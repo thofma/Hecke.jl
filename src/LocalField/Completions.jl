@@ -19,10 +19,10 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
   return z
 end
 
-function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool)
-  if !isdefined(f, :lift_data) || f.lift_data[1] != f.precision
-    l = lll(basis_matrix(f.P^f.precision))
-    f.lift_data = (f.precision, l, solve_init(map_entries(QQ, l)))
+function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool, precision::Int)
+  if !isdefined(f, :lift_data) || f.lift_data[1] != precision
+    l = lll(basis_matrix(f.P^precision))
+    f.lift_data = (precision, l, solve_init(map_entries(QQ, l)))
   end
   n = degree(domain(f))
   zk = order(f.P)
@@ -67,7 +67,7 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
   r = Kx(coeffs)
   s = evaluate(r, f.inv_img[2])
   if small_lift
-    return _small_lift(f, s, integral)
+    return _small_lift(f, s, integral, precision(a))
   else
     return s
   end
@@ -78,7 +78,7 @@ function preimage(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalFie
   @assert codomain(f) === parent(a)
   s = evaluate(map_coefficients(x -> lift(ZZ, x), a.data, cached = false), f.inv_img[2])
   if small_lift
-    return _small_lift(f, s, integral)
+    return _small_lift(f, s, integral, precision(a))
   else
     return s
   end
@@ -93,7 +93,7 @@ function preimage(f::CompletionMap{QadicField, QadicFieldElem}, a::QadicFieldEle
   as_fmpq_poly = map_coefficients(x -> lift(ZZ, x), as_pol, cached = false)
   r = evaluate(as_fmpq_poly, f.inv_img[1])
   if small_lift
-    return _small_lift(f, r, integral)
+    return _small_lift(f, r, integral, precision(a))
   else
     return r
   end

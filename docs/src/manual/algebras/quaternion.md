@@ -1,6 +1,7 @@
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
+CollapsedDocStrings = true
 DocTestSetup = Hecke.doctestsetup()
 ```
 # [Quaternion algebras](@id quat-alg)
