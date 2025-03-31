@@ -122,6 +122,30 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
   end
 end
 
+function block_system(t::AbsSimpleNumFieldElem, C::Hecke.qAdicConj)
+  pr = 1
+  while true
+    c = conjugates(t, C, pr)::Vector{QadicFieldElem}
+    D = Dict{QadicFieldElem, Vector{Int}}()
+    for i = 1:length(c)
+      if haskey(D, c[i])
+        push!(D[c[i]], i)
+      else
+        D[c[i]] = [i]
+      end
+    end
+    bs = sort(collect(values(D)), lt = (a,b) -> isless(a[1], b[1]))
+    if length(bs) * length(bs[1]) == length(c) &&
+        all(x->length(x) == length(bs[1]), bs)
+      return bs
+    end
+    pr *= 2
+    if pr > 100
+      error("probably bad")
+    end
+  end
+end
+
 #As above, but for AbsSimpleNumField type
 #In this case, we can use block system to find if an element is primitive.
 #does not need to be a basis, generators are sufficient
@@ -138,21 +162,19 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   # First check basis elements
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   f = Zx(K.pol*denominator(K.pol))
-  p, d = _find_prime(ZZPolyRingElem[f])
-  #does not need to ne successful!!!
+  C = get_attribute(K, :subfieldData)
+  if C === nothing
+    p, d = _find_prime(ZZPolyRingElem[f])
+    C = Hecke.qAdicConj(K, p; splitting_field = true)
+    set_attribute!(K, :subfieldData => C)
+  end
   #First, we search for elements that are primitive using block systems
   #TODO: use p-adic roots ala Oscar/experimental/Galois.../src/Subfield.jl
   # prob: get bounds without SLP and GaloisCtx
-  F = Nemo.Native.finite_field(p, d, "w", cached = false)[1]
-  Ft = polynomial_ring(F, "t", cached = false)[1]
-  ap = zero(Ft)
-  fit!(ap, degree(K)+1)
-  rt = roots(F, f)
-  indices = Int[]
   b = [collect(1:degree(f))] #block system for QQ
   all_b = []
   for i = 1:length(as)
-    _b = _block(as[i], rt, ap)
+    _b = block_system(as[i], C)
     push!(all_b, _b)
     b = [intersect(x, y) for x = b for y = _b]
     b = [x for x = b if length(x) > 0]
@@ -188,7 +210,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     cur_b = [intersect(x, y) for x = cur_b for y = all_b[i]]
     cur_b = [x for x = cur_b if length(x) > 0]
     j = 1
-    while _block(pe + j*as[i], rt, ap) != c
+    while block_system(pe + j*as[i], C) != c
       j += 1
       if j > 10
         error("dnw")
@@ -201,6 +223,54 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     end
   end
   error("should be hard...")
+end
+
+function _subfield_from_block(K::AbsSimpleNumField, C::qAdicConj, b::Vector{Vector{Int}})
+  # Klueners:
+  # - try sum of conj. in block
+  # - then prod
+  # - then prod (x+i) for i this will enventually be OK
+  # trivial precision: double until it works
+  pr = 5
+  @assert is_monic(defining_polynomial(K))
+  c = conjugates(gen(K), C, pr) #the roots...
+  pe = c -> [sum(c[x]) for x = b]
+  if length(Set(pe(c))) != length(b)
+    #trace is not primitive!
+    pe = c -> [prod(c[x]) for x = b]
+    if length(Set(pe(c))) != length(b)
+      i = 1
+      while true
+        pe = c -> let i= i; [prod(y+i for y = c[x]) for x = b] end
+        if length(Set(pe(c))) == length(b)    
+          break
+        end
+        i += 1
+      end
+    end
+  end
+  pr *= 2
+  Qp = parent(c[1])
+  Qpt, t = polynomial_ring(Qp, cached = false)
+  p = ZZ(C.C.p)
+  local ff::ZZPolyRingElem
+  while true
+    p_pow = p^pr
+    c = conjugates(gen(K), C, pr) #the roots...
+    v = pe(c)
+    f = prod([t-x for x = v])
+    ff = map_coefficients(x->mod_sym(lift(coeff(x, 0)), p_pow), f)
+    if all(x->nbits(x) < nbits(p_pow) - 30, coefficients(ff))
+      f = interpolate(Qpt, c, [v[findall(x-> j in x, b)[1]] for j=1:length(c)])
+      elem = map_coefficients(x->rational_reconstruction(lift(coeff(x, 0)), p_pow)[2], f)(gen(K))
+
+      if is_zero(ff(elem))
+        return elem
+      end
+    end
+    pr *= 2
+    #if the block system is illegal, this will not terminate.
+  end
 end
 
 ################################################################################
