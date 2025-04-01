@@ -41,8 +41,12 @@ function _subfield_basis(K::S, as::Vector{T}) where {
           K(kx([Kv[n] for n in d:-1:1]))
         end
        for v in gens(Fvs)]::Vector{elem_type(K)}
-          #return b
-  return [x*denominator(x) for x= b]
+
+  if K isa AbsSimpleNumField
+    return [x*denominator(x) for x in b]
+  else
+    return b
+  end
 end
 
 function _improve_subfield_basis(K, bas)
@@ -184,7 +188,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     b = Vector{Int}[x for x in b if length(x) > 0]
   end
   @vprintln :Subfields 1 "Have block systems, degree of subfield is $(length(b))"
-sort!(b, lt = (a,b) -> isless(a[1], b[1]))
+  sort!(b, lt = (a,b) -> isless(a[1], b[1]))
   # b is the block of the subfield (with respect to the embeddings in C)
 
   if lincomb
@@ -225,7 +229,6 @@ function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b,
     cur_b = Vector{Int}[x for x in cur_b if length(x) > 0]
     sort!(cur_b, lt = (a,b) -> isless(a[1], b[1]))
     j = 1
-    ```
     while block_system(pe + j*as[i], C) != cur_b
       j += 1
       if j > 10
