@@ -223,7 +223,9 @@ function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b,
     end
     cur_b = Vector{Int}[intersect(x, y) for x in cur_b for y in all_b[i]]
     cur_b = Vector{Int}[x for x in cur_b if length(x) > 0]
+    sort!(cur_b, lt = (a,b) -> isless(a[1], b[1]))
     j = 1
+    ```
     while block_system(pe + j*as[i], C) != cur_b
       j += 1
       if j > 10
