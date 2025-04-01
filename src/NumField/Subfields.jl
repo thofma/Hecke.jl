@@ -152,7 +152,7 @@ end
 # In this case, we can use a block system to find if an element is
 # primitive (and find a primitive element) Input does not need to be
 # a basis, generators are sufficient
-function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector{AbsSimpleNumFieldElem})
+function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector{AbsSimpleNumFieldElem}, lincomb = false)
   if isempty(as) || degree(K) == 1
     return gen(K)
   end
@@ -183,8 +183,18 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     b = Vector{Int}[intersect(x, y) for x in b for y in _b]
     b = Vector{Int}[x for x in b if length(x) > 0]
   end
-  @vprintln :Subfields 1 "Have block systems, degree of subfield is $(length(b))\n"
+  @vprintln :Subfields 1 "Have block systems, degree of subfield is $(length(b))"
 
+  # b is the block of the subfield (with respect to the embeddings in C)
+
+  if lincomb
+    return _subfield_primitive_element_from_basis_lincomb(K, b, all_b, C, as)
+  else
+    return _subfield_primitive_element_from_block(K, C, b)
+  end
+end
+
+function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b, all_b, C, as::Vector{AbsSimpleNumFieldElem})
   indices = findall(x->length(x) == length(b), all_b)
 
   @vprintln :Subfields 1 "Found $(length(indices)) primitive elements in the basis"
@@ -214,7 +224,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     cur_b = Vector{Int}[intersect(x, y) for x in cur_b for y in all_b[i]]
     cur_b = Vector{Int}[x for x in cur_b if length(x) > 0]
     j = 1
-    while block_system(pe + j*as[i], C) != c
+    while block_system(pe + j*as[i], C) != cur_b
       j += 1
       if j > 10
         error("dnw")
@@ -229,7 +239,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   error("should be hard...")
 end
 
-function _subfield_from_block(K::AbsSimpleNumField, C#=::qAdicConj=#, b::Vector{Vector{Int}})
+function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdicConj=#, b::Vector{Vector{Int}})
   @assert C isa qAdicConj
   # Klueners:
   # - try sum of conj. in block
