@@ -535,7 +535,7 @@ function (f::NfToAlgGrpMor)(O::AbsNumFieldOrder)
   A = codomain(f)
   B = basis(O)
   G = group(A)
-  ZG = Order(A, collect(G))
+  ZG = order(A, collect(G))
   return ideal_from_lattice_gens(A, ZG, [f(elem_in_nf(b)) for b in B], :right)
 end
 
@@ -1133,7 +1133,7 @@ function is_almost_maximally_ramified(K::AbsSimpleNumField, p::ZZRingElem)
     HinG = [ mD(mH(h)) for h in H]
     for t in 1:length(ram_groups)
       if all(h in ram_groups[t] for h in HinG) && all(h in HinG for h in ram_groups[t + 1])
-        eH = sum(QG(h) for h in HinG) * QG(1//Order(H))
+        eH = sum(QG(h) for h in HinG) * QG(1//order(H))
         if !(eH in assOrd)
           return false
         end

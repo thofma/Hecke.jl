@@ -18,7 +18,7 @@ function _unit_group_generators_maximal(M; GRH::Bool = true)
   gens = elem_type(algebra(M))[]
   for i in 1:length(res)
     B, mB = res[i]
-    MinB = Order(B, [(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
+    MinB = order(B, [(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
     UB = _unit_group_generators_maximal_simple(MinB; GRH = GRH)
     e = sum(idems[j] for j in 1:length(res) if j != i; init = zero(algebra(M)))
     @assert isone(e + mB(one(B)))
@@ -114,7 +114,7 @@ function _SLn_generators(OK, n)
         if !fl
           continue
         end
-        OO = Order(K, G)
+        OO = order(K, G)
         if abs(discriminant(OO)) == abs(discriminant(OK))
           found = true
           break

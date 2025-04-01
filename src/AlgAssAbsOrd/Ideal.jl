@@ -803,7 +803,7 @@ function _ring_of_multipliers_integral_ideal(I::AlgAssAbsOrdIdl, p::ZZRingElem =
   b = inv(QQ.(n))
   mul!(b, b, basis_matrix(O, copy = false))
   @hassert :AlgAssOrd 1 defines_order(algebra(O), b)[1]
-  O1 = Order(algebra(O), b)
+  O1 = order(algebra(O), b)
   O1.disc = divexact(discriminant(O), s^2)
   return O1
 end
@@ -840,7 +840,7 @@ Given an ideal $a$, it returns the ring $(a : a)$.
 function ring_of_multipliers(a::AlgAssAbsOrdIdl, action::Symbol = :left)
   M = _colon_raw(a, a, action)
   R = base_ring(a)
-  return Order(algebra(a), R, _hnf_integral(M, R))
+  return order(algebra(a), R, _hnf_integral(M, R))
 end
 
 @doc raw"""
@@ -1665,7 +1665,7 @@ function _as_order_of_smaller_algebra(m::AbsAlgAssMor, O::AlgAssAbsOrd, OB::AlgA
     elem_to_mat_row!(M, i, basis_in_A[i])
   end
   MM = sub(_hnf!_integral(M, :lowerleft), (dim(B) - dim(A) + 1):dim(B), 1:dim(A))
-  OO = Order(A, MM)
+  OO = order(A, MM)
   return OO
 end
 

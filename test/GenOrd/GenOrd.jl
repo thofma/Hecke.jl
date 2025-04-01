@@ -2,7 +2,7 @@
   # Test first the ring interface
   Qx, x = QQ["x"]
   K, _ = number_field(x^3 - 18, "a")
-  O = @inferred Order(ZZ, K)
+  O = @inferred order(ZZ, K)
   @test O isa Hecke.GenOrd
   ConformanceTests.test_Ring_interface(O)
 

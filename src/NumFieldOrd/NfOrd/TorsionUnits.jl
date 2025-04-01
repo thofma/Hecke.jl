@@ -291,7 +291,7 @@ function _torsion_group_order_divisor(K::AbsSimpleNumField)
   if is_maximal_order_known(K)
     disc = abs(discriminant(maximal_order(K)))
   elseif is_defining_polynomial_nice(K)
-    disc = discriminant(EquationOrder(K))
+    disc = discriminant(equation_order(K))
   else
     disc_1 = discriminant(K.pol)
     disc = numerator(disc_1)*denominator(disc_1)

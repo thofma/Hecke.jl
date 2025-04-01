@@ -8,7 +8,7 @@
     A = StructureConstantAlgebra(y^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
-    OO = Order(A, basis_pmatrix(O))
+    OO = order(A, basis_pmatrix(O))
     @test O == OO
     @test hash(O) == hash(OO)
 

@@ -1591,7 +1591,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   scaled_basisofLinFabs = elem_type(EFabs)[]
 
-  O = Order(Fabs, __colon_raw(Fabs, basisofLinFabs, basisofLinFabs))
+  O = order(Fabs, __colon_raw(Fabs, basisofLinFabs, basisofLinFabs))
 
   z = zero_matrix(K, degree(O), degree(F))
   for i in 1:degree(O)
@@ -1604,7 +1604,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-  OinF = Order(F, pm)
+  OinF = order(F, pm)
 
   LinFabs = fractional_ideal(O, basisofLinFabs)
 
