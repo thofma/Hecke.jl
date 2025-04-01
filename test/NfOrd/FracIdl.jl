@@ -104,4 +104,12 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test parent(I) == parent(zero(K) * OK)
     @test hash(parent(I)) == hash(parent(zero(K) * OK))
   end
+
+  # principality testing for non-maximal orders #1833
+  let
+    _, x = QQ[:x]
+    O = equation_order(x^2 - 5)
+    fl, a = is_principal_with_data(fractional_ideal(O, [one(number_field(O))]))
+    @test fl && (a*O == 1*O)
+  end
 end
