@@ -11,7 +11,7 @@
   H = matrix(QQ, 3, 3, [1,0,0,0,1,0,0,9,1]);
   l = [A, B, C, D, E, F, G, H]
   A = matrix_algebra(QQ, 3)
-  O = Order(A, l)
+  O = order(A, l)
   @test discriminant(O) == -8862938119652501095929
 
   @testset "Quaternion Algebras" begin
@@ -38,7 +38,7 @@
       A = Hecke.CrossedProductAlgebra(K,G,cocval)
       if Hecke.is_split(A)
         A1 = Hecke.CrossedProductAlgebra(O, G, cocval)
-        O1 = Order(A1, basis(A1))
+        O1 = order(A1, basis(A1))
         d = discriminant(O1)
         fac = factor(d)
         for p in keys(fac.fac)
@@ -54,7 +54,7 @@
     A = Hecke.quaternion_algebra2(4,36)
     @test Hecke.is_split(A)
     A = Hecke.quaternion_algebra2(-1,-1)
-    O = Order(A, [A[i] for i=1:4])
+    O = order(A, [A[i] for i=1:4])
     @test schur_index(A) == 2
   end
 
@@ -76,7 +76,7 @@
     end
     A = Hecke.CrossedProductAlgebra(O, Autos, Coc)
     @test is_split(A)
-    O1 = Order(A, basis(A))
+    O1 = order(A, basis(A))
     d = discriminant(O1)
     fac1 = factor(discriminant(O))
     fac2 = factor(d)
@@ -130,16 +130,16 @@
     f = prod(x - i for i in 1:30)
     A = StructureConstantAlgebra(f)
     R = any_order(A)
-    M = MaximalOrder(R)
+    M = maximal_order(R)
     @test isone(abs(discriminant(M)))
 
     G = small_group(6, 1)
     QG = QQ[G]
-    ZG = Order(QG, basis(QG))
+    ZG = order(QG, basis(QG))
     @test !is_maximal(ZG)
 
     # This is not ZG, so we need to also make it maximal at 5
-    O = Order(QG, [one(QG), 5 * QG(gens(G)[1]), 5 * QG(gens(G)[2])])
+    O = order(QG, [one(QG), 5 * QG(gens(G)[1]), 5 * QG(gens(G)[2])])
     @test !is_maximal(O)
     @test discriminant(maximal_order(ZG)) == -1
 
@@ -154,11 +154,11 @@
 
     # Trigger multiple maximal orders in the StructureConstantAlgebra case
     A, AtoQG = StructureConstantAlgebra(QG)
-    ZG = Order(A, basis(A))
+    ZG = order(A, basis(A))
     @test !is_maximal(ZG)
 
     # This is not ZG, so we need to also make it maximal at 5
-    O = Order(A, [one(A), 5 * (AtoQG\(QG(gens(G)[1]))), (5 * (AtoQG\(QG(gens(G)[2]))))])
+    O = order(A, [one(A), 5 * (AtoQG\(QG(gens(G)[1]))), (5 * (AtoQG\(QG(gens(G)[2]))))])
     @test !is_maximal(O)
     @test discriminant(maximal_order(ZG)) == -1
 
@@ -172,13 +172,13 @@
     @test count(is_maximal, S) == 2
 
     A = matrix_algebra(QQ, 6)
-    O = Order(A, basis(A), isbasis = true)
+    O = order(A, basis(A), isbasis = true)
     M = maximal_order(O)
     @test is_unit(discriminant(M))
 
     G = small_group(10, 1)
     QG = QQ[G]
-    ZG = Order(QG, basis(QG))
+    ZG = order(QG, basis(QG))
     # there are exactly two maximal overorders and we hope to find them all
     @test length(unique([Hecke.new_maximal_order(ZG, false) for i in 1:20])) == 2
   end
@@ -202,7 +202,7 @@
   @testset "index" begin
     G = small_group(2, 1)
     QG = QQ[G]
-    R = Order(QG, basis(QG))
+    R = order(QG, basis(QG))
     M = maximal_order(R)
     @test (@inferred index(R, M)) == 2
   end
@@ -221,15 +221,15 @@
     b = 1//2*a^3 - 9//2*a # sqrt(2)
     c = 1//2*a^3 - 11//2*a # sqrt(3)
 
-    O = Order(A, [ a, b, a*b ])
+    O = order(A, [ a, b, a*b ])
     @test discriminant(O) == 9216
-    @test O == Order(A, [ a, b ])
-    @test O == Order(A, [ a, b ], check = false)
+    @test O == order(A, [ a, b ])
+    @test O == order(A, [ a, b ], check = false)
 
     d = 1//4*a^3 + 1//4*a^2 + 3//4*a + 3//4
     OO = Hecke._order(A, [d], extends = O)
     @test is_maximal(OO)
-    @test_throws ErrorException Order(A, [ b ])
+    @test_throws ErrorException order(A, [ b ])
 
     # Example where the non-commutative stuff happens:
     # One needs to multiply "from both sides" and the "while true" loop in
@@ -248,9 +248,9 @@
                                      A(matrix(K, [ 0 0 0; 1 0 0; 0 0 0 ])),
                                      A(matrix(K, [ 0 0 0; 0 0 0; 0 1 0 ]))
                                     ])
-    O = Order(B, g)
+    O = order(B, g)
     @test discriminant(O) == ZZ(9216)^9
-    @test O == Order(B, g, check = false)
+    @test O == order(B, g, check = false)
     d = 1//4*a^3 + 1//4*a^2 + 3//4*a + 3//4
     OO = Hecke._order(B, [BtoA\A(matrix(K, [ d 0 0; 0 0 0; 0 0 0 ]))], extends = O)
     @test discriminant(OO) == ZZ(2304)^9
@@ -263,18 +263,18 @@
   @test (nrows(B), ncols(B)) == (0, 0)
   M = maximal_order(A)
   @test is_maximal(M)
-  O = Order(A, [zero(A)])
+  O = order(A, [zero(A)])
   @test is_maximal(O)
 
   # equality and hashing
   let
     A = matrix_algebra(QQ, 2)
-    O = Order(A, identity_matrix(QQ, 4))
-    OO = Order(A, identity_matrix(QQ, 4))
+    O = order(A, identity_matrix(QQ, 4))
+    OO = order(A, identity_matrix(QQ, 4))
     @test O == OO
     @test hash(O) == hash(OO)
     A = group_algebra(QQ, abelian_group([4]))
-    OO = Order(A, identity_matrix(QQ, 4))
+    OO = order(A, identity_matrix(QQ, 4))
     @test O != OO
   end
 end

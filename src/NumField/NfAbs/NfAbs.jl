@@ -352,7 +352,7 @@ function normal_basis(K::AbsSimpleNumField)
   #   end
   # end
 
-  O = EquationOrder(K)
+  O = equation_order(K)
   Qx = parent(K.pol)
   d = discriminant(O)
   p = 1

@@ -532,7 +532,7 @@ function _coefficients_bound(K::AbsSimpleNumField)
   for i in 1:r1+r2
     bound_root[i] = ub_f * abs(dfa_conjs[i])
   end
-  E = EquationOrder(K)
+  E = equation_order(K)
   c1, c2 = norm_change_const(E)
 
   #First, t2 norm

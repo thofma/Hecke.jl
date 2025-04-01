@@ -28,7 +28,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
     end
   end
   quoAlg = StructureConstantAlgebra(QQ, mt; check = false)
-  ord = Order(quoAlg, basis(quoAlg))
+  ord = order(quoAlg, basis(quoAlg))
   #
   bminvO = basis_matrix_inverse(O; copy = false)
   VQ = change_base_ring(QQ, V)

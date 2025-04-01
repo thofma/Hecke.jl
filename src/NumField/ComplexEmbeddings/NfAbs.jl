@@ -414,7 +414,7 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   if b <= 0
     b = 10
     cnt = 0
-    lllE = lll(EquationOrder(K))
+    lllE = lll(equation_order(K))
     bas = basis(lllE, K, copy = false)
     while true
       @assert b>0

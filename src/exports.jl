@@ -38,7 +38,7 @@ export EmbeddedAbsSimpleNumField
 export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
 export EmbeddedNumField
-export EquationOrder
+export equation_order
 export FacElem
 export FacElemMon
 export FactorBase
@@ -68,7 +68,7 @@ export MSet
 export Map
 export MapFromFunc
 export MapRayClassGrp
-export MaximalOrder
+export maximal_order
 export NewtonPolygon
 export AbsNonSimpleNumField
 export AbsNonSimpleNumFieldElem

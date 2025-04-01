@@ -1067,7 +1067,7 @@ end
 
 function is_index_divisor(O::RelNumFieldOrder{S, T, U}, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) where {S, T, U <: RelNonSimpleNumFieldElem}
   I = discriminant(O)
-  J = discriminant(EquationOrder(nf(O)))
+  J = discriminant(equation_order(nf(O)))
   return valuation(I, p) != valuation(J, p)
 end
 

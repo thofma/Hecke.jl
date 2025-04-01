@@ -25,7 +25,7 @@
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
 
-        O = Order(K, shuffle(basis(O)), isbasis = true)
+        O = order(K, shuffle(basis(O)), isbasis = true)
         O.is_maximal = 1
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
@@ -45,7 +45,7 @@
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
 
-      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O = order(K, shuffle(basis(O)), isbasis = true)
       O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
@@ -59,7 +59,7 @@
       Cl, mCl = Hecke.class_group(O)
       @test order(Cl) == 8
 
-      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O = order(K, shuffle(basis(O)), isbasis = true)
       O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
@@ -116,7 +116,7 @@ end
     @test contains(AF(0.88137358701),U.tentative_regulator)
     @test order(Cl) == 1
 
-    O = Order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), isbasis = true)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -157,7 +157,7 @@ end
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
 
-    O = Order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), isbasis = true)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -187,7 +187,7 @@ end
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
 
-    O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
+    O = order(K, shuffle(basis(O)), isbasis = true, cached = false)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -210,7 +210,7 @@ end
 
     @test order(Cl)== 36
 
-    O = Order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), isbasis = true)
     O.is_maximal = 1
 
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)

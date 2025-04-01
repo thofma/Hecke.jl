@@ -2,7 +2,7 @@
   Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
-  O1 = EquationOrder(K1)
+  O1 = equation_order(K1)
 
   K2, a2 = number_field(4*x^2 + 1, "a")
   O2 = maximal_order(K2)

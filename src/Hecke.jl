@@ -105,10 +105,10 @@ const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
-function MaximalOrder
+function maximal_order
 end
 
-global const maximal_order = MaximalOrder
+global const maximal_order = maximal_order
 
 function _print_banner()
   printstyled(raw""" _    _           _        """, color = :red)

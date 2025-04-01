@@ -4,12 +4,12 @@
 #
 ###############################################################################
 @doc raw"""
-    MaximalOrder(O::AbsNumFieldOrder; index_divisors::Vector{ZZRingElem}, discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> AbsNumFieldOrder
+    maximal_order(O::AbsNumFieldOrder; index_divisors::Vector{ZZRingElem}, discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> AbsNumFieldOrder
 
 Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
 the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
 """
-function MaximalOrder(O::AbsNumFieldOrder{S, T}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) where {S, T}
+function maximal_order(O::AbsNumFieldOrder{S, T}; index_divisors::Vector{ZZRingElem} = ZZRingElem[], discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[]) where {S, T}
   K = nf(O)
   return get_attribute!(K, :maximal_order) do
     M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
@@ -25,7 +25,7 @@ function MaximalOrder(O::AbsNumFieldOrder{S, T}; index_divisors::Vector{ZZRingEl
 end
 
 @doc raw"""
-    MaximalOrder(K::NumField{QQFieldElem}; discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> AbsNumFieldOrder
+    maximal_order(K::NumField{QQFieldElem}; discriminant::ZZRingElem, ramified_primes::Vector{ZZRingElem}) -> AbsNumFieldOrder
 
 Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
 or the discriminant of the maximal order.
@@ -35,10 +35,10 @@ or the discriminant of the maximal order.
 ```julia-repl
 julia> Qx, x = QQ["x"];
 julia> K, a = number_field(x^3 + 2, "a");
-julia> O = MaximalOrder(K);
+julia> O = maximal_order(K);
 ```
 """
-function MaximalOrder(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function maximal_order(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     E = any_order(K)
     O = new_maximal_order(E, ramified_primes = ramified_primes)
@@ -58,7 +58,7 @@ end
 
 Returns the ring of integers of $K$.
 
-See also `[`MaximalOrder`](@ref)`.
+See also `[`maximal_order`](@ref)`.
 """
 function ring_of_integers(x::T; kw...) where T
   return maximal_order(x; kw...)
@@ -103,7 +103,7 @@ function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingE
 
   ind = index(O)
   K = nf(O)
-  EO = EquationOrder(K)
+  EO = equation_order(K)
   M = zero_matrix(ZZ, 2 * degree(O), degree(O))
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   f = Zx(K.pol)
@@ -148,7 +148,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
 
   if is_defining_polynomial_nice(K) && !contains_equation_order(O)
     #The order does not contain the equation order. We add them
-    O = O + EquationOrder(K)
+    O = O + equation_order(K)
   end
 
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
@@ -272,7 +272,7 @@ function _TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem})
       end
     else
       if is_defining_polynomial_nice(nf(O)) && is_coprime(index(OO), q)
-        q1, OOq = dedekind_test_composite(EquationOrder(K), q)
+        q1, OOq = dedekind_test_composite(equation_order(K), q)
         if !isone(q1)
           push!(M, q1)
           push!(M, divexact(q, q1))

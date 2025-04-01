@@ -114,31 +114,31 @@ end
   o = extend(equation_order(k), gs)
   @test discriminant(o) == -210517451702272
   push!(gs, gen(k))
-  oo = Order(gs)
+  oo = order(gs)
   @test o == oo
 
   Qx, x = QQ["x"]
   K, a = quadratic_field(5)
-  R = Order(K, [10*a])
+  R = order(K, [10*a])
   @test extend(R, [a]) == equation_order(K)
   @test extend(R, []) == R
   @test extend(R, [1//2 + a//2]) == maximal_order(K)
   @test extend(maximal_order(R), [a]) == maximal_order(R)
 
   K, a = number_field(x, "a")
-  @test Order(K, [1]) == equation_order(K)
-  @test Order(K, []) == equation_order(K)
+  @test order(K, [1]) == equation_order(K)
+  @test order(K, []) == equation_order(K)
 
   K, a = number_field(x^4 - 10*x^2 + 1, "a")
   x = 1//2*a^3 - 9//2*a # sqrt(2)
   y = 1//2*a^3 - 11//2*a # sqrt(3)
-  O = Order(K, [x, y, x*y])
-  @test O == Order(K, [x, y])
-  @test O == Order(K, [x, y], check = false)
+  O = order(K, [x, y, x*y])
+  @test O == order(K, [x, y])
+  @test O == order(K, [x, y], check = false)
   z = 1//4*a^3 + 1//4*a^2 + 3//4*a + 3//4
   OO = Hecke._order(K, [z], extends = O)
   @test is_maximal(OO)
-  @test_throws ErrorException Order(K, [x])
+  @test_throws ErrorException order(K, [x])
 end
 
 

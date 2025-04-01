@@ -96,7 +96,7 @@ function *(O1::AbsNumFieldOrder, O2::AbsNumFieldOrder)
   for i=1:n
     push!(b, Hecke.elem_from_mat_row(k, h, i, d))
   end
-  return Hecke.Order(k, b)
+  return Hecke.order(k, b)
 end
 
 mutable struct GeIdeal

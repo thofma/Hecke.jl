@@ -283,3 +283,8 @@ end
 # Deprecated in 0.35.10
 @deprecate minpoly(a::Union{LocalFieldElem, QadicFieldElem, RelFinFieldElem, AbsNumFieldOrderElem}, R::PolyRing) minpoly(R, a)
 @deprecate charpoly(a::AbsNumFieldOrderElem, R::PolyRing) charpoly(R, a)
+
+# Deprecated in 0.35.15
+@deprecate MaximalOrder maximal_order
+@deprecate Order order
+@deprecate EquationOrder equation_order
