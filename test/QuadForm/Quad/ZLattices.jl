@@ -812,3 +812,12 @@ end
   L = lattice(V, B);
   @test rank.(irreducible_components(L)) == Int[6]
 end
+
+@testset "Sum of trivial lattices" begin
+  L = integer_lattice(; gram=matrix(QQ, 0, 0, []))
+  L2 = lattice(ambient_space(L))
+  q = discriminant_group(L)
+  q2 = discriminant_group(L2)
+  @test rank(L + L2) == 0
+  @test order(q + q2) == 1
+end

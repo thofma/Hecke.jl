@@ -1015,7 +1015,13 @@ end
 function +(M::ZZLat, N::ZZLat)
   @req ambient_space(M) === ambient_space(N) "Lattices must have same ambient space"
   BM = basis_matrix(M)
+  if nrows(BM) == 0
+    return N
+  end
   BN = basis_matrix(N)
+  if nrows(BN) == 0
+    return M
+  end
   B = QQMatrix(_hnf_integral(FakeFmpqMat(vcat(BM, BN))))
   i = 1
   while is_zero_row(B, i)
