@@ -184,7 +184,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     b = Vector{Int}[x for x in b if length(x) > 0]
   end
   @vprintln :Subfields 1 "Have block systems, degree of subfield is $(length(b))"
-
+sort!(b, lt = (a,b) -> isless(a[1], b[1]))
   # b is the block of the subfield (with respect to the embeddings in C)
 
   if lincomb
