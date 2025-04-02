@@ -60,7 +60,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
   prim_img::T
   inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}
   precision::Int
-  lift_data::Tuple{Int, ZZMatrix, AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix}}
+  lift_data::Dict{Int, Tuple{ZZMatrix, AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix}}}
 
   function CompletionMap(K::AbsSimpleNumField, L::LocalField{QadicFieldElem, EisensteinLocalField},
                           img::LocalFieldElem{QadicFieldElem, EisensteinLocalField},
@@ -70,6 +70,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
     z.prim_img = img
     z.inv_img = inv_img
     z.precision = precision
+    z.lift_data = Dict{Int, Tuple{ZZMatrix, AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix}}}()
     return z
   end
 

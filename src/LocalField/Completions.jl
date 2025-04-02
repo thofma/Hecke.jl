@@ -20,17 +20,18 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
 end
 
 function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool, precision::Int)
-  if !isdefined(f, :lift_data) || f.lift_data[1] != precision
+  if !haskey(f.lift_data, precision) 
     l = lll(basis_matrix(f.P^precision))
-    f.lift_data = (precision, l, solve_init(map_entries(QQ, l)))
+    f.lift_data[precision] = (l, solve_init(map_entries(QQ, l)))
   end
+  lift_data = f.lift_data[precision]
   n = degree(domain(f))
   zk = order(f.P)
   @assert denominator(a, zk) == 1
   cc = matrix(ZZ, 1, n, coordinates(zk(a)))
-  l = f.lift_data[2]
+  l = lift_data[1]
   if integral
-    s = solve(f.lift_data[3], QQ.(cc))
+    s = solve(lift_data[2], QQ.(cc))
     r = round.(ZZRingElem, s)
     cc -= r*l
     return domain(f)(order(f.P)(cc))
