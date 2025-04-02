@@ -18,12 +18,12 @@
   @testset "Homomorphisms" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
-    h = @inferred hom(gens(G), gens(H))
+    h = @inferred hom(G, H, gens(G), gens(H))
     @test h(G[1]) == H[1]
     @test h(G[2]) == H[2]
     @test h(G[3]) == H[3]
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
@@ -32,7 +32,7 @@
   @testset "Kernel" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
@@ -43,7 +43,7 @@
 
     G = abelian_group(Int[])
     H = abelian_group([2])
-    h = hom(G, H, eltype(G)[])
+    h = hom(G, H, eltype(H)[])
     K, mK = @inferred kernel(h)
     @test isone(order(K))
   end
@@ -51,7 +51,7 @@
   @testset "Image" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
@@ -65,11 +65,11 @@
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     b = @inferred is_injective(h)
     @test !b
 
-    h = @inferred hom(G, [3*h for h in gens(H)])
+    h = @inferred hom(G, H, [3*h for h in gens(H)])
     b = @inferred is_injective(h)
     @test b
   end
@@ -78,11 +78,11 @@
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     b = @inferred is_surjective(h)
     @test !b
 
-    h = @inferred hom(G, [3*h for h in gens(H)])
+    h = @inferred hom(G, H, [3*h for h in gens(H)])
     b = @inferred is_surjective(h)
     @test b
 
@@ -96,11 +96,11 @@
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     b = @inferred is_bijective(h)
     @test !b
 
-    h = @inferred hom(G, [3*h for h in gens(H)])
+    h = @inferred hom(G, H, [3*h for h in gens(H)])
     b = @inferred is_bijective(h)
     @test b
 
