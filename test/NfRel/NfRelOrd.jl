@@ -238,7 +238,7 @@ let
   g = y^3 - 51*y^2 + 30*y - 28
   L, b = number_field(g, "b", cached = false)
   P = pseudo_matrix(identity_matrix(K, 3))
-  @test Order(L, P) == Order(L, P)
-  @test Order(L, P) !== Order(L, P)
-  @test hash(Order(L, P)) == hash(Order(L, P))
+  @test order(L, P) == order(L, P)
+  @test order(L, P) !== order(L, P)
+  @test hash(order(L, P)) == hash(order(L, P))
 end

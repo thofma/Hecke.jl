@@ -41,7 +41,7 @@ end
   @test isone(mQ(O(5)))
 
   A = StructureConstantAlgebra(x * (x^2 - 113000))
-  O = Order(A, basis(A), cached = false)
+  O = order(A, basis(A), cached = false)
   I = 2 * O
   Q, mQ = quo(O, I)
   b = FacElem(Dict(A(2) => -1, A(6) => 1, A(3) => -1, A(5) => 2))

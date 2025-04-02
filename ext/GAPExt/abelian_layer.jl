@@ -44,7 +44,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
     res = Vector{FieldsTower}(undef, length(lq))
     for i = 1:length(lq)
       x = lq[i]
-      E = EquationOrder(x[1])
+      E = equation_order(x[1])
       E.is_maximal = 1
       E.index = ZZRingElem(1)
       E.gen_index = QQFieldElem(1)

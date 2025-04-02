@@ -34,6 +34,10 @@ end
 
 @attributes AbstractAlgebra.Generic.FunctionField
 
+function trivial_divisor(F::Generic.FunctionField)
+  return divisor(one(F))
+end
+
 
 @doc raw"""
     divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) -> Divisor
@@ -279,6 +283,37 @@ function Base.:*(n::Int, D::Divisor)
   return Dnew
 end
 
+function gcd(D1::Divisor, D2::Divisor)
+  D1_fin, D1_inf = ideals(D1)
+  D2_fin, D2_inf = ideals(D2)
+  Dnew = Divisor(D1_fin + D2_fin, D1_inf + D2_inf)
+
+  if has_support(D1) && has_support(D2)
+    P = union(keys(D1.finite_support), keys(D2.finite_support))
+    fin_support = Dict{GenOrdIdl,Int}()
+    for p in P
+      p_val = min(valuation(D1, p), valuation(D2, p))
+      if p_val != 0
+        fin_support[p] = p_val
+      end
+    end
+
+    inf_support = Dict{GenOrdIdl,Int}()
+    P_inf = union(keys(D1.infinite_support), keys(D2.infinite_support))
+    for p in P_inf
+      p_val = min(valuation(D1, p), valuation(D2, p))
+      if p_val != 0
+        inf_support[p] = p_val
+      end
+    end
+
+    Dnew.finite_support = fin_support
+    Dnew.infinite_support = inf_support
+  end
+
+  return Dnew
+end
+
 Base.:*(D::Divisor, n::Int) = n * D
 
 function -(D::Divisor)
@@ -456,7 +491,7 @@ Return the degree of D.
 """
 function degree(D::Divisor)
   L = support(D)
-  return sum(degree(f)*e for (f,e) in L)
+  return sum(degree(f)*e for (f,e) in L; init = zero(ZZ))
 end
 
 @doc raw"""

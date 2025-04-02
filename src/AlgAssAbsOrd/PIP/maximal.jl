@@ -28,7 +28,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   for i in 1:length(res)
     B, mB = res[i]
     #@show isdefined(B, :isomorphic_full_matrix_algebra)
-    MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
+    MinB = order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
     #@show is_maximal(MinC)
     #@show hnf(basis_matrix(MinC))
     ainB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(mB(one(B))* b)) for b in abas])
@@ -219,7 +219,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
     return fl, AAtoA(AAtoK\(elem_in_nf(zK)))
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, elem_type(B)[BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
+    MB = order(B, elem_type(B)[BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
     aB = ideal_from_lattice_gens(B, elem_type(B)[BtoA\b for b in absolute_basis(a)])
     fl, zK = _isprincipal_maximal_simple(aB, MB, side)::Tuple{Bool, elem_type(B)}
     gen = BtoA(zK)::elem_type(A)
@@ -379,7 +379,7 @@ function _isprincipal_maximal_simple(a::AlgAssAbsOrdIdl, M, side = :right)
   @assert _test_ideal_sidedness(a, M, :right)
   @assert all(b in M for b in basis(a))
   S, c = nice_order(M)
-  @assert Order(algebra(M), [ c * elem_in_algebra(b) * inv(c) for b in basis(M)]) == S
+  @assert order(algebra(M), [ c * elem_in_algebra(b) * inv(c) for b in basis(M)]) == S
   ainS = a * inv(c)
   #@show basis(S)
   fl, alpha = _isprincipal_maximal_simple_nice(ainS, S, side)

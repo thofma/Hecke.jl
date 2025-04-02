@@ -151,6 +151,13 @@ end
 Base.:*(A::T, B::T) where T <: GenOrdFracIdl = prod(A, B)
 
 
+function Base.:(+)(a::T, b::T) where T <: GenOrdFracIdl
+  d = lcm(denominator(a), denominator(b))
+  ma = divexact(d, denominator(a))
+  mb = divexact(d, denominator(b))
+  return GenOrdFracIdl(order(a)(ma)*numerator(a) + order(b)(mb) * numerator(b),d)
+end
+
 ################################################################################
 #
 #  Powering
@@ -161,7 +168,7 @@ function Base.:^(A::GenOrdFracIdl, a::Int)
 
   O = order(A)
   if a == 0
-    B = GenOrdFracIdl(ideal(order(A), 1), O.R(1))
+    B = GenOrdFracIdl(ideal(order(A), one(O)), O.R(1))
     return B
   end
 

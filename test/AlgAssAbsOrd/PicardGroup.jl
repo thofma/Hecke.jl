@@ -51,7 +51,7 @@ end
 
   G = abelian_group([2, 3])
   A = GroupAlgebra(QQ, G)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
   @test ngens(P) == 0
@@ -59,7 +59,7 @@ end
 
   # To make sure it also works with StructureConstantAlgebra
   B, mB = StructureConstantAlgebra(A)
-  O = Order(B, basis(B))
+  O = order(B, basis(B))
   P, mP = picard_group(O)
   @test is_snf(P)
   @test ngens(P) == 0
@@ -67,7 +67,7 @@ end
 
   G = abelian_group([3, 3])
   A = GroupAlgebra(QQ, G)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   P, mP = picard_group(O)
   @test is_snf(P)
   @test P.snf == ZZRingElem[ 3 ]
@@ -77,7 +77,7 @@ end
   f = x^3 - 10x^2 - 3x - 2
   g = x^2 - 9x + 1
   A = StructureConstantAlgebra(f*g)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   P, mP = picard_group(O, true)
   @test is_snf(P)
   @test P.snf == ZZRingElem[ 2 ]
@@ -107,7 +107,7 @@ end
   UK, mUK = unit_group(OK)
 
   A = StructureConstantAlgebra(f)
-  OA = Order(A, basis(A))
+  OA = order(A, basis(A))
   UA, mUA = unit_group(OA)
   @test is_snf(UA)
   @test UA.snf == ZZRingElem[ 2, 0 ]
@@ -117,7 +117,7 @@ end
   end
 
   A = StructureConstantAlgebra(x * (x^2 - 113000))
-  O = Order(A, basis(A), cached = false)
+  O = order(A, basis(A), cached = false)
   U, mU = unit_group(O)
   UU, mUU = unit_group_fac_elem(O)
   u = mUU(UU[2])

@@ -566,7 +566,7 @@ function (f::NfToModAlgAssMor)(O::Union{AbsNumFieldOrder, AbsNumFieldOrderIdeal}
   B = basis(O)
   A = algebra(V)
   G = group(A)
-  ZG = Order(A, collect(G))
+  ZG = order(A, collect(G))
   return lattice(V, ZG, [f(elem_in_nf(b)) for b in B])
 end
 
