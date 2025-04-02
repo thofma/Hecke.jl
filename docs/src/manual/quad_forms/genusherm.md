@@ -94,10 +94,12 @@ julia> p = prime_decomposition(OK, 2)[1][1];
 
 julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
 Local genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 Prime ideal: <2, a>
 Jordan blocks (scale, rank, det, norm):
   (0, 1, +, 0)
@@ -111,10 +113,12 @@ julia> L = hermitian_lattice(E, gens, gram = D);
 
 julia> g2 = genus(L, p)
 Local genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 Prime ideal: <2, a>
 Jordan blocks (scale, rank, det, norm):
   (-2, 1, +, -1)
@@ -157,12 +161,10 @@ Relative number field with defining polynomial t^2 - a
     over rational field
 
 julia> prime(g1)
-<2, a>
-Norm: 2
-Minimum: 2
-basis_matrix
-[2 0; 0 1]
-two normal wrt: 2
+Ideal of maximal order of number field of degree 2 over QQ
+  of norm 2
+  of minimum 2
+with 2-normal generators [2, a]
 ```
 
 ---
@@ -440,10 +442,12 @@ julia> length(SEK)
 
 julia> G1 = genus([g1], [(SEK[1], 1)])
 Genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 Signature:
   infinite place corresponding to (Complex embedding of relative number field) => 1
 Local symbol:
@@ -457,10 +461,12 @@ julia> L = hermitian_lattice(E, gens, gram = D);
 
 julia> G2 = genus(L)
 Genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 Signature:
   infinite place corresponding to (Complex embedding of number field) => 2
 Local symbols:
@@ -514,17 +520,7 @@ Relative number field with defining polynomial t^2 - a
 julia> primes(G2)
 2-element Vector{AbsSimpleNumFieldOrderIdeal}:
  <2, a>
-Norm: 2
-Minimum: 2
-basis_matrix
-[2 0; 0 1]
-two normal wrt: 2
  <7, a + 4>
-Norm: 7
-Minimum: 7
-basis_matrix
-[7 0; 4 1]
-two normal wrt: 7
 
 julia> signatures(G2)
 Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64} with 1 entry:
@@ -616,20 +612,24 @@ julia> G1 = genus([g1], [(SEK[1], 1)]);
 
 julia> L1 = representative(g1)
 Hermitian lattice of rank 3 and degree 3
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 
 julia> L1 in g1
 true
 
 julia> L2 = representative(G1)
 Hermitian lattice of rank 3 and degree 3
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 
 julia> L2 in G1, L2 in g1
 (true, true)
@@ -683,10 +683,12 @@ julia> G2 = genus(L);
 
 julia> direct_sum(g1, g2)
 Local genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 Prime ideal: <2, a>
 Jordan blocks (scale, rank, det, norm):
   (-2, 1, +, -1)
@@ -695,10 +697,12 @@ Jordan blocks (scale, rank, det, norm):
 
 julia> direct_sum(G1, G2)
 Genus symbol for hermitian lattices
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 - a
+      over number field of degree 2 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b, 1//1 * <1, 1>)
+    (1, <1>//1)
+    (b, <1>//1)
 Signature:
   infinite place corresponding to (Complex embedding of number field) => 3
 Local symbols:
@@ -733,30 +737,12 @@ julia> SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restri
 
 julia> hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
 6-element Vector{HermGenus{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderIdeal, HermLocalGenus{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderIdeal}, Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64}}}:
- Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$, 1//1 * <1, 1>)
- Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$, 1//1 * <1, 1>)
- Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$, 1//1 * <1, 1>)
- Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$, 1//1 * <1, 1>)
- Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$, 1//1 * <1, 1>)
- Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$, 1//1 * <1, 1>)
+ Genus symbol for hermitian lattices of rank 3 over maximal order of relative number field
+ Genus symbol for hermitian lattices of rank 3 over maximal order of relative number field
+ Genus symbol for hermitian lattices of rank 3 over maximal order of relative number field
+ Genus symbol for hermitian lattices of rank 3 over maximal order of relative number field
+ Genus symbol for hermitian lattices of rank 3 over maximal order of relative number field
+ Genus symbol for hermitian lattices of rank 3 over maximal order of relative number field
 ```
 
 ## Rescaling

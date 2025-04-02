@@ -11,12 +11,12 @@ julia> K, a = quadratic_field(-3);
 
 julia> complex_embeddings(K)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 1.73 * i of K
- Complex embedding corresponding to 0.00 - 1.73 * i of K
+ Imaginary embedding with 0.00 + 1.73 * i of K
+ Imaginary embedding with 0.00 - 1.73 * i of K
 
 julia> complex_embeddings(K, conjugates = false)
 1-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 1.73 * i of K
+ Imaginary embedding with 0.00 + 1.73 * i of K
 ```
 """
 complex_embeddings(K::NumField)
@@ -33,8 +33,8 @@ julia> K, a = quadratic_field(3);
 
 julia> real_embeddings(K)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to -1.73 of K
- Complex embedding corresponding to 1.73 of K
+ Real embedding with -1.73 of K
+ Real embedding with 1.73 of K
 ```
 """
 function real_embeddings(K::NumField)
@@ -126,8 +126,9 @@ julia> L, b = number_field(polynomial(K, [1, 0, 1]), "b");
 julia> e = complex_embeddings(L);
 
 julia> restrict(e[1], K)
-Complex embedding corresponding to -1.73
+Real embedding
   of real quadratic field defined by x^2 - 3
+corresponding to root -1.73
 ```
 """
 restrict(f::NumFieldEmb, K::NumField)
@@ -150,9 +151,10 @@ julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 julia> e = complex_embeddings(K);
 
 julia> restrict(e[1], ktoK)
-Complex embedding corresponding to 0.62
+Real embedding
   of number field with defining polynomial x^2 + x - 1
     over rational field
+corresponding to root 0.62
 ```
 """
 restrict(f::NumFieldEmb, K::NumFieldHom)
@@ -180,8 +182,8 @@ julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to -0.81 + 0.59 * i of K
- Complex embedding corresponding to -0.81 - 0.59 * i of K
+ Imaginary embedding with -0.81 + 0.59 * i of K
+ Imaginary embedding with -0.81 - 0.59 * i of K
 ```
 """
 function extend(e::NumFieldEmb, f::NumFieldHom)
@@ -296,13 +298,13 @@ are by default all real embeddings of the number field.
 
 # Examples
 
-```jldoctest; filter = r"Complex.*"
+```jldoctest; filter = r"Real.*"
 julia> K, a = quadratic_field(3);
 
 julia> signs(a)
 Dict{AbsSimpleNumFieldEmbedding, Int64} with 2 entries:
-  Complex embedding corresponding to -1.73 of real quadratic field define… => -1
-  Complex embedding corresponding to 1.73 of real quadratic field defined… => 1
+  Real embedding with -1.73 of K => -1
+  Real embedding with 1.73 of K  => 1
 ```
 """
 function signs(a::Union{NumFieldElem, FacElem, NumFieldOrderElem},
