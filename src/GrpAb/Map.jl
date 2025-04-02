@@ -160,7 +160,7 @@ function hom(
     T = sub(T, 1:nrows(T), 1:length(A))
     n = reduce(vcat, ZZMatrix[x.coeff for x in B])
     n = T*n
-    @req !can_solve(rels(H), n; side=:left) "Data does not define a homomorphism"
+    @req can_solve(rels(H), n; side=:left) "Data does not define a homomorphism"
   end
 
   _M = reduce(vcat, ZZMatrix[hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
@@ -226,7 +226,9 @@ end
       check::Bool=true,
     ) -> FinGenAbGroupHom
 
-Return the group homomorphism $G\to H$ defined by the integer matrix `M`.
+Return the group homomorphism $G\to H$ defined by the integer matrix
+$M = (m_{ij})$, by sending the $i$th generator of $G$ to
+$\sum_{j=1}^nm_{ij}h_j$ where $h_1,\ldots, h_n$ are the generators of $H$.
 If `check` is set to `true`, the function checks whether `M` indeed
 defines a morphism of finitely generated abelian groups.
 """
@@ -251,8 +253,10 @@ end
       check::Bool=true,
     ) -> FinGenAbGroupHom
 
-Return the group homomorphism $G\to H$ defined by the integer matrix `M` and
-with pseudo-inverse $H\to G$ (or right inverse) defined by `Minv`.
+Return the group homomorphism $G\to H$ defined by the integer matrix
+$M = (m_{ij})$ (by sending the $i$th generator of $G$ to
+$\sum_{j=1}^nm_{ij}h_j$ where $h_1,\ldots, h_n$ are the generators of $H$)
+and with pseudo-inverse $H\to G$ (or right inverse) defined by `Minv`.
 If `check` is set to `true`, the function checks whether `M` and `Minv` indeed
 define morphisms of finitely generated abelian groups, and whether `Minv`
 defines a right inverse to `M`.
