@@ -688,7 +688,7 @@ end
     hom(
       T::TorQuadModule,
       S::TorQuadModule,
-      img::Vector{TorQuadModuleElem};
+      img::Vector;
       check::Bool=true
     ) -> TorQuadModuleMap
 
@@ -702,7 +702,7 @@ morphism of finite abelian groups.
 function hom(
     T::TorQuadModule,
     S::TorQuadModule,
-    img::Vector{TorQuadModuleElem};
+    img::Vector;
     check::Bool=true,
   )
   _img = FinGenAbGroupElem[]
@@ -719,8 +719,8 @@ end
     hom(
       T::TorQuadModule,
       S::TorQuadModule,
-      A::Vector{TorQuadModuleElem},
-      B::Vector{TorQuadModuleElem};
+      A::Vector,
+      B::Vector;
       check::Bool=true,
     ) -> TorQuadModuleMap
 
@@ -733,8 +733,8 @@ morphism of finite abelian groups.
 function hom(
     T::TorQuadModule,
     S::TorQuadModule,
-    A::Vector{TorQuadModuleElem},
-    B::Vector{TorQuadModuleElem};
+    A::Vector,
+    B::Vector;
     check::Bool=true,
   )
   @req length(A) == length(B) "Wrong number of elements"

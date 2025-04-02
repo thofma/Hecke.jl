@@ -124,8 +124,8 @@ id_hom(G::FinGenAbGroup) = identity_map(G)
     hom(
       G::FinGenAbGroup,
       H::FinGenAbGroup,
-      A::Vector{FinGenAbGroupElem},
-      B::Vector{FinGenAbGroupElem};
+      A::Vector,
+      B::Vector;
       check::Bool=true,
     ) -> FinGenAbGroupHom
 
@@ -136,8 +136,8 @@ define a morphism of finitely generated abelian groups.
 function hom(
     G::FinGenAbGroup,
     H::FinGenAbGroup,
-    A::Vector{FinGenAbGroupElem},
-    B::Vector{FinGenAbGroupElem};
+    A::Vector,
+    B::Vector;
     check::Bool=true
   )
   @req length(B) == length(A) "Lists of elements in input must have the same size"
@@ -181,7 +181,7 @@ end
     hom(
       G::FinGenAbGroup,
       H::FinGenAbGroup,
-      B::Vector{FinGenAbGroupElem};
+      B::Vector;
       check::Bool=true,
     ) -> FinGenAbGroupHom
 
@@ -192,7 +192,7 @@ define a morphism of finitely generated abelian groups.
 function hom(
     G::FinGenAbGroup,
     H::FinGenAbGroup,
-    B::Vector{FinGenAbGroupElem};
+    B::Vector;
     check::Bool=true
   )
   @req length(B) == ngens(G) "Number of elements in input list should be the same as the number of generators of the source"
