@@ -259,7 +259,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
     @assert all(x->parent(x) === parent(all_f[1]), all_f)
     setprecision!(completion_map, e*x)
     if haskey(Kp.def_poly_cache, x)
-      return Kp.def_poly_cache[p]
+      return Kp.def_poly_cache[x]
     end
     k = sort(collect(keys(Kp.def_poly_cache)))
     p = searchsortedfirst(k, x)
