@@ -279,10 +279,10 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
     c = conjugates(gen(K), C, pr) #the roots...
     v = pe(c)
     f = prod(elem_type(Qpt)[t-x for x in v])
-    ff = map_coefficients(x->mod_sym(lift(coeff(x, 0)), p_pow), f)
+    ff = map_coefficients(x->mod_sym(lift(ZZ, coeff(x, 0)), p_pow), f)
     if all(x->nbits(x) < nbits(p_pow) - 30, coefficients(ff))
       f = interpolate(Qpt, c, [v[findall(x-> j in x, b)[1]] for j=1:length(c)])
-      elem = map_coefficients(x->QQ(rational_reconstruction(lift(coeff(x, 0)), p_pow)[2:3]...), f)(gen(K))
+      elem = map_coefficients(x->QQ(rational_reconstruction(lift(ZZ, coeff(x, 0)), p_pow)[2:3]...), f)(gen(K))
 
       if is_zero(ff(elem))
         return elem
