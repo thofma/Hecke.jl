@@ -112,7 +112,7 @@ function __unit_reps_estimates(M, F)
   unit_reps = Vector{elem_type(algebra(M))}[]
   for (B, mB) in dec
     @info _describe(B)
-    MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
+    MinB = order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
     FinB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(b)) for b in absolute_basis(F)])
     @assert Hecke._test_ideal_sidedness(FinB, MinB, :right)
     FinB.order = MinB
@@ -143,7 +143,7 @@ function __unit_reps(M, F; GRH::Bool = true)
   dec = decompose(algebra(M))
   unit_reps = Vector{elem_type(algebra(M))}[]
   for (B, mB) in dec
-    MinB = Order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
+    MinB = order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in absolute_basis(M)])
     FinB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(b)) for b in absolute_basis(F)])
     @assert Hecke._test_ideal_sidedness(FinB, MinB, :right)
     FinB.order = MinB

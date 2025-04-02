@@ -2,7 +2,7 @@ Qx, x = polynomial_ring(QQ, "x")
 K2, a2 = number_field(x^3 - 2, "a1")
 K3, (a3,) = number_field([x^3 - 2], "a2")
 @testset "Fractional ideals for $K1" for (K1, a1) in [(K2, a2), (K3, a3)]
-  O1 = Order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
+  O1 = order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
 
   i = ideal(O1, O1(2*a1))
 
@@ -103,5 +103,13 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     I = zero(K) * OK
     @test parent(I) == parent(zero(K) * OK)
     @test hash(parent(I)) == hash(parent(zero(K) * OK))
+  end
+
+  # principality testing for non-maximal orders #1833
+  let
+    _, x = QQ[:x]
+    O = equation_order(x^2 - 5)
+    fl, a = is_principal_with_data(fractional_ideal(O, [one(number_field(O))]))
+    @test fl && (a*O == 1*O)
   end
 end

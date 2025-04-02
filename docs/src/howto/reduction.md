@@ -2,6 +2,7 @@
 CurrentModule = Hecke
 DocTestSetup = Hecke.doctestsetup()
 ```
+
 # Reduction of polynomials over number fields modulo a prime ideal
 
 Given a polynomial $f \in K[x]$ and a prime ideal $\mathfrak p$ of $\mathcal O_K$,

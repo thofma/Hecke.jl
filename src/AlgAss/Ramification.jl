@@ -283,6 +283,6 @@ function _is_eichler_csa(A::AbstractAssociativeAlgebra{QQFieldElem})
   if dim(A) != 4
     return true
   end
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   return schur_index(A, inf) == 1
 end

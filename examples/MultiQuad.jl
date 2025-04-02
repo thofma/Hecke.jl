@@ -92,7 +92,7 @@ function multi_quad(d::Vector{ZZRingElem}, B::Int)
 
   # @show all_d
 
-  ZK = Order(K, b)
+  ZK = order(K, b)
   ZK = pmaximal_overorder(ZK, ZZRingElem(2))
   ZK.is_maximal = 1
   set_attribute!(K, :maximal_order => ZK)

@@ -819,7 +819,7 @@ end
 
 function ring_of_multipliers(a::AlgAssRelOrdIdl, action::Symbol = :left)
   PM = _colon_raw(a, a, action)
-  return Order(algebra(a), PM)
+  return order(algebra(a), PM)
 end
 
 @doc raw"""
