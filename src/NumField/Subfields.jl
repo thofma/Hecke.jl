@@ -278,6 +278,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
     p_pow = p^pr
     c = conjugates(gen(K), C, pr) #the roots...
     v = pe(c)
+    setprecision!(t, pr)
     f = prod(elem_type(Qpt)[t-x for x in v])
     ff = map_coefficients(x->mod_sym(lift(ZZ, coeff(x, 0)), p_pow), f)
     if all(x->nbits(x) < nbits(p_pow) - 30, coefficients(ff))
@@ -290,7 +291,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
     end
     pr *= 2
     #if the block system is illegal, this will not terminate.
-    if pr > 2^10
+    if pr > 10
       error("probably something bad?")
     end
   end
