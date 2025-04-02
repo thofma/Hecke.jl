@@ -223,7 +223,7 @@ end
 function _conjugates(a::AbsSimpleNumFieldElem, C::qAdicConj, n::Int, op::Function)
   R = roots(C.C, n)
   setprecision(parent(R[1]), n) do
-    setprecision(coefficient_ring(parent(R[1])), n) do
+    setprecision(base_field(parent(R[1])), n) do
       @assert parent(a) == C.K
       Zx = polynomial_ring(ZZ, cached = false)[1]
       d = denominator(a)
