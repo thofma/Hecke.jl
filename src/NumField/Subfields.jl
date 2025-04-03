@@ -246,6 +246,9 @@ end
 
 function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdicConj=#, b::Vector{Vector{Int}})
   @assert C isa qAdicConj
+  if length(b) == 1
+    return one(K)
+  end
   # Klueners:
   # - try sum of conj. in block
   # - then prod
