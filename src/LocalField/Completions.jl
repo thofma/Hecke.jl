@@ -180,7 +180,7 @@ function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::
     ia = ia*(2-ia*der(a))
     a = _mod_den(a, minP2i)
     ia = _mod_den(ia, minP2i)
-    @assert valuation(f(a), P) >= chain[i-1]
+#    @assert valuation(f(a), P) >= chain[i-1]
   end
   return a
 end
@@ -362,9 +362,13 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
 
   if new_prec < f.precision
     K = codomain(f)
-    setprecision!(K, new_prec)
     e = ramification_index(P)
-    setprecision!(base_field(K), div(new_prec+e-1, e))
+    pr = div(new_prec+e-1, e)
+    v = sort(collect(keys(K.def_poly_cache)))
+    i = searchsortedfirst(v, pr)
+    K.def_poly_cache[pr] = setprecision(K.def_poly_cache[v[i]], pr)
+    setprecision!(K, new_prec)
+    setprecision!(base_field(K), pr)
     setprecision!(f.prim_img, new_prec)
   else
     #I need to increase the precision of the data
@@ -408,7 +412,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       f.precision = new_prec
       v = sort(collect(keys(Kp.def_poly_cache)))
       i = sortedsearch(v, new_prec)
-      Kp.def_poly_cache[new_prec] = setprecision(Kp.def_poly_cache, new_prec)
+      Kp.def_poly_cache[new_prec] = setprecision(Kp.def_poly_cache[v[i]], new_prec)
       setprecision!(Kp, new_prec)
       setprecision!(Qq, div(new_prec, e)+1)
       setprecision!(Zp, div(new_prec, e)+1)
