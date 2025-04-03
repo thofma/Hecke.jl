@@ -104,21 +104,14 @@ end
 ################################################################################
 
 @doc raw"""
-    identity_map(G::FinGenAbGroup) -> FinGenAbGroupHom
+    id_hom(G::FinGenAbGroup) -> FinGenAbGroupHom
 
-Return the identity map of `G`.
+Return the identity homomorphism of `G`.
 """
-function identity_map(G::FinGenAbGroup)
+function id_hom(G::FinGenAbGroup)
   I = identity_matrix(ZZ, ngens(G))
   return FinGenAbGroupHom(G, G, I, I)::FinGenAbGroupHom
 end
-
-@doc raw"""
-    id_hom(G::FinGenAbGroup) -> FinGenAbGroupHom
-
-Alias for [`identity_map`].
-"""
-id_hom(G::FinGenAbGroup) = identity_map(G)
 
 @doc raw"""
     hom(
