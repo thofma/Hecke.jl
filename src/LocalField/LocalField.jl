@@ -134,6 +134,10 @@ function base_field(L::LocalField)
   return base_ring(defining_polynomial(L))
 end
 
+#problem: for Eisenstein fields, the polynomial can change and is known
+#         to many(?) precisions. Any will do to get the base ring
+#         but asking fro one that is not (yet) known might
+#         trigger an infinite recursion
 function base_field(K::LocalField{S, EisensteinLocalField}) where S <: FieldElem
   return base_ring(first(values(K.def_poly_cache)))
 end
