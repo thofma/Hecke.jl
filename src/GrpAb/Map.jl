@@ -165,7 +165,6 @@ function hom(
     M = hnf(_M)
   end
   M = sub(M, 1:ngens(G), ngens(G)+1:ngens(G)+ngens(H))
-  @show M
   h = hom(G, H, M; check)
   return h
 end
