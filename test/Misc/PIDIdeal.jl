@@ -1,6 +1,6 @@
 @testset "PIDIdeal" begin
   k, = quadratic_field(-1)
-  for K in [QQ, k, GF(2)] 
+  for K in [QQ, k, GF(2)]
     Kx, x = K["x"]
 
     I = ideal(Kx, x)
@@ -37,10 +37,24 @@
     @test intersect(I, J) == J
     @test I * J == ideal(Kx, x^3)
 
-    @test !is_one(I)
-    @test is_one(ideal(Kx, 3))
     @test !is_zero(I)
-    @test is_zero(ideal(Kx, 0))
+    @test !is_one(I)
+    @test is_maximal(I)
+    @test is_prime(I)
+
+    # special case: zero ideal
+    I0 = ideal(Kx, 0)
+    @test is_zero(I0)
+    @test !is_one(I0)
+    @test !is_maximal(I0)
+    @test is_prime(I0)
+
+    # special case: one ideal
+    I1 = ideal(Kx, 1)
+    @test !is_zero(I1)
+    @test is_one(I1)
+    @test !is_maximal(I1)
+    @test !is_prime(I1)
   end
 
   for K in [QQ, k, GF(2)]
@@ -83,10 +97,17 @@
     @test I * I == I
     @test I * J == J
 
-    @test is_one(I)
-    @test !is_one(J)
-    @test is_zero(J)
+    # one ideal
     @test !is_zero(I)
+    @test is_one(I)
+    @test !is_maximal(I)
+    @test !is_prime(I)
+
+    # zero ideal
+    @test is_zero(J)
+    @test !is_one(J)
+    @test is_maximal(J)
+    @test is_prime(J)
   end
 end
 
