@@ -591,7 +591,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
        # it is not, in general it will never be.
        #example: Q[sqrt(10)], rcf of 16*Zk
   # now the map G -> R sG[i] -> sR[i]
-  h = hom(sG, sR, check = false)
+  h = hom(G, parent(first(sR)), sG, sR, check = false)
   @hassert :ClassField 1 !isone(gcd(ZZRingElem(degree(CF)), minimum(m))) || is_surjective(h)
   CF.h = h
   return h
@@ -997,7 +997,7 @@ function _rcf_descent(CF::ClassField_pp)
     #                  PrimesSet(200, -1), cp)
     lp, f1 = find_gens_descent(MapFromFunc(IdealSet(Zk), AutA, canFrob), CF, cp)
     imgs = FinGenAbGroupElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
-    h = hom(f1, imgs)
+    h = hom(parent(first(f1)), parent(first(imgs)), f1, imgs)
     @hassert :ClassField 1 is_surjective(h)
     s, ms = kernel(h, false)
     @vprintln :ClassField 2 "... done, have subgroup!"
@@ -1123,7 +1123,7 @@ function ring_class_field(O::AbsNumFieldOrder)
     return hilbert_class_field(nf(O))
   end
   g, t = find_gens(mR)
-  h = hom(t, [mP \ contract(x, O) for x = g], check = true)
+  h = hom(parent(first(t)), P, t, [mP \ contract(x, O) for x = g], check = true)
   k = kernel(h, true)[1]
   q, mq = quo(R, k)
   return ray_class_field(mR, mq)

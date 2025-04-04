@@ -419,7 +419,7 @@ end
 Return the divisor whose support is equal to the support of D in the infinite places
 """
 function infinite_divisor(D::Divisor)
-  return divisor(D.finite_ideal)
+  return divisor(D.infinite_ideal)
 end
 
 

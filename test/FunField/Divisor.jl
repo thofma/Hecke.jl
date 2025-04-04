@@ -32,6 +32,10 @@ import Hecke: divisor
       D = 3*D3 - D1
       Do = @inferred divisor(inv(p1), p3^3)
 
+      Dp = D1 + D3
+      @test D1 == finite_divisor(Dp)
+      @test D3 == infinite_divisor(Dp)
+
       #Elliptic curve group law
       @test is_principal(D1 + D2 - 2*D3)
       @test is_zero(D - D)
