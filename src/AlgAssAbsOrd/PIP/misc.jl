@@ -4,10 +4,10 @@ function _get_order_from_gens(A::AbstractAssociativeAlgebra{S}, B::Vector{ <: Ab
     elem_to_mat_row!(M, i, B[i])
   end
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft, true)
-  return Order(A, sub(pm, (nrows(pm) - ncols(pm) + 1):nrows(pm), 1:ncols(pm)))
+  return order(A, sub(pm, (nrows(pm) - ncols(pm) + 1):nrows(pm), 1:ncols(pm)))
 end
 
-_get_order_from_gens(A::AbstractAssociativeAlgebra{QQFieldElem}, B::Vector) = Order(A, B)
+_get_order_from_gens(A::AbstractAssociativeAlgebra{QQFieldElem}, B::Vector) = order(A, B)
 
 function absolute_basis(M::AlgAssAbsOrd{<:StructureConstantAlgebra{QQFieldElem}})
   return basis(M)
@@ -36,7 +36,7 @@ function maximal_order_via_absolute(O::AlgAssRelOrd)
     elem_to_mat_row!(M, i, CtoA(elem_in_algebra(basis(OC, copy = false)[i], copy = false)))
   end
   PM = sub(pseudo_hnf(pseudo_matrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
-  O = Order(A, PM)
+  O = order(A, PM)
   O.is_maximal = 1
   return O
 end

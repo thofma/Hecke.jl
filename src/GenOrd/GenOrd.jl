@@ -30,9 +30,9 @@ import AbstractAlgebra: expressify
 #
 ################################################################################
 
-Order(R::Ring, F::Field) = GenOrd(R, F)
+order(R::Ring, F::Field) = GenOrd(R, F)
 
-Order(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true) = GenOrd(O, T, d; check = check)
+order(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true) = GenOrd(O, T, d; check = check)
 
 ################################################################################
 #

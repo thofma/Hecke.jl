@@ -390,4 +390,4 @@ end
   return LocalFieldValuationRing{T, elem_type(T)}(K)
 end
 
-MaximalOrder(K::NonArchLocalField) = valuation_ring(K)
+maximal_order(K::NonArchLocalField) = valuation_ring(K)

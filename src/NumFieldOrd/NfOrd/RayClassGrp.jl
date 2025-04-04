@@ -1065,7 +1065,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   if coprime_to != -1
     mm = lcm(mm, coprime_to)
   end
-  mm = lcm(mm, discriminant(EquationOrder(nf(O))))
+  mm = lcm(mm, discriminant(equation_order(nf(O))))
   if isdefined(mR, :gens)
     if coprime_to == -1
       return mR.gens[1], mR.gens[2]

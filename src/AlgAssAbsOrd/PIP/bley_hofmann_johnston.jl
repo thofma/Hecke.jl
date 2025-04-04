@@ -151,7 +151,7 @@ function _solve_norm_equation_over_center(M, x)
   sol = zero(M)
   for i in 1:length(dec)
     Ai, mAi = dec[i]
-    MinAi = Order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
+    MinAi = order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     si = _solve_norm_equation_over_center_simple(MinAi, preimage(mAi, x))
     sol += M(mAi(elem_in_algebra(si)))
   end
@@ -219,7 +219,7 @@ function _solve_norm_equation_over_center_full_matrix_algebra(M, x)
     return M(x)
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, [(BtoA\elem_in_algebra(b))::elem_type(B) for b in absolute_basis(M)])
+    MB = order(B, [(BtoA\elem_in_algebra(b))::elem_type(B) for b in absolute_basis(M)])
     xinB = BtoA\x
     solB = _solve_norm_equation_over_center_full_rational_matrix_algebra(MB, xinB)
     sol = M(BtoA(elem_in_algebra(solB))::elem_type(A))
@@ -274,7 +274,7 @@ function lift_norm_one_unit(x, F)
   #@show F
   for i in 1:length(res)
     Ai, AitoA = res[i]
-    MinAi = Order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
+    MinAi = order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     xinAi = MinAi(preimage(AitoA, elem_in_algebra(x)))
     Fi = ideal_from_lattice_gens(Ai, MinAi, [ AitoA\b for b in basis(F) ], :twosided)
     #@show Fi

@@ -214,7 +214,7 @@ function _issimilar_husert_generic(A, B)
   end
 
   ide = ideal_from_lattice_gens(A, idealAgens)
-  ideO = Order(A, ordergens)
+  ideO = order(A, ordergens)
 
   @assert ideO == right_order(ide)
 

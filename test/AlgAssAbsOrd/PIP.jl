@@ -1,7 +1,7 @@
 @testset "PIP" begin
   G = small_group(8, 3) # D_4
   QG = QQ[G]
-  ZG = Order(QG, basis(QG))
+  ZG = order(QG, basis(QG))
   I = 1 * ZG
   Hecke._assert_has_refined_wedderburn_decomposition(QG)
   fl, a = Hecke.is_principal_with_data(I, ZG, side = :right)
@@ -13,7 +13,7 @@
 
   G = small_group(8, 4) # Q_8
   QG = QQ[G]
-  ZG = Order(QG, basis(QG))
+  ZG = order(QG, basis(QG))
   I = 1 * ZG
   Hecke._assert_has_refined_wedderburn_decomposition(QG)
   fl, a = Hecke._is_principal_with_data_bj(I, ZG, side = :right)
@@ -22,7 +22,7 @@
 
   G = small_group(16, 9) # Q_16
   QG = QQ[G]
-  ZG = Order(QG, basis(QG))
+  ZG = order(QG, basis(QG))
   I = 1 * ZG
   Hecke._assert_has_refined_wedderburn_decomposition(QG)
   fl, a = Hecke._is_principal_with_data_bj(I, ZG, side = :right)
@@ -520,7 +520,7 @@
                      607//6 809//6 1//3 1//6 0 0 0 0 0 0 103//2 41//3 1//3 0 0 1//3 1//6 1//6 0 0;
                      520//3 895//6 1//6 1//3 0 0 0 0 0 0 359//6 47//6 1//3 0 0 1//6 1//2 0 1//6 0;
                      0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1//24 1//24 1//24 1//24 1//24])
-    Gamma = Order(A, B)
+    Gamma = order(A, B)
     I = ideal(A, Gamma, BI)
     @test I * Gamma == I
     fl, beta = Hecke._is_principal_with_data_bj(I * Gamma, Gamma; side = :right)

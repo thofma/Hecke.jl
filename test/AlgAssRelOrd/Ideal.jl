@@ -35,7 +35,7 @@
       end
     end
     d = lcm([ denominator(b) for b in basisOL ])
-    OKG = Order(KG, basis(KG))
+    OKG = order(KG, basis(KG))
     I = Hecke.ideal_from_lattice_gens(KG, OKG, [ d*b for b in basisOL ])
 
     p = prime_decomposition(OK, 3)[1][1]

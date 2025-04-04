@@ -388,7 +388,7 @@ function _isGLZ_conjugate_integral(A::QQMatrix, B::QQMatrix)
     push!(idealgens, z)
   end
 
-  OO = Order(AA, ordergens)
+  OO = order(AA, ordergens)
   OI = ideal_from_lattice_gens(AA, idealgens)
   @hassert :Conjugacy 1 OO == right_order(OI)
   @vprintln :Conjugacy 1 "Testing if ideal is principal..."
@@ -657,7 +657,7 @@ end
 #
 #  @info "Dimension of the commutator algebra: $(dim(AA))"
 #
-#  OO = Order(AA, map(x -> AA(map(QQ, x)), O))
+#  OO = order(AA, map(x -> AA(map(QQ, x)), O))
 #  OI = ideal_from_lattice_gens(AA, map(x -> AA(invC * map(QQ, x)), I))
 #  @assert OO == right_order(OI)
 #
@@ -693,7 +693,7 @@ end
 #    @info "Semisimple quotient has dimension $(dim(S))"
 #    !is_commutative(S) && error("Semisimple quotient must be commutative")
 #    IS = ideal_from_lattice_gens(S, [AtoS(b) for b in basis(OI)])
-#    OS = Order(S, [AtoS(elem_in_algebra(b)) for b in basis(OO)])
+#    OS = order(S, [AtoS(elem_in_algebra(b)) for b in basis(OO)])
 #    @info "Algebra is commutative"
 #    IS.order = OS
 #    d = denominator(IS, OS)

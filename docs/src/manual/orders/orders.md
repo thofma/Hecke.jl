@@ -27,12 +27,11 @@ and can also be interpreted as a normalization of any other order.
 ## Creation and basic properties
 
 ```@docs
-Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
-Order(::AbsSimpleNumField, ::QQMatrix)
-Order(::AbsSimpleNumFieldOrderFractionalIdeal)
-EquationOrder(::AbsSimpleNumField)
-MaximalOrder(::AbsSimpleNumField)
-MaximalOrder(::AbsSimpleNumFieldOrder)
+order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
+order(::AbsSimpleNumField, ::QQMatrix)
+equation_order(::AbsSimpleNumField)
+maximal_order(::AbsSimpleNumField)
+maximal_order(::AbsSimpleNumFieldOrder)
 lll(::AbsSimpleNumFieldOrder)
 any_order(K::AbsSimpleNumField)
 ```
@@ -44,7 +43,7 @@ julia> Qx, x = polynomial_ring(QQ, :x);
 
 julia> K, a = number_field(x^2 - 2, :a);
 
-julia> O = EquationOrder(K)
+julia> O = equation_order(K)
 Maximal order of number field of degree 2 over QQ
 with basis [1, a]
 ```

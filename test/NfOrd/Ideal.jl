@@ -2,10 +2,10 @@
    Qx, x = polynomial_ring(QQ, "x")
 
    K1, a1 = number_field(x^3 - 2, "a")
-   O1 = Order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
+   O1 = order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
 
    K2, a2 = number_field(x^2 - 4^2*7^2*5, "a")
-   O2 = Order(K2, [K2(1), a2])
+   O2 = order(K2, [K2(1), a2])
 
   @testset "Construction" begin
     I = @inferred ideal(O1, -17)
@@ -198,7 +198,7 @@
     f = x^5 + x^3 - x^2 - x - 1
     K, a = number_field(f)
     R = maximal_order(K)
-    OO = Order(K, basis(5*R))
+    OO = order(K, basis(5*R))
     pradical(OO, 2)
   end
 
@@ -305,7 +305,7 @@
     P, x = polynomial_ring(ZZ)
     K, a = number_field(x^3 + x + 1)
     R = maximal_order(K)
-    OO = Order(K, basis(2*R))
+    OO = order(K, basis(2*R))
     I = ideal(OO, [OO(x) for x in basis(2*R)])
     G = gens(I)
     @test I == ideal(OO, G)
