@@ -191,6 +191,25 @@ end
 #
 ################################################################################
 
+function precision_all(K::Union{QadicField, <:LocalField}; init::Vector{Int}=Int[])
+  push!(init, precision(K))
+  return precision_all(base_field(K); init)
+end
+
+function precision_all(K::PadicField; init::Vector{Int}=Int[])
+  push!(init, precision(K))
+  return init
+end
+
+function setprecision_all!(K::Union{QadicField, <:LocalField}, pr::Vector{Int})
+  setprecision!(K, popfirst!(pr))
+  setprecision_all!(base_field(K), pr)
+end
+
+function setprecision_all!(K::PadicField, pr::Vector{Int})
+  setprecision!(K, popfirst!(pr))
+end
+
 @doc raw"""
     completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int)
                                                     -> LocalField, CompletionMap
@@ -257,7 +276,9 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   Kp.def_poly = function(x::Int)
     all_f = collect(values(Kp.def_poly_cache))
     @assert all(x->parent(x) === parent(all_f[1]), all_f)
+    old_pr = Hecke.precision_all(Kp)
     setprecision!(completion_map, e*x)
+    setprecision_all!(Kp, old_pr)
     if haskey(Kp.def_poly_cache, x)
       return Kp.def_poly_cache[x]
     end

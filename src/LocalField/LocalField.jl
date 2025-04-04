@@ -385,6 +385,7 @@ function precision(K::LocalField)
 end
 
 function setprecision!(K::LocalField, n::Int)
+#  Base.show_backtrace(stdout, backtrace())
   K.precision_base = ceil(Int, n/ramification_index(K))
   K.precision_times_ramification_index = n
   return nothing
