@@ -553,6 +553,7 @@ end
   @test isempty(integer_genera((0, 8), 1, min_scale = 2))
   gen = @inferred integer_genera((0,8), 1, min_scale = 1//2, max_scale = 4)
   @test length(gen) == 53
+  @test !isempty(integer_genera((4,0), 5; min_scale=1, max_scale=15, even=true))
 
   # Mass
   gen = integer_genera((0,8), 16, even=true)

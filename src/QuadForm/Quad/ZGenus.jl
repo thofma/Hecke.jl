@@ -498,7 +498,12 @@ function integer_genera(sig_pair::Tuple{Int,Int}, _determinant::RationalUnion;
     maxscale_p = valuation(_max_scale, p)
     local_symbol_p = _local_genera(p, rank, det_val, minscale_p, maxscale_p, even)
     filter!(s -> (prime(s) == 2) || (length(symbol(s)) > 1) || (symbol(s)[1][1] != 0), local_symbol_p)
-    isempty(local_symbol_p) && return out
+    if isempty(local_symbol_p)
+      !iszero(det_val) && return out
+      (minscale_p > 0) && return out
+      (maxscale_p < 0) && return out
+      continue
+    end
     push!(local_symbols, local_symbol_p)
   end
   # take the cartesian product of the collection of all possible
