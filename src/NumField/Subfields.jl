@@ -250,14 +250,40 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   # - try sum of conj. in block
   # - then prod
   # - then prod (x+i) for i this will enventually be OK
+  #
   # trivial precision: double until it works
+  #
+  # So we have/ want to have K/k where k is given via block system
+  # Klueners: at least one of
+  #      Tr_K/k(gen(K)), N_K/k(gen(K)) or N_K/k(gen(K)+i)
+  # is primitive (for suitable i)
+  # so try in this order as Tr is expected to be smaller than Norm.
+  # Size:
+  # T_2(gen(k)) <= [K:k] T_2(gen(K)) via Trace
+  #             <= T_2(gen(K))^[K:k] via Norm
+  #             <= (sqrt(T_2) + sqrt([K:k])i)^2)^[K:k] in the last case
+  #(using that sqrt(T_2) is a euclidean norm, so 
+  #  sqrt(T_2(a+b)) <= sqrt(T_2(a)) + sqrt(T_2(b))
+  #
+  # if gen(K) is integral, then so is gen(k), however, gen(k)
+  # won't be in the equation order
+  # So we'll recover in the Kronnecker rep, in the dual basis
+  # gen(k) = sum a_i omega_i
+  # for Tr(omega_i gen(K)^j) = delta_i,j
+  # so a_i = Tr(gen(k) * omega_i), using Cauchy-Schwarz
+  # a_i^2 <= T_2(gen(k)) * T_2(omega_i)
+  # omega_i can be obtained from coeff of def_poly(K)/(t-gen(K))
+  # [K:k] = length(b[i]) for all i, [k:Q] = length(b) 
+
   pr = 5
   @assert is_monic(defining_polynomial(K))
   c = conjugates(gen(K), C, pr) #the roots...
   pe = c -> [sum(c[x]) for x = b]
+  Bpe = length(b[1]) * length(gen(K)) 
   if length(Set(pe(c))) != length(b)
     #trace is not primitive!
     pe = c -> [prod(c[x]) for x in b]
+    Bpe = length(gen(K))^length(b[1])
     if length(Set(pe(c))) != length(b)
       i = 1
       while true
@@ -267,10 +293,35 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
         end
         i += 1
       end
+      Bpe = (length(gen(K))+i*degree(K))^length(b[1]) #not quite correct?
     end
   end
-  pr *= 2
+
+  #Bpe should now be an upper bound on T_2 of gen(k)
+  #from there we need
+  # - bound on minpoly(gen(k))
+  # - bound on coeffs (via dual basis, see above)
+  #   dual[i]*den is actually dual to gen(K)^(i-1)
+  #   and gen(k)//den is in ZZ[gen(K)]
+  #   so tr(gen(k)//den * dual[i]*den) = tr(gen(k)*dual[i])
+  #   is integral (and bounded)...
+  #
+  # minpoly: 
+  #  T_2 is upper bound on conjugates (squared)
+  #  coeffs of min_poly are elementary symmetric,
+  #   so bounded by max(binom([k:Q], i), T_2(gen(k))^i : i)
+  #  max binum is in the middle..
+  B_f = binomial(ZZ(length(b)), div(ZZ(length(b)), 2))*Bpe^length(b)
+  # the coeffs of minpoly are in Z, so need prec <= log_p(2 B_f)
+  Kt, t = polynomial_ring(K; cached = false)
+  den = inv(derivative(defining_polynomial(K))(gen(K)))
+  dual = collect(coefficients(div(defining_polynomial(K)(t), t-gen(K)))) 
+  B_pe = maximum(ceil(ZZRingElem, length(x)) for x = dual) * ceil(ZZRingElem, Bpe)
+  #so pr needs to cover 2*max(B_pe, B_f)
   Qp = parent(c[1])
+  pr_max = ceil(Int, log(2*max(B_pe, B_f), BigFloat(prime(Qp))))
+    
+  pr *= 2
   Qpt, t = polynomial_ring(Qp, cached = false)
   p = ZZ(C.C.p)
   local ff::ZZPolyRingElem
@@ -281,19 +332,33 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
     setprecision!(t, pr)
     f = prod(elem_type(Qpt)[t-x for x in v])
     ff = map_coefficients(x->mod_sym(lift(ZZ, coeff(x, 0)), p_pow), f)
-    if all(x->nbits(x) < nbits(p_pow) - 30, coefficients(ff))
-      f = interpolate(Qpt, c, [v[findall(x-> j in x, b)[1]] for j=1:length(c)])
-      elem = map_coefficients(x->QQ(rational_reconstruction(lift(ZZ, coeff(x, 0)), p_pow)[2:3]...), f)(gen(K))
-
-      if is_zero(ff(elem))
-        return elem
-      end
+    elem = zero(K)
+    v = [v[findall(x-> j in x, b)[1]] for j=1:length(c)]
+    bb = one(K)
+    for i = 1:length(dual)
+      b = dual[i]
+      d = conjugates(b, C, pr)
+      cf = mod_sym(lift(ZZ, coeff(dot(v, d), 0)), p_pow)
+      elem += cf*bb
+      bb *= gen(K)
+    end
+    elem *= den
+    if iszero(ff(elem))
+      return elem
+    end
+#    if all(x->nbits(x) < nbits(p_pow) - 30, coefficients(ff))
+#      f = interpolate(Qpt, c, [v[findall(x-> j in x, b)[1]] for j=1:length(c)])
+#      elem = map_coefficients(x->QQ(rational_reconstruction(lift(ZZ, coeff(x, 0)), p_pow)[2:3]...), f)(gen(K))
+#
+#      if is_zero(ff(elem))
+#        return elem
+#      end
+#    end
+    if pr > pr_max
+        error("probably something bad?")
     end
     pr *= 2
     #if the block system is illegal, this will not terminate.
-    if pr > 10
-      error("probably something bad?")
-    end
   end
 end
 
