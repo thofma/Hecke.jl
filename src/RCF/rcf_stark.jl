@@ -139,7 +139,7 @@ function assure_with_conductor(chi::RCFCharacter)
   r, mr = ray_class_group(c, chi.conductor_inf_plc, n_quo = degree(C))
   lp, sR = find_gens(mR)
   imgs = FinGenAbGroupElem[mr\x for x in lp]
-  mpR = hom(sR, imgs)
+  mpR = hom(parent(first(sR)), parent(first(imgs)), sR, imgs)
   chi.mrcond = mr
   chi.mp_cond = mpR
   return nothing
@@ -335,7 +335,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
         r, mr = ray_class_group_quo(OK, newc, w, ctx)
         gens, group_gens = find_gens(mr)
         images = FinGenAbGroupElem[mQ(mR\J) for J in gens]
-        mp = hom(group_gens, images, check = false)
+        mp = hom(parent(first(group_gens)), parent(first(images)), group_gens, images, check = false)
         k, mk = kernel(mp)
         ls = subgroups(k, quotype = Int[2], fun = (x, y) -> sub(x, y, false)[2])
         for ms in ls

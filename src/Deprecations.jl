@@ -288,3 +288,6 @@ end
 @deprecate MaximalOrder maximal_order
 @deprecate Order order
 @deprecate EquationOrder equation_order
+
+@deprecate hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool=true) hom(G, parent(B[1]), B; check)
+@deprecate hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}; check::Bool=true) hom(parent(A[1]), parent(B[1]), A, B; check)

@@ -661,35 +661,89 @@ end
 ################################################################################
 
 @doc raw"""
-    hom(T::TorQuadModule, S::TorQuadModule, M::ZZMatrix) -> TorQuadModuleMap
+    hom(
+      T::TorQuadModule,
+      S::TorQuadModule,
+      M::ZZMatrix;
+      check::Bool=true,
+    ) -> TorQuadModuleMap
 
-Given two torsion quadratic modules `T` and `S`, and a matrix `M` representing
+Given two torsion quadratic modules `T` and `S`, and a matrix `M` defining
 an abelian group homomorphism between the underlying groups of `T` and `S`,
 return the corresponding abelian group homomorphism between `T` and `S`.
+If `check` is set to `true`, the function checks whether `M` defines a
+morphism of finite abelian groups between `T` and `S`.
 """
-function hom(T::TorQuadModule, S::TorQuadModule, M::ZZMatrix)
-  map_ab = hom(abelian_group(T), abelian_group(S), M)
+function hom(
+    T::TorQuadModule,
+    S::TorQuadModule,
+    M::ZZMatrix;
+    check::Bool=true,
+  )
+  map_ab = hom(abelian_group(T), abelian_group(S), M; check)
   return TorQuadModuleMap(T, S, map_ab)
 end
 
 @doc raw"""
-    hom(T::TorQuadModule, s::TorQuadModule, img::Vector{TorQuadModuleElem})
-                                              -> TorQuadModuleMap
+    hom(
+      T::TorQuadModule,
+      S::TorQuadModule,
+      img::Vector;
+      check::Bool=true
+    ) -> TorQuadModuleMap
 
-Given two torsion quadratic modules `T` and `S`, and a set of elements of `S`
-containing as many elements as `ngens(T)`, return the abelian group homomorphism
-between `T` and `S` mapping the generators of `T` to the elements of `img`.
+Given two torsion quadratic modules `T` and `S`, and a list `img` of elements
+of `S` containing as many elements as `ngens(T)`, return the abelian group
+homomorphism between `T` and `S` mapping the generators of `T` to the elements
+of `img`.
+If `check` is set to `true`, the function checks whether the inputs define a
+morphism of finite abelian groups.
 """
-function hom(T::TorQuadModule, S::TorQuadModule, img::Vector{TorQuadModuleElem})
+function hom(
+    T::TorQuadModule,
+    S::TorQuadModule,
+    img::Vector;
+    check::Bool=true,
+  )
   _img = FinGenAbGroupElem[]
   @req length(img) == ngens(T) "Wrong number of elements"
   for g in img
     @req parent(g) === S "Elements have the wrong parent"
     push!(_img, abelian_group(S)(g))
   end
-  map_ab = hom(abelian_group(T), abelian_group(S), _img)
+  map_ab = hom(abelian_group(T), abelian_group(S), _img; check)
   return TorQuadModuleMap(T, S, map_ab)
 end
+
+@doc raw"""
+    hom(
+      T::TorQuadModule,
+      S::TorQuadModule,
+      A::Vector,
+      B::Vector;
+      check::Bool=true,
+    ) -> TorQuadModuleMap
+
+Given two torsion quadratic modules `T` and `S`, and two lists `A` and `B`
+of elements of `T` and `S` respectively, return the abelian group homomorphism
+between `T` and `S` mapping `A[i]` to `B[i]` for all i.
+If `check` is set to `true`, the function checks whether the inputs define a
+morphism of finite abelian groups.
+"""
+function hom(
+    T::TorQuadModule,
+    S::TorQuadModule,
+    A::Vector,
+    B::Vector;
+    check::Bool=true,
+  )
+  @req length(A) == length(B) "Wrong number of elements"
+  @req all(a -> parent(a) === T, A) "Wrong parent for first input list"
+  @req all(b -> parent(b) === S, B) "Wrong parent for second input list"
+  map_ab = hom(abelian_group(T), abelian_group(S), data.(A), data.(B); check)
+  return TorQuadModuleMap(T, S, map_ab)
+end
+
 
 @doc raw"""
     abelian_group_homomorphism(f::TorQuadModuleMap) -> FinGenAbGroupHom

@@ -125,7 +125,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
           push!(fields_in_product, (LtoA, KtoL))
 
           G, pi = direct_product(G, UK, task = :prod)::Tuple{FinGenAbGroup, Tuple{FinGenAbGroupHom, FinGenAbGroupHom}}
-          GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
+          GtoUk = hom(G, Uk, gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
           if is_surjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
           end
