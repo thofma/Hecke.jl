@@ -322,7 +322,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   B_pe = maximum(ceil(ZZRingElem, length(x)) for x = dual) * ceil(ZZRingElem, Bpe)
   #so pr needs to cover 2*max(B_pe, B_f)
   Qp = parent(c[1])
-  pr_max = ceil(Int, log(2*max(B_pe, B_f), BigFloat(prime(Qp))))
+  pr_max = ceil(Int, BigFloat(prime(Qp))), log(BigFloat(2*max(B_pe, B_f)))
     
   pr *= 2
   Qpt, t = polynomial_ring(Qp, cached = false)
