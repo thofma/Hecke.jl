@@ -31,10 +31,10 @@ julia> OK = maximal_order(K);
 julia> p = 29;
 
 julia> frakp = prime_decomposition(OK, p)[1][1]
-<29, z_7 + 22>
-Norm: 29
-Minimum: 29
-two normal wrt: 29
+Ideal of maximal order of cyclotomic field of order 7
+  of norm 29
+  of minimum 29
+with 29-normal generators [29, z_7 + 22]
 ```
 
 We can now determine the residue field ``F = \mathcal{O}_K/\mathfrak p`` and
@@ -49,7 +49,6 @@ Prime field of characteristic 29
 julia> reduction_map_OK
 Map
   from maximal order of cyclotomic field of order 7
-  with basis [1, z_7, z_7^2, z_7^3, z_7^4, z_7^5]
   to prime field of characteristic 29
 ```
 
