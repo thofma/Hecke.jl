@@ -116,13 +116,13 @@ function translate_extension(mL::NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
   for i = 1:length(preimgs)
     preimgs[i] = mr\listn[i]
   end
-  proj = hom(gS, preimgs)
+  proj = hom(parent(first(gS)), parent(first(preimgs)), gS, preimgs)
   #compute the norm group of C in RM
   prms = Vector{FinGenAbGroupElem}(undef, length(lP))
   for i = 1:length(lP)
     prms[i] = C.quotientmap(mR\lP[i])
   end
-  RMtoR = hom(gS, prms)
+  RMtoR = hom(parent(first(gS)), parent(first(prms)), gS, prms)
   k, mk = kernel(RMtoR, false)
   @hassert :ClassField 1 is_isomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
   mp = mk*proj
