@@ -168,9 +168,9 @@ is_primary(I::ZZIdl) = is_zero(I) || is_prime_power_with_data(gen(I))[1]
 
 is_subset(I::ZZIdl, J::ZZIdl) = is_divisible_by(gen(J), gen(I))
 
-radical(I::ZZIdl) = iszero(I) ? I : ideal(ZZ, radical(gen(I)))
+radical(I::ZZIdl) = iszero(I) ? I : ideal(radical(gen(I)))
 primary_decomposition(I::ZZIdl) = iszero(I) ? [ (I,I) ] :
-  [ (ideal(ZZ, p^k), ideal(ZZ, p)) for (p,k) in factor(gen(I)) ]
+  [ (ideal(p^k), ideal(p)) for (p,k) in factor(gen(I)) ]
 
 maximal_order(::QQField) = ZZ
 
