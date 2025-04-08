@@ -290,7 +290,8 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
     if length(Set(pe(c))) != length(b)
       i = 1
       while true
-        pe = c -> let i= i; [prod(y+i for y in c[x]) for x = b] end
+        let i = i
+        pe = c -> [prod(y+i for y in c[x]) for x = b] end
         if length(Set(pe(c))) == length(b)
           break
         end
@@ -322,7 +323,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   B_pe = maximum(ceil(ZZRingElem, length(x)) for x = dual) * ceil(ZZRingElem, Bpe)
   #so pr needs to cover 2*max(B_pe, B_f)
   Qp = parent(c[1])
-  pr_max = ceil(Int, BigFloat(prime(Qp))), log(BigFloat(2*max(B_pe, B_f)))
+  pr_max = ceil(Int, log(BigFloat(prime(Qp)), BigFloat(2*max(B_pe, B_f))))
     
   pr *= 2
   Qpt, t = polynomial_ring(Qp, cached = false)
@@ -339,8 +340,8 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
     v = [v[findall(x-> j in x, b)[1]] for j=1:length(c)]
     bb = one(K)
     for i = 1:length(dual)
-      b = dual[i]
-      d = conjugates(b, C, pr)
+      db = dual[i]
+      d = conjugates(db, C, pr)
       cf = mod_sym(lift(ZZ, coeff(dot(v, d), 0)), p_pow)
       elem += cf*bb
       bb *= gen(K)
@@ -357,6 +358,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
 #        return elem
 #      end
 #    end
+
     if pr > pr_max
         error("probably something bad?")
     end
