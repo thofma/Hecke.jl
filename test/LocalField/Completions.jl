@@ -62,8 +62,8 @@ end
   @test precision(bb) >= 20
 
   setprecision!(mC, 100)  #does not seem to work
-  @test_broken b == preimage(mC, mC(b); small_lift=true)
-  @test_broken setprecision!(mC, 20)
+  @test b == preimage(mC, mC(b); small_lift=true)
+  setprecision!(mC, 20)
 end
 
 @testset "Issue 1509" begin
