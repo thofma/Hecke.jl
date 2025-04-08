@@ -14,6 +14,10 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
     v = valuation(a, f.P)
     a = a*uniformizer(f.P).elem_in_nf^-v
     z = evaluate(Qx(a), f.prim_img)
+    if precision(z) < 0
+      setprecision!(f, 2*f.precision)
+      return image(f, a)
+    end
     z *= uniformizer(parent(z))^v
   end
   return z
