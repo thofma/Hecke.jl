@@ -92,6 +92,8 @@ jobs:
         env:
           HECKE_TEST_THREADS: "1"
           JULIA_NUM_THREADS: "2"
+        with:
+          depwarn: error
       - name: "Process code coverage"
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"

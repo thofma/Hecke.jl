@@ -716,13 +716,13 @@ function translate_extensions(mL::Hecke.morphism_type(AbsSimpleNumField, AbsSimp
     for i = 1:length(preimgs)
       preimgs[i] = mr\listn[i]
     end
-    proj = hom(gS, preimgs)
+    proj = hom(RM, domain(mr), gS, preimgs)
     #compute the norm group of C in RM
     prms = Vector{FinGenAbGroupElem}(undef, length(lP))
     for i = 1:length(lP)
       prms[i] = C.quotientmap(mR\lP[i])
     end
-    RMtoR = hom(gS, prms)
+    RMtoR = hom(RM, codomain(C.quotientmap), gS, prms)
     k, mk = kernel(RMtoR, false)
     @hassert :Fields 1 is_isomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
     mp = mk*proj
