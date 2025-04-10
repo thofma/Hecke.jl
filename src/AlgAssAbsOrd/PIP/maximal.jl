@@ -78,6 +78,8 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
     #@show A
+    @assert is_totally_real(base_ring(ZA))
+    @assert all(!is_split(ZA, v) for v in real_places(base_ring(ZA)))
     return _is_principal_maximal_quaternion_generic(a, M, side)
   else
     error("Not implemented yet")
