@@ -4,22 +4,33 @@
 #
 ################################################################################
 
-function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
+function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(codomain(f)))
   if iszero(a)
     return zero(codomain(f))
   end
   Qx = parent(parent(a).pol)
-  z = evaluate(Qx(a), f.prim_img)
-  if !is_unit(z)
+  C = codomain(f)
+  v = Int(valuation(denominator(a), minimum(f.P)))
+  z = setprecision(C, precision(C)+absolute_ramification_index(C)*v) do
+       evaluate(Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)))
+   end
+#n   @show z, Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)), f.prim_img
+  if valuation(z) < 0
     v = valuation(a, f.P)
-    a = a*uniformizer(f.P).elem_in_nf^-v
-    z = evaluate(Qx(a), f.prim_img)
-    if precision(z) < 0
-      setprecision!(f, 2*f.precision)
-      return image(f, a)
-    end
+    b = a*uniformizer(f.P).elem_in_nf^-v
+#  @show v = Int(valuation(denominator(b), minimum(f.P)))
+    z = evaluate(Qx(b), f.prim_img)
     z *= uniformizer(parent(z))^v
   end
+  if precision(z) < pr
+    old_pr = f.precision
+    setprecision!(f, 2*f.precision)
+    im = image(f, a; pr)
+    setprecision!(f, old_pr)
+    return im
+  end
+#  @show valuation(z), valuation(a, f.P), a, f.P
+  @assert valuation(z) == valuation(a, f.P)
   return z
 end
 
@@ -439,15 +450,16 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
     K.def_poly_cache[pr] = setprecision(K.def_poly_cache[v[i]], pr)
     setprecision!(K, new_prec)
     setprecision!(base_field(K), pr)
-    setprecision!(f.prim_img, new_prec)
+    @assert new_prec <= precision(f.prim_img)
+#    setprecision!(f.prim_img, new_prec)
   else
     #I need to increase the precision of the data
     Kp = codomain(f)
     _f = inertia_degree(P)
     e = ramification_index(P)
-    if new_prec > maximum(keys(Kp.def_poly_cache))
+    if new_prec > e*maximum(keys(Kp.def_poly_cache))
       asked = new_prec
-      new_prec = max(new_prec, 2*maximum(keys(Kp.def_poly_cache))) 
+      new_prec = max(new_prec, 2*e*maximum(keys(Kp.def_poly_cache))) 
       #to not do this too frequently
       gq, u = f.inv_img
       ex = div(new_prec+e-1, e)
@@ -467,6 +479,8 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       coeffs_eisenstein, xZp = _solve_internal(gq, P, new_prec, Zp, Qq)
 
       Qqx = parent(first(values(Kp.def_poly_cache)))
+#      @show coeffs_eisenstein
+#      @show xZp
 
       pol_gen = Qqx(coeffs_eisenstein)
       Kp.def_poly_cache[div(new_prec + e -1, e)] = pol_gen
@@ -480,12 +494,15 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       end
       setprecision!(Kp, new_prec)
       f.prim_img = Kp(Qqx(img_prim_elem))
+#      @show f.prim_img, new_prec
       f.precision = new_prec
       if asked < new_prec
-        return setprecision!(f, asked)
+        setprecision!(Kp, asked)
+        setprecision!(base_field(Kp), div(asked+e-1, e)+1)
+        return 
       end
     else
-      f.precision = new_prec
+#      f.precision = new_prec
       v = sort(collect(keys(Kp.def_poly_cache)))
       i = searchsortedfirst(v, new_prec)
       Kp.def_poly_cache[new_prec] = setprecision(Kp.def_poly_cache[v[i]], new_prec)
@@ -563,7 +580,8 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     Kp = codomain(f)
     setprecision!(Kp, new_prec)
     setprecision!(base_field(Kp), new_prec)
-    setprecision!(f.prim_img, new_prec)
+    @assert precision(f.prim_img) >= new_prec
+#    setprecision!(f.prim_img, new_prec)
   else
     K = domain(f)
     #I need to increase the precision of the data
@@ -671,10 +689,14 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
 end
 
 function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::Int)
+  if new_prec == f.precision
+    return
+  end
   Kp = codomain(f)
   setprecision!(Kp, new_prec)
   if new_prec < f.precision
-    setprecision!(f.prim_img, new_prec)
+    @assert precision(f.prim_img) >= new_prec
+#    setprecision!(f.prim_img, new_prec)
   else
     P = prime(f)
     gq, u = f.inv_img
@@ -685,7 +707,7 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
     f.inv_img = (gq, u)
     setprecision!(Kp, new_prec)
     #To increase the precision of the image of the primitive element, I use Hensel lifting
-    f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, f.precision)
+    f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, precision(f.prim_img))
   end
   f.precision = new_prec
   return nothing
