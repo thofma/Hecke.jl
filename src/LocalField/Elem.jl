@@ -705,7 +705,7 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   if n < 0 && iszero(a)
     error("Element is not invertible")
   end
-  v = valuation(n, prime(K))
+  v = valuation(n, prime(K))*absolute_ramification_index(K)
   prec = precision(data(a)) + v
   if v > 0
     b = setprecision(data(a), prec)
