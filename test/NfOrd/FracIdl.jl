@@ -112,4 +112,19 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     fl, a = is_principal_with_data(fractional_ideal(O, [one(number_field(O))]))
     @test fl && (a*O == 1*O)
   end
+
+  let # printing
+    Qx, x = polynomial_ring(QQ, "x")
+    K, a = number_field(x^3 - 2, "a")
+    O = equation_order(K)
+    @test sprint(show, K(2)*O) isa String
+    @test sprint(show, "text/plain", 2*O) isa String
+    @test sprint(show, K(2)*O + K(4)*O) isa String
+    @test sprint(show, "text/plain", K(2)*O + K(4)*O) isa String
+
+    OK = maximal_order(K)
+    p = prime_decomposition(OK, 2)[1][1]
+    @test sprint(show, fractional_ideal(p, ZZ(3))) isa String
+    @test sprint(show, "text/plain", fractional_ideal(p, ZZ(3))) isa String
+  end
 end

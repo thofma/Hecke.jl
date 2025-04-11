@@ -232,38 +232,44 @@ function show(io::IO, S::NfRelOrdSet)
   print(io, S.nf)
 end
 
-function show(io::IO, O::RelNumFieldOrder)
+function show(io::IO, ::MIME"text/plain", O::RelNumFieldOrder)
   compact = get(io, :compact, false)
-  if compact
-    if is_maximal_known_and_maximal(O)
-      print(io, "Relative maximal order with pseudo-basis ")
+  io = pretty(io)
+  if is_maximal_known_and_maximal(O)
+    println(io, "Maximal order")
+  else
+    println(io, "Order")
+  end
+  print(io, Indent(), "of ", Lowercase())
+  show(IOContext(io, :collapsenf => true), MIME"text/plain"(), nf(O))
+  println(io, Dedent())
+  print(io, "with pseudo-basis")
+  print(io, Indent())
+  pb = pseudo_basis(O, copy = false)
+  for i = 1:degree(O)
+    print(io, "\n(")
+    print(io, pb[i][1])
+    print(io, ", ")
+    print(io, pb[i][2])
+    print(io, ")")
+  end
+  print(io, Dedent())
+end
+
+function show(io::IO, O::RelNumFieldOrder)
+  @show_name(io, O)
+  @show_special(io, O)
+  prefix = is_maximal_known_and_maximal(O) ? "Maximal order" : "Order"
+  if is_terse(io)
+    if !is_simple(nf(O))
+      print(io, prefix, " of relative non-simple number field")
     else
-      print(io, "Relative order with pseudo-basis ")
-    end
-    pb = pseudo_basis(O, copy = false)
-    for i = 1:degree(O)
-      print(io, "($(pb[i][1])) * ")
-      show(IOContext(io, :compact => true), pb[i][2])
-      if i != degree(O)
-        print(io, ", ")
-      end
+      print(io, prefix, " of relative number field")
     end
   else
-    if is_maximal_known_and_maximal(O)
-      print(io, "Relative maximal order of ")
-    else
-      print(io, "Relative order of ")
-    end
-    println(io, nf(O))
-    print(io, "with pseudo-basis ")
-    pb = pseudo_basis(O, copy = false)
-    for i = 1:degree(O)
-      print(io, "\n(")
-      print(io, pb[i][1])
-      print(io, ", ")
-      show(IOContext(io, :compact => true), pb[i][2])
-      print(io, ")")
-    end
+    io = pretty(io)
+    print(io, prefix, " of ")
+    print(io, Lowercase(), nf(O))
   end
 end
 
