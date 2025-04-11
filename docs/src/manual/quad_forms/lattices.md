@@ -358,6 +358,9 @@ julia> involution(Lherm)
 Map
   from relative number field of degree 2 over K
   to relative number field of degree 2 over K
+defined by
+  b -> -b
+with trivial map on base field
 
 julia> pseudo_matrix(Lherm)
 [1   0   0   0] * <7, 1//2*b + 7//2>//1
