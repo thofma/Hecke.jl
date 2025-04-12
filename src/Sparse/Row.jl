@@ -65,6 +65,20 @@ ConformanceTests.equality(A::SRow, B::SRow) = A == B
 #
 ################################################################################
 
+function _assert_is_unique_sorted(pos)
+  local f
+  for (i, p) in enumerate(pos)
+    if i == 1
+      f = p
+    else
+      if p == f
+        error("positions must be unique")
+      end
+      f = p
+    end
+  end
+end
+
 @doc raw"""
     sparse_row(R::Ring) -> SRow
 
@@ -84,6 +98,7 @@ function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) wher
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
+  _assert_is_unique_sorted(a[1] for a in A)
   return SRow(R, A)
 end
 
@@ -97,6 +112,7 @@ function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
+  _assert_is_unique_sorted(a[1] for a in A)
   return SRow(R, A)
 end
 
@@ -132,6 +148,7 @@ function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::B
     pos = pos[p]
     val = val[p]
   end
+  _assert_is_unique_sorted(pos)
   if T === elem_type(R)
     return SRow(R, pos, val)
   else
