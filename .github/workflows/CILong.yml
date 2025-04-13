@@ -91,7 +91,7 @@ jobs:
         uses: julia-actions/julia-runtest@v1
         env:
           HECKE_TEST_THREADS: "1"
-          JULIA_NUM_THREADS: "2"
+          JULIA_NUM_THREADS: "1"
         with:
           depwarn: error
       - name: "Process code coverage"
