@@ -1,4 +1,4 @@
-parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
+parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = S
 
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
