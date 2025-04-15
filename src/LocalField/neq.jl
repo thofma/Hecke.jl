@@ -772,12 +772,12 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   G = [g for g = G if map(g, gK) == gK]
   @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 
-  u = mKL(uniformizer(K))//uniformizer(L)^e
+  u = mKL(setprecision(uniformizer(K), precision(K)+10))//setprecision(uniformizer(L)^e, precision(L)+10)
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
   @assert norm(v) == u
-  pi = v*uniformizer(L)
+  pi = v*setprecision(uniformizer(L), precision(L)+5)
   pi_inv = inv(pi)
 
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
@@ -844,7 +844,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     gij = map(G[i], imG[j])
     f = findall(isequal(gij), imG)
     if f === nothing || length(f) == 0
-      f = argmax([valuation(x-gij) for x = imG], dims = 1)
+      f = argmax([minimum(map(valuation, x.-gij)) for x = imG], dims = 1)
     end
     @assert length(f) == 1
     return f[1]
@@ -882,7 +882,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
 
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
-    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= precision(c)//absolute_ramification_index(E)
+    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= floor(precision(c)//absolute_ramification_index(E))
     uv = us*GG[fa[fb[1]]](pi)
     push!(beta, vcat([us for i=1:power_L], [uv for i=1:d-power_L]))
     push!(sigma_hat, (GG[fa[fb[1]]], d-power_L))

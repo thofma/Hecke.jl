@@ -390,11 +390,13 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
   B = ArbField(nbits(v)*2)(v)^2
   B = 1/2 *acosh((B-2)/2)^2
   p = Hecke.upper_bound(ZZRingElem, log(B)/log(parent(B)(2)))
-  @vprint :qAdic 1  "using", p, nbits(v)*2
+  @vprintln :qAdic 1  "using", p, nbits(v)*2
   b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
 #  @show B , sum(x*x for x = b), is_torsion_unit(t)[1]
   @hassert :qAdic 1 (B > sum(x*x for x = b)) == is_torsion_unit(t)[1]
-  return B > sum(x*x for x = b)
+  fl =  B > sum(x*x for x = b) 
+  @hassert :qAdic 2 fl == is_torsion_unit(evaluate(t))
+  return fl
 end
 
 """
@@ -568,6 +570,8 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
             @vprint :qAdic 1  "increase prec to ", prec
             log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
             break
+          else
+#            @show y
           end
           push!(s, y)
         end
@@ -590,12 +594,12 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
     for i=1:length(gamma)-1
       push!(c, divexact(gamma[i], -gamma[end]))
     end
-    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^-gamma[i] for i=1:length(gamma)-1)])
+    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
 
     push!(c, divexact(_c[1,1], _c[1,2]))
     return G(c)
   end
-  return G, MapFromFunc(G, parent(g1[1]), im, pr)
+  return G, MapFromFunc(G, parent(u[1]), im, pr)
 end
 
 export syzygies

@@ -66,21 +66,23 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{Padic
     i = div(i+1, 2)
     pushfirst!(chain, i)
   end
-  der = derivative(f)
-  @assert precision(der) >= target_prec
-  rtnew = [setprecision(x, target_prec) for x = rt]
-  wvect = [(der(rtnew[i])) for i = 1:length(rt)]
-  prec_loss = Int(absolute_ramification_index(parent(rt[1]))*maximum(valuation, wvect))
-  wvect = map(inv, wvect)
-  for i in 1:length(chain)
-    for j = 1:length(rtnew)
-      rtnew[j] = rtnew[j] - wvect[j]*f(rtnew[j])
-      if i < length(chain)
-        wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+  rtnew = setprecision(base_ring(f), precision(f)) do
+    der = derivative(f)
+    @assert precision(der) >= target_prec
+    rtnew = [setprecision(x, target_prec) for x = rt]
+    wvect = [(der(rtnew[i])) for i = 1:length(rt)]
+    prec_loss = Int(absolute_ramification_index(parent(rt[1]))*maximum(valuation, wvect))
+    wvect = map(inv, wvect)
+    for i in 1:length(chain)
+      for j = 1:length(rtnew)
+        rtnew[j] = rtnew[j] - wvect[j]*f(rtnew[j])
+        if i < length(chain)
+          wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+        end
       end
     end
+    return [setprecision(x, target_prec - prec_loss) for x= rtnew]
   end
-  return [setprecision(x, target_prec - prec_loss) for x= rtnew]
   return rtnew
 end
 
