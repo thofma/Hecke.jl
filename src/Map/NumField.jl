@@ -103,7 +103,7 @@
 #
 ################################################################################
 
-mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldHom}
+mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, Any}#HeckeMap, NumFieldHom}
   header::MapHeader{S, T}
   image_data::U
   inverse_data::V
@@ -1031,4 +1031,35 @@ end
 function restrict(f::NumFieldHom, K::SimpleNumField)
   k = domain(f)
   return hom(K, k, k(gen(K)))*f
+end
+
+################################################################################
+#
+#  Show
+#
+################################################################################
+
+function AbstractAlgebra.show_map_data(io::IO, f::NumFieldHom)
+  println(io, "\ndefined by")
+  if is_simple(domain(f))
+    print(io, Indent(), gen(domain(f)), " -> ", image_primitive_element(f))
+  else
+    imgsgens = image_generators(f)
+    print(io, Indent())
+    for i in 1:length(imgsgens)
+      print(io, gen(domain(f), i), " -> ", imgsgens[i])
+      if i < length(imgsgens)
+        println(io)
+      end
+    end
+  end
+  print(io, Dedent())
+  if hasfield(typeof(f.image_data), :base_field_map_data)
+    print(io, "\n")
+    if f.image_data.base_field_map_data.isid
+      print(io, "with trivial map on base field")
+    else
+      print(io, "with non-trivial map on base field")
+    end
+  end
 end

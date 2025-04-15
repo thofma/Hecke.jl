@@ -53,8 +53,10 @@ julia> gens = Vector{AbsSimpleNumFieldElem}[map(K, [1, 1, 0]), map(K, [1, 0, 1])
 
 julia> Lquad = quadratic_lattice(K, gens, gram = D)
 Quadratic lattice of rank 3 and degree 3
-  over maximal order of number field of degree 1 over QQ
-  with basis [1]
+  over maximal order
+    of number field with defining polynomial x - 1
+      over rational field
+  with Z-basis [1]
 
 julia> D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
@@ -62,10 +64,12 @@ julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, 
 
 julia> Lherm = hermitian_lattice(E, gens, gram = D)
 Hermitian lattice of rank 4 and degree 4
-  over relative maximal order of Relative number field of degree 2 over K
+  over maximal order
+    of relative number field with defining polynomial t^2 + 7
+      over number field of degree 1 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b + 1, 1//2 * <1, 1>)
+    (1, <1>//1)
+    (b + 1, <1>//2)
 ```
 
 Note that the format used here is the one given by the internal function
@@ -112,8 +116,10 @@ Number of lattices: 30250
 
 julia> lattice(qld, 1)
 Quadratic lattice of rank 3 and degree 3
-  over maximal order of number field of degree 1 over QQ
-  with basis [1]
+  over maximal order
+    of number field with defining polynomial x - 1
+      over rational field
+  with Z-basis [1]
 
 julia> hlb = Hecke.hermitian_lattice_database()
 Hermitian lattices of rank >= 3 with class number 1 or 2
@@ -124,10 +130,12 @@ Number of lattices: 570
 
 julia> lattice(hlb, 426)
 Hermitian lattice of rank 4 and degree 4
-  over relative maximal order of Relative number field of degree 2 over number field
+  over maximal order
+    of relative number field with defining polynomial t^2 + 7
+      over number field of degree 1 over QQ
   with pseudo-basis
-  (1, 1//1 * <1, 1>)
-  (b + 1, 1//2 * <1, 1>)
+    (1, <1>//1)
+    (b + 1, <1>//2)
 ```
 
 ---
@@ -234,17 +242,18 @@ julia> gens = Vector{AbsSimpleNumFieldElem}[map(K, [-35, 25, 0]), map(K, [30, 40
 
 julia> Lquad2 = quadratic_lattice(K, gens, gram = D)
 Quadratic lattice of rank 3 and degree 3
-  over maximal order of number field of degree 1 over QQ
-  with basis [1]
+  over maximal order
+    of number field with defining polynomial x - 1
+      over rational field
+  with Z-basis [1]
 
 julia> OK = maximal_order(K);
 
 julia> p = prime_decomposition(OK, 7)[1][1]
-<7, 7>
-Norm: 7
-Minimum: 7
-principal generator 7
-two normal wrt: 7
+Ideal of maximal order of number field of degree 1 over QQ
+  of norm 7
+  of minimum 7
+with generator 7
 
 julia> hasse_invariant(Lquad, p), witt_invariant(Lquad, p)
 (1, 1)
@@ -314,11 +323,13 @@ julia> rank(Lherm), degree(Lherm)
 (4, 4)
 
 julia> discriminant(Lherm)
-Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <7, 7>) * [1 0]
-(1//2 * <7, 7>) * [0 1]
+Fractional ideal of maximal order of relative number field of degree 2 over K
+with numerator
+  ideal of maximal order of relative number field of degree 2 over K
+  with pseudo-basis
+    (1, <7>//1)
+    (b + 1, <7>//2)
+with denominator 1
 
 julia> base_field(Lherm)
 Relative number field with defining polynomial t^2 + 7
@@ -326,79 +337,50 @@ Relative number field with defining polynomial t^2 + 7
     over rational field
 
 julia> base_ring(Lherm)
-Relative maximal order of Relative number field of degree 2 over K
+Maximal order
+  of relative number field with defining polynomial t^2 + 7
+    over number field of degree 1 over QQ
 with pseudo-basis
-(1, 1//1 * <1, 1>)
-(b + 1, 1//2 * <1, 1>)
+  (1, <1>//1)
+  (b + 1, <1>//2)
 
 julia> fixed_field(Lherm)
 Number field with defining polynomial x - 1
   over rational field
 
 julia> fixed_ring(Lherm)
-Maximal order of number field of degree 1 over QQ
-with basis [1]
+Maximal order
+  of number field with defining polynomial x - 1
+    over rational field
+with Z-basis [1]
 
 julia> involution(Lherm)
 Map
   from relative number field of degree 2 over K
   to relative number field of degree 2 over K
+defined by
+  b -> -b
+with trivial map on base field
 
 julia> pseudo_matrix(Lherm)
-Pseudo-matrix over Relative maximal order of Relative number field of degree 2 over K
-with pseudo-basis
-(1, 1//1 * <1, 1>)
-(b + 1, 1//2 * <1, 1>)
-Fractional ideal with row [1 0 0 0]
-Fractional ideal with row [5 1 0 0]
-Fractional ideal with row [3 0 1 0]
-Fractional ideal with row [0 0 0 1]
+[1   0   0   0] * <7, 1//2*b + 7//2>//1
+[5   1   0   0] * <1>//1
+[3   0   1   0] * <1>//1
+[0   0   0   1] * <1>//1
 
 julia> pseudo_basis(Lherm)
 4-element Vector{Tuple{Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, Hecke.RelNumFieldOrderFractionalIdeal{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}}:
- ([1, 0, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <7, 28>) * [1 0]
-(1//2 * <1, 1>) * [6 1])
- ([5, 1, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([3, 0, 1, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([0, 0, 0, 1], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
+ ([1, 0, 0, 0], <7, 1//2*b + 7//2>//1)
+ ([5, 1, 0, 0], <1>//1)
+ ([3, 0, 1, 0], <1>//1)
+ ([0, 0, 0, 1], <1>//1)
 
 julia> coefficient_ideals(Lherm)
 4-element Vector{Hecke.RelNumFieldOrderFractionalIdeal{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}:
- Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <7, 28>) * [1 0]
-(1//2 * <1, 1>) * [6 1]
- Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1]
- Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1]
- Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1]
+ <7, 1//2*b + 7//2>//1
+ <1>//1
+ <1>//1
+ <1>//1
 
 julia> absolute_basis_matrix(Lherm)
 [            7               0               0               0]
@@ -485,25 +467,19 @@ julia> OK = maximal_order(K);
 julia> p = prime_decomposition(OK, 7)[1][1];
 
 julia> pseudo_matrix(Lquad + Lquad2)
-Pseudo-matrix over Maximal order of number field of degree 1 over QQ
-with basis [1]
-1//1 * <2, 2> with row [1 0 0]
-1//1 * <1, 1> with row [1 1 0]
-1//1 * <1, 1> with row [1 0 1]
+[1   0   0] * <2>//1
+[1   1   0] * <1>//1
+[1   0   1] * <1>//1
 
 julia> pseudo_matrix(intersect(Lquad, Lquad2))
-Pseudo-matrix over Maximal order of number field of degree 1 over QQ
-with basis [1]
-1//1 * <10, 10> with row [1 0 0]
-1//1 * <25, 25> with row [1//5 1 0]
-1//1 * <5, 5> with row [0 3 1]
+[   1   0   0] * <10>//1
+[1//5   1   0] * <25>//1
+[   0   3   1] * <5>//1
 
 julia> pseudo_matrix(p*Lquad)
-Pseudo-matrix over Maximal order of number field of degree 1 over QQ
-with basis [1]
-1//1 * <14, 126> with row [1 0 0]
-1//1 * <7, 7> with row [1 1 0]
-1//1 * <7, 7> with row [1 0 1]
+[1   0   0] * <14>//1
+[1   1   0] * <7>//1
+[1   0   1] * <7>//1
 
 julia> ambient_space(rescale(Lquad,3*a))
 Quadratic space of dimension 3
@@ -514,11 +490,9 @@ with gram matrix
 [0   0   6]
 
 julia> pseudo_matrix(Lquad)
-Pseudo-matrix over Maximal order of number field of degree 1 over QQ
-with basis [1]
-1//1 * <2, 2> with row [1 0 0]
-1//1 * <1, 1> with row [1 1 0]
-1//1 * <1, 1> with row [1 0 1]
+[1   0   0] * <2>//1
+[1   1   0] * <1>//1
+[1   0   1] * <1>//1
 ```
 
 ## Categorical constructions
@@ -570,27 +544,30 @@ julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, 
 julia> Lherm = hermitian_lattice(E, gens, gram = D);
 
 julia> norm(Lherm)
-1//1 * <1, 1>
-Norm: 1
-Minimum: 1
-principal generator 1
-basis_matrix
-[1]
-two normal wrt: 2
+Fractional ideal
+  with numerator ideal of maximal order of number field of degree 1 over QQ
+    of norm 1
+    of minimum 1
+  with generator 1
+  with denominator 1
 
 julia> scale(Lherm)
-Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1]
+Fractional ideal of maximal order of relative number field of degree 2 over K
+with numerator
+  ideal of maximal order of relative number field of degree 2 over K
+  with pseudo-basis
+    (1, <1>//1)
+    (b + 1, <1>//2)
+with denominator 1
 
 julia> volume(Lherm)
-Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <7, 7>) * [1 0]
-(1//2 * <7, 7>) * [0 1]
+Fractional ideal of maximal order of relative number field of degree 2 over K
+with numerator
+  ideal of maximal order of relative number field of degree 2 over K
+  with pseudo-basis
+    (1, <7>//1)
+    (b + 1, <7>//2)
+with denominator 1
 ```
 ---
 
@@ -823,71 +800,23 @@ julia> is_maximal(Lherm, p)
 
 julia> pseudo_basis(maximal_integral_lattice(Lherm, p))
 4-element Vector{Tuple{Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, Hecke.RelNumFieldOrderFractionalIdeal{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}}:
- ([1, 0, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([0, 1, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([2, 4, 1, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//14 * <1, 1>) * [6 1])
- ([4, 5, 0, 1], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//14 * <1, 1>) * [6 1])
+ ([1, 0, 0, 0], <1>//1)
+ ([0, 1, 0, 0], <1>//1)
+ ([2, 4, 1, 0], <7, 1//2*b + 7//2>//7)
+ ([3, 2, 0, 1], <7, 1//2*b + 7//2>//7)
 
 julia> pseudo_basis(maximal_integral_lattice(Lherm))
 4-element Vector{Tuple{Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, Hecke.RelNumFieldOrderFractionalIdeal{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}}:
- ([1, 0, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([0, 1, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([2, 4, 1, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//14 * <1, 1>) * [6 1])
- ([3, 2, 0, 1], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//14 * <1, 1>) * [6 1])
+ ([1, 0, 0, 0], <1>//1)
+ ([0, 1, 0, 0], <1>//1)
+ ([2, 4, 1, 0], <7, 1//2*b + 7//2>//7)
+ ([4, 5, 0, 1], <7, 1//2*b + 7//2>//7)
 
 julia> pseudo_basis(maximal_integral_lattice(ambient_space(Lherm)))
 4-element Vector{Tuple{Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}, Hecke.RelNumFieldOrderFractionalIdeal{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}}:
- ([1, 0, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([0, 1, 0, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//2 * <1, 1>) * [0 1])
- ([2, 4, 1, 0], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//14 * <1, 1>) * [6 1])
- ([4, 5, 0, 1], Fractional ideal of
-Relative maximal order with pseudo-basis (1) * 1//1 * <1, 1>, (b + 1) * 1//2 * <1, 1>
-with basis pseudo-matrix
-(1//1 * <1, 1>) * [1 0]
-(1//14 * <1, 1>) * [6 1])
+ ([1, 0, 0, 0], <1>//1)
+ ([0, 1, 0, 0], <1>//1)
+ ([5, 4, 1, 0], <7, 1//2*b + 7//2>//7)
+ ([3, 5, 0, 1], <7, 1//2*b + 7//2>//7)
 ```
 

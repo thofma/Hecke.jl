@@ -69,7 +69,15 @@ julia> c, mc = class_group(K)
 Set of ideals of O_K)
 
 julia> A = ray_class_field(mc)
-Class field defined mod (<1, 1>, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]) of structure c
+Class field
+  over number field with defining polynomial x^2 - 10
+    over rational field
+with modulus
+  finite part <1>
+  infinite part
+    []
+with structure
+  Z/2
 ```
 
 ## Conversions
@@ -94,18 +102,28 @@ julia> k, a = number_field(x^2 - 10, :a);
 julia> c, mc = class_group(k);
 
 julia> A = ray_class_field(mc)
-Class field defined mod (<1, 1>, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]) of structure c
+Class field
+  over number field with defining polynomial x^2 - 10
+    over rational field
+with modulus
+  finite part <1>
+  infinite part
+    []
+with structure
+  Z/2
 
 julia> K = number_field(A)
-Non-simple number field with defining polynomials [x^2 - 2]
+Relative non-simple number field with defining polynomials [x^2 - 2]
   over number field with defining polynomial x^2 - 10
     over rational field
 
 julia> ZK = maximal_order(K)
-Relative maximal order of Non-simple number field of degree 2 over k
+Maximal order
+  of relative non-simple number field with defining polynomials [x^2 - 2]
+    over number field of degree 2 over QQ
 with pseudo-basis
-(1, 1//1 * <1, 1>)
-(_$1 + a, 1//4 * <2, a>)
+  (1, <1, 1>//1)
+  (_$1 + a, <2, a>//4)
 
 julia> isone(discriminant(ZK))
 true

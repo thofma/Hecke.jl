@@ -313,12 +313,27 @@
 
   # parent
   let
-   Qx, x = polynomial_ring(QQ, "x")
-   K, a = number_field(x^3 - 2, "a")
-   O = equation_order(K)
-   @test parent(1*O) == parent(1*O)
-   @test hash(parent(1*O)) == hash(parent(1*O))
- end
+    Qx, x = polynomial_ring(QQ, "x")
+    K, a = number_field(x^3 - 2, "a")
+    O = equation_order(K)
+    @test parent(1*O) == parent(1*O)
+    @test hash(parent(1*O)) == hash(parent(1*O))
+  end
+
+  let
+    Qx, x = polynomial_ring(QQ, "x")
+    K, a = number_field(x^3 - 2, "a")
+    O = equation_order(K)
+    @test sprint(show, 2*O) isa String
+    @test sprint(show, "text/plain", 2*O) isa String
+    @test sprint(show, 2*O + 4*O) isa String
+    @test sprint(show, "text/plain", 2*O + 4*O) isa String
+
+    OK = maximal_order(K)
+    p = prime_decomposition(OK, 2)
+    @test sprint(show, p) isa String
+    @test sprint(show, "text/plain", p) isa String
+  end
 
   include("Ideal/Prime.jl")
 end

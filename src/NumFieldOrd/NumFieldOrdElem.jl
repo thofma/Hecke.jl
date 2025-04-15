@@ -132,6 +132,10 @@ function //(x::T, y::T) where {T <: NumFieldOrderElem}
   return divexact(x.elem_in_nf, y.elem_in_nf)
 end
 
+function is_unit(x::NumFieldOrderElem)
+  return inv(x.elem_in_nf) in parent(x)
+end
+
 ################################################################################
 #
 #  Ad hoc operations

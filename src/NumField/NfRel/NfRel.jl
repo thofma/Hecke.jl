@@ -124,7 +124,11 @@ function Base.show(io::IO, ::MIME"text/plain", a::RelSimpleNumField)
   println(io, "Relative number field with defining polynomial ", a.pol)
   io = pretty(io)
   print(io, Indent(), "over ", Lowercase())
-  show(io, MIME"text/plain"(), base_field(a))
+  if haskey(io, :collapsenf)
+    print(io, base_field(a))
+  else
+    show(io, MIME"text/plain"(), base_field(a))
+  end
   print(io, Dedent())
 end
 
