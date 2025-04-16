@@ -667,6 +667,8 @@ export modulus_quadratic_form
 export morphisms
 export mukai_lattice
 export mul!
+export mul_dense
+export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
