@@ -1,4 +1,7 @@
 @testset "AlgAssAbsOrd" begin
+  ZG = integral_group_ring(QQ[abelian_group(3)])
+  @test parent_type(elem_type(ZG)) === typeof(ZG)
+
   Qx, x = QQ["x"]
 
   A = matrix(QQ, 3, 3, [1,3^4,0,0,1,0,0,0,1]);

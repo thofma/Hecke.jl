@@ -279,7 +279,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{Ab
   for i = 1:length(preimgs)
     preimgs[i] = mr\listn[i]
   end
-  proj = hom(gS, preimgs)
+  proj = hom(domain(mR), domain(mr), gS, preimgs)
   #compute the norm group of A in R
   prms = Vector{FinGenAbGroupElem}(undef, length(lP))
   for i = 1:length(lP)
@@ -291,7 +291,7 @@ function _maximal_abelian_subfield(A::Hecke.ClassField, mp::Hecke.NumFieldHom{Ab
     end
     prms[i] = A.quotientmap(f)
   end
-  proj1 = hom(gS, prms)
+  proj1 = hom(domain(mR), codomain(A.quotientmap), gS, prms)
   S, mS = kernel(proj1, false)
   mS1 = mS*proj
   G, mG = Hecke.cokernel(mS1, false)
