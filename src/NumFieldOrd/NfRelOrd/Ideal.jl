@@ -1553,7 +1553,8 @@ end
 
 function in(x::NumFieldElem, y::RelNumFieldOrderIdeal)
   parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
-  return in(order(y)(x),y)
+  !_check_elem_in_order(x, order(y), Val(true)) && return false
+  return in(order(y)(x, false),y)
 end
 
 in(x::ZZRingElem, y::RelNumFieldOrderIdeal) = in(order(y)(x),y)

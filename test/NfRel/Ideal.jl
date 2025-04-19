@@ -263,4 +263,12 @@
     @test 0 * OL + 0 * OL == 0 * OL
     @test is_zero(minimum(0 * OL))
   end
+
+  let # fix containment bug
+    K, a = rationals_as_number_field();
+    Kt, t = K[:t];
+    L, b = number_field(t^2 + 1, :b);
+    OL = maximal_order(L);
+    @test !(L(1//2) in 2*OL)
+  end
 end
