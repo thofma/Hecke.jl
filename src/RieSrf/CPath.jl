@@ -52,7 +52,7 @@ mutable struct CPath
     P.center = c
     P.radius = radius
     P.orientation = orientation
-    P.bounds = []
+    #P.bounds = []
     
     #Line
     if path_type == 0
@@ -278,7 +278,7 @@ function set_int_param_N(G::CPath, N::Int)
   G.int_params_N = N
 end
 
-function get_int_param_r(G::CPath)
+function get_int_param_N(G::CPath)
   return G.int_params_N
 end
 

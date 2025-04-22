@@ -108,17 +108,17 @@ function Base.mod2pi(x::arb)
   return x
 end
 
-function embed_poly(f::PolyElem{nf_elem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
+function embed_poly(f::PolyRingElem{nf_elem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
   coeffs = coefficients(f)
-  coeffs = map(t -> evaluate(t, v, prec), coeffs)
+  coeffs = map(t -> evaluate(t, v.embedding, prec), coeffs)
   
-  Cx, x = PolynomialRing(AcbField(prec), "x")
+  Cx, x = polynomial_ring(AcbField(prec), "x")
   
   return sum(coeffs[i]*x^(i - 1) for i in (1:length(coeffs)))
 end
 
-function embed_mpoly(f::MPolyElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  return map_coefficients(x -> evaluate(x, v, prec), f)
+function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
+  return map_coefficients(x -> evaluate(x, v.embedding, prec), f)
 end
 
 #Might need to be made more rigorous due to dealing with arb balls

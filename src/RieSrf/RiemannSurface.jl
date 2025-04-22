@@ -12,7 +12,7 @@ export RiemannSurface, discriminant_points, embedding, genus, precision, fundame
 export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_mpoly, analytic_continuation, minimal_spanning_tree
 
 mutable struct RiemannSurface
-  defining_polynomial::MPolyElem
+  defining_polynomial::MPolyRingElem
   genus::Int
   tau::acb_mat
   prec::Int
@@ -26,10 +26,10 @@ mutable struct RiemannSurface
   real_field::ArbField
   complex_field::AcbField
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
-  homology_basis::Tuple{Vector{Vector{Int64}}, fmpz_mat, fmpz_mat}
+  homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
   degree::Vector{Int}
 
-  function RiemannSurface(f::MPolyElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
+  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
     
     RS = new()
@@ -38,8 +38,8 @@ mutable struct RiemannSurface
     RS.embedding = v
     
     k = base_ring(f)
-    kx, x = RationalFunctionField(k, "x")
-    kxy, y = PolynomialRing(kx, "y")
+    kx, x = rational_function_field(k, "x")
+    kxy, y = polynomial_ring(kx, "y")
     f_new = f(x,y)
     F, a = function_field(f_new)
     diff_base = basis_of_differentials(F)
@@ -106,8 +106,8 @@ end
 function defining_polynomial_univariate(RS::RiemannSurface)
   f = defining_polynomial(RS)
   K = base_ring(f)
-  Kx, x = PolynomialRing(K, "x")
-  Kxy, y = PolynomialRing(Kx, "y")
+  Kx, x = polynomial_ring(K, "x")
+  Kxy, y = polynomial_ring(Kx, "y")
   
   return f(x, y)
 end
@@ -274,7 +274,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   if abel_jacobi
     
     #Real part should already be minimal in D_points
-    x0 = Cc(min(floor(fmpz, real(D_points[1]) - 2*max_radius(RS)), -1))
+    x0 = Cc(min(floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS)), -1))
     
     
     #Connect base point to closest point in D_points
@@ -539,7 +539,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   x_vals[1] = evaluate(path, u[1])
   
   Kxy = parent(f)
-  Ky, y = PolynomialRing(base_ring(Kxy), "y")
+  Ky, y = polynomial_ring(base_ring(Kxy), "y")
   
   
   y_vals[1] = sort!(roots(f(x_vals[1], y), initial_prec = prec), lt = sheet_ordering)
@@ -553,7 +553,7 @@ end
 
 function recursive_continuation(f, x1, x2, z)
   Kxy = parent(f)
-  Ky, y = PolynomialRing(base_ring(Kxy), "y")
+  Ky, y = polynomial_ring(base_ring(Kxy), "y")
   Cc = base_ring(f)
   prec = precision(Cc)
   m = degree(f, 2)
@@ -787,18 +787,21 @@ function _homology_basis(RS::RiemannSurface)
   @req rank(A) == 2*genus "Computed matrix has the wrong rank. There is a bug in the code."
   K = matrix(ZZ, A)
   
+  print(typeof(cycles_list),"\n")
+  print(typeof(K),"\n")
+  print(typeof(symplectic_reduction(K)),"\n")
   RS.homology_basis = cycles_list, K, symplectic_reduction(K)
   return RS.homology_basis
 end
 
-function symplectic_reduction(K::MatrixElem{fmpz})
+function symplectic_reduction(K::ZZMatrix)
 
   @req is_zero(K + transpose(K)) "Matrix needs to be skew-symmetric" 
   @req nrows(K) == ncols(K) "Matrix needs to be square"
 
   n = nrows(K)
   
-  function find_one_above_pivot(K::MatrixElem{fmpz}, pivot::Int)
+  function find_one_above_pivot(K::ZZMatrix, pivot::Int)
     for i in (pivot:n)
       for j in (pivot:n)
         if K[i, j] == 1
@@ -850,10 +853,10 @@ function symplectic_reduction(K::MatrixElem{fmpz})
   sort!(ind1)
   reverse!(ind1)
   new_rows_ind = vcat([i[2] for i in ind1], [i[2] + 1 for i in ind1], ind2)
-  return vcat([B[Int(i), 1:n] for i in new_rows_ind])
+  return matrix(ZZ, vcat([B[Int(i), 1:n] for i in new_rows_ind]))
 end
 
-function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::MatrixElem{fmpz}, B::MatrixElem{fmpz})
+function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::ZZMatrix, B::ZZMatrix)
   pivot_plus = pivot + 1
   v = A[i, j] 
   is_pivot = false
