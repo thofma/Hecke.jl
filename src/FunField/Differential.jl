@@ -1,9 +1,3 @@
-using Hecke
-
-export FunFldDiff
-
-export differential, basis_of_differentials
-
 ################################################################################
 #
 #  Constructors
@@ -32,14 +26,14 @@ function differential(f::Generic.FunctionFieldElem)
   F = parent(f)
   y = gen(F)
   x = F(gen(base_ring(F)))
-    
+
   fnum = to_bivariate(numerator(f))
   fdenom = to_bivariate(denominator(f))
-  
+
   df = derivative(fnum//fdenom, 1)
   num = evaluate(numerator(df), [x, y])
   den = evaluate(denominator(df), [x, y])
-  
+
   return FunFldDiff(num//den)
 end
 
@@ -83,6 +77,12 @@ end
 
 function Base.:(==)(df::FunFldDiff, dg::FunFldDiff)
   return function_field(df) === function_field(df) && df.f == df.f
+end
+
+function Base.hash(df::FunFldDiff, h::UInt)
+  h = hash(function_field(df), h)
+  h = hash(df.f, h)
+  return h
 end
 
 ################################################################################
@@ -130,7 +130,7 @@ Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
 @doc raw"""
     //(df::FunFldDiff, dg::FunFldDiff) -> FunctionFieldElem
-    
+
 Return the function r such that r*df = dg.
 """
 function Base.://(df::FunFldDiff, dg::FunFldDiff)
@@ -160,7 +160,7 @@ end
 
 @doc raw"""
     divisor(df::FunFldDiff) -> Divisor
-    
+
 Return the divisor corresponding to the differential form.
 """
 function divisor(df::FunFldDiff)
@@ -171,7 +171,7 @@ end
 
 @doc raw"""
     valuation(df::FunFldDiff, p::GenOrdIdl) -> Int
-    
+
 Return the valuation of the differential form at a prime.
 """
 function valuation(df::FunFldDiff, p::GenOrdIdl)
@@ -186,7 +186,7 @@ end
 
 @doc raw"""
     basis_of_differentials(F::FunctionField) -> Vector{FunFldDiff}
-    
+
 Return a basis of the first order differential forms of F.
 """
 function basis_of_differentials(F::AbstractAlgebra.Generic.FunctionField)

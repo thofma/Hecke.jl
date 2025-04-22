@@ -1,7 +1,7 @@
-function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
+function _can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
   # Works also for non-square matrices
   #@hassert :HNF 1  ncols(A) == nrows(A)
-  @hassert :HNF 2  isupper_triangular(A)
+  @hassert :HNF 2  is_upper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
   # the transformation
   # supposed to be over a field...
@@ -41,8 +41,8 @@ function can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModR
   return sol
 end
 
-function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
-  fl, sol = can_solve_ut(A, g)
+function _solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzModRingElem}
+  fl, sol = _can_solve_ut(A, g)
   @assert fl
   return sol
 end
@@ -56,7 +56,7 @@ successful. In this case, the numerator is returned as a matrix and the
 common denominator in the third value.
 """
 function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
-  B = sparse_row(FlintZZ)
+  B = sparse_row(ZZ)
   de = ZZRingElem(1)
   M2 = div(M, 2)
   nbM = div(nbits(M), 2)
@@ -85,11 +85,11 @@ function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
   return true, B, de
 end
 
-function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
-  @hassert :HNF 1  isupper_triangular(A)
+function _solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
+  @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
 
-  sol = sparse_row(FlintZZ)
+  sol = sparse_row(ZZ)
   den = ZZRingElem(1)
   while length(b) > 0
     p = b.pos[1]
@@ -111,13 +111,13 @@ function solve_ut(A::SMat{ZZRingElem}, b::SRow{ZZRingElem})
   return sol, den
 end
 
-function solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
-  @hassert :HNF 1  isupper_triangular(A)
+function _solve_ut(A::SMat{ZZRingElem}, b::SMat{ZZRingElem})
+  @hassert :HNF 1  is_upper_triangular(A)
   #still assuming A to be upper-triag
   d = ZZRingElem(1)
-  r = sparse_matrix(FlintZZ)
+  r = sparse_matrix(ZZ)
   for i = b
-    x, dx = solve_ut(A, i)
+    x, dx = _solve_ut(A, i)
     nd = lcm(d, dx)
     if nd != d
       dd = div(nd, d)
@@ -147,12 +147,12 @@ Uses the dense (zzModMatrix) determinant on $A$ for various primes $p$.
 function det_mc(A::SMat{ZZRingElem})
 
   @hassert :HNF 1  A.r == A.c
-  if isupper_triangular(A)
+  if is_upper_triangular(A)
     z = ZZRingElem[ A[i, i] for i in 1:A.r]
     return prod(z)
   end
 
-  b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
+  b = sparse_matrix(matrix(ZZ, 1, A.c, rand(1:10, A.c)))
   _, qq = solve_dixon_sf(A, b)
 
   q = p_start # global prime
@@ -161,7 +161,7 @@ function det_mc(A::SMat{ZZRingElem})
   mm = ZZRingElem(1)
   last = ZZRingElem(0)
   while true
-    R = residue_ring(FlintZZ, q, cached = false)
+    R = residue_ring(ZZ, q, cached = false)[1]
     d = det(matrix(change_base_ring(R, A)))*inv(R(qq))
     if first
       dd = ZZRingElem(d)
@@ -188,7 +188,7 @@ Uses the dense (zzModMatrix) determinant on $A$ for various primes $p$.
 """
 function det(A::SMat{ZZRingElem})
   @hassert :HNF 1  A.r == A.c
-  if isupper_triangular(A)
+  if is_upper_triangular(A)
     return prod(ZZRingElem[A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
@@ -201,7 +201,7 @@ function det(A::SMat{ZZRingElem})
   #TODO: re-use the zzModMatrix....
   ld = ZZRingElem[]
   for q in lp
-    R = residue_ring(FlintZZ, Int(q), cached = false)
+    R = residue_ring(ZZ, Int(q), cached = false)[1]
     push!(ld, ZZRingElem(det(matrix(change_base_ring(R, A)))))
   end
   #ld = [ZZRingElem(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
@@ -236,7 +236,7 @@ If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
 rational reconstruction is avoided.
 """
 function solve_dixon_sf(A::SMat{ZZRingElem}, b::SRow{ZZRingElem}, is_int::Bool = false)
-  B = sparse_matrix(FlintZZ)
+  B = sparse_matrix(ZZ)
   push!(B, b)
   s, d = solve_dixon_sf(A, B, is_int)
   return s[1], d
@@ -245,7 +245,7 @@ end
 function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
-  R = residue_ring(FlintZZ, p, cached = false)
+  R = residue_ring(ZZ, p, cached = false)[1]
 
   Ap = change_base_ring(R, A)
 
@@ -266,7 +266,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
   reverse_rows!(Ep)
   Ep = transpose(Ep)
   reverse_rows!(Ep)
-#  @hassert :HNF 1  Hecke.isupper_triangular(Ep)
+#  @hassert :HNF 1  Hecke.is_upper_triangular(Ep)
 
   reverse_rows!(Tp)
   Tp = transpose(Tp)
@@ -275,7 +275,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
   #now, to solve xA = b, we do
   #              xAT = bT since AT is upper-triag, we can do this!
 
-  sol_all = sparse_matrix(FlintZZ)
+  sol_all = sparse_matrix(ZZ)
   den_all = ZZRingElem(1)
 
   for b in B
@@ -284,19 +284,19 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
 
     bp = change_base_ring(R, b)
 
-    sol = sparse_row(FlintZZ)
+    sol = sparse_row(ZZ)
     last = (sol, ZZRingElem(1))
 
     while true
-      bp = mul(bp, Tp)
-      zp = solve_ut(Ep, bp)
+      bp = bp * Tp
+      zp = _solve_ut(Ep, bp)
       z = lift(zp)
 
       sol += pp*z
 
       pp *= ZZRingElem(p)
 
-  #    @hassert :HNF 1  iszero(SRow(b_orig - Hecke.mul(sol, A), pp))
+  #    @hassert :HNF 1  iszero(SRow(b_orig - sol * A, pp))
 
       if is_int
         fl = true
@@ -308,9 +308,9 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
       end
       if fl
   #      @hassert :HNF 1  SRow(de*sol, pp) == SRow(nu, pp)
-  #      @hassert :HNF 1  SRow(mul(nu, A), pp) == SRow(de*b_orig, pp)
+  #      @hassert :HNF 1  SRow(nu*A, pp) == SRow(de*b_orig, pp)
         if last == (nu, de)
-          if mul(nu, A) == de*b_orig
+          if nu*A == de*b_orig
             l = lcm(den_all, de)
             if l == den_all
               push!(sol_all, div(l, de)*nu)
@@ -327,8 +327,8 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
         end
       end
 
-  #    @hassert :HNF 1  SRow(Hecke.mul(z, A), p) == bp
-      b = b - mul(z, A)
+  #    @hassert :HNF 1  SRow(z*A, p) == bp
+      b = b - z*A
 
       for i=1:length(b.values)
   #      @hassert :HNF 1  b.values[i] % p == 0
@@ -346,6 +346,14 @@ function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   return sol
 end
 
+function can_solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+  c = sparse_matrix(base_ring(b))
+  push!(c, b)
+
+  # b is a row, so this is always from the left
+  return can_solve(a, c, side = :left)
+end
+
 function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = sparse_matrix(base_ring(b))
   push!(c, b)
@@ -358,7 +366,7 @@ function can_solve_with_solution(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   return fl, sol.rows[1]
 end
 
-function solve(a::SMat{T}, b::SMat{T}; side = :right) where T <: FieldElem
+function solve(a::SMat{T}, b::SMat{T}; side = :left) where T <: FieldElem
   fl, sol = can_solve_with_solution(a, b, side = side)
   @assert fl
   return sol
@@ -383,10 +391,10 @@ function find_pivot(A::SMat{T}) where T <: RingElement
   return p
 end
 
-function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) where T <: FieldElement
-  @assert side == :right || side == :left "Unsupported argument :$side for side: Must be :left or :right."
+function can_solve(A::SMat{T}, B::SMat{T}; side::Symbol = :left) where T <: FieldElement
+  Solve.check_option(side, [:right, :left], "side")
   K = base_ring(A)
-  if side == :right
+  if side === :right
     # sparse matrices might have omitted zero rows, so checking compatibility of
     # the dimensions does not really make sense (?)
     #nrows(A) != nrows(B) && error("Incompatible matrices")
@@ -402,7 +410,29 @@ function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) 
 
   rk, mu = rref(mu, truncate = true)
   p = find_pivot(mu)
-  if any(i -> i > ncolsA, p)
+  return !any(let ncolsA = ncolsA; i -> i > ncolsA; end, p)
+end
+
+function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :left) where T <: FieldElement
+  Solve.check_option(side, [:right, :left], "side")
+  K = base_ring(A)
+  if side === :right
+    # sparse matrices might have omitted zero rows, so checking compatibility of
+    # the dimensions does not really make sense (?)
+    #nrows(A) != nrows(B) && error("Incompatible matrices")
+    mu = hcat(A, B)
+    ncolsA = ncols(A)
+    ncolsB = ncols(B)
+  else # side == :left
+    #ncols(A) != ncols(B) && error("Incompatible matrices")
+    mu = hcat(transpose(A), transpose(B))
+    ncolsA = nrows(A) # They are transposed
+    ncolsB = nrows(B)
+  end
+
+  rk, mu = rref(mu, truncate = true)
+  p = find_pivot(mu)
+  if any(let ncolsA = ncolsA; i -> i > ncolsA; end, p)
     return (false, sparse_matrix(K))
   end
   sol = zero_matrix(SMat, K, ncolsA, ncolsB)
@@ -420,7 +450,7 @@ function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :right) 
       sol.nnz += 1
     end
   end
-  if side == :left
+  if side === :left
     sol = transpose(sol)
   end
   return (true, sol)

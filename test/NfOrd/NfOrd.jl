@@ -1,21 +1,21 @@
 @testset "Orders" begin
 
-  @test elem_type(parent_type(NfOrdElem)) === NfOrdElem
-  @test parent_type(elem_type(NfOrd)) === NfOrd
+  @test elem_type(parent_type(AbsSimpleNumFieldOrderElem)) === AbsSimpleNumFieldOrderElem
+  @test parent_type(elem_type(AbsSimpleNumFieldOrder)) === AbsSimpleNumFieldOrder
 
   @testset "Construction" begin
-     Qx, x = polynomial_ring(FlintQQ, "x")
+     Qx, x = polynomial_ring(QQ, "x")
 
      K1, a1 = number_field(x^3 - 2, "a")
-    O1 = EquationOrder(K1, true)
+    O1 = equation_order(K1, true)
 
-    @test @inferred nf(O1) == K1
+    @test @inferred Hecke.nf(O1) == K1
 
 
      K2, a2 = number_field(x - 2, "a")
-    O2 = EquationOrder(K2, true)
+    O2 = equation_order(K2, true)
 
-    @test @inferred nf(O2) == K2
+    @test @inferred Hecke.nf(O2) == K2
 
 
     f3 = x^64 - 64*x^62 +
@@ -37,16 +37,16 @@
          2
 
     K3, a3 = number_field(f3, "a")
-    O3 = Order(K3, [ a3^i for i in 0:63])
+    O3 = order(K3, [ a3^i for i in 0:63])
 
-    @test nf(O3) == K3
+    @test Hecke.nf(O3) == K3
 
      K4, a4 = number_field(x^2 - 5, "a")
-    O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
-    O44 = Order(K4, FlintQQ[1 0; 0 2])
-    O444 = Order(K4, FlintZZ[1 0; 0 2])
+    O4 = order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
+    O44 = order(K4, QQ[1 0; 0 2])
+    O444 = order(K4, ZZ[1 0; 0 2])
 
-    @test nf(O4) == K4
+    @test Hecke.nf(O4) == K4
 
     #@test O4 == O44
     #@test O44 == O444
@@ -54,34 +54,34 @@
 #    @test O44 === O444
 
     K6, a6 = number_field(x^2 - 180, "a")
-    O6 = EquationOrder(K6)
+    O6 = equation_order(K6)
 
-    @test nf(O6) == K6
+    @test Hecke.nf(O6) == K6
 
-    O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)), check = true, cached = false)
-    O77 = Order(K6, FlintQQ[1 0; 0 1//6])
+    O7 = order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)), check = true, cached = false)
+    O77 = order(K6, QQ[1 0; 0 1//6])
 
     #@test O7 == O77
     #@test !(O7 === O77)
 
-    O8 = Order(K6, [a1])
-    @test O8 == EquationOrder(K1)
+    O8 = order(K1, [a1])
+    @test O8 == equation_order(K1)
 
-    @test_throws ErrorException Order(K1, [a1, a1, a1], isbasis = true)
-    #@test_throws ErrorException Order(K1, [1, a1, a1])
-    #@test_throws ErrorException Order(K1, [1.0, a1, a1])
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 0; 0 0], FlintZZ(6)))
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 2; 2 0], FlintZZ(6)))
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(FlintZZ[0 0], FlintZZ(6)))
+    @test_throws ErrorException order(K1, [a1, a1, a1], isbasis = true)
+    #@test_throws ErrorException order(K1, [1, a1, a1])
+    #@test_throws ErrorException order(K1, [1.0, a1, a1])
+    @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
+    @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 2; 2 0], ZZ(6)))
+    @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 0], ZZ(6)))
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
-  O1 = EquationOrder(K1)
+  O1 = equation_order(K1)
 
   K2, a2 = number_field(x - 2, "a")
-  O2 = EquationOrder(K2)
+  O2 = equation_order(K2)
 
   f3 = x^64 - 64*x^62 +
        1952*x^60 - 37760*x^58 +
@@ -105,30 +105,30 @@
        87296*x^4 - 1024*x^2 + 2
 
   K3, a3 = number_field(f3, "a")
-  O3 = Order(K3, [ a3^i for i in 0:63])
+  O3 = order(K3, [ a3^i for i in 0:63])
 
   K4, a4 = number_field(x^2 - 5, "a")
-  O4 = Order(K4, Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], ZZRingElem(1)))
+  O4 = order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
 
   K6, a6 = number_field(x^2 - 180, "a")
-  O6 = EquationOrder(K6)
+  O6 = equation_order(K6)
 
-  O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)))
+  O7 = order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
 
   O5 = @inferred deepcopy(O2)
 
   @testset "Deepcopy" begin
     O5 = @inferred deepcopy(O2)
-    @test nf(O2) == nf(O5)
+    @test Hecke.nf(O2) == Hecke.nf(O5)
   end
 
   @testset "Field access" begin
     b = @inferred parent(O2)
     @test b == @inferred parent(O5)
 
-    @test K1 == @inferred nf(O1)
-    @test K2 == @inferred nf(O2)
-    @test K3 == @inferred nf(O3)
+    @test K1 == @inferred Hecke.nf(O1)
+    @test K2 == @inferred Hecke.nf(O2)
+    @test K3 == @inferred Hecke.nf(O3)
 
     @test @inferred is_equation_order(O1)
     @test @inferred is_equation_order(O2)
@@ -157,28 +157,28 @@
     @test O4.basis_nf == [ a4^0, 2*a4 ]
 
     b = @inferred basis_matrix(O1)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 3, 3)), one(ZZ)))
 
     b = @inferred basis_matrix(O2)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 1, 1)), one(ZZ)))
 
     b = @inferred basis_matrix(O3)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 64, 64)), one(ZZ)))
 
     b = @inferred basis_matrix(O4)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0; 0 2], one(FlintZZ))
+    @test b == QQMatrix(Hecke.FakeFmpqMat(ZZ[1 0; 0 2], one(ZZ)))
 
-    b = @inferred basis_mat_inv(O1)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 3, 3)), one(FlintZZ))
+    b = @inferred basis_matrix_inverse(O1)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 3, 3)), one(ZZ)))
 
-    b = @inferred basis_mat_inv(O2)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 1, 1)), one(FlintZZ))
+    b = @inferred basis_matrix_inverse(O2)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 1, 1)), one(ZZ)))
 
-    b = @inferred basis_mat_inv(O3)
-    @test b == Hecke.FakeFmpqMat(one(matrix_space(FlintZZ, 64, 64)), one(FlintZZ))
+    b = @inferred basis_matrix_inverse(O3)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(one(matrix_space(ZZ, 64, 64)), one(ZZ)))
 
-    b = @inferred basis_mat_inv(O4)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[2 0; 0 1], FlintZZ(2))
+    b = @inferred basis_matrix_inverse(O4)
+    @test b == QQMatrix(Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
   end
 
   @testset "Index" begin
@@ -198,11 +198,11 @@
     @test b == 1
 
     b = @inferred gen_index(O4)
-    @test b == FlintQQ(1, 2)
+    @test b == QQ(1, 2)
     @test_throws ErrorException index(O4)
 
     b = @inferred gen_index(O7)
-    @test b == FlintQQ(6)
+    @test b == QQ(6)
     b = @inferred index(O7)
     @test b == 6
 
@@ -341,19 +341,19 @@
   end
 
   @testset "Addition" begin
-    O6_2 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[2 0; 0 1], FlintZZ(2)))
-    O6_3 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[3 0; 0 1], FlintZZ(3)))
+    O6_2 = order(K6, Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
+    O6_3 = order(K6, Hecke.FakeFmpqMat(ZZ[3 0; 0 1], ZZ(3)))
 
     b = @inferred O6_2 +
  O6_3
-    @test basis_matrix(b) == Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6))
+    @test basis_matrix(b) == QQMatrix(Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
 
     @test discriminant(b) == 20
 
     @test O4 +
  O4 == O4
     @test (@inferred O6_2 +
- O6_2) isa NfOrd
+ O6_2) isa AbsSimpleNumFieldOrder
   end
 
   @testset "Maximal Order" begin
@@ -376,7 +376,7 @@
     f = x^7 - 1000*x^2 +
  1000*x - 1000
     K, a = number_field(f,"a");
-    E = Order(K, [1, a, a^2, a^3, a^4, 1//5*a^5, 1//5*a^6])
+    E = order(K, [1, a, a^2, a^3, a^4, 1//5*a^5, 1//5*a^6])
     lP = prime_ideals_over(E, 5)
     @test length(lP) == 1
     P = lP[1]
@@ -475,7 +475,7 @@
     @test maximal_order(E) === E
 
     K, a = number_field(x^5 - 5x - 1, "a")
-    O = Order(K, [3*a])
+    O = order(K, [3*a])
     @test pmaximal_overorder(O, 3) == equation_order(K)
   end
 

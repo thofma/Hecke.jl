@@ -1,5 +1,5 @@
 @testset "NfAbs/Conjugates" begin
-Qx, x = FlintQQ["x"]
+Qx, x = QQ["x"]
 K1, a1 = number_field(x^6 - x^5 + x^4 - x^3 + x^2 - x + 1, "a") # totally complex
 K2, a2 = number_field(x^6 - x^5 - 7*x^4 + 2*x^3 + 7*x^2 - 2*x - 1, "a") # totally real
 K3, a3 = number_field(x^6 - x^5 - x^4 + 4*x^3 + 3*x^2 - 1, "a") # signature (2, 2)
@@ -102,18 +102,25 @@ end
   K, a = cyclotomic_field(5)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  @test aut(a) == conj(a)
 
   K, a = cyclotomic_field(29)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  @test aut(a) == conj(a)
 
   K, a = cyclotomic_field(13)
   aut = @inferred complex_conjugation(K)
   @test aut(a) == a^-1
+  @test aut(a) == conj(a)
+  K, a = quadratic_field(5)
+  aut = @inferred complex_conjugation(K)
+  @test aut(a) == a
+  @test aut(a) == conj(a)
 end
 
 @testset "Bad example" begin
-  Zx, x = polynomial_ring(FlintZZ)
+  Zx, x = polynomial_ring(ZZ)
   f = swinnerton_dyer(3, x)
   g = swinnerton_dyer(8, x)
   k, a = number_field(f, cached = false)
@@ -131,7 +138,7 @@ end
 end
 
 @testset "Another bad example" begin
-  Qx, x = polynomial_ring(FlintQQ)
+  Qx, x = polynomial_ring(QQ)
   f = x^12-3502319*x^10-3032677266943*x^8+17220065055936439179*x^6+26436504739687580368857995*x^4+12508949875084010197801010438203*x^2+1495531630727918278288148065057756816
   K, a = number_field(f, "a")
   @test 19619386 >= t2(a) >= 19619385

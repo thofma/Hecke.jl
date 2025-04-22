@@ -1,9 +1,13 @@
 name: OscarCI
 
 on:
-   pull_request:
-     branches:
-       - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    # Every day at 3:05 AM UTC
+    - cron: '5 3 * * *'
+
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
@@ -18,14 +22,14 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     env:
-      PR_NUMBER: ${{github.event.number}}
+      PR_NUMBER: ${{github.event.number || '0' }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: "Set up Julia"
-      uses: julia-actions/setup-julia@v1
+      uses: julia-actions/setup-julia@v2
       with:
-        version: '~1.9.0-0'
+        version: '1.10'
     - name: OscarDevTools - CI
       if: github.repository == 'oscar-system/OscarDevTools.jl'
       run: |
@@ -61,9 +65,9 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v1
+        uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
       - name: re-using OscarDevTools checkout

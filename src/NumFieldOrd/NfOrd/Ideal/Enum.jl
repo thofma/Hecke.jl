@@ -6,7 +6,7 @@ import Base.==
 
 mutable struct FactoredIdeal
   exp::Vector{Int}
-  idl::NfAbsOrdIdl
+  idl::AbsNumFieldOrderIdeal
   norm::Int
   pred::Int
   function FactoredIdeal(n::Int)
@@ -21,6 +21,10 @@ function ==(a::FactoredIdeal, b::FactoredIdeal)
   return a.exp == b.exp
 end
 
+function Base.hash(a::FactoredIdeal, h::UInt)
+  return hash(a.exp, h)
+end
+
 function Base.copy(a::FactoredIdeal)
   b = FactoredIdeal(length(a.exp))
   b.exp = copy(a.exp)
@@ -29,13 +33,13 @@ function Base.copy(a::FactoredIdeal)
 end
 
 mutable struct IdealEnum
-  FB::Vector{NfAbsOrdIdl}
+  FB::Vector{AbsNumFieldOrderIdeal}
   cur::Vector{FactoredIdeal}
   lim::Vector{Int}
   mi::Int
   mi_idx::Vector{Int}
 
-  function IdealEnum(FB::Vector{<: NfAbsOrdIdl})
+  function IdealEnum(FB::Vector{<: AbsNumFieldOrderIdeal})
     r = new()
     r.FB = FB
     r.cur = [FactoredIdeal(length(FB))]

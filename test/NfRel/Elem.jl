@@ -1,5 +1,5 @@
 @testset "Is integral" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 1
   K, a = number_field(f, "a")
   Ky, y = K["y"]

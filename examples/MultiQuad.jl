@@ -23,7 +23,7 @@ function _combine(f::QQPolyRingElem, g::QQPolyRingElem, Qxy)
 end
 
 function multi_quad_with_aut(d::Vector{ZZRingElem})
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   Qxy, y = polynomial_ring(Qx, "y", cached = false)
   lp = [ number_field(x^2-a)[1] for a = d]
   aut = [ [gen(x), -gen(x)] for x = lp]
@@ -48,7 +48,7 @@ function multi_quad_with_aut(d::Vector{ZZRingElem})
 end
 
 function multi_quad_with_emb(d::Vector{ZZRingElem})
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   Qxy, y = polynomial_ring(Qx, "y", cached = false)
   lp = [ number_field(x^2-a)[1] for a = d]
   aut = [ [gen(x)] for x = lp]
@@ -58,7 +58,7 @@ function multi_quad_with_emb(d::Vector{ZZRingElem})
     for i=1:div(length(lp), 2)
       K, m1, m2 = compositum(lp[2*i-1], lp[2*i])
       push!(ld, K)
-      push!(lau, vcat([ m1(x) for x = aut[2*i-1]], [ m2(x) for x = aut[2*i]]))
+      push!(lau, vcat([m1(x) for x = aut[2*i-1]], [m2(x) for x = aut[2*i]]))
     end
     if isodd(length(lp))
       push!(ld, lp[end])
@@ -92,7 +92,7 @@ function multi_quad(d::Vector{ZZRingElem}, B::Int)
 
   # @show all_d
 
-  ZK = Order(K, b)
+  ZK = order(K, b)
   ZK = pmaximal_overorder(ZK, ZZRingElem(2))
   ZK.is_maximal = 1
   set_attribute!(K, :maximal_order => ZK)
@@ -102,7 +102,7 @@ function multi_quad(d::Vector{ZZRingElem}, B::Int)
   t_ord = 0
   local t_u
 
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
 
   for i = 2:length(all_d)
     k, a = number_field(x^2-all_d[i], cached = false)
@@ -117,7 +117,7 @@ function multi_quad(d::Vector{ZZRingElem}, B::Int)
     else
       S, mS = Hecke.unit_group_fac_elem(zk)
     end
-    h = Hecke.NfToNfMor(k, K, bb[i])
+    h = hom(k, K, bb[i])
     @assert bb[i]^2 == all_d[i]
 
     for i=2:ngens(S) # don't need torsion here - it's the "same" everywhere
@@ -222,7 +222,7 @@ function _nullspace(A::zzModMatrix)
     if valuation(p, i) > 1
       continue
     end
-    b = matrix(residue_ring(FlintZZ, Int(i)), A_orig)
+    b = matrix(residue_ring(ZZ, Int(i))[1], A_orig)
     b = nullspace(b)
     b = rref(b[1]')
     c = matrix(base_ring(b[2]), A)'
@@ -236,7 +236,7 @@ function _nullspace(A::zzModMatrix)
   return ncols(A), A
 end
 
-function mod_p(R, Q::NfOrdIdl, p::Int)
+function mod_p(R, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int)
   F, mF = Hecke.ResidueFieldSmall(order(Q), Q)
   mF = Hecke.extend_easy(mF, nf(order(Q)))
   @assert size(F) % p == 1
@@ -261,7 +261,7 @@ function mod_p(R, Q::NfOrdIdl, p::Int)
     end
   end
 #  =#
-  return matrix(residue_ring(FlintZZ, p), 1, length(R), [dlog(dl, mF(x)^e, pp) % p for x = R])
+  return matrix(residue_ring(ZZ, p)[1], 1, length(R), [dlog(dl, mF(x)^e, pp) % p for x = R])
 end
 
 Hecke.lift(A::ZZMatrix) = A
@@ -283,7 +283,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   else
     #println("NOT doint zeta")
   end
-  T = residue_ring(FlintZZ, p)
+  T = residue_ring(ZZ, p)[1]
   A = identity_matrix(T, length(R))
   i = 1
   for (up, k) = factor(p).fac
@@ -293,10 +293,10 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       all_p = [up^k]
     end
     #@show all_p
-    AA = identity_matrix(FlintZZ, ncols(A))
+    AA = identity_matrix(ZZ, ncols(A))
     for pp = all_p
       #println("doin' $pp")
-      AA = matrix(residue_ring(FlintZZ, Int(pp)), lift(AA))
+      AA = matrix(residue_ring(ZZ, Int(pp))[1], lift(AA))
       Ap = matrix(base_ring(AA), A)
       i = 1
       S = Hecke.PrimesSet(Hecke.p_start, -1, Int(pp), 1)
@@ -391,21 +391,21 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
 end
 
 fe(a::FacElem) = a
-fe(a::nf_elem) = FacElem(a)
+fe(a::AbsSimpleNumFieldElem) = FacElem(a)
 
 function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   res = []
   fac = []
   for i=1:ncols(z)
-    a = fe(c.R_gen[1])^FlintZZ(z[1, i])
-    b = FlintZZ(z[1, i]) * c.M.bas_gens[1]
+    a = fe(c.R_gen[1])^ZZ(z[1, i])
+    b = ZZ(z[1, i]) * c.M.bas_gens[1]
     for j=2:length(c.R_gen)
-      a *= fe(c.R_gen[j])^FlintZZ(z[j, i])
-      b += FlintZZ(z[j, i]) * c.M.bas_gens[j]
+      a *= fe(c.R_gen[j])^ZZ(z[j, i])
+      b += ZZ(z[j, i]) * c.M.bas_gens[j]
     end
     for j=1:length(c.R_rel)
-      a *= fe(c.R_rel[j])^FlintZZ(z[j + length(c.R_gen), i])
-      b += FlintZZ(z[j + length(c.R_gen), i]) * c.M.rel_gens[j]
+      a *= fe(c.R_rel[j])^ZZ(z[j + length(c.R_gen), i])
+      b += ZZ(z[j + length(c.R_gen), i]) * c.M.rel_gens[j]
     end
 
     push!(res, (a, b))
@@ -414,10 +414,10 @@ function elems_from_sat(c::Hecke.ClassGrpCtx, z)
 end
 
 function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
-  e = matrix(FlintZZ, saturate_exp(c, n%8 == 0 ? 2*n : n, stable))
+  e = matrix(ZZ, saturate_exp(c, n%8 == 0 ? 2*n : n, stable))
   se = sparse_matrix(e)'
 
-  A = sparse_matrix(FlintZZ)
+  A = sparse_matrix(ZZ)
   K = nf(c)
   _, zeta = get_attribute(K, :torsion_units)
 
@@ -498,7 +498,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   R = vcat(R, n_gen)
   @assert ncols(Ti) == length(R)
 
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
+  d = Hecke.class_group_init(c.FB; add_rels = false)
 
   for i=1:nrows(Ti)
     a = FacElem(K(1))
@@ -515,7 +515,7 @@ end
 function sunits_mod_units(c::Hecke.ClassGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
-  su = Vector{FacElem{nf_elem, AnticNumberField}}()
+  su = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}()
   for i=1:length(c.FB.ideals)
     x = zeros(ZZRingElem, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
@@ -529,8 +529,8 @@ function sunits_mod_units(c::Hecke.ClassGrpCtx)
 end
 
 function simplify(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+  d = Hecke.class_group_init(c.FB; add_rels = false)
+  U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
@@ -551,14 +551,14 @@ function simplify(c::Hecke.ClassGrpCtx)
     end
   end
   for i=1:length(U.units)
-    Hecke.class_group_add_relation(d, U.units[i], sparse_row(FlintZZ))
+    Hecke.class_group_add_relation(d, U.units[i], sparse_row(ZZ))
   end
   return d
 end
 
 function units(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{ZZRingElem}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+  d = Hecke.class_group_init(c.FB; add_rels = false)
+  U = Hecke.UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo

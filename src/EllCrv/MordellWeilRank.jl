@@ -7,8 +7,6 @@
 #
 ###############################################################################
 
-export  quartic_local_solubility, R_soluble, Qp_soluble, quartic_rational_point_search, rank_2_torsion
-
 ###############################################################################
 #
 #  Quartic local solubility
@@ -255,7 +253,7 @@ end
 
 # Following Cremona p. 87
 @doc raw"""
-    rank_2_torsion(E::EllCrv, lim1::Int, lim2::Int) -> Int, Int, Int, Int
+    rank_2_torsion(E::EllipticCurve, lim1::Int, lim2::Int) -> Int, Int, Int, Int
 
 Compute bounds on rank and Sha using descent by 2-torsion isogeny.
 
@@ -270,8 +268,8 @@ S': upper bound on #III(E')[phi']
 Here phi: E -> E' is an isogeny defined by a rational 2-torsion point on E
 and phi' is its dual isogeny.
 """
-function rank_2_torsion(E::EllCrv, lim1=100, lim2 = 1000)
-  a1, a2, a3, a4, a6 = map(numerator,(a_invars(E)))
+function rank_2_torsion(E::EllipticCurve, lim1=100, lim2 = 1000)
+  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
   if (a1==a3==0)
     s2 = a2
     s4 = a4

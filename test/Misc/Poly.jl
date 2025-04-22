@@ -21,8 +21,8 @@
 
     while p < 4096
       l = roots(ArbField(p, cached = false), f)
-      sgtpos = count(ispositive, l)
-      sgtneg = count(isnegative, l)
+      sgtpos = count(is_positive, l)
+      sgtneg = count(is_negative, l)
       sgtz = count(iszero, l)
       if sgtpos + sgtneg + sgtz != length(l)
         p *= 2
@@ -37,7 +37,7 @@
   end
 
   function random_symmetric_matrix(x::Int)
-    M = zero_matrix(FlintZZ, x, x)
+    M = zero_matrix(ZZ, x, x)
     for i = 1:x
       for j= i:x
         a = rand(1:5)
@@ -73,12 +73,12 @@
 end
 
 @testset "roots" begin
-  o = CyclotomicField(2)[1](1)
+  o = cyclotomic_field(2)[1](1)
   @test issetequal(roots(o, 2), [o, -o])
-  o = CyclotomicField(1)[1](1)
+  o = cyclotomic_field(1)[1](1)
   @test issetequal(roots(o, 2), [o, -o])
 
-  o, a = CyclotomicField(4)
+  o, a = cyclotomic_field(4)
   _, x = o["x"]
   @test length(roots(x^2-a^2//4)) == 2
 
@@ -103,7 +103,7 @@ end
   Qx, x = QQ["x"]
   @test @inferred is_squarefree(x)
   @test @inferred is_squarefree(2*x^0)
-  @test @inferred is_squarefree(0*x^0)
+  @test @inferred !is_squarefree(0*x^0)
   @test @inferred !is_squarefree(2*x^2)
   @test @inferred is_squarefree(x * (x + 1))
   @test @inferred !is_squarefree(x * (x + 1)^2)
@@ -111,16 +111,16 @@ end
   Zx, x = ZZ["x"]
   @test @inferred is_squarefree(x)
   @test @inferred is_squarefree(2*x^0)
-  @test @inferred is_squarefree(0*x^0)
+  @test @inferred !is_squarefree(0*x^0)
   @test @inferred !is_squarefree(2*x^2)
   @test @inferred is_squarefree(x * (x + 1))
   @test @inferred !is_squarefree(x * (x + 1)^2)
 
-  F, a = RationalFunctionField(GF(3), "a")
+  F, a = rational_function_field(GF(3), "a")
   Fx, x = F["x"]
   @test @inferred is_squarefree(x)
   @test @inferred is_squarefree(2*x^0)
-  @test @inferred is_squarefree(0*x^0)
+  @test @inferred !is_squarefree(0*x^0)
   @test @inferred !is_squarefree(2*x^2)
   @test @inferred is_squarefree(x^3 - a)
   @test @inferred is_squarefree(2*x)
@@ -130,7 +130,7 @@ end
 @testset "Cyclotomic polynomials" begin
   listp = Hecke.primes_up_to(50)
   for i in 1:20
-    Fp, _ = FiniteField(rand(listp), cached=false)
+    Fp, _ = finite_field(rand(listp), cached=false)
     Fpt, _ = polynomial_ring(Fp, "t", cached=false)
     chi = @inferred cyclotomic_polynomial(rand(1:100), Fpt)
     @test is_cyclotomic_polynomial(chi)
@@ -155,4 +155,120 @@ end
   QQ1y, y = QQ1[:y]
   n = Hecke.n_positive_roots((y-1//10000)*(y-2//10000)*(y-100), Hecke.embedding(P))
   @test n == 3
+end
+
+@testset "numerical roots" begin
+  QQx, x = QQ[:x]
+  f = x^3-2
+  r = roots(f)
+  @test length(r) == 0
+
+  r = roots(ArbField(100), f)
+  @test length(r) == 1
+  fa = factor(ArbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  r = roots(RealField(), f)
+  @test length(r) == 1
+  fa = factor(RealField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+
+
+  r = roots(AcbField(100), f)
+  @test length(r) == 3
+  fa = factor(AcbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  r = roots(ComplexField(), f)
+  @test length(r) == 3
+  fa = factor(ComplexField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+
+  ZZx, x = ZZ[:x]
+  f = x^3-2
+  r = roots(f)
+  @test length(r) == 0
+
+  r = roots(ArbField(100), f)
+  @test length(r) == 1
+  fa = factor(ArbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  r = roots(RealField(), f)
+  @test length(r) == 1
+  fa = factor(RealField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+
+  r = roots(AcbField(100), f)
+  @test length(r) == 3
+  fa = factor(AcbField(100), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  r = roots(ComplexField(), f)
+  @test length(r) == 3
+  fa = factor(ComplexField(), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+
+  r = roots(GF(5), f)
+  @test length(r) == 1
+
+  r = roots(GF(5, 2), f)
+  @test length(r) == 3
+
+  fa = factor(GF(5), f)
+  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+
+  fa = factor(6*x)
+  @test length(fa) == 3
+
+  fa = factor(QQ, 6*x)
+  @test length(fa) == 1
+
+  #
+  let
+    K, = rationals_as_number_field()
+    Ky, y = K["y"]
+    f = y^4 - 46720785304//289510225*y^3 + 11506176//289510225*y^2 + 20030976//1412245*y - 2985984//289510225
+    @test Hecke.n_positive_roots(f, real_embeddings(K)[1]) == 3
+  end
+end
+
+@testset "hensel" begin
+  Zx, x = ZZ["x"]
+  f = x^2 + x + 1
+  h = one(Zx)
+  (gg, hh) = hensel_lift(f, f, h, ZZ(2), 2)
+  @test mod(gg * hh, ZZ(4)) == mod(f, ZZ(4))
+  (gg, hh) = hensel_lift(f, h, f, ZZ(2), 2)
+  @test mod(gg * hh, ZZ(4)) == mod(f, ZZ(4))
+end
+
+let
+  "divrem/gcd_right"
+  A = matrix_ring(QQ, 2)
+  Ax, x = A[:x]
+  f = A([1 1; 0 0]) * A([1 2; 3 4]) * x
+  g = A([1 2; 3 4]) * x
+  q, r = Hecke.divrem_right(f, g)
+  @test f == q * g + r
+  @test is_zero(r)
+  h = Hecke.gcd_right(f, g)
+  @test is_zero(Hecke.divrem_right(f, h)[2])
+  @test is_zero(Hecke.divrem_right(g, h)[2])
+end
+
+let
+  Q = Hecke.QuaternionAlgebra(QQ, QQ(-1), QQ(-1))
+  o, i, j, k = basis(Q)
+  Qx, x = Q[:x]
+  f = i * x^2 + j * x
+  g = i * x
+  @test divexact_right(f, g) == x + k
+  @test (x + k) * g == f
+  @test divexact_left(f, g) == x - k
+  @test g * (x - k) == f
+
+  f = (x + i)*(x + j)
+  g = Hecke.gcd_right(f, (x + j))
+  @test degree(g) == 1
+  @test divexact_right(f, g) * g  == f
+  f = (x + j)*(x + i)
+  g = Hecke.gcd_right(f, (x + j))
+  @test degree(g) == 0
 end

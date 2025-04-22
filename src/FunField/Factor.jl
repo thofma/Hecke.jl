@@ -1,7 +1,52 @@
 module FactorFF
-using Hecke
+using ..Hecke
 
-function Hecke.norm(f::PolyElem{<: Generic.FunctionFieldElem})
+function _is_separable(F::Generic.FunctionField)
+  return is_separable(defining_polynomial(F))
+end
+
+function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem})
+  @assert !_is_separable(F)
+  f = defining_polynomial(F)
+  K = base_ring(f)
+  # K = k(t)
+  d = lcm(denominator.(coefficients(f)))
+  fint = map_coefficients(numerator, d * f; cached = false)
+  R = base_ring(fint)
+  Rxy, (x, y) = polynomial_ring(R, [:x, :y]; cached = false)
+  fintbiv = map_coefficients(c -> c(y), fint)(x)
+  # new do the switcheroo
+  # this is in R[y][x] = R[x, y]
+  gint = fintbiv(gen(base_ring(fint)), gen(parent(fint)))
+  g = map_coefficients(base_ring(F), gint)
+  FF, FFprim = function_field(g, :b; cached = false)
+  # now the maps ...
+  FtoFF = function(a)
+    anum = numerator(a)    
+    aden = denominator(a) # parent(aden) == R
+    abiv = (map_coefficients(c -> c(y), anum)(x))
+    abivswap = abiv(gen(base_ring(fint)), FFprim)/aden(FFprim)
+    return abivswap::typeof(a)
+  end
+
+  FFtoF = function(b)
+    bnum = numerator(b)    
+    bden = denominator(b) # parent(aden) == R
+    bbiv = (map_coefficients(c -> c(y), bnum)(x))
+    bbivswap = bbiv(gen(base_ring(fint)), gen(F))/bden(gen(F))
+    return bbivswap::typeof(b)
+  end
+
+  for i in 1:10
+    a = rand(F, 0:5)
+    b = rand(F, 0:5)
+    @assert FtoFF(a * b) == FtoFF(a) * FtoFF(b)
+    @assert FFtoF(FtoFF(a)) == a
+  end
+  return FF, FtoFF, FFtoF
+end
+
+function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
     K = base_ring(f)
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = elem_type(base_field(K))[tr(x) for x in P]
@@ -21,7 +66,7 @@ function from_mpoly(f::MPolyRingElem, S::PolyRing{<:Generic.RationalFunctionFiel
   return S(map(x->base_ring(S)(x//o), F))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+function to_mpoly(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   Pf = parent(f)
   R, r = polynomial_ring(base_ring(base_ring(f)), 2)
   d = is_zero(f) ? one(R) : lcm(map(denominator, coefficients(f)))
@@ -32,28 +77,129 @@ function Hecke.factor(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
       push_term!(Fc, coeff(c, j), [i,j])
     end
   end
-  lf = factor(finish(Fc))
-  @assert is_constant(lf.unit)
+  return finish(Fc)
+end
 
-  fa = Fac(Pf(constant_coefficient(lf.unit)), Dict((from_mpoly(k, Pf), e) for (k,e) = lf))
-  @assert iszero(f) || sum(degree(x)*y for (x,y) = fa; init = 0) == degree(f)
-  return fa
+function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+  Pf = parent(f)
+  lf = factor_absolute(to_mpoly(f))
+
+  la = Any[from_mpoly(lf[1], Pf)]
+  for (gh, v) = lf[2:end]
+    g = gh[1]
+    h = gh[2]
+    k = base_ring(g)
+    kt, t = rational_function_field(k, base_ring(Pf).S, cached = false)
+    ktx, x = polynomial_ring(kt, symbols(Pf)[1], cached = false)
+    push!(la, [from_mpoly(g, ktx), from_mpoly(h, ktx)]=>v)
+  end
+  return la
+end
+
+function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+  return is_absolutely_irreducible(to_mpoly(f))
 end
 
 function Hecke.factor(F::Generic.FunctionField{T}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}) where {T}
-  return factor(map_coefficients(F, f))
+  return factor(map_coefficients(F, f, cached = false))
+end
+
+# squarefree factorization a la Trager-Gianni
+
+function is_separable(f::PolyRingElem{<:FieldElem})
+  # Bourbaki, N. (2003). *Algebra II. Chapters 4--7*. Springer-Verlag, Berlin.
+  # Chapter 5, §7, No. 2.
+  return is_unit(gcd(f, derivative(f)))
+end
+
+function _induced_derivation(a::Generic.FunctionFieldElem)
+  # Given F/k(T), extend the non-trivial deriviation from k(T) to F
+  # see Gianni-Trager, Prop. 11.
+  #
+  # TODO: improve this by caching the extension to the primitive element
+  f = minpoly(a)
+  b = -((map_coefficients(derivative, f)))(a)/(derivative(f)(a))
+  return b
+end
+
+function _induced_derivation(f::PolyRingElem{<:Generic.FunctionFieldElem})
+  # Gianni-Trager, Ex. 4
+  return  map_coefficients(_induced_derivation, f; parent = parent(f))
+end
+
+function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
+  if characteristic(base_ring(f)) == 0
+    return Hecke.Nemo._factor_squarefree_char_0(f)
+  end
+  if is_separable(defining_polynomial(base_ring(f)))
+    return _factor_squarefree_sep_ext(f)
+  end
+  FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
+  ff = map_coefficients(FtoFF, f; cached = false)
+  fa = _factor_squarefree_sep_ext(ff)
+  D = Dict{typeof(f), Int}((map_coefficients(FFtoF, q; parent = parent(f)), e) for (q, e) in fa)
+  return Fac(map_coefficients(FFtoF, unit(fa); parent = parent(f)), D)
+end
+
+function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem})
+  @req is_separable(defining_polynomial(base_ring(f))) "Defining polynomial must be separable"
+  D = Dict{typeof(f), Int}() 
+  un = leading_coefficient(f)
+  f = divexact(f, leading_coefficient(f))
+  p = characteristic(base_ring(f))
+  C = gcd(f, derivative(f), _induced_derivation(f))
+  B = divexact(f, C)
+  R = Tuple{typeof(f), Int}[]
+  i = 1
+  while !is_unit(B)
+    _B = B
+    B = gcd(C, _B)
+    C = divexact(C, B)
+    P = divexact(_B, B)
+    D[P] = i
+    i += 1
+  end
+  delete!(D, one(f))
+  R = Fac(parent(f)(un), D)
+  k = i - 1
+  if degree(C) == 0
+    return R
+  end
+  h = Hecke.absolute_frobenius_inverse(C)
+  Hecke.AbstractAlgebra.mulpow!(R, factor_squarefree(h), Int(p))
+  return R
+end
+
+function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
+  if characteristic(base_ring(f)) == 0
+    return is_unit(gcd(f, derivative(f)))
+  end
+  return all(e == 1 for (_, e) in factor_squarefree(f)) 
+end
+
+function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
+  if !_is_separable(base_ring(f))
+    FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
+    return Hecke.AbstractAlgebra.Generic._transport_factor(factor, f, FtoFF, FFtoF)
+  end
+  return _factor_assume_separable(f)
+end
+
+function _factor_assume_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
+  lc = leading_coefficient(f)
+  f = divexact(f, lc)
+  fsqf = factor_squarefree(f)
+  res = Fac(one(f), Dict{typeof(f), Int}())
+  for (p, e) in fsqf
+    D = _factor_assume_squarefree_and_separable(p)
+    Hecke.AbstractAlgebra.mulpow!(res, D, e)
+  end
+  Hecke.AbstractAlgebra.mulpow!(res, parent(f)(lc), 1)
+  return res
 end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
-function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
-  if !is_squarefree(f)
-    sf = gcd(f, derivative(f))
-    f = divexact(f, sf)
-  else
-    sf = one(parent(f))
-  end
-  lc = leading_coefficient(f)
-  f = divexact(f, lc)
+function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
   i = 0
   local N
   g = f
@@ -76,12 +222,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
 
   fN = factor(N)
   @assert isone(fN.unit)
-  D = Fac(parent(f)(lc), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
-  if !isone(sf)
-    for k = keys(D.fac)
-      D.fac[k] += valuation(sf, k)
-    end
-  end
+  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
   return D
 end
 
@@ -96,7 +237,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   end
 
   while true
-    G, b = FunctionField(lf[1], "b", cached = false)
+    G, b = function_field(lf[1], "b", cached = false)
     if length(lf) == 1 && degree(G) < 3
       return G
     end

@@ -1,48 +1,20 @@
 ################################################################################
 #
-#  Map/NfRel.jl : Types for maps with domains of type NfRel
-#
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
+#  Map/RelSimpleNumField.jl : Types for maps with domains of type RelSimpleNumField
 #
 ################################################################################
 
-mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqField, HeckeMap, NfRelToFqMor}
-  header::MapHeader{NfRel{T}, FqField}
+mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, HeckeMap, NfRelToFqMor}
+  header::MapHeader{RelSimpleNumField{T}, FqField}
 
   function NfRelToFqMor{T}() where {T}
     z = new{T}()
-    z.header = MapHeader{NfRel{T}, FqField}()
+    z.header = MapHeader{RelSimpleNumField{T}, FqField}()
     return z
   end
 end
 
-function _automorphisms(L::NfRel{T}) where T
+function _automorphisms(L::RelSimpleNumField{T}) where T
   if degree(L) == 1
     return morphism_type(L)[id_hom(L)]
   end
@@ -60,7 +32,7 @@ function _automorphisms(L::NfRel{T}) where T
   return auts
 end
 
-function automorphism_list(L::T; copy::Bool = true) where {T <: NfRel}
+function automorphism_list(L::T; copy::Bool = true) where {T <: RelSimpleNumField}
   auts = get_attribute!(L, :automorphisms) do
     return _automorphisms(L)
   end::Vector{morphism_type(T, T)}
@@ -84,13 +56,13 @@ mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsA
   mat::Mat
   t::Mat
 
-  function NfRelToAbsAlgAssMor{S, T, Mat}(K::S, A::T, M::Mat) where { S <: NfRel, T <: AbsAlgAss, Mat <: MatElem }
+  function NfRelToAbsAlgAssMor{S, T, Mat}(K::S, A::T, M::Mat) where { S <: RelSimpleNumField, T <: AbstractAssociativeAlgebra, Mat <: MatElem }
     @assert base_ring(A) == base_field(K)
     z = new{S, T, Mat}()
     z.mat = M
     z.t = zero_matrix(base_field(K), 1, degree(K))
 
-    function _image(x::NfRelElem)
+    function _image(x::RelSimpleNumFieldElem)
       for i = 1:degree(K)
         z.t[1, i] = coeff(x, i - 1)
       end
@@ -103,11 +75,11 @@ mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsA
   end
 end
 
-function NfRelToAbsAlgAssMor(K::S, A::T, M::Mat) where { S <: NfRel, T <: AbsAlgAss, Mat <: MatElem }
+function NfRelToAbsAlgAssMor(K::S, A::T, M::Mat) where { S <: RelSimpleNumField, T <: AbstractAssociativeAlgebra, Mat <: MatElem }
   return NfRelToAbsAlgAssMor{S, T, Mat}(K, A, M)
 end
 
-function haspreimage(m::NfRelToAbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::NfRelToAbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   A = parent(a)
   t = matrix(base_ring(A), 1, dim(A), coefficients(a))
   b, p = can_solve_with_solution(m.mat, t, side = :left)

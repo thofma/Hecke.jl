@@ -1,7 +1,5 @@
 import Base: ceil, log, -, <, <=, vcat, sum, ^, &, +, /
 
-export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_integral, li, ei
-
 #= source: https://cr.yp.to/bib/1996/bach-semismooth.pdf
 
   idea is that
@@ -176,7 +174,6 @@ end
 
 @doc raw"""
     exponential_integral(x::AbstractFloat) -> AbstractFloat
-    ei(x::AbstractFloat) -> AbstractFloat
 
 Compute the exponential integral function.
 """
@@ -283,12 +280,12 @@ function psi_guess(x::Number, B::Int, e::AbstractUnitRange)
 end
 
 
-function class_group_expected(O::NfOrd, B::Integer, samples::Int = 100)
+function class_group_expected(O::AbsSimpleNumFieldOrder, B::Integer, samples::Int = 100)
   d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 
-function class_group_expected(O::NfOrd, B::ZZRingElem, samples::Int = 100)
+function class_group_expected(O::AbsSimpleNumFieldOrder, B::ZZRingElem, samples::Int = 100)
   d = isqrt(abs(discriminant(O)))
   return class_group_expected(d, degree(O), Int(B), samples)
 end

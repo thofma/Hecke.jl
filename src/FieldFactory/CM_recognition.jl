@@ -4,7 +4,7 @@ function defines_CM_field(F::FieldsTower)
     return false, id_hom(K)
   end
   autsK = F.generators_of_automorphisms
-  permGC = GAP.julia_to_gap([_perm_to_gap_perm(x) for x in permutations(autsK)])
+  permGC = GAP.GapObj([_perm_to_gap_perm(x) for x in permutations(autsK)])
   perm_group = GAP.Globals.GroupByGenerators(permGC)
   Z = GAP.Globals.Center(perm_group)
   if isodd(GAP.Globals.Size(Z))
@@ -14,7 +14,7 @@ function defines_CM_field(F::FieldsTower)
   for i = 1:length(els)
     @show i
     el = els[i]
-    if GAP.Globals.Order(els[i]) != 2
+    if GAP.Globals.order(els[i]) != 2
       continue
     end
     word = GAP.Globals.Factorization(perm_group, el)

@@ -1,13 +1,19 @@
 function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   @assert parent(a) == K
 
+  # I will be jumping through a lot of hoops to make
+  # base_field(F) == F_p work
   if check
-    @assert iszero(defining_polynomial(F)(a))
+    if absolute_degree(base_field(F)) == 1 || base_field(F) !== base_field(K)
+      @assert iszero(map_coefficients(x -> base_field(K)(lift(ZZ, x)), defining_polynomial(F), cached = false)(a))
+    else
+      @assert iszero(defining_polynomial(F)(a))
+    end
   end
 
   if F isa FqField
     @assert K isa FqField
-    @assert base_field(F) === base_field(K)
+    @assert absolute_degree(F) == 1 || base_field(F) === base_field(K)
     k = base_field(F)
     kx = parent(defining_polynomial(F))
 
@@ -133,13 +139,13 @@ function minpoly(a::FinFieldElem, mp::Nemo.FinFieldMorphism)
   end
   t = polynomial_ring(codomain(mp), "x", cached = false)[2]
   pol = prod(t-x for x in conjs)
-  return map_coefficients(preimage_map(mp), pol)
+  return map_coefficients(preimage_map(mp), pol, cached = false)
 end
 
 function Nemo.generator_minimum_polynomial(mp::Nemo.FinFieldMorphism{FqPolyRepField, FqPolyRepField})
   return minpoly(gen(codomain(mp)), mp)
 end
 
-function Nemo.any_root(f::PolyElem{T}) where T <: FinFieldElem
+function Nemo.any_root(f::PolyRingElem{T}) where T <: FinFieldElem
   return roots(f)[1]
 end

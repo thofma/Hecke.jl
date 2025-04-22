@@ -1,5 +1,4 @@
-
-Qx,x = FlintQQ["x"]
+Qx,x = QQ["x"]
 K,a = number_field(x^6+108)
 OK = ring_of_integers(K)
 lp = prime_decomposition(OK, 5)
@@ -10,15 +9,15 @@ L = localization(OK, P)
 
   @testset "Constructor" begin
 
-    @test parent_type(OrdLocElem{nf_elem}) == OrdLoc{nf_elem}
+    @test parent_type(OrdLocElem{AbsSimpleNumFieldElem}) == OrdLoc{AbsSimpleNumFieldElem}
 
     lp = prime_decomposition(OK, 3)
     P = lp[1][1]
     L = localization(OK, P)
 
-    @test elem_type(L) == OrdLocElem{nf_elem}
-    @test nf(L) == K
-    @test nf(L()) == K
+    @test elem_type(L) == OrdLocElem{AbsSimpleNumFieldElem}
+    @test Hecke.nf(L) == K
+    @test Hecke.nf(L()) == K
 
 end
 
@@ -124,4 +123,15 @@ end
       @test isone(L(13//13)) == true
       @test is_unit(L(50//2)) == false
     end
+
+  let
+    # hashing
+    Qx, x = QQ["x"]
+    K, a = number_field(x^6 + 108)
+    OK = ring_of_integers(K)
+    lp = prime_decomposition(OK, 5)
+    P = lp[1][1]
+    L = localization(OK, P)
+    @test hash(one(L)) == hash(one(L))
+  end
 end

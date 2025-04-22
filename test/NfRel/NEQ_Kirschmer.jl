@@ -1,5 +1,5 @@
 @testset "NEQ Kirschmer" begin
-  R,x = FlintZZ["x"]
+  R,x = ZZ["x"]
   K,a = number_field(x^2+3x+1,"a")
   kt,t = K["t"]
   E, b = number_field( t^2 + (a+5)* (-2*a+2) )

@@ -2,34 +2,6 @@
 #
 #     Clgrp.jl : Class group computation of maximal orders in number fields
 #
-# This file is part of hecke.
-#
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-# (C) 2015, 2016 Claus Fieker
-#
 ################################################################################
 #
 # Todo:
@@ -64,15 +36,6 @@
 #
 ################################################################################
 
-export class_group, FactorBase, is_smooth, factor, lll_basis,
-       unit_group_fac_elem, unit_group, regulator
-
-add_verbosity_scope(:ClassGroup)
-add_verbosity_scope(:ClassGroup_time)
-add_verbosity_scope(:ClassGroup_gc)
-
-add_assertion_scope(:ClassGroup)
-
 include("Clgp/Ctx.jl")
 include("Clgp/FacBase_Euc.jl")
 include("Clgp/FacBase_Idl.jl")
@@ -95,12 +58,12 @@ using .RelSaturate
 #
 ################################################################################
 
-function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
+function class_group_ctx(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
 
   if !redo
     c = get_attribute(O, :ClassGrpCtx)
     if c !== nothing
-      return c::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
+      return c::ClassGrpCtx{sparse_matrix_type(ZZ)}
     end
   end
 
@@ -109,10 +72,10 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}}
+  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{sparse_matrix_type(ZZ)}
   @assert order(c) === O
 
-  set_attribute!(O, :ClassGroupCtx, c)
+  set_attribute!(O, :ClassGrpCtx, c)
 
   c.B2 = bound * large
 
@@ -213,7 +176,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true, bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRHClassGroup::Bool = true, GRHUnitGroup::Bool = true)
 
   @vprintln :UnitGroup 1 "Computing tentative class and unit group ..."
 
@@ -222,25 +185,26 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
-    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}
+    # Found tentative class and unit group, which are correct assuming GRH
+    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
     @assert U.finished
     @vprintln :UnitGroup 1 "... done (retrieved)."
-    if c.GRH && !GRH
-      if !GRH
-        class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
-        for (p, _) in factor(c.h)
-          while saturate!(c, U, Int(p), 3.5)
-          end
-        end
-      end
-      c.GRH = false
+    primes_checked = Int[]
+    if !GRHClassGroup
+      # an unconditional class group is requested
+      # (the unit group might need to be enlarged at the same time)
+      _class_group_proof(c, U, primes_checked)
+    end
+    if !GRHUnitGroup && unit_group_rank(O) > 0
+      # an unconditional unit group is requested
+      _unit_group_proof(U, primes_checked)
     end
     return c, U, ZZRingElem(1)
   end
 
   @vprintln :UnitGroup 1 "Tentative class number is now $(c.h)"
 
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
 
   need_more = true
 
@@ -346,13 +310,19 @@ function _class_unit_group(O::NfOrd; saturate_at_2::Bool = true, bound::Int = -1
 
   #@vprintln :ClassGroup 1 "hnftime $(c.time[:hnf_time])"
 
-  if !GRH
-    class_group_proof(c, ZZRingElem(2), factor_base_bound_minkowski(O))
-    for (p, _) in factor(c.h)
-      while saturate!(c, U, Int(p), 3.5)
-      end
-    end
-    c.GRH = false
+  primes_checked = Int[]
+  if !GRHClassGroup
+    # want unconditional class group
+    _class_group_proof(c, U, primes_checked)
+  end
+
+  if !GRHUnitGroup && unit_group_rank(O) > 0
+    # want unconditional unit group
+    _unit_group_proof(U, primes_checked)
+  end
+
+  if degree(O) == 1
+    @assert c.h == 1
   end
 
   return c, U, _validate_class_unit_group(c, U)[1]
@@ -367,7 +337,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
     end
   end
 
-  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   need_more = true
   while true
     r = _unit_group_find_units(U, c)
@@ -403,15 +373,24 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 end
 
 @doc raw"""
-    class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
+    class_group(O::AbsSimpleNumFieldOrder; bound = -1,
+                          redo = false,
+                          GRH = true)   -> FinGenAbGroup, Map
 
-Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
-The inverse of the map is the projection onto the group of ideals modulo the
-group of principal ideals.
-`redo` allows to trigger a re-computation, thus avoiding the cache.
-`bound`, when given, is the bound for the factor base.
+Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$. The
+inverse of the map is the projection onto the group of ideals modulo the group
+of principal ideals.
+
+By default, the correctness is guarenteed only assuming the Generalized Riemann
+Hypothesis (GRH).
+
+Keyword arguments:
+
+- `redo`: Trigger a recomputation, thus avoiding the cache.
+- `bound`: When specified, this is used for the bound for the factor base.
+- `GRH`: If `false`, the correctness of the result does not depend on GRH.
 """
-function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
+function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3,
                      redo::Bool = false, unit_method::Int = 1,
                      large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
@@ -423,37 +402,37 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
   else
     L = O
   end
-  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH, saturate_at_2 = saturate_at_2)
+  c, U, b = _class_unit_group(L, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRHClassGroup = GRH, saturate_at_2 = saturate_at_2)
 
   @assert b == 1
-  return class_group(c, O)::Tuple{GrpAbFinGen, MapClassGrp}
+  return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
-function _unit_group_maximal(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
+function _unit_group_maximal(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH)
   @assert b==1
-  return unit_group(c, U)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+  return unit_group(c, U)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
 
 
 @doc raw"""
-    unit_group(O::NfOrd) -> GrpAbFinGen, Map
+    unit_group(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
 obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 """
-function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function unit_group(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
-    return unit_group_non_maximal(O)::Tuple{GrpAbFinGen, MapUnitGrp{NfAbsOrd{AnticNumberField,nf_elem}}}
+    return unit_group_non_maximal(O)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
   end
 end
 
 @doc raw"""
-    unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
+    unit_group_fac_elem(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
 
 Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 A set of fundamental units of $\mathcal O$ can be
@@ -461,48 +440,53 @@ obtained via `[ f(U[1+i]) for i in 1:unit_group_rank(O) ]`.
 `f(U[1])` will give a generator for the torsion subgroup.
 All elements will be returned in factored form.
 """
-function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
+function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true, redo::Bool = false)
   if !is_maximal(O)
     OK = maximal_order(nf(O))
-    UUU, mUUU = unit_group_fac_elem(OK)
-    return _unit_group_non_maximal(O, OK, mUUU)
+    UUU, mUUU = unit_group_fac_elem(OK; GRH = GRH)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
+    return _unit_group_non_maximal(O, OK, mUUU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{nf_elem, AnticNumberField}})
+    if !GRH
+      # there was unit group context saved
+      # unconditional unit group requested
+      _unit_group_proof(U, nothing)
+    end
+    return unit_group_fac_elem(U::UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
   end
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     O = lll(maximal_order(nf(O)))
   end
-  _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH, redo = redo)
+  _, UU, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH, redo = redo)
   @assert b==1
-  return unit_group_fac_elem(UU)
+  return unit_group_fac_elem(UU)::Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}
 end
 
 @doc raw"""
-    regulator(O::NfOrd)
+    regulator(O::AbsSimpleNumFieldOrder)
 
 Computes the regulator of $O$, i.e. the discriminant of the unit lattice.
 """
-function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+function regulator(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c = get_attribute(O, :ClassGrpCtx)
   if c === nothing
     O = lll(maximal_order(nf(O)))
   end
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH)
   @assert b == 1
   unit_group_fac_elem(U)
   return U.tentative_regulator
 end
 
 @doc raw"""
-    regulator(K::AnticNumberField)
+    regulator(K::AbsSimpleNumField)
 
 Computes the regulator of $K$, i.e. the discriminant of the unit lattice
 for the maximal order of $K$.
 """
-function regulator(K::AnticNumberField)
+function regulator(K::AbsSimpleNumField)
   return regulator(maximal_order(K))
 end

@@ -72,20 +72,12 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   return H[1:ncols(M), :]
 end
 
-function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
+function function_field(f::PolyRingElem{<:Generic.RationalFunctionFieldElem}, s::VarName = :_a; check::Bool = true, cached::Bool = false)
+  return function_field(f, s, cached = cached)
 end
 
-function function_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::Symbol; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
-end
-
-function extension_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::String = "_a"; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
-end
-
-function extension_field(f::PolyElem{<:Generic.RationalFunctionFieldElem}, s::Symbol; check::Bool = true, cached::Bool = false)
-  return FunctionField(f, s, cached = cached)
+function extension_field(f::PolyRingElem{<:Generic.RationalFunctionFieldElem}, s::VarName = :_a; check::Bool = true, cached::Bool = false)
+  return function_field(f, s, cached = cached)
 end
 
 function Hecke.basis(F::Generic.FunctionField)
@@ -97,18 +89,13 @@ function Hecke.basis(F::Generic.FunctionField)
   return bas
 end
 
-function Hecke.residue_field(R::QQPolyRing, p::QQPolyRingElem)
-  K, _ = number_field(p)
-  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
-end
-
-function Hecke.residue_field(R::PolyRing{T}, p::PolyElem{T}) where {T <: NumFieldElem}
+function Hecke.residue_field(R::PolyRing{T}, p::PolyRingElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)
   return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
-function (F::Generic.FunctionField{T})(p::PolyElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T <: FieldElem}
+function (F::Generic.FunctionField{T})(p::PolyRingElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T <: FieldElem}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
@@ -147,10 +134,10 @@ integral_split(a::Rational, R::ZZRing) = integral_split(QQFieldElem(a), R)
 
 #######################################################################
 #
-# support for Loc{ZZRingElem}
+# support for LocalizedEuclideanRing{ZZRingElem}
 #
 #######################################################################
-function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
+function Hecke.integral_split(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem})
   d = denominator(a)
   p = R.prime
   q,w = Hecke.ppio(d, p)
@@ -160,11 +147,11 @@ function Hecke.integral_split(a::QQFieldElem, R::Loc{ZZRingElem})
     return R(numerator(a)//w), R(q)
   end
 end
-Hecke.denominator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[2]
-Hecke.numerator(a::QQFieldElem, R::Loc{ZZRingElem}) = integral_split(a, R)[1]
-(::QQField)(a::LocElem{ZZRingElem}) = data(a)
+Hecke.denominator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[2]
+Hecke.numerator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[1]
+(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)
 
-function Hecke.factor(a::LocElem{ZZRingElem})
+function Hecke.factor(a::LocalizedEuclideanRingElem{ZZRingElem})
   c = canonical_unit(a)
   b = a*inv(c)
   L = parent(a)
@@ -173,14 +160,14 @@ function Hecke.factor(a::LocElem{ZZRingElem})
   return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
 end
 
-function Hecke.residue_field(R::Loc{ZZRingElem}, p::LocElem{ZZRingElem})
+function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::LocalizedEuclideanRingElem{ZZRingElem})
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
   return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(ZZ, y)))
 end
 
-Hecke.is_domain_type(::Type{LocElem{ZZRingElem}}) = true
+Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
 
 #######################################################################
 #
@@ -282,8 +269,4 @@ function Hecke.lcm(a::Vector{<:RingElem})
     error("don't know the ring")
   end
   return reduce(lcm, a)
-end
-
-function rational_function_field(k::Field, s::VarName = :t)
-  return RationalFunctionField(k, s)
 end

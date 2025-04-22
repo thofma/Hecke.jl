@@ -1,11 +1,11 @@
-parent_type(::Type{AlgMatElem{T, S, Mat}}) where {T, S, Mat} = S
+parent_type(::Type{MatAlgebraElem{T, S}}) where {T, S} = MatAlgebra{T, S}
 
 @doc raw"""
-    matrix(a::AlgMatElem; copy::Bool = true) -> MatElem
+    matrix(a::MatAlgebraElem; copy::Bool = true) -> MatElem
 
 Returns the matrix which defines $a$.
 """
-function matrix(a::AlgMatElem; copy::Bool = true)
+function matrix(a::MatAlgebraElem; copy::Bool = true)
   if copy
     return deepcopy(a.matrix)
   else
@@ -19,20 +19,23 @@ end
 #
 ################################################################################
 
-function assure_has_coeffs(a::AlgMatElem)
+function assure_has_coeffs(a::MatAlgebraElem)
   if !a.has_coeffs
     a.coeffs = _matrix_in_algebra(matrix(a), parent(a))
     a.has_coeffs = true
   end
+  @hassert :StructureConstantAlgebra 1 begin B = basis(parent(a));
+                           sum(B[i] * a.coeffs[i] for i in 1:length(a.coeffs)) == a
+                     end
   return nothing
 end
 
 @doc raw"""
-    coefficients(a::AlgMatElem; copy::Bool = true) -> Vector{RingElem}
+    coefficients(a::MatAlgebraElem; copy::Bool = true) -> Vector{RingElem}
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.
 """
-function coefficients(a::AlgMatElem; copy::Bool = true)
+function coefficients(a::MatAlgebraElem; copy::Bool = true)
   assure_has_coeffs(a)
   if copy
     return deepcopy(a.coeffs)
@@ -47,7 +50,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, a::AlgMatElem)
+function show(io::IO, a::MatAlgebraElem)
   show(IOContext(io, :compact => true), matrix(a, copy = false))
 end
 
@@ -58,11 +61,11 @@ end
 ################################################################################
 
 @doc raw"""
-    -(a::AlgMatElem) -> AlgMatElem
+    -(a::MatAlgebraElem) -> MatAlgebraElem
 
 Returns $-a$.
 """
-function -(a::AlgMatElem)
+function -(a::MatAlgebraElem)
   b = parent(a)(-matrix(a, copy = false))
   if a.has_coeffs
     b.coeffs = [ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
@@ -77,9 +80,9 @@ end
 #
 ################################################################################
 
-function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
+function +(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false))
+  c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false), check = false)
   if a.has_coeffs && b.has_coeffs
     c.coeffs = [ coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
     c.has_coeffs = true
@@ -87,7 +90,7 @@ function +(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   return c
 end
 
-function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
+function -(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false))
   if a.has_coeffs && b.has_coeffs
@@ -97,9 +100,9 @@ function -(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
   return c
 end
 
-function *(a::T, b::T) where {T <: AlgMatElem}
+function *(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  return parent(a)(matrix(a, copy = false)*matrix(b, copy = false); check = get_assertion_level(:AlgAss)>1)
+  return parent(a)(matrix(a, copy = false)*matrix(b, copy = false); check = get_assertion_level(:StructureConstantAlgebra)>1)
 end
 
 ################################################################################
@@ -108,21 +111,15 @@ end
 #
 ################################################################################
 
-function zero!(a::AlgMatElem)
+function zero!(a::MatAlgebraElem)
   a.matrix = zero!(a.matrix)
   return a
 end
 
-function add!(c::AlgMatElem{T, S, V}, a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
+function add!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   parent(c) != parent(b) && error("Parents don't match.")
   A = parent(a)
-
-  if c === a || c === b
-    d = A()
-    d = add!(d, a, b)
-    return d
-  end
 
   c.matrix = add!(c.matrix, a.matrix, b.matrix)
   c.has_coeffs = false
@@ -130,7 +127,7 @@ function add!(c::AlgMatElem{T, S, V}, a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S
   return c
 end
 
-function mul!(c::AlgMatElem{T, S, V}, a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
+function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
 
@@ -146,36 +143,45 @@ function mul!(c::AlgMatElem{T, S, V}, a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S
   return c
 end
 
+function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::T) where {T}
+  parent(c) !== parent(a) && error("Parents don't match.")
+  A = parent(a)
+
+  c.matrix = mul!(c.matrix, a.matrix, b)
+  c.has_coeffs = false
+  return c
+end
+
 ################################################################################
 #
 #  Ad hoc operations
 #
 ################################################################################
 
-function *(a::AlgMatElem, b::T) where {T <: RingElem}
+function *(a::MatAlgebraElem, b::T) where {T <: RingElem}
   A = parent(a)
   if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
-  return A(matrix(a, copy = false)*b)::elem_type(A)
+  return A(matrix(a, copy = false)*b, check = false)::elem_type(A)
 end
 
-function *(b::T, a::AlgMatElem) where {T <: RingElem}
+function *(b::T, a::MatAlgebraElem) where {T <: RingElem}
   A = parent(a)
   if parent(b) == base_ring(A)
     b = coefficient_ring(A)(b)
   end
-  return A(b*matrix(a, copy = false))::elem_type(A)
+  return A(b*matrix(a, copy = false), check = false)::elem_type(A)
 end
 
-function *(a::AlgMatElem{S, T, U}, b::U) where { S, T, U <: MatElem }
+function *(a::MatAlgebraElem{T,S}, b::S) where { T, S <: MatElem }
   A = parent(a)
-  return A(matrix(a, copy = false)*b)
+  return A(matrix(a, copy = false)*b, check = false)
 end
 
-function *(b::U, a::AlgMatElem{S, T, U}) where { S, T, U <: MatElem }
+function *(b::S, a::MatAlgebraElem{T,S}) where { T, S <: MatElem }
   A = parent(a)
-  return A(b*matrix(a, copy = false))
+  return A(b*matrix(a, copy = false), check = false)
 end
 
 ################################################################################
@@ -185,11 +191,11 @@ end
 ################################################################################
 
 @doc raw"""
-    inv(a::AlgMatElem) -> AlgMatElem
+    inv(a::MatAlgebraElem) -> MatAlgebraElem
 
 Returns $a^{-1}$.
 """
-function inv(a::AlgMatElem)
+function inv(a::MatAlgebraElem)
   if coefficient_ring(parent(a)) isa Field
     return parent(a)(inv(matrix(a, copy = false)))
   else # we cannot invert the matrix
@@ -208,12 +214,12 @@ end
 ################################################################################
 
 @doc raw"""
-    ^(a::AlgMatElem, b::Int) -> AlgMatElem
+    ^(a::MatAlgebraElem, b::Int) -> MatAlgebraElem
 
 Returns $a^b$.
 """
-function ^(a::AlgMatElem, b::Int)
-  return parent(a)(matrix(a, copy = false)^b)
+function ^(a::MatAlgebraElem, b::Int)
+  return parent(a)(matrix(a, copy = false)^b, check = false)
 end
 
 ################################################################################
@@ -222,47 +228,55 @@ end
 #
 ################################################################################
 
-function (A::AlgMat)()
-  n = degree(A)
-  return A(zero_matrix(coefficient_ring(A), n, n))
+function one(A::MatAlgebra)
+  if !has_one(A)
+    error("Algebra does not have a one")
+  end
+  return A(identity_matrix(coefficient_ring(A), _matdeg(A)), check = false) # deepcopy needed by mul!
 end
 
-function (A::AlgMat{T, S})(M::S; check::Bool = true) where {T, S}
+function (A::MatAlgebra)()
+  n = _matdeg(A)
+  return A(zero_matrix(coefficient_ring(A), n, n), check = false)
+end
+
+function (A::MatAlgebra{T, S})(M::S; check::Bool = true, deepcopy::Bool = true) where {T, S}
   @assert base_ring(M) === coefficient_ring(A)
   if check
     b, c = _check_matrix_in_algebra(M, A)
     @req b "Matrix not an element of the matrix algebra"
-    z = AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+    z = MatAlgebraElem{T, S}(A, deepcopy ? Base.deepcopy(M) : M)
     z.coeffs = c
     z.has_coeffs = true
     return z
   else
-    return AlgMatElem{T, typeof(A), S}(A, deepcopy(M))
+    return MatAlgebraElem{T, S}(A, deepcopy ? Base.deepcopy(M) : M)
   end
 end
 
-#function (A::AlgMat{T, S})(a::T) where { T, S }
+#function (A::MatAlgebra{T, S})(a::T) where { T, S }
 #  return a*one(A)
 #end
 #
-#function (A::AlgMat)(x::ZZRingElem)
+#function (A::MatAlgebra)(x::ZZRingElem)
 #  return x * one(A)
 #end
 #
-#function (A::AlgMat)(x::Integer)
+#function (A::MatAlgebra)(x::Integer)
 #  return x * one(A)
 #end
 
-function (A::AlgMat{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
+function (A::MatAlgebra{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
   @assert length(v) == dim(A)
   R = coefficient_ring(A)
-  M = zero_matrix(R, degree(A), degree(A))
+  M = zero_matrix(R, _matdeg(A), _matdeg(A))
+  temp = zero_matrix(R, _matdeg(A), _matdeg(A))
   B = basis(A)
   for i = 1:dim(A)
-    #M = add!(M, M, matrix(basis(A)[i], copy = false)*v[i])
-    M += matrix(B[i], copy = false)*R(v[i])
+    temp = mul!(temp, matrix(B[i], copy = false), R(v[i]))
+    M = add!(M, M, temp)
   end
-  a = A(M)
+  a = A(M; check = false, deepcopy = false)
   if copy
     a.coeffs = Base.copy(v)
   else
@@ -279,11 +293,11 @@ end
 ################################################################################
 
 @doc raw"""
-    ==(a::AlgMatElem, b::AlgMatElem) -> Bool
+    ==(a::MatAlgebraElem, b::MatAlgebraElem) -> Bool
 
 Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
-function ==(a::AlgMatElem{T, S, V}, b::AlgMatElem{T, S, V}) where {T, S, V}
+function ==(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && return false
   return matrix(a, copy = false) == matrix(b, copy = false)
 end
@@ -294,9 +308,9 @@ end
 #
 ################################################################################
 
-isone(a::AlgMatElem) = isone(matrix(a, copy = false))
+isone(a::MatAlgebraElem) = isone(matrix(a, copy = false))
 
-iszero(a::AlgMatElem) = iszero(matrix(a, copy = false))
+iszero(a::MatAlgebraElem) = iszero(matrix(a, copy = false))
 
 ################################################################################
 #
@@ -304,7 +318,7 @@ iszero(a::AlgMatElem) = iszero(matrix(a, copy = false))
 #
 ################################################################################
 
-function elem_from_mat_row(A::AlgMat{T, S}, M::MatElem{T}, i::Int) where { T, S }
+function elem_from_mat_row(A::MatAlgebra{T, S}, M::MatElem{T}, i::Int) where { T, S }
   v = Vector{T}(undef, dim(A))
   for c = 1:ncols(M)
     v[c] = deepcopy(M[i, c])
@@ -312,7 +326,7 @@ function elem_from_mat_row(A::AlgMat{T, S}, M::MatElem{T}, i::Int) where { T, S 
   return A(v)
 end
 
-function elem_from_mat_row(A::AlgMat, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
+function elem_from_mat_row(A::MatAlgebra, M::ZZMatrix, i::Int, d::ZZRingElem = ZZRingElem(1))
   v = Vector{QQFieldElem}(undef, dim(A))
   for j in 1:ncols(M)
     v[j] = QQFieldElem(M[i, j], d)
@@ -326,7 +340,7 @@ end
 #
 ################################################################################
 
-function Base.hash(a::AlgMatElem, h::UInt)
+function Base.hash(a::MatAlgebraElem, h::UInt)
   return Base.hash(matrix(a, copy = false), h)
 end
 
@@ -336,11 +350,11 @@ end
 #
 ################################################################################
 
-function getindex(a::AlgMatElem, r::Int, c::Int)
+function getindex(a::MatAlgebraElem, r::Int, c::Int)
   return matrix(a, copy = false)[r, c]
 end
 
-function setindex!(a::AlgMatElem, d::T, r::Int, c::Int) where T <: Union{ RingElem, Int }
+function setindex!(a::MatAlgebraElem, d::T, r::Int, c::Int) where T <: Union{ RingElem, Int }
   a.matrix[r, c] = coefficient_ring(parent(a))(d)
   a.has_coeffs = false
   return nothing

@@ -1,4 +1,4 @@
-function test_disc_log_picard(P, mP, O::NfOrd)
+function test_disc_log_picard(P, mP, O::AbsSimpleNumFieldOrder)
   # principal ideals should always be invertible
   i = 1
   while i <= 5
@@ -38,7 +38,7 @@ function test_disc_log_picard(P, mP, O::NfOrd)
   return true
 end
 
-function test_disc_log_units(U, mU, O::NfOrd)
+function test_disc_log_units(U, mU, O::AbsSimpleNumFieldOrder)
   if !iszero(mU\O(1))
     return false
   end
@@ -59,12 +59,12 @@ function test_disc_log_units(U, mU, O::NfOrd)
 end
 
 @testset "Picard group and unit group of non maximal orders" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   AF = ArbField(20)
 
   f = x^3 - 2
   K, a = number_field(f, "a", cached = false)
-  O = Order(K, [ K(1), 10*a, 100*a^2 ])
+  O = order(K, [ K(1), 10*a, 100*a^2 ])
   P, mP = @inferred picard_group(O)
   @test is_snf(P)
   @test P.snf == ZZRingElem[ 24 ]

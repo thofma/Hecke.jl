@@ -1,5 +1,3 @@
-export maximal_integral_lattice, is_maximal_integral
-
 ################################################################################
 #
 #  String I/O
@@ -14,7 +12,7 @@ function Base.show(io::IO, ::MIME"text/plain", L::HermLat)
 end
 
 function show(io::IO, L::HermLat)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian lattice")
   else
     print(io, "Hermitian lattice of rank $(rank(L)) and degree $(degree(L))")
@@ -65,10 +63,10 @@ function hermitian_lattice(E::NumField, B::PMat; gram = nothing, check::Bool = t
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
-    gram = map_entries(E, gram)
-    V = hermitian_space(E, gram)
+    gramE = map_entries(E, gram)
+    V = hermitian_space(E, gramE)
   end
-  return lattice(V, B, check = check)
+  return lattice(V, B; check)
 end
 
 @doc raw"""
@@ -84,7 +82,7 @@ matrix over `E` of size the number of columns of `basis`.
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis), gram = gram, check = check)
+hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis); gram, check)
 
 @doc raw"""
     hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
@@ -103,7 +101,7 @@ function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))
-    L = hermitian_lattice(E, pm, gram = gram, check = false)
+    L = hermitian_lattice(E, pm; gram, check = false)
     return L
   end
   @assert length(gens[1]) > 0
@@ -115,8 +113,8 @@ function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
-    gram = map_entries(E, gram)
-    V = hermitian_space(E, gram)
+    gramE = map_entries(E, gram)
+    V = hermitian_space(E, gramE)
   end
   return lattice(V, gens)
 end
@@ -129,9 +127,9 @@ lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
 function hermitian_lattice(E::NumField; gram::MatElem)
   @req is_square(gram) "gram must be a square matrix"
-  gram = map_entries(E, gram)
-  B = pseudo_matrix(identity_matrix(E, ncols(gram)))
-  return hermitian_lattice(E, B, gram = gram, check = false)
+  gramE = map_entries(E, gram)
+  B = pseudo_matrix(identity_matrix(E, ncols(gramE)))
+  return hermitian_lattice(E, B; gram = gramE, check = false)
 end
 
 ################################################################################
@@ -227,11 +225,11 @@ function norm(L::HermLat)
   K = base_ring(G)
   R = base_ring(L)
   C = coefficient_ideals(L)
-  to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C))
-  to_sum = to_sum + R * reduce(+, [tr(C[i] * G[i, j] * v(C[j])) for j in 1:length(C) for i in 1:(j-1)], init = ZZ(0)*inv(1*base_ring(R)))
+  to_sum = sum(G[i, i] * C[i] * v(C[i]) for i in 1:length(C); init = fractional_ideal(R, zero(K)))
+  to_sum = reduce(+, tr(C[i] * G[i, j] * v(C[j]))*R for j in 1:length(C) for i in 1:(j-1); init = to_sum)
   n = minimum(numerator(to_sum))//denominator(to_sum)
   L.norm = n
-  return n
+  return n::fractional_ideal_type(base_ring(base_ring(L)))
 end
 
 ################################################################################
@@ -251,7 +249,7 @@ function scale(L::HermLat)
   for i in 1:d
     push!(to_sum, involution(L)(to_sum[i]))
   end
-  s = sum(to_sum, init = zero(base_field(L))*base_ring(L))
+  s = sum(to_sum; init = fractional_ideal(base_ring(L), zero(base_field(L))))
   L.scale = s
   return s
 end
@@ -270,7 +268,7 @@ function rescale(L::HermLat, a::Union{FieldElem, RationalUnion})
   K = fixed_field(L)
   b = base_field(L)(K(a))
   gramamb = gram_matrix(ambient_space(L))
-  return hermitian_lattice(base_field(L), pseudo_matrix(L),
+  return hermitian_lattice(base_field(L), pseudo_matrix(L);
                            gram = b * gramamb)
 end
 
@@ -282,7 +280,7 @@ end
 
 @doc raw"""
     bad_primes(L::HermLat; discriminant::Bool = false, dyadic::Bool = false)
-                                                             -> Vector{NfOrdIdl}
+                                                             -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 Given a hermitian lattice `L` over $E/K$, return the prime ideals of $\mathcal O_K$
 dividing the scale or the volume of `L`.
@@ -457,7 +455,7 @@ end
 
 # Checks whether L is p-maximal integral. If not, a minimal integral
 # over-lattice at p is returned
-function _ismaximal_integral(L::HermLat, p)
+function _is_maximal_integral(L::HermLat, p)
   R = base_ring(L)
   E = nf(R)
   D = prime_decomposition(R, p)
@@ -472,13 +470,13 @@ function _ismaximal_integral(L::HermLat, p)
 
   absolute_map = absolute_simple_field(ambient_space(L))[2]
 
-  M = local_basis_matrix(L, p, type = :submodule)
+  M = local_basis_matrix(L, p; type = :submodule)
   G = gram_matrix(ambient_space(L), M)
   F, h = residue_field(R, D[1][1])
   hext = extend(h, E)
   sGmodp = map_entries(hext, s * G)
-  Vnullity, V = kernel(sGmodp, side = :left)
-  if Vnullity == 0
+  V = kernel(sGmodp, side = :left)
+  if nrows(V) == 0
     return true, zero_matrix(E, 0, 0)
   end
 
@@ -537,7 +535,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     @assert S[end] != 0
     if minimal
       max = 1
-      M = pseudo_matrix(B[lS][1, :], fractional_ideal_type(R)[invP])
+      M = pseudo_matrix(B[lS][1:1, :], fractional_ideal_type(R)[invP])
     else
       max = S[end]
       coeff_ideals = fractional_ideal_type(R)[]
@@ -561,7 +559,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
+        M = pseudo_matrix(B[lS][1:1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -589,7 +587,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     end
     # new we look for zeros of ax^2 + by^2
     kk, h = residue_field(R, P)
-    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]) > 1
+    while sum(Int[S[i] * nrows(B[i]) for i in 1:length(B)]; init = 0) > 1
       k = 0
       for i in 1:(length(S) + 1)
         if S[i] == 1
@@ -603,7 +601,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       while valuation(G[k][1, 1] + G[k][2, 2] * elem_in_nf(norm(r)), P) < 2
         r = h\rand(kk)
       end
-      M = pseudo_matrix(B[k][1, :] + elem_in_nf(r) * B[k][2, :], [invP])
+      M = pseudo_matrix(B[k][1:1, :] + elem_in_nf(r) * B[k][2:2, :], [invP])
       _new_pmat = _sum_modules_with_map(pseudo_matrix(L), M, absolute_map)
       LLL = invP * pseudo_matrix(L)
       _new_pmat = _intersect_modules_with_map(_new_pmat, LLL, absolute_map)
@@ -620,7 +618,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     if S[end] >= 2
       if minimal
         max = 1
-        M = pseudo_matrix(B[lS][1, :], [invP^(div(S[end], 2))])
+        M = pseudo_matrix(B[lS][1:1, :], [invP^(div(S[end], 2))])
       else
         max = S[end]
         coeff_ideals = fractional_ideal_type(R)[]
@@ -646,7 +644,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
       B, G, S = jordan_decomposition(L, p)
     end
     v = valuation(volume(L), P)
-    ok, x = _ismaximal_integral(L, p)
+    ok, x = _is_maximal_integral(L, p)
     while !ok
       LL = L
       LLL = pseudo_matrix(x, fractional_ideal_type(R)[invP])
@@ -659,7 +657,7 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
         return false, L
       end
       is_max = false
-      ok, x = _ismaximal_integral(L, p)
+      ok, x = _is_maximal_integral(L, p)
     end
     @assert iseven(v)
     v = div(v, 2)
@@ -680,12 +678,13 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
 end
 
 function is_maximal_integral(L::HermLat, p)
+  @req order(p) == fixed_ring(L) "The ideal does not belong to the fixed ring of the lattice"
   valuation(norm(L), p) < 0 && return false, L
   return _maximal_integral_lattice(L, p, true)
 end
 
 function is_maximal_integral(L::HermLat)
-  !is_integral(norm(L)) && error("The lattice is not integral")
+  !is_integral(norm(L)) && return false, L
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -703,6 +702,8 @@ function is_maximal_integral(L::HermLat)
 end
 
 function is_maximal(L::HermLat, p)
+  @req order(p) == fixed_ring(L) "The ideal does not belong to the fixed ring of the lattice"
+  @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
   #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
   x = elem_in_nf(p_uniformizer(p))^(-v)
@@ -715,7 +716,7 @@ function is_maximal(L::HermLat, p)
 end
 
 function maximal_integral_lattice(L::HermLat)
-  !is_integral(norm(L)) && error("The lattice is not integral")
+  @req is_integral(norm(L)) "The norm of the lattice is not integral"
   S = base_ring(L)
   f = factor(discriminant(S))
   ff = factor(norm(volume(L)))
@@ -730,7 +731,8 @@ function maximal_integral_lattice(L::HermLat)
 end
 
 function maximal_integral_lattice(L::HermLat, p)
-  valuation(norm(L), p) < 0 && error("Lattice is not locally integral")
+  @req order(p) == fixed_ring(L) "The ideal does not belong to the fixed ring of the lattice"
+  @req valuation(norm(L), p) >= 0 "The norm of the lattice is not locally integral"
   _, L = _maximal_integral_lattice(L, p, false)
   return L
 end

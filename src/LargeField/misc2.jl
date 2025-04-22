@@ -1,5 +1,5 @@
 
-function basis_rels(b::Vector{nf_elem}, c; bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0) )
+function basis_rels(b::Vector{AbsSimpleNumFieldElem}, c; bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0) )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -34,12 +34,12 @@ function basis_rels(b::Vector{nf_elem}, c; bd::ZZRingElem = ZZRingElem(10^35), n
   end
 end
 
-function basis_rels_2(b::Vector{nf_elem}, bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0), smooth = 0 )
+function basis_rels_2(b::Vector{AbsSimpleNumFieldElem}, bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
   one = ZZRingElem(1)
-  rels = Array{Hecke.nf_elem}(no_rel)
+  rels = Array{Hecke.AbsSimpleNumFieldElem}(no_rel)
   i = 1
   l = 0
   while i < no_rel + 1
@@ -85,11 +85,11 @@ function basis_rels_2(b::Vector{nf_elem}, bd::ZZRingElem = ZZRingElem(10^35), no
   return rels
 end
 
-function basis_rels_3(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::ZZRingElem = ZZRingElem(1), smooth = 0 )
+function basis_rels_3(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::ZZRingElem = ZZRingElem(1), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
-  rels = Dict{ZZRingElem, nf_elem}()
+  rels = Dict{ZZRingElem, AbsSimpleNumFieldElem}()
   i = 1
   l = 0
   while i < no_rel + 1
@@ -131,11 +131,11 @@ function local_norm!(n::ZZRingElem, ap::Vector{fqPolyRepFieldElem}, me::Hecke.mo
     ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], ap[j].parent)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
+  set!(n, nn)
   return n
 end
 
-function local_norm(a::nf_elem, me::Hecke.modular_env)
+function local_norm(a::AbsSimpleNumFieldElem, me::Hecke.modular_env)
   Fpx = me.Fpx
   aa = Fpx(a)
   ff = Fpx(parent(a).pol)
@@ -143,7 +143,7 @@ function local_norm(a::nf_elem, me::Hecke.modular_env)
   return ZZRingElem(np)
 end
 
-function basis_rels_4(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
+function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
 
@@ -259,11 +259,11 @@ function local_norm!(n::ZZRingElem, ap::zzModMatrix, me::Hecke.modular_env)
     np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), n, nn)
+  set!(n, nn)
   return n
 end
 
-function basis_rels_5(b::Vector{nf_elem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
+function basis_rels_5(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
 
@@ -387,8 +387,8 @@ end
 
 #=
 
-Qx,x = polynomial_ring(FlintQQ, "a")
-K, a = CyclotomicRealSubfield(1024, "a");
+Qx,x = polynomial_ring(QQ, "a")
+K, a = cyclotomic_real_subfield(1024, "a");
 @time fb_int = Hecke.int_fb_max_real(1024, 2^20);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
@@ -397,8 +397,8 @@ fb_int = FactorBase(ZZRingElem[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])])
 @time Hecke.basis_rels_4(b, 600, 10, 5, fb_int)
 @time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
-Qx,x = polynomial_ring(FlintQQ, "a")
-K, a = CyclotomicRealSubfield(512, "a");
+Qx,x = polynomial_ring(QQ, "a")
+K, a = cyclotomic_real_subfield(512, "a");
 @time fb_int = Hecke.int_fb_max_real(512, 2^18);
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
@@ -424,7 +424,7 @@ function improve(c::Hecke.ClassGrpCtx)
 end
 
 
-function rels_stat(b::Vector{Hecke.nf_elem}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function rels_stat(b::Vector{Hecke.AbsSimpleNumFieldElem}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)

@@ -92,16 +92,16 @@ function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R
         for j=piv+1:n
           while !iszero(H[i, j])
             q, r = divrem(H[i, j], H[i,piv])
-            H[:, j] = H[:, j] - q*H[:, piv]
+            H[:, j:j] = H[:, j:j] - q*H[:, piv:piv]
             @assert H[i, j] == r
-            T2[:, j] = T2[:, j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, piv]
-            MM[:, j] = MM[:, j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, piv]
+            T2[:, j] = T2[:, j:j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, piv:piv]
+            MM[:, j] = MM[:, j:j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, piv:piv]
             if iszero(r)
               break
             end
-            H[:, piv], H[:, j] = H[:, j], H[:, piv]
-            T2[:, piv], T2[:, j] = T2[:, j], T2[:, piv]
-            MM[:, piv], MM[:, j] = MM[:, j], MM[:, piv]
+            H[:, piv:piv], H[:, j:j] = H[:, j:j], H[:, piv:piv]
+            T2[:, piv:piv], T2[:, j:j] = T2[:, j:j], T2[:, piv:piv]
+            MM[:, piv:piv], MM[:, j:j] = MM[:, j:j], MM[:, piv:piv]
           end
         end
         @assert !iszero(H[i,piv])
@@ -118,10 +118,10 @@ function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R
       end
       done = true
       for i=1:n
-        if iszero(H[:,i])
+        if iszero(H[:,i:i])
           done = false
-          T2[:, i] *= Qt(QQFieldElem(1, p))
-          MM[:, i] *= R(QQFieldElem(1, p))
+          T2[:, i:i] *= Qt(QQFieldElem(1, p))
+          MM[:, i:i] *= R(QQFieldElem(1, p))
         end
       end
       @assert T1*M*T2 == MM
@@ -150,9 +150,9 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
 
   o3 = Hecke.GenOrd(Zx, F, true)
   if isdefined(o2, :trans)
-    oo2 = Order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
+    oo2 = order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
   else
-    oo2 = Order(o3, integral_split(inv(T2), Zx)..., check = false)
+    oo2 = order(o3, integral_split(inv(T2), Zx)..., check = false)
   end
   return oo2
 
@@ -161,9 +161,9 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   @assert isone(H)
   T1 = map_entries(Qt, TT1)*T1
   if isdefined(o1, :trans)
-    oo1 = Order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
+    oo1 = order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
   else
-    oo1 = Order(o3, integral_split(T1, Zx)..., check = false)
+    oo1 = order(o3, integral_split(T1, Zx)..., check = false)
   end
   return oo1, oo2
 end
@@ -213,9 +213,9 @@ using .HessMain
 #=
   this should work:
 
-Qt, t = RationalFunctionField(QQ, "t")
+Qt, t = rational_function_field(QQ, "t")
 Qtx, x = polynomial_ring(Qt, "x")
-F, a = FunctionField(x^6+27*t^2+108*t+108, "a")
+F, a = function_field(x^6+27*t^2+108*t+108, "a")
 integral_closure(parent(denominator(t)), F)
 integral_closure(localization(Qt, degree), F)
 integral_closure(Hecke.Globals.Zx, F)
@@ -228,6 +228,6 @@ integral_closure(localization(ZZ, 2), k)
 
 more interesting and MUCH harder:
 
-G, b = FunctionField(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
+G, b = function_field(x^6 + (140*t - 70)*x^3 + 8788*t^2 - 8788*t + 2197, "b")
 
 =#

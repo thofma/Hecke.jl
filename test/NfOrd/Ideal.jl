@@ -1,11 +1,11 @@
 @testset "Ideals" begin
-   Qx, x = polynomial_ring(FlintQQ, "x")
+   Qx, x = polynomial_ring(QQ, "x")
 
    K1, a1 = number_field(x^3 - 2, "a")
-   O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
+   O1 = order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
 
    K2, a2 = number_field(x^2 - 4^2*7^2*5, "a")
-   O2 = Order(K2, [K2(1), a2])
+   O2 = order(K2, [K2(1), a2])
 
   @testset "Construction" begin
     I = @inferred ideal(O1, -17)
@@ -13,18 +13,18 @@
     @test I.princ_gen_special[1] == 1
     @test I.princ_gen_special[2] == 17
     @test I.princ_gen == O1(-17)
-    @test basis_matrix(I) == matrix_space(FlintZZ, 3, 3)(17)
+    @test basis_matrix(I) == matrix_space(ZZ, 3, 3)(17)
 
-    J = @inferred ideal(O1, FlintZZ(-17))
+    J = @inferred ideal(O1, ZZ(-17))
     @test order(J) == O1
     @test J.princ_gen_special[1] == 2
-    @test J.princ_gen_special[3] == FlintZZ(17)
+    @test J.princ_gen_special[3] == ZZ(17)
     @test J.princ_gen == O1(-17)
-    @test basis_matrix(J) == matrix_space(FlintZZ, 3, 3)(17)
+    @test basis_matrix(J) == matrix_space(ZZ, 3, 3)(17)
 
     K = @inferred ideal(O1, O1(-17))
     @test K.princ_gen == O1(-17)
-    @test basis_matrix(K) == matrix_space(FlintZZ, 3, 3)(17)
+    @test basis_matrix(K) == matrix_space(ZZ, 3, 3)(17)
 
     M = @inferred O1(-17)*O1
     L = @inferred O1*O1(-17)
@@ -36,10 +36,13 @@
     Ib = basis(I2)
     II = ideal(O2, Ib)
     @test I2 == II
+
+    @test is_zero(ideal(O1, 0))
+    @test is_zero(ideal(O1, ZZ(0)))
   end
 
   I = ideal(O1, -17)
-  J = ideal(O1, FlintZZ(-17))
+  J = ideal(O1, ZZ(-17))
   K = ideal(O1, O1(-17))
   M = O1(-17)*O1
   I2 = ideal(O2, O2(1 + a2))
@@ -54,7 +57,7 @@
 
     # Test where gens are weakly normal and second generator is zero
     @testset begin
-      R, x = polynomial_ring(FlintQQ, "x")
+      R, x = polynomial_ring(QQ, "x")
       _K, _a = number_field(x, "a")
       _O = maximal_order(_K)
       _I = fractional_ideal(_O, _K(1))
@@ -80,23 +83,23 @@
 
   @testset "Basis" begin
     b = @inferred basis(I)
-    @test b == NfOrdElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
+    @test b == AbsSimpleNumFieldOrderElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
   end
 
   @testset "Basismatrix" begin
     M = @inferred ideal(O1, O1(4*a1^2))
 
     b = @inferred basis_matrix(M)
-    @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
+    @test b == ZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
+    b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
+    @test b == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 1 0; 0 0 16], ZZ(16))
 
     b = @inferred basis_matrix(M)
-    @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
+    @test b == ZZ[16 0 0; 0 16 0; 0 0 1]
 
-    b = @inferred basis_mat_inv(M)
-    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
+    b = @inferred basis_mat_inv(Hecke.FakeFmpqMat, M)
+    @test b == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 1 0; 0 0 16], ZZ(16))
   end
 
   @testset "Inclusion" begin
@@ -188,7 +191,15 @@
 
   @testset "p-Radical" begin
     I = @inferred pradical(O1, 2)
-    @test I == ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
+    @test I == ideal(O1, ZZ[2 0 0; 0 1 0; 0 0 1])
+
+    # An order which does not contain the equation order
+    P, x = polynomial_ring(QQ)
+    f = x^5 + x^3 - x^2 - x - 1
+    K, a = number_field(f)
+    R = maximal_order(K)
+    OO = order(K, basis(5*R))
+    pradical(OO, 2)
   end
 
   @testset "Prime Decomposition" begin
@@ -251,7 +262,7 @@
   end
 
   # Minimum for non-simple
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x - 1
   K, a = number_field([f], "a")
   O = maximal_order(K)
@@ -264,6 +275,50 @@
   I = ideal(O, 2 * identity_matrix(ZZ, 2))
   Hecke.assure_2_normal(I)
   @test isdefined(I, :gen_two)
+
+  # Some issue with ideal(O, M)
+  K, a = quadratic_field(-1)
+  O = maximal_order(K)
+  @test basis_matrix(ideal(O, representation_matrix(O(a)))) == identity_matrix(ZZ, 2)
+
+  # zero ideals, #1330
+  let
+    OK = maximal_order(quadratic_field(-1, cached = false)[1])
+    I = 0 * OK
+    @test basis_matrix(I) == zero_matrix(ZZ, 0, 2)
+    @test basis(I) == elem_type(OK)[]
+    @test is_zero(I)
+    @test !is_zero(1 * OK)
+    I = ideal(OK, zero_matrix(ZZ, 0, 2))
+    @test is_zero(I)
+    @test is_zero(I)
+    @test minimum(I) == 0
+    @test idempotents(I, 2*OK + 3 * OK) == (0, 1)
+    @test idempotents(2*OK + 3 * OK, I) == (1, 0)
+    @test is_coprime(2*OK + 3 * OK, I)
+    I = ideal(OK, identity_matrix(ZZ, 2))
+    @test !is_zero(I)
+    @test !is_zero(I)
+  end
+
+  let
+    P, x = polynomial_ring(ZZ)
+    K, a = number_field(x^3 + x + 1)
+    R = maximal_order(K)
+    OO = order(K, basis(2*R))
+    I = ideal(OO, [OO(x) for x in basis(2*R)])
+    G = gens(I)
+    @test I == ideal(OO, G)
+  end
+
+  # parent
+  let
+   Qx, x = polynomial_ring(QQ, "x")
+   K, a = number_field(x^3 - 2, "a")
+   O = equation_order(K)
+   @test parent(1*O) == parent(1*O)
+   @test hash(parent(1*O)) == hash(parent(1*O))
+ end
 
   include("Ideal/Prime.jl")
 end

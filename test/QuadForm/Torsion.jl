@@ -5,7 +5,7 @@
   @test order(T) == 1
   # discriminant_group group of a non full lattice
   L = integer_lattice(2*identity_matrix(ZZ,2))
-  S = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  S = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test order(discriminant_group(S)) == 4
   @test discriminant_group(S) === discriminant_group(S)
 
@@ -20,7 +20,7 @@
   @test order(T) == 4
   @test elementary_divisors(T) == ZZRingElem[2, 2]
 
-  S = lattice(ambient_space(L),basis_matrix(L)[:2,:])
+  S = lattice(ambient_space(L),basis_matrix(L)[2:2,:])
   D = discriminant_group(S)
   D0, _ = sub(D,gens(D)[1:0])
   @test order(D0)==1
@@ -39,11 +39,11 @@
   @test lift(inner_product(a,b)) == 1//2
   @test order(a) == 2
   @test order(0*a) == 1
-  set_attribute!(q1, :name, "q1")
+  AbstractAlgebra.set_name!(q1, "q1")
   f = hom(q1,q1, ZZ[2 0; 0 1])
   @test sprint(show, f) isa String
 
-  ok, c = @inferred has_preimage(f ,b)
+  ok, c = @inferred has_preimage_with_preimage(f ,b)
   @test ok
   @test b == c
   @test_throws ArgumentError preimage(f,a)
@@ -181,6 +181,24 @@
   T1 = discriminant_group(L1)
   @test genus(T1, (6,0)) == genus(L1)
 
+  B = matrix(QQ, 8, 8 ,[2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3//2, 1//2, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1//2, 0, 1//2, 0, 0, 2//3, 1//6]);
+  G = matrix(QQ, 8, 8 ,[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 0, 0, 0, 0, -42]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test genus(T, signature_tuple(L)[[1,3]]) == genus(L)
+  T2 = Hecke._as_finite_bilinear_module(T)
+  @test genus(T2, signature_tuple(L)[[1,3]]; parity = 2) == genus(L)
+
+  B = matrix(QQ, 7, 7 ,[2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1//2, 1//2, 1//2, 0, 1//2, 0, 0, 1//2, 1, 1//2, 3//2, 0, 1//2, 0, 1//2, 1, 1//2, 1, 0, 0, 1//2]);
+  G = matrix(QQ, 7, 7 ,[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -10]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test genus(T, signature_tuple(L)[[1,3]]) == genus(L)
+  T2 = Hecke._as_finite_bilinear_module(T)
+  @test genus(T2, signature_tuple(L)[[1,3]]; parity = 2) == genus(L)
+
   #test for is_genus
   L = integer_lattice(gram=diagonal_matrix(ZZRingElem[1,2,3,4]))
   D = discriminant_group(L)
@@ -195,6 +213,20 @@
   D = discriminant_group(G)
   @test is_genus(D, (2,0)) == false
   @test is_genus(D, (3,0)) == true
+
+  B = matrix(QQ, 7, 7 ,[2, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1//2, 13//2, 1//2, 1//2, 1, 0, 0, 3//2, 3, 0, 1//2, 1//2, 1//2, 0, 1, 5//2, 1//2, 0, 0, 0, 1//2]);
+  G = matrix(QQ, 7, 7 ,[1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -38]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test is_genus(T, signature_tuple(L)[[1,3]]; parity = 1)
+
+  B = matrix(QQ, 6, 6 ,[2, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 1, 6, 1, 0, 0, 0, 0, 5, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1//2, 9, 1//2, 0, 0, 1//2]);
+  G = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2]);
+  L = integer_lattice(B, gram = G);
+
+  T = discriminant_group(L)
+  @test is_genus(T, signature_tuple(L)[[1,3]]; parity = 1)
 
   N, i = normal_form(D)
   @test N === normal_form(N)[1]
@@ -291,16 +323,16 @@
 
   # direct sums
 
-  B = matrix(FlintQQ, 3, 3 ,[1, 1, 0, 1, -1, 0, 0, 1, -1])
-  G = matrix(FlintQQ, 3, 3 ,[1, 0, 0, 0, 1, 0, 0, 0, 1])
+  B = matrix(QQ, 3, 3 ,[1, 1, 0, 1, -1, 0, 0, 1, -1])
+  G = matrix(QQ, 3, 3 ,[1, 0, 0, 0, 1, 0, 0, 0, 1])
   L1 = integer_lattice(B, gram = G)
   qL1 = discriminant_group(L1)
   Z = torsion_quadratic_module(QQ[1;])
   @test_throws ArgumentError direct_sum(qL1, Z)
   @test_throws ArgumentError direct_product(qL1, rescale(Z, 2))
 
-  B = matrix(FlintQQ, 4, 4 ,[2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1])
-  G = matrix(FlintQQ, 4, 4 ,[1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2])
+  B = matrix(QQ, 4, 4 ,[2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 1, 1, 1, 1])
+  G = matrix(QQ, 4, 4 ,[1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2, 0, 0, 0, 0, 1//2])
   L2 = integer_lattice(B, gram = G)
   qL2 = discriminant_group(L2)
   Z = torsion_quadratic_module(QQ[2;])
@@ -450,4 +482,13 @@ end
   @test T == T2
   @test length(unique!([T, T2])) == 1
   @test length(unique!([T[1], -T[1]])) == 1
+end
+
+@testset "Map with trivial torsion quadratic modules" begin
+  q = discriminant_group(integer_lattice(; gram=matrix(QQ, 0, 0, [])))
+  q2 = discriminant_group(root_lattice(:E, 6))
+  psi = @inferred hom(q, q, gens(q), gens(q))
+  @test is_bijective(psi)
+  phi = @inferred hom(q, q2, elem_type(q2)[])
+  @test is_injective(phi)
 end

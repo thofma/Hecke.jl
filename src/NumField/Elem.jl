@@ -1,6 +1,3 @@
-export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
-       absolute_minpoly
-
 ################################################################################
 #
 #
@@ -8,7 +5,7 @@ export coordinates, absolute_coordinates, absolute_norm, absolute_tr,
 ################################################################################
 
 
-function dot(a::Vector{NfAbsNSElem}, b::Vector{ZZRingElem})
+function dot(a::Vector{AbsNonSimpleNumFieldElem}, b::Vector{ZZRingElem})
   Qxy = parent(a[1].data)
   d = zero(Qxy)
   t = zero(Qxy)
@@ -215,7 +212,7 @@ basis_matrix(v::Vector{<: NumFieldElem})
 ################################################################################
 
 @doc doc"""
-    charpoly(a::NumFieldElem) -> PolyElem
+    charpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the characteristic polynomial of $a$ over the base field of $K$.
@@ -223,7 +220,7 @@ the characteristic polynomial of $a$ over the base field of $K$.
 charpoly(::NumFieldElem)
 
 @doc doc"""
-    absolute_charpoly(a::NumFieldElem) -> PolyElem
+    absolute_charpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the characteristic polynomial of $a$ over the rationals $\mathbf{Q}$.
@@ -231,7 +228,7 @@ the characteristic polynomial of $a$ over the rationals $\mathbf{Q}$.
 absolute_charpoly(::NumFieldElem)
 
 @doc doc"""
-    minpoly(a::NumFieldElem) -> PolyElem
+    minpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the minimal polynomial of $a$ over the base field of $K$.
@@ -239,7 +236,7 @@ the minimal polynomial of $a$ over the base field of $K$.
 minpoly(::NumFieldElem)
 
 @doc doc"""
-    absolute_minpoly(a::NumFieldElem) -> PolyElem
+    absolute_minpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
 the minimal polynomial of $a$ over the rationals $\mathbf{Q}$.
@@ -262,7 +259,7 @@ power basis of `L`. The result is an element of `K`.
 """
 coeff(::SimpleNumFieldElem, ::Int)
 
-# copy does not do anything (so far), this is only for compatibility with coefficients(::AbsAlgAssElem)
+# copy does not do anything (so far), this is only for compatibility with coefficients(::AbstractAssociativeAlgebraElem)
 
 @doc doc"""
     coefficients(a::SimpleNumFieldElem, i::Int) -> Vector{FieldElem}
@@ -284,18 +281,18 @@ coercible to `K`, this functions returns the element of `L` with coefficients
 """
 (K::SimpleNumField)(c::Vector)
 
-function (K::AnticNumberField)(c::Vector{QQFieldElem})
+function (K::AbsSimpleNumField)(c::Vector{QQFieldElem})
   @assert length(c) == degree(K)
   return K(parent(K.pol)(c))
 end
 
-function (L::NfRel{T})(a::Vector{T}) where T
-  z = NfRelElem{T}(parent(L.pol)(a))
+function (L::RelSimpleNumField{T})(a::Vector{T}) where T
+  z = RelSimpleNumFieldElem{T}(parent(L.pol)(a))
   z.parent = L
   return z
 end
 
-for F in [AnticNumberField, NfRel]
+for F in [AbsSimpleNumField, RelSimpleNumField]
   @eval begin
     function (L::$F)(a::Vector)
       length(a) != degree(L) && error("Vector must have length ($(length(a))) equal to the degree ($(degree(L)))")
@@ -360,7 +357,7 @@ function tr(a::NumFieldElem, k::NumField)
   return _elem_tr_to(a, k)
 end
 
-tr(a::NumFieldElem, ::QQField) = _elem_tr_to(a, FlintQQ)
+tr(a::NumFieldElem, ::QQField) = _elem_tr_to(a, QQ)
 
 @doc doc"""
     norm(a::NumFieldElem, k::NumField) -> NumFieldElem
@@ -372,7 +369,7 @@ function norm(a::NumFieldElem, k::NumField)
   _elem_norm_to(a, k)
 end
 
-norm(a::NumFieldElem, ::QQField) = _elem_norm_to(a, FlintQQ)
+norm(a::NumFieldElem, ::QQField) = _elem_norm_to(a, QQ)
 
 @doc doc"""
     absolute_tr(a::NumFieldElem) -> QQFieldElem
@@ -383,9 +380,9 @@ function absolute_tr(a::T) where T <: NumFieldElem
   return absolute_tr(tr(a))
 end
 
-absolute_tr(a::nf_elem) = tr(a)
+absolute_tr(a::AbsSimpleNumFieldElem) = tr(a)
 
-absolute_tr(a::NfAbsNSElem) = tr(a)
+absolute_tr(a::AbsNonSimpleNumFieldElem) = tr(a)
 
 absolute_tr(x::QQFieldElem) = x
 
@@ -398,7 +395,7 @@ function absolute_norm(a::T) where T <: NumFieldElem
   return absolute_norm(norm(a))
 end
 
-absolute_norm(a::T) where T <: Union{nf_elem, NfAbsNSElem} = norm(a)
+absolute_norm(a::T) where T <: Union{AbsSimpleNumFieldElem, AbsNonSimpleNumFieldElem} = norm(a)
 
 absolute_norm(a::QQFieldElem) = a
 
@@ -409,19 +406,19 @@ absolute_norm(a::QQFieldElem) = a
 ################################################################################
 
 @doc doc"""
-    norm(f::PolyElem{<:NumFieldElem}) -> PolyElem
+    norm(f::PolyRingElem{<:NumFieldElem}) -> PolyRingElem
 
 Returns the norm of $f$, that is, the product of all conjugates of $f$ taken
 coefficientwise.
 """
-function norm(f::PolyElem{<: NumFieldElem})
+function norm(f::PolyRingElem{<: NumFieldElem})
   K = base_ring(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x) for x in P]
   return power_sums_to_polynomial(PQ)
 end
 
-function norm(f::PolyElem{<:NumFieldElem}, k::NumField)
+function norm(f::PolyRingElem{<:NumFieldElem}, k::NumField)
   K = base_ring(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x, k) for x in P]
@@ -432,36 +429,35 @@ norm(a::QQPolyRingElem) = a
 
 absolute_norm(a::QQPolyRingElem) = a
 
-function absolute_norm(f::PolyElem{nf_elem})
+function absolute_norm(f::PolyRingElem{AbsSimpleNumFieldElem})
   return norm(f)
 end
 
-function absolute_norm(f::PolyElem{<: NumFieldElem})
+function absolute_norm(f::PolyRingElem{<: NumFieldElem})
   return absolute_norm(norm(f))
 end
 
-function is_irreducible(f::PolyElem{<: NumFieldElem})
+function is_irreducible(f::PolyRingElem{<: NumFieldElem})
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
   return sum(values(lf.fac)) == 1
 end
 
-function AbstractAlgebra.factor(f::PolyElem{<: NumFieldElem})
+function AbstractAlgebra.factor(f::PolyRingElem{<: NumFieldElem})
   K = base_ring(f)
   Ka, mKa = absolute_simple_field(K)
 
-  fKa = map_coefficients(inv(mKa), f)
+  fKa = map_coefficients(inv(mKa), f, cached = false)
   lf = factor(fKa)
   res = Fac(map_coefficients(mKa, lf.unit, parent = parent(f)), Dict(map_coefficients(mKa, k, parent = parent(f)) => v for (k,v) = lf.fac))
 
   return res
 end
 
-function roots(f::PolyElem{<: NumFieldElem})
+function roots(f::PolyRingElem{<: NumFieldElem})
   lf = factor(f)
   @assert degree(unit(lf)) == 0
-  scale = inv(coeff(unit(lf), 0))
-  return elem_type(base_ring(f))[-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x) == 1]
+  return elem_type(base_ring(f))[-constant_coefficient(x)*inv(leading_coefficient(x)) for x = keys(lf.fac) if degree(x) == 1]
 end
 
 ################################################################################
@@ -514,7 +510,7 @@ with respect to the basis of $K$ (the output of the 'basis' function).
 """
 coordinates(::NumFieldElem)
 
-function coordinates(a::nf_elem)
+function coordinates(a::AbsSimpleNumFieldElem)
   K = parent(a)
   v = Vector{QQFieldElem}(undef, degree(K))
   for i = 1:length(v)
@@ -523,7 +519,7 @@ function coordinates(a::nf_elem)
   return v
 end
 
-function coordinates(a::NfAbsNSElem)
+function coordinates(a::AbsNonSimpleNumFieldElem)
   adata = data(a)
   K = parent(a)
   v = Vector{QQFieldElem}(undef, degree(K))
@@ -538,7 +534,7 @@ function coordinates(a::NfAbsNSElem)
   return v
 end
 
-function coordinates(a::NfRelElem{T}) where T
+function coordinates(a::RelSimpleNumFieldElem{T}) where T
   K = parent(a)
   k = base_field(K)
   v = Vector{T}(undef, degree(K))
@@ -548,7 +544,7 @@ function coordinates(a::NfRelElem{T}) where T
   return v
 end
 
-function coordinates(a::NfRelNSElem{T}) where T
+function coordinates(a::RelNonSimpleNumFieldElem{T}) where T
   K = parent(a)
   k = base_field(K)
   v = Vector{T}(undef, degree(K))
@@ -579,7 +575,7 @@ function absolute_coordinates(a::NumFieldElem{QQFieldElem})
   return coordinates(a)
 end
 
-function absolute_coordinates(a::T) where T <: Union{NfRelElem, NfRelNSElem}
+function absolute_coordinates(a::T) where T <: Union{RelSimpleNumFieldElem, RelNonSimpleNumFieldElem}
   K = parent(a)
   v = Vector{QQFieldElem}(undef, absolute_degree(K))
   va = coordinates(a)
@@ -600,9 +596,9 @@ end
 #
 ################################################################################
 
-function denominator!(z::ZZRingElem, a::nf_elem)
+function denominator!(z::ZZRingElem, a::AbsSimpleNumFieldElem)
    ccall((:nf_elem_get_den, libantic), Nothing,
-         (Ref{ZZRingElem}, Ref{nf_elem}, Ref{AnticNumberField}),
+         (Ref{ZZRingElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}),
          z, a, a.parent)
    return z
 end
@@ -614,7 +610,7 @@ end
 ################################################################################
 
 @doc raw"""
-    valuation(a::NumFieldElem, p::NfOrdIdl) -> ZZRingElem
+    valuation(a::NumFieldElem, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
@@ -627,12 +623,12 @@ function valuation(::NumFieldElem, p) end
 #
 ################################################################################
 
-function support(a::NumFieldElem{QQFieldElem}, R::NfAbsOrd = maximal_order(parent(a)))
+function support(a::NumFieldElem{QQFieldElem}, R::AbsNumFieldOrder = maximal_order(parent(a)))
   @assert nf(R) == parent(a)
   return support(a * R)
 end
 
-function support(a::NumFieldElem, R::NfRelOrd = maximal_order(parent(a)))
+function support(a::NumFieldElem, R::RelNumFieldOrder = maximal_order(parent(a)))
   @assert nf(R) == parent(a)
   return support(a * R)
 end
@@ -643,7 +639,7 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, ::QQField) where T <: Union{NfRelNSElem, NfRelElem}
+function minpoly(a::T, ::QQField) where T <: Union{RelNonSimpleNumFieldElem, RelSimpleNumFieldElem}
   f = minpoly(a)
   n = absolute_norm(f)
   g = gcd(n, derivative(n))
@@ -654,7 +650,25 @@ function minpoly(a::T, ::QQField) where T <: Union{NfRelNSElem, NfRelElem}
   return n
 end
 
-absolute_minpoly(a::nf_elem) = minpoly(a)
-absolute_minpoly(a::NfAbsNS) = minpoly(a)
+absolute_minpoly(a::AbsSimpleNumFieldElem) = minpoly(a)
 
-absolute_minpoly(a::T) where T <: Union{NfRelNSElem, NfRelElem} = minpoly(a, FlintQQ)
+absolute_minpoly(a::AbsNonSimpleNumField) = minpoly(a)
+
+absolute_minpoly(a::T) where T <: Union{RelNonSimpleNumFieldElem, RelSimpleNumFieldElem} = minpoly(a, QQ)
+
+absolute_minpoly(a::QQFieldElem) = Hecke.Globals.Qx([-a, 1])
+
+################################################################################
+#
+#  Integral multiplicator
+#
+################################################################################
+
+function _integral_multiplicator(a::Union{PolyRingElem, MPolyRingElem})
+  return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(a)])
+end
+
+function _integral_multiplicator(a::NumFieldElem)
+  f = minpoly(a)
+  return _integral_multiplicator(f)
+end

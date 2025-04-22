@@ -1,6 +1,6 @@
 @testset "ResidueRingMultGrp" begin
 
-  function verify_order(g::Hecke.NfOrdQuoRingElem,o)
+  function verify_order(g::Hecke.AbsSimpleNumFieldOrderQuoRingElem,o)
     g == 0 && return false
     g^o == 1 || return false
     for l in keys(factor(o).fac)
@@ -20,7 +20,7 @@
 
 
   @testset "multiplicative_group" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "K = Q" begin
       K,  a = number_field(x,"a");
@@ -28,7 +28,7 @@
 
       @testset "m0 = <$n>" for n in 1:50
         m0 = O(n)*O
-        Q = NfOrdQuoRing(O, m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -50,7 +50,7 @@
 
       @testset "m0 = <1361>^3000" begin
         m0 = ideal(O,O(1361))^100
-        Q = NfOrdQuoRing(O,m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -76,7 +76,7 @@
 
       @testset "m0 = <$n>" for n in 1:100
         m0 = ideal(O,O(n))
-        Q = NfOrdQuoRing(O,m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -102,7 +102,7 @@
 
       @testset "m0 = <2>" begin
         m0 = ideal(O,O(2))
-        Q = NfOrdQuoRing(O,m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -125,7 +125,7 @@
 
       @testset "m0 = <4>" begin
         m0 = ideal(O,O(4))
-        Q = NfOrdQuoRing(O,m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -150,7 +150,7 @@
 
       @testset "m0 = <5>" begin
         m0 = ideal(O,O(5))
-        Q = NfOrdQuoRing(O,m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -173,7 +173,7 @@
 
       @testset "m0 = <20>" begin
         m0 = ideal(O,O(20))
-        Q = NfOrdQuoRing(O,m0)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test is_snf(G)
         SNF = G.snf
@@ -203,7 +203,7 @@
       #= @testset "m0 = <3>" begin =#
       #=   println("m0 = <3>") =#
       #=   m0 = ideal(O,O(3)) =#
-      #=   Q = NfOrdQuoRing(O,m0) =#
+      #=   Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 512000 =#
@@ -222,7 +222,7 @@
       #= @testset "m0 = <4>" begin =#
       #=   println("m0 = <4>") =#
       #=   m0 = ideal(O,O(4)) =#
-      #=   Q = NfOrdQuoRing(O,m0) =#
+      #=   Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14745600 =#
@@ -241,7 +241,7 @@
       #= @testset "m0 = <5>" begin =#
       #=   println("m0 = <5>") =#
       #=   m0 = ideal(O,O(5)) =#
-      #=   Q = NfOrdQuoRing(O,m0) =#
+      #=   Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 187500000 =#
@@ -260,7 +260,7 @@
       #= @testset "m0 = <60>" begin =#
       #=   println("m0 = <60>") =#
       #=   m0 = ideal(O,O(60)) =#
-      #=   Q = NfOrdQuoRing(O,m0) =#
+      #=   Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14155776*ZZRingElem(10)^14 =#
@@ -279,7 +279,7 @@
   end
 
   @testset "_multgrp_mod_pv" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "K = Q" begin
        K,  a = number_field(x,"a");
@@ -301,7 +301,7 @@
         H = Hecke.multgrp_of_cyclic_grp(ZZRingElem(pnum)^v)
         @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
-        Q = NfOrdQuoRing(O, pv)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
         for g in mG.generators
           for exp in [ -1, 1, 6 ]
             el = g^exp
@@ -328,7 +328,7 @@
           @test verify_order(gens[i].elem, pv, structure[i])
         end
         # Test discrete logarithm
-        Q = NfOrdQuoRing(O, pv)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
         for g in mG.generators
           for exp in [ -1, 0, 1, 2 ]
             el = g^exp
@@ -359,7 +359,7 @@
         H = abelian_group(structures[v])
         @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
-        Q = NfOrdQuoRing(O, pv)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
         for g in mG.generators
           for exp in [ -2, 1, 3 ]
             el = g^exp
@@ -390,7 +390,7 @@
         H = abelian_group(structures[v])
         @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
-        Q = NfOrdQuoRing(O,pv)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O,pv)
         for g in mG.generators
           for exp in [ -4, 1, 6 ]
             el = g^exp
@@ -421,7 +421,7 @@
         H = abelian_group(structures[v])
         @test Hecke.is_isomorphic(S, H)
         # Test discrete logarithm
-        Q = NfOrdQuoRing(O, pv)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
         for g in mG.generators
           for exp in [ -1, 0, 1, 6 ]
             el = g^exp
@@ -433,7 +433,7 @@
   end
 
   @testset "_multgrp_mod_p" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "K = Q" begin
        K,  a = number_field(x, "a");
@@ -459,7 +459,7 @@
        K,  a = number_field(x^2-2,"a");
       O = maximal_order(K)
 
-      primeideals = Vector{Hecke.NfOrdIdl}()
+      primeideals = Vector{Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for pnum in [ x for x in 1:40 if is_prime(ZZRingElem(x))]
         append!(primeideals, collect(keys(factor(O(pnum)*O))))
       end
@@ -473,7 +473,7 @@
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g, p, n)
-        Q = NfOrdQuoRing(O, p)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, p)
         for exp in [ 0, 1, 2, n - 2, n - 1, n ]
           @test mG.discrete_logarithm((Q(g)^exp).elem)[1] == mod(ZZRingElem(exp), n)
         end
@@ -484,7 +484,7 @@
        K,  a = number_field(x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20,"a");
       O = maximal_order(K)
 
-      primeideals = Vector{Hecke.NfOrdIdl}()
+      primeideals = Vector{Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for pnum in [ x for x in 1:20 if is_prime(ZZRingElem(x)) ]
         append!(primeideals, collect(keys(factor(O(pnum)*O))))
       end
@@ -498,7 +498,7 @@
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g, p, n)
-        Q = NfOrdQuoRing(O, p)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, p)
         for exp in [ 24, n - 345 ]
           @test mG.discrete_logarithm((Q(g)^exp).elem)[1] == mod(ZZRingElem(exp), n)
         end
@@ -509,7 +509,7 @@
        K,  a = number_field(x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1,"a");
       O = maximal_order(K)
 
-      primeideals = Vector{Hecke.NfOrdIdl}()
+      primeideals = Vector{Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
       for pnum in [ 2, 3, 5, 11 ]
         append!(primeideals, collect(keys(factor(O(pnum)*O))))
       end
@@ -523,7 +523,7 @@
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g, p, n)
-        Q = NfOrdQuoRing(O, p)
+        Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, p)
         for exp in [ 50, n - 30 ]
           @test mG.discrete_logarithm((Q(g)^exp).elem)[1] == mod(ZZRingElem(exp), n)
         end
@@ -532,7 +532,7 @@
   end
 
   @testset "_1_plus_p_mod_1_plus_pv" begin
-     Qx,  x = polynomial_ring(FlintQQ, "x");
+     Qx,  x = polynomial_ring(QQ, "x");
 
     @testset "Method: $method" for method in [:quadratic,:artin_hasse,:p_adic]
 
@@ -565,7 +565,7 @@
             @test Hecke.is_isomorphic(G, J)
           end
           # Test discrete logarithm
-          Q = NfOrdQuoRing(O, pv)
+          Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
           for g in mG.generators
             for exp in -1:2
               el = Q(g)^exp
@@ -579,7 +579,7 @@
          K,  a = number_field(x^2 - 2,"a")
         O = maximal_order(K)
 
-        primeideals = Vector{Hecke.NfOrdIdl}()
+        primeideals = Vector{Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
         for pnum in [2,3,5,7,19]
           fac = factor(ideal(O,O(pnum)))
           ks = collect(keys(fac))
@@ -606,7 +606,7 @@
             @test Hecke.is_isomorphic(G, J)
           end
           # Test discrete logarithm
-          Q = NfOrdQuoRing(O, pv)
+          Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
           for g in mG.generators
             for exp in [ -1, 1, 2 ]
               el = Q(g)^exp
@@ -621,7 +621,7 @@
          K,  a = number_field(f,"a")
         O = maximal_order(K)
 
-        primeideals = Vector{Hecke.NfOrdIdl}()
+        primeideals = Vector{Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
         for pnum in [2,11,13]
           fac = factor(ideal(O,O(pnum)))
           ks = collect(keys(fac))
@@ -648,7 +648,7 @@
             @test Hecke.is_isomorphic(G, J)
           end
           # Test discrete logarithm
-          Q = NfOrdQuoRing(O, pv)
+          Q = Hecke.AbsSimpleNumFieldOrderQuoRing(O, pv)
           for g in mG.generators
             for exp in [-1, 2]
               el = Q(g)^exp
@@ -661,11 +661,11 @@
   end
 
   @testset "Non-maximal orders" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
 
     K1, a1 = number_field(x^3 - 2, "a1")
     OK1 = maximal_order(K1)
-    O1 = Order(K1, [K1(1), 10*a1, 100*a1^2])
+    O1 = order(K1, [K1(1), 10*a1, 100*a1^2])
     F1 = conductor(O1, OK1)
     Q1, mQ1 = quo(O1, F1)
     G1, mG1 = multiplicative_group(Q1)
@@ -677,7 +677,7 @@
     end
 
     K2, a2 = number_field(x^3 - 12*x^2 - 6324*x + 459510, "a2")
-    O2 = EquationOrder(K2)
+    O2 = equation_order(K2)
     OK2 = maximal_order(O2)
     F2 = conductor(O2, OK2)
     Q2, mQ2 = quo(O2, F2)
@@ -691,7 +691,7 @@
 
     K3, a3 = number_field(x^5 - 1389*x^4 + 512066*x^3 - 11859166*x^2 + 83453925*x - 211865821, "a3")
     OK3 = maximal_order(K3)
-    O3 = EquationOrder(K3)
+    O3 = equation_order(K3)
     F3 = conductor(O3, OK3)
     Q3, mQ3 = quo(O3, F3)
     G3, mG3 = multiplicative_group(Q3)
@@ -702,4 +702,12 @@
       @test mG3(g)*mG3(h) == mG3(g + h)
     end
   end
+
+  # zero-rings
+  K, a = rationals_as_number_field()
+  OK = maximal_order(K)
+  I = ideal(OK, 1)
+  Q, mQ = quo(OK, I)
+  @test is_unit(zero(Q))
+  @test divides(zero(Q), zero(Q))[1]
 end

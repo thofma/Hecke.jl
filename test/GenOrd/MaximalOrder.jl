@@ -1,8 +1,8 @@
 @testset "Qt" begin
-  qt, t = RationalFunctionField(QQ, "t")
+  qt, t = rational_function_field(QQ, "t")
   qtx, x = polynomial_ring(qt, "x")
   f = x^4 + t*x^3 - 6*x^2 - t*x + 1
-  F, a = FunctionField(f, "a")
+  F, a = function_field(f, "a")
   O = integral_closure(Hecke.localization(qt, degree), F)
   b = basis(O, F)
   mp = map(minpoly, b)
@@ -23,17 +23,17 @@ end
 end
 
 @testset "FldFin" begin
-  for q = [GF(17), GF(next_prime(ZZRingElem(10)^30)), FiniteField(5, 2)[1], FiniteField(next_prime(ZZRingElem(10)^25), 2, "a", cached = false)[1]]
-    qt, t = RationalFunctionField(q, "t", cached = false)
+  for q = [GF(17), GF(next_prime(ZZRingElem(10)^30)), finite_field(5, 2)[1], finite_field(next_prime(ZZRingElem(10)^25), 2, "a", cached = false)[1]]
+    qt, t = rational_function_field(q, "t", cached = false)
     qtx, x = polynomial_ring(qt, cached = false)
     f = x^3+(t+1)^5*(x+1)+(t^2+t+1)^7
-    F, a = FunctionField(f, "a", cached = false)
+    F, a = function_field(f, "a", cached = false)
     integral_closure(parent(numerator(t)), F)
     integral_closure(localization(qt, degree), F)
   end
 
   k = GF(5)
-  kx, x = RationalFunctionField(k, "x")
+  kx, x = rational_function_field(k, "x")
   kt = parent(numerator(x))
   ky, y = polynomial_ring(kx, "y")
   F, a = function_field(y^3+(4*x^3 + 4*x^2 + 2*x +2)*y^2 + (3*x+3)*y +2)

@@ -58,7 +58,7 @@ function _ispadic_normal_form_odd(G, p)
 
   o = identity_matrix(QQ, 1)
 
-  F,  = FiniteField(p, 1, cached = false)
+  F,  = finite_field(p, 1, cached = false)
 
   for i in 1:length(blocks)
     if all(==(o), blocks[i])
@@ -68,7 +68,7 @@ function _ispadic_normal_form_odd(G, p)
         return false
       end
       u = blocks[i][end][1, 1]
-      m = FlintZZ(u)
+      m = ZZ(u)
       if is_square(F(m))
         return false
       end
@@ -100,12 +100,12 @@ function _ispadic_normal_form_dyadic(G, p)
     end
   end
 
-  U = matrix(FlintQQ,2,2,[0,1,1,0])
-  V = matrix(FlintQQ,2,2,[2,1,1,2])
-  W1 = matrix(FlintQQ,1,1,[1])
-  W3 = matrix(FlintQQ,1,1,[3])
-  W5 = matrix(FlintQQ,1,1,[5])
-  W7 = matrix(FlintQQ,1,1,[7])
+  U = matrix(QQ,2,2,[0,1,1,0])
+  V = matrix(QQ,2,2,[2,1,1,2])
+  W1 = matrix(QQ,1,1,[1])
+  W3 = matrix(QQ,1,1,[3])
+  W5 = matrix(QQ,1,1,[5])
+  W7 = matrix(QQ,1,1,[7])
 
   for B in blocks
     i = 1
@@ -170,7 +170,7 @@ We refer to [MirMor2009]_ IV Definition 4.6. for the details.
 If `partial` is set, only the partial normal form is returned.
 """
 function padic_normal_form(G, p::IntegerUnion; prec::Int = -1, partial::Bool = false)
-  return _padic_normal_form(change_base_ring(FlintQQ, G), ZZRingElem(p), prec = prec, partial = partial)
+  return _padic_normal_form(change_base_ring(QQ, G), ZZRingElem(p), prec = prec, partial = partial)
 end
 
 # For a definition in the even case, see Definition 4.6 of Miranda, Morrison,
@@ -178,7 +178,7 @@ end
 function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
   _G = deepcopy(G)
   dd = denominator(G)
-  G0 = change_base_ring(FlintZZ, dd * G)
+  G0 = change_base_ring(ZZ, dd * G)
   d = valuation(dd, p)
   n = nrows(G)
   r = rank(G0)
@@ -187,12 +187,12 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
     _, U = hnf_with_transform(G0)
     _ker = U[(r + 1):n, :]
     _nondeg = U[1:r, :]
-    ker = change_base_ring(FlintQQ, _ker)
-    nondeg = change_base_ring(FlintQQ, _nondeg)
+    ker = change_base_ring(QQ, _ker)
+    nondeg = change_base_ring(QQ, _nondeg)
     G = p^d * nondeg * G * transpose(nondeg)
   else
-    ker = zero_matrix(FlintQQ, 0, n)
-    nondeg = identity_matrix(FlintQQ, n)
+    ker = zero_matrix(QQ, 0, n)
+    nondeg = identity_matrix(QQ, n)
     G = p^d * G
   end
   # continue with the non-degenerate part
@@ -202,16 +202,16 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
   end
 
   modu = p^prec
-  R = residue_ring(FlintZZ, modu, cached = false)
+  R = residue_ring(ZZ, modu, cached = false)[1]
   Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G) # this will probably fail
   D = deepcopy(Gmod)
 
   n = ncols(Gmod)
 
-  Qp = PadicField(p, prec, cached = false)
+  Qp = padic_field(p, precision = prec, cached = false)
 
   if n == 0
-    return (zero_matrix(FlintQQ, n, n), zero_matrix(FlintQQ, n, n))::Tuple{QQMatrix, QQMatrix}
+    return (zero_matrix(QQ, n, n), zero_matrix(QQ, n, n))::Tuple{QQMatrix, QQMatrix}
   end
 
   # the transformation matrix is called B
@@ -248,8 +248,8 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
   #    if debug:
   @assert _val(det(B), p) == 0     # B is invertible!
 
-  DD = map_entries(x -> FlintQQ(lift(x))//p^d, D)
-  BB = map_entries(x -> FlintQQ(lift(x)), B)
+  DD = map_entries(x -> QQ(lift(x))//p^d, D)
+  BB = map_entries(x -> QQ(lift(x)), B)
   return (DD, BB)::Tuple{QQMatrix, QQMatrix}
 end
 
@@ -836,9 +836,10 @@ function _min_nonsquare(p)
   Rx, x = polynomial_ring(GF(p, cached = false), "x", cached = false)
   for i in 1:p
     if length(factor(x^2 - i)) == 1
-      return i
+      return Int(i)
     end
   end
+  error("this can't be reached")
 end
 
 function _issquare(d::Nemo.ZZModRingElem, p::ZZRingElem)
@@ -850,7 +851,7 @@ end
 
 function _issquare(d::zzModRingElem, p)
   f = ZZ(modulus(parent(d)))
-  R = residue_ring(FlintZZ, f, cached = false)
+  R = residue_ring(ZZ, f, cached = false)[1]
   g = R(d)
   return _issquare(g, ZZ(p))
 end
@@ -941,8 +942,8 @@ function _normalize(G, p, normal_odd = true)
           j = pop!(non_squares)
           trafo = _normalize_odd_twobytwo(D[[i, j], [i, j]], p)
           _BB = trafo * B[[i, j], :]
-          B[i, :] = _BB[1, :]
-          B[j, :] = _BB[2, :]
+          B[i:i, :] = _BB[1:1, :]
+          B[j:j, :] = _BB[2:2, :]
           #B[[i, j], :] = trafo * B[[i, j], :]
           D[i, i] = 1
           D[j, j] = 1
@@ -1047,7 +1048,7 @@ function _normalize_twobytwo(G, p)
     error("Not a valid 2 x 2 block.")
   end
   scale = p^(_val(G[1, 2], p))
-  D = matrix(R, 2, 2, [divexact(d, R(scale)) for d in G]) # G is symmetric
+  D = map_entries(d -> divexact(d, R(scale)), G) # G is symmetric
   # now D is of the form
   # [2a b ]
   # [b  2c]

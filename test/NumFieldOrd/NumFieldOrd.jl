@@ -1,5 +1,5 @@
-@testset "NumFieldOrd" begin
-  x = polynomial_ring(FlintQQ, "x", cached = false)[2]
+@testset "NumFieldOrder" begin
+  x = polynomial_ring(QQ, "x", cached = false)[2]
   K, a = number_field(x^2+1, check = false, cached = false)
   Kns, gKns = number_field([x^2+1], check = false, cached = false)
   Kt, t = polynomial_ring(K, "t", cached = false)
@@ -7,7 +7,7 @@
   Lns, gLns = number_field([t^2+3], cached = false, check = false)
 
   OK = maximal_order(K)
-  @inferred nf(OK)
+  @inferred Hecke.nf(OK)
   @test is_simple(OK)
   @test is_commutative(OK)
   @test @inferred is_equation_order(OK)
@@ -17,10 +17,10 @@
   BOK = absolute_basis(OK)
   @test @inferred discriminant(BOK) == @inferred discriminant(OK)
   @test @inferred signature(OK) == (0, 1)
-  @test @inferred discriminant(OK, FlintQQ) == discriminant(OK)
+  @test @inferred discriminant(OK, QQ) == discriminant(OK)
 
   OKns = maximal_order(Kns)
-  @inferred nf(OKns)
+  @inferred Hecke.nf(OKns)
   @test !is_simple(OKns)
   @test is_commutative(OKns)
   @test @inferred !is_equation_order(OKns)
@@ -30,10 +30,10 @@
   BOKns = absolute_basis(OKns)
   @test @inferred discriminant(BOKns) == @inferred discriminant(OKns)
   @test @inferred signature(OKns) == (0, 1)
-  @test @inferred discriminant(OKns, FlintQQ) == discriminant(OKns)
+  @test @inferred discriminant(OKns, QQ) == discriminant(OKns)
 
   OL = maximal_order(L)
-  @inferred nf(OL)
+  @inferred Hecke.nf(OL)
   @test is_simple(OL)
   @test is_commutative(OL)
   @test @inferred !is_equation_order(OL)
@@ -43,10 +43,10 @@
   BOL = absolute_basis(OL)
   @test numerator(det(trace_matrix(map(elem_in_nf, BOL)))) == @inferred absolute_discriminant(OL)
   @test @inferred signature(OL) == (0, 2)
-  @test @inferred discriminant(OL, FlintQQ) == absolute_discriminant(OL)
+  @test @inferred discriminant(OL, QQ) == absolute_discriminant(OL)
 
   OLns = maximal_order(Lns)
-  @inferred nf(OLns)
+  @inferred Hecke.nf(OLns)
   @test !is_simple(OLns)
   @test is_commutative(OLns)
   @test @inferred !is_equation_order(OLns)
@@ -56,7 +56,7 @@
   BOLns = absolute_basis(OLns)
   @test numerator(det(trace_matrix(map(elem_in_nf, BOLns)))) == @inferred absolute_discriminant(OLns)
   @test @inferred signature(OLns) == (0, 2)
-  @test @inferred discriminant(OLns, FlintQQ) == absolute_discriminant(OLns)
+  @test @inferred discriminant(OLns, QQ) == absolute_discriminant(OLns)
 
 end
 
@@ -114,15 +114,45 @@ end
   o = extend(equation_order(k), gs)
   @test discriminant(o) == -210517451702272
   push!(gs, gen(k))
-  oo = Order(gs)
+  oo = order(gs)
   @test o == oo
 
   Qx, x = QQ["x"]
   K, a = quadratic_field(5)
-  R = Order(K, [10*a])
+  R = order(K, [10*a])
   @test extend(R, [a]) == equation_order(K)
   @test extend(R, []) == R
   @test extend(R, [1//2 + a//2]) == maximal_order(K)
   @test extend(maximal_order(R), [a]) == maximal_order(R)
+
+  K, a = number_field(x, "a")
+  @test order(K, [1]) == equation_order(K)
+  @test order(K, []) == equation_order(K)
+
+  K, a = number_field(x^4 - 10*x^2 + 1, "a")
+  x = 1//2*a^3 - 9//2*a # sqrt(2)
+  y = 1//2*a^3 - 11//2*a # sqrt(3)
+  O = order(K, [x, y, x*y])
+  @test O == order(K, [x, y])
+  @test O == order(K, [x, y], check = false)
+  z = 1//4*a^3 + 1//4*a^2 + 3//4*a + 3//4
+  OO = Hecke._order(K, [z], extends = O)
+  @test is_maximal(OO)
+  @test_throws ErrorException order(K, [x])
 end
+
+
+@testset "Order - Misc" begin
+  k, a = cyclotomic_field(11)
+  zk = maximal_order(k)
+  lp = prime_ideals_over(zk, 23)
+  p1 = lp[1]
+  p2 = lp[2]
+  p1.gen_two *= zk(a+1)
+  p2.gen_two *= zk(a+1)
+
+  @test p1 != p2
+end
+
+
 

@@ -1,13 +1,13 @@
 using Hecke
 
-Base.:*(x::Hecke.NfRelNSElem{Nemo.nf_elem}) = x
+Base.:*(x::Hecke.RelNonSimpleNumFieldElem{Nemo.AbsSimpleNumFieldElem}) = x
 
 function _get_simple_extension_and_maximal_order(K)
   @assert degree(base_ring(K)) == 1
   pol = K.pol
   k = length(pol)
   gensK = gens(K)
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   basesofmaximalorders = Vector{elem_type(K)}[]
   discs = ZZRingElem[]
   for i in 1:k
@@ -31,7 +31,7 @@ function _get_simple_extension_and_maximal_order(K)
       prime_divisors = union(prime_divisors, Set{ZZRingElem}([ p for (p, e) in ff ]))
     end
   end
-  OO = Order(Ksimpleabs, [ g\b for b in bbb ])
+  OO = order(Ksimpleabs, [ g\b for b in bbb ])
   for p in prime_divisors
     OO = pmaximal_overorder(OO, p)
   end
@@ -97,7 +97,7 @@ width = length(string(total_cond))
 
 #@show l_conductors
 
-fields=Tuple{AnticNumberField, ZZRingElem}[]
+fields=Tuple{AbsSimpleNumField, ZZRingElem}[]
 #  autos=Vector{NfRelNSToNfRelNSMor}[]
 
 #Now, the big loop

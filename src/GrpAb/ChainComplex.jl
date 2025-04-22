@@ -1,6 +1,3 @@
-export chain_complex, is_exact, free_resolution, zero_map, ComplexOfMorphisms,
-       cochain_complex, shift, is_chain_complex, is_cochain_complex
-
 ######################################################################
 #
 # Lift of homomorphisms
@@ -21,20 +18,20 @@ Given $\phi: G\to F$ and $\psi:H \to F$ s.th. $\Im(\phi) \subseteq \Im(\psi)$
 return the map $G\to H$ to make the diagram commute.
 """
 function lift(phi::Map, psi::Map)
-  x = [haspreimage(psi, image(phi, g)) for g = gens(domain(phi))]
+  x = [has_preimage_with_preimage(psi, image(phi, g)) for g = gens(domain(phi))]
   @assert all(t -> t[1], x)
   return hom(domain(phi), domain(psi), [t[2] for t = x])
 end
 
 @doc raw"""
-    zero_map(G::GrpAbFinGen) -> Map
+    zero_map(G::FinGenAbGroup) -> Map
 Create the map $G \to \{0\}$.
 """
-function zero_map(G::GrpAbFinGen)
+function zero_map(G::FinGenAbGroup)
   return zero_map(G, zero_obj(G))
 end
 
-function zero_map(G::GrpAbFinGen, H::GrpAbFinGen)
+function zero_map(G::FinGenAbGroup, H::FinGenAbGroup)
   return hom(G, H, [H[0] for i=1:ngens(G)])
 end
 
@@ -53,12 +50,12 @@ end
 ```
 
 There are logically 2 types of complexes
- - chain 
+ - chain
  - cochain
 (stored in `typ` (`type` cannot be used as it is a keyword)
 
 The type determines, jointly with `seed` the homological, external,
-numbering of the maps and object. `seed` always stores the logically 
+numbering of the maps and object. `seed` always stores the logically
 minimal object index (in the sense of homological degree)
 
 # Chain Complex
@@ -104,7 +101,7 @@ at the end, the last object is the codomain of the last map...
 """
 @attributes mutable struct ComplexOfMorphisms{T}
   maps      ::Vector{<:Map}
-  seed      ::Int  
+  seed      ::Int
   typ       ::Symbol # :chain or :cochain
   exact     ::Vector{Bool}
   complete  ::Bool
@@ -159,7 +156,7 @@ end
 is_chain_complex(C::ComplexOfMorphisms) = C.typ == :chain
 is_cochain_complex(C::ComplexOfMorphisms) = C.typ == :cochain
 
-function zero_obj(::GrpAbFinGen)
+function zero_obj(::FinGenAbGroup)
   A = abelian_group([1])
   set_name!(A, "Zero")
   return A
@@ -308,12 +305,11 @@ function Base.pushfirst!(C::ComplexOfMorphisms{T}, M::Map{<:T, <:T}) where {T}
   set_attribute!(C, :show=>nothing)
 end
 
-
 function shift(C::ComplexOfMorphisms{T}, n::Int) where T
   if iseven(n)
-    ComplexOfMorphisms(T, copy(C.maps), seed = C.seed+n, typ = C.typ)
+    ComplexOfMorphisms(T, copy(C.maps), check = false, seed = C.seed+n, typ = C.typ)
   else
-    ComplexOfMorphisms(T, [-f for f = C.maps], seed = C.seed+n, typ = C.typ)
+    ComplexOfMorphisms(T, [-f for f = C.maps], check = false, seed = C.seed+n, typ = C.typ)
   end
 end
 
@@ -327,37 +323,96 @@ Base.getindex(C::ComplexOfMorphisms, i::Int) = obj(C, i)
 obj_type(C::ComplexOfMorphisms{T}) where {T} = T
 map_type(C::ComplexOfMorphisms) = valtype(C.maps)
 
-Hecke.base_ring(::GrpAbFinGen) = ZZ
+Hecke.base_ring(::FinGenAbGroup) = ZZ
 
-function free_show(io::IO, C::ComplexOfMorphisms)
-  Cn = get_attribute(C, :name)
-  if Cn === nothing
-    Cn = "F"
-  end
+Hecke.base_ring_type(::Type{FinGenAbGroup}) = ZZRing
 
+function pres_show(io::IO, C::ComplexOfMorphisms)
   name_mod = String[]
   rank_mod = Int[]
 
   rng = range(C)
-  if C.typ == :chain
-    arr = ("--", "-->")
-  else
-    arr = ("<--", "--")
-  end
+  arr = ("<--", "--")
 
   R = Nemo.base_ring(C[first(rng)])
-  R_name = get_attribute(R, :name)
-  if R_name === nothing
-    R_name = "$R"
+  R_name = get_name(R)
+  if isnothing(R_name)
+    R_name = "($R)"
   end
 
-  for i=rng
+  for i=reverse(rng)
     M = C[i]
-    if get_attribute(M, :name) !== nothing
-      push!(name_mod, get_attribute(M, :name))
+    if i == -1 #the object that is presented
+      M_name = get_name(M)
+      if isnothing(M_name)
+        M_name = "M"
+      end
+      push!(name_mod, M_name)
+      push!(rank_mod, 0)
     else
-      push!(name_mod, "$R_name^$(rank(M))")
+      M_name = get_name(M)
+      if isnothing(M_name)
+        M_name = "$R_name^$(rank(M))"
+      end
+      push!(name_mod, M_name)
+      push!(rank_mod, rank(M))
     end
+  end
+
+  io = IOContext(io, :compact => true)
+#  print(io, "Presentation")
+#  N = get_attribute(C, :free_res)
+#  if N !== nothing
+#    print(io, " of ", N)
+#  end
+#  print(io, "\n")
+
+  pos = 0
+  pos_mod = Int[]
+
+  for i=1:length(name_mod)
+    print(io, name_mod[i])
+    push!(pos_mod, pos)
+    pos += length(name_mod[i])
+    if i < length(name_mod)
+      print(io, " ", arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 2
+    end
+  end
+#  print(io, "\n")
+#  len = 0
+#  for i=1:length(name_mod)
+#    if i>1
+#      print(io, " "^(pos_mod[i] - pos_mod[i-1]-len +1))
+#    end
+#    print(io, rng[i])
+#    len += length("$(rng[i])")
+#  end
+#  print(io, "\n")
+end
+
+
+function free_show(io::IO, C::ComplexOfMorphisms)
+  name_mod = String[]
+  rank_mod = Int[]
+
+  rng = range(C)
+  rng = first(rng)-1:-1:0
+  arr = ("<--", "--")
+
+  R = Nemo.base_ring(C[first(rng)])
+  R_name = get_name(R)
+  if R_name === nothing
+    R_name = "($R)"
+  end
+
+  for i=reverse(rng)
+    M = C[i]
+    M_name = get_name(M)
+    if M_name === nothing
+      M_name = "$R_name^$(rank(M))"
+    end
+    push!(name_mod, M_name)
     push!(rank_mod, rank(M))
   end
 
@@ -371,32 +426,91 @@ function free_show(io::IO, C::ComplexOfMorphisms)
 
   pos = 0
   pos_mod = Int[]
+
   for i=1:length(name_mod)
     print(io, name_mod[i])
     push!(pos_mod, pos)
     pos += length(name_mod[i])
     if i < length(name_mod)
-      print(io, arr[1], arr[2], " ")
-      pos += length(arr[1]) + length(arr[2]) + 1
+      print(io, " ", arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 2
     end
   end
+
   print(io, "\n")
   len = 0
   for i=1:length(name_mod)
     if i>1
       print(io, " "^(pos_mod[i] - pos_mod[i-1]-len))
     end
-    print(io, rank_mod[i])
-    len += length("$(rank_mod[i])")
+    print(io, reverse(rng)[i])
+    len = length("$(reverse(rng)[i])")
+  end
+#  print(io, "\n")
+end
+
+function free_show(io::IO, C::ComplexOfMorphisms{<:FinGenAbGroup})
+  name_mod = String[]
+  rank_mod = Int[]
+
+  rng = range(C)
+  rng = first(rng)-1:-1:0
+  arr = ("<--", "--")
+
+  R = Nemo.base_ring(C[first(rng)])
+  R_name = get_name(R)
+  if R_name === nothing
+    R_name = "($R)"
+  end
+
+  for i=reverse(rng)
+    M = C[i]
+    M_name = get_name(M)
+    if M_name === nothing
+      M_name = "$R_name^$(torsion_free_rank(M))"
+    end
+    push!(name_mod, M_name)
+    push!(rank_mod, torsion_free_rank(M))
+  end
+
+  io = IOContext(io, :compact => true)
+  print(io, "Free resolution")
+  N = get_attribute(C, :free_res)
+  if N !== nothing
+    print(io, " of ", N)
   end
   print(io, "\n")
+
+  pos = 0
+  pos_mod = Int[]
+
+  for i=1:length(name_mod)
+    print(io, name_mod[i])
+    push!(pos_mod, pos)
+    pos += length(name_mod[i])
+    if i < length(name_mod)
+      print(io, " ", arr[1], arr[2], " ")
+      pos += length(arr[1]) + length(arr[2]) + 2
+    end
+  end
+
+  print(io, "\n")
+  len = 0
+  for i=1:length(name_mod)
+    if i>1
+      print(io, " "^(pos_mod[i] - pos_mod[i-1]-len))
+    end
+    print(io, reverse(rng)[i])
+    len = length("$(reverse(rng)[i])")
+  end
+#  print(io, "\n")
 end
 
 function show(io::IO, C::ComplexOfMorphisms)
   @show_name(io, C)
   @show_special(io, C)
 
-  Cn = get_attribute(C, :name)
+  Cn = get_name(C)
   if Cn === nothing
     Cn = "C"
   end
@@ -406,37 +520,25 @@ function show(io::IO, C::ComplexOfMorphisms)
   mis_mod = Tuple{Int, <:Any}[]
 
   rng = range(C)
+  arr = ("<--", "--")
   if is_chain_complex(C)
-    arr = ("--", "-->")
     dir = 1
   else
-    arr = ("<--", "--")
-    arr = ("--", "-->")
     dir = 0
   end
 
   for i=rng
     M = obj(C, i)
-#    if get_attribute(M, :name) !== nothing
-#      name_mod[i] = get_attribute(M, :name)
-#    else
-      if is_chain_complex(C)
-        name_mod[i] = "$(Cn)_$i"
-      else
-        name_mod[i] = "$(Cn)^$i"
-      end
-#      AbstractAlgebra.set_name!(M)
-#      if get_attribute(M, :name) !== nothing
-#        name_mod[i] = get_attribute(M, :name)
-#      else
-#        push!(mis_mod, (i, M))
-#      end
-#    end
+    if is_chain_complex(C)
+      name_mod[i] = "$(Cn)_$i"
+    else
+      name_mod[i] = "$(Cn)^$i"
+    end
   end
 
   io = IOContext(io, :compact => true)
-  for i=rng
-    if i == first(rng)
+  for i=reverse(rng)
+    if i == last(rng)
       print(io, name_mod[i])
       continue
     end
@@ -447,70 +549,67 @@ function show(io::IO, C::ComplexOfMorphisms)
     for (i, M) = mis_mod
       print(io, "\t$(name_mod[i]) = ", M, "\n")
     end
-#    for (i, phi) = mis_map
-#      print(io, "\tphi_$i = ", phi, "\n")
-#    end
   end
 end
 
 @doc raw"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
+    chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...) -> ComplexOfMorphisms{FinGenAbGroup}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the chain complex.
 """
-function chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
-  return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain)
+function chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(collect(A), seed = seed, typ = :chain, check = check)
 end
 
-function chain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
-  return ComplexOfMorphisms(A, seed = seed, typ = :chain)
+function chain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(A, seed = seed, typ = :chain, check = check)
 end
-function cochain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...; seed::Int = 0)
-  return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain)
+function cochain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(collect(A), seed = seed, typ = :cochain, check = check)
 end
 
 @doc raw"""
-    chain_complex(A::Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}...) -> ComplexOfMorphisms{GrpAbFinGen}
+    chain_complex(A::Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}...) -> ComplexOfMorphisms{FinGenAbGroup}
 Given maps $A_i$ s.th. $\Im(A_i) \subseteq \Kern(A_{i+1})$, this creates
 the cochain complex.
 The logical indexing and the printing for chain and cochain complexes differs.
 See `Hecke.ComplexOfMorphisms` for details.
 """
-function cochain_complex(A::Vector{<:Map{GrpAbFinGen, GrpAbFinGen, <:Any, <:Any}}; seed::Int = 0)
-  return ComplexOfMorphisms(A, seed = seed, typ = :cochain)
+function cochain_complex(A::Vector{<:Map{FinGenAbGroup, FinGenAbGroup, <:Any, <:Any}}; seed::Int = 0, check::Bool = true)
+  return ComplexOfMorphisms(A, seed = seed, typ = :cochain, check = check)
 end
 
 Base.lastindex(C::ComplexOfMorphisms) = lastindex(range(C))
 function getindex(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i = u])
+  return ComplexOfMorphisms(T, [map(C, i) for i = u], check = false)
 end
 
 function getindex(C::ComplexOfMorphisms{T}, u::StepRange) where {T}
   @assert is_chain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i = u])
+  return ComplexOfMorphisms(T, [map(C, i) for i = u], check = false)
 end
 
 #TODO: Why?
 # what is the intend, the specs? In particular: seed/ start?
 function extract_map_range(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start, direction=:right)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start, direction=:right, check = false)
 end
 
 function extract_map_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   @assert is_chain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start-length(C)-1)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u]; start=C.start-length(C)-1, check = false)
 end
 
 function extract_object_range(C::ComplexOfMorphisms{T}, u::AbstractUnitRange) where T
   @assert is_cochain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != first(u)]; start=C.start, direction=:right, check = false)
 end
 
 function extract_object_range(C::ComplexOfMorphisms{T}, u::StepRange) where T
   @assert is_chain_complex(C)
-  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1)
+  return ComplexOfMorphisms(T, [map(C, i) for i in u if i != last(u)]; start=C.start-length(C.maps)-1, check = false)
 end
 
 @doc raw"""
@@ -524,16 +623,16 @@ function is_exact(C::ComplexOfMorphisms)
 end
 
 @doc raw"""
-    free_resolution(G::GrpAbFinGen) -> ComplexOfMorphisms{GrpAbFinGen}
+    free_resolution(G::FinGenAbGroup) -> ComplexOfMorphisms{FinGenAbGroup}
 A free resolution for $G$, ie. a chain complex terminating in
 $G \to \{0\}$ that is exact.
 """
-function free_resolution(G::GrpAbFinGen)
+function free_resolution(G::FinGenAbGroup)
   A = free_abelian_group(ngens(G))
   R = rels(G)
   B = free_abelian_group(nrows(R))
   h_A_G = hom(A, G, gens(G))
-  h_B_A = hom(B, A, [GrpAbFinGenElem(A, R[i, :]) for i=1:ngens(B)])
+  h_B_A = hom(B, A, [FinGenAbGroupElem(A, R[i:i, :]) for i=1:ngens(B)])
   Z = zero_obj(G)
   C = chain_complex(hom(Z, B, [B[0]]), h_B_A)
   set_attribute!(C, :show => free_show, :free_res => G)
@@ -636,7 +735,7 @@ function hom(G::T, C::ComplexOfMorphisms{T}) where {T}
 end
 
 @doc raw"""
-    homology(C::ComplexOfMorphisms{GrpAbFinGen}) -> Vector{GrpAbFinGen}
+    homology(C::ComplexOfMorphisms{FinGenAbGroup}) -> Vector{FinGenAbGroup}
 Given a complex $A_i: G_i \to G_{i+1}$,
 compute the homology, ie. the modules $H_i = \Kern A_{i+1}/\Im A_i$
 """

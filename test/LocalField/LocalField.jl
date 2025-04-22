@@ -1,7 +1,7 @@
 @testset "LocalField" begin
 
   @testset "Creation" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2-2*x+2
     K, a = local_field(f, 2, 10, "a", Hecke.EisensteinLocalField, check = false)
     @test precision(K) == 20
@@ -17,7 +17,7 @@
     @test absolute_degree(L) == 4
     @test prime(L) == 2
 
-    Q2 = PadicField(2, 10)
+    Q2 = padic_field(2, precision = 10)
     Q2s, s = polynomial_ring(Q2, "s")
     f = s^2+s+1
     Ku, c = local_field(f, "s", Hecke.UnramifiedLocalField, check = false)
@@ -39,7 +39,7 @@
   end
 
   @testset "Norm" begin
-    K = QadicField(3, 4, 10)[1]
+    K = qadic_field(3, 4, precision = 10)[1]
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
     b = @inferred basis(L)
@@ -98,7 +98,7 @@
     @test valuation(mKp(gen(K))) == valuation(gen(K), P)
     @test iszero(defining_polynomial(K)(mKp(gen(K))))
 
-    Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+    Qx, x = polynomial_ring(QQ, "x", cached = false)
     f = x^10 + 5*x^9 - 633*x^8 + 38157*x^7 + 1360601*x^6 - 39808345*x^5 - 464252491*x^4 - 17622187401*x^3 + 2826886632714*x^2 - 96335539805104*x + 1313743135204448
     K, a = number_field(f, check = false, cached = false)
     OK = maximal_order(K)
@@ -125,32 +125,32 @@
 
 
   @testset "Exp and Log" begin
-    K = PadicField(2, 100)
+    K = padic_field(2, precision = 100)
     Kx, x = polynomial_ring(K, "x", cached = false)
-    L, b = Hecke.eisenstein_extension(x^7+2, "a")
+    L, b = eisenstein_extension(x^7+2, :a)
     pi = uniformizer(L)
     @test iszero(log(pi))
     @test iszero(log(one(L)))
     B = basis(L)
     for i = 15:20
-      el = sum([rand(FlintZZ, 0:10)*B[j] for j = 1:7])*pi^i
+      el = sum([rand(ZZ, 0:10)*B[j] for j = 1:7])*pi^i
       explog = exp(log(1+el))
       logexp = log(exp(el))
       @test iszero(explog - 1 - el) || valuation(explog - 1 - el) > 80
       @test iszero(logexp - el) || valuation(logexp - el) > 80 #need improving
     end
 
-    KK, a = QadicField(2, 2, 16)
+    KK, a = qadic_field(2, 2, precision = 16)
     KKx, x = KK["x"]
     f = x + 2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15
-    L, b = Hecke.eisenstein_extension(f, "b");
+    L, b = eisenstein_extension(f, "b");
     c = L((2^1 + 2^2 + 2^5 + 2^7 + 2^9 + 2^10 + 2^11 + 2^12)*a + 2^0 + 2^6 + 2^8 + 2^9 + 2^10 + 2^11 + 2^14)
     @test valuation(log(c)) == 1
   end
 
   @testset "Maps" begin
-    # FlintQadicField -> FlintQadicField
-    Qq, a = QadicField(2, 3, 100)
+    # QadicField -> QadicField
+    Qq, a = qadic_field(2, 3, precision = 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(Qq)))
 
     i = findfirst(x -> x == a, rt)
@@ -166,7 +166,7 @@
     for i in 1:10
       z = mk\(rand(k))
       @test z == f\(f(z))
-      fl, w = @inferred haspreimage(f, z)
+      fl, w = @inferred has_preimage_with_preimage(f, z)
       @test fl
       @test f(w) == z
     end
@@ -187,7 +187,7 @@
       @test g(f(z)) == z
     end
 
-    # FlintQadicField -> LocalField
+    # QadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
     f = @inferred hom(Qq, L, L(gen(Qq)))
@@ -195,15 +195,15 @@
     @test f(a) == L(gen(Qq))
     @test_throws ErrorException hom(Qq, L, b)
     @test f\(L(gen(Qq))) == gen(Qq)
-    fl, z = @inferred haspreimage(f, b^3)
+    fl, z = @inferred has_preimage_with_preimage(f, b^3)
     @test fl
     @test f(z) == L(-2)
 
-    # LocalField -> FlintQadicField
-    Qp = PadicField(2, 100)
+    # LocalField -> QadicField
+    Qp = padic_field(2, precision = 100)
     Qpx, x = polynomial_ring(Qp)
-    K, a = Hecke.unramified_extension(x^2+x+1)
-    Qq, gQq = QadicField(2, 2, 100)
+    K, a = unramified_extension(x^2+x+1)
+    Qq, gQq = qadic_field(2, 2, precision = 100)
     rt = roots(map_coefficients(Qq, defining_polynomial(K)))
 
     f = @inferred hom(K, Qq, rt[1])
@@ -216,14 +216,14 @@
   end
 
   @testset "Automorphisms" begin
-    K = PadicField(2, 200)
+    K = padic_field(2, precision = 200)
     Kt, t = polynomial_ring(K)
-    L, b = Hecke.eisenstein_extension(t^2+2, "a")
+    L, b = eisenstein_extension(t^2+2, "a")
     @test length(automorphism_list(L)) == 2
-    Qq, a = QadicField(2, 2, 100)
+    Qq, a = qadic_field(2, 2, precision = 100)
     @test length(automorphism_list(Qq)) == 2
     Qqx, x = polynomial_ring(Qq)
-    L, b = Hecke.eisenstein_extension(x^3+2, "a")
+    L, b = eisenstein_extension(x^3+2, "a")
     @test length(automorphism_list(L)) == 3
     @test length(absolute_automorphism_list(L)) == 6
     G, mG = absolute_automorphism_group(L)
@@ -232,7 +232,7 @@
   end
 
   @testset "Unramified extension" begin
-    Qx,x = FlintQQ["x"]
+    Qx,x = QQ["x"]
     f = Qx([ 1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1, 1 ])
     L = number_field(f)[1];
     P = prime_decomposition(maximal_order(L),7)[1][1];
@@ -248,19 +248,19 @@
   end
 
   @testset "Ali-Inverse" begin
-    Qx,x = FlintQQ["x"]
+    Qx,x = QQ["x"]
     L = number_field(x^6-6*x^4+9*x^2+23)[1]
     P = prime_decomposition(maximal_order(L),23)[1][1]
     lp,mp = Hecke.completion(L,P)
     a = uniformizer(lp)
     Qy,y = polynomial_ring(lp,"y")
-    N = Hecke.unramified_extension(y^2+13*y+4)[1]
+    N = unramified_extension(y^2+13*y+4)[1]
     r = N(53)*basis(N)[1] + N(165)*basis(N)[2]
     @test isone(r*r^-1)
   end
 
   @testset "extend extend extend" begin
-    K, = QadicField(5, 2, 10)
+    K, = qadic_field(5, 2, precision = 10)
     L, = unramified_extension(K, 3)
     M, = unramified_extension(L, 3)
   end
@@ -274,7 +274,7 @@
   @test length(automorphism_list(k3)) == 3
 
   @testset "image of one units under log" begin
-    Qp = PadicField(3, 10)
+    Qp = padic_field(3, precision = 10)
     Qpt, t = Qp["t"]
     E, a = eisenstein_extension(t^2 - 3)
     n, x = Hecke.image_of_logarithm_one_units(E)
@@ -285,5 +285,67 @@
 
     n, x = Hecke.image_of_logarithm_one_units(Qp)
     @test n == 1 && length(x) == 1
+  end
+
+  @testset "log problems" begin
+    Qx, x = QQ["x"]
+    f = x^4 - 52*x^2 + 26
+    K, a = number_field(f; cached = false)
+    u = 1//5*a^2 - 51//5
+    OK = maximal_order(K)
+    P = prime_decomposition(OK, 2)[1][1]
+    C, mC = completion(K, P)
+    @test valuation(log(mC(u))) == 1//2
+  end
+
+  let
+    # missing canonical unit
+    K, a = quadratic_field(5);
+    OK = maximal_order(K)
+    lp = prime_decomposition(OK, 7)
+    C, mC = completion(K, lp[1][1], 20)
+    Ct, t = C["t"];
+    s = sprint(show, "text/plain", t//(1 + t))
+    @test s isa String
+  end
+
+  let
+    # some maps
+    Qx, x = QQ[:x]
+    K, a = number_field(x^3 - x^2 - 30*x + 64)
+    KK, aa = number_field(x^3 - x^2 - 30*x - 27)
+    # isomorphic over 13
+    P, = prime_ideals_over(maximal_order(K), 13)
+    Q, = prime_ideals_over(maximal_order(KK), 13)
+    CP, mCP = completion(K, P)
+    CQ, mCQ = completion(KK, Q)
+    fl, h = is_isomorphic(CP, CQ)
+    @test fl
+    @test is_one(h(one(CP)))
+    @test is_zero(h(zero(CP)))
+
+    # not isomorphic over 7
+    P, = prime_ideals_over(maximal_order(K), 7)
+    Q, = prime_ideals_over(maximal_order(KK), 7)
+    CP, mCP = completion(K, P)
+    CQ, mCQ = completion(KK, Q)
+    fl, h = is_isomorphic(CP, CQ)
+    @test !fl
+  end
+
+  let
+    # local isomormophism
+    Qx, x = QQ[:x]
+    K, a = number_field(x^3 - x^2 - 30*x + 64)
+    KK, aa = number_field(x^3 - x^2 - 30*x - 27)
+    @test Hecke._is_locally_isomorphic(K, KK, 13)
+    @test !Hecke._is_locally_isomorphic(K, KK, 7)
+
+    f = x^4 + 6*x^2 + 4
+    g = x^4 - 6*x^2 + 4
+    K, = number_field(f)
+    L, = number_field(g)
+    @test Hecke._is_locally_isomorphic(K, L, 5)
+    #@test !Hecke._is_locally_isomorphic(K, L, 2)
   end
 end

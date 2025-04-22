@@ -73,7 +73,7 @@
   @test_throws ErrorException Hecke.complex_embedding(K, 0.0)
 
   K, a = quadratic_field(-2)
-  @test Hecke.infinite_uniformizers(K) == Dict{Hecke.embedding_type(K), nf_elem}()
+  @test Hecke.infinite_uniformizers(K) == Dict{Hecke.embedding_type(K), AbsSimpleNumFieldElem}()
   K, a = quadratic_field(2)
   em = complex_embeddings(K)
   for (e, elt) in Hecke.infinite_uniformizers(K)
@@ -84,4 +84,11 @@
   # This should be fast
   K, a = cyclotomic_field(19^3, cached = false)
   @test length(@inferred complex_embeddings(K)) == degree(K)
+
+  # Some issue
+  Qx, x = QQ["x"]
+  K, a = number_field(x^4 - 8)
+  e = complex_embedding(K, 1.68)
+  @test number_field(e) === K
+  @test is_real(e(a)) && real(e(a)) > 0
 end

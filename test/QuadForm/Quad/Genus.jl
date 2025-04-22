@@ -1,5 +1,5 @@
 @testset "Genus" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a", cached = false)
   OK = maximal_order(K)
   rlp = real_places(K)
@@ -124,7 +124,7 @@
     @test L3 in G3
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [30, -15, 0, -15, 30, -15, 0, -15, 30]);
@@ -134,7 +134,7 @@
   fl, LL = Hecke.is_maximal_integral(L, p)
   @test !fl
 
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2;
   K, a = number_field(f)
   p = prime_ideals_over(maximal_order(K),2)[1]
@@ -197,11 +197,11 @@
 end
 
 @testset "Hashes" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x - 1;
   K, a = number_field(f, "a", cached = false)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 10, 0, 0, 0, 20]);
-  gens = Vector{nf_elem}[map(K, [0, 1, 0]), map(K, [0, 1, 0]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, -1//2, -1//4]), map(K, [-5//4, -1//2, -1//4])]
+  gens = Vector{AbsSimpleNumFieldElem}[map(K, [0, 1, 0]), map(K, [0, 1, 0]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, -1//2, -1//4]), map(K, [-5//4, -1//2, -1//4])]
   L = quadratic_lattice(K, gens, gram = D)
   L2 = lattice(ambient_space(L), pseudo_matrix(L))
   p1 = support(5*maximal_order(K))[1]

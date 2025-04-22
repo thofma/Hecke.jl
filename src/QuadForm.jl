@@ -31,6 +31,7 @@ include("QuadForm/Quad/GenusRep.jl")
 include("QuadForm/Quad/Legacy.jl")
 include("QuadForm/Quad/ZGenus.jl")
 include("QuadForm/Quad/PadicLift.jl")
+include("QuadForm/Quad/ZGenusRep.jl")
 
 # Hermitian
 include("QuadForm/Herm/Spaces.jl")
@@ -51,7 +52,7 @@ include("QuadForm/MassQuad.jl")
 # Close vectors
 include("QuadForm/CloseVectors.jl")
 
-# indefinite LLL 
+# indefinite LLL
 include("QuadForm/indefiniteLLL.jl")
 
 # Functionality for IO with Hecke/Magma

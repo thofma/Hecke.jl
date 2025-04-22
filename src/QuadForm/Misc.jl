@@ -18,7 +18,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::VecSpaceRes)
 end
 
 function Base.show(io::IO, f::VecSpaceRes)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Map of change of scalars")
   else
     print(io, "Map of change of scalars between vector spaces")
@@ -34,7 +34,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::AbstractSpaceRes)
 end
 
 function Base.show(io::IO, f::AbstractSpaceRes)
- if get(io, :supercompact, false)
+ if is_terse(io)
     print(io, "Map of change of scalars")
   else
     print(io, "Map of change of scalars between hermitian spaces")
@@ -74,22 +74,13 @@ function _image(f::VecSpaceRes{S, T}, v::Vector{QQFieldElem}) where {S, T}
   return z
 end
 
-function image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
-  if v isa Vector{elem_type(base_ring(domain(f)))}
-    vv = v
-  else
-    vv = map(base_ring(domain(f)), v)
-  end
-  return _image(f, vv)
-end
-
 # f makes f.btop correspond with f.bdown. So for a vector v in
 # the domain of f, we get its coordinates in the basis f.btop
 # using f.ibtop, we do the exntension of scalars. This gives
 # the coordinates in the basis f.bdown of the codomain of f
 # which we therefore multiply to f.bdown to get coordinates
 # in the standard basis
-function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
+function image(f::AbstractSpaceRes{S, T}, v::Union{Vector, MatrixElem}) where {S, T}
   E = base_ring(codomain(f))
   ibtop = f.ibtop
   bdown = f.bdown
@@ -97,18 +88,25 @@ function _image(f::AbstractSpaceRes{S, T}, v::Vector) where {S, T}
   d = absolute_degree(E)
   m = rank(domain(f))
   B = absolute_basis(E)
-  @req length(v) == m "Vector must have length $m ($(length(v)))"
-  vl = vec(collect(transpose(matrix(v))*ibtop))
+  if v isa MatElem
+    @req size(v) == (1, m) || size(v) == (m, 1) "Matrix should be a column or row vector of length $m ($(size(v)))"
+    if ncols(v) == 1
+      v = transpose(v)
+    end
+  else
+    @req length(v) == m "Vector must have length $m ($(length(v)))"
+  end
+  v *= ibtop
   z = Vector{elem_type(E)}(undef, n)
   l = 1
   for i in 1:n
     z[i] = zero(E)
     for k in 1:d
-      z[i] = z[i] + vl[l] * B[k]
+      z[i] = z[i] + v[l] * B[k]
       l = l + 1
     end
   end
-  return vec(collect(matrix(E, 1, length(z), z)*bdown))
+  return (z*bdown)::Vector{elem_type(E)}
 end
 
 ### Preimage functions
@@ -178,7 +176,7 @@ function _preimage(f::AbstractSpaceRes{S, T}, w::Vector) where {S, T}
       k = k + 1
     end
   end
-  return vec(collect(matrix(QQ, 1, length(z), z)*btop))
+  return vec(collect(matrix(QQ, 1, length(z), z)*btop))::Vector{elem_type(K)}
 end
 
 ################################################################################
@@ -257,40 +255,40 @@ end
 ################################################################################
 
 # This can be done more efficiently
-function image(f::NfToNfRel, I::NfAbsOrdIdl, OK)
+function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in basis(I)), init = 0 * OK)
 end
 
-function image(f::NfToNfRel, I::NfAbsOrdIdl)
+function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal)
   OK = maximal_order(codomain(f))
   return image(f, I, OK)
 end
 
-function image(f::NfRelToNfRelMor_nf_elem_nf_elem, I::NfRelOrdIdl)
+function image(f::NumFieldHom{RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal)
   OK = order(I)
   return reduce(+, (OK(f(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdIdl, OK)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(I)), init = 0 * OK)
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdIdl)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderIdeal)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
 end
 
-function image(S::T, A::NfOrdFracIdl) where {T <: Hecke.NumFieldMor}
+function image(S::T, A::AbsSimpleNumFieldOrderFractionalIdeal) where {T <: Hecke.NumFieldHom}
   return S(numerator(A))//denominator(A)
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdFracIdl, OK)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderFractionalIdeal, OK)
   E = codomain(f)
   den = (f\E(denominator(I)))*OK
   return reduce(+, (OK(f\(b)) * OK for b in absolute_basis(numerator(I))), init = 0 * OK)//den
 end
 
-function preimage(f::NfToNfRel, I::NfRelOrdFracIdl)
+function preimage(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::RelNumFieldOrderFractionalIdeal)
   OK = maximal_order(domain(f))
   return preimage(f, I, OK)
 end
@@ -321,7 +319,7 @@ function _strong_approximation(S, ep, xp)
     end
   end
   _ep = ZZRingElem[]
-  _xp = nf_elem[]
+  _xp = AbsSimpleNumFieldElem[]
   _S = support(d * OK)
   _SS = ideal_type(OK)[]
   for i in 1:length(S)
@@ -393,7 +391,7 @@ function _idempotents(x::Vector)
   # ( 0 | M_x | I )
   # ( 0 | M_y | 0 )
 
-  V = zero_matrix(FlintZZ, d * k + 1, d * k + 1)
+  V = zero_matrix(ZZ, d * k + 1, d * k + 1)
 
   u = coordinates(one(O))
 
@@ -479,7 +477,7 @@ end
 #
 ################################################################################
 
-function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
+function image(f::NumFieldHom, I::RelNumFieldOrderIdeal{T, S}) where {T, S}
   #f has to be an automorphism!!!!
   O = order(I)
   @assert is_maximal(O) # Otherwise the order might change
@@ -535,7 +533,7 @@ function image(f::NumFieldMor, I::NfRelOrdIdl{T, S}) where {T, S}
   return J
 end
 
-function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}; order = order(I)) where {T, S}
+function image(f::NumFieldHom, I::RelNumFieldOrderFractionalIdeal{T, S}; order = order(I)) where {T, S}
   #S has to be an automorphism!!!!
   O = order
   @assert is_maximal(O) # Otherwise the order might change
@@ -544,7 +542,7 @@ function image(f::NumFieldMor, I::NfRelOrdFracIdl{T, S}; order = order(I)) where
 
   pb = pseudo_basis(I)
 
-  z = sum(b * (f(a) * O) for (a, b) in pb)
+  z = sum(b * (f(a) * O) for (a, b) in pb; init = zero(K) * O)
   return z
 end
 
@@ -618,7 +616,7 @@ The number field $L/K$ must be a simple extension of degree 2.
 """
 is_local_norm(::NumField, ::NumFieldElem, ::Any)
 
-function is_local_norm(K::AnticNumberField, a::QQFieldElem, p::ZZRingElem)
+function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, p::ZZRingElem)
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
   b = (2 * x - tr(x))^2
@@ -627,24 +625,24 @@ function is_local_norm(K::AnticNumberField, a::QQFieldElem, p::ZZRingElem)
   return hilbert_symbol(a, bQ, p) == 1
 end
 
-function is_local_norm(K::AnticNumberField, a::QQFieldElem, P::NfOrdIdl)
+function is_local_norm(K::AbsSimpleNumField, a::QQFieldElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   p = minimum(P)
   return is_local_norm(K, a, p)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, P::NfOrdIdl)
-  return is_local_norm(K, FlintQQ(a), P)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  return is_local_norm(K, QQ(a), P)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, p::ZZRingElem)
-  return is_local_norm(K, FlintQQ(a), p)
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::ZZRingElem)
+  return is_local_norm(K, QQ(a), p)
 end
 
-function is_local_norm(K::AnticNumberField, a::RingElement, p::Integer)
-  return is_local_norm(K, FlintQQ(a), ZZRingElem(p))
+function is_local_norm(K::AbsSimpleNumField, a::RingElement, p::Integer)
+  return is_local_norm(K, QQ(a), ZZRingElem(p))
 end
 
-function is_local_norm(K::NfRel{T}, a::T, P) where {T} # ideal of parent(a)
+function is_local_norm(K::RelSimpleNumField{T}, a::T, P) where {T} # ideal of parent(a)
   nf(order(P)) != parent(a) && error("Prime ideal must have the same base field as the second argument")
   degree(K) != 2 && error("Degree of number field must be 2")
   x = gen(K)
@@ -679,7 +677,7 @@ function _special_unit(P, p::ZZRingElem)
   end
   k = GF(p, cached = false)
   hex(x) = k(numerator(x)) * inv(k(denominator(x)))
-  hexinv(x) = FlintQQ(lift(x))
+  hexinv(x) = QQ(lift(x))
   t = hexinv(sqrt(hex(a)))
   a = a//t^2
   x = x//t
@@ -782,7 +780,7 @@ end
 
 ################################################################################
 #
-#  Treat FlintQQ as a number field
+#  Treat QQ as a number field
 #
 ################################################################################
 
@@ -853,26 +851,26 @@ function _find_quaternion_algebra(b, P, I)
     end
   end
 
-  F = Nemo.GF(2)
+  F = Nemo.Native.GF(2)
 
   target = matrix(F, 1, length(__P) + length(I), vcat(fill(1, n), fill(0, length(__P) - n), fill(1, m), fill(0, length(I) - m)))
   if iszero(target)
     return one(K)
   end
 
-  #__P = convert(Vector{NfOrdIdl}, collect(keys(_P)))
+  #__P = convert(Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, collect(keys(_P)))
 
   found = false
   U, h = unit_group(R)
-  sign_vector = g -> begin
+  function sign_vector(g)
     return matrix(F, 1, length(__P) + length(I),
-                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))
+                  vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))::typeof(target)
   end
 
 
   L, f = sunit_group(identity.(__P))
   M = zero_matrix(F, 0, length(__P) + length(I))
-  elts = nf_elem[]
+  elts = AbsSimpleNumFieldElem[]
 
   for i in 1:ngens(L)
     v = sign_vector(f(L[i]))
@@ -881,8 +879,7 @@ function _find_quaternion_algebra(b, P, I)
     end
     M = vcat(M, v)
     push!(elts, f(L[i])) # cache
-    fl, w = can_solve_with_solution(M, target, side = :left)
-    if fl
+    if can_solve(M, target, side = :left)
       found = true
       break
     end
@@ -892,6 +889,7 @@ function _find_quaternion_algebra(b, P, I)
     Cl, mCl = class_group(R)
     A = abelian_group(fill(0, length(__P)))
     hh = hom(A, Cl, [mCl\(p) for p in __P])
+    _orders = [order(mCl\(p)) for p in __P]
     S, mS = image(hh, false)
     Q, mQ = quo(Cl, [mS(S[i]) for i in 1:ngens(S)])
 
@@ -904,7 +902,7 @@ function _find_quaternion_algebra(b, P, I)
         end
         o = order(mQ(mCl\(q)))
         c = -(hh\(o * (mCl\(q))))
-        fl, x = is_principal(q * prod(__P[i]^Int(c.coeff[i]) for i in 1:length(__P)))
+        fl, x = is_principal_with_data(q * prod(__P[i]^mod(Int(c.coeff[i]), Int(_orders[i])) for i in 1:length(__P)))
         @assert fl
         v = sign_vector(elem_in_nf(x))
         if rank(M) == rank(vcat(M, v + target))
@@ -916,9 +914,9 @@ function _find_quaternion_algebra(b, P, I)
       end
     end
   end
-  fl, v = can_solve_with_solution(M, target, side = :left)
+  fl, w = can_solve_with_solution(M, target, side = :left)
   @assert fl
-  z = evaluate(FacElem(Dict(elts[i] => Int(lift(v[1, i])) for i in 1:ncols(v))))
+  z = evaluate(FacElem(Dict(elts[i] => Int(lift(w[1, i])) for i in 1:ncols(w))))
   @assert sign_vector(z) == target
   return z
 end
@@ -937,7 +935,7 @@ function _find_quaternion_algebra(b::QQFieldElem, P, I)
     @assert length(I) == 1
     IK = infinite_places(K)
   end
-  c = _find_quaternion_algebra(bK, PK, IK)::nf_elem
+  c = _find_quaternion_algebra(bK, PK, IK)::AbsSimpleNumFieldElem
   return coeff(c, 0)
 end
 
@@ -959,7 +957,7 @@ end
 function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   K = number_field(first(I))
   OK = maximal_order(K)
-  local A::GrpAbFinGen
+  local A::FinGenAbGroup
   A, exp, log = sign_map(OK, _embedding.(I), 1 * OK)
   uni = infinite_uniformizers(K)
   target_signs = zeros(Int, ngens(A))
@@ -971,7 +969,7 @@ function _weak_approximation_generic(I::Vector{<: InfPlc}, val::Vector{Int})
   end
 
   for P in I
-    v = log(uni[embedding(P)])::GrpAbFinGenElem
+    v = log(uni[embedding(P)])::FinGenAbGroupElem
     for i in 1:ngens(A)
       if v.coeff[i] == 1
         target_signs[i] = val[i] == -1 ? 1 : 0

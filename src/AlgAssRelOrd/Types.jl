@@ -6,10 +6,10 @@
 
 # S is the element type of the base field of the algebra, T the fractional ideal
 # type of this field
-mutable struct AlgAssRelOrd{S, T, U} <: Ring
+mutable struct AlgAssRelOrd{S, T, U} <: NCRing
   algebra::U
   dim::Int
-  pseudo_basis#::Vector{Tuple{AbsAlgAssElem{S}, T}}
+  pseudo_basis#::Vector{Tuple{AbstractAssociativeAlgebraElem{S}, T}}
   basis_matrix::Generic.MatSpaceElem{S}
   basis_mat_inv::Generic.MatSpaceElem{S}
   basis_pmatrix::PMat{S, T}
@@ -28,7 +28,7 @@ mutable struct AlgAssRelOrd{S, T, U} <: Ring
   nice_order#Tuple{AlgAssAbsOrd, T}
   nice_order_ideal::T
 
-  function AlgAssRelOrd{S, T, U}(A::AbsAlgAss{S}) where {S, T, U}
+  function AlgAssRelOrd{S, T, U}(A::AbstractAssociativeAlgebra{S}) where {S, T, U}
     z = new{S, T, U}()
     z.algebra = A
     z.dim = dim(A)
@@ -58,9 +58,9 @@ end
 #
 ################################################################################
 
-mutable struct AlgAssRelOrdElem{S, T, U} <: RingElem
+mutable struct AlgAssRelOrdElem{S, T, U} <: NCRingElem
   parent::AlgAssRelOrd{S, T, U}
-  elem_in_algebra::AbsAlgAssElem{S}
+  elem_in_algebra::AbstractAssociativeAlgebraElem{S}
   coordinates::Vector{S}
   has_coord::Bool
 
@@ -73,7 +73,7 @@ mutable struct AlgAssRelOrdElem{S, T, U} <: RingElem
     return z
   end
 
-  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}, a::AbsAlgAssElem{S}) where {S, T, U}
+  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}, a::AbstractAssociativeAlgebraElem{S}) where {S, T, U}
     z = new{S, T, U}()
     z.parent = O
     z.elem_in_algebra = a
@@ -82,7 +82,7 @@ mutable struct AlgAssRelOrdElem{S, T, U} <: RingElem
     return z
   end
 
-  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}, a::AbsAlgAssElem{S}, arr::Vector{S}) where {S, T, U}
+  function AlgAssRelOrdElem{S, T, U}(O::AlgAssRelOrd{S, T, U}, a::AbstractAssociativeAlgebraElem{S}, arr::Vector{S}) where {S, T, U}
     z = new{S, T, U}()
     z.parent = O
     z.elem_in_algebra = a
@@ -101,7 +101,7 @@ end
 mutable struct AlgAssRelOrdIdl{S, T, U}
   algebra::U
 
-  pseudo_basis::Vector{Tuple{AbsAlgAssElem{S}, T}}
+  pseudo_basis::Vector{Tuple{AbstractAssociativeAlgebraElem{S}, T}}
   # The basis matrices are in the BASIS of the ALGEBRA!
   basis_pmatrix::PMat{S, T}
   basis_matrix::Generic.MatSpaceElem{S}
@@ -131,7 +131,7 @@ mutable struct AlgAssRelOrdIdl{S, T, U}
                                        # to different orders
   normred::Dict{AlgAssRelOrd{S, T, U}, T}
 
-  function AlgAssRelOrdIdl{S, T, U}(A::AbsAlgAss{S}) where {S, T, U}
+  function AlgAssRelOrdIdl{S, T, U}(A::AbstractAssociativeAlgebra{S}) where {S, T, U}
     z = new{S, T, U}()
     z.algebra = A
     z.isleft = 0
@@ -143,7 +143,7 @@ mutable struct AlgAssRelOrdIdl{S, T, U}
     return z
   end
 
-  function AlgAssRelOrdIdl{S, T, U}(A::AbsAlgAss{S}, M::PMat{S, T}) where {S, T, U}
+  function AlgAssRelOrdIdl{S, T, U}(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}) where {S, T, U}
     z = AlgAssRelOrdIdl{S, T, U}(A)
     z.basis_pmatrix = M
     z.basis_matrix = M.matrix

@@ -1,5 +1,5 @@
-@testset "NfRelNS" begin
-  Qx, x = FlintQQ["x"]
+@testset "RelNonSimpleNumField" begin
+  Qx, x = QQ["x"]
   K, _ = number_field(x^2 - 2)
   Ky, y = K["y"]
   L, (a, b) = @inferred number_field([y^2 - 3, y^3 - 5])

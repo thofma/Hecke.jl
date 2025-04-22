@@ -1,4 +1,4 @@
-export sparse_row, dot, scale_row!, add_scaled_row, permute_row
+import Base.Vector
 
 ################################################################################
 #
@@ -8,12 +8,12 @@ export sparse_row, dot, scale_row!, add_scaled_row, permute_row
 
 function SRowSpace(R::Ring; cached = true)
   T = elem_type(R)
-  return SRowSpace{T}(R)
+  return SRowSpace{T}(R, cached)
 end
 
-base_ring(A::SRow{ZZRingElem}) = FlintZZ
+base_ring(A::SRow{ZZRingElem}) = ZZ
 
-base_ring(A::SRow{QQFieldElem}) = FlintQQ
+base_ring(A::SRow{QQFieldElem}) = QQ
 
 function base_ring(A::SRow{T}) where {T}
   if isdefined(A, :base_ring)
@@ -25,7 +25,39 @@ function base_ring(A::SRow{T}) where {T}
   end
 end
 
+base_ring_type(::Type{SRow{T}}) where {T} = parent_type(T)
+
+
+@doc raw"""
+    sparse_row_type(a)
+
+Return the type of the sparse row type of the given element, element type, parent or parent type $a$.
+
+# Examples
+```jldoctest
+julia> x = sparse_row(QQ)
+Sparse row with positions Int64[] and values QQFieldElem[]
+
+julia> sparse_row_type(QQ) == typeof(x)
+true
+
+julia> sparse_row_type(zero(QQ)) == typeof(x)
+true
+
+julia> sparse_row_type(typeof(QQ)) == typeof(x)
+true
+
+julia> sparse_row_type(typeof(zero(QQ))) == typeof(x)
+true
+```
+"""
+sparse_row_type(::T) where {T <: Union{NCRing, NCRingElem}} = sparse_row_type(T)
+sparse_row_type(::Type{T}) where {T <: NCRing} = sparse_row_type(elem_type(T))
+sparse_row_type(::Type{T}) where {T <: NCRingElem} = SRow{T, sparse_inner_type(T)}
+
+
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
+ConformanceTests.equality(A::SRow, B::SRow) = A == B
 
 ################################################################################
 #
@@ -38,20 +70,19 @@ end
 
 Constructs an empty row with base ring $R$.
 """
-function sparse_row(R::Ring)
+function sparse_row(R::NCRing)
   return SRow(R)
 end
 
-const _sort = sort
 @doc raw"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 The elements $x_i$ must belong to the ring $R$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
-  if sort
-    A = _sort(A, lt=(a,b) -> isless(a[1], b[1]))
+function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
+  if sort && length(A) > 1
+    A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
   return SRow(R, A)
 end
@@ -62,9 +93,9 @@ end
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
 where $J = (i_j, x_j)_j$.
 """
-function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
-  if sort
-    A = _sort(A, lt=(a,b)->isless(a[1], b[1]))
+function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
+  if sort && length(A) > 1
+    A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
   return SRow(R, A)
 end
@@ -75,6 +106,14 @@ function Base.empty!(A::SRow)
   return A
 end
 
+function Base.empty(A::SRow)
+  return sparse_row(base_ring(A))
+end
+
+function zero(A::SRow)
+  return empty(A)
+end
+
 function swap!(A::SRow, B::SRow)
   A.pos, B.pos = B.pos, A.pos
   A.values, B.values = B.values, A.values
@@ -82,13 +121,13 @@ function swap!(A::SRow, B::SRow)
 end
 
 @doc raw"""
-    sparse_row(R::Ring, J::Vector{Int}, V::Vector{T}) -> SRow{T}
+    sparse_row(R::NCRing, J::Vector{Int}, V::Vector{T}) -> SRow{T}
 
 Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
 $J = (i_j)_j$ and $V = (x_j)_j$.
 """
-function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}; sort::Bool = true) where T
-  if sort
+function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::Bool = true) where T
+  if sort && length(pos) > 1
     p = sortperm(pos)
     pos = pos[p]
     val = val[p]
@@ -118,9 +157,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(r::SRow, dict::IdDict)
-  s = sparse_row(base_ring(r))
-  s.pos = Base.deepcopy_internal(r.pos, dict)
-  s.values = Base.deepcopy_internal(r.values, dict)
+  s = sparse_row(base_ring(r), Base.deepcopy_internal(r.pos, dict), Base.deepcopy_internal(r.values, dict))
   return s
 end
 
@@ -131,7 +168,7 @@ end
 ################################################################################
 
 function show(io::IO, A::SRow{T}) where T
-  print(io, "Sparse row with positions $(A.pos) and values $(A.values)\n")
+  print(io, "Sparse row with positions $(A.pos) and values $(A.values)")
 end
 
 ################################################################################
@@ -264,7 +301,7 @@ end
 
 Create a new sparse row by coercing all elements into the ring $R$.
 """
-function change_base_ring(R::S, A::SRow{T}) where {T <: RingElem, S <: Ring}
+function change_base_ring(R::S, A::SRow{T}) where {T <: NCRingElem, S <: NCRing}
   z = sparse_row(R)
   for (i, v) in A
     nv = R(v)
@@ -291,7 +328,7 @@ end
 
 Given a sparse row $(a_i)_{i}$ and an index $j$ return $a_j$.
 """
-function Base.getindex(A::SRow{T}, i::Int) where {T <: RingElem}
+function Base.getindex(A::SRow{T}, i::Int) where {T <: NCRingElem}
   i < 1 && error("Index must be positive")
   p = findfirst(isequal(i), A.pos)
   if p === nothing
@@ -299,6 +336,14 @@ function Base.getindex(A::SRow{T}, i::Int) where {T <: RingElem}
   else
     return A.values[p]
   end
+end
+
+#the generic case is a julia array, so getindex does not do any allocations
+#set!(a, ...) will e.g. fail on FqDefault as push!() will not do a copy
+#consider push!(some_row.values, getindex!(t, some_otherow.values, i))
+#if set! is used that all values will be identical: t
+function Hecke.getindex!(a::T, A::Vector{T}, i::Int) where {T <: NCRingElem}
+  return A[i]
 end
 
 ################################################################################
@@ -328,9 +373,9 @@ function Base.iterate(A::SRow, st::Int = 1)
   return (A.pos[st], A.values[st]), st + 1
 end
 
-Base.eltype(::Type{SRow{T}}) where T = Tuple{Int, T}
+Base.eltype(::Type{<:SRow{T}}) where T = Tuple{Int, T}
 
-Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
+Base.IteratorSize(::Type{<:SRow{T}}) where T = Base.HasLength()
 
 ################################################################################
 #
@@ -341,7 +386,7 @@ Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
 @doc raw"""
     dot(A::SRow, B::SRow) -> RingElem
 
-Returns the dot product of $A$ and $B$.
+Returns the dot product of $A$ and $B$. Note the order matters in non-commutative case.
 """
 function dot(A::SRow{T}, B::SRow{T}) where T
   @assert length(A) != 0
@@ -355,7 +400,7 @@ function dot(A::SRow{T}, B::SRow{T}) where T
       return v
     end
     if B.pos[b] == A.pos[a]
-      v += B.values[b] * A.values[a]
+      v += A.values[a] * B.values[b]
     end
   end
   return v
@@ -418,15 +463,64 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    scale_row!(a::SRow, b::NCRingElem) -> SRow
+
+Returns the (left) product of $b \times a$ and reassigns the value of $a$ to this product.
+For rows, the standard multiplication is from the left.
+"""
 function scale_row!(a::SRow{T}, b::T) where T
-  @assert !iszero(b)
-  if isone(b)
-    return
+  if iszero(b)
+    return empty!(a)
+  elseif isone(b)
+    return a
   end
-  for i=1:length(a.pos)
-    a.values[i] *= b
+  i = 1
+  while i <= length(a)
+    a.values[i] = b*a.values[i]
+    if iszero(a.values[i])
+      deleteat!(a.values, i)
+      deleteat!(a.pos, i)
+    else
+      i += 1
+    end
   end
+  return a
 end
+
+scale_row!(a::SRow, b) = scale_row!(a, base_ring(a)(b))
+
+@doc raw"""
+    scale_row_right!(a::SRow, b::NCRingElem) -> SRow
+
+Returns the (right) product of $a \times b$ and modifies $a$ to this product.
+"""
+function scale_row_right!(a::SRow{T}, b::T) where T
+  if iszero(b)
+    return empty!(a)
+  elseif isone(b)
+    return a
+  end
+  i = 1
+  while i <= length(a)
+    a.values[i] *= b
+    if iszero(a.values[i])
+      deleteat!(a.values, i)
+      deleteat!(a.pos, i)
+    else
+      i += 1
+    end
+  end
+  return a
+end
+
+scale_row_right!(a::SRow, b) = scale_row_right!(a, base_ring(a)(b))
+
+function scale_row_left!(a::SRow{T}, b::T) where T
+  return scale_row!(a,b)
+end
+
+scale_row_left!(a::SRow, b) = scale_row_left!(a, base_ring(a)(b))
 
 ################################################################################
 #
@@ -436,9 +530,9 @@ end
 
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
-    return B
+    return deepcopy(B)
   elseif length(B.values) == 0
-    return A
+    return deepcopy(A)
   end
   return add_scaled_row(A, B, one(base_ring(A)))
 end
@@ -446,12 +540,12 @@ end
 function -(A::SRow{T}, B::SRow{T}) where T
   if length(A) == 0
     if length(B) == 0
-      return A
+      return deepcopy(A)
     else
-      return add_scaled_row(B, A, base_ring(B)(-1))
+      return add_scaled_row(B, A, -1)
     end
   end
-  return add_scaled_row(B, A, base_ring(A)(-1))
+  return add_scaled_row(B, A, -1)
 end
 
 function -(A::SRow{T}) where {T}
@@ -474,7 +568,29 @@ function *(b::T, A::SRow{T}) where T
   if iszero(b)
     return B
   end
-  for (p,v) = A
+  for (p,v) in A
+    nv = b*v
+    if !iszero(nv)  # there are zero divisors - potentially
+      push!(B.pos, p)
+      push!(B.values, nv)
+    end
+  end
+  return B
+end
+
+function *(b, A::SRow)
+  if length(A.values) == 0
+    return sparse_row(base_ring(A))
+  end
+  return base_ring(A)(b)*A
+end
+
+function *(A::SRow{T}, b::T) where T
+  B = sparse_row(parent(b))
+  if iszero(b)
+    return B
+  end
+  for (p,v) in A
     nv = v*b
     if !iszero(nv)  # there are zero divisors - potentially
       push!(B.pos, p)
@@ -484,13 +600,14 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-function *(b::Integer, A::SRow{T}) where T
+function *(A::SRow, b)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
-  return base_ring(A)(b)*A
+  return A*base_ring(A)(b)
 end
 
+#left and right div not implemented
 function div(A::SRow{T}, b::T) where T
   B = sparse_row(base_ring(A))
   if iszero(b)
@@ -513,13 +630,20 @@ function div(A::SRow{T}, b::Integer) where T
   return div(A, base_ring(A)(b))
 end
 
-function divexact(A::SRow{T}, b::T) where T
+@doc raw"""
+    divexact(A::SRow, b::RingElem; check::Bool = true) -> SRow
+
+Return $C$ such that $a = b \cdot C$. Calls the function `divexact_left(A,b;check)`
+"""
+divexact(A::SRow{T}, b::T; check::Bool=true) where T <: RingElem = divexact_left(A, b; check)
+
+function divexact_left(A::SRow{T}, b::T; check::Bool=true) where T <: NCRingElem
   B = sparse_row(base_ring(A))
   if iszero(b)
     return error("Division by zero")
   end
   for (p,v) = A
-    nv = divexact(v, b)
+    nv = divexact_left(v, b; check=check)
     @assert !iszero(nv)
     push!(B.pos, p)
     push!(B.values, nv)
@@ -527,11 +651,37 @@ function divexact(A::SRow{T}, b::T) where T
   return B
 end
 
-function divexact(A::SRow{T}, b::Integer) where T
+function divexact(A::SRow{T}, b::Integer; check::Bool=true) where T
   if length(A.values) == 0
     return deepcopy(A)
   end
-  return divexact(A, base_ring(A)(b))
+  return divexact_left(A, base_ring(A)(b), check=check)
+end
+
+@doc raw"""
+    divexact_right(A::SRow, b::NCRingElem; check::Bool = true) -> SRow
+
+Return $C$ such that $A = C \cdot b.
+"""
+function divexact_right(A::SRow{T}, b::T; check::Bool=true) where T
+  B = sparse_row(base_ring(A))
+  if iszero(b)
+    return error("Division by zero")
+  end
+  for (p,v) = A
+    nv = divexact_right(v, b; check=check)
+    @assert !iszero(nv)
+    push!(B.pos, p)
+    push!(B.values, nv)
+  end
+  return B
+end
+
+function divexact_right(A::SRow{T}, b::Integer; check::Bool=true) where T
+  if length(A.values) == 0
+    return deepcopy(A)
+  end
+  return divexact_right(A, base_ring(A)(b); check=check)
 end
 
 ################################################################################
@@ -543,7 +693,7 @@ end
 function permute_row(n::SRow{ZZRingElem}, p::Nemo.Generic.Perm{Int})
   r = Tuple{Int, ZZRingElem}[(p[i], v) for (i,v) = n]
   sort!(r, lt = (a,b)->a[1]<b[1])
-  return sparse_row(FlintZZ, r)
+  return sparse_row(ZZ, r)
 end
 
 ################################################################################
@@ -557,29 +707,39 @@ end
 
 Returns the row $c A + B$.
 """
-add_scaled_row(a::SRow{T}, b::SRow{T}, c::T) where {T} = add_scaled_row!(a, deepcopy(b), c)
+add_scaled_row(a::SRow{T}, b::SRow{T}, c) where {T} = add_scaled_row!(a, deepcopy(b), c)
+
+add_left_scaled_row(a::SRow{T}, b::SRow{T}, c) where {T} = add_left_scaled_row!(a, deepcopy(b), c)
+add_right_scaled_row(a::SRow{T}, b::SRow{T}, c) where {T} = add_right_scaled_row!(a, deepcopy(b), c)
+
+
 
 @doc raw"""
     add_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-Returns the row $c A + B$ by changing $B$ in place.
+Adds the left scaled row $c A$ to $B$.
 """
-function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
-  @assert a !== b
+function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, ::Val{left_side} = Val(true)) where {T, left_side}
+  if a === b
+    a = deepcopy(a)
+  end
   i = 1
   j = 1
   t = base_ring(a)()
   while i <= length(a) && j <= length(b)
     if a.pos[i] < b.pos[j]
-      insert!(b.pos, j, a.pos[i])
-      insert!(b.values, j, c*a.values[i])
+      t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
+      if !iszero(t)
+        insert!(b.pos, j, a.pos[i])
+        insert!(b.values, j, c*a.values[i])
+        j += 1
+      end
       i += 1
-      j += 1
     elseif a.pos[i] > b.pos[j]
       j += 1
     else
-      t = mul!(t, c, a.values[i])
-      b.values[j] = addeq!(b.values[j], t)
+      t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
+      b.values[j] = add!(b.values[j], t)
 
       if iszero(b.values[j])
         deleteat!(b.values, j)
@@ -591,14 +751,155 @@ function add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T) where T
     end
   end
   while i <= length(a)
-    push!(b.pos, a.pos[i])
-    push!(b.values, c*a.values[i])
+    t = left_side ? mul!(t, c, a.values[i]) : mul!(t, a.values[i], c)
+    if !iszero(t)
+      push!(b.pos, a.pos[i])
+      push!(b.values, c*a.values[i])
+    end
     i += 1
   end
   return b
 end
 
-add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c) where {T} = add_scaled_row!(a, b, base_ring(a)(c))
+
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c, side::Val) where {T} = add_scaled_row!(a, b, base_ring(a)(c), side)
+
+# ignore tmp argument
+add_scaled_row!(a::SRow{T}, b::SRow{T}, c, tmp::SRow{T}) where T = add_scaled_row!(a, b, c)
+
+add_left_scaled_row!(a::SRow{T}, b::SRow{T}, c) where T = add_scaled_row!(a, b, c)
+
+@doc raw"""
+    add_right_scaled_row!(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
+
+Return the right scaled row $A c$ to $B$ by changing $B$ in place.
+"""
+add_right_scaled_row!(a::SRow{T}, b::SRow{T}, c) where T = add_scaled_row!(a, b, c, Val(false))
+
+
+################################################################################
+#
+#  Mutating arithmetics
+#
+################################################################################
+
+function zero!(z::SRow)
+  return empty!(z)
+end
+
+function neg!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return neg!(x)
+  end
+  swap!(z, -x)
+  return z
+end
+
+function neg!(z::SRow)
+  for i in 1:length(z)
+    z.values[i] = neg!(z.values[i])
+  end
+  return z
+end
+
+function add!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  if z === x
+    return add!(x, y)
+  elseif z === y
+    return add!(y, x)
+  end
+  swap!(z, x + y)
+  return z
+end
+
+function add!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return scale_row!(z, 2)
+  end
+  return add_scaled_row!(x, z, one(base_ring(x)))
+end
+
+function sub!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  if z === x
+    return sub!(x, y)
+  elseif z === y
+    return neg!(sub!(y, x))
+  end
+  swap!(z, x - y)
+  return z
+end
+
+function sub!(z::SRow{T}, x::SRow{T}) where T
+  if z === x
+    return empty!(z)
+  end
+  return add_scaled_row!(x, z, -1)
+end
+
+function mul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function mul!(z::SRow{T}, x::SRow{T}, c) where T
+  if z === x
+    return scale_row_right!(x, c)
+  end
+  swap!(z, x * c)
+  return z
+end
+
+function mul!(z::SRow{T}, c, y::SRow{T}) where T
+  if z === y
+    return scale_row_left!(y, c)
+  end
+  swap!(z, c * y)
+  return z
+end
+
+function addmul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function addmul!(z::SRow{T}, x::SRow{T}, y) where T
+  if z === x
+    return scale_row_right!(x, y+1)
+  end
+  return add_right_scaled_row!(x, z, y)
+end
+
+function addmul!(z::SRow{T}, x, y::SRow{T}) where T
+  if z === x
+    return scale_row_left!(y, x+1)
+  end
+  return add_left_scaled_row!(y, z, x)
+end
+
+function submul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
+  error("Not implemented")
+end
+
+function submul!(z::SRow{T}, x::SRow{T}, y) where T
+  if z === x
+    return scale_row_right!(x, -y+1)
+  end
+  return add_right_scaled_row!(x, z, -y)
+end
+
+function submul!(z::SRow{T}, x, y::SRow{T}) where T
+  if z === x
+    return scale_row_left!(y, -x+1)
+  end
+  return add_left_scaled_row!(y, z, -x)
+end
+
+
+# ignore temp variable
+addmul!(z::SRow{T}, x::SRow{T}, y, t) where T = addmul!(z, x, y)
+addmul!(z::SRow{T}, x, y::SRow{T}, t) where T = addmul!(z, x, y)
+submul!(z::SRow{T}, x::SRow{T}, y, t) where T = submul!(z, x, y)
+submul!(z::SRow{T}, x, y::SRow{T}, t) where T = submul!(z, x, y)
+
 
 ################################################################################
 #
@@ -612,7 +913,7 @@ add_scaled_row!(a::SRow{T}, b::SRow{T}, c::T, tmp::SRow{T}) where T = add_scaled
 Return the sparse row obtained by lifting all entries in $A$.
 """
 function lift(A::SRow{zzModRingElem})
-  b = sparse_row(FlintZZ)
+  b = sparse_row(ZZ)
   for (p,v) = A
     push!(b.pos, p)
     push!(b.values, lift(v))
@@ -632,7 +933,7 @@ end
 Returns $A \cdot A^t$.
 """
 function norm2(A::SRow{T}) where {T}
-  return sum([x * x for x in A.values])
+  return sum(T[x * x for x in A.values]; init = zero(base_ring(A)))
 end
 
 ################################################################################
@@ -648,14 +949,9 @@ Returns the largest, in absolute value, entry of $A$.
 """
 function maximum(::typeof(abs), A::SRow{ZZRingElem})
   if iszero(A)
-    return zero(FlintZZ)
+    return zero(ZZ)
   end
-  m = abs(A.values[1])
-  for j in 2:length(A)
-    if cmpabs(m, A.values[j]) < 0
-      m = A.values[j]
-    end
-  end
+  m = maximum(abs, A.values)
   return abs(m)
 end
 
@@ -675,4 +971,50 @@ Returns the smallest entry of $A$.
 """
 function minimum(A::SRow)
   return minimum(A.values)
+end
+
+################################################################################
+#
+#  Conversion from/to julia and AbstractAlgebra types
+#
+################################################################################
+
+@doc raw"""
+    Vector(a::SMat{T}, n::Int) -> Vector{T}
+
+The first `n` entries of `a`, as a julia vector.
+"""
+function Vector(r::SRow, n::Int)
+  A = elem_type(base_ring(r))[zero(base_ring(r)) for _ in 1:n]
+  for i in intersect(r.pos, 1:n)
+    A[i] = r[i]
+  end
+  return A
+end
+
+@doc raw"""
+    sparse_row(A::MatElem)
+
+Convert `A` to a sparse row.
+`nrows(A) == 1` must hold.
+"""
+function sparse_row(A::MatElem)
+  @assert nrows(A) == 1
+  if ncols(A) == 0
+    return sparse_row(base_ring(A))
+  end
+  return Hecke.sparse_matrix(A)[1]
+end
+
+@doc raw"""
+    dense_row(r::SRow, n::Int)
+
+Convert `r[1:n]` to a dense row, that is an AbstractAlgebra matrix.
+"""
+function dense_row(r::SRow, n::Int)
+  A = zero_matrix(base_ring(r), 1, n)
+  for i in intersect(r.pos, 1:n)
+    A[1,i] = r[i]
+  end
+  return A
 end

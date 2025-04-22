@@ -10,10 +10,6 @@
 #
 ###############################################################################
 
-export lll_gram_indef_isotropic
-export lll_gram_indef_ternary_hyperbolic
-export lll_gram_indef_with_transform
-
 ###############################################################################
 #
 #  Helpful functions
@@ -60,7 +56,7 @@ If `v` is a square matrix, return the identity matrix of size nxn.
 If `redflag` is set to `true`, it LLL-reduces the `m-n` first rows.
 """
 function _complete_to_basis(v::MatElem{ZZRingElem}, redflag::Bool = false)
-  
+
   n = nrows(v)
   m = ncols(v)
 
@@ -117,12 +113,12 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
   #Case 1: A basis vector is isotropic
   for i = 1:n
     if G[i,i] == 0
-      sol = H[i, :]
+      sol = H[i:i, :]
       if !base
         return G, H, sol
       end
-      H[i,:] = H[1,:]
-      H[1,:] = sol
+      H[i:i,:] = H[1:1,:]
+      H[1:1,:] = sol
 
       return H*G*transpose(H), H, sol
     end
@@ -131,14 +127,14 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
   #Case 2: G has a block +- [1 0 ; 0 -1] on the diagonal
   for i = 2:n
     if G[i-1,i] == 0 && abs(G[i-1,i-1])==1 &&abs(G[i,i])==1 && sign(G[i-1,i-1])*sign(G[i,i]) == -1
-  
+
       H[i,i-1] = -1
-      sol = H[i,:]
+      sol = H[i:i,:]
       if !base
         return G, H, sol
       end
-      H[i,:] = H[1,:]
-      H[1,:] = sol
+      H[i:i,:] = H[1:1,:]
+      H[1:1,:] = sol
 
       return H*G*transpose(H), H, sol
     end
@@ -150,15 +146,15 @@ function _quadratic_form_solve_triv(G::MatElem{ZZRingElem}; base::Bool = false,
     if det(GG) != 0
       continue
     end
-    sol = left_kernel(GG)[2][1,:]
+    sol = kernel(GG, side = :left)[1:1,:]
     sol = divexact(sol,content(sol))
     sol = hcat(sol,zero_matrix(base_ring(sol),1,n-i))
     if !base
       return G, H, transpose(sol)
     end
     H = _complete_to_basis(sol)
-    H[n,:] = - H[1,:]
-    H[1,:] = sol
+    H[n:n,:] = - H[1:1,:]
+    H[1:1,:] = sol
 
     return H*G*transpose(H), H, sol
   end
@@ -281,7 +277,7 @@ julia> lll_gram_indef_with_transform(G)
 """
 function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = false)
 
-  @req !check || (issymmetric(G) && det(G) != 0 && _is_indefinite(change_base_ring(QQ,G))) "Input should be a non-degenerate indefinite Gram matrix."
+  @req !check || (is_symmetric(G) && det(G) != 0 && _is_indefinite(change_base_ring(QQ,G))) "Input should be a non-degenerate indefinite Gram matrix."
 
   red = lll_gram_indef_isotropic(G; base = true)
 
@@ -292,13 +288,13 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
 
   U1 = red[2]
   G2 = red[1]
-  U2 = transpose(_mathnf(G2[1,:])[2])
+  U2 = transpose(_mathnf(G2[1:1,:])[2])
   G3 = U2*G2*transpose(U2)
 
   #The first line of the matrix G3 only contains 0, except some 'g' on the right, where g² | det G.
   n = ncols(G)
   U3 = identity_matrix(ZZ,n)
-  U3[n,1] = round(- G3[n,n]//2*1//G3[1,n])
+  U3[n,1] = round(ZZRingElem, - G3[n,n]//2*1//G3[1,n])
   G4 = U3*G3*transpose(U3)
 
   #The coeff G4[n,n] is reduced modulo 2g
@@ -310,7 +306,7 @@ function lll_gram_indef_with_transform(G::MatElem{ZZRingElem}; check::Bool = fal
     V = G4[[1,n], 2:(n-1)]
   end
 
-  B = map_entries(round, -inv(change_base_ring(QQ,U))*V)
+  B = map_entries(x->round(ZZRingElem, x), -inv(change_base_ring(QQ,U))*V)
   U4 = identity_matrix(ZZ,n)
 
   for j = 2:n-1

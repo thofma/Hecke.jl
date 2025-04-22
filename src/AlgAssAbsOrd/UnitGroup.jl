@@ -4,14 +4,14 @@
 #
 ################################################################################
 
-function unit_group(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+function unit_group(O::AlgAssAbsOrd; GRH::Bool = true)
+  @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group) do
-    if ismaximal(O)
-      U, mU = _unit_group_maximal(O)
+    if is_maximal(O)
+      U, mU = _unit_group_maximal(O; GRH = GRH)
     else
       OK = maximal_order(O)
-      UU, mUU = unit_group(OK)
+      UU, mUU = unit_group(OK; GRH = GRH)
       U, mU = _unit_group_non_maximal(O, OK, mUU)
     end
     return mU
@@ -20,9 +20,9 @@ function unit_group(O::AlgAssAbsOrd)
 end
 
 function unit_group_fac_elem(O::AlgAssAbsOrd)
-  @assert iscommutative(O)
+  @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group_fac_elem) do
-    if ismaximal(O)
+    if is_maximal(O)
       U, mU = _unit_group_maximal_fac_elem(O)
     else
       OK = maximal_order(O)
@@ -57,16 +57,16 @@ end
 function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{FacElemMon{AnticNumberField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{FinGenAbGroup, MapUnitGrp{FacElemMon{AbsSimpleNumField}}}[unit_group_fac_elem(maximal_order(field)) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
-    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
+    G = direct_product(G, unit_groups[i][1], task = :none)::FinGenAbGroup
   end
   S, StoG = snf(G)
 
   local disc_exp
   let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       g = StoG(x)
       v = FacElem(one(A))
       offset = 1
@@ -84,7 +84,7 @@ function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   local disc_log
   let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
     function disc_log(x::FacElem)
-      g = zero_matrix(FlintZZ, 1, 0)
+      g = zero_matrix(ZZ, 1, 0)
       for i = 1:length(fields_and_maps)
         K, AtoK = fields_and_maps[i]
         U, mU = unit_groups[i]
@@ -101,19 +101,19 @@ function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd)
   return S, StoO
 end
 
-function _unit_group_maximal(O::AlgAssAbsOrd)
+function _unit_group_maximal(O::AlgAssAbsOrd; GRH::Bool = true)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  unit_groups = Tuple{GrpAbFinGen, MapUnitGrp{NfOrd}}[ unit_group(maximal_order(field)) for (field, map) in fields_and_maps ]
+  unit_groups = Tuple{FinGenAbGroup, MapUnitGrp{AbsSimpleNumFieldOrder}}[ unit_group(maximal_order(field); GRH = GRH) for (field, map) in fields_and_maps ]
   G = unit_groups[1][1]
   for i = 2:length(unit_groups)
-    G = direct_product(G, unit_groups[i][1], task = :none)::GrpAbFinGen
+    G = direct_product(G, unit_groups[i][1], task = :none)::FinGenAbGroup
   end
   S, StoG = snf(G)
 
   local disc_exp
   let StoG = StoG, unit_groups = unit_groups, fields_and_maps = fields_and_maps
-    function disc_exp(x::GrpAbFinGenElem)
+    function disc_exp(x::FinGenAbGroupElem)
       g = StoG(x)
       v = zero(O)
       offset = 1
@@ -131,13 +131,13 @@ function _unit_group_maximal(O::AlgAssAbsOrd)
   local disc_log
   let fields_and_maps = fields_and_maps, unit_groups = unit_groups, StoG = StoG, G = G
     function disc_log(x::AlgAssAbsOrdElem)
-      g = zero_matrix(FlintZZ, 1, 0)
+      g = zero_matrix(ZZ, 1, 0)
       for i = 1:length(fields_and_maps)
         K, AtoK = fields_and_maps[i]
         U, mU = unit_groups[i]
         OK = codomain(mU)
         y = OK(AtoK(elem_in_algebra(x, copy = false)))
-        @assert isunit(y)
+        @assert is_unit(y)
         u = mU\y
         g = hcat(g, u.coeff)
       end
@@ -175,7 +175,7 @@ function OO_mod_F_mod_O_mod_F(O::AlgAssAbsOrd)
   StoQ1 = GrpAbFinGenToAbsOrdQuoRingMultMap(S, Q1, [ H1toQ1(toH\(StoH(S[i]))) for i = 1:ngens(S) ], _disc_log)
   return S, StoQ1, toQ1
 end
-# for _unit_group_non_maximal see NfOrd/PicardGroup.jl
+# for _unit_group_non_maximal see AbsSimpleNumFieldOrder/PicardGroup.jl
 
 # Given an order O in an étale algebra, determine the
 # O^+ = {x \in O | x_v > 0 for v in rlpl}
@@ -192,7 +192,7 @@ function unit_group_positive(O::AlgAssAbsOrd, rlpl)
       uinK = co[i][2](u)
       for r in rlpl[i]
         @assert number_field(r) === co[i][1]
-        if ispositive(uinK, r)
+        if is_positive(uinK, r)
           push!(imu, 0)
         else
           push!(imu, 1)
@@ -214,7 +214,7 @@ function unit_group_positive(O::AlgAssAbsOrd, rlpl)
   log = function(uu)
     @assert parent(uu) === O
     kk = mU\uu
-    fl, k = haspreimage(StoU, kk)
+    fl, k = has_preimage_with_preimage(StoU, kk)
     if !fl
       error("Element not positive at described places")
     end

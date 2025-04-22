@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  The NumFieldMor type
+#  The NumFieldHom type
 #
 ################################################################################
 
@@ -9,16 +9,15 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor
   image_data::U
   inverse_data::V
   absolute_basis::Vector{W}
-  absolute_basis_matrix_image::Generic.MatSpaceElem{padic}
-  rref::Tuple{Generic.MatSpaceElem{padic}, Generic.MatSpaceElem{padic}}
-  pivots_of_rref::Vector{Int}
+  absolute_basis_matrix_image::Generic.MatSpaceElem{PadicFieldElem}
+  solve_context::Solve.SolveCtx{PadicFieldElem, AbstractAlgebra.Solve.LUTrait, Generic.MatSpaceElem{PadicFieldElem}, Generic.MatSpaceElem{PadicFieldElem}, Solve.LazyTransposeMatElem{PadicFieldElem, Generic.MatSpaceElem{PadicFieldElem}}}
 
   function LocalFieldMor{S, T, U, V}() where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}()
     return z
   end
 
-  function LocalFieldMor(K::S, L::T) where {S <: Union{FlintPadicField, FlintQadicField, LocalField}, T <: Union{FlintPadicField, FlintQadicField, LocalField}}
+  function LocalFieldMor(K::S, L::T) where {S <: Union{PadicField, QadicField, LocalField}, T <: Union{PadicField, QadicField, LocalField}}
     z = new{typeof(K), typeof(L), map_data_type(K, L), map_data_type(L, K), elem_type(K)}()
     z.header = MapHeader(K, L)
     return z
@@ -36,7 +35,7 @@ end
 #
 ################################################################################
 
-function id_hom(K::T) where T <: Union{LocalField, FlintQadicField}
+function id_hom(K::T) where T <: Union{LocalField, QadicField}
   z = LocalFieldMor{typeof(K), typeof(K), map_data_type(K, K), map_data_type(K, K)}(MapHeader(K, K), map_data(K, K, true), map_data(K, K, true))
 end
 
@@ -48,13 +47,13 @@ end
 
 morphism_type(K::LocalField) = morphism_type(typeof(K), typeof(K))
 
-morphism_type(K::FlintQadicField) = morphism_type(typeof(K), typeof(K))
+morphism_type(K::QadicField) = morphism_type(typeof(K), typeof(K))
 
-morphism_type(K::Type{T}) where T <: Union{LocalField, FlintQadicField} = morphism_type(T, T)
+morphism_type(K::Type{T}) where T <: Union{LocalField, QadicField} = morphism_type(T, T)
 
-morphism_type(K::S, L::T) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField}} = morphism_type(S, T)
+morphism_type(K::S, L::T) where {S <: Union{LocalField, QadicField, PadicField}, T <: Union{LocalField, QadicField}} = morphism_type(S, T)
 
-morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicField, FlintPadicField}, T <: Union{LocalField, FlintQadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
+morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, QadicField, PadicField}, T <: Union{LocalField, QadicField}} = LocalFieldMor{S, T, map_data_type(S, T), map_data_type(T, S), elem_type(S)}
 ################################################################################
 #
 #  The hom function
@@ -63,8 +62,8 @@ morphism_type(::Type{S}, ::Type{T}) where {S <: Union{LocalField, FlintQadicFiel
 
 function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
-                               compute_inverse = false) where {S <: Union{LocalField, FlintQadicField},
-                                                               T <: Union{LocalField, FlintQadicField}}
+                               compute_inverse = false) where {S <: Union{LocalField, QadicField},
+                                                               T <: Union{LocalField, QadicField}}
   header = MapHeader(K, L)
 
   # Check if data defines a morphism
@@ -115,11 +114,11 @@ mutable struct MapDataFromPadicField{S}
 end
 
 
-function map_data_type(T::Type{FlintPadicField}, L::Type{S}) where S <: Union{LocalField, FlintQadicField, FlintPadicField}
+function map_data_type(T::Type{PadicField}, L::Type{S}) where S <: Union{LocalField, QadicField, PadicField}
   MapDataFromPadicField{S}
 end
 
-map_data_type(T::FlintPadicField, L::Union{LocalField, FlintQadicField, FlintPadicField}) = map_data_type(typeof(T), typeof(L))
+map_data_type(T::PadicField, L::Union{LocalField, QadicField, PadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromPadicField{T}, v::MapDataFromPadicField{T}) where T
@@ -130,11 +129,15 @@ function image(f::MapDataFromPadicField, L, y)
   return L(y)
 end
 
-function map_data(K::FlintPadicField, L, ::Bool)
+function image(f::MapDataFromPadicField, L::PadicField, y)
+  return L(lift(ZZ, y))
+end
+
+function map_data(K::PadicField, L, ::Bool)
   return MapDataFromPadicField{typeof(L)}(L)
 end
 
-function map_data(K::FlintPadicField, L, x...; check::Bool = true)
+function map_data(K::PadicField, L, x...; check::Bool = true)
   return MapDataFromPadicField{typeof(L)}(L)
 end
 
@@ -158,11 +161,11 @@ mutable struct MapDataFromLocalField{T, S}
 end
 
 
-function map_data_type(T::Type{<:LocalField}, L::Type{<:Union{LocalField, FlintQadicField, FlintPadicField}})
+function map_data_type(T::Type{<:LocalField}, L::Type{<:Union{LocalField, QadicField, PadicField}})
   MapDataFromLocalField{elem_type(L), map_data_type(base_field_type(T), L)}
 end
 
-map_data_type(T::LocalField, L::Union{LocalField, FlintQadicField, FlintPadicField}) = map_data_type(typeof(T), typeof(L))
+map_data_type(T::LocalField, L::Union{LocalField, QadicField, PadicField}) = map_data_type(typeof(T), typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromLocalField{T, S}, v::MapDataFromLocalField{T, S}) where {T, S}
@@ -257,11 +260,11 @@ mutable struct MapDataFromQadicField{T}
   end
 end
 
-function map_data_type(T::Type{FlintQadicField}, L::Type{<:Union{LocalField, FlintQadicField}})
+function map_data_type(T::Type{QadicField}, L::Type{<:Union{LocalField, QadicField}})
   MapDataFromQadicField{elem_type(L)}
 end
 
-map_data_type(::FlintQadicField, L::Union{LocalField, FlintQadicField}) = map_data_type(FlintQadicField, typeof(L))
+map_data_type(::QadicField, L::Union{LocalField, QadicField}) = map_data_type(QadicField, typeof(L))
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromQadicField{T}, v::MapDataFromQadicField{T}) where {T}
@@ -279,7 +282,7 @@ function image(f::MapDataFromQadicField, L, y)
   return evaluate(Qpx(y), f.prim_image)
 end
 
-function map_data(K::FlintQadicField, L, f::LocalFieldMor, x; check::Bool = true)
+function map_data(K::QadicField, L, f::LocalFieldMor, x; check::Bool = true)
   if check && false
     base_field(K) != domain(f) && error("Data does not define a morphism")
   end
@@ -290,7 +293,7 @@ function map_data(K::FlintQadicField, L, f::LocalFieldMor, x; check::Bool = true
 end
 
 
-function map_data(K::FlintQadicField, L, f::LocalFieldMor; check::Bool = true)
+function map_data(K::QadicField, L, f::LocalFieldMor; check::Bool = true)
   if check
     K !== domain(f) && error("Data does not define a morphism")
   end
@@ -301,14 +304,14 @@ function map_data(K::FlintQadicField, L, f::LocalFieldMor; check::Bool = true)
 end
 
 
-function map_data(K::FlintQadicField, L, ::Bool)
+function map_data(K::QadicField, L, ::Bool)
   return MapDataFromQadicField{elem_type(L)}(true)
 end
 
-map_data(K::FlintQadicField, L; check = true) = map_data(K, L, L(gen(K)), check = check)
+map_data(K::QadicField, L; check = true) = map_data(K, L, L(gen(K)), check = check)
 
 
-function map_data(K::FlintQadicField, L, x; check = true)
+function map_data(K::QadicField, L, x; check = true)
 
   if check
     y = evaluate(defining_polynomial(K), x)
@@ -349,18 +352,14 @@ function _assert_has_preimage_data(f::LocalFieldMor)
     end
   end
 
-  r, R, U =  _rref_with_trans(M) #terribly unstable numerically
-  pivots = _get_pivots_ut(R)
-
+  f.solve_context = solve_init(M)
   f.absolute_basis_matrix_image = M
   f.absolute_basis = b
-  f.pivots_of_rref = pivots
-  f.rref = R, U
 
   return nothing
 end
 
-function haspreimage(f::LocalFieldMor, g::Union{qadic, LocalFieldElem})
+function has_preimage_with_preimage(f::LocalFieldMor, g::Union{QadicFieldElem, LocalFieldElem})
   if isdefined(f, :inverse_data)
     return true, image(f.inverse_data, domain(f), g)
   end
@@ -369,7 +368,7 @@ function haspreimage(f::LocalFieldMor, g::Union{qadic, LocalFieldElem})
   d = absolute_degree(K)
   cc = absolute_coordinates(g)
   _assert_has_preimage_data(f)
-  fl, s = can_solve_given_rref(f.rref[1], f.rref[2], f.pivots_of_rref, cc)
+  fl, s = can_solve_with_solution(f.solve_context, cc, side = :right)
   if !fl
     return false, zero(K)
   else
@@ -383,8 +382,8 @@ function haspreimage(f::LocalFieldMor, g::Union{qadic, LocalFieldElem})
   end
 end
 
-function preimage(f::LocalFieldMor, g::Union{qadic, LocalFieldElem})
-  fl, y = haspreimage(f, g)
+function preimage(f::LocalFieldMor, g::Union{QadicFieldElem, LocalFieldElem})
+  fl, y = has_preimage_with_preimage(f, g)
   @assert fl
   return y
 end
@@ -409,7 +408,7 @@ function inv(f::LocalFieldMor{S, T}) where {S, T}
   _assure_has_inverse_data(f)
   pr = f.inverse_data
   hd = MapHeader(codomain(f), domain(f))
-  g = NumFieldMor{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
+  g = NumFieldHom{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
   return g
 end
 
@@ -423,15 +422,15 @@ end
 
 function _compute_inverse_data(f#= image data =#, K, LL, L::LocalField)
   g = LL(gen(L))
-  fl, prim_preimg = haspreimage(f, LL(g))
+  fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
   return MapDataFromLocalField{typeof(prim_preimg)}(prim_preimg)
 end
 
 
-function _compute_inverse_data(f#= image data =#, K, LL, L::FlintQadicField)
+function _compute_inverse_data(f#= image data =#, K, LL, L::QadicField)
   g = LL(gen(L))
-  fl, prim_preimg = haspreimage(f, LL(g))
+  fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
   return MapDataFromQadicField{typeof(prim_preimg)}(prim_preimg)
 end
@@ -543,7 +542,7 @@ Base.hash(f::LocalFieldMor, h::UInt) = hash(f.image_data, domain(f), codomain(f)
 #
 ################################################################################
 
-function restrict(f::LocalFieldMor, K::Union{FlintQadicField, LocalField})
+function restrict(f::LocalFieldMor, K::Union{QadicField, LocalField})
   k = domain(f)
   return hom(K, k, k(gen(K)))*f
 end
@@ -554,10 +553,10 @@ end
 #
 ################################################################################
 
-function GrpGenToNfMorSet(G::GrpGen, K::T) where T <: Union{LocalField, FlintQadicField}
+function GrpGenToNfMorSet(G::MultTableGroup, K::T) where T <: Union{LocalField, QadicField}
   return GrpGenToNfMorSet(automorphism_list(K), G, NfMorSet(K))
 end
 
-function GrpGenToNfMorSet(G::GrpGen, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, FlintQadicField}}
+function GrpGenToNfMorSet(G::MultTableGroup, aut::Vector{S}, K::T) where {S <: LocalFieldMor, T <: Union{LocalField, QadicField}}
   return GrpGenToNfMorSet(aut, G, NfMorSet(K))
 end

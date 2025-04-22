@@ -1,6 +1,6 @@
 @testset "Jordan and Rational canonical form" begin
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^6 + rand(Qx, 1:5, -3:3)
   M = companion_matrix(f)
   @test minpoly(Qx, M) == f
@@ -13,10 +13,10 @@
   @test minpoly(Qx, J) == g^2
   @test charpoly(Qx, J) == g^2
 
-  M = identity_matrix(FlintQQ, 6)
+  M = identity_matrix(QQ, 6)
   for i = 1:6
     for j = i+1:6
-      M[i, j] = rand(FlintQQ, -2:2)
+      M[i, j] = rand(QQ, -2:2)
     end
   end
   M1 = transpose(M)
@@ -44,54 +44,22 @@
   g = x^3 + rand(Qx, 1:2, -2:2)
   f1 = f
   f2 = f*g
-  C = zero_matrix(FlintQQ, 9, 9)
+  C = zero_matrix(QQ, 9, 9)
   Hecke._copy_matrix_into_matrix(C, 1, 1, companion_matrix(f1))
   Hecke._copy_matrix_into_matrix(C, 4, 4, companion_matrix(f2))
   CF, TM = rational_canonical_form(C)
   @test CF == C
   @test TM * C * inv(TM) == CF
 
+  # Issue #1279
+  K, _ = number_field(x^2 - 2)
+  M = matrix(K, [ 0 1 1; 1//2 0 0 ; 1//2 0 0 ])
+  J, S = jordan_normal_form(M)
+  @test J == S*M*inv(S)
+  @test Set([ J[1, 1], J[2, 2], J[3, 3] ]) == Set([ K(), K(1), K(-1) ])
 end
 
-@testset "Spectrum and eigenspaces" begin
-  M = matrix(FlintQQ, 4, 4, [ 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 ])
-  l = eigvals(M)
-  @test length(keys(l)) == 1
-  @test haskey(l, one(FlintQQ))
-  @test l[one(FlintQQ)] == 2
-
-  K, a = CyclotomicField(3, "a")
-  lK = eigvals(M, K)
-  @test length(keys(lK)) == 3
-  @test haskey(lK, one(K)) && haskey(lK, a) && haskey(lK, -a - 1)
-  @test lK[one(K)] == 2
-  @test lK[a] == 1
-  @test lK[-a - 1] == 1
-
-  M = matrix(K, 4, 4, [ 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1 ])
-  lK2 = eigvals(M)
-  @test lK == lK2
-
-  Eig = eigenspaces(M, side = :right)
-  V = zero_matrix(K, 4, 0)
-  for (e, v) in Eig
-    @test haskey(lK2, e)
-    @test lK2[e] == ncols(v)
-    @test M*v == e*v
-    V = hcat(V, v)
-  end
-  @test rref!(V) == 4
-
-  Eig = eigenspaces(M, side = :left)
-  V = zero_matrix(K, 0, 4)
-  for (e, v) in Eig
-    @test haskey(lK2, e)
-    @test lK2[e] == nrows(v)
-    @test v*M == e*v
-    V = vcat(V, v)
-  end
-  @test rref!(V) == 4
-
+@testset "Common eigenspaces" begin
   M = [ matrix(QQ, [ 0 1 0 0 0 0;
                     1 0 0 0 0 0;
                     0 0 1 0 0 0;
@@ -112,7 +80,7 @@ end
                     0 0 0 0 1 0; ]) ]
 
   Eig = common_eigenspaces(M, side = :right)
-  V = zero_matrix(FlintQQ, 6, 0)
+  V = zero_matrix(QQ, 6, 0)
   for (e, v) in Eig
     @test length(e) == 3
     for i = 1:3
@@ -123,7 +91,7 @@ end
   @test rref!(V) == 6
 
   Eig = common_eigenspaces(M, side = :left)
-  V = zero_matrix(K, 0, 6)
+  V = zero_matrix(QQ, 0, 6)
   for (e, v) in Eig
     @test length(e) == 3
     for i = 1:3
@@ -148,6 +116,7 @@ end
 
   @test_throws ErrorException Hecke.simultaneous_diagonalization(N)
 
+  K, a = cyclotomic_field(3, "a")
   T, D = Hecke.simultaneous_diagonalization(N, K)
   for i = 1:length(N)
     @test T*N[i]*inv(T) == D[i]

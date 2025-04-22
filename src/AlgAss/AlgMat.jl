@@ -1,39 +1,41 @@
-export matrix_algebra
-
 ################################################################################
 #
 #  Basic field access
 #
 ################################################################################
 
-degree(A::AlgMat) = A.degree
+_matdeg(A::MatAlgebra) = A.degree
 
-dim(A::AlgMat) = A.dim
+dim(A::MatAlgebra) = A.dim
 
-base_ring(A::AlgMat{T, S}) where {T, S} = A.base_ring::parent_type(T)
+base_ring(A::MatAlgebra{T, S}) where {T, S} = A.base_ring::parent_type(T)
 
-coefficient_ring(A::AlgMat) = A.coefficient_ring
+base_ring_type(::Type{MatAlgebra{T, S}}) where {T, S} = parent_type(T)
 
-basis(A::AlgMat) = A.basis
+coefficient_ring(A::MatAlgebra{T, S}) where {T, S} = A.coefficient_ring::base_ring_type(S)
 
-has_one(A::AlgMat) = true
+function basis(A::MatAlgebra; copy::Bool = true)
+  if copy
+    return Base.copy(A.basis::Vector{elem_type(A)})
+  else
+    return A.basis::Vector{elem_type(A)}
+  end
+end
 
-elem_type(A::AlgMat{T, S}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
+has_one(A::MatAlgebra) = true
 
-elem_type(::Type{AlgMat{T, S}}) where { T, S } = AlgMatElem{T, AlgMat{T, S}, S}
+elem_type(::Type{MatAlgebra{T, S}}) where { T, S } = MatAlgebraElem{T, S}
 
-order_type(::AlgMat{QQFieldElem, S}) where { S } = AlgAssAbsOrd{AlgMat{QQFieldElem, S}, elem_type(AlgMat{QQFieldElem, S})}
-order_type(::Type{AlgMat{QQFieldElem, S}}) where { S } = AlgAssAbsOrd{AlgMat{QQFieldElem, S}, elem_type(AlgMat{QQFieldElem, S})}
-
-order_type(::AlgMat{T, S}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgMat{T, S}}
-order_type(::Type{AlgMat{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgMat{T, S}}
+#order_type(::Type{MatAlgebra{QQFieldElem, S}}) where { S } = AlgAssAbsOrd{MatAlgebra{QQFieldElem, S}, elem_type(MatAlgebra{QQFieldElem, S})}
+#
+#order_type(::Type{MatAlgebra{T, S}}) where { T <: NumFieldElem, S } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), MatAlgebra{T, S}}
 
 matrix_algebra_type(K::Field) = matrix_algebra_type(typeof(K))
 
-matrix_algebra_type(::Type{T}) where {T <: Field} = AlgMat{elem_type(T), dense_matrix_type(elem_type(T))}
+matrix_algebra_type(::Type{T}) where {T <: Field} = MatAlgebra{elem_type(T), dense_matrix_type(elem_type(T))}
 
-# Returns the dimension d of the coefficient_ring of A, so that dim(A) is up to degree(A)^2 * d.
-function dim_of_coefficient_ring(A::AlgMat)
+# Returns the dimension d of the coefficient_ring of A, so that dim(A) is up to _matdeg(A)^2 * d.
+function dim_of_coefficient_ring(A::MatAlgebra)
   if base_ring(A) == coefficient_ring(A)
     return 1
   end
@@ -47,19 +49,27 @@ end
 #
 ################################################################################
 
-is_commutative_known(A::AlgMat) = (A.is_commutative != 0)
+is_commutative_known(A::MatAlgebra) = (A.is_commutative != 0)
 
 @doc raw"""
-    is_commutative(A::AlgMat) -> Bool
+    is_commutative(A::MatAlgebra) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function is_commutative(A::AlgMat)
+function is_commutative(A::MatAlgebra)
   if is_commutative_known(A)
     return A.is_commutative == 1
   end
   dcr = dim_of_coefficient_ring(A)
-  if dim(A) == degree(A)^2*dcr
+  if _matdeg(A) == 1
+    if base_ring(A) isa Field || is_commutative(base_ring(A))
+      A.is_commutative = 1
+      return true
+    end
+    A.is_commutative = 2
+    return false
+  end
+  if dim(A) == _matdeg(A)^2*dcr
     A.is_commutative = 2
     return false
   end
@@ -83,12 +93,12 @@ end
 #
 ################################################################################
 
-function assure_has_basis_matrix(A::AlgMat)
+function assure_has_basis_matrix(A::MatAlgebra)
   if isdefined(A, :basis_matrix)
     return nothing
   end
 
-  d2 = degree(A)^2
+  d2 = _matdeg(A)^2
   if coefficient_ring(A) == base_ring(A)
     M = zero_matrix(base_ring(A), dim(A), d2)
     for i = 1:dim(A)
@@ -116,7 +126,7 @@ function assure_has_basis_matrix(A::AlgMat)
   return nothing
 end
 
-function basis_matrix(A::AlgMat{S, T}; copy::Bool = true) where {S, T}
+function basis_matrix(A::MatAlgebra{S, T}; copy::Bool = true) where {S, T}
   assure_has_basis_matrix(A)
   if copy
     return deepcopy(A.basis_matrix)::dense_matrix_type(S)
@@ -125,7 +135,7 @@ function basis_matrix(A::AlgMat{S, T}; copy::Bool = true) where {S, T}
   end
 end
 
-function assure_has_basis_matrix_rref(A::AlgMat)
+function assure_has_basis_matrix_rref(A::MatAlgebra)
   if isdefined(A, :basis_matrix_rref)
     return nothing
   end
@@ -135,24 +145,22 @@ function assure_has_basis_matrix_rref(A::AlgMat)
   return nothing
 end
 
-function basis_matrix_rref(A::AlgMat{S, T}) where {S, T}
+function basis_matrix_rref(A::MatAlgebra{S, T}) where {S, T}
   assure_has_basis_matrix_rref(A)
   return A.basis_matrix_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
 end
 
-function assure_has_basis_matrix_transpose_rref(A::AlgMat)
-  if isdefined(A, :basis_matrix_transpose_rref)
+function assure_has_basis_matrix_solve_context(A::MatAlgebra)
+  if isdefined(A, :basis_matrix_solve_ctx)
     return nothing
   end
-  s, R, U = _rref_with_trans(transpose(basis_matrix(A, copy = false)))
-  pivots = _get_pivots_ut(R)
-  A.basis_matrix_transpose_rref = (R, U, pivots)
+  A.basis_matrix_solve_ctx = solve_init(basis_matrix(A))
   return nothing
 end
 
-function basis_matrix_transpose_rref(A::AlgMat{S, T}) where {S, T}
-  assure_has_basis_matrix_transpose_rref(A)
-  return A.basis_matrix_transpose_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
+function basis_matrix_solve_context(A::MatAlgebra{S, T}) where {S, T}
+  assure_has_basis_matrix_solve_context(A)
+  return A.basis_matrix_solve_ctx
 end
 
 ################################################################################
@@ -161,13 +169,13 @@ end
 #
 ################################################################################
 
-function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
+function assure_has_multiplication_table(A::MatAlgebra{T, S}) where { T, S }
   if isdefined(A, :mult_table)
     return nothing
   end
 
   d = dim(A)
-  de = degree(A)
+  de = _matdeg(A)
   mt = Array{T, 3}(undef, d, d, d)
   K = base_ring(A)
 
@@ -206,19 +214,38 @@ function assure_has_multiplication_table(A::AlgMat{T, S}) where { T, S }
 end
 
 @doc raw"""
-    multiplication_table(A::AlgMat; copy::Bool = true) -> Array{RingElem, 3}
+    multiplication_table(A::MatAlgebra; copy::Bool = true) -> Array{RingElem, 3}
 
 Given an algebra $A$ this function returns the multiplication table of $A$:
 If the function returns $M$ and the basis of $A$ is $e_1,\dots, e_n$ then
 it holds $e_i \cdot e_j = \sum_k M[i, j, k] \cdot e_k$.
 """
-function multiplication_table(A::AlgMat; copy::Bool = true)
+function multiplication_table(A::MatAlgebra; copy::Bool = true)
   assure_has_multiplication_table(A)
   if copy
     return deepcopy(A.mult_table)
   else
     return A.mult_table
   end
+end
+
+denominator_of_structure_constant_table(A::MatAlgebra) =
+    denominator_of_multiplication_table(A)
+
+function denominator_of_multiplication_table(A::MatAlgebra)
+  get_attribute!(A, :denominator_of_multiplication_table) do
+    den = one(ZZ)
+    mt = multiplication_table(A)
+    d = _matdeg(A)
+    for i in 1:d
+      for j in 1:d
+        for k in 1:d
+          den = lcm!(den, den, denominator(mt[i, j, k]))
+        end
+      end
+    end
+    return den
+  end::ZZRingElem
 end
 
 ################################################################################
@@ -228,12 +255,12 @@ end
 ################################################################################
 
 @doc raw"""
-    matrix_algebra(R::Ring, n::Int) -> AlgMat
+    matrix_algebra(R::Ring, n::Int) -> MatAlgebra
 
 Returns $\mathrm{Mat}_n(R)$.
 """
 function matrix_algebra(R::Ring, n::Int)
-  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
+  A = MatAlgebra{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   n2 = n^2
   A.dim = n2
   A.degree = n
@@ -256,13 +283,13 @@ end
 
 # Constructs Mat_n(S) as an R-algebra
 @doc raw"""
-    matrix_algebra(R::Ring, S::Ring, n::Int) -> AlgMat
+    matrix_algebra(R::Ring, S::NCRing, n::Int) -> MatAlgebra
 
 Returns $\mathrm{Mat}_n(S)$ as an $R$-algebra.
 It is assumed that $S$ is an $R$-algebra.
 """
-function matrix_algebra(R::Ring, S::Ring, n::Int)
-  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
+function matrix_algebra(R::Ring, S::NCRing, n::Int)
+  A = MatAlgebra{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   n2 = n^2
   A.dim = n2*dim(S)
   A.degree = n
@@ -286,7 +313,7 @@ end
 
 @doc raw"""
     matrix_algebra(R::Ring, gens::Vector{<: MatElem}; isbasis::Bool = false)
-      -> AlgMat
+      -> MatAlgebra
 
 Returns the matrix algebra over $R$ generated by the matrices in `gens`.
 If `isbasis` is `true`, it is assumed that the given matrices are an $R$-basis
@@ -295,9 +322,9 @@ multiplication.
 """
 function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   @assert length(gens) > 0
-  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(R))}(R)
+  A = MatAlgebra{elem_type(R), dense_matrix_type(elem_type(R))}(R)
   A.degree = nrows(gens[1])
-  A.one = identity_matrix(R, degree(A))
+  A.one = identity_matrix(R, _matdeg(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -309,8 +336,8 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   end
   A.gens = map(x -> A(x, check = false), gens)
 
-  d = degree(A)
-  d2 = degree(A)^2
+  d = _matdeg(A)
+  d2 = _matdeg(A)^2
   span = deepcopy(gens)
   push!(span, identity_matrix(R, d))
   M = zero_matrix(R, max(d2, length(span)), d2) # the maximal possible dimension is d^2
@@ -354,7 +381,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   A.basis_matrix = sub(M, 1:cur_rank, 1:d2)
   bas = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
-    N = zero_matrix(R, degree(A), degree(A))
+    N = zero_matrix(R, _matdeg(A), _matdeg(A))
     for j = 1:d
       jd = (j - 1)*d
       for k = 1:d
@@ -369,9 +396,9 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
 end
 
 @doc raw"""
-    matrix_algebra(R::Ring, S::Ring, gens::Vector{<: MatElem};
+    matrix_algebra(R::Ring, S::NCRing, gens::Vector{<: MatElem};
                    isbasis::Bool = false)
-      -> AlgMat
+      -> MatAlgebra
 
 Returns the matrix algebra over $S$ generated by the matrices in `gens` as
 an algebra with base ring $R$.
@@ -380,11 +407,11 @@ If `isbasis` is `true`, it is assumed that the given matrices are an $R$-basis
 of this algebra, i. e. that the spanned $R$-module is closed under
 multiplication.
 """
-function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, gens::Vector{<:MatElem}; isbasis::Bool = false)
+function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bool = false)
   @assert length(gens) > 0
-  A = AlgMat{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
+  A = MatAlgebra{elem_type(R), dense_matrix_type(elem_type(S))}(R, S)
   A.degree = nrows(gens[1])
-  A.one = identity_matrix(S, degree(A))
+  A.one = identity_matrix(S, _matdeg(A))
   if isbasis
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
@@ -396,8 +423,8 @@ function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, ge
     return A
   end
 
-  d = degree(A)
-  d2 = degree(A)^2
+  d = _matdeg(A)
+  d2 = _matdeg(A)^2
   span = deepcopy(gens)
   push!(span, identity_matrix(S, d))
   dcr = dim(S)
@@ -458,7 +485,7 @@ function matrix_algebra(R::AbstractAlgebra.NCRing, S::AbstractAlgebra.NCRing, ge
   A.basis_matrix = sub(M, 1:cur_rank, 1:max_dim)
   bas = Vector{elem_type(A)}(undef, dim(A))
   for i = 1:dim(A)
-    N = zero_matrix(S, degree(A), degree(A))
+    N = zero_matrix(S, _matdeg(A), _matdeg(A))
     for j = 1:d
       jd = (j - 1)*d
       for k = 1:d
@@ -483,7 +510,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, A::AlgMat)
+function show(io::IO, A::MatAlgebra)
   print(io, "Matrix algebra of dimension ", dim(A), " over ", base_ring(A))
 end
 
@@ -493,8 +520,8 @@ end
 #
 ################################################################################
 
-function deepcopy_internal(A::AlgMat{T, S}, dict::IdDict) where { T, S }
-  B = AlgMat{T, S}(base_ring(A))
+function deepcopy_internal(A::MatAlgebra{T, S}, dict::IdDict) where { T, S }
+  B = MatAlgebra{T, S}(base_ring(A))
   for x in fieldnames(typeof(A))
     if x != :base_ring x != :coefficient_ring && isdefined(A, x)
       setfield!(B, x, deepcopy_internal(getfield(A, x), dict))
@@ -511,8 +538,8 @@ end
 #
 ################################################################################
 
-function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
-  @assert size(M) == (degree(A), degree(A))
+function _matrix_in_algebra(M::S, A::MatAlgebra{T, S}) where {T, S<:MatElem}
+  @assert size(M) == (_matdeg(A), _matdeg(A))
   _, U, pivots = basis_matrix_rref(A)
   # U * basis_matrix(A)[:, pivots] == R[:, pivots] == I, thus
   # U = inv(basis_matrix(A)[:, pivots]). So, for t = M[pivots],
@@ -529,15 +556,15 @@ function _matrix_in_algebra(M::S, A::AlgMat{T, S}) where {T, S<:MatElem}
   return t*U
 end
 
-function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = Val{false}) where {S, T, U}
-  if nrows(M) != degree(A) || ncols(M) != degree(A)
-    if short == Val{true}
+function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(false)) where {S, T, short}
+  if nrows(M) != _matdeg(A) || ncols(M) != _matdeg(A)
+    if short
       return false
     end
     return false, zeros(base_ring(A), dim(A))
   end
 
-  d2 = degree(A)^2
+  d2 = _matdeg(A)^2
   #B = basis_matrix(A, copy = false)
   if coefficient_ring(A) == base_ring(A)
     #tt = zero_matrix(base_ring(A), 1, d2)
@@ -560,14 +587,9 @@ function _check_matrix_in_algebra(M::S, A::AlgMat{T, S}, short::Type{Val{U}} = V
       end
     end
   end
-  R, UU, piv = basis_matrix_transpose_rref(A)
-  #@show B, tt
-  #@show UU
-  #@show UU * B == R
-  b, N = can_solve_given_rref(R, UU, piv, t)
-  #b, N = can_solve_with_solution(B, tt, side = :left)
-  #@assert b == bb && NN == [N[1, i] for i in 1:length(N)]
-  if short == Val{true}
+  C = basis_matrix_solve_context(A)
+  b, N = can_solve_with_solution(C, t, side = :left)
+  if short
     return b
   end
   s = N #[N[1, i] for i in 1:length(N)]
@@ -580,26 +602,21 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    center(A::AlgMat) -> AlgAss, AbsAlgAssMor
-
-Returns the center $C$ of $A$ and the inclusion $C \to A$.
-"""
-function center(A::AlgMat{T, S}) where {T, S}
+function center(A::MatAlgebra{T, S}) where {T, S}
   if isdefined(A, :center)
-    return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
+    return A.center::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}
   end
 
-  # Unlike for AlgAss, we should cache the centre even if A is commutative
+  # Unlike for StructureConstantAlgebra, we should cache the centre even if A is commutative
   # since it is of a different type, so A !== center(A)[1].
   # Otherwise center(A)[1] !== center(A)[1] which is really annoying.
-  B, mB = AlgAss(A)
+  B, mB = StructureConstantAlgebra(A)
   C, mC = center(B)
   mD = compose_and_squash(mB, mC)
   A.center = C, mD
 
   if isdefined(A, :decomposition)
-    idems = elem_type(C)[haspreimage(mC, StoA(one(SS)))[2] for (SS, StoA) in A.decomposition]
+    idems = elem_type(C)[has_preimage_with_preimage(mC, StoA(one(SS)))[2] for (SS, StoA) in A.decomposition]
     set_attribute!(C, :central_idempotents, idems)
   end
 
@@ -608,13 +625,13 @@ end
 
 ################################################################################
 #
-#  Conversion to AlgAss
+#  Conversion to StructureConstantAlgebra
 #
 ################################################################################
 
-function AlgAss(A::AlgMat{T, S}) where {T, S}
+function StructureConstantAlgebra(A::MatAlgebra{T, S}) where {T, S}
   K = base_ring(A)
-  B = AlgAss(K, multiplication_table(A), coefficients(one(A)))
+  B = StructureConstantAlgebra(K, multiplication_table(A), coefficients(one(A)))
   B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
   AtoB = hom(A, B, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
@@ -623,7 +640,7 @@ function AlgAss(A::AlgMat{T, S}) where {T, S}
     B.center = (Z, compose_and_squash(AtoB, ZtoA))
   end
   if isdefined(A, :decomposition)
-    dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(B))}[]
+    dec = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(B))}[]
     for (C, CtoA) in A.decomposition
       CtoB = compose_and_squash(AtoB, CtoA)
       push!(dec, (C, CtoB))
@@ -631,7 +648,7 @@ function AlgAss(A::AlgMat{T, S}) where {T, S}
     B.decomposition = dec
   end
   if isdefined(A, :maps_to_numberfields)
-    fields_and_maps = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
+    fields_and_maps = Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[]
     for (K, AtoK) in A.maps_to_numberfields
       BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
       push!(fields_and_maps, (K, BtoK))
@@ -648,7 +665,7 @@ end
 ################################################################################
 
 # Checks whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
-function is_canonical(A::AlgMat)
+function is_canonical(A::MatAlgebra)
   if A.canonical_basis != 0
     return A.canonical_basis == 1
   end
@@ -658,7 +675,7 @@ function is_canonical(A::AlgMat)
     return false
   end
 
-  n = degree(A)
+  n = _matdeg(A)
   if dim(A) != n^2
     A.canonical_basis = 2
     return false
@@ -696,9 +713,11 @@ end
 #
 ################################################################################
 
-function opposite_algebra(A::AlgMat)
-  B, BtoA = AlgAss(A)
-  O, BtoO = opposite_algebra(B)
-  return O, compose_and_squash(BtoO, inv(BtoA))
+@attr Tuple{typeof(A), morphism_type(typeof(A), typeof(A))} function opposite_algebra(A::MatAlgebra)
+  BA = basis(A)
+  d = dim(A)
+  K = coefficient_ring(A)
+  BAt = [transpose(matrix(a, copy = false)) for a in BA]
+  Aop = matrix_algebra(coefficient_ring(A), BAt, isbasis = true)
+  return Aop, hom(A, Aop, identity_matrix(K, d), identity_matrix(K, d))
 end
-

@@ -1,5 +1,5 @@
 @testset "PrimeIdealsSet" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
   O = maximal_order(K)
 
@@ -33,7 +33,7 @@
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), -1, degreebound = 1)
   z = 1
-  T = NfOrdIdl[]
+  T = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for P in S
     push!(T, P)
     if z == 18
@@ -86,10 +86,10 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
-Qx, x = FlintQQ["x"]
+Qx, x = QQ["x"]
 f = x^2 - 2
 K, a = number_field([f], "a")
-O = Order(K, [3*a[1]])
+O = order(K, [3*a[1]])
 P = ZZ(7) * O + (O(3*a[1]) + 2) * O
 @test minimum(P) == 7
 @test norm(P) == 7
@@ -135,7 +135,7 @@ PD = primary_decomposition(I)
 @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
 
 # Non-maximal, locally maximal order
-Qx, x = FlintQQ["x"]
+Qx, x = QQ["x"]
 f = x^3 - x^2 + 1
 K, a = number_field(f)
 O = equation_order(K)
@@ -143,3 +143,9 @@ E = pmaximal_overorder(O, 23)
 lp = prime_decomposition(E, 23)
 @test length(lp) == 2
 
+let
+  # valuation for large degree, inert prime
+  K, a = cyclotomic_real_subfield(101, :a)
+  P, = prime_ideals_over(maximal_order(K), 10007)
+  @test valuation(gen(K), P) == 0
+end

@@ -1,5 +1,3 @@
-export grunwald_wang
-
 function Base.show(io::IO, C::ClassField_pp{S, T}) where {S, T}
   println(IOContext(io, :compact => true), "Cyclic class field of degree $(degree(C)) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)
@@ -42,11 +40,11 @@ function defining_modulus(CF::ClassField_pp)
 end
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
+  return mq.defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
 end
 
 function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc{AnticNumberField, NumFieldEmbNfAbs}[])::Tuple{NfOrdIdl, Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}}
+  return (ideal(order(codomain(mq)), 1), InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[])::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
 end
 
 ###############################################################################
@@ -63,6 +61,8 @@ The maximal order of the field that $A$ is defined over.
 function base_ring(A::ClassField)
   return order(codomain(A.rayclassgroupmap))
 end
+
+base_ring_type(::Type{ClassField}) = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 @doc raw"""
     base_field(A::ClassField)
@@ -168,7 +168,7 @@ function compositum(a::ClassField, b::ClassField)
   h = norm_group_map(C, [a,b])
   _, mU = intersect(kernel(h[1], false)[2], kernel(h[2], false)[2], false)
   q, mq = quo(codomain(C.quotientmap), mU, false)
-  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
+  return ray_class_field(mr, FinGenAbGroupHom(C.quotientmap * mq))
 end
 
 @doc raw"""
@@ -200,7 +200,7 @@ function Base.intersect(a::ClassField, b::ClassField)
   h = norm_group_map(C, [a,b])
   U = kernel(h[1])[1] + kernel(h[2])[1]
   q, mq = quo(codomain(C.quotientmap), U)
-  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
+  return ray_class_field(mr, FinGenAbGroupHom(C.quotientmap * mq))
 end
 
 ###############################################################################
@@ -254,6 +254,9 @@ function ==(a::ClassField, b::ClassField)
   return is_eq(kernel(h[2])[1], kernel(h[1])[1])
 end
 
+function Base.hash(a::ClassField, h::UInt)
+  return hash(base_ring(a), h)
+end
 
 ###############################################################################
 #
@@ -295,12 +298,12 @@ end
 
 
 @doc raw"""
-    is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
+    is_local_norm(r::ClassField, a::AbsNumFieldOrderElem, p::AbsNumFieldOrderIdeal) -> Bool
 
 Tests if $a$ is a local norm at $p$ in the extension implicitly given by $r$.
 Currently the conductor cannot have infinite places.
 """
-function is_local_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
+function is_local_norm(r::ClassField, a::AbsNumFieldOrderElem, p::AbsNumFieldOrderIdeal)
   m0, minf = conductor(r)
   if length(minf) > 0
     error("not implemented yet")
@@ -325,11 +328,11 @@ end
 ################################################################################
 
 @doc raw"""
-    is_local_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
+    is_local_norm(r::ClassField, a::AbsNumFieldOrderElem) -> Bool
 
 Tests if $a$ is a local norm at all finite places in the extension implicitly given by $r$.
 """
-function is_local_norm(r::ClassField, a::NfAbsOrdElem)
+function is_local_norm(r::ClassField, a::AbsNumFieldOrderElem)
   K = base_field(r)
   m0, minf = conductor(r)
   if !isempty(minf) && !is_positive(a, _embedding.(minf))
@@ -340,13 +343,13 @@ function is_local_norm(r::ClassField, a::NfAbsOrdElem)
 end
 
 @doc raw"""
-    prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
+    prime_decomposition_type(C::ClassField, p::AbsNumFieldOrderIdeal) -> (Int, Int, Int)
 
 For a prime $p$ in the base ring of $r$, determine the splitting type of $p$
 in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
 and the number of primes above $p$.
 """
-function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassField, ClassField_pp}
+function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Union{ClassField, ClassField_pp}
   @hassert :ClassField 1 is_prime(p)
   mR = C.rayclassgroupmap
   m0 = defining_modulus(C)[1]
@@ -359,8 +362,8 @@ function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassFi
   end
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
   lp, sR = find_gens(mR, coprime_to = minimum(m0))
-  h = hom(sR, [preimage(mr, p) for p = lp])
-  k, mk = kernel(GrpAbFinGenMap(C.quotientmap), false)
+  h = hom(parent(first(sR)), domain(mr), sR, [preimage(mr, p) for p = lp])
+  k, mk = kernel(FinGenAbGroupHom(C.quotientmap), false)
   q, mq = cokernel(mk*h, false)
   f = Int(order(mq(preimage(mr, p))))
   e = Int(divexact(degree(C), Int(order(q))))
@@ -368,7 +371,7 @@ function prime_decomposition_type(C::T, p::NfAbsOrdIdl) where T <: Union{ClassFi
 end
 
 @doc raw"""
-    decomposition_group(C::ClassField, p::[InfPlc | NfOrdIdl]) -> GrpAbFinGen
+    decomposition_group(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> FinGenAbGroup
 
 Compute the decomposition group of any infinite place or prime ideal of the
 base field (ring) as a subgroup of the norm group.
@@ -386,7 +389,7 @@ function decomposition_group(C::ClassField, p::InfPlc)
   return C.quotientmap(preimage(CC.quotientmap, kernel(h)[1])[1])[1]
 end
 
-function decomposition_group(C::ClassField, p::NfOrdIdl)
+function decomposition_group(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert is_prime(p)
   @assert order(p) == base_ring(C)
   R, mR = norm_group(C)
@@ -412,12 +415,12 @@ function decomposition_group(C::ClassField, p::NfOrdIdl)
 end
 
 @doc raw"""
-    inertia_subgroup(C::ClassField, p::NfOrdIdl) -> GrpAbFinGen
+    inertia_subgroup(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> FinGenAbGroup
 
 Compute the inertia subgroup of any prime ideal of the
 base ring as a subgroup of the norm group.
 """
-function inertia_subgroup(C::ClassField, p::NfOrdIdl)
+function inertia_subgroup(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   #same as above, just the element p is missing...
   @assert is_prime(p)
   @assert order(p) == base_ring(C)
@@ -440,22 +443,22 @@ function inertia_subgroup(C::ClassField, p::NfOrdIdl)
 end
 
 @doc raw"""
-    decomposition_field(C::ClassField, p::[InfPlc | NfOrdIdl]) -> ClassField
+    decomposition_field(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> ClassField
 
 Compute the decomposition field, ie. the field fixed by the decomposition group
 as a class field.
 """
-function decomposition_field(C::ClassField, p::NfOrdIdl)
+function decomposition_field(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return fixed_field(C, decomposition_group(C, p))
 end
 
 @doc raw"""
-    inertia_field(C::ClassField, p::NfOrdIdl) -> ClassField
+    inertia_field(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ClassField
 
 Compute the inertia field, ie. the field fixed by the decomposition group
 as a class field.
 """
-function inertia_field(C::ClassField, p::NfOrdIdl)
+function inertia_field(C::ClassField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return fixed_field(C, inertia_subgroup(C, p))
 end
 
@@ -479,8 +482,8 @@ function knot(C::ClassField)
   if norm(c) == 1 && length(ci) == 0 #unramifed
     return snf(H2_G_QmodZ(G))[1]
   end
-  U = vcat(GrpAbFinGen[decomposition_group(C, p) for p = keys(factor(c))],
-           GrpAbFinGen[decomposition_group(C, i) for i = ci])
+  U = vcat(FinGenAbGroup[decomposition_group(C, p) for p = keys(factor(c))],
+           FinGenAbGroup[decomposition_group(C, i) for i = ci])
   phi = H2_G_QmodZ_restriction(G, U)
   k = kernel(phi[1])[1]
   for i=2:length(phi)
@@ -511,7 +514,7 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
 end
 
 @doc raw"""
-    ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
+    ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::FinGenAbGroupHom) -> ClassField
 
 For $m$ a map computed by either {ray_class_group} or {class_group} and
 $q$ a canonical projection (quotient map) as returned by {quo} for q
@@ -525,37 +528,37 @@ function ray_class_field(m::S, quomap::T) where {S <: Union{MapClassGrp, MapRayC
   CF.rayclassgroupmap = m
   D = codomain(quomap)
   S1, mS1 = snf(D)
-  iS1 = inv(mS1)#GrpAbFinGenMap(D, S1, mS1.imap, mS1.map)
+  iS1 = inv(mS1)#FinGenAbGroupHom(D, S1, mS1.imap, mS1.map)
   CF.quotientmap = Hecke.compose(quomap, iS1)
   return CF
 end
 
 @doc raw"""
-    hilbert_class_field(k::AnticNumberField) -> ClassField
+    hilbert_class_field(k::AbsSimpleNumField) -> ClassField
 
 The Hilbert class field of $k$ as a formal (ray-) class field.
 """
-function hilbert_class_field(k::AnticNumberField)
+function hilbert_class_field(k::AbsSimpleNumField)
   return ray_class_field(class_group(k)[2])
 end
 
 @doc raw"""
-    ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
+    ray_class_field(I::AbsNumFieldOrderIdeal; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl; n_quo = -1)
+function ray_class_field(I::AbsNumFieldOrderIdeal; n_quo = -1)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
 @doc raw"""
-    ray_class_field(I::NfAbsOrdIdl, inf::Vector{InfPlc}; n_quo = 0) -> ClassField
+    ray_class_field(I::AbsNumFieldOrderIdeal, inf::Vector{InfPlc}; n_quo = 0) -> ClassField
 
 The ray class field modulo $I$ and the infinite places given. If `n_quo` is given, then the largest
 subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl, inf::Vector{<: InfPlc}; n_quo = -1)
+function ray_class_field(I::AbsNumFieldOrderIdeal, inf::Vector{<: InfPlc}; n_quo = -1)
   return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end
 
@@ -563,8 +566,8 @@ end
 prime_decomposition(::ZZRing, p::Int) = [[p*ZZ, 1]]
 
 """
-    grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int})
-    grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int})
+    grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int})
+    grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldEmb, Int})
 
 For a collection of places given via ideals as keys of `dp` and embeddings
 given as keys of `di` find a cyclic extension where the completions at
@@ -578,7 +581,7 @@ The field will be constructed as a `ray_class_field`.
 # EXAMPLES
 ```julia
 julia> A = grunwald_wang(Dict(3*ZZ => 3, 5*ZZ => 2))
-Class field defined mod (<13, 13>, InfPlc{AnticNumberField, NumFieldEmbNfAbs}[]) of structure Abelian group with structure: Z/6
+Class field defined mod (<13, 13>, InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}[]) of structure Abelian group with structure: Z/6
 
 julia> K = absolute_simple_field(number_field(A))[1];
 
@@ -596,7 +599,7 @@ julia> prime_decomposition_type(maximal_order(K), 3)
 
 ```
 """
-function grunwald_wang(dp::Dict{<:NumFieldOrdIdl, Int}, di::Dict{<:NumFieldEmb, Int} = Dict{NumFieldEmb, Int}())
+function grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldEmb, Int} = Dict{NumFieldEmb, Int}())
   lp = collect(keys(dp))
   li = collect(keys(di))
   if length(li) == 0
@@ -631,7 +634,7 @@ end
 function _grunwald_wang(d::Dict{<:Any, Int})
   lp = collect(keys(d))
   li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
+  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
   @assert length(lp) + length(li) == length(d)
 
   if length(li) == 0
@@ -666,7 +669,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
 
   lp = collect(keys(d))
   li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrdIdl)]
+  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
 
   if length(li) == 0
     if length(lp) == 0
@@ -727,7 +730,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   #  time the index of this group in the full (ramified) one
   while true
     R, mR = ray_class_group(con, li, n_quo = deg)
-    val = GrpAbFinGenElem[preimage(mR, p) for p = lp]
+    val = FinGenAbGroupElem[preimage(mR, p) for p = lp]
 
     if length(lp) > 0 && any(x->order(val[x]) % d[lp[x]] != 0, 1:length(lp))
 #      @show "too small"
@@ -745,7 +748,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
       fl, s = has_complement(s, R)
       @assert fl
       c, mc = quo(R, s)
-      c, _mc = quo(c, GrpAbFinGenElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
+      c, _mc = quo(c, FinGenAbGroupElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
       mc = mc * _mc
       if all(i->order(mc(val[i])) == d[lp[i]], 1:length(lp))
 #        @show :cyc, snf(c)[1]

@@ -26,7 +26,7 @@
 
 function steinitz(a::zzModPolyRingElem)
   p = characteristic(base_ring(a))
-  ZZx = polynomial_ring(FlintZZ)[1]
+  ZZx = polynomial_ring(ZZ)[1]
   #  f = lift(ZZx, a)  ## bloody stupid lift for poly uses symmetric residue
   f = [lift(coeff(a, i))::ZZRingElem for i=0:degree(a)]
   return Nemo.evaluate(ZZx(f), p)
@@ -36,9 +36,9 @@ function steinitz(a::ResElem{ZZRingElem})
   return lift(a)
 end
 
-function steinitz(a::ResElem{T}) where T <: Union{zzModPolyRingElem, fqPolyRepPolyRingElem, PolyElem}
+function steinitz(a::ResElem{T}) where T <: Union{zzModPolyRingElem, fqPolyRepPolyRingElem, PolyRingElem}
   f = [steinitz(coeff(a.data, i))::ZZRingElem for i=0:degree(a.data)]
-  ZZx = polynomial_ring(FlintZZ)[1]
+  ZZx = polynomial_ring(ZZ)[1]
   S = base_ring(base_ring(parent(a)))
   return evaluate(ZZx(f), size(S))
 end
@@ -83,7 +83,7 @@ function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: Union{fqPolyRepP
   return f
 end
 
-function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyElem
+function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyRingElem
   R = parent(a)
   RX, X = polynomial_ring(R)
   o = Set{typeof(X)}()
@@ -97,7 +97,7 @@ function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyElem
   return f
 end
 
-function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fqPolyRepPolyRingElem}
+function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyRingElem, fqPolyRepPolyRingElem}
   R = parent(a)
   S = base_ring(base_ring(R))
   M = matrix_space(S, deg, degree(R.modulus))()
@@ -109,7 +109,7 @@ function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fqPolyR
     b *= a
   end
   elem_to_mat_row!(B, 1, -b)
-  s = solve_rational(M', B')
+  s = Nemo._solve_rational(M', B')
   if isa(s, Tuple)
     s = s[1] * inv(s[2])
   end
@@ -183,7 +183,7 @@ function primitive_root_r_div_qm1(R, r::Int)
 end
 
 function get_f(r::Int, p::ZZRingElem, s::Int)
-  R = PadicField(r, s)
+  R = padic_field(r, precision = s)
   return lift(teichmuller(R(p)))
 end
 # plan
@@ -214,11 +214,11 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
 
 
   if (p-1) % r == 0
-    R = FiniteField(p)
+    R = finite_field(p)
     descent = false
   else
-    f = cyclotomic(r, polynomial_ring(FlintZZ)[2])
-    f = polynomial_ring(residue_ring(FlintZZ, p))[1](f)
+    f = cyclotomic(r, polynomial_ring(ZZ)[2])
+    f = polynomial_ring(residue_ring(ZZ, p)[1])[1](f)
     f = factor(f)
     k = keys(f.fac)
     st = start(k)
@@ -234,8 +234,8 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
     end
     descent = true
     ord = degree(opt)
-    R = FlintFiniteField(opt, "a")[1]
-    T = residue_ring(FlintZZ, p)
+    R = Native.finite_field(opt, "a")[1]
+    T = residue_ring(ZZ, p)[1]
     J = CoerceMap(T, R)
   end
   zeta = primitive_root_r_div_qm1(R, r)
@@ -253,7 +253,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
   for i=1:s ## maybe do one step x^(r^s)-a only?
     #println("doin' stuff")
     Rx, x = polynomial_ring(R, "x_$i")
-    S = residue_ring(Rx, x^r-a)
+    S = residue_ring(Rx, x^r-a)[1]
     I = CoerceMap(R, S)
     a = S(x)
     if descent
@@ -269,7 +269,7 @@ function plesken_kummer(p::ZZRingElem, r::Int, s::Int)
         arr[j+1] = preimage(J, preimage(I, coeff(pol, j)))
       end
       pol = polynomial_ring(T, "t_$i")[1](arr)
-      U = residue_ring(parent(pol), pol)
+      U = residue_ring(parent(pol), pol)[1]
       H = ResidueRingPolyMap(U, S, b, J)
       #H.coeff_map = J
       J = H
@@ -283,12 +283,12 @@ end
 
 function plesken_as(p::ZZRingElem, r::Int, s::Int)
   @assert p==r
-  R = FiniteField(p)
+  R = finite_field(p)
   g = R(-1)
   t = 1
   while s>1
     Rx,x = polynomial_ring(R, "t_$i")
-    R = residue_ring(Rx, x^r-x-g^(r-1)) ## r==p, but of better type
+    R = residue_ring(Rx, x^r-x-g^(r-1))[1] ## r==p, but of better type
     g = gen(R)
     s -= 1
     t += 1
@@ -300,21 +300,21 @@ function plesken_2(p::ZZRingElem, r::Int, s::Int)
   @assert r==2
   #Plesken, 1.27
   if valuation(p-1, 2) >1
-    R = FiniteField(p)
+    R = finite_field(p)
     g = primitive_root_r_div_qm1(p, r)
     t = 1
   else
     @assert valuation(p+1, 2)>1
-    R = FiniteField(p)
+    R = finite_field(p)
     Rx,x = polynomial_ring(R, "t_1")
-    R = residue_ring(Rx, x^2+1)
+    R = residue_ring(Rx, x^2+1)[1]
     g = primitive_root_r_div_qm1(R, 2)
     s -= 1
     t = 2
   end
   while s>0
     Rx,x = polynomial_ring(R, "t_$t")
-    R = residue_ring(Rx, x^2-g)
+    R = residue_ring(Rx, x^2-g)[1]
     g = gen(R)
     t += 1
   end
@@ -355,7 +355,7 @@ function h_minus(p::Int, nb::Int)
   # is the asymptotic size, so that's what nb should be
 
 
-  Zx, x = polynomial_ring(FlintZZ)
+  Zx, x = polynomial_ring(ZZ)
   F = Vector{ZZRingElem}(p-1)
 
   g = rand(1:p-1)

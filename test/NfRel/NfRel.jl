@@ -1,6 +1,6 @@
-@testset "NfRel" begin
+@testset "RelSimpleNumField" begin
   @testset "is_subfield" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]
@@ -17,7 +17,7 @@
 
 
   @testset "is_isomorphic" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]
@@ -39,7 +39,7 @@
   end
 
   @testset "signature" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]
@@ -48,7 +48,7 @@
     L, b = number_field(g, "b")
     @test signature(L) == (2, 4)
 
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]
@@ -58,7 +58,7 @@
   end
 
   @testset "rand" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]
@@ -67,9 +67,9 @@
 
     m = make(L, 1:3)
     for x in (rand(L, 1:3), rand(rng, L, 1:3), rand(m), rand(rng, m))
-      @test x isa Hecke.NfRelElem{nf_elem}
+      @test x isa Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}
     end
-    @test rand(m, 3) isa Vector{Hecke.NfRelElem{nf_elem}}
+    @test rand(m, 3) isa Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}
     @test reproducible(m)
     @test reproducible(L, 1:3)
   end

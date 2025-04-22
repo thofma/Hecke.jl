@@ -1,7 +1,5 @@
-export is_left_ideal, is_right_ideal
-
 @doc raw"""
-    algebra(a::AbsAlgAssIdl) -> AbsAlgAss
+    algebra(a::AbsAlgAssIdl) -> AbstractAssociativeAlgebra
 
 Returns the algebra containing $a$.
 """
@@ -9,17 +7,39 @@ algebra(a::AbsAlgAssIdl) = a.algebra
 
 iszero(a::AbsAlgAssIdl) = (a.iszero == 1)
 
+@doc raw"""
+    dim(a::AbsAlgAssIdl) -> Int
+
+Return the vector space dimension an ideal.
+"""
+dim(a::AbsAlgAssIdl) = nrows(basis_matrix(a, copy = false))
+
 ###############################################################################
 #
 #  String I/O
 #
 ###############################################################################
 
-function show(io::IO, a::AbsAlgAssIdl)
-  print(io, "Ideal of ")
-  print(io, algebra(a))
-  println(io, " with basis matrix")
-  print(io, basis_matrix(a, copy = false))
+function show(io::IO, A::AbsAlgAssIdl)
+  if is_terse(io)
+    print(io, "Ideal")
+  else
+    io = pretty(io)
+    print(io, "Ideal of dimension ", dim(A), " in ")
+    print(terse(io), Lowercase(), algebra(A))
+  end
+end
+
+function show(io::IO, mime::MIME"text/plain", a::AbsAlgAssIdl)
+  println(io, "Ideal")
+  io = pretty(io)
+  println(io, Indent(), "of dimension ", dim(a))
+  println(io, "in ", Lowercase(), algebra(a))
+  println(io, "with basis matrix")
+  print(io, Indent())
+  show(io, MIME"text/plain"(), basis_matrix(a, copy = false))
+  print(io, Dedent())
+  print(io, Dedent())
 end
 
 ################################################################################
@@ -61,16 +81,16 @@ function assure_has_basis(a::AbsAlgAssIdl)
 end
 
 @doc raw"""
-    basis(a::AbsAlgAssIdl; copy::Bool = true) -> Vector{AbsAlgAssElem}
+    basis(a::AbsAlgAssIdl; copy::Bool = true) -> Vector{AbstractAssociativeAlgebraElem}
 
 Returns the basis of $a$.
 """
 function basis(a::AbsAlgAssIdl; copy::Bool = true)
   assure_has_basis(a)
   if copy
-    return deepcopy(a.basis)
+    return Base.copy(a.basis)::Vector{elem_type(algebra(a))}
   else
-    return a.basis
+    return a.basis::Vector{elem_type(algebra(a))}
   end
 end
 
@@ -81,9 +101,19 @@ Returns the basis matrix of $a$ with respect to the basis of the algebra.
 """
 function basis_matrix(a::AbsAlgAssIdl; copy::Bool = true)
   if copy
-    return deepcopy(a.basis_matrix)
+    return deepcopy(a.basis_matrix)::dense_matrix_type(base_ring_type(algebra(a)))
   else
-    return a.basis_matrix
+    return a.basis_matrix::dense_matrix_type(base_ring_type(algebra(a)))
+  end
+end
+
+function basis_matrix_solve_context(a::AbsAlgAssIdl)
+  if isdefined(a, :basis_matrix_solve_ctx)
+    return a.basis_matrix_solve_ctx::Solve.solve_context_type(base_ring(algebra(a)))
+  else
+    c = Solve.solve_init(basis_matrix(a, copy = false))
+    a.basis_matrix_solve_ctx = c
+    return c
   end
 end
 
@@ -93,15 +123,13 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    in(x::AbsAlgAssElem, a::AbsAlgAssIdl) -> Bool
+function in(x, a::AbsAlgAssIdl)
+  c = basis_matrix_solve_context(a)
+  return can_solve(c, coefficients(x, copy = false); side = :left)
+end
 
-Returns `true` if $x$ is an element of $a$ and `false` otherwise.
-"""
-function in(x::T, a::AbsAlgAssIdl{S, T, U}) where {S, T, U}
-  A = algebra(a)
-  M = matrix(base_ring(A), 1, dim(A), coefficients(x, copy = false))
-  return rank(vcat(basis_matrix(a, copy = false), M)) == nrows(basis_matrix(a, copy = false)) # so far we assume nrows(basis_matrix) == rank(basis_matrix)
+function is_subset(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
+  return all(in(b), basis(a, copy = false))
 end
 
 ################################################################################
@@ -114,17 +142,20 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
   A = algebra(a)
   ba = basis(a, copy = false)
   t = A()
-  for i = 1:dim(A)
-    for j = 1:length(ba)
-      if side == :left
+  for i in 1:dim(A)
+    for j in 1:length(ba)
+      if side === :left || side === :twosided
         t = mul!(t, A[i], ba[j])
-      elseif side == :right
+        if !(t in a)
+          return false
+        end
+      elseif side === :right || side === :twosided
         t = mul!(t, ba[j], A[i])
+        if !(t in a)
+          return false
+        end
       else
         error("side must be either :left or :right")
-      end
-      if !(t in a)
-        return false
       end
     end
   end
@@ -183,16 +214,13 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    +(a::AbsAlgAssIdl, b::AbsAlgAssIdl) -> AbsAlgAssIdl
+function +(a::AbsAlgAssIdl{S}, b::AbsAlgAssIdl{S}) where {S}
+  @req algebra(a) === algebra(b) "Ideals must have same algebra"
 
-Returns $a + b$.
-"""
-function +(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
-  if iszero(a)
-    return deepcopy(b)
-  elseif iszero(b)
-    return deepcopy(a)
+  if is_zero(a)
+    return b
+  elseif is_zero(b)
+    return a
   end
 
   M = vcat(basis_matrix(a), basis_matrix(b))
@@ -200,19 +228,15 @@ function +(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   if r != nrows(M)
     M = sub(M, 1:r, 1:ncols(M))
   end
-  return ideal(algebra(a), M; M_in_rref=true)
+  return _ideal_from_matrix(algebra(a), M; M_in_rref=true)
 end
 
-@doc raw"""
-    *(a::AbsAlgAssIdl, b::AbsAlgAssIdl) -> AbsAlgAssIdl
-
-Returns $a \cdot b$.
-"""
-function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
+function *(a::AbsAlgAssIdl{S}, b::AbsAlgAssIdl{S}) where {S}
+  @req algebra(a) === algebra(b) "Ideals must have same algebra"
   if iszero(a)
-    return deepcopy(a)
+    return a
   elseif iszero(b)
-    return deepcopy(b)
+    return b
   end
 
   A = algebra(a)
@@ -225,59 +249,56 @@ function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
       elem_to_mat_row!(M, ii + j, ba[i]*bb[j])
     end
   end
-  return ideal(algebra(a), M)
+  return _ideal_from_matrix(algebra(a), M)
 end
 
-@doc raw"""
-    ^(a::AbsAlgAssIdl, e::Union{ Int, ZZRingElem }) -> AbsAlgAssIdl
-
-Returns $a^e$.
-"""
 ^(A::AbsAlgAssIdl, e::Int) = Base.power_by_squaring(A, e)
 ^(A::AbsAlgAssIdl, e::ZZRingElem) = Base.power_by_squaring(A, BigInt(e))
 
 function one(a::AbsAlgAssIdl)
   A = algebra(a)
-  return ideal(A, identity_matrix(base_ring(A), dim(A)); side=:twosided, M_in_rref=true)
+  return _ideal_from_matrix(A, identity_matrix(base_ring(A), dim(A)); side=:twosided, M_in_rref=true)
 end
 
 function Base.copy(a::AbsAlgAssIdl)
   return a
 end
 
-function *(x::AbsAlgAssElem, a::AbsAlgAssIdl)
+function *(x::AbstractAssociativeAlgebraElem, a::AbsAlgAssIdl)
   @assert is_left_ideal(a) "Not a left ideal"
   if iszero(a)
-    return deepcopy(a)
+    return a
   end
 
   basis_a = basis(a, copy = false)
-  return ideal_from_gens(algebra(a), [ x*basis_a[i] for i = 1:length(basis_a) ])
+  return _ideal_from_kgens(algebra(a), [ x*basis_a[i] for i = 1:length(basis_a) ])
 end
 
-function *(a::AbsAlgAssIdl, x::AbsAlgAssElem)
+function *(a::AbsAlgAssIdl, x::AbstractAssociativeAlgebraElem)
   @assert is_right_ideal(a) "Not a right ideal"
   if iszero(a)
     return deepcopy(a)
   end
 
   basis_a = basis(a, copy = false)
-  return ideal_from_gens(algebra(a), [ basis_a[i]*x for i = 1:length(basis_a) ])
+  return _ideal_from_kgens(algebra(a), [ basis_a[i]*x for i = 1:length(basis_a) ])
 end
+
 ################################################################################
 #
 #  Equality
 #
 ################################################################################
 
-@doc raw"""
-    ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl) -> Bool
-
-Returns `true` if $a$ and $b$ are equal and `false` otherwise.
-"""
 function ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
-  algebra(a) != algebra(b) && return false
+  algebra(a) !== algebra(b) && return false
   return basis_matrix(a, copy = false) == basis_matrix(b, copy = false)
+end
+
+function Base.hash(a::AbsAlgAssIdl, h::UInt)
+  h = hash(algebra(a), h)
+  h = hash(basis_matrix(a, copy = false), h)
+  return h
 end
 
 ################################################################################
@@ -286,17 +307,41 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    ideal_from_gens(A::AbsAlgAss, b::Vector{ <: AbsAlgAssElem},
-                    side::Symbol = :nothing)
-      -> AbsAlgAssIdl
-
-Returns the ideal of $A$ generated by the elements of `b` as a subspace of $A$.
-"""
-function ideal_from_gens(A::AbsAlgAss, b::Vector{T}, side::Symbol = :nothing) where { T <: AbsAlgAssElem }
+# side is necessary
+function ideal(A::AbstractAssociativeAlgebra, b::Vector; side::Symbol)
+  @req side in (:left, :right, :twosided) "Side must be :left, :right or :twosided"
   if length(b) == 0
     M = zero_matrix(base_ring(A), 0, dim(A))
-    return ideal(A, M; side, M_in_rref=true)
+    return _ideal_from_matrix(A, M; side, M_in_rref=true)
+  end
+  B = basis(A)
+
+  kgens = elem_type(A)[]
+  for i in 1:length(b)
+    for j in 1:dim(A)
+      el = b[i]
+      if side == :left || side == :twosided
+        Bel = B[j] * el
+        if side == :twosided
+          for k in 1:dim(A)
+            push!(kgens, Bel * B[k])
+          end
+        else
+          push!(kgens, Bel)
+        end
+      end
+      if side == :right
+        push!(kgens, el * B[j])
+      end
+    end
+  end
+  return _ideal_from_kgens(A, kgens; side = side)
+end
+
+function _ideal_from_kgens(A::AbstractAssociativeAlgebra, b::Vector{<:AbstractAssociativeAlgebraElem}; side = nothing)
+  if length(b) == 0
+    M = zero_matrix(base_ring(A), 0, dim(A))
+    return _ideal_from_matrix(A, M; side, M_in_rref=true)
   end
 
   @assert parent(b[1]) == A
@@ -305,60 +350,21 @@ function ideal_from_gens(A::AbsAlgAss, b::Vector{T}, side::Symbol = :nothing) wh
   for i = 1:length(b)
     elem_to_mat_row!(M, i, b[i])
   end
-  return ideal(A, M; side)
+  return _ideal_from_matrix(A, M; side)
 end
 
-@doc raw"""
-    ideal(A::AbsAlgAss, x::AbsAlgAssElem) -> AbsAlgAssIdl
+left_ideal(A::AbstractAssociativeAlgebra, x...; kw...) = ideal(A, x...; side = :left, kw...)
 
-Returns the twosided principal ideal of $A$ generated by $x$.
-"""
-function ideal(A::AbsAlgAss, x::AbsAlgAssElem)
-  t1 = A()
-  t2 = A()
-  M = zero_matrix(base_ring(A), dim(A)^2, dim(A))
-  for i = 1:dim(A)
-    t1 = mul!(t1, A[i], x)
-    ii = (i - 1)*dim(A)
-    for j = 1:dim(A)
-      t2 = mul!(t2, t1, A[j])
-      elem_to_mat_row!(M, ii + j, t2)
-    end
-  end
+right_ideal(A::AbstractAssociativeAlgebra, x...; kw...) = ideal(A, x...; side = :right, kw...)
 
-  return ideal(A, M; side=:twosided)
-end
+twosided_ideal(A::AbstractAssociativeAlgebra, x...; kw...) = ideal(A, x...; side = :twosided, kw...)
+
+*(A::AbstractAssociativeAlgebra, x::NCRingElement) = left_ideal(A, x)
+
+*(x::NCRingElement, A::AbstractAssociativeAlgebra) = right_ideal(A, x)
 
 @doc raw"""
-    ideal(A::AbsAlgAss, x::AbsAlgAssElem, action::Symbol) -> AbsAlgAssIdl
-
-Returns the ideal $x \cdot A$ if `action == :left`, and $A \cdot x$ if
-`action == :right`.
-"""
-function ideal(A::AbsAlgAss, x::AbsAlgAssElem, action::Symbol)
-  M = representation_matrix(x, action)
-  a = ideal(A, M)
-
-  if action == :left
-    a.isright = 1
-  elseif action == :right
-    a.isleft = 1
-  end
-
-  return a
-end
-
-@doc raw"""
-    *(A::AbsAlgAss, x::AbsAlgAssElem) -> AbsAlgAssIdl
-    *(x::AbsAlgAssElem, A::AbsAlgAss) -> AbsAlgAssIdl
-
-Returns the ideal $A \cdot x$ or $x \cdot A$ respectively.
-"""
-*(A::AbsAlgAss, x::AbsAlgAssElem) = ideal(A, x, :right)
-*(x::AbsAlgAssElem, A::AbsAlgAss) = ideal(A, x, :left)
-
-@doc raw"""
-    ideal(A::AbsAlgAss, M::MatElem; side::Symbol = :nothing, M_in_rref::Bool = false)
+    _ideal_from_matrix(A::AbstractAssociativeAlgebra, M::MatElem; side::Symbol = :nothing, M_in_rref::Bool = false)
       -> AbsAlgAssIdl
 
 Returns the ideal of $A$ with basis matrix $M$.
@@ -367,13 +373,13 @@ set to `:right`/`:left`/`:twosided` respectively.
 If `M_in_rref == true`, it is assumed that $M$ is already in row reduced echelon
 form.
 """
-function ideal(A::AbsAlgAss, M::MatElem; side::Symbol = :nothing, M_in_rref::Bool = false)
+function _ideal_from_matrix(A::AbstractAssociativeAlgebra, M::MatElem; side = nothing, M_in_rref::Bool = false)
   @assert base_ring(M) == base_ring(A)
   @assert ncols(M) == dim(A)
   if !M_in_rref
     r, N = rref(M)
     if r == 0
-      a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, zero_matrix(base_ring(A), 0, dim(A)))
+      a = AbsAlgAssIdl{typeof(A)}(A, zero_matrix(base_ring(A), 0, dim(A)))
       a.iszero = 1
       return a
     end
@@ -384,12 +390,12 @@ function ideal(A::AbsAlgAss, M::MatElem; side::Symbol = :nothing, M_in_rref::Boo
     end
   end
   if M_in_rref && nrows(M) == 0
-    a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, M)
+    a = AbsAlgAssIdl{typeof(A)}(A, M)
     a.iszero = 1
     return a
   end
 
-  a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, M)
+  a = AbsAlgAssIdl{typeof(A)}(A, M)
   _set_sidedness(a, side)
   a.iszero = 2
   return a
@@ -397,7 +403,7 @@ end
 
 # Helper function to set the side-flags
 # side can be :right, :left or :twosided
-function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, side::Symbol)
+function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, side)
   if side == :right
     a.isleft = 0
     a.isright = 1
@@ -407,9 +413,11 @@ function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl, AlgAssRelOrdIdl
   elseif side == :twosided
     a.isleft = 1
     a.isright = 1
-  else
+  elseif side === nothing || side === :nothing
     a.isleft = 0
     a.isright = 0
+  else
+    error("Not a valid side")
   end
   return nothing
 end
@@ -421,17 +429,19 @@ end
 ################################################################################
 
 @doc raw"""
-    quo(A::AbsAlgAss, a::AbsAlgAssIdl) -> AbsAlgAss, AbsAlgAssMor
+    quo(A::AbstractAssociativeAlgebra, a::AbsAlgAssIdl)
+                                    -> AbstractAssociativeAlgebra, AbsAlgAssMor
 
-Returns the quotient algebra $A/a$ and the projection map $A \to A/a$.
+Return the quotient algebra $A/a$ and the projection map $A \to A/a$.
 """
-function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
-  @assert A == algebra(a)
+function quo(A::S, a::AbsAlgAssIdl{S}) where {S}
+  @req A === algebra(a) "Ideal not in the algebra"
   K = base_ring(A)
+  d = dim(A)
 
   # First compute the vector space quotient
   Ma = basis_matrix(a, copy = false)
-  M = hcat(deepcopy(transpose(Ma)), identity_matrix(K, dim(A)))
+  M = hcat(transpose(Ma), identity_matrix(K, d))
   r = rref!(M)
   pivot_cols = Vector{Int}()
   j = 1
@@ -448,62 +458,65 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
   end
 
   # We now have the basis (basis of the quotient, basis of the ideal)
-  n = dim(A) - nrows(Ma)
-  M = vcat(zero_matrix(K, n, dim(A)), Ma)
-  oneK = K(1)
-  zeroK = K()
+  n = d - nrows(Ma)
+  M = vcat(zero_matrix(K, n, d), Ma)
+  oneK = one(K)
+  zeroK = zero(K)
   for i = 1:n
     M[i, pivot_cols[i]] = oneK
   end
   iM = inv(M)
 
-  N = sub(M, 1:n, 1:dim(A))
-  NN = sub(iM, 1:dim(A), 1:n)
+  N = sub(M, 1:n, 1:d)
+  NN = sub(iM, 1:d, 1:n)
 
   # Lift a basis of the quotient to A
   quotient_basis = Vector{elem_type(A)}(undef, n)
-  b = zero_matrix(K, 1, n)
+  b = elem_type(K)[zero(K) for i in 1:n]
   for i = 1:n
-    b[1, i] = oneK
+    b[i] = oneK
     bN = b*N
-    quotient_basis[i] = A([ bN[1, i] for i = 1:dim(A) ])
-    b[1, i] = zeroK
+    quotient_basis[i] = A(bN; copy = true)
+    b[i] = zeroK
   end
 
   # Build the multiplication table
   t = A()
-  s = zero_matrix(K, 1, dim(A))
+  s = elem_type(K)[zero(K) for i in d]
   mult_table = Array{elem_type(K), 3}(undef, n, n, n)
-  for i = 1:n
-    for j = 1:n
+  for i in 1:n
+    for j in 1:n
       t = mul!(t, quotient_basis[i], quotient_basis[j])
-      elem_to_mat_row!(s, 1, t)
-      sNN = s*NN
-      mult_table[i, j, :] = [ sNN[1, k] for k = 1:n ]
+      sNN = coefficients(t, copy = false) * NN
+      mult_table[i, j, :] = sNN
     end
   end
 
-  B = AlgAss(K, mult_table)
+  B = StructureConstantAlgebra(K, mult_table)
   AtoB = hom(A, B, NN, N)
   return B, AtoB
 end
 
 # Assumes b \subseteq a
 @doc raw"""
-    quo(a::AbsAlgAssIdl, b::AbsAlgAssIdl) -> AbsAlgAss, AbsAlgAssMor
+    quo(a::AbsAlgAssIdl, b::AbsAlgAssIdl) -> AbstractAssociativeAlgebra, AbsAlgAssMor
 
 Given ideals $b \subseteq a$, this function returns the quotient algebra $a/b$
 and the projection map $a \to a/b$.
 """
-function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U }
-  @assert algebra(a) == algebra(b)
+function quo(a::AbsAlgAssIdl{S}, b::AbsAlgAssIdl{S}) where {S}
+  @req algebra(a) === algebra(b) "Ideals must have same algebra"
+  @req is_subset(b, a) "Second ideal must be a subsets of the first ideal"
+  @req _test_ideal_sidedness(b, :twosided) "Second ideal must be two-sided"
+
   A = algebra(a)
+  d = dim(A)
   K = base_ring(A)
 
   # First compute the vector space quotient
   Ma = basis_matrix(a, copy = false)
   Mb = basis_matrix(b, copy = false)
-  M = hcat(deepcopy(transpose(Mb)), deepcopy(transpose(Ma)))
+  M = hcat(transpose(Mb), transpose(Ma))
   r = rref!(M)
   pivot_cols = Vector{Int}()
   j = 1
@@ -520,39 +533,55 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   end
 
   # Build the basis matrix for the quotient
-  M = zero_matrix(K, dim(A), dim(A))
   n = nrows(Ma) - nrows(Mb)
+  M = zero_matrix(K, n, d)
   for i = 1:n
-    for j = 1:dim(A)
+    for j = 1:d
       M[i, j] = deepcopy(Ma[pivot_cols[i], j])
     end
   end
 
-  mult_table = _build_subalgebra_mult_table!(A, M)
-  # M is now in rref
+  # Lift a basis of the quotient to A
+  quotient_basis = Vector{elem_type(A)}(undef, n)
+  b = [zero(K) for i in 1:n]
+  for i = 1:n
+    b[i] = one(K)
+    bM = b*M
+    quotient_basis[i] = A(bM; copy = true)
+    b[i] = zero(K)
+  end
 
-  B = AlgAss(K, mult_table)
-  MM = sub(M, 1:dim(B), 1:dim(A))
+  # Another basis matrix for a: basis of the quotient + basis of b
+  N = vcat(M, Mb)
 
-  AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(MM)}(A, B)
+  # Build the multiplication table
+  t = A()
+  mult_table = Array{elem_type(K), 3}(undef, n, n, n)
+  Nctx = solve_init(N)
+  for i = 1:n
+    for j = 1:n
+      t = mul!(t, quotient_basis[i], quotient_basis[j])
+      y = solve(Nctx, coefficients(t, copy = false), side = :left)
+      mult_table[i, j, :] = view(y, 1:n)
+    end
+  end
 
-  N = transpose(vcat(MM, Mb)) # Another basis matrix for a
-  function _image(x::AbsAlgAssElem)
-    t, y = can_solve_with_solution(N, matrix(K, dim(A), 1, coefficients(x, copy = false)))
+  B = StructureConstantAlgebra(K, mult_table)
+
+  AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(M)}(A, B)
+
+  function _image(x::AbstractAssociativeAlgebraElem)
+    t, y = can_solve_with_solution(Nctx, coefficients(x, copy = false), side = :left)
     if t
-      return B([ y[i, 1] for i = 1:dim(B) ])
+      return B(y[1:dim(B)]; copy = false)
     else
       error("Element is not in the domain")
     end
   end
 
-  function _preimage(x::AbsAlgAssElem)
-    t = zero_matrix(K, 1, dim(B))
-    for i = 1:dim(B)
-      t[1, i] = x.coeffs[i]
-    end
-    tt = t*MM
-    return A([ tt[1, i] for i = 1:dim(A) ])
+  function _preimage(x::AbstractAssociativeAlgebraElem)
+    tt = coefficients(x, copy = false) * M
+    return A(tt; copy = false)
   end
 
   AtoB.header.image = _image
@@ -567,26 +596,34 @@ end
 ################################################################################
 
 # TODO: implement for ::Type{AbsAlgAssIdl}
-Random.gentype(a::AbsAlgAssIdl) = elem_type(algebra(a))
+#Random.gentype(a::AbsAlgAssIdl) = elem_type(algebra(a))
 
-function rand(rng::AbstractRNG, a_sp::Random.SamplerTrivial{<:AbsAlgAssIdl})
-  a = a_sp[]
+function RandomExtensions.maketype(I::AbsAlgAssIdl, _)
+  return elem_type(algebra(I))
+end
+
+function RandomExtensions.make(I::AbsAlgAssIdl, vs...)
+  R = base_ring(algebra(I))
+  if length(vs) == 1 && elem_type(R) == Random.gentype(vs[1])
+    RandomExtensions.Make(I, vs[1]) # forward to default Make constructor
+  else
+    RandomExtensions.Make(I, make(R, vs...))
+  end
+end
+
+function rand(rng::AbstractRNG, a_sp::Random.SamplerTrivial{<:Make2{<:NCRingElem, <:AbsAlgAssIdl}})
+  a, v = a_sp[][1:end]
   A = algebra(a)
   x = A()
   for b in basis(a, copy = false)
-    x += rand(rng, base_ring(A))*b
+    x = add!(x, rand(rng, v)*b)
   end
   return x
 end
 
-function rand(a::AbsAlgAssIdl, rng::AbstractUnitRange{Int})
-  A = algebra(a)
-  x = A()
-  for b in basis(a, copy = false)
-    x += rand(base_ring(A), rng)*b
-  end
-  return x
-end
+rand(rng::AbstractRNG, a::AbsAlgAssIdl, v...) = rand(rng, make(a, v...))
+
+rand(a::AbsAlgAssIdl, v...) = rand(Random.GLOBAL_RNG, a, v...)
 
 ################################################################################
 #
@@ -594,7 +631,7 @@ end
 #
 ################################################################################
 
-function mod(x::AbsAlgAssElem, a::AbsAlgAssIdl)
+function mod(x::AbstractAssociativeAlgebraElem, a::AbsAlgAssIdl)
   if iszero(a)
     return deepcopy(x)
   end
@@ -624,17 +661,17 @@ end
 #
 ################################################################################
 
-function left_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
-  @assert is_left_ideal(a) "Not a left ideal"
+function left_principal_generator(a::AbsAlgAssIdl{S}) where {S <: MatAlgebra}
+  @req is_left_ideal(a) "Not a left ideal"
   A = algebra(a)
-  if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
+  if dim(A) != _matdeg(A)^2*dim_of_coefficient_ring(A)
     error("Only implemented for full matrix algebras")
   end
 
   if is_canonical(A)
     e11 = A[1]
   else
-    t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
+    t = zero_matrix(coefficient_ring(A), _matdeg(A), _matdeg(A))
     t[1, 1] = one(coefficient_ring(A))
     e11 = A(t)
     t[1, 1] = zero(coefficient_ring(A))
@@ -655,17 +692,17 @@ function left_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat,
   return x
 end
 
-function right_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat, T, U }
+function right_principal_generator(a::AbsAlgAssIdl{S}) where {S <: MatAlgebra}
   @assert is_right_ideal(a) "Not a right ideal"
   A = algebra(a)
-  if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
+  if dim(A) != _matdeg(A)^2*dim_of_coefficient_ring(A)
     error("Only implemented for full matrix algebras")
   end
 
   if is_canonical(A)
     e11 = A[1]
   else
-    t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
+    t = zero_matrix(coefficient_ring(A), _matdeg(A), _matdeg(A))
     t[1, 1] = one(coefficient_ring(A))
     e11 = A(t)
     t[1, 1] = zero(coefficient_ring(A))
@@ -675,7 +712,7 @@ function right_principal_generator(a::AbsAlgAssIdl{S, T, U}) where { S <: AlgMat
   x = A()
   for i = 1:length(basis(ae, copy = false))
     if is_canonical(A)
-      e1i = A[(i - 1)*degree(A) + 1]
+      e1i = A[(i - 1)*_matdeg(A) + 1]
     else
       t[1, i] = one(coefficient_ring(A))
       e1i = A(t)

@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-export schur_index, is_eichler
-
 ################################################################################
 #
 #  Is split
@@ -13,20 +11,20 @@ export schur_index, is_eichler
 ################################################################################
 
 @doc raw"""
-    is_split(A::AbsAlgAss, p) -> Bool
+    is_split(A::AbstractAssociativeAlgebra, p) -> Bool
 
 Return whether the $\mathbf{Q}$-algebra $A$ is split at $p$. The object $p$ can be an integer or `inf`.
 """
-function is_split(A::AbsAlgAss, p)
+function is_split(A::AbstractAssociativeAlgebra, p)
   return schur_index(A, p) == 1
 end
 
 @doc raw"""
-    is_split(A::AlgAss{QQFieldElem}) -> Bool
+    is_split(A::StructureConstantAlgebra{QQFieldElem}) -> Bool
 
 Given a central $\mathbf{Q}$-algebra $A$, return `true` if $A$ splits.
 """
-function is_split(A::AbsAlgAss{QQFieldElem})
+function is_split(A::AbstractAssociativeAlgebra{QQFieldElem})
   i = schur_index(A, inf)
   if i == 2
     @vprintln :AlgAssOrd 1 "Not split at the infinite prime"
@@ -44,7 +42,7 @@ function is_split(A::AbsAlgAss{QQFieldElem})
   return true
 end
 
-function is_split(A::AbsAlgAss{nf_elem})
+function is_split(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
   for p in infinite_places(K)
     if !is_split(A, p)
@@ -55,8 +53,8 @@ function is_split(A::AbsAlgAss{nf_elem})
   return isone(discriminant(O1))
 end
 
-function is_split(A::AbsAlgAss, P::InfPlc)
-  if iscomplex(P)
+function is_split(A::AbstractAssociativeAlgebra, P::InfPlc)
+  if is_complex(P)
     return true
   end
   return schur_index(A, P) == 1
@@ -68,9 +66,9 @@ end
 #
 ################################################################################
 
-function ramified_infinite_places(A::AlgAss{nf_elem})
+function ramified_infinite_places(A::StructureConstantAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
-  inf_plc = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}()
+  inf_plc = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
   places = real_places(K)
   for p in places
     if !is_split(A, p)
@@ -81,10 +79,10 @@ function ramified_infinite_places(A::AlgAss{nf_elem})
   return inf_plc
 end
 
-function ramified_infinite_places_of_center(A::AbsAlgAss)
+function ramified_infinite_places_of_center(A::AbstractAssociativeAlgebra)
   dec = decompose(A)
   C, = center(A)
-  res = Vector{InfPlc{AnticNumberField, NumFieldEmbNfAbs}}[]
+  res = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}[]
   for i in 1:length(dec)
     K, = component(Field, C, i)
     B, = _as_algebra_over_center(dec[i][1])
@@ -109,15 +107,15 @@ end
 # https://doi.org/10.1016/j.jalgebra.2009.04.026
 
 @doc raw"""
-   schur_index(A::AlgAss{QQFieldElem}, p::Union{IntegerUnion, PosInf}) -> Int
+   schur_index(A::StructureConstantAlgebra{QQFieldElem}, p::Union{IntegerUnion, PosInf}) -> Int
 
 Determine the Schur index of $A$ at $p$, where $p$ is either a prime or `inf`.
 """
-schur_index(A::AbsAlgAss{QQFieldElem}, ::Union{IntegerUnion, PosInf})
+schur_index(A::AbstractAssociativeAlgebra{QQFieldElem}, ::Union{IntegerUnion, PosInf})
 
-function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+function schur_index(A::AbstractAssociativeAlgebra{QQFieldElem}, ::PosInf)
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   dim(A) % 4 == 0 || return 1
 
@@ -131,9 +129,9 @@ function schur_index(A::AbsAlgAss{QQFieldElem}, ::PosInf)
   end
 end
 
-function schur_index(A::AbsAlgAss{nf_elem}, P::InfPlc)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+function schur_index(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, P::InfPlc)
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   dim(A) % 4 == 0 && is_real(P) || return 1
 
@@ -149,9 +147,9 @@ end
 
 #  Schur Index at p
 
-function schur_index(A::AbsAlgAss, p::IntegerUnion)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+function schur_index(A::AbstractAssociativeAlgebra, p::IntegerUnion)
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   d = discriminant(maximal_order(A))
   v = valuation(d, p)
@@ -163,9 +161,9 @@ function schur_index(A::AbsAlgAss, p::IntegerUnion)
   return divexact(s, t)
 end
 
-function schur_index(A::AbsAlgAss{<: NumFieldElem}, p::NumFieldOrdIdl)
-  @req iscentral(A) "Algebra must be central"
-  @req issimple(A) "Algebra must be simple"
+function schur_index(A::AbstractAssociativeAlgebra{<: NumFieldElem}, p::NumFieldOrderIdeal)
+  @req is_central(A) "Algebra must be central"
+  @req is_simple(A) "Algebra must be simple"
 
   M = maximal_order(A)
   d = discriminant(maximal_order(A))
@@ -179,24 +177,60 @@ function schur_index(A::AbsAlgAss{<: NumFieldElem}, p::NumFieldOrdIdl)
   return divexact(s, t)
 end
 
-function schur_index(A::AbsAlgAss{QQFieldElem})
+function local_schur_indices(A::AbstractAssociativeAlgebra{QQFieldElem})
+  lsd = Pair{ZZRingElem, Int}[]
   e = schur_index(A, inf)
-  for p in prime_divisors(discriminant(maximal_order(A)))
-    e = lcm(e, schur_index(A, p))
+  if e != 1
+    push!(lsd, 0=>e)
   end
-  return e
+  for p in prime_divisors(discriminant(maximal_order(A)))
+    e = schur_index(A, p)
+    if e != 1
+      push!(lsd, p=>e)
+    end
+  end
+  return lsd
 end
 
-function schur_index(A::AbsAlgAss{<: NumFieldElem})
+function schur_index(A::AbstractAssociativeAlgebra{<: Union{QQFieldElem, NumFieldElem}})
+  lsd = local_schur_indices(A)
+  return length(lsd) == 0 ? 1 : lcm([x[2] for x in lsd])
+end
+
+function local_schur_indices(A::AbstractAssociativeAlgebra{<: NumFieldElem})
   rlp = infinite_places(base_ring(A))
+  lsd = Any[]
   e = schur_index(A, rlp[1])
+  if e != 1
+    push!(lsd, rlp[1]=>e)
+  end
   for i in 2:length(rlp)
-    e = lcm(e, schur_index(A, rlp[i]))
+    e = schur_index(A, rlp[i])
+    if e != 1
+      push!(lsd, rlp[i]=>e)
+    end
   end
   for (p, _) in factor(discriminant(maximal_order(A)))
-    e = lcm(e, schur_index(A, p))
+    e = schur_index(A, p)
+    if e != 1
+      push!(lsd, p=>e)
+    end
   end
-  return e
+  return lsd
+end
+
+# Can the following be done without computing the center? Not clear, since the algebra
+# might have locally different Schur indicies over places lying over the same place
+function schur_index_over_center(A::AbstractAssociativeAlgebra)
+  C, = StructureConstantAlgebra(A)
+  B, = _as_algebra_over_center(C)
+  return schur_index(B)
+end
+
+function schur_index_over_center(A::AbstractAssociativeAlgebra, p)
+  C, = StructureConstantAlgebra(A)
+  B, = _as_algebra_over_center(C)
+  return schur_index(B, p)
 end
 
 ################################################################################
@@ -205,13 +239,27 @@ end
 #
 ################################################################################
 
+function is_eichler(A::AbstractAssociativeAlgebra)
+  if is_simple(A) && is_central(A)
+    return _is_eichler_csa(A)
+  end
+  d = decompose(A)
+  for (B, _) in d
+    BC, = _as_algebra_over_center(B)
+    if !_is_eichler_csa(BC)
+      return false
+    end
+  end
+  return true
+end
+
 # Tests whether A fulfils the Eichler condition relative to the maximal Z-order
 # of base_ring(A)
-function is_eichler(A::AbsAlgAss{nf_elem})
-  @assert issimple(A)
-  @assert iscentral(A)
+function _is_eichler_csa(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem})
+  @assert is_simple(A)
+  @assert is_central(A)
 
-  if !istotally_real(base_ring(A))
+  if !is_totally_real(base_ring(A))
     return true
   end
 
@@ -229,12 +277,12 @@ function is_eichler(A::AbsAlgAss{nf_elem})
   return false
 end
 
-function is_eichler(A::AbsAlgAss{QQFieldElem})
-  @assert issimple(A)
-  @assert iscentral(A)
+function _is_eichler_csa(A::AbstractAssociativeAlgebra{QQFieldElem})
+  @assert is_simple(A)
+  @assert is_central(A)
   if dim(A) != 4
     return true
   end
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   return schur_index(A, inf) == 1
 end

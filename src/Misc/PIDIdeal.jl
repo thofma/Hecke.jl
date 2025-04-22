@@ -7,9 +7,11 @@ end
 
 base_ring(x::PIDIdeal) = parent(x.gen)
 
+base_ring_type(::Type{PIDIdeal{T}}) where {T} = parent_type(T)
+
 _can_canonicalize(::Type{ZZRingElem}) = true
 
-_can_canonicalize(::Type{<:PolyElem{T}}) where {T <: FieldElem} = true
+_can_canonicalize(::Type{<:PolyRingElem{T}}) where {T <: FieldElem} = true
 
 _can_canonicalize(::Type{<:FieldElem}) = true
 
@@ -21,7 +23,7 @@ function _canonicalize(x::ZZRingElem)
   end
 end
 
-function _canonicalize(x::PolyElem{ <: FieldElem})
+function _canonicalize(x::PolyRingElem{ <: FieldElem})
   if is_monic(x)
     return x
   else
@@ -57,9 +59,22 @@ function ideal(R::PolyRing{<:FieldElem}, x...)
   return _ideal_pid(R, x...)
 end
 
+function ideal(R::PolyRing{<:FieldElem}, xs::AbstractVector{T}) where T<:RingElement
+  return _ideal_pid(R, xs)
+end
+
 function ideal(R::Field, x...)
   return _ideal_pid(R, x...)
 end
+
+function ideal(R::Field, xs::AbstractVector{T}) where T<:RingElement
+  return _ideal_pid(R, xs)
+end
+
+ideal_type(::Type{T}) where {T<:Field} = PIDIdeal{elem_type(T)}
+
+ideal_type(::Type{T}) where {T<:PolyRing{<:FieldElem}} = PIDIdeal{elem_type(T)}
+
 
 # Show
 
@@ -101,6 +116,8 @@ lcm(x::PIDIdeal, y::PIDIdeal) = intersect(x, y)
 +(x::PIDIdeal, y::PIDIdeal) = gcd(x, y)
 
 *(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(x.gen * y.gen)
+
+^(x::PIDIdeal, n::IntegerUnion) = PIDIdeal(x.gen ^ n)
 
 intersect(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(lcm(x.gen, y.gen))
 

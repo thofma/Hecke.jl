@@ -6,7 +6,6 @@ using Hecke.Random
 using Hecke.RandomExtensions
 
 import Hecke.AbstractAlgebra
-include(joinpath(pathof(AbstractAlgebra), "..", "..", "test", "Rings-conformance-tests.jl"))
 
 import Hecke: mul!
 
@@ -23,7 +22,8 @@ end
 
 Hecke.assertions(true)
 
-if long_test
+if (isdefined(Hecke, :long_test) && Hecke.long_test) ||
+   (isdefined(Main, :long_test) && Main.long_test)
   macro long_test(ex)
     ex
   end
@@ -33,7 +33,8 @@ else
   end
 end
 
-if _with_gap
+if (isdefined(Hecke, :_with_gap) && Hecke._with_gap) ||
+   (isdefined(Main, :_with_gap) && Main._with_gap)
   macro with_gap(ex)
     ex
   end
@@ -43,7 +44,8 @@ else
   end
 end
 
-if _with_polymake
+if (isdefined(Hecke, :_with_polymake) && Hecke._with_polymake) ||
+   (isdefined(Main, :_with_polymake) && Main._with_polymake)
   macro with_polymake(ex)
     ex
   end

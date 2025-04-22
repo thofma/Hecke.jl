@@ -6,21 +6,21 @@
 #
 ################################################################################
 
-function NfFactorBase(O::NfOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
   @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::NfOrd, lp::AbstractVector{Int}, degree_limit::Int = 0)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, lp::AbstractVector{Int}, degree_limit::Int = 0)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
   @vprintln :ClassGroup 2 " done"
   return NfFactorBase(O, lP)
 end
 
-function NfFactorBase(O::NfOrd, B::Int;
+function NfFactorBase(O::AbsSimpleNumFieldOrder, B::Int;
                         complete::Bool = true, degree_limit::Int = 5)
   @vprintln :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
@@ -28,8 +28,8 @@ function NfFactorBase(O::NfOrd, B::Int;
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
-  lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
+function NfFactorBase(O::AbsSimpleNumFieldOrder, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+  lp = sort(lp, lt = function(a,b) return norm(a, copy = false) > norm(b, copy = false); end)
   FB = NfFactorBase()
   FB.size = length(lp)
   FB.ideals = lp
@@ -38,7 +38,7 @@ function NfFactorBase(O::NfOrd, lp::Vector{NfOrdIdl})
   FB.rw = Array{Int}(undef, 20)
   FB.mx = 20
 
-  fb = Dict{ZZRingElem, Vector{Tuple{Int, NfOrdIdl}}}()
+  fb = Dict{ZZRingElem, Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}}()
 
   for i = 1:length(lp)
     if !haskey(fb, minimum(lp[i]))
@@ -76,7 +76,7 @@ order(F::NfFactorBase) = ring(F)
 #
 ################################################################################
 
-function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
+function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::AbsSimpleNumFieldElem;
                  error = true, n = abs(norm(a))) where T
   fl, res = _factor(FB, a, error=error, n=n)
   if fl
@@ -85,7 +85,7 @@ function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
   return fl
 end
 
-function _factor!(FB::NfFactorBase, a::nf_elem,
+function _factor!(FB::NfFactorBase, a::AbsSimpleNumFieldElem,
                     error::Bool = true, n::QQFieldElem = abs(norm(a)), integral::Bool = true)
   T = ZZRingElem
   O = order(FB.ideals[1])
@@ -97,7 +97,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     df = numerator(n)*denominator(a, O)
   end
   if isone(df)
-    return true, sparse_row(FlintZZ)
+    return true, sparse_row(ZZ)
   end
 
   d = factor(FB.fb_int, df, error)  #careful: if df is non-int-smooth, then error is ignored
@@ -107,7 +107,6 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   ret = true
   for p in keys(d)
     vp = valuation!(n, p)
-#    s::Vector{Tuple{Int, Int}}, vp::Int = FB.fb[p].doit(a, vp)
     s::Vector{Tuple{Int, Int}}, vp::Int = fb_doit(a, vp, FB.fb[p], QQFieldElem(p)^vp)
     if !iszero(vp)
       ret = false
@@ -127,19 +126,19 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
       @hassert :ClassGroup 9000  ideal(O, a) == prod([FB.ideals[i]^j for (i, j) in r])
     end
     @hassert :ClassGroup 1 length(r) > 0
-    return ret, sparse_row(FlintZZ, r)
+    return ret, sparse_row(ZZ, r)
   else
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
-    return false, sparse_row(FlintZZ)
+    return false, sparse_row(ZZ)
   end
 end
 
-function factor(FB::NfFactorBase, a::nf_elem)
+function factor(FB::NfFactorBase, a::AbsSimpleNumFieldElem)
   return _factor!(FB, a, true, abs(norm(a)), false)[2]
 end
 
-function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
+function _factor!(FB::Hecke.NfFactorBase, A::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
                     error::Bool = true)
   T = ZZRingElem
   O = order(A)
@@ -149,7 +148,7 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
   # If the ideal is the trivial ideal, return true, and the zero row
   # Otherwise factor will choke
   if isone(n)
-    return true, sparse_row(FlintZZ)
+    return true, sparse_row(ZZ)
   end
 
   d = factor(FB.fb_int, n) # as above: fails - even if error is false -
@@ -174,7 +173,7 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
       if error
         @assert vp == 0
       end
-      return false, sparse_row(FlintZZ)
+      return false, sparse_row(ZZ)
     end
     r = vcat(r, s)
   end
@@ -184,14 +183,14 @@ function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
       FB.mx = length(rw)
     end
     sort!(r, lt = (a,b) -> a[1] < b[1])
-    res = sparse_row(FlintZZ, r)
+    res = sparse_row(ZZ, r)
     @hassert :ClassGroup 9000 A == prod([FB.ideals[i]^j for (i, j) in r])
     @hassert :ClassGroup 1 length(r) > 0
     return true, res
   else
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
-    return false, sparse_row(FlintZZ)
+    return false, sparse_row(ZZ)
   end
 end
 

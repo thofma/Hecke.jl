@@ -4,22 +4,7 @@
 #
 ################################################################################
 
-function _pivot(A, start_row, col)
-  if !iszero(A[start_row, col])
-    return 1;
-  end
-
-  for j in start_row + 1:nrows(A)
-    if !iszero(A[j, col])
-      swap_rows!(A, j, start_row)
-      return -1
-    end
-  end
-
-  return 0
-end
-
-function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, strategy)
+function _strong_echelon_form(A::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, strategy)
   B = deepcopy(A)
 
   if nrows(B) < ncols(B)
@@ -43,7 +28,7 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, strategy)
   end
 end
 
-function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
+function strong_echelon_form(A::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
     h = _strong_echelon_form(reverse_cols(A), strategy)
     reverse_cols!(h)
@@ -57,186 +42,17 @@ function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :
   end
 end
 
-function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
-  n = nrows(A)
-  m = ncols(A)
-  d = one(base_ring(A))
-
-
-  t_isdiv = 0.0
-  t_xxgcd = 0.0
-  t_arith = 0.0
-
-  row = 1
-  col = 1
-  while row <= nrows(A) && col <= ncols(A)
-    #println("doing row $row")
-    t = _pivot(A, row, col)
-    if iszero(t)
-      col = col + 1
-      continue
-    end
-    d = d*t
-    for i in (row + 1):nrows(A)
-      if iszero(A[i, col])
-        continue
-      end
-
-      t_isdiv += @elapsed b, q = is_divisible(A[i, col], A[row, col])
-
-      if b
-        for k in col:m
-          t_arith += @elapsed A[i, k] = A[i, k] - q*A[row, k]
-        end
-        @hassert :NfOrdQuoRing 1 A[i, col] == zero(base_ring(A))
-      else
-        t_xxgcd += @elapsed g,s,t,u,v = xxgcd(A[row, col], A[i, col])
-        @hassert :NfOrdQuoRing 1 isone(s*v - t*u)
-
-        for k in col:m
-          t_arith += @elapsed t1 = s*A[row, k] + t*A[i, k]
-          t_arith += @elapsed t2 = u*A[row, k] + v*A[i, k]
-          A[row, k] = t1
-          A[i, k] = t2
-        end
-      end
-    end
-    row = row + 1;
-    col = col + 1;
-  end
-  #println("  === Time triangularization")
-  #println("    isdivisbible: $t_isdiv")
-  #println("    xxgcd       : $t_xxgcd")
-  #println("    arith       : $t_arith")
-  #println("    total time  : $(toc())")
-  return d
-end
-
-function triangularize(A::Generic.Mat{NfOrdQuoRingElem})
-  #println("copying ...")
-  B = deepcopy(A)
-  #println("done")
-  triangularize!(B)
-  return B
-end
-
 ################################################################################
 #
-#  Strong echelon form
+#  Inverse
 #
 ################################################################################
 
-# Naive version of inplace strong echelon form
-# It is assumed that A has more rows then columns.
-function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
-  #A = deepcopy(B)
-  n = nrows(A)
-  m = ncols(A)
-
-  @assert n >= m
-
-  @vprintln :PseudoHnf 1 "Triangularizing ..."
-  triangularize!(A)
-  #println("done")
-
-  T = zero_matrix(base_ring(A), 1, ncols(A))
-
-  # We do not normalize!
-  for j in 1:m
-    if !iszero(A[j, j])
-      # This is the reduction
-      for i in 1:j-1
-        if iszero(A[i, j])
-          continue
-        end
-        q, r = divrem(A[i, j], A[j, j])
-        for l in i:m
-          A[i, l] = A[i, l] - q*A[j, l]
-        end
-      end
-
-      a = annihilator(A[j, j])
-
-      for k in 1:m
-        T[1, k] = a*A[j, k]
-      end
-    else
-      for k in 1:m
-        T[1, k] = A[j, k]
-      end
-    end
-
-    for i in j+1:m
-
-      if iszero(T[1, i])
-        continue
-      end
-
-      if iszero(A[i, i])
-        for k in i:m
-          T[1, k], A[i, k] = A[i, k], T[1, k]
-        end
-      else
-        b, q = is_divisible(T[1, i], A[i, i])
-        if b
-          for k in i:m
-            T[1, k] = T[1, k] - q*A[i, k]
-          end
-          @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
-        else
-          g, s, t, u, v = xxgcd(A[i, i], T[1, i])
-          for k in i:m
-            t1 = s*A[i, k] + t*T[1, k]
-            t2 = u*A[i, k] + v*T[1, k]
-            A[i, k] = t1
-            T[1, k] = t2
-          end
-        end
-      end
-    end
-  end
-  return A
-end
-
-################################################################################
-#
-#  Howell form
-#
-################################################################################
-
-function howell_form!(A::Generic.Mat{NfOrdQuoRingElem})
-  @assert nrows(A) >= ncols(A)
-
-  k = nrows(A)
-
-  strong_echelon_form_naive!(A)
-
-  for i in 1:nrows(A)
-    if is_zero_row(A, i)
-      k = k - 1
-
-      for j in (i + 1):nrows(A)
-        if !is_zero_row(A, j)
-          swap_rows!(A, i, j)
-          j = nrows(A)
-          k = k + 1
-        end
-      end
-    end
-  end
-  return k
-end
-
-function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
-  B = deepcopy(A)
-
-  if nrows(B) < ncols(B)
-    B = vcat(B, zero_matrix(base_ring(B), ncols(B) - nrows(B), ncols(B)))
-  end
-
-  howell_form!(B)
-
-  return B
+function inv(A::MatElem{T}) where {T <: Union{AbsSimpleNumFieldOrderQuoRingElem, LocalFieldValuationRingResidueRingElem}}
+  !is_square(A) && error("Matrix not invertible")
+  H, U = howell_form_with_transformation(A)
+  !is_one(H) && error("Matrix not invertible")
+  return U
 end
 
 ################################################################################
@@ -245,17 +61,17 @@ end
 #
 ################################################################################
 
-function det(M::Generic.Mat{NfOrdQuoRingElem})
+function det(M::Generic.Mat{AbsSimpleNumFieldOrderQuoRingElem})
   nrows(M) != ncols(M) && error("Matrix must be square matrix")
   N = deepcopy(M)
-  d = triangularize!(N)
+  d = AbstractAlgebra.triangularize!(N)
   z = one(base_ring(M))
   for i in 1:nrows(N)
     z = z * N[i, i]
   end
   return z*d
   q, r = divrem(z, d)
-  @hassert :NfOrdQuoRing 1 iszero(r)
+  @hassert :AbsOrdQuoRing 1 iszero(r)
   return divexact(z, d)
 end
 
@@ -265,13 +81,13 @@ end
 #
 ################################################################################
 
-function z_split1(I::NfOrdIdl)
+function z_split1(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   lf = factor_easy(I)
   if isempty(lf)
-    return NfOrdIdl[I], NfOrdIdl[]
+    return AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[I], AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   end
-  A = NfOrdIdl[]
-  B = NfOrdIdl[]
+  A = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
+  B = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for (I, v) in lf
     a = I^v
     if norm(a) != minimum(a)
@@ -285,27 +101,27 @@ end
 
 
 
-function z_split(I::NfOrdIdl)
+function z_split(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   b = basis_matrix(I, copy = false)
   O = order(I)
   n = degree(O)
   c = coprime_base([b[i, i] for i in 1:n])
   nI = norm(I)
   if isone(nI)
-    return NfOrdIdl[I], NfOrdIdl[]
+    return AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[I], AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   end
   val = Vector{Int}(undef, length(c))
   for i in 1:length(c)
     val[i] = valuation(nI, c[i])
   end
   if n == 1
-    nz = one(FlintZZ)
+    nz = one(ZZ)
   else
     nz = prod(b[i, i] for i in 2:n)
   end
 
-  A = NfOrdIdl[]
-  B = NfOrdIdl[]
+  A = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
+  B = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
   for i in 1:length(c)
     a = ideal(O, c[i]^val[i]) + I
@@ -318,7 +134,7 @@ function z_split(I::NfOrdIdl)
   return A, B
 end
 
-function can_map_into_integer_quotient(Q::NfOrdQuoRing)
+function can_map_into_integer_quotient(Q::AbsSimpleNumFieldOrderQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   for i in 2:ncols(B)
     if !isone(B[i, i])
@@ -328,22 +144,22 @@ function can_map_into_integer_quotient(Q::NfOrdQuoRing)
   return true
 end
 
-function map_into_integer_quotient(Q::NfOrdQuoRing)
+function map_into_integer_quotient(Q::AbsSimpleNumFieldOrderQuoRing)
   B = basis_matrix(ideal(Q), copy = false)
   m = B[1, 1]
-  R = residue_ring(FlintZZ, m, cached = false)
+  R = residue_ring(ZZ, m, cached = false)[1]
   local f
   let R = R, Q = Q
-    function f(x::NfOrdQuoRingElem)
+    function f(x::AbsSimpleNumFieldOrderQuoRingElem)
       mod!(x.elem, Q)
       return R(coordinates(x.elem, copy = false)[1])
     end
   end
-  g = (y -> Q(y.data)::NfOrdQuoRingElem)
+  g = (y -> Q(y.data)::AbsSimpleNumFieldOrderQuoRingElem)
   return R, f, g
 end
 
-function can_make_small(Q::Generic.ResidueRing{ZZRingElem})
+function can_make_small(Q::EuclideanRingResidueRing{ZZRingElem})
   if nbits(modulus(Q)) < Sys.WORD_SIZE - 1
     return true
   else
@@ -359,22 +175,22 @@ function can_make_small(Q::Nemo.ZZModRing)
   end
 end
 
-function make_small(Q::Generic.ResidueRing{ZZRingElem})
-  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
+function make_small(Q::EuclideanRingResidueRing{ZZRingElem})
+  R = residue_ring(ZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(x.data)::zzModRingElem)
-  g = (x -> Q(x.data)::Generic.ResidueRingElem{ZZRingElem})
+  g = (x -> Q(x.data)::EuclideanRingResidueRingElem{ZZRingElem})
   return R, f, g
 end
 
 function make_small(Q::Nemo.ZZModRing)
-  R = residue_ring(FlintZZ, Int(modulus(Q)), cached = false)
+  R = residue_ring(ZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(data(x))::zzModRingElem)
   g = (x -> Q(x.data)::Nemo.ZZModRingElem)
   return R, f, g
 end
 
 
-function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
+function _strong_echelon_form_split(M::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, ideals1)
   Q = base_ring(M)
   R = base_ring(Q)
   modulus = ideal(Q)
@@ -441,7 +257,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
 
     @hassert :PseudoHnf 1 ideal(R, lift(R, gI)) + modulus == I
 
-    g, a, b, e, f = xxgcd(l, gI)
+    g, a, b, e, f = gcdxx(l, gI)
     #gg = g
     ginv = inv(g)
     #mul!(e, e, gg)
@@ -471,7 +287,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals1)
   return r
 end
 
-function mul!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::NfOrdQuoRingElem)
+function mul!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, c::AbsSimpleNumFieldOrderQuoRingElem)
   for i = 1:nrows(b)
     for j = 1:ncols(b)
       mul!(a[i, j], b[i, j], c)
@@ -480,7 +296,7 @@ function mul!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::NfO
   return a
 end
 
-function mul_special!(a::MatElem{NfOrdQuoRingElem}, b::NfOrdQuoRingElem)
+function mul_special!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::AbsSimpleNumFieldOrderQuoRingElem)
   for i = 1:min(nrows(a), ncols(a))
     for j = i:ncols(a)
       mul!(a[i, j], a[i, j], b)
@@ -489,7 +305,7 @@ function mul_special!(a::MatElem{NfOrdQuoRingElem}, b::NfOrdQuoRingElem)
   return a
 end
 
-function add_special!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem})
+function add_special!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::MatElem{AbsSimpleNumFieldOrderQuoRingElem})
   for i = 1:min(nrows(b), ncols(b))
     for j = i:ncols(b)
       add!(a[i, j], a[i, j], b[i, j])
@@ -498,7 +314,7 @@ function add_special!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}
   return a
 end
 
-function add!(a::MatElem{NfOrdQuoRingElem}, b::MatElem{NfOrdQuoRingElem}, c::MatElem{NfOrdQuoRingElem})
+function add!(a::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, b::MatElem{AbsSimpleNumFieldOrderQuoRingElem}, c::MatElem{AbsSimpleNumFieldOrderQuoRingElem})
   for i = 1:nrows(b)
     for j = 1:ncols(b)
       add!(a[i, j], b[i, j], c[i, j])
@@ -559,7 +375,7 @@ function _strong_echelon_form_nonsplit!(M)
         end
       end
     else
-      forflint = zero_matrix(FlintZZ, n, m)
+      forflint = zero_matrix(ZZ, n, m)
       for i in 1:n
         for j in 1:m
           forflint[i, j] = f(M[i, j]).data
@@ -582,7 +398,7 @@ function _strong_echelon_form_nonsplit!(M)
     end
     return M
   else
-    strong_echelon_form_naive!(M)
+    AbstractAlgebra.strong_echelon_form_naive!(M)
     return M
   end
 
@@ -614,7 +430,7 @@ function _strong_echelon_form_nonsplit(M)
         end
       end
     else
-      forflint = zero_matrix(FlintZZ, n, m)
+      forflint = zero_matrix(ZZ, n, m)
       for i in 1:n
         for j in 1:m
           forflint[i, j] = f(M[i, j]).data
@@ -630,17 +446,17 @@ function _strong_echelon_form_nonsplit(M)
     return M_cur
   else
     N = deepcopy(M)
-    strong_echelon_form_naive!(N)
+    AbstractAlgebra.strong_echelon_form_naive!(N)
     return N
   end
 end
 
 function test_pseudohnf()
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   for i in 2:15
     K, a = number_field(x^i - 10, "a")
     O = maximal_order(K)
-    lp = NfOrdFracIdl[]
+    lp = AbsSimpleNumFieldOrderFractionalIdeal[]
     for p in [2, 3, 5, 7, 11, 13]
       pp = prime_decomposition(O, p)
       for P in pp

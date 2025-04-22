@@ -2,7 +2,7 @@
 
   @testset "Periods" begin
     K, a = quadratic_field(-5)
-    E = EllipticCurve(K, [1-a, a-4, 1, 0, 2])
+    E = elliptic_curve(K, [1-a, a-4, 1, 0, 2])
     L = @inferred periods(E)
     C = AcbField(100)
     R = ArbField(100)
@@ -14,7 +14,7 @@
     @test contains(C("-1.4432185402614538932714036971746453808628921690048", "0.13590523293148654948722413951015999464720046993453"), L[2][2])
 
     K, a = quadratic_field(7)
-    E = EllipticCurve(K, [1, a, 3, a+7, -2])
+    E = elliptic_curve(K, [1, a, 3, a+7, -2])
     L = @inferred periods(E)
 
     @test contains(C("2.7629221426067257179910708730994041505062373525092", "0"), L[1][1])
@@ -22,7 +22,7 @@
     @test contains(C("1.8732151552347948762918104229736927352409220860319", "0"), L[2][1])
     @test contains(C("-0.93660757761739743814590521148684636762046104301596", "1.1499337130709974851637683595038472294320843580688"), L[2][2])
 
-    E = EllipticCurve([0, -6, 0, 11, -6])
+    E = elliptic_curve([0, -6, 0, 11, -6])
     L = @inferred periods(E)
 
     @test contains(C("2.6220575542921198104648395898911194136827549514316", "0"), L[1][1])
@@ -33,7 +33,7 @@
   end
   @testset "Faltings height" begin
     R = ArbField(100)
-    E = EllipticCurve([0, -6, 0, 11, -6])
+    E = elliptic_curve([0, -6, 0, 11, -6])
     @test contains(R("-1.3105329259115095182522750833047286679516075894"), @inferred stable_faltings_height(E))
     @test contains(R("-0.9639593356315368635436590225756403839138575222"), @inferred faltings_height(E))
   end

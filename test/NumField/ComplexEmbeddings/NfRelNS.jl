@@ -123,4 +123,13 @@
   emb = complex_embeddings(M)
   @test Set([restrict(e, L) for e in emb]) == Set(complex_embeddings(L))
   @test Set([restrict(e, K) for e in emb]) == Set(complex_embeddings(K))
+
+  # Creation
+
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 - 2, "a")
+  L, b = number_field([polynomial(K, [-3, 0, 1], cached = false)])
+  for e in complex_embeddings(L)
+    @test complex_embedding(L, restrict(e, K), e.(b)) == e
+  end
 end

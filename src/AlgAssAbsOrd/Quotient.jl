@@ -17,7 +17,7 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   S, U, V = snf_with_transform(numerator(M))
   adj_bas_mat = inv(V)
   adj_bas_all = [elem_from_mat_row(O, adj_bas_mat, i) for i in 1:degree(O)]
-  k = findfirst(iszero, diagonal(S))
+  k = something(findfirst(iszero, diagonal(S)), nrows(S) + 1)
   adjusted_basis = adj_bas_all[k:end]
   l = length(adjusted_basis)
   mt = Array{QQFieldElem, 3}(undef, l, l, l)
@@ -27,10 +27,10 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
       mt[i, j, :] = (coordinates(bij) * V)[k:end]
     end
   end
-  quoAlg = AlgAss(QQ, mt)
-  ord = Order(quoAlg, basis(quoAlg))
+  quoAlg = StructureConstantAlgebra(QQ, mt; check = false)
+  ord = order(quoAlg, basis(quoAlg))
   #
-  bminvO = QQMatrix(basis_mat_inv(O))
+  bminvO = basis_matrix_inverse(O; copy = false)
   VQ = change_base_ring(QQ, V)
   A = algebra(O)
   img = matrix(QQ, [((coefficients(b) * bminvO * VQ)[k:end]) for b in basis(A)])
@@ -40,8 +40,8 @@ function quotient_order(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl)
   # Lets determine the decomposition of quoAlg if the decomposition of algebra(O) is known
 
   #if isdefined(A, :decomposition)
-  #  dec = Vector{Tuple{AlgAss{QQFieldElem},
-  #               morphism_type(AlgAss{QQFieldElem}, typeof(quoAlg))}}()
+  #  dec = Vector{Tuple{StructureConstantAlgebra{QQFieldElem},
+  #               morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(quoAlg))}}()
 
   #  d = 0
   #  for (B, mB) in decompose(A)

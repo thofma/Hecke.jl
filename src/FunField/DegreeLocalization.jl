@@ -7,8 +7,6 @@
 #
 ###############################################################################
 
-export KInftyRing, KInftyElem, function_field
-
 ###############################################################################
 #
 #   Data type and parent object methods
@@ -28,12 +26,8 @@ end
 
 parent(a::KInftyElem{T}) where T <: FieldElement = a.parent
 
-function check_parent(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
-  parent(a) != parent(b) && error("Parent objects do not match")
-end
-
 function Base.hash(a::KInftyElem, h::UInt)
-  b = 0x32ba43ad011affd1%UInt 
+  b = 0x32ba43ad011affd1%UInt
   return xor(b, hash(data(a), h))
 end
 
@@ -89,7 +83,7 @@ end
     in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
 
 Return `true` if the given element of the rational function field is an
-element of `k_\infty(x)`, i.e. if `degree(numerator) <= degree(denominator)`.
+element of $k_\infty(x)$, i.e. if `degree(numerator) <= degree(denominator)`.
 """
 function in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
   if parent(a) != function_field(R)
@@ -162,10 +156,6 @@ function mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
   return b*c
 end
 
-function addeq!(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
-  return a+b
-end
-
 ###############################################################################
 #
 #   Comparison
@@ -223,7 +213,7 @@ function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where
 end
 
 @doc raw"""
-     divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where {T <: nf_elem}
+     divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
 Returns element 'c' of given localization such that $a = bc$ if such element
 exists. If `checked = false` the corresponding element of the rational function
 field is returned and it is not checked whether it is an element of the given
@@ -305,6 +295,8 @@ function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <:
   end
 end
 
+Base.rem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement = mod(a, b, checked)
+
 ###############################################################################
 #
 #  GCD
@@ -384,7 +376,7 @@ function RandomExtensions.make(S::KInftyRing, vs...)
   if length(vs) == 1 && elem_type(R) == Random.gentype(vs[1])
     RandomExtensions.Make(S, vs[1]) # forward to default Make constructor
   else
-    make(S, make(R, vs...))
+    RandomExtensions.Make(S, make(R, vs...))
   end
 end
 
@@ -417,7 +409,7 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
 
 function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.RationalFunctionFieldElem{T}}
-  return KInftyElem{T}
+  return U
 end
 
 function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}

@@ -1,41 +1,9 @@
 ################################################################################
 #
-#             EllCrv/Periods.jl: Functions for computing the period matrix of
+#             EllipticCurve/Periods.jl: Functions for computing the period matrix of
 #                                an  elliptic curve
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2016 Tommy Hofmann
-# (C) 2016 Robin Ammon
-# (C) 2016 Sofia Brenner
-# (C) 2022 Jeroen Hanselman
-#
 ################################################################################
-
-export periods, real_period, faltings_height, stable_faltings_height
 
 ################################################################################
 #
@@ -46,19 +14,19 @@ export periods, real_period, faltings_height, stable_faltings_height
 # Following The complex AGM, periods of elliptic curves over C and complex
 #elliptic logarithms by John E. Cremona and Thotsaphon Thongjunthug
 @doc raw"""
-    real_period(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
+    real_period(E::EllipticCurve{QQFieldElem}, prec::Int) -> Float64
 Return the real period of an elliptic curve $E$ over QQ
 """
-function real_period(E::EllCrv{QQFieldElem}, prec::Int = 100)
+function real_period(E::EllipticCurve{QQFieldElem}, prec::Int = 100)
   return real(period_real_embedding(E, nothing, prec)[1])
 end
 
 @doc raw"""
-    periods(E::EllCrv{ZZRingElem}, prec::Int) -> Float64
+    periods(E::EllipticCurve{ZZRingElem}, prec::Int) -> Float64
 Return the period lattices of an elliptic curve $E$ over a number field for each possible
 embedding in $mathb{C}$.
 """
-function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{QQFieldElem, nf_elem}
+function periods(E::EllipticCurve{T}, prec::Int = 100) where T <: Union{QQFieldElem, AbsSimpleNumFieldElem}
   K = base_field(E)
   if K == QQ
     return [period_real_embedding(E, nothing, prec)]
@@ -70,7 +38,7 @@ function periods(E::EllCrv{T}, prec::Int = 100) where T <: Union{QQFieldElem, nf
 end
 
 #Compute the period lattice of an elliptic curve over a number field using a chosen real embedding.
-function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Union{QQFieldElem, nf_elem}
+function period_real_embedding(E::EllipticCurve{T}, phi, prec::Int = 100) where T<: Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   attempt = 1
   K = base_field(E)
@@ -79,9 +47,9 @@ function period_real_embedding(E::EllCrv{T}, phi, prec::Int = 100) where T<: Uni
     precnew = attempt*prec
 
     if phi === nothing
-      b2, b4, b6, b8 = map(ArbField(precnew), b_invars(E))
+      b2, b4, b6, b8 = map(ArbField(precnew), b_invariants(E))
     else
-      b2, b4, b6, b8 = map(real, (map(evaluation_function(phi, precnew), b_invars(E))))
+      b2, b4, b6, b8 = map(real, (map(evaluation_function(phi, precnew), b_invariants(E))))
     end
 
     delta = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
@@ -122,7 +90,7 @@ end
 #Compute the period lattice of an elliptic curve over a number field using a chosen embedding.
 #Also works for real embeddings, but as the other one exclusively uses real arithmetic, it is probably
 #faster.
-function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Union{QQFieldElem, nf_elem}
+function period_complex_embedding(E::EllipticCurve{T}, phi, prec = 100) where T <: Union{QQFieldElem, AbsSimpleNumFieldElem}
 
   attempt = 1
   K = base_field(E)
@@ -131,9 +99,9 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
     precnew = attempt*prec
 
     if phi === nothing
-      b2, b4, b6, b8 = map(AcbField(precnew), b_invars(E))
+      b2, b4, b6, b8 = map(AcbField(precnew), b_invariants(E))
     else
-      b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invars(E))
+      b2, b4, b6, b8 = map(evaluation_function(phi, precnew), b_invariants(E))
     end
 
     C = parent(b2)
@@ -158,12 +126,12 @@ function period_complex_embedding(E::EllCrv{T}, phi, prec = 100) where T <: Unio
 end
 
 @doc raw"""
-    faltings_height(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
+    faltings_height(E::EllipticCurve{QQFieldElem}, prec::Int) -> Float64
 
 Return the Faltings height of E. This is defined as -1/2log(A) where A is the covolume
 of the period lattice of the mnimal model of E.
 """
-function faltings_height(E::EllCrv{QQFieldElem}, prec::Int = 100)
+function faltings_height(E::EllipticCurve{QQFieldElem}, prec::Int = 100)
 
   attempt = 2
   E, phi = minimal_model(E)
@@ -181,14 +149,14 @@ function faltings_height(E::EllCrv{QQFieldElem}, prec::Int = 100)
 end
 
 @doc raw"""
-    stable_faltings_height(E::EllCrv{QQFieldElem}, prec::Int) -> Float64
+    stable_faltings_height(E::EllipticCurve{QQFieldElem}, prec::Int) -> Float64
 
 Return the stable Faltings height of E. This is defined as
 1/12*(log(denominator(j)) - abs(delta))-1/2log(A) where j is the j-invariant,
 delta is the discriminant and A is the covolume
 of the period lattice of the chosen model of E.
 """
-function stable_faltings_height(E::EllCrv{QQFieldElem}, prec = 100)
+function stable_faltings_height(E::EllipticCurve{QQFieldElem}, prec = 100)
   attempt = 2
   while true
     precnew = attempt*prec
@@ -205,7 +173,7 @@ function stable_faltings_height(E::EllCrv{QQFieldElem}, prec = 100)
 end
 
 #Compute -1/2log(A) where A is the covolume of the period lattice of E.
-function _faltings(E::EllCrv, prec::Int)
+function _faltings(E::EllipticCurve, prec::Int)
    L = periods(E, prec)[1]
    M = matrix(ArbField(prec), 2, 2, [real(L[1]), imag(L[1]), real(L[2]), imag(L[2])])
    return -log(det(M))/2

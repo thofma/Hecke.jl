@@ -1,6 +1,6 @@
 @testset "Relative ideals" begin
   @testset "Arithmetic" begin
-     Qx, x = FlintQQ["x"]
+     Qx, x = QQ["x"]
     f = x^2 + 12*x - 92
      K, a = number_field(f, "a")
     OK = maximal_order(K)
@@ -37,7 +37,7 @@
   end
 
   @testset "Prime decomposition" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12*x - 92
     K, a = number_field(f, "a")
     OK = maximal_order(K)
@@ -85,7 +85,7 @@
   end
 
   @testset "Residue fields" begin
-     Qx, x = FlintQQ["x"]
+     Qx, x = QQ["x"]
     f = x^4 - 95x^3 - 91x^2 + 90x - 31
      K, a = number_field(f, "a")
     OK = maximal_order(K)
@@ -153,7 +153,7 @@
   end
 
   @testset "Idempotents and uniformizers" begin
-     Qx, x = FlintQQ["x"]
+     Qx, x = QQ["x"]
     f = x^2 + 12*x - 92
      K, a = number_field(f, "a")
     OK = maximal_order(K)
@@ -239,11 +239,36 @@
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
     E, z = number_field(t^2 + 1, "z")
-    OE = Order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
+    OE = order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
     I = OE(1) * OE
     @test I * I == I
     @test I + I == I
     @test intersect(I, I) == I
     @test isone(I//I)
+  end
+
+  let
+    K, a = rationals_as_number_field()
+    Kt, t = polynomial_ring(K, "t")
+    L, b = number_field(t^2 + 1, "b")
+    OL = maximal_order(L)
+    I = 0 * OL
+    @test iszero(I)
+    @test nrows(basis_pmatrix(I)) == 0
+    @test isempty(pseudo_basis(I))
+    I = 1 * OL
+    @test !iszero(L)
+    @test 0 * OL + 1 * OL == 1 * OL
+    @test 1 * OL + 0 * OL == 1 * OL
+    @test 0 * OL + 0 * OL == 0 * OL
+    @test is_zero(minimum(0 * OL))
+  end
+
+  let # fix containment bug
+    K, a = rationals_as_number_field();
+    Kt, t = K[:t];
+    L, b = number_field(t^2 + 1, :b);
+    OL = maximal_order(L);
+    @test !(L(1//2) in 2*OL)
   end
 end

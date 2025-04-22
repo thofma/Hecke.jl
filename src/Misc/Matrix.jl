@@ -1,6 +1,3 @@
-export is_zero_row, howell_form, kernel_basis, is_diagonal, diagonal, saturate,
-       has_finite_multiplicative_order, multiplicative_order
-
 import Nemo.matrix
 
 ################################################################################
@@ -48,7 +45,7 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   # For any invertible H' with H'H = 1, also S = H'HS = H'A.
   H = hnf!(transpose(A))
   H = transpose(H[1:rank(H), :])
-  S = solve(H, A)
+  S = solve(H, A; side = :right)
   @assert rank(S) == rank(H)
   return S
 end
@@ -216,9 +213,9 @@ end
 #
 ################################################################################
 
-function is_lll_reduced(x::ZZMatrix, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function is_lll_reduced(x::ZZMatrix, ctx::LLLContext = LLLContext(0.99, 0.51))
   b = ccall((:fmpz_lll_is_reduced_d, libflint), Cint,
-            (Ref{ZZMatrix}, Ref{lll_ctx}), x, ctx)
+            (Ref{ZZMatrix}, Ref{LLLContext}), x, ctx)
   return Bool(b)
 end
 
@@ -241,19 +238,19 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         if j > ncols(H)
           break
         end
-        n = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, j - 1)
-        m = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, j - 1)
+        n = mat_entry_ptr(a, c, j)
+        m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), q)
+        fl = is_zero(q)
         if fl
           continue
         end
         for k = j:ncols(a)
-          t = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, k - 1)
-          l = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, k - 1)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
+          t = mat_entry_ptr(a, c, k)
+          l = mat_entry_ptr(H, i, k)
+          submul!(t, q, l)
           #a[c, k] = a[c, k] - q * H[i, k]
         end
       end
@@ -273,19 +270,19 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         if iszero(j)
           break
         end
-        n = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, j - 1)
-        m = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, j - 1)
+        n = mat_entry_ptr(a, c, j)
+        m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
         ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
         #q = fdiv(a[c, j], H[i, j])
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), q)
+        fl = is_zero(q)
         if fl
           continue
         end
         for k = 1:j
-          t = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), a, c - 1, k - 1)
-          l = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), H, i - 1, k - 1)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), t, q, l)
+          t = mat_entry_ptr(a, c, k)
+          l = mat_entry_ptr(H, i, k)
+          submul!(t, q, l)
         end
       end
     end
@@ -300,73 +297,25 @@ end
 ################################################################################
 
 function lift_nonsymmetric(a::zzModMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
 end
 
 function lift_nonsymmetric(a::fpMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, Hecke.libflint), Nothing,
           (Ref{ZZMatrix}, Ref{fpMatrix}), z, a)
   return z
 end
 
 function lift_unsigned(a::zzModMatrix)
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  z = zero_matrix(ZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, libflint), Nothing,
           (Ref{ZZMatrix}, Ref{zzModMatrix}), z, a)
   return z
 end
-
-################################################################################
-#
-#  Kernel function
-#
-################################################################################
-@doc raw"""
-    kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
-
-It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
-specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
-"""
-function kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
-  if side == :right
-    return right_kernel_basis(A)
-  elseif side == :left
-    return left_kernel_basis(A)
-  else
-    error("Unsupported argument: :$side for side: Must be :left or :right")
-  end
-end
-
-@doc raw"""
-    right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
-
-It returns a basis for the right kernel of the matrix defined over a field.
-"""
-function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
-  R = base_ring(a)
-  n, z = nullspace(a)
-  ar = typeof(Array{T}(undef, nrows(z)))[]
-  for i in 1:n
-    t = Array{T}(undef, nrows(z))
-    for j in 1:nrows(z)
-      t[j] = R(z[j, i])
-    end
-    push!(ar,t)
-  end
-  return ar
-end
-
-@doc raw"""
-    left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
-
-It returns a basis for the left kernel of the matrix.
-"""
-left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
-
 
 ################################################################################
 #
@@ -376,31 +325,36 @@ left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_ke
 
 # Copy B into A at position (i, j)
 function _copy_matrix_into_matrix(A::ZZMatrix, i::Int, j::Int, B::ZZMatrix)
-  @GC.preserve A B begin
+  GC.@preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
-        d = ccall((:fmpz_mat_entry, libflint),
-                  Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), B, k, l)
-        t = ccall((:fmpz_mat_entry, libflint),
-                  Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), A, i - 1 + k, j - 1 + l)
-        ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), t, d)
+        d = mat_entry_ptr(B, 1 + k, 1 + l)
+        t = mat_entry_ptr(A, i + k, j + l)
+        set!(t, d)
       end
     end
   end
 end
 
-function _copy_matrix_into_matrix!(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
-  @GC.preserve A B begin
+function _copy_matrix_into_matrix(A::QQMatrix, i::Int, j::Int, B::QQMatrix)
+  GC.@preserve A B begin
     for k in 0:nrows(B) - 1
       for l in 0:ncols(B) - 1
-        d = ccall((:fmpq_mat_entry, libflint),
-                  Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), B, k, l)
-        t = ccall((:fmpq_mat_entry, libflint),
-                  Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), A, i - 1 + k, j - 1 + l)
-        ccall((:fmpq_set, libflint), Nothing, (Ptr{QQFieldElem}, Ptr{QQFieldElem}), t, d)
+        d = mat_entry_ptr(B, 1 + k, 1 + l)
+        t = mat_entry_ptr(A, i + k, j + l)
+        set!(t, d)
       end
     end
   end
+end
+
+function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
+  for k in 0:nrows(B) - 1
+    for l in 0:ncols(B) - 1
+      setindex!(A, B[k+1, l+1], i+k, j+l)
+    end
+  end
+  return nothing
 end
 
 function _copy_matrix_into_matrix(A::MatElem, r::Vector{Int}, c::Vector{Int}, B::MatElem)
@@ -442,7 +396,7 @@ end
 #converts BigFloat -> ZZRingElem via round(a*2^l), in a clever(?) way
 function round_scale(a::Matrix{BigFloat}, l::Int)
   s = size(a)
-  b = zero_matrix(FlintZZ, s[1], s[2])
+  b = zero_matrix(ZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
 
@@ -476,16 +430,16 @@ function round_scale!(b::ZZMatrix, a::Matrix{BigFloat}, l::Int, R=_RealRings[Thr
   return b
 end
 
-function round_scale!(b::ZZMatrix, a::arb_mat, l::Int)
+function round_scale!(b::ZZMatrix, a::ArbMatrix, l::Int)
   s = size(a)
 
   R = base_ring(a)
   r = R()
   for i = 1:s[1]
       for j = 1:s[2]
-          v = ccall((:arb_mat_entry_ptr, libarb), Ptr{arb},
-              (Ref{arb_mat}, Int, Int), a, i - 1, j - 1)
-          ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{arb}, Ptr{arb}, Int), r, v, l)
+          v = ccall((:arb_mat_entry_ptr, libarb), Ptr{ArbFieldElem},
+              (Ref{ArbMatrix}, Int, Int), a, i - 1, j - 1)
+          ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
           b[i, j] = round(ZZRingElem, r)
       end
   end
@@ -499,12 +453,12 @@ end
 ################################################################################
 
 function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
-  R = identity_matrix(FlintZZ, ncols(A))
+  R = identity_matrix(ZZ, ncols(A))
   S = deepcopy(A)
 
 
   if !is_diagonal(S)
-    T = zero_matrix(FlintZZ, ncols(A), ncols(A))
+    T = zero_matrix(ZZ, ncols(A), ncols(A))
     GC.@preserve S R T begin
       while true
         hnf_modular_eldiv!(S, mod)
@@ -522,7 +476,7 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         R = mul!(R, T, R)
         ccall((:fmpz_mat_transpose, libflint), Nothing,
            (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
-        if isupper_triangular(S)
+        if is_upper_triangular(S)
           break
         end
       end
@@ -531,18 +485,18 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   #this is probably not really optimal...
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
-      Sii = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), S, i - 1, i - 1)
-      fl = ccall((:fmpz_is_one, libflint), Bool, (Ref{ZZRingElem},), Sii)
+      Sii = mat_entry_ptr(S, i, i)
+      fl = is_one(Sii)
       if fl
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
-        Sjj = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), S, j - 1, j - 1)
-        fl = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sjj)
+        Sjj = mat_entry_ptr(S, j, j)
+        fl = is_zero(Sjj)
         if fl
           continue
         end
-        fl1 = ccall((:fmpz_is_zero, libflint), Bool, (Ref{ZZRingElem},), Sii)
+        fl1 = is_zero(Sii)
         if !fl1
           fl2 = Bool(ccall((:fmpz_divisible, libflint), Cint,
               (Ref{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sii))
@@ -563,34 +517,33 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         ccall((:fmpz_tdiv_qr, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), a, r, Sii, g)
         #a = divexact(S[i,i], g)
-        ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Sii, g)
+        set!(Sii, g)
         #S[i,i] = g
         b = ZZRingElem()
         ccall((:fmpz_tdiv_qr, libflint), Nothing,
           (Ref{ZZRingElem}, Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), b, r, Sjj, g)
         #b = divexact(S[j,j], g)
-        ccall((:fmpz_mul, libflint), Nothing, (Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sjj, a)
+        Sjj = mul!(Sjj, a)
         #S[j,j] *= a
         # V = [e -b ; f a];
         # so col i and j of R will be transformed. We do it naively
         # careful: at this point, R is still transposed
         for k = 1:nrows(R)
-          Rik = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), R, i - 1, k - 1)
-          Rjk = ccall((:fmpz_mat_entry, libflint), Ptr{ZZRingElem}, (Ref{ZZMatrix}, Int, Int), R, j - 1, k - 1)
+          Rik = mat_entry_ptr(R, i, k)
+          Rjk = mat_entry_ptr(R, j, k)
           aux = ZZRingElem()
-          ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rik, e)
-          ccall((:fmpz_addmul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux, Rjk, f)
+          aux = mul!(aux, Rik, e)
+          aux = addmul!(aux, Rjk, f)
           aux1 = ZZRingElem()
-          ccall((:fmpz_mul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rjk, a)
-          ccall((:fmpz_submul, libflint), Nothing, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), aux1, Rik, b)
-          ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Rik, aux)
-          ccall((:fmpz_set, libflint), Nothing, (Ptr{ZZRingElem}, Ref{ZZRingElem}), Rjk, aux1)
+          aux1 = mul!(aux1, Rjk, a)
+          aux1 = submul!(aux1, Rik, b)
+          set!(Rik, aux)
+          set!(Rjk, aux1)
           #R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
         end
       end
     end
-    ccall((:fmpz_mat_transpose, libflint), Nothing,
-         (Ref{ZZMatrix}, Ref{ZZMatrix}), R, R)
+    transpose!(R)
   end
   return S, R
 end
@@ -615,38 +568,6 @@ function _rref_with_trans(M::T) where {T <: MatElem{S} where {S <: FieldElem}}
   return s, sub(n, 1:nrows(M), 1:ncols(M)), sub(n, 1:nrows(M), ncols(M)+1:ncols(n))
 end
 
-# can_solve_ut over a field
-#
-#Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
-#\times k$, this function computes $x$ such that $Ax = b$. Might fail if
-#the pivots of $A$ are not invertible.
-#"""
-function can_solve_rref_ut(A::MatElem{T}, b::Vector{T}, pivots::Vector{Int}) where T <: FieldElem
-  n = nrows(A)
-  m = ncols(A)
-  @assert n == length(b)
-  x = Vector{T}(undef, m)
-  K = base_ring(A)
-  for i in 1:m
-    x[i] = zero(K)
-  end
-  if length(pivots) == 0
-    pivots = _get_pivots_ut(A)
-  end
-  @assert length(pivots) == n
-
-  if any(i -> !iszero(b[i]) && iszero(pivots[i]), 1:n)
-    return false, x
-  else
-    for i in 1:n
-      if !iszero(pivots[i])
-        x[pivots[i]] = b[i]
-      end
-    end
-    return true, x
-  end
-end
-
 function _get_pivots_ut(A::MatElem{<: FieldElem})
   n = nrows(A)
   m = ncols(A)
@@ -664,37 +585,15 @@ function _get_pivots_ut(A::MatElem{<: FieldElem})
   return pivots
 end
 
-function can_solve_using_rref(A::MatElem{T}, b::Vector{T}) where {T}
-  s, R, U = _rref_with_trans(A)
-  pivots = _get_pivots_ut(R)
-  fl, x = can_solve_given_rref(R, U, pivots, b)
-  if fl
-    @assert A * matrix(base_ring(A), length(x), 1, x) == matrix(base_ring(A), length(b), 1, b)
-  end
-  return fl, x
-end
-
-function can_solve_given_rref(R::MatElem{T}, U, pivots, b::Vector{T}) where {T}
-  Ub = U * b
-  fl, x = can_solve_rref_ut(R, Ub, pivots)
-  return fl, x
-end
-
-function can_solve_given_rref(R::MatElem{T}, U, pivots, b) where {T}
-  Ub = U * matrix(base_ring(R), length(b), 1, b)
-  fl, x = can_solve_rref_ut(R, [Ub[i, 1] for i in 1:nrows(Ub)], pivots)
-  return fl, x
-end
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
-
 @doc raw"""
-    solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
+    _solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
 \times k$, this function computes $x$ such that $Ax = b$. Might fail if
 the pivots of $A$ are not invertible.
 """
-function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
+function _solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
   s = ncols(b)
@@ -730,13 +629,13 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
 end
 
 @doc raw"""
-    solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
+    _solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
 
 Given a lower triangular $m \times m$ matrix $A$ and a matrix $b$ of size
 $m \times k$, this function computes $x$ such that $Ax = b$. Might fail if the
 pivots of $A$ are not invertible.
 """
-function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
+function _solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
   s = ncols(b)
@@ -769,7 +668,7 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   return x
 end
 
-function solve_lt(A::MatElem{T}, b::Vector{T}) where T
+function _solve_lt(A::MatElem{T}, b::Vector{T}) where T
   m = nrows(A)
   n = ncols(A)
   @assert m <= n
@@ -911,243 +810,6 @@ julia> Hecke.non_pivot_cols_of_ref(QQ[0 2 2 2 2; 0 0 3 3 3; 0 0 0 4 4])
 """
 non_pivot_cols_of_ref(H::MatrixElem) = findall(!, pivots_of_ref(H)[2])
 
-
-#@doc raw"""
-#    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
-#
-#Tries to solve $Ax = B$ for $x$ if `side = :right` and $xA = B$ if `side =
-#:left`.
-#"""
-#function can_solve_with_solution(A::MatElem{T}, B::MatElem{T};
-#                                  side = :right) where T <: FieldElem
-#  @assert base_ring(A) == base_ring(B)
-#
-#  if side === :right
-#    @assert nrows(A) == nrows(B)
-#    return _can_solve_with_solution(A, B)
-#  elseif side === :left
-#    @assert ncols(A) == ncols(B)
-#    b, C = _can_solve_with_solution(transpose(A), transpose(B))
-#    if b
-#      return true, transpose(C)
-#    else
-#      return false, C
-#    end
-#  else
-#    error("Unsupported argument :$side for side: Must be :left or :right")
-#  end
-#end
-#
-#function _can_solve_with_solution(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-#  R = base_ring(A)
-#  mu = [A B]
-#  rk, mu = rref(mu)
-#  p = find_pivot(mu)
-#  if any(i -> i > ncols(A), p)
-#    return false, B
-#  end
-#  sol = zero_matrix(R, ncols(A), ncols(B))
-#  for i = 1:length(p)
-#    for j = 1:ncols(B)
-#      sol[p[i], j] = mu[i, ncols(A) + j]
-#    end
-#  end
-#  return true, sol
-#end
-
-#@doc raw"""
-#    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
-#
-#Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
-#It returns the solution and the right respectively left kernel of $A$.
-#"""
-#function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
-#  @assert base_ring(A) == base_ring(B)
-#  if side === :right
-#    @assert nrows(A) == nrows(B)
-#    return _can_solve_with_kernel(A, B)
-#  elseif side === :left
-#    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
-#    @assert ncols(A) == ncols(B)
-#    if b
-#      return b, transpose(C), transpose(K)
-#    else
-#      return b, C, K
-#    end
-#  else
-#    error("Unsupported argument :$side for side: Must be :left or :right")
-#  end
-#end
-
-#function _can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
-#  R = base_ring(A)
-#  mu = [A B]
-#  rank, mu = rref(mu)
-#  p = find_pivot(mu)
-#  if any(i->i>ncols(A), p)
-#    return false, B, B
-#  end
-#  sol = zero_matrix(R, ncols(A), ncols(B))
-#  for i = 1:length(p)
-#    for j = 1:ncols(B)
-#      sol[p[i], j] = mu[i, ncols(A) + j]
-#    end
-#  end
-#  nullity = ncols(A) - length(p)
-#  X = zero(A, ncols(A), nullity)
-#  pivots = zeros(Int, max(nrows(A), ncols(A)))
-#  np = rank
-#  j = k = 1
-#  for i = 1:rank
-#    while iszero(mu[i, j])
-#      pivots[np + k] = j
-#      j += 1
-#      k += 1
-#    end
-#    pivots[i] = j
-#    j += 1
-#  end
-#  while k <= nullity
-#    pivots[np + k] = j
-#    j += 1
-#    k += 1
-#  end
-#  for i = 1:nullity
-#    for j = 1:rank
-#      X[pivots[j], i] = -mu[j, pivots[np + i]]
-#    end
-#    X[pivots[np + i], i] = one(R)
-#  end
-#  return true, sol, X
-#end
-
-#@doc raw"""
-#    can_solve_with_solution(A::MatElem{T}, B::MatElem{T}, side = :right) where T <: RingElem -> Bool, MatElem
-#
-#Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`
-#over a euclidean ring.
-#"""
-#function can_solve_with_solution(A::MatElem{T}, B::MatElem{T};
-#                                  side = :right) where T <: RingElem
-#  @assert base_ring(A) == base_ring(B)
-#
-#  if side === :right
-#    @assert nrows(A) == nrows(B)
-#    return _can_solve_with_solution(A, B)
-#  elseif side === :left
-#    @assert ncols(A) == ncols(B)
-#    b, C = _can_solve_with_solution(transpose(A), transpose(B))
-#    if b
-#      return true, transpose(C)
-#    else
-#      return false, C
-#    end
-#  else
-#    error("Unsupported argument :$side for side: Must be :left or :right")
-#  end
-#end
-#
-#function _can_solve_with_solution(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
-#  H, T = hnf_with_transform(transpose(a))
-#  b = deepcopy(b)
-#  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
-#  l = min(nrows(a), ncols(a))
-#  for i = 1:ncols(b)
-#    for j = 1:l
-#      k = 1
-#      while k <= ncols(H) && iszero(H[j, k])
-#        k += 1
-#      end
-#      if k > ncols(H)
-#        continue
-#      end
-#      q, r = divrem(b[k, i], H[j, k])
-#      if !iszero(r)
-#        return false, b
-#      end
-#      for h = k:ncols(H)
-#        b[h, i] -= q*H[j, h]
-#      end
-#      z[i, j] = q
-#    end
-#  end
-#  if !iszero(b)
-#    return false, b
-#  end
-#  return true, transpose(z*T)
-#end
-
-#@doc raw"""
-#    can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
-#
-#Tries to solve $Ax = B$ for $x$ if `side = :right` or $xA = B$ if `side = :left`.
-#It returns the solution and the right respectively left kernel of $A$.
-#"""
-#function can_solve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
-#  @assert base_ring(A) == base_ring(B)
-#  if side === :right
-#    @assert nrows(A) == nrows(B)
-#    return _can_solve_with_kernel(A, B)
-#  elseif side === :left
-#    b, C, K = _can_solve_with_kernel(transpose(A), transpose(B))
-#    @assert ncols(A) == ncols(B)
-#    if b
-#      return b, transpose(C), transpose(K)
-#    else
-#      return b, C, K
-#    end
-#  else
-#    error("Unsupported argument :$side for side: Must be :left or :right")
-#  end
-#end
-
-#function _can_solve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
-#  H, T = hnf_with_transform(transpose(a))
-#  z = zero_matrix(base_ring(a), ncols(b), ncols(a))
-#  l = min(nrows(a), ncols(a))
-#  b = deepcopy(b)
-#  for i=1:ncols(b)
-#    for j=1:l
-#      k = 1
-#      while k <= ncols(H) && iszero(H[j, k])
-#        k += 1
-#      end
-#      if k > ncols(H)
-#        continue
-#      end
-#      q, r = divrem(b[k, i], H[j, k])
-#      if !iszero(r)
-#        return false, b, b
-#      end
-#      for h=k:ncols(H)
-#        b[h, i] -= q*H[j, h]
-#      end
-#      z[i, j] = q
-#    end
-#  end
-#  if !iszero(b)
-#    return false, b, b
-#  end
-#
-#  for i = nrows(H):-1:1
-#    for j = 1:ncols(H)
-#      if !iszero(H[i,j])
-#        N = zero_matrix(base_ring(a), ncols(a), nrows(H) - i)
-#        for k = 1:nrows(N)
-#          for l = 1:ncols(N)
-#            N[k,l] = T[nrows(T) - l + 1, k]
-#          end
-#        end
-#        return true, transpose(z*T), N
-#      end
-#    end
-#  end
-#
-#  N = identity_matrix(base_ring(a), ncols(a))
-#
-#  return true, transpose(z*T), N
-#end
-
 ################################################################################
 #
 #  Elementary divisors
@@ -1190,7 +852,7 @@ function divisors(M::ZZMatrix, d::ZZRingElem)
       push!(l, p)
     end
   end
-  d = is_power(d)[2]
+  d = is_perfect_power_with_data(d)[2]
   M1 = _hnf_modular_eldiv(M, d)
   while !is_diagonal(M1)
     M1 = transpose(M1)
@@ -1222,7 +884,7 @@ largest_elementary_divisor(A::ZZMatrix) = maximal_elementary_divisor(A)
 #
 ################################################################################
 
-function _left_kernel_of_howell_form_aurel(A::zzModMatrix)
+function __left_kernel_of_howell_form_aurel(A::zzModMatrix)
   n = nrows(A)
   m = ncols(A)
   K = zero_matrix(base_ring(A), n, n)
@@ -1250,7 +912,7 @@ function _left_kernel_of_howell_form_aurel(A::zzModMatrix)
   return K
 end
 
-function _left_kernel_naive(A::zzModMatrix)
+function __left_kernel_naive(A::zzModMatrix)
   m = Int(modulus(base_ring(A)))
   D1 = abelian_group(Int[m for i in 1:nrows(A)])
   D2 = abelian_group(Int[m for i in 1:ncols(A)])
@@ -1268,11 +930,11 @@ function _left_kernel_naive(A::zzModMatrix)
   return z
 end
 
-function left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
+function _left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
   R = base_ring(A)
   Alift = lift(A)
   F = GF(p)
-  _, _M = left_kernel(change_base_ring(F, Alift))
+  _M = kernel(change_base_ring(F, Alift), side = :left)
   M = lift(_M)
   Mi = hnf_modular_eldiv(M, ZZRingElem(p))
   r = nrows(Mi)
@@ -1283,7 +945,7 @@ function left_kernel_prime_power(A::zzModMatrix, p::Int, l::Int)
   Mfi = Mi * Alift
   local H
   for i in 1:(l - 1)
-    _, K = left_kernel(change_base_ring(F, divexact(Mfi, p^i)))
+    K = kernel(change_base_ring(F, divexact(Mfi, p^i)), side = :left)
     H = hnf_modular_eldiv(lift(K), ZZRingElem(p))
     r = nrows(H)
     while is_zero_row(H, r)
@@ -1304,7 +966,7 @@ end
 
 function invmod(M::ZZMatrix, d::ZZRingElem)
   if fits(Int, d)
-    RR = residue_ring(FlintZZ, Int(d), cached = false)
+    RR = residue_ring(ZZ, Int(d), cached = false)[1]
     MRR = map_entries(RR, M)
     SR = zero_matrix(RR, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(SR, 1, 1, MRR)
@@ -1317,14 +979,14 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
   else
-    R = residue_ring(FlintZZ, d, cached = false)
+    R = residue_ring(ZZ, d, cached = false)[1]
     MR = map_entries(R, M)
     S = zero_matrix(R, 2*nrows(M), 2*nrows(M))
     _copy_matrix_into_matrix(S, 1, 1, MR)
     for i = 1:nrows(M)
       S[i, i+nrows(M)] = 1
     end
-    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, ), S)
+    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), S, R.ninv)
     iM = S[1:nrows(M), nrows(M)+1:ncols(S)]
     #@assert iM*MR == identity_matrix(R, nrows(M))
     return lift(iM)
@@ -1410,7 +1072,7 @@ julia> N = matrix(ZZ, 2, 2, [1 1;
 [0   1]
 
 julia> multiplicative_order(N)
-PosInf()
+infinity
 ```
 """
 function multiplicative_order(f::Union{ZZMatrix, QQMatrix})
@@ -1431,40 +1093,34 @@ end
 
 ################################################################################
 #
-#  Linear solve context
+#  Determinant of triangular matrix
 #
 ################################################################################
 
-mutable struct LinearSolveCtx{S, T}
-  A::S
-  R::S # rref
-  U::S # U * A = R
-  v::T # temp vector
-  pivots::Vector{Int}
-
-  function LinearSolveCtx{S}() where {T, S <: MatElem{T}}
-    return new{S, Vector{T}}()
+# Compute the determinant of a (lower-left or upper-right) triangular matrix by
+# multiplying the diagonal entries. Nothing is checked.
+function _det_triangular(M::MatElem)
+  R = base_ring(M)
+  d = one(R)
+  for i in 1:nrows(M)
+    mul!(d, d, M[i, i])
   end
-
-  function LinearSolveCtx(A::MatElem{T}, side::Symbol) where {T <: RingElem}
-    @assert side === :right
-    r, R, U = _rref_with_trans(A)
-    pivots = _get_pivots_ut(R)
-    v = [zero(base_ring(A)) for i in 1:ncols(U)]
-    z = new{typeof(A), Vector{T}}(A, R, U, v, pivots)
-  end
+  return d
 end
 
-function solve_context(A; side::Symbol)
-  return LinearSolveCtx(A, side)
-end
-
-function solve(L::LinearSolveCtx, b::Vector)
-  L.v = mul!(L.v, L.U, b)
-  fl, w = can_solve_rref_ut(L.R, L.v, L.pivots)
-  # entries of w are aliasing v, which we don't want for some reason
-  #if fl
-  #  @assert L.A * w == b
-  #end
-  return fl, deepcopy(w)
+function remove_row(M, r)
+  N = zero_matrix(base_ring(M), nrows(M) - 1, ncols(M))
+  n = nrows(M)
+  m = ncols(M)
+  l = 1
+  for i in 1:n
+    if i == r
+      continue
+    end
+    for j in 1:m
+      N[l, j] = M[i, j]
+    end
+    l += 1
+  end
+  return N
 end

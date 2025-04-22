@@ -139,7 +139,7 @@ function to_magma(io::IOStream, f::Generic.MPolyRingElem)
   end
 end
 
-function to_magma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
+function to_magma(io::IOStream, k::AbsSimpleNumField; name::String = "S", gen_name::String="_a")
   print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
 end
 

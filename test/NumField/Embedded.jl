@@ -1,10 +1,16 @@
-test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
-
 @testset "Embedded number field" begin
   Qx, x = QQ["x"]
   K, _a = number_field(x^2 - 2, "a")
   i = Hecke.real_embedding(K, 1.41)
   E, a = Hecke.embedded_field(K, i)
+  @test is_positive(a)
+  @test !is_negative(a)
+  @test sign(a) == one(E)
+  @test sign(-a) == -one(E)
+  @test sign(zero(E)) == zero(E)
+  @test abs(a) == a
+  @test abs(-a) == a
+  @test abs(zero(E)) == zero(E)
   @test a > 0
   @test a >= 0
   @test !(a > a)
@@ -15,7 +21,7 @@ test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
   @test sprint(show, a) isa String
   @test sprint(show, "text/plain", a) isa String
   @test E([1, 2]) == 1 + 2*a
-  test_Ring_interface(E)
+  ConformanceTests.test_Ring_interface(E)
   # trigger expressify
   Et, t = E["t"]
   @test sprint(show, a * t) isa String
@@ -39,7 +45,7 @@ test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
   @test sprint(show, "text/plain", E) isa String
   @test sprint(show, a[1]) isa String
   @test sprint(show, "text/plain", a[1]) isa String
-  test_Ring_interface(E)
+  ConformanceTests.test_Ring_interface(E)
 
   # other constructors
   E, a = Hecke.embedded_number_field([x^2 - 2, x^2 - 3], [1.41, 1.6])
@@ -90,5 +96,46 @@ test_elem(E::Hecke.EmbeddedField) = E(rand(number_field(E), -10:10))
   @test @inferred is_rational(a^0)
   @test !is_rational(a)
   @test (@inferred QQ(2*a^0)) == 2 * one(QQ)
-end
 
+  @test isapprox(Float64(a), -1.41; rtol=0.1)
+  K, _a = number_field(x^2 - 2, "a")
+  i = Hecke.real_embedding(K, 1.41)
+  E, a = Hecke.embedded_field(K, i)
+  @test isapprox(Float64(a), 1.41; rtol=0.1)
+
+  # roots and factor
+  let
+    Qx, x = QQ["x"]
+    K, _a = number_field(x^2 - 2, "a")
+    i = Hecke.real_embedding(K, 1.41)
+    E, a = Hecke.embedded_field(K, i)
+    Et, t = E["t"]
+    @test issetequal(roots(t^2 - 2), [a, -a])
+    fa = factor(t^2 - 2)
+    @test unit(fa) * prod(g^e for (g, e) in fa) == t^2 - 2
+    fa = factor(t^2 - a)
+    @test unit(fa) * prod(g^e for (g, e) in fa) == t^2 - a
+  end
+
+  # floor, ceil, round
+  let
+    Qx, x = QQ["x"]
+    K, a = embedded_number_field(x^2 - 2, 1.4)
+    # element, floor, ceiling, round, rounddown, roundup, roundnear
+    test_data = [(a, 1, 2, 1, 1, 2, 1), (K(1), 1, 1, 1, 1, 1, 1), (K(0), 0, 0, 0, 0, 0, 0), (K(1//2), 0, 1, 1, 0, 1, 0), (K(3//2), 1, 2, 2, 1, 2, 2), (K(-1//2), -1, 0, -1, -1, 0, 0)]
+    for (e, f, c, r, rd, ru, rn) in test_data
+      @test floor(e) == f && parent(floor(e)) === K
+      @test floor(ZZRingElem, e) == f && floor(ZZRingElem, e) isa ZZRingElem
+      @test ceil(e) == K(c) && parent(ceil(e)) === K
+      @test ceil(ZZRingElem, e) == c && ceil(ZZRingElem, e) isa ZZRingElem
+      @test round(e) == r && parent(round(e)) === K
+      @test round(ZZRingElem, e) == r && round(ZZRingElem, e) isa ZZRingElem
+      @test round(e, RoundDown) == rd && parent(round(e, RoundDown)) === K
+      @test round(ZZRingElem, e, RoundDown) == rd && round(ZZRingElem, e, RoundDown) isa ZZRingElem
+      @test round(e, RoundUp) == ru && parent(round(e, RoundUp)) === K
+      @test round(ZZRingElem, e, RoundUp) == ru && round(ZZRingElem, e, RoundUp) isa ZZRingElem
+      @test round(e, RoundNearest) == rn && parent(round(e, RoundNearest)) === K
+      @test round(ZZRingElem, e, RoundNearest) == rn && round(ZZRingElem, e, RoundNearest) isa ZZRingElem
+    end
+  end
+end

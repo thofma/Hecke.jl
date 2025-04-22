@@ -1,5 +1,3 @@
-export is_represented_by, is_locally_represented_by, is_locally_hyperbolic
-
 ################################################################################
 #
 #  Constructors
@@ -15,7 +13,7 @@ is, $degree(E) == 2$ must hold.
 """
 function hermitian_space(E::NumField, n::Int; cached::Bool = true)
   G = identity_matrix(E, n)
-  return hermitian_space(E, G, cached = cached)
+  return hermitian_space(E, G; cached)
 end
 
 @doc raw"""
@@ -77,7 +75,7 @@ function Base.show(io::IO, ::MIME"text/plain", V::HermSpace)
 end
 
 function show(io::IO, V::HermSpace)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Hermitian space")
   else
     print(io, "Hermitian space of dimension $(dim(V))")
@@ -99,7 +97,7 @@ function absolute_simple_field(V::HermSpace)
     set_attribute!(V, :absolute_field => (Eabs, EabsToE))
     return Eabs, EabsToE
   else
-    return c::Tuple{AnticNumberField, NfToNfRel}
+    return c::Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem})}
   end
 end
 
@@ -111,7 +109,7 @@ end
 
 is_quadratic(V::HermSpace) = false
 
-ishermitian(V::HermSpace) = true
+is_hermitian(V::HermSpace) = true
 
 _base_algebra(V::HermSpace) = V.E
 
@@ -140,7 +138,8 @@ function inner_product(V::HermSpace, v::Vector, w::Vector)
   _inner_product(gram_matrix(V), v, w, involution(V))
 end
 
-inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(V)*map_entries(involution(V),transpose(w))
+inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W} =
+                        v*gram_matrix(V)*map_entries(involution(V), transpose(w))
 
 ################################################################################
 #
@@ -148,14 +147,23 @@ inner_product(V::HermSpace{S,T,U,W}, v::U, w::U) where {S,T,U,W}= v*gram_matrix(
 #
 ################################################################################
 
-function diagonal(V::HermSpace)
+diagonal(V::HermSpace) = _diagonal(V, false)[1]
+
+diagonal_with_transform(V::HermSpace) = _diagonal(V)
+
+function _diagonal(V::HermSpace, with_transform::Bool = true)
+  E = base_ring(V)
   g = gram_matrix(V)
-  k, K = left_kernel(g)
+  K = kernel(g, side = :left)
+  k = nrows(K)
   B = complete_to_basis(K)
   g = B[k+1:end,:]*g*transpose(B[k+1:end,:])
-  D, _ = _gram_schmidt(g, involution(V))
-  D = append!(zeros(base_ring(V),k), diagonal(D))
-  return map(fixed_field(V), D)
+  D, U = _gram_schmidt(g, involution(V))
+  diagE = append!(zeros(base_ring(V),k), diagonal(D))
+  diagK = map(fixed_field(V), diagE)
+  !with_transform && return diagK, matrix(E, 0, 0, elem_type(E)[])
+  B[k+1:end, :] = U*view(B, k+1:nrows(B), :)
+  return diagK, B
 end
 
 ################################################################################
@@ -184,7 +192,7 @@ function is_isometric(L::HermSpace, M::HermSpace, p::ZZRingElem)
   return _isisometric(L, M, p)
 end
 
-function is_isometric(L::HermSpace, M::HermSpace, p::NfOrdIdl)
+function is_isometric(L::HermSpace, M::HermSpace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return _isisometric(L, M, p)
 end
 
@@ -258,7 +266,7 @@ end
 #
 ################################################################################
 
-function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrdIdl
+function is_isotropic(V::HermSpace, q::T) where T <: NumFieldOrderIdeal
   if nf(order(q)) == base_ring(V)
     p = minimum(q)
   else
@@ -285,7 +293,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_locally_hyperbolic(V::Hermspace, p::NfOrdIdl) -> Bool
+    is_locally_hyperbolic(V::Hermspace, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> Bool
 
 Return whether the completion of the hermitian space `V` over $E/K$ at the prime
 ideal `p` of $\mathcal O_K$ is hyperbolic.

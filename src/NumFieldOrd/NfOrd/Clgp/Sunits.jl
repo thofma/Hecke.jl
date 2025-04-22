@@ -1,5 +1,3 @@
-export sunit_group_fac_elem, sunit_group, sunit_mod_units_group_fac_elem
-
 function show(io::IO, mC::MapSUnitModUnitGrpFacElem)
   @show_name(io, mC)
   io = IOContext(io, :compact => true)
@@ -14,13 +12,13 @@ end
 #  saturate T|-d??
 
 @doc raw"""
-    sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$ modulo the units of the field.
 The map will return elements in factored form.
 """
-function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
+function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   #deal with trivial case somehow!!!
   @assert length(I) > 0
   O = order(I[1])
@@ -39,11 +37,11 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   H = c.M.basis
   T = c.M.trafo
 
-  U = Vector{FacElem{nf_elem, Nemo.AnticNumberField}}()
+  U = Vector{FacElem{AbsSimpleNumFieldElem, Nemo.AbsSimpleNumField}}()
 
-  X = Vector{nf_elem}()
+  X = Vector{AbsSimpleNumFieldElem}()
 
-  rr = sparse_matrix(FlintZZ)
+  rr = sparse_matrix(ZZ)
 
   # To track the valuation of the S-units
   vals_of_rels = SRow{ZZRingElem}[]
@@ -56,18 +54,18 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
-    v = sparse_row(FlintZZ)
+    v = sparse_row(ZZ)
     # We only track the valuation of the prime ideals in S.
     # Even though S might intersect the class group factor base
     # non-trivially, this should still be correct.
-    push!(vals_of_rels, sparse_row(FlintZZ, [(i, ZZRingElem(-1))], sort = false))
+    push!(vals_of_rels, sparse_row(ZZ, [(i, ZZRingElem(-1))], sort = false))
   end
 
   @vprintln :ClassGroup 1 "... done"
 
   @vprintln :ClassGroup 1 "solving..."
-  @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
-  Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), ZZRingElem(-1)*R)
+  @vtime :ClassGroup 1 R, d = _solve_ut(H, rr)
+  Rd = hcat(d*identity_matrix(SMat, ZZ, nrows(R)), ZZRingElem(-1)*R)
   @vprintln :ClassGroup 1 ".. done, now saturating ..."
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
   @vprintln :ClassGroup 1 " done"
@@ -89,7 +87,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
       apply_right!(rs, T[i])
     end
 
-    _val_vec = sparse_row(FlintZZ)
+    _val_vec = sparse_row(ZZ)
 
     e = FacElem(g, rs)
     for (p, v) = S1[s]
@@ -121,7 +119,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
 
   local exp
   let U = U
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       b = U[1]^a.coeff[1, 1]
       for i = 2:length(U)
         if iszero(a.coeff[1, i])
@@ -136,8 +134,8 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
   local log
   let I = I, S1 = S1, C = C
 
-    function log(a::FacElem{nf_elem, AnticNumberField})
-      b = sparse_row(FlintZZ)
+    function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+      b = sparse_row(ZZ)
       for i=1:length(I)
         v = valuation(a, I[i])
         if v != 0
@@ -145,7 +143,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
           push!(b.values, v)
         end
       end
-      s, d = solve_ut(S1, b)
+      s, d = _solve_ut(S1, b)
       @assert d == 1  # this would indicate element is not in group...
       c = zeros(ZZRingElem, length(I))
       for (p,v) = s
@@ -154,7 +152,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{NfOrdIdl})
       return C(c)
     end
 
-    function log(a::nf_elem)
+    function log(a::AbsSimpleNumFieldElem)
       return log(FacElem(a))
     end
   end
@@ -176,13 +174,13 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
 end
 
 @doc raw"""
-    sunit_group_fac_elem(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 The map will return elements in factored form.
 """
-function sunit_group_fac_elem(I::Vector{NfOrdIdl})
+function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = order(I[1])
   S, mS = sunit_mod_units_group_fac_elem(I)
   U, mU = unit_group_fac_elem(O)
@@ -192,7 +190,7 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
   r = MapSUnitGrpFacElem()
   r.valuations = Vector{SRow{ZZRingElem}}(undef, ngens(G))
   for i = 1:ngens(U)
-    r.valuations[i] = sparse_row(FlintZZ)
+    r.valuations[i] = sparse_row(ZZ)
   end
   for i = 1:ngens(S)
     r.valuations[i+ngens(U)] = mS.valuations[i]
@@ -201,23 +199,23 @@ function sunit_group_fac_elem(I::Vector{NfOrdIdl})
 
   local exp
   let mU = mU, mS = mS, U = U, G = G
-    function exp(a::GrpAbFinGenElem)
-      return image(mU, GrpAbFinGenElem(U, sub(a.coeff, 1:1, 1:length(U.snf))))*
-             image(mS, GrpAbFinGenElem(S, sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
+    function exp(a::FinGenAbGroupElem)
+      return image(mU, FinGenAbGroupElem(U, sub(a.coeff, 1:1, 1:length(U.snf))))*
+             image(mS, FinGenAbGroupElem(S, sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
     end
   end
 
   local log
   let mS = mS, mU = mU, G = G
-    function log(a::FacElem{nf_elem, AnticNumberField})
+    function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
       a1 = preimage(mS, a)
       a2 = a*inv(image(mS, a1))
       #     @assert is_unit(O(evaluate(a2)))
       a3 = preimage(mU, a2)
-      return GrpAbFinGenElem(G, hcat(a3.coeff, a1.coeff))
+      return FinGenAbGroupElem(G, hcat(a3.coeff, a1.coeff))
     end
 
-    function log(a::nf_elem)
+    function log(a::AbsSimpleNumFieldElem)
       return log(FacElem(a))
     end
   end
@@ -236,12 +234,12 @@ function show(io::IO, mC::MapSUnitGrp)
 end
 
 @doc raw"""
-    sunit_group(I::Vector{NfOrdIdl}) -> GrpAb, Map
+    sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> GrpAb, Map
 For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 by $I$, ie. the group of non-zero field elements which are only divisible
 by ideals in $I$.
 """
-function sunit_group(I::Vector{NfOrdIdl})
+function sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   O = order(I[1])
   G, mG = sunit_group_fac_elem(I)
 
@@ -250,14 +248,14 @@ function sunit_group(I::Vector{NfOrdIdl})
 
   local exp
   let mG = mG
-    function exp(a::GrpAbFinGenElem)
+    function exp(a::FinGenAbGroupElem)
       return evaluate(image(mG, a))
     end
   end
 
   local log
   let mG = mG
-    function log(a::nf_elem)
+    function log(a::AbsSimpleNumFieldElem)
       return preimage(mG, FacElem(a))
     end
   end

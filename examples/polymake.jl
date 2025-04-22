@@ -2,10 +2,10 @@ module PolymakeOscar
 
 using Polymake, Hecke
 
-Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
-Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
+Hecke.number_of_rows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
+Hecke.number_of_columns(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
-function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
+function _polytope(; A::ZZMatrix=zero_matrix(ZZ, 1, 1), b::ZZMatrix=zero_matrix(ZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(ZZ, 1, 1))
   if !iszero(A)
     bA = Matrix{BigInt}(hcat(-b, A))
     z = findall(i->!is_zero_row(bA, i), 1:nrows(bA))
@@ -15,7 +15,7 @@ function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_ma
   end
   if !iszero(C)
     z = findall(i->!is_zero_row(C, i), 1:nrows(C))
-    zI = Matrix{BigInt}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
+    zI = Matrix{BigInt}(hcat(zero_matrix(ZZ, nrows(C), 1), C))[z, :]
   else
     zI = Matrix{BigInt}(undef, 0, 0)
   end
@@ -43,7 +43,7 @@ function solve_ineq(A::ZZMatrix, b::ZZMatrix)
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  res = zero_matrix(ZZ, nrows(inner) + nrows(out), ncols(A))
   for i=1:nrows(out)
     @assert out[i,1] == 1
     for j=1:ncols(A)
@@ -65,11 +65,11 @@ end
 Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
 """
 function solve_non_negative(A::ZZMatrix, b::ZZMatrix)
-  p = _polytope(A = A, b = b, C = identity_matrix(FlintZZ, ncols(A)))
+  p = _polytope(A = A, b = b, C = identity_matrix(ZZ, ncols(A)))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  res = zero_matrix(ZZ, nrows(inner) + nrows(out), ncols(A))
   for i=1:nrows(out)
     @assert out[i,1] == 1
     for j=1:ncols(A)
@@ -95,7 +95,7 @@ function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && Cx >= 
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  res = zero_matrix(ZZ, nrows(inner) + nrows(out), ncols(A))
   for i=1:nrows(out)
     if out[i,1] != 1
       println("unbounded polytope!!")
@@ -126,9 +126,9 @@ Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
 """
 function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
   n = ncols(A)
-  A = cat(A, identity_matrix(FlintZZ, ncols(d)), dims=(1,2))
-  b = vcat(b, identity_matrix(FlintZZ, ncols(d)))
-  C = [C -d; zero_matrix(FlintZZ, ncols(d), ncols(C)) identity_matrix(FlintZZ, ncols(d))]
+  A = cat(A, identity_matrix(ZZ, ncols(d)), dims=(1,2))
+  b = vcat(b, identity_matrix(ZZ, ncols(d)))
+  C = [C -d; zero_matrix(ZZ, ncols(d), ncols(C)) identity_matrix(ZZ, ncols(d))]
   s = solve_mixed(A, b, C)
   return s[:, 1:n]
 end
@@ -137,15 +137,15 @@ function Hecke.valuation(a::FacElem{ZZRingElem, ZZRing}, p::ZZRingElem)
   return sum(k*valuation(b, p) for (b, k) = a.fac)
 end
 
-function norm_equation2_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
+function norm_equation2_fac_elem(R::AbsNumFieldOrder, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k*R)
   s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
-  C = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
+  C = reduce(vcat, [matrix(ZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
 
   lp = factor(k)
-  A = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(Hecke.factored_norm(ms(s[i])), p) for i=1:ngens(s)]) for p = keys(lp.fac)])
-  b = matrix(FlintZZ, length(lp.fac), 1, [valuation(k, p) for p = keys(lp.fac)])
+  A = reduce(vcat, [matrix(ZZ, 1, ngens(s), [valuation(Hecke.factored_norm(ms(s[i])), p) for i=1:ngens(s)]) for p = keys(lp.fac)])
+  b = matrix(ZZ, length(lp.fac), 1, [valuation(k, p) for p = keys(lp.fac)])
 
   so = solve_mixed(A, b, C)
   sol = [ms(s(sub(so, i:i, 1:ncols(so)))) for i=1:nrows(so)]
@@ -164,13 +164,13 @@ function norm_equation2_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
 end
 
 
-function norm_equation_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
+function norm_equation_fac_elem(R::AbsNumFieldOrder, k::ZZRingElem; abs::Bool = false)
   @assert Hecke.is_maximal(R)
   lp = factor(k)
   S = []
   for (p, k) = lp.fac
     P = prime_decomposition(R, p)
-    s = solve_non_negative(matrix(FlintZZ, 1, length(P), [degree(x[1]) for x = P]), matrix(FlintZZ, 1, 1, [k]))
+    s = solve_non_negative(matrix(ZZ, 1, length(P), [degree(x[1]) for x = P]), matrix(ZZ, 1, 1, [k]))
     push!(S, (P, [view(s, i:i, 1:ncols(s)) for i=1:nrows(s)]))
   end
   sol = []
@@ -197,17 +197,17 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
   return sol
 end
 
-norm_equation_fac_elem(R::NfAbsOrd, k::Integer; abs::Bool = false) =
+norm_equation_fac_elem(R::AbsNumFieldOrder, k::Integer; abs::Bool = false) =
                             norm_equation_fac_elem(R, ZZRingElem(k), abs = abs)
 
-function norm_equation(R::NfAbsOrd, k::ZZRingElem; abs::Bool = false)
+function norm_equation(R::AbsNumFieldOrder, k::ZZRingElem; abs::Bool = false)
   s = norm_equation_fac_elem(R, k, abs = abs)
   return [R(evaluate(x)) for x = s]
 end
 
-norm_equation(R::NfAbsOrd, k::Integer; abs::Bool = false) = norm_equation(R, ZZRingElem(k), abs = abs)
+norm_equation(R::AbsNumFieldOrder, k::Integer; abs::Bool = false) = norm_equation(R, ZZRingElem(k), abs = abs)
 
-function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a::NfAbsOrdElem{AnticNumberField,nf_elem})
+function norm_equation_fac_elem(R::Hecke.RelNumFieldOrder{AbsSimpleNumFieldElem,Hecke.AbsSimpleNumFieldOrderFractionalIdeal}, a::AbsSimpleNumFieldOrderElem)
 
   @assert Hecke.is_maximal(R)
   Ka, mKa, mkK = collapse_top_layer(nf(R))
@@ -225,10 +225,10 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   q, mms = snf(q)
   mq = mq*inv(mms)
 
-  C = vcat([matrix(FlintZZ, 1, ngens(q), [valuation(mS(preimage(mq, q[i])), p) for i=1:ngens(q)]) for p = keys(lp)])
+  C = reduce(vcat, [matrix(ZZ, 1, ngens(q), [valuation(mS(preimage(mq, q[i])), p) for i=1:ngens(q)]) for p = keys(lp)])
 
-  A = vcat([matrix(FlintZZ, 1, ngens(q), [valuation(norm(mkK, mS(preimage(mq, g))), p) for g in gens(q)]) for p = keys(la)])
-  b = matrix(FlintZZ, length(la), 1, [valuation(a, p) for p = keys(la)])
+  A = reduce(vcat, [matrix(ZZ, 1, ngens(q), [valuation(norm(mkK, mS(preimage(mq, g))), p) for g in gens(q)]) for p = keys(la)])
+  b = matrix(ZZ, length(la), 1, [valuation(a, p) for p = keys(la)])
 
   so = solve_mixed(A, b, C)
   u, mu = Hecke.unit_group_fac_elem(parent(a))
@@ -240,7 +240,7 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
     b = norm(mkK, aa)
     c = b*inv(FacElem(k(a)))
     d = preimage(mu, c)
-    fl, p = haspreimage(No, d)
+    fl, p = has_preimage_with_preimage(No, d)
     if fl
       push!(sol, FacElem(Dict(mKa(x) => v for (x, v) = (aa*inv(mU(p))).fac)))
     end
@@ -249,7 +249,7 @@ function norm_equation_fac_elem(R::Hecke.NfRelOrd{nf_elem,Hecke.NfOrdFracIdl}, a
   return sol
 end
 
-function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
+function Hecke.is_irreducible(a::AbsSimpleNumFieldOrderElem)
   if iszero(a)
     return false
   end
@@ -261,23 +261,23 @@ function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   s, ms = Hecke.sunit_mod_units_group_fac_elem(S)
   V = matrix([ZZRingElem[valuation(ms(x), y) for y = S] for x = gens(s)])
   b = matrix([ZZRingElem[valuation(a, y) for y = S]])
-  sol = solve(V, b)
+  sol = solve(V, b; side = :right)
 
   #want to write sol = x+y where
   # Cx, Cy > 0
   # if this is possible, then a is not irreducible as a
   # is then ms(Ax) * ms(Ay) and neither is trivial.
 
-  I = identity_matrix(FlintZZ, length(S))
+  I = identity_matrix(ZZ, length(S))
   A = hcat(I, I)
   #so A*(x|y) = x+y = sol is the  1. condition
   C = cat(V, V, dims=(1,2))
   # C(x|y) >=0 iff Cx >=0 and Cy >=0
   #Cx <> 0 iff (1,..1)*Cx >= 1
-  one = matrix(FlintZZ, 1, length(S), [1 for p = S])
-  zer = matrix(FlintZZ, 1, length(S), [0 for p = S])
+  one = matrix(ZZ, 1, length(S), [1 for p = S])
+  zer = matrix(ZZ, 1, length(S), [0 for p = S])
   C = vcat(C, hcat(one, zer), hcat(zer, one))
-  d = matrix(FlintZZ, 2*length(S)+2, 1, [0 for i = 1:2*length(S) + 2])
+  d = matrix(ZZ, 2*length(S)+2, 1, [0 for i = 1:2*length(S) + 2])
   d[end-1, 1] = 1
   d[end, 1] = 1
   global last_irr = a
@@ -286,11 +286,11 @@ function Hecke.is_irreducible(a::NfAbsOrdElem{AnticNumberField,nf_elem})
 end
 
 @doc raw"""
-    irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}}) -> Vector{NfAbsOrdElem}
+    irreducibles(S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}}) -> Vector{AbsNumFieldOrderElem}
 
 Computes all irreducibles whose support is contained in $S$.
 """
-function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
+function irreducibles(S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}})
   if length(S) == 0
     return []
   end
@@ -317,11 +317,11 @@ function irreducibles(S::Vector{NfAbsOrdIdl{AnticNumberField,nf_elem}})
 end
 
 @doc raw"""
-    factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem}) -> Vector{Fac{OrdElem}}
+    factorisations(a::AbsSimpleNumFieldOrderElem) -> Vector{Fac{OrdElem}}
 
 Computes all factorisations of $a$ into irreducibles.
 """
-function factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem})
+function factorisations(a::AbsSimpleNumFieldOrderElem)
   O = parent(a)
   S = collect(keys(factor(a*O)))
   if length(S) == 0
@@ -331,7 +331,7 @@ function factorisations(a::NfAbsOrdElem{AnticNumberField,nf_elem})
   A = matrix([ZZRingElem[valuation(x, y) for y = S] for x = irr])
   b = matrix([ZZRingElem[valuation(a, y) for y = S]])
   sol = solve_non_negative(A, b)
-  res = Fac{NfAbsOrdElem{AnticNumberField,nf_elem}}[]
+  res = Fac{AbsSimpleNumFieldOrderElem}[]
   for j=1:nrows(sol)
     x = Dict{typeof(a), Int}()
     y = a

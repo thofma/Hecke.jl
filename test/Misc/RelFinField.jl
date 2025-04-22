@@ -1,9 +1,9 @@
 @testset "RelFinField" begin
 
   @testset "Basic properties" begin
-    F = Native.FiniteField(3, 3, cached = false)[1]
+    F = Native.finite_field(3, 3, cached = false)[1]
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = @inferred Native.FiniteField(x^2+1, "a")
+    K, gK = @inferred Native.finite_field(x^2+1, :a)
     dp = @inferred defining_polynomial(K)
     @test dp == x^2+1
     @test degree(K) == 2
@@ -15,11 +15,11 @@
   end
 
   @testset "Promote rule" begin
-    F, gF = Native.FiniteField(3, 3, cached = false)
+    F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = Native.FiniteField(x^2+1, "a")
+    K, gK = Native.finite_field(x^2+1, "a")
     Kt, t = K["t"]
-    L, gL = @inferred Native.FiniteField(t^5+t^4+t^2+1, "b")
+    L, gL = @inferred Native.finite_field(t^5+t^4+t^2+1, "b")
     dp = @inferred defining_polynomial(L)
     el = @inferred gL + gK
     @test parent(el) == L
@@ -29,11 +29,11 @@
   end
 
   @testset "Basic operations" begin
-    F, gF = Native.FiniteField(3, 3, cached = false)
+    F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = Native.FiniteField(x^2+1, "a")
+    K, gK = Native.finite_field(x^2+1, "a")
     Kt, t = K["t"]
-    L, gL = Native.FiniteField(t^5+t^4+t^2+1, "b")
+    L, gL = Native.finite_field(t^5+t^4+t^2+1, "b")
     @inferred gL + gL
     @inferred gL - gL
     @inferred gL*gL
@@ -48,11 +48,11 @@
   end
 
   @testset "Norm, Trace, Minpoly" begin
-    F, gF = Native.FiniteField(3, 3, cached = false)
+    F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = Native.FiniteField(x^2+1, "a")
+    K, gK = Native.finite_field(x^2+1, "a")
     Kt, t = K["t"]
-    L, gL = Native.FiniteField(t^5+t^4+t^2+1, "b")
+    L, gL = Native.finite_field(t^5+t^4+t^2+1, "b")
     el = @inferred absolute_norm(gL)
     @test isone(el)
     el1 = @inferred absolute_tr(gL)
@@ -69,20 +69,20 @@
     y = gen(Rx)
     @test g(y+1) == y^5+y^4+y^2+1
 
-    f, o = Native.FiniteField(7, 2, "o");
+    f, o = Native.finite_field(7, 2, "o");
     fx, x = f["x"];
-    F, u = Native.FiniteField(x^3 + o + 4, "u");
+    F, u = Native.finite_field(x^3 + o + 4, "u");
     c = 3*u + 5*o + 1;
     @test norm(c) == 2*o
     @test Hecke.norm_via_powering(c) == 2*o
   end
 
   @testset "Absolute basis and coordinates" begin
-    F, gF = Native.FiniteField(3, 3, cached = false)
+    F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = Native.FiniteField(x^2+1, "a")
+    K, gK = Native.finite_field(x^2+1, "a")
     Kt, t = K["t"]
-    L, gL = Native.FiniteField(t^5+t^4+t^2+1, "b")
+    L, gL = Native.finite_field(t^5+t^4+t^2+1, "b")
     B = absolute_basis(L)
     for i = 1:length(B)
       v = absolute_coordinates(B[i])
@@ -94,22 +94,45 @@
         end
       end
     end
+
+    F = GF(3^3, cached = false)
+    x = polynomial_ring(F, "x", cached = false)[2]
+    K, gK = Hecke.Nemo._residue_field(x^2+1, "a")
+    Kt, t = K["t"]
+    L, gL = Hecke.Nemo._residue_field(t^5+t^4+t^2+1, "b")
+    B = absolute_basis(L)
+    for i = 1:length(B)
+      v = absolute_coordinates(B[i])
+      for j = 1:length(v)
+        if i == j
+          @test isone(v[j])
+        else
+          @test iszero(v[j])
+        end
+      end
+    end
+
+    for i in 1:100
+      z = rand(L)
+      @test dot(absolute_coordinates(z), absolute_basis(L)) == z
+    end
+
   end
 
   @testset "Polynomials" begin
-    F, gF = Native.FiniteField(3, 3, cached = false)
+    F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = Native.FiniteField(x^2+1, "a")
+    K, gK = Native.finite_field(x^2+1, "a")
     Kt, t = K["t"]
-    L, gL = Native.FiniteField(t^5+t^4+t^2+1, "b")
+    L, gL = Native.finite_field(t^5+t^4+t^2+1, "b")
     Ly, y = L["y"]
     @test is_irreducible(y^13+2*y+1)
   end
 
   @testset "Random" begin
-    F, gF = Native.FiniteField(3, 3, cached = false)
+    F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
-    K, gK = Native.FiniteField(x^2+1, "a")
+    K, gK = Native.finite_field(x^2+1, "a")
     a = @inferred rand(K)
     @test parent(a) === K
   end

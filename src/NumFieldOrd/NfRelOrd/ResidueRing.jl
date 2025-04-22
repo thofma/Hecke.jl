@@ -9,12 +9,9 @@ function elem_type(::Type{RelOrdQuoRing{T1, T2, T3}}) where { T1, T2, T3 }
   return RelOrdQuoRingElem{T1, T2, T3, S}
 end
 
-function elem_type(::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
-  S = elem_type(T1)
-  return RelOrdQuoRingElem{T1, T2, T3, S}
-end
-
 base_ring(Q::RelOrdQuoRing) = Q.base_ring
+
+base_ring_type(::Type{RelOrdQuoRing{T1, T2, T3}}) where {T1, T2, T3} = T1
 
 ideal(Q::RelOrdQuoRing) = Q.ideal
 
@@ -93,7 +90,7 @@ end
 #
 ################################################################################
 
-function quo(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl})
+function quo(O::Union{RelNumFieldOrder, AlgAssRelOrd}, I::Union{RelNumFieldOrderIdeal, AlgAssRelOrdIdl})
   @assert order(I) === O
   # We should check that I is not zero
   Q = RelOrdQuoRing(O, I)
@@ -101,20 +98,7 @@ function quo(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOr
   return Q, f
 end
 
-Nemo.residue_ring(O::Union{NfRelOrd, AlgAssRelOrd}, I::Union{NfRelOrdIdl, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
-
-################################################################################
-#
-#  Parent check
-#
-################################################################################
-
-function check_parent(x::RelOrdQuoRingElem, y::RelOrdQuoRingElem)
-  if parent(x) !== parent(y)
-    error("Elements must have same parents")
-  end
-  return true
-end
+Nemo.residue_ring(O::Union{RelNumFieldOrder, AlgAssRelOrd}, I::Union{RelNumFieldOrderIdeal, AlgAssRelOrdIdl}) = RelOrdQuoRing(O, I)
 
 ################################################################################
 #
@@ -234,8 +218,4 @@ end
 #
 ################################################################################
 
-function ==(x::RelOrdQuoRing, y::RelOrdQuoRing)
-  return base_ring(x) === base_ring(y) && ideal(x) == ideal(y)
-end
-
-==(x::RelOrdQuoRingElem, y::RelOrdQuoRingElem) = x.elem == y.elem
+==(x::RelOrdQuoRingElem, y::RelOrdQuoRingElem) = parent(x) === parent(y) && x.elem == y.elem

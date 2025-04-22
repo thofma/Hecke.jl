@@ -1,5 +1,3 @@
-export mass
-
 ################################################################################
 #
 #  Local factor of a maximal lattice in K*L following Shimura and Gan-Hanke-Yu.
@@ -154,28 +152,28 @@ function _local_factor_cho(L, p)
   _, G, S = jordan_decomposition(L, p)
   k, h = residue_field(R, p)
   hext = extend(h, K)
-  V = []
+  V = Tuple{eltype(S), dense_matrix_type(k)}[]
 
   for s in S
-    AG = diagonal_matrix([2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
-    _,B = left_kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]))
+    AG = diagonal_matrix(eltype(G)[2^(S[j] < s ? 2*(s - S[j]) : 0) * G[j] for j in 1:length(G)])
+    B = kernel(matrix(k, nrows(AG), 1, [hext(d//K(2)^s) for d in diagonal(AG)]), side = :left)
     @assert all(is_square(x)[1] for x in B)
     B = map_entries(x -> sqrt(x), B)
     BK = map_entries(x -> hext\x, B)
-    Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
-    for i in 1:ncols(Q)
-      for j in 1:ncols(Q)
+    _Q = 1//K(2)^(s + 1) * BK * AG * transpose(BK)
+    for i in 1:ncols(_Q)
+      for j in 1:ncols(_Q)
         if i > j
-          Q[i, j] = 0
+          _Q[i, j] = 0
         elseif i < j
-          Q[i, j] *= 2
+          _Q[i, j] *= 2
         end
       end
     end
 
-    Q = map_entries(hext, Q)
+    Q = map_entries(hext, _Q)
 
-    BB = []
+    BB = dense_matrix_type(k)[]
     for i in 1:nrows(B)
       b = zero_matrix(k, 1, nrows(B))
       b[1, i] = 1
@@ -184,21 +182,20 @@ function _local_factor_cho(L, p)
 
     @assert matrix(k, length(BB), length(BB), [ (b * Q * transpose(c))[1, 1] + (c * Q * transpose(b))[1, 1] for b in BB, c in BB]) == Q + transpose(Q)
 
-    _, N = left_kernel(Q + transpose(Q))
+    N = kernel(Q + transpose(Q), side = :left)
     ok = is_diagonal(N * Q * transpose(N))
     @assert ok
     D = diagonal(N * Q * transpose(N))
 
     @assert ok
-    _, rad = left_kernel(matrix(k, length(D), 1, D))
+    rad = kernel(matrix(k, length(D), 1, D), side = :left)
 
     rad = rad * N
 
     VV = vector_space(k, nrows(B))
 
-    SS, mSS = sub(VV, [ VV([rad[i, j] for j in 1:ncols(rad) ]) for i in 1:nrows(rad)])
-    W, g = quo(VV, SS)
-
+    SS, mSS = sub(VV, elem_type(VV)[ VV(elem_type(k)[rad[i, j] for j in 1:ncols(rad)]) for i in 1:nrows(rad)])
+    W, g = quo(VV, SS)::Tuple{Generic.QuotientModule{elem_type(k)}, Generic.ModuleHomomorphism{elem_type(k)}}
     @assert length(rels(W)) == 0
 
     if ngens(W) == 0
@@ -206,13 +203,13 @@ function _local_factor_cho(L, p)
     else
       BBelts = elem_type(k)[]
       for w in gens(W)
-        _w = preimage(g, w)
+        _w = preimage(g, w)::elem_type(VV)
         for j in 1:rank(VV)
           push!(BBelts, _w[j])
         end
       end
-      BB = matrix(k, ngens(W), ncols(Q), BBelts)
-      push!(V, (s, BB * Q * transpose(BB)))
+      BBB = matrix(k, ngens(W), ncols(Q), BBelts)
+      push!(V, (s, BBB * Q * transpose(BBB)))
     end
   end
 
@@ -224,8 +221,7 @@ function _local_factor_cho(L, p)
   alpha = Int[]
 
   for i in 1:length(G)
-    j = findfirst(v -> v[1] == S[i], V)
-    @assert j !== nothing
+    j = something(findfirst(v -> v[1] == S[i], V))
     v = V[j]
     if ncols(v[2]) != 0 && (!((S[i] - 1) in S) || !(PT[i-1])) && (!((S[i] + 1) in S) || !PT[i + 1])
       push!(alpha, i)
@@ -296,7 +292,7 @@ function _local_factor_cho(L, p)
 
   @assert is_integral(exp)
 
-  return QQFieldElem(q)^Int(FlintZZ(exp)) * H//2 * QQFieldElem(1)//beta
+  return QQFieldElem(q)^Int(ZZ(exp)) * H//2 * QQFieldElem(1)//beta
 end
 
 ################################################################################
@@ -333,7 +329,7 @@ function local_factor(L::QuadLat, p)
       if def
         R = base_ring(L)
         rlp = real_places(K)
-        A::GrpAbFinGen, _exp, _log = sign_map(R, _embedding.(rlp), p)
+        A::FinGenAbGroup, _exp, _log = sign_map(R, _embedding.(rlp), p)
         sa = ss * a
         t = (1 + _exp(A(Int[ sign(sa, _embedding(rlp[j])) == 1 ? 0 : 1 for j in 1:length(rlp)]))::elem_type(R))
         @assert t - 1 in p
@@ -414,7 +410,7 @@ function local_factor(L::QuadLat, p)
 
   @assert is_integral(N)
 
-  return q^Int(FlintZZ(N)) * f
+  return q^Int(ZZ(N)) * f
 end
 
 ################################################################################
@@ -461,7 +457,7 @@ function _exact_standard_mass(L::QuadLat)
 
   fl = true
 
-  standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+  standard_mass = QQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
     #standard_mass *= prod(dedekind_zeta_exact(K, -i) for i in 1:2:(m-2))
     if _exact_dedekind_zeta_cheap(K)
@@ -523,7 +519,7 @@ function _standard_mass(L::QuadLat, prec::Int = 10)
   K = nf(R)
   r = div(m, 2)
 
-  __standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+  __standard_mass = QQ(2)^(-absolute_degree(K) * r)
   if isodd(m)
     standard_mass = __standard_mass * prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
   else
@@ -566,7 +562,7 @@ function _mass(L::QuadLat, standard_mass = 0, prec::Int = 10)
   r = div(m, 2)
 
   if standard_mass == 0
-    standard_mass = FlintQQ(2)^(-absolute_degree(K) * r)
+    standard_mass = QQ(2)^(-absolute_degree(K) * r)
     if isodd(m)
       standard_mass *= prod(dedekind_zeta(K, -i, prec) for i in 1:2:(m-2))
     else
@@ -656,7 +652,7 @@ function _L_function_negative(E, s, prec)
   wprec = 8 * prec
   R = ArbField(wprec, cached = false)
 
-  local pref::arb
+  local pref::ArbFieldElem
 
   while true
     R = ArbField(wprec, cached = false)
@@ -782,7 +778,7 @@ end
 # converges only "linear", that is doubling the number of primes only doubles
 # the precision.
 
-function _truncated_euler_product(K::AnticNumberField, T::Int, s, RR::ArbField)
+function _truncated_euler_product(K::AbsSimpleNumField, T::Int, s, RR::ArbField)
   z = one(RR)
   OK = maximal_order(K)
   p = 2
@@ -809,12 +805,12 @@ function _local_correction(K, p, RR)
   return z
 end
 
-function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int)
+function _dedekind_zeta_attwell_duval_positive(K::AbsSimpleNumField, s, prec::Int)
   RR = ArbField(512)
   d = degree(K)
   #@show prec
 
-  local_cor = prod(arb[_local_correction(K, p, RR) for p in primes_up_to(100)])
+  local_cor = prod(ArbFieldElem[_local_correction(K, p, RR) for p in primes_up_to(100)])
   #@show local_cor
 
   _b = RR(s - 1) * (root(RR(2)^(-prec + 1)//(local_cor * zeta(RR(s))^d) + 1, d) - 1)
@@ -863,7 +859,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
 
     valaddederror = deepcopy(z)
     ccall((:arb_add_error_arf, libarb), Nothing,
-                (Ref{arb}, Ref{arf_struct}), valaddederror, error_arf)
+                (Ref{ArbFieldElem}, Ref{arf_struct}), valaddederror, error_arf)
 
     if radiuslttwopower(valaddederror, -prec)
       break
@@ -875,7 +871,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AnticNumberField, s, prec::Int
   return valaddederror
 end
 
-function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_prec::Int)
+function _dedekind_zeta_attwell_duval_negative(K::AbsSimpleNumField, s, target_prec::Int)
   @assert s < 0
   if iseven(s)
     return zero(ArbField(target_prec))
@@ -921,7 +917,7 @@ function _dedekind_zeta_attwell_duval_negative(K::AnticNumberField, s, target_pr
   return res
 end
 
-function dedekind_zeta(K::AnticNumberField, s::Int, prec::Int)
+function dedekind_zeta(K::AbsSimpleNumField, s::Int, prec::Int)
   @req s != 0 && s != 1 "Point $s is a pole"
   r1, r2 = signature(K)
   if r2 == 0
@@ -1220,7 +1216,7 @@ function _bernoulli_kronecker(z::Int, D)
   @assert z >= 0
   D1 = fundamental_discriminant(D)
   f = abs(D1)
-  K = FlintQQ
+  K = QQ
   Rt, t = power_series_ring(K, z + 3, "t", cached = false, model = :capped_absolute)
   denom = exp(f*t) - 1
   #@show [_kronecker_as_dirichlet(a, N) for a in 1:Int(f)]
@@ -1297,7 +1293,7 @@ end
 #
 ################################################################################
 
-function dedekind_zeta_exact(K::AnticNumberField, s::Int)
+function dedekind_zeta_exact(K::AbsSimpleNumField, s::Int)
   @assert is_totally_real(K)
   @assert s < 0
 
@@ -1364,7 +1360,7 @@ function _compute_an(Z::ZetaFunction, n::Int, h::Int)
   p, f =  Z.dec_types[h]
   P = p^f
   v, = remove(n, P)
-  z = zero(FlintZZ)
+  z = zero(ZZ)
   for k in 0:v
     z = z + _compute_an(Z, divexact(n, P^k), h - 1)
   end
@@ -1387,7 +1383,7 @@ end
 function _compute_g_function_coefficients_even(i, n, r1, r2, CC::AcbField)
   @assert i % 2 == 0
   q = div(i, 2)
-  res = Vector{acb}(undef, n + 1)
+  res = Vector{AcbFieldElem}(undef, n + 1)
   res[1] = zero(CC)
   RR = ArbField(precision(CC))
   for k in 1:n
@@ -1411,7 +1407,7 @@ function _compute_Aij_even(i, r1, r2, CC::AcbField)
   g = sum(coef[i + 1] * x^i for i in 1:(length(coef) - 1))
   expg = exp(g)
   pr = _compute_premultiplier_even(i, r1, r2, CC)
-  res = Vector{acb}(undef, r1 + r2 + 1)
+  res = Vector{AcbFieldElem}(undef, r1 + r2 + 1)
   for j in 0:(r1 + r2)
     # this is A_{i,j}
     res[j + 1] = coeff(expg, r1 + r2 - j) * pr
@@ -1428,7 +1424,7 @@ end
 function _compute_g_function_coefficients_odd(i, n, r1, r2, CC::AcbField)
   @assert i % 2 == 1
   q = div(i - 1, 2)
-  res = Vector{acb}(undef, n + 1)
+  res = Vector{AcbFieldElem}(undef, n + 1)
   res[1] = zero(CC)
   RR = ArbField(precision(CC))
   for k in 1:n
@@ -1452,7 +1448,7 @@ function _compute_Aij_odd(i, r1, r2, CC::AcbField)
   g = sum(coef[i + 1] * x^i for i in 1:(length(coef) - 1))
   expg = exp(g)
   pr = _compute_premultiplier_odd(i, r1, r2, CC)
-  res = Vector{acb}(undef, r1 + r2 + 1)
+  res = Vector{AcbFieldElem}(undef, r1 + r2 + 1)
   for j in 0:(r1 + r2)
     # this is A_{i,j}
     res[j + 1] = coeff(expg, r2 - j) * pr
@@ -1519,7 +1515,7 @@ function _tollis_f(x, s::Int, i0, r1, r2, CC)
   return z
 end
 
-function _tollis_f(x, s::acb, i0, r1, r2, CC)
+function _tollis_f(x, s::AcbFieldElem, i0, r1, r2, CC)
   z = zero(CC)
   @show "tollis f $x $s"
   for j in 1:(r1 + r2)

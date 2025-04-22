@@ -13,7 +13,7 @@ function slope_eigenspace(M::MatElem{T}) where T <: Hecke.NonArchLocalFieldElem
   zk = maximal_order(k)
 
   for f = keys(lf)
-    se[f] = kernel(f(M))[2] #hopefully, this is in rref
+    se[f] = kernel(f(M); side = :right) #hopefully, this is in rref
   end
   @assert sum(ncols(x) for x = values(se)) == nrows(M)
   return se
@@ -30,12 +30,12 @@ function _intersect(M::MatElem{T}, N::MatElem{T}) where T <: Hecke.FieldElem
     end
   end
 
-  r, v = kernel(I) #precision issues...
-  l = M*v[1:ncols(M), 1:r]
+  v = kernel(I; side = :right) #precision issues...
+  l = M*v[1:ncols(M), 1:ncols(v)]
   return transpose(rref(transpose(l))[2])
 end
 
-function valuation_of_roots(f::PolyElem{<:Hecke.NonArchLocalFieldElem})
+function valuation_of_roots(f::PolyRingElem{<:Hecke.NonArchLocalFieldElem})
   iszero(f) && error("polynomial must not be zero")
   return (valuation(constant_coefficient(f)) - valuation(leading_coefficient(f)))//degree(f)
 end
@@ -84,7 +84,7 @@ lp[1].gen_two*lp[2].gen_two^2
 ma = representation_matrix(a)
 mb = representation_matrix(k(ans))
 @assert iszero(ma*mb - mb*ma)
-Qp = PadicField(7, 10)
+Qp = padic_field(7, precision = 10)
 Main.TropicalModule.simultaneous_diagonalization([map_entries(Qp, ma), map_entries(Qp, mb)])
 
 =#

@@ -6,8 +6,6 @@
 
 using Pkg.Artifacts
 
-#export number_of_small_groups, small_groups_limit
-export small_group
 #CF: as of now, nothing works here and the exports cause errors in Oscar
 
 mutable struct SmallGroupDB
@@ -138,7 +136,7 @@ function DefaultSmallGroupDB()
   end
 end
 
-is_from_db(G::GrpGen) = G.isfromdb
+is_from_db(G::MultTableGroup) = G.isfromdb
 
 function small_group(i, j; DB = DefaultSmallGroupDB())
   data = DB.db[i][j]

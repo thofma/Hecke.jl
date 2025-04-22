@@ -1,17 +1,12 @@
-
-export conjugates_init, is_squarefree, conjugates, angle, cos,
-       sin, abs, abs2, sqrt
-
-
 function conjugates_init(f_in::Union{ZZPolyRingElem, QQPolyRingElem})
   local f::ZZPolyRingElem
   if typeof(f_in) == QQPolyRingElem
     f_in = f_in*denominator(f_in)
     gz = Array{ZZRingElem}(undef, length(f_in))
     for i = 1:f_in.length
-      gz[i] = FlintZZ(numerator(coeff(f_in, i-1)))
+      gz[i] = ZZ(numerator(coeff(f_in, i-1)))
     end
-    g = polynomial_ring(FlintZZ, string(var(parent(f_in))), cached = false)[1](gz)
+    g = polynomial_ring(ZZ, string(var(parent(f_in))), cached = false)[1](gz)
     f = g
   else
     f = f_in
@@ -77,7 +72,7 @@ function hensel_lift(f::ZZPolyRingElem, r::BigComplex)
   return r - evaluate(f, r)/evaluate(derivative(f), r)
 end
 
-function conjugates(K::AnticNumberField, p::Int)
+function conjugates(K::AbsSimpleNumField, p::Int)
   return conjugates(roots_ctx(K), p)
 end
 
@@ -107,7 +102,7 @@ function Base.setprecision(a::Vector{BigComplex}, p::Int)
   return b
 end
 
-function minkowski(a::nf_elem, p::Int)
+function minkowski(a::AbsSimpleNumFieldElem, p::Int)
   c = roots_ctx(parent(a))
   x = conjugates_arb(a, p)
   old = precision(BigFloat)
@@ -127,13 +122,13 @@ function minkowski(a::nf_elem, p::Int)
   return m
 end
 
-function length(a::nf_elem, p::Int = 50)
+function length(a::AbsSimpleNumFieldElem, p::Int = 50)
   m = minkowski(a, p)
   return sum([x*x for x in m])
 end
 
 
-function minkowski_matrix(K::AnticNumberField, p::Int = 50)
+function minkowski_matrix(K::AbsSimpleNumField, p::Int = 50)
   c = roots_ctx(K)
 
   if isdefined(c, :minkowski_matrix)

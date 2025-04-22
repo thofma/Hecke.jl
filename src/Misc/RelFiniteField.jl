@@ -5,12 +5,12 @@
 ################################################################################
 
 mutable struct RelFinField{T} <: FinField
-  defining_polynomial::PolyElem{T}
+  defining_polynomial::PolyRingElem{T}
   var::Symbol
   absolute_field::Nemo.FinFieldMorphism
   basis_tr::Vector{T}
 
-  function RelFinField(f::PolyElem{T}, v::Symbol) where T
+  function RelFinField(f::PolyRingElem{T}, v::Symbol) where T
     K = new{T}()
     K.defining_polynomial = f
     K.var = v
@@ -55,6 +55,8 @@ prime_field(F::RelFinField; cached::Bool = true) = prime_field(base_field(F), ca
 function defining_polynomial(F::RelFinField{T}) where T
   return F.defining_polynomial::dense_poly_type(T)
 end
+
+base_field_type(::Type{RelFinField{S}}) where S = parent_type(S)
 
 base_field(F::RelFinField{S}) where S= base_ring(F.defining_polynomial)::parent_type(S)
 
@@ -139,6 +141,8 @@ iszero(x::RelFinFieldElem) = iszero(x.data)
 isone(x::RelFinFieldElem) = isone(x.data)
 is_unit(x::RelFinFieldElem) = !iszero(x)
 
+hash(x::RelFinFieldElem, h::UInt) = hash(x.data, h)
+
 ==(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T} = x.data == y.data
 
 coeff(a::RelFinFieldElem, i::Int) = coeff(a.data, i)
@@ -152,10 +156,8 @@ function zero!(x::RelFinFieldElem)
   return x
 end
 
-elem_type(F::RelFinField{T}) where T = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
-elem_type(::Type{RelFinField{T}}) where T  = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
+elem_type(::Type{RelFinField{T}}) where T = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
 
-parent_type(::RelFinFieldElem{S, T}) where {S, T} = S
 parent_type(::Type{RelFinFieldElem{S, T}}) where {S, T}  = S
 
 gen(F::RelFinField) = F(gen(parent(defining_polynomial(F))))
@@ -175,7 +177,7 @@ function (F::RelFinField{T})(x::S) where {S <: IntegerUnion, T}
   return F(parent(defining_polynomial(F))(x))
 end
 
-function (F::RelFinField{T})(x::PolyElem{T}) where T
+function (F::RelFinField{T})(x::PolyRingElem{T}) where T
   r = mod(x, defining_polynomial(F))
   return RelFinFieldElem{typeof(F), typeof(r)}(F, r)
 end
@@ -287,13 +289,6 @@ function sub!(z::RelFinFieldElem{S, T}, x::RelFinFieldElem{S, T}, y::RelFinField
   return z
 end
 
-
-function addeq!(z::RelFinFieldElem{S, T}, x::RelFinFieldElem{S, T}) where {S, T}
-  z.data = add!(z.data, z.data, x.data)
-  z.data = rem!(z.data, z.data, defining_polynomial(parent(z)))
-  return z
-end
-
 function Base.div(x::RelFinFieldElem{S, T}, y::RelFinFieldElem{S, T}) where {S, T}
   return x*inv(y)
 end
@@ -376,11 +371,16 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Rx::PolyRing = polynomial_ring(base_field(parent(a)), "x", cached = false)[1]) where T <:RelFinFieldElem
+function minpoly(a::RelFinFieldElem)
+  Rx = polynomial_ring(base_field(parent(a)), "x", cached = false)[1]
+  return minpoly(Rx, a)
+end
+
+function minpoly(Rx::PolyRing, a::RelFinFieldElem)
   F = parent(a)
   d = degree(F)
   p = order(base_field(F))
-  conjs = T[a]
+  conjs = typeof(a)[a]
   el = a
   for i = 2:d
     el = el^p
@@ -497,6 +497,15 @@ function absolute_basis(F::T) where T <: FinField
   return powers(gen(F), degree(F)-1)
 end
 
+function absolute_basis(F::FqField)
+  return powers(Nemo._gen(F), absolute_degree(F) - 1)
+end
+
+function absolute_coordinates(x::FqFieldElem)
+  F = prime_field(parent(x))
+  return FqFieldElem[F(Nemo._coeff(x, i)) for i in 0:Nemo._degree(parent(x))-1]
+end
+
 function absolute_coordinates(x::FinFieldElem)
   F = parent(x)
   Fp = prime_field(F)
@@ -547,7 +556,7 @@ end
 #
 ################################################################################
 
-function Native.FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
+function Native.finite_field(f::T, s::VarName = :a; cached::Bool = true, check::Bool = true) where T <: Union{fqPolyRepPolyRingElem, FqPolyRepPolyRingElem}
   if check
     @assert is_irreducible(f)
   end
@@ -556,7 +565,7 @@ function Native.FiniteField(f::T, s::String = "a" ; cached::Bool = true, check::
   return F, gen(F)
 end
 
-function Native.FiniteField(f::PolyElem{T}, s::String = "a" ; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
+function Native.finite_field(f::PolyRingElem{T}, s::VarName = :a; cached::Bool = true, check::Bool = true) where T <: RelFinFieldElem
   if check
     @assert is_irreducible(f)
   end
@@ -643,11 +652,11 @@ end
 #
 ################################################################################
 
-function _char(F::FqPolyRepField)
+function _char(F::Union{FqPolyRepField, FqField, FpField})
   return characteristic(F)
 end
 
-function _char(F::fqPolyRepField)
+function _char(F::Union{fpField, fqPolyRepField})
   return Int(characteristic(F))
 end
 
@@ -666,12 +675,12 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
   end
   p = _char(F)
   d = absolute_degree(F)
-  K, gK = Native.FiniteField(p, d, "a", cached = cached)
+  K, gK = Native.finite_field(p, d, "a", cached = cached)
   k, mk = absolute_field(base_field(F))
-  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F))
+  def_pol_new = map_coefficients(pseudo_inv(mk), defining_polynomial(F), cached = false)
   img_gen_k = roots(K, defining_polynomial(k))[1]
   mp = hom(k, K, img_gen_k)
-  g = map_coefficients(mp, def_pol_new)
+  g = map_coefficients(mp, def_pol_new, cached = false)
   img_gen_F = roots(g)[1]
   img_basis_k = powers(img_gen_k, degree(k)-1)
   img_absolute_basis = Vector{elem_type(K)}(undef, degree(K))
@@ -732,13 +741,13 @@ end
 #
 ################################################################################
 
-function factor(f::PolyElem{T}) where T <: RelFinFieldElem
+function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
   K = base_ring(f)
   Kx = parent(f)
   F, mF = absolute_field(K)
   imF = inv(mF)
   @assert domain(imF) == K
-  fF = map_coefficients(imF, f)
+  fF = map_coefficients(imF, f, cached = false)
   lfF = factor(fF)
   facs = Dict{typeof(f), Int}()
   for (p, k) in lfF
@@ -747,14 +756,14 @@ function factor(f::PolyElem{T}) where T <: RelFinFieldElem
   return Fac(map_coefficients(mF, lfF.unit, parent = Kx), facs)
 end
 
-function is_irreducible(f::PolyElem{T}) where T <: RelFinFieldElem
+function is_irreducible(f::PolyRingElem{T}) where T <: RelFinFieldElem
   l = factor(f)
   return length(l.fac) == 1
 end
 
 
 
-function norm(f::PolyElem{fqPolyRepFieldElem})
+function norm(f::PolyRingElem{fqPolyRepFieldElem})
   Fx = parent(f)
   Fp = prime_field(base_ring(Fx))
   Fpx = polynomial_ring(Fp, "x", cached = false)[1]

@@ -7,6 +7,9 @@ on:
       - 'release-'
     tags: '*'
   pull_request:
+  schedule:
+    # Every day at 3:05 AM UTC
+    - cron: '5 3 * * *'
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
@@ -24,30 +27,30 @@ jobs:
       matrix:
         julia-version:
           - '1.6'
-          - '1.9'
-          - '~1.10.0-0'
+          - '1.10'   # to be removed in the near future
+          - '1.11'
           - 'nightly'
         os:
           - ubuntu-latest
         include:
           # Add a few windows and macOS jobs (not too many, the number we can run in parallel is limited)
-          - julia-version: '1.9'
+          - julia-version: '1.10'
             os: macOS-latest
-          - julia-version: '1.9'
+          - julia-version: '1.10'
             os: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v1
+        uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache artifacts"
-        uses: julia-actions/cache@v1
+        uses: julia-actions/cache@v2
       - name: "Build package"
-        uses: julia-actions/julia-buildpkg@latest
+        uses: julia-actions/julia-buildpkg@v1
       - name: "Run tests"
-        uses: julia-actions/julia-runtest@latest
+        uses: julia-actions/julia-runtest@v1
         env:
           HECKE_TEST_PARALLEL: "2"
         with:
@@ -61,7 +64,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - run: |
           echo $RELEASE_VERSION
@@ -70,15 +73,15 @@ jobs:
           git config user.name github-actions # mike needs a user name, but we do not push the commit, so all is fine
           git config user.email github-actions@github.com
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
-          version: '1.9'
-      - uses: julia-actions/cache@v1
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-docdeploy@latest
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

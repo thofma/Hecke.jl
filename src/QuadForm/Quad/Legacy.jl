@@ -1,4 +1,4 @@
-function is_locally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::NfOrdIdl)
+function is_locally_isometric_kirschmer(L::QuadLat, M::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = base_ring(L)
   base_ring(L) != base_ring(M) && error("Lattices must have the same base ring")
   order(p) != R && error("Ideal must be in the base ring of the lattices")

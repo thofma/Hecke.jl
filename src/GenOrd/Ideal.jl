@@ -176,9 +176,9 @@ function assure_has_basis_matrix(A::GenOrdIdl)
     return nothing
   end
 
-  @hassert :NfOrd 1 has_2_elem(A)
+  @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
-  V = hnf(vcat([representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
   d = ncols(V)
   A.basis_matrix = V[d+1:2*d,1:d]
   return nothing
@@ -227,7 +227,7 @@ end
 ###########################################################################################
 
 
-(O::GenOrd)(p::PolyElem) = O(O.F(p))
+(O::GenOrd)(p::PolyRingElem) = O(O.F(p))
 Hecke.is_commutative(O::GenOrd) = true
 
 Nemo.elem_type(::Type{GenOrd}) = GenOrdElem
@@ -251,8 +251,7 @@ end
 
 
 function Base.:(+)(a::GenOrdIdl, b::GenOrdIdl)
-  check_parent(a, b)
-  O = order(a)
+  @req order(a) === order(b) "Ideals must have same order"
 
   if iszero(a)
     return b
@@ -273,7 +272,7 @@ function Base.:(*)(a::GenOrdIdl, b::GenOrdIdl)
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
-  V = hnf(vcat([Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
+  V = hnf(reduce(vcat, [Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
   d = ncols(V)
   return GenOrdIdl(O, V[d*(d-1)+1:d^2,1:d])
 end
@@ -392,7 +391,7 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
   O = order(A)
   if isa(b, KInftyElem)
     b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyElem)
+  elseif isa(b, PolyRingElem)
     b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
   end
   bm = divexact(basis_matrix(A), b)
@@ -440,7 +439,7 @@ function assure_has_minimum(A::GenOrdIdl)
 
   if isa(den, KInftyElem)
     A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-  elseif isa(den, PolyElem)
+  elseif isa(den, PolyRingElem)
     A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
   end
 
@@ -473,7 +472,7 @@ function assure_has_norm(A::GenOrdIdl)
     b = det(basis_matrix(A))
     if isa(b, KInftyElem)
       A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyElem)
+    elseif isa(b, PolyRingElem)
       A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
     end
     return nothing
@@ -483,7 +482,7 @@ function assure_has_norm(A::GenOrdIdl)
     b = det(basis_matrix(A))
     if isa(b, KInftyElem)
       A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyElem)
+    elseif isa(b, PolyRingElem)
       A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
     end
     return nothing
@@ -493,7 +492,7 @@ function assure_has_norm(A::GenOrdIdl)
   b = det(basis_matrix(A))
   if isa(b, KInftyElem)
     A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyElem)
+  elseif isa(b, PolyRingElem)
     A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
   end
   return nothing
@@ -577,7 +576,7 @@ end
 ################################################################################
 
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
-  K, _ = FiniteField(p,"o")
+  K, _ = finite_field(p,"o")
   return K, MapFromFunc(R, K, x->K(x), y->R(y))
 end
 
@@ -599,14 +598,14 @@ function Hecke.index(O::GenOrd)
   return index
 end
 
-function prime_dec_nonindex(O::GenOrd, p::PolyElem, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)
   K, mK = residue_field(parent(p),p)
   fact = factor(poly_to_residue(K, O.F.pol))
   result = []
   F = function_field(O)
   a = gen(F)
   for (fac, e) in fact
-    facnew = map_coefficients(y -> preimage(mK, y), fac)
+    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
     I = GenOrdIdl(O, p, O(facnew(a)))
     I.is_prime = 1
     f = degree(fac)
@@ -701,13 +700,13 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprintln :NfOrd 1 "using trace-radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprintln :NfOrd 1 "non-perfect case for radical for $p"
+    @vprintln :AbsNumFieldOrder 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprintln :NfOrd 1 "using radical-by-power for $p"
+    @vprintln :AbsNumFieldOrder 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   return GenOrdIdl(O,rad(O,p))
@@ -718,7 +717,7 @@ function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p:
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
-  A, OtoA = AlgAss(O, Ip1, p)
+  A, OtoA = StructureConstantAlgebra(O, Ip1, p)
   AtoO = pseudo_inv(OtoA)
   ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   for j in 1:length(ideals)
@@ -731,7 +730,12 @@ function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p:
   return ideals
 end
 
-function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
+function StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
+  FQ, phi = residue_field(base_ring(O), p)
+  StructureConstantAlgebra(O, I, p, phi)
+end
+
+function StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem, phi)
   @assert order(I) === O
 
   n = degree(O)
@@ -747,12 +751,10 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   end
 
   r = length(basis_elts)
-  FQ, phi = residue_field(O.R,p)
-  phi_inv = inv(phi)
-
+  FQ = codomain(phi)
 
   if r == 0
-    A = _zero_algebra(FQ)
+    A = zero_algebra(FQ)
 
     local _image_zero
 
@@ -765,7 +767,7 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
     local _preimage_zero
 
     let O = O
-      function _preimage_zero(a::AlgAssElem)
+      function _preimage_zero(a::AssociativeAlgebraElem)
         return O()
       end
     end
@@ -792,9 +794,9 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   if isone(BO[1])
     one = zeros(FQ, r)
     one[1] = FQ(1)
-    A = AlgAss(FQ, mult_table, one)
+    A = StructureConstantAlgebra(FQ, mult_table, one)
   else
-    A = AlgAss(FQ, mult_table)
+    A = StructureConstantAlgebra(FQ, mult_table)
   end
   if is_commutative(O)
     A.is_commutative = 1
@@ -812,9 +814,9 @@ function Hecke.AlgAss(O::GenOrd, I::GenOrdIdl, p::RingElem)
   local _preimage
 
   let BO = BO, basis_elts = basis_elts, r = r
-    function _preimage(a::AlgAssElem)
+    function _preimage(a::AssociativeAlgebraElem)
       ca = coefficients(a)
-      return sum(phi_inv(ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
+      return sum(preimage(phi, ca[i]) * BO[basis_elts[i]] for i in 1:length(ca))
     end
   end
 
@@ -929,7 +931,7 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
   num = map_entries(kx,A*den)
-  R = residue_ring(kx, den, cached = false)
+  R = residue_ring(kx, den, cached = false)[1]
   M = map_entries(R, num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x))
   #mul!(v, v, M) This didn't work
@@ -943,14 +945,14 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::RingElem) where {T}
+function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1, p::RingElem) where {T}
 
   O = order(Ip1)
   n = degree(O)
   R = O.R
-  @vprintln :NfOrd 1 "Splitting the algebra"
+  @vprintln :AbsNumFieldOrder 1 "Splitting the algebra"
   AA = Hecke.decompose(A)
-  @vprintln :NfOrd 1 "Done"
+  @vprintln :AbsNumFieldOrder 1 "Done"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1, copy = false)
   list_bases = Vector{Vector{Vector{elem_type(R)}}}(undef, length(AA))
@@ -1002,20 +1004,19 @@ end
 #
 ################################################################################
 
-mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, Hecke.HeckeMap, GenOrdToAlgAssMor}
+mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, Hecke.HeckeMap, Any}#GenOrdToAlgAssMor}
   header::Hecke.MapHeader
 
-  function GenOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
+  function GenOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
     z.header = Hecke.MapHeader(O, A, _image, _preimage)
     return z
   end
 end
 
-function GenOrdToAlgAssMor(O::GenOrd, A::AlgAss{T}, _image, _preimage) where {T}
-  return AbsOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
+function GenOrdToAlgAssMor(O::GenOrd, A::StructureConstantAlgebra{T}, _image, _preimage) where {T}
+  return GenOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
-
 
 ################################################################################
 #
@@ -1024,15 +1025,57 @@ end
 ################################################################################
 
 
-function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
+function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
   return characteristic(function_field(base_ring(R)))
 end
 
-function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
+function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
   return 0
 end
 
-function Hecke.characteristic(R::Generic.ResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
+function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
   return characteristic(function_field(base_ring(R)))
 end
 
+mutable struct GenOrdToFqField{S, T} <: Map{S, T, Hecke.HeckeMap, Any}#GenOrdToFqField}
+  header::Hecke.MapHeader
+
+  function GenOrdToFqField{S, T}(O::S, A::T, _image::Function, _preimage::Function) where {S <: GenOrd, T}
+    z = new{S, T}()
+    z.header = Hecke.MapHeader(O, A, _image, _preimage)
+    return z
+  end
+end
+
+function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
+  Kt = parent(f)
+  L, b = number_field(f, "a"; cached = false)
+  return L, MapFromFunc(Kt, L, x -> L(x), y -> Kt(y))
+end
+
+function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)
+  a, g, b, phi = get_residue_field_data(P)::Tuple{elem_type(O),
+                                                  dense_poly_type(base_ring(O)),
+                                                  Vector{dense_matrix_type(base_ring(O))},
+                                                  Any} # not optimal
+  gg = map_coefficients(phi, g)
+  bb = map_entries.(phi, b)
+  K = base_ring(parent(gg))
+  F, KtoF = Nemo._residue_field(gg)
+  d = degree(O)
+  imgofbas = [KtoF(parent(gg)(bb[i][1, :])) for i in 1:d]
+  powersofa = powers(a, degree(g))
+
+  _image = function(x::GenOrdElem)
+    @assert parent(x) === O
+    c = base_ring(O).(coordinates(x))
+    return sum(phi(c[i]) * imgofbas[i] for i in 1:d)
+  end
+
+  _preimage = function(x)
+    @assert parent(x) === F
+    return sum(preimage(phi, coeff(x, i - 1)) * powersofa[i] for i in 1:degree(g))
+  end
+
+  return F, GenOrdToFqField{typeof(O), typeof(F)}(O, F, _image, _preimage)
+end

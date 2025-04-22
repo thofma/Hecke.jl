@@ -4,7 +4,7 @@
 #
 ##########################################################################################################
 
-function tame_conductors_degree_2(O::NfOrd, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
   K = nf(O)
   d = degree(O)
   b1 = Int(iroot(bound,d))
@@ -45,7 +45,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::ZZRingElem; unramified_outsid
 
 end
 
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
+function squarefree_for_conductors(O::AbsSimpleNumFieldOrder, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
 
   sqf = trues(n)
   primes = trues(n)
@@ -159,7 +159,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Vecto
 end
 
 
-function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductors_tame(O::AbsSimpleNumFieldOrder, n::Int, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   if n == 2
     return tame_conductors_degree_2(O, bound, unramified_outside = unramified_outside)
@@ -172,7 +172,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside
   K = nf(O)
   wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
   ram_primes = ramified_primes(O)
-  filter!(x -> !divisible(ZZRingElem(n),x), ram_primes)
+  filter!(x -> !is_divisible_by(ZZRingElem(n),x), ram_primes)
   sort!(ram_primes)
   coprime_to = vcat(ram_primes, wild_ram)
   m = minimum(wild_ram)
@@ -182,7 +182,8 @@ function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside
   list = squarefree_for_conductors(O, b1, n, coprime_to = coprime_to, prime_base = unramified_outside)
 
   extra_list = Tuple{Int, ZZRingElem}[(1, ZZRingElem(1))]
-  for q in ram_primes
+  for _q in ram_primes
+    q = ZZ(_q)
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
     end
@@ -221,7 +222,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::ZZRingElem; unramified_outside
   return final_list
 end
 
-function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   #Careful: I am assuming that a is in snf!
   K = nf(O)
@@ -238,13 +239,14 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=fals
 
   if tame
     reverse!(list)
-    return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]
+    return Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in list]
   end
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
   #
-  wild_list = Tuple{Int, Dict{NfOrdIdl, Int}, ZZRingElem}[(1, Dict{NfOrdIdl, Int}(), ZZRingElem(1))]
-  for q in wild_ram
+  wild_list = Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}[(1, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1))]
+  for _q in wild_ram
+    q = ZZ(_q)
     if !isempty(unramified_outside) && !(q in unramified_outside)
       continue
     end
@@ -298,7 +300,7 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=fals
       end
     end
     for i=2:bound_max_exp
-      d1=Dict{NfOrdIdl, Int}()
+      d1=Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
       for j=1:length(lp)
         d1[lp[j][1]]=i
       end
@@ -320,7 +322,7 @@ function conductors(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=fals
   end
 
   #the final list
-  final_list=Tuple{Int, Dict{NfOrdIdl, Int}}[]
+  final_list=Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}[]
   for (el, nm) in list
     for (q,d,nm2) in wild_list
       if nm*nm2 > bound
@@ -340,7 +342,7 @@ end
 #
 ###############################################################################
 
-function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Vector{Int}; coprime_to::Vector{ZZRingElem}=ZZRingElem[], unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function squarefree_for_conductorsQQ(O::AbsSimpleNumFieldOrder, n::Int, a::Vector{Int}; coprime_to::Vector{ZZRingElem}=ZZRingElem[], unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   G = map(Int, snf(abelian_group(a))[1].snf)
   sqf= trues(n)
@@ -452,7 +454,7 @@ end
 
 
 
-function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductors_tameQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   #
   #  First, conductors coprime to the ramified primes and to the
@@ -468,7 +470,7 @@ function conductors_tameQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem; unramifi
 
 end
 
-function conductorsQQ(O::NfOrd, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
+function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem, tame::Bool=false; unramified_outside::Vector{ZZRingElem} = ZZRingElem[])
 
   K = nf(O)
   d = degree(O)
@@ -578,17 +580,21 @@ end
 
 
 
-function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
+function conductors_generic(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
+  return conductors_generic(lll(maximal_order(K)), gtype, absolute_bound; only_tame = only_tame)
+end
+
+function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
   #I am assuming that gtype is in "SNF"
-  conds_tame = conductors_generic_tame(K, gtype, absolute_bound)
+  conds_tame = conductors_generic_tame(OK, gtype, absolute_bound)
   if only_tame
-    return Dict{NfOrdIdl, Int}[(x[1], Dict{NfOrdIdl, Int}()) for x in conds_tame]
+    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in conds_tame]
   end
-  OK = maximal_order(K)
   wild = collect(keys(factor(gtype[end]).fac))
   n = prod(gtype)
   bound = div(absolute_bound, abs(discriminant(OK))^n)
-  wild_primes = Vector{Tuple{NfOrdIdl, UnitRange{Int}}}()
+  wild_primes = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, UnitRange{Int}}}()
+  @vprintln :AbExt 1 "Computing wild conductors ... "
   for p in wild
     lp = prime_decomposition(OK, p)
     for (P, v) in lp
@@ -620,8 +626,8 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
     end
   end
   #create now a sublist with just the wild ramified primes.
-  conds_wild = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
-  push!(conds_wild, (Dict{NfOrdIdl, Int}(), ZZRingElem(1)))
+  conds_wild = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+  push!(conds_wild, (Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1)))
   # For each p in wild_primes, p[2] describes the possible exponent
   # range. Of course, not every prime needs to appear, so we add
   # 0 to the list of possible exponents.
@@ -632,15 +638,15 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
       # Note that all exponents are >= 2 by if they are nonzero
       continue
     end
-    D = Dict{NfOrdIdl, Int}()
+    D = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
     nD = ZZRingElem(1)
     for j = 1:length(I)
       if iszero(I[j])
         continue
       end
       P = wild_primes[j][1]
-      nP = norm(P)
-      p = minimum(P)
+      nP = norm(P, copy = false)
+      p = minimum(P, copy = false)
       vp = minimum([valuation(gtype[i], p) for i = 1:length(gtype)])
       nD *= nP^((p^vp-p^(vp-1))*I[j])
       if nD > bound
@@ -653,29 +659,36 @@ function conductors_generic(K::AnticNumberField, gtype::Vector{Int}, absolute_bo
     end
     push!(conds_wild, (D, nD))
   end
-
+  @vprintln :AbExt 1 "... done"
+  @vprintln :AbExt 1 "Merging tame and wild conductors ..."
   #Now, the final merge.
-  conds = Vector{Dict{NfOrdIdl, Int}}()
-  for i = 1:length(conds_wild)
-    for j = 1:length(conds_tame)
+  conds = Vector{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}()
+  for i in 1:length(conds_wild)
+    for j in 1:length(conds_tame)
       if conds_wild[i][2]*conds_tame[j][2] <= bound
         push!(conds, merge(conds_wild[i][1], conds_tame[j][1]))
       end
     end
   end
+  @vprintln :AbExt 1 "... done"
   return conds
 end
 
-function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolute_bound::ZZRingElem)
+function conductors_generic_tame(K::AbsSimpleNumField, gtype::Vector{Int}, absolute_bound::ZZRingElem)
+  return conductors_generic_tame(lll(maximal_order(K), gtype, absolute_bound))
+end
 
-  OK = maximal_order(K)
+function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem)
   n = prod(gtype)
   wild = collect(keys(factor(n).fac))
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
+  @vprintln :AbExt 1 "Tame conductors: Computing prime ideals ... "
   lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
+  @vprintln :AbExt 1 "Tame conductors: found $(length(lp)) "
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
-  lf = Vector{Tuple{NfOrdIdl, ZZRingElem}}()
+  lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
+  dummy = Int[]
   for P in lp
     nP = norm(P)
     gn = gcd(nP-1, gtype[end])
@@ -692,28 +705,64 @@ function conductors_generic_tame(K::AnticNumberField, gtype::Vector{Int}, absolu
     push!(lf, (P, dP))
   end
   #Now, I have to merge them.
-  conds = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
-  push!(conds, (Dict{NfOrdIdl, Int}(), ZZRingElem(1)))
+  new_conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+
+  # All possible conductors are the squarefree products of the elements in lf with norm bounded
+  # P1
+  # P1, P2, P1*P2
+  # P1, P2, P1*P2, P3, P3*P1, P3*P2, P3*P1*P2
+  # ...
+  # We iteratively construct all those products.
+  # To be efficient, the list must always be ordered.
+  # Thus we need an ordered list with
+  # - in-order iteration
+  # - fast random insertion
+  # We use a tree to keep track of the indices for the ordering induced by the norm.
+  # Our AVL implementation cannot handle ordering with are not anti-symmetric
+  # (We keep track of the indicies, but compare them by comparing the corresponding norm.
+  # This is not anti-symmetric).
+  # To cicrumvent this, we keep an array of indices per norm.
+
+  conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+  push!(conds, (Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1)))
   if isempty(lf)
     return conds
   end
+  A = AVLTree{Tuple{Vector{Int}, ZZRingElem}}((i, j) -> i[2] < j[2], (i, j) -> i[2] == j[2])
+  push!(A, ([1], ZZ(1)))
+  @vprintln :AbExt 1 "Tame conductors: Computing all tame conductors ..."
   for i = 1:length(lf)
+    empty!(new_conds)
+    if i % 10000 == 1
+      @vprintln :AbExt 1 "Tame conductors: ... $(length(lf) - i) left"
+    end
     P = lf[i][1]
     dP = lf[i][2]
-    indj = length(conds)
-    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
-    for j = 1:indj
-      Dd = dP*conds[j][2]
+    for j in A
+      Dd = dP*j[2]
       if Dd > bound
         break
       end
-      D = copy(conds[j][1])
-      D[P] = 1
-      push!(new_conds, (D, Dd))
+      for k in j[1]
+        D = copy(conds[k][1])
+        D[P] = 1
+        push!(new_conds, (D, Dd))
+      end
     end
-    for j = 1:length(new_conds)
-      insert!(conds, searchsortedfirst(conds, new_conds[j], by = x -> x[2]), new_conds[j])
+
+    for j in 1:length(new_conds)
+      newnorm = !haskey(A, (dummy, new_conds[j][2]))
+      push!(conds, new_conds[j])
+      if newnorm
+        push!(A, ([length(conds)], new_conds[j][2]))
+      else
+        node = search_node(A, (dummy, new_conds[j][2]))
+        @assert node.data[2] == new_conds[j][2]
+        push!(node.data[1], length(conds))
+      end
     end
   end
+  @vprintln :AbExt 1 "Tame conductors: found $(length(conds))"
+  sort!(conds, by = x -> x[2])
   return conds
 end

@@ -1,35 +1,6 @@
 #################################################################################
 #
-#             EllCrv/Misc.jl : Misc functions
-#
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2016 Tommy Hofmann
-# (C) 2016 Robin Ammon
-# (C) 2016 Sofia Brenner
+#             EllipticCurve/Misc.jl : Misc functions
 #
 ################################################################################
 
@@ -115,13 +86,13 @@ function quadroots(a, b, c, _res::Union{Function, MapFromFunc})
   end
 end
 
-function quadroots(a::nf_elem, b::nf_elem, c::nf_elem, pIdeal:: NfOrdIdl)
+function quadroots(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, pIdeal:: AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
   P, x = polynomial_ring(F, "x", cached = false)
-  
+
   t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [a, b, c]]
-  
+
   f = t[1]*x^2 + t[2]*x + t[3]
 
   if degree(f) == -1
@@ -159,27 +130,27 @@ function nrootscubic(b, c, d, p)
 
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return FlintZZ(3)
+      return ZZ(3)
     else
-      return FlintZZ(0)
+      return ZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
       # one linear and one irreducible quadratic factor
-      return FlintZZ(1)
+      return ZZ(1)
     else
-      return FlintZZ(3) #one double and one single root
+      return ZZ(3) #one double and one single root
     end
   else
-    return FlintZZ(3)
+    return ZZ(3)
   end
 end
 
-function nrootscubic(b::nf_elem, c::nf_elem, d::nf_elem, pIdeal:: NfOrdIdl)
+function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsSimpleNumFieldElem, pIdeal:: AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(pIdeal)
   F, phi = residue_field(R, pIdeal)
   P, x = polynomial_ring(F, "x", cached = false)
-  
+
   t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [b,c,d]]
 
   f = x^3 + t[1]*x^2 + t[2]*x + t[3]
@@ -187,19 +158,19 @@ function nrootscubic(b::nf_elem, c::nf_elem, d::nf_elem, pIdeal:: NfOrdIdl)
   fac = factor(f)
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return FlintZZ(3)
+      return ZZ(3)
     else
-      return FlintZZ(0)
+      return ZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
       # one linear and one irreducible quadratic factor
-      return FlintZZ(1)
+      return ZZ(1)
     else
-      return FlintZZ(3) #one double and one single root
+      return ZZ(3) #one double and one single root
     end
   else
-    return FlintZZ(3)
+    return ZZ(3)
   end
 end
 
@@ -241,7 +212,7 @@ function normal_basis(K::T, L::T) where T<:FinField
 end
 
 
-function mod(a::nf_elem, I::NfOrdIdl)
+function mod(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(I)
   k, phi = residue_field(R, I)
   a_num = phi(R(numerator(a)))
@@ -251,17 +222,17 @@ function mod(a::nf_elem, I::NfOrdIdl)
 end
 
 @doc raw"""
-	inv_mod(a::NfOrdElem, I::NfOrdIdl) -> NfOrdElem
+	inv_mod(a::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 Return a lift of the inverse of an element modulo a prime ideal.
 """
-function Base.invmod(a::NfOrdElem, I::NfOrdIdl)
+function Base.invmod(a::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(I)
   k, phi = residue_field(R, I)
   return preimage(phi, inv(phi(R(a))))
 end
 
-function Base.invmod(a::nf_elem, I::NfOrdIdl)
+function Base.invmod(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(I)
   k, phi = residue_field(R, I)
   a_num = phi(R(numerator(a)))
@@ -271,18 +242,18 @@ function Base.invmod(a::nf_elem, I::NfOrdIdl)
 end
 
 @doc raw"""
-	pth_root_mod(a::NfOrdElem, I::NfOrdIdl) -> NfOrdElem
+	pth_root_mod(a::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> AbsSimpleNumFieldOrderElem
 
 Return a lift of the pth root of an element mod a prime ideal lying over p.
 """
-function pth_root_mod(a::NfOrdElem, pIdeal::NfOrdIdl)
+function pth_root_mod(a::AbsSimpleNumFieldOrderElem, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(pIdeal)
   p = pIdeal.gen_one
   k, phi = residue_field(R, pIdeal)
   return preimage(phi, pth_root(phi(R(a))))
 end
 
-function pth_root_mod(a::nf_elem, pIdeal::NfOrdIdl)
+function pth_root_mod(a::AbsSimpleNumFieldElem, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   R = order(pIdeal)
   p = pIdeal.gen_one
   k, phi = residue_field(R, pIdeal)

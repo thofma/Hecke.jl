@@ -1,7 +1,3 @@
-export HermGenus
-export HermLat
-export HermLocalGenus
-
 ###############################################################################
 #
 #  Hermitian genera

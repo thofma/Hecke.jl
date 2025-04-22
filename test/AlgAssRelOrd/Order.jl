@@ -1,13 +1,16 @@
 @testset "AlgAssRelOrd" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 - 5x - 1
   K, a = number_field(f, "a")
 
   @testset "Any order" begin
     Ky, y = K["y"]
-    A = AlgAss(y^2 - QQFieldElem(1, 5))
+    A = StructureConstantAlgebra(y^2 - QQFieldElem(1, 5))
 
     O = any_order(A)
+    OO = order(A, basis_pmatrix(O))
+    @test O == OO
+    @test hash(O) == hash(OO)
 
     # Test whether O is indeed an order
     @test one(A) in O
@@ -42,13 +45,13 @@
     O2 = Hecke.maximal_order_via_relative(KG)
     @test discriminant(O1) == discriminant(O2)
 
-    KG = AlgAss(KG)[1]
+    KG = StructureConstantAlgebra(KG)[1]
 
     O1 = Hecke.maximal_order_via_absolute(KG)
     O2 = Hecke.maximal_order_via_relative(KG)
     @test discriminant(O1) == discriminant(O2)
 
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     K, a = number_field(x^4 - 4 * x^2 + 2)
     A = Hecke.quaternion_algebra2(K, -1, -1)
     M = maximal_order(A)

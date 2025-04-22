@@ -5,4 +5,7 @@ REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-Aqua = "0.6.3"
+Aqua = "0.8.2"
+Documenter = "0.27"
+REPL = "1.6"
+Test = "1.6"

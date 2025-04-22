@@ -1,6 +1,3 @@
-export submodules, minimal_submodules, maximal_submodules, composition_series,
-       composition_factors_with_multiplicity, meataxe
-
 ################################################################################
 #
 #  Tools for MeatAxe
@@ -350,12 +347,11 @@ function is_isomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T
 end
 
 function dual_space(M::ModAlgAss{S, T, V}) where {S, T, V}
-  @assert !isdefined(M, :algebra)
-  G = T[transpose(g) for g in M.action_of_gens]
+  G = T[transpose(g) for g in (isdefined(M, :action_of_gens) ? M.action_of_gens : M.action_of_basis)]
   return Amodule(G)
 end
 
-function _subst(f::Nemo.PolyElem{T}, a::MatElem{T}) where {T <: Nemo.RingElement}
+function _subst(f::Nemo.PolyRingElem{T}, a::MatElem{T}) where {T <: Nemo.RingElement}
    n = degree(f)
    if n < 0
       return similar(a)
@@ -432,7 +428,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
       return true, identity_matrix(K, n)
     else
       N = _subst(t, A)
-      null, kern = kernel(N, side = :left)
+      kern = kernel(N, side = :left)
       B = closure(sub(kern, 1:1, 1:n), G)
       return false, B
     end
@@ -463,25 +459,25 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     poly = minpoly(Kx, A)
     for f in lazy_factor(poly)
       N = _subst(f, A)
-      a, kern = kernel(N, side = :left)
-      @assert a > 0
+      kern = kernel(N, side = :left)
+      @assert nrows(kern) > 0
       #  Norton test
       B = closure(sub(kern, 1:1, 1:n), M.action_of_gens)
       if nrows(B) != n
         M.is_irreducible = 2
         return false, B
       end
-      aa, kernt = kernel(transpose(N), side = :left)
-      @assert aa == a
+      kernt = kernel(transpose(N), side = :left)
+      @assert nrows(kernt) == nrows(kern)
       Bt = closure(sub(kernt, 1:1, 1:n), Gt)
       if nrows(Bt) != n
-        aa, Btnu = kernel(Bt)
+        Btnu = kernel(Bt; side = :right)
         subst = transpose(Btnu)
         #@assert nrows(subst)==nrows(closure(subst,G))
         M.is_irreducible = 2
         return false, subst
       end
-      if degree(f) == a
+      if degree(f) == nrows(kern)
         # f is a good factor, irreducibility!
         M.is_irreducible = 1
         return true, identity_matrix(K, n)
@@ -674,8 +670,8 @@ function eigenspace_as_matrix(M::MatElem{T}, lambda::T) where T <: FieldElem
   for i = 1:ncols(N)
     N[i, i] -= lambda
   end
-  d, res = Hecke.left_kernel(N)
-  return view(res, 1:d, 1:ncols(res))
+  res = kernel(N, side = :left)
+  return res
 end
 
 
@@ -775,7 +771,8 @@ function irreducible_submodules(N::ModAlgAss{S, T, V}, M::ModAlgAss{S, T, V}) wh
     if !iszero(rel[dim(N), dim(N)])
       return T[]
     end
-    a, kern = nullspace(rel)
+    kern = kernel(rel, side = :right)
+    a = ncols(kern)
     kern = transpose(kern)
     if a == 1
       return T[closure(kern, N.action_of_gens)]
@@ -980,7 +977,7 @@ function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=dim(M), lf = Tuple
   minlist = minimal_submodules(M_dual, index+1, lf)
   maxlist = Vector{T}(undef, length(minlist))
   for j=1:length(minlist)
-    maxlist[j]=transpose(nullspace(minlist[j])[2])
+    maxlist[j]=transpose(kernel(minlist[j], side = :right))
   end
   return maxlist
 
@@ -1127,7 +1124,7 @@ function submodules(M::ModAlgAss{S, T, V}, index::Int; comp_factors = Tuple{ModA
   #  Duality
     M_dual=dual_space(M)
     dlist=submodules(M_dual, dim(M)-index)
-    list=T[transpose(nullspace(x)[2]) for x in dlist]
+    list=T[transpose(kernel(x, side = :right)) for x in dlist]
   end
   return list
 
@@ -1179,11 +1176,9 @@ function powermod(f::Zmodn_poly, e::ZZRingElem, g::Zmodn_poly)
   if fits(Int, e)
     return powermod(f, Int(e), g)
   else
-    _e = BigInt()
     z = parent(f)()
-    ccall((:fmpz_get_mpz, libflint), Nothing, (Ref{BigInt}, Ref{ZZRingElem}), _e, e)
-    ccall((:nmod_poly_powmod_mpz_binexp, libflint), Nothing,
-          (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{BigInt}, Ref{Zmodn_poly}),
+    ccall((:nmod_poly_powmod_fmpz_binexp, libflint), Nothing,
+          (Ref{Zmodn_poly}, Ref{Zmodn_poly}, Ref{ZZRingElem}, Ref{Zmodn_poly}),
            z, f, e, g)
     return z
   end

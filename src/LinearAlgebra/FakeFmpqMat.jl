@@ -24,9 +24,9 @@ function denominator(x::FakeFmpqMat; copy::Bool = true)
   end
 end
 
-nrows(x::FakeFmpqMat) = nrows(x.num)
+number_of_rows(x::FakeFmpqMat) = number_of_rows(x.num)
 
-ncols(x::FakeFmpqMat) = ncols(x.num)
+number_of_columns(x::FakeFmpqMat) = number_of_columns(x.num)
 
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
@@ -202,17 +202,10 @@ isequal(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
 #
 ################################################################################
 
-to_array(x::FakeFmpqMat) = (x.num, x.den)
-
-function to_fmpz_mat(x::FakeFmpqMat)
-  !isone(x.den) && error("Denominator has to be 1")
-  return numerator(x)
-end
-
 function FakeFmpqMat(x::Vector{QQFieldElem})
   dens = ZZRingElem[denominator(x[i]) for i=1:length(x)]
   den = lcm(dens)
-  M = zero_matrix(FlintZZ, 1, length(x))
+  M = zero_matrix(ZZ, 1, length(x))
   for i in 1:length(x)
     M[1,i] = numerator(x[i])*divexact(den, dens[i])
   end
@@ -225,11 +218,13 @@ function QQMatrix(x::FakeFmpqMat)
 end
 
 function _fmpq_mat_to_fmpz_mat_den(x::QQMatrix)
-  z = zero_matrix(FlintZZ, nrows(x), ncols(x))
+  z = zero_matrix(ZZ, nrows(x), ncols(x))
   d = ZZRingElem()
   ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
   return z, d
 end
+
+numerator(x::QQMatrix) = _fmpq_mat_to_fmpz_mat_den(x)[1]
 
 function _fmpq_mat_to_fmpz_mat_den!(z::ZZMatrix, d::ZZRingElem, x::QQMatrix)
   ccall((:fmpq_mat_get_fmpz_mat_matwise, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{QQMatrix}), z, d, x)
@@ -245,19 +240,55 @@ end
 #
 ################################################################################
 
-function hnf!(x::FakeFmpqMat, shape = :lowerleft)
+for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
+  @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+  @eval ($s)(x::QQMatrix, ::ZZRing, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+end
+
+function _hnf!_integral(x::QQMatrix, shape = :lowerleft)
+  x .= QQMatrix(_hnf!_integral(FakeFmpqMat(x), shape))
+  return x
+end
+
+function _hnf_integral_modular_eldiv!(x::QQMatrix, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+  y = _hnf_integral_modular_eldiv!(FakeFmpqMat(x), g; shape = shape, cutoff = cutoff)
+  yq = QQMatrix(y)
+  if cutoff
+    return yq
+  else
+    return x .= yq
+  end
+end
+
+function _hnf!_integral(x::FakeFmpqMat, shape = :lowerleft)
   x.num = _hnf(x.num, shape)
   return x
 end
 
-function __hnf(x::FakeFmpqMat)
-  FakeFmpqMat(Nemo.__hnf(x.num), x.den)
+function _hnf!_integral(x::MatElem, R::Ring, shape = :lowerleft)
+  y, d = integral_split(x, R)
+  x .= divexact(base_ring(x).(_hnf(y, :lowerleft)), d)
 end
 
+#function hnf_integral(x::QQMatrix, args...; kw...)
+#  return QQMatrix(hnf(FakeFmpqMat(x, args...; kw...)))
+#end
+
+function _hnf_integral(x::MatElem, R::Ring,  shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+  y, d = integral_split(x, R)
+  return divexact(base_ring(x).(_hnf(y, shape)), d)
+end
+
+# used in Oscar
+# remove this temporarily while changing FakeFmpqMat -> QQMatrix
 function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+  return _hnf_integral(x, shape; triangular_top, compute_det)
+end
+
+function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
-    z = one(FlintZZ)
+    z = one(ZZ)
     for i in 1:(ncols(x) - 1)
       for j in (i + 1):ncols(x)
         @assert iszero(x.num[i, j])
@@ -276,10 +307,10 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, c
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function _hnf_integral_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = _hnf_modular_eldiv(x.num, g, shape)
   if cutoff
-    # Since we are modular, we are in the full rank situation 
+    # Since we are modular, we are in the full rank situation
     n = nrows(x)
     m = ncols(x)
     if shape === :lowerleft
@@ -292,9 +323,9 @@ function hnf_modular_eldiv(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cu
   return FakeFmpqMat(h, denominator(x))
 end
 
-function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
+function _hnf_integral_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, cutoff::Bool = false)
   h = hnf_modular_eldiv!(x.num, g, shape)
-  # Since we are modular, we are in the full rank situation 
+  # Since we are modular, we are in the full rank situation
   if cutoff
     n = nrows(x)
     m = ncols(x)
@@ -307,10 +338,7 @@ function hnf_modular_eldiv!(x::FakeFmpqMat, g::ZZRingElem; shape = :lowerleft, c
   return x
 end
 
-function _hnf_modular_iterative_eldiv(x::Vector{FakeFmpqMat}, g::ZZRingElem, shape = :lowerleft, cutoff::Bool = false)
-end
-
-function hnf!!(x::FakeFmpqMat, shape = :lowerleft)
+function _hnf!_integral!(x::FakeFmpqMat, shape = :lowerleft)
   _hnf!(x.num, shape)
 end
 
@@ -321,7 +349,7 @@ end
 ################################################################################
 
 function sub(x::FakeFmpqMat, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
-  z = FakeFmpqMat(sub(x.num, r, c), x.den)
+  z = FakeFmpqMat(sub(x.num, r, c), deepcopy(x.den))
   return z
 end
 
@@ -329,8 +357,6 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
   z = FakeFmpqMat()
   z.num = Base.deepcopy_internal(x.num, dict)
   z.den = Base.deepcopy_internal(x.den, dict)
-  z.rows = nrows(x)
-  z.cols = ncols(x)
   return z
 end
 
@@ -395,7 +421,7 @@ function reduce(::typeof(vcat), A::Vector{FakeFmpqMat})
   end
 
   d = reduce(lcm, (denominator(a) for a in A), init = ZZRingElem(1))
-  res = zero_matrix(FlintZZ, sum(nrows, A), ncols(A[1]))
+  res = zero_matrix(ZZ, sum(nrows, A), ncols(A[1]))
   k = 1
   for i in 1:length(A)
     _copy_matrix_into_matrix(res, k, 1, divexact(d, denominator(A[i])) * numerator(A[i], copy = false))

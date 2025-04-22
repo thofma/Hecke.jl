@@ -67,10 +67,10 @@
       @time l_without = Hecke.fields(18, 3, ZZRingElem(10)^18, using_direct_product = false)
       @test length(l_direct_product) == length(l_without)
       for x in l_direct_product
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [19, 3]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (19, 3)
       end
       for x in l_without
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [18, 3]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (18, 3)
       end
     end
   end
@@ -78,12 +78,12 @@
   println("Split extension")
   @time begin
     @testset "Split extension" begin
-      x = polynomial_ring(FlintZZ, "x", cached = false)[2]
+      x = polynomial_ring(ZZ, "x", cached = false)[2]
       K =  number_field(x^2+1)[1]
       l = [Hecke.field_context(K)]
       l1 = Hecke.fields(42, 5, l, ZZRingElem(10)^90)
       @test length(l1) == 1
-      @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(l1[1].generators_of_automorphisms))) == [42, 5]
+      @test Tuple{Int,Int}(Hecke.IdGroup(closure(l1[1].generators_of_automorphisms))) == (42, 5)
     end
   end
 
@@ -163,19 +163,19 @@
       @time l1 = Hecke.fields(6, 1, ZZRingElem(10)^8)
       @test length(l1) == 107
       for x in l1
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [6, 1]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (6, 1)
       end
       @time l2 = Hecke.fields(24, 8, ZZRingElem(10)^30)
       @test length(l2) == 15
       for x in l2
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [24, 8]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (24, 8)
       end
       @time l3 = Hecke.fields(30, 3, ZZRingElem(10)^40)
       @test length(l3) == 5
       for x in l3
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [30, 3]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (30, 3)
       end
-      Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+      Qx, x = polynomial_ring(QQ, "x", cached = false)
       f = x^36 - x^33 + x^27 - x^24 + x^18 - x^12 + x^9 - x^3 + 1
       K, a = number_field(f, cached = false, check = false)
       d = ZZRingElem(1252291517600545939502745293690906945712691746311040212121628914687318440182651069503694911322360563684969)
@@ -208,4 +208,12 @@
   k, _ = number_field(x^4-11*x^2+9)
   L = abelian_extensions(k, [3], ZZRingElem(10)^16)
   @test length(L) == 2
+
+  let
+    l = Hecke.C22_extensions_with_given_disc(7056)
+    flds = first.(number_field.(Hecke.Globals.Qx.([[1, 0, -5, 0, 1], [25, 0, 11, 0, 1], [22, 2, -1, -2, 1], [49, 0, 7, 0, 1]])))
+    @test all(x -> any(y -> is_isomorphic(x, y), flds), l)
+    l = Hecke.C22_extensions_with_given_disc(7056; only_real = true)
+    @test length(l) == 1 && is_isomorphic(l[1], flds[1])
+  end
 end

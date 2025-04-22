@@ -1,5 +1,3 @@
-export complex_embeddings, real_embeddings, evaluation_function, complex_embedding
-
 @doc raw"""
     complex_embeddings(K::NumField; conjugates::Bool = true) -> Vector{NumFieldEmb}
 
@@ -12,13 +10,13 @@ imaginary embedding per conjugated pairs is returned.
 julia> K, a = quadratic_field(-3);
 
 julia> complex_embeddings(K)
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
- Complex embedding corresponding to 0.00 - 1.73 * i of imaginary quadratic field defined by x^2 + 3
+2-element Vector{AbsSimpleNumFieldEmbedding}:
+ Complex embedding corresponding to 0.00 + 1.73 * i of K
+ Complex embedding corresponding to 0.00 - 1.73 * i of K
 
 julia> complex_embeddings(K, conjugates = false)
-1-element Vector{Hecke.NumFieldEmbNfAbs}:
- Complex embedding corresponding to 0.00 + 1.73 * i of imaginary quadratic field defined by x^2 + 3
+1-element Vector{AbsSimpleNumFieldEmbedding}:
+ Complex embedding corresponding to 0.00 + 1.73 * i of K
 ```
 """
 complex_embeddings(K::NumField)
@@ -30,13 +28,13 @@ Return the real embeddings of $K$.
 
 # Examples
 
-```jldoctst
+```jldoctest
 julia> K, a = quadratic_field(3);
 
 julia> real_embeddings(K)
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Embedding corresponding to ≈ -1.73
- Embedding corresponding to ≈ 1.73
+2-element Vector{AbsSimpleNumFieldEmbedding}:
+ Complex embedding corresponding to -1.73 of K
+ Complex embedding corresponding to 1.73 of K
 ```
 """
 function real_embeddings(K::NumField)
@@ -53,7 +51,7 @@ Return the corresponding number field of the embedding $f$.
 
 # Examples
 
-```jldoctet
+```jldoctest
 julia> K, a = quadratic_field(-3); e = complex_embeddings(K)[1];
 
 julia> number_field(e)
@@ -129,14 +127,13 @@ julia> e = complex_embeddings(L);
 
 julia> restrict(e[1], K)
 Complex embedding corresponding to -1.73
-  of number field with defining polynomial x^2 - 3
-    over rational field
+  of real quadratic field defined by x^2 - 3
 ```
 """
 restrict(f::NumFieldEmb, K::NumField)
 
 @doc raw"""
-    restrict(f::NumFieldEmb, g::NumFieldMor)
+    restrict(f::NumFieldEmb, g::NumFieldHom)
 
 Given an embedding $f$ of a number field $L$ and a morphism $g \colon K \to L$,
 return the embedding $g \circ f$ of $K$.
@@ -146,7 +143,7 @@ This is the same as `g * f`.
 # Examples
 
 ```jldoctest
-julia> K, a = CyclotomicField(5, "a");
+julia> K, a = cyclotomic_field(5, "a");
 
 julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 
@@ -158,7 +155,7 @@ Complex embedding corresponding to 0.62
     over rational field
 ```
 """
-restrict(f::NumFieldEmb, K::NumFieldMor)
+restrict(f::NumFieldEmb, K::NumFieldHom)
 
 ################################################################################
 #
@@ -167,7 +164,7 @@ restrict(f::NumFieldEmb, K::NumFieldMor)
 ################################################################################
 
 @doc raw"""
-    extend(e::NumFieldEmb, f::NumFieldMor)
+    extend(e::NumFieldEmb, f::NumFieldHom)
 
 Given an embedding $e$ of $k$ and a morphism $f \colon k \to K$, determine
 all embedings of $K$ which restrict to $e$ along $f$.
@@ -175,19 +172,19 @@ all embedings of $K$ which restrict to $e$ along $f$.
 # Example
 
 ```jldoctest
-julia> K, a = CyclotomicField(5, "a");
+julia> K, a = cyclotomic_field(5, "a");
 
 julia> k, ktoK = Hecke.subfield(K, [a + inv(a)]);
 
 julia> e = complex_embeddings(k)[1];
 
 julia> extend(e, ktoK)
-2-element Vector{Hecke.NumFieldEmbNfAbs}:
- Complex embedding corresponding to -0.81 + 0.59 * i of cyclotomic field of order 5
- Complex embedding corresponding to -0.81 - 0.59 * i of cyclotomic field of order 5
+2-element Vector{AbsSimpleNumFieldEmbedding}:
+ Complex embedding corresponding to -0.81 + 0.59 * i of K
+ Complex embedding corresponding to -0.81 - 0.59 * i of K
 ```
 """
-function extend(e::NumFieldEmb, f::NumFieldMor)
+function extend(e::NumFieldEmb, f::NumFieldHom)
   @req number_field(e) === domain(f) "Number field of embedding must be domain"
   emb = complex_embeddings(codomain(f))
   res = eltype(emb)[ E for E in emb if f * E == e ]
@@ -196,11 +193,11 @@ function extend(e::NumFieldEmb, f::NumFieldMor)
   return res
 end
 
-function Base.:(*)(f::NumFieldMor, e::NumFieldEmb)
+function Base.:(*)(f::NumFieldHom, e::NumFieldEmb)
   return restrict(e, f)
 end
 
-function compose(f::NumFieldMor, e::NumFieldEmb)
+function compose(f::NumFieldHom, e::NumFieldEmb)
   return f * e
 end
 
@@ -212,7 +209,7 @@ end
 
 # Extension to order elements
 
-(f::NumFieldEmb)(x::NumFieldOrdElem, prec::Int = 32) = f(elem_in_nf(x), prec)
+(f::NumFieldEmb)(x::NumFieldOrderElem, prec::Int = 32) = f(elem_in_nf(x), prec)
 
 @doc raw"""
     evaluation_function(e::NumFieldEmb, prec::Int) -> Function
@@ -269,13 +266,13 @@ function sign(x::NumFieldElem, e::NumFieldEmb)
     if is_positive(real(ex))
       return 1
     elseif is_negative(real(ex))
-      return -1 
+      return -1
     end
     p = 2 * p
   end
 end
 
-sign(x::NumFieldOrdElem, e::NumFieldEmb) = sign(elem_in_nf(x), e)
+sign(x::NumFieldOrderElem, e::NumFieldEmb) = sign(elem_in_nf(x), e)
 
 function sign(x::FacElem{<:NumFieldElem}, e::NumFieldEmb)
   @req _base_ring(x) === number_field(e) "Parents must match"
@@ -303,12 +300,12 @@ are by default all real embeddings of the number field.
 julia> K, a = quadratic_field(3);
 
 julia> signs(a)
-Dict{Hecke.NumFieldEmbNfAbs, Int64} with 2 entries:
+Dict{AbsSimpleNumFieldEmbedding, Int64} with 2 entries:
   Complex embedding corresponding to -1.73 of real quadratic field define… => -1
   Complex embedding corresponding to 1.73 of real quadratic field defined… => 1
 ```
 """
-function signs(a::Union{NumFieldElem, FacElem, NumFieldOrdElem},
+function signs(a::Union{NumFieldElem, FacElem, NumFieldOrderElem},
                p::Vector{<: NumFieldEmb} = real_embeddings(_base_ring(a)))
   return Dict(q => sign(a, q) for q in p)
 end
@@ -371,9 +368,9 @@ function is_totally_positive(a::Union{NumFieldElem, FacElem})
   return is_positive(a, real_embeddings(K))
 end
 
-is_positive(a::NumFieldOrdElem, e...) = is_positive(elem_in_nf(a), e...)
+is_positive(a::NumFieldOrderElem, e...) = is_positive(elem_in_nf(a), e...)
 
-is_totally_positive(a::NumFieldOrdElem, e...) =
+is_totally_positive(a::NumFieldOrderElem, e...) =
     is_totally_positive(elem_in_nf(a), e...)
 
 ################################################################################
@@ -425,7 +422,7 @@ function is_negative(a::Union{NumFieldElem, FacElem}, l::Vector{<: NumFieldEmb})
   return all(x -> is_negative(a, x), l)
 end
 
-is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
+is_negative(a::NumFieldOrderElem, e...) = is_negative(elem_in_nf(a), e...)
 
 ################################################################################
 #
@@ -438,7 +435,7 @@ is_negative(a::NumFieldOrdElem, e...) = is_negative(elem_in_nf(a), e...)
 (::typeof(log))(f::ComposedFunction{typeof(abs), <: NumFieldEmb}) =
     ComposedFunction(log, f)
 
-function (f::ComposedFunction{typeof(log), ComposedFunction{typeof(abs), T}})(x::Union{NumFieldElem, NumFieldOrdElem, FacElem}, prec::Int = 64) where {T}
+function (f::ComposedFunction{typeof(log), ComposedFunction{typeof(abs), T}})(x::Union{NumFieldElem, NumFieldOrderElem, FacElem}, prec::Int = 64) where {T}
   return _log_evaluate_fac_elem(f.inner.inner, x, prec)
 end
 
@@ -466,7 +463,7 @@ function (e::NumFieldEmb{T})(x::FacElem{S, T}, prec::Int = 64) where {S, T}
   return z
 end
 
-function __log_evaluate_fac_elem(e, x::NumFieldOrdElem, prec)
+function __log_evaluate_fac_elem(e, x::NumFieldOrderElem, prec)
   return __log_evaluate_fac_elem(e, elem_in_nf(x, copy = false), prec)
 end
 
@@ -490,4 +487,17 @@ function _log_evaluate_fac_elem(e, x, prec)
     z = __log_evaluate_fac_elem(e, x, wprec)
   end
   return z
+end
+
+################################################################################
+#
+#  Complex conjugation
+#
+################################################################################
+
+function complex_conjugation(K::NumField)
+  L, f = absolute_simple_field(K)
+  g = inv(f)
+  conj = complex_conjugation(L)
+  return compose(compose(g, conj), f)
 end

@@ -1,4 +1,36 @@
-function AlgQuat(K::Field, a::T, b::T) where { T <: FieldElem }
+@doc raw"""
+    quaternion_algebra(K::Field, a, b) -> QuaternionAlgebra
+
+Return the quaternion algebra $(a, b | K)$ defined by $i^2 = a$, $j^2 = b$.
+
+At the moment, the field must have characteristic not equal to $2$.
+
+# Examples
+
+```jldoctest
+julia> Q = quaternion_algebra(QQ, -1, -1)
+Quaternion algebra
+  over rational field
+  defined by i^2 = -1, j^2 = -1
+
+julia> K, sqrt2 = quadratic_field(2);
+
+julia> Q = quaternion_algebra(K, sqrt2, -1)
+Quaternion algebra
+  over real quadratic field defined by x^2 - 2
+  defined by i^2 = sqrt(2), j^2 = -1
+```
+"""
+function quaternion_algebra(K::Field, a, b)
+  if parent(a) === K && parent(b) === K
+    return QuaternionAlgebra(K, a, b)
+  else
+    return QuaternionAlgebra(K, K(a)::elem_type(K), K(b)::elem_type(K))
+  end
+end
+
+function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
+  @req characteristic(K) != 2 "Characteristic must not be 2"
 
   M = zeros(K, 4, 4, 4)
 
@@ -22,7 +54,7 @@ function AlgQuat(K::Field, a::T, b::T) where { T <: FieldElem }
   M[4, 3, 2] = b
   M[4, 4, 1] = -a*b
 
-  z = AlgQuat{T}()
+  z = QuaternionAlgebra{T}()
 
   z.base_ring = K
   z.mult_table = M
@@ -31,53 +63,86 @@ function AlgQuat(K::Field, a::T, b::T) where { T <: FieldElem }
   return z
 end
 
-function show(io::IO, A::AlgQuat)
-  print(io, "Quaternion algebra over\n")
-  println(IOContext(io, :compact => true), base_ring(A))
+dim(A::QuaternionAlgebra) = 4
+
+base_ring(A::QuaternionAlgebra{T}) where {T} = A.base_ring::parent_type(T)
+
+base_ring_type(::Type{QuaternionAlgebra{T}}) where {T} = parent_type(T)
+
+multiplication_table(A::QuaternionAlgebra; copy = false) = A.mult_table
+
+standard_form(A::QuaternionAlgebra) = A.std
+
+has_one(A::QuaternionAlgebra) = true
+
+elem_type(::Type{QuaternionAlgebra{T}}) where {T} = AssociativeAlgebraElem{T, QuaternionAlgebra{T}}
+
+is_commutative(A::QuaternionAlgebra) = false
+
+is_simple(A::QuaternionAlgebra) = true
+
+is_simple_known(A::QuaternionAlgebra) = true
+
+dimension_of_center(A::QuaternionAlgebra) = 1
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, mime::MIME"text/plain", A::QuaternionAlgebra)
+  @show_name(io, A)
+  @show_special(io, mime, A)
+  println(io, "Quaternion algebra")
+  io = pretty(io)
   a, b = standard_form(A)
+  println(io, Indent(), "over ", Lowercase(), base_ring(A))
   print(io, "defined by i^2 = ", a, ", j^2 = ", b)
+  print(io, Dedent())
 end
 
-function show(io::IO, a::AlgAssElem{T, AlgQuat{T}}) where {T}
+function show(io::IO, A::QuaternionAlgebra)
+  if is_terse(io)
+    print(io, "Quaternion algebra")
+  else
+    a, b = standard_form(A)
+    io = pretty(io)
+    print(io, "Quaternion algebra over ")
+    print(terse(io), Lowercase(), base_ring(A))
+    print(io, " defined by i^2 = ", a, ", j^2 = ", b)
+  end
+end
+
+# now for elements
+
+@enable_all_show_via_expressify AssociativeAlgebraElem{T, QuaternionAlgebra{T}} where {T}
+
+function AbstractAlgebra.expressify(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}; context = nothing) where {T}
+  # Expr(:row, a, b) gives a b
   v = a.coeffs
-  print(io, "(", v[1], ") + (", v[2], ") * i + (", v[3], ") * j + (", v[4], ") * k")
+  sum = Expr(:call, :+)
+  for (i, sym) in enumerate([1, :i, :j, :k])
+    push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(v[i]; context), AbstractAlgebra.expressify(sym; context)))
+  end
+  return sum
 end
 
-dim(A::AlgQuat) = 4
+################################################################################
+#
+#  Parent call overloading
+#
+################################################################################
 
-base_ring(A::AlgQuat{T}) where {T} = A.base_ring::parent_type(T)
+(A::QuaternionAlgebra{T})(a::IntegerUnion) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
-multiplication_table(A::AlgQuat; copy = false) = A.mult_table
+(A::QuaternionAlgebra{AbsSimpleNumFieldElem})(a::AbsSimpleNumFieldElem) = A(map(base_ring(A), [a, 0, 0, 0]))
 
-standard_form(A::AlgQuat) = A.std
+(A::QuaternionAlgebra{T})(a::QQFieldElem) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
 
-has_one(A::AlgQuat) = true
-
-elem_type(A::AlgQuat{T}) where {T} = AlgAssElem{T, AlgQuat{T}}
-
-elem_type(::Type{AlgQuat{T}}) where {T} = AlgAssElem{T, AlgQuat{T}}
-
-is_commutative(A::AlgQuat) = false
-
-is_simple(A::AlgQuat) = true
-
-is_simple_known(A::AlgQuat) = true
-
-dimension_of_center(A::AlgQuat) = 1
-
-(A::AlgQuat{T})(a::IntegerUnion) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
-
-(A::AlgQuat{nf_elem})(a::nf_elem) = A(map(base_ring(A), [a, 0, 0, 0]))
-
-(A::AlgQuat{T})(a::QQFieldElem) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
-
-order_type(::AlgQuat{QQFieldElem}) = order_type(AlgQuat{QQFieldElem})
-
-order_type(::Type{AlgQuat{QQFieldElem}}) = AlgAssAbsOrd{AlgQuat{QQFieldElem}, elem_type(AlgQuat{QQFieldElem})}
-
-order_type(::AlgQuat{T}) where { T <: NumFieldElem} = order_type(AlgQuat{T})
-
-order_type(::Type{AlgQuat{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), AlgQuat{T}}
+#order_type(::Type{QuaternionAlgebra{QQFieldElem}}) = AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}, elem_type(QuaternionAlgebra{QQFieldElem})}
+#
+order_type(::Type{QuaternionAlgebra{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), QuaternionAlgebra{T}}
 
 ################################################################################
 #
@@ -85,9 +150,9 @@ order_type(::Type{AlgQuat{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fract
 #
 ################################################################################
 
-function standard_involution(A::AlgQuat{T}) where {T}
+function standard_involution(A::QuaternionAlgebra{T}) where {T}
   if isdefined(A, :std_inv)
-    return A.std_inv::morphism_type(AlgQuat{T}, AlgQuat{T})
+    return A.std_inv::morphism_type(QuaternionAlgebra{T}, QuaternionAlgebra{T})
   else
     f = __standard_involution(A)
     A.std_inv = f
@@ -95,25 +160,42 @@ function standard_involution(A::AlgQuat{T}) where {T}
   end
 end
 
-function conjugate(a::AlgAssElem{T, AlgQuat{T}}) where {T}
+@doc raw"""
+    conjugate(a::AssociativeAlgebraElem{_, QuaternionAlgebra})
+                                 -> AssociativeAlgebraElem{_, QuaternionAlgebra}
+
+Return the image of $a$ under the canonical involution of the quaternion
+algebra.
+
+# Examples
+
+```jldoctest
+julia> Q = quaternion_algebra(QQ, -1, -1); a = Q([1, 1, 1, 1])
+1 + i + j + k
+
+julia> conjugate(a)
+1 - i - j - k
+```
+"""
+function conjugate(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
   return standard_involution(parent(a))(a)
 end
 
-function trred(a::AlgAssElem{T, AlgQuat{T}}) where {T}
-  return base_ring(parent(a))(a + conjugate(a))
+function trred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
+  return (a + conjugate(a)).coeffs[1]
 end
 
-function normred(a::AlgAssElem{T, AlgQuat{T}}) where {T}
-  return base_ring(parent(a))(a * conjugate(a))
+function normred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
+  return (a * conjugate(a)).coeffs[1]
 end
 
-function reduced_charpoly(a::AlgAssElem{T, AlgQuat{T}}) where {T}
+function reduced_charpoly(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
   A = parent(a)
   R = polynomial_ring(base_ring(A), "x", cached = false)[1]
-  return x^2 - trred(a) * x + normred(a)
+  return R([normred(a), -trred(a), one(base_ring(A))])
 end
 
-function standard_involution(A::AlgAss{T}) where {T}
+function standard_involution(A::StructureConstantAlgebra{T}) where {T}
   return __standard_involution(A)
 end
 
@@ -150,18 +232,33 @@ function __standard_involution(A)
   return hom(A, A, M, inv(M))
 end
 
+function isomorphism(::Type{QuaternionAlgebra}, A::StructureConstantAlgebra)
+  @req characteristic(base_ring(A)) != 2 "Characteristic must not be 2"
+  fl, iso = _is_quaternion_algebra(A)
+  !fl && error("Not an quaternion algebra")
+  return iso
+end
+
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
 # https://math.dartmouth.edu/~jvoight/hints-solns.pdf
-function is_quaternion_algebra(A::AlgAss)
-  @assert dim(A) == 4
-  @assert dimension_of_center(A) == 1
+function _is_quaternion_algebra(A::StructureConstantAlgebra)
+  K = base_ring(A)
+  if dim(A) != 4 || dimension_of_center(A) != 1
+    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
+  end
 
   f = standard_involution(A)
-  K = base_ring(A)
   G = zero_matrix(K, 4, 4)
   B = copy(basis(A))
-  @assert dot(B[1].coeffs, one(A).coeffs) != 0
-  B[1] = one(A)
+  # Make one(A) the first element of B
+  for i in 1:4
+    if dot(B[i].coeffs, one(A).coeffs) != 0
+      B[i] = one(A)
+      B[1], B[i] = B[i], B[1]
+      break
+    end
+  end
+  @assert B[1] == one(A)
   for i in 1:4
     for j in 1:4
       G[i, j] = trred(B[i] * f(B[j]))//2
@@ -177,7 +274,7 @@ function is_quaternion_algebra(A::AlgAss)
   @assert stdbasis[1] == 1
 
   if iszero(det(F))
-    return false
+    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
   end
 
   a = stdbasis[2]^2
@@ -196,7 +293,7 @@ function is_quaternion_algebra(A::AlgAss)
   @assert stdbasis[2] * stdbasis[3] == -stdbasis[3] * stdbasis[2]
   @assert stdbasis[2] * stdbasis[3] == stdbasis[4]
 
-  QA = AlgQuat(K, newa, newb)
+  QA = QuaternionAlgebra(K, newa, newb)
 
   #@show stdbasis
 
@@ -212,7 +309,7 @@ function is_quaternion_algebra(A::AlgAss)
 
   SBinv = inv(SB)
 
-  return QA, hom(QA, A, SB, SBinv)
+  return true, hom(QA, A, SB, SBinv)
 end
 
 ################################################################################
@@ -221,10 +318,10 @@ end
 #
 ################################################################################
 
-function _reduce_standard_form(a::nf_elem, b::nf_elem)
+function _reduce_standard_form(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem)
   K = parent(a)
   if is_rational(a) && is_rational(b)
-    n, m, ap, bp = _reduce_standard_form(FlintQQ(a), FlintQQ(b))
+    n, m, ap, bp = _reduce_standard_form(QQ(a), QQ(b))
     return K(n), K(m), K(ap), K(bp)
   else
     return one(K), one(K), a, b
@@ -276,10 +373,10 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   f = standard_involution(A)
   B = elem_in_algebra.(absolute_basis(O))
   d = length(B)
-  G = zero_matrix(FlintQQ, d, d)
+  G = zero_matrix(QQ, d, d)
   for i in 1:d
     for j in 1:d
-      G[i, j] = FlintZZ(absolute_tr(trred(B[i] * f(B[j]))))//2
+      G[i, j] = ZZ(absolute_tr(trred(B[i] * f(B[j]))))//2
     end
   end
 
@@ -307,7 +404,7 @@ end
 # TODO: There is a faster version in Magma.
 function unit_group_modulo_scalars(O::AlgAssRelOrd)
   A = algebra(O)
-  @assert A isa AlgQuat
+  @assert A isa QuaternionAlgebra
   OF = base_ring(O)
   u, mu = unit_group(lll(OF))
   q, mq = quo(u, 2)
@@ -315,9 +412,15 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   gens = elem_type(O)[]
   for e in q
     _x = mu(mq\e)
+    _n = abs(ZZ(absolute_tr(_x)))
     # Reduce modulo squares, so that the trace is hopefully small
     x = evaluate(reduce_mod_powers(elem_in_nf(_x), 2))
-    n = abs(FlintZZ(absolute_tr(x)))
+    n = abs(ZZ(absolute_tr(x)))
+    if _n < n
+      # the old x has smaller trace
+      x = _x
+      n = _n
+    end
     if !(n in norms)
       newel = enumerate(O, Int(n), true)
       for un in newel
@@ -346,13 +449,13 @@ end
 
 function unit_group_modulo_scalars(O::AlgAssAbsOrd)
   A = algebra(O)
-  @assert A isa AlgQuat
+  @assert A isa QuaternionAlgebra
   return enumerate(O, 1)
 end
 
-function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd})
+function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd}; GRH::Bool = true)
   gens1 = unit_group_modulo_scalars(O)
-  u, mu = unit_group(base_ring(O))
+  u, mu = unit_group(base_ring(O); GRH = GRH)
   A = algebra(O)
   gens2 = [ O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u) ]
   return append!(gens1, gens2)
@@ -360,7 +463,7 @@ end
 
 ### change basis
 
-function _change_basis(A::AlgAss, bas)
+function _change_basis(A::StructureConstantAlgebra, bas)
   n = dim(A)
   M = zero_matrix(base_ring(A), n, n)
   N = zero_matrix(base_ring(A), n, n)
@@ -387,7 +490,7 @@ function _change_basis(A::AlgAss, bas)
     end
   end
 
-  B = AlgAss(K, mt)
+  B = StructureConstantAlgebra(K, mt)
   h = hom(B, A, M, invM)
   return B, h
 end
@@ -433,8 +536,6 @@ function ___standard_involution(A)
   return hom(A, A, invol, inv(invol))
 end
 
-global _debug = []
-
 function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   A = algebra(M)
   f = standard_involution(A)
@@ -445,7 +546,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
   nr = simplify(nr)
   #@show norm(nr)
   #@show nr
-  fl, c = is_principal(nr)
+  fl, c = is_principal_with_data(nr)
   if !fl
     return false, zero(A)
   end
@@ -461,7 +562,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
   Babs = absolute_basis(a)
   d = length(Babs)
-  G = zero_matrix(FlintZZ, d, d)
+  G = zero_matrix(ZZ, d, d)
   #@show reps
   for z in reps
     Nnu = z * u * c
@@ -475,7 +576,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     for i in 1:d
       for j in 1:d
-        G[i, j] = FlintZZ(absolute_tr(alpha * trred(Babs[i] * f(Babs[j]))))
+        G[i, j] = ZZ(absolute_tr(alpha * trred(Babs[i] * f(Babs[j]))))
       end
     end
 
@@ -491,7 +592,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     #@show B
 
-    v = _short_vectors_gram_integral(G, FlintZZ(B), hard = true)
+    v = _short_vectors_gram_integral(Vector, G, ZZ(B), hard = true)
 
     #if min == degree(base_ring(A))
     for w in v
@@ -509,12 +610,76 @@ end
 
 ################################################################################
 #
-#  Conversion to AlgAss
+#  Conversion to StructureConstantAlgebra
 #
 ################################################################################
 
-function AlgAss(A::AlgQuat)
+function StructureConstantAlgebra(A::QuaternionAlgebra)
   K = base_ring(A)
-  B = AlgAss(K, A.mult_table)
+  B = StructureConstantAlgebra(K, A.mult_table)
   return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+end
+
+################################################################################
+#
+#  Zero-divisors for split algebras
+#
+################################################################################
+
+@doc raw"""
+    is_split_with_zero_divisor(A::QuaternionAlgebra) -> Bool, AssociativeAlgebraElem
+
+Given a quaternion algebra $A$, return whether $A$ is split together with an element,
+which is a zero-divisor in case $A$ is split.
+
+# Examples
+
+```jldoctest
+julia> A = quaternion_algebra(QQ, 1, 4);
+
+julia> is_split_with_zero_divisor(A)
+(true, 1 + i)
+
+julia> A = quaternion_algebra(QQ, -1, -1);
+
+julia> is_split_with_zero_divisor(A)
+(false, 0)
+```
+"""
+function is_split_with_zero_divisor(A::QuaternionAlgebra{<:Union{QQFieldElem, AbsSimpleNumFieldElem}})
+  if !is_split(A)
+    return false, zero(A)
+  end
+
+  _, i, j, k = basis(A)
+
+  # reduced norm is t^2 - a x^2 - b y^2 + ab z^2
+
+  # let's do it via norm norm equations
+
+  a, b = standard_form(A)
+
+  fl, asqrt = is_square_with_sqrt(a)
+  if fl
+    alpha = asqrt + i
+    @assert norm(alpha) == 0
+    return true, alpha
+  end
+
+  fl, bsqrt = is_square_with_sqrt(b)
+  if fl
+    alpha = bsqrt + j
+    @assert norm(alpha) == 0
+    return true, alpha
+  end
+
+  d = denominator(a)
+  aa = d^2 * a
+  K, = radical_extension(2, aa)
+  c = norm_equation(K, b)
+  # b = nr(c) = nr(x + y * sqrt(aa)) = x^2 - y^2 d^2 * a = x^2 - (y * d)^2 * a
+  alpha = coeff(c, 0) + coeff(c, 1)* d * i + j
+  @assert !is_zero(alpha)
+  @assert norm(alpha) == 0
+  return true, alpha
 end

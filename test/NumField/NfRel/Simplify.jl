@@ -31,4 +31,12 @@
   Kt, t = K["t"]
   L, = number_field([t^2 - a + 27])
   k, = @inferred absolute_simple_field(L, cached = false, simplify = true)
+
+  # #1257
+  R, x = polynomial_ring(QQ)
+  Q, = number_field(x)
+  S, y = polynomial_ring(Q)
+  K, = number_field([y])
+  b = absolute_primitive_element(K)
+  @test parent(b) === K # b could be anything in K
 end

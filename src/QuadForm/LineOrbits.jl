@@ -7,7 +7,7 @@
 # We iterate through K by adding 1 in the prime field case and by multiplying
 # with a primitive element in the general case.
 
-function LineEnumCtx(K::T, n) where {T}
+function LineEnumCtx(K::T, n::Int) where {T}
   a = primitive_element(K)
   v = Vector{elem_type(K)}(undef, n)
   for i in 1:n
@@ -16,7 +16,7 @@ function LineEnumCtx(K::T, n) where {T}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(q^n - 1, q - 1)
+  length = divexact(BigInt(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -29,7 +29,7 @@ function LineEnumCtx(K::T, n::Int) where {T <: Union{fpField, FpField}}
   depth = n + 1
   dim = n
   q = order(K)
-  length = divexact(q^n - 1, q - 1)
+  length = divexact(BigInt(q)^n - 1, q - 1)
   return LineEnumCtx{T, elem_type(T)}(K, a, dim, depth, v, length)
 end
 
@@ -45,12 +45,12 @@ function Base.show(io::IO, ::MIME"text/plain", P::LineEnumCtx)
 end
 
 function Base.show(io::IO, P::LineEnumCtx)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Iterator for vector lines")
   else
     io = pretty(io)
     print(io, "Iterator for Gr(1, $(dim(P))) over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), P.K)
+    print(terse(io), Lowercase(), P.K)
   end
 end
 
@@ -58,11 +58,25 @@ Base.length(P::LineEnumCtx) = P.length
 
 Base.eltype(::Type{LineEnumCtx{T, S}}) where {T, S} = Vector{S}
 
+base_field(P::LineEnumCtx) = P.K
+
 depth(P::LineEnumCtx) = P.depth
 
 dim(P::LineEnumCtx) = P.dim
 
 primitive_element(P::LineEnumCtx) = P.a
+
+function Base.rand(P::LineEnumCtx)
+  K = base_field(P)
+  n = dim(P)
+  v = rand(K, n)
+  while iszero(v)
+    v = rand(K, n)
+  end
+  j = findfirst(!iszero, v)
+  map!(x -> x*inv(v[j]), v, v)
+  return v
+end
 
 ################################################################################
 #
@@ -75,7 +89,7 @@ function next(P::LineEnumCtx)
   if depth(P) > 0
     i = dim(P)
     while true
-      @show i, P.v, depth(P)
+      #@show i, P.v, depth(P)
       if i == depth(P)
         P.v[i] = zero!(P.v[i])
         i = i - 1
@@ -106,7 +120,7 @@ function next(P::LineEnumCtx{T, S}) where {T <: Union{fpField, FpField}, S}
   if depth(P) > 0
     i = dim(P)
     while true
-      @show i, P.v, depth(P)
+      #@show i, P.v, depth(P)
       if i == depth(P)
         P.v[i] = zero!(P.v[i])
         i = i - 1
@@ -296,7 +310,7 @@ function line_orbits(G::Vector{FqPolyRepMatrix})
     let GFp = GFp
       fp = map_coefficients(a -> GFp(a.data), f, parent = GFpx)
     end
-    FF, aa = FlintFiniteField(fp, "aa", cached = false)
+    FF, aa = Native.finite_field(fp, "aa", cached = false)
     GG = Vector{dense_matrix_type(FF)}(undef, length(G))
     for i in 1:length(G)
       GG[i] = map_entries(b -> sum(coeff(b, i) * aa^i for i in 0:(d-1)), G[i])::dense_matrix_type(FF)
@@ -402,7 +416,7 @@ end
 
 function _normalize!(x::fpMatrix)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
@@ -460,7 +474,7 @@ end
 
 function _normalize!(x::MatElem{FpFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
@@ -519,9 +533,9 @@ end
 
 function _isequal(x::fqPolyRepMatrix, y::Vector{fqPolyRepFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:length(y)
-      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fqPolyRepFieldElem}, (Ref{fqPolyRepMatrix}, Int, Int), x, 0, i - 1)
+      el = mat_entry_ptr(x, 1, i)
       b = ccall((:fq_nmod_equal, libflint), Cint, (Ref{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), y[i], el, R)
       bb = Bool(b)
       if !bb
@@ -534,10 +548,10 @@ end
 
 function _muleq!(x::fqPolyRepMatrix, y::fqPolyRepFieldElem)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
-        el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fqPolyRepFieldElem}, (Ref{fqPolyRepMatrix}, Int, Int), x, i - 1, j - 1)
+        el = mat_entry_ptr(x, i, j)
         ccall((:fq_nmod_mul, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, el, y, R)
       end
     end
@@ -547,11 +561,11 @@ end
 
 function _normalize!(x::fqPolyRepMatrix)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
-      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fqPolyRepFieldElem}, (Ref{fqPolyRepMatrix}, Int, Int), x, 0, j - 1)
+      el = mat_entry_ptr(x, 1, j)
       b = ccall((:fq_nmod_is_zero, libflint), Cint, (Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, R)
       if !Bool(b)
         piv = j
@@ -564,8 +578,7 @@ function _normalize!(x::fqPolyRepMatrix)
     @assert piv != 0
 
     for j in (piv+1):ncols(x)
-      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fqPolyRepFieldElem},
-                 (Ref{fqPolyRepMatrix}, Int, Int), x, 0, j - 1)
+      el = mat_entry_ptr(x, 1, j)
       ccall((:fq_nmod_mul, libflint), Cvoid,
             (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}),
             el, el, ell, R)
@@ -616,11 +629,10 @@ end
 function _isless(x::Vector{fqPolyRepFieldElem}, y::fqPolyRepMatrix)
   d = length(x)
   R = base_ring(y)
-  @GC.preserve y begin
+  GC.@preserve y begin
     for i in 1:d
       xi = x[i]
-      el = ccall((:fq_nmod_mat_entry, libflint), Ptr{fqPolyRepFieldElem},
-                 (Ref{fqPolyRepMatrix}, Int, Int), y, 0, i - 1)
+      el = mat_entry_ptr(y, 1, i)
       b = ccall((:fq_nmod_equal, libflint), Cint,
                 (Ref{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), xi, el, R)
       if !Bool(b)
@@ -643,10 +655,9 @@ end
 
 function _isequal(x::FqPolyRepMatrix, y::Vector{FqPolyRepFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:length(y)
-      el = ccall((:fq_mat_entry, libflint), Ptr{FqPolyRepFieldElem},
-                 (Ref{FqPolyRepMatrix}, Int, Int), x, 0, i - 1)
+      el = mat_entry_ptr(x, 1, i)
       b = ccall((:fq_equal, libflint), Cint,
                 (Ref{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), y[i], el, R)
       bb = Bool(b)
@@ -660,11 +671,10 @@ end
 
 function _muleq!(x::FqPolyRepMatrix, y::FqPolyRepFieldElem)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
-        el = ccall((:fq_mat_entry, libflint), Ptr{FqPolyRepFieldElem},
-                   (Ref{FqPolyRepMatrix}, Int, Int), x, i - 1, j - 1)
+        el = mat_entry_ptr(x, i, j)
         ccall((:fq_mul, libflint), Cvoid,
               (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, el, y, R)
       end
@@ -675,12 +685,11 @@ end
 
 function _normalize!(x::FqPolyRepMatrix)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     piv = 0
     local ell
     for j in 1:ncols(x)
-      el = ccall((:fq_mat_entry, libflint), Ptr{FqPolyRepFieldElem},
-                 (Ref{FqPolyRepMatrix}, Int, Int), x, 0, j - 1)
+      el = mat_entry_ptr(x, 1, j)
       b = ccall((:fq_is_zero, libflint), Cint,
                 (Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, R)
       if !Bool(b)
@@ -695,8 +704,7 @@ function _normalize!(x::FqPolyRepMatrix)
     @assert piv != 0
 
     for j in (piv+1):ncols(x)
-      el = ccall((:fq_mat_entry, libflint), Ptr{FqPolyRepFieldElem},
-                 (Ref{FqPolyRepMatrix}, Int, Int), x, 0, j - 1)
+      el = mat_entry_ptr(x, 1, j)
       ccall((:fq_mul, libflint), Cvoid,
             (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, el, ell, R)
     end
@@ -750,11 +758,10 @@ end
 function _isless(x::Vector{FqPolyRepFieldElem}, y::FqPolyRepMatrix, tx::ZZRingElem = ZZRingElem(), ty::ZZRingElem = ZZRingElem())
   d = length(x)
   R = base_ring(y)
-  @GC.preserve y begin
+  GC.@preserve y begin
     for i in 1:d
       xi = x[i]
-      el = ccall((:fq_mat_entry, libflint), Ptr{FqPolyRepFieldElem},
-                 (Ref{FqPolyRepMatrix}, Int, Int), y, 0, i - 1)
+      el = mat_entry_ptr(y, 1, i)
       b = ccall((:fq_equal, libflint), Cint,
                 (Ref{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), xi, el, R)
       if !Bool(b)
@@ -784,10 +791,9 @@ end
 
 function _isequal(x::FqMatrix, y::Vector{FqFieldElem})
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:length(y)
-      el = ccall((:fq_mat_entry, libflint), Ptr{FqFieldElem},
-                 (Ref{FqMatrix}, Int, Int), x, 0, i - 1)
+      el = mat_entry_ptr(x, 1, i)
       b = ccall((:fq_default_equal, libflint), Cint,
                 (Ref{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), y[i], el, R)
       bb = Bool(b)
@@ -801,7 +807,7 @@ end
 
 function _muleq!(x::FqMatrix, y::FqFieldElem)
   R = base_ring(x)
-  @GC.preserve x begin
+  GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
         el = Nemo.fq_default_mat_entry_ptr(x, i, j)
@@ -817,7 +823,7 @@ function _normalize!(x::FqMatrix)
   R = base_ring(x)
   piv = 0
   local ell
-  @GC.preserve x begin
+  GC.@preserve x begin
     for j in 1:ncols(x)
       el = Nemo.fq_default_mat_entry_ptr(x, 1, j)
       b = ccall((:fq_default_is_zero, libflint), Cint,
@@ -889,7 +895,7 @@ end
 function _isless(x::Vector{FqFieldElem}, y::FqMatrix, tx::ZZRingElem = ZZRingElem(), ty::ZZRingElem = ZZRingElem())
   d = length(x)
   R = base_ring(y)
-  @GC.preserve y begin
+  GC.@preserve y begin
     for i in 1:d
       xi = x[i]
       el = Nemo.fq_default_mat_entry_ptr(y, 1, i)

@@ -1,7 +1,8 @@
 @testset "Group algebras" begin
   G = small_group(8, 4)
-  A = AlgGrp(FlintQQ, G)
-
+  A = GroupAlgebra(QQ, G)
+  @test sprint(show, MIME"text/plain"(), A) isa String
+  @test sprint(show, A) isa String
   @testset "Regular matrix algebra" begin
     B, BtoA = Hecke.regular_matrix_algebra(A)
 
@@ -16,11 +17,11 @@
   end
 
   @testset "Generators" begin
-    g, full_basis, v = gens(A, Val{true})
+    g, full_basis, v = gens(A, Val(true))
 
     @test length(full_basis) == dim(A)
 
-    M = zero_matrix(FlintQQ, dim(A), dim(A))
+    M = zero_matrix(QQ, dim(A), dim(A))
     for i = 1:dim(A)
       Hecke.elem_to_mat_row!(M, i, full_basis[i])
     end
@@ -72,5 +73,72 @@
         @test f(a + b) == f(a) + f(b)
       end
     end
+  end
+
+  # abelian groups
+
+  QG = group_algebra(QQ, abelian_group([2, 2]))
+  @test QG isa GroupAlgebra
+  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); cached = false)
+  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); sparse = true)
+
+  QG = Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
+  @test QG isa GroupAlgebra
+  @test QG !== Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
+
+  # test sparse arithmetic
+
+  let
+    G = SymmetricGroup(10)
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    @test dim(QG) == factorial(10)
+    #@test !is_commutative(QG) # needs https://github.com/Nemocas/AbstractAlgebra.jl/pull/1907
+    @test sprint(show, MIME"text/plain"(), QG) isa String
+    @test sprint(show, QG) isa String
+    for i in 1:10
+      a = rand(G)
+      b = rand(G)
+      c = a * b
+      d = b * a
+      aa = QG(a)
+      bb = QG(b)
+      cc = QG(c)
+      dd = QG(d)
+      @test aa * bb == cc
+      @test bb * aa == dd
+      @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
+      @test aa - bb == aa + (-bb)
+    end
+  end
+
+  let
+    G = abelian_group([2, 3, 5000])
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    @test dim(QG) == 2 * 3 * 5000
+    @test is_commutative(QG)
+    @test sprint(show, MIME"text/plain"(), QG) isa String
+    @test sprint(show, QG) isa String
+    for i in 1:10
+      a = rand(G)
+      b = rand(G)
+      c = a + b
+      d = b + a
+      aa = QG(a)
+      bb = QG(b)
+      cc = QG(c)
+      dd = QG(d)
+      @test aa * bb == cc
+      @test bb * aa == dd
+      @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
+      @test aa - bb == aa + (-bb)
+    end
+  end
+
+  let
+    G = abelian_group([2, 3, 0])
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    @test is_commutative(QG)
+    @test sprint(show, MIME"text/plain"(), QG) isa String
+    @test sprint(show, QG) isa String
   end
 end

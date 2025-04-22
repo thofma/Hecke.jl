@@ -1,86 +1,9 @@
-export spectrum, eigenspace, jordan_normal_form, rational_canonical_form,
-companion_matrix, common_eigenspaces, eigenspaces
-
-@doc raw"""
-    spectrum(M::MatElem{T}) where T <: FieldElem -> Dict{T, Int}
-
-Returns the spectrum of a matrix, i.e. the set of eigenvalues of $M$ with multiplicities.
-"""
-function spectrum(M::MatElem{T}) where T <: FieldElem
-  @assert is_square(M)
-  K = base_ring(M)
-  f = charpoly(M)
-  fac = factor(f) #Should use roots! But needs to take into account
-                  #multiplicities
-  D = Dict{elem_type(K), Int}()
-  for (g, v) in fac
-    if degree(g) > 1
-      continue
-    end
-    lambda = -divexact(coeff(g, 0), leading_coefficient(g))
-    D[lambda] = v
-  end
-  return D
-end
-
-@doc raw"""
-    spectrum(M::MatElem{T}, L) where T <: FieldElem -> Dict{T, Int}
-
-Returns the spectrum of a matrix over the field $L$, i.e. the set of eigenvalues of $M$ with multiplicities.
-"""
-function spectrum(M::MatElem{T}, L) where T <: FieldElem
-  @assert is_square(M)
-  M1 = change_base_ring(L, M)
-  return spectrum(M1)
-end
-
-eigvals(M::MatElem{T}) where T <: FieldElem = spectrum(M)
-eigvals(M::MatElem{T}, L) where T <: FieldElem = spectrum(M, L)
-
-@doc raw"""
-    eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right)
-      where T <: FieldElem -> Vector{MatElem{T}}
-
-Return a basis of the eigenspace of $M$ with respect to the eigenvalue $\lambda$.
-If side is `:right`, the right eigenspace is computed, i.e. vectors $v$ such that
-$Mv = \lambda v$. If side is `:left`, the left eigenspace is computed, i.e. vectors
-$v$ such that $vM = \lambda v$.
-"""
-function eigenspace(M::MatElem{T}, lambda::T; side::Symbol = :right) where T <: FieldElem
-  @assert is_square(M)
-  N = deepcopy(M)
-  for i = 1:ncols(N)
-    N[i, i] -= lambda
-  end
-  return kernel(N, side = side)[2]
-end
-
-@doc raw"""
-    eigenspace(M::MatElem{T}; side::Symbol = :right)
-      where T <: FieldElem -> Dict{T, MatElem{T}}
-
-Return a dictionary containing the eigenvalues of $M$ as keys and bases for the
-corresponding eigenspaces as values.
-If side is `:right`, the right eigenspaces are computed, if it is `:left` then the
-left eigenspaces are computed.
-
-See also `eigenspace`.
-"""
-function eigenspaces(M::MatElem{T}; side::Symbol = :right) where T<:Hecke.FieldElem
-
-  S = spectrum(M)
-  L = Dict{elem_type(base_ring(M)), typeof(M)}()
-  for k in keys(S)
-    push!(L, k => Hecke.vcat(Hecke.eigenspace(M, k, side = side)))
-  end
-  return L
-end
-
 function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
   i = 1
   E = rref(v)[2]
   w = v*M
   res = Hecke.cleanvect(E, w)
+  v = deepcopy(v) # the output should not "share" entries with the input
   while !iszero(res)
     v = vcat(v, w)
     E = vcat(E, res)
@@ -89,7 +12,7 @@ function closure_with_pol(v::MatElem{T}, M::MatElem{T}) where T <: FieldElem
     w = w*M
     res = Hecke.cleanvect(E, w)
   end
-  fl, c = Hecke.can_solve_with_solution(v, w, side = :left)
+  fl, c = can_solve_with_solution(v, w, side = :left)
   @assert fl
   return v, c
 end
@@ -203,18 +126,9 @@ function decompose_primary(M::MatElem{T}) where T <: FieldElem
   return L
 end
 
-function _copy_matrix_into_matrix(A::MatElem, i::Int, j::Int, B::MatElem)
-  for k in 0:nrows(B) - 1
-    for l in 0:ncols(B) - 1
-      setindex!(A, B[k+1, l+1], i+k, j+l)
-    end
-  end
-  return nothing
-end
-
 
 @doc raw"""
-    companion_matrix(p::PolyElem) -> MatElem
+    companion_matrix(p::PolyRingElem) -> MatElem
 
 Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
 
@@ -226,7 +140,7 @@ Returns the companion matrix of $p = \sum_{i=0}^n a_ix^i$, i.e. the matrix
     $-a_0$  $-a_1$  $-a_2$  $\dots$  $-a_{n-1}$
 
 """
-function companion_matrix(p::PolyElem)
+function companion_matrix(p::PolyRingElem)
   K = base_ring(p)
   p1 = divexact(p, leading_coefficient(p))
   M = zero_matrix(K, degree(p), degree(p))
@@ -239,7 +153,7 @@ function companion_matrix(p::PolyElem)
   return M
 end
 
-function jordan_block(p::PolyElem, e::Int)
+function jordan_block(p::PolyRingElem, e::Int)
   K = base_ring(p)
   M = zero_matrix(K, degree(p)*e, degree(p)*e)
   C = companion_matrix(p)
@@ -336,7 +250,7 @@ function maximal_vector(M::MatElem{T}, Kt, max_deg::Int = -1) where T <: FieldEl
 end
 
 #Finds a1, b1 such that a1*b1 = a*b/gcd(a, b) and a1, b1 are coprime
-function coprime_fact(a::PolyElem{T}, b::PolyElem{T}) where T <: FieldElem
+function coprime_fact(a::PolyRingElem{T}, b::PolyRingElem{T}) where T <: FieldElem
   d = gcd(a, b)
   if isone(d)
     return a, b
@@ -399,8 +313,8 @@ function find_invariant_complement(M::MatElem{T}, C::MatElem{T}) where T <: Fiel
       N[j, i] = ed[j, 1]
     end
   end
-  k, K = kernel(N, side = :left)
-  return view(K, 1:k, 1:ncols(K))*S
+  K = kernel(N, side = :left)
+  return K*S
 end
 
 function _closure(M::MatElem{T}, v::MatElem{T}, d::Int) where T <: FieldElem
@@ -422,7 +336,7 @@ end
 #The function returns a matrix representing the restriction of the linear map to the subspace
 function restriction(M::MatElem{T}, S::MatElem{T}) where T <: FieldElem
   TR = S*M
-  fl, R = Hecke.can_solve_with_solution(S, TR, side = :left)
+  fl, R = can_solve_with_solution(S, TR, side = :left)
   if !fl
     error("The subspace is not invariant!")
   end
@@ -501,7 +415,7 @@ function pre_factorization(pols::Vector)
   return factors
 end
 
-function factor_over(f::PolyElem{T}, l::Vector) where T <: FieldElem
+function factor_over(f::PolyRingElem{T}, l::Vector) where T <: FieldElem
   exps = Vector{Int}(undef, length(l))
   for i = 1:length(l)
     exps[i] = Int(valuation(f, l[i]))
@@ -646,7 +560,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
       gMW = Hecke._subst(g, MW)
       kernels = Vector{typeof(M)}()
       push!(kernels, zero_matrix(base_ring(MW), 0, ncols(gMW)))
-      d, K = kernel(gMW, side = :left)
+      K = kernel(gMW, side = :left)
       rref!(K)
       push!(kernels, K)
       M1 = gMW
@@ -656,7 +570,7 @@ function split_primary(L::Dict, M::MatElem{T}) where T <: FieldElem
           push!(kernels, identity_matrix(base_ring(MW), ncols(M1)))
           break
         end
-        d1, K = kernel(M1, side = :left)
+        K = kernel(M1, side = :left)
         rref!(K)
         push!(kernels, K)
       end
@@ -815,8 +729,8 @@ end
 function _intersect(A::Hecke.MatElem{T}, B::Hecke.MatElem{T}) where T <: Hecke.FieldElem
   n = Hecke.nrows(A)
   M = Hecke.vcat(A, B)
-  a, N = Hecke.kernel(M, side=:left)
-  return N[1:a, 1:n]*A
+  N = kernel(M, side = :left)
+  return view(N, 1:nrows(N), 1:n)*A
 end
 
 
@@ -848,7 +762,7 @@ function simultaneous_diagonalization(L::Vector{S}; check::Bool = true) where S 
 
   # Compute transformation matrix
   CE = common_eigenspaces(L, side = :left)
-  A =  Hecke.vcat(collect(values(CE)))
+  A = reduce(vcat, values(CE))
 
   # Compute diagonal forms
   D = [ zero_matrix(base_ring(L[1]), nrows(L[1]), ncols(L[1])) for i = 1:length(L) ]
@@ -879,7 +793,7 @@ function simultaneous_diagonalization(L::Vector{S}, K::W; check::Bool = true) wh
 end
 
 @doc raw"""
-    common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right)
+    common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :left)
       where T <: FieldElem -> Dict{Vector{T}, MatElem{T}}
 
 Return a dictionary containing vectors of eigenvalues of the matrices in `L` as
@@ -889,12 +803,12 @@ of a key and a value, then `v` is the eigenspace of `L[i]` w.r.t. the eigenvalue
 If side is `:right`, the right eigenspaces are computed, if it is `:left` then the
 left eigenspaces are computed.
 """
-function common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :right) where T <: FieldElem
-  eigs = [ eigenspaces(M, side = side) for M in L ]
+function common_eigenspaces(L::Vector{<: MatElem{T}}; side::Symbol = :left) where T <: FieldElem
+  eigs = [ eigenspaces(M; side = side) for M in L ]
   return intersect_eigenspaces([ Dict([x] => v for (x, v) in eig) for eig in eigs ], side = side)
 end
 
-function intersect_eigenspaces(L::Vector{Dict{Vector{T}, S}}; side::Symbol = :right) where S <: MatElem{T} where T <: FieldElem
+function intersect_eigenspaces(L::Vector{Dict{Vector{T}, S}}; side::Symbol = :left) where S <: MatElem{T} where T <: FieldElem
   @assert !isempty(L)
 
   n = length(L)

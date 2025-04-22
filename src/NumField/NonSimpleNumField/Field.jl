@@ -1,5 +1,3 @@
-export component, non_simple_extension
-
 ################################################################################
 #
 #  Constructor
@@ -7,7 +5,7 @@ export component, non_simple_extension
 ################################################################################
 
 @doc raw"""
-    number_field(f::Vector{PolyElem{<:NumFieldElem}}, s::String="_\$", check = true)
+    number_field(f::Vector{PolyRingElem{<:NumFieldElem}}, s::VarName="_\$", check = true)
                                               -> NumField, Vector{NumFieldElem}
 
 Given a list $f_1, \ldots, f_n$ of univariate polynomials in $K[x]$ over
@@ -20,7 +18,7 @@ some number field $K$, constructs the extension $K[x_1, \ldots, x_n]/(f_1(x_1),
 julia> Qx, x = QQ["x"];
 
 julia> K, a = number_field([x^2 - 2, x^2 - 3], "a")
-(Non-simple number field of degree 4 over QQ, NfAbsNSElem[a1, a2])
+(Non-simple number field of degree 4 over QQ, AbsNonSimpleNumFieldElem[a1, a2])
 ```
 """
 function _doc_stub_nf2 end
@@ -33,7 +31,7 @@ abstract type DocuDummy2 end
 number_field(::DocuDummy2)
 
 @doc (@doc _doc_stub_nf2)
-number_field(::Vector{<:PolyElem{<:Union{NumFieldElem, QQFieldElem}}}, ::String, check::Bool = true)
+number_field(::Vector{<:PolyRingElem{<:Union{NumFieldElem, QQFieldElem}}}, ::VarName, check::Bool = true)
 
 ################################################################################
 #
@@ -56,7 +54,7 @@ julia> Qx, x = QQ["x"];
 julia> K, (a1, a2) = number_field([x^2 - 2, x^2 - 3], "a");
 
 julia> basis(K)
-4-element Vector{NfAbsNSElem}:
+4-element Vector{AbsNonSimpleNumFieldElem}:
  1
  a1
  a2
@@ -71,19 +69,17 @@ basis(::NonSimpleNumField)
 #
 ################################################################################
 
-export defining_polynomials
-
 @doc raw"""
-    defining_polynomials(L::NonSimpleNumField) -> Vector{PolyElem}
+    defining_polynomials(L::NonSimpleNumField) -> Vector{PolyRingElem}
 
 Given a non-simple number field $L/K$, constructed as $L =
 K[x]/(f_1,\dotsc,f_r)$, return the vector containing the $f_i$'s.
 """
 defining_polynomials(::NonSimpleNumField)
 
-defining_polynomials(K::NfRelNS) = K.abs_pol
+defining_polynomials(K::RelNonSimpleNumField) = K.abs_pol
 
-defining_polynomials(K::NfAbsNS) = K.abs_pol
+defining_polynomials(K::AbsNonSimpleNumField) = K.abs_pol
 
 ################################################################################
 #
@@ -298,7 +294,7 @@ function simplified_simple_extension(L::NonSimpleNumField; cached::Bool = true, 
   return Ls, mp
 end
 
-function simplified_simple_extension(K::NfAbsNS; cached::Bool = true, is_abelian::Bool = false)
+function simplified_simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, is_abelian::Bool = false)
   OK = maximal_order(K)
   if is_abelian
     OS = _lll_CM(OK)

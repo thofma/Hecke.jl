@@ -27,9 +27,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_verbosity_scope(:NfOrd)
-add_assertion_scope(:NfOrd)
-
 include("NfOrd/Clgp/Types.jl")
 include("NfOrd/NfOrd.jl")
 include("NfOrd/LLL.jl")

@@ -1,54 +1,67 @@
-export group_algebra, galois_module, group
-
 ################################################################################
 #
 #  Basic field access
 #
 ################################################################################
 
-denominator_of_multiplication_table(A::AlgGrp{QQFieldElem}) = one(ZZ)
+denominator_of_structure_constant_table(A::GroupAlgebra{QQFieldElem}) = one(ZZ)
 
-base_ring(A::AlgGrp{T}) where {T} = A.base_ring::parent_type(T)
+denominator_of_multiplication_table(A::GroupAlgebra{QQFieldElem}) = one(ZZ)
 
-Generic.dim(A::AlgGrp) = size(multiplication_table(A, copy = false), 1)
+base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
-elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, R}}
+base_ring_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = parent_type(T)
 
-order_type(::AlgGrp{QQFieldElem, S, R}) where { S, R } = AlgAssAbsOrd{AlgGrp{QQFieldElem, S, R}, elem_type(AlgGrp{QQFieldElem, S, R})}
+Generic.dim(A::GroupAlgebra) = order(Int, group(A))
 
-order_type(::Type{AlgGrp{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{AlgGrp{QQFieldElem, S, R}, elem_type(AlgGrp{QQFieldElem, S, R})}
+elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 
-order_type(::AlgGrp{T, S, R}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
-order_type(::Type{AlgGrp{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+#order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{ZZRing, GroupAlgebra{QQFieldElem, S, R}}
+
+# order_type(::Type{S}, ::Type{T}) where {S <: GroupAlgebra, T} = AlgAssAbsOrd{T, S}
+
+order_type(::Type{GroupAlgebra{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
 
 @doc raw"""
-    group(A::AlgGrp) -> Group
+    group(A::GroupAlgebra) -> Group
 
 Returns the group defining $A$.
 """
-group(A::AlgGrp) = A.group
+group(A::GroupAlgebra) = A.group
 
-has_one(A::AlgGrp) = true
+has_one(A::GroupAlgebra) = true
 
-function (A::AlgGrp{T, S, R})(c::Vector{T}; copy::Bool = false) where {T, S, R}
-  length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgGrpElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
+function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
+  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
+  return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
 @doc raw"""
-    multiplication_table(A::AlgGrp; copy::Bool = true) -> Matrix{RingElem}
+    multiplication_table(A::GroupAlgebra; copy::Bool = true) -> Matrix{RingElem}
 
 Given a group algebra $A$ this function returns the multiplication table of
 $A$: If the function returns $M$ and the basis of $A$ is $g_1,\dots, g_n$ then
 it holds $g_i \cdot g_j = g_{M[i, j]}$.
 """
-function multiplication_table(A::AlgGrp; copy::Bool = true)
+function multiplication_table(A::GroupAlgebra; copy::Bool = true)
   if copy
     return deepcopy(A.mult_table)
   else
     return A.mult_table
   end
 end
+
+# get the underyling group operation, I wish this was part of the group interface
+
+_op(G::AbstractAlgebra.AdditiveGroup) = +
+_op(G::Group) = *
+_op(A::GroupAlgebra) = _op(group(A))
+
+_is_identity_elem(x::AbstractAlgebra.AdditiveGroupElem) = iszero(x)
+_is_identity_elem(x::GroupElem) = isone(x)
+
+_identity_elem(G::AbstractAlgebra.AdditiveGroup) = zero(G)
+_identity_elem(G::Group) = one(G)
 
 ################################################################################
 #
@@ -57,17 +70,29 @@ end
 ################################################################################
 
 @doc raw"""
-    group_algebra(K::Ring, G; op = *) -> AlgGrp
+    group_algebra(K::Ring, G::Group; cached::Bool = true) -> GroupAlgebra
 
-Returns the group ring $K[G]$.
-$G$ may be any set and `op` a group operation on $G$.
+Return the group algebra of the group $G$ over the ring $R$. Shorthand syntax
+for this construction is `R[G]`.
+
+# Examples
+
+```jldoctest
+julia> QG = group_algebra(QQ, small_group(8, 5))
+Group algebra
+  of generic group of order 8 with multiplication table
+  over rational field
+```
 """
-group_algebra(K::Ring, G; op = *) = AlgGrp(K, G, op = op)
+group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; cached)
 
-group_algebra(K::Ring, G::GrpAbFinGen) = AlgGrp(K, G)
-
-function group_algebra(K::Field, G; op = *)
-  A = AlgGrp(K, G, op = op)
+# one additional level of indirection to hide the non-user facing options
+# `op` and `sparse`.
+function _group_algebra(K::Ring, G; op = _op(G), sparse = _use_sparse_group_algebra(G), cached::Bool = true)
+  A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
+  if !(K isa Field)
+    return A
+  end
   if iszero(characteristic(K))
     A.issemisimple = 1
   else
@@ -76,20 +101,18 @@ function group_algebra(K::Field, G; op = *)
   return A
 end
 
-function group_algebra(K::Field, G::GrpAbFinGen)
-  A = group_algebra(K, G, op = +)
-  A.is_commutative = true
-  return A
-end
+#_group_algebra(K::Ring, G::FinGenAbGroup; op = +, cached::Bool = true, sparse::Bool = false) = GroupAlgebra(K, G, cached, sparse)
 
-@doc raw"""
-    (K::Ring)[G::Group] -> AlgGrp
-    (K::Ring)[G::GrpAbFinGen] -> AlgGrp
-
-Returns the group ring $K[G]$.
-"""
 getindex(K::Ring, G::Group) = group_algebra(K, G)
-getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
+getindex(K::Ring, G::FinGenAbGroup) = group_algebra(K, G)
+
+function _use_sparse_group_algebra(G)
+  if !is_finite(G)
+    return true
+  else
+    return order(G) >= 1000
+  end
+end
 
 ################################################################################
 #
@@ -97,27 +120,37 @@ getindex(K::Ring, G::GrpAbFinGen) = group_algebra(K, G)
 #
 ################################################################################
 
-is_commutative_known(A::AlgGrp) = (A.is_commutative != 0)
+is_commutative_known(A::GroupAlgebra) = (A.is_commutative != 0)
 
 @doc raw"""
-    is_commutative(A::AlgGrp) -> Bool
+    is_commutative(A::GroupAlgebra) -> Bool
 
 Returns `true` if $A$ is a commutative ring and `false` otherwise.
 """
-function is_commutative(A::AlgGrp)
+function is_commutative(A::GroupAlgebra)
   if is_commutative_known(A)
     return A.is_commutative == 1
   end
-  for i in 1:dim(A)
-    for j in 1:dim(A)
-      if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
-        A.is_commutative = 2
-        return false
+  if _is_sparse(A)
+    if is_abelian(group(A))
+      A.is_commutative = 1
+      return true
+    else
+      A.is_commutative = 2
+      return false
+    end
+  else
+    for i in 1:dim(A)
+      for j in 1:dim(A)
+        if multiplication_table(A, copy = false)[i, j] != multiplication_table(A, copy = false)[j, i]
+          A.is_commutative = 2
+          return false
+        end
       end
     end
+    A.is_commutative = 1
+    return true
   end
-  A.is_commutative = 1
-  return true
 end
 
 ################################################################################
@@ -126,13 +159,34 @@ end
 #
 ################################################################################
 
-function show(io::IO, A::AlgGrp)
-  compact = get(io, :compact, false)
-  if compact
-    print(io, "Group algebra of dimension ", dim(A), " over ", base_ring(A))
+function show(io::IO, ::MIME"text/plain", A::GroupAlgebra)
+  io = pretty(io)
+  println(io, "Group algebra")
+  print(io, Indent())
+  println(io, "of ", Lowercase(), group(A))
+  print(io, "over ", Lowercase(), base_ring(A))
+  print(io, Dedent())
+end
+
+function show(io::IO, A::GroupAlgebra)
+  io = pretty(io)
+  if is_terse(io)
+    print(io, "Group algebra of ")
+    if is_finite(group(A))
+      print(io, "dimension ", order(group(A)), " ")
+    else
+      print(io, "infinite dimension ")
+    end
   else
-    print(io, "Group algebra of group\n", group(A), "\nover\n", base_ring(A))
+    print(io, "Group algebra of group ")
+    if is_finite(group(A))
+      print(io, "of order ", order(group(A)), " ")
+    else
+      print(io, "of infinite order ")
+    end
+    io = terse(io)
   end
+  print(io, "over ", Lowercase(), base_ring(A))
 end
 
 ################################################################################
@@ -142,8 +196,8 @@ end
 ################################################################################
 
 # TODO: This is broken. I have to copy everything carefully by hand.
-#function Base.deepcopy_internal(A::AlgGrp, dict::IdDict)
-#  B = AlgGrp(base_ring(A), group(A))
+#function Base.deepcopy_internal(A::GroupAlgebra, dict::IdDict)
+#  B = GroupAlgebra(base_ring(A), group(A))
 #  for x in fieldnames(typeof(A))
 #    if x != :base_ring && x != :group && isdefined(A, x)
 #      setfield!(B, x, Base.deepcopy_internal(getfield(A, x), dict))
@@ -160,7 +214,7 @@ end
 #
 ###############################################################################
 
-function _assure_trace_basis(A::AlgGrp{T}) where {T}
+function _assure_trace_basis(A::GroupAlgebra{T}) where {T}
   if isdefined(A, :trace_basis_elem)
     return nothing
   end
@@ -179,39 +233,35 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    center(A::AlgGrp) -> AlgAss, AbsAlgAssMor
-
-Returns the center $C$ of $A$ and the inclusion $C \to A$.
-"""
-function center(A::AlgGrp{T}) where {T}
+function center(A::GroupAlgebra{T}) where {T}
   if isdefined(A, :center)
-    return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
+    return A.center::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}
   end
 
-  # Unlike for AlgAss, we should cache the centre even if A is commutative
+  # Unlike for StructureConstantAlgebra, we should cache the centre even if A is commutative
   # since it is of a different type, so A !== center(A)[1].
   # Otherwise center(A)[1] !== center(A)[1] which is really annoying.
-  B, mB = AlgAss(A)
+  B, mB = StructureConstantAlgebra(A)
   C, mC = center(B)
   mD = compose_and_squash(mB, mC)
   A.center = C, mD
 
   if isdefined(A, :decomposition)
-    idems = elem_type(C)[haspreimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
+    idems = elem_type(C)[has_preimage_with_preimage(mC, StoA(one(S)))[2] for (S, StoA) in A.decomposition]
     set_attribute!(C, :central_idempotents, idems)
   end
 
-  return (C, mD)::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
+  return (C, mD)::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}
 end
 
 ################################################################################
 #
-#  Conversion to AlgAss
+#  Conversion to StructureConstantAlgebra
 #
 ################################################################################
 
-function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
+function StructureConstantAlgebra(A::GroupAlgebra{T, S, R}) where {T, S, R}
+  @req _is_dense(A) "StructureConstantAlgebra only works for dense group algebras"
   K = base_ring(A)
   mult = Array{T, 3}(undef, dim(A), dim(A), dim(A))
   B = basis(A)
@@ -228,7 +278,7 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
       end
     end
   end
-  B = AlgAss(K, mult, one(A).coeffs, check = false)
+  B = StructureConstantAlgebra(K, mult, one(A).coeffs, check = false)
   B.is_commutative = A.is_commutative
   B.is_simple = A.is_simple
   B.issemisimple = A.issemisimple
@@ -238,8 +288,8 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
     B.center = (Z, compose_and_squash(AtoB, ZtoA))
   end
   if isdefined(A, :decomposition)
-    dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(B))}[]
-    for (C, CtoA) in A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
+    dec = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(B))}[]
+    for (C, CtoA) in A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
       CtoB = compose_and_squash(AtoB, CtoA)
       push!(dec, (C, CtoB))
     end
@@ -247,7 +297,7 @@ function AlgAss(A::AlgGrp{T, S, R}) where {T, S, R}
   end
   if isdefined(A, :maps_to_numberfields)
     NF = A.maps_to_numberfields::Vector{Tuple{_ext_type(T),_abs_alg_ass_to_nf_abs_mor_type(A)}}
-    fields_and_maps = Tuple{AnticNumberField,_abs_alg_ass_to_nf_abs_mor_type(B)}[]
+    fields_and_maps = Tuple{AbsSimpleNumField,_abs_alg_ass_to_nf_abs_mor_type(B)}[]
     for (K, AtoK) in NF
       BtoK = AbsAlgAssToNfAbsMor(B, K, AtoK.mat, AtoK.imat)
       push!(fields_and_maps, (K, BtoK))
@@ -305,23 +355,23 @@ function _merge_elts_in_gens!(left::Vector{Tuple{Int, Int}}, mid::Vector{Tuple{I
 end
 
 @doc raw"""
-    gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false})
-      -> Vector{AlgGrpElem}
+    gens(A::GroupAlgebra, return_full_basis::Val = Val(false))
+      -> Vector{GroupAlgebraElem}
 
 Returns a subset of `basis(A)`, which generates $A$ as an algebra over
 `base_ring(A)`.
-If `return_full_basis` is set to `Val{true}`, the function also returns a
-`Vector{AbsAlgAssElem}` containing a full basis consisting of monomials in
+If `return_full_basis` is set to `Val(true)`, the function also returns a
+`Vector{AbstractAssociativeAlgebraElem}` containing a full basis consisting of monomials in
 the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
 information on how these monomials are built. E. g.: If the function returns
 `g`, `full_basis` and `v`, then we have
 `full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
 """
-function gens(A::AlgGrp, return_full_basis::Type{Val{T}} = Val{false}) where T
+function gens(A::GroupAlgebra, ::Val{return_full_basis} = Val(false)) where return_full_basis
   G = group(A)
   group_gens = gens(G)
 
-  return_full_basis == Val{true} ? nothing : return map(A, group_gens)
+  !return_full_basis && return map(A, group_gens)
 
   full_group = elem_type(G)[ id(G) ]
   elts_in_gens = Vector{Tuple{Int, Int}}[ Tuple{Int, Int}[] ]
@@ -380,7 +430,7 @@ end
 # Assumes that Gal(K/k) == group(A), where k = base_field(K) and that group(A) is
 # abelian.
 # Returns a k-linear map from K to A and one from A to K
-function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgGrp)
+function _find_isomorphism(K::Union{ AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem} }, A::GroupAlgebra)
   G = group(A)
   aut = automorphism_list(K)
 
@@ -440,7 +490,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
 
   local KtoA
   let K = K, invM = invM, A = A
-    function KtoA(x::Union{ nf_elem, NfRelElem })
+    function KtoA(x::Union{ AbsSimpleNumFieldElem, RelSimpleNumFieldElem })
       t = zero_matrix(base_field(K), 1, degree(K))
       for i = 1:degree(K)
         t[1, i] = coeff(x, i - 1)
@@ -452,7 +502,7 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
 
   local AtoK
   let K = K, M = M
-    function AtoK(x::AlgGrpElem)
+    function AtoK(x::GroupAlgebraElem)
       t = matrix(base_field(K), 1, degree(K), coefficients(x))
       y = t*M
       return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
@@ -462,10 +512,10 @@ function _find_isomorphism(K::Union{ AnticNumberField, NfRel{nf_elem} }, A::AlgG
   return KtoA, AtoK
 end
 
-mutable struct NfToAlgGrpMor{S, T, U} <: Map{AnticNumberField, AlgGrp{S, T, U}, HeckeMap, AbsAlgAssMor}
-  K::AnticNumberField
-  mG::GrpGenToNfMorSet{NfToNfMor, AnticNumberField}
-  A::AlgGrp{S, T, U}
+mutable struct NfToAlgGrpMor{S, T, U} <: Map{AbsSimpleNumField, GroupAlgebra{S, T, U}, HeckeMap, AbsAlgAssMor}
+  K::AbsSimpleNumField
+  mG::GrpGenToNfMorSet{_AbsSimpleNumFieldAut, AbsSimpleNumField}
+  A::GroupAlgebra{S, T, U}
   M::QQMatrix
   Minv::QQMatrix
 
@@ -481,131 +531,131 @@ function show(io::IO, f::NfToAlgGrpMor)
   print(io, f.A)
 end
 
-function (f::NfToAlgGrpMor)(O::NfAbsOrd)
+function (f::NfToAlgGrpMor)(O::AbsNumFieldOrder)
   A = codomain(f)
   B = basis(O)
   G = group(A)
-  ZG = Order(A, collect(G))
+  ZG = order(A, collect(G))
   return ideal_from_lattice_gens(A, ZG, [f(elem_in_nf(b)) for b in B], :right)
 end
 
 automorphism_map(f::NfToAlgGrpMor) = f.mG
 
-function galois_module(K::AnticNumberField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
-  G = domain(aut)
-  A = FlintQQ[G]
-  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
-end
-
-function _galois_module(K::AnticNumberField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
-  G = domain(aut)
-  alpha = normal_basis_generator
-
-  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
-  for (i, g) in enumerate(G)
-    f = aut(g)
-    basis_alpha[A.group_to_base[g]] = f(alpha)
-  end
-
-  M = zero_matrix(base_field(K), degree(K), degree(K))
-  for i = 1:degree(K)
-    a = basis_alpha[i]
-    for j = 1:degree(K)
-      M[i, j] = coeff(a, j - 1)
-    end
-  end
-
-  invM = inv(M)
-
-  z = NfToAlgGrpMor{QQFieldElem, GrpGen, GrpGenElem}()
-  z.K = K
-  z.mG = aut
-  z.A = A
-  z.M = M
-  z.Minv = invM
-
-  return A, z
-end
-
-function galois_module(K::AnticNumberField, A::AlgGrp; normal_basis_generator = normal_basis(K))
-  G = group(A)
-  Au, mAu = automorphism_group(K)
-  fl, f = is_isomorphic_with_map(G, Au)
-  @assert fl
-  aut = Vector{NfToNfMor}(undef, order(G))
-  for g in G
-    aut[g[]] = mAu(f(g))
-  end
-  h = GrpGenToNfMorSet(G, aut, K)
-
-  return _galois_module(K, A, h, normal_basis_generator = normal_basis(K))
-end
-
-domain(f::NfToAlgGrpMor) = f.K
-
-codomain(f::NfToAlgGrpMor) = f.A
-
-function image(f::NfToAlgGrpMor, x::nf_elem)
-  K = domain(f)
-  @assert parent(x) === K
-  A = codomain(f)
-
-  t = zero_matrix(base_field(K), 1, degree(K))
-  for i = 1:degree(K)
-    t[1, i] = coeff(x, i - 1)
-  end
-  y = t*f.Minv
-  return A([ y[1, i] for i = 1:degree(K) ])
-end
-
-function preimage(f::NfToAlgGrpMor, x::AlgGrpElem)
-  K = domain(f)
-  t = matrix(base_field(K), 1, degree(K), coefficients(x))
-  y = t*f.M
-  v = QQFieldElem[ y[1, i] for i = 1:degree(K) ]
-  return K(v)
-end
-
-# Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
-# to Q[G] and one from Q[G] to K
-function _galois_module(K::AnticNumberField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
-  G = domain(to_automorphisms)
-  A = FlintQQ[G]
-  alpha = normal_basis_generator
-
-  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
-  for (i, g) in enumerate(G)
-    f = to_automorphisms(g)
-    basis_alpha[A.group_to_base[g]] = f(alpha)
-  end
-
-  M = zero_matrix(base_field(K), degree(K), degree(K))
-  for i = 1:degree(K)
-    a = basis_alpha[i]
-    for j = 1:degree(K)
-      M[i, j] = coeff(a, j - 1)
-    end
-  end
-
-  invM = inv(M)
-
-  function KtoA(x::nf_elem)
-    t = zero_matrix(base_field(K), 1, degree(K))
-    for i = 1:degree(K)
-      t[1, i] = coeff(x, i - 1)
-    end
-    y = t*invM
-    return A([ y[1, i] for i = 1:degree(K) ])
-  end
-
-  function AtoK(x::AlgGrpElem)
-    t = matrix(base_field(K), 1, degree(K), coefficients(x))
-    y = t*M
-    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
-  end
-
-  return A, KtoA, AtoK
-end
+#function galois_module(K::AbsSimpleNumField, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#  G = domain(aut)
+#  A = QQ[G]
+#  return _galois_module(K, A, aut, normal_basis_generator = normal_basis_generator)
+#end
+#
+#function _galois_module(K::AbsSimpleNumField, A, aut::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#  G = domain(aut)
+#  alpha = normal_basis_generator
+#
+#  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+#  for (i, g) in enumerate(G)
+#    f = aut(g)
+#    basis_alpha[A.group_to_base[g]] = f(alpha)
+#  end
+#
+#  M = zero_matrix(base_field(K), degree(K), degree(K))
+#  for i = 1:degree(K)
+#    a = basis_alpha[i]
+#    for j = 1:degree(K)
+#      M[i, j] = coeff(a, j - 1)
+#    end
+#  end
+#
+#  invM = inv(M)
+#
+#  z = NfToAlgGrpMor{QQFieldElem, MultTableGroup, MultTableGroupElem}()
+#  z.K = K
+#  z.mG = aut
+#  z.A = A
+#  z.M = M
+#  z.Minv = invM
+#
+#  return A, z
+#end
+#
+#function galois_module(K::AbsSimpleNumField, A::GroupAlgebra; normal_basis_generator = normal_basis(K))
+#  G = group(A)
+#  Au, mAu = automorphism_group(K)
+#  fl, f = is_isomorphic_with_map(G, Au)
+#  @assert fl
+#  aut = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}(undef, order(G))
+#  for g in G
+#    aut[g[]] = mAu(f(g))
+#  end
+#  h = GrpGenToNfMorSet(G, aut, K)
+#
+#  return _galois_module(K, A, h, normal_basis_generator = normal_basis(K))
+#end
+#
+#domain(f::NfToAlgGrpMor) = f.K
+#
+#codomain(f::NfToAlgGrpMor) = f.A
+#
+#function image(f::NfToAlgGrpMor, x::AbsSimpleNumFieldElem)
+#  K = domain(f)
+#  @assert parent(x) === K
+#  A = codomain(f)
+#
+#  t = zero_matrix(base_field(K), 1, degree(K))
+#  for i = 1:degree(K)
+#    t[1, i] = coeff(x, i - 1)
+#  end
+#  y = t*f.Minv
+#  return A([ y[1, i] for i = 1:degree(K) ])
+#end
+#
+#function preimage(f::NfToAlgGrpMor, x::GroupAlgebraElem)
+#  K = domain(f)
+#  t = matrix(base_field(K), 1, degree(K), coefficients(x))
+#  y = t*f.M
+#  v = QQFieldElem[ y[1, i] for i = 1:degree(K) ]
+#  return K(v)
+#end
+#
+## Returns the group algebra Q[G] where G = Gal(K/Q) and a Q-linear map from K
+## to Q[G] and one from Q[G] to K
+#function _galois_module(K::AbsSimpleNumField, to_automorphisms::Map = automorphism_group(K)[2]; normal_basis_generator = normal_basis(K))
+#  G = domain(to_automorphisms)
+#  A = QQ[G]
+#  alpha = normal_basis_generator
+#
+#  basis_alpha = Vector{elem_type(K)}(undef, dim(A))
+#  for (i, g) in enumerate(G)
+#    f = to_automorphisms(g)
+#    basis_alpha[A.group_to_base[g]] = f(alpha)
+#  end
+#
+#  M = zero_matrix(base_field(K), degree(K), degree(K))
+#  for i = 1:degree(K)
+#    a = basis_alpha[i]
+#    for j = 1:degree(K)
+#      M[i, j] = coeff(a, j - 1)
+#    end
+#  end
+#
+#  invM = inv(M)
+#
+#  function KtoA(x::AbsSimpleNumFieldElem)
+#    t = zero_matrix(base_field(K), 1, degree(K))
+#    for i = 1:degree(K)
+#      t[1, i] = coeff(x, i - 1)
+#    end
+#    y = t*invM
+#    return A([ y[1, i] for i = 1:degree(K) ])
+#  end
+#
+#  function AtoK(x::GroupAlgebraElem)
+#    t = matrix(base_field(K), 1, degree(K), coefficients(x))
+#    y = t*M
+#    return K(parent(K.pol)([ y[1, i] for i = 1:degree(K) ]))
+#  end
+#
+#  return A, KtoA, AtoK
+#end
 
 const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
                 reps=Vector{Vector{Rational{BigInt}}}[[[1],[1],[1],[1]],
@@ -623,7 +673,7 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 #
 ################################################################################
 
-mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGen}
+mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAssMorGen}
   domain::S
   codomain::T
   tempdomain::U
@@ -644,7 +694,7 @@ mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, AbsAlgAssMorGe
     z.tempcodomain2 = zero_matrix(base_ring(Minv), 1, ncols(Minv))
     z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:Threads.nthreads()]
     z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:Threads.nthreads()]
-
+    @assert nrows(Minv) == degree(base_ring(codomain)) * dim(codomain)
     z.Minv = Minv
     return z
   end
@@ -672,7 +722,7 @@ function image(f::AbsAlgAssMorGen, z)
   return codomain(f)(v * f.M)
 end
 
-(f::AbsAlgAssMorGen)(z::AbsAlgAssElem) = image(f, z)
+(f::AbsAlgAssMorGen)(z::AbstractAssociativeAlgebraElem) = image(f, z)
 
 function preimage(f::AbsAlgAssMorGen, z)
   @assert parent(z) === codomain(f)
@@ -695,13 +745,13 @@ end
 
 # Write M_n(K) as M_n(Q) if [K : Q] = 1
 # We use the "restricted scalar map" to model M_n(Q) -> M_n(K)
-function _as_full_matrix_algebra_over_Q(A::AlgMat{nf_elem})
+function _as_full_matrix_algebra_over_Q(A::MatAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1
-  B = matrix_algebra(FlintQQ, degree(A))
+  B = matrix_algebra(QQ, _matdeg(A))
 
   M = identity_matrix(K, dim(B))
-  Minv = identity_matrix(FlintQQ, dim(B))
+  Minv = identity_matrix(QQ, dim(B))
 
   return B, AbsAlgAssMorGen(B, A, M, Minv)
 end
@@ -716,14 +766,13 @@ end
 # Eric Jespers, Guilherme Leal and Antonio Paques
 # Central idempotents in the rational group algebra of a finite nilpotent group
 # https://www.worldscientific.com/doi/10.1142/S0219498803000398
-function _central_primitive_idempotents_abelian(A::AlgGrp)
+function _central_primitive_idempotents_abelian(A::GroupAlgebra)
   G = group(A)
   @assert base_ring(A) isa QQField
   @assert is_abelian(G)
   S = subgroups(G, fun = (x, m) -> sub(x, m, false))
   o = one(A)
   idem = elem_type(A)[]
-  push!(idem, 1//order(G) * sum(basis(A)))
   for (s, ms) in S
     Q, mQ = quo(G, ms, false)
     if !is_cyclic(Q)
@@ -741,24 +790,24 @@ function _central_primitive_idempotents_abelian(A::AlgGrp)
   return idem
 end
 
-function __decompose_abelian_group_algebra(A::AlgGrp)
+function __decompose_abelian_group_algebra(A::GroupAlgebra)
   T = elem_type(base_ring(A))
   idems = _central_primitive_idempotents_abelian(A)
-  res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
+  res = Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}()
   for idem in idems
-    S, StoA = subalgebra(A, idem, true)
+    S, StoA = _subalgebra(A, idem, true)
     S.is_simple = 1
     push!(res, (S, StoA))
   end
   return res
 end
 
-function decompose(A::AlgGrp)
+function decompose(A::GroupAlgebra)
   T = elem_type(base_ring(A))
   if isdefined(A, :decomposition)
-    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
+    return A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
   end
-  if group(A) isa GrpAbFinGen && (base_ring(A) isa QQField)
+  if group(A) isa FinGenAbGroup && (base_ring(A) isa QQField)
     res = __decompose_abelian_group_algebra(A)
     A.decomposition = res
     return res
@@ -777,14 +826,17 @@ function _compute_matrix_algebras_from_reps(A, res)
   idempotents = elem_type(A)[r[2](one(r[1])) for r in res]
   data = DefaultSmallGroupDB().db[smallid[1]][smallid[2]]
   Qx = Globals.Qx
+  if length(data.fields) == 0
+    return nothing
+  end
   for j in data.galrep
     if data.schur[j] != 1
       continue
     end
     field, _ = number_field(Qx(data.fields[j]), "a", cached = false)
     d = data.dims[j]
-    mats = dense_matrix_type(nf_elem)[ matrix(field, d, d, map(field, data.mod[j][k])) for k in 1:length(data.mod[j])]
-    D = Tuple{GrpGenElem, dense_matrix_type(nf_elem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
+    mats = dense_matrix_type(AbsSimpleNumFieldElem)[ matrix(field, d, d, map(field, data.mod[j][k])) for k in 1:length(data.mod[j])]
+    D = Tuple{MultTableGroupElem, dense_matrix_type(AbsSimpleNumFieldElem)}[(H[H.gens[i]], mats[i]) for i in 1:length(H.gens)]
     op = (x, y) -> (x[1] * y[1], x[2] * y[2])
     id = (Hecke.id(H), identity_matrix(field, d))
     cl = closure(D, op, id)
@@ -810,7 +862,7 @@ function _compute_matrix_algebras_from_reps(A, res)
 
     forward_matrix = zero_matrix(field, dim(B), dim(MB))
 
-    back_matrix = zero_matrix(FlintQQ, dim(B), dim(B))
+    back_matrix = zero_matrix(QQ, dim(B), dim(B))
 
     BinMB = elem_type(MB)[]
 
@@ -831,11 +883,11 @@ function _compute_matrix_algebras_from_reps(A, res)
   end
 end
 
-function _assert_has_refined_wedderburn_decomposition(A::AbsAlgAss)
+function _assert_has_refined_wedderburn_decomposition(A::AbstractAssociativeAlgebra)
   return false
 end
 
-function _assert_has_refined_wedderburn_decomposition(A::AlgGrp{<:Any, <:Any, <: Any})
+function _assert_has_refined_wedderburn_decomposition(A::GroupAlgebra{<:Any, <:Any, <: Any})
   get_attribute!(A, :refined_wedderburn) do
     dec = decompose(A)
     _compute_matrix_algebras_from_reps(A, dec)
@@ -863,33 +915,21 @@ function _coefficients_of_restricted_scalars!(y, x)
 end
 
 function __set_row!(y::QQMatrix, k, c)
-  GC.@preserve y
-  begin
-    for i in 1:length(c)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), y, k - 1, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, c[i])
-    end
-  end
-  nothing
+  return y[k, :] = c
 end
 
 function __set_row!(c::Vector{QQFieldElem}, y::QQMatrix, k)
-  GC.@preserve y
-  begin
+  GC.@preserve y begin
     for i in 1:length(c)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), y, k - 1, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ref{QQFieldElem}, Ptr{QQFieldElem}), c[i], t)
+      t = mat_entry_ptr(y, k, i)
+      set!(c[i], t)
     end
   end
-  nothing
+  return c
 end
 
 function __set!(y, k, c)
-  GC.@preserve y begin
-    t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), y, 0, k - 1)
-    ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, c)
-  end
-  nothing
+  y[1, k] = c
 end
 
 function _coefficients_of_restricted_scalars!(y::Vector, x)
@@ -925,13 +965,13 @@ function _absolute_basis(A)
   n = degree(K)
   B = Vector{elem_type(A)}()
   bK = basis(K)
-  for i in 1:n
-    for j in 1:m
+  for i in 1:m
+    for j in 1:n
       v = Vector{elem_type(K)}(undef, m)
       for k in 1:m
-        v[i] = zero(K)
+        v[k] = zero(K)
       end
-      v[j] = bK[j]
+      v[i] = bK[j]
       push!(B, A(v))
     end
   end
@@ -941,7 +981,7 @@ end
 function _evaluate_rep(el, d, rep)
   c = coefficients(el)
   A = parent(el)
-  z = zero_matrix(FlintQQ, d, d)
+  z = zero_matrix(QQ, d, d)
   for (g, M) in rep
     i = A.group_to_base[g]
     z += c[i] * M
@@ -960,7 +1000,7 @@ function _evaluate_rep(el, d, rep, f)
   return z
 end
 
-elem_type(::Type{NfMorSet{AnticNumberField}}) = NfToNfMor
+elem_type(::Type{NfMorSet{AbsSimpleNumField}}) = morphism_type(AbsSimpleNumField, AbsSimpleNumField)
 
 ################################################################################
 #
@@ -968,7 +1008,7 @@ elem_type(::Type{NfMorSet{AnticNumberField}}) = NfToNfMor
 #
 ################################################################################
 
-function opposite_algebra(A::AlgGrp{S, GrpAbFinGen, GrpAbFinGenElem}) where S
+function opposite_algebra(A::GroupAlgebra{S, FinGenAbGroup, FinGenAbGroupElem}) where S
   G = group(A)
   z = zero_matrix(base_ring(A), dim(A), dim(A))
   for g in G
@@ -978,7 +1018,7 @@ function opposite_algebra(A::AlgGrp{S, GrpAbFinGen, GrpAbFinGenElem}) where S
   return A, hom(A, A, z, z)
 end
 
-function opposite_algebra(A::AlgGrp{S}) where S
+function opposite_algebra(A::GroupAlgebra{S}) where S
   G = group(A)
   z = zero_matrix(base_ring(A), dim(A), dim(A))
   for g in G
@@ -994,7 +1034,7 @@ end
 #
 ################################################################################
 
-function is_free_s4_fabi(K::AnticNumberField)
+function is_free_s4_fabi(K::AbsSimpleNumField)
   if is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return true
@@ -1031,7 +1071,7 @@ function is_free_s4_fabi(K::AnticNumberField)
   return false
 end
 
-function is_free_a4_fabi(K::AnticNumberField)
+function is_free_a4_fabi(K::AbsSimpleNumField)
   if is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return true
@@ -1049,7 +1089,7 @@ function is_free_a4_fabi(K::AnticNumberField)
   return false
 end
 
-function is_free_a5_fabi(K::AnticNumberField)
+function is_free_a5_fabi(K::AbsSimpleNumField)
   if !is_tamely_ramified(K, ZZRingElem(2))
     println("fabi 1")
     return false
@@ -1068,7 +1108,7 @@ function is_free_a5_fabi(K::AnticNumberField)
   return true
 end
 
-function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
+function is_almost_maximally_ramified(K::AbsSimpleNumField, p::ZZRingElem)
   P = prime_decomposition(maximal_order(K), p)[1][1]
   G, mG = automorphism_group(K)
   D, mD = decomposition_group(K, P, mG) # this is the local Galois group
@@ -1083,7 +1123,7 @@ function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
     t += 1
   end
 
-  QG = group_algebra(FlintQQ, G)
+  QG = group_algebra(QQ, G)
   A, KtoA = galois_module(K)
   I = KtoA(maximal_order(K))
   assOrd = right_order(I)
@@ -1093,7 +1133,7 @@ function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
     HinG = [ mD(mH(h)) for h in H]
     for t in 1:length(ram_groups)
       if all(h in ram_groups[t] for h in HinG) && all(h in HinG for h in ram_groups[t + 1])
-        eH = sum(QG(h) for h in HinG) * QG(1//Order(H))
+        eH = sum(QG(h) for h in HinG) * QG(1//order(H))
         if !(eH in assOrd)
           return false
         end
@@ -1104,7 +1144,7 @@ function is_almost_maximally_ramified(K::AnticNumberField, p::ZZRingElem)
   return true
 end
 
-function hom(KG::AlgGrp, KH::AlgGrp, m::GrpGenToGrpGenMor)
+function hom(KG::GroupAlgebra, KH::GroupAlgebra, m::Map)
   @assert base_ring(KG) === base_ring(KH)
   K = base_ring(KG)
   M = zero_matrix(K, dim(KG), dim(KH))

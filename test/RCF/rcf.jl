@@ -1,5 +1,5 @@
 @testset "RCF" begin
-  Qx, x = polynomial_ring(FlintQQ)
+  Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
@@ -78,7 +78,7 @@
     @test Hecke.is_local_norm(r1, zk(p)) == b
   end
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
   B = Hecke.maximal_abelian_subfield(A, k)
@@ -90,7 +90,7 @@
   @test degree(A) == 2
   @test degree(intersect(A, cyclotomic_field(ClassField, 10))) == 1
 
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   k, a = number_field(x^2 - 10, "a");
   A = ray_class_field(35*maximal_order(k))
 
@@ -144,6 +144,9 @@
   @test length(subfields(r)) == 5
   @test length(subfields(r; degree = 2)) == 3
   @test is_central(r)
+  @test length(subfields(r; degree = 2, is_normal)) == 3
+  @test length(subfields(r; type = [2], is_normal)) == 3
+  @test length(subfields(r; is_normal = automorphism_list(base_field(r)))) == 5
 
   K = quadratic_field(5)[1]
   OK = maximal_order(K)
@@ -179,7 +182,7 @@ end
 end
 
 @testset "Some abelian extensions" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x - 1, "a")
   O = maximal_order(K)
   r, mr = Hecke.ray_class_groupQQ(O, 7872, true, 16)
@@ -187,7 +190,7 @@ end
   @test Hecke.has_quotient(r, [16])
   class_fields = []
   for s in ls;
-    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
+    C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}
     CC = number_field(C)
     if Hecke._is_conductor_minQQ(C, 16)
       push!(class_fields, CC)
@@ -330,6 +333,63 @@ end
 end
 
 @testset "Conductor fix" begin
-  flds = abelian_fields(QQ, [2, 2], ZZ(4225), only_real = true)
+  flds = abelian_extensions(QQ, [2, 2], ZZ(4225), only_real = true)
   @test length(flds) == 4
+end
+
+@testset "Kaiser-Lorenz" begin
+  Qx, x = QQ["x"]
+  f = x^6-x^5+x^4-2*x^3+x^2+1
+  k = splitting_field(f)
+  I = Hecke.lorenz_module(k, 12)
+  @test Hecke.is_consistent(I)
+end
+
+@testset "Enumerate by conductor" begin
+  l = abelian_extensions([3], collect(1:10^3); only_real = true)
+  @test length(l) == 159
+  l = abelian_extensions([2], collect(1:10^3))
+  @test length(l) == 607
+end
+
+let
+  Qx, x = QQ["x"]
+  K, a = rationals_as_number_field()
+  all_fields = abelian_extensions(K, [2], ZZRingElem(10)^3, absolutely_distinct = true)
+  OK = maximal_order(K)
+  lp = prime_ideals_up_to(OK, 10^3)
+  prime_cond = abelian_extensions(K, [2], ZZRingElem(10)^3, absolutely_distinct = true, conductors = lp)
+  @test length(prime_cond) == count(is_prime.(first.(conductor.(all_fields))))
+
+  # with target signatures
+  K, a = number_field(x^3 - x^2 - 2*x + 1, cached = false)
+  l = abelian_extensions(K, [2, 2], ZZRingElem(10)^12)
+  conds = Hecke.conductors_generic(K, [2, 2], ZZ(10)^12)
+  l = abelian_extensions(K, [2, 2], ZZRingElem(10)^12)
+  ll = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, conductors = conds)
+  @test length(l) == length(ll)
+  l1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)])
+  ll1 = abelian_extensions(K, [2, 2], ZZRingElem(10)^12, signatures = [(4, 4)], conductors = conds)
+  @test length(l1) == length(ll1)
+end
+
+let
+  # https://github.com/thofma/Hecke.jl/issues/1625
+  K, a = cyclotomic_field(7, :a)
+  P, x = polynomial_ring(K, :x)
+  L, = number_field(x^3 - 840539241479//13824*a^5 - 18036715089631//9216*a^4 - 18036715089631//9216*a^3 - 840539241479//13824*a^2 - 7320065966297//9216)
+  @test !is_abelian(L)
+end
+
+let
+  # fix hashing
+  K, = quadratic_field(-1)
+  OK = maximal_order(K)
+  C = ray_class_field(1*OK)
+  CC = ray_class_field(1*OK)
+  @test C == CC
+  @test hash(C) == hash(CC)
+  D = Dict()
+  D[C] = 1
+  @test haskey(D, CC)
 end

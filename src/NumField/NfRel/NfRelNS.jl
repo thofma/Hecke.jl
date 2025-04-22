@@ -1,41 +1,11 @@
 ################################################################################
 #
-#  NfRel/NfRelNS.jl : non-simple relative fields
-#
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
+#  RelSimpleNumField/RelNonSimpleNumField.jl : non-simple relative fields
 #
 ################################################################################
 
-export NfRelNS, simple_extension
-
 #= trivial example
-Qx, x = polynomial_ring(FlintQQ)
+Qx, x = polynomial_ring(QQ)
 QQ = number_field(x-1)[1]
 QQt, t = QQ["t"]
 K, gK = number_field([t^2-2, t^2-3, t^2-5, t^2-7])
@@ -49,7 +19,7 @@ mS\gens(K)[2]
 #this could be extended to arbitrary zero-dimensional quotients, but
 #I don't need this here.
 
-#mostly copied from NfRel I am afraid..
+#mostly copied from RelSimpleNumField I am afraid..
 
 ################################################################################
 #
@@ -57,14 +27,14 @@ mS\gens(K)[2]
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelNSElem{T}, dict::IdDict) where T
-  z = NfRelNSElem{T}(Base.deepcopy_internal(data(a), dict))
+function Base.deepcopy_internal(a::RelNonSimpleNumFieldElem{T}, dict::IdDict) where T
+  z = RelNonSimpleNumFieldElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
 end
 
 #julia's a^i needs copy
-function Base.copy(a::NfRelNSElem)
+function Base.copy(a::RelNonSimpleNumFieldElem)
   return parent(a)(a.data)
 end
 
@@ -74,25 +44,23 @@ end
 #
 ################################################################################
 
-order_type(K::NfRelNS{T}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(base_field(K))), NfRelNSElem{T}}
+order_type(::Type{RelNonSimpleNumField{T}}) where {T} = RelNumFieldOrder{T, fractional_ideal_type(order_type(parent_type(T))), RelNonSimpleNumFieldElem{T}}
 
-order_type(::Type{NfRelNS{T}}) where {T} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), NfRelNSElem{T}}
-
-function Nemo.iszero(a::NfRelNSElem)
+function Nemo.iszero(a::RelNonSimpleNumFieldElem)
   return iszero(data(a))
 end
 
-function Nemo.isone(a::NfRelNSElem)
+function Nemo.isone(a::RelNonSimpleNumFieldElem)
   return isone(data(a))
 end
 
-Nemo.zero(K::NfRelNS) = K(Nemo.zero(parent(K.pol[1])))
+Nemo.zero(K::RelNonSimpleNumField) = K(Nemo.zero(parent(K.pol[1])))
 
-Nemo.one(K::NfRelNS) = K(Nemo.one(parent(K.pol[1])))
+Nemo.one(K::RelNonSimpleNumField) = K(Nemo.one(parent(K.pol[1])))
 
-Nemo.one(a::NfRelNSElem) = one(a.parent)
+Nemo.one(a::RelNonSimpleNumFieldElem) = one(a.parent)
 
-function zero!(a::NfRelNSElem)
+function zero!(a::RelNonSimpleNumFieldElem)
   zero!(a.data)
   return a
 end
@@ -103,13 +71,13 @@ end
 #
 ################################################################################
 
-@inline base_field(a::NfRelNS{T}) where {T} = a.base_ring::parent_type(T)
+@inline base_field(a::RelNonSimpleNumField{T}) where {T} = a.base_ring::parent_type(T)
 
-@inline Nemo.data(a::NfRelNSElem) = a.data
+@inline Nemo.data(a::RelNonSimpleNumFieldElem) = a.data
 
-@inline Nemo.parent(a::NfRelNSElem{T}) where {T} = a.parent::NfRelNS{T}
+@inline Nemo.parent(a::RelNonSimpleNumFieldElem{T}) where {T} = a.parent::RelNonSimpleNumField{T}
 
-is_simple(a::NfRelNS) = false
+is_simple(a::RelNonSimpleNumField) = false
 
 ################################################################################
 #
@@ -117,7 +85,7 @@ is_simple(a::NfRelNS) = false
 #
 ################################################################################
 
-function reduce!(a::NfRelNSElem)
+function reduce!(a::RelNonSimpleNumFieldElem)
   q, a.data = divrem(a.data, parent(a).pol)
   return a
 end
@@ -128,7 +96,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, ::MIME"text/plain", a::NfRelNS)
+function Base.show(io::IO, ::MIME"text/plain", a::RelNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
   io = pretty(io)
@@ -140,23 +108,23 @@ function Base.show(io::IO, ::MIME"text/plain", a::NfRelNS)
   print(io, Dedent())
 end
 
-function Base.show(io::IO, a::NfRelNS)
+function Base.show(io::IO, a::RelNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Non-simple number field")
   else
     io = pretty(io)
     print(io, "Non-simple number field of degree ", degree(a))
-    print(IOContext(io, :supercompact => true), " over ", Lowercase(), base_field(a))
+    print(terse(io), " over ", Lowercase(), base_field(a))
   end
 end
 
-function AbstractAlgebra.expressify(a::NfRelNSElem; context = nothing)
+function AbstractAlgebra.expressify(a::RelNonSimpleNumFieldElem; context = nothing)
   return AbstractAlgebra.expressify(data(a), a.parent.S; context = context)
 end
 
-function Base.show(io::IO, a::NfRelNSElem)
+function Base.show(io::IO, a::RelNonSimpleNumFieldElem)
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
@@ -169,58 +137,57 @@ end
 function number_field(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Bool = false, check::Bool = true) where T
   length(S) == length(f) || error("number of names must match the number of polynomials")
   R = base_ring(f[1])
-  Rx, x = polynomial_ring(R, S)
-  K = NfRelNS(f, [f[i](x[i]) for i=1:length(f)], S)
+  Rx, x = polynomial_ring(R, S)::Tuple{mpoly_ring_type(T), Vector{mpoly_type(T)}}
+  K = RelNonSimpleNumField(f, [f[i](x[i]) for i=1:length(f)], S)
   if check
     if !_check_consistency(K)
       error("The fields are not linearly disjoint!")
     end
   end
-  return K, gens(K)
+  return K, gens(K)::Vector{elem_type(K)}
 end
-  
-function number_field(f::Vector{Generic.Poly{T}}, s::String="_\$"; cached::Bool = false, check::Bool = true) where T
-  sym = Symbol(s)
+
+function number_field(f::Vector{Generic.Poly{T}}, s::VarName="_\$"; cached::Bool = false, check::Bool = true) where T
   S = [Symbol("$s$i") for i=1:length(f)]
   return number_field(f, S, cached = cached, check = check)
 end
 
-function number_field(::Type{NfAbsNS}, L::NfRelNS{nf_elem})
+function number_field(::Type{AbsNonSimpleNumField}, L::RelNonSimpleNumField{AbsSimpleNumFieldElem})
   @assert degree(base_field(L)) == 1
   K = base_field(L)
   Kx, _ = polynomial_ring(K, "x", cached = false)
-  pols = QQPolyRingElem[map_coefficients(FlintQQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
+  pols = QQPolyRingElem[map_coefficients(QQ, to_univariate(Kx, x), parent = Hecke.Globals.Qx) for x in L.pol]
   return number_field(pols, cached = false, check = false)
 end
 
-Nemo.gens(K::NfRelNS) = [K(x) for x = gens(parent(K.pol[1]))]
+Nemo.gens(K::RelNonSimpleNumField{T}) where {T} = elem_type(K)[K(x) for x = gens(parent(K.pol[1]))::Vector{mpoly_type(T)}]
 
-function (K::NfRelNS{T})(a::Generic.MPoly{T}) where T
+function (K::RelNonSimpleNumField{T})(a::Generic.MPoly{T}) where T
   q, w = divrem(a, K.pol)
-  z = NfRelNSElem{T}(w)
+  z = RelNonSimpleNumFieldElem{T}(w)
   z.parent = K
   return z
 end
 
-function vars(E::NfRelNS)
+function vars(E::RelNonSimpleNumField)
   return E.S
 end
-function symbols(E::NfRelNS)
+function symbols(E::RelNonSimpleNumField)
   return vars(E)
 end
 
 
-(K::NfRelNS)(a::Integer) = K(parent(K.pol[1])(a))
+(K::RelNonSimpleNumField)(a::Integer) = K(parent(K.pol[1])(a))
 
-(K::NfRelNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
+(K::RelNonSimpleNumField)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
 
-(K::NfRelNS)(a::ZZRingElem) = K(parent(K.pol[1])(a))
+(K::RelNonSimpleNumField)(a::ZZRingElem) = K(parent(K.pol[1])(a))
 
-(K::NfRelNS)(a::QQFieldElem) = K(parent(K.pol[1])(a))
+(K::RelNonSimpleNumField)(a::QQFieldElem) = K(parent(K.pol[1])(a))
 
-(K::NfRelNS)() = zero(K)
+(K::RelNonSimpleNumField)() = zero(K)
 
-Nemo.gen(K::NfRelNS) = K(Nemo.gen(parent(K.pol[1])))
+Nemo.gen(K::RelNonSimpleNumField) = K(Nemo.gen(parent(K.pol[1])))
 
 ################################################################################
 #
@@ -228,8 +195,8 @@ Nemo.gen(K::NfRelNS) = K(Nemo.gen(parent(K.pol[1])))
 #
 ################################################################################
 
-function Base.:(-)(a::NfRelNSElem{T}) where T
-  z = NfRelNSElem{T}(-data(a))
+function Base.:(-)(a::RelNonSimpleNumFieldElem{T}) where T
+  z = RelNonSimpleNumFieldElem{T}(-data(a))
   z.parent = parent(a)
   return z
   #return parent(a)(-data(a))
@@ -241,41 +208,41 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::NfRelNSElem{T}
-  z = NfRelNSElem{T}(data(a) + data(b))
+function Base.:(+)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(+, a, b)::RelNonSimpleNumFieldElem{T}
+  z = RelNonSimpleNumFieldElem{T}(data(a) + data(b))
   z.parent = parent(a)
   return z
 end
 
-function Base.:(-)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
-  parent(a) == parent(b) || force_op(-, a, b)::NfRelNSElem{T}
-  z = NfRelNSElem{T}(data(a) - data(b))
+function Base.:(-)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(-, a, b)::RelNonSimpleNumFieldElem{T}
+  z = RelNonSimpleNumFieldElem{T}(data(a) - data(b))
   z.parent = parent(a)
   return z
 end
 
-function Base.:(*)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::NfRelNSElem{T}
+function Base.:(*)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(+, a, b)::RelNonSimpleNumFieldElem{T}
   return parent(a)(data(a) * data(b))
 end
 
-function Base.:(*)(a::NfRelNSElem{T}, b::Union{Int, ZZRingElem}) where {T}
-  z = NfRelNSElem{T}(data(a)*b)
+function Base.:(*)(a::RelNonSimpleNumFieldElem{T}, b::Union{Int, ZZRingElem}) where {T}
+  z = RelNonSimpleNumFieldElem{T}(data(a)*b)
   z.parent = parent(a)
   return z
 end
 
-function Base.:(//)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+function Base.:(//)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
   return div(a, b)
 end
 
-function Base.div(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
-  parent(a) == parent(b) || force_op(div, a, b)::NfRelNSElem{T}
+function Base.div(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
+  parent(a) == parent(b) || force_op(div, a, b)::RelNonSimpleNumFieldElem{T}
   return a*inv(b)
 end
 
-Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem; check::Bool = true) = div(a, b)
+Nemo.divexact(a::RelNonSimpleNumFieldElem, b::RelNonSimpleNumFieldElem; check::Bool = true) = div(a, b)
 
 ################################################################################
 #
@@ -284,7 +251,7 @@ Nemo.divexact(a::NfRelNSElem, b::NfRelNSElem; check::Bool = true) = div(a, b)
 ################################################################################
 #via julia
 
-function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
+function Base.:(^)(a::RelNonSimpleNumFieldElem{T}, b::Integer) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -302,7 +269,7 @@ function Base.:(^)(a::NfRelNSElem{T}, b::Integer) where T
   end
 end
 
-function Base.:(^)(a::NfRelNSElem{T}, b::ZZRingElem) where T
+function Base.:(^)(a::RelNonSimpleNumFieldElem{T}, b::ZZRingElem) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -326,7 +293,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(a::NfRelNSElem{T}, b::NfRelNSElem{T}) where T
+function Base.:(==)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where T
   parent(a) == parent(b) || force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
@@ -337,27 +304,22 @@ end
 #
 ################################################################################
 
-function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+function Nemo.mul!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
   mul!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
 end
 
-function Nemo.mul!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::Union{Int, ZZRingElem}) where {T}
+function Nemo.mul!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T}, b::Union{Int, ZZRingElem}) where {T}
   return a*b
 end
 
-function Nemo.addeq!(b::NfRelNSElem{T}, a::NfRelNSElem{T}) where {T}
-  addeq!(b.data, a.data)
-  return b
-end
-
-function Nemo.add!(c::NfRelNSElem{T}, a::NfRelNSElem{T}, b::NfRelNSElem{T}) where {T}
+function Nemo.add!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
   c.data = add!(c.data, a.data, b.data)
   return c
 end
 
-function Base.hash(a::NfRelNSElem{nf_elem}, b::UInt)
+function Base.hash(a::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, b::UInt)
   return hash(a.data, b)
 end
 
@@ -365,7 +327,7 @@ end
 # other stuff, trivia and non-trivia
 ###############################################################################
 
-function dot(v::Vector{T}, v1::Vector{ZZRingElem}) where T <: NfRelNSElem
+function dot(v::Vector{T}, v1::Vector{ZZRingElem}) where T <: RelNonSimpleNumFieldElem
   @assert length(v) == length(v1)
   el = data(v[1])*v1[1]
   for j = 2:length(v)
@@ -376,11 +338,11 @@ function dot(v::Vector{T}, v1::Vector{ZZRingElem}) where T <: NfRelNSElem
   return z
 end
 
-function Nemo.degree(K::NfRelNS)
+function Nemo.degree(K::RelNonSimpleNumField)
   return prod(Int[total_degree(x) for x=K.pol])
 end
 
-function basis(K::NfRelNS)
+function basis(K::RelNonSimpleNumField)
   k = base_field(K)
   kxy = parent(K.pol[1])
   B = Vector{elem_type(K)}(undef, degree(K))
@@ -394,7 +356,7 @@ function basis(K::NfRelNS)
   return B
 end
 
-function coefficients(a::NfRelNSElem; copy = false)
+function coefficients(a::RelNonSimpleNumFieldElem; copy = false)
   L = parent(a)
   K = base_field(L)
   v = Vector{elem_type(K)}(undef, degree(L))
@@ -407,7 +369,7 @@ function coefficients(a::NfRelNSElem; copy = false)
   return v
 end
 
-function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
+function basis_matrix(a::Vector{RelNonSimpleNumFieldElem{T}}) where {T <: NumFieldElem}
   @assert length(a) > 0
   K = parent(a[1])
   M = zero_matrix(base_field(K), length(a), degree(K))
@@ -417,7 +379,7 @@ function basis_matrix(a::Vector{NfRelNSElem{T}}) where {T <: NumFieldElem}
   return M
 end
 
-function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelNSElem{T}) where T
+function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::RelNonSimpleNumFieldElem{T}) where T
   K = parent(a)
   for j=1:ncols(M)
     M[i, j] = zero(base_field(K))
@@ -428,7 +390,7 @@ function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelNSElem{T}) where T
   return nothing
 end
 
-function elem_from_mat_row(K::NfRelNS{T}, M::Generic.Mat{T}, i::Int) where T
+function elem_from_mat_row(K::RelNonSimpleNumField{T}, M::Generic.Mat{T}, i::Int) where T
   a = K()
   t = K()
   b = basis(K)
@@ -438,7 +400,7 @@ function elem_from_mat_row(K::NfRelNS{T}, M::Generic.Mat{T}, i::Int) where T
   return a
 end
 
-function monomial_to_index(i::Int, a::NfRelNSElem)
+function monomial_to_index(i::Int, a::RelNonSimpleNumFieldElem)
   K = parent(a)
   n = ngens(K)
   idx = a.data.exps[1, i]
@@ -449,7 +411,7 @@ function monomial_to_index(i::Int, a::NfRelNSElem)
   return Int(idx+1)
 end
 
-function SRow(a::NfRelNSElem)
+function SRow(a::RelNonSimpleNumFieldElem)
   sr = SRow(base_field(parent(a)))
   for i=1:length(a.data)
     push!(sr.pos, monomial_to_index(i, a))
@@ -461,7 +423,7 @@ function SRow(a::NfRelNSElem)
   return sr
 end
 
-function SRow(a::NfRelElem)
+function SRow(a::RelSimpleNumFieldElem)
   sr = SRow(base_field(parent(a)))
   for i=0:length(a.data)
     c = coeff(a.data, i)
@@ -473,7 +435,7 @@ function SRow(a::NfRelElem)
   return sr
 end
 
-function minpoly_dense(a::NfRelNSElem)
+function minpoly_dense(a::RelNonSimpleNumFieldElem)
   K = parent(a)
   n = degree(K)
   k = base_field(K)
@@ -485,9 +447,9 @@ function minpoly_dense(a::NfRelNSElem)
   i = 2
   while true
     if n % (i-1) == 0 && rank(M) < i
-      N = nullspace(sub(M, 1:i, 1:ncols(M))')
-      @assert N[1] == 1
-      f = polynomial_ring(k,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
+      N = kernel(sub(M, 1:i, 1:ncols(M))', side = :right)
+      @assert ncols(N) == 1
+      f = polynomial_ring(k,"t", cached=false)[1]([N[j, 1] for j=1:i])
       return f*inv(leading_coefficient(f))
     end
     z *= a
@@ -496,17 +458,7 @@ function minpoly_dense(a::NfRelNSElem)
   end
 end
 
-function Base.Matrix(a::SMat)
-  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
-  for i = 1:nrows(a)
-    for (k, c) = a[i]
-      A[i, k] = c
-    end
-  end
-  return A
-end
-
-function minpoly_sparse(a::NfRelNSElem)
+function minpoly_sparse(a::RelNonSimpleNumFieldElem)
   K = parent(a)
   n = degree(K)
   k = base_field(K)
@@ -521,7 +473,7 @@ function minpoly_sparse(a::NfRelNSElem)
   f = kt()
   while true
     if n % i == 0
-      fl, so = can_solve_with_solution(M, sz)
+      fl, so = can_solve_with_solution(M, sz) # sparse
       if fl
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
@@ -543,11 +495,11 @@ function minpoly_sparse(a::NfRelNSElem)
   end
 end
 
-function minpoly(a::NfRelNSElem{T}) where T
+function minpoly(a::RelNonSimpleNumFieldElem{T}) where T
   return minpoly_sparse(a)::AbstractAlgebra.Generic.Poly{T}
 end
 
-function inv(a::NfRelNSElem)
+function inv(a::RelNonSimpleNumFieldElem)
   if iszero(a)
     error("division by zero")
   end
@@ -560,18 +512,18 @@ function inv(a::NfRelNSElem)
   return -z*inv(coeff(f, 0))
 end
 
-function charpoly(a::NfRelNSElem)
+function charpoly(a::RelNonSimpleNumFieldElem)
   f = minpoly(a)
   return f^div(degree(parent(a)), degree(f))
 end
 
-function norm(a::NfRelNSElem)
+function norm(a::RelNonSimpleNumFieldElem)
   f = minpoly(a)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
 
-function assure_has_traces(L::NfRelNS{T}) where T
+function assure_has_traces(L::RelNonSimpleNumField{T}) where T
   if isdefined(L, :basis_traces)
     return nothing
   end
@@ -594,7 +546,7 @@ function assure_has_traces(L::NfRelNS{T}) where T
   return nothing
 end
 
-function tr(a::NfRelNSElem)
+function tr(a::RelNonSimpleNumFieldElem)
   K = parent(a)
   assure_has_traces(K)
   traces = K.basis_traces
@@ -614,11 +566,11 @@ function tr(a::NfRelNSElem)
     end
     res += temp
   end
-  @hassert :NfRel 9001 res == tr_via_minpoly(a)
+  @hassert :RelSimpleNumField 9001 res == tr_via_minpoly(a)
   return res
 end
 
-function tr_via_minpoly(a::NfRelNSElem)
+function tr_via_minpoly(a::RelNonSimpleNumFieldElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
@@ -654,13 +606,13 @@ function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
   return evaluate(res, new_vals)
 end
 
-function rand(L::NfRelNS, rg::AbstractUnitRange)
+function rand(L::RelNonSimpleNumField, rg::AbstractUnitRange)
   B = absolute_basis(L)
   return rand(B, rg)
 end
 
 
-function mod(a::NfRelNSElem{T}, p::ZZRingElem) where T
+function mod(a::RelNonSimpleNumFieldElem{T}, p::ZZRingElem) where T
   K = parent(a)
   b = data(a)
   Kx = parent(b)
@@ -669,7 +621,7 @@ function mod(a::NfRelNSElem{T}, p::ZZRingElem) where T
 end
 
 #TODO: also provide a sparse version
-function representation_matrix(a::NfRelNSElem)
+function representation_matrix(a::RelNonSimpleNumFieldElem)
   K = parent(a)
   b = basis(K)
   k = base_field(K)
@@ -682,9 +634,9 @@ function representation_matrix(a::NfRelNSElem)
   return M
 end
 
-@inline ngens(K::NfRelNS) = length(K.pol)
+@inline number_of_generators(K::RelNonSimpleNumField) = length(K.pol)
 
-function primitive_element(K::NfRelNS)
+function primitive_element(K::RelNonSimpleNumField)
   g = gens(K)
   n = length(g)
   if n == 1
@@ -706,7 +658,7 @@ function primitive_element(K::NfRelNS)
   return pe
 end
 
-function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true) where {T}
+function simple_extension(K::RelNonSimpleNumField{T}; simplified::Bool = false, cached = true) where {T}
   if simplified
     return simplified_simple_extension(K; cached = cached)
   end
@@ -750,10 +702,10 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
   end
   N = zero_matrix(k, 1, degree(K))
   b1 = basis(Ka)
-  emb = Vector{NfRelElem{T}}(undef, n)
+  emb = Vector{RelSimpleNumFieldElem{T}}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
-    s = solve(transpose(M), transpose(N))
+    s = solve(transpose(M), transpose(N); side = :right)
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
       emb[i] += b1[j]*s[j, 1]
@@ -764,8 +716,8 @@ function simple_extension(K::NfRelNS{T}; simplified::Bool = false, cached = true
 end
 
 
-#trivia, missing in NfRel
-function basis(K::NfRel)
+#trivia, missing in RelSimpleNumField
+function basis(K::RelSimpleNumField)
   a = gen(K)
   z = one(K)
   b = elem_type(K)[z, a]
@@ -775,19 +727,19 @@ function basis(K::NfRel)
   return b
 end
 
-function (K::NfRelNS)(a::Vector)
+function (K::RelNonSimpleNumField)(a::Vector)
   return dot(a, basis(K))
 end
 
-function Base.one(a::NfRelElem)
+function Base.one(a::RelSimpleNumFieldElem)
   return one(parent(a))
 end
 
-function Base.copy(a::NfRelElem)
+function Base.copy(a::RelSimpleNumFieldElem)
   return parent(a)(a.data)
 end
 
-function Nemo.discriminant(K::NfRelNS)
+function Nemo.discriminant(K::RelNonSimpleNumField)
   kx, _ = polynomial_ring(base_field(K), "x", cached = false)
   p = [to_univariate(kx, x) for x = K.pol]
   d = discriminant(p[1])
@@ -799,12 +751,12 @@ function Nemo.discriminant(K::NfRelNS)
   return d
 end
 
-function Nemo.discriminant(K::NfRelNS, ::QQField)
+function Nemo.discriminant(K::RelNonSimpleNumField, ::QQField)
   d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
   return d
 end
 
-absolute_discriminant(K::NfRelNS) = discriminant(K, FlintQQ)
+absolute_discriminant(K::RelNonSimpleNumField) = discriminant(K, QQ)
 
 ################################################################################
 #
@@ -812,13 +764,24 @@ absolute_discriminant(K::NfRelNS) = discriminant(K, FlintQQ)
 #
 ################################################################################
 
-function (K::QQField)(a::NfRelNSElem)
+function (K::QQField)(a::RelNonSimpleNumFieldElem)
   d = data(a)
   @req is_constant(d) "Element must be rational"
   return QQ(constant_coefficient(d))
 end
 
-function is_rational(a::NfRelNSElem)
+function is_rational(a::RelNonSimpleNumFieldElem)
   d = data(a)
   return is_constant(d) && is_rational(constant_coefficient(d))
 end
+#
+#################################################################################
+##
+##  Integral multiplicator
+##
+#################################################################################
+#
+#function _integral_multiplicator(a::RelNonSimpleNumFieldElem)
+#  f = minpoly(a)
+#  return lcm(ZZRingElem[_integral_multiplicator(c) for c in coefficients(f)])
+#end

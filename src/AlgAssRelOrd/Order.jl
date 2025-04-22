@@ -1,7 +1,3 @@
-export is_commutative, trred_matrix, any_order, pmaximal_overorder, phereditary_overorder, is_maximal
-
-elem_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdElem{S, T, U}
-
 elem_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdElem{S, T, U}
 
 ideal_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
@@ -9,7 +5,7 @@ ideal_type(::AlgAssRelOrd{S, T, U}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
 ideal_type(::Type{AlgAssRelOrd{S, T, U}}) where {S, T, U} = AlgAssRelOrdIdl{S, T, U}
 
 @doc raw"""
-    algebra(O::AlgAssRelOrd) -> AbsAlgAss
+    algebra(O::AlgAssRelOrd) -> AbstractAssociativeAlgebra
 
 Returns the algebra which contains $O$.
 """
@@ -18,11 +14,13 @@ algebra(O::AlgAssRelOrd) = O.algebra
 _algebra(O::AlgAssRelOrd) = algebra(O)
 
 @doc raw"""
-    base_ring(O::AlgAssRelOrd) -> Union{NfAbsOrd, NfRelOrd}
+    base_ring(O::AlgAssRelOrd) -> Union{AbsNumFieldOrder, RelNumFieldOrder}
 
 Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an $R$-order.
 """
 base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
+
+base_ring_type(::Type{<:AlgAssRelOrd{S, T, U}}) where {S, T, U} = order_type(base_ring_type(U))
 
 @doc raw"""
     is_commutative(O::AlgAssRelOrd) -> Bool
@@ -38,38 +36,38 @@ is_commutative(O::AlgAssRelOrd) = is_commutative(algebra(O))
 ################################################################################
 
 @doc raw"""
-    Order(A::AbsAlgAss{<: NumFieldElem}, M::Generic.Mat{<: NumFieldElem})
+    order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, M::Generic.Mat{<: NumFieldElem})
       -> AlgAssRelOrd
 
 Returns the order of $A$ with basis matrix $M$.
 """
-function Order(A::AbsAlgAss{S}, M::Generic.Mat{S}) where S <: NumFieldElem
+function order(A::AbstractAssociativeAlgebra{S}, M::Generic.Mat{S}) where S <: NumFieldElem
   return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
 end
 
 @doc raw"""
-    Order(A::AbsAlgAss{<: NumFieldElem}, M::PMat{<: NumFieldElem, T})
+    order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, M::PMat{<: NumFieldElem, T})
       -> AlgAssRelOrd
 
 Returns the order of $A$ with basis pseudo-matrix $M$.
 """
-function Order(A::AbsAlgAss{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
+function order(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
   return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
 end
 
 @doc raw"""
-    Order(A::AbsAlgAss{<: NumFieldElem}, B::Vector{<: AbsAlgAssElem{ <: NumFieldElem}})
+    order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, B::Vector{<: AbstractAssociativeAlgebraElem{ <: NumFieldElem}})
       -> AlgAssRelOrd
 
 Returns the order of $A$ with basis $B$.
 """
-function Order(A::AbsAlgAss{S}, B::Vector{ <: AbsAlgAssElem{S} }) where { S <: NumFieldElem }
+function order(A::AbstractAssociativeAlgebra{S}, B::Vector{ <: AbstractAssociativeAlgebraElem{S} }) where { S <: NumFieldElem }
   @assert length(B) == dim(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:dim(A)
     elem_to_mat_row!(M, i, B[i])
   end
-  return Order(A, M)
+  return order(A, M)
 end
 ################################################################################
 #
@@ -252,12 +250,12 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, V}, short::Type{Val{U}} = Val{false}) where {S, T, U, V}
+function _check_elem_in_order(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, V}, ::Val{short} = Val(false)) where {S, T, V, short}
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
   b_pmat = basis_pmatrix(O, copy = false)
-  if short == Val{true}
+  if short
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
         return false
@@ -279,12 +277,12 @@ function _check_elem_in_order(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, V}, sho
 end
 
 @doc raw"""
-    in(a::AbsAlgAssElem, O::AlgAssRelOrd) -> Bool
+    in(a::AbstractAssociativeAlgebraElem, O::AlgAssRelOrd) -> Bool
 
 Returns `true` if the algebra element $a$ is in $O$ and `false` otherwise.
 """
-function in(a::AbsAlgAssElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U}
-  return _check_elem_in_order(a, O, Val{true})
+function in(a::AbstractAssociativeAlgebraElem{S}, O::AlgAssRelOrd{S, T, U}) where {S, T, U}
+  return _check_elem_in_order(a, O, Val(true))
 end
 
 ################################################################################
@@ -294,11 +292,11 @@ end
 ################################################################################
 
 @doc raw"""
-    denominator(a::AbsAlgAssElem, O::AlgAssRelOrd) -> ZZRingElem
+    denominator(a::AbstractAssociativeAlgebraElem, O::AlgAssRelOrd) -> ZZRingElem
 
 Returns $d\in \mathbb Z$ such that $d \cdot a \in O$.
 """
-function denominator(a::AbsAlgAssElem, O::AlgAssRelOrd)
+function denominator(a::AbstractAssociativeAlgebraElem, O::AlgAssRelOrd)
   t = zero_matrix(base_ring(algebra(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, copy = false)
@@ -371,8 +369,14 @@ end
 Returns `true` if $R$ and $S$ are equal and `false` otherwise.
 """
 function ==(R::AlgAssRelOrd, S::AlgAssRelOrd)
-  algebra(R) != algebra(S) && return false
-  return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
+  algebra(R) !== algebra(S) && return false
+  Rpmat = basis_pmatrix(R, copy = false)
+  Spmat = basis_pmatrix(S, copy = false)
+  return _spans_subset_of_pseudohnf(Rpmat, Spmat; shape = :lowerleft) && _spans_subset_of_pseudohnf(Spmat, Rpmat; shape = :lowerleft)
+end
+
+function Base.hash(R::AlgAssRelOrd, h::UInt)
+  return hash(algebra(R), h)
 end
 
 ################################################################################
@@ -435,16 +439,16 @@ end
 #
 ################################################################################
 
-function is_maximal_order_known(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+function is_maximal_order_known(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldElem }
   return isdefined(A, :maximal_order)
 end
 
 @doc raw"""
-    maximal_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
+    maximal_order(A::AbstractAssociativeAlgebra{ <: NumFieldElem }) -> AlgAssRelOrd
 
 Returns a maximal $R$-order of $A$ where $R$ is the maximal order of the base ring of $A$.
 """
-function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+function maximal_order(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldElem }
   if isdefined(A, :maximal_order)
     return A.maximal_order::order_type(A)
   end
@@ -452,7 +456,7 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   # So far ..._absolute is usually faster for linear, quadratic and cubic base fields,
   # but of course there are exceptions.
   # Feel free to adjust this if-condition.
-  if base_field(base_ring(A)) == FlintQQ && degree(base_ring(A)) <= 3
+  if base_field(base_ring(A)) == QQ && degree(base_ring(A)) <= 3
     O = maximal_order_via_absolute(A)
   else
     O = maximal_order_via_relative(A)
@@ -461,21 +465,21 @@ function maximal_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
   return O::order_type(A)
 end
 
-function maximal_order_via_absolute(A::AbsAlgAss{T}) where { T <: NumFieldElem }
-  B, BtoA = AlgAss(A)
-  C, CtoB = restrict_scalars(B, FlintQQ)
+function maximal_order_via_absolute(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldElem }
+  B, BtoA = StructureConstantAlgebra(A)
+  C, CtoB = restrict_scalars(B, QQ)
   OC = maximal_order(C)
   M = zero_matrix(base_ring(A), degree(OC), dim(A))
   for i = 1:degree(OC)
     elem_to_mat_row!(M, i, BtoA(CtoB(elem_in_algebra(basis(OC, copy = false)[i], copy = false))))
   end
   PM = sub(pseudo_hnf(pseudo_matrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
-  O = Order(A, PM)
+  O = order(A, PM)
   O.is_maximal = 1
   return O
 end
 
-function maximal_order_via_relative(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+function maximal_order_via_relative(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldElem }
   O = any_order(A)
   return maximal_order(O)
 end
@@ -491,7 +495,7 @@ function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
   if isdefined(A, :maximal_order)
     # Check whether O \subseteq OO
     OO = A.maximal_order::AlgAssRelOrd{S, T, U}
-    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false), :lowerleft)
+    if _spans_subset_of_pseudohnf(basis_pmatrix(O, copy = false), basis_pmatrix(OO, copy = false); shape = :lowerleft)
       return OO
     end
   end
@@ -515,22 +519,22 @@ function maximal_order(O::AlgAssRelOrd{S, T, U}) where {S, T, U}
 end
 
 @doc raw"""
-    any_order(A::AbsAlgAss{ <: NumFieldElem }) -> AlgAssRelOrd
+    any_order(A::AbstractAssociativeAlgebra{ <: NumFieldElem }) -> AlgAssRelOrd
 
 Returns any $R$-order of $A$ where $R$ is the maximal order of the base ring of $A$.
 """
-function any_order(A::AbsAlgAss{T}) where { T <: NumFieldElem }
+function any_order(A::AbstractAssociativeAlgebra{T}) where { T <: NumFieldElem }
   K = base_ring(A)
   return any_order(A, maximal_order(K))
 end
 
 @doc raw"""
-    any_order(A::AbsAlgAss{ <: NumFieldElem}, R::Union{ NfAbsOrd, NfRelOrd })
+    any_order(A::AbstractAssociativeAlgebra{ <: NumFieldElem}, R::Union{ AbsNumFieldOrder, RelNumFieldOrder })
       -> AlgAssRelOrd
 
 Returns any $R$-order of $A$.
 """
-function any_order(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
+function any_order(A::AbstractAssociativeAlgebra{T}, R::Union{ AbsNumFieldOrder, RelNumFieldOrder }) where { T <: NumFieldElem }
   K = base_ring(A)
   d = _denominator_of_mult_table(A, R)
 
@@ -541,11 +545,11 @@ function any_order(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <:
   end
   PM = pseudo_matrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)
-  O = Order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
+  O = order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
   return O
 end
 
-function _denominator_of_mult_table(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem }
+function _denominator_of_mult_table(A::AbstractAssociativeAlgebra{T}, R::Union{ AbsNumFieldOrder, RelNumFieldOrder }) where { T <: NumFieldElem }
   l = denominator(multiplication_table(A, copy = false)[1, 1, 1], R)
   for i = 1:dim(A)
     for j = 1:dim(A)
@@ -557,7 +561,7 @@ function _denominator_of_mult_table(A::AbsAlgAss{T}, R::Union{ NfAbsOrd, NfRelOr
   return l
 end
 
-_denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where { T <: NumFieldElem } = ZZRingElem(1)
+_denominator_of_mult_table(A::GroupAlgebra{T}, R::Union{ AbsNumFieldOrder, RelNumFieldOrder }) where { T <: NumFieldElem } = ZZRingElem(1)
 
 # TODO: This is type unstable
 # Requires that O is maximal and A = K^(n\times n) for a number field K.
@@ -569,10 +573,10 @@ _denominator_of_mult_table(A::AlgGrp{T}, R::Union{ NfAbsOrd, NfRelOrd }) where {
 # for an ideal a of O.
 # See Bley, Johnston "Computing generators of free modules over orders in group
 # algebras", Prop. 5.1.
-function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_trafo::Type{Val{T}} = Val{false}) where T
+function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, ::Val{with_transform} = Val(false)) where {with_transform}
   A = algebra(O)
-  @assert A isa AlgMat
-  n = degree(A)
+  @assert A isa MatAlgebra
+  n = _matdeg(A)
   K = coefficient_ring(A)
 
   # Build a matrix with the first columns of basis elements of O
@@ -597,7 +601,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   fl = false
 
   if make_free
-    fl, beta = is_principal(a)
+    fl, beta = is_principal_with_data(a)
   end
 
   if fl
@@ -621,11 +625,11 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, with_tra
   PN = pseudo_matrix(N, deepcopy(basis_pmatrix(O, copy = false).coeffs))
   PN = pseudo_hnf(PN, :lowerleft)
 
-  niceorder = Order(A, PN)
+  niceorder = order(A, PN)
   niceorder.isnice = true
   niceorder.nice_order_ideal = a
 
-  if with_trafo == Val{true}
+  if with_transform
     return niceorder, A(iM)
   else
     return niceorder
@@ -642,7 +646,7 @@ function nice_order(O::AlgAssRelOrd{S, T, U}; cached::Bool = true) where {S, T, 
   if cached && isdefined(O, :nice_order)
     return O.nice_order::Tuple{typeof(O), elem_type(U)}
   else
-    sO, A = _simple_maximal_order(O, true, Val{true})
+    sO, A = _simple_maximal_order(O, true, Val(true))
     if cached
       O.nice_order = sO, A
     end
@@ -707,13 +711,13 @@ is_maximal_known(O::AlgAssRelOrd) = O.is_maximal != 0
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 4.12
 @doc raw"""
-    phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+    phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
       -> AlgAssRelOrd
 
 Returns an order $O'$ containing $O$ such that the localization $O'_p$ is
 hereditary where $p$ is a prime ideal of the base ring of $O$.
 """
-function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }; return_pradical::Type{Val{T}} = Val{false}) where T
+function phereditary_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; return_pradical::Val{return_pradical_bool} = Val(false)) where return_pradical_bool
   d = discriminant(O)
   prad = pradical(O, p)
   OO = left_order(prad)
@@ -727,7 +731,7 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdI
       break
     end
   end
-  if return_pradical == Val{true}
+  if return_pradical_bool
     return OO, prad
   else
     return OO
@@ -735,11 +739,11 @@ function phereditary_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdI
 end
 
 # See Friedrichs: "Berechnung von Maximalordnungen über Dedekindringen", Algorithmus 3.16
-function _pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+function _pmaximal_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
   return _pmaximal_overorder(O, pradical(O, p), p)
 end
 
-function _pmaximal_overorder(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ NfAbsOrdIdl, NfRelOrdIdl }; strict_containment::Bool = false)
+function _pmaximal_overorder(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; strict_containment::Bool = false)
   d = discriminant(O)
   primes = _prime_ideals_over(O, prad, p, strict_containment = strict_containment)
   for P in primes
@@ -756,15 +760,15 @@ function _pmaximal_overorder(O::AlgAssRelOrd, prad::AlgAssRelOrdIdl, p::Union{ N
 end
 
 @doc raw"""
-    pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
+    pmaximal_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
       -> AlgAssRelOrd
 
 Returns an order $O'$ containing $O$ such that the index $(O'':O')$ of any maximal
 order $O''$ containing $O$ is not divisible by $p$ where $p$ is a prime ideal
 of the base ring of $O$.
 """
-function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ NfAbsOrdIdl, NfRelOrdIdl })
-  O, prad = phereditary_overorder(O, p, return_pradical = Val{true})
+function pmaximal_overorder(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal })
+  O, prad = phereditary_overorder(O, p; return_pradical = Val(true))
   return _pmaximal_overorder(O, prad, p, strict_containment = true)
 end
 
@@ -780,7 +784,7 @@ function +(a::AlgAssRelOrd{S, T, U}, b::AlgAssRelOrd{S, T, U}) where { S, T, U}
   bB = basis_pmatrix(b, copy = false)
   d = degree(a)
   PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
-  return Order(algebra(a), PM)
+  return order(algebra(a), PM)
 end
 
 ################################################################################
@@ -794,12 +798,12 @@ end
 # Assumes that O is a maximal order in Mat_{n\times n}(K).
 # See Bley, Johnson: "Computing generators of free modules over orders in
 # group algebras", section 6.
-function enum_units(O::AlgAssRelOrd, g::NfAbsOrdIdl)
+function enum_units(O::AlgAssRelOrd, g::AbsNumFieldOrderIdeal)
   A = algebra(O)
-  @assert A isa AlgMat
-  @assert degree(A)^2 == dim(A)
+  @assert A isa MatAlgebra
+  @assert _matdeg(A)^2 == dim(A)
 
-  n = degree(A)
+  n = _matdeg(A)
 
   K = base_ring(A)
   OK = base_ring(O)
@@ -927,7 +931,7 @@ end
 # of A with respect to conjugation, that is, any maximal order of A is conjugated
 # to one of them and no two returned orders are conjugated.
 # Only works for algebras fulfilling the Eichler condition.
-representatives_of_maximal_orders(A::AlgAss{nf_elem}) = representatives_of_maximal_orders(maximal_order(A))
+representatives_of_maximal_orders(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}) = representatives_of_maximal_orders(maximal_order(A))
 
 function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)

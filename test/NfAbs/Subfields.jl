@@ -1,5 +1,5 @@
 @testset "Fixed fields" begin
-  Qx,x = FlintQQ["x"]
+  Qx,x = QQ["x"]
 
   @testset "FixedField: absolute" begin
     f = x^8+236*x^6+12158*x^4+201788*x^2+779689
@@ -12,7 +12,7 @@
     @test degree(fixed_field(K,[s,t])[1]) == 2
   end
 
-  @testset "FixedField: realtiv" begin
+  @testset "FixedField: relative" begin
     K,b     = number_field(x-1,"b")
     Ky,y    = K["y"]
     f = y^8+236*y^6+12158*y^4+201788*y^2+779689
@@ -27,7 +27,7 @@
 end
 
 @testset "Subfields" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f_1 = x^6 + 108;
   K_1,_ = number_field(f_1);
   #(C_2)^3
@@ -445,4 +445,11 @@ end
     @test length(subfields(K)) == 4
     @test length(Hecke.principal_subfields(K)) == 4
   end
+end
+
+let
+  Qx, x = QQ[:x]
+  L, a = number_field(x^4 + 6*x^2 + 4, :a)
+  LL, b = number_field(x^2 + 1, :b)
+  @test_throws ArgumentError Hecke.subfield(L, [b])
 end

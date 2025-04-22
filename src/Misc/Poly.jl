@@ -1,9 +1,3 @@
-
-export rational_reconstruction, farey_lift, div, leading_coefficient,
-       trailing_coefficient, constant_coefficient, factor_mod_pk,
-       factor_mod_pk_init, hensel_lift, rres, rresx,
-       coefficients, cyclotomic_polynomial, is_cyclotomic_polynomial
-
 import Nemo: fmpz_mod_ctx_struct
 
 
@@ -15,7 +9,7 @@ Apply `rational_reconstruction` to each coefficient of $a$, resulting
 in either a fail (return (false, s.th.)) or (true, g) for some rational
 polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
-function induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem; parent=polynomial_ring(FlintQQ, parent(a).S, cached = false)[1])
+function induce_rational_reconstruction(a::ZZPolyRingElem, M::ZZRingElem; parent=polynomial_ring(QQ, parent(a).S, cached = false)[1])
   b = parent()
   for i=0:degree(a)
     fl, x,y = rational_reconstruction(coeff(a, i), M)
@@ -54,7 +48,7 @@ end
 
 function _inv_compose_mod(z::ZZModPolyRingElem)
   r = reverse(z)
-  ccall((:fmpz_mod_poly_inv_series_newton, libflint), Nothing,
+  ccall((:fmpz_mod_poly_inv_series, libflint), Nothing,
         (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), r, r, length(r), z.parent.base_ring.ninv)
   return r
 end
@@ -62,7 +56,7 @@ end
 function precomp_compose_mod(y::ZZModPolyRingElem, z::ZZModPolyRingElem)
   zinv = _inv_compose_mod(z)
   nr = Int(iroot(degree(z), 2)) + 1
-  A = zero_matrix(FlintZZ, nr, degree(z))
+  A = zero_matrix(ZZ, nr, degree(z))
   ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
         (Ref{ZZMatrix}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), A, y, z, zinv, y.parent.base_ring.ninv)
   return A, zinv
@@ -110,7 +104,7 @@ end
 ################################################################################
 function factor_to_dict(a::fmpz_poly_factor)
   res = Dict{ZZPolyRingElem,Int}()
-  Zx,x = polynomial_ring(FlintZZ, "x", cached = false)
+  Zx,x = polynomial_ring(ZZ, "x", cached = false)
   for i in 1:a._num
     f = Zx()
     ccall((:fmpz_poly_set, libflint), Nothing, (Ref{ZZPolyRingElem}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
@@ -119,7 +113,7 @@ function factor_to_dict(a::fmpz_poly_factor)
   return res
 end
 
-function factor_to_array(a::fmpz_poly_factor; parent::ZZPolyRing = polynomial_ring(FlintZZ, "x", cached = false)[1])
+function factor_to_array(a::fmpz_poly_factor; parent::ZZPolyRing = polynomial_ring(ZZ, "x", cached = false)[1])
   res = Vector{Tuple{ZZPolyRingElem, Int}}()
   Zx = parent
   for i in 1:a._num
@@ -259,6 +253,14 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p:
   ## is essentially f and f would be a legal answer. Probably reduced mod p^k
   ## with all non-negative coefficients
   ## for now:
+  if is_one(g)
+    h = mod(h, p^k)
+    return g, h
+  elseif is_one(h)
+    g = mod(g, p^k)
+    return g, h
+  end
+
   @assert !iszero(a) && !iszero(b)
   a = lift(parent(g), a)
   b = lift(parent(g), b)
@@ -323,12 +325,12 @@ end
 ################################################################################
 
 @doc raw"""
-    rres(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
+    reduced_resultant(f::ZZPolyRingElem, g::ZZPolyRingElem) -> ZZRingElem
 
 The reduced resultant of $f$ and $g$,
 that is a generator for the ideal $(f, g) \cap Z$.
 """
-function rres(f::ZZPolyRingElem, g::ZZPolyRingElem)
+function reduced_resultant(f::ZZPolyRingElem, g::ZZPolyRingElem)
   return rres_bez(f,g)
 end
 
@@ -342,7 +344,7 @@ end
 
 function rres_bez(f::ZZPolyRingElem, g::ZZPolyRingElem)
   Nemo.check_parent(f, g)
-  Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+  Qx = polynomial_ring(QQ, "x", cached = false)[1]
   f1 = Qx(f)
   g1 = Qx(g)
   d, q, w = gcdx(f1, g1)
@@ -384,7 +386,7 @@ $\deg u < \deg g$ and $\deg v < \deg f$.
 function rresx(f::ZZPolyRingElem, g::ZZPolyRingElem)
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  Qx = polynomial_ring(FlintQQ, "x", cached = false)[1]
+  Qx = polynomial_ring(QQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(f), Qx(g))
   l = lcm(denominator(q), denominator(w))
   Zx = parent(f)
@@ -418,7 +420,7 @@ function n_positive_roots(f::ZZPolyRingElem; multiplicities::Bool = false)
   if !multiplicities
     ffp = derivative(ff)
     g = gcd(ff, ffp)
-    if isconstant(g)
+    if is_constant(g)
       return _n_positive_roots_sf(f)
     else
       return n_positive_roots(divexact(ff, g))::Int
@@ -446,7 +448,7 @@ function _n_positive_roots_sf(f::ZZPolyRingElem)
   # Here a = 0
   _, f = remove(f, gen(parent(f)))
 
-  if isconstant(f)
+  if is_constant(f)
     # f = x^n * a, so no positive root
     return 0
   end
@@ -465,7 +467,7 @@ function n_real_roots(f::ZZPolyRingElem)
   ff = Hecke.Globals.Qx(f)
   ffp = derivative(ff)
   g = gcd(ff, ffp)
-  if isconstant(g)
+  if is_constant(g)
     return _n_real_roots_sf(f)
   else
     return n_real_roots(divexact(ff, g))::Int
@@ -486,7 +488,7 @@ function _n_real_roots_sf(f::ZZPolyRingElem)
   return _number_of_sign_changes(evminf) - _number_of_sign_changes(evinf)
 end
 
-function n_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{nf_elem}[])
+function n_real_roots(f::PolyRingElem{<:NumFieldElem}, P; sturm_sequence = PolyRingElem{AbsSimpleNumFieldElem}[])
   if length(sturm_sequence) == 0
     s = Hecke.sturm_sequence(f)
   else
@@ -499,11 +501,11 @@ function n_real_roots(f::PolyElem{<:NumFieldElem}, P; sturm_sequence = PolyElem{
 end
 
 @doc raw"""
-    n_positive_roots(f::PolyElem, P::InfPlc; multiplicities::Bool) -> true
+    n_positive_roots(f::PolyRingElem, P::InfPlc; multiplicities::Bool) -> true
 
 Return the number of positive roots of the polynomial $f$ at the real place $P$.
 """
-function n_positive_roots(f::PolyElem{nf_elem}, P::NumFieldEmb; multiplicities::Bool = false)
+function n_positive_roots(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFieldEmb; multiplicities::Bool = false)
   fsq = factor_squarefree(f)
   p = 0
   for (g, e) in fsq
@@ -512,12 +514,13 @@ function n_positive_roots(f::PolyElem{nf_elem}, P::NumFieldEmb; multiplicities::
   return p
 end
 
-function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec::Int = 32)
+function _n_positive_roots_sqf(f::PolyRingElem{AbsSimpleNumFieldElem}, P::NumFieldEmb; start_prec::Int = 32)
   # We could do better this by not computing the roots.
   # We could just use the Sturm sequence as before.
   prec = start_prec
   while true
-    coeffs = Vector{acb}(undef, length(f))
+    prec > 2^10 && error("Something wrong here")
+    coeffs = Vector{AcbFieldElem}(undef, length(f))
     c = evaluate(coeff(f, 0), P, prec)
     coeffs[1] = c
     C = parent(c)
@@ -527,7 +530,7 @@ function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec:
     end
     g = Cx(coeffs)
     try
-      rts = roots(g)
+      rts = roots(g, initial_prec = div(prec, 2))
     catch e
       e isa ErrorException && startswith(e.msg, "unable to isolate all roots") || rethrow()
       prec *= 2
@@ -542,14 +545,13 @@ function _n_positive_roots_sqf(f::PolyElem{nf_elem}, P::NumFieldEmb; start_prec:
   end
 end
 
-
 ################################################################################
 #
 #  Squarefree factorization for QQPolyRingElem
 #
 ################################################################################
 
-function charpoly_mod(M::Generic.Mat{nf_elem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
+function charpoly_mod(M::Generic.Mat{AbsSimpleNumFieldElem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
   K = base_ring(M)
   p = p_start
   Kt, t = polynomial_ring(K, cached = false)
@@ -711,34 +713,52 @@ function roots(::QQField, f::ZZPolyRingElem; max_roots::Int=degree(f))
 end
 
 function roots(f::ZZPolyRingElem; max_roots::Int=degree(f))
-  r = roots(FlintQQ, f, max_roots=max_roots)
-  return ZZRingElem[FlintZZ(x) for x = r if denominator(x) == 1]
+  r = roots(QQ, f, max_roots=max_roots)
+  return ZZRingElem[ZZ(x) for x = r if denominator(x) == 1]
 end
 
 function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
-  Zx, x = polynomial_ring(FlintZZ, cached = false)
+  Zx, x = polynomial_ring(ZZ, cached = false)
   g = Zx(denominator(f)*f)
-  return roots(FlintQQ, g)
+  return roots(QQ, g)
 end
 
 function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
-  return map(R, vcat([_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]...))
+  return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
+end
+
+function roots(x::RealPolyRingElem)
+  rt = roots(map_coefficients(ComplexField(), x), isolate_real=true)
+  return real.(filter(isreal, rt))
 end
 
 function _roots(f::QQPolyRingElem, ::PosInf; prec::Int=64)
   g = squarefree_part(f)
   all_rts = _roots(g, prec)
-  rl_rts = real.(filter(isreal, all_rts))
-  compl_rts = filter(x -> !isreal(x) && ispositive(imag(x)), all_rts)
+  # real.(filter(...)) leads to worse type inference
+  rl_rts = map(real, (filter(isreal, all_rts)))
+  compl_rts = filter(x -> !isreal(x) && is_positive(imag(x)), all_rts)
   @assert length(rl_rts) + 2 * length(compl_rts) == degree(g)
   return all_rts, rl_rts, compl_rts
 end
 
 function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   g = factor(f)
-  d = Dict{acb_poly, Int}()
-  Rt, t = polynomial_ring(R, String(var(parent(f))), cached = false)
+  d = Dict{AcbPolyRingElem, Int}()
+  Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
+  for (k,v) = g.fac
+    for r = roots(R, k)
+      d[t-r] = v
+    end
+  end
+  return Fac(Rt(g.unit), d)
+end
+
+function factor(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
+  g = factor(f)
+  Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
+  d = Dict{typeof(t), Int}()
   for (k,v) = g.fac
     for r = roots(R, k)
       d[t-r] = v
@@ -759,11 +779,16 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return r
 end
 
-function factor(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
+function factor(R::Union{RealField, ArbField}, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(R), initial_prec::Int...)
   g = factor(f)
-  d = Dict{arb_poly, Int}()
-  Rx, x = polynomial_ring(R, String(var(parent(f))), cached = false)
-  C = AcbField(precision(R))
+  Rx, x = polynomial_ring(R, var(parent(f)), cached = false)
+  d = Dict{typeof(x), Int}()
+  if isa(R, RealField)
+    C = ComplexField()
+  else
+    C = AcbField(precision(R))
+  end
+
   for (k,v) = g.fac
     s, t = signature(k)
     r = roots(C, k)
@@ -829,7 +854,7 @@ function mahler_measure_bound(f::ZZPolyRingElem)
   return root(sum([coeff(f, i)^2 for i=0:degree(f)])-1, 2)+1
 end
 
-function prod1(a::Vector{T}; inplace::Bool = false) where T <: PolyElem
+function prod1(a::Vector{T}; inplace::Bool = false) where T <: PolyRingElem
   if length(a) == 1
     return deepcopy(a[1])
   end
@@ -874,7 +899,7 @@ end
 
 @doc raw"""
     cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where T
-                                                                  -> PolyElem{T}
+                                                                  -> PolyRingElem{T}
 
 Return the `n`-th cyclotomic polynomial as an element of `R`. If `R` is not
 specified, return the `n`-th cyclotomic polynomial over the integers.
@@ -882,11 +907,11 @@ specified, return the `n`-th cyclotomic polynomial over the integers.
 # Examples
 
 ```jldoctest
-julia> F, _ = FiniteField(5)
-(Finite field of characteristic 5, 1)
+julia> F, _ = finite_field(5)
+(Prime field of characteristic 5, 0)
 
 julia> Ft, _ = F["t"]
-(Univariate polynomial ring in t over GF(5), t)
+(Univariate polynomial ring in t over F, t)
 
 julia> cyclotomic_polynomial(15, Ft)
 t^8 + 4*t^7 + t^5 + 4*t^4 + t^3 + 4*t + 1
@@ -902,11 +927,40 @@ function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where 
   @req n > 0 "n must be positive"
   x = gen(Hecke.Globals.Zx)
   p = Hecke.cyclotomic(n, x)
-  return map_coefficients(base_ring(R), p, parent = R)::PolyElem{T}
+  return map_coefficients(base_ring(R), p, parent = R)::PolyRingElem{T}
 end
 
 @doc raw"""
-    is_cyclotomic_polynomial(p::PolyElem{T}) where T -> Bool
+    is_cyclotomic_polynomial_with_data(p::PolyRingElem{T}) where T -> Bool, Int
+
+Return a tuple containing whether `p` is cyclotomic and which cyclotomic polynomial it is.
+
+# Examples
+
+```jldoctest
+julia> _, b = cyclotomic_field_as_cm_extension(12)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field of order 12, z_12)
+
+julia> is_cyclotomic_polynomial_with_data(minpoly(b))
+(false, -1)
+
+julia> is_cyclotomic_polynomial_with_data(absolute_minpoly(b))
+(true, 12)
+```
+"""
+function is_cyclotomic_polynomial_with_data(p::PolyRingElem{T}) where T
+  n = degree(p)
+  R = parent(p)::PolyRing{T}
+  for k in union(euler_phi_inv(n), [1])
+    if p == cyclotomic_polynomial(k, R)
+      return (true, k)
+    end
+  end
+  return (false, -1)
+end
+
+@doc raw"""
+    is_cyclotomic_polynomial(p::PolyRingElem{T}) where T -> Bool
 
 Return whether `p` is cyclotomic.
 
@@ -923,12 +977,7 @@ julia> is_cyclotomic_polynomial(absolute_minpoly(b))
 true
 ```
 """
-function is_cyclotomic_polynomial(p::PolyElem{T}) where T
-  n = degree(p)
-  R = parent(p)::PolyRing{T}
-  list_cyc = union(Int[k for k in euler_phi_inv(n)], [1])::Vector{Int}
-  return any(k -> p == cyclotomic_polynomial(k, R), list_cyc)
-end
+is_cyclotomic_polynomial(p::PolyRingElem{T}) where T = is_cyclotomic_polynomial_with_data(p)[1]
 
 ################################################################################
 #
@@ -941,10 +990,10 @@ end
 
 Return iterator over the irreducible factors of a minimal polynomial.
 """
-lazy_factor(poly::PolyElem) = _lazy_factor(poly, base_ring(parent(poly)))
-_lazy_factor(poly::PolyElem, ::FinField) =
+lazy_factor(poly::PolyRingElem) = _lazy_factor(poly, base_ring(parent(poly)))
+_lazy_factor(poly::PolyRingElem, ::FinField) =
   (f for (sqf, _) in factor_squarefree(poly) for g in FactorsOfSquarefree(sqf) for (f, _) in factor(g))
-_lazy_factor(poly::PolyElem, ::Ring) =
+_lazy_factor(poly::PolyRingElem, ::Ring) =
   (f for (sqf, _) in factor_squarefree(poly) for (f, _) in factor(sqf))
 
 """
@@ -952,12 +1001,12 @@ _lazy_factor(poly::PolyElem, ::Ring) =
 
 Iterator that turns a squarefree polynomial in smaller factors.
 """
-struct FactorsOfSquarefree{T<:PolyElem}
+struct FactorsOfSquarefree{T<:PolyRingElem}
   orderOfBaseRing :: Int
   x :: T
   poly :: T
 
-  function FactorsOfSquarefree(poly::T) where T <:PolyElem
+  function FactorsOfSquarefree(poly::T) where T <:PolyRingElem
     Kx = poly.parent
     return new{T}(order(Kx.base_ring), gen(Kx), poly)
   end
@@ -966,7 +1015,7 @@ end
 function Base.iterate(
     a::FactorsOfSquarefree{T},
     (p, exp)::Tuple{T,Int} = (a.poly, 0)
-  ) where T<:PolyElem
+  ) where T<:PolyRingElem
   isone(p) && return nothing
   exp += 1
   exponent = ZZ(a.orderOfBaseRing) ^ exp
@@ -975,5 +1024,39 @@ function Base.iterate(
   return (f, (p, exp))
 end
 
-Base.IteratorSize(::FactorsOfSquarefree) = Base.SizeUnknown()
-Base.eltype(::FactorsOfSquarefree{T}) where T = T
+Base.IteratorSize(::Type{FactorsOfSquarefree{T}}) where T = Base.SizeUnknown()
+Base.eltype(::Type{FactorsOfSquarefree{T}}) where T = T
+
+################################################################################
+#
+#  Right division with remainder
+#
+################################################################################
+
+# Conventions follow Ore, "Theory of Non-Commutative Polynomials", 1933
+
+function divrem_right(f::NCPolyRingElem, g::NCPolyRingElem)
+  check_parent(f, g)
+  @req !is_zero(g) "Divisor must be non-zero"
+  # we are looing for q, r with f = q*g + r, so g is always a right divisors
+  b = leading_coefficient(g)
+  q = zero(f)
+  R = parent(f)
+  while degree(f) >= degree(g)
+    n = degree(f) - degree(g)
+    c = shift_left(R(divexact_right(leading_coefficient(f), b)), n)
+    q += c
+    @assert degree(f - c * g) < degree(f)
+    f = f - c * g
+  end
+  return q, f
+end
+
+function gcd_right(f::NCPolyRingElem, g::NCPolyRingElem)
+  check_parent(f, g)
+  while !iszero(g)
+    _, r = divrem_right(f, g)
+    f, g = g, r
+  end
+  return f
+end

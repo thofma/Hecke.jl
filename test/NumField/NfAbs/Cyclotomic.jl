@@ -1,11 +1,11 @@
 @testset "Cyclotomic" begin
   for q in [7, 7^2, 2^2, 2^3, 2^4]
-    K, a = CyclotomicRealSubfield(q)
+    K, a = cyclotomic_real_subfield(q)
     v = cyclotomic_units_totally_real(K)
     @test length(v) == degree(K) # = unit rank + 1
   end
 
-  K, a = CyclotomicRealSubfield(7)
+  K, a = cyclotomic_real_subfield(7)
   v = cyclotomic_units_totally_real(K)
   # Class number of Q(zeta_7)^+ is one, so the cyclotomic units are the units
   @test overlaps(regulator(maximal_order(K)), regulator(v[2:end]))

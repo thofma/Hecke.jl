@@ -85,7 +85,7 @@ end
 @testset "fqPolyRepField" begin
 
   for p in [31, 11, 101]
-    F = FiniteField(p, 2)[1]
+    F = finite_field(p, 2)[1]
     G, mG = unit_group(F)
     #Test generator
     g = mG(G[1])
@@ -127,9 +127,9 @@ end
 @testset "FqPolyRepField" begin
 
   for p in [31, 11, 101]
-    _ = FiniteField(ZZRingElem(p), 2, "a")[1]
-    _ = FiniteField(ZZRingElem(p), 2, 'a')[1]
-    F = FiniteField(ZZRingElem(p), 2, :a)[1]
+    _ = finite_field(ZZRingElem(p), 2, "a")[1]
+    _ = finite_field(ZZRingElem(p), 2, 'a')[1]
+    F = finite_field(ZZRingElem(p), 2, :a)[1]
     G, mG = unit_group(F)
     #Test generator
     g = mG(G[1])
@@ -171,9 +171,9 @@ end
 @testset "FqField" begin
 
   for p in [31, 11, 101]
-    _ = Hecke.Nemo._GF(ZZRingElem(p), 2, "a")
-    _ = Hecke.Nemo._GF(ZZRingElem(p), 2, 'a')
-    F = Hecke.Nemo._GF(ZZRingElem(p), 2, :a)
+    _ = GF(ZZRingElem(p), 2, "a")
+    _ = GF(ZZRingElem(p), 2, 'a')
+    F = GF(ZZRingElem(p), 2, :a)
     G, mG = unit_group(F)
     #Test generator
     g = mG(G[1])

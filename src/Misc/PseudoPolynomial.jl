@@ -15,6 +15,8 @@ iszero(f::PseudoPoly) = iszero(polynomial(f))
 
 base_ring(f::PseudoPoly) = parent(polynomial(f))
 
+base_ring_type(::Type{PseudoPoly{S, T}}) where {S, T} = parent_type(S)
+
 pseudo_polynomial(f, A) = PseudoPoly(f, A)
 
 polynomial(f::PseudoPoly) = f.poly
@@ -44,7 +46,7 @@ function can_reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, 
   if isone(denominator(b))
     c = sum(leading_coefficient(G[i]) for i in I)//coefficient_ideal(f)
     l = _contains(leading_coefficient(polynomial(f)), [leading_coefficient(G[i])//coefficient_ideal(f) for i in I])
-    l = nf_elem[ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
+    l = AbsSimpleNumFieldElem[ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
     g = deepcopy(polynomial(f))
     @assert leading_coefficient(polynomial(f)) == sum(l[i] * leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I))
     for i in 1:length(I)
@@ -75,17 +77,16 @@ function reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, T}
   end
 end
 
-function _contains(a::nf_elem, I)
+function _contains(a::AbsSimpleNumFieldElem, I)
   @assert a in sum(I)
   OK = maximal_order(parent(a))
   dena = denominator(a, OK)
   d = lcm(dena, lcm([denominator(id) for id in I]))
-  v = matrix(FlintZZ, 1, degree(OK), coordinates(OK(d * a)))
+  v = matrix(ZZ, 1, degree(OK), coordinates(OK(d * a)))
   @assert all(isone(denominator(basis_matrix(d * id))) for id in I)
-  M = vcat([numerator(basis_matrix(d * id)) for id in I ])
-  b, w = cansolve(M', v')
-  @assert b
-  res = nf_elem[]
+  M = reduce(vcat, [numerator(basis_matrix(d * id)) for id in I ])
+  w = solve(M', v', side = :right)
+  res = AbsSimpleNumFieldElem[]
   for i in 1:length(I)
     B = basis(I[i])
     push!(res, sum(w[(i - 1) * degree(OK) + k, 1] * B[k] for k in 1:degree(OK)))
@@ -186,8 +187,8 @@ function gb(G::Vector{S}, mmod) where {S}
     C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
-    Nfinv = mmod * inv(C)::NfOrdFracIdl
-    newcoeffs = nf_elem[]
+    Nfinv = mmod * inv(C)::AbsSimpleNumFieldOrderFractionalIdeal
+    newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
       c = r.poly.coeffs[i]
@@ -221,8 +222,8 @@ function gb(G::Vector{S}, mmod) where {S}
     C, b = reduce_ideal(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, fractional_ideal(order(C), C))
-    Nfinv = mmod * inv(C)::NfOrdFracIdl
-    newcoeffs = nf_elem[]
+    Nfinv = mmod * inv(C)::AbsSimpleNumFieldOrderFractionalIdeal
+    newcoeffs = AbsSimpleNumFieldElem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
       c = r.poly.coeffs[i]
@@ -262,7 +263,7 @@ end
 #
 ################################################################################
 
-function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
+function lcm(a::AbsSimpleNumFieldOrderFractionalIdeal, b::AbsSimpleNumFieldOrderFractionalIdeal)
   a = simplify(a)
   b = simplify(b)
   da = denominator(a)
@@ -277,11 +278,11 @@ function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
 end
 
 
-function divides(a::NfAbsOrdElem, b::NfAbsOrdElem)
+function divides(a::AbsNumFieldOrderElem, b::AbsNumFieldOrderElem)
   c = divexact(elem_in_nf(a), elem_in_nf(b))
   x, y = _check_elem_in_order(c, parent(a))
   if x
-    return true, NfAbsOrdElem(parent(a), c, y)
+    return true, AbsNumFieldOrderElem(parent(a), c, y)
   else
     return false, a
   end

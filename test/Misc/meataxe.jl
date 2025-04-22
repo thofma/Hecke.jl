@@ -3,8 +3,8 @@
   finite_field_functions = [
     n -> GF(n),
     n -> GF(ZZ(n)),
-    n -> FiniteField(n, 1, "a")[1],
-    n -> FiniteField(ZZ(n), 1, "a")[1]
+    n -> finite_field(n, 1, "a")[1],
+    n -> finite_field(ZZ(n), 1, "a")[1]
   ]
   finite_fields = 3 .|> finite_field_functions
   infinite_fields = [QQ, number_field(ZZPolyRingElem(ZZRingElem[-1,-1,1]))[1]]
@@ -103,4 +103,8 @@
     end
   end
 
+  k = GF(3)
+  Mat = matrix_algebra(k, [k[1 0; 0 1]])
+  Mod = Hecke.regular_module(Mat)
+  @test length(maximal_submodules(Mod)) == 1
 end

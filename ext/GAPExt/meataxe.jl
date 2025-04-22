@@ -1,6 +1,6 @@
 ## `ZZRingElem` to GAP integer
-function _julia_to_gap(obj::ZZRingElem)
-  Nemo._fmpz_is_small(obj) && return GAP.julia_to_gap(Int(obj))
+function _GapObj(obj::ZZRingElem)
+  Nemo._fmpz_is_small(obj) && return GAP.GapObj(Int(obj))
   GC.@preserve obj begin
     x = Nemo._as_bigint(obj)
     return ccall((:MakeObjInt, GAP.libgap), GAP.GapObj, (Ptr{UInt64}, Cint), x.d, x.size)
@@ -42,10 +42,10 @@ end
 # computes the isomorphism between the Oscar field F and the corresponding GAP field
 function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fpField, Nemo.FpField}
    p = characteristic(F)
-   G = GAP.Globals.GF(_julia_to_gap(p))
+   G = GAP.Globals.GF(_GapObj(p))
    e = GAP.Globals.One(G)
 
-   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = _julia_to_gap(lift(x))*e
+   f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = _GapObj(lift(x))*e
    finv(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
 
    return MapFromFunc(F, G, f, finv)
@@ -118,15 +118,15 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
 end
 
 function __to_gap(h, x::Vector)
-  return GAP.Globals.GModuleByMats(GAP.julia_to_gap([GAP.julia_to_gap(map(x -> _image(h, x), Matrix(y))) for y in x]), codomain(h))
+  return GAP.Globals.GModuleByMats(GAP.GapObj([(map(x -> _image(h, x), Matrix(y))) for y in x]; recursive=true), codomain(h))
 end
 
 function __gap_matrix_to_julia(h, g)
-  return matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in GAP.gap_to_julia(g)])
+  return matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in g])
 end
 
 function __to_julia(h, C)
-  return [ matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in GAP.gap_to_julia(g)]) for g in GAP.Globals.MTX.Generators(C)]
+  return [ __gap_matrix_to_julia(h, g) for g in GAP.Globals.MTX.Generators(C)]
 end
 
 function Hecke.stub_composition_factors(x::Vector{T}) where {T <: MatElem}
@@ -136,7 +136,7 @@ function Hecke.stub_composition_factors(x::Vector{T}) where {T <: MatElem}
   Vcf = GAP.Globals.MTX.CompositionFactors(V)
   res = Vector{T}[]
   for C in Vcf
-    push!(res, _to_julia(h, C))
+    push!(res, __to_julia(h, C))
   end
   return res
 end
@@ -147,6 +147,6 @@ function Hecke.stub_basis_hom_space(x::Vector{T}, y::Vector{T}) where {T <: MatE
   @assert base_ring(x[1]) == base_ring(y[1])
   @assert length(x) == length(y)
   hb = GAP.Globals.MTX.BasisModuleHomomorphisms(__to_gap(h, x), __to_gap(h, y))
-  hbb = [__gap_matrix_to_julia(h, g) for g in GAP.gap_to_julia(hb)]
+  hbb = [__gap_matrix_to_julia(h, g) for g in hb]
   return hbb
 end

@@ -51,12 +51,12 @@ function FakeAbsOrdQuoRing(O::S, id::T) where {S, T}
   Snf, U, V = snf_with_transform(B)
   # the new basis is given by V^-1, since Snf = U * B * V
   Vinv = inv(V)
-  newbas = [ O(_eltseq(Vinv[i, :])) for i in 1:degree(O)]
-  @assert O == Order(algebra(O), elem_in_algebra.(newbas))
+  newbas = [ O(_eltseq(Vinv[i:i, :])) for i in 1:degree(O)]
+  @assert O == order(algebra(O), elem_in_algebra.(newbas))
   eld = diagonal(Snf)
   # I am assuming everything fits Int :)
   n = Int(eld[end])
-  ZnZ = residue_ring(ZZ, n)
+  ZnZ = residue_ring(ZZ, n)[1]
 
   coord = coordinates(one(O)) * V
   coords = Int[Int(mod(coord[i], eld[i])) for i in 1:length(eld)]
@@ -75,6 +75,10 @@ end
 # equality
 function Base.:(==)(x::FakeAbsOrdQuoRingElem, y::FakeAbsOrdQuoRingElem)
   return x.v == y.v
+end
+
+function Base.hash(x::FakeAbsOrdQuoRingElem, h::UInt)
+  return hash(x.v, h)
 end
 
 # multiplication

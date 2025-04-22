@@ -1,6 +1,6 @@
 @testset "Poly" begin
 
-  K = PadicField(2, 100)
+  K = padic_field(2, precision = 100)
   Kx, x = polynomial_ring(K, "x")
   L, gL = eisenstein_extension(x^2+2, "a")
 
@@ -8,12 +8,12 @@
     Fx, x = polynomial_ring(F, "x")
     f = x^5
     for i = 0:4
-      c = K(rand(FlintZZ, 1:100))
+      c = K(rand(ZZ, 1:100))
       f += c*x^i
     end
     u = 1
     for i = 1:5
-      c = K(rand(FlintZZ, 1:100))
+      c = K(rand(ZZ, 1:100))
       u += 2*c*x^i
     end
 
@@ -79,8 +79,17 @@
     @test length(Hecke.slope_factorization(2*x+1)) == 1
   end
 
+  @testset "Roots" begin
+    _, t = padic_field(3, precision = 10)["t"]
+    f = ((t-1+81)*(t-1+2*81))
+    rt = roots(f)
+    @test length(rt) == 2
+    @test rt[1] != rt[2]
+    @test all(iszero, map(f, rt))
+  end
+
   @testset "Resultant" begin
-    R, x = polynomial_ring(PadicField(853, 2), "x")
+    R, x = polynomial_ring(padic_field(853, precision = 2), "x")
     a = 4*x^5 + x^4 + 256*x^3 + 192*x^2 + 48*x + 4
     b = derivative(a)
     rab = @inferred resultant(a, b)

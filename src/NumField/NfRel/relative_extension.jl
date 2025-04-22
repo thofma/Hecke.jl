@@ -1,5 +1,3 @@
-export relative_simple_extension, is_primitive, is_primitive_over
-
 ################################################################################
 #
 #  Relative extension
@@ -7,7 +5,7 @@ export relative_simple_extension, is_primitive, is_primitive_over
 ################################################################################
 
 @doc raw"""
-    relative_simple_extension(K::NumField, k::NumField) -> NfRel
+    relative_simple_extension(K::NumField, k::NumField) -> RelSimpleNumField
 
 Given two fields $K\supset k$, it returns $K$ as a simple relative
 extension $L$ of $k$ and an isomorphism $L \to K$.
@@ -28,13 +26,13 @@ function relative_ext_in_tower(K::NumField, k::NumField)
   return L, mL
 end
 
-function relative_simple_extension(K::AnticNumberField, k::AnticNumberField)
+function relative_simple_extension(K::AbsSimpleNumField, k::AbsSimpleNumField)
   fl, mp = is_subfield(k, K)
   @assert fl
   return relative_simple_extension(mp)
 end
 
-function relative_simple_extension(m::NfToNfMor)
+function relative_simple_extension(m::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   k = domain(m)
   K = codomain(m)
   lf = factor(k, K.pol)
@@ -43,7 +41,7 @@ function relative_simple_extension(m::NfToNfMor)
   p = pols[1]
   if length(pols) > 1
     i = 2
-    while !iszero(map_coefficients(m, p)(gen(K)))
+    while !iszero(map_coefficients(m, p, cached = false)(gen(K)))
       p = pols[i]
       i += 1
     end

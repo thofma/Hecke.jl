@@ -19,7 +19,7 @@ function _reduce_size(x::Vector{T}, prec::Int = 64) where T
 
   A = zero_matrix(parent(conlog[1]), length(x), rr)
 
-  B = zero_matrix(FlintZZ, nrows(A), ncols(A))
+  B = zero_matrix(ZZ, nrows(A), ncols(A))
 
   for i in 1:rr
     A[1, i] = conlog[i]
@@ -49,7 +49,7 @@ end
 function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
 
   r,s = signature(_base_ring(u[1]))
-  A = zero_matrix(FlintZZ, length(u), r + s)
+  A = zero_matrix(ZZ, length(u), r + s)
   @vprintln :UnitGroup 1 "starting prec in scaled_log_matrix: $pr"
 
   for i in 1:length(u)
@@ -69,7 +69,7 @@ function scaled_log_matrix(u::Vector{T}, pr::Int = 32) where T
     end
     for j in 1:length(c)
       tt = ZZRingElem()
-      t = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{arb}, ), c[j])
+      t = ccall((:arb_mid_ptr, libarb), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), c[j])
       l = ccall((:arf_get_fmpz_fixed_si, libarb), Int, (Ref{ZZRingElem}, Ptr{arf_struct}, Int), tt, t, -pr)
       A[i, j] = tt
     end

@@ -1,10 +1,3 @@
-export binary_quadratic_form, can_solve, discriminant,
-       fundamental_discriminant, is_discriminant, QuadBin,
-       is_fundamental_discriminant, prime_form, cycle,
-       is_indefinite, is_positive_definite, is_negative_definite, is_reduced
-
-import Nemo: can_solve
-
 ###############################################################################
 #
 #   Constructor
@@ -18,7 +11,7 @@ Constructs the binary quadratic form $ax^2 + bxy + cy^2$.
 """
 binary_quadratic_form(a::T, b::T, c::T) where {T <: RingElem} = QuadBin(parent(a), a, b, c)
 
-binary_quadratic_form(a::Integer, b::Integer, c::Integer) = binary_quadratic_form(FlintZZ(a), FlintZZ(b), FlintZZ(c))
+binary_quadratic_form(a::Integer, b::Integer, c::Integer) = binary_quadratic_form(ZZ(a), ZZ(b), ZZ(c))
 
 @doc raw"""
     binary_quadratic_form(R::Ring, a, b, c)
@@ -39,12 +32,12 @@ function show(io::IO, ::MIME"text/plain", f::QuadBin)
 end
 
 function show(io::IO, f::QuadBin)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Binary quadratic form")
   else
     io = pretty(io)
     print(io, "Binary quadratic form over ")
-    print(IOContext(io, :supercompact => true), Lowercase(), base_ring(f))
+    print(terse(io), Lowercase(), base_ring(f))
     print(io, ": ")
     _show(io, f, true)
   end
@@ -99,6 +92,8 @@ end
 
 base_ring(f::QuadBin{T}) where {T} = f.base_ring::parent_type(T)
 
+base_ring_type(::Type{QuadBin{T}}) where {T} = parent_type(T)
+
 ###############################################################################
 #
 #   Coefficients
@@ -135,9 +130,10 @@ function Base.:(*)(c::Integer, f::QuadBin)
   return binary_quadratic_form(c * f[1], c * f[2], c * f[3])
 end
 
-function divexact(f::QuadBin{T}, c::T) where T <: RingElem
-  return binary_quadratic_form(divexact(f[1], c), divexact(f[2], c),
-                                                  divexact(f[3], c))
+function divexact(f::QuadBin{T}, c::T; check::Bool=true) where T <: RingElem
+  return binary_quadratic_form(divexact(f[1], c; check=check),
+                               divexact(f[2], c; check=check),
+                               divexact(f[3], c; check=check))
 end
 
 ###############################################################################
@@ -272,7 +268,7 @@ end
 
 function fundamental_discriminant(D::IntegerUnion)
   fac = factor(D)
-  sqf = one(FlintZZ)
+  sqf = one(ZZ)
   for (p, e) in fac
     if isodd(e)
       sqf = sqf * p
@@ -297,6 +293,14 @@ function ==(f1::QuadBin, f2::QuadBin)
     return false
   end
   return f1[1] == f2[1] && f1[2] == f2[2] && f1[3] == f2[3]
+end
+
+function Base.hash(f::QuadBin, h::UInt)
+  h = hash(base_ring(f), h)
+  h = hash(f[1], h)
+  h = hash(f[2], h)
+  h = hash(f[3], h)
+  return h
 end
 
 ###############################################################################
@@ -493,7 +497,7 @@ function _isequivalent_reducible(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem};
   if fred[1] == invmod(gred[1], gred[2])
     gg = binary_quadratic_form(gred[1], -gred[2], zero(ZZRingElem))
     _, Tgg = reduction_with_transformation(gg)
-    T = Tf * inv(Tg * matrix(FlintZZ, 2, 2, [1, 0, 0, -1]) * Tgg)
+    T = Tf * inv(Tg * matrix(ZZ, 2, 2, [1, 0, 0, -1]) * Tgg)
     @assert Hecke._action(f, T) == g
     return true, T
   end
@@ -533,7 +537,7 @@ function _reduction(f::QuadBin{ZZRingElem})
   end
 
   if is_reduced(f)
-    return f, identity_matrix(FlintZZ, 2)
+    return f, identity_matrix(ZZ, 2)
   end
 
   if is_indefinite(f)
@@ -546,10 +550,12 @@ end
 # TODO (TH):
 # - Make the functions operate on (a, b, c)
 # - Don't build up T, just do the operations directly on U
-function _reduction_indefinite(f)
+function _reduction_indefinite(_ff)
   # Compute a reduced form in the proper equivalence class of f
+  local f::QuadBin{ZZRingElem} = _ff
+  local _f
   RR = ArbField(53, cached = false)
-  U = identity_matrix(FlintZZ, 2)
+  U = identity_matrix(ZZ, 2)
   d = sqrt(RR(discriminant(f)))
   while !is_reduced(f)
     a = f[1]
@@ -567,14 +573,14 @@ function _reduction_indefinite(f)
         @assert fl # might fail with precision too low
         s = sign(c) * o
       end
-      T = matrix(FlintZZ, 2, 2, [0, -1, 1, s])
+      T = matrix(ZZ, 2, 2, [0, -1, 1, s])
       U = U * T
       _f = binary_quadratic_form(c, -b + 2*s*c, c*s*s - b*s + a)
       @assert _buchmann_vollmer_action(f, T) == _f
       f = _f
     else
       if b < 0
-        T = matrix(FlintZZ, 2, 2, [1, 0, 0, -1])
+        T = matrix(ZZ, 2, 2, [1, 0, 0, -1])
         U = U * T
         _f = binar_quadratic_form(a, -b, c)
         @assert _buchmann_vollmer_action(f, T) == _f
@@ -585,7 +591,7 @@ function _reduction_indefinite(f)
           q, r = divrem(a, -b)
           q = -q
         end
-        T = matrix(FlintZZ, 2, 2, [1, 0, -q, 1])
+        T = matrix(ZZ, 2, 2, [1, 0, -q, 1])
         U = U * T
         _f = binary_quadratic_form(r, b, c)
         @assert _buchmann_vollmer_action(f, T) == _f
@@ -615,12 +621,12 @@ function _reduction_reducible(f::QuadBin)
   _,w, _z = gcdx(x, y)
   z = -_z
   @assert x * w - y * z == 1
-  T = matrix(FlintZZ, 2, 2, [x, z, y, w])
+  T = matrix(ZZ, 2, 2, [x, z, y, w])
   g = Hecke._action(f, T)
   # Now g = [0, +/- N, g[2]]
   @assert iszero(g[1])
   @assert abs(g[2]) == N
-  TT = matrix(FlintZZ, 2, 2, [0, -1, 1, 0])
+  TT = matrix(ZZ, 2, 2, [0, -1, 1, 0])
   g = Hecke._action(g, TT)
   T = T * TT
   # Now g = [g[1], N, 0]
@@ -632,7 +638,7 @@ function _reduction_reducible(f::QuadBin)
     t = divexact(g[1] * aa - 1, N)
     # a * aa - N * t == 1
     @assert a * aa - N * t == 1
-    TT = inv(matrix(FlintZZ, 2, 2, [a, -N, -t, aa]))
+    TT = inv(matrix(ZZ, 2, 2, [a, -N, -t, aa]))
     g = Hecke._action(g, TT)
     T = T * TT
   end
@@ -645,7 +651,7 @@ function _reduction_reducible(f::QuadBin)
   @assert r >= 0
   @assert r < N
   @assert g[1] - _t * N == r
-  TT = matrix(FlintZZ, 2, 2, [1, 0, -_t, 1])
+  TT = matrix(ZZ, 2, 2, [1, 0, -_t, 1])
   g = Hecke._action(g, TT)
   T = T * TT
   # @assert 0 <= g[1] < N && g[2] == N && iszero(g[3])
@@ -797,7 +803,7 @@ function _rhotau(f::QuadBin{ZZRingElem})
     s = sign(c) * o
   end
   g = binary_quadratic_form(-c, -b + 2*s*c, -(a - b*s + c*s*s))
-  T = matrix(FlintZZ, 2, 2, [0, 1, 1, -s])
+  T = matrix(ZZ, 2, 2, [0, 1, 1, -s])
   @assert _buchmann_vollmer_action(f, T) == g
   return (g, T)
 end
@@ -820,7 +826,7 @@ function _rho(f::QuadBin{ZZRingElem})
     @assert fl # might fail with precision too low
     s = sign(c) * o
   end
-  T = matrix(FlintZZ, 2, 2, [0, -1, 1, s])
+  T = matrix(ZZ, 2, 2, [0, -1, 1, s])
   g = binary_quadratic_form(c, -b + 2*s*c, a - b*s + c*s*s)
   @assert _buchmann_vollmer_action(f, T) == g
   return g, T
@@ -829,7 +835,7 @@ end
 # Apply the tau operator of Buchmann--Vollmer, which turns
 # [a, b, c] into [-a, b, -c]
 function _tau(f::QuadBin{ZZRingElem})
-  T = matrix(FlintZZ, 2, 2, [1, 0, 0, -1])
+  T = matrix(ZZ, 2, 2, [1, 0, 0, -1])
   g = binary_quadratic_form(-f[1], f[2], -f[3])
   @assert _buchmann_vollmer_action(f, T) == g
   return g, T

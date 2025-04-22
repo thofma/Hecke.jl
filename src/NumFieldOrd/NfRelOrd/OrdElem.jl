@@ -1,5 +1,4 @@
-parent_type(::NfRelOrdElem{T, U}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
-parent_type(::Type{NfRelOrdElem{T, U}}) where {T, U} = NfRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), U}
+parent_type(::Type{RelNumFieldOrderElem{T, U}}) where {T, U} = RelNumFieldOrder{T, fractional_ideal_type(order_type(parent_type(T))), U}
 
 ################################################################################
 #
@@ -7,7 +6,7 @@ parent_type(::Type{NfRelOrdElem{T, U}}) where {T, U} = NfRelOrd{T, fractional_id
 #
 ################################################################################
 
-function Base.deepcopy_internal(x::NfRelOrdElem, dict::IdDict)
+function Base.deepcopy_internal(x::RelNumFieldOrderElem, dict::IdDict)
   z = parent(x)()
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
@@ -24,26 +23,26 @@ end
 ################################################################################
 #=
 @doc raw"""
-      (O::NfRelOrd)(a::NumFieldElem, check::Bool = true) -> NfRelOrdElem
+      (O::RelNumFieldOrder)(a::NumFieldElem, check::Bool = true) -> RelNumFieldOrderElem
 
 Given an element $a$ of the ambient number field of $\mathcal O$, this
 function coerces the element into $\mathcal O$. If `check` is `true`
 it will be checked that $a$ is contained in $\mathcal O$.
 """
 =#
-function (O::NfRelOrd{S, T, U})(a::U, check::Bool = true) where {S, T, U}
+function (O::RelNumFieldOrder{S, T, U})(a::U, check::Bool = true) where {S, T, U}
   if check
     x, y = _check_elem_in_order(a, O)
     !x && error("Number field element not in the order.")
-    return NfRelOrdElem{S, U}(O, deepcopy(a), y)
+    return RelNumFieldOrderElem{S, U}(O, deepcopy(a), y)
   else
-    return NfRelOrdElem{S, U}(O, deepcopy(a))
+    return RelNumFieldOrderElem{S, U}(O, deepcopy(a))
   end
 end
 
 #=
 @doc raw"""
-      (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
+      (O::RelNumFieldOrder)(a::RelNumFieldOrderElem, check::Bool = true) -> RelNumFieldOrderElem
 
 Given an element $a$ of some order in the ambient number field of
 $\mathcal O$, this function coerces the element into $\mathcal O$.
@@ -51,9 +50,9 @@ If `check` is `true` it will be checked that $a$ is contained in
 $\mathcal O$.
 """
 =#
-(O::NfRelOrd{S, T, U})(a::NfRelOrdElem{S, U}, check::Bool = true) where {S, T, U} = O(nf(O)(a.elem_in_nf), check)
+(O::RelNumFieldOrder{S, T, U})(a::RelNumFieldOrderElem{S, U}, check::Bool = true) where {S, T, U} = O(nf(O)(a.elem_in_nf), check)
 
-function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
+function (O::RelNumFieldOrder)(a::Vector{T}, check::Bool = true) where T
   t = nf(O)()
   basis = basis_nf(O, copy = false)
   for i = 1:degree(O)
@@ -65,18 +64,18 @@ function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
   return s
 end
 
-(O::NfRelOrd)(a::NfOrdElem, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
+(O::RelNumFieldOrder)(a::AbsSimpleNumFieldOrderElem, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
 
-(O::NfRelOrd)(a::IntegerUnion) = O(nf(O)(a))
+(O::RelNumFieldOrder)(a::IntegerUnion) = O(nf(O)(a))
 
 #=
 @doc raw"""
-      (O::NfRelOrd)() -> NfRelOrdElem
+      (O::RelNumFieldOrder)() -> RelNumFieldOrderElem
 
 Constructs a new element of $\mathcal O$ which is set to $0$.
 """
 =#
-(O::NfRelOrd{T, S, U})() where {T, S, U} = NfRelOrdElem{T, U}(O)
+(O::RelNumFieldOrder{T, S, U})() where {T, S, U} = RelNumFieldOrderElem{T, U}(O)
 
 ################################################################################
 #
@@ -84,7 +83,7 @@ Constructs a new element of $\mathcal O$ which is set to $0$.
 #
 ################################################################################
 
-function assure_has_coord(a::NfRelOrdElem)
+function assure_has_coord(a::RelNumFieldOrderElem)
   if a.has_coord
     return nothing
   else
@@ -103,11 +102,11 @@ end
 ################################################################################
 
 @doc raw"""
-      coordinates(a::NfRelOrdElem{T}) -> Vector{T}
+      coordinates(a::RelNumFieldOrderElem{T}) -> Vector{T}
 
 Returns the coefficient vector of $a$.
 """
-function coordinates(a::NfRelOrdElem; copy::Bool = true)
+function coordinates(a::RelNumFieldOrderElem; copy::Bool = true)
   assure_has_coord(a)
   if copy
     return deepcopy(a.coordinates)
@@ -122,7 +121,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, a::NfRelOrdElem)
+function show(io::IO, a::RelNumFieldOrderElem)
   print(io, a.elem_in_nf)
 end
 
@@ -132,8 +131,8 @@ end
 #
 ################################################################################
 
-norm(a::NfRelOrdElem, k::Union{NumField, QQField }) = base_ring(parent(a))(norm(a.elem_in_nf, k))
-tr(a::NfRelOrdElem, k::Union{NumField, QQField }) = base_ring(parent(a))(tr(a.elem_in_nf, k))
+norm(a::RelNumFieldOrderElem, k::Union{NumField, QQField }) = base_ring(parent(a))(norm(a.elem_in_nf, k))
+tr(a::RelNumFieldOrderElem, k::Union{NumField, QQField }) = base_ring(parent(a))(tr(a.elem_in_nf, k))
 
 ################################################################################
 #
@@ -141,9 +140,9 @@ tr(a::NfRelOrdElem, k::Union{NumField, QQField }) = base_ring(parent(a))(tr(a.el
 #
 ################################################################################
 
-(K::NfRel)(a::NfRelOrdElem) = elem_in_nf(a)
+(K::RelSimpleNumField)(a::RelNumFieldOrderElem) = elem_in_nf(a)
 
-(K::NfRelNS)(a::NfRelOrdElem) = elem_in_nf(a)
+(K::RelNonSimpleNumField)(a::RelNumFieldOrderElem) = elem_in_nf(a)
 
 ################################################################################
 #
@@ -151,7 +150,7 @@ tr(a::NfRelOrdElem, k::Union{NumField, QQField }) = base_ring(parent(a))(tr(a.el
 #
 ################################################################################
 
-function representation_matrix(a::NfRelOrdElem)
+function representation_matrix(a::RelNumFieldOrderElem)
   O = parent(a)
   A = representation_matrix(elem_in_nf(a))
   A = basis_matrix(O, copy = false)*A*basis_mat_inv(O, copy = false)

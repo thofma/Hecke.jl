@@ -12,7 +12,7 @@
 
   @testset "quadratic fields" begin
 
-    Qx,x=polynomial_ring(FlintQQ,"x")
+    Qx,x=polynomial_ring(QQ,"x")
     K,a=number_field(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
@@ -48,7 +48,7 @@
 
   @testset "infinite places" begin
 
-     Qx, x = polynomial_ring(FlintQQ, "x");
+     Qx, x = polynomial_ring(QQ, "x");
      K, a = number_field(x^4-4*x^3-11*x^2+30*x+20, cached = false)
     O = maximal_order(K)
     r, mr = ray_class_group(ideal(O,4), real_places(K), n_quo=2)
@@ -60,7 +60,7 @@
 
   @testset "stable subgroups" begin
 
-     Qx,x=polynomial_ring(FlintQQ,"x");
+     Qx,x=polynomial_ring(QQ,"x");
     f=x^2+1;
     K,a=number_field(f,"a");
     auts = automorphism_list(K)

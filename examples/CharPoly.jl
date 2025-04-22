@@ -95,7 +95,7 @@ function Hecke.charpoly(A::SMat{<:FieldElem})
   return cp
 end
 
-#function Hecke.charpoly(A::SMat{nf_elem})
+#function Hecke.charpoly(A::SMat{AbsSimpleNumFieldElem})
 #end
 
 end #CharPolyMod

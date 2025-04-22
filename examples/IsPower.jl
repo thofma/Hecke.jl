@@ -13,7 +13,7 @@ function Hecke.roots_upper_bound(f::QQPolyRingElem)
   return max(QQFieldElem(1), maximum([abs(coeff(f, i)//a) for i=0:degree(f)]))
 end
 
-function ispower_mod_p(a::nf_elem, i::Int)
+function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
 
   p = 2^10
   K = parent(a)
@@ -106,7 +106,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
   con_pr_j = [[one(parent(x)) for x = y] for y = con_pr]
   no_fac = sum(map(length, con_pr))
   j = 0
-  trafo = identity_matrix(FlintZZ, no_fac)
+  trafo = identity_matrix(ZZ, no_fac)
   no_rt = no_fac
   while true
     j += 1
@@ -128,7 +128,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
       continue
     end
     trafo = hcat(trafo, data)
-    data = zero_matrix(FlintZZ, 1, ncols(trafo))
+    data = zero_matrix(ZZ, 1, ncols(trafo))
     data[1, end] = pk
     trafo = vcat(trafo, data)
     #= roots: products of the local roots that ar small
@@ -184,7 +184,7 @@ function ispower_mod_p(a::nf_elem, i::Int)
   end
 end
 
-function Hecke.crt(A::Vector{<:NfAbsOrdElem}, I::Vector{<:NfAbsOrdIdl})
+function Hecke.crt(A::Vector{<:AbsNumFieldOrderElem}, I::Vector{<:AbsNumFieldOrderIdeal})
   while length(I) > 1
     II = typeof(I[1])[]
     AA = typeof(A[1])[]
@@ -209,7 +209,7 @@ function Base.lastindex(M::MatElem, i::Int)
   error("illegal dimensino")
 end
 
-function Hecke.is_power(a::qadic, i::Int)
+function Hecke.is_power(a::QadicFieldElem, i::Int)
   @assert i>0
   if i==1
     return true, a
@@ -238,7 +238,7 @@ function Hecke.is_power(a::qadic, i::Int)
   return true, b*uniformizer(parent(a))^rv
 end
 
-function Hecke.roots(a::qadic, i::Int)
+function Hecke.roots(a::QadicFieldElem, i::Int)
   @assert i>0
   if i==1
     return a
@@ -312,11 +312,11 @@ function Base.getindex(H::Hecke.HenselCtx, s::Symbol, i::Int)
     return unsafe_load(H.link, i)
   elseif s == :v
     f = Hecke.Globals.Zx()
-    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   elseif s == :w
     f = Hecke.Globals.Zx()
-    @GC.preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   end
 end
@@ -373,11 +373,11 @@ function Hecke.crt(v::Vector{ZZPolyRingElem}, m::Vector{ZZPolyRingElem}, H::Heck
   return res[end]
 end
 
-function Hecke.degree(R::qadic) #TODO XXXX
+function Hecke.degree(R::QadicFieldElem) #TODO XXXX
   return R.length
 end
 
-function Hecke.ideal(R::NfAbsOrd, f::MapFromFunc{AnticNumberField,FlintQadicField})
+function Hecke.ideal(R::AbsNumFieldOrder, f::MapFromFunc{AbsSimpleNumField,QadicField})
   K = nf(R)
   Cq = codomain(f)
   if degree(Cq) == degree(K)

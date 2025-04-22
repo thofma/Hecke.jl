@@ -141,7 +141,6 @@
   @test_throws ArgumentError close_vectors(L, v, -1)
   Lm = rescale(L,-1)
   @test_throws ArgumentError close_vectors(Lm, v, 1)
-  @test_throws ArgumentError short_vectors(Lm, 1)
 
   # Test the legacy interface
 

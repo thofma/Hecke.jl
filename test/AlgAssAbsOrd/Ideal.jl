@@ -1,5 +1,5 @@
 @testset "AlgAssAbsOrdIdl" begin
-  QG = group_algebra(FlintQQ, GrpAbFinGen([ 4 ]))
+  QG = group_algebra(QQ, FinGenAbGroup([ 4 ]))
 
   @testset "Arithmetic" begin
     O = any_order(QG)
@@ -29,7 +29,7 @@
 
   #=
   @testset "Locally free basis" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^4 - 5x^2 + 5
     K, a = number_field(f, "a", cached = false, check = false) # Gal(K/Q) == C_4
     OK = maximal_order(K)
@@ -37,7 +37,7 @@
     KtoQG, QGtoK = Hecke._find_isomorphism(K, QG)
     basisOK = [ KtoQG(b.elem_in_nf) for b in basis(OK) ]
     d = lcm([ denominator(b) for b in basisOK ])
-    ZG = Order(QG, basis(QG))
+    ZG = order(QG, basis(QG))
     I = Hecke.ideal_from_lattice_gens(QG, ZG, [ d*b for b in basisOK ])
 
     g = Hecke.locally_free_basis(I, 3)
@@ -50,8 +50,8 @@
   =#
 
   @testset "rand" begin
-    Qx, x = FlintQQ["x"]
-    A = AlgAss(x^2 - QQFieldElem(1, 5))
+    Qx, x = QQ["x"]
+    A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
     O = any_order(A)
     I = 2*O
     T = elem_type(A)
@@ -68,7 +68,7 @@
   @testset "Swan module" begin
     G = abelian_group([2, 2])
     QG = QQ[G]
-    ZG = Order(QG, basis(QG))
+    ZG = order(QG, basis(QG))
     I = swan_module(ZG, 1)
     @test I == ZG * sum(basis(QG)) + ZG * 1
     I = swan_module(ZG, ZZ(1))
@@ -79,7 +79,7 @@
   @testset "Local computations" begin
     G = small_group(10, 1) # D_5
     QG = QQ[G]
-    ZG = Order(QG, basis(QG))
+    ZG = order(QG, basis(QG))
     O = pmaximal_overorder(ZG, 2) # not maximal
     M = maximal_order(QG)
 
@@ -100,21 +100,23 @@
     # Create something in a different algebra
     H = small_group(10, 2) # C_10
     QH = QQ[H]
-    ZH = Order(QH, basis(QH))
+    ZH = order(QH, basis(QH))
     II = 1 * ZH
 
     @test_throws ArgumentError is_subset_locally(I, II, 2)
     @test_throws ArgumentError is_equal_locally(I, II, 2)
 
     K = rand(M, -1:1) * O
-    while iszero(det(basis_matrix(K)))
+    MK = basis_matrix(K)
+    while !is_square(MK) || is_zero(det(MK))
       K = rand(M, -1:1) * O
+      MK = basis_matrix(K)
     end
     X = lattice_with_local_conditions(O, [2, 3, 13], [I, J, K])
     @test is_equal_locally(X, I, 2)
     @test is_equal_locally(X, J, 3)
     @test is_equal_locally(X, K, 13)
-    T = basis_matrix(X) * basis_mat_inv(O)
+    T = basis_matrix(X) * basis_matrix_inverse(O)
     for a in QQMatrix(T)
       @test issubset(prime_divisors(denominator(a)) , [2, 3, 13])
     end
@@ -130,7 +132,7 @@
   # issubset
   G = small_group(4, 2)
   QG = QQ[G]
-  ZG = Order(QG, basis(QG), isbasis = true)
+  ZG = order(QG, basis(QG), isbasis = true)
   M = maximal_order(ZG)
   @test is_subset(2 * ZG, ZG)
   @test is_subset(2 * ZG, M)
@@ -141,14 +143,14 @@
   # minimum
   G = small_group(10, 1) # D_5
   QG = QQ[G]
-  ZG = Order(QG, basis(QG))
+  ZG = order(QG, basis(QG))
   @test minimum(12 * ZG) == 12
   @test minimum(4 * ZG) == 4
 
   # primary decomposition
   G = small_group(4, 2)
   QG = QQ[G]
-  ZG = Order(QG, basis(QG), isbasis = true)
+  ZG = order(QG, basis(QG), isbasis = true)
   M = maximal_order(ZG)
   I = 6 * ZG
   PD = primary_decomposition(I, ZG)
@@ -181,13 +183,28 @@
   m[:, :, 2] = m2
   m[:, :, 3] = m3
   m[:, :, 4] = m4
-  A = AlgAss(QQ, m)
+  A = StructureConstantAlgebra(QQ, m)
   basO = map(x -> A(x), Vector{QQFieldElem}[[1//24, 0, 0, 0], [0, 1//48, 0, 0], [1//48, 0, 1//48, 0], [0, 0, 0, 1//48]])
-  O = Order(A, basO)
+  O = order(A, basO)
   I = A(48) * O
   PD = primary_decomposition(I, O)
 
-  J = typeof(I)(A, FakeFmpqMat(identity_matrix(QQ, 4)))
-  @test J * J == typeof(I)(A, FakeFmpqMat(48 * identity_matrix(QQ, 4)))
+  J = typeof(I)(A, ZZ, identity_matrix(QQ, 4))
+  @test J * J == typeof(I)(A, ZZ, 48 * identity_matrix(QQ, 4))
 
+  # zero algebra
+
+  A = zero_algebra(QQ)
+  O = order(A, elem_type(A)[])
+  I = 1 * O
+  @test Hecke.is_full_lattice(I)
+
+  # parent
+  let
+    A = zero_algebra(QQ)
+    O = order(A, elem_type(A)[])
+    I = 1 * O
+    @test parent(I) == parent(I)
+    @test hash(parent(I)) == hash(parent(I))
+  end
 end

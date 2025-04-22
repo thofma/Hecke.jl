@@ -5,7 +5,7 @@
 #  end
 #end
 #
-#function ResidueRingPolyMap_image(M::ResidueRingPolyMap{D, C}, a::Generic.ResidueRingElem{T}) where {D, C, T}
+#function ResidueRingPolyMap_image(M::ResidueRingPolyMap{D, C}, a::EuclideanRingResidueRingElem{T}) where {D, C, T}
 #  #a should be in the domain of M...
 #  if isdefined(M, :coeff_map)
 #    I = codomain(M)(0)
@@ -21,7 +21,7 @@
 #  return I
 #end
 #
-#function ResidueRingPolyMap_preimage(M::ResidueRingPolyMap{D, C}, a::Generic.ResidueRingElem{T}) where {D, C, T}
+#function ResidueRingPolyMap_preimage(M::ResidueRingPolyMap{D, C}, a::EuclideanRingResidueRingElem{T}) where {D, C, T}
 #  #a should be in the codomain of M...
 #  #
 #  # a good 1st attempt. If many preimages are needed, the matrix Mt
@@ -38,7 +38,7 @@
 #  end
 #  b = zero_matrix(base_ring(base_ring(R)), 1, degree(R.modulus))
 #  elem_to_mat_row!(b, 1, a)
-#  s = solve_rational(Mt', b') # why, oh why is solve operating on columns????
+#  s = Nemo._solve_rational(Mt', b') # why, oh why is solve operating on columns????
 #  if isa(s, Tuple) ## again, why, oh why is solve doing things differently
 #                   ## over rings than fields?
 #    s = s[1] * inv(s[2]) # all rings here (type) are actually fields (math)

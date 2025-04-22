@@ -5,50 +5,50 @@
 ################################################################################
 
 @doc raw"""
-    nf(O::NumFieldOrd) -> NumField
+    nf(O::NumFieldOrder) -> NumField
 
 Returns the ambient number field of $\mathcal O$.
 """
-nf(O::NumFieldOrd)
+nf(O::NumFieldOrder)
 
-@inline nf(O::NfAbsOrd{S, T}) where {S, T} = O.nf::S
+@inline nf(O::AbsNumFieldOrder{S, T}) where {S, T} = O.nf::S
 
-@inline nf(O::NfRelOrd{S, T, U}) where {S, T, U} = O.nf::parent_type(U)
+@inline nf(O::RelNumFieldOrder{S, T, U}) where {S, T, U} = O.nf::parent_type(U)
 
-_algebra(O::NumFieldOrd) = nf(O)
+_algebra(O::NumFieldOrder) = nf(O)
 
 @doc raw"""
-    number_field(O::NumFieldOrd)
+    number_field(O::NumFieldOrder)
 
 Return the ambient number field of $\mathcal O$.
 """
-@inline function number_field(O::NumFieldOrd)
+@inline function number_field(O::NumFieldOrder)
   return nf(O)
 end
 
-is_simple(O::NumFieldOrd) = is_simple(nf(O))
+is_simple(O::NumFieldOrder) = is_simple(nf(O))
 
-is_commutative(O::NumFieldOrd) = true
+is_commutative(O::NumFieldOrder) = true
 
 @doc raw"""
-    is_equation_order(O::NumFieldOrd) -> Bool
+    is_equation_order(O::NumFieldOrder) -> Bool
 
 Returns whether $\mathcal O$ is the equation order of the ambient number
 field $K$.
 """
-@inline is_equation_order(O::NumFieldOrd) = O.is_equation_order
+@inline is_equation_order(O::NumFieldOrder) = O.is_equation_order
 
-@inline is_maximal_known(O::NumFieldOrd) = O.is_maximal != 0
+@inline is_maximal_known(O::NumFieldOrder) = O.is_maximal != 0
 
-@inline is_maximal_known_and_maximal(O::NumFieldOrd) = isone(O.is_maximal)
+@inline is_maximal_known_and_maximal(O::NumFieldOrder) = isone(O.is_maximal)
 
 @doc raw"""
-    is_maximal(R::NfAbsOrd) -> Bool
+    is_maximal(R::AbsNumFieldOrder) -> Bool
 
 Tests if the order $R$ is maximal. This might trigger the
 computation of the maximal order.
 """
-function is_maximal(R::NumFieldOrd)
+function is_maximal(R::NumFieldOrder)
   if R.is_maximal == 1
     return true
   end
@@ -71,13 +71,13 @@ end
 ################################################################################
 
 @doc raw"""
-    degree(O::NumFieldOrd) -> Int
+    degree(O::NumFieldOrder) -> Int
 
 Returns the degree of $\mathcal O$.
 """
-degree(O::NumFieldOrd) = degree(O.nf)
+degree(O::NumFieldOrder) = degree(O.nf)
 
-function absolute_degree(O::NumFieldOrd)
+function absolute_degree(O::NumFieldOrder)
   return absolute_degree(nf(O))
 end
 
@@ -88,11 +88,11 @@ end
 ################################################################################
 
 @doc raw"""
-    signature(O::NumFieldOrd) -> Tuple{Int, Int}
+    signature(O::NumFieldOrder) -> Tuple{Int, Int}
 
 Returns the signature of the ambient number field of $\mathcal O$.
 """
-function signature(x::NumFieldOrd)
+function signature(x::NumFieldOrder)
   return signature(nf(x))
 end
 
@@ -102,7 +102,7 @@ end
 #
 ################################################################################
 
-function discriminant(O::NumFieldOrd, K::NumField)
+function discriminant(O::NumFieldOrder, K::NumField)
   K = nf(O)
   if K == base_field(K)
     return discriminant(O)
@@ -111,7 +111,7 @@ function discriminant(O::NumFieldOrd, K::NumField)
   end
 end
 
-discriminant(O::NumFieldOrd, ::QQField) = absolute_discriminant(O)
+discriminant(O::NumFieldOrder, ::QQField) = absolute_discriminant(O)
 
 
 ################################################################################
@@ -120,11 +120,11 @@ discriminant(O::NumFieldOrd, ::QQField) = absolute_discriminant(O)
 #
 ################################################################################
 
-function absolute_basis(O::NfAbsOrd)
+function absolute_basis(O::AbsNumFieldOrder)
   return basis(O)
 end
 
-function absolute_basis(O::NfRelOrd)
+function absolute_basis(O::RelNumFieldOrder)
   pb = pseudo_basis(O, copy = false)
   res = Vector{elem_type(O)}()
   for i = 1:degree(O)

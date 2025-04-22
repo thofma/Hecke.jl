@@ -15,4 +15,5 @@
   include("QuadForm/indefiniteLLL.jl")
   include("QuadForm/IO.jl")
   include("QuadForm/Database.jl")
+  include("QuadForm/LineOrbits.jl")
 end

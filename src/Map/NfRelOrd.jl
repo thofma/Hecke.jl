@@ -1,13 +1,13 @@
-mutable struct NfRelOrdToFqMor{T, S, U} <: Map{NfRelOrd{T, S, U}, FqField, HeckeMap, NfRelOrdToFqMor}
-  header::MapHeader{NfRelOrd{T, S, U}, FqField}
+mutable struct NfRelOrdToFqMor{T, S, U} <: Map{RelNumFieldOrder{T, S, U}, FqField, HeckeMap, NfRelOrdToFqMor}
+  header::MapHeader{RelNumFieldOrder{T, S, U}, FqField}
   poly_of_the_field::FqPolyRingElem
-  P::NfRelOrdIdl{T, S, U}
+  P::RelNumFieldOrderIdeal{T, S, U}
   function NfRelOrdToFqMor{T, S, U}() where {T, S, U}
     return new{T, S, U}()
   end
 end
 
-function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T, S, U}
+function NfRelOrdToFqMor(O::RelNumFieldOrder{T, S, U}, P::RelNumFieldOrderIdeal{T, S, U}) where {T, S, U}
   z = NfRelOrdToFqMor{T, S, U}()
   z.P = P
   p = minimum(P, copy = false)
@@ -15,7 +15,7 @@ function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T
   mmF = extend(mF, nf(order(p)))
   Fx, = polynomial_ring(F, "x", cached = false)
   if is_index_divisor(O, p)
-    A, OtoA = AlgAss(O, P, p, mF)
+    A, OtoA = StructureConstantAlgebra(O, P, p, mF)
     AtoO = pseudo_inv(OtoA)
     x = rand(A)
     h = minpoly(x)
@@ -40,7 +40,7 @@ function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T
     end
     Minv = inv(M)
 
-    function _image_index_div(a::NfRelOrdElem)
+    function _image_index_div(a::RelNumFieldOrderElem)
       b = OtoA(a)
       bb = zero_matrix(F, dim(A), 1)
       for i = 1:dim(A)
@@ -72,20 +72,20 @@ function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T
     ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, F)
     z.poly_of_the_field = hh
     d = degree(hh)
-    FF, mFF = Nemo._residue_field(hh; absolute = true)
+    FF, mFF2 = Nemo._residue_field(hh; absolute = true)
 
-    function _image(x::NfRelOrdElem)
+    function _image(x::RelNumFieldOrderElem)
       f = parent(nf(O).pol)(elem_in_nf(x))
       if iszero(f)
         ff = Fx()
       else
         ff = Fx([ mmF(coeff(f, i)) for i = 0:degree(f) ])
       end
-      return mFF(ff)
+      return mFF2(ff)
     end
 
     function _preimage(x::FqFieldElem)
-      f = preimage(mFF, x)
+      f = preimage(mFF2, x)
       immF = pseudo_inv(mmF)
       #xp = Nemo._as_poly(x)
       y = nf(O)([ immF(coeff(f, i)) for i = 0:(d - 1) ])
@@ -97,7 +97,7 @@ function NfRelOrdToFqMor(O::NfRelOrd{T, S, U}, P::NfRelOrdIdl{T, S, U}) where {T
   return z
 end
 
-function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
+function extend(f::NfRelOrdToFqMor{T, S}, K::RelSimpleNumField{T}) where {T, S}
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
   g = NfRelToFqMor{T}()
@@ -108,7 +108,7 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
   P = f.P
   u = anti_uniformizer(P)
 
-  function _image(x::NfRelElem{T})
+  function _image(x::RelSimpleNumFieldElem{T})
     m = denominator(x, O)
     a = O(m*x)
     b = O(m)
@@ -130,17 +130,17 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
   return g
 end
 
-mutable struct RelOrdToAlgAssMor{S, T} <: Map{S, AlgAss{T}, HeckeMap, RelOrdToAlgAssMor}
-  header::MapHeader{S, AlgAss{T}}
+mutable struct RelOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, RelOrdToAlgAssMor}
+  header::MapHeader{S, StructureConstantAlgebra{T}}
 
-  function RelOrdToAlgAssMor{S, T}(O::S, A::AlgAss{T}, _image::Function, _preimage::Function) where { S <: Union{ NfRelOrd, AlgAssRelOrd }, T }
+  function RelOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where { S <: Union{ RelNumFieldOrder, AlgAssRelOrd }, T }
     z = new{S, T}()
     z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
 end
 
-function RelOrdToAlgAssMor(O::Union{ NfRelOrd, AlgAssRelOrd }, A::AlgAss{T}, _image, _preimage) where {T}
+function RelOrdToAlgAssMor(O::Union{ RelNumFieldOrder, AlgAssRelOrd }, A::StructureConstantAlgebra{T}, _image, _preimage) where {T}
   return RelOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
 
@@ -173,7 +173,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
   poly_of_the_field
   P
   map_subfield::Union{NfOrdToFqFieldMor, NfRelOrdToFqFieldRelMor}
-  
+
     function NfRelOrdToFqFieldRelMor{S}(O::S, P, mapsub) where {S}
     z = new{S}()
     z.P = P
@@ -183,7 +183,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
     mmK = extend(mK, nf(order(p)))
     FKx, = polynomial_ring(FK, "x", cached = false)
     if is_index_divisor(O, p)
-      A, OtoA = AlgAss(O, P, p, mK)
+      A, OtoA = StructureConstantAlgebra(O, P, p, mK)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
       h = minpoly(x)
@@ -194,7 +194,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       hh = FKx()
       ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, FK)
       z.poly_of_the_field = hh
-      
+
       FE, mE = Nemo._residue_field(hh)
 #
 #      FE = RelFinField(hh, :v)
@@ -213,7 +213,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       end
       Minv = inv(M)
 
-      function _image_index_div(a::NfRelOrdElem)
+      function _image_index_div(a::RelNumFieldOrderElem)
         b = OtoA(a)
         bb = zero_matrix(FK, dim(A), 1)
         for i = 1:dim(A)
@@ -251,7 +251,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       #FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
       #mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
 
-      function _image(x::NfRelOrdElem)
+      function _image(x::RelNumFieldOrderElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
         if iszero(f)
           ff = FKx()
@@ -289,7 +289,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     mmK = extend(mK, nf(order(p)))
     FKx, = polynomial_ring(FK, "x", cached = false)
     if is_index_divisor(O, p)
-      A, OtoA = AlgAss(O, P, p)
+      A, OtoA = StructureConstantAlgebra(O, P, p)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
       h = minpoly(x)
@@ -317,7 +317,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       end
       Minv = inv(M)
 
-      function _image_index_div(a::NfRelOrdElem)
+      function _image_index_div(a::RelNumFieldOrderElem)
         b = OtoA(a)
         bb = zero_matrix(FK, dim(A), 1)
         for i = 1:dim(A)
@@ -352,7 +352,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
       mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
 
-      function _image(x::NfRelOrdElem)
+      function _image(x::RelNumFieldOrderElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
         if iszero(f)
           ff = FKx()
@@ -385,7 +385,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     FKtoFKabs = pseudo_inv(FKabstoFK)
     FKabsz, _ = polynomial_ring(FKabs, "z", cached = false)
     if is_index_divisor(O, p)
-      A, OtoA = AlgAss(O, P, p, mK)
+      A, OtoA = StructureConstantAlgebra(O, P, p, mK)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
       h = minpoly(x)
@@ -395,7 +395,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       end
       hh = FKabsz()
       ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
-      h = map_coefficients(FKabstoFK, hh)
+      h = map_coefficients(FKabstoFK, hh, cached = false)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
 
@@ -416,7 +416,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       end
       Minv = inv(M)
 
-      function _image_index_div(a::NfRelOrdElem)
+      function _image_index_div(a::RelNumFieldOrderElem)
         b = OtoA(a)
         bb = zero_matrix(FK, dim(A), 1)
         for i = 1:dim(A)
@@ -443,7 +443,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       h = P.non_index_div_poly
       hh = FKabsz()
       ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
-      h = map_coefficients(FKabstoFK, hh)
+      h = map_coefficients(FKabstoFK, hh, cached = false)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
 
@@ -454,7 +454,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
       mE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
 
-      function _image(x::NfRelOrdElem)
+      function _image(x::RelNumFieldOrderElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
         if iszero(f)
           ff = FKx()
@@ -480,14 +480,14 @@ end
 mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelToFqFieldRelMor}
   header::MapHeader{S, FqField}
 
-  function NfRelToFqFieldRelMor{S}() where {S <: NfRel}
+  function NfRelToFqFieldRelMor{S}() where {S <: RelSimpleNumField}
     z = new{S}()
     z.header = MapHeader{S, FqField}()
     return z
   end
 end
 
-function extend(f::NfRelOrdToFqFieldRelMor{S}, E::NfRel) where {S}
+function extend(f::NfRelOrdToFqFieldRelMor{S}, E::RelSimpleNumField) where {S}
   nf(domain(f)) != E && error("Number field is not the number field of the order")
 
   g = NfRelToFqFieldRelMor{typeof(E)}()
@@ -498,7 +498,7 @@ function extend(f::NfRelOrdToFqFieldRelMor{S}, E::NfRel) where {S}
   P = f.P
   u = anti_uniformizer(P)
 
-  function _image(x::NfRelElem)
+  function _image(x::RelSimpleNumFieldElem)
     m = denominator(x, OE)
     a = OE(m*x)
     b = OE(m)

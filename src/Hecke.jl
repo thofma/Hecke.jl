@@ -1,37 +1,3 @@
-################################################################################
-#
-#     Hecke.jl : Hecke main file
-#
-# This file is part of Hecke.
-#
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# (C) 2015-2019 Claus Fieker, Tommy Hofmann
-# (C) 2020-2022 Claus Fieker, Tommy Hofmann, Carlo Sircana
-#
-################################################################################
-
-
 @doc raw"""
 Hecke is a Julia package for algorithmic algebraic number theory.
 For more information please visit
@@ -75,7 +41,21 @@ using Pkg
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
 
-import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent
+import AbstractAlgebra: pretty, Lowercase, LowercaseOff, Indent, Dedent, terse, is_terse
+
+import AbstractAlgebra:
+  add_assertion_scope,
+  add_verbosity_scope,
+  assertions,
+  clearindent,
+  get_assertion_level,
+  get_verbosity_level,
+  popindent,
+  pushindent,
+  set_assertion_level,
+  set_verbosity_level
+
+import AbstractAlgebra: Solve, coprime_base_steel
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
@@ -92,14 +72,14 @@ import Nemo
 
 import Pkg
 
-exclude = [:Nemo, :AbstractAlgebra, :RealNumberField, :zz, :qq, :factor, :call,
+exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :can_solve, :set_entry!,]
+           :set_entry!, :RDF]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue
-  eval(Meta.parse("import Nemo." * string(i)))
-  eval(Expr(:export, i))
+  @eval import Nemo: $i
+  @eval export $i
 end
 
 import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struct,
@@ -107,10 +87,13 @@ import Nemo: acb_struct, Ring, Group, Field, zzModRing, zzModRingElem, arf_struc
              FpFieldElem, Zmodn_poly, Zmodn_mat, fpField,
              FpField, acb_vec, array, acb_vec_clear, force_coerce,
              force_op, fmpz_mod_ctx_struct, divisors, is_zero_entry, IntegerUnion, remove!,
-             valuation!
+             valuation!, is_cyclo_type, is_embedded, is_maxreal_type,
+             mat_entry_ptr, factor_trial_range, set!, numerator!, denominator!
 
-export show, StepRange, domain, codomain, image, preimage, modord, resultant,
-       next_prime, is_power, number_field, factor, @vtime, RationalUnion, conjugate, disc_log
+AbstractAlgebra.@include_deprecated_bindings()
+Nemo.@include_deprecated_bindings()
+
+include("exports.jl")
 
 const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
@@ -122,57 +105,35 @@ const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
-function MaximalOrder
+function maximal_order
 end
 
-global const maximal_order = MaximalOrder
+global const maximal_order = maximal_order
+
+function _print_banner()
+  printstyled(raw""" _    _           _        """, color = :red)
+  println("")
+  printstyled(raw"""| |  | |         | |       """, color = :red)
+  println("  |  Software package for")
+  printstyled(raw"""| |__| | ___  ___| | _____ """, color = :red)
+  println("  |  algorithmic algebraic number theory")
+  printstyled(raw"""|  __  |/ _ \/ __| |/ / _ \\""", color = :red)
+  println("  |  ")
+  printstyled(raw"""| |  | |  __/ (__|   <  __/""", color = :red)
+  println("  |  Manual: https://thofma.github.io/Hecke.jl")
+  printstyled(raw"""|_|  |_|\___|\___|_|\_\___|""", color = :red)
+  print("  |  Version ")
+  printstyled("$VERSION_NUMBER", color = :green)
+  println()
+end
 
 function __init__()
   # verify some base rings survived serialization/deserialization
-  @assert base_ring(Hecke.Globals.Zx) === FlintZZ
-  @assert base_ring(Hecke.Globals.Qx) === FlintQQ
+  @assert base_ring(Hecke.Globals.Zx) === ZZ
+  @assert base_ring(Hecke.Globals.Qx) === QQ
 
-  # Check if were loaded from another package
-  # if VERSION < 1.7.*, only the "other" package will have the
-  # _tryrequire_from_serialized in the backtrace.
-  # if VERSION >= 1.8, also doing 'using Package' will have
-  # _tryrequire_from_serialized the backtrace.
-  #
-  # To still distinguish both scenarios, notice that
-  # 'using OtherPackage' will either have _tryrequire_from_serialized at least twice,
-  # or one with four arguments (hence five as the function name is the first argument)
-  # 'using Package' serialized will have a version with less arguments
-  bt = Base.process_backtrace(Base.backtrace())
-  filter!(sf -> sf[1].func === :_tryrequire_from_serialized, bt)
-  isinteractive_manual =
-    length(bt) == 0 || (length(bt) == 1 && length(only(bt)[1].linfo.specTypes.parameters) < 4)
-
-  # Respect the -q and --banner flag
-  allowbanner = Base.JLOptions().banner != 0
-
-  show_banner = allowbanner && isinteractive_manual && isinteractive() &&
-                !any(x->x.name in ["Oscar"], keys(Base.package_locks)) &&
-                get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
-
-  if show_banner
-    println("")
-    print("Welcome to \n")
-    printstyled("
-    _    _           _
-   | |  | |         | |
-   | |__| | ___  ___| | _____
-   |  __  |/ _ \\/ __| |/ / _ \\
-   | |  | |  __/ (__|   <  __/
-   |_|  |_|\\___|\\___|_|\\_\\___|
-    ", color = :red)
-
-    println()
-    print("Version")
-    printstyled(" $VERSION_NUMBER ", color = :green)
-    print("... \n ... which comes with absolutely no warranty whatsoever")
-    println()
-    println("(c) 2015-2023 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
-    println()
+  if AbstractAlgebra.should_show_banner() && get(ENV, "HECKE_PRINT_BANNER", "true") != "false"
+    _print_banner()
   end
 
   #if inNotebook()  # to make toggle work in IJulia
@@ -181,60 +142,152 @@ function __init__()
 
   global R = _RealRing()
 
-  global flint_rand_ctx = flint_rand_state()
+  #global flint_rand_ctx = flint_rand_state()
 
   resize!(_RealRings, Threads.nthreads())
   for i in 1:Threads.nthreads()
      _RealRings[i] = _RealRing()
   end
 
+  add_verbosity_scope(:AbExt)
+  add_assertion_scope(:AbExt)
+
+  add_verbosity_scope(:AbsFact)
+  add_assertion_scope(:AbsFact)
+
+  add_verbosity_scope(:AbsNumFieldOrder)
+  add_assertion_scope(:AbsNumFieldOrder)
+
+  add_assertion_scope(:AbsOrdQuoRing)
+
+  add_verbosity_scope(:AlgAssOrd)
+  add_assertion_scope(:AlgAssOrd)
+
+  add_verbosity_scope(:Automorphisms)
+
+  add_verbosity_scope(:ClassField)
+  add_assertion_scope(:ClassField)
+
+  add_verbosity_scope(:ClassGroup)
+  add_assertion_scope(:ClassGroup)
+  add_verbosity_scope(:ClassGroup_time)
+  add_verbosity_scope(:ClassGroup_gc)
+  add_verbosity_scope(:ClassGroupProof)
+
+  add_verbosity_scope(:CompactPresentation)
+  add_assertion_scope(:CompactPresentation)
+
+  add_verbosity_scope(:Conjugacy)
+  add_assertion_scope(:Conjugacy)
+
+  add_verbosity_scope(:GenRep)
+  add_assertion_scope(:GenRep)
+
+  add_verbosity_scope(:HNF)
+  add_assertion_scope(:HNF)
+
+  add_verbosity_scope(:LatEnum)
+  add_assertion_scope(:LatEnum)
+
+  add_verbosity_scope(:Lattice)
+  add_assertion_scope(:Lattice)
+
+  add_verbosity_scope(:LLL)
+  add_assertion_scope(:LLL)
+
+  add_verbosity_scope(:LocallyFreeClassGroup)
+
+  add_verbosity_scope(:MaxAbExt)
+
+  add_assertion_scope(:ModLattice)
+
+  add_verbosity_scope(:MPolyGcd)
+
+  add_verbosity_scope(:NewtonIteration)
+
+  add_verbosity_scope(:NormRelation)
+  add_assertion_scope(:NormRelation)
+
+  add_assertion_scope(:padic_poly)
+
+  add_verbosity_scope(:Par)
+
+  add_assertion_scope(:PID_Test)
+
+  add_verbosity_scope(:PIP)
+  add_assertion_scope(:PIP)
+
+  add_verbosity_scope(:PolyFactor)
+  add_assertion_scope(:PolyFactor)
+
+  add_verbosity_scope(:PseudoHnf)
+  add_assertion_scope(:PseudoHnf)
+  add_verbosity_scope(:PseudoHnfKB)
+
+  add_verbosity_scope(:qAdic)
+  add_assertion_scope(:qAdic)
+
+  add_verbosity_scope(:RayFacElem)
+  add_assertion_scope(:RayFacElem)
+
+  add_verbosity_scope(:RelNumFieldOrder)
+
+  add_assertion_scope(:RelSimpleNumField)
+
+  add_assertion_scope(:Rres)
+
+  add_verbosity_scope(:Saturate)
+
+  add_verbosity_scope(:Simplify)
+
+  add_verbosity_scope(:Subfields)
+
+  add_verbosity_scope(:StabSub)
+  add_assertion_scope(:StabSub)
+
+  add_assertion_scope(:StructureConstantAlgebra)
+
+  add_verbosity_scope(:UnitGroup)
+  add_assertion_scope(:UnitGroup)
+
+  add_verbosity_scope(:ZGenRep)
+  add_assertion_scope(:ZGenRep)
 end
 
 module Globals
   using Hecke
-  const Qx, _ = polynomial_ring(FlintQQ, "x", cached = false)
-  const Zx, _ = polynomial_ring(FlintZZ, "x", cached = false)
-  const Zxy, _ = polynomial_ring(FlintZZ, ["x", "y"], cached = false)
+  const Qx, _ = polynomial_ring(QQ, "x", cached = false)
+  const Zx, _ = polynomial_ring(ZZ, "x", cached = false)
+  const Zxy, _ = polynomial_ring(ZZ, ["x", "y"], cached = false)
 end
 
 using .Globals
 
 ################################################################################
 #
-#  AbstractAlgebra/Nemo shenanigans
+#  Aliases
 #
 ################################################################################
 
-# We have our own factor in Hecke, but some functions in AA fall back to
-# AA.factor, so let's add a fallback.
-
-AbstractAlgebra.factor(x::RingElement) = factor(x)
+include("Aliases.jl")
 
 ################################################################################
 #
-#  Verbose printing and custom assertions
+#  Setter and getter for Nemo type AbsSimpleNumField
 #
 ################################################################################
 
-include("Assertions.jl")
-
-################################################################################
-#
-#  Setter and getter for objects
-#
-################################################################################
-
-function is_maximal_order_known(K::AnticNumberField)
+function is_maximal_order_known(K::AbsSimpleNumField)
   return has_attribute(K, :maximal_order)
 end
 
-function conjugate_data_arb(K::AnticNumberField)
+function conjugate_data_arb(K::AbsSimpleNumField)
   return get_attribute!(K, :conjugate_data_arb) do
     return acb_root_ctx(K.pol)
   end::acb_root_ctx
 end
 
-function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
+function conjugate_data_arb_roots(K::AbsSimpleNumField, p::Int)
   already_set = false
   _c = get_attribute(K, :conjugate_data_arb_roots)
   if _c !== nothing
@@ -260,27 +313,27 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
       p = max(p, 2)
       rall = [one(AcbField(p, cached = false))]
       rreal = [one(ArbField(p, cached = false))]
-      rcomplex = Vector{acb}()
+      rcomplex = Vector{AcbFieldElem}()
     elseif f == 2
       # x + 1
       p = max(p, 2)
       rall = [-one(AcbField(p, cached = false))]
       rreal = [-one(ArbField(p, cached = false))]
-      rcomplex = Vector{acb}()
+      rcomplex = Vector{AcbFieldElem}()
     else
       # Use that e^(i phi) = cos(phi) + i sin(phi)
       # Call sincospi to determine these values
       pstart = max(p, 2) # Sometimes this gets called with -1
-      local _rall::Vector{Tuple{arb, arb}}
-      rreal = arb[]
-      rcomplex = Vector{acb}(undef, div(degree(K), 2))
+      local _rall::Vector{Tuple{ArbFieldElem, ArbFieldElem}}
+      rreal = ArbFieldElem[]
+      rcomplex = Vector{AcbFieldElem}(undef, div(degree(K), 2))
       while true
         R = ArbField(pstart, cached = false)
         # We need to pair them
-        _rall = Tuple{arb, arb}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
+        _rall = Tuple{ArbFieldElem, ArbFieldElem}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
         if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
           CC = AcbField(pstart, cached = false)
-          rall = acb[ CC(l[2], l[1]) for l in _rall]
+          rall = AcbFieldElem[ CC(l[2], l[1]) for l in _rall]
           j = 1
           good = true
           for i in 1:degree(K)
@@ -329,25 +382,17 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   return c[p]::acb_roots
 end
 
-function signature(K::AnticNumberField)
+function signature(K::AbsSimpleNumField)
   return get_attribute!(K, :signature) do
     return signature(defining_polynomial(K))
   end::Tuple{Int, Int}
 end
 
-function _get_prime_data_lifting(K::AnticNumberField)
+function _get_prime_data_lifting(K::AbsSimpleNumField)
   return get_attribute!(K, :_get_prime_data_lifting) do
     return Dict{Int,Any}()
   end::Dict{Int,Any}
 end
-
-################################################################################
-#
-#  Intermediate backwards compatibility
-#
-################################################################################
-
-trace(x...) = tr(x...)
 
 ################################################################################
 #
@@ -373,23 +418,6 @@ function _get_version()
 end
 const pkg_version = _get_version()
 
-######################################################################
-# named printing support
-######################################################################
-
-# to use:
-# in HeckeMap
-#   in the show function, start with @show_name(io, map)
-# for other objects
-#   add @attributes to the struct
-#   add @show_name(io, obj) to show
-#   optionally, add @show_special(io, obj) as well
-# on creation, or whenever, call set_name!(obj, string)
-# @show_name will set on printing if bound in the REPL
-# moved into AbstractAlgebra
-
-#maps are different - as are number fields
-
 ################################################################################
 #
 #  Jupyter notebook check
@@ -411,15 +439,18 @@ abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
 
 import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
        _get_attributes, _get_attributes!, _is_attribute_storing_type,
-       @show_special_elem, @attributes, extra_name, set_name!, find_name
+       @show_special_elem, @attributes, extra_name, set_name!, get_name
 
 # Hecke maps store attributes in the header object
 _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
 _get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
 _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
-import Nemo: libflint, libantic, libarb  #to be able to reference libraries by full path
-                                         #to avoid calling the "wrong" copy
+import Nemo: libflint  #to be able to reference libraries by full path
+                       #to avoid calling the "wrong" copy
+
+const libantic = libflint
+const libarb = libflint
 
 ################################################################################
 #
@@ -462,75 +493,10 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
      Hecke.@eval _with_polymake = $with_polymake
      assertions(true)
      @info("Running tests for $x in same session")
-     include(setup_file)
-     include(test_file)
+     Base.include(Main, setup_file)
+     Base.include(Main, test_file)
      assertions(false)
    end
-end
-
-################################################################################
-#
-#  Verbose time printing
-#
-################################################################################
-
-macro vtime(args...)
-  if length(args) == 2
-    msg = string(args[2])
-    quote
-      if get_verbosity_level($(args[1])) >= 1
-        local t0 = time_ns()
-        local val = $(esc(args[2]))
-        println((time_ns()-t0)/1e9, " @ ", $msg)
-        val
-      else
-        local val2 = $(esc(args[2]))
-        val2
-      end
-    end
-  elseif length(args) == 3
-    msg = string(args[3])
-    quote
-      if get_verbosity_level($(args[1])) >= $(args[2])
-        local t0 = time_ns()
-        local val = $(esc(args[3]))
-        println((time_ns()-t0)/1e9, " @ ", $msg)
-        val
-      else
-        local val2 = $(esc(args[3]))
-        val2
-      end
-    end
-  end
-end
-
-#usage
-# @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
-# @vtime_add :ClassGroup 2 clg :saturate  0.5
-# -> clg.time[:saturate] +=
-function _vtime_add(D::Dict, k::Any, v::Any)
-  if haskey(D, k)
-    D[k] += v
-  else
-    D[k] = v
-  end
-end
-
-macro vtime_add(flag, level, var, key, value)
-  quote
-    if get_verbosity_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, $(esc(value)))
-    end
-  end
-end
-
-macro vtime_add_elapsed(flag, level, var, key, stmt)
-  quote
-    tm = @elapsed $(esc(stmt))
-    if get_verbosity_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, tm)
-    end
-  end
 end
 
 ################################################################################
@@ -556,11 +522,35 @@ mutable struct NotImplemented <: Exception end
 Base.showerror(io::IO, ::NotImplemented) =
     print(io, """Not implemented (yet).""")
 
-# what is this function doing here?
-function checkbounds(a::Int, b::Int) nothing; end;
+################################################################################
 
 ################################################################################
-add_assertion_scope(:PID_Test)
+#
+#  Function stub
+#
+################################################################################
+
+# - The following function is introduced in src/ModAlgAss/*
+# - The Hecke.MPolyFactor submodule wants to extend it, but is loaded earlier
+# - Introduce the function here, to make everyone happy
+function is_absolutely_irreducible end
+function multiplicative_group end
+
+fractional_ideal_type(x) = fractional_ideal_type(typeof(x))
+fractional_ideal_type(T::DataType) = throw(MethodError(fractional_ideal_type, (T,)))
+
+place_type(x) = place_type(typeof(x))
+place_type(T::DataType) = throw(MethodError(place_type, (T,)))
+
+order_type(x) = order_type(typeof(x))
+order_type(x, y) = order_type(typeof(x), typeof(y))
+order_type(T::DataType) = throw(MethodError(order_type, (T,)))
+
+embedding_type(x) = embedding_type(typeof(x))
+embedding_type(T::DataType) = throw(MethodError(embedding_type, (T,)))
+
+base_field_type(x) = base_field_type(typeof(x))
+base_field_type(T::DataType) = throw(MethodError(base_field_type, (T,)))
 
 ################################################################################
 #
@@ -609,7 +599,7 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-#precompile(maximal_order, (AnticNumberField, ))
+#precompile(maximal_order, (AbsSimpleNumField, ))
 
 ################################################################################
 #
@@ -667,8 +657,7 @@ has_root(a...) = is_power(a...)  # catch all... needs revisiting:
 Base.issubset(K::NumField, L::NumField) = is_subfield(K, L)[1]
 Base.issubset(C::ClassField, B::ClassField) = is_subfield(C, B)
 
-include("Aliases.jl")
-#
+
 ################################################################################
 #
 #  Deprecations
@@ -755,7 +744,7 @@ function open_doc()
     end
 end
 
-function build_doc(; doctest=false, strict=false, format=:mkdocs)
+function build_doc(; doctest=false, strict=false, format=:vitepress)
   if !isdefined(Main, :Build)
     doc_init()
   end
@@ -764,13 +753,18 @@ function build_doc(; doctest=false, strict=false, format=:mkdocs)
   end
   if format == :html
     open_doc()
-  elseif format == :mkdocs
-    println("""Run `mkdocs serve` inside `../Hecke/docs/` to view the documentation.
-
-            Use `format = :html` for a simplified version of the docs which does
-            not require `mkdocs`.
+  elseif format == :vitepress
+    println("""Run `npm run docs:dev` inside `../Hecke/docs/` to view the documentation.
             """)
+  else
+    error("format :$(format) not recognized")
   end
+end
+
+# Hecke needs some complicated setup to get the printing right. This provides a
+# helper function to set this up consistently.
+function doctestsetup()
+  return :(using Hecke; Hecke.AbstractAlgebra.set_current_module(@__MODULE__))
 end
 
 #html_build = Ref(false)
@@ -798,8 +792,6 @@ function percent_P()
   print_history(REPL.LineEdit.mode(s).hist)
 end
 
-export percent_P
-
 #same (copied) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
 #difference: names(m, all = true) to also see non-exported variables, aka
 # caches...
@@ -821,7 +813,7 @@ varinfo(pat::Regex) = varinfo(Main, pat)
 
 
 function print_cache(sym::Vector{Any})
-  for f in sym;
+  for f in sym
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
@@ -839,11 +831,10 @@ end
 function find_cache(M::Module)
   sym = []
   for a in collect(names(M, all = true))
-    d = Meta.parse("$M.$a")
       try
-        z = eval(d);
+        z = getproperty(M, a)
         if isa(z, AbstractArray) || isa(z, AbstractDict)
-          push!(sym, (d, z))
+          push!(sym, ((M,a), z))
         end
     catch e
     end
@@ -851,19 +842,25 @@ function find_cache(M::Module)
   return sym
 end
 
-protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP),
-           :(Hecke.ASSERT_SCOPE), :(Hecke.VERBOSE_SCOPE),
-           :(Hecke._euler_phi_inverse_maximum),
-           :(Hecke.odlyzko_bound_grh),
-           :(Hecke.nC), :(Hecke.B1), #part of ECM
-           :(Hecke.VERBOSE_PRINT_INDENT),
-           :(Hecke._RealRings),
-           :(Hecke.protect)] # We need to protect protect itself :)
-                             # Otherwise it might emptied and then everything
-                             # is emptied.
+const protect = [
+  # We need to protect protect itself :)
+  # Otherwise it might emptied and then everything
+  # is emptied.
+  (Hecke, :protect),
+
+  (Hecke, :ASSERT_LOOKUP),
+  (Hecke, :VERBOSE_LOOKUP),
+  (Hecke, :ASSERT_SCOPE),
+  (Hecke, :VERBOSE_SCOPE),
+  (Hecke, :_euler_phi_inverse_maximum),
+  (Hecke, :odlyzko_bound_grh),
+  (Hecke, :nC), (Hecke, :B1), #part of ECM
+  (Hecke, :VERBOSE_PRINT_INDENT),
+  (Hecke, :_RealRings),
+]
 
 function clear_cache(sym::Vector{Any})
-  for f in sym;
+  for f in sym
     if f[1] in protect
       continue
     end
@@ -880,8 +877,8 @@ function clear_cache()
   clear_cache(find_cache(Hecke))
 end
 
-precompile(maximal_order, (AnticNumberField, ))
-precompile(class_group, (NfAbsOrd{AnticNumberField, nf_elem},))
+precompile(maximal_order, (AbsSimpleNumField, ))
+precompile(class_group, (AbsSimpleNumFieldOrder,))
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 

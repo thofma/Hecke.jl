@@ -1,6 +1,105 @@
-export subalgebra, decompose, radical, is_central, is_simple, central_primitive_idempotents, is_semisimple, is_etale
+################################################################################
+#
+#  Internal thingy
+#
+################################################################################
 
-_base_ring(A::AbsAlgAss) = base_ring(A)
+# check if elements are represented using a sparse row
+
+_is_sparse(A::AbstractAssociativeAlgebra) = false
+
+_is_sparse(A::GroupAlgebra) = A.sparse
+
+# because we are lazy
+_is_dense(A::AbstractAssociativeAlgebra) = !_is_sparse(A)
+
+_base_ring(A::AbstractAssociativeAlgebra) = base_ring(A)
+
+@doc raw"""
+    base_ring(A::AbstractAssociativeAlgebra) -> Field
+
+Given a $K$-algebra $A$, return $K$.
+"""
+base_ring(A::AbstractAssociativeAlgebra)
+
+################################################################################
+#
+#  Zero algebra
+#
+################################################################################
+
+@doc raw"""
+    zero_algebra([T, ] K::Field) -> AbstractAssociativeAlgebra
+
+Return the zero ring as an algebra over the field $K$.
+
+The optional first argument determines the type of the algebra, and can be
+`StructureConstantAlgebra` (default) or `MatrixAlgebra`.
+
+# Examples
+
+```jldoctest
+julia> A = zero_algebra(QQ)
+Structure constant algebra of dimension 0 over QQ
+```
+"""
+zero_algebra(K::Field)
+
+@doc raw"""
+    is_zero(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether $A$ is the zero algebra.
+"""
+is_zero(A::AbstractAssociativeAlgebra) = dim(A) == 0
+
+@doc raw"""
+    has_one(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether $A$ has a one.
+"""
+has_one(A::AbstractAssociativeAlgebra)
+
+@doc raw"""
+    is_commutative(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether $A$ is commutative.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 2);
+
+julia> is_commutative(A)
+false
+```
+"""
+is_commutative(::AbstractAssociativeAlgebra)
+
+################################################################################
+#
+#  Center
+#
+################################################################################
+
+@doc raw"""
+    center(A::AbstractAssociativeAlgebra)
+                                       -> StructureConstantAlgebra, Map
+
+Returns the center $C$ of $A$ and the inclusion $C \to A$. Note that $C$ itself
+is an algebra.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 2);
+
+julia> C, CtoA = center(A);
+
+julia> C
+Structure constant algebra of dimension 1 over QQ
+```
+"""
+center(A::AbstractAssociativeAlgebra)
 
 ################################################################################
 #
@@ -8,23 +107,23 @@ _base_ring(A::AbsAlgAss) = base_ring(A)
 #
 ################################################################################
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{R}, S <: AbsAlgAss{R}} = AbsAlgAssMor{T, S, Generic.MatSpaceElem{R}}
+morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbstractAssociativeAlgebra{R}, S <: AbstractAssociativeAlgebra{R}} = AbsAlgAssMor{T, S, Generic.MatSpaceElem{R}}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{QQFieldElem}, S <: AbsAlgAss{QQFieldElem}} = AbsAlgAssMor{T, S, QQMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}, S <: AbstractAssociativeAlgebra{QQFieldElem}} = AbsAlgAssMor{T, S, QQMatrix}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{FqPolyRepFieldElem}, S <: AbsAlgAss{FqPolyRepFieldElem}} = AbsAlgAssMor{T, S, FqPolyRepMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{FqPolyRepFieldElem}, S <: AbstractAssociativeAlgebra{FqPolyRepFieldElem}} = AbsAlgAssMor{T, S, FqPolyRepMatrix}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fqPolyRepFieldElem}, S <: AbsAlgAss{fqPolyRepFieldElem}} = AbsAlgAssMor{T, S, fqPolyRepMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{fqPolyRepFieldElem}, S <: AbstractAssociativeAlgebra{fqPolyRepFieldElem}} = AbsAlgAssMor{T, S, fqPolyRepMatrix}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{zzModRingElem}, S <: AbsAlgAss{zzModRingElem}} = AbsAlgAssMor{T, S, zzModMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{zzModRingElem}, S <: AbstractAssociativeAlgebra{zzModRingElem}} = AbsAlgAssMor{T, S, zzModMatrix}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{fpFieldElem}, S <: AbsAlgAss{fpFieldElem}} = AbsAlgAssMor{T, S, fpMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{fpFieldElem}, S <: AbstractAssociativeAlgebra{fpFieldElem}} = AbsAlgAssMor{T, S, fpMatrix}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{FpFieldElem}, S <: AbsAlgAss{FpFieldElem}} = AbsAlgAssMor{T, S, FpMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{FpFieldElem}, S <: AbstractAssociativeAlgebra{FpFieldElem}} = AbsAlgAssMor{T, S, FpMatrix}
 
-morphism_type(::Type{T}, ::Type{S}) where {T <: AbsAlgAss{FqFieldElem}, S <: AbsAlgAss{FqFieldElem}} = AbsAlgAssMor{T, S, FqMatrix}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{FqFieldElem}, S <: AbstractAssociativeAlgebra{FqFieldElem}} = AbsAlgAssMor{T, S, FqMatrix}
 
-morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
+morphism_type(A::Type{T}) where {T <: AbstractAssociativeAlgebra} = morphism_type(A, A)
 
 ################################################################################
 #
@@ -33,11 +132,13 @@ morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 ################################################################################
 
 @doc raw"""
-    basis(A::AbsAlgAss) -> Vector{AbsAlgAssElem}
+    basis(A::AbstractAssociativeAlgebra) -> Vector
 
-Returns the basis of $A$.
+Given a $K$-algebra $A$ return the $K$-basis of $A$. See also
+[`coordinates`](@ref) to get the the coordinates of an element with respect to
+the bases.
 """
-function basis(A::AbsAlgAss)
+function basis(A::AbstractAssociativeAlgebra)
   if isdefined(A, :basis)
     return A.basis::Vector{elem_type(A)}
   end
@@ -60,7 +161,7 @@ end
 #
 ################################################################################
 
-function check_associativity(A::AbsAlgAss)
+function check_associativity(A::AbstractAssociativeAlgebra)
   for i = 1:dim(A)
     for j = 1:dim(A)
       el = A[i] * A[j]
@@ -74,7 +175,7 @@ function check_associativity(A::AbsAlgAss)
   return true
 end
 
-function check_distributivity(A::AbsAlgAss)
+function check_distributivity(A::AbstractAssociativeAlgebra)
   for i = 1:dim(A)
     for j = 1:dim(A)
       el = A[i]*A[j]
@@ -94,20 +195,55 @@ end
 #
 ################################################################################
 
-@attr Int function dimension_of_center(A::AbsAlgAss)
+@doc raw"""
+    dimension_of_center(A::AbstractAssociativeAlgebra) -> Int
+
+Given a $K$-algebra, return the $K$-dimension of the center of $A$.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 2);
+
+julia> dimension_of_center(A)
+1
+```
+"""
+@attr Int function dimension_of_center(A::AbstractAssociativeAlgebra)
   C, _ = center(A)
   return dim(C)
 end
 
-@attr Int function dimension_over_center(A::AbsAlgAss)
+@doc raw"""
+    dimension_over_center(A::AbstractAssociativeAlgebra) -> Int
+
+Given a simple $K$-algebra with center $C$, return the $C$-dimension $A$.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 2);
+
+julia> dimension_of_center(A)
+1
+```
+"""
+@attr Int function dimension_over_center(A::AbstractAssociativeAlgebra)
+  @req is_simple(A) "Algebra must be simple"
   return divexact(dim(A), dimension_of_center(A))
 end
 
-@attr Int function degree_as_central_simple_algebra(A::AbsAlgAss)
+@attr Int function degree_as_central_simple_algebra(A::AbstractAssociativeAlgebra)
   return isqrt(dimension_over_center(A))
 end
 
-@attr Bool is_central(A::AbsAlgAss) = dimension_of_center(A) == 1
+@doc raw"""
+    is_central(A::AbstractAssociativeAlgebra)
+
+Return whether the $K$-algebra $A$ is central, that is, whether $K$ is the
+center of $A$.
+"""
+@attr Bool is_central(A::AbstractAssociativeAlgebra) = dimension_of_center(A) == 1
 
 ################################################################################
 #
@@ -117,488 +253,38 @@ end
 
 # This is the generic fallback which constructs an associative algebra
 @doc raw"""
-    subalgebra(A::AbsAlgAss, e::AbsAlgAssElem, idempotent::Bool = false,
+    subalgebra(A::AbstractAssociativeAlgebra, e::AbstractAssociativeAlgebraElem, idempotent::Bool = false,
                action::Symbol = :left)
-      -> AlgAss, AbsAlgAssMor
+      -> StructureConstantAlgebra, AbsAlgAssMor
 
 Given an algebra $A$ and an element $e$, this function constructs the algebra
 $e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :right`)
 and a map from this algebra to $A$.
 If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
 """
-function subalgebra(A::AbsAlgAss{T}, e::AbsAlgAssElem{T}, idempotent::Bool = false, action::Symbol = :left) where {T}
+function _subalgebra(A::AbstractAssociativeAlgebra{T}, e::AbstractAssociativeAlgebraElem{T}, idempotent::Bool = false, action::Symbol = :left) where {T}
   @assert parent(e) == A
-  B, mB = AlgAss(A)
-  C, mC = subalgebra(B, mB\e, idempotent, action)
+  B, mB = StructureConstantAlgebra(A)
+  C, mC = _subalgebra(B, mB\e, idempotent, action)
   mD = compose_and_squash(mB, mC)
   @assert domain(mD) == C
   return C, mD
 end
 
 @doc raw"""
-    subalgebra(A::AbsAlgAss, basis::Vector{AbsAlgAssElem})
-      -> AlgAss, AbsAlgAssMor
+    _subalgebra(A::AbstractAssociativeAlgebra, basis::Vector{AbstractAssociativeAlgebraElem})
+      -> StructureConstantAlgebra, AbsAlgAssMor
 
 Returns the subalgebra $A$ generated by the elements in `basis` and a map
 from this algebra to $A$.
 """
-function subalgebra(A::AbsAlgAss{T}, basis::Vector{ <: AbsAlgAssElem{T} }) where T
-  B, mB = AlgAss(A)
+function _subalgebra(A::AbstractAssociativeAlgebra{T}, basis::Vector{ <: AbstractAssociativeAlgebraElem{T} }) where T
+  B, mB = StructureConstantAlgebra(A)
   basis_pre = elem_type(B)[mB\(basis[i]) for i in 1:length(basis)]
-  C, mC = subalgebra(B, basis_pre)
+  C, mC = _subalgebra(B, basis_pre)
   mD = compose_and_squash(mB, mC)
   @assert domain(mD) == C
   return C, mD
-end
-
-################################################################################
-#
-#  Decomposition
-#
-################################################################################
-
-# Assume that A is a commutative algebra over a finite field of cardinality q.
-# This functions computes a basis for ker(x -> x^q).
-function kernel_of_frobenius(A::AbsAlgAss)
-  F = base_ring(A)
-  q = order(F)
-
-  b = A()
-  B = zero_matrix(F, dim(A), dim(A))
-  for i = 1:dim(A)
-    b.coeffs[i] = one(F)
-    if i > 1
-      b.coeffs[i - 1] = zero(F)
-    end
-    c = b^q - b
-    for j = 1:dim(A)
-      B[j, i] = c.coeffs[j]
-    end
-  end
-
-  V = right_kernel_basis(B)
-  return [ A(v) for v in V ]
-end
-
-@doc raw"""
-    decompose(A::AbsAlgAss) -> Array{Tuple{AlgAss, AbsAlgAssMor}}
-
-Given a semisimple algebra $A$ over a field, this function returns a
-decomposition of $A$ as a direct sum of simple algebras and maps from these
-components to $A$.
-"""
-function decompose(A::AlgAss{T}) where {T}
-  if isdefined(A, :decomposition)
-    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
-  end
-
-  if is_simple_known(A) && A.is_simple == 1
-    B, mB = AlgAss(A)
-    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
-  end
-
-  res = _decompose(A)
-  A.decomposition = res
-  return res
-end
-
-# Generic function for everything besides AlgAss
-function decompose(A::AbsAlgAss{T}) where T
-  return __decompose(A)
-end
-
-function __decompose(A::AbsAlgAss{T}) where {T}
-  if isdefined(A, :decomposition)
-    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
-  end
-
-  B, mB = AlgAss(A)
-
-  if is_simple_known(A) && A.is_simple == 1
-    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[ (B, mB) ]
-  end
-
-  D = _decompose(B)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, AlgAss{T})}}
-  res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
-  for (S, mS) in D
-    mD = compose_and_squash(mB, mS)
-    push!(res, (S, mD))
-  end
-  A.decomposition = res
-  Z, ZtoB = center(B)
-  if dim(Z) != dim(B)
-    if isdefined(A, :center)
-      @assert A.center[1] === Z
-    end
-    A.center = (Z, compose_and_squash(mB, ZtoB))
-  end
-  return res
-end
-
-function _decompose(A::AbsAlgAss{T}) where {T}
-  @assert _issemisimple(A) != 2 "Algebra is not semisimple"
-  if is_commutative(A)
-    return _dec_com(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
-  else
-    return _dec_via_center(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
-  end
-end
-
-function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
-  ZA, mZA = center(A)
-  Algs = _dec_com(ZA)
-  ZA.decomposition = Algs
-  res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, S)}[ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
-  for i in 1:length(res)
-    res[i][1].is_simple = 1
-    B, BtoZA = Algs[i] # B is the centre of res[i][1]
-    # Build a map from B to res[i][1] via B -> ZA -> A -> res[i][1]
-    M = zero_matrix(base_ring(A), dim(B), dim(res[i][1]))
-    for j = 1:dim(B)
-      t = mZA(BtoZA(B[j]))
-      s = res[i][2]\t
-      elem_to_mat_row!(M, j, s)
-    end
-    if dim(res[i][1]) != dim(B)
-      res[i][1].center = (B, hom(B, res[i][1], M))
-    else
-      # res[i][1] is commutative, so we do not cache the centre
-      iM = inv(M)
-      BtoA = hom(B, A, M*res[i][2].mat, res[i][2].imat*iM)
-      res[i] = (B, BtoA)
-    end
-  end
-  A.decomposition = res
-  return res
-end
-
-function _dec_com(A::AbsAlgAss{T}) where {T}
-  v = get_attribute(A, :central_idempotents)
-  if v !== nothing
-    w = v::Vector{elem_type(A)}
-    return _dec_com_given_idempotents(A, w)
-  end
-
-  if characteristic(base_ring(A)) > 0
-    return _dec_com_finite(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
-  else
-    return _dec_com_gen(A)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}
-  end
-end
-
-function _dec_com_given_idempotents(A::AbsAlgAss{T}, v::Vector) where {T}
-  dec = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[]
-  for idem in v
-    S, StoA = subalgebra(A, idem, true)
-    push!(dec, (S, StoA))
-  end
-  return dec
-end
-
-function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
-  if dim(A) == 1
-    A.is_simple = 1
-    B, mB = AlgAss(A)
-    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
-  end
-
-  F = base_ring(A)
-
-  k = dim(A)
-
-  V = elem_type(A)[A[i] for i in 1:k]
-
-  while true
-    c = elem_type(F)[ rand(F, -10:10) for i = 1:k ]
-    a = dot(c, V)
-    f = minpoly(a)
-
-    if degree(f) < 2
-      continue
-    end
-    if is_irreducible(f)
-      if degree(f) == dim(A)
-        A.is_simple = 1
-        B, mB = AlgAss(A)
-        return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
-      end
-      continue
-    end
-
-    @assert is_squarefree(f)
-
-    fac = factor(f)
-    R = parent(f)
-    factors = Vector{elem_type(R)}()
-    for ff in keys(fac.fac)
-      push!(factors, ff)
-    end
-    sols = Vector{elem_type(R)}()
-    right_side = elem_type(R)[ R() for i = 1:length(factors) ]
-    max_deg = 0
-    for i = 1:length(factors)
-      right_side[i] = R(1)
-      if i != 1
-        right_side[i - 1] = R(0)
-      end
-      s = crt(right_side, factors)
-      push!(sols, s)
-      max_deg = max(max_deg, degree(s))
-    end
-    x = one(A)
-    powers = Vector{elem_type(A)}()
-    for i = 1:max_deg + 1
-      push!(powers, x)
-      x *= a
-    end
-    idems = Vector{elem_type(A)}()
-    for s in sols
-      idem = A()
-      for i = 0:degree(s)
-        idem += coeff(s, i)*powers[i + 1]
-      end
-      push!(idems, idem)
-    end
-
-    A.is_simple = 2
-
-    res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
-    for idem in idems
-      S, StoA = subalgebra(A, idem, true)
-      decS = _dec_com_gen(S)::Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(S))}}
-      for (B, BtoS) in decS
-        BtoA = compose_and_squash(StoA, BtoS)
-        push!(res, (B, BtoA))
-      end
-    end
-    return res
-  end
-end
-
-function _dec_com_finite(A::AbsAlgAss{T}) where T
-  if dim(A) == 1
-    A.is_simple = 1
-    B, mB = AlgAss(A)
-    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
-  end
-
-  F = base_ring(A)
-  @assert !iszero(characteristic(F))
-  V = kernel_of_frobenius(A)
-  k = length(V)
-
-  if k == 1
-    A.is_simple = 1
-    B, mB = AlgAss(A)
-    return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
-  end
-
-  A.is_simple = 2
-  c = elem_type(F)[ rand(F) for i = 1:k ]
-  M = zero_matrix(F, dim(A), dim(A))
-  a = dot(c, V)
-  representation_matrix!(a, M)
-  f = minpoly(M)
-  while degree(f) < 2
-    for i = 1:length(c)
-      c[i] = rand(F)
-    end
-    a = dot(c, V)
-    zero!(M)
-    representation_matrix!(a, M)
-    f = minpoly(M)
-  end
-
-  #@assert is_squarefree(f)
-  fac = factor(f)
-  R = parent(f)
-  factorss = collect(keys(fac.fac))
-  sols = Vector{typeof(f)}(undef, length(factorss))
-  right_side = typeof(f)[ zero(R) for i = 1:length(factorss) ]
-  max_deg = 0
-  for i = 1:length(factorss)
-    right_side[i] = one(R)
-    if 1 != i
-      right_side[i - 1] = zero(R)
-    end
-    sols[i] = crt(right_side, factorss)
-    max_deg = max(max_deg, degree(sols[i]))
-  end
-  powers = Vector{elem_type(A)}(undef, max_deg+1)
-  powers[1] = one(A)
-  powers[2] = a
-  x = a
-  for i = 3:max_deg + 1
-    x *= a
-    powers[i] = x
-  end
-
-  idems = Vector{elem_type(A)}()
-  for s in sols
-    idem = A()
-    for i = 0:degree(s)
-      idem += coeff(s, i)*powers[i + 1]
-    end
-    push!(idems, idem)
-  end
-
-  res = Vector{Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}}()
-  for idem in idems
-    S, StoA = subalgebra(A, idem, true)
-    decS = _dec_com_finite(S)
-    for (B, BtoS) in decS
-      BtoA = compose_and_squash(StoA, BtoS)
-      push!(res, (B, BtoA))
-    end
-  end
-  return res
-
-end
-
-################################################################################
-#
-#  Decomposition as number fields
-#
-################################################################################
-
-@doc raw"""
-    components(::Type{Field}, A::AbsAlgAss)
-      -> Vector{Tuple{Field, Morphism}}
-
-Given an étale algebra $A$, return the simple components of $A$
-as fields $K$ together with the projection $A \to K$.
-"""
-function components(::Type{Field}, A::AbsAlgAss)
-  @assert iscommutative(A)
-  return as_number_fields(A)
-end
-
-@doc raw"""
-    component(::Type{Field}, A::AbsAlgAss, i::Int)
-      -> Vector{Tuple{Field, Morphism}}
-
-Given an étale algebra $A$ and index $i$, return the $i$-th simple components
-of $A$ as a field $K$ together with the projection $A \to K$.
-"""
-function component(::Type{Field}, A::AbsAlgAss, i::Int)
-  nf = as_number_fields(A)
-  return nf[i]
-end
-
-@doc raw"""
-    as_number_fields(A::AbsAlgAss{QQFieldElem})
-      -> Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor}}
-
-Given a commutative algebra $A$ over $\mathbb Q$, this function returns a
-decomposition of $A$ as direct sum of number fields and maps from $A$ to
-these fields.
-"""
-function as_number_fields(A::AbsAlgAss{T}) where {T}
-  return __as_number_fields(A)
-end
-
-function __as_number_fields(A::AbsAlgAss{T}; use_maximal_order::Bool = true) where {T}
-  if isdefined(A, :maps_to_numberfields)
-    NF = A.maps_to_numberfields::Vector{Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}}
-    return NF
-  end
-
-  result = _as_number_fields(A, use_maximal_order = use_maximal_order)
-  @assert all(domain(AtoK) === A for (_, AtoK) in result)
-  A.maps_to_numberfields = result
-  return result
-end
-
-_ext_type(::Type{QQFieldElem}) = AnticNumberField
-
-_ext_type(::Type{nf_elem}) = NfRel{nf_elem}
-
-function _as_number_fields(A::AbsAlgAss{T}; use_maximal_order::Bool = true) where {T}
-  d = dim(A)
-
-  Adec = decompose(A)
-
-  fields_not_cached = false
-  for i = 1:length(Adec)
-    if !isdefined(Adec[i][1], :maps_to_numberfields)
-      fields_not_cached = true
-    end
-  end
-
-  if fields_not_cached && T === QQFieldElem && use_maximal_order
-    # Compute a LLL reduced basis of the maximal order of A to find "small"
-    # polynomials for the number fields.
-    OA = maximal_order(A)
-    L = lll(basis_matrix(OA, copy = false).num)
-    n = basis_matrix(OA, copy = false).den
-    basis_lll = elem_type(A)[ elem_from_mat_row(A, L, i, n) for i = 1:d ]
-  elseif fields_not_cached
-    basis_lll = basis(A)
-  end
-
-  KK = base_ring(A)
-
-  M = zero_matrix(KK, 0, d)
-  matrices = Vector{dense_matrix_type(T)}()
-  fields = Vector{_ext_type(T)}()
-  for i = 1:length(Adec)
-    # For each small algebra construct a number field and the isomorphism
-    B, BtoA = Adec[i]
-    dB = dim(B)
-    if !isdefined(B, :maps_to_numberfields)
-      local K, BtoK
-      found_field = false # Only for debugging
-      for j = 1:d
-        t = BtoA\basis_lll[j]
-        mint = minpoly(t)
-        if degree(mint) == dB
-          found_field = true
-          K, BtoK = _as_field_with_isomorphism(B, t, mint)
-          B.maps_to_numberfields = Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(B)}[(K, BtoK)]
-          push!(fields, K)
-          break
-        end
-      end
-      @assert found_field "This should not happen..."
-    else
-      K, BtoK = B.maps_to_numberfields[1]::Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(B)}
-      push!(fields, K)
-    end
-
-    # TODO: We can do a short cut, but the map must be BtoK \circ inv(BtoA)
-    #if length(Adec) == 1
-    #  res = Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}[(K, BtoK)]
-    #  A.maps_to_numberfields = res
-    #  return res
-    #end
-
-    # Construct the map from K to A
-    N = zero_matrix(KK, degree(K), d)
-    for j = 1:degree(K)
-      t = BtoA(BtoK\basis(K)[j])
-      elem_to_mat_row!(N, j, t)
-    end
-    push!(matrices, N)
-    M = vcat(M, N)
-  end
-  @assert nrows(M) == d
-
-  invM = inv(M)
-  matrices2 = Vector{dense_matrix_type(T)}(undef, length(matrices))
-  offset = 1
-  for i = 1:length(matrices)
-    r = nrows(matrices[i])
-    N = sub(invM, 1:d, offset:(offset + r - 1))
-    matrices2[i] = N
-    offset += r
-  end
-
-  result = Vector{Tuple{_ext_type(T), _abs_alg_ass_to_nf_abs_mor_type(A)}}()
-  for i = 1:length(fields)
-    push!(result, (fields[i], AbsAlgAssToNfAbsMor(A, fields[i], matrices2[i], matrices[i])))
-  end
-
-  return result
 end
 
 ################################################################################
@@ -607,9 +293,9 @@ end
 #
 ################################################################################
 
-Random.gentype(::Type{T}) where {T<:AbsAlgAss} = elem_type(T)
+Random.gentype(::Type{T}) where {T<:AbstractAssociativeAlgebra} = elem_type(T)
 
-function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbsAlgAss{T}}
+function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbstractAssociativeAlgebra{T}}
   A = Asp[]
   c = [rand(rng, base_ring(A)) for i in 1:dim(A)]
 #  c = rand(rng, base_ring(A), dim(A))
@@ -617,18 +303,18 @@ function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbsAlgAss
   return A(c)
 end
 
-function rand(A::AbsAlgAss{nf_elem}, rng::AbstractUnitRange{Int} = -10:10)
-  c = nf_elem[rand(base_ring(A), rng) for i = 1:dim(A)]
+function rand(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, rng::AbstractUnitRange{Int} = -10:10)
+  c = AbsSimpleNumFieldElem[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 
-function rand(A::AbsAlgAss{T}, rng::AbstractUnitRange{Int}) where T
+function rand(A::AbstractAssociativeAlgebra{T}, rng::AbstractUnitRange{Int}) where T
   c = T[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 
-function rand(A::AlgAss{QQFieldElem}, rng::AbstractUnitRange{Int} = -20:20)
-  c = [QQFieldElem(rand(FlintZZ, rng)) for i = 1:dim(A)]
+function rand(A::StructureConstantAlgebra{QQFieldElem}, rng::AbstractUnitRange{Int} = -20:20)
+  c = [QQFieldElem(rand(ZZ, rng)) for i = 1:dim(A)]
   return A(c)
 end
 
@@ -683,7 +369,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
       end
 
       s = mul!(s, t, Mrj)
-      v[j] = addeq!(v[j], s)
+      v[j] = add!(v[j], s)
     end
     v[c] = zero!(v[c])
   end
@@ -712,7 +398,7 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
     t = -Mrp
     for c = pivot_col + 1:ncols(M)
       s = mul!(s, t, v[c])
-      M[r, c] = addeq!(M[r, c], s)
+      M[r, c] = add!(M[r, c], s)
     end
     M[r, pivot_col] = zero(base_ring(M))
   end
@@ -725,25 +411,67 @@ function _add_row_to_rref!(M::MatElem{T}, v::Vector{T}, pivot_rows::Vector{Int},
 end
 
 @doc raw"""
-    gens(A::AbsAlgAss, return_full_basis::Typel{Val{T}} = Val{false};
-         thorough_search::Bool = false) where T
-      -> Vector{AbsAlgAssElem}
+    gens(A::AbstractAssociativeAlgebra; thorough_search::Bool = false) -> Vector
 
-Returns a subset of `basis(A)`, which generates $A$ as an algebra over
-`base_ring(A)`.
-If `return_full_basis` is set to `Val{true}`, the function also returns a
-`Vector{AbsAlgAssElem}` containing a full basis consisting of monomials in
-the generators and a `Vector{Vector{Tuple{Int, Int}}}` containing the
-information on how these monomials are built. E. g.: If the function returns
-`g`, `full_basis` and `v`, then we have
-`full_basis[i] = prod( g[j]^k for (j, k) in v[i] )`.
+Given a $K$-algebra $A$, return a subset of `basis(A)`, which generates $A$ as
+an algebra over $K$.
+
 If `thorough_search` is `true`, the number of returned generators is possibly
 smaller. This will in general increase the runtime. It is not guaranteed that
 the number of generators is minimal in any case.
+
+The [`gens_with_data`](@ref) function computes additional data for expressing a
+basis as words in the generators.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 3);
+
+julia> gens(A; thorough_search = true)
+5-element Vector{MatAlgebraElem{QQFieldElem, QQMatrix}}:
+ [1 0 0; 0 0 0; 0 0 0]
+ [0 0 0; 1 0 0; 0 0 0]
+ [0 0 0; 0 0 0; 1 0 0]
+ [0 1 0; 0 0 0; 0 0 0]
+ [0 0 1; 0 0 0; 0 0 0]
+```
 """
-function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorough_search::Bool = false) where T
+function gens(A::AbstractAssociativeAlgebra; thorough_search::Bool = false)
+  return _gens(A, Val(false); thorough_search = thorough_search)
+end
+
+@doc raw"""
+    gens_with_data(A::AbstractAssociativeAlgebra; thorough_search::Bool = false)
+                                                       -> Vector, Vector, Vector
+
+Given a $K$-algebra $A$, return a triple $(G, B, w)$ consisting of
+- a subset $G$ of `basis(A)`, which generates $A$ as an algebra over $K$,
+- a (new) basis $B$ and a vector `w::Vector{Tuple{Int, Int}}`, such that
+  `B[i] = prod(G[j]^k for (j, k) in w[i]`.
+
+If `thorough_search` is `true`, the number of returned generators is possibly
+smaller. This will in general increase the runtime. It is not guaranteed that
+the number of generators is minimal in any case.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 3);
+
+julia> G, B, w = gens_with_data(A; thorough_search = true);
+
+julia> B[1] == prod(G[i]^j for (i, j) in w[1])
+true
+```
+"""
+function gens_with_data(A::AbstractAssociativeAlgebra; thorough_search::Bool = false)
+  return _gens(A, Val(true); thorough_search = thorough_search)
+end
+
+function _gens(A::AbstractAssociativeAlgebra, ::Val{return_full_basis} = Val(false); thorough_search::Bool = false) where return_full_basis
   d = dim(A)
-  if return_full_basis === Val{false}
+  if !return_full_basis
     if isdefined(A, :gens)
       return A.gens::Vector{elem_type(A)}
     end
@@ -853,7 +581,7 @@ function gens(A::AbsAlgAss, return_full_basis::Type{Val{T}} = Val{false}; thorou
     A.gens = generators
   end
 
-  if return_full_basis == Val{true}
+  if return_full_basis
     return generators, full_basis, elts_in_gens
   else
     return generators
@@ -866,12 +594,12 @@ end
 #
 ################################################################################
 
-function primitive_element(A::AbsAlgAss)
+function primitive_element(A::AbstractAssociativeAlgebra)
   a, _ = _primitive_element(A)
   return a
 end
 
-function primitive_element(A::AbsAlgAss{QQFieldElem})
+function primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
   if isdefined(A, :maps_to_numberfields)
     return primitive_element_via_number_fields(A)
   end
@@ -880,7 +608,7 @@ function primitive_element(A::AbsAlgAss{QQFieldElem})
 end
 
 # TODO: Fix this with the types once a new version is released
-#function _primitive_element(A::AbsAlgAss)
+#function _primitive_element(A::AbstractAssociativeAlgebra)
 #  error("Not implemented yet")
 #  return nothing
 #end
@@ -890,12 +618,23 @@ end
 # is implemented to find primitive elements with small minimal
 # polynomial. Note that this could be improved by calling into
 # simplify for number fields. But it is a bit tricky.
-function _primitive_element(A::AbsAlgAss{QQFieldElem})
+function _primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
   a = primitive_element_via_number_fields(A)
   return a, minpoly(a)
 end
 
-function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbsAlgAss{T}} #<: Union{zzModRingElem, FqPolyRepFieldElem, fqPolyRepFieldElem, Generic.ResidueRingElem{ZZRingElem}, QQFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fpFieldElem}
+function __primitive_element(A::AbstractAssociativeAlgebra{QQFieldElem})
+  return _primitive_element(A)
+end
+
+function __primitive_element(A::AbstractAssociativeAlgebra{<:NumFieldElem})
+  B, BtoA = restrict_scalars(A, QQ)
+  a, f = __primitive_element(B)
+  b = BtoA(a)
+  return b, minpoly(b)
+end
+
+function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbstractAssociativeAlgebra{T}} #<: Union{zzModRingElem, FqPolyRepFieldElem, fqPolyRepFieldElem, EuclideanRingResidueRingElem{ZZRingElem}, QQFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fpFieldElem}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
@@ -906,7 +645,7 @@ function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbsAlgAss{T}} 
   return a, f
 end
 
-function primitive_element_via_number_fields(A::AbsAlgAss{QQFieldElem})
+function primitive_element_via_number_fields(A::AbstractAssociativeAlgebra{QQFieldElem})
   fields_and_maps = as_number_fields(A)
   a = A()
   for (K, AtoK) in fields_and_maps
@@ -915,7 +654,7 @@ function primitive_element_via_number_fields(A::AbsAlgAss{QQFieldElem})
   return a
 end
 
-function _as_field(A::AbsAlgAss{T}) where T
+function _as_field(A::AbstractAssociativeAlgebra{T}) where T
   d = dim(A)
   a, mina = __primitive_element(A)
   b = one(A)
@@ -939,18 +678,18 @@ function _as_field(A::AbsAlgAss{T}) where T
   return a, mina, f
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{QQFieldElem}) #<: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+function _as_field_with_isomorphism(A::AbstractAssociativeAlgebra{QQFieldElem}) #<: Union{QQFieldElem, fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
   return _as_field_with_isomorphism(A, _primitive_element(A)...)
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S } #<: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
+function _as_field_with_isomorphism(A::AbstractAssociativeAlgebra{S}) where { S } #<: Union{QQFieldElem, fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem} }
   return _as_field_with_isomorphism(A, __primitive_element(A)...)
 end
 
 # Assuming a is a primitive element of A and mina its minimal polynomial, this
 # functions constructs the field base_ring(A)/mina and the isomorphism between
 # A and this field.
-function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where {S, T} # where { S <: Union{QQFieldElem, fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem}, T <: Union{QQPolyRingElem, fpPolyRingElem, FpPolyRingElem, fqPolyRepPolyRingElem, FqPolyRepPolyRingElem} }
+function _as_field_with_isomorphism(A::AbstractAssociativeAlgebra{S}, a::AbstractAssociativeAlgebraElem{S}, mina::T) where {S, T} # where { S <: Union{QQFieldElem, fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem}, T <: Union{QQPolyRingElem, fpPolyRingElem, FpPolyRingElem, fqPolyRepPolyRingElem, FqPolyRepPolyRingElem} }
   s = one(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -962,28 +701,28 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
   return __as_field_with_isomorphism(A, mina, M)
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{S}, f, M) where {S <: Union{QQFieldElem, nf_elem}}
+function __as_field_with_isomorphism(A::AbstractAssociativeAlgebra{S}, f, M) where {S <: Union{QQFieldElem, AbsSimpleNumFieldElem}}
   K = number_field(f, cached = false)[1]
   return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{fpFieldElem}, f::fpPolyRingElem, M::fpMatrix)
+function __as_field_with_isomorphism(A::AbstractAssociativeAlgebra{fpFieldElem}, f::fpPolyRingElem, M::fpMatrix)
   Fq = fqPolyRepField(f, Symbol("a"), false)
   return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{FpFieldElem}, f::FpPolyRingElem, M)
+function __as_field_with_isomorphism(A::AbstractAssociativeAlgebra{FpFieldElem}, f::FpPolyRingElem, M)
   Fq = FqPolyRepField(f, Symbol("a"), false)
   return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(f))
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{FqFieldElem}, f::FqPolyRingElem, M::FqMatrix)
+function __as_field_with_isomorphism(A::AbstractAssociativeAlgebra{FqFieldElem}, f::FqPolyRingElem, M::FqMatrix)
   Fr, = Nemo._residue_field(f)
   RtoFr = FqPolyRingToFqMor{typeof(parent(f)), typeof(Fr), typeof(f), Any}(Fr, f)
   return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(f), RtoFr)
 end
 
-function __as_field_with_isomorphism(A::AbsAlgAss{S}, f::T, M::U) where { S <: Union{fqPolyRepFieldElem, FqPolyRepFieldElem }, T <: Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem }, U <: Union{ fqPolyRepMatrix, FqPolyRepMatrix } }
+function __as_field_with_isomorphism(A::AbstractAssociativeAlgebra{S}, f::T, M::U) where { S <: Union{fqPolyRepFieldElem, FqPolyRepFieldElem }, T <: Union{ fqPolyRepPolyRingElem, FqPolyRepPolyRingElem }, U <: Union{ fqPolyRepMatrix, FqPolyRepMatrix } }
   Fr, RtoFr = field_extension(f)
   return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(f), RtoFr)
 end
@@ -995,15 +734,15 @@ end
 ################################################################################
 
 @doc raw"""
-    regular_matrix_algebra(A::Union{ AlgAss, AlgGrp }) -> AlgMat, AbsAlgAssMor
+    regular_matrix_algebra(A::Union{ StructureConstantAlgebra, GroupAlgebra }) -> MatAlgebra, AbsAlgAssMor
 
 Returns the matrix algebra $B$ generated by the right representation matrices
 of the basis elements of $A$ and a map from $B$ to $A$.
 """
-function regular_matrix_algebra(A::Union{ AlgAss, AlgGrp })
+function regular_matrix_algebra(A::Union{ StructureConstantAlgebra, GroupAlgebra })
   K = base_ring(A)
   B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true)
-  return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)))
+  return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)); check = false)
 end
 
 ###############################################################################
@@ -1024,7 +763,7 @@ end
 
 
 #K/Q is a Galois extension.
-function CrossedProductAlgebra(K::AnticNumberField, G::Vector{T}, cocval::Matrix{nf_elem}) where T
+function CrossedProductAlgebra(K::AbsSimpleNumField, G::Vector{T}, cocval::Matrix{AbsSimpleNumFieldElem}) where T
 
   n=degree(K)
   m=length(G)
@@ -1063,11 +802,11 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Vector{T}, cocval::Matrix
       end
     end
   end
-  return AlgAss(FlintQQ, M)
+  return StructureConstantAlgebra(QQ, M)
 
 end
 
-function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) where T
+function CrossedProductAlgebra(O::AbsSimpleNumFieldOrder, G::Vector{T}, cocval::Matrix{AbsSimpleNumFieldElem}) where T
 
   n=degree(O)
   m=length(G)
@@ -1114,7 +853,7 @@ function CrossedProductAlgebra(O::NfOrd, G::Vector{T}, cocval::Matrix{nf_elem}) 
   j = find_elem(G, j1)
   O1 = QQFieldElem[0 for i=1:n*m]
   O1[j] = QQFieldElem(1)
-  A = AlgAss(FlintQQ, M, O1)
+  A = StructureConstantAlgebra(QQ, M, O1)
   A.is_simple = 1
   return A
 
@@ -1126,7 +865,7 @@ end
 #
 ###############################################################################
 
-function _assure_trace_basis(A::AbsAlgAss{T}) where T
+function _assure_trace_basis(A::AbstractAssociativeAlgebra{T}) where T
   if isdefined(A, :trace_basis_elem)
     return nothing
   end
@@ -1140,15 +879,32 @@ function _assure_trace_basis(A::AbsAlgAss{T}) where T
 end
 
 @doc raw"""
-    trace_matrix(A::AbsAlgAss) -> MatElem
+    trace_matrix(A::AbstractAssociativeAlgebra) -> MatElem
 
 Returns a matrix $M$ over the base ring of $A$ such that
 $M_{i, j} = \mathrm{tr}(b_i \cdot b_j)$, where $b_1, \dots, b_n$ is the
 basis of $A$.
 """
-function trace_matrix(A::AbsAlgAss)
+function trace_matrix(A::AbstractAssociativeAlgebra, tr = tr)
   F = base_ring(A)
   n = dim(A)
+  M = zero_matrix(F, n, n)
+  for i = 1:n
+    M[i, i] = tr(A[i]^2)
+  end
+  for i = 1:n
+    for j = i + 1:n
+      x = tr(A[i]*A[j])
+      M[i, j] = x
+      M[j, i] = x
+    end
+  end
+  return M
+end
+
+function _trace_matrix(A::Vector, tr = tr)
+  F = base_ring(parent(A[1]))
+  n = length(A)
   M = zero_matrix(F, n, n)
   for i = 1:n
     M[i, i] = tr(A[i]^2)
@@ -1171,26 +927,26 @@ end
 
 # This is the generic fallback which constructs an associative algebra
 @doc raw"""
-    restrict_scalars(A::AbsAlgAss{nf_elem}, Q::QQField)
-    restrict_scalars(A::AbsAlgAss{fqPolyRepFieldElem}, Fp::fpField)
-    restrict_scalars(A::AbsAlgAss{FqPolyRepFieldElem}, Fp::Generic.ResidueField{ZZRingElem})
-      -> AlgAss, Function, Function
+    restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
+    restrict_scalars(A::AbstractAssociativeAlgebra{fqPolyRepFieldElem}, Fp::fpField)
+    restrict_scalars(A::AbstractAssociativeAlgebra{FqPolyRepFieldElem}, Fp::EuclideanRingResidueField{ZZRingElem})
+      -> StructureConstantAlgebra, Function, Function
 
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
 function returns the restriction $B$ of $A$ to $K$ and maps from $A$ to $B$
 and from $B$ to $A$.
 """
-function restrict_scalars(A::AbsAlgAss{T}, K::Field) where {T}
+function restrict_scalars(A::AbstractAssociativeAlgebra{T}, K::Field) where {T}
   #K == base_ring(A) && error("Not yet implemented")
-  B, BtoA = AlgAss(A)::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}
+  B, BtoA = StructureConstantAlgebra(A)::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}
   C, BtoC, CtoB = restrict_scalars(B, K)
 
-  function CtoA(x::AbsAlgAssElem)
+  function CtoA(x::AbstractAssociativeAlgebraElem)
     @assert parent(x) === C
     return BtoA(CtoB(x))
   end
 
-  function AtoC(x::AbsAlgAssElem)
+  function AtoC(x::AbstractAssociativeAlgebraElem)
     @assert parent(x) === A
     return BtoC(BtoA\x)
   end
@@ -1200,198 +956,17 @@ end
 
 ################################################################################
 #
-#  Radical
-#
-################################################################################
-
-@doc raw"""
-     radical(A::AbsAlgAss) -> AbsAlgAssIdl
-
-Returns the Jacobson-Radical of $A$.
-"""
-function radical(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, fqPolyRepFieldElem, FqPolyRepFieldElem, QQFieldElem, nf_elem } }
-  return ideal_from_gens(A, _radical(A), :twosided)
-end
-
-# Section 2.3.2 in W. Eberly: Computations for Algebras and Group Representations
-# TODO: Fix the type
-function _radical_prime_field(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } }
-  F = base_ring(A)
-  p = characteristic(F)
-  k = flog(ZZRingElem(dim(A)), p)
-
-  MF = trace_matrix(A)
-  d, B = nullspace(MF)
-  if d == 0
-    return elem_type(A)[]
-  end
-
-  C = transpose(B)
-  # Now, iterate: we need to find the kernel of tr((xy)^(p^i))/p^i mod p
-  # on the subspace generated by C
-  # Hard to believe, but this is linear!!!!
-  MZ = zero_matrix(FlintZZ, dim(A), dim(A))
-  pl = ZZRingElem(1)
-  a = A()
-  for l = 1:k
-    pl = p*pl
-    M = zero_matrix(F, dim(A), nrows(C))
-    for i = 1:nrows(C)
-      c = elem_from_mat_row(A, C, i)
-      for j = 1:dim(A)
-        a = mul!(a, c, A[j])
-        MF = representation_matrix(a)
-        for m = 1:nrows(MF)
-          for n = 1:ncols(MF)
-            if T <: FqFieldElem
-              MZ[m, n] = lift(ZZ, MF[m, n])
-            else
-              MZ[m, n] = lift(MF[m, n])
-            end
-          end
-        end
-        t = tr(MZ^Int(pl))
-        @assert iszero(mod(t, pl))
-        M[j, i] = F(divexact(t, pl))
-      end
-    end
-    d, B = nullspace(M)
-    if d == 0
-      return elem_type(A)[]
-    end
-    C = transpose(B)*C
-  end
-
-  return elem_type(A)[ elem_from_mat_row(A, C, i) for i = 1:nrows(C) ]
-end
-
-function _radical(A::AbsAlgAss{T}) where { T <: Union{ fpFieldElem, FpFieldElem } }
-  return _radical_prime_field(A)
-end
-
-function _radical(A::AbsAlgAss{T}) where { T <: Union{ fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem } }
-  F = base_ring(A)
-
-  p = characteristic(F)
-  if T <: fqPolyRepFieldElem
-    Fp = Native.GF(Int(p))
-  elseif T === FqFieldElem
-    Fp = Nemo._GF(p)
-  else
-    Fp = Native.GF(p)
-  end
-
-  A2, A2toA = restrict_scalars(A, Fp)
-  if T === FqFieldElem
-    n = absolute_degree(F)
-  else
-    n = degree(F)
-  end
-
-  if n == 1
-    J = _radical_prime_field(A2)
-    return elem_type(A)[ A2toA(b) for b in J ]
-  end
-
-  if T === FqFieldElem
-    absgenF =  Nemo._gen(F)
-  else
-    absgenF = gen(F)
-  end
-
-  k = flog(ZZRingElem(dim(A)), p)
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
-  f = Qx(push!(QQFieldElem[ -QQFieldElem(T === FqFieldElem ? Nemo._coeff(absgenF^n, i) : coeff(absgenF^n, i)) for i = 0:(n - 1) ], QQFieldElem(1)))
-  K, a = number_field(f, "a")
-
-  MF = trace_matrix(A2)
-  d, B = nullspace(MF)
-  if d == 0
-    return elem_type(A)[]
-  end
-
-  C = transpose(B)
-  pl = ZZRingElem(1)
-  MK = zero_matrix(K, dim(A), dim(A))
-  MQx = zero_matrix(Qx, dim(A), dim(A))
-  a = A()
-  for l = 1:k
-    pl = p*pl
-    M = zero_matrix(Fp, dim(A2), nrows(C))
-    for i = 1:nrows(C)
-      c = A2toA(elem_from_mat_row(A2, C, i))
-      for j = 1:dim(A)
-        a = mul!(a, c, A[j])
-        MF = representation_matrix(a)
-        MK = _lift_fq_mat!(MF, MK, MQx)
-        t = tr(MK^Int(pl))
-        @assert all([ iszero(mod(coeff(t, s), pl)) for s = 0:(n - 1) ])
-        jn = (j - 1)*n
-        for s = 1:n
-          M[jn + s, i] = Fp(divexact(numerator(coeff(t, s - 1)), pl))
-        end
-      end
-    end
-    d, B = nullspace(M)
-    if d == 0
-      return elem_type(A)[]
-    end
-    C = transpose(B)*C
-  end
-
-  return elem_type(A)[ A2toA(elem_from_mat_row(A2, C, i)) for i = 1:nrows(C) ]
-end
-
-function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{nf_elem}, M3::MatElem{QQPolyRingElem}) where { T <: Union{ fqPolyRepFieldElem, FqPolyRepFieldElem, FqFieldElem } }
-  @assert ncols(M1) == ncols(M2) && ncols(M1) == ncols(M3)
-  @assert nrows(M1) == nrows(M2) && nrows(M1) == nrows(M3)
-  n = degree(base_ring(M1))
-  K = base_ring(M2)
-  R = base_ring(M3)
-  for i = 1:nrows(M1)
-    for j = 1:ncols(M1)
-      # Sadly, there is no setcoeff! for nf_elem...
-      for k = 0:(n - 1)
-        if T === FqFieldElem
-          M3[i, j] = setcoeff!(M3[i, j], k, QQFieldElem(Nemo._coeff(M1[i, j], k)))
-        else
-          M3[i, j] = setcoeff!(M3[i, j], k, QQFieldElem(coeff(M1[i, j], k)))
-        end
-      end
-      ccall((:nf_elem_set_fmpq_poly, libantic), Nothing, (Ref{nf_elem}, Ref{QQPolyRingElem}, Ref{AnticNumberField}), M2[i, j], M3[i, j], K)
-    end
-  end
-  return M2
-end
-
-function _radical(A::AbsAlgAss{T}) where { T <: Union{ QQFieldElem, NumFieldElem } }
-  M = trace_matrix(A)
-  n, N = nullspace(M)
-  b = Vector{elem_type(A)}(undef, n)
-  t = zeros(base_ring(A), dim(A))
-  # the construct A(t) will make a copy (hopefully :))
-  for i = 1:n
-    for j = 1:dim(A)
-      t[j] = N[j, i]
-    end
-    b[i] = A(t)
-  end
-  return b
-end
-
-################################################################################
-#
 #  is_simple
 #
 ################################################################################
 
-function is_semisimple(A::AbsAlgAss)
+function is_semisimple(A::AbstractAssociativeAlgebra)
   b = _issemisimple(A)
   @assert b == 1 || b == 2
   return b == 1
 end
 
-function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem, QQFieldElem, nf_elem } }
+function _issemisimple(A::AbstractAssociativeAlgebra{T}) where { T } #<: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem, QQFieldElem, AbsSimpleNumFieldElem } }
   if A.issemisimple == 0
     if isempty(_radical(A))
       A.issemisimple = 1
@@ -1403,9 +978,23 @@ function _issemisimple(A::AbsAlgAss{T}) where { T } #<: Union{ fpFieldElem, Gene
   return A.issemisimple
 end
 
-is_simple_known(A::AbsAlgAss) = A.is_simple != 0
+is_simple_known(A::AbstractAssociativeAlgebra) = A.is_simple != 0
 
-function is_simple(A::AbsAlgAss)
+@doc raw"""
+    is_simple(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether the algebra $A$ is simple.
+
+# Examples
+
+```jldoctest
+julia> A = matrix_algebra(QQ, 2);
+
+julia> is_simple(A)
+true
+```
+"""
+function is_simple(A::AbstractAssociativeAlgebra)
   if A.is_simple != 0
     return A.is_simple == 1
   end
@@ -1432,8 +1021,50 @@ end
 #
 ################################################################################
 
-function is_etale(A::AbsAlgAss)
+@doc raw"""
+    is_etale(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether the algebra $A$ is étale, that is, commutative and semisimple.
+"""
+function is_etale(A::AbstractAssociativeAlgebra)
   return is_commutative(A) && is_semisimple(A)
+end
+
+################################################################################
+#
+#  Separability
+#
+################################################################################
+
+@doc raw"""
+    is_separable(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether the algebra is separable, that is, semisimple under any base
+field extension.
+"""
+@attr Bool function is_separable(A::AbstractAssociativeAlgebra)
+  K = base_ring(A)
+  # Would be great to have is_known(K, is_perfect) or something like that
+  if characteristic(K) == 0  || is_finite(K)
+    return is_semisimple(A)
+  end
+
+  if !is_commutative(A)
+    # Strategy (see Ford's seperable algebras)
+    # If I understand it correctly, a semi-simple K-algebra is separable
+    # if and only if the center is a separable K-algebra
+    
+    # Maybe as follows?
+    # C, = center(A)
+    # return is_separable(C) && is_semisimple(A)
+    throw(NotImplemented())
+  end
+
+  # A commutative algebra is separable, if and only if the (ordinary) trace
+  # form is non-degenerate, see Jacobson, Basic Algebra II, some Lemma near
+  # page 641
+
+  return !is_zero(det(trace_matrix(A)))
 end
 
 ################################################################################
@@ -1442,7 +1073,7 @@ end
 #
 ################################################################################
 
-function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
+function trace_signature(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, P::InfPlc)
   M = trred_matrix(basis(A))
   Ky, y = polynomial_ring(base_ring(A), "y", cached = false)
   f = charpoly(Ky, M)
@@ -1450,7 +1081,7 @@ function trace_signature(A::AbsAlgAss{nf_elem}, P::InfPlc)
   return (npos, degree(f) - npos)
 end
 
-function trace_signature(A::AbsAlgAss{QQFieldElem})
+function trace_signature(A::AbstractAssociativeAlgebra{QQFieldElem})
   O = get_attribute(A, :any_order)
   if O === nothing
     M = trred_matrix(basis(A))
@@ -1473,7 +1104,8 @@ end
 
 # Given epimorphism h : A -> B, transport the refined wedderburn decomposition
 # of A to B
-function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
+function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor; is_anti::Bool = false)
+  # is_anti = h is anti-morphism
   A = domain(h)
   B = codomain(h)
 
@@ -1483,7 +1115,7 @@ function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
 
   _assert_has_refined_wedderburn_decomposition(A)
   dec = decompose(A)
-  T = AlgAss{elem_type(base_ring(B))}
+  T = StructureConstantAlgebra{elem_type(base_ring(B))}
   new_dec = Tuple{T, morphism_type(T, typeof(B))}[]
   k = 0
   # We have to be very careful not to change the decomposition of B if it
@@ -1510,7 +1142,15 @@ function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor)
         CtoBc = hom(C, Bc, M, inv(M))
         if isdefined(C, :isomorphic_full_matrix_algebra)
           CM, CtoCM = C.isomorphic_full_matrix_algebra
+          #bmat = basis_matrix([CM(transpose(matrix(x)), check = false) for x in basis(CM)])
+          #ff = hom(CM, CM, bmat, inv(bmat))
           f = AbsAlgAssMorGen(Bc, CM, inv(CtoBc).mat * CtoCM.M, CtoCM.Minv * CtoBc.mat)
+          if is_anti
+            BB = matrix([coefficients(CM(transpose(matrix(f(b))), check = false)) for b in basis(Bc)])
+            BBinv = matrix([coefficients(preimage(CtoCM, CM(transpose(matrix(b)), check = false))) for b in _absolute_basis(CM)])
+            #BBinv = inv(BB)
+            f = AbsAlgAssMorGen(Bc, CM, BB, BBinv)
+          end
           Bc.isomorphic_full_matrix_algebra = CM, f
         end
       end
@@ -1527,47 +1167,47 @@ end
 ################################################################################
 
 @doc raw"""
-    product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
-                                                               -> AbsAlgAss, Map
+    product_of_components_with_projection(A::AbstractAssociativeAlgebra, a::Vector{Int})
+                                                               -> AbstractAssociativeAlgebra, Map
 
 Return the direct product of the simple components of $A$ specified by `a`
 together with the canonical projection, where the ordering is with respect to
 the ordering returned by `decompose(A)`.
 """
-function product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
+function product_of_components_with_projection(A::AbstractAssociativeAlgebra, a::Vector{Int})
   dec = decompose(A)
   l = length(dec)
   @req all(i -> 1 <= i <= l, a) "Indices ($a) must satisfy >= 1 and <= $l"
   algs = [dec[i][1] for i in a]
   injs = [dec[i][2] for i in a]
   r = length(a)
-  B, injstoB = direct_product(algs)
+  B, injstoB = direct_product(base_ring(A), algs)
   imgs = elem_type(B)[]
   for b in basis(A)
-    push!(imgs, sum(injstoB[i](injs[i]\b) for i in 1:r))
+    push!(imgs, sum(injstoB[i](injs[i]\b) for i in eachindex(a); init = zero(B)))
   end
-  p = hom(A, B, basis_matrix(imgs))
+  p = hom(A, B, basis_matrix(imgs); check = false)
   _transport_refined_wedderburn_decomposition_forward(p)
   return B, p
 end
-#function product_of_components(A::AbsAlgAss)
+#function product_of_components(A::AbstractAssociativeAlgebra)
 
 @doc raw"""
-    product_of_components_with_projection(A::AbsAlgAss, a::Vector{Int})
-                                                                   -> AbsAlgAss
+    product_of_components_with_projection(A::AbstractAssociativeAlgebra, a::Vector{Int})
+                                                                   -> AbstractAssociativeAlgebra
 
 Return the direct product of the simple components of $A$ specified by `a`, where
 the ordering is with respect to the ordering returned by `decompose(A)`.
 """
-function product_of_components(A::AbsAlgAss, a::Vector{Int})
+function product_of_components(A::AbstractAssociativeAlgebra, a::Vector{Int})
   B, = product_of_components(A, a)
   return B
 end
 
 @doc raw"""
-    maximal_eichler_quotient_with_projection(A::AbsAlgAss) -> AbsAlgAss, Map
+    maximal_eichler_quotient_with_projection(A::AbstractAssociativeAlgebra) -> AbstractAssociativeAlgebra, Map
 """
-function maximal_eichler_quotient_with_projection(A::AbsAlgAss)
+function maximal_eichler_quotient_with_projection(A::AbstractAssociativeAlgebra)
   v = Int[]
   dec = decompose(A)
   for i in 1:length(dec)
@@ -1586,7 +1226,7 @@ end
 ################################################################################
 
 @doc raw"""
-    central_primitive_idempotents(A::AbsAlgAss) -> Vector
+    central_primitive_idempotents(A::AbstractAssociativeAlgebra) -> Vector
 
 Returns the central primitive idempotents of `A`.
 
@@ -1599,7 +1239,7 @@ julia> length(central_primitive_idempotents(QG))
 2
 ```
 """
-function central_primitive_idempotents(A::AbsAlgAss)
+function central_primitive_idempotents(A::AbstractAssociativeAlgebra)
   dec = decompose(A)
   res = Vector{elem_type(A)}(undef, length(dec))
   for i in 1:length(dec)
@@ -1607,4 +1247,144 @@ function central_primitive_idempotents(A::AbsAlgAss)
     res[i] = BtoA(one(B))
   end
   return res
+end
+
+###############################################################################
+#
+#  Skolem-Noether
+#
+################################################################################
+
+function _skolem_noether(h::AbsAlgAssMor)
+  A = domain(h)
+  @req A === codomain(h) "Morphism must be an isomorphism"
+  @req is_simple(A) "Algebra must be simple"
+  @req is_central(A) "Algebra must be central"
+  # for b, consider the map f_b : A -> A, x -> b * x - x * h(b)
+  # we look for something in the intersection ker(f_b), where b runs through
+  # a basis of A. We are tad more clever and consider only the restriction
+  # on the kernel (intersection) we found so far
+  #
+  # Also if we hit something one-dimensional, we are done
+  B = basis(A)
+  C = B
+  Cmat = basis_matrix(C)
+  for b in B
+    M = basis_matrix(elem_type(A)[b * c - c * h(b) for c in C])
+    K = kernel(M, side = :left)
+    Cmat = K * Cmat
+    C = elem_type(A)[A(Cmat[i, :]) for i in 1:nrows(Cmat)]
+    if length(C) == 1
+      break
+    end
+  end
+  if length(C) == 1
+    a = C[1]
+    fl, _ = is_invertible(a)
+    @assert fl
+    return a
+  else
+    for i in 1:length(C)
+      a = C[i]
+      fl, _ = is_invertible(a)
+      if fl
+        return a
+      end
+    end
+    # do some random combination
+    error("Not impelemented yet")
+  end
+end
+
+################################################################################
+#
+#  Maximal separable subalgebra
+#
+################################################################################
+
+# (Part of) Algorithm 5.5 of Lenstra-Silverberg, Algorithms for Commutative Algebras Over the Rational Numbers
+# (they only state it for QQ, but should be valid in charcteristic zero)
+function maximal_separable_subalgebra(A::AbstractAssociativeAlgebra)
+  @req is_commutative(A) "Algebra must be commutative"
+  @req is_zero(characteristic(base_ring(A))) "Characteristic of base ring must be zero"
+
+  B = basis(A)
+  BU = eltype(B)[]
+  for b in B
+    u, v = jordan_chevalley_decomposition(b)
+    push!(BU, u)
+  end
+  R = echelon_form(basis_matrix(BU); trim = true)
+  return _subalgebra(A, [elem_from_mat_row(A, R, i) for i in 1:nrows(R)])
+end
+
+################################################################################
+#
+#  Multiplicative dependencies
+#
+################################################################################
+
+function _multiplicative_dependencies(A::AbstractAssociativeAlgebra, S::Vector)
+  @req is_commutative(A) "Algebra must be commutative"
+  @req is_zero(characteristic(base_ring(A))) "Characteristic of base ring must be zero"
+
+  B, BtoA = maximal_separable_subalgebra(A)
+
+  nfs = _as_number_fields(B)
+
+  jcs = first.(jordan_chevalley_decomposition.(S))
+  jc = [has_preimage_with_preimage(BtoA, x)[2] for x in first.(jordan_chevalley_decomposition.(S))]
+
+  F = free_abelian_group(length(S))
+
+  kernels = ZZMatrix[]
+
+  for (K, BtoK) in nfs
+    eltsinK = BtoK.(jc)
+    if any(is_zero, eltsinK)
+      error("oopsie, elements not invertible")
+    end
+    # hack to get something
+    v = _mult_dep(K, eltsinK)
+    Hm = reduce(vcat, v)
+    push!(kernels, Hm)
+  end
+
+  J = radical(A)
+  m = dim(A) # TODO: compute the nilpotency index
+  logimgs = elem_type(A)[]
+  for (s, pis) in zip(S, jcs)
+    w = s*inv(pis)
+    v = 1 - w
+    logimg = -sum(v^i * QQ(1//i) for i in 1:m)
+    push!(logimgs, logimg)
+  end
+  Blog, = integral_split(basis_matrix(logimgs), ZZ)
+
+  push!(kernels, kernel(Blog, side = :left))
+
+  RtoF = reduce((x, y) -> intersect(x, y, false)[2], [sub(F, k, false)[2] for k in kernels])
+  return [_eltseq(x.coeff) for x in RtoF.(gens(domain(RtoF)))]
+end
+
+function _multiplicative_dependencies(v::Vector{<:MatElem})
+  A = matrix_algebra(QQ, v)
+  S = A.(v)
+  _multiplicative_dependencies(A, S)
+end
+
+# TODO: Use Ge
+function _mult_dep(K::AbsSimpleNumField, S::Vector)
+  OK = maximal_order(K)
+  sup = reduce(vcat, [ support(s, OK) for s in S])
+  # I don't know why noone ever implemented this
+  if isempty(sup)
+    push!(sup, prime_ideals_over(OK, 2)[1])
+  end
+  U, mU = sunit_group(unique!(sup))
+  SinU = .\(mU, S)
+  F = free_abelian_group(length(SinU))
+  h = hom(F, U, SinU)
+  K, mK = kernel(h)
+  [x.coeff for x in mK.(gens(K))]
 end

@@ -1,7 +1,3 @@
-export FacElem, FacElemMon, simplify, factor_coprime
-
-export transform
-
 ################################################################################
 #
 #  Insert in a dictionary
@@ -72,8 +68,6 @@ end
 ################################################################################
 
 # abstract nonsense
-
-const FacElemMonDict = IdDict()
 
 function (x::FacElemMon{S})() where S
   z = FacElem{elem_type(S), S}()
@@ -182,6 +176,8 @@ parent(x::FacElem) = x.parent
 
 base_ring(x::FacElemMon) = x.base_ring
 
+base_ring_type(::Type{FacElemMon{S}}) where {S} = S
+
 base_ring(x::FacElem) = base_ring(parent(x))
 
 base(x::FacElem) = keys(x.fac)
@@ -212,6 +208,8 @@ Base.iterate(a::FacElem, state) = Base.iterate(a.fac, state)
 
 Base.length(a::FacElem) = Base.length(a.fac)
 
+Base.eltype(a::Type{FacElem{S, T}}) where {S, T} = Pair{S, ZZRingElem}
+
 check_parent(x::FacElem{S, T}, y::FacElem{S, T}) where { S, T } = base_ring(x) == base_ring(y)
 
 ################################################################################
@@ -224,9 +222,18 @@ function show(io::IO, x::FacElemMon)
   print(io, "Factored elements over $(x.base_ring)")
 end
 
-function show(io::IO, x::FacElem)
-  print(io, "Factored element with data\n$(x.fac)")
+function AbstractAlgebra.expressify(x::FacElem; context=nothing)
+  if length(x.fac) == 0
+    return 1
+  end
+  prod = Expr(:call, :*)
+  for (k,v) = x.fac
+    push!(prod.args, Expr(:call, :^, AbstractAlgebra.expressify(k, context=context), v))
+  end
+  return prod
 end
+
+@enable_all_show_via_expressify FacElem
 
 ################################################################################
 #
@@ -432,7 +439,7 @@ end
 #
 ################################################################################
 
-function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
+function evaluate(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}; coprime::Bool = false)
   O = order(base_ring(x))
   if !coprime
     x = simplify(x) # the other method won't work due to one()
@@ -449,7 +456,7 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   return A
 end
 
-function _ev(d::Dict{nf_elem, ZZRingElem}, oe::nf_elem)
+function _ev(d::Dict{AbsSimpleNumFieldElem, ZZRingElem}, oe::AbsSimpleNumFieldElem)
   z = deepcopy(oe)
   if length(d)==0
     return z
@@ -529,7 +536,11 @@ function _ev(d::Dict{fqPolyRepFieldElem, ZZRingElem}, z::fqPolyRepFieldElem)
 end
 
 function _ev(d::Dict{T, ZZRingElem}, oe::T) where T
-  z = copy(oe)
+  if T <: RingElement
+    z = deepcopy(oe)
+  else # mainly for ideals?
+    z = copy(oe)
+  end
   if length(d)==0
     return z
   elseif length(d)==1

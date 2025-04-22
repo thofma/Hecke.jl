@@ -62,7 +62,7 @@ end
 
 export graphic_divisors
 
-function graphic_subgroups(A::GrpAbFinGen)
+function graphic_subgroups(A::FinGenAbGroup)
   s = collect(subgroups(A))
   g = graph()
   n = [node("$i: $(length(s[i][1]))") for i = 1:length(s)]

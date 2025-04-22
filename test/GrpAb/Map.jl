@@ -4,26 +4,26 @@
     H, mH = sub(G, [G[1]])
     a = G[1]
     b = G[3]
-    bb, c = @inferred haspreimage(mH, a)
+    bb, c = @inferred has_preimage_with_preimage(mH, a)
     @test bb
     @test mH(c) == a
-    bb, c = @inferred haspreimage(mH, b)
+    bb, c = @inferred has_preimage_with_preimage(mH, b)
     @test !bb
     # TODO: Test for has_image missing
 
-    fl, c = @inferred haspreimage(mH, elem_type(H)[])
+    fl, c = @inferred has_preimage_with_preimage(mH, elem_type(H)[])
     @test fl
   end
 
   @testset "Homomorphisms" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
-    h = @inferred hom(gens(G), gens(H))
+    h = @inferred hom(G, H, gens(G), gens(H))
     @test h(G[1]) == H[1]
     @test h(G[2]) == H[2]
     @test h(G[3]) == H[3]
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
@@ -32,7 +32,7 @@
   @testset "Kernel" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
@@ -43,7 +43,7 @@
 
     G = abelian_group(Int[])
     H = abelian_group([2])
-    h = hom(G, H, eltype(G)[])
+    h = hom(G, H, eltype(H)[])
     K, mK = @inferred kernel(h)
     @test isone(order(K))
   end
@@ -51,13 +51,13 @@
   @testset "Image" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
 
     I, mI = @inferred image(h)
-    @test all(haspreimage(h, mI(i))[1] for i in I)
+    @test all(has_preimage_with_preimage(h, mI(i))[1] for i in I)
     @test order(I) == 8
   end
 
@@ -65,11 +65,11 @@
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     b = @inferred is_injective(h)
     @test !b
 
-    h = @inferred hom(G, [3*h for h in gens(H)])
+    h = @inferred hom(G, H, [3*h for h in gens(H)])
     b = @inferred is_injective(h)
     @test b
   end
@@ -78,11 +78,11 @@
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     b = @inferred is_surjective(h)
     @test !b
 
-    h = @inferred hom(G, [3*h for h in gens(H)])
+    h = @inferred hom(G, H, [3*h for h in gens(H)])
     b = @inferred is_surjective(h)
     @test b
 
@@ -96,11 +96,11 @@
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])
 
-    h = @inferred hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, H, [2*h for h in gens(H)])
     b = @inferred is_bijective(h)
     @test !b
 
-    h = @inferred hom(G, [3*h for h in gens(H)])
+    h = @inferred hom(G, H, [3*h for h in gens(H)])
     b = @inferred is_bijective(h)
     @test b
 
@@ -123,5 +123,13 @@
     @test gg * g == id_hom(H)
     @test_throws ArgumentError preinverse(f)
     @test_throws ArgumentError postinverse(g)
+  end
+
+  let
+    G = abelian_group([2, 2])
+    h = zero_map(G, G);
+    hh = zero_map(G, G);
+    @test h == hh
+    @test hash(h) == hash(hh)
   end
 end

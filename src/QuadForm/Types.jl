@@ -1,13 +1,3 @@
-export AbstractLat
-export AbstractSpace
-export AbstractSpaceMor
-export AbstractSpaceRes
-export TorQuadModule
-export TorQuadModuleElem
-export TorQuadModuleMor
-export VecSpaceRes
-export ZZLat
-
 ################################################################################
 #
 #  Abstract types
@@ -161,7 +151,7 @@ of $W$
 mutable struct AbstractSpaceRes{S, T} <: Map{S, T, HeckeMap, AbstractSpaceRes}
   header::MapHeader{S, T}
   btop::MatrixElem        # A given basis for the top space
-  ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it everytime
+  ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it every time
   bdown::MatrixElem       # A given basis the bottom space
   ibdown::MatrixElem      # Same as ibtop
 
@@ -252,7 +242,7 @@ julia> R = rescale(root_lattice(:D,4),2);
 julia> D = discriminant_group(R);
 
 julia> A = abelian_group(D)
-GrpAb: (Z/2)^2 x (Z/4)^2
+(Z/2)^2 x (Z/4)^2
 
 julia> d = D[1]
 Element
@@ -273,10 +263,10 @@ julia> lift(d)
 N.B. Since there are no elements of $\mathbb{Z}$-lattices, we think of elements of `M` as
 elements of the ambient vector space. Thus if `v::Vector` is such an element
 then the coordinates with respec to the basis of `M` are given by
-`solve_left(basis_matrix(M), v)`.
+`solve(basis_matrix(M), v; side = :left)`.
 """
 @attributes mutable struct TorQuadModule
-  ab_grp::GrpAbFinGen             # underlying abelian group
+  ab_grp::FinGenAbGroup             # underlying abelian group
   cover::ZZLat                     # ZZLat -> ab_grp, x -> x * proj
   rels::ZZLat
   proj::ZZMatrix                  # is a projection and respects the forms
@@ -297,16 +287,16 @@ end
 ### Element
 
 mutable struct TorQuadModuleElem
-  data::GrpAbFinGenElem
+  data::FinGenAbGroupElem
   parent::TorQuadModule
 
-  TorQuadModuleElem(T::TorQuadModule, a::GrpAbFinGenElem) = new(a, T)
+  TorQuadModuleElem(T::TorQuadModule, a::FinGenAbGroupElem) = new(a, T)
 end
 
 ### Maps
 
 @doc raw"""
-    TorQuadModuleMor
+    TorQuadModuleMap
 
 Type for abelian group homomorphisms between torsion quadratic modules. It
 consists of a header which keeps track of the domain and the codomain of type
@@ -333,13 +323,7 @@ Gram matrix quadratic form:
 [1//3   2//3   1//4]
 
 julia> N, f = normal_form(T)
-(Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z, Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z)
+(Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z, Map: finite quadratic module -> finite quadratic module)
 
 
 julia> domain(f)
@@ -366,18 +350,12 @@ Gram matrix quadratic form:
 [   0      0      0   4//3]
 
 julia> abelian_group_homomorphism(f)
-Map with following data
-Domain:
-=======
-Abelian group with structure: (Z/3)^2 x Z/12
-Codomain:
-=========
-(General) abelian group with relation matrix
-[4 0 0 0; 0 3 0 0; 0 0 3 0; 0 0 0 3]
-with structure of Abelian group with structure: (Z/3)^2 x Z/12
+Map
+  from (Z/3)^2 x Z/12
+  to finitely generated abelian group with 4 generators and 4 relations
 ```
 
-Note that an object of type `TorQuadModuleMor` needs not to be a morphism
+Note that an object of type `TorQuadModuleMap` needs not to be a morphism
 of torsion quadratic modules, i.e. it does not have to preserve the
 respective bilinear or quadratic forms of its domain and codomain. Though,
 it must be a homomorphism between the underlying finite abelian groups.
@@ -409,13 +387,9 @@ Gram matrix quadratic form:
 [2   4   3//2]
 
 julia> f = hom(T, T6, gens(T6))
-Map with following data
-Domain:
-=======
-Finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
-Codomain:
-=========
-Finite quadratic module: (Z/3)^2 x Z/12 -> Q/12Z
+Map
+  from finite quadratic module: (Z/3)^2 x Z/12 -> Q/2Z
+  to finite quadratic module: (Z/3)^2 x Z/12 -> Q/12Z
 
 julia> T[1]*T[1] == f(T[1])*f(T[1])
 false
@@ -424,16 +398,16 @@ julia> is_bijective(f)
 true
 ```
 
-Hecke provides several constructors for objects of type `TorQuadModuleMor`, see
+Hecke provides several constructors for objects of type `TorQuadModuleMap`, see
 for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 [`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
 [`identity_map(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
 """
-mutable struct TorQuadModuleMor <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMor}
+mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMap}
   header::MapHeader{TorQuadModule, TorQuadModule}
-  map_ab::GrpAbFinGenMap
+  map_ab::FinGenAbGroupHom
 
-  function TorQuadModuleMor(T::TorQuadModule, S::TorQuadModule, m::GrpAbFinGenMap)
+  function TorQuadModuleMap(T::TorQuadModule, S::TorQuadModule, m::FinGenAbGroupHom)
     z = new()
     z.header = MapHeader(T, S)
     z.map_ab = m
@@ -479,48 +453,89 @@ end
 #
 ###############################################################################
 
-mutable struct SCPComb
-  rank::Int
-  trans::ZZMatrix
-  coef::ZZMatrix
-  F::Vector{ZZMatrix}
-
-  SCPComb() = new()
-end
-
 mutable struct VectorList{S, T}
-  vectors::Vector{S}
-  lengths::Vector{Vector{T}}
-  lookup::Dict{S, Int}
-  issorted::Bool
-  use_dict::Bool
+  vectors::Vector{S} # list of (short) vectors
+  lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
+  lookup::Dict{S, Int} # v => i iff vectors[i] == v
+  issorted::Bool # whether the vectors are sorted
+  use_dict::Bool # whether lookup is used
 
   function VectorList{S, T}() where {S, T}
     return new{S, T}()
   end
 end
 
+# scalar product combinations
+mutable struct SCPComb{S, V}
+  scpcombs::VectorList{V, S} # list of vectors s with <w, e_i> = s_i for w a short vector
+  trans::ZZMatrix # transformation matrix mapping the vector sums to a basis
+  coef::ZZMatrix # "inverse" of trans: maps the basis to the vector sums
+  F::Vector{ZZMatrix} # Gram matrices of the basis
+
+  xvectmp::ZZMatrix # length(scpcombs.vectors) x dim
+  xbasetmp::ZZMatrix # nrows(trans) x dim
+  multmp1::ZZMatrix # nrows(trans) x dim
+  multmp2::ZZMatrix # nrows(trans) x nrows(trans)
+  multmp3::ZZMatrix # length(scpcombs.vectors) x dim
+
+  SCPComb{S, V}() where {S, V} = new{S, V}()
+end
+
+# Bacher polynomials
+# In theory, this is a polynomial, but for the application we only need the
+# coefficients.
+# `coeffs` is assumed to be of length n := `maximal_degree - minimal_degree + 1` and
+# the corresponding polynomial is
+#     coeffs[n] * X^maximal_degree + coeffs[n - 1] * X^(maximal_degree - 1)
+#   + ... + coeffs[1] * X^minimal_degree \in ZZ[X]
+mutable struct BacherPoly{T}
+  coeffs::Vector{Int}
+  minimal_degree::Int
+  maximal_degree::Int
+  sum_coeffs::Int # = sum(coeffs)
+  S::T # the scalar product w.r.t. which the polynomial is constructed
+
+  BacherPoly{T}() where {T} = new{T}()
+end
+
 mutable struct ZLatAutoCtx{S, T, V}
-  G::Vector{T}
-  Gtr::Vector{T}
+  G::Vector{T} # Gram matrices
+  GZZ::Vector{ZZMatrix} # Gram matrices (of type ZZMatrix)
+  Gtr::Vector{T} # transposed Gram matrices
   dim::Int
   max::S
-  V::VectorList{V, S}
-  v::Vector{T}
-  per::Vector{Int}
-  fp::Matrix{Int}
-  fp_diagonal::Vector{Int}
-  std_basis::Vector{Int}
-  scpcomb::SCPComb
+  V::VectorList{V, S} # list of (short) vectors
+  v::Vector{Vector{V}} # list of list of vectors (n x 1 matrices),
+                       # v[i][j][k] is the dot product of V[j] with
+                       # the k-th row of G[i]
+                       # v[i][j] is the (matrix) product G[i]*V[j]
+  per::Vector{Int} # permutation of the basis vectors such that in every step
+                   # the number of possible continuations is minimal
+  fp::Matrix{Int} # the "fingerprint": fp[1, i] = number vectors v such that v
+                  # has same length as b_i for all forms
+  fp_diagonal::Vector{Int} # diagonal of the fingerprint matrix
+  std_basis::Vector{Int} # index of the the standard basis vectors in V.vectors
 
-  orders::Vector{Int}
-  ng::Vector{Int}
-  nsg::Vector{Int}
-  g::Vector{Vector{T}}
+  # Vector sum stuff
+  scpcomb::Vector{SCPComb{S, V}} # cache for the vector sum optimization
+  depth::Int # depth of the vector sums (0 == no vector sums)
+
+  # Bacher polynomial stuff
+  bacher_polys::Vector{BacherPoly{S}}
+  bacher_depth::Int # For how many base vectors the Bacher polynomial should be
+                    # used. Between 0 (none at all) and `dim`
+
+  orders::Vector{Int} # orbit length of b_i under <g[i], ..., g[end]>
+  nsg::Vector{Int} # the first nsg[i] elements of g[i] lie in <g[1], ..., g[i-1]>
+  g::Vector{Vector{T}} # generators for (subgroups of) the iterative stabilizers:
+                       # <g[1], ..., g[i]> is the point-wise stabilizer of the
+                       # basis vectors b_1, ..., b_{i - 1} in the full automorphism
+                       # group
   prime::S
 
-  is_symmetric::BitArray{1}
-  operate_tmp::V
+  is_symmetric::BitArray{1} # whether G[i] is symmetric
+  operate_tmp::V # temp storage for orbit computation
+  dot_product_tmp::V # temp storage for dot product computation
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
     z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
@@ -528,7 +543,8 @@ mutable struct ZLatAutoCtx{S, T, V}
     z.Gtr = ZZMatrix[transpose(g) for g in G]
     z.dim = nrows(G[1])
     z.is_symmetric = falses(length(G))
-    z.operate_tmp = zero_matrix(FlintZZ, 1, ncols(G[1]))
+    z.operate_tmp = zero_matrix(ZZ, 1, ncols(G[1]))
+    z.dot_product_tmp = zero_matrix(ZZ, 1, 1)
 
     for i in 1:length(z.G)
       z.is_symmetric[i] = is_symmetric(z.G[i])
@@ -549,11 +565,11 @@ end
 ###############################################################################
 
 mutable struct ZetaFunction
-  K::AnticNumberField
+  K::AbsSimpleNumField
   coeffs::Vector{ZZRingElem}
   dec_types
 
-  function ZetaFunction(K::AnticNumberField)
+  function ZetaFunction(K::AbsSimpleNumField)
     z = new()
     z.K = K
     z.coeffs = ZZRingElem[]

@@ -2,34 +2,6 @@
 #
 #        NfOrdClsZeta.jl: Zeta functions of orders in number fields
 #
-# This file is part of hecke.
-#
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2015, 2016 Tommy Hofmann
-#
 ################################################################################
 
 export zeta_log_residue
@@ -83,7 +55,7 @@ _max_power_in(a::Int, b::Int) = _max_power_in(ZZRingElem(a), b)
 ################################################################################
 
 # bounding the error
-function _approx_error_bf(O::NfOrd, Tc = BigFloat)
+function _approx_error_bf(O::AbsSimpleNumFieldOrder, Tc = BigFloat)
   return _approx_error_bf(discriminant(O), degree(O), Tc)
 end
 
@@ -106,10 +78,10 @@ function _approx_error_bf(disc::ZZRingElem, degree::Int, Tc = BigFloat)
 
   n = BigFloat(degree)
 
-  C1 = @with_round_down(Tc(FlintQQ(2324)//FlintQQ(1000)),Tc)
-  C2 = @with_round_down(Tc(FlintQQ(388)//FlintQQ(100)),Tc)
+  C1 = @with_round_down(Tc(QQ(2324)//QQ(1000)),Tc)
+  C2 = @with_round_down(Tc(QQ(388)//QQ(100)),Tc)
   C3 = Tc(2)
-  C4 = @with_round_down(Tc(FlintQQ(426)//FlintQQ(100)),Tc)
+  C4 = @with_round_down(Tc(QQ(426)//QQ(100)),Tc)
 
   function F(X)#(X::Tc)
     A1 = @with_round_down(C1*logd_down/(@with_round_up(sqrt(X)*log(3*X),Tc)),Tc)
@@ -154,10 +126,10 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
   return x0::Tc
 end
 
-  function _comp_summand(R, p::ZZRingElem, m::Int, aa::arb)
+  function _comp_summand(R, p::ZZRingElem, m::Int, aa::ArbFieldElem)
     logp = log(R(p))
 
-    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
+    pm2 = R(p)^(R(ZZ(m)//ZZ(2)))
 
     pm2inv = inv(pm2)
 
@@ -178,12 +150,12 @@ end
     return pro*pro3
   end
 
-  function _comp_summand(R, p::Int, m::Int, aa::arb)
+  function _comp_summand(R, p::Int, m::Int, aa::ArbFieldElem)
     return _comp_summand(R, ZZRingElem(p), m, aa)
   end
 
 # Computing the g_K(X) term of Belabas-Friedmann
-function _term_bf(O::NfOrd, B::Int, R::ArbField)
+function _term_bf(O::AbsSimpleNumFieldOrder, B::Int, R::ArbField)
 
   xx0 = B
 
@@ -272,7 +244,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
 end
 
 # Approximate the residue
-function _residue_approx_bf(O::NfOrd, error::Float64)
+function _residue_approx_bf(O::AbsSimpleNumFieldOrder, error::Float64)
   F = _approx_error_bf(O, BigFloat)
 
   # magic constant
@@ -303,7 +275,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
 
   valaddederror = deepcopy(val)
   ccall((:arb_add_error_arf, libarb), Nothing,
-              (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)
+              (Ref{ArbFieldElem}, Ref{arf_struct}), valaddederror, error_prime_arf)
 
   while (!radiuslttwopower(val, -der)) ||
                 !((radius(valaddederror)) < error)
@@ -319,7 +291,7 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
     val = _term_bf(O, x0, ArbField(prec, cached = false))
     valaddederror = deepcopy(val)
     ccall((:arb_add_error_arf, libarb), Nothing,
-                (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)
+                (Ref{ArbFieldElem}, Ref{arf_struct}), valaddederror, error_prime_arf)
   end
 
   ccall((:arf_clear, libarb), Nothing, (Ref{arf_struct}, ), error_prime_arf)
@@ -335,13 +307,13 @@ end
 ################################################################################
 
 @doc raw"""
-    zeta_log_residue(O::NfOrd, error::Float64) -> arb
+    zeta_log_residue(O::AbsSimpleNumFieldOrder, error::Float64) -> ArbFieldElem
 
 Computes the residue of the zeta function of $\mathcal O$ at $1$.
-The output will be an element of type `arb` with radius less then
+The output will be an element of type `ArbFieldElem` with radius less then
 `error`.
 """
-function zeta_log_residue(O::NfOrd, abs_error::Float64)
+function zeta_log_residue(O::AbsSimpleNumFieldOrder, abs_error::Float64)
   degree(O) == 1 && error("Number field must be of degree > 1")
   return _residue_approx_bf(O, abs_error)
 end

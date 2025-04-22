@@ -11,16 +11,14 @@
 #Algorithm based on ratpoints by Michael Stoll
 
 #Things Stoll does that we (may not) have yet (or may not want):
-# - Sieving a second round. After the initial sieving round 
-#   Stoll sieves the surviving chunks a second time using a different set of primes 
+# - Sieving a second round. After the initial sieving round
+#   Stoll sieves the surviving chunks a second time using a different set of primes
 # - Use gcd and Jacobi symbol routines that rely (almost) entirely on differences and
 #   shifts. (Not sure if we have this already (or need this)
 # - Compute the residue classes of b modulo the various sieving primes by addition of the
 #   difference from the last b and then correcting by subtracting p a number of times if necessary
 # - Implement most of the testing of ‘forbidden divisors’ of b using bit arrays similar to those used
 #   for sieving the numerators
-
-export find_points
 
 const _primes_for_sieve =
  [3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,
@@ -37,7 +35,7 @@ const _primes_for_sieve =
     find_points((coefficients::Vector{ZZRingElem}, bound::IntegerUnion) -> ArbField
 
 Given a list of coefficients [a_0, a_1, ..., a_n] and a bound,
-return a list of points (x, y) satisfying  
+return a list of points (x, y) satisfying
 y^2 = a_0 + a_1*x + ... +a_n*x^n
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
@@ -62,19 +60,19 @@ function find_points(coefficients::Vector{ZZRingElem}, bound::IntegerUnion, N = 
 end
 
 @doc raw"""
-    find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
+    find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion) -> ArbField
 
 Given an elliptic curve E over QQ with integral coefficients and
 a bound, return a list of points (x: y: 1) on the curve
 where writing x = a//b with gcd(a, b) = 1 the points are bounded by
 max(|a|, |b|) <= bound.
 """
-function find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+function find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
   @req is_integral_model(E) "Elliptic Curve needs to be integral"
-  a1, a2, a3, a4, a6 = a_invars(E)
+  a1, a2, a3, a4, a6 = a_invariants(E)
   transform = false
   if a1 != 0 || a3!= 0
-    b2, b4, b6 = b_invars(E)
+    b2, b4, b6 = b_invariants(E)
     coeffs = [b6, b4, b2, 4]
     transform = true
   else
@@ -82,7 +80,7 @@ function find_points(E::EllCrv{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 
   end
   coeffs = map(numerator, coeffs)
   points = _find_points(coeffs, bound, N, P, Pfirst)
-  
+
   if transform
     map!(t-> transform_ys(t, a1, a3), points, points)
   else
@@ -108,7 +106,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
   #N is size of chunks in which we subdivide
   #P is the number of primes we consider for sieving
   #Pfirst is the number of optimal primes we consider
-  
+
   @req coefficients[end] != 0 "Leading coefficient needs to be non-zero"
 
   # Cache for some BitVector operations
@@ -125,7 +123,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
   primes = _primes_for_sieve[1:P]
 
   # Define the polynomial because we like to evaluate it
-  
+
   # First decide whether to reverse the polynomial or not
 
   n = length(coefficients)
@@ -143,20 +141,20 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
       while tempcoeff[1] == 0
         popfirst!(tempcoeff)
       end
-      
+
       if isodd(length(tempcoeff)) && tempcoeff[1] < coefficients[n]
         reverse_polynomial = true
         coefficients = reverse!(tempcoeff)
       end
     end
   #If f is of even degree, reverse the polynomial if it would lead to better results
-  else 
+  else
     #First compute the coefficients of the reciprocal polynomial
     potential_coefficients = reverse(coefficients)
     while potential_coefficients[end] == 0
       pop!(potential_coefficients)
     end
-    
+
     #If the reciprocal polynomial has odd degree we reverse
     if iseven(length(potential_coefficients))
       reverse_polynomial = true
@@ -165,29 +163,29 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     #Store the leading coefficients for later comparison
       old_lead = coefficients[end]
       new_lead = potential_coefficients[end]
-    end    
+    end
   end
-  
+
   g = Hecke.Globals.Qx(coefficients)
-  
+
   n = length(coefficients)
   odd_degree = iseven(n)
   lead_coeff = coefficients[end]
-  
+
   # Now first compute the primes we will use for sieving
   # We use those primes such that mod p there are few points
-  
+
   # Take the Pfirst primes that are most optimal for sieving
   best_primes = Tuple{Int, QQFieldElem}[]
   exclude_denom= Int[]
   exclude_denom_new = Int[]
-   
+
   for p in primes
     F = GF(p, cached = false)
     order = Hecke.order_via_exhaustive_search(map(F, coefficients))
     push!(best_primes, (p, order//p))
-    
-    if !odd_degree 
+
+    if !odd_degree
       if !is_square(F(old_lead))
         push!(exclude_denom, p)
       end
@@ -196,13 +194,13 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
       end
     end
   end
-  
-  if !odd_degree 
-  #We are going to exclude the denominators b divided by p for which the 
+
+  if !odd_degree
+  #We are going to exclude the denominators b divided by p for which the
   #squarefree part of the leading coefficient is a non-square mod p.
   #To maximize the number of denominators we use the euler_phi function as
-  #a heuristic. 
-  
+  #a heuristic.
+
   #Maybe simply compute the size of B for both potential leading coefficients?
   #This test doesn't include the effect of prime divisors of leading coefficient
     old_d = prod(exclude_denom;init = one(ZZRingElem))
@@ -213,7 +211,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     if old_score > new_score
       reverse_polynomial = true
       coefficients = potential_coefficients
-      
+
       exclude_denom = exclude_denom_new
     end
   end
@@ -222,9 +220,9 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
   primes = Int[p for (p,q) in best_primes[1:Pfirst]]
 
   n = length(coefficients)
-  
+
   lead_coeff = coefficients[n]
- 
+
   #H[m][n] contains sieving info for the residue class k-1 mod m
   H = Vector{BitVector}[]
   H_temp = BitVector[]
@@ -240,15 +238,15 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     push!(H_temp, copy(p_sieve[1]))
     push!(p_starts, mod(-bound, p))
   end
-  
+
   two_adic_info = mod16_check_arrays(coefficients)
-  
+
   #candidates = fill(trues(N), H_parts)
   candidates = BitVector[trues(N) for i in 1:(H_parts + 1)]
 
 
   res = Tuple{QQFieldElem, QQFieldElem, QQFieldElem}[]
-  
+
   #Determine the set of denumerators b
 
   #if the polynomial is odd we can restrict the possible denominators to the ones of the form a*b^2
@@ -263,7 +261,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     end
     B = collect(filter!(t -> t <= bound, BB))
   else
-    #Exclude denominators divisible py p^k for which the leading coefficient is not a 
+    #Exclude denominators divisible py p^k for which the leading coefficient is not a
     #square mod p^k. (k minimal in this way)
     for p in prime_divisors(lead_coeff)
       vp = valuation(lead_coeff, p)
@@ -279,26 +277,26 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     end
     B = filter!(collect(1:bound)) do b
       for d in exclude_denom
-        if divisible(b,d)
+        if is_divisible_by(b,d)
           return false
         end
       end
 
       gcdb = gcd(b, 2*lead_coeff)
-      
+
       while gcdb != 1
         b = divexact(b, gcd(b, 2*lead_coeff))
         gcdb = gcd(b, 2*lead_coeff)
       end
-      
+
       if jacobi_symbol(lead_coeff, b) != 1
         return false
       end
-      
+
       return true
     end
   end
-  
+
   neg_ints = negative_intervals(g)
 
   left = neg_ints[1]
@@ -306,51 +304,51 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
   right = neg_ints[3]
 
   interval_bounds = QQFieldElem[]
-  
+
   if !isempty(left)
     push!(interval_bounds, max(-bound, left[1]))
   else
     push!(interval_bounds, -bound)
   end
-  
+
   for I in intervals
     push!(interval_bounds, I[1])
     push!(interval_bounds, I[2])
   end
-  
+
   if !isempty(right)
     push!(interval_bounds, min(bound, right[1]))
   else
     push!(interval_bounds, bound)
   end
-  
+
   #Delete any intervals that are already out of bounds
   out_of_bounds = interval_bounds[2] < -bound
   while out_of_bounds
-  
+
     popfirst!(interval_bounds)
     popfirst!(interval_bounds)
     out_of_bounds = interval_bounds[2] < -bound
   end
-  
+
   out_of_bounds = interval_bounds[end - 1] > bound
   while out_of_bounds
-  
+
     pop!(interval_bounds)
     pop!(interval_bounds)
     out_of_bounds = interval_bounds[end - 1] < bound
   end
-  
+
    #Add point(s) at infinity of desingularized projective closure
    #If the degree of f is odd we have y^2 = a(n-1)*x^(n - 1)*z + ... + a0*z^n, so (1:0:0) is a point
-   if odd_degree_original 
+   if odd_degree_original
      push!(res, (one(QQFieldElem), zero(QQFieldElem), zero(QQFieldElem)))
    #If the degree of f is even we have y^2 = an*x^n + ... + a0*z^n, so (1:1:0) and (1:-1:0) are points if and only if an is a square
    elseif is_square(leading_coefficient(f))
      push!(res, (one(QQFieldElem), one(QQFieldElem), zero(QQFieldElem)))
      push!(res, (one(QQFieldElem), -one(QQFieldElem), zero(QQFieldElem)))
    end
-   
+
    if reverse_polynomial
      points_with_x!(res, zero(QQFieldElem), f)
    end
@@ -374,50 +372,50 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
     else
       H = H_triple[case]
     end
-    
+
     #Compute the start of the interval and the end of the interval, but make sure it is within height bounds
     start_interval = min(max(ceil(ZZRingElem, b*left_bound), -bound), bound)
     end_interval = max(min(floor(ZZRingElem, b*right_bound), bound), -bound)
-    
-    
+
+
     # If we only consider odd or even numerators
     if case > 1
-      
+
       #Make sure starting bit corresponds to even numerator if case = 2 and odd if case = 3
       if isodd(start_interval + case)
         start_interval += 1
       end
-      
+
       #Range is divided by 2 when we only consider odd or even numerators
       numerator_range = ceil(Int, (1  - start_interval + end_interval)// 2)
     else
       numerator_range = 1 + - start_interval + end_interval
     end
     H_parts = Int(div(numerator_range, N))
-    
+
     rest = rem(numerator_range, N)
-    
+
     for i in 1:H_parts
       fill!(candidates[i], true)
     end
     candidates[H_parts + 1] = BitVector(x <= rest for x in 1:N)
-    
+
     for i in 1:length(primes)
       p = @inbounds primes[i]
-      
+
       if p < N
         shift = -rem(N, p)
       else
         shift = -N
       end
-      
+
       k = mod(b, p)
       if case == 1
         offset = Int(mod(start_interval, p))
       elseif case == 2
         temp =  Int(mod(start_interval, p))
         if iseven(temp)
-          offset = divexact(temp, 2) 
+          offset = divexact(temp, 2)
         else
           offset = div(p, 2) + 1 + div(temp, 2)
         end
@@ -426,7 +424,7 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
         if iseven(temp)
           offset = mod(div(p, 2)  + divexact(temp, 2), p)
         else
-          offset = div(temp, 2) 
+          offset = div(temp, 2)
         end
       end
       k = mod(b, p)
@@ -434,7 +432,7 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
       #Need to shift by 1 as H[i][k] corresponds to k-1 mod p
       p_sieve = @inbounds H[i][k + 1]
       p_sieve_temp = @inbounds H_temp[i]
-      
+
 
       for j in 1:(H_parts + 1)
         c = candidates[j]
@@ -460,14 +458,14 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
           for j in 1:cnt
             a = _a + I[j]
             if gcd(a, b) == 1
-              if reverse_polynomial 
-                if a != 0 
+              if reverse_polynomial
+                if a != 0
                   x = QQFieldElem(b//a)
                 else
                   continue
                 end
               else
-                
+
                 x = QQFieldElem(a//b)
               end
               points_with_x!(res, x, f)
@@ -487,8 +485,8 @@ function _find_points_in_interval!(res, f, coefficients::Vector, primes, H_tripl
           for j in 1:cnt
             a = _a + 2*(I[j] - 1)
             if gcd(a, b) == 1
-              if reverse_polynomial 
-                if a != 0 
+              if reverse_polynomial
+                if a != 0
                   x = QQFieldElem(b//a)
                 else
                   continue
@@ -518,24 +516,24 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
   p_part = Vector{Vector{Bool}}(undef, p)
   p_part_odd = Vector{Vector{Bool}}(undef, p)
   p_part_even = Vector{Vector{Bool}}(undef, p)
-  
-  
+
+
   az = Vector{elem_type(F)}(undef, n + 1)
   _chunk = Vector{Bool}(undef, length(F))
   for t in (0:p - 1)
     z = F(t)
     zpowers = powers(z, n)
-    #a[i+1] corresponds to a_i above
+   #a[i+1] corresponds to a_i above
     for i in 0:n
       az[i + 1] = a[i + 1] * zpowers[n - i + 1]
     end
-        
+
     chunk = _chunk
     #for (j, x) in enumerate(F)
-    #  @inbounds chunk[j] = issquare(sum([az[i + 1]*x^i for i in (0:n)]))
+    #  @inbounds chunk[j] = is_square(sum([az[i + 1]*x^i for i in (0:n)]))
     #end
-    chunk = Bool[issquare(sum([az[i + 1]*x^i for i in (0:n)])) for x in F]
-    chunk_odd = vcat(chunk[2:2:p], chunk[1:2:p])    
+    chunk = Bool[is_square(sum([az[i + 1]*x^i for i in (0:n)])) for x in F]
+    chunk_odd = vcat(chunk[2:2:p], chunk[1:2:p])
     chunk_even = vcat(chunk[1:2:p], chunk[2:2:p])
 
     #Pad the BitArray to have chunks that are at least big enough to do a broadcasted & with
@@ -582,7 +580,7 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
   p_part = Vector{BitVector}(undef, p)
   p_part_odd = Vector{BitVector}(undef, p)
   p_part_even = Vector{BitVector}(undef, p)
-  
+
   temp = BitVector(undef, p)
 
   if p < N
@@ -594,7 +592,7 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
   az = Vector{elem_type(F)}(undef, n + 1)
 
   collF = collect(F)
-  
+
   temp = BitVector(undef, p)
   temp2 = BitVector(undef, p)
   temp3 = BitVector(undef, p)
@@ -616,12 +614,12 @@ function prime_check_arrays_2(coeff::Vector{<: IntegerUnion}, p::Int, N, C)
     # compute z,...,z^{n+1} if z is even and
     #         1,...,z^n if n is even
     zpowers = _powers(z, isoddn, n)
-    
+
     #a[i+1] corresponds to a_i above
     for i in 0:n
       az[i + 1] = a[i + 1] * zpowers[n - i + 1]
     end
-        
+
     for i in 1:p
       temp4[i] = squares[_sum_up(az, collF[i], n).data + 1]
     end
@@ -691,26 +689,26 @@ end
 #       3 if only odd solutions
 function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
-  R = residue_ring(ZZ, 16)
+  R = residue_ring(ZZ, 16)[1]
   # a contains n+1 elements : a0, ...., an
   n = length(coefficients) - 1
 
   a = map(R, coefficients)
 
   part_16 = Array{Int}(undef, 16)
-  
+
   if isodd(n)
       d = 1
     else
       d = 0
     end
-  
+
   # t odd
   for t in (1:2:15)
     z = R(t)
-    
+
     #Projective closure
-    
+
     #a[i+1] corresponds to a_i above
     chunk = BitArray(sum([a[i + 1]*x^i*z^(n - i + d) for i in (0:n)]) in map(R, [0,1,4,9]) for x in R)
     if chunk == falses(16)
@@ -718,7 +716,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
     else
       evens = [chunk[i] for i in (1:2:16)]
       odds = [chunk[i] for i in (2:2:16)]
-      
+
       #Only even solutions
       if odds == falses(8)
         part_16[t+1] = 2
@@ -731,7 +729,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
       end
     end
   end
-  
+
   for t in (0:2:15)
     z = R(t)
     #a[i+1] corresponds to a_i above
@@ -754,7 +752,7 @@ end
 
 function Hecke.order_via_exhaustive_search(coeff::Array{T}) where T<:FinFieldElem
   F = parent(coeff[1])
-  order = FlintZZ(0)
+  order = ZZ(0)
   for x in F
     ys = points_with_x_coordinate(coeff, x)
     order += length(ys)
@@ -918,7 +916,7 @@ function negative_intervals(N::NegativityCertificate)
   return l, N.intervals, r
 end
 
-function _get_interval(x::arb)
+function _get_interval(x::ArbFieldElem)
   a = ZZRingElem()
   b = ZZRingElem()
   e = ZZRingElem()
@@ -929,7 +927,7 @@ function _get_interval(x::arb)
     return y//1, y//1
   end
 
-  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arb}), a, b, e, x)
+  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ArbFieldElem}), a, b, e, x)
   ee = Int(e)
   @assert ee <= 0
   d = one(ZZRingElem) << -ee

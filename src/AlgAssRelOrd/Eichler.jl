@@ -65,15 +65,15 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
   OpO, toOpO = quo(O, p*O, p)
   B, toB = _as_matrix_algebra(OpO)
 
-  I = ideal_from_gens(B, [ toB(toOpO(O(b))) for b in absolute_basis(M) ])
-  J = ideal_from_gens(B, [ toB(toOpO(O(b))) for b in absolute_basis(N) ])
+  I = _ideal_from_kgens(B, [ toB(toOpO(O(b))) for b in absolute_basis(M) ])
+  J = _ideal_from_kgens(B, [ toB(toOpO(O(b))) for b in absolute_basis(N) ])
 
   # Compute the image of 1 under the canonical projections O -> O/M respectively O -> O/N
   Fq = base_ring(B)
   vv = mod(one(B), I)
   nonZeroCol = 0
-  for i = 1:degree(B)
-    for j = 1:degree(B)
+  for i = 1:_matdeg(B)
+    for j = 1:_matdeg(B)
       if !iszero(vv[i, j])
         nonZeroCol = j
         break
@@ -83,11 +83,11 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
       break
     end
   end
-  v = matrix(Fq, degree(B), 1, [ vv[i, nonZeroCol] for i = 1:degree(B) ])
+  v = matrix(Fq, _matdeg(B), 1, elem_type(Fq)[ vv[i, nonZeroCol] for i = 1:_matdeg(B) ])
   ww = mod(one(B), J)
   nonZeroCol = 0
-  for i = 1:degree(B)
-    for j = 1:degree(B)
+  for i = 1:_matdeg(B)
+    for j = 1:_matdeg(B)
       if !iszero(ww[i, j])
         nonZeroCol = j
         break
@@ -97,7 +97,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
       break
     end
   end
-  w = matrix(Fq, degree(B), 1, [ ww[i, nonZeroCol] for i = 1:degree(B) ])
+  w = matrix(Fq, _matdeg(B), 1, elem_type(Fq)[ ww[i, nonZeroCol] for i = 1:_matdeg(B) ])
 
   b = ceil(Int, degree(base_ring(B))*dim(B)*log2(BigInt(characteristic(base_ring(B)))))
   # A minimal set of generators of around b elements should generate B^\times
@@ -125,7 +125,7 @@ function _eichler_find_transforming_unit_maximal(M::T, N::T) where { T <: Union{
 end
 
 # Finds at least n units in the order F.maximal_orders[order_num]
-function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{nf_elem}, T, U, M }
+function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, T, U, M }
   O = F.maximal_orders[order_num]
   units = Vector{elem_type(O)}()
   while length(units) < n
@@ -146,7 +146,7 @@ function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) wh
   return units
 end
 
-function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, ZZRingElem, NfAbsOrdIdl, NfRelOrdIdl } }
+function _eichler_find_transforming_unit_recurse(I::S, J::S, primes::Vector{T}) where { S <: Union{ AlgAssAbsOrdIdl, AlgAssRelOrdIdl }, T <: Union{ Int, ZZRingElem, AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal } }
   if length(primes) == 1
     u = _eichler_find_transforming_unit_maximal(I, J)
     return elem_in_algebra(u, copy = false)
@@ -207,7 +207,8 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
 end
 
 function get_coeff_fmpz!(x::fqPolyRepFieldElem, n::Int, z::ZZRingElem)
-  ccall((:fmpz_set_ui, libflint), Nothing, (Ref{ZZRingElem}, UInt), z, ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n))
+  c = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n)
+  set!(z, c)
   return z
 end
 
@@ -236,7 +237,7 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
     return n
   end
 
-  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } }
+  function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem} } }
     n = zero!(n)
     for i = 1:nrows(v)
       n = add!(n, n, lift!(v[i, 1], t))

@@ -44,6 +44,7 @@ function is_normalized(w::ZZMatrix)
       return w[1, k] > 0
     end
   end
+  return true # w == 0
 end
 
 function is_normalized(w::Vector{Int})
@@ -52,6 +53,7 @@ function is_normalized(w::Vector{Int})
       return w[k] > 0
     end
   end
+  return true # w == 0
 end
 
 function find_point(w, V::VectorList)
@@ -139,7 +141,7 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true)
+function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -161,7 +163,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
 
   lengths = Vector{Vector{ZZRingElem}}(undef, length(V))
 
-  tmp = zero_matrix(FlintZZ, 1, n)
+  tmp = zero_matrix(ZZ, 1, n)
 
   for i in 1:length(V)
     # First canonicalize them
@@ -175,7 +177,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
       v .*= -1
     end
 
-    vfmpz = matrix(FlintZZ, 1, n, v)
+    vfmpz = matrix(ZZ, 1, n, v)
 
     w = Vector{ZZRingElem}(undef, r)
     w[1] = numerator(cand[2])
@@ -207,7 +209,7 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   if auto
     # Find the standard basis vectors
     C.std_basis = Vector{Int}(undef, dim(C))
-    z = zero_matrix(FlintZZ, 1, dim(C))
+    z = zero_matrix(ZZ, 1, dim(C))
     for i in 1:dim(C)
       z[1, C.per[i]] = 1
       k = find_point(z, C.V)
@@ -216,15 +218,14 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
     end
   end
 
-  #
-
-  C.v = Vector{ZZMatrix}(undef, length(C.G))
+  C.v = Vector{Vector{ZZMatrix}}(undef, length(C.G))
 
   for i in 1:length(C.G)
-    A = zero_matrix(FlintZZ, length(C.V), dim(C))
+    A = Vector{ZZMatrix}(undef, length(C.V))
     for j in 1:length(C.V)
+      A[j] = zero_matrix(ZZ, dim(C), 1)
       for k in 1:dim(C)
-        A[j, k] = _dot_product_with_row(C.V[j], C.G[i], k)
+        A[j][k, 1] = _dot_product_with_row(C.V[j], C.G[i], k)
       end
     end
     C.v[i] = A
@@ -244,50 +245,49 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   for i in 1:dim(C)
     C.g[i] = ZZMatrix[]
   end
-  C.ng = zeros(Int, dim(C))
   C.nsg = zeros(Int, dim(C))
   C.orders = Vector{Int}(undef, dim(C))
 
   # -Id is always an automorphism
-  C.g[1] = ZZMatrix[-identity_matrix(FlintZZ, dim(C))]
-  C.ng[1] = 1
+  C.g[1] = ZZMatrix[-identity_matrix(ZZ, dim(C))]
 
   # Calculate orbit lengths
 
   nH = 0
 
   for i in 1:dim(C)
-    nH += C.ng[i]
+    nH += length(C.g[i])
   end
 
   H = Vector{ZZMatrix}(undef, nH)
 
   if auto
     for i in 1:dim(C)
-      if C.ng[i] > 0
+      if !isempty(C.g[i])
         nH = 0
         for j in i:dim(C)
-          for k in 1:C.ng[j]
+          for k in 1:length(C.g[j])
             nH += 1
             H[nH] = C.g[j][k]
           end
         end
-        #@assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V)
-        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, nH, C.V, C)
+        #@assert _orbitlen_naive(C.std_basis[i], C.fp_diagonal[i], H, C.V) == _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, C.V)
+        C.orders[i] = _orbitlen(C.std_basis[i], C.fp_diagonal[i], H, C.V, C)
       else
         C.orders[i] = 1
       end
     end
   end
 
+  init_vector_sums(C, depth)
+  init_bacher_polynomials(C, bacher_depth)
+
   return C
 end
 
 # The following functions tries to initialize a ZLatAutoCtx with entries in Int.
 # The return value is flag, Csmall
-function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true)
-  # Compute the necessary short vectors
-  @vprintln :Lattice 1 "Computing short vectors of length $max"
+function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -304,6 +304,8 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   end
   @assert bound > 0
 
+  # Compute the necessary short vectors
+  @vprintln :Lattice 1 "Computing short vectors of length $bound"
   @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound, Int)
 
   vectors = Vector{Vector{Int}}(undef, length(V))
@@ -384,6 +386,7 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   Csmall.dim = n
   Csmall.is_symmetric = C.is_symmetric
   Csmall.operate_tmp = zeros(Int, n)
+  Csmall.dot_product_tmp = Int[ 0 ]
 
   @assert C.is_symmetric[1]
 
@@ -408,20 +411,22 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
 
   #
 
-  Csmall.v = Vector{Matrix{Int}}(undef, length(C.G))
+  Csmall.v = Vector{Vector{Vector{Int}}}(undef, length(Csmall.G))
 
   # Here needs to be another overflow check
+  # JS: "needs to be" or is it carried out?
   @inbounds for i in 1:length(Csmall.G)
-    A = zeros(Int, length(Csmall.V.vectors), dim(C))
+    A = Vector{Vector{Int}}(undef, length(Csmall.V))
     for j in 1:length(Csmall.V.vectors)
+      A[j] = Vector{Int}(undef, dim(Csmall))
       for k in 1:dim(Csmall)
-        A[j, k] = _dot_product_with_row(Csmall.V.vectors[j], Csmall.G[i], k)
+        A[j][k] = _dot_product_with_row(Csmall.V.vectors[j], Csmall.G[i], k)
       end
     end
     Csmall.v[i] = A
   end
 
-  if false
+  if false # JS: Is this for debugging?
     for i in 1:length(Csmall.G)
       for j in 1:length(Csmall.V.vectors)
         for k in 1:length(Csmall.V.vectors)
@@ -435,7 +440,6 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   for i in 1:dim(Csmall)
     Csmall.g[i] = Matrix{Int}[]
   end
-  Csmall.ng = zeros(Int, dim(Csmall))
   Csmall.nsg = zeros(Int, dim(Csmall))
   Csmall.orders = Vector{Int}(undef, dim(Csmall))
 
@@ -445,79 +449,358 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
     mid[i, i] = -1
   end
   Csmall.g[1] = Matrix{Int}[mid]
-  Csmall.ng[1] = 1
 
   # Calculate orbit lengths
-
+  # JS: If g is hard-coded to ([-I_n], [ ], ..., [ ]), we don't need all this?
+  #     Do we want to add the option of getting generators by the user like in
+  #     Souvignier's code? Otherwise the nested for-loops don't do much.
   nH = 0
 
   for i in 1:dim(Csmall)
-    nH += Csmall.ng[i]
+    nH += length(Csmall.g[i])
   end
 
   H = Vector{Matrix{Int}}(undef, nH)
 
   if automorphism_mode
     for i in 1:dim(Csmall)
-      if Csmall.ng[i] > 0
+      if !isempty(Csmall.g[i])
         nH = 0
         for j in i:dim(Csmall)
-          for k in 1:Csmall.ng[j]
+          for k in 1:length(Csmall.g[j])
             nH += 1
             H[nH] = Csmall.g[j][k]
           end
         end
-        #@assert _orbitlen_naive(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V) == _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V)
-        Csmall.orders[i] = _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, nH, Csmall.V, Csmall)
+        #@assert _orbitlen_naive(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, Csmall.V) == _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, Csmall.V)
+        Csmall.orders[i] = _orbitlen(Csmall.std_basis[i], Csmall.fp_diagonal[i], H, Csmall.V, Csmall)
       else
         Csmall.orders[i] = 1
       end
     end
   end
 
+  init_vector_sums(Csmall, depth)
+  init_bacher_polynomials(Csmall, bacher_depth)
+
   return true, Csmall
 end
 
-#function compute_scpcomb(C::ZAutLatCtx, depth::Int)
-#  comb = Vector{SCPComp}(undef, dim(C))
-#  for i in 1:dim(C)
-#  end
-#end
+################################################################################
+#
+#  Vector sums
+#
+################################################################################
 
+_zero_vector(::Type{ZZRingElem}, len::Int) = zero_matrix(ZZ, 1, len)
+_zero_vector(::Type{Int}, len::Int) = zeros(Int, len)
 
-#	if (flags.DEPTH > 0)
-#	{
-#		if ((comb = (scpcomb*)malloc(dim * sizeof(scpcomb))) == 0)
-#			exit (1);
-#		for (i = 0; i < dim; ++i)
-#		{
-#/* compute the list of scalar product combinations and the corresponding
-#   vector sums */
-#			scpvecs(&comb[i].list, &sumveclist, i, fp.e, flags.DEPTH, V, F);
-#/* compute a basis for the lattice that is generated by the vector sums and
-#   a transformation matrix that expresses the basis in terms of the
-#   vector sums */
-#			base(&comb[i], &sumvecbase, sumveclist, F.A[0], dim);
-#			if (flags.PRINT == 1)
-#/* if the -P option is given, print the rank of the lattice generated by the
-#   vector sums on level i on AUTO.tmp */
-#			{
-#				outfile = fopen("AUTO.tmp", "a");
-#				fprintf(outfile, "comb[%d].rank = %d\n", i, comb[i].rank);
-#				fclose(outfile);
-#			}
-#/* compute the coefficients of the vector sums in terms of the basis */
-#			coef(&comb[i], sumvecbase, sumveclist, F.A[0], dim);
-#			for (j = 0; j <= comb[i].list.n; ++j)
-#				free(sumveclist[j]);
-#			free(sumveclist);
-#/* compute the scalar products of the base-vectors */
-#			scpforms(&comb[i], sumvecbase, F);
-#			for (j = 0; j < comb[i].rank; ++j)
-#				free(sumvecbase[j]);
-#			free(sumvecbase);
-#		}
-#	}
+function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
+
+  scalar_products = Vector{Vector{V}}(undef, dim(C))
+  look_up = Vector{Dict{V, Int}}(undef, dim(C))
+  vector_sums = Vector{Vector{V}}(undef, dim(C))
+  for i in 1:dim(C)
+    scalar_products[i] = Vector{V}()
+    look_up[i] = Dict{V, Int}()
+    vector_sums[i] = Vector{V}()
+  end
+
+  s = _zero_vector(S, length(C.G)*dep)
+  # Can't use zeros since then scpvec[1] === scpvec[2] which collides with the
+  # in place operations in case S == ZZRingElem
+  scpvec = Vector{S}(undef, length(C.G)*dim(C))
+  @inbounds for i in 1:length(scpvec)
+    scpvec[i] = zero(S)
+  end
+  for w in C.V.vectors
+    @inbounds for i in 1:length(C.G)
+      for j in 1:dim(C)
+        t = (i - 1)*dim(C) + j
+        scpvec[t] = _dot_product_with_entry!(scpvec[t], w, C.v[i], C.std_basis[j], C.dot_product_tmp)
+      end
+    end
+    minusW = -w
+    for I in 1:dim(C)
+      sign_s = 0
+      # Extract the subset of the scalar products which are relevant for the basis
+      # vector I. Directly normalize the vector (i.e. make it positive)
+      @inbounds for j in 0:length(C.G) - 1
+        t = j*dim(C) + I + 1
+        for i in 1:min(dep, I)
+          scpvecti = scpvec[t - i]
+          if is_zero(sign_s) && !is_zero(scpvecti)
+            sign_s = scpvecti > 0 ? 1 : -1
+          end
+          if sign_s == -1
+            s[j*dep + i] = -scpvecti
+          else
+            s[j*dep + i] = scpvecti # Danger! s shares elements with scpvec (if S == ZZRingElem)
+          end
+        end
+        for i in I + 1:dep
+          s[j*dep + i] = S(0)
+        end
+      end
+      ww = w
+      if sign_s == -1
+        ww = minusW
+      end
+      k = get(look_up[I], s, 0)
+      is0 = is_zero(sign_s)
+      if k > 0
+        if !is0
+          if S <: ZZRingElem
+            add!(vector_sums[I][k], ww)
+          else
+            @inbounds for l in 1:dim(C)
+              vector_sums[I][k][l] += ww[l]
+            end
+          end
+        end
+      else
+        s_deep = deepcopy(s)
+        push!(scalar_products[I], s_deep)
+        !is0 ? push!(vector_sums[I], deepcopy(ww)) : push!(vector_sums[I], _zero_vector(S, dim(C)))
+        look_up[I][s_deep] = length(scalar_products[I])
+      end
+    end
+  end
+
+  for I in 1:dim(C)
+    C.scpcomb[I].scpcombs = VectorList{V, S}()
+    C.scpcomb[I].scpcombs.vectors = scalar_products[I]
+    C.scpcomb[I].scpcombs.lookup = look_up[I]
+    C.scpcomb[I].scpcombs.use_dict = true
+    C.scpcomb[I].scpcombs.issorted = false
+  end
+
+  return vector_sums
+end
+
+# Return `true` if the initialization was successful, `false` otherwise.
+# Only relevant if S1 <: Int, that is, if things might overflow.
+function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2, S3}
+  if depth == -1
+    depth = round(Int, C.dim/10)
+  end
+  @assert depth >= 0 "`depth` must be non-negative"
+  C.depth = depth
+
+  small = S1 <: Int
+
+  if small
+    C.GZZ = [ matrix(ZZ, M) for M in C.G ]
+  else
+    C.GZZ = C.G
+  end
+
+  depth == 0 && return nothing
+
+  C.scpcomb = Vector{SCPComb{S1, S3}}(undef, dim(C))
+  for i in 1:C.dim
+    C.scpcomb[i] = SCPComb{S1, S3}()
+  end
+  vector_sums = vs_scalar_products(C, depth)
+
+  for i in 1:C.dim
+    # Compute a basis of the lattice spanned by vector_sums
+    if !small
+      M = reduce(vcat, vector_sums[i])
+    else
+      # We need to convert to ZZRingElem since we don't have LLL for Ints
+      M = zero_matrix(ZZ, length(vector_sums[i]), length(vector_sums[i][1]))
+      for r in 1:nrows(M)
+        for c in 1:ncols(M)
+          M[r, c] = vector_sums[i][r][c]
+        end
+      end
+    end
+    B, T = lll_with_transform(M)
+    # Compute the coefficients of the vector sums in the basis
+    invT = inv(T)
+
+    # Remove the zero rows from B and the corresponding rows / columns from T
+    # and invT. The zero rows are on the top.
+    k = 1
+    for r in 1:nrows(B)
+      !is_zero_row(B, r) && break
+      k += 1
+    end
+
+    # We leave these matrices "big" (i.e. of type ZZMatrix) even if the short
+    # vectors fit in Int
+    B = sub(B, k:nrows(B), 1:ncols(B))
+    C.scpcomb[i].trans = sub(T, k:nrows(T), 1:ncols(T))
+    C.scpcomb[i].coef = sub(invT, 1:nrows(invT), k:ncols(invT))
+
+    # Compute the Gram matrices of the basis w.r.t. C.G[:]
+    transpB = transpose(B)
+    C.scpcomb[i].F = [ B*G*transpB for G in C.GZZ ]
+
+    C.scpcomb[i].xvectmp = zero_matrix(ZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
+    C.scpcomb[i].xbasetmp = zero_matrix(ZZ, nrows(C.scpcomb[i].trans), C.dim)
+    C.scpcomb[i].multmp1 = zero_matrix(ZZ, nrows(C.scpcomb[i].trans), C.dim)
+    C.scpcomb[i].multmp2 = zero_matrix(ZZ, nrows(C.scpcomb[i].trans), nrows(C.scpcomb[i].trans))
+    C.scpcomb[i].multmp3 = zero_matrix(ZZ, length(C.scpcomb[i].scpcombs.vectors), C.dim)
+  end
+  return nothing
+end
+
+################################################################################
+#
+#  Bacher polynomials
+#
+################################################################################
+
+# Compute the Bacher polynomial for the standard basis vector I with respect to
+# the scalar product S
+function bacher_polynomial(C::ZLatAutoCtx{T}, I::Int, S::T) where T
+  p = BacherPoly{T}()
+  p.S = S
+
+  vI = C.V[C.std_basis[I]]
+  lI = C.V.lengths[C.std_basis[I]][1]
+
+  s = zero(T)
+  minusS = -S
+  vecS = Vector{Int}() # indices of vectors having scalar product S with vI
+  @inbounds for i in 1:length(C.V)
+    C.V.lengths[i][1] != lI && continue
+
+    s = _dot_product_with_entry!(s, vI, C.v[1], i, C.dot_product_tmp)
+    if s == S
+      push!(vecS, i)
+    elseif s == minusS
+      push!(vecS, -i)
+    end
+  end
+  p.sum_coeffs = length(vecS)
+
+  counts = zeros(Int, length(vecS))
+  pairs = Vector{Int}(undef, length(vecS))
+  @inbounds for i in 1:length(vecS)
+    npairs = 0
+    for j in vecS
+      s = sign(j)*_dot_product_with_entry!(s, C.V[vecS[i]], C.v[1], sign(j)*j, C.dot_product_tmp)
+      if s == S
+        npairs += 1
+        pairs[npairs] = j
+      end
+    end
+    # the first npairs entries of pairs are now the indices of the vectors having
+    # scalar product S with C.V.vectors[vecS[i]]
+
+    for j in 1:npairs
+      vJ = pairs[j]
+      for k in j + 1:npairs
+        vK = pairs[k]
+        s = sign(vK)*_dot_product_with_entry!(s, C.V[vJ], C.v[1], sign(vK)*vK, C.dot_product_tmp)
+        if s == S
+          counts[i] += 1
+        end
+      end
+    end
+  end
+
+  if isempty(counts)
+    p.minimal_degree = 0
+  else
+    p.minimal_degree = minimum(counts)
+  end
+  p.maximal_degree = maximum(counts, init = -1)
+  p.coeffs = zeros(Int, p.maximal_degree - p.minimal_degree + 1)
+  @inbounds for i in counts
+    p.coeffs[i - p.minimal_degree + 1] += 1
+  end
+
+  return p
+end
+
+function init_bacher_polynomials(C::ZLatAutoCtx{T}, depth::Int) where T
+  @assert depth >= 0 "`bacher_depth` must be non-negative"
+  C.bacher_depth = depth
+  C.bacher_polys = Vector{BacherPoly{T}}(undef, depth)
+  for i in 1:depth
+    # We compute the Bacher polynomials w.r.t. the scalar product 1/2 the norm
+    # of the vector (for the first form)
+    S = div(C.V.lengths[C.std_basis[i]][1], 2)
+    p = bacher_polynomial(C, i, S)
+    C.bacher_polys[i] = p
+  end
+  return nothing
+end
+
+# Checks whether the short vector C.V[I] has Bacher polynomial p
+function has_bacher_polynomial(C::ZLatAutoCtx{T}, I::Int, p::BacherPoly{T}) where {T}
+  vI = C.V[I]
+  lI = C.V.lengths[abs(I)][1]
+
+  s = zero(T)
+  S = p.S
+  minusS = -S
+  vecS = Vector{Int}() # indices of vectors having scalar product S with vI
+  @inbounds for i in 1:length(C.V)
+    C.V.lengths[i][1] != lI && continue
+
+    s = _dot_product_with_entry!(s, vI, C.v[1], i, C.dot_product_tmp)
+    if s == S
+      push!(vecS, i)
+    elseif s == minusS
+      push!(vecS, -i)
+    end
+    if length(vecS) > p.sum_coeffs
+      return false
+    end
+  end
+  if length(vecS) != p.sum_coeffs
+    return false
+  end
+
+  coeffs = zeros(Int, length(p.coeffs))
+  pairs = Vector{Int}(undef, length(vecS))
+  @inbounds for i in 1:length(vecS)
+    npairs = 0
+    for j in vecS
+      s = sign(j)*_dot_product_with_entry!(s, C.V[vecS[i]], C.v[1], sign(j)*j, C.dot_product_tmp)
+      if s == S
+        npairs += 1
+        pairs[npairs] = j
+      end
+    end
+    # the first npairs entries of pairs are now the indices of the vectors having
+    # scalar product S with C.V.vectors[vecS[i]]
+
+    count = 0
+    for j in 1:npairs
+      vJ = pairs[j]
+      for k in j + 1:npairs
+        vK = pairs[k]
+        s = sign(vK)*_dot_product_with_entry!(s, C.V[vJ], C.v[1], sign(vK)*vK, C.dot_product_tmp)
+        if s == S
+          count += 1
+        end
+      end
+    end
+    if count < p.minimal_degree || count > p.maximal_degree
+      return false
+    end
+
+    c_minus_d_min = count - p.minimal_degree + 1
+    coeffs[c_minus_d_min] += 1
+    if coeffs[c_minus_d_min] > p.coeffs[c_minus_d_min]
+      return false
+    end
+  end
+
+  return true
+end
+
+################################################################################
+#
+#  Short vectors
+#
+################################################################################
 
 function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max = ZZRingElem(-1))
   #V = enumerate_using_gram(G, R(max))
@@ -545,7 +828,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
   for i in 1:length(V)
     z = Vector{ZZRingElem}(undef, length(C.G))
     z[1] = V[i][2]
-    m = matrix(FlintZZ, 1, n, V[i][1])
+    m = matrix(ZZ, 1, n, V[i][1])
     mt = transpose(m)
     for k in 2:length(C.G)
       z[k] = (m * C.G[k] * mt)[1, 1]
@@ -573,82 +856,91 @@ function _get_vectors_of_length(G::ZZLat, max::ZZRingElem)
   return _get_vectors_of_length(FakeFmpqMat(gram_matrix(G)), max)
 end
 
-function possible(C::ZLatAutoCtx, per, I, J)
+function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   V = C.V.vectors
   W = C.V.lengths
   F = C.G
-  Ftr = C.Gtr
-  n = length(W)
-  f = length(F)
   _issymmetric = C.is_symmetric
-  return possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
-end
 
-function possible(V, W, F, Ftr, _issymmetric, n, f, per, I, J)
   count = 0
 
   tmp1 = zero(eltype(V[1]))
   tmp2 = zero(eltype(V[1]))
+  tmp3 = zero(eltype(V[1]))
+  tmp4 = zero(eltype(V[1]))
+  tmp5 = zero(eltype(V[1]))
+  tmp6 = zero(eltype(V[1]))
+  is_small = eltype(V[1]) <: Int
 
-  for j in 1:n
+  for j in 1:length(W)
     Wj = W[j]
     Vj = V[j]
-    good_scalar = true
     good_length = true
-    @inbounds for k in 1:f
-      if Wj[k] != F[k][J, J]
+    @inbounds for k in 1:length(F)
+      # getindex for ZZMatrix is super slow, so we need to do this the long way round...
+      if is_small
+        tmp1 = F[k][J, J]
+      else
+        getindex!(tmp1, F[k], J, J)
+      end
+      if Wj[k] != tmp1
         good_length = false
         break
       end
     end
 
-    if !good_length
-      continue
-    end
-
-    @inbounds for k in 1:f
-      for i in 1:I
-        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == F[k][J, per[i]]) ||
-              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != F[k][per[i], J])
-          good_scalar = false
-          break
-        end
-      end
-
-      if !good_scalar
-        break
-      end
-    end
-
-    if good_length && good_scalar
-      count = count + 1
-    end
-
-    if !good_length
-      continue
-    end
+    !good_length && continue
 
     # length is correct
 
-    good_scalar = true
-
-    @inbounds for k in 1:f
+    good_scalar_plus = true
+    good_scalar_minus = true
+    @inbounds for k in 1:length(F)
       for i in 1:I
-        if !(_dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2) == -F[k][J, per[i]]) ||
-              (!_issymmetric[k] && _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2) != -F[k][per[i], J])
-          good_scalar = false
+        if is_small
+          tmp5 = F[k][J, per[i]]
+          if !_issymmetric[k]
+            tmp6 = F[k][per[i], J]
+          end
+        else
+          getindex!(tmp5, F[k], J, per[i])
+          !_issymmetric[k] && getindex!(tmp6, F[k], per[i], J)
+        end
+        tmp1 = _dot_product_with_column!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4)
+        if tmp1 != tmp5
+          good_scalar_plus = false
+        end
+        if tmp1 != -tmp5
+          good_scalar_minus = false
+        end
+        if !good_scalar_plus && !good_scalar_minus
           break
         end
 
+        if !_issymmetric[k]
+          tmp1 = _dot_product_with_row!(tmp1, Vj, F[k], per[i], tmp2, tmp3, tmp4)
+          if tmp1 != tmp6
+            good_scalar_plus = false
+          end
+          if tmp1 != -tmp6
+            good_scalar_minus = false
+          end
+          if !good_scalar_plus && !good_scalar_minus
+            break
+          end
+        end
       end
 
-      if !good_scalar
+      if !good_scalar_plus && !good_scalar_minus
         break
       end
     end
 
-    if good_scalar
-      count = count + 1
+    if good_scalar_plus
+      count += 1
+    end
+    if good_scalar_minus
+      count += 1
     end
   end
   return count
@@ -753,7 +1045,7 @@ function fingerprint(C::ZLatAutoCtx)
 end
 
 # computes min(#O, orblen), where O is the orbit of pt under the first nG matrices in G
-function _orbitlen(point::Int, orblen::Int, G::Vector{T}, nG, V, C) where {T}
+function _orbitlen(point::Int, orblen::Int, G::Vector{T}, V, C) where {T}
   n = length(V)
   orb = ones(Int, orblen)
   orb[1] = point
@@ -766,10 +1058,10 @@ function _orbitlen(point::Int, orblen::Int, G::Vector{T}, nG, V, C) where {T}
   #flag[pt] = 1;
   len = 1
   cnd = 1
-  #@show G, nG
+  #@show G
   while cnd <= len && len < orblen
     i = 1
-    while i <= nG && len < orblen
+    while i <= length(G) && len < orblen
       imag = _operate(orb[cnd], G[i], V, C.operate_tmp)
       if !flag[imag + n + 1]
         # the image is a new point in the orbit
@@ -790,7 +1082,7 @@ function _operate(point, A::Matrix{Int}, V)
 end
 
 function _operate(point, A::ZZMatrix, V)
-  return _operate(point, A, V, zero_matrix(FlintZZ, 1, ncols(A)))
+  return _operate(point, A, V, zero_matrix(ZZ, 1, ncols(A)))
 end
 
 
@@ -872,12 +1164,12 @@ function _find_point(w::ZZMatrix, V)
   end
 end
 
-function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, nG::Int, V)
+function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, V)
   working_list = Int[point]
   orbit = Int[point]
   while !isempty(working_list)
     current_point = pop!(working_list)
-    for i in 1:nG
+    for i in 1:length(G)
       if current_point < 0
         new_point_coord = -V[abs(current_point)] * G[i]
       else
@@ -894,34 +1186,28 @@ function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, nG::Int, 
 end
 
 function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+  # If S == ZZRingElem, we produce a ZLatAutoCtx with integer entries allowing
+  # overflow. This is used in `cand`: Only if `cand` returns true for the
+  # Int-version, we run the computation for the ZZRingElem-version for
+  # verification.
+  D = _make_small(C)
   dim = Hecke.dim(C)
 
-  candidates = Vector{Vector{Int}}(undef, dim) # candidate list for the image of the i-th basis vector
-
+  candidates = Vector{Vector{Int}}(undef, dim)
   for i in 1:dim
+    # candidate list for the image of the i-th basis vector
     candidates[i] = zeros(Int, C.fp_diagonal[i])
   end
 
   x = Vector{Int}(undef, dim)
   bad = Vector{Int}(undef, 2 * length(C.V))
 
-  sta = 1
+  sta = 1 # JS: In Souvignier's code, sta (or flags.STAB) can be set so that only
+          #     the point stabilizer of the first sta basis vectors is computed.
+          #     Here the variable is not used?
   for step in sta:dim
     @vprintln :Lattice 1 "Entering step $step"
-    nH = 0
-    for i in step:dim
-      nH += C.ng[i]
-    end
-    #@show nH
-    H = Vector{T}(undef, nH)
-    nH = 0
-    @inbounds for i in step:dim
-      for j in 1:C.ng[i]
-        nH += 1
-        #@show C.g[i]
-        H[nH] = C.g[i][j]
-      end
-    end
+    H = reduce(vcat, C.g[step:dim])
     @inbounds for i in 1:2*length(C.V)
       bad[i] = 0
     end
@@ -929,48 +1215,33 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     @inbounds for i in 1:(step - 1)
       x[i] = C.std_basis[i]
     end
-    #@show C.fp_diagonal[step]
-    #@show candidates
     if C.fp_diagonal[step] > 1
-      nC = cand(candidates[step], step, x, C, 0)#comb)
-    else # there is only one candidates
+      cand(candidates[step], step, x, C, D)
+    else # there is only one candidate
       candidates[step] = Int[C.std_basis[step]]
-      nC = 1
     end
-    #@show nC
-    #@show candidates
-    orb = orbit(C.std_basis[step], 1, H, nH, C.V, C)
+    orb = orbit(C.std_basis[step], 1, H, C.V, C)
     C.orders[step] = length(orb)
     # delete the orbit of the step-th basis vector from the candidates
     #nC = delete(candidates[step], nC, orb, C.orders[step])
     setdiff!(candidates[step], orb)
     nC = length(candidates[step])
-    #@show step, nC
     while nC > 0 && ((im = candidates[step][1]) != 0)
       @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
-      #@show im
-      found = 0
+      found = false
       # try C.V[im] as the image of the step-th basis vector
       x[step] = im
       if step < dim
-        #@show candidates
-        if cand(candidates[step + 1], step + 1, x, C, 0) == C.fp_diagonal[step + 1]
-          #@show candidates
-          #@show "right before aut"
-          #@show step + 1, x
-          found = aut(step + 1, x, candidates, C, 0)#comb)
-        else
-          found = 0
+        if cand(candidates[step + 1], step + 1, x, C, D)
+          found = aut(step + 1, x, candidates, C, D)
         end
       else
-        found = 1
+        found = true
       end
 
-      #@show found
-
-      if found == 0
+      if !found
         # x[1],...,x[step] cannot be continued
-        oc = orbit(im, 1, H, nH, C.V, C)
+        oc = orbit(im, 1, H, C.V, C)
         # delete the orbit of im from the candidates for x[step]
         #
         # This could go very bad ...
@@ -981,35 +1252,20 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         nbad += 1
         bad[nbad] = im
       else
-        #@show x, step
         # a new generator has been found
-        C.ng[step] += 1
-        # append the new generator to C.>g[step]
-        #@show "================================"
-        ##@show C.g, step
-        Gstep = resize!(C.g[step], C.ng[step])
-        ##@show C.g, step
-        matgen(x, dim, C.per, C.V)
-        Gstep[C.ng[step]] = matgen(x, dim, C.per, C.V)
-        C.g[step] = Gstep
-        nH += 1
-        H = Vector{T}(undef, nH)
-        nH = 0
-        @inbounds for i in step:dim
-          for j in 1:C.ng[i]
-            nH += 1
-            H[nH] = C.g[i][j]
-          end
-        end
+        # append the new generator to C.g[step] and to H
+        push!(C.g[step], matgen(x, dim, C.per, C.V))
+        insert!(H, length(C.g[step]), C.g[step][end])
         # compute the new orbit of std_basis[step]
-        orb = orbit(C.std_basis[step], 1, H, nH, C.V, C)
+        orb = orbit(C.std_basis[step], 1, H, C.V, C)
         C.orders[step] = length(orb)
         # delete the orbit from the candidates for x[step]
         setdiff!(candidates[step], orb)
-        nC = length(candidates[step])
+        #nC = length(candidates[step])
         #nC = delete(candidates[step], nC, orb, C.orders[step])
-        # compute the new orbit of the vectors, which could be continued to an automorphism
-        oc = orbit(bad, nbad, H, nH, C.V, C)
+        # compute the new orbit of the vectors, which could not be continued
+        # to an automorphism
+        oc = orbit(bad, nbad, H, C.V, C)
         # delete the orbit from the candidates
         setdiff!(candidates[step], oc)
         nC = length(candidates[step])
@@ -1017,28 +1273,30 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         #empty!(oc)
       end
     end
+    # JS: This whole block is not doing anything because of an "if false".
+    #     Do we use sta (or flags.STAB in Souvignier's code) at all?
+    #=
     if step == sta
       # test, whether on step flags.STAB some generators may be omitted
       tries = C.nsg[step]
-      while tries <= C.ng[step]
-      #for tries in C.nsg[step]:C.ng[step]
+      while tries <= length(C.g[step])
+        #for tries in C.nsg[step]:length(C.g[step])
         nH = 0
         for j in 1:(tries-1)
           nH += 1
           H[nH] = C.g[step][j]
         end
-        for j in (tries + 1):(C.ng[step]-1)
+        for j in (tries + 1):(length(C.g[step])-1)
           nH += 1
           H[nH] = C.g[step][j]
         end
         for i in (step + 1):dim
-          for j in 1:C.ng[i]
+          for j in 1:length(C.g[i])
             nH += 1
             H[nH] = C.g[i][j]
-            if false #_orbitlen(C.std_basis[step], C.orders[step], H, nH, C.V) == C.orders[step]
+            if false #_orbitlen(C.std_basis[step], C.orders[step], H, C.V) == C.orders[step]
               # /* the generator g[step][tries] can be omitted */
-              C.ng[step] -= 1
-              for i in tries:(C.ng[step] - 1)
+              for i in tries:(length(C.g[step]) - 1)
                 C.g[step][i] = C.g[step][i + 1]
               end
               tries -= 1
@@ -1048,6 +1306,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
         tries += 1
       end
     end
+    =#
     if step < dim && C.orders[step] > 1
      # /* calculate stabilizer elements fixing the basis-vectors
      #    C.std_basis[1]...fp.e[step] */
@@ -1065,7 +1324,7 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   orde = prod(ZZRingElem.(C.orders))
 
   for i in 1:dim(C)
-    for j in (C.nsg[i] + 1):C.ng[i]
+    for j in (C.nsg[i] + 1):length(C.g[i])
       push!(gens, C.g[i][j])
     end
   end
@@ -1073,19 +1332,18 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   return gens, orde
 end
 
-function aut(step, x, candidates, C, comb)
+function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLatAutoCtx, D::ZLatAutoCtx)
   dim = Hecke.dim(C)
-  found = 0
+  found = false
   x[step + 1:length(x)] .= 0
-  while candidates[step][1] != 0 && found == 0
+  while candidates[step][1] != 0 && !found
     if step < dim
       x[step] = candidates[step][1]
-      #/* check, whether x[1]...x[step] is a partial automorphism and compute the candidates for x[step + 1]
-			if (cand(candidates[step + 1], step + 1, x, C, comb) == C.fp_diagonal[step + 1])
-        found = aut(step + 1, x, candidates, C, comb)
-      end
-      if found == 1
-        return found
+      # check, whether x[1]...x[step] is a partial automorphism and compute the
+      # candidates for x[step + 1]
+			if cand(candidates[step + 1], step + 1, x, C, D)
+        found = aut(step + 1, x, candidates, C, D)
+        found && break
       end
       orb = Int[x[step]]
       # delete the chosen vector from the list of candidates
@@ -1094,264 +1352,254 @@ function aut(step, x, candidates, C, comb)
       #setdiff!(candidates[step], orb)
       # This should be made faster to not always go to the end
       # Actually I should copy the delete function
-      #@show candidates[step], k
       for i in (k + 1):length(candidates[step])
         candidates[step][i - 1] = candidates[step][i]
       end
       candidates[step][end] = 0
-      #@show candidates[step]
     else
       x[dim] = candidates[dim][1]
-      found = 1
+      found = true
     end
   end
   return found
 end
 
-function cand(candidates, I, x, C::ZLatAutoCtx{S, T, U}, comb) where {S, T, U}
-  #@show candidates, I, x, C, comb
-  DEP = 0 # this is bs
-  dim = Hecke.dim(C)
-  len = length(C.G) * DEP
+# For automorphisms (= isometries between the same lattice)
+function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, C::ZLatAutoCtx, D::ZLatAutoCtx)
+  return cand(candidates, I, x, C, C, D, D)
+end
+
+# In case the short vectors don't fit in Int, we first compute with Int anyway
+# allowing overflows via Di/Do and only verify a positive result with ZZRingElem
+# via Ci/Co.
+function cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{ZZRingElem}, Co::ZLatAutoCtx{ZZRingElem}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int})
+  if _cand(candidates, I, x, Di, Do, true)
+    # _cand with Integers returned true, so we have to verify the result with
+    # ZZRingElem
+    return _cand(candidates, I, x, Ci, Co)
+  end
+  return false
+end
+
+# If the short vectors fit in Int, the last arguments (Di/Do) are ignored.
+cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{Int}, Co::ZLatAutoCtx{Int}, Di::ZLatAutoCtx, Do::ZLatAutoCtx) = _cand(candidates, I, x, Ci, Co)
+
+function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{S, T, U}, Co::ZLatAutoCtx{S, T, U}, overflows::Bool = false) where {S, T, U}
+  dep = Ci.depth
+  use_vector_sums = (I > 1 && dep > 0)
+  dim = Hecke.dim(Ci)
   vec = Vector{S}(undef, dim)
   vec2 = Vector{S}(undef, dim)
-  scpvec = Vector{Int}(undef, len)
-  if I >= 2 && DEP > 0
-    com = comb[I - 1]
-    rank = com.rank
-    n = com.list.n
-    # xvec is the list of vector sums which are computed with respect to the partial basis in x
-    xvec = Vector{Vector{ZZRingElem}}(undef, n + 1)
-    for i in 1:(n + 1)
-      xvec[i] = Vector{ZZRingElem}(undef, dim)
-      for j in 1:dim
-        xvec[i][j] = zero(ZZRingElem)
-      end
+  for i in 1:dim
+    vec[i] = zero(S)
+    vec2[i] = zero(S)
+  end
+  tmp1 = zero(S)
+  tmp2 = zero(S)
+  tmp3 = zero(S)
+  if use_vector_sums
+    comb = Ci.scpcomb[I - 1]
+    n = length(comb.scpcombs.vectors)
+    scpvec = _zero_vector(S, length(Ci.G)*dep)
+    # the rows of xvec are the vector sums which are computed with respect to the
+    # partial basis in x
+    if T <: ZZMatrix
+      xvec = zero!(comb.xvectmp)
+    else
+      xvec = zeros(Int, n, dim)
     end
-#/* xbase should be a basis for the lattice generated by the vectors in xvec,
-#   it is obtained via the transformation matrix comb[I-1].trans */
-    #xbase = zero_matrix(FlintZZ, rank, dim)
-    #Fxbase = zero_matrix(FlintZZ, rank, dim)
   end
   # candidates is the list for the candidates
-  #@show C.fp_diagonal[I], length(candidates)
-  for i in 1:C.fp_diagonal[I]
+  for i in 1:Ci.fp_diagonal[I]
     candidates[i] = 0
   end
 
+  # Check via Bacher polynomial
+  if I > 1 && Ci.bacher_depth >= I - 1
+    if !has_bacher_polynomial(Co, x[I - 1], Ci.bacher_polys[I - 1])
+      return false
+    end
+  end
+
+  # If S == ZZRingElem then getting entries of the matrices Ci.G is slow, so we
+  # store all the entries we need a lot in vectors.
+  rowsI = Vector{Vector{S}}(undef, length(Ci.G))
+  minusRowsI = Vector{Vector{S}}(undef, length(Ci.G))
+  colsI = Vector{Vector{S}}(undef, length(Ci.G))
+  minusColsI = Vector{Vector{S}}(undef, length(Ci.G))
+  diagI = Vector{S}(undef, length(Ci.G))
+  for i in 1:length(Ci.G)
+    rowsI[i] = Vector{S}(undef, I - 1)
+    minusRowsI[i] = Vector{S}(undef, I - 1)
+    colsI[i] = Vector{S}(undef, I - 1)
+    minusColsI[i] = Vector{S}(undef, I - 1)
+    diagI[i] = Ci.G[i][Ci.per[I], Ci.per[I]]
+    for k in 1:I - 1
+      rowsI[i][k] = Ci.G[i][Ci.per[I], Ci.per[k]]
+      minusRowsI[i][k] = -rowsI[i][k]
+      if !Ci.is_symmetric[i]
+        colsI[i][k] = Ci.G[i][Ci.per[k], Ci.per[I]]
+        minusColsI[i][k] = -colsI[i][k]
+      end
+    end
+  end
 
   nr = 0
-  fail = 0
-  @inbounds for j in 1:length(C.V)
-    if fail != 0
-      break
-    end
-    Vvj = C.V[j]
-    okp = 0
-    okm = 0
-    for k in 1:len
-      scpvek[k] = 0
-    end
-    #@show C.V[j]
-    for i in 1:length(C.G)
-      _issym = C.is_symmetric[i]
-      Cvi = C.v[i]
-      #@show Cvi
+  @inbounds for j in 1:length(Co.V)
+    Vvj = Co.V[j]
+    okp = true
+    okm = true
+    for i in 1:length(Co.G)
+      _issym = Ci.is_symmetric[i]
 
-    # vec is the vector of scalar products of V.v[j] with the first I base vectors
-    #   x[1]...x[I]
-
+      # vec is the vector of scalar products of V.v[j] with the first I base vectors
+      #   x[1]...x[I]
       for k in 1:(I - 1)
-        #@show x[k]
         xk = x[k]
         if xk > 0
-          #vec[k] = _dot_product(Vvj, C.G[i], C.V[xk])
-          vec[k] = _dot_product_with_row(Vvj, C.v[i], xk)
-          #@assert _tutut == vec[k]
+          vec[k] = _dot_product_with_entry!(vec[k], Vvj, Co.v[i], xk, Co.dot_product_tmp)
           if !_issym
-            #vec2[k] = _dot_product(C.V[xk], C.G[i], Vvj)
-            vec2[k] = _dot_product_with_row(C.V[xk], C.v[i], j)
-            #@assert vec2[k] == _tutut2
+            vec2[k] = _dot_product_with_entry!(vec2[k], Co.V[xk], Co.v[i], j, Co.dot_product_tmp)
           end
         else
-          #vec[k] = -_dot_product(Vvj, C.G[i], C.V[-xk])
-          vec[k] = -_dot_product_with_row(Vvj, C.v[i], -xk)
-          #@assert _tutut == vec[k]
-
+          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, Co.v[i], -xk, Co.dot_product_tmp)
           if !_issym
-            #vec2[k] = -_dot_product(C.V[-xk], C.G[i], Vvj)
-            vec2[k] = -_dot_product_with_row(C.V[-xk], C.v[i], j)
-            #@assert vec2[k] == _tutut2
+            vec2[k] = -_dot_product_with_entry!(vec2[k], Co.V[-xk], Co.v[i], j, Co.dot_product_tmp)
           end
         end
       end
 
-      good = true
       for k in 1:(I - 1)
-        if vec[k] != C.G[i][C.per[I], C.per[k]] || (!_issym && vec2[k] != C.G[i][C.per[k], C.per[I]])
-          good = false
+        if vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k])
+          okp = false
           break
         end
       end
 
-      #@show "pos", Vvj, good
-
-      if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
-        # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
-        okp += 1
+      if okp && Co.V.lengths[j][i] != diagI[i]
+        okp = false
       end
+      # if okp == true then Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
 
-      good = true
       for k in 1:(I - 1)
-        if vec[k] != -C.G[i][C.per[I], C.per[k]] || (!_issym && vec2[k] != -C.G[i][C.per[k], C.per[I]])
-          good = false
+        if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
+          okm = false
           break
         end
       end
 
-      #@show "neg", Vvj, good
+      if okm && Co.V.lengths[j][i] != diagI[i]
+        okm = false
+      end
+      # if okm == true then -Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
 
-      if good && C.V.lengths[j][i] == C.G[i][C.per[I], C.per[I]]
-        # C.V[j] is a candidate for x[I] with respec to the form C.G[i]
-        #@show "here"
-        okm += 1
+      if use_vector_sums
+        for k in I - 1:-1:max(1, I - dep) # basically I - 1 - dep + 1, ..., I - 1
+          scpvec[(i - 1)*dep + I - k] = vec[k]
+        end
       end
 
-      if okp < i && okm < i
-        break
-      end
-
-      #if I >= 2 && DEP > 0
-      #  for k in I-1:-1:1
-      #    if k <= I - 1 - DEP
-      #      continue
-      #    end
-      #    scpvec[(i - 1) * DEP + I - k] = vec[k]
-      #  end
+      # JS: I think this is wrong if we use vector sums.
+      #     If the for loop breaks out here, scpvec is not filled correctly and
+      #     then looking it up will fail and hence return false although just the
+      #     candidate Co.V[j] is bad (but not necessarily the whole branch in the
+      #     search tree).
+      #if okp < i && okm < i
+      #  break
       #end
     end
 
-    #if I >= 2 && DEP > 0
-    #  # check whether the scalar product combination scpvec is contained in the list comb[I - 1].list
-    #  if all(iszero, scpvec)
-    #    num = 0
-    #  else
-    #    num = find_vector(scpvec, com.list)
-    #    sign = num > 0 ? 1 : -1
-    #    num = sign * num
-    #  end
+    if use_vector_sums
+      sign = false
+      # If we work with Int's allowing overflows we can't trust the sign anymore
+      if overflows
+        k = get(comb.scpcombs.lookup, scpvec, 0)
+        if k == 0
+          neg!(scpvec)
+          sign = true
+          k = get(comb.scpcombs.lookup, scpvec, 0)
+        end
+      else
+        if !is_normalized(scpvec)
+          neg!(scpvec)
+          sign = true
+        end
+        k = get(comb.scpcombs.lookup, scpvec, 0)
+      end
+      is0 = is_zero(scpvec)
+      if k > 0
+        if !is0
+          # the scalar products scpvec are found and we add the vector to the
+          # corresponding vector sum
+          xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
+        end
+      else
+        # scpvec is not found, hence x[1], ..., x[I - 1] is not a partial automorphism
+        return false
+      end
+    end
 
-    #  if num > n
-    #    # scpvec is not found, hence x[1],...,x[I - 1] is not a partial automorphism
-    #    fail = 1
-    #  elseif num > 0
-    #    # scpvec is found and the vector is added to the corresponding vector sum
-    #    xnum = xvec[num]
-    #    for k in 1:dim
-    #      xnum[k] += sign * Vvj[k]
-    #    end
-    #  end
-    #end
-
-    if okp == length(C.G)
+    if okp
       # V.v[j] is a candidate for x[I]
-      if nr < C.fp_diagonal[I]
+      if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = j
       else
         # there are too many candidates
-        fail = 1
+        return false
       end
     end
 
-    #@show nr
-
-    #@show okm == length(C.G)
-
-    if okm == length(C.G)
+    if okm
       # -V.v[j] is a candidate for x[I]
-      if nr < C.fp_diagonal[I]
+      if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = -j
       else
         # there are too many candidates
-        fail = 1
-      end
-    end
-
-    #@show nr
-  end
-
-  #@show fail
-
-  if fail == 1
-    nr = 0
-  end
-
-  if nr == C.fp_diagonal[I] && I >= 2 && DEP > 0
-    # compute the basis of the lattice generated by the vectors in xvec via the transformation matrix comb[I - 1].trans
-    for i in 1:rank
-      comtri = com.trans[i]
-      for j in 1:dim
-        xbij = FlintZZ(0)
-        for k in 1:(n+1)
-          xbij += comtri[k] * xvec[k][j]
-        end
-        xbase[i, j] = xbij
+        return false
       end
     end
   end
 
-  if nr == C.fp_diagonal[I] && I >= 2 && DEP > 0
-    for i in 1:length(C.G)
-      if !(nr > 0)
-        break
-      end
-      for j in 1:rank
-        for k in 1:dim
-          Fxbase[j, k] = _dot_product(xbase[j], C.A[i], k)
-        end
-      end
-      for j in 1:rank
-        if !(nr > 0)
-          break
-        end
-        for k in 1:j
-          if !(nr > 0)
-            break
-          end
-          if _dot_product(xbase[j], Fxbase[k]) != com.F[i][j][k]
-            # scalar product is wrong
-            nr = 0
-          end
+  if nr < Ci.fp_diagonal[I]
+    # there are not enough candidates
+    return false
+  end
+
+  if use_vector_sums
+    if T <: Matrix{Int}
+      # Convert to a ZZMatrix
+      @inbounds for i in 1:size(xvec, 1)
+        for j in 1:size(xvec, 2)
+          comb.xvectmp[i, j] = xvec[i, j]
         end
       end
     end
+    # compute the basis of the lattice generated by the vectors in xvec via the
+    # transformation matrix comb.trans
+    mul!(comb.xbasetmp, comb.trans, comb.xvectmp)
+
+    # check, whether the base xbase has the right scalar products
+    transpxbase = transpose(comb.xbasetmp)
+    for i in 1:length(Co.G)
+      mul!(comb.multmp1, comb.xbasetmp, Co.GZZ[i])
+      mul!(comb.multmp2, comb.multmp1, transpxbase)
+      if comb.multmp2 != comb.F[i]
+        return false
+      end
+    end
+
+    mul!(comb.multmp3, comb.coef, comb.xbasetmp)
+    if comb.xvectmp != comb.multmp3
+      return false
+    end
   end
 
-  if nr == C.fp_diagonal[I] && I >= 2 && DEP > 0
-    for i in 1:(n + 1)
-      if !(nr > 0)
-        break
-      end
-    end
-    comcoi = com.coeff[i]
-    for j in 1:dim
-      vj = zero(ZZRingElem)
-      for k in 1:rank
-        vj += comcoi[k] * xbase[k][j]
-      end
-      if vj != xvec[i][j]
-        # entry wrong
-        nr = 0
-        break
-      end
-    end
-  end
-  return nr
+  return true
 end
 
-function orbit(pt, npt, G, nG, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
+function orbit(pt, npt, G, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # Assumes that V is sorted
   orb = Vector{Int}(undef, npt)
   n = length(V)
@@ -1364,7 +1612,7 @@ function orbit(pt, npt, G, nG, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   norb = npt
   cnd = 1
   while cnd <= norb
-    for i in 1:nG
+    for i in 1:length(G)
       im = _operate(orb[cnd], G[i], V, C.operate_tmp)
       if !flag[im + n + 1]
         # this is a new point
@@ -1431,7 +1679,7 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
 
   nH = 0
   for i in I:dim
-    nH += C.ng[i]
+    nH += length(C.g[i])
   end
 
   Hj = Vector{T}(undef, nH + 1)
@@ -1441,7 +1689,7 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
 
   k = 0
   for i in I:dim
-    for j in 1:C.ng[i]
+    for j in 1:length(C.g[i])
       k += 1
       H[k] = C.g[i][j]
     end
@@ -1513,17 +1761,16 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
           Hj[1] = S
           nHj = 1
           for k in j:dim
-            for l in 1:C.ng[k]
+            for l in 1:length(C.g[k])
               nHj += 1
               Hj[nHj] = C.g[k][l]
             end
           end
-          tmplen = _orbitlen(C.std_basis[j], C.fp_diagonal[j], Hj, nHj, V, C)
+          tmplen = _orbitlen(C.std_basis[j], C.fp_diagonal[j], Hj, V, C)
           if tmplen > C.orders[j] || fail >= Maxfail
 #/* the new stabilizer element S either enlarges the orbit of e[j]
 #   or it is one of the additional elements after MAXFAIL failures */
             C.orders[j] = tmplen
-            C.ng[j] = C.ng[j] + 1
             C.nsg[j] = C.nsg[j] + 1
             #@show C.g[j]
             #@show C.nsg[j]
@@ -1565,8 +1812,8 @@ end
 #						stabilizes e	*****/
 function stabil(x1, x2, per, G, V, C)
   dim = length(x1)
-  XG = zero_matrix(FlintZZ, dim, dim)
-  X2 = zero_matrix(FlintZZ, dim, dim)
+  XG = zero_matrix(ZZ, dim, dim)
+  X2 = zero_matrix(ZZ, dim, dim)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
     x[i] = _operate(x1[i], G, V, C.operate_tmp) # ZZRingElem case
@@ -1606,11 +1853,11 @@ function _one(::Type{Matrix{Int}}, n::Int)
   return z
 end
 
-_one(::Type{ZZMatrix}, n::Int) = identity_matrix(FlintZZ, n)
+_one(::Type{ZZMatrix}, n::Int) = identity_matrix(ZZ, n)
 
 _zero(::Type{Matrix{Int}}, n::Int, m::Int) = zeros(Int, n, m)
 
-_zero(::Type{ZZMatrix}, n::Int, m::Int) = zero_matrix(FlintZZ, n, m)
+_zero(::Type{ZZMatrix}, n::Int, m::Int) = zero_matrix(ZZ, n, m)
 
 function matgen(x, dim, per, v)
 #/*****	generates the matrix X which has as row
@@ -1635,12 +1882,14 @@ end
 
 # Isomorphism computation
 
-function _try_iso_setup_small(Gi, Go)
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
-  fl, Cismall = try_init_small(Ci, false)
+  # We only need to initialize the vector sums and Bacher polynomials for the
+  # first lattice
+  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max))
+    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -1649,15 +1898,23 @@ function _try_iso_setup_small(Gi, Go)
   return false, Cismall, Cismall
 end
 
-function _iso_setup(Gi, Go)
+function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
-  init(Ci, true)
-  init(Co, false, Ci.max)
+  # We only need to initialize the vector sums and Bacher polynomials for the
+  # first lattice
+  init(Ci, true, depth = depth, bacher_depth = bacher_depth)
+  init(Co, false, Ci.max, depth = 0, bacher_depth = 0)
   return Ci, Co
 end
 
 function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
+  # If S == ZZRingElem, we produce ZLatAutoCtx with integer entries allowing
+  # overflow. This is used in `cand`: Only if `cand` returns true for the
+  # Int-version, we run the computation for the ZZRingElem-version for
+  # verification.
+  Di = _make_small(Ci)
+  Do = _make_small(Co)
   d = dim(Co)
   C = Vector{Vector{Int}}(undef, d)
   # I could actually also test the minimum
@@ -1677,13 +1934,13 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
       k += 1
     end
   end
-  isocand(C[1], 1, x, Ci, Co)
+  cand(C[1], 1, x, Ci, Co, Di, Do)
 
-  found = iso(1, x, C, Ci, Co, H)
+  found = iso(1, x, C, Ci, Co, Di, Do, H)
   if found
     ISO = matgen(x, d, Ci.per, Co.V)
     for k in 1:length(Ci.G)
-      ISO * Co.G[k] * ISO' == Ci.G[k]
+      ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
     end
     return true, ISO
   else
@@ -1691,7 +1948,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   end
 end
 
-function iso(step, x, C, Ci, Co, G)
+function iso(step::Int, x::Vector{Int}, C::Vector{Vector{Int}}, Ci::ZLatAutoCtx{S, T}, Co::ZLatAutoCtx{S, T}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int}, G::Vector{T}) where {S, T}
   d = dim(Ci)
   found = false
   @vprintln :Lattice "Testing $(length(C[step])) many candidates"
@@ -1700,9 +1957,8 @@ function iso(step, x, C, Ci, Co, G)
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]
-        # check whether x[1]..x[step]
-      nbc = isocand(C[step + 1], step + 1, x, Ci, Co)
-      if nbc == Ci.fp_diagonal[step + 1]
+      # check whether x[1]..x[step]
+      if cand(C[step + 1], step + 1, x, Ci, Co, Di, Do)
         # go deeper in the recursion
         Maxfail = 0
         # determine the heuristic value of Maxfail for the break condition in isostab
@@ -1717,16 +1973,15 @@ function iso(step, x, C, Ci, Co, G)
           end
         end
         H = isostab(x[step], G, Co, Maxfail)
-        found = iso(step + 1, x, C, Ci, Co, H)
+        found = iso(step + 1, x, C, Ci, Co, Di, Do, H)
       end
-      if found
-        return found
-      end
+      found && break
+
       # This is horrible
       # this is remove orb from C[step], and then adding 0's at the end to make
       # it again as big as in the beginning. This can be done more efficiently.
       nc = length(C[step])
-      orb = orbit(x[step], 1, G, length(G), Co.V, Co)
+      orb = orbit(x[step], 1, G, Co.V, Co)
       no = length(orb)
       setdiff!(C[step], orb)
       newnc = length(C[step])
@@ -1780,8 +2035,8 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
   len = 1
   fail = 0
 #/* fail is the number of successive failures */
-  #A = zero_matrix(FlintZZ, d, d)
-  #B = zero_matrix(FlintZZ, d, d)
+  #A = zero_matrix(ZZ, d, d)
+  #B = zero_matrix(ZZ, d, d)
   while (cnd <= len && fail < Maxfail)
     for i in 1:nG
       if fail >= Maxfail
@@ -1809,12 +2064,12 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
           H[nH + 1] = w[orb[cnd] + n + 1] * G[i] * inv(w[im + n + 1])
           #	psolve((*H)[nH], A, B, dim, V.prime);
           rpt = rand(1:(n + 1))
-          templen = _orbitlen(rpt, 2*n, H, nH + 1, V)
+          templen = _orbitlen(rpt, 2*n, H, V)
           while templen < orblen
 #/* the orbit of this vector is shorter than a previous one, hence choose a new
 #   random vector */
             rpt = rand(1:(n + 1))
-            tmplen = _orbitlen(rpt, 2*n, H, nH + 1, V)
+            tmplen = _orbitlen(rpt, 2*n, H, V)
           end
           if tmplen > orblen
 #/* the new stabilizer element H[nH] enlarges the group generated by H */
@@ -1833,97 +2088,6 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
   end
   resize!(H, nH)
   return H
-end
-
-function isocand(CI, I, x, Ci::ZLatAutoCtx{S, T, U}, Co) where {S, T, U}
-  d = dim(Ci)
-  n = length(Ci.V)
-  @assert n == length(Co.V)
-  # Do something with bacher polynomials ...
-  vec = Vector{S}(undef, d)
-  vec2 = Vector{S}(undef, d)
-  for i in 1:Ci.fp_diagonal[I]
-    CI[i] = 0
-  end
-  nr = 0
-  fail = false
-  for j in 1:n
-    if fail
-      break
-    end
-    Vvj = Co.V[j]
-    okp = 0
-    okm = 0
-    # do something with scpvec
-    for i in 1:length(Co.G)
-      # GiI = Ci.G[i][Ci.per[I]] this is the Ci.per[I]-th row of Ci.G[i]
-      Fvi = Co.v[i]
-      # vec is the vector of scalar products of Co.v[j] with the first I base vectors
-      # x[1]...x[I-1]
-      for k in 1:(I - 1)
-        xk = x[k]
-        # TODO: Check for symmetry as in the cand function
-        # TODO: Use dot_product_with_row
-        if xk > 0
-          vec[k] = _dot_product(Vvj, Co.G[i], Co.V[xk])
-          vec2[k] = _dot_product(Co.V[xk], Co.G[i], Vvj)
-          #vec[k] = _dot_product(Vvj, Fvi, -xk)
-        else
-          vec[k] = -_dot_product(Vvj, Co.G[i], Co.V[-xk])
-          vec2[k] = -_dot_product(Co.V[-xk], Co.G[i], Vvj)
-          #vec[k] = -(Vvj * Co.G[i] * Co.V[-xk]')[1, 1]
-          #vec2[k] = -(Co.V[-xk] * Co.G[i] * Vvj')[1, 1]
-          #vec[k] = -_dot_product(Vvj, Fvi, -xk)
-        end
-      end
-      good = true
-      for k in 1:(I - 1)
-        if vec[k] != Ci.G[i][Ci.per[I], Ci.per[k]] || vec2[k] != Ci.G[i][Ci.per[k], Ci.per[I]]
-          good = false
-          break
-        end
-      end
-      if good && Co.V.lengths[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
-        okp += 1
-      end
-      good = true
-      for k in 1:(I - 1)
-        if vec[k] != -Ci.G[i][Ci.per[I], Ci.per[k]] || vec2[k] != -Ci.G[i][Ci.per[k], Ci.per[I]]
-
-          good = false
-          break
-        end
-      end
-      if good && Co.V.lengths[j][i] == Ci.G[i][Ci.per[I], Ci.per[I]]
-        okm += 1
-      end
-      # do something with scpvec
-    end
-    # do something with scpvec and DEP
-    if okp == length(Ci.G)
-      if nr < Ci.fp_diagonal[I]
-        nr += 1
-        CI[nr] = j
-      else
-        fail = true
-      end
-    end
-    if okm == length(Ci.G)
-      if nr < Ci.fp_diagonal[I]
-        nr += 1
-        CI[nr] = -j
-      else
-        fail = true
-      end
-    end
-  end
-  if fail
-    nr = 0
-  end
-
-  #if nr == Ci.fp_diagonal[I] # DEP
-  # update the blabla
-  return nr
 end
 
 function assert_auto(C, order)
@@ -1954,37 +2118,51 @@ end
 #
 ################################################################################
 
-function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem)
-  mul!(t, v[1, 1], A[1, k])
+function _dot_product_with_column!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = ZZ(), tmp3::ZZRingElem = ZZ())
+  getindex!(tmp2, v, 1, 1)
+  getindex!(tmp3, A, 1, k)
+  mul!(t, tmp2, tmp3)
   for i in 2:ncols(v)
-    mul!(tmp, v[1, i], A[i, k])
-    addeq!(t, tmp)
+    getindex!(tmp2, v, 1, i)
+    getindex!(tmp3, A, i, k)
+    mul!(tmp1, tmp2, tmp3)
+    add!(t, tmp1)
   end
   return t
 end
 
-function _dot_product_with_column(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(FlintZZ))
-  t = zero(FlintZZ)
+function _dot_product_with_column(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(ZZ))
+  t = zero(ZZ)
   t = _dot_product_with_column!(t, v, A, k, tmp)
   return t
 end
 
-function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem)
-  mul!(t, v[1, 1], A[k, 1])
+function _dot_product_with_entry!(t::ZZRingElem, v::ZZMatrix, A::Vector{ZZMatrix}, k::Int, tmp::ZZMatrix)
+  @inbounds mul!(tmp, v, A[k])
+  getindex!(t, tmp, 1, 1)
+  return t
+end
+
+function _dot_product_with_row!(t::ZZRingElem, v::ZZMatrix, A::ZZMatrix, k::Int, tmp1::ZZRingElem, tmp2::ZZRingElem = ZZ(), tmp3::ZZRingElem = ZZ())
+  getindex!(tmp2, v, 1, 1)
+  getindex!(tmp3, A, k, 1)
+  mul!(t, tmp2, tmp3)
   for i in 2:ncols(v)
-    mul!(tmp, v[1, i], A[k, i])
-    addeq!(t, tmp)
+    getindex!(tmp2, v, 1, i)
+    getindex!(tmp3, A, k, i)
+    mul!(tmp1, tmp2, tmp3)
+    add!(t, tmp1)
   end
   return t
 end
 
-function _dot_product_with_row(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(FlintZZ))
-  t = zero(FlintZZ)
+function _dot_product_with_row(v::ZZMatrix, A::ZZMatrix, k::Int, tmp::ZZRingElem = zero(ZZ))
+  t = zero(ZZ)
   t = _dot_product_with_row!(t, v, A, k, tmp)
   return t
 end
 
-function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
+function _dot_product_with_column!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int, tmp2::Int = 0, tmp3::Int = 0)
   @inbounds t = v[1] * A[1, k]
   @inbounds for i in 2:length(v)
     t = t + v[i] * A[i, k]
@@ -2000,10 +2178,19 @@ function _dot_product_with_column(v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::I
   return t
 end
 
-function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int)
+function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int, tmp2::Int = 0, tmp3::Int = 0)
   @inbounds t = v[1] * A[k, 1]
   @inbounds for i in 2:length(v)
     t = t + v[i] * A[k, i]
+  end
+  return t
+end
+
+function _dot_product_with_entry!(t::Int, v::Vector{Int}, A::Vector{Vector{Int}}, k::Int, tmp::Vector{Int})
+  @inbounds A = A[k]
+  @inbounds t = v[1] * A[1]
+  @inbounds for i in 2:length(v)
+    t = t + v[i] * A[i]
   end
   return t
 end
@@ -2044,7 +2231,7 @@ function _norm(v::Vector{Int}, M::Matrix{Int}, tmp::Vector{Int} = Vector{Int}(un
   return dot(v, tmp)
 end
 
-function _norm(v::ZZMatrix, M::ZZMatrix, tmp::ZZMatrix = zero_matrix(FlintZZ, 1, ncols(v)))
+function _norm(v::ZZMatrix, M::ZZMatrix, tmp::ZZMatrix = zero_matrix(ZZ, 1, ncols(v)))
   mul!(tmp, v, M)
   return (v * transpose(tmp))[1, 1]
 end
@@ -2109,6 +2296,36 @@ function _psolve(X, A, B, n, p)
   end
 end
 
+# Add (or subtract if sign == true) the 1 x n matrix r to the ith row of the
+# m x n matrix A.
+function add_to_row!(A::Matrix{Int}, r::Vector{Int}, i::Int, sign::Bool = false, tmp1::Int = 0, tmp2::Int = 0, tmp3::Int = 0)
+  @assert ncols(A) == length(r)
+  @assert 1 <= i && i <= nrows(A)
+  @inbounds for j in 1:ncols(A)
+    if sign
+      A[i, j] -= r[j]
+    else
+      A[i, j] += r[j]
+    end
+  end
+  return A
+end
+
+function add_to_row!(A::ZZMatrix, r::ZZMatrix, i::Int, sign::Bool = false, tmp1::ZZRingElem = ZZ(), tmp2::ZZRingElem = ZZ(), tmp3::ZZRingElem = ZZ())
+  @assert ncols(A) == length(r)
+  @assert 1 <= i && i <= nrows(A)
+  @inbounds for j in 1:ncols(A)
+    getindex!(tmp1, A, i, j)
+    getindex!(tmp2, r, 1, j)
+    if sign
+      neg!(tmp2)
+    end
+    add!(tmp3, tmp1, tmp2)
+    A[i, j] = tmp3
+  end
+  return A
+end
+
 ###########################################
 #
 #  isless for ZZMatrix (vectors)
@@ -2129,14 +2346,122 @@ function _isless(x::ZZMatrix, y::ZZMatrix)
   return false
 end
 
-# should do this more C style
-max_nbits(v::ZZMatrix) = maximum([nbits(v[1, i]) for i in 1:ncols(v)])
-
 # Some tests that I need to add:
 #
-# G = matrix(FlintZZ, 8, 8, [4, -2, 0, 0, 0, 0, 0, 1, -2, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2])
+# G = matrix(ZZ, 8, 8, [4, -2, 0, 0, 0, 0, 0, 1, -2, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, -1, 0, 0, 0, 0, 0, 0, -1, 2, 0, 1, 0, 0, 0, 0, 0, 0, 2])
 #
 # C = Hecke.ZLatAutoCtx([G]); Hecke.compute_short_vectors(C);
 #
 # Hecke.fingerprint(C)
 # reduce(hcat, [C.fp[:, i] for i in 1:8][C.per]) == [240 240 2160 240 240 240 240 240; 0 56 126 126 126 126 126 126; 0 0 27 27 72 72 72 72; 0 0 0 10 40 16 40 40; 0 0 0 0 8 8 24 24; 0 0 0 0 0 4 6 12; 0 0 0 0 0 0 3 6; 0 0 0 0 0 0 0 2]
+
+################################################################################
+#
+#  Convert ZZRingElem to Int (with overflow)
+#
+################################################################################
+
+function _int_with_overflow(a::ZZRingElem)
+  fits(Int, a) && return Int(a)
+  return BigInt(a) % Int
+end
+
+function _int_vector_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
+  if nrows(a) == 1
+    b = Vector{Int}(undef, ncols(a))
+    for i in 1:ncols(a)
+      getindex!(tmp, a, 1, i)
+      b[i] = _int_with_overflow(tmp)
+    end
+  else
+    b = Vector{Int}(undef, nrows(a))
+    for i in 1:nrows(a)
+      getindex!(tmp, a, i, 1)
+      b[i] = _int_with_overflow(tmp)
+    end
+  end
+  return b
+end
+
+function _int_matrix_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
+  b = Matrix{Int}(undef, nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
+      getindex!(tmp, a, i, j)
+      b[i, j] = _int_with_overflow(tmp)
+    end
+  end
+  return b
+end
+
+function _make_small(V::VectorList{ZZMatrix, ZZRingElem})
+  tmp = ZZ()
+  W = VectorList{Vector{Int}, Int}()
+  W.vectors = [ _int_vector_with_overflow(v, tmp) for v in V.vectors ]
+  if isdefined(V, :lengths)
+    W.lengths = Vector{Vector{Int}}(undef, length(V.lengths))
+    for i in 1:length(V.lengths)
+      W.lengths[i] = [ _int_with_overflow(x) for x in V.lengths[i] ]
+    end
+  end
+  W.issorted = V.issorted
+  W.use_dict = V.use_dict
+  if W.use_dict
+    W.lookup = Dict{Vector{Int}, Int}()
+    for i in 1:length(W.vectors)
+      W.lookup[W.vectors[i]] = i
+    end
+  end
+  return W
+end
+
+_make_small(C::ZLatAutoCtx{Int}) = C
+
+# Forces the entries of C in Ints. Only the fields relevant for `cand` are filled.
+function _make_small(C::ZLatAutoCtx{ZZRingElem})
+  tmp = ZZ()
+  D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
+  D.G = [ _int_matrix_with_overflow(M, tmp) for M in C.G ]
+
+  if isdefined(C, :GZZ)
+    D.GZZ = C.GZZ
+  end
+
+  D.dim = C.dim
+  D.V = _make_small(C.V)
+  D.v = Vector{Vector{Int}}(undef, length(C.v))
+  for i in 1:length(C.v)
+    D.v[i] = [ _int_vector_with_overflow(M, tmp) for M in C.v[i] ]
+  end
+
+  if isdefined(C, :per)
+    D.per = copy(C.per)
+    D.fp = copy(C.fp)
+    D.fp_diagonal = copy(C.fp_diagonal)
+    D.std_basis = copy(C.std_basis)
+  end
+
+  if isdefined(C, :scpcomb)
+    D.scpcomb = Vector{SCPComb{Int, Vector{Int}}}(undef, length(C.scpcomb))
+    for i in 1:length(C.scpcomb)
+      D.scpcomb[i] = SCPComb{Int, Vector{Int}}()
+      D.scpcomb[i].scpcombs = _make_small(C.scpcomb[i].scpcombs)
+      D.scpcomb[i].trans = C.scpcomb[i].trans
+      D.scpcomb[i].coef = C.scpcomb[i].coef
+      D.scpcomb[i].F = C.scpcomb[i].F
+      D.scpcomb[i].xvectmp = C.scpcomb[i].xvectmp
+      D.scpcomb[i].xbasetmp = C.scpcomb[i].xbasetmp
+      D.scpcomb[i].multmp1 = C.scpcomb[i].multmp1
+      D.scpcomb[i].multmp2 = C.scpcomb[i].multmp2
+      D.scpcomb[i].multmp3 = C.scpcomb[i].multmp3
+    end
+  end
+
+  D.depth = C.depth
+  D.is_symmetric = copy(C.is_symmetric)
+  D.dot_product_tmp = Int[ 0 ]
+
+  D.bacher_depth = 0
+
+  return D
+end

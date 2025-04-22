@@ -1,81 +1,85 @@
-export embedded_number_field, EmbeddedField, EmbeddedElem
-
 ################################################################################
 #
 #  Types
 #
 ################################################################################
 
-mutable struct EmbeddedField{S, E} <: Field
+mutable struct EmbeddedNumField{S, E} <: Field
   field::S
   embedding::E
 end
 
-mutable struct EmbeddedElem{T} <: FieldElem
+mutable struct EmbeddedNumFieldElem{T} <: FieldElem
   parent
   element::T
 
-  function EmbeddedElem{T}(parent, element::T) where {T}
+  function EmbeddedNumFieldElem{T}(parent, element::T) where {T}
     @assert Hecke.parent(element) === number_field(parent)
     return new{T}(parent, element)
   end
 end
 
-function (E::EmbeddedField{S})(x::T) where {S, T <: NumFieldElem}
+const EmbeddedAbsSimpleNumField = EmbeddedNumField{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}
+
+const EmbeddedAbsSimpleNumFieldElem = EmbeddedNumFieldElem{AbsSimpleNumFieldElem}
+
+function (E::EmbeddedNumField{S})(x::T) where {S, T <: NumFieldElem}
   if elem_type(S) === T
     @assert parent(x) === number_field(E)
-    return EmbeddedElem{T}(E, x)
+    return EmbeddedNumFieldElem{T}(E, x)
   else
     return E(number_field(E)(x))
   end
 end
 
-function (E::EmbeddedField)(x::EmbeddedElem)
+function (E::EmbeddedNumField)(x::EmbeddedNumFieldElem)
   @assert parent(x) === E
   return x
 end
 
-function (E::EmbeddedField)(x::RingElement)
+function (E::EmbeddedNumField)(x::RingElement)
   return E(number_field(E)(x))
 end
 
-function hash(x::EmbeddedElem, h::UInt)
+function hash(x::EmbeddedNumFieldElem, h::UInt)
   return xor(hash(data(x), h), 0x5cccaf5d1346dc53%UInt)
 end
 
-function Base.deepcopy_internal(x::EmbeddedElem, id::IdDict)
+function Base.deepcopy_internal(x::EmbeddedNumFieldElem, id::IdDict)
   return parent(x)(Base.deepcopy_internal(data(x), id))
 end
 
-number_field(K::EmbeddedField) = K.field
+number_field(K::EmbeddedNumField) = K.field
 
-embedding(K::EmbeddedField) = K.embedding
+embedding(K::EmbeddedNumField) = K.embedding
 
-parent(x::EmbeddedElem{T}) where {T} = x.parent::parent_type(x)
+parent(x::EmbeddedNumFieldElem{T}) where {T} = x.parent::parent_type(x)
 
-elem_type(::Type{EmbeddedField{S, E}}) where {S, E} = EmbeddedElem{elem_type(S)}
+elem_type(::Type{EmbeddedNumField{S, E}}) where {S, E} = EmbeddedNumFieldElem{elem_type(S)}
 
-elem_type(K::EmbeddedField{S, E}) where {S, E} = elem_type(EmbeddedField{S, E})
+parent_type(::Type{EmbeddedNumFieldElem{T}}) where {T} = EmbeddedNumField{parent_type(T), embedding_type(parent_type(T))}
 
-parent_type(::Type{EmbeddedElem{T}}) where {T} = EmbeddedField{parent_type(T), embedding_type(parent_type(T))}
+base_ring(::EmbeddedNumField) = QQ
 
-parent_type(x::EmbeddedElem{T}) where {T} = parent_type(EmbeddedElem{T})
+base_ring_type(::Type{<:EmbeddedNumField}) = QQField
 
-data(x::EmbeddedElem) = x.element
+data(x::EmbeddedNumFieldElem) = x.element
+
+characteristic(::EmbeddedNumField) = 0
 
 function embedded_field(K::SimpleNumField, i::NumFieldEmb)
   @assert number_field(i) === K
-  E = EmbeddedField(K, i)
+  E = EmbeddedNumField(K, i)
   return E, E(gen(K))
 end
 
 function embedded_field(K::NonSimpleNumField, i::NumFieldEmb)
   @assert number_field(i) === K
-  E = EmbeddedField(K, i)
+  E = EmbeddedNumField(K, i)
   return E, E.(gens(K))
 end
 
-(E::EmbeddedField)() = zero(E)
+(E::EmbeddedNumField)() = zero(E)
 
 unary_ops = [:(-)]
 
@@ -83,7 +87,7 @@ binary_ops = [:(+), :(*), :(-), :(div), :(//)]
 
 for b in unary_ops
   @eval begin
-    function ($b)(x::EmbeddedElem)
+    function ($b)(x::EmbeddedNumFieldElem)
       return parent(x)($(b)(data(x)))
     end
   end
@@ -91,33 +95,33 @@ end
 
 for b in binary_ops
   @eval begin
-    function ($b)(x::EmbeddedElem, y::EmbeddedElem)
+    function ($b)(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
       return parent(x)($(b)(data(x), data(y)))
     end
   end
 end
 
-function divexact(x::EmbeddedElem, y::EmbeddedElem; check::Bool = true)
+function divexact(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem; check::Bool = true)
   return parent(x)(divexact(data(x), data(y), check = check))
 end
 
-function ==(x::EmbeddedElem, y::EmbeddedElem)
+function ==(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
   return ==(data(x), data(y))
 end
 
-iszero(x::EmbeddedElem) = iszero(data(x))
+iszero(x::EmbeddedNumFieldElem) = iszero(data(x))
 
-isone(x::EmbeddedElem) = isone(data(x))
+isone(x::EmbeddedNumFieldElem) = isone(data(x))
 
-is_unit(x::EmbeddedElem) = is_unit(data(x))
+is_unit(x::EmbeddedNumFieldElem) = is_unit(data(x))
 
-zero(E::EmbeddedField) = E(zero(number_field(E)))
+zero(E::EmbeddedNumField) = E(zero(number_field(E)))
 
-one(E::EmbeddedField) = E(one(number_field(E)))
+one(E::EmbeddedNumField) = E(one(number_field(E)))
 
 # Now the ordering
 
-function isless(x::EmbeddedElem, y::EmbeddedElem)
+function isless(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
   i = embedding(parent(x))
   # Need to exclude equality
   if x == y
@@ -137,13 +141,13 @@ function isless(x::EmbeddedElem, y::EmbeddedElem)
   end
 end
 
-isless(x::EmbeddedElem, y) = isless(x, parent(x)(y))
+isless(x::EmbeddedNumFieldElem, y) = isless(x, parent(x)(y))
 
-isless(x, y::EmbeddedElem) = isless(parent(y)(x), y)
+isless(x, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
 
 # Support comparing with floats
 
-function isless(x::EmbeddedElem, y::AbstractFloat)
+function isless(x::EmbeddedNumFieldElem, y::AbstractFloat)
   i = embedding(parent(x))
   # Need to exclude equality
   p = 32
@@ -174,7 +178,7 @@ function isless(x::EmbeddedElem, y::AbstractFloat)
   end
 end
 
-function isless(y::AbstractFloat, x::EmbeddedElem)
+function isless(y::AbstractFloat, x::EmbeddedNumFieldElem)
   i = embedding(parent(x))
   # Need to exclude equality
   p = 32
@@ -205,30 +209,59 @@ function isless(y::AbstractFloat, x::EmbeddedElem)
   end
 end
 
+is_positive(x::EmbeddedNumFieldElem) = x > 0
+
+is_negative(x::EmbeddedNumFieldElem) = x < 0
+
+################################################################################
+#
+#  Sign
+#
+################################################################################
+
+function sign(x::EmbeddedNumFieldElem)
+  if is_zero(x)
+    return x
+  end
+  if x > 0
+    return one(parent(x))
+  else
+    return -one(parent(x))
+  end
+end
+
+################################################################################
+#
+#  Abs
+#
+################################################################################
+
+abs(x::EmbeddedNumFieldElem) = sign(x) * x
+
 ################################################################################
 #
 #  String I/O
 #
 ################################################################################
 
-function Base.show(io::IO, E::EmbeddedField)
+function Base.show(io::IO, E::EmbeddedNumField)
   print(io, "Embedded field\n$(number_field(E))\nat\n$(embedding(E))")
 end
 
 # I overload this to get the value at the embedding
 # (But I don't want this in the general printing routines, e.g., over polynomial
 # rings.)
-function Base.show(io::IO, ::MIME"text/plain", x::EmbeddedElem)
+function Base.show(io::IO, ::MIME"text/plain", x::EmbeddedNumFieldElem)
   print(io, "$(data(x))")
   a = Float64(real(embedding(parent(x))(data(x), 32)))
   print(io, @sprintf " (%.2f)" a)
 end
 
-function Base.show(io::IO, x::EmbeddedElem)
+function Base.show(io::IO, x::EmbeddedNumFieldElem)
   print(io, "$(data(x))")
 end
 
-function AbstractAlgebra.expressify(x::EmbeddedElem; context = nothing)
+function AbstractAlgebra.expressify(x::EmbeddedNumFieldElem; context = nothing)
   AbstractAlgebra.expressify(data(x), context = context)
 end
 
@@ -256,7 +289,7 @@ end
 #
 ################################################################################
 
-(E::EmbeddedField)(v::Vector) = E(number_field(E)(v))
+(E::EmbeddedNumField)(v::Vector) = E(number_field(E)(v))
 
 ################################################################################
 #
@@ -264,20 +297,20 @@ end
 #
 ################################################################################
 
-function AbstractAlgebra.promote_rule(::Type{EmbeddedElem{T}}, ::Type{S}) where {T <: NumFieldElem, S <: RingElement}
+function AbstractAlgebra.promote_rule(::Type{EmbeddedNumFieldElem{T}}, ::Type{S}) where {T <: NumFieldElem, S <: RingElement}
   if T === S
     return Union{}
   else
     if AbstractAlgebra.promote_rule(T, S) === T
-      return EmbeddedElem{T}
+      return EmbeddedNumFieldElem{T}
     else
       return Union{}
     end
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{EmbeddedElem{T}}, ::Type{EmbeddedElem{T}}) where {T <: NumFieldElem}
-  return EmbeddedElem{T}
+function AbstractAlgebra.promote_rule(::Type{EmbeddedNumFieldElem{T}}, ::Type{EmbeddedNumFieldElem{T}}) where {T <: NumFieldElem}
+  return EmbeddedNumFieldElem{T}
 end
 
 ################################################################################
@@ -286,10 +319,123 @@ end
 #
 ################################################################################
 
-function (QQ::QQField)(x::EmbeddedElem)
+function (QQ::QQField)(x::EmbeddedNumFieldElem)
   return QQ(data(x))
 end
 
-function is_rational(x::EmbeddedElem)
+function Base.Float64(x::EmbeddedNumFieldElem)
+  i = embedding(parent(x))
+  return Float64(real(i(data(x))))
+end
+
+function Base.convert(::Type{Float64}, x::EmbeddedNumFieldElem)
+  return Float64(x)
+end
+
+function is_rational(x::EmbeddedNumFieldElem)
   return is_rational(data(x))
+end
+
+################################################################################
+#
+#  Factorization and roots
+#
+################################################################################
+
+function roots(f::PolyRingElem{<:EmbeddedNumFieldElem})
+  E = base_ring(parent(f))
+  K = number_field(E)
+  return E.(roots(map_coefficients(data, f, cached = false)))
+end
+
+function factor(f::PolyRingElem{<:EmbeddedNumFieldElem})
+  Ex = parent(f)
+  E = base_ring(parent(f))
+  K = number_field(E)
+  fa = factor(map_coefficients(data, f, cached = false))
+  return Fac(Ex(E(constant_coefficient(unit(fa)))),
+             Dict{typeof(f), Int}(
+               (map_coefficients(E, g, parent = Ex), e) for (g, e) in fa))
+end
+
+################################################################################
+#
+#  Rounding
+#
+################################################################################
+
+function floor(::Type{ZZRingElem}, a::EmbeddedNumFieldElem)
+  i = embedding(parent(a))
+  p = 32
+  fl, b = unique_integer(floor(real(i(data(a), p))))
+  while !fl
+    p = Int(floor(p * 1.42))
+    fl, b = unique_integer(real(i(data(a), p)))
+  end
+  return b
+end
+
+function floor(a::EmbeddedNumFieldElem)
+  return parent(a)(floor(ZZRingElem, a))
+end
+
+function ceil(::Type{ZZRingElem}, a::EmbeddedNumFieldElem)
+  i = embedding(parent(a))
+  p = 32
+  fl, b = unique_integer(ceil(real(i(data(a), p))))
+  while !fl
+    p = Int(ceil(p * 1.42))
+    fl, b = unique_integer(real(i(data(a), p)))
+  end
+  return b
+end
+
+function ceil(a::EmbeddedNumFieldElem)
+  return parent(a)(ceil(ZZRingElem, a))
+end
+
+# rounding
+function round(::Type{ZZRingElem}, a::EmbeddedNumFieldElem, ::RoundingMode{:Nearest})
+  if is_zero(a)
+    return zero(ZZ)
+  end
+
+  ca = floor(ZZRingElem, a)
+  if a < ca + QQ(1//2)
+    return ca
+  elseif a > ca + QQ(1//2)
+    return ca + 1
+  else
+    return is_even(ca) ? ca : ca + 1
+  end
+end
+
+function round(a::EmbeddedNumFieldElem, ::RoundingMode{:Nearest})
+  return parent(a)(round(ZZRingElem, a, RoundNearest))
+end
+
+round(x::EmbeddedNumFieldElem, ::RoundingMode{:Up}) = ceil(x)
+round(::Type{ZZRingElem}, x::EmbeddedNumFieldElem, ::RoundingMode{:Up})= ceil(ZZRingElem, x)
+
+round(x::EmbeddedNumFieldElem, ::RoundingMode{:Down}) = floor(x)
+round(::Type{ZZRingElem}, x::EmbeddedNumFieldElem, ::RoundingMode{:Down}) = floor(ZZRingElem, x)
+
+round(x::EmbeddedNumFieldElem, ::RoundingMode{:NearestTiesAway}) = sign(x) * floor(abs(x) + 1 // 2)
+function round(::Type{ZZRingElem}, x::EmbeddedNumFieldElem, ::RoundingMode{:NearestTiesAway})
+    tmp = floor(ZZRingElem, abs(x) + 1 // 2)
+    return is_positive(x) ? tmp : -tmp
+end
+
+# default
+round(a::EmbeddedNumFieldElem) = round(a, RoundNearestTiesAway)
+round(::Type{ZZRingElem}, a::EmbeddedNumFieldElem) = round(ZZRingElem, a, RoundNearestTiesAway)
+
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function ConformanceTests.generate_element(E::EmbeddedNumField)
+  E(rand(number_field(E), -10:10))
 end

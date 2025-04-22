@@ -1,5 +1,5 @@
 @testset "Clgp" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   @testset "class numbers" begin
     @testset "quadratic fields" begin
       classnumbersofquadraticfields = Tuple{Int, Int}[(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
@@ -25,7 +25,7 @@
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
 
-        O = Order(K, shuffle(basis(O)), isbasis = true)
+        O = order(K, shuffle(basis(O)), isbasis = true)
         O.is_maximal = 1
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
@@ -45,7 +45,7 @@
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
 
-      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O = order(K, shuffle(basis(O)), isbasis = true)
       O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
@@ -59,7 +59,7 @@
       Cl, mCl = Hecke.class_group(O)
       @test order(Cl) == 8
 
-      O = Order(K, shuffle(basis(O)), isbasis = true)
+      O = order(K, shuffle(basis(O)), isbasis = true)
       O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
@@ -87,7 +87,7 @@
 end
 
 @testset "_class_unit_group" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   AF = ArbField(20, cached = false)
 
   @testset "K = Q" begin
@@ -116,7 +116,7 @@ end
     @test contains(AF(0.88137358701),U.tentative_regulator)
     @test order(Cl) == 1
 
-    O = Order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), isbasis = true)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -157,7 +157,7 @@ end
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
 
-    O = Order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), isbasis = true)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -187,7 +187,7 @@ end
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
 
-    O = Order(K, shuffle(basis(O)), isbasis = true, cached = false)
+    O = order(K, shuffle(basis(O)), isbasis = true, cached = false)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -210,7 +210,7 @@ end
 
     @test order(Cl)== 36
 
-    O = Order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), isbasis = true)
     O.is_maximal = 1
 
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -220,7 +220,7 @@ end
   end
 
   @testset "S3 field" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     f = x^6-24*x^4+157*x^2-162
     K, a = number_field(f)
     OK = maximal_order(K)
@@ -230,7 +230,7 @@ end
   end
 
   @testset "Proof" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     f = x^2 - 3 * 5 * 7 * 11
     K, a = number_field(f)
     OK = maximal_order(K)
@@ -273,8 +273,23 @@ end
   @testset "Class group proof" begin
     K, a = number_field(x^2 - 2)
     OK = maximal_order(K)
+    class_group(OK, GRH = true)
     c, mc = class_group(OK, GRH = false)
     @test isone(order(c))
+    unit_group(OK, GRH = false)
+    unit_group(OK, GRH = true)
+
+    # 
+    K, = quadratic_field(-100200000001; cached = false)
+    OK = maximal_order(K)
+    U, mU = unit_group_fac_elem(OK, GRH = false)
+    U, mU = unit_group_fac_elem(OK, GRH = false)
+
+    #
+    K,a = number_field(x^2 -5,"a")
+    O = maximal_order(K)
+    unit_group_fac_elem(O)
+    unit_group_fac_elem(lll(O); GRH = false)
   end
 
   @testset "Class group with small generating set" begin
@@ -285,4 +300,11 @@ end
       @test order(c) == 892
     end
   end
+
+  # saturation at large primes
+  
+  # the cyclotomic units are saturated at any prime l, since the class number h_149^+ is one.
+  K, = cyclotomic_real_subfield(149, "a")
+  u = Hecke._cyclotomic_units_totally_real_prime_conductor(K, 149)
+  @test nrows(Hecke.RelSaturate.compute_candidates_for_saturate(FacElem.(u[2:end]), next_prime(2^25))) == 0
 end

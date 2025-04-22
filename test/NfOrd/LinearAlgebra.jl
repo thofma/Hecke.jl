@@ -1,18 +1,18 @@
 @testset "Linear algebra" begin
 
   @testset "Dixon solve" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     K, a = number_field(x^3 + 3)
     A = rand(matrix_space(K, 4, 4), 10:100)
     while iszero(det(A))
       A = rand(matrix_space(K, 4, 4), 10:100)
     end
     b = rand(matrix_space(K, 4 ,1), 10:100)
-    @test A * Hecke.solve_dixon(A, b) == b
+    @test A * Hecke._solve_dixon(A, b) == b
   end
 
   @testset "Pseudo matrices" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
 
     # Compute a pseudo-hnf of a matrix over Z and check result against the HNF
 
@@ -36,7 +36,7 @@
     de = ZZRingElem(37684868701591492337245802520684209569420259)
     AoverO = matrix_space(O, 5, 5)(map(z -> O(z), A))
 
-    Apm = Hecke.pseudo_matrix( AoverO, [(O(1)*O)::Hecke.NfOrdIdl for i in 1:5])
+    Apm = Hecke.pseudo_matrix( AoverO, [(O(1)*O)::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} for i in 1:5])
 
     d = numerator(det(Apm))
 
@@ -48,7 +48,7 @@
       Hecke.mul_row!(z, i, K(norm(Apseudohnf.coeffs[i])))
     end
 
-    zinZ = matrix_space(FlintZZ, 5, 5)(map(zz -> numerator(coordinates(O(zz))[1]), z.entries))
+    zinZ = matrix_space(ZZ, 5, 5)(map(zz -> numerator(coordinates(O(zz))[1]), z.entries))
     c = parent(zinZ)(Ahnf) - zinZ
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])
@@ -72,7 +72,7 @@
         ll = rand(1:20)
         z = rand(matrix_space(O, l, l), ZZRingElem(2)^ll)
         #println("    $l x $l matrix with $ll bits")
-        cc = NfOrdIdl[ideal(O, 1) for i in 1:l]
+        cc = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(O, 1) for i in 1:l]
         pm = Hecke.pseudo_matrix(z, cc)
         d = det(pm)
         ppm = Hecke.pseudo_hnf(pm)
@@ -99,7 +99,7 @@
       @test G.matrix == U*PM.matrix
 
       G2, U2 = Hecke.pseudo_hnf_kb_with_transform(PM, :lowerleft)
-      @test Hecke._spans_subset_of_pseudohnf(PM, G2, :lowerleft)
+      @test Hecke._spans_subset_of_pseudohnf(PM, G2, shape = :lowerleft)
       @test !iszero(det(U2))
       @test G2.matrix == U2*PM.matrix
 
@@ -113,7 +113,7 @@
       @test H.matrix == V*PN.matrix
 
       H2, V2 = Hecke.pseudo_hnf_kb_with_transform(PN, :lowerleft)
-      @test Hecke._spans_subset_of_pseudohnf(PN, H2, :lowerleft)
+      @test Hecke._spans_subset_of_pseudohnf(PN, H2, shape = :lowerleft)
       @test !iszero(det(V2))
       @test H2.matrix == V2*PN.matrix
     end
@@ -121,7 +121,7 @@
     @testset "in span" begin
       K,  a = number_field(x^3 - 10, "a")
       O = maximal_order(K)
-      ideals = NfOrdIdl[]
+      ideals = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
       p = 2
       while length(ideals) < 5
         ideals = union(ideals, prime_decomposition(O, p))
@@ -137,18 +137,43 @@
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]
       @test Hecke._in_span(map(K, [5, 6, 7, 8]), A)[1] == false
     end
+    @testset "emptiness" begin
+      K, a = quadratic_field(-5)
+      O = maximal_order(K)
+      ide = fractional_ideal(O, one(O))
+      pmat00 = pseudo_matrix(identity_matrix(K, 0), [])
+      pmat02 = pseudo_matrix(matrix(K, 0, 2, []), [])
+      pmat20 = pseudo_matrix(matrix(K, 2, 0, []), [ide, ide])
+      pmat11 = pseudo_matrix(identity_matrix(K, 1), [ide])
+      pmat23 = pseudo_matrix(matrix(K, 2, 3, [1, 2, 3, a, 2*a, 3*a]), [ide, ide])
+      @test is_empty(pmat00)
+      @test is_empty(pmat02)
+      @test is_empty(pmat20)
+      @test !is_empty(pmat11)
+      @test !is_empty(pmat23)
+      @test isempty(pmat00)
+      @test isempty(pmat02)
+      @test isempty(pmat20)
+      @test !is_empty(pmat11)
+      @test !is_empty(pmat23)
+      
+      @test sprint(show, pmat00) isa String
+      @test sprint(show, pmat02) isa String
+      @test sprint(show, pmat20) isa String
+
+    end
   end
 
   @testset "rand" begin
-    R, x = polynomial_ring(FlintQQ, "x")
+    R, x = polynomial_ring(QQ, "x")
     K, a = number_field(x, "a")
     O = maximal_order(K)
-    I = Hecke.NfOrdFracIdl(ideal(O, O(2)), ZZRingElem(2))
-    @assert I isa Hecke.NfOrdFracIdl
+    I = Hecke.AbsSimpleNumFieldOrderFractionalIdeal(ideal(O, O(2)), ZZRingElem(2))
+    @assert I isa Hecke.AbsSimpleNumFieldOrderFractionalIdeal
     J = numerator(I)
-    @assert J isa Hecke.NfOrdIdl
+    @assert J isa Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-    for (T, E) in (I => nf_elem, J => Hecke.NfOrdElem)
+    for (T, E) in (I => AbsSimpleNumFieldElem, J => Hecke.AbsSimpleNumFieldOrderElem)
       m = make(T, 3)
       @test all(x -> x isa E,
                 (rand(T, 3), rand(rng, T, 3), rand(m), rand(rng, m)))
@@ -159,27 +184,27 @@
   end
 
   # issue 859
-  Qx, x = polynomial_ring(FlintQQ, "x");
+  Qx, x = polynomial_ring(QQ, "x");
   K, a = number_field(x^2 + 1, "a", cached = false);
   M = matrix(K, 1, 3, [5*a, 3*a, 0])
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :lowerleft)
   M = matrix(K, 1, 3, [0, 0, 3*a])
   pm = pseudo_hnf(pseudo_matrix(M), :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :upperright)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :upperright)
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [b + 2, 1, 0])]
   pm = pseudo_hnf(pseudo_matrix(matrix(gens)), :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(pm, pm, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(pm, pm, shape = :lowerleft)
 
   # issue 1112
-  K, a = CyclotomicRealSubfield(8, "a");
+  K, a = cyclotomic_real_subfield(8, "a");
   Kt, t = K["t"];
   E, b = number_field(t^2 - a * t + 1, "b");
   V = hermitian_space(E, gram_matrix(root_lattice(:E, 8)));

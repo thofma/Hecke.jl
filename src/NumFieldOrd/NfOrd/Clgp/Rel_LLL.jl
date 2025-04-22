@@ -1,4 +1,4 @@
-function NormCtx(O::NfAbsOrd, nb::Int, normal::Bool = false)
+function NormCtx(O::AbsNumFieldOrder, nb::Int, normal::Bool = false)
   if normal
     return NormCtx_split(O, nb)
   else
@@ -71,18 +71,18 @@ function norm(a::ZZMatrix, NC::NormCtx_simple, div::ZZRingElem = ZZRingElem(1))
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
-                O::NfOrd; prec::Int = 200, val::Int = 0,
+                O::AbsSimpleNumFieldOrder; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
-  return class_group_small_lll_elements_relation_start(clg, ideal(O, parent(basis_matrix(O).num)(1)), prec = prec)
+  return class_group_small_lll_elements_relation_start(clg, ideal(O, parent(basis_matrix(FakeFmpqMat, O).num)(1)), prec = prec)
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
-                A::NfOrdIdl; prec::Int = 200, val::Int = 0,
+                A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
   O = order(A)
   n = degree(O)
   L, Tr = lll(A, prec = prec)
-  I = SmallLLLRelationsCtx(zero_matrix(FlintZZ, 1, 1))
+  I = SmallLLLRelationsCtx(zero_matrix(ZZ, 1, 1))
   S = Tr*basis_matrix(A, copy = false)
   bd = abs(discriminant(O))*norm(A)^2
   bd = root(bd, n, check = false)
@@ -104,7 +104,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
   #now select a subset that can yield "small" relations, where
   #small means of effective norm <= sqrt(disc)
   I.A = A
-  I.elt = zero_matrix(FlintZZ, 1, n)
+  I.elt = zero_matrix(ZZ, 1, n)
   return I
 end
 

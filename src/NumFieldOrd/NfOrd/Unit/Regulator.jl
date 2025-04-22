@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    regulator(x::Vector{T}, abs_tol::Int = 64) -> arb
+    regulator(x::Vector{T}, abs_tol::Int = 64) -> ArbFieldElem
 
 Compute the regulator $r$ of the elements in $x$, such that the radius of $r$
 is less then `-2^abs_tol`.
@@ -23,7 +23,7 @@ function regulator(x::Vector{T}, abs_tol::Int = 64) where T
 
   p = 32
 
-  conlog = Vector{Vector{arb}}(undef, r)
+  conlog = Vector{Vector{ArbFieldElem}}(undef, r)
 
   while true
     q = 2
@@ -52,6 +52,10 @@ function regulator(x::Vector{T}, abs_tol::Int = 64) where T
   end
 end
 
-function lower_regulator_bound(K::AnticNumberField)
-  return ArbField(64, cached = false)("0.054")
+function lower_regulator_bound(K::AbsSimpleNumField)
+  R = ArbField(64, cached = false)
+  r1, r2 = signature(K)
+  w = torsion_units_order(K)
+  zimmert = w * 4//100 * exp(46//100 * R(r1) + 1/100 * R(r2))
+  return max(zimmert, ArbField(64, cached = false)("0.054"))
 end

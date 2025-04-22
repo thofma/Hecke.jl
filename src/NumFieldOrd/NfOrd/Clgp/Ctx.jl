@@ -4,6 +4,37 @@
 #
 ################################################################################
 
+function Base.deepcopy_internal(FB::NfFactorBase, dict::IdDict)
+  c = NfFactorBase()
+  c.fb = Dict(x => deepcopy(y) for (x, y) in FB.fb) # should be shallow
+  c.size = FB.size
+  c.fb_int = Base.deepcopy_internal(FB.fb_int, dict)
+  c.ideals = [deepcopy(p) for p in FB.ideals]  # Not shallow,
+                                               # otherwise the ideals reference each other
+  c.rw = copy(FB.rw)
+  c.mx = FB.mx
+  return c
+end
+
+function Base.deepcopy_internal(FB::FactorBase{T}, dict::IdDict) where {T}
+  return FactorBase(FB.base)
+end
+
+function Base.deepcopy_internal(FBS::FactorBaseSingleP{T}, dict::IdDict) where {T}
+  lp = [(e, deepcopy(P)) for (e, P) in FBS.lp]
+  if T === zzModPolyRingElem
+    return FactorBaseSingleP(Int(FBS.P), lp)
+  else
+    @assert T === ZZModPolyRingElem
+    return FactorBaseSingleP(FBS.P, lp)
+  end
+end
+#mutable struct FactorBaseSingleP{T}
+#  P::ZZRingElem
+#  pt::FactorBase{T}
+#  lp::Vector{Tuple{Int,AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+#  lf::Vector{T}
+
 function show(io::IO, c::ClassGrpCtx)
   println(io, "Ctx for class group of ", order(c.FB.ideals[1]))
   println(io, "Factorbase with ", length(c.FB.ideals), " ideals of norm up to ", norm(c.FB.ideals[1]))
@@ -18,7 +49,7 @@ function nf(c::ClassGrpCtx)
   return nf(order(c))
 end
 
-function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array}; add_rels::Bool = true, use_aut::Bool = false)
+function class_group_init(FB::NfFactorBase, T::DataType = sparse_matrix_type(ZZ); add_rels::Bool = true, use_aut::Bool = false)
   O = order(FB.ideals[1])
   n = degree(O)
   clg = ClassGrpCtx{T}()
@@ -30,8 +61,8 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   clg.last = 0
 
   clg.M = ModuleCtx_fmpz(length(FB.ideals))
-  clg.R_gen = Vector{nf_elem}()
-  clg.R_rel = Vector{nf_elem}()
+  clg.R_gen = Vector{AbsSimpleNumFieldElem}()
+  clg.R_rel = Vector{AbsSimpleNumFieldElem}()
 
   clg.c = conjugates_init(nf(O).pol)
   add_rels && for I in clg.FB.ideals
@@ -44,7 +75,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
     end
   end
 
-  l = zero_matrix(FlintZZ, n, 1+clg.c.r2)
+  l = zero_matrix(ZZ, n, 1+clg.c.r2)
   for i = 1:n
     l[i,1] = 1
   end
@@ -57,7 +88,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   # however, there is nullspace - which is strange...
   l, t = hnf_with_transform(l)
   if 1 + clg.c.r2 + 1 > nrows(l)
-    t = zero_matrix(FlintZZ, 0, 0)
+    t = zero_matrix(ZZ, 0, 0)
   else
     t = view(t, (1+clg.c.r2+1):nrows(l), 1:nrows(l))
   end
@@ -83,9 +114,9 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{ZZRingElem, ZZRin
   return clg
 end
 
-function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
+function class_group_init(O::AbsSimpleNumFieldOrder, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           use_aut::Bool = false,
-                          complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{ZZRingElem, ZZRingElem_Array_Mod.ZZRingElem_Array})
+                          complete::Bool = true, degree_limit::Int = 0, T::DataType = sparse_matrix_type(ZZ))
   @vprintln :ClassGroup 2 "Computing factor base ..."
 
   @assert B > 0
@@ -104,7 +135,7 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
 end
 
 function _get_autos_from_ctx(ctx::ClassGrpCtx)
-  return ctx.aut_grp::Vector{Tuple{NfToNfMor, Perm{Int}}}
+  return ctx.aut_grp::Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Perm{Int}}}
 end
 
 ################################################################################
@@ -114,7 +145,7 @@ end
 ################################################################################
 function to_magma(f::IOStream, clg::ClassGrpCtx)
   print(f, "K<a> := number_field(", nf(order(clg.FB.ideals[1])).pol, ");\n");
-  print(f, "M := MaximalOrder(K);\n");
+  print(f, "M := maximal_order(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size
     to_magma(f, clg.FB.ideals[i], "M")
@@ -152,7 +183,7 @@ function to_hecke(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   print(f, "$field_name, $vvar = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$varr\");\n");
   O = order(clg.FB.ideals[1])
   to_hecke(f, basis(O))
-  print(f, "O = Order($field_name, map($field_name, R))\n")
+  print(f, "O = order($field_name, map($field_name, R))\n")
   print(f, "O.is_maximal = 1\n")
 
   print(f, "c = Hecke.class_group_init(O, ", norm(clg.FB.ideals[1]), ")\n")

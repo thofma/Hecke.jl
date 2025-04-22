@@ -10,7 +10,7 @@
 
   E, b = number_field(t^2+7, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [3*b - 28, b + 14, 0]), map(E, [9, 3, 1]), map(E, [-21//2*b + 49//2, 5//2*b - 35//2, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [3*b - 28, b + 14, 0]), map(E, [9, 3, 1]), map(E, [-21//2*b + 49//2, 5//2*b - 35//2, 0])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -33,7 +33,7 @@
 
   E, b = number_field(t^2+3, "b", cached = false)
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [b - 30, b - 6, 0, 0]), map(E, [-1, 1, 1, 0]), map(E, [0, 0, 0, -1]), map(E, [2*b + 15, 3, 0, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [b - 30, b - 6, 0, 0]), map(E, [-1, 1, 1, 0]), map(E, [0, 0, 0, -1]), map(E, [2*b + 15, 3, 0, 0])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -60,7 +60,7 @@
 
   E, b = number_field(t^2+1, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [3*b - 17, 5*b + 11, 0]), map(E, [74*b - 412, 241//2*b + 525//2, 1//2*b - 3//2]), map(E, [-886*b + 3051, -701*b - 2077, -5*b + 11])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [3*b - 17, 5*b + 11, 0]), map(E, [74*b - 412, 241//2*b + 525//2, 1//2*b - 3//2]), map(E, [-886*b + 3051, -701*b - 2077, -5*b + 11])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -88,7 +88,7 @@
 
   E, b = number_field(t^2+3, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2, 0]), map(E, [0, -1, -1]), map(E, [0, 3//2*b + 3//2, 0])]
+gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2, 0]), map(E, [0, -1, -1]), map(E, [0, 3//2*b + 3//2, 0])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -111,7 +111,7 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
 
   E, b = number_field(t^2+7, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [3*b - 28, b + 14, 0]), map(E, [9, 3, 1]), map(E, [-21//2*b + 49//2, 5//2*b - 35//2, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [3*b - 28, b + 14, 0]), map(E, [9, 3, 1]), map(E, [-21//2*b + 49//2, 5//2*b - 35//2, 0])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -136,7 +136,7 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   # 2 odd scales less than 4
 
   D = matrix(E, 5, 5, [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-3*b - 6, -3//2*b - 9//2, 0, 0, 0]), map(E, [-1, -1, 1, 0, 0]), map(E, [-12*b + 45, -23//2*b + 39//2, 0, -15, 0]), map(E, [0, 0, 0, 0, 1]), map(E, [14*b - 66, 15*b - 30, 0, b + 21, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-3*b - 6, -3//2*b - 9//2, 0, 0, 0]), map(E, [-1, -1, 1, 0, 0]), map(E, [-12*b + 45, -23//2*b + 39//2, 0, -15, 0]), map(E, [0, 0, 0, 0, 1]), map(E, [14*b - 66, 15*b - 30, 0, b + 21, 0])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -158,7 +158,7 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   # 1 odd scale less than 4
 
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b + 27//2, 3//2*b + 15//2, 0, 0]), map(E, [-1, -1, 1, 0]), map(E, [0, 0, 0, -1]), map(E, [-2*b - 30, -5*b - 15, 0, 0])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-1//2*b + 27//2, 3//2*b + 15//2, 0, 0]), map(E, [-1, -1, 1, 0]), map(E, [0, 0, 0, -1]), map(E, [-2*b - 30, -5*b - 15, 0, 0])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -180,7 +180,7 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
   # 1 scale greater or equal to 4
 
   D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [3//2*b - 27//2, -1//2*b + 3//2, 0, 0]), map(E, [1, 1, -1, 0]), map(E, [-3, 0, 0, 3//2*b - 3//2]), map(E, [0, 0, 0, 1//2*b + 3//2])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [3//2*b - 27//2, -1//2*b + 3//2, 0, 0]), map(E, [1, 1, -1, 0]), map(E, [-3, 0, 0, 3//2*b - 3//2]), map(E, [0, 0, 0, 1//2*b + 3//2])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -206,7 +206,7 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
 
   E, b = number_field(t^2+1, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [3*b - 17, 5*b + 11, 0]), map(E, [74*b - 412, 241//2*b + 525//2, 1//2*b - 3//2]), map(E, [-886*b + 3051, -701*b - 2077, -5*b + 11])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [3*b - 17, 5*b + 11, 0]), map(E, [74*b - 412, 241//2*b + 525//2, 1//2*b - 3//2]), map(E, [-886*b + 3051, -701*b - 2077, -5*b + 11])]
   L = hermitian_lattice(E, gens, gram = D)
 
   G = genus(L)
@@ -227,7 +227,7 @@ gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [-1//2*b - 3//2, 15//2*b + 33//2,
 
   E, b = number_field(t^2+17, "b", cached = false)
   D = matrix(E, 2, 2, [102, b, -b, 0])
-  gens = Vector{Hecke.NfRelElem{nf_elem}}[map(E, [1, 0]), map(E, [b, 0]), map(E, [0, 1]), map(E, [0, b])]
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0]), map(E, [b, 0]), map(E, [0, 1]), map(E, [0, b])]
   L = hermitian_lattice(E, gens, gram = D)
 
 end

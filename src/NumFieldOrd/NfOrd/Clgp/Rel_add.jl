@@ -10,11 +10,11 @@
   b is a linear factor of f, the defining polynomial, mod p.
   I can compute b as gcd(a, f) of course.
   =#
-function special_prime_ideal(p::ZZRingElem, a::nf_elem)
+function special_prime_ideal(p::ZZRingElem, a::AbsSimpleNumFieldElem)
   K = parent(a)
   f = K.pol
   R = parent(f)
-  Zx = polynomial_ring(FlintZZ)[1]
+  Zx = polynomial_ring(ZZ)[1]
   Zpx = polynomial_ring(Native.GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
   g = Zpx(a)
   ff = Zpx(f)
@@ -35,13 +35,13 @@ function push_normStat!(clg::ClassGrpCtx, n::ZZRingElem, b::Bool)
   end
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem; orbit::Bool = true, integral::Bool = false) where T
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::AbsSimpleNumFieldElem; orbit::Bool = true, integral::Bool = false) where T
   return class_group_add_relation(clg, a, norm(a), ZZRingElem(1), orbit = orbit, integral = integral)
 end
 
 #deal with integral and non-integral elements differently. Computing the order
 #denominator is expensive (and mostly unnecessary)
-function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::QQFieldElem, nI::ZZRingElem; orbit::Bool = true, integral::Bool = true, always::Bool = true) where T
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::AbsSimpleNumFieldElem, n::QQFieldElem, nI::ZZRingElem; orbit::Bool = true, integral::Bool = true, always::Bool = true) where T
   if hash(a) in clg.RS
     return false
   end
@@ -148,8 +148,8 @@ end
 
 
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRingElem_Array_Mod.ZZRingElem_Array}}, a::FacElem{nf_elem, AnticNumberField})
-  R = sparse_row(FlintZZ)
+function class_group_add_relation(clg::ClassGrpCtx{<:SMat{ZZRingElem}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  R = sparse_row(ZZ)
   for i = 1:length(clg.FB.ideals)
     p = clg.FB.ideals[i]
     v = valuation(a, p)
@@ -161,7 +161,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRing
   return class_group_add_relation(clg, a, R)
 end
 
-function class_group_add_relation(clg::ClassGrpCtx{SMat{ZZRingElem, Hecke.ZZRingElem_Array_Mod.ZZRingElem_Array}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{ZZRingElem}; always::Bool = true, add_orbit = true)
+function class_group_add_relation(clg::ClassGrpCtx{<:SMat{ZZRingElem}}, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, R::SRow{ZZRingElem}; always::Bool = true, add_orbit = true)
 
   if hash(a) in clg.RS
     return false

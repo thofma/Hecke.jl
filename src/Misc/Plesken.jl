@@ -78,14 +78,14 @@ end
 function _presentation_artin_schreier(F, n)
   p = characteristic(F)
   Fx, x = polynomial_ring(F, "x", cached = false)
-  F1, a = FiniteField(x^p-x-1, "a", cached = false, check = false)
+  F1, a = finite_field(x^p-x-1, "a", cached = false, check = false)
   F1y, y = polynomial_ring(F1, "y1", cached = false)
   el = a
   for i = 2:n
     pol = y^p-y-el^(p-1)
-    Frel = FiniteField(pol, "a$i", cached = false, check = false)[1]
+    Frel = finite_field(pol, "a$i", cached = false, check = false)[1]
     abs_def_pol = norm(pol)
-    F1, gF1 = FiniteField(abs_def_pol, "a", check = false, cached = false)
+    F1, gF1 = finite_field(abs_def_pol, "a", check = false, cached = false)
     mp = hom(F1, Frel, gen(Frel))
     el = mp\(gen(Frel)*el)
     F1y, y = polynomial_ring(F1, "y1", cached = false)
@@ -132,7 +132,7 @@ function _presentation_kummer(F, r::T, n::Int) where T <: Union{ZZRingElem, Int}
   def_pol1 = Fx()
   setcoeff!(def_pol1, 0, -pr_root)
   setcoeff!(def_pol1, r^n, one(F))
-  F1, gF1 = FiniteField(def_pol1, "a1", cached = false, check = false)
+  F1, gF1 = finite_field(def_pol1, "a1", cached = false, check = false)
   return F1
 end
 
@@ -151,7 +151,7 @@ function _presentation_generic(F, r::T, n::Int) where T <: Union{ZZRingElem, Int
       ind = i
     end
   end
-  F0, gF0 = FiniteField(lF[ind], "a0", cached = false)
+  F0, gF0 = finite_field(lF[ind], "a0", cached = false)
   f = degree(F0)
   Fn = _presentation_kummer(F0, r, n)
   #Now, I need to take the trace.
@@ -163,13 +163,13 @@ function _presentation_generic(F, r::T, n::Int) where T <: Union{ZZRingElem, Int
     g = g^e
     t = add!(t, t, g)
   end
-  return FiniteField(_minpoly(t, r^n), "a", cached = false, check = false)[1]
+  return finite_field(_minpoly(t, r^n), "a", cached = false, check = false)[1]
 end
 
 function _find_exponent(f::Int, p::ZZRingElem, r::ZZRingElem, n::Int)
   xZx = ZZ["x"][2]
   phi = cyclotomic(f, xZx)
-  R = residue_ring(FlintZZ, r^(n+1), cached = false)
+  R = residue_ring(ZZ, r^(n+1), cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   phiR = Rx(phi)
   phiR1 = derivative(phiR)

@@ -4,17 +4,17 @@ using Hecke, Polymake
 
 import Hecke:
   solve_mixed,
-  ncols,
-  nrows
+  number_of_columns,
+  number_of_rows
 
 # Needs polymake (obviously)
 
 # Returns all vectors v such that Av == b and Cv >= 0.
 
-Hecke.nrows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
-Hecke.ncols(A::Polymake.MatrixAllocated) = Int(size(A)[2])
+Hecke.number_of_rows(A::Polymake.MatrixAllocated) = Int(size(A)[1])
+Hecke.number_of_columns(A::Polymake.MatrixAllocated) = Int(size(A)[2])
 
-function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_matrix(FlintZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(FlintZZ, 1, 1))
+function _polytope(; A::ZZMatrix=zero_matrix(ZZ, 1, 1), b::ZZMatrix=zero_matrix(ZZ, ncols(A), 1), C::ZZMatrix=zero_matrix(ZZ, 1, 1))
   if !iszero(A)
     bA = Matrix{BigInt}(hcat(-b, A))
     z = findall(i->!is_zero_row(bA, i), 1:nrows(bA))
@@ -24,7 +24,7 @@ function _polytope(; A::ZZMatrix=zero_matrix(FlintZZ, 1, 1), b::ZZMatrix=zero_ma
   end
   if !iszero(C)
     z = findall(i->!is_zero_row(C, i), 1:nrows(C))
-    zI = Matrix{BigInt}(hcat(zero_matrix(FlintZZ, nrows(C), 1), C))[z, :]
+    zI = Matrix{BigInt}(hcat(zero_matrix(ZZ, nrows(C), 1), C))[z, :]
   else
     zI = Matrix{BigInt}(undef, 0, 0)
   end
@@ -52,7 +52,7 @@ function solve_ineq(A::ZZMatrix, b::ZZMatrix)
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  res = zero_matrix(ZZ, nrows(inner) + nrows(out), ncols(A))
   for i=1:nrows(out)
     @assert out[i,1] == 1
     for j=1:ncols(A)
@@ -74,11 +74,11 @@ end
 Finds all solutions to $Ax = b$, $x>=0$. Assumes a finite set of solutions.
 """
 function solve_non_negative(A::ZZMatrix, b::ZZMatrix)
-  p = _polytope(A = A, b = b, C = identity_matrix(FlintZZ, ncols(A)))
+  p = _polytope(A = A, b = b, C = identity_matrix(ZZ, ncols(A)))
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  res = zero_matrix(ZZ, nrows(inner) + nrows(out), ncols(A))
   for i=1:nrows(out)
     @assert out[i,1] == 1
     for j=1:ncols(A)
@@ -104,7 +104,7 @@ function Hecke.solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix)  # Ax == b && 
   inner = p.INTERIOR_LATTICE_POINTS
   out = p.BOUNDARY_LATTICE_POINTS
 
-  res = zero_matrix(FlintZZ, (nrows(inner) + nrows(out))::Int, ncols(A)::Int)
+  res = zero_matrix(ZZ, (nrows(inner) + nrows(out))::Int, ncols(A)::Int)
   for i=1:nrows(out)
     if out[i,1] != 1
       println("unbounded polytope!!")
@@ -135,9 +135,9 @@ Solves $Ax = b$ under $Cx >= d$, assumes a finite solution set.
 """
 function solve_mixed(A::ZZMatrix, b::ZZMatrix, C::ZZMatrix, d::ZZMatrix)
   n = ncols(A)
-  A = cat(A, identity_matrix(FlintZZ, ncols(d)), dims=(1,2))
-  b = vcat(b, identity_matrix(FlintZZ, ncols(d)))
-  C = [C -d; zero_matrix(FlintZZ, ncols(d), ncols(C)) identity_matrix(FlintZZ, ncols(d))]
+  A = cat(A, identity_matrix(ZZ, ncols(d)), dims=(1,2))
+  b = vcat(b, identity_matrix(ZZ, ncols(d)))
+  C = [C -d; zero_matrix(ZZ, ncols(d), ncols(C)) identity_matrix(ZZ, ncols(d))]
   s = solve_mixed(A, b, C)
   return s[:, 1:n]
 end

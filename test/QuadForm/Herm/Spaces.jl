@@ -1,5 +1,5 @@
 @testset "Spaces" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^2 - 2, "a1")
   OK = maximal_order(K)
   p = 3*OK
@@ -11,12 +11,6 @@
   s = involution(E)
 
   F = GF(3)
-
-  Hecke.change_base_ring(::Hecke.NfRel, ::Hecke.fpMatrix) = error("asd")
-  @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
-
-  Hecke.change_base_ring(::Hecke.NfRel, x::Hecke.fpMatrix) = x
-  @test_throws ErrorException hermitian_space(E, F[1 2; 2 1])
 
   V = @inferred hermitian_space(E, E[1 1; 1 1;])
   @test 0 in diagonal(V)
@@ -32,12 +26,12 @@
   @test inner_product(V, v, v) == matrix(E,1,1,[3])
 
   @test_throws ArgumentError hermitian_space(E, E[1 b; b 1])
-  @test_throws ArgumentError hermitian_space(E, FlintQQ[1 0; 1 1])
+  @test_throws ArgumentError hermitian_space(E, QQ[1 0; 1 1])
 
-  V = @inferred hermitian_space(E, FlintQQ[1 2; 2 1])
-  @test V === hermitian_space(E, FlintQQ[1 2; 2 1])
-  @test V !== hermitian_space(E, FlintQQ[1 2; 2 1], cached = false)
-  @test ishermitian(V)
+  V = @inferred hermitian_space(E, QQ[1 2; 2 1])
+  @test V === hermitian_space(E, QQ[1 2; 2 1])
+  @test V !== hermitian_space(E, QQ[1 2; 2 1], cached = false)
+  @test is_hermitian(V)
   @test !is_definite(V)
   @test involution(V) == s
   @test det(V) == -discriminant(V)
@@ -59,7 +53,7 @@
   @test gram_matrix(Vm) == -gram_matrix(V)
 
 
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   f = x^2-3
   K, a = number_field(f, "a", cached = false)
   Kt, t = polynomial_ring(K, "t")
@@ -129,4 +123,13 @@
   @test !is_isometric(V1, H)
   @test is_isometric(V1, V2)
 
+end
+
+@testset "diagonal with transform" begin
+  E, b = cyclotomic_field_as_cm_extension(3)
+  K = base_field(E)
+  s = involution(E)
+  Vh = hermitian_space(E, E[1 b 1; s(b) 4 s(b); 1 b 1])
+  diag, U = @inferred diagonal_with_transform(Vh)
+  @test diagonal(map_entries(K, U*gram_matrix(Vh)*map_entries(s, transpose(U)))) == diag
 end

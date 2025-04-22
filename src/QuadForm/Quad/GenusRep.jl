@@ -3,11 +3,6 @@
 # With permission ported from Magma package of Markus Kirschmer:
 # http://www.math.rwth-aachen.de/~Markus.Kirschmer/magma/lat.html
 
-add_verbosity_scope(:GenRep)
-add_assertion_scope(:GenRep)
-
-export automorphism_group_generators, genus_representatives
-
 ################################################################################
 #
 #  SpinorGeneraCtx
@@ -21,8 +16,7 @@ function SpinorGeneraCtx(L::QuadLat)
   RCG, mRCG, Gens = _compute_ray_class_group(L)
 
   # 1) Map the generators into the class group to create the factor group.
-
-  subgroupgens = GrpAbFinGenElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
+  subgroupgens = FinGenAbGroupElem[_map_idele_into_class_group(mRCG, [g]) for g in Gens ]
 
   for g in gens(RCG)
     push!(subgroupgens, 2*g)
@@ -89,7 +83,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   if rank(L) == 2
     if is_definite(L)
-      return _genus_representatives_binary_quadratic_definite(L, max = max, use_auto = true, use_mass = true)
+      return _genus_representatives_binary_quadratic_definite(L; max, use_auto = true, use_mass = true)
     else
       @req degree(base_ring(L)) == 1 "Binary indefinite quadratic lattices must be only over the rationals"
       return _genus_representatives_binary_quadratic_indefinite_rationals(L)
@@ -98,7 +92,7 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
 
   if !is_definite(L)
     @vprintln :GenRep 1 "Genus representatives of indefinite lattice"
-    return spinor_genera_in_genus(L, [])
+    return spinor_genera_in_genus(L, ideal_type(base_ring(L))[])
   end
 
   res = typeof(L)[]
@@ -112,21 +106,21 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
     _mass = mass(L)
     @vprintln :GenRep 1 "... $(_mass)"
   else
-    _mass = -one(FlintQQ)
+    _mass = -one(QQ)
   end
 
   @vprintln :GenRep 1 "Found $(length(spinor_genera)) many spinor genera in genus"
 
   for LL in spinor_genera
     @hassert :GenRep 3 all(!is_isometric_with_isometry(X, LL)[1] for X in res)
-    new_lat =  iterated_neighbours(LL, p, use_auto = use_auto,
+    new_lat =  iterated_neighbours(LL, p; use_auto,
                                           max = max - length(res),
                                           mass = _mass//length(spinor_genera))
     append!(res, new_lat)
   end
 
   if max > length(res) && use_mass
-    if sum(QQFieldElem[1//automorphism_group_order(LL) for LL in res]) != _mass
+    if sum(1//automorphism_group_order(LL) for LL in res; init = QQ(0)) != _mass
       error("Something very wrong")
     end
   end
@@ -145,7 +139,7 @@ function spinor_genera_in_genus(L, mod_out)
   C = SpinorGeneraCtx(L)
 
   # We don't need minimal generators, to make them not too large.
-  Gr = gram_matrix_of_generators(L, minimal = false)
+  Gr = gram_matrix_of_generators(L; minimal = false)
 
   R = base_ring(L)
   F = nf(R)
@@ -216,7 +210,7 @@ function spinor_genera_in_genus(L, mod_out)
   res = typeof(L)[ L ]
 
   for p in primes
-    N = neighbours(L, p, max = 1)[1]
+    N = only(neighbours(L, p; max = 1))
     pN = pseudo_matrix(N)
     for i in 1:length(res)
       pM = pseudo_matrix(res[i])
@@ -233,11 +227,11 @@ end
 
 function _smallest_norm_good_prime(L)
   OK = base_ring(L)
-  lp = ideal_type(OK)[p for p in bad_primes(L, even = true) if is_dyadic(p) || !is_modular(L, p)[1]]
+  lp = ideal_type(OK)[p for p in bad_primes(L; even = true) if is_dyadic(p) || !is_modular(L, p)[1]]
   limit = 20
   while true
     lq = prime_ideals_up_to(OK, limit)
-    sort!(lq, by = norm)
+    sort!(lq; by = norm)
     for q in lq
       if !(q in lp)
         return q
@@ -271,7 +265,7 @@ function spinor_norm(L, p)
       # Which of the two is the case?
       # TODO: It is not a good idea to rely on implementation details of
       #       local_multiplicative_group_modulo_squares
-      if length(unique([e % 2 for e in E])) == 1
+      if length(unique!([e % 2 for e in E])) == 1
         return gens(V)[1:ngens(V) - 1], V, g, true
       else
         return gens(V), V, g, false
@@ -284,9 +278,9 @@ function spinor_norm(L, p)
     # Generators of the (principal) norm ideals of the Jordan components: since
     # p is odd, the norms (and the scales) are just the dimensions of the
     # Jordan components
-     normgens = nf_elem[g[1,1] for g in G]
+     normgens = AbsSimpleNumFieldElem[g[1,1] for g in G]
 
-     twonormgens = nf_elem[]
+     twonormgens = AbsSimpleNumFieldElem[]
 
      for i in 1:length(normgens)
        for j in 1:length(normgens)
@@ -300,7 +294,7 @@ function spinor_norm(L, p)
     # cf. Kneser 1956, Satz 3:
     _SN, mS = sub(V, twonormvectors)
     #@assert length(rels(_SN)) == 0 # free
-    SN = [ mS(s) for s in gens(_SN) ]
+    SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
   else
     bong = good_bong(L, p)
     @hassert :GenRep 1 is_good_bong(bong, p)
@@ -350,7 +344,7 @@ function spinor_norm(L, p)
       alpha = minimum(div(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) for i in 1:(rank(L) - 2) if mod(valuation(bong[i + 2], p) - valuation(bong[i], p), 2) == 0)
       # SN = SN + one_plus_power_of_P(alpha, V, g, P)
       _G, _mG = _one_plus_power_of_p(alpha, V, g, p)
-      _SN, mS = sub(V, append!(SN, [_mG(g) for g in gens(_G)]))
+      _SN, mS = sub(V, append!(SN, eltype(SN)[_mG(g) for g in gens(_G)]))
       #@assert length(rels(_SN)) == 0 # free
       SN = elem_type(V)[ mS(s) for s in gens(_SN) ]
     end
@@ -378,11 +372,11 @@ function good_bong(L, p)
   @req is_dyadic(p) "Prime must be dyadic"
   G, JJ = maximal_norm_splitting(L, p)
   K = nf(base_ring(L))
-  bong = nf_elem[]
+  bong = AbsSimpleNumFieldElem[]
   for i in 1:length(G)
     GG = G[i]
     if nrows(GG) == 2
-      bong = append!(bong, _make_bong_dim_2(quadratic_lattice(K, identity_matrix(K, 2), gram = GG), p))
+      bong = append!(bong, _make_bong_dim_2(quadratic_lattice(K, identity_matrix(K, 2); gram = GG), p))
     elseif nrows(GG) == 1
       push!(bong, GG[1, 1])
     else
@@ -404,11 +398,11 @@ function maximal_norm_splitting(L, p)
   K = nf(R)
   e = ramification_index(p)
   uni = uniformizer(p)
-  J, G, _ = jordan_decomposition(L, p)
+  J, _G, _ = jordan_decomposition(L, p)
   # join J into one matrix of base vectors
   JJ = reduce(vcat, J)
   # join the individual Gram matrices:
-  A = diagonal_matrix(G)
+  A = diagonal_matrix(_G)
 
   # read the finer decomposition:
   G = dense_matrix_type(elem_type(K))[]
@@ -438,7 +432,7 @@ function maximal_norm_splitting(L, p)
     sL, aL, uL, wL = _scales_and_norms(G, p, uni)
 
     failset_old = failset
-    b, i, failset = __ismaximal_norm_splitting(G, sL, aL, p)
+    b, i, failset = __is_maximal_norm_splitting(G, sL, aL, p)
     @assert isempty(failset_old) || length(failset_old) > length(failset)
     if b
       break
@@ -451,7 +445,7 @@ function maximal_norm_splitting(L, p)
     # Unary components already have maximal norm.
 
     # The maximal norm splitting condition is violated at index i.
-    find_j = append!([valuation(aL[k], p) for k in (i+1):length(aL)], [2*(sL[i] - sL[k]) + valuation(aL[k], p) for k in 1:(i - 1)])
+    find_j = append!(ZZRingElem[valuation(aL[k], p) for k in (i+1):length(aL)], ZZRingElem[2*(sL[i] - sL[k]) + valuation(aL[k], p) for k in 1:(i - 1)])
     @assert length(find_j) > 0
     min, j = findmin(find_j)
     if j <= length(aL) - i
@@ -474,11 +468,11 @@ function maximal_norm_splitting(L, p)
         end
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
 
-        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)), gram = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
+        @assert valuation(scale(quadratic_lattice(K, identity_matrix(K, nrows(B)); gram = B * gram_matrix(ambient_space(L)) * transpose(B))), p) == -sL[k]
       end
       # Apply case 1 to the reversed orthogonal sum of the dual lattices:
 
-      steps = reverse!(steps)
+      reverse!(steps)
       # Update Gram matrices for the reversed, dualized lattice:
       for k in 1:length(G)
         B = sub(JJ, steps[k][1]:steps[k][length(steps[k])], 1:ncols(JJ))
@@ -488,8 +482,8 @@ function maximal_norm_splitting(L, p)
       # Component i is now at position #aL-i+1
       @assert length(steps[length(aL) - i + 1]) == 2
       beli_correction!(L, G, JJ, steps, length(aL) - i + 1, length(aL) - j + 1, p)
-      steps = reverse!(steps)
-      G = reverse!(G)
+      reverse!(steps)
+      reverse!(G)
       # Update norms/scales from the updated Gram matrices:
       sL, aL, uL, wL = _scales_and_norms(G, p, uni)
       # Dualize again
@@ -510,8 +504,9 @@ function maximal_norm_splitting(L, p)
       end
     end
   end
-
-  @assert all(k -> nrows(G[k]) in [1,2], 1:length(G))
+  # We use the `let bla = bla; ...; end` due to type stability; see the
+  # JuliaLang issue 15276
+  @assert all(let G = G; k -> nrows(G[k]) in [1,2]; end, 1:length(G))
   return G, JJ
 end
 
@@ -523,8 +518,8 @@ end
 
 function has_propertyA(L, p)
   @assert is_dyadic(p)
-  rL, sL, wL, aL = _genus_symbol_kirschmer(L, p).data
-  nL = [valuation(aL[i], p) for i in 1:length(aL)]
+  rL, sL::Vector{Int}, wL, aL = _genus_symbol_kirschmer(L, p).data
+  nL = ZZRingElem[valuation(aL[i], p) for i in 1:length(aL)]
   r = maximum(rL)
   if r > 2
     @vprintln :GenRep 1 """Property A is violated over dyadic prime:
@@ -573,8 +568,8 @@ function G_function(a, V, g, p)
   elseif 2*e < R && R <= 4 * e
     if d <= 2 * e - R//2
       @vprintln :GenRep 2 "G_function case A"
-      O = _one_plus_power_of_p(R + d - 2*e, V, g, p)
-      return _intersect(N_function(-a, g, p), _sum(O, sub(V, [g\(a)])))
+      OO = _one_plus_power_of_p(R + d - 2*e, V, g, p)
+      return _intersect(N_function(-a, g, p), _sum(OO, sub(V, [g\(a)])))
     else
       @vprintln :GenRep 2 "G_function case B"
       @assert R % 2 == 0
@@ -683,11 +678,12 @@ end
 # parameter atinfinity can be a list of tuples <v, +1 or -1>, where v is an
 # element of real_places(nf(base_ring(L))). All places, finite or infinite, which
 # are unspecified are interpreted as 1.}
-function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AnticNumberField, NumFieldEmbNfAbs}, Int}[]) where {T}
+function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, Int}} = Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int}[]) where {T}
+  #local s::AbsSimpleNumFieldElem
   R = order(base_ring(codomain(mRCG)))
   F = nf(R)
   IP = defining_modulus(mRCG)[2]
-  the_idele_inf = [1 for i in IP]
+  the_idele_inf = Int[1 for i in IP]
   if length(atinfinity) != 0
     for pl in atinfinity
       if pl[1] in IP
@@ -701,7 +697,7 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
   rayprimes = collect(keys(mRCG.fact_mod))
   exponents = Int[mRCG.fact_mod[p] for p in rayprimes]
   factors = ideal_type(R)[rayprimes[i]^exponents[i] for i in 1:length(rayprimes)]
-  the_idele = [ one(F) for p in rayprimes ]
+  the_idele = elem_type(F)[ one(F) for p in rayprimes ]
   for i in idele
     j = findfirst(isequal(i[1]), rayprimes)
     if j isa Int # found
@@ -757,21 +753,21 @@ function _map_idele_into_class_group(mRCG, idele, atinfinity::Vector{Tuple{T, In
     x = mQ\inv(mQ(x)) # x = invmod(x, M)
   end
 
-  sgns = [ sign(s, IP[j]) * the_idele_inf[j] for j in 1:length(IP)]
+  sgns = Int[ sign(s, IP[j]) * the_idele_inf[j] for j in 1:length(IP)]
 
   A, _exp, _log = sign_map(R, _embedding.(IP), M)
-  t = x * (1 + _exp(A([ sgns[j] == sign(x, IP[j]) ? 0 : 1 for j in 1:length(IP)])))
+  t = x * (1 + _exp(A(Int[ sgns[j] == sign(x, IP[j]) ? 0 : 1 for j in 1:length(IP)])))
   @assert x - t in M
   @assert all(sign(t, IP[j]) == sgns[j] for j in 1:length(IP))
   #t = crt(M, IP, x, sgns)
 
   s = s * t
 
+  # We use the `let bla = bla; ...; end` due to type stability; see the
+  # JuliaLang issue 15276
   # Check if everything is ok.
-  @hassert :GenRep 1 all(isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))) for k in 1:length(the_idele))
-  @hassert :GenRep 1 all(sign(s * the_idele_inf[j], IP[j]) == 1 for j in 1:length(IP))
-
-
+  @hassert :GenRep 1 all(let s = s; k -> isone(quo(R, factors[k])[2](FacElem(s * the_idele[k]))); end, 1:length(the_idele))
+  @hassert :GenRep 1 all(let s = s, the_idele_inf = the_idele_inf; j -> sign(s * the_idele_inf[j], IP[j]) == 1; end, 1:length(IP))
   # We first interpret it as the ideal which will actually have to be mapped:
   # i.e., we just collect the p-valuations at the noncritical places (p notin RayPrimes):
 
@@ -799,7 +795,7 @@ function _compute_ray_class_group(L)
   MM = ideal_type(R)[]
   Mfact = Dict{ideal_type(R), Int}()
 
-  for p in bad_primes(L, even = true)
+  for p in bad_primes(L; even = true)
     spinors, V, g, exactlytheunits = spinor_norm(L, p)
     # we only need to carry around those finite places where the Spinor norm is
     # not exactly the units:
@@ -842,7 +838,7 @@ function _get_critical_primes(L, mRCG, inf_plc, mQ, full = true)
   critical_primes = ideal_type(R)[]
   Q = codomain(mQ)
 
-  bad = prod(bad_primes(L, even = true))
+  bad = prod(bad_primes(L; even = true))
 
   maxnorm = 50
   goodprimes = [ p for p in prime_ideals_up_to(R, maxnorm) if is_coprime(p, bad)]
@@ -891,7 +887,7 @@ function _spinor_generators(L, C, mod_out = elem_type(codomain(C.mQ))[])
     for P in lp
       g = _map_idele_into_class_group(C.mR, [(P, uniformizer(P))])
       h = C.mQ(g)
-      if !haspreimage(mS, h)[1]
+      if !has_preimage_with_preimage(mS, h)[1]
         push!(gens, P)
         push!(tmp_gens, h)
         S, mS = sub(codomain(C.mQ), tmp_gens)
@@ -916,7 +912,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   @req e == 0 || valuation(norm(L), p) >= e "The lattice must be even"
   B = local_basis_matrix(L, p, type = :submodule)
   n = nrows(B)
-  if F isa AnticNumberField
+  if F isa AbsSimpleNumField
     @assert nbits(minimum(p)) < 60
     k, h = ResidueFieldSmall(R, p)
   else
@@ -934,11 +930,11 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   if use_auto
     G = automorphism_group_generators(L)
     @hassert :GenRep 1 all(g -> g * gram_matrix(ambient_space(L)) * transpose(g) == gram_matrix(ambient_space(L)), G)
-    adjust_gens = eltype(G)[solve_left(B, B*g) for g in G]
-    @hassert :GenRep 1 all(g -> g * form * transpose(g) == form, adjust_gens)
+    adjust_gens = eltype(G)[solve(B, B*g; side = :left) for g in G]
+    @hassert :GenRep 1 all(let form = form; g -> g * form * transpose(g) == form; end, adjust_gens)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
-    @hassert :GenRep 1 all(g -> g * pform * transpose(g) == pform, adjust_gens_mod_p)
+    @hassert :GenRep 1 all(let form = form; g -> g * pform * transpose(g) == pform; end, adjust_gens_mod_p)
     q = order(k)
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
@@ -958,9 +954,9 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   pMmat = _module_scale_ideal(p, pseudo_matrix(L))
 
   # TODO: This is too slow
-  _dotk(u, v) = (matrix(k, 1, n, u) * pform * matrix(k, n, 1, v))[1, 1]
+  _dotk = let k = k; (u, v) -> (matrix(k, 1, n, u) * pform * matrix(k, n, 1, v))[1, 1]; end
 
-  _dotF(u, v) = (matrix(F, 1, n, u) * form * matrix(F, n, 1, v))[1, 1]
+  _dotF = let form = form; (u, v) -> (matrix(F, 1, n, u) * form * matrix(F, n, 1, v))[1, 1]; end
 
   keep = true
   cont = true
@@ -984,7 +980,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
       continue # can only happen if p is even
     elseif val == e + 1
       # make val > e + 1
-      bas = [zero(k) for i in 1:n]
+      bas = elem_type(k)[zero(k) for i in 1:n]
       r = 0
       for i in 1:n
         bas[i] = one(k)
@@ -995,7 +991,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
         bas[i] = zero(k)
       end
       @assert r != 0
-      u = [zero(F) for i in 1:n]
+      u = elem_type(F)[zero(F) for i in 1:n]
       u[r] = one(F)
       a = (h\(hext((nrm//(2 * pi * _dotF(x, u))))))
       @. x = x - a * pi * u
@@ -1063,7 +1059,7 @@ function neighbours(L::QuadLat, p; call = stdcallback, use_auto = true, max = in
   return result
 end
 
-function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -one(FlintQQ))
+function iterated_neighbours(L::QuadLat, p; use_auto = true, max = inf, mass = -one(QQ))
   @req is_definite(L) "Lattice must be definite"
   result = typeof(L)[ L ]
   i = 1
@@ -1122,7 +1118,7 @@ function _scales_and_norms(G, p, uni)
   # scales, norm generators, norm valuations, weight valuations of a (Jordan) decomposition of L
 end
 
-function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
+function __is_maximal_norm_splitting(gram_matrices, scales, norms, p)
   #  Scales: list of valuations of scales
   #  Norms: list of generators of norms
   #  occurring in a Genus symbol of L at p, as calculated by GenusSymbol(L, p).
@@ -1131,7 +1127,7 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   k = findfirst(i -> !(ncols(gram_matrices[i]) in [1, 2]), 1:length(gram_matrices))
   if k !== nothing
     @vprintln :GenRep 2 "not maximal norm splitting: components are not all unary or binary";
-    return false, -k, []
+    return false, -something(k), []
   end
   # test if binary components are modular:
   for i in 1:length(gram_matrices)
@@ -1143,14 +1139,13 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   # test if sL[1] \supseteq sL[2] \supseteq ... \supseteq sL[#sL]:
   for i in 1:length(scales) - 1
     if scales[i] > scales[i + 1]
-      throw(Error("Your lattice is weird"))
-      return fail, 0, []
+      error("Your lattice is weird")
     end
   end
 
   NU, _ = _norm_upscaled(gram_matrices, p)
   # test if nL[i] = n(L^{sL[i]}):
-  fail = []
+  fail = Int[]
   for i in 1:length(scales)
     @assert NU[i] <= normsval[i]
     if NU[i] < normsval[i]
@@ -1162,10 +1157,10 @@ function __ismaximal_norm_splitting(gram_matrices, scales, norms, p)
   if length(fail) > 0
     return false, fail[1], fail
   end
-  return true, 0, []
+  return true, 0, Int[]
 end
 
-function _ismaximal_norm_splitting(G, p)
+function _is_maximal_norm_splitting(G, p)
   sL, aL, _, _ = scales_and_norms(G, p, uniformizer(p))
   return __is_maximal_norm_splitting(G, sL, aL, p)
 end
@@ -1181,9 +1176,8 @@ function _norm_upscaled(G, p)
   sL = Int[ minimum(Union{Int, PosInf}[iszero(g[i, j]) ? inf : valuation(g[i, j], p) for j in 1:ncols(g) for i in 1:j]) for g in G]
   e = ramification_index(p)
   uni = elem_in_nf(uniformizer(p))
-  aL = []
-  uL = []
-  wL = []
+  aL = typeof(uni)[]
+  uL = ZZRingElem[]
   for i in 1:t
     GG = diagonal_matrix([ j < i ? uni^(2*(sL[i] - sL[j])) * G[j] : G[j] for j in 1:t])
     # the norm is 2*Scale + <ideals generated by the diagonals>, cf. § 94 O'Meara.
@@ -1253,10 +1247,10 @@ function _one_plus_power_of_p(k, V, g, p)
   # See Beli 2003, Def. 1.
   # We expect V, g = local_multiplicative_group_modulo_squares(p)
   r = ngens(V)
-  it = Iterators.product([collect(0:1) for i in 1:r]...)
+  it = cartesian_product_iterator([0, 1], r, inplace = false)#Iterators.product([collect(0:1) for i in 1:r]...)
   S = [ g(V(collect(v))) for v in it ]
   SS = [ s for s in S if relative_quadratic_defect(s, p) >= k ]
-  return sub(V, [g\(s) for s in SS])
+  return sub(V, elem_type(V)[g\(s) for s in SS])
 end
 
 function _intersect(_V, _W)
@@ -1389,7 +1383,7 @@ function show(io::IO, ::MIME"text/plain", f::LocMultGrpModSquMap)
 end
 
 function show(io::IO, f::LocMultGrpModSquMap)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Map for local unit group modulo squares")
   else
     print(io, "Map for local unit group modulo squares at the prime ideal ")
@@ -1397,7 +1391,7 @@ function show(io::IO, f::LocMultGrpModSquMap)
   end
 end
 
-function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
+function image(f::LocMultGrpModSquMap, x::FinGenAbGroupElem)
   @assert parent(x) == f.domain
   K = f.codomain
   if !f.is_dyadic
@@ -1421,7 +1415,7 @@ function image(f::LocMultGrpModSquMap, x::GrpAbFinGenElem)
   end
 end
 
-function preimage(f::LocMultGrpModSquMap, y::nf_elem)
+function preimage(f::LocMultGrpModSquMap, y::AbsSimpleNumFieldElem)
   @assert parent(y) == f.codomain
   if !f.is_dyadic
     v = valuation(y, f.p)
@@ -1471,7 +1465,7 @@ function __colon_raw(K, a, b)
   d = degree(K)
   bb = b
   B = inv(basis_matrix(a)) #QQMatrix(basis_mat_inv(a, copy = false))
-  M = zero_matrix(FlintQQ, d^2, d)
+  M = zero_matrix(QQ, d^2, d)
   for i = 1:d
     N = representation_matrix(bb[i])*B
     for s = 1:d
@@ -1480,7 +1474,7 @@ function __colon_raw(K, a, b)
       end
     end
   end
-  M = sub(hnf(FakeFmpqMat(M), :upperright), 1:d, 1:d)
+  M = sub(_hnf_integral(FakeFmpqMat(M), :upperright), 1:d, 1:d)
   N = inv(transpose(M))
   return N
 end
@@ -1597,7 +1591,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
 
   scaled_basisofLinFabs = elem_type(EFabs)[]
 
-  O = Order(Fabs, __colon_raw(Fabs, basisofLinFabs, basisofLinFabs))
+  O = order(Fabs, __colon_raw(Fabs, basisofLinFabs, basisofLinFabs))
 
   z = zero_matrix(K, degree(O), degree(F))
   for i in 1:degree(O)
@@ -1610,7 +1604,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   end
   pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-  OinF = Order(F, pm)
+  OinF = order(F, pm)
 
   LinFabs = fractional_ideal(O, basisofLinFabs)
 
@@ -1809,7 +1803,7 @@ function _fractional_ideal_from_base_ring_generators(OE, v)
   return fractional_ideal(OE, basis_matrix(v) * basis_mat_inv(OE))
 end
 
-function _intersect(I::NfRelOrdFracIdl, J::NfRelOrdFracIdl)
+function _intersect(I::RelNumFieldOrderFractionalIdeal, J::RelNumFieldOrderFractionalIdeal)
   pm = _intersect_modules(basis_pmatrix(I), basis_pmatrix(J))
   return fractional_ideal(order(I), pm)
 end
@@ -1928,11 +1922,11 @@ function absolute_norm(A::Hecke.AlgAssAbsOrdIdl)
   return norm(A)
 end
 
-function absolute_norm(A::NfAbsOrdFracIdl)
+function absolute_norm(A::AbsNumFieldOrderFractionalIdeal)
   return norm(A)
 end
 
-function *(a::NfAbsOrdFracIdl{AnticNumberField,nf_elem}, b::AlgAssRelOrdIdl{nf_elem,Hecke.NfAbsOrdFracIdl{AnticNumberField,nf_elem},AlgAss{nf_elem}})
+function *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
   pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)
@@ -2045,7 +2039,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
     end
   end
 
-  A = AlgAss(K, mult_tb)
+  A = StructureConstantAlgebra(K, mult_tb)
   B = basis(A)
   sigma(a) = A([a.coeffs[2], a.coeffs[1]])
   inv2 = inv(A(2))
@@ -2141,11 +2135,11 @@ end
 
 function _lattice_to_binary_quadratic_form(L::QuadLat)
   M = absolute_basis_matrix(L) # This corresponds to a basis of L
-  @assert nrows(M) == 2 && ncols(M) == 2
+  @assert nrows(M) == 2
   G = gram_matrix(ambient_space(L), M)
-  GG = change_base_ring(FlintQQ, G)
+  GG = change_base_ring(QQ, G)
   d = denominator(GG)
-  f = binary_quadratic_form(FlintZZ(d * GG[1, 1]), FlintZZ(2 * d * GG[1, 2]), FlintZZ(d * GG[2, 2]))
+  f = binary_quadratic_form(ZZ(d * GG[1, 1]), ZZ(2 * d * GG[1, 2]), ZZ(d * GG[2, 2]))
   return f, d
 end
 
@@ -2186,9 +2180,9 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   @assert d > 0
   Qx = Hecke.Globals.Qx
   x = gen(Qx)
-  f = x^2 - d * x + (d^2 - d)//4
-  @assert isone(denominator(f))
-  K, a = number_field(f, "a", cached = false) # a is (d + \sqrt(d))//2
+  ff = x^2 - d * x + (d^2 - d)//4
+  @assert isone(denominator(ff))
+  K, a = number_field(ff, "a", cached = false) # a is (d + \sqrt(d))//2
   O = equation_order(K)
   C, _dlog, _exp = narrow_picard_group(O)
   res = QuadBin{ZZRingElem}[]
@@ -2196,7 +2190,7 @@ function _equivalence_classes_binary_quadratic_indefinite_primitive(d::ZZRingEle
   # So if proper = true, we don't have to do anything
   # and if proper = false, we have to sieve using is_equivalent
   for c in C
-    I = _exp(c)
+    I::AbsSimpleNumFieldOrderFractionalIdeal = _exp(c)
     J = numerator(I)
     f = _ideal_to_form(J, d)
     if proper || all(h -> !is_equivalent(h, f, proper = false), res)
@@ -2226,7 +2220,7 @@ function _form_to_ideal(f::QuadBin{ZZRingElem}, O, a)
 end
 
 # This is from Kani
-function _ideal_to_form(I::NfAbsOrdIdl, delta)
+function _ideal_to_form(I::AbsNumFieldOrderIdeal, delta)
   # first make primitive
   M = _hnf(basis_matrix(I), :lowerleft)
   g = reduce(gcd, [M[1, 1], M[1, 2], M[2, 2]])
@@ -2255,30 +2249,44 @@ function primitive_form(g::QuadBin{ZZRingElem})
 end
 
 function automorphism_group_generators(g::QuadBin{ZZRingElem})
-  gens = dense_matrix_type(FlintZZ)[]
+  gens = dense_matrix_type(ZZ)[]
   g = primitive_form(g)
   d = discriminant(g)
   @assert d > 0
   if is_square(d)
+    # if d is a square, the form represents zero
+    # Let e_1, e_2 be primitive with e_1^2 = 0, e_2^2 = 0 and e_1.e_2>0.
+    # Then any isometry preserves the set {e_1,e_2, -e_1, -e_2}.
+    # We see that the orthogonal group is generated by -id and
+    # possibly the one exchanging e_1 <-> e_2 if it is integral.
+    push!(gens, matrix(ZZ, 2, 2, [-1, 0, 0, -1]))
+
     g = primitive_form(g)
+    gg = binary_quadratic_form(g.a, -g.b, g.c)
+    is_ambiguous = is_equivalent(g, gg, proper = true)
+
     gred, t = reduction_with_transformation(g)
-    push!(gens, matrix(FlintZZ, 2, 2, [-1, 0, 0, -1]))
     a = gred.a
     b = gred.b
     c = gred.c
     @assert a == 0 || c == 0
-    if a == c == 0
-      push!(gens, t * matrix(FlintZZ, 2, 2, [0, 1, 1, 0]) * inv(t))
-    elseif a == 0 && c != 0
+
+    # bring it to the form x^2 + b xy
+    if a == 0 && c != 0
       a = gred.c
       c = gred.a
       t = t * matrix(ZZ, 2, 2, [0, 1, 1, 0])
-    elseif a != 0 && c ==0 && b % (2*a) == 0
-      n = b//(2*a)
-      t = t * matrix(ZZ, 2, 2, [1, -n, 0, 1])
-      push!(gens, t * matrix(FlintZZ, 2, 2, [1,0,0,-1]) * inv(t) )
     end
-    @assert all(T -> _action(g, T) == g, gens)
+
+    fl, n = divides(1 - a^2, b)
+    @assert fl == is_ambiguous
+    if fl
+      f = matrix(ZZ, 2, 2, [a, b, n, -a])
+      push!(gens, t* f * inv(t))
+    end
+    for T in gens
+      @assert _action(g, T) == g
+    end
     return gens
   end
   Qx = Hecke.Globals.Qx
@@ -2304,14 +2312,16 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
     @assert norm_one_gens[i] == divexact(_x + _y * deltasqrt, 2)
     @assert iseven(_x + g.b * _y)
     @assert iseven(_x + d * _y)
-    T = zero_matrix(FlintZZ, 2, 2)
+    T = zero_matrix(ZZ, 2, 2)
     T[1, 1] = divexact(_x + _y * g.b, 2)
     T[1, 2] = g.c * _y
     T[2, 1] = -g.a * _y
     T[2, 2] = divexact(_x - _y * g.b, 2)
     push!(gens, T)
   end
-  @assert all(T -> _action(g, T) == g, gens)
+  for T in gens
+    @assert _action(g, T) == g
+  end
   # Now test if g is ambiguous or not
   gg = binary_quadratic_form(g.a, -g.b, g.c)
   fl = is_equivalent(g, gg, proper = true)
@@ -2396,7 +2406,9 @@ function automorphism_group_generators(g::QuadBin{ZZRingElem})
     end
   end
 
-  @assert all(T -> _action(gorig, T) == gorig, gens)
+  for T in gens
+    @assert _action(gorig, T) == gorig
+  end
 
   return gens
 end

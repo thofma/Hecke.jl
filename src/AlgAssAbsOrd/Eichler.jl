@@ -27,7 +27,7 @@ end
 # Many functions are in AlgAssRelOrd/Eichler.jl
 
 # Finds at least n units in the order F.maximal_orders[order_num]
-function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbsAlgAss{QQFieldElem}, T, U, M }
+function _find_some_units(F::FieldOracle{S, T, U, M}, order_num::Int, n::Int) where { S <: AbstractAssociativeAlgebra{QQFieldElem}, T, U, M }
   O = F.maximal_orders[order_num]
   units = Vector{elem_type(O)}()
   while length(units) < n

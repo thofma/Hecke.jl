@@ -13,15 +13,15 @@ function rref_with_trans(M::T) where {T <: MatElem{S} where {S <: FieldElem}}
 end
 
 function quo_gens(A, B)
-  n, B = rref(B')
-  B = sub(B, 1:n, 1:ncols(B))'
-  fl, T = can_solve_with_solution(A, B)  # A T = B
-  d, r = rref(T')
+  n, B = rref(transpose(B))
+  B = transpose(sub(B, 1:n, 1:ncols(B)))
+  fl, T = can_solve_with_solution(A, B; side = :right)  # A T = B
+  d, r = rref(transpose(T))
   t = sub(r, 1:d, 1:ncols(r))
   t = Hecke.reduce_mod(identity_matrix(base_ring(t), ncols(t)), t)
   d = rref!(t)
   t = t[1:d, :]
-  return A*t'
+  return A*transpose(t)
 end
 
 function rational_normal_form(M::T) where {T <: MatElem{S} where {S <: FieldElem}}
@@ -32,7 +32,7 @@ function rational_normal_form(M::T) where {T <: MatElem{S} where {S <: FieldElem
     m = (g^v)(M)
     this_g = zero_matrix(base_ring(M), nrows(M), 0)
     while true
-      d, km = nullspace(m)
+      km = kernel(m, side = :right)
       km = quo_gens(km, this_g)
       if ncols(km) == 0
         break
@@ -43,10 +43,10 @@ function rational_normal_form(M::T) where {T <: MatElem{S} where {S <: FieldElem
         if ncols(b) > 0
           break
         end
-        @show ex -= 1
+        ex -= 1
         km = g(M)*km
-        d, km = rref(km')
-        km = km[1:d, :]'
+        d, km = rref(transpose(km))
+        km = transpose(km[1:d, :])
       end
       b = b[:, 1]
     #any 0 ne b in km/g(M)km will generate a sigma cyclic subspace
@@ -55,11 +55,10 @@ function rational_normal_form(M::T) where {T <: MatElem{S} where {S <: FieldElem
       b = zero_matrix(base_ring(M), nrows(M), 0)
       for k = 1:ex
         for j = 1:degree(g)
-          @show k, j
           b = hcat(b, (M^(j-1))*((g^(k-1))(M))*ve)
         end
       end
-      @show this_g = hcat(this_g, b)
+      this_g = hcat(this_g, b)
     end
     all_b = hcat(all_b, this_g)
   end

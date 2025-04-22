@@ -38,14 +38,14 @@ function is_kummer_extension(K::SimpleNumField)
   return true
 end
 
-function is_kummer_extension(K::AnticNumberField)
+function is_kummer_extension(K::AbsSimpleNumField)
   if degree(K) != 2
     return false
   end
   return is_radical_extension(K)
 end
 
-function radical_extension(n::Int, a::FacElem, s::String = "_\$";
+function radical_extension(n::Int, a::FacElem, s::VarName = "_\$";
                         cached::Bool = true, check::Bool = true)
   return radical_extension(n, evaluate(a), s, cached = cached, check = check)
 end
@@ -64,14 +64,14 @@ julia> radical_extension(5, QQ(2), "a")
 (Number field of degree 5 over QQ, a)
 ```
 """
-function radical_extension(n::Int, a::NumFieldElem, s::String = "_\$";
+function radical_extension(n::Int, a::NumFieldElem, s::VarName = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = polynomial_ring(k, cached = false)
   return number_field(x^n - a, s, check = check, cached = cached)
 end
 
-function radical_extension(n::Int, a::QQFieldElem, s::String = "_\$";
+function radical_extension(n::Int, a::QQFieldElem, s::VarName = "_\$";
                         cached::Bool = true, check::Bool = true)
   k = parent(a)
   kx, x = polynomial_ring(k, cached = false)
@@ -99,7 +99,7 @@ julia> Qx, x = QQ["x"];
 julia> K, a = number_field(x^2 - 2, "a");
 
 julia> basis(K)
-2-element Vector{nf_elem}:
+2-element Vector{AbsSimpleNumFieldElem}:
  1
  a
 ```
@@ -112,17 +112,15 @@ basis(::SimpleNumField)
 #
 ################################################################################
 
-export defining_polynomial
-
 @doc raw"""
-    defining_polynomial(L::SimpleNumField) -> PolyElem
+    defining_polynomial(L::SimpleNumField) -> PolyRingElem
 
 Given a simple number field $L/K$, constructed as $L = K[x]/(f)$, this function
 returns $f$.
 """
 defining_polynomial(::SimpleNumField)
 
-defining_polynomial(K::NfRel) = K.pol
+defining_polynomial(K::RelSimpleNumField) = K.pol
 
 ################################################################################
 #
@@ -156,11 +154,11 @@ degree of $L$.
 """
 absolute_discriminant(::SimpleNumField)
 
-function absolute_discriminant(K::AnticNumberField)
+function absolute_discriminant(K::AbsSimpleNumField)
   return discriminant(K)
 end
 
-function absolute_discriminant(K::NfRel)
+function absolute_discriminant(K::RelSimpleNumField)
   d = norm(discriminant(K)) * absolute_discriminant(base_field(K))^degree(K)
   return d
 end
@@ -195,8 +193,6 @@ Otherwise the function returns `false` and a morphism mapping everything to $0$.
 """
 is_isomorphic_with_map(::SimpleNumField, ::SimpleNumField)
 
-export is_isomorphic_with_map
-
 ################################################################################
 #
 #  Linear disjointness
@@ -208,7 +204,7 @@ export is_isomorphic_with_map
     is_linearly_disjoint(K::SimpleNumField, L::SimpleNumField) -> Bool
 
 Given two number fields $K$ and $L$ with the same base field $k$, this function
-returns whether $K$ and $L$ are linear disjoint over $k$.
+returns whether $K$ and $L$ are linearly disjoint over $k$.
 """
 is_linearly_disjoint(K::SimpleNumField, L::SimpleNumField)
 

@@ -1,8 +1,8 @@
 @testset "AlgAssRelOrdIdl" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 - 10x - 8
   K, a = number_field(f, "a")
-  KG = group_algebra(K, GrpAbFinGen([ 2 ]))
+  KG = group_algebra(K, FinGenAbGroup([ 2 ]))
 
   @testset "Arithmetic" begin
     O = any_order(KG)
@@ -16,6 +16,8 @@
     @test I^ZZRingElem(2) == J
 
     @test norm(I) == 4*base_ring(O)
+
+    @test hash(I * J) == hash(8 * O)
   end
 
   @testset "Locally free basis" begin
@@ -33,7 +35,7 @@
       end
     end
     d = lcm([ denominator(b) for b in basisOL ])
-    OKG = Order(KG, basis(KG))
+    OKG = order(KG, basis(KG))
     I = Hecke.ideal_from_lattice_gens(KG, OKG, [ d*b for b in basisOL ])
 
     p = prime_decomposition(OK, 3)[1][1]
@@ -56,7 +58,7 @@
     M[1,2,2] = one(K)
     M[2,1,2] = one(K)
     M[2,2,1] = K(-12)
-    E = Hecke.AlgAss(K,M)
+    E = Hecke.StructureConstantAlgebra(K,M)
     OE = maximal_order(E)
     @test is_prime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
   end

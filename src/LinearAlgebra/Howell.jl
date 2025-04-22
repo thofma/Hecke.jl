@@ -12,7 +12,7 @@ end
 function howell_form(A::Generic.Mat{Nemo.ZZModRingElem})
   local B::ZZMatrix
   if nrows(A) < ncols(A)
-    B = vcat(lift(A), zero_matrix(FlintZZ, ncols(A)-nrows(A), ncols(A)))
+    B = vcat(lift(A), zero_matrix(ZZ, ncols(A)-nrows(A), ncols(A)))
   else
     B = lift(A)
   end

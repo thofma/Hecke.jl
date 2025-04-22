@@ -1,8 +1,8 @@
 @testset "Elements" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
-  O1 = EquationOrder(K1)
+  O1 = equation_order(K1)
 
   K2, a2 = number_field(4*x^2 + 1, "a")
   O2 = maximal_order(K2)
@@ -13,39 +13,39 @@
     b1 = @inferred O1(2*a1^0)
     @test b1.elem_in_nf == 2*a1^0
     @test parent(b1) == O1
-    @test typeof(b1) == NfOrdElem
+    @test typeof(b1) == AbsSimpleNumFieldOrderElem
 
     b2 = @inferred O1(2)
     @test parent(b2) == O1
-    @test typeof(b2) == NfOrdElem
+    @test typeof(b2) == AbsSimpleNumFieldOrderElem
     @test b1 == b2
 
     b3 = @inferred O1(ZZRingElem(2))
     @test parent(b3) == O1
-    @test typeof(b3) == NfOrdElem
+    @test typeof(b3) == AbsSimpleNumFieldOrderElem
     @test b1 == b3
 
     b4 = @inferred O1([2, 0, 0])
     @test parent(b4) == O1
-    @test typeof(b4) == NfOrdElem
+    @test typeof(b4) == AbsSimpleNumFieldOrderElem
     @test b4.has_coord
     @test b1 == b4
 
-    b5 = @inferred O1([FlintZZ(2), FlintZZ(0), FlintZZ(0)])
+    b5 = @inferred O1([ZZ(2), ZZ(0), ZZ(0)])
     @test parent(b5) == O1
-    @test typeof(b5) == NfOrdElem
+    @test typeof(b5) == AbsSimpleNumFieldOrderElem
     @test b5.has_coord
     @test b1 == b5
 
-    b6 = @inferred O1(2*a1^0, [FlintZZ(2), FlintZZ(0), FlintZZ(0)])
+    b6 = @inferred O1(2*a1^0, [ZZ(2), ZZ(0), ZZ(0)])
     @test parent(b6) == O1
-    @test typeof(b6) == NfOrdElem
+    @test typeof(b6) == AbsSimpleNumFieldOrderElem
     @test b6.has_coord
     @test b1 == b6
 
     b7 = @inferred O1()
     @test parent(b6) == O1
-    @test typeof(b6) == NfOrdElem
+    @test typeof(b6) == AbsSimpleNumFieldOrderElem
   end
 
   b1 = O1(2*a1^0)
@@ -62,7 +62,7 @@
     @test b == K1(2)
 
     b = @inferred coordinates(b1)
-    @test b == [ FlintZZ(2), FlintZZ(0), FlintZZ(0) ]
+    @test b == [ ZZ(2), ZZ(0), ZZ(0) ]
 
     b = O1(a1//2, false)
     @test_throws ErrorException coordinates(b)
@@ -117,7 +117,7 @@
     c = @inferred add!(c, c, O1(a1^2))
     @test b == c
     c = O1(a1)
-    c = @inferred addeq!(c, O1(a1^2))
+    c = @inferred add!(c, O1(a1^2))
     @test b == c
     @test b == O1(a1 + a1^2)
 
@@ -133,13 +133,13 @@
     c = @inferred divexact(O1(a1^2), O1(a1))
     @test c == O1(a1)
 
-    c = @inferred divexact(O1(a1^2), O1(a1), true)
+    c = @inferred divexact(O1(a1^2), O1(a1); check=true)
     @test c == O1(a1)
 
-    c = @inferred divexact(O1(a1^2), O1(a1), false)
+    c = @inferred divexact(O1(a1^2), O1(a1); check=false)
     @test c == O1(a1)
 
-    @test_throws ErrorException divexact(O1(1), O1(2))
+    @test_throws ArgumentError divexact(O1(1), O1(2))
 
     b = O1(2)
     c = @inferred b//b
@@ -191,12 +191,12 @@
     @test c == O1(a1)
     c = @inferred divexact(b, ZZRingElem(2))
     @test c == O1(a1)
-    c = @inferred divexact(b, ZZRingElem(2), true)
+    c = @inferred divexact(b, ZZRingElem(2); check=true)
     @test c == O1(a1)
-    c = @inferred divexact(b, ZZRingElem(2), false)
+    c = @inferred divexact(b, ZZRingElem(2); check=false)
     @test c == O1(a1)
 
-    @test_throws ErrorException divexact(b, O1(4*a1))
+    @test_throws ArgumentError divexact(b, O1(4*a1))
   end
 
   @testset "Exponentiation" begin
@@ -234,12 +234,12 @@
   @testset "Representation matrix" begin
     b = O1(1)
     c = @inferred representation_matrix(b)
-    @test c == one(matrix_space(FlintZZ, 3, 3))
+    @test c == one(matrix_space(ZZ, 3, 3))
     b = O1(a1)
     c = @inferred representation_matrix(b)
-    @test c == FlintZZ[0 1 0; 0 0 1; 2 0 0]
+    @test c == ZZ[0 1 0; 0 0 1; 2 0 0]
     c = @inferred representation_matrix(b, K1)
-    @test c == Hecke.FakeFmpqMat(FlintZZ[0 1 0; 0 0 1; 2 0 0], one(FlintZZ))
+    @test c == Hecke.FakeFmpqMat(ZZ[0 1 0; 0 0 1; 2 0 0], one(ZZ))
   end
 
   @testset "Trace" begin
@@ -274,7 +274,7 @@
       @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
 
-    B = FlintZZ(10)
+    B = ZZ(10)
     b = @inferred rand(O1, B)
     for i in 1:degree(O1)
       @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
@@ -299,7 +299,7 @@
   @testset "Conjugates" begin
     b = O1(a1)
     c = @inferred conjugates_arb(b, 1024)
-    @test isa(c, Vector{acb})
+    @test isa(c, Vector{AcbFieldElem})
     @test overlaps(c[1], CC(root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[1], -1024)
     @test overlaps(c[2], (-CC(1)//2 + onei(CC)*Base.sqrt(RR(3))//2)*CC(root(RR(2), 3)))
@@ -308,7 +308,7 @@
     @test Hecke.radiuslttwopower(c[1], -1024)
 
     c = @inferred conjugates_arb_log(b, 1024)
-    @test isa(c, Vector{arb})
+    @test isa(c, Vector{ArbFieldElem})
     @test overlaps(c[1], log(RR(2))//3)
     @test Hecke.radiuslttwopower(c[1], -1024)
     @test overlaps(c[2], 2*log(RR(2))//3)
@@ -321,14 +321,14 @@
   end
 
   @testset "Factorization" begin
-    K, a = number_field(x^2 + 1, "a")
+    K, a = number_field(x^2 + 1, "a"; cached = false)
     OK = maximal_order(K)
     b = OK(2 * 3 * a)
     fac = @inferred factor(b)
     @test is_unit(unit(fac)) == 1
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
 
-    K, a = number_field(x^3 - 2, "a")
+    K, a = number_field(x^3 - 2, "a"; cached = false)
     OK = maximal_order(K)
     b = rand(OK, -10:10)
 		while isone(abs(norm(b)))
@@ -337,5 +337,17 @@
     fac = @inferred factor(b)
     @test is_unit(unit(fac))
     @test b == unit(fac) * prod(p^e for (p, e) in fac)
+  end
+
+  # minpoly and charpoly
+  let
+    Qx, x = QQ[:x]
+    K, a = quadratic_field(2; cached = false)
+    OK = maximal_order(K)
+    ZZx, x = ZZ[:x]
+    @test minpoly(OK(a))(x) == x^2 - 2
+    @test parent(minpoly(ZZx, OK(a))) === ZZx
+    @test charpoly(OK(a))(x) == x^2 - 2
+    @test parent(charpoly(ZZx, OK(a))) === ZZx
   end
 end

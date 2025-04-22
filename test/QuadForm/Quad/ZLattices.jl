@@ -1,5 +1,5 @@
 function _random_invertible_matrix(n, B)
-  A = identity_matrix(FlintZZ, n)
+  A = identity_matrix(ZZ, n)
   if n == 1
     return A
   end
@@ -9,7 +9,7 @@ function _random_invertible_matrix(n, B)
     A[i, j] += rand(B)
   end
   @assert det(A) == 1
-  C = identity_matrix(FlintZZ, n)
+  C = identity_matrix(ZZ, n)
   for k in 1:10
     i = rand(1:(n - 1))
     j = rand((i + 1):n)
@@ -123,7 +123,7 @@ end
   @test (@inferred integer_lattice(gram = G, check=false)) isa ZZLat
   @test_throws ArgumentError integer_lattice(gram = B)
 
-  V = quadratic_space(FlintQQ, G)
+  V = quadratic_space(QQ, G)
   B = matrix(ZZ, 1, 2, [1, 0])
   @test (@inferred lattice(V, B)) isa ZZLat
   Lr1 = lattice(V, B)
@@ -143,7 +143,7 @@ end
   @test (@inferred base_ring(Lr0)) isa ZZRing
 
   @test !(@inferred is_sublattice(Lr2, Lr1))
-  M = integer_lattice(;gram = FlintQQ[2 2; 2 2])
+  M = integer_lattice(;gram = QQ[2 2; 2 2])
   @test !(@inferred is_sublattice(Lr0, M))
   @test is_sublattice(Lr2, Lr0)
   @test is_sublattice(Lr1, lattice(V, QQ[2 0;]))
@@ -201,30 +201,36 @@ end
   R = @inferred root_sublattice(L)
   @test 0 == rank(R)
   L = root_lattice(:A,2)
-  R = lattice(ambient_space(L),basis_matrix(L)[1,:])
+  R = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test rank(root_sublattice(R))==1
 
   L = biproduct(root_lattice(:A,2),root_lattice(:D,4))[1]
   R = root_lattice_recognition(L)
   @test length(R[1]) == 2
-  @test (:D,4) in R[1] && (:A,2) in R[1]
+  @test R[1] == Tuple{Symbol, Int}[(:A, 2), (:D, 4)]
   R = root_lattice_recognition_fundamental(L)
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
 
 
-  B = matrix(FlintQQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
-  G = matrix(FlintQQ, 6, 6 ,[3, 1, -1, 1, 0, 0, 1, 3, 1, 1, 1, 1, -1, 1, 3, 0, 0, 1, 1, 1, 0, 4, 2, 2, 0, 1, 0, 2, 4, 2, 0, 1, 1, 2, 2, 4]);
+  B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
+  G = matrix(QQ, 6, 6 ,[3, 1, -1, 1, 0, 0, 1, 3, 1, 1, 1, 1, -1, 1, 3, 0, 0, 1, 1, 1, 0, 4, 2, 2, 0, 1, 0, 2, 4, 2, 0, 1, 1, 2, 2, 4]);
   L = integer_lattice(B, gram = G);
   R = root_lattice_recognition(L)
   @test (isempty(R[1]) && isempty(R[2]))
 
-  B = matrix(FlintQQ, 19, 20 ,[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-  G = matrix(FlintQQ, 20, 20 ,[-2, 0, 1, -1, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -4, 0, 0, 0, -1, -1, -2, -2, -2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, -2, 1, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, -2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, -2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, -2, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, -2, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, -1, -1, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -2, -1, 1, 1, 0, -1, -1, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, -1, 1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -2, 1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, -2, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, -2, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, -1, 0, -2, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, 0, -1, -2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, 0, -1, -1, -2, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2]);
+  B = matrix(QQ, 19, 20 ,[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
+  G = matrix(QQ, 20, 20 ,[-2, 0, 1, -1, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -4, 0, 0, 0, -1, -1, -2, -2, -2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, -2, 1, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, -2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, -2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, -2, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, -2, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0, 0, -1, -1, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -2, -1, 1, 1, 0, -1, -1, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, -1, 1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -2, 1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, -2, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, -2, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, -1, 0, -2, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, 0, -1, -2, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, 0, -1, -1, -2, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2]);
   rsL = integer_lattice(B, gram = G);
   @test length(root_lattice_recognition(rsL)[1]) == 4
   rsLp = rescale(rsL,-1)
-  @test length(Hecke._irreducible_components_short_vectors(rsLp, 2))==4
-  @test length(Hecke._irreducible_components_short_vectors(rsLp, 4))==4
+
+  B = matrix(QQ, 4, 4 ,[1, 0, 0, 0, 0, 3, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1]);
+  G = matrix(QQ, 4, 4 ,[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 10]);
+  L = integer_lattice(B, gram = G);
+
+  ADE, _ = root_lattice_recognition(L)
+  @test length(ADE) == 2
+  @test all(R -> R[2] == 1, ADE)
 
   # isometry testing
   C1 = root_lattice(:A, 2)
@@ -235,7 +241,7 @@ end
 
   for (m, o) in lattices_and_aut_order
     n = length(m[1])
-    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    G = matrix(ZZ, n, n, reduce(vcat, m))
     L = integer_lattice(gram = G)
     Ge = automorphism_group_generators(L, ambient_representation = true)
     test_automorphisms(L, Ge, true)
@@ -273,6 +279,22 @@ end
     @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
   end
 
+  # Force using ZZRingElem's
+  L = lattice(D, 75)
+  Hecke.assert_has_automorphisms(L, try_small = false)
+  test_automorphisms(L, L.automorphism_group_generators, true)
+  @test L.automorphism_group_order == lattice_automorphism_group_order(D, 75)
+
+  # Call the Bacher polynomials
+  for i in [ 1, 101, 113 ] # triggering different checks in the Bacher polynomials
+    L = integer_lattice(gram = gram_matrix(lattice(D, i)))
+    Ge = automorphism_group_generators(L, ambient_representation = true, bacher_depth = 1)
+    test_automorphisms(L, Ge, true)
+    Ge = automorphism_group_generators(L, ambient_representation = false, bacher_depth = 1)
+    test_automorphisms(L, Ge, false)
+    @test automorphism_group_order(L) == lattice_automorphism_group_order(D, i)
+  end
+
   # automorphisms for indefinite of rank 2
   U = hyperbolic_plane_lattice()
   G = @inferred automorphism_group_generators(U)
@@ -293,7 +315,7 @@ end
 
   for (m, o) in lattices_and_aut_order
     n = length(m[1])
-    G = matrix(FlintZZ, n, n, reduce(vcat, m))
+    G = matrix(ZZ, n, n, reduce(vcat, m))
     L = integer_lattice(gram = G)
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
@@ -317,10 +339,22 @@ end
     L = lattice(D, i)
     L = integer_lattice(gram = gram_matrix(L)) # to avoid caching
     n = rank(L)
-    X = change_base_ring(FlintQQ, _random_invertible_matrix(n, -3:3))
+    X = change_base_ring(QQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
     L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
     b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
+    @test b
+    @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
+  end
+
+  # Call the Bacher polynomials
+  for i in [ 1, 101, 113 ] # triggering different checks in the Bacher polynomials
+    L = integer_lattice(gram = gram_matrix(lattice(D, i)))
+    n = rank(L)
+    X = change_base_ring(QQ, _random_invertible_matrix(n, -3:3))
+    @assert abs(det(X)) == 1
+    L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
+    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false, bacher_depth = 1)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -447,8 +481,8 @@ end
   @test ok
   @test p == multiplicative_order(f)
 
-  @test_throws ErrorException root_lattice(:F,3)
-  @test_throws ErrorException root_lattice(:D,1)
+  @test_throws ErrorException root_lattice(:F, 3)
+  @test_throws ArgumentError root_lattice(:D, 1)
 
   L = root_lattice(:A, 2)
   @test signature_tuple(L) == (2,0,0)
@@ -459,7 +493,7 @@ end
   N = invariant_lattice(L, G)
   @test ambient_space(N) === ambient_space(L)
   @test rank(N) == 0
-  @test basis_matrix(invariant_lattice(L, identity_matrix(QQ, 2))) == basis_matrix(L)
+  @test invariant_lattice(L, identity_matrix(QQ, 2)) == L
 
   L = [root_lattice(:D,i) for i in 2:10]
   @test all(l -> det(l) == 4, L)
@@ -705,10 +739,11 @@ end
 # Issue 1054
 
 let
-  B = matrix(FlintQQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])
-  G = matrix(FlintQQ, 6, 6 ,[876708188094148315826780735392810, 798141405233250328867679564294410, -352823337641433300965521329447720, 326768950610851461363580717982402, -690595881941554449465975342845028, 433433545243019702766746394677218, 798141405233250328867679564294410, 867615301468758683549323652197099, -301315621373858240463110267500961, 316796431934778296047626373086339, -725765288914917260527454069649226, 505082964151083450666500945258490, -352823337641433300965521329447720, -301315621373858240463110267500961, 809946152369211852531731702980788, -343784636213856787915462553587466, 84764902049682607076640678540130, -613908853150167850995565570653796, 326768950610851461363580717982402, 316796431934778296047626373086339, -343784636213856787915462553587466, 219957919673551825679009958633894, -226934633316066727073394927118195, 298257387132139131540277459301842, -690595881941554449465975342845028, -725765288914917260527454069649226, 84764902049682607076640678540130, -226934633316066727073394927118195, 671443408734467545153681225010914, -277626128761200144008657217470664, 433433545243019702766746394677218, 505082964151083450666500945258490, -613908853150167850995565570653796, 298257387132139131540277459301842, -277626128761200144008657217470664, 640432299215298238271419741190578])
+  B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])
+  G = matrix(QQ, 6, 6 ,[876708188094148315826780735392810, 798141405233250328867679564294410, -352823337641433300965521329447720, 326768950610851461363580717982402, -690595881941554449465975342845028, 433433545243019702766746394677218, 798141405233250328867679564294410, 867615301468758683549323652197099, -301315621373858240463110267500961, 316796431934778296047626373086339, -725765288914917260527454069649226, 505082964151083450666500945258490, -352823337641433300965521329447720, -301315621373858240463110267500961, 809946152369211852531731702980788, -343784636213856787915462553587466, 84764902049682607076640678540130, -613908853150167850995565570653796, 326768950610851461363580717982402, 316796431934778296047626373086339, -343784636213856787915462553587466, 219957919673551825679009958633894, -226934633316066727073394927118195, 298257387132139131540277459301842, -690595881941554449465975342845028, -725765288914917260527454069649226, 84764902049682607076640678540130, -226934633316066727073394927118195, 671443408734467545153681225010914, -277626128761200144008657217470664, 433433545243019702766746394677218, 505082964151083450666500945258490, -613908853150167850995565570653796, 298257387132139131540277459301842, -277626128761200144008657217470664, 640432299215298238271419741190578])
   L = integer_lattice(B, gram = G)
   @test automorphism_group_order(L) == 2
+  @test is_isometric_with_isometry(L, L)[1]
   G = [ ZZ[15 0 2 0; 0 30 0 4; 2 0 32 0; 0 4 0 64],
         ZZ[0 15 0 2; 15 0 2 0; 0 2 0 32; 2 0 32 0]];
   C = Hecke.ZLatAutoCtx(G)
@@ -725,7 +760,7 @@ end
   @test genus(L) == genus(E8)
 
   B = basis_matrix(dual(E8))
-  L = @inferred quadratic_lattice(QQ, [B[i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
+  L = @inferred quadratic_lattice(QQ, [B[i:i,:] for i in 1:nrows(B)], gram = gram_matrix(E8))
   @test genus(L) == genus(E8)
 end
 
@@ -741,4 +776,48 @@ end
 @testset "Hashes" begin
   L = root_lattice(:D, 5)
   @test length(unique!([L,lattice_in_same_ambient_space(L, basis_matrix(L))])) == 1
+end
+
+@testset "Hyperkaehler lattices" begin
+  L = @inferred k3_lattice()
+  @test is_unimodular(L)
+
+  for S in [:K3, :Ab], extended in [true, false]
+    L = @inferred mukai_lattice(S; extended)
+    @test is_unimodular(L)
+  end
+
+  L = @inferred hyperkaehler_lattice(:K3; n = 3)
+  @test det(L) == 4
+
+  L = @inferred hyperkaehler_lattice(:Kum; n = 3)
+  @test det(L) == 8
+
+  L = @inferred hyperkaehler_lattice(:OG6)
+  @test det(L) == -4
+
+  L = @inferred hyperkaehler_lattice(:OG10)
+  @test det(L) == -3
+end
+
+@testset "Fix irreducible components" begin
+  B = matrix(QQ, 8, 16 ,[0, 0, 0, 0, 0, 0, 0, 0, 1, -1//2, 0, -1//2, 1//2, 1//2, 1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1//2, 0, -1//2, -1//2, -1//2, 1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1//2, 0, 1//2, -1//2, -1//2, 1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1//2, 0, -1//2, -1//2, 1//2, -1//2, 1//2, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1//2, 0, -1//2, -1//2, -1//2, 1//2, -1//2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1//2, -1, -1//2, -1//2, 1//2, -1//2, -1//2]);
+  G = matrix(QQ, 16, 16 ,[-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+  L = integer_lattice(B, gram = G);
+  @test irreducible_components(L)[1] == L
+
+  G = matrix(QQ, 10, 10, [-2 1 1 1 -1 -1 -1 1 -1 1; 1 -2 -1 -1 1 1 1 -1 1 0; 1 -1 -2 -1 0 0 0 0 1 0; 1 -1 -1 -2 0 1 0 -1 1 0; -1 1 0 0 -4 -2 -2 2 0 1; -1 1 0 1 -2 -4 0 2 -1 0; -1 1 0 0 -2 0 -4 2 0 1; 1 -1 0 -1 2 2 2 -4 1 0; -1 1 1 1 0 -1 0 1 -4 1; 1 0 0 0 1 0 1 0 1 -4]);
+  B = matrix(QQ, 6, 10, [1 0 1 -1 1 -1 0 1 0 1; -1 1 -1 0 0 1 1 0 0 0; 1 0 1 0 0 -1 0 0 1 1; 0 0 0 0 -1 0 1 0 0 0; 0 0 0 0 -1 1 1 1 0 0; 0 0 1 -1 1 -1 0 1 1 0]);
+  V = quadratic_space(QQ, G);
+  L = lattice(V, B);
+  @test rank.(irreducible_components(L)) == Int[6]
+end
+
+@testset "Sum of trivial lattices" begin
+  L = integer_lattice(; gram=matrix(QQ, 0, 0, []))
+  L2 = lattice(ambient_space(L))
+  q = discriminant_group(L)
+  q2 = discriminant_group(L2)
+  @test rank(L + L2) == 0
+  @test order(q + q2) == 1
 end

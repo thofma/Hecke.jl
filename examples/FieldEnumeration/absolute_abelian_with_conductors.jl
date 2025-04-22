@@ -104,7 +104,7 @@ function main()
   expo=lcm(gtype)
 
 
-  class_fields = Vector{Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}}()
+  class_fields = Vector{Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}}()
   for (i, k) in enumerate(l_conductors)
     r, mr = Hecke.ray_class_groupQQ(O, k, true, expo)
     if !Hecke.has_quotient(r, gtype)
@@ -112,7 +112,7 @@ function main()
     end
     ls = subgroups(r, quotype = gtype, fun = (x, y) -> quo(x, y, false)[2])
     for s in ls
-      C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, GrpAbFinGenMap}
+      C = ray_class_field(mr, s)::Hecke.ClassField{Hecke.MapRayClassGrp, FinGenAbGroupHom}
       if Hecke._is_conductor_minQQ(C, n)
         push!(class_fields, C)
       end
@@ -136,7 +136,7 @@ function main()
 
   #=
   #The non simple absolute extension and the absolute value of its discriminant
-  fields = Vector{Tuple{NfAbsNS, ZZRingElem}}()
+  fields = Vector{Tuple{AbsNonSimpleNumField, ZZRingElem}}()
   for i = 1:length(class_fields)
     println("Computing class field $(i) /$(length(class_fields))")
     C = class_fields[i]

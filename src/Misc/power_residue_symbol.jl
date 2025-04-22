@@ -2,13 +2,13 @@
 #with d|q-1
 
 @doc raw"""
-    power_residue(a::PolyElem{T}, b::PolyElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
+    power_residue(a::PolyRingElem{T}, b::PolyRingElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
 
 Computes the $d$-th power residue symbol $\left(\frac{a}{b}\right)_d$ in $\mathbb{F}_q$.
 $d$ has to divide $q-1$.
 """
 
-function power_residue(a::PolyElem{T}, b::PolyElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
+function power_residue(a::PolyRingElem{T}, b::PolyRingElem{T}, d::ZZRingElem, q::ZZRingElem) where T<: RingElem
     if mod(q-1,d)!=0
         return error("Must have d|q-1")
     end

@@ -1,20 +1,20 @@
 abstract type Hensel end
 
 mutable struct HenselCtxQadic <: Hensel
-  f::PolyElem{qadic}
-  lf::Vector{PolyElem{qadic}}
-  la::Vector{PolyElem{qadic}}
-  p::qadic
+  f::PolyRingElem{QadicFieldElem}
+  lf::Vector{PolyRingElem{QadicFieldElem}}
+  la::Vector{PolyRingElem{QadicFieldElem}}
+  p::QadicFieldElem
   n::Int
   #TODO: lift over subfields first iff poly is defined over subfield
-  #TODO: use flint if qadic = padic!!
-  function HenselCtxQadic(f::PolyElem{qadic}, lfp::Vector{fqPolyRepPolyRingElem})
+  #TODO: use flint if QadicFieldElem = PadicFieldElem!!
+  function HenselCtxQadic(f::PolyRingElem{QadicFieldElem}, lfp::Vector{FqPolyRingElem})
     @assert sum(map(degree, lfp)) == degree(f)
     Q = base_ring(f)
     Qx = parent(f)
     K, mK = residue_field(Q)
     i = 1
-    la = Vector{PolyElem{qadic}}()
+    la = Vector{PolyRingElem{QadicFieldElem}}()
     n = length(lfp)
     while i < length(lfp)
       f1 = lfp[i]
@@ -26,10 +26,10 @@ mutable struct HenselCtxQadic <: Hensel
       push!(lfp, f1*f2)
       i += 2
     end
-    return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, cached = false, parent = Qx), 1), lfp), la, uniformizer(Q), n)
+    return new(f, map(x->setprecision(map_coefficients(y->preimage(mK, y), x, parent = Qx), 1), lfp), la, uniformizer(Q), n)
   end
 
-  function HenselCtxQadic(f::PolyElem{qadic})
+  function HenselCtxQadic(f::PolyRingElem{QadicFieldElem})
     Q = base_ring(f)
     K, mK = residue_field(Q)
     fp = map_coefficients(mK, f, cached = false)
@@ -113,14 +113,14 @@ end
 # tighter implementation
 mutable struct HenselCtxPadic <: Hensel
   X::HenselCtx
-  f::PolyElem{padic}
-  function HenselCtxPadic(f::PolyElem{padic})
+  f::PolyRingElem{PadicFieldElem}
+  function HenselCtxPadic(f::PolyRingElem{PadicFieldElem})
     r = new()
     r.f = f
-    Zx = polynomial_ring(FlintZZ, cached = false)[1]
+    Zx = polynomial_ring(ZZ, cached = false)[1]
     ff = Zx()
     for i=0:degree(f)
-      setcoeff!(ff, i, lift(coeff(f, i)))
+      setcoeff!(ff, i, lift(ZZ, coeff(f, i)))
     end
     r.X = HenselCtx(ff, prime(base_ring(f)))
     start_lift(r.X, 1)
@@ -130,14 +130,14 @@ end
 
 function lift(C::HenselCtxPadic, mx::Int)
   for i=0:degree(C.f)
-    setcoeff!(C.X.f, i, lift(coeff(C.f, i)))
+    setcoeff!(C.X.f, i, lift(ZZ, coeff(C.f, i)))
   end
   continue_lift(C.X, mx)
 end
 
 function factor(C::HenselCtxPadic)
   res =  typeof(C.f)[]
-  Zx = polynomial_ring(FlintZZ, cached = false)[1]
+  Zx = polynomial_ring(ZZ, cached = false)[1]
   h = Zx()
   Qp = base_ring(C.f)
   for i = 1:C.X.LF._num #from factor_to_dict
@@ -199,13 +199,13 @@ function reco(a::ZZRingElem, M, pM::Tuple{ZZMatrix, ZZRingElem}, O)
   return a - O(m)
 end
 
-function reco(a::NfAbsOrdElem, M, pM)
-  m = matrix(FlintZZ, 1, degree(parent(a)), coordinates(a))
+function reco(a::AbsNumFieldOrderElem, M, pM)
+  m = matrix(ZZ, 1, degree(parent(a)), coordinates(a))
   m = m - map(x -> round(ZZRingElem, x, pM[2]), m*pM[1])*M
   return parent(a)(m)
 end
 
-function is_prime_nice(O::NfOrd, p::Int)
+function is_prime_nice(O::AbsSimpleNumFieldOrder, p::Int)
   f = is_prime_nice(nf(O), p)
   f || return f
   if discriminant(O) %p == 0
@@ -214,13 +214,13 @@ function is_prime_nice(O::NfOrd, p::Int)
   return true
 end
 
-function is_prime_nice(K::AnticNumberField, p::Int)
+function is_prime_nice(K::AbsSimpleNumField, p::Int)
   d = lcm(map(denominator, coefficients(K.pol)))
   if d % p == 0
     return false
   end
   F = Native.GF(p)
-  f = map_coefficients(F, d*K.pol)
+  f = map_coefficients(F, d*K.pol, cached = false)
   if degree(f) < degree(K)
     return false
   end
@@ -231,19 +231,19 @@ function is_prime_nice(K::AnticNumberField, p::Int)
 end
 
 @doc raw"""
-    factor_new(f::PolyElem{nf_elem}) -> Vector{PolyElem{nf_elem}}
+    factor_new(f::PolyRingElem{AbsSimpleNumFieldElem}) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 Direct factorisation over a number field, using either Zassenhaus' approach
 with the potentially exponential recombination or a van Hoeij like approach using LLL.
 The decision is based on the number of local factors.
 """
-function factor_new(f::PolyElem{nf_elem})
+function factor_new(f::PolyRingElem{AbsSimpleNumFieldElem})
   k = base_ring(f)
-  local zk::NfOrd
+  local zk::AbsSimpleNumFieldOrder
   if is_maximal_order_known(k)
     zk = maximal_order(k)
     if isdefined(zk, :lllO)
-      zk = zk.lllO::NfOrd
+      zk = zk.lllO::AbsSimpleNumFieldOrder
     end
   else
     zk = any_order(k)
@@ -266,7 +266,7 @@ function factor_new(f::PolyElem{nf_elem})
     if length(P) == 0
       continue
     end
-    F, mF1 = ResidueFieldSmallDegree1(zk::NfOrd, P[1][1])
+    F, mF1 = ResidueFieldSmallDegree1(zk::AbsSimpleNumFieldOrder, P[1][1])
     mF = extend(mF1, k)
     fp = map_coefficients(mF, f, cached = false)
     if degree(fp) < degree(f) || iszero(constant_coefficient(fp)) || iszero(constant_coefficient(fp))
@@ -322,7 +322,7 @@ function degree_set(fa::Dict{Int, Int})
 end
 
 @doc raw"""
-    zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyElem{nf_elem}}
+    zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; degset::Set{Int} = Set{Int}(collect(1:degree(f)))) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 Zassenhaus' factoring algorithm over an absolute simple field. Given a prime ideal $P$ which
 has to be an unramified non-index divisor, a factorisation of $f$ in the $P$-adic completion
@@ -330,7 +330,7 @@ is computed. In the last step, all combinations of the local factors are tried t
 correct factorisation.
 $f$ needs to be square-free and square-free modulo $P$ as well.
 """
-function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
+function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; degset::Set{Int} = Set{Int}(collect(1:degree(f))))
   @vprintln :PolyFactor 1 "Using (relative) Zassenhaus"
 
   K = base_ring(parent(f))
@@ -340,7 +340,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   den = K(1)
   if !is_maximal_known_and_maximal(order(P))
     if !is_defining_polynomial_nice(K)
-      den = K(discriminant(order(P))*det(basis_matrix(order(P), copy = false)))
+      den = K(discriminant(order(P))*det(basis_matrix(FakeFmpqMat, order(P), copy = false)))
     else
       den = derivative(K.pol)(gen(K))
     end
@@ -379,7 +379,7 @@ function zassenhaus(f::PolyElem{nf_elem}, P::NfOrdIdl; degset::Set{Int} = Set{In
   zk = order(P)
 
   if degree(P) == 1
-    S = Set(map(x -> map_coefficients(y -> lift(y), x, parent = parent(f)), lf))
+    S = Set(map(x -> map_coefficients(y -> lift(ZZ, y), x, parent = parent(f)), lf))
   else
     S = Set(map(x -> map_coefficients(y -> preimage(mC, y), x, parent = parent(f)), lf))
   end
@@ -423,7 +423,7 @@ end
 #given the local factorisation in H, find the cld, the Coefficients of the Logarithmic
 #Derivative: a factor g of f is mapped to g'*f/g
 #Only the coefficients 0:up_to and from:degree(f)-1 are computed
-function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
+function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::AbsSimpleNumFieldElem)
   lf = factor(H)
   a = preimage(mC, zero(codomain(mC)))
   k = parent(a)
@@ -432,19 +432,19 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
   @assert 0<= from <= N   #from : div by x^from
 #  @assert up_to <= from
 
-  M = zero_matrix(FlintZZ, length(lf), (1+up_to + N - from) * degree(k))
+  M = zero_matrix(ZZ, length(lf), (1+up_to + N - from) * degree(k))
   #last_lf[] = (lf, H.f, up_to)
 
   lf = [divexact_low(mullow(derivative(x), H.f, up_to+1), x, up_to+1) for x = lf]
 #  lf = [divexact(derivative(x)*H.f, x) for x = lf]
 #  @show llf .- lf
 
-  NN = zero_matrix(FlintZZ, 1, degree(k))
-  d = FlintZZ()
+  NN = zero_matrix(ZZ, 1, degree(k))
+  d = ZZ()
 
   for i=0:up_to
     for j=1:length(lf)
-      c = sc * preimage(mC, coeff(lf[j], i)) # should be an nf_elem
+      c = sc * preimage(mC, coeff(lf[j], i)) # should be an AbsSimpleNumFieldElem
       elem_to_mat_row!(NN, 1, d, c)
       mul!(NN, NN, Mi) #base_change, Mi should be the inv-lll-basis-mat wrt field
       @assert isone(d)
@@ -457,7 +457,7 @@ function cld_data(H::Hensel, up_to::Int, from::Int, mC, Mi, sc::nf_elem)
   lf = [divhigh(mulhigh(derivative(x), H.f, from), x, from) for x = lf]
   for i=from:N-1
     for j=1:length(lf)
-      c = sc * preimage(mC, coeff(lf[j], i)) # should be an nf_elem
+      c = sc * preimage(mC, coeff(lf[j], i)) # should be an AbsSimpleNumFieldElem
       elem_to_mat_row!(NN, 1, d, c)
       mul!(NN, NN, Mi) #base_change, Mi should be the inv-lll-basis-mat wrt field
       @assert isone(d)
@@ -475,8 +475,8 @@ mutable struct vanHoeijCtx
   Ml::ZZMatrix
   pMr::Tuple{ZZMatrix, ZZRingElem, fmpz_preinvn_struct}
   pM::Tuple{ZZMatrix, ZZRingElem}
-  C::Union{FlintQadicField, FlintPadicField}
-  P::NfOrdIdl
+  C::Union{QadicField, PadicField}
+  P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   function vanHoeijCtx()
     return new()
   end
@@ -495,14 +495,14 @@ function grow_prec!(vH::vanHoeijCtx, pr::Int)
   #M * basis_matrix(zk) is the basis wrt to the field
   #(M*B)^-1 = B^-1 * M^-1, so I need basis_mat_inv(zk) * pM
   vH.pMr = (F.num, F.den, fmpz_preinvn_struct(2*F.den))
-  F = basis_mat_inv(order(vH.P)) * F
+  F = basis_mat_inv(FakeFmpqMat, order(vH.P)) * F
   vH.pM = (F.num, F.den)
 end
 
-function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::lll_ctx = lll_ctx(0.99, 0.51))
+function lll_with_removal_knapsack(x::ZZMatrix, b::ZZRingElem, ctx::LLLContext = LLLContext(0.99, 0.51))
    z = deepcopy(x)
    d = Int(ccall((:fmpz_lll_wrapper_with_removal_knapsack, libflint), Cint,
-    (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{lll_ctx}), z, C_NULL, b, ctx))
+    (Ref{ZZMatrix}, Ptr{nothing}, Ref{ZZRingElem}, Ref{LLLContext}), z, C_NULL, b, ctx))
    return d, z
 end
 
@@ -513,10 +513,10 @@ function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingEle
   while false && sc > 0
     BB = tdivpow2(B, sc)
     dd = tdivpow2(d, sc)
-    MM = [M BB; zero_matrix(FlintZZ, ncols(B), ncols(M)) dd*identity_matrix(FlintZZ, ncols(B))]
+    MM = [M BB; zero_matrix(ZZ, ncols(B), ncols(M)) dd*identity_matrix(ZZ, ncols(B))]
     @show maximum(nbits, MM)
-    @time MM, T = lll_with_transform(MM, lll_ctx(0.75, 0.51))
-    @time l, _ = lll_with_removal(MM, bnd, lll_ctx(0.75, 0.51))
+    @time MM, T = lll_with_transform(MM, LLLContext(0.75, 0.51))
+    @time l, _ = lll_with_removal(MM, bnd, LLLContext(0.75, 0.51))
     @show l
     M = T[1:nrows(M), 1:nrows(M)]*M
     B = T[1:nrows(M), 1:nrows(M)]*B
@@ -524,13 +524,13 @@ function gradual_feed_lll(M::ZZMatrix, sm::ZZRingElem, B::ZZMatrix, d::ZZRingEle
     @show maximum(nbits, B)
     @show sc = max(0, sc-55)
   end
-  M = [M B; zero_matrix(FlintZZ, ncols(B), ncols(M)) d*identity_matrix(FlintZZ, ncols(B))]
+  M = [M B; zero_matrix(ZZ, ncols(B), ncols(M)) d*identity_matrix(ZZ, ncols(B))]
   return lll_with_removal(M, bnd)
 end
 
 
 @doc raw"""
-    van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 20) -> Vector{PolyElem{nf_elem}}
+    van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec_scale = 20) -> Vector{PolyRingElem{AbsSimpleNumFieldElem}}
 
 A van Hoeij-like factorisation over an absolute simple number field, using the factorisation in the
 $P$-adic completion where $P$ has to be an unramified non-index divisor and the square-free $f$ has
@@ -538,7 +538,7 @@ to be square-free mod $P$ as well.
 
 Approach is taken from Hart, Novacin, van Hoeij in ISSAC.
 """
-function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
+function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec_scale = 1)
   @vprintln :PolyFactor 1 "Using (relative) van Hoeij"
   @vprintln :PolyFactor 2 "with p = $P"
   @assert all(x->denominator(x) == 1, coefficients(f))
@@ -552,12 +552,14 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   elseif is_defining_polynomial_nice(K)
     den = derivative(K.pol)(gen(K))
   else
-    den = K(discriminant(order(P))) * det(basis_matrix(order(P), copy= false))
+    den = K(discriminant(order(P))) * det(basis_matrix(FakeFmpqMat, order(P), copy= false))
   end
 
   _, mK = residue_field(order(P), P)
   mK = extend(mK, K)
   r = length(factor(map_coefficients(mK, f, cached = false)))
+  prec_scale = max(nbits(r), prec_scale)
+
   N = degree(f)
   @vprintln :PolyFactor 1  "Having $r local factors for degree $N"
 
@@ -565,9 +567,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
 
   vH = vanHoeijCtx()
   if degree(P) == 1
-    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f))
+    vH.H = HenselCtxPadic(map_coefficients(x->coeff(mC(x), 0), f, cached = false))
   else
-    vH.H = HenselCtxQadic(map_coefficients(mC, f))
+    vH.H = HenselCtxQadic(map_coefficients(mC, f, cached = false))
   end
   vH.C = C
   vH.P = P
@@ -589,7 +591,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     - the bounds are monotonous in the abs value of the coeffs (I think they are using abs value of coeff)
     - the math works for real coeffs as well
     - thus create an ZZPolyRingElem with pos. coeffs. containing upper bounds of the conjugates of the
-      coeffs. DOne via T_2: sqrt(n*T_2(alpha) is an upper bounds for all conjugates
+      coeffs. Done via T_2: sqrt(T_2(alpha) is an upper bounds for all conjugates
     - Fieker/ Friedrichs compares T_2 vs 2-norm (squared) of coeffs
     - leading coeff as well as den are algebraic
       CHECK: den*lead*cld in Z[alpha] (or in the order used)
@@ -603,13 +605,13 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
   #       2nd block is for additional bits for rounding?
   bb = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(den*leading_coefficient(f))))
   #CHECK: landau... is a bound on the (abs value) of the coeffs of the factors,
-  #       need everywhere sqrt(n*T_2)? to get conjugate bounds
+  #       need everywhere sqrt(T_2)? to get conjugate bounds
   kk = ceil(Int, degree(K)/2/log(norm(P))*(log2(c1*c2) + 2*nbits(bb)))
   @vprintln :PolyFactor 2 "using CLD precision bounds $b"
 
   used = []
   really_used = []
-  M = identity_matrix(FlintZZ, r)*ZZRingElem(2)^prec_scale
+  M = identity_matrix(ZZ, r)*ZZRingElem(2)^prec_scale
 
   while true #the main loop
     #find some prec
@@ -623,9 +625,9 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     @vprintln :PolyFactor 1 "setting prec to $i, and lifting the info ..."
     setprecision!(codomain(mC), i)
     if degree(P) == 1
-      vH.H.f = map_coefficients(x->coeff(mC(x), 0), f)
+      vH.H.f = map_coefficients(x->coeff(mC(x), 0), f, cached = false)
     else
-      vH.H.f = map_coefficients(mC, f)
+      vH.H.f = map_coefficients(mC, f, cached = false)
     end
     @vtime :PolyFactor 1 grow_prec!(vH, i)
 
@@ -644,7 +646,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
     have = vcat(0:up_to-1, from:N-2)  #N-1 is always 1
 
     if degree(P) == 1
-      mD = MapFromFunc(K, base_ring(vH.H.f), x->coeff(mC(x),0), y->K(lift(y)))
+      mD = MapFromFunc(K, base_ring(vH.H.f), x->coeff(mC(x),0), y->K(lift(ZZ, y)))
       @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mD, vH.pM[1], den*leading_coefficient(f))
     else
       @vtime :PolyFactor 1 C = cld_data(vH.H, up_to, from, mC, vH.pM[1], den*leading_coefficient(f))
@@ -762,7 +764,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
       M = sub(M, 1:l, 1:ncols(M))
       d = Dict{ZZMatrix, Vector{Int}}()
       for l=1:r
-        k = M[:, l]
+        k = M[:, l:l]
         if haskey(d, k)
           push!(d[k], l)
         else
@@ -783,7 +785,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           if isone(den) && is_monic(f) #don't know what to do for non-monics
             a = prod(map(constant_coefficient, factor(vH.H)[v]))
             if degree(P) == 1
-              A = K(reco(order(P)(lift(a)), vH.Ml, vH.pMr))
+              A = K(reco(order(P)(lift(ZZ, a)), vH.Ml, vH.pMr))
             else
               A = K(reco(order(P)(preimage(mC, a)), vH.Ml, vH.pMr))
             end
@@ -798,7 +800,7 @@ function van_hoeij(f::PolyElem{nf_elem}, P::NfOrdIdl; prec_scale = 1)
           end
           @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
           if degree(P) == 1
-            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
+            @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(ZZ, coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else
             @vtime :PolyFactor 2 G = parent(f)([K(reco(order(P)(preimage(mC, mC(den*leading_coefficient(f))*coeff(g, l))), vH.Ml, vH.pMr)) for l=0:degree(g)])
           end
@@ -868,7 +870,7 @@ end
 # fixed "most" of it...
 #Update: f, K large enough, this wins. Need bounds...
 
-function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
+function norm_mod(f::PolyRingElem{AbsSimpleNumFieldElem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   K = base_ring(f)
   k = Native.GF(p)
   s = 0
@@ -903,7 +905,7 @@ function norm_mod(f::PolyElem{nf_elem}, p::Int, Zx::ZZPolyRing = Globals.Zx)
   return lift(Zx, pol)
 end
 
-function norm_mod(f::PolyElem{nf_elem}, Zx::ZZPolyRing = Globals.Zx)
+function norm_mod(f::PolyRingElem{AbsSimpleNumFieldElem}, Zx::ZZPolyRing = Globals.Zx)
   #assumes, implicitly, the coeffs of f are algebraic integers.
   # equivalently: the norm is integral...
   p = p_start

@@ -1,5 +1,5 @@
 @testset "Linear disjoint" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   _K, _ = number_field([x^2 - 2, x^2 - 3], "a", cached = false)
   K, _ = simple_extension(_K)
   L, b = number_field(x^2 - 2, "b", cached = false)
@@ -10,16 +10,16 @@
 end
 
 @testset "Random" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^32 + 2, "a")
 
   b = @inferred rand([a], -10:10)
-  @test b isa nf_elem
-  @test_throws ErrorException rand(nf_elem[], -10:10)
+  @test b isa AbsSimpleNumFieldElem
+  @test_throws ErrorException rand(AbsSimpleNumFieldElem[], -10:10)
 
   b = @inferred rand(basis(K), 1:100, 10)
   @test count(!iszero, (coeff(b, i) for i in 0:31)) <= 10
-  @test_throws ErrorException rand(nf_elem[], -10:10, 5)
+  @test_throws ErrorException rand(AbsSimpleNumFieldElem[], -10:10, 5)
   @test_throws ErrorException rand([a, a^2], -10:10, -10)
   @test_throws ErrorException rand(basis(K), -10:10, 100)
 
@@ -29,7 +29,7 @@ end
   @test_throws ErrorException rand!(b, basis(K), 1:100, -100)
 
   @inferred rand!(b, basis(K), 1:100)
-  @test_throws ErrorException rand!(b, nf_elem[], 1:100)
+  @test_throws ErrorException rand!(b, AbsSimpleNumFieldElem[], 1:100)
 end
 
 @testset "Polynomial" begin
@@ -47,7 +47,7 @@ end
 end
 
 @testset "Is integral" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 1
   K, a = number_field(f, "a")
 
@@ -62,7 +62,7 @@ end
 end
 
 @testset "Compositum" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 1
   K, a = number_field(f, "a")
   L, b = number_field(x^2-3, "b")
@@ -73,7 +73,7 @@ end
 end
 
 @testset "PolyFactor" begin
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
   k, a = number_field(swinnerton_dyer(3, x))
   kt, t = k["t"]
 
@@ -89,7 +89,7 @@ end
   for i in 1:10
     n = rand(1:10)
     d = rand(1:10)
-    k, a = number_field(n//d * change_base_ring(FlintQQ, swinnerton_dyer(3, x)))
+    k, a = number_field(n//d * change_base_ring(QQ, swinnerton_dyer(3, x)))
     kt, t = k["t"]
     g = swinnerton_dyer(8, x)
     @test length(factor((t^2-a)*(t^3-a-1))) == 2 #Trager
@@ -108,13 +108,13 @@ end
   for i in 1:10
     n = rand(1:10)
     d = rand(1:10)
-    K, a = number_field(n//d * change_base_ring(FlintQQ, x - 1), "a")
+    K, a = number_field(n//d * change_base_ring(QQ, x - 1), "a")
     Kt, t = K["t"]
     f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
     @test length(factor(f)) == 5
     @test length(factor(f*t)) == 6
 
-    K, a = number_field(change_base_ring(FlintQQ, x) - n//d, "a")
+    K, a = number_field(change_base_ring(QQ, x) - n//d, "a")
     Kt, t = K["t"]
     f = t^5 -3 * t^4 - 104 * t^3 + 312 * t^2 + 400*t -1200
     @test length(factor(f)) == 5

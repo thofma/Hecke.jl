@@ -1,5 +1,4 @@
 import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
-export crt_env, crt, crt_inv, modular_init, crt_signed
 
 mutable struct crt_env{T}
   pr::Vector{T}
@@ -51,7 +50,7 @@ end
 @doc raw"""
     crt_env(p::Vector{T}) -> crt_env{T}
 
-Given coprime moduli in some euclidean ring (FlintZZ, zzModRingElem\_poly,
+Given coprime moduli in some euclidean ring (ZZ, zzModRingElem\_poly,
 ZZRingElem\_mod\_poly), prepare data for fast application of the chinese
 remainder theorem for those moduli.
 """
@@ -270,11 +269,11 @@ end
 
 
 @doc raw"""
-    crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
+    crt(r1::PolyRingElem, m1::PolyRingElem, r2::PolyRingElem, m2::PolyRingElem) -> PolyRingElem
 
 Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
 """
-function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T}) where T
+function crt(r1::PolyRingElem{T}, m1::PolyRingElem{T}, r2::PolyRingElem{T}, m2::PolyRingElem{T}) where T
   g, u, v = gcdx(m1, m2)
   m = m1*m2
   return (r1*v*m2 + r2*u*m1) % m
@@ -451,13 +450,13 @@ function induce_crt(a::ZZPolyRingElem, p::ZZRingElem, b::ZZPolyRingElem, q::ZZRi
 end
 
 @doc raw"""
-    induce_crt(L::Vector{PolyElem}, c::crt_env{ZZRingElem}) -> ZZPolyRingElem
+    induce_crt(L::Vector{PolyRingElem}, c::crt_env{ZZRingElem}) -> ZZPolyRingElem
 
 Given ZZRingElem\_poly polynomials $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyElem}
-  Zx, x = FlintZZ["x"]
+function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyRingElem}
+  Zx, x = ZZ["x"]
   res = Zx()
   m = maximum(degree(x) for x = L)
 
@@ -468,47 +467,47 @@ function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}) where {T <: PolyElem}
 end
 
 #@doc raw"""
-#    _num_setcoeff!(a::nf_elem, n::Int, c::ZZRingElem)
-#    _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
+#    _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::ZZRingElem)
+#    _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::Integer)
 #
 #Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
 #only if you know what you're doing.
 #"""
-function _num_setcoeff!(a::nf_elem, n::Int, c::ZZRingElem)
+function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::ZZRingElem)
   K = parent(a)
   ra = pointer_from_objref(a)
   if degree(K) == 1
     @assert n == 0
     ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{ZZRingElem}), ra, c)
-    ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{nf_elem}, ), a)
+    ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, ), a)
   elseif degree(K) == 2
      @assert n >= 0  && n <= 3
      ccall((:fmpz_set, libflint), Nothing, (Ref{Nothing}, Ref{ZZRingElem}), ra+n*sizeof(Int), c)
   else
     @assert n < degree(K) && n >=0
-    ccall((:fmpq_poly_set_coeff_fmpz, libflint), Nothing, (Ref{nf_elem}, Int, Ref{ZZRingElem}), a, n, c)
+    ccall((:fmpq_poly_set_coeff_fmpz, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Int, Ref{ZZRingElem}), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
 
-function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
+function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::UInt)
   K = a.parent
   @assert n < degree(K) && n >=0
 
-  ra = pointer_from_objref(a)
+  ra = Ptr{ZZRingElem}(pointer_from_objref(a))
 
   if degree(K) == 1
-    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra, c)
-    ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{nf_elem}, ), a)
+    set!(ra, c)
+    ccall((:fmpq_canonicalise, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, ), a)
   elseif degree(K) == 2
-    ccall((:fmpz_set_ui, libflint), Nothing, (Ref{Nothing}, UInt), ra+n*sizeof(Int), c)
+    set!(ra+n*sizeof(Int), c)
   else
-    ccall((:fmpq_poly_set_coeff_ui, libflint), Nothing, (Ref{nf_elem}, Int, UInt), a, n, c)
+    ccall((:fmpq_poly_set_coeff_ui, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Int, UInt), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
 
-function _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
+function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::Integer)
   _num_setcoeff!(a, n, ZZRingElem(c))
 end
 
@@ -519,7 +518,7 @@ Given matrices $L[i]$ and a `crt\_env`, apply the
 `crt` function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Vector{T}, c::crt_env{ZZRingElem}, signed::Bool = false) where {T <: MatElem}
-  res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))
+  res = zero_matrix(ZZ, nrows(L[1]), ncols(L[1]))
 
   if signed
     cr = crt_signed
@@ -547,11 +546,13 @@ mutable struct modular_env
   rp::Vector{zzModPolyRingElem}
   res::Vector{fqPolyRepFieldElem}
   Fpx::zzModPolyRing
-  K::AnticNumberField
+  K::AbsSimpleNumField
   Rp::Vector{fqPolyRepPolyRingElem}
-  Kx::Generic.PolyRing{nf_elem}
-  Kxy::Generic.MPolyRing{nf_elem}
+  Kx::Generic.PolyRing{AbsSimpleNumFieldElem}
+  Kxy::Generic.MPolyRing{AbsSimpleNumFieldElem}
   Kpxy::zzModMPolyRing
+
+  lazy::Bool
 
   function modular_env()
     return new()
@@ -569,34 +570,67 @@ function show(io::IO, me::modular_env)
 end
 
 @doc raw"""
-    modular_init(K::AnticNumberField, p::ZZRingElem) -> modular_env
-    modular_init(K::AnticNumberField, p::Integer) -> modular_env
+    modular_init(K::AbsSimpleNumField, p::ZZRingElem) -> modular_env
+    modular_init(K::AbsSimpleNumField, p::Integer) -> modular_env
 
 Given a number field $K$ and an ``easy'' prime $p$ (i.e. fits into an
 \code{Int} and is coprime to the polynomial discriminant), compute
 the residue class fields of the associated prime ideals above $p$.
 Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
-function modular_init(K::AnticNumberField, p::ZZRingElem; deg_limit::Int=0, max_split::Int = 0)
-  @hassert :NfOrd 1 is_prime(p)
+function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, deg_limit::Int=0, max_split::Int = 0)
+  @hassert :AbsNumFieldOrder 1 is_prime(p)
   me = modular_env()
-  me.Fpx = polynomial_ring(residue_ring(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
+  pp = Int(p)
+  me.Fpx = polynomial_ring(residue_ring(ZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
-  lp = factor(fp)
-  if Set(values(lp.fac)) != Set([1])
-    throw(BadPrime(p))
-  end
-  pols = collect(keys(lp.fac))
-  if deg_limit > 0
-    pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
+  if lazy
+    if !is_squarefree(fp)
+      throw(BadPrime(p))
+    end
+    pols = [fp]
+  else
+    local pols
+    if deg_limit == 1
+      if !is_squarefree(fp)
+        throw(BadPrime(p))
+      end
+      # Cache the roots of the defining polynomial modulo p
+      # We cache them as a vector of Int's, so that we don't have problems with
+      # parents
+      __roots_dict = get_attribute(K, :roots_mod_p)
+      if __roots_dict === nothing
+        _roots_dict = Dict{Int, Vector{Int}}()
+        set_attribute!(K, :roots_mod_p, _roots_dict)
+      else
+        _roots_dict = __roots_dict::Dict{Int, Vector{Int}}
+      end
+      _roots = get!(_roots_dict, pp) do
+        rt = roots(fp)
+        return lift.(rt)
+      end::Vector{Int}
+      x = gen(parent(fp))
+      Fp = base_ring(me.Fpx)
+      pols = [x-Fp(r) for r = _roots]
+    else
+      lp = factor(fp)
+      if any(!isequal(1), values(lp.fac))
+        throw(BadPrime(p))
+      end
+      pols = collect(keys(lp.fac))
+      if deg_limit > 0
+        pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
+      end
+    end
+
+    if max_split > 0
+      pols = pols[1:min(length(pols), max_split)]
+    end
+    if length(pols) == 0
+      return me
+    end
   end
 
-  if max_split > 0
-    pols = pols[1:min(length(pols), max_split)]
-  end
-  if length(pols) == 0
-    return me
-  end
   me.ce = crt_env(pols)
   me.fld = [fqPolyRepField(x, :$, false) for x = pols]  #think about F_p!!!
                                    # and chacheing
@@ -610,17 +644,17 @@ function modular_init(K::AnticNumberField, p::ZZRingElem; deg_limit::Int=0, max_
   return me
 end
 
-function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_split::Int = 0)
-  return modular_init(K, ZZRingElem(p), deg_limit = deg_limit, max_split = max_split)
+function modular_init(K::AbsSimpleNumField, p::Integer; lazy::Bool = false, deg_limit::Int=0, max_split::Int = 0)
+  return modular_init(K, ZZRingElem(p); lazy = lazy, deg_limit = deg_limit, max_split = max_split)
 end
 
 @doc raw"""
-    modular_proj(a::nf_elem, me::modular_env) -> Vector{fqPolyRepFieldElem}
+    modular_proj(a::AbsSimpleNumFieldElem, me::modular_env) -> Vector{fqPolyRepFieldElem}
 
 Given an algebraic number $a$ and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
 """
-function modular_proj(a::nf_elem, me::modular_env)
+function modular_proj(a::AbsSimpleNumFieldElem, me::modular_env)
   ap = me.Fpx(a)
   crt_inv!(me.rp, ap, me.ce)
   for i=1:me.ce.n
@@ -639,12 +673,12 @@ function modular_proj(a::nf_elem, me::modular_env)
 end
 
 @doc raw"""
-    modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Vector{fqPolyRepFieldElem}
+    modular_proj(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, me::modular_env) -> Vector{fqPolyRepFieldElem}
 
 Given an algebraic number $a$ in factored form and data \code{me} as computed by
 \code{modular_init}, project $a$ onto the residue class fields.
 """
-function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+function modular_proj(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, me::modular_env)
   if length(A.fac) > 100 #arbitrary
     return modular_proj_vec(A, me)
   end
@@ -678,7 +712,7 @@ function _apply_frob(a::fqPolyRepFieldElem, F)
   return b
 end
 
-function modular_proj_vec(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+function modular_proj_vec(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, me::modular_env)
   for i=1:me.ce.n
     me.res[i] = one(me.fld[i])
   end
@@ -801,7 +835,7 @@ end
 
 
 @doc raw"""
-    modular_lift(a::Array{fqPolyRepFieldElem}, me::modular_env) -> nf_elem
+    modular_lift(a::Array{fqPolyRepFieldElem}, me::modular_env) -> AbsSimpleNumFieldElem
 
 Given an array of elements as computed by \code{modular_proj},
 compute a global pre-image using some efficient CRT.
@@ -820,12 +854,12 @@ function modular_lift(a::Vector{fqPolyRepFieldElem}, me::modular_env)
 end
 
 @doc raw"""
-    modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
+    modular_proj(a::Generic.Poly{AbsSimpleNumFieldElem}, me::modular_env) -> Array
 
 Apply the \code{modular_proj} function to each coefficient of $a$.
 Computes an array of polynomials over the respective residue class fields.
 """
-function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
+function modular_proj(a::Generic.Poly{AbsSimpleNumFieldElem}, me::modular_env)
 
   if !isdefined(me, :fldx)
     me.fldx = [polynomial_ring(x, "_x", cached=false)[1] for x = me.fld]
@@ -859,7 +893,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 end
 
 @doc raw"""
-    modular_lift(a::Array{fqPolyRepPolyRingElem}, me::modular_env) -> Generic.Poly{nf_elem}
+    modular_lift(a::Array{fqPolyRepPolyRingElem}, me::modular_env) -> Generic.Poly{AbsSimpleNumFieldElem}
 
 Apply the \code{modular_lift} function to each coefficient of $a$.
 Computes a polynomial over the number field.
@@ -883,13 +917,13 @@ function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
 end
 
 @doc raw"""
-    modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
-    modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}
+    modular_proj(a::Generic.Mat{AbsSimpleNumFieldElem}, me::modular_env) -> Array{Matrix}
+    modular_proj(a::Generic.Mat{AbsSimpleNumFieldOrderElem}, me::modular_env) -> Array{Matrix}
 
 Apply the \code{modular_proj} function to each entry of $a$.
 Computes an array of matrices over the respective residue class fields.
 """
-function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
+function modular_proj(a::Generic.Mat{AbsSimpleNumFieldElem}, me::modular_env)
   Mp = fqPolyRepMatrix[]
   for i=1:me.ce.n
     push!(Mp, zero_matrix(me.fld[i], nrows(a), ncols(a)))
@@ -905,7 +939,7 @@ function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
   return Mp
 end
 
-function modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env)
+function modular_proj(a::Generic.Mat{AbsSimpleNumFieldOrderElem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
     push!(Mp, zero_matrix(me.fld[i], nrows(a), ncols(a)))

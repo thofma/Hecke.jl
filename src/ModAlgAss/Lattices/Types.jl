@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-mutable struct ModAlgAssLat{S, T, U}
+@attributes mutable struct ModAlgAssLat{S, T, U}
   base_ring::S   # the underlying order
   V::T           # the underlying module
   basis::U       # the basis matrix

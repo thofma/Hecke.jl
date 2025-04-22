@@ -1,8 +1,3 @@
-export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian, is_quadratic, is_regular,
-       is_local_square, is_isometric, is_rationally_isometric, is_isotropic, is_isotropic_with_vector, quadratic_space,
-       hermitian_space, diagonal, invariants, hasse_invariant, witt_invariant, orthogonal_basis, fixed_field,
-       restrict_scalars, orthogonal_complement, orthogonal_projection
-
 ################################################################################
 #
 #  Maps
@@ -10,7 +5,7 @@ export ambient_space, rank, gram_matrix, inner_product, involution, ishermitian,
 ################################################################################
 
 function hom(V::AbstractSpace, W::AbstractSpace, B::MatElem; check::Bool = false)
-  @req base_ring(V) == base_ring(W) "Spaces must have the same base field"
+  @req base_ring(V) === base_ring(W) "Spaces must have the same base field"
   @req nrows(B) == dim(V) && ncols(B) == dim(W) """
   Dimension mismatch. Matrix ($(nrows(B))x$(ncols(B))) must be of
   dimensions $(dim(V))x$(dim(W)).
@@ -40,7 +35,7 @@ end
 
 function image(f::AbstractSpaceMor, L::AbstractLat)
   V = domain(f)
-  @req V==ambient_space(L) "L not in domain"
+  @req V === ambient_space(L) "L not in domain"
   W = codomain(f)
   if is_injective(f)
     B = pseudo_matrix(L)
@@ -54,23 +49,23 @@ end
 
 function image(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
-  @req V==ambient_space(L) "L not in domain"
+  @req V === ambient_space(L) "L not in domain"
   W = codomain(f)
   B = basis_matrix(L)*f.matrix
   isbasis = is_injective(f)
-  return lattice(W, B, isbasis=isbasis, check=false)
+  return lattice(W, B; isbasis=isbasis, check=false)
 end
 
 function preimage(f::AbstractSpaceMor, L::ZZLat)
   V = domain(f)
   W = codomain(f)
-  @req W==ambient_space(L) "L not in codomain"
-  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L), side=:left)
+  @req W === ambient_space(L) "L not in codomain"
+  ok, B = can_solve_with_solution(f.matrix, basis_matrix(L); side=:left)
   if !ok
     # intersect with the image
     L1 = intersect(lattice(W, f.matrix) , L)
     L2 = primitive_closure(L, L1)
-    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2), side=:left)
+    ok, B = can_solve_with_solution(f.matrix, basis_matrix(L2); side=:left)
     @assert ok
   end
   return lattice(V, B)
@@ -139,7 +134,7 @@ Return the fixed field of the space `V`.
 fixed_field(::AbstractSpace)
 
 @doc raw"""
-    involution(V::AbstractSpace) -> NumFieldMor
+    involution(V::AbstractSpace) -> NumFieldHom
 
 Return the involution of the space `V`.
 """
@@ -173,7 +168,7 @@ is_quadratic(::AbstractSpace)
 
 Return whether the space `V` is hermitian.
 """
-ishermitian(::AbstractSpace)
+is_hermitian(::AbstractSpace)
 
 ################################################################################
 #
@@ -295,7 +290,8 @@ Return a matrix `M`, such that the rows of `M` form an orthogonal basis of the s
 """
 function orthogonal_basis(V::AbstractSpace)
   G = gram_matrix(V)
-  r, Rad = left_kernel(G)
+  Rad = kernel(G, side = :left)
+  r = nrows(Rad)
   if r > 0
     basis_nondeg = _basis_complement(Rad)
     G_nondeg = gram_matrix(V, basis_nondeg)
@@ -318,6 +314,19 @@ the diagonal space $\langle a_1,\dotsc,a_n \rangle$.
 The elements are contained in the fixed field of `V`.
 """
 diagonal(V::AbstractSpace)
+
+@doc raw"""
+    diagonal_with_transform(V::AbstractSpace) -> Vector{FieldElem},
+                                                             MatElem{FieldElem}
+
+Return a vector of elements $a_1,\dotsc,a_n$ such that the space `V` is
+isometric to the diagonal space $\langle a_1,\dotsc,a_n \rangle$. The second
+output is a matrix `U` whose rows span an orthogonal basis of `V` for which the
+Gram matrix is given by the diagonal matrix of the $a_i$'s.
+
+The elements are contained in the fixed field of `V`.
+"""
+diagonal_with_transform(V::AbstractSpace)
 
 ################################################################################
 #
@@ -408,7 +417,7 @@ end
 ################################################################################
 
 @doc raw"""
-    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, NfOrdIdl}) -> Bool
+    is_isometric(L::AbstractSpace, M::AbstractSpace, p::Union{InfPlc, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) -> Bool
 
 Return whether the spaces `L` and `M` are isometric over the completion at `p`.
 """
@@ -439,7 +448,7 @@ is_isometric(L::AbstractSpace, M::AbstractSpace)
 function _isdefinite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
+  if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
     return zero(K)
   end
   D = diagonal(V)
@@ -467,7 +476,7 @@ Return whether the space `V` is positive definite.
 function is_positive_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
+  if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
     return false
   end
   D = diagonal(V)
@@ -487,7 +496,7 @@ Return whether the space `V` is negative definite.
 function is_negative_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
-  if (!is_totally_real(K)) || (ishermitian(V) && !is_totally_complex(E))
+  if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
     return false
   end
   D = diagonal(V)
@@ -532,7 +541,7 @@ Return if the space `V` is isotropic and an isotropic vector.
 is_isotropic_with_vector(::AbstractSpace)
 
 @doc raw"""
-    is_isotropic(V::AbstractSpace, p::Union{NfOrdIdl, InfPlc}) -> Bool
+    is_isotropic(V::AbstractSpace, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, InfPlc}) -> Bool
 
 Given a space `V` and a place `p` in the fixed field `K` of `V`, return
 whether the completion of `V` at `p` is isotropic.
@@ -610,7 +619,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
   B = absolute_basis(E)
   v = elem_type(E)[zero(E) for i in 1:n]
   w = elem_type(E)[zero(E) for i in 1:n]
-  G = zero_matrix(FlintQQ, d * n, d * n)
+  G = zero_matrix(QQ, d * n, d * n)
   r = 1
   c = 1
   for i in 1:n
@@ -620,7 +629,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       for j in 1:n
         for bj in 1:length(B)
           w[j] = B[bj]
-          G[r, c] = trace(alpha * inner_product(V, v, w), FlintQQ)
+          G[r, c] = trace(alpha * inner_product(V, v, w), QQ)
           w[j] = zero(E)
           c = c + 1
         end
@@ -629,7 +638,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       r = r + 1
     end
   end
-  Vres = quadratic_space(FlintQQ, G, check = false)
+  Vres = quadratic_space(QQ, G; check = false)
   VrestoV = AbstractSpaceRes(Vres, V, identity_matrix(QQ, rank(Vres)), identity_matrix(E, rank(V)))
   return Vres, VrestoV
 end
@@ -648,8 +657,7 @@ matrix of the orthogonal complement of `W` inside `V`.
 """
 function orthogonal_complement(V::AbstractSpace, M::MatElem)
   N = gram_matrix(V) * _map(transpose(M), involution(V))
-  r, K = left_kernel(N)
-  @assert r == nrows(K)
+  K = kernel(N, side = :left)
   return K
 end
 
@@ -679,7 +687,7 @@ end
 function _biproduct(x::Vector{T}) where T <: AbstractSpace
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
-  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> ishermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
+  @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> is_hermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
   G = diagonal_matrix(gram_matrix.(x))
   V = is_quadratic(x[1]) ? quadratic_space(K, G) : hermitian_space(K, G)
   n = sum(dim.(x))
@@ -775,7 +783,7 @@ biproduct(x::Vararg{AbstractSpace}) = biproduct(collect(x))
 ################################################################################
 
 @doc raw"""
-    is_locally_represented_by(U::T, V::T, p::NfOrdIdl) where T <: AbstractSpace -> Bool
+    is_locally_represented_by(U::T, V::T, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) where T <: AbstractSpace -> Bool
 
 Given two spaces `U` and `V` over the same algebra `E`, and a prime ideal `p` in
 the maximal order $\mathcal O_K$ of their fixed field `K`, return whether `U` is

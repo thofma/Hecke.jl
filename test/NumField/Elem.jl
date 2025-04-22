@@ -1,5 +1,5 @@
 @testset "NumField/Elem" begin
-  Qx, x = polynomial_ring(FlintQQ, "x")
+  Qx, x = polynomial_ring(QQ, "x")
   QasNumberField, _ = number_field(x - 1)
   Kt, t = polynomial_ring(QasNumberField, "t")
   K1, a1 = number_field(x^3 - 2)
@@ -37,7 +37,7 @@
   end
 
   @testset "NumField/Component" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     QasNumberField, _ = number_field(x - 1)
     Kt, t = polynomial_ring(QasNumberField, "t")
     K3, a3 = number_field(t^3 - 2)
@@ -55,17 +55,17 @@
   end
 
   @testset "rand" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^3 - 2)
     v = [a^0, a^2]
-    @assert elem_type(K) == nf_elem
+    @assert elem_type(K) == AbsSimpleNumFieldElem
     for args = ((v, 1:3), (v, 1:3, 2))
       m = make(K, args...)
       for x in (rand(args...), rand(rng, args...),
                 rand(m), rand(rng, m))
-        @test x isa nf_elem
+        @test x isa AbsSimpleNumFieldElem
       end
-      @test rand(m, 3) isa Vector{nf_elem}
+      @test rand(m, 3) isa Vector{AbsSimpleNumFieldElem}
       c = zero(K)
       @test c === rand!(c, m)
       @test c === rand!(rng, c, m)
@@ -77,7 +77,7 @@
   end
 
   @testset "NumField/Coordinates" begin
-    Qx, x = polynomial_ring(FlintQQ, "x")
+    Qx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^2+1, cached = false)
     BK = basis(K)
     for i = 1:5
@@ -148,7 +148,7 @@
   end
 
   @testset "relative extension" begin
-    Qx, x = FlintQQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12x - 92
     K, a = number_field(f, "a")
     Ky, y = K["y"]
@@ -211,7 +211,7 @@ end
   @test !isone(g^3)
   @test !isone(g^2)
   @test Hecke.is_torsion_unit_group_known(K)
-  M = EquationOrder(K)
+  M = equation_order(K)
   A, mA = @inferred torsion_unit_group(M)
   @test order(A) == 2
   @test mA(A[1]) == M(-1)
@@ -244,4 +244,34 @@ end
   @test isone(g^24)
   @test !isone(g^8)
   @test !isone(g^3)
+end
+
+# Issue with scaling of roots found by M. Zach
+begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 + x + 1, cached = false)
+  Ks, s = polynomial_ring(K, "s")
+  L, = number_field(s^8 + 6s^4 + 1)
+  Ly, y = L["y"]
+  h = -1//4*y^8 - 3//2*y^4 - 1//4
+  r = roots(h)
+  @test length(r) == 8
+  @test all(iszero, h.(r))
+end
+
+begin
+  f = absolute_minpoly(QQ(1//3))
+  @test degree(f) == 1 && is_monic(f) && f(1//3) == 0
+end
+
+let
+  NF, sr5 = quadratic_field(5)
+  phi = (1 + sr5)//2
+  NFy, y = NF["y"]
+  MF, srm = number_field(y^2 - (phi - 5//27), "a")
+  MFz, z = MF["z"]
+  LF, lr = number_field(z^3 - (phi + srm)//2, "b")
+  LFw, w = LF["w"]
+  r = roots(w^3 - (phi - srm)//2)
+  @test length(r) == 1
 end

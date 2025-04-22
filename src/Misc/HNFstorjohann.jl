@@ -32,8 +32,8 @@ function conditioning_with_transform!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}
         N[2, 2] = deepcopy(T[row1, col2])
         # Make sure the rows row and row1 are linearly independent
         if i != row1
-          N[2, 1] = addeq!(N[2, 1], T[i, col1])
-          N[2, 2] = addeq!(N[2, 2], T[i, col2])
+          N[2, 1] = add!(N[2, 1], T[i, col1])
+          N[2, 2] = add!(N[2, 2], T[i, col2])
           s = i
         end
         break
@@ -54,12 +54,12 @@ function conditioning_with_transform!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}
     end
     q1, r1 = divrem(divexact(N[2, 1], g), N[1, 1])
     if r1 < 0
-      addeq!(r1, N[1, 1])
+      add!(r1, N[1, 1])
       q1 = q1 - 1
     end
     q2, r2 = divrem(divexact(T[l, col1], g), N[1, 1])
     if r2 < 0
-      addeq!(r2, N[1, 1])
+      add!(r2, N[1, 1])
       q2 = q2 - 1
     end
     t1 = mul!(t1, N[1, 1], T[l, col2])
@@ -78,7 +78,7 @@ function conditioning_with_transform!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}
     t1 = zero!(t1)
     t2 = deepcopy(r1)
     while gcd(t2, N[1, 1]) != 1
-      t2 = addeq!(t2, r2)
+      t2 = add!(t2, r2)
       t1 += 1
     end
     if !iszero(t1)
@@ -88,9 +88,9 @@ function conditioning_with_transform!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}
       CC[l] = deepcopy(t1)
       zero_cols[l] = false
       t = mul!(t, T[l, col1], t1)
-      N[2, 1] = addeq!(N[2, 1], t)
+      N[2, 1] = add!(N[2, 1], t)
       t = mul!(t, T[l, col2], t1)
-      N[2, 2] = addeq!(N[2, 2], t)
+      N[2, 2] = add!(N[2, 2], t)
     end
   end
   if s > row1
@@ -153,7 +153,7 @@ function column_reduction_with_transform!(T::MatElem{S}, N::MatElem{S}, QC::MatE
       q = -fdiv(t, N[2, 2])
       for c = row:row1
         t1 = mul!(t1, q, QC[row1, c])
-        QC[i, c] = addeq!(QC[i, c], t1)
+        QC[i, c] = add!(QC[i, c], t1)
       end
     end
   end
@@ -163,7 +163,7 @@ function column_reduction_with_transform!(T::MatElem{S}, N::MatElem{S}, QC::MatE
     if i != row && (T[i, col1] < 0 || T[i, col1] >= N[1, 1])
       q = -fdiv(T[i, col1], N[1, 1])
       t1 = mul!(t1, q, N[1, 2])
-      t = addeq!(t, t1) # this would be T[i, col2]
+      t = add!(t, t1) # this would be T[i, col2]
       for c = row:row1
         QC[i, c] = mul!(QC[i, c], q, QC[row, c])
       end
@@ -177,7 +177,7 @@ function column_reduction_with_transform!(T::MatElem{S}, N::MatElem{S}, QC::MatE
       q = -fdiv(t, N[2, 2])
       for c = row:row1
         t1 = mul!(t1, q, QC[row1, c])
-        QC[i, c] = addeq!(QC[i, c], t1)
+        QC[i, c] = add!(QC[i, c], t1)
       end
     end
   end
@@ -271,7 +271,7 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
           continue
         end
         t = mul!(t, CC[i], C[i, j])
-        C[row1, j] = addeq!(C[row1, j], t)
+        C[row1, j] = add!(C[row1, j], t)
         push!(non_zero_entries[j], row1)
       end
     end
@@ -303,16 +303,16 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
       end
       for l = row:n
         if zero_cols[l]
-          temp[l] = addeq!(temp[l], Q[l, j])
+          temp[l] = add!(temp[l], Q[l, j])
           continue
         end
         for i = 1:row - 1
           t = mul!(t, QC[i, l], Q[l, j])
-          Q[i, j] = addeq!(Q[i, j], t)
+          Q[i, j] = add!(Q[i, j], t)
         end
         for i = row:n
           t = mul!(t, QC[i, l], Q[l, j])
-          temp[i] = addeq!(temp[i], t)
+          temp[i] = add!(temp[i], t)
         end
       end
       for i = row:n
@@ -326,16 +326,16 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
       end
       for l = row:n
         if zero_cols[l]
-          temp[l] = addeq!(temp[l], T[l, j])
+          temp[l] = add!(temp[l], T[l, j])
           continue
         end
         for i = 1:row - 1
           t = mul!(t, QC[i, l], T[l, j])
-          T[i, j] = addeq!(T[i, j], t)
+          T[i, j] = add!(T[i, j], t)
         end
         for i = row:n
           t = mul!(t, QC[i, l], T[l, j])
-          temp[i] = addeq!(temp[i], t)
+          temp[i] = add!(temp[i], t)
         end
       end
       for i = row:n
@@ -354,7 +354,7 @@ function hnf_storjohann_with_transform(A::MatElem{S}) where S <: Nemo.RingElemen
     for i = 1:n
       for l in non_zero_entries[j]
         t = mul!(t, Q[i, l], C[l, j])
-        U[i, j] = addeq!(U[i, j], t)
+        U[i, j] = add!(U[i, j], t)
       end
     end
   end
@@ -386,7 +386,7 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
         # Make sure the rows row and row1 are linearly independent
         if i != row1
           for j = col1:ncols(T)
-            T[row1, j] = addeq!(T[row1, j], T[i, j])
+            T[row1, j] = add!(T[row1, j], T[i, j])
           end
         end
         break
@@ -407,12 +407,12 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
     end
     q1, r1 = divrem(divexact(T[row1, col1], g), T[row, col1])
     if r1 < 0
-      addeq!(r1, T[row, col1])
+      add!(r1, T[row, col1])
       q1 = q1 - 1
     end
     q2, r2 = divrem(divexact(T[l, col1], g), T[row, col1])
     if r2 < 0
-      addeq!(r2, T[row, col1])
+      add!(r2, T[row, col1])
       q2 = q2 - 1
     end
     t1 = mul!(t1, T[row, col1], T[l, col2])
@@ -431,7 +431,7 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
     t1 = zero!(t1)
     t2 = deepcopy(r1)
     while gcd(t2, T[row, col1]) != 1
-      t2 = addeq!(t2, r2)
+      t2 = add!(t2, r2)
       t1 += 1
     end
     if !iszero(t1)
@@ -440,7 +440,7 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
       end
       for j = col1:(ncols(T) - 1)
         t = mul!(t, T[l, j], t1)
-        T[row1, j] = addeq!(T[row1, j], t)
+        T[row1, j] = add!(T[row1, j], t)
       end
     end
   end
@@ -490,7 +490,7 @@ function column_reduction!(T::MatElem{S}, row::Int, col1::Int, col2::Int) where 
       q = -fdiv(T[i, col2], T[row1, col2])
       for j = col11:n
         t = mul!(t, q, T[row1, j])
-        T[i, j] = addeq!(T[i, j], t)
+        T[i, j] = add!(T[i, j], t)
       end
     end
   end
@@ -500,7 +500,7 @@ function column_reduction!(T::MatElem{S}, row::Int, col1::Int, col2::Int) where 
       q = -fdiv(T[i, col1], T[row, col1])
       for j = col1:n
         t = mul!(t, q, T[row, j])
-        T[i, j] = addeq!(T[i, j], t)
+        T[i, j] = add!(T[i, j], t)
       end
     end
   end
@@ -510,7 +510,7 @@ function column_reduction!(T::MatElem{S}, row::Int, col1::Int, col2::Int) where 
       q = -fdiv(T[i, col2], T[row1, col2])
       for j = col11:n
         t = mul!(t, q, T[row1, j])
-        T[i, j] = addeq!(T[i, j], t)
+        T[i, j] = add!(T[i, j], t)
       end
     end
   end

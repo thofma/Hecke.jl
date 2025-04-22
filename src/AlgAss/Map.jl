@@ -1,5 +1,3 @@
-export opposite_algebra
-
 mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   header::MapHeader{R, S}
 
@@ -116,29 +114,29 @@ end
 function __set!(c_t::QQMatrix, ca)
   GC.@preserve c_t begin
     for i in 1:length(ca)
-      t = ccall((:fmpq_mat_entry, libflint), Ptr{QQFieldElem}, (Ref{QQMatrix}, Int, Int), c_t, 0, i - 1)
-      ccall((:fmpq_set, libflint), Cvoid, (Ptr{QQFieldElem}, Ref{QQFieldElem}), t, ca[i])
+      t = mat_entry_ptr(c_t, 1, i)
+      set!(t, ca[i])
     end
   end
 end
 
 #inv(a::AbsAlgAssMor) = pseudo_inv(a)
 
-#mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssMor}
-#  header::MapHeader{AlgAss{R}, AlgAss{S}}
+#mutable struct AlgAssMor{R, S, T} <: Map{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}, HeckeMap, AlgAssMor}
+#  header::MapHeader{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}}
 #
 #  mat::T
 #  imat::T
 #  c_t::T
 #  d_t::T
 #
-#  function AlgAssMor(A::AlgAss{R}, B::AlgAss{S}, M::T) where {R, S, T}
+#  function AlgAssMor(A::StructureConstantAlgebra{R}, B::StructureConstantAlgebra{S}, M::T) where {R, S, T}
 #    z = new{R, S, T}()
 #    z.c_t = similar(M, 1, dim(A))
 #    z.d_t = similar(M, 1, dim(B))
 #    z.mat = M
 #
-#    function image(a::AlgAssElem)
+#    function image(a::AssociativeAlgebraElem)
 #      for i in 1:dim(A)
 #        z.c_t[1, i] = a.coeffs[i]
 #      end
@@ -149,14 +147,14 @@ end
 #        s[i] = z.d_t[1, i]
 #      end
 #
-#      return AlgAssElem{S}(B, s)
+#      return AssociativeAlgebraElem{S}(B, s)
 #    end
 #
 #    z.header = MapHeader(A, B, image)
 #    return z
 #  end
 #
-#  function AlgAssMor(A::AlgAss{R}, B::AlgAss{S}, M::T, N::T) where {R, S, T}
+#  function AlgAssMor(A::StructureConstantAlgebra{R}, B::StructureConstantAlgebra{S}, M::T, N::T) where {R, S, T}
 #    z = new{R, S, T}()
 #    z.c_t = similar(M, 1, dim(A))
 #    z.d_t = similar(M, 1, dim(B))
@@ -164,7 +162,7 @@ end
 #    z.mat = M
 #    z.imat = N
 #
-#    function image(a::AlgAssElem)
+#    function image(a::AssociativeAlgebraElem)
 #      for i in 1:dim(A)
 #        z.c_t[1, i] = a.coeffs[i]
 #      end
@@ -175,10 +173,10 @@ end
 #        s[i] = z.d_t[1, i]
 #      end
 #
-#      return AlgAssElem{S}(B, s)
+#      return AssociativeAlgebraElem{S}(B, s)
 #    end
 #
-#    function preimage(a::AlgAssElem)
+#    function preimage(a::AssociativeAlgebraElem)
 #      for i in 1:dim(B)
 #        z.d_t[1, i] = a.coeffs[i]
 #      end
@@ -187,7 +185,7 @@ end
 #      for i in 1:dim(A)
 #        s[i] = z.c_t[1, i]
 #      end
-#      return AlgAssElem{R}(A, s)
+#      return AssociativeAlgebraElem{R}(A, s)
 #    end
 #
 #    z.header = MapHeader(A, B, image, preimage)
@@ -204,23 +202,38 @@ function compose_and_squash(f::AbsAlgAssMor{R, U, T}, g::AbsAlgAssMor{S, R, T}) 
   end
 end
 
-function hom(A::R, B::S, M::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T}
-  return AbsAlgAssMor{R, S, T}(A, B, M)
+function hom(A::R, B::S, imgs::Vector; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra}
+  @assert length(imgs) == dim(A)
+  bmat = basis_matrix(imgs)
+  return hom(A, B, bmat; check = check)
 end
 
-function hom(A::R, B::S, M::T, N::T) where {R <: AbsAlgAss, S <: AbsAlgAss, T}
+function hom(A::R, B::S, M::T; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+  h = AbsAlgAssMor{R, S, T}(A, B, M)
+  if check
+    for a in basis(A), b in basis(A)
+      if h(a * b) != h(a) * h(b)
+        error("Data does not define an algebra homomorphism")
+      end
+    end
+  end
+  return h
+end
+
+function hom(A::R, B::S, M::T, N::T; check = true) where {R <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra, T <: MatElem}
+  # TODO: add check
   return AbsAlgAssMor{R, S, T}(A, B, M, N)
 end
 
-#function hom(A::AlgAss{R}, B::AlgAss{S}, M::T) where {R <: AlgAss, S <: AlgAss, T}
+#function hom(A::StructureConstantAlgebra{R}, B::StructureConstantAlgebra{S}, M::T) where {R <: StructureConstantAlgebra, S <: StructureConstantAlgebra, T}
 #  return AlgAssMor{R, S, T}(A, B, M)
 #end
 #
-#function hom(A::AlgAss{R}, B::AlgAss{S}, M::T, N::T) where {R <: AlgAss, S <: AlgAss, T}
+#function hom(A::StructureConstantAlgebra{R}, B::StructureConstantAlgebra{S}, M::T, N::T) where {R <: StructureConstantAlgebra, S <: StructureConstantAlgebra, T}
 #  return AlgAssMor{R, S, T}(A, B, M, N)
 #end
 
-function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
+function has_preimage_with_preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
   if isdefined(m, :imat)
     return true, preimage(m, a)
   end
@@ -235,9 +248,9 @@ function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   end
 end
 
-#function preimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
+#function preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
 #  @assert parent(a) === codomain(m)
-#  fl, b = haspreimage(m, a)
+#  fl, b = has_preimage_with_preimage(m, a)
 #  !fl && error("Element has no preimage")
 #  return b
 #end
@@ -302,7 +315,7 @@ function AbsAlgAssToNfAbsMor(A::S, K::U, M::V, N::V) where {S, U, V}
   return AbsAlgAssToNfAbsMor{S, elem_type(A), U, V}(A, K, M, N)
 end
 
-function _abs_alg_ass_to_nf_abs_mor_type(A::AbsAlgAss{T}) where {T}
+function _abs_alg_ass_to_nf_abs_mor_type(A::AbstractAssociativeAlgebra{T}) where {T}
   return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A), _ext_type(T), dense_matrix_type(T)}
 end
 
@@ -313,7 +326,7 @@ end
 ################################################################################
 
 # Morphism between an algebra A and a finite field Fq.
-# base_ring(A) can be a fpField, a Generic.ResidueField{ZZRingElem} or a Fq(Nmod)FiniteField, Fq can be a
+# base_ring(A) can be a fpField, a EuclideanRingResidueField{ZZRingElem} or a Fq(Nmod)FiniteField, Fq can be a
 # Fq(Nmod)FiniteField.
 # MatType is the type of matrices over base_ring(A), PolyRingType the type of a
 # polynomial ring over base_ring(A)
@@ -324,14 +337,14 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   t::MatType # dummy vector used in image and preimage
   tt::MatType # another dummy vector
   R::PolyRingType
-  RtoFq::FqPolyRingToFqMor # only used if S == AbsAlgAss{FqPolyRepFieldElem} or S == AbsAlgAss{fqPolyRepFieldElem}
+  RtoFq::FqPolyRingToFqMor # only used if S == AbstractAssociativeAlgebra{FqPolyRepFieldElem} or S == AbstractAssociativeAlgebra{fqPolyRepFieldElem}
 
   # First case: base_ring(A) == F_p
   function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType) where {
            S, T, MatType, PolyRingType
-           #S <: AbsAlgAss{S1} where { S1 <: Union{ fpFieldElem, Generic.ResidueFieldElem{ZZRingElem} } },
+           #S <: AbstractAssociativeAlgebra{S1} where { S1 <: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem} } },
            #T <: Union{ fqPolyRepField, FqPolyRepField },
-           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}} },
+           #MatType <: Union{ fpMatrix, Generic.MatSpaceElem{EuclideanRingResidueFieldElem{ZZRingElem}} },
            #PolyRingType <: Union{ fpPolyRing, FpPolyRing }
     }
 
@@ -342,7 +355,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     z.tt = zero_matrix(base_ring(A), 1, dim(A))
     z.R = R
 
-    function _image(x::AbsAlgAssElem)
+    function _image(x::AbstractAssociativeAlgebraElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
         z.t[1, i] = coefficients(x, copy = false)[i]
@@ -368,7 +381,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
   # Second case: base_ring(A) == F_p^n
   function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType, RtoFq::FqPolyRingToFqMor) where {
                                                                                                                                                S, T, MatType, PolyRingType
-           #S <: AbsAlgAss{S1} where { S1 <: Union{ FqPolyRepFieldElem, fqPolyRepFieldElem } },
+           #S <: AbstractAssociativeAlgebra{S1} where { S1 <: Union{ FqPolyRepFieldElem, fqPolyRepFieldElem } },
            #T <: Union{ fqPolyRepField, FqPolyRepField },
            #MatType <: Union{ fqPolyRepMatrix, FqPolyRepMatrix },
            #PolyRingType <: Union{ fqPolyRepPolyRing, FqPolyRepPolyRing }
@@ -382,7 +395,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     z.R = R
     z.RtoFq = RtoFq
 
-    function _image(x::AbsAlgAssElem)
+    function _image(x::AbstractAssociativeAlgebraElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
         z.t[1, i] = coefficients(x, copy = false)[i]
@@ -408,24 +421,24 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
 
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{fpFieldElem}, Fq::fqPolyRepField, M::fpMatrix, N::fpMatrix, R::fpPolyRing)
+function AbsAlgAssToFqMor(A::AbstractAssociativeAlgebra{fpFieldElem}, Fq::fqPolyRepField, M::fpMatrix, N::fpMatrix, R::fpPolyRing)
   return AbsAlgAssToFqMor{typeof(A), fqPolyRepField, fpMatrix, fpPolyRing}(A, Fq, M, N, R)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{fqPolyRepFieldElem}, Fq::fqPolyRepField, M::fqPolyRepMatrix, N::fqPolyRepMatrix, R::fqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
+function AbsAlgAssToFqMor(A::AbstractAssociativeAlgebra{fqPolyRepFieldElem}, Fq::fqPolyRepField, M::fqPolyRepMatrix, N::fqPolyRepMatrix, R::fqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
   return AbsAlgAssToFqMor{typeof(A), fqPolyRepField, fqPolyRepMatrix, fqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-#function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResidueFieldElem{ZZRingElem}}, Fq::FqPolyRepField, M::Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}}, N::Generic.MatSpaceElem{Generic.ResidueFieldElem{ZZRingElem}}, R::FpPolyRing)
+#function AbsAlgAssToFqMor(A::AbstractAssociativeAlgebra{EuclideanRingResidueFieldElem{ZZRingElem}}, Fq::FqPolyRepField, M::Generic.MatSpaceElem{EuclideanRingResidueFieldElem{ZZRingElem}}, N::Generic.MatSpaceElem{EuclideanRingResidueFieldElem{ZZRingElem}}, R::FpPolyRing)
 function AbsAlgAssToFqMor(A, Fq::FqPolyRepField, M, N, R::FpPolyRing)
   return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, typeof(M), FpPolyRing}(A, Fq, M, N, R)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{FqPolyRepFieldElem}, Fq::FqPolyRepField, M::FqPolyRepMatrix, N::FqPolyRepMatrix, R::FqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
+function AbsAlgAssToFqMor(A::AbstractAssociativeAlgebra{FqPolyRepFieldElem}, Fq::FqPolyRepField, M::FqPolyRepMatrix, N::FqPolyRepMatrix, R::FqPolyRepPolyRing, RtoFq::FqPolyRingToFqMor)
   return AbsAlgAssToFqMor{typeof(A), FqPolyRepField, FqPolyRepMatrix, FqPolyRepPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{FqFieldElem}, Fq::FqField, M::FqMatrix, N::FqMatrix, R::FqPolyRing, RtoFq)
+function AbsAlgAssToFqMor(A::AbstractAssociativeAlgebra{FqFieldElem}, Fq::FqField, M::FqMatrix, N::FqMatrix, R::FqPolyRing, RtoFq)
   return AbsAlgAssToFqMor{typeof(A), FqField, FqMatrix, FqPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
@@ -438,7 +451,9 @@ end
 function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
   domain(f) != algebra(O) && error("Order not an order of the domain")
   B = codomain(f)
-  C = Order(B, elem_type(B)[f(b) for b in O.basis_alg], check = false)
+  # dirty trick, because it does not work for orders
+  J = ideal_from_lattice_gens(B, elem_type(B)[f(b) for b in O.basis_alg])
+  C = order(B, basis(J), check = false, isbasis = true)
   return C
 end
 

@@ -1,9 +1,5 @@
 # Everything related to transformation on sparse matrices
 
-export sparse_trafo_scale, sparse_trafo_swap, sparse_trafo_add_scaled,
-       sparse_trafo_para_add_scaled, sparse_trafo_partial_dense,
-       sparse_trafo_move_row
-
 ################################################################################
 #
 #  Constructors
@@ -15,7 +11,7 @@ function sparse_trafo_scale(i::Int, c::T) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 1
   z.i = i
-  z.a = c
+  z.a = deepcopy(c)
   return z
 end
 
@@ -34,7 +30,7 @@ function sparse_trafo_add_scaled(i::Int, j::Int, s::T) where {T}
   z.type = 3
   z.i = i
   z.j = j
-  z.a = s
+  z.a = deepcopy(s)
   return z
 end
 
@@ -44,10 +40,10 @@ function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) wh
   z.type = 4
   z.i = i
   z.j = j
-  z.a = a
-  z.b = b
-  z.c = c
-  z.d = d
+  z.a = deepcopy(a)
+  z.b = deepcopy(b)
+  z.c = deepcopy(c)
+  z.d = deepcopy(d)
   return z
 end
 
@@ -159,7 +155,9 @@ end
 Multiply the $i$-th row of $A$ by $c$ inplace.
 """
 function scale_row!(A::SMat{T}, i::Int, c::T) where T
-  scale_row!(A[i], c)
+  A.nnz = A.nnz - length(A[i])
+  scale_row!(A[i],c)
+  A.nnz = A.nnz + length(A[i])
   return A
 end
 
@@ -287,17 +285,24 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
 
   for r in A.rows
     if i in r.pos
-      i_i = findfirst(r.pos, i)
+      i_i = findfirst(isequal(i), r.pos)
       val_i = r.values[i_i]
+      iszero(c*val_i) && continue
       if j in r.pos
-        i_j = findfirst(r.pos, j)
+        i_j = findfirst(isequal(j), r.pos)
         val_j = r.values[i_j]
 
         r.values[i_j] += c*r.values[i_i]
+        if iszero(r.values[i_j])
+          deleteat!(r.pos, i_j)
+          deleteat!(r.values, i_j)
+          A.nnz -= 1
+        end
       else
         k = searchsortedfirst(r.pos, j)
         insert!(r.pos, k, j)
         insert!(r.values, k, c*r.values[i_i])
+        A.nnz += 1
       end
     end
   end
@@ -390,6 +395,18 @@ function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
       push!(tr.values, d*Aj.values[pj])
     end
     pj += 1
+  end
+  for pi in length(sr):-1:1
+    if iszero(sr.values[pi])
+      deleteat!(sr.values, pi)
+      deleteat!(sr.pos, pi)
+    end
+  end
+  for pj in length(tr):-1:1
+    if iszero(tr.values[pj])
+      deleteat!(tr.values, pj)
+      deleteat!(tr.pos, pj)
+    end
   end
 
   return sr, tr
@@ -565,15 +582,15 @@ end
 #
 ################################################################################
 
-#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoSwap)
+#function apply_left!(x::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, y::TrafoSwap)
 #  x[y.i], x[y.j] = x[y.j], x[y.i]
 #end
 #
-#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoAddScaled)
+#function apply_left!(x::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, y::TrafoAddScaled)
 #  x[y.j] = x[y.j] * x[y.i]^Int(y.s)
 #end
 #
-#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoPartialDense)
+#function apply_left!(x::Vector{AbsSimpleNumFieldOrderFractionalIdeal}, y::TrafoPartialDense)
 #  z = view(deepcopy(x), y.cols)
 #  xx = view(x, y.cols)
 #  for i in 1:nrows(y.U)  ## use power product instead

@@ -8,7 +8,7 @@ struct QQEmb <: NumFieldEmb{QQField}
 end
 
 function Base.show(io::IO, ::QQEmb)
-  if get(io, :supercompact, false)
+  if is_terse(io)
     print(io, "Complex embedding of QQ")
   else
     print(io, "Complex embedding of rational numbers")
@@ -27,7 +27,7 @@ is_real(::QQEmb) = true
 
 restrict(::NumFieldEmb, ::QQField) = QQEmb()
 
-restrict(e::NumFieldEmb, f::NumFieldMor{QQField}) = QQEmb()
+restrict(e::NumFieldEmb, f::NumFieldHom{QQField}) = QQEmb()
 
 _embedding(::PosInf) = QQEmb()
 
@@ -52,3 +52,5 @@ sign(x::Union{ZZRingElem, FacElem{QQFieldElem}}, ::QQEmb) = sign(Int, x)
 signs(x::Union{ZZRingElem, QQFieldElem, FacElem{QQFieldElem}}, ::Vector{QQEmb}) = Dict(QQEmb() => sign(x, QQEmb()))
 
 signs(x::Union{ZZRingElem, QQFieldElem, FacElem{QQFieldElem}}) = Dict(QQEmb() => sign(x, QQEmb()))
+
+complex_conjugation(K::QQField) = identity_map(K)

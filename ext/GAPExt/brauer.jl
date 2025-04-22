@@ -29,7 +29,7 @@ function Hecke.check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
     #Of course!
     fl, Lnew = find_subgroup(L, i)
     if fl
-      new_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(GAP.Globals.FactorGroup(Lnew[2], Lnew[3])))
+      new_invariants = Vector{Int}(GAP.Globals.AbelianInvariants(GAP.Globals.FactorGroup(Lnew[2], Lnew[3])))
       new_invariants = map(Int, snf(abelian_group(new_invariants))[1].snf)
       list = check_obstruction(list, Lnew, 2, new_invariants)
     end
@@ -158,7 +158,7 @@ function find_subgroup(L::GAP.GapObj, level::Int)
     end
   end
   if !found
-    return found, GAP.julia_to_gap([candidate])
+    return found, GAP.GapObj([candidate])
   end
   #I need to change the series...
   L1 = GAP.GapObj[]
@@ -168,7 +168,7 @@ function find_subgroup(L::GAP.GapObj, level::Int)
   for i = level:length(L)
     push!(L1, GAP.Globals.Image(proj_comp, L[i]))
   end
-  return found, GAP.julia_to_gap(L1)
+  return found, GAP.GapObj(L1)
 end
 
 ################################################################################
@@ -227,7 +227,7 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
   for i = 1:length(gensEp)
     push!(imgs_new_proj, GAP.Globals.Image(proj, gensEp[i]))
   end
-  imgs_proj = GAP.julia_to_gap(imgs_new_proj)
+  imgs_proj = GAP.GapObj(imgs_new_proj)
   Gp = GAP.Globals.Subgroup(G, imgs_proj)
   #I need the inclusion of Gp into G for strange (GAP) reasons.
   gensGp = GAP.Globals.GeneratorsOfGroup(Gp)
@@ -241,7 +241,7 @@ function _to_prime_power_groups(cocycle::cocycle_ctx, p::Int)
     prel = GAP.Globals.PreImagesRepresentative(inj_Ep, el)
     push!(images_inclusion, prel)
   end
-  imgs_inclusion = GAP.julia_to_gap(images_inclusion)
+  imgs_inclusion = GAP.GapObj(images_inclusion)
   new_incl = GAP.Globals.GroupHomomorphismByImages(A, Ep, gensA, imgs_inclusion)
   res =  cocycle_ctx(new_proj, new_incl, cocycle.cocycle)
   res.inclusion_of_pSylow = inclusion_Gp
@@ -268,7 +268,7 @@ function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
     end
     prmg = GAP.Globals.PreImage(inc, g)
     fg = GAP.Globals.FactorGroup(K, prmg)
-    order = ZZRingElem(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
+    order = ZZRingElem(Int(GAP.Globals.Size(fg)))
     np = remove(order, p)[2]
     if isone(np) && GAP.Globals.IsCyclic(fg)
       push!(normal_cyclic_and_contained, prmg)
@@ -318,14 +318,14 @@ function _to_subgroup_of_kernel(cocycle::cocycle_ctx, S)
     el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
     push!(images_inclusion, GAP.Globals.Image(pr1, el_E))
   end
-  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.julia_to_gap(images_inclusion))
+  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.GapObj(images_inclusion))
   gensE_new = GAP.Globals.GeneratorsOfGroup(E_new)
   images_proj = []
   for i = 1:length(gensE_new)
     el = GAP.Globals.PreImagesRepresentative(pr1, gensE_new[i])
     push!(images_proj, GAP.Globals.Image(cocycle.projection, el))
   end
-  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
+  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.GapObj(images_proj))
   local new_coc
   let cocycle = cocycle, pr = pr
     function new_coc(x::GAP.GapObj, y::GAP.GapObj)
@@ -355,7 +355,7 @@ function _to_prime_power_kernel(cocycle::cocycle_ctx, p::Int)
   E = GAP.Globals.Source(cocycle.projection)
   G = GAP.Globals.ImagesSource(cocycle.projection)
   sizeG = GAP.Globals.Size(G)
-  S = GAP.Globals.Subgroup(A, GAP.julia_to_gap(gens_sub))
+  S = GAP.Globals.Subgroup(A, GAP.GapObj(gens_sub))
   pr = GAP.Globals.NaturalHomomorphismByNormalSubgroup(A, S)
   #I still need to create the maps.
   S1 = GAP.Globals.Image(cocycle.inclusion, S)
@@ -369,14 +369,14 @@ function _to_prime_power_kernel(cocycle::cocycle_ctx, p::Int)
     el_E = GAP.Globals.Image(cocycle.inclusion, el_A)
     push!(images_inclusion, GAP.Globals.Image(pr1, el_E))
   end
-  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.julia_to_gap(images_inclusion))
+  inclusion = GAP.Globals.GroupHomomorphismByImages(A_new, E_new, gensA_new, GAP.GapObj(images_inclusion))
   gensE_new = GAP.Globals.GeneratorsOfGroup(E_new)
   images_proj = []
   for i = 1:length(gensE_new)
     el = GAP.Globals.PreImagesRepresentative(pr1, gensE_new[i])
     push!(images_proj, GAP.Globals.Image(cocycle.projection, el))
   end
-  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.julia_to_gap(images_proj))
+  projection = GAP.Globals.GroupHomomorphismByImages(E_new, G, gensE_new, GAP.GapObj(images_proj))
   local new_coc
   let cocycle = cocycle, pr = pr
     function new_coc(x::GAP.GapObj, y::GAP.GapObj)
@@ -399,7 +399,7 @@ function assure_isomorphism(F::FieldsTower, G)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   iso = GAP.Globals.IsomorphismGroups(Gperm, G)
-  D = Dict{NfToNfMor, GAP.GapObj}()
+  D = Dict{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField), GAP.GapObj}()
   for i = 1:length(autsK)
     permgap = _perm_to_gap_perm(permGC[i])
     k = GAP.Globals.Image(iso, permgap)
@@ -432,7 +432,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   gK = GAP.Globals.GeneratorsOfGroup(K)
   for s = 1:length(gens)
     ind_auts_quo[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
-    igK = GAP.julia_to_gap([GAP.Globals.Image(gens[s], gK[i]) for i = 1:length(gK)])
+    igK = GAP.GapObj([GAP.Globals.Image(gens[s], gK[i]) for i = 1:length(gK)])
     h = GAP.Globals.GroupHomomorphismByImages(K, K, gK, igK)
     ind_auts_sub[s] = GAP.Globals.Image(isoAutK, h)
   end
@@ -443,7 +443,7 @@ function _autos_to_check(G::GAP.GapObj, K::GAP.GapObj, E::GAP.GapObj, mG::GAP.Ga
   for s = 1:length(gens)
     gensubs[s] = GAP.Globals.Image(EmbAutG, ind_auts_quo[s]) * GAP.Globals.Image(EmbAutK, ind_auts_sub[s])
   end
-  S = GAP.Globals.Subgroup(GProd, GAP.julia_to_gap(gensubs))
+  S = GAP.Globals.Subgroup(GProd, GAP.GapObj(gensubs))
   @vprintln :BrauerObst 1 "Map constructed. Enumerating cosets..."
   Transv = GAP.Globals.RightTransversal(GProd, S)
   Tperm = GAP.Globals.List(Transv)
@@ -472,7 +472,7 @@ function projections(mG::GAP.GapObj)
   for s = 1:length(gens)
     gens_img[s] = GAP.Globals.Image(isoAutG, GAP.Globals.InducedAutomorphism(mG, gens[s]))
   end
-  S = GAP.Globals.Subgroup(permAutG, GAP.julia_to_gap(gens_img))
+  S = GAP.Globals.Subgroup(permAutG, GAP.GapObj(gens_img))
   @vprintln :BrauerObst 1 "Map constructed. Enumerating cosets..."
   Transv = GAP.Globals.RightTransversal(permAutG, S)
   Tperm = GAP.Globals.List(Transv)
@@ -583,14 +583,14 @@ end
 #
 ###############################################################################
 
-function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNfMor}, p::Int)
-  p2 = is_power(length(G))[2]
+function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::Int)
+  p2 = is_perfect_power_with_data(length(G))[2]
   if p == p2
     return G
   end
   H = GAP.Globals.SylowSubgroup(Gperm, p)
   lGp = GAP.Globals.Size(H)
-  Gp = Vector{Hecke.NfToNfMor}(undef, lGp)
+  Gp = Vector{Hecke.Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, lGp)
   j = 1
   for ind = 1:length(G)
     if j > lGp
@@ -604,7 +604,7 @@ function pSylow(Gperm::GAP.GapObj, permGAP::Vector{GAP.GapObj}, G::Vector{NfToNf
   return Gp
 end
 
-function pSylow(G::Vector{NfToNfMor}, p::Int)
+function pSylow(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::Int)
   com, uncom = ppio(length(G), p)
   if uncom == 1
     return G
@@ -624,7 +624,7 @@ end
 #
 ################################################################################
 
-function _ext_cycl(G::Vector{Hecke.NfToNfMor}, d::Int)
+function _ext_cycl(G::Vector{<:Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, d::Int)
   K = domain(G[1])
   Kc = cyclotomic_extension(K, d, compute_maximal_order = true, compute_LLL_basis = false, cached = false)
   automorphism_list(Kc; gens = G, copy = false)
@@ -645,7 +645,7 @@ function check_obstruction_prime(F::FieldsTower, cocycles::Vector{cocycle_ctx}, 
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), ZZRingElem(p))
+  if is_divisible_by(order(T), ZZRingElem(p))
     return _obstruction_prime_no_extend(F, cocycles, p)
   end
   lp = ramified_primes(F)
@@ -662,12 +662,12 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   GC = automorphism_list(K, copy = false)
   D = x.isomorphism
   Pcomp = 2
-  R = GF(Pcomp, cached = false)
+  R = Native.GF(Pcomp, cached = false)
   Rx = polynomial_ring(R, "x", cached = false)[1]
   ff = Rx(K.pol)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff))
     Pcomp = next_prime(Pcomp)
-    R = GF(Pcomp, cached = false)
+    R = Native.GF(Pcomp, cached = false)
     Rx = polynomial_ring(R, "x", cached = false)[1]
     ff = Rx(K.pol)
   end
@@ -694,7 +694,7 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   for i = 1:length(obstruction)
     if isdefined(cocycles[i], :inclusion_of_pSylow)
       #I need to assert that I took the right pSylow.
-      Gp1 = NfToNfMor[]
+      Gp1 = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
       for g in GC
         el = D1[Rx(image_primitive_element(g))]
         if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
@@ -738,13 +738,13 @@ function _obstruction_prime(x::FieldsTower, cocycles::Vector{cocycle_ctx}, p)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 2
-  R = GF(Pcomp, cached = false)
+  R = Native.GF(Pcomp, cached = false)
   Rx = polynomial_ring(R, "x", cached = false)[1]
   ff1 = Rx(K.pol)
   ff2 = Rx(K1.pol)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
-    R = GF(Pcomp, cached = false)
+    R = Native.GF(Pcomp, cached = false)
     Rx = polynomial_ring(R, "x", cached = false)[1]
     ff1 = Rx(K.pol)
     ff2 = Rx(K1.pol)
@@ -796,17 +796,17 @@ end
 #
 ################################################################################
 
-function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
+function action_on_roots(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, zeta::AbsSimpleNumFieldElem, pv::Int)
   act_on_roots = Vector{Int}(undef, length(G))
   p = 11
   K = domain(G[1])
   Qx = parent(K.pol)
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   fmod = Rx(K.pol)
   while iszero(discriminant(fmod)) || iszero(mod(pv, p))
     p = next_prime(p)
-    R = GF(p, cached = false)
+    R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
     fmod = Rx(K.pol)
   end
@@ -829,17 +829,17 @@ function action_on_roots(G::Vector{NfToNfMor}, zeta::nf_elem, pv::Int)
   return act_on_roots
 end
 
-function restriction(autsK1::Vector{NfToNfMor}, autsK::Vector{NfToNfMor}, mp::NfToNfMor)
+function restriction(autsK1::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, autsK::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, mp::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(mp)
   K1 = codomain(mp)
   p = 11
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   fmod = Rx(K1.pol)
   while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
     p = next_prime(p)
-    R = GF(p, cached = false)
+    R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
     fmod = Rx(K1.pol)
@@ -886,14 +886,14 @@ function check_obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, n::
   lp = ramified_primes(F)
   assure_automorphisms(F)
 
-  v, p = is_power(n)
+  v, p = is_perfect_power_with_data(n)
   if all(x -> (isone(mod(x, n)) || x == p), lp)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
   K = F.field
   OK = maximal_order(K)
   T, mT = torsion_unit_group(OK)
-  if divisible(order(T), n)
+  if is_divisible_by(order(T), n)
     return _obstruction_pp_no_extend(F, cocycles, n)
   end
   =#
@@ -902,7 +902,7 @@ end
 
 
 function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = is_power(pv)
+  v, p = is_perfect_power_with_data(pv)
   Kc = _ext_cycl(F.generators_of_automorphisms, pv)
   K = F.field
   K1 = Kc.Ka
@@ -914,13 +914,13 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 7
-  R = GF(Pcomp, cached = false)
+  R = Native.GF(Pcomp, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   ff2 = Rx(K1.pol)
   while iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
-    R = GF(Pcomp, cached = false)
+    R = Native.GF(Pcomp, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
     ff2 = Rx(K1.pol)
@@ -945,7 +945,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   for i = 1:length(obstruction)
     #I create the cocycle
     if isdefined(cocycles[i], :inclusion_of_pSylow)
-      Gp1 = NfToNfMor[]
+      Gp1 = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
       for g in autsK1
         el = D1[Rx(image_primitive_element(g))]
         if GAP.Globals.IN(el, GAP.Globals.Image(cocycles[i].inclusion_of_pSylow))
@@ -969,7 +969,7 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
     end
     #I have to find the subgroup of Gp such that the action of Gp on the roots of unity
     #coincides with the action on the kernel
-    Stab = NfToNfMor[]
+    Stab = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
     inclusion = cocycles[i].inclusion
     projection = cocycles[i].projection
     inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
@@ -999,19 +999,19 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
 end
 
 function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
-  v, p = is_power(pv)
+  v, p = is_perfect_power_with_data(pv)
   K = F.field
   autsK = automorphism_list(K, copy = false)
   #I construct the group and the isomorphisms between the automorphisms and the gap group.
   permGC = _from_autos_to_perm(autsK)
   Gperm = _perm_to_gap_grp(permGC)
   Pcomp = 7
-  R = GF(Pcomp, cached = false)
+  R = Native.GF(Pcomp, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
   ff1 = Rx(K.pol)
   while iszero(discriminant(ff1))
     Pcomp = next_prime(Pcomp)
-    R = GF(Pcomp, cached = false)
+    R = Native.GF(Pcomp, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
     ff1 = Rx(K.pol)
   end
@@ -1041,7 +1041,7 @@ function _obstruction_pp_no_extend(F::FieldsTower, cocycles::Vector{cocycle_ctx}
     end
     #I have to find the subgroup of Gp such that the action of Gp on the roots of unity
     #coincides with the action on the kernel
-    Stab = NfToNfMor[]
+    Stab = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[]
     inclusion = cocycles[i].inclusion
     projection = cocycles[i].projection
     inc_gen = GAP.Globals.Image(inclusion, cocycles[i].gen_kernel)
@@ -1073,7 +1073,7 @@ end
 #
 ################################################################################
 
-function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, v::Int, Rx::fpPolyRing)
+function issplit_cpa(F::FieldsTower, G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Coc::Function, p::Int, v::Int, Rx::fpPolyRing)
   K = F.field
   @vtime :BrauerObst 1 if p == 2 && is_totally_complex(K) && !is_split_at_infinity(K, G, Coc, Rx)
     return false
@@ -1106,7 +1106,7 @@ function issplit_cpa(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int
   return true
 end
 
-function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Function, Rx::fpPolyRing)
+function is_split_at_infinity(K::AbsSimpleNumField, G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Coc::Function, Rx::fpPolyRing)
   fl, aut = _find_complex_conjugation(K, G)
   if !fl
     return true
@@ -1115,13 +1115,13 @@ function is_split_at_infinity(K::AnticNumberField, G::Vector{NfToNfMor}, Coc::Fu
   return !isone(Coc(Rx(image_primitive_element(aut)), Rx(image_primitive_element(aut))))
 end
 
-function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::Int, n::Int, Rx::fpPolyRing)
+function issplit_at_p(F::FieldsTower, G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Coc::Function, p::Int, n::Int, Rx::fpPolyRing)
   K = domain(G[1])
   O = maximal_order(K)
   lp = prime_decomposition(O, p, cached = true)
   if degree(O) == length(G)
     if !is_coprime(length(G), p)
-      q = is_power(n)[2]
+      q = is_perfect_power_with_data(n)[2]
       Gq = pSylow(G, q)
       return issplit_at_P(O, Gq, Coc, lp[1][1], n, Rx)
     else
@@ -1138,22 +1138,22 @@ function issplit_at_p(F::FieldsTower, G::Vector{NfToNfMor}, Coc::Function, p::In
 end
 
 
-function _find_theta(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
+function _find_theta(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, F::fqPolyRepField, mF::Hecke.NfOrdToFqNmodMor, e::Int)
   #G is the decomposition group of a prime ideal P
   # F is the quotient, mF the map
   K = domain(G[1])
   O = maximal_order(K)
-  p = is_power(e)[2]
+  p = is_perfect_power_with_data(e)[2]
   t = div(e, p)
   gF = gen(F)
   igF = K(mF\gF)
   q = 2
-  R = residue_ring(FlintZZ, q, cached = false)
+  R = residue_ring(ZZ, q, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q = next_prime(q)
-    R = residue_ring(FlintZZ, q, cached = false)
+    R = residue_ring(ZZ, q, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
@@ -1179,21 +1179,21 @@ function _find_theta(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToF
 end
 
 
-function _find_frob(G::Vector{NfToNfMor}, F::fqPolyRepField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NfToNfMor)
+function _find_frob(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, F::fqPolyRepField, mF::Hecke.NfOrdToFqNmodMor, e::Int, f::Int, q::Int, theta::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(G[1])
   O = maximal_order(K)
   q1 = 2
-  R = residue_ring(FlintZZ, q1, cached = false)
+  R = residue_ring(ZZ, q1, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
   fmod = Rt(K.pol)
   while iszero(discriminant(fmod))
     q1 = next_prime(q1)
-    R = residue_ring(FlintZZ, q1, cached = false)
+    R = residue_ring(ZZ, q1, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
     fmod = Rt(K.pol)
   end
   gK = gen(K)
-  p = is_power(e)[2]
+  p = is_perfect_power_with_data(e)[2]
   t = div(e, p)
   expo = mod(q, e)
   gF = gen(F)
@@ -1254,13 +1254,13 @@ end
 
 
 
-function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl, n::Int, Rx::fpPolyRing)
+function issplit_at_P(O::AbsSimpleNumFieldOrder, G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, Coc::Function, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, n::Int, Rx::fpPolyRing)
   e = gcd(length(G), ramification_index(P))
   if e == 1
     return true
   end
   f = gcd(length(G), degree(P))
-  if divisible(norm(P)-1, e)
+  if is_divisible_by(norm(P)-1, e)
     c = divexact(norm(P)-1, e)
     if f == 1 && iszero(mod(c, n))
       return true
@@ -1287,7 +1287,7 @@ function issplit_at_P(O::NfOrd, G::Vector{NfToNfMor}, Coc::Function, P::NfOrdIdl
   theta1 = _find_theta(InGrp, F, mF, e)
 
   theta = Rx(image_primitive_element(theta1))
-  fmod = Rx(nf(O).pol)
+  fmod = Rx(Hecke.nf(O).pol)
   #I have found my generators. Now, we find the elements to test if it splits.
   if !iszero(mod(c, n))
     powtheta = theta

@@ -25,7 +25,7 @@
 
   F = GF(13)
   E = elliptic_curve_from_j_invariant(F(1))
-  E = EllipticCurve(F, [1, 0, 0, 8, 6])
+  E = elliptic_curve(F, [1, 0, 0, 8, 6])
   Fx, x = F["x"]
   g = x^18 + 11*x^16 + 7*x^15 + 6*x^13 + x^12 + 9*x^11 + 12*x^10 + 8*x^9 + 3*x^8 + 4*x^7 + 4*x^6 + 5*x^5 + 7*x^4 + 3*x^3 + 8*x^2 + 6*x + 5
   i = isogeny_from_kernel(E, g)

@@ -10,7 +10,7 @@ function monic_randpoly(S::PolyRing, dmin::Int, dmax::Int, n::Int)
 end
 
 @testset "Relative maximal orders of simple extensions" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 36*x + 16
   K, a = number_field(f, "a", cached = false)
   Ky, y = K["y"]
@@ -20,8 +20,8 @@ end
   Oabs = Hecke.maximal_order_via_absolute(L)
   Brel = Hecke.basis_pmatrix(Orel, copy = false)
   Babs = Hecke.basis_pmatrix(Oabs, copy = false)
-  @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Brel, Babs; shape = :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Babs, Brel; shape = :lowerleft)
 
   for i = 1:1
     f = monic_randpoly(Qx, 2, 3, 10)
@@ -41,8 +41,8 @@ end
     Oabs = Hecke.maximal_order_via_absolute(L)
     Brel = Hecke.basis_pmatrix(Orel, copy = false)
     Babs = Hecke.basis_pmatrix(Oabs, copy = false)
-    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
-    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs; shape = :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel; shape = :lowerleft)
   end
 
   f = x^4 - 2*x^3 - 353*x^2 + 354*x + 24014;
@@ -68,14 +68,14 @@ end
     Oabs = Hecke.maximal_order_via_absolute(L)
     Brel = Hecke.basis_pmatrix(Orel, copy = false)
     Babs = Hecke.basis_pmatrix(Oabs, copy = false)
-    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
-    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Brel, Babs; shape = :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Babs, Brel; shape = :lowerleft)
   end
 end
 
 
 @testset "Relative maximal orders of non-simple extensions" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
 
   K, a = number_field(x, "a")
   OK = maximal_order(K)
@@ -92,8 +92,8 @@ end
     Cs[i] = ideal(OK, K(QQFieldElem(1, 2)))
   end
   Bs = Hecke.pseudo_matrix(Ms, Cs)
-  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs; shape = :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns; shape = :lowerleft)
 
   K, a = number_field(x^2 - 2*x + 38, "a", cached = false)
   OK = maximal_order(K)
@@ -110,8 +110,8 @@ end
     Cs[i] = ideal(OK, K(QQFieldElem(1, 4)))
   end
   Bs = Hecke.pseudo_matrix(Ms, Cs)
-  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
-  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs; shape = :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns; shape = :lowerleft)
 
   for i = 1:1
     f = monic_randpoly(Qx, 2, 2, 10)
@@ -121,7 +121,7 @@ end
     K, a = number_field(f, "a")
 
     Ky, y = K["y"]
-    g = Vector{Generic.Poly{nf_elem}}()
+    g = Vector{Generic.Poly{AbsSimpleNumFieldElem}}()
     h = monic_randpoly(Ky, 2, 2, 10)
     while !is_irreducible(h)
       h = monic_randpoly(Ky, 2, 2, 10)
@@ -138,13 +138,13 @@ end
     Os = Hecke.maximal_order_via_simple(L)
     Bns = Hecke.basis_pmatrix(Ons, copy = false)
     Bs = Hecke.basis_pmatrix(Os, copy = false)
-    @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
-    @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Bns, Bs; shape = :lowerleft)
+    @test Hecke._spans_subset_of_pseudohnf(Bs, Bns; shape = :lowerleft)
   end
 end
 
 @testset "Field towers" begin
-   Qx, x = FlintQQ["x"]
+   Qx, x = QQ["x"]
 
   Q1, q1 = number_field(x, "q1", cached = false)
   Z1 = maximal_order(Q1)
@@ -175,7 +175,7 @@ end
 end
 
 @testset "Different/codifferent" begin
-  Qx, x = polynomial_ring(FlintQQ, "x", cached = false)
+  Qx, x = polynomial_ring(QQ, "x", cached = false)
   f = x^2 - 2
   K, a = number_field(f, "a", cached = false)
   Kt, t = K["t"]
@@ -190,7 +190,7 @@ end
 end
 
 @testset "rand" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^2 + 36*x + 16
   K, a = number_field(f, "a")
   Ky, y = K["y"]
@@ -212,3 +212,33 @@ K, a = quadratic_field(5)
 Kt, t = K["t"]
 L, b = number_field(polynomial(K, [-2, 0, 0, 1]), "b");
 @test_throws Hecke.NotImplemented extend(equation_order(L), [b])
+
+# Towards non-nice equations
+
+begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x - 1)
+  Kt, t = K["t"]
+  L, b = number_field(t^2 + 1//2)
+  c = Hecke._integral_multiplicator(b)
+  @test is_integral(c * b)
+  O = any_order(L)
+  @test Hecke.nf(O) === L
+  L, b = number_field([t^2 + 1//2])
+  O = any_order(L)
+  @test Hecke.nf(O) === L
+end
+
+# hash
+let
+  Qx, x = QQ["x"]
+  f = x^2 + 36*x + 16
+  K, a = number_field(f, "a", cached = false)
+  Ky, y = K["y"]
+  g = y^3 - 51*y^2 + 30*y - 28
+  L, b = number_field(g, "b", cached = false)
+  P = pseudo_matrix(identity_matrix(K, 3))
+  @test order(L, P) == order(L, P)
+  @test order(L, P) !== order(L, P)
+  @test hash(order(L, P)) == hash(order(L, P))
+end

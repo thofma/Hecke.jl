@@ -1,5 +1,5 @@
 @testset "Test composition order" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x^6 + 108, "a")
   A = automorphism_list(K)
   for f in A
@@ -11,7 +11,7 @@
 end
 
 @testset "Induce image" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   K, a = number_field(x^6 + 108, "a")
   A = automorphism_list(K)
   OK = maximal_order(K)
@@ -23,7 +23,7 @@ end
     @test id !== nothing
   end
   f = hom(K, K, a^4//12+a//2)
-  E = EquationOrder(K)
+  E = equation_order(K)
   I = ideal(E, E(a))
   @test_throws ErrorException Hecke.induce_image(f, I)
 
@@ -31,7 +31,7 @@ end
 
 
 @testset "Automorphisms" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^32 - 217*x^28 + 42321*x^24 - 999502*x^20 + 18913054*x^16 - 80959662*x^12 + 277668081*x^8 - 115322697*x^4 + 43046721
   K, a = number_field(f, cached = false, check = false)
   auts = Hecke._automorphisms(K, is_abelian = true)
@@ -63,7 +63,7 @@ end
 end
 
 @testset "CM" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^20 + 6*x^19 + 33*x^18 + 109*x^17 + 332*x^16 + 706*x^15 + 1299*x^14 + 1910*x^13 + 3303*x^12 + 7116*x^11 + 14445*x^10 + 24009*x^9 + 30102*x^8 + 37094*x^7 + 54187*x^6 + 82991*x^5 + 119418*x^4 + 148247*x^3 + 185442*x^2 + 184250*x + 112225
   K, a = number_field(f, "a", cached = false)
   G, mG = automorphism_group(K)
@@ -77,10 +77,14 @@ end
   @test fl
   fl, tau = Hecke.is_cm_field(K)
   @test fl
+
+  Qt, t = QQ["t"]
+  K, _ = number_field(t+1; cached=false)
+  @test length(automorphism_list(K)) == 1
 end
 
 @testset "parents" begin
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x - 1
   K, a = number_field(f, "a", cached = false)
   G, mG = automorphism_group(K)

@@ -7,12 +7,12 @@ using Hecke
 
 #= kept for the comments
 
-function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
+function mult_syzygies_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(2^10) #experimentally, the runtime is dominated by
          # log which in case is dominated by the a^(p^n-1) in the 1st step
          # thus try p smaller..., ideally also try n smaller...
          # also, see comments at _log
-  u = FacElem{nf_elem, AnticNumberField}[]
+  u = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
   la = [conjugates_pAdic_log(e, p, 300) for e = a] #can loose precision
     # needs to be traced
     # precision needs to be updated.
@@ -25,14 +25,14 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
       continue
     end
     lv = vcat(lu, la[i])
-    k = Hecke.left_kernel_basis(lv)
+    k = Hecke._left_kernel_basis(lv)
     @assert length(k) < 2
     if length(k) == 0
       println("new at $i")
       push!(u, a[i])
       lu = vcat(lu, la[i])
     else # length == 1 extend the module
-      r = [lift_reco(FlintQQ, x, reco = true) for x = k[1]]
+      r = [lift_reco(QQ, x, reco = true) for x = k[1]]
       #lift can fail if precision wrong.
       #or at least result is (can be) garbage
       #= bound on relation
@@ -53,7 +53,7 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
         and using universal lower bounds on the size of units (Dobrowski)
         and the successive minimal, we can get a lower bound on the
         regulator of <e_i>. Hadramat gives an upper bound on reg(<u_i>)
-        (regulator in the sence of lattice disciminant)
+        (regulator in the sense of lattice disciminant)
 
         Think: can we use the p-adic regulator to help???
                possibly increase precision until we either have
@@ -61,7 +61,7 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
                ignore bounds?
       =#
       d = reduce(lcm, map(denominator, r))
-      gamma = [FlintZZ(x*d) for x = r]
+      gamma = [ZZ(x*d) for x = r]
       #technically, this relations needs to be verified.
       #=
         we have a relation mod p^k, which means
@@ -84,7 +84,7 @@ function mult_syzygies_units(a::Vector{FacElem{nf_elem, AnticNumberField}})
         Not done.
       =#
       @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-      _, U = hnf_with_transform(matrix(FlintZZ, length(r), 1, gamma))
+      _, U = hnf_with_transform(matrix(ZZ, length(r), 1, gamma))
       U = inv(U)
       U = sub(U, 1:nrows(U), 2:ncols(U))
       #new basis is the cols of U
@@ -98,8 +98,8 @@ end
 
 =#
 
-function non_torsion_lower_bound(R::NfOrd, B::Int = 2*degree(R))
-  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(FlintZZ, 0, 0))
+function non_torsion_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
+  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(ZZ, 0, 0))
   n = degree(R)
   i = B
   while true
@@ -117,8 +117,8 @@ function non_torsion_lower_bound(R::NfOrd, B::Int = 2*degree(R))
   end
 end
 
-function unit_lower_bound(R::NfOrd, B::Int = 2*degree(R))
-  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(FlintZZ, 0, 0))
+function unit_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
+  L = Hecke.enum_ctx_from_ideal(1*R, zero_matrix(ZZ, 0, 0))
   n = degree(R)
   i = B
   while true
@@ -141,7 +141,7 @@ function unit_lower_bound(R::NfOrd, B::Int = 2*degree(R))
 end
 
 
-function regulator_lower_bound(R::NfOrd, B::Int = 2*degree(R))
+function regulator_lower_bound(R::AbsSimpleNumFieldOrder, B::Int = 2*degree(R))
   Ms, _ = unit_lower_bound(R, B)
   r1, r2 = signature(R)
   r = r1+r2-1

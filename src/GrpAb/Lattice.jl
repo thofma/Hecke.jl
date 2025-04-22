@@ -2,34 +2,6 @@
 #
 #            GrpAb/Lattice.jl : Lattice of abelian groups
 #
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2017 Tommy Hofmann
-#
 ################################################################################
 
 ################################################################################
@@ -369,7 +341,7 @@ end
 function Base.show(io::IO, L::RelLattice{T, D}) where {T, D}
   print("Relation lattice for $T with underlying graph \n$(L.graph)\n")
   print("In weak dict: $(length(L.weak_vertices))\n")
-  print("In dict: $(length(L.block_gc))\n")
+  print("In dict: $(length(L.block_gc))")
 end
 
 # The finalizer, which must be attached to a every group in the lattice.
@@ -517,6 +489,10 @@ end
 # "overgroup" M. If so, the second return value is M and the third and fourth
 # return values describe the map from G to M and H to M respectively.
 function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D}
+  if G === H
+    return true, G, L.make_id(G)::D, L.make_id(G)::D
+  end
+
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
     return false, G, L.zero, L.zero
   end

@@ -1,6 +1,6 @@
 @testset "Ideal class monoid of orders in number fields" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 + 31*x^2 + 43*x + 77
   K, a = number_field(f, "a")
   O = equation_order(K)
@@ -24,10 +24,10 @@ end
 
 @testset "Ideal class monoid of orders in algebras" begin
 
-  Qx, x = FlintQQ["x"]
+  Qx, x = QQ["x"]
   f = x^3 + 31*x^2 + 43*x + 77
-  A = AlgAss(f)
-  O = Order(A, basis(A))
+  A = StructureConstantAlgebra(f)
+  O = order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 59
   @test !is_isomorphic(evaluate(icm[1]), evaluate(icm[2]))
@@ -40,8 +40,8 @@ end
 
   f1 = x^2 + 4*x + 7
   f2 = x^3 - 9*x^2 - 3*x - 1
-  A = AlgAss(f1*f2)
-  O = Order(A, basis(A))
+  A = StructureConstantAlgebra(f1*f2)
+  O = order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 852
 
@@ -49,11 +49,11 @@ end
 
 @testset "Conjugacy of integral matrices" begin
 
-  Zx, x = FlintZZ["x"]
+  Zx, x = ZZ["x"]
   f = x^3 - 4x^2 + 8x + 5
 
   M = companion_matrix(f)
-  U = identity_matrix(FlintZZ, nrows(M))
+  U = identity_matrix(ZZ, nrows(M))
   for i = 1:nrows(M)
     for j = i + 1:ncols(M)
       U[i, j] = rand(-10:10)
@@ -65,7 +65,7 @@ end
   @test b == true
   @test M == V*N*inv(V)
 
-  N = identity_matrix(FlintZZ, nrows(M))
+  N = identity_matrix(ZZ, nrows(M))
   b, V = is_conjugate(M, N)
   @test b == false
 
@@ -73,7 +73,7 @@ end
   h = x^2 - x + 5
 
   M = companion_matrix(f*g*h)
-  U = identity_matrix(FlintZZ, nrows(M))
+  U = identity_matrix(ZZ, nrows(M))
   for i = 1:nrows(M)
     for j = i + 1:ncols(M)
       U[i, j] = rand(-10:10)
@@ -85,8 +85,12 @@ end
   @test b == true
   @test M == V*N*inv(V)
 
-  N = identity_matrix(FlintZZ, nrows(M))
+  N = identity_matrix(ZZ, nrows(M))
   b, V = is_conjugate(M, N)
   @test b == false
 
+  M = ZZ[-2 0; -3 -8]
+  N = ZZ[2 5; -8 -12]
+  b, V = is_conjugate(M, N)
+  @test b == false
 end

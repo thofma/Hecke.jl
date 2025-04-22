@@ -1,7 +1,7 @@
-density(f::PolyElem) = length(findall(x->!iszero(x), coefficients(f)))/length(f)
+density(f::PolyRingElem) = length(findall(x->!iszero(x), coefficients(f)))/length(f)
 
 #move elsewhere? Not used in here
-function Hecke.representation_matrix(a::ResElem{<:PolyElem})
+function Hecke.representation_matrix(a::ResElem{<:PolyRingElem})
   R = parent(a)
   S = base_ring(base_ring(R))
   n = degree(modulus(R))

@@ -1,54 +1,8 @@
 ################################################################################
 #
-#    NfOrd/Ideal/Ideal.jl : Ideals in orders of absolute number fields
-#
-# This file is part of Hecke.
-#
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-#  Copyright (C) 2015, 2016, 2017 Tommy Hofmann
-#  Copyright (C) 2015, 2016, 2017 Claus Fieker
+#    AbsSimpleNumFieldOrder/Ideal/Ideal.jl : Ideals in orders of absolute number fields
 #
 ################################################################################
-
-export show, ideal
-
-export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
-       prime_ideals_up_to, factor, divexact, is_ramified, anti_uniformizer,
-       uniformizer, is_coprime, conductor, colon, equation_order
-
-export NfOrdIdl
-
-export deepcopy, parent, order, basis, basis_matrix, basis_mat_inv, minimum, norm,
-       ==, in, +, *, intersect, lcm, idempotents, mod, pradical
-
-add_assertion_scope(:Rres)
-new = !true
-
-function toggle()
-  global new = !new
-end
 
 ################################################################################
 #
@@ -62,11 +16,13 @@ end
 # We hack around it by don't deepcopying A.valuation.
 # Note that B therefore contains a reference to A (A cannot be freed unless
 # B is freed).
-function Base.deepcopy_internal(A::NfAbsOrdIdl, dict::IdDict)
+function Base.deepcopy_internal(A::AbsNumFieldOrderIdeal, dict::IdDict)
   B = typeof(A)(order(A))
   for i in fieldnames(typeof(A))
     if isdefined(A, i)
-      if i == :valuation || i == :order
+      if i === :valuation
+        continue
+      elseif i === :order
         setfield!(B, i, getfield(A, i))
       else
         setfield!(B, i, Base.deepcopy_internal(getfield(A, i), dict))
@@ -82,7 +38,7 @@ end
 #
 ################################################################################
 
-parent(A::NfAbsOrdIdl) = NfAbsOrdIdlSet(order(A), false)
+parent(A::AbsNumFieldOrderIdeal) = AbsNumFieldOrderIdealSet(order(A), false)
 
 #################################################################################
 #
@@ -90,8 +46,8 @@ parent(A::NfAbsOrdIdl) = NfAbsOrdIdlSet(order(A), false)
 #
 #################################################################################
 
-function IdealSet(O::NfOrd)
-   return NfAbsOrdIdlSet(O)
+function IdealSet(O::AbsSimpleNumFieldOrder)
+   return AbsNumFieldOrderIdealSet(O)
 end
 
 ################################################################################
@@ -100,11 +56,9 @@ end
 #
 ################################################################################
 
-elem_type(::Type{NfOrdIdlSet}) = NfOrdIdl
+elem_type(::Type{AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
-elem_type(::NfOrdIdlSet) = NfOrdIdl
-
-parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
+parent_type(::Type{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 ################################################################################
 #
@@ -112,7 +66,11 @@ parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 #
 ################################################################################
 
-==(x::NfAbsOrdIdlSet, y::NfAbsOrdIdlSet) = x.order === y.order
+==(x::AbsNumFieldOrderIdealSet, y::AbsNumFieldOrderIdealSet) = x.order === y.order
+
+function Base.hash(x::AbsNumFieldOrderIdealSet, h::UInt)
+  return hash(objectid(x.order), h)
+end
 
 ################################################################################
 #
@@ -123,7 +81,7 @@ parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 # a (bad) hash function
 # - slow (due to basis)
 # - unless basis is in HNF it is also non-unique
-function Base.hash(A::NfAbsOrdIdl, h::UInt)
+function Base.hash(A::AbsNumFieldOrderIdeal, h::UInt)
   return Base.hash(basis_matrix(A, copy = false), h)
 end
 
@@ -133,13 +91,12 @@ end
 #
 ################################################################################
 
-function show(io::IO, a::NfAbsOrdIdlSet)
+function show(io::IO, a::AbsNumFieldOrderIdealSet)
   print(io, "Set of ideals of ")
   show(Base.IOContext(io, :compact => true), order(a))
-  print(io, "\n")
 end
 
-function show(io::IO, a::NfAbsOrdIdl)
+function show(io::IO, a::AbsNumFieldOrderIdeal)
   if is_maximal_known_and_maximal(order(a))
     return show_maximal(io, a)
   else
@@ -147,7 +104,7 @@ function show(io::IO, a::NfAbsOrdIdl)
   end
 end
 
-function show_gen(io::IO, a::NfAbsOrdIdl)
+function show_gen(io::IO, a::AbsNumFieldOrderIdeal)
   print(io, "Ideal of (")
   show(IOContext(io, :compact => true), order(a))
   print(io, ")\n")
@@ -161,7 +118,7 @@ function show_gen(io::IO, a::NfAbsOrdIdl)
   end
 end
 
-function show_maximal(io::IO, id::NfAbsOrdIdl)
+function show_maximal(io::IO, id::AbsNumFieldOrderIdeal)
   compact = get(io, :compact, false)
   if compact
     if has_2_elem(id)
@@ -207,7 +164,7 @@ end
 #
 ################################################################################
 
-function copy(i::NfAbsOrdIdl)
+function copy(i::AbsNumFieldOrderIdeal)
   return i
 end
 
@@ -218,18 +175,18 @@ end
 ################################################################################
 
 @doc raw"""
-    ideal(O::NfAbsOrd, v::Vector{NfAbsOrdElem}) -> NfAbsOrdIdl
+    ideal(O::AbsNumFieldOrder, v::Vector{AbsNumFieldOrderElem}) -> AbsNumFieldOrderIdeal
 
 Creates the ideal of $O$ generated by the elements contained in $v$.
 """
-function ideal(O::NfAbsOrd, v::Vector{<:NfAbsOrdElem})
+function ideal(O::AbsNumFieldOrder, v::Vector{<:AbsNumFieldOrderElem})
   if isempty(v)
     return ideal(O, 0)
   end
   for i = 1:length(v)
     @assert O === parent(v[i])
   end
-  M = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+  M = zero_matrix(ZZ, 2*degree(O), degree(O))
   M1 = representation_matrix(v[1])
   _hnf!(M1, :lowerleft)
   _copy_matrix_into_matrix(M, degree(O)+1, 1, M1)
@@ -255,84 +212,81 @@ function ideal(O::NfAbsOrd, v::Vector{<:NfAbsOrdElem})
 end
 
 @doc raw"""
-    ideal(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
+    ideal(O::AbsSimpleNumFieldOrder, x::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal
 
 Creates the principal ideal $(x)$ of $\mathcal O$.
 """
-function ideal(O::NfAbsOrd, x::NfAbsOrdElem)
-  return NfAbsOrdIdl(deepcopy(x))
+function ideal(O::AbsNumFieldOrder, x::AbsNumFieldOrderElem)
+  return AbsNumFieldOrderIdeal(deepcopy(x))
 end
 
 @doc raw"""
-    ideal(O::NfOrd, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false) -> NfAbsOrdIdl
+    ideal(O::AbsSimpleNumFieldOrder, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false) -> AbsNumFieldOrderIdeal
 
 Creates the ideal of $\mathcal O$ with basis matrix $M$. If `check` is set, then it is
 checked whether $M$ defines an ideal (expensive). If `M_in_hnf` is set, then it is assumed
 that $M$ is already in lower left HNF.
 """
-function ideal(O::NfAbsOrd, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
-  !M_in_hnf ? x = _hnf(M, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
-  #_trace_call(;print = true)
-  I = NfAbsOrdIdl(O, M)
+function ideal(O::AbsNumFieldOrder, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
+  x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
+  I = AbsNumFieldOrderIdeal(O, x)
   # The compiler stopped liking this recursion??
   # if check
   #   J = ideal(O, basis(I))
   #   @assert J == I
   # end
-
   return I
 end
 
-function _ideal(O::NfAbsOrd, M::ZZMatrix, M_in_hnf::Bool = false)
-  !M_in_hnf ? x = _hnf(M, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
+function _ideal(O::AbsNumFieldOrder, M::ZZMatrix, M_in_hnf::Bool = false)
+  x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
   #_trace_call(;print = true)
-  I = NfAbsOrdIdl(O, M)
-
+  I = AbsNumFieldOrderIdeal(O, x)
   return I
 end
 
 @doc raw"""
-    ideal(O::NfOrd, x::ZZRingElem, y::NfOrdElem) -> NfAbsOrdIdl
-    ideal(O::NfOrd, x::Integer, y::NfOrdElem) -> NfAbsOrdIdl
+    ideal(O::AbsSimpleNumFieldOrder, x::ZZRingElem, y::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal
+    ideal(O::AbsSimpleNumFieldOrder, x::Integer, y::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal
 
 Creates the ideal $(x, y)$ of $\mathcal O$.
 """
-function ideal(O::NfAbsOrd, x::ZZRingElem, y::NfAbsOrdElem)
+function ideal(O::AbsNumFieldOrder, x::ZZRingElem, y::AbsNumFieldOrderElem)
   @assert parent(y) === O
-  return NfAbsOrdIdl(deepcopy(x), deepcopy(y))
+  return AbsNumFieldOrderIdeal(x, y)
 end
 
-function ideal(O::NfAbsOrd, x::Integer, y::NfAbsOrdElem)
+function ideal(O::AbsNumFieldOrder, x::Integer, y::AbsNumFieldOrderElem)
   @assert parent(y) === O
-  return NfAbsOrdIdl(ZZRingElem(x), deepcopy(y))
+  return AbsNumFieldOrderIdeal(ZZRingElem(x), y)
 end
 
-function ideal(O::NfAbsOrd)
-  return NfAbsOrdIdl(O)
+function ideal(O::AbsNumFieldOrder)
+  return AbsNumFieldOrderIdeal(O)
 end
 
-function (S::NfAbsOrdIdlSet)()
-   return NfAbsOrdIdl(order(S))
+function (S::AbsNumFieldOrderIdealSet)()
+   return AbsNumFieldOrderIdeal(order(S))
 end
 
 @doc raw"""
-    ideal(O::NfOrd, a::ZZRingElem) -> NfAbsOrdIdl
-    ideal(O::NfOrd, a::Integer) -> NfAbsOrdIdl
+    ideal(O::AbsSimpleNumFieldOrder, a::ZZRingElem) -> AbsNumFieldOrderIdeal
+    ideal(O::AbsSimpleNumFieldOrder, a::Integer) -> AbsNumFieldOrderIdeal
 
 Returns the ideal of $\mathcal O$ which is generated by $a$.
 """
-ideal(O::NfAbsOrd, a::ZZRingElem)  = NfAbsOrdIdl(O, deepcopy(a))
-ideal(O::NfAbsOrd, a::Int) = NfAbsOrdIdl(O, a)
-ideal(O::NfAbsOrd, a::Integer) = NfAbsOrdIdl(O, ZZRingElem(a))
+ideal(O::AbsNumFieldOrder, a::ZZRingElem)  = AbsNumFieldOrderIdeal(O, deepcopy(a))
+ideal(O::AbsNumFieldOrder, a::Int) = AbsNumFieldOrderIdeal(O, a)
+ideal(O::AbsNumFieldOrder, a::Integer) = AbsNumFieldOrderIdeal(O, ZZRingElem(a))
 
-function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
+function ideal_from_z_gens(O::AbsSimpleNumFieldOrder, b::Vector{AbsSimpleNumFieldOrderElem}, check::Bool = false)
   for i = 1:length(b)
     @assert parent(b[i]) === O
   end
   d = degree(O)
   @assert length(b) >= d
 
-  M = zero_matrix(FlintZZ, length(b), d)
+  M = zero_matrix(ZZ, length(b), d)
   for i = 1:length(b)
     el = coordinates(b[i])
     for j = 1:d
@@ -353,11 +307,11 @@ end
 ################################################################################
 
 @doc raw"""
-    order(x::NfAbsOrdIdl) -> NfAbsOrd
+    order(x::AbsNumFieldOrderIdeal) -> AbsNumFieldOrder
 
 Returns the order, of which $x$ is an ideal.
 """
-order(a::NfAbsOrdIdlSet) = a.order
+order(a::AbsNumFieldOrderIdealSet) = a.order
 
 ################################################################################
 #
@@ -366,20 +320,20 @@ order(a::NfAbsOrdIdlSet) = a.order
 ################################################################################
 
 @doc raw"""
-    *(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
-    *(x::NfAbsOrdElem, O::NfAbsOrd) -> NfAbsOrdIdl
+    *(O::AbsSimpleNumFieldOrder, x::AbsSimpleNumFieldOrderElem) -> AbsNumFieldOrderIdeal
+    *(x::AbsNumFieldOrderElem, O::AbsNumFieldOrder) -> AbsNumFieldOrderIdeal
 
 Returns the principal ideal $(x)$ of $\mathcal O$.
 """
-function *(O::NfAbsOrd, x::NfAbsOrdElem)
+function *(O::AbsNumFieldOrder, x::AbsNumFieldOrderElem)
   parent(x) !== O && error("Order of element does not coincide with order")
   return ideal(O, x)
 end
 
-*(x::NfAbsOrdElem, O::NfAbsOrd) = O*x
-*(x::Int, O::NfAbsOrd) = ideal(O, x)
-*(x::BigInt, O::NfAbsOrd) = ideal(O, ZZRingElem(x))
-*(x::ZZRingElem, O::NfAbsOrd) = ideal(O, x)
+*(x::AbsNumFieldOrderElem, O::AbsNumFieldOrder) = O*x
+*(x::Int, O::AbsNumFieldOrder) = ideal(O, x)
+*(x::BigInt, O::AbsNumFieldOrder) = ideal(O, ZZRingElem(x))
+*(x::ZZRingElem, O::AbsNumFieldOrder) = ideal(O, x)
 
 ###########################################################################################
 #
@@ -388,23 +342,23 @@ end
 ###########################################################################################
 
 @doc raw"""
-    has_basis(A::NfAbsOrdIdl) -> Bool
+    has_basis(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ has a basis already computed.
 """
-@inline has_basis(A::NfAbsOrdIdl) = isdefined(A, :basis)
+@inline has_basis(A::AbsNumFieldOrderIdeal) = isdefined(A, :basis)
 
-function assure_has_basis(A::NfAbsOrdIdl)
+function assure_has_basis(A::AbsNumFieldOrderIdeal)
   if isdefined(A, :basis)
     return nothing
   else
     assure_has_basis_matrix(A)
     O = order(A)
-    M = A.basis_matrix
+    M = basis_matrix(A, copy = false)
     Ob = basis(O, copy = false)
-    B = Vector{elem_type(O)}(undef, degree(O))
+    B = Vector{elem_type(O)}(undef, nrows(M))
     y = O()
-    for i in 1:degree(O)
+    for i in 1:nrows(M)
       z = O()
       for k in 1:degree(O)
         mul!(y, M[i, k], Ob[k])
@@ -418,11 +372,11 @@ function assure_has_basis(A::NfAbsOrdIdl)
 end
 
 @doc raw"""
-    basis(A::NfAbsOrdIdl) -> Vector{NfOrdElem}
+    basis(A::AbsNumFieldOrderIdeal) -> Vector{AbsSimpleNumFieldOrderElem}
 
 Returns the basis of $A$.
 """
-@inline function basis(A::NfAbsOrdIdl; copy::Bool = true)
+@inline function basis(A::AbsNumFieldOrderIdeal; copy::Bool = true)
   assure_has_basis(A)
   if copy
     return deepcopy(A.basis)
@@ -438,18 +392,18 @@ end
 ################################################################################
 
 @doc raw"""
-    has_basis_matrix(A::NfAbsOrdIdl) -> Bool
+    has_basis_matrix(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ knows its basis matrix.
 """
-@inline has_basis_matrix(A::NfAbsOrdIdl) = isdefined(A, :basis_matrix)
+@inline has_basis_matrix(A::AbsNumFieldOrderIdeal) = isdefined(A, :basis_matrix)
 
 @doc raw"""
-    basis_matrix(A::NfAbsOrdIdl) -> ZZMatrix
+    basis_matrix(A::AbsNumFieldOrderIdeal) -> ZZMatrix
 
 Returns the basis matrix of $A$.
 """
-function basis_matrix(A::NfAbsOrdIdl; copy::Bool = true)
+function basis_matrix(A::AbsNumFieldOrderIdeal; copy::Bool = true)
   assure_has_basis_matrix(A)
   if copy
     return deepcopy(A.basis_matrix)
@@ -458,20 +412,19 @@ function basis_matrix(A::NfAbsOrdIdl; copy::Bool = true)
   end
 end
 
-function assure_has_basis_matrix(A::NfAbsOrdIdl)
+function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
   if isdefined(A, :basis_matrix)
     return nothing
   end
   OK = order(A)
   n = degree(OK)
 
-  if iszero(A)
-    A.basis_matrix = zero_matrix(FlintZZ, n, n)
-    return nothing
-  end
-
   if has_princ_gen_special(A)
-    A.basis_matrix = scalar_matrix(FlintZZ, n, princ_gen_special(A))
+    if is_zero(princ_gen_special(A))
+      A.basis_matrix = zero_matrix(ZZ, 0, n)
+    else
+      A.basis_matrix = scalar_matrix(ZZ, n, princ_gen_special(A))
+    end
     return nothing
   end
 
@@ -489,11 +442,15 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
+    if is_zero(A.princ_gen)
+      A.basis_matrix = zero_matrix(ZZ, 0, n)
+    else
+      A.basis_matrix = hnf_modular_eldiv!(representation_matrix_mod(A.princ_gen, minimum(A)), minimum(A), :lowerleft)
+    end
     return nothing
   end
 
-  @hassert :NfOrd 1 has_2_elem(A)
+  @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
   m = abs(A.gen_one)
   if has_minimum(A)
@@ -509,12 +466,12 @@ function assure_has_basis_matrix(A::NfAbsOrdIdl)
   return nothing
 end
 
-function basis_mat_prime_deg_1(A::NfAbsOrdIdl)
+function basis_mat_prime_deg_1(A::AbsNumFieldOrderIdeal)
   @assert A.is_prime == 1
   @assert A.minimum == A.norm
   O = order(A)
   n = degree(O)
-  b = identity_matrix(FlintZZ, n)
+  b = identity_matrix(ZZ, n)
 
   K, mK = residue_field(O, A)
   assure_has_basis(O)
@@ -532,7 +489,7 @@ function basis_mat_prime_deg_1(A::NfAbsOrdIdl)
 end
 
 # For compatibility with AlgAssAbsOrdIdl
-function integral_basis_matrix_wrt(A::NfAbsOrdIdl, O::NfAbsOrd; copy::Bool = true)
+function integral_basis_matrix_wrt(A::AbsNumFieldOrderIdeal, O::AbsNumFieldOrder; copy::Bool = true)
   @assert O === order(A)
   return basis_matrix(A, copy = copy)
 end
@@ -544,18 +501,22 @@ end
 ################################################################################
 
 @doc raw"""
-    has_basis_mat_inv(A::NfAbsOrdIdl) -> Bool
+    has_basis_mat_inv(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ knows its inverse basis matrix.
 """
-@inline has_basis_mat_inv(A::NfAbsOrdIdl) = isdefined(A, :basis_mat_inv)
+@inline has_basis_mat_inv(A::AbsNumFieldOrderIdeal) = isdefined(A, :basis_mat_inv)
 
 @doc raw"""
-    basis_mat_inv(A::NfAbsOrdIdl) -> ZZMatrix
+    basis_matrix_inverse(A::AbsNumFieldOrderIdeal) -> QQMatrix
 
 Returns the inverse basis matrix of $A$.
 """
-function basis_mat_inv(A::NfAbsOrdIdl; copy::Bool = true)
+function basis_matrix_inverse(A::AbsNumFieldOrderIdeal; copy::Bool = true)
+  return QQMatrix(basis_mat_inv(FakeFmpqMat, A, copy = false))
+end
+
+function basis_mat_inv(::Type{FakeFmpqMat}, A::AbsNumFieldOrderIdeal; copy::Bool = true)
   assure_has_basis_mat_inv(A)
   if copy
     return deepcopy(A.basis_mat_inv)
@@ -564,18 +525,13 @@ function basis_mat_inv(A::NfAbsOrdIdl; copy::Bool = true)
   end
 end
 
-@doc raw"""
-    basis_mat_inv(A::NfAbsOrdIdl) -> FakeFmpqMat
-
-Returns the inverse of the basis matrix of $A$.
-"""
-function assure_has_basis_mat_inv(A::NfAbsOrdIdl)
+function assure_has_basis_mat_inv(A::AbsNumFieldOrderIdeal)
   if isdefined(A, :basis_mat_inv)
     return nothing
   else
     if degree(order(A)) == 1
       # This will be fixed in flint 2.7
-      A.basis_mat_inv = FakeFmpqMat(identity_matrix(FlintZZ, 1), basis_matrix(A, copy = false)[1, 1])
+      A.basis_mat_inv = FakeFmpqMat(identity_matrix(ZZ, 1), basis_matrix(A, copy = false)[1, 1])
     else
       A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_matrix(A, copy = false)))
     end
@@ -590,20 +546,20 @@ end
 ################################################################################
 
 @doc raw"""
-    has_minimum(A::NfAbsOrdIdl) -> Bool
+    has_minimum(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ knows its minimum.
 """
-function has_minimum(A::NfAbsOrdIdl)
+function has_minimum(A::AbsNumFieldOrderIdeal)
   return isdefined(A, :minimum)
 end
 
 @doc raw"""
-    minimum(A::NfAbsOrdIdl) -> ZZRingElem
+    minimum(A::AbsNumFieldOrderIdeal) -> ZZRingElem
 
-Returns the smallest nonnegative element in $A \cap \mathbf Z$.
+Returns the smallest non-negative element in $A \cap \mathbf Z$.
 """
-function minimum(A::NfAbsOrdIdl; copy::Bool = true)
+function minimum(A::AbsNumFieldOrderIdeal; copy::Bool = true)
   assure_has_minimum(A)
   if copy
     return deepcopy(A.minimum)
@@ -612,7 +568,7 @@ function minimum(A::NfAbsOrdIdl; copy::Bool = true)
   end
 end
 
-function assure_has_minimum(A::NfAbsOrdIdl)
+function assure_has_minimum(A::AbsNumFieldOrderIdeal)
   if has_minimum(A)
     return nothing
   end
@@ -630,7 +586,11 @@ function assure_has_minimum(A::NfAbsOrdIdl)
   end
 
   if isdefined(A, :basis_matrix) && isone(basis(order(A), copy = false)[1])
-    A.minimum = basis_matrix(A, copy = false)[1, 1]
+    if is_zero(A)
+      A.minimum = zero(ZZ)
+    else
+      A.minimum = basis_matrix(A, copy = false)[1, 1]
+    end
     return nothing
   end
 
@@ -670,7 +630,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
 
   if has_weakly_normal(A)
     d = denominator(inv(K(A.gen_two)), order(A))
-    d = gcd(d, FlintZZ(A.gen_one))
+    d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
     return nothing
   end
@@ -680,7 +640,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
   else
     M = basis_matrix(A, copy = false)
     d = prod(ZZRingElem[M[i, i] for i = 1:nrows(M)])
-    v = matrix(FlintZZ, 1, nrows(M), coordinates(order(A)(d)))
+    v = matrix(ZZ, 1, nrows(M), coordinates(order(A)(d)))
     fl, s = can_solve_with_solution(M, v, side = :left)
     @assert fl
     den = denominator(s[1]//d)
@@ -699,15 +659,15 @@ end
 ################################################################################
 
 @doc raw"""
-    has_norm(A::NfAbsOrdIdl) -> Bool
+    has_norm(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ knows its norm.
 """
-function has_norm(A::NfAbsOrdIdl)
+function has_norm(A::AbsNumFieldOrderIdeal)
   return isdefined(A, :norm)
 end
 
-function assure_has_norm(A::NfAbsOrdIdl)
+function assure_has_norm(A::AbsNumFieldOrderIdeal)
   if has_norm(A)
     return nothing
   end
@@ -728,12 +688,8 @@ function assure_has_norm(A::NfAbsOrdIdl)
   end
 
   if has_2_elem(A) && A.gens_weakly_normal == 1
-    #if new
-      A.norm = _normmod(A.gen_one^degree(order(A)), A.gen_two)
-      @hassert :Rres 1 A.norm == gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
-    #else
-    #  A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
-    #end
+    A.norm = _normmod(A.gen_one^degree(order(A)), A.gen_two)
+    @hassert :Rres 1 A.norm == gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
     return nothing
   end
 
@@ -743,12 +699,12 @@ function assure_has_norm(A::NfAbsOrdIdl)
 end
 
 @doc raw"""
-    norm(A::NfAbsOrdIdl) -> ZZRingElem
+    norm(A::AbsNumFieldOrderIdeal) -> ZZRingElem
 
 Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
 $\mathcal O$ is the order of $A$.
 """
-function norm(A::NfAbsOrdIdl; copy::Bool = true)
+function norm(A::AbsNumFieldOrderIdeal; copy::Bool = true)
   assure_has_norm(A)
   if copy
     return deepcopy(A.norm)
@@ -764,20 +720,20 @@ end
 ################################################################################
 
 @doc raw"""
-    has_princ_gen(A::NfAbsOrdIdl) -> Bool
+    has_princ_gen(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ knows if it is generated by one element.
 """
-function has_princ_gen(A::NfAbsOrdIdl)
+function has_princ_gen(A::AbsNumFieldOrderIdeal)
   return isdefined(A, :princ_gen)
 end
 
 @doc raw"""
-    has_princ_gen_special(A::NfAbsOrdIdl) -> Bool
+    has_princ_gen_special(A::AbsNumFieldOrderIdeal) -> Bool
 
 Returns whether $A$ knows if it is generated by a rational integer.
 """
-function has_princ_gen_special(A::NfAbsOrdIdl)
+function has_princ_gen_special(A::AbsNumFieldOrderIdeal)
   if isdefined(A, :princ_gen_special)
     return true
   end
@@ -792,15 +748,41 @@ function has_princ_gen_special(A::NfAbsOrdIdl)
   return false
 end
 
-princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] + 1]
+princ_gen_special(A::AbsNumFieldOrderIdeal) = A.princ_gen_special[A.princ_gen_special[1] + 1]
 
 ################################################################################
 #
 #  Equality
 #
 ################################################################################
+#to be used in the ideal ===
+#in case
+# the ideals are known to be prime ideals
+# with the same minimum
+# in the easy case: nice equation order, nice prime
+#Then the ideals are "mapped" in to GF(p)[x]/f and are equal iff they
+#agree there, so
+# map the 2nd gen (the first is p)
+# check if they are coprime in the residue ring
+#
+#the _test should be able to ensure type-stability and the use of small
+#p for speed.
+function _test(p::Union{Int, ZZRingElem}, f::AbsSimpleNumFieldElem, g::AbsSimpleNumFieldElem, h::QQPolyRingElem)
+  #the GF(p) version should be faster, in partcular for small p
+  #however, there are functions missing, Rx(f) will fail for large p
+#  R = Native.GF(p, cached = false, check = false)
+  R = residue_ring(ZZ, p, cached = false)[1]
+  Rx = polynomial_ring(R, "x", cached = false)[1]
+  f1 = Rx(f)
+  f2 = Rx(g)
+  f = Rx(h)
+  #the problem was f1 and f2 included a unit mod f, thus the gcd was non-trivial
+  f1 = gcd(f, f1)
+  f2 = gcd(f, f2)
+  return !is_coprime(f1, f2)
+end
 
-function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   @assert order(x) === order(y)
   if x === y
     return true
@@ -838,15 +820,16 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
     OK = order(x)
     if contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
-      R = residue_ring(FlintZZ, px, cached = false)
-      Rx = polynomial_ring(R, "x", cached = false)[1]
-      f1 = Rx(elem_in_nf(x.gen_two))
-      f2 = Rx(elem_in_nf(y.gen_two))
-      return !is_coprime(f1, f2)
+      f = defining_polynomial(number_field(OK))
+      if px <= typemax(Int)
+        return _test(Int(px), elem_in_nf(x.gen_two), elem_in_nf(y.gen_two), f)
+      else
+        return _test(px, elem_in_nf(x.gen_two), elem_in_nf(y.gen_two), f)
+      end
     end
   end
   if isdefined(x, :basis_matrix) && has_2_elem(y)
-    if !divisible(y.gen_one, minimum(x, copy = false))
+    if !is_divisible_by(y.gen_one, minimum(x, copy = false))
       return false
     end
     if !(y.gen_two in x)
@@ -855,7 +838,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     return norm(x) == norm(y)
   end
   if isdefined(y, :basis_matrix) && has_2_elem(y)
-    if !divisible(x.gen_one, minimum(y, copy = false))
+    if !is_divisible_by(x.gen_one, minimum(y, copy = false))
       return false
     end
     if !(x.gen_two in y)
@@ -875,13 +858,13 @@ end
 ################################################################################
 
 @doc raw"""
-    in(x::NumFieldOrdElem, y::NumFieldOrdIdl)
-    in(x::NumFieldElem, y::NumFieldOrdIdl)
-    in(x::ZZRingElem, y::NumFieldOrdIdl)
+    in(x::NumFieldOrderElem, y::NumFieldOrderIdeal)
+    in(x::NumFieldElem, y::NumFieldOrderIdeal)
+    in(x::ZZRingElem, y::NumFieldOrderIdeal)
 
 Returns whether $x$ is contained in $y$.
 """
-function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
+function in(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
   OK = order(y)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   if is_maximal_known_and_maximal(OK) && y.is_prime == 1 && has_2_elem(y) && has_2_elem_normal(y)
@@ -891,22 +874,22 @@ function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   return containment_by_matrices(x, y)
 end
 
-function containment_by_matrices(x::NfAbsOrdElem, y::NfAbsOrdIdl)
-  R = residue_ring(FlintZZ, basis_mat_inv(y, copy = false).den, cached = false)
-  M = map_entries(R, basis_mat_inv(y, copy = false).num)
+function containment_by_matrices(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
+  R = residue_ring(ZZ, basis_mat_inv(FakeFmpqMat, y, copy = false).den, cached = false)[1]
+  M = map_entries(R, basis_mat_inv(FakeFmpqMat, y, copy = false).num)
   v = matrix(R, 1, degree(parent(x)), coordinates(x, copy = false))
   mul!(v, v, M)
   return iszero(v)
 end
 
-function in(x::nf_elem, y::NfAbsOrdIdl)
+function in(x::AbsSimpleNumFieldElem, y::AbsNumFieldOrderIdeal)
   parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
   return in(order(y)(x),y)
 end
 
-in(x::ZZRingElem, y::NfAbsOrdIdl) = in(order(y)(x),y)
+in(x::ZZRingElem, y::AbsNumFieldOrderIdeal) = in(order(y)(x),y)
 
-in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x), y)
+in(x::Integer, y::AbsNumFieldOrderIdeal) = in(order(y)(x), y)
 
 ################################################################################
 #
@@ -915,12 +898,12 @@ in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x), y)
 ################################################################################
 
 @doc raw"""
-    inv(A::NfAbsOrdIdl) -> NfOrdFracIdl
+    inv(A::AbsNumFieldOrderIdeal) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 Computes the inverse of $A$, that is, the fractional ideal $B$ such that
 $AB = \mathcal O_K$.
 """
-function inv(A::NfAbsOrdIdl)
+function inv(A::AbsNumFieldOrderIdeal)
   @assert !iszero(A)
   if is_maximal_known_and_maximal(order(A))
     return inv_maximal(A)
@@ -939,12 +922,12 @@ end
 
 # If I is not coprime to the conductor of O in the maximal order, then this might
 # not be an inverse.
-function inv_generic(A::NfAbsOrdIdl)
+function inv_generic(A::AbsNumFieldOrderIdeal)
   O = order(A)
   return colon(O(1)*O, A)
 end
 
-function inv_maximal(A::NfAbsOrdIdl)
+function inv_maximal(A::AbsNumFieldOrderIdeal)
   O = order(A)
   if has_princ_gen_special(A)
     return fractional_ideal(O, ideal(O, 1), princ_gen_special(A))
@@ -965,13 +948,13 @@ function inv_maximal(A::NfAbsOrdIdl)
     end
     alpha = _invmod(m, A.gen_two)
     _, d = ppio(denominator(alpha, O), m)
-    Ai = NfAbsOrdIdl(order(A))
+    Ai = AbsNumFieldOrderIdeal(order(A))
     dn = denominator(d*alpha, O)
-    @hassert :NfOrd 1 ppio(dn, m)[1] == dn
+    @hassert :AbsNumFieldOrder 1 ppio(dn, m)[1] == dn
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(order(A))//norm(A)
-    @hassert :NfOrd 1 denominator(temp) == 1
+    @hassert :AbsNumFieldOrder 1 denominator(temp) == 1
     Ai.norm = numerator(temp)
     Ai.gens_normal = A.gens_normal
     AAi = fractional_ideal(O, Ai, dn)
@@ -985,12 +968,12 @@ function inv_maximal(A::NfAbsOrdIdl)
 end
 
 @doc raw"""
-    is_invertible(A::NfAbsOrdIdl) -> Bool, NfOrdFracIdl
+    is_invertible(A::AbsNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldOrderFractionalIdeal
 
 Returns `true` and an inverse of $A$ or `false` and an ideal $B$ such that
 $A*B \subsetneq order(A)$, if $A$ is not invertible.
 """
-function is_invertible(A::NfAbsOrdIdl)
+function is_invertible(A::AbsNumFieldOrderIdeal)
   if iszero(A)
     return false, A
   end
@@ -1021,42 +1004,48 @@ end
 # .../ enter rresx and rres!
 
 
-function _minmod(a::ZZRingElem, b::NfAbsOrdElem)
+function _minmod(a::ZZRingElem, b::AbsNumFieldOrderElem)
   return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
 end
 
-function _minmod_easy(a::ZZRingElem, b::NfOrdElem)
+function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
+  if is_one(a)
+    return a
+  end
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
-    S = residue_ring(FlintZZ, Int(a), cached = false)
+    S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
-    m = data(rres(B, F))
+    m = data(reduced_resultant(B, F))
     return gcd(a, m)
   else
-    S1 = residue_ring(FlintZZ, a, cached = false)
+    S1 = residue_ring(ZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
-    m1 = data(rres(B1, F1))
+    m1 = data(reduced_resultant(B1, F1))
     return gcd(a, m1)
   end
 end
 
-function _minmod_easy_pp(a::ZZRingElem, b::NfOrdElem)
+function _minmod_easy_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
+  if isone(a)
+    return one(a)
+  end
   Zk = parent(b)
   k = number_field(Zk)
   if fits(Int, a)
-    S = residue_ring(FlintZZ, Int(a), cached = false)
+    S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
     F = St(k.pol)
     m = lift(rres_sircana_pp(B, F))
     return gcd(a, m)
   else
-    S1 = residue_ring(FlintZZ, a, cached = false)
+    S1 = residue_ring(ZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
     F1 = St1(k.pol)
@@ -1065,7 +1054,7 @@ function _minmod_easy_pp(a::ZZRingElem, b::NfOrdElem)
   end
 end
 
-function _minmod(a::ZZRingElem, b::NfOrdElem)
+function _minmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   if isone(a)
     return a
   end
@@ -1086,11 +1075,11 @@ function _minmod(a::ZZRingElem, b::NfOrdElem)
     return min
   end
   mul!(min, min, _minmod_comp(ar, b))
-  @hassert :NfOrd 1 min == gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
+  @hassert :AbsNumFieldOrder 1 min == gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   return min
 end
 
-function _minmod_comp_pp(a::ZZRingElem, b::NfOrdElem)
+function _minmod_comp_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   #a is a prime power
   Zk = parent(b)
   k = number_field(Zk)
@@ -1100,17 +1089,17 @@ function _minmod_comp_pp(a::ZZRingElem, b::NfOrdElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(denominator(basis_matrix(Zk, copy = false)), acom)
+  e, _ = ppio(denominator(basis_matrix(FakeFmpqMat, Zk, copy = false)), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)
   mod = acom*d*e
   if fits(Int, mod)
-    S1 = residue_ring(FlintZZ, Int(mod), cached = false)
+    S1 = residue_ring(ZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
     F1 = St1(k.pol)
     m1, u1, v1 = rresx_sircana_pp(B1, F1)  # u*B + v*F = m mod modulus(S)
-    U1 = lift(FlintZZ["x"][1], u1)
+    U1 = lift(ZZ["x"][1], u1)
     # m can be zero...
     m2 = lift(m1)
     if iszero(m2)
@@ -1120,12 +1109,12 @@ function _minmod_comp_pp(a::ZZRingElem, b::NfOrdElem)
     d = denominator(bi, Zk)
     return min_uncom*gcd(d, acom)
   else
-    S = residue_ring(FlintZZ, mod, cached = false)
+    S = residue_ring(ZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
     m, u, v = rresx_sircana_pp(B, F)  # u*B + v*F = m mod modulus(S)
-    U = lift(FlintZZ["x"][1], u)
+    U = lift(ZZ["x"][1], u)
     # m can be zero...
     m3 = lift(m)
     if iszero(m3)
@@ -1139,8 +1128,7 @@ function _minmod_comp_pp(a::ZZRingElem, b::NfOrdElem)
 end
 
 
-function _minmod_comp(a::ZZRingElem, b::NfOrdElem)
-
+function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   Zk = parent(b)
   k = number_field(Zk)
   acom, auncom = ppio(a, index(Zk))
@@ -1148,17 +1136,17 @@ function _minmod_comp(a::ZZRingElem, b::NfOrdElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(denominator(basis_matrix(Zk, copy = false)), acom)
+  e, _ = ppio(denominator(basis_matrix(FakeFmpqMat, Zk, copy = false)), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)
   mod = acom*d*e
   if fits(Int, mod)
-    S1 = residue_ring(FlintZZ, Int(mod), cached = false)
+    S1 = residue_ring(ZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
     F1 = St1(k.pol)
     m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
-    U1 = lift(FlintZZ["x"][1], u1)
+    U1 = lift(ZZ["x"][1], u1)
     # m can be zero...
     m2 = lift(m1)
     if iszero(m2)
@@ -1168,12 +1156,12 @@ function _minmod_comp(a::ZZRingElem, b::NfOrdElem)
     d = denominator(bi, Zk)
     return min_uncom*gcd(d, acom)
   else
-    S = residue_ring(FlintZZ, mod, cached = false)
+    S = residue_ring(ZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
     m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
-    U = lift(FlintZZ["x"][1], u)
+    U = lift(ZZ["x"][1], u)
     # m can be zero...
     m3 = lift(m)
     if iszero(m3)
@@ -1192,11 +1180,11 @@ function _minmod_comp(a::ZZRingElem, b::NfOrdElem)
   #at this point, min(<a, b*d>) SHOULD be
 end
 
-function _invmod(a::ZZRingElem, b::NfAbsOrdElem)
+function _invmod(a::ZZRingElem, b::AbsNumFieldOrderElem)
   return inv(b.elem_in_nf)
 end
 
-function _invmod(a::ZZRingElem, b::NfOrdElem)
+function _invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   Zk = parent(b)
   k = nf(Zk)
   if isone(a)
@@ -1210,15 +1198,15 @@ end
 
 
 
-function __invmod(a::ZZRingElem, b::NfOrdElem)
+function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   Zk = parent(b)
   k = nf(Zk)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-   e, _ = ppio(basis_matrix(Zk, copy = false).den, a)
+   e, _ = ppio(basis_matrix(FakeFmpqMat, Zk, copy = false).den, a)
   mod_r = a^2*d*e
   if fits(Int, mod_r)
-    S1 = residue_ring(FlintZZ, Int(mod_r), cached=false)
+    S1 = residue_ring(ZZ, Int(mod_r), cached=false)[1]
     S1t = polynomial_ring(S1, cached=false)[1]
     B1 = S1t(d*b.elem_in_nf)
     F1 = S1t(k.pol)
@@ -1230,11 +1218,11 @@ function __invmod(a::ZZRingElem, b::NfOrdElem)
       c1 = inv(canonical_unit(m1))
       m1 = lift(m1*c1)
     end
-    U1 = lift(polynomial_ring(FlintZZ, "x", cached = false)[1], u1*c1)
+    U1 = lift(polynomial_ring(ZZ, "x", cached = false)[1], u1*c1)
     bi1 = k(U1)//m1*d # at this point, bi*d*b = m mod a*d*idx
     return bi1
   else
-    S = residue_ring(FlintZZ, mod_r, cached=false)
+    S = residue_ring(ZZ, mod_r, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1247,17 +1235,17 @@ function __invmod(a::ZZRingElem, b::NfOrdElem)
       c = inv(canonical_unit(m))
       m = lift(m*c)
     end
-    U = lift(polynomial_ring(FlintZZ, "x", cached = false)[1], u*c)
+    U = lift(polynomial_ring(ZZ, "x", cached = false)[1], u*c)
     bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
     return bi
   end
   end
 
-function _normmod(a::ZZRingElem, b::NfAbsOrdElem)
+function _normmod(a::ZZRingElem, b::AbsNumFieldOrderElem)
   return gcd(norm(b), a)
 end
 
-function _normmod(a::ZZRingElem, b::NfOrdElem)
+function _normmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   if isone(a)
     return a
   end
@@ -1293,17 +1281,17 @@ function _normmod(a::ZZRingElem, b::NfOrdElem)
     push!(resp, _normmod_comp(ar, b))
   end
   if isone(length(mods))
-    @hassert :NfOrd 1 gcd(norm(b), a) == resp[1]
+    @hassert :AbsNumFieldOrder 1 gcd(norm(b), a) == resp[1]
     return resp[1]
   else
     res = gcd(crt(resp, mods), a)
-    @hassert :NfOrd 1 gcd(norm(b), a) == res
+    @hassert :AbsNumFieldOrder 1 gcd(norm(b), a) == res
     return res
   end
 
 end
 
-function _normmod_comp(a::ZZRingElem, b::NfOrdElem)
+function _normmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
   if isone(a)
     return a
   end
@@ -1314,7 +1302,7 @@ function _normmod_comp(a::ZZRingElem, b::NfOrdElem)
   com, uncom = ppio(d, a)
   mod = a*com^degree(k)
   if fits(Int, mod)
-    R = residue_ring(FlintZZ, Int(mod), cached=false)
+    R = residue_ring(ZZ, Int(mod), cached=false)[1]
     Rt = polynomial_ring(R, cached=false)[1]
     B1 = Rt(d*b.elem_in_nf)
     F1 = Rt(k.pol)
@@ -1322,7 +1310,7 @@ function _normmod_comp(a::ZZRingElem, b::NfOrdElem)
     m3 = gcd(modulus(R), lift(m2))
     return divexact(m3, com^degree(parent(b)))
   else
-    S = residue_ring(FlintZZ, mod, cached=false)
+    S = residue_ring(ZZ, mod, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
     F = St(k.pol)
@@ -1333,7 +1321,7 @@ function _normmod_comp(a::ZZRingElem, b::NfOrdElem)
 
 end
 
-function simplify(A::NfAbsOrdIdl)
+function simplify(A::AbsNumFieldOrderIdeal)
   if iszero(A)
     return A
   end
@@ -1343,10 +1331,10 @@ function simplify(A::NfAbsOrdIdl)
     A.minimum = ZZRingElem(1)
     A.norm = ZZRingElem(1)
     A.gens_normal = ZZRingElem(2)
-    @hassert :NfOrd 1 is_consistent(A)
+    @hassert :AbsNumFieldOrder 1 is_consistent(A)
     return A
   end
-  @hassert :NfOrd 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder 1 is_consistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
@@ -1367,9 +1355,9 @@ function simplify(A::NfAbsOrdIdl)
         #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
         #      order basis. For this it would better be small in the field basis....
         n = _normmod(A.gen_one^degree(order(A)), A.gen_two)
-        @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
+        @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), ZZ(norm(A.gen_two)))
       else
-        n = gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
+        n = gcd(A.gen_one^degree(order(A)), ZZ(norm(A.gen_two)))
       end
       A.norm = n
     end
@@ -1381,10 +1369,10 @@ function simplify(A::NfAbsOrdIdl)
       A.gens_normal = A.gen_one
     end
 
-    @hassert :NfOrd 1 is_consistent(A)
+    @hassert :AbsNumFieldOrder 1 is_consistent(A)
     return A
   end
-  @hassert :NfOrd 1 is_consistent(A)
+  @hassert :AbsNumFieldOrder 1 is_consistent(A)
   return A
 end
 
@@ -1394,7 +1382,7 @@ end
 #
 ################################################################################
 
-function trace_matrix(A::NfAbsOrdIdl)
+function trace_matrix(A::AbsNumFieldOrderIdeal)
   g = trace_matrix(order(A))
   b = basis_matrix(A, copy = false)
 #  mul!(b, b, g)   #b*g*b' is what we want.
@@ -1410,12 +1398,12 @@ end
 ################################################################################
 
 @doc raw"""
-    is_power(I::NfAbsOrdIdl) -> Int, NfAbsOrdIdl
-    is_power(a::NfOrdFracIdl) -> Int, NfOrdFracIdl
+    is_power(I::AbsNumFieldOrderIdeal) -> Int, AbsNumFieldOrderIdeal
+    is_power(a::AbsSimpleNumFieldOrderFractionalIdeal) -> Int, AbsSimpleNumFieldOrderFractionalIdeal
 
 Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
-function is_power(I::NfAbsOrdIdl)
+function is_power(I::AbsNumFieldOrderIdeal)
   m = minimum(I)
   if isone(m)
     return 0, I
@@ -1453,13 +1441,13 @@ function is_power(I::NfAbsOrdIdl)
   return g, JJ^div(e, g)*J
 end
 
-function is_power_unram(I::NfAbsOrdIdl)
+function is_power_unram(I::AbsNumFieldOrderIdeal)
   m = minimum(I)
   if isone(m)
     return 0, I
   end
 
-  e, ra = is_power(m)
+  e, ra = is_perfect_power_with_data(m)
   J = gcd(I, ra)
 
   II = J^e//I
@@ -1482,25 +1470,25 @@ function is_power_unram(I::NfAbsOrdIdl)
   return e, JJ
 end
 
-function is_power(I::NfOrdFracIdl)
+function is_power(I::AbsSimpleNumFieldOrderFractionalIdeal)
   num, den = integral_split(I)
-  e, r = is_power(num)
+  e, r = is_perfect_power_with_data(num)
   if e == 1
     return e, I
   end
-  f, s = is_power(den)
+  f, s = is_perfect_power_with_data(den)
   g = gcd(e, f)
   return g, r^div(e, g)//s^div(f, g)
 end
 
 @doc raw"""
-    is_power(A::NfAbsOrdIdl, n::Int) -> Bool, NfAbsOrdIdl
-    is_power(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl
+    is_power(A::AbsNumFieldOrderIdeal, n::Int) -> Bool, AbsNumFieldOrderIdeal
+    is_power(A::AbsSimpleNumFieldOrderFractionalIdeal, n::Int) -> Bool, AbsSimpleNumFieldOrderFractionalIdeal
 
 Computes, if possible, an ideal $B$ s.th. $B^n==A$ holds. In this
 case, `true` and $B$ are returned.
 """
-function is_power(A::NfAbsOrdIdl, n::Int)
+function is_power(A::AbsNumFieldOrderIdeal, n::Int)
   m = minimum(A)
   if isone(m)
     return true, A
@@ -1533,7 +1521,7 @@ function is_power(A::NfAbsOrdIdl, n::Int)
   return true, JJ*J
 end
 
-function is_power_unram(I::NfAbsOrdIdl, n::Int)
+function is_power_unram(I::AbsNumFieldOrderIdeal, n::Int)
   m = minimum(I)
   if isone(m)
     return true, I
@@ -1565,7 +1553,7 @@ end
 
 #TODO: check if the integral_plit is necessary or if one can just use
 #      the existing denominator
-function is_power(A::NfOrdFracIdl, n::Int)
+function is_power(A::AbsSimpleNumFieldOrderFractionalIdeal, n::Int)
   nu, de = integral_split(A)
   fl, nu = is_power(nu, n)
   if !fl
@@ -1575,17 +1563,17 @@ function is_power(A::NfOrdFracIdl, n::Int)
   return fl, nu//de
 end
 
-function one(A::NfAbsOrdIdl)
+function one(A::AbsNumFieldOrderIdeal)
   return ideal(order(A), 1)
 end
 
 @doc raw"""
-    isone(A::NfAbsOrdIdl) -> Bool
-    is_unit(A::NfAbsOrdIdl) -> Bool
+    isone(A::AbsNumFieldOrderIdeal) -> Bool
+    is_unit(A::AbsNumFieldOrderIdeal) -> Bool
 
 Tests if $A$ is the trivial ideal generated by $1$.
 """
-function isone(I::NfAbsOrdIdl)
+function isone(I::AbsNumFieldOrderIdeal)
   if isdefined(I, :gen_one) && isone(I.gen_one)
     return true
   end
@@ -1595,9 +1583,25 @@ function isone(I::NfAbsOrdIdl)
   return isone(minimum(I, copy = false))
 end
 
-is_unit(I::NfAbsOrdIdl) = isone(I)
+is_unit(I::AbsNumFieldOrderIdeal) = isone(I)
 
-iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
+function iszero(I::AbsNumFieldOrderIdeal)
+  if I.iszero != 0
+    return I.iszero == 1
+  else
+    if has_princ_gen(I)
+      fl = is_zero(I.princ_gen)
+    else
+      fl = nrows(basis_matrix(I, copy = false)) == 0
+    end
+    if fl
+      I.iszero = 1
+    else
+      I.iszero = 2
+    end
+    return fl
+  end
+end
 
 ################################################################################
 #
@@ -1606,7 +1610,7 @@ iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 ################################################################################
 
 @doc raw"""
-    mod(x::NfOrdElem, I::NfAbsOrdIdl)
+    mod(x::AbsSimpleNumFieldOrderElem, I::AbsNumFieldOrderIdeal)
 
 Returns the unique element $y$ of the ambient order of $x$ with
 $x \equiv y \bmod I$ and the following property: If
@@ -1614,7 +1618,7 @@ $a_1,\dotsc,a_d \in \mathbf{Z}_{\geq 1}$ are the diagonal entries of the unique 
 basis matrix of $I$ and $(b_1,\dotsc,b_d)$ is the coefficient vector of $y$,
 then $0 \leq b_i < a_i$ for $1 \leq i \leq d$.
 """
-function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <: Union{NfAbsOrdIdl, AlgAssAbsOrdIdl} }
+function mod(x::S, y::T) where { S <: Union{AbsNumFieldOrderElem, AlgAssAbsOrdElem}, T <: Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl} }
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
@@ -1641,7 +1645,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
   return z
 end
 
-function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Vector{fmpz_preinvn_struct})
+function mod(x::AbsSimpleNumFieldOrderElem, y::AbsNumFieldOrderIdeal, preinv::Vector{fmpz_preinvn_struct})
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
@@ -1659,7 +1663,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Vector{fmpz_preinvn_struct})
   end
 end
 
-function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vector{fmpz_preinvn_struct})
+function mod(x::Union{AbsSimpleNumFieldOrderElem, AlgAssAbsOrdElem}, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vector{fmpz_preinvn_struct})
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1679,7 +1683,7 @@ function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{ZZMatrix, Matrix{ZZ
   return z
 end
 
-function mod!(x::NfOrdElem, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vector{fmpz_preinvn_struct})
+function mod!(x::AbsSimpleNumFieldOrderElem, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vector{fmpz_preinvn_struct})
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1697,7 +1701,7 @@ function mod!(x::NfOrdElem, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vect
       submul!(a[j], q, c[i, j])
     end
   end
-  # We need to adjust the underlying nf_elem
+  # We need to adjust the underlying AbsSimpleNumFieldElem
   t = nf(O)()
   B = O.basis_nf
   zero!(x.elem_in_nf)
@@ -1706,7 +1710,7 @@ function mod!(x::NfOrdElem, c::Union{ZZMatrix, Matrix{ZZRingElem}}, preinv::Vect
     add!(x.elem_in_nf, x.elem_in_nf, t)
   end
 
-  @hassert :NfOrd 2 x.elem_in_nf == dot(a, O.basis_nf)
+  @hassert :AbsNumFieldOrder 2 x.elem_in_nf == dot(a, O.basis_nf)
 
   return x
 end
@@ -1739,7 +1743,7 @@ function mod!(x::AlgAssAbsOrdElem, c::Union{ZZMatrix, Matrix{ZZRingElem}}, prein
   return x
 end
 
-function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
+function mod(x::Union{AbsSimpleNumFieldOrderElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
 
   y = ideal(Q)
@@ -1754,7 +1758,7 @@ function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   return mod(x, Q.basis_mat_array, Q.preinvn)
 end
 
-function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
+function mod!(x::Union{AbsSimpleNumFieldOrderElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
   y = ideal(Q)
 
@@ -1807,7 +1811,7 @@ end
 #
 #   We map to M/J, translate to R/J and project to R/I.
 
-function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S}}) where { S, T }
+function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{AbsNumFieldOrder{T, S}, AbsNumFieldOrderIdeal{T, S}}) where { S, T }
   if is_maximal(base_ring(Q))
     return _mod_fac_elem_maximal(x, Q)::elem_type(Q)
   else
@@ -1815,7 +1819,7 @@ function mod(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S
   end
 end
 
-function _mod_fac_elem_maximal(x::FacElem{S, T}, Q::AbsOrdQuoRing{NfAbsOrd{T, S}, NfAbsOrdIdl{T, S}}) where { S, T }
+function _mod_fac_elem_maximal(x::FacElem{S, T}, Q::AbsOrdQuoRing{AbsNumFieldOrder{T, S}, AbsNumFieldOrderIdeal{T, S}}) where { S, T }
   O = base_ring(Q)
   @assert is_maximal(O)
   K = nf(O)
@@ -1960,7 +1964,7 @@ function _mod_fac_elem_maximal(x, Q::AbsOrdQuoRing{<:AlgAssAbsOrd})
   return v
 end
 
-function _ideal_equal_helper(x::NfOrdIdl, y::NfOrdIdl)
+function _ideal_equal_helper(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   return basis_matrix(x, copy = false) * basis_matrix(order(x), copy = false) ==
            basis_matrix(y, copy = false) * basis_matrix(order(y), copy = false)
 end
@@ -1985,14 +1989,14 @@ function _datum_for_reduction_non_maximal(Q::AbsOrdQuoRing)
     AQJ, AQJtoQJ, QJtoAQJ = abelian_group(QJ)
     AQQ, AQQtoQQ, QQtoAQQ = abelian_group(QQ)
     h = hom(AQJ, AQQ, [QQtoAQQ(mQQ(base_ring(QQ)(_elem_in_algebra(mQJ\AQJtoQJ(g))))) for g in gens(AQJ)])
-    return function(x) 
+    return function(x)
       if x isa FacElem
         y = _mod_fac_elem_maximal(x, QQ)
       else
         y = _mod_fac_elem_maximal(M(_elem_in_algebra(x)), QQ)
       end
       @assert is_injective(h)
-      fl, yy = haspreimage(h, QQtoAQQ(y))
+      fl, yy = has_preimage_with_preimage(h, QQtoAQQ(y))
       @assert fl
       res = Q(mQJ\(AQJtoQJ(yy)))
       return res
@@ -2011,19 +2015,19 @@ end
 #
 ################################################################################
 
-function pradical_trace(O::NfAbsOrd, p::IntegerUnion)
+function pradical_trace(O::AbsNumFieldOrder, p::IntegerUnion)
   d = degree(O)
   M = trace_matrix(O)
   F = GF(p, cached = false)
   M1 = map_entries(F, M)
-  k, B = nullspace(M1)
-  if iszero(k)
+  B = kernel(M1, side = :right)
+  if iszero(ncols(B))
     return ideal(O, p)
   end
-  M2 = zero_matrix(FlintZZ, d, d)
+  M2 = zero_matrix(ZZ, d, d)
   for i = 1:ncols(B)
     for j = 1:d
-      M2[i, j] = FlintZZ(lift(ZZ, B[j, i]))
+      M2[i, j] = ZZ(lift(ZZ, B[j, i]))
     end
   end
   gens = elem_type(O)[O(p)]
@@ -2039,7 +2043,7 @@ function pradical_trace(O::NfAbsOrd, p::IntegerUnion)
   return I
 end
 
-function pradical_frobenius(O::NfAbsOrd, p::IntegerUnion)
+function pradical_frobenius(O::AbsNumFieldOrder, p::IntegerUnion)
 
   #First, I need an exponent for the maximum of the nilpotency indices.
   R = GF(p, cached = false)
@@ -2061,44 +2065,44 @@ function pradical_frobenius(O::NfAbsOrd, p::IntegerUnion)
       A[k, i] = ar[k]
     end
   end
-  X = right_kernel_basis(A)
+  X = kernel(A, side = :right)
   gens = elem_type(O)[O(p)]
-  if isempty(X)
+  if is_zero(ncols(X))
     I = ideal(O, p)
     I.gens = gens
     return I
   end
   #First, find the generators
-  for i = 1:length(X)
+  for i = 1:ncols(X)
     coords = Vector{ZZRingElem}(undef, d)
     for j=1:d
-      coords[j] = lift(ZZ, X[i][j])
+      coords[j] = lift(ZZ, X[j, i])
     end
     push!(gens, O(coords))
   end
   #Then, construct the basis matrix of the ideal
-  m = zero_matrix(FlintZZ, d, d)
-  for i = 1:length(X)
+  m = zero_matrix(ZZ, d, d)
+  for i = 1:ncols(X)
     for j = 1:d
-      m[i, j] = lift(ZZ, X[i][j])
+      m[i, j] = lift(ZZ, X[j, i])
     end
   end
   mm = hnf_modular_eldiv!(m, ZZRingElem(p), :lowerleft)
-  I = NfAbsOrdIdl(O, mm)
+  I = AbsNumFieldOrderIdeal(O, mm)
   I.minimum = p
   I.gens = gens
   return I
 end
 
 @doc raw"""
-    pradical(O::NfOrd, p::{ZZRingElem|Integer}) -> NfAbsOrdIdl
+    pradical(O::AbsSimpleNumFieldOrder, p::{ZZRingElem|Integer}) -> AbsNumFieldOrderIdeal
 
 Given a prime number $p$, this function returns the $p$-radical
 $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
 just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 \in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
-function pradical(O::NfAbsOrd, p::IntegerUnion)
+function pradical(O::AbsNumFieldOrder, p::IntegerUnion)
   if p isa ZZRingElem
     if fits(Int, p)
       return pradical(O, Int(p))
@@ -2119,12 +2123,12 @@ end
 ################################################################################
 
 @doc raw"""
-    colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl) -> NfOrdFracIdl
+    colon(a::AbsNumFieldOrderIdeal, b::AbsNumFieldOrderIdeal) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 The ideal $(a:b) = \{x \in K | xb \subseteq a\} = \hom(b, a)$
 where $K$ is the number field.
 """
-function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
+function colon(a::AbsNumFieldOrderIdeal, b::AbsNumFieldOrderIdeal, contains::Bool = false)
 
   O = order(a)
   n = degree(O)
@@ -2134,16 +2138,16 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
     B = basis(b)
   end
 
-  bmatinv = basis_mat_inv(a, copy = false)
+  bmatinv = basis_mat_inv(FakeFmpqMat, a, copy = false)
 
   if contains
-    m = zero_matrix(FlintZZ, n*length(B), n)
-    id_gen = zero_matrix(FlintZZ, 2*n, n)
+    m = zero_matrix(ZZ, n*length(B), n)
+    id_gen = zero_matrix(ZZ, 2*n, n)
     ind = 1
     modu = minimum(a)*bmatinv.den
     for i = 1:length(B)
       if i != 1
-        c = matrix(FlintZZ, 1, n, coordinates(B[i]))
+        c = matrix(ZZ, 1, n, coordinates(B[i]))
         reduce_mod_hnf_ll!(c, id_gen)
         if iszero(c)
           continue
@@ -2168,7 +2172,7 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
     hnf_modular_eldiv!(m, minimum(a))
     m = transpose(view(m, 1:n, 1:n))
     b, l = pseudo_inv(m)
-    return NfAbsOrdIdl(O, b)//l
+    return AbsNumFieldOrderIdeal(O, b)//l
   else
     n = representation_matrix(B[1])*bmatinv
     m = numerator(n)
@@ -2206,11 +2210,11 @@ end
 ################################################################################
 
 @doc raw"""
-    fractional_ideal(O::NfOrd, I::NfAbsOrdIdl) -> NfOrdFracIdl
+    fractional_ideal(O::AbsSimpleNumFieldOrder, I::AbsNumFieldOrderIdeal) -> AbsSimpleNumFieldOrderFractionalIdeal
 
 The fractional ideal of $O$ generated by a $Z$-basis of $I$.
 """
-function fractional_ideal(O::NfOrd, I::NfAbsOrdIdl)
+function fractional_ideal(O::AbsSimpleNumFieldOrder, I::AbsNumFieldOrderIdeal)
   k = nf(O)
   bI = basis(I)
   J = ideal(O, k(bI[1]))
@@ -2241,7 +2245,7 @@ function random_init(I::AbstractVector{T}; reduce::Bool = true, ub::ZZRingElem=Z
   return R
 end
 
-function random_extend(R::RandIdlCtx, I::T) where {T <:AbstractVector{NfOrdIdl}}
+function random_extend(R::RandIdlCtx, I::T) where {T <:AbstractVector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
   for i = I
     if i in R.base
       continue
@@ -2326,12 +2330,12 @@ end
 #
 ################################################################################
 
-function to_magma(f::IOStream, clg::NfOrdIdl, order::String = "M")
+function to_magma(f::IOStream, clg::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, order::String = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")
 end
 
-function to_magma(s::String, c::NfOrdIdl, order::String = "M")
+function to_magma(s::String, c::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, order::String = "M")
   f = open(s, "w")
   to_magma(f, c, order)
   close(f)
@@ -2345,11 +2349,11 @@ end
 
 
 @doc raw"""
-    is_coprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
+    is_coprime(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool
 
 Test if ideals $I,J$ are coprime.
 """
-function is_coprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
+function is_coprime(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal)
   @assert order(I) === order(J)
   if isdefined(I, :norm) && isdefined(J, :norm)
     if isone(gcd(norm(I, copy = false), norm(J, copy = false)))
@@ -2373,37 +2377,37 @@ function is_coprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   #Lemma: Let R be a (commutative) artinian ring, let I be an ideal of R and
   #let x be a nilpotent element. Then I = 1 if and only if I + x = 1
   m = gcd(minimum(I, copy = false), minimum(J, copy = false))
-  m = is_power(m)[2]
+  m = is_perfect_power_with_data(m)[2]
   if has_2_elem(I) && has_2_elem(J)
     K = nf(order(I))
     if gcd(m, index(order(I))) == 1
       if fits(Int, m)
-        RI = residue_ring(FlintZZ, Int(m), cached = false)
+        RI = residue_ring(ZZ, Int(m), cached = false)[1]
         RIx = polynomial_ring(RI, "x", cached = false)[1]
         fI1 = RIx(I.gen_two.elem_in_nf)
         fI2 = RIx(J.gen_two.elem_in_nf)
         fI3 = RIx(K.pol)
         fl = _coprimality_test(fI1, fI2, fI3)
       else
-        R = residue_ring(FlintZZ, m, cached = false)
+        R = residue_ring(ZZ, m, cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
         f1 = Rx(I.gen_two.elem_in_nf)
         f2 = Rx(J.gen_two.elem_in_nf)
         f3 = Rx(K.pol)
         fl = _coprimality_test(f1, f2, f3)
       end
-      @hassert :NfOrd 1 fl == isone(I+J)
+      @hassert :AbsNumFieldOrder 1 fl == isone(I+J)
       return fl
     end
   end
   return isone(gcd(I, m)+J)
 end
 
-function is_coprime(I::NfAbsOrdIdl, a::ZZRingElem)
+function is_coprime(I::AbsNumFieldOrderIdeal, a::ZZRingElem)
   return is_coprime(minimum(I, copy = false), a)
 end
 
-one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
+one(I::AbsNumFieldOrderIdealSet) = ideal(order(I), 1)
 
 ###############################################################################
 #
@@ -2411,7 +2415,7 @@ one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
 #
 ###############################################################################
 
-function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
+function (I_Zk::AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem})(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   if parent(a) === I_Zk
     return a
   end
@@ -2445,14 +2449,14 @@ end
 
 #############################################################################
 @doc raw"""
-    euler_phi(A::NfOrdIdl) -> ZZRingElem
+    euler_phi(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 The ideal version of the totient function returns the size of the unit group
 of the residue ring modulo the ideal.
 """
-Hecke.euler_phi(A::NfOrdIdl) = Hecke.euler_phi(factor(A))
-Hecke.euler_phi(A::FacElem{NfOrdIdl}) = Hecke.euler_phi(factor(A))
-function Hecke.euler_phi(A::Dict{NfOrdIdl, Int})
+Hecke.euler_phi(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = Hecke.euler_phi(factor(A))
+Hecke.euler_phi(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = Hecke.euler_phi(factor(A))
+function Hecke.euler_phi(A::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int})
   return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k > 0 || error("Ideal not integral"))
 end
 
@@ -2460,15 +2464,15 @@ end
 #http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
 @doc raw"""
-    euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf_elem})
+    euler_phi_inv_fac_elem(n::ZZRingElem, zk::AbsSimpleNumFieldOrder)
 
 The inverse of the ideal totient function: all ideals $A$ s.th. the unit group of the
 residue ring has the required size. Here, the ideals are returned in factorised form.
 """
-function euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf_elem})
+function euler_phi_inv_fac_elem(n::ZZRingElem, zk::AbsSimpleNumFieldOrder)
   lp = []
   for d = Divisors(n)
-    k, p = is_power(d+1)
+    k, p = is_perfect_power_with_data(d+1)
     if is_prime(p)
       ll = prime_decomposition(zk, p)
       for P = ll
@@ -2522,13 +2526,13 @@ function euler_phi_inv_fac_elem(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf
 end
 
 @doc raw"""
-    euler_phi_inv(n::ZZRingElem, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Vector{NfOrdIdl}
+    euler_phi_inv(n::ZZRingElem, zk::AbsSimpleNumFieldOrder) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
 The inverse of the ideal totient function: all ideals $A$ s.th. the unit group of the
 residue ring has the required size.
 """
-euler_phi_inv(n::ZZRingElem, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(n, zk)]
-euler_phi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(ZZRingElem(n), zk)]
+euler_phi_inv(n::ZZRingElem, zk::AbsNumFieldOrder) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(n, zk)]
+euler_phi_inv(n::Integer, zk::AbsNumFieldOrder) = [ numerator(evaluate(x)) for x = euler_phi_inv_fac_elem(ZZRingElem(n), zk)]
 
 ################################################################################
 #
@@ -2536,15 +2540,15 @@ euler_phi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = euler
 #
 ################################################################################
 
-function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, lp::Vector{NfOrdIdl}, bound::ZZRingElem)
+function _squarefree_ideals_with_bounded_norm(O::AbsNumFieldOrder, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, bound::ZZRingElem)
   #@assert issorted(lp, by = x -> norm(x))
-  lf = Vector{Tuple{NfOrdIdl, ZZRingElem}}()
+  lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
   for P in lp
     push!(lf, (P, norm(P)))
   end
   #Now, I have to merge them.
-  conds = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
-  push!(conds, (Dict{NfOrdIdl, Int}(), ZZRingElem(1)))
+  conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+  push!(conds, (Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1)))
   if isempty(lf)
     return conds
   end
@@ -2552,7 +2556,7 @@ function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, lp::Vector{NfOrdIdl},
     P = lf[i][1]
     dP = lf[i][2]
     indj = length(conds)
-    new_conds = Vector{Tuple{Dict{NfOrdIdl, Int}, ZZRingElem}}()
+    new_conds = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
     for j = 1:indj
       Dd = dP*conds[j][2]
       if Dd > bound
@@ -2571,7 +2575,7 @@ function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, lp::Vector{NfOrdIdl},
   return conds
 end
 
-function _squarefree_ideals_with_bounded_norm(O::NfAbsOrd, bound::ZZRingElem; coprime::ZZRingElem = ZZRingElem(0))
+function _squarefree_ideals_with_bounded_norm(O::AbsNumFieldOrder, bound::ZZRingElem; coprime::ZZRingElem = ZZRingElem(0))
   lp = prime_ideals_up_to(O, Int(bound))
   if !iszero(coprime)
     filter!(x -> is_coprime(norm(x), coprime), lp)
