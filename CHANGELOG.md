@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.35.18](https://github.com/thofma/Hecke/releases/tag/v0.35.18) - 2025-04-23
+
+The following gives an overview of the changes compared to the previous release. This list is not
+complete, many more internal or minor changes were made, but we tried to only list those changes
+which we think might affect some users directly.
+
+### Noncommutative algebras
+
+#### New features or extended functionality
+
+- [#1854](https://github.com/thofma/Hecke.jl/pull/1854) Make order element arithmetic faster (for noncommutative algebras)
+
+### Other changes
+
+#### Bugfix
+
+- [#1852](https://github.com/thofma/Hecke.jl/pull/1852) Fix rescaling of form in neighbour method for Hermitian lattices
+
+#### New features or extended functionality
+
+- [#1835](https://github.com/thofma/Hecke.jl/pull/1835) Cleanup `hom` methods for `FinGenAbGrp` and `TorQuadModule` (deprecate methods with domain/codomain)
+
 ## [0.35.16](https://github.com/thofma/Hecke/releases/tag/v0.35.16) - 2025-04-02
 
 The following gives an overview of the changes compared to the previous release. This list is not
