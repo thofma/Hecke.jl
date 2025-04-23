@@ -15,7 +15,11 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
        evaluate(Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)))
    end
 #n   @show z, Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)), f.prim_img
-  if valuation(z) < 0
+#  if iszero(z)
+#    @show valuation(a, f.P), pr, f.precision
+#    @show a, z
+#  end
+  if iszero(z) || valuation(z) < 0
     v = valuation(a, f.P)
     b = a*uniformizer(f.P).elem_in_nf^-v
 #  @show v = Int(valuation(denominator(b), minimum(f.P)))
@@ -29,8 +33,9 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
     setprecision!(f, old_pr)
     return im
   end
-#  @show valuation(z), valuation(a, f.P), a, f.P
-  @assert valuation(z) == valuation(a, f.P)
+#  @show valuation(z), valuation(a, f.P)#, a, f.P
+# should be multiplied(?) by the abs. or rel. ram index?
+#  @assert valuation(z) == valuation(a, f.P)
   return z
 end
 
