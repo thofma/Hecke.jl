@@ -694,7 +694,7 @@ function mul_dense(A::SMat{T}, B::SMat{T}) where {T}
   C = zero_matrix(base_ring(B), nrows(A), ncols(B))
   for (i, rA) in enumerate(A.rows)
     rC = rA * B
-    for (j, val) in zip(rC.pos, rC.values)
+    for (j, val) in rC
       C[i, j] = val
     end
   end
