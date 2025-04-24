@@ -34,9 +34,12 @@ mutable struct CPath
   permutation::Perm{Int}
   
   int_param_r::arb
-  t_of_closed_D_point::acb
+  t_of_closest_d_point::acb
   int_params_M::Array{Int}
   int_params_N::Array{Int}
+  bounds::Array{arb}
+
+  sub_paths::Array{CPath}
   #Path type index:
   #0 is a line
   #1 is an arc
@@ -52,7 +55,7 @@ mutable struct CPath
     P.center = c
     P.radius = radius
     P.orientation = orientation
-    #P.bounds = []
+    P.bounds = []
     
     #Line
     if path_type == 0
@@ -69,27 +72,10 @@ mutable struct CPath
     
     #Round real or imag part to zero to compute angle if necessary
     prec = precision(Cc)
-    zero_sens = floor(prec*log(2)/log(10)) - 5
+    zero_sens = floor(Int64, prec*log(2)/log(10)) - 5
     
-    a_diff = a - c
-    
-    if abs(real(a_diff)) < 10^(-zero_sens)
-      a_diff = Cc(imag(a_diff))*i
-    end
-    
-    if abs(imag(a_diff)) < 10^(-zero_sens)
-      a_diff = Cc(real(a_diff))
-    end
-    
-    b_diff = b - c
-    
-    if abs(real(b_diff)) < 10^(-zero_sens)
-      b_diff = Cc(imag(b_diff))*i
-    end
-    
-    if abs(imag(b_diff)) < 10^(-zero_sens)
-      b_diff = Cc(real(b_diff))
-    end
+    a_diff = trim_zero(a - c, zero_sens)
+    b_diff = trim_zero(b - c, zero_sens)
     
     phi_a = mod2pi(angle(a_diff))
     phi_b = mod2pi(angle(b_diff))
@@ -266,22 +252,28 @@ function get_t_of_closest_d_point(G::CPath)
 end
 
 function set_int_param_r(G::CPath, r::arb)
-  G.int_params_r = r
+  G.int_param_r = r
 end
 
 function get_int_param_r(G::CPath)
-  return G.int_params_r
+  return G.int_param_r
 end
 
-
-function set_int_param_N(G::CPath, N::Int)
+function set_int_params_N(G::CPath, N::Int)
   G.int_params_N = N
 end
 
-function get_int_param_N(G::CPath)
+function get_int_params_N(G::CPath)
   return G.int_params_N
 end
 
+function set_subpaths(G::CPath, paths::Array{CPath})
+  G.sub_paths = paths
+end
+
+function get_subpaths(G::CPath)
+  return G.sub_paths
+end
 
 
 ################################################################################

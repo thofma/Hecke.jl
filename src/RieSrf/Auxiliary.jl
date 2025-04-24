@@ -133,3 +133,20 @@ function sheet_ordering(z1::acb,z2::acb)
     return false
   end
 end
+
+#Sets the real or imaginary parts of a number to zero if it is very close to zero.
+function trim_zero(x::acb, zero_sens::Int)
+  Cc = parent(x)
+  prec = precision(Cc)
+  Rc = ArbField(prec)
+  i = onei(Cc)
+  if abs(real(x)) < Rc(10)^(-zero_sens)
+    x = Cc(imag(x))*i
+  end
+
+  if abs(imag(x)) < Rc(10)^(-zero_sens)
+    x = Cc(real(x))
+  end
+
+  return x
+end

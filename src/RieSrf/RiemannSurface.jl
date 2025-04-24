@@ -23,6 +23,7 @@ mutable struct RiemannSurface
   basis_of_differentials::Vector{Any}
   weak_error::arb
   error::arb
+  extra_error::arb
   real_field::ArbField
   complex_field::AcbField
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
@@ -47,14 +48,19 @@ mutable struct RiemannSurface
     RS.basis_of_differentials = diff_base
     RS.genus = length(diff_base)
     
-    RS.complex_field = AcbField(prec + 3 + max(degree(f, 1), degree(f, 2)))
-    Rc = ArbField(prec + 3 + max(degree(f, 1), degree(f, 2)))
+    b10_prec = floor(Int, prec*log(2)/log(10))
+    b10_extra_prec = b10_prec + 3 + max(degree(f, 1), degree(f, 2))
+    
+    extra_prec = floor(Int, (3 + max(degree(f, 1), degree(f, 2)) *log(2)/log(10)))
+    RS.complex_field = AcbField(prec)
+    Rc = ArbField(prec + extra_prec)
     RS.real_field = Rc
     
-    b10prec = floor(Int, prec*log(2)/log(10))
     
-    RS.weak_error = Rc(10)^(-(2//3) *b10prec)
-    RS.error = Rc(10)^(-prec + 1)
+    
+    RS.weak_error = Rc(10)^(-(2//3) *b10_prec)
+    RS.error = Rc(10)^(-b10_prec + 1)
+    RS.extra_error = Rc(10)^(-b10_extra_prec + 1)
     
     RS.degree = degrees(f)
     
