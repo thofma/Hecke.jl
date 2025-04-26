@@ -26,6 +26,9 @@ mutable struct RiemannSurface
   extra_error::arb
   real_field::ArbField
   complex_field::AcbField
+  computational_precision_complex_field::AcbField
+  max_precision_complex_field::AcbField
+  integration_schemes::Array{IntScheme}
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
   homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
   degree::Vector{Int}
@@ -51,6 +54,12 @@ mutable struct RiemannSurface
     b10_prec = floor(Int, prec*log(2)/log(10))
     b10_extra_prec = b10_prec + 3 + max(degree(f, 1), degree(f, 2))
     
+    ExtraPrec := max(10,ceil(Int, log(10, Binomial(n,Floor(n/4))*MaxAbs)));
+	vprint RS,1 : "Extra precision:",ExtraPrec; 	
+
+	/* Complex field of maximal precision */
+	MaxPrec := Max(MinPrec,CompPrec+ExtraPrec);
+
     extra_prec = floor(Int, (3 + max(degree(f, 1), degree(f, 2)) *log(2)/log(10)))
     RS.complex_field = AcbField(prec)
     Rc = ArbField(prec + extra_prec)
@@ -59,8 +68,8 @@ mutable struct RiemannSurface
     
     
     RS.weak_error = Rc(10)^(-(2//3) *b10_prec)
-    RS.error = Rc(10)^(-b10_prec + 1)
-    RS.extra_error = Rc(10)^(-b10_extra_prec + 1)
+    RS.error = Rc(10)^(-b10_prec - 1)
+    RS.extra_error = Rc(10)^(-b10_extra_prec - 1)
     
     RS.degree = degrees(f)
     
@@ -164,6 +173,10 @@ function assure_has_discriminant_points(RS::RiemannSurface)
     D2 = vcat(acb[],[roots(fac, initial_prec = prec) for fac in a0_factors]...)
     D_points = sort!(vcat(D1, D2), lt = sheet_ordering)
     RS.discriminant_points = D_points
+
+    #TODO:Compute max precision dynamically based on size of |x| and |f(x)| for x in discriminant points
+    RS.max_precision_complex_field := AcbField(700)
+
     return nothing
   end
 end

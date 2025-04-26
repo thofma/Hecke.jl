@@ -8,6 +8,33 @@
 
 export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points, gauss_legendre_path_parameters
 
+
+mutable struct IntegrationScheme
+
+  abscissae::Array{arb}
+  weights::Array{arb}
+  int_param_r::arb
+  int_param_N::Int
+  bounds::Array{arb}
+  prec::Int
+
+  
+  #Compute a Gauss-Legendre integration scheme
+  function IntegrationScheme(r, prec, error, bound::Int = 10^5 )
+  
+    integration_scheme = new()
+    N = gauss_legendre_parameters(r, error, bound)
+    integration_scheme.int_param_N = N
+    abscissas, weights = gauss_legendre_integration_points(N, prec)
+    integration_scheme.abscissae = abscissae
+    integration_scheme.weights = weights
+    integration_scheme.int_param_r = r
+    integration_scheme.bounds = [bound]
+    return integration_scheme 
+  end
+
+end
+
 ################################################################################
 #
 #  Gauss-Legendre
@@ -38,10 +65,10 @@ function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: Int
   return abscissae, weights
 end
 
-function gauss_legendre_parameters(r, err, Bound = 10^5)
+function gauss_legendre_parameters(r, error, bound = 10^5)
 
-  R = ArbField(10);
-  N = ceil((log(64*R(Bound/15))-log(R(err))-log(1-exp(acosh(r))^(-2)))/acosh(r))-1;
+  R = Float64
+  N = ceil(Int64, (log(64*(bound/15))-log(R(error))-log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
   return N
 end
 

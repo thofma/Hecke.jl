@@ -36,8 +36,9 @@ mutable struct CPath
   int_param_r::arb
   t_of_closest_d_point::acb
   int_params_M::Array{Int}
-  int_params_N::Array{Int}
+  int_params_N::Int
   bounds::Array{arb}
+  integration_scheme_index::Int
 
   sub_paths::Array{CPath}
   #Path type index:
