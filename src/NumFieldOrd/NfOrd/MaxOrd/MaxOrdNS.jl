@@ -32,7 +32,7 @@ function _maximal_order_round_four(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, 
   if !isempty(ramified_primes)
     push!(l, ramified_primes)
   end
-  l = coprime_base(l)
+  l = isempty(l) ? l : coprime_base(l)
   for s in l
     if disc != -1
       u = divexact(discriminant(OO), disc)
