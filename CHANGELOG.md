@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.35.19](https://github.com/thofma/Hecke/releases/tag/v0.35.19) - 2025-04-27
+
+The following gives an overview of the changes compared to the previous release. This list is not
+complete, many more internal or minor changes were made, but we tried to only list those changes
+which we think might affect some users directly.
+
+### Number fields
+
+#### Bugfix
+
+- [#1859](https://github.com/thofma/Hecke.jl/pull/1859) Fix order_type for generic non-simple absolute fields
+
+### Other changes
+
+#### Bugfix
+
+- [#1858](https://github.com/thofma/Hecke.jl/pull/1858) Fix `local_factor` for Hermitian lattices
+
+#### New features or extended functionality
+
+- [#1228](https://github.com/thofma/Hecke.jl/pull/1228) Add multiplication of sparse matrices
+
 ## [0.35.18](https://github.com/thofma/Hecke/releases/tag/v0.35.18) - 2025-04-23
 
 The following gives an overview of the changes compared to the previous release. This list is not
