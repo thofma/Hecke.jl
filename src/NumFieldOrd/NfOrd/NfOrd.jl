@@ -725,6 +725,19 @@ order is cached for future use.
 """
 function order(K::S, a::Vector{T}; check::Bool = true, isbasis::Bool = false,
                cached::Bool = false) where {S <: NumField{QQFieldElem}, T <: NumFieldElem{QQFieldElem}}
+  # hot-fix for some Oscar bug
+  # Should be removed for the next breaking Hecke release
+  if !(K isa AbsNonSimpleNumField || K isa AbsSimpleNumField)
+    a = copy(a)
+    for i in 1:length(a)
+      z = a[i]
+      d = denominator(minpoly(z))
+      if !(is_unit(d))
+        a[i] = d*z
+      end
+    end
+  end
+
   @assert all(x->K == parent(x), a)
   if isbasis
     if check
