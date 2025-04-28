@@ -38,6 +38,8 @@ end
   Kt, t = K["t"]
   f = t^4+(-28*_a^2 + 26*_a + 124)*t^2+(81*_a^2 + 504*_a + 936)
   @test @inferred is_irreducible(f)
+  @test @inferred !is_irreducible(zero(Kt))
+  @test @inferred !is_irreducible(one(Kt))
 
   f = x^3-7*x^2+6*x-1
   K, a = number_field(f, "a")
