@@ -8,7 +8,7 @@
 
 export CPath
 
-export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation, start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point, get_t_of_closest_d_point
+export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation, start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point, get_t_of_closest_d_point, evaluate_d
 
 ################################################################################
 #
@@ -30,17 +30,18 @@ mutable struct CPath
   
   length::arb
   gamma::Any
+  dgamma::Any
   orientation::Int
   permutation::Perm{Int}
   
   int_param_r::arb
   t_of_closest_d_point::acb
-  int_params_M::Array{Int}
   int_params_N::Int
-  bounds::Array{arb}
+  bounds::Vector{arb}
   integration_scheme_index::Int
 
-  sub_paths::Array{CPath}
+  sub_paths::Vector{CPath}
+  integral_matrix::AcbMatrix
   #Path type index:
   #0 is a line
   #1 is an arc
@@ -60,8 +61,11 @@ mutable struct CPath
     
     #Line
     if path_type == 0
-      gamma = function(t::arb)
+      gamma = function(t::FieldElem)
         return (a + b)//2 + (b - a)//2 * t
+      end
+      dgamma = function(t::FieldElem)
+        return (b - a)//2
       end
       length = abs(b - a)
     end
@@ -99,24 +103,32 @@ mutable struct CPath
    
     #Arc
     if path_type == 1
-      gamma = function(t::arb)
+      gamma = function(t::FieldElem)
         return c + radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * orientation * t))
       end
-      
+      dgamma = function(t::FieldElem)
+        return i * (phi_b - phi_a)//2 * orientation * radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * orientation * t))
+      end
+
       length = abs((phi_b - phi_a)) * radius
       
     end
     
     #Full circle
     if path_type == 2
-      gamma = function(t::arb)
+      gamma = function(t::FieldElem)
         #Minus radius as gamma(-1) = a
-        return c - radius * exp(i * (phi_a + piC * t ))
+        return c - radius * exp(i * (phi_a + orientation * piC * t ))
       end
+      dgamma = function(t::FieldElem)
+        return orientation * i * (piC ) * (-1) * radius * exp(i * (phi_a + orientation * piC * t )) 
+      end
+
       length = 2 * piC * radius
     end
     
     P.gamma = gamma
+    P.dgamma = dgamma
     P.length = length
     return P
   end
@@ -181,6 +193,11 @@ function reverse(G::CPath)
     G_rev = c_arc(end_point(G), start_point(G), center(G), orientation = -orientation(G))
   end
   assign_permutation(G_rev, inv(permutation(G)))
+
+  if isdefined(G, :integral_matrix)
+    G_rev.integral_matrix =  permutation(G_rev) * -G.integral_matrix
+  end
+
   return G_rev
 end
 
@@ -268,7 +285,7 @@ function get_int_params_N(G::CPath)
   return G.int_params_N
 end
 
-function set_subpaths(G::CPath, paths::Array{CPath})
+function set_subpaths(G::CPath, paths::Vector{CPath})
   G.sub_paths = paths
 end
 
@@ -283,7 +300,11 @@ end
 #
 ################################################################################
 
-function evaluate(G::CPath, t::arb)
+function evaluate(G::CPath, t::FieldElem)
   return G.gamma(t)
+end
+
+function evaluate_d(G::CPath, t::FieldElem)
+  return G.dgamma(t)
 end
 

@@ -6,30 +6,33 @@
 #
 ################################################################################
 
+export IntegrationScheme
+
 export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points, gauss_legendre_path_parameters
 
 
 mutable struct IntegrationScheme
 
-  abscissae::Array{arb}
-  weights::Array{arb}
+  abscissae::Vector{arb}
+  weights::Vector{arb}
   int_param_r::arb
   int_param_N::Int
-  bounds::Array{arb}
+  bounds::Vector{arb}
   prec::Int
 
   
   #Compute a Gauss-Legendre integration scheme
-  function IntegrationScheme(r, prec, error, bound::Int = 10^5 )
+  function IntegrationScheme(r, prec, error, bound)
   
     integration_scheme = new()
     N = gauss_legendre_parameters(r, error, bound)
     integration_scheme.int_param_N = N
-    abscissas, weights = gauss_legendre_integration_points(N, prec)
+    abscissae, weights = gauss_legendre_integration_points(N, prec)
     integration_scheme.abscissae = abscissae
     integration_scheme.weights = weights
     integration_scheme.int_param_r = r
     integration_scheme.bounds = [bound]
+    integration_scheme.prec = prec
     return integration_scheme 
   end
 
@@ -67,8 +70,7 @@ end
 
 function gauss_legendre_parameters(r, error, bound = 10^5)
 
-  R = Float64
-  N = ceil(Int64, (log(64*(bound/15))-log(R(error))-log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
+  N = ceil(Int64, (log(64*(bound/15))-log(error)-log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
   return N
 end
 
@@ -118,7 +120,7 @@ function split_line_segment(points, path::CPath, err)
     set_int_params_N(gam2, N2)
     
     if N - N1 - N2 >= 10
-      paths = hcat(split_line_segment(points, gam1, err), split_line_segment(points, gam2, err))
+      paths = vcat(split_line_segment(points, gam1, err), split_line_segment(points, gam2, err))
     end
   end
   return paths
@@ -140,7 +142,6 @@ function gauss_legendre_line_parameters(points::Vector{acb}, path::CPath)
     #Now picking r_k to be the following, we ensure that t_p lies on the boundary
     #and not on the ellipse if radius < r_k  
     r_p = (abs(t_p + 1) + abs(t_p - 1))//2
-    
     @req r_p > 1 "Error in computation of r_p"
     if r_p < r_0
       r_0 = r_p

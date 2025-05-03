@@ -150,3 +150,84 @@ function trim_zero(x::acb, zero_sens::Int)
 
   return x
 end
+
+
+################################################################################
+#
+#  Convex hull
+#
+################################################################################
+
+function inner_faces(f)
+  points = [degrees(mon) for mon in monomials(f)]
+  ordered_vertices = convex_hull(points)
+  n = length(ordered_vertices)
+  edges = vcat([line_equation(ordered_vertices[i-1], ordered_vertices[i]) for i in (2:n)], line_equation(ordered_vertices[end], ordered_vertices[1]))
+  center = sum(ordered_vertices)//n
+
+  result = []
+  d = total_degree(f)-3
+	for i in (0:d)
+		for j in (0:d-i)
+      if  all([(sign(g(i + 1, j + 1)) == sign(g(center[1], center[2]))) for g in edges])
+			  push!(result, [i + 1, j + 1])
+			end
+		end
+	end
+
+  return result
+end 
+
+
+function convex_hull(points::Vector{Vector{Int}})
+  orig_points = copy(points)
+
+  points = sort(points)
+
+  # Take care of trivial case with 1 or 2 elements
+  if length(points) == 1
+    error("Convex hull of 1 point is not defined")
+  elseif length(points) == 2
+    P = Polygon([Line((points[1], points[2]))])
+  else
+    points_lower_convex_hull = Vector{Int}[points[1]]
+    i = 2
+    while i<= length(points)
+      y = points_lower_convex_hull[end]
+      sl = [_slope(y, x) for x = points[i:end]]
+      min_sl = minimum(sl)
+      p = findlast(x->x == min_sl, sl)::Int
+      push!(points_lower_convex_hull, points[p+i-1])
+      i += p
+    end
+    
+    points = reverse(points)
+    points_upper_convex_hull = Vector{Int}[points[1]]
+    i = 2
+    while i<= length(points)
+      y = points_upper_convex_hull[end]
+      sl = [_slope(y, x) for x = points[i:end]]
+      min_sl = minimum(sl)
+      p = findlast(x->x == min_sl, sl)::Int
+      push!(points_upper_convex_hull, points[p+i-1])
+      i += p
+    end
+    return vcat(points_lower_convex_hull[1:end-1], points_upper_convex_hull[1:end-1])
+  end
+end
+
+function _slope(a::Vector{Int}, b::Vector{Int})
+  if b[1] == a[1]
+    return inf
+  end
+  return QQFieldElem(b[2]-a[2], b[1]-a[1])
+end
+
+function line_equation(a::Vector{Int}, b::Vector{Int})
+  Qxy, (x,y) = polynomial_ring(QQ, ["x","y"])
+  if b[1] == a[1]
+    return x - a[1]
+  end
+  c = _slope(a,b)
+  return  c*x - y - c*b[1] + b[2]
+end

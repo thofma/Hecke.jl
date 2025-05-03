@@ -26,12 +26,17 @@ mutable struct RiemannSurface
   extra_error::arb
   real_field::ArbField
   complex_field::AcbField
+  complex_field2::AcbField
   computational_precision_complex_field::AcbField
   max_precision_complex_field::AcbField
-  integration_schemes::Array{IntScheme}
+  integration_schemes::Vector{IntegrationScheme}
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
   homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
   degree::Vector{Int}
+  evaluate_differential_factors_matrix::Any
+  baker_basis::Bool
+  differential_form_data::Any
+  bounds::Vector{arb}
 
   function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
@@ -44,22 +49,106 @@ mutable struct RiemannSurface
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
     kxy, y = polynomial_ring(kx, "y")
-    f_new = f(x,y)
+    f_new = f(x, y)
     F, a = function_field(f_new)
     diff_base = basis_of_differentials(F)
     RS.function_field = F
     RS.basis_of_differentials = diff_base
-    RS.genus = length(diff_base)
+    g = length(diff_base)
+    RS.genus = g
+
+
+
+    inner_fac = inner_faces(f)
+    if length(inner_fac) == g
+      RS.baker_basis = true
+      x, y = gens(parent(f))
+      factor_set = [x, y, derivative(f, 2)]
+      n = length(factor_set)
+      min_x = minimum([t[1] for t in inner_fac])
+      max_x = maximum([t[1] for t in inner_fac])
+      min_y = minimum([t[2] for t in inner_fac])
+      max_y = maximum([t[2] for t in inner_fac])
+      min_pows = [min_x - 1, min_y - 1, -1]
+	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
+
+      factor_matrix = zero_matrix(Int, n, g)
+      
+      for i in (1:g)
+        factor_matrix[1, i] = inner_fac[i][1] - 1
+        factor_matrix[2, i] = inner_fac[i][2] - 1
+        factor_matrix[3, i] = -1
+      end 
+
+    else
+      RS.baker_basis = false
+      factor_set = Set()
+      factored_nums = []
+      factored_denoms = []
+      #Gather all the factors occurring in the basis of differential forms
+      for i in 1:g
+        num_diff_i_fac = factor(numerator(diff_base[i].f)).fac
+        denom_diff_i_fac = factor(denominator(diff_base[i].f)).fac
+
+        union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
+
+        push!(factored_nums, num_diff_i_fac)
+        push!(factored_denoms, denom_diff_i_fac)
+      end
     
+      #Turn set into sequence so we can enumerate
+      factor_set = collect(factor_set)
+      number_of_factors = length(factor_set)
+      n = length(factor_set)
+      factor_matrix = zero_matrix(Int, n, g)
+      for j in 1:g
+        for i in 1:n
+          if haskey(factored_nums[j], factor_set[i])
+            factor_matrix[i,j] = get(factored_nums[j], factor_set[i], 0)
+          end
+
+          if haskey(factored_denoms[j], factor_set[i])
+            factor_matrix[i,j] = -get(factored_denoms[j], factor_set[i], 0)
+          end
+        end
+      end 
+
+		  min_pows= [minimum( [factor_matrix[j, 1:g] for j in 1:n])]
+	    range_pows= [maximum( [factor_matrix[j, 1:g] for j in 1:n])] - min_pows
+    end
+
+    function evaluate_differential_factors_matrix(factors, x0, ys)
+      Kxy = parent(factors[1])
+      Ky, y = polynomial_ring(base_ring(Kxy), "y")
+      CC = base_ring(factors[1])
+      m = length(ys)
+
+      result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
+      for l in 1:length(factors)
+        f = factors[l]
+        fx0 = f(x0, y)
+        for s in 1:m
+          fx0ys = CC(fx0(ys[s]))
+          factor_at_xys = [fx0ys^min_pows[l] ]
+          for k in (1:range_pows[l])
+            push!(factor_at_xys, factor_at_xys[k]*fx0ys)
+          end
+          for k in 1:g
+            #Let omega_i = g_i * dx where the omega form a basis of 
+            #differentials. Then result[s][k] = g_k(x0, ys) where the
+            #ys are the m preimages in the fiber f^(-1)(x0).
+            result[s, k] *= factor_at_xys[factor_matrix[l, k] - min_pows[l]+1]
+          end
+        end
+      end
+      return result
+      end
+
+    RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
+    RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
+
     b10_prec = floor(Int, prec*log(2)/log(10))
     b10_extra_prec = b10_prec + 3 + max(degree(f, 1), degree(f, 2))
-    
-    ExtraPrec := max(10,ceil(Int, log(10, Binomial(n,Floor(n/4))*MaxAbs)));
-	vprint RS,1 : "Extra precision:",ExtraPrec; 	
-
-	/* Complex field of maximal precision */
-	MaxPrec := Max(MinPrec,CompPrec+ExtraPrec);
-
     extra_prec = floor(Int, (3 + max(degree(f, 1), degree(f, 2)) *log(2)/log(10)))
     RS.complex_field = AcbField(prec)
     Rc = ArbField(prec + extra_prec)
@@ -70,23 +159,9 @@ mutable struct RiemannSurface
     RS.weak_error = Rc(10)^(-(2//3) *b10_prec)
     RS.error = Rc(10)^(-b10_prec - 1)
     RS.extra_error = Rc(10)^(-b10_extra_prec - 1)
-    
+    RS.bounds = []
     RS.degree = degrees(f)
-    
-    #Additional field with low precision
-    
-    #Process differentials to store complex ones?
-    #Low precision differentials?
-    
-    #Homogenization?
-    #Variable for integration scheme?
-    
-    #Store data for fundamental group, dicriminant points, homoology?
-    #Fiber function?
-    
-    
-    
-    
+
     return RS
   end
 end
@@ -175,7 +250,7 @@ function assure_has_discriminant_points(RS::RiemannSurface)
     RS.discriminant_points = D_points
 
     #TODO:Compute max precision dynamically based on size of |x| and |f(x)| for x in discriminant points
-    RS.max_precision_complex_field := AcbField(700)
+    RS.max_precision_complex_field = AcbField(700)
 
     return nothing
   end
@@ -536,7 +611,7 @@ end
 #
 ################################################################################
 
-function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{arb})
+function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{arb}, start_ys::Vector{acb}=acb[])
   v = embedding(RS)
   prec = precision(RS)
   Rc = ArbField(prec)
@@ -552,16 +627,21 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   N = length(u)
   
   x_vals = zeros(Cc, N)
+  dx_vals = zeros(Cc, N)
   y_vals = [zeros(Cc, m) for i in (1:N)]
+
   z = zeros(Cc, m)
 
   x_vals[1] = evaluate(path, u[1])
-  
+
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   
-  
-  y_vals[1] = sort!(roots(f(x_vals[1], y), initial_prec = prec), lt = sheet_ordering)
+  if length(start_ys) == 0
+    y_vals[1] = sort!(roots(f(x_vals[1], y), initial_prec = prec), lt = sheet_ordering)
+  else
+    y_vals[1] = start_ys
+  end
   for l in (2:N)
     x_vals[l] = evaluate(path, u[l])
     z .= y_vals[l-1]
@@ -806,9 +886,6 @@ function _homology_basis(RS::RiemannSurface)
   @req rank(A) == 2*genus "Computed matrix has the wrong rank. There is a bug in the code."
   K = matrix(ZZ, A)
   
-  print(typeof(cycles_list),"\n")
-  print(typeof(K),"\n")
-  print(typeof(symplectic_reduction(K)),"\n")
   RS.homology_basis = cycles_list, K, symplectic_reduction(K)
   return RS.homology_basis
 end
@@ -845,22 +922,29 @@ function symplectic_reduction(K::ZZMatrix)
       pivot +=1
       continue
     end
-    move_to_positive_pivot(next[2], next[1], pivot, A, B)
+    Hecke.move_to_positive_pivot(next[2], next[1], pivot, A, B)
     zeros_only = true
     pivot_plus = pivot + 1
     for j in (pivot + 2:n)
       v = -A[pivot, j]
       if v != 0
-        add_row!(A, v, pivot_plus, j)
-        add_column!(A, v, pivot_plus, j)
-        add_row!(B, v, pivot_plus, j)
+        #The version with ! gave different results for some reason.
+        #add_row!(A, v, pivot_plus, j)
+        #add_column!(A, v, pivot_plus, j)
+        #add_row!(B, v, pivot_plus, j)
+        A = add_row(A, v, pivot_plus, j)
+        A = add_column(A, v, pivot_plus, j)
+        B = add_row(B, v, pivot_plus, j)
         zeros_only = false
       end
       v = A[pivot_plus, j]
       if v != 0
-        add_row!(A, v, pivot, j)
-        add_column!(A, v, pivot, j)
-        add_row!(B, v, pivot, j)
+        A = add_row(A, v, pivot, j)
+        A = add_column(A, v, pivot, j)
+        B = add_row(B, v, pivot, j)
+        #add_row!(A, v, pivot, j)
+        #add_column!(A, v, pivot, j)
+        #add_row!(B, v, pivot, j)
         zeros_only = false
       end
     end
