@@ -7,6 +7,7 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision
   qfs = change_base_ring(Q, fs, cached = false)
 
   o = Q(r)
+  starting_prec = min(starting_prec, precision(o))
   @assert precision(o) >= starting_prec
 
   o = qfs(o)
