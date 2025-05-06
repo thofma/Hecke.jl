@@ -10,22 +10,23 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
   end
   Qx = parent(parent(a).pol)
   C = codomain(f)
+
   v = Int(valuation(denominator(a), minimum(f.P)))
   z = setprecision(C, precision(C)+absolute_ramification_index(C)*v) do
        evaluate(Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)))
-   end
-#n   @show z, Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)), f.prim_img
-#  if iszero(z)
-#    @show valuation(a, f.P), pr, f.precision
-#    @show a, z
-#  end
+  end
+
   if iszero(z) || valuation(z) < 0
     v = valuation(a, f.P)
     b = a*uniformizer(f.P).elem_in_nf^-v
-#  @show v = Int(valuation(denominator(b), minimum(f.P)))
-    z = evaluate(Qx(b), f.prim_img)
-    z *= uniformizer(parent(z))^v
+
+    vv = Int(valuation(denominator(b), minimum(f.P)))
+    z = setprecision(C, precision(C)+absolute_ramification_index(C)*vv) do
+         evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)))
+    end
+    z *= uniformizer(parent(z), v)
   end
+
   if precision(z) < pr
     old_pr = f.precision
     setprecision!(f, 2*f.precision)
@@ -33,7 +34,7 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
     setprecision!(f, old_pr)
     return im
   end
-#  @show valuation(z), valuation(a, f.P)#, a, f.P
+
 # should be multiplied(?) by the abs. or rel. ram index?
 #  @assert valuation(z) == valuation(a, f.P)
   return z
@@ -170,7 +171,7 @@ function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::AbsNum
   bi *= c
   bi = mod(bi, minP2i)
   @assert denominator(bi, O) == 1
-#  @show iszero(f(bi)) ? -1 :  valuation(f(bi), P), prec
+
   return bi
 end
 
@@ -581,12 +582,14 @@ end
 
 
 function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, new_prec::Int)
-  if new_prec < f.precision
-    Kp = codomain(f)
+  Kp = codomain(f)
+  if new_prec <= maximum(keys(Kp.def_poly_cache))
     setprecision!(Kp, new_prec)
     setprecision!(base_field(Kp), new_prec)
+#    @show new_prec, precision(f.prim_img)
     @assert precision(f.prim_img) >= new_prec
 #    setprecision!(f.prim_img, new_prec)
+    f.precision = new_prec
   else
     K = domain(f)
     #I need to increase the precision of the data
@@ -601,14 +604,23 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     end
     Qp = padic_field(prime(Kp), precision = div(new_prec, e) + 1)
     Zp = maximal_order(Qp)
+#    @show Zp, precision(Zp)
     Qpx, _ = polynomial_ring(Qp, "x")
     pows_u = powers(u, e-1)
     bK = basis_matrix(AbsSimpleNumFieldElem[u*pows_u[end], gen(K)])
     append!(pows_u, map(elem_in_nf, basis(P^new_prec, copy = false)))
     MK = basis_matrix(pows_u)
+    cMK = content(MK)
+#    @show content(MK), valuation(Qp(content(MK)))
+    divexact!(MK, MK, cMK)
+    divexact!(bK, bK, cMK)
     MZp = map_entries(Zp, MK)
+#    @show map_entries(precision, MZp)
+#    @show elementary_divisors(MZp)
     bZp = map_entries(Zp, bK)
+#    global last_mat = (MZp, bZp)
     fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+#    @show map_entries(precision, xZp)
     @assert fl
     coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
     for i = 1:e
@@ -623,8 +635,11 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     for i = 1:e
       img_prim_elem[i] = xZp[2, i].x
     end
+#    @show map(precision, img_prim_elem)
     img = Kp(Qpx(img_prim_elem))
     f.prim_img = img
+#    @show precision(img), new_prec
+    f.precision = new_prec
   end
   return nothing
 end
