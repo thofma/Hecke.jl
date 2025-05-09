@@ -12,8 +12,18 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
   C = codomain(f)
 
   v = Int(valuation(denominator(a), minimum(f.P)))
+  
+#  if pr > 1000
+#    error("ASD")
+#  end
+
+  old = f.precision
+
+  if f.precision < pr + absolute_ramification_index(C)*v 
+    setprecision!(f, pr + absolute_ramification_index(C)*v)
+  end
   z = setprecision(C, precision(C)+absolute_ramification_index(C)*v) do
-       evaluate(Qx(a), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)))
+       evaluate(Qx(a), setprecision(f.prim_img, pr + absolute_ramification_index(C)*v))
   end
 
   if iszero(z) || valuation(z) < 0
@@ -21,18 +31,32 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
     b = a*uniformizer(f.P).elem_in_nf^-v
 
     vv = Int(valuation(denominator(b), minimum(f.P)))
-    z = setprecision(C, precision(C)+absolute_ramification_index(C)*vv) do
-         evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*v)))
+
+    if precision(C) +absolute_ramification_index(C)*v - vv < f.precision
+      setprecision!(f, precision(C) +absolute_ramification_index(C)*vv - v)
     end
-    z *= uniformizer(parent(z), v)
+    z = setprecision(C, precision(C)+absolute_ramification_index(C)*vv - v) do
+         evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + absolute_ramification_index(C)*vv - v)))
+    end
+    z *= uniformizer(parent(z), v; prec = pr)
   end
 
   if precision(z) < pr
+    global last_in = (f, a, pr)
+    error("ASD2")
     old_pr = f.precision
     setprecision!(f, 2*f.precision)
+    @show :bad, pr, f.precision, precision(z)
+    if f.precision > 1000
+      @show precision(f.prim_img), precision(base_field(C))
+      error("roo bad")
+    end
     im = image(f, a; pr)
     setprecision!(f, old_pr)
     return im
+  end
+  if old != f.precision
+    setprecision!(f, old)
   end
 
 # should be multiplied(?) by the abs. or rel. ram index?
@@ -463,7 +487,9 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
     Kp = codomain(f)
     _f = inertia_degree(P)
     e = ramification_index(P)
-    if new_prec > e*maximum(keys(Kp.def_poly_cache))
+    if new_prec >= e*maximum(keys(Kp.def_poly_cache))
+      new_prec += e - new_prec % e
+      @assert new_prec % e == 0
       asked = new_prec
       new_prec = max(new_prec, 2*e*maximum(keys(Kp.def_poly_cache))) 
       #to not do this too frequently
@@ -508,9 +534,9 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
         return 
       end
     else
-#      f.precision = new_prec
+#      f.precision = max(new_prec, f.precision)
       v = sort(collect(keys(Kp.def_poly_cache)))
-      i = searchsortedfirst(v, new_prec)
+      i = searchsortedfirst(v, div(new_prec, e))
       Kp.def_poly_cache[new_prec] = setprecision(Kp.def_poly_cache[v[i]], new_prec)
       setprecision!(Kp, new_prec)
       setprecision!(base_field(Kp), div(new_prec, e)+1)
