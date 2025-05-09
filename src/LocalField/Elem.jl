@@ -13,8 +13,6 @@ function Base.show(io::IO, a::LocalFieldElem)
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
-canonical_unit(x::LocalFieldElem) = x
-
 ################################################################################
 #
 #  Deepcopy
