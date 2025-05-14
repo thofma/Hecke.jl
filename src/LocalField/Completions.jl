@@ -5,7 +5,7 @@
 ################################################################################
 
 function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(codomain(f)))
-  f_in = deepcopy(f)
+
   if iszero(a)
     return zero(codomain(f))
   end
@@ -29,26 +29,29 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
 
   if iszero(z) || valuation(z) < 0
     v = valuation(a, f.P)
+    av = abs(v)
     b = a*uniformizer(f.P).elem_in_nf^-v
 
     e = absolute_ramification_index(C)
 
     vv = Int(valuation(denominator(b), minimum(f.P)))
 
-    if pr -v + vv + e < f.precision
-      setprecision!(f, pr +absolute_ramification_index(C)*vv - v + e)
+    if pr +av + vv + e < f.precision
+      setprecision!(f, pr +e*vv + av + e)
     end
     @assert parent(f.prim_img) === C
-    z = setprecision(C, pr+e*vv - v + e) do
-      setprecision(base_field(C), ceil(Int, (pr+e*vv - v + e)/e)) do
-         evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + e*vv - v + e)))
+    @assert pr >= 0
+    @assert pr+e*vv + av + e >= 0
+    z = setprecision(C, pr+e*vv + av + e) do
+      setprecision(base_field(C), ceil(Int, (pr+e*vv + av + e)/e)) do
+         evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + e*vv  + av + e)))
       end
     end
     z *= uniformizer(parent(z), v; prec = pr)
   end
 
   if precision(z) < pr
-    global last_in = (f_in, a, pr)
+    global last_in = (f, a, pr)
     error("ASD2")
     old_pr = f.precision
     setprecision!(f, 2*f.precision)
