@@ -1733,7 +1733,7 @@ end
     z.base_ring = O
     z.ideal = I
     z.basis_matrix = integral_basis_matrix_wrt(I, O)
-    z.basis_mat_array = Matrix{ZZRingELem}(z.basis_matrix)
+    z.basis_mat_array = Matrix{ZZRingElem}(z.basis_matrix)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = zero_matrix(ZZ, 2*d + 1, 2*d + 1)
