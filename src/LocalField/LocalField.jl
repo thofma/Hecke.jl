@@ -134,6 +134,14 @@ function base_field(L::LocalField)
   return base_ring(defining_polynomial(L))
 end
 
+#problem: for Eisenstein fields, the polynomial can change and is known
+#         to many(?) precisions. Any will do to get the base ring
+#         but asking fro one that is not (yet) known might
+#         trigger an infinite recursion
+function base_field(K::LocalField{S, EisensteinLocalField}) where S <: FieldElem
+  return base_ring(first(values(K.def_poly_cache)))
+end
+
 function absolute_base_field(L::LocalField)
   return absolute_base_field(base_field(L))
 end
@@ -377,6 +385,7 @@ function precision(K::LocalField)
 end
 
 function setprecision!(K::LocalField, n::Int)
+#  Base.show_backtrace(stdout, backtrace())
   K.precision_base = ceil(Int, n/ramification_index(K))
   K.precision_times_ramification_index = n
   return nothing
