@@ -40,6 +40,8 @@
   @test ZZRingElem(2) == @inferred D[2]
   @test ZZRingElem(0) == @inferred D[3]
   @test ZZRingElem(0) == @inferred D[1000]
+  @test D[1:2] == @inferred sparse_row(ZZ, [(1, 1), (2, 2)])
+  @test D[1:1] == @inferred sparse_row(ZZ, [(1, 1)])
 
   G = @inferred copy(F)
   @test G == F

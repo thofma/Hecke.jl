@@ -214,8 +214,10 @@
     #addition
     P = @inferred E43_a1([QQ(-1), QQ(0)])
     O = infinity(E43_a1)
+    @test is_zero(O)
 
     @test P == @inferred P + O
+    @test !is_zero(P)
     @test E43_a1([2, -4]) == P + P
     @test E43_a1([QQFieldElem(-2, 9), QQFieldElem(1, 27)]) == P + P + P
 
@@ -301,5 +303,5 @@ end
   kt = fraction_field(pt)
   R, (x, y) = polynomial_ring(kt, [:x, :y])
   f = y^2 - x^3 - 3*t*x^2 + 7*x - 4*t^2 - 3
-  elliptic_curve(f, x, y)
+  @test elliptic_curve(f, x, y) isa EllipticCurve
 end
