@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.35.20"
+version = "0.36.0-DEV"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -27,7 +27,7 @@ GAPExt = "GAP"
 PolymakeExt = "Polymake"
 
 [compat]
-AbstractAlgebra = "^0.44.13"
+AbstractAlgebra = "0.45.0"
 Dates = "1.6"
 Distributed = "1.6"
 GAP = "0.13"
@@ -35,7 +35,7 @@ InteractiveUtils = "1.6"
 LazyArtifacts = "1.6"
 LinearAlgebra = "1.6"
 Markdown = "1.6"
-Nemo = "0.49.1"
+Nemo = "0.50.0"
 Pkg = "1.6"
 Polymake = "0.10, 0.11, 0.12"
 Printf = "1.6"
