@@ -4,33 +4,88 @@
 #
 ################################################################################
 
-function image(f::CompletionMap, a::AbsSimpleNumFieldElem)
+function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(codomain(f)))
+
   if iszero(a)
     return zero(codomain(f))
   end
   Qx = parent(parent(a).pol)
-  z = evaluate(Qx(a), f.prim_img)
-  if !is_unit(z)
-    v = valuation(a, f.P)
-    a = a*uniformizer(f.P).elem_in_nf^-v
-    z = evaluate(Qx(a), f.prim_img)
-    z *= uniformizer(parent(z))^v
+  C = codomain(f)
+
+  v = Int(valuation(denominator(a), minimum(f.P)))
+  
+#  if pr > 1000
+#    error("ASD")
+#  end
+
+  old = f.precision
+
+  if f.precision < pr + absolute_ramification_index(C)*v 
+    setprecision!(f, pr + absolute_ramification_index(C)*v)
   end
+  z = setprecision(C, precision(C)+absolute_ramification_index(C)*v) do
+       evaluate(Qx(a), setprecision(f.prim_img, pr + absolute_ramification_index(C)*v))
+  end
+
+  if iszero(z) || valuation(z) < 0
+    v = valuation(a, f.P)
+    av = abs(v)
+    b = a*uniformizer(f.P).elem_in_nf^-v
+
+    e = absolute_ramification_index(C)
+
+    vv = Int(valuation(denominator(b), minimum(f.P)))
+
+    if pr +av + vv + e < f.precision
+      setprecision!(f, pr +e*vv + av + e)
+    end
+    @assert parent(f.prim_img) === C
+    @assert pr >= 0
+    @assert pr+e*vv + av + e >= 0
+    z = setprecision(C, pr+e*vv + av + e) do
+      setprecision(base_field(C), ceil(Int, (pr+e*vv + av + e)/e)) do
+         evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + e*vv  + av + e)))
+      end
+    end
+    z *= uniformizer(parent(z), v; prec = pr)
+  end
+
+  if precision(z) < pr
+    global last_in = (f, a, pr)
+    error("ASD2")
+    old_pr = f.precision
+    setprecision!(f, 2*f.precision)
+    @show :bad, pr, f.precision, precision(z)
+    if f.precision > 1000
+      @show precision(f.prim_img), precision(base_field(C))
+      error("roo bad")
+    end
+    im = image(f, a; pr)
+    setprecision!(f, old_pr)
+    return im
+  end
+  if old != f.precision
+    setprecision!(f, old)
+  end
+
+# should be multiplied(?) by the abs. or rel. ram index?
+#  @assert valuation(z) == valuation(a, f.P)
   return z
 end
 
 function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool, precision::Int)
-  if !isdefined(f, :lift_data) || f.lift_data[1] != precision
+  if !haskey(f.lift_data, precision) 
     l = lll(basis_matrix(f.P^precision))
-    f.lift_data = (precision, l, solve_init(map_entries(QQ, l)))
+    f.lift_data[precision] = (l, solve_init(map_entries(QQ, l)))
   end
+  lift_data = f.lift_data[precision]
   n = degree(domain(f))
   zk = order(f.P)
   @assert denominator(a, zk) == 1
   cc = matrix(ZZ, 1, n, coordinates(zk(a)))
-  l = f.lift_data[2]
+  l = lift_data[1]
   if integral
-    s = solve(f.lift_data[3], QQ.(cc))
+    s = solve(lift_data[2], QQ.(cc))
     r = round.(ZZRingElem, s)
     cc -= r*l
     return domain(f)(order(f.P)(cc))
@@ -59,7 +114,7 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
   pr = ceil(Int, min(f.precision, precision(a)) / ramification_index(Kp))
   for i = 0:degree(a.data)
     as_pol = Qpx(coeff(a.data, i))
-    as_fmpq_poly = map_coefficients(x->lift(ZZ, setprecision(x, min(precision(x), pr))), as_pol, cached = false)
+    as_fmpq_poly = map_coefficients(x->lift(QQ, setprecision(x, min(precision(x), pr))), as_pol, cached = false)
     push!(coeffs, evaluate(as_fmpq_poly, f.inv_img[1]))
   end
   K = domain(f)
@@ -122,6 +177,7 @@ function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::AbsNum
   bi = a
   F, mF = residue_field(order(P), P)
   wi = parent(a)(preimage(mF, inv(mF(der(order(P)(a))))))
+  local minP2i::ZZRingElem
   for i in length(chain):-1:1
     ex, r = divrem(chain[i], ramification_index(P))
     if r > 0
@@ -133,26 +189,91 @@ function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::AbsNum
     wi = wi*(2-wi*der(bi))
     wi = mod(wi, minP2i)
   end
+  O = order(P)
+  lp = prime_decomposition(O, minimum(P))
+  v = [valuation(bi, p[1]) for p = lp]
+  c = one(O)
+  Q = P^prec
+  for i=1:length(v)
+    if v[i] < 0
+      @assert lp[i][1] != P
+      c = crt(c, Q, uniformizer(lp[i][1])^-v[i], lp[i][1]^(-v[i]+1))
+      Q *= lp[i][1]^(-v[i]+1)
+    end
+  end
+  bi *= c
+  bi = mod(bi, minP2i)
+  @assert denominator(bi, O) == 1
+
   return bi
 end
 
+function _mod_den(a::AbsSimpleNumFieldElem, p::ZZRingElem)
+  da = denominator(a)
+  b = coordinates(a*da)
+  p *= da
+  for i=1:length(b)
+    b[i] = QQ(numerator(b[i]) % p)
+  end
+  return parent(a)(b)//da
+end
+
 function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, new_prec::Int, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  i = new_prec
+  p = minimum(P)
+  e = ramification_index(P)
+  der = derivative(f)
+  ia = inv(der(a))
+  den = denominator(ia)
+  pp, op = ppio(den, p)
+  ia *= invmod(op, p^(prec+1))*op
+  @assert denominator(ia) == pp
+  # quad lifting:
+  # val(f(a)) = k
+  # val(f'(a)) = l
+  # then lifting increases to 2*k-l
+  # thus to reach new_prec = 2*k-l, the lifting needs to start at
+  # (new_prec +l)/2
+  #
+  # we assume valuation(f'(a)) == l == 0 here
+
+  @assert prec < new_prec
+  i = new_prec 
   chain = [new_prec]
   while i > prec
     i = div(i+1, 2)
     pushfirst!(chain, max(i, prec))
   end
-  der = derivative(f)
+  
+  local minP2i::ZZRingElem
   for i = 2:length(chain)
-    ex, r = divrem(2*chain[i], ramification_index(P))
-    if r > 0
-      ex += 1
-    end
-    minP2i = minimum(P)^ex
-    a = a - f(a)//der(a)
-    a = mod(a, minP2i)
+    ex = chain[i]
+    
+    minP2i = p^ex
+    a = a - f(a)*ia
+    ia = ia*(2-ia*der(a))
+    a = _mod_den(a, minP2i)
+    ia = _mod_den(ia, minP2i)
+#    @assert valuation(f(a), P) >= chain[i-1]
   end
+
+  O = order(P)
+  lp = prime_decomposition(O, minimum(P))
+  v = [valuation(a, p[1]) for p = lp]
+  c = one(O)
+  Q = P^prec
+  for i=1:length(v)
+    if v[i] < 0
+      @assert lp[i][1] != P
+      c = crt(c, Q, uniformizer(lp[i][1])^-v[i], lp[i][1]^(-v[i]+1))
+      Q *= lp[i][1]^(-v[i]+1)
+    end
+  end
+  a *= c
+  a = mod(a, minP2i)
+  @assert denominator(a, O) == 1
+
+
+#  @show :snd, iszero(f(a)) ? -1 :  valuation(f(a), P), prec
   return a
 end
 
@@ -161,6 +282,25 @@ end
 #  Generic completion
 #
 ################################################################################
+
+function precision_all(K::Union{QadicField, <:LocalField}; init::Vector{Int}=Int[])
+  push!(init, precision(K))
+  return precision_all(base_field(K); init)
+end
+
+function precision_all(K::PadicField; init::Vector{Int}=Int[])
+  push!(init, precision(K))
+  return init
+end
+
+function setprecision_all!(K::Union{QadicField, <:LocalField}, pr::Vector{Int})
+  setprecision!(K, popfirst!(pr))
+  setprecision_all!(base_field(K), pr)
+end
+
+function setprecision_all!(K::PadicField, pr::Vector{Int})
+  setprecision!(K, popfirst!(pr))
+end
 
 @doc raw"""
     completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int)
@@ -211,7 +351,6 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
 
   pol_gen = Qqx(coeffs_eisenstein)
   Kp, gKp = eisenstein_extension(pol_gen, "a", cached = false)
-  Kp.def_poly = x->setprecision(pol_gen, x)
   img_prim_elem = Vector{QadicFieldElem}(undef, e)
   for i = 1:e
     coeff = Qq()
@@ -225,6 +364,23 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   u = uniformizer(P).elem_in_nf
   completion_map = CompletionMap(K, Kp, img, (gq_in_K, u), precision)
   completion_map.P = P
+
+  Kp.def_poly = function(x::Int)
+    all_f = collect(values(Kp.def_poly_cache))
+    @assert all(x->parent(x) === parent(all_f[1]), all_f)
+    old_pr = Hecke.precision_all(Kp)
+    setprecision!(completion_map, e*x)
+    setprecision_all!(Kp, old_pr)
+    if haskey(Kp.def_poly_cache, x)
+      return Kp.def_poly_cache[x]
+    end
+    k = sort(collect(keys(Kp.def_poly_cache)))
+    p = searchsortedfirst(k, x)
+    @assert p <= length(k)
+    Kp.def_poly_cache[x] = setprecision(Kp.def_poly_cache[k[p]], x)
+    @assert all(x->parent(x) === parent(all_f[1]), all_f)
+    return Kp.def_poly_cache[x]
+  end
   return Kp, completion_map
 end
 
@@ -253,12 +409,12 @@ function _solve_internal(gq_in_K, P, precision, Zp, Qq)
     end
     mul!(el, el, u)
   end
-  append!(els,  map(elem_in_nf, basis(P^precision, copy = false)))
+  append!(els,  map(elem_in_nf, basis(P^(precision), copy = false)))
   MK = basis_matrix(els, FakeFmpqMat)
   bK = basis_matrix(AbsSimpleNumFieldElem[u^e, gen(K)], FakeFmpqMat)
   d = lcm(denominator(MK, copy = false), denominator(bK, copy = false))
   if d != denominator(MK, copy = false)
-    mul!(MK.num, mK.num, divexact(d, denominator(MK, copy = false)))
+    mul!(MK.num, MK.num, divexact(d, denominator(MK, copy = false)))
   end
   if d != denominator(bK, copy = false)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
@@ -280,9 +436,14 @@ if true
   # x inv(u)   s   = b v
   # x = b v inv(s) u
   #lets try:
+  
   s, _u, v = snf_with_transform(MK.num)
   bv = bK.num * v
+  
   bv = map_entries(Zp, bv)
+  
+#  sZ = solve(MK.num, bK.num; side = :left)
+#   xZp = map_entries(Zp, sZ)
   for i=1:ncols(s)
     bv[1, i] = divexact(bv[1, i], Zp(s[i,i]))
     bv[2, i] = divexact(bv[2, i], Zp(s[i,i]))
@@ -317,48 +478,78 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
   OK = order(P)
   new_prec += valuation(denominator(basis_matrix(OK, copy = false)), P)
 
+  new_prec == f.precision && return
+
   if new_prec < f.precision
     K = codomain(f)
-    setprecision!(K, new_prec)
     e = ramification_index(P)
-    setprecision!(base_field(K), div(new_prec+e-1, e))
-    setprecision!(f.prim_img, new_prec)
+    pr = div(new_prec+e-1, e)
+    v = sort(collect(keys(K.def_poly_cache)))
+    i = searchsortedfirst(v, pr)
+    K.def_poly_cache[pr] = setprecision(K.def_poly_cache[v[i]], pr)
+    setprecision!(K, new_prec)
+    setprecision!(base_field(K), pr)
+    @assert new_prec <= precision(f.prim_img)
+#    setprecision!(f.prim_img, new_prec)
   else
     #I need to increase the precision of the data
     Kp = codomain(f)
     _f = inertia_degree(P)
     e = ramification_index(P)
-    @assert !(new_prec in keys(Kp.def_poly_cache))
-    gq, u = f.inv_img
-    ex = div(new_prec+e-1, e)
-    Zx = polynomial_ring(ZZ, "x", cached = false)[1]
-    pol_gq = map_coefficients(x -> lift(ZZ, x), defining_polynomial(base_field(Kp)), cached = false)
-    gq = _increase_precision(gq, pol_gq, div(f.precision+e-1, e), ex, P)
-    f.inv_img = (gq, f.inv_img[2])
+    if new_prec >= e*maximum(keys(Kp.def_poly_cache))
+      new_prec += e - new_prec % e
+      @assert new_prec % e == 0
+      asked = new_prec
+      new_prec = max(new_prec, 2*e*maximum(keys(Kp.def_poly_cache))) 
+      #to not do this too frequently
+      gq, u = f.inv_img
+      ex = div(new_prec+e-1, e)
+      Zx = polynomial_ring(ZZ, "x", cached = false)[1]
+      pol_gq = map_coefficients(x -> lift(ZZ, x), defining_polynomial(base_field(Kp)), cached = false)
+      gq = _increase_precision(gq, pol_gq, div(f.precision+e-1, e), ex, P)
+  #    @show valuation(pol_gq(gq), P), ex
+      f.inv_img = (gq, f.inv_img[2])
 
-    Zp = maximal_order(absolute_base_field(Kp))
-    Qq = base_field(Kp)
+      Zp = maximal_order(absolute_base_field(Kp))
+      Qq = base_field(Kp)
 
-    setprecision!(Qq, ex)
-    setprecision!(Zp, ex)
-    gQq = gen(Qq)
+      setprecision!(Qq, ex)
+      setprecision!(Zp, ex)
+      gQq = gen(Qq)
 
-    coeffs_eisenstein, xZp = _solve_internal(gq, P, new_prec, Zp, Qq)
+      coeffs_eisenstein, xZp = _solve_internal(gq, P, new_prec, Zp, Qq)
 
-    Qqx = polynomial_ring(Qq, "x", cached = false)[1]
+      Qqx = parent(first(values(Kp.def_poly_cache)))
+#      @show coeffs_eisenstein
+#      @show xZp
 
-    pol_gen = Qqx(coeffs_eisenstein)
-    Kp.def_poly_cache[new_prec] = pol_gen
-    img_prim_elem = Vector{QadicFieldElem}(undef, e)
-    for i = 1:e
-      coeff = Qq()
-      for j = 0:_f-1
-        coeff += (gQq^j)*xZp[2, j+1+(i-1)*_f].x
+      pol_gen = Qqx(coeffs_eisenstein)
+      Kp.def_poly_cache[div(new_prec + e -1, e)] = pol_gen
+      img_prim_elem = Vector{QadicFieldElem}(undef, e)
+      for i = 1:e
+        coeff = Qq()
+        for j = 0:_f-1
+          coeff += (gQq^j)*xZp[2, j+1+(i-1)*_f].x
+        end
+        img_prim_elem[i] = coeff
       end
-      img_prim_elem[i] = coeff
+      setprecision!(Kp, new_prec)
+      f.prim_img = Kp(Qqx(img_prim_elem))
+#      @show f.prim_img, new_prec
+      f.precision = new_prec
+      if asked < new_prec
+        setprecision!(Kp, asked)
+        setprecision!(base_field(Kp), div(asked+e-1, e)+1)
+        return 
+      end
+    else
+#      f.precision = max(new_prec, f.precision)
+      v = sort(collect(keys(Kp.def_poly_cache)))
+      i = searchsortedfirst(v, div(new_prec, e))
+      Kp.def_poly_cache[new_prec] = setprecision(Kp.def_poly_cache[v[i]], new_prec)
+      setprecision!(Kp, new_prec)
+      setprecision!(base_field(Kp), div(new_prec, e)+1)
     end
-    setprecision!(Kp, new_prec)
-    f.prim_img = Kp(Qqx(img_prim_elem))
   end
   return nothing
 end
@@ -426,11 +617,14 @@ end
 
 
 function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, new_prec::Int)
-  if new_prec < f.precision
-    Kp = codomain(f)
+  Kp = codomain(f)
+  if new_prec <= maximum(keys(Kp.def_poly_cache))
     setprecision!(Kp, new_prec)
     setprecision!(base_field(Kp), new_prec)
-    setprecision!(f.prim_img, new_prec)
+#    @show new_prec, precision(f.prim_img)
+    @assert precision(f.prim_img) >= new_prec
+#    setprecision!(f.prim_img, new_prec)
+    f.precision = new_prec
   else
     K = domain(f)
     #I need to increase the precision of the data
@@ -445,14 +639,23 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     end
     Qp = padic_field(prime(Kp), precision = div(new_prec, e) + 1)
     Zp = maximal_order(Qp)
+#    @show Zp, precision(Zp)
     Qpx, _ = polynomial_ring(Qp, "x")
     pows_u = powers(u, e-1)
     bK = basis_matrix(AbsSimpleNumFieldElem[u*pows_u[end], gen(K)])
     append!(pows_u, map(elem_in_nf, basis(P^new_prec, copy = false)))
     MK = basis_matrix(pows_u)
+    cMK = content(MK)
+#    @show content(MK), valuation(Qp(content(MK)))
+    divexact!(MK, MK, cMK)
+    divexact!(bK, bK, cMK)
     MZp = map_entries(Zp, MK)
+#    @show map_entries(precision, MZp)
+#    @show elementary_divisors(MZp)
     bZp = map_entries(Zp, bK)
+#    global last_mat = (MZp, bZp)
     fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+#    @show map_entries(precision, xZp)
     @assert fl
     coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
     for i = 1:e
@@ -467,8 +670,11 @@ function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLoc
     for i = 1:e
       img_prim_elem[i] = xZp[2, i].x
     end
+#    @show map(precision, img_prim_elem)
     img = Kp(Qpx(img_prim_elem))
     f.prim_img = img
+#    @show precision(img), new_prec
+    f.precision = new_prec
   end
   return nothing
 end
@@ -538,10 +744,14 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
 end
 
 function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::Int)
+  if new_prec == f.precision
+    return
+  end
   Kp = codomain(f)
   setprecision!(Kp, new_prec)
   if new_prec < f.precision
-    setprecision!(f.prim_img, new_prec)
+    @assert precision(f.prim_img) >= new_prec
+#    setprecision!(f.prim_img, new_prec)
   else
     P = prime(f)
     gq, u = f.inv_img
@@ -552,7 +762,7 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
     f.inv_img = (gq, u)
     setprecision!(Kp, new_prec)
     #To increase the precision of the image of the primitive element, I use Hensel lifting
-    f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, f.precision)
+    f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, precision(f.prim_img))
   end
   f.precision = new_prec
   return nothing

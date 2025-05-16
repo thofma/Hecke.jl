@@ -300,6 +300,29 @@ function gcdx(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
   end
 end
 
+function AbstractAlgebra.gcdxx(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
+  if iszero(a)
+    c = canonical_unit(b)
+    c = setprecision(c, precision(b))
+    return divexact(b, c), a, inv(c), -c, a
+  end
+  if iszero(b)
+    c = canonical_unit(a)
+    c = setprecision(c, precision(a))
+    return divexact(a, c), inv(c), b, b, -c
+  end
+  if valuation(data(a)) < valuation(data(b))
+    c = canonical_unit(a)
+    c = setprecision(c, precision(a))
+    return divexact(a, c), inv(c), setprecision(parent(a)(0), precision(a)), setprecision(-c*divexact(b, a), precision(a)), c
+  else
+    c = canonical_unit(b)
+    c = setprecision(c, precision(b))
+    return divexact(b, c), setprecision(parent(b)(0), precision(b)), inv(c), -c, setprecision(c*divexact(a, b), precision(b))
+  end
+end
+
+
 ################################################################################
 #
 #  Inverse
