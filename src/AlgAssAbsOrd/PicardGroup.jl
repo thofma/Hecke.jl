@@ -668,6 +668,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
     end
 
     function disc_log(x::AbsNumFieldOrderIdeal)
+      @req !is_zero(x) "Ideal must be non-zero"
       return StoR\(mR\x)
     end
   end
@@ -855,7 +856,7 @@ function kernel_group_with_disc_log(O::AlgAssAbsOrd)
     push!(B, c)
   end
 
-  PtoC = hom(A, B)
+  PtoC = hom(P, C, A, B)
 
   # The kernel group is the kernel of this morphism
   D, DtoP = kernel(PtoC)

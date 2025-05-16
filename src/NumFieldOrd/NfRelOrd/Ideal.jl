@@ -1067,7 +1067,7 @@ end
 
 function is_index_divisor(O::RelNumFieldOrder{S, T, U}, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}) where {S, T, U <: RelNonSimpleNumFieldElem}
   I = discriminant(O)
-  J = discriminant(EquationOrder(nf(O)))
+  J = discriminant(equation_order(nf(O)))
   return valuation(I, p) != valuation(J, p)
 end
 
@@ -1553,7 +1553,8 @@ end
 
 function in(x::NumFieldElem, y::RelNumFieldOrderIdeal)
   parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
-  return in(order(y)(x),y)
+  !_check_elem_in_order(x, order(y), Val(true)) && return false
+  return in(order(y)(x, false),y)
 end
 
 in(x::ZZRingElem, y::RelNumFieldOrderIdeal) = in(order(y)(x),y)

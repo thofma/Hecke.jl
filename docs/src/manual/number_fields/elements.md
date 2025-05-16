@@ -1,10 +1,8 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # Element operations
 
 ## Creation
@@ -33,7 +31,7 @@ julia> K([1, 2])
 2*a + 1
 
 julia> L, b = radical_extension(3, a, "b")
-(Relative number field of degree 3 over number field, b)
+(Relative number field of degree 3 over K, b)
 
 julia> L([a, 1, 1//2])
 1//2*b^2 + b + a

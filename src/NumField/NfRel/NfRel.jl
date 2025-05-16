@@ -676,7 +676,7 @@ end
 
 # Mostly the same as in the absolute case
 function normal_basis(L::RelSimpleNumField{AbsSimpleNumFieldElem}, check::Bool = false)
-  O = EquationOrder(L)
+  O = equation_order(L)
   K = base_field(L)
   OK = base_ring(O)
   d = discriminant(O)

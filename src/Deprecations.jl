@@ -283,3 +283,11 @@ end
 # Deprecated in 0.35.10
 @deprecate minpoly(a::Union{LocalFieldElem, QadicFieldElem, RelFinFieldElem, AbsNumFieldOrderElem}, R::PolyRing) minpoly(R, a)
 @deprecate charpoly(a::AbsNumFieldOrderElem, R::PolyRing) charpoly(R, a)
+
+# Deprecated in 0.35.15
+@deprecate MaximalOrder maximal_order
+@deprecate Order order
+@deprecate EquationOrder equation_order
+
+@deprecate hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool=true) hom(G, parent(B[1]), B; check)
+@deprecate hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}; check::Bool=true) hom(parent(A[1]), parent(B[1]), A, B; check)

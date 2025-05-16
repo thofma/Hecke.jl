@@ -44,7 +44,7 @@ function abelian_extensionsQQ(gtype::Vector{Int}, bound::ZZRingElem, only_real::
     res = Vector{FieldsTower}(undef, length(lq))
     for i = 1:length(lq)
       x = lq[i]
-      E = EquationOrder(x[1])
+      E = equation_order(x[1])
       E.is_maximal = 1
       E.index = ZZRingElem(1)
       E.gen_index = QQFieldElem(1)
@@ -716,13 +716,13 @@ function translate_extensions(mL::Hecke.morphism_type(AbsSimpleNumField, AbsSimp
     for i = 1:length(preimgs)
       preimgs[i] = mr\listn[i]
     end
-    proj = hom(gS, preimgs)
+    proj = hom(RM, domain(mr), gS, preimgs)
     #compute the norm group of C in RM
     prms = Vector{FinGenAbGroupElem}(undef, length(lP))
     for i = 1:length(lP)
       prms[i] = C.quotientmap(mR\lP[i])
     end
-    RMtoR = hom(gS, prms)
+    RMtoR = hom(RM, codomain(C.quotientmap), gS, prms)
     k, mk = kernel(RMtoR, false)
     @hassert :Fields 1 is_isomorphic(cokernel(mk, false)[1], codomain(C.quotientmap))
     mp = mk*proj

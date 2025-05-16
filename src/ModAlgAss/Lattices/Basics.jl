@@ -292,7 +292,7 @@ function lattice(O::AlgAssAbsOrd, v::Vector{<:Vector})
     h = hom(EW, EV, basis_matrix(imgs))
     for b in basis(EW)
       for bb in basis(EW)
-        @assert h(b * bb) == h(b) * h(bb)
+        @hassert :ModLattice h(b * bb) == h(b) * h(bb)
       end
     end
     _transport_refined_wedderburn_decomposition_forward(h)

@@ -1,12 +1,9 @@
-# Introduction
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
-
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Introduction
 
 This chapter deals with functionality for elliptic curves, which is available over arbitrary fields, with
 specific features available for curves over the rationals and number fields, and finite fields.

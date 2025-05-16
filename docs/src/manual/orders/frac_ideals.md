@@ -1,7 +1,9 @@
-# Fractional ideals
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Fractional ideals
 
 
 A fractional ideal in the number field $K$ is a $Z_K$-module $A$

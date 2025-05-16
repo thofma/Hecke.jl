@@ -132,7 +132,7 @@ function _isisomorphic_generic_right(X, Y; strategy = :default)
     end
   elseif strategy == :s1
     fl = _is_principal(CIint, Gamma; side = :right)::Bool
-    alpha = zero(algebra(order(X)))
+    alpha = zero(algebra(X))
   else
     error("strategy :$strategy not valid")
   end

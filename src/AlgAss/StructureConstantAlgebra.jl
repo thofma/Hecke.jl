@@ -156,7 +156,7 @@ $K$-linear map $A \to L$.
 julia> L, = quadratic_field(2);
 
 julia> structure_constant_algebra(L)
-(Structure constant algebra of dimension 2 over QQ, Map: structure constant algebra -> real quadratic field)
+(Structure constant algebra of dimension 2 over QQ, Map: structure constant algebra -> L)
 ```
 """
 function structure_constant_algebra(K::SimpleNumField)

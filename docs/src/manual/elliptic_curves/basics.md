@@ -1,12 +1,9 @@
-# Basics
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
-
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Basics
 
 ## Creation
 

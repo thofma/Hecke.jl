@@ -362,7 +362,7 @@ function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Uni
   end
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
   lp, sR = find_gens(mR, coprime_to = minimum(m0))
-  h = hom(sR, [preimage(mr, p) for p = lp])
+  h = hom(parent(first(sR)), domain(mr), sR, [preimage(mr, p) for p = lp])
   k, mk = kernel(FinGenAbGroupHom(C.quotientmap), false)
   q, mq = cokernel(mk*h, false)
   f = Int(order(mq(preimage(mr, p))))

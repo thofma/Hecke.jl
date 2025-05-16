@@ -1,7 +1,10 @@
-# Orders
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Orders
+
 
 Orders, that is, unitary subrings that are free $\mathbf{Z}$-modules of rank
 equal to the degree of the number field, are at the core of the
@@ -24,23 +27,25 @@ and can also be interpreted as a normalization of any other order.
 ## Creation and basic properties
 
 ```@docs
-Order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
-Order(::AbsSimpleNumField, ::QQMatrix)
-Order(::AbsSimpleNumFieldOrderFractionalIdeal)
-EquationOrder(::AbsSimpleNumField)
-MaximalOrder(::AbsSimpleNumField)
-MaximalOrder(::AbsSimpleNumFieldOrder)
+order(::AbsSimpleNumField, ::Vector{AbsSimpleNumFieldElem})
+order(::AbsSimpleNumField, ::QQMatrix)
+equation_order(::AbsSimpleNumField)
+maximal_order(::AbsSimpleNumField)
+maximal_order(::AbsSimpleNumFieldOrder)
 lll(::AbsSimpleNumFieldOrder)
 any_order(K::AbsSimpleNumField)
 ```
 
 ### Example
 
-```@repl
-using Hecke; # hide
-Qx, x = polynomial_ring(QQ, "x");
-K, a = number_field(x^2 - 2, "a");
-O = EquationOrder(K)
+```jldoctest
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> O = equation_order(K)
+Maximal order of number field of degree 2 over QQ
+with basis [1, a]
 ```
 
 ```@docs

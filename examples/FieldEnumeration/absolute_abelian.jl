@@ -31,7 +31,7 @@ function _get_simple_extension_and_maximal_order(K)
       prime_divisors = union(prime_divisors, Set{ZZRingElem}([ p for (p, e) in ff ]))
     end
   end
-  OO = Order(Ksimpleabs, [ g\b for b in bbb ])
+  OO = order(Ksimpleabs, [ g\b for b in bbb ])
   for p in prime_divisors
     OO = pmaximal_overorder(OO, p)
   end

@@ -1,12 +1,11 @@
-# Basics
-
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
-DocTestSetup = quote
-  using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Basics
+
 
 ## Creation of algebras
 

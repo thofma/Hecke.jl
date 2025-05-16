@@ -39,7 +39,7 @@ mutable struct Order{S, T} <: AbstractAlgebra.Ring
   itrans#::dense_matrix_type(base_ring(S))
   is_standard::Bool
 
-  function Order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
+  function order(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
     # Z[x]/3x+1 is no order. This will be "fixed" by using any_order, but
     #the initial shell needs to be empty (illegal)
@@ -60,18 +60,18 @@ mutable struct Order{S, T} <: AbstractAlgebra.Ring
           M[i, j] = coeff(f, d - (i - j))
         end
       end
-      O = Order(r, M, one(Qt), check = check)
+      O = order(r, M, one(Qt), check = check)
       return O
     end
     return r
   end
 
-  function Order(O::Order, T::MatElem, d::RingElem; check::Bool = true)
+  function order(O::Order, T::MatElem, d::RingElem; check::Bool = true)
     F = base_ring(O.F)
     T = map_entries(F, T)
     T = divexact(T, base_ring(T)(d))
     Ti = inv(T)
-    r = Order(O.R, O.F, true)
+    r = order(O.R, O.F, true)
     if isdefined(O, :trans)
       r.trans = T*O.trans
       r.itrans = O.itrans*Ti
@@ -443,7 +443,7 @@ function ring_of_multipliers(O::Order, I::MatElem)
 
   @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
 
-  O = Order(O, Hi', d)
+  O = order(O, Hi', d)
   return O
 end
 
@@ -517,7 +517,7 @@ function integral_closure(S::KInftyRing{T}, F::Generic.FunctionField{T}) where {
 end
 
 function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Ring)
-  O = Order(S, F)
+  O = order(S, F)
   return Hecke.maximal_order(O)
 end
 
@@ -547,7 +547,7 @@ function Hecke.maximal_order(O::Order)
   if first
     return O
   else
-    return Order(O, Op[1], Op[2])
+    return order(O, Op[1], Op[2])
   end
 end
 
@@ -1248,13 +1248,13 @@ function GenericRound2.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField
   TT1 = TT1
   n, d = integral_split(TT1, Zx)
   @assert map_entries(Qt, n) == TT1 * Qt(d)
-  o3 = GenericRound2.Order(Zx, F)
+  o3 = GenericRound2.order(Zx, F)
   if isdefined(o1, :trans)
-    return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)..., check = false)
+    return GenericRound2.order(o3, integral_split(map_entries(Qt, TT1)*o1.trans, Zx)..., check = false)
   else
-    return GenericRound2.Order(o3, integral_split(map_entries(Qt, TT1), Zx)..., check = false)
+    return GenericRound2.order(o3, integral_split(map_entries(Qt, TT1), Zx)..., check = false)
   end
-  return GenericRound2.Order(o1, TT1, one(S)), GenericRound2.Order(o2, inv(TT2'), one(base_ring(TT2)))
+  return GenericRound2.order(o1, TT1, one(S)), GenericRound2.order(o2, inv(TT2'), one(base_ring(TT2)))
 end
 
 function Base.denominator(a::Generic.RationalFunctionFieldElem{QQFieldElem}, S::ZZPolyRing)

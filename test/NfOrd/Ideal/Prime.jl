@@ -89,7 +89,7 @@ end
 Qx, x = QQ["x"]
 f = x^2 - 2
 K, a = number_field([f], "a")
-O = Order(K, [3*a[1]])
+O = order(K, [3*a[1]])
 P = ZZ(7) * O + (O(3*a[1]) + 2) * O
 @test minimum(P) == 7
 @test norm(P) == 7

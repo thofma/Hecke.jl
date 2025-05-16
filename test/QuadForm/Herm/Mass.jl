@@ -126,5 +126,19 @@
   m = @inferred mass(L)
   @test m == 1//10125
 
+  let # 1857
+    Qx, x = polynomial_ring(QQ, :x)
+    f = x + 1
+    K, a = number_field(f, :a, cached = false)
+    Kt, t = polynomial_ring(K, :t)
+    g = t^2 + t + 1
+    E, b = number_field(g, :b, cached = false)
+    D = matrix(E, 3, 3, [-1//3, 0, 0, 0, -1//3, 0, 0, 0, -1//3])
+    gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [3, 0, 0]), map(E, [b + 2, 0, 0]), map(E, [0, 3, 0]), map(E, [0, b + 2, 0]), map(E, [1, 1, 1]), map(E, [b, b, b])]
+    L = hermitian_lattice(E, gens, gram = D)
+    p, = prime_ideals_over(fixed_ring(L), 3)
+    @test local_factor(L, p) == 1//2
+    @test mass(L) == 1//1296
+  end
 end
 

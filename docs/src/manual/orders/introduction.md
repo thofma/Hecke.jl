@@ -1,7 +1,10 @@
-# Introduction
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Introduction
+
 
 This chapter deals with number fields and orders there of.
 We follow the common terminology and conventions as e.g. used in
@@ -50,34 +53,3 @@ $K$-linear independent elements $\omega_i\in L$. In general
 it is impossible to have both $\mathfrak a_i$ integral and
 $\omega_i \in \mathcal O$, thus coefficients will not be integral and/or
 generators not in the structure.
-
-## Examples
-
-Usually, to create an order, one starts with a field (or a polynomial):
-
-```@repl 1
-using Hecke; # hide
-Qx, x = polynomial_ring(QQ, "x");
-K, a = number_field(x^2 - 10, "a");
-E = equation_order(K)
-Z_K = maximal_order(K)
-conductor(E)
-E == Z_K
-```
-
-Once orders are created, we can play with elements and ideals:
-
-```@repl 1
-lp = prime_decomposition(Z_K, 2)
-p = lp[1][1]
-is_principal(p)
-fl, alpha = is_principal_with_data(p^2)
-norm(alpha)
-```
-
-It is possible to work with residue fields as well:
-
-```@repl 1
-Fp, mFp = residue_field(Z_K, p)
-[ mFp(x) for x = basis(Z_K)]
-```

@@ -911,7 +911,7 @@ julia> F, _ = finite_field(5)
 (Prime field of characteristic 5, 0)
 
 julia> Ft, _ = F["t"]
-(Univariate polynomial ring in t over GF(5), t)
+(Univariate polynomial ring in t over F, t)
 
 julia> cyclotomic_polynomial(15, Ft)
 t^8 + 4*t^7 + t^5 + 4*t^4 + t^3 + 4*t + 1

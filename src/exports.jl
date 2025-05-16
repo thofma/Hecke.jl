@@ -38,7 +38,7 @@ export EmbeddedAbsSimpleNumField
 export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
 export EmbeddedNumField
-export EquationOrder
+export equation_order
 export FacElem
 export FacElemMon
 export FactorBase
@@ -68,7 +68,7 @@ export MSet
 export Map
 export MapFromFunc
 export MapRayClassGrp
-export MaximalOrder
+export maximal_order
 export NewtonPolygon
 export AbsNonSimpleNumField
 export AbsNonSimpleNumFieldElem
@@ -667,6 +667,8 @@ export modulus_quadratic_form
 export morphisms
 export mukai_lattice
 export mul!
+export mul_dense
+export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
@@ -917,6 +919,7 @@ export trailing_coefficient
 export transform
 export transform_rstu
 export triangularize
+export trivial_divisor
 export trivial_morphism
 export trred
 export trred_matrix

@@ -251,6 +251,8 @@ end
 #
 # Magma code:
 # [Maximum(&cat[ EulerPhiInverse(d) : d in Divisors(n)  | #EulerPhiInverse(d) ne 0 ]) : n in [1..250]];
+# Hecke
+# [ maximum(vcat([euler_phi_inv(d) for d in divisors(n)]...)) for n in 1:250]
 const _euler_phi_inverse_maximum =
 [ 2, 6, 2, 12, 2, 18, 2, 30, 2, 22, 2, 42, 2, 6, 2, 60, 2, 54, 2, 66, 2, 46, 2,
 90, 2, 6, 2, 58, 2, 62, 2, 120, 2, 6, 2, 126, 2, 6, 2, 150, 2, 98, 2, 138, 2,
@@ -265,14 +267,19 @@ const _euler_phi_inverse_maximum =
 2, 6, 2, 810, 2, 6, 2, 726, 2, 446, 2, 870, 2, 454, 2, 458, 2, 94, 2, 708, 2,
 158, 2, 12, 2, 478, 2, 1050, 2, 46, 2, 12, 2, 166, 2, 30, 2, 502 ]
 
+#
+
 # One should/could also try to be closer to Algorithm 1
 # in Molin, "On the calculation of roots of unity in a number field"
 function _torsion_group_order_divisor(K::AbsSimpleNumField)
-
   if degree(K) <= 250
     upper_bound = _euler_phi_inverse_maximum[degree(K)]
   else
-    error("Not implemented yet")
+    l = 0
+    for d in divisors(degree(K))
+      l = maximum(euler_phi_inv(d); init = l)
+    end
+    upper_bound = l
   end
 
   p = upper_bound + 1
@@ -284,7 +291,7 @@ function _torsion_group_order_divisor(K::AbsSimpleNumField)
   if is_maximal_order_known(K)
     disc = abs(discriminant(maximal_order(K)))
   elseif is_defining_polynomial_nice(K)
-    disc = discriminant(EquationOrder(K))
+    disc = discriminant(equation_order(K))
   else
     disc_1 = discriminant(K.pol)
     disc = numerator(disc_1)*denominator(disc_1)
@@ -342,7 +349,11 @@ function _torsion_group_order_divisor(K::NumField)
   if absolute_degree(K) <= 250
     upper_bound = _euler_phi_inverse_maximum[absolute_degree(K)]
   else
-    error("Not implemented yet")
+    l = 0
+    for d in divisors(absolute_degree(K))
+      l = maximum(euler_phi_inv(d); init = l)
+    end
+    upper_bound = l
   end
 
   p = upper_bound + 1
@@ -402,6 +413,16 @@ end
 
 function _torsion_units_gen(K::AbsSimpleNumField)
  return get_attribute!(K, :torsion_units) do
+  if Nemo.is_cyclo_type(K)
+    f = get_attribute(K, :cyclo)::Int
+    a = Hecke.gen(K)
+    if is_even(f)
+      return f, a
+    else
+      return 2*f, -a
+    end
+  end
+
   r1, r2 = signature(K)
   if r1 > 0
     return 2, K(-1)

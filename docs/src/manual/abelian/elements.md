@@ -1,8 +1,7 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Elements
 Elements in a finitely generated abelian group are of type `FinGenAbGroupElem`
@@ -41,11 +40,17 @@ order(A::FinGenAbGroupElem)
 ## Iterator
 One can iterate over the elements of a finite abelian group.
 
-```@repl
-using Hecke # hide
-G = abelian_group(ZZRingElem[1 2; 3 4])
-for g = G
-  println(g)
-end
+```jldoctest
+julia> G = abelian_group(ZZRingElem[1 2; 3 4])
+Finitely generated abelian group
+  with 2 generators and 2 relations and relation matrix
+  [1   2]
+  [3   4]
+
+julia> for g in G
+         println(g)
+       end
+Abelian group element [0, 0]
+Abelian group element [0, 1]
 ```
 

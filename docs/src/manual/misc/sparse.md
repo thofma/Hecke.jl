@@ -1,8 +1,9 @@
-# Sparse linear algebra
-
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Sparse linear algebra
 
 ## Introduction
 
@@ -209,6 +210,8 @@ Various products:
 *(::SMat{T}, ::AbstractMatrix{T})  where {T}
 *(::SMat{T}, ::MatElem{T}) where {T}
 *(::SRow{T}, ::SMat{T}) where {T}
+mul_sparse(::SMat{T}, ::SMat{T}) where {T}
+mul_dense(::SMat{T}, ::SMat{T}) where {T}
 ```
 
 ```@docs

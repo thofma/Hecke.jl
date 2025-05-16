@@ -1,8 +1,7 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Maps
 Maps between abelian groups are mainly of type `FinGenAbGroupHom`. They
@@ -20,20 +19,34 @@ hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGro
 is_isomorphic(G::FinGenAbGroup, H::FinGenAbGroup)
 ```
 
-```@repl
-using Hecke # hide
-G = free_abelian_group(2)
-h = hom(G, G, [gen(G, 2), 3*gen(G, 1)])
-h(gen(G, 1))
-h(gen(G, 2))
+```jldoctest
+julia> G = free_abelian_group(2)
+Z^2
+
+julia> h = hom(G, G, [gen(G, 2), 3*gen(G, 1)])
+Map
+  from Z^2
+  to Z^2
+
+julia> h(gen(G, 1))
+Abelian group element [0, 1]
+
+julia> h(gen(G, 2))
+Abelian group element [3, 0]
 ```
 
 Homomorphisms also allow addition and subtraction corresponding to the
 pointwise operation:
-```@repl
-using Hecke # hide
-G = free_abelian_group(2)
-h = hom(G, G, [2*gen(G, 2), 3*gen(G, 1)])
-(h+h)(gen(G, 1))
+```jldoctest
+julia> G = free_abelian_group(2)
+Z^2
+
+julia> h = hom(G, G, [2*gen(G, 2), 3*gen(G, 1)])
+Map
+  from Z^2
+  to Z^2
+
+julia> (h+h)(gen(G, 1))
+Abelian group element [0, 4]
 ```
 

@@ -1,11 +1,10 @@
-# Elliptic curves over finite fields
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Elliptic curves over finite fields
+
 
 ## Random points
 

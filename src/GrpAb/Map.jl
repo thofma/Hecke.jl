@@ -103,80 +103,98 @@ end
 #
 ################################################################################
 
-id_hom(G::FinGenAbGroup) = hom(G, G, identity_matrix(ZZ, ngens(G)), identity_matrix(ZZ, ngens(G)), check = false)
+@doc raw"""
+    id_hom(G::FinGenAbGroup) -> FinGenAbGroupHom
+
+Return the identity homomorphism of `G`.
+"""
+function id_hom(G::FinGenAbGroup)
+  I = identity_matrix(ZZ, ngens(G))
+  return FinGenAbGroupHom(G, G, I, I)::FinGenAbGroupHom
+end
 
 @doc raw"""
-    hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}) -> Map
+    hom(
+      G::FinGenAbGroup,
+      H::FinGenAbGroup,
+      A::Vector,
+      B::Vector;
+      check::Bool=true,
+    ) -> FinGenAbGroupHom
 
-Creates the homomorphism $A[i] \mapsto B[i]$.
+Return the group homomorphism $G\to H$ that sends `A[i]` to `B[i]` for all `i`.
+If `check` is set to `true`, the function checks whether the inputs indeed
+define a morphism of finitely generated abelian groups.
 """
-function hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}; check::Bool = true)
-  GA = parent(A[1])
-  GB = parent(B[1])
-  @assert length(B) == length(A)
-  @assert length(A) > 0
-  #=
-  if (check)
-    m = vcat(ZZMatrix[x.coeff for x in A])
-    m = vcat(m, rels(parent(A[1])))
-    T = kernel(transpose(m), side = :right)
+function hom(
+    G::FinGenAbGroup,
+    H::FinGenAbGroup,
+    A::Vector,
+    B::Vector;
+    check::Bool=true
+  )
+  @req length(B) == length(A) "Lists of elements in input must have the same size"
+  @req all(a -> parent(a) === G, A) "Wrong parent for first input list"
+  @req all(b -> parent(b) === H, B) "Wrong parent for second input list"
+  if ngens(H) == 0
+    return hom(G, H, matrix(ZZ, ngens(G), 0, ZZRingElem[]); check)
+  elseif ngens(G) == 0
+    return hom(G, H, matrix(ZZ, 0, ngens(H), ZZRingElem[]); check)
+  end
+
+  @req length(A) >= 1 "For maps between nontrivial groups, lists of elements must be nonempty"
+
+  if check
+    m = reduce(vcat, ZZMatrix[x.coeff for x in A])
+    m = reduce(vcat, ZZMatrix[m, rels(G)])
+    T = kernel(transpose(m); side=:right)
     i = ncols(T)
     T = transpose(T)
     T = sub(T, 1:nrows(T), 1:length(A))
-    n = vcat(ZZMatrix[x.coeff for x in B])
+    n = reduce(vcat, ZZMatrix[x.coeff for x in B])
     n = T*n
-    if !can_solve_with_solution(rels(parent(B[1])), n, side = :left)[1]
-      error("Data does not define a homomorphism")
-    end
-  end
-  =#
-  if ngens(GB) == 0
-    return hom(GA, GB, matrix(ZZ, ngens(GA), 0, ZZRingElem[]), check = check)
+    @req can_solve(rels(H), n; side=:left) "Data does not define a homomorphism"
   end
 
-  M = reduce(vcat, [hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
-  RA = rels(GA)
-  M = vcat(M, hcat(RA, zero_matrix(ZZ, nrows(RA), ncols(B[1].coeff))))
-  if isdefined(GB, :exponent) && nrows(M) >= ncols(M)
-    H = hnf_modular_eldiv(M, exponent(GB))
+  _M = reduce(vcat, ZZMatrix[hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
+  RA = rels(G)
+  _M = vcat(_M, hcat(RA, zero_matrix(ZZ, nrows(RA), ncols(B[1].coeff))))
+  if isdefined(H, :exponent) && nrows(_M) >= ncols(_M)
+    M = hnf_modular_eldiv(_M, exponent(H))
   else
-    H = hnf(M)
+    M = hnf(_M)
   end
-  H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
-  h = hom(GA, GB, H, check = check)
+  M = sub(M, 1:ngens(G), ngens(G)+1:ngens(G)+ngens(H))
+  h = hom(G, H, M; check)
   return h
 end
 
 @doc raw"""
-    hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}) -> Map
+    hom(
+      G::FinGenAbGroup,
+      H::FinGenAbGroup,
+      B::Vector;
+      check::Bool=true,
+    ) -> FinGenAbGroupHom
 
-Creates the homomorphism which maps $G[i]$ to $B[i]$.
+Return the group homomorphism $G\to H$ that sends `G[i]` to `B[i]` for all `i`.
+If `check` is set to `true`, the function checks whether the inputs indeed
+define a morphism of finitely generated abelian groups.
 """
-function hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool = true)
-  GB = parent(B[1])
-  @assert length(B) == ngens(G)
-  M = reduce(vcat, [B[i].coeff for i = 1:length(B)])
-  h = hom(G, GB, M, check = check)
-  return h
-end
-
-function hom(G::FinGenAbGroup, H::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool = true)
-  @assert length(B) == ngens(G)
-  @assert all(i -> parent(i) == H, B)
+function hom(
+    G::FinGenAbGroup,
+    H::FinGenAbGroup,
+    B::Vector;
+    check::Bool=true
+  )
+  @req length(B) == ngens(G) "Number of elements in input list should be the same as the number of generators of the source"
+  @req all(b -> parent(b) == H, B) "Wrong parent for input list"
   if length(B) == 0
     M = zero_matrix(ZZ, ngens(G), ngens(H))
   else
-    M = reduce(vcat, [x.coeff for x = B])
+    M = reduce(vcat, ZZMatrix[x.coeff for x in B])
   end
-  #=
-  M = zero_matrix(ZZ, ngens(G), ngens(H))
-  for i = 1:ngens(G)
-    for j = 1:ngens(H)
-      M[i, j] = B[i][j]
-    end
-  end
-  =#
-  h = hom(G, H, M, check = check)
+  h = hom(G, H, M; check)
   return h
 end
 
@@ -192,27 +210,67 @@ function check_mat(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix)
   return all(x -> iszero(FinGenAbGroupElem(B, R[x:x, :])), 1:nrows(R))
 end
 
-function hom(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix; check::Bool = true)
-  if check
-    check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
-  end
+@doc raw"""
+    hom(
+      G::FinGenAbGroup,
+      H::FinGenAbGroup,
+      M::ZZMatrix;
+      check::Bool=true,
+    ) -> FinGenAbGroupHom
 
-  return FinGenAbGroupHom(A, B, M)::FinGenAbGroupHom
+Return the group homomorphism $G\to H$ defined by the integer matrix
+$M = (m_{ij})$, by sending the $i$th generator of $G$ to
+$\sum_{j=1}^nm_{ij}h_j$ where $h_1,\ldots, h_n$ are the generators of $H$.
+If `check` is set to `true`, the function checks whether `M` indeed
+defines a morphism of finitely generated abelian groups.
+"""
+function hom(
+    G::FinGenAbGroup,
+    H::FinGenAbGroup,
+    M::ZZMatrix;
+    check::Bool=true,
+  )
+  if check
+    @req check_mat(G, H, M) "Matrix does not define a morphism of abelian groups"
+  end
+  return FinGenAbGroupHom(G, H, M)::FinGenAbGroupHom
 end
 
-function hom(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix, Minv; check::Bool = true)
+@doc raw"""
+    hom(
+      G::FinGenAbGroup,
+      H::FinGenAbGroup,
+      M::ZZMatrix,
+      Minv::ZZMatrix;
+      check::Bool=true,
+    ) -> FinGenAbGroupHom
+
+Return the group homomorphism $G\to H$ defined by the integer matrix
+$M = (m_{ij})$ (by sending the $i$th generator of $G$ to
+$\sum_{j=1}^nm_{ij}h_j$ where $h_1,\ldots, h_n$ are the generators of $H$)
+and with pseudo-inverse $H\to G$ (or right inverse) defined by `Minv`.
+If `check` is set to `true`, the function checks whether `M` and `Minv` indeed
+define morphisms of finitely generated abelian groups, and whether `Minv`
+defines a right inverse to `M`.
+"""
+function hom(
+    G::FinGenAbGroup,
+    H::FinGenAbGroup,
+    M::ZZMatrix,
+    Minv::ZZMatrix;
+    check::Bool=true,
+  )
   if check
-    check_mat(A, B, M) || error("Matrix does not define a morphism of abelian groups")
-    check_mat(B, A, Minv) || error("Matrix does not define a morphism of abelian groups")
-    h = FinGenAbGroupHom(A, B, M, Minv)
+    @req check_mat(G, H, M) "First matrix does not define a morphism of abelian groups"
+    @req check_mat(H, G, Minv) "Second matrix does not define a morphism of abelian groups"
+    h = FinGenAbGroupHom(G, H, M, Minv)
     ph = pseudo_inv(h)
-    all(x -> x == ph(h(x)), gens(A)) || error("Matrix does not define a morphism of abelian groups")
+    @req all(x -> x == ph(h(x)), gens(G)) "Second matrix does not define a right inverse of the first matrix"
     return h::FinGenAbGroupHom
   end
 
-  return FinGenAbGroupHom(A, B, M, Minv)::FinGenAbGroupHom
+  return FinGenAbGroupHom(G, H, M, Minv)::FinGenAbGroupHom
 end
-
 
 ==(f::FinGenAbGroupHom, g::FinGenAbGroupHom) = domain(f) === domain(g) && codomain(f) === codomain(g) && all(x -> f(x) == g(x), gens(domain(f)))
 

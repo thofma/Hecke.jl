@@ -1,7 +1,8 @@
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # [Introduction](@id NumberFieldsLink)
 
 By definition, mathematically a number field is just a finite extension of the rationals $\mathbf{Q}$.

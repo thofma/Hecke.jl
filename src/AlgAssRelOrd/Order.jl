@@ -36,38 +36,38 @@ is_commutative(O::AlgAssRelOrd) = is_commutative(algebra(O))
 ################################################################################
 
 @doc raw"""
-    Order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, M::Generic.Mat{<: NumFieldElem})
+    order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, M::Generic.Mat{<: NumFieldElem})
       -> AlgAssRelOrd
 
 Returns the order of $A$ with basis matrix $M$.
 """
-function Order(A::AbstractAssociativeAlgebra{S}, M::Generic.Mat{S}) where S <: NumFieldElem
+function order(A::AbstractAssociativeAlgebra{S}, M::Generic.Mat{S}) where S <: NumFieldElem
   return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
 end
 
 @doc raw"""
-    Order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, M::PMat{<: NumFieldElem, T})
+    order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, M::PMat{<: NumFieldElem, T})
       -> AlgAssRelOrd
 
 Returns the order of $A$ with basis pseudo-matrix $M$.
 """
-function Order(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
+function order(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
   return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
 end
 
 @doc raw"""
-    Order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, B::Vector{<: AbstractAssociativeAlgebraElem{ <: NumFieldElem}})
+    order(A::AbstractAssociativeAlgebra{<: NumFieldElem}, B::Vector{<: AbstractAssociativeAlgebraElem{ <: NumFieldElem}})
       -> AlgAssRelOrd
 
 Returns the order of $A$ with basis $B$.
 """
-function Order(A::AbstractAssociativeAlgebra{S}, B::Vector{ <: AbstractAssociativeAlgebraElem{S} }) where { S <: NumFieldElem }
+function order(A::AbstractAssociativeAlgebra{S}, B::Vector{ <: AbstractAssociativeAlgebraElem{S} }) where { S <: NumFieldElem }
   @assert length(B) == dim(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:dim(A)
     elem_to_mat_row!(M, i, B[i])
   end
-  return Order(A, M)
+  return order(A, M)
 end
 ################################################################################
 #
@@ -474,7 +474,7 @@ function maximal_order_via_absolute(A::AbstractAssociativeAlgebra{T}) where { T 
     elem_to_mat_row!(M, i, BtoA(CtoB(elem_in_algebra(basis(OC, copy = false)[i], copy = false))))
   end
   PM = sub(pseudo_hnf(pseudo_matrix(M), :lowerleft, true), (degree(OC) - dim(A) + 1):degree(OC), 1:dim(A))
-  O = Order(A, PM)
+  O = order(A, PM)
   O.is_maximal = 1
   return O
 end
@@ -545,7 +545,7 @@ function any_order(A::AbstractAssociativeAlgebra{T}, R::Union{ AbsNumFieldOrder,
   end
   PM = pseudo_matrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)
-  O = Order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
+  O = order(A, sub(PM, 2:dim(A) + 1, 1:dim(A)))
   return O
 end
 
@@ -625,7 +625,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, ::Val{wi
   PN = pseudo_matrix(N, deepcopy(basis_pmatrix(O, copy = false).coeffs))
   PN = pseudo_hnf(PN, :lowerleft)
 
-  niceorder = Order(A, PN)
+  niceorder = order(A, PN)
   niceorder.isnice = true
   niceorder.nice_order_ideal = a
 
@@ -784,7 +784,7 @@ function +(a::AlgAssRelOrd{S, T, U}, b::AlgAssRelOrd{S, T, U}) where { S, T, U}
   bB = basis_pmatrix(b, copy = false)
   d = degree(a)
   PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
-  return Order(algebra(a), PM)
+  return order(algebra(a), PM)
 end
 
 ################################################################################

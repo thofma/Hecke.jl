@@ -423,7 +423,7 @@ function is_irreducible_easy(f::PolyRingElem{AbsSimpleNumFieldElem})
   if degree(f) == 1
     return true, true
   end
-  if iszero(coeff(f, 0))
+  if iszero(coeff(f, 0)) || is_constant(f)
     return true, false
   end
   if !is_squarefree(f)

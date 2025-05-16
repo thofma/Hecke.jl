@@ -239,7 +239,7 @@
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
     E, z = number_field(t^2 + 1, "z")
-    OE = Order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
+    OE = order(E, pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, 1]), [1 * maximal_order(K), 2 * maximal_order(K)]))
     I = OE(1) * OE
     @test I * I == I
     @test I + I == I
@@ -262,5 +262,13 @@
     @test 1 * OL + 0 * OL == 1 * OL
     @test 0 * OL + 0 * OL == 0 * OL
     @test is_zero(minimum(0 * OL))
+  end
+
+  let # fix containment bug
+    K, a = rationals_as_number_field();
+    Kt, t = K[:t];
+    L, b = number_field(t^2 + 1, :b);
+    OL = maximal_order(L);
+    @test !(L(1//2) in 2*OL)
   end
 end

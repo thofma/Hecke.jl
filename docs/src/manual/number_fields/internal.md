@@ -1,7 +1,8 @@
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # Internals
 
 ## Types of number fields

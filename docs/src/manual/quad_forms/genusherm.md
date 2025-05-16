@@ -1,10 +1,9 @@
-# Genera for hermitian lattices
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Genera for hermitian lattices
 
 ## Local genus symbols
 
@@ -80,19 +79,46 @@ There are two ways of creating a local genus symbol for hermitian lattices:
 We will construct two examples for the rest of this section. Note that the prime
 chosen here is bad.
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
-L = hermitian_lattice(E, gens, gram = D);
-g2 = genus(L, p)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det)
+Local genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Prime ideal: <2, a>
+Jordan blocks (scale, rank, det, norm):
+  (0, 1, +, 0)
+  (2, 2, -, 1)
+
+julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> g2 = genus(L, p)
+Local genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Prime ideal: <2, a>
+Jordan blocks (scale, rank, det, norm):
+  (-2, 1, +, -1)
+  (2, 2, +, 1)
 ```
 
 ---
@@ -107,18 +133,36 @@ prime(::HermLocalGenus)
 
 #### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-length(g1)
-base_field(g1)
-prime(g1)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> length(g1)
+2
+
+julia> base_field(g1)
+Relative number field with defining polynomial t^2 - a
+  over number field with defining polynomial x^2 - 2
+    over rational field
+
+julia> prime(g1)
+<2, a>
+Norm: 2
+Minimum: 2
+basis_matrix
+[2 0; 0 1]
+two normal wrt: 2
 ```
 
 ---
@@ -144,23 +188,49 @@ norms(::HermLocalGenus)
 
 #### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
-L = hermitian_lattice(E, gens, gram = D);
-g2 = genus(L, p);
-scales(g2)
-ranks(g2)
-dets(g2)
-norms(g2)
-rank(g2), det(g2), discriminant(g2)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> g2 = genus(L, p);
+
+julia> scales(g2)
+2-element Vector{Int64}:
+ -2
+  2
+
+julia> ranks(g2)
+2-element Vector{Int64}:
+ 1
+ 2
+
+julia> dets(g2)
+2-element Vector{Int64}:
+ 1
+ 1
+
+julia> norms(g2)
+2-element Vector{Int64}:
+ -1
+  1
+
+julia> rank(g2), det(g2), discriminant(g2)
+(3, 1, -1)
 ```
 
 ---
@@ -176,16 +246,23 @@ is_dyadic(::HermLocalGenus)
 
 #### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> is_ramified(g1), is_split(g1), is_inert(g1), is_dyadic(g1)
+(true, false, false, true)
 ```
 
 ---
@@ -198,16 +275,23 @@ uniformizer(::HermLocalGenus)
 
 #### Example
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-uniformizer(g1)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> uniformizer(g1)
+-a
 ```
 
 ---
@@ -225,17 +309,26 @@ det_representative(::HermLocalGenus)
 
 #### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-det_representative(g1)
-det_representative(g1,2)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> det_representative(g1)
+-8*a - 6
+
+julia> det_representative(g1,2)
+-8*a - 6
 ```
 
 ---
@@ -249,20 +342,34 @@ gram_matrix(::HermLocalGenus)
 
 #### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
-L = hermitian_lattice(E, gens, gram = D);
-g2 = genus(L, p);
-gram_matrix(g2)
-gram_matrix(g2,1)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> g2 = genus(L, p);
+
+julia> gram_matrix(g2)
+[-3//2*a   0     0]
+[      0   a     a]
+[      0   a   4*a]
+
+julia> gram_matrix(g2,1)
+[-3//2*a]
 ```
 
 ---
@@ -307,23 +414,58 @@ lattices:
 As before, we will construct two different global genus symbols for hermitian
 lattices, which we will use for the rest of this section.
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-infp = infinite_places(E)
-SEK = unique([r.base_field_place for r in infp if isreal(r.base_field_place) && !isreal(r)]);
-length(SEK)
-G1 = genus([g1], [(SEK[1], 1)])
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
-L = hermitian_lattice(E, gens, gram = D);
-G2 = genus(L)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> infp = infinite_places(E);
+
+julia> SEK = unique([r for r in infp if isreal(restrict(r, K)) && !isreal(r)])
+1-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumFieldEmbedding{AbsSimpleNumFieldEmbedding, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
+ Infinite place corresponding to (Complex embedding corresponding to root 0.00 + 1.19 * i of relative number field)
+
+julia> length(SEK)
+1
+
+julia> G1 = genus([g1], [(SEK[1], 1)])
+Genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Signature:
+  infinite place corresponding to (Complex embedding of relative number field) => 1
+Local symbol:
+  <2, a> => (0, 1, +, 0)(2, 2, -, 1)
+
+julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> G2 = genus(L)
+Genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Signature:
+  infinite place corresponding to (Complex embedding of number field) => 2
+Local symbols:
+  <2, a> => (-2, 1, +, -1)(2, 2, +, 1)
+  <7, a + 4> => (0, 1, +)(1, 2, +)
 ```
 
 ---
@@ -343,22 +485,53 @@ norm(::HermGenus)
 
 #### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
-L = hermitian_lattice(E, gens, gram = D);
-G2 = genus(L);
-base_field(G2)
-primes(G2)
-signatures(G2)
-rank(G2)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> G2 = genus(L);
+
+julia> base_field(G2)
+Relative number field with defining polynomial t^2 - a
+  over number field with defining polynomial x^2 - 2
+    over rational field
+
+julia> primes(G2)
+2-element Vector{AbsSimpleNumFieldOrderIdeal}:
+ <2, a>
+Norm: 2
+Minimum: 2
+basis_matrix
+[2 0; 0 1]
+two normal wrt: 2
+ <7, a + 4>
+Norm: 7
+Minimum: 7
+basis_matrix
+[7 0; 4 1]
+two normal wrt: 7
+
+julia> signatures(G2)
+Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64} with 1 entry:
+  Infinite place corresponding to (Complex embedding corresponding to -1.4… => 2
+
+julia> rank(G2)
+3
 ```
 
 ---
@@ -383,18 +556,27 @@ mass(::HermLat)
 
 #### Example
 
-```@repl 2
-using Hecke # hide
-Qx, x = polynomial_ring(QQ, "x");
-f = x^2 - 2;
-K, a = number_field(f, "a", cached = false);
-Kt, t = polynomial_ring(K, "t");
-g = t^2 + 1;
-E, b = number_field(g, "b", cached = false);
-D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [(-3*a + 7)*b + 3*a, (5//2*a - 1)*b - 3//2*a + 4, 0]), map(E, [(3004*a - 4197)*b - 3088*a + 4348, (-1047//2*a + 765)*b + 5313//2*a - 3780, (-a - 1)*b + 3*a - 1]), map(E, [(728381*a - 998259)*b + 3345554*a - 4653462, (-1507194*a + 2168244)*b - 1507194*a + 2168244, (-5917//2*a - 915)*b - 4331//2*a - 488])];
-L = hermitian_lattice(E, gens, gram = D);
-mass(L)
+```jldoctest; filter = r".*"
+julia> Qx, x = polynomial_ring(QQ, "x");
+
+julia> f = x^2 - 2;
+
+julia> K, a = number_field(f, "a", cached = false);
+
+julia> Kt, t = polynomial_ring(K, "t");
+
+julia> g = t^2 + 1;
+
+julia> E, b = number_field(g, :b, cached = false);
+
+julia> D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [(-3*a + 7)*b + 3*a, (5//2*a - 1)*b - 3//2*a + 4, 0]), map(E, [(3004*a - 4197)*b - 3088*a + 4348, (-1047//2*a + 765)*b + 5313//2*a - 3780, (-a - 1)*b + 3*a - 1]), map(E, [(728381*a - 998259)*b + 3345554*a - 4653462, (-1507194*a + 2168244)*b - 1507194*a + 2168244, (-5917//2*a - 915)*b - 4331//2*a - 488])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> mass(L)
+1//1024
 ```
 
 ---
@@ -413,23 +595,50 @@ genus_representatives(::HermLat)
 
 ### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
-G1 = genus([g1], [(SEK[1], 1)]);
-L1 = representative(g1)
-L1 in g1
-L2 = representative(G1)
-L2 in G1, L2 in g1
-length(genus_representatives(L1))
-length(representatives(G1))
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
+
+julia> G1 = genus([g1], [(SEK[1], 1)]);
+
+julia> L1 = representative(g1)
+Hermitian lattice of rank 3 and degree 3
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+
+julia> L1 in g1
+true
+
+julia> L2 = representative(G1)
+Hermitian lattice of rank 3 and degree 3
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+
+julia> L2 in G1, L2 in g1
+(true, true)
+
+julia> length(genus_representatives(L1))
+1
+
+julia> length(representatives(G1))
+1
 ```
 
 ---
@@ -443,24 +652,58 @@ direct_sum(::HermGenus, ::HermGenus)
 
 ### Examples
 
-```@repl 2
-using Hecke # hide
-Qx, x = QQ["x"];
-K, a = number_field(x^2 - 2, "a");
-Kt, t  = K["t"];
-E, b = number_field(t^2 - a, "b");
-OK = maximal_order(K);
-p = prime_decomposition(OK, 2)[1][1];
-g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
-SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
-G1 = genus([g1], [(SEK[1], 1)]);
-D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
-gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
-L = hermitian_lattice(E, gens, gram = D);
-g2 = genus(L, p);
-G2 = genus(L);
-direct_sum(g1, g2)
-direct_sum(G1, G2)
+```jldoctest; filter = r".*"
+julia> Qx, x = QQ[:x];
+
+julia> K, a = number_field(x^2 - 2, :a);
+
+julia> Kt, t  = K[:t];
+
+julia> E, b = number_field(t^2 - a, :b);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 2)[1][1];
+
+julia> g1 = genus(HermLat, E, p, [(0, 1, 1, 0), (2, 2, -1, 1)], type = :det);
+
+julia> SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
+
+julia> G1 = genus([g1], [(SEK[1], 1)]);
+
+julia> D = matrix(E, 3, 3, [5//2*a - 4, 0, 0, 0, a, a, 0, a, -4*a + 8]);
+
+julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [a, 0, 0]), map(E, [b, 0, 0]), map(E, [a*b, 0, 0]), map(E, [0, 1, 0]), map(E, [0, a, 0]), map(E, [0, b, 0]), map(E, [0, a*b, 0]), map(E, [0, 0, 1]), map(E, [0, 0, a]), map(E, [0, 0, b]), map(E, [0, 0, a*b])];
+
+julia> L = hermitian_lattice(E, gens, gram = D);
+
+julia> g2 = genus(L, p);
+
+julia> G2 = genus(L);
+
+julia> direct_sum(g1, g2)
+Local genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Prime ideal: <2, a>
+Jordan blocks (scale, rank, det, norm):
+  (-2, 1, +, -1)
+  (0, 1, +, 0)
+  (2, 4, -, 1)
+
+julia> direct_sum(G1, G2)
+Genus symbol for hermitian lattices
+  over relative maximal order of Relative number field of degree 2 over K
+  with pseudo-basis
+  (1, 1//1 * <1, 1>)
+  (b, 1//1 * <1, 1>)
+Signature:
+  infinite place corresponding to (Complex embedding of number field) => 3
+Local symbols:
+  <2, a> => (-2, 1, +, -1)(0, 1, +, 0)(2, 4, -, 1)
+  <7, a + 4> => (0, 4, +)(1, 2, +)
 ```
 
 ---
@@ -474,15 +717,46 @@ hermitian_genera(::Hecke.RelSimpleNumField, ::Int, ::Dict{InfPlc, Int}, ::Union{
 
 ### Examples
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(8, "a");
-Kt, t = K["t"];
-E, b = number_field(t^2 - a * t + 1);
-p = prime_decomposition(maximal_order(K), 2)[1][1];
-hermitian_local_genera(E, p, 4, 2, 0, 4)
-SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
-hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
+```jldoctest; filter = r".*"
+julia> K, a = cyclotomic_real_subfield(8, :a);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2 - a * t + 1);
+
+julia> p = prime_decomposition(maximal_order(K), 2)[1][1];
+
+julia> length(hermitian_local_genera(E, p, 4, 2, 0, 4))
+15
+
+julia> SEK = unique([restrict(r, K) for r in infinite_places(E) if isreal(restrict(r, K)) && !isreal(r)]);
+
+julia> hermitian_genera(E, 3, Dict(SEK[1] => 1, SEK[2] => 1), 30 * maximal_order(E))
+6-element Vector{HermGenus{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderIdeal, HermLocalGenus{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderIdeal}, Dict{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64}}}:
+ Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$, 1//1 * <1, 1>)
+ Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$, 1//1 * <1, 1>)
+ Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$, 1//1 * <1, 1>)
+ Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$, 1//1 * <1, 1>)
+ Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$, 1//1 * <1, 1>)
+ Genus symbol for hermitian lattices of rank 3 over relative maximal order of Relative number field
+with pseudo-basis
+(1, 1//1 * <1, 1>)
+(_$, 1//1 * <1, 1>)
 ```
 
 ## Rescaling

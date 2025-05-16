@@ -1,11 +1,9 @@
-# Number field operations
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-  using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Number field operations
 
 ## Creation of number fields
 

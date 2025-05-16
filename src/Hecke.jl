@@ -30,7 +30,6 @@ using LazyArtifacts
 using LinearAlgebra
 using Markdown
 using InteractiveUtils
-using Libdl
 using Distributed
 using Printf
 using SparseArrays
@@ -105,10 +104,10 @@ const RationalUnion = Union{IntegerUnion, Rational{<: Integer}, QQFieldElem}
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
-function MaximalOrder
+function maximal_order
 end
 
-global const maximal_order = MaximalOrder
+global const maximal_order = maximal_order
 
 function _print_banner()
   printstyled(raw""" _    _           _        """, color = :red)
@@ -759,6 +758,12 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
   else
     error("format :$(format) not recognized")
   end
+end
+
+# Hecke needs some complicated setup to get the printing right. This provides a
+# helper function to set this up consistently.
+function doctestsetup()
+  return :(using Hecke; Hecke.AbstractAlgebra.set_current_module(@__MODULE__))
 end
 
 #html_build = Ref(false)

@@ -1,12 +1,9 @@
-# [Spaces](@id Spaces2)
-
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-  using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# [Spaces](@id Spaces2)
 
 ## Creation of spaces
 
@@ -21,13 +18,29 @@ hermitian_space(::NumField, ::MatElem)
 Here are easy examples to see how these constructors work. We will keep the two
 following spaces for the rest of this section:
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-Q = quadratic_space(K, K[0 1; 1 0])
-H = hermitian_space(E, 3)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> Q = quadratic_space(K, K[0 1; 1 0])
+Quadratic space of dimension 2
+  over maximal real subfield of cyclotomic field of order 7
+with gram matrix
+[0   1]
+[1   0]
+
+julia> H = hermitian_space(E, 3)
+Hermitian space of dimension 3
+  over relative number field with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1
+    over number field with defining polynomial $^3 + $^2 - 2*$ - 1
+      over rational field
+with gram matrix
+[1   0   0]
+[0   1   0]
+[0   0   1]
 ```
 ---
 
@@ -59,18 +72,39 @@ discriminant(::AbstractSpace)
 So for instance, one could get the following information about the hermitian
 space $H$:
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-H = hermitian_space(E, 3);
-rank(H), dim(H)
-gram_matrix(H)
-involution(H)
-base_ring(H)
-fixed_field(H)
-det(H), discriminant(H)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> H = hermitian_space(E, 3);
+
+julia> rank(H), dim(H)
+(3, 3)
+
+julia> gram_matrix(H)
+[1   0   0]
+[0   1   0]
+[0   0   1]
+
+julia> involution(H)
+Map
+  from relative number field of degree 2 over K
+  to relative number field of degree 2 over K
+
+julia> base_ring(H)
+Relative number field with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1
+  over number field with defining polynomial $^3 + $^2 - 2*$ - 1
+    over rational field
+
+julia> fixed_field(H)
+Number field with defining polynomial $^3 + $^2 - 2*$ - 1
+  over rational field
+
+julia> det(H), discriminant(H)
+(1, -1)
 ```
 ---
 
@@ -96,16 +130,25 @@ Note that the `is_hermitian` function tests whether the space is non-quadratic.
 
 ### Examples
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-Q = quadratic_space(K, K[0 1; 1 0]);
-H = hermitian_space(E, 3);
-is_regular(Q), is_regular(H)
-is_quadratic(Q), is_hermitian(H)
-is_definite(Q), is_positive_definite(H)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> Q = quadratic_space(K, K[0 1; 1 0]);
+
+julia> H = hermitian_space(E, 3);
+
+julia> is_regular(Q), is_regular(H)
+(true, true)
+
+julia> is_quadratic(Q), is_hermitian(H)
+(true, true)
+
+julia> is_definite(Q), is_positive_definite(H)
+(false, true)
 ```
 ---
 
@@ -123,18 +166,36 @@ restrict_scalars(::AbstractSpace, ::QQField, ::FieldElem)
 
 ### Examples
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-Q = quadratic_space(K, K[0 1; 1 0]);
-H = hermitian_space(E, 3);
-gram_matrix(Q, K[1 1; 2 0])
-gram_matrix(H, E[1 0 0; 0 1 0; 0 0 1])
-inner_product(Q, K[1  1], K[0  2])
-orthogonal_basis(H)
-diagonal(Q), diagonal(H)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> Q = quadratic_space(K, K[0 1; 1 0]);
+
+julia> H = hermitian_space(E, 3);
+
+julia> gram_matrix(Q, K[1 1; 2 0])
+[2   2]
+[2   0]
+
+julia> gram_matrix(H, E[1 0 0; 0 1 0; 0 0 1])
+[1   0   0]
+[0   1   0]
+[0   0   1]
+
+julia> inner_product(Q, K[1  1], K[0  2])
+[2]
+
+julia> orthogonal_basis(H)
+[1   0   0]
+[0   1   0]
+[0   0   1]
+
+julia> diagonal(Q), diagonal(H)
+(AbsSimpleNumFieldElem[1, -1], AbsSimpleNumFieldElem[1, 1, 1])
 ```
 ---
 
@@ -160,17 +221,28 @@ invariants(::QuadSpace)
 For instance, for the case of $Q$ and the totally ramified prime $\mathfrak p$
 of $O_K$ above $7$, one can get:
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Q = quadratic_space(K, K[0 1; 1 0]);
-OK = maximal_order(K);
-p = prime_decomposition(OK, 7)[1][1];
-hasse_invariant(Q, p), witt_invariant(Q, p)
-Q2 = quadratic_space(K, K[-1 0; 0 1]);
-is_isometric(Q, Q2, p)
-is_isometric(Q, Q2)
-invariants(Q2)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Q = quadratic_space(K, K[0 1; 1 0]);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 7)[1][1];
+
+julia> hasse_invariant(Q, p), witt_invariant(Q, p)
+(1, 1)
+
+julia> Q2 = quadratic_space(K, K[-1 0; 0 1]);
+
+julia> is_isometric(Q, Q2, p)
+true
+
+julia> is_isometric(Q, Q2)
+true
+
+julia> invariants(Q2)
+(2, 0, -1, Dict{AbsSimpleNumFieldOrderIdeal, Int64}(), Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64}[(Infinite place corresponding to (Complex embedding corresponding to -1.80 of K), 1), (Infinite place corresponding to (Complex embedding corresponding to -0.45 of K), 1), (Infinite place corresponding to (Complex embedding corresponding to 1.25 of K), 1)])
 ```
 ---
 
@@ -196,21 +268,36 @@ is_represented_by(::AbstractSpace, ::AbstractSpace)
 Still using the spaces $Q$ and $H$, we can decide whether some other spaces
 embed respectively locally or globally into $Q$ or $H$:
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-Q = quadratic_space(K, K[0 1; 1 0]);
-H = hermitian_space(E, 3);
-OK = maximal_order(K);
-p = prime_decomposition(OK, 7)[1][1];
-Q2 = quadratic_space(K, K[-1 0; 0 1]);
-H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
-is_locally_represented_by(Q2, Q, p)
-is_represented_by(Q2, Q)
-is_locally_represented_by(H2, H, p)
-is_represented_by(H2, H)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> Q = quadratic_space(K, K[0 1; 1 0]);
+
+julia> H = hermitian_space(E, 3);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 7)[1][1];
+
+julia> Q2 = quadratic_space(K, K[-1 0; 0 1]);
+
+julia> H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
+
+julia> is_locally_represented_by(Q2, Q, p)
+true
+
+julia> is_represented_by(Q2, Q)
+true
+
+julia> is_locally_represented_by(H2, H, p)
+true
+
+julia> is_represented_by(H2, H)
+false
 ```
 ---
 
@@ -229,14 +316,21 @@ biproduct(::Vector{AbstractSpace})
 
 ### Example
 
-```@repl 2
-using Hecke # hide
-E, b = cyclotomix_field_as_cm_extensions(7);
-H = hermitian_space(E, 3);
-H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
-H3, inj, proj = biproduct(H, H2)
-is_one(matrix(compose(inj[1], proj[1])))
-is_zero(matrix(compose(inj[1], proj[2])))
+```jldoctest
+julia> E, b = cyclotomic_field_as_cm_extension(7);
+
+julia> H = hermitian_space(E, 3);
+
+julia> H2 = hermitian_space(E, E[-1 0 0; 0 1 0; 0 0 -1]);
+
+julia> H3, inj, proj = biproduct(H, H2)
+(Hermitian space of dimension 6, AbstractSpaceMor[Map: hermitian space -> hermitian space, Map: hermitian space -> hermitian space], AbstractSpaceMor[Map: hermitian space -> hermitian space, Map: hermitian space -> hermitian space])
+
+julia> is_one(matrix(compose(inj[1], proj[1])))
+true
+
+julia> is_zero(matrix(compose(inj[1], proj[2])))
+true
 ```
 ## Orthogonality operations
 
@@ -247,12 +341,15 @@ orthogonal_projection(::AbstractSpace, ::MatElem)
 
 ### Example
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-Q = quadratic_space(K, K[0 1; 1 0]);
-orthogonal_complement(Q, matrix(K, 1, 2, [1 0]))
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> Q = quadratic_space(K, K[0 1; 1 0]);
+
+julia> orthogonal_complement(Q, matrix(K, 1, 2, [1 0]))
+[1   0]
 ```
 ---
 
@@ -268,15 +365,21 @@ is_isotropic(::AbstractSpace, p)
 ```
 ### Example
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-H = hermitian_space(E, 3);
-OK = maximal_order(K);
-p = prime_decomposition(OK, 7)[1][1];
-is_isotropic(H, p)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> H = hermitian_space(E, 3);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 7)[1][1];
+
+julia> is_isotropic(H, p)
+true
 ```
 ---
 
@@ -295,14 +398,20 @@ is_locally_hyperbolic(::HermSpace, ::AbsNumFieldOrderIdeal{AbsSimpleNumField, Ab
 
 ### Example
 
-```@repl 2
-using Hecke # hide
-K, a = cyclotomic_real_subfield(7);
-Kt, t = K["t"];
-E, b = number_field(t^2-a*t+1, "b");
-H = hermitian_space(E, 3);
-OK = maximal_order(K);
-p = prime_decomposition(OK, 7)[1][1];
-is_locally_hyperbolic(H, p)
+```jldoctest
+julia> K, a = cyclotomic_real_subfield(7);
+
+julia> Kt, t = K[:t];
+
+julia> E, b = number_field(t^2-a*t+1, :b);
+
+julia> H = hermitian_space(E, 3);
+
+julia> OK = maximal_order(K);
+
+julia> p = prime_decomposition(OK, 7)[1][1];
+
+julia> is_locally_hyperbolic(H, p)
+false
 ```
 

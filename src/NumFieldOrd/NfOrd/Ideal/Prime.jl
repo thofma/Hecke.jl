@@ -769,7 +769,7 @@ function coprime_base(A::Vector{AbsSimpleNumFieldOrderElem})
 end
 
 function integral_split(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return A, ideal(Order(A), ZZRingElem(1))
+  return A, ideal(order(A), ZZRingElem(1))
 end
 
 ################################################################################

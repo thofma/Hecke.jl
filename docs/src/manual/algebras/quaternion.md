@@ -1,12 +1,11 @@
-# [Quaternion algebras](@id quat-alg)
-
 ```@meta
 CurrentModule = Hecke
 CollapsedDocStrings = true
-DocTestSetup = quote
-  using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# [Quaternion algebras](@id quat-alg)
+
 
 We provide a model for quaternion algebras over a field $K$ in *standard form*, which is
 parametrized by two elements $a, b \in K$.

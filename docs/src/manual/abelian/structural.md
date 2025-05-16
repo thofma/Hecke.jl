@@ -1,8 +1,7 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
 # Structural Computations
 Abelian groups support a wide range of structural operations such as
@@ -39,14 +38,23 @@ of a finite abelian group is available.
 ```@docs
 psubgroups(g::FinGenAbGroup, p::Integer)
 ```
-```@repl subgroups
-using Hecke # hide
-G = abelian_group([6, 12])
-shapes = MSet{Vector{ZZRingElem}}()
-for U = psubgroups(G, 2)
-  push!(shapes, elementary_divisors(U[1]))
-end
-shapes
+```jldoctest subgroups
+julia> G = abelian_group([6, 12])
+Z/6 x Z/12
+
+julia> shapes = MSet{Vector{ZZRingElem}}();
+
+julia> for U = psubgroups(G, 2)
+         push!(shapes, elementary_divisors(U[1]))
+       end
+
+julia> shapes
+MSet{Vector{ZZRingElem}} with 8 elements:
+  ZZRingElem[]
+  ZZRingElem[2, 4]
+  ZZRingElem[4]    : 2
+  ZZRingElem[2, 2]
+  ZZRingElem[2]    : 3
 ```
 So there are $2$ subgroups isomorphic to $C_4$ (`ZZRingElem[4] : 2`),
 $1$ isomorphic to $C_2\times C_4$, 1 trivial and $3$ $C_2$ subgroups.
@@ -54,13 +62,20 @@ $1$ isomorphic to $C_2\times C_4$, 1 trivial and $3$ $C_2$ subgroups.
 ```@docs
 subgroups(g::FinGenAbGroup)
 ```
-```@repl subgroups
-for U = subgroups(G, subtype = [2])
-  @show U[1], map(U[2], gens(U[1]))
-end
-for U = subgroups(G, quotype = [2])
-  @show U[1], map(U[2], gens(U[1]))
-end
+```jldoctest subgroups
+julia> for U in subgroups(G, subtype = [2])
+         @show U[1], map(U[2], gens(U[1]))
+       end
+(U[1], map(U[2], gens(U[1]))) = (Z/2, FinGenAbGroupElem[[0, 6]])
+(U[1], map(U[2], gens(U[1]))) = (Z/2, FinGenAbGroupElem[[3, 6]])
+(U[1], map(U[2], gens(U[1]))) = (Z/2, FinGenAbGroupElem[[3, 0]])
+
+julia> for U in subgroups(G, quotype = [2])
+         @show U[1], map(U[2], gens(U[1]))
+       end
+(U[1], map(U[2], gens(U[1]))) = (Finitely generated abelian group with 3 generators and 3 relations, FinGenAbGroupElem[[3, 3], [0, 4], [2, 0]])
+(U[1], map(U[2], gens(U[1]))) = (Finitely generated abelian group with 3 generators and 3 relations, FinGenAbGroupElem[[0, 3], [0, 4], [2, 0]])
+(U[1], map(U[2], gens(U[1]))) = (Finitely generated abelian group with 4 generators and 4 relations, FinGenAbGroupElem[[3, 6], [0, 6], [0, 4], [2, 0]])
 ```
 
 ```@docs

@@ -1,8 +1,9 @@
-# Factored Elements
-
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Factored Elements
 
 In many applications in number theory related to the multiplicative
 structure of number fields, interesting elements, e.g. units,
