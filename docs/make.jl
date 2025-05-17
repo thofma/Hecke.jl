@@ -1,4 +1,4 @@
-using Documenter
+using Documenter, DocumenterVitepress
 using Hecke
 using Pkg
 
@@ -14,7 +14,7 @@ if get(ENV, "GITHUB_ACTOR", "") == "dependabot[bot]"
   should_push_preview = false
 end
 
-deploydocs(
+DocumenterVitepress.deploydocs(
   repo = "github.com/thofma/Hecke.jl.git",
   target = "build",
   push_preview = should_push_preview,
