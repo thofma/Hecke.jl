@@ -93,6 +93,9 @@ julia> involution(H)
 Map
   from relative number field of degree 2 over K
   to relative number field of degree 2 over K
+defined by
+  b -> -b + (z_7 + 1/z_7)
+with trivial map on base field
 
 julia> base_ring(H)
 Relative number field with defining polynomial t^2 - (z_7 + 1/z_7)*t + 1
@@ -242,7 +245,7 @@ julia> is_isometric(Q, Q2)
 true
 
 julia> invariants(Q2)
-(2, 0, -1, Dict{AbsSimpleNumFieldOrderIdeal, Int64}(), Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64}[(Infinite place corresponding to (Complex embedding corresponding to -1.80 of K), 1), (Infinite place corresponding to (Complex embedding corresponding to -0.45 of K), 1), (Infinite place corresponding to (Complex embedding corresponding to 1.25 of K), 1)])
+(2, 0, -1, Dict{AbsSimpleNumFieldOrderIdeal, Int64}(), Tuple{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}, Int64}[(Infinite place of real embedding with -1.80 of K, 1), (Infinite place of real embedding with -0.45 of K, 1), (Infinite place of real embedding with 1.25 of K, 1)])
 ```
 ---
 
