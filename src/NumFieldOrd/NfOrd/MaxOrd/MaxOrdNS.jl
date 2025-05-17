@@ -1,4 +1,4 @@
-function MaximalOrder(K::AbsNonSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
+function maximal_order(K::AbsNonSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     O = maximal_order_from_components(K)
     O.is_maximal = 1
@@ -32,7 +32,7 @@ function _maximal_order_round_four(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, 
   if !isempty(ramified_primes)
     push!(l, ramified_primes)
   end
-  l = coprime_base(l)
+  l = isempty(l) ? l : coprime_base(l)
   for s in l
     if disc != -1
       u = divexact(discriminant(OO), disc)
@@ -58,7 +58,7 @@ end
 function maximal_order_from_components(L::AbsNonSimpleNumField; disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   BKs, lp, disc_order = _maximal_order_of_components(L)
   B = _product_basis(BKs)
-  OO = Order(L, B, check = false, cached = false, isbasis = true)
+  OO = order(L, B, check = false, cached = false, isbasis = true)
   OO.disc = disc_order
   if disc != -1 && discriminant(OO) == disc
     OO.is_maximal = 1

@@ -232,38 +232,44 @@ function show(io::IO, S::NfRelOrdSet)
   print(io, S.nf)
 end
 
-function show(io::IO, O::RelNumFieldOrder)
+function show(io::IO, ::MIME"text/plain", O::RelNumFieldOrder)
   compact = get(io, :compact, false)
-  if compact
-    if is_maximal_known_and_maximal(O)
-      print(io, "Relative maximal order with pseudo-basis ")
+  io = pretty(io)
+  if is_maximal_known_and_maximal(O)
+    println(io, "Maximal order")
+  else
+    println(io, "Order")
+  end
+  print(io, Indent(), "of ", Lowercase())
+  show(IOContext(io, :collapsenf => true), MIME"text/plain"(), nf(O))
+  println(io, Dedent())
+  print(io, "with pseudo-basis")
+  print(io, Indent())
+  pb = pseudo_basis(O, copy = false)
+  for i = 1:degree(O)
+    print(io, "\n(")
+    print(io, pb[i][1])
+    print(io, ", ")
+    print(io, pb[i][2])
+    print(io, ")")
+  end
+  print(io, Dedent())
+end
+
+function show(io::IO, O::RelNumFieldOrder)
+  @show_name(io, O)
+  @show_special(io, O)
+  prefix = is_maximal_known_and_maximal(O) ? "Maximal order" : "Order"
+  if is_terse(io)
+    if !is_simple(nf(O))
+      print(io, prefix, " of relative non-simple number field")
     else
-      print(io, "Relative order with pseudo-basis ")
-    end
-    pb = pseudo_basis(O, copy = false)
-    for i = 1:degree(O)
-      print(io, "($(pb[i][1])) * ")
-      show(IOContext(io, :compact => true), pb[i][2])
-      if i != degree(O)
-        print(io, ", ")
-      end
+      print(io, prefix, " of relative number field")
     end
   else
-    if is_maximal_known_and_maximal(O)
-      print(io, "Relative maximal order of ")
-    else
-      print(io, "Relative order of ")
-    end
-    println(io, nf(O))
-    print(io, "with pseudo-basis ")
-    pb = pseudo_basis(O, copy = false)
-    for i = 1:degree(O)
-      print(io, "\n(")
-      print(io, pb[i][1])
-      print(io, ", ")
-      show(IOContext(io, :compact => true), pb[i][2])
-      print(io, ")")
-    end
+    io = pretty(io)
+    print(io, prefix, " of ")
+    print(io, Lowercase(), nf(O))
   end
 end
 
@@ -463,36 +469,36 @@ end
 #
 ################################################################################
 
-function Order(L::RelSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
+function order(L::RelSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
   return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
-function Order(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
+function order(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{AbsSimpleNumFieldElem})
   return RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(L, deepcopy(M))
 end
 
 
-function Order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} where T
+function order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} where T
   return RelNumFieldOrder{S, RelNumFieldOrderFractionalIdeal{T}, elem_type(L)}(L, deepcopy(M))
 end
 
 #=
 @doc raw"""
-      Order(K::NumField, M::PMat) -> RelNumFieldOrder
+      order(K::NumField, M::PMat) -> RelNumFieldOrder
 
 Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
 of $K$.
 """
 =#
-function Order(L::NumField{T}, M::PMat{T, S}) where {T, S}
+function order(L::NumField{T}, M::PMat{T, S}) where {T, S}
   # checks
   return RelNumFieldOrder{T, S, elem_type(L)}(L, deepcopy(M))
 end
 
-function EquationOrder(L::NumField)
+function equation_order(L::NumField)
   M = identity_matrix(base_field(L), degree(L))
   PM = pseudo_matrix(M)
-  O = Order(L, PM)
+  O = order(L, PM)
   O.basis_mat_inv = M
   O.is_equation_order = true
   return O
@@ -514,7 +520,7 @@ function any_order(K::RelSimpleNumField)
       end
     end
     B = pseudo_hnf(pseudo_matrix(M), :lowerleft)
-    return Order(K, B)
+    return order(K, B)
   end
 end
 
@@ -538,26 +544,24 @@ function any_order(K::RelNonSimpleNumField)
     b[ind] = prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i))
     ind += 1
   end
-  return Order(K, basis_matrix(b))
+  return order(K, basis_matrix(b))
 end
 
-function EquationOrder(L::RelSimpleNumField{AbsSimpleNumFieldElem})
+function equation_order(L::RelSimpleNumField{AbsSimpleNumFieldElem})
   a = gen(L)
   @req is_integral(a) "Generator of must be integral"
   M = identity_matrix(base_field(L), degree(L))
   PM = pseudo_matrix(M)
-  O = Order(L, PM)
+  O = order(L, PM)
   O.basis_mat_inv = M
   O.is_equation_order = true
   O.index = ideal(maximal_order(base_field(L)), 1)
   return O
 end
 
-equation_order(L::NumField) = EquationOrder(L)
-
-function MaximalOrder(L::NumField)
+function maximal_order(L::NumField)
   return get_attribute!(L, :maximal_order) do
-    O = MaximalOrder(any_order(L))
+    O = maximal_order(any_order(L))
     O.is_maximal = 1
     return O
   end::order_type(L)
@@ -590,7 +594,7 @@ function maximal_order_via_relative(K::AbsSimpleNumField, m::NumFieldHom{AbsSimp
     L = codomain(m)
     OL = maximal_order(L)
     B = absolute_basis(OL, L)
-    OK = Order(K, [ m\b for b in B ], check = false, isbasis = true)
+    OK = order(K, [ m\b for b in B ], check = false, isbasis = true)
     OK.is_maximal = 1
     return OK
   end::order_type(K)
@@ -616,6 +620,12 @@ end
 function ==(R::RelNumFieldOrder, S::RelNumFieldOrder)
   nf(R) != nf(S) && return false
   return basis_pmatrix(R, copy = false) == basis_pmatrix(S, copy = false)
+end
+
+function Base.hash(R::RelNumFieldOrder, h::UInt)
+  h = hash(nf(R), h)
+  h = hash(basis_matrix(R, copy = false), h)
+  return h
 end
 
 ################################################################################
@@ -817,7 +827,7 @@ function _maximal_order_round2(O::RelNumFieldOrder)
   return OO
 end
 
-function MaximalOrder(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: NonSimpleNumFieldElem}
+function maximal_order(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: NonSimpleNumFieldElem}
   L = nf(O)
   K = base_field(L)
   Obase_K = maximal_order(K)
@@ -840,7 +850,7 @@ function MaximalOrder(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: NonSimpleN
   end
   Bp = product_pseudobasis(B)
   MOstart = pseudo_matrix(basis_matrix(U[x[1] for x in Bp]), fractional_ideal_type(Obase_K)[x[2] for x in Bp])
-  Ostart = Order(L, MOstart)
+  Ostart = order(L, MOstart)
   lp = ideal_type(Obase_K)[]
   for i = 1:length(fields)
     for j = i+1:length(fields)
@@ -952,7 +962,7 @@ function relative_order(O::AbsSimpleNumFieldOrder, m::NumFieldHom{AbsSimpleNumFi
   OK = maximal_order(K)
   B = basis(O, Labs, copy = false)
   if is_maximal_known_and_maximal(O)
-    E = EquationOrder(L)
+    E = equation_order(L)
     els = elem_type(L)[m(x) for x in B]
     return add_to_order(E, els)
   else
@@ -1035,7 +1045,7 @@ rand(rng::AbstractRNG, O::RelNumFieldOrder, B::Int) = rand(rng, make(O, B))
 #
 ################################################################################
 
-Order(elt::Vector{S}; check::Bool = false, cached::Bool = false) where {S <: Union{RelSimpleNumFieldElem, RelNonSimpleNumFieldElem}} = _order(elt, check = check)
+order(elt::Vector{S}; check::Bool = false, cached::Bool = false) where {S <: Union{RelSimpleNumFieldElem, RelNonSimpleNumFieldElem}} = _order(elt, check = check)
 
 function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{RelSimpleNumFieldElem, RelNonSimpleNumFieldElem}}
   @assert length(elt) > 0
@@ -1080,7 +1090,7 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{RelSimple
 
   # Make an explicit check
   @hassert :RelNumFieldOrder 1 defines_order(K, B)[1]
-  return Order(K, B)
+  return order(K, B)
 end
 
 function _get_gens(M::PMat)
@@ -1168,7 +1178,7 @@ function add_to_order(O::RelNumFieldOrder, elt::Vector{T}; check::Bool = false) 
         rk += 1
       end
       B = sub(B, rk:nrows(B), 1:n)
-      O = Order(K, B)
+      O = order(K, B)
     end
   end
   return O
@@ -1276,7 +1286,7 @@ function prefactorization(I::RelNumFieldOrderIdeal)
   return ideals
 end
 
-function MaximalOrder(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
+function maximal_order(O::RelNumFieldOrder{S, T, U}) where {S, T, U <: RelSimpleNumFieldElem}
   # If O contains OK[a] with a the generator of nf(O), then we do something
   # clever as in the absolute case (composite Dedekind test and prefactorization)
   #
@@ -1296,7 +1306,7 @@ function _maximal_order_rel_nice(O::RelNumFieldOrder{S, T, U}) where {S, T, U <:
   facts = prefactorization_discriminant(K, d)
   sort!(facts, by = x -> absolute_minimum(x), rev = true)
   @vprintln :RelNumFieldOrder 1 "Factors of the discriminant lying over $([minimum(x) for x in facts])"
-  E = EquationOrder(K)
+  E = equation_order(K)
   OO = O
   while !isempty(facts)
     p = pop!(facts)

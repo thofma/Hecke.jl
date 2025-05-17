@@ -128,7 +128,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
       z.partial_solutions[i] = Dict{Set{Int}, Vector{FacElem{U, S}}}()
       z.partial_solutions[i][Set{Int}()] = [ z.fac_elem_mon() ]
       z.solutions_mod_units[i] = Dict{FacElem{U, S}, FinGenAbGroupElem}()
-      z.GtoUk[i] = hom([ FinGenAbGroup(ZZRingElem[])() ], [ Uk() ])
+      z.GtoUk[i] = hom(FinGenAbGroup(ZZRingElem[]), Uk, elem_type(Uk)[])
       z.fields_in_product[i] = Vector{Tuple{NfRelToAbsAlgAssMor, NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}}}()
     end
 

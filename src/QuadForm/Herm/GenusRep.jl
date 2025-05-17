@@ -188,7 +188,8 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       special = isodd(scale)
       scale = div(scale + 1, 2)
     end
-    form = K(elem_in_nf(uniformizer(minimum(P))))^(-scale) * form
+    # we rescale so that L things stay integral
+    form = K(elem_in_nf(anti_uniformizer(minimum(P))))^(scale) * form
   end
   n = rank(L)
   W = vector_space(k, n)
@@ -279,6 +280,7 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       __w = [ (hext\w[i]) for i in 1:n]
       x = [ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a)
+      @assert is_integral(nrm)
       if !(nrm in P)
         continue
       end
@@ -741,6 +743,11 @@ function genus_representatives(L::HermLat; max=inf, use_auto::Bool = true,
   else
     result = LL
   end
+
+  if use_mass
+    @assert is_zero(missing_mass)
+  end
+
   return typeof(L)[rescale(LL, 1//s) for LL in result]
 end
 

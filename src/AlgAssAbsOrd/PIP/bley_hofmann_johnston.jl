@@ -92,7 +92,7 @@ function _is_principal_with_data_bhj(a::AlgAssAbsOrdIdl, O; side = :right, local
   OZ = maximal_order(Z)
   Q, mQ = quo(OZ, FinZ)
   Quni, mQuni = unit_group(Q)
-  U::FinGenAbGroup, mU::MapUnitGrp{Hecke.AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},AssociativeAlgebraElem{QQFieldElem,StructureConstantAlgebra{QQFieldElem}}}} = unit_group(OZ)
+  U::FinGenAbGroup, mU::MapUnitGrp{typeof(OZ)} = unit_group(OZ)
   @vprintln :PIP 1 "Solving principal ideal problem over maximal order..."
 
   #@show Q
@@ -151,7 +151,7 @@ function _solve_norm_equation_over_center(M, x)
   sol = zero(M)
   for i in 1:length(dec)
     Ai, mAi = dec[i]
-    MinAi = Order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
+    MinAi = order(Ai, [ mAi\(mAi(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     si = _solve_norm_equation_over_center_simple(MinAi, preimage(mAi, x))
     sol += M(mAi(elem_in_algebra(si)))
   end
@@ -173,7 +173,7 @@ function _solve_norm_equation_over_center_simple(M, x)
     ZA, ZAtoA = center(A)
     @assert ZAtoA(normred_over_center(elem_in_algebra(sol), ZAtoA)) == x
     return sol
-  elseif degree(A) == 4 && !is_split(A)
+  elseif _matdeg(A) == 4 && !is_split(A)
     return _solve_norm_equation_over_center_quaternion(M, x)
   else
     throw(NotImplemented())
@@ -214,12 +214,12 @@ end
 function _solve_norm_equation_over_center_full_matrix_algebra(M, x)
   A = algebra(M)
   ZA, ZAtoA = center(A)
-  if degree(A) == 1
+  if _matdeg(A) == 1
     @assert ZAtoA(normred_over_center(x, ZAtoA)) == x
     return M(x)
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = Order(B, [(BtoA\elem_in_algebra(b))::elem_type(B) for b in absolute_basis(M)])
+    MB = order(B, [(BtoA\elem_in_algebra(b))::elem_type(B) for b in absolute_basis(M)])
     xinB = BtoA\x
     solB = _solve_norm_equation_over_center_full_rational_matrix_algebra(MB, xinB)
     sol = M(BtoA(elem_in_algebra(solB))::elem_type(A))
@@ -274,7 +274,7 @@ function lift_norm_one_unit(x, F)
   #@show F
   for i in 1:length(res)
     Ai, AitoA = res[i]
-    MinAi = Order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
+    MinAi = order(Ai, elem_type(Ai)[ AitoA\(AitoA(one(Ai)) * elem_in_algebra(b)) for b in Mbas])
     xinAi = MinAi(preimage(AitoA, elem_in_algebra(x)))
     Fi = ideal_from_lattice_gens(Ai, MinAi, [ AitoA\b for b in basis(F) ], :twosided)
     #@show Fi
@@ -306,7 +306,7 @@ function _lift_norm_one_unit_simple(x, F)
     FinB = ideal_from_lattice_gens(B, MinB, elem_type(B)[ AtoB(b) for b in basis(F) ], :twosided)
     y = _lift_norm_one_unit_full_matrix_algebra(MinB(AtoB(elem_in_algebra(x))::elem_type(B)), FinB)
     return (AtoB\y)::elem_type(A)
-  elseif degree(A) == 4 && !is_split(A)
+  elseif _matdeg(A) == 4 && !is_split(A)
     return _lift_norm_one_unit_quaternion(x, F)
   else
     error("Not implemented yet")
@@ -354,7 +354,7 @@ end
 function _lift_norm_one_unit_full_matrix_algebra(x, F)
   #@show F
   A = algebra(parent(x))
-  if degree(A) == 1
+  if _matdeg(A) == 1
     return elem_in_algebra(one(parent(x)))
   elseif degree(base_ring(A)) == 1
     M = parent(x)
@@ -393,7 +393,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   # zetainv * a == b
   @assert b + idnu == 1*order(b)
   zeta = inv(zetainv)
-  n = degree(A)
+  n = _matdeg(A)
   Phi1 = identity_matrix(base_ring(A), n)
   Phi1[n, n] = zetainv
   _belem, y = idempotents(b, idnu)

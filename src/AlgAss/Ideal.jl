@@ -286,7 +286,6 @@ end
 
 ################################################################################
 #
-#
 #  Equality
 #
 ################################################################################
@@ -294,6 +293,12 @@ end
 function ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
   algebra(a) !== algebra(b) && return false
   return basis_matrix(a, copy = false) == basis_matrix(b, copy = false)
+end
+
+function Base.hash(a::AbsAlgAssIdl, h::UInt)
+  h = hash(algebra(a), h)
+  h = hash(basis_matrix(a, copy = false), h)
+  return h
 end
 
 ################################################################################
@@ -659,14 +664,14 @@ end
 function left_principal_generator(a::AbsAlgAssIdl{S}) where {S <: MatAlgebra}
   @req is_left_ideal(a) "Not a left ideal"
   A = algebra(a)
-  if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
+  if dim(A) != _matdeg(A)^2*dim_of_coefficient_ring(A)
     error("Only implemented for full matrix algebras")
   end
 
   if is_canonical(A)
     e11 = A[1]
   else
-    t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
+    t = zero_matrix(coefficient_ring(A), _matdeg(A), _matdeg(A))
     t[1, 1] = one(coefficient_ring(A))
     e11 = A(t)
     t[1, 1] = zero(coefficient_ring(A))
@@ -690,14 +695,14 @@ end
 function right_principal_generator(a::AbsAlgAssIdl{S}) where {S <: MatAlgebra}
   @assert is_right_ideal(a) "Not a right ideal"
   A = algebra(a)
-  if dim(A) != degree(A)^2*dim_of_coefficient_ring(A)
+  if dim(A) != _matdeg(A)^2*dim_of_coefficient_ring(A)
     error("Only implemented for full matrix algebras")
   end
 
   if is_canonical(A)
     e11 = A[1]
   else
-    t = zero_matrix(coefficient_ring(A), degree(A), degree(A))
+    t = zero_matrix(coefficient_ring(A), _matdeg(A), _matdeg(A))
     t[1, 1] = one(coefficient_ring(A))
     e11 = A(t)
     t[1, 1] = zero(coefficient_ring(A))
@@ -707,7 +712,7 @@ function right_principal_generator(a::AbsAlgAssIdl{S}) where {S <: MatAlgebra}
   x = A()
   for i = 1:length(basis(ae, copy = false))
     if is_canonical(A)
-      e1i = A[(i - 1)*degree(A) + 1]
+      e1i = A[(i - 1)*_matdeg(A) + 1]
     else
       t[1, i] = one(coefficient_ring(A))
       e1i = A(t)

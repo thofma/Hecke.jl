@@ -129,7 +129,7 @@ function _issimilar_husert_generic(A, B)
     M = hcat(M, _M)
   end
 
-  M = sub(hnf(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
+  M = sub(_hnf_integral(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
   N = inv(M)
 
   SS = N
@@ -147,7 +147,7 @@ function _issimilar_husert_generic(A, B)
     end
     M = hcat(M, _M)
   end
-  M = sub(hnf(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
+  M = sub(_hnf_integral(FakeFmpqMat(transpose(M)), :upperright), 1:la, 1:la)
   N = inv(M)
 
   bcolonb = N
@@ -214,7 +214,7 @@ function _issimilar_husert_generic(A, B)
   end
 
   ide = ideal_from_lattice_gens(A, idealAgens)
-  ideO = Order(A, ordergens)
+  ideO = order(A, ordergens)
 
   @assert ideO == right_order(ide)
 

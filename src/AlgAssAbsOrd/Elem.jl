@@ -1,4 +1,4 @@
-parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
+parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = S
 
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
@@ -10,42 +10,42 @@ Base.hash(x::AlgAssAbsOrdElem, h::UInt) = hash(elem_in_algebra(x, copy = false),
 #
 ################################################################################
 
-(O::AlgAssAbsOrd{S, T})(a::T, check::Bool = true) where {S, T} = begin
+(O::AlgAssAbsOrd)(a::AbstractAssociativeAlgebraElem, check::Bool = true) = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     !x && error("Algebra element not in the order")
-    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a), y)
+    return AlgAssAbsOrdElem{typeof(O), typeof(a)}(O, deepcopy(a), y)
   else
-    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a))
+    return AlgAssAbsOrdElem{typeof(O), typeof(a)}(O, deepcopy(a))
   end
 end
 
-(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{ZZRingElem}, check::Bool = false) where {S, T} = begin
+(O::AlgAssAbsOrd)(a::AbstractAssociativeAlgebraElem, arr::Vector, check::Bool = false) = begin
   if check
     (x, y) = _check_elem_in_order(a, O)
     (!x || arr != y) && error("Algebra element not in the order")
-    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a), y)
+    return AlgAssAbsOrdElem{typeof(O), typeof(a)}(O, deepcopy(a), y)
   else
-    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a), deepcopy(arr))
+    return AlgAssAbsOrdElem{typeof(O), typeof(a)}(O, deepcopy(a), deepcopy(arr))
   end
 end
 
 (O::AlgAssAbsOrd{S, T})(arr::Vector{ZZRingElem}) where {S, T} = begin
-  M = basis_matrix(FakeFmpqMat, O, copy = false)
+  M = basis_matrix(O, copy = false)
   N = matrix(ZZ, 1, degree(O), arr)
   NM = N*M
-  x = elem_from_mat_row(algebra(O), NM.num, 1, NM.den)
-  return AlgAssAbsOrdElem{S, T}(O, x, deepcopy(arr))
+  x = elem_from_mat_row(algebra(O), NM, 1)
+  return AlgAssAbsOrdElem{typeof(O), typeof(x)}(O, x, deepcopy(arr))
 end
 
-(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} = begin
+(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem, check::Bool = true) where {S, T} = begin
   b = elem_in_algebra(a) # already a copy
   if check
     (x, y) = _check_elem_in_order(b, O)
     !x && error("Algebra element not in the order")
-    return AlgAssAbsOrdElem{S, T}(O, b, y)
+    return AlgAssAbsOrdElem{typeof(O), typeof(b)}(O, b, y)
   else
-    return AlgAssAbsOrdElem{S, T}(O, b)
+    return AlgAssAbsOrdElem{typeof(O), typeof(b)}(O, b)
   end
 end
 
@@ -73,7 +73,7 @@ end
 #
 ################################################################################
 
-(O::AlgAssAbsOrd{S, T})() where {S, T} = AlgAssAbsOrdElem{S, T}(O)
+(O::AlgAssAbsOrd{S, T})() where {S, T} = elem_type(O)(O)
 
 one(O::AlgAssAbsOrd) = O(one(algebra(O)))
 
@@ -142,6 +142,15 @@ Returns the coordinates of $x$ in the basis of `parent(x)`.
 function coordinates(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem }; copy::Bool = true)
   assure_has_coord(x)
   if copy
+    return deepcopy(x.coordinates)::Vector{elem_type(base_ring(parent(x)))}
+  else
+    return x.coordinates::Vector{elem_type(base_ring(parent(x)))}
+  end
+end
+
+function coordinates(x::AlgAssRelOrdElem; copy::Bool = true)
+  assure_has_coord(x)
+  if copy
     return deepcopy(x.coordinates)
   else
     return x.coordinates
@@ -155,7 +164,7 @@ end
 ################################################################################
 
 function -(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem })
-  return parent(x)(-elem_in_algebra(x, copy = false))
+  return parent(x)(-elem_in_algebra(x, copy = false), false)
 end
 
 ###############################################################################
@@ -166,12 +175,12 @@ end
 
 function *(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   check_parent(x, y)
-  return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false))
+  return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false), false)
 end
 
 function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   check_parent(x, y)
-  z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
+  z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false), false)
   if x.has_coord && y.has_coord
     z.coordinates = [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
@@ -181,7 +190,7 @@ end
 
 function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   check_parent(x, y)
-  z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
+  z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false), false)
   if x.has_coord && y.has_coord
     z.coordinates = [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
@@ -192,7 +201,7 @@ end
 function *(n::IntegerUnion, x::AlgAssAbsOrdElem)
   #O=x.parent
   O = parent(x)
-  y = O(n * elem_in_algebra(x, copy = false))
+  y = O(n * elem_in_algebra(x, copy = false), false)
   if x.has_coord
     y.coordinates = n .* coordinates(x, copy = false)
     y.has_coord = true
@@ -366,31 +375,31 @@ The multiplication is from the left if `action == :left` and from the right if
 function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
 
   O = parent(x)
-  M = basis_matrix(FakeFmpqMat, O, copy = false)
-  M1 = basis_mat_inv(FakeFmpqMat, O, copy = false)
+  M = basis_matrix(O, copy = false)
+  M1 = basis_matrix_inverse(O, copy = false)
 
-  B = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
+  B = representation_matrix(elem_in_algebra(x, copy = false), action)
   B = mul!(B, M, B)
   B = mul!(B, B, M1)
 
-  @assert B.den == 1
-  return B.num
+  @assert is_one(denominator(B))
+  return numerator(B)
 end
 
 function representation_matrix_mod(x::AlgAssAbsOrdElem, d::ZZRingElem, action::Symbol = :left)
   O = parent(x)
-  M = basis_matrix(FakeFmpqMat, O, copy = false)
-  M1 = basis_mat_inv(FakeFmpqMat, O, copy = false)
+  M = basis_matrix(O, copy = false)
+  M1 = basis_matrix_inverse(O, copy = false)
 
-  A = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
-  d2 = M.den * M1.den*A.den
+  A = representation_matrix(elem_in_algebra(x, copy = false), action)
+  d2 = denominator(M) * denominator(M1) * denominator(A)
   d2c, d2nc = ppio(d2, d)
   d1 = d * d2c
-  A1 = A.num
-  mod!(A.num, d1)
-  S1 = mod(M.num, d1)
+  A1 = numerator(A)
+  mod!(A1, d1)
+  S1 = mod(numerator(M), d1)
   mul!(A1, S1, A1)
-  S2 = mod(M1.num, d1)
+  S2 = mod(numerator(M1), d1)
   mul!(A1, A1, S2)
   mod!(A1, d1)
   divexact!(A1, A1, d2c)

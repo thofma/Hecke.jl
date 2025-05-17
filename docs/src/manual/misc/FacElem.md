@@ -1,38 +1,39 @@
-# Factored Elements
-
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Factored Elements
 
 In many applications in number theory related to the multiplicative
 structure of number fields, interesting elements, e.g. units,
-are extremely large when written wrt. to a fxied basis for the field:
+are extremely large when written with respect to a fixed basis for the field:
 for the fundamental unit in $Q[\sqrt d]$ it is known that the coefficients
-wrt. the canonical basis $1, \sqrt d$ can have $O(\exp \sqrt d)$ many digits.
+with respect to the canonical basis $1, \sqrt d$ can have $O(\exp \sqrt d)$ many digits.
 All currently known, fast methods construct those elements as power
 products of smaller elements, allowing the computer to handle them.
 
 Mathematically, one can think of factored elements to formally
-live in the ring $Z[K]$ the group ring of the non-zero field
-elements. Thus elements are of the form $ \prod a_i^{e_i}$ where
-$a_i$ are elements in $K$, typically _small_ and the $e_i\in Z$ are frequently
+live in the ring $\mathbb{Z}[K^*]$ the group ring of the non-zero field
+elements. Thus elements are of the form $\prod a_i^{e_i}$ where
+$a_i$ are elements in $K$, typically _small_ and the $e_i\in \mathbb{Z}$ are frequently
 large exponents. We refer to the $a_i$ as the *base* and the $e_i$ as the
 *exponents* of the factored element.
 
-Since $K$ is, in general, no PID, this presentation
-is non-unique, elements in this form can easily be multiplied, raised
+Presentations of elements of $K^*$ are
+non-unique; elements in this form can easily be multiplied, raised
 to large powers, but in general not compared and not added.
 
-In Hecke, this is caputured more generally by the type `FacElem`,
+In Hecke, this is captured more generally by the type `FacElem`,
 parametrized by the type of the elements in the base and the type of their
 parent.
 
 Important special cases are
  * ```FacElem{ZZRingElem, ZZRing}```, factored integers
- * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algerbaic numbers
+ * ```FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}```, factored algebraic numbers
  * ```FacElem{AbsNumFieldOrderIdeal, AbsNumFieldOrderIdealSet}```, factored ideals
 
-It should be noted that an object of type ```FacElem{ZZRingElem, ZZRing}``
+It should be noted that an object of type `FacElem{ZZRingElem, ZZRing}`
 will, in general, not represent an integer as the exponents can be
 negative.
 

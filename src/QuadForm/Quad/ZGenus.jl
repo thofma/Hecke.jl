@@ -497,8 +497,9 @@ function integer_genera(sig_pair::Tuple{Int,Int}, _determinant::RationalUnion;
     minscale_p = valuation(_min_scale, p)
     maxscale_p = valuation(_max_scale, p)
     local_symbol_p = _local_genera(p, rank, det_val, minscale_p, maxscale_p, even)
+    isempty(local_symbol_p) && return out  # impossible local conditions
     filter!(s -> (prime(s) == 2) || (length(symbol(s)) > 1) || (symbol(s)[1][1] != 0), local_symbol_p)
-    isempty(local_symbol_p) && return out
+    isempty(local_symbol_p) && continue  # unimodular at p, nothing to do
     push!(local_symbols, local_symbol_p)
   end
   # take the cartesian product of the collection of all possible

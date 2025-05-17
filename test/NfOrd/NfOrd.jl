@@ -7,13 +7,13 @@
      Qx, x = polynomial_ring(QQ, "x")
 
      K1, a1 = number_field(x^3 - 2, "a")
-    O1 = EquationOrder(K1, true)
+    O1 = equation_order(K1, true)
 
     @test @inferred Hecke.nf(O1) == K1
 
 
      K2, a2 = number_field(x - 2, "a")
-    O2 = EquationOrder(K2, true)
+    O2 = equation_order(K2, true)
 
     @test @inferred Hecke.nf(O2) == K2
 
@@ -37,14 +37,14 @@
          2
 
     K3, a3 = number_field(f3, "a")
-    O3 = Order(K3, [ a3^i for i in 0:63])
+    O3 = order(K3, [ a3^i for i in 0:63])
 
     @test Hecke.nf(O3) == K3
 
      K4, a4 = number_field(x^2 - 5, "a")
-    O4 = Order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
-    O44 = Order(K4, QQ[1 0; 0 2])
-    O444 = Order(K4, ZZ[1 0; 0 2])
+    O4 = order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
+    O44 = order(K4, QQ[1 0; 0 2])
+    O444 = order(K4, ZZ[1 0; 0 2])
 
     @test Hecke.nf(O4) == K4
 
@@ -54,34 +54,34 @@
 #    @test O44 === O444
 
     K6, a6 = number_field(x^2 - 180, "a")
-    O6 = EquationOrder(K6)
+    O6 = equation_order(K6)
 
     @test Hecke.nf(O6) == K6
 
-    O7 = Order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)), check = true, cached = false)
-    O77 = Order(K6, QQ[1 0; 0 1//6])
+    O7 = order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)), check = true, cached = false)
+    O77 = order(K6, QQ[1 0; 0 1//6])
 
     #@test O7 == O77
     #@test !(O7 === O77)
 
-    O8 = Order(K1, [a1])
-    @test O8 == EquationOrder(K1)
+    O8 = order(K1, [a1])
+    @test O8 == equation_order(K1)
 
-    @test_throws ErrorException Order(K1, [a1, a1, a1], isbasis = true)
-    #@test_throws ErrorException Order(K1, [1, a1, a1])
-    #@test_throws ErrorException Order(K1, [1.0, a1, a1])
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 2; 2 0], ZZ(6)))
-    @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0], ZZ(6)))
+    @test_throws ErrorException order(K1, [a1, a1, a1], isbasis = true)
+    #@test_throws ErrorException order(K1, [1, a1, a1])
+    #@test_throws ErrorException order(K1, [1.0, a1, a1])
+    @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
+    @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 2; 2 0], ZZ(6)))
+    @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 0], ZZ(6)))
   end
 
   Qx, x = polynomial_ring(QQ, "x")
 
   K1, a1 = number_field(x^3 - 2, "a")
-  O1 = EquationOrder(K1)
+  O1 = equation_order(K1)
 
   K2, a2 = number_field(x - 2, "a")
-  O2 = EquationOrder(K2)
+  O2 = equation_order(K2)
 
   f3 = x^64 - 64*x^62 +
        1952*x^60 - 37760*x^58 +
@@ -105,15 +105,15 @@
        87296*x^4 - 1024*x^2 + 2
 
   K3, a3 = number_field(f3, "a")
-  O3 = Order(K3, [ a3^i for i in 0:63])
+  O3 = order(K3, [ a3^i for i in 0:63])
 
   K4, a4 = number_field(x^2 - 5, "a")
-  O4 = Order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
+  O4 = order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], ZZRingElem(1)))
 
   K6, a6 = number_field(x^2 - 180, "a")
-  O6 = EquationOrder(K6)
+  O6 = equation_order(K6)
 
-  O7 = Order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
+  O7 = order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
 
   O5 = @inferred deepcopy(O2)
 
@@ -341,8 +341,8 @@
   end
 
   @testset "Addition" begin
-    O6_2 = Order(K6, Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
-    O6_3 = Order(K6, Hecke.FakeFmpqMat(ZZ[3 0; 0 1], ZZ(3)))
+    O6_2 = order(K6, Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
+    O6_3 = order(K6, Hecke.FakeFmpqMat(ZZ[3 0; 0 1], ZZ(3)))
 
     b = @inferred O6_2 +
  O6_3
@@ -376,7 +376,7 @@
     f = x^7 - 1000*x^2 +
  1000*x - 1000
     K, a = number_field(f,"a");
-    E = Order(K, [1, a, a^2, a^3, a^4, 1//5*a^5, 1//5*a^6])
+    E = order(K, [1, a, a^2, a^3, a^4, 1//5*a^5, 1//5*a^6])
     lP = prime_ideals_over(E, 5)
     @test length(lP) == 1
     P = lP[1]
@@ -475,7 +475,7 @@
     @test maximal_order(E) === E
 
     K, a = number_field(x^5 - 5x - 1, "a")
-    O = Order(K, [3*a])
+    O = order(K, [3*a])
     @test pmaximal_overorder(O, 3) == equation_order(K)
   end
 

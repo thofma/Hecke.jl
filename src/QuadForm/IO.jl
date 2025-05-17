@@ -109,7 +109,7 @@ function to_hecke(io::IO, G::HermGenus; target = "G")
   vals = [sig[p] for p in SE]
   println(io, "vals = Int$(vals);")
   println(io, "sig = Dict(S[i] => vals[i] for i in 1:$(length(vals)));")
-  println(io, "OK = maximal_order(K);")
+  println(io, "OK = MaximalOrder(K);")
   lgs = G.LGS
   pp = prime.(lgs)
   bases = [gens(p) for p in pp]

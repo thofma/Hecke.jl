@@ -219,7 +219,7 @@ end
   @test absolute_degree(K) == 2
   K, r = splitting_field(t^6-2, do_roots = true)
   @test length(r) == 2
-  
+
   K = splitting_field(t^6-t-1)
   @test degree(K) == 6
 
@@ -228,6 +228,16 @@ end
 
   @test absolute_degree(E) == 30
   @test length(r) == 5
-end  
+end
 
-
+let
+  F = GF(3,4)
+  a = gen(F)
+  for i in 1:10
+    i = rand(0:3^4 - 1)
+    b = a^i
+    m = disc_log(a, b)
+    # a is not promised to be primitive
+    @test a^m == b
+  end
+end

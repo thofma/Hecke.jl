@@ -368,7 +368,7 @@ function principal_generator(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
     end
     return O(evaluate(e))
   else
-    fl, e1 = is_principal_non_maximal(A)
+    fl, e1 = _is_principal_non_maximal(A)
     if !fl
       error("Ideal is not principal")
     end
@@ -525,7 +525,7 @@ end
 function is_principal_with_data(A::AbsSimpleNumFieldOrderFractionalIdeal)
   O = order(A)
   if !is_maximal(O)
-    fl, a = is_principal_non_maximal(numerator(A, copy = false))
+    fl, a = _is_principal_non_maximal(numerator(A, copy = false))
     b = elem_in_nf(a, copy = false)
   else
     fl, a = is_principal_fac_elem(numerator(A, copy = false))

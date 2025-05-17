@@ -57,12 +57,27 @@ sparse_row_type(::Type{T}) where {T <: NCRingElem} = SRow{T, sparse_inner_type(T
 
 
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
+ConformanceTests.equality(A::SRow, B::SRow) = A == B
 
 ################################################################################
 #
 #  Sparse row creation
 #
 ################################################################################
+
+function _assert_is_unique_sorted(pos)
+  local f
+  for (i, p) in enumerate(pos)
+    if i == 1
+      f = p
+    else
+      if p == f
+        error("positions must be unique")
+      end
+      f = p
+    end
+  end
+end
 
 @doc raw"""
     sparse_row(R::Ring) -> SRow
@@ -83,6 +98,7 @@ function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) wher
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
+  _assert_is_unique_sorted(a[1] for a in A)
   return SRow(R, A)
 end
 
@@ -96,6 +112,7 @@ function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
   end
+  _assert_is_unique_sorted(a[1] for a in A)
   return SRow(R, A)
 end
 
@@ -131,6 +148,7 @@ function sparse_row(R::NCRing, pos::Vector{Int}, val::AbstractVector{T}; sort::B
     pos = pos[p]
     val = val[p]
   end
+  _assert_is_unique_sorted(pos)
   if T === elem_type(R)
     return SRow(R, pos, val)
   else
@@ -156,9 +174,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(r::SRow, dict::IdDict)
-  s = sparse_row(base_ring(r))
-  s.pos = Base.deepcopy_internal(r.pos, dict)
-  s.values = Base.deepcopy_internal(r.values, dict)
+  s = sparse_row(base_ring(r), Base.deepcopy_internal(r.pos, dict), Base.deepcopy_internal(r.values, dict))
   return s
 end
 
@@ -337,6 +353,26 @@ function Base.getindex(A::SRow{T}, i::Int) where {T <: NCRingElem}
   else
     return A.values[p]
   end
+end
+
+#the generic case is a julia array, so getindex does not do any allocations
+#set!(a, ...) will e.g. fail on FqDefault as push!() will not do a copy
+#consider push!(some_row.values, getindex!(t, some_otherow.values, i))
+#if set! is used that all values will be identical: t
+function Hecke.getindex!(a::T, A::Vector{T}, i::Int) where {T <: NCRingElem}
+  return A[i]
+end
+
+function getindex(r::Hecke.SRow, u::AbstractUnitRange)
+  s = sparse_row(base_ring(r))
+  shift = 1-first(u)
+  for (p,v) = r
+    if p in u
+      push!(s.pos, p+shift)
+      push!(s.values, v)
+    end
+  end
+  return s
 end
 
 ################################################################################
@@ -944,12 +980,7 @@ function maximum(::typeof(abs), A::SRow{ZZRingElem})
   if iszero(A)
     return zero(ZZ)
   end
-  m = abs(A.values[1])
-  for j in 2:length(A)
-    if cmpabs(m, A.values[j]) < 0
-      m = A.values[j]
-    end
-  end
+  m = maximum(abs, A.values)
   return abs(m)
 end
 

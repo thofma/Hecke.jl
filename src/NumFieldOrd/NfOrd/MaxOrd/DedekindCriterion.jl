@@ -73,7 +73,7 @@ function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_o
     n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
     b = FakeFmpqMat(n, p)
     @hassert :AbsNumFieldOrder 1 defines_order(nf(O), b)[1]
-    OO = Order(nf(O), b, check = false)
+    OO = order(nf(O), b, check = false)
 
     OO.is_equation_order = false
 

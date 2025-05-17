@@ -1065,7 +1065,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   if coprime_to != -1
     mm = lcm(mm, coprime_to)
   end
-  mm = lcm(mm, discriminant(EquationOrder(nf(O))))
+  mm = lcm(mm, discriminant(equation_order(nf(O))))
   if isdefined(mR, :gens)
     if coprime_to == -1
       return mR.gens[1], mR.gens[2]
@@ -1260,9 +1260,9 @@ function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{<:Hec
     end
 
     if mp == id_hom(R)
-      G[k] = hom(genstot, images, check = true)
+      G[k] = hom(parent(first(genstot)), parent(first(images)), genstot, images, check = true)
     else
-      G[k] = hom(FinGenAbGroupElem[mp(x) for x = genstot], FinGenAbGroupElem[mp(x) for x = images], check = true)
+      G[k] = hom(codomain(mp), codomain(mp), FinGenAbGroupElem[mp(x) for x = genstot], FinGenAbGroupElem[mp(x) for x = images], check = true)
     end
     @hassert :RayFacElem 1 is_bijective(G[k])
   end

@@ -289,6 +289,7 @@ function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuat
   end
   @req valuation(data(a)) >= valuation(data(b)) "Division not possible"
   c = divexact(data(a), data(b))
+  setprecision!(c, min(precision(data(a)), precision(data(b))))
   return parent(a)(c, copy = false, check = false)
 end
 
@@ -340,9 +341,10 @@ function annihilator(a::LocalFieldValuationRingResidueRingElem)
   if is_zero(a)
     return one(parent(a))
   end
-  pi = uniformizer(_valuation_ring(parent(a)))
+  R = parent(a)
   va = _valuation_integral(data(a))
-  return parent(a)(pi)^(_exponent(parent(a)) - va)
+  pi = R(uniformizer(_field(R), _exponent(R) - va; prec = _exponent(R)))
+  return pi
 end
 
 ################################################################################
@@ -391,6 +393,25 @@ AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingResidueRingElem{S, T}
 
 function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingResidueRingElem{S, T}}, ::Type{U}) where {S, T, U <: RingElement}
   AbstractAlgebra.promote_rule(T, U) == T ? LocalFieldValuationRingResidueRingElem{S, T} : Union{}
+end
+
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function ConformanceTests.generate_element(R::LocalFieldValuationRingResidueRing{<:LocalFieldValuationRing})
+  return R(ConformanceTests.generate_element(_valuation_ring(R)))
+end
+
+function ConformanceTests.generate_element(R::LocalFieldValuationRingResidueRing{<:LaurentSeriesFieldValuationRing})
+  O = _valuation_ring(R)
+  return R(ConformanceTests.generate_element(O; shift = _exponent(R)))
+end
+
+function ConformanceTests.equality(a::LocalFieldValuationRingElem{S, T}, b::LocalFieldValuationRingElem{S, T}) where {S, T}
+  return a == b
 end
 
 ################################################################################

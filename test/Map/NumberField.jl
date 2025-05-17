@@ -23,7 +23,7 @@ end
     @test id !== nothing
   end
   f = hom(K, K, a^4//12+a//2)
-  E = EquationOrder(K)
+  E = equation_order(K)
   I = ideal(E, E(a))
   @test_throws ErrorException Hecke.induce_image(f, I)
 

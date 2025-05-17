@@ -125,7 +125,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
           push!(fields_in_product, (LtoA, KtoL))
 
           G, pi = direct_product(G, UK, task = :prod)::Tuple{FinGenAbGroup, Tuple{FinGenAbGroupHom, FinGenAbGroupHom}}
-          GtoUk = hom(gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
+          GtoUk = hom(G, Uk, gens(G), [ GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
           if is_surjective(GtoUk)
             NC.GtoUk_surjective[order_num] = true
           end
@@ -257,7 +257,7 @@ function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, Kto
   OK = maximal_order(K)
   UK, mUK = unit_group(OK)
   if !isassigned(cache, 1)
-    cache[1] = Order(K, [ KtoL\b for b in absolute_basis(equation_order(L)) ], check = false, isbasis = true)
+    cache[1] = order(K, [ KtoL\b for b in absolute_basis(equation_order(L)) ], check = false, isbasis = true)
   end
   OE = cache[1]
   if !isassigned(cache, 2)

@@ -35,7 +35,7 @@ features:
 - Class field theory
 - Abelian groups
 - Associative algebras
-- Ideals and orders in (semsimple) associative algebras
+- Ideals and orders in (semisimple) associative algebras
 - Locally free class groups of orders in semisimple algebras
 - Quadratic and Hermitian forms and lattices
 

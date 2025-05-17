@@ -436,6 +436,7 @@ mutable struct SMat{T, S}
   nnz::Int
   base_ring::Union{Ring, Nothing}
   tmp::Vector{SRow{T, S}}
+  tmp_scalar::Vector{T}
 
   function SMat{T, S}() where {T, S}
     r = new{T, S}(0,0,Vector{SRow{T, S}}(), 0, nothing, Vector{SRow{T, S}}())
@@ -526,8 +527,6 @@ Used predominantly to represent bases of orders in absolute number fields.
 mutable struct FakeFmpqMat
   num::ZZMatrix
   den::ZZRingElem
-  rows::Int
-  cols::Int
 
   function FakeFmpqMat()
     z = new()
@@ -538,8 +537,6 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x
     z.den = y
-    z.rows = nrows(x)
-    z.cols = ncols(x)
     if !simplified
       simplify_content!(z)
     end
@@ -550,8 +547,6 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x[1]
     z.den = x[2]
-    z.rows = nrows(x[1])
-    z.cols = ncols(x[1])
     if !simplified
       simplify_content!(z)
     end
@@ -563,15 +558,11 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x
     z.den = one(ZZ)
-    z.rows = nrows(x)
-    z.cols = ncols(x)
     return z
   end
 
   function FakeFmpqMat(x::QQMatrix)
     z = new()
-    z.rows = nrows(x)
-    z.cols = ncols(x)
 
     n, d = _fmpq_mat_to_fmpz_mat_den(x)
 
@@ -1214,11 +1205,14 @@ mutable struct UnitGrpCtx{T <: Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNum
   cache::Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   relations_used::Vector{Int}
 
+  GRH::Bool
+
   function UnitGrpCtx{T}(O::AbsSimpleNumFieldOrder) where {T}
     z = new{T}()
     z.order = O
     z.rank = -1
     z.full_rank = false
+    z.GRH = true
     z.regulator_precision = -1
     z.torsion_units_order = -1
     z.units = Vector{T}()
@@ -1739,7 +1733,7 @@ end
     z.base_ring = O
     z.ideal = I
     z.basis_matrix = integral_basis_matrix_wrt(I, O)
-    z.basis_mat_array = Array(z.basis_matrix)
+    z.basis_mat_array = Matrix{ZZRingElem}(z.basis_matrix)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_matrix[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = zero_matrix(ZZ, 2*d + 1, 2*d + 1)

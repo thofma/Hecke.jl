@@ -15,14 +15,22 @@
   D = @inferred sparse_row(R, [(1, ZZRingElem(1)), (2, ZZRingElem(2))])
   @test D isa SRow{ZZRingElem}
   @test D isa sparse_row_type(R)
+  @test_throws ErrorException sparse_row(R, [(1, ZZRingElem(1)), (1, ZZRingElem(2))])
+  @test_throws ErrorException sparse_row(ZZ, [(1, ZZRingElem(1)), (1, ZZRingElem(2))])
+
 
   E = @inferred sparse_row(R, [(1, 1), (2, 2)])
   @test E isa SRow{ZZRingElem}
   @test E isa sparse_row_type(R)
+  @test_throws ErrorException sparse_row(R, [(1, 1), (1, 2)])
+  @test_throws ErrorException sparse_row(ZZ, [(1, 1), (1, 2)])
 
   F = @inferred sparse_row(R, [1, 2], [ZZRingElem(1), ZZRingElem(2)])
   @test F isa SRow{ZZRingElem}
   @test F isa sparse_row_type(R)
+  @test_throws ErrorException sparse_row(R, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
+  @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
+  @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
 
   # Equality
 
@@ -40,6 +48,8 @@
   @test ZZRingElem(2) == @inferred D[2]
   @test ZZRingElem(0) == @inferred D[3]
   @test ZZRingElem(0) == @inferred D[1000]
+  @test D[1:2] == @inferred sparse_row(ZZ, [(1, 1), (2, 2)])
+  @test D[1:1] == @inferred sparse_row(ZZ, [(1, 1)])
 
   G = @inferred copy(F)
   @test G == F
@@ -210,7 +220,7 @@
     n = rand((1,1,1,2,5,7,15))
     return rand(-2^n:2^n)
   end
-  Main.equality(A::SRow, B::SRow) = A == B
+
   @testset "mutating arithmetic; R = $R" for R in (ZZ, QQ)
     for _ in 1:10
       maxind_A = rand(0:10)
@@ -223,21 +233,21 @@
       vals_B = elem_type(R)[R(rand((-1, 1)) * rand(1:10)) for _ in 1:length(inds_B)]
       B = sparse_row(R, inds_B, vals_B)
 
-      test_mutating_op_like_zero(zero, zero!, A)
+      ConformanceTests.test_mutating_op_like_zero(zero, zero!, A)
 
-      test_mutating_op_like_neg(-, neg!, A)
+      ConformanceTests.test_mutating_op_like_neg(-, neg!, A)
 
-      test_mutating_op_like_add(+, add!, A, B)
-      test_mutating_op_like_add(-, sub!, A, B)
-      test_mutating_op_like_add(*, mul!, A, randcoeff(), SRow)
-      test_mutating_op_like_add(*, mul!, randcoeff(), A, SRow)
-      test_mutating_op_like_add(*, mul!, A, ZZ(randcoeff()), SRow)
-      test_mutating_op_like_add(*, mul!, ZZ(randcoeff()), A, SRow)
+      ConformanceTests.test_mutating_op_like_add(+, add!, A, B)
+      ConformanceTests.test_mutating_op_like_add(-, sub!, A, B)
+      ConformanceTests.test_mutating_op_like_add(*, mul!, A, randcoeff(), SRow)
+      ConformanceTests.test_mutating_op_like_add(*, mul!, randcoeff(), A, SRow)
+      ConformanceTests.test_mutating_op_like_add(*, mul!, A, ZZ(randcoeff()), SRow)
+      ConformanceTests.test_mutating_op_like_add(*, mul!, ZZ(randcoeff()), A, SRow)
 
-      test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, B, randcoeff(), SRow)
-      test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, randcoeff(), B, SRow)
-      test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, B, randcoeff(), SRow)
-      test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, randcoeff(), B, SRow)
+      ConformanceTests.test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, B, randcoeff(), SRow)
+      ConformanceTests.test_mutating_op_like_addmul((a, b, c) -> a + b*c, addmul!, A, randcoeff(), B, SRow)
+      ConformanceTests.test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, B, randcoeff(), SRow)
+      ConformanceTests.test_mutating_op_like_addmul((a, b, c) -> a - b*c, submul!, A, randcoeff(), B, SRow)
     end
   end
 end

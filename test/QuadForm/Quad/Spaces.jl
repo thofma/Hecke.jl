@@ -525,3 +525,24 @@ end
   diag, U = @inferred diagonal_with_transform(V)
   @test diagonal(U*gram_matrix(V)*transpose(U)) == diag
 end
+
+# hashing of global isometry classes
+let
+  q = quadratic_space(QQ, QQ[-1 0; 0 1])
+  qq = quadratic_space(QQ, QQ[-1 0; 0 1])
+  @test hash(Hecke.isometry_class(q)) == hash(Hecke.isometry_class(qq))
+end
+
+# hashing of local isometry classes
+let
+  R, x = polynomial_ring(QQ, "x")
+  F, a = number_field(x^2 -3)
+  infF, infF2 = infinite_places(F)
+  q = quadratic_space(F, F[1 0; 0 a])
+  p, = prime_ideals_over(maximal_order(base_ring(q)), 3)
+  cls1 = Hecke.isometry_class(q, p)
+  @test cls1 == Hecke.isometry_class(q, p)
+  @test cls1 !== Hecke.isometry_class(q, p)
+  @test hash(cls1) == hash(Hecke.isometry_class(q, p))
+end
+ 

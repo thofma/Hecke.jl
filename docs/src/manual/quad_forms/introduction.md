@@ -1,7 +1,9 @@
-# Introduction
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Introduction
 
 
 This chapter deals with quadratic and hermitian spaces, and lattices there of.

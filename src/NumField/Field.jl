@@ -104,7 +104,7 @@ is_simple(a::NumField)
 
 @doc doc"""
     number_field(f::Poly{NumFieldElem}, s::VarName;
-                cached::Bool = false, check::Bool = false) -> NumField, NumFieldElem
+                cached::Bool = false, check::Bool = true) -> NumField, NumFieldElem
 
 Given an irreducible polynomial $f \in K[x]$ over some number field $K$, this
 function creates the simple number field $L = K[x]/(f)$ and returns $(L, b)$,
@@ -135,7 +135,7 @@ number_field(::DocuDummy)
 
 @doc (@doc _doc_stub_nf)
 number_field(f::PolyRingElem{<: NumFieldElem}, s::VarName;
-            cached::Bool = false, check::Bool = false)
+            cached::Bool = false, check::Bool = true)
 
 ################################################################################
 #

@@ -27,7 +27,7 @@ end
   Qx, x = QQ["x"]
   f = x^3 + 31*x^2 + 43*x + 77
   A = StructureConstantAlgebra(f)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 59
   @test !is_isomorphic(evaluate(icm[1]), evaluate(icm[2]))
@@ -41,7 +41,7 @@ end
   f1 = x^2 + 4*x + 7
   f2 = x^3 - 9*x^2 - 3*x - 1
   A = StructureConstantAlgebra(f1*f2)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   icm = ideal_class_monoid(O)
   @test length(icm) == 852
 
@@ -89,4 +89,8 @@ end
   b, V = is_conjugate(M, N)
   @test b == false
 
+  M = ZZ[-2 0; -3 -8]
+  N = ZZ[2 5; -8 -12]
+  b, V = is_conjugate(M, N)
+  @test b == false
 end

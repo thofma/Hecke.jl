@@ -902,6 +902,23 @@ function trace_matrix(A::AbstractAssociativeAlgebra, tr = tr)
   return M
 end
 
+function _trace_matrix(A::Vector, tr = tr)
+  F = base_ring(parent(A[1]))
+  n = length(A)
+  M = zero_matrix(F, n, n)
+  for i = 1:n
+    M[i, i] = tr(A[i]^2)
+  end
+  for i = 1:n
+    for j = i + 1:n
+      x = tr(A[i]*A[j])
+      M[i, j] = x
+      M[j, i] = x
+    end
+  end
+  return M
+end
+
 ################################################################################
 #
 #  Change of ring
@@ -1011,6 +1028,43 @@ Return whether the algebra $A$ is étale, that is, commutative and semisimple.
 """
 function is_etale(A::AbstractAssociativeAlgebra)
   return is_commutative(A) && is_semisimple(A)
+end
+
+################################################################################
+#
+#  Separability
+#
+################################################################################
+
+@doc raw"""
+    is_separable(A::AbstractAssociativeAlgebra) -> Bool
+
+Return whether the algebra is separable, that is, semisimple under any base
+field extension.
+"""
+@attr Bool function is_separable(A::AbstractAssociativeAlgebra)
+  K = base_ring(A)
+  # Would be great to have is_known(K, is_perfect) or something like that
+  if characteristic(K) == 0  || is_finite(K)
+    return is_semisimple(A)
+  end
+
+  if !is_commutative(A)
+    # Strategy (see Ford's seperable algebras)
+    # If I understand it correctly, a semi-simple K-algebra is separable
+    # if and only if the center is a separable K-algebra
+    
+    # Maybe as follows?
+    # C, = center(A)
+    # return is_separable(C) && is_semisimple(A)
+    throw(NotImplemented())
+  end
+
+  # A commutative algebra is separable, if and only if the (ordinary) trace
+  # form is non-degenerate, see Jacobson, Basic Algebra II, some Lemma near
+  # page 641
+
+  return !is_zero(det(trace_matrix(A)))
 end
 
 ################################################################################

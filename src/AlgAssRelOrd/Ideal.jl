@@ -734,6 +734,11 @@ function ==(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) where { S,
          _spans_subset_of_pseudohnf(bpmat, apmat; shape = :lowerleft)
 end
 
+function Base.hash(a::AlgAssRelOrdIdl, h::UInt)
+  # apparently, basis matrices are not normalized
+  return hash(algebra(a), h)
+end
+
 ################################################################################
 #
 #  isleft/isright
@@ -814,7 +819,7 @@ end
 
 function ring_of_multipliers(a::AlgAssRelOrdIdl, action::Symbol = :left)
   PM = _colon_raw(a, a, action)
-  return Order(algebra(a), PM)
+  return order(algebra(a), PM)
 end
 
 @doc raw"""
@@ -1142,7 +1147,7 @@ function is_locally_free(O::AlgAssRelOrd, I::AlgAssRelOrdIdl, p::Union{ AbsNumFi
       end
     end
 
-    if length(basiseIJoverZ) != degree(C)
+    if length(basiseIJoverZ) != _matdeg(C)
       # I is not locally free
       return false, O()
     end
@@ -1278,7 +1283,7 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal
   C, CtoB = _as_algebra_over_center(B)
   D, CtoD = _as_matrix_algebra(C)
 
-  n = degree(D)
+  n = _matdeg(D)
   if isone(n)
     return P
   end
@@ -1356,7 +1361,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ AbsNumF
   y = left_principal_generator(JinC)
   m = matrix(y)
   r = rref!(m)
-  k = degree(C)
+  k = _matdeg(C)
   @assert r < k - 1 # Otherwise J would be maximal, which we have checked...
 
   # We need to "add" pivots to m to get rank k - 1

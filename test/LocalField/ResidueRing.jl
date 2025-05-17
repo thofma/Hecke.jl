@@ -1,41 +1,3 @@
-function _integral_test_elem(R::PadicField)
-  p = prime(R)
-  prec = rand(1:R.prec_max)
-  r = ZZRingElem(0):p-1
-  return R(sum(rand(r)*p^i for i in 0:prec))
-end
-
-function _integral_test_elem(R::NonArchLocalField)
-  d = degree(R)
-  a = gen(R)
-  x = R()
-  for i in 0:d - 1
-    if rand() < 0.5
-      # Only fill every second coefficient
-      continue
-    end
-    x += _integral_test_elem(base_field(R))*a^i
-  end
-  return x
-end
-
-function test_elem(R::Hecke.LocalFieldValuationRing)
-  return R(_integral_test_elem(Hecke._field(R)))
-end
-
-function test_elem(R::Hecke.LocalFieldValuationRingResidueRing{<:Hecke.LocalFieldValuationRing})
-  return R(test_elem(Hecke._valuation_ring(R)))
-end
-
-function test_elem(R::Hecke.LaurentSeriesFieldValuationRing; shift::Int = 10)
-  return R(rand(data(R), 0:shift))
-end
-
-function test_elem(R::Hecke.LocalFieldValuationRingResidueRing{<:Hecke.LaurentSeriesFieldValuationRing})
-  O = Hecke._valuation_ring(R)
-  return R(test_elem(O, shift = Hecke._exponent(R)))
-end
-
 @testset "Conformance tests" begin
   F, _ = cyclotomic_field(20)
   OF = maximal_order(F)
@@ -57,7 +19,7 @@ end
     @test Hecke._exponent(R) == 3
     @test !is_domain_type(elem_type(R))
     @test is_exact_type(elem_type(R))
-    test_Ring_interface(R)
+    ConformanceTests.test_Ring_interface(R)
 
     p = uniformizer(R)
     @test p == R(pi)
@@ -69,7 +31,7 @@ end
 
     # the euclidean conformance test seems to assume that the ring is a domain
     R, _ = residue_ring(O, pi)
-    test_EuclideanRing_interface(R)
+    ConformanceTests.test_EuclideanRing_interface(R)
   end
 end
 
@@ -82,9 +44,9 @@ end
   @test is_one(RtoS(R(1)))
   @test_throws ArgumentError RtoS(setprecision!(R(1), 1))
 
-  for a in [test_elem(R) for i in 1:10]
+  for a in [ConformanceTests.generate_element(R) for i in 1:10]
     @test RtoS\RtoS(a) == a
-    for b in [test_elem(R) for i in 1:10]
+    for b in [ConformanceTests.generate_element(R) for i in 1:10]
       @test RtoS\RtoS(b) == b
       @test RtoS(a + b) == RtoS(a) + RtoS(b)
       @test RtoS(a * b) == RtoS(a) * RtoS(b)

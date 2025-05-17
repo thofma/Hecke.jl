@@ -209,7 +209,7 @@ function kernel(mp::GrpAbFinGenToQmodnZ)
       push!(imgs, numerator(imgx)*o*C[1])
     end
   end
-  mpk = hom(gensG, imgs)
+  mpk = hom(G, C, gensG, imgs)
   return kernel(mpk)
 end
 

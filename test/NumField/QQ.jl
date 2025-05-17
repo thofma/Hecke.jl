@@ -18,7 +18,7 @@ end
   @test Hecke.ideal_type(ZZ) == Hecke.ZZIdl
   @test Hecke.ideal_type(Hecke.ZZRing) == Hecke.ZZIdl
   @test Hecke.fractional_ideal_type(QQ) == Hecke.ZZFracIdl
-  @test_throws MethodError Hecke.ideal_type(QQ)
+  @test Hecke.ideal_type(QQ) == Hecke.PIDIdeal{QQFieldElem}
 
   I = 2*ZZ
   @test I == ZZ(2)*ZZ

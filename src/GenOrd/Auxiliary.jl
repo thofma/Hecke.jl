@@ -243,6 +243,14 @@ function Hecke.integral_split(M::Vector{<:AbstractAlgebra.FieldElem}, S::Generic
   end
   return m, den
 end
+
+function Hecke.integral_split(M::QQMatrix, S::ZZRing)
+  z = zero_matrix(ZZ, nrows(M), ncols(M))
+  d = ZZ()
+  Hecke._fmpq_mat_to_fmpz_mat_den!(z, d, M)
+  return z, d
+end
+
 function Hecke.integral_split(M::MatElem{<:AbstractAlgebra.FieldElem}, S::Generic.Ring)
   m = zero_matrix(S, nrows(M), ncols(M))
   den = one(S)

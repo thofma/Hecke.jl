@@ -505,6 +505,18 @@ Return the torsion free rank of $A$, that is, the dimension of the
 $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 
 See also [`rank`](@ref).
+
+# Examples
+```jldoctest
+julia> G = abelian_group(5,0)
+Z/5 x Z
+
+julia> torsion_free_rank(G)
+1
+
+julia> rank(G)
+2
+```
 """
 function torsion_free_rank(A::FinGenAbGroup)
   if !is_snf(A)
@@ -537,9 +549,20 @@ end
 Return the rank of $A$, that is, the size of a minimal generating set for $A$.
 
 See also [`torsion_free_rank`](@ref).
+
+# Examples
+```jldoctest
+julia> G = abelian_group(5,0)
+Z/5 x Z
+
+julia> torsion_free_rank(G)
+1
+
+julia> rank(G)
+2
+```
 """
-rank(A::FinGenAbGroup) = error("rank(::FinGenAbGroup) has been renamed to torsion_free_rank")
-#rank(A::FinGenAbGroup) = is_snf(A) ? length(A.snf) : return rank(snf(A)[1])
+rank(A::FinGenAbGroup) = is_snf(A) ? length(A.snf) : return rank(snf(A)[1])
 
 
 ################################################################################
@@ -604,6 +627,39 @@ Return whether $G$ and $H$ are isomorphic.
 """
 function is_isomorphic(G::FinGenAbGroup, H::FinGenAbGroup)
   return elementary_divisors(G) == elementary_divisors(H)
+end
+
+function isomorphism(G::FinGenAbGroup, H::FinGenAbGroup)
+  SG, SGtoG = snf(G)
+  SH, SHtoH = snf(H)
+  @req SG.snf == SH.snf "Groups are not isomorphic"
+  h = hom(SG, SH, gens(SH))
+  return inv(SGtoG) * h * SHtoH
+end
+
+function (::Type{T})(G::FinGenAbGroup) where T <: Group
+  return codomain(isomorphism(T, G))
+end
+
+function (::Type{FinGenAbGroup})(G::Group)
+  return codomain(isomorphism(FinGenAbGroup, G))
+end
+
+function isomorphism(::Type{FinGenAbGroup}, G::FinGenAbGroup; on_gens::Bool=false)
+  # Known isomorphisms are cached in the attribute `:isomorphisms`.
+  on_gens = true # we ignore the on_gens flag, the identity will *always* map gens onto gens
+  isos = get_attribute!(Dict{Tuple{Type, Bool}, Any}, G, :isomorphisms)::Dict{Tuple{Type, Bool}, Any}
+  return get!(isos, (FinGenAbGroup, on_gens)) do
+    return id_hom(G)
+  end::FinGenAbGroupHom
+end
+
+function isomorphism(::Type{T}, G::FinGenAbGroup; on_gens::Bool=false) where T <: Group
+  throw(NotImplementedError(:isomorphism, T, G))
+end
+
+function isomorphism(::Type{FinGenAbGroup}, G::Group; on_gens::Bool=false)
+  throw(NotImplementedError(:isomorphism, FinGenAbGroup, G))
 end
 
 ################################################################################

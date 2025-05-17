@@ -27,6 +27,8 @@ function ==(x::RCFCharacter, y::RCFCharacter)
   error("Not yet implemented!")
 end
 
+Base.hash(x::RCFCharacter, h::UInt) = hash(x.x, hash(x.C, h))
+
 function conductor(chi::RCFCharacter)
   if isdefined(chi, :conductor)
     return chi.conductor
@@ -137,7 +139,7 @@ function assure_with_conductor(chi::RCFCharacter)
   r, mr = ray_class_group(c, chi.conductor_inf_plc, n_quo = degree(C))
   lp, sR = find_gens(mR)
   imgs = FinGenAbGroupElem[mr\x for x in lp]
-  mpR = hom(sR, imgs)
+  mpR = hom(parent(first(sR)), parent(first(imgs)), sR, imgs)
   chi.mrcond = mr
   chi.mp_cond = mpR
   return nothing
@@ -333,7 +335,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
         r, mr = ray_class_group_quo(OK, newc, w, ctx)
         gens, group_gens = find_gens(mr)
         images = FinGenAbGroupElem[mQ(mR\J) for J in gens]
-        mp = hom(group_gens, images, check = false)
+        mp = hom(parent(first(group_gens)), parent(first(images)), group_gens, images, check = false)
         k, mk = kernel(mp)
         ls = subgroups(k, quotype = Int[2], fun = (x, y) -> sub(x, y, false)[2])
         for ms in ls
@@ -670,7 +672,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   @hassert :ClassField 1 lambda in J
   g = numerator(simplify(ideal(OK, lambda) * inv(J)))
   @hassert :ClassField 1 is_coprime(g, c)
-  u = idempotents(g, c)[1]
+  u = idempotents(g^2, c)[1] # use g^2, since we later change things modulo g^2
   u = make_positive(u, minimum(g^2))
   @hassert :ClassField 1 is_totally_positive(u)
   @hassert :ClassField 1 u in g

@@ -571,7 +571,7 @@ function _order_for_polygon_overorder(K::S, elt::Vector{T}, dold::QQFieldElem = 
 
   # Make an explicit check
   @hassert :AbsNumFieldOrder 1 defines_order(K, elt)[1]
-  res = Order(K, elt, check = false, isbasis = true, cached = false)
+  res = order(K, elt, check = false, isbasis = true, cached = false)
   res.gen_index = inv(dold)
   res.index = numerator(res.gen_index)
   res.disc = divexact(numerator(discriminant(K)), res.index^2)

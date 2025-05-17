@@ -7,7 +7,7 @@
   g1 = matrix(QQ, 4, 4, [ 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 1, -1, 1, -1 ])
   g2 = matrix(QQ, 4, 4, [ -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, -1, 1, -1, 1 ])
   A = matrix_algebra(QQ, 4)
-  O = Order(A, [g1, g2])
+  O = order(A, [g1, g2])
   L = Hecke.natural_lattice(O)
   for p in [2, 3, 5, 7]
     S = Hecke.sublattice_classes(L, p)
@@ -20,7 +20,7 @@
   g1 = matrix(QQ, 5, 5, [ 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, -1, 1, -1, 1])
   g2 = matrix(QQ, 5, 5, [ -1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 1, -1, 1, -1, 1 ])
   A = matrix_algebra(QQ, 5)
-  O = Order(A, [g1, g2])
+  O = order(A, [g1, g2])
   L = Hecke.natural_lattice(O)
   for p in [2, 3, 5, 7]
     S = Hecke.sublattice_classes(L, p)
@@ -40,7 +40,7 @@ end
   H = matrix(QQ, 3, 3, [1,0,0,0,1,0,0,9,1]);
   l = [A, B, C, D, E, F, G, H]
   A = matrix_algebra(QQ, 3)
-  O = Order(A, l)
+  O = order(A, l)
   L = Hecke.natural_lattice(O)
   S = Hecke.sublattices(L, 3)
   @test length(S) == 216

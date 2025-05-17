@@ -911,7 +911,7 @@ julia> F, _ = finite_field(5)
 (Prime field of characteristic 5, 0)
 
 julia> Ft, _ = F["t"]
-(Univariate polynomial ring in t over GF(5), t)
+(Univariate polynomial ring in t over F, t)
 
 julia> cyclotomic_polynomial(15, Ft)
 t^8 + 4*t^7 + t^5 + 4*t^4 + t^3 + 4*t + 1
@@ -928,6 +928,35 @@ function cyclotomic_polynomial(n::Int, R::PolyRing{T} = Hecke.Globals.Zx) where 
   x = gen(Hecke.Globals.Zx)
   p = Hecke.cyclotomic(n, x)
   return map_coefficients(base_ring(R), p, parent = R)::PolyRingElem{T}
+end
+
+@doc raw"""
+    is_cyclotomic_polynomial_with_data(p::PolyRingElem{T}) where T -> Bool, Int
+
+Return a tuple containing whether `p` is cyclotomic and which cyclotomic polynomial it is.
+
+# Examples
+
+```jldoctest
+julia> _, b = cyclotomic_field_as_cm_extension(12)
+(Relative number field of degree 2 over maximal real subfield of cyclotomic field of order 12, z_12)
+
+julia> is_cyclotomic_polynomial_with_data(minpoly(b))
+(false, -1)
+
+julia> is_cyclotomic_polynomial_with_data(absolute_minpoly(b))
+(true, 12)
+```
+"""
+function is_cyclotomic_polynomial_with_data(p::PolyRingElem{T}) where T
+  n = degree(p)
+  R = parent(p)::PolyRing{T}
+  for k in union(euler_phi_inv(n), [1])
+    if p == cyclotomic_polynomial(k, R)
+      return (true, k)
+    end
+  end
+  return (false, -1)
 end
 
 @doc raw"""
@@ -948,12 +977,7 @@ julia> is_cyclotomic_polynomial(absolute_minpoly(b))
 true
 ```
 """
-function is_cyclotomic_polynomial(p::PolyRingElem{T}) where T
-  n = degree(p)
-  R = parent(p)::PolyRing{T}
-  list_cyc = union(Int[k for k in euler_phi_inv(n)], [1])::Vector{Int}
-  return any(k -> p == cyclotomic_polynomial(k, R), list_cyc)
-end
+is_cyclotomic_polynomial(p::PolyRingElem{T}) where T = is_cyclotomic_polynomial_with_data(p)[1]
 
 ################################################################################
 #
@@ -1002,3 +1026,49 @@ end
 
 Base.IteratorSize(::Type{FactorsOfSquarefree{T}}) where T = Base.SizeUnknown()
 Base.eltype(::Type{FactorsOfSquarefree{T}}) where T = T
+
+################################################################################
+#
+#  Right division with remainder
+#
+################################################################################
+
+# Conventions follow Ore, "Theory of Non-Commutative Polynomials", 1933
+
+function divrem_right(f::NCPolyRingElem, g::NCPolyRingElem)
+  check_parent(f, g)
+  @req !is_zero(g) "Divisor must be non-zero"
+  # we are looing for q, r with f = q*g + r, so g is always a right divisors
+  b = leading_coefficient(g)
+  q = zero(f)
+  R = parent(f)
+  while degree(f) >= degree(g)
+    n = degree(f) - degree(g)
+    c = shift_left(R(divexact_right(leading_coefficient(f), b)), n)
+    q += c
+    @assert degree(f - c * g) < degree(f)
+    f = f - c * g
+  end
+  return q, f
+end
+
+function gcd_right(f::NCPolyRingElem, g::NCPolyRingElem)
+  check_parent(f, g)
+  while !iszero(g)
+    _, r = divrem_right(f, g)
+    f, g = g, r
+  end
+  return f
+end
+
+##
+
+function numerator(f::QQPolyRingElem, parent::ZZPolyRing = Hecke.Globals.Zx)
+  g = parent()
+  ccall((:fmpq_poly_get_numerator, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), g, f)
+  return g
+end
+
+##
+
+minpoly(a::QQBarFieldElem) = minpoly(Hecke.Globals.Qx, a)

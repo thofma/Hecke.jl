@@ -378,10 +378,10 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
   if !isempty(prim_elems)
     #Now, I need to compare the elements and understand which is better.
     a = prim_elems[1]
-    poly = minpoly(prim_elems[1], Zx)
+    poly = minpoly(Zx, prim_elems[1])
     M = maximum([abs(coeff(poly, i)) for i = 0:degree(poly)-1])
     for i = 2:length(prim_elems)
-      poly2 = minpoly(prim_elems[i], Zx)
+      poly2 = minpoly(Zx, prim_elems[i])
       M2 = maximum([abs(coeff(poly2, i)) for i = 0:degree(poly2)-1])
       if M2 < M
         poly = poly2

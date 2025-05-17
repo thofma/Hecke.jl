@@ -38,7 +38,7 @@ export EmbeddedAbsSimpleNumField
 export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
 export EmbeddedNumField
-export EquationOrder
+export equation_order
 export FacElem
 export FacElemMon
 export FactorBase
@@ -68,7 +68,7 @@ export MSet
 export Map
 export MapFromFunc
 export MapRayClassGrp
-export MaximalOrder
+export maximal_order
 export NewtonPolygon
 export AbsNonSimpleNumField
 export AbsNonSimpleNumFieldElem
@@ -315,6 +315,7 @@ export embedded_number_field
 export embedding
 export embeddings
 export enumerate_definite_genus
+export enumerate_quadratic_triples
 export equation
 export equation_order
 export euclid
@@ -465,6 +466,7 @@ export is_coprime
 export is_cyclic
 export is_cyclic_kernel_polynomial
 export is_cyclotomic_polynomial
+export is_cyclotomic_polynomial_with_data
 export is_defining_polynomial_nice
 export is_definite
 export is_degenerate
@@ -548,12 +550,14 @@ export is_represented_by
 export is_right_ideal
 export is_semi_regular
 export is_semisimple
+export is_separable
 export is_short_weierstrass_model
 export is_simple
 export is_simplified_model
 export is_smooth
 export is_snf
 export is_split
+export is_split_with_zero_divisor
 export is_squarefree
 export is_subfield
 export is_subfield_normal
@@ -663,6 +667,8 @@ export modulus_quadratic_form
 export morphisms
 export mukai_lattice
 export mul!
+export mul_dense
+export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
@@ -756,6 +762,7 @@ export quadratic_product
 export quadratic_space
 export quadratic_twist
 export quadratic_twists
+export quaternion_algebra
 export quo
 export quotient
 export radical
@@ -821,6 +828,7 @@ export scale_row!
 export scale_row_right!
 export scales
 export schur_index
+export schur_index_over_center
 export semi_global_minimal_model
 export set_assertion_level
 export set_var!
@@ -828,6 +836,7 @@ export set_vars!
 export set_verbosity_level
 export shift
 export short_vectors
+export short_vectors_affine
 export short_vectors_iterator
 export short_weierstrass_model
 export shortest_vectors
@@ -866,6 +875,7 @@ export strong_echelon_form
 export structure_constant_algebra
 export structure_constant_table
 export sub
+export subfield
 export subfields
 export subgroups
 export submodules
@@ -909,6 +919,7 @@ export trailing_coefficient
 export transform
 export transform_rstu
 export triangularize
+export trivial_divisor
 export trivial_morphism
 export trred
 export trred_matrix

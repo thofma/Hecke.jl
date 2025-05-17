@@ -181,4 +181,36 @@
     GG = representative(G)
     @test GG in G
   end
+
+  let # 1851
+    Qx, x = polynomial_ring(QQ, :x)
+    f = x^3 + x^2 - 2*x - 1
+    K, a = number_field(f, :a, cached = false)
+    Kt, t = polynomial_ring(K, :t)
+    g = t^2 - a*t + 1
+    E, b = number_field(g, :b, cached = false)
+    D = matrix(E, 3, 3, [-1//49, 0, 0, 0, -1//49, 0, 0, 0, -1//49])
+    gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[
+             map(E, [7, 0, 0]),
+             map(E, [7*a, 0, 0]),
+             map(E, [a^2 + 3*a + 4, 0, 0]),
+             map(E, [7*b, 0, 0]),
+             map(E, [7*a*b, 0, 0]),
+             map(E, [(a^2 + 3*a + 4)*b, 0, 0]),
+             map(E, [0, 7, 0]),
+             map(E, [0, 7*a, 0]),
+             map(E, [0, a^2 + 3*a + 4, 0]),
+             map(E, [0, 7*b, 0]),
+             map(E, [0, 7*a*b, 0]),
+             map(E, [0, (a^2 + 3*a + 4)*b, 0]),
+             map(E, [0, 0, 7]),
+             map(E, [0, 0, 7*a]),
+             map(E, [0, 0, a^2 + 3*a + 4]),
+             map(E, [0, 0, 7*b]),
+             map(E, [0, 0, 7*a*b]),
+             map(E, [0, 0, (a^2 + 3*a + 4)*b])]
+    L = hermitian_lattice(E, gens, gram = D)
+    @test length(genus_representatives(L)) == 2
+    @test length(genus_representatives(L; use_mass = true)) == 2
+  end
 end

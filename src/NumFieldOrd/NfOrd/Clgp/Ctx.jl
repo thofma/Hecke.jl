@@ -145,7 +145,7 @@ end
 ################################################################################
 function to_magma(f::IOStream, clg::ClassGrpCtx)
   print(f, "K<a> := number_field(", nf(order(clg.FB.ideals[1])).pol, ");\n");
-  print(f, "M := MaximalOrder(K);\n");
+  print(f, "M := maximal_order(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size
     to_magma(f, clg.FB.ideals[i], "M")
@@ -183,7 +183,7 @@ function to_hecke(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   print(f, "$field_name, $vvar = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$varr\");\n");
   O = order(clg.FB.ideals[1])
   to_hecke(f, basis(O))
-  print(f, "O = Order($field_name, map($field_name, R))\n")
+  print(f, "O = order($field_name, map($field_name, R))\n")
   print(f, "O.is_maximal = 1\n")
 
   print(f, "c = Hecke.class_group_init(O, ", norm(clg.FB.ideals[1]), ")\n")

@@ -143,8 +143,8 @@
 
   @testset "Maximal order" begin
     K2,  = @inferred number_field([x^2 - 50, x^3 - 3])
-    OO = EquationOrder(K2)
-    Omax = @inferred MaximalOrder(OO)
+    OO = equation_order(K2)
+    Omax = @inferred maximal_order(OO)
     @test discriminant(Omax) == ZZ(30233088)
 
     lp = prime_decomposition(Omax, 101)

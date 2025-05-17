@@ -1,15 +1,12 @@
-# Introduction
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
-
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Introduction
 
 This chapter deals with functionality for elliptic curves, which is available over arbitrary fields, with
-specific features available for curvers over the rationals and number fields, and finite fields.
+specific features available for curves over the rationals and number fields, and finite fields.
 
 An elliptic curve $E$ is the projective closure of the curve given by the *Weierstrass equation*
 ```math

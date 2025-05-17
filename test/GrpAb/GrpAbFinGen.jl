@@ -176,10 +176,18 @@
   @testset "Isomorphism" begin
     b = @inferred is_isomorphic(abelian_group(Int[]), abelian_group(Int[]))
     @test b
+    h = isomorphism(abelian_group(Int[]), abelian_group(Int[]))
+    @test is_bijective(h)
 
     G = abelian_group([2, 3, 5])
     H = abelian_group([30])
     @test @inferred is_isomorphic(G, H)
+
+    h = isomorphism(G, H)
+    @test is_bijective(h)
+
+    K = abelian_group([2, 3])
+    @test_throws ArgumentError isomorphism(G, K)
   end
 
   @testset "Direct product" begin

@@ -417,6 +417,10 @@ function euler_phi_inv(n::Int)
   end
   #  println("possible primes: ", lp)
 
+  if is_one(n)
+    return T[1, 2]
+  end
+
   E = Tuple{T,T,T}[]
   res = T[]
   for p = lp

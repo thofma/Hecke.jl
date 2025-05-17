@@ -116,12 +116,12 @@ end
 Given a group ring $O$, this function returns the locally free class group of
 $O$ and map from the set of ideals of $O$ to this group.
 As the function only works for group rings, it is tested whether
-`A = algebra(O)` is of type `GroupAlgebra` and whether `O == Order(A, basis(A))`.
+`A = algebra(O)` is of type `GroupAlgebra` and whether `O == order(A, basis(A))`.
 These tests can be disabled by setting `check = false`.
 """
 function locally_free_class_group_with_disc_log(O::AlgAssAbsOrd; check::Bool = true)
   if check
-    if !(algebra(O) isa GroupAlgebra) || basis_matrix(FakeFmpqMat, O, copy = false) != FakeFmpqMat(identity_matrix(ZZ, dim(algebra(O))), ZZRingElem(1))
+    if !(algebra(O) isa GroupAlgebra) || basis_matrix(O, copy = false) != identity_matrix(QQ, dim(algebra(O)))
       error("Only implemented for group rings")
     end
   end
@@ -194,7 +194,7 @@ function K1_order_mod_conductor(O::AlgAssAbsOrd, OA::AlgAssAbsOrd, F::AlgAssAbsO
   OinZ = _as_order_of_smaller_algebra(ZtoA, O, OA)
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :left)
   @assert Hecke._test_ideal_sidedness(FinZ, OinZ, :right)
-  @assert isone(denominator(basis_matrix(FinZ) * basis_mat_inv(FakeFmpqMat, OinZ)))
+  @assert isone(denominator(basis_matrix(FinZ; copy = false) * basis_matrix_inverse(OinZ; copy = false)))
 
   primary_ideals = Vector{Tuple{ideal_type(O), ideal_type(O)}}()
   prim = primary_decomposition(FinZ, OinZ)
@@ -316,8 +316,8 @@ end
 # Generators for GL_n(K), taken from Taylor, Pairs of Generators for Matrix Groups. I
 function _unit_group_generators(A::MatAlgebra{<:FinFieldElem})
   K = base_ring(A)
-  @assert degree(A)^2 == dim(A)
-  d = degree(A)
+  @assert _matdeg(A)^2 == dim(A)
+  d = _matdeg(A)
   res = dense_matrix_type(K)[]
   if order(K) == 2
     # GL_n(K) = SL_n(K)

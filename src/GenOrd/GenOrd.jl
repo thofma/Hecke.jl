@@ -30,9 +30,9 @@ import AbstractAlgebra: expressify
 #
 ################################################################################
 
-Order(R::Ring, F::Field) = GenOrd(R, F)
+order(R::Ring, F::Field) = GenOrd(R, F)
 
-Order(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true) = GenOrd(O, T, d; check = check)
+order(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true) = GenOrd(O, T, d; check = check)
 
 ################################################################################
 #
@@ -630,7 +630,7 @@ julia> k, a = quadratic_field(12);
 
 julia> integral_closure(ZZ, k)
 
-Maximal order of Real quadratic field defined by x^2 - 12
+Maximal order of real quadratic field defined by x^2 - 12
 with basis AbsSimpleNumFieldElem[1, 1//2*sqrt(12)]
 ```
 """
@@ -915,4 +915,15 @@ function codifferent(O::GenOrd)
      end
    end
   return fractional_ideal(O, inv(matrix(R, n, n, mat_entries)))
+end
+
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function ConformanceTests.generate_element(O::GenOrd{<:Any, ZZRing})
+  B = basis(O)
+  return sum(rand(-10:10) * B[i] for i in 1:degree(O))
 end

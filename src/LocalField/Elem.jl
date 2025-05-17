@@ -13,8 +13,6 @@ function Base.show(io::IO, a::LocalFieldElem)
   print(io, AbstractAlgebra.obj_to_string(a, context = io))
 end
 
-canonical_unit(x::LocalFieldElem) = x
-
 ################################################################################
 #
 #  Deepcopy
@@ -535,8 +533,12 @@ end
 #
 ################################################################################
 
-function minpoly(a::T, Kx::PolyRing = polynomial_ring(parent(a), "t", cached = false)[1]) where T <: Union{LocalFieldElem, QadicFieldElem}
+function minpoly(Kx::PolyRing, a::T)  where T <: Union{LocalFieldElem, QadicFieldElem}
   return squarefree_part(norm(gen(Kx)-a))
+end
+
+function minpoly(a::Union{LocalFieldElem, QadicFieldElem})
+  return minpoly(polynomial_ring(parent(a), "t", cached = false)[1], a)
 end
 
 function absolute_minpoly(a::LocalFieldElem)
@@ -660,15 +662,17 @@ function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
   #by prime number afterwards
   #also: find out abs and rel prec....
   e = absolute_ramification_index(L)
-  pr = ceil(Int, (prec-v)/e)+2
+  pr = ceil(Int, (prec-v)/e)+2*ceil(Int, log2(abs(v)))+2
   f = defining_polynomial(L, pr)
   local pi_inv
   setprecision(L, pr*e) do
-    g = parent(f)([coeff(f, i) for i=1:degree(f)])
-    pi_inv = g(uniformizer(L))
-    pi_inv *= -inv(coeff(f, 0))
-    @assert valuation(pi_inv) == - valuation(uniformizer(L))
-    @assert precision(pi_inv) >= prec - 1
+    setprecision(base_field(L), pr) do
+      g = parent(f)([coeff(f, i) for i=1:degree(f)])
+      pi_inv = g(uniformizer(L))
+      pi_inv *= -inv(coeff(f, 0))
+      @assert valuation(pi_inv) == - valuation(uniformizer(L))
+      @assert precision(pi_inv) >= prec - v #+ 2*ceil(Int, log2(abs(v)))
+    end
   end
   return pi_inv^-v
 end
@@ -701,7 +705,7 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   if n < 0 && iszero(a)
     error("Element is not invertible")
   end
-  v = valuation(n, prime(K))
+  v = valuation(n, prime(K))*absolute_ramification_index(K)
   prec = precision(data(a)) + v
   if v > 0
     b = setprecision(data(a), prec)

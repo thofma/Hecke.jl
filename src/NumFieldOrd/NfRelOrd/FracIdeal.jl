@@ -115,21 +115,26 @@ end
 ################################################################################
 
 function show(io::IO, s::NfRelOrdFracIdlSet)
+  print(io, pretty(io))
   print(io, "Set of fractional ideals of ")
-  print(io, s.order)
+  print(io, Lowercase(), s.order)
 end
 
 function show(io::IO, a::RelNumFieldOrderFractionalIdeal)
-  compact = get(io, :compact, false)
-  if compact
-    print(io, "Fractional ideal")
-    #show(IOContext(io, :compact => true), basis_pmatrix(a, copy = false))
-  else
-    print(io, "Fractional ideal of\n")
-    show(IOContext(io, :compact => true), order(a))
-    print(io, "\nwith basis pseudo-matrix\n")
-    show(IOContext(io, :compact => true), basis_pmatrix(a, copy = false))
-  end
+  d = denominator(a, copy = false)
+  n = numerator(a, copy = false)
+  print(io, n, "//", d)
+end
+
+function show(io::IO, ::MIME"text/plain", a::RelNumFieldOrderFractionalIdeal)
+  io = pretty(io)
+  print(io, "Fractional ideal of ", Lowercase(), order(a))
+  print(io, "\n")
+  print(io, "with numerator\n", Indent(), Lowercase())
+  show(io, "text/plain", numerator(a, copy = false))
+  print(io, Dedent())
+  print(io, "\nwith denominator ")
+  print(io, denominator(a, copy = false))
 end
 
 ################################################################################

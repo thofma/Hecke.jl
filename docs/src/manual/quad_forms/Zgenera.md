@@ -1,10 +1,10 @@
-# Genera of Integer Lattices
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Genera of Integer Lattices
+
 Two $\mathbb{Z}$-lattices $M$ and $N$ are said to be in the same genus if
 their completions $M \otimes \mathbb{Z}_p$ and $N \otimes \mathbb{Z}_p$ are isometric for all
 prime numbers $p$ as well as $M \otimes \mathbb{R} \cong N\otimes \mathbb{R}$.

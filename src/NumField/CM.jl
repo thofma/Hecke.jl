@@ -60,6 +60,10 @@ end
 Base.:(==)(f::CMType, g::CMType) = (f.field === g.field) &&
   issetequal(f.embeddings, g.embeddings)
 
+# this is not optimal, we would need to sort the embeddings on creation using
+# _absolute_index, but do we want this?
+Base.hash(f::CMType, h::UInt) = hash(f.field, h)
+
 number_field(C::CMType) = C.field
 
 embeddings(C::CMType) = C.embeddings

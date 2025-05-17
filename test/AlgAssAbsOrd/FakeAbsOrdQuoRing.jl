@@ -1,7 +1,7 @@
 @testset "FakeAbsOrdQuoRing" begin
   G = small_group(8, 3)
   QG = QQ[G]
-  ZG = Order(QG, basis(QG))
+  ZG = order(QG, basis(QG))
 
   for L in [ZG, maximal_order(ZG)]
     x = rand(L, -1:1)

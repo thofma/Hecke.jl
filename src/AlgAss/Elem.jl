@@ -16,6 +16,10 @@ function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem{T
   end
 end
 
+function AbstractAlgebra.promote_rule(::Type{S}, ::Type{S}) where {T, S <: AbstractAssociativeAlgebraElem{T}}
+  return S
+end
+
 parent_type(::Type{AssociativeAlgebraElem{T, S}}) where {T, S} = S
 
 parent_type(::Type{GroupAlgebraElem{T, S}}) where {T, S} = S
@@ -97,7 +101,7 @@ function one(A::AbstractAssociativeAlgebra)
   if _is_dense(A)
     return A(deepcopy(A.one)) # deepcopy needed by mul!
   else
-    return A(deepcopy(A.sparse_one))
+    return A(deepcopy(A.sparse_one)::sparse_row_type(base_ring(A)))
   end
 end
 
@@ -443,6 +447,14 @@ end
 #
 ################################################################################
 
+function is_divisible_right(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem)
+  return is_divisible(a, b, :right)[1]
+end
+
+function is_divisible_left(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem)
+  return is_divisible(a, b, :left)[1]
+end
+
 # Tries to compute a/b if action is :right and b\a if action is :left
 @doc raw"""
     is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol)
@@ -657,6 +669,10 @@ end
 (A::GroupAlgebra{T, S, R})() where {T, S, R} = GroupAlgebraElem{T, typeof(A)}(A)
 
 function (A::StructureConstantAlgebra{T})(c::Vector; copy::Bool = true) where {T}
+  return _create_element_from_vector(A, c; copy)
+end
+
+function _create_element_from_vector(A::AbstractAssociativeAlgebra{T}, c::Vector; copy::Bool = true) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
   if eltype(c) === T
     _c = c
@@ -664,15 +680,14 @@ function (A::StructureConstantAlgebra{T})(c::Vector; copy::Bool = true) where {T
     _c = convert(Vector{T}, map(base_ring(A), c))::Vector{T}
   end
   if copy
-    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, deepcopy(_c))
+    return AssociativeAlgebraElem{T, typeof(A)}(A, deepcopy(_c))
   else
-    return AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}(A, _c)
+    return AssociativeAlgebraElem{T, typeof(A)}(A, _c)
   end
 end
 
-function (A::QuaternionAlgebra{T})(c::Vector{T}; copy::Bool = true) where {T}
-  length(c) != dim(A) && error("Dimensions don't match.")
-  return AssociativeAlgebraElem{T, QuaternionAlgebra{T}}(A, copy ? deepcopy(c) : c)
+function (A::QuaternionAlgebra{T})(c::Vector; copy::Bool = true) where {T}
+  return _create_element_from_vector(A, c; copy)
 end
 
 function Base.getindex(A::AbstractAssociativeAlgebra{T}, i::Int) where {T}
@@ -720,21 +735,22 @@ function (A::MatAlgebra)(a::MatAlgebraElem)
 end
 
 # For polynomial substitution
-for T in subtypes(AbstractAssociativeAlgebra)
-  @eval begin
-    function (A::$T)(a::Union{Integer, ZZRingElem, Rational{<: Integer}})
-      return A(base_ring(A)(a))
-    end
 
-    #function (A::$T{S})(a::S) where {S <: RingElem}
-    #  return a*one(A)
-    #end
-  end
+function (A::AbstractAssociativeAlgebra)(a::Union{Integer, ZZRingElem, Rational{<: Integer}})
+  return A(base_ring(A)(a))
 end
+
+#function (A::AbstractAssociativeAlgebra{S})(a::S) where {S <: RingElem}
+#  return a*one(A)
+#end
 
 (A::AbstractAssociativeAlgebra{T})(x::T) where {T <: RingElem} = x * one(A)
 
 (A::AbstractAssociativeAlgebra{T})(x::T) where {T <: AssociativeAlgebraElem} = x * one(A)
+
+# resolve ambiguity
+(A::AbstractAssociativeAlgebra{ZZRingElem})(x::ZZRingElem) = x * one(A)
+
 
 ################################################################################
 #

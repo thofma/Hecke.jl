@@ -16,7 +16,9 @@ Generic.dim(A::GroupAlgebra) = order(Int, group(A))
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 
-order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{GroupAlgebra{QQFieldElem, S, R}, elem_type(GroupAlgebra{QQFieldElem, S, R})}
+#order_type(::Type{GroupAlgebra{QQFieldElem, S, R}}) where { S, R } = AlgAssAbsOrd{ZZRing, GroupAlgebra{QQFieldElem, S, R}}
+
+# order_type(::Type{S}, ::Type{T}) where {S <: GroupAlgebra, T} = AlgAssAbsOrd{T, S}
 
 order_type(::Type{GroupAlgebra{T, S, R}}) where { T <: NumFieldElem, S, R } = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), GroupAlgebra{T, S, R}}
 
@@ -29,7 +31,7 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
-function (A::GroupAlgebra{T, S, R})(c::Union{Vector{T}, SRow{T}}; copy::Bool = false) where {T, S, R}
+function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
   c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
@@ -167,14 +169,14 @@ function show(io::IO, ::MIME"text/plain", A::GroupAlgebra)
 end
 
 function show(io::IO, A::GroupAlgebra)
+  io = pretty(io)
   if is_terse(io)
     print(io, "Group algebra of ")
     if is_finite(group(A))
-      print(io, "dimension ", order(group(A)))
+      print(io, "dimension ", order(group(A)), " ")
     else
       print(io, "infinite dimension ")
     end
-    print(io, " over ", base_ring(A))
   else
     print(io, "Group algebra of group ")
     if is_finite(group(A))
@@ -182,9 +184,9 @@ function show(io::IO, A::GroupAlgebra)
     else
       print(io, "of infinite order ")
     end
-    print(io, "over ")
-    print(terse(io), base_ring(A))
+    io = terse(io)
   end
+  print(io, "over ", Lowercase(), base_ring(A))
 end
 
 ################################################################################
@@ -533,7 +535,7 @@ function (f::NfToAlgGrpMor)(O::AbsNumFieldOrder)
   A = codomain(f)
   B = basis(O)
   G = group(A)
-  ZG = Order(A, collect(G))
+  ZG = order(A, collect(G))
   return ideal_from_lattice_gens(A, ZG, [f(elem_in_nf(b)) for b in B], :right)
 end
 
@@ -692,7 +694,7 @@ mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAss
     z.tempcodomain2 = zero_matrix(base_ring(Minv), 1, ncols(Minv))
     z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:Threads.nthreads()]
     z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:Threads.nthreads()]
-
+    @assert nrows(Minv) == degree(base_ring(codomain)) * dim(codomain)
     z.Minv = Minv
     return z
   end
@@ -746,7 +748,7 @@ end
 function _as_full_matrix_algebra_over_Q(A::MatAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
   @assert is_absolute(K) && degree(K) == 1
-  B = matrix_algebra(QQ, degree(A))
+  B = matrix_algebra(QQ, _matdeg(A))
 
   M = identity_matrix(K, dim(B))
   Minv = identity_matrix(QQ, dim(B))
@@ -913,33 +915,21 @@ function _coefficients_of_restricted_scalars!(y, x)
 end
 
 function __set_row!(y::QQMatrix, k, c)
-  GC.@preserve y
-  begin
-    for i in 1:length(c)
-      t = mat_entry_ptr(y, k, i)
-      set!(t, c[i])
-    end
-  end
-  nothing
+  return y[k, :] = c
 end
 
 function __set_row!(c::Vector{QQFieldElem}, y::QQMatrix, k)
-  GC.@preserve y
-  begin
+  GC.@preserve y begin
     for i in 1:length(c)
       t = mat_entry_ptr(y, k, i)
       set!(c[i], t)
     end
   end
-  nothing
+  return c
 end
 
 function __set!(y, k, c)
-  GC.@preserve y begin
-    t = mat_entry_ptr(y, 1, k)
-    set!(t, c)
-  end
-  nothing
+  y[1, k] = c
 end
 
 function _coefficients_of_restricted_scalars!(y::Vector, x)
@@ -1143,7 +1133,7 @@ function is_almost_maximally_ramified(K::AbsSimpleNumField, p::ZZRingElem)
     HinG = [ mD(mH(h)) for h in H]
     for t in 1:length(ram_groups)
       if all(h in ram_groups[t] for h in HinG) && all(h in HinG for h in ram_groups[t + 1])
-        eH = sum(QG(h) for h in HinG) * QG(1//Order(H))
+        eH = sum(QG(h) for h in HinG) * QG(1//order(H))
         if !(eH in assOrd)
           return false
         end

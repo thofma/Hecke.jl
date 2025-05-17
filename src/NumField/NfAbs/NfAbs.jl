@@ -257,6 +257,10 @@ function is_torsion_unit(x::AbsSimpleNumFieldElem, checkisunit::Bool = false)
     _isunit(x) ? nothing : return false
   end
 
+  if is_one(x) || x == -1
+    return true
+  end
+
   K = parent(x)
   d = degree(K)
   c = conjugate_data_arb(K)
@@ -352,7 +356,7 @@ function normal_basis(K::AbsSimpleNumField)
   #   end
   # end
 
-  O = EquationOrder(K)
+  O = equation_order(K)
   Qx = parent(K.pol)
   d = discriminant(O)
   p = 1

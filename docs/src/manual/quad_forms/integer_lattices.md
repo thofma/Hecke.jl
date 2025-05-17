@@ -1,10 +1,10 @@
-# Integer Lattices
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-  end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Integer Lattices
+
 An integer lattice $L$ is a finitely generated $\mathbb{Z}$-submodule of a quadratic
 vector space $V = \mathbb{Q}^n$ over the rational numbers.
 Integer lattices are also known as quadratic forms over the integers.
@@ -188,6 +188,14 @@ shortest_vectors
 short_vectors_iterator
 minimum(L::ZZLat)
 kissing_number(L::ZZLat)
+```
+
+### Short Vectors affine
+
+```@docs
+enumerate_quadratic_triples
+short_vectors_affine(::ZZLat, ::QQMatrix, ::RationalUnion, ::RationalUnion)
+short_vectors_affine(::QQMatrix, ::QQMatrix, ::RationalUnion, ::RationalUnion)
 ```
 
 ### Close Vectors

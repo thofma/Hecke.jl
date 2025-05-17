@@ -11,7 +11,7 @@ function sparse_trafo_scale(i::Int, c::T) where {T}
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 1
   z.i = i
-  z.a = c
+  z.a = deepcopy(c)
   return z
 end
 
@@ -30,7 +30,7 @@ function sparse_trafo_add_scaled(i::Int, j::Int, s::T) where {T}
   z.type = 3
   z.i = i
   z.j = j
-  z.a = s
+  z.a = deepcopy(s)
   return z
 end
 
@@ -40,10 +40,10 @@ function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) wh
   z.type = 4
   z.i = i
   z.j = j
-  z.a = a
-  z.b = b
-  z.c = c
-  z.d = d
+  z.a = deepcopy(a)
+  z.b = deepcopy(b)
+  z.c = deepcopy(c)
+  z.d = deepcopy(d)
   return z
 end
 

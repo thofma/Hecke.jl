@@ -300,6 +300,29 @@ function gcdx(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
   end
 end
 
+function AbstractAlgebra.gcdxx(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem)
+  if iszero(a)
+    c = canonical_unit(b)
+    c = setprecision(c, precision(b))
+    return divexact(b, c), a, inv(c), -c, a
+  end
+  if iszero(b)
+    c = canonical_unit(a)
+    c = setprecision(c, precision(a))
+    return divexact(a, c), inv(c), b, b, -c
+  end
+  if valuation(data(a)) < valuation(data(b))
+    c = canonical_unit(a)
+    c = setprecision(c, precision(a))
+    return divexact(a, c), inv(c), setprecision(parent(a)(0), precision(a)), setprecision(-c*divexact(b, a), precision(a)), c
+  else
+    c = canonical_unit(b)
+    c = setprecision(c, precision(b))
+    return divexact(b, c), setprecision(parent(b)(0), precision(b)), inv(c), -c, setprecision(c*divexact(a, b), precision(b))
+  end
+end
+
+
 ################################################################################
 #
 #  Inverse
@@ -349,6 +372,37 @@ function AbstractAlgebra.promote_rule(::Type{LocalFieldValuationRingElem{S, T}},
   AbstractAlgebra.promote_rule(T, U) == T ? LocalFieldValuationRingElem{S, T} : Union{}
 end
 
+###############################################################################
+#
+#   Conformance test element generation
+#
+###############################################################################
+
+function _integral_test_elem(R::PadicField)
+  p = prime(R)
+  prec = rand(1:R.prec_max)
+  r = ZZRingElem(0):p-1
+  return R(sum(rand(r)*p^i for i in 0:prec))
+end
+
+function _integral_test_elem(R::NonArchLocalField)
+  d = degree(R)
+  a = gen(R)
+  x = R()
+  for i in 0:d - 1
+    if rand() < 0.5
+      # Only fill every second coefficient
+      continue
+    end
+    x += _integral_test_elem(base_field(R))*a^i
+  end
+  return x
+end
+
+function ConformanceTests.generate_element(R::LocalFieldValuationRing)
+  return R(_integral_test_elem(_field(R)))
+end
+
 ################################################################################
 #
 #  Construction
@@ -359,4 +413,4 @@ end
   return LocalFieldValuationRing{T, elem_type(T)}(K)
 end
 
-MaximalOrder(K::NonArchLocalField) = valuation_ring(K)
+maximal_order(K::NonArchLocalField) = valuation_ring(K)

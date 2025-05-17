@@ -210,7 +210,7 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrd
       end
     end
     if typeof(R) <: AlgAssAbsOrd
-      M = basis_matrix(potential_basis, FakeFmpqMat)
+      M = basis_matrix(potential_basis)
       return ideal(algebra(R), R, M)
     else
       M = basis_matrix(potential_basis, FakeFmpqMat)*basis_mat_inv(FakeFmpqMat, R, copy = false)
@@ -319,10 +319,10 @@ function _isconjugate(O::Union{ AbsNumFieldOrder, AlgAssAbsOrd }, M::ZZMatrix, N
   I, basisI = matrix_to_ideal(O, M)
   J, basisJ = matrix_to_ideal(O, N)
   t, a = is_isomorphic_with_map(J, I)
-  @assert J == a*I
   if !t
     return false, zero_matrix(ZZ, nrows(M), ncols(M))
   end
+  @assert J == a*I
 
   aBI = basis_matrix([ a*b for b in basisI ], FakeFmpqMat)
   BJ = basis_matrix(basisJ, FakeFmpqMat)

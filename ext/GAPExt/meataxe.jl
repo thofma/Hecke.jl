@@ -118,15 +118,15 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
 end
 
 function __to_gap(h, x::Vector)
-  return GAP.Globals.GModuleByMats(GAP.GapObj([GAP.GapObj(map(x -> _image(h, x), Matrix(y))) for y in x]), codomain(h))
+  return GAP.Globals.GModuleByMats(GAP.GapObj([(map(x -> _image(h, x), Matrix(y))) for y in x]; recursive=true), codomain(h))
 end
 
 function __gap_matrix_to_julia(h, g)
-  return matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in GAP.gap_to_julia(g)])
+  return matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in g])
 end
 
 function __to_julia(h, C)
-  return [ matrix(domain(h), [map(y -> _preimage(h, y), gg) for gg in GAP.gap_to_julia(g)]) for g in GAP.Globals.MTX.Generators(C)]
+  return [ __gap_matrix_to_julia(h, g) for g in GAP.Globals.MTX.Generators(C)]
 end
 
 function Hecke.stub_composition_factors(x::Vector{T}) where {T <: MatElem}
@@ -136,7 +136,7 @@ function Hecke.stub_composition_factors(x::Vector{T}) where {T <: MatElem}
   Vcf = GAP.Globals.MTX.CompositionFactors(V)
   res = Vector{T}[]
   for C in Vcf
-    push!(res, _to_julia(h, C))
+    push!(res, __to_julia(h, C))
   end
   return res
 end
@@ -147,6 +147,6 @@ function Hecke.stub_basis_hom_space(x::Vector{T}, y::Vector{T}) where {T <: MatE
   @assert base_ring(x[1]) == base_ring(y[1])
   @assert length(x) == length(y)
   hb = GAP.Globals.MTX.BasisModuleHomomorphisms(__to_gap(h, x), __to_gap(h, y))
-  hbb = [__gap_matrix_to_julia(h, g) for g in GAP.gap_to_julia(hb)]
+  hbb = [__gap_matrix_to_julia(h, g) for g in hb]
   return hbb
 end

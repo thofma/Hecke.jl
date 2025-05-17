@@ -1,7 +1,7 @@
 @testset "Locally free class group of group algebras" begin
   G = small_group(8, 4)
   A = GroupAlgebra(QQ, G)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[ 2 ]
 
@@ -18,24 +18,24 @@
   end
 
   A = StructureConstantAlgebra(A)[1]
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[ 2 ]
 
   G = small_group(10, 2)
   A = GroupAlgebra(QQ, G)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
 
   A = StructureConstantAlgebra(A)[1]
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
 
   G = small_group(12, 3)
   A = StructureConstantAlgebra(GroupAlgebra(QQ, G))[1]
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   C = locally_free_class_group(O)
   @test C.snf == ZZRingElem[]
 end
@@ -46,7 +46,7 @@ end
   K, a = number_field(f, "a")
   A = StructureConstantAlgebra(matrix_ring(K, 2))
   A, _ = Hecke.restrict_scalars(A, QQ)
-  O = MaximalOrder(A)
+  O = maximal_order(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
   @test C.snf == ZZRingElem[ 5 ]
 
@@ -54,7 +54,7 @@ end
   K, a = number_field(f, "a")
   A = StructureConstantAlgebra(matrix_ring(K, 2))
   A, _ = Hecke.restrict_scalars(A, QQ)
-  O = MaximalOrder(A)
+  O = maximal_order(A)
   C = Hecke.locally_free_class_group(O) # == class_group(K)
   @test C.snf == ZZRingElem[ 6 ]
 end
@@ -81,7 +81,7 @@ end
 
   basisOK2 = [ BtoA\(AregToA(VToAreg(KtoV(K(b))))) for b in basis(lll(OK)) ]
   d2 = lcm([ denominator(b) for b in basisOK2 ])
-  ZG = Order(B, basis(B))
+  ZG = order(B, basis(B))
   I = Hecke.ideal_from_lattice_gens(B, ZG, [ d2*b for b in basisOK2 ])
   S, mS = locally_free_class_group_with_disc_log(ZG, check = false)
   @test S.snf == ZZRingElem[ 2, 2 ]

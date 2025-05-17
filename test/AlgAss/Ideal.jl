@@ -27,6 +27,9 @@
     @test ideal(A, elem_type(A)[], side = :left) == I
     @test is_zero(I)
     @test !is_one(I)
+
+    I = A * zero(A)
+    @test hash(I) == hash(A * zero(A))
   end
 
 

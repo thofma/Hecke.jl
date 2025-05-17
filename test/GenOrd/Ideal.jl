@@ -87,4 +87,6 @@ let
   F, a = function_field(y^2+x)
   O = integral_closure(kt, F)
   @test hash(fractional_ideal(a*O)) == hash(fractional_ideal(a*O))
+
+  @test fractional_ideal(a * O) + fractional_ideal(a * O) == fractional_ideal(a * O)
 end

@@ -483,3 +483,12 @@ end
   @test length(unique!([T, T2])) == 1
   @test length(unique!([T[1], -T[1]])) == 1
 end
+
+@testset "Map with trivial torsion quadratic modules" begin
+  q = discriminant_group(integer_lattice(; gram=matrix(QQ, 0, 0, [])))
+  q2 = discriminant_group(root_lattice(:E, 6))
+  psi = @inferred hom(q, q, gens(q), gens(q))
+  @test is_bijective(psi)
+  phi = @inferred hom(q, q2, elem_type(q2)[])
+  @test is_injective(phi)
+end

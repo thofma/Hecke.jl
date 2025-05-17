@@ -71,6 +71,11 @@ function ideal(R::Field, xs::AbstractVector{T}) where T<:RingElement
   return _ideal_pid(R, xs)
 end
 
+ideal_type(::Type{T}) where {T<:Field} = PIDIdeal{elem_type(T)}
+
+ideal_type(::Type{T}) where {T<:PolyRing{<:FieldElem}} = PIDIdeal{elem_type(T)}
+
+
 # Show
 
 function Base.show(io::IO, x::PIDIdeal)
@@ -112,6 +117,8 @@ lcm(x::PIDIdeal, y::PIDIdeal) = intersect(x, y)
 
 *(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(x.gen * y.gen)
 
+^(x::PIDIdeal, n::IntegerUnion) = PIDIdeal(x.gen ^ n)
+
 intersect(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(lcm(x.gen, y.gen))
 
 # Predicates
@@ -125,3 +132,20 @@ function is_one(x::PIDIdeal{T}) where {T}
 end
 
 is_zero(x::PIDIdeal) = is_zero(gen(x))
+
+is_maximal(I::PIDIdeal{<:PolyRingElem{<:FieldElem}}) = is_irreducible(gen(I))
+
+is_maximal(I::PIDIdeal{<:FieldElem}) = is_zero(I)
+
+is_prime(I::PIDIdeal) = is_zero(I) || is_maximal(I)
+
+is_prime(I::PIDIdeal{<:FieldElem}) = is_zero(I)
+
+radical(I::PIDIdeal{<:FieldElem}) = I
+
+#is_primary(I::PIDIdeal) = is_zero(I) || is_prime_power_with_data(gen(I))[1]
+
+#radical(I::PIDIdeal) = iszero(I) ? I : ideal(radical(gen(I)))
+
+#primary_decomposition(I::PIDIdeal) = iszero(I) ? [ (I,I) ] :
+#  [ (ideal(p^k), ideal(p)) for (p,k) in factor(gen(I)) ]

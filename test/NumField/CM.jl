@@ -45,4 +45,13 @@
   KK = Hecke.reflex(ct[1]).field
   @test is_isomorphic(KK, number_field(x^4 + 52*x^2 + 477)[1])
   @test is_isomorphic(Hecke.reflex(Hecke.reflex(ct[1])).field, K) # since primitive
+
+  # hashing
+  let
+    Qx, x = QQ["x"]
+    f = x^4 + 104x^2 + 796
+    K, a = number_field(f)
+    ct = Hecke.cm_types(K)
+    @test hash(ct[1]) == hash(cm_type(K, copy(embeddings(ct[1]))))
+  end
 end

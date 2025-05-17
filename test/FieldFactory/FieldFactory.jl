@@ -67,10 +67,10 @@
       @time l_without = Hecke.fields(18, 3, ZZRingElem(10)^18, using_direct_product = false)
       @test length(l_direct_product) == length(l_without)
       for x in l_direct_product
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [19, 3]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (19, 3)
       end
       for x in l_without
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [18, 3]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (18, 3)
       end
     end
   end
@@ -83,7 +83,7 @@
       l = [Hecke.field_context(K)]
       l1 = Hecke.fields(42, 5, l, ZZRingElem(10)^90)
       @test length(l1) == 1
-      @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(l1[1].generators_of_automorphisms))) == [42, 5]
+      @test Tuple{Int,Int}(Hecke.IdGroup(closure(l1[1].generators_of_automorphisms))) == (42, 5)
     end
   end
 
@@ -163,17 +163,17 @@
       @time l1 = Hecke.fields(6, 1, ZZRingElem(10)^8)
       @test length(l1) == 107
       for x in l1
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [6, 1]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (6, 1)
       end
       @time l2 = Hecke.fields(24, 8, ZZRingElem(10)^30)
       @test length(l2) == 15
       for x in l2
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [24, 8]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (24, 8)
       end
       @time l3 = Hecke.fields(30, 3, ZZRingElem(10)^40)
       @test length(l3) == 5
       for x in l3
-        @test GAP.gap_to_julia(Vector{Int}, Hecke.IdGroup(closure(x.generators_of_automorphisms))) == [30, 3]
+        @test Tuple{Int,Int}(Hecke.IdGroup(closure(x.generators_of_automorphisms))) == (30, 3)
       end
       Qx, x = polynomial_ring(QQ, "x", cached = false)
       f = x^36 - x^33 + x^27 - x^24 + x^18 - x^12 + x^9 - x^3 + 1

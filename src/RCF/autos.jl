@@ -101,7 +101,8 @@ function frobenius_map(C::ClassField)
 
   g = find_gens(pseudo_inv(mrc), PrimesSet(ZZRingElem(1000), ZZRingElem(-1)), minimum(c)*discriminant(equation_order(base_field(C))))
 
-  h = hom([frobenius_easy(p, C) for p = g[1]], g[2])
+  source = [frobenius_easy(p, C) for p = g[1]]
+  h = hom(parent(first(source)), parent(first(g[2])), source, g[2])
   fr = pseudo_inv(mrc)*pseudo_inv(h)*f
   set_attribute!(C, :ArtinMap => fr)
   return fr
@@ -986,7 +987,7 @@ function _find_embedding(KK::KummerExt, el::FacElem{AbsSimpleNumFieldElem, AbsSi
   end
 
   checkAuto = get_assertion_level(:ClassField) > 0
-  mp = hom(gens(G), imgs, check = checkAuto)
+  mp = hom(G, parent(first(imgs)), gens(G), imgs, check = checkAuto)
   b = H(imgs_rhs)
   fl, coord = has_preimage_with_preimage(mp, b)
   if !fl

@@ -1,10 +1,11 @@
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
-
 # [Introduction](@id NumberFieldsLink)
 
-By definition, mathematically a number field is just a finite extension of the rational $\mathbf{Q}$.
+By definition, mathematically a number field is just a finite extension of the rationals $\mathbf{Q}$.
 In Hecke, a number field $L$ is recursively defined as being the field of rational numbers $\mathbf{Q}$ or
 a finite extension of a number field $K$. In the second case, the extension
 can be defined in the one of the following two ways:

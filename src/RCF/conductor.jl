@@ -956,9 +956,17 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
                              PrimesSet(100, -1), minimum(mR))
 
   if map == false
-    h = [hom(sR, FinGenAbGroupElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
+    h = FinGenAbGroupHom[]
+    for x in r
+      imgs = FinGenAbGroupElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]
+      push!(h, hom(parent(first(sR)), parent(first(imgs)), sR, imgs))
+    end
   else
-    h = [hom(sR, FinGenAbGroupElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
+    h = FinGenAbGroupHom[]
+    for x in r
+      imgs = FinGenAbGroupElem[preimage(compose(pseudo_inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]
+      push!(h, hom(parent(first(sR)), parent(first(imgs)), sR, imgs))
+    end
   end
   return h
 end
@@ -1108,9 +1116,9 @@ function maximal_abelian_subfield(A::ClassField, mp::NumFieldHom{AbsSimpleNumFie
   lP, gS = Hecke.find_gens(mR, coprime_to = minimum(defining_modulus(mR1)[1]))
   listn = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[norm(mp, x, order = zk) for x in lP]
   # Create the map between R and r by taking norms
-  proj = hom(gS, FinGenAbGroupElem[mr\x for x in listn])
+  proj = hom(parent(first(gS)), r, gS, FinGenAbGroupElem[mr\x for x in listn])
   #compute the norm group of A in R
-  proj1 = hom(gS, FinGenAbGroupElem[mC\x for x in lP])
+  proj1 = hom(parent(first(gS)), domain(mC), gS, FinGenAbGroupElem[mC\x for x in lP])
   S, mS = kernel(proj1)
   mS1 = compose(mS, proj)
   G, mG = Hecke.cokernel(mS1)

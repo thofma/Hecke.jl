@@ -1,7 +1,7 @@
 @testset "Quotient orders" begin
   G = small_group(8, 4)
   QG = QQ[G]
-  ZG = Order(QG, basis(QG); cached = false)
+  ZG = order(QG, basis(QG); cached = false)
   N, NtoG = subgroups(G, order = 2)[1]
   I = sum([QG(NtoG(n)) for n in N]) * ZG
   OO, h = Hecke.quotient_order(ZG, I)
@@ -20,5 +20,5 @@
     end
   end
 
-  @test OO == Order(algebra(OO), [h(elem_in_algebra(b)) for b in basis(ZG)])
+  @test OO == order(algebra(OO), [h(elem_in_algebra(b)) for b in basis(ZG)])
 end

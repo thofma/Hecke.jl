@@ -29,7 +29,7 @@ function Hecke.check_obstruction(list::Vector{FieldsTower}, L::GAP.GapObj,
     #Of course!
     fl, Lnew = find_subgroup(L, i)
     if fl
-      new_invariants = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(GAP.Globals.FactorGroup(Lnew[2], Lnew[3])))
+      new_invariants = Vector{Int}(GAP.Globals.AbelianInvariants(GAP.Globals.FactorGroup(Lnew[2], Lnew[3])))
       new_invariants = map(Int, snf(abelian_group(new_invariants))[1].snf)
       list = check_obstruction(list, Lnew, 2, new_invariants)
     end
@@ -268,7 +268,7 @@ function  _cocycles_with_cyclic_kernel(old_cocycle::cocycle_ctx, p::Int)
     end
     prmg = GAP.Globals.PreImage(inc, g)
     fg = GAP.Globals.FactorGroup(K, prmg)
-    order = ZZRingElem(GAP.gap_to_julia(Int, GAP.Globals.Size(fg)))
+    order = ZZRingElem(Int(GAP.Globals.Size(fg)))
     np = remove(order, p)[2]
     if isone(np) && GAP.Globals.IsCyclic(fg)
       push!(normal_cyclic_and_contained, prmg)

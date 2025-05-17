@@ -16,5 +16,18 @@
       @test f(mG(g)(b)) == f(b) * QG(g)
     end
   end
+
+  # hashing
+  let
+    K, a = cyclotomic_field(7, "a") 
+    G, mG = automorphism_group(K)
+    V, f = galois_module(K, mG)
+    x = V([1, 2, 3, 4, 5, 6])
+    y = V([1, 2, 3, 4, 5, 6])
+    z = V([1, 2, 3, 4, 5, 7])
+    @test x == y
+    @test x != z
+    @test hash(x) == hash(y)
+  end
 end
 

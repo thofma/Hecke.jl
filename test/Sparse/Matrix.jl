@@ -156,6 +156,14 @@ using Hecke.SparseArrays
   w = @inferred v * D
   @test w == sparse_row(ZZ)
 
+  D1 = sparse_matrix(ZZ, [81 0 2; 31 0 -5])
+  D2 = sparse_matrix(ZZ, [12 403 -23; 0 0 122; -1 2 99])
+  @test_throws Exception D1 * D2
+  E1 = @inferred mul_dense(D1, D2)
+  @test E1 == matrix(D1) * matrix(D2)
+  E2 = @inferred mul_sparse(D1, D2)
+  @test E2 == sparse_matrix(E1)
+
   # Addition
 
   D = sparse_matrix(ZZ, [1 5 3; 0 0 0; 0 1 0])

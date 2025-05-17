@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Hecke
+DocTestSetup = Hecke.doctestsetup()
+```
 # Getting started
 
 To use Hecke, a julia version of 1.0 is necessary (the latest stable julia version will do).
@@ -12,12 +16,19 @@ julia> Pkg.add("Hecke")
 
 Here is a quick example of using Hecke to define a number field and compute its class group::
 
-```@repl
-using Hecke
-Qx, x = QQ["x"];
-f = x^2 - 2*3*5*7;
-K, a = number_field(f, "a");
-OK = maximal_order(K);
-C, mC = class_group(OK);
-C
+```jldoctest
+julia> using Hecke
+
+julia> Qx, x = QQ[:x];
+
+julia> f = x^2 - 2*3*5*7;
+
+julia> K, a = number_field(f, :a);
+
+julia> OK = maximal_order(K);
+
+julia> C, mC = class_group(OK);
+
+julia> C
+(Z/2)^2
 ```

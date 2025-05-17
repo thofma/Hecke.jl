@@ -1,11 +1,9 @@
-# Number field operations
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-  using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Number field operations
 
 ## Creation of number fields
 
@@ -20,8 +18,8 @@ number_field(::DocuDummy2)
 ```
 
 !!! tip
-    Many of the constructors have arguments of type `Symbol` or
-    `AbstractString`.  If used, they define the appearance in printing, and
+    Many of the constructors have arguments of type `VarName`.
+    If used, they define the appearance in printing, and
     printing only.  The named parameter `check` can be `true` or `false`, the
     default being `true`.  This parameter controls whether the polynomials
     defining the number field are tested for irreducibility or not. Given that

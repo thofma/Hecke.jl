@@ -3,7 +3,8 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
 Hecke = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
 
 [compat]
-DocumenterVitepress = "0.1.1"
+DocumenterVitepress = "0.1.10"

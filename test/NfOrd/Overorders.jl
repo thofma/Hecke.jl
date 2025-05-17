@@ -4,7 +4,7 @@
   f = x^2 + 100x + 100
 
   A = StructureConstantAlgebra(f * (f - 1))
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
 
   orders = @inferred poverorders(O, 2)
   @test length(orders) == 6
@@ -30,7 +30,7 @@
 
   G = small_group(6, 1)
   A = StructureConstantAlgebra(group_algebra(QQ, G))[1]
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   orders = @inferred overorders(O)
   @test length(orders) == 12
 
@@ -44,7 +44,7 @@
   @test_throws ErrorException overorders(O, type =  :blub)
 
   f = x^4-1680*x^3-25920*x^2-1175040*x+25214976
-  O = EquationOrder(f)
+  O = equation_order(f)
   orders = @inferred overorders(O)
   @test length(orders) == 2535
   @test count(is_maximal, orders) == 1
@@ -56,7 +56,7 @@
 
   f = x^4-1680*x^3-25920*x^2-1175040*x+25214976
   A = StructureConstantAlgebra(f)
-  O = Order(A, basis(A))
+  O = order(A, basis(A))
   @test length(overorders(O)) == 2535
 
   let # issue reported by M. Kirschmer
@@ -64,7 +64,7 @@
     K, a  = number_field(x^6 - x^5 - x^4 + 2*x^3 - x + 1)
     R = ring_of_integers(K)
     P = prime_ideals_over(R, 5)
-    OO = Order(K, basis(P[1]*P[2]^2))
+    OO = order(K, basis(P[1]*P[2]^2))
     X = overorders(OO);
     S = Set([ basis_matrix(x) for x in X ]);
     @test length(S) == length(X) == 29

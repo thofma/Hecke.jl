@@ -7,8 +7,11 @@
 elem_type(::Type{StructureConstantAlgebra{T}}) where {T} = AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
 
 # Definitions for orders
-order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem})}
-order_type(::Type{StructureConstantAlgebra{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
+order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, ZZRing}
+
+#order_type(::Type{T}, ::Type{ZZRing}) where {T} = AlgAssAbsOrd{ZZRing, T}
+#
+#order_type(::Type{StructureConstantAlgebra{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T)))}
 
 ################################################################################
 #
@@ -153,7 +156,7 @@ $K$-linear map $A \to L$.
 julia> L, = quadratic_field(2);
 
 julia> structure_constant_algebra(L)
-(Structure constant algebra of dimension 2 over QQ, Map: structure constant algebra -> real quadratic field)
+(Structure constant algebra of dimension 2 over QQ, Map: structure constant algebra -> L)
 ```
 """
 function structure_constant_algebra(K::SimpleNumField)

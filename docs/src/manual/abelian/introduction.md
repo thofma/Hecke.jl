@@ -1,8 +1,7 @@
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
 # [Introduction](@id AbelianGroupLink2)
 
@@ -31,9 +30,9 @@ Alternatively, there are shortcuts to create products of cyclic groups:
 ```@docs
 abelian_group(M::Vector{Union{ZZRingElem, Integer}})
 ```
-```@repl
-using Hecke # hide
-G = abelian_group(2, 2, 6)
+```jldoctest
+julia> G = abelian_group(2, 2, 6)
+(Z/2)^2 x Z/6
 ```
 
 or even
@@ -42,9 +41,12 @@ or even
 free_abelian_group(::Int)
 abelian_groups(n::Int)
 ```
-```@repl
-using Hecke # hide
-abelian_groups(8)
+```jldoctest
+julia> abelian_groups(8)
+3-element Vector{FinGenAbGroup}:
+ (Z/2)^3
+ Z/2 x Z/4
+ Z/8
 ```
 
 ## Invariants

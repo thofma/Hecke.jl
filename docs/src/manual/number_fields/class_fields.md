@@ -1,8 +1,9 @@
-# Class Field Theory
-
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Class Field Theory
 
 ## Introduction
 
@@ -10,7 +11,7 @@ This chapter deals with abelian extensions of number fields and the rational num
 
 Class Field Theory, here specifically, class field theory of global number fields, deals
 with abelian extension, ie. fields where the group of automorphisms is abelian.
-For extensions of $\mathbb Q$, the famous Kronnecker-Weber theorem classifies all such fields:
+For extensions of $\mathbb Q$, the famous Kronecker-Weber theorem classifies all such fields:
 a field is abelian if and only if it is contained in some cyclotomic field. For general
 number fields this is more involved and even for extensions of $\mathbb Q$ is is not practical.
 
@@ -58,12 +59,25 @@ ring_class_field(::AbsNumFieldOrder)
 
 ### Example
 
-```@repl
-using Hecke # hide
-Qx, x = polynomial_ring(QQ, "x");
-K, a = number_field(x^2 - 10, "a");
-c, mc = class_group(K)
-A = ray_class_field(mc)
+```jldoctest
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> K, a = number_field(x^2 - 10, :a);
+
+julia> c, mc = class_group(K)
+(Z/2, ClassGroup map of
+Set of ideals of O_K)
+
+julia> A = ray_class_field(mc)
+Class field
+  over number field with defining polynomial x^2 - 10
+    over rational field
+with modulus
+  finite part <1>
+  infinite part
+    []
+with structure
+  Z/2
 ```
 
 ## Conversions
@@ -80,15 +94,39 @@ where $0\le n\le 3$
 number_field(C::ClassField)
 ```
 
-```@repl
-using Hecke; # hide
-Qx, x = polynomial_ring(QQ, "x");
-k, a = number_field(x^2 - 10, "a");
-c, mc = class_group(k);
-A = ray_class_field(mc)
-K = number_field(A)
-ZK = maximal_order(K)
-isone(discriminant(ZK))
+```jldoctest
+julia> Qx, x = polynomial_ring(QQ, :x);
+
+julia> k, a = number_field(x^2 - 10, :a);
+
+julia> c, mc = class_group(k);
+
+julia> A = ray_class_field(mc)
+Class field
+  over number field with defining polynomial x^2 - 10
+    over rational field
+with modulus
+  finite part <1>
+  infinite part
+    []
+with structure
+  Z/2
+
+julia> K = number_field(A)
+Relative non-simple number field with defining polynomials [x^2 - 2]
+  over number field with defining polynomial x^2 - 10
+    over rational field
+
+julia> ZK = maximal_order(K)
+Maximal order
+  of relative non-simple number field with defining polynomials [x^2 - 2]
+    over number field of degree 2 over QQ
+with pseudo-basis
+  (1, <1, 1>//1)
+  (_$1 + a, <2, a>//4)
+
+julia> isone(discriminant(ZK))
+true
 ```
 
 ```@docs

@@ -665,7 +665,7 @@
 
     K1, a1 = number_field(x^3 - 2, "a1")
     OK1 = maximal_order(K1)
-    O1 = Order(K1, [K1(1), 10*a1, 100*a1^2])
+    O1 = order(K1, [K1(1), 10*a1, 100*a1^2])
     F1 = conductor(O1, OK1)
     Q1, mQ1 = quo(O1, F1)
     G1, mG1 = multiplicative_group(Q1)
@@ -677,7 +677,7 @@
     end
 
     K2, a2 = number_field(x^3 - 12*x^2 - 6324*x + 459510, "a2")
-    O2 = EquationOrder(K2)
+    O2 = equation_order(K2)
     OK2 = maximal_order(O2)
     F2 = conductor(O2, OK2)
     Q2, mQ2 = quo(O2, F2)
@@ -691,7 +691,7 @@
 
     K3, a3 = number_field(x^5 - 1389*x^4 + 512066*x^3 - 11859166*x^2 + 83453925*x - 211865821, "a3")
     OK3 = maximal_order(K3)
-    O3 = EquationOrder(K3)
+    O3 = equation_order(K3)
     F3 = conductor(O3, OK3)
     Q3, mQ3 = quo(O3, F3)
     G3, mG3 = multiplicative_group(Q3)

@@ -11,8 +11,8 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
     return ab, (1, 1), 1, 1
   end
   n = ab[1]
-  subs = GAP.gap_to_julia(Vector{GAP.GapObj}, GAP.Globals.NormalSubgroups(G))
-  sort!(subs, by = x -> GAP.Globals.Size(x))
+  subs = Vector{GAP.GapObj}(GAP.Globals.NormalSubgroups(G))
+  sort!(subs; by=GAP.Globals.Size)
   #First, I collect all the possible decompositions
   decompositions = Tuple{GAP.GapObj, GAP.GapObj}[]
   for i = 1:length(subs)
@@ -42,7 +42,7 @@ function direct_product_decomposition(G::GAP.GapObj, ab::Tuple{Int, Int})
   #We pass to the list with the group ID
   grp_id_list = Vector{Tuple{Tuple{Int, Int}, Tuple{Int, Int}}}(undef, length(decompositions))
   for i = 1:length(grp_id_list)
-    grp_id_list[i] = (GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][1])), GAP.gap_to_julia(Tuple{Int, Int}, GAP.Globals.IdGroup(decompositions[i][2])))
+    grp_id_list[i] = (Tuple{Int, Int}(GAP.Globals.IdGroup(decompositions[i][1])), Tuple{Int, Int}(GAP.Globals.IdGroup(decompositions[i][2])))
   end
 
   possible_decompositions = Set(grp_id_list)
@@ -628,8 +628,8 @@ function _merge(list1::Vector{FieldsTower}, list2::Vector{FieldsTower}, absolute
 
   G1 = GAP.Globals.SmallGroup(g1[1], g1[2])
   G2 = GAP.Globals.SmallGroup(g2[1], g2[2])
-  mas1 = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(G1))
-  mas2 = GAP.gap_to_julia(Vector{Int}, GAP.Globals.AbelianInvariants(G2))
+  mas1 = Vector{Int}(GAP.Globals.AbelianInvariants(G1))
+  mas2 = Vector{Int}(GAP.Globals.AbelianInvariants(G2))
   if gcd(prod(mas1), prod(mas2)) == 1
     #All the fields are automatically linearly disjoint
     @vprintln :Fields 1 "All the fields are linearly disjoint, easy case"

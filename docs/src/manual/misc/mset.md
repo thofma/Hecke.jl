@@ -1,11 +1,10 @@
-# Multi-sets and sub-set iterators
-
 ```@meta
 CurrentModule = Hecke
-DocTestSetup = quote
-    using Hecke
-end
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
+# Multi-sets and sub-set iterators
+
 
 ## Multi-sets
 
@@ -78,22 +77,14 @@ Base.:(+)(::MSet, ::MSet)
 Base.:(-)(::MSet, ::MSet...)
 ```
 
-## Sub-set iterators
-
-### Sub-multi-sets
+## Subset iterators for sets and multisets
 
 ```@docs
-subsets(::MSet{Int})
-```
-
-### Sub-sets
-
-```@docs
-subsets(::Set{Int})
+subsets(::MSet{T}) where {T}
 ```
 
 ### Sub-sets of a given size
 
 ```@docs
-subsets(::Set, ::Int)
+subsets(::Set{T}, ::Int64) where {T}
 ```

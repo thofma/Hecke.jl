@@ -66,21 +66,23 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{Padic
     i = div(i+1, 2)
     pushfirst!(chain, i)
   end
-  der = derivative(f)
-  @assert precision(der) >= target_prec
-  rtnew = [setprecision(x, target_prec) for x = rt]
-  wvect = [(der(rtnew[i])) for i = 1:length(rt)]
-  prec_loss = Int(absolute_ramification_index(parent(rt[1]))*maximum(valuation, wvect))
-  wvect = map(inv, wvect)
-  for i in 1:length(chain)
-    for j = 1:length(rtnew)
-      rtnew[j] = rtnew[j] - wvect[j]*f(rtnew[j])
-      if i < length(chain)
-        wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+  rtnew = setprecision(base_ring(f), precision(f)) do
+    der = derivative(f)
+    @assert precision(der) >= target_prec
+    rtnew = [setprecision(x, target_prec) for x = rt]
+    wvect = [(der(rtnew[i])) for i = 1:length(rt)]
+    prec_loss = Int(absolute_ramification_index(parent(rt[1]))*maximum(valuation, wvect))
+    wvect = map(inv, wvect)
+    for i in 1:length(chain)
+      for j = 1:length(rtnew)
+        rtnew[j] = rtnew[j] - wvect[j]*f(rtnew[j])
+        if i < length(chain)
+          wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+        end
       end
     end
+    return [setprecision(x, target_prec - prec_loss) for x= rtnew]
   end
-  return [setprecision(x, target_prec - prec_loss) for x= rtnew]
   return rtnew
 end
 
@@ -268,4 +270,45 @@ function absolute_automorphism_group(L::LocalField)
   end
   G = MultTableGroup(mult_table)
   return G, GrpGenToNfMorSet(G, aut, L)
+end
+
+################################################################################
+#
+#  Isomorphism (partially)
+#
+################################################################################
+
+function is_isomorphic(K::PadicField, L::PadicField)
+  if prime(K) != prime(L)
+    return false, hom(K, L)
+  end
+  return true, hom(K, L)
+end
+
+function is_isomorphic(K::QadicField, L::QadicField)
+  fl, h = is_isomorphic(base_field(K), base_field(L))
+  if !fl
+    return false, hom(K, L, h, zero(L); check = false)
+  end
+  foverL = map_coefficients(h, defining_polynomial(K), parent = parent(defining_polynomial(L)))
+  r = roots(L, foverL)
+  if isempty(r)
+    return false, hom(K, L, zero(L); check = false)
+  else
+    return true, hom(K, L, r[1])
+  end
+end
+
+function is_isomorphic(K::LocalField, L::LocalField)
+  fl, h = is_isomorphic(base_field(K), base_field(L))
+  if !fl
+    return false, hom(K, L, h, zero(L); check = false)
+  end
+  foverL = map_coefficients(h, defining_polynomial(K), parent = parent(defining_polynomial(L)))
+  r = roots(L, foverL)
+  if isempty(r)
+    return false, hom(K, L, h, zero(L); check = false)
+  else
+    return true, hom(K, L, h, r[1])
+  end
 end

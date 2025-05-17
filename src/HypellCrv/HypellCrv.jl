@@ -219,6 +219,11 @@ function ==(C::HypellCrv{T}, D::HypellCrv{T}) where T
   return hyperelliptic_polynomials(C) == hyperelliptic_polynomials(D) && base_field(C) == base_field(D)
 end
 
+function Base.hash(C::HypellCrv, h::UInt)
+  h = hash(base_field(C), h)
+  h = hash(hyperelliptic_polynomials(C), h)
+  return h
+end
 
 ################################################################################
 #
@@ -484,14 +489,25 @@ end
 @doc raw"""
     ==(P::EllipticCurvePoint, Q::EllipticCurvePoint) -> Bool
 
-Return true if $P$ and $Q$ are equal and live over the same elliptic curve
+Return true if $P$ and $Q$ are equal and live over the same hyperelliptic curve
 $E$.
 """
 function ==(P::HypellCrvPt{T}, Q::HypellCrvPt{T}) where T
- # Compare coordinates
+  if parent(P) != parent(Q)
+    return false
+  end
+  # Compare coordinates
   if P[1] == Q[1] && P[2] == Q[2] && P[3] == Q[3]
     return true
   else
     return false
   end
+end
+
+function Base.hash(P::HypellCrvPt, h::UInt)
+  h = hash(parent(P), h)
+  h = hash(P[1], h)
+  h = hash(P[2], h)
+  h = hash(P[3], h)
+  return h
 end

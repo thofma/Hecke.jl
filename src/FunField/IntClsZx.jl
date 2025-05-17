@@ -150,9 +150,9 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
 
   o3 = Hecke.GenOrd(Zx, F, true)
   if isdefined(o2, :trans)
-    oo2 = Order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
+    oo2 = order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
   else
-    oo2 = Order(o3, integral_split(inv(T2), Zx)..., check = false)
+    oo2 = order(o3, integral_split(inv(T2), Zx)..., check = false)
   end
   return oo2
 
@@ -161,9 +161,9 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   @assert isone(H)
   T1 = map_entries(Qt, TT1)*T1
   if isdefined(o1, :trans)
-    oo1 = Order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
+    oo1 = order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
   else
-    oo1 = Order(o3, integral_split(T1, Zx)..., check = false)
+    oo1 = order(o3, integral_split(T1, Zx)..., check = false)
   end
   return oo1, oo2
 end

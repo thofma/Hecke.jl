@@ -14,7 +14,7 @@ function defines_CM_field(F::FieldsTower)
   for i = 1:length(els)
     @show i
     el = els[i]
-    if GAP.Globals.Order(els[i]) != 2
+    if GAP.Globals.order(els[i]) != 2
       continue
     end
     word = GAP.Globals.Factorization(perm_group, el)

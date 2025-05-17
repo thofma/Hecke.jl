@@ -64,7 +64,7 @@ end
 
   f = x^3 - 2
   K, a = number_field(f, "a", cached = false)
-  O = Order(K, [ K(1), 10*a, 100*a^2 ])
+  O = order(K, [ K(1), 10*a, 100*a^2 ])
   P, mP = @inferred picard_group(O)
   @test is_snf(P)
   @test P.snf == ZZRingElem[ 24 ]

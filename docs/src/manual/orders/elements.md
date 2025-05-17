@@ -1,8 +1,9 @@
-# Elements
 ```@meta
 CurrentModule = Hecke
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
 ```
-
+# Elements
 
 Elements in orders have two representations: they can be viewed as
 elements in the $\mathbf Z^n$ giving the coefficients wrt to the order basis
@@ -38,7 +39,7 @@ discriminant(::Vector{AbsSimpleNumFieldOrderElem})
 
 ## Arithmetic
 
-All the usual arithmetic operatinos are defined:
+All the usual arithmetic operations are defined:
 
 - `-(::NUmFieldOrdElem)`
 - `+(::NumFieldOrderElem, ::NumFieldOrderElem)`
@@ -63,8 +64,8 @@ minkowski_map(::AbsSimpleNumFieldOrderElem, ::Int)
 conjugates_arb(::AbsSimpleNumFieldOrderElem, ::Int)
 conjugates_arb_log(::AbsSimpleNumFieldOrderElem, ::Int)
 t2(::AbsSimpleNumFieldOrderElem, ::Int)
-minpoly(::AbsSimpleNumFieldOrderElem)
-charpoly(::AbsSimpleNumFieldOrderElem)
+minpoly(::ZZPolyRing, ::AbsSimpleNumFieldOrderElem)
+charpoly(::ZZPolyRing, ::AbsSimpleNumFieldOrderElem)
 factor(::AbsSimpleNumFieldOrderElem)
 denominator(a::NumFieldElem, O::RelNumFieldOrder)
 discriminant(::Vector{AbsNumFieldOrderElem})

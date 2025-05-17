@@ -211,7 +211,7 @@ end
   @test !isone(g^3)
   @test !isone(g^2)
   @test Hecke.is_torsion_unit_group_known(K)
-  M = EquationOrder(K)
+  M = equation_order(K)
   A, mA = @inferred torsion_unit_group(M)
   @test order(A) == 2
   @test mA(A[1]) == M(-1)
