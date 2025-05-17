@@ -363,6 +363,18 @@ function Hecke.getindex!(a::T, A::Vector{T}, i::Int) where {T <: NCRingElem}
   return A[i]
 end
 
+function getindex(r::Hecke.SRow, u::AbstractUnitRange)
+  s = sparse_row(base_ring(r))
+  shift = 1-first(u)
+  for (p,v) = r
+    if p in u
+      push!(s.pos, p+shift)
+      push!(s.values, v)
+    end
+  end
+  return s
+end
+
 ################################################################################
 #
 #  Make sparse row iterable
