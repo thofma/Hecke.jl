@@ -1,6 +1,6 @@
 module IsPower
 
-using Hecke, InteractiveUtils
+using Hecke
 import Hecke.Nemo
 
 function Hecke.roots_upper_bound(f::ZZPolyRingElem)

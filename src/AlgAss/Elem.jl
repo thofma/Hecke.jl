@@ -735,21 +735,22 @@ function (A::MatAlgebra)(a::MatAlgebraElem)
 end
 
 # For polynomial substitution
-for T in subtypes(AbstractAssociativeAlgebra)
-  @eval begin
-    function (A::$T)(a::Union{Integer, ZZRingElem, Rational{<: Integer}})
-      return A(base_ring(A)(a))
-    end
 
-    #function (A::$T{S})(a::S) where {S <: RingElem}
-    #  return a*one(A)
-    #end
-  end
+function (A::AbstractAssociativeAlgebra)(a::Union{Integer, ZZRingElem, Rational{<: Integer}})
+  return A(base_ring(A)(a))
 end
+
+#function (A::AbstractAssociativeAlgebra{S})(a::S) where {S <: RingElem}
+#  return a*one(A)
+#end
 
 (A::AbstractAssociativeAlgebra{T})(x::T) where {T <: RingElem} = x * one(A)
 
 (A::AbstractAssociativeAlgebra{T})(x::T) where {T <: AssociativeAlgebraElem} = x * one(A)
+
+# resolve ambiguity
+(A::AbstractAssociativeAlgebra{ZZRingElem})(x::ZZRingElem) = x * one(A)
+
 
 ################################################################################
 #
