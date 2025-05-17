@@ -409,7 +409,7 @@ function pop_first!(a::SRow{ZZRingElem, ZZRingElem_Array}, len::Int = length(a))
     len -= 1
     _perc_down!(a, 1, len)
   end
-    
+
   return xi=>xv, len
 end
 
@@ -485,14 +485,24 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
   return true
 end
 
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, Int64}}; sort::Bool = true)
+function sparse_row(R::ZZRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
   a = ZZRingElem_Array()
   sizehint!(a, length(A))
   l = Int[]
-  for (p, v) = A
+  # assume A is sorted
+  local c
+  for (i, (p, v)) in enumerate(A)
+    if i == 1
+      c = p
+    else
+      if c == p
+        error("positions in sparse row must be unique")
+      end
+      c = p
+    end
     if !is_zero(v)
       push!(a, v)
       push!(l, p)
@@ -501,14 +511,23 @@ function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, Int64}}; sort::Bool = true
   return SRow(R, l, a)
 end
 
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int64, ZZRingElem}}; sort::Bool = true)
+function sparse_row(R::ZZRing, A::Vector{Tuple{Int, ZZRingElem}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
   a = ZZRingElem_Array()
   sizehint!(a, length(A))
+  local c
   l = Int[]
-  for (p, v) = A
+  for (i, (p, v)) in enumerate(A)
+    if i == 1
+      c = p
+    else
+      if c == p
+        error("positions in sparse row must be unique")
+      end
+      c = p
+    end
     if !is_zero(v)
       push!(a, v)
       push!(l, p)
@@ -529,9 +548,19 @@ function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{T}; sort:
   sizehint!(a, length(val))
   l = Int[]
   for i=1:length(pos)
+    if i == 1
+      p = pp = @inbounds pos[i]
+    else
+      pp = @inbounds pos[i]
+      if pp == p
+        error("positions in sparse row must be unique")
+      end
+      p = pp
+    end
+
     @inbounds if !is_zero(val[i])
       @inbounds push!(a, val[i])
-      @inbounds push!(l, pos[i])
+      @inbounds push!(l, p)
     else
       error("zero passed in")
     end
@@ -539,7 +568,7 @@ function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{T}; sort:
   return SRow(R, l, a)
 end
 
-function scale_row!(a::SRow{ZZRingElem}, b::Union{ZZRingElem, Int}) 
+function scale_row!(a::SRow{ZZRingElem}, b::Union{ZZRingElem, Int})
   if iszero(b)
     return empty!(a)
   elseif isone(b)
@@ -600,7 +629,7 @@ function _add_scaled_row(Ai::SRow{ZZRingElem}, Aj::SRow{ZZRingElem}, c::ZZRingEl
     push!(sr.values, get_ptr(Aj.values, pj))
     pj += 1
   end
-#  Nemo._fmpz_clear_fn(n) 
+#  Nemo._fmpz_clear_fn(n)
   return sr
 end
 

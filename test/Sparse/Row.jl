@@ -15,14 +15,22 @@
   D = @inferred sparse_row(R, [(1, ZZRingElem(1)), (2, ZZRingElem(2))])
   @test D isa SRow{ZZRingElem}
   @test D isa sparse_row_type(R)
+  @test_throws ErrorException sparse_row(R, [(1, ZZRingElem(1)), (1, ZZRingElem(2))])
+  @test_throws ErrorException sparse_row(ZZ, [(1, ZZRingElem(1)), (1, ZZRingElem(2))])
+
 
   E = @inferred sparse_row(R, [(1, 1), (2, 2)])
   @test E isa SRow{ZZRingElem}
   @test E isa sparse_row_type(R)
+  @test_throws ErrorException sparse_row(R, [(1, 1), (1, 2)])
+  @test_throws ErrorException sparse_row(ZZ, [(1, 1), (1, 2)])
 
   F = @inferred sparse_row(R, [1, 2], [ZZRingElem(1), ZZRingElem(2)])
   @test F isa SRow{ZZRingElem}
   @test F isa sparse_row_type(R)
+  @test_throws ErrorException sparse_row(R, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
+  @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
+  @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
 
   # Equality
 
