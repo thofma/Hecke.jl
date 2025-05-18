@@ -672,7 +672,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   @hassert :ClassField 1 lambda in J
   g = numerator(simplify(ideal(OK, lambda) * inv(J)))
   @hassert :ClassField 1 is_coprime(g, c)
-  u = idempotents(g, c)[1]
+  u = idempotents(g^2, c)[1] # use g^2, since we later change things modulo g^2
   u = make_positive(u, minimum(g^2))
   @hassert :ClassField 1 is_totally_positive(u)
   @hassert :ClassField 1 u in g

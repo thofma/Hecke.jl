@@ -604,12 +604,12 @@ end
 @doc raw"""
     *(A::SMat{T}, b::AbstractMatrix{T}) -> Matrix{T}
 
-Return the product $A \cdot b$ as a dense array.
+Return the product $A \cdot b$ as a dense matrix.
 """
 function *(A::SMat{T}, b::AbstractMatrix{T}) where T
   sz = size(b)
   @assert sz[1] == ncols(A)
-  c = Array{T}(undef, sz[1], sz[2])
+  c = Matrix{T}(undef, sz[1], sz[2])
   return mul!(c, A, b)
 end
 
@@ -652,6 +652,51 @@ function *(A::SRow{T}, B::SMat{T}) where T
       continue
     end
     C = add_scaled_row(B[p], C, v)
+  end
+  return C
+end
+
+# - SMat{T} * SMat{T}
+function *(A::SMat{T}, B::SMat{T}) where {T}
+  error("""
+  The product of two sparse matrices is, in general, not sparse.
+  Use `mul_sparse` if you still want to compute the product of two sparse matrices as a sparse matrix,
+  or `mul_dense` if you want to compute the product as a dense matrix.
+  """)
+end
+
+@doc raw"""
+    mul_sparse(A::SMat{T}, B::SMat{T}) -> SMat{T}
+
+Return the product $A\cdot B$ as a sparse matrix.
+
+The product of two sparse matrices is, in general, not sparse, so depending on the context,
+it might be more efficient to use [`mul_dense(::SMat{T}, ::SMat{T}) where {T}`](@ref) instead.
+"""
+function mul_sparse(A::SMat{T}, B::SMat{T}) where {T}
+  @req ncols(A) == nrows(B) "Matrices must have compatible dimensions"
+  @req base_ring(A) == base_ring(B) "Matrices must have same base ring"
+  C = sparse_matrix(base_ring(B), nrows(A), ncols(B))
+  for (i, rA) in enumerate(A.rows)
+    C[i] = rA * B
+  end
+  return C
+end
+
+@doc raw"""
+    mul_dense(A::SMat{T}, B::SMat{T}) -> MatElem{T}
+
+Return the product $A\cdot B$ as a dense matrix.
+"""
+function mul_dense(A::SMat{T}, B::SMat{T}) where {T}
+  @req ncols(A) == nrows(B) "Matrices must have compatible dimensions"
+  @req base_ring(A) == base_ring(B) "Matrices must have same base ring"
+  C = zero_matrix(base_ring(B), nrows(A), ncols(B))
+  for (i, rA) in enumerate(A.rows)
+    rC = rA * B
+    for (j, val) in rC
+      C[i, j] = val
+    end
   end
   return C
 end

@@ -164,7 +164,7 @@ end
 ################################################################################
 
 function -(x::Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem })
-  return parent(x)(-elem_in_algebra(x, copy = false))
+  return parent(x)(-elem_in_algebra(x, copy = false), false)
 end
 
 ###############################################################################
@@ -175,12 +175,12 @@ end
 
 function *(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   check_parent(x, y)
-  return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false))
+  return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false), false)
 end
 
 function +(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   check_parent(x, y)
-  z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
+  z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false), false)
   if x.has_coord && y.has_coord
     z.coordinates = [ x.coordinates[i] + y.coordinates[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
@@ -190,7 +190,7 @@ end
 
 function -(x::T, y::T) where { T <: Union{ AlgAssAbsOrdElem, AlgAssRelOrdElem } }
   check_parent(x, y)
-  z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
+  z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false), false)
   if x.has_coord && y.has_coord
     z.coordinates = [ x.coordinates[i] - y.coordinates[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
@@ -201,7 +201,7 @@ end
 function *(n::IntegerUnion, x::AlgAssAbsOrdElem)
   #O=x.parent
   O = parent(x)
-  y = O(n * elem_in_algebra(x, copy = false))
+  y = O(n * elem_in_algebra(x, copy = false), false)
   if x.has_coord
     y.coordinates = n .* coordinates(x, copy = false)
     y.has_coord = true

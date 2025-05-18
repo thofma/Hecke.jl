@@ -29,8 +29,6 @@ using LazyArtifacts
 
 using LinearAlgebra
 using Markdown
-using InteractiveUtils
-using Libdl
 using Distributed
 using Printf
 using SparseArrays

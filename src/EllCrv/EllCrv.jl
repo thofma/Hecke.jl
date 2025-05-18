@@ -963,6 +963,10 @@ function -(P::EllipticCurvePoint)
   return Q
 end
 
+function iszero(P::EllipticCurvePoint)
+  return iszero(P[1]) && isone(P[2]) && iszero(P[3])
+end
+
 #@doc raw"""
 #    ==(P::EllipticCurvePoint, Q::EllipticCurvePoint) -> Bool
 #

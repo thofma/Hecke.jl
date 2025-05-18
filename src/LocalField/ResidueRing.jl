@@ -289,6 +289,7 @@ function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuat
   end
   @req valuation(data(a)) >= valuation(data(b)) "Division not possible"
   c = divexact(data(a), data(b))
+  setprecision!(c, min(precision(data(a)), precision(data(b))))
   return parent(a)(c, copy = false, check = false)
 end
 
@@ -340,9 +341,10 @@ function annihilator(a::LocalFieldValuationRingResidueRingElem)
   if is_zero(a)
     return one(parent(a))
   end
-  pi = uniformizer(_valuation_ring(parent(a)))
+  R = parent(a)
   va = _valuation_integral(data(a))
-  return parent(a)(pi)^(_exponent(parent(a)) - va)
+  pi = R(uniformizer(_field(R), _exponent(R) - va; prec = _exponent(R)))
+  return pi
 end
 
 ################################################################################
