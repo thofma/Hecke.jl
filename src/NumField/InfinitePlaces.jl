@@ -34,8 +34,9 @@ See also [`embeddings`](@ref).
 julia> K, a = quadratic_field(5);
 
 julia> embedding(real_places(K)[1])
-Complex embedding corresponding to -2.24
+Real embedding
   of real quadratic field defined by x^2 - 5
+corresponding to root -2.24
 ```
 """
 function embedding(p::InfPlc)
@@ -60,8 +61,8 @@ julia> K,  = quadratic_field(-5);
 
 julia> embeddings(complex_places(K)[1])
 2-element Vector{AbsSimpleNumFieldEmbedding}:
- Complex embedding corresponding to 0.00 + 2.24 * i of K
- Complex embedding corresponding to 0.00 - 2.24 * i of K
+ Imaginary embedding with 0.00 + 2.24 * i of K
+ Imaginary embedding with 0.00 - 2.24 * i of K
 ```
 """
 function embeddings(p::InfPlc)
@@ -114,12 +115,16 @@ end
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", p::InfPlc)
-  print(io, "Infinite place of\n", number_field(p), "\ncorresponding to\n",
-        _embedding(p))
+  io = pretty(io)
+  print(io, "Infinite place\n", Indent(), "of ", Lowercase())
+  show(io, number_field(p))
+  println(io, Dedent())
+  print(io, "corresponding to\n", Indent(), Lowercase(), _embedding(p))
 end
 
 function Base.show(io::IO, p::InfPlc)
-  print(io, "Infinite place corresponding to (", _embedding(p), ")")
+  io = pretty(io)
+  print(io, "Infinite place of ", Lowercase(), _embedding(p))
 end
 
 ################################################################################
@@ -170,10 +175,10 @@ Construct the infinite place induced by the given complex embedding.
 julia> K,  = quadratic_field(5);
 
 julia> infinite_place(complex_embedding(K, 2.24))
-Infinite place of
-Real quadratic field defined by x^2 - 5
+Infinite place
+  of real quadratic field defined by x^2 - 5
 corresponding to
-Complex embedding corresponding to 2.24 of K
+  real embedding with 2.24 of K
 ```
 """
 function infinite_place(e::NumFieldEmb)
@@ -192,8 +197,8 @@ julia> K,  = quadratic_field(5);
 
 julia> infinite_places(K)
 2-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
- Infinite place corresponding to (Complex embedding corresponding to -2.24 of K)
- Infinite place corresponding to (Complex embedding corresponding to 2.24 of K)
+ Infinite place of real embedding with -2.24 of K
+ Infinite place of real embedding with 2.24 of K
 ```
 """
 function infinite_places(K::NumField)
@@ -212,8 +217,8 @@ julia> K,  = quadratic_field(5);
 
 julia> infinite_places(K)
 2-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
- Infinite place corresponding to (Complex embedding corresponding to -2.24 of K)
- Infinite place corresponding to (Complex embedding corresponding to 2.24 of K)
+ Infinite place of real embedding with -2.24 of K
+ Infinite place of real embedding with 2.24 of K
 ```
 """
 real_places(K::NumField) = place_type(K)[infinite_place(i) for i in real_embeddings(K)]
@@ -230,7 +235,7 @@ julia> K,  = quadratic_field(-5);
 
 julia> complex_places(K)
 1-element Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}:
- Infinite place corresponding to (Complex embedding corresponding to 0.00 + 2.24 * i of K)
+ Infinite place of imaginary embedding with 0.00 + 2.24 * i of K
 ```
 """
 complex_places(K::NumField) = [p for p in infinite_places(K) if is_complex(p)]
@@ -257,10 +262,10 @@ julia> L, b = number_field(polynomial(K, [1, 0, 1]), "b");
 julia> p = complex_places(L)[1];
 
 julia> restrict(p, K)
-Infinite place of
-Real quadratic field defined by x^2 - 3
+Infinite place
+  of real quadratic field defined by x^2 - 3
 corresponding to
-Complex embedding corresponding to -1.73 of K
+  real embedding with -1.73 of K
 ```
 """
 restrict(p::InfPlc, K::NumField) = infinite_place(restrict(_embedding(p), K))
@@ -290,8 +295,8 @@ julia> p = infinite_places(K)[1];
 
 julia> extend(p, L)
 2-element Vector{InfPlc{Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, RelSimpleNumFieldEmbedding{AbsSimpleNumFieldEmbedding, Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}}}}:
- Infinite place corresponding to (Complex embedding corresponding to root 1.26 of relative number field)
- Infinite place corresponding to (Complex embedding corresponding to root -0.63 + 1.09 * i of relative number field)
+ Infinite place of complex embedding corresponding to root 1.26 of relative number field
+ Infinite place of complex embedding corresponding to root -0.63 + 1.09 * i of relative number field
 ```
 """
 function extend(p::InfPlc, L::NumField)

@@ -344,6 +344,11 @@ end
 #
 ################################################################################
 
+function _gens_for_show(a::AbsNumFieldOrderFractionalIdeal)
+  d = denominator(a; copy = false)
+  return [elem_in_nf(x)/d for x in _gens_for_show(numerator(a))]
+end
+
 function show(io::IO, s::AbsNumFieldOrderFractionalIdealSet)
    print(io, "Set of fractional ideals of ")
    print(io, s.order)
@@ -351,11 +356,35 @@ end
 
 function show(io::IO, id::AbsNumFieldOrderFractionalIdeal)
   if isdefined(id, :num) && isdefined(id, :den)
-    print(io, "1//", denominator(id, copy = false), " * ")
-    print(io, numerator(id, copy = false))
+    d = denominator(id, copy = false)
+    n = numerator(id, copy = false)
+    print(io, n, "//", d)
   else
-    print(io, "Fractional ideal with basis matrix\n")
-    print(io, basis_matrix(FakeFmpqMat, id, copy = false))
+    b = basis(id)
+    l = reduce(lcm, denominator(x, order(id)) for x in b; init = one(ZZ))
+    print(io, "<", join([l * x for x in b], ", "), ">//", l)
+  end
+end
+
+function show(io::IO, ::MIME"text/plain", id::AbsNumFieldOrderFractionalIdeal)
+  io = pretty(io)
+  if isdefined(id, :num)
+    print(io, "Fractional ideal")
+    print(io, "\n")
+    print(io, Indent())
+    print(io, "with numerator ", Lowercase())
+    show(io, "text/plain", numerator(id, copy = false))
+    print(io, "\nwith denominator ")
+    print(io, denominator(id, copy = false))
+    print(io, Dedent())
+  else
+    print(io, "Fractional ideal of ")
+    print(io, Lowercase(), order(id))
+    print(io, Indent())
+    print(io, "\nwith Z-basis ")
+    b = basis(id)
+    print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
+    print(io, Dedent())
   end
 end
 

@@ -207,36 +207,43 @@ function extra_name(O::AbsNumFieldOrder)
   return nothing
 end
 
-function show(io::IO, O::AbsNumFieldOrder)
-  @show_name(io, O)
-  @show_special(io, O)
-  if is_maximal_known_and_maximal(O)
-    show_maximal(io, O)
-  else
-    show_gen(io, O)
-  end
-end
-
-function show_gen(io::IO, O::AbsNumFieldOrder)
+function show(io::IO, ::MIME"text/plain", O::AbsNumFieldOrder)
   io = pretty(io)
-  print(io, "Order of ")
-  println(io, Lowercase(), nf(O))
-  print(io, "with Z-basis ")
+  if is_maximal_known_and_maximal(O)
+    println(io, "Maximal order")
+  else
+    println(io, "Order")
+  end
+  print(io, Indent(), "of ", Lowercase())
+  show(io, MIME"text/plain"(), nf(O))
+  #println(io, Lowercase(), nf(O))
+  print(io, Dedent())
+  print(io, "\nwith Z-basis ")
   b = basis(O, copy = false)
   # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
   # to `[1, a, a^2]` when printing the base
   print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
 end
 
-function show_maximal(io::IO, O::AbsNumFieldOrder)
-  io = pretty(io)
-  print(io, "Maximal order of ")
-  println(io, Lowercase(), nf(O))
-  print(io, "with basis ")
-  b = O.basis_nf
-    # use `typeinfo` in IOContext to change e.g. `AbsSimpleNumFieldElem[1, a, a^2]`
-    # to `[1, a, a^2]` when printing the base
-    print(IOContext(terse(io), :typeinfo=>typeof(b)), b)
+function show(io::IO, O::AbsNumFieldOrder)
+  @show_name(io, O)
+  @show_special(io, O)
+  if is_maximal_known_and_maximal(O)
+    prefix = "Maximal order"
+  else
+    prefix = "Order"
+  end
+  if is_terse(io)
+    if !is_simple(L)
+      print(io, prefix, " of non-simple number field")
+    else
+      print(io, prefix, " of number field")
+    end
+  else
+    io = pretty(io)
+    print(io, prefix, " of ")
+    print(io, Lowercase(), nf(O))
+  end
 end
 
 ################################################################################
@@ -725,6 +732,19 @@ order is cached for future use.
 """
 function order(K::S, a::Vector{T}; check::Bool = true, isbasis::Bool = false,
                cached::Bool = false) where {S <: NumField{QQFieldElem}, T <: NumFieldElem{QQFieldElem}}
+  # hot-fix for some Oscar bug
+  # Should be removed for the next breaking Hecke release
+  if !(K isa AbsNonSimpleNumField || K isa AbsSimpleNumField)
+    a = copy(a)
+    for i in 1:length(a)
+      z = a[i]
+      d = denominator(minpoly(z))
+      if !(is_unit(d))
+        a[i] = d*z
+      end
+    end
+  end
+
   @assert all(x->K == parent(x), a)
   if isbasis
     if check

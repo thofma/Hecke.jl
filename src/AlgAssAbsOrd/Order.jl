@@ -403,7 +403,10 @@ function _check_elem_in_order(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd
   t = zero_matrix(base_ring(parent(a)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_matrix_inverse(O, copy = false)
-  _, d = integral_split(t, base_ring(O))
+  if t isa QQMatrix && short
+    return is_one(denominator(t))
+  end
+  tn, d = integral_split(t, base_ring(O))
   if short
     return is_unit(d)
   else
@@ -412,9 +415,11 @@ function _check_elem_in_order(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd
     else
       v = Vector{elem_type(base_ring(O))}(undef, degree(O))
       for i = 1:degree(O)
-        tn, d = integral_split(t, base_ring(O))
-        @assert is_one(d)
-        v[i] = deepcopy(tn[1, i])
+        if eltype(v) !== ZZRingElem
+          v[i] = deepcopy(tn[1, i])
+        else
+          v[i] = tn[1, i]
+        end
       end
       return true, v
     end
@@ -1033,7 +1038,7 @@ function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructure
     Mibas = [ mAi(elem_in_algebra(b)) for b in basis(Mi)]
     append!(bas, Mibas)
   end
-  M = order(A, bas, isbasis = true)
+  M = order(A, bas, isbasis = true, check = false)
   N = order(A, _hnf_integral(basis_matrix(M, copy = false)))
   N.is_maximal = 1
   return N

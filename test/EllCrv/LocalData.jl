@@ -299,8 +299,12 @@
 
     L, a = number_field(x^2-x+1)
     E = elliptic_curve(L, [0, 0, 0, -15, 22])
-    @test @inferred tamagawa_numbers(E) == [3, 2]
-    @test @inferred kodaira_symbols(E) == ["IV*", "I0*"]
+    Ps = bad_primes(E)
+    sort!(Ps, by = x -> minimum(x))
+    @test tamagawa_number.(Ref(E), Ps) == [3, 2]
+    @test kodaira_symbol.(Ref(E), Ps) == ["IV*", "I0*"]
+    @test @inferred issetequal(tamagawa_numbers(E), [3, 2])
+    @test @inferred issetequal(kodaira_symbols(E), KodairaSymbol.(["IV*", "I0*"]))
   end
 
   # Another test
@@ -402,6 +406,8 @@
   @test all(isone(denominator(i)) for i in a_invariants(integral_model(E)[1]))
   Eglobal = tates_algorithm_global(E)
   ainvs_minimal = kt.([0, 103*t^4 + 53*t^2 + 78, 0, 14*t^8 + 61*t^6 + 2*t^4 + 44*t^2 + 50, 86*t^12 + 59*t^10 + 93*t^8 + 27*t^6 + 109*t^4 + 17*t^2 + 48])
-  @test elliptic_curve(ainvs_minimal) == Eglobal
+  Eglobal2 = elliptic_curve(ainvs_minimal)
+  @test is_isomorphic(Eglobal2, Eglobal)
+  @test discriminant(Eglobal) == discriminant(Eglobal2)
 end
 

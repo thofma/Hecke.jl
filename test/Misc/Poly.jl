@@ -272,3 +272,9 @@ let
   g = Hecke.gcd_right(f, (x + j))
   @test degree(g) == 0
 end
+
+let
+  Qx, x = QQ[:x]
+  g = numerator(x)
+  @test g == gen(parent(g)) && g isa ZZPolyRingElem
+end

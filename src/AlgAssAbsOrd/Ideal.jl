@@ -1767,11 +1767,13 @@ function _as_ideal_of_number_field(I::AlgAssAbsOrdIdl, m::AbsAlgAssToNfAbsMor)
   K = codomain(m)
   OK = maximal_order(K)
 
+  B = basis(I, copy = false)
   b = Vector{elem_type(OK)}()
-  for i = 1:dim(domain(m))
-    push!(b, OK(m(basis(I, copy = false)[i])))
+  for i = 1:length(B)
+    push!(b, OK(m(B[i])))
   end
-  return ideal_from_z_gens(OK, b)
+  J = ideal_from_z_gens(OK, b)
+  return J
 end
 
 function _as_ideal_of_number_field(I::FacElem{ <: AlgAssAbsOrdIdl, <: AlgAssAbsOrdIdlSet}, m::AbsAlgAssToNfAbsMor)

@@ -1,21 +1,27 @@
 #XXX: valuation(Q(0)) == 0 !!!!!
 function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
   Q = parent(r)
+
+  fs = derivative(f)
+  qf = change_base_ring(Q, f, cached = false)
+  qfs = change_base_ring(Q, fs, cached = false)
+
+  o = Q(r)
+  starting_prec = min(starting_prec, precision(o))
+  @assert precision(o) >= starting_prec
+
+  o = qfs(o)
+  vo = valuation(o)
+  o = inv(o)
+
   n = prec
   i = n
   chain = [n]
   while i>starting_prec
-    i = div(i+1, 2)
+    i = div(i+1+vo, 2)
     push!(chain, i)
   end
-  fs = derivative(f)
-  qf = change_base_ring(Q, f, cached = false)
-  qfs = change_base_ring(Q, fs, cached = false)
-  r = setprecision(r, 1)
-  o = Q(r)
-  s = qf(r)
-  o = inv(setprecision(qfs, 1)(o))
-  @assert r.N == 1
+  
   for p = reverse(chain)
     setprecision!(r, p)
     setprecision!(o, p)

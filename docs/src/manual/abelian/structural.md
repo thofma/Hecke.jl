@@ -51,10 +51,10 @@ julia> for U = psubgroups(G, 2)
 julia> shapes
 MSet{Vector{ZZRingElem}} with 8 elements:
   ZZRingElem[]
-  ZZRingElem[4]    : 2
   ZZRingElem[2, 4]
-  ZZRingElem[2]    : 3
+  ZZRingElem[4]    : 2
   ZZRingElem[2, 2]
+  ZZRingElem[2]    : 3
 ```
 So there are $2$ subgroups isomorphic to $C_4$ (`ZZRingElem[4] : 2`),
 $1$ isomorphic to $C_2\times C_4$, 1 trivial and $3$ $C_2$ subgroups.

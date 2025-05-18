@@ -282,6 +282,7 @@ function rank_2_torsion(E::EllipticCurve, lim1=100, lim2 = 1000)
 
   R,x = polynomial_ring(QQ,"x")
   list = roots(x^3+s2*x^2+s4*x+s6)
+  sort!(list, rev = true)
 
   if all(!is_integral, list)
     throw(DomainError(E, "No rational 2-torsion"))
@@ -293,6 +294,7 @@ function rank_2_torsion(E::EllipticCurve, lim1=100, lim2 = 1000)
   d = (c+s2)*x0+s4
   _c = -2*c
   _d = c^2-4*d
+
 
   if iszero(d*_d)
     throw(DomainError(E, "Curve is singular"))

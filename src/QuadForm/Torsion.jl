@@ -1606,7 +1606,7 @@ function normal_form(T::TorQuadModule; partial=false)
     i = identity_map(T)
   end
   normal_gens = TorQuadModuleElem[]
-  prime_div = prime_divisors(exponent(N))
+  prime_div = sort!(prime_divisors(exponent(N)))
   for p in prime_div
     D_p, I_p = primary_part(N, p)
     q_p = gram_matrix_quadratic(D_p)
