@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.36.0](https://github.com/thofma/Hecke/releases/tag/v0.36.0) - 2025-05-19
+
+The following gives an overview of the changes compared to the previous release. This list is not
+complete, many more internal or minor changes were made, but we tried to only list those changes
+which we think might affect some users directly.
+
+### Number fields
+
+#### Bugfix
+
+- [#1859](https://github.com/thofma/Hecke.jl/pull/1859) Fix order_type for generic non-simple absolute fields
+
+#### New features or extended functionality
+
+- [#1840](https://github.com/thofma/Hecke.jl/pull/1840) Overhaul printing of orders, (fractional) ideals, and related objects
+
+### Noncommutative algebras
+
+#### New features or extended functionality
+
+- [#1863](https://github.com/thofma/Hecke.jl/pull/1863) Performance improvements for orders and lattices
+
+### Other changes
+
+#### Bugfix
+
+- [#1858](https://github.com/thofma/Hecke.jl/pull/1858) Fix `local_factor` for Hermitian lattices
+
+#### New features or extended functionality
+
+- [#1871](https://github.com/thofma/Hecke.jl/pull/1871) Bump Nemo to 0.50, AA to 0.45, Polymake to 0.12
+- [#1825](https://github.com/thofma/Hecke.jl/pull/1825) Add is_maximal & is_prime for some PIDIdeal subtypes
+
 ## [0.35.19](https://github.com/thofma/Hecke/releases/tag/v0.35.19) - 2025-04-27
 
 The following gives an overview of the changes compared to the previous release. This list is not
