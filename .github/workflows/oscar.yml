@@ -67,6 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "Set up Julia"
+        id: setup-julia
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
@@ -99,6 +100,9 @@ jobs:
                                            varname=\"oscar_run_doctests\",
                                            filename=\"${GITHUB_ENV}\");"
 
+      - name: "workaround libstdc++ issue for julia 1.6"
+        if: matrix.julia-version == '~1.6.0-0' # && runner.os == 'Linux'
+        run: rm -f ${{ steps.setup-julia.outputs.julia-bindir }}/../lib/julia/libstdc++.so.6
       - name: "Run tests"
         run: |
           echo '${{ env.oscar_run_tests }}'
