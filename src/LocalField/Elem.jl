@@ -527,6 +527,11 @@ end
 function tr(a::LocalFieldElem{QadicFieldElem}, F::QadicField)
   return tr(a)
 end
+
+function tr(a::QadicFieldElem, _::PadicField)
+  return tr(a)
+end
+
 ################################################################################
 #
 #  Minpoly
