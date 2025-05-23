@@ -923,7 +923,7 @@ end
 Return the submatrix of $A$, where the rows correspond to $r$ and the columns
 correspond to $c$.
 """
-function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
+function sub(A::SMat{T}, r::AbstractRange, c::AbstractRange) where T
   B = sparse_matrix(base_ring(A))
   B.nnz = 0
   B.c = length(c)
