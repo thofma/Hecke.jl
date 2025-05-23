@@ -1,4 +1,20 @@
+function test_elem(K::RelSimpleNumField)
+  return rand(K, -10:10)
+end
+
 @testset "RelSimpleNumField" begin
+
+  @testset "conformance" begin
+    Qx, x = QQ["x"]
+    f = x^2 + 12x - 92
+    K, a = number_field(f, "a")
+    Ky, y = K["y"]
+
+    L, b = number_field(y^2 + y + 1, "b")
+
+    test_Field_interface_recursive(L)
+  end
+
   @testset "is_subfield" begin
     Qx, x = QQ["x"]
     f = x^2 + 12x - 92
