@@ -1756,7 +1756,7 @@ function vectors_of_square_and_divisibility(
     @req can_solve(basis_matrix(L), basis_matrix(S)) "Second input must be contained in the rational span of the first one"
     @req is_definite(S) "Second input must be definite"
   end
-  @req d > 0 "Divisibility ($d) must be a positive integer"
+  @req d > 0 "Divisibility ($d) must be positive"
   @req !iszero(n) "Square ($n) must be nonzero"
   nQQ = abs(QQ(n))
   de = denominator(n)
@@ -1991,7 +1991,7 @@ function vectors_of_square_and_divisibility(
     @req can_solve(basis_matrix(L), basis_matrix(S)) "Second input must be contained in the rational span of the first one"
     @req is_definite(S) "Second input must be definite"
   end
-  @req all(>(0), keys(vector_type)) "Divisibilities must be positive integers"
+  @req all(>(0), keys(vector_type)) "Divisibilities must be positive"
   out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
   for d in keys(vector_type)
     @req all(!iszero, vector_type[d]) "Squares for the divisibility $d must be nonzero"
