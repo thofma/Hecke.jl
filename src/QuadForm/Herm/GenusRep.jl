@@ -214,7 +214,7 @@ function neighbours(
     genUL = automorphism_group_generators(L)
     Tinv = inv(T)
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, T*g*Tinv) for g in genUL]
-    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !allequal(diagonal(x))]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if length(unique!(diagonal(x))) != 1]
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
