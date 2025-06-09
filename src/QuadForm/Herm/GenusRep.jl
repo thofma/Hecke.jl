@@ -29,17 +29,20 @@ function _all_row_span(M)
 end
 
 @doc raw"""
-    smallest_neighbour_prime(L::HermLat) -> Bool, RelNumFieldOrderIdeal, Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    smallest_neighbour_prime(
+      L::HermLat,
+    ) -> Bool, RelNumFieldOrderIdeal, Vector{AbsNumFieldOrderIdeal}
 
-Given a hermitian lattice `L`, return `def, P0, bad` such that:
+Given a hermitian lattice ``L``, return `def, P0, bad` where:
 
-- `def` is `true` if `L` is definite, else `false`;
-- `P0` is a prime ideal in the base ring $O_E$ of `L` which is not bad, such that
-  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes
-  satisfying these properties; if `L` is indefinite, `P0` is set to be the trivial ideal;
-- `bad` is a vector of prime ideals $\mathfrak p$ in the fixed ring $O_K$ of `L` such that
-  $L_{\mathfrak p}$ is not modular or $\mathfrak p$ is dyadic and is not coprime to the
-  discriminant of $O_E$.
+- `def` is `true` if ``L`` is definite, else `false`;
+- `P0` is a prime ideal in the base ring $O_E$ of ``L`` which is not bad,
+  such that ``L`` is isotropic at $minimum(P0)$ and `P0` has smallest minimum
+  among the primes satisfying these properties; if ``L`` is indefinite, `P0`
+  is set to be the trivial ideal;
+- `bad` is a vector of prime ideals $\mathfrak p$ in the fixed ring $O_K$ of
+  ``L`` such that $L_{\mathfrak p}$ is not modular or $\mathfrak p$ is dyadic
+  and is not coprime to the discriminant of $O_E$.
 """
 function smallest_neighbour_prime(L::HermLat)
   S = base_ring(L)
@@ -102,7 +105,16 @@ function smallest_neighbour_prime(L::HermLat)
   error("Impossible")
 end
 
-function _neighbour(L, B, xG, x, h, P, CC, split)
+function _neighbour(
+    L::HermLat,
+    B::MatElem,
+    xG::FqMatrix,
+    x::Vector,
+    h::Map,
+    P::NumFieldOrderIdeal,
+    CC::NumFieldOrderIdeal,
+    split::Bool,
+  )
   R = order(P)
   K = nf(R)
   n = nrows(B)
@@ -143,28 +155,32 @@ function _neighbour(L, B, xG, x, h, P, CC, split)
   return LL
 end
 
-function stdcallback(list, L)
-  keep = all(LL -> !is_isometric_with_isometry(LL,L)[1], list)
-  return keep, true
-end
-
-function eqcallback(list, L)
-  keep = all(LL -> LL != L, list)
-  return keep, true
-end
-
-function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
+function neighbours(
+    L::HermLat,
+    P::RelNumFieldOrderIdeal,
+    algorithm::Symbol = :orbit;
+    rand_neigh::Int=75,
+    callback::Function=(M -> M != L),
+    inv_dict::Dict=Dict(),
+    invariants::Function=(M -> []),
+    use_mass::Bool=true,
+    missing_mass::Base.RefValue{QQFieldElem}=Ref{QQFieldElem}(-1),
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+  )
   ok, scale = is_modular(L, P)
   @req ok "The lattice must be locally modular"
+  @assert algorithm in [:orbit, :random, :exhaustive]
   R = base_ring(L)
   K = nf(R)
   a = involution(L)
 
-  if !is_definite(L) && use_auto
-    use_auto = false
+  if use_mass
+    __mass = missing_mass[]
   end
 
-  T = local_basis_matrix(L, P, type = :submodule)
+  T = local_basis_matrix(L, P; type=:submodule)
   p = minimum(P)
   lp = prime_decomposition(R, p)
   if length(lp) == 1
@@ -194,47 +210,89 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
   n = rank(L)
   W = vector_space(k, n)
 
-  if use_auto
-    G = automorphism_group_generators(L)
+  if algorithm == :orbit
+    genUL = automorphism_group_generators(L)
     Tinv = inv(T)
-    adjust_gens = eltype(G)[T * g * Tinv for g in G]
-    adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, g) for g in adjust_gens]
-    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !is_diagonal(x)]
+    adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, T*g*Tinv) for g in genUL]
+    adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if !allequal(diagonal(x))]
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
     else
       LO = enumerate_lines(k, n)
     end
+    maxlines = length(LO)
+    @vprintln :GenRep 1 "$(maxlines) orbits of lines to try"
   else
     LO = enumerate_lines(k, n)
+    maxlines = algorithm == :random ? min(rand_neigh, length(LO)) : length(LO)
+    @vprintln :GenRep 1 "Try $(maxlines) lines"
   end
 
-  keep = true
-  cont = true
+  result = typeof(L)[]
 
   if P != C
     _G = T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
     pi = p_uniformizer(P)
     pih = h(pi)
-    for w in LO
-      x = elem_type(K)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
-      LL = _neighbour(L, T, pih * matrix(k, 1, length(w), w) * G, K(pi) .* x, hext, P, C, true)
-      keep, cont = callback(result, LL)
-      @assert is_modular(LL, P)[1]
-      if keep
-        push!(result, LL)
-      end
-      if !cont || (length(result) >= max)
-        break
-      end
-    end
   elseif special
     pi = uniformizer(P)
     _G = elem_in_nf(pi) * T * form * _map(transpose(T), a)
     G = map_entries(hext, _G)
-    for w::Vector{FqFieldElem} in LO
+  else
+    _G = T * form * _map(transpose(T), a)
+    G = map_entries(hext, _G)
+    ram = is_ramified(R, minimum(P))
+    if ram
+      pi = uniformizer(P)
+      S = elem_type(R)[ h\x for x in k ]
+    else
+      p = minimum(P)
+      pi = uniformizer(p)
+      kp, hp = residue_field(order(p), p)
+      hpext = extend(hp, base_field(K))
+      alpha = h\(degree(k) == 1 ? one(k) : gen(k))
+      Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
+    end
+  end
+
+  for i in 1:maxlines
+    vain[] > stop_after && break
+    if algorithm == :orbit
+      w = LO[i]
+    elseif algorithm == :random
+      w = rand(LO)
+    else
+      w = next(LO)
+    end
+
+    if P != C
+      x = elem_type(K)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
+      LL = _neighbour(L, T, pih * matrix(k, 1, length(w), w) * G, K(pi) .* x, hext, P, C, true)
+      keep = callback(LL)
+      if !keep
+        vain[] += 1
+        continue
+      end
+      vain[] = Int(0)
+      @vprintln :GenRep 1 "Keep an isometry class"
+      invLL = invariants(LL)
+      if haskey(inv_dict, invLL)
+        push!(inv_dict[invLL], LL)
+      else
+        inv_dict[invLL] = typeof(LL)[LL]
+      end
+      push!(result, LL)
+
+      if use_mass
+        s = automorphism_group_order(LL)
+        sub!(__mass, __mass, 1//s)
+        is_zero(__mass) && return result
+      end
+
+      length(result) == max && return result
+    elseif special
       Gw = G * matrix(k, length(w), 1, w)
       ok = 0
       for d in 1:n
@@ -252,33 +310,31 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       end
       nrm = _inner_product(form, x, x, a)
       LL = _neighbour(L, T, matrix(k, 1, length(w), w) * G, x, hext, P, P, false)
-      keep, cont = callback(result, LL)
-      if keep
-        @assert is_modular(LL, P)[1]
-        push!(result, LL)
+      keep = callback(LL)
+      if !keep
+        vain[] += 1
+        continue
       end
-      if !cont || length(result) >= max
-        break
+      vain[] = Int(0)
+      @vprintln :GenRep 1 "Keep an isometry class"
+      invLL = invariants(LL)
+      if haskey(inv_dict, invLL)
+        push!(inv_dict[invLL], LL)
+      else
+        inv_dict[invLL] = typeof(LL)[LL]
       end
-    end
-  else
-    _G = T * form * _map(transpose(T), a)
-    G = map_entries(hext, _G)
-    ram = is_ramified(R, minimum(P))
-    if ram
-      pi = uniformizer(P)
-      S = [ h\x for x in k ]
+      push!(result, LL)
+
+      if use_mass
+        s = automorphism_group_order(LL)
+        sub!(__mass, __mass, 1//s)
+        is_zero(__mass) && return result
+      end
+
+      length(result) == max && return result
     else
-      p = minimum(P)
-      pi = uniformizer(p)
-      kp, hp = residue_field(order(p), p)
-      hpext = extend(hp, base_field(K))
-      alpha = h\(degree(k) == 1 ? one(k) : gen(k))
-      Tram = matrix(kp, 2, 1, [2, hp(tr(alpha))])
-    end
-    for w::Vector{FqFieldElem} in LO
-      __w = [ (hext\w[i]) for i in 1:n]
-      x = [ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
+      __w = elem_type(K)[ (hext\w[i]) for i in 1:n]
+      x = elem_type(K)[ sum(T[i, j] * (__w[i]) for i in 1:n if !iszero(w[i])) for j in 1:ncols(T)]
       nrm = _inner_product(form, x, x, a)
       @assert is_integral(nrm)
       if !(nrm in P)
@@ -295,23 +351,37 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
       @assert ok != 0
       if !ram
         el = order(p)(base_field(K)(nrm)//pi)
-        b, s, V = can_solve_with_solution_and_kernel(Tram, matrix(kp, 1, 1, [hp(-el)]), side = :left)
+        b, s, V = can_solve_with_solution_and_kernel(Tram, matrix(kp, 1, 1, [hp(-el)]); side=:left)
         @assert b
         @assert s * Tram == matrix(kp, 1, 1, [hp(-el)])
-        _kernel = [ matrix(kp, 1, 2, v) for v in _all_row_span(V)]
+        _kernel = FqMatrix[ matrix(kp, 1, 2, v) for v in _all_row_span(V)]
         l = a(hext\(inv(wG[ok])))
         S = elem_type(K)[ l * K((hpext\((s + v)[1])) + K(hpext\(s + v)[2])*alpha) for v in _kernel ]
       end
       for s in S
         LL = _neighbour(L, T, wG, elem_type(K)[x[o] + K(elem_in_nf(pi))*s*T[ok, o] for o in 1:ncols(T)], hext, P, P, false)
-        keep, cont = callback(result, LL)
-        if keep
-          @assert is_modular(LL, P)[1]
-          push!(result, LL)
+        keep = callback(LL)
+        if !keep
+          vain[] += 1
+          continue
         end
-        if !cont || (length(result) >= max)
-          break
+        vain[] = Int(0)
+        @vprintln :GenRep 1 "Keep an isometry class"
+        invLL = invariants(LL)
+        if haskey(inv_dict, invLL)
+          push!(inv_dict[invLL], LL)
+        else
+          inv_dict[invLL] = typeof(LL)[LL]
         end
+        push!(result, LL)
+
+        if use_mass
+          s = automorphism_group_order(LL)
+          sub!(__mass, __mass, 1//s)
+          is_zero(__mass) && return result
+        end
+
+        length(result) == max && return result
       end
     end
   end
@@ -319,103 +389,26 @@ function _neighbours(L, P, result, max, callback = eqcallback, use_auto = true)
 end
 
 @doc raw"""
-    neighbours(L::HermLat, P::RelNumFieldOrderIdeal, max = inf) -> Vector{HermLat}
-
-Return the immediate `P`-neighbours of `L`. At most `max` neighbours are returned.
-
-If `L` is definite, this function uses by default the automorphism group of `L`. If
-`L` is indefinite, the use of the automorphism group is automatically disabled.
-"""
-function neighbours(L::HermLat, P, max = inf)
-  @req order(P) == base_ring(L) "Arguments are incompatible"
-  @req is_prime(P) "Second argument must be prime"
-  @req !is_ramified(order(P), minimum(P)) || !Hecke.is_dyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
-  @req is_modular(L, P)[1] "The lattice must be locally modular"
-  @req rank(L) >= 2 "The rank of the lattice must be at least 2"
-  @req Hecke.is_isotropic(L, P) "The lattice must be locally isotropic"
-
-  return _neighbours(L, P, [], max)
-end
-
-@doc raw"""
-    iterated_neighbours(L:HermLat, P::RelNumFieldOrderIdeal; use_auto = false, max = inf,
-				                   callback = eqcallback,
-						   missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
-                                                                            -> Vector{HermLat}
-
-Return a set of representatives of $N(L,P)$ (see [Kir16, Definition 5.2.6]). At most
-`max` representatives are returned.
-
-The use of the automorphism group of `L` is disabled by default. If `use_auto` is set on
-`true`, the function uses the automorphism group in the definite case; in the indefinite
-case, this keyword has no effect.
-If `callback == false`, it uses `stdcallback` in the case where `L` is definite, `eqcallback`
-otherwise. By default, the use of the mass is disabled.
-"""
-function iterated_neighbours(L::HermLat, P; use_auto = false, max = inf,
-                                            callback = false,
-                                            missing_mass = Ref{QQFieldElem}(zero(QQFieldElem)))
-  @req order(P) == base_ring(L) "Arguments are incompatible"
-  @req is_prime(P) "Second argument must be prime"
-  @req !is_ramified(order(P), minimum(P)) || !Hecke.is_dyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
-  @req is_modular(L, P)[1] "The lattice must be locally modular"
-  @req rank(L) >= 2 "The rank of the lattice must be at least 2"
-  @req Hecke.is_isotropic(L, P) "The lattice must be locally isotropic"
-
-  if callback == false && is_definite(L)
-    _callback = stdcallback
-  elseif callback == false && !is_definite(L)
-    _callback = eqcallback
-  else
-    _callback = callback
-  end
-
-  result = typeof(L)[ L ]
-
-  use_mass = !iszero(missing_mass[])
-
-  if use_mass
-    _mass = missing_mass[] - 1//automorphism_group_order(L)
-  end
-
-  i = 1
-  oldlength = length(result)
-  while length(result) < max && i <= length(result)
-    result = _neighbours(result[i], P, result, max, _callback, use_auto)
-    @assert all(_L -> is_modular(_L, P)[1], result)
-    no_lattices = length(result) - oldlength
-    oldlength = length(result)
-    if use_mass && no_lattices > 0
-      _mass = _mass - sum(QQFieldElem[1//automorphism_group_order(result[i]) for i in (length(result) - no_lattices + 1):length(result)])
-      if iszero(_mass)
-        break
-      end
-    end
-    if use_mass && _mass < 0
-      error("This should not happen")
-    end
-    i = i + 1
-  end
-  if use_mass
-    missing_mass[] = _mass
-  end
-  return result
-end
-
-@doc raw"""
-    neighbours_with_ppower(L::HermLat, P::RelNumFieldOrderIdeal, e::Integer)
-                                                                      -> Vector{HermLat}
+    neighbours_with_ppower(
+      L::HermLat,
+      P::RelNumFieldOrderIdeal,
+      e::Integer,
+    ) -> Vector{HermLat}
 
 Return a sequence of `P`-neighbours of length `e`, $L=L_1, L_2, \dots, L_e$ such that
 $L_{i-1} \neq L_{i+1}$ for $i = 2, \dots, e-1$ (see [Kir19, Algorithm 4.7.]).
 """
-function neighbours_with_ppower(L, P, e)
+function neighbours_with_ppower(
+    L::HermLat,
+    P::RelNumFieldOrderIdeal,
+    e::IntegerUnion,
+  )
   result = typeof(L)[]
   for i = 1:e
     if i == 1
-      L = neighbours(L, P, 1)[1]
+      L = only(neighbours(L, P, :exhaustive; max=1, use_mass=false))
     else
-      N = neighbours(L, P,  2)
+      N = neighbours(L, P, :exhaustive; max=2, use_mass=false)
       L = N[1] == result[end] ? N[2] : N[1]
     end
   push!(result, L)
@@ -437,7 +430,10 @@ consisting of s-invariant ideals. C_0 is generated by the ramified
 primes in E, and the representatives in the class group of K.
 We denote by s the generator of Gal(E/K)
 """
-function _class_group_modulo_invariant_classes(EabstoE, R)
+function _class_group_modulo_invariant_classes(
+    EabstoE::NumFieldHom,
+    R::NumFieldOrder,
+  )
   D = different(R)
   Eabs = domain(EabstoE)
   Rabs = maximal_order(Eabs)
@@ -457,18 +453,19 @@ function _class_group_modulo_invariant_classes(EabstoE, R)
 end
 
 @doc raw"""
-    genus_generators(L::HermLat) -> Vector{Tuple{RelNumFieldOrderIdeal, ZZRingElem}}, Bool,
-                                    RelNumFieldOrderIdeal
+    genus_generators(
+      L::HermLat,
+    ) -> Vector{Tuple{RelNumFieldOrderIdeal, ZZRingElem}}, Bool, RelNumFieldOrderIdeal
 
-Given a hermitian lattice `L`, return `gens, def, P0` such that:
+Given a hermitian lattice ``L``, return `gens, def, P0` where:
 
-- `gens` is a vector of tuples $(P,e)$ consisting of a prime ideal `P` in the base ring of `L`
-  and an integer $e \geq 2$ which can be used to compute the ideal $\mathfrak A$ in line 11
-  of [Kir19, Algorithm 4.7.]);
-- `def` is `true` if `L` is definite, else `false`;
-- `P0` is a prime ideal in the base ring of `L` which is not bad, such that
-  `L` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the primes
-  satisfying these properties.
+- `gens` is a vector of tuples $(P,e)$ consisting of a prime ideal `P` in the
+  base ring of ``L`` and an integer $e \geq 2$ which can be used to compute the
+  ideal $\mathfrak A$ in line 11 of [Kir19, Algorithm 4.7.]);
+- `def` is `true` if ``L`` is definite, else `false`;
+- `P0` is a prime ideal in the base ring of ``L`` which is not bad, such that
+  ``L`` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the
+  primes satisfying these properties.
 """
 function genus_generators(L::HermLat)
   R = base_ring(L)
@@ -654,20 +651,354 @@ function genus_generators(L::HermLat)
 end
 
 @doc raw"""
-    genus_representatives(L::HermLat; max = inf, use_auto = true,
-                                                 use_mass = false)
-                                                          -> Vector{HermLat}
+   spinor_genera_in_genus(
+     L::HermLat;
+     max::IntExt=inf,
+   ) -> Vector{HermLat}, RelNumFieldOrderIdeal
+
+Given a hermitian lattice ``L``, return a complete list of representatives
+for the spinor genera in the genus of ``L`` together with a good prime
+ideal `P0` for the neighbours method. Namely `P0` is not a bad prime
+for ``L``, the lattice ``L`` is isotropic at `minimum(P0)`, `P0` has
+minimal norm with these properties, and neighbours construction at `P0`
+preserve spinor genera.
+"""
+function spinor_genera_in_genus(
+    L::HermLat;
+    max::IntExt=inf,
+  )
+  @req rank(L) >= 2 "Lattice must have rank >= 2"
+  s = denominator(scale(L))
+  L = rescale(L, s)
+  R = base_ring(L)
+  gens, def, P0 = genus_generators(L)
+  a = involution(L)
+  res = typeof(L)[ L ]
+  if max == 1
+    return res
+  end
+  for g in gens
+    if def && g[1] == P0
+      continue
+    end
+    I = g[1]^Int(g[2] - 1)
+    J = inv(a(I))
+    N = neighbours_with_ppower(L, g[1], g[2] - 1)
+    inter = typeof(L)[]
+    for i in 2:length(res)
+      M = pseudo_matrix(res[i])
+      IM = _module_scale_ideal(I,M)
+      JM = _module_scale_ideal(J,M)
+      inter = append!(inter, lattice(ambient_space(L), _intersect_modules(_sum_modules(IM, pseudo_matrix(x)), JM)) for x in N)
+    end
+    res = vcat(res, N, inter)
+  end
+  @assert length(res) == prod(Int[g[2] for g in gens if !def || g[1] != P0])
+  @assert all(X -> genus(X) == genus(L), res)
+
+  n = min(max, length(res))
+  return typeof(L)[rescale(res[i], 1//s) for i in 1:n], P0
+end
+
+function _short_vectors_trace_form(L::HermLat)
+  LZ = restrict_scalars(L, QQ, one(base_field(L)))
+  n = minimum(LZ)
+  k = kissing_number(LZ)
+  return n, k
+end
+
+function default_invariant_function(L::HermLat)
+  s = automorphism_group_order(L)
+  n, k = _short_vectors_trace_form(L)
+  return (s, n, k)
+end
+
+@doc raw"""
+    enumerate_definite_genus(known::Vector{HermLat}, algorithm::Symbol = :default) -> Vector{HermLat}, QQFieldElem
+    enumerate_definite_genus(L::HermLat, algorithm::Symbol = :default) -> Vector{HermLat}
+    enumerate_definite_genus(G::HermGenus, algorithm::Symbol = :default) -> Vector{HermLat}
+
+Enumerate lattices in a given genus of definite hermitian lattices of rank at
+least `2`, using Kneser's neighbour algorithm.
+
+The output consists of a list of lattices representing the isometry classes
+in the given genus.
+
+For the first argument, one can choose to give directly a genus symbol ``G`` or
+a lattice ``L`` in ``G``. Otherwise, one can give a list of known lattices
+``G`` to continue an incomplete enumeration (in which case the lattices are
+assumed to be in the same spinor genus).
+
+The second argument gives the choice to which algorithm to use for the
+enumeration. We currently support three algorithms:
+- `:exhaustive` which enumerates all isotropic lines in the neighbour
+  algorithm;
+- `:orbit` which computes orbits of isotropic lines before constructing
+  neighbours.
+- `:random` which finds new isometry classes by constructing neighbours from
+  random isotropic lines;
+If `algorithm = :default`, the function chooses the most appropriate algorithm
+depending on some invariants of the genus to be enumerated, and on the value
+of the keyword argument `use_auto`.
+* If `use_auto = true` and there are less than 900000 (default) lines to
+  enumerate in the neighbour algorithm, then `algorithm` is set to `:orbit`;
+* If `use_auto = false` and there are less than 50000 (default) libes to
+  enumerate in the neighbour algorithm, then `algorithm` is set to
+  `:exhaustive`;
+* In all the other cases, `algorithm` is set to `:random`.
+The number of lines to enumerate is decided via the choice of a prime ideal
+of small norm for Kneser algorithm of neighbours, and the choice of this prime
+ideal depends on the invariants of the genus to enumerate.
+
+There are other possible extra optional arguments:
+- `rand_neigh::Int` (default = `75`) -> for random enumeration, how many
+  random neighbours are computed at each iteration;
+- `invariant_function::Function` (default = `default_invariant_function`) -> a
+  function to compute isometry invariants in order to avoid unnecessary isometry
+  tests;
+- `use_mass::Bool` (default = `true`) -> whether to use the mass formula as
+  termination condition;
+- `stop_after::IntExt` (default = `inf`) -> the algorithm stops after the
+  specified amount of vain iterations without finding a new isometry class
+  is reached;
+- `max::IntExt` (default = `inf`) -> the algorithm stops after finding `max`
+  new isometry classes.
+
+In the case where one gives a list of `known` lattices in input, the output
+list contains a copy of `known` together with any new lattice computed. The
+extra output of the function is a rational number giving the portion of the
+mass of the (spinor) genus which is missing. It is set to be `0` whenever the
+mass is not used (`use_mass = false`).
+Moreover, there are two other possible extra optional arguments:
+- `distinct::Bool` (default = `false`) -> whether the lattices in `known` are
+  known to be pairwise non-isometric;
+- `missing_mass::QQFieldElem` (default = `nothing`) -> if `use_mass` and
+  `distinct` are true, and the partial mass of `known` is known, gives what is
+  the part of the mass which is missing;
+If `distinct == false`, the function first compares all the lattices in `known`
+to only keep one representative for each isometry class represented.
+
+The `default_invariant_function` currently computes:
+- the absolute length of a shortest vector in the trace form of the given
+  lattice;
+- the kissing number of the trace form of the given lattice, which is
+  proportional to the number of vectors of shortest length;
+- the order of the isometry group of the given lattice.
+"""
+enumerate_definite_genus(::Union{HermLat, HermGenus, Vector{HermLat}}, ::Symbol)
+
+function enumerate_definite_genus(
+    known::Vector{T},
+    P::Union{RelNumFieldOrderIdeal, Nothing} = nothing,
+    algorithm::Symbol = :default;
+    rand_neigh::Int=75,
+    distinct::Bool=false,
+    invariant_function::Function=default_invariant_function,
+    use_auto::Bool=true,
+    use_mass::Bool=true,
+    missing_mass::Union{QQFieldElem, Nothing}=nothing,
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+  ) where T <: HermLat
+  @req !isempty(known) "Should know at least one lattice in the genus"
+  @req all(LL -> genus(LL) == genus(known[1]), known) "Known lattices must be in the same genus"
+  if algorithm != :default
+    @req algorithm == :orbit || algorithm == :random || algorithm == :exhaustive "Only :exhaustive, :random and :orbit algorithms are currently implemented"
+  end
+  @req order(P) === base_ring(known[1]) "Arguments are incompatible"
+  @req is_prime(P) "Second argument must be prime"
+  @req !is_ramified(order(P), minimum(P)) || !Hecke.is_dyadic(minimum(P)) "Second argument cannot be a ramified prime over 2"
+  @req is_modular(known[1], P)[1] "The lattices must be locally modular at P"
+  @req rank(known[1]) >= 2 "The rank of the lattices must be at least 2"
+  @req Hecke.is_isotropic(known[1], P) "The lattices must be locally isotropic at P"
+
+  @req !is_finite(max) || max > 0 "max must be infinite or positive"
+
+  if isnothing(P)
+    _, P, _ = smallest_neighbour_prime(known[1])
+  end
+  res = copy(known)
+  !distinct && _unique_iso_class!(res)
+
+  L, itk = Iterators.peel(res)
+  inv_lat = invariant_function(L)
+  inv_dict = Dict{typeof(inv_lat), typeof(known)}(inv_lat => eltype(known)[L])
+  for N in itk
+    inv_lat = invariant_function(N)
+    if haskey(inv_dict, inv_lat)
+      push!(inv_dict[inv_lat], N)
+    else
+      inv_dict[inv_lat] = eltype(known)[N]
+    end
+  end
+
+  function invariants(M::HermLat)
+    for (I, Z) in inv_dict
+      M in Z && return I
+    end
+    return invariant_function(M)
+  end
+
+  callback = function(M::HermLat)
+    any(isequal(M), res) && return false
+    invM = invariants(M)
+    !haskey(inv_dict, invM) && return true
+    keep = all(N -> !is_isometric(N, M), inv_dict[invM])
+    return keep
+  end
+
+  if use_mass
+    _mass = mass(L)
+    if isnothing(missing_mass)
+      found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
+      _missing_mass = Ref{QQFieldElem}(_mass-found)
+    else
+      _missing_mass = Ref{QQFieldElem}(missing_mass)
+    end
+  else
+    _missing_mass = Ref{QQFieldElem}(-1)
+  end
+
+  r = rank(L)
+  q = absolute_norm(P)
+
+  if algorithm == :default
+    nlines = divexact(ZZ(q)^r-1, q-1)
+    if use_auto && nlines < 900000
+      algorithm = :orbit
+    elseif !use_auto && nlines <= 50000
+      algorithm = :exhaustive
+    else
+      algorithm = :random
+    end
+  end
+
+  count_new = Int(0)
+  i = Int(0)
+  while i != length(res) && count_new < max
+    i += 1
+    N = neighbours(
+                   res[i],
+                   P,
+                   algorithm;
+                   rand_neigh,
+                   callback,
+                   inv_dict,
+                   invariants,
+                   use_mass,
+                   missing_mass=_missing_mass,
+                   vain,
+                   stop_after,
+                   max
+                  )
+
+    if !is_empty(N)
+      for M in N
+        count_new += 1
+        push!(res, M)
+        if count_new >= max
+          return res, _missing_mass[]
+        end
+      end
+      use_mass && is_zero(_missing_mass[]) && break
+      if use_mass
+        @v_do :GenRep 2 perc = Float64(_missing_mass[]//_mass) * 100
+        @vprintln :GenRep 2 "Lattices : $(length(res)), Target mass: $(_mass), Missing $(_missing_mass[]) ($(perc)%)"
+      end
+    elseif vain[] > stop_after
+      break
+    end
+  end
+  return res, _missing_mass[]
+end
+
+function enumerate_definite_genus(
+    L::HermLat,
+    algorithm::Symbol = :default;
+    rand_neigh::Int=75,
+    invariant_function::Function=default_invariant_function,
+    use_auto::Bool=true,
+    use_mass::Bool=true,
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+  )
+  @req is_definite(L) "Lattice must be definite"
+  edg = typeof(L)[]
+  sc = denominator(scale(L))
+  _L = rescale(L, sc)
+
+  spinor_genera, P0 = spinor_genera_in_genus(_L)
+
+  for M in spinor_genera
+    vain = Ref{Int}(0)
+    if use_mass
+      missing_mass = mass(M)//length(spinor_genera)
+      s = automorphism_group_order(M)
+      sub!(missing_mass, missing_mass, 1//s)
+    else
+      @req 0 < stop_after < inf "Need to provide a finite positive value for stop_after if the mass is not used. Otherwise the algorithm may eventually never stops"
+      missing_mass = QQ(-1)
+    end
+    _edg = typeof(M)[M]
+    while vain[] <= stop_after && length(edg) + length(_edg) < max
+      use_mass && iszero(missing_mass) && break
+      _edg, missing_mass = enumerate_definite_genus(
+                                                    _edg,
+                                                    P0,
+                                                    algorithm;
+                                                    distinct=true,
+                                                    rand_neigh,
+                                                    invariant_function,
+                                                    use_auto,
+                                                    use_mass,
+                                                    missing_mass,
+                                                    vain,
+                                                    stop_after,
+                                                    max=max-length(edg)-length(_edg)
+                                                   )
+    end
+    append!(edg, _edg)
+    length(edg) >= max && break
+  end
+  sc != 1 && map!(L -> rescale(L, 1//sc), edg, edg)
+  return edg
+end
+
+function enumerate_definite_genus(
+    G::HermGenus,
+    algorithm::Symbol = :default;
+    rand_neigh::Int=75,
+    invariant_function::Function=default_invariant_function,
+    use_auto::Bool=true,
+    use_mass::Bool=true,
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+  )
+  L = representative(G)
+  isone(max) && return typeof(L)[L]
+  return enumerate_definite_genus(L, algorithm; rand_neigh, invariant_function, use_mass, stop_after, max)
+end
+
+@doc raw"""
+    genus_representatives(L::HermLat) -> Vector{HermLat}
 
 Return representatives for the isometry classes in the genus of the hermitian
 lattice `L`. At most `max` representatives are returned.
 
-If `L` is definite, the use of the automorphism group of `L` is enabled by default.
-It can be disabled by `use_auto = false`. In the case where `L` is indefinite, the entry
-`use_auto` has no effect. The computation of the mass can be enabled by `use_mass = true`.
+If `L` is definite, the use of the automorphism group of `L` and of the mass
+formula are enabled by default. For more flexibility on these two points,
+one may call the function `enumerate_definite_genus` instead.
 """
-function genus_representatives(L::HermLat; max=inf, use_auto::Bool = true,
-                                                    use_mass::Bool = false)
-  if rank(L) == 1
+function genus_representatives(
+    L::HermLat;
+    max::IntExt=inf,
+    use_auto::Bool=true,
+    use_mass::Bool=true,
+  )
+  if rank(L) == 0 || max == 1
+    return typeof(L)[L]
+  elseif rank(L) == 1
     # According to Proposition 2.9 of "Prime order isometries of
     # unimodular lattices and automorphisms of IHS manifolds" by
     # S. Brandhorst Al. Cattaneo, the set of isometry classes in
@@ -694,61 +1025,16 @@ function genus_representatives(L::HermLat; max=inf, use_auto::Bool = true,
     CmodC0 = Hecke.ideal_type(R)[EabstoE(I) for I in q00.(collect(Q0))]
     s = involution(L)
     JmodJ0 = Hecke.fractional_ideal_type(R)[I*inv(s(I)) for I in CmodC0]
-    return typeof(L)[I*L for I in JmodJ0]
+    n = min(max, length(JmodJ0))
+    return typeof(L)[JmodJ0[i]*L for i in 1:n]
   end
 
-  @req rank(L) >= 2 "Lattice must have rank >= 2"
-  s = denominator(scale(L))
-  L = rescale(L, s)
-  R = base_ring(L)
-  gens, def, P0 = genus_generators(L)
-  a = involution(L)
-  LL = typeof(L)[ L ]
-  for g in gens
-    if def && g[1] == P0
-      continue
-    end
-    I = g[1]^Int(g[2] - 1)
-    J = inv(a(I))
-    N = neighbours_with_ppower(L, g[1], g[2] - 1)
-    inter = typeof(L)[]
-    for i in 2:length(LL)
-      M = pseudo_matrix(LL[i])
-      IM = _module_scale_ideal(I,M)
-      JM = _module_scale_ideal(J,M)
-      inter = append!(inter, lattice(ambient_space(L), _intersect_modules(_sum_modules(IM, pseudo_matrix(x)), JM)) for x in N)
-    end
-    LL = vcat(LL, N, inter)
-  end
-  @assert length(LL) == prod(Int[g[2] for g in gens if !def || g[1] != P0])
-  @assert all(X -> genus(X) == genus(L), LL)
-
-  if use_mass
-    mass = Hecke.mass(L)
+  if is_definite(L)
+    res = enumerate_definite_genus(L; use_auto, max, use_mass)
   else
-    mass = zero(QQFieldElem)
+    res, _ = spinor_genera_in_genus(L; max)
   end
-
-  missing_mass = Ref(mass)
-
-  local result::Vector{typeof(L)}
-
-  if def
-    result = typeof(L)[]
-    for L in LL
-      neig = iterated_neighbours(L, P0, max = max, use_auto = use_auto, missing_mass = missing_mass)
-      append!(result, neig)
-      max = max - length(result)
-    end
-  else
-    result = LL
-  end
-
-  if use_mass
-    @assert is_zero(missing_mass)
-  end
-
-  return typeof(L)[rescale(LL, 1//s) for LL in result]
+  return res
 end
 
 @doc raw"""
