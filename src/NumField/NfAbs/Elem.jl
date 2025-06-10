@@ -252,9 +252,11 @@ function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
   elseif degree(f) > 10 || degree(K) > 10 # TODO: find a good cross-over,
                          # do this using CRT modular?
     ff = f * inv(leading_coefficient(f)) #make monic
-    P = polynomial_to_power_sums(ff, degree(ff)*degree(K))
+    n, fff = remove(ff, gen(parent(ff)))
+    P = polynomial_to_power_sums(fff, degree(fff)*degree(K))
     PQ = QQFieldElem[tr(x) for x in P]
     N = power_sums_to_polynomial(PQ)*norm(leading_coefficient(f))
+    (n > 0) && (N = shift_left(N, n*degree(K)))
   else
     Qx = polynomial_ring(QQ, "x", cached = false)[1]
     Qxy = polynomial_ring(Qx, "y", cached = false)[1]
