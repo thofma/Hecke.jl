@@ -310,7 +310,7 @@ end
 
 Given a definite hermitian lattice `L`, return the mass of its genus.
 """
-function mass(L::HermLat)
+@attr QQFieldElem function mass(L::HermLat)
   @req is_definite(L) "Lattice must be definite"
   m = rank(L)
   if m == 0
