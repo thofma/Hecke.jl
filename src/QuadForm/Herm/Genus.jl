@@ -1820,7 +1820,7 @@ end
       rank::Int,
       signatures::Dict{InfPlc, Int},
       determinant::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal};
-      min_scale::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}=denominator(determinant)*order(determinant),
+      min_scale::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}=inv(denominator(determinant)*order(determinant)),
       max_scale::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}=numerator(determinant),
     ) -> Vector{HermGenus}
 
@@ -1833,7 +1833,7 @@ function hermitian_genera(
     rank::Int,
     signatures::Dict{<: InfPlc, Int},
     determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal};
-    min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=denominator(determinant)*order(determinant),
+    min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=inv(denominator(determinant)*order(determinant)),
     max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=numerator(determinant),
   )
   @req rank >= 0 "Rank must be a non-negative integer"
