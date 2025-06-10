@@ -1782,16 +1782,3 @@ function prime_ideals_up_to(O::RelNumFieldOrder, n::Union{Int, ZZRingElem})
   end
   return sort!(z, by = a -> absolute_norm(a))
 end
-
-###############################################################################
-#
-#  Tautological
-#
-###############################################################################
-
-# Numerator and denominator for functions where ideals and fractional ideals
-# could be both used
-
-numerator(I::RelNumFieldOrderIdeal) = I::RelNumFieldOrderIdeal
-
-denominator(I::RelNumFieldOrderIdeal) = ZZ(1)::ZZRingElem
