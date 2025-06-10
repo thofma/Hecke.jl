@@ -2564,3 +2564,16 @@ function _squarefree_ideals_with_bounded_norm(O::AbsNumFieldOrder, bound::ZZRing
   end
   return _squarefree_ideals_with_bounded_norm(O, lp, bound)
 end
+
+###############################################################################
+#
+#  Tautological
+#
+###############################################################################
+
+# Numerator and denominator for functions where ideals and fractional ideals
+# could be both used
+
+numerator(I::AbsNumFieldOrderIdeal) = I::AbsNumFieldOrderIdeal
+
+denominator(I::AbsNumFieldOrderIdeal) = ZZ(1)::ZZRingElem
