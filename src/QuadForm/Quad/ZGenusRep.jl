@@ -76,11 +76,16 @@ function neighbour(L::ZZLat, v::QQMatrix, p::ZZRingElem)
 end
 
 @doc raw"""
-    make_admissible!(w::ZZMatrix, form::ZZMatrix, m::ZZRingElem, K::FinField) -> Nothing
+    make_admissible!(
+      w::ZZMatrix,
+      form::ZZMatrix,
+      m::ZZRingElem,
+      K::FinField,
+    ) -> Nothing
 
 Modify the coordinates of ``w`` by adding an element ``p*v`` of ``p*L0``
-such that the square of ``w + p*v`` with respect to `form` is divisible by ``m``,
-where ``(L0, b)`` is an even lattice with Gram matrix `form`.
+such that the square of ``w + p*v`` with respect to `form` is divisible by
+``m``, where ``(L0, b)`` is an even lattice with Gram matrix `form`.
 
 The even lattice ``(L0, b)`` is the even sublattice of the original integral
 lattice ``(L, b)`` from the neighbour algorithm.
@@ -93,8 +98,8 @@ Input:
   - An integer ``m`` which is either:
       * ``2*p^2`` if ``L = L0`` or ``p=2``;
       * ``p^2`` if ``L != L0`` and ``p`` odd.
-  - A vector ``w`` in ``L0`` not lying in ``p*L0`` such that ``b(w, w)`` is divisible
-    by ``m/p`` but not by ``m``.
+  - A vector ``w`` in ``L0`` not lying in ``p*L0`` such that ``b(w, w)`` is
+    divisible by ``m/p`` but not by ``m``.
 
 Output:
   - Nothing, but ``w`` has been modified by a vector in ``p*L0`` so that
@@ -104,18 +109,24 @@ The existence of ``v`` in ``L0`` such that ``w + p*v`` has square divisible by
 ``m`` is ensured by the conditions on ``w``.
 (see [SP91, Chapter 1, conditions (i) & (vii)])
 
-In the case ``p == 2``, such a vector ``v`` exists only if the prime dual lattice
-``L_{w, 2} != L0``. In such a case, ``b(w, w)`` is divisible by 4 but not by 8,
-and there exists ``v' \in L0`` such that ``b(v', w)`` is odd: one finds such a
-``v'`` by solving ``x+y*b(w, v') == 0 mod 2`` in ``(x, y)``. The vector
-``v = w + 2*v'`` satisfies the requirement to be admissible.
+In the case ``p == 2``, such a vector ``v`` exists only if the prime dual
+lattice ``L_{w, 2} != L0``. In such a case, ``b(w, w)`` is divisible by 4 but
+not by 8, and there exists ``v' \in L0`` such that ``b(v', w)`` is odd: one
+finds such a ``v'`` by solving ``x+y*b(w, v') == 0 mod 2`` in ``(x, y)``. The
+vector ``v = w + 2*v'`` satisfies the requirement to be admissible.
 
 In the case ``p`` odd, given that ``p`` was chosen to be Kneser and that
 ``L0_{w, p} != L0``, there exists a solution ``v'`` to the equation
 ``x + 2*y*b(w, v') == 0 mod p``. The vector ``v = w + p*v'`` satisfies the
 requirement to be admissible.
 """
-function make_admissible!(w::QQMatrix, form::QQMatrix, m::ZZRingElem, K::FinField, _a::ZZRingElem)
+function make_admissible!(
+    w::QQMatrix,
+    form::QQMatrix,
+    m::ZZRingElem,
+    K::FinField,
+    _a::ZZRingElem,
+  )
   p = characteristic(K)
   # We prepare the good system to solve depending on the parity of p
   if p != 2
@@ -151,18 +162,22 @@ end
 ################################################################################
 
 @doc raw"""
-    neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
-                                        rand_neigh::Int = 10,
-                                        callback::Function,
-                                        inv_dict::Dict,
-                                        _invariants::Function,
-                                        save_partial::Bool = false,
-                                        save_path::Union{Nothing, String} = nothing,
-                                        use_mass::Bool = true,
-                                        missing_mass::Base.RefValue{QQFieldElem},
-                                        vain::Base.RefValue{Int} = Ref{Int}(0),
-                                        stop_after::IntExt = inf,
-                                        max::IntExt = inf) -> Vector{ZZLat}
+    neighbours(
+      L::ZZLat,
+      p::ZZRingElem,
+      algorithm::Symbol = :orbit;
+      rand_neigh::Int=10,
+      callback::Function=(M -> M != L),
+      inv_dict::Dict=Dict(),
+      _invariants::Function=(M -> []),
+      save_partial::Bool=false,
+      save_path::Union{Nothing, String}=nothing,
+      use_mass::Bool=true,
+      missing_mass::Base.RefValue{QQFieldElem}=Ref{QQFieldElem}(-1),
+      vain::Base.RefValue{Int}=Ref{Int}(0),
+      stop_after::IntExt=inf,
+      max::IntExt=inf,
+    ) -> Vector{ZZLat}
 
 Return a list of $p$-neighbours of the integral lattice ``L``.
 
@@ -180,33 +195,39 @@ Input:
  - A dictionary of isometry invariants `inv_dict` to make `callback` faster;
  - A function `_invariants` that computes the invariants of any new neighbour,
    and stores them in `inv_dict`;
- - A boolean `save_partial` telling whether to save partial results on the machine;
- - A string `save_path` telling where to store the lattice in case `save_partial` is
-   `true`.
- - A boolean `use_mass` telling whether to use the mass of the genus of ``L`` for
-   the termination of the algorithm;
+ - A boolean `save_partial` telling whether to save partial results on the
+   machine;
+ - A string `save_path` telling where to store the lattice in case
+   `save_partial` is `true`.
+ - A boolean `use_mass` telling whether to use the mass of the genus of ``L``
+   for the termination of the algorithm;
  - A rational number `missing_mass` telling what proportion of the mass has not
    been computed yet in the outer scope (if `use_masss == true`);
  - An integer `vain` refering the number of vain iteration, i.e. how many new
-   neighbours did not give rise to a non-explored isometry class in the neighbour
-   graph;
- - A value `stop_after` telling after how many vain iterations the algorithm should
-   stop;
- - A value `max` telling the maximum number of representatives of isometry classes
-   in the genus of ``L`` to compute in the outer scope before stopping the enumeration.
+   neighbours did not give rise to a non-explored isometry class in the
+   neighbour graph;
+ - A value `stop_after` telling after how many vain iterations the algorithm
+   should stop;
+ - A value `max` telling the maximum number of representatives of isometry
+   classes in the genus of ``L`` to compute in the outer scope before stopping
+   the enumeration.
 """
-function neighbours(L::ZZLat, p::ZZRingElem, algorithm::Symbol = :orbit;
-                                             rand_neigh::Int = 10,
-                                             callback::Function = (M -> M != L),
-                                             inv_dict::Dict = Dict(),
-                                             _invariants::Function = M -> [],
-                                             save_partial::Bool = false,
-                                             save_path::Union{Nothing, String} = nothing,
-                                             use_mass::Bool = true,
-                                             missing_mass::Base.RefValue{QQFieldElem} = Ref{QQFieldElem}(-1),
-                                             vain::Base.RefValue{Int} = Ref{Int}(0),
-                                             stop_after::IntExt = inf,
-                                             max::IntExt = inf)
+function neighbours(
+    L::ZZLat,
+    p::ZZRingElem,
+    algorithm::Symbol = :orbit;
+    rand_neigh::Int=10,
+    callback::Function=(M -> M != L),
+    inv_dict::Dict=Dict(),
+    _invariants::Function=(M -> []),
+    save_partial::Bool=false,
+    save_path::Union{Nothing, String}=nothing,
+    use_mass::Bool=true,
+    missing_mass::Base.RefValue{QQFieldElem}=Ref{QQFieldElem}(-1),
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+  )
   @assert !save_partial || !isnothing(save_path)
   bad = is_divisible_by(numerator(det(L)), p)
   even = is_even(L)
@@ -396,7 +417,9 @@ end
 ###############################################################################
 
 @doc raw"""
-    _unique_iso_class!(A::Vector{ZZLat}) -> Nothing
+    _unique_iso_class!(
+      A::Vector{T},
+    ) where T <: Union{ZZLat, HermLat} -> Nothing
 
 Reorder and resize ``A`` to keep only one representative for each isometry
 class represented by the lattices in ``A``.
@@ -404,7 +427,7 @@ class represented by the lattices in ``A``.
 Similar to the function `unique` where we change the equality test to an
 isometry test.
 """
-function _unique_iso_class!(A::Vector{ZZLat})
+function _unique_iso_class!(A::Vector{T}) where T <: Union{ZZLat, HermLat}
   isempty(A) && return A
   idxs = eachindex(A)
 
@@ -548,42 +571,59 @@ a lattice ``L`` in ``G``. Otherwise, one can give a list of known lattices
 ``G`` to continue an incomplete enumeration (in which case the lattices are
 assumed to be in the same spinor genus).
 
-The second argument gives the choice to which algorithm to use for the enumeration.
-We currently support two algorithms:
-- `:random` which finds new isometry classes by constructing neighbours from random isotropic lines;
-- `:orbit` which computes orbits of isotropic lines before constructing neighbours.
+The second argument gives the choice to which algorithm to use for the
+enumeration. We currently support two algorithms:
+- `:random` which finds new isometry classes by constructing neighbours from
+  random isotropic lines;
+- `:orbit` which computes orbits of isotropic lines before constructing
+  neighbours.
 If `algorithm = :default`, the function chooses the most appropriate algorithm
 depending on the rank and determinant of the genus to be enumerated.
 
 There are possible extra optional arguments:
-- `rand_neigh::Int` (default = `10`) -> for random enumeration, how many random neighbours are computed at each iteration;
-- `invariant_function::Function` (default = `default_invariant_function`) -> a function to compute isometry invariants in order to avoid unnecessary isometry tests;
-- `save_partial::Bool` (default = `false`) -> whether one wants to save iteratively new isometry classes (for instance for large genera);
-- `save_path::String` (default = `nothing`) -> a path to a folder where to save new lattices in the case where `save_partial` is true;
-- `use_mass::Bool` (default = `true`) -> whether to use the mass formula as termination condition;
-- `stop_after::IntExt` (default = `inf`) -> the algorithm stops after the specified amount of vain iterations without finding a new isometry class is reached;
-- `max::IntExt` (default = `inf`) -> the algorithm stops after finding `max` new isometry classes.
+- `rand_neigh::Int` (default = `10`) -> for random enumeration, how many random
+  neighbours are computed at each iteration;
+- `invariant_function::Function` (default = `default_invariant_function`) -> a
+  function to compute isometry invariants in order to avoid unnecessary isometry
+  tests;
+- `save_partial::Bool` (default = `false`) -> whether one wants to save
+  iteratively new isometry classes (for instance for large genera);
+- `save_path::String` (default = `nothing`) -> a path to a folder where to save
+  new lattices in the case where `save_partial` is true;
+- `use_mass::Bool` (default = `true`) -> whether to use the mass formula as
+  termination condition;
+- `stop_after::IntExt` (default = `inf`) -> the algorithm stops after the
+  specified amount of vain iterations without finding a new isometry class
+  is reached;
+- `max::IntExt` (default = `inf`) -> the algorithm stops after finding `max`
+  new isometry classes.
 
-In the case where one gives a list of `known` lattices in input, the output list
-contains a copy of `known` together with any new lattice computed. The extra
-output of the function is a rational number giving the portion of the mass of
-the (spinor) genus which is missing. It is set to be `0` whenever the mass is not
-used (`use_mass = false`).
+In the case where one gives a list of `known` lattices in input, the output
+list contains a copy of `known` together with any new lattice computed. The
+extra output of the function is a rational number giving the portion of the
+mass of the (spinor) genus which is missing. It is set to be `0` whenever the
+mass is not used (`use_mass = false`).
 Moreover, there are two other possible extra optional arguments:
-- `distinct::Bool` (default = `false`) -> whether the lattices in `known` are known to be pairwise non-isometric;
-- `missing_mass::QQFieldElem` (default = `nothing`) -> if `use_mass` and `distinct` are true, and the partial mass of `known` is known, gives what is the part of the mass which is missing;
+- `distinct::Bool` (default = `false`) -> whether the lattices in `known` are
+  known to be pairwise non-isometric;
+- `missing_mass::QQFieldElem` (default = `nothing`) -> if `use_mass` and
+  `distinct` are true, and the partial mass of `known` is known, gives what is
+  the part of the mass which is missing;
 If `distinct == false`, the function first compares all the lattices in `known`
 to only keep one representative for each isometry class represented.
 
 If `save_partial == true`, the lattices are stored in a compact way in a `.txt`
 file. The storing only remembers the rank of a lattice, half of its Gram matrix
-(which is enough to reconstruct the lattice as a standalone object) and the order
-of the isometry group of the lattice if it has been computed.
+(which is enough to reconstruct the lattice as a standalone object) and the
+order of the isometry group of the lattice if it has been computed.
 
 The `default_invariant_function` currently computes:
-- the absolute length of a shortest vector in the given lattice (also known as [`minimum`](@ref));
-- an ordered list of tuples consisting of the decomposition of the root sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
-- the kissing number of the given lattice, which is proportional to the number of vectors of shortest length;
+- the absolute length of a shortest vector in the given lattice (also known as
+  [`minimum`](@ref));
+- an ordered list of tuples consisting of the decomposition of the root
+  sublattice of the given lattice (see [`root_lattice_recognition`](@ref));
+- the kissing number of the given lattice, which is proportional to the number
+  of vectors of shortest length;
 - the order of the isometry group of the given lattice.
 """
 enumerate_definite_genus(::Union{ZZLat, ZZGenus, Vector{ZZLat}}, ::Symbol)
@@ -591,16 +631,16 @@ enumerate_definite_genus(::Union{ZZLat, ZZGenus, Vector{ZZLat}}, ::Symbol)
 function enumerate_definite_genus(
     known::Vector{ZZLat},
     algorithm::Symbol = :default;
-    rand_neigh::Int = 10,
-    distinct::Bool = false,
-    invariant_function::Function = default_invariant_function,
-    save_partial::Bool = false,
-    save_path::Union{String, Nothing} = nothing,
-    use_mass::Bool = true,
-    _missing_mass::Union{QQFieldElem, Nothing} = nothing,
-    vain::Base.RefValue{Int} = Ref{Int}(0),
-    stop_after::IntExt = inf,
-    max::IntExt = inf
+    rand_neigh::Int=10,
+    distinct::Bool=false,
+    invariant_function::Function=default_invariant_function,
+    save_partial::Bool=false,
+    save_path::Union{String, Nothing}=nothing,
+    use_mass::Bool=true,
+    _missing_mass::Union{QQFieldElem, Nothing}=nothing,
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
@@ -627,7 +667,7 @@ function enumerate_definite_genus(
   end
 
   function _invariants(M::ZZLat)
-    for (I, Z) in keys(inv_dict)
+    for (I, Z) in inv_dict
       M in Z && return I
     end
     return invariant_function(M)
@@ -666,15 +706,32 @@ function enumerate_definite_genus(
     end
   end
 
+  count_new = Int(0)
   i = Int(0)
   while i != length(res)
     i += 1
-    N = neighbours(res[i], p, algorithm; rand_neigh, callback, inv_dict, _invariants, use_mass, missing_mass, save_partial, save_path, vain, stop_after, max)
+    N = neighbours(
+                   res[i],
+                   p,
+                   algorithm;
+                   rand_neigh,
+                   callback,
+                   inv_dict,
+                   _invariants,
+                   use_mass,
+                   missing_mass,
+                   save_partial,
+                   save_path,
+                   vain,
+                   stop_after,
+                   max,
+                  )
 
     if !is_empty(N)
       for M in N
+        count_new += 1
         push!(res, M)
-        if length(res) >= max
+        if count_new >= max
           return res, missing_mass[]
         end
       end
@@ -744,13 +801,13 @@ end
 function enumerate_definite_genus(
     _L::ZZLat,
     algorithm::Symbol = :default;
-    rand_neigh::Int = 10,
-    invariant_function::Function = default_invariant_function,
-    save_partial::Bool = false,
-    save_path::Union{IO, String, Nothing} = nothing,
-    use_mass::Bool = true,
-    stop_after::IntExt = inf,
-    max::IntExt = inf
+    rand_neigh::Int=10,
+    invariant_function::Function=default_invariant_function,
+    save_partial::Bool=false,
+    save_path::Union{IO, String, Nothing}=nothing,
+    use_mass::Bool=true,
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
 
@@ -777,35 +834,27 @@ function enumerate_definite_genus(
       _missing_mass = mass(M)//length(spinor_genera)
       s = automorphism_group_order(M)
       sub!(_missing_mass, _missing_mass, 1//s)
-      if is_zero(_missing_mass)
-        push!(edg, M)
-        continue
-      end
     else
       @req 0 < stop_after < inf "Need to provide a finite positive value for stop_after if the mass is not used. Otherwise the algorithm may eventually never stops"
-      _missing_mass = QQ(0)
+      _missing_mass = QQ(-1)
     end
-    _edg, mm = enumerate_definite_genus(ZZLat[M], algorithm; rand_neigh,
-                                                             invariant_function,
-                                                             save_partial,
-                                                             save_path,
-                                                             use_mass,
-                                                             _missing_mass,
-                                                             vain,
-                                                             stop_after,
-                                                             max=max-length(edg))
+    _edg = ZZLat[M]
     while vain[] <= stop_after && length(edg) + length(_edg) < max
-      use_mass && is_zero(mm) && break
-      _edg, mm = enumerate_definite_genus(_edg, algorithm; distinct=true,
-                                                           rand_neigh,
-                                                           invariant_function,
-                                                           save_partial,
-                                                           save_path,
-                                                           use_mass,
-                                                           _missing_mass=mm,
-                                                           vain,
-                                                           stop_after,
-                                                           max=max-length(edg)-length(_edg))
+      use_mass && is_zero(_missing_mass) && break
+      _edg, _missing_mass = enumerate_definite_genus(
+                                                     _edg,
+                                                     algorithm;
+                                                     distinct=true,
+                                                     rand_neigh,
+                                                     invariant_function,
+                                                     save_partial,
+                                                     save_path,
+                                                     use_mass,
+                                                     _missing_mass,
+                                                     vain,
+                                                     stop_after,
+                                                     max=max-length(edg)-length(_edg),
+                                                    )
     end
     append!(edg, _edg)
     length(edg) >= max && return edg
@@ -817,23 +866,27 @@ end
 function enumerate_definite_genus(
     G::ZZGenus,
     algorithm::Symbol = :default;
-    rand_neigh::Int = 10,
-    invariant_function::Function = default_invariant_function,
-    save_partial::Bool = false,
-    save_path::Union{IO, String, Nothing} = nothing,
-    use_mass::Bool = true,
-    stop_after::IntExt = inf,
-    max::IntExt = inf
+    rand_neigh::Int=10,
+    invariant_function::Function=default_invariant_function,
+    save_partial::Bool=false,
+    save_path::Union{IO, String, Nothing}=nothing,
+    use_mass::Bool=true,
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
   )
   L = representative(G)
   max == 1 && return ZZLat[L]
-  return enumerate_definite_genus(L, algorithm; rand_neigh,
-                                                invariant_function,
-                                                save_partial,
-                                                save_path,
-                                                use_mass,
-                                                stop_after,
-                                                max)
+  return enumerate_definite_genus(
+                                  L,
+                                  algorithm;
+                                  rand_neigh,
+                                  invariant_function,
+                                  save_partial,
+                                  save_path,
+                                  use_mass,
+                                  stop_after,
+                                  max,
+                                 )
 end
 
 ###############################################################################
