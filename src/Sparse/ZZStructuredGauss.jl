@@ -13,6 +13,8 @@
 #TODO: don't deepcopy best_row?
 #TODO: set best_single_row to 0, same for best_col
 #TODO: is_light_col with 0 and 1 and inplace changes?
+#TODO: include update in add_scaled_row!
+#TODO: check why update after addition necessary in combination with deleting before adding
 #test
 
 #=
@@ -21,11 +23,11 @@ PROBLEMS:
 - maximum of PR.A greater as in SG.Y?
 =#
 
-AbstractAlgebra.add_verbosity_scope(:StructGauss)
-AbstractAlgebra.set_verbosity_level(:StructGauss, 1)
+add_verbosity_scope(:StructGauss)
+set_verbosity_level(:StructGauss, 1)
 
-AbstractAlgebra.add_assertion_scope(:StructGauss)
-AbstractAlgebra.set_assertion_level(:StructGauss, 1)
+add_assertion_scope(:StructGauss)
+set_assertion_level(:StructGauss, 1)
 
 #test
 mutable struct test_ZZStructGauss{T}
@@ -138,6 +140,7 @@ function part_echolonize!(A::SMat{T})::Tuple{data_ZZStructGauss{ZZRingElem}, tes
    turn_heavy(SG)
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
+  #@vprint :StructGauss best_single_row, SG.base, SG.dense_start
   push!(SG_test.best_row_idcs, SG.col_list_perm[best_single_row]) #test
   eliminate_and_update2!(best_single_row, SG, SG_test)
  end
@@ -170,7 +173,7 @@ function build_part_ref!(SG::data_ZZStructGauss)
     singleton_row_idx = SG.col_list_permi[singleton_row_origin]
     for jj in SG.A[singleton_row_idx].pos
      if SG.is_light_col[jj]
-      #@hassert :StructGauss singleton_row_origin in SG.col_list[jj]
+      @hassert :StructGauss singleton_row_origin in SG.col_list[jj]
       j_idx = searchsortedfirst(SG.col_list[jj], singleton_row_origin)
       deleteat!(SG.col_list[jj],j_idx)
       length(SG.col_list[jj]) == 1 && push!(queue_new, jj)
@@ -218,7 +221,7 @@ function find_best_single_row(SG::data_ZZStructGauss)::Int64
    best_len = single_row_len
    best_is_one = true
    best_val = single_row_val
-  elseif (is_one == best_is_one && single_row_len < best_len)
+  elseif (is_one == best_is_one && single_row_len < best_len) #TODO: first part unnecessary?
    best_single_row = i
    best_col = j_light
    best_len = single_row_len
@@ -309,12 +312,17 @@ function eliminate_and_update!(best_single_row::Int64, SG::data_ZZStructGauss, S
  row_idx = 0
  while length(best_col_idces) > 1
   row_idx = find_row_to_add_on(row_idx, best_row, best_col_idces, SG)
+  @v_do :StructGauss lw = deepcopy(SG.light_weight[row_idx]) #test
   #@hassert :StructGauss 1 best_col_idces == SG.col_list[best_col]
   @assert row_idx > 0
   #@hassert :StructGauss SG.col_list_perm[row_idx] in SG.col_list[best_col]
   L_row = SG.col_list_perm[row_idx]
   add_to_eliminate!(L_row, row_idx, best_row, best_col, best_val, SG) #TODO: isone query
+  @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
   update_after_addition!(L_row, row_idx, best_col, SG)
+  #@vprintln :StructGauss lw, SG.light_weight[row_idx]
+  @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
+  @hassert :StructGauss SG.light_weight[row_idx] == lw-1
   handle_new_light_weight2!(row_idx, SG) #all inplace
   #handle_new_light_weight!(row_idx, SG) #with Y
  end
@@ -331,6 +339,7 @@ function find_row_to_add_on(row_idx::Int64, best_row::SRow{T}, best_col_idces::V
  return row_idx
 end
 
+#TODO: only changes in lightcol for bestcol in row_idx
 function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best_col::Int64, best_val::ZZRingElem, SG::data_ZZStructGauss)::data_ZZStructGauss where T <: ZZRingElem
  #@hassert :StructGauss L_row in SG.col_list[best_col]
  #@hassert :StructGauss !(0 in SG.A[row_idx].values)
@@ -363,9 +372,8 @@ function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, S
   @assert c != best_col
   if SG.is_light_col[c]
     insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], L_row), L_row)
-    #row_idx == 100 && @show c
+    SG.light_weight[row_idx]+=1
   end
-  SG.is_light_col[c] && (SG.light_weight[row_idx]+=1)
  end
  return SG
 end
@@ -423,6 +431,7 @@ function find_light_entry(position_array::Vector{Int64}, is_light_col::Vector{Bo
  end
 end
 
+#TODO: push only non-empty rows into Y
 function move_into_Y(i::Int64, SG::data_ZZStructGauss)
  @assert i == SG.base
  push!(SG.Y, deepcopy(SG.A[SG.base]))
@@ -469,8 +478,8 @@ function compute_kernel(SG, kernel_basis::Bool)
   Hecke.update_light_cols!(SG)
   @assert SG.nlight >= 0
   KER = Hecke.collect_dense_cols!(SG)
-  D = dense_matrix2(SG, KER) #all inplace
-  #D = dense_matrix(SG, KER) #with Y
+  #D = dense_matrix2(SG, KER) #all inplace
+  D = dense_matrix(SG, KER) #with Y
   if kernel_basis
     _nullity, _dense_kernel = nullspace(D)
   else
@@ -678,32 +687,80 @@ end
 #functions for correct elimination:
 #function eliminate_and_update2!(best_single_row::Int64, SG::data_ZZStructGauss)::data_ZZStructGauss
 function eliminate_and_update2!(best_single_row::Int64, SG::data_ZZStructGauss, SG_test::test_ZZStructGauss)::Tuple{data_ZZStructGauss{ZZRingElem}, test_ZZStructGauss{ZZRingElem}} #test
+ L_best = deepcopy(SG.col_list_perm[best_single_row]) #test
+ best_row_pos = deepcopy(SG.A[best_single_row].pos) #test
  @assert !iszero(best_single_row)
+ #@vprint :StructGauss "limits: $(SG.base), $(SG.single_row_limit), $best_single_row"
  push!(SG_test.best_rows, SG.A[best_single_row]) #test
  light_idx = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
  best_col = SG.A[best_single_row].pos[light_idx]
+ @hassert :StructGauss !(best_col in SG_test.best_col_idcs)
  push!(SG_test.best_col_idcs, best_col) #test
- #@show best_col
  @assert length(SG.col_list[best_col]) > 1
- #best_val = deepcopy(SG.A[best_single_row, best_col])
- #@assert !iszero(best_val)
+ best_val = SG.A[best_single_row].values[light_idx] #test
+ @hassert :StructGauss !iszero(best_val)
  #best_col_idces = SG.col_list[best_col]
  row_idx = 0
+ len = length(SG.col_list[best_col]) #test
  while length(SG.col_list[best_col]) > 1
-  L_best_row = SG.col_list_perm[best_single_row]
+  #@show SG.col_list[best_col]
+  best_single_row = SG.col_list_permi[L_best]
+  @hassert :StructGauss SG.light_weight[best_single_row] == 1
   row_idx = find_row_to_add_on2(row_idx, best_single_row, best_col, SG)
-  #@hassert :StructGauss 1 best_col_idces == SG.col_list[best_col]
   @assert row_idx > 0
-  #@hassert :StructGauss SG.col_list_perm[row_idx] in SG.col_list[best_col]
+  @hassert :StructGauss L_best != SG.col_list_perm[row_idx]
   L_row = SG.col_list_perm[row_idx]
+  row_pos = deepcopy(SG.A[row_idx].pos) #test
+  L1 = deepcopy(L_row)
+  @v_do :StructGauss _light = deepcopy(SG.is_light_col)
+  @v_do :StructGauss lw = deepcopy(SG.light_weight[row_idx]) #test
+  _v = 0
+  for _i in SG.A[row_idx].pos
+    if SG.is_light_col[_i] 
+      _v+=1
+    end
+  end
+  #best_col == 42 && @show row_idx, SG.nlight
+  @hassert :StructGauss best_row_pos == SG.A[best_single_row].pos
+  @hassert :StructGauss best_single_row == SG.col_list_permi[L_best]
   add_to_eliminate2!(L_row, row_idx, best_single_row, best_col, SG) #TODO: isone query
-  update_after_addition!(L_row, row_idx, best_col, SG)
-  #@show row_idx, SG.col_list_perm[row_idx]
-  #row_idx == 100 && @show 1, SG.col_list_perm[row_idx], SG.light_weight[row_idx]
+  @hassert :StructGauss L_best != SG.col_list_perm[row_idx]
+  @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
+  #= TODO: alternative update
+  SG.light_weight[row_idx] -= 1
+  jj = searchsortedfirst(SG.col_list[best_col], L_row)
+  @hassert :StructGauss SG.col_list[best_col][jj] == L_row
+  deleteat!(SG.col_list[best_col], jj)
+  =#
+  #@show best_single_row, row_idx
+  best_row_pos != SG.A[best_single_row].pos && @vprintln :StructGauss "bestpos1 = $best_row_pos \n bestpos2 = $(SG.A.rows[best_single_row].pos) \n pos1 = $row_pos \n pos2 = $(SG.A.rows[row_idx].pos)"
+  @hassert :StructGauss best_row_pos == SG.A[best_single_row].pos #error, best row pos is union of row positions for best_row and row_idx
+  
+  update_after_addition2!(L_row, row_idx, best_col, SG)
+  @hassert :StructGauss L_best != SG.col_list_perm[row_idx]
+  @hassert :StructGauss best_single_row == SG.col_list_permi[L_best]
+  @hassert :StructGauss SG.is_light_col == _light
+  @hassert :StructGauss best_row_pos == SG.A[best_single_row].pos
+  #best_col == 42 && @show row_idx
+  _w = 0
+  for _i in SG.A[row_idx].pos
+    if SG.is_light_col[_i] 
+      _w+=1
+      @hassert :StructGauss !iszero(SG.A[row_idx, _i])
+    end
+  end
+  #@vprintln :StructGauss lw, _v, SG.light_weight[row_idx], _w
+  @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
+  @hassert :StructGauss SG.light_weight[row_idx] == lw-1
   handle_new_light_weight2!(row_idx, SG) #all inplace
+  #@vprintln :StructGauss row_idx, SG.col_list_permi[L_best]
   #handle_new_light_weight!(row_idx, SG) #with Y
+  #best_row_pos != SG.A[best_single_row].pos && @show best_col, best_row_pos, SG.A[best_single_row].pos
+  #@hassert :StructGauss best_row_pos == SG.A[best_single_row].pos
   #row_idx == 100 && @show 2, SG.col_list_perm[row_idx], SG.light_weight[row_idx]
-  best_single_row = SG.col_list_permi[L_best_row]
+  @hassert :StructGauss length(SG.col_list[best_col]) == len-1
+  @v_do :StructGauss len -= 1
+  
  end
  return SG, SG_test
 end
@@ -711,60 +768,119 @@ end
 function find_row_to_add_on2(row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_ZZStructGauss)::Int64
  for L_row in SG.col_list[best_col][end:-1:1]
   row_idx = SG.col_list_permi[L_row]
-  row_idx == best_single_row && continue
+  row_idx == best_single_row && continue #TODO: work with origin idces here
   @assert SG.base <= row_idx
   break
  end
  return row_idx
 end
 
+#TODO: only changes in lightcol for bestcol in row_idx
 function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_ZZStructGauss{ZZRingElem})::data_ZZStructGauss{ZZRingElem}
- #@hassert :StructGauss L_row in SG.col_list[best_col]
- #@hassert :StructGauss !(0 in SG.A[row_idx].values)
+ #test start
+ best_row_pos = deepcopy(SG.A[best_single_row].pos) #test
+ L_best = SG.col_list_perm[best_single_row]
+ @assert L_row in SG.col_list[best_col]
+ @assert !(0 in SG.A[row_idx].values)
+ best_row = SG.A[best_single_row]
+ bv = best_row.values[searchsortedfirst(best_row.pos, best_col)]
  #best_val = getindex!(best_val, best_row.values, searchsortedfirst(best_row.pos, best_col))
+ @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
+ @v_do :StructGauss _count = 0
+ #=
  for c in SG.A[row_idx].pos
-  isempty(SG.col_list[c]) && @show c
+  SG.is_light_col[c] && @v_do :StructGauss _count += 1
+  isempty(SG.col_list[c]) && @show c, SG.is_light_col[c]
+  @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
+ end
+ =#
+ #test end
+ #not necessary for integral domains???
+ 
+ for c in SG.A[row_idx].pos
+  SG.is_light_col[c] && @v_do :StructGauss _count += 1
+  isempty(SG.col_list[c]) && @show c, SG.is_light_col[c]
   @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
   if SG.is_light_col[c]
    jj = searchsortedfirst(SG.col_list[c], L_row)
+   @hassert :StructGauss SG.col_list[c][jj] == L_row
    deleteat!(SG.col_list[c], jj)
   end
  end
+ @hassert :StructGauss L_best != L_row
+
  #best_idx = searchsortedfirst(SG.A[].pos, best_col)
  tmpa = Hecke.get_tmp(SG.A)
  tmpb = Hecke.get_tmp(SG.A)
- best_val = SG.A[best_single_row, best_col]
+ #best_val = SG.A[best_single_row, best_col] #TODO: use only one best_val
  tmp, g, a_best, a_row, best_val, val = tmp_scalar = Hecke.get_tmp_scalar(SG.A, 6)
  best_val = getindex!(best_val, SG.A[best_single_row].values, searchsortedfirst(SG.A[best_single_row].pos, best_col))
  val = getindex!(val, SG.A[row_idx].values, searchsortedfirst(SG.A[row_idx].pos, best_col))
  @assert !iszero(val)
- fl, tmp = Nemo.divides!(tmp, val, best_val)
- if fl
+ fl, tmp = Nemo.divides!(tmp, val, best_val) 
+ if fl #best_val divides val
+  #@vprintln :StructGauss "Case1:"
   tmp = neg!(tmp)
   SG.A.nnz -= length(SG.A[row_idx])
   SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
   SG.A.nnz += length(SG.A[row_idx])
+  @hassert :StructGauss best_row_pos == SG.A[best_single_row].pos
  else
   fl, tmp = Nemo.divides!(tmp, best_val, val)
-  if fl
+  if fl #val divides best_val
+   #@vprintln :StructGauss "Case2:"
    SG.A.nnz -= length(SG.A[row_idx])
    tmp = neg!(tmp)
    scale_row!(SG.A, row_idx, tmp)
    tmp = one!(tmp)
    SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
    SG.A.nnz += length(SG.A[row_idx])
-  else
-   g, a_best, a_row = gcdx!(g, a_best, a_row, best_val, val)
-   c = div!(tmp, val, g)
-   c = neg!(c)
-   d = div!(best_val, best_val, g) #TODO: check if best_val changed afterwards
+   @hassert :StructGauss best_row_pos == SG.A[best_single_row].pos
+  else #best_val and val don't divide the other
+   #@vprintln :StructGauss "Case3:"
+   #@vprintln :StructGauss "fl = $fl, tmp = $tmp"
+   g, a_best, a_row = gcdx!(g, a_best, a_row, best_val, val) #g = gcd(best_val, val) = a_best*best_val + a_row*val
+   val_red = div!(tmp, val, g)
+   @hassert :StructGauss val_red == div(val, g)
+   val_red = neg!(val_red)
+   bv = deepcopy(best_val) #test
+   best_val_red = div!(best_val, best_val, g) #TODO: check if best_val changed afterwards
+   @hassert :StructGauss best_val_red == div(bv, g)
    SG.A.nnz -= length(SG.A[row_idx])
-   Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], a_best, a_row, c, d, tmpa, tmpb)
+   @hassert :StructGauss iszero(tmp)
+   #Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], a_best, a_row, val_red, best_val_red, tmpa, tmpb) #wrong
+   Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], ZZ(1), tmp, val_red, best_val_red, tmpa, tmpb)
    SG.A.nnz += length(SG.A[row_idx])
+   @hassert :StructGauss best_row_pos == SG.A[best_single_row].pos #error
   end
  end
  Hecke.release_tmp_scalar(SG.A, tmp_scalar)
  Hecke.release_tmp(SG.A, tmpa)
  Hecke.release_tmp(SG.A, tmpb)
+ #test begin
+ @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
+ @hassert :StructGauss L_best != L_row
+ @v_do :StructGauss _count2 = 0
+  for c in SG.A[row_idx].pos
+    SG.is_light_col[c] && @v_do :StructGauss _count2 += 1
+  end
+  #@show _count, _count2
+  #test end
+ return SG
+end
+
+#should work for both eliminations, updates all cols not only light
+function update_after_addition2!(L_row::Int64, row_idx::Int64, best_col::Int64, SG::data_ZZStructGauss)::data_ZZStructGauss
+ SG.light_weight[row_idx] = 0
+ for c_idx in 1:length(SG.A[row_idx].pos)
+  c = SG.A[row_idx].pos[c_idx]
+  @assert c != best_col
+  if SG.is_light_col[c]
+    @hassert :StructGauss !iszero(SG.A[row_idx].values[c_idx])
+    @hassert :StructGauss !(L_row in SG.col_list[c])
+    insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], L_row), L_row)
+    SG.light_weight[row_idx]+=1
+  end
+ end
  return SG
 end
