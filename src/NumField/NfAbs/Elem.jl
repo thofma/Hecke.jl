@@ -265,6 +265,7 @@ function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
     h = nf_poly_to_xy(f, Qxy, Qx)
     N = resultant(T, h)
   end
+  N.parent = parent(defining_polynomial(base_ring(parent(f))))
   return inflate(N, i)
 end
 

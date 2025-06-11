@@ -169,11 +169,8 @@ end
   F, _ = number_field(xQ^2-2)
   Fx, xF = F["x"]
   d = degree(F)
-  for i in 1:11
-    f = xF^i + xF^(i+1)
-    nf = norm(f)
-    cand = xQ^(i*d) * norm(xF+1)
-    @test change_base_ring(QQ, nf, parent = Qx) == change_base_ring(QQ, cand, parent = Qx)
+  for i in 0:11
+    @test norm(xF^i + xF^(i+1)) == xQ^(i*d) * norm(xF+1)
   end
 end
 
