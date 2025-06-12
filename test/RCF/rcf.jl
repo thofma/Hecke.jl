@@ -393,3 +393,10 @@ let
   D[C] = 1
   @test haskey(D, CC)
 end
+
+@testset "Grunwald Wang" begin
+  Q = rationals_as_number_field()
+  @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 2))) == 2
+  @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 3))) == 6
+end
+
