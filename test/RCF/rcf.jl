@@ -395,7 +395,8 @@ let
 end
 
 @testset "Grunwald Wang" begin
-  Q = rationals_as_number_field()
+  Q = rationals_as_number_field()[1]
+  Z = maximal_order(Q)
   @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 2))) == 2
   @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 3))) == 6
 end
