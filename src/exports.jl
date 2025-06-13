@@ -935,6 +935,7 @@ export value_module
 export value_module_quadratic_form
 export vcat
 export vcat!
+export vectors_of_square_and_divisibility
 export volume
 export weil_pairing
 export wildanger_field
