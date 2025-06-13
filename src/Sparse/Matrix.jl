@@ -1409,7 +1409,7 @@ function identity_matrix(::Type{SMat}, R::Ring, n::Int)
   A = sparse_matrix(R)
   A.c = n
   for i in 1:n
-    push!(A, sparse_row(R, [i], [one(R)]))
+    push!(A, sparse_row(R, [(i, one(R))]))
   end
   return A
 end
