@@ -804,7 +804,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
         if st[1] in map(minimum, lp)
           continue
         end
-        if iscoprime(st[1], minimum(con))
+        if is_coprime(st[1], minimum(con))
           break
         end
       end
