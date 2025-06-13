@@ -2798,7 +2798,8 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
       norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
       @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
       fp = reflection(gramV, norm_gen) * fp
-      @assert valuation(det(fp)-1, p)>= vp
+      d = det(fp)-1
+      @assert  iszero(d) || valuation(d, p)>= vp
     end
     # double check that fp: Lp --> Mp
     M1fp = lattice(V, basis_matrix(L1) * fp, check=false)
