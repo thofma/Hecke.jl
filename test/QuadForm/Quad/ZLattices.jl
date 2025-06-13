@@ -821,3 +821,16 @@ end
   @test rank(L + L2) == 0
   @test order(q + q2) == 1
 end
+
+@testset "Fix extended ADE lattices" begin
+  for n in 1:6
+    _, v = Hecke.extended_ade(:A, n)
+    @test all(isone, v)
+  end
+  for n in 4:10
+    _, v = Hecke.extended_ade(:D, n)
+    @test all(isone, view(v, 1:1, 1:3))
+    @test all(==(2), view(v, 1:1, 4:n))
+    @test isone(v[1, n+1])
+  end
+end

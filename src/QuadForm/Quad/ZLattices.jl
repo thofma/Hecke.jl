@@ -3268,17 +3268,18 @@ function extended_ade(ADE::Symbol, n::Int)
     G[1,n+1] = -1
     G[n+1,1] = -1
   end
-  if ADE == :A && n > 0
+  if ADE == :A && n > 1
     G[1,2] = -1
     G[2,1] = -1
     G[1,n+1] = -1
     G[n+1,1] = -1
   end
-  if ADE == :A && n ==1 0
+  if ADE == :A && n == 1
     G[1,2]= -2
     G[2,1] = -2
   end
   if ADE == :D
+    @assert n >= 4
     G[1,n] = -1
     G[n,1] = -1
   end
