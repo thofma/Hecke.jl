@@ -2792,7 +2792,8 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
     @assert normalM1 == normalL1
     TT = inv(TL1) * TM1
     fp = inv(basis_matrix(L1))* TT * basis_matrix(M1)
-    if valuation(det(fp)-1,p)<= vp
+    d = det(fp)-1
+    if !iszero(d) && valuation(d, p)<= vp
       # we want fp in SO(Vp)
       # compose with a reflection preserving Lp
       norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
