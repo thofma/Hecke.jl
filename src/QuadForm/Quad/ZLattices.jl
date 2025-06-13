@@ -2738,8 +2738,8 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
   # scale integral
   n = rank(L)
   s = scale(M)
-  M = rescale(M,s)
-  L = rescale(L,s)
+  M = rescale(M,s^-1)
+  L = rescale(L,s^-1)
   @assert scale(M)==1
   @assert scale(L)==1
   g = genus(L)
