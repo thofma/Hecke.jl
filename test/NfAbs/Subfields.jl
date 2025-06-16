@@ -453,3 +453,12 @@ let
   LL, b = number_field(x^2 + 1, :b)
   @test_throws ArgumentError Hecke.subfield(L, [b])
 end
+
+let
+  Qx, x = QQ[:x]
+  K, _ = number_field(x^8 - x^4 + 1, :a)
+  b = Hecke._subfield_primitive_element_from_basis(K, [sqrt(K(2)), sqrt(K(3))], true)
+  @test degree(minpoly(b)) == 2
+  b = Hecke._subfield_primitive_element_from_basis(K, [sqrt(K(2)), sqrt(K(3))], false)
+  @test degree(minpoly(b)) == 2
+end

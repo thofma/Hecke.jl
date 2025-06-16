@@ -36,10 +36,17 @@ function _subfield_basis(K::S, as::Vector{T}) where {
   end
 
   kx = parent(K.pol)
-  return elem_type(K)[let Kv = phivs(v)
-            K(kx([Kv[n] for n in d:-1:1]))
-          end
-          for v in gens(Fvs)]::Vector{elem_type(K)}
+  b = elem_type(K)[
+        let Kv = phivs(v)
+          K(kx([Kv[n] for n in d:-1:1]))
+        end
+       for v in gens(Fvs)]::Vector{elem_type(K)}
+
+  if K isa AbsSimpleNumField
+    return [x*denominator(x) for x in b]
+  else
+    return b
+  end
 end
 
 function _improve_subfield_basis(K, bas)
@@ -120,38 +127,82 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
   end
 end
 
-#As above, but for AbsSimpleNumField type
-#In this case, we can use block system to find if an element is primitive.
-function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector{AbsSimpleNumFieldElem})
+function block_system(t::AbsSimpleNumFieldElem, C#=::qAdicConj=#)
+  @assert C isa qAdicConj
+  pr = 1
+  while true
+    c = conjugates(t, C, pr)::Vector{QadicFieldElem}
+    D = Dict{QadicFieldElem, Vector{Int}}()
+    for i = 1:length(c)
+      if haskey(D, c[i])
+        push!(D[c[i]], i)
+      else
+        D[c[i]] = [i]
+      end
+    end
+    bs = sort(collect(values(D)), lt = (a,b) -> isless(a[1], b[1]))
+    if length(bs) * length(bs[1]) == length(c) &&
+        all(x->length(x) == length(bs[1]), bs)
+      return bs
+    end
+    pr *= 2
+    if pr > 100
+      error("probably bad")
+    end
+  end
+end
+
+# As above, but for AbsSimpleNumField type
+# In this case, we can use a block system to find if an element is
+# primitive (and find a primitive element) Input does not need to be
+# a basis, generators are sufficient
+function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector{AbsSimpleNumFieldElem}, lincomb = false)
   if isempty(as) || degree(K) == 1
     return gen(K)
   end
+
+  as = AbsSimpleNumFieldElem[x for x in as if !iszero(x)]
 
   dsubfield = length(as)
 
   @vprintln :Subfields 1 "Sieving for primitive elements"
   # First check basis elements
-  @vprintln :Subfields 1 "Sieving for primitive elements"
-  # First check basis elements
-  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
+  Zx, = polynomial_ring(ZZ, "x", cached = false)
   f = Zx(K.pol*denominator(K.pol))
-  p, d = _find_prime(ZZPolyRingElem[f])
-  #First, we search for elements that are primitive using block systems
-  F = Nemo.Native.finite_field(p, d, "w", cached = false)[1]
-  Ft = polynomial_ring(F, "t", cached = false)[1]
-  ap = zero(Ft)
-  fit!(ap, degree(K)+1)
-  rt = roots(F, f)
-  indices = Int[]
-  for i = 1:length(as)
-    b = _block(as[i], rt, ap)
-    if length(b) == dsubfield
-      push!(indices, i)
-    end
+  _C = get_attribute(K, :subfield_data)
+  if _C === nothing
+    p, d = _find_prime(ZZPolyRingElem[f])
+    _C = qAdicConj(K, p; splitting_field = true)
+    set_attribute!(K, :subfield_data => _C)
   end
+  C = _C::qAdicConj
+  # First, we search for elements that are primitive using block systems
+  # TODO: use p-adic roots ala Oscar/experimental/Galois.../src/Subfield.jl
+  # prob: get bounds without SLP and GaloisCtx
+  b = Vector{Int}[collect(1:degree(f))] #block system for QQ
+  all_b = Vector{Vector{Int}}[]
+  for i = 1:length(as)
+    _b = block_system(as[i], C)
+    push!(all_b, _b)
+    b = Vector{Int}[intersect(x, y) for x in b for y in _b]
+    b = Vector{Int}[x for x in b if length(x) > 0]
+  end
+  @vprintln :Subfields 1 "Have block systems, degree of subfield is $(length(b))"
+  sort!(b, lt = (a,b) -> isless(a[1], b[1]))
+  # b is the block of the subfield (with respect to the embeddings in C)
+
+  if lincomb
+    return _subfield_primitive_element_from_basis_lincomb(K, b, all_b, C, as)
+  else
+    return _subfield_primitive_element_from_block(K, C, b)
+  end
+end
+
+function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b, all_b, C, as::Vector{AbsSimpleNumFieldElem})
+  indices = findall(x->length(x) == length(b), all_b)
 
   @vprintln :Subfields 1 "Found $(length(indices)) primitive elements in the basis"
-  #Now, we select the one of smallest T2 norm
+  # Now, we select the one of smallest T2 norm
   if !isempty(indices)
     a = as[indices[1]]
     I = t2(a)
@@ -166,41 +217,153 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
     return a
   end
 
-  @vprintln :Subfields 1 "Trying combinations of elements in the basis"
-  # Notation: cs the coefficients in a linear combination of the as, ca the dot
-  # product of these vectors.
-  cs = ZZRingElem[rand(ZZ, -2:2) for n in 1:dsubfield]
-  k = 0
-  s = 1
-  first = true
-  a = one(K)
-  I = t2(a)
-  while true
-    s += 1
-    ca = sum(c*a for (c,a) in zip(cs,as))
-    b = _block(ca, rt, ap)
-    if length(b) == dsubfield
-      t2n = t2(ca)
-      if first
-        a = ca
-        I = t2n
-        first = false
-      elseif t2n < I
-        a = ca
-        I = t2n
-      end
-      k += 1
-      if k == 5
-      	@vprintln :Subfields 1 "Primitive element found"
-        return a
-      end
-    end
+  @vprintln :Subfields 1 "Finding combination of elements"
 
-    # increment the components of cs
-    bb = div(s, 10)+1
-    for n = 1:dsubfield
-      cs[n] = rand(ZZ, -bb:bb)
+  pe = as[1]
+  cur_b = all_b[1]
+  for i=2:length(as)
+    if issubset(all_b[i][1], cur_b[1])
+      continue
     end
+    cur_b = Vector{Int}[intersect(x, y) for x in cur_b for y in all_b[i]]
+    cur_b = Vector{Int}[x for x in cur_b if length(x) > 0]
+    sort!(cur_b, lt = (a,b) -> isless(a[1], b[1]))
+    j = 1
+    while block_system(pe + j*as[i], C) != cur_b
+      j += 1
+      if j > 10
+        error("dnw")
+      end
+    end
+    pe += j*as[i]
+    if cur_b == b
+      @vprintln :Subfields 1 "Primitive element found"
+      return pe
+    end
+  end
+  error("should be hard...")
+end
+
+function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdicConj=#, b::Vector{Vector{Int}})
+  @assert C isa qAdicConj
+  if length(b) == 1
+    return one(K)
+  end
+  # Klueners:
+  # - try sum of conj. in block
+  # - then prod
+  # - then prod (x+i) for i this will enventually be OK
+  #
+  # trivial precision: double until it works
+  #
+  # So we have/ want to have K/k where k is given via block system
+  # Klueners: at least one of
+  #      Tr_K/k(gen(K)), N_K/k(gen(K)) or N_K/k(gen(K)+i)
+  # is primitive (for suitable i)
+  # so try in this order as Tr is expected to be smaller than Norm.
+  # Size:
+  # T_2(gen(k)) <= [K:k] T_2(gen(K)) via Trace
+  #             <= T_2(gen(K))^[K:k] via Norm
+  #             <= (sqrt(T_2) + sqrt([K:k])i)^2)^[K:k] in the last case
+  #(using that sqrt(T_2) is a euclidean norm, so 
+  #  sqrt(T_2(a+b)) <= sqrt(T_2(a)) + sqrt(T_2(b))
+  #
+  # if gen(K) is integral, then so is gen(k), however, gen(k)
+  # won't be in the equation order
+  # So we'll recover in the Kronnecker rep, in the dual basis
+  # gen(k) = sum a_i omega_i
+  # for Tr(omega_i gen(K)^j) = delta_i,j
+  # so a_i = Tr(gen(k) * omega_i), using Cauchy-Schwarz
+  # a_i^2 <= T_2(gen(k)) * T_2(omega_i)
+  # omega_i can be obtained from coeff of def_poly(K)/(t-gen(K))
+  # [K:k] = length(b[i]) for all i, [k:Q] = length(b) 
+
+  pr = 5
+  @assert is_monic(defining_polynomial(K))
+  c = conjugates(gen(K), C, pr) #the roots...
+  pe = c -> [sum(c[x]) for x = b]
+  Bpe = length(b[1]) * length(gen(K)) 
+  if length(Set(pe(c))) != length(b)
+    #trace is not primitive!
+    pe = c -> [prod(c[x]) for x in b]
+    Bpe = length(gen(K))^length(b[1])
+    if length(Set(pe(c))) != length(b)
+      i = 1
+      while true
+        let i = i
+        pe = c -> [prod(y+i for y in c[x]) for x = b] end
+        if length(Set(pe(c))) == length(b)
+          break
+        end
+        i += 1
+      end
+      Bpe = (length(gen(K))+i*degree(K))^length(b[1]) #not quite correct?
+    end
+  end
+
+  #Bpe should now be an upper bound on T_2 of gen(k)
+  #from there we need
+  # - bound on minpoly(gen(k))
+  # - bound on coeffs (via dual basis, see above)
+  #   dual[i]*den is actually dual to gen(K)^(i-1)
+  #   and gen(k)//den is in ZZ[gen(K)]
+  #   so tr(gen(k)//den * dual[i]*den) = tr(gen(k)*dual[i])
+  #   is integral (and bounded)...
+  #
+  # minpoly: 
+  #  T_2 is upper bound on conjugates (squared)
+  #  coeffs of min_poly are elementary symmetric,
+  #   so bounded by max(binom([k:Q], i), T_2(gen(k))^i : i)
+  #  max binum is in the middle..
+  B_f = binomial(ZZ(length(b)), div(ZZ(length(b)), 2))*Bpe^length(b)
+  # the coeffs of minpoly are in Z, so need prec <= log_p(2 B_f)
+  Kt, t = polynomial_ring(K; cached = false)
+  den = inv(derivative(defining_polynomial(K))(gen(K)))
+  dual = collect(coefficients(div(defining_polynomial(K)(t), t-gen(K)))) 
+  B_pe = maximum(ceil(ZZRingElem, length(x)) for x = dual) * ceil(ZZRingElem, Bpe)
+  #so pr needs to cover 2*max(B_pe, B_f)
+  Qp = parent(c[1])
+  pr_max = ceil(Int, log(BigFloat(prime(Qp)), BigFloat(2*max(B_pe, B_f))))
+    
+  pr *= 2
+  Qpt, t = polynomial_ring(Qp, cached = false)
+  p = ZZ(C.C.p)
+  local ff::ZZPolyRingElem
+  while true
+    p_pow = p^pr
+    c = conjugates(gen(K), C, pr) #the roots...
+    v = pe(c)
+    setprecision!(t, pr)
+    f = prod(elem_type(Qpt)[t-x for x in v])
+    ff = map_coefficients(x->mod_sym(lift(ZZ, coeff(x, 0)), p_pow), f)
+    elem = zero(K)
+    v = [v[findall(x-> j in x, b)[1]] for j=1:length(c)]
+    bb = one(K)
+    for i = 1:length(dual)
+      db = dual[i]
+      d = conjugates(db, C, pr)
+      cf = mod_sym(lift(ZZ, coeff(dot(v, d), 0)), p_pow)
+      elem += cf*bb
+      bb *= gen(K)
+    end
+    elem *= den
+    if iszero(ff(elem))
+      return elem
+    end
+#    if all(x->nbits(x) < nbits(p_pow) - 30, coefficients(ff))
+#      f = interpolate(Qpt, c, [v[findall(x-> j in x, b)[1]] for j=1:length(c)])
+#      elem = map_coefficients(x->QQ(rational_reconstruction(lift(ZZ, coeff(x, 0)), p_pow)[2:3]...), f)(gen(K))
+#
+#      if is_zero(ff(elem))
+#        return elem
+#      end
+#    end
+
+    if pr > pr_max
+        error("probably something bad?")
+    end
+    pr *= 2
+    #if the block system is illegal, this will not terminate.
   end
 end
 
@@ -235,10 +398,16 @@ Number field with defining polynomial x^2 + 6*x + 4
 function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = false, isbasis::Bool = false)
   @req all(x -> parent(x) === K, elt) "Elements must be contained in the field"
 
+  if K isa AbsSimpleNumField
+    # in this case the block code does not need a basis
+    s = _subfield_primitive_element_from_basis(K, elt)
+    s *= denominator(s)
+    return _subfield_from_primitive_element(K, s)
+  end
+
   if length(elt) == 1
     return _subfield_from_primitive_element(K, elt[1])
   end
-
   isbasis = is_basis || isbasis
 
   if isbasis
