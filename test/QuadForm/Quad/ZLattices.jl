@@ -710,6 +710,15 @@ end
   L2 = integer_lattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   @test genus(L1)==genus(L2)
   @test !Hecke.is_isometric(L1, L2)
+
+  # A previously buggy example:
+  G = matrix(QQ, 3, 3 ,[-2, 18, 7, 18, -2, 2, 7, 2, -2]);
+  L1 = integer_lattice(gram = G);
+
+  G = matrix(QQ, 3, 3 ,[-2, 7, 18, 7, -2, 2, 18, 2, -2]);
+  L2 = integer_lattice(gram = G);
+  @test is_isometric(L1,L2)
+
 end
 
 @testset "direct sums" begin
