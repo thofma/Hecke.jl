@@ -936,6 +936,8 @@ function det(L::ZZLat)
   return det(gram_matrix(L))
 end
 
+is_isotropic(L::ZZLat) = is_isotropic(rational_span(L))
+
 ################################################################################
 #
 #  Rank
@@ -2570,6 +2572,35 @@ function overlattice(glue_map::TorQuadModuleMap)
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
 
+function overlattice(L::ZZLat, glue::Vector{TorQuadModuleElem})
+  D = discriminant_group(L)
+  @req all(d in D for d in glue) "glue msut be contained in the discriminant group of L"
+  return lattice_in_same_ambient_space(L,lift.(glue)) + L
+end
+
+function overlattice(L::ZZLat, glue_group::TorQuadModule; check::Bool=true)
+  C = cover(glue_group)
+  check && (is_sublattice(C, L) || error("glue group must be of the form C/L"))
+  return C
+end
+
+function overlattices(L; even::Bool=true)
+  @req is_integral(L) "L must be integral"
+  D = discriminant_group(L)
+  d = ZZ(det(L))
+  sq = divexact(d,squarefree_part(d))
+  result = ZZLat[]
+  for g in divisors(sq)
+    CC = submodules(D; order=g)
+    if even
+      C = ZZLat[overlattice(L, t[1]; check=false) for t in CC if is_totally_isotropic(t[1])]
+    else
+      C = ZZLat[overlattice(L, t[1]; check=false) for t in CC if iszero(gram_matrix_bilinear(t[1]))]
+    end
+    append!(result,C)
+  end
+  return result
+end
 ################################################################################
 #
 #  Primary/elementary lattices
