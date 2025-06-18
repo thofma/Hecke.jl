@@ -1685,6 +1685,10 @@ $\mathbb{Z}$-lattice ``S`` in the ambient space of ``L``, return all the
 vectors in $S \cap (L\otimes \mathbb{Q})$ whose square has absolute value $|n|$
 and whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$.
 
+For a vector ``v`` in the ambient quadratic space $(V, \Phi)$ of ``L``,
+we call the divisibility of ``v`` in ``L`` the nonnegative generator of the
+fractional ideal $\Phi(v, L)$ of $\mathbb{Z}$.
+
 The entry `n` must be nonzero and `d` must be a positive rational number,
 set to `scale(L)` by default.
 
