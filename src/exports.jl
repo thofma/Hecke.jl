@@ -712,6 +712,7 @@ export orthogonal_complement
 export orthogonal_projection
 export orthogonal_submodule
 export overlattice
+export overlattices
 export overorders
 export parent
 export periods

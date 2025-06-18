@@ -660,6 +660,19 @@ end
 
   L2 = @inferred overlattice(glue)
   @test L2 == L  # We found back our initial overlattice
+  L = integer_lattice(QQ[3 0]; gram=QQ[-2 1; 1 -2])
+  D = discriminant_group(L)
+  M = overlattice(L, sub(D,[6*i for i in gens(D)])[1])
+  M1 = overlattice(L, [6*D[1]])
+  @test M==M1
+  @test is_sublattice(M, L)
+  @test length(overlattices(L))==2
+  @test length(overlattices(L;indices=[3]))==1
+
+
+  L = integer_lattice(gram=ZZ[4;])
+  @test length(overlattices(L;even=true))==1
+  @test length(overlattices(L;even=false))==2
 
   # primary and elementary lattices
 
