@@ -128,6 +128,16 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   return res
 end
 
+function stdcallback(list, L)
+  keep = all(LL -> !is_isometric_with_isometry(LL,L)[1], list)
+  return keep, true
+end
+
+function eqcallback(list, L)
+  keep = all(LL -> LL != L, list)
+  return keep, true
+end
+
 function spinor_genera_in_genus(L, mod_out)
 #{A sequence of lattices representing the spinor genera in the genus of L}
   @req rank(L) >= 3 "(Currently) rank must be at least 3"

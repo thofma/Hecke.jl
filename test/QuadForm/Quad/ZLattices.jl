@@ -710,6 +710,15 @@ end
   L2 = integer_lattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   @test genus(L1)==genus(L2)
   @test !Hecke.is_isometric(L1, L2)
+
+  # A previously buggy example:
+  G = matrix(QQ, 3, 3 ,[-2, 18, 7, 18, -2, 2, 7, 2, -2]);
+  L1 = integer_lattice(gram = G);
+
+  G = matrix(QQ, 3, 3 ,[-2, 7, 18, 7, -2, 2, 18, 2, -2]);
+  L2 = integer_lattice(gram = G);
+  @test is_isometric(L1,L2)
+
 end
 
 @testset "direct sums" begin
@@ -836,4 +845,17 @@ end
   E8 = rescale(root_lattice(:E, 8), 1//2)
   l = vectors_of_square_and_divisibility(E8, Dict(1//2 => [1]))
   @assert length(l) == 120 # Number of roots in E_8
+end
+
+@testset "Fix extended ADE lattices" begin
+  for n in 1:6
+    _, v = Hecke.extended_ade(:A, n)
+    @test all(isone, v)
+  end
+  for n in 4:10
+    _, v = Hecke.extended_ade(:D, n)
+    @test all(isone, view(v, 1:1, 1:3))
+    @test all(==(2), view(v, 1:1, 4:n))
+    @test isone(v[1, n+1])
+  end
 end

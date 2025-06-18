@@ -3146,8 +3146,8 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
   # scale integral
   n = rank(L)
   s = scale(M)
-  M = rescale(M,s)
-  L = rescale(L,s)
+  M = rescale(M,s^-1)
+  L = rescale(L,s^-1)
   @assert scale(M)==1
   @assert scale(L)==1
   g = genus(L)
@@ -3200,13 +3200,15 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
     @assert normalM1 == normalL1
     TT = inv(TL1) * TM1
     fp = inv(basis_matrix(L1))* TT * basis_matrix(M1)
-    if valuation(det(fp)-1,p)<= vp
+    d = det(fp)-1
+    if !iszero(d) && valuation(d, p)<= vp
       # we want fp in SO(Vp)
       # compose with a reflection preserving Lp
       norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
       @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
       fp = reflection(gramV, norm_gen) * fp
-      @assert valuation(det(fp)-1, p)>= vp
+      d = det(fp)-1
+      @assert  iszero(d) || valuation(d, p)>= vp
     end
     # double check that fp: Lp --> Mp
     M1fp = lattice(V, basis_matrix(L1) * fp, check=false)
@@ -3676,17 +3678,18 @@ function extended_ade(ADE::Symbol, n::Int)
     G[1,n+1] = -1
     G[n+1,1] = -1
   end
-  if ADE == :A && n > 0
+  if ADE == :A && n > 1
     G[1,2] = -1
     G[2,1] = -1
     G[1,n+1] = -1
     G[n+1,1] = -1
   end
-  if ADE == :A && n ==1 0
+  if ADE == :A && n == 1
     G[1,2]= -2
     G[2,1] = -2
   end
   if ADE == :D
+    @assert n >= 4
     G[1,n] = -1
     G[n,1] = -1
   end

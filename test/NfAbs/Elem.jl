@@ -164,6 +164,16 @@ end
   @test all(iszero, (f(b) for b in r))
 end
 
+@testset "Norm" begin
+  Qx, xQ = QQ["x"]
+  F, _ = number_field(xQ^2-2)
+  Fx, xF = F["x"]
+  d = degree(F)
+  for i in 0:11
+    @test norm(xF^i + xF^(i+1)) == xQ^(i*d) * norm(xF+1)
+  end
+end
+
 @testset "Norm of factored element" begin
   Qx, x = QQ["x"]
   f = x^3 - 2
