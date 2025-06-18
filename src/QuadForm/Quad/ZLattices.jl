@@ -2574,8 +2574,9 @@ end
 
 function overlattice(L::ZZLat, glue::Vector{TorQuadModuleElem})
   D = discriminant_group(L)
-  @req all(d in D for d in glue) "glue msut be contained in the discriminant group of L"
-  return lattice_in_same_ambient_space(L,lift.(glue)) + L
+  @req all(in(D), glue) "glue must be contained in the discriminant group of L"
+  B = matrix(QQ, lift.(glue))
+  return lattice_in_same_ambient_space(L, B) + L
 end
 
 function overlattice(L::ZZLat, glue_group::TorQuadModule; check::Bool=true)
