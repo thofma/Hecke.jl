@@ -444,8 +444,7 @@ _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.heade
 _get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
 _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
-import Nemo: libflint  #to be able to reference libraries by full path
-                       #to avoid calling the "wrong" copy
+using FLINT_jll: libflint
 
 const libantic = libflint
 const libarb = libflint

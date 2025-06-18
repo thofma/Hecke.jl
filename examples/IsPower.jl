@@ -312,11 +312,11 @@ function Base.getindex(H::Hecke.HenselCtx, s::Symbol, i::Int)
     return unsafe_load(H.link, i)
   elseif s == :v
     f = Hecke.Globals.Zx()
-    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Hecke.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   elseif s == :w
     f = Hecke.Globals.Zx()
-    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Hecke.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   end
 end

@@ -19,7 +19,7 @@ mutable struct n_primes_struct
     r = new()
     n_primes_init!(r)
     finalizer(r) do r
-      ccall((:n_primes_clear, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, ), r)
+      ccall((:n_primes_clear, libflint), Cvoid, (Ref{n_primes_struct}, ), r)
     end
     return r
   end
@@ -29,7 +29,7 @@ mutable struct n_primes_struct
 end
 
 function n_primes_init!(a::n_primes_struct)
-  ccall((:n_primes_init, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, ), a)
+  ccall((:n_primes_init, libflint), Cvoid, (Ref{n_primes_struct}, ), a)
 end
 
 function n_primes_init()
@@ -48,15 +48,15 @@ function n_primes_init!(r::n_primes_struct, from::Int, to::Int=-1)
     if from < 1
       from = 1
     end
-    ccall((:n_primes_jump_after, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt), r, from)
+    ccall((:n_primes_jump_after, libflint), Cvoid, (Ref{n_primes_struct}, UInt), r, from)
   else
-    ccall((:n_primes_sieve_range, Nemo.libflint), Cvoid, (Ref{n_primes_struct}, UInt, UInt), r, from, to)
+    ccall((:n_primes_sieve_range, libflint), Cvoid, (Ref{n_primes_struct}, UInt, UInt), r, from, to)
   end
   return r
 end
 
 function next_prime(r::n_primes_struct)
-  return ccall((:n_primes_next, Nemo.libflint), UInt, (Ref{n_primes_struct}, ), r)
+  return ccall((:n_primes_next, libflint), UInt, (Ref{n_primes_struct}, ), r)
 end
 
 
