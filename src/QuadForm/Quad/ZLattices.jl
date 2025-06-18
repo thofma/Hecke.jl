@@ -2588,7 +2588,7 @@ end
 @doc raw"""
     overlattices(L; even::Bool=true) -> Vector{ZZLat}
 
-Return all (even) overlattices of ``L``.
+Return all (even) integral overlattices of ``L``.
 
 # Input
 - `indices` -- a list of integers; if given only return overlattices ``M`` with index ``[M:L]`` in `indices`.
