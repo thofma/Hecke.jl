@@ -2303,6 +2303,8 @@ function submodules(T::TorQuadModule; kw...)
   return (sub(T, T.(StoA.(gens(S)))) for (S, StoA) in subgroups(A; kw..., fun = (x, y) -> sub(x, y, false)))
 end
 
+subgroups(T::TorQuadModule; kw...) = submodules(T; kw...)
+
 @doc raw"""
     stable_submodules(T::TorQuadModule, act::Vector{TorQuadModuleMap}; kw...)
 

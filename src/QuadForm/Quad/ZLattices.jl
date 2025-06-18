@@ -2585,13 +2585,27 @@ function overlattice(L::ZZLat, glue_group::TorQuadModule; check::Bool=true)
   return C
 end
 
-function overlattices(L; even::Bool=true)
+@doc raw"""
+    overlattices(L; even::Bool=true) -> Vector{ZZLat}
+
+Return all (even) overlattices of ``L``.
+
+# Input
+- `indices` -- a list of integers; if given only return overlattices ``M`` with index ``[M:L]`` in `indices`.
+"""
+function overlattices(L::ZZLat; even::Bool=true, indices=nothing)
   @req is_integral(L) "L must be integral"
   D = discriminant_group(L)
   d = ZZ(det(L))
   sq = divexact(d,squarefree_part(d))
+  if indices isa Nothing
+    indices = divisors(sq)
+  else
+    indices = ZZ.(indices)
+    indices = [i for i in indices if divides(sq, i)[1]]
+  end
   result = ZZLat[]
-  for g in divisors(sq)
+  for g in indices
     CC = submodules(D; order=g)
     if even
       C = ZZLat[overlattice(L, t[1]; check=false) for t in CC if is_totally_isotropic(t[1])]
