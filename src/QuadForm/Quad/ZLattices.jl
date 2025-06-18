@@ -1681,15 +1681,26 @@ end
     ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
 
 Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
-$\mathbb{Z}$-lattice ``S`` in $L\otimes \mathbb{Q}$, return all the vectors
-in ``S`` whose square has absolute value $|n|$ and whose divisibility in
-``L`` is in the ideal $d\mathbb{Z}$.
+$\mathbb{Z}$-lattice ``S`` in the ambient space of ``L``, return all the
+vectors in $S \cap (L\otimes \mathbb{Q})$ whose square has absolute value $|n|$
+and whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$.
 
 The entry `n` must be nonzero and `d` must be a positive rational number,
 set to `scale(L)` by default.
 
+!!! note
+    Alternatively, instead of single values `n` and `d` one can input:
+    * a list of pairs of rational numbers `(n, d)` where `n` is nonzero and
+      `d` is positive;
+    * a dictionary whose keys are positive rational number `d` and the
+      associated list of numbers consist of nonzero rational numbers `n`.
+
 The output consists of a list of triples `(v, n', d')` where `v` is a vector
 of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
+
+!!! note
+    In the case where one wants to choose ``S`` to be ``L`` itself, one can
+    call instead `vectors_of_square_and_divisibility(L, n, d)`.
 
 One can choose in which coordinates system each vector `v` in output is
 represented by changing the symbol `coordinates_representation`.
@@ -1702,7 +1713,7 @@ There are three possibilities:
     of its coordinates in the standard basis of the ambient space of ``L``.
 
 If the keyword argument `check` is set to true, the function checks whether
-``S`` is definite and lies in the rational span of ``L``.
+``S`` is definite.
 
 # Examples
 ```jldoctest
@@ -1741,8 +1752,23 @@ julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representati
  ([2 4 6 5 4 3], 12, 3)
  ([1 2 3 4 2 3], 12, 3)
  ([1 2 3 1 2 0], 12, 3)
+
+julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[2   1]
+[1   4]
+
+julia> vectors_of_square_and_divisibility(L, 8, 2)
+1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([2 0], 8, 2)
+
+julia> length(short_vectors(L, 8, 8))
+3
 ```
 """
+vectors_of_square_and_divisibility
+
 function vectors_of_square_and_divisibility(
     L::ZZLat,
     S::ZZLat,
@@ -1789,53 +1815,6 @@ function vectors_of_square_and_divisibility(
   return out
 end
 
-@doc raw"""
-    vectors_of_square_and_divisibility(
-      L::ZZLat,
-      n::RationalUnion,
-      d::RationalUnion = scale(L);
-      coordinates_representation::Symbol=:ambient,
-      check::Bool=true,
-    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
-
-Given a nondegenerate definite $\mathbb{Z}$-lattice ``L``, return all the
-vectors in ``L`` whose square has absolute value $|n|$ and whose divisibility
-is in the ideal $d\mathbb{Z}$.
-
-The entry `n` must be nonzero and `d` must be a positive rational number,
-set to `scale(L)` by default.
-
-The output consists of a list of triples `(v, n', d')` where `v` is a vector
-of ``L`` of square of absolute value $n'$ and of divisibility $d'$.
-
-One can choose in which coordinates system each vector `v` in output is
-represented by changing the symbol `coordinates_representation`.
-There are two possibilities:
-  - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the fixed basis of the lattice ``L``;
-  - `coordinates_representation = :ambient` (default): the vector `v` is given
-    in terms of its coordinates in the standard basis of the ambient space of
-    ``L``.
-
-If the keyword argument `check` is set to true, the function checks whether
-``L`` is definite.
-
-# Examples
-```jldoctest
-julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
-Integer lattice of rank 2 and degree 2
-with gram matrix
-[2   1]
-[1   4]
-
-julia> vectors_of_square_and_divisibility(L, 8, 2)
-1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([2 0], 8, 2)
-
-julia> length(short_vectors(L, 8, 8))
-3
-```
-"""
 function vectors_of_square_and_divisibility(
     L::ZZLat,
     n::RationalUnion,
@@ -1849,39 +1828,6 @@ function vectors_of_square_and_divisibility(
   return vectors_of_square_and_divisibility(L, L, n, d; coordinates_representation, check=false)
 end
 
-@doc raw"""
-    vectors_of_square_and_divisibility(
-      L::ZZLat,
-      S::ZZLat,
-      vector_type::Vector;
-      coordinates_representation::Symbol=:S,
-    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
-
-Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
-$\mathbb{Z}$-lattice ``S`` in $L\otimes \mathbb{Q}$, return all the vectors
-in ``S`` whose square has absolute value $|n|$ and whose divisibility in ``L``
-is in the ideal `d\mathbb{Z}` for a certain pair `(n, d)` of the input list
-`vector_type`.
-
-Each entry of `vector_type` must be a tuple of rational numbers `(n, d)` where
-`n` is nonzero and `d` is positive.
-
-The output consists of a list of triples `(v, n', d')` where `v` is a vector
-of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
-
-One can choose in which coordinates system each vector `v` in output is
-represented by changing the symbol `coordinates_representation`.
-There are three possibilities:
-  - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the fixed basis of the top lattice ``L``;
-  - `coordinates_representation = :S` (default): the vector `v` is given in
-    terms of its coordinates in the fixed basis of the bottom lattice ``S``;
-  - `coordinates_representation = :ambient`: the vector `v` is given in terms
-    of its coordinates in the standard basis of the ambient space of ``L``.
-
-If the keyword argument `check` is set to true, the function checks whether
-``S`` is definite and lies in the rational span of ``L``.
-"""
 function vectors_of_square_and_divisibility(
     L::ZZLat,
     S::ZZLat,
@@ -1891,7 +1837,6 @@ function vectors_of_square_and_divisibility(
   )
   @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
   if check
-    @req can_solve(basis_matrix(L), basis_matrix(S)) "Second input must be contained in the rational span of the first one"
     @req is_definite(S) "Second input must be definite"
   end
   ns = sort!(unique!(first.(vector_type)))
@@ -1903,37 +1848,6 @@ function vectors_of_square_and_divisibility(
   return vectors_of_square_and_divisibility(L, S, vector_type_dict; coordinates_representation, check=false)
 end
 
-@doc raw"""
-    vectors_of_square_and_divisibility(
-      L::ZZLat,
-      vector_type::Vector;
-      coordinates_representation::Symbol=:ambient,
-      check::Bool=true,
-    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
-
-Given a nondegenerate definite $\mathbb{Z}$-lattice ``L``, return all the
-vectors in ``L`` whose square has absolute value $|n|$ and whose divisibility
-is in the ideal `d\mathbb{Z}` for a certain pair `(n, d)` of the input list
-`vector_type`.
-
-Each entry of `vector_type` must be a tuple of rational numbers `(n, d)` where
-`n` is nonzero and `d` is positive.
-
-The output consists of a list of triples `(v, n', d')` where `v` is a vector
-of ``L`` of square of absolute value $n'$ and of divisibility $d'$.
-
-One can choose in which coordinates system each vector `v` in output is
-represented by changing the symbol `coordinates_representation`.
-There are two possibilities:
-  - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the fixed basis of the lattice ``L``;
-  - `coordinates_representation = :ambient` (default): the vector `v` is given
-    in terms of its coordinates in the standard basis of the ambient space of
-    ``L``.
-
-If the keyword argument `check` is set to true, the function checks whether
-``L`` is definite.
-"""
 function vectors_of_square_and_divisibility(
     L::ZZLat,
     vector_type::Vector;
@@ -1946,39 +1860,6 @@ function vectors_of_square_and_divisibility(
   return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
 end
 
-@doc raw"""
-    vectors_of_square_and_divisibility(
-      L::ZZLat,
-      S::ZZLat,
-      vector_type::Dict;
-      coordinates_representation::Symbol=:S,
-    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
-
-Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
-$\mathbb{Z}$-lattice ``S`` in $L\otimes \mathbb{Q}$, return all the vectors
-in ``S`` whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$ for a key
-`d` of the dictionary `vector_type`, and whose square has absolute value $|n|$
-for a certain `n` in the list of values associated to `d`.
-
-Each key `d` of `vector_type` must be a positive rational number and the
-associated list must consist of nonzero rational numbers.
-
-The output consists of a list of triples `(v, n', d')` where `v` is a vector
-of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
-
-One can choose in which coordinates system each vector `v` in output is
-represented by changing the symbol `coordinates_representation`.
-There are three possibilities:
-  - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the fixed basis of the top lattice ``L``;
-  - `coordinates_representation = :S` (default): the vector `v` is given in
-    terms of its coordinates in the fixed basis of the bottom lattice ``S``;
-  - `coordinates_representation = :ambient`: the vector `v` is given in terms
-    of its coordinates in the standard basis of the ambient space of ``L``.
-
-If the keyword argument `check` is set to true, the function checks whether
-``S`` is definite and lies in the rational span of ``L``.
-"""
 function vectors_of_square_and_divisibility(
     L::ZZLat,
     S::ZZLat,
@@ -1988,7 +1869,6 @@ function vectors_of_square_and_divisibility(
   )
   @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
   if check
-    @req can_solve(basis_matrix(L), basis_matrix(S)) "Second input must be contained in the rational span of the first one"
     @req is_definite(S) "Second input must be definite"
   end
   @req all(>(0), keys(vector_type)) "Divisibilities must be positive"
@@ -2036,36 +1916,6 @@ function vectors_of_square_and_divisibility(
   return out
 end
 
-@doc raw"""
-    vectors_of_square_and_divisibility(
-      L::ZZLat,
-      vector_type::Dict;
-      coordinates_representation::Symbol=:S,
-    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
-
-Given a nondegenerate definite $\mathbb{Z}$-lattice ``L``, return all the
-vectors in ``L`` whose divisibility is in the ideal $d\mathbb{Z}$ for a key
-`d` of the dictionary `vector_type`, and whose square has absolute value $|n|$
-for a certain `n` in the list of values associated to `d`.
-
-Each key `d` of `vector_type` must be a positive rational number and the
-associated list must consist of nonzero rational numbers.
-
-The output consists of a list of triples `(v, n', d')` where `v` is a vector
-of ``L`` of square of absolute value $n'$ and of divisibility $d'$.
-
-One can choose in which coordinates system each vector `v` in output is
-represented by changing the symbol `coordinates_representation`.
-There are two possibilities:
-  - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the fixed basis of the lattice ``L``;
-  - `coordinates_representation = :ambient` (default): the vector `v` is given
-    in terms of its coordinates in the standard basis of the ambient space of
-    ``L``.
-
-If the keyword argument `check` is set to true, the function checks whether
-``L`` is definite.
-"""
 function vectors_of_square_and_divisibility(
     L::ZZLat,
     vector_type::Dict;
