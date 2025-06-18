@@ -1779,7 +1779,6 @@ function vectors_of_square_and_divisibility(
   )
   @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
   if check
-    @req can_solve(basis_matrix(L), basis_matrix(S)) "Second input must be contained in the rational span of the first one"
     @req is_definite(S) "Second input must be definite"
   end
   @req d > 0 "Divisibility ($d) must be positive"
