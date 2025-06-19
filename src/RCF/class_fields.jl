@@ -711,7 +711,7 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
 
   @assert is_prime_power(deg) #for now, to keep things simple
 
-  con = prod(lp)
+  con = 1*zk
   #complication:
   # if deg = 2^l, l >= 3 then, since there are no unramifed
   # extensions of Q_2 of this degree, 2 has to divide the conductor
@@ -740,6 +740,13 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   end
   P = PrimesSet(2, -1, Int(divexact(deg, s)), 1)
   st = iterate(P)
+  while true
+    if st[1] in map(minimum, lp)
+      st = iterate(P, st[2])
+    else
+      break
+    end
+  end
   PP = prime_decomposition(zk, st[1])
   iP = 1
   cnt = 0
@@ -792,7 +799,15 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
     con *= PP[iP][1]
     iP += 1
     if length(PP) < iP
-      st = iterate(P, st[2])
+      while true
+        st = iterate(P, st[2])
+        if st[1] in map(minimum, lp)
+          continue
+        end
+        if is_coprime(st[1], minimum(con))
+          break
+        end
+      end
       PP = prime_decomposition(zk, st[1])
       iP = 1
     end
