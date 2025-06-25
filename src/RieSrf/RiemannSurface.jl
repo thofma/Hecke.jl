@@ -7,20 +7,72 @@
 ################################################################################
 
 
-export RiemannSurface, discriminant_points, embedding, genus, precision, fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group, homology_basis
+export RiemannSurface, discriminant_points, embedding, genus, precision, 
+fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group, 
+homology_basis
 
-export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_mpoly, analytic_continuation, minimal_spanning_tree
+export max_radius, radius_factor, find_paths_to_end, sheet_ordering, 
+embed_mpoly, analytic_continuation, minimal_spanning_tree
+
+#A class defining a Riemann surface X.
 
 mutable struct RiemannSurface
+  #A polynomial f(x,y) in K[x,y] for some number field K defining the Riemann
+  #surface (or equivalently) a not necessarily smooth plane curve in P_2 
   defining_polynomial::MPolyRingElem
   genus::Int
-  tau::acb_mat
-  prec::Int
-  embedding::Union{PosInf, InfPlc}
-  discriminant_points::Vector{acb}
-  fundamental_group_of_P1::Tuple{Vector{CPath}, Vector{Vector{Int}}}
   function_field::AbstractAlgebra.Generic.FunctionField
+
+  #The degree of the field extension K(x,y)/f over K(x).
+  degree::Vector{Int}
+
+  #The small period matrix of X
+  small_period_matrix::acb_mat
+  big_period_matrix::acb_mat
+
+  #The embedding used to embed X 
+  embedding::Union{PosInf, InfPlc}
+
+  #The points P for which disc(f(P,y)) = 0. This includes the ramification 
+  #points and the singular points of the curve
+  discriminant_points::Vector{acb}
+
+  #A set of generators of the fundamental group pi_1 of P^1/D where D is the set
+  #of discriminant points.
+  #It consists of a tuple (L, G) where 
+  # - L is a list of paths
+  # - G consists of generators for pi_1. Each generator is encoded by a 
+  #sequence of indices. These indices refer to the paths in L. 
+  #
+  # If for example G[1] = [1, 23, 12, -1]. Then the first 
+  # generator is given by composing the paths L[1], L[23], L[12] and 
+  # reverse(L[1]).
+  fundamental_group_of_P1::Tuple{Vector{CPath}, Vector{Vector{Int}}}
+
+  #The permutations of the sheets that correspond to walking along the chains
+  #of paths that are generators of the fundamental group of P1. Every 
+  #element is of the form (P, sigma) where P is a list of paths and sigma is
+  #the permutation of sheets.
+  #
+  # Continuing the above example, the first element could look like 
+  # ([L[1], L[23], L[12],reverse(L[1])], (1,3))) 
+  # where (1,3) is the permutation. 
+  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
+
+
+  homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
+
   basis_of_differentials::Vector{Any}
+  baker_basis::Bool
+  differential_form_data::Any
+  evaluate_differential_factors_matrix::Any
+
+  integration_schemes::Vector{IntegrationScheme}
+  bounds::Vector{arb}
+
+  #A collection of fields and error bounds needed to ensure correctness
+  #TODO: Check which ones are actually used and necessary. Optimize this.
+  prec::Int
   weak_error::arb
   error::arb
   extra_error::arb
@@ -29,14 +81,6 @@ mutable struct RiemannSurface
   complex_field2::AcbField
   computational_precision_complex_field::AcbField
   max_precision_complex_field::AcbField
-  integration_schemes::Vector{IntegrationScheme}
-  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
-  homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
-  degree::Vector{Int}
-  evaluate_differential_factors_matrix::Any
-  baker_basis::Bool
-  differential_form_data::Any
-  bounds::Vector{arb}
 
   function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
