@@ -936,6 +936,8 @@ function det(L::ZZLat)
   return det(gram_matrix(L))
 end
 
+is_isotropic(L::ZZLat) = is_isotropic(rational_span(L))
+
 ################################################################################
 #
 #  Rank
@@ -2570,6 +2572,50 @@ function overlattice(glue_map::TorQuadModuleMap)
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
 
+function overlattice(L::ZZLat, glue::Vector{TorQuadModuleElem})
+  D = discriminant_group(L)
+  @req all(in(D), glue) "glue must be contained in the discriminant group of L"
+  B = matrix(QQ, lift.(glue))
+  return lattice_in_same_ambient_space(L, B) + L
+end
+
+function overlattice(L::ZZLat, glue_group::TorQuadModule; check::Bool=true)
+  C = cover(glue_group)
+  check && (is_sublattice(C, L) || error("glue group must be of the form C/L"))
+  return C
+end
+
+@doc raw"""
+    overlattices(L; even::Bool=true) -> Vector{ZZLat}
+
+Return all (even) integral overlattices of ``L``.
+
+# Input
+- `indices` -- a list of integers; if given only return overlattices ``M`` with index ``[M:L]`` in `indices`.
+"""
+function overlattices(L::ZZLat; even::Bool=true, indices=nothing)
+  @req is_integral(L) "L must be integral"
+  D = discriminant_group(L)
+  d = ZZ(det(L))
+  sq = divexact(d,squarefree_part(d))
+  if indices isa Nothing
+    indices = divisors(sq)
+  else
+    indices = ZZ.(indices)
+    indices = [i for i in indices if divides(sq, i)[1]]
+  end
+  result = ZZLat[]
+  for g in indices
+    CC = submodules(D; order=g)
+    if even
+      C = ZZLat[overlattice(L, t[1]; check=false) for t in CC if is_totally_isotropic(t[1])]
+    else
+      C = ZZLat[overlattice(L, t[1]; check=false) for t in CC if iszero(gram_matrix_bilinear(t[1]))]
+    end
+    append!(result,C)
+  end
+  return result
+end
 ################################################################################
 #
 #  Primary/elementary lattices
@@ -2738,8 +2784,8 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
   # scale integral
   n = rank(L)
   s = scale(M)
-  M = rescale(M,s)
-  L = rescale(L,s)
+  M = rescale(M,s^-1)
+  L = rescale(L,s^-1)
   @assert scale(M)==1
   @assert scale(L)==1
   g = genus(L)
@@ -2792,13 +2838,15 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
     @assert normalM1 == normalL1
     TT = inv(TL1) * TM1
     fp = inv(basis_matrix(L1))* TT * basis_matrix(M1)
-    if valuation(det(fp)-1,p)<= vp
+    d = det(fp)-1
+    if !iszero(d) && valuation(d, p)<= vp
       # we want fp in SO(Vp)
       # compose with a reflection preserving Lp
       norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
       @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
       fp = reflection(gramV, norm_gen) * fp
-      @assert valuation(det(fp)-1, p)>= vp
+      d = det(fp)-1
+      @assert  iszero(d) || valuation(d, p)>= vp
     end
     # double check that fp: Lp --> Mp
     M1fp = lattice(V, basis_matrix(L1) * fp, check=false)
@@ -3268,17 +3316,18 @@ function extended_ade(ADE::Symbol, n::Int)
     G[1,n+1] = -1
     G[n+1,1] = -1
   end
-  if ADE == :A && n > 0
+  if ADE == :A && n > 1
     G[1,2] = -1
     G[2,1] = -1
     G[1,n+1] = -1
     G[n+1,1] = -1
   end
-  if ADE == :A && n ==1 0
+  if ADE == :A && n == 1
     G[1,2]= -2
     G[2,1] = -2
   end
   if ADE == :D
+    @assert n >= 4
     G[1,n] = -1
     G[n,1] = -1
   end
