@@ -660,6 +660,19 @@ end
 
   L2 = @inferred overlattice(glue)
   @test L2 == L  # We found back our initial overlattice
+  L = integer_lattice(QQ[3 0]; gram=QQ[-2 1; 1 -2])
+  D = discriminant_group(L)
+  M = overlattice(L, sub(D,[6*i for i in gens(D)])[1])
+  M1 = overlattice(L, [6*D[1]])
+  @test M==M1
+  @test is_sublattice(M, L)
+  @test length(overlattices(L))==2
+  @test length(overlattices(L;indices=[3]))==1
+
+
+  L = integer_lattice(gram=ZZ[4;])
+  @test length(overlattices(L;even=true))==1
+  @test length(overlattices(L;even=false))==2
 
   # primary and elementary lattices
 
@@ -710,6 +723,15 @@ end
   L2 = integer_lattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
   @test genus(L1)==genus(L2)
   @test !Hecke.is_isometric(L1, L2)
+
+  # A previously buggy example:
+  G = matrix(QQ, 3, 3 ,[-2, 18, 7, 18, -2, 2, 7, 2, -2]);
+  L1 = integer_lattice(gram = G);
+
+  G = matrix(QQ, 3, 3 ,[-2, 7, 18, 7, -2, 2, 18, 2, -2]);
+  L2 = integer_lattice(gram = G);
+  @test is_isometric(L1,L2)
+
 end
 
 @testset "direct sums" begin
@@ -820,4 +842,17 @@ end
   q2 = discriminant_group(L2)
   @test rank(L + L2) == 0
   @test order(q + q2) == 1
+end
+
+@testset "Fix extended ADE lattices" begin
+  for n in 1:6
+    _, v = Hecke.extended_ade(:A, n)
+    @test all(isone, v)
+  end
+  for n in 4:10
+    _, v = Hecke.extended_ade(:D, n)
+    @test all(isone, view(v, 1:1, 1:3))
+    @test all(==(2), view(v, 1:1, 4:n))
+    @test isone(v[1, n+1])
+  end
 end

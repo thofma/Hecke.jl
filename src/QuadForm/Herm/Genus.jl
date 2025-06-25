@@ -1672,10 +1672,23 @@ end
 #
 ################################################################################
 
+_num(I::RelNumFieldOrderIdeal) = I::RelNumFieldOrderIdeal
+
+_num(I::RelNumFieldOrderFractionalIdeal) = numerator(I)::RelNumFieldOrderIdeal
+
+_den(I::RelNumFieldOrderIdeal) = ZZ(1)::ZZRingElem
+
+_den(I::RelNumFieldOrderFractionalIdeal) = denominator(I)::ZZRingElem
+
 @doc raw"""
-    hermitian_local_genera(E::NumField, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, rank::Int,
-                           det_val::Int, min_scale::Int, max_scale::Int)
-                                                      -> Vector{HermLocalGenus}
+    hermitian_local_genera(
+      E::NumField,
+      p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
+      rank::Int,
+      det_val::Int,
+      min_scale::Int,
+      max_scale::Int
+    ) -> Vector{HermLocalGenus}
 
 Return all local genus symbols for hermitian lattices over the algebra `E`, with base
 field $K$, at the prime ideal`p` of $\mathcal O_K$. Each of them has rank equal to
@@ -1815,23 +1828,27 @@ function hermitian_local_genera(E, p, rank::Int, det_val::Int, min_scale::Int, m
 end
 
 @doc raw"""
-    hermitian_genera(E::NumField, rank::Int,
-                                  signatures::Dict{InfPlc, Int},
-                                  determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal};
-                                  min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? inv(1*order(determinant)) : determinant,
-                                  max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? determinant : inv(1*order(determinant)))
-                                                                                                                 -> Vector{HermGenus}
+    hermitian_genera(
+      E::NumField,
+      rank::Int,
+      signatures::Dict{InfPlc, Int},
+      determinant::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal};
+      min_scale::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}=inv(denominator(determinant)*order(determinant)),
+      max_scale::Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}=numerator(determinant),
+    ) -> Vector{HermGenus}
 
-Return all global genus symbols for hermitian lattices over the algebra`E` with rank
-`rank`, signatures given by `signatures`, scale bounded by `max_scale` and determinant
-class equal to `determinant`.
-
-If `max_scale == nothing`, it is set to be equal to `determinant`.
+Return all global genus symbols for hermitian lattices over the algebra `E`
+with rank `rank`, signatures given by `signatures`, scale bounded by
+`min_scale` and `max_scale` and determinant class equal to `determinant`.
 """
-function hermitian_genera(E::Hecke.RelSimpleNumField, rank::Int, signatures::Dict{<: InfPlc, Int},
-                          determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal};
-                          min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? 1*order(determinant) : determinant,
-                          max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal} = is_integral(determinant) ? determinant : 1*order(determinant))
+function hermitian_genera(
+    E::Hecke.RelSimpleNumField,
+    rank::Int,
+    signatures::Dict{<: InfPlc, Int},
+    determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal};
+    min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=inv(_den(determinant)*order(determinant)),
+    max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=_num(determinant),
+  )
   @req rank >= 0 "Rank must be a non-negative integer"
   K = base_field(E)
   OE = maximal_order(E)
