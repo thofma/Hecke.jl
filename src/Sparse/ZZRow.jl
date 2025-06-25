@@ -2,6 +2,7 @@ module ZZRingElem_Array_Mod
 
 using Nemo
 using Nemo: set!
+import Hecke: libflint
 
 mutable struct ZZRingElem_Array <: AbstractVector{ZZRingElem}
   ar::Vector{Int}
