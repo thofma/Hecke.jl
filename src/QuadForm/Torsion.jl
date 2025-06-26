@@ -1550,19 +1550,15 @@ Return the radical `\{x \in T | b(x,T) = 0 and q(x)=0\}` of the quadratic form
 """
 function radical_quadratic(T::TorQuadModule)
   Kb, ib = radical_bilinear(T)
-  n = order(T)
-  o = divexact(n,ZZ(2)^valuation(n,2))
-  Kb_odd, i1 = primary_part(Kb, o)
-  Kb2, i2 = primary_part(Kb,2)
-  G = gram_matrix_quadratic(Kb2)*1//modulus_bilinear_form(Kb2)
+  G = gram_matrix_quadratic(Kb)*1//modulus_bilinear_form(Kb)
   F = Native.GF(2; cached=false)
   G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
   kermat = kernel(G2, side = :left)
   kermat = lift(kermat)
-  g = gens(Kb2)
+  g = gens(Kb)
   n = length(g)
-  kergen = TorQuadModuleElem[i2(sum(kermat[i,j]*g[j] for j in 1:n)) for i in 1:nrows(kermat)]
-  append!(kergen,[i1(i) for i in gens(Kb_odd)])
+  kergen = TorQuadModuleElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:nrows(kermat)]
+  append!(kergen, TorQuadModuleElem[2*i for i in g])
   Kq, iq = sub(Kb,kergen)
   @assert iszero(gram_matrix_quadratic(Kq))
   return Kq, compose(iq,ib)
