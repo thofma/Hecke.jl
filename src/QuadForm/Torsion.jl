@@ -1558,6 +1558,7 @@ function radical_quadratic(T::TorQuadModule)
   g = gens(Kb)
   n = length(g)
   kergen = TorQuadModuleElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:nrows(kermat)]
+  append!(kergen, TorQuadModuleElem[2*i for i in g])
   Kq, iq = sub(Kb,kergen)
   @assert iszero(gram_matrix_quadratic(Kq))
   return Kq, compose(iq,ib)

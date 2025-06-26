@@ -245,8 +245,15 @@
   k = sub(t,gens(t)[3:4])
   @test order(radical_quadratic(k[1])[1])==2
 
-  # isometry
+  D = discriminant_group(integer_lattice(gram=ZZ[60*5;]))
+  s = sub(D,[10*D[1],30*D[1],60*D[1]])[1]
+  @test order(radical_quadratic(s)[1])==5
+  D = discriminant_group(integer_lattice(gram=diagonal_matrix([4,4,4,4])))
+  s = sub(D,[sum(gens(D))])[1]
+  @test order(radical_quadratic(s)[1])==2
 
+
+  # isometry
   L = integer_lattice(gram=matrix(ZZ, [[2, -1, 0, 0, 0, 0],[-1, 2, -1, -1, 0, 0],[0, -1, 2, 0, 0, 0],[0, -1, 0, 2, 0, 0],[0, 0, 0, 0, 6, 3],[0, 0, 0, 0, 3, 6]]))
   T = discriminant_group(L)
   N, S = normal_form(T)
