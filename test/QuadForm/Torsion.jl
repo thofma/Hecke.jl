@@ -245,7 +245,7 @@
   k = sub(t,gens(t)[3:4])
   @test order(radical_quadratic(k[1])[1])==2
 
-  discriminant_group(integer_lattice(ZZ[4*30]))
+  discriminant_group(integer_lattice(ZZ[4*30;]))
   D = discriminant_group(integer_lattice(gram=ZZ[60*5;]))
   s = sub(D,[10*D[1],30*D[1],60*D[1]])[1]
   @test order(radical_quadratic(s))==5
