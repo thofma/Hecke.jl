@@ -129,28 +129,28 @@ function NfMatElem_clear1(en::Vector{nf_elem_raw})
   #degree 1 case...
   for i=1:length(en)
     p = pointer(en, i)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
+    ccall((:fmpz_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Int)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
+    ccall((:fmpz_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
   end
 end
 
 function NfMatElem_clear2(en::Vector{nf_elem_raw})
   for i=1:length(en)
     p = pointer(en, i)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
+    ccall((:fmpz_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Int)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
+    ccall((:fmpz_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Int)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
+    ccall((:fmpz_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
     p += sizeof(Int)
-    ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
+    ccall((:fmpz_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, ), p)
   end
 end
 
 function NfMatElem_clear3(en::Vector{nf_elem_raw})
   for i=1:length(en)
-    ccall((:fmpq_poly_clear, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw},), pointer(en, i))
+    ccall((:fmpq_poly_clear, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw},), pointer(en, i))
   end
 end
 
@@ -863,7 +863,7 @@ function setcoeff!(M::NfMatElem, n::Int, m::QQMatrix)
   @assert degree(K) > 2 #for now
   for i=1:nrows(M)
     for j=1:ncols(M)
-      ccall((:fmpq_poly_set_coeff_fmpq, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ptr{QQFieldElem}), mat_entry_ptr(M, i, j), n, mat_entry_ptr(m, i, j))
+      ccall((:fmpq_poly_set_coeff_fmpq, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ptr{QQFieldElem}), mat_entry_ptr(M, i, j), n, mat_entry_ptr(m, i, j))
     end
   end
 end
@@ -951,14 +951,14 @@ mutable struct fmpz_poly_mat <: MatElem{ZZPolyRingElem}
    d::Int #Ptr{Ptr{fmpz_poly_raw}}
    function fmpz_poly_mat(r::Int, c::Int)
      mat = new()
-     ccall((:fmpz_poly_mat_init, Nemo.libflint), Cvoid, (Ref{fmpz_poly_mat}, Int, Int), mat, r, c)
+     ccall((:fmpz_poly_mat_init, Hecke.libflint), Cvoid, (Ref{fmpz_poly_mat}, Int, Int), mat, r, c)
      finalizer(fmpz_poly_mat_clear, mat)
      return mat
    end
 end
 
 function fmpz_poly_mat_clear(M::fmpz_poly_mat)
-  ccall((:fmpz_poly_mat_clear, Nemo.libflint), Cvoid, (Ref{fmpz_poly_mat}, ), M)
+  ccall((:fmpz_poly_mat_clear, Hecke.libflint), Cvoid, (Ref{fmpz_poly_mat}, ), M)
 end
 
 Hecke.base_ring(::fmpz_poly_mat) = Hecke.Globals.Zx
@@ -967,7 +967,7 @@ Hecke.number_of_columns(M::fmpz_poly_mat) = M.c
 
 function Base.getindex(M::fmpz_poly_mat, i::Int, j::Int)
   f = Hecke.Globals.Zx()
-  ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{fmpz_poly_raw}), f, mat_entry_ptr(M, i, j))
+  ccall((:fmpz_poly_set, Hecke.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{fmpz_poly_raw}), f, mat_entry_ptr(M, i, j))
   return f
 end
 
@@ -977,7 +977,7 @@ end
 
 @inline function getindex_raw(M::fmpz_poly_mat, i::Int, j::Int)
   @boundscheck checkbounds(M, i, j)
-  return ccall((:fmpz_poly_mat_entry, Nemo.libflint), Ptr{fmpz_poly_raw}, (Ref{fmpz_poly_mat}, Int, Int), M, i-1, j-1)
+  return ccall((:fmpz_poly_mat_entry, Hecke.libflint), Ptr{fmpz_poly_raw}, (Ref{fmpz_poly_mat}, Int, Int), M, i-1, j-1)
 end
 
 @inline function Base.setindex!(M::fmpz_poly_mat, f::Ptr{nf_elem_raw}, i::Int, j::Int)
@@ -986,7 +986,7 @@ end
   B = [fmpz_poly_raw(unsafe_load(ff, 1), unsafe_load(ff, 3), unsafe_load(ff, 4))]
   Base.GC.@preserve B begin
     b = pointer(B, 1)
-    ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}), getindex_raw(M, i, j), b)
+    ccall((:fmpz_poly_set, Hecke.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}), getindex_raw(M, i, j), b)
   end
 end
 
@@ -996,7 +996,7 @@ end
   B = [fmpq_poly_raw(unsafe_load(ff, 1), 1, unsafe_load(ff, 2), unsafe_load(ff, 3))]
   Base.GC.@preserve B begin
     b = pointer(B, 1)
-    ccall((:fmpq_poly_set, Nemo.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{fmpq_poly_raw}), getindex_raw(M, i, j), b)
+    ccall((:fmpq_poly_set, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{fmpq_poly_raw}), getindex_raw(M, i, j), b)
   end
 end
 
@@ -1015,7 +1015,7 @@ function mul_KS(A::NfMatElem, B::NfMatElem)
         tA[i,j] = getindex_raw(A, i, j)
         s = Nemo.divexact(dA[i], denominator(getindex_raw(A, i, j), K))
         if !isone(s)
-          ccall((:fmpz_poly_scalar_mul_fmpz, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{ZZRingElem}), getindex_raw(tA, i, j), getindex_raw(tA, i, j), s)
+          ccall((:fmpz_poly_scalar_mul_fmpz, Hecke.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{ZZRingElem}), getindex_raw(tA, i, j), getindex_raw(tA, i, j), s)
         end
       end
     end
@@ -1026,12 +1026,12 @@ function mul_KS(A::NfMatElem, B::NfMatElem)
         tB[i,j] = getindex_raw(B, i, j)
         s = Nemo.divexact(dB[j], denominator(getindex_raw(B, i, j), K))
         if !isone(s)
-          ccall((:fmpz_poly_scalar_mul_fmpz, Nemo.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{ZZRingElem}), getindex_raw(tB, i, j), getindex_raw(tB, i, j), s)
+          ccall((:fmpz_poly_scalar_mul_fmpz, Hecke.libflint), Cvoid, (Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ref{ZZRingElem}), getindex_raw(tB, i, j), getindex_raw(tB, i, j), s)
         end
       end
     end
 
-    ccall((:fmpz_poly_mat_mul, Nemo.libflint), Cvoid, (Ref{fmpz_poly_mat}, Ref{fmpz_poly_mat}, Ref{fmpz_poly_mat}), tC, tA, tB)
+    ccall((:fmpz_poly_mat_mul, Hecke.libflint), Cvoid, (Ref{fmpz_poly_mat}, Ref{fmpz_poly_mat}, Ref{fmpz_poly_mat}), tC, tA, tB)
 
     C = zero_matrix(K, nrows(A), ncols(B))
     for i=1:nrows(C)

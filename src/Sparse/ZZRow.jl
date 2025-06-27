@@ -2,6 +2,7 @@ module ZZRingElem_Array_Mod
 
 using Nemo
 using Nemo: set!
+import Hecke: libflint
 
 mutable struct ZZRingElem_Array <: AbstractVector{ZZRingElem}
   ar::Vector{Int}
@@ -54,7 +55,7 @@ end
       return
     end
   end
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), get_ptr(a, i), v)
+  ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), get_ptr(a, i), v)
   return v
 end
 
@@ -106,7 +107,7 @@ function empty!!(a::ZZRingElem_Array)
   p = get_ptr(a, 1)
   for i=1:length(a)
     @inbounds if !Nemo.__fmpz_is_small(a.ar[i])
-      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
+      ccall((:fmpz_clear, libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
     end
     unsafe_store!(Ptr{Int}(p), 0)
     p += sizeof(Int)
@@ -194,7 +195,7 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
   elseif n < la
     ap = get_ptr(a, n+1)
     for i=n+1:la
-      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), ap)
+      ccall((:fmpz_clear, libflint), Cvoid, (Ptr{ZZRingElem}, ), ap)
       unsafe_store!(Ptr{Int}(ap), 0)
       ap += sizeof(Int)
     end
@@ -205,7 +206,7 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
 end
 
 function Base.deleteat!(a::ZZRingElem_Array, b::Int64)
-  ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
+  ccall((:fmpz_clear, libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
   a.ar[b] = 0
   deleteat!(a.ar, b)
   a.l -= 1
@@ -474,7 +475,7 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
     pa = get_ptr(a.values, 1)
     pb = get_ptr(b.values, 1)
     for i=1:length(a)
-#      if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
+#      if ccall((:fmpz_cmp, libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
       if cmp(pa, pb) != 0
         return false
       end
