@@ -1696,7 +1696,7 @@ set to `scale(L)` by default.
     Alternatively, instead of single values `n` and `d` one can input:
     * a list of pairs of rational numbers `(n, d)` where `n` is nonzero and
       `d` is positive;
-    * a dictionary whose keys are positive rational number `d` and the
+    * a dictionary whose keys are positive rational numbers `d` and the
       associated list of numbers consist of nonzero rational numbers `n`.
 
 The output consists of a list of triples `(v, n', d')` where `v` is a vector
@@ -1710,9 +1710,10 @@ One can choose in which coordinates system each vector `v` in output is
 represented by changing the symbol `coordinates_representation`.
 There are three possibilities:
   - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the fixed basis of the top lattice ``L``;
+    coordinates in the standard basis of the rational span of the lattice
+    ``L``;
   - `coordinates_representation = :S` (default): the vector `v` is given in
-    terms of its coordinates in the fixed basis of the bottom lattice ``S``;
+    terms of its coordinates in the fixed basis of the lattice ``S``;
   - `coordinates_representation = :ambient`: the vector `v` is given in terms
     of its coordinates in the standard basis of the ambient space of ``L``.
 
