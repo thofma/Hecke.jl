@@ -234,7 +234,7 @@ function show(io::IO, O::AbsNumFieldOrder)
     prefix = "Order"
   end
   if is_terse(io)
-    if !is_simple(L)
+    if !is_simple(nf(O))
       print(io, prefix, " of non-simple number field")
     else
       print(io, prefix, " of number field")
