@@ -1672,6 +1672,268 @@ function divisibility(L::ZZLat, v::QQMatrix)
   return gen(I)
 end
 
+@doc raw"""
+    vectors_of_square_and_divisibility(
+      L::ZZLat,
+      S::ZZLat,
+      n::RationalUnion,
+      d::RationalUnion = scale(L);
+      coordinates_representation::Symbol=:S,
+      check::Bool=true,
+    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
+
+Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
+$\mathbb{Z}$-lattice ``S`` in the ambient space of ``L``, return all the
+vectors in $S \cap (L\otimes \mathbb{Q})$ whose square has absolute value $|n|$
+and whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$.
+
+For a vector ``v`` in the ambient quadratic space $(V, \Phi)$ of ``L``,
+we call the divisibility of ``v`` in ``L`` the nonnegative generator of the
+fractional ideal $\Phi(v, L)$ of $\mathbb{Z}$.
+
+The entry `n` must be nonzero and `d` must be a positive rational number,
+set to `scale(L)` by default.
+
+!!! note
+    Alternatively, instead of single values `n` and `d` one can input:
+    * a list of pairs of rational numbers `(n, d)` where `n` is nonzero and
+      `d` is positive;
+    * a dictionary whose keys are positive rational numbers `d` and the
+      associated list of numbers consist of nonzero rational numbers `n`.
+
+The output consists of a list of triples `(v, n', d')` where `v` is a vector
+of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
+
+!!! note
+    In the case where one wants to choose ``S`` to be ``L`` itself, one can
+    call instead `vectors_of_square_and_divisibility(L, n, d)`.
+
+One can choose in which coordinates system each vector `v` in output is
+represented by changing the symbol `coordinates_representation`.
+There are three possibilities:
+  - `coordinates_representation = :L`: the vector `v` is given in terms of its
+    coordinates in the standard basis of the rational span of the lattice
+    ``L``;
+  - `coordinates_representation = :S` (default): the vector `v` is given in
+    terms of its coordinates in the fixed basis of the lattice ``S``;
+  - `coordinates_representation = :ambient`: the vector `v` is given in terms
+    of its coordinates in the standard basis of the ambient space of ``L``.
+
+If the keyword argument `check` is set to true, the function checks whether
+``S`` is definite.
+
+# Examples
+```jldoctest
+julia> E6 = root_lattice(:E, 6)
+Integer lattice of rank 6 and degree 6
+with gram matrix
+[ 2   -1    0    0    0    0]
+[-1    2   -1    0    0    0]
+[ 0   -1    2   -1    0   -1]
+[ 0    0   -1    2   -1    0]
+[ 0    0    0   -1    2    0]
+[ 0    0   -1    0    0    2]
+
+julia> A2 = lattice_in_same_ambient_space(E6, basis_matrix(E6)[1:2, :])
+Integer lattice of rank 2 and degree 6
+with gram matrix
+[ 2   -1]
+[-1    2]
+
+julia> C = orthogonal_submodule(E6, A2)
+Integer lattice of rank 4 and degree 6
+with gram matrix
+[12   -3    0   -3]
+[-3    2   -1    0]
+[ 0   -1    2    0]
+[-3    0    0    2]
+
+julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
+9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([1 2 3 1 -1 3], 12, 3)
+ ([2 4 6 2 1 3], 12, 3)
+ ([1 2 3 1 -1 0], 12, 3)
+ ([2 4 6 5 1 3], 12, 3)
+ ([1 2 3 4 2 0], 12, 3)
+ ([1 2 3 1 2 3], 12, 3)
+ ([2 4 6 5 4 3], 12, 3)
+ ([1 2 3 4 2 3], 12, 3)
+ ([1 2 3 1 2 0], 12, 3)
+
+julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[2   1]
+[1   4]
+
+julia> vectors_of_square_and_divisibility(L, 8, 2)
+1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([2 0], 8, 2)
+
+julia> length(short_vectors(L, 8, 8))
+3
+```
+"""
+vectors_of_square_and_divisibility
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    n::RationalUnion,
+    d::RationalUnion = scale(L);
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  @req d > 0 "Divisibility ($d) must be positive"
+  @req !iszero(n) "Square ($n) must be nonzero"
+  nQQ = abs(QQ(n))
+  de = denominator(n)
+  if de > 1
+    L = rescale(L, de)
+    S = lattice_in_same_ambient_space(L, basis_matrix(S))
+    n = n*de^2
+    d = d*de
+  end
+  Sd = intersect(d*dual(L), S)
+  BSd = basis_matrix(Sd)
+  l = short_vectors(Sd, n, n)
+  if coordinates_representation == :S
+    B = solve(basis_matrix(S), basis_matrix(Sd); side=:left)
+  elseif coordinates_representation == :L
+    B = solve(basis_matrix(L), basis_matrix(Sd); side=:left)
+  elseif coordinates_representation == :ambient
+    B = BSd
+  else
+    error("Wrong symbol for coordinates representation")
+  end
+  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
+  for a in l
+    v = matrix(QQ, 1, rank(Sd), a[1])
+    dv = divisibility(L, v*BSd)
+    v = v*B
+    push!(out, (v, nQQ, dv))
+  end
+  sort!(out; lt=(a,b) -> a[3] < b[3])
+  return out
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    n::RationalUnion,
+    d::RationalUnion = scale(L);
+    coordinates_representation::Symbol=:ambient,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, n, d; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    vector_type::Vector;
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  ns = sort!(unique!(first.(vector_type)))
+  ds = [gcd([a[2] for a in vector_type if a[1] == n]) for n in ns]
+  vector_type_dict = Dict{eltype(ds), Vector{eltype(ns)}}()
+  for d in unique(ds)
+    vector_type_dict[d] = [ns[i] for i in 1:length(ns) if ds[i] == d]
+  end
+  return vectors_of_square_and_divisibility(L, S, vector_type_dict; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    vector_type::Vector;
+    coordinates_representation::Symbol=:L,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    vector_type::Dict;
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  @req all(>(0), keys(vector_type)) "Divisibilities must be positive"
+  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
+  for d in keys(vector_type)
+    @req all(!iszero, vector_type[d]) "Squares for the divisibility $d must be nonzero"
+    de = lcm(denominator.(vector_type[d]))
+    if de > 1
+      _L = rescale(L, de)
+      _S = lattice_in_same_ambient_space(_L, basis_matrix(S))
+      _d = d*de
+    else
+      _L = L
+      _S = S
+      _d = d
+    end
+    Sd = intersect(_d*dual(_L), _S)
+    BSd = basis_matrix(Sd)
+    for n in vector_type[d]
+      nQQ = abs(QQ(n))
+      if de > 1
+        _n = n*de^2
+      else
+        _n = n
+      end
+      l = short_vectors(Sd, _n, _n)
+      if coordinates_representation == :S
+        B = solve(basis_matrix(_S), basis_matrix(Sd); side=:left)
+      elseif coordinates_representation == :L
+        B = solve(basis_matrix(_L), basis_matrix(Sd); side=:left)
+      elseif coordinates_representation == :ambient
+        B = BSd
+      else
+        error("Wrong symbol for coordinates representation")
+      end
+      for a in l
+        v = matrix(QQ, 1, rank(Sd), a[1])
+        dv = divisibility(L, v*BSd)
+        v = v*B
+        push!(out, (v, nQQ, dv))
+      end
+    end
+  end
+  sort!(out, lt=(a,b) -> a[2] < b[2] || a[2] == b[2] && a[3] < b[3])
+  return out
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    vector_type::Dict;
+    coordinates_representation::Symbol=:L,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
+end
+
 ################################################################################
 #
 #  LLL-reduction
