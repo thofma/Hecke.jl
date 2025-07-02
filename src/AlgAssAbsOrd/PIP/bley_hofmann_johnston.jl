@@ -340,11 +340,9 @@ function _lift_norm_one_unit_quaternion(x, F)
     @assert normred(y) == 1
     if y - x in F
       return y
-      println("success");
     end
     if -y - x in F
       return -y
-      println("success");
     end
   end
 
