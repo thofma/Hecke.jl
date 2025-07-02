@@ -17,7 +17,7 @@
 # G.new_low_degrees.
 
 function Base.show(io::IO, G::Graph{T, M}) where {T, M}
-  print("Graph with $(length(G.edges)) vertices of type $T and edge data of type $M\n")
+  print(io, "Graph with $(length(G.edges)) vertices of type $T and edge data of type $M")
 end
 
 # Append an element to a graph
@@ -339,9 +339,9 @@ end
 #  if would be useful if hom(::T, ::T, ::D) would exist
 
 function Base.show(io::IO, L::RelLattice{T, D}) where {T, D}
-  print("Relation lattice for $T with underlying graph \n$(L.graph)\n")
-  print("In weak dict: $(length(L.weak_vertices))\n")
-  print("In dict: $(length(L.block_gc))")
+  print(io, "Relation lattice for $T with underlying graph \n$(L.graph)\n")
+  print(io, "In weak dict: $(length(L.weak_vertices))\n")
+  print(io, "In dict: $(length(L.block_gc))")
 end
 
 # The finalizer, which must be attached to a every group in the lattice.
