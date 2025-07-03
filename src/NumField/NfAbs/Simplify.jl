@@ -460,10 +460,12 @@ function polredabs(K::AbsSimpleNumField)
 werden alle als 'canonical' ausgegeben, obwohl sie isomorphe
 K"orper definieren ??
 =#
-  sort!(all_a, lt = (a,b) -> length(a) < length(b))
+  length_a = map(t2, all_a)
+  all_a = all_a[sortperm(length_a)]
+
   i = length(all_a)
-  la1 = length(all_a[1])
-  while i >= 1 && la1 <= length(all_a[i]) - 1e-10
+  la1 = length_a[1]
+  while i >= 1 && la1  <= length_a[i] - 1e-10
     i -= 1
   end
   all_a = all_a[1:i]
