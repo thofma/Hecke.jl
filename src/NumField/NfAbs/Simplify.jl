@@ -461,7 +461,9 @@ werden alle als 'canonical' ausgegeben, obwohl sie isomorphe
 K"orper definieren ??
 =#
   length_a = map(t2, all_a)
-  all_a = all_a[sortperm(length_a)]
+  p = sortperm(length_a)
+  all_a = all_a[p]
+  length_a = length_a[p]
 
   i = length(all_a)
   la1 = length_a[1]
