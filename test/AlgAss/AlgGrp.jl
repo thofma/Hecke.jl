@@ -141,4 +141,19 @@
     @test sprint(show, MIME"text/plain"(), QG) isa String
     @test sprint(show, QG) isa String
   end
+
+  let
+    # 1892
+    G = abelian_group([2, 3, 50])
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    B = basis(QG)
+    b = B[1]
+    @test sprint(show, MIME"text/plain"(), b) isa String
+
+    G = abelian_group([2, 3, 50])
+    QG = Hecke._group_algebra(QQ, G; sparse = false, cached = false)
+    B = basis(QG)
+    b = B[1]
+    @test sprint(show, MIME"text/plain"(), b) isa String
+  end
 end
