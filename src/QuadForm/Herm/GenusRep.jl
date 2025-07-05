@@ -216,9 +216,11 @@ function neighbours(
     adjust_gens_mod_p = dense_matrix_type(k)[map_entries(hext, T*g*Tinv) for g in genUL]
     adjust_gens_mod_p = dense_matrix_type(k)[x for x in adjust_gens_mod_p if length(unique!(diagonal(x))) != 1]
     if length(adjust_gens_mod_p) > 0
+      use_auto = true
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
     else
+      use_auto = false
       LO = enumerate_lines(k, n)
     end
     maxlines = length(LO)
@@ -259,7 +261,7 @@ function neighbours(
 
   for i in 1:maxlines
     vain[] > stop_after && break
-    if algorithm == :orbit
+    if algorithm == :orbit && use_auto
       w = LO[i]
     elseif algorithm == :random
       w = rand(LO)
