@@ -218,6 +218,7 @@ function neighbours(
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
+      maxlines = length(LO)
     else
       LO = enumerate_lines(k, n)
       if length(LO) <= 50000
