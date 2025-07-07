@@ -246,6 +246,9 @@ end
 function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(f)
+  if degree(f) == 0
+    return parent(defining_polynomial(K))(norm(constant_coefficient(f)))
+  end
   f, i = deflate(f)
   if degree(f) == 1 && is_monic(f)
     N = charpoly(-constant_coefficient(f))
