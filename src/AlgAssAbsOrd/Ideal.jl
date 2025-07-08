@@ -23,7 +23,7 @@ _algebra(a::AlgAssAbsOrdIdl) = algebra(a)
 
 # The basis matrix is (should be) in lowerleft HNF, so if the upper left corner
 # is not zero, then the matrix has full rank.
-is_full_lattice(a::AlgAssAbsOrdIdl) = dim(algebra(a)) == 0 || !iszero(basis_matrix(a, copy = false)[1, 1])
+is_full_lattice(a::AlgAssAbsOrdIdl) = dim(algebra(a)) == 0 || is_square(basis_matrix(a, copy = false))
 
 # Whether I is equal to order(I)
 function isone(I::AlgAssAbsOrdIdl)
@@ -42,7 +42,10 @@ function Base.copy(I::AlgAssAbsOrdIdl)
 end
 
 function is_full_rank(I::AlgAssAbsOrdIdl)
-  @assert I.full_rank != 0
+  if I.full_rank == 0
+    fl = is_full_lattice(I)
+    I.full_rank == fl ? 1 : 2
+  end
   return I.full_rank == 1
 end
 
@@ -535,9 +538,9 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   # We do something more clever if the dimensio is too big
   M = zero_matrix(QQ, d2, d)
   t = one(A)
-  for i = 1:d
-    i1d = (i - 1)*d
-    for j = 1:d
+  for i = 1:length(ba)
+    i1d = (i - 1)*length(bb)
+    for j = 1:length(bb)
       t = mul!(t, ba[i], bb[j])
       elem_to_mat_row!(M, i1d + j, t)
     end

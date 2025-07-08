@@ -161,7 +161,7 @@
   @test prod(x[1] for x in PD) == I
   @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
 
-  I = 16 * M 
+  I = 16 * M
   PD = primary_decomposition(I, M)
   @test prod(x[1] for x in PD) == I
   @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*M, PD), PD)
@@ -206,5 +206,15 @@
     I = 1 * O
     @test parent(I) == parent(I)
     @test hash(parent(I)) == hash(parent(I))
+  end
+
+  let
+    T = matrix(QQ, [0 1; 0 0])
+    A = matrix_algebra(QQ, [T])
+    O = order(A, [T])
+    I = ideal(O, A(T))
+    @test !Hecke.is_full_lattice(I)
+    @test !Hecke.is_full_rank(I)
+    @test is_zero(I^2)
   end
 end
