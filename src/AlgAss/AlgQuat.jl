@@ -11,14 +11,14 @@ If the characteristic of K is 2, return the quaternion algebra $[a,b)_K$ defined
 julia> Q = quaternion_algebra(QQ, -1, -1)
 Quaternion algebra
   over rational field
-  defined by i^2 = -1, j^2 = -1
+  defined by i^2 = -1, j^2 = -1, ij = -ji
 
 julia> K, sqrt2 = quadratic_field(2);
 
 julia> Q = quaternion_algebra(K, sqrt2, -1)
 Quaternion algebra
   over real quadratic field defined by x^2 - 2
-  defined by i^2 = sqrt(2), j^2 = -1
+  defined by i^2 = sqrt(2), j^2 = -1, ij = -ji
 
 julia> R, x = polynomial_ring(GF(2), "x"); F=fraction_field(R);
 
@@ -184,7 +184,7 @@ function AbstractAlgebra.expressify(a::AssociativeAlgebraElem{T, QuaternionAlgeb
   # Expr(:row, a, b) gives a b
   v = a.coeffs
   sum = Expr(:call, :+)
-  for (i, sym) in enumerate([1, :i, :j, :ij])
+  for (i, sym) in enumerate([1, :i, :j, :k])
     push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(v[i]; context), AbstractAlgebra.expressify(sym; context)))
   end
   return sum
@@ -233,10 +233,10 @@ algebra.
 
 ```jldoctest
 julia> Q = quaternion_algebra(QQ, -1, -1); a = Q([1, 1, 1, 1])
-1 + i + j + ij
+1 + i + j + k
 
 julia> conjugate(a)
-1 - i - j - ij
+1 - i - j - k
 ```
 """
 function conjugate(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
