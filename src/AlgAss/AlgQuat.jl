@@ -1,9 +1,9 @@
 @doc raw"""
     quaternion_algebra(K::Field, a, b) -> QuaternionAlgebra
 
-Return the quaternion algebra $(a, b | K)$ defined by $i^2 = a$, $j^2 = b$.
+If the characteristic of K isn't 2, return the quaternion algebra $(a, b)_K$ defined by $i^2 = a$, $j^2 = b$, and $ij=-ji$.
 
-At the moment, the field must have characteristic not equal to $2$.
+If the characteristic of K is 2, return the quaternion algebra $[a,b)_K$ defined by $i^2+i=a$, $j^2=b$, and $ij=ji+j$.
 
 # Examples
 
@@ -19,6 +19,13 @@ julia> Q = quaternion_algebra(K, sqrt2, -1)
 Quaternion algebra
   over real quadratic field defined by x^2 - 2
   defined by i^2 = sqrt(2), j^2 = -1
+
+julia> R, x = polynomial_ring(GF(2), "x"); F=fraction_field(R);
+
+julia> Q = quaternion_algebra(F, 0, x)
+Quaternion algebra
+  over fraction field of R
+  defined by i^2 = i+0, j^2 = x, ij = ji+j
 ```
 """
 function quaternion_algebra(K::Field, a, b)
@@ -30,37 +37,73 @@ function quaternion_algebra(K::Field, a, b)
 end
 
 function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
-  @req characteristic(K) != 2 "Characteristic must not be 2"
+  if characteristic(K)!=2
+    @assert a != zero(K) && b != zero(K)
+    M = zeros(K, 4, 4, 4)
 
-  M = zeros(K, 4, 4, 4)
+    M[1, 1, 1] = one(K) # 1*1=1
+    M[1, 2, 2] = one(K) # 1*i=i
+    M[1, 3, 3] = one(K) # 1*j=j
+    M[1, 4, 4] = one(K) # 1*ij=ij
 
-  M[1, 1, 1] = one(K) # 1*1=1
-  M[1, 2, 2] = one(K) # 1*i=i
-  M[1, 3, 3] = one(K) # 1*j=j
-  M[1, 4, 4] = one(K) # 1*ij=1
+    M[2, 1, 2] = one(K) # i*1=1*i
+    M[2, 2, 1] = a      # i*i=a*1
+    M[2, 3, 4] = one(K) # i*j=1*ij
+    M[2, 4, 3] = a      # i*ij=a*j
 
-  M[2, 1, 2] = one(K)
-  M[2, 2, 1] = a
-  M[2, 3, 4] = one(K)
-  M[2, 4, 3] = a
+    M[3, 1, 3] = one(K)
+    M[3, 2, 4] = -one(K)
+    M[3, 3, 1] = b
+    M[3, 4, 2] = -b
 
-  M[3, 1, 3] = one(K)
-  M[3, 2, 4] = -one(K)
-  M[3, 3, 1] = b
-  M[3, 4, 2] = -b
+    M[4, 1, 4] = one(K)
+    M[4, 2, 3] = -a
+    M[4, 3, 2] = b
+    M[4, 4, 1] = -a*b
 
-  M[4, 1, 4] = one(K)
-  M[4, 2, 3] = -a
-  M[4, 3, 2] = b
-  M[4, 4, 1] = -a*b
+    z = QuaternionAlgebra{T}()
 
-  z = QuaternionAlgebra{T}()
+    z.base_ring = K
+    z.mult_table = M
+    z.one = T[ one(K), zero(K), zero(K), zero(K) ]
+    z.std = a, b
+    return z
+  else #if characteristic(K)=2
+    @assert b != zero(K)
+    M = zeros(K, 4, 4, 4)
 
-  z.base_ring = K
-  z.mult_table = M
-  z.one = T[ one(K), zero(K), zero(K), zero(K) ]
-  z.std = a, b
-  return z
+    M[1, 1, 1] = one(K) # 1*1=1*1
+    M[1, 2, 2] = one(K) # 1*i=1*i
+    M[1, 3, 3] = one(K) # 1*j=1*j
+    M[1, 4, 4] = one(K) # 1*ij=1*ij
+
+    M[2, 1, 2] = one(K) # i*1=1*i
+    M[2, 2, 1] = a      # i*i=1*i+a*1
+    M[2, 2, 2] = one(K)
+    M[2, 3, 4] = one(K) # i*j=1*ij
+    M[2, 4, 3] = a
+    M[2, 4, 4] = one(K) # i*ij=1*ij+a*j
+
+    M[3, 1, 3] = one(K)
+    M[3, 2, 4] = one(K)
+    M[3, 2, 3] = one(K) #j*i= ij+j
+    M[3, 3, 1] = b
+    M[3, 4, 2] = b #j*ij= j*ji+j^2 = bi+b
+    M[3, 4, 1] = b
+
+    M[4, 1, 4] = one(K)
+    M[4, 2, 3] = a #ij*i=(ji+j)*i=j(a-i)+ji=a*j
+    M[4, 3, 2] = b #ij*j = b*i
+    M[4, 4, 1] = a*b #ij*ij=i(bi+b)=b(a-i)+bi=ab
+
+    z = QuaternionAlgebra{T}()
+
+    z.base_ring = K
+    z.mult_table = M
+    z.one = T[ one(K), zero(K), zero(K), zero(K) ]
+    z.std = a, b
+    return z
+  end
 end
 
 dim(A::QuaternionAlgebra) = 4
@@ -92,25 +135,44 @@ dimension_of_center(A::QuaternionAlgebra) = 1
 ################################################################################
 
 function show(io::IO, mime::MIME"text/plain", A::QuaternionAlgebra)
-  @show_name(io, A)
-  @show_special(io, mime, A)
-  println(io, "Quaternion algebra")
-  io = pretty(io)
-  a, b = standard_form(A)
-  println(io, Indent(), "over ", Lowercase(), base_ring(A))
-  print(io, "defined by i^2 = ", a, ", j^2 = ", b)
-  print(io, Dedent())
+  if characteristic(base_ring(A)) !=2
+    @show_name(io, A)
+    @show_special(io, mime, A)
+    println(io, "Quaternion algebra")
+    io = pretty(io)
+    a, b = standard_form(A)
+    println(io, Indent(), "over ", Lowercase(), base_ring(A))
+    print(io, "defined by i^2 = ", a, ", j^2 = ", b, ", ij = -ji")
+    print(io, Dedent())
+  else
+    @show_name(io, A)
+    @show_special(io, mime, A)
+    println(io, "Quaternion algebra")
+    io = pretty(io)
+    a, b = standard_form(A)
+    println(io, Indent(), "over ", Lowercase(), base_ring(A))
+    print(io, "defined by i^2 = i+", a, ", j^2 = ", b, ", ij = ji+j")
+    print(io, Dedent())
+  end
 end
 
 function show(io::IO, A::QuaternionAlgebra)
   if is_terse(io)
     print(io, "Quaternion algebra")
   else
-    a, b = standard_form(A)
-    io = pretty(io)
-    print(io, "Quaternion algebra over ")
-    print(terse(io), Lowercase(), base_ring(A))
-    print(io, " defined by i^2 = ", a, ", j^2 = ", b)
+    if characteristic(base_ring(A))!=2
+      a, b = standard_form(A)
+      io = pretty(io)
+      print(io, "Quaternion algebra over ")
+      print(terse(io), Lowercase(), base_ring(A))
+      print(io, " defined by i^2 = ", a, ", j^2 = ", b, ", ij = -ji")
+    else
+      a, b = standard_form(A)
+      io = pretty(io)
+      print(io, "Quaternion algebra over ")
+      print(terse(io), Lowercase(), base_ring(A))
+      print(io, " defined by i^2 = ", a, ", j^2 = ", b, ", ij = ji+j")
+    end
   end
 end
 
@@ -122,7 +184,7 @@ function AbstractAlgebra.expressify(a::AssociativeAlgebraElem{T, QuaternionAlgeb
   # Expr(:row, a, b) gives a b
   v = a.coeffs
   sum = Expr(:call, :+)
-  for (i, sym) in enumerate([1, :i, :j, :k])
+  for (i, sym) in enumerate([1, :i, :j, :ij])
     push!(sum.args, Expr(:call, :*, AbstractAlgebra.expressify(v[i]; context), AbstractAlgebra.expressify(sym; context)))
   end
   return sum
@@ -171,10 +233,10 @@ algebra.
 
 ```jldoctest
 julia> Q = quaternion_algebra(QQ, -1, -1); a = Q([1, 1, 1, 1])
-1 + i + j + k
+1 + i + j + ij
 
 julia> conjugate(a)
-1 - i - j - k
+1 - i - j - ij
 ```
 """
 function conjugate(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
