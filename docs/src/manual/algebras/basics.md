@@ -38,7 +38,7 @@ Elements of algebras can be constructed by arithmetic with basis elements, gener
 julia> Q = quaternion_algebra(QQ, -1, -1)
 Quaternion algebra
   over rational field
-  defined by i^2 = -1, j^2 = -1
+  defined by i^2 = -1, j^2 = -1, ij = -ji
 
 julia> B = basis(Q);
 
