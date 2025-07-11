@@ -40,13 +40,14 @@ end
 const QmodnZID = AbstractAlgebra.CacheDictType{Tuple{Bool, ZZRingElem, ZZRingElem}, QmodnZ}()
 
 function show(io::IO, G::QmodnZ)
+  io = pretty(io)
   if G.trivialmodulus
-    print(io, "Q/Z")
+    print(io, LowercaseOff(), "Q/Z")
   else
     if isone(G.d)
-      print(io, "Q/", G.n, "Z")
+      print(io, LowercaseOff(), "Q/", G.n, "Z")
     else
-      print(io, "Q/(", G.n, "/", G.d, ")Z")
+      print(io, LowercaseOff(), "Q/(", G.n, "/", G.d, ")Z")
     end
   end
 end
