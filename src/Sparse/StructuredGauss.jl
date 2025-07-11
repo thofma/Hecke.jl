@@ -3,6 +3,7 @@
 #TODO: pointer pointer pointer
 #TODO: sizehint for heavy stuff can be given later, so don't initialize immediately
 #TODO: new struct for second part
+#TODO: use divides false, y to reduce elements
 
 #=
 PROBLEMS:
@@ -114,6 +115,8 @@ function part_echolonize!(A::SMat{T})::data_StructGauss where T <: RingElem
 
  while SG.nlight > 0 && SG.base <= n
   build_part_ref!(SG)
+  test_col_list(SG) #test
+  #@show "after build:" SG.npivots, SG.nlight
   for i = 1:m
    SG.is_light_col[i] && @assert length(SG.col_list[i]) != 1
   end
@@ -124,6 +127,7 @@ function part_echolonize!(A::SMat{T})::data_StructGauss where T <: RingElem
   if best_single_row < 0
    #find_dense_cols(SG)
    turn_heavy(SG)
+   test_col_list(SG) #test
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
   eliminate_and_update2!(best_single_row, SG)
@@ -179,10 +183,14 @@ function build_part_ref!(SG::data_StructGauss)
   queue_new = Int[]
   for j in queue
    if length(SG.col_list[j])==1 && SG.is_light_col[j]
+    #@show j
     singleton_row_origin = only(SG.col_list[j])
     singleton_row_idx = SG.col_list_permi[singleton_row_origin]
+    @assert !iszero(SG.A[singleton_row_idx, j])
     for jj in SG.A[singleton_row_idx].pos
      if SG.is_light_col[jj]
+      #@show jj
+      #!(singleton_row_origin in SG.col_list[jj]) && @show SG.A[SG.col_list_permi[jj], j]
       @assert singleton_row_origin in SG.col_list[jj]
       j_idx = findfirst(isequal(singleton_row_origin), SG.col_list[jj])
       deleteat!(SG.col_list[jj],j_idx)
@@ -348,16 +356,19 @@ end
 function handle_new_light_weight!(i::Int64, SG::data_StructGauss)::data_StructGauss
  w = SG.light_weight[i]
  if w == 0
+  #println("Case1")
   swap_i_into_base(i, SG)
   SG.pivot_col[SG.base] = 0
   move_into_Y(SG.base, SG)
   SG.base+=1
  elseif w == 1
+  #println("Case2")
   if i > SG.single_row_limit
    swap_rows_perm(i, SG.single_row_limit, SG)
   end
   SG.single_row_limit += 1
  elseif SG.base <= i < SG.single_row_limit #TODO: check if necessary
+  #println("Case3")
   swap_rows_perm(i, SG.single_row_limit-1, SG)
   SG.single_row_limit-=1
  end
@@ -389,29 +400,55 @@ end
 function eliminate_and_update2!(best_single_row::Int64, SG::data_StructGauss)::data_StructGauss
  @assert !iszero(best_single_row)
  L_best = deepcopy(SG.col_list_perm[best_single_row])
+ #L_best == 85 && @show SG.A[best_single_row].pos
  light_idx = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
  best_col = SG.A[best_single_row].pos[light_idx]
+ #@show L_best, best_col
  @assert length(SG.col_list[best_col]) > 1
  best_val = SG.A[best_single_row].values[light_idx] #test
  @assert !iszero(best_val) #test
  row_idx = 0
  while length(SG.col_list[best_col]) > 1
   best_single_row = SG.col_list_permi[L_best]
-  @hassert :StructGauss SG.light_weight[best_single_row] == 1
   row_idx = find_row_to_add_on2(best_single_row, best_col, SG)
   @assert row_idx > 0
-  @hassert :StructGauss L_best != SG.col_list_perm[row_idx]
   L_row = SG.col_list_perm[row_idx]
+  @assert L_row != L_best
+  @assert SG.col_list_perm[best_single_row] == L_best #test
   add_to_eliminate2!(L_row, row_idx, best_single_row, best_col, SG)
-  update_after_addition2(L_row, row_idx, best_col, SG)
+  @assert iszero(SG.A[row_idx, best_col])
+  @assert SG.col_list_perm[best_single_row] == L_best #test
+  update_after_addition2!(L_row, row_idx, best_col, SG)
+  @assert SG.col_list_perm[best_single_row] == L_best #test
+  #@show L_row
+  #test_col_list(SG) #FAILS
+  for i in 1:length(SG.col_list) #test works
+    C = SG.col_list[i]
+    if SG.is_light_col[i]
+     L_best in C && @assert SG.A[best_single_row, i] != 0
+    end
+  end
   handle_new_light_weight!(row_idx, SG)
+   #=
+  r = SG.col_list_permi[L_best]
+ 
+  @show r == best_single_row
+  
+  for i in 1:length(SG.col_list) #test works
+    C = SG.col_list[i]
+    if SG.is_light_col[i]
+     L_best in C && @assert SG.A[best_single_row, i] !=0
+    end
+  end
+  =# #TODO: check case where r != best_single_row
  end
  return SG
 end
 
 function eliminate_and_update_field!(best_single_row::Int64, SG::data_StructGauss)::data_StructGauss
  @assert best_single_row != 0
- best_col = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
+ light_idx = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
+ best_col = SG.A[best_single_row].pos[light_idx]
  @assert length(SG.col_list[best_col]) > 1
  best_val = SG.A[best_single_row, best_col]
  @assert !iszero(best_val)
@@ -484,13 +521,15 @@ end
 function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_StructGauss)::data_StructGauss
  L_best = SG.col_list_perm[best_single_row]
  @assert L_row in SG.col_list[best_col]
+ @assert L_best != L_row
+ @assert L_row == SG.col_list_perm[row_idx] #test
  @assert !(0 in SG.A[row_idx].values)
- best_row = SG.A[best_single_row]
- bv = best_row.values[searchsortedfirst(best_row.pos, best_col)]
- for c in SG.A[row_idx].pos
+ test_col_list(SG)
+ for c in SG.A[row_idx].pos 
   @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
   if SG.is_light_col[c]
    jj = searchsortedfirst(SG.col_list[c], L_row)
+   @assert SG.col_list[c][jj] == L_row
    deleteat!(SG.col_list[c], jj)
   end
  end
@@ -500,27 +539,40 @@ function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64
  @assert !iszero(val)
  fl, tmp = divides(val, best_val)
  if fl #best_val divides val
+  #println("add Case1, $fl, $tmp")
   tmp = neg!(tmp)
   SG.A.nnz -= length(SG.A[row_idx])
   SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp)
   SG.A.nnz += length(SG.A[row_idx])
+  @assert iszero(SG.A[row_idx, best_col])
  else
   fl, tmp = divides(best_val, val)
   if fl #val divides best_val
+   #println("add Case2, $fl, $tmp")
    SG.A.nnz -= length(SG.A[row_idx])
    tmp = neg!(tmp)
    scale_row!(SG.A, row_idx, tmp)
    tmp = one!(tmp)
    SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp)
    SG.A.nnz += length(SG.A[row_idx])
+   @assert iszero(SG.A[row_idx, best_col])
   else
-   g, a_best, a_row = gcdx(best_val, val)
+   #println("add Case3, $fl, $tmp")
+   zero!(tmp)
+   g = gcd(best_val, val)
+   #TODO: find out why gcdx so slow
    val_red = div(val, g)
    val_red = neg!(val_red)
    best_val_red = div(best_val, g)
    SG.A.nnz -= length(SG.A[row_idx])
-   Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], SG.R(1), tmp, val_red, best_val_red)
+   #@show SG.A[best_single_row]
+   Hecke.transform_row!(SG.A, best_single_row, row_idx, SG.R(1), tmp, val_red, best_val_red)
+   #@show SG.A[best_single_row]
+   #TODO: write transform_rows for rows
    SG.A.nnz += length(SG.A[row_idx])
+   @assert iszero(SG.A[row_idx, best_col])
+   @assert !iszero(SG.A[best_single_row, best_col])
+   @assert L_best != SG.col_list_perm[row_idx]
   end
  end
  return SG
@@ -554,6 +606,22 @@ function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, S
   if SG.is_light_col[c]
     insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], L_row), L_row)
     SG.light_weight[row_idx]+=1
+  end
+ end
+ return SG
+end
+
+function update_after_addition2!(L_row::Int64, row_idx::Int64, best_col::Int64, SG::data_StructGauss)::data_StructGauss
+ @assert L_row == SG.col_list_perm[row_idx]
+ @assert !(0 in SG.A[row_idx].values)
+ SG.light_weight[row_idx] = 0
+ for c_idx in 1:length(SG.A[row_idx].pos)
+  c = SG.A[row_idx].pos[c_idx]
+  @assert c != best_col
+  @assert SG.A[row_idx].values[c_idx] != 0
+  if SG.is_light_col[c]
+   insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], L_row), L_row)
+   SG.light_weight[row_idx]+=1
   end
  end
  return SG
@@ -775,6 +843,41 @@ function delete_zero_rows!(A::SMat{T}) where T
     end
   end
   return A
+end
+
+################################################################################
+#
+#  Tests
+#
+################################################################################
+
+function test_col_list(SG)
+ T = transpose(SG.A)
+ 
+ for j in 1:SG.A.c
+  if SG.is_light_col[j]
+   @assert issorted(SG.col_list[j])
+   S = sort!([SG.col_list_perm[k] for k in T[j].pos])
+   if S != SG.col_list[j]
+    s = setdiff(S, SG.col_list[j])[1] #
+    @show j, s, S, SG.col_list[j], SG.A[SG.col_list_permi[s],j], SG.A[SG.col_list_permi[59],j]
+    idx = searchsortedfirst(SG.A[SG.col_list_permi[s]].pos, j)
+    _row = SG.A[SG.col_list_permi[s]]
+    @show idx, _row.pos, _row.values[idx], iszero(_row.values[idx])#.values[idx]
+   end
+   @assert S == SG.col_list[j]
+  end
+ end
+end
+
+function test_col_list2(SG, L_row)
+ T = transpose(SG.A)
+ for j in 1:SG.A.c
+  if SG.is_light_col[j]
+   S = sort!([SG.col_list_perm[k] for k in T[j].pos])
+   @assert S == SG.col_list[j] || setdiff(S, SG.col_list[j])[1] == L_row
+  end
+ end
 end
 
 
