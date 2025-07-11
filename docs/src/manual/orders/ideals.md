@@ -82,8 +82,7 @@ julia> k, a = wildanger_field(3, 13);
 julia> zk = maximal_order(k);
 
 julia> c, mc = class_group(zk)
-(Z/9, ClassGroup map of
-Set of ideals of zk)
+(Z/9, Class group map of set of ideals of zk)
 
 julia> lp = prime_ideals_up_to(zk, 20);
 

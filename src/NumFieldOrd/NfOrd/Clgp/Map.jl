@@ -231,8 +231,9 @@ end
 
 function show(io::IO, mC::MapClassGrp)
   @show_name(io, mC)
-  println(io, "ClassGroup map of ")
-  show(IOContext(io, :compact => true), codomain(mC))
+  io = pretty(io)
+  print(io, "Class group map of ", Lowercase())
+  show(terse(io), codomain(mC))
 end
 
 function class_group(c::ClassGrpCtx, O::AbsSimpleNumFieldOrder = order(c); redo::Bool = false)

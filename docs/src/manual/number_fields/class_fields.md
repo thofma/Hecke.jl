@@ -65,8 +65,7 @@ julia> Qx, x = polynomial_ring(QQ, :x);
 julia> K, a = number_field(x^2 - 10, :a);
 
 julia> c, mc = class_group(K)
-(Z/2, ClassGroup map of
-Set of ideals of O_K)
+(Z/2, Class group map of set of ideals of O_K)
 
 julia> A = ray_class_field(mc)
 Class field

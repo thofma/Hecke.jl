@@ -351,7 +351,7 @@ end
 
 function show(io::IO, s::AbsNumFieldOrderFractionalIdealSet)
    print(io, "Set of fractional ideals of ")
-   print(io, s.order)
+   print(io, Lowercase(), order(s))
 end
 
 function show(io::IO, id::AbsNumFieldOrderFractionalIdeal)
