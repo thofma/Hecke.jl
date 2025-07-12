@@ -1,0 +1,1207 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-\.]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
+    
+    
+      
+        <title>Introduction - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.adb8469c.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.86422ebf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#class-field-theory" tabindex="0" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Hecke" aria-label="Hecke" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Hecke
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Introduction
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../.." class="md-tabs__link">
+        About
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    
+    
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../number_fields/intro/" class="md-tabs__link">
+          Documentation
+        </a>
+      
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="https://www.github.com/thofma/Hecke.jl" class="md-tabs__link">
+          Source
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Hecke
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Number fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        Number fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/basics/" title="Creation and basics" class="md-nav__link">
+      Creation and basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/internal/" title="Internals" class="md-nav__link">
+      Internals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2">
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Orders
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        Orders
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../orders/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../orders/orders/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../orders/elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../orders/ideals/" title="Ideals" class="md-nav__link">
+      Ideals
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../orders/frac_ideals/" title="Fractional Ideals" class="md-nav__link">
+      Fractional Ideals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Quadratic and Hermitian forms
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Quadratic and Hermitian forms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/basics/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/lattices/" title="Lattices" class="md-nav__link">
+      Lattices
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Abelian groups
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Abelian groups
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../abelian/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5" checked>
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Class fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Class fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Introduction
+      </label>
+    
+    <a href="./" title="Introduction" class="md-nav__link md-nav__link--active">
+      Introduction
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ray-class-groups" class="md-nav__link">
+    Ray Class Groups
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ray-class-fields" class="md-nav__link">
+    Ray Class Fields
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversions" class="md-nav__link">
+    Conversions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operations" class="md-nav__link">
+    Operations
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Misc
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../FacElem/" title="Factored Elements" class="md-nav__link">
+      Factored Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sparse/intro/" title="Sparse Linear Algebra" class="md-nav__link">
+      Sparse Linear Algebra
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Source
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Source
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://www.github.com/thofma/Hecke.jl" title="None" class="md-nav__link">
+      None
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ray-class-groups" class="md-nav__link">
+    Ray Class Groups
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ray-class-fields" class="md-nav__link">
+    Ray Class Fields
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversions" class="md-nav__link">
+    Conversions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operations" class="md-nav__link">
+    Operations
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p><a id='Class-Field-Theory-1'></a></p>
+<h1 id="class-field-theory">Class Field Theory</h1>
+<p><a id='Introduction-1'></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>This chapter deals with abelian extensions of number fields and the rational numbers.</p>
+<p>Class Field Theory, here specifically, class field theory of global number fields, deals with abelian extension, ie. fields where the group of automorphisms is abelian. For extensions of {\Q}, the famous Kronnecker-Weber theorem classifies all such fields: a field is abelian if and only if it is contained in some cyclotomic field. For general number fields this is more involved and even for extensions of {\Q} is is not practical.</p>
+<p>In Hecke, abelian extensions are parametrized by quotients of so called ray class groups. The language of ray class groups while dated is more applicable to algorithms than the modern language of idel class groups and quotients.</p>
+<p><a id='Ray-Class-Groups-1'></a></p>
+<h2 id="ray-class-groups">Ray Class Groups</h2>
+<p>Given an integral ideal <script type="math/tex">m_0 \le Z_K</script> and a list of real places <script type="math/tex">m_\infty</script>, the ray class group modulo <script type="math/tex">(m_0, m_\infty)</script>, <script type="math/tex">C(m)</script> is defined as the group of ideals coprime to <script type="math/tex">m_0</script> modulo the elements <script type="math/tex">a\in K^*</script> s.th. <script type="math/tex">v_p(a-1) \ge v_p(m_0)</script> and for all <script type="math/tex">v\in m_\infty</script>, <script type="math/tex">a^{(v)} >0</script>. This is a finite abelian group. For <script type="math/tex">m_0 = Z_K</script> and <script type="math/tex">m_\infty = \{\}</script> we get <script type="math/tex">C()</script> is the class group, if <script type="math/tex">m_\infty</script> contains all real places, we obtain the narrow class group, or strict class group.</p>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Array{Hecke.InfPlc,1}; p_part, n_quo)</code>. Check Documenter's build log for details.</p>
+</div>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">class_group</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">;</span> <span class="n">bound</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">redo</span> <span class="o">=</span> <span class="kc">false</span><span class="p">,</span> <span class="n">large</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GrpAbFinGen</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+
+<p>Returns a group <script type="math/tex">A</script> and a map <script type="math/tex">f</script> from <script type="math/tex">A</script> to the set of ideals of <script type="math/tex">O</script>. The inverse of the map is the projection onto the group of ideals modulo the  group of principal ideals. \texttt{redo} allows to trigger a re-computation, thus avoiding the cache. \texttt{bound}, when given, is the bound for the factor base.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">class_group</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GrpAbFinGen</span><span class="p">,</span> <span class="n">Map</span>
+</code></pre></div>
+
+<p>Shortcut for <code>class_group(maximal_order(K))</code>: returns the class group as an abelian group and a map from this group to the set of ideals of the maximal order.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">norm_group</span><span class="p">(</span><span class="n">f</span><span class="o">::</span><span class="n">Nemo</span><span class="o">.</span><span class="n">PolyElem</span><span class="p">,</span> <span class="n">mR</span><span class="o">::</span><span class="n">Hecke</span><span class="o">.</span><span class="n">MapRayClassGrp</span><span class="p">,</span> <span class="n">isabelian</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span> <span class="n">of_closure</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAb</span><span class="p">,</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAbMap</span>
+
+<span class="n">norm_group</span><span class="p">(</span><span class="n">f</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">PolyElem</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">},</span> <span class="n">mR</span><span class="o">::</span><span class="n">Hecke</span><span class="o">.</span><span class="n">MapRayClassGrp</span><span class="p">,</span> <span class="n">isabelian</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span> <span class="n">of_closure</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAb</span><span class="p">,</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAbMap</span>
+</code></pre></div>
+
+<p>Computes the subgroup of the Ray Class Group <script type="math/tex">R</script> given by the norm of the extension generated by a/the roots of <script type="math/tex">f</script>. If <code>isabelian</code> is set to true, then the code assumes the field to be abelian, hence the algorithm stops when the quotient by the norm group has the correct order. Even though the algorithm is probabilistic by nature, in this case the result is guaranteed. If <code>of_closure</code> is given, then the norm group of the splitting field of the polynomial(s) is computed. It is the callers responsibility to ensure that the ray class group passed in is large enough.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">norm_group</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">NfRel</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">},</span> <span class="n">mR</span><span class="o">::</span><span class="n">Hecke</span><span class="o">.</span><span class="n">MapRayClassGrp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAb</span><span class="p">,</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAbMap</span>
+
+<span class="n">norm_group</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">NfRelNS</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">},</span> <span class="n">mR</span><span class="o">::</span><span class="n">Hecke</span><span class="o">.</span><span class="n">MapRayClassGrp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAb</span><span class="p">,</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">FinGenGrpAbMap</span>
+</code></pre></div>
+
+<p>Computes the subgroup of the Ray Class Group <script type="math/tex">R</script> given by the norm of the extension.</p>
+<p><a id='Ray-Class-Fields-1'></a></p>
+<h2 id="ray-class-fields">Ray Class Fields</h2>
+<p>In general, the construction of a class field starts with a (ray) class group. Each quotient of a ray class group then defines a ray class field, the defining property is that the (relative) automorphism group is canonically isomorphic to the quotient of the ray class group where the isomorphism is given by the Artin (or Frobenius) map. Since, in Hecke, the (ray) class groups have no link to the field, actually this has to be specified using the maps.</p>
+<p>It should be noted that this is a {\em lazy} construction: nothing is computed at this point.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">ray_class_field</span><span class="p">(</span><span class="n">m</span><span class="o">::</span><span class="n">MapClassGrp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+<span class="n">ray_class_field</span><span class="p">(</span><span class="n">m</span><span class="o">::</span><span class="n">MapRayClassGrp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>Creates the (formal) abelian extension defined by the map <script type="math/tex">m: A \to I</script> where <script type="math/tex">I</script> is the set of ideals coprime to the modulus defining <script type="math/tex">m</script> and <script type="math/tex">A</script>  is a quotient of the ray class group (or class group). The map <script type="math/tex">m</script> must be the map returned from a call to {class<em>group} or {ray</em>class_group}.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">ray_class_field</span><span class="p">(</span><span class="n">m</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="n">MapClassGrp</span><span class="p">,</span> <span class="n">MapRayClassGrp</span><span class="p">},</span> <span class="n">quomap</span><span class="o">::</span><span class="n">GrpAbFinGenMap</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>For <script type="math/tex">m</script> a map computed by either {ray<em>class</em>group} or {class_group} and <script type="math/tex">q</script> a canonical projection (quotient map) as returned by {quo} for q  quotient of the domain of <script type="math/tex">m</script> and a subgroup of <script type="math/tex">m</script>, create the (formal) abelian extension where the (relative) automorphism group is canonically isomorphic to the codomain of <script type="math/tex">q</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">ray_class_field</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">;</span> <span class="n">n_quo</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The ray class field modulo <script type="math/tex">I</script>. If <code>n_quo</code> is given, then the largest subfield of exponent <script type="math/tex">n</script> is computed.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">ray_class_field</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">,</span> <span class="n">inf</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">InfPlc</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span> <span class="n">n_quo</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The ray class field modulo <script type="math/tex">I</script> and the infinite places given. If <code>n_quo</code> is given, then the largest subfield of exponent <script type="math/tex">n</script> is computed.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">hilbert_class_field</span><span class="p">(</span><span class="n">k</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The Hilbert class field of <script type="math/tex">k</script> as a formal (ray-) class field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">ring_class_field</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The ring class field of <script type="math/tex">O</script>, ie. the maximal abelian extension ramifed  only at primes dividing the conductor with the automorphism group isomorphic to the Picard group.</p>
+<h3 id="example">Example</h3>
+<div class="codehilite"><pre><span></span><code>julia&gt; Qx, x = PolynomialRing(FlintQQ, &quot;x&quot;);
+
+julia&gt; K, a = NumberField(x^2 - 10, &quot;a&quot;);
+
+julia&gt; c, mc = class_group(K)
+(GrpAb: Z/2, ClassGroup map of
+Set of ideals of Maximal order of Number field over Rational Field with defining polynomial x^2-10
+with basis nf_elem[1, a]
+)
+
+julia&gt; A = ray_class_field(mc)
+Class field defined mod (&lt;1, 1&gt;, InfPlc[]) of structure Abelian group with structure: Z/2
+</code></pre></div>
+
+<p><a id='Conversions-1'></a></p>
+<h2 id="conversions">Conversions</h2>
+<p>Given a ray class field, it is possible to actually compute defining equation(s) for this field. In general, the number field constructed this way will be non-simple by type and is defined by a polynomial for each maximal cyclic quotient of prime power order in the defining group.</p>
+<p>The algorithm employed is based on Kummer-theory and requires the addition of a suitable root of unity. Progress can be monitored by setting {{{set<em>verbose</em>level(:ClassField, n)}}} where <script type="math/tex">0\le n\le 3</script>
+</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">NumberField</span><span class="p">(</span><span class="n">CF</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hecke</span><span class="o">.</span><span class="n">NfRelNS</span><span class="p">{</span><span class="n">Nemo</span><span class="o">.</span><span class="n">nf_elem</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Given a (formal) abelian extension, compute the class field by finding defining polynomials for all prime power cyclic subfields. Note, by type this is always a non-simple extension.</p>
+<div class="codehilite"><pre><span></span><code>julia&gt; Qx, x = PolynomialRing(FlintQQ, &quot;x&quot;);
+
+julia&gt; k, a = NumberField(x^2 - 10, &quot;a&quot;);
+
+julia&gt; c, mc = class_group(k);
+
+julia&gt; A = ray_class_field(mc)
+Class field defined mod (&lt;1, 1&gt;, InfPlc[]) of structure Abelian group with structure: Z/2
+
+julia&gt; K = number_field(A)
+non-simple Relative number field over
+Number field over Rational Field with defining polynomial x^2-10
+ with defining polynomials AbstractAlgebra.Generic.MPoly{nf_elem}[_$1^2+(-2)]
+
+julia&gt; ZK = maximal_order(K)
+Relative maximal order of non-simple Relative number field over
+Number field over Rational Field with defining polynomial x^2-10
+ with defining polynomials AbstractAlgebra.Generic.MPoly{nf_elem}[_$1^2+(-2)]
+with pseudo-basis
+(1, 1//1 * &lt;1, 1&gt;)
+(_$1+(a), 1//4 * &lt;2, 3*a+2&gt;)
+
+julia&gt; isone(discriminant(ZK))
+true
+</code></pre></div>
+
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">ray_class_field</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">NfRel</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>For a (relative) abelian extension, compute an abstract representation as a class field. </p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">genus_field</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">k</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The maximal extension contained in <script type="math/tex">A</script> that is the compositum of <script type="math/tex">K</script> with an abelian extension of <script type="math/tex">k</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">maximal_abelian_subfield</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">k</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The maximal abelian extension of <script type="math/tex">k</script> contained in <script type="math/tex">A</script>. <script type="math/tex">k</script> must be a subfield of the base field of <script type="math/tex">A</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">maximal_abelian_subfield</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">NfRel</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">};</span> <span class="n">of_closure</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>Using a probabilistic algorithm for the norm group computation, determine tha maximal abelian subfield in <script type="math/tex">K</script> over its base field. If <code>of_closure</code> is set to true, then the algorithm is applied to the normal closure if <script type="math/tex">K</script> (without computing it).</p>
+<p><a id='Invariants-1'></a></p>
+<h2 id="invariants">Invariants</h2>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">degree</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The degree of <script type="math/tex">A</script> over its base field, ie. the size of the defining ideal group.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">base_ring</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The maximal order of the field that <script type="math/tex">A</script> is defined over.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">base_field</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The number field that <script type="math/tex">A</script> is defined over.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">discriminant</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</code></pre></div>
+
+<p>Using the conductor-discriminant formula, compute the (relative) discriminant of <script type="math/tex">C</script>. This does not use the defining equations.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">conductor</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span><span class="p">,</span> <span class="kt">Array</span><span class="p">{</span><span class="n">InfPlc</span><span class="p">,</span><span class="mi">1</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Return the conductor of the abelian extension corresponding to C</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">defining_modulus</span><span class="p">(</span><span class="n">CF</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The modulus, ie. an ideal the the set of real places, used to create the class field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">iscyclic</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Tests if the (relative) automorphism group of <script type="math/tex">C</script> is cyclic (by checking the defining ideal group).</p>
+<hr />
+<p>isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; check) -&gt; NfOrdIdl, Array{InfPlc,1}</p>
+<p>Checks if (m, inf_plc) is the conductor of the abelian extension corresponding to C. If check is false, it assumes that the  given modulus is a multiple of the conductor. This is usually faster than computing the conductor.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">isnormal</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+
+<p>For a class field <script type="math/tex">C</script> defined over a normal base field <script type="math/tex">k</script>, decide if <script type="math/tex">C</script> is normal over <script type="math/tex">Q</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">iscentral</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+
+<p>For a class field <script type="math/tex">C</script> defined over a normal base field <script type="math/tex">k</script>, decide if <script type="math/tex">C</script> is central over <script type="math/tex">Q</script>.</p>
+<p><a id='Operations-1'></a></p>
+<h2 id="operations">Operations</h2>
+<hr />
+<p>*(A::ClassField, B::ClassField) -&gt; ClassField The compositum of <script type="math/tex">a</script> and <script type="math/tex">b</script> as a (formal) class field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">compositum</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<blockquote>
+<p>The compositum of <script type="math/tex">a</script> and <script type="math/tex">b</script> as a (formal) class field.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="o">==</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Tests if <script type="math/tex">a</script> and <script type="math/tex">b</script> are equal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">intersect</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>The intersect of <script type="math/tex">a</script> and <script type="math/tex">b</script> as a class field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">prime_decomposition_type</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+
+<p>For a prime <script type="math/tex">p</script> in the base ring of <script type="math/tex">r</script>, determine the splitting type of <script type="math/tex">p</script>  in <script type="math/tex">r</script>. ie. the tuple <script type="math/tex">(e, f, g)</script> giving the ramification degree, the inertia and the number of primes above <script type="math/tex">p</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">issubfield</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+
+<p>Determines of <script type="math/tex">a</script> is a subfield of <script type="math/tex">b</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">islocal_norm</span><span class="p">(</span><span class="n">r</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+
+<p>Tests if <script type="math/tex">a</script> is a local norm at all finite places in the extension implictly given by <script type="math/tex">r</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">islocal_norm</span><span class="p">(</span><span class="n">r</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+
+<p>Tests if <script type="math/tex">a</script> is a local norm at <script type="math/tex">p</script> in the extension implictly given by <script type="math/tex">r</script>. Currently the conductor cannot have infinite places.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">normal_closure</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassField</span>
+</code></pre></div>
+
+<p>For a ray class field <script type="math/tex">C</script> extending a normal base field <script type="math/tex">k</script>, compute the normal closure over <script type="math/tex">Q</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">subfields</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">ClassField</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Find all subfields of <script type="math/tex">C</script> as class fields.     Note: this will not find all subfields over <script type="math/tex">Q</script>, but only the ones sharing the same base field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">subfields</span><span class="p">(</span><span class="n">C</span><span class="o">::</span><span class="n">ClassField</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">ClassField</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Find all subfields of <script type="math/tex">C</script> of degree <script type="math/tex">d</script> as class fields.     Note: this will not find all subfields over <script type="math/tex">Q</script>, but only the ones sharing the same base field.</p>
+                
+                  
+                
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../abelian/introduction/" title="Introduction" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Introduction
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../../FacElem/" title="Factored Elements" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Factored Elements
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org" target="_blank" rel="noopener">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.c33a9706.js"></script>
+      
+      <script>app.initialize({version:"1.1",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+    
+  </body>
+</html>
