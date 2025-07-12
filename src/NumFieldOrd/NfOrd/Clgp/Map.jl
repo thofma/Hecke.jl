@@ -229,6 +229,10 @@ function change_base_ring(mC::MapClassGrp, O::AbsSimpleNumFieldOrder)
   return mD
 end
 
+function AbstractAlgebra.show_map_head(io::IO, mC::MapClassGrp)
+  print(io, "Class group map")
+end
+
 function show(io::IO, mC::MapClassGrp)
   @show_name(io, mC)
   io = pretty(io)
