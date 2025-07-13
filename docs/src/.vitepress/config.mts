@@ -148,6 +148,7 @@ export default defineConfig({
               text: 'Miscellaneous',
               collapsed: true,
               items: [
+                { text: 'Elementary number theory', link: '/manual/misc/elementary'},
                 { text: 'Factored elements', link: '/manual/misc/FacElem'},
                 { text: 'Sparse linear algebra', link: '/manual/misc/sparse'},
                 { text: 'Conjugacy of integer matrices', link: '/manual/misc/conjugacy'},

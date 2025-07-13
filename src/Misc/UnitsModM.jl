@@ -667,3 +667,36 @@ end
 
 unit_group(A::Nemo.ZZModRing) = UnitGroup(A)
 unit_group(A::Nemo.zzModRing) = UnitGroup(A)
+
+function primitive_root(n::ZZRingElem)
+  @req n >= 1 "Argument ($n) must be positive"
+  if n == 1
+    return zero(n)
+  end
+  if n == 2
+    return one(n)
+  end
+  e, _n = remove(n, 2)
+  @req n == 1 || n == 2 || n == 4 ||
+    e in [0, 1] && is_prime_power(_n) "Argument ($n) must be 1, 2, 4, p^k, or 2p^k with p an odd prime"
+  R = residue_ring(ZZ, n; cached = false)[1]
+  U, UtoR = unit_group(R)
+  @assert ngens(U) == 1
+  return lift(UtoR(gen(U, 1)))
+end
+
+@doc raw"""
+    primitive_root(n::IntegerUnion) -> IntegerUnion
+
+Given a positive integer $n$, return a primitive root modulo $n$. If no such
+element exists, an error is thrown.
+
+# Examples
+```jldoctest
+julia> primitive_root(6)
+5
+```
+"""
+function primitive_root(n::IntegerUnion)
+  return typeof(n)(primitive_root(ZZ(n)))
+end
