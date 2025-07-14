@@ -41,3 +41,19 @@ end
   R = localization(base_ring(F),degree)
   Oinfi = integral_closure(R,F)
 end
+
+@testset "Misc" begin
+  k = GF(9)
+  kt, t = rational_function_field(k, "t")
+  ktx, x = polynomial_ring(kt, "x")
+  F20, a = function_field(x^5+t*x^3+t^5+t^2+1)
+  kx = parent(numerator(gen(base_ring(F20)))) #Fq[t]
+  O = Hecke.GenOrd(kx, F20)
+  d = discriminant(O)
+  ld = factor(d)
+  _fac = [(p,k) for (p,k) in ld.fac]
+  p = _fac[2][1]
+  I = Hecke.radical_basis_power(O, p)
+  S = ring_of_multipliers(O, I, p, true)
+  @test basis(O, F20) == basis(S, F20)
+end
