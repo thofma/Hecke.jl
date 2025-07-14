@@ -9,55 +9,25 @@ function add_to_key!(D::Dict{S, T}, k::S, v; remove_zero::Bool = true) where S w
   return nothing
 end
 
-if VERSION >= v"1.9.0-DEV.215"
-  function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: IntegerUnion
-    hash_k, sh = Base.ht_keyindex2_shorthash!(D, k)
-    if hash_k > 0
-      D.age += 1
-      #The key is in the dictionary, we only need to add
-      w = D.vals[hash_k]
-      if remove_zero
-        if w != v && iszero(cmpabs(w, v))
-          Base._delete!(D, hash_k)
-        else
-          @inbounds D.vals[hash_k] = w + v
-        end
-      else
-        @inbounds Base._setindex!(D, w + v, k, -hash_k, sh)
-      end
-    else
-      @inbounds Base._setindex!(D, v, k, -hash_k, sh)
-    end
-    return nothing
-  end
-else
-  function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: IntegerUnion
-    hash_k = Base.ht_keyindex2!(D, k)
-    if hash_k > 0
-      #The key is in the dictionary, we only need to add
-      w = D.vals[hash_k]
-      if remove_zero
-        if w != v && iszero(cmpabs(w, v))
-          Base._delete!(D, hash_k)
-        else
-          @inbounds D.vals[hash_k] = w + v
-        end
+function add_to_key!(D::Dict{S, T}, k::S, v::T; remove_zero::Bool = true) where S where T <: IntegerUnion
+  hash_k, sh = Base.ht_keyindex2_shorthash!(D, k)
+  if hash_k > 0
+    D.age += 1
+    #The key is in the dictionary, we only need to add
+    w = D.vals[hash_k]
+    if remove_zero
+      if w != v && iszero(cmpabs(w, v))
+        Base._delete!(D, hash_k)
       else
         @inbounds D.vals[hash_k] = w + v
       end
     else
-      pos = -hash_k
-      @inbounds D.slots[pos] = 0x1
-      @inbounds D.keys[pos] = k
-      @inbounds D.vals[pos] = v
-      D.count += 1
-      if pos < D.idxfloor
-        D.idxfloor = pos
-      end
+      @inbounds Base._setindex!(D, w + v, k, -hash_k, sh)
     end
-    D.age += 1
-    return nothing
+  else
+    @inbounds Base._setindex!(D, v, k, -hash_k, sh)
   end
+  return nothing
 end
 
 

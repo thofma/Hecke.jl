@@ -382,7 +382,7 @@ function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlge
     for j in 1:d
       k = mA[i, j]
       _v = v[k]
-      if _ismutabletype(T)
+      if ismutabletype(T)
         _v = addmul!(_v, ca[i], cb[j])
       else
         v[k] = addmul!(_v, ca[i], cb[j])
@@ -391,12 +391,6 @@ function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlge
   end
 
   return c
-end
-
-if VERSION <= v"1.7"
-  _ismutabletype(::Type{T}) where {T} = T.mutable
-else
-  _ismutabletype(::Type{T}) where {T} = ismutabletype(T)
 end
 
 function mul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::AssociativeAlgebraElem{T}) where {T}
