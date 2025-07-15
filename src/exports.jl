@@ -241,6 +241,7 @@ export content_ideal
 export contract
 export coordinates
 export coprime_base
+export coprime_residues
 export copy
 export cos
 export cover
@@ -743,6 +744,7 @@ export prime_ideals_over
 export prime_ideals_up_to
 export primes
 export primitive_closure
+export primitive_root
 export principal_generator
 export principal_subfields
 export pselmer_group

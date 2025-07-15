@@ -63,7 +63,6 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
       R = x
       mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
     end
-    r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
   end
   H = vcat(H, d*identity_matrix(parent(d), ncols(M)))

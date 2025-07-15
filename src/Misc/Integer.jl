@@ -757,3 +757,48 @@ function support(a::QQFieldElem)
   return res
 end
 
+################################################################################
+#
+#   Coprime residues
+#
+################################################################################
+
+@doc raw"""
+    coprime_residues(n::IntegerUnion) -> Vector
+
+Given an integer $n$, return the list of all $i$ in the range $0 \leq i < |n|$
+that are coprime to $n$.
+
+# Examples
+
+```jldoctest
+julia> println(coprime_residues(20))
+[1, 3, 7, 9, 11, 13, 17, 19]
+```
+"""
+function coprime_residues(n::IntegerUnion)
+  @req fits(Int, n) "Argument ($n) too large too compute coprime residues"
+  if n isa Int
+    return _coprime_residues(n)
+  else
+    return convert(Vector{typeof(n)}, _coprime_residues(Int(n)))
+  end
+end
+
+function _coprime_residues(n::Int)
+  if n == 0
+    return Int[]
+  end
+  if abs(n) == 1
+    return Int[0]
+  end
+  n = abs(n)
+  B = ones(Bool, n - 1)
+  ps = prime_divisors(n)
+  for p in ps
+    for i in 1:(div(n, p) - 1)
+      B[p*i] = false
+    end
+  end
+  return findall(B)
+end

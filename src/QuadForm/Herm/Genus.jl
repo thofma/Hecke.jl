@@ -1857,6 +1857,13 @@ function hermitian_genera(
   @req !iszero(max_scale) "max_scale must be a non-zero fractional ideal"
   @req !iszero(min_scale) "min_scale must be a non-zero fractional ideal"
   @req all(v -> 0 <= v <= rank, values(signatures)) "Incompatible signatures and rank"
+  # determinant/volume D must be coming from a fractional ideal of K
+  # since E/K is quadratic, this is the case if and only if sigma(D) = D
+  # and v_P(D) is even for all ramified primes of OE.
+  A = automorphism_list(E)
+  if A[1](determinant) != A[2](determinant) || any(!is_even(valuation(determinant, P)) for P in support(different(OE)))
+    return genus_herm_type(E)[]
+  end
   union!(bd, support(norm(min_scale)))
   union!(bd, support(norm(max_scale)))
   union!(bd, support(norm(determinant)))
