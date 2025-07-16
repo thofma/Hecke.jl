@@ -8,7 +8,7 @@ DocTestSetup = Hecke.doctestsetup()
 By definition, mathematically a number field is just a finite extension of the rationals $\mathbf{Q}$.
 In Hecke, a number field $L$ is recursively defined as being the field of rational numbers $\mathbf{Q}$ or
 a finite extension of a number field $K$. In the second case, the extension
-can be defined in the one of the following two ways:
+can be defined in one of the following two ways:
  - We have $L = K[x]/(f)$, where $f \in K[x]$ is an irreducible polynomial (*simple extension*), or
  - We have $L = K[x_1,\dotsc,x_n]/(f_1(x_1),\dotsc,f_n(x_n))$, where $f_1,\dotsc,f_n \in K[x]$
    are univariate polynomials (*non-simple extension*).
