@@ -86,3 +86,10 @@ function roots(f::PolyRingElem{QQBarFieldElem})
   return rts
 end
 
+@doc doc"""
+    is_integral(a::QQBarFieldElem) -> Bool
+
+Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
+has integral coefficients.
+"""
+is_integral(a::QQBarFieldElem) = is_algebraic_integer(a)
