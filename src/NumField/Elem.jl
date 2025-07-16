@@ -32,15 +32,16 @@ end
 #
 ################################################################################
 
-is_integral(a::QQFieldElem) = isone(denominator(a))
+is_algebraic_integer(a::QQFieldElem) = isone(denominator(a))
+
+is_integral(a::QQFieldElem) = is_algebraic_integer(a)
 
 @doc doc"""
-    is_integral(a::NumFieldElem) -> Bool
+    is_algebraic_integer(x::NumFieldElem)
 
-Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
-has integral coefficients.
+Return whether $x$ is an algebraic integer.
 """
-function is_integral(a::NumFieldElem)
+function is_algebraic_integer(a::NumFieldElem)
   K = parent(a)
   if is_maximal_order_known(K)
     OK = maximal_order(K)
@@ -54,6 +55,14 @@ function is_integral(a::NumFieldElem)
   end
   return true
 end
+
+@doc doc"""
+    is_integral(a::NumFieldElem) -> Bool
+
+Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
+has integral coefficients.
+"""
+is_integral(a::NumFieldElem) = is_algebraic_integer(a)
 
 ################################################################################
 #
