@@ -57,6 +57,31 @@ end
 
 ################################################################################
 #
+#  Integer and rational
+#
+################################################################################
+
+@doc raw"""
+    isinteger(a::AbsNonSimpleNumFieldElem)
+
+Return `true` if the given number field element is an integer, i.e., in ZZ, otherwise
+return `false`.
+"""
+function isinteger(a::AbsNonSimpleNumFieldElem)
+  is_constant(data(a)) || return false
+  return is_one(denominator(constant_coefficient(data(a))))
+end
+
+@doc raw"""
+    is_rational(a::AbsNonSimpleNumFieldElem)
+
+Return `true` if the given number field element is a rational number, i.e., in QQ,
+otherwise `false`.
+"""
+is_rational(a::AbsNonSimpleNumFieldElem) = is_constant(data(a))
+
+################################################################################
+#
 #  Random elements from arrays of number field elements
 #
 ################################################################################

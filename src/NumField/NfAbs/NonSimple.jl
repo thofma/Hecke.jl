@@ -1207,6 +1207,3 @@ function (K::QQField)(a::AbsNonSimpleNumFieldElem)
   return constant_coefficient(data(a))
 end
 
-function is_rational(a::AbsNonSimpleNumFieldElem)
-  return is_constant(data(a))
-end
