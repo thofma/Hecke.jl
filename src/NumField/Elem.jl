@@ -69,7 +69,7 @@ return `false`.
 """
 function isinteger(a::AbsNonSimpleNumFieldElem)
   is_constant(data(a)) || return false
-  return is_one(denominator(constant_coefficient(data(a))))
+  return isinteger(constant_coefficient(data(a)))
 end
 
 @doc raw"""
