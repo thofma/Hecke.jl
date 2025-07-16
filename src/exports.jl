@@ -449,7 +449,6 @@ export is_GLZ_conjugate
 export is_abelian
 export is_absolute
 export is_absolutely_irreducible
-export is_algebraic_integer
 export is_anti_isometric_with_anti_isometry
 export is_anti_isometry
 export is_automorphous
