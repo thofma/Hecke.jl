@@ -36,8 +36,8 @@ function quaternion_algebra(K::Field, a, b)
   end
 end
 
-function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
-  if characteristic(K)!=2
+function QuaternionAlgebra(K::Field, a::T, b::T) where {T<:FieldElem}
+  if characteristic(K) != 2
     @assert a != zero(K) && b != zero(K)
     M = zeros(K, 4, 4, 4)
 
@@ -59,13 +59,13 @@ function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
     M[4, 1, 4] = one(K)
     M[4, 2, 3] = -a
     M[4, 3, 2] = b
-    M[4, 4, 1] = -a*b
+    M[4, 4, 1] = -a * b
 
     z = QuaternionAlgebra{T}()
 
     z.base_ring = K
     z.mult_table = M
-    z.one = T[ one(K), zero(K), zero(K), zero(K) ]
+    z.one = T[one(K), zero(K), zero(K), zero(K)]
     z.std = a, b
     return z
   else #if characteristic(K)=2
@@ -94,13 +94,13 @@ function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
     M[4, 1, 4] = one(K)
     M[4, 2, 3] = a #ij*i=(ji+j)*i=j(a-i)+ji=a*j
     M[4, 3, 2] = b #ij*j = b*i
-    M[4, 4, 1] = a*b #ij*ij=i(bi+b)=b(a-i)+bi=ab
+    M[4, 4, 1] = a * b #ij*ij=i(bi+b)=b(a-i)+bi=ab
 
     z = QuaternionAlgebra{T}()
 
     z.base_ring = K
     z.mult_table = M
-    z.one = T[ one(K), zero(K), zero(K), zero(K) ]
+    z.one = T[one(K), zero(K), zero(K), zero(K)]
     z.std = a, b
     return z
   end
@@ -112,13 +112,13 @@ base_ring(A::QuaternionAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
 base_ring_type(::Type{QuaternionAlgebra{T}}) where {T} = parent_type(T)
 
-multiplication_table(A::QuaternionAlgebra; copy = false) = A.mult_table
+multiplication_table(A::QuaternionAlgebra; copy=false) = A.mult_table
 
 standard_form(A::QuaternionAlgebra) = A.std
 
 has_one(A::QuaternionAlgebra) = true
 
-elem_type(::Type{QuaternionAlgebra{T}}) where {T} = AssociativeAlgebraElem{T, QuaternionAlgebra{T}}
+elem_type(::Type{QuaternionAlgebra{T}}) where {T} = CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}
 
 is_commutative(A::QuaternionAlgebra) = false
 
@@ -135,7 +135,7 @@ dimension_of_center(A::QuaternionAlgebra) = 1
 ################################################################################
 
 function show(io::IO, mime::MIME"text/plain", A::QuaternionAlgebra)
-  if characteristic(base_ring(A)) !=2
+  if characteristic(base_ring(A)) != 2
     @show_name(io, A)
     @show_special(io, mime, A)
     println(io, "Quaternion algebra")
@@ -160,7 +160,7 @@ function show(io::IO, A::QuaternionAlgebra)
   if is_terse(io)
     print(io, "Quaternion algebra")
   else
-    if characteristic(base_ring(A))!=2
+    if characteristic(base_ring(A)) != 2
       a, b = standard_form(A)
       io = pretty(io)
       print(io, "Quaternion algebra over ")
@@ -178,9 +178,9 @@ end
 
 # now for elements
 
-@enable_all_show_via_expressify AssociativeAlgebraElem{T, QuaternionAlgebra{T}} where {T}
+@enable_all_show_via_expressify CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}} where {T}
 
-function AbstractAlgebra.expressify(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}; context = nothing) where {T}
+function AbstractAlgebra.expressify(a::CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}; context=nothing) where {T}
   # Expr(:row, a, b) gives a b
   v = a.coeffs
   sum = Expr(:call, :+)
@@ -204,7 +204,7 @@ end
 
 #order_type(::Type{QuaternionAlgebra{QQFieldElem}}) = AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}, elem_type(QuaternionAlgebra{QQFieldElem})}
 #
-order_type(::Type{QuaternionAlgebra{T}}) where {T <: NumFieldElem} = AlgAssRelOrd{T, fractional_ideal_type(order_type(parent_type(T))), QuaternionAlgebra{T}}
+order_type(::Type{QuaternionAlgebra{T}}) where {T<:NumFieldElem} = AlgAssRelOrd{T,fractional_ideal_type(order_type(parent_type(T))),QuaternionAlgebra{T}}
 
 ################################################################################
 #
@@ -239,21 +239,21 @@ julia> conjugate(a)
 1 - i - j - k
 ```
 """
-function conjugate(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
+function conjugate(a::CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}) where {T}
   return standard_involution(parent(a))(a)
 end
 
-function trred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  return (a + conjugate(a)).coeffs[1]
+function trred(a::CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}) where {T}
+  return (a+conjugate(a)).coeffs[1]
 end
 
-function normred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  return (a * conjugate(a)).coeffs[1]
+function normred(a::CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}) where {T}
+  return (a*conjugate(a)).coeffs[1]
 end
 
-function reduced_charpoly(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
+function reduced_charpoly(a::CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}) where {T}
   A = parent(a)
-  R = polynomial_ring(base_ring(A), "x", cached = false)[1]
+  R = polynomial_ring(base_ring(A), "x", cached=false)[1]
   return R([normred(a), -trred(a), one(base_ring(A))])
 end
 
@@ -323,7 +323,7 @@ function _is_quaternion_algebra(A::StructureConstantAlgebra)
   @assert B[1] == one(A)
   for i in 1:4
     for j in 1:4
-      G[i, j] = trred(B[i] * f(B[j]))//2
+      G[i, j] = trred(B[i] * f(B[j])) // 2
     end
   end
 
@@ -400,8 +400,8 @@ function _reduce_standard_form(a::QQFieldElem, b::QQFieldElem)
 
   while apabs > 1 && is_square(numerator(apabs))
     sq = sqrt(numerator(apabs))
-    n = n//sq
-    apabs = apabs//sq^2
+    n = n // sq
+    apabs = apabs // sq^2
   end
 
   ap = sign(ap) * apabs
@@ -411,8 +411,8 @@ function _reduce_standard_form(a::QQFieldElem, b::QQFieldElem)
   while bpabs > 1 && is_square(numerator(bpabs))
     #@show numerator(bpabs)
     sq = sqrt(numerator(bpabs))
-    m = m//sq
-    bpabs = bpabs//sq^2
+    m = m // sq
+    bpabs = bpabs // sq^2
   end
 
   bp = sign(bp) * bpabs
@@ -430,7 +430,7 @@ _reduce_standard_form(a::T, b::T) where {T} = (one(parent(a)), one(parent(a)), a
 ################################################################################
 
 # return elements x with absolute_tr(rednorm(x)) <= B (including zero) up to sign!
-function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Bool = false)
+function Base.enumerate(O::Union{AlgAssRelOrd,AlgAssAbsOrd}, b::Int, equal::Bool=false)
   A = algebra(O)
   f = standard_involution(A)
   B = elem_in_algebra.(absolute_basis(O))
@@ -438,13 +438,13 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   G = zero_matrix(QQ, d, d)
   for i in 1:d
     for j in 1:d
-      G[i, j] = ZZ(absolute_tr(trred(B[i] * f(B[j]))))//2
+      G[i, j] = ZZ(absolute_tr(trred(B[i] * f(B[j])))) // 2
     end
   end
 
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
   @assert !iszero(det(G))
-  V = _short_vectors_gram(Vector, G, ZZRingElem(b), hard = true)
+  V = _short_vectors_gram(Vector, G, ZZRingElem(b), hard=true)
   res = elem_type(O)[]
   for i in 1:length(V)
     y = sum(V[i][1][j] * B[j] for j in 1:d)
@@ -473,7 +473,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
   norms = ZZRingElem[]
   gens = elem_type(O)[]
   for e in q
-    _x = mu(mq\e)
+    _x = mu(mq \ e)
     _n = abs(ZZ(absolute_tr(_x)))
     # Reduce modulo squares, so that the trace is hopefully small
     x = evaluate(reduce_mod_powers(elem_in_nf(_x), 2))
@@ -489,7 +489,7 @@ function unit_group_modulo_scalars(O::AlgAssRelOrd)
         if is_unit(un) && !(un in gens)
           isnew = true
           for oldunits in gens
-            if (all(k -> iszero((elem_in_algebra(un) * inv(elem_in_algebra(oldunits))).coeffs[k]), 2:4))
+            if (all(k -> iszero((elem_in_algebra(un)*inv(elem_in_algebra(oldunits))).coeffs[k]), 2:4))
               isnew = false
               break
             end
@@ -515,47 +515,15 @@ function unit_group_modulo_scalars(O::AlgAssAbsOrd)
   return enumerate(O, 1)
 end
 
-function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd}; GRH::Bool = true)
+function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd,AlgAssAbsOrd}; GRH::Bool=true)
   gens1 = unit_group_modulo_scalars(O)
-  u, mu = unit_group(base_ring(O); GRH = GRH)
+  u, mu = unit_group(base_ring(O); GRH=GRH)
   A = algebra(O)
-  gens2 = [ O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u) ]
+  gens2 = [O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u)]
   return append!(gens1, gens2)
 end
 
 ### change basis
-
-function _change_basis(A::StructureConstantAlgebra, bas)
-  n = dim(A)
-  M = zero_matrix(base_ring(A), n, n)
-  N = zero_matrix(base_ring(A), n, n)
-
-  for i in 1:n
-    elem_to_mat_row!(M, i, bas[i])
-  end
-
-  # This is the "adjusted" basis matrix
-  invM = inv(M)
-
-  K = base_ring(A)
-
-  mt = Array{elem_type(K), 3}(undef, n, n, n)
-
-  for i in 1:n
-    for j in 1:n
-      c = bas[i] * bas[j]
-      t = matrix(base_ring(A), 1, dim(A), c.coeffs) * invM
-      @assert sum(t[1, i] * bas[i] for i in 1:n) == c
-      for k in 1:n
-        mt[i, j, k] = t[1, k]
-      end
-    end
-  end
-
-  B = StructureConstantAlgebra(K, mt)
-  h = hom(B, A, M, invM)
-  return B, h
-end
 
 function ___standard_involution(A)
   n = dim(A)
@@ -582,7 +550,7 @@ function ___standard_involution(A)
 
   for i in 2:n
     for j in (i+1):n
-      nij = (B[i] + B[j])^2 - (t[i] + t[j])*(B[i] + B[j])
+      nij = (B[i] + B[j])^2 - (t[i] + t[j]) * (B[i] + B[j])
       @assert all(i -> iszero(nij.coeffs[i]), 2:n)
     end
   end
@@ -598,7 +566,7 @@ function ___standard_involution(A)
   return hom(A, A, invol, inv(invol))
 end
 
-function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
+function _is_principal_maximal_quaternion_generic_proper(a, M, side=:right)
   A = algebra(M)
   f = standard_involution(A)
   K = base_ring(A)
@@ -654,7 +622,7 @@ function _is_principal_maximal_quaternion_generic_proper(a, M, side = :right)
 
     #@show B
 
-    v = _short_vectors_gram_integral(Vector, G, ZZ(B), hard = true)
+    v = _short_vectors_gram_integral(Vector, G, ZZ(B), hard=true)
 
     #if min == degree(base_ring(A))
     for w in v
@@ -708,7 +676,7 @@ julia> is_split_with_zero_divisor(A)
 (false, 0)
 ```
 """
-function is_split_with_zero_divisor(A::QuaternionAlgebra{<:Union{QQFieldElem, AbsSimpleNumFieldElem}})
+function is_split_with_zero_divisor(A::QuaternionAlgebra{<:Union{QQFieldElem,AbsSimpleNumFieldElem}})
   if !is_split(A)
     return false, zero(A)
   end
@@ -740,7 +708,7 @@ function is_split_with_zero_divisor(A::QuaternionAlgebra{<:Union{QQFieldElem, Ab
   K, = radical_extension(2, aa)
   c = norm_equation(K, b)
   # b = nr(c) = nr(x + y * sqrt(aa)) = x^2 - y^2 d^2 * a = x^2 - (y * d)^2 * a
-  alpha = coeff(c, 0) + coeff(c, 1)* d * i + j
+  alpha = coeff(c, 0) + coeff(c, 1) * d * i + j
   @assert !is_zero(alpha)
   @assert norm(alpha) == 0
   return true, alpha

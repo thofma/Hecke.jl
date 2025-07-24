@@ -4,10 +4,10 @@
 #
 ################################################################################
 
-elem_type(::Type{StructureConstantAlgebra{T}}) where {T} = AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
+elem_type(::Type{StructureConstantAlgebra{T}}) where {T} = AssociativeAlgebraElem{T,StructureConstantAlgebra{T}}
 
 # Definitions for orders
-order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem}, ZZRing}
+order_type(::Type{StructureConstantAlgebra{QQFieldElem}}) = AlgAssAbsOrd{StructureConstantAlgebra{QQFieldElem},ZZRing}
 
 #order_type(::Type{T}, ::Type{ZZRing}) where {T} = AlgAssAbsOrd{ZZRing, T}
 #
@@ -38,12 +38,12 @@ julia> associative_algebra(QQ, reshape([1, 0, 0, 2, 0, 1, 1, 0], (2, 2, 2)))
 Structure constant algebra of dimension 2 over QQ
 ```
 """
-function structure_constant_algebra(R::Ring, sctable::Array{<:Any, 3}; one = nothing,
-                                                                       check::Bool = true)
-  return associative_algebra(R, sctable; one = one, check = check)
+function structure_constant_algebra(R::Ring, sctable::Array{<:Any,3}; one=nothing,
+  check::Bool=true)
+  return associative_algebra(R, sctable; one=one, check=check)
 end
 
-structure_constant_algebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where T = StructureConstantAlgebra(R, mult_table, one; check)
+structure_constant_algebra(R::Ring, mult_table::Array{T,3}, one::Vector{T}; check::Bool=true) where {T} = StructureConstantAlgebra(R, mult_table, one; check)
 
 @doc raw"""
     structure_constant_algebra(f::PolyRingElem)
@@ -62,8 +62,8 @@ Structure constant algebra of dimension 2 over QQ
 """
 structure_constant_algebra(f::PolyRingElem) = StructureConstantAlgebra(f)
 
-function associative_algebra(R::Ring, sctable::Array{<:Any, 3}; one = nothing,
-                                                                check::Bool = true)
+function associative_algebra(R::Ring, sctable::Array{<:Any,3}; one=nothing,
+  check::Bool=true)
   @req all(isequal(size(sctable, 1)), size(sctable)) "Multiplication must have dimensions have same length"
   d = size(sctable, 1)
   if one !== nothing
@@ -71,10 +71,10 @@ function associative_algebra(R::Ring, sctable::Array{<:Any, 3}; one = nothing,
   end
 
   if (d > 0 && parent(d[1, 1, 1]) === R) ||
-       (d == 0 && eltype(sctable) === elem_type(R))
-    _sctable = sctable::Array{elem_type(R), 3}
+     (d == 0 && eltype(sctable) === elem_type(R))
+    _sctable = sctable::Array{elem_type(R),3}
   else
-    _sctable = convert(Array{elem_type(R), 3}, map(R, sctable))::Array{elem_type(R), 3}
+    _sctable = convert(Array{elem_type(R),3}, map(R, sctable))::Array{elem_type(R),3}
   end
 
   if one isa Vector
@@ -93,9 +93,9 @@ function associative_algebra(R::Ring, sctable::Array{<:Any, 3}; one = nothing,
   return StructureConstantAlgebra(R, _sctable; check)
 end
 
-associative_algebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = true) where T = StructureConstantAlgebra(R, mult_table, one; check)
+associative_algebra(R::Ring, mult_table::Array{T,3}, one::Vector{T}; check::Bool=true) where {T} = StructureConstantAlgebra(R, mult_table, one; check)
 
-function StructureConstantAlgebra(R::Ring, mult_table::Array{T, 3}, one::Vector{T}; check::Bool = get_assertion_level(:StructureConstantAlgebra) > 0) where {T}
+function StructureConstantAlgebra(R::Ring, mult_table::Array{T,3}, one::Vector{T}; check::Bool=get_assertion_level(:StructureConstantAlgebra) > 0) where {T}
   if size(mult_table, 1) == 0
     return zero_algebra(R)
   end
@@ -107,7 +107,7 @@ function StructureConstantAlgebra(R::Ring, mult_table::Array{T, 3}, one::Vector{
   return A
 end
 
-function StructureConstantAlgebra(R::Ring, mult_table::Array{T, 3}; check::Bool = get_assertion_level(:StructureConstantAlgebra) > 0) where {T}
+function StructureConstantAlgebra(R::Ring, mult_table::Array{T,3}; check::Bool=get_assertion_level(:StructureConstantAlgebra) > 0) where {T}
   @req all(isequal(size(mult_table, 1)), size(mult_table)) "Multiplication must have dimensions have same length"
   if size(mult_table, 1) == 0
     return zero_algebra(R)
@@ -132,12 +132,12 @@ function StructureConstantAlgebra(R::Ring, d::Int, arr::Vector{T}) where {T}
   if d == 0
     return zero_algebra(R)
   end
-  mult_table = Array{T, 3}(undef, d, d, d)
+  mult_table = Array{T,3}(undef, d, d, d)
   n = d^2
   for i in 1:d
     for j in 1:d
       for k in 1:d
-        mult_table[i, j, k] = arr[(i - 1) * n + (j - 1) * d + k]
+        mult_table[i, j, k] = arr[(i-1)*n+(j-1)*d+k]
       end
     end
   end
@@ -167,7 +167,7 @@ function StructureConstantAlgebra(K::SimpleNumField)
   A = StructureConstantAlgebra(defining_polynomial(K))
   k = base_field(K)
   m = AbsAlgAssToNfAbsMor(A, K, identity_matrix(k, dim(A)), identity_matrix(k, dim(A)))
-  A.maps_to_numberfields = [ (K, m) ]
+  A.maps_to_numberfields = [(K, m)]
   return A, m
 end
 
@@ -183,7 +183,7 @@ function zero_algebra(R::Ring)
   A.is_commutative = 1
   A.has_one = true
   A.one = elem_type(R)[]
-  A.mult_table = Array{elem_type(R), 3}(undef, 0, 0, 0)
+  A.mult_table = Array{elem_type(R),3}(undef, 0, 0, 0)
   return A
 end
 
@@ -227,7 +227,7 @@ function Generic.dim(A::StructureConstantAlgebra)
   if iszero(A)
     return 0
   end
-  return size(structure_constant_table(A, copy = false), 1)
+  return size(structure_constant_table(A, copy=false), 1)
 end
 
 @doc raw"""
@@ -252,11 +252,11 @@ julia> structure_constant_table(A)
  1  0
 ```
 """
-function structure_constant_table(A::StructureConstantAlgebra; copy::Bool = true)
-  return multiplication_table(A; copy = copy)
+function structure_constant_table(A::StructureConstantAlgebra; copy::Bool=true)
+  return multiplication_table(A; copy=copy)
 end
 
-function multiplication_table(A::StructureConstantAlgebra; copy::Bool = true)
+function multiplication_table(A::StructureConstantAlgebra; copy::Bool=true)
   if copy
     return deepcopy(A.mult_table)
   else
@@ -277,8 +277,8 @@ function is_commutative(A::StructureConstantAlgebra)
     return A.is_commutative == 1
   end
   for i = 1:dim(A)
-    for j = i + 1:dim(A)
-      if structure_constant_table(A, copy = false)[i, j, :] != structure_constant_table(A, copy = false)[j, i, :]
+    for j = i+1:dim(A)
+      if structure_constant_table(A, copy=false)[i, j, :] != structure_constant_table(A, copy=false)[j, i, :]
         A.is_commutative = 2
         return false
       end
@@ -304,15 +304,15 @@ function find_one(A::StructureConstantAlgebra)
   M = zero_matrix(base_ring(A), n^2, n)
   c = zero_matrix(base_ring(A), n^2, 1)
   for k = 1:n
-    kn = (k - 1)*n
-    c[kn + k, 1] = base_ring(A)(1)
+    kn = (k - 1) * n
+    c[kn+k, 1] = base_ring(A)(1)
     for i = 1:n
       for j = 1:n
-        M[i + kn, j] = deepcopy(structure_constant_table(A, copy = false)[j, k, i])
+        M[i+kn, j] = deepcopy(structure_constant_table(A, copy=false)[j, k, i])
       end
     end
   end
-  fl, cc = can_solve_with_solution(M, c; side = :right)
+  fl, cc = can_solve_with_solution(M, c; side=:right)
   one = elem_type(base_ring(A))[cc[i, 1] for i = 1:n]
   return true, one
 end
@@ -324,17 +324,17 @@ function StructureConstantAlgebra(f::PolyRingElem)
   n = degree(f)
   Rx = parent(f)
   x = gen(Rx)
-  B = Vector{elem_type(Rx)}(undef, 2*n - 1)
+  B = Vector{elem_type(Rx)}(undef, 2 * n - 1)
   B[1] = Rx(1)
-  for i = 2:2*n - 1
-    B[i] = mod(B[i - 1]*x, f)
+  for i = 2:2*n-1
+    B[i] = mod(B[i-1] * x, f)
   end
-  mult_table = Array{elem_type(R), 3}(undef, n, n, n)
+  mult_table = Array{elem_type(R),3}(undef, n, n, n)
   for i = 1:n
     for j = i:n
       for k = 1:n
-        mult_table[i, j, k] = coeff(B[i + j - 1], k - 1)
-        mult_table[j, i, k] = coeff(B[i + j - 1], k - 1)
+        mult_table[i, j, k] = coeff(B[i+j-1], k - 1)
+        mult_table[j, i, k] = coeff(B[i+j-1], k - 1)
       end
     end
   end
@@ -377,15 +377,15 @@ end
 # We assume ncols(B) == dim(A).
 # A rref of B will be computed IN PLACE! If return_LU is Val{true}, a LU-factorization
 # of transpose(rref(B)) is returned.
-function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatElem{T}, ::Val{return_LU} = Val(false); is_commutative = false) where { T, return_LU }
+function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatElem{T}, ::Val{return_LU}=Val(false); is_commutative=false) where {T,return_LU}
   K = base_ring(A)
   n = dim(A)
   r = rref!(B)
   if r == 0
     if return_LU
-      return Array{elem_type(K), 3}(undef, 0, 0, 0), solve_init(B)
+      return Array{elem_type(K),3}(undef, 0, 0, 0), solve_init(B)
     else
-      return Array{elem_type(K), 3}(undef, 0, 0, 0)
+      return Array{elem_type(K),3}(undef, 0, 0, 0)
     end
   end
 
@@ -400,7 +400,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
 
   iscom = is_commutative || Hecke.is_commutative(A)
 
-  mult_table = Array{elem_type(K), 3}(undef, r, r, r)
+  mult_table = Array{elem_type(K),3}(undef, r, r, r)
   c = A()
   d = zero_matrix(K, n, 1)
   for i = 1:r
@@ -418,7 +418,7 @@ function _build_subalgebra_mult_table!(A::StructureConstantAlgebra{T}, B::MatEle
       #d = _solve_lt(L, d)
       #d = _solve_ut(U, d)
       #@assert Btr * d == mc
-      dd = solve(LL, c.coeffs, side = :right)
+      dd = solve(LL, c.coeffs, side=:right)
       for k = 1:r
         #@assert dd[k] == d[k, 1]
         mult_table[i, j, k] = dd[k]
@@ -449,7 +449,7 @@ $e \cdot A$ (if `action == :left`) respectively $A \cdot e$ (if `action == :righ
 and a map from this algebra to $A$.
 If `idempotent` is `true`, it is assumed that $e$ is idempotent in $A$.
 """
-function _subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
+function _subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T,StructureConstantAlgebra{T}}, idempotent::Bool=false, action::Symbol=:left) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   n = dim(A)
@@ -480,7 +480,7 @@ function _subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T
     # for i in 1:r
     #   v[i] = d[i, 1]
     # end
-    vv = solve(LL, e.coeffs, side = :right)
+    vv = solve(LL, e.coeffs, side=:right)
     #@assert v == vv[1:r]
     eA = StructureConstantAlgebra(R, mult_table, vv[1:r])
   else
@@ -503,7 +503,7 @@ function _subalgebra(A::StructureConstantAlgebra{T}, e::AssociativeAlgebraElem{T
       #end
       #d = _solve_lt(L, d)
       #d = _solve_ut(U, d)
-      dd = solve(LL, [B2[i, k] for k in 1:n], side = :right)
+      dd = solve(LL, [B2[i, k] for k in 1:n], side=:right)
       #@assert [d[i, 1] for i in 1:nrows(d)] == dd
       for k in 1:r
         C[i, k] = dd[k]
@@ -522,12 +522,12 @@ end
 Returns the _subalgebra of $A$ generated by the elements in `basis` and a map
 from this algebra to $A$.
 """
-function _subalgebra(A::StructureConstantAlgebra{T}, basis::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}}; is_commutative = false) where T
+function _subalgebra(A::StructureConstantAlgebra{T}, basis::Vector{AssociativeAlgebraElem{T,StructureConstantAlgebra{T}}}; is_commutative=false) where {T}
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:length(basis)
     elem_to_mat_row!(M, i, basis[i])
   end
-  mt = _build_subalgebra_mult_table!(A, M; is_commutative = is_commutative)
+  mt = _build_subalgebra_mult_table!(A, M; is_commutative=is_commutative)
   B = StructureConstantAlgebra(base_ring(A), mt)
   return B, hom(B, A, sub(M, 1:length(basis), 1:dim(A)))
 end
@@ -538,18 +538,18 @@ end
 #
 ###############################################################################
 
-function _rep_for_center!(M::T, A::StructureConstantAlgebra) where T<: MatElem
+function _rep_for_center!(M::T, A::StructureConstantAlgebra) where {T<:MatElem}
   n = dim(A)
-  mt = structure_constant_table(A, copy = false)
+  mt = structure_constant_table(A, copy=false)
   tt = zero(base_ring(A))
-  for i=1:n
+  for i = 1:n
     for j = 1:n
       for k = 1:n
         if tt isa QQFieldElem
           sub!(tt, mt[i, j, k], mt[j, i, k])
-          M[k + (i-1)*n, j] = tt
+          M[k+(i-1)*n, j] = tt
         else
-          M[k + (i-1)*n, j] = mt[i, j, k] - mt[j, i, k]
+          M[k+(i-1)*n, j] = mt[i, j, k] - mt[j, i, k]
         end
       end
     end
@@ -563,20 +563,20 @@ function center(A::StructureConstantAlgebra{T}) where {T}
     return B, mB
   end
   if isdefined(A, :center)
-    return A.center::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})}
+    return A.center::Tuple{StructureConstantAlgebra{T},morphism_type(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})}
   end
 
   n = dim(A)
   M = zero_matrix(base_ring(A), n^2, n)
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center!(M, A)
-  B = kernel(M, side = :right)
+  B = kernel(M, side=:right)
   k = ncols(B)
   res = Vector{elem_type(A)}(undef, k)
-  for i=1:k
-    res[i]= A(T[B[j,i] for j=1:n])
+  for i = 1:k
+    res[i] = A(T[B[j, i] for j = 1:n])
   end
-  C, mC = _subalgebra(A, res, is_commutative = true)
+  C, mC = _subalgebra(A, res, is_commutative=true)
   A.center = C, mC
 
   # Store the idempotents of A if known so that the Wedderburn decompositions
@@ -598,7 +598,7 @@ end
 
 # See W. Eberly "Computations for Algebras and Group Representations" p. 126.
 # TODO: fix the type
-function _find_non_trivial_idempotent(A::StructureConstantAlgebra{T}) where { T } #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _find_non_trivial_idempotent(A::StructureConstantAlgebra{T}) where {T} #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
     error("Dimension of algebra is 1")
   end
@@ -652,14 +652,14 @@ function _find_idempotent_via_non_squarefree_poly(A::StructureConstantAlgebra{T}
   end
   MN = hcat(transpose(M), N)
   r = rref!(MN)
-  be = _solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA) + 1):(dim(bA) + 1)))
-  e = bAtoA(bA([ be[i, 1] for i = 1:dim(bA) ]))
+  be = _solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA)+1):(dim(bA)+1)))
+  e = bAtoA(bA([be[i, 1] for i = 1:dim(bA)]))
   return e
 end
 
 # A should be semi-simple
 # See W. Eberly "Computations for Algebras and Group Representations" p. 89.
-function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool = false)
+function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool=false)
   Z, ZtoA = center(A)
   if dim(Z) == 1
     error("Dimension of centre is 1")
@@ -676,7 +676,7 @@ function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool 
   end
 
   fac = factor(f)
-  fi = [ k for k in keys(fac.fac) ]
+  fi = [k for k in keys(fac.fac)]
   l = length(fi)
   R = parent(f)
   if only_one
@@ -694,7 +694,7 @@ function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool 
       gi[i] = crt(r, fi)
       r[i] = zeroR
     end
-    return [ g(a) for g in gi ]
+    return [g(a) for g in gi]
   end
 end
 
@@ -704,14 +704,14 @@ function _find_idempotent_via_squarefree_poly(A::StructureConstantAlgebra{T}, a:
   B = StructureConstantAlgebra(mina)
   idemB = _extraction_of_idempotents(B, true)
 
-  e = dot(coefficients(idemB, copy = false), [ a^k for k = 0:(degree(mina) - 1) ])
+  e = dot(coefficients(idemB, copy=false), [a^k for k = 0:(degree(mina)-1)])
   return e
 end
 
 # TODO: fix the type
-function _primitive_idempotents(A::StructureConstantAlgebra{T}) where { T } #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
+function _primitive_idempotents(A::StructureConstantAlgebra{T}) where {T} #<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem} }
   if dim(A) == 1
-    return [ one(A) ]
+    return [one(A)]
   end
 
   e = _find_non_trivial_idempotent(A)
@@ -719,23 +719,23 @@ function _primitive_idempotents(A::StructureConstantAlgebra{T}) where { T } #<: 
   idempotents = Vector{elem_type(A)}()
 
   eA, m1 = _subalgebra(A, e, true, :left)
-  eAe, m2 = _subalgebra(eA, m1\e, true, :right)
+  eAe, m2 = _subalgebra(eA, m1 \ e, true, :right)
   if dim(eAe) == dim(A)
     push!(idempotents, e)
   else
     idems = _primitive_idempotents(eAe)
-    append!(idempotents, [ m1(m2(idem)) for idem in idems ])
+    append!(idempotents, [m1(m2(idem)) for idem in idems])
   end
 
   f = (1 - e)
   fA, n1 = _subalgebra(A, f, true, :left)
-  fAf, n2 = _subalgebra(fA, n1\f, true, :right)
+  fAf, n2 = _subalgebra(fA, n1 \ f, true, :right)
 
   if dim(fAf) == dim(A)
     push!(idempotents, f)
   else
     idems = _primitive_idempotents(fAf)
-    append!(idempotents, [ n1(n2(idem)) for idem in idems ])
+    append!(idempotents, [n1(n2(idem)) for idem in idems])
   end
 
   return idempotents
@@ -750,13 +750,13 @@ end
 # This computes a "matrix type" basis for A.
 # See W. Eberly "Computations for Algebras and Group Representations" p. 121.
 # TODO: fix the type
-function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) where { T, S }#<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} }
+function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) where {T,S}#<: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} }
   k = length(idempotents)
   # Compute a basis e_ij of A (1 <= i, j <= k) with
   # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
   new_basis = Vector{elem_type(A)}(undef, k^2) # saved column major: new_basis[i + (j - 1)*k] = e_ij
   for i = 1:k
-    new_basis[i + (i - 1)*k] = idempotents[i]
+    new_basis[i+(i-1)*k] = idempotents[i]
   end
 
   a = idempotents[1]
@@ -764,10 +764,10 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     b = idempotents[i]
     e = a + b
     eA, m1 = _subalgebra(A, e, true, :left)
-    eAe, m2 = _subalgebra(eA, m1\e, true, :right)
+    eAe, m2 = _subalgebra(eA, m1 \ e, true, :right)
 
-    aa = m2\(m1\(a))
-    bb = m2\(m1\(b))
+    aa = m2 \ (m1 \ (a))
+    bb = m2 \ (m1 \ (b))
 
     # We compute an element x of eAe which fulfils
     # aa*x == x, bb*x == 0, x*aa == 0 and x*bb == x.
@@ -777,10 +777,10 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     M4 = representation_matrix(bb - one(eAe), :right)
 
     M = hcat(M1, M2, M3, M4)
-    xx = eAe(kernel(M, side = :left)[1, :])
+    xx = eAe(kernel(M, side=:left)[1, :])
     x = m1(m2(xx))
 
-    new_basis[1 + (i - 1)*k] = x # this is e_1i
+    new_basis[1+(i-1)*k] = x # this is e_1i
 
     # We compute an element y of eAe which fulfils
     # aa*y == 0, bb*y == y, y*aa == y, y*bb == 0, y*xx == bb, xx*y == aa.
@@ -791,21 +791,21 @@ function _matrix_basis(A::StructureConstantAlgebra{T}, idempotents::Vector{S}) w
     N5 = representation_matrix(xx, :right)
     N6 = representation_matrix(xx, :left)
     N = hcat(N1, N2, N3, N4, N5, N6)
-    NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
+    NN = zero_matrix(base_ring(A), 4 * dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coefficients(aa)))
-    b, yy = can_solve_with_solution(transpose(N), NN; side = :right)
+    b, yy = can_solve_with_solution(transpose(N), NN; side=:right)
     @assert b
-    y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
+    y = m1(m2(eAe([yy[i, 1] for i = 1:dim(eAe)])))
 
     new_basis[i] = y # this is e_i1
   end
 
   for j = 2:k
-    jk = (j - 1)*k
-    e1j = new_basis[1 + jk]
+    jk = (j - 1) * k
+    e1j = new_basis[1+jk]
     for i = 2:k
-      new_basis[i + jk] = new_basis[i]*e1j # this is e_ij
+      new_basis[i+jk] = new_basis[i] * e1j # this is e_ij
     end
   end
   return new_basis
@@ -813,7 +813,7 @@ end
 
 # Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
 # TODO: fix the type
-function _as_matrix_algebra(A::StructureConstantAlgebra{T}) where { T } # <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} }
+function _as_matrix_algebra(A::StructureConstantAlgebra{T}) where {T} # <: Union{fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem}, FqPolyRepFieldElem, fqPolyRepFieldElem}, S <: AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} }
 
   idempotents = _primitive_idempotents(A)
   @assert length(idempotents)^2 == dim(A)
@@ -847,42 +847,42 @@ Returns the algebra $A = A_1 \times \cdots \times A_k$. `task` can be
 ":sum", ":prod", ":both" or ":none" and determines which canonical maps
 are computed as well: ":sum" for the injections, ":prod" for the projections.
 """
-function direct_product(algebras::Vector{<: StructureConstantAlgebra{T}}; task::Symbol = :sum) where T
+function direct_product(algebras::Vector{<:StructureConstantAlgebra{T}}; task::Symbol=:sum) where {T}
   @req !isempty(algebras) "Must be at least one algebra for direct product (or specifiy the field)"
-  return direct_product(algebras..., task = task)
+  return direct_product(algebras..., task=task)
 end
 
-function direct_product(K, algebras::Vector{<: StructureConstantAlgebra{T}}; task::Symbol = :sum) where T
+function direct_product(K, algebras::Vector{<:StructureConstantAlgebra{T}}; task::Symbol=:sum) where {T}
   if length(algebras) == 0
     mt = zeros(K, 0, 0, 0)
-    A = StructureConstantAlgebra(K, mt; check = false)
+    A = StructureConstantAlgebra(K, mt; check=false)
     return A, morphism_type(eltype(algebras), typeof(A))[]
   end
-  return direct_product(algebras..., task = task)
+  return direct_product(algebras..., task=task)
 end
 
-function direct_product(a::StructureConstantAlgebra{T}, _algebras::StructureConstantAlgebra{T}...; task::Symbol = :sum) where T
+function direct_product(a::StructureConstantAlgebra{T}, _algebras::StructureConstantAlgebra{T}...; task::Symbol=:sum) where {T}
   algebras = (a, _algebras...)
   @assert !isempty(algebras)
-  @assert all( A -> base_ring(A) == base_ring(algebras[1]), algebras)
-  @assert task in [ :prod, :sum, :both, :none ]
+  @assert all(A -> base_ring(A) == base_ring(algebras[1]), algebras)
+  @assert task in [:prod, :sum, :both, :none]
 
-  d = sum( dim(A) for A in algebras )
+  d = sum(dim(A) for A in algebras)
   mt = zeros(base_ring(algebras[1]), d, d, d)
   offset = 0
   for B in algebras
-    mtB = structure_constant_table(B, copy = false)
+    mtB = structure_constant_table(B, copy=false)
     dd = dim(B)
     for i = 1:dd
       for j = 1:dd
         for k = 1:dd
-          mt[i + offset, j + offset, k + offset] = mtB[i, j, k]
+          mt[i+offset, j+offset, k+offset] = mtB[i, j, k]
         end
       end
     end
     offset += dd
   end
-  A = StructureConstantAlgebra(base_ring(algebras[1]), mt; check = false)
+  A = StructureConstantAlgebra(base_ring(algebras[1]), mt; check=false)
   if task == :none
     return A
   end
@@ -898,7 +898,7 @@ function direct_product(a::StructureConstantAlgebra{T}, _algebras::StructureCons
     B = algebras[i]
     M = zero_matrix(base_ring(A), dim(A), dim(B))
     for i = 1:dim(B)
-      M[i + offset, i] = one(base_ring(A))
+      M[i+offset, i] = one(base_ring(A))
     end
     Mt = transpose(M)
     if task == :sum || task == :both
@@ -933,15 +933,15 @@ end
 
 function direct_product(_field::AbsSimpleNumField, _fields::AbsSimpleNumField...)
   fields = (_field, _fields...)
-  algebras = Tuple{StructureConstantAlgebra{QQFieldElem}, AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}[ StructureConstantAlgebra(K) for K in fields ]
-  A, proj, inj = direct_product([ B for (B, m) in algebras ], task = :both)
-  A.decomposition = [ (algebras[i][1], inj[i]) for i = 1:length(algebras) ]
-  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}(undef, length(fields))
+  algebras = Tuple{StructureConstantAlgebra{QQFieldElem},AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem},elem_type(StructureConstantAlgebra{QQFieldElem}),AbsSimpleNumField,QQMatrix}}[StructureConstantAlgebra(K) for K in fields]
+  A, proj, inj = direct_product([B for (B, m) in algebras], task=:both)
+  A.decomposition = [(algebras[i][1], inj[i]) for i = 1:length(algebras)]
+  maps_to_fields = Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem},elem_type(StructureConstantAlgebra{QQFieldElem}),AbsSimpleNumField,QQMatrix}}(undef, length(fields))
   for i = 1:length(fields)
     # Assumes, that the map algebras[i] -> K is given by the identity matrix
     maps_to_fields[i] = AbsAlgAssToNfAbsMor(A, fields[i], proj[i].mat, proj[i].imat)
   end
-  A.maps_to_numberfields = Tuple{AbsSimpleNumField, AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}[ (fields[i], maps_to_fields[i]) for i = 1:length(fields) ]
+  A.maps_to_numberfields = Tuple{AbsSimpleNumField,AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem},elem_type(StructureConstantAlgebra{QQFieldElem}),AbsSimpleNumField,QQMatrix}}[(fields[i], maps_to_fields[i]) for i = 1:length(fields)]
   return A, maps_to_fields
 end
 
@@ -952,7 +952,7 @@ end
 ################################################################################
 
 # internal use only
-function quaternion_algebra2(K::Field, a::T, b::T) where { T <: FieldElem }
+function quaternion_algebra2(K::Field, a::T, b::T) where {T<:FieldElem}
   M = zeros(K, 4, 4, 4)
 
   M[1, 1, 1] = one(K) # 1*1=1
@@ -973,9 +973,9 @@ function quaternion_algebra2(K::Field, a::T, b::T) where { T <: FieldElem }
   M[4, 1, 4] = one(K)
   M[4, 2, 3] = -a
   M[4, 3, 2] = b
-  M[4, 4, 1] = -a*b
+  M[4, 4, 1] = -a * b
 
-  return StructureConstantAlgebra(K, M, [ one(K), zero(K), zero(K), zero(K) ])
+  return StructureConstantAlgebra(K, M, [one(K), zero(K), zero(K), zero(K)])
 end
 
 quaternion_algebra2(K::Field, a::Int, b::Int) = quaternion_algebra2(K, K(a), K(b))
@@ -992,7 +992,7 @@ function opposite_algebra(A::StructureConstantAlgebra)
   K = base_ring(A)
   B = basis(A)
   d = dim(A)
-  z = Array{elem_type(K), 3}(undef, d, d, d)
+  z = Array{elem_type(K),3}(undef, d, d, d)
   for i in 1:d
     for j in 1:d
       z[i, j, :] = A.mult_table[j, i, :]
@@ -1003,3 +1003,43 @@ function opposite_algebra(A::StructureConstantAlgebra)
   B = StructureConstantAlgebra(K, z, o)
   return B, hom(A, B, identity_matrix(K, d), identity_matrix(K, d))
 end
+
+################################################################################
+#
+#  Change basis
+#
+################################################################################
+
+function _change_basis(A::StructureConstantAlgebra, bas)
+  n = dim(A)
+  M = zero_matrix(base_ring(A), n, n)
+  N = zero_matrix(base_ring(A), n, n)
+
+  for i in 1:n
+    elem_to_mat_row!(M, i, bas[i])
+  end
+
+  # This is the "adjusted" basis matrix
+  invM = inv(M)
+
+  K = base_ring(A)
+
+  mt = Array{elem_type(K),3}(undef, n, n, n)
+
+  for i in 1:n
+    for j in 1:n
+      c = bas[i] * bas[j]
+      t = matrix(base_ring(A), 1, dim(A), c.coeffs) * invM
+      @assert sum(t[1, i] * bas[i] for i in 1:n) == c
+      for k in 1:n
+        mt[i, j, k] = t[1, k]
+      end
+    end
+  end
+
+  B = StructureConstantAlgebra(K, mt)
+  h = hom(B, A, M, invM)
+  return B, h
+end
+
+#
