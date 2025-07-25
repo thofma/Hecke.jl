@@ -31,6 +31,20 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
+##To be removed
+struct InfiniteDimensionError <: Exception
+end
+
+##To be removed
+function Base.showerror(io::IO, err::InfiniteDimensionError)
+  println(io, "Infinite-dimensional vector space")
+end
+
+function vector_space_dim(A::GroupAlgebra{T, S, R}) where {T <: FieldElem, S, R}
+  isfinite(group(A)) || throw(InfiniteDimensionError())
+  return order(group(A))
+end
+
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
   c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
