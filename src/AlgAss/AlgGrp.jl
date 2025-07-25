@@ -42,7 +42,7 @@ end
 
 function vector_space_dim(A::GroupAlgebra{T, S, R}) where {T <: FieldElem, S, R}
   isfinite(group(A)) || throw(InfiniteDimensionError())
-  return order(group(A))
+  return order(Int, group(A))
 end
 
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
