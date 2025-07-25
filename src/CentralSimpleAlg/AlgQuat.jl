@@ -303,6 +303,7 @@ end
 
 # John Voight, "Quaternion algebra companion", Algorithm 4.6.1
 # https://math.dartmouth.edu/~jvoight/hints-solns.pdf
+#TODO: This doesn't work in characteristic 2
 function _is_quaternion_algebra(A::StructureConstantAlgebra)
   K = base_ring(A)
   if dim(A) != 4 || dimension_of_center(A) != 1

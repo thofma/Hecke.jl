@@ -11,13 +11,13 @@ abstract type AbstractAssociativeAlgebraElem{T} <: NCRingElem end
 # Associative algebras defined by structure constants (multiplication table)
 @attributes mutable struct StructureConstantAlgebra{T} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
-  mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
+  mult_table::Array{T,3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Vector{T}
   has_one::Bool
   iszero::Bool
   is_commutative::Int       # 0: don't know
-                           # 1: known to be commutative
-                           # 2: known to be not commutative
+  # 1: known to be commutative
+  # 2: known to be not commutative
   basis#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
   gens#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} # "Small" number of algebra generators
   trace_basis_elem::Vector{T}
@@ -40,7 +40,7 @@ abstract type AbstractAssociativeAlgebraElem{T} <: NCRingElem end
     return A
   end
 
-  function StructureConstantAlgebra{T}(R::Ring, mult_table::Array{T, 3}, one::Vector{T}) where {T}
+  function StructureConstantAlgebra{T}(R::Ring, mult_table::Array{T,3}, one::Vector{T}) where {T}
     A = StructureConstantAlgebra{T}(R)
     A.mult_table = mult_table
     A.one = one
@@ -49,7 +49,7 @@ abstract type AbstractAssociativeAlgebraElem{T} <: NCRingElem end
     return A
   end
 
-  function StructureConstantAlgebra{T}(R::Ring, mult_table::Array{T, 3}) where {T}
+  function StructureConstantAlgebra{T}(R::Ring, mult_table::Array{T,3}) where {T}
     A = StructureConstantAlgebra{T}(R)
     A.mult_table = mult_table
     A.iszero = (size(mult_table, 1) == 0)
@@ -57,12 +57,12 @@ abstract type AbstractAssociativeAlgebraElem{T} <: NCRingElem end
   end
 end
 
-mutable struct AssociativeAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
+mutable struct AssociativeAlgebraElem{T,S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   coeffs::Vector{T}
 
-  function AssociativeAlgebraElem{T, S}(A::S) where {T, S}
-    z = new{T, S}()
+  function AssociativeAlgebraElem{T,S}(A::S) where {T,S}
+    z = new{T,S}()
     z.parent = A
     z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
@@ -71,8 +71,8 @@ mutable struct AssociativeAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
     return z
   end
 
-  function AssociativeAlgebraElem{T, S}(A::StructureConstantAlgebra{T}) where {T, S}
-    z = new{T, StructureConstantAlgebra{T}}()
+  function AssociativeAlgebraElem{T,S}(A::StructureConstantAlgebra{T}) where {T,S}
+    z = new{T,StructureConstantAlgebra{T}}()
     z.parent = A
     z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
@@ -82,8 +82,8 @@ mutable struct AssociativeAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   end
 
   # This does not make a copy of coeffs
-  function AssociativeAlgebraElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
-    z = new{T, S}()
+  function AssociativeAlgebraElem{T,S}(A::S, coeffs::Vector{T}) where {T,S}
+    z = new{T,S}()
     z.parent = A
     z.coeffs = coeffs
     return z
@@ -97,7 +97,7 @@ end
 ################################################################################
 
 # Group rings
-@attributes mutable struct GroupAlgebra{T, S, R} <: AbstractAssociativeAlgebra{T}
+@attributes mutable struct GroupAlgebra{T,S,R} <: AbstractAssociativeAlgebra{T}
   base_ring::Ring
   group::S
   # We represent elements using a coefficient vector (which can be either
@@ -109,7 +109,7 @@ end
   # {1,...n} -> G
   # (In the sparse version, this map is constructed on demand)
 
-  group_to_base::Dict{R, Int}
+  group_to_base::Dict{R,Int}
   base_to_group::Vector{R}
   one::Vector{T}
   basis#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}}
@@ -128,25 +128,25 @@ end
   # For the sparse presentation
   sparse::Bool
   ind::Int      # This is the number of group elements currently stored in
-                # group_to_base and base_to_group.
+  # group_to_base and base_to_group.
   sparse_one    # Store the sparse row for the one element
 
-  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool = true, sparse::Bool = false)
-    A = GroupAlgebra(K, G; op = +, cached = cached, sparse = sparse)
+  function GroupAlgebra(K::Ring, G::FinGenAbGroup, cached::Bool=true, sparse::Bool=false)
+    A = GroupAlgebra(K, G; op=+, cached=cached, sparse=sparse)
     A.is_commutative = true
     return A
   end
 
-  function GroupAlgebra(K::Ring, G; op = *, cached::Bool = true, sparse::Bool = false)
+  function GroupAlgebra(K::Ring, G; op=*, cached::Bool=true, sparse::Bool=false)
     return get_cached!(GroupAlgebraID, (K, G, op, sparse), cached) do
-      A = new{elem_type(K), typeof(G), elem_type(G)}()
+      A = new{elem_type(K),typeof(G),elem_type(G)}()
       A.sparse = sparse
       A.is_commutative = 0
       A.is_simple = 0
       A.issemisimple = 0
       A.base_ring = K
       A.group = G
-      A.group_to_base = Dict{elem_type(G), Int}()
+      A.group_to_base = Dict{elem_type(G),Int}()
       if !sparse
         @assert is_finite(G)
         d = order(Int, G)
@@ -159,7 +159,7 @@ end
         el = _identity_elem(G)
         A.group_to_base[el] = 1
         A.base_to_group[1] = el
-        A.sparse_one = sparse_row(K, [(1,one(K))])
+        A.sparse_one = sparse_row(K, [(1, one(K))])
       else
         # dense
         A.mult_table = zeros(Int, d, d)
@@ -194,19 +194,19 @@ end
       end
 
       return A
-    end::GroupAlgebra{elem_type(K), typeof(G), elem_type(G)}
+    end::GroupAlgebra{elem_type(K),typeof(G),elem_type(G)}
   end
 end
 
-const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring, Any, Any, Bool}, GroupAlgebra}()
+const GroupAlgebraID = AbstractAlgebra.CacheDictType{Tuple{Ring,Any,Any,Bool},GroupAlgebra}()
 
-mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
+mutable struct GroupAlgebraElem{T,S} <: AbstractAssociativeAlgebraElem{T}
   parent::S
   coeffs::Vector{T}
   coeffs_sparse
 
-  function GroupAlgebraElem{T, S}(A::S) where {T, S}
-    z = new{T, S}()
+  function GroupAlgebraElem{T,S}(A::S) where {T,S}
+    z = new{T,S}()
     z.parent = A
     if !A.sparse
       z.coeffs = Vector{T}(undef, size(A.mult_table, 1))
@@ -219,11 +219,11 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
     return z
   end
 
-  function GroupAlgebraElem{T, S}(A::S, g::U) where {T, S, U}
+  function GroupAlgebraElem{T,S}(A::S, g::U) where {T,S,U}
     if A.sparse
       i = __elem_index(A, g)
-      a = GroupAlgebraElem{T, S}(A)
-      a.coeffs_sparse = sparse_row(base_ring(A), [(i,one(base_ring(A)))])
+      a = GroupAlgebraElem{T,S}(A)
+      a.coeffs_sparse = sparse_row(base_ring(A), [(i, one(base_ring(A)))])
       return a
     else
       return A[A.group_to_base[g]]
@@ -231,25 +231,26 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   end
 
   # This does not make a copy of coeffs
-  function GroupAlgebraElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
-    z = new{T, S}()
+  function GroupAlgebraElem{T,S}(A::S, coeffs::Vector{T}) where {T,S}
+    z = new{T,S}()
     z.parent = A
     z.coeffs = coeffs
     return z
   end
 
-  function GroupAlgebraElem{T, S}(A::S, coeffs::SRow{T}) where {T, S}
-    z = new{T, S}()
+  function GroupAlgebraElem{T,S}(A::S, coeffs::SRow{T}) where {T,S}
+    z = new{T,S}()
     z.parent = A
     z.coeffs_sparse = coeffs
     return z
   end
 end
 
-__elem_index(A, g) = get!(A.group_to_base, g) do
-        push!(A.base_to_group, g)
-        return length(A.base_to_group)
-      end
+__elem_index(A, g) =
+  get!(A.group_to_base, g) do
+    push!(A.base_to_group, g)
+    return length(A.base_to_group)
+  end
 
 ################################################################################
 #
@@ -266,8 +267,8 @@ mutable struct AbsAlgAssIdl{S}
   basis_matrix_solve_ctx#solve_context_type(...)
 
   isleft::Int                      # 0 Not known
-                                   # 1 Known to be a left ideal
-                                   # 2 Known not to be a left ideal
+  # 1 Known to be a left ideal
+  # 2 Known not to be a left ideal
   isright::Int                     # as for isleft
 
   iszero::Int                      # as for isleft
@@ -292,3 +293,79 @@ mutable struct AbsAlgAssIdl{S}
   end
 end
 
+################################################################################
+#
+#  MatAlgebra / MatAlgebraElem
+#
+################################################################################
+
+# T == elem_type(base_ring), S == dense_matrix_type(coefficient_ring)
+@attributes mutable struct MatAlgebra{T,S<:MatElem} <: AbstractAssociativeAlgebra{T}
+  base_ring::Ring
+  coefficient_ring::NCRing
+  one::S
+  basis
+  basis_matrix # matrix over the base_ring
+  basis_matrix_rref
+  basis_matrix_solve_ctx
+  dim::Int
+  degree::Int
+  is_simple::Int
+  issemisimple::Int
+  is_commutative::Int
+  decomposition
+  maximal_order
+  mult_table::Array{T,3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
+  canonical_basis::Int # whether A[(j - 1)*n + i] == E_ij, where E_ij = (e_kl)_kl with e_kl = 1 if i =k and j = l and e_kl = 0 otherwise.
+  center#Tuple{StructureConstantAlgebra{T}, mor(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})
+  trace_basis_elem::Vector{T}
+  gens
+
+  maps_to_numberfields
+  isomorphic_full_matrix_algebra#Tuple{MatAlgebra{T}, mor(StructureConstantAlgebra{T}, MatAlgebra{T})
+
+  function MatAlgebra{T,S}(R::Ring) where {T,S}
+    A = new{T,S}()
+    A.base_ring = R
+    A.coefficient_ring = R
+    A.is_simple = 0
+    A.issemisimple = 0
+    A.is_commutative = 0
+    A.canonical_basis = 0
+    return A
+  end
+
+  function MatAlgebra{T,S}(R1::Ring, R2::NCRing) where {T,S}
+    A = new{T,S}()
+    A.base_ring = R1
+    A.coefficient_ring = R2
+    A.is_simple = 0
+    A.issemisimple = 0
+    A.is_commutative = 0
+    A.canonical_basis = 0
+    return A
+  end
+end
+
+mutable struct MatAlgebraElem{T,S<:MatElem} <: AbstractAssociativeAlgebraElem{T}
+  parent::MatAlgebra{T,S}
+  matrix::S # over the coefficient ring of the parent
+  coeffs::Vector{T} # over the base ring of the parent
+  has_coeffs::Bool
+
+  function MatAlgebraElem{T,S}(A::MatAlgebra{T,S}) where {T,S}
+    z = new{T,S}()
+    z.parent = A
+    z.matrix = zero_matrix(base_ring(A), degree(A), degree(A))
+    z.has_coeffs = false
+    return z
+  end
+
+  function MatAlgebraElem{T,S}(A::MatAlgebra{T,S}, M::S) where {T,S}
+    z = new{T,S}()
+    z.parent = A
+    z.matrix = M
+    z.has_coeffs = false
+    return z
+  end
+end
