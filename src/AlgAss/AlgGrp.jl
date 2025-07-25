@@ -12,7 +12,12 @@ base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
 base_ring_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = parent_type(T)
 
-Generic.dim(A::GroupAlgebra) = order(Int, group(A))
+Generic.dim(A::GroupAlgebra) = vector_space_dim(A)
+
+function vector_space_dim(A::GroupAlgebra{T, S, R}) where {T <: FieldElem, S, R}
+  isfinite(group(A)) || throw(InfiniteDimensionError())
+  return order(group(A))
+end
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 
@@ -30,20 +35,6 @@ Returns the group defining $A$.
 group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
-
-##To be removed
-struct InfiniteDimensionError <: Exception
-end
-
-##To be removed
-function Base.showerror(io::IO, err::InfiniteDimensionError)
-  println(io, "Infinite-dimensional vector space")
-end
-
-function vector_space_dim(A::GroupAlgebra{T, S, R}) where {T <: FieldElem, S, R}
-  isfinite(group(A)) || throw(InfiniteDimensionError())
-  return order(Int, group(A))
-end
 
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
   c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
