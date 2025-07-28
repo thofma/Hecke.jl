@@ -216,15 +216,89 @@ function standard_involution(A::QuaternionAlgebra{T}) where {T}
   if isdefined(A, :std_inv)
     return A.std_inv::morphism_type(QuaternionAlgebra{T}, QuaternionAlgebra{T})
   else
-    f = __standard_involution(A)
+    f = _standard_involution(A)
     A.std_inv = f
     return f
   end
 end
 
+function _standard_involution(A)
+  BB = basis(A)
+
+  if isone(BB[1])
+    return __standard_involution(A)
+  end
+
+  B = copy(basis(A))
+  n = dim(A)
+  o = one(A)
+  for i in 1:n
+    if dot(o.coeffs, B[i].coeffs) != 0
+      B[i] = o
+      B[i], B[1] = B[1], B[i]
+      break
+    end
+  end
+
+  _A, _AtoA = _change_basis(A, B)
+
+  _f = __standard_involution(_A)
+
+  M = zero_matrix(base_ring(A), n, n)
+
+  g = inv(_AtoA) * _f * _AtoA
+
+  for i in 1:n
+    elem_to_mat_row!(M, i, g(BB[i]))
+  end
+
+  return hom(A, A, M, inv(M))
+end
+
+function __standard_involution(A)
+  n = dim(A)
+  o = one(A)
+
+  @assert isone(basis(A)[1])
+
+  N = zero_matrix(base_ring(A), n, n)
+
+  K = base_ring(A)
+
+  B = basis(A)
+
+  @assert isone(B[1])
+  t = elem_type(base_ring(A))[]
+  push!(t, zero(K))
+  for i in 2:n
+    v = matrix(K, 1, n, (B[i]^2).coeffs)
+    ti = v[1, i]
+    push!(t, ti)
+    _ni = B[i]^2 - ti * B[i]
+    @assert all(i -> iszero(_ni.coeffs[i]), 2:n)
+  end
+
+  for i in 2:n
+    for j in (i+1):n
+      nij = (B[i] + B[j])^2 - (t[i] + t[j]) * (B[i] + B[j])
+      @assert all(i -> iszero(nij.coeffs[i]), 2:n)
+    end
+  end
+
+  for i in 1:n
+    b = i == 1 ? B[i] : t[i] - B[i]
+    v = matrix(base_ring(A), 1, n, b.coeffs)
+    for j in 1:n
+      N[i, j] = v[1, j]
+    end
+  end
+  invol = N
+  return hom(A, A, invol, inv(invol))
+end
+
 @doc raw"""
-    conjugate(a::AssociativeAlgebraElem{_, QuaternionAlgebra})
-                                 -> AssociativeAlgebraElem{_, QuaternionAlgebra}
+    conjugate(a::CentralSimpleAlgebraElem{_, QuaternionAlgebra})
+                                 -> CentralSimpleAlgebraElem{_, QuaternionAlgebra}
 
 Return the image of $a$ under the canonical involution of the quaternion
 algebra.
@@ -255,124 +329,6 @@ function reduced_charpoly(a::CentralSimpleAlgebraElem{T,QuaternionAlgebra{T}}) w
   A = parent(a)
   R = polynomial_ring(base_ring(A), "x", cached=false)[1]
   return R([normred(a), -trred(a), one(base_ring(A))])
-end
-
-function standard_involution(A::StructureConstantAlgebra{T}) where {T}
-  return __standard_involution(A)
-end
-
-function __standard_involution(A)
-  BB = basis(A)
-
-  if isone(BB[1])
-    return ___standard_involution(A)
-  end
-
-  B = copy(basis(A))
-  n = dim(A)
-  o = one(A)
-  for i in 1:n
-    if dot(o.coeffs, B[i].coeffs) != 0
-      B[i] = o
-      B[i], B[1] = B[1], B[i]
-      break
-    end
-  end
-
-  _A, _AtoA = _change_basis(A, B)
-
-  _f = ___standard_involution(_A)
-
-  M = zero_matrix(base_ring(A), n, n)
-
-  g = inv(_AtoA) * _f * _AtoA
-
-  for i in 1:n
-    elem_to_mat_row!(M, i, g(BB[i]))
-  end
-
-  return hom(A, A, M, inv(M))
-end
-
-function isomorphism(::Type{QuaternionAlgebra}, A::StructureConstantAlgebra)
-  @req characteristic(base_ring(A)) != 2 "Characteristic must not be 2"
-  fl, iso = _is_quaternion_algebra(A)
-  !fl && error("Not an quaternion algebra")
-  return iso
-end
-
-# John Voight, "Quaternion algebra companion", Algorithm 4.6.1
-# https://math.dartmouth.edu/~jvoight/hints-solns.pdf
-#TODO: This doesn't work in characteristic 2
-function _is_quaternion_algebra(A::StructureConstantAlgebra)
-  K = base_ring(A)
-  if dim(A) != 4 || dimension_of_center(A) != 1
-    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
-  end
-
-  f = standard_involution(A)
-  G = zero_matrix(K, 4, 4)
-  B = copy(basis(A))
-  # Make one(A) the first element of B
-  for i in 1:4
-    if dot(B[i].coeffs, one(A).coeffs) != 0
-      B[i] = one(A)
-      B[1], B[i] = B[i], B[1]
-      break
-    end
-  end
-  @assert B[1] == one(A)
-  for i in 1:4
-    for j in 1:4
-      G[i, j] = trred(B[i] * f(B[j])) // 2
-    end
-  end
-
-  F, S = _gram_schmidt(G, identity)
-  stdbasis = elem_type(A)[]
-  for i in 1:4
-    push!(stdbasis, dot(B, [S[i, j] for j in 1:4]))
-  end
-
-  @assert stdbasis[1] == 1
-
-  if iszero(det(F))
-    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
-  end
-
-  a = stdbasis[2]^2
-  b = stdbasis[3]^2
-
-  (scalea, scaleb, newa, newb) = _reduce_standard_form(K(a), K(b))
-
-  stdbasis[2] = scalea * stdbasis[2]
-  stdbasis[3] = scaleb * stdbasis[3]
-
-  stdbasis[4] = stdbasis[2] * stdbasis[3]
-
-  @assert stdbasis[2]^2 == A(newa)
-  @assert stdbasis[3]^2 == A(newb)
-
-  @assert stdbasis[2] * stdbasis[3] == -stdbasis[3] * stdbasis[2]
-  @assert stdbasis[2] * stdbasis[3] == stdbasis[4]
-
-  QA = QuaternionAlgebra(K, newa, newb)
-
-  #@show stdbasis
-
-  #@show basis(A)
-
-  SB = basis_matrix(stdbasis)# * basis_matrix(B)
-
-  #@show SB
-
-  for i in 1:4
-    @assert sum(SB[i, j] * basis(A)[j] for j in 1:4) == stdbasis[i]
-  end
-
-  SBinv = inv(SB)
-
-  return true, hom(QA, A, SB, SBinv)
 end
 
 ################################################################################
@@ -524,49 +480,6 @@ function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd,AlgAssAbsOrd}; 
   return append!(gens1, gens2)
 end
 
-### change basis
-
-function ___standard_involution(A)
-  n = dim(A)
-  o = one(A)
-
-  @assert isone(basis(A)[1])
-
-  N = zero_matrix(base_ring(A), n, n)
-
-  K = base_ring(A)
-
-  B = basis(A)
-
-  @assert isone(B[1])
-  t = elem_type(base_ring(A))[]
-  push!(t, zero(K))
-  for i in 2:n
-    v = matrix(K, 1, n, (B[i]^2).coeffs)
-    ti = v[1, i]
-    push!(t, ti)
-    _ni = B[i]^2 - ti * B[i]
-    @assert all(i -> iszero(_ni.coeffs[i]), 2:n)
-  end
-
-  for i in 2:n
-    for j in (i+1):n
-      nij = (B[i] + B[j])^2 - (t[i] + t[j]) * (B[i] + B[j])
-      @assert all(i -> iszero(nij.coeffs[i]), 2:n)
-    end
-  end
-
-  for i in 1:n
-    b = i == 1 ? B[i] : t[i] - B[i]
-    v = matrix(base_ring(A), 1, n, b.coeffs)
-    for j in 1:n
-      N[i, j] = v[1, j]
-    end
-  end
-  invol = N
-  return hom(A, A, invol, inv(invol))
-end
-
 function _is_principal_maximal_quaternion_generic_proper(a, M, side=:right)
   A = algebra(M)
   f = standard_involution(A)
@@ -649,6 +562,87 @@ function StructureConstantAlgebra(A::QuaternionAlgebra)
   K = base_ring(A)
   B = StructureConstantAlgebra(K, A.mult_table)
   return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+end
+
+function isomorphism(::Type{QuaternionAlgebra}, A::StructureConstantAlgebra)
+  @req characteristic(base_ring(A)) != 2 "Characteristic must not be 2"
+  fl, iso = _is_quaternion_algebra(A)
+  !fl && error("Not an quaternion algebra")
+  return iso
+end
+
+# John Voight, "Quaternion algebra companion", Algorithm 4.6.1
+# https://math.dartmouth.edu/~jvoight/hints-solns.pdf
+#TODO: This doesn't work in characteristic 2
+function _is_quaternion_algebra(A::StructureConstantAlgebra)
+  K = base_ring(A)
+  if dim(A) != 4 || dimension_of_center(A) != 1
+    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
+  end
+
+  f = _standard_involution(A)
+  G = zero_matrix(K, 4, 4)
+  B = copy(basis(A))
+  # Make one(A) the first element of B
+  for i in 1:4
+    if dot(B[i].coeffs, one(A).coeffs) != 0
+      B[i] = one(A)
+      B[1], B[i] = B[i], B[1]
+      break
+    end
+  end
+  @assert B[1] == one(A)
+  for i in 1:4
+    for j in 1:4
+      G[i, j] = trred(B[i] * f(B[j])) // 2
+    end
+  end
+
+  F, S = _gram_schmidt(G, identity)
+  stdbasis = elem_type(A)[]
+  for i in 1:4
+    push!(stdbasis, dot(B, [S[i, j] for j in 1:4]))
+  end
+
+  @assert stdbasis[1] == 1
+
+  if iszero(det(F))
+    return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
+  end
+
+  a = stdbasis[2]^2
+  b = stdbasis[3]^2
+
+  (scalea, scaleb, newa, newb) = _reduce_standard_form(K(a), K(b))
+
+  stdbasis[2] = scalea * stdbasis[2]
+  stdbasis[3] = scaleb * stdbasis[3]
+
+  stdbasis[4] = stdbasis[2] * stdbasis[3]
+
+  @assert stdbasis[2]^2 == A(newa)
+  @assert stdbasis[3]^2 == A(newb)
+
+  @assert stdbasis[2] * stdbasis[3] == -stdbasis[3] * stdbasis[2]
+  @assert stdbasis[2] * stdbasis[3] == stdbasis[4]
+
+  QA = QuaternionAlgebra(K, newa, newb)
+
+  #@show stdbasis
+
+  #@show basis(A)
+
+  SB = basis_matrix(stdbasis)# * basis_matrix(B)
+
+  #@show SB
+
+  for i in 1:4
+    @assert sum(SB[i, j] * basis(A)[j] for j in 1:4) == stdbasis[i]
+  end
+
+  SBinv = inv(SB)
+
+  return true, hom(QA, A, SB, SBinv)
 end
 
 ################################################################################
