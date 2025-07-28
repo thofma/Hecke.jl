@@ -449,7 +449,7 @@ function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_me
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    if !GRH
+    if !GRH && unit_group_rank(O) > 0
       # there was unit group context saved
       # unconditional unit group requested
       _unit_group_proof(U, nothing)
