@@ -222,6 +222,10 @@ function standard_involution(A::QuaternionAlgebra{T}) where {T}
   end
 end
 
+function standard_involution(A::StructureConstantAlgebra{T}) where {T}
+  return _standard_involution(A)
+end
+
 function _standard_involution(A)
   BB = basis(A)
 
@@ -482,7 +486,7 @@ end
 
 function _is_principal_maximal_quaternion_generic_proper(a, M, side=:right)
   A = algebra(M)
-  f = standard_involution(A)
+  f = _standard_involution(A)
   K = base_ring(A)
   #@assert right_order(a) == M
   @assert _test_ideal_sidedness(a, M, :right)
