@@ -109,6 +109,10 @@ end
 global const maximal_order = maximal_order
 
 function _print_banner()
+  version_string = string(HECKE_VERSION)
+  if isdir(joinpath(@__DIR__, "..", ".git"))
+    version_string *= "-dev"
+  end
   printstyled(raw""" _    _           _        """, color = :red)
   println("")
   printstyled(raw"""| |  | |         | |       """, color = :red)
@@ -121,7 +125,7 @@ function _print_banner()
   println("  |  Manual: https://thofma.github.io/Hecke.jl")
   printstyled(raw"""|_|  |_|\___|\___|_|\_\___|""", color = :red)
   print("  |  Version ")
-  printstyled("$VERSION_NUMBER", color = :green)
+  printstyled("$version_string", color = :green)
   println()
 end
 
@@ -398,23 +402,8 @@ end
 #
 ################################################################################
 
-deps = Pkg.dependencies()
-if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
-  ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
-  if occursin("/dev/", ver.source)
-    global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
-  else
-    global VERSION_NUMBER = VersionNumber("$(ver.version)")
-  end
-else
-  global VERSION_NUMBER = "building"
-end
-
 # version number determined at compile time
-function _get_version()
-    return VersionNumber(Pkg.TOML.parsefile(joinpath(dirname(@__DIR__), "Project.toml"))["version"])
-end
-const pkg_version = _get_version()
+const HECKE_VERSION = Base.pkgversion(@__MODULE__)
 
 ################################################################################
 #
