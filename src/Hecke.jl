@@ -28,6 +28,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
 using LazyArtifacts
 
 using LinearAlgebra
+using Markdown
 using Distributed
 using Printf
 using SparseArrays
