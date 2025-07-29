@@ -789,26 +789,6 @@ function percent_P()
   print_history(REPL.LineEdit.mode(s).hist)
 end
 
-#same (copied) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
-#difference: names(m, all = true) to also see non-exported variables, aka
-# caches...
-
-function varinfo(m::Module=Main, pattern::Regex=r"")
-    rows =
-        Any[ let value = getfield(m, v)
-                 Any[string(v),
-                     (value===Base || value===Main || value===Core ? "" : format_bytes(summarysize(value))),
-                     summary(value)]
-             end
-             for v in sort!(names(m, all = true)) if isdefined(m, v) && occursin(pattern, string(v)) ]
-
-    pushfirst!(rows, Any["name", "size", "summary"])
-
-    return Markdown.MD(Any[Markdown.Table(rows, Symbol[:l, :r, :l])])
-end
-varinfo(pat::Regex) = varinfo(Main, pat)
-
-
 function print_cache(sym::Vector{Any})
   for f in sym
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
