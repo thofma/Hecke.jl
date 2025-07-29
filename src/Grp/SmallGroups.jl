@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-using Pkg.Artifacts
-
 #CF: as of now, nothing works here and the exports cause errors in Oscar
 
 mutable struct SmallGroupDB

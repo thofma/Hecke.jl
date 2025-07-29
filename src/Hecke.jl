@@ -25,7 +25,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
-using LazyArtifacts
+using Artifacts
 
 using LinearAlgebra
 using Markdown
