@@ -57,64 +57,9 @@ function SmallGroupDB(path::String)
   return SmallGroupDB(path, max_order, db)
 end
 
-function SmallGroupDBLegacy(path::String)
-
-  f = function(z)
-    if z isa BigInt
-      return ZZRingElem(z)
-    elseif z isa Rational{BigInt}
-      return QQFieldElem()
-    elseif z isa Vector{Vector{Rational{BigInt}}}
-      return Vector{QQFieldElem}[ QQFieldElem.(v) for v in z]
-    elseif z isa Vector{Vector{Vector{Vector{Rational{BigInt}}}}}
-      zz = Vector{Vector{Vector{Vector{QQFieldElem}}}}(undef, length(z))
-      for i in 1:length(z)
-        zz[i] = Vector{Vector{Vector{QQFieldElem}}}(undef, length(z[i]))
-        for j in 1:length(z[i])
-          zz[i][j] = Vector{Vector{QQFieldElem}}(undef, length(z[i][j]))
-          for k in 1:length(z[i][j])
-            zz[i][j][k] = QQFieldElem.(z[i][j][k])
-          end
-        end
-      end
-      return zz
-    else
-      return z
-    end
-  end
-
-  dbnew = Vector{NamedTuple{(:id, :name, :gens, :rels, :nontrivrels, :orderdis,
-                          :ordersubdis, :is_abelian, :is_cyclic, :issolvable,
-                          :is_nilpotent, :autorder, :aut_gens, :nchars, :dims,
-                          :schur, :galrep, :fields, :mod),
-                         Tuple{Tuple{Int, Int}, String, Vector{Perm{Int}},
-                               Vector{Vector{Int}}, Vector{Vector{Int}},
-                               Vector{Tuple{Int,Int}},
-                               Vector{Tuple{Int,Int}}, Bool, Bool, Bool,
-                               Bool, ZZRingElem, Vector{Vector{Vector{Int}}}, Int,
-                               Vector{Int},Vector{Int}, Vector{Int},
-                               Vector{Vector{QQFieldElem}},
-                               Vector{Vector{Vector{Vector{QQFieldElem}}}}}}}[]
-
-  db = Hecke.eval(Meta.parse(Base.read(path, String)))
-  for i in 1:length(db)
-    push!(dbnew, eltype(dbnew)(undef, length(db[i])))
-    for j in 1:length(db[i])
-      v = db[i][j]
-      vv = map(f, v)
-      dbnew[i][j] = (id = (i, j), vv...)
-    end
-  end
-
-  max_order = length(dbnew)
-  return SmallGroupDB(path, max_order, dbnew)
-end
-
 function show(io::IO, L::SmallGroupDB)
   print(io, "Database of small groups (order limit = ", L.max_order, ")")
 end
-
-const legacy_default_small_group_db = [joinpath(pkgdir, "data/small_groups_extended"), joinpath(pkgdir, "data/small_groups_default")]
 
 function small_group_database()
   st = artifact"SmallGroupDB"
