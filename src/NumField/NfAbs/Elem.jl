@@ -50,20 +50,20 @@ end
 ################################################################################
 
 function set_den!(a::AbsSimpleNumFieldElem, d::ZZRingElem)
-  ccall((:nf_elem_set_den, libantic), Nothing,
+  ccall((:nf_elem_set_den, libflint), Nothing,
         (Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}),
         a, d, parent(a))
 end
 
 function set_num_coeff!(a::AbsSimpleNumFieldElem, i::Int, b::ZZRingElem)
-  ccall((:_nf_elem_set_coeff_num_fmpz, libantic), Nothing,
+  ccall((:_nf_elem_set_coeff_num_fmpz, libflint), Nothing,
         (Ref{AbsSimpleNumFieldElem}, Int, Ref{ZZRingElem}, Ref{AbsSimpleNumField}),
         a, i, b, parent(a))
 end
 
 function gen!(r::AbsSimpleNumFieldElem)
    a = parent(r)
-   ccall((:nf_elem_gen, libantic), Nothing,
+   ccall((:nf_elem_gen, libflint), Nothing,
          (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), r, a)
    return r
 end
@@ -111,7 +111,7 @@ function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
      return no//1
    end
    de = denominator(a)
-   ccall((:nf_elem_norm_div, libantic), Nothing,
+   ccall((:nf_elem_norm_div, libflint), Nothing,
          (Ref{QQFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Ref{ZZRingElem}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
    return z
@@ -868,13 +868,13 @@ end
 
 function __mod(a::AbsSimpleNumFieldElem, b::ZZRingElem, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
-  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}, Cint), z, a, b, parent(a), Cint(fl))
+  ccall((:nf_elem_mod_fmpz_den, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
 end
 
 function coprime_denominator(a::AbsSimpleNumFieldElem, b::ZZRingElem)
   z = parent(a)()
-  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), z, a, b, parent(a))
+  ccall((:nf_elem_coprime_den, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), z, a, b, parent(a))
   return z
 end
 

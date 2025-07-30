@@ -631,7 +631,7 @@ end
 ################################################################################
 
 function denominator!(z::ZZRingElem, a::AbsSimpleNumFieldElem)
-   ccall((:nf_elem_get_den, libantic), Nothing,
+   ccall((:nf_elem_get_den, libflint), Nothing,
          (Ref{ZZRingElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}),
          z, a, a.parent)
    return z
