@@ -21,7 +21,7 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision
     i = div(i+1+vo, 2)
     push!(chain, i)
   end
-  
+
   for p = reverse(chain)
     setprecision!(r, p)
     setprecision!(o, p)
@@ -609,7 +609,7 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem; cached::Bool = tru
 #  bjj = Kjj(parent(Kjj.pol)(b))
 #  djj = lift_root(f, ajj, bjj, p, 10)
 #  d = K(parent(K.pol)(djj))
-      ccall((:nf_elem_set, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), c, d, K)
+      ccall((:nf_elem_set, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), c, d, K)
       set!(pc, precision(x))
     elseif precision(x) < pc
       d = mod_sym(c, p^precision(x))

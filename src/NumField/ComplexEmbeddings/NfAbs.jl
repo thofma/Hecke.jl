@@ -138,7 +138,7 @@ function (f::AbsSimpleNumFieldEmbedding)(x::AbsSimpleNumFieldElem, abs_tol::Int 
 
     if i <= r1
       o = RR()
-      ccall((:arb_poly_evaluate, libarb), Nothing,
+      ccall((:arb_poly_evaluate, libflint), Nothing,
             (Ref{ArbFieldElem}, Ref{ArbPolyRingElem}, Ref{ArbFieldElem}, Int),
              o, xpoly, c.real_roots[i], abs_tol)
 
@@ -152,7 +152,7 @@ function (f::AbsSimpleNumFieldEmbedding)(x::AbsSimpleNumFieldElem, abs_tol::Int 
     else
       tacb = CC()
       j = i <= r1 + r2 ? i - r1 : i - r1 - r2
-      ccall((:arb_poly_evaluate_acb, libarb), Nothing,
+      ccall((:arb_poly_evaluate_acb, libflint), Nothing,
             (Ref{AcbFieldElem}, Ref{ArbPolyRingElem}, Ref{AcbFieldElem}, Int),
              tacb, xpoly, c.complex_roots[j], abs_tol)
 

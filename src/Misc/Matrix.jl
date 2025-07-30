@@ -437,9 +437,9 @@ function round_scale!(b::ZZMatrix, a::ArbMatrix, l::Int)
   r = R()
   for i = 1:s[1]
       for j = 1:s[2]
-          v = ccall((:arb_mat_entry_ptr, libarb), Ptr{ArbFieldElem},
+          v = ccall((:arb_mat_entry_ptr, libflint), Ptr{ArbFieldElem},
               (Ref{ArbMatrix}, Int, Int), a, i - 1, j - 1)
-          ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
+          ccall((:arb_mul_2exp_si, libflint), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
           b[i, j] = round(ZZRingElem, r)
       end
   end

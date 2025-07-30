@@ -64,7 +64,7 @@ end
 function _nf_to_fq!(a::FqFieldElem, b::AbsSimpleNumFieldElem, K::FqField)#, a_tmp::FpPolyRingElem)
   # AbsSimpleNumFieldElem -> QQPolyRingElem
   z = QQPolyRingElem()
-  ccall((:nf_elem_get_fmpq_poly, libantic), Nothing,
+  ccall((:nf_elem_get_fmpq_poly, libflint), Nothing,
         (Ref{QQPolyRingElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), z, b, parent(b))
   z.parent = Globals.Qx
   # QQPolyRingElem -> ZZPolyRingElem, ZZRingElem

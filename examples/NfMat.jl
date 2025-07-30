@@ -111,7 +111,7 @@ mutable struct NfMatElem <: MatElem{AbsSimpleNumFieldElem}
     end
     for i=1:length(entries)
       if M.entries[i].a != 0 #wrong for deg2 , here .d needs to be tested
-        ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), pointer(entries, i), pointer(M.entries, i), K)
+        ccall((:nf_elem_set, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), pointer(entries, i), pointer(M.entries, i), K)
       end
     end
     if degree(K) == 1
@@ -321,7 +321,7 @@ end
 function Base.getindex(M::NfMatElem, r::Int, c::Int)
   checkbounds(M, r, c)
   a = base_ring(M)()
-  ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, pointer(M.entries, M.rows[r]+c), base_ring(M))
+  ccall((:nf_elem_set, Hecke.libflint), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, pointer(M.entries, M.rows[r]+c), base_ring(M))
   return a
 end
 
@@ -362,28 +362,28 @@ end
 
 function Base.setindex!(M::NfMatElem, a::AbsSimpleNumFieldElem, r::Int, c::Int)
   checkbounds(M, r, c)
-  ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+  ccall((:nf_elem_set, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
 function Base.setindex!(M::NfMatElem, a::Int, r::Int, c::Int)
   checkbounds(M, r, c)
-  ccall((:nf_elem_set_si, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Int, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+  ccall((:nf_elem_set_si, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Int, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
 function Base.setindex!(M::NfMatElem, a::ZZRingElem, r::Int, c::Int)
   checkbounds(M, r, c)
-  ccall((:nf_elem_set_fmpz, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+  ccall((:nf_elem_set_fmpz, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
 #hopefully not used?
 function Base.setindex!(M::NfMatElem, a::nf_elem_raw, r::Int, c::Int)
   @boundscheck checkbounds(M, r, c)
-  ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem_raw}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+  ccall((:nf_elem_set, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem_raw}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
 @inline function Base.setindex!(M::NfMatElem, a::Ptr{nf_elem_raw}, r::Int, c::Int)
   @boundscheck checkbounds(M, r, c)
-  ccall((:nf_elem_set, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem_raw}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
+  ccall((:nf_elem_set, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{nf_elem_raw}, Ref{AbsSimpleNumField}), pointer(M.entries, M.rows[r]+c), a, base_ring(M))
 end
 
 function Base.setindex!(M::NfMatElem, N::NfMatElem, r::AbstractUnitRange{Int}, c::AbstractUnitRange{Int})
@@ -437,7 +437,7 @@ end
 @inline function Hecke.is_zero_entry(M::NfMatElem, i::Int, j::Int)
   p = getindex_raw(M, i, j)
   reduce!(p, base_ring(M))
-  return ccall((:nf_elem_is_zero, Nemo.libantic), Cint, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), p, base_ring(M)) == 1
+  return ccall((:nf_elem_is_zero, Hecke.libflint), Cint, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), p, base_ring(M)) == 1
 end
 
 function Hecke.is_zero_row(M::NfMatElem, i::Int)
@@ -451,43 +451,43 @@ end
 @inline function isone_entry(M::NfMatElem, i::Int, j::Int)
   p = getindex_raw(M, i, j)
   reduce!(p, base_ring(M))
-  return ccall((:nf_elem_is_one, Nemo.libantic), Cint, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), p, base_ring(M)) == 1
+  return ccall((:nf_elem_is_one, Hecke.libflint), Cint, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), p, base_ring(M)) == 1
 end
 
 @inline function mul!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::Ptr{nf_elem_raw}, K::AbsSimpleNumField, red::Bool = true)
-  ccall((:nf_elem_mul_red, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
+  ccall((:nf_elem_mul_red, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
 end
 
 @inline function mul!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::AbsSimpleNumFieldElem, K::AbsSimpleNumField, red::Bool = true)
-  ccall((:nf_elem_mul_red, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
+  ccall((:nf_elem_mul_red, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
 end
 
 @inline function mul!(a::AbsSimpleNumFieldElem, b::Ptr{nf_elem_raw}, c::Ptr{nf_elem_raw}, K::AbsSimpleNumField, red::Bool = true)
-  ccall((:nf_elem_mul_red, Nemo.libantic), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
+  ccall((:nf_elem_mul_red, Hecke.libflint), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
 end
 
 @inline function mul!(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, c::Ptr{nf_elem_raw}, K::AbsSimpleNumField, red::Bool = true)
-  ccall((:nf_elem_mul_red, Nemo.libantic), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
+  ccall((:nf_elem_mul_red, Hecke.libflint), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}, Cint), a, b, c, K, red)
 end
 
 @inline function reduce!(a::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
-  ccall((:nf_elem_reduce, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, K)
+  ccall((:nf_elem_reduce, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, K)
 end
 
 @inline function add!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
-  ccall((:nf_elem_add, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, b, c, K)
+  ccall((:nf_elem_add, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, b, c, K)
 end
 
 @inline function add!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::AbsSimpleNumFieldElem, K::AbsSimpleNumField)
-  ccall((:nf_elem_add, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), a, b, c, K)
+  ccall((:nf_elem_add, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), a, b, c, K)
 end
 
 @inline function sub!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
-  ccall((:nf_elem_sub, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, b, c, K)
+  ccall((:nf_elem_sub, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, b, c, K)
 end
 
 @inline function sub!(a::Ptr{nf_elem_raw}, b::Ptr{nf_elem_raw}, c::AbsSimpleNumFieldElem, K::AbsSimpleNumField)
-  ccall((:nf_elem_sub, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), a, b, c, K)
+  ccall((:nf_elem_sub, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), a, b, c, K)
 end
 
 function Hecke.divide_row!(M::NfMatElem, i::Int, a::AbsSimpleNumFieldElem)
@@ -622,7 +622,7 @@ function _ref!(M::NfMatElem;
         Nemo.mul!(de, de, M[i,j])
       end
       if !isone_entry(M, i, j)
-        ccall((:nf_elem_inv, Nemo.libantic), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), t, getindex_raw(M, i, j), K)
+        ccall((:nf_elem_inv, Hecke.libflint), Cvoid, (Ref{AbsSimpleNumFieldElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), t, getindex_raw(M, i, j), K)
         k = j
         while k<= ncols(M)
           reduce!(getindex_raw(M, i, k), K)
@@ -680,7 +680,7 @@ function ref(M::NfMatElem)
 end
 
 Nemo.iszero(a::Ptr{nf_elem_raw}, K::AbsSimpleNumField) =
-  ccall((:nf_elem_is_zero, Nemo.libantic), Int, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, K) == 1
+  ccall((:nf_elem_is_zero, Hecke.libflint), Int, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, K) == 1
 
 function reduce_up!(M::NfMatElem, piv::Vector{Int})
   K = base_ring(M)
@@ -742,7 +742,7 @@ Base.similar(M::NfMatElem) = zero_matrix(base_ring(M), nrows(M), ncols(M))
 
 #not used.
 function init!(A::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
-  ccall((:nf_elem_init, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), A, K)
+  ccall((:nf_elem_init, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), A, K)
 end
 
 function Base.:*(x::NfMatElem, y::NfMatElem)
@@ -766,7 +766,7 @@ function Base.:*(x::NfMatElem, y::NfMatElem)
 end
 
 function Hecke.zero!(a::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
-  ccall((:nf_elem_zero, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, K)
+  ccall((:nf_elem_zero, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), a, K)
 end
 
 #add version is used in strassen
@@ -843,7 +843,7 @@ function coeff!(m::QQMatrix, M::NfMatElem, n::Int)
   K = base_ring(M)
   for i=1:nrows(M)
     for j=1:ncols(M)
-      ccall((:nf_elem_get_coeff_fmpq, Nemo.libantic), Cvoid, (Ptr{QQFieldElem}, Ptr{nf_elem_raw}, Int, Ref{AbsSimpleNumField}), mat_entry_ptr(m, i, j), mat_entry_ptr(M, i, j), n, K)
+      ccall((:nf_elem_get_coeff_fmpq, Hecke.libflint), Cvoid, (Ptr{QQFieldElem}, Ptr{nf_elem_raw}, Int, Ref{AbsSimpleNumField}), mat_entry_ptr(m, i, j), mat_entry_ptr(M, i, j), n, K)
     end
   end
 end
@@ -855,7 +855,7 @@ function Hecke.denominator(a::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
 end
 
 function denominator!(d::ZZRingElem, a::Ptr{nf_elem_raw}, K::AbsSimpleNumField)
-  ccall((:nf_elem_get_den, Nemo.libantic), Nothing, (Ref{ZZRingElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), d, a, K)
+  ccall((:nf_elem_get_den, Hecke.libflint), Nothing, (Ref{ZZRingElem}, Ptr{nf_elem_raw}, Ref{AbsSimpleNumField}), d, a, K)
 end
 
 function setcoeff!(M::NfMatElem, n::Int, m::QQMatrix)
@@ -1037,7 +1037,7 @@ function mul_KS(A::NfMatElem, B::NfMatElem)
     for i=1:nrows(C)
       for j=1:ncols(C)
         C[i,j] = getindex_raw(tC, i, j)
-        ccall((:nf_elem_set_den, Nemo.libantic), Cvoid, (Ptr{nf_elem_raw}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), getindex_raw(C, i, j), dA[i]*dB[j], K)
+        ccall((:nf_elem_set_den, Hecke.libflint), Cvoid, (Ptr{nf_elem_raw}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), getindex_raw(C, i, j), dA[i]*dB[j], K)
         reduce!(getindex_raw(C, i, j), K)
       end
     end
