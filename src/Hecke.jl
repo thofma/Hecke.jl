@@ -435,9 +435,6 @@ _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
 using FLINT_jll: libflint
 
-const libantic = libflint
-const libarb = libflint
-
 ################################################################################
 #
 #  Custom test function
