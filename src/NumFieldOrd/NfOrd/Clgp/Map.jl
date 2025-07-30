@@ -622,7 +622,7 @@ function reduce_mod_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumF
     bd = maximum(sqrt(sum((B[i,j]::ArbFieldElem)^2 for j=1:ncols(B)))::ArbFieldElem for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
-      s = ccall((:arb_bits, libarb), Int, (Ref{ArbFieldElem}, ), bd)
+      s = ccall((:arb_bits, libflint), Int, (Ref{ArbFieldElem}, ), bd)
       prec = max(s, prec)
       prec = 1<<nbits(prec)
     else

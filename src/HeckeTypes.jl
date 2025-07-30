@@ -227,7 +227,7 @@ mutable struct acb_root_ctx
     z.signature = (r, s)
 
     for i = 1:degree(x)
-      ccall((:acb_set, libarb), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}),
+      ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}),
             z._roots + (i - 1) * sizeof(acb_struct), z.roots[i])
     end
 
@@ -260,7 +260,7 @@ mutable struct acb_root_ctx
 end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
-  ccall((:_acb_vec_clear, libarb), Nothing,
+  ccall((:_acb_vec_clear, libflint), Nothing,
               (Ptr{acb_struct}, Int), x._roots, degree(x.poly))
 end
 

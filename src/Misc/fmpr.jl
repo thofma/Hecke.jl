@@ -5,35 +5,35 @@ mutable struct fmpr
 
   function fmpr()
     z = new()
-    ccall((:fmpr_init, libarb), Nothing, (Ref{fmpr}, ), z)
+    ccall((:fmpr_init, libflint), Nothing, (Ref{fmpr}, ), z)
     finalizer(_fmpr_clear_fn, z)
     return z
   end
 
   function fmpr(x::Ref{arf_struct})
     z = new()
-    ccall((:fmpr_init, libarb), Nothing, (Ref{fmpr}, ), z)
-    ccall((:arf_get_fmpr, libarb), Nothing, (Ref{fmpr}, Ref{arf_struct}), z, x)
+    ccall((:fmpr_init, libflint), Nothing, (Ref{fmpr}, ), z)
+    ccall((:arf_get_fmpr, libflint), Nothing, (Ref{fmpr}, Ref{arf_struct}), z, x)
     finalizer(_fmpr_clear_fn, z)
     return z
   end
 
   function fmpr(x::arf_struct)
     z = new()
-    ccall((:fmpr_init, libarb), Nothing, (Ref{fmpr}, ), z)
-    ccall((:arf_get_fmpr, libarb), Nothing, (Ref{fmpr}, Ref{arf_struct}), z, x)
+    ccall((:fmpr_init, libflint), Nothing, (Ref{fmpr}, ), z)
+    ccall((:arf_get_fmpr, libflint), Nothing, (Ref{fmpr}, Ref{arf_struct}), z, x)
     finalizer(_fmpr_clear_fn, z)
     return z
   end
 end
 
 function _fmpr_clear_fn(x::fmpr)
-  ccall((:fmpr_clear, libarb), Nothing, (Ref{fmpr}, ), x)
+  ccall((:fmpr_clear, libflint), Nothing, (Ref{fmpr}, ), x)
 end
 
 function QQFieldElem(x::fmpr)
   z = QQFieldElem()
-  ccall((:fmpr_get_fmpq, libarb), Nothing, (Ref{QQFieldElem}, Ref{fmpr}), z, x)
+  ccall((:fmpr_get_fmpq, libflint), Nothing, (Ref{QQFieldElem}, Ref{fmpr}), z, x)
   return z
 end
 =#
