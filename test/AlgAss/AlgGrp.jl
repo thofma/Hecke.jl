@@ -43,7 +43,7 @@
     R1 = group_algebra(QQ, G1)
     R2 = group_algebra(QQ, G2)
     @test vector_space_dim(R1) == 6
-    @test_throws InfiniteDimensionError vector_space_dim(R2)
+    @test_throws Hecke.InfiniteDimensionError vector_space_dim(R2)
   end
 
   @testset "Decomposition for abelian group algebras" begin
