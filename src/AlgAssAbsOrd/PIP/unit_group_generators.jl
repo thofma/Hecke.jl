@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-function _unit_group_generators(O)
+function _unit_group_generators(O; GRH::Bool = true)
   M = maximal_order(O)
-  gens = _unit_group_generators_maximal(M)
+  gens = _unit_group_generators_maximal(M; GRH = GRH)
   _, Y = _orbit_stabilizer(gens, one(algebra(O)), O)
   return Y
 end
@@ -38,19 +38,17 @@ function _unit_group_generators_maximal_simple(M; GRH::Bool = true)
   end
   ZA, ZAtoA = _as_algebra_over_center(A)
   if dim(ZA) == 1
-    !GRH && error("Not implemented (yet)")
     # this is a field
     K, AtoK = _as_field_with_isomorphism(A)
     OK = maximal_order(K)
-    u, mu = unit_group(OK)
+    u, mu = unit_group(OK; GRH = GRH)
     return [preimage(AtoK, elem_in_nf(mu(u[i]))) for i in 1:ngens(u)]
   elseif isdefined(A, :isomorphic_full_matrix_algebra)
-    !GRH && error("Not implemented (yet)")
     B, AtoB = A.isomorphic_full_matrix_algebra
     OB = _get_order_from_gens(B, [AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     N, S = nice_order(OB)
     @assert basis_matrix(N) == identity_matrix(base_ring(B), dim(B))
-    gens = [ B(u) for u in _GLn_generators(base_ring(OB), _matdeg(B))]
+    gens = [ B(u) for u in _GLn_generators(base_ring(OB), _matdeg(B); GRH)]
     @assert all(b in N for b in gens)
     gens_adjusted = [ inv(S) * u * S for u in gens]
     @assert all(b in OB for b in gens_adjusted)
@@ -154,7 +152,7 @@ function _SLn_generators(OK, n)
   end
 end
 
-function _GLn_generators(OK, n)
+function _GLn_generators(OK, n; GRH = true)
   K = nf(OK)
   if degree(K) == 1
     if n == 0
@@ -180,11 +178,11 @@ function _GLn_generators(OK, n)
   end
 
   if n == 2 && unit_group_rank(OK) == 0 && degree(K) == 2
-    return _GLn_generators_quadratic(OK, n)
+    return _GLn_generators_quadratic(OK, n; GRH)
   end
 
   res = _SLn_generators(OK, n)
-  U, mU = unit_group(OK)
+  U, mU = unit_group(OK; GRH)
   if n == 0
     return dense_matrix_type(K)[]
   end
@@ -198,7 +196,7 @@ function _GLn_generators(OK, n)
   return res
 end
 
-function _GLn_generators_quadratic(OK, n)
+function _GLn_generators_quadratic(OK, n; GRH = true)
   d = discriminant(OK)
   _v = findfirst(z -> z[1] == d, __GLn_generators_quadratic)
   if _v === nothing
