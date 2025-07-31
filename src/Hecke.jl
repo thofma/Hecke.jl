@@ -53,7 +53,7 @@ import AbstractAlgebra:
   set_assertion_level,
   set_verbosity_level
 
-import AbstractAlgebra: Solve, coprime_base_steel
+import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 

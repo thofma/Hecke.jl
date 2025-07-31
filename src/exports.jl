@@ -939,7 +939,6 @@ export value_module_quadratic_form
 export vcat
 export vcat!
 export vectors_of_square_and_divisibility
-export InfiniteDimensionError #To be removed
 export vector_space_dim
 export volume
 export weil_pairing
