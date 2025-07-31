@@ -16,7 +16,7 @@ Generic.dim(A::GroupAlgebra) = vector_space_dim(A)
 
 function vector_space_dim(A::GroupAlgebra{T, S, R}) where {T <: FieldElem, S, R}
   isfinite(group(A)) || throw(InfiniteDimensionError())
-  return order(group(A))
+  return order(Int, group(A))
 end
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
