@@ -37,6 +37,15 @@
     end
   end
 
+  @testset "Vector space dimension" begin
+    G1 = abelian_group(2,3)
+    G2 = abelian_group(0) 
+    R1 = group_algebra(QQ, G1)
+    R2 = group_algebra(QQ, G2)
+    @test vector_space_dim(R1) == 6
+    @test_throws Hecke.InfiniteDimensionError vector_space_dim(R2)
+  end
+
   @testset "Decomposition for abelian group algebras" begin
     G = abelian_group([2,4,6])
     QG = QQ[G]
