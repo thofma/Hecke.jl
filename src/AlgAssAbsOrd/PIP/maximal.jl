@@ -7,7 +7,7 @@
 # Here is the strategy for testing if a in M \subseteq A is principal.
 # Decompose A = A_1 x ... x A_n and M = M_1 x ... M_n
 # The A_i must know their full matrix algebra isomorphism
-function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
+function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side=:right)
   @assert side == :right
   @hassert :PIP 1 _test_ideal_sidedness(a, M, :right)
   @hassert :PIP 1 is_maximal(M)
@@ -28,10 +28,10 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   for i in 1:length(res)
     B, mB = res[i]
     #@show isdefined(B, :isomorphic_full_matrix_algebra)
-    MinB = order(B, elem_type(B)[(mB\(mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
+    MinB = order(B, elem_type(B)[(mB \ (mB(one(B)) * elem_in_algebra(b))) for b in Mbas])
     #@show is_maximal(MinC)
     #@show hnf(basis_matrix(MinC))
-    ainB = ideal_from_lattice_gens(B, elem_type(B)[(mB\(mB(one(B))* b)) for b in abas])
+    ainB = ideal_from_lattice_gens(B, elem_type(B)[(mB \ (mB(one(B)) * b)) for b in abas])
     @hassert :PIP 1 all(b in MinB for b in basis(ainB))
     fl, gen = _is_principal_maximal_simple_component(ainB, MinB, side)
     #@show "not simple for component", B
@@ -47,7 +47,7 @@ function _isprincipal_maximal(a::AlgAssAbsOrdIdl, M, side = :right)
   return true, gen
 end
 
-function _is_principal_maximal_simple_component(a, M, side = :right)
+function _is_principal_maximal_simple_component(a, M, side=:right)
   A = algebra(M)
   ZA, ZAtoA = _as_algebra_over_center(A)
 
@@ -55,7 +55,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     @assert base_ring(ZA) isa NumField{QQFieldElem}
     B = matrix_algebra(base_ring(ZA), 1)
     img = [preimage(ZAtoA, x) for x in basis(A)]
-    m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1])/(one(A).coeffs[1]) for x in img])
+    m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1]) / (one(A).coeffs[1]) for x in img])
     B1 = basis(B)[1]
     minv = matrix([ZAtoA(B1[1, 1] * (x * one(ZA))).coeffs for x in absolute_basis(base_ring(ZA))])
     AtoB = AbsAlgAssMorGen(A, B, m, minv)
@@ -63,7 +63,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   end
 
   if isdefined(A, :isomorphic_full_matrix_algebra)
-    local B::MatAlgebra{AbsSimpleNumFieldElem, Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
+    local B::MatAlgebra{AbsSimpleNumFieldElem,Generic.MatSpaceElem{AbsSimpleNumFieldElem}}
     B, AtoB = A.isomorphic_full_matrix_algebra
     OB = _get_order_from_gens(B, elem_type(B)[AtoB(elem_in_algebra(b)) for b in absolute_basis(M)])
     #@show OB
@@ -71,7 +71,7 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     #@show ainOB
     #@show is_maximal(OB)
     fl, gen = _is_principal_maximal_full_matrix_algebra(ainOB, OB, side)
-    gentr = (AtoB\gen)::elem_type(A)
+    gentr = (AtoB \ gen)::elem_type(A)
     @hassert :PIP 1 gentr * M == a
     return fl, gentr
   elseif base_ring(A) isa QQField && dim(A) == 4 && !is_split(A)
@@ -86,14 +86,14 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   end
 end
 
-function _is_principal_maximal_quaternion_generic(a, M, side = :right)
+function _is_principal_maximal_quaternion_generic(a, M, side=:right)
   A = algebra(M)
   B, BtoA = _as_algebra_over_center(A)
-  OB = _get_order_from_gens(B, elem_type(B)[BtoA\(elem_in_algebra(b)) for b in absolute_basis(M)])
+  OB = _get_order_from_gens(B, elem_type(B)[BtoA \ (elem_in_algebra(b)) for b in absolute_basis(M)])
   f = standard_involution(B)
   K = base_ring(B)
   @assert right_order(a) == M
-  b = ideal_from_lattice_gens(B, OB, elem_type(B)[BtoA\(b) for b in absolute_basis(a)])
+  b = ideal_from_lattice_gens(B, OB, elem_type(B)[BtoA \ (b) for b in absolute_basis(a)])
   nr = normred(b)
   nr = simplify(nr)
   #@show nr
@@ -117,7 +117,7 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   for z in reps
     for i in 1:d
       for j in 1:d
-        G[i, j] = absolute_tr(inv(u * c * z) * trred(Babs[i] * f(Babs[j]))//2)
+        G[i, j] = absolute_tr(inv(u * c * z) * trred(Babs[i] * f(Babs[j])) // 2)
       end
     end
     #@show G
@@ -151,9 +151,9 @@ function _reps_for_totally_positive(c::AbsSimpleNumFieldElem, K::AbsSimpleNumFie
   r, s = signature(K)
   S = abelian_group([2 for i in 1:r])
   rpls = real_embeddings(K)
-  h = hom(Q, S, [S([ sign(mU(mQ\Q[i]), sigma) == -1 ? 1 : 0 for sigma in rpls ]) for i in 1:ngens(Q)])
+  h = hom(Q, S, [S([sign(mU(mQ \ Q[i]), sigma) == -1 ? 1 : 0 for sigma in rpls]) for i in 1:ngens(Q)])
   # this is U/U^2 -> (Z/2Z)^r
-  tar = S([ sign(c, sigma) == -1 ? 1 : 0 for sigma in rpls ])
+  tar = S([sign(c, sigma) == -1 ? 1 : 0 for sigma in rpls])
   if is_totally_positive(c)
     el = one(K)
   else
@@ -161,18 +161,18 @@ function _reps_for_totally_positive(c::AbsSimpleNumFieldElem, K::AbsSimpleNumFie
     if !fl
       return false, zero(K), AbsSimpleNumFieldElem[]
     end
-    el = mU(mQ\q)
+    el = mU(mQ \ q)
   end
   K, mK = kernel(h)
   res = AbsSimpleNumFieldElem[]
   for k in K
-    push!(res, elem_in_nf(mU(mQ\mK(k))))
+    push!(res, elem_in_nf(mU(mQ \ mK(k))))
   end
 
   return true, el, res
 end
 
-function _is_principal_maximal_quaternion(a, M, side = :right)
+function _is_principal_maximal_quaternion(a, M, side=:right)
   @assert side == :right
   A = algebra(M)
   !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
@@ -184,7 +184,7 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   f = standard_involution(A)
   for i in 1:4
     for j in 1:4
-      G[i, j] = ZZ(trred(B[i] * f(B[j])))//2
+      G[i, j] = ZZ(trred(B[i] * f(B[j]))) // 2
     end
   end
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
@@ -205,25 +205,25 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   end
 end
 
-function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
+function _is_principal_maximal_full_matrix_algebra(a, M, side=:right)
   A = algebra(M)
   if _matdeg(A) == 1
     # I don't have _as_field_with_isomorphism for algebras over K
     AA, AAtoA = restrict_scalars(A, QQ)
     K, AAtoK = _as_field_with_isomorphism(AA)
     MK = maximal_order(K)
-    I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA\(b)) * MK for b in absolute_basis(a)])
+    I = sum(fractional_ideal_type(order_type(K))[AAtoK(AAtoA \ (b)) * MK for b in absolute_basis(a)])
     fl, zK = is_principal_with_data(I)
-    gen = AAtoA(AAtoK\(elem_in_nf(zK)))
+    gen = AAtoA(AAtoK \ (elem_in_nf(zK)))
     if fl
       @assert gen * M == a
     end
-    return fl, AAtoA(AAtoK\(elem_in_nf(zK)))
+    return fl, AAtoA(AAtoK \ (elem_in_nf(zK)))
   elseif degree(base_ring(A)) == 1
     B, BtoA = _as_full_matrix_algebra_over_Q(A)
-    MB = order(B, elem_type(B)[BtoA\elem_in_algebra(b) for b in absolute_basis(M)])
-    aB = ideal_from_lattice_gens(B, elem_type(B)[BtoA\b for b in absolute_basis(a)])
-    fl, zK = _isprincipal_maximal_simple(aB, MB, side)::Tuple{Bool, elem_type(B)}
+    MB = order(B, elem_type(B)[BtoA \ elem_in_algebra(b) for b in absolute_basis(M)])
+    aB = ideal_from_lattice_gens(B, elem_type(B)[BtoA \ b for b in absolute_basis(a)])
+    fl, zK = _isprincipal_maximal_simple(aB, MB, side)::Tuple{Bool,elem_type(B)}
     gen = BtoA(zK)::elem_type(A)
     if fl
       @assert zK * MB == aB
@@ -239,7 +239,7 @@ function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)
   end
 end
 
-function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
+function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side=:right)
   @assert side == :right
   @assert _test_ideal_sidedness(I, M, :right)
   @assert M.isnice
@@ -308,7 +308,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssRelOrdIdl, M, side = :right)
   return true, algebra(M)(alpha)
 end
 
-function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
+function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side=:right)
   @assert side == :right
   @assert _test_ideal_sidedness(I, M, :right)
   @assert basis_matrix(M) == identity_matrix(ZZ, dim(algebra(M)))
@@ -334,8 +334,8 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   #@show z
   h = transpose(_hnf_integral(transpose(FakeFmpqMat(z))))
   #@show h
-  @assert all(i -> is_zero_column(h, i), 1:(d^2 - d))
-  T = sub(h, 1:d, (d^2 - d + 1:d^2))
+  @assert all(i -> is_zero_column(h, i), 1:(d^2-d))
+  T = sub(h, 1:d, (d^2-d+1:d^2))
   #@show T
   alpha = zero_matrix(QQ, d, d)
   e1i = zero_matrix(QQ, d, d)
@@ -360,7 +360,7 @@ function _isprincipal_maximal_simple_nice(I::AlgAssAbsOrdIdl, M, side = :right)
   return true, algebra(M)(divexact(alpha, den))
 end
 
-function _isprincipal_maximal_simple(a::AlgAssRelOrdIdl, M, side = :right)
+function _isprincipal_maximal_simple(a::AlgAssRelOrdIdl, M, side=:right)
   @assert side == :right
   @assert _test_ideal_sidedness(a, M, :right)
   @assert all(b in M for b in absolute_basis(a))
@@ -376,12 +376,12 @@ function _isprincipal_maximal_simple(a::AlgAssRelOrdIdl, M, side = :right)
   end
 end
 
-function _isprincipal_maximal_simple(a::AlgAssAbsOrdIdl, M, side = :right)
+function _isprincipal_maximal_simple(a::AlgAssAbsOrdIdl, M, side=:right)
   @assert side == :right
   @assert _test_ideal_sidedness(a, M, :right)
   @assert all(b in M for b in basis(a))
   S, c = nice_order(M)
-  @assert order(algebra(M), [ c * elem_in_algebra(b) * inv(c) for b in basis(M)]) == S
+  @assert order(algebra(M), [c * elem_in_algebra(b) * inv(c) for b in basis(M)]) == S
   ainS = a * inv(c)
   #@show basis(S)
   fl, alpha = _isprincipal_maximal_simple_nice(ainS, S, side)

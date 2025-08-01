@@ -1,7 +1,6 @@
 include("AlgAss/Map.jl")
 include("AlgAss/AbsAlgAss.jl")
 include("AlgAss/Decompose.jl")
-include("AlgAss/AlgQuat.jl")
 include("AlgAss/StructureConstantAlgebra.jl")
 include("AlgAss/Conversions.jl")
 include("AlgAss/radical.jl")
@@ -13,3 +12,4 @@ include("AlgAss/AlgMatElem.jl")
 include("AlgAss/Ideal.jl")
 include("AlgAss/Ramification.jl")
 include("AlgAss/Torus.jl")
+
