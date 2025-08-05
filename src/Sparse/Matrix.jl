@@ -937,7 +937,7 @@ function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
 end
 
 @doc raw"""
-    sub(A::SMat, r::AbstractUnitRange, c::AbstractUnitRange) -> SMat
+    sub(A::SMat, r::AbstractVector, c::AbstractVector) -> SMat
 
 Return the submatrix of $A$, where the rows correspond to $r$ and the columns
 correspond to $c$. The row and column indices must be sorted and unique.
