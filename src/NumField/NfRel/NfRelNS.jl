@@ -579,6 +579,7 @@ function tr_via_minpoly(a::RelNonSimpleNumFieldElem)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
+# TODO: move to AA together with resultant
 function resultant(f::UniversalPolyRingElem, g::UniversalPolyRingElem, x::UniversalPolyRingElem)
   check_parent(f, g) && check_parent(f, x)
   up = parent(x)
