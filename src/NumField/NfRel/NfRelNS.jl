@@ -580,11 +580,11 @@ function tr_via_minpoly(a::RelNonSimpleNumFieldElem)
 end
 
 function resultant(f::UniversalPolyRingElem, g::UniversalPolyRingElem, x::UniversalPolyRingElem)
-  check_parent(f, g) && check_parent(f,x)
+  check_parent(f, g) && check_parent(f, x)
   up = parent(x)
   @req is_gen(x) "Not a variable in the universal polynomial ring"
-  res = resultant(data(f), data(g), findfirst(==(x), gens(up))
-  return up(collect(coefficients(res), collect(exponent_vectors(res))))
+  res = resultant(data(f), data(g), findfirst(==(x), gens(up)))
+  return up(collect(coefficients(res)), collect(exponent_vectors(res)))
 end
 
 function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
