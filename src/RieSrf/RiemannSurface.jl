@@ -59,6 +59,17 @@ mutable struct RiemannSurface
   # where (1,3) is the permutation. 
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
 
+  #Data encoding the homology basis. 
+  # We encode homology cycles in H_1(RS, Z) in the following way:
+  # Each cycle Gamma_i in L is given as a sequence of integers 
+  # [s_i1, b_i1, s_i2, b_i2, ..., s_in, b_in ].
+  # Here each s_ij gives the index of the sheet we start or end up in
+  # and each b_ij gives the index of the branch point we circle around to get 
+  # there. 
+
+  # As an example, the cycle [1, 3, 5, 2, 1] means that we start in sheet 1,
+  # circle around branch point nr 3 to move to sheet 5, circle around branch
+  # point number 2 to finish in sheet 1 again and complete a full circle.
 
   homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
 

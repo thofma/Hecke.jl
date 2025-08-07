@@ -248,7 +248,6 @@ function gauss_legendre_circle_parameters(points::Vector{acb}, path::CPath)
   
 end
 
-
 function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
   Rc = ArbField(prec)
   pi_N12 = const_pi(Rc)//(2*N)

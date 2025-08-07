@@ -4,17 +4,34 @@
 #
 # (C) 2022 Jeroen Hanselman
 #
+# Riemann surface functionality based on the thesis and implementation by Christian Neurohr
+# https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
+#
 ################################################################################
 
 export TretkoffEdge
 
 export  is_terminated, branch, set_position, terminate, edge_level, get_position, set_label, get_label, PQ
 
-################################################################################
+###############################################################################
 #
 #  Edges for Tretkoff Algorithm
 #
-################################################################################
+###############################################################################
+
+#The edges of the tree graph in the Tretkoff algorithm. 
+# - Each edge has a start point and an end point. 
+# - Each edge has a level. The first vertex has level 1. The odd levels 
+#   correspond to ramification points and the even levels correspond to sheets.
+# - An edge is labeled terminated if the algorithm is done with this edge
+# - A branch of the graph is a sequence of edges that ends traces back to the
+#   starting vertex.
+# - In the algorithm the Tretkoff edges get sorted by the function 
+#   compare_branches. The position variable gives the position of the
+#  terminated edges in this ordering
+# - For "even" edges the label gives the position in the list of ordered even 
+#   edges. The "odd" edges have the same label as their even counterpart 
+# (with start point and end point reversed).
 
 mutable struct TretkoffEdge
   start_point::Int
@@ -91,10 +108,12 @@ end
 
 ################################################################################
 #
-#  Auxiliary functions
+#  Auxiliary functions for computation over the complex numbers
 #
 ################################################################################
 
+
+#Ensures that the output is between 0 and 2pi.
 function Base.mod2pi(x::arb)
   pi2 = 2*const_pi(parent(x))
   while x < 0
@@ -108,6 +127,11 @@ function Base.mod2pi(x::arb)
   return x
 end
 
+@doc raw"""
+    embed_poly(f::PolyRingElem{nf_elem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
+
+Embed a polynomial into the polynomial ring over the complex numbers using the given place. 
+"""
 function embed_poly(f::PolyRingElem{nf_elem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
   coeffs = coefficients(f)
   coeffs = map(t -> evaluate(t, v.embedding, prec), coeffs)
@@ -117,11 +141,22 @@ function embed_poly(f::PolyRingElem{nf_elem}, v::T, prec::Int = 100) where T<:Un
   return sum(coeffs[i]*x^(i - 1) for i in (1:length(coeffs)))
 end
 
+@doc raw"""
+    embed_mpoly(f::MPolyRingElem{nf_elem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
+
+Embed a polynomial into the polynomial ring over the complex numbers using the given place. 
+"""
 function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
   return map_coefficients(x -> evaluate(x, v.embedding, prec), f)
 end
 
-#Might need to be made more rigorous due to dealing with arb balls
+#TODO: Might need to be made more rigorous due to dealing with arb balls
+@doc raw"""
+    sheet_ordering(z1::acb,z2::acb) -> Bool
+
+An ordering on the complex numbers. The number z2 = x2 + y2 is greater 
+than z1 = x1 + y1 if x2 > x1. In case of equality z2 is greater than z1 if y2 > y1.
+"""
 function sheet_ordering(z1::acb,z2::acb)
   if real(z1) < real(z2) 
     return true
@@ -134,17 +169,23 @@ function sheet_ordering(z1::acb,z2::acb)
   end
 end
 
-#Sets the real or imaginary parts of a number to zero if it is very close to zero.
-function trim_zero(x::acb, zero_sens::Int)
+#This is mainly useful when plugging an acb ball centered around zero into a 
+#function like arg where its output would suddenly have a radius of length pi.
+@doc raw"""
+    trim_zero(x::acb, n::Int) -> Bool
+
+Sets the real or imaginary parts of a complex number to zero if it is smaller than 10^(-N).
+"""
+function trim_zero(x::acb, n::Int)
   Cc = parent(x)
   prec = precision(Cc)
   Rc = ArbField(prec)
   i = onei(Cc)
-  if abs(real(x)) < Rc(10)^(-zero_sens)
+  if abs(real(x)) < Rc(10)^(-n)
     x = Cc(imag(x))*i
   end
 
-  if abs(imag(x)) < Rc(10)^(-zero_sens)
+  if abs(imag(x)) < Rc(10)^(-n)
     x = Cc(real(x))
   end
 
@@ -158,6 +199,13 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    inner_faces(f::MPolyRingElem) -> Array
+
+Compute the inner faces of the Newton polygon corresponding to the multivariate 
+polynomial f(x,y). The Newton polygon is the convex hull of the points (i,j) 
+for which x^i * y^j is a monomial of f.
+"""
 function inner_faces(f)
   points = [degrees(mon) for mon in monomials(f)]
   ordered_vertices = convex_hull(points)
@@ -178,7 +226,14 @@ function inner_faces(f)
   return result
 end 
 
+@doc raw"""
+    convex_hull(points::Vector{Vector{Int}}) -> Vector{Vector{Int}}
 
+Computes the convex hull of the points [i,j] in the plane. 
+The convex hull is returned as a list of points that form the 
+vertices of the polygon. The edges of the polygon correspond to the
+lines connecting the succesive vertices.
+"""
 function convex_hull(points::Vector{Vector{Int}})
   orig_points = copy(points)
 
@@ -223,6 +278,11 @@ function _slope(a::Vector{Int}, b::Vector{Int})
   return QQFieldElem(b[2]-a[2], b[1]-a[1])
 end
 
+@doc raw"""
+    line_equation(a::Vector{Int}, b::Vector{Int}) -> MPolyRingElem
+
+Returns the equation of the line in the plane connecting the points a and b.
+"""
 function line_equation(a::Vector{Int}, b::Vector{Int})
   Qxy, (x,y) = polynomial_ring(QQ, ["x","y"])
   if b[1] == a[1]
