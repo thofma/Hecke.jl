@@ -249,7 +249,7 @@ end
 
 @testset "extend base field" begin
   Qx, x = QQ["x"]
-  k, a = number_field(x^3 - 3*x^2 - 87*x + 424) 
+  k, a = number_field(x^3 - 3*x^2 - 87*x + 424)
   #random transformation from x^3-5 - so that lll does s.th.
   K, mkK = normal_closure(k)
 
@@ -288,7 +288,7 @@ end
 
   d = Set([elementary_divisors(inertia_subgroup(Gamma, p[1])) for p = lp])
   @test d == Set([ZZRingElem[2,2], ZZRingElem[2,2,2,2]])
-end 
+end
 
 @testset "Knots - abelian" begin
   Qx, x = QQ["x"]
@@ -326,7 +326,11 @@ end
   S = fixed_field(R, kernel(h-hh)[1])
 
   ns = norm_group(S)[1]
-  t = fixed_field(S, sub(ns, [ns[1], ns[3]])[1])
+  if VERSION >= v"1.13.0-DEV.970"
+    t = fixed_field(S, sub(ns, [ns[1], ns[2]])[1])
+  else
+    t = fixed_field(S, sub(ns, [ns[1], ns[3]])[1])
+  end
   @test degree(t) == 4
   @test !is_normal(t)
   @test normal_closure(t) == S
