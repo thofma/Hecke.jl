@@ -2564,3 +2564,91 @@ function _squarefree_ideals_with_bounded_norm(O::AbsNumFieldOrder, bound::ZZRing
   end
   return _squarefree_ideals_with_bounded_norm(O, lp, bound)
 end
+
+################################################################################
+#
+#  Ideals up to
+#
+################################################################################
+
+function ideals_up_to(O::AbsSimpleNumFieldOrder, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(O, 1))
+  if is_maximal(O)
+    return ideals_up_to_maximal(O, n, coprime_to)
+  else
+    @req is_one(coprime_to) "Not implemented yet!"
+    return ideals_up_to_nonmaximal(O, n)
+  end
+end
+
+function ideals_up_to_maximal(OK::AbsSimpleNumFieldOrder, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(OK, 1))
+
+  lp = prime_ideals_up_to(OK, n)
+  filter!(x -> is_coprime(x, coprime_to), lp)
+  lI = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, 1)]
+  for i = 1:length(lp)
+    lnew = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
+    P = lp[i]
+    nP = Int(norm(P, copy = false))
+    @assert nP <= n
+    expon = Int(flog(ZZRingElem(n), nP))
+    for j = 1:length(lI)
+      I = lI[j]
+      if norm(I, copy = false)*nP > n
+        break
+      end
+      push!(lnew, I*P)
+      for s = 2:expon
+        if nP^s*norm(I, copy = false) > n
+          break
+        end
+        push!(lnew, I*P^s)
+      end
+    end
+    append!(lI, lnew)
+    sort!(lI, by = x -> norm(x, copy = false))
+  end
+  return lI
+end
+
+function ideals_up_to_nonmaximal(O::AbsNumFieldOrder, bound::Int)
+  # this is the lazy version without using primary decompositions
+  # TODO: use primary decompositions
+  # - any ideal is a product of primary ideals
+  # - primary ideals are P-primary, with P a prime ieal above p
+  # - any P-primary ideal I with norm(I) = n satisfies
+  #     P^k <= I <= P
+  #   for any k >= log_p(n)
+  # - Thus, look at P/P^log_p(n) and extract all the ideals as in
+  #   ideals_with_norm
+  result = ideal_type(O)[1 * O]
+  oneideal = 1*O
+  _result = ideal_type(O)[]
+  __result = ideal_type(O)[]
+  for n in 1:bound
+    f = factor(n)
+    empty!(_result)
+    push!(_result, oneideal)
+    badnorm = false
+    for (p, e) in f
+      _ppower_ideals = ideals_with_norm(O, ZZ(p), e)
+      if length(_ppower_ideals) == 0
+        badnorm = true
+        break
+      end
+      empty!(__result)
+      while length(_result) > 0
+        I = pop!(_result)
+        for J in _ppower_ideals
+          K = I * J[2]
+          push!(__result, K)
+        end
+      end
+      empty!(_result)
+      append!(_result, __result)
+    end
+    badnorm && continue
+    append!(result, unique!(_result))
+  end
+  popfirst!(result)
+  return result
+end
