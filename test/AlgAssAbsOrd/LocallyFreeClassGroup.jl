@@ -127,3 +127,51 @@ let
   u = Hecke.K1(A; do_units = true)
   @test length(closure(u, *)) == 16 * 15
 end
+
+let
+  # relative K0
+  for p in [3, 5, 7, 11, 13]
+    G = abelian_group([p])
+    ZG = integral_group_ring(group_algebra(QQ, G))
+    K0p = Hecke.relative_k0_torsion(ZG, p)
+    @test is_cyclic(K0p) && order(K0p) == p - 1
+    K0 = Hecke.relative_k0_torsion(ZG)
+    @test order(K0) == p - 1
+  end
+
+  for n in [5, 7, 9]
+    G = small_group(2*n, 1) # dihedral
+    ZG = integral_group_ring(group_algebra(QQ, G))
+    K0 = Hecke.relative_k0_torsion(ZG, 2)
+    @test order(K0) == 1
+  end
+
+  for p in [5, 7, 11]
+    G = small_group(2*p, 1) # dihedral
+    ZG = integral_group_ring(group_algebra(QQ, G))
+    K0 = Hecke.relative_k0_torsion(ZG)
+    @test is_cyclic(K0) && order(K0) == p - 1
+  end
+
+  # A4
+  let
+    G =  small_group(12, 3)
+    ZG = integral_group_ring(group_algebra(QQ, G))
+    K02 = Hecke.relative_k0_torsion(ZG, 2)
+    K03 = Hecke.relative_k0_torsion(ZG, 3)
+    @test order(K02) == 2 && order(K03) == 2
+    @test elementary_divisors(Hecke.relative_k0_torsion(ZG)) == [2, 2]
+  end
+
+  # non-maximal order
+  let
+    G = small_group(27, 3)
+    ZG = integral_group_ring(QQ[G])
+    QG = algebra(ZG)
+    H, HtoG = commutator_subgroup(G)
+    dec = decompose(QG)
+    _, p = Hecke.product_of_components_with_projection(QG, [i for i in 1:length(dec) if dim(dec[i][1]) > 3])
+    @test dim(codomain(p)) == 18
+    @test order(Hecke.relative_k0_torsion(p(ZG))) == 3
+  end
+end
