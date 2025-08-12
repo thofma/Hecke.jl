@@ -16,9 +16,9 @@ function is_ramified(O::AbsNumFieldOrder, p::Union{Int, ZZRingElem})
 end
 
 @doc raw"""
-    is_tamely_ramified(O::AbsSimpleNumFieldOrder, p::Union{Int, ZZRingElem}) -> Bool
+    is_tamely_ramified(K::AbsSimpleNumField, p::Union{Int, ZZRingElem}) -> Bool
 
-Returns whether the integer $p$ is tamely ramified in $\mathcal O$.
+Returns whether the integer $p$ is tamely ramified in $K$.
 It is assumed that $p$ is prime.
 """
 function is_tamely_ramified(K::AbsSimpleNumField, p::Union{Int, ZZRingElem})
