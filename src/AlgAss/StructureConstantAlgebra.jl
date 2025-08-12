@@ -195,7 +195,7 @@ zero_algebra(::Type{StructureConstantAlgebra}, R::Ring) = return zero_algebra(R)
 #
 ################################################################################
 
-function denominator_of_structure_constant_table(A::StructureConstantAlgebra{QQFieldElem})
+function denominator_of_structure_constant_table(A::Union{StructureConstantAlgebra{QQFieldElem}, QuaternionAlgebra{QQFieldElem}})
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
     mt = structure_constant_table(A)

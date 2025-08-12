@@ -125,6 +125,12 @@ morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{FqFie
 
 morphism_type(A::Type{T}) where {T <: AbstractAssociativeAlgebra} = morphism_type(A, A)
 
+morphism_type(A::Type{T}, B::AbstractAssociativeAlgebra{S}) where {T, S} = morphism_type(A, typeof(B))
+
+morphism_type(A::AbstractAssociativeAlgebra{T}, B::Type{S}) where {T, S} = morphism_type(typeof(A), B)
+
+morphism_type(A::AbstractAssociativeAlgebra, B::AbstractAssociativeAlgebra) = morphism_type(typeof(A), typeof(B))
+
 ################################################################################
 #
 #  Basis

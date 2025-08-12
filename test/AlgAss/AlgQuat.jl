@@ -122,4 +122,48 @@
     m = reduced_charpoly(z)
     @test m(z) == 0 && degree(m) == 2
   end
+
+  let
+    # opposite algebra
+    for K in [QQ, quadratic_field(2)[1], GF(3), rational_function_field(GF(3), :x)[1]]
+      A = quaternion_algebra(K, K(-1), K(-2))
+      B, BtoA = opposite_algebra(A)
+      B, BtoA = opposite_algebra(A) # twice to check caching does not fail
+      for b in basis(B)
+        for bb in basis(B)
+          @test BtoA(b + bb) == BtoA(b) + BtoA(bb)
+          @test BtoA(b * bb) == BtoA(bb) * BtoA(b)
+        end
+        @test b == preimage(BtoA, BtoA(b))
+      end
+    end
+  end
+
+  let
+    # center
+    for K in [QQ, quadratic_field(2)[1], GF(3), rational_function_field(GF(3), :x)[1]]
+      A = quaternion_algebra(K, K(-1), K(-2))
+      C, CtoA = center(A)
+      C, CtoA = center(A) # twice to check that caching does not fail
+      @test dim(C) == 1 && domain(CtoA) === C && codomain(CtoA) === A
+    end
+  end
+
+  let
+    # decomposition
+    for K in [QQ, quadratic_field(2)[1], GF(3), rational_function_field(GF(3), :x)[1]]
+      A = quaternion_algebra(K, K(-1), K(-2))
+      dec = decompose(A)
+      dec = decompose(A)
+      @test length(dec) == 1 && dim(dec[1][1]) == 4
+    end
+  end
+
+  let # StructureConstantAlgebra conversion
+    for K in [QQ, quadratic_field(2)[1], GF(3), rational_function_field(GF(3), :x)[1]]
+      A = quaternion_algebra(K, K(-1), K(-2))
+      B, BtoA = StructureConstantAlgebra(A)
+      @test B isa StructureConstantAlgebra && domain(BtoA) === B && codomain(BtoA) === A
+    end
+  end
 end

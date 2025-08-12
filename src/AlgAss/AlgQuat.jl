@@ -114,6 +114,8 @@ base_ring_type(::Type{QuaternionAlgebra{T}}) where {T} = parent_type(T)
 
 multiplication_table(A::QuaternionAlgebra; copy = false) = A.mult_table
 
+structure_constant_table(A::QuaternionAlgebra; copy = false) = A.mult_table
+
 standard_form(A::QuaternionAlgebra) = A.std
 
 has_one(A::QuaternionAlgebra) = true
@@ -679,7 +681,7 @@ end
 function StructureConstantAlgebra(A::QuaternionAlgebra)
   K = base_ring(A)
   B = StructureConstantAlgebra(K, A.mult_table)
-  return B, hom(A, B, identity_matrix(K, 4), identity_matrix(K, 4))
+  return B, hom(B, A, identity_matrix(K, 4), identity_matrix(K, 4))
 end
 
 ################################################################################
@@ -744,4 +746,38 @@ function is_split_with_zero_divisor(A::QuaternionAlgebra{<:Union{QQFieldElem, Ab
   @assert !is_zero(alpha)
   @assert norm(alpha) == 0
   return true, alpha
+end
+
+################################################################################
+#
+#  Opposite algebra
+#
+################################################################################
+
+@attr Tuple{typeof(A), morphism_type(A, A)} function opposite_algebra(A::QuaternionAlgebra)
+  m = basis_matrix(conjugate.(basis(A)))
+  return A, hom(A, A, m, m; check = false)
+end
+
+################################################################################
+#
+#  Center
+#
+################################################################################
+
+@attr Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, A)} function center(A::QuaternionAlgebra{T}) where {T}
+  R = base_ring(A)
+  C = structure_constant_algebra(R, [one(R);;;])
+  mC = hom(C, A, [one(A)])
+  return C, mC
+end
+
+################################################################################
+#
+#  Decomposition
+#
+################################################################################
+
+@attr Vector{Tuple{typeof(A), morphism_type(A, A)}} function decompose(A::QuaternionAlgebra)
+  return [(A, id_hom(A))]
 end
