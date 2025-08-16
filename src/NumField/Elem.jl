@@ -36,7 +36,7 @@ is_algebraic_integer(a::QQFieldElem) = isone(denominator(a))
 
 is_integral(a::QQFieldElem) = is_algebraic_integer(a)
 
-@doc doc"""
+@doc raw"""
     is_algebraic_integer(x::NumFieldElem)
 
 Return whether $x$ is an algebraic integer.
@@ -56,7 +56,7 @@ function is_algebraic_integer(a::NumFieldElem)
   return true
 end
 
-@doc doc"""
+@doc raw"""
     is_integral(a::NumFieldElem) -> Bool
 
 Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
@@ -97,7 +97,7 @@ is_rational(a::AbsNonSimpleNumFieldElem) = is_constant(data(a))
 
 ## rand(::Vector{NumFieldElem}, ::AbstractUnitRange)
 
-@doc doc"""
+@doc raw"""
     rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::AbstractUnitRange) -> NumFieldElem
     rand([rng::AbstractRNG], make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange)) -> NumFieldElem
 
@@ -119,7 +119,7 @@ end
 
 ## rand(::Vector{<: NumFieldElem}, ::AbstractUnitRange, ::Int)
 
-@doc doc"""
+@doc raw"""
     rand([rng::AbstractRNG], b::Vector{NumFieldElem}, r::AbstractUnitRange, terms::Int) -> NumFieldElem
     rand([rng::AbstractRNG],
          make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange, terms::Int)) -> NumFieldElem
@@ -145,7 +145,7 @@ end
 
 ## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::AbstractUnitRange, terms::Int)
 
-@doc doc"""
+@doc raw"""
     rand!([rng::AbstractRNG], c::NumFieldElem, b::Vector{NumFieldElem},
           r::AbstractUnitRange, terms::Int) -> NumFieldElem
     rand!([rng::AbstractRNG], c::NumFieldElem,
@@ -186,7 +186,7 @@ end
 
 ## rand!(::NumFieldElem, ::Vector{NumFieldElem}, ::AbstractUnitRange)
 
-@doc doc"""
+@doc raw"""
     rand!(c::NumFieldElem, b::Vector{NumFieldElem}, r::AbstractUnitRange) -> NumFieldElem
     rand!(c::NumFieldElem, make(F::NumField, b::Vector{NumFieldElem}, r::AbstractUnitRange)) -> NumFieldElem
 
@@ -229,7 +229,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     basis_matrix(v::Vector{NumFieldElem}) -> Mat
 
 Given a vector $v$ of $n$ elements of a number field $K$ of degree $d$, this
@@ -245,7 +245,7 @@ basis_matrix(v::Vector{<: NumFieldElem})
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     charpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
@@ -253,7 +253,7 @@ the characteristic polynomial of $a$ over the base field of $K$.
 """
 charpoly(::NumFieldElem)
 
-@doc doc"""
+@doc raw"""
     absolute_charpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
@@ -261,7 +261,7 @@ the characteristic polynomial of $a$ over the rationals $\mathbf{Q}$.
 """
 absolute_charpoly(::NumFieldElem)
 
-@doc doc"""
+@doc raw"""
     minpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
@@ -269,7 +269,7 @@ the minimal polynomial of $a$ over the base field of $K$.
 """
 minpoly(::NumFieldElem)
 
-@doc doc"""
+@doc raw"""
     absolute_minpoly(a::NumFieldElem) -> PolyRingElem
 
 Given a number field element $a$ of a number field $K$, this function returns
@@ -284,7 +284,7 @@ absolute_minpoly(::NumFieldElem)
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     coeff(a::SimpleNumFieldElem, i::Int) -> FieldElem
 
 Given a number field element `a` of a simple number field extension `L/K`, this
@@ -295,7 +295,7 @@ coeff(::SimpleNumFieldElem, ::Int)
 
 # copy does not do anything (so far), this is only for compatibility with coefficients(::AbstractAssociativeAlgebraElem)
 
-@doc doc"""
+@doc raw"""
     coefficients(a::SimpleNumFieldElem, i::Int) -> Vector{FieldElem}
 
 Given a number field element `a` of a simple number field extension `L/K`, this
@@ -306,7 +306,7 @@ function coefficients(a::SimpleNumFieldElem; copy::Bool = false)
   return [ coeff(a, i) for i = 0:degree(parent(a)) - 1 ]
 end
 
-@doc doc"""
+@doc raw"""
     (L::SimpleNumField)(c::Vector) -> SimpleNumFieldElem
 
 Given a simple number field extension `L/K` and a vector of elements that are
@@ -346,7 +346,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     tr(a::NumFieldElem) -> NumFieldElem
 
 Returns the trace of an element $a$ of a number field extension $L/K$. This
@@ -354,7 +354,7 @@ will be an element of $K$.
 """
 tr(::NumFieldElem)
 
-@doc doc"""
+@doc raw"""
     norm(a::NumFieldElem) -> NumFieldElem
 
 Returns the norm of an element $a$ of a number field extension $L/K$. This
@@ -381,7 +381,7 @@ function _elem_norm_to(a, k::T) where {T}
   end
 end
 
-@doc doc"""
+@doc raw"""
     tr(a::NumFieldElem, k::NumField) -> NumFieldElem
 
 Returns the trace of an element $a$ of a number field $L$ with respect to
@@ -393,7 +393,7 @@ end
 
 tr(a::NumFieldElem, ::QQField) = _elem_tr_to(a, QQ)
 
-@doc doc"""
+@doc raw"""
     norm(a::NumFieldElem, k::NumField) -> NumFieldElem
 
 Returns the norm of an element $a$ of a number field $L$ with respect to
@@ -405,7 +405,7 @@ end
 
 norm(a::NumFieldElem, ::QQField) = _elem_norm_to(a, QQ)
 
-@doc doc"""
+@doc raw"""
     absolute_tr(a::NumFieldElem) -> QQFieldElem
 
 Given a number field element $a$, returns the absolute trace of $a$.
@@ -420,7 +420,7 @@ absolute_tr(a::AbsNonSimpleNumFieldElem) = tr(a)
 
 absolute_tr(x::QQFieldElem) = x
 
-@doc doc"""
+@doc raw"""
     absolute_norm(a::NumFieldElem) -> QQFieldElem
 
 Given a number field element $a$, returns the absolute norm of $a$.
@@ -439,7 +439,7 @@ absolute_norm(a::QQFieldElem) = a
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     norm(f::PolyRingElem{<:NumFieldElem}) -> PolyRingElem
 
 Returns the norm of $f$, that is, the product of all conjugates of $f$ taken
@@ -500,7 +500,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     representation_matrix(a::NumFieldElem) -> MatElem
 
 Returns the representation matrix of $a$, that is, the matrix representing
@@ -514,7 +514,7 @@ representation_matrix(a::NumFieldElem)
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     gen(L::SimpleNumField) -> NumFieldElem
 
 Given a simple number field $L = K[x]/(f)$ over $K$, this functions returns the
@@ -522,7 +522,7 @@ class of $x$, which is the canonical primitive element of $L$ over $K$.
 """
 gen(::SimpleNumField)
 
-@doc doc"""
+@doc raw"""
     gens(L::NonSimpleNumField) -> Vector{NumFieldElem}
 
 Given a non-simple number field $L = K[x_1,\dotsc,x_n]/(f_1,\dotsc,f_n)$ over
@@ -536,7 +536,7 @@ gens(::NonSimpleNumField)
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     coordinates(x::NumFieldElem{T}) -> Vector{T}
 
 Given an element $x$ in a number field $K$, this function returns the coordinates of $x$
@@ -597,7 +597,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     absolute_coordinates(x::NumFieldElem{T}) -> Vector{T}
 
 Given an element $x$ in a number field $K$, this function returns the coordinates of $x$

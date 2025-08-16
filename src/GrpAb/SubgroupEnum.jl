@@ -924,7 +924,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     minimal_subgroups(G::FinGenAbGroup) -> Vector{Tuple{FinGenAbGroup, Map}}
 
 Return the minimal subgroups of $G$.
