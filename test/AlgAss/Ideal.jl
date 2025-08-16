@@ -163,4 +163,23 @@
     a = @inferred Hecke.right_principal_generator(J)
     @test a * A == J
   end
+
+  let
+    for q in [2, 3, 4]
+      for n in [1, 2, 3]
+        A = matrix_algebra(GF(q), n)
+        for side in [:right, :left]
+          J = Hecke.maximal_ideal(A; side = side)
+          @test Hecke._test_ideal_sidedness(J, side)
+          @test dim(J) == n*(n-1)
+          Js = Hecke.maximal_ideals(A; side = side)
+          @test length(Js) == divexact(q^n - 1, q - 1)
+          @test allunique(Js)
+          @test all(x -> Hecke._test_ideal_sidedness(x, side) && dim(x) == n*(n-1), Js)
+        end
+        @test_throws ArgumentError Hecke.maximal_ideal(A; side = :bla)
+        @test_throws ArgumentError Hecke.maximal_ideals(A; side = :bla)
+      end
+    end
+  end
 end

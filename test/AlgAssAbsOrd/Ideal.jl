@@ -217,4 +217,31 @@
     @test !Hecke.is_full_rank(I)
     @test is_zero(I^2)
   end
+
+  let # maximal integral ideal
+    ZG = integral_group_ring(QQ[small_group(36, 1)])
+    P = Hecke.maximal_integral_ideal(ZG, 2; side = :left)
+    @test ZG(2) in P
+    @test !(ZG(3) in P)
+    @test ZG * P == P
+    P = Hecke.maximal_integral_ideal(ZG, 3; side = :right)
+    @test ZG(3) in P
+    @test !(ZG(2) in P)
+    @test P * ZG == P
+
+    ZG = integral_group_ring(QQ[small_group(20, 1)])
+    Ps = Hecke.maximal_integral_ideals(ZG, 2; side = :left)
+    for P in Ps
+      @test ZG(2) in P
+      @test !(ZG(3) in P)
+      @test ZG * P == P
+    end
+
+    Ps = Hecke.maximal_integral_ideals(ZG, 3; side = :right)
+    for P in Ps
+      @test ZG(3) in P
+      @test !(ZG(2) in P)
+      @test P * ZG == P
+    end
+  end
 end

@@ -722,3 +722,85 @@ function right_principal_generator(a::AbsAlgAssIdl{S}) where {S <: MatAlgebra}
   end
   return x
 end
+
+################################################################################
+#
+#  Maximal ideals of matrix algebras
+#
+################################################################################
+
+# These are standard results, see for example "Left ideals of matrix rings and
+# error-correcting codes":
+# Left (right) ideals correspond to subspaces and
+# this bijection is dimension presevering. Hence maximal ideals are the same
+# as maximal subspaces, with a basis matrix being a generator of the ideal.
+# Now turn this into a basis.
+
+@doc raw"""
+    maximal_ideal(A::MatAlgebra{FinFieldElem}; side)
+
+Given a full matrix algebra over a finite field, return a maximal right (if
+`side == :right`) or left (if `side == :left`) ideal of $A$.
+"""
+function maximal_ideal(A::MatAlgebra{<:FinFieldElem, <:Any}; side::Symbol)
+  n = _matdeg(A)
+  F = base_ring(A)
+  @req dim(A) == _matdeg(A)^2 "Must be a full matrix algebra"
+  n = _matdeg(A)
+
+  M = identity_matrix(F, n)
+  M[n, n] = zero(F)
+  return ideal(A, M; side = side)
+end
+
+@doc raw"""
+    maximal_ideal(A::MatAlgebra{FinFieldElem}; side)
+
+Given a full matrix algebra over a finite field, return all maximal right (if
+`side == :right`) or left (if `side == :left`) ideals of $A$.
+"""
+function maximal_ideals(A::MatAlgebra{<:FinFieldElem, <:Any}; side::Symbol)
+  # must be full matrix algebra
+  n = _matdeg(A)
+  F = base_ring(A)
+  @req dim(A) == _matdeg(A)^2 "Must be a full matrix algebra"
+  res = AbsAlgAssIdl{typeof(A)}[]
+  if side == :left
+    zrow = [zero(F) for i in 1:n]
+    t = zero_matrix(F, n, n)
+    for M in maximal_subspaces(F, n)
+      bas = elem_type(A)[]
+      for i in 1:n
+        for j in 1:n-1
+          # i-th row of t should be j-th row of M
+          t[i, :] = M[j, :]
+          push!(bas, A(t))
+        end
+        t[i, :] = zrow
+      end
+      push!(res, _ideal_from_kgens(A, bas; side = side))
+    end
+    q = order(F)
+    @assert length(res) == divexact(q^n - 1, q - 1)
+    return res
+  else
+    @req side == :right "Side (:$(side)) must be :left or :right."
+    zcol = [zero(F) for i in 1:n]
+    t = zero_matrix(F, n, n)
+    for M in maximal_subspaces(F, n)
+      bas = elem_type(A)[]
+      for j in 1:n
+        for i in 1:n-1
+          # i-th row of t should be j-th row of M
+          t[:, j] = M[i, :]
+          push!(bas, A(t))
+        end
+        t[:, j] = zcol
+      end
+      push!(res, _ideal_from_kgens(A, bas; side = side))
+    end
+    q = order(F)
+    @assert length(res) == divexact(q^n - 1, q - 1)
+    return res
+  end
+end

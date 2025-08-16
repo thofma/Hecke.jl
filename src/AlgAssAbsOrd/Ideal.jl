@@ -1983,41 +1983,35 @@ end
 
 # Computes any maximal integral ideal with left order O (if side = :left) or
 # right order O (if side = :right) which contains p.
+function maximal_integral_ideal(O::AlgAssAbsOrd, p::IntegerUnion; side)
+  return maximal_integral_ideal(O, p, side)
+end
+
+function maximal_integral_ideal(O::AlgAssAbsOrd, p::IntegerUnion, side::Symbol)
+  P, = prime_ideals_over(O, p) # pick any prime ideal
+  return __maximal_integral_ideal(O, P, p, side)
+end
+
+# Computes any maximal integral ideal with left order O (if side = :left) or
+# right order O (if side = :right) which contains p.
 # Assumes (so far?) that the algebra is simple and O is maximal.
-function maximal_integral_ideal(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }, side::Symbol)
-  A = algebra(O)
-  @assert is_simple(A)
-  @assert is_maximal(O)
 
-  P = prime_ideals_over(O, p)[1] # if the algebra is simple, then there is exactly one prime lying over p
+function maximal_integral_ideals(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }; side::Symbol)
+  lP = prime_ideals_over(O, p) # if the algebra is simple, then there is exactly one prime lying over p
+  return reduce(vcat, [__maximal_integral_ideals(O, lP[i], p, side) for i in 1:length(lP)])
+end
 
-  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
-  B, OtoB = quo(O, P, p)
-  C, CtoB = _as_algebra_over_center(B)
-  D, CtoD = _as_matrix_algebra(C)
-
-  n = degree(D)
-  if isone(n)
-    return P
-  end
-
-  N = QQMatrix(basis_matrix(P))
-  t = zero_matrix(QQ, 1, degree(O))
-  # Now we only need to lift a basis for diag(1, ..., 1, 0)*D (side = :left) or
-  # D*diag(1, ..., 1, 0) (side = :right) since these are maximal ideals of D.
-  if side == :left
-    jMax = n - 1
-    iMax = n
-  elseif side == :right
-    jMax = n
-    iMax = n - 1
-  else
-    error("Option :$(side) for side not implemented")
-  end
-  for j = 1:jMax
-    jn = (j - 1)*n
-    for i = 1:iMax
-      b = (OtoB\(CtoB(CtoD\D[jn + i])))
+function __construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, N, I)
+  D = codomain(CtoD)
+  for bb in basis(maximal_ideal(D; side))
+    if length(basisofcenter) > 1
+      for e in basisofcenter # element of B
+        b = (OtoB\(e * CtoB(CtoD\bb)))
+        elem_to_mat_row!(t, 1, elem_in_algebra(b, copy = false))
+        N = vcat(N, deepcopy(t))
+      end
+    else
+      b = (OtoB\(CtoB(CtoD\bb)))
       elem_to_mat_row!(t, 1, elem_in_algebra(b, copy = false))
       N = vcat(N, deepcopy(t))
     end
@@ -2025,13 +2019,65 @@ function maximal_integral_ideal(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }, si
   N = sub(_hnf_integral(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
 
   M = ideal(algebra(O), O, N; side, M_in_hnf=true)
-  if side == :left
-    M.left_order = O # O is maximal
-  else
-    M.right_order = O
+  if is_known(is_maximal, O) && is_maximal(O)
+    if side == :left
+      M.left_order = O # O is maximal
+    else
+      M.right_order = O
+    end
   end
   return M
 end
+
+function __maximal_integral_ideal(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int }, side::Symbol)
+  A = algebra(O)
+
+  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
+  B, OtoB = quo(O, P, p)
+  C, CtoB = _as_algebra_over_center(B)
+  D, CtoD = _as_matrix_algebra(C)
+
+  # we need the center to accomodate a non-central A
+  _C, _CtoB = center(B)
+  basisofcenter = _CtoB.(basis(_C))
+
+  n = _matdeg(D)
+
+  if isone(n)
+    return P
+  end
+
+  t = zero_matrix(QQ, 1, degree(O))
+  N = QQMatrix(basis_matrix(P))
+
+  return __construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, N, maximal_ideal(D; side))
+end
+
+function __maximal_integral_ideals(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int }, side::Symbol)
+  A = algebra(O)
+
+  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
+  B, OtoB = quo(O, P, p)
+  C, CtoB = _as_algebra_over_center(B)
+  D, CtoD = _as_matrix_algebra(C)
+
+  # we need the center to accomodate a non-central A
+  _C, _CtoB = center(B)
+  basisofcenter = _CtoB.(basis(_C))
+
+  n = _matdeg(D)
+
+  if isone(n)
+    return P
+  end
+
+  t = zero_matrix(QQ, 1, degree(O))
+  N = QQMatrix(basis_matrix(P))
+
+  return [__construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, N, I)
+            for I in maximal_ideals(D; side)]
+end
+
 
 # Constructs a maximal integral ideal M of O such that M\cap R = p and I\subseteq M,
 # where O is the left order (if side = :left) or right order (if side = :right)
