@@ -1059,7 +1059,7 @@ function is_bass(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   return true
 end
 
-@doc doc"""
+@doc raw"""
     is_bass(O::AbsSimpleNumFieldOrder) -> Bool
 
 Return whether the order `\mathcal{O}` is Bass.
@@ -1095,7 +1095,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     is_gorenstein(O::AbsSimpleNumFieldOrder) -> Bool
 
 Return whether the order `\mathcal{O}` is Gorenstein.

@@ -125,7 +125,7 @@ function abelian_extensions(O::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absol
 end
 
 
-@doc doc"""
+@doc raw"""
     abelian_normal_extension(K::AbsSimpleNumField, gtype::Vector{Int},
                              bound::ZZRingElem;
                              only_real = false,

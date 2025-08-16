@@ -8,7 +8,7 @@ function quadratic_defect(a::Union{Rational{<:Integer},IntegerUnion,QQFieldElem}
   return quadratic_defect(QQFieldElem(a), ZZRingElem(p))
 end
 
-@doc doc"""
+@doc raw"""
     quadratic_defect(a::Union{NumFieldElem,Rational,QQFieldElem}, p) -> Union{Inf, PosInf}
 
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
@@ -102,7 +102,7 @@ function quadratic_defect(a::NumFieldElem, p::Union{AbsNumFieldOrderIdeal, RelNu
   return w + v
 end
 
-@doc doc"""
+@doc raw"""
     quadratic_defect(a::AbsSimpleNumFieldOrderElem, p) -> Union{Inf, PosInf}
 
 Returns the valuation of the quadratic defect of the element $a$ at $p$, which
