@@ -54,7 +54,7 @@ function radical_extension(n::Int, gen::ZZRingElem; cached::Bool = true, check::
 end
 
 # TODO: Some sort of reference?
-@doc doc"""
+@doc raw"""
     wildanger_field(n::Int, B::ZZRingElem) -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
@@ -132,7 +132,7 @@ function show_quad(io::IO, q::AbsSimpleNumField)
   end
 end
 
-@doc doc"""
+@doc raw"""
     rationals_as_number_field() -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the rational numbers as the number field defined by $x - 1$.
