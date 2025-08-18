@@ -21,10 +21,6 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge,
 	     powermod
 
-# To make all exported Nemo functions visible to someone using "using Hecke"
-# we have to export everything again
-# dong it the "import" route, we can pick & choose...
-
 using Artifacts
 
 using LinearAlgebra
@@ -65,6 +61,10 @@ using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 import Nemo
 
 import Pkg
+
+# To make all exported Nemo functions visible to someone using "using Hecke"
+# we have to export everything again
+# dong it the "import" route, we can pick & choose...
 
 exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
