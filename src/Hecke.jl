@@ -31,7 +31,6 @@ using LinearAlgebra
 using Distributed
 using Printf
 using SparseArrays
-using Serialization
 using Random
 using Pkg
 
@@ -57,8 +56,6 @@ import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
-
-import Serialization: serialize, deserialize
 
 import Random: rand!
 using Random: Sampler, SamplerTrivial, GLOBAL_RNG
