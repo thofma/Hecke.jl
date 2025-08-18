@@ -97,3 +97,12 @@ end
   @test elem_type(codomain(mG)) == typeof(mG(one(G)))
 end
 
+@testset "caching" begin
+  Qx, x = QQ["x"]
+  f = x - 1
+  K, a = number_field(f, "a", cached = false)
+  G, mG = @inferred automorphism_group(K)
+  GG, mGG = @inferred automorphism_group(K)
+  @test G === GG && mG === mGG
+end
+
