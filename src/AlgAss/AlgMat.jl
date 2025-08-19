@@ -346,7 +346,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   cur_rank = 0
   for i = 1:length(span)
     cur_rank == d2 ? break : nothing
-    new_elt = _add_row_to_rref!(M, reshape(collect(span[i]), :), pivot_rows, cur_rank + 1)
+    new_elt = _add_row_to_rref!(M, deepcopy(reshape(collect(span[i]), :)), pivot_rows, cur_rank + 1)
     if new_elt
       push!(new_elements, i)
       cur_rank += 1
@@ -364,7 +364,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
       s = b*span[r]
       for l = 1:n
         t = span[l]*s
-        new_elt = _add_row_to_rref!(M, reshape(collect(t), :), pivot_rows, cur_rank + 1)
+        new_elt = _add_row_to_rref!(M, deepcopy(reshape(collect(t), :)), pivot_rows, cur_rank + 1)
         if !new_elt
           continue
         end

@@ -255,4 +255,11 @@
   A = Hecke.QuaternionAlgebra(QQ, QQ(-1), QQ(-1))
   M = matrix_algebra(QQ, A, 2)
   @test isone(inv(one(M)))
+
+  # An aliasing bug causing a crash, fixed in PR 1951
+  Qx, x = QQ[:x]
+  K, a = number_field(x^4 + 3 * x^2 + 1, :a)
+  c = [K[0 0 -1 0; 1//2*a^3+a-1//2 -1//2*a^3-a+1//2 1 0; 0 0 0 0; 0 0 0 0],
+       K[0 0 0 -1; 1//2*a^3+a+1//2 1//2*a^3+a+1//2 0 1; 0 0 0 0; 0 0 0 0]]
+  matrix_algebra(K, c)
 end
