@@ -1,66 +1,24 @@
-```@raw html
----
-# https://vitepress.dev/reference/default-theme-home-page
-layout: home
+## Introduction
 
-hero:
-  name: "Hecke"
-  tagline: Computational number theory for everyone
-  actions:
-    - theme: alt
-      text: Getting Started
-      link: /start/
-    - theme: alt
-      text: Manual
-      link: /manual/
-    - theme: alt
-      text: View on Github
-      link: https://github.com/thofma/Hecke.jl
+Hecke is a software package for computational algebraic number theory. It is written in the julia programming language and makes use of the computer algebra packages [Nemo.jl](https://nemocas.github.io/Nemo.jl/latest/) and [AbstractAlgebra.jl](https://nemocas.github.io/AbstractAlgebra.jl/stable/).
 
-features:
-  - title: What is Hecke?
-    details: Hecke is a software package for computational algebraic number theory. It is written in julia and makes use of the computer algebra packages Nemo and AbstractAlgebra.
-  - title: OSCAR
-    details: Hecke is part of the <a href="https://www.oscar-system.org/" target="_blank">OSCAR</a> system, which covers, in addition to number theory, also commutative algebra, algebraic geometry, group theory and polyhedral geometry.
----
-```
+Hecke is part of the [OSCAR](https://www.oscar-system.org) computer algebra system, which covers algebraic geometry, group theory, and polyhedral geometry in addition to number theory and commutative algebra.
 
 ## Features
 
-- Number fields (absolute, relative, simple and non-simple)
-- Orders and ideals in number fields
-- Class and unit group computations of orders
-- Lattice enumeration
-- Sparse linear algebra
-- Class field theory
-- Abelian groups
-- Associative algebras
-- Ideals and orders in (semisimple) associative algebras
-- Locally free class groups of orders in semisimple algebras
-- Quadratic and Hermitian forms and lattices
+Hecke currently provides functionliaty to enable a number of computations in number theory and commutative algebra. Some of the features implemented by Hecke include:
 
-## Citing Hecke
-
-If your research depends on computations done with Hecke, please consider giving us a formal citation:
-
-- Claus Fieker, William Hart, Tommy Hofmann and Fredrik Johansson, [Nemo/Hecke: Computer Algebra and Number Theory Packages
-  for the Julia Programming Language](https://doi.acm.org/10.1145/3087604.3087611). In: Proceedings of ISSAC '17, pages 157–164, New York, NY, USA, 2017. ACM.
-
-```
-@inproceedings{nemo,
-    author = {Fieker, Claus and Hart, William and Hofmann, Tommy and Johansson, Fredrik},
-     title = {Nemo/Hecke: Computer Algebra and Number Theory Packages for the Julia Programming Language},
- booktitle = {Proceedings of the 2017 ACM on International Symposium on Symbolic and Algebraic Computation},
-    series = {ISSAC '17},
-      year = {2017},
-     pages = {157--164},
-  numpages = {8},
-       url = {https://doi.acm.org/10.1145/3087604.3087611},
-       doi = {10.1145/3087604.3087611},
- publisher = {ACM},
-   address = {New York, NY, USA},
-}
-```
+- Number fields (absolute, relative, simple and non-simple),
+- Orders and ideals in number fields,
+- Class and unit group computations of orders,
+- Lattice enumeration,
+- Sparse linear algebra,
+- Class field theory,
+- Abelian groups,
+- Associative algebras,
+- Ideals and orders in (semisimple) associative algebras,
+- Locally free class groups of orders in semisimple algebras,
+- Quadratic and Hermitian forms and lattices.
 
 ## Acknowledgement
 
