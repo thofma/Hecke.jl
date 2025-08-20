@@ -33,16 +33,19 @@ Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 #   end
 # end
 
-status = sprint(io -> Pkg.status("Nemo"; io = io))
+#include array defining file tree. How is this done in Oscar?
+include("pages.jl")
+
+status = sprint(io -> Pkg.status("Nemo"; io=io))
 version = match(r"(v[0-9].[0-9]+.[0-9]+)", status)[1]
 gh_moi = Documenter.Remotes.GitHub("nemocas", "Nemo.jl")
 remotes = Dict(pkgdir(Nemo) => (gh_moi, version))
 
-function make(Hecke::Module; strict = false,
-                             local_build::Bool = false,
-                             doctest = true,
-                             format::Symbol = :vitepress,
-                             warnonly = false)
+function make(Hecke::Module; strict=false,
+  local_build::Bool=false,
+  doctest=true,
+  format::Symbol=:vitepress,
+  warnonly=false)
 
   # Load the bibliography
   bib = CitationBibliography(joinpath(Hecke.pkgdir, "docs", "src", "Hecke.bib"))
@@ -50,40 +53,45 @@ function make(Hecke::Module; strict = false,
   @info "Using bibliography: $(bib)"
 
   cd(joinpath(Hecke.pkgdir, "docs")) do
-    DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive = true)
-    DocMeta.setdocmeta!(Hecke.Nemo, :DocTestSetup, :(using Hecke.Nemo); recursive = true)
+    DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
+    DocMeta.setdocmeta!(Hecke.Nemo, :DocTestSetup, :(using Hecke.Nemo); recursive=true)
 
     if format == :html
       makedocs(
-        modules = [Hecke, Hecke.Nemo],
+        modules=[Hecke, Hecke.Nemo],
+        authors="Claus Fieker and Tommy Hofmann",
+        repo="https://github.com/thofma/Hecke.jl",
+        sitename="Hecke.jl",
+        checkdocs=:none,
+        pages=pages_array, #from pages.jl
+        format=Documenter.HTML(
+          assets=["assets/favicon.ico"],
+          repolink="https://github.com/thofma/Hecke.jl",
+          prettyurls=!local_build,
+          collapselevel=1),
+        warnonly=warnonly,
+        plugins=[bib],
+        doctest=doctest,
+        remotes=remotes,
+      )
+    elseif format == :vitepress
+      makedocs(
+        modules=[Hecke, Hecke.Nemo],
         authors="Claus Fieker and Tommy Hofmann",
         repo="https://github.com/thofma/Hecke.jl",
         sitename="Hecke",
-        checkdocs = :none,
-        format = Documenter.HTML(prettyurls = !local_build, collapselevel = 1),
-        warnonly = warnonly,
-        plugins=[bib],
-        doctest = doctest,
-        remotes = remotes,
-      )
-    elseif format == :vitepress
-    makedocs(
-      modules = [Hecke, Hecke.Nemo],
-      authors="Claus Fieker and Tommy Hofmann",
-      repo="https://github.com/thofma/Hecke.jl",
-      sitename="Hecke",
-      checkdocs = :none,
-      remotes = remotes,
-      format=DocumenterVitepress.MarkdownVitepress(
-          repo = "github.com/thofma/Hecke.jl",
-          devurl = "dev",
-          devbranch = "master",
-          deploy_url = "https://docs.hecke.thofma.com",
+        checkdocs=:none,
+        remotes=remotes,
+        format=DocumenterVitepress.MarkdownVitepress(
+          repo="github.com/thofma/Hecke.jl",
+          devurl="dev",
+          devbranch="master",
+          deploy_url="https://docs.hecke.thofma.com",
           #build_vitepress = !local_build,
-         ),
-      warnonly = warnonly,
-      plugins=[bib],
-      doctest= doctest,
+        ),
+        warnonly=warnonly,
+        plugins=[bib],
+        doctest=doctest,
       )
     end
   end
@@ -112,8 +120,8 @@ function clear_header(content)
 end
 
 static_tutorial_list =
-Dict("quaternion" => "Quaternion algebras",
-    )
+  Dict("quaternion" => "Quaternion algebras",
+  )
 
 function remove_using_hecke(content)
   str = """
@@ -132,7 +140,7 @@ nothing
   return content
 end
 
-function build_all_tutorials(Hecke::Module, local_build::Bool = false)
+function build_all_tutorials(Hecke::Module, local_build::Bool=false)
   # get the base_str
   relpath = local_build ? "" : "/"
   res = []
@@ -148,10 +156,10 @@ function build_all_tutorials(Hecke::Module, local_build::Bool = false)
         name = String(name)
         mdlink = repourl * "docs/src/tutorials/" * name
         ipylink = repourl * "docs/src/tutorials/" * name * ".ipynb"
-        mdfile = basename(Literate.markdown(s; codefence = codefence = "````@repl bla" => "````", preprocess = edit_header, postprocess = remove_using_hecke, repo_root_url = repourl * "dev/tutorials/build/" * name * "", name =name, credit = false))
+        mdfile = basename(Literate.markdown(s; codefence=codefence = "````@repl bla" => "````", preprocess=edit_header, postprocess=remove_using_hecke, repo_root_url=repourl * "dev/tutorials/build/" * name * "", name=name, credit=false))
         @info mdfile
-        notebookfile = basename(Literate.notebook(s, preprocess = clear_header, outdir, credit = false))
-        scriptfile = basename(Literate.script(s, preprocess = clear_header, outdir, credit = false))
+        notebookfile = basename(Literate.notebook(s, preprocess=clear_header, outdir, credit=false))
+        scriptfile = basename(Literate.script(s, preprocess=clear_header, outdir, credit=false))
         push!(res, (name, mdfile, notebookfile, scriptfile))
       end
     end
@@ -159,14 +167,16 @@ function build_all_tutorials(Hecke::Module, local_build::Bool = false)
 
   cd(joinpath(Hecke.pkgdir, "docs", "src", "tutorials")) do
     open("index.md", "w") do io
-      println(io, """
+      println(
+        io,
+        """
 ```@meta
 CurrentModule = Hecke
 DocTestSetup = Hecke.doctestsetup()
 ```
 # Tutorials
 """
-    )
+      )
       for (s, mdfile, notebookfile, scriptfile) in res
         println(io, "- [$(static_tutorial_list[s])]($mdfile)")
       end
