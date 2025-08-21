@@ -486,40 +486,14 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
   return true
 end
 
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
+function sparse_row(R::ZZRing, A::Vector{Tuple{Int, <:IntegerUnion}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
   a = ZZRingElem_Array()
   sizehint!(a, length(A))
   l = Int[]
-  # assume A is sorted
   local c
-  for (i, (p, v)) in enumerate(A)
-    if i == 1
-      c = p
-    else
-      if c == p
-        error("positions in sparse row must be unique")
-      end
-      c = p
-    end
-    if !is_zero(v)
-      push!(a, v)
-      push!(l, p)
-    end
-  end
-  return SRow(R, l, a)
-end
-
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int, ZZRingElem}}; sort::Bool = true)
-  if sort && length(A) > 1
-    A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
-  end
-  a = ZZRingElem_Array()
-  sizehint!(a, length(A))
-  local c
-  l = Int[]
   for (i, (p, v)) in enumerate(A)
     if i == 1
       c = p
