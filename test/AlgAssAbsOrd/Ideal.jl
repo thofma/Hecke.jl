@@ -231,6 +231,7 @@
 
     ZG = integral_group_ring(QQ[small_group(20, 1)])
     Ps = Hecke.maximal_integral_ideals(ZG, 2; side = :left)
+    @test allunique(Ps)
     for P in Ps
       @test ZG(2) in P
       @test !(ZG(3) in P)
@@ -238,10 +239,22 @@
     end
 
     Ps = Hecke.maximal_integral_ideals(ZG, 3; side = :right)
+    @test allunique(Ps)
     for P in Ps
       @test ZG(3) in P
       @test !(ZG(2) in P)
       @test P * ZG == P
+    end
+
+    # a quaternion algebra (I know the result)
+    let
+      a, b, bas = (-3, -1, Vector{QQFieldElem}[[1, 0, 0, 0], [1//2, 3//2, 0, 0], [0, 0, 3, 0], [0, 0, 3//2, 1//2]])
+      A = quaternion_algebra(QQ, a, b)
+      bO = A.(bas)
+      O = order(A, bO)
+      lP = Hecke.maximal_integral_ideals(O, 2; side = :right)
+      @test allunique(lP) && length(lP) == 3
+      @test all(P -> P * O == P, lP)
     end
   end
 end

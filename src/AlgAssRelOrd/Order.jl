@@ -703,6 +703,8 @@ end
 
 is_maximal_known(O::AlgAssRelOrd) = O.is_maximal != 0
 
+is_known(::typeof(is_maximal), O::AlgAssRelOrd) = is_maximal_known(O)
+
 ################################################################################
 #
 #  p-hereditary / p-maximal overorders
