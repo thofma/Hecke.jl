@@ -1992,18 +1992,15 @@ function maximal_integral_ideal(O::AlgAssAbsOrd, p::IntegerUnion, side::Symbol)
   return __maximal_integral_ideal(O, P, p, side)
 end
 
-# Computes any maximal integral ideal with left order O (if side = :left) or
-# right order O (if side = :right) which contains p.
-# Assumes (so far?) that the algebra is simple and O is maximal.
-
 function maximal_integral_ideals(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }; side::Symbol)
-  lP = prime_ideals_over(O, p) # if the algebra is simple, then there is exactly one prime lying over p
+  lP = prime_ideals_over(O, p)
   return reduce(vcat, [__maximal_integral_ideals(O, lP[i], p, side) for i in 1:length(lP)])
 end
 
-function __construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, N, I)
+function __construct_maximal_ideal(O::AlgAssAbsOrd, OtoB, CtoB, CtoD, basisofcenter, side, t, P, I)
+  N = QQMatrix(basis_matrix(P))
   D = codomain(CtoD)
-  for bb in basis(maximal_ideal(D; side))
+  for bb in basis(I)
     if length(basisofcenter) > 1
       for e in basisofcenter # element of B
         b = (OtoB\(e * CtoB(CtoD\bb)))
@@ -2032,7 +2029,7 @@ end
 function __maximal_integral_ideal(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int }, side::Symbol)
   A = algebra(O)
 
-  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
+  # O/P is a simple algebra
   B, OtoB = quo(O, P, p)
   C, CtoB = _as_algebra_over_center(B)
   D, CtoD = _as_matrix_algebra(C)
@@ -2048,9 +2045,8 @@ function __maximal_integral_ideal(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int 
   end
 
   t = zero_matrix(QQ, 1, degree(O))
-  N = QQMatrix(basis_matrix(P))
 
-  return __construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, N, maximal_ideal(D; side))
+  return __construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, P, maximal_ideal(D; side))
 end
 
 function __maximal_integral_ideals(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int }, side::Symbol)
@@ -2072,9 +2068,7 @@ function __maximal_integral_ideals(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int
   end
 
   t = zero_matrix(QQ, 1, degree(O))
-  N = QQMatrix(basis_matrix(P))
-
-  return [__construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, N, I)
+  return [__construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, P, I)
             for I in maximal_ideals(D; side)]
 end
 
