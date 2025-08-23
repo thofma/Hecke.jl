@@ -9,4 +9,5 @@
   include("AlgAssAbsOrd/FakeAbsOrdQuoRing.jl")
   include("AlgAssAbsOrd/PIP.jl")
   include("AlgAssAbsOrd/ResidueRingMultGrp.jl")
+  include("AlgAssAbsOrd/SFC.jl")
 end

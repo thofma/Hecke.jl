@@ -41,7 +41,8 @@ function decompose(A::StructureConstantAlgebra{T}) where {T}
 
   if is_simple_known(A) && A.is_simple == 1
     B, mB = StructureConstantAlgebra(A)
-    return Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[(B, mB)]
+    A.decomposition =  Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[(B, mB)]
+    return A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
   end
 
   res = _decompose(A)
@@ -61,9 +62,10 @@ function __decompose(A::AbstractAssociativeAlgebra{T}) where {T}
 
   B, mB = StructureConstantAlgebra(A)
 
-  if is_simple_known(A) && A.is_simple == 1
-    return Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[ (B, mB) ]
-  end
+  #if is_simple_known(A) && A.is_simple == 1
+  #  A.decomposition = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[ (B, mB) ]
+  #  return A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
+  #end
 
   D = _decompose(B)::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})}}
   res = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[]

@@ -166,4 +166,14 @@
       @test B isa StructureConstantAlgebra && domain(BtoA) === B && codomain(BtoA) === A
     end
   end
+
+  let # unit group
+    data = ([-6, 0, 1], [-1, 0], [-1, 0], Vector{Vector{Rational{Int64}}}[[[1, 0], [0, 0], [0, 0], [0, 0]], [[0, 1], [0, 0], [0, 0], [0, 0]], [[0, 0], [1, 0], [0, 0], [0, 0]], [[0, 0], [0, 1], [0, 0], [0, 0]], [[0, 1//2], [1//2, 0], [1//2, 0], [0, 0]], [[3, 0], [0, 1//2], [0, 1//2], [0, 0]], [[1//2, 0], [0, 1//2], [0, 0], [1//2, 0]], [[0, 1//2], [3, 0], [0, 0], [0, 1//2]]])
+    Qx, x = QQ[:x]
+    K, = number_field(Qx(data[1]))
+    aa = K(data[2]); bb = K(data[3]); B = [([K(x) for x in y]) for y in data[4]]; A = quaternion_algebra(K, aa, bb)
+    O = order(A, sub(pseudo_hnf(pseudo_matrix(matrix(B)), :lowerleft), length(data[4])-3:length(data[4]), 1:4));
+    ugens = Hecke.unit_group_modulo_scalars(O)
+    @test length(ugens) == 8 && allunique(ugens) && all(is_unit, ugens)
+  end
 end

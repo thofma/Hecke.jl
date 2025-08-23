@@ -31,6 +31,11 @@ function _unit_group_generators_maximal(M; GRH::Bool = true)
   return gens
 end
 
+function _unit_group_generators_maximal_simple(M::AlgAssAbsOrd{<:QuaternionAlgebra}; GRH::Bool = true)
+  return elem_in_algebra.(_unit_group_generators_quaternion(M))
+end
+
+
 function _unit_group_generators_maximal_simple(M; GRH::Bool = true)
   A = algebra(M)
   if dim(A) == 0

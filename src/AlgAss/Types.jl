@@ -68,6 +68,8 @@ end
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
+  decomposition
+  center
 
   function QuaternionAlgebra{T}() where {T}
     z = new{T}()

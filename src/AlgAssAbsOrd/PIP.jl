@@ -89,7 +89,19 @@ end
 #
 ################################################################################
 
-function _isisomorphic_generic(X, Y; side::Symbol = :right, strategy = :default)
+function _isisomorphic_generic(X::AlgAssRelOrdIdl, Y::AlgAssRelOrdIdl; side::Symbol = :right, strategy = :default)
+  # this is a bad idea
+  O = order(X)
+  A = algebra(X)
+  AQ, AQtoA = restrict_scalars(A, QQ)
+  OQ = order(AQ, preimage.(Ref(AQtoA), elem_in_algebra.(absolute_basis(O))))
+  XQ = Hecke.ideal_from_lattice_gens(AQ, OQ, preimage.(Ref(AQtoA), absolute_basis(X)))
+  YQ = Hecke.ideal_from_lattice_gens(AQ, OQ, preimage.(Ref(AQtoA), absolute_basis(Y)))
+  fl, a = _isisomorphic_generic(XQ, YQ; side, strategy)
+  return fl, AQtoA(a)
+end
+
+function _isisomorphic_generic(X::AlgAssAbsOrdIdl, Y::AlgAssAbsOrdIdl; side::Symbol = :right, strategy = :default)
   if side === :right
     return _isisomorphic_generic_right(X, Y, strategy = strategy)
   elseif side === :left
