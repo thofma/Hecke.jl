@@ -48,6 +48,7 @@
     A = quaternion_algebra(QQ, a, b)
     bO = A.(bas)
     O = order(A, bO)
+    @test Hecke.has_stably_free_cancellation(O)
     ls = Hecke.right_class_set(O)
     @test length(ls) == r
     AA = quaternion_algebra(K, a, b)
@@ -472,6 +473,9 @@
       end
       O = create_order(dataall[j][1])
       @test length(Hecke.right_class_set(O)) == dataall[j][2][1]
+      @test Hecke.type_number(O) == dataall[j][2][5]
+      @test Hecke.has_stably_free_cancellation(O)
+      @test Hecke.has_locally_free_cancellation(O) == (dataall[j][2][3] == 1)
       # locally free class group only works for orders over Z so far
       AA, AAtoA  = restrict_scalars(algebra(O), QQ);
       OO = Hecke.order(AA, preimage.(AAtoA, elem_in_algebra.(absolute_basis(O))))
