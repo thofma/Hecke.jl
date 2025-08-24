@@ -5,10 +5,7 @@
 # The code is inspired by the Magma implementation in
 # https://github.com/dansme/hermite by Smertnig-Voight
 #
-# TODO: - type number
-#       - has_locally_free_cancellation/is_hermite
-#       - has_stably_free_cancellation
-#       - has_stably_free_cancellation_using_classification
+# TODO: - has_stably_free_cancellation_using_classification
 #       - put the data from test in src
 #       - redo the calculations
 
@@ -48,7 +45,6 @@ function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, 
       primes = _prime_ideals_over(R, pe)
     end
     pp = popfirst!(primes)
-    @info norm(pp), massformula, masstotal
       if pp in avoidprimes
         continue
       end
@@ -77,121 +73,53 @@ function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, 
   return ideals
 end
 
-# function right_class_set(O::Union{AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra}})
-# #    { Compute the right class set of a quaternion order O in a naive way.
-# #      This code is originally by Voight (also appears as commented out code in
-# #      ideals-jv.m). Some small modifications have been made.
-# #
-# #      We use this naive version, because it works for any order.
-# #    }
-#   avoidprimes = support(_reduced_disc(O))
-#   A = algebra(O)
-#   R = base_ring(O)
-#   massformula = 1//length(unit_group_modulo_scalars(O))
-#   masses = [massformula] # record the contribution of each ideal class to the total mass
-#   masstotal = mass(O)
-#   #    vprintf Quaternion:
-#   #        "Starting with the trivial ideal class. \nMass %o out of total mass %o\n", massformula, masstotal;
-#   ideals = [1*O]
-#   pe = 1
-#   while massformula != masstotal
-#     pe = next_prime(pe)
-#     if pe > 300
-#       error("asdS")
-#     end
-#     for pp in prime_ideals_over(R, pe)
-#       if pp in avoidprimes
-#         continue
-#       end
-#       I = maximal_integral_ideal(O, pp, :right)
-#       found = false
-#       for J in ideals
-#         fl, _ = _isisomorphic_generic(I, J; side = :right)
-#         if fl
-#           found = true
-#           break
-#         end
-#       end
-#
-#       if !found
-#         @info "new, $pe"
-#         push!(ideals, I)
-#         mass = 1//length(unit_group_modulo_scalars(left_order(I)))
-#         massformula += mass
-#         push!(masses, mass)
-#       end
-#     end
-#   end
-#   return ideals
-# end
+# { Compute type number for arbitrary order using RightClassSet }
+function type_number(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+  C = right_class_set(O)
+  orders = [left_order(R) for R in C]
+  nonisomorphic = typeof(O)[]
+  for R in orders
+    seen  = false
+    for S in nonisomorphic
+      if _is_isomorphic(R, S)
+        seen = true
+        break
+      end
+    end
 
-#                if not found then
-#                    vprintf Quaternion: "New ideal of norm %o, now found %o ideal classes\n",
-#                                        Norm(Norm(I)), #ideals+1;
-#                    Append(~ideals, I);
-#                    mass := 1/#UnitGroup(LeftOrder(I));
-#                    massformula +:= mass;
-#                    Append(~masses, mass);
-#                    vprintf Quaternion: "Masstotal now %o out of %o\n", massformula, masstotal;
-#                    vprintf Quaternion: "Contributions: %o\n", masses;
+    if !seen
+      push!(nonisomorphic, R)
+    end
+  end
+  return length(nonisomorphic)
+end
 
-#        factpe := Factorization(ideal<R|pe>);
-#        // NB Daniel: only use primes where residue field is minimal, in an attempt to speed up the search
-#        primes := [ x[1] : x in factpe | not x[1] in AvoidPrimes and Norm(x[1]) eq pe ];
-#
-#        for pp in primes do
-#            M2F, phi := pMatrixRing(O, pp);
-#
-#            // Magma's choice of generators for a matrix algebra, whatev!
-#            e11 := Inverse(phi)(M2F.1);
-#            e21 := Inverse(phi)(M2F.2*M2F.1);
-#
-#            // Ideals mod pp are in 1-1 correspondence with elements
-#            // of P^1(F_pp) on the first row (with zeros on the second)
-#            k, mk := ResidueClassField(pp);
-#
-#            // Reduce mod p otherwise 'rideal' will choke  (Steve added this)
-#            e11coords, e21coords := Explode(Coordinates( [A!e11,A!e21], ZbasisO ));
-#
-#            e11 := O! &+[ (e11coords[i] mod pe) * ZbasisO[i] : i in [1..#ZbasisO]];
-#            e21 := O! &+[ (e21coords[i] mod pe) * ZbasisO[i] : i in [1..#ZbasisO]];
-#            for museq in [[0,1]] cat [[1,x@@mk] : x in [x : x in k]] do
-#                mu := O!(museq[1]*e11 + museq[2]*e21);
-#                I := rideal<O | [mu] cat Generators(pp)>;
-#                I`Norm := pp;
-#
-#                found := false;
-#                for jj := 1 to #ideals do
-#                    if IsIsomorphic(I, ideals[jj]) then
-#                        found := true;
-#                        break jj;
-#                    end if;
-#                end for;
-#                if not found then
-#                    vprintf Quaternion: "New ideal of norm %o, now found %o ideal classes\n",
-#                                        Norm(Norm(I)), #ideals+1;
-#                    Append(~ideals, I);
-#                    mass := 1/#UnitGroup(LeftOrder(I));
-#                    massformula +:= mass;
-#                    Append(~masses, mass);
-#                    vprintf Quaternion: "Masstotal now %o out of %o\n", massformula, masstotal;
-#                    vprintf Quaternion: "Contributions: %o\n", masses;
-#
-#                end if;
-#            end for;
-#        end for;
-#        pe := NextPrime(pe);
-#    end while;
-#
-#    O`RightClassSet := ideals;
-#    return ideals;
-#end intrinsic;
-#
-#intrinsic TypeNumber(O::AlgAssVOrd) -> RngInt
-#    { Compute type number for arbitrary order using RightClassSet }
-#
-#    C := RightClassSet(O);
-#    orders := [ LeftOrder(OO) : OO in C ];
+function _is_isomorphic(R::T, S::T) where {T <: Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd}}
+  # Kirschmer, "Konstruktive Idealtheorie in Quatenionalgebren":
+  # R, S sind isomorph, wenn die zugehörigen quadratischen R-Gitter isomorph sind bezüglich
+  # (x, y) -> tr_D/K(x * conj(y))
+
+  A = algebra(R)
+  @assert !is_eichler(A)
+  B = basis(A)
+  K = base_ring(A)
+  M = zero_matrix(K, 4, 4)
+  for i in 1:4
+    for j in 1:4
+      M[i, j] = trred(B[i] * conjugate(B[j]))
+    end
+  end
+  V = quadratic_space(K, M)
+  if K isa QQField
+    LR = lattice(V, basis_matrix(R))
+    LS = lattice(V, basis_matrix(S))
+  else
+    LR = lattice(V, basis_pmatrix(R))
+    LS = lattice(V, basis_pmatrix(S))
+  end
+  return is_isometric(LR, LS)
+end
+
 #    noniso := [];
 #
 #    for OO in orders do
@@ -210,23 +138,25 @@ end
 #    return #noniso;
 #end intrinsic;
 #
-#intrinsic StablyFreeMass(O::AlgAssVOrd) -> FldRatElt
-#    { Compute mass(Cls^1 O) }
-#    return Mass(O) / #StableClassGroup(O);
-#end intrinsic;
-#
-#intrinsic IsHermite(O::AlgAssVOrd) -> Bool
-#    { Is the quaternion order O a Hermite ring? }
-#    return StablyFreeMass(O) eq 1/#Units(O);
-#end intrinsic;
-#
-#intrinsic HasCancellation(O::AlgAssVOrd) -> Bool
-#    { Does the quaternion order O have locally free cancellation? }
-#    return #StableClassGroup(O) eq #RightClassSet(O);
-#end intrinsic;
 
-#  {Returns the mass of an order O in a definite quaternion algebra
-#   over Q, F_q(X) or a totally real number field.}
+function locally_free_class_group(O::AlgAssRelOrd)
+  AA, AAtoA  = restrict_scalars(algebra(O), QQ);
+  OO = Hecke.order(AA, preimage.(AAtoA, elem_in_algebra.(absolute_basis(O))))
+  return locally_free_class_group(OO)
+end
+
+function _stably_free_mass(O)
+  return mass(O)//order(locally_free_class_group(O))
+end
+
+function has_stably_free_cancellation(O)
+  u = unit_group_modulo_scalars(O)
+  return _stably_free_mass(O) == 1//length(u)
+end
+
+function has_locally_free_cancellation(O)
+  return order(locally_free_class_group(O)) == length(right_class_set(O))
+end
 
 function _zeta_denominator_bound_at_minus_one(K)
   S = lcm(cyclotomic_quadratic_extensions(K))
