@@ -32,7 +32,7 @@ end
 #
 ################################################################################
 
-is_algebraic_integer(a::QQFieldElem) = isone(denominator(a))
+is_algebraic_integer(a::QQFieldElem) = is_integer(a)
 
 is_integral(a::QQFieldElem) = is_algebraic_integer(a)
 
