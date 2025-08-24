@@ -486,7 +486,7 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
   return true
 end
 
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int, <:IntegerUnion}}; sort::Bool = true)
+function sparse_row(R::ZZRing, A::Vector{<:Tuple{Int, <:IntegerUnion}}; sort::Bool = true)
   if sort && length(A) > 1
     A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
   end
