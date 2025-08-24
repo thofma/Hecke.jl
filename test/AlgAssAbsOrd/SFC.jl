@@ -482,4 +482,36 @@
       @test order(locally_free_class_group(OO)) == dataall[j][2][2]
     end
   end
+
+  let
+    K, = cyclotomic_real_subfield(23)
+    A = quaternion_algebra(K, -1, -1)
+    O = order(A, basis(A))
+    @test !Hecke.has_stably_free_cancellation(O)
+    @test !Hecke.has_locally_free_cancellation(O)
+  end
+
+  let
+    K, = cyclotomic_real_subfield(7)
+    A = quaternion_algebra(K, -1, -1)
+    O = order(A, basis(A))
+    @test !Hecke.has_stably_free_cancellation(O)
+    @test !Hecke.has_locally_free_cancellation(O)
+  end
+
+  let
+    # this is #6 in the list of SV
+    K, = rationals_as_number_field()
+    A = quaternion_algebra(K, -2, -1)
+    O = order(A, basis(A))
+    @test Hecke.has_stably_free_cancellation(O)
+    @test Hecke.has_locally_free_cancellation(O)
+  end
+
+  let
+    A = quaternion_algebra(QQ, -2, -1)
+    O = order(A, push!(100 .* basis(A), one(A)))
+    @test !Hecke.has_stably_free_cancellation(O)
+    @test !Hecke.has_locally_free_cancellation(O)
+  end
 end
