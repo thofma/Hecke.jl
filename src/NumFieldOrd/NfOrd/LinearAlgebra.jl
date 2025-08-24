@@ -269,6 +269,12 @@ base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.b
 
 base_ring_type(::Type{PMat{T, S}}) where {T, S} = order_type(parent_type(T))
 
+function pseudo_matrix_type(::Type{R}, ::Type{S}) where {R, S}
+  return PMat{elem_type(S), fractional_ideal_type(R)}
+end
+
+pseudo_matrix_type(R, S) = pseudo_matrix_type(typeof(R), typeof(S))
+
 function pseudo_matrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
   # sanity checks
   @assert nrows(m) == length(c)

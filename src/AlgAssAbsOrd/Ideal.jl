@@ -1171,6 +1171,10 @@ end
 #
 ################################################################################
 
+function pradical_radical(O::AlgAssAbsOrd, p::Int)
+  A1, OtoA1 = quo(O, p*O, p)
+  return A1
+end
 function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   A1, OtoA1 = quo(O, p*O, p)
   @vtime :AlgAssOrd 1 lg = gens(A1)

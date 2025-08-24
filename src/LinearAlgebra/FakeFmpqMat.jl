@@ -254,6 +254,20 @@ function trim_lowerleft(x)
   return x
 end
 
+function trim_upperright(x)
+  r = 0
+  for i in 1:nrows(x)
+    if is_zero_row(x, i)
+      break
+    end
+    r += 1
+  end
+  if r < nrows(x)
+    return x[1:r, :]
+  end
+  return x
+end
+
 for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
   @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
   @eval ($s)(x::QQMatrix, ::ZZRing, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
