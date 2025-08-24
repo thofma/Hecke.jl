@@ -6,7 +6,7 @@
 
 # S is the element type of the base field of the algebra, T the fractional ideal
 # type of this field
-mutable struct AlgAssRelOrd{S, T, U} <: NCRing
+@attributes mutable struct AlgAssRelOrd{S, T, U} <: NCRing
   algebra::U
   dim::Int
   pseudo_basis#::Vector{Tuple{AbstractAssociativeAlgebraElem{S}, T}}

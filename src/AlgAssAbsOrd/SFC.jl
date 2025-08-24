@@ -5,9 +5,7 @@
 # The code is inspired by the Magma implementation in
 # https://github.com/dansme/hermite by Smertnig-Voight
 #
-# TODO: - has_stably_free_cancellation_using_classification
-#       - put the data from test in src
-#       - redo the calculations
+# TODO: redo the calculations
 
 _prime_ideals_over(R::ZZRing, pe) = pe
 
@@ -149,12 +147,12 @@ function _stably_free_mass(O)
   return mass(O)//order(locally_free_class_group(O))
 end
 
-function has_stably_free_cancellation(O)
+function _has_stably_free_cancellation(O)
   u = unit_group_modulo_scalars(O)
   return _stably_free_mass(O) == 1//length(u)
 end
 
-function has_locally_free_cancellation(O)
+function _has_locally_free_cancellation(O)
   return order(locally_free_class_group(O)) == length(right_class_set(O))
 end
 
@@ -245,9 +243,9 @@ _reduced_disc(O::AlgAssAbsOrd{<:QuaternionAlgebra}) = sqrt(abs(discriminant(O)))
 
 _reduced_disc(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra}) = is_power(discriminant(O), 2)[2]
 
-mass(O::AlgAssAbsOrd{<:QuaternionAlgebra}) = _mass(O)
+@attr QQFieldElem mass(O::AlgAssAbsOrd{<:QuaternionAlgebra}) = _mass(O)
 
-mass(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra}) = _mass(O)
+@attr QQFieldElem mass(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra}) = _mass(O)
 
 function _mass(O)
   A = algebra(O)
@@ -288,4 +286,91 @@ function _eichler_invariant(O, p)
   else
     return 1
   end
+end
+
+################################################################################
+#
+#  Classification
+#
+################################################################################
+
+function _norms_of_ramified_primes(A::QuaternionAlgebra)
+  O = maximal_order(A)
+  return sort!([p isa ZZRingElem ? abs(p) : absolute_norm(p) for (p, _) in factor(discriminant(O))])
+end
+
+function _finger_print(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+  A = algebra(O)
+  K = base_ring(A)
+  return degree(K), discriminant(maximal_order(K)), collect(coefficients(defining_polynomial(K))), _norms_of_ramified_primes(A), absolute_norm(_reduced_disc(O)), mass(O)
+end
+
+const degree_ranges = [1:40, 41:249, 250:309, 310:368, 369:373, 374:375]
+
+# fp created with
+# open("fp", "w") do io; for i in 1:length(fp); for x in fp[i]; print(io, ",", Hecke._stringify(x)); end; println(io); end; end;
+
+function _read_fingerprint(;range = 1:375)
+  res = Vector{Tuple{Int, ZZRingElem, Vector{Int}, Vector{Int}, Int, QQFieldElem}}(undef, length(range))
+  j = 1
+  for (i, l) in enumerate(readlines(joinpath(@__DIR__, "SVfingerprint.dat")))
+    if !(i in range)
+      continue
+    end
+    io = IOBuffer(l)
+    _, deg = _parse(Int, io)
+    _, discOK = _parse(ZZRingElem, io)
+    _, coeffs = _parse(Vector{Int}, io)
+    _, normsram = _parse(Vector{Int}, io)
+    _, normdisc = _parse(Int, io)
+    b, mas = _parse(QQFieldElem, io)
+    res[j] = deg, discOK, coeffs, normsram, normdisc, mas
+    j += 1
+  end
+  return res
+end
+
+# true => order not in the database
+# false => order maybe in the database
+function _order_not_in_db(O::AlgAssRelOrd)
+  A = algebra(O)
+  K = base_ring(O)
+  if degree(K) > 6
+    return true
+  end
+  fps = _read_fingerprint(; range = degree_ranges[degree(K)])
+  length(fps) == 0 && return true
+  filter!(x -> x[2] == discriminant(maximal_order(K)), fps)
+  length(fps) == 0 && return true
+  filter!(x -> x[4] == _norms_of_ramified_primes(A), fps)
+  length(fps) == 0 && return true
+  filter!(x -> x[5] == absolute_norm(_reduced_disc(O)), fps)
+  length(fps) == 0 && return true
+  filter!(x -> x[6] == mass(O), fps)
+  return length(fps) == 0
+end
+
+function _order_not_in_db(O::AlgAssAbsOrd)
+  A = algebra(O)
+  fps = _read_fingerprint(; range = degree_ranges[1])
+  filter!(x -> x[4] == _norms_of_ramified_primes(A), fps)
+  length(fps) == 0 && return true
+  filter!(x -> x[5] == abs(_reduced_disc(O)), fps)
+  length(fps) == 0 && return true
+  filter!(x -> x[6] == mass(O), fps)
+  return length(fps) == 0
+end
+
+function has_stably_free_cancellation(O::Union{AlgAssAbsOrd{<:QuaternionAlgebra}, AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra}})
+  if _order_not_in_db(O)
+    return false
+  end
+  return _has_stably_free_cancellation(O)
+end
+
+function has_locally_free_cancellation(O::Union{AlgAssAbsOrd{<:QuaternionAlgebra}, AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra}})
+  if _order_not_in_db(O)
+    return false
+  end
+  return _has_locally_free_cancellation(O)
 end
