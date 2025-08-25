@@ -825,6 +825,18 @@ function hnf(A::SMat{ZZRingElem}; truncate::Bool = false, full_hnf::Bool = true,
   return hnf_kannan_bachem(A; truncate, full_hnf, auto, limit)
 end
 
+function hnf_with_trafo(A::SMat{ZZRingElem}; truncate::Bool = false, full_hnf::Bool = true, auto::Bool = false, limit::Int=typemax(Int))
+  B, T = hnf_kannan_bachem(A, Val(true); truncate, full_hnf, auto, limit)
+  I = sparse_matrix(ZZ, 0, nrows(A))
+  for i in 1:nrows(A)
+    push!(I, sparse_row(ZZ, [(i, ZZ(1))]))
+  end
+  for (i, TT) in enumerate(T)
+    apply_left!(I, TT)
+  end
+  return B, I
+end
+
 @doc raw"""
     hnf!(A::SMat{ZZRingElem})
 
@@ -838,13 +850,25 @@ function hnf!(A::SMat{ZZRingElem}; truncate::Bool = false, full_hnf::Bool = true
   A.c = B.c
 end
 
+function hnf_with_trafo!(A::SMat{ZZRingElem}, I::SMat{ZZRingElem}; truncate::Bool = false, full_hnf::Bool = true, auto::Bool = false)
+  B, U = hnf_with_trafo(A; truncate, full_hnf, auto)
+  A.rows = B.rows
+  A.nnz = B.nnz
+  A.r = B.r
+  A.c = B.c
+  I.rows = U.rows
+  I.nnz = U.nnz
+  I.r = U.r
+  I.c = U.c
+end
+
 @doc raw"""
     diagonal_form(A::SMat{ZZRingElem}) -> SMat{ZZRingElem}
 
 A matrix $D$ that is diagonal and obtained via unimodular row and column operations.
 Like a snf without the divisibility condition.
 """
-function diagonal_form(A::SMat{ZZRingElem})
+function diagonal_form(A::SMat{ZZRingElem}, with_right_trafo = false, with_left_trafo = false)
   sa = size(A)
   if nrows(A) < ncols(A)
     A = transpose(A)
@@ -852,6 +876,14 @@ function diagonal_form(A::SMat{ZZRingElem})
     A = deepcopy(A)
   end
   el_div = ZZRingElem[]
+  U = []
+  V = []
+  if with_right_trafo
+    V = identity_matrix(ZZ, ncols(A))
+  end
+  if with_left_trafo
+    U = identity_matrix(ZZ, nrows(A))
+  end 
   while true
     r = nrows(A)
     hnf!(A; auto = true, truncate = true)
@@ -865,6 +897,7 @@ function diagonal_form(A::SMat{ZZRingElem})
     append!(el_div, [ZZ(1) for j = 1:i-1])
     if i > 1
       A = sub(A, i:nrows(A), 1:ncols(A))
+      print(Matrix(A))
     end
     if all(x->length(x) == 1, A.rows)
       for x = A.rows
