@@ -23,8 +23,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-        julia-arch:
-          - x64
         os:
           - ubuntu-latest
 
@@ -39,7 +37,6 @@ jobs:
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
         uses: julia-actions/cache@v2
       - name: "Build package"
@@ -68,8 +65,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-        julia-arch:
-          - x64
         os:
           - macOS-latest
 
@@ -83,7 +78,6 @@ jobs:
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
         uses: julia-actions/cache@v2
       - name: "Build package"
