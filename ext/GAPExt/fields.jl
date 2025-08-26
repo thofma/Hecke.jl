@@ -1,4 +1,5 @@
 export fields
+export assure_automorphisms
 
 
 ################################################################################
@@ -118,11 +119,11 @@ end
 #
 ################################################################################
 
-function assure_automorphisms(T::FieldsTower)
-  assure_automorphisms(T.field, T.generators_of_automorphisms)
+function Hecke.assure_automorphisms(T::FieldsTower)
+  Hecke.assure_automorphisms(T.field, T.generators_of_automorphisms)
 end
 
-function assure_automorphisms(K::AbsSimpleNumField, gens::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function Hecke.assure_automorphisms(K::AbsSimpleNumField, gens::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
   if !is_automorphisms_known(K)
     auts = closure(gens, degree(K))
     set_automorphisms(K, auts)

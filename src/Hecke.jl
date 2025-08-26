@@ -861,6 +861,9 @@ using .NormRel
 function fields
 end
 
+function assure_automorphisms
+end
+
 function IdGroup
 end
 
