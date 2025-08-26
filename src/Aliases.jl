@@ -12,3 +12,4 @@ function number_of_lattices end
 function number_of_relations end
 @alias nlattices number_of_lattices
 @alias nrels number_of_relations
+@alias id_hom identity_map

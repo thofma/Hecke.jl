@@ -760,11 +760,11 @@ Return the matrix defining the underlying abelian group homomorphism of `f`.
 matrix(f::TorQuadModuleMap) = matrix(abelian_group_homomorphism(f))
 
 @doc raw"""
-    identity_map(T::TorQuadModule) -> TorQuadModuleMap
+    id_hom(T::TorQuadModule) -> TorQuadModuleMap
 
 Return the identity map of `T`.
 """
-function identity_map(T::TorQuadModule)
+function id_hom(T::TorQuadModule)
   map_ab = id_hom(abelian_group(T))
   return TorQuadModuleMap(T, T, map_ab)
 end
@@ -792,13 +792,6 @@ Given a map `f` between two torsion quadratic modules `T` and `U`,
 return the trivial map between `T` and `U` (see [`trivial_morphism`](@ref)).
 """
 zero(f::TorQuadModuleMap) = trivial_morphism(domain(f), codomain(f))
-
-@doc raw"""
-    id_hom(T::TorQuadModule) -> TorQuadModuleMap
-
-Alias for [`identity_map`](@ref).
-"""
-id_hom(T::TorQuadModule) = identity_map(T)
 
 @doc raw"""
     inv(f::TorQuadModuleMap) -> TorQuadModuleMap
@@ -993,7 +986,7 @@ Given an abelian group endomorphism `f` of a torsion quadratic module `T`
 return the $n$-fold self-composition of `f`.
 
 Note that `n` must be non-negative and $f^0$ is by default the identity map
-of the domain of `f` (see [`identity_map`](@ref)).
+of the domain of `f` (see [`id_hom`](@ref)).
 """
 function Base.:^(f::TorQuadModuleMap, n::Integer)
   @req n >= 0 "n must be a positive integer"
@@ -1604,7 +1597,7 @@ function normal_form(T::TorQuadModule; partial=false)
     i = hom(T, N, TorQuadModuleElem[N(lift(g)) for g in gens(T)])
   else
     N = T
-    i = identity_map(T)
+    i = id_hom(T)
   end
   normal_gens = TorQuadModuleElem[]
   prime_div = sort!(prime_divisors(exponent(N)))

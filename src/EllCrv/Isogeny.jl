@@ -470,7 +470,7 @@ end
 Return the isogeny corresponding to the identity map on $E$
 """
 function identity_isogeny(E::EllipticCurve)
-  return isomorphism_to_isogeny(identity_map(E))
+  return isomorphism_to_isogeny(id_hom(E))
 end
 
 @doc raw"""
@@ -481,7 +481,7 @@ Return the isogeny corresponding to the multiplication by m map on $E$
 function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer, ZZRingElem}
 
   if m==1
-    return isomorphism_to_isogeny(identity_map(E))
+    return isomorphism_to_isogeny(id_hom(E))
   end
 
   p = characteristic(base_field(E))

@@ -46,11 +46,11 @@ mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCr
 end
 
 @doc raw"""
-    identity_map(E::EllipticCurve) -> EllCrvIso
+    id_hom(E::EllipticCurve) -> EllCrvIso
 
 Return the identity isomorphism on the elliptic curve $E$.
 """
-function identity_map(E::EllipticCurve)
+function id_hom(E::EllipticCurve)
   return isomorphism(E, [0, 0, 0, 1])
 end
 
@@ -526,7 +526,7 @@ function automorphism_group_generators(E::EllipticCurve{T}) where {T}
       #Element of order 3
       for phi in auts
         phi3 = phi * phi * phi
-        if phi3 == identity_map(Es)
+        if phi3 == id_hom(Es)
           g1 = phi
         end
       end
@@ -542,7 +542,7 @@ function automorphism_group_generators(E::EllipticCurve{T}) where {T}
     elseif size == 2 #Group is Z/6Z
       g1 = auts[1]
       g2 = auts[2]
-      if (g1 * g1 * g1) != identity_map(Es)
+      if (g1 * g1 * g1) != id_hom(Es)
         return [g1]
       else
         return [g2]
