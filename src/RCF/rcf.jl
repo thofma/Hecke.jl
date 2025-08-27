@@ -704,6 +704,11 @@ function find_orbit(auts, AutG, x)
   t = ngens(AutG)
   order = 1
   elements = Tuple{FinGenAbGroupElem, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[(id(AutG), x)]
+
+  if Hecke.order(AutG) == 1
+    return elements
+  end
+
   g = S[1]
 
   while !iszero(g)
