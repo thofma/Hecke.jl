@@ -405,3 +405,12 @@ end
   @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 3))) == 6
 end
 
+let # cornercase with trivial automorphism group
+  Qx, x = QQ[:x]
+  f = x^4 + 4*x^2 + 1
+  K, a = number_field(f, :a)
+  OK = maximal_order(K)
+  ab = abelian_normal_extensions(K, [4], ZZ(100000000000000000000545460846592))
+  L = number_field(ab[1])
+  @test degree(L) == 4
+end
