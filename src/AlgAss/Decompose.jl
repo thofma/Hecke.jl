@@ -487,7 +487,7 @@ end
 
 function _separable_subalgebra(A::AbstractAssociativeAlgebra)
   if is_separable(A)
-    return A, identity_map(A)
+    return A, id_hom(A)
   end
   char = characteristic(base_ring(A))
   n = ZZ(char)^flog(ZZ(dim(A)), char)

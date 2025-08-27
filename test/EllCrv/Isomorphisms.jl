@@ -48,9 +48,9 @@
   psi6 = @inferred isomorphism(E8, F8)
   psi7 = @inferred isomorphism(E9, F9)
 
-  @test isomorphism_data(psi2 * inv(phi2)) == isomorphism_data(identity_map(E2)) || isomorphism_data(psi2 * inv(phi2)) == isomorphism_data(negation_map(E2))
-  @test (psi4 * inv(phi4)) == identity_map(E4) || (psi4 * inv(phi4)) == negation_map(E4)
-  @test (psi5 * inv(phi5)) == identity_map(E5) || (psi5 * inv(phi5)) == negation_map(E5)
+  @test isomorphism_data(psi2 * inv(phi2)) == isomorphism_data(id_hom(E2)) || isomorphism_data(psi2 * inv(phi2)) == isomorphism_data(negation_map(E2))
+  @test (psi4 * inv(phi4)) == id_hom(E4) || (psi4 * inv(phi4)) == negation_map(E4)
+  @test (psi5 * inv(phi5)) == id_hom(E5) || (psi5 * inv(phi5)) == negation_map(E5)
 
   P = points_with_x_coordinate(E4, b)[1]
   @test @inferred preimage(psi4, psi4(P)) == P

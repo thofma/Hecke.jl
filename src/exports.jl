@@ -415,7 +415,6 @@ export ideal_type
 export ideals
 export idempotents
 export identity_isogeny
-export identity_map
 export image
 export in
 export index
