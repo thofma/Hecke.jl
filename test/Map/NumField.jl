@@ -349,8 +349,8 @@
   end
 
   # Maps into arbitrary rings
-  begin
-    K, a = quadratic_field(-1);
+  let
+    K, a = quadratic_field(-1)
     Kx, x = K["x"]
     h = @inferred hom(K, Kx, Kx(a))
     @test h(a + 1) == Kx(a + 1)
@@ -361,5 +361,15 @@
     @test_throws ErrorException hom(K, QQy, [0, 0])
     h = @inferred hom(K, QQy, [1, 2])
     @test h(a[1] + a[2]) == QQy(3)
+  end
+
+  # Maps into arbitrary noncommutative rings
+  let
+    K, a = quadratic_field(-1)
+    A = matrix_algebra(QQ, 2)
+    f = hom(K, A, A(QQ[0 -1; 1 0]))
+    @test f(a) == A(QQ[0 -1; 1 0])
+    @test f(a + 2) == f(a) + 2
+    @test_throws ErrorException hom(K, A, one(A))
   end
 end
