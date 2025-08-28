@@ -137,7 +137,7 @@ end
 function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
                                compute_inverse = false) where {S <: Union{NumField, QQField},
-                                                               T <: Ring}
+                                                               T <: NCRing}
   header = MapHeader(K, L)
 
   #if length(x) == 0
@@ -265,7 +265,7 @@ end
 #
 map_data(K::AbsSimpleNumField, L, ::Bool) = MapDataFromAnticNumberField{elem_type(L)}(true)
 
-function map_data(K::AbsSimpleNumField, L, x::RingElement; check = true)
+function map_data(K::AbsSimpleNumField, L, x::NCRingElement; check = true)
   if parent(x) === L
     xx = x
   else
