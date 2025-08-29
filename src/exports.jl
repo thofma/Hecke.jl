@@ -195,6 +195,7 @@ export center
 export central_primitive_idempotents
 export chain_complex
 export class_group
+export class_number
 export classical_modular_polynomial
 export close_vectors
 export close_vectors_iterator
