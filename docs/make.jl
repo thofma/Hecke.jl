@@ -6,7 +6,7 @@ include(normpath(joinpath(Hecke.pkgdir, "docs", "Build.jl")))
 
 Build.build_all_tutorials(Hecke)
 
-Build.make(Hecke; strict=Documenter.except(:missing_docs), local_build=true, doctest=false, format=:html, warnonly=false)
+Build.make(Hecke; strict=Documenter.except(:missing_docs), local_build=true, doctest=false, format=:vitepress, warnonly=false)
 
 should_push_preview = true
 if get(ENV, "GITHUB_ACTOR", "") == "dependabot[bot]"

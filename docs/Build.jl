@@ -33,9 +33,6 @@ Base.print(io::IO, b::Base.Docs.Binding) = print(io, b.var)
 #   end
 # end
 
-#include array defining file tree. How is this done in Oscar?
-include("pages.jl")
-
 status = sprint(io -> Pkg.status("Nemo"; io=io))
 version = match(r"(v[0-9].[0-9]+.[0-9]+)", status)[1]
 gh_moi = Documenter.Remotes.GitHub("nemocas", "Nemo.jl")
@@ -63,9 +60,7 @@ function make(Hecke::Module; strict=false,
         repo="https://github.com/thofma/Hecke.jl",
         sitename="Hecke.jl",
         checkdocs=:none,
-        pages=pages_array, #from pages.jl
         format=Documenter.HTML(
-          assets=["assets/favicon.ico"],
           repolink="https://github.com/thofma/Hecke.jl",
           prettyurls=!local_build,
           collapselevel=1),
@@ -79,7 +74,7 @@ function make(Hecke::Module; strict=false,
         modules=[Hecke, Hecke.Nemo],
         authors="Claus Fieker and Tommy Hofmann",
         repo="https://github.com/thofma/Hecke.jl",
-        sitename="Hecke",
+        sitename="Hecke.jl",
         checkdocs=:none,
         remotes=remotes,
         format=DocumenterVitepress.MarkdownVitepress(

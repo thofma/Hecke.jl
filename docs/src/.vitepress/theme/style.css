@@ -13,12 +13,13 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 
 /* black */
 :root {
-  --vp-home-hero-name-color: #000000 !important;
-}
+  --vp-home-hero-name-color: #bd0036 !important;
+} /* changed from #0000000 */
+
 
 .dark {
-  --vp-home-hero-name-color: #ffffff !important;
-}
+  --vp-home-hero-name-color: #bd0036 !important;
+} /* changed from #ffffff */
 
 .VPHero .clip {
   white-space: pre;
@@ -38,9 +39,9 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 }
 
 .mono {
-  /* 
-  Disable contextual alternates (kind of like ligatures but different) in monospace, 
-  which turns `/>` to an up arrow and `|>` (the Julia pipe symbol) to an up arrow as well.  
+  /*
+  Disable contextual alternates (kind of like ligatures but different) in monospace,
+  which turns `/>` to an up arrow and `|>` (the Julia pipe symbol) to an up arrow as well.
   This is pretty bad for Julia folks reading even though copy+paste retains the same text.
   */
   font-feature-settings: 'calt' 0;
@@ -54,6 +55,16 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     --julia-red: rgb(179.10, 52.875, 45.0);
     --julia-green: rgb(49.5, 134.1, 33.525);
 
+/* Red brand colors */
+    --vp-c-brand: #bd0036;
+    --vp-c-brand-light: #f00044;
+    --vp-c-brand-lighter: #ff2362;
+    --vp-c-brand-lightest: #ff5786;
+    --vp-c-brand-dark: #8a0027;
+    --vp-c-brand-darker: #570018;
+    --vp-c-brand-dimm: rgba(189, 0, 54, 0.08);
+
+/* Purple brand colors (omitted)
     --vp-c-brand: #646cff;
     --vp-c-brand-light: #747bff;
     --vp-c-brand-lighter: #9499ff;
@@ -61,6 +72,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     --vp-c-brand-dark: #535bf2;
     --vp-c-brand-darker: #454ce1;
     --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
+*/
 }
 
  /* Component: Button */
@@ -103,6 +115,10 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
   }
 }
 
+.VPHome .vp-doc h1 {
+  margin-top: var(--vp-nav-height);
+}
+
 /* Component: Custom Block */
 
 :root.dark {
@@ -121,7 +137,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     --vp-c-gray-dark-3: hsl(220 12% 23%);
     --vp-c-gray-dark-4: hsl(220 14% 17%);
     --vp-c-gray-dark-5: hsl(220 16% 13%);
-  
+
     /* // Backgrounds */
     /* --vp-c-bg: hsl(240, 2%, 11%); */
     --vp-custom-block-info-bg: hsl(220 14% 17%);
@@ -165,17 +181,35 @@ mjx-container > svg {
  * -------------------------------------------------------------------------- */
 
  :root {
+/* omitted light/alt theme link colors
   --vp-c-brand-1: #CB3C33;
   --vp-c-brand-2: #CB3C33;
   --vp-c-brand-3: #CB3C33;
   --vp-c-sponsor: #ca2971;
   --vitest-c-sponsor-hover: #c13071;
+*/
+
+/* red light/alt theme link colors */
+  --vp-c-brand-1: var(--vp-c-brand);
+  --vp-c-brand-2: var(--vp-c-brand-light);
+  --vp-c-brand-3: var(--vp-c-brand-lighter);
+  --vp-c-sponsor: #ca2971;
+  --vitest-c-sponsor-hover: #c13071;
 }
 
 .dark {
+/* omitted dark theme link colors
   --vp-c-brand-1: #91dd33;
   --vp-c-brand-2: #91dd33;
   --vp-c-brand-3: #91dd33;
+  --vp-c-sponsor: #91dd33;
+  --vitest-c-sponsor-hover: #e51370;
+*/
+
+/* red light/alt theme link colors */
+  --vp-c-brand-1: var(--vp-c-brand-light);
+  --vp-c-brand-2: var(--vp-c-brand-lighter);
+  --vp-c-brand-3: var(--vp-c-brand-lightest);
   --vp-c-sponsor: #91dd33;
   --vitest-c-sponsor-hover: #e51370;
 }
