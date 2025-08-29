@@ -326,14 +326,11 @@ end
   S = fixed_field(R, kernel(h-hh)[1])
 
   ns = norm_group(S)[1]
-  if VERSION >= v"1.13.0-DEV.970"
-    t = fixed_field(S, sub(ns, [ns[1], ns[2]])[1])
-  else
-    t = fixed_field(S, sub(ns, [ns[1], ns[3]])[1])
+  for i = subgroups(ns; quotype = [2,2])
+    t = fixed_field(S, i[1])
+    @test degree(t) == 4
+    @test is_normal(t) || normal_closure(t) == S
   end
-  @test degree(t) == 4
-  @test !is_normal(t)
-  @test normal_closure(t) == S
 end
 
 @testset "Conductor fix" begin
