@@ -1107,10 +1107,12 @@ end
 
 function Nemo.div!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
   ccall((:fmpz_tdiv_q, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
+  return a
 end
 
 function shift_right!(a::ZZRingElem, b::ZZRingElem, i::Int)
   ccall((:fmpz_fdiv_q_2exp, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), a, b, i)
+  return a
 end
 
 #output sensitive rational_reconstruction, in particular if
