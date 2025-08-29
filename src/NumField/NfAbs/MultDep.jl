@@ -337,7 +337,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
     append!(uu[i][2], zeros(ZZ, length(uu[end][2])-length(uu[i][2])))
   end
   if length(uu) == 0 #all torsion
-    return [], A
+    return identity_matrix(ZZ, length(A)), matrix(ZZ, 0, length(A), []), C
   else
     U = matrix(ZZ, length(uu), length(uu[end][2]), reduce(vcat, [x[2] for x = uu]))
     U = hcat(U[:, 1:length(u)], U[:, r+1:ncols(U)])
@@ -514,13 +514,18 @@ mapping group elements to number field elements and vice-versa.
 """
 function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all)
 
+  K = parent(A[1])
   S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord)
   u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
   g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
   
   U, T, C = syzygies_units_mod_tor(u)
   g2 = Hecke._transform(u, transpose(U))
-  u = Hecke._transform(u, transpose(T))
+  if length(T) == 0
+    u = [FacElem(K(1))]
+  else
+    u = Hecke._transform(u, transpose(T))
+  end
 
   Ut, _, o = syzygies_tor(u)
 
