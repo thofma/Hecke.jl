@@ -157,25 +157,24 @@ function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
     p = 2^60
   end
   sp = PrimesSet(p, 2*p, 1024, 1)
-  st = start(sp)
-  p, st = next(sp, st)
+  p, st = iterate(sp)
   lp = [ZZRingElem(p)]
   i = no_b
   while i>0
-    p, st = next(sp, st)
+    p, st = iterate(sp, st)
     push!(lp, ZZRingElem(p))
     i -= nbits(p[end])
   end
 
   crt_env = Hecke.crt_env(lp)
-  np = Array{ZZRingElem}(length(lp))
+  np = Vector{ZZRingElem}(undef, length(lp))
   for i=1:length(lp)
     np[i] = ZZRingElem(0)
   end
 
 
   lpx = [modular_init(K, p) for p=lp]
-  bp = Array{fqPolyRepFieldElem}(length(lpx), n, n)
+  bp = Array{fqPolyRepFieldElem}(undef, length(lpx), n, n)
   for i=1:length(lpx)
     for k=1:n
       ap = Hecke.modular_proj(b[k], lpx[i])
@@ -186,7 +185,7 @@ function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
   end
 #  bp = [[deepcopy(Hecke.modular_proj(x, me)) for x = b] for me = lpx]
 
-  tmp = Array{fqPolyRepFieldElem}(length(lpx), n)
+  tmp = Array{fqPolyRepFieldElem}(undef, length(lpx), n)
   for i=1:length(lpx)
     for j=1:n
       tmp[i,j] = zero(parent(bp[i, 1, 1]))
@@ -209,7 +208,7 @@ function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
   while i < no_rel + 1
     ll = ll + 1
     if ll % 1000 == 0
-      println("so far $ll tries, avg nbits of norm ", sum_nb/ll)
+      println("so far $ll tries, avg nbits of norm ", sum_nb/ll, " current ", i)
     end
     for j=1:no_coeff
       p  = rand(1:nb)
@@ -252,7 +251,7 @@ function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
   return rels
 end
 
-function local_norm!(n::ZZRingElem, ap::zzModMatrix, me::Hecke.modular_env)
+function local_norm!(n::ZZRingElem, ap::fpMatrix, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
   for j=1:nrows(ap)
@@ -277,28 +276,27 @@ function basis_rels_5(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
     p = 2^60
   end
   sp = PrimesSet(p, 2*p, 1024, 1)
-  st = start(sp)
-  p, st = next(sp, st)
+  p, st = iterate(sp)
   lp = [ZZRingElem(p)]
   i = no_b
   while i>0
-    p, st = next(sp, st)
+    p, st = iterate(sp, st)
     push!(lp, ZZRingElem(p))
     i -= nbits(p[end])
   end
   println("using primes ", lp, " for modular norm")
 
   crt_env = Hecke.crt_env(lp)
-  np = Array{ZZRingElem}(length(lp))
+  np = Array{ZZRingElem}(undef, length(lp))
   for i=1:length(lp)
     np[i] = ZZRingElem(0)
   end
 
 
   lpx = [modular_init(K, p) for p=lp]
-  bp = Array{fpMatrix}(length(lpx))
+  bp = Array{fpMatrix}(undef, length(lpx))
   for i=1:length(lpx)
-    bp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, n)
+    bp[i] = zero_matrix(Native.GF(Int(lpx[i].p), cached=false), n, n)
     for k=1:n
       ap = modular_proj(b[k], lpx[i])
       for l=1:n
@@ -308,11 +306,11 @@ function basis_rels_5(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
   end
 #  bp = [[deepcopy(modular_proj(x, me)) for x = b] for me = lpx]
 
-  tmp = Array{fpMatrix}(length(lpx))
-  lcp = Array{fpMatrix}(length(lpx))
+  tmp = Array{fpMatrix}(undef, length(lpx))
+  lcp = Array{fpMatrix}(undef, length(lpx))
   for i=1:length(lpx)
-    tmp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
-    lcp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
+    tmp[i] = zero_matrix(Native.GF(Int(lpx[i].p), cached=false), n, 1)
+    lcp[i] = zero_matrix(Native.GF(Int(lpx[i].p), cached=false), n, 1)
   end
 
   lc = Vector{Int}()
@@ -329,7 +327,7 @@ function basis_rels_5(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
   @inbounds while i < no_rel + 1
     ll = ll + 1
     if ll % 1000 == 0
-      println("so far $ll tries, avg nbits of norm ", sum_nb/ll)
+      println("so far $ll tries, avg nbits of norm ", sum_nb/ll, " current ", i)
     end
     for j=1:no_coeff
       lc[j]=0
@@ -345,7 +343,7 @@ function basis_rels_5(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
     for j=1:length(lpx)
       zero!(lcp[j])
       for k=lc
-        Nemo.setindex_raw!!(lcp[j], Nemo.getindex_raw(lcp[j], k, 1) + UInt(1), k, 1)
+        Nemo.setindex_raw!(lcp[j], Nemo.getindex_raw(lcp[j], k, 1) + UInt(1), k, 1)
         #should be unlikely - but seems to happen a lot:
         # duplication!
       end
