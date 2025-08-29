@@ -372,7 +372,7 @@ end
 Tests if $a$ is positive definite by testing if all principal minors
 have positive determinant.
 """
-function is_positive_definite(a::ZZMatrix)
+function is_positive_definite(a::Union{QQMatrix, ZZMatrix})
   for i=1:nrows(a)
     if det(sub(a, 1:i, 1:i)) <= 0
       return false
