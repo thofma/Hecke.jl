@@ -314,4 +314,17 @@ end
     U, = unit_group_fac_elem(O; GRH = false)
     @test order(U) == 2
   end
+
+  let # non-maximal orders
+    K, a = quadratic_field(-1)
+    O = order(K, [10*a])
+    @test_throws ArgumentError class_group(O)
+    @test_throws ArgumentError class_number(O)
+  end
+
+  let # class number
+    K, a = quadratic_field(-1)
+    O = maximal_order(K)
+    @test class_number(O) == 1
+  end
 end
