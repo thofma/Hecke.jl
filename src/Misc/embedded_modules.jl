@@ -3,13 +3,44 @@ abstract type _PID <: _RingType end
 abstract type _DD <: _RingType end
 abstract type _Field <: _RingType end
 
-_ring_type(::ZZRing) = _PID
-_ring_type(::PolyRing{<:T}) where {T <: FieldElement} = _PID
-_ring_type(::AbsNumFieldOrder) = _DD
+_ring_type(::Type{ZZRing}) = _PID
+_ring_type(::Type{<:PolyRing{<:T}}) where {T <: FieldElement} = _PID
+_ring_type(::Type{KInftyRing{T}}) where {T <: FieldElement} = _PID
+_ring_type(::Type{<:AbsNumFieldOrder}) = _DD
+_ring_type(R::Ring) = _ring_type(typeof(R))
+
+struct PseudoElement{S, T}
+  elem::S
+  ideal::T
+
+  PseudoElement(elem, ideal) = new{typeof(elem), typeof(ideal)}(elem, ideal)
+end
+
+element(p::PseudoElement) = p.elem
+fractional_ideal(p::PseudoElement) = p.ideal
+
+_pseudo_element(elem, R::Ring) = _pseudo_element(elem, R, _ring_type(R))
+
+function _pseudo_element(elem, R::Ring, ::Type{_PID})
+  return PseudoElement(elem, nothing)
+end
+
+function _pseudo_element(elem, id)
+  return PseudoElement(elem, id)
+end
+
+function _pseudo_element(elem, R::Ring, ::Type{_DD})
+  return PseudoElement(elem, fractional_ideal(R, one(R)))
+end
+
+function Base.:(*)(x::PseudoElement, y::PseudoElement)
+  return PseudoElement(x.elem * y.elem, x.ideal === nothing ? nothing : x.ideal * y.ideal)
+end
+
 
 # Structure to represent R-modules inside S^n, where R <= S are commutative rings and
 # S = Frac(R)
-mutable struct EmbeddedModule{RingType, OverringType}
+mutable struct EmbeddedModule{RingTypeType, RingType, OverringType}
   overstructure::Any # only used to check whether modules are compatible
   generator_matrix
   ring::RingType
@@ -34,7 +65,7 @@ mutable struct EmbeddedModule{RingType, OverringType}
                           ring::RingType,
                           overring::OverringType
       ) where {RingType, OverringType}
-    z = new{RingType, OverringType}(overstructure, generator_matrix, ring, overring, fraction_field_map(ring, overring), 0, -1)
+    z = new{_ring_type(ring), RingType, OverringType}(overstructure, generator_matrix, ring, overring, fraction_field_map(ring, overring), 0, -1)
   end
 end
 
@@ -75,12 +106,14 @@ function _tmp_mat_overring(M::EmbeddedModule, r::Int = 1)
   end
 end
 
-generator_matrix(M::EmbeddedModule{RingType, OverringType}) where {RingType, OverringType} = M.generator_matrix::dense_matrix_type(OverringType)
+generator_matrix(M::EmbeddedModule{_PID, RingType, OverringType}) where {RingType, OverringType} = M.generator_matrix
+
+generator_matrix(M) = M.generator_matrix
 
 # For type _PID, we assume that the ring supports hnf and hnf_modular_eldiv with all
 # trim options and shape options
 
-function basis_matrix_numerator(M::EmbeddedModule{RingType, OverringType}) where {RingType, OverringType}
+function basis_matrix_numerator(M::EmbeddedModule{_PID, RingType, OverringType}) where {RingType, OverringType}
   if !isdefined(M, :basis_matrix_numerator)
     if isdefined(M, :basis_matrix)
       N, d = decompose(fraction_map(M), basis_matrix(M))
@@ -101,12 +134,31 @@ function basis_matrix_numerator(M::EmbeddedModule{RingType, OverringType}) where
   return M.basis_matrix_numerator::dense_matrix_type(RingType)
 end
 
-basis_matrix_components(M::EmbeddedModule{RingType, OverringType}) where {RingType, OverringType} = (basis_matrix_numerator(M), M.denominator)::Tuple{dense_matrix_type(RingType), elem_type(RingType)}
+basis_matrix_components(M::EmbeddedModule{_PID, RingType, OverringType}) where {RingType, OverringType} = (basis_matrix_numerator(M), M.denominator)::Tuple{dense_matrix_type(RingType), elem_type(RingType)}
 
-function basis_matrix(M::EmbeddedModule{RingType, OverringType}) where {RingType, OverringType}
+function basis_matrix(M::EmbeddedModule{_DD, RingType, OverringType}) where {RingType, OverringType}
   if isdefined(M, :basis_matrix)
-    return M.basis_matrix
+    return M.basis_matrix::pseudo_matrix_type(RingType, OverringType)
   end
+  N = pseudo_hnf(generator_matrix(M), :lowerleft)
+  # trim myself :(
+  NN = matrix(N)
+  k = findfirst(i -> !is_zero_row(NN, i), 1:nrows(NN))
+  N = sub(N, k:nrows(N), 1:ncols(N))
+  M.basis_matrix = N
+  return N
+end
+
+function basis_matrix(M::EmbeddedModule{_PID, RingType, OverringType}) where {RingType, OverringType}
+  if isdefined(M, :basis_matrix)
+    return M.basis_matrix::dense_matrix_type(OverringType)
+  else
+    @assert isdefined(M, :generator_matrix)
+    N, d = decompose(fraction_map(M), generator_matrix(M))
+    NN = _hnf(N; shape = :lowerleft, trim = true)
+    set_basis_matrix_components(M, NN, d)
+  end
+
   @assert isdefined(M, :basis_matrix_numerator)
   N = basis_matrix_numerator(M)
   d = M.denominator
@@ -168,20 +220,20 @@ function rank(M::EmbeddedModule)
   end
   return M.rank
 end
-#
-function embedded_module(R::Ring, M::MatrixElem; overstructure = nothing, is_basis_matrix = false)
-  S = base_ring(M)
-  n = nrows(M)
-  return EmbeddedModule(overstructure, M, R, S)
-end
+# #
+# function embedded_module(R::Ring, M#=::MatrixElem or PMat=#; overstructure = nothing, is_basis_matrix = false)
+#   S = _ring_type(R) === _DD ? nf(base_ring(M)) : base_ring(M) # fix this
+#   n = nrows(M)
+#   return EmbeddedModule(overstructure, M, R, S)
+# end
 
 zero_embedded_module(R, S, n::Int) = embedded_module(R, S, zero_matrix(S, 0, n))
 
-function embedded_module(R::Ring, S::Ring, M::MatrixElem; overstructure = nothing, is_basis_matrix = false, inverse = nothing)
-  if base_ring(M) === S
-    N = embedded_module(R, M; overstructure)
+function embedded_module(R::Ring, S::Ring, M#=::MatrixElem or PMat=#; overstructure = nothing, is_basis_matrix = false, inverse = nothing)
+  if base_ring(M) === S || _ring_type(R) === _DD
+    N = EmbeddedModule(overstructure, M, R, S)
   else
-    N = embedded_module(R, change_base_ring(S, M); overstructure)
+    N = EmbeddedModule(overstructure, change_base_ring(S, M), R, S)
   end
 
   if is_basis_matrix
@@ -325,7 +377,7 @@ has_full_rank(M::EmbeddedModule) = rank(M) == ambient_rank(M)
 ################################################################################
 
 # PIP
-function _in(a::Vector, M::EmbeddedModule)
+function _in(a::Vector, M::EmbeddedModule{_PID})
   if isdefined(M, :basis_matrix_inverse)
     t = _tmp_vec_overring(M)
     mul!(t, a, basis_matrix_inverse(M))
@@ -340,23 +392,37 @@ function _in(a::Vector, M::EmbeddedModule)
   return can_solve(Mn, x; side = :left)
 end
 
-function _in(a::MatrixElem, M::EmbeddedModule)
+function _in(a::MatrixElem, M::EmbeddedModule{_PID})
   if isdefined(M, :basis_matrix_inverse)
     mul!(a, a, basis_matrix_inverse(M))
     return _has_preimage(fraction_map(M), a)
   end
-  eror("sds")
-  #x, y = decompose(fraction_map(M), a)
-  #Mn, Md = basis_matrix_components(M)
-  #fl = is_divisible_by(Md, y)
-  #if !fl
-  #  return false
-  #end
-  #return can_solve(Mn, x; side = :left)
+  x, y = decompose(fraction_map(M), a)
+  Mn, Md = basis_matrix_components(M)
+  fl = is_divisible_by(Md, y)
+  if !fl
+    return false
+  end
+  return can_solve(Mn, x; side = :left)
+end
+
+# Dedekind domain with given pseudo-element
+function _in((a, id)::Tuple, M::EmbeddedModule{_DD})
+  MB = basis_matrix(M)
+  return _contained_in_span_of_pseudohnf(a, id, MB; shape = :lowerleft)
 end
 
 _map(x, M) = x
 
 function Base.in(x, M::EmbeddedModule)
   return _in(_map(x, M), M)
+end
+
+function Base.in(x::PseudoElement, M::EmbeddedModule)
+  if _ring_type(ring(M)) === _PID
+    return _in(_map(element(x), M), M)
+  else
+    y = _map(element(x), M)
+    return _in((y, fractional_ideal(x)), M)
+  end
 end
