@@ -965,7 +965,7 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
     end
   end
   if isempty(list)
-    return Base.Generator([])
+    return (x for x in Vector{FinGenAbGroupElem}[FinGenAbGroupElem[]])
   end
 
   if minimal
