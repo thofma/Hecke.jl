@@ -572,6 +572,7 @@ include("QuadForm.jl")
 include("FieldFactory.jl")
 include("RieSrf.jl")
 include("../examples/NFDB.jl")
+include("AssociativeAlgebraOrder.jl")
 
 const _RealRings = _RealRing[_RealRing()]
 
