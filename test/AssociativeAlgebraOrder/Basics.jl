@@ -22,4 +22,11 @@
       @test_throws ArgumentError Hecke.new_order(A, R, vcat(identity_matrix(K, 2), zero_matrix(K, 2, 2)); is_basis = true)
     end
   end
+
+  let # Dedekind interface
+    K, = rationals_as_number_field()
+    OK = maximal_order(K)
+    A = matrix_algebra(K, 2)
+    R = Hecke._closure(A, OK, 2 .* basis(A)) # should not crash for now
+  end
 end
