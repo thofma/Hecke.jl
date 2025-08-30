@@ -721,3 +721,27 @@ end
   Aop = matrix_algebra(coefficient_ring(A), BAt, isbasis = true)
   return Aop, hom(A, Aop, identity_matrix(K, d), identity_matrix(K, d))
 end
+
+################################################################################
+#
+#  Iteration interface
+#
+################################################################################
+
+Base.eltype(::Type{A}) where {A<:MatAlgebra} = elem_type(A)
+
+Base.length(A::MatAlgebra) = BigInt(length(base_ring(A)))^(_matdeg(A)^2)
+
+function Base.iterate(A::MatAlgebra)
+  M = matrix_space(base_ring(A), _matdeg(A), _matdeg(A))
+  a_st = iterate(M)
+  a_st === nothing && return nothing
+  return A(first(a_st)), (M, last(a_st))
+end
+
+function Base.iterate(A::MatAlgebra, state)
+  # state[1] is the matrix space
+  a_st = iterate(state[1], state[2])
+  a_st === nothing && return nothing
+  return A(first(a_st)), (state[1], last(a_st))
+end

@@ -262,4 +262,15 @@
   c = [K[0 0 -1 0; 1//2*a^3+a-1//2 -1//2*a^3-a+1//2 1 0; 0 0 0 0; 0 0 0 0],
        K[0 0 0 -1; 1//2*a^3+a+1//2 1//2*a^3+a+1//2 0 1; 0 0 0 0; 0 0 0 0]]
   matrix_algebra(K, c)
+
+  let # iteration
+    k = GF(9)
+    m = matrix_algebra(k, 2)
+    c = @inferred collect(m)
+    @test length(c) == 9^4
+    @test allunique(c)
+    m = matrix_algebra(k, 0)
+    c = @inferred collect(m)
+    @test c == [zero(m)]
+  end
 end
