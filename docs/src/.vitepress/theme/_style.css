@@ -12,6 +12,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 }
 
 /* black */
+/* is this still needed?
 :root {
   --vp-home-hero-name-color: #000000 !important;
 }
@@ -19,6 +20,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 .dark {
   --vp-home-hero-name-color: #ffffff !important;
 }
+*/
 
 .VPHero .clip {
   white-space: pre;
@@ -46,6 +48,17 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
   --julia-red: #CB3C33;
   --julia-green: #389826;
 
+/* Red brand colors */
+  --vp-c-brand: #bd0036;
+  --vp-c-brand-light: #f00044;
+  --vp-c-brand-lighter: #ff2362;
+  --vp-c-brand-lightest: #ff5786;
+  --vp-c-brand-dark: #8a0027;
+  --vp-c-brand-darker: #570018;
+  --vp-c-brand-dimm: rgba(189, 0, 54, 0.08);
+
+
+/* Green brand color omitted
   --vp-c-brand: #389826;
   --vp-c-brand-light: #3dd027;
   --vp-c-brand-lighter: #9499ff;
@@ -53,6 +66,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
   --vp-c-brand-dark: #535bf2;
   --vp-c-brand-darker: #454ce1;
   --vp-c-brand-dimm: #212425;
+*/
 }
 
  /* Component: Button */
@@ -110,7 +124,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     --vp-c-gray-dark-3: hsl(220 12% 23%);
     --vp-c-gray-dark-4: hsl(220 14% 17%);
     --vp-c-gray-dark-5: hsl(220 16% 13%);
-  
+
     /* // Backgrounds */
     /* --vp-c-bg: hsl(240, 2%, 11%); */
     --vp-custom-block-info-bg: hsl(220 14% 17%);
