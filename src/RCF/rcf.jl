@@ -876,7 +876,7 @@ function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::NumF
   dict[h(a)] = 1
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
-    aa = FacElem(dict)
+    aa = FacElem(k, dict)
     @vtime :ClassField 3 fl, b = is_power(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
@@ -892,7 +892,6 @@ function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::NumF
     return hom(K, K, h, evaluate(b)*gen(K)^(r-degree(K)))
   end
 end
-
 
 function _rcf_descent(CF::ClassField_pp)
   if isdefined(CF, :A)
