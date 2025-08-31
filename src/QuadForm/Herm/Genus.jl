@@ -1496,7 +1496,9 @@ Return the global genus symbol `G` of the hermitian lattice `L`. `G` satisfies:
   at the real infinite places of `K` which split into complex places of `E`.
 """
 @attr genus_herm_type(base_field(L)) function genus(L::HermLat)
-  return _genus(L)
+  g = _genus(L)
+  g.representative = L
+  return g
 end
 
 function _genus(L::HermLat)
