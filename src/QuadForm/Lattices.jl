@@ -1081,7 +1081,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
   # We only consider full rank lattices for simplicity
   @req degree(H) == rank(H) "Lattice must be of full rank"
   @req parent(beta) === E "beta must be an element of the base algebra of H"
-  @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
+  #@req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
   @req !is_zero(alpha) "alpha must be non zero"
 
   n = degree(H)
@@ -1098,7 +1098,7 @@ function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha:
   end
 
   @req H isa HermLat "H must be hermitian or defined over the integers"
-  @req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
+  #@req maximal_order(E) == equation_order(E) "Equation order and maximal order must coincide"
 
   # This function perform the trace construction on the level of the
   # ambient spaces - we just need to transport the lattice

@@ -1,5 +1,33 @@
 ###############################################################################
 #
+#  Hermitian lattices
+#
+###############################################################################
+
+@attributes mutable struct HermLat{S, T, U, V, W} <: AbstractLat{S}
+  space::HermSpace{S, T, U, W}
+  pmat::V
+  gram::U
+  rational_span::HermSpace{S, T, U, W}
+  base_algebra::S
+  involution::W
+  automorphism_group_generators::Vector{U}
+  automorphism_group_order::ZZRingElem
+  generators
+  minimal_generators
+  norm
+  scale
+
+  function HermLat{S, T, U, V, W}() where {S, T, U, V, W}
+    z = new{S, T, U, V, W}()
+    return z
+  end
+end
+
+
+
+###############################################################################
+#
 #  Hermitian genera
 #
 ###############################################################################
@@ -33,6 +61,7 @@ mutable struct HermGenus{S, T, U, V}
   LGS::Vector{U}
   rank::Int
   signatures::V
+  representative::HermLat  # TODO: Make this type stable
 
   function HermGenus(E::S, r, LGS::Vector{U}, signatures::V) where {S, U, V}
     K = base_field(E)
@@ -43,32 +72,6 @@ mutable struct HermGenus{S, T, U, V}
       @assert r == rank(LGS[i])
     end
     z = new{S, eltype(primes), U, V}(E, primes, LGS, r, signatures)
-    return z
-  end
-end
-
-###############################################################################
-#
-#  Hermitian lattices
-#
-###############################################################################
-
-@attributes mutable struct HermLat{S, T, U, V, W} <: AbstractLat{S}
-  space::HermSpace{S, T, U, W}
-  pmat::V
-  gram::U
-  rational_span::HermSpace{S, T, U, W}
-  base_algebra::S
-  involution::W
-  automorphism_group_generators::Vector{U}
-  automorphism_group_order::ZZRingElem
-  generators
-  minimal_generators
-  norm
-  scale
-
-  function HermLat{S, T, U, V, W}() where {S, T, U, V, W}
-    z = new{S, T, U, V, W}()
     return z
   end
 end

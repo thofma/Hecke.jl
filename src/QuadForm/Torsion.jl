@@ -101,7 +101,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
 end
 
 @doc raw"""
-    discriminant_group(L::ZZLat) -> TorQuadModule
+    discriminant_group(L::ZZLat, [n::Int]) -> TorQuadModule
 
 Return the discriminant group of `L`.
 
@@ -125,6 +125,8 @@ quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{
   set_attribute!(T, :is_degenerate => false)
   return T
 end
+
+discriminant_group(L::ZZLat, n::Int) = primary_part(discriminant_group(L), n)[1]
 
 @doc raw"""
     order(T::TorQuadModule) -> ZZRingElem
@@ -1014,7 +1016,14 @@ end
 
 function evaluate(p::QQPolyRingElem, f::TorQuadModuleMap)
   @req domain(f) === codomain(f) "f must be a self-map"
-  @req all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
+  if !all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
+    l = lcm(ZZRingElem[denominator(i) for i in coefficients(p)])
+    e = elementary_divisors(domain(f))[end]
+    R,iR = residue_ring(ZZ,e;cached=false)
+    s = preimage(iR,inv(iR(l)))
+    p = s*l*p
+    @req all(a -> is_integral(a), coefficients(p)) "the denominator of p must be coprime to the exponent of the domain of f"
+  end
   return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
 

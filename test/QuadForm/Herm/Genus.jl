@@ -580,6 +580,9 @@ end
     @test prod([fractional_ideal(prime(g))^(sum([rank(g,i)*scale(g,i) for i in 1:length(g)])) for g in G.LGS]) == inv(135*maximal_order(base_field(E)))
   end
 
+  gh = hermitian_genera(E, 8, sig; min_scale = E(1)*maximal_order(E), max_scale = E(1)*maximal_order(E))
+  @test length(gh)==2
+
   @test_throws ArgumentError hermitian_genera(E, -1, sig, DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, min_scale = 0*DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, max_scale = 0*DE)
