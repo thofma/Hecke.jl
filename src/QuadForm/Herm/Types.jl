@@ -24,6 +24,13 @@
   end
 end
 
+function lattice_type(S::Type{<:RelSimpleNumField})
+  T = base_field_type(S)
+  U = AbstractAlgebra.Generic.MatSpaceElem{elem_type(S)}
+  V = PMat{elem_type(S),fractional_ideal_type(order_type(S))}
+  W = morphism_type(S,S)
+  return HermLat{S,T,U,V,W}
+end
 
 
 ###############################################################################
@@ -55,13 +62,13 @@ end
 
 ### Global
 
-mutable struct HermGenus{S, T, U, V}
+mutable struct HermGenus{S, T, U, V,W}
   E::S
   primes::Vector{T}
   LGS::Vector{U}
   rank::Int
   signatures::V
-  representative::HermLat  # TODO: Make this type stable
+  representative::W
 
   function HermGenus(E::S, r, LGS::Vector{U}, signatures::V) where {S, U, V}
     K = base_field(E)
@@ -71,7 +78,7 @@ mutable struct HermGenus{S, T, U, V}
       primes[i] = prime(LGS[i])
       @assert r == rank(LGS[i])
     end
-    z = new{S, eltype(primes), U, V}(E, primes, LGS, r, signatures)
+    z = new{S, eltype(primes), U, V, lattice_type(S)}(E, primes, LGS, r, signatures)
     return z
   end
 end
