@@ -1075,13 +1075,15 @@ the map of change of scalars associated to the underlying trace construction.
 """
 function trace_lattice_with_isometry_and_transfer_data(H::AbstractLat{T}; alpha::FieldElem = one(base_field(H)),
                                                                           beta::FieldElem = gen(base_field(H)),
-                                                                          order::Integer = 2) where T
+                                                                          order::Integer = 2, check::Bool=true) where T
   E = base_field(H)
 
   # We only consider full rank lattices for simplicity
   @req degree(H) == rank(H) "Lattice must be of full rank"
   @req parent(beta) === E "beta must be an element of the base algebra of H"
-  #@req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
+  if check
+    @req (beta == QQ(1) || norm(beta) == 1) "beta must be of norm 1"
+  end
   @req !is_zero(alpha) "alpha must be non zero"
 
   n = degree(H)
