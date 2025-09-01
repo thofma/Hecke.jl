@@ -1016,13 +1016,13 @@ end
 
 function evaluate(p::QQPolyRingElem, f::TorQuadModuleMap)
   @req domain(f) === codomain(f) "f must be a self-map"
-  if !all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
+  if !all(is_integral, coefficients(p))
     l = lcm(ZZRingElem[denominator(i) for i in coefficients(p)])
     e = elementary_divisors(domain(f))[end]
     R, iR = residue_ring(ZZ, e; cached=false)
     s = preimage(iR, inv(iR(l)))
     p = s*l*p
-    @req all(a -> is_integral(a), coefficients(p)) "the denominator of p must be coprime to the exponent of the domain of f"
+    @req all(is_integral, coefficients(p)) "The denominator of p must be coprime to the exponent of the domain of f"
   end
   return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
