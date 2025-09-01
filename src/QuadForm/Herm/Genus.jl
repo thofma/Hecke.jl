@@ -1179,7 +1179,7 @@ end
 #
 ################################################################################
 
-genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{place_type(base_field(E)), Int}}
+genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{place_type(base_field(E)), Int}, lattice_type(E)}
 
 ################################################################################
 #
@@ -1662,8 +1662,8 @@ function representative(G::HermGenus)
   bd = union!(support(2*fixed_ring(M)), support(discriminant(maximal_order(E))))
   union!(bd, lp)
   for p in bd
-    @vprintln :Lattice 1 "Finding representative for $g at $(prime(g))..."
     g = G[p]
+    @vprintln :Lattice 2 "Finding representative for $G at $(prime(g))..."
     L = representative(g)
     @hassert :Lattice 1 genus(L, p) == g
     @vprintln :Lattice 1 "Finding sublattice"

@@ -1190,6 +1190,8 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
+  @vprintln :Lattice 2 "Computing automorphisms of $(C.G[1])"
+
   D = _make_small(C)
   dim = Hecke.dim(C)
 
@@ -1913,6 +1915,11 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
+  @vprintln :Lattice 2 "Computing isometry between"
+  @vprintln :Lattice 2 Ci.G[1]
+  @vprintln :Lattice 2 "and"
+  @vprintln :Lattice 2 Co.G[1]
+
   Di = _make_small(Ci)
   Do = _make_small(Co)
   d = dim(Co)

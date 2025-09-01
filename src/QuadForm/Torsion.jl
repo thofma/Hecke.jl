@@ -114,6 +114,41 @@ $$D \times D \to \mathbb{Q} / \mathbb{Z} \qquad (x,y) \mapsto \Phi(x,y) + \mathb
 
 If `L` is even, then the discriminant group is equipped with the discriminant
 quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{Z}$.
+
+# Input:
+- `n::Int` -- if given, return the ``n``-primary part of the discriminant group
+
+# Examples:
+```jldoctest
+julia> L = rescale(root_lattice(:A,2),10)
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[ 20   -10]
+[-10    20]
+
+julia> discriminant_group(L)
+Finite quadratic module
+  over integer ring
+Abelian group: Z/10 x Z/30
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
+[ 1//5   1//10]
+[1//10   1//15]
+
+julia> discriminant_group(L, 10)
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/10)^2
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
+[4//5   1//5      0      0]
+[1//5   2//5      0      0]
+[   0      0      1   1//2]
+[   0      0   1//2      1]
+
+```
 """
 @attr TorQuadModule function discriminant_group(L::ZZLat)
   @req is_integral(L) "The lattice must be integral"
