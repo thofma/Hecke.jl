@@ -1179,7 +1179,7 @@ end
 #
 ################################################################################
 
-genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{place_type(base_field(E)), Int}, lattice_type(E)}
+genus_herm_type(E) = HermGenus{typeof(E), ideal_type(order_type(base_field(E))), local_genus_herm_type(E), Dict{place_type(base_field(E)), Int}, lattice_type(typeof(E))}
 
 ################################################################################
 #
