@@ -1019,8 +1019,8 @@ function evaluate(p::QQPolyRingElem, f::TorQuadModuleMap)
   if !all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
     l = lcm(ZZRingElem[denominator(i) for i in coefficients(p)])
     e = elementary_divisors(domain(f))[end]
-    R,iR = residue_ring(ZZ,e;cached=false)
-    s = preimage(iR,inv(iR(l)))
+    R, iR = residue_ring(ZZ, e; cached=false)
+    s = preimage(iR, inv(iR(l)))
     p = s*l*p
     @req all(a -> is_integral(a), coefficients(p)) "the denominator of p must be coprime to the exponent of the domain of f"
   end
