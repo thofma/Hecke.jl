@@ -5,21 +5,31 @@
 https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
  */
 
-  /* Layouts */
+/* Layouts */
 
 :root {
   --vp-font-family-mono: "Fira Code", Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-/* black */
+/* Hero Name Color */
 :root {
-  --vp-home-hero-name-color: #bd0036 !important;
-} /* changed from #0000000 */
-
+  --vp-home-hero-name-color: #bd0036;
+}
 
 .dark {
-  --vp-home-hero-name-color: #bd0036 !important;
-} /* changed from #ffffff */
+  --vp-home-hero-name-color: #bd0036;
+
+/* Highlighted gradient to match modular logo
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(
+    120deg,
+    #bd0036 45%,
+    #ffbc00 65%,
+    #ab7b9b 98%
+  );
+
+*/
+}
 
 .VPHero .clip {
   white-space: pre;
@@ -92,13 +102,6 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 /* Component: Home */
 
 :root {
-    --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(
-    120deg,
-    #e4c92a,
-    #dd3365,
-    #3782b9 80%
-  );
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: blur(40px);
 }

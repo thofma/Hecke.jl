@@ -8,7 +8,7 @@ hero:
   text: Computational number theory for everyone
   tagline: A fast, open-source computer algebra system for computational number theory
   image:
-    src: /Hecke_logo_shift2.png
+    src: /assets/modular/Hecke_logo_modular2.png
     alt: Hecke.jl
   actions:
     - theme: brand

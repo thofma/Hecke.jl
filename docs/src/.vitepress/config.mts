@@ -21,7 +21,7 @@ export default defineConfig({
       {
         rel: "apple-touch-icon",
         sizes: "180x180",
-        href: "/apple-touch-icon.png",
+        href: "/assets/modular/apple-touch-icon.png",
       },
     ],
     [
@@ -30,7 +30,7 @@ export default defineConfig({
         rel: "icon",
         type: "image/png",
         sizes: "32x32",
-        href: "/favicon-32x32.png",
+        href: "/assets/modular/favicon-32x32.png",
       },
     ],
     [
@@ -39,10 +39,10 @@ export default defineConfig({
         rel: "icon",
         type: "image/png",
         sizes: "16x16",
-        href: "/favicon-16x16.png",
+        href: "/assets/modular/favicon-16x16.png",
       },
     ],
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', href: '/assets/modular/favicon.ico' }],
     ['script', {src: '/versions.js'}],
     ['script', {src: `${baseTemp.base}warner.js`}],
     ['script', {src: `${baseTemp.base}siteinfo.js`}]
@@ -81,7 +81,7 @@ export default defineConfig({
       dark: "github-dark"}
   },
   themeConfig: {
-    logo: '/Hecke_logo_shift2.png',
+    logo: '/assets/modular/Hecke_logo_modular2.png',
     search: {
       provider: 'local',
       options: {
