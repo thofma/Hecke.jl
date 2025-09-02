@@ -22,7 +22,7 @@ quaternion_algebra(::Field, ::Any, ::Any)
 ## Arithmetic of elements
 
 ```@docs
-conjugate(a::AssociativeAlgebraElem)
+conj(a::AssociativeAlgebraElem)
 ```
 
 ```@docs; canonical=false
