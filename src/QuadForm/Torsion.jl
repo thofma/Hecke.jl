@@ -101,7 +101,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
 end
 
 @doc raw"""
-    discriminant_group(L::ZZLat) -> TorQuadModule
+    discriminant_group(L::ZZLat, [n::Int]) -> TorQuadModule
 
 Return the discriminant group of `L`.
 
@@ -114,6 +114,41 @@ $$D \times D \to \mathbb{Q} / \mathbb{Z} \qquad (x,y) \mapsto \Phi(x,y) + \mathb
 
 If `L` is even, then the discriminant group is equipped with the discriminant
 quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{Z}$.
+
+# Input:
+- `n::Int` -- if given, return the ``n``-primary part of the discriminant group
+
+# Examples:
+```jldoctest
+julia> L = rescale(root_lattice(:A,2),10)
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[ 20   -10]
+[-10    20]
+
+julia> discriminant_group(L)
+Finite quadratic module
+  over integer ring
+Abelian group: Z/10 x Z/30
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
+[ 1//5   1//10]
+[1//10   1//15]
+
+julia> discriminant_group(L, 10)
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/10)^2
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
+[4//5   1//5      0      0]
+[1//5   2//5      0      0]
+[   0      0      1   1//2]
+[   0      0   1//2      1]
+
+```
 """
 @attr TorQuadModule function discriminant_group(L::ZZLat)
   @req is_integral(L) "The lattice must be integral"
@@ -125,6 +160,8 @@ quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{
   set_attribute!(T, :is_degenerate => false)
   return T
 end
+
+discriminant_group(L::ZZLat, n::Int) = primary_part(discriminant_group(L), n)[1]
 
 @doc raw"""
     order(T::TorQuadModule) -> ZZRingElem
@@ -1014,7 +1051,14 @@ end
 
 function evaluate(p::QQPolyRingElem, f::TorQuadModuleMap)
   @req domain(f) === codomain(f) "f must be a self-map"
-  @req all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
+  if !all(is_integral, coefficients(p))
+    l = lcm(ZZRingElem[denominator(i) for i in coefficients(p)])
+    e = elementary_divisors(domain(f))[end]
+    R, iR = residue_ring(ZZ, e; cached=false)
+    s = preimage(iR, inv(iR(l)))
+    p = s*l*p
+    @req all(is_integral, coefficients(p)) "The denominator of p must be coprime to the exponent of the domain of f"
+  end
   return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
 

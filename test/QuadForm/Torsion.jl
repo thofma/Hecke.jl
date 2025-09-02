@@ -8,6 +8,7 @@
   S = lattice(ambient_space(L),basis_matrix(L)[1:1,:])
   @test order(discriminant_group(S)) == 4
   @test discriminant_group(S) === discriminant_group(S)
+  @test order(discriminant_group(S, 3))==1
 
   D4_gram = matrix(ZZ, [[2, 0, 0, -1],
                         [0, 2, 0, -1],
