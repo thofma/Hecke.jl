@@ -1,5 +1,6 @@
 # alternative names for some functions from Base
 @alias trace tr
+@alias conjugate conj
 
 # alternative names for some functions from LinearAlgebra
 # we don't use the `@alias` macro here because we provide custom
