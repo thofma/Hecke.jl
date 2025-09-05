@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.37.7"
+version = "0.38.0"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -20,19 +20,22 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 GAP = "c863536a-3901-11e9-33e7-d5cd0df7b904"
 Polymake = "d720cf60-89b5-51f5-aff5-213f193123e7"
 
+[sources]
+Nemo = {path = "/Users/thofma/software/Nemo.jl/"}
+
 [extensions]
 GAPExt = "GAP"
 PolymakeExt = "Polymake"
 
 [compat]
-AbstractAlgebra = "0.46.1"
+AbstractAlgebra = "0.47.0"
 Artifacts = "1.10"
 Dates = "1.10"
 Distributed = "1.10"
 FLINT_jll = "~301.300.000"
 GAP = "0.13, 0.14, 0.15"
 LinearAlgebra = "1.10"
-Nemo = "0.51"
+Nemo = "0.52"
 Pkg = "1.10"
 Polymake = "0.10, 0.11, 0.12, 0.13"
 Printf = "1.10"
