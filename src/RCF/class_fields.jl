@@ -669,13 +669,13 @@ function _grunwald_wang(d::Dict{<:Any, Int})
   @assert all(x->k === number_field(order(x)), lp)
 
   deg = lcm([x for x = values(d)]...)
-  ld = factor(deg).fac
-  if length(keys(ld)) == 1
+  ld = factor(deg)
+  if length(ld) == 1
     return _grunwald_wang_pp(d)
   end
   S = ray_class_field(1*maximal_order(k))
-  for p = keys(ld)
-    dp = Dict(x => Int(gcd(v, p^ld[p])) for (x, v) = d)
+  for (p, k) in ld
+    dp = Dict(x => Int(gcd(v, p^k)) for (x, v) = d)
     S *= _grunwald_wang_pp(dp)
   end
   return rewrite_with_conductor(S)

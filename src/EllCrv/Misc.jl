@@ -48,9 +48,9 @@ function quadroots(a, b, c, p)
   end
 
   fac = factor(f)
-  p = first(keys(fac.fac))
+  p, k = first(fac)
 
-  if fac[p] == 2 # f has a double zero
+  if k == 2 # f has a double zero
     return true
   elseif length(fac) == 2 # f splits into two different linear factors
     return true
@@ -75,9 +75,9 @@ function quadroots(a, b, c, _res::Union{Function, MapFromFunc})
   end
 
   fac = factor(f)
-  p = first(keys(fac.fac))
+  p, k = first(fac)
 
-  if fac[p] == 2 # f has a double zero
+  if k == 2 # f has a double zero
     return true
   elseif length(fac) == 2 # f splits into two different linear factors
     return true
@@ -104,7 +104,7 @@ function quadroots(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, c::AbsSim
   end
 
   fac = factor(f)
-  p = first(keys(fac.fac))
+  p, k = first(fac)
 
   if fac[p] == 2 # f has a double zero
     return true
@@ -129,13 +129,13 @@ function nrootscubic(b, c, d, p)
   fac = factor(f)
 
   if length(fac) == 1
-    if fac[first(keys(fac.fac))] == 3
+    if fac[first(fac)[1]] == 3
       return ZZ(3)
     else
       return ZZ(0)
     end
   elseif length(fac) == 2
-    if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
+    if fac[first(fac)[1]]== 1 && fac[first(fac)[1]] == 1
       # one linear and one irreducible quadratic factor
       return ZZ(1)
     else
@@ -157,13 +157,13 @@ function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsS
 
   fac = factor(f)
   if length(fac) == 1
-    if fac[first(keys(fac.fac))] == 3
+    if fac[first(fac)[1]] == 3
       return ZZ(3)
     else
       return ZZ(0)
     end
   elseif length(fac) == 2
-    if fac[first(keys(fac.fac))]== 1 && fac[first(keys(fac.fac))] == 1
+    if fac[first(fac)[1]]== 1 && fac[first(fac)[1]] == 1
       # one linear and one irreducible quadratic factor
       return ZZ(1)
     else

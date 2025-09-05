@@ -170,7 +170,7 @@ function conductors_tame(O::AbsSimpleNumFieldOrder, n::Int, bound::ZZRingElem; u
   #
   d = degree(O)
   K = nf(O)
-  wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
+  wild_ram = prime_divisors(n)
   ram_primes = ramified_primes(O)
   filter!(x -> !is_divisible_by(ZZRingElem(n),x), ram_primes)
   sort!(ram_primes)
@@ -229,7 +229,7 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
   d = degree(O)
   n = prod(a)
   expo = a[end]
-  wild_ram = collect(keys(factor(n).fac))
+  wild_ram = prime_divisors(n)
 
   #
   # First, conductors for tamely ramified extensions
@@ -289,7 +289,7 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
     #The prime may be also tamely ramified!
     nisc = gcd(q^(FqPolyRepFieldElem)-1, ZZRingElem(expo))
     if nisc != 1
-      fnisc=minimum(keys(factor(nisc).fac))
+      fnisc=minimum(prime_divisors(nisc))
       nq=sq^((fnisc-1)*(divexact(n, fnisc)))
       for s=1:l
         nn=nq*wild_list[s][3]
@@ -461,7 +461,7 @@ function conductors_tameQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZR
   #  degree of the extension we are searching for.
   #
   n = prod(a)
-  wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
+  wild_ram = prime_divisors(ZZ(n))
   m = minimum(wild_ram)
   k = divexact(n, m)
   b1 = Int(iroot(ZZRingElem(bound),Int((m-1)*k)))
@@ -476,7 +476,7 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
   d = degree(O)
   n = prod(a)
   expo = a[end]
-  wild_ram = collect(keys(factor(ZZRingElem(n)).fac))
+  wild_ram = prime_divisors(n)
 
   #
   # First, conductors for tamely ramified extensions
@@ -524,7 +524,7 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
       bound_max_exp = min(bound_max_exp, valuation(expo, q)+1)
     end
     if nisc != 1
-      fnisc=minimum(keys(factor(nisc).fac))
+      fnisc=minimum(prime_divisors(nisc))
       nq=ZZRingElem(q)^((fnisc-1)*(divexact(n, fnisc)))
       for s=1:l
         nn=nq*wild_list[s][3]
@@ -590,7 +590,7 @@ function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, abso
   if only_tame
     return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in conds_tame]
   end
-  wild = collect(keys(factor(gtype[end]).fac))
+  wild = prime_divisors(gtype[end])
   n = prod(gtype)
   bound = div(absolute_bound, abs(discriminant(OK))^n)
   wild_primes = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, UnitRange{Int}}}()
@@ -680,7 +680,7 @@ end
 
 function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem)
   n = prod(gtype)
-  wild = collect(keys(factor(n).fac))
+  wild = prime_divisors(n)
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
   @vprintln :AbExt 1 "Tame conductors: Computing prime ideals ... "
@@ -696,7 +696,7 @@ function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int},
       continue
     end
     fgn = factor(gn)
-    k = minimum(keys(fgn.fac))
+    k = minimum(prime_divisors(gn))
     kp, cpk = ppio(gtype[end], Int(k))
     dP = nP^(div(n, gtype[end])*(k-1)*cpk)
     if dP > bound

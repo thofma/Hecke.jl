@@ -701,7 +701,7 @@ function normal_basis(L::RelSimpleNumField{AbsSimpleNumFieldElem}, check::Bool =
       # Lift an idempotent of O/pO
       immF = pseudo_inv(mmF)
       fac = factor(ft)
-      gt = divexact(ft, first(keys(fac.fac)))
+      gt = divexact(ft, first(fac)[1])
       g = fq_poly_to_nf_elem_poly(parent(L.pol), immF, gt)
       return L(g)
     end

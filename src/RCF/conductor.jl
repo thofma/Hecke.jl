@@ -1632,7 +1632,7 @@ function lorenz_module(k::AbsSimpleNumField, n::Int; containing=false)
     end
   end
   lf = factor(n)
-  return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l, containing = containing) for (p,l) = lf.fac])
+  return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l, containing = containing) for (p, l) in lf])
 end
 
 #TODO: is this the right interface???
@@ -1680,7 +1680,7 @@ function norm(m::T, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) where 
   Qt = parent(K.pol)
   h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
   d = Dict{AbsSimpleNumFieldElem, ZZRingElem}()
-  for (e,v) = a.fac
+  for (e, v) in a
     n = resultant(h, mod(change_base_ring(k, Qt(e), parent = kt), h))
     if haskey(d, n)
       d[n] += v
