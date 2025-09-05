@@ -655,26 +655,3 @@ function postinverse(f::FinGenAbGroupHom)
   @req is_injective(f) "Map must be injective"
   return hom(codomain(f), domain(f), _prepostinverse(f))
 end
-
-################################################################################
-#
-#  Show
-#
-################################################################################
-
-function Base.show(io::IO, mime::MIME"text/plain", M::FinGenAbGroupHom)
-  if has_attribute(M, :is_identity)
-    io = pretty(io)
-    println(io, "Identity map")
-    print(io, Indent(), "of ", Lowercase())
-    show(io, MIME("text/plain"), domain(M))
-    print(io, Dedent())
-  else
-    AbstractAlgebra.show_map_head(io, M)
-    println(io)
-    io = pretty(io)
-    println(io, Indent(), "from ", Lowercase(), domain(M))
-    print(io, "to ", Lowercase(), codomain(M), Dedent())
-    AbstractAlgebra.show_map_data(io, M)
-  end
-end
