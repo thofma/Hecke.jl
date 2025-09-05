@@ -247,6 +247,7 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
     bas = _subfield_basis(K, elt)
     s = _subfield_primitive_element_from_basis(K, bas)
   end
+  s *= denominator(s)
 
   return _subfield_from_primitive_element(K, s)
 end
