@@ -252,6 +252,7 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
 end
 
 function _subfield_from_primitive_element(K::AbsSimpleNumField, s::AbsSimpleNumFieldElem)
+  s *= denominator(s)
   @vtime :Subfields 1 f = minpoly(Globals.Qx, s)
   f = denominator(f) * f
   L, _ = number_field(f, cached = false)
