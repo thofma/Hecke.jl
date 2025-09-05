@@ -742,10 +742,10 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
   ffl = QQPolyRingElem[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
-  r = []
+  r = QQFieldElem[]
   if do_roots
     r = [roots(x)[1] for x = fl if degree(x) == 1]
   end

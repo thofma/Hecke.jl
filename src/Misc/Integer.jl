@@ -126,7 +126,7 @@ function preimage(f::MapSUnitGrpZFacElem, a::QQFieldElem)
 end
 
 function preimage(f::MapSUnitGrpZFacElem, a::FacElem)
-  return sum(FinGenAbGroupElem[e * preimage(f, k) for (k, e) = a.fac])
+  return sum(FinGenAbGroupElem[e * preimage(f, k) for (k, e) in a])
 end
 
 @doc raw"""
@@ -209,7 +209,7 @@ mutable struct Divisors{T}
     r = new{T}()
     r.n = a
     r.lf = MSet{T}()
-    for (p, k) = factor(a).fac
+    for (p, k) = factor(a)
       k = div(k, power)
       if k > 0
         push!(r.lf, T(p), k)
@@ -259,7 +259,7 @@ mutable struct Divisors{T}
     r = new{ZZRingElem}()
     r.n = evaluate(a)
     r.lf = MSet{ZZRingElem}()
-    for (p, k) = factor(a).fac
+    for (p, k) = factor(a)
       k = div(k, power)
       if k > 0
         push!(r.lf, p, k)
@@ -472,11 +472,14 @@ end
 
 function euler_phi(x::FacElem{ZZRingElem,ZZRing})
   x = factor(x)
-  return prod((p - 1) * p^(v - 1) for (p, v) = x.fac)
+  return prod((p - 1) * p^(v - 1) for (p, v) in x)
 end
 
-function carmichael_lambda(x::Fac{ZZRingElem})
+function carmichael_lambda(_x::Fac{ZZRingElem})
   two = ZZRingElem(2)
+  # we want to swap out x under our feets, so we use a Dict instead
+  # (better behaved with respect to copying)
+  x = Dict(p => e for (p, e) in _x)
   if haskey(x.fac, two)
     y = deepcopy(x.fac)
     v = y[two]
@@ -504,7 +507,7 @@ function carmichael_lambda(x::ZZRingElem)
     c = ZZRingElem(1)
   else
     x = factor(x)
-    c = reduce(lcm, (p - 1) * p^(v - 1) for (p, v) = x.fac)
+    c = reduce(lcm, (p - 1) * p^(v - 1) for (p, v) in x)
   end
   if v == 2
     c = lcm(2, c)
@@ -547,23 +550,21 @@ function factor(a::FacElem{ZZRingElem,ZZRing})
   b = simplify(a)
   c = Dict{ZZRingElem,Int}()
   s = ZZRingElem(1)
-  for (p, k) = b.fac
+  for (p, k) in b
     lp = factor(p)
-    s *= lp.unit
-    for (q, w) = lp.fac
+    s *= unit(lp)
+    for (q, w) in lp
       c[q] = w * k
     end
   end
-  l = Fac{ZZRingElem}()
-  l.fac = c
-  l.unit = s
+  l = Fac(s, Nemo._pretty_sort(c))
   return l
 end
 
 function FacElem(a::Fac{ZZRingElem})
-  f = FacElem(a.fac)
-  if a.unit == -1
-    return a.unit * f
+  f = FacElem(Dict(p => e for (p, e) in a))
+  if unit(a) == -1
+    return unit(a) * f
   end
   return f
 end
@@ -574,7 +575,7 @@ end
 
 =#
 
-radical(a::ZZRingElem) = prod(keys(factor(a).fac))
+radical(a::ZZRingElem) = prod(p for p in prime_divisors(a))
 function radical(a::T) where {T<:Integer}
   return T(radical(ZZRingElem(a)))
 end
@@ -728,10 +729,9 @@ Factor the rational number $a$ into prime numbers.
 function factor(::ZZRing, a::QQFieldElem)
   fn = factor(numerator(a))
   fd = factor(denominator(a))
-  for (p, e) = fd
-    fn.fac[p] = -e
-  end
-  return fn
+  arr = [p => e for (p, e) in fn]
+  Nemo._pretty_sort!(append!(arr, (p => -e for (p, e) in fd)))
+  return Fac(unit(fn), arr)
 end
 
 ################################################################################
@@ -741,7 +741,7 @@ end
 ################################################################################
 
 function support(d::ZZRingElem)
-  return collect(keys(factor(d).fac))
+  return prime_divisors(d)
 end
 
 function support(a::QQFieldElem)

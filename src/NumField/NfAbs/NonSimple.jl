@@ -1168,7 +1168,7 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
 
   res = Dict{PolyRingElem{AbsNonSimpleNumFieldElem}, Int64}()
 
-  for i in keys(fac.fac)
+  for (i, _) in fac
     t = change_base_ring(K, i, parent = Kx)
     t = compose(t, gen(Kx) + k*pe, inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)

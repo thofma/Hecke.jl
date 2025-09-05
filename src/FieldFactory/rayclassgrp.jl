@@ -457,10 +457,9 @@ end
 function ray_class_group_quo(O::AbsSimpleNumFieldOrder, m::Int, wprimes::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}, inf_plc::Vector{<: InfPlc}, ctx::ctx_rayclassgrp; GRH::Bool = true)
 
   d1 = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
-  lp = factor(m)
   I = ideal(O, 1)
   minI = ZZRingElem(1)
-  for q in keys(lp.fac)
+  for q in prime_divisors(m)
     lq = prime_decomposition(O, q)
     for (P, e) in lq
       if !haskey(wprimes, P)

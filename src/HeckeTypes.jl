@@ -1998,9 +1998,9 @@ mutable struct ZpnGModule <: GModule
     z.G=G
     z.V=V
     z.R=parent(G[1][1,1])
-    f=factor(ZZRingElem(z.R.n))
-    @assert length(f.fac)==1
-    z.p=Int(first(keys(f.fac)))
+    fl, k, p = is_prime_power_with_data(Int(z.R.n))
+    @req fl "Modulus ($(z.R.n)) must be a prime power"
+    z.p=p
     return z
   end
 

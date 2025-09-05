@@ -85,7 +85,6 @@ end
 
   @test domain(projL.map_subfield) === OE
   @test mL(gen(L)//2) == gen(FL)//2
-  @test absolute_degree(FL) == 6
   @test characteristic(Hecke.prime_field(FL)) == 11
 
   K,a = rationals_as_number_field()

@@ -385,7 +385,7 @@ end
 function Hecke.factor(a::HessQRElem)
   f = factor(a.c)
   R = parent(a)
-  return Fac(R(a.f), Dict((R(p),k) for (p,k) = f.fac))
+  return Fac(R(a.f), Dict((R(p),k) for (p,k) in f))
 end
 
 function Hecke.factor(R::HessQR, a::Generic.RationalFunctionFieldElem)
@@ -394,15 +394,15 @@ function Hecke.factor(R::HessQR, a::Generic.RationalFunctionFieldElem)
   d2 = reduce(lcm, map(denominator, coefficients(denominator(a))), init = ZZRingElem(1))
   f2 = factor(R(d1*denominator(a)))
 
-  for (p,k) = f2.fac
-    if haskey(f1.fac, p)
-      f1.fac[p] -= k
+  dic = Dict(p => k for (p, k) in f1)
+  for (p, k) in f2
+    if haskey(dic, p)
+      dic[p] -= k
     else
-      f1.fac[p] = k
+      dic[p] = k
     end
   end
-  f1.unit = divexact(f1.unit, f2.unit)
-  return f1
+  return Fac(divexact(unit(f1), unit(f2)), dic)
 end
 
 function Hecke.is_constant(a::HessQRElem)

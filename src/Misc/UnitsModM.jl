@@ -100,13 +100,12 @@ The unit group of $R = Z/nZ$ together with the appropriate map.
 """
 function UnitGroup(R::Nemo.ZZModRing, mod::ZZRingElem=ZZRingElem(0))
   m = modulus(R)
-  fm = factor(m).fac
+  fm = factor(m)
 
   r = Array{ZZRingElem}(undef, 0)
   g = Array{ZZRingElem}(undef, 0)
   mi = Array{ZZRingElem}(undef, 0)
-  for p=keys(fm)
-    k = fm[p]
+  for (p, k) in fm
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
       continue
     end
@@ -168,13 +167,12 @@ end
 function UnitGroup(R::Nemo.zzModRing, mod::ZZRingElem=ZZRingElem(0))
 
   m = Int(R.n)
-  fm = factor(ZZRingElem(m)).fac
+  fm = factor(ZZRingElem(m))
 
   r = Array{ZZRingElem}(undef, 0)
   g = Array{ZZRingElem}(undef, 0)
   mi = Array{ZZRingElem}(undef, 0)
-  for p=keys(fm)
-    k = fm[p]
+  for (p, k) in fm
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
       continue
     end
@@ -258,10 +256,9 @@ Computes $g$ s.th. $a^g == b mod M$. $M$ has to be a power of an odd prime
 and $a$ a generator for the multiplicative group mod $M$.
 """
 function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
-  fM = factor(M).fac
-  @assert length(keys(fM)) == 1
-  p = first(keys(fM))
-  if p==2
+  fl, k, p = is_prime_power_with_data(M)
+  @req fl "Modulus ($M) must be the power of a prime"
+  if p == 2
     if (a+1) % 4 == 0
       if b%4 == 3
         return ZZRingElem(1)
@@ -279,13 +276,13 @@ function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
       end
       @assert (b-1) % 8 == 0
       @assert (a^2-1) % 8 == 0
-      if fM[p] > 3
-        F = padic_field(p, precision = fM[p], cached = false)
+      if k > 3
+        F = padic_field(p, precision = k, cached = false)
         g += 2*lift(divexact(log(F(b)), log(F(a^2))))
       end
       return g
     else
-      error("illegal generator mod 2^$(fM[p])")
+      error("illegal generator mod 2^$(k)")
     end
   end
 
@@ -318,7 +315,7 @@ function disc_log_mod(a::ZZRingElem, b::ZZRingElem, M::ZZRingElem)
   B = b*powermod(a, -g, M) %M
   @assert B%p == 1
   @assert A%p == 1
-  lp = [fM[p]]
+  lp = [k]
   while lp[end] > 1
     push!(lp, div(lp[end]+1, 2))
   end

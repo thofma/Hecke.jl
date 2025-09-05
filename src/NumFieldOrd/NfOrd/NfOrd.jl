@@ -366,7 +366,7 @@ end
 Returns the list of prime numbers that divide $\operatorname{disc}(\mathcal O)$.
 """
 function ramified_primes(O::AbsNumFieldOrder)
-  return collect(keys(factor(discriminant(O)).fac))
+  return prime_divisors(discriminant(O))
 end
 
 ################################################################################
