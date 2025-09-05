@@ -1212,9 +1212,9 @@ Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
 #TODO: move to Arithmetic?
 function radical(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   a = minimum(A)
-  lp = factor(a).fac
+  lp = factor(a)
   R = 1*order(A)
-  for p = keys(lp)
+  for (p, _) in lp
     R = intersect(R, A + pradical(order(A), p))
   end
   return R
@@ -1231,9 +1231,9 @@ is_maximal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) =
 
 function primary_decomposition(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   a = minimum(A)
-  lp = factor(a).fac
+  lp = factor(a)
   P = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[]
-  for p = keys(lp)
+  for (p, _) in lp
     pp = prime_ideals_over(order(A), p)
     for x = pp
       if !is_coprime(x, A)

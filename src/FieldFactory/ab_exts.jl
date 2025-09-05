@@ -959,7 +959,7 @@ function discriminant_conductor(C::ClassField, bound::ZZRingElem; lwp::Dict{Tupl
   n = degree(C)
   e = Int(exponent(C))
   lp = mr.fact_mod
-  abs_disc = Dict(p => e for (p, e) in factor(discriminant(O)^n))
+  abs_disc = Dict(p => n*e for (p, e) in factor(discriminant(O)))
   if isempty(lp)
     C.absolute_discriminant=abs_disc
     return true

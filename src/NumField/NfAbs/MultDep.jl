@@ -5,7 +5,7 @@ import Base.*
 
 """
 Given A[i] elements in K, find matrices I and U s.th.
-A^I is a basis for 
+A^I is a basis for
   <A[i] | i>/Units < K^*/Units
 actually a sub-group of the S-unit group for a coprime base
 generated from the elements in A.
@@ -14,7 +14,7 @@ A^U is a generating set for the relations:
   <A^U> < Units
 and every u s.th. A^u is a unit is in the span of U
 
-The coprime base is returned as well, the columns of I correspond to the 
+The coprime base is returned as well, the columns of I correspond to the
 ordeing of the base.
 """
 function syzygies_sunits_mod_units(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder}=nothing)
@@ -51,7 +51,7 @@ function syzygies_sunits_mod_units(A::Vector{AbsSimpleNumFieldElem}; use_ge::Boo
   # - M is naturally sparse, hence it makes sense
   # - for this application we need all units, hence the complete
   #   kernel - which is huge and dense...
-  # - cp seems to not be used for anything afterwards. 
+  # - cp seems to not be used for anything afterwards.
   #   It will be when we actually create the group, in the DiscLog
   h, t = Hecke.hnf_kannan_bachem(M, Val(true), truncate = true)
   return h, t, cp
@@ -162,7 +162,7 @@ function divexact(a::GeIdeal, b::GeIdeal; check::Bool=true)
 end
 
 Hecke.norm(a::GeIdeal) = norm(a.a)
-#XXX:  not sure if those 2 should get "exported", Ge does not seem to be 
+#XXX:  not sure if those 2 should get "exported", Ge does not seem to be
 #      overly fast....
 #TODO: do an integer coprime base first, then refine. Possibly also do
 #      a p-maximality for all p from the integer coprime base.
@@ -214,16 +214,16 @@ end
 
 """
 A a vector of units in fac-elem form. Find matrices U and V s.th.
-A^U is a basis for <A>/Tor 
+A^U is a basis for <A>/Tor
 and
 A^V is a generating system for the relations of A in Units/Tor
 
-The pAdic Ctx is returned as well  
+The pAdic Ctx is returned as well
 """
 function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
-  m = maximum(degree, keys(factor(GF(p), K.pol).fac))
+  m = maximum(degree, first.(factor(GF(p), K.pol)))
   while m > 4
     p = next_prime(p)
     m = maximum(degree, keys(factor(GF(p), K.pol).fac))
@@ -330,7 +330,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
     for the case of n=s+1 this is mostly the "normal" construction.
     Note: as a side, the relations do not have to be primitive.
       If they are, (and n=s+1), then H = 1
-    We deal with that by saturation  
+    We deal with that by saturation
   =#
 
   for i=1:length(uu)-1
@@ -344,11 +344,11 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   end
 
   U = saturate(U)
-  
+
   _, U = hnf_with_transform(transpose(U))
 
   k = base_ring(A[1])
-  
+
   U = inv(U)
   V = sub(U, 1:nrows(U), 1:ncols(U)-length(u)) #the torsion part
   U = sub(U, 1:nrows(U), ncols(U)-length(u)+1:ncols(U))
@@ -394,13 +394,13 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
   b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
 #  @show B , sum(x*x for x = b), is_torsion_unit(t)[1]
   @hassert :qAdic 1 (B > sum(x*x for x = b)) == is_torsion_unit(t)[1]
-  fl =  B > sum(x*x for x = b) 
+  fl =  B > sum(x*x for x = b)
   @hassert :qAdic 2 fl == is_torsion_unit(evaluate(t))
   return fl
 end
 
 """
-A padic number a is internally written as 
+A padic number a is internally written as
   p^v*u
 for a unit u given in some precision.
 This returns u, v and the precision
@@ -508,7 +508,7 @@ end
 @doc raw"""
     multiplicative_group(A::Vector{AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
 
-Return the subgroup of the multiplicative group of the number field generated 
+Return the subgroup of the multiplicative group of the number field generated
 by the elements in `A` as an abstract abelian group together with a map
 mapping group elements to number field elements and vice-versa.
 """
@@ -518,7 +518,7 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
   S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord)
   u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
   g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
-  
+
   U, T, C = syzygies_units_mod_tor(u)
   g2 = Hecke._transform(u, transpose(U))
   if length(T) == 0
