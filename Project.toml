@@ -20,6 +20,9 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 GAP = "c863536a-3901-11e9-33e7-d5cd0df7b904"
 Polymake = "d720cf60-89b5-51f5-aff5-213f193123e7"
 
+[sources]
+AbstractAlgebra = {path = "/Users/thofma/software/AbstractAlgebra.jl/"}
+
 [extensions]
 GAPExt = "GAP"
 PolymakeExt = "Polymake"
