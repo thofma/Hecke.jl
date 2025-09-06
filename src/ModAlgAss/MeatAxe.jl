@@ -421,8 +421,8 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     A = G[1]
     poly = minpoly(Kx, A)
     sq = factor_squarefree(poly)
-    lf = factor(first(keys(sq.fac)))
-    t = first(keys(lf.fac))
+    lf = factor(first(sq)[1])
+    t = first(lf)[1]
     if degree(t)==n
       M.is_irreducible = 1
       return true, identity_matrix(K, n)

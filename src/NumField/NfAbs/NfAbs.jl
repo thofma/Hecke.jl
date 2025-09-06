@@ -386,7 +386,7 @@ function _normal_basis_generator(K, p)
   Rx, x = polynomial_ring(R, "x", cached = false)
   f = Rx(K.pol)
   fac = factor(f)
-  g = divexact(f, first(keys(fac.fac)))
+  g = divexact(f, first(fac)[1])
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   g1 = lift(Zy, g)
   return K(g1)
@@ -742,10 +742,10 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
   ffl = QQPolyRingElem[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
-  r = []
+  r = QQFieldElem[]
   if do_roots
     r = [roots(x)[1] for x = fl if degree(x) == 1]
   end

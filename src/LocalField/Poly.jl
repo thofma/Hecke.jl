@@ -817,10 +817,10 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldEle
   k, mk = residue_field(K)
   kt = polynomial_ring(k, "t", cached = false)[1]
   fp = kt(elem_type(k)[mk(coeff(f, i)) for i = 0:degree(f)])
-  lfp = factor(fp).fac
+  lfp = factor(fp)
   if length(lfp) == 1
     #The Hensel factorization is trivial...
-    phi = setprecision(map_coefficients(pseudo_inv(mk), first(keys(lfp)), parent = Kt), precision(f))
+    phi = setprecision(map_coefficients(pseudo_inv(mk), first(lfp)[1], parent = Kt), precision(f))
     D[phi] = f
     return D
   end
@@ -905,8 +905,8 @@ mutable struct HenselCtxdr{S}
     Q = base_ring(f)
     K, mK = residue_field(Q)
     fp = change_base_ring(f, mK)
-    fac = factor(fp).fac
-    lfp = Vector{keytype(fac)}(undef, length(fac))
+    fac = factor(fp)
+    lfp = Vector{typeof(f)}(undef, length(fac))
     ind = 1
     for (k, v) in fac
       lfp[ind] = k^v

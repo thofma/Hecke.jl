@@ -691,8 +691,8 @@ function Hecke.maximal_order(O::GenOrd)
   @vtime :AbsNumFieldOrder 2 ld = factor(d)
   local Op
   first = true
-  for (p,k) = ld.fac
-    if k<2
+  for (p ,k) in ld
+    if k < 2
       continue
     end
     OO = pmaximal_overorder(O, p, true)

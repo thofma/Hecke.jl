@@ -1401,8 +1401,7 @@ function is_power(I::AbsNumFieldOrderIdeal)
 
   g = e
   J = one(I)
-  lp = factor(b)
-  for p = keys(lp.fac)
+  for p in prime_divisors(b)
     lP = prime_decomposition(order(I), Int(p))
     for i=1:length(lP)
       P = lP[i][1]
@@ -1486,8 +1485,7 @@ function is_power(A::AbsNumFieldOrderIdeal, n::Int)
   end
 
   J = one(A)
-  lp = factor(b)
-  for p = keys(lp.fac)
+  for p in prime_divisors(b)
     lP = prime_decomposition(order(A), Int(p))
     for i=1:length(lP)
       P = lP[i][1]

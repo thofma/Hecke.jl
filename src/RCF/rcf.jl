@@ -25,7 +25,7 @@ function number_field(CF::ClassField{S, T}; redo::Bool = false, using_norm_relat
   for i=1:ngens(G)
     o = G.snf[i]
     lo = factor(o)
-    for (p, e) = lo.fac
+    for (p, e) in lo
       q[i] = p^e*G[i]
       S1, mQ = quo(G, q, false)
       if using_norm_relation && !divides(ZZRingElem(ord), order(S1))[1]
@@ -144,8 +144,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
   @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[mS(S[i]) for i=1:ngens(S)])
   CF.bigK = KK
-  lf = factor(minimum(defining_modulus(CF)[1]))
-  lfs = Set(collect(keys(lf.fac)))
+  lfs = prime_divisors(minimum(defining_modulus(CF)[1]))
   CE.kummer_exts[lfs] = (lP, KK)
   _rcf_find_kummer(CF)
   return nothing
@@ -181,8 +180,8 @@ end
 function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
-  lf = factor(f)
-  lfs = Set(collect(keys(lf.fac)))
+  fps = prime_divisors(f)
+  lfs = Set(fps)
   for (k, v) in C.kummer_exts
     if issubset(lfs, k)
       return v
@@ -197,7 +196,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
 
   lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
-  for p = keys(lf.fac)
+  for p in fps
     #I remove the primes that can't be in the conductor
     lp = prime_decomposition(ZK, p)
     for (P, s) in lp
@@ -468,8 +467,8 @@ end
 function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
-  lf = factor(f)
-  lfs = Set(collect(keys(lf.fac)))
+  fps = prime_divisors(f)
+  lfs = Set(fps)
   for (k, v) in C.kummer_exts
     if issubset(lfs, k)
       return v
@@ -487,7 +486,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
 
   lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
-  for p = keys(lf.fac)
+  for p in fps
      #I remove the primes that can't be in the conductor
      lp = prime_decomposition(ZK, p)
      for (P, s) in lp

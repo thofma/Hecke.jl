@@ -126,12 +126,10 @@ function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
     end
 
 
-    lp = factor(gp).fac
-
     #set up the mod p data:
     #need finite_field as I need to factor (roots)
     # I want to find a residue field with less roots
-    for gp_factor in keys(lp)
+    for (gp_factor, _) in factor(gp)
       deg_p = degree(gp_factor)
 
       S = fqPolyRepField(gp_factor, :z, false)
@@ -651,10 +649,10 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem}, p::Int, k::Int; max_roo
   Rp = Nemo.Native.GF(p, cached=false)
   Rpt, t = polynomial_ring(Rp, "t", cached=false)
   gp = Rpt(K.pol)
-  lp = factor(gp).fac
-  lpfac = first(keys(lp))
+  lp = [p for (p, _) in factor(gp)]
+  lpfac = first(lp)
 
-  for lpfac in keys(lp)
+  for lpfac in lp
     if is_squarefree(lpfac)
       break
     end

@@ -676,7 +676,7 @@ function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool 
   end
 
   fac = factor(f)
-  fi = [ k for k in keys(fac.fac) ]
+  fi = [ k for (k, _) in fac ]
   l = length(fi)
   R = parent(f)
   if only_one
