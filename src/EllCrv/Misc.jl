@@ -135,7 +135,8 @@ function nrootscubic(b, c, d, p)
       return ZZ(0)
     end
   elseif length(fac) == 2
-    if fac[first(fac)[1]]== 1 && fac[first(fac)[1]] == 1
+    _fac = collect(fac)
+    if _fac[1][2] == 1 && _fac[2][2] == 1
       # one linear and one irreducible quadratic factor
       return ZZ(1)
     else
@@ -163,7 +164,8 @@ function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsS
       return ZZ(0)
     end
   elseif length(fac) == 2
-    if fac[first(fac)[1]]== 1 && fac[first(fac)[1]] == 1
+    _fac = collect(fac)
+    if _fac[1][2] == 1 && _fac[2][2] == 1
       # one linear and one irreducible quadratic factor
       return ZZ(1)
     else
