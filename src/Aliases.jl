@@ -9,6 +9,7 @@
 
 
 # predeclare some functions to allow defining aliases for some of our own functions
+function identity_map end
 function number_of_lattices end
 function number_of_relations end
 @alias nlattices number_of_lattices
