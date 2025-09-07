@@ -591,7 +591,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
         end
       else
         #p is not wildly ramified. Then we only have the boring bound...
-        d = Int(prime_divisors(invariants[end]))
+        d = Int(minimum(prime_divisors(invariants[end])))
         cd1 = p^((d-1)*div(pinvariants, d))
         if cd > cd1
           cd = cd1
