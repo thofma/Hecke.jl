@@ -3,14 +3,16 @@ CurrentModule = Hecke
 DocTestSetup = Hecke.doctestsetup()
 ```
 
-# Reduction of polynomials over number fields modulo a prime ideal
+# Reduce polynomials over number fields modulo a prime ideal
 
-Given a polynomial $f \in K[x]$ and a prime ideal $\mathfrak p$ of $\mathcal O_K$,
-we want to determine the reduction $\bar f \in F[x]$, where $F = \mathcal O_K/\mathfrak p$
+Given a polynomial ``f \in K[x]`` and a prime ideal ``\mathfrak p`` of ``\mathcal O_K``,
+we want to determine the reduction ``\bar f \in F[x]``, where ``F = \mathcal O_K/\mathfrak p``
 is the residue field.
 Concretely, we want to reduce the polynomial
-``f = x^3 + (1 + ζ_7 + ζ_7^2)x^2 + (23 + 55ζ_7^5)x + (ζ_7 + 77)/2``
-over ``\mathbf{Q}(\zeta_7)``.
+```math
+f = x^3 + (1 + ζ_7 + ζ_7^2)x^2 + (23 + 55ζ_7^5)x + (ζ_7 + 77)/2
+```
+defined over ``\mathbb{Q}(\zeta_7)``.
 We begin by defining the cyclotomic field and the polynomial.
 
 ```jldoctest 1
@@ -52,10 +54,10 @@ Map
   to prime field of characteristic 29
 ```
 
-Not that the reduction map has domain ``\mathcal O_K`` and thus cannot be applied
+Note that the reduction map has domain ``\mathcal O_K`` and thus cannot be applied
 to elements of ``K``. We can extend it to the set of ``\mathfrak p``-integral elements
 by invoking the `extend` function.
-Not that the domain of the extended map will be the whole ``K``, but the map
+Note that the domain of the extended map will be the whole ``K``, but the map
 will throw an error when applied to elements which are not ``\mathfrak p``-integral.
 
 ```jldoctest 1
