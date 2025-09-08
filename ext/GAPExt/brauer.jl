@@ -1095,7 +1095,7 @@ function issplit_cpa(F::FieldsTower, G::Vector{<: NumFieldHom{AbsSimpleNumField,
       end
     end
   else
-    for i = 1:length(lp)-1
+    for i = 1:length(lp)
       q = lp[i]
       @vtime :BrauerObst 1 fl = issplit_at_p(F, G, Coc, Int(q), p^v, Rx)
       if !fl
