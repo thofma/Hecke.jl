@@ -85,7 +85,7 @@ end
 function action(V::FinGenAbGroup, act::Vector{T}) where T<: Map{FinGenAbGroup, FinGenAbGroup}
 
   expon = Int(exponent(V))
-  @hassert :StabSub 1 length(factor(order(V)).fac)==1
+  @hassert :StabSub 1 length(factor(order(V)))==1
   RR = residue_ring(ZZ, expon, cached=false)[1]
   act_mat = Vector{zzModMatrix}(undef, length(act))
   for z = 1:length(act)
@@ -886,7 +886,7 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
   c = exponent(R)
   lf = factor(c)
   list = Base.Generator[]
-  for p in keys(lf.fac)
+  for (p, _) in lf
     x1 = valuation(c, p)
     G, mG = sylow_subgroup(R, p, false)
     S, mS = snf(G)

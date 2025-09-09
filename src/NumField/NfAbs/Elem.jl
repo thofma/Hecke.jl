@@ -406,7 +406,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
 
   res = typeof(f)[]
 
-  for i in keys(fac.fac)
+  for (i, _) in fac
     t = change_base_ring(K, i, parent = Kx)
     t = compose(t, gen(Kx) + k*gen(K), inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)
@@ -463,8 +463,8 @@ function is_irreducible_easy(f::PolyRingElem{AbsSimpleNumFieldElem})
 end
 
 function _ds(fa)
-  @assert all(x->x == 1, values(fa.fac))
-  T = Int[degree(x) for x = keys(fa.fac)]
+  @assert all(x == 1 for (_, x) in fa)
+  T = Int[degree(x) for (x, _) in fa]
   M = MSet(T)
   return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end

@@ -3,7 +3,7 @@
   function verify_order(g::Hecke.AbsSimpleNumFieldOrderQuoRingElem,o)
     g == 0 && return false
     g^o == 1 || return false
-    for l in keys(factor(o).fac)
+    for l in prime_divisors(o)
       g^div(o,l) == 1 && return false
     end
     return true
@@ -12,7 +12,7 @@
   function verify_order(g,i,o)
     iszero(g) && return false
     powermod(g,o,i.gen_one) - 1 in i || return false
-    for l in keys(factor(o).fac)
+    for l in prime_divisors(o)
       powermod(g,div(o,l),i.gen_one) - 1  in i && return false
     end
     return true

@@ -1063,3 +1063,23 @@ function AbstractAlgebra.show_map_data(io::IO, f::NumFieldHom)
     end
   end
 end
+
+################################################################################
+#
+#  QQ
+#
+################################################################################
+
+struct QQHom{S} <: Map{QQField, S, HeckeMap, Any}
+  C::S
+end
+
+identity_map(R::S) where {S} = QQHom{S}(R)
+
+domain(::QQHom) = QQ
+
+codomain(::QQHom) = QQ
+
+image(f::QQHom, x::QQFieldElem) = codomain(f)(x)
+
+preimage(f::QQHom{QQ}, x::QQFieldElem) = x

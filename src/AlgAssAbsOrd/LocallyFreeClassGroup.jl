@@ -501,7 +501,7 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   I = d * I
 
   n = norm(I)
-  primes = collect(keys(factor(numerator(n)).fac))
+  primes = prime_divisors(numerator(n))
   C = codomain(RtoC)
   c = id(C)
   for p in primes

@@ -36,7 +36,7 @@ julia> frakp = prime_decomposition(OK, p)[1][1]
 Ideal of maximal order of cyclotomic field of order 7
   of norm 29
   of minimum 29
-with 29-normal generators [29, z_7 + 22]
+with 29-normal generators [29, z_7 + 4]
 ```
 
 We can now determine the residue field ``F = \mathcal{O}_K/\mathfrak p`` and
@@ -79,7 +79,7 @@ the reduction map to the coefficients.
 
 ```jldoctest 1
 julia> fbar = map_coefficients(reduction_map_extended, f)
-x^3 + 28*x^2 + 4*x + 13
+x^3 + 13*x^2 + 21*x + 22
 
 julia> base_ring(fbar) === F
 true

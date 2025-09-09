@@ -51,7 +51,7 @@ end
   O = Hecke.GenOrd(kx, F20)
   d = discriminant(O)
   ld = factor(d)
-  _fac = [(p,k) for (p,k) in ld.fac]
+  _fac = [(p,k) for (p,k) in ld]
   p = _fac[2][1]
   I = Hecke.radical_basis_power(O, p)
   S = ring_of_multipliers(O, I, p, true)

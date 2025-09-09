@@ -2130,8 +2130,7 @@ function is_neat(U::FinGenAbGroup, G::FinGenAbGroup)
   @assert is_finite(G)
   #not implemented in general: needs to be done via torsion subgroup
   n = exponent(G)
-  lf = factor(n).fac
-  for p = keys(lf)
+  for p in prime_divisors(n)
     h = hom(G, G, [p*g for g = gens(G)])
     q, mq = quo(intersect(image(h)[1], U), h(U)[1])
     if order(q) != 1
