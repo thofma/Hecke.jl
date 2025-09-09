@@ -372,4 +372,14 @@
     @test f(a + 2) == f(a) + 2
     @test_throws ErrorException hom(K, A, one(A))
   end
+
+  let
+    K, a = quadratic_field(-1)
+    h = hom(QQ, K)
+    @test domain(h) === QQ
+    @test codomain(h) === K
+    @test h(QQ(1)) == K(1)
+    h = id_hom(QQ)
+    @test domain(h) === QQ === codomain(h)
+  end
 end
