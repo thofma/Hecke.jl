@@ -1074,11 +1074,11 @@ struct QQHom{S} <: Map{QQField, S, HeckeMap, Any}
   C::S
 end
 
-identity_map(R::S) where {S} = QQHom{S}(R)
+id_hom(::QQField) = QQHom{QQField}(QQ)
 
 domain(::QQHom) = QQ
 
-codomain(::QQHom) = QQ
+codomain(f::QQHom) = f.C
 
 image(f::QQHom, x::QQFieldElem) = codomain(f)(x)
 
