@@ -987,7 +987,7 @@ function cyclotomic_field(::Type{NonSimpleNumField}, n::Int, s::VarName=:z; cach
     lc = [1]
   else
     lf = factor(n)
-    lc = [Int(p^k) for (p,k) = lf.fac]
+    lc = [Int(p^k) for (p,k) = lf]
   end
   lp = [cyclotomic(k, x) for k = lc]
   ls = ["$s($n)_$k" for k = lc]
