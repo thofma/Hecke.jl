@@ -28,7 +28,6 @@ using Distributed
 using Printf
 using SparseArrays
 using Random
-using Pkg
 
 import AbstractAlgebra
 import AbstractAlgebra: get_cached!, @alias
@@ -59,8 +58,6 @@ using Random: Sampler, SamplerTrivial, GLOBAL_RNG
 using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 
 import Nemo
-
-import Pkg
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -696,12 +693,13 @@ function doc_init(;path=mktempdir())
   if !isfile(joinpath(docsproject,"Project.toml"))
     cp(joinpath(pkgdir, "docs", "Project.toml"), joinpath(docsproject,"Project.toml"))
   end
-  Pkg.activate(docsproject) do
-    # we dev all packages with the paths from where they are currently loaded
-    Pkg.develop(path=pkgdir)
-    Pkg.instantiate()
-    Base.include(Main, joinpath(pkgdir, "docs", "Build.jl"))
-  end
+  error("TODO")
+#  Pkg.activate(docsproject) do
+#    # we dev all packages with the paths from where they are currently loaded
+#    Pkg.develop(path=pkgdir)
+#    Pkg.instantiate()
+#    Base.include(Main, joinpath(pkgdir, "docs", "Build.jl"))
+#  end
 end
 
 #function doc_update_deps()
@@ -727,9 +725,10 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
   if !isdefined(Main, :Build)
     doc_init()
   end
-  Pkg.activate(docsproject) do
-    Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
-  end
+  error("TODO")
+#  Pkg.activate(docsproject) do
+#    Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
+#  end
   if format == :html
     open_doc()
   elseif format == :vitepress
