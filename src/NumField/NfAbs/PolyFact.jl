@@ -33,7 +33,7 @@ mutable struct HenselCtxQadic <: Hensel
     Q = base_ring(f)
     K, mK = residue_field(Q)
     fp = map_coefficients(mK, f, cached = false)
-    lfp = collect(keys(factor(fp).fac))
+    lfp = first.(collect(factor(fp)))
     return HenselCtxQadic(f, lfp)
   end
 end
