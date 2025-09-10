@@ -238,9 +238,9 @@ mutable struct MapDataFromAnticNumberField{T}
 end
 
 # Helper functions to create the type
-map_data_type(K::AbsSimpleNumField, L::Union{NumField, QQField, Ring}) = map_data_type(AbsSimpleNumField, typeof(L))
+map_data_type(K::AbsSimpleNumField, L::Union{NumField, QQField, NCRing}) = map_data_type(AbsSimpleNumField, typeof(L))
 
-map_data_type(::Type{AbsSimpleNumField}, T::Type{S}) where {S <: Union{NumField, QQField, Ring}} = MapDataFromAnticNumberField{elem_type(T)}
+map_data_type(::Type{AbsSimpleNumField}, T::Type{S}) where {S <: Union{NumField, QQField, NCRing}} = MapDataFromAnticNumberField{elem_type(T)}
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromAnticNumberField{T},
