@@ -374,6 +374,16 @@
   end
 
   let
+    k, = rationals_as_number_field();
+    K, a = number_field(t^3 - 2, "a");
+    A = matrix_algebra(K, 2)
+    f = hom(K, A)
+    @test domain(f) === K
+    @test codomain(f) === A
+    @test f(a) == A(K[a 0; 0 a])
+  end
+
+  let
     K, a = quadratic_field(-1)
     h = hom(QQ, K)
     @test domain(h) === QQ
