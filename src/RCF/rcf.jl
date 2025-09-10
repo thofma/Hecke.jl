@@ -144,7 +144,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
   @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[mS(S[i]) for i=1:ngens(S)])
   CF.bigK = KK
-  lfs = prime_divisors(minimum(defining_modulus(CF)[1]))
+  lfs = Set(prime_divisors(minimum(defining_modulus(CF)[1])))
   CE.kummer_exts[lfs] = (lP, KK)
   _rcf_find_kummer(CF)
   return nothing

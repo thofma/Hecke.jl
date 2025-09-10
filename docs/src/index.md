@@ -82,7 +82,7 @@ julia> C
 ```
 
 Other examples of Hecke's usage can be found in the [How-to Guides](@ref) section of this website.
-More in-depth resources are provided by our [Tutorials](@ref), which are guided walkthroughs to using Hecke, and by the [Manual](@ref), which gives a complete list of Hecke's implemented functionality.
+More in-depth resources are provided by our [Tutorials](@ref hecke_tutorials), which are guided walkthroughs to using Hecke, and by the [Manual](@ref), which gives a complete list of Hecke's implemented functionality.
 
 # Features
 

@@ -728,6 +728,7 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
     doc_init()
   end
   Pkg.activate(docsproject) do
+    Base.invokelatest(Main.Build.build_all_tutorials, Hecke)
     Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
   end
   if format == :html
