@@ -169,7 +169,7 @@ function build_all_tutorials(Hecke::Module, local_build::Bool=false)
 CurrentModule = Hecke
 DocTestSetup = Hecke.doctestsetup()
 ```
-# Tutorials
+# [Tutorials](@id hecke_tutorials)
 """
       )
       for (s, mdfile, notebookfile, scriptfile) in res
