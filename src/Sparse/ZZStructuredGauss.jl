@@ -15,7 +15,7 @@
 #TODO: is_light_col with 0 and 1 and inplace changes?
 #TODO: include update in add_scaled_row!
 #TODO: check why update after addition necessary in combination with deleting before adding
-#test
+#TODO: set tmp to zero after divides
 
 #=
 PROBLEMS:
@@ -123,16 +123,16 @@ function part_echolonize!(A::SMat{T})::Tuple{data_ZZStructGauss{ZZRingElem}, tes
  SG_test = test_ZZStructGauss(A)
  single_rows_to_top!(SG)
 
- while SG.nlight > 0 && SG.base <= SG.dense_start #all inplace
- #while SG.nlight > 0 && SG.base <= n #with Y
+ #while SG.nlight > 0 && SG.base <= SG.dense_start #all inplace
+ while SG.nlight > 0 && SG.base <= n #with Y
   build_part_ref!(SG)
   #=
   for i = 1:m
    SG.is_light_col[i] && @assert length(SG.col_list[i]) != 1
   end
   =# #testing
-  (SG.nlight == 0 || SG.base > SG.dense_start) && break #all inplace
-  #(SG.nlight == 0 || SG.base > n) && break #with Y
+  #(SG.nlight == 0 || SG.base > SG.dense_start) && break #all inplace
+  (SG.nlight == 0 || SG.base > n) && break #with Y
   best_single_row = find_best_single_row(SG)
   best_single_row < 0 && @assert(SG.base == SG.single_row_limit)
   
@@ -249,8 +249,8 @@ function turn_heavy(SG::data_ZZStructGauss)
   i_current = SG.col_list_permi[i_origin]
   @assert SG.light_weight[i_current] > 0
   SG.light_weight[i_current]-=1
-  handle_new_light_weight2!(i_current, SG) #all inplace
-  #handle_new_light_weight!(i_current, SG) #with Y
+  #handle_new_light_weight2!(i_current, SG) #all inplace
+  handle_new_light_weight!(i_current, SG) #with Y
  end
  SG.nlight -= 1
 end
@@ -323,8 +323,8 @@ function eliminate_and_update!(best_single_row::Int64, SG::data_ZZStructGauss, S
   #@vprintln :StructGauss lw, SG.light_weight[row_idx]
   @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
   @hassert :StructGauss SG.light_weight[row_idx] == lw-1
-  handle_new_light_weight2!(row_idx, SG) #all inplace
-  #handle_new_light_weight!(row_idx, SG) #with Y
+  #handle_new_light_weight2!(row_idx, SG) #all inplace
+  handle_new_light_weight!(row_idx, SG) #with Y
  end
  return SG, SG_test
 end
@@ -687,7 +687,7 @@ end
 #functions for correct elimination:
 #function eliminate_and_update2!(best_single_row::Int64, SG::data_ZZStructGauss)::data_ZZStructGauss
 function eliminate_and_update2!(best_single_row::Int64, SG::data_ZZStructGauss, SG_test::test_ZZStructGauss)::Tuple{data_ZZStructGauss{ZZRingElem}, test_ZZStructGauss{ZZRingElem}} #test
- L_best = deepcopy(SG.col_list_perm[best_single_row]) #test
+ L_best = deepcopy(SG.col_list_perm[best_single_row])
  best_row_pos = deepcopy(SG.A[best_single_row].pos) #test
  @assert !iszero(best_single_row)
  #@vprint :StructGauss "limits: $(SG.base), $(SG.single_row_limit), $best_single_row"
@@ -711,7 +711,7 @@ function eliminate_and_update2!(best_single_row::Int64, SG::data_ZZStructGauss, 
   @hassert :StructGauss L_best != SG.col_list_perm[row_idx]
   L_row = SG.col_list_perm[row_idx]
   row_pos = deepcopy(SG.A[row_idx].pos) #test
-  L1 = deepcopy(L_row)
+  #L1 = deepcopy(L_row) #test
   @v_do :StructGauss _light = deepcopy(SG.is_light_col)
   @v_do :StructGauss lw = deepcopy(SG.light_weight[row_idx]) #test
   _v = 0
@@ -752,15 +752,14 @@ function eliminate_and_update2!(best_single_row::Int64, SG::data_ZZStructGauss, 
   #@vprintln :StructGauss lw, _v, SG.light_weight[row_idx], _w
   @hassert :StructGauss row_idx == SG.col_list_permi[L_row]
   @hassert :StructGauss SG.light_weight[row_idx] == lw-1
-  handle_new_light_weight2!(row_idx, SG) #all inplace
+  #handle_new_light_weight2!(row_idx, SG) #all inplace
   #@vprintln :StructGauss row_idx, SG.col_list_permi[L_best]
-  #handle_new_light_weight!(row_idx, SG) #with Y
+  handle_new_light_weight!(row_idx, SG) #with Y
   #best_row_pos != SG.A[best_single_row].pos && @show best_col, best_row_pos, SG.A[best_single_row].pos
   #@hassert :StructGauss best_row_pos == SG.A[best_single_row].pos
   #row_idx == 100 && @show 2, SG.col_list_perm[row_idx], SG.light_weight[row_idx]
   @hassert :StructGauss length(SG.col_list[best_col]) == len-1
   @v_do :StructGauss len -= 1
-  
  end
  return SG, SG_test
 end
@@ -815,6 +814,7 @@ function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64
  #best_val = SG.A[best_single_row, best_col] #TODO: use only one best_val
  tmp, g, a_best, a_row, best_val, val = tmp_scalar = Hecke.get_tmp_scalar(SG.A, 6)
  best_val = getindex!(best_val, SG.A[best_single_row].values, searchsortedfirst(SG.A[best_single_row].pos, best_col))
+ #TODO: use index from before instead (jlight)
  val = getindex!(val, SG.A[row_idx].values, searchsortedfirst(SG.A[row_idx].pos, best_col))
  @assert !iszero(val)
  fl, tmp = Nemo.divides!(tmp, val, best_val) 
