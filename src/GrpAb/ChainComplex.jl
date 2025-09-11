@@ -785,7 +785,7 @@ function tensor_product(C::ComplexOfMorphisms{T}, G::T) where {T}
   H = vcat(H, [tensor_product(codomain(f), G, task = :none) for f = C.maps])
 
   R = map_type(C)[]
-  I = identity_map(G)
+  I = id_hom(G)
   for i = 1:length(C.maps)
     push!(R, hom(H[i], H[i+1], [C.maps[i], I]))
   end

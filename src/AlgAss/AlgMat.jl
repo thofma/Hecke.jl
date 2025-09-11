@@ -346,7 +346,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
   cur_rank = 0
   for i = 1:length(span)
     cur_rank == d2 ? break : nothing
-    new_elt = _add_row_to_rref!(M, reshape(collect(span[i]), :), pivot_rows, cur_rank + 1)
+    new_elt = _add_row_to_rref!(M, deepcopy(reshape(collect(span[i]), :)), pivot_rows, cur_rank + 1)
     if new_elt
       push!(new_elements, i)
       cur_rank += 1
@@ -364,7 +364,7 @@ function matrix_algebra(R::Ring, gens::Vector{<:MatElem}; isbasis::Bool = false)
       s = b*span[r]
       for l = 1:n
         t = span[l]*s
-        new_elt = _add_row_to_rref!(M, reshape(collect(t), :), pivot_rows, cur_rank + 1)
+        new_elt = _add_row_to_rref!(M, deepcopy(reshape(collect(t), :)), pivot_rows, cur_rank + 1)
         if !new_elt
           continue
         end
@@ -720,4 +720,28 @@ end
   BAt = [transpose(matrix(a, copy = false)) for a in BA]
   Aop = matrix_algebra(coefficient_ring(A), BAt, isbasis = true)
   return Aop, hom(A, Aop, identity_matrix(K, d), identity_matrix(K, d))
+end
+
+################################################################################
+#
+#  Iteration interface
+#
+################################################################################
+
+Base.eltype(::Type{A}) where {A<:MatAlgebra} = elem_type(A)
+
+Base.length(A::MatAlgebra) = BigInt(length(base_ring(A)))^(_matdeg(A)^2)
+
+function Base.iterate(A::MatAlgebra)
+  M = matrix_space(base_ring(A), _matdeg(A), _matdeg(A))
+  a_st = iterate(M)
+  a_st === nothing && return nothing
+  return A(first(a_st)), (M, last(a_st))
+end
+
+function Base.iterate(A::MatAlgebra, state)
+  # state[1] is the matrix space
+  a_st = iterate(state[1], state[2])
+  a_st === nothing && return nothing
+  return A(first(a_st)), (state[1], last(a_st))
 end

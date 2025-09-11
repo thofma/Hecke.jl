@@ -169,7 +169,7 @@ function _theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, char::Vector{Vector{Int
 
   error_term = exponential_part*error_epsilon
 
-  ccall((:acb_add_error_arb, libarb), Cvoid,
+  ccall((:acb_add_error_arb, libflint), Cvoid,
       (Ref{AcbFieldElem}, Ref{ArbFieldElem}), result, error_term)
 
   return result
@@ -247,7 +247,7 @@ end
 function cholesky_decomposition(x::ArbMatrix)
   z = similar(x, nrows(x), ncols(x))
   p = precision(base_ring(x))
-  fl = ccall((:arb_mat_cho, Hecke.libarb), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
+  fl = ccall((:arb_mat_cho, libflint), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
   @assert fl != 0
   return z
 end

@@ -71,4 +71,55 @@
     list_factors = factor.(list_ideals)
     @test prod.(list_factors) == list_ideals
   end
+
+  let # maximal integral ideal
+    K, = rationals_as_number_field()
+    QG = K[small_group(36, 1)]
+    ZG = order(QG, basis(QG))
+    p, = prime_ideals_over(maximal_order(K), 2)
+    P = Hecke.maximal_integral_ideal(ZG, p; side = :left)
+    @test ZG(2) in P
+    @test !(ZG(3) in P)
+    @test ZG * P == P
+    p, = prime_ideals_over(maximal_order(K), 3)
+    P = Hecke.maximal_integral_ideal(ZG, p; side = :right)
+    @test ZG(3) in P
+    @test !(ZG(2) in P)
+    @test P * ZG == P
+
+    K, = rationals_as_number_field()
+    QG = K[small_group(20, 1)]
+    ZG = order(QG, basis(QG))
+    p, = prime_ideals_over(maximal_order(K), 2)
+    Ps = Hecke.maximal_integral_ideals(ZG, p; side = :left)
+    @test allunique(Ps)
+    for P in Ps
+      @test ZG(2) in P
+      @test !(ZG(3) in P)
+      @test ZG * P == P
+    end
+
+    p, = prime_ideals_over(maximal_order(K), 3)
+    Ps = Hecke.maximal_integral_ideals(ZG, p; side = :right)
+    @test allunique(Ps)
+    for P in Ps
+      @test ZG(3) in P
+      @test !(ZG(2) in P)
+      @test P * ZG == P
+    end
+
+    # a quaternion algebra (I know the result)
+    let
+      K, = rationals_as_number_field()
+      a, b, bas = (-3, -1, Vector{QQFieldElem}[[1, 0, 0, 0], [1//2, 3//2, 0, 0], [0, 0, 3, 0], [0, 0, 3//2, 1//2]])
+      A = quaternion_algebra(K, a, b)
+      bO = A.(bas)
+      O = order(A, bO)
+      p, = prime_ideals_over(base_ring(O), 2)
+      lP = Hecke.maximal_integral_ideals(O, p; side = :right)
+      @test allunique(lP) && length(lP) == 3
+      @test all(P -> P * O == P, lP)
+      @test all(P -> all(in(O), absolute_basis(P)), lP)
+    end
+  end
 end

@@ -581,7 +581,7 @@ function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
 end
 
 function Hecke.residue_field(R::FqPolyRing, p::FqPolyRingElem)
-  return Nemo._residue_field(p, absolute = true)
+  return Nemo._residue_field(p, absolute = false)
 end
 
 ################################################################################

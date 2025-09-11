@@ -12,7 +12,12 @@ base_ring(A::GroupAlgebra{T}) where {T} = A.base_ring::parent_type(T)
 
 base_ring_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = parent_type(T)
 
-Generic.dim(A::GroupAlgebra) = order(Int, group(A))
+Generic.dim(A::GroupAlgebra) = vector_space_dim(A)
+
+function vector_space_dim(A::GroupAlgebra{T, S, R}) where {T <: FieldElem, S, R}
+  isfinite(group(A)) || throw(InfiniteDimensionError())
+  return order(Int, group(A))
+end
 
 elem_type(::Type{GroupAlgebra{T, S, R}}) where {T, S, R} = GroupAlgebraElem{T, GroupAlgebra{T, S, R}}
 

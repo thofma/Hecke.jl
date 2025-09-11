@@ -691,8 +691,8 @@ function Hecke.maximal_order(O::GenOrd)
   @vtime :AbsNumFieldOrder 2 ld = factor(d)
   local Op
   first = true
-  for (p,k) = ld.fac
-    if k<2
+  for (p ,k) in ld
+    if k < 2
       continue
     end
     OO = pmaximal_overorder(O, p, true)
@@ -767,22 +767,24 @@ function radical_basis_power(O::GenOrd, p::RingElem)
     F = t
     mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
   end
-#  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
-  q = characteristic(F)
+
+  q = order(F)
+  d = q
   @assert q > 0
-  while q < degree(O)
-    q *= characteristic(F)
+  while d < degree(O)
+    d *= q
   end
 
   b = basis(O)
   m = zero_matrix(F, degree(O), degree(O))
   for i=1:degree(O)
-    c = coordinates(powermod(b[i], q, p))
+    c = coordinates(powermod(b[i], d, p))
     for j=1:degree(O)
       m[j,i] = mF(O.R(c[j]))
     end
   end
   B = kernel(m; side = :right)
+#  @assert m*B == 0
 
   M2 = transpose(B)
   M2 = map_entries(x->preimage(mF, x), M2)

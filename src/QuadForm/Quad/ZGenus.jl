@@ -1030,7 +1030,8 @@ function _write_global_symbol(G::ZZGenus)
 end
 
 function Base.show(io::IO, ::MIME"text/latex", G::ZZGenus)
-  str = iseven(G) ? "II" : "I"
+  print(io,"\\(")
+  str = iseven(G) ? "\\mathrm{II}" : "\\mathrm{I}"
   p, n = signature_pair(G)
   str *= "_{($p, $n)}"
   s = local_symbols(G)
@@ -1039,6 +1040,7 @@ function Base.show(io::IO, ::MIME"text/latex", G::ZZGenus)
   for g in s
     show(io, "text/latex", g)
   end
+  print(io, "\\)")
 end
 
 function Base.show(io::IO, ::MIME"text/latex", g::ZZLocalGenus)

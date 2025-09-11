@@ -12,7 +12,7 @@ different types:
  - `AbsSimpleNumField`: a finite simple extension of the rational numbers $\mathbf{Q}$
  - `AbsNonSimpleNumField`: a finite extension of $\mathbf{Q}$ given by several polynomials.
    We will refer to this as a non-simple field - even though mathematically
-   we can find a primitive elements.
+   we can find primitive elements.
  - `RelSimpleNumField`: a finite simple extension of a number field. This is
    actually parametrised by the (element) type of the coefficient field.
    The complete type of an extension of an absolute field (`AbsSimpleNumField`)

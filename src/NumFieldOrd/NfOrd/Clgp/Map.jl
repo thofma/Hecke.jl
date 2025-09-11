@@ -229,10 +229,15 @@ function change_base_ring(mC::MapClassGrp, O::AbsSimpleNumFieldOrder)
   return mD
 end
 
+function AbstractAlgebra.show_map_head(io::IO, mC::MapClassGrp)
+  print(io, "Class group map")
+end
+
 function show(io::IO, mC::MapClassGrp)
   @show_name(io, mC)
-  println(io, "ClassGroup map of ")
-  show(IOContext(io, :compact => true), codomain(mC))
+  io = pretty(io)
+  print(io, "Class group map of ", Lowercase())
+  show(terse(io), codomain(mC))
 end
 
 function class_group(c::ClassGrpCtx, O::AbsSimpleNumFieldOrder = order(c); redo::Bool = false)
@@ -617,7 +622,7 @@ function reduce_mod_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumF
     bd = maximum(sqrt(sum((B[i,j]::ArbFieldElem)^2 for j=1:ncols(B)))::ArbFieldElem for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
-      s = ccall((:arb_bits, libarb), Int, (Ref{ArbFieldElem}, ), bd)
+      s = ccall((:arb_bits, libflint), Int, (Ref{ArbFieldElem}, ), bd)
       prec = max(s, prec)
       prec = 1<<nbits(prec)
     else

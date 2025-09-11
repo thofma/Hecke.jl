@@ -564,15 +564,14 @@ function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd
 
   reverse!(reducers)
 
-  tmp_matrix = zero_matrix(_base_ring(K), 1, degree(O))
-
+  # Write the coefficients of c in the new basis of O
   function _coeff(c)
     cfcs = coefficients(c, copy = false)
-    for i = 1:degree(O)
-      tmp_matrix[1, i] = cfcs[i]
-    end
-    return tmp_matrix*new_bmatinvO
+    return cfcs * new_bmatinvO
   end
+
+  # We need them a lot, so lets get the rows out once
+  rows_new_bmatI = [new_bmatI[i, :] for i in 1:nrows(new_bmatI)]
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   for i in 1:r
@@ -582,9 +581,8 @@ function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd
 
       for k in reducers
         d = -coeffs_c[k]//new_bmatI[k, k]
-        c = c + d*new_basisI[k][1]
+        coeffs_c = coeffs_c + d .* rows_new_bmatI[k]
       end
-      coeffs_c = _coeff(c)
       for k in 1:degree(O)
         if !(k in basis_elts)
           @assert iszero(coeffs_c[k])
@@ -615,9 +613,8 @@ function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd
       coeffs_c = _coeff(c)
       for k in reducers
         d = -coeffs_c[k]//new_bmatI[k, k]
-        c = c + d*new_basisI[k][1]
+        coeffs_c = coeffs_c + d .* rows_new_bmatI[k]
       end
-      coeffs_c = _coeff(c)
       for k in 1:degree(O)
         if !(k in basis_elts)
           @assert iszero(coeffs_c[k])
@@ -719,17 +716,16 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
 
   reverse!(reducers)
 
-  tmp_matrix = zero_matrix(_base_ring(K), 1, degree(O))
-
+  # Write the coefficients of c in the new basis of I
   function _coeff(c)
-    for i = 1:degree(O)
-      tmp_matrix[1, i] = coefficients(c, copy = false)[i]
-    end
-    return tmp_matrix*bmatinvI
+    cfcs = coefficients(c, copy = false)
+    return cfcs * bmatinvI
   end
 
-  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
+  # We need them a lot, so lets get the rows out once
+  rows_new_bmatJinI = [new_bmatJinI[i, :] for i in 1:nrows(new_bmatJinI)]
 
+  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   for i in 1:r
     for j in 1:r
       c = new_basisI[basis_elts[i]][1]*new_basisI[basis_elts[j]][1]
@@ -737,9 +733,8 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
 
       for k in reducers
         d = -coeffs[k]//new_bmatJinI[k, k]
-        c = c + d * new_basisJ[k][1]
+        coeffs_c = coeffs_c + d .* rows_new_bmatJinI[k]
       end
-      coeffs = _coeff(c)
       for k in 1:degree(O)
         if !(k in basis_elts)
           @assert iszero(coeffs[k])
@@ -770,9 +765,8 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
       coeffs = _coeff(c)
       for k in reducers
         d = -coeffs[k]//new_bmatJinI[k, k]
-        c = c + d*new_basisJ[k][1]
+        coeffs_c = coeffs_c + d .* rows_new_bmatJinI[k]
       end
-      coeffs = _coeff(c)
       for k in 1:degree(O)
         if !(k in basis_elts)
           @assert iszero(coeffs[k])

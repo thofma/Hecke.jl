@@ -288,7 +288,7 @@ for (testname, (resp,)) in results
   elseif isa(resp, Test.TestSetException)
     fake = Test.DefaultTestSet(testname)
     for i in 1:resp.pass
-      Test.record(fake, VERSION < v"1.7.0-DEV.1196" ? Test.Pass(:test, nothing, nothing, nothing) : Test.Pass(:test, nothing, nothing, nothing, LineNumberNode(@__LINE__, @__FILE__)))
+      Test.record(fake, Test.Pass(:test, nothing, nothing, nothing, LineNumberNode(@__LINE__, @__FILE__)))
     end
     for i in 1:resp.broken
       Test.record(fake, Test.Broken(:test, nothing))

@@ -1265,23 +1265,53 @@ end
 #
 ################################################################################
 
-# Computes any maximal integral ideal with left order O (if side = :left) or
-# right order O (if side = :right) which contains p.
-# Assumes (so far?) that the algebra is simple and O is maximal.
-function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }, side::Symbol)
-  A = algebra(O)
-  @assert is_simple(A)
-  @assert is_maximal(O)
+function __construct_maximal_ideal(O::AlgAssRelOrd, OtoB, CtoB, CtoD, basisofcenter, side, t, P, I)
+  N = basis_pmatrix(P)
+  K = nf(base_ring(O))
+  OK = base_ring(O)
+  # modulus for pseudo-HNF is d * p, where d * O is "integral|
+  # but we don't store this currently
+  # m = denominator(basis_pmatrix(O)) * p
+  for bb in basis(I)
+    if length(basisofcenter) > 1
+      for e in basisofcenter # element of B
+        b = OtoB\(e * (CtoB(CtoD\bb)))
+        elem_to_mat_row!(t, 1, elem_in_algebra(b, copy = false))
+        N = vcat(N, pseudo_matrix(deepcopy(t), [ K(1)*OK ]))
+      end
+    else
+      b = OtoB\(CtoB(CtoD\bb))
+      elem_to_mat_row!(t, 1, elem_in_algebra(b, copy = false))
+      N = vcat(N, pseudo_matrix(deepcopy(t), [ K(1)*OK ]))
+    end
+  end
+  #N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  N = sub(pseudo_hnf(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
+  M = ideal(algebra(O), O, N; side, M_in_hnf=true)
 
+  if is_known(is_maximal, O) && is_maximal(O)
+    if side == :left
+      M.left_order = O # O is maximal
+    else
+      M.right_order = O
+    end
+  end
+  return M
+end
+
+function __maximal_integral_ideal(O::AlgAssRelOrd, P, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }, side::Symbol)
+  A = algebra(O)
   K = base_ring(algebra(O))
   OK = base_ring(O)
 
-  P = pradical(O, p) # if the algebra is simple, then the pradical is the unique prime lying over p
-
-  # P is the Jacobson radical of O/pO, so O/P is a simple algebra
+  # O/P is a simple algebra
   B, OtoB = quo(O, P, p)
   C, CtoB = _as_algebra_over_center(B)
   D, CtoD = _as_matrix_algebra(C)
+
+  # we need the center to accomodate a non-central A
+  _C, _CtoB = center(B)
+  basisofcenter = _CtoB.(basis(_C))
 
   n = _matdeg(D)
   if isone(n)
@@ -1291,34 +1321,52 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal
   N = basis_pmatrix(P)
   m = numerator(det(N), copy = false)
   t = zero_matrix(K, 1, degree(O))
-  # Now we only need to lift a basis for diag(1, ..., 1, 0)*D (side = :left) or
-  # D*diag(1, ..., 1, 0) (side = :right) since these are maximal ideals of D.
-  if side == :left
-    jMax = n - 1
-    iMax = n
-  elseif side == :right
-    jMax = n
-    iMax = n - 1
-  else
-    error("Option :$(side) for side not implemented")
-  end
-  for j = 1:jMax
-    jn = (j - 1)*n
-    for i = 1:iMax
-      b = (OtoB\(CtoB(CtoD\D[jn + i])))
-      elem_to_mat_row!(t, 1, elem_in_algebra(b, copy = false))
-      N = vcat(N, pseudo_matrix(deepcopy(t), [ K(1)*OK ]))
-    end
-  end
-  N = sub(pseudo_hnf_full_rank_with_modulus(N, m, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
 
-  M = ideal(algebra(O), O, N; side, M_in_hnf=true)
-  if side == :left
-    M.left_order = O # O is maximal
-  else
-    M.right_order = O
+  return __construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, P, maximal_ideal(D; side = side))
+end
+
+
+function __maximal_integral_ideals(O::AlgAssRelOrd, P, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }, side::Symbol)
+  A = algebra(O)
+  K = base_ring(algebra(O))
+  OK = base_ring(O)
+
+  # O/P is a simple algebra
+  B, OtoB = quo(O, P, p)
+  C, CtoB = _as_algebra_over_center(B)
+  D, CtoD = _as_matrix_algebra(C)
+
+  # we need the center to accomodate a non-central A
+  _C, _CtoB = center(B)
+  basisofcenter = _CtoB.(basis(_C))
+
+  n = _matdeg(D)
+  if isone(n)
+    return P
   end
-  return M
+
+  N = basis_pmatrix(P)
+  m = numerator(det(N), copy = false)
+  t = zero_matrix(K, 1, degree(O))
+
+  return [__construct_maximal_ideal(O, OtoB, CtoB, CtoD, basisofcenter, side, t, P, I) for I in maximal_ideals(D; side = side)]
+end
+
+# Computes any maximal integral ideal with left order O (if side = :left) or
+# right order O (if side = :right) which contains p.
+# Assumes (so far?) that the algebra is simple and O is maximal.
+function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; side::Symbol)
+  return maximal_integral_ideal(O, p, side)
+end
+
+function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }, side::Symbol)
+  P, = prime_ideals_over(O, p)
+  return __maximal_integral_ideal(O, P, p, side)
+end
+
+function maximal_integral_ideals(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; side::Symbol)
+  lP = prime_ideals_over(O, p)
+  return reduce(vcat, [__maximal_integral_ideals(O, lP[i], p, side) for i in 1:length(lP)])
 end
 
 # Constructs a maximal integral ideal M of O such that M\cap R = p and I\subseteq M,

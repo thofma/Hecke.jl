@@ -541,7 +541,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     _local_coeffs = __local_coeffs[i]
     #_local_coeffs = _local_coeffs_buffer(A, length(ui)) #Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
     #_local_coeffs = Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
-    m = dec_sorted[i][2]::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
+    m = dec_sorted[i][2]#::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
     alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
     kblock = div(length(ui), nt)
     if mod(length(ui), nt) != 0

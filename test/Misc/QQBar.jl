@@ -9,4 +9,8 @@ let
   rts = @inferred roots(f)
   @test length(rts) == 3
   @test all(r -> is_zero(f(r)), rts)
+
+  R,z = QQBarField()[:z]
+  @test length(roots(z^2)) == 1
+  @test length(roots(z^0)) == 0
 end

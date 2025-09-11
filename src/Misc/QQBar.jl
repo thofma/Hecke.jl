@@ -64,12 +64,32 @@ function roots(f::PolyRingElem{QQBarFieldElem})
   # the roots of f in Qbar are contained in the roots of norm(f) in Qbar
   @req !is_zero(f) "Polynomial must be non-zero"
   QQbar = base_ring(f)
+  no_0 = 0
+  while is_zero(coeff(f, no_0))
+    no_0 += 1
+  end
+  f = shift_right(f, no_0)
+
   cfs, pe = _map_to_common_number_field(collect(coefficients(f)))
   K = parent(cfs[1])
   Kt, t = polynomial_ring(K; cached = false)
   fK = Kt(cfs)
-  rts = roots(QQbar, norm(fK)::dense_poly_type(QQ))
-  rts = unique!(QQBarFieldElem[r for r in rts if is_zero(f(r))])
+  rts = unique!(roots(QQbar, norm(fK)::dense_poly_type(QQ)))
+  if no_0 > 0
+    push!(rts, zero(base_ring(f)))
+  end
+  if degree(K) == 1
+    return rts
+  end
+  #the norm will have added spurious roots...
+  rts = QQBarFieldElem[r for r in rts if is_zero(f(r))]
   return rts
 end
 
+@doc raw"""
+    is_integral(a::QQBarFieldElem) -> Bool
+
+Returns whether $a$ is integral, that is, whether the minimal polynomial of $a$
+has integral coefficients.
+"""
+is_integral(a::QQBarFieldElem) = is_algebraic_integer(a)

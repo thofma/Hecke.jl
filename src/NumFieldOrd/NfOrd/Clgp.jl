@@ -394,8 +394,11 @@ function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3
                      redo::Bool = false, unit_method::Int = 1,
                      large::Int = 1000, use_aut::Bool = is_automorphisms_known(nf(O)), GRH::Bool = true, do_lll::Bool = true,
                      saturate_at_2::Bool = true)
+  if !is_maximal(O)
+    throw(ArgumentError("Class group not defined for non-maximal orders. See `picard_group`"))
+  end
   if do_lll
-   OK = maximal_order(nf(O))
+    OK = maximal_order(nf(O))
     @assert OK.is_maximal == 1
     L = lll(OK)
     @assert L.is_maximal == 1
@@ -408,12 +411,18 @@ function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3
   return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
+function class_number(O::AbsSimpleNumFieldOrder)
+  if !is_maximal(O)
+    throw(ArgumentError("Class number not defined for non-maximal orders. See `picard_group`"))
+  end
+  return order(class_group(O)[1])
+end
+
 function _unit_group_maximal(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRHUnitGroup = GRH)
   @assert b==1
   return unit_group(c, U)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
 end
-
 
 @doc raw"""
     unit_group(O::AbsSimpleNumFieldOrder) -> FinGenAbGroup, Map
@@ -449,7 +458,7 @@ function unit_group_fac_elem(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_me
 
   U = get_attribute(O, :UnitGrpCtx)
   if U !== nothing && U.finished
-    if !GRH
+    if !GRH && unit_group_rank(O) > 0
       # there was unit group context saved
       # unconditional unit group requested
       _unit_group_proof(U, nothing)

@@ -271,6 +271,22 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    embedded_number_field(f::QQPolyRingElem, r)
+                                  -> Tuple{EmbeddedAbsSimpleNumField, FieldElem}
+
+Create the real algebraic extension $K = \mathbf{QQ}(a)$, where $a$ is the root
+of $f$ closest to $r$. The function returns the field $K$ and $a$.
+
+```jldoctest
+julia> Qx, x = QQ[:x];
+
+julia> K, a = embedded_number_field(x^2 - 2, 1.0);
+
+julia> a^2 == 2 && a > 0
+true
+```
+"""
 function embedded_number_field(f::Union{QQPolyRingElem, ZZPolyRingElem}, r::Union{AbstractFloat, Tuple}, var = "a")
   K, a = number_field(f, var)
   r = real_embedding(K, r)

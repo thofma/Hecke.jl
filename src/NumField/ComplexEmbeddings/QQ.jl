@@ -53,4 +53,4 @@ signs(x::Union{ZZRingElem, QQFieldElem, FacElem{QQFieldElem}}, ::Vector{QQEmb}) 
 
 signs(x::Union{ZZRingElem, QQFieldElem, FacElem{QQFieldElem}}) = Dict(QQEmb() => sign(x, QQEmb()))
 
-complex_conjugation(K::QQField) = identity_map(K)
+complex_conjugation(K::QQField) = id_hom(K)

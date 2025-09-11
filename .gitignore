@@ -9,7 +9,7 @@ docs/site/*
 docs/build/*
 docs/node_modules/*
 docs/package-lock.json
-Manifest.toml
+Manifest*.toml
 .DS_Store
 docs/node_modules/*
 docs/package-lock.json

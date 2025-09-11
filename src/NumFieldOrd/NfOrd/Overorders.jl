@@ -535,7 +535,7 @@ function _minimal_poverorders_at_2(O, P, excess = Int[])
           continue
         end
         _hnf!_integral(bL, :lowerleft)
-        bL = 
+        bL =
         L = order(K, bL, check = false, cached = false)
         @hassert :AbsNumFieldOrder is_hnf(basis_matrix(FakeFmpqMat, L).num, :lowerleft)
         lQL = prime_ideals_over(L, P)
@@ -1059,7 +1059,7 @@ function is_bass(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   return true
 end
 
-@doc doc"""
+@doc raw"""
     is_bass(O::AbsSimpleNumFieldOrder) -> Bool
 
 Return whether the order `\mathcal{O}` is Bass.
@@ -1095,7 +1095,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     is_gorenstein(O::AbsSimpleNumFieldOrder) -> Bool
 
 Return whether the order `\mathcal{O}` is Gorenstein.
@@ -1176,7 +1176,7 @@ function ideals_with_norm(O::AbsSimpleNumFieldOrder, p::ZZRingElem, n::Int)
     push!(autos, hom(A, A, m))
   end
 
-  potential_basis = Vector{elem_type(O)}(d)
+  potential_basis = Vector{elem_type(O)}(undef, d)
   ideals = Vector{Tuple{Vector{Int}, ideal_type(O)}}()
 
   for par in AllParts(n)

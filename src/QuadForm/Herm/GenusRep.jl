@@ -218,10 +218,17 @@ function neighbours(
     if length(adjust_gens_mod_p) > 0
       _LO = line_orbits(adjust_gens_mod_p)
       LO = Vector{eltype(k)}[x[1] for x in _LO]
+      maxlines = length(LO)
     else
       LO = enumerate_lines(k, n)
+      if length(LO) <= 50000
+        algorithm = :exhaustive
+        maxlines = length(LO)
+      else
+        algorithm = :random
+        maxlines = min(rand_neigh, length(LO))
+      end
     end
-    maxlines = length(LO)
     @vprintln :GenRep 1 "$(maxlines) orbits of lines to try"
   else
     LO = enumerate_lines(k, n)

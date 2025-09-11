@@ -107,5 +107,11 @@
 
   end
 
-
+  let # cornercase
+    A = abelian_group()
+    g = id_hom(A)
+    l = stable_subgroups(A,[g])
+    ll = collect(l)
+    @test length(ll) == 1
+  end
 end

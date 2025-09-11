@@ -725,7 +725,7 @@ end
 
 function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
   lf = factor(f)
-  return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for g = keys(lf.fac) if degree(g) > 0]))
+  return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for (g, _) in lf if degree(g) > 0]))
 end
 
 function roots(x::RealPolyRingElem)
@@ -747,7 +747,7 @@ function factor(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::
   g = factor(f)
   d = Dict{AcbPolyRingElem, Int}()
   Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
-  for (k,v) = g.fac
+  for (k, v) in g
     for r = roots(R, k)
       d[t-r] = v
     end
@@ -759,7 +759,7 @@ function factor(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_t
   g = factor(f)
   Rt, t = polynomial_ring(R, var(parent(f)), cached = false)
   d = Dict{typeof(t), Int}()
-  for (k,v) = g.fac
+  for (k, v) in g
     for r = roots(R, k)
       d[t-r] = v
     end
@@ -771,7 +771,7 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   g = factor(f)
   r = elem_type(R)[]
   C = AcbField(precision(R))
-  for k = keys(g.fac)
+  for (k, _) in g
     s, _ = signature(k)
     rt = roots(C, k)
     append!(r, map(real, rt[1:s]))
@@ -789,7 +789,7 @@ function factor(R::Union{RealField, ArbField}, f::Union{ZZPolyRingElem, QQPolyRi
     C = AcbField(precision(R))
   end
 
-  for (k,v) = g.fac
+  for (k, v) in g
     s, t = signature(k)
     r = roots(C, k)
     for i=1:s
@@ -1065,7 +1065,7 @@ end
 
 function numerator(f::QQPolyRingElem, parent::ZZPolyRing = Hecke.Globals.Zx)
   g = parent()
-  ccall((:fmpq_poly_get_numerator, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), g, f)
+  ccall((:fmpq_poly_get_numerator, libflint), Cvoid, (Ref{ZZPolyRingElem}, Ref{QQPolyRingElem}), g, f)
   return g
 end
 

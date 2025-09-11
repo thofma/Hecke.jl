@@ -166,7 +166,7 @@ dict(s::MSet) = s.dict
 
 # We try to adopt the same conventions as in Oscar, so one-line printing should
 # stay in one line, and we do not give details about what is in the MSet: the
-# detailled printing will take care of it
+# detailed printing will take care of it
 function Base.show(io::IO, s::MSet{T}) where {T}
   if isempty(s)
     print(io, "MSet{$(eltype(s))}()")

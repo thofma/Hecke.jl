@@ -54,7 +54,7 @@ function radical_extension(n::Int, gen::ZZRingElem; cached::Bool = true, check::
 end
 
 # TODO: Some sort of reference?
-@doc doc"""
+@doc raw"""
     wildanger_field(n::Int, B::ZZRingElem) -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
@@ -132,7 +132,7 @@ function show_quad(io::IO, q::AbsSimpleNumField)
   end
 end
 
-@doc doc"""
+@doc raw"""
     rationals_as_number_field() -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the rational numbers as the number field defined by $x - 1$.
@@ -386,7 +386,7 @@ function _normal_basis_generator(K, p)
   Rx, x = polynomial_ring(R, "x", cached = false)
   f = Rx(K.pol)
   fac = factor(f)
-  g = divexact(f, first(keys(fac.fac)))
+  g = divexact(f, first(fac)[1])
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   g1 = lift(Zy, g)
   return K(g1)
@@ -742,10 +742,10 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
   ffl = QQPolyRingElem[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
-  r = []
+  r = QQFieldElem[]
   if do_roots
     r = [roots(x)[1] for x = fl if degree(x) == 1]
   end

@@ -357,8 +357,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
     y[k] = CtoL(dot(basis(domain(CtoL)), elem_type(K)[xxM[(k - 1) * dC + l] for l in 1:dC]))
   end
 
-
-  B = StructureConstantAlgebra(L, mult_table, y)
+  B = StructureConstantAlgebra(L, mult_table, y; check = false)
   B.is_commutative = A.is_commutative
 
   BtoA = AlgAssExtMor(B, A, CtoL, basisCinA, basisCinL, iMM, elem_type(A)[A[i] for i in AoverC])

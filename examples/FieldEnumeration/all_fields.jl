@@ -1,4 +1,6 @@
-using GAP, Hecke, Printf, ArgParse
+using GAP, Hecke, Printf, Tryparse, ArgParse
+
+Tryparse.@override BigInt
 
 include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 
@@ -8,18 +10,18 @@ include(joinpath(Hecke.pkgdir,"examples/FieldEnumeration/FieldEnumeration.jl"))
 #
 ###############################################################################
 
-function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
-  if in('^', x)
-    l = split(x, '^')
-    if length(l) != 2
-      error("Could not parse $x as ZZRingElem")
-    end
-    l = string.(l)
-    return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
-  else
-    return parse(ZZRingElem, string(x))
-  end
-end
+# function ArgParse.parse_item(::Type{ZZRingElem}, x::AbstractString)
+#   if in('^', x)
+#     l = split(x, '^')
+#     if length(l) != 2
+#       error("Could not parse $x as ZZRingElem")
+#     end
+#     l = string.(l)
+#     return (parse(ZZRingElem, l[1]))^parse(Int, l[2])
+#   else
+#     return parse(ZZRingElem, string(x))
+#   end
+# end
 
 function parse_commandline()
   s = ArgParseSettings()
@@ -48,7 +50,7 @@ function parse_commandline()
       action = :store_true
     "--disc-bound"
       help = "Discriminant bound"
-      arg_type = ZZRingElem
+      arg_type = BigInt
     "--rootdisc-bound"
       help = "Discriminant bound"
       arg_type = Float64
@@ -120,6 +122,8 @@ function main()
       silent = val
     elseif arg == "output"
       output = val
+    elseif arg == "dbound"
+      dbound = ZZ(dbound)
     end
   end
 
@@ -192,16 +196,20 @@ function main()
 
   if maxabsubfields isa String
     maxabsub = Hecke._read_from_file(maxabsubfields)
-    l = fields(n, i, maxabsub, dbound, only_real = only_real)
+    l = Hecke.fields(n, i, maxabsub, dbound, only_real = only_real)
   else
-    l = fields(n, i, dbound, only_real = only_real)
+    l = Hecke.fields(n, i, dbound, only_real = only_real)
   end
 
   flush(stdout)
 
   # Determine the automorphism groups
   if only_cm
-    Hecke.assure_automorphisms.(l)
+    @info "Sieving for CM fields. Computing automorphisms ..."
+    for (i, K) in enumerate(l)
+      @info "$(i)/$(length(l))"
+      Hecke.assure_automorphisms(K)
+    end
   end
 
   flush(stdout)

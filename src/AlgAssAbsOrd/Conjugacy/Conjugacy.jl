@@ -285,7 +285,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     is_GLZ_conjugate(A::MatElem, B::MatElem) -> Bool, MatElem
 
 Given two integral or rational matrices, determine whether there exists an

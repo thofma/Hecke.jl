@@ -1153,3 +1153,10 @@ end
 #  lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
 #  @test length.(lis) == [4, 12, 12, 4]
 end
+
+# issue 1939
+let
+  L = integer_lattice(; gram=matrix(QQ, 2, 2, [-144 -132; -132 -122]))
+  G = genus_representatives(L)
+  @test length(G) == 2
+end

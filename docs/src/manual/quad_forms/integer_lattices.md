@@ -190,6 +190,11 @@ minimum(L::ZZLat)
 kissing_number(L::ZZLat)
 ```
 
+### Vectors with given square and divisibility
+```@docs
+vectors_of_square_and_divisibility
+```
+
 ### Short Vectors affine
 
 ```@docs

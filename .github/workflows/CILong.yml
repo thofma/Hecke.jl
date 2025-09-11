@@ -23,8 +23,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-        julia-arch:
-          - x64
         os:
           - ubuntu-latest
 
@@ -39,7 +37,6 @@ jobs:
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
         uses: julia-actions/cache@v2
       - name: "Build package"
@@ -49,9 +46,6 @@ jobs:
         run: |
           sed -i -e "s/\[deps\]/[deps]\nGAP = \"c863536a-3901-11e9-33e7-d5cd0df7b904\"/" test/Project.toml
           sed -i -e "s/\[deps\]/[deps]\nPolymake = \"d720cf60-89b5-51f5-aff5-213f193123e7\"/" test/Project.toml
-      - name: "workaround libstdc++ issue for julia 1.6"
-        if: matrix.julia-version == '~1.6.0-0' # && runner.os == 'Linux'
-        run: rm -f ${{ steps.setup-julia.outputs.julia-bindir }}/../lib/julia/libstdc++.so.6
       - name: "Run long tests"
         uses: julia-actions/julia-runtest@v1
         env:
@@ -71,8 +65,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-        julia-arch:
-          - x64
         os:
           - macOS-latest
 
@@ -86,7 +78,6 @@ jobs:
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
         uses: julia-actions/cache@v2
       - name: "Build package"

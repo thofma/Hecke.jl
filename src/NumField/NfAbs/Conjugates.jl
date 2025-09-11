@@ -89,7 +89,7 @@ function __conjugates_arb(x::AbsSimpleNumFieldElem, prec::Int = 32)
 
   for i in 1:r1
     o = RR()
-    ccall((:arb_poly_evaluate, libarb), Nothing,
+    ccall((:arb_poly_evaluate, libflint), Nothing,
           (Ref{ArbFieldElem}, Ref{ArbPolyRingElem}, Ref{ArbFieldElem}, Int),
            o, xpoly, c.real_roots[i], prec)
 
@@ -101,7 +101,7 @@ function __conjugates_arb(x::AbsSimpleNumFieldElem, prec::Int = 32)
 
   for i in 1:r2
     tacb = CC()
-    ccall((:arb_poly_evaluate_acb, libarb), Nothing,
+    ccall((:arb_poly_evaluate_acb, libflint), Nothing,
           (Ref{AcbFieldElem}, Ref{ArbPolyRingElem}, Ref{AcbFieldElem}, Int),
            tacb, xpoly, c.complex_roots[i], prec)
 
@@ -139,7 +139,7 @@ function conjugates_arb(x::AbsSimpleNumFieldElem, abs_tol::Int = 32)
 
     for i in 1:r1
       o = RR()
-      ccall((:arb_poly_evaluate, libarb), Nothing,
+      ccall((:arb_poly_evaluate, libflint), Nothing,
             (Ref{ArbFieldElem}, Ref{ArbPolyRingElem}, Ref{ArbFieldElem}, Int),
              o, xpoly, c.real_roots[i], abs_tol)
 
@@ -157,7 +157,7 @@ function conjugates_arb(x::AbsSimpleNumFieldElem, abs_tol::Int = 32)
 
     for i in 1:r2
       tacb = CC()
-      ccall((:arb_poly_evaluate_acb, libarb), Nothing,
+      ccall((:arb_poly_evaluate_acb, libflint), Nothing,
             (Ref{AcbFieldElem}, Ref{ArbPolyRingElem}, Ref{AcbFieldElem}, Int),
              tacb, xpoly, c.complex_roots[i], abs_tol)
 
@@ -272,7 +272,7 @@ function conjugates_arb_log(x::AbsSimpleNumFieldElem, abs_tol::Int)
   d = degree(K)
   target_tol = abs_tol
 
-  # TODO: Replace this using multipoint evaluation of libarb
+  # TODO: Replace this using multipoint evaluation of libflint
   z = Array{ArbFieldElem}(undef, r1 + r2)
   while true
     prec_too_low = false
@@ -284,7 +284,7 @@ function conjugates_arb_log(x::AbsSimpleNumFieldElem, abs_tol::Int)
     RR = ArbField(abs_tol, cached = false)
     for i in 1:r1
       o = RR()
-      ccall((:arb_poly_evaluate, libarb), Nothing,
+      ccall((:arb_poly_evaluate, libflint), Nothing,
             (Ref{ArbFieldElem}, Ref{ArbPolyRingElem}, Ref{ArbFieldElem}, Int),
             o, xpoly, c.real_roots[i], abs_tol)
       abs!(o, o)
@@ -307,7 +307,7 @@ function conjugates_arb_log(x::AbsSimpleNumFieldElem, abs_tol::Int)
     tacb = CC()
     for i in 1:r2
       oo = RR()
-      ccall((:arb_poly_evaluate_acb, libarb), Nothing,
+      ccall((:arb_poly_evaluate_acb, libflint), Nothing,
             (Ref{AcbFieldElem}, Ref{ArbPolyRingElem}, Ref{AcbFieldElem}, Int),
             tacb, xpoly, c.complex_roots[i], abs_tol)
       abs!(oo, tacb)

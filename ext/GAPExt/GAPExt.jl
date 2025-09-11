@@ -6,6 +6,7 @@ const Nemo = Hecke.Nemo
 const AbstractAlgebra = Hecke.AbstractAlgebra
 
 import Hecke:
+  assure_automorphisms,
   cartesian_product_iterator,
   check_obstruction,
   compose_mod,

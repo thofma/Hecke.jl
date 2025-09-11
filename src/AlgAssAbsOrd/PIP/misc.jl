@@ -29,8 +29,9 @@ end
 
 function maximal_order_via_absolute(O::AlgAssRelOrd)
   A = algebra(O)
-  C, AtoC, CtoA = restrict_scalars(A, QQ)
-  OC = maximal_order(Hecke._get_order_from_gens(C, AtoC.(elem_in_algebra.(absolute_basis(O)))))
+  C, CtoA = restrict_scalars(A, QQ)
+  basisOinC = [preimage(CtoA, elem_in_algebra(x)) for x in absolute_basis(O)]
+  OC = maximal_order(Hecke._get_order_from_gens(C, basisOinC))
   M = zero_matrix(base_ring(A), degree(OC), dim(A))
   for i = 1:degree(OC)
     elem_to_mat_row!(M, i, CtoA(elem_in_algebra(basis(OC, copy = false)[i], copy = false)))

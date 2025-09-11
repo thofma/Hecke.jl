@@ -64,7 +64,7 @@ end
 function _nf_to_fq!(a::FqFieldElem, b::AbsSimpleNumFieldElem, K::FqField)#, a_tmp::FpPolyRingElem)
   # AbsSimpleNumFieldElem -> QQPolyRingElem
   z = QQPolyRingElem()
-  ccall((:nf_elem_get_fmpq_poly, libantic), Nothing,
+  ccall((:nf_elem_get_fmpq_poly, libflint), Nothing,
         (Ref{QQPolyRingElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), z, b, parent(b))
   z.parent = Globals.Qx
   # QQPolyRingElem -> ZZPolyRingElem, ZZRingElem
@@ -134,7 +134,7 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepFiel
     end
     n, k = ppio(n, ZZRingElem(n_quo))
   end
-  primefactors_n = collect(keys(factor(n).fac))
+  primefactors_n = prime_divisors(n)
 
   x = rand(F)^k
   while iszero(x)
@@ -321,7 +321,7 @@ end
 function splitting_field(f::PolyRingElem{<:FinFieldElem}; do_roots::Bool = false)
   lf = factor(f)
   k = base_ring(f)
-  d = reduce(lcm, [degree(x) for x = keys(lf.fac)], init = 1)
+  d = reduce(lcm, [degree(x) for (x, _) in lf], init = 1)
   if isa(k,  Nemo.fpField) || isa(k, Nemo.fqPolyRepField)
     K = GF(Int(characteristic(k)), absolute_degree(k)*d)
   else

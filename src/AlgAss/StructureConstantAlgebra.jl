@@ -195,7 +195,7 @@ zero_algebra(::Type{StructureConstantAlgebra}, R::Ring) = return zero_algebra(R)
 #
 ################################################################################
 
-function denominator_of_structure_constant_table(A::StructureConstantAlgebra{QQFieldElem})
+function denominator_of_structure_constant_table(A::Union{StructureConstantAlgebra{QQFieldElem}, QuaternionAlgebra{QQFieldElem}})
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
     mt = structure_constant_table(A)
@@ -676,7 +676,7 @@ function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool 
   end
 
   fac = factor(f)
-  fi = [ k for k in keys(fac.fac) ]
+  fi = [ k for (k, _) in fac ]
   l = length(fi)
   R = parent(f)
   if only_one

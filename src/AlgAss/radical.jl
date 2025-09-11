@@ -349,7 +349,7 @@ function _lift_fq_mat!(M1::MatElem{T}, M2::MatElem{AbsSimpleNumFieldElem}, M3::M
           M3[i, j] = setcoeff!(M3[i, j], k, QQFieldElem(coeff(M1[i, j], k)))
         end
       end
-      ccall((:nf_elem_set_fmpq_poly, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{QQPolyRingElem}, Ref{AbsSimpleNumField}), M2[i, j], M3[i, j], K)
+      ccall((:nf_elem_set_fmpq_poly, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{QQPolyRingElem}, Ref{AbsSimpleNumField}), M2[i, j], M3[i, j], K)
     end
   end
   return M2

@@ -2,6 +2,7 @@ module ZZRingElem_Array_Mod
 
 using Nemo
 using Nemo: set!
+import Hecke: libflint
 
 mutable struct ZZRingElem_Array <: AbstractVector{ZZRingElem}
   ar::Vector{Int}
@@ -54,7 +55,7 @@ end
       return
     end
   end
-  ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), get_ptr(a, i), v)
+  ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), get_ptr(a, i), v)
   return v
 end
 
@@ -106,7 +107,7 @@ function empty!!(a::ZZRingElem_Array)
   p = get_ptr(a, 1)
   for i=1:length(a)
     @inbounds if !Nemo.__fmpz_is_small(a.ar[i])
-      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
+      ccall((:fmpz_clear, libflint), Cvoid, (Ptr{ZZRingElem}, ), p)
     end
     unsafe_store!(Ptr{Int}(p), 0)
     p += sizeof(Int)
@@ -194,7 +195,7 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
   elseif n < la
     ap = get_ptr(a, n+1)
     for i=n+1:la
-      ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), ap)
+      ccall((:fmpz_clear, libflint), Cvoid, (Ptr{ZZRingElem}, ), ap)
       unsafe_store!(Ptr{Int}(ap), 0)
       ap += sizeof(Int)
     end
@@ -205,7 +206,7 @@ function Base.resize!(a::ZZRingElem_Array, n::Int)
 end
 
 function Base.deleteat!(a::ZZRingElem_Array, b::Int64)
-  ccall((:fmpz_clear, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
+  ccall((:fmpz_clear, libflint), Cvoid, (Ptr{ZZRingElem}, ), get_ptr(a, b))
   a.ar[b] = 0
   deleteat!(a.ar, b)
   a.l -= 1
@@ -474,7 +475,7 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
     pa = get_ptr(a.values, 1)
     pb = get_ptr(b.values, 1)
     for i=1:length(a)
-#      if ccall((:fmpz_cmp, Nemo.libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
+#      if ccall((:fmpz_cmp, libflint), Cint, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), pa, pb) != 0
       if cmp(pa, pb) != 0
         return false
       end
@@ -485,55 +486,33 @@ function ==(a::SRow{ZZRingElem, ZZRingElem_Array}, b::SRow{ZZRingElem, ZZRingEle
   return true
 end
 
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
-  if sort && length(A) > 1
-    A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
-  end
-  a = ZZRingElem_Array()
-  sizehint!(a, length(A))
-  l = Int[]
-  # assume A is sorted
-  local c
-  for (i, (p, v)) in enumerate(A)
-    if i == 1
-      c = p
-    else
-      if c == p
-        error("positions in sparse row must be unique")
+for T in (Int, ZZRingElem)
+  @eval begin
+    function sparse_row(R::ZZRing, A::Vector{Tuple{Int, $T}}; sort::Bool = true)
+      if sort && length(A) > 1
+        A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
       end
-      c = p
-    end
-    if !is_zero(v)
-      push!(a, v)
-      push!(l, p)
-    end
-  end
-  return SRow(R, l, a)
-end
-
-function sparse_row(R::ZZRing, A::Vector{Tuple{Int, ZZRingElem}}; sort::Bool = true)
-  if sort && length(A) > 1
-    A = Base.sort(A, lt=(a,b)->isless(a[1], b[1]))
-  end
-  a = ZZRingElem_Array()
-  sizehint!(a, length(A))
-  local c
-  l = Int[]
-  for (i, (p, v)) in enumerate(A)
-    if i == 1
-      c = p
-    else
-      if c == p
-        error("positions in sparse row must be unique")
+      a = ZZRingElem_Array()
+      sizehint!(a, length(A))
+      l = Int[]
+      local c
+      for (i, (p, v)) in enumerate(A)
+        if i == 1
+          c = p
+        else
+          if c == p
+            error("positions in sparse row must be unique")
+          end
+          c = p
+        end
+        if !is_zero(v)
+          push!(a, v)
+          push!(l, p)
+        end
       end
-      c = p
-    end
-    if !is_zero(v)
-      push!(a, v)
-      push!(l, p)
+      return SRow(R, l, a)
     end
   end
-  return SRow(R, l, a)
 end
 
 function sparse_row(R::ZZRing, pos::Vector{Int64}, val::AbstractVector{T}; sort::Bool = true) where T

@@ -161,7 +161,7 @@
   @test prod(x[1] for x in PD) == I
   @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*ZG, PD), PD)
 
-  I = 16 * M 
+  I = 16 * M
   PD = primary_decomposition(I, M)
   @test prod(x[1] for x in PD) == I
   @test all(x -> all(y -> y[2] === x[2] || x[2] + y[2] == 1*M, PD), PD)
@@ -206,5 +206,55 @@
     I = 1 * O
     @test parent(I) == parent(I)
     @test hash(parent(I)) == hash(parent(I))
+  end
+
+  let
+    T = matrix(QQ, [0 1; 0 0])
+    A = matrix_algebra(QQ, [T])
+    O = order(A, [T])
+    I = ideal(O, A(T))
+    @test !Hecke.is_full_lattice(I)
+    @test !Hecke.is_full_rank(I)
+    @test is_zero(I^2)
+  end
+
+  let # maximal integral ideal
+    ZG = integral_group_ring(QQ[small_group(36, 1)])
+    P = Hecke.maximal_integral_ideal(ZG, 2; side = :left)
+    @test ZG(2) in P
+    @test !(ZG(3) in P)
+    @test ZG * P == P
+    P = Hecke.maximal_integral_ideal(ZG, 3; side = :right)
+    @test ZG(3) in P
+    @test !(ZG(2) in P)
+    @test P * ZG == P
+
+    ZG = integral_group_ring(QQ[small_group(20, 1)])
+    Ps = Hecke.maximal_integral_ideals(ZG, 2; side = :left)
+    @test allunique(Ps)
+    for P in Ps
+      @test ZG(2) in P
+      @test !(ZG(3) in P)
+      @test ZG * P == P
+    end
+
+    Ps = Hecke.maximal_integral_ideals(ZG, 3; side = :right)
+    @test allunique(Ps)
+    for P in Ps
+      @test ZG(3) in P
+      @test !(ZG(2) in P)
+      @test P * ZG == P
+    end
+
+    # a quaternion algebra (I know the result)
+    let
+      a, b, bas = (-3, -1, Vector{QQFieldElem}[[1, 0, 0, 0], [1//2, 3//2, 0, 0], [0, 0, 3, 0], [0, 0, 3//2, 1//2]])
+      A = quaternion_algebra(QQ, a, b)
+      bO = A.(bas)
+      O = order(A, bO)
+      lP = Hecke.maximal_integral_ideals(O, 2; side = :right)
+      @test allunique(lP) && length(lP) == 3
+      @test all(P -> P * O == P, lP)
+    end
   end
 end

@@ -563,9 +563,9 @@ Base.isempty(me::modular_env) = !isdefined(me, :ce)
 
 function show(io::IO, me::modular_env)
   if isempty(me)
-    println("modular environment for p=$(me.p), using $(0) ideals")
+    print(io, "modular environment for p=$(me.p), using $(0) ideals")
   else
-    println("modular environment for p=$(me.p), using $(me.ce.n) ideals")
+    print(io, "modular environment for p=$(me.p), using $(me.ce.n) ideals")
   end
 end
 

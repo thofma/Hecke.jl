@@ -225,7 +225,7 @@ function setindex!(D::NFDBRecord, s, k::Symbol, x...)
     end
   end
 
-  if (k === :p_adic_regulator && !(s isa Union{Integer, Rational{<:Integer}, QQFieldElem})) || (k !== :p_adic_regulator! && (s isa properties_comp[k][1]))
+  if (k === :p_adic_regulator && !(s isa Union{Integer, Rational{<:Integer}, QQFieldElem})) || (k !== :p_adic_regulator! && !(s isa properties_comp[k][1]))
     error("$s has the wrong type (expected $(properties_comp[k][1]))")
   end
 

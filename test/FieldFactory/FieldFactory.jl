@@ -121,7 +121,7 @@
       G = GAP.Globals.SmallGroup(27, 3)
       L = GAP.Globals.DerivedSeries(G)
       lsieved = Hecke.check_obstruction(l, L, 2, [3])
-      @test length(lsieved) == 24
+      @test length(lsieved) == 13
     end
   end
 

@@ -1953,7 +1953,7 @@ function _padic_index(N, M, p)
   for i in 1:n
     for j in 1:n
       if !(T[i, j] == 0)
-           mini = min(mini, valuation(T[i, j], p) + valuation(Npb[i][2], p) - valuation(Mpb[i][2], p))
+           mini = min(mini, valuation(T[i, j], p) + valuation(Npb[i][2], p) - valuation(Mpb[j][2], p))
       end
     end
   end
@@ -1961,7 +1961,7 @@ function _padic_index(N, M, p)
   pi = elem_in_nf(uniformizer(p))
   for i in 1:n
     for j in 1:n
-      TT[i, j] = TT[i, j] * pi^(valuation(Npb[i][2], p) - valuation(Mpb[i][2], p))
+      TT[i, j] = TT[i, j] * pi^(valuation(Npb[i][2], p) - valuation(Mpb[j][2], p))
     end
   end
 

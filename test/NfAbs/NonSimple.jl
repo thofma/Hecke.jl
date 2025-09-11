@@ -174,9 +174,7 @@
     Qx, x = QQ["x"]
     K, (a, b) = number_field([x^2 - 2, x^3 - 3])
     @test (@inferred QQ(2*a^0)) == 2*one(QQ)
-    @test @inferred is_rational(2*a^0)
     @test_throws ArgumentError QQ(a)
-    @test @inferred !is_rational(a)
   end
 
   K, (a,) = @inferred number_field([x])
@@ -200,5 +198,10 @@
     fa = factor(f)
     @test length(fa) == 5
     @test f == unit(fa) * prod(p^e for (p, e) in fa)
+  end
+
+  let
+    K, = cyclotomic_field(NonSimpleNumField, 100)
+    @test degree(K) == 40
   end
 end

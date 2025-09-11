@@ -21,18 +21,12 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge,
 	     powermod
 
-# To make all exported Nemo functions visible to someone using "using Hecke"
-# we have to export everything again
-# dong it the "import" route, we can pick & choose...
-
-using LazyArtifacts
+using Artifacts
 
 using LinearAlgebra
-using Markdown
 using Distributed
 using Printf
 using SparseArrays
-using Serialization
 using Random
 using Pkg
 
@@ -53,13 +47,11 @@ import AbstractAlgebra:
   set_assertion_level,
   set_verbosity_level
 
-import AbstractAlgebra: Solve, coprime_base_steel
+import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
-
-import Serialization: serialize, deserialize
 
 import Random: rand!
 using Random: Sampler, SamplerTrivial, GLOBAL_RNG
@@ -69,6 +61,10 @@ using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 import Nemo
 
 import Pkg
+
+# To make all exported Nemo functions visible to someone using "using Hecke"
+# we have to export everything again
+# dong it the "import" route, we can pick & choose...
 
 exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
@@ -109,6 +105,10 @@ end
 global const maximal_order = maximal_order
 
 function _print_banner()
+  version_string = string(HECKE_VERSION)
+  if isdir(joinpath(@__DIR__, "..", ".git"))
+    version_string *= "-dev"
+  end
   printstyled(raw""" _    _           _        """, color = :red)
   println("")
   printstyled(raw"""| |  | |         | |       """, color = :red)
@@ -121,7 +121,7 @@ function _print_banner()
   println("  |  Manual: https://thofma.github.io/Hecke.jl")
   printstyled(raw"""|_|  |_|\___|\___|_|\_\___|""", color = :red)
   print("  |  Version ")
-  printstyled("$VERSION_NUMBER", color = :green)
+  printstyled("$version_string", color = :green)
   println()
 end
 
@@ -398,23 +398,8 @@ end
 #
 ################################################################################
 
-deps = Pkg.dependencies()
-if haskey(deps, Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21"))
-  ver = Pkg.dependencies()[Base.UUID("3e1990a7-5d81-5526-99ce-9ba3ff248f21")]
-  if occursin("/dev/", ver.source)
-    global VERSION_NUMBER = VersionNumber("$(ver.version)-dev")
-  else
-    global VERSION_NUMBER = VersionNumber("$(ver.version)")
-  end
-else
-  global VERSION_NUMBER = "building"
-end
-
 # version number determined at compile time
-function _get_version()
-    return VersionNumber(Pkg.TOML.parsefile(joinpath(dirname(@__DIR__), "Project.toml"))["version"])
-end
-const pkg_version = _get_version()
+const HECKE_VERSION = Base.pkgversion(@__MODULE__)
 
 ################################################################################
 #
@@ -444,11 +429,7 @@ _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.heade
 _get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
 _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
-import Nemo: libflint  #to be able to reference libraries by full path
-                       #to avoid calling the "wrong" copy
-
-const libantic = libflint
-const libarb = libflint
+using FLINT_jll: libflint
 
 ################################################################################
 #
@@ -747,6 +728,7 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
     doc_init()
   end
   Pkg.activate(docsproject) do
+    Base.invokelatest(Main.Build.build_all_tutorials, Hecke)
     Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
   end
   if format == :html
@@ -789,26 +771,6 @@ function percent_P()
   end
   print_history(REPL.LineEdit.mode(s).hist)
 end
-
-#same (copied) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
-#difference: names(m, all = true) to also see non-exported variables, aka
-# caches...
-
-function varinfo(m::Module=Main, pattern::Regex=r"")
-    rows =
-        Any[ let value = getfield(m, v)
-                 Any[string(v),
-                     (value===Base || value===Main || value===Core ? "" : format_bytes(summarysize(value))),
-                     summary(value)]
-             end
-             for v in sort!(names(m, all = true)) if isdefined(m, v) && occursin(pattern, string(v)) ]
-
-    pushfirst!(rows, Any["name", "size", "summary"])
-
-    return Markdown.MD(Any[Markdown.Table(rows, Symbol[:l, :r, :l])])
-end
-varinfo(pat::Regex) = varinfo(Main, pat)
-
 
 function print_cache(sym::Vector{Any})
   for f in sym
@@ -895,6 +857,9 @@ using .NormRel
 ################################################################################
 
 function fields
+end
+
+function assure_automorphisms
 end
 
 function IdGroup

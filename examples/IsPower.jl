@@ -2,6 +2,7 @@ module IsPower
 
 using Hecke
 import Hecke.Nemo
+import Hecke: qAdicConj
 
 function Hecke.roots_upper_bound(f::ZZPolyRingElem)
   a = coeff(f, degree(f))
@@ -87,7 +88,7 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
     for j=a_len-1:-1:0
       c = B*c+ceil(ZZRingElem, abs(coeff(a, j)))
     end
-    c = root(c, i)
+    c = iroot(c, i)
     power_sum = l-> degree(parent(a))*c^l
   end
 
@@ -118,6 +119,8 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
     @assert con_pr_j[1][1] == con_pr[1][1]^j
 
     data = matrix([reduce(vcat, [map(x -> lift(trace(x)), y) for y = con_pr_j])])
+    data = transpose(data)
+    @show size(data), no_rt, no_fac
     data = sub(trafo, 1:no_rt, 1:no_fac)*data
     k = clog(bd[j], p)
     @assert k < pr
@@ -141,7 +144,7 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
     trafo = sub(trafo, 1:no_rt, 1:ncols(trafo))
     d = Dict{ZZMatrix, Vector{Int}}()
     for l=1:no_fac
-      k = trafo[:, l]
+      k = trafo[:, l:l]
       if haskey(d, k)
         push!(d[k], l)
       else
@@ -258,10 +261,10 @@ function Hecke.roots(a::QadicFieldElem, i::Int)
   end
 
   local zeta
-  j = gcd(size(k)-1, i)
+  j = gcd(order(k)-1, i)
   if j != 1
     while true
-      zeta = rand(k)^(divexact(size(k)-1, j))
+      zeta = rand(k)^(divexact(order(k)-1, j))
       if all(l-> !isone(zeta^l), 1:j-1)
         break
       end
@@ -312,11 +315,11 @@ function Base.getindex(H::Hecke.HenselCtx, s::Symbol, i::Int)
     return unsafe_load(H.link, i)
   elseif s == :v
     f = Hecke.Globals.Zx()
-    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Hecke.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.v+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   elseif s == :w
     f = Hecke.Globals.Zx()
-    GC.@preserve f H ccall((:fmpz_poly_set, Nemo.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
+    GC.@preserve f H ccall((:fmpz_poly_set, Hecke.libflint), Cvoid, (Ref{ZZPolyRingElem}, Ptr{Hecke.fmpz_poly_raw}), f, H.w+(i-1)*sizeof(Hecke.fmpz_poly_raw))
     return f
   end
 end

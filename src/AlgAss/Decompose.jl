@@ -41,7 +41,8 @@ function decompose(A::StructureConstantAlgebra{T}) where {T}
 
   if is_simple_known(A) && A.is_simple == 1
     B, mB = StructureConstantAlgebra(A)
-    return Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[(B, mB)]
+    A.decomposition =  Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[(B, mB)]
+    return A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
   end
 
   res = _decompose(A)
@@ -61,9 +62,10 @@ function __decompose(A::AbstractAssociativeAlgebra{T}) where {T}
 
   B, mB = StructureConstantAlgebra(A)
 
-  if is_simple_known(A) && A.is_simple == 1
-    return Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[ (B, mB) ]
-  end
+  #if is_simple_known(A) && A.is_simple == 1
+  #  A.decomposition = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[ (B, mB) ]
+  #  return A.decomposition::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}}
+  #end
 
   D = _decompose(B)::Vector{Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, StructureConstantAlgebra{T})}}
   res = Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}[]
@@ -212,10 +214,7 @@ function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
 
     fac = factor(f)
     R = parent(f)
-    factors = Vector{elem_type(R)}()
-    for ff in keys(fac.fac)
-      push!(factors, ff)
-    end
+    factors = [ff for (ff, _) in fac]
     sols = Vector{elem_type(R)}()
     right_side = elem_type(R)[ R() for i = 1:length(factors) ]
     max_deg = 0
@@ -295,7 +294,7 @@ function _dec_com_finite(A::AbstractAssociativeAlgebra{T}) where T
   #@assert is_squarefree(f)
   fac = factor(f)
   R = parent(f)
-  factorss = collect(keys(fac.fac))
+  factorss = [p for (p, _) in fac]
   sols = Vector{typeof(f)}(undef, length(factorss))
   right_side = typeof(f)[ zero(R) for i = 1:length(factorss) ]
   max_deg = 0
@@ -485,7 +484,7 @@ end
 
 function _separable_subalgebra(A::AbstractAssociativeAlgebra)
   if is_separable(A)
-    return A, identity_map(A)
+    return A, id_hom(A)
   end
   char = characteristic(base_ring(A))
   n = ZZ(char)^flog(ZZ(dim(A)), char)

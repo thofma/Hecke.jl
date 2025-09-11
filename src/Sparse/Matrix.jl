@@ -917,13 +917,7 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    sub(A::SMat, r::AbstractUnitRange, c::AbstractUnitRange) -> SMat
-
-Return the submatrix of $A$, where the rows correspond to $r$ and the columns
-correspond to $c$.
-"""
-function sub(A::SMat{T}, r::AbstractRange, c::AbstractRange) where T
+function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
   B = sparse_matrix(base_ring(A))
   B.nnz = 0
   B.c = length(c)
@@ -937,6 +931,47 @@ function sub(A::SMat{T}, r::AbstractRange, c::AbstractRange) where T
         push!(rw.pos, ra.pos[j]-first(c)+1)
       end
     end
+    push!(B, rw)
+  end
+  return B
+end
+
+@doc raw"""
+    sub(A::SMat, r::AbstractVector, c::AbstractVector) -> SMat
+
+Return the submatrix of $A$, where the rows correspond to $r$ and the columns
+correspond to $c$. The row and column indices must be sorted and unique.
+"""
+function sub(A::SMat{T}, r::AbstractVector, c::AbstractVector) where T
+  @req issorted(r) "The row indicies ($r) must be sorted"
+  @req issorted(c) "The column indicies ($c) must be sorted"
+  B = sparse_matrix(base_ring(A))
+  B.nnz = 0
+  B.c = length(c)
+  t = base_ring(A)()
+  _r = 0
+  for i in r
+    @req i != _r "The row indices must be unique"
+    _r = i
+    rw = sparse_row(base_ring(A))
+    ra = A.rows[i]
+    _k = 0
+    errork = false
+    for j=1:length(ra.values)
+      # searchsortedfirst cannot be useddd
+      cview = @view(c[_k + 1:end])
+      !insorted(ra.pos[j], cview) && continue
+      __k = searchsorted(cview, ra.pos[j])
+      if length(__k) > 1
+        errork = true
+        break
+      end
+      k = first(__k) + _k
+      push!(rw.values, getindex!(t, ra.values, j))
+      push!(rw.pos, k)
+      _k = k
+    end
+    @req !errork "The column indices must be unique"
     push!(B, rw)
   end
   return B
@@ -1409,7 +1444,7 @@ function identity_matrix(::Type{SMat}, R::Ring, n::Int)
   A = sparse_matrix(R)
   A.c = n
   for i in 1:n
-    push!(A, sparse_row(R, [i], [one(R)]))
+    push!(A, sparse_row(R, [(i, one(R))]))
   end
   return A
 end

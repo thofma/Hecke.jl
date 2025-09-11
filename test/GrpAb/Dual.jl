@@ -14,4 +14,9 @@
   @test iszero(QZ(1//2) - QZ(1//2))
   @test -QZ(1//2) == QZ(1//2)
   @test -QZ(1//3) == QZ(2//3)
+
+  @test sprint(show, "text/plain", QZ) isa String
+  @test sprint(show, "text/plain", Hecke.QmodnZ(ZZ(2))) isa String
+  s = sprint(show, "text/plain", map_from_func(x -> x, QZ, QZ))
+  @test s isa String && !contains(s, "q/Z")
 end

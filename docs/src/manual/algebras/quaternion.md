@@ -22,7 +22,7 @@ quaternion_algebra(::Field, ::Any, ::Any)
 ## Arithmetic of elements
 
 ```@docs
-conjugate(a::AssociativeAlgebraElem)
+conj(a::AssociativeAlgebraElem)
 ```
 
 ```@docs; canonical=false
@@ -37,7 +37,7 @@ reduced_charpoly(::AbstractAssociativeAlgebraElem)
 julia> Q = quaternion_algebra(QQ, -1, -1)
 Quaternion algebra
   over rational field
-  defined by i^2 = -1, j^2 = -1
+  defined by i^2 = -1, j^2 = -1, ij = -ji
 
 julia> z = Q([1, 2, 0, 1//3])
 1 + 2*i + 1//3*k

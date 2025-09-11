@@ -32,6 +32,10 @@ struct ZZFracIdl <: NumFieldOrderFractionalIdeal
   end
 end
 
+base_ring(::ZZIdl) = ZZ
+
+base_ring_type(::Type{ZZIdl}) = ZZRing
+
 order(::ZZIdl) = ZZ
 
 order(::ZZFracIdl) = ZZ

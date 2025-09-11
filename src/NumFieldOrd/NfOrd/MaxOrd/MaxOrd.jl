@@ -242,8 +242,7 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   if !isempty(Q) && discriminant(O1) != disc
     @vprintln :AbsNumFieldOrder 1 "I have to factor $Q\n "
     for el in Q
-      d = factor(el).fac
-      O2 = pmaximal_overorder_at(O, collect(keys(d)))
+      O2 = pmaximal_overorder_at(O, prime_divisors(el))
       O1 = sum_as_Z_modules(O1, O2, auxmat)
     end
   end

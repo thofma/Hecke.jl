@@ -68,6 +68,8 @@ end
   trace_basis_elem::Vector{T}
   maximal_order
   std_inv# standard involution
+  decomposition
+  center
 
   function QuaternionAlgebra{T}() where {T}
     z = new{T}()
@@ -189,7 +191,7 @@ end
         el = _identity_elem(G)
         A.group_to_base[el] = 1
         A.base_to_group[1] = el
-        A.sparse_one = sparse_row(K, [1], [one(K)])
+        A.sparse_one = sparse_row(K, [(1,one(K))])
       else
         # dense
         A.mult_table = zeros(Int, d, d)
@@ -253,7 +255,7 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
     if A.sparse
       i = __elem_index(A, g)
       a = GroupAlgebraElem{T, S}(A)
-      a.coeffs_sparse = sparse_row(base_ring(A), [i], [one(base_ring(A))])
+      a.coeffs_sparse = sparse_row(base_ring(A), [(i,one(base_ring(A)))])
       return a
     else
       return A[A.group_to_base[g]]

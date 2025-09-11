@@ -25,7 +25,7 @@ function number_field(CF::ClassField{S, T}; redo::Bool = false, using_norm_relat
   for i=1:ngens(G)
     o = G.snf[i]
     lo = factor(o)
-    for (p, e) = lo.fac
+    for (p, e) in lo
       q[i] = p^e*G[i]
       S1, mQ = quo(G, q, false)
       if using_norm_relation && !divides(ZZRingElem(ord), order(S1))[1]
@@ -144,8 +144,7 @@ function _rcf_S_units_enlarge(CE, CF::ClassField_pp)
   @vtime :ClassField 3 S, mS = NormRel._sunit_group_fac_elem_quo_via_brauer(nf(OK), lP, e, saturate_units = true)
   KK = kummer_extension(e, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[mS(S[i]) for i=1:ngens(S)])
   CF.bigK = KK
-  lf = factor(minimum(defining_modulus(CF)[1]))
-  lfs = Set(collect(keys(lf.fac)))
+  lfs = Set(prime_divisors(minimum(defining_modulus(CF)[1])))
   CE.kummer_exts[lfs] = (lP, KK)
   _rcf_find_kummer(CF)
   return nothing
@@ -181,8 +180,8 @@ end
 function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
-  lf = factor(f)
-  lfs = Set(collect(keys(lf.fac)))
+  fps = prime_divisors(f)
+  lfs = Set(fps)
   for (k, v) in C.kummer_exts
     if issubset(lfs, k)
       return v
@@ -197,7 +196,7 @@ function _s_unit_for_kummer_using_Brauer(C::CyclotomicExt, f::ZZRingElem)
 
   lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
-  for p = keys(lf.fac)
+  for p in fps
     #I remove the primes that can't be in the conductor
     lp = prime_decomposition(ZK, p)
     for (P, s) in lp
@@ -468,8 +467,8 @@ end
 function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
 
   e = C.n
-  lf = factor(f)
-  lfs = Set(collect(keys(lf.fac)))
+  fps = prime_divisors(f)
+  lfs = Set(fps)
   for (k, v) in C.kummer_exts
     if issubset(lfs, k)
       return v
@@ -487,7 +486,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
 
   lP = Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
 
-  for p = keys(lf.fac)
+  for p in fps
      #I remove the primes that can't be in the conductor
      lp = prime_decomposition(ZK, p)
      for (P, s) in lp
@@ -704,6 +703,11 @@ function find_orbit(auts, AutG, x)
   t = ngens(AutG)
   order = 1
   elements = Tuple{FinGenAbGroupElem, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[(id(AutG), x)]
+
+  if Hecke.order(AutG) == 1
+    return elements
+  end
+
   g = S[1]
 
   while !iszero(g)
@@ -871,7 +875,7 @@ function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::NumF
   dict[h(a)] = 1
   if r <= div(degree(K), 2)
     add_to_key!(dict, a, -r)
-    aa = FacElem(dict)
+    aa = FacElem(k, dict)
     @vtime :ClassField 3 fl, b = is_power(aa, degree(K), with_roots_unity = true)
     if !fl
       throw(ExtendAutoError())
@@ -887,7 +891,6 @@ function _extend_auto(K::Hecke.RelSimpleNumField{AbsSimpleNumFieldElem}, h::NumF
     return hom(K, K, h, evaluate(b)*gen(K)^(r-degree(K)))
   end
 end
-
 
 function _rcf_descent(CF::ClassField_pp)
   if isdefined(CF, :A)
