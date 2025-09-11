@@ -58,6 +58,16 @@ mutable struct data_StructGauss{T}
  end
 end
 
+mutable struct data_Det
+ scaling #tracks scaling -> divide det by product in the end
+ divisions #tracks divisions -> multiply det by product
+ function data_Det(R)
+  return new(one(R), one(R))
+ end
+end
+
+
+
 function _col_list(A::SMat{T})::Vector{Vector{Int64}} where T
  n = nrows(A)
  m = ncols(A)
@@ -80,7 +90,7 @@ AN is the zero matrix.
 """
 
 function structured_gauss(A::SMat{T}) where T <: RingElem
- SG = part_echolonize!(A)
+ SG, Det = part_echolonize!(A)
  return compute_kernel(SG)
 end
 
@@ -106,11 +116,12 @@ end
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-function part_echolonize!(A::SMat{T})::data_StructGauss where T <: RingElem
+function part_echolonize!(A::SMat{T})::Tuple{data_StructGauss{ZZPolyRingElem}, data_Det} where T <: RingElem
  A = delete_zero_rows!(A)
  n = nrows(A)
  m = ncols(A)
  SG = data_StructGauss(A)
+ Det = data_Det(SG.R(1))
  single_rows_to_top!(SG)
 
  while SG.nlight > 0 && SG.base <= n
@@ -130,9 +141,9 @@ function part_echolonize!(A::SMat{T})::data_StructGauss where T <: RingElem
    test_col_list(SG) #test
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
-  eliminate_and_update2!(best_single_row, SG)
+  eliminate_and_update2!(best_single_row, SG, Det)
  end
- return SG
+ return SG, Det
 end
 
 function part_echolonize_field!(A::SMat{T})::data_StructGauss where T <: FieldElem
@@ -397,7 +408,7 @@ function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss)::da
  return SG
 end
 
-function eliminate_and_update2!(best_single_row::Int64, SG::data_StructGauss)::data_StructGauss
+function eliminate_and_update2!(best_single_row::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
  @assert !iszero(best_single_row)
  L_best = deepcopy(SG.col_list_perm[best_single_row])
  #L_best == 85 && @show SG.A[best_single_row].pos
@@ -415,10 +426,11 @@ function eliminate_and_update2!(best_single_row::Int64, SG::data_StructGauss)::d
   L_row = SG.col_list_perm[row_idx]
   @assert L_row != L_best
   @assert SG.col_list_perm[best_single_row] == L_best #test
-  add_to_eliminate2!(L_row, row_idx, best_single_row, best_col, SG)
+  add_to_eliminate2!(L_row, row_idx, best_single_row, best_col, SG, Det)
   @assert iszero(SG.A[row_idx, best_col])
   @assert SG.col_list_perm[best_single_row] == L_best #test
   update_after_addition2!(L_row, row_idx, best_col, SG)
+  #TODO: divide (row_idx) by gcd and test time diff
   @assert SG.col_list_perm[best_single_row] == L_best #test
   #@show L_row
   #test_col_list(SG) #FAILS
@@ -518,7 +530,7 @@ function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_row::SRow{T}, best
  return SG
 end
 
-function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_StructGauss)::data_StructGauss
+function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
  L_best = SG.col_list_perm[best_single_row]
  @assert L_row in SG.col_list[best_col]
  @assert L_best != L_row
@@ -552,6 +564,7 @@ function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64
    SG.A.nnz -= length(SG.A[row_idx])
    tmp = neg!(tmp)
    scale_row!(SG.A, row_idx, tmp)
+   Det.scaling *= tmp
    tmp = one!(tmp)
    SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp)
    SG.A.nnz += length(SG.A[row_idx])
@@ -567,6 +580,7 @@ function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64
    SG.A.nnz -= length(SG.A[row_idx])
    #@show SG.A[best_single_row]
    Hecke.transform_row!(SG.A, best_single_row, row_idx, SG.R(1), tmp, val_red, best_val_red)
+   Det.scaling*=best_val_red
    #@show SG.A[best_single_row]
    #TODO: write transform_rows for rows
    SG.A.nnz += length(SG.A[row_idx])
@@ -685,6 +699,18 @@ end
 #Compute the kernel corresponding to the non echolonized part from above and
 #insert backwards using the triangular part to get the full kernel.
 
+mutable struct data_Kernel
+ heavy_mapi::Vector{Int64}
+ heavy_map::Vector{Int64}
+
+ function data_Kernel(SG::data_StructGauss, nheavy::Int64)
+  return new(
+  sizehint!(Int[], nheavy),
+  fill(0, ncols(SG.A))
+  )
+ end
+end
+
 function compute_kernel(SG, with_light = true)
  Hecke.update_light_cols!(SG)
  @assert SG.nlight > -1
@@ -726,6 +752,33 @@ function collect_dense_cols!(SG)
  end
  @assert length(SG.heavy_mapi)==nheavy
  return
+end
+
+function collect_dense_cols2!(SG)
+ m = ncols(SG.A)
+ nheavy = m - SG.nlight - SG.npivots
+ KER = data_Kernel(SG, nheavy)
+ j = 1
+ for i = 1:m
+  if !SG.is_light_col[i] && !SG.is_pivot_col[i]
+   KER.heavy_map[i] = j
+   push!(KER.heavy_mapi, i)
+   j+=1
+  end
+ end
+ @assert length(KER.heavy_mapi) == nheavy
+ return KER
+end
+
+function dense_matrix(SG, KER) #with Y
+ D = zero_matrix(SG.R, nrows(SG.A) - SG.npivots, length(KER.heavy_mapi))
+	 for i in 1:length(SG.Y)
+	  for j in 1:length(KER.heavy_mapi)
+    D[i,j]=SG.Y[i, KER.heavy_mapi[j]]
+	   #setindex!(D, SG.Y[i], i, j, KER.heavy_mapi[j])
+	  end
+	 end
+ return D
 end
 
 function dense_kernel(SG)
@@ -843,6 +896,53 @@ function delete_zero_rows!(A::SMat{T}) where T
     end
   end
   return A
+end
+
+
+################################################################################
+#
+#  Determinant
+#
+################################################################################
+
+function collect_pivots(SG, pivprod = one(SG.R))
+ _count = 0
+ while _count < SG.npivots
+  for i = 1:nrows(SG.A)
+   c = SG.pivot_col[i]
+   if c > 0
+    pivprod *= SG.A[i,c] #improve
+    _count +=1
+   end
+  end
+ end
+ return pivprod
+end
+
+
+function reduce_max(A)
+ SG, Det = part_echolonize!(A)
+ s = Det.scaling
+ d = SG.R(1)
+ KER = Hecke.collect_dense_cols2!(SG)
+ D = Hecke.dense_matrix(SG, KER)
+ _pivots = collect_pivots(SG)
+ for i = 1:5
+  A = sparse_matrix(D)
+  SG, Det = part_echolonize!(A)
+  s*=Det.scaling
+  d*=Det.divisions
+  @show SG.npivots, degree(Det.scaling)
+  _pivots = collect_pivots(SG, _pivots)
+  KER = Hecke.collect_dense_cols2!(SG)
+  D = Hecke.dense_matrix(SG, KER)
+  for i = 1:size(D)[1]
+   g = gcd(D[i,:])
+   d *= g
+   D[i, :]./=g 
+  end
+ end
+ return _pivots, s, d, D
 end
 
 ################################################################################
