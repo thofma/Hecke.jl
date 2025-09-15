@@ -786,10 +786,11 @@ whose combined rank is ``n``.
 # Examples
 ```jldoctest
 julia> root_symbols(3)
-3-element Vector{Tuple{Symbol, Int}}:
- [(:A, 3)]
- [(:A, 2), (:A, 1)]
+3-element Vector{Vector{Tuple{Symbol, Int64}}}:
  [(:A, 1), (:A, 1), (:A, 1)]
+ [(:A, 2), (:A, 1)]
+ [(:A, 3)]
+
 ```
 """
 function root_symbols(n::Int)
@@ -811,7 +812,7 @@ function root_symbols(n::Int)
       push!(result, i)
     end
   end
-  return result
+  return sort!(result)
 end
 
 """
@@ -833,12 +834,8 @@ julia> rls = root_lattices(5)
  Integer lattice of rank 5 and degree 5
  Integer lattice of rank 5 and degree 5
 
-julia> gram_matrix(rls[8]) # This is A5
-[ 2   -1    0    0    0]
-[-1    2   -1    0    0]
-[ 0   -1    2   -1    0]
-[ 0    0   -1    2   -1]
-[ 0    0    0   -1    2]
+julia> all(L -> L == root_sublattice(L), rls)
+true
 ```
 """
 function root_lattices(n::Int)
