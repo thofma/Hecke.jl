@@ -6,7 +6,7 @@
       f = factor(a)
       g = f.unit
       esum = 0
-      for i in f.fac
+      for i in f
           g *= i[1]^i[2]
           esum += i[2]
       end

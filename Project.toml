@@ -1,6 +1,6 @@
 name = "Hecke"
 uuid = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
-version = "0.37.7"
+version = "0.38.5"
 
 [deps]
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
@@ -14,7 +14,6 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RandomExtensions = "fb686558-2515-59ef-acaa-46db3789a887"
-Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
@@ -26,19 +25,18 @@ GAPExt = "GAP"
 PolymakeExt = "Polymake"
 
 [compat]
-AbstractAlgebra = "0.46.1"
+AbstractAlgebra = "0.47.1"
 Artifacts = "1.10"
 Dates = "1.10"
 Distributed = "1.10"
 FLINT_jll = "~301.300.000"
 GAP = "0.13, 0.14, 0.15"
 LinearAlgebra = "1.10"
-Nemo = "0.51"
+Nemo = "0.52"
 Pkg = "1.10"
 Polymake = "0.10, 0.11, 0.12, 0.13"
 Printf = "1.10"
 Random = "1.10"
 RandomExtensions = "0.4.3"
-Serialization = "1.10"
 SparseArrays = "1.10"
 julia = "1.10"

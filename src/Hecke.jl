@@ -21,17 +21,12 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              numerator, denominator, exp, maximum, intersect, reduce, sqrt, haskey, merge,
 	     powermod
 
-# To make all exported Nemo functions visible to someone using "using Hecke"
-# we have to export everything again
-# dong it the "import" route, we can pick & choose...
-
 using Artifacts
 
 using LinearAlgebra
 using Distributed
 using Printf
 using SparseArrays
-using Serialization
 using Random
 using Pkg
 
@@ -58,8 +53,6 @@ import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
 
-import Serialization: serialize, deserialize
-
 import Random: rand!
 using Random: Sampler, SamplerTrivial, GLOBAL_RNG
 
@@ -68,6 +61,10 @@ using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 import Nemo
 
 import Pkg
+
+# To make all exported Nemo functions visible to someone using "using Hecke"
+# we have to export everything again
+# dong it the "import" route, we can pick & choose...
 
 exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
@@ -731,6 +728,7 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
     doc_init()
   end
   Pkg.activate(docsproject) do
+    Base.invokelatest(Main.Build.build_all_tutorials, Hecke)
     Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
   end
   if format == :html

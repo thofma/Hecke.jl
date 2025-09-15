@@ -281,7 +281,7 @@ julia> order(P)
 100
 
 julia> fac = factor(order(E))
-1 * 5^2 * 2^2
+2^2 * 5^2
 
 julia> order(P, fac)
 100

@@ -94,7 +94,7 @@ mutable struct HenselCtxFqRelSeries{T}
     is_squarefree(g) || return nothing
     @assert is_squarefree(g)
 
-    lf = collect(keys(factor(g).fac))
+    lf = first.(collect(factor(g)))
     return HenselCtxFqRelSeries(f, lf, s)
   end
 
@@ -472,7 +472,7 @@ function symbolic_roots(f::ZZMPolyRingElem, r::ZZRingElem, pr::Int = 10; max_roo
   g = evaluate(f, [Hecke.Globals.Zx(r), gen(Hecke.Globals.Zx)])
   @assert is_squarefree(g)
   lg = factor(g)
-  rt = reduce(vcat, [Hecke.roots(number_field(x)[1], x) for x = keys(lg.fac)])
+  rt = reduce(vcat, [Hecke.roots(number_field(x)[1], x) for (x, _) = lg])
   rt = rt[1:min(length(rt), max_roots)]
   RT = []
   for i = 1:length(rt)
@@ -593,11 +593,11 @@ function roots(f::QQMPolyRingElem, p_max::Int=2^15; pr::Int = 2)
   while true
     p_max = next_prime(p_max)
     gp = factor(Native.GF(p_max, cached = false), g)
-    if any(x->x>1, values(gp.fac))
+    if any(x > 1 for (_, x) in gp)
       @vprintln :AbsFact 1 "not squarefree mod $p_max"
       continue
     end
-    e = lcm([degree(x) for x = keys(gp.fac)])
+    e = lcm([degree(x) for (x, _) = gp])
     if e < d
       d = e
       best_p = p_max
@@ -1123,7 +1123,7 @@ function absolute_bivariate_factorisation(f::QQMPolyRingElem)
   x, y = gens(R)
 
   lf = factor(f)
-  if length(lf.fac) > 1 || any(x->x>1, values(lf.fac))
+  if length(lf) > 1 || any(x>1 for (_, x) in lf)
     error("poly must be irreducible over Q")
   end
 
@@ -1425,7 +1425,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   A = map_coefficients(K1, a, parent = R1)
   lcAf = Fac{elem_type(R1)}()
   lcAf.unit = map_coefficients(K1, lcaf.unit, parent = R1)
-  for i in lcaf.fac
+  for i in lcaf
     lcAf[map_coefficients(K1, i[1], parent = R1)] = i[2]
   end
 

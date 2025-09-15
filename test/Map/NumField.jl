@@ -372,4 +372,24 @@
     @test f(a + 2) == f(a) + 2
     @test_throws ErrorException hom(K, A, one(A))
   end
+
+  let
+    k, = rationals_as_number_field();
+    K, a = number_field(t^3 - 2, "a");
+    A = matrix_algebra(K, 2)
+    f = hom(K, A)
+    @test domain(f) === K
+    @test codomain(f) === A
+    @test f(a) == A(K[a 0; 0 a])
+  end
+
+  let
+    K, a = quadratic_field(-1)
+    h = hom(QQ, K)
+    @test domain(h) === QQ
+    @test codomain(h) === K
+    @test h(QQ(1)) == K(1)
+    h = id_hom(QQ)
+    @test domain(h) === QQ === codomain(h)
+  end
 end

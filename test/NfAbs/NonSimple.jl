@@ -199,4 +199,9 @@
     @test length(fa) == 5
     @test f == unit(fa) * prod(p^e for (p, e) in fa)
   end
+
+  let
+    K, = cyclotomic_field(NonSimpleNumField, 100)
+    @test degree(K) == 40
+  end
 end

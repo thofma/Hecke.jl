@@ -183,8 +183,7 @@ end
 
 function max_ramified_prime(O::AbsSimpleNumFieldOrder, gtype::Vector{Int}, bound::ZZRingElem)
   n = prod(gtype)
-  fac = factor(n)
-  m = Int(minimum(keys(fac.fac)))
+  m = Int(minimum(prime_divisors(n)))
   k = divexact(n, m)
   b1 = Int(root(bound, degree(O)*(m-1)*k))
   return b1

@@ -60,8 +60,7 @@ Hecke.number_field(F::FieldsTower) = F.field
 
 function ramified_primes(F::FieldsTower)
   if !isdefined(F, :ramified_primes)
-    f = factor(discriminant(maximal_order(F.field)))
-    F.ramified_primes = collect(keys(f.fac))
+    F.ramified_primes = prime_divisors(discriminant(maximal_order(F.field)))
   end
   return F.ramified_primes
 end
@@ -573,7 +572,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
       cd = 2^pinvariants
     else
       #2 is not wildly ramified. Then we only have the boring bound...
-      d = minimum(keys(factor(invariants[end]).fac))
+      d = minimum(prime_divisors(invariants[end]))
       cd = 2^((d-1)*div(pinvariants, d))
     end
     #But I want the minimum. So I have to look at the other primes..
@@ -592,7 +591,7 @@ function Hecke.fields(a::Int, b::Int, absolute_bound::ZZRingElem; using_direct_p
         end
       else
         #p is not wildly ramified. Then we only have the boring bound...
-        d = Int(minimum(keys(factor(invariants[end]).fac)))
+        d = Int(minimum(prime_divisors(invariants[end])))
         cd1 = p^((d-1)*div(pinvariants, d))
         if cd > cd1
           cd = cd1

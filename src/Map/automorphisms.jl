@@ -84,8 +84,7 @@ function _order_bound(K::AbsSimpleNumField)
     end
   end
   if ord == degree(K) && !is_normal
-    lf = factor(ord)
-    divs = collect(keys(lf.fac))
+    divs = prime_divisors(ord)
     ord = Int(div(ord, minimum(divs)))
   end
   return ord

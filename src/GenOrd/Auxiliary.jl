@@ -156,7 +156,7 @@ function Hecke.factor(a::LocalizedEuclideanRingElem{ZZRingElem})
   L = parent(a)
   @assert isone(denominator(data(b)))
   lf = factor(numerator(data(b)))
-  return Fac(c, Dict(L(p)=>v for (p,v) = lf.fac))
+  return Fac(c, Dict(L(p)=>v for (p,v) in lf))
 end
 
 function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::LocalizedEuclideanRingElem{ZZRingElem})
@@ -211,12 +211,13 @@ function Hecke.factor(R::S, a::Generic.RationalFunctionFieldElem{T}) where {T, S
   @assert parent(numerator(a)) == R
   f1 = factor(numerator(a))
   f2 = factor(denominator(a))
-  for (p,e) = f2.fac
-    @assert !haskey(f1.fac, p)
-    f1.fac[p] = -e
+  arr = [p => e for (p, e) in f1]
+  for (p,e) = f2
+    @assert !in(p, first.(arr))
+    push!(arr, p => -e)
   end
-  f1.unit = divexact(f1.unit, f2.unit)
-  return f1
+  u = divexact(unit(f1), unit(f2))
+  return Fac(u, Nemo._pretty_sort!(arr))
 end
 
 ########################################################################
