@@ -777,6 +777,93 @@ function _root_lattice_E(n::Int)
   return matrix(QQ, G)
 end
 
+@doc raw"""
+    root_symbols(n::Int) -> Vector{Vector{Tuple{Symbol, Int}}}
+
+Return the list of all ADE root symbols, up to permutation,
+whose combined rank is ``n``.
+
+# Examples
+```jldoctest
+julia> root_symbols(3)
+3-element Vector{Tuple{Symbol, Int}}:
+ [(:A, 3)]
+ [(:A, 2), (:A, 1)]
+ [(:A, 1), (:A, 1), (:A, 1)]
+```
+"""
+function root_symbols(n::Int)
+  result = Vector{Tuple{Symbol, Int}}[]
+  for p in AllParts(n)
+    tmp = Vector{Tuple{Symbol, Int}}[]
+    for i in p
+      symb = Tuple{Symbol, Int}[]
+      push!(symb, (:A, i))
+      if i >= 4
+        push!(symb, (:D, i))
+      end
+      if i in 6:8
+        push!(symb, (:E, i))
+      end
+      push!(tmp, symb)
+    end
+    for i in cartesian_product_iterator(tmp; inplace=false)
+      push!(result, i)
+    end
+  end
+  return result
+end
+
+"""
+    root_lattices(n::Int) -> Vector{ZZLat}
+
+Return the list of all even root lattices, up to isomorphism, of rank ``n``.
+
+# Examples
+```jldoctest
+julia> rls = root_lattices(5)
+9-element Vector{ZZLat}:
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+ Integer lattice of rank 5 and degree 5
+
+julia> gram_matrix(rls[8]) # This is A5
+[ 2   -1    0    0    0]
+[-1    2   -1    0    0]
+[ 0   -1    2   -1    0]
+[ 0    0   -1    2   -1]
+[ 0    0    0   -1    2]
+```
+"""
+function root_lattices(n::Int)
+  result = ZZLat[]
+  for p in AllParts(n)
+    tmp = Vector{QQMatrix}[]
+    for i in p
+      lat = QQMatrix[]
+      push!(lat, Hecke._root_lattice_A(i))
+      if i >= 4
+        push!(lat, Hecke._root_lattice_D(i))
+      end
+      if i in 6:8
+        push!(lat, Hecke._root_lattice_E(i))
+      end
+      push!(tmp, lat)
+    end
+    for i in cartesian_product_iterator(tmp; inplace=true)
+      g = diagonal_matrix(i)
+      push!(result, integer_lattice(; gram=g))
+    end
+  end
+  return result
+end
+
 ################################################################################
 #
 #  Hyperbolic plane

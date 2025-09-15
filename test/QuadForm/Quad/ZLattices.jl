@@ -872,3 +872,12 @@ end
     @test isone(v[1, n+1])
   end
 end
+
+@testset "Enumeration of even root lattices" begin
+  rl = Vector{ZZLat}[root_lattices(i) for i in 1:9]
+  @test length.(rl) == [1, 2, 3, 6, 9, 16, 24, 40, 58]
+
+  rs10 = Set.(root_symbols(10))
+  rl10 = Set.(first.(root_lattice_recognition.(root_lattices(10))))
+  @test rs10 == rl10
+end
