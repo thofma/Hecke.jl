@@ -32,7 +32,7 @@ mutable struct NormRelation{T}
   pure_coefficients::Vector{Int}
   is_abelian::Bool
   isgeneric::Bool
-  coefficients_gen::Vector{Vector{Tuple{Int, Hecke._AbsSimpleNumFieldAut, Hecke._AbsSimpleNumFieldAut}}}
+  coefficients_gen::Vector{Vector{Tuple{ZZRingElem, Hecke._AbsSimpleNumFieldAut, Hecke._AbsSimpleNumFieldAut}}}
   embed_cache::Dict{Tuple{Int, Int}, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   mor_cache::Dict{Hecke._AbsSimpleNumFieldAut, Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}
   induced::Dict{Hecke._AbsSimpleNumFieldAut, Perm{Int}}
@@ -242,7 +242,7 @@ function _norm_relation_setup_generic(K::AbsSimpleNumField; small_degree::Bool =
     z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{ZZRingElem, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
 
   for i in 1:n
     w = Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
@@ -1121,10 +1121,10 @@ function has_coprime_norm_relation(K::AbsSimpleNumField, m::ZZRingElem)
     z.is_normal[i] = Hecke._isnormal(ls[i][1])
   end
 
-  z.coefficients_gen = Vector{Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
+  z.coefficients_gen = Vector{Vector{Tuple{ZZRingElem, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}}(undef, n)
 
   for i in 1:n
-    w = Vector{Tuple{Int, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
+    w = Vector{Tuple{ZZRingElem, morphism_type(AbsSimpleNumField, AbsSimpleNumField), morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, length(ls[i][2]))
     for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
       w[j] = (expo, mG(auto_pre), mG(auto_post))
     end
