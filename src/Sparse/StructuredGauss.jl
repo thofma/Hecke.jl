@@ -123,10 +123,16 @@ function part_echolonize!(A::SMat{T})::Tuple{data_StructGauss{ZZPolyRingElem}, d
  SG = data_StructGauss(A)
  Det = data_Det(SG.R(1))
  single_rows_to_top!(SG)
-
+ for i = 1:n
+  g = gcd(SG.A[i].values)
+  Det.divisions*=g
+  SG.A[i].values./=g
+ end
  while SG.nlight > 0 && SG.base <= n
   build_part_ref!(SG)
-  test_col_list(SG) #test
+  @show SG.npivots, SG.nlight
+  #SG.npivots > 1000 && break
+  #test_col_list(SG) #test
   #@show "after build:" SG.npivots, SG.nlight
   for i = 1:m
    SG.is_light_col[i] && @assert length(SG.col_list[i]) != 1
@@ -138,7 +144,7 @@ function part_echolonize!(A::SMat{T})::Tuple{data_StructGauss{ZZPolyRingElem}, d
   if best_single_row < 0
    #find_dense_cols(SG)
    turn_heavy(SG)
-   test_col_list(SG) #test
+   #test_col_list(SG) #test
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
   eliminate_and_update2!(best_single_row, SG, Det)
@@ -427,6 +433,9 @@ function eliminate_and_update2!(best_single_row::Int64, SG::data_StructGauss, De
   @assert L_row != L_best
   @assert SG.col_list_perm[best_single_row] == L_best #test
   add_to_eliminate2!(L_row, row_idx, best_single_row, best_col, SG, Det)
+  g = gcd(SG.A[row_idx].values)
+  Det.divisions*=g
+  SG.A[row_idx].values./=g
   @assert iszero(SG.A[row_idx, best_col])
   @assert SG.col_list_perm[best_single_row] == L_best #test
   update_after_addition2!(L_row, row_idx, best_col, SG)
@@ -536,7 +545,7 @@ function add_to_eliminate2!(L_row::Int64, row_idx::Int64, best_single_row::Int64
  @assert L_best != L_row
  @assert L_row == SG.col_list_perm[row_idx] #test
  @assert !(0 in SG.A[row_idx].values)
- test_col_list(SG)
+ #test_col_list(SG)
  for c in SG.A[row_idx].pos 
   @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
   if SG.is_light_col[c]
@@ -930,8 +939,9 @@ function reduce_max(A)
  for i = 1:5
   A = sparse_matrix(D)
   SG, Det = part_echolonize!(A)
-  s*=Det.scaling
-  d*=Det.divisions
+  g = gcd(Det.scaling, Det.divisions)
+  s*=div(Det.scaling, g)
+  d*=div(Det.divisions, g)
   @show SG.npivots, degree(Det.scaling)
   _pivots = collect_pivots(SG, _pivots)
   KER = Hecke.collect_dense_cols2!(SG)
