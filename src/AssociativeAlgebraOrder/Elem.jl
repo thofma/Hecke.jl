@@ -107,7 +107,7 @@ function elem_in_algebra(x::AssociativeAlgebraOrderElem{S, T}; copy::Bool = true
   end
 end
 
-_elem_in_algebra(x::Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem }; copy::Bool = true) = elem_in_algebra(x, copy = copy)
+_elem_in_algebra(x::AssociativeAlgebraOrderElem; copy::Bool = true) = elem_in_algebra(x, copy = copy)
 
 ################################################################################
 #
@@ -115,7 +115,7 @@ _elem_in_algebra(x::Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem }; copy
 #
 ################################################################################
 
-function assure_has_coord(x::Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem })
+function assure_has_coord(x::AssociativeAlgebraOrderElem)
   if x.has_coord
     return nothing
   end
@@ -154,7 +154,7 @@ end
 #
 ################################################################################
 
-function -(x::Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem })
+function -(x::AssociativeAlgebraOrderElem)
   return parent(x)(-elem_in_algebra(x, copy = false), false)
 end
 
@@ -164,12 +164,12 @@ end
 #
 ###############################################################################
 
-function *(x::T, y::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function *(x::AssociativeAlgebraOrderElem, y::AssociativeAlgebraOrderElem)
   check_parent(x, y)
   return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false), false)
 end
 
-function +(x::T, y::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function +(x::AssociativeAlgebraOrderElem, y::AssociativeAlgebraOrderElem)
   check_parent(x, y)
   z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false), false)
   if x.has_coord && y.has_coord
@@ -179,7 +179,7 @@ function +(x::T, y::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRe
   return z
 end
 
-function -(x::T, y::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function -(x::AssociativeAlgebraOrderElem, y::AssociativeAlgebraOrderElem)
   check_parent(x, y)
   z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false), false)
   if x.has_coord && y.has_coord
@@ -203,7 +203,7 @@ end
 *(x::AssociativeAlgebraOrderElem, n::IntegerUnion) = n*x
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::T, b::T, action::Symbol, check::Bool = true) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function divexact(a::AssociativeAlgebraOrderElem, b::AssociativeAlgebraOrderElem, action::Symbol, check::Bool = true)
   check_parent(a, b)
   O = parent(a)
   c = divexact(elem_in_algebra(a, copy = false), elem_in_algebra(b, copy = false), action)
@@ -224,7 +224,7 @@ Returns an element $c \in O$ such that $a = c \cdot b$ where $O$ is the order
 containing $a$.
 If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
-divexact_right(a::T, b::T; check::Bool = true) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } } = divexact(a, b, :right, check)
+divexact_right(a::AssociativeAlgebraOrderElem, b::AssociativeAlgebraOrderElem; check::Bool = true) = divexact(a, b, :right, check)
 
 @doc raw"""
     divexact_left(a::AssociativeAlgebraOrderElem, b::AssociativeAlgebraOrderElem; check::Bool = true)
@@ -235,7 +235,7 @@ Returns an element $c \in O$ such that $a = b \cdot c$ where $O$ is the order
 containing $a$.
 If `check` is `false`, it is not checked whether $c$ is an element of $O$.
 """
-divexact_left(a::T, b::T; check::Bool = true) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } } = divexact(a, b, :left, check)
+divexact_left(a::AssociativeAlgebraOrderElem, b::AssociativeAlgebraOrderElem; check::Bool = true) = divexact(a, b, :left, check)
 
 ################################################################################
 #
@@ -266,13 +266,13 @@ end
 
 Returns $x^y$.
 """
-function ^(x::Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem }, y::ZZRingElem)
+function ^(x::AssociativeAlgebraOrderElem, y::ZZRingElem)
   z = parent(x)()
   z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
   return z
 end
 
-function ^(x::Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem }, y::Integer)
+function ^(x::AssociativeAlgebraOrderElem, y::Integer)
   z = parent(x)()
   z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
   return z
@@ -290,7 +290,7 @@ end
 
 Returns `true` if $a$ and $b$ are equal and `false` otherwise.
 """
-function ==(a::T, b::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function ==(a::AssociativeAlgebraOrderElem, b::AssociativeAlgebraOrderElem)
   if parent(a) !== parent(b)
     return false
   end
@@ -303,13 +303,13 @@ end
 #
 ################################################################################
 
-function add!(z::T, x::T, y::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function add!(z::AssociativeAlgebraOrderElem, x::AssociativeAlgebraOrderElem, y::AssociativeAlgebraOrderElem)
   z.elem_in_algebra = add!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
   z.has_coord = false
   return z
 end
 
-function mul!(z::T, x::T, y::T) where { T <: Union{ AssociativeAlgebraOrderElem, AlgAssRelOrdElem } }
+function mul!(z::AssociativeAlgebraOrderElem, x::AssociativeAlgebraOrderElem, y::AssociativeAlgebraOrderElem)
   z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
   z.has_coord = false
   return z
