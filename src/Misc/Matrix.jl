@@ -1124,3 +1124,12 @@ function remove_row(M, r)
   end
   return N
 end
+
+function Base.inv(M::MatElem{AbsSimpleNumFieldElem})
+   is_square(M) || throw(DomainError(M, "Can not invert non-square Matrix"))
+   flag, A = AbstractAlgebra._can_solve_with_solution_fflu(M, identity_matrix(M))
+   !flag && error("Singular matrix in inv")
+   return A
+end
+
+
