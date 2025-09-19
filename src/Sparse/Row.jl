@@ -96,9 +96,9 @@ The elements $x_i$ must belong to the ring $R$.
 """
 function sparse_row(R::NCRing, A::Vector{Tuple{Int, T}}; sort::Bool = true) where T
   if sort && length(A) > 1
-    A = Base.sort(A, lt=(a,b) -> isless(a[1], b[1]))
+    A = Base.sort(A, by=first)
   end
-  _assert_is_unique_sorted(a[1] for a in A)
+  _assert_is_unique_sorted(first(a) for a in A)
   return SRow(R, A)
 end
 
@@ -301,6 +301,8 @@ function map_entries(f, A::SRow)
   iszero(A) && error("Can change ring only for non-zero rows")
   R = parent(f(A.values[1]))
   z = sparse_row(R)
+  sizehint!(z.pos, length(A))
+  sizehint!(z.values, length(A))
   for (i, v) in A
     nv = f(v)
     if iszero(nv)
@@ -594,6 +596,8 @@ end
 
 function *(b::T, A::SRow{T}) where T
   B = sparse_row(parent(b))
+  sizehint!(B.pos, length(A))
+  sizehint!(B.values, length(A))
   if iszero(b)
     return B
   end

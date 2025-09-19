@@ -346,6 +346,8 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow(R::NCRing, A::Vector{Tuple{Int, T}}) where T
     r = SRow(R)
+    sizehint!(r.pos, length(A))
+    sizehint!(r.values, length(A))
     for (i, v) = A
       if !iszero(v)
         @assert parent(v) === R
@@ -358,6 +360,8 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow(R::NCRing, A::Vector{Tuple{Int, Int}})
     r = SRow(R)
+    sizehint!(r.pos, length(A))
+    sizehint!(r.values, length(A))
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)
