@@ -38,6 +38,12 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test K == L
     @test L == M
     @test M == J
+
+    I = fractional_ideal(O1, K1(2))
+    @test I == fractional_ideal(O1, 2)
+    @test I == fractional_ideal(O1, ZZ(2))
+    @test I == fractional_ideal(O1, O1(2))
+    @test I == fractional_ideal(O1, BigInt(2))
   end
 
   J = fractional_ideal(O1, i, 2)
@@ -126,5 +132,17 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     p = prime_decomposition(OK, 2)[1][1]
     @test sprint(show, fractional_ideal(p, ZZ(3))) isa String
     @test sprint(show, "text/plain", fractional_ideal(p, ZZ(3))) isa String
+  end
+
+  let # subset
+    Qx, x = polynomial_ring(QQ, "x")
+    K, a = number_field(x^3 - 2, "a")
+    O = maximal_order(K)
+    @test is_subset(K(0) * O, K(1) * O)
+    @test !is_subset(K(1) * O, K(0) * O)
+    @test is_subset(K(0) * O, K(0) * O)
+    @test is_subset(K(2) * O, K(1) * O)
+    @test is_subset(K(4) * O, K(2) * O)
+    @test !is_subset(K(4) * O, K(3) * O)
   end
 end

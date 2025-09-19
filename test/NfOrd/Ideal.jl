@@ -349,6 +349,17 @@
     @test length(unique(l)) == 45
   end
 
+  #
+  let
+    Qx, x = polynomial_ring(QQ, "x")
+    K, a = number_field(x^2 - 5, "a")
+    O = maximal_order(K)
+    @test divides(2*O, 1*O)
+    @test !divides(1*O, 2*O)
+    @test is_subset(2*O, 1*O)
+    @test !is_subset(1*O, 2*O)
+  end
+  
   # lll
   let
     R, x = polynomial_ring(QQ, :x)

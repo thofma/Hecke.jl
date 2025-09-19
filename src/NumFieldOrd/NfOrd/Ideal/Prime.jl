@@ -654,6 +654,8 @@ function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
   return (valuation(A, B) > 0)::Bool
 end
 
+issubset(A::AbsNumFieldOrderIdeal, B::AbsNumFieldOrderIdeal) = divides(A, B)
+
 function coprime_base(A::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, p::ZZRingElem)
   #consider A^2 B and A B: if we do gcd with the minimum, we get twice AB
   #so the coprime base is AB
