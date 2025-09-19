@@ -349,5 +349,14 @@
     @test length(unique(l)) == 45
   end
 
+  # lll
+  let
+    R, x = polynomial_ring(QQ, :x)
+    K, a = number_field(x^3-7);
+    OK = maximal_order(K);
+    B = lll_basis(3*OK)
+    @test length(B) == 3
+  end
+
   include("Ideal/Prime.jl")
 end
