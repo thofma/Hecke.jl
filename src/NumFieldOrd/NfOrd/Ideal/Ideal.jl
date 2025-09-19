@@ -394,6 +394,10 @@ function basis_matrix(A::AbsNumFieldOrderIdeal; copy::Bool = true)
   end
 end
 
+function basis_matrix(::Type{FakeFmpqMat}, A::AbsNumFieldOrderIdeal; copy::Bool = true)
+  return FakeFmpqMat(basis_matrix(A))
+end
+
 function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
   if isdefined(A, :basis_matrix)
     return nothing

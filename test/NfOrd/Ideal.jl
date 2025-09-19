@@ -359,6 +359,15 @@
     @test is_subset(2*O, 1*O)
     @test !is_subset(1*O, 2*O)
   end
+  
+  # lll
+  let
+    R, x = polynomial_ring(QQ, :x)
+    K, a = number_field(x^3-7);
+    OK = maximal_order(K);
+    B = lll_basis(3*OK)
+    @test length(B) == 3
+  end
 
   include("Ideal/Prime.jl")
 end

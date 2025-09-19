@@ -468,7 +468,7 @@
     end
     for i in 1:10
       j = rand(1:length(dataall))
-      if j == 375
+      if j <= 300
         continue # too large
       end
       O = create_order(dataall[j][1])
