@@ -199,9 +199,9 @@ end
 
 function preimage(f::MapFromFunc, y)
   @req parent(y) === codomain(f) "Element not in the codomain"
-  x = f.g(y)
+  x = f.g(y)::elem_type(domain(f))
   @req parent(x) === domain(f) "Preimage not in the domain"
-  return x::elem_type(domain(f))
+  return x
 end
 
 function Base.show(io::IO, ::MIME"text/plain", M::MapFromFunc)
