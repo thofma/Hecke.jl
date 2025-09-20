@@ -119,6 +119,7 @@ is_involution(::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
 fixed_field(::NumFieldHom)
 automorphism_list(::NumField)
 automorphism_group(::AbsSimpleNumField)
+automorphism_group(::NumField, ::NumField)
 complex_conjugation(::AbsSimpleNumField)
 ```
 
