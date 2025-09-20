@@ -414,7 +414,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   @assert typeof(G) == typeof(H)
 
   if isempty(G)
-    return false, matrix(K, 1, n, V[one(K) for i = 1:n])
+    return false, matrix(K, 1, n, elem_type(S)[one(K) for i = 1:n])
   end
 
   if isone(length(G))
