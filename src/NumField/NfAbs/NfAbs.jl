@@ -998,7 +998,7 @@ function find_one_chain(t::NumField, a::NumField)
   s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
   s === nothing && return s
   ot = objectid(t)
-  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s)
+  all_chain = Dict{UInt, Vector{Any}}(objectid(domain(f)) => Any[f] for f = s)
   if isa(base_field(a), NumField)
     all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
   end
@@ -1092,9 +1092,9 @@ end
 #in (small) fields, super fields are stored via WeakRef's
 # special -> :sub_of
 #this find all superfields registered
-function find_all_super(A::NumField, filter::Function = x->true)
+function find_all_super(A::NumField, filter::T = x->true) where {T <: Function}
   s = get_attribute(A, :sub_of)::Union{Nothing, Vector{WeakRef}}
-  s === nothing && return Set([A])
+  s === nothing && return Set(typeof(A)[A])
 
   # Remove dead weak refs (since we edit s in-place, this
   # automatically updates the :sub_of attribute of A, too.
@@ -1103,7 +1103,7 @@ function find_all_super(A::NumField, filter::Function = x->true)
   #the gc could(?) run anytime, so even after the pruning above
   #things could get deleted
 
-  all_s = Set([x.value for x = s if x.value !== nothing && filter(x.value)])
+  all_s = Set(typeof(A)[x.value for x = s if x.value !== nothing && filter(x.value)])
   new_s = copy(all_s)
   while length(new_s) > 0
     B = pop!(new_s)
@@ -1156,7 +1156,7 @@ function common_super(a::NumFieldElem, b::NumFieldElem)
 end
 
 #tries to find a common parent for all "a" and then calls op on it.
-function force_op(op::Function, ::Val{throw_error}, a::NumFieldElem...) where {throw_error}
+function force_op(op::T, ::Val{throw_error}, a::NumFieldElem...) where {T <: Function, throw_error}
   C = parent(a[1])
   for b = a
     C = common_super(parent(b), C)
@@ -1241,8 +1241,8 @@ function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, ::Va
 
     ex = [x[1] for x = cg]
     ky = polynomial_ring(parent(b), cached = false)[1]
-    f = interpolate(ky, [(za)^(i) for i=ex],
-                        [ff(zb^(i)) for i=ex])
+    f = interpolate(ky, AbsSimpleNumFieldElem[(za)^(i) for i=ex],
+                        AbsSimpleNumFieldElem[ff(zb^(i)) for i=ex])
     g = parent(ff)()
     for i=0:length(f)
       c = coeff(f, i)
