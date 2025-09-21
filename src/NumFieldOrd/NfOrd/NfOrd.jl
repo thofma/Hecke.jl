@@ -1015,7 +1015,7 @@ function _closure(K, elt::Vector{T}; cached::Bool = true, check::Bool = true, ex
     @assert K === _algebra(extended_order)
 
     if is_maximal_known_and_maximal(extended_order) || length(elt) == 0
-      return extended_order
+      return basis_matrix(FakeFmpqMat, extends)
     end
     B = basis_matrix(FakeFmpqMat, extended_order)
     bas = basis(extended_order, K)
