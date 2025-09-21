@@ -935,9 +935,7 @@ function _intersect_modules(BM::QQMatrix, BN::QQMatrix)
   BMint = numerator(d * BM)
   BNint = numerator(d * BN)
   H = vcat(BMint, BNint)
-  @info H
   K = kernel(H, side = :left)
-  @info K
   BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
   return BI
 end
