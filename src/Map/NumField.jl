@@ -103,7 +103,7 @@
 #
 ################################################################################
 
-mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, NumFieldHom}
+mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, Any}#HeckeMap, NumFieldHom}
   header::MapHeader{S, T}
   image_data::U
   inverse_data::V
@@ -137,7 +137,7 @@ end
 function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
                                compute_inverse = false) where {S <: Union{NumField, QQField},
-                                                               T <: Ring}
+                                                               T <: NCRing}
   header = MapHeader(K, L)
 
   #if length(x) == 0
@@ -238,9 +238,9 @@ mutable struct MapDataFromAnticNumberField{T}
 end
 
 # Helper functions to create the type
-map_data_type(K::AbsSimpleNumField, L::Union{NumField, QQField, Ring}) = map_data_type(AbsSimpleNumField, typeof(L))
+map_data_type(K::AbsSimpleNumField, L::Union{NumField, QQField, NCRing}) = map_data_type(AbsSimpleNumField, typeof(L))
 
-map_data_type(::Type{AbsSimpleNumField}, T::Type{S}) where {S <: Union{NumField, QQField, Ring}} = MapDataFromAnticNumberField{elem_type(T)}
+map_data_type(::Type{AbsSimpleNumField}, T::Type{S}) where {S <: Union{NumField, QQField, NCRing}} = MapDataFromAnticNumberField{elem_type(T)}
 
 # Test if data u, v specfiying a map K -> L define the same morphism
 function _isequal(K, L, u::MapDataFromAnticNumberField{T},
@@ -265,7 +265,7 @@ end
 #
 map_data(K::AbsSimpleNumField, L, ::Bool) = MapDataFromAnticNumberField{elem_type(L)}(true)
 
-function map_data(K::AbsSimpleNumField, L, x::RingElement; check = true)
+function map_data(K::AbsSimpleNumField, L, x::NCRingElement; check = true)
   if parent(x) === L
     xx = x
   else
@@ -1032,3 +1032,54 @@ function restrict(f::NumFieldHom, K::SimpleNumField)
   k = domain(f)
   return hom(K, k, k(gen(K)))*f
 end
+
+################################################################################
+#
+#  Show
+#
+################################################################################
+
+function AbstractAlgebra.show_map_data(io::IO, f::NumFieldHom)
+  println(io, "\ndefined by")
+  if is_simple(domain(f))
+    print(io, Indent(), gen(domain(f)), " -> ", image_primitive_element(f))
+  else
+    imgsgens = image_generators(f)
+    print(io, Indent())
+    for i in 1:length(imgsgens)
+      print(io, gen(domain(f), i), " -> ", imgsgens[i])
+      if i < length(imgsgens)
+        println(io)
+      end
+    end
+  end
+  print(io, Dedent())
+  if hasfield(typeof(f.image_data), :base_field_map_data)
+    print(io, "\n")
+    if f.image_data.base_field_map_data.isid
+      print(io, "with trivial map on base field")
+    else
+      print(io, "with non-trivial map on base field")
+    end
+  end
+end
+
+################################################################################
+#
+#  QQ
+#
+################################################################################
+
+struct QQHom{S} <: Map{QQField, S, HeckeMap, Any}
+  C::S
+end
+
+id_hom(::QQField) = QQHom{QQField}(QQ)
+
+domain(::QQHom) = QQ
+
+codomain(f::QQHom) = f.C
+
+image(f::QQHom, x::QQFieldElem) = codomain(f)(x)
+
+preimage(f::QQHom{QQ}, x::QQFieldElem) = x

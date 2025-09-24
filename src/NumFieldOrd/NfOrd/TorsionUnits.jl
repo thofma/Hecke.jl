@@ -430,7 +430,7 @@ function _torsion_units_gen(K::AbsSimpleNumField)
 
   m = _torsion_group_order_divisor(K)
   Ky = polynomial_ring(K, "y", cached = false)[1]
-  fac = factor(m).fac
+  fac = factor(m)
   gen = K(1)
   ord = 1
   Zx, x = polynomial_ring(ZZ, "x")
@@ -464,7 +464,7 @@ function _torsion_units_gen(K::NumField)
 
   m = _torsion_group_order_divisor(K)
   Ky = polynomial_ring(K, "y", cached = false)[1]
-  fac = factor(m).fac
+  fac = factor(m)
   gen = one(K)
   ord = 1
   Zx, x = polynomial_ring(ZZ, "x")

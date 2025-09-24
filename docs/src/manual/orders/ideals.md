@@ -82,8 +82,7 @@ julia> k, a = wildanger_field(3, 13);
 julia> zk = maximal_order(k);
 
 julia> c, mc = class_group(zk)
-(Z/9, ClassGroup map of
-Set of ideals of zk)
+(Z/9, Class group map of set of ideals of zk)
 
 julia> lp = prime_ideals_up_to(zk, 20);
 
@@ -178,61 +177,40 @@ sunit_mod_units_group_fac_elem(::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
 ```jldoctest 2; filter = r".*"
 julia> u, mu = unit_group(zk)
 (Z/2 x Z, UnitGroup map of Maximal order of number field of degree 3 over QQ
-with basis [1, _$, 1//2*_$^2 + 1//2]
 )
 
 julia> mu(u[2])
-_$ - 12
+-_$^2 + _$ - 1
 
 julia> u, mu = unit_group_fac_elem(zk)
 (Z/2 x Z, UnitGroup map of Factored elements over Number field of degree 3 over QQ
 )
 
 julia> mu(u[2])
-(19//2*_$^2 - 117*_$ + 117//2)^1*(_$^2 + 1)^-1*(1//2*_$^2 - 6*_$ + 5//2)^1*(1//2*_$^2 - 6*_$ + 7//2)^1*(10*_$^2 - 91*_$ - 156)^-1
+(-1//2*_$^2 + 6*_$ - 3//2)^-1*(_$^2 + 1)^1*(_$ + 5)^1*3^-1*2^-2
 
 julia> evaluate(ans)
-_$ - 12
+-_$^2 + _$ - 1
 
 julia> lp = factor(6*zk)
 Dict{AbsSimpleNumFieldOrderIdeal, Int64} with 4 entries:
   <3, _$ + 5>                  => 1
   <3, _$^2 + 1>                => 1
-  <2, 3//2*_$^2 + 7//2>        => 2
-  <2, 5//2*_$^2 + 3*_$ + 5//2> => 1
+  <2, 7//2*_$^2 + 2*_$ + 7//2> => 2
+  <2, 1//2*_$^2 + 3//2>        => 1
 
 julia> s, ms = Hecke.sunit_group(collect(keys(lp)))
-(Z/2 x Z^(5), SUnits  map of k for AbsSimpleNumFieldOrderIdeal[<3, _$ + 5>
-Norm: 3
-Minimum: 3
-basis_matrix
-[3 0 0; 2 1 0; 2 0 1]
-two normal wrt: 3, <3, _$^2 + 1>
-Norm: 9
-Minimum: 3
-basis_matrix
-[3 0 0; 0 3 0; 0 0 1]
-two normal wrt: 3, <2, 3//2*_$^2 + 7//2>
-Norm: 2
-Minimum: 2
-basis_matrix
-[2 0 0; 1 1 0; 0 0 1]
-two normal wrt: 2, <2, 5//2*_$^2 + 3*_$ + 5//2>
-Norm: 2
-Minimum: 2
-basis_matrix
-[2 0 0; 1 1 0; 1 0 1]
-two normal wrt: 2]
+(Z/2 x Z^(5), SUnits  map of k for AbsSimpleNumFieldOrderIdeal[<3, _$ + 5>, <3, _$^2 + 1>, <2, 7//2*_$^2 + 2*_$ + 7//2>, <2, 1//2*_$^2 + 3//2>]
 )
 
 julia> ms(s[4])
--1//2*_$^2 + 6*_$ + 5//2
+1//2*_$^2 - 6*_$ - 5//2
 
 julia> norm(ans)
-144
+-144
 
 julia> factor(numerator(ans))
-1 * 2^4 * 3^2
+-1 * 2^4 * 3^2
 ```
 
 ## Miscellaneous

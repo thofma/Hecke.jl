@@ -604,12 +604,12 @@ end
 @doc raw"""
     *(A::SMat{T}, b::AbstractMatrix{T}) -> Matrix{T}
 
-Return the product $A \cdot b$ as a dense array.
+Return the product $A \cdot b$ as a dense matrix.
 """
 function *(A::SMat{T}, b::AbstractMatrix{T}) where T
   sz = size(b)
   @assert sz[1] == ncols(A)
-  c = Array{T}(undef, sz[1], sz[2])
+  c = Matrix{T}(undef, sz[1], sz[2])
   return mul!(c, A, b)
 end
 
@@ -652,6 +652,51 @@ function *(A::SRow{T}, B::SMat{T}) where T
       continue
     end
     C = add_scaled_row(B[p], C, v)
+  end
+  return C
+end
+
+# - SMat{T} * SMat{T}
+function *(A::SMat{T}, B::SMat{T}) where {T}
+  error("""
+  The product of two sparse matrices is, in general, not sparse.
+  Use `mul_sparse` if you still want to compute the product of two sparse matrices as a sparse matrix,
+  or `mul_dense` if you want to compute the product as a dense matrix.
+  """)
+end
+
+@doc raw"""
+    mul_sparse(A::SMat{T}, B::SMat{T}) -> SMat{T}
+
+Return the product $A\cdot B$ as a sparse matrix.
+
+The product of two sparse matrices is, in general, not sparse, so depending on the context,
+it might be more efficient to use [`mul_dense(::SMat{T}, ::SMat{T}) where {T}`](@ref) instead.
+"""
+function mul_sparse(A::SMat{T}, B::SMat{T}) where {T}
+  @req ncols(A) == nrows(B) "Matrices must have compatible dimensions"
+  @req base_ring(A) == base_ring(B) "Matrices must have same base ring"
+  C = sparse_matrix(base_ring(B), nrows(A), ncols(B))
+  for (i, rA) in enumerate(A.rows)
+    C[i] = rA * B
+  end
+  return C
+end
+
+@doc raw"""
+    mul_dense(A::SMat{T}, B::SMat{T}) -> MatElem{T}
+
+Return the product $A\cdot B$ as a dense matrix.
+"""
+function mul_dense(A::SMat{T}, B::SMat{T}) where {T}
+  @req ncols(A) == nrows(B) "Matrices must have compatible dimensions"
+  @req base_ring(A) == base_ring(B) "Matrices must have same base ring"
+  C = zero_matrix(base_ring(B), nrows(A), ncols(B))
+  for (i, rA) in enumerate(A.rows)
+    rC = rA * B
+    for (j, val) in rC
+      C[i, j] = val
+    end
   end
   return C
 end
@@ -872,12 +917,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    sub(A::SMat, r::AbstractUnitRange, c::AbstractUnitRange) -> SMat
-
-Return the submatrix of $A$, where the rows correspond to $r$ and the columns
-correspond to $c$.
-"""
 function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
   B = sparse_matrix(base_ring(A))
   B.nnz = 0
@@ -892,6 +931,47 @@ function sub(A::SMat{T}, r::AbstractUnitRange, c::AbstractUnitRange) where T
         push!(rw.pos, ra.pos[j]-first(c)+1)
       end
     end
+    push!(B, rw)
+  end
+  return B
+end
+
+@doc raw"""
+    sub(A::SMat, r::AbstractVector, c::AbstractVector) -> SMat
+
+Return the submatrix of $A$, where the rows correspond to $r$ and the columns
+correspond to $c$. The row and column indices must be sorted and unique.
+"""
+function sub(A::SMat{T}, r::AbstractVector, c::AbstractVector) where T
+  @req issorted(r) "The row indicies ($r) must be sorted"
+  @req issorted(c) "The column indicies ($c) must be sorted"
+  B = sparse_matrix(base_ring(A))
+  B.nnz = 0
+  B.c = length(c)
+  t = base_ring(A)()
+  _r = 0
+  for i in r
+    @req i != _r "The row indices must be unique"
+    _r = i
+    rw = sparse_row(base_ring(A))
+    ra = A.rows[i]
+    _k = 0
+    errork = false
+    for j=1:length(ra.values)
+      # searchsortedfirst cannot be useddd
+      cview = @view(c[_k + 1:end])
+      !insorted(ra.pos[j], cview) && continue
+      __k = searchsorted(cview, ra.pos[j])
+      if length(__k) > 1
+        errork = true
+        break
+      end
+      k = first(__k) + _k
+      push!(rw.values, getindex!(t, ra.values, j))
+      push!(rw.pos, k)
+      _k = k
+    end
+    @req !errork "The column indices must be unique"
     push!(B, rw)
   end
   return B
@@ -1364,7 +1444,7 @@ function identity_matrix(::Type{SMat}, R::Ring, n::Int)
   A = sparse_matrix(R)
   A.c = n
   for i in 1:n
-    push!(A, sparse_row(R, [i], [one(R)]))
+    push!(A, sparse_row(R, [(i, one(R))]))
   end
   return A
 end

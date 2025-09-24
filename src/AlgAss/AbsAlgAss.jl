@@ -125,6 +125,12 @@ morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{FqFie
 
 morphism_type(A::Type{T}) where {T <: AbstractAssociativeAlgebra} = morphism_type(A, A)
 
+morphism_type(A::Type{T}, B::AbstractAssociativeAlgebra{S}) where {T, S} = morphism_type(A, typeof(B))
+
+morphism_type(A::AbstractAssociativeAlgebra{T}, B::Type{S}) where {T, S} = morphism_type(typeof(A), B)
+
+morphism_type(A::AbstractAssociativeAlgebra, B::AbstractAssociativeAlgebra) = morphism_type(typeof(A), typeof(B))
+
 ################################################################################
 #
 #  Basis
@@ -143,13 +149,20 @@ function basis(A::AbstractAssociativeAlgebra)
     return A.basis::Vector{elem_type(A)}
   end
   B = Vector{elem_type(A)}(undef, dim(A))
-  for i in 1:dim(A)
-    z = Vector{elem_type(base_ring(A))}(undef, dim(A))
-    for j in 1:dim(A)
-      z[j] = zero(base_ring(A))
+  if A isa GroupAlgebra && A.sparse
+    for g in group(A)
+      i = __elem_index(A, g)
+      B[i] = A(g)
     end
-    z[i] = one(base_ring(A))
-    B[i] = A(z)
+  else
+    for i in 1:dim(A)
+      z = Vector{elem_type(base_ring(A))}(undef, dim(A))
+      for j in 1:dim(A)
+        z[j] = zero(base_ring(A))
+      end
+      z[i] = one(base_ring(A))
+      B[i] = A(z)
+    end
   end
   A.basis = B
   return B::Vector{elem_type(A)}
@@ -1053,7 +1066,7 @@ field extension.
     # Strategy (see Ford's seperable algebras)
     # If I understand it correctly, a semi-simple K-algebra is separable
     # if and only if the center is a separable K-algebra
-    
+
     # Maybe as follows?
     # C, = center(A)
     # return is_separable(C) && is_semisimple(A)

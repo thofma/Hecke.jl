@@ -16,7 +16,33 @@ export default defineConfig({
   cleanUrls: true,
   outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
   head: [
-    ['link', { rel: 'icon', href: 'REPLACE_ME_DOCUMENTER_VITEPRESS_FAVICON' }],
+   [
+      "link",
+      {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: `${baseTemp.base}/assets/modular/apple-touch-icon.png`,
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        href: `${baseTemp.base}/assets/modular/favicon-32x32.png`,
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "16x16",
+        href: `${baseTemp.base}/assets/modular/favicon-16x16.png`,
+      },
+    ],
+    ['link', { rel: 'icon', href: `${baseTemp.base}/assets/modular/favicon.ico` }],
     ['script', {src: '/versions.js'}],
     ['script', {src: `${baseTemp.base}warner.js`}],
     ['script', {src: `${baseTemp.base}siteinfo.js`}]
@@ -55,7 +81,7 @@ export default defineConfig({
       dark: "github-dark"}
   },
   themeConfig: {
-    logo: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
+    logo: '/assets/modular/Hecke_logo_modular2.png',
     search: {
       provider: 'local',
       options: {
@@ -64,7 +90,7 @@ export default defineConfig({
     },
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Getting Started', link: '/start/' },
+  //  { text: 'Getting Started', link: '/start/' },
       { text: 'Manual', link: '/manual/' },
       { text: 'Tutorials', link: '/tutorials/' },
       { text: 'How-to Guides', link: '/howto/' },
@@ -75,9 +101,10 @@ export default defineConfig({
     sidebar: {
       '/manual/': [
         { text: 'Manual',
+          collapsed: true,
           items: [
             { text: 'Introduction', link: '/manual/'},
-            { text: 'Number fields',
+            { text: 'Number Fields',
               collapsed: true,
               items: [
                 { text: 'Introduction', link: '/manual/number_fields/intro'},
@@ -90,7 +117,7 @@ export default defineConfig({
               ]
             },
             {
-              text: 'Orders in number fields',
+              text: 'Orders in Number Fields',
               collapsed: true,
               items: [
                 { text: 'Introduction', link: '/manual/orders/introduction'},
@@ -101,11 +128,11 @@ export default defineConfig({
               ]
             },
             {
-              text: 'Quadratic and hermitian forms',
+              text: 'Quadratic and Hermitian Forms',
               collapsed: true,
               items: [
-                { text: 'Introduction', link: '/manual//quad_forms/introduction'},
-                { text: 'Basics', link: '/manual//quad_forms/basics'},
+                { text: 'Introduction', link: '/manual/quad_forms/introduction'},
+                { text: 'Basics', link: '/manual/quad_forms/basics'},
                 { text: 'Lattices', link: '/manual/quad_forms/lattices'},
                 { text: 'Integer lattices', link: '/manual/quad_forms/integer_lattices'},
                 { text: 'Genera for hermitian lattices', link: '/manual/quad_forms/genusherm'},
@@ -113,7 +140,7 @@ export default defineConfig({
                 { text: 'Discriminant groups', link: '/manual/quad_forms/discriminant_group'},
               ]
             },
-            { text: 'Algebras',
+            { text: 'Associative Algebras',
               collapsed: true,
               items: [
                 { text: 'Introduction', link: '/manual/algebras/intro'},
@@ -121,11 +148,11 @@ export default defineConfig({
                 { text: 'Structure constant algebras', link: '/manual/algebras/structureconstant'},
                 { text: 'Group algebras', link: '/manual/algebras/groupalgebras'},
                 { text: 'Quaternion algebras', link: '/manual/algebras/quaternion'},
-                { text: 'Ideals', link: '/manual/algebras/ideals'},
+                { text: 'Ideals in algebras', link: '/manual/algebras/ideals'},
               ]
             },
             {
-              text: 'Elliptic curves',
+              text: 'Elliptic Curves',
               collapsed: true,
               items: [
                 { text: 'Introduction', link: '/manual/elliptic_curves/intro'},
@@ -135,7 +162,7 @@ export default defineConfig({
               ]
             },
             {
-              text: 'Abelian groups',
+              text: 'Abelian Groups',
               collapsed: true,
               items: [
                 { text: 'Introduction', link: '/manual/abelian/introduction'},
@@ -148,6 +175,7 @@ export default defineConfig({
               text: 'Miscellaneous',
               collapsed: true,
               items: [
+                { text: 'Elementary number theory', link: '/manual/misc/elementary'},
                 { text: 'Factored elements', link: '/manual/misc/FacElem'},
                 { text: 'Sparse linear algebra', link: '/manual/misc/sparse'},
                 { text: 'Conjugacy of integer matrices', link: '/manual/misc/conjugacy'},
@@ -155,27 +183,37 @@ export default defineConfig({
                 { text: 'Pseudo-matrices', link: '/manual/misc/pmat'},
               ]
             },
-            {
-              text: 'Developer',
+          ]
+        },
+        {
+              text: 'For Developers',
               collapsed: true,
               items: [
+                { text: 'Introduction', link: '/manual/developer/'},
                 { text: 'Tests', link: '/manual/developer/test'},
                 { text: 'Documentation', link: '/manual/developer/documentation'},
               ]
-            }
-          ]
+        },
+        {
+                text: 'References', link: '/manual/references'
         }
       ],
       '/tutorials/': [
         { text: 'Tutorials',
           items: [
-            { text: 'Add me', link: '/tutorials/'},
+            { text: 'Introduction', link: '/tutorials/'},
+            { text: 'Quaternion Algebras', link: '/tutorials/quaternion'},
           ]
         }
       ],
       '/howto/': [
         { text: 'How-to Guides',
           items: [
+            { text: 'Introduction', link: '/howto/'},
+            { text: 'Compute an order of a number field', link: '/howto/defineorder'},
+            { text: 'Decompose a prime in the ring of integers', link: '/howto/decompose'},
+            { text: 'Test if an ideal is principal', link: '/howto/pip'},
+            { text: 'Construct a residue field', link: '/howto/resfield'},
             { text: 'Reduction of polynomials', link: '/howto/reduction'},
           ]
         }

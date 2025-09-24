@@ -47,6 +47,8 @@ is_commutative(O::AlgAssAbsOrd) = is_commutative(algebra(O))
 
 is_maximal_known(O::AlgAssAbsOrd) = O.is_maximal != 0
 
+is_known(::typeof(is_maximal), O::AlgAssAbsOrd) = is_maximal_known(O)
+
 @inline is_maximal_known_and_maximal(O::AlgAssAbsOrd) = isone(O.is_maximal)
 
 @doc raw"""
@@ -194,7 +196,7 @@ end
 Returns the order of $A$ with basis matrix $M$. If `check` is set, it is checked
 whether $M$ defines an order.
 """
-function order(A::S, M::QQMatrix; check::Bool = true, cached::Bool = true) where {S <: AbstractAssociativeAlgebra{QQFieldElem}} 
+function order(A::S, M::QQMatrix; check::Bool = true, cached::Bool = true) where {S <: AbstractAssociativeAlgebra{QQFieldElem}}
   return order(A, ZZ, M; check, cached)
 end
 
@@ -403,7 +405,10 @@ function _check_elem_in_order(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd
   t = zero_matrix(base_ring(parent(a)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_matrix_inverse(O, copy = false)
-  _, d = integral_split(t, base_ring(O))
+  if t isa QQMatrix && short
+    return is_one(denominator(t))
+  end
+  tn, d = integral_split(t, base_ring(O))
   if short
     return is_unit(d)
   else
@@ -412,9 +417,11 @@ function _check_elem_in_order(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd
     else
       v = Vector{elem_type(base_ring(O))}(undef, degree(O))
       for i = 1:degree(O)
-        tn, d = integral_split(t, base_ring(O))
-        @assert is_one(d)
-        v[i] = deepcopy(tn[1, i])
+        if eltype(v) !== ZZRingElem
+          v[i] = deepcopy(tn[1, i])
+        else
+          v[i] = tn[1, i]
+        end
       end
       return true, v
     end
@@ -426,7 +433,7 @@ end
 
 Returns `true` if the algebra element $x$ is in $O$ and `false` otherwise.
 """
-function in(x, O::AlgAssAbsOrd)
+function in(x::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd)
   @assert parent(x) === algebra(O)
   return _check_elem_in_order(x, O, Val(true))
 end
@@ -1033,7 +1040,7 @@ function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructure
     Mibas = [ mAi(elem_in_algebra(b)) for b in basis(Mi)]
     append!(bas, Mibas)
   end
-  M = order(A, bas, isbasis = true)
+  M = order(A, bas, isbasis = true, check = false)
   N = order(A, _hnf_integral(basis_matrix(M, copy = false)))
   N.is_maximal = 1
   return N

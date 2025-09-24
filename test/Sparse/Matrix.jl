@@ -156,6 +156,14 @@ using Hecke.SparseArrays
   w = @inferred v * D
   @test w == sparse_row(ZZ)
 
+  D1 = sparse_matrix(ZZ, [81 0 2; 31 0 -5])
+  D2 = sparse_matrix(ZZ, [12 403 -23; 0 0 122; -1 2 99])
+  @test_throws Exception D1 * D2
+  E1 = @inferred mul_dense(D1, D2)
+  @test E1 == matrix(D1) * matrix(D2)
+  E2 = @inferred mul_sparse(D1, D2)
+  @test E2 == sparse_matrix(E1)
+
   # Addition
 
   D = sparse_matrix(ZZ, [1 5 3; 0 0 0; 0 1 0])
@@ -248,6 +256,23 @@ using Hecke.SparseArrays
   @test nrows(E) == 2
   @test ncols(E) == 2
   @test E == sparse_matrix(ZZ, [0 0; 1 0])
+  E = @inferred sub(D, [2, 3], [2, 3])
+  @test size(E) == (2, 2)
+  @test E == sparse_matrix(ZZ, [0 0; 1 0])
+  E = @inferred sub(D, [1, 3], [1, 3])
+  @test size(E) == (2, 2)
+  @test E == sparse_matrix(ZZ, [1 3; 0 0])
+  D = sparse_matrix(ZZ, [1 5 0 3;
+                         0 1 0 0;
+                         0 0 0 0;
+                         1 0 0 0])
+  E = @inferred sub(D, [1, 2, 4], [2, 3])
+  @test E == sparse_matrix(ZZ, [5 0; 1 0; 0 0])
+  @test size(E) == (3, 2)
+  @test_throws ArgumentError sub(D, [3, 2], [1, 2])
+  @test_throws ArgumentError sub(D, [2, 3], [2, 1])
+  @test_throws ArgumentError sub(D, [1, 1], [1, 2])
+  @test_throws ArgumentError sub(D, [1, 2], [1, 1])
 
   # Vertical concatenation
   D = sparse_matrix(ZZ, [1 5 3; 0 0 0; 0 1 0])

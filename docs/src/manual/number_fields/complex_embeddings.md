@@ -57,8 +57,9 @@ Given an object `e` representing an embedding $\iota \colon L \to \mathbf{C}$, t
 julia> K, a = quadratic_field(2);
 
 julia> e = complex_embedding(K, 1.41)
-Complex embedding corresponding to 1.41
+Real embedding
   of real quadratic field defined by x^2 - 2
+corresponding to root 1.41
 
 julia> log(abs(e))(a, 128)
 [0.346573590279972654708616060729088284037750067180127627 +/- 4.62e-55]
@@ -123,10 +124,12 @@ julia> k, b = quadratic_field(-1);
 julia> i = hom(k, K, a[1]);
 
 julia> restrict(emb[1], i)
-Complex embedding corresponding to 1.00 * i
+Imaginary embedding
   of imaginary quadratic field defined by x^2 + 1
+corresponding to root 1.00 * i
 
 julia> restrict(emb[3], i)
-Complex embedding corresponding to -1.00 * i
+Imaginary embedding
   of imaginary quadratic field defined by x^2 + 1
+corresponding to root -1.00 * i
 ```

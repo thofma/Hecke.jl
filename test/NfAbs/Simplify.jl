@@ -38,4 +38,12 @@
   L, _ = simplify(K)
   g = defining_polynomial(L)
   @test is_monic(g) && is_one(denominator(g))
+
+  let
+    # issue #1897
+    R, x = polynomial_ring(QQ, :x)
+    f = x^3 - 65637*x - 5630196
+    K, = simplify(number_field(f)[1]; canonical = true)
+    @test defining_polynomial(K) == f
+  end
 end

@@ -79,22 +79,32 @@ end
 ################################################################################
 
 function Base.show(io::IO, ::MIME"text/plain", f::AbsSimpleNumFieldEmbedding)
-  print(io, "Complex embedding corresponding to ")
-  _print_acb_neatly(io, f.r)
-  println(io)
-  io = pretty(io)
-  print(io, Indent(), "of ", Lowercase())
-  Base.show(io, MIME"text/plain"(), number_field(f))
+  pref = is_real(f) ? "Real" : "Imaginary"
+  if is_terse(io)
+    print(io, "$(pref) embedding of number field")
+  else
+    io = pretty(io)
+    println(io, "$(pref) embedding")
+    print(io, Indent(), "of ", Lowercase())
+    show(io, "text/plain", number_field(f))
+    println(io, Dedent())
+    print(io, "corresponding to root ")
+    _print_acb_neatly(io, f.r)
+    print(io, Dedent())
+  end
 end
 
 function Base.show(io::IO, f::AbsSimpleNumFieldEmbedding)
+  pref = is_real(f) ? "Real" : "Imaginary"
+  io = pretty(io)
   if is_terse(io)
-    print(io, "Complex embedding of number field")
+    print(io, "$(pref) embedding of number field")
   else
-    print(io, "Complex embedding corresponding to ")
+    print(io, "$(pref) embedding with ")
     _print_acb_neatly(io, f.r)
-    io = pretty(io)
-    print(terse(io), " of ", Lowercase(), number_field(f))
+    if !haskey(io, :nofield)
+      print(terse(io), " of ", Lowercase(), number_field(f))
+    end
   end
 end
 
@@ -128,7 +138,7 @@ function (f::AbsSimpleNumFieldEmbedding)(x::AbsSimpleNumFieldElem, abs_tol::Int 
 
     if i <= r1
       o = RR()
-      ccall((:arb_poly_evaluate, libarb), Nothing,
+      ccall((:arb_poly_evaluate, libflint), Nothing,
             (Ref{ArbFieldElem}, Ref{ArbPolyRingElem}, Ref{ArbFieldElem}, Int),
              o, xpoly, c.real_roots[i], abs_tol)
 
@@ -142,7 +152,7 @@ function (f::AbsSimpleNumFieldEmbedding)(x::AbsSimpleNumFieldElem, abs_tol::Int 
     else
       tacb = CC()
       j = i <= r1 + r2 ? i - r1 : i - r1 - r2
-      ccall((:arb_poly_evaluate_acb, libarb), Nothing,
+      ccall((:arb_poly_evaluate_acb, libflint), Nothing,
             (Ref{AcbFieldElem}, Ref{ArbPolyRingElem}, Ref{AcbFieldElem}, Int),
              tacb, xpoly, c.complex_roots[j], abs_tol)
 
@@ -266,7 +276,7 @@ function _find_nearest_complex_embedding(K::AbsSimpleNumField, x)
     if j == i
       continue
     end
-    if overlaps(t[i], t[j]) 
+    if overlaps(t[i], t[j])
       possible = [ (Float64(real(e.r)), Float64(imag(e.r))) for e in r]
       s = IOBuffer()
       for i in 1:length(possible)
@@ -313,7 +323,7 @@ function infinite_uniformizers(K::AbsSimpleNumField)
     return _infinite_uniformizers(K)
   end::Dict{embedding_type(K), AbsSimpleNumFieldElem}
 end
-# 
+#
 
 function _infinite_uniformizers(K::AbsSimpleNumField)
   p = real_embeddings(K) #Important: I assume these are ordered as the roots of the defining polynomial!

@@ -50,20 +50,20 @@ end
 ################################################################################
 
 function set_den!(a::AbsSimpleNumFieldElem, d::ZZRingElem)
-  ccall((:nf_elem_set_den, libantic), Nothing,
+  ccall((:nf_elem_set_den, libflint), Nothing,
         (Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}),
         a, d, parent(a))
 end
 
 function set_num_coeff!(a::AbsSimpleNumFieldElem, i::Int, b::ZZRingElem)
-  ccall((:_nf_elem_set_coeff_num_fmpz, libantic), Nothing,
+  ccall((:_nf_elem_set_coeff_num_fmpz, libflint), Nothing,
         (Ref{AbsSimpleNumFieldElem}, Int, Ref{ZZRingElem}, Ref{AbsSimpleNumField}),
         a, i, b, parent(a))
 end
 
 function gen!(r::AbsSimpleNumFieldElem)
    a = parent(r)
-   ccall((:nf_elem_gen, libantic), Nothing,
+   ccall((:nf_elem_gen, libflint), Nothing,
          (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), r, a)
    return r
 end
@@ -111,7 +111,7 @@ function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
      return no//1
    end
    de = denominator(a)
-   ccall((:nf_elem_norm_div, libantic), Nothing,
+   ccall((:nf_elem_norm_div, libflint), Nothing,
          (Ref{QQFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Ref{ZZRingElem}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
    return z
@@ -246,15 +246,20 @@ end
 function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
   Kx = parent(f)
   K = base_ring(f)
+  if degree(f) == 0
+    return parent(defining_polynomial(K))(norm(constant_coefficient(f)))
+  end
   f, i = deflate(f)
   if degree(f) == 1 && is_monic(f)
     N = charpoly(-constant_coefficient(f))
   elseif degree(f) > 10 || degree(K) > 10 # TODO: find a good cross-over,
                          # do this using CRT modular?
     ff = f * inv(leading_coefficient(f)) #make monic
-    P = polynomial_to_power_sums(ff, degree(ff)*degree(K))
+    n, fff = remove(ff, gen(parent(ff)))
+    P = polynomial_to_power_sums(fff, degree(fff)*degree(K))
     PQ = QQFieldElem[tr(x) for x in P]
     N = power_sums_to_polynomial(PQ)*norm(leading_coefficient(f))
+    (n > 0) && (N = shift_left(N, n*degree(K)))
   else
     Qx = polynomial_ring(QQ, "x", cached = false)[1]
     Qxy = polynomial_ring(Qx, "y", cached = false)[1]
@@ -263,6 +268,7 @@ function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
     h = nf_poly_to_xy(f, Qxy, Qx)
     N = resultant(T, h)
   end
+  N.parent = parent(defining_polynomial(base_ring(parent(f))))
   return inflate(N, i)
 end
 
@@ -400,7 +406,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
 
   res = typeof(f)[]
 
-  for i in keys(fac.fac)
+  for (i, _) in fac
     t = change_base_ring(K, i, parent = Kx)
     t = compose(t, gen(Kx) + k*gen(K), inner = :second)
     @vtime :PolyFactor 2 t = gcd(f, t)
@@ -423,7 +429,7 @@ function is_irreducible_easy(f::PolyRingElem{AbsSimpleNumFieldElem})
   if degree(f) == 1
     return true, true
   end
-  if iszero(coeff(f, 0))
+  if iszero(coeff(f, 0)) || is_constant(f)
     return true, false
   end
   if !is_squarefree(f)
@@ -457,8 +463,8 @@ function is_irreducible_easy(f::PolyRingElem{AbsSimpleNumFieldElem})
 end
 
 function _ds(fa)
-  @assert all(x->x == 1, values(fa.fac))
-  T = Int[degree(x) for x = keys(fa.fac)]
+  @assert all(x == 1 for (_, x) in fa)
+  T = Int[degree(x) for (x, _) in fa]
   M = MSet(T)
   return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
@@ -862,13 +868,13 @@ end
 
 function __mod(a::AbsSimpleNumFieldElem, b::ZZRingElem, fl::Bool = true)#, sym::Bool = false) # Not yet
   z = parent(a)()
-  ccall((:nf_elem_mod_fmpz_den, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}, Cint), z, a, b, parent(a), Cint(fl))
+  ccall((:nf_elem_mod_fmpz_den, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}, Cint), z, a, b, parent(a), Cint(fl))
   return z
 end
 
 function coprime_denominator(a::AbsSimpleNumFieldElem, b::ZZRingElem)
   z = parent(a)()
-  ccall((:nf_elem_coprime_den, libantic), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), z, a, b, parent(a))
+  ccall((:nf_elem_coprime_den, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{ZZRingElem}, Ref{AbsSimpleNumField}), z, a, b, parent(a))
   return z
 end
 

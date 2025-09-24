@@ -124,7 +124,11 @@ function Base.show(io::IO, ::MIME"text/plain", a::RelSimpleNumField)
   println(io, "Relative number field with defining polynomial ", a.pol)
   io = pretty(io)
   print(io, Indent(), "over ", Lowercase())
-  show(io, MIME"text/plain"(), base_field(a))
+  if haskey(io, :collapsenf)
+    print(io, base_field(a))
+  else
+    show(io, MIME"text/plain"(), base_field(a))
+  end
   print(io, Dedent())
 end
 
@@ -697,7 +701,7 @@ function normal_basis(L::RelSimpleNumField{AbsSimpleNumFieldElem}, check::Bool =
       # Lift an idempotent of O/pO
       immF = pseudo_inv(mmF)
       fac = factor(ft)
-      gt = divexact(ft, first(keys(fac.fac)))
+      gt = divexact(ft, first(fac)[1])
       g = fq_poly_to_nf_elem_poly(parent(L.pol), immF, gt)
       return L(g)
     end

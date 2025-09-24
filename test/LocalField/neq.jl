@@ -50,9 +50,9 @@ end
   G, mG = automorphism_group(k2, Hecke.absolute_base_field((k2)))
 
   z = Hecke.local_fundamental_class_serre(k2, Hecke.absolute_base_field((k2)))
-  for g = G 
-    for h = G 
-      for k = G 
+  for g = G
+    for h = G
+      for k = G
         a = z(mG(g), mG(h*k))*z(mG(h), mG(k)) - mG(k)(z(mG(g), mG(h)))*z(mG(g*h), mG(k))
          @test iszero(a) || valuation(a) > 20
        end
@@ -70,8 +70,8 @@ end
 
   for i=1:10
     #numerical problems with gen[1] : there is valuation...
-    u = sum(rand(-10:10)*x for x = gens(U)[2:end]) 
-    @test u == preimage(mU, mU(u))  
+    u = sum(rand(-10:10)*x for x = gens(U)[2:end])
+    @test u == preimage(mU, mU(u))
   end
 
   l5 = prime_decomposition(maximal_order(k), 5)
@@ -81,8 +81,8 @@ end
 
   for i=1:10
     #numerical problems with gen[1] : there is valuation...
-    u = sum(rand(-10:10)*x for x = gens(U)[2:end]) 
-    @test u == preimage(mU, mU(u))  
+    u = sum(rand(-10:10)*x for x = gens(U)[2:end])
+    @test u == preimage(mU, mU(u))
   end
 
 end
@@ -115,6 +115,7 @@ end
   k = padic_field(3, precision = 10)
   @test is_norm(K, k(3)) == false
   @test is_norm(K, k(3)^5) == true
+  @test norm(norm_equation(K, k(4))) == k(4)
 
   @test length(coordinates(gen(K)^10, k)) == 5
 end

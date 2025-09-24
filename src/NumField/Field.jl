@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     base_field(L::NumField) -> NumField
 
 Given a number field $L/K$ this function returns the base field $K$.
@@ -22,7 +22,7 @@ _base_ring(::QQField) = QQ
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     is_absolute(L::NumField) -> Bool
 
 Returns whether $L$ is an absolute extension, that is, whether the base field
@@ -40,7 +40,7 @@ is_absolute(::NumField{QQFieldElem}) = true
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     degree(L::NumField) -> Int
 
 Given a number field $L/K$, this function returns the degree of $L$ over $K$.
@@ -66,7 +66,7 @@ dim(K::NumField) = degree(K)
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     absolute_degree(L::NumField) -> Int
 
 Given a number field $L/K$, this function returns the degree of $L$ over
@@ -88,7 +88,7 @@ absolute_degree(::QQField) = 1
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     is_simple(L::NumField) -> Bool
 
 Given a number field $L/K$ this function returns whether $L$ is simple, that is,
@@ -102,7 +102,7 @@ is_simple(a::NumField)
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     number_field(f::Poly{NumFieldElem}, s::VarName;
                 cached::Bool = false, check::Bool = true) -> NumField, NumFieldElem
 
@@ -152,7 +152,7 @@ is_commutative(::QQField) = true
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     normal_basis(L::NumField) -> NumFieldElem
 
 Given a normal number field $L/K$, this function returns an element $a$ of $L$,
@@ -225,7 +225,7 @@ end
 is_cached(L::NonSimpleNumField) = false
 
 #the Symbol is part of the key for caching, hence it should be be changed
-@doc doc"""
+@doc raw"""
     set_var!(L::SimpleNumField, s::VarName)
 
 Sets the name used when printing the primitive element of $L$.
@@ -237,7 +237,7 @@ function set_var!(L::SimpleNumField{T}, s::VarName) where {T}
   nothing
 end
 
-@doc doc"""
+@doc raw"""
     set_vars!(L::NonSimpleNumField{T}, a::VarName)
 
 Sets the string printed for each generator of the field. If the string contains
@@ -259,7 +259,7 @@ function set_vars!(L::NonSimpleNumField{T}, a::String) where {T}
   return set_vars!(L, S)
 end
 
-@doc doc"""
+@doc raw"""
     set_vars!(L::NonSimpleNumField{T}, a::Vector{<:VarName})
 
 Set the printing names for the generators to the string specified in
@@ -303,7 +303,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     absolute_basis(K::NumField) -> Vector{NumFieldElem}
 
 Returns an array of elements that form a basis of $K$ (as a vector space)
@@ -336,7 +336,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     discriminant_sign(K::NumField) -> Int
 
 Returns the sign of the discriminant of the maximal order of $K$.
@@ -373,7 +373,7 @@ end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     signature(K::NumField)
 
 Return the signature of the number field of $K$.
@@ -420,7 +420,7 @@ function signature(K::NumField) end
 #"""
 #function infinite_places(::NumField) end
 
-@doc doc"""
+@doc raw"""
     isreal(P::Plc)
 
 Return whether the embedding into $\mathbf{C}$ defined by $P$ is real or not.
@@ -440,7 +440,7 @@ function is_complex(::Plc) end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     is_abelian(L::NumField) -> Bool
 
 Check if the number field $L/K$ is abelian over $K$.  The function is
@@ -454,7 +454,7 @@ function is_abelian(::NumField) end
 #
 ################################################################################
 
-@doc doc"""
+@doc raw"""
     automorphism_list(L::NumField) -> Vector{NumFieldHom}
 
 Given a number field $L/K$, return a list of all $K$-automorphisms of $L$.

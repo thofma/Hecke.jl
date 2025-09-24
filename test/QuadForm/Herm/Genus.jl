@@ -528,7 +528,7 @@
 end
 
 @testset "non-integral genera" begin
-  
+
   # rescaling
   Qx, x = polynomial_ring(QQ, "x")
   f = x^2 - 3
@@ -551,7 +551,7 @@ end
   @test is_isometric(reps[1], rescale(L, -1//(a^2+5)))
   L2 = representative(rescale(G, 1//100000001))
   @test is_isometric(L2, rescale(L, 1//100000001))
-  
+
   # enumeration
   E, b = cyclotomic_field_as_cm_extension(8, cached=false)
   Eabs, EabstoE = absolute_simple_field(E)
@@ -566,7 +566,7 @@ end
   @test all(G -> rank(G) == 4, gh)
   @test all(G -> !is_integral(G), gh)
   @test all(G -> is_integral(Hecke._scale(G)*fractional_ideal(maximal_order(E), DE)^2), gh)
-  
+
   K = base_field(E)
   sig[rp[1]] = 7
   sig[rp[2]] = 3
@@ -579,6 +579,9 @@ end
   for G in gh
     @test prod([fractional_ideal(prime(g))^(sum([rank(g,i)*scale(g,i) for i in 1:length(g)])) for g in G.LGS]) == inv(135*maximal_order(base_field(E)))
   end
+
+  gh = hermitian_genera(E, 8, sig; min_scale = E(1)*maximal_order(E), max_scale = E(1)*maximal_order(E))
+  @test length(gh)==2
 
   @test_throws ArgumentError hermitian_genera(E, -1, sig, DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, min_scale = 0*DE)
@@ -628,4 +631,18 @@ end
   L = lattice(hermitian_space(E, 0))
   G = genus(L)
   @test length(unique([G ,G, G])) == 1
+
+  let #1887
+    E, _ = cyclotomic_field_as_cm_extension(3; cached=false);
+    DK = different(base_ring(maximal_order(E)));
+    DEK = different(maximal_order(E));
+    DE = DK*maximal_order(E)*DEK;
+    OE = maximal_order(E);
+    P = prime_decomposition(OE, 3)[1][1];
+    D = P^(-1);
+    K = base_field(E);
+    sig = Dict(r => 1 for r in real_places(K));
+    L = hermitian_genera(E, 2, sig, D; min_scale=inv(DE), max_scale=numerator(D)*DE)
+    @test length(L) == 0
+  end
 end

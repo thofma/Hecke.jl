@@ -110,7 +110,9 @@ Return the identity homomorphism of `G`.
 """
 function id_hom(G::FinGenAbGroup)
   I = identity_matrix(ZZ, ngens(G))
-  return FinGenAbGroupHom(G, G, I, I)::FinGenAbGroupHom
+  m = FinGenAbGroupHom(G, G, I, I)
+  set_attribute!(m, :is_identity => true)
+  return m::FinGenAbGroupHom
 end
 
 @doc raw"""

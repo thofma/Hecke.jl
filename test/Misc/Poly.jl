@@ -166,21 +166,21 @@ end
   r = roots(ArbField(100), f)
   @test length(r) == 1
   fa = factor(ArbField(100), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  @test Set(degree.(first.(fa))) == Set([1,2])
   r = roots(RealField(), f)
   @test length(r) == 1
   fa = factor(RealField(), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  @test Set(degree.(first.(fa))) == Set([1,2])
 
 
   r = roots(AcbField(100), f)
   @test length(r) == 3
   fa = factor(AcbField(100), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  @test Set(degree.(first.(fa))) == Set([1])
   r = roots(ComplexField(), f)
   @test length(r) == 3
   fa = factor(ComplexField(), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  @test Set(degree.(first.(fa))) == Set([1])
 
   ZZx, x = ZZ[:x]
   f = x^3-2
@@ -190,20 +190,20 @@ end
   r = roots(ArbField(100), f)
   @test length(r) == 1
   fa = factor(ArbField(100), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  @test Set(degree.(first.(fa))) == Set([1,2])
   r = roots(RealField(), f)
   @test length(r) == 1
   fa = factor(RealField(), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  @test Set(degree.(first.(fa))) == Set([1,2])
 
   r = roots(AcbField(100), f)
   @test length(r) == 3
   fa = factor(AcbField(100), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  @test Set(degree.(first.(fa))) == Set([1])
   r = roots(ComplexField(), f)
   @test length(r) == 3
   fa = factor(ComplexField(), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1])
+  @test Set(degree.(first.(fa))) == Set([1])
 
   r = roots(GF(5), f)
   @test length(r) == 1
@@ -212,7 +212,7 @@ end
   @test length(r) == 3
 
   fa = factor(GF(5), f)
-  @test Set(map(degree, collect(keys(fa.fac)))) == Set([1,2])
+  @test Set(degree.(first.(fa))) == Set([1,2])
 
   fa = factor(6*x)
   @test length(fa) == 3
@@ -271,4 +271,10 @@ let
   f = (x + j)*(x + i)
   g = Hecke.gcd_right(f, (x + j))
   @test degree(g) == 0
+end
+
+let
+  Qx, x = QQ[:x]
+  g = numerator(x)
+  @test g == gen(parent(g)) && g isa ZZPolyRingElem
 end

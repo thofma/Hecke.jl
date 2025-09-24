@@ -84,8 +84,7 @@ function _order_bound(K::AbsSimpleNumField)
     end
   end
   if ord == degree(K) && !is_normal
-    lf = factor(ord)
-    divs = collect(keys(lf.fac))
+    divs = prime_divisors(ord)
     ord = Int(div(ord, minimum(divs)))
   end
   return ord
@@ -183,11 +182,11 @@ end
 ################################################################################
 
 @doc raw"""
-    automorphism_group(K::NumField) -> GenGrp, GrpGenToNfMorSet
+    automorphism_group(K::NumField) -> MultTableGroup, GrpGenToNfMorSet
 
 Given a number field $K$, this function returns a group $G$ and a map from $G$ to the automorphisms of $K$.
 """
-function automorphism_group(K::AbsSimpleNumField)
+@attr Tuple{MultTableGroup, GrpGenToNfMorSet{morphism_type(K, K), AbsSimpleNumField}} function automorphism_group(K::AbsSimpleNumField)
   if Nemo.is_cyclo_type(K)
     return _automorphism_group_cyclo(K)
   else

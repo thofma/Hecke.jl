@@ -92,7 +92,7 @@ end
 
 function -(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false))
+  c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false); check = false)
   if a.has_coeffs && b.has_coeffs
     c.coeffs = [ coefficients(a, copy = false)[i] - coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
     c.has_coeffs = true
@@ -271,8 +271,11 @@ function (A::MatAlgebra{T, S})(v::Vector{T}; copy::Bool = true) where { T, S }
   R = coefficient_ring(A)
   M = zero_matrix(R, _matdeg(A), _matdeg(A))
   temp = zero_matrix(R, _matdeg(A), _matdeg(A))
-  B = basis(A)
-  for i = 1:dim(A)
+  B = basis(A; copy = false)
+  for i in 1:dim(A)
+    if is_zero(v[i])
+      continue
+    end
     temp = mul!(temp, matrix(B[i], copy = false), R(v[i]))
     M = add!(M, M, temp)
   end

@@ -107,5 +107,18 @@
 
   end
 
+  let # cornercase
+    A = abelian_group()
+    g = id_hom(A)
+    l = stable_subgroups(A,[g])
+    ll = collect(l)
+    @test length(ll) == 1
+  end
 
+  let # cornercase
+    A = abelian_group([4,4])
+    endo = hom(A,A,[2*i for i in gens(A)])
+    s = stable_subgroups(A,[endo])
+    @test length(s) == 15
+  end
 end

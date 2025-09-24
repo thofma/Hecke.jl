@@ -376,7 +376,7 @@ function new_extend_aut(A::ClassField, autos::Vector{T}) where T <: Map
   lG = gens(L)
   #P-Sylow subgroups are invariant, I can reduce to the prime power case.
   res = Vector{morphism_type(RelNonSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}(undef, length(autos))
-  for (p, v) = lp.fac
+  for (p, v) in lp
     @vprint :ClassField 1 "Extending auto pp ..."
     @vtime :ClassField 1 imgs = extend_aut_pp(A, autos, p)
     # The output are the images of the cyclic components in A.A
@@ -1022,7 +1022,7 @@ function extend_hom(A::ClassField, B::ClassField, tau::T) where T <: Map
   @assert degree(B) % degree(A) == 0 #actually, this should hold for the exponent
   lp = factor(ZZRingElem(degree(B)))
   all_h = [B.A() for x in A.cyc]
-  for (p, v) = lp.fac
+  for (p, v) in lp
     Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
     Dp = [Bp for Bp = B.cyc if degree(Bp) % Int(p) == 0]
     h = [extend_hom(x, Dp, tau) for x = Cp]

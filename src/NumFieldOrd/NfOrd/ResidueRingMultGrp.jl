@@ -211,7 +211,7 @@ function _primitive_element_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Ab
   O = order(p)
   Q, Q_map = quo(O,p)
   n = norm(p) - 1
-  primefactors_n = collect(keys(factor(n).fac))
+  primefactors_n = prime_divisors(n)
   while true
     x = rand(Q)
     x == 0 && continue
@@ -945,8 +945,7 @@ function _n_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
   @assert !isone(gcd(ZZRingElem(n), np))
   npart, m = ppio(np, ZZRingElem(n))
   k = gcd(npart, ZZRingElem(n))
-  fac = factor(k)
-  powm = ZZRingElem[divexact(npart, x) for x in keys(fac.fac)]
+  powm = ZZRingElem[divexact(npart, x) for x in prime_divisors(k)]
 
   #
   #  We search for a random element with the right order

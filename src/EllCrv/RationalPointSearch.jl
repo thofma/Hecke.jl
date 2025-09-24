@@ -927,7 +927,7 @@ function _get_interval(x::ArbFieldElem)
     return y//1, y//1
   end
 
-  ccall((:arb_get_interval_fmpz_2exp, libarb), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ArbFieldElem}), a, b, e, x)
+  ccall((:arb_get_interval_fmpz_2exp, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ArbFieldElem}), a, b, e, x)
   ee = Int(e)
   @assert ee <= 0
   d = one(ZZRingElem) << -ee

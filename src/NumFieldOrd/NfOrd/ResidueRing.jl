@@ -148,7 +148,7 @@ end
     quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing, Map
 
 The quotient ring $O/I$ as a ring together with the projection $M: O\to O/I$.
-The pointwise inverse of $M$ implements a preimage/ lift function. In 
+The pointwise inverse of $M$ implements a preimage/ lift function. In
   general this will not be a section as it will not be linear.
 """
 function quo(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl})
@@ -514,7 +514,7 @@ function _divexact_strong(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumF
       k += 1
       q = q0 + rand(parent(x))*i
       #println("current valuation $(euclid(q))")
-      if k > 500
+      if k > 5500
         error("Could not find proper quotion for strong division")
       end
     end
@@ -604,7 +604,7 @@ function Base.divrem(x::AbsSimpleNumFieldOrderQuoRingElem, y::AbsSimpleNumFieldO
       @hassert :AbsOrdQuoRing 1 euclid(r) < e
       return q, r
     end
-    if cnt > 1000
+    if cnt > 5500
       error("Something odd in divrem for $x $y $(parent(x))")
     end
   end

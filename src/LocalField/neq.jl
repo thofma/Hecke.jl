@@ -772,16 +772,16 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   G = [g for g = G if map(g, gK) == gK]
   @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 
-  u = mKL(uniformizer(K))//uniformizer(L)^e
+  u = mKL(setprecision(uniformizer(K), precision(K)+10))//setprecision(uniformizer(L)^e, precision(L)+10)
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
   @assert norm(v) == u
-  pi = v*uniformizer(L)
+  pi = v*setprecision(uniformizer(L), precision(L)+5)
   pi_inv = inv(pi)
 
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
-  
+
   if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
@@ -844,7 +844,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     gij = map(G[i], imG[j])
     f = findall(isequal(gij), imG)
     if f === nothing || length(f) == 0
-      f = argmax([valuation(x-gij) for x = imG], dims = 1)
+      f = argmax([minimum(map(valuation, x.-gij)) for x = imG], dims = 1)
     end
     @assert length(f) == 1
     return f[1]
@@ -882,7 +882,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
 
     us = frobenius_equation(c, K, frobenius = fr)
     #think...
-    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= precision(c)//absolute_ramification_index(E)
+    @assert fr(us) == c*us || valuation(fr(us) - c*us) >= floor(precision(c)//absolute_ramification_index(E))
     uv = us*GG[fa[fb[1]]](pi)
     push!(beta, vcat([us for i=1:power_L], [uv for i=1:d-power_L]))
     push!(sigma_hat, (GG[fa[fb[1]]], d-power_L))
@@ -1185,16 +1185,16 @@ end
 @doc raw"""
     is_local_norm(mkK::Map, a::AbsSimpleNumFieldElem) -> Bool
 
-Let    
+Let
     ```mkK : k \to K```
-be a map (embedding) of number fields.    
+be a map (embedding) of number fields.
 
 Tests if ``a`` is a local norm for the relative extension implicit in the map.
 That is for a prime ideal ``p`` in ``k`` let ``Q_i`` the primes above.
-``a`` is a local norm if there are ``b_i`` in the completions at ``Q_i`` s.th. the 
+``a`` is a local norm if there are ``b_i`` in the completions at ``Q_i`` s.th. the
     ```\prod N(b_i) = q```
 where the norm ``N`` is form the completion at ``Q_i`` down to the completion
-at ``p``.  
+at ``p``.
 """
 function is_local_norm(mkK::Map{AbsSimpleNumField, AbsSimpleNumField}, a::AbsSimpleNumFieldElem)
 
@@ -1221,7 +1221,7 @@ function is_local_norm(mkK::Map{AbsSimpleNumField, AbsSimpleNumField}, a::AbsSim
   #for unram. primes, only the valuation counts: the local norm is surjective
   #on units
   #inf. places
-  if signature(k)[1] > 0 
+  if signature(k)[1] > 0
     for i = complex_places(K)
       ki = restrict(embeddings(i)[1], mkK)
       if isreal(ki) && real(evaluate(a, ki)) < 0
@@ -1248,7 +1248,7 @@ function is_local_norm(mkK::Map{AbsSimpleNumField, AbsSimpleNumField}, a::AbsSim
       continue
     end
     #the norm_cts needs to invert a matrix and this seems to loose
-    #precision proportional to the valuation 
+    #precision proportional to the valuation
     #times ram_index: due to the different ways to measure precision
     c, mc = completion(k, p, (20+v)*ramification_index(p))
 
@@ -1341,19 +1341,19 @@ function Hecke.unit_group(K::PadicField; n_quo::Int = -1)
       y *= g^-f[1]
     end
     return A(ZZRingElem[v, f[1], lift(ZZ, divexact(y-1, p))])
-  end  
+  end
   return A, MapFromFunc(A, K, x-> p^x[1]*g^x[2]*(1+p*x[3]), fl)
 end
 
 @doc raw"""
     is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem) -> Bool
 
-Tests if `a` is a local norm in `k`.    
+Tests if `a` is a local norm in `k`.
 """
 function is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem)
   #need to test local norm at all primes dividing RHS + primes in D
   #well, at the prime in K above...
-  if signature(k)[1] == 0  && #totally complex 
+  if signature(k)[1] == 0  && #totally complex
      a < 0
     return false
   end
@@ -1362,7 +1362,7 @@ function is_local_norm(k::Hecke.AbsSimpleNumField, a::ZZRingElem)
 
   zk = maximal_order(k)
   S = ramified_primes(zk)
-  for p = keys(factor(a).fac)
+  for (p, _) in factor(a)
     p in S && continue
     push!(S, p)
   end
@@ -1438,7 +1438,7 @@ Given number fields ``k`` and ``K`` as well as a prime ``p`` in ``k`` and
 ```mkK: k \to K```
 ```mc: k \to k_p```
 ```mC: K \to K_Q```
-this function returns a function 
+this function returns a function
     ```N: K_Q \to k_p```
 implementing the norm of this extension.
 (In particular the extension ``K_Q/k_p`` is not explicit here)
@@ -1486,13 +1486,13 @@ function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSim
 
   b_k = absolute_basis(c)
   b_kK = [mC(mkK(preimage(mc, x))) for x = b_k]
- 
+
   #now the product basis of b_kK, pow_rho and pow_pi
   b_K = [x*y*z for x = pow_pi for y = pow_rho for z = b_kK]
   T = matrix(hcat([absolute_coordinates(x) for x = b_K]...))
 
   S = inv(T)
-  
+
   function norm(x)
     e = divexact(eC, ec)
     f = divexact(fC, fc)

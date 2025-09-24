@@ -693,7 +693,7 @@ function _twists(V::ModAlgAss)
   A = outer_automorphisms(G)
   res = typeof(V)[]
   for a in A
-    push!(res, _twist(V, hom(a)))
+    push!(res, _twist(V, a))
   end
   return res
 end

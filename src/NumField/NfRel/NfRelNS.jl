@@ -100,11 +100,15 @@ function Base.show(io::IO, ::MIME"text/plain", a::RelNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
   io = pretty(io)
-  print(io, "Non-simple number field with defining polynomials [")
+  print(io, "Relative non-simple number field with defining polynomials [")
   join(io, defining_polynomials(a), ", ")
   println(io, "]")
   print(io, Indent(), "over ", Lowercase())
-  show(io, MIME"text/plain"(), base_field(a))
+  if haskey(io, :collapsenf)
+    print(io, base_field(a))
+  else
+    show(io, MIME"text/plain"(), base_field(a))
+  end
   print(io, Dedent())
 end
 
@@ -112,10 +116,10 @@ function Base.show(io::IO, a::RelNonSimpleNumField)
   @show_name(io, a)
   @show_special(io, a)
   if is_terse(io)
-    print(io, "Non-simple number field")
+    print(io, "Relative non-simple number field")
   else
     io = pretty(io)
-    print(io, "Non-simple number field of degree ", degree(a))
+    print(io, "Relative non-simple number field of degree ", degree(a))
     print(terse(io), " over ", Lowercase(), base_field(a))
   end
 end
@@ -573,6 +577,15 @@ end
 function tr_via_minpoly(a::RelNonSimpleNumFieldElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
+end
+
+# TODO: move to AA together with resultant
+function resultant(f::UniversalPolyRingElem, g::UniversalPolyRingElem, x::UniversalPolyRingElem)
+  check_parent(f, g) && check_parent(f, x)
+  up = parent(x)
+  @req is_gen(x) "Not a variable in the universal polynomial ring"
+  res = resultant(data(f), data(g), findfirst(==(x), gens(up)))
+  return up(collect(coefficients(res)), collect(exponent_vectors(res)))
 end
 
 function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)

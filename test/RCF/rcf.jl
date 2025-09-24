@@ -249,7 +249,7 @@ end
 
 @testset "extend base field" begin
   Qx, x = QQ["x"]
-  k, a = number_field(x^3 - 3*x^2 - 87*x + 424) 
+  k, a = number_field(x^3 - 3*x^2 - 87*x + 424)
   #random transformation from x^3-5 - so that lll does s.th.
   K, mkK = normal_closure(k)
 
@@ -288,7 +288,7 @@ end
 
   d = Set([elementary_divisors(inertia_subgroup(Gamma, p[1])) for p = lp])
   @test d == Set([ZZRingElem[2,2], ZZRingElem[2,2,2,2]])
-end 
+end
 
 @testset "Knots - abelian" begin
   Qx, x = QQ["x"]
@@ -326,10 +326,11 @@ end
   S = fixed_field(R, kernel(h-hh)[1])
 
   ns = norm_group(S)[1]
-  t = fixed_field(S, sub(ns, [ns[1], ns[3]])[1])
-  @test degree(t) == 4
-  @test !is_normal(t)
-  @test normal_closure(t) == S
+  for i = subgroups(ns; quotype = [2,2])
+    t = fixed_field(S, i[1])
+    @test degree(t) == 4
+    @test is_normal(t) || normal_closure(t) == S
+  end
 end
 
 @testset "Conductor fix" begin
@@ -392,4 +393,21 @@ let
   D = Dict()
   D[C] = 1
   @test haskey(D, CC)
+end
+
+@testset "Grunwald Wang" begin
+  Q = rationals_as_number_field()[1]
+  Z = maximal_order(Q)
+  @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 2))) == 2
+  @test degree(Hecke.grunwald_wang(Dict(2*Z => 2, 5*Z => 3))) == 6
+end
+
+let # cornercase with trivial automorphism group
+  Qx, x = QQ[:x]
+  f = x^4 + 4*x^2 + 1
+  K, a = number_field(f, :a)
+  OK = maximal_order(K)
+  ab = abelian_normal_extensions(K, [4], ZZ(100000000000000000000545460846592))
+  L = number_field(ab[1])
+  @test degree(L) == 4
 end

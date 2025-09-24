@@ -225,6 +225,12 @@ function hom(A::R, B::S, M::T, N::T; check = true) where {R <: AbstractAssociati
   return AbsAlgAssMor{R, S, T}(A, B, M, N)
 end
 
+function id_hom(A::AbstractAssociativeAlgebra)
+  n = dim(A)
+  K = base_ring(A)
+  return hom(A, A, identity_matrix(K, n), identity_matrix(K, n))
+end
+
 #function hom(A::StructureConstantAlgebra{R}, B::StructureConstantAlgebra{S}, M::T) where {R <: StructureConstantAlgebra, S <: StructureConstantAlgebra, T}
 #  return AlgAssMor{R, S, T}(A, B, M)
 #end

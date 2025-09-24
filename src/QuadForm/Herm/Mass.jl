@@ -244,7 +244,7 @@ function local_factor(L::HermLat, p)
     mi = ncols(G[i])
     ri = sum(ncols(G[j]) for j in (i + 1):length(s); init = 0)
     if ram
-      N = N - div(s[i], 2) * mi^2
+      N = N - fdiv(ZZ(s[i]), ZZ(2)) * mi^2 # s[i] might be negative, so choose the right division
       if isodd(s[i])
         N = N - (mi + 1) * div(mi, 2)
         f = divexact(f, group_order("Sp", mi, q))
@@ -310,7 +310,7 @@ end
 
 Given a definite hermitian lattice `L`, return the mass of its genus.
 """
-function mass(L::HermLat)
+@attr QQFieldElem function mass(L::HermLat)
   @req is_definite(L) "Lattice must be definite"
   m = rank(L)
   if m == 0

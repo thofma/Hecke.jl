@@ -43,8 +43,7 @@
         A1 = Hecke.CrossedProductAlgebra(O, G, cocval)
         O1 = order(A1, basis(A1))
         d = discriminant(O1)
-        fac = factor(d)
-        for p in keys(fac.fac)
+        for p in prime_divisors(d)
           On = Hecke.pmaximal_overorder(O1, Int(p))
           @test valuation(discriminant(On), p) == 0
         end
@@ -83,8 +82,8 @@
     d = discriminant(O1)
     fac1 = factor(discriminant(O))
     fac2 = factor(d)
-    @test Set(collect(keys(fac1.fac))) == Set(collect(keys(fac2.fac)))
-    for p in keys(fac1.fac)
+    @test issetequal(first.(fac1), first.(fac2))
+    for (p, _) in fac1
       O3 = Hecke.pmaximal_overorder(O1, Int(p))
       @test valuation(discriminant(O3), p) == 0
     end

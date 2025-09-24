@@ -474,7 +474,7 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
 
   fac = factor_squarefree(fmodp)
 
-  g = prod(x for x in keys(fac.fac); init = one(fmodp))
+  g = prod(x for (x, _) in fac; init = one(fmodp))
   h = divexact(fmodp,g)
 
   # first build 1/p ( f - g*h)
@@ -961,7 +961,7 @@ function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingEl
       for i=1:length(pols)
         fact = factor(pols[i])
         s = denominator(slope(Nl[i]))
-        for psi in keys(fact.fac)
+        for (psi, _) in fact
           push!(res, (degree(phi)*degree(psi), s))
         end
       end

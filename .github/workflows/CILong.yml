@@ -23,8 +23,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-        julia-arch:
-          - x64
         os:
           - ubuntu-latest
 
@@ -35,10 +33,10 @@ jobs:
           # be able to properly deal with PRs / merges
           fetch-depth: 2
       - name: "Set up Julia"
+        id: setup-julia
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
         uses: julia-actions/cache@v2
       - name: "Build package"
@@ -67,8 +65,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-        julia-arch:
-          - x64
         os:
           - macOS-latest
 
@@ -82,7 +78,6 @@ jobs:
         uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
       - name: "Cache artifacts"
         uses: julia-actions/cache@v2
       - name: "Build package"

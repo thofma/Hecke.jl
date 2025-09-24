@@ -38,6 +38,8 @@ end
   Kt, t = K["t"]
   f = t^4+(-28*_a^2 + 26*_a + 124)*t^2+(81*_a^2 + 504*_a + 936)
   @test @inferred is_irreducible(f)
+  @test @inferred !is_irreducible(zero(Kt))
+  @test @inferred !is_irreducible(one(Kt))
 
   f = x^3-7*x^2+6*x-1
   K, a = number_field(f, "a")
@@ -59,6 +61,25 @@ end
 
   @test Hecke.is_integral(b[1]) == true
   @test Hecke.is_integral(QQFieldElem(1, 2)*b[1]) == false
+end
+
+@testset "Is integer or rational" begin
+  Qx, x = QQ["x"]
+  f = x^2 + 1//2
+  K, a = number_field(f, "a")
+
+  @test Hecke.is_integer(2*a^2) == true
+  @test Hecke.is_integer(a^2) == false
+  @test Hecke.is_rational(a^2) == true
+  @test Hecke.is_rational(a) == false
+
+  g = x^3 + 3
+  L, b = number_field([f, g], "b")
+
+  @test Hecke.is_integer(2*b[1]^2) == true
+  @test Hecke.is_integer(b[1]^2) == false
+  @test Hecke.is_rational(b[1]^2) == true
+  @test Hecke.is_rational(b[1]) == false
 end
 
 @testset "Compositum" begin
@@ -160,6 +181,16 @@ end
   r = @inferred roots(K, f)
   @test length(r) == 3
   @test all(iszero, (f(b) for b in r))
+end
+
+@testset "Norm" begin
+  Qx, xQ = QQ["x"]
+  F, _ = number_field(xQ^2-2)
+  Fx, xF = F["x"]
+  d = degree(F)
+  for i in 0:11
+    @test norm(xF^i + xF^(i+1)) == xQ^(i*d) * norm(xF+1)
+  end
 end
 
 @testset "Norm of factored element" begin

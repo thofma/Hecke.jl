@@ -195,6 +195,7 @@ export center
 export central_primitive_idempotents
 export chain_complex
 export class_group
+export class_number
 export classical_modular_polynomial
 export close_vectors
 export close_vectors_iterator
@@ -241,6 +242,7 @@ export content_ideal
 export contract
 export coordinates
 export coprime_base
+export coprime_residues
 export copy
 export cos
 export cover
@@ -414,7 +416,6 @@ export ideal_type
 export ideals
 export idempotents
 export identity_isogeny
-export identity_map
 export image
 export in
 export index
@@ -667,6 +668,8 @@ export modulus_quadratic_form
 export morphisms
 export mukai_lattice
 export mul!
+export mul_dense
+export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
@@ -710,6 +713,7 @@ export orthogonal_complement
 export orthogonal_projection
 export orthogonal_submodule
 export overlattice
+export overlattices
 export overorders
 export parent
 export periods
@@ -740,6 +744,7 @@ export prime_ideals_over
 export prime_ideals_up_to
 export primes
 export primitive_closure
+export primitive_root
 export principal_generator
 export principal_subfields
 export pselmer_group
@@ -814,9 +819,11 @@ export ring_of_integers
 export ring_of_multipliers
 export root
 export root_lattice
+export root_lattices
 export root_lattice_recognition
 export root_lattice_recognition_fundamental
 export root_sublattice
+export root_symbols
 export roots
 export rres
 export rresx
@@ -933,6 +940,8 @@ export value_module
 export value_module_quadratic_form
 export vcat
 export vcat!
+export vectors_of_square_and_divisibility
+export vector_space_dim
 export volume
 export weil_pairing
 export wildanger_field

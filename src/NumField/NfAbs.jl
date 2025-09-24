@@ -6,6 +6,8 @@ else
   global const p_start = next_prime(2^60)
 end
 
+order_type(T::Type{<:NonSimpleNumField{QQFieldElem}}) = AbsNumFieldOrder{T, elem_type(T)}
+
 include("NfAbs/NfAbs.jl")
 include("NfAbs/Conjugates.jl")
 include("NfAbs/CompactRepresentation.jl")

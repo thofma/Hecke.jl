@@ -56,7 +56,7 @@ function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=
   L = lll(maximal_order(K))
   C, mC = narrow_class_group(L)
 #  println("narrow group is : $C")
-  S = union(Set(keys(factor(a).fac)), Set(keys(factor(discriminant(L)).fac)))
+  S = union(Set(prime_divisors(a)), Set(prime_divisors(discriminant(L))))
   S = union(S, Set(extra))
 
   g = Set(elem_type(C)[])

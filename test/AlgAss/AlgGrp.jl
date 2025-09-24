@@ -37,6 +37,15 @@
     end
   end
 
+  @testset "Vector space dimension" begin
+    G1 = abelian_group(2,3)
+    G2 = abelian_group(0) 
+    R1 = group_algebra(QQ, G1)
+    R2 = group_algebra(QQ, G2)
+    @test vector_space_dim(R1) == 6
+    @test_throws Hecke.InfiniteDimensionError vector_space_dim(R2)
+  end
+
   @testset "Decomposition for abelian group algebras" begin
     G = abelian_group([2,4,6])
     QG = QQ[G]
@@ -140,5 +149,20 @@
     @test is_commutative(QG)
     @test sprint(show, MIME"text/plain"(), QG) isa String
     @test sprint(show, QG) isa String
+  end
+
+  let
+    # 1892
+    G = abelian_group([2, 3, 50])
+    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    B = basis(QG)
+    b = B[1]
+    @test sprint(show, MIME"text/plain"(), b) isa String
+
+    G = abelian_group([2, 3, 50])
+    QG = Hecke._group_algebra(QQ, G; sparse = false, cached = false)
+    B = basis(QG)
+    b = B[1]
+    @test sprint(show, MIME"text/plain"(), b) isa String
   end
 end

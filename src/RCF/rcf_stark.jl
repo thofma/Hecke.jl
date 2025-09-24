@@ -591,36 +591,6 @@ function compute_coeffs_L_function(chi::T, n::Int, prec::Int) where T <: RCFChar
   return coeffs_old
 end
 
-function ideals_up_to(OK::AbsSimpleNumFieldOrder, n::Int, coprime_to::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = ideal(OK, 1))
-
-  lp = prime_ideals_up_to(OK, n)
-  filter!(x -> is_coprime(x, coprime_to), lp)
-  lI = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, 1)]
-  for i = 1:length(lp)
-    lnew = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
-    P = lp[i]
-    nP = Int(norm(P, copy = false))
-    @assert nP <= n
-    expon = Int(flog(ZZRingElem(n), nP))
-    for j = 1:length(lI)
-      I = lI[j]
-      if norm(I, copy = false)*nP > n
-        break
-      end
-      push!(lnew, I*P)
-      for s = 2:expon
-        if nP^s*norm(I, copy = false) > n
-          break
-        end
-        push!(lnew, I*P^s)
-      end
-    end
-    append!(lI, lnew)
-    sort!(lI, by = x -> norm(x, copy = false))
-  end
-  return lI
-end
-
 ################################################################################
 #
 #  Correction term
@@ -672,7 +642,7 @@ function artin_root_number(chi::RCFCharacter, prec::Int)
   @hassert :ClassField 1 lambda in J
   g = numerator(simplify(ideal(OK, lambda) * inv(J)))
   @hassert :ClassField 1 is_coprime(g, c)
-  u = idempotents(g, c)[1]
+  u = idempotents(g^2, c)[1] # use g^2, since we later change things modulo g^2
   u = make_positive(u, minimum(g^2))
   @hassert :ClassField 1 is_totally_positive(u)
   @hassert :ClassField 1 u in g

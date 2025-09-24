@@ -128,6 +128,16 @@ function genus_representatives(L::QuadLat; max = inf, use_auto = true, use_mass 
   return res
 end
 
+function stdcallback(list, L)
+  keep = all(LL -> !is_isometric_with_isometry(LL,L)[1], list)
+  return keep, true
+end
+
+function eqcallback(list, L)
+  keep = all(LL -> LL != L, list)
+  return keep, true
+end
+
 function spinor_genera_in_genus(L, mod_out)
 #{A sequence of lattices representing the spinor genera in the genus of L}
   @req rank(L) >= 3 "(Currently) rank must be at least 3"
@@ -1943,7 +1953,7 @@ function _padic_index(N, M, p)
   for i in 1:n
     for j in 1:n
       if !(T[i, j] == 0)
-           mini = min(mini, valuation(T[i, j], p) + valuation(Npb[i][2], p) - valuation(Mpb[i][2], p))
+           mini = min(mini, valuation(T[i, j], p) + valuation(Npb[i][2], p) - valuation(Mpb[j][2], p))
       end
     end
   end
@@ -1951,7 +1961,7 @@ function _padic_index(N, M, p)
   pi = elem_in_nf(uniformizer(p))
   for i in 1:n
     for j in 1:n
-      TT[i, j] = TT[i, j] * pi^(valuation(Npb[i][2], p) - valuation(Mpb[i][2], p))
+      TT[i, j] = TT[i, j] * pi^(valuation(Npb[i][2], p) - valuation(Mpb[j][2], p))
     end
   end
 

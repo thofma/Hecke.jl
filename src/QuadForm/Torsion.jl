@@ -101,7 +101,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
 end
 
 @doc raw"""
-    discriminant_group(L::ZZLat) -> TorQuadModule
+    discriminant_group(L::ZZLat, [n::Int]) -> TorQuadModule
 
 Return the discriminant group of `L`.
 
@@ -114,6 +114,41 @@ $$D \times D \to \mathbb{Q} / \mathbb{Z} \qquad (x,y) \mapsto \Phi(x,y) + \mathb
 
 If `L` is even, then the discriminant group is equipped with the discriminant
 quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{Z}$.
+
+# Input:
+- `n::Int` -- if given, return the ``n``-primary part of the discriminant group
+
+# Examples:
+```jldoctest
+julia> L = rescale(root_lattice(:A,2),10)
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[ 20   -10]
+[-10    20]
+
+julia> discriminant_group(L)
+Finite quadratic module
+  over integer ring
+Abelian group: Z/10 x Z/30
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
+[ 1//5   1//10]
+[1//10   1//15]
+
+julia> discriminant_group(L, 10)
+Finite quadratic module
+  over integer ring
+Abelian group: (Z/10)^2
+Bilinear value module: Q/Z
+Quadratic value module: Q/2Z
+Gram matrix quadratic form:
+[   1   1//2      0      0]
+[1//2      1      0      0]
+[   0      0   4//5   1//5]
+[   0      0   1//5   2//5]
+
+```
 """
 @attr TorQuadModule function discriminant_group(L::ZZLat)
   @req is_integral(L) "The lattice must be integral"
@@ -125,6 +160,8 @@ quadratic form $D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{
   set_attribute!(T, :is_degenerate => false)
   return T
 end
+
+discriminant_group(L::ZZLat, n::Int) = primary_part(discriminant_group(L), n)[1]
 
 @doc raw"""
     order(T::TorQuadModule) -> ZZRingElem
@@ -760,11 +797,11 @@ Return the matrix defining the underlying abelian group homomorphism of `f`.
 matrix(f::TorQuadModuleMap) = matrix(abelian_group_homomorphism(f))
 
 @doc raw"""
-    identity_map(T::TorQuadModule) -> TorQuadModuleMap
+    id_hom(T::TorQuadModule) -> TorQuadModuleMap
 
 Return the identity map of `T`.
 """
-function identity_map(T::TorQuadModule)
+function id_hom(T::TorQuadModule)
   map_ab = id_hom(abelian_group(T))
   return TorQuadModuleMap(T, T, map_ab)
 end
@@ -792,13 +829,6 @@ Given a map `f` between two torsion quadratic modules `T` and `U`,
 return the trivial map between `T` and `U` (see [`trivial_morphism`](@ref)).
 """
 zero(f::TorQuadModuleMap) = trivial_morphism(domain(f), codomain(f))
-
-@doc raw"""
-    id_hom(T::TorQuadModule) -> TorQuadModuleMap
-
-Alias for [`identity_map`](@ref).
-"""
-id_hom(T::TorQuadModule) = identity_map(T)
 
 @doc raw"""
     inv(f::TorQuadModuleMap) -> TorQuadModuleMap
@@ -993,7 +1023,7 @@ Given an abelian group endomorphism `f` of a torsion quadratic module `T`
 return the $n$-fold self-composition of `f`.
 
 Note that `n` must be non-negative and $f^0$ is by default the identity map
-of the domain of `f` (see [`identity_map`](@ref)).
+of the domain of `f` (see [`id_hom`](@ref)).
 """
 function Base.:^(f::TorQuadModuleMap, n::Integer)
   @req n >= 0 "n must be a positive integer"
@@ -1021,7 +1051,14 @@ end
 
 function evaluate(p::QQPolyRingElem, f::TorQuadModuleMap)
   @req domain(f) === codomain(f) "f must be a self-map"
-  @req all(a -> is_integral(a), coefficients(p)) "p must have integral coefficients"
+  if !all(is_integral, coefficients(p))
+    l = lcm(ZZRingElem[denominator(i) for i in coefficients(p)])
+    e = elementary_divisors(domain(f))[end]
+    R, iR = residue_ring(ZZ, e; cached=false)
+    s = preimage(iR, inv(iR(l)))
+    p = s*l*p
+    @req all(is_integral, coefficients(p)) "The denominator of p must be coprime to the exponent of the domain of f"
+  end
   return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
 
@@ -1558,6 +1595,7 @@ function radical_quadratic(T::TorQuadModule)
   g = gens(Kb)
   n = length(g)
   kergen = TorQuadModuleElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:nrows(kermat)]
+  append!(kergen, TorQuadModuleElem[2*i for i in g])
   Kq, iq = sub(Kb,kergen)
   @assert iszero(gram_matrix_quadratic(Kq))
   return Kq, compose(iq,ib)
@@ -1603,10 +1641,10 @@ function normal_form(T::TorQuadModule; partial=false)
     i = hom(T, N, TorQuadModuleElem[N(lift(g)) for g in gens(T)])
   else
     N = T
-    i = identity_map(T)
+    i = id_hom(T)
   end
   normal_gens = TorQuadModuleElem[]
-  prime_div = prime_divisors(exponent(N))
+  prime_div = sort!(prime_divisors(exponent(N)))
   for p in prime_div
     D_p, I_p = primary_part(N, p)
     q_p = gram_matrix_quadratic(D_p)
@@ -2302,6 +2340,8 @@ function submodules(T::TorQuadModule; kw...)
   A = abelian_group(T)
   return (sub(T, T.(StoA.(gens(S)))) for (S, StoA) in subgroups(A; kw..., fun = (x, y) -> sub(x, y, false)))
 end
+
+subgroups(T::TorQuadModule; kw...) = submodules(T; kw...)
 
 @doc raw"""
     stable_submodules(T::TorQuadModule, act::Vector{TorQuadModuleMap}; kw...)

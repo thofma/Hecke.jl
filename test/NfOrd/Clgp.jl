@@ -279,7 +279,7 @@ end
     unit_group(OK, GRH = false)
     unit_group(OK, GRH = true)
 
-    # 
+    #
     K, = quadratic_field(-100200000001; cached = false)
     OK = maximal_order(K)
     U, mU = unit_group_fac_elem(OK, GRH = false)
@@ -302,9 +302,29 @@ end
   end
 
   # saturation at large primes
-  
+
   # the cyclotomic units are saturated at any prime l, since the class number h_149^+ is one.
   K, = cyclotomic_real_subfield(149, "a")
   u = Hecke._cyclotomic_units_totally_real_prime_conductor(K, 149)
   @test nrows(Hecke.RelSaturate.compute_candidates_for_saturate(FacElem.(u[2:end]), next_prime(2^25))) == 0
+
+  let
+    O = maximal_order(rationals_as_number_field()[1])
+    unit_group(O)
+    U, = unit_group_fac_elem(O; GRH = false)
+    @test order(U) == 2
+  end
+
+  let # non-maximal orders
+    K, a = quadratic_field(-1)
+    O = order(K, [10*a])
+    @test_throws ArgumentError class_group(O)
+    @test_throws ArgumentError class_number(O)
+  end
+
+  let # class number
+    K, a = quadratic_field(-1)
+    O = maximal_order(K)
+    @test class_number(O) == 1
+  end
 end

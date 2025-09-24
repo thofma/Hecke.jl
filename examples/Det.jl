@@ -209,7 +209,7 @@ end
 function induce_crt!(A::ZZMatrix, p::ZZRingElem, B::fpMatrix, ::Integer; signed::Bool = false)
   #the second modulus is implicit in B: B.n
 
-  ccall((:fmpz_mat_CRT_ui, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{fpMatrix}, Int), A, A, p, B, signed)
+  ccall((:fmpz_mat_CRT_ui, Hecke.libflint), Cvoid, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZRingElem}, Ref{fpMatrix}, Int), A, A, p, B, signed)
   Nemo.mul!(p, p, B.n)
   return
 end
@@ -677,7 +677,7 @@ function UniCertZ_CRT(A::ZZMatrix)
 end
 
 function mod_sym!(a::Ptr{ZZRingElem}, b::Ptr{ZZRingElem}, c::ZZRingElem, t::ZZRingElem = ZZ(0))
-  ccall((:fmpz_ndiv_qr, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), t, a, b, c)
+  ccall((:fmpz_ndiv_qr, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Ptr{ZZRingElem}, Ref{ZZRingElem}), t, a, b, c)
 end
 
 function renorm(U::ZZMatrix, m::ZZRingElem; start::Int = 1, last::Int = nrows(U))
@@ -775,7 +775,7 @@ function UniCertZ_CRT(A::ZZMatrix, U::ZZMatrix; pr_max::Int = 10^8)
 
   @show size(U)
   @assert nrows(U) == 1
-  @show pr = 2^(k+2)-1  
+  @show pr = 2^(k+2)-1
   V = zero_matrix(ZZ, pr+100, ncols(U))
   V[1, :] = U
   U = V
@@ -877,7 +877,7 @@ end
 function _det(a::fpMatrix)
   a.r < 10 && return ZZ(lift(det(a)))
   #_det avoids a copy: det is computed destructively
-  r = ccall((:_nmod_mat_det, Nemo.libflint), UInt, (Ref{fpMatrix}, ), a)
+  r = ccall((:_nmod_mat_det, Hecke.libflint), UInt, (Ref{fpMatrix}, ), a)
   return ZZ(r)
 end
 
@@ -984,16 +984,16 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false, do
       if do_hnf
         @show d
         T1 = hcol(TS, d)
-        return T1 * _hnf 
+        return T1 * _hnf
       end
       return d1
     end
     if (Had - nbits(d1) - nbits(prod_p))/60 < dixon_cost(d)
       @show "finishing with CRT"
-      if do_hnf 
+      if do_hnf
         T1 = hcol(TS, d)
         AT = AbstractAlgebra.Strassen._solve_triu(T1, AT; side = :left)
-        _hnf = T1 * _hnf 
+        _hnf = T1 * _hnf
       end
       while nbits(prod_p)+nbits(d1) < Had
         change_prime(Ap, p)
@@ -1005,7 +1005,7 @@ function DetS(A::ZZMatrix, U::AbstractArray= -100:100; use_rns::Bool = false, do
       mis = mod_sym(det_p*invmod(d1, prod_p), prod_p)
       if do_hnf
         h = hnf_modular_eldiv(AT, mis)
-        return h * _hnf 
+        return h * _hnf
       end
       return d1*mis
     end
@@ -1106,11 +1106,13 @@ function induce_rational_reconstruction(a::ZZMatrix, b::ZZRingElem)
 end
 
 function Nemo.div!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
-  ccall((:fmpz_tdiv_q, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
+  ccall((:fmpz_tdiv_q, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
+  return a
 end
 
 function shift_right!(a::ZZRingElem, b::ZZRingElem, i::Int)
-  ccall((:fmpz_fdiv_q_2exp, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), a, b, i)
+  ccall((:fmpz_fdiv_q_2exp, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Int), a, b, i)
+  return a
 end
 
 #output sensitive rational_reconstruction, in particular if
@@ -1135,7 +1137,7 @@ function ratrec!(n::ZZRingElem, d::ZZRingElem, a::ZZRingElem, b::ZZRingElem)
 
 #    @assert 2*N*D < b
 
-    fl = ccall((:_fmpq_reconstruct_fmpz_2, Nemo.libflint), Bool, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), n, d, a, b, N, D)
+    fl = ccall((:_fmpq_reconstruct_fmpz_2, Hecke.libflint), Bool, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), n, d, a, b, N, D)
 
     if fl && (nbits(n)+nbits(d) < k - 30 || D>N)
       return fl
@@ -1151,18 +1153,18 @@ function Hecke.map_entries(k::Nemo.fpField, A::ZZMatrix)
 end
 
 function map_entries!(a::fpMatrix, k::Nemo.fpField, A::ZZMatrix)
-  ccall((:fmpz_mat_get_nmod_mat, Nemo.libflint), Cvoid, (Ref{fpMatrix}, Ref{ZZMatrix}), a, A)
+  ccall((:fmpz_mat_get_nmod_mat, Hecke.libflint), Cvoid, (Ref{fpMatrix}, Ref{ZZMatrix}), a, A)
   return a
 end
 
 function change_prime(a::fpMatrix, p::UInt)
   a.n = p  #in flint 3.0 available as nmod_mat_set_mod
   a.norm = leading_zeros(p)
-  a.ninv = ccall((:n_preinvert_limb_prenorm, Nemo.libflint), UInt, (UInt, ), p << a.norm)
+  a.ninv = ccall((:n_preinvert_limb_prenorm, Hecke.libflint), UInt, (UInt, ), p << a.norm)
 end
 
 function lift!(A::ZZMatrix, a::fpMatrix)
-  ccall((:fmpz_mat_set_nmod_mat, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}), A, a)
+  ccall((:fmpz_mat_set_nmod_mat, Hecke.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}), A, a)
 end
 
 mutable struct DixonCtx{T}
@@ -1196,7 +1198,7 @@ function dixon_init(A::ZZMatrix, B::ZZMatrix, T::DataType = fpMatrix)
 
   _N = ZZ()
   _D = ZZ()
-  ccall((:fmpz_mat_solve_bound, Nemo.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZMatrix}, Ref{ZZMatrix}), _N, _D, A, B)
+  ccall((:fmpz_mat_solve_bound, Hecke.libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZMatrix}, Ref{ZZMatrix}), _N, _D, A, B)
   local Ainv_t
   if T == fpMatrix
     p = next_prime(2^59)
@@ -1269,7 +1271,7 @@ function map_entries!(A::Matrix{Float64}, k::Nemo.fpField, d::ZZMatrix)
   for i=1:nrows(d)
     d_ptr = Nemo.mat_entry_ptr(d, i, 1)
     for j=1:ncols(d)
-      A[i,j] = ccall((:fmpz_mod_ui, Nemo.libflint), UInt, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Int), t, d_ptr, p)
+      A[i,j] = ccall((:fmpz_mod_ui, Hecke.libflint), UInt, (Ref{ZZRingElem}, Ptr{ZZRingElem}, Int), t, d_ptr, p)
       d_ptr += 8
     end
   end
@@ -1288,7 +1290,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
 
     if T == fpMatrix
       Nemo.mul!(D.y_mod, D.Ainv, D.d_mod)
-      ccall((:fmpz_mat_scalar_addmul_nmod_mat_fmpz, Nemo.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}, Ref{ZZRingElem}), D.x, D.y_mod, ppow)
+      ccall((:fmpz_mat_scalar_addmul_nmod_mat_fmpz, Hecke.libflint), Cvoid, (Ref{ZZMatrix}, Ref{fpMatrix}, Ref{ZZRingElem}), D.x, D.y_mod, ppow)
     else
       BLAS.gemm!('N', 'N', 1.0, D.Ainv, D.d_mod, 0.0, D.y_mod)
       mod!(D.y_mod, Int(D.p))
@@ -1347,7 +1349,7 @@ function dixon_solve(D::DixonCtx{T}, B::ZZMatrix; block::Int = 10) where T
        for i=1:n
          Ay_ptr = Nemo.mat_entry_ptr(D.Ay, i, 1)
          A_ptr = Nemo.mat_entry_ptr(D.A, i, 1)
-         ccall((:fmpz_zero, Nemo.libflint), Cvoid, (Ptr{ZZRingElem},), Ay_ptr)
+         ccall((:fmpz_zero, Hecke.libflint), Cvoid, (Ptr{ZZRingElem},), Ay_ptr)
          for j=1:n
            y_ptr = Nemo.mat_entry_ptr(D.y_mod, j, 1)
            addmul!(Ay_ptr, A_ptr, unsafe_load(y_ptr))

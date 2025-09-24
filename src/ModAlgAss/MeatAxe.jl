@@ -414,15 +414,15 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   @assert typeof(G) == typeof(H)
 
   if isempty(G)
-    return false, matrix(K, 1, n, V[one(K) for i = 1:n])
+    return false, matrix(K, 1, n, elem_type(S)[one(K) for i = 1:n])
   end
 
   if isone(length(G))
     A = G[1]
     poly = minpoly(Kx, A)
     sq = factor_squarefree(poly)
-    lf = factor(first(keys(sq.fac)))
-    t = first(keys(lf.fac))
+    lf = factor(first(sq)[1])
+    t = first(lf)[1]
     if degree(t)==n
       M.is_irreducible = 1
       return true, identity_matrix(K, n)

@@ -372,7 +372,7 @@ end
 Tests if $a$ is positive definite by testing if all principal minors
 have positive determinant.
 """
-function is_positive_definite(a::ZZMatrix)
+function is_positive_definite(a::Union{QQMatrix, ZZMatrix})
   for i=1:nrows(a)
     if det(sub(a, 1:i, 1:i)) <= 0
       return false
@@ -437,9 +437,9 @@ function round_scale!(b::ZZMatrix, a::ArbMatrix, l::Int)
   r = R()
   for i = 1:s[1]
       for j = 1:s[2]
-          v = ccall((:arb_mat_entry_ptr, libarb), Ptr{ArbFieldElem},
+          v = ccall((:arb_mat_entry_ptr, libflint), Ptr{ArbFieldElem},
               (Ref{ArbMatrix}, Int, Int), a, i - 1, j - 1)
-          ccall((:arb_mul_2exp_si, libarb), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
+          ccall((:arb_mul_2exp_si, libflint), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
           b[i, j] = round(ZZRingElem, r)
       end
   end
