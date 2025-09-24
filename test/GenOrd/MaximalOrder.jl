@@ -57,3 +57,12 @@ end
   S = ring_of_multipliers(O, I, p, true)
   @test basis(O, F20) == basis(S, F20)
 end
+
+@testset "Jeroen" begin
+  kx, x = rational_function_field(QQ)
+  kxy, y = polynomial_ring(kx, "y")
+  f = x^3 + x^2 +x*y^3 -x*y^2 +y^2 -y
+  F, a = function_field(f)
+  @test genus(F) == 3
+end
+
