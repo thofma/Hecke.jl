@@ -20,7 +20,7 @@ function theta_f(z::Vector{AcbFieldElem},  tau::AcbMatrix, theta_characteristic:
   g = nrows(tau)
   zd = length(z)
   if (g != zd)
-    error("Dimension mismatch. tau is of dimension "+ g +", but z is of dimension "+zd)
+    error("Dimension mismatch. tau is of dimension $g, but z is of dimension $zd")
   end
   return _theta_jet(z, 1, tau, 0, theta_characteristic, 0, 0)[1]
 end
@@ -41,7 +41,7 @@ function theta_f(zs::Vector{Vector{AcbFieldElem}},  tau::AcbMatrix, theta_charac
   for z in zs
     zd = length(z)
     if (g != zd)
-      error("Dimension mismatch. tau is of dimension "+ g +", but zt least one of the z_i is of dimension "+zd)
+      error("Dimension mismatch. tau is of dimension $g, but at least one of the z_i is of dimension $zd")
     end
   end
   @assert theta_characteristic < 2^(2*g)
@@ -63,7 +63,7 @@ function thetas_f(z::Vector{AcbFieldElem},  tau::AcbMatrix)
   g = nrows(tau)
   zd = length(z)
   if (g != zd)
-    error("Dimension mismatch. tau is of dimension "+ g +", but z is of dimension "+zd)
+    error("Dimension mismatch. tau is of dimension $g, but z is of dimension $zd")
   end
   return _theta_jet(z, 1, tau, 0, 0, 1, 0)
 end
@@ -74,7 +74,7 @@ function thetas_f(zs::Vector{Vector{AcbFieldElem}},  tau::AcbMatrix)
   for z in zs
     zd = length(z)
     if (g != zd)
-      error("Dimension mismatch. tau is of dimension "+ g +", but zt least one of the z_i is of dimension "+zd)
+      error("Dimension mismatch. tau is of dimension $g, but at least one of the z_i is of dimension $zd")
     end
   end
   res =  _theta_jet(reduce(vcat,(zs)), n, tau, 0, 0, 1, 0)
@@ -126,6 +126,7 @@ function parse_theta_characteristic(theta_characteristic::Vector{Vector{Int}})
   end
   return parse_theta_characteristic(reduce(vcat,theta_characteristic))
 end
+#Based on Computing Theta Functions with Julia by Daniele Agostini and Lynn Chua
 
 @doc raw"""
     theta(z::Vector{AcbFieldElem},  tau::AcbMatrix}; char::Vector{Vector{Int}},
@@ -282,7 +283,7 @@ function _theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, char::Vector{Vector{Int
 
   error_term = exponential_part*error_epsilon
 
-  ccall((:acb_add_error_arb, libarb), Cvoid,
+  ccall((:acb_add_error_arb, libflint), Cvoid,
       (Ref{AcbFieldElem}, Ref{ArbFieldElem}), result, error_term)
 
   return result
@@ -360,7 +361,7 @@ end
 function cholesky_decomposition(x::ArbMatrix)
   z = similar(x, nrows(x), ncols(x))
   p = precision(base_ring(x))
-  fl = ccall((:arb_mat_cho, Hecke.libarb), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
+  fl = ccall((:arb_mat_cho, libflint), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
   @assert fl != 0
   return z
 end
