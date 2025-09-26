@@ -131,11 +131,11 @@ function Base.mod2pi(x::ArbFieldElem)
 end
 
 @doc raw"""
-    embed_poly(f::PolyRingElem{nf_elem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
+    embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
 
 Embed a polynomial into the polynomial ring over the complex numbers using the given place. 
 """
-function embed_poly(f::PolyRingElem{nf_elem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
+function embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
   coeffs = coefficients(f)
   coeffs = map(t -> evaluate(t, v.embedding, prec), coeffs)
   
@@ -145,7 +145,7 @@ function embed_poly(f::PolyRingElem{nf_elem}, v::T, prec::Int = 100) where T<:Un
 end
 
 @doc raw"""
-    embed_mpoly(f::MPolyRingElem{nf_elem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
+    embed_mpoly(f::MPolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
 
 Embed a polynomial into the polynomial ring over the complex numbers using the given place. 
 """
