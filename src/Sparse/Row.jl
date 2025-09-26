@@ -127,6 +127,11 @@ function sparse_row(idx::Int, coeff::T; check::Bool=true) where {T}
   return SRow(parent(coeff), Int64[idx], T[coeff]; check=false)
 end
 
+# For ZZRingElems this has to be overwritten, because the values are stored differently. 
+function sparse_row(idx::Int, coeff::ZZRingElem; check::Bool=true)
+  return sparse_row(parent(coeff), [(idx, coeff)])
+end
+
 function Base.empty!(A::SRow)
   empty!(A.pos)
   empty!(A.values)

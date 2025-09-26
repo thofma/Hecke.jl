@@ -36,8 +36,13 @@
   @test base_ring(G) === R
   H = @inferred sparse_row(1, zero(R))
   @test is_empty(H)
+
+  G = @inferred sparse_row(1, one(S))
+  @test base_ring(G) === S
+  H = @inferred sparse_row(1, zero(S))
+  @test is_empty(H)
   # incorrectly stored element at the user's responsibility
-  H = @inferred sparse_row(1, zero(R); check=false)
+  H = @inferred sparse_row(1, zero(S); check=false)
   @test !is_empty(H)
   @test all(is_zero(c) for (_, c) in H)
 
