@@ -722,9 +722,19 @@ end
 ################################################################################
 
 function Hecke.discriminant(O::GenOrd)
-  d = discriminant(O.F)
-  if isdefined(O, :trans)
-    d *= det(O.trans)^2
+  if is_monic(defining_polynomial(O.F))
+    #"the" example from Jeroen is
+    #   x*y^3 + (-x + 1)*y^2 - y + x^3 + x^2
+    # and the problem is the correct power of x.
+    # The disc. is "well definined" up to the correct power of the
+    # leading coeff....
+    # The bypass is to use det(trace_mat) which is correct for orders
+    d = discriminant(O.F)
+    if isdefined(O, :trans)
+      d *= det(O.trans)^2
+    end
+  else
+    d = det(trace_matrix(O))
   end
   return O.R(d)
 end
