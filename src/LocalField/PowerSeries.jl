@@ -24,8 +24,7 @@ is_exact_type(::Type{<: LaurentSeriesFieldValuationRingElem}) = false
 _field(R::LaurentSeriesFieldValuationRing) = R.K
 data(R::LaurentSeriesFieldValuationRing) = R.R
 
-base_ring(R::LaurentSeriesFieldValuationRing) = Union{}
-base_ring_type(::Type{<: LaurentSeriesFieldValuationRing}) = typeof(Union{})
+base_ring_type(::Type{<: LaurentSeriesFieldValuationRing}) = Union{}
 
 parent(a::LaurentSeriesFieldValuationRingElem) = a.parent
 data(a::LaurentSeriesFieldValuationRingElem) = a.a

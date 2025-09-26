@@ -19,8 +19,7 @@ _valuation_ring(R::LocalFieldValuationRingResidueRing) = R.R
 _field(R::LocalFieldValuationRingResidueRing) = _field(_valuation_ring(R))
 _exponent(R::LocalFieldValuationRingResidueRing) = R.k
 
-base_ring(R::LocalFieldValuationRingResidueRing) = Union{}
-base_ring_type(::Type{<: LocalFieldValuationRingResidueRing}) = typeof(Union{})
+base_ring_type(::Type{<: LocalFieldValuationRingResidueRing}) = Union{}
 
 parent(a::LocalFieldValuationRingResidueRingElem) = a.parent
 data(a::LocalFieldValuationRingResidueRingElem) = a.a
