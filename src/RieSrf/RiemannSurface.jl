@@ -2,10 +2,30 @@
 #
 #          RieSrf/RiemannSurface.jl : Riemann surfaces
 #
-# (C) 2022 Jeroen Hanselman
+# (C) 2025 Jeroen Hanselman
+# This is a port of the Riemann surfaces package written by
+# Christian Neurohr. It is based on his Phd thesis 
+# https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
+# Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
 ################################################################################
 
+#=
+Example code:
+using Hecke.RiemannSurfaces
+K = rationals_as_number_field()[1]
+
+Kxy, (x,y) = polynomial_ring(K, ["x","y"])
+f = x^5 + x^4 +x^3 -x + 4 -y^2
+
+v = real_places(K)[1]
+RS = RiemannSurface(f, v)
+tau = small_period_matrix(RS)
+=#
+
+module RiemannSurfaces
+
+using Hecke
 
 export RiemannSurface, discriminant_points, embedding, genus, precision, 
 fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group, 
@@ -13,6 +33,18 @@ homology_basis
 
 export max_radius, radius_factor, find_paths_to_end, sheet_ordering, 
 embed_mpoly, analytic_continuation, minimal_spanning_tree
+
+import Hecke.AbstractAlgebra, Hecke.Nemo
+import Hecke.IntegerUnion
+import Hecke:function_field, basis_of_differentials, genus, embedding, evaluate, fillacb!, length, reverse, precision
+import Base:show, isequal, mod2pi
+using FLINT_jll: libflint
+
+import Nemo: acb_struct, acb_vec, acb_vec_clear, array
+
+include("Auxiliary.jl")
+include("CPath.jl")
+include("NumIntegrate.jl")
 
 #A class defining a Riemann surface X.
 
@@ -221,6 +253,9 @@ mutable struct RiemannSurface
   end
 end
 
+
+include("PeriodMatrix.jl")
+include("Theta.jl")
 
 ################################################################################
 #
@@ -719,7 +754,7 @@ function recursive_continuation(f, x1, x2, z)
   
   if w < d // (2*m)
     fillacb!(temp_vec, z)
-    dd = ccall((:acb_poly_find_roots, libarb), Cint, (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
+    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
 
     @assert dd == m
     z .= array(Cc, temp_vec_res, m)
@@ -977,7 +1012,7 @@ function symplectic_reduction(K::ZZMatrix)
       pivot +=1
       continue
     end
-    Hecke.move_to_positive_pivot(next[2], next[1], pivot, A, B)
+    move_to_positive_pivot(next[2], next[1], pivot, A, B)
     zeros_only = true
     pivot_plus = pivot + 1
     for j in (pivot + 2:n)
@@ -1058,4 +1093,5 @@ function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::ZZMatrix, B::ZZMa
   end
 end
 
+end
 

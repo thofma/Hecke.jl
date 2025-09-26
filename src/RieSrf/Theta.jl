@@ -1,8 +1,8 @@
 ################################################################################
 #
-#          RieSrf/Theta.jl : Functions for computing theta functions
+#          RieSrf/ThetaFlint.jl : Functions for computing theta functions
 #
-# (C) 2023 Jeroen Hanselman
+# (C) 2025 Jeroen Hanselman
 #
 ################################################################################
 
@@ -12,7 +12,120 @@
 #
 ################################################################################
 
-#Based on Computing Theta Functions with Julia by Daniele Agostini and Lynn Chua
+#This is an interface to the Theta code by Jean Kieffer and Noam Elkies
+
+export theta_f, thetas_f, _theta_jet, theta
+
+function theta_f(z::Vector{AcbFieldElem},  tau::AcbMatrix, theta_characteristic::Int)
+  g = nrows(tau)
+  zd = length(z)
+  if (g != zd)
+    error("Dimension mismatch. tau is of dimension "+ g +", but z is of dimension "+zd)
+  end
+  return _theta_jet(z, 1, tau, 0, theta_characteristic, 0, 0)[1]
+end
+
+function theta_f(z::Vector{AcbFieldElem},  tau::AcbMatrix, theta_characteristic::Vector{Int})
+  ab = parse_theta_characteristic(theta_characteristic)
+  return theta_f(z,  tau, ab)
+end
+
+function theta_f(z::Vector{AcbFieldElem},  tau::AcbMatrix, theta_characteristic::Vector{Vector{Int}})
+  ab = parse_theta_characteristic(theta_characteristic)
+  return theta_f(z,  tau, ab)
+end
+
+function theta_f(zs::Vector{Vector{AcbFieldElem}},  tau::AcbMatrix, theta_characteristic::Int)
+  g = nrows(tau)
+  n = length(zs)
+  for z in zs
+    zd = length(z)
+    if (g != zd)
+      error("Dimension mismatch. tau is of dimension "+ g +", but zt least one of the z_i is of dimension "+zd)
+    end
+  end
+  @assert theta_characteristic < 2^(2*g)
+  res =  _theta_jet(reduce(vcat,(zs)), n, tau, 0, theta_characteristic, 0, 0)
+  return res[1:n]
+end
+
+function theta_f(zs::Vector{Vector{AcbFieldElem}},  tau::AcbMatrix, theta_characteristic::Vector{Int})
+  ab = parse_theta_characteristic(theta_characteristic)
+  return theta_f(zs,  tau, ab)
+end
+
+function theta_f(zs::Vector{Vector{AcbFieldElem}},  tau::AcbMatrix, theta_characteristic::Vector{Vector{Int}})
+  ab = parse_theta_characteristic(theta_characteristic)
+  return theta_f(zs,  tau, ab)
+end
+
+function thetas_f(z::Vector{AcbFieldElem},  tau::AcbMatrix)
+  g = nrows(tau)
+  zd = length(z)
+  if (g != zd)
+    error("Dimension mismatch. tau is of dimension "+ g +", but z is of dimension "+zd)
+  end
+  return _theta_jet(z, 1, tau, 0, 0, 1, 0)
+end
+
+function thetas_f(zs::Vector{Vector{AcbFieldElem}},  tau::AcbMatrix)
+  g = nrows(tau)
+  n = length(zs)
+  for z in zs
+    zd = length(z)
+    if (g != zd)
+      error("Dimension mismatch. tau is of dimension "+ g +", but zt least one of the z_i is of dimension "+zd)
+    end
+  end
+  res =  _theta_jet(reduce(vcat,(zs)), n, tau, 0, 0, 1, 0)
+  return [res[i:min(i + 2^(2*g)- 1, end)] for i in 1:2^(2*g):length(res)]
+end
+
+
+
+function _theta_jet(zs::Vector{AcbFieldElem},number_of_z::Int, tau::AcbMatrix,
+  order_of_derivative::Int, theta_characteristic::Int, all::Int, squares::Int)
+  zzs = acb_vec(zs)
+  g = nrows(tau)
+
+  #I haven't quite figured out yet how much space needs to be allocated. 
+  #I got an error when computing a single theta and only having a 1 dimensional
+  #array. Having a slightly bigger array gave no error, but the wrong answer.
+  #With a big enough array the answer became correct. But I do not know what 
+  #"big enough" means. I currently simply default to having enough space
+  #to potentially compute all thetas as that seems to work. But I would like
+  #to have something more tight before introducing theta derivatives.
+  output_length = number_of_z * 2^(2*g)
+  th = acb_vec(output_length)
+  
+  @ccall libflint.acb_theta_jet(th::Ptr{acb_struct}, 
+  zzs::Ptr{acb_struct}, number_of_z::Int, tau::Ref{AcbMatrix},
+  order_of_derivative::Int, theta_characteristic::Cint, all::Int, squares::Int,
+  100::Int)::Nothing
+
+  acb_vec_clear(zzs, length(zs))
+  acb_vec_clear(th, output_length)
+  res = array(base_ring(tau), th, output_length)
+  return res
+end
+
+function parse_theta_characteristic(theta_characteristic::Vector{Int})
+  for i in theta_characteristic
+    if (i!=0 && i!=1)
+      error("theta_characteristic has to be either an integer,
+       a vector in [0,1]^2g or a tuple (a,b) with a, b in [0,1]^g.")
+    end
+  end
+  return evalpoly(2, reverse(theta_characteristic))
+end
+
+function parse_theta_characteristic(theta_characteristic::Vector{Vector{Int}})
+  if length(theta_characteristic) != 2
+    error("theta_characteristic has to be either an integer,
+    a vector in [0,1]^2g or a tuple (a,b) with a, b in [0,1]^g.")
+  end
+  return parse_theta_characteristic(reduce(vcat,theta_characteristic))
+end
 
 @doc raw"""
     theta(z::Vector{AcbFieldElem},  tau::AcbMatrix}; char::Vector{Vector{Int}},
@@ -169,7 +282,7 @@ function _theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, char::Vector{Vector{Int
 
   error_term = exponential_part*error_epsilon
 
-  ccall((:acb_add_error_arb, libflint), Cvoid,
+  ccall((:acb_add_error_arb, libarb), Cvoid,
       (Ref{AcbFieldElem}, Ref{ArbFieldElem}), result, error_term)
 
   return result
@@ -247,7 +360,7 @@ end
 function cholesky_decomposition(x::ArbMatrix)
   z = similar(x, nrows(x), ncols(x))
   p = precision(base_ring(x))
-  fl = ccall((:arb_mat_cho, libflint), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
+  fl = ccall((:arb_mat_cho, Hecke.libarb), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
   @assert fl != 0
   return z
 end
@@ -280,4 +393,3 @@ function shortest_vectors(M::ArbMatrix)
   U = shortest_vectors(L)
   return map(matrix, [map(R, u)*M for u in U])
 end
-

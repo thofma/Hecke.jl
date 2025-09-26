@@ -2,13 +2,18 @@
 #
 #          RieSrf/NumIntegrate.jl : Numerical integration
 #
-# (C) 2022 Jeroen Hanselman
+# (C) 2025 Jeroen Hanselman
+# This is a port of the Riemann surfaces package written by
+# Christian Neurohr. It is based on his Phd thesis 
+# https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
+# Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
 ################################################################################
 
 export IntegrationScheme
 
 export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points, gauss_legendre_path_parameters
+
 
 
 mutable struct IntegrationScheme
@@ -55,7 +60,7 @@ function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: Int
   w = zeros(Rc, m)
   
   for l in (0:m-1)
-    ccall((:arb_hypgeom_legendre_p_ui_root, libarb), Nothing, (Ref{arb}, Ref{arb}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
+    ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, (Ref{arb}, Ref{arb}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
   end
   
   if isodd(N)

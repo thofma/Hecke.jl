@@ -2,13 +2,22 @@
 #
 #          RieSrf/PeriodMatrix.jl : Computing the period matrix
 #
-# (C) 2023 Jeroen Hanselman
+# (C) 2025 Jeroen Hanselman
+# This is a port of the Riemann surfaces package written by
+# Christian Neurohr. It is based on his Phd thesis 
+# https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
+# Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
 ################################################################################
 
-export big_period_matrix
+export big_period_matrix, small_period_matrix
+
 
 function big_period_matrix(RS::RiemannSurface)
+  
+  if isdefined(RS, :big_period_matrix)
+    return RS.big_period_matrix
+  end
 
   g = genus(RS)
   diff_base = basis_of_differentials(RS)
@@ -27,7 +36,7 @@ function big_period_matrix(RS::RiemannSurface)
   int_parameters = ArbFieldElem[]
   for path in paths 
     if path_type(path) == 0
-      append!(int_parameters, [ get_int_param_r(sub_path) for sub_path in Hecke.get_subpaths(path) ])
+      append!(int_parameters, [ get_int_param_r(sub_path) for sub_path in get_subpaths(path) ])
     else
       append!(int_parameters, [get_int_param_r(path)])
     end
@@ -76,8 +85,8 @@ function big_period_matrix(RS::RiemannSurface)
 
   bound_temp = []
   for path in paths
-    for subpath in Hecke.get_subpaths(path)
-      Hecke.compute_ellipse_bound(subpath, embedded_differentials, int_group_rs, RS)
+    for subpath in get_subpaths(path)
+      compute_ellipse_bound(subpath, embedded_differentials, int_group_rs, RS)
       append!(bound_temp, subpath.bounds)
     end
   end
@@ -109,7 +118,7 @@ function big_period_matrix(RS::RiemannSurface)
 		integral_matrix = zero_matrix(Cc, m, g)
     subpaths = path.sub_paths
     x0 = start_point(subpaths[1])
-		ys =  sort!(roots(f(x0, y), initial_prec = prec), lt = Hecke.sheet_ordering)
+		ys =  sort!(roots(f(x0, y), initial_prec = prec), lt = sheet_ordering)
 
 		for subpath in subpaths
 			
@@ -215,7 +224,24 @@ function big_period_matrix(RS::RiemannSurface)
 	PMAPMB = sym_transform * matrix(pre_period_matrix)
 
 	big_period_matrix = transpose(PMAPMB[1:2*g,:])
+  RS.big_period_matrix = big_period_matrix
   return big_period_matrix
+end
+
+#We use the convention that  
+#[0  1]
+#[-1 0] defines a polarization.
+function small_period_matrix(RS::RiemannSurface)
+  if isdefined(RS, :small_period_matrix)
+    return RS.small_period_matrix
+  end
+  g = genus(RS)
+  P = big_period_matrix(RS)
+  P1 = P[1:g, 1:g]
+  P2 = P[1:g, g+1:2*g]
+  small_period_matrix = P1^(-1)*P2
+  RS.small_period_matrix = small_period_matrix
+  return small_period_matrix
 end
 
 function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurface)

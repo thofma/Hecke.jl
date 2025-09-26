@@ -2,16 +2,19 @@
 #
 #          RieSrf/Auxiliary.jl : Auxiliary Methods for Riemann Surfaces
 #
-# (C) 2022 Jeroen Hanselman
-#
-# Riemann surface functionality based on the thesis and implementation by Christian Neurohr
+# (C) 2025 Jeroen Hanselman
+# This is a port of the Riemann surfaces package written by
+# Christian Neurohr. It is based on his Phd thesis 
 # https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
+# Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
 ################################################################################
 
 export TretkoffEdge
 
-export  is_terminated, branch, set_position, terminate, edge_level, get_position, set_label, get_label, PQ
+export  is_terminated, branch, set_position, terminate, edge_level, isequal,
+ get_position, set_label, get_label, PQ, get_subpaths, sheet_ordering, reverse, start_point,
+end_point
 
 ###############################################################################
 #
