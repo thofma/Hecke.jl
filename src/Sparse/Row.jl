@@ -116,6 +116,17 @@ function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
   return SRow(R, A)
 end
 
+@doc raw"""
+    sparse_row(idx::Int, coeff::T; check::Bool=true) where {T}
+
+Constructs a sparse row with at most one non-zero entry `coeff` in 
+position `idx`.
+"""
+function sparse_row(idx::Int, coeff::T; check::Bool=true) where {T}
+  check && is_zero(coeff) && return SRow(parent(coeff))
+  return SRow(parent(coeff), Int64[idx], T[coeff]; check=false)
+end
+
 function Base.empty!(A::SRow)
   empty!(A.pos)
   empty!(A.values)
