@@ -18,11 +18,11 @@ export gauss_legendre_integration_points, gauss_chebyshev_integration_points, ta
 
 mutable struct IntegrationScheme
 
-  abscissae::Vector{arb}
-  weights::Vector{arb}
-  int_param_r::arb
+  abscissae::Vector{ArbFieldElem}
+  weights::Vector{ArbFieldElem}
+  int_param_r::ArbFieldElem
   int_param_N::Int
-  bounds::Vector{arb}
+  bounds::Vector{ArbFieldElem}
   prec::Int
 
   
@@ -60,7 +60,7 @@ function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: Int
   w = zeros(Rc, m)
   
   for l in (0:m-1)
-    ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, (Ref{arb}, Ref{arb}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
+    ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
   end
   
   if isodd(N)
@@ -131,7 +131,7 @@ function split_line_segment(points, path::CPath, err)
   return paths
 end
 
-function gauss_legendre_line_parameters(points::Vector{acb}, path::CPath)
+function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
   r_0 = Rr(5.0)
@@ -163,7 +163,7 @@ function gauss_legendre_line_parameters(points::Vector{acb}, path::CPath)
   
 end
 
-function gauss_legendre_arc_parameters(points::Vector{acb}, path::CPath)
+function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
   r_0 = Rr(5.0)
@@ -209,7 +209,7 @@ function gauss_legendre_arc_parameters(points::Vector{acb}, path::CPath)
   
 end
 
-function gauss_legendre_circle_parameters(points::Vector{acb}, path::CPath)
+function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
   r_0 = Rr(5.0)
@@ -270,7 +270,7 @@ function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: In
   return abscissae, fill(const_pi(Rc)//(N), N)  
 end
 
-function tanh_sinh_quadrature_integration_points(N::T, h::arb, lambda::arb = const_pi(parent(h))//2) where T <: IntegerUnion
+function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::ArbFieldElem = const_pi(parent(h))//2) where T <: IntegerUnion
   Rc = parent(h)
   N = Int(N)
 

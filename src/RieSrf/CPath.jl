@@ -8,7 +8,9 @@
 
 export CPath
 
-export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation, start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point, get_t_of_closest_d_point, evaluate_d
+export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation,
+start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point,
+get_t_of_closest_d_point, evaluate_d
 
 ################################################################################
 #
@@ -31,15 +33,15 @@ mutable struct CPath
   C::AcbField
 
   #The start point and the end point of the path
-  start_point::acb
-  end_point::acb
+  start_point::AcbFieldElem
+  end_point::AcbFieldElem
 
   #If the path is an arc or a circle, it will be described by the center,
   #the radius, and the start and end angles. (c + r*e^(ix))
-  center::acb
-  radius::arb
-  start_arc::arb
-  end_arc::arb
+  center::AcbFieldElem
+  radius::ArbFieldElem
+  start_arc::ArbFieldElem
+  end_arc::ArbFieldElem
 
   #The orientation determines how we move from start point to end point
   #If the orientation is 1 we move counterclockwise and if the orientatoin
@@ -47,7 +49,7 @@ mutable struct CPath
   orientation::Int
   
   #The length of the path
-  length::arb
+  length::ArbFieldElem
 
   #A map gamma:[-1, 1] -> CC parametrizing the path
   gamma::Any
@@ -77,18 +79,18 @@ mutable struct CPath
   #And then we determine an M such that |gamma(e_r)|< M. 
   #During computations we determine an optimal r to find proper error bounds
   #This r is stored with the path and called int_param_r.
-  int_param_r::arb
+  int_param_r::ArbFieldElem
 
   #Let D be the set of points where disc(f) = 0. Let P be the point in D
   #for which the distance between gamma and P is minimal. Now
   #t_of_closest_d_point is the variable t0 for which gamma(t0) = P.
-  t_of_closest_d_point::acb
+  t_of_closest_d_point::AcbFieldElem
 
   #The number of abscissae of the path
   int_params_N::Int
 
   #The bounds M computed
-  bounds::Vector{arb}
+  bounds::Vector{ArbFieldElem}
 
   #The index of the integration scheme that should be used to compute the
   #integral along this path
@@ -108,7 +110,7 @@ mutable struct CPath
 
 
   #Constructor of CPath.
-  function CPath(a::acb, b::acb, path_type::Int, c::acb = zero(parent(a)), radius::arb = real(zero(parent(a))), orientation::Int = 1)
+  function CPath(a::AcbFieldElem, b::AcbFieldElem, path_type::Int, c::AcbFieldElem = zero(parent(a)), radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
   
     P = new()
     P.C = parent(a)
@@ -196,16 +198,16 @@ mutable struct CPath
 end
 
 @doc raw"""
-c_line(start_point::acb, end_point::acb) -> CPath
+c_line(start_point::AcbFieldElem, end_point::AcbFieldElem) -> CPath
 
 Constructs a line in C from start_point to end_point.
 """
-function c_line(start_point::acb, end_point::acb)
+function c_line(start_point::AcbFieldElem, end_point::AcbFieldElem)
   return CPath(start_point, end_point, 0)
 end
 
 @doc raw"""
-c_arc(start_point::acb, end_point::acb, center::acb; orientation::Int = 1) 
+c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1) 
   -> CPath
 
 Constructs an arc around ''center'' in C from ''start_point'' to 
@@ -213,7 +215,7 @@ Constructs an arc around ''center'' in C from ''start_point'' to
 If it is -1 it goes clockwise. If start_point and end_point are identical
 a circle is created instead. 
 """
-function c_arc(start_point::acb, end_point::acb, center::acb; 
+function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; 
   orientation::Int = 1)
   #TODO: We might need a check that start point and end_point are equally
   #far away from center.
@@ -342,7 +344,7 @@ function permutation(G::CPath)
   return G.permutation
 end
 
-function set_t_of_closest_d_point(G::CPath, t::acb)
+function set_t_of_closest_d_point(G::CPath, t::AcbFieldElem)
   G.t_of_closest_d_point = t
 end
 
@@ -350,7 +352,7 @@ function get_t_of_closest_d_point(G::CPath)
   return G.t_of_closest_d_point
 end
 
-function set_int_param_r(G::CPath, r::arb)
+function set_int_param_r(G::CPath, r::ArbFieldElem)
   G.int_param_r = r
 end
 

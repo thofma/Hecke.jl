@@ -117,7 +117,7 @@ end
 
 
 #Ensures that the output is between 0 and 2pi.
-function Base.mod2pi(x::arb)
+function Base.mod2pi(x::ArbFieldElem)
   pi2 = 2*const_pi(parent(x))
   while x < 0
     x += pi2
@@ -155,12 +155,12 @@ end
 
 #TODO: Might need to be made more rigorous due to dealing with arb balls
 @doc raw"""
-    sheet_ordering(z1::acb,z2::acb) -> Bool
+    sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem) -> Bool
 
 An ordering on the complex numbers. The number z2 = x2 + y2 is greater 
 than z1 = x1 + y1 if x2 > x1. In case of equality z2 is greater than z1 if y2 > y1.
 """
-function sheet_ordering(z1::acb,z2::acb)
+function sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem)
   if real(z1) < real(z2) 
     return true
   elseif real(z1) > real(z2) 
@@ -175,11 +175,11 @@ end
 #This is mainly useful when plugging an acb ball centered around zero into a 
 #function like arg where its output would suddenly have a radius of length pi.
 @doc raw"""
-    trim_zero(x::acb, n::Int) -> Bool
+    trim_zero(x::AcbFieldElem, n::Int) -> Bool
 
 Sets the real or imaginary parts of a complex number to zero if it is smaller than 10^(-N).
 """
-function trim_zero(x::acb, n::Int)
+function trim_zero(x::AcbFieldElem, n::Int)
   Cc = parent(x)
   prec = precision(Cc)
   Rc = ArbField(prec)

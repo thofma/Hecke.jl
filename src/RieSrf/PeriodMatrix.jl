@@ -205,7 +205,7 @@ function big_period_matrix(RS::RiemannSurface)
     push!(chain_integrals, chain_integral)
   end
 
-  pre_period_matrix = Vector{acb}[]
+  pre_period_matrix = Vector{AcbFieldElem}[]
   for cycle in cycles
 		
 		cycle_integral = [zero(Cc) for x in 1:g]
@@ -276,7 +276,7 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
       for t in test_points
         e_t = r*cos(t) + b*sin(t)*I
         radius = real(piC/n)
-        #ccall((:acb_add_error_arb, libarb), Cvoid, (Ref{AcbFieldElem}, 
+        #ccall((:acb_add_error_arb, libflint), Cvoid, (Ref{AcbFieldElem}, 
         #Ref{ArbFieldElem}), e_t, radius)
         x_ball = evaluate(subpath, e_t)
         ys = roots(f(x_ball, y), initial_prec = prec)

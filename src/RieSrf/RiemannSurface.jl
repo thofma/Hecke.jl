@@ -59,15 +59,15 @@ mutable struct RiemannSurface
   degree::Vector{Int}
 
   #The small period matrix of X
-  small_period_matrix::acb_mat
-  big_period_matrix::acb_mat
+  small_period_matrix::AcbMatrix
+  big_period_matrix::AcbMatrix
 
   #The embedding used to embed X 
   embedding::Union{PosInf, InfPlc}
 
   #The points P for which disc(f(P,y)) = 0. This includes the ramification 
   #points and the singular points of the curve
-  discriminant_points::Vector{acb}
+  discriminant_points::Vector{AcbFieldElem}
 
   #A set of generators of the fundamental group pi_1 of P^1/D where D is the set
   #of discriminant points.
@@ -111,14 +111,14 @@ mutable struct RiemannSurface
   evaluate_differential_factors_matrix::Any
 
   integration_schemes::Vector{IntegrationScheme}
-  bounds::Vector{arb}
+  bounds::Vector{ArbFieldElem}
 
   #A collection of fields and error bounds needed to ensure correctness
   #TODO: Check which ones are actually used and necessary. Optimize this.
   prec::Int
-  weak_error::arb
-  error::arb
-  extra_error::arb
+  weak_error::ArbFieldElem
+  error::ArbFieldElem
+  extra_error::ArbFieldElem
   real_field::ArbField
   complex_field::AcbField
   complex_field2::AcbField
@@ -323,8 +323,8 @@ function assure_has_discriminant_points(RS::RiemannSurface)
     v = embedding(RS)
     prec = precision(RS)
   
-    disc_y_factors = acb_poly[]
-    a0_factors = acb_poly[]
+    disc_y_factors = AcbPolyRingElem[]
+    a0_factors = AcbPolyRingElem[]
   
     for (f,e) in factor(discriminant(f))
       push!(disc_y_factors, embed_poly(f, v, prec))
@@ -334,8 +334,8 @@ function assure_has_discriminant_points(RS::RiemannSurface)
       push!(a0_factors, embed_poly(f, v, prec))
     end
   
-    D1 = vcat(acb[],[roots(fac, initial_prec = prec) for fac in disc_y_factors]...)
-    D2 = vcat(acb[],[roots(fac, initial_prec = prec) for fac in a0_factors]...)
+    D1 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in disc_y_factors]...)
+    D2 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in a0_factors]...)
     D_points = sort!(vcat(D1, D2), lt = sheet_ordering)
     RS.discriminant_points = D_points
 
@@ -652,7 +652,7 @@ end
 
 
 #Could be optimized probably. Kruskal's algorithm
-function minimal_spanning_tree(v::Vector{acb})
+function minimal_spanning_tree(v::Vector{AcbFieldElem})
 
   edge_weights = []
   
@@ -701,7 +701,7 @@ end
 #
 ################################################################################
 
-function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{arb}, start_ys::Vector{acb}=acb[])
+function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{ArbFieldElem}, start_ys::Vector{AcbFieldElem}=AcbFieldElem[])
   v = embedding(RS)
   prec = precision(RS)
   Rc = ArbField(prec)
@@ -754,7 +754,7 @@ function recursive_continuation(f, x1, x2, z)
   
   if w < d // (2*m)
     fillacb!(temp_vec, z)
-    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{acb_poly}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
+    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
 
     @assert dd == m
     z .= array(Cc, temp_vec_res, m)
