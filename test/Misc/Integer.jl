@@ -3,6 +3,8 @@
 
     @test is_commutative(ZZ)
 
+    @test modord(3,1) == 1
+
     @test modord(2,3) == 2
 
     @test modord(ZZ(2),ZZ(3)) == ZZ(2)
