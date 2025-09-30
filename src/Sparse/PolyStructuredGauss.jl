@@ -594,6 +594,7 @@ function collect_pivots(SG, pivprod = one(SG.R))
  return pivprod
 end
 
+#uses only row-wise gcd reductions
 function extract_matrix(SG, Det)
  m, n = ncols(SG.A), nrows(SG.A)
  Det.npiv += SG.npivots
@@ -654,7 +655,79 @@ function extract_matrix(SG, Det)
   @assert length(_pos) == length(SG.Y[i])
   push!(M, sparse_row(SG.R, _pos, SG.Y[i].values))
  end
- return M, max(rowdeg, sum(coldeg)), Det
+ return M, min(rowdeg, sum(coldeg)), Det
+end
+
+#uses row- and col-wise gcd reductions
+function extract_red_matrix(SG, Det)
+ m, n = ncols(SG.A), nrows(SG.A)
+ Det.npiv += SG.npivots
+ c = m - SG.npivots
+ heavy_mapi = sizehint!(Int[], c)
+ heavy_map = zeros(Int, m)
+ j = 1
+ for i = 1:m
+  if !SG.is_pivot_col[i]
+   heavy_map[i] = j
+   push!(heavy_mapi, i)
+   j+=1
+  end
+ end
+ @assert length(heavy_mapi) == c
+ M = sparse_matrix(SG.R, 0, c)
+ for i in SG.base:nrows(SG.A)
+  g = gcd(SG.A[i].values)
+  c = content(g)
+  gred = divexact(g,c)
+  SG.A[i].values./=g #try div by c and then gred
+  Det.divisions *= gred
+  Det.content *= c
+  _pos = sizehint!(Int[], length(SG.A[i].pos))
+  for j = 1:length(SG.A[i])
+   x = heavy_map[SG.A[i].pos[j]]
+   push!(_pos, x)
+  end
+  @assert length(_pos) == length(SG.A[i])
+  push!(M, sparse_row(SG.R, _pos, SG.A[i].values))
+ end
+ for i in 1:length(SG.Y)
+  g = gcd(SG.Y[i].values)
+  c = content(g)
+  gred = divexact(g,c)
+  SG.Y[i].values./=g #try div by c and then gred
+  Det.divisions *= gred
+  Det.content *= c
+  _pos = sizehint!(Int[], length(SG.Y[i].pos))
+  for j = 1:length(SG.Y[i])
+   x = heavy_map[SG.Y[i].pos[j]]
+   push!(_pos, x)
+  end
+  @assert length(_pos) == length(SG.Y[i])
+  push!(M, sparse_row(SG.R, _pos, SG.Y[i].values))
+ end
+ T = transpose(M)
+ coldeg = 0
+ for i in 1:nrows(T)
+  g = gcd(T[i].values)
+  c = content(g)
+  gred = divexact(g,c)
+  T[i].values./=g
+  coldeg+=maximum(degree, T[i].values)
+  Det.divisions *= gred
+  Det.content *= c
+ end
+ M = transpose(T)
+ rowdeg = max_row_deg(M)
+ return M, min(rowdeg, coldeg), Det
+end
+
+
+function max_row_deg(A)
+ degsum = 0
+ for i in 1:nrows(A)
+  degsum+=maximum(degree, A[i].values)
+ end
+ return degsum
 end
 
 function det_iter(A::SMat{T}, pbound) where T <: RingElem
@@ -662,6 +735,16 @@ function det_iter(A::SMat{T}, pbound) where T <: RingElem
  while true
   SG, Det = part_echelonize!(A, Det, pivbound = pbound)
   A, _, Det = extract_matrix(SG, Det)
+  SG.npivots<pbound && break
+ end
+ return A, Det
+end
+
+function det_iter_red(A::SMat{T}, pbound) where T <: RingElem
+ Det=Hecke.data_Det(base_ring(A))
+ while true
+  SG, Det = part_echelonize!(A, Det, pivbound = pbound)
+  A, _, Det = extract_red_matrix(SG, Det)
   SG.npivots<pbound && break
  end
  return A, Det
