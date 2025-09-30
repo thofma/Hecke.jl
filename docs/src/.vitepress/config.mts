@@ -21,7 +21,7 @@ export default defineConfig({
       {
         rel: "apple-touch-icon",
         sizes: "180x180",
-        href: "/assets/modular/apple-touch-icon.png",
+        href: `${baseTemp.base}/assets/modular/apple-touch-icon.png`,
       },
     ],
     [
@@ -30,7 +30,7 @@ export default defineConfig({
         rel: "icon",
         type: "image/png",
         sizes: "32x32",
-        href: "/assets/modular/favicon-32x32.png",
+        href: `${baseTemp.base}/assets/modular/favicon-32x32.png`,
       },
     ],
     [
@@ -39,10 +39,10 @@ export default defineConfig({
         rel: "icon",
         type: "image/png",
         sizes: "16x16",
-        href: "/assets/modular/favicon-16x16.png",
+        href: `${baseTemp.base}/assets/modular/favicon-16x16.png`,
       },
     ],
-    ['link', { rel: 'icon', href: '/assets/modular/favicon.ico' }],
+    ['link', { rel: 'icon', href: `${baseTemp.base}/assets/modular/favicon.ico` }],
     ['script', {src: '/versions.js'}],
     ['script', {src: `${baseTemp.base}warner.js`}],
     ['script', {src: `${baseTemp.base}siteinfo.js`}]

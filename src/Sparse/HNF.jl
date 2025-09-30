@@ -291,6 +291,7 @@ function reduce_up(A::SMat{T}, piv::Vector{Int}, with_transform_val::Val{with_tr
 
   @inbounds for red=p-1:-1:1
     # the last argument should be the smallest pivot larger then pos[1]
+    A.nnz -= length(A[red])
     if with_transform
       A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), with_transform_val; limit, new_g = true)
       for t in new_trafos
@@ -300,6 +301,7 @@ function reduce_up(A::SMat{T}, piv::Vector{Int}, with_transform_val::Val{with_tr
     else
       A[red] = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]); limit, new_g = true)
     end
+    A.nnz += length(A[red])
   end
   with_transform ? (return trafos) : nothing
 end
@@ -409,7 +411,9 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
       sca = neg!(sca)
       @assert !iszero(sca)
       @assert new_g
+      A.nnz -= length(Aj)
       Hecke.add_scaled_row!(Aj, g, sca, tmpa)
+      A.nnz += length(Aj)
       with_transform ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -420,7 +424,9 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
       c = neg!(c)
       d = div(A_v, x)
       @assert new_g
+      A.nnz -= length(Aj)
       Hecke.transform_row!(Aj, g, a, b, c, d, tmpa, tmpb)
+      A.nnz += length(Aj)
       if with_transform
         push!(trafos, sparse_trafo_para_add_scaled(j, nrA + 1, a, b, c, d))
       end
@@ -429,7 +435,9 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
       push!(piv, Aj.pos[1])
       if full_hnf
         if with_transform
+          A.nnz -= length(Aj)
           A[j], new_trafos = reduce_right(A, Aj, Aj.pos[1]+1, with_transform_val; limit, new_g = true)
+          A.nnz += length(Aj)
           # We are updating the jth row
           # Have to adjust the transformations
           for t in new_trafos
@@ -438,7 +446,9 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
           # Now append
           append!(trafos, new_trafos)
         else
+          A.nnz -= length(Aj)
           A[j] = reduce_right(A, Aj, Aj.pos[1]+1, with_transform_val; limit)
+          A.nnz += length(Aj)
         end
       end
 
@@ -800,6 +810,7 @@ function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} =
     end
   end
 
+  @hassert :HNF 1 sum([length(r) for r in  B]) == B.nnz
   with_transform ? (return B, trafos) : (return B)
 end
 

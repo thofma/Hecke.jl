@@ -346,6 +346,8 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow(R::NCRing, A::Vector{Tuple{Int, T}}) where T
     r = SRow(R)
+    sizehint!(r.pos, length(A))
+    sizehint!(r.values, length(A))
     for (i, v) = A
       if !iszero(v)
         @assert parent(v) === R
@@ -358,6 +360,8 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
 
   function SRow(R::NCRing, A::Vector{Tuple{Int, Int}})
     r = SRow(R)
+    sizehint!(r.pos, length(A))
+    sizehint!(r.values, length(A))
     for (i, v) = A
       if !iszero(v)
         push!(r.pos, i)
@@ -651,19 +655,9 @@ end
 #
 ################################################################################
 
-mutable struct AbsNumFieldOrderSet{T}
+struct AbsNumFieldOrderSet{T}
   nf::T
-
-  function AbsNumFieldOrderSet{T}(a::T, cached::Bool = false) where {T}
-    return get_cached!(AbsNumFieldOrderSetID, a, cached) do
-      return new{T}(a)::AbsNumFieldOrderSet{T}
-    end::AbsNumFieldOrderSet{T}
-  end
 end
-
-AbsNumFieldOrderSet(a::T, cached::Bool = false) where {T} = AbsNumFieldOrderSet{T}(a, cached)
-
-const AbsNumFieldOrderSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFieldOrderSet}()
 
 @attributes mutable struct AbsNumFieldOrder{S, T} <: NumFieldOrder
   nf::S
@@ -727,7 +721,7 @@ const AbsNumFieldOrderSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFiel
   end
 
   function AbsNumFieldOrder{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    return get_cached!(AbsNumFieldOrderID, (K, x), cached) do
+    return get_cached!(AbsNumFieldOrderID(K), x, cached) do
       z = AbsNumFieldOrder{S, T}(K)
       n = degree(K)
       z.basis_nf = B
@@ -738,7 +732,7 @@ const AbsNumFieldOrderSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFiel
   end
 
   function AbsNumFieldOrder{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    return get_cached!(AbsNumFieldOrderID, (K, x), cached) do
+    return get_cached!(AbsNumFieldOrderID(K), x, cached) do
       z = AbsNumFieldOrder{S, T}(K)
       n = degree(K)
       B_K = basis(K)
@@ -755,7 +749,7 @@ const AbsNumFieldOrderSetID = AbstractAlgebra.CacheDictType{NumField, AbsNumFiel
   function AbsNumFieldOrder{S, T}(b::Vector{T}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_matrix(b, FakeFmpqMat)
-    return get_cached!(AbsNumFieldOrderID, (K, A), cached) do
+    return get_cached!(AbsNumFieldOrderID(K), A, cached) do
       z = AbsNumFieldOrder{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_matrix = A
@@ -770,7 +764,7 @@ AbsNumFieldOrder(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = AbsNumF
 
 AbsNumFieldOrder(b::Vector{T}, cached::Bool = false) where {T} = AbsNumFieldOrder{parent_type(T), T}(b, cached)
 
-const AbsNumFieldOrderID = AbstractAlgebra.CacheDictType{Tuple{Any, FakeFmpqMat}, AbsNumFieldOrder}()
+@attr AbstractAlgebra.CacheDictType{FakeFmpqMat, order_type(S)} AbsNumFieldOrderID(K::S) where {S <: NumField} = AbstractAlgebra.CacheDictType{FakeFmpqMat, order_type(S)}()
 
 const AbsSimpleNumFieldOrder = AbsNumFieldOrder{AbsSimpleNumField, AbsSimpleNumFieldElem}
 

@@ -62,11 +62,12 @@ function rational_reconstruction(A::SRow{ZZRingElem}, M::ZZRingElem)
   nbM = div(nbits(M), 2)
   fl, d,n = true, ZZRingElem(1), ZZRingElem(1)
   for (p,v) = A
+    @assert !iszero(M)
     vv = mod_sym(d*v, M)
     if nbits(vv) < nbM
       fl, n = true, vv
     else
-      fl, n, d = rational_reconstruction(v, M)
+      fl, n, d = Nemo._rational_reconstruction(v, M)
     end
     if !fl
       return false, B, de
@@ -304,6 +305,7 @@ function solve_dixon_sf(A::SMat{ZZRingElem}, B::SMat{ZZRingElem}, is_int::Bool =
         mod_sym!(nu, pp)
         de = ZZRingElem(1)
       else
+        @assert !iszero(pp)
         fl, nu, de = rational_reconstruction(sol, pp)
       end
       if fl

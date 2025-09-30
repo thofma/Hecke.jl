@@ -819,9 +819,11 @@ export ring_of_integers
 export ring_of_multipliers
 export root
 export root_lattice
+export root_lattices
 export root_lattice_recognition
 export root_lattice_recognition_fundamental
 export root_sublattice
+export root_symbols
 export roots
 export rres
 export rresx

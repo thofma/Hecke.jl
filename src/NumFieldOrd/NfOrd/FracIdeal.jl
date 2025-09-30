@@ -101,24 +101,15 @@ fractional_ideal(x::AbsNumFieldOrderIdeal) = fractional_ideal(order(x), x, ZZRin
 fractional_ideal(O::AbsNumFieldOrder, x::AbsNumFieldOrderIdeal, y::Integer) = fractional_ideal(O, x, ZZRingElem(y))
 
 @doc raw"""
-    fractional_ideal(O::AbsNumFieldOrder, a::AbsSimpleNumFieldElem) -> AbsNumFieldOrderFractionalIdeal
+    fractional_ideal(O::AbsNumFieldOrder, a::RingElement) -> AbsNumFieldOrderFractionalIdeal
 
 Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
-function fractional_ideal(O::AbsNumFieldOrder, x::NumFieldElem)
+fractional_ideal(O::AbsNumFieldOrder, x::RingElement) = _fractional_ideal(O, nf(O)(x))
+
+function _fractional_ideal(O::AbsNumFieldOrder, x::NumFieldElem)
   @assert parent(x) == nf(O)
   z = AbsNumFieldOrderFractionalIdeal(O, deepcopy(x))
-  return z
-end
-
-@doc raw"""
-    fractional_ideal(O::AbsNumFieldOrder, a::AbsNumFieldOrderElem) -> AbsNumFieldOrderFractionalIdeal
-
-Creates the principal fractional ideal $(a)$ of $\mathcal O$.
-"""
-function fractional_ideal(O::AbsNumFieldOrder, x::AbsNumFieldOrderElem)
-  @assert parent(x) === O
-  z = AbsNumFieldOrderFractionalIdeal(O, elem_in_nf(x))
   return z
 end
 
@@ -810,6 +801,19 @@ end
 
 function in(x::AbsNumFieldOrderElem, y::AbsSimpleNumFieldOrderFractionalIdeal)
   return in(elem_in_nf(x), y)
+end
+
+################################################################################
+#
+#  Subset
+#
+################################################################################
+
+function is_subset(I::AbsNumFieldOrderFractionalIdeal, J::AbsSimpleNumFieldOrderFractionalIdeal)
+  if is_zero(J)
+    return is_zero(I)
+  end
+  return is_integral(I * inv(J))
 end
 
 ################################################################################

@@ -25,8 +25,7 @@ is_exact_type(::Type{<: LocalFieldValuationRingElem}) = false
 
 _field(R::LocalFieldValuationRing) = R.Q
 
-base_ring(R::LocalFieldValuationRing) = Union{}
-base_ring_type(::Type{<: LocalFieldValuationRing}) = typeof(Union{})
+base_ring_type(::Type{<: LocalFieldValuationRing}) = Union{}
 
 parent(a::LocalFieldValuationRingElem) = a.P
 data(a::LocalFieldValuationRingElem) = a.x
