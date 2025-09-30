@@ -81,7 +81,7 @@ end
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-function part_echolonize!(A::SMat{T}, Det=Hecke.data_Det(base_ring(A)); pivbound=ncols(A), trybound=ncols(A))::Tuple{data_StructGauss{ZZPolyRingElem}, data_Det} where T <: RingElem
+function part_echelonize!(A::SMat{T}, Det=Hecke.data_Det(base_ring(A)); pivbound=ncols(A), trybound=ncols(A))::Tuple{data_StructGauss{ZZPolyRingElem}, data_Det} where T <: RingElem
  A = delete_zero_rows!(A)
  n = nrows(A)
  m = ncols(A)
@@ -97,7 +97,7 @@ function part_echolonize!(A::SMat{T}, Det=Hecke.data_Det(base_ring(A)); pivbound
  t = ncols(SG.A) - trybound
  while SG.nlight > 0 && SG.base <= n
   build_part_ref!(SG, Det)
-  @show SG.npivots, SG.nlight
+  #@show SG.npivots, SG.nlight
   (SG.npivots > pivbound || t > SG.nlight) && break
   for i = 1:m
    SG.is_light_col[i] && @assert length(SG.col_list[i]) != 1
@@ -660,7 +660,7 @@ end
 function det_iter(A::SMat{T}, pbound) where T <: RingElem
  Det=Hecke.data_Det(base_ring(A))
  while true
-  SG, Det = part_echolonize!(A, Det, pivbound = pbound)
+  SG, Det = part_echelonize!(A, Det, pivbound = pbound)
   A, _, Det = extract_matrix(SG, Det)
   SG.npivots<pbound && break
  end
@@ -678,7 +678,7 @@ function compute_det(A, Det)
 end
 
 function reduce_max(A)
- SG, Det = part_echolonize!(A)
+ SG, Det = part_echelonize!(A)
  s = Det.scaling
  d = SG.R(1)
  KER = Hecke.collect_dense_cols2!(SG)
@@ -686,7 +686,7 @@ function reduce_max(A)
  _pivots = collect_pivots(SG)
  for i = 1:5
   A = sparse_matrix(D)
-  SG, Det = part_echolonize!(A)
+  SG, Det = part_echelonize!(A)
   g = gcd(Det.scaling, Det.divisions)
   s*=div(Det.scaling, g)
   d*=div(Det.divisions, g)
