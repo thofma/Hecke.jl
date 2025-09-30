@@ -97,8 +97,8 @@ function part_echelonize!(A::SMat{T}, Det=Hecke.data_Det(base_ring(A)); pivbound
  t = ncols(SG.A) - trybound
  while SG.nlight > 0 && SG.base <= n
   build_part_ref!(SG, Det)
-  #@show SG.npivots, SG.nlight
-  (SG.npivots > pivbound || t > SG.nlight) && break
+  @show SG.npivots, SG.nlight
+  (SG.npivots >= pivbound || t >= SG.nlight) && break
   for i = 1:m
    SG.is_light_col[i] && @assert length(SG.col_list[i]) != 1
   end
@@ -595,7 +595,7 @@ function collect_pivots(SG, pivprod = one(SG.R))
 end
 
 #uses only row-wise gcd reductions
-function extract_matrix(SG, Det)
+function extract_matrix(SG::data_StructGauss{ZZPolyRingElem}, Det::data_Det)
  m, n = ncols(SG.A), nrows(SG.A)
  Det.npiv += SG.npivots
  c = m - SG.npivots
@@ -659,7 +659,7 @@ function extract_matrix(SG, Det)
 end
 
 #uses row- and col-wise gcd reductions
-function extract_red_matrix(SG, Det)
+function extract_red_matrix(SG, Det::data_Det)
  m, n = ncols(SG.A), nrows(SG.A)
  Det.npiv += SG.npivots
  c = m - SG.npivots
@@ -750,9 +750,9 @@ function det_iter_red(A::SMat{T}, pbound) where T <: RingElem
  return A, Det
 end
 
-function compute_det(A, Det)
+function compute_det(A::SMat{T}, Det::data_Det) where T <: RingElem
  D = matrix(A)
- d = det(A)
+ d = det(D)
  d*=Det.divisions;
  d*=Det.content;
  d*=Det.pivprod;
