@@ -117,19 +117,20 @@ function sparse_row(R::NCRing, A::Vector{Tuple{Int, Int}}; sort::Bool = true)
 end
 
 @doc raw"""
-    sparse_row(idx::Int, coeff::T; check::Bool=true) where {T}
+    sparse_row(R::NCRing, idx::Int, coeff::T; check::Bool=true) where {T}
 
 Constructs a sparse row with at most one non-zero entry `coeff` in 
 position `idx`.
 """
-function sparse_row(idx::Int, coeff::T; check::Bool=true) where {T}
-  check && is_zero(coeff) && return SRow(parent(coeff))
-  return SRow(parent(coeff), Int64[idx], T[coeff]; check=false)
+function sparse_row(R::NCRing, idx::Int, coeff; check::Bool=true)
+  parent(coeff) === R || return sparse_row(R, idx, R(coeff); check)
+  check && is_zero(coeff) && return SRow(R)
+  return SRow(parent(coeff), Int64[idx], elem_type(R)[coeff]; check=false)
 end
 
 # For ZZRingElems this has to be overwritten, because the values are stored differently. 
-function sparse_row(idx::Int, coeff::ZZRingElem; check::Bool=true)
-  return sparse_row(parent(coeff), [(idx, coeff)])
+function sparse_row(R::ZZRing, idx::Int, coeff; check::Bool=true)
+  return sparse_row(R, [(idx, coeff)])
 end
 
 function Base.empty!(A::SRow)
