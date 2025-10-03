@@ -450,41 +450,81 @@ end
 #
 ###############################################################################
 
-function submodules_all(M::ZpnGModule)
+function _transform_to_howell(x::zzModMatrix, w::Vector{ZZRingElem})
+  R = base_ring(x)
+  n = ncols(x)
+  #
+  #  Howell form of every candidate, embedding them in a free module
+  #
+  if n > nrows(x)
+    xx = vcat(x, zero_matrix(R, n-nrows(x), ncols(x)))
+  else
+    xx = deepcopy(x)
+  end
+  for k=1:nrows(xx)
+    for j=1:n
+      @inbounds xx[k,j] *= w[j]
+    end
+  end
+  howell_form!(xx)
+  xx = view(xx, 1:n, 1:n)
+  return xx
+end
 
+
+function _transfrom_from_howell(x::zzModMatrix, w::Vector{ZZRingElem})
+  xx = deepcopy(x)
+  for j=1:ncols(x)
+    for k=1:j
+      xx[k,j] = divexact(xx[k,j].data, w[j])
+    end
+  end
+  return xx
+end
+
+function submodules_all(M::ZpnGModule)
   R = M.R
   if isone(order(M.V))
     return (zzModMatrix[])
   end
   S,mS = snf(M)
-  minlist = minimal_submodules(S)
-  list = zzModMatrix[identity_matrix(R, length(S.V.snf)), zero_matrix(R,1,length(S.V.snf))]
 
-  #
-  #  Find minimal submodules, factor out and recursion on the quotients
-  #
+  w = ZZRingElem[divexact(ZZRingElem(R.n), S.V.snf[j]) for j=1:ngens(S.V)]
 
-  for x in minlist
-    N, _ = quo(S, x)
-    newlist = submodules_all(N)
-    for y in newlist
-      push!(list,vcat(y,x))
+  reshowell = Set{zzModMatrix}()
+  res = Vector{zzModMatrix}()
+  workqueue = Vector{zzModMatrix}()
+
+  triv = zero_matrix(R, 0, ngens(S.V))
+  push!(workqueue, triv)
+  h = _transform_to_howell(triv, w)
+  m = _transfrom_from_howell(h, w)
+  push!(res, m)
+  push!(reshowell, h)
+
+  while !isempty(workqueue)
+    x = popfirst!(workqueue)
+    N, = quo(S, x)
+    if is_one(order(N.V))
+      continue
+    end
+    for Nnew in minimal_submodules(N)
+      yy = vcat(x, Nnew)
+      h = _transform_to_howell(yy, w)
+      if h in reshowell
+        continue
+      else
+        m = _transfrom_from_howell(h, w)
+        push!(workqueue, yy)
+        push!(res, m)
+        push!(reshowell, h)
+      end
     end
   end
 
-  append!(list,minlist)
-  #
-  #  Eliminate redundance via Howell form
-  #
-  w=ZZRingElem[divexact(ZZRingElem(R.n), S.V.snf[j]) for j=1:ngens(S.V)]
-  list=_no_redundancy(list, w)
-
-  #
   #  Writing the submodules in terms of the given generators and returning an iterator
-  #
   MatSnf=change_base_ring(R, mS.map)
-  return (x*MatSnf for x in list)
-
+  return (x*MatSnf for x in res)
 end
 
 ###############################################################################
