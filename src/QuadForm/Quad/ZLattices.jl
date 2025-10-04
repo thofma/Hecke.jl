@@ -2870,6 +2870,10 @@ Given the glue map of a primitive extension of $\mathbb Z$-lattices
 $S \oplus R \subseteq L$, return `L` and the inclusions of
 $S\otimes \QQ $ and $R \otimes \QQ$ into $L \otimes \QQ$.
 
+This creates $L$ inside the direct sum of $S$ and $R$.
+If $S$ and $R$ are in the same ambient space consider using
+[`overlattice`](@ref) instead.
+
 # Example
 
 We construct the $E_8$ root lattice as a primitive extension of
@@ -2978,11 +2982,12 @@ function overlattice(glue_map::TorQuadModuleMap)
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
 
-function overlattice(L::ZZLat, glue::Vector{TorQuadModuleElem})
+function overlattice(L::ZZLat, glue::Vector{TorQuadModuleElem}; check=true)
+  length(glue) == 0 && return L
   D = discriminant_group(L)
-  @req all(in(D), glue) "glue must be contained in the discriminant group of L"
+  check && @req all(in(D), glue) "glue must be contained in the discriminant group of L"
   B = matrix(QQ, lift.(glue))
-  return lattice_in_same_ambient_space(L, B) + L
+  return lattice(ambient_space(L), B; isbasis=false) + L
 end
 
 function overlattice(L::ZZLat, glue_group::TorQuadModule; check::Bool=true)
