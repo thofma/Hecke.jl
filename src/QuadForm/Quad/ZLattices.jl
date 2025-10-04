@@ -2864,6 +2864,67 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
 end
 
 @doc raw"""
+    primitive_extension(glue_map::TorQuadModuleMap)
+
+Given the glue map of a primitive extension of $\mathbb Z$-lattices
+$S \oplus R \subseteq L$, return `L` and the inclusions of
+$S\otimes \QQ $ and $R \otimes \QQ$ into $L \otimes \QQ$.
+
+# Example
+
+We construct the $E_8$ root lattice as a primitive extension of
+the $E_6$ and $A_2$ root lattice.
+```jldoctest
+julia> R = root_lattice(:A,2);
+
+julia> S = root_lattice(:E,6);
+
+julia> DR = discriminant_group(R);
+
+julia> DS = discriminant_group(S);
+
+julia> b, glue_map = is_anti_isometric_with_anti_isometry(DR,DS)
+(true, Map: finite quadratic module -> finite quadratic module)
+
+julia> L, iR, iS = Hecke.primitive_extension(glue_map);
+
+julia> L
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[ 2   -1    0    0    0    0    1    0]
+[-1    2    0    0    0    0    0    0]
+[ 0    0    2   -1    0    0    1    0]
+[ 0    0   -1    2   -1    0    0    0]
+[ 0    0    0   -1    2   -1   -1   -1]
+[ 0    0    0    0   -1    2    1    0]
+[ 1    0    1    0   -1    1    2    0]
+[ 0    0    0    0   -1    0    0    2]
+
+julia> det(L)
+1
+
+```
+"""
+function primitive_extension(glue_map::TorQuadModuleMap)
+  S = relations(domain(glue_map))
+  R = relations(codomain(glue_map))
+  SR, (iS, iR) = direct_sum(S, R)
+  S = iS(S)
+  R = iR(R)
+  glue = Vector{QQFieldElem}[iS(lift(g)) + iR(lift(glue_map(g))) for g in gens(domain(glue_map))]
+  rS = rank(S)
+  rR = rank(R)
+  rSR = rS+rR
+  g = length(glue)
+  n = rSR + g
+  z = zero_matrix(QQ, 0, degree(SR))
+  B = reduce(vcat, QQMatrix[matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
+  B = vcat(basis_matrix(S), basis_matrix(R), B)
+  B = _hnf_integral(B)
+  return lattice(ambient_space(SR), B[end-rank(S)-rank(R)+1:end,:]; check=false), iS, iR
+end
+
+@doc raw"""
     overlattice(glue_map::TorQuadModuleMap) -> ZZLat
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
@@ -2908,13 +2969,12 @@ true
 function overlattice(glue_map::TorQuadModuleMap)
   S = relations(domain(glue_map))
   R = relations(codomain(glue_map))
+  @req ambient_space(S)==ambient_space(R) "lattices lie in different ambient spaces, try `primitive_extension` instead"
   glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]
   z = zero_matrix(QQ, 0, degree(S))
-  glue = reduce(vcat, [matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
-  glue = vcat(basis_matrix(S + R), glue)
-  glue = FakeFmpqMat(glue)
-  B = _hnf_integral(glue)
-  B = QQ(1, denominator(glue))*change_base_ring(QQ, numerator(B))
+  B = reduce(vcat, QQMatrix[matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
+  B = vcat(basis_matrix(S),basis_matrix(R), B)
+  B = _hnf_integral(B)
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
 

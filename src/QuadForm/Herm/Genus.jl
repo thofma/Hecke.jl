@@ -105,6 +105,21 @@ function scale(g::HermLocalGenus)
 end
 
 @doc raw"""
+    max_scale(g::HermLocalGenus) -> AbsSimpleNumFieldOrderFractionalIdeal
+
+Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime
+$\mathfrak p$ of $\mathcal O_K$, return the scale of the Jordan block of maximum
+$\mathfrak P$-valuation, where $\mathfrak{P}$ is a prime ideal of $\mathcal O_E$
+lying over $\mathfrak p$.
+"""
+function max_scale(g::HermLocalGenus)
+  E = base_field(g)
+  OE = maximal_order(E)
+  P = prime_decomposition(OE, prime(g))[1][1]
+  return fractional_ideal(OE, P)^(scale(g, length(g)))
+end
+
+@doc raw"""
     scales(g::HermLocalGenus) -> Vector{Int}
 
 Given a local genus symbol `g` for hermitian lattices over $E/K$ at a prime $\mathfrak
@@ -1310,6 +1325,12 @@ Return the scale ideal of any hermitian lattice with global genus symbol `G`.
 function scale(G::HermGenus)
   OE = maximal_order(base_field(G))
   I = prod(scale(g) for g in G.LGS; init = fractional_ideal(OE, [elem_in_nf(OE(1))]))
+  return I
+end
+
+function max_scale(G::HermGenus)
+  OE = maximal_order(base_field(G))
+  I = prod(max_scale(g) for g in G.LGS; init = fractional_ideal(OE, [elem_in_nf(OE(1))]))
   return I
 end
 
