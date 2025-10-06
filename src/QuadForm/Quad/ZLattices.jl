@@ -2973,7 +2973,7 @@ true
 function overlattice(glue_map::TorQuadModuleMap)
   S = relations(domain(glue_map))
   R = relations(codomain(glue_map))
-  @req ambient_space(S)==ambient_space(R) "lattices lie in different ambient spaces, try `primitive_extension` instead"
+  @req ambient_space(S) === ambient_space(R) "Lattices lie in different ambient spaces, try `primitive_extension` instead"
   glue = [lift(g) + lift(glue_map(g)) for g in gens(domain(glue_map))]
   z = zero_matrix(QQ, 0, degree(S))
   B = reduce(vcat, QQMatrix[matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
