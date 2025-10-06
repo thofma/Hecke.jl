@@ -190,6 +190,13 @@ function elementary_divisors(T::TorQuadModule)
   return elementary_divisors(abelian_group(T))
 end
 
+function Base.in(x::TorQuadModuleElem, T::TorQuadModule)
+  P = parent(x)
+  P === T && return true
+  relations(T) == relations(P) || return false
+  return lift(x) in cover(T)
+end
+
 ################################################################################
 #
 #  Basic field access
@@ -1442,10 +1449,11 @@ function sub(T::TorQuadModule, gens::Vector{TorQuadModuleElem})
     cover = T.rels
     _gens = nothing
   end
-  S = torsion_quadratic_module(cover, T.rels; gens=_gens, modulus=modulus_bilinear_form(T),
-                               modulus_qf=modulus_quadratic_form(T))
-  imgs = TorQuadModuleElem[T(lift(g)) for g in Hecke.gens(S)]
-  inclusion = hom(S, T, imgs)
+  S = torsion_quadratic_module(cover, T.rels; gens=_gens,
+                               modulus=modulus_bilinear_form(T),
+                               modulus_qf=modulus_quadratic_form(T),
+                               check=false)
+  inclusion = hom(S, T, gens; check=false)
   return S, inclusion
 end
 
@@ -1496,19 +1504,21 @@ Gram matrix quadratic form:
 [1//3]
 ```
 """
-function torsion_quadratic_module(q::QQMatrix)
-  @req is_square(q) "Matrix must be a square matrix"
-  @req is_symmetric(q) "Matrix must be symmetric"
+function torsion_quadratic_module(q::QQMatrix; check::Bool=true)
+  if check
+    @req is_square(q) "Matrix must be a square matrix"
+    @req is_symmetric(q) "Matrix must be symmetric"
+  end
 
   d = denominator(q)
   Q = change_base_ring(ZZ, d * q)
   S, U, V = snf_with_transform(Q)
   D = change_base_ring(QQ, U) * q * change_base_ring(QQ, V)
-  L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q)
+  L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q, check=false)
   denoms = QQFieldElem[denominator(D[i, i]) for i in 1:ncols(D)]
   rels = diagonal_matrix(denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
-  return torsion_quadratic_module(L, LL; modulus = QQFieldElem(1))
+  return torsion_quadratic_module(L, LL; modulus = QQFieldElem(1), check=false)
 end
 
 TorQuadModule(q::QQMatrix) = torsion_quadratic_module(q)

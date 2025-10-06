@@ -86,6 +86,7 @@
   @test hermitian_lattice(E1; gram = gram_matrix(g)) in g
   d = @inferred det_representative(g)
   @test is_local_norm(E1, K(det(gram_matrix(g))) * inv(d), p)
+  @test norm(Hecke.max_scale(g)) == prime(g)^2
 
   # negative scale
   g = @inferred genus(HermLat, E1, p, [(-2, 1, 1, -1), (2, 2, -1, 1)], type = :disc)
