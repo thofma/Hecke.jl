@@ -1068,11 +1068,17 @@ function _non_norm_rep(E, K, p)
       end
       B = elem_in_nf.(basis(p))
       k = 0
+      OK = maximal_order(K)
       while true
         if k > 10000
           error("Something wrong in non_norm_rep")
         end
-        y = rand(K, -5:5)
+        # we need OK here and not
+        # ZZ[a] where a=gen(K)
+        # because otherwise if ZZ[a] is not maximal at p
+        # we may not find a non-norm
+        # of valuation 0
+        y = K(rand(OK, -10:10))
         if iszero(y)
           continue
         end

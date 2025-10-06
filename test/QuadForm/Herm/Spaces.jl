@@ -133,3 +133,19 @@ end
   diag, U = @inferred diagonal_with_transform(Vh)
   @test diagonal(map_entries(K, U*gram_matrix(Vh)*map_entries(s, transpose(U)))) == diag
 end
+
+@testset "misc" begin
+  Qx, x = polynomial_ring(QQ, "x")
+  mipo = x^4 + 18*x^3 + 459*x^2 + 5202*x + 83521
+  E1, a1 = number_field(mipo)
+  E,iE1 = simplify(E1)
+  a = inv(iE1)(a1)
+  K, KtoE = subfield(E, [a+q^2*a^-1])
+  EK, phiEK = relative_simple_extension(KtoE)
+  OK = maximal_order(K)
+  p = prime_ideals_over(OK, 5)[1]
+  n = Hecke._non_norm_rep(EK, K, p)
+  @test !is_local_norm(EK,n, p)
+  @test iszero(valuation(n, p))
+
+end
