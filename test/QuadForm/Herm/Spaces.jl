@@ -140,7 +140,7 @@ end
   E1, a1 = number_field(mipo)
   E,iE1 = simplify(E1)
   a = inv(iE1)(a1)
-  K, KtoE = subfield(E, [a+q^2*a^-1])
+  K, KtoE = subfield(E, [a+17^2*a^-1])
   EK, phiEK = relative_simple_extension(KtoE)
   OK = maximal_order(K)
   p = prime_ideals_over(OK, 5)[1]
