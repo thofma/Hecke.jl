@@ -280,6 +280,19 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   return LL
 end
 
+function _locally_isometric_rank_1(M, L, p, P, D)
+  # We just need the correct scale.
+  i = valuation(scale(L), P)
+  j = valuation(scale(M), P)
+  if length(D)==2 # split case
+    k = i-j
+  else
+    k = divexact(i-j, 2)
+  end
+  LL = P^k*M
+  return LL
+end
+
 ################################################################################
 #
 #  Locally isometric sublattices
@@ -303,7 +316,9 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   absolute_map = absolute_simple_field(ambient_space(M))[2]
 
   P = D[1][1]
-
+  if rank(M) == 1 # easy case, we call a faster function
+    return _locally_isometric_rank_1(M, L, p, P, D)
+  end
   if length(D) == 2 # split case
     LL = _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
@@ -313,7 +328,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   else # even ramified
     LL = _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   end
-  @assert is_locally_isometric(L, LL, p)
+  @hassert :Lattice 0 is_locally_isometric(L, LL, p)
   return LL::typeof(L)
 end
 
