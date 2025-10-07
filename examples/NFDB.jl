@@ -1115,6 +1115,7 @@ names64 = [ "C64", "C8^2", "C8:C8", "C2^3:C8", "(C2*C4):C8", "D4:C8", "Q8:C8",
            "C2*Q8:C2^2", "C2*C4.C2^3", "D4.C2^3", "C2^6" ]
 
 function has_obviously_relative_class_number_not_one(K::AbsSimpleNumField, is_normal::Bool = true, maxdeg::Int = degree(K))
+  lll(maximal_order(K))
   if is_normal
     subs = subfields_normal(K)
   else
@@ -1127,12 +1128,15 @@ function has_obviously_relative_class_number_not_one(K::AbsSimpleNumField, is_no
     if degree(L) > min(degree(K) - 1, maxdeg)
       continue
     end
+    L, = simplify(L)
     fl, tau = is_cm_field(L)
     if !fl
       continue
     end
 
+    lll(maximal_order(L))
     l = fixed_field(L, tau)[1]
+    l, = simplify(l)
 
     h = order(class_group(lll(maximal_order(L)))[1])
     hp = order(class_group(lll(maximal_order(l)))[1])
