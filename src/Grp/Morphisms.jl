@@ -117,6 +117,12 @@ function _is_small_group(G::MultTableGroup, id::Tuple{Int, Int}; DB = DefaultSma
     end
   end
 
+  for o in H.gens
+    if !haskey(elements_by_orders, order(o))
+      return false
+    end
+  end
+
   elbyord = [elements_by_orders[order(o)] for o in H.gens]
 
   it = Iterators.product(elbyord...)
