@@ -391,7 +391,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
 #    d = mapreduce(x->denominator(x, A), lcm, coefficients(g), init = ZZRingElem(1))
 #    @vtime :PolyFactor 2 N = norm_mod(g*d, Zx)
 #    N = Hecke.Globals.Qx(N) * QQFieldElem(1, d)^degree(K)
-    @vtime :PolyFactor 2 N = map_coefficients(identity,norm(g); parent=Qx)
+    @vtime :PolyFactor 2 N = map_coefficients(identity, norm(g); parent=Qx)
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
     @hassert :PolyFactor 1 N == map_coefficients(identity, norm(g); parent=Zx)
