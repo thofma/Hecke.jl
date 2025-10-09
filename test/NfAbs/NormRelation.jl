@@ -17,6 +17,11 @@
   S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K)))
   c, U = Hecke.NormRel._sunit_group_fac_elem_quo_via_brauer(K, S, 2)
 
+  N = Hecke.NormRel._norm_relation_setup_generic(K; small_degree = true, pure = true)
+  h = Hecke.NormRel._class_number_via_brauer(maximal_order(K), N; GRH = false)
+  @test h == 1
+  h = Hecke.NormRel._class_number_via_brauer(maximal_order(K), N; GRH = true)
+  @test h == 1
   # Test a non-normal group
 
   Qx, x = polynomial_ring(QQ, "x");
