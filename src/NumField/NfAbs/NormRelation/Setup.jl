@@ -619,15 +619,15 @@ function _lift_to_normalized_brauer_relation(N)
   return rel
 end
 
-function hR_from_subfields(N, abs_prec::Int = 64)
+function hR_from_subfields(N, abs_prec::Int = 64; GRH::Bool = false)
   @assert ispure(N)
   rel = _lift_to_normalized_brauer_relation(N)
   vals = ArbFieldElem[]
   for i in 1:length(N)
     zk = lll(maximal_order(subfield(N, i)[1]))
-    c, _ = class_group(zk)
-    u, mu = unit_group_fac_elem(zk)
-    push!(vals, (1//order(torsion_unit_group(zk)[1]) * order(c) * regulator([mu(u[i]) for i in 2:rank(u) + 1], abs_prec))^rel[i])
+    c, _ = class_group(zk; GRH)
+    u, mu = unit_group_fac_elem(zk; GRH)
+    push!(vals, (1//order(torsion_unit_group(zk)[1]) * order(c) * regulator([mu(u[i]) for i in 2:rank(u)], abs_prec))^rel[i])
   end
   return prod(vals) * order(torsion_unit_group(maximal_order(field(N)))[1])
 end

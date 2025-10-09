@@ -63,7 +63,7 @@ function abs_upper_bound(::Type{ZZRingElem}, x::ArbFieldElem)
         (Ref{arf_struct}, Ref{ArbFieldElem}, Int), tarf, x, 64)
 
   if ccall((:arf_is_nan, libflint), Bool, (Ref{arf_struct}, ), tarf)
-    throw(Base.InexactError(:abs_upper_bound, x, ZZRingElem))
+    throw(Base.InexactError(:abs_upper_bound, ZZRingElem, x))
   end
 
   bound = ZZRingElem()
