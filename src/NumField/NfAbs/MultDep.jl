@@ -17,10 +17,15 @@ and every u s.th. A^u is a unit is in the span of U
 The coprime base is returned as well, the columns of I correspond to the
 ordeing of the base.
 """
-function syzygies_sunits_mod_units(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder}=nothing)
+function syzygies_sunits_mod_units(A::Vector{<:Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder}=nothing, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}}=nothing)
   k = parent(A[1])
   @assert all(i->parent(i) === k, A)
-  if !use_ge
+  if !isnothing(support)
+    @assert length(support) > 0
+    cp = support
+    zk = order(support[1])
+    @assert isnothing(max_ord) || max_ord === zk
+  elseif !use_ge
     if max_ord === nothing
       zk = maximal_order(k)
     else
@@ -512,12 +517,26 @@ Return the subgroup of the multiplicative group of the number field generated
 by the elements in `A` as an abstract abelian group together with a map
 mapping group elements to number field elements and vice-versa.
 """
-function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all)
+function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}}=nothing)
 
-  K = parent(A[1])
-  S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord)
-  u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
-  g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
+  @req (!isa(A[1], FacElem)) || !isnothing(support) "For elements in factored form, the support has to be passed in as well"
+
+  if isa(A[1], FacElem)
+    K = base_ring(parent(A[1]))
+    if length(support) == 0 #kown to be units
+      u = A
+      g1 = typeof(A[1])[]
+    else
+      S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
+      u = Hecke._transform(A, transpose(T))
+      g1 = Hecke._transform(A, transpose(S))
+    end
+  else
+    K = parent(A[1])
+    S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
+    u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
+    g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
+  end
 
   U, T, C = syzygies_units_mod_tor(u)
   g2 = Hecke._transform(u, transpose(U))
@@ -527,12 +546,17 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
     u = Hecke._transform(u, transpose(T))
   end
 
-  Ut, _, o = syzygies_tor(u)
+  if task == :all
+    Ut, _, o = syzygies_tor(u)
 
-  t = evaluate(Hecke._transform(u, transpose(Ut))[1])
+    t = evaluate(Hecke._transform(u, transpose(Ut))[1])
 
-  G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
-  g = vcat(g1, g2, [FacElem(t)])
+    G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
+    g = vcat(g1, g2, [FacElem(t)])
+  elseif task == :modulo_tor
+    G = free_abelian_group(length(g1)+length(g2))
+    g = vcat(g1, g2)
+  end
 
   function im(a::FinGenAbGroupElem)
     @assert parent(a) == G
@@ -544,7 +568,7 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
   local gamma::Vector{ZZRingElem}
 
   function pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
-    @assert base_ring(parent(a)) == parent(A[1])
+    @assert parent(a) == parent(A[1]) || base_ring(parent(a)) == parent(A[1])
     c = ZZRingElem[]
     for i=1:length(cp)
       v = valuation(a, cp[i])
@@ -596,15 +620,67 @@ function Hecke.multiplicative_group(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bo
         break
       end
     end
+
     for i=1:length(gamma)-1
       push!(c, divexact(gamma[i], -gamma[end]))
     end
+
+    if task == :modulo_tor
+      return G(c)
+    end
+
     _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
 
     push!(c, divexact(_c[1,1], _c[1,2]))
     return G(c)
   end
   return G, MapFromFunc(G, parent(u[1]), im, pr)
+end
+
+function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  G = domain(f)
+  @assert is_free(G) # now now due to difficulties with torsion in the saturation
+  c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, 3.5)
+  if nrows(c) == 0
+    return f
+  end
+
+  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}() 
+
+  cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
+  if nrows(c) > ngens(G) #torsion added
+    K = base_ring(parent(cand[1]))
+    zeta = Hecke.torsion_units_generator(K)
+    for i=1:ncols(c)
+      cand[i] *= zeta^c[end, i]
+    end
+  end
+
+  new = typeof(cand[1])[]
+  for a = cand
+    @vprintln :Saturate 1 "Testing if element is an n-th power"
+    decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+    if !isnothing(support)
+      for P = support
+        decom[P] = valuation(a, P)
+      end
+    end
+    @vtime :Saturate 1 fl, x = is_power(a, p; decom)
+    if fl
+      @vprintln :Saturate 1  "The element is an n-th power"
+      push!(new, x)
+    else
+#      @show :bad
+    end
+  end
+  #TODO: MultGrp needs to be a "special" type, ie. attributes
+  #      can be on the map
+  #       -> suport can be inherited
+  #       -> the valuations
+  #       -> the data for disc log and such could to be updated 
+  #      possibly the result should be the injection into the larger group?
+  #      deal with torsion
+  return multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
 end
 
 export syzygies
