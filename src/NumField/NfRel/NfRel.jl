@@ -618,8 +618,13 @@ function absolute_charpoly(a::RelSimpleNumFieldElem)
   return charpoly(a, QQ)
 end
 
+function lift(R::PolyRing{<:NumFieldElem}, x::SimpleNumFieldElem)
+  @req base_ring(R) === base_field(parent(x)) "Ring mismatch. Cannot lift to polynomial ring."
+    return deepcopy(data(x))
+end
+
 function (R::Generic.PolyRing{AbsSimpleNumFieldElem})(a::RelSimpleNumFieldElem{AbsSimpleNumFieldElem})
-  if base_ring(R)==base_field(parent(a))
+  if base_ring(R) == base_field(parent(a))
     return a.data
   end
   error("wrong ring")
