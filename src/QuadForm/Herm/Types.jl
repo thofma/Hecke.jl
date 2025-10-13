@@ -40,11 +40,10 @@ end
 ###############################################################################
 
 ### Local
-
-# Need to make this type stable once we have settled on a design
-mutable struct HermLocalGenus{S, T}
+mutable struct HermLocalGenus{S, T, U}
   E::S                                # Field
   p::T                                # prime of base_field(E)
+  P::U                                # ideal of maximal_order(E) above p
   data::Vector{Tuple{Int, Int, Int}}  # data
   norm_val::Vector{Int}               # additional norm valuation
                                       # (for the dyadic case)
@@ -54,14 +53,13 @@ mutable struct HermLocalGenus{S, T}
   non_norm_rep::FieldElem             # u in K*\N(E*)
   ni::Vector{Int}                     # ni for the ramified, dyadic case
 
-  function HermLocalGenus{S, T}() where {S, T}
-    z = new{S, T}()
+  function HermLocalGenus{S, T, U}() where {S, T, U}
+    z = new{S, T, U}()
     return z
   end
 end
 
 ### Global
-
 mutable struct HermGenus{S, T, U, V,W}
   E::S
   primes::Vector{T}
