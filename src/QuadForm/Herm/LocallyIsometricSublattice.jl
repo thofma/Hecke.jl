@@ -314,7 +314,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p ; check=true)
   else # even ramified
     LL = _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   end
-  @hassert :Lattice 1 is_locally_isometric(L, LL, p)
+  @hassert :Lattice 0 is_locally_isometric(L, LL, p)
   return LL::typeof(L)
 end
 

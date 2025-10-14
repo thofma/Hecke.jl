@@ -1,4 +1,16 @@
 @testset "RelSimpleNumField" begin
+  let
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    L, b = number_field(t - 1, "b")
+    Lt, t = L["t"]
+    M, o = number_field(t^3 + 2, "o")
+    @test L(lift(Kt, b)) == b
+    @test_throws ArgumentError lift(Lt, b)
+    @test M(lift(Lt, o^2 + 1)) == o^2 + 1
+    @test_throws ArgumentError lift(Kt, o)
+  end
+
   @testset "is_subfield" begin
     Qx, x = QQ["x"]
     f = x^2 + 12x - 92
@@ -105,7 +117,7 @@
     for p in Hecke.primes_up_to(50)[2:end]
       _,b = @inferred cyclotomic_field_as_cm_extension(p, cached=false)
       chip = absolute_minpoly(b)
-      R = parent(chip) 
+      R = parent(chip)
       x = gen(R)
       @test chip == sum([x^i for i=0:p-1])
     end

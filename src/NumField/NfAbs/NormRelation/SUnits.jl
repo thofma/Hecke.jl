@@ -145,24 +145,24 @@ function _embed(N::NormRelation, i::Int, a::AbsSimpleNumFieldElem)
   end
 end
 
-function _get_sunits(N, i, lp)
+function _get_sunits(N, i, lp; GRH)
   k = subfield(N, i)[1]
   if degree(k) > 10
     Gk, mGk = automorphism_group(k)
     if has_useful_brauer_relation(Gk)
-      Szk, mS = _sunit_group_fac_elem_via_brauer(k, lp, true, index(N) == 1 ? 0 : index(N))
+      Szk, mS = _sunit_group_fac_elem_via_brauer(k, lp, true, index(N) == 1 ? 0 : index(N); GRH)
     else
-      Szk, mS = Hecke.sunit_group_fac_elem(lp)
+      Szk, mS = Hecke.sunit_group_fac_elem(lp; GRH)
     end
   else
-    Szk, mS = Hecke.sunit_group_fac_elem(lp)
+    Szk, mS = Hecke.sunit_group_fac_elem(lp; GRH)
   end
   return Szk, mS
 end
 
 # pure
 
-function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0, saturate_units::Bool = false)
+function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, compact::Int = 0, saturate_units::Bool = false, GRH::Bool = true)
   # I am assuming that c.FB.ideals is invariant under the action of the automorphism group used by N
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
   K = N.K
@@ -192,7 +192,7 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
     end
     @assert length(lpk) > 0
     @vprintln :NormRelation 1 "Computing sunit group for set of size $(length(lpk)) ..."
-    Szk, mS = _get_sunits(N, i, lpk)
+    Szk, mS = _get_sunits(N, i, lpk; GRH)
     @vprintln :NormRelation 1 "Coercing the sunits into the big field ..."
     z = induce_action_just_from_subfield(N, i, lpk, c.FB, invariant)
 
@@ -394,8 +394,7 @@ function sunit_group_fac_elem_via_brauer(N::NormRelation, S, invariant::Bool = f
   return _sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
 end
 
-function _setup_for_norm_relation_fun(K, S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K))))
-  ZK = order(S[1])
+function _setup_for_norm_relation_fun(K, ZK, S = prime_ideals_up_to(maximal_order(K), Hecke.factor_base_bound_grh(maximal_order(K))))
   FB = NfFactorBase(ZK, S)
   c = Hecke.class_group_init(FB)
   UZK = get_attribute!(ZK, :UnitGrpCtx) do
@@ -414,12 +413,15 @@ function _find_perm(v::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   return p
 end
 
-function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, n::Int, invariant::Bool = false, compact::Int = 0; saturate_units::Bool = false)
-  O = order(S[1])
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, n::Int, invariant::Bool = false, compact::Int = 0; saturate_units::Bool = false, GRH::Bool = true)
+  return __sunit_group_fac_elem_quo_via_brauer(N, order(S[1]), S, n, invariant, compact; saturate_units, GRH)
+end
+
+function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, O, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, n::Int, invariant::Bool = false, compact::Int = 0; saturate_units::Bool = false, GRH::Bool = true)
   K = N.K
   if invariant
-    c, UZK = _setup_for_norm_relation_fun(K, S)
-    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
+    c, UZK = _setup_for_norm_relation_fun(K, O, S)
+    _add_sunits_from_brauer_relation!(c, UZK, N; invariant = true, compact = compact, saturate_units = saturate_units, GRH)
   else
     cp = sort!(collect(Set(minimum(x) for x = S)))
     Sclosed = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
@@ -435,8 +437,8 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
     if !invariant
       @vprintln :NormRelation 1 "I am not Galois invariant. Working with S of size $(length(Sclosed))"
     end
-    c, UZK = _setup_for_norm_relation_fun(K, Sclosed)
-    _add_sunits_from_brauer_relation!(c, UZK, N, invariant = true, compact = compact, saturate_units = saturate_units)
+    c, UZK = _setup_for_norm_relation_fun(K, O, Sclosed)
+    _add_sunits_from_brauer_relation!(c, UZK, N; invariant = true, compact = compact, saturate_units = saturate_units, GRH)
   end
 
   if gcd(index(N), n) != 1
@@ -594,4 +596,29 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, S::Vector{AbsNum
     fl
   end
   return (res_group, r)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
+end
+
+function _fundamental_units_via_brauer(O::AbsSimpleNumFieldOrder, N::NormRelation; GRH::Bool = true)
+  S = prime_ideals_over(O, 2)
+  G, mG = __sunit_group_fac_elem_quo_via_brauer(N, S, 0, true; GRH)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
+  M = matrix(ZZ, [valuation(mG(G[i]), p) for i in 2:rank(G), p in S])
+  @assert is_zero(@view M[1:Hecke.unit_group_rank(O), 1:length(S)])
+  return [mG(G[i]) for i in 2:Hecke.unit_group_rank(O)+1]
+end
+
+function _class_number_via_brauer(O::AbsSimpleNumFieldOrder, N::NormRelation; GRH::Bool = true)
+  prec = 256
+  fund = _fundamental_units_via_brauer(O, N; GRH)
+  while true
+    hR = hR_from_subfields(N, prec; GRH)
+    R = regulator(fund, prec)
+    fl, h = unique_integer(hR/R)
+    if fl
+      return h
+    end
+    prec *= 2
+    if prec > 2^20
+      error("something wrong")
+    end
+  end
 end

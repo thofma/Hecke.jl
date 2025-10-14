@@ -73,3 +73,16 @@
     @test !is_isomorphic(K, K3)
   end
 end
+
+
+@testset "Misc/modular_init" begin
+  F2p,t2 = QQ[:t]
+  f2 = 364500000*t2^12 - 736290000*t2^10 + 611460900*t2^8 - 265281750*t2^6 + 62955117*t2^4 - 7693776*t2^2 + 374003
+  f2 = f2/leading_coefficient(f2)
+  F3,c = number_field(f2, "c")
+  F3p,t3 = F3[:t]
+  f3 = 17559810*t3^2 - 16159500000*c^10 + 35436690000*c^8 - 29275389900*c^6 + 11410311150*c^4 - 2037830337*c^2 + 114317153
+  f3 = f3/leading_coefficient(f3)
+  F4,_ = number_field(f3, "d") #crash in modular_init by Oscar #5442
+end
+
