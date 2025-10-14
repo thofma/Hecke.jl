@@ -751,10 +751,8 @@ function maximal_integral_lattice(V::HermSpace)
       @assert fac[i][2] == fac[1][2]
       s = s * inv(fac[1][1])^fac[1][2]
       deleteat!(fac, i)
-    elseif is_prime(nrm)
-      s = s * inv(fac[1][1])^fac[1][2]
     else
-      s = s * inv(fac[1][1])^(div(fac[1][2], 2))
+      s = s * inv(fac[1][1])^(div(fac[1][2], 2, RoundDown))
     end
     deleteat!(fac, 1)
   end
