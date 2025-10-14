@@ -2030,7 +2030,7 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
   G.is_split = g.is_split
 
   if isdefined(g, :non_norm_rep)
-    G.non_norm_rep=G.non_norm_rep
+    G.non_norm_rep = g.non_norm_rep
   end
   if isdefined(g, :P)
     G.P = g.P
