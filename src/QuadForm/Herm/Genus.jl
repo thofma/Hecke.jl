@@ -134,7 +134,9 @@ function prime_over(g::HermLocalGenus{S,T,U}) where {S,T,U}
   if is_split(g)
     return first(factor(maximal_invariant_ideal(g)))[1]
   end
-  return maximal_invariant_ideal(g)
+  P =  maximal_invariant_ideal(g)
+  @assert is_prime(P)
+  return P
 end
 
 @doc raw"""
