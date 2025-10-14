@@ -1337,7 +1337,7 @@ Return the rank of any hermitian lattice with global genus symbol `G`.
 """
 rank(G::HermGenus) = G.rank
 
-# not quite the scale at the ramified primes 
+# not quite the scale at the ramified primes
 function _scale(G::HermGenus)
   I = maximal_order(base_field(base_field(G)))
   for p in primes(G)
@@ -2036,6 +2036,9 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
   end
   if isdefined(g, :P)
     G.P = g.P
+  end
+  if isdefined(g, :norm_val)
+    G.norm_val = g.norm_val .+ val
   end
   G.data = typeof(g.data)()
   for v in g.data
