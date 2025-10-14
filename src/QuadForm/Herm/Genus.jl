@@ -1335,7 +1335,7 @@ Return the rank of any hermitian lattice with global genus symbol `G`.
 """
 rank(G::HermGenus) = G.rank
 
-# not quite the scale at the split primes (their conjugate is missing)
+# not quite the scale at the ramified primes 
 function _scale(G::HermGenus)
   I = maximal_order(base_field(base_field(G)))
   for p in primes(G)
