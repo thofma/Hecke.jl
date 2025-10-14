@@ -700,7 +700,7 @@ end
 
 # This is the internal function which requires the decomposition behavior of
 # the prime to be already determined and does not do any internal checks.
-function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}, is_dyadic, is_ramified, is_split) where {S, T, U}
+function _genus(::Type{HermLat}, E::S, p::T, data::Vector{Tuple{Int, Int, Int}}, is_dyadic, is_ramified, is_split) where {S, T}
   z = HermLocalGenus{S, T, ideal_type(order_type(S))}()
   z.E = E
   z.p = p
