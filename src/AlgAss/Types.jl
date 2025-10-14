@@ -222,7 +222,7 @@ end
           end
         end
 
-        @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+        @assert all(A.mult_table[1, i] == i for i in 1:d)
       end
 
       return A

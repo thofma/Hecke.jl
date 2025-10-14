@@ -37,7 +37,7 @@ group(A::GroupAlgebra) = A.group
 has_one(A::GroupAlgebra) = true
 
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
-  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
+  c isa Vector && length(c) != order(group(A)) && error("Dimensions don't match.")
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
