@@ -2024,24 +2024,27 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
   a = K(a)
 
   val = valuation(a, p)
-  b = is_local_norm(E, a, p)
+  # Copy the relevant
+  # attributes/properties of g
   G = T()
   G.E = g.E
   G.p = g.p
   G.is_ramified = g.is_ramified
   G.is_split = g.is_split
   G.is_dyadic = g.is_dyadic
-
   if isdefined(g, :non_norm_rep)
     G.non_norm_rep = g.non_norm_rep
   end
   if isdefined(g, :P)
     G.P = g.P
   end
-  if isdefined(g, :norm_val)
+
+  # rescaled copies of the data
+  if is_dyadic(g) && is_ramified(g)
     G.norm_val = g.norm_val .+ val
   end
   G.data = typeof(g.data)()
+  b = is_local_norm(E, a, p)
   for v in g.data
     if !b && isone(mod(v[2], 2))
       det = -v[3]
@@ -2050,8 +2053,6 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
     end
     if is_split(g)
       push!(G.data, (v[1]+ val, v[2], v[3]))
-    elseif is_dyadic(g) && is_ramified(g)
-      push!(G.data, (v[1]+ 2*val, v[2], det, v[4]))
     elseif is_ramified(g)
       push!(G.data, (v[1]+ 2*val, v[2], det))
     else
