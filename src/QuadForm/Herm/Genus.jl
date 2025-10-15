@@ -2030,6 +2030,7 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
   G.p = g.p
   G.is_ramified = g.is_ramified
   G.is_split = g.is_split
+G.is_dyadic = g.is_dyadic
 
   if isdefined(g, :non_norm_rep)
     G.non_norm_rep = g.non_norm_rep
