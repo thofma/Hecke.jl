@@ -25,6 +25,7 @@ struct partition_with_condition
     return new(n, k, l)
   end
 end
+
 function Base.iterate(parti::partition_with_condition)
   if parti.k == 1
     # If k is 1, the problem is trivial
@@ -43,6 +44,7 @@ function Base.iterate(parti::partition_with_condition)
   iter = (firstlist, pushfirst!(pushfirst!(firstlist[3:end], Int(0)), Int(0)))
   return firstlist, iter
 end
+
 function Base.iterate(parti::partition_with_condition, iter::Tuple{Vector{Int}, Vector{Int}})
   if parti.k == Int(1)
     return nothing
