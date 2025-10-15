@@ -17,7 +17,18 @@
   [0, 3, 2]
   [1, 1, 3]
 
+  julia> for i in partition_with_condition(2, 1, 0) println(i) end
+  [2]
 
+  julia> for i in partition_with_condition(2, 1, 1) println(i) end
+
+  julia> for i in partition_with_condition(7, 4, 12) println(i) end
+  [7, 0, 0, 0]
+  [0, 2, 5, 0]
+  [1, 0, 6, 0]
+  [1, 3, 0, 3]
+  [2, 1, 1, 3]
+  [3, 0, 0, 4]
   ```
 """
 struct partition_with_condition
@@ -37,7 +48,7 @@ function Base.iterate(parti::partition_with_condition)
   if parti.k == 1
     # If k is 1, the problem is trivial
     if parti.l == 0
-      return Int[parti.n], Int[]
+      return Int[parti.n], (Int[parti.n],Int[parti.n])
     else
       return nothing
     end
