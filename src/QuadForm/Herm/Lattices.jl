@@ -521,15 +521,16 @@ function _maximal_integral_lattice(L::HermLat, p, minimal = true)
     return true, L
   end
 
+
   absolute_map = absolute_simple_field(ambient_space(L))[2]
 
-  B, G, S = jordan_decomposition(L, p)
   D = prime_decomposition(R, p)
   P = D[1][1]
+  invP = inv(P)
+  B, G, S = jordan_decomposition(L, p)
   is_max = true
   lS = length(S)
 
-  invP = inv(P)
 
   if length(D) == 2 # split
     @assert S[end] != 0
@@ -748,15 +749,21 @@ function maximal_integral_lattice(V::HermSpace)
     if i !== nothing
       i = i + 1 # findfirst gives the index and not the element
       @assert fac[i][2] == fac[1][2]
-      s = s * fractional_ideal(S, fac[1][1])^fac[1][2]
+      s = s * inv(fac[1][1])^fac[1][2]
       deleteat!(fac, i)
     else
-      s = s * inv(fac[1][1])^(div(fac[1][2], 2))
+      s = s * inv(fac[1][1])^(div(fac[1][2], 2, RoundDown))
     end
     deleteat!(fac, 1)
   end
   if !isone(s)
+    sigma = involution(L)
+    sc = s*sigma(s)*scale(L)
     L = s * L
+    L.scale= sc
+  end
+  if dim(V) == 1
+    return L
   end
   return maximal_integral_lattice(L)
 end

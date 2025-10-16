@@ -605,7 +605,7 @@ end
   OK = maximal_order(K);
   ps = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[ideal(OK, v) for v in Vector{AbsSimpleNumFieldOrderElem}[map(OK, [2, 6*a^4 + 4*a^3 - 6*a^2 - 2*a + 2]), map(OK, [13, a + 11])]];
   datas = [[(0, 2, 1)], [(-11, 2, 1)]];
-  lgs = Hecke.HermLocalGenus{typeof(E), AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
+  lgs = Hecke.local_genus_herm_type(E)[genus(HermLat, E, ps[i], datas[i]) for i in 1:2];
   G = Hecke.HermGenus(E, 2, lgs, sig)
   h = Hecke._hermitian_form_with_invariants(E, 2, Hecke._non_norm_primes(local_symbols(G)), sig)
   L = lattice(hermitian_space(E, h))
