@@ -13,7 +13,6 @@
   # Examples
   ```jldoctest
   julia> for i in partition_with_condition(5, 3, 7) println(i) end
-  [5, 0, 0]
   [0, 3, 2]
   [1, 1, 3]
 
@@ -23,7 +22,6 @@
   julia> for i in partition_with_condition(2, 1, 1) println(i) end
 
   julia> for i in partition_with_condition(7, 4, 12) println(i) end
-  [7, 0, 0, 0]
   [0, 2, 5, 0]
   [1, 0, 6, 0]
   [1, 3, 0, 3]
@@ -62,7 +60,11 @@ function Base.iterate(parti::PartitionWithCondition)
   firstlist = zeros(Int, parti.k-1)
   pushfirst!(firstlist, parti.n)
   iter = (firstlist, pushfirst!(pushfirst!(firstlist[3:end], Int(0)), Int(0)))
-  return firstlist, iter
+  if parti.l == 0
+    return firstlist, iter
+  else
+    return iterate(parti, iter)
+  end
 end
 
 function Base.iterate(parti::PartitionWithCondition, iter::Tuple{Vector{Int}, Vector{Int}})

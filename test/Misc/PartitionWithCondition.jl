@@ -2,7 +2,6 @@
   x = partition_with_condition(5, 3, 7)
   y = iterate(x)
   y = iterate(x,y[2])
-  y = iterate(x,y[2])
   @test y[1] == [1, 1, 3]
 
   a = partition_with_condition(2, 1, 0)
@@ -14,5 +13,5 @@
   for i in partition_with_condition(7, 4, 12)
     n += 1
   end
-  @test n == 6
+  @test n == 5
 end
