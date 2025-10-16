@@ -31,11 +31,11 @@
   [3, 0, 0, 4]
   ```
 """
-struct partition_with_condition
+struct PartitionWithCondition
   n::Int
   k::Int
   l::Int
-  function partition_with_condition(n::Int, k::Int, l::Int)
+  function PartitionWithCondition(n::Int, k::Int, l::Int)
     # Catch non-meaningful input
     @req n>=0 "n should be >= 0"
     @req k>0 "k should be > 0"
@@ -44,7 +44,9 @@ struct partition_with_condition
   end
 end
 
-function Base.iterate(parti::partition_with_condition)
+partition_with_condition(n::Int, k::Int, l::Int) = PartitionWithCondition(n, k, l)
+
+function Base.iterate(parti::PartitionWithCondition)
   if parti.k == 1
     # If k is 1, the problem is trivial
     if parti.l == 0
@@ -63,7 +65,7 @@ function Base.iterate(parti::partition_with_condition)
   return firstlist, iter
 end
 
-function Base.iterate(parti::partition_with_condition, iter::Tuple{Vector{Int}, Vector{Int}})
+function Base.iterate(parti::PartitionWithCondition, iter::Tuple{Vector{Int}, Vector{Int}})
   if parti.k == Int(1)
     return nothing
   end
