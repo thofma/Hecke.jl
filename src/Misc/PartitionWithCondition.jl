@@ -20,35 +20,36 @@ mutable struct PartitionWithCondition
 end
 
 @doc raw"""
-  ``partition_with_condition(
-    n::Int,
-    k::Int,
-    l::Int
-  ) -> iterator``
-  
-  This code provides an iterator ``partition_with_condition(n, k, l)``. This
-  iterator enumerates all possible ``k``-tuples ``[ a_0, ..., a_{k-1} ]`` of
-  nonnegative integers satisfying ``a_0 + a_1 + ... + a_{k-1} = n`` and,
-  furthermore, ``0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l``.
+    partition_with_condition(
+      n::Int,
+      k::Int,
+      l::Int
+    ) -> iterator
 
-  # Examples
-  ```jldoctest\
-  julia> for i in partition_with_condition(5, 3, 7) println(i) end\
-  [0, 3, 2]\
-  [1, 1, 3]
+This code provides an iterator `partition_with_condition(n, k, l)`. This
+iterator enumerates all possible `k`-tuples `[ a_0, ..., a_{k-1} ]` of
+nonnegative integers satisfying `a_0 + a_1 + ... + a_{k-1} = n` and,
+furthermore, `0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l`.
 
-  julia> for i in partition_with_condition(2, 1, 0) println(i) end\
-  [2]
+# Examples
 
-  julia> for i in partition_with_condition(2, 1, 1) println(i) end
+```jldoctest
+julia> for i in partition_with_condition(5, 3, 7) println(i) end
+[0, 3, 2]
+[1, 1, 3]
 
-  julia> for i in partition_with_condition(7, 4, 12) println(i) end\
-  [0, 2, 5, 0]\
-  [1, 0, 6, 0]\
-  [1, 3, 0, 3]\
-  [2, 1, 1, 3]\
-  [3, 0, 0, 4]
-  ```
+julia> for i in partition_with_condition(2, 1, 0) println(i) end
+[2]
+
+julia> for i in partition_with_condition(2, 1, 1) println(i) end
+
+julia> for i in partition_with_condition(7, 4, 12) println(i) end
+[0, 2, 5, 0]
+[1, 0, 6, 0]
+[1, 3, 0, 3]
+[2, 1, 1, 3]
+[3, 0, 0, 4]
+```
 """
 partition_with_condition(n::Int, k::Int, l::Int) = PartitionWithCondition(n, k, l)
 
@@ -80,7 +81,8 @@ function Base.iterate(parti::PartitionWithCondition, xxx::Nothing)
   # For every choice of integers a_2, a_3, ... a_{k-1} there exists a unique pair of integers
   # (a_0, a_1) fulfilling the two equations. Hence, we can iterate over all such choices and
   # calculate the corresponding pair (a_0, a_1) and check, whether a_0 and a_1 are both >= 0.
-  while current_position < parti.k+1
+  kp1 = parti.k + 1
+  while current_position < kp1
     parti.sum += 1
     parti.weighted_sum += current_position - 1
     @inbounds parti.vect[current_position] += 1
