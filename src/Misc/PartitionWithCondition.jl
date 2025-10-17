@@ -84,7 +84,7 @@ function Base.iterate(parti::PartitionWithCondition, xxx::Nothing)
   while current_position < parti.k+1
     parti.sum += 1
     parti.weighted_sum += current_position - 1
-    parti.vect[current_position] += 1
+    @inbounds parti.vect[current_position] += 1
     a1 = parti.l - parti.weighted_sum
     if a1 >= 0
       a0 = parti.n - parti.sum - a1
@@ -96,7 +96,7 @@ function Base.iterate(parti::PartitionWithCondition, xxx::Nothing)
     else
       @inbounds parti.sum -= parti.vect[current_position]
       @inbounds parti.weighted_sum -= (current_position - 1) * parti.vect[current_position]
-      parti.vect[current_position] = 0
+      @inbounds parti.vect[current_position] = 0
       current_position += 1
     end
   end
