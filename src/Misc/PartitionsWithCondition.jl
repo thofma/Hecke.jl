@@ -67,12 +67,13 @@ function Base.iterate(parti::PartitionsWithCondition)
       return nothing
     end
   end
-  firstlist = zeros(Int, parti.k-1)
-  pushfirst!(firstlist, parti.n)
+  firstlist = parti.vect
+  firstlist[1] = parti.n - parti.l
+  firstlist[2] = parti.l
   parti.sum = 0
   parti.weighted_sum = 0
-  if parti.l == 0
-    parti.isdone = true
+  parti.isdone = parti.l==parti.n
+  if parti.l <= parti.n
     return firstlist, nothing
   else
     return iterate(parti, nothing)

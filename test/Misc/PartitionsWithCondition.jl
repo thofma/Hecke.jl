@@ -14,4 +14,10 @@
     n += 1
   end
   @test n == 5
+
+  n = 0
+  for i in Hecke.partitions_with_condition(2, 2, 1)
+    n += 1
+  end
+  @test n == 1
 end
