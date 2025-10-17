@@ -1,34 +1,3 @@
-@doc raw"""
-  partition_with_condition(
-    n::Int,
-    k::Int,
-    l::Int
-  ) -> iterator
-  
-  This code provides an iterator ``partition_with_condition(n, k, l)``. This
-  iterator enumerates all possible ``k``-tuples ``[ a_0, ..., a_{k-1} ]`` of
-  nonnegative integers satisfying ``a_0 + a_1 + ... + a_{k-1} = n`` and,
-  furthermore, ``0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l``.
-
-  # Examples
-  ```jldoctest
-  julia> for i in partition_with_condition(5, 3, 7) println(i) end
-  [0, 3, 2]
-  [1, 1, 3]
-
-  julia> for i in partition_with_condition(2, 1, 0) println(i) end
-  [2]
-
-  julia> for i in partition_with_condition(2, 1, 1) println(i) end
-
-  julia> for i in partition_with_condition(7, 4, 12) println(i) end
-  [0, 2, 5, 0]
-  [1, 0, 6, 0]
-  [1, 3, 0, 3]
-  [2, 1, 1, 3]
-  [3, 0, 0, 4]
-  ```
-"""
 mutable struct PartitionWithCondition
   n::Int
   k::Int
@@ -50,6 +19,37 @@ mutable struct PartitionWithCondition
 
 end
 
+@doc raw"""
+  ``partition_with_condition(
+    n::Int,
+    k::Int,
+    l::Int
+  ) -> iterator``
+  
+  This code provides an iterator ``partition_with_condition(n, k, l)``. This
+  iterator enumerates all possible ``k``-tuples ``[ a_0, ..., a_{k-1} ]`` of
+  nonnegative integers satisfying ``a_0 + a_1 + ... + a_{k-1} = n`` and,
+  furthermore, ``0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l``.
+
+  # Examples
+  ```jldoctest\
+  julia> for i in partition_with_condition(5, 3, 7) println(i) end\
+  [0, 3, 2]\
+  [1, 1, 3]
+
+  julia> for i in partition_with_condition(2, 1, 0) println(i) end\
+  [2]
+
+  julia> for i in partition_with_condition(2, 1, 1) println(i) end
+
+  julia> for i in partition_with_condition(7, 4, 12) println(i) end\
+  [0, 2, 5, 0]\
+  [1, 0, 6, 0]\
+  [1, 3, 0, 3]\
+  [2, 1, 1, 3]\
+  [3, 0, 0, 4]
+  ```
+"""
 partition_with_condition(n::Int, k::Int, l::Int) = PartitionWithCondition(n, k, l)
 
 function Base.iterate(parti::PartitionWithCondition)
