@@ -542,26 +542,23 @@ No input checks are done.
 function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
                        max_scale::Int, even::Bool)
   scales_rks = Vector{Vector{Int}}[] # contains possibilities for scales & ranks
-  for rkseq in _integer_lists(rank, min_scale, max_scale)
+  sc = max_scale-min_scale+1
+  symbols = Vector{ZZLocalGenus}()
+  if sc<= 0
+    return symbols
+  end
+  for rkseq in partitions_with_condition(rank, sc, det_val-rank*min_scale)
     # rank sequences
     # sum(rkseq) = rank
-    # length(rkseq) = max_scale - min_scale + 1
-    # now assure that we get the right determinant
-    d = 0
     pgensymbol = Vector{Int}[]
-    for i in min_scale:max_scale
-      d += i * rkseq[i-min_scale+1]
+    for i in 1:sc
       # blocks of rank 0 are omitted
-      if rkseq[i-min_scale+1] != 0
-        push!(pgensymbol, Int[i, rkseq[i-min_scale+1], 0])
-      end
+      iszero(rkseq[i]) && continue
+      push!(pgensymbol, Int[i-1+min_scale, rkseq[i], 0])
     end
-    if d == det_val
-      push!(scales_rks, pgensymbol)
-    end
+    push!(scales_rks, pgensymbol)
   end
   # add possible determinant square classes
-  symbols = Vector{ZZLocalGenus}()
   if p != 2
     for g in scales_rks
       n = length(g)

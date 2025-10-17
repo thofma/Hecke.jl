@@ -1809,20 +1809,32 @@ function hermitian_local_genera(E, p, rank::Int, det_val::Union{Int,Nothing}, mi
 
   scales_rks = Vector{Tuple{Int, Int}}[] # possible scales and ranks
 
-  for rkseq in _integer_lists(rank, min_scale, max_scale)
-    d = 0
-    pgensymbol = Tuple{Int, Int}[]
-    for i in min_scale:max_scale
-      d += i * rkseq[i-min_scale + 1]
-      if rkseq[i-min_scale + 1] != 0
-        push!(pgensymbol, (i, rkseq[i-min_scale + 1]))
+  sc = max_scale - min_scale + 1
+  if det_val isa Nothing
+    for rkseq in _integer_lists(rank, min_scale, max_scale)
+      d = 0
+      pgensymbol = Tuple{Int, Int}[]
+      for i in min_scale:max_scale
+        d += i * rkseq[i-min_scale + 1]
+        if rkseq[i-min_scale + 1] != 0
+          push!(pgensymbol, (i, rkseq[i-min_scale + 1]))
+        end
       end
+      push!(scales_rks, pgensymbol)
     end
-    if (det_val isa Nothing) || d == det_val
+  elseif sc > 0
+    for rkseq in partitions_with_condition(rank, sc, det_val-rank*min_scale)
+      # rank sequences
+      # sum(rkseq) = rank
+      pgensymbol = Tuple{Int, Int}[]
+      for i in 1:sc
+        # blocks of rank 0 are omitted
+        iszero(rkseq[i]) && continue
+        push!(pgensymbol, (i-1+min_scale, rkseq[i]))
+      end
       push!(scales_rks, pgensymbol)
     end
   end
-
   if !is_ramified
     # I add the 0 to make the compiler happy
     symbols = Vector{local_genus_herm_type(E)}(undef, length(scales_rks))
