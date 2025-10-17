@@ -64,7 +64,6 @@ function Base.iterate(parti::PartitionWithCondition)
   # and W = 2*a_2 + 3*a_3 + ... + (k-1)*a_{k-1}.
   firstlist = zeros(Int, parti.k-1)
   pushfirst!(firstlist, parti.n)
-  #iter = (firstlist, pushfirst!(pushfirst!(firstlist[3:end], Int(0)), Int(0)))
   parti.sum = 0
   parti.weighted_sum = 0
   if parti.l == 0
@@ -79,15 +78,12 @@ function Base.iterate(parti::PartitionWithCondition, xxx::Nothing)
     return nothing
   end
   current_position = Int(3)
-  # weighted_sum = iter[2][1]
-  # sum = iter[2][2]
   # For every choice of integers a_2, a_3, ... a_{k-1} there exists a unique pair of integers
   # (a_0, a_1) fulfilling the two equations. Hence, we can iterate over all such choices and
   # calculate the corresponding pair (a_0, a_1) and check, whether a_0 and a_1 are both >= 0.
   while current_position < parti.k+1
     parti.sum += 1
     parti.weighted_sum += current_position - 1
-    # @inbounds iter[2][current_position] += 1
     parti.vect[current_position] += 1
     a1 = parti.l - parti.weighted_sum
     if a1 >= 0
@@ -95,17 +91,11 @@ function Base.iterate(parti::PartitionWithCondition, xxx::Nothing)
       if a0 >= 0
         @inbounds parti.vect[1] = a0
         @inbounds parti.vect[2] = a1
-        # iter[1][3:end] = view(iter[2], 3:parti.k)
-        # @inbounds iter[1][2] = a1
-        # @inbounds iter[1][1] = a0
-        # @inbounds iter[2][1] = parti.weighted_sum
-        # @inbounds iter[2][2] = parti.sum
         return parti.vect, nothing
       end
     else
       @inbounds parti.sum -= parti.vect[current_position]
       @inbounds parti.weighted_sum -= (current_position - 1) * parti.vect[current_position]
-      # @inbounds iter[2][current_position] = 0
       parti.vect[current_position] = 0
       current_position += 1
     end
