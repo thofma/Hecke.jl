@@ -280,19 +280,6 @@ function  _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   return LL
 end
 
-function _locally_isometric_rank_1(M, L, p, P, D)
-  # We just need the correct scale.
-  i = valuation(scale(L), P)
-  j = valuation(scale(M), P)
-  if length(D)==2 # split case
-    k = i-j
-  else
-    k = divexact(i-j, 2)
-  end
-  LL = P^k*M
-  return LL
-end
-
 ################################################################################
 #
 #  Locally isometric sublattices
@@ -306,19 +293,18 @@ Given rationally isometric hermitian lattices `M` and `L` over $E/K$ and a prime
 of $\mathcal O_K$, return a sublattice `N` of `M` with $N_q = M_q$ for $q \neq p$ and
 $N_p$ isometric to $L_p$.
 """
-function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
+function locally_isometric_sublattice(M::HermLat, L::HermLat, p ; check=true)
   @assert base_ring(M) == base_ring(L)
-  @assert is_rationally_isometric(M, L, p)
-  @assert is_maximal_integral(M, p)[1]
+  if check
+    @req is_rationally_isometric(M, L, p) "M and L must be rationally isometric at p"
+    @req is_maximal_integral(M, p)[1] || rank(M)==1 "M must be maximally integral or of rank 1"
+  end
 
   D = prime_decomposition(base_ring(L), p)
 
   absolute_map = absolute_simple_field(ambient_space(M))[2]
 
   P = D[1][1]
-  if rank(M) == 1 # easy case, we call a faster function
-    return _locally_isometric_rank_1(M, L, p, P, D)
-  end
   if length(D) == 2 # split case
     LL = _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
