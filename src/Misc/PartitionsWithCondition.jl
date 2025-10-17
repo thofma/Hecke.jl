@@ -100,6 +100,8 @@ function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
         @inbounds parti.vect[1] = a0
         @inbounds parti.vect[2] = a1
         return parti.vect, nothing
+      else
+        current_position = 3
       end
     else
       @inbounds parti.sum -= parti.vect[current_position]
