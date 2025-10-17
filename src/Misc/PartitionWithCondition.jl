@@ -1,4 +1,4 @@
-mutable struct PartitionWithCondition
+mutable struct PartitionsWithCondition
   n::Int
   k::Int
   l::Int
@@ -9,7 +9,7 @@ mutable struct PartitionWithCondition
   # sum = a_2 + ... + a_{k-1} and weighted_sum = 2*a_2 + 3*a_3 + ... + (k-1)*a_{k-1}.
   # This yields faster computations.
 
-  function PartitionWithCondition(n::Int, k::Int, l::Int)
+  function PartitionsWithCondition(n::Int, k::Int, l::Int)
     # Catch non-meaningful input
     @req n>=0 "n should be >= 0"
     @req k>0 "k should be > 0"
@@ -20,7 +20,7 @@ mutable struct PartitionWithCondition
 end
 
 @doc raw"""
-    partition_with_condition(
+    partitions_with_condition(
       n::Int,
       k::Int,
       l::Int
@@ -33,16 +33,16 @@ furthermore, `0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l`.
 # Examples
 
 ```jldoctest
-julia> for i in partition_with_condition(5, 3, 7) println(i) end
+julia> for i in partitions_with_condition(5, 3, 7) println(i) end
 [0, 3, 2]
 [1, 1, 3]
 
-julia> for i in partition_with_condition(2, 1, 0) println(i) end
+julia> for i in partitions_with_condition(2, 1, 0) println(i) end
 [2]
 
-julia> for i in partition_with_condition(2, 1, 1) println(i) end
+julia> for i in partitions_with_condition(2, 1, 1) println(i) end
 
-julia> for i in partition_with_condition(7, 4, 12) println(i) end
+julia> for i in partitions_with_condition(7, 4, 12) println(i) end
 [0, 2, 5, 0]
 [1, 0, 6, 0]
 [1, 3, 0, 3]
@@ -50,9 +50,9 @@ julia> for i in partition_with_condition(7, 4, 12) println(i) end
 [3, 0, 0, 4]
 ```
 """
-partition_with_condition(n::Int, k::Int, l::Int) = PartitionWithCondition(n, k, l)
+partitions_with_condition(n::Int, k::Int, l::Int) = PartitionsWithCondition(n, k, l)
 
-function Base.iterate(parti::PartitionWithCondition)
+function Base.iterate(parti::PartitionsWithCondition)
   if parti.k == 1
     # If k is 1, the problem is trivial
     if parti.l == 0
@@ -72,7 +72,7 @@ function Base.iterate(parti::PartitionWithCondition)
   end
 end
 
-function Base.iterate(parti::PartitionWithCondition, xxx::Nothing)
+function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
   if parti.k == Int(1)
     return nothing
   end
