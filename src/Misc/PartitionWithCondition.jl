@@ -26,8 +26,7 @@ end
       l::Int
     ) -> iterator
 
-This code provides an iterator `partition_with_condition(n, k, l)`. This
-iterator enumerates all possible `k`-tuples `[ a_0, ..., a_{k-1} ]` of
+Return an iterator which enumerates all possible `k`-tuples `[ a_0, ..., a_{k-1} ]` of
 nonnegative integers satisfying `a_0 + a_1 + ... + a_{k-1} = n` and,
 furthermore, `0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l`.
 
