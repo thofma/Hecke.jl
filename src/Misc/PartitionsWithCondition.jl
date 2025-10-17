@@ -5,6 +5,7 @@ mutable struct PartitionsWithCondition
   sum::Int
   weighted_sum::Int
   vect::Vector{Int}
+  isdone::Bool
   # The struct stores an integer vector, i.e. the vector [a_0, ..., a_{k-1}], together with
   # sum = a_2 + ... + a_{k-1} and weighted_sum = 2*a_2 + 3*a_3 + ... + (k-1)*a_{k-1}.
   # This yields faster computations.
@@ -14,7 +15,11 @@ mutable struct PartitionsWithCondition
     @req n>=0 "n should be >= 0"
     @req k>0 "k should be > 0"
     @req l>=0 "l should be >= 0"
-    return new(n, k, l, 0, 0, zeros(Int, k))
+    isdone = false
+    if k==0 && l>0
+      isdone = true
+    end
+    return new(n, k, l, 0, 0, zeros(Int, k), isdone)
   end
 
 end
@@ -26,9 +31,9 @@ end
       l::Int
     ) -> iterator
 
-Return an iterator which enumerates all possible `k`-tuples `[ a_0, ..., a_{k-1} ]` of
-nonnegative integers satisfying `a_0 + a_1 + ... + a_{k-1} = n` and,
-furthermore, `0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l`.
+Return a statful inplace iterator which enumerates all possible `k`-tuples ``[ a_0, ..., a_{k-1} ]`` of
+nonnegative integers satisfying ``a_0 + a_1 + ... + a_{k-1} = n`` and,
+furthermore, ``0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l``.
 
 # Examples
 
@@ -56,6 +61,7 @@ function Base.iterate(parti::PartitionsWithCondition)
   if parti.k == 1
     # If k is 1, the problem is trivial
     if parti.l == 0
+      parti.isdone = true
       return Int[parti.n], nothing
     else
       return nothing
@@ -66,6 +72,7 @@ function Base.iterate(parti::PartitionsWithCondition)
   parti.sum = 0
   parti.weighted_sum = 0
   if parti.l == 0
+    parti.isdone = true
     return firstlist, nothing
   else
     return iterate(parti, nothing)
@@ -100,5 +107,11 @@ function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
       current_position += 1
     end
   end
+  parti.isdone = true
   return nothing
 end
+
+Base.IteratorSize(::PartitionsWithCondition) = Base.SizeUnknown()
+
+eltype(::PartitionsWithCondition) = Vector{Int}
+Base.isdone(iter::PartitionsWithCondition) = iter.isdone

@@ -717,7 +717,6 @@ export overlattices
 export overorders
 export parent
 export periods
-export partitions_with_condition
 export permute_row
 export phereditary_overorder
 export picard_group
