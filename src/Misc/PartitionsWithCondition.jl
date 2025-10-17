@@ -73,7 +73,7 @@ function Base.iterate(parti::PartitionsWithCondition)
 end
 
 function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
-  if parti.k == Int(1)
+  if parti.k == 1
     return nothing
   end
   current_position = 3
