@@ -67,8 +67,9 @@ function Base.iterate(parti::PartitionsWithCondition)
       return nothing
     end
   end
-  firstlist = zeros(Int, parti.k-1)
-  pushfirst!(firstlist, parti.n)
+  firstlist = parti.vect
+  firstlist[1] = parti.n #0 parti.n - parti.l
+  firstlist[2] = 0#parti.l
   parti.sum = 0
   parti.weighted_sum = 0
   if parti.l == 0
@@ -92,6 +93,8 @@ function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
     parti.sum += 1
     parti.weighted_sum += current_position - 1
     @inbounds parti.vect[current_position] += 1
+    @show parti.vect
+    @show current_position
     a1 = parti.l - parti.weighted_sum
     if a1 >= 0
       a0 = parti.n - parti.sum - a1
@@ -99,6 +102,8 @@ function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
         @inbounds parti.vect[1] = a0
         @inbounds parti.vect[2] = a1
         return parti.vect, nothing
+      else
+        current_position = 3
       end
     else
       @inbounds parti.sum -= parti.vect[current_position]
