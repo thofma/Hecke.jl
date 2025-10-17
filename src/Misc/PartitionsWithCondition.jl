@@ -76,7 +76,7 @@ function Base.iterate(parti::PartitionsWithCondition, xxx::Nothing)
   if parti.k == Int(1)
     return nothing
   end
-  current_position = Int(3)
+  current_position = 3
   # For every choice of integers a_2, a_3, ... a_{k-1} there exists a unique pair of integers
   # (a_0, a_1) fulfilling the two equations. Hence, we can iterate over all such choices and
   # calculate the corresponding pair (a_0, a_1) and check, whether a_0 and a_1 are both >= 0.
