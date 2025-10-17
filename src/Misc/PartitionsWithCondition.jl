@@ -113,5 +113,5 @@ end
 
 Base.IteratorSize(::PartitionsWithCondition) = Base.SizeUnknown()
 
-eltype(::PartitionsWithCondition) = Vector{Int}
+Base.eltype(::PartitionsWithCondition) = Vector{Int}
 Base.isdone(iter::PartitionsWithCondition) = iter.isdone
