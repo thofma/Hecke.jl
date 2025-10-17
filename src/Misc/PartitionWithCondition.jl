@@ -36,6 +36,9 @@ mutable struct PartitionWithCondition
   sum::Int
   weighted_sum::Int
   vect::Vector{Int}
+  # The struct stores an integer vector, i.e. the vector [a_0, ..., a_{k-1}], together with
+  # sum = a_2 + ... + a_{k-1} and weighted_sum = 2*a_2 + 3*a_3 + ... + (k-1)*a_{k-1}.
+  # This yields faster computations.
 
   function PartitionWithCondition(n::Int, k::Int, l::Int)
     # Catch non-meaningful input
@@ -58,10 +61,6 @@ function Base.iterate(parti::PartitionWithCondition)
       return nothing
     end
   end
-  # The iterators hidden output 'iter' is a tuple of two integer vectors of the same size.
-  # The first vector is the last non-hidden output, i.e. the vector [a_0, ..., a_{k-1}].
-  # The second vector is of the form [W, S, a_2, a_3, ..., a_{k-1}], where S = a_2 + ... + a_{k-1}
-  # and W = 2*a_2 + 3*a_3 + ... + (k-1)*a_{k-1}.
   firstlist = zeros(Int, parti.k-1)
   pushfirst!(firstlist, parti.n)
   parti.sum = 0
