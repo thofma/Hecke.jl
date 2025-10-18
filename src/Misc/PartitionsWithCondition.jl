@@ -37,16 +37,16 @@ furthermore, ``0*a_0 + 1*a_1 + 2*a_2 + ... + (k-1)*a_{k-1} = l``.
 # Examples
 
 ```jldoctest
-julia> for i in partitions_with_condition(5, 3, 7) println(i) end
+julia> for i in Hecke.partitions_with_condition(5, 3, 7) println(i) end
 [0, 3, 2]
 [1, 1, 3]
 
-julia> for i in partitions_with_condition(2, 1, 0) println(i) end
+julia> for i in Hecke.partitions_with_condition(2, 1, 0) println(i) end
 [2]
 
-julia> for i in partitions_with_condition(2, 1, 1) println(i) end
+julia> for i in Hecke.partitions_with_condition(2, 1, 1) println(i) end
 
-julia> for i in partitions_with_condition(7, 4, 12) println(i) end
+julia> for i in Hecke.partitions_with_condition(7, 4, 12) println(i) end
 [0, 2, 5, 0]
 [1, 0, 6, 0]
 [1, 3, 0, 3]
