@@ -59,10 +59,10 @@ partitions_with_condition(n::Int, k::Int, l::Int) = PartitionsWithCondition(n, k
 function Base.iterate(parti::PartitionsWithCondition)
   if parti.k <= 1
     # If k is 0, 1, the problem is trivial
-    if parti.k ==1 && parti.l = 0
+    if parti.k==1 && parti.l==0
       parti.isdone = true
       return Int[parti.n], nothing
-    elseif if parti.k ==0 && parti.l = 0
+    elseif parti.k==0 && parti.l==0
       return Int[], nothing
     else
       return nothing
