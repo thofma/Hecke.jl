@@ -13,10 +13,9 @@ mutable struct PartitionsWithCondition
   function PartitionsWithCondition(n::Int, k::Int, l::Int)
     # Catch non-meaningful input
     @req n>=0 "n should be >= 0"
-    @req k>0 "k should be > 0"
-    @req l>=0 "l should be >= 0"
+    @req k>=0 "k should be >= 0"
     isdone = false
-    if k==0 && l>0
+    if k<=1 && l>0
       isdone = true
     end
     return new(n, k, l, 0, 0, zeros(Int, k), isdone)
@@ -58,11 +57,13 @@ julia> for i in partitions_with_condition(7, 4, 12) println(i) end
 partitions_with_condition(n::Int, k::Int, l::Int) = PartitionsWithCondition(n, k, l)
 
 function Base.iterate(parti::PartitionsWithCondition)
-  if parti.k == 1
-    # If k is 1, the problem is trivial
-    if parti.l == 0
+  if parti.k <= 1
+    # If k is 0, 1, the problem is trivial
+    if parti.k==1 && parti.l==0
       parti.isdone = true
       return Int[parti.n], nothing
+    elseif parti.k==0 && parti.l==0
+      return Int[], nothing
     else
       return nothing
     end
