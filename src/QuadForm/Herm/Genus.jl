@@ -1812,10 +1812,8 @@ function hermitian_local_genera(E, p, rank::Int, det_val::Union{Int,Nothing}, mi
   sc = max_scale - min_scale + 1
   if det_val isa Nothing
     for rkseq in _integer_lists(rank, min_scale, max_scale)
-      d = 0
       pgensymbol = Tuple{Int, Int}[]
       for i in min_scale:max_scale
-        d += i * rkseq[i-min_scale + 1]
         if rkseq[i-min_scale + 1] != 0
           push!(pgensymbol, (i, rkseq[i-min_scale + 1]))
         end
