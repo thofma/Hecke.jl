@@ -1157,7 +1157,7 @@ function hasse_invariant(S::ZZLocalGenus)
     if v == 0
       data = [[0, n, eps, 1, mod(u+n-1, 8)]]
     else
-      data = [[0 , n-1, 1, 1, mod(n-1,8)], [v,1, eps, 1, mod(u, 8)]]
+      data = [[0 , n-1, 1, 1, mod(n-1,8)], [v,1, eps, 1, eps]]
     end
   else
     eps = kronecker_symbol(u, p)
