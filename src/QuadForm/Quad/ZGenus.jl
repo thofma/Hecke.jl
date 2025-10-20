@@ -510,7 +510,7 @@ function integer_genera(sig_pair::Tuple{Int,Int}, _determinant::RationalUnion;
   # clever way to directly match the symbols for different primes.
   for g in cartesian_product_iterator(local_symbols)
     # create a Genus from a list of local symbols
-    G = ZZGenus(sig_pair, copy(g))
+    G = ZZGenus(sig_pair, deepcopy(g))
     !is_equal(abs(det(G)), abs(determinant)) && continue
     even && !iseven(G) && continue
     # discard the empty genera
@@ -587,7 +587,7 @@ function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
       end
       for _g1 in cartesian_product_iterator(poss_blocks)
         if _is2adic_genus(_g1)
-          g1 = ZZLocalGenus(p, copy(_g1))
+          g1 = ZZLocalGenus(p, deepcopy(_g1))
           push!(symbols, g1)
         end
       end
@@ -628,30 +628,30 @@ function _blocks(b::Array{Int}, even_only=false)
     @assert b[3] == 1
     @assert b[4] == 0
     @assert b[5] == 0
-    push!(blocks, copy(b))
+    push!(blocks, deepcopy(b))
   elseif rk == 1 && !even_only
     for det in [1, 3, 5, 7]
-      b1 = copy(b)
+      b1 = deepcopy(b)
       b1[3] = det
       b1[4] = 1
       b1[5] = det
       push!(blocks, b1)
     end
   elseif rk == 2
-    b1 = copy(b)
+    b1 = deepcopy(b)
     # even case
     b1[4] = 0
     b1[5] = 0
     b1[3] = 3
     push!(blocks, b1)
-    b1 = copy(b1)
+    b1 = deepcopy(b1)
     b1[3] = 7
     push!(blocks, b1)
     # odd case
     if !even_only
       # format (det, oddity)
       for s in Tuple{Int, Int}[(1,2), (5,6), (1,6), (5,2), (7,0), (3,4)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = s[1]
         b1[4] = 1
         b1[5] = s[2]
@@ -660,26 +660,26 @@ function _blocks(b::Array{Int}, even_only=false)
     end
   elseif rk % 2 == 0
     # the even case has even rank
-    b1 = copy(b)
+    b1 = deepcopy(b)
     b1[4] = 0
     b1[5] = 0
     d = mod((-1)^(rk//2), 8)
     for det in Int[d, mod(d * (-3) , 8)]
-      b1 = copy(b1)
+      b1 = deepcopy(b1)
       b1[3] = det
       push!(blocks, b1)
     end
     # odd case
     if !even_only
       for s in Tuple{Int, Int}[(1,2), (5,6), (1,6), (5,2), (7,0), (3,4)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = mod(s[1]*(-1)^(rk//2 -1) , 8)
         b1[4] = 1
         b1[5] = s[2]
         push!(blocks, b1)
       end
       for s in Tuple{Int, Int}[(1,4), (5,0)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = mod(s[1]*(-1)^(rk//2 - 2) , 8)
         b1[4] = 1
         b1[5] = s[2]
@@ -691,7 +691,7 @@ function _blocks(b::Array{Int}, even_only=false)
     for t in Int[1, 3, 5, 7]
       d = mod((-1)^div(rk, 2) * t , 8)
       for det in Int[d, mod(-3*d, 8)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = det
         b1[4] = 1
         b1[5] = t
@@ -840,10 +840,11 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   end
   push!(sym1, Int[sym1[end][1]+1, 0, 1, 0, 0])
   push!(sym2, Int[sym1[end][1]+1, 0, 1, 0, 0])
-  pushfirst!(sym1, Int[-1, 0, 1, 0, 0])
-  pushfirst!(sym1, Int[-2, 0, 1, 0, 0])
-  pushfirst!(sym2, Int[-1, 0, 1, 0, 0])
-  pushfirst!(sym2, Int[-2, 0, 1, 0, 0])
+  s = sym1[1][1]
+  pushfirst!(sym1, Int[s-1, 0, 1, 0, 0])
+  pushfirst!(sym1, Int[s-2, 0, 1, 0, 0])
+  pushfirst!(sym2, Int[s-1, 0, 1, 0, 0])
+  pushfirst!(sym2, Int[s-2, 0, 1, 0, 0])
 
   n = length(sym1)
   # oddity && sign walking conditions
@@ -1123,7 +1124,7 @@ function symbol(S::ZZLocalGenus, scale::Int)
   sym = symbol(S)
   for s in sym
     if s[1] == scale
-      return copy(s)
+      return s
     end
   end
   if prime(S) != 2
@@ -2911,7 +2912,7 @@ function rescale(G::ZZLocalGenus, a::RationalUnion)
   p = prime(G)
   v, _u = remove(a, p)
   u = numerator(_u)*denominator(_u)
-  data = copy(symbol(G))
+  data = deepcopy(symbol(G))
   if p != 2
     eps = kronecker_symbol(u,p)
     for d in data
