@@ -588,17 +588,15 @@ function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
       for _g1 in cartesian_product_iterator(poss_blocks)
         if _is2adic_genus(_g1)
           g1 = ZZLocalGenus(p, copy(_g1))
-          # some of our symbols have the same canonical symbol
-          # thus they are equivalent - we want only one in
-          # each equivalence class
-          if !(g1 in symbols)
-            push!(symbols, g1)
-          end
+          push!(symbols, g1)
         end
       end
     end
   end
-  return symbols
+  # some of our symbols have the same canonical symbol
+  # thus they are equivalent - we want only one in
+  # each equivalence class
+  return unique!(symbols)  # use unique instead of Set to keep deterministic order
 end
 
 function _local_genera(p::Int, rank::Int, det_val::Int, min_scale::Int,
@@ -823,10 +821,8 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-
-  # make a copy and enforce sparsity
-  sym1 = [g for g in symbol(G1) if g[2] != 0]
-  sym2 = [g for g in symbol(G2) if g[2] != 0]
+  sym1 = symbol(G1)
+  sym2 = symbol(G2)
   if length(sym1) == 0 || length(sym2) == 0
     return sym1 == sym2
   end
@@ -835,15 +831,11 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   end
   n = length(sym1)
   # scales && ranks
-  s1 = Vector{Int}[g[1:2] for g in sym1]
-  s2 = Vector{Int}[g[1:2] for g in sym2]
-  if s1 != s2
+  if !all(sym1[i][1] == sym2[i][1] && sym1[i][2] == sym2[i][2] for i in 1:n)
     return false
   end
   # parity
-  s1 = Int[g[4] for g in sym1]
-  s2 = Int[g[4] for g in sym2]
-  if s1 != s2
+  if !all(sym1[i][4] == sym2[i][4] for i in 1:n)
     return false
   end
   push!(sym1, Int[sym1[end][1]+1, 0, 1, 0, 0])
@@ -852,11 +844,13 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   pushfirst!(sym1, Int[-2, 0, 1, 0, 0])
   pushfirst!(sym2, Int[-1, 0, 1, 0, 0])
   pushfirst!(sym2, Int[-2, 0, 1, 0, 0])
+
   n = length(sym1)
   # oddity && sign walking conditions
   det_differs = Int[i for i in 1:n if _kronecker_symbol(sym1[i][3], 2)
                   != _kronecker_symbol(sym2[i][3], 2)]
   odd = Int[sym1[i][1] for i in 1:n if sym1[i][4] == 1]
+  are_equal = true
   for m in sym2[1][1]:sym2[n][1]
     # "for each integer m for which f_{2^m} has type II, we have..."
     if m in odd
@@ -868,10 +862,18 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
     r = 4*sum(min(ZZ(m), sym1[i][1]) for i in det_differs; init = ZZ(0))
     if 0 != mod(l-r, 8)
-      return false
+      are_equal = false
+      break
     end
   end
-  return true
+  # reinstate the original state
+  pop!(sym1)
+  pop!(sym2)
+  popfirst!(sym1)
+  popfirst!(sym1)
+  popfirst!(sym2)
+  popfirst!(sym2)
+  return are_equal
 end
 
 @doc raw"""
@@ -1142,13 +1144,37 @@ $\prod_{i < j}(a_i, a_j)_p$.
 """
 function hasse_invariant(S::ZZLocalGenus)
   # Conway Sloane Chapter 15 5.3
+  if rank(S) == 0
+    return 1
+  end
   n = dim(S)
   d = det(S)
-  f0 = ZZRingElem[squarefree_part(numerator(d)*denominator(d))]
+  e = numerator(d)*denominator(d)
+  p = prime(S)
+  (v, u) = remove(e, p)
+  if p == 2
+    eps = mod(u, 8)
+    if v == 0
+      data = [[0, n, eps, 1, mod(u+n-1, 8)]]
+    else
+      data = [[0 , n-1, 1, 1, mod(n-1,8)], [v,1, eps, 1, mod(u, 8)]]
+    end
+  else
+    eps = kronecker_symbol(u, p)
+    if v == 0
+      data = [[0, n, eps]]
+    else
+      data = [[0 ,rank(S)-1, 1], [v,1, eps]]
+    end
+  end
+  g = ZZLocalGenus(p, data)
+  #=f0 = ZZRingElem[e]
   append!(f0, eltype(f0)[one(ZZ) for i in 2:n])
   mf0 = diagonal_matrix(f0)
   gf0 = genus(mf0, prime(S))
-  if excess(S) == excess(gf0)
+  @assert g == gf0
+  =#
+  if excess(S) == excess(g)
     return 1
   else
     return -1
@@ -2883,8 +2909,31 @@ function rescale(G::ZZLocalGenus, a::RationalUnion)
   @req !iszero(a) "a must be non-zero"
   a = QQ(a)
   p = prime(G)
-  m = gram_matrix(G)
-  return genus(a*m, p)
+  v, _u = remove(a, p)
+  u = numerator(_u)*denominator(_u)
+  data = copy(symbol(G))
+  if p != 2
+    eps = kronecker_symbol(u,p)
+    for d in data
+      d[1]+= v
+      if !iszero(mod(d[2],2))
+        d[3]*=eps
+      end
+    end
+  else
+    eps = mod(u,8)
+    for d in data
+      d[1]+=v
+      if !iszero(mod(d[2],2))
+        d[3] = mod(d[3]*eps, 8)
+      end
+      d[5] = mod(d[5]*u, 8)
+    end
+  end
+  g = ZZLocalGenus(p, data)
+  #m = gram_matrix(G)
+  #@assert genus(a*m, p)==g
+  return g
 end
 
 @doc raw"""
