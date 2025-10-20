@@ -81,7 +81,11 @@ function Base.iterate(parti::PartitionsWithCondition)
   parti.weighted_sum = 0
   parti.isdone = parti.l==parti.n
   if parti.l <= parti.n
-    return firstlist, nothing
+    if parti.l >= 0
+      return firstlist, nothing
+    else
+      return nothing
+    end
   else
     return iterate(parti, nothing)
   end

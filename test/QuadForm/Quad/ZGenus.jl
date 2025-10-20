@@ -552,7 +552,9 @@ end
   @test all(g -> g in gen4, gen2)
   @test isempty(integer_genera((0, 8), 1, min_scale = 2))
   gen = @inferred integer_genera((0,8), 1, min_scale = 1//2, max_scale = 4)
-  @test length(gen) == 53
+  @test length(gen) == 69
+  gen = @inferred integer_genera((0,8), 2^8, min_scale = 1, max_scale = 8)
+  @test length(gen) == 69
   @test !isempty(integer_genera((4,0), 5; min_scale=1, max_scale=15, even=true))
 
   # Mass
