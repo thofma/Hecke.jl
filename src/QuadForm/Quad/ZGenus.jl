@@ -900,7 +900,7 @@ function Base.hash(G::ZZLocalGenus, u::UInt)
     h = xor(hash(prime(G)),  hash(symbol(G)))
   else
     # symbol is not unique but at least scales and ranks
-    h = reduce(xor, (hash(s[1:2]) for s in symbol(G)), init = hash(prime(G)))
+    h = reduce(xor, (hash(view(s, [1,2,4])) for s in symbol(G)), init = hash(prime(G)))
   end
   return xor(h, u)
 end
