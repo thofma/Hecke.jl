@@ -2072,7 +2072,7 @@ function _lll(
     else
       G2, U = lll_gram_with_transform(M, ctx)
     end
-  elseif (rank(L) == 3) && (abs(det(M)) == 1)
+  elseif (nrows(M) == 3) && (abs(det(M)) == 1)
     G2, U = lll_gram_indef_ternary_hyperbolic(M)
   elseif det(M) == 1
     G2, U = lll_gram_indef_with_transform(M)
@@ -2101,7 +2101,7 @@ respect to `C` is LLL-reduced.
 By default, it creates the lattice in the same ambient space as `L`. This
 can be disabled by setting `same_ambient = false`.
 
-After computation, the next lattice in output remembers that it has an
+After computation, the new lattice in output remembers that it has a fixed
 lll-reduced basis. If one wants to perform the computations again, one should
 set `redo` to `true`.
 

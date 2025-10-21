@@ -164,7 +164,7 @@ function init(
   @assert bound > 0
 
   @vprintln :Lattice 1 "Computing short vectors of length $bound"
-  # If one already knows all the short vectors of norm at most equal to alpha
+  # If one already knows all the short vectors of square at most equal to alpha
   alpha, V = known_short_vectors
 
   if isdefined(C, :is_lll_reduced_known)
@@ -332,7 +332,7 @@ function try_init_small(
 
   # Compute the necessary short vectors
   @vprintln :Lattice 1 "Computing short vectors of length $bound"
-  # If one already knows all the short vectors of norm at most equal to alpha
+  # If one already knows all the short vectors of square at most equal to alpha
   alpha, _V = known_short_vectors
   V = Tuple{Vector{Int}, QQFieldElem}[(Int.(v[1]), v[2]) for v in _V]
 
