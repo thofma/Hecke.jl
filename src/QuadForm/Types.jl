@@ -534,6 +534,7 @@ mutable struct ZLatAutoCtx{S, T, V}
   prime::S
 
   is_symmetric::BitArray{1} # whether G[i] is symmetric
+  is_lll_reduced::BitArray{1} # whether G[i] is lll-reduced
   operate_tmp::V # temp storage for orbit computation
   dot_product_tmp::V # temp storage for dot product computation
 

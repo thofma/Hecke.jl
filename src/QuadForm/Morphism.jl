@@ -141,7 +141,15 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
+function init(
+  C::ZLatAutoCtx,
+  auto::Bool = true,
+  bound::ZZRingElem = ZZRingElem(-1),
+  use_dict::Bool = true;
+  depth::Int=-1,
+  bacher_depth::Int=0,
+  known_short_vectors=(QQFieldElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
+)
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -156,8 +164,18 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
   @assert bound > 0
 
   @vprintln :Lattice 1 "Computing short vectors of length $bound"
+  # If one already knows all the short vectors of norm at most equal to alpha
+  alpha, V = known_short_vectors
 
-  @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound)
+  if isdefined(C, :is_lll_reduced_known)
+    is_lll_reduced_known = C.is_lll_reduced_known[1]
+  else
+    is_lll_reduced_known = false
+  end
+
+  if alpha < bound
+    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
+  end
 
   vectors = Vector{ZZMatrix}(undef, length(V))
 
@@ -287,7 +305,15 @@ end
 
 # The following functions tries to initialize a ZLatAutoCtx with entries in Int.
 # The return value is flag, Csmall
-function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
+function try_init_small(
+  C::ZLatAutoCtx,
+  auto::Bool = true,
+  bound::ZZRingElem = ZZRingElem(-1),
+  use_dict::Bool = true;
+  depth::Int=-1,
+  bacher_depth::Int=0,
+  known_short_vectors=(QQFieldElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
+ )
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -306,7 +332,19 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
 
   # Compute the necessary short vectors
   @vprintln :Lattice 1 "Computing short vectors of length $bound"
-  @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound, Int)
+  # If one already knows all the short vectors of norm at most equal to alpha
+  alpha, _V = known_short_vectors
+  V = Tuple{Vector{Int}, QQFieldElem}[(Int.(v[1]), v[2]) for v in _V]
+
+  if isdefined(C, :is_lll_reduced_known)
+    is_lll_reduced_known = C.is_lll_reduced_known[1]
+  else
+    is_lll_reduced_known = false
+  end
+
+  if alpha < bound
+    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound, Int; is_lll_reduced_known))
+  end
 
   vectors = Vector{Vector{Int}}(undef, length(V))
 
