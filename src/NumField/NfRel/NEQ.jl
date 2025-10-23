@@ -65,7 +65,7 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   if length(S) > 0
     v = matrix(ZZ, length(gk), length(S), [valuation(g, P)*norm(P) for g = gk for P = S])
   else
-    v = zero_matrix(ZZ, ngens(k), 0)
+    v = zero_matrix(ZZ, length(gk), 0)
   end
   pr = 256
   local vv
