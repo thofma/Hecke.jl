@@ -30,6 +30,12 @@
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
+
+        K, a = number_field(x^2-1//d, "a")
+        O = maximal_order(K)
+        Cl, mCl = Hecke.class_group(O, redo = true)
+        U, mU = Hecke.unit_group(O)
+        @test order(Cl) == h
       end
     end
 
