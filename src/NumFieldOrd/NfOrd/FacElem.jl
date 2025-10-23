@@ -206,7 +206,7 @@ function conjugates_arb_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
 end
 
 function conjugates_arb_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, R::ArbField)
-  z = conjugates_arb_log(x, -R.prec)
+  z = conjugates_arb_log(x, R.prec)
   return map(R, z)
 end
 
