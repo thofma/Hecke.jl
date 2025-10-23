@@ -218,6 +218,27 @@ function size_reduce(M::ZZMatrix, v::ZZMatrix)
 end
 
 """
+reduce the rows of v modulo the lattice spanned by the rows of M.
+M should be LLL reduced.
+Also returns the transformations applied to v, so on return
+ v <- v + t*M
+"""
+function size_reduce_with_transform(M::ZZMatrix, v::ZZMatrix)
+  s = gram_schmidt_orthogonalisation(QQ.(transpose(M)))
+  d = diagonal(transpose(s)*s)
+  t = zero_matrix(ZZ, nrows(v), nrows(M))
+  for i=1:nrows(v)
+    for j=nrows(M):-1:1
+      x = ZZ(round((v[i:i, :]* s[:, j:j]/d[j])[1,1]))
+      t[i, j] = -x
+      v[i:i, :] -= x*M[j:j, :]
+    end
+  end
+  return v, t
+end
+
+
+"""
 A a vector of units in fac-elem form. Find matrices U and V s.th.
 A^U is a basis for <A>/Tor
 and
