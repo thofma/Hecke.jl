@@ -210,6 +210,7 @@ function size_reduce(M::ZZMatrix, v::ZZMatrix)
   d = diagonal(transpose(s)*s)
   for i=1:nrows(v)
     for j=nrows(M):-1:1
+      is_zero(d[j]) && continue
       x = ZZ(round((v[i:i, :]* s[:, j:j]/d[j])[1,1]))
       v[i:i, :] -= x*M[j:j, :]
     end
@@ -229,6 +230,7 @@ function size_reduce_with_transform(M::ZZMatrix, v::ZZMatrix)
   t = zero_matrix(ZZ, nrows(v), nrows(M))
   for i=1:nrows(v)
     for j=nrows(M):-1:1
+      is_zero(d[j]) && continue
       x = ZZ(round((v[i:i, :]* s[:, j:j]/d[j])[1,1]))
       t[i, j] = -x
       v[i:i, :] -= x*M[j:j, :]
