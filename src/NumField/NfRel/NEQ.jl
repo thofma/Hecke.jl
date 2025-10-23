@@ -50,6 +50,47 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   aa = preimage(mu, FacElem(a))::FinGenAbGroupElem
   fl, so = has_preimage_with_preimage(No, aa)
   fl || return fl, FacElem(one(K))
+
+  #try to get a smaller solution, we're allowed to modify by the
+  #kernel of No
+  #Goal: solution should have small valuation everywhere
+  #the weights are somewhat random
+  # - val*norm(P) so that size of P does matter a bit
+  # - scale by 1000 so that small units do not vanish to zero
+  k, mk = kernel(No)
+  k, _mk = snf(k)
+  mk = _mk*mk
+  gk = [mU(mk(g)) for g = gens(k)]
+  pushfirst!(gk, mU(so))
+  if length(S) > 0
+    v = matrix(ZZ, length(gk), length(S), [valuation(g, P)*norm(P) for g = gk for P = S])
+  else
+    v = zero_matrix(ZZ, ngens(k), 0)
+  end
+  pr = 256
+  local vv
+  while true
+    R = ArbField(pr)
+    try 
+      vv = matrix([[round(ZZRingElem, x*1000) for x = conjugates_arb_log(g, R)] for g = gk])
+      break
+    catch e
+      if isa(e, InexactError)
+        pr *= 2
+        if pr >10000
+          error("$pr too large")
+        end
+      else
+        rethrow(e)
+      end
+    end
+  end
+  v = hcat(1000*v, vv)
+
+  l, t = lll_with_transform(view(v, 2:nrows(v), :))
+  _, tt = Hecke.MultDep.size_reduce_with_transform(l, view(v, 1:1, :))
+  so += mk(k(tt*t))
+
   return true, FacElem(K, Dict{elem_type(K), ZZRingElem}([image(KasToKa * mKa, k) => v for (k,v) = (mU(so)::FacElem{elem_type(Ka), typeof(Ka)})]))
 end
 
