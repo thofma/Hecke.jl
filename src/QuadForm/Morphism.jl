@@ -148,6 +148,7 @@ function init(
   use_dict::Bool = true;
   depth::Int=-1,
   bacher_depth::Int=0,
+  is_lll_reduced_known::Bool=false,
   known_short_vectors=(QQFieldElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
 )
   # Compute the necessary short vectors
@@ -166,12 +167,6 @@ function init(
   @vprintln :Lattice 1 "Computing short vectors of length $bound"
   # If one already knows all the short vectors of square at most equal to alpha
   alpha, V = known_short_vectors
-
-  if isdefined(C, :is_lll_reduced_known)
-    is_lll_reduced_known = C.is_lll_reduced_known[1]
-  else
-    is_lll_reduced_known = false
-  end
 
   if alpha < bound
     @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
@@ -312,6 +307,7 @@ function try_init_small(
   use_dict::Bool = true;
   depth::Int=-1,
   bacher_depth::Int=0,
+  is_lll_reduced_known::Bool=false,
   known_short_vectors=(QQFieldElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
  )
   automorphism_mode = bound == ZZRingElem(-1)
@@ -335,12 +331,6 @@ function try_init_small(
   # If one already knows all the short vectors of square at most equal to alpha
   alpha, _V = known_short_vectors
   V = Tuple{Vector{Int}, QQFieldElem}[(Int.(v[1]), v[2]) for v in _V]
-
-  if isdefined(C, :is_lll_reduced_known)
-    is_lll_reduced_known = C.is_lll_reduced_known[1]
-  else
-    is_lll_reduced_known = false
-  end
 
   if alpha < bound
     @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound, Int; is_lll_reduced_known))

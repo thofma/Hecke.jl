@@ -433,17 +433,16 @@ function assert_has_automorphisms(
   known_short_vectors = (alpha, sv)
 
   C = ZLatAutoCtx(res)
-  C.is_lll_reduced = trues(1)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
     if fl
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
   end
   if !try_small || !fl
-    init(C; depth, bacher_depth, known_short_vectors)
+    init(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
 
@@ -2132,30 +2131,6 @@ function lll(
   end
   set_attribute!(Llll, :is_lll_reduced, true)
   return Llll
-end
-
-function lll!(
-  L::ZZLat;
-  redo::Bool=false,
-  ctx::LLLContext=LLLContext(0.99, 0.51, :gram),
-)
-  if !redo && get_attribute(L, :is_lll_reduced, false)
-    return nothing
-  end
-  rank(L) == 0 && return L
-  def = is_definite(L)
-  G = gram_matrix(L)
-  d = denominator(G)
-  M = change_base_ring(ZZ, d*G)
-  G2, U = _lll(M, def, ctx)
-  set_attribute!(L, :is_lll_reduced, true)
-  L.basis_matrix = change_base_ring(QQ, U)*basis_matrix(L)
-  L.gram_matrix = (1//d)*change_base_ring(QQ, G2)
-  if isdefined(L, :automorphism_group_generators)
-    Uinv = inv(U)
-    L.automorphism_group_generators = ZZMatrix[U*m*Uinv for m in L.automorphism_group_generators]
-  end
-  nothing
 end
 
 ###############################################################################
