@@ -307,6 +307,11 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
   ZK = order(B)
   dB = denominator(B)#*denominator(basis_matrix(ZK, copy = false))
 
+  den = ZZ(1)
+  if !(is_defining_polynomial_nice(K) && contains_equation_order(ZK))
+    den = denominator(gen(K), ZK)^degree(K)
+  end
+
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
@@ -346,15 +351,15 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
     m = modular_lift(mp, me)
     if isone(pp)
       re = m
-      rf = mod_sym(ZK(re), p)
+      rf = mod_sym(ZK(re*den), p)
       pp = p
     else
       p2 = pp*p
       last = rf
       re = induce_inner_crt(re, m, pp*invmod(pp, p), p2, div(p2, 2))
-      rf = mod_sym(ZK(re), p2)
+      rf = mod_sym(ZK(re*den), p2)
       if rf == last
-        return nf(ZK)(rf)//dB
+        return nf(ZK)(rf)//dB//den
       end
       pp = p2
     end
