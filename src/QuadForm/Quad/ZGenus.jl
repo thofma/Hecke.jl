@@ -479,7 +479,7 @@ function integer_genera(sig_pair::Tuple{Int,Int}, _determinant::RationalUnion;
   _max_scale = QQ(max_scale)
   rank = sig_pair[1] + sig_pair[2]
   out = ZZGenus[]
-  local_symbols = Vector{ZZLocalGenus}[]
+  local_symbols = Set{ZZLocalGenus}[]
   pd = prime_divisors(numerator(determinant))
   union!(pd, prime_divisors(denominator(determinant)),
              prime_divisors(numerator(_min_scale)),
@@ -543,7 +543,7 @@ function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
                        max_scale::Int, even::Bool)
   scales_rks = Vector{Vector{Int}}[] # contains possibilities for scales & ranks
   sc = max_scale-min_scale+1
-  symbols = Vector{ZZLocalGenus}()
+  symbols = Set{ZZLocalGenus}()
   if sc<= 0
     return symbols
   end
@@ -596,7 +596,7 @@ function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
   # some of our symbols have the same canonical symbol
   # thus they are equivalent - we want only one in
   # each equivalence class
-  return unique!(symbols)  # use unique instead of Set to keep deterministic order
+  return symbols
 end
 
 function _local_genera(p::Int, rank::Int, det_val::Int, min_scale::Int,
@@ -858,10 +858,10 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
       continue
     end
     # sum_{q<2^m}(t_q-t'_q)
-    l = sum(sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1] < m; init = ZZ(0))
+    l = sum(sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1] < m; init = 0)
     # 4 (min(a,m)+min(b,m)+...)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
-    r = 4*sum(min(ZZ(m), sym1[i][1]) for i in det_differs; init = ZZ(0))
+    r = 4*sum(min(m, sym1[i][1]) for i in det_differs; init = 0)
     if 0 != mod(l-r, 8)
       are_equal = false
       break
@@ -1512,7 +1512,7 @@ is_integral(G::ZZGenus) = is_integral(scale(G))
 
 Return the quadratic space defined by this genus.
 """
-function quadratic_space(G::ZZGenus)
+function quadratic_space(G::ZZGenus; cached=false)
   dimension = dim(G)
   if dimension == 0
     qf = zero_matrix(QQ, 0, 0)
@@ -1523,7 +1523,7 @@ function quadratic_space(G::ZZGenus)
   neg = signature_pair(G)[2]
   qf =_quadratic_form_with_invariants(dimension, determinant, prime_neg_hasse,
                                       neg)
-  return quadratic_space(QQ, qf)
+  return quadratic_space(QQ, qf; cached=false)
 end
 
 @doc raw"""
@@ -1567,7 +1567,7 @@ function representative(G::ZZGenus)
     G._representative = L
     return L
   end
-  V = quadratic_space(G)
+  V = quadratic_space(G; cached=false)
   if rank(G) == 0
     return lattice(V)
   end
@@ -1575,7 +1575,7 @@ function representative(G::ZZGenus)
   L = maximal_integral_lattice(L)
   for sym in G._symbols
     p = prime(sym)
-    L = local_modification(L, representative(sym), p)
+    L = local_modification(L, representative(sym), p; check=false)
   end
   # confirm the computation
   @hassert :Lattice 1 genus(L) == G

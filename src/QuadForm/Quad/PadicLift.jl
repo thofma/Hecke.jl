@@ -1,8 +1,15 @@
-function _val(m::zzModRingElem, p)
+function _val(m::zzModRingElem, p::Int)
   if m == 0
     return inf
   end
-  return valuation(lift(m), p)
+  return remove(Int(m.data), p)[1]
+end
+
+function _val(m::zzModRingElem, p::ZZRingElem)
+  if m == 0
+    return inf
+  end
+  return valuation(Int(m.data), p)
 end
 
 
