@@ -1321,7 +1321,8 @@ function simplify(A::AbsNumFieldOrderIdeal)
     return A
   end
   @hassert :AbsNumFieldOrder 1 is_consistent(A)
-  if has_2_elem(A) && has_weakly_normal(A)
+  #TODO: do a simplify in the presence of evil polynomials
+  if has_2_elem(A) && has_weakly_normal(A) && is_defining_polynomial_nice(nf(order(A)))
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
