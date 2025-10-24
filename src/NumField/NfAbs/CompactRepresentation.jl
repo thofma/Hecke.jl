@@ -352,7 +352,7 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
       p = next_prime(p)
       continue
     end
-    m = modular_lift(mp, me)*den
+    m = modular_lift(mp, me)
     if isone(pp)
       re = m
       rf = mod_sym(ZK(re*den), p)
