@@ -15,6 +15,22 @@ base_ring_type(::Type{MatAlgebra{T, S}}) where {T, S} = parent_type(T)
 coefficient_ring(A::MatAlgebra{T, S}) where {T, S} = A.coefficient_ring::base_ring_type(S)
 
 function basis(A::MatAlgebra; copy::Bool = true)
+  if !isdefined(A, :basis)
+    @assert A.canonical_basis == 1
+    n = _matdeg(A)
+    n2 = n^2
+    R = base_ring(A)
+    B = Vector{elem_type(A)}(undef, n2)
+    for i = 1:n
+      ni = n*(i - 1)
+      for j = 1:n
+        M = zero_matrix(R, n, n)
+        M[j, i] = one(R)
+        B[ni + j] = A(M, check = false)
+      end
+    end
+    A.basis = B
+  end
   if copy
     return Base.copy(A.basis::Vector{elem_type(A)})
   else
@@ -206,7 +222,7 @@ function assure_has_multiplication_table(A::MatAlgebra{T, S}) where { T, S }
   B = basis(A)
   for i in 1:d
     for j in 1:d
-      mt[i, j, :] = coeffs_of_product(matrix(B[i]; copy = false),  
+      mt[i, j, :] = coeffs_of_product(matrix(B[i]; copy = false),
                                       matrix(B[j]; copy = false), A)
     end
   end
@@ -265,16 +281,6 @@ function matrix_algebra(R::Ring, n::Int)
   n2 = n^2
   A.dim = n2
   A.degree = n
-  B = Vector{elem_type(A)}(undef, n2)
-  for i = 1:n
-    ni = n*(i - 1)
-    for j = 1:n
-      M = zero_matrix(R, n, n)
-      M[j, i] = one(R)
-      B[ni + j] = A(M, check = false)
-    end
-  end
-  A.basis = B
   A.one = identity_matrix(R, n)
   A.canonical_basis = 1
   A.is_simple = 1
