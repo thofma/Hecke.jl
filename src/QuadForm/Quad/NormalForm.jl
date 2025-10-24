@@ -20,9 +20,11 @@ function _unit_part(x, p)
     return x
   end
   v = _val(x, p)
-  y = divexact(x, parent(x)(p^v))
+  y = divexact(x, parent(x)(p)^v)
   return y
 end
+
+_unit_part(x::ZZModRingElem, p) = canonical_unit(x)
 
 function _ispadic_normal_form(G, p)
   if isodd(p)
@@ -176,77 +178,74 @@ end
 # For a definition in the even case, see Definition 4.6 of Miranda, Morrison,
 # "Embeddings of Integral Quadratic Forms", 2009.
 function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
-  _G = deepcopy(G)
+  _G = G
   dd = denominator(G)
   G0 = change_base_ring(ZZ, dd * G)
   d = valuation(dd, p)
   n = nrows(G)
   r = rank(G0)
 
+  if r == 0
+    return (zero_matrix(QQ, n, n), zero_matrix(QQ, n, n))::Tuple{QQMatrix, QQMatrix}
+  end
+
   if r != n
     _, U = hnf_with_transform(G0)
     _ker = U[(r + 1):n, :]
     _nondeg = U[1:r, :]
+    G0 = _nondeg * G0 * transpose(_nondeg)
     ker = change_base_ring(QQ, _ker)
     nondeg = change_base_ring(QQ, _nondeg)
-    G = p^d * nondeg * G * transpose(nondeg)
-  else
-    ker = zero_matrix(QQ, 0, n)
-    nondeg = identity_matrix(QQ, n)
-    G = p^d * G
   end
   # continue with the non-degenerate part
 
+
   if prec == -1
-    prec = valuation(det(G)::QQFieldElem, p) + 4
+    prec = valuation(det(G0)::ZZRingElem, p) + 4
   end
 
   modu = p^prec
   R = residue_ring(ZZ, modu, cached = false)[1]
-  Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G) # this will probably fail
-  D = deepcopy(Gmod)
+  Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G0) # this will probably fail
 
-  n = ncols(Gmod)
-
-  Qp = padic_field(p, precision = prec, cached = false)
-
-  if n == 0
-    return (zero_matrix(QQ, n, n), zero_matrix(QQ, n, n))::Tuple{QQMatrix, QQMatrix}
-  end
 
   # the transformation matrix is called B
 
+  D = deepcopy(Gmod)
+  B  = one(D)
   if p == 2
-    D, B = _jordan_2_adic(Gmod)
+    D, B = _jordan_2_adic!(D, B, Gmod)
   else
-    D, B = _jordan_odd_adic(Gmod, p)
+    D, B = _jordan_odd_adic!(D, B, p)
   end
 
-  @assert B * Gmod * transpose(B) == D
+  @hassert :Lattice 1 B * Gmod * transpose(B) == D
 
-  D, B1 = _normalize(D, p)
-  B = B1 * B
+  D, B = _normalize!(D, B, Gmod, p)
 
-  @assert B * Gmod * transpose(B) == D
+  @hassert :Lattice 1 B * Gmod * transpose(B) == D
   # we have reached a normal form for p != 2
   # for p == 2 extra work is necessary
   if p == 2
-    D, B1 = _two_adic_normal_forms(D, p, partial = partial)
-    B = B1 * B
+    D, B = _two_adic_normal_forms!(D, B, Gmod, p, partial = partial)
   end
-  @assert B * Gmod * transpose(B) == D
+  @hassert :Lattice 1 B * Gmod * transpose(B) == D
 
-  __nondeg = B * map_entries(x -> R(numerator(x)), nondeg)
-  B = vcat(__nondeg, map_entries(x -> R(numerator(x)), ker))
-  D = diagonal_matrix([D, zero_matrix(base_ring(D), nrows(ker), nrows(ker))])
-  _Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), p^d * _G)
-  if p == 2
-    @assert B * _Gmod * transpose(B) == diagonal_matrix(collect_small_blocks(D)) == D
-  else
-    @assert B * _Gmod * transpose(B) == diagonal_matrix(diagonal(D)) == D
+  # assemble the result
+  if r!=n
+    __nondeg = B*map_entries(x -> R(numerator(x)), nondeg)
+    B = vcat(__nondeg, map_entries(x -> R(numerator(x)), ker))
+    D = diagonal_matrix([D, zero_matrix(base_ring(D), nrows(ker), nrows(ker))])
   end
-  #    if debug:
-  @assert _val(det(B), p) == 0     # B is invertible!
+  @hassert :Lattice 1 begin
+    _Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), p^d*_G)
+    if p == 2
+      B * _Gmod * transpose(B) == diagonal_matrix(collect_small_blocks(D)) == D
+    else
+      B * _Gmod * transpose(B) == D && isdiag(D)
+    end
+  end
+  @hassert :Lattice 1 _val(det(B), p) == 0     # B is invertible!
 
   DD = map_entries(x -> QQ(lift(x))//p^d, D)
   BB = map_entries(x -> QQ(lift(x)), B)
@@ -522,11 +521,12 @@ end
 #        [7 0]
 #        [0 7]
 #    """
-function _homogeneous_normal_form(G, w, p)
-  D = deepcopy(G)
+_homogeneous_normal_form(G, w, p) = _homogeneous_normal_form!(deepcopy(G), one(G), G, w, p)
+
+function _homogeneous_normal_form!(D, B, G, w, p)
+  @hassert :Lattice 2 D == B * G * transpose(B)
   R = base_ring(G)
-  n = ncols(G)
-  B = identity_matrix(base_ring(G), n)
+  n = ncols(D)
   if w == 2
     if n > 2 && !iszero(D[end - 2, end - 2])
       v = 2
@@ -540,9 +540,11 @@ function _homogeneous_normal_form(G, w, p)
       e = Set([e1, e2])
       E = [Set(R.([1, 3])), Set(R.([1, 7])), Set(R.([5, 7])), Set(R.([3, 5]))]
       if !(e in E)
-        B[end - 3:end, :] = _relations(D[(end - 3):end, (end - 3):end], 5, p) * B[(end - 3):end, :]
-        D = B * G * transpose(B)
+        T = _relations(D[(end - 3):end, (end - 3):end], 5, p)
+        B[n - 3:n, :] = T * B[(n - 3):n, :]
+        D[n-3:n,n-3:n] = T * view(D,n-3:n, n-3:n) * transpose(T)
       end
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
 
     e1 = _unit_part(D[end - 1, end - 1], p)
@@ -550,30 +552,25 @@ function _homogeneous_normal_form(G, w, p)
     e = Set([e1, e2])
     E = [Set(R.([3, 3])), Set(R.([3, 5])), Set(R.([5, 5])), Set(R.([5, 7]))]
     if e in E
-      B[end - 1:end, :] = _relations(D[(end - 1):end, end - 1:end], 1, p) * B[end - 1:end, :]
-      D = B * G * transpose(B)
+      T = _relations(D[(n - 1):n, n - 1:n], 1, p)
+      B[n - 1:n, :] = T * @view B[n - 1:n, :]
+      D[n-1:n,n-1:n] = T * view(D,n-1:n,n-1:n) * transpose(T)
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
     # assert that e1 < e2
-    e1 = _unit_part(D[end - 1, end - 1], p)
-    e2 = _unit_part(D[end - 0, end - 0], p)
+    e1 = _unit_part(D[n - 1, n - 1], p)
+    e2 = _unit_part(D[n - 0, n - 0], p)
     if lift(e1) > lift(e2)
       swap_rows!(B, n, n - 1)
       swap_rows!(D, n, n - 1)
       swap_cols!(D, n, n - 1)
     end
+    @hassert :Lattice 2 D == B * G * transpose(B)
   end
+  @hassert :Lattice 2 D == B * G * transpose(B)
   return D, B
 end
 
-#        # assert that e1 < e2
-#        e1 = D[-2,-2].unit_part()
-#        e2 = D[-1,-1].unit_part()
-#        if ZZ(e1) > ZZ(e2):
-#            B.swap_rows(n-1, n-2)
-#            D.swap_rows(n-1, n-2)
-#            D.swap_columns(n-1, n-2)
-#    return D, B
-#
 #def _jordan_odd_adic(G):
 #    r"""
 #    Return the Jordan decomposition of a symmetric matrix over an odd prime.
@@ -608,13 +605,14 @@ end
 #        sage: B.determinant().valuation() == 0
 #        True
 #    """
-function _jordan_odd_adic(G, p)
-  R = base_ring(G)
-  D = deepcopy(G)
-  n = nrows(G)
+_jordan_odd_adic(G, p) = _jordan_odd_adic!(deepcopy(G), one(G), p)
+
+function _jordan_odd_adic!(D, B, p)
+  R = base_ring(D)
+  n = nrows(D)
+  oneR = one(R)
 
   # transformation matrix
-  B = identity_matrix(R, n)
   cnt = 1
   minval = 0
   while cnt <= n
@@ -634,14 +632,10 @@ function _jordan_odd_adic(G, p)
       # now make the rest orthgonal too
       for i in (cnt + 1):n
         if !iszero(D[i, cnt])
-          c = divexact(D[i, cnt], D[cnt, cnt])
-          for j in 1:ncols(B)
-            B[i, j] = B[i, j] - c * B[cnt, j]
-            D[i, j] = D[i, j] - c * D[cnt, j]
-          end
-          for j in 1:nrows(D)
-            D[j, i] = D[j, i] - c * D[j, cnt]
-          end
+          c = divexact!(D[i, cnt], D[cnt, cnt])
+          add_row!(B, -c, cnt, i)
+          add_row!(D, -c, cnt, i)
+          add_column!(D, -c, cnt, i)
         end
       end
       cnt += 1
@@ -649,30 +643,15 @@ function _jordan_odd_adic(G, p)
       # the smallest valuation is off the diagonal
       row = pivot[2]
       col = pivot[3]
-      for j in 1:ncols(B)
-        B[row, j] = B[row, j] + B[col, j]
-        D[row, j] = D[row, j] + D[col, j]
-      end
-      for j in 1:nrows(D)
-        D[j, row] = D[j, row] + D[j, col]
-      end
+      add_row!(B, oneR, col, row)
+      add_row!(D, oneR, col, row)
+      add_column!(D, oneR, col, row)
       # the smallest valuation is now on the diagonal
     end
   end
   return D, B
 end
-#                    D[:, i] += - c * D[:, cnt]
-#            cnt = cnt + 1
-#        else:
-#            # the smallest valuation is off the diagonal
-#            row = pivot[1]
-#            col = pivot[2]
-#            B[row, :] += B[col, :]
-#            D[row, :] += D[col, :]
-#            D[:, row] += D[:, col]
-#            # the smallest valuation is now on the diagonal
-#    return D, B
-#
+
 #def _jordan_2_adic(G):
 #    r"""
 #    Transform a symmetric matrix over the `2`-adic integers into jordan form.
@@ -717,13 +696,11 @@ end
 #        True
 #    """
 
-function _jordan_2_adic(G)
-  D = deepcopy(G)
-  n = ncols(G)
-  R = base_ring(G)
+_jordan_2_adic(G) = _jordan_2_adic!(deepcopy(G), one(G), G)
 
-  # transformation matrix
-  B = identity_matrix(base_ring(G), n)
+function _jordan_2_adic!(D, B, G)
+  n = ncols(D)
+  R = base_ring(D)
 
   # indices of the diagonal entries which are already used
   cnt = 1
@@ -745,14 +722,10 @@ function _jordan_2_adic(G)
       # now make the rest orthogonal too
       for i in cnt+1:n
         if !iszero(D[i, cnt])
-          c = divexact(D[i, cnt], D[cnt, cnt])
-          for j in 1:ncols(B)
-            B[i, j] = B[i, j] - c * B[cnt, j]
-            D[i, j] = D[i, j] - c * D[cnt, j]
-          end
-          for j in 1:nrows(D)
-            D[j, i] = D[j, i] - c * D[j, cnt]
-          end
+          c = divexact!(D[i, cnt], D[cnt, cnt])
+          add_row!(B,-c, cnt, i)
+          add_row!(D,-c, cnt, i)
+          add_column!(D,-c, cnt, i)
         end
       end
       cnt = cnt + 1
@@ -773,98 +746,31 @@ function _jordan_2_adic(G)
       # if it is the last 2 x 2 block, there is nothing to do.
       if cnt != n - 1
         content = R(ZZRingElem(2)^minval)
-        DD = D[cnt:cnt + 1, cnt:cnt + 1]
-        #@show objectid(DD)
+        DD = @view D[cnt:cnt + 1, cnt:cnt + 1]
         _eqn_mat = Hecke._eltseq(DD)
-        eqn_mat = matrix(R, 2, 2, [divexact(e, content) for e in _eqn_mat])
+        eqn_mat = matrix(R, 2, 2, [divexact!(e, content) for e in _eqn_mat])
         # calculate the inverse without using division
         eqn_mat_inv = inv(det(eqn_mat)) * matrix(R, 2, 2, [eqn_mat[2, 2], -eqn_mat[1, 2], -eqn_mat[2, 1], eqn_mat[1, 1]])
-        @assert isone(eqn_mat * eqn_mat_inv)
-        B1 = B[cnt:cnt+1, :]
-        #@show objectid(B1)
-        DD = D[cnt + 2:nrows(D), cnt:cnt + 1]
-        #@show objectid(DD)
+        @hassert :Lattice 1 isone(eqn_mat * eqn_mat_inv)
+        DD = @view D[cnt + 2:nrows(D), cnt:cnt + 1]
         B2 = DD * eqn_mat_inv
         for i in 1:nrows(B2)
           for j in 1:ncols(B2)
-            B2[i, j] = divexact(B2[i, j], content)
+            B2[i, j] = divexact!(B2[i, j], content)
           end
         end
+        B1 = @view B[cnt:cnt+1, :]
         Bv = @view B[cnt + 2:nrows(B), :]
         add!(Bv, Bv, -B2 * B1)
         Dv = @view D[cnt:nrows(D),cnt:ncols(D)]
-        BB = B[cnt:nrows(B), :]
-        mul!(Dv, BB * G, transpose(BB))
+        BB = @view B[cnt:nrows(B), :]
+        mul!(Dv, BB * G, transpose(BB))  # how to get rid of G in this line?
       end
       cnt += 2
     end
   end
   return D, B
 end
-
-#
-#def _min_nonsquare(p):
-#    r"""
-#    Return the minimal nonsquare modulo the prime `p`.
-#
-#    INPUT:
-#
-#    - ``p`` -- a prime number
-#
-#    OUTPUT:
-#
-#    - ``a`` -- the minimal nonsquare mod `p`
-#
-#    EXAMPLES::
-#
-#        sage: from sage.quadratic_forms.genera.normal_form import _min_nonsquare
-#        sage: _min_nonsquare(2)
-#        sage: _min_nonsquare(3)
-#        2
-#        sage: _min_nonsquare(5)
-#        2
-#        sage: _min_nonsquare(7)
-#        3
-#    """
-#    R = GF(p)
-#    for i in R:
-#        if not R(i).is_square():
-#            return i
-
-
-function _min_nonsquare(p)
-  Rx, x = polynomial_ring(GF(p, cached = false), "x", cached = false)
-  for i in 1:p
-    if length(factor(x^2 - i)) == 1
-      return Int(i)
-    end
-  end
-  error("this can't be reached")
-end
-
-function _issquare(d::Nemo.ZZModRingElem, p::ZZRingElem)
-  @assert valuation(lift(d), p) == 0
-  Rx, x = polynomial_ring(parent(d), "x", cached = false)
-  rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
-  return length(rts) > 0
-end
-
-function _issquare(d::zzModRingElem, p)
-  f = ZZ(modulus(parent(d)))
-  R = residue_ring(ZZ, f, cached = false)[1]
-  g = R(d)
-  return _issquare(g, ZZ(p))
-end
-
-function _sqrt(d::Nemo.ZZModRingElem, p::ZZRingElem)
-  @assert valuation(lift(d), p) == 0
-  Rx, x = polynomial_ring(parent(d), "x", cached = false)
-  rts = roots(x^2 - d, p, valuation(modulus(parent(d)), p))
-  r = rts[1][1]
-  @assert r^2 == d
-  return r
-end
-
 
 #
 #def _normalize(G, normal_odd=True):
@@ -904,16 +810,17 @@ end
 #        [    0     0     0     0     0     0     0   3^3]
 #    """
 
-function _normalize(G, p, normal_odd = true)
+_normalize(G, p, normal_odd=true) = _normalize!(deepcopy(G), one(G), G, p, normal_odd)
+
+function _normalize!(D, B, G, p, normal_odd = true)
   R = base_ring(G)
-  D = deepcopy(G)
-  n = ncols(G)
-  B = identity_matrix(R, n)
+  n = ncols(D)
+  tmp = zero_matrix(R, 2, ncols(B)) # temporary variable for inplace multiplications
   if p != 2
     # squareclasses 1, v
     v = _min_nonsquare(p)
     vv = R(v)
-    non_squares = []
+    non_squares = Int[]
     val = 0
     for i in 1:n
       if _val(D[i, i], p) > val
@@ -923,30 +830,23 @@ function _normalize(G, p, normal_odd = true)
           # move the non-square to the last entry of the previous block
           j = pop!(non_squares)
           swap_rows!(B, j, i - 1)
+          swap_rows!(D, j, i - 1)
+          swap_cols!(D, j, i - 1)
         end
       end
       d = _unit_part(D[i, i], p)
       if _issquare(d, p)
-        D[i, i] = 1
         c = _sqrt(inv(d), p)
-        for j in 1:ncols(B)
-          B[i, j] = c * B[i, j]
-        end
+        multiply_row!(B, c, i)
+        D[i, i] = p^val
       else
-        D[i, i] = vv
-        for j in 1:ncols(B)
-          B[i, j] = B[i, j] * _sqrt(vv * inv(d), p)
-        end
+        D[i, i] = vv*p^val
+        c = _sqrt(vv * inv(d), p)
+        multiply_row!(B, c, i)
         if normal_odd && length(non_squares) != 0
           # we combine two non-squares to get the 2 x 2 identity matrix
           j = pop!(non_squares)
-          trafo = _normalize_odd_twobytwo(D[[i, j], [i, j]], p)
-          _BB = trafo * B[[i, j], :]
-          B[i:i, :] = _BB[1:1, :]
-          B[j:j, :] = _BB[2:2, :]
-          #B[[i, j], :] = trafo * B[[i, j], :]
-          D[i, i] = 1
-          D[j, j] = 1
+          D, B = _normalize_odd_twobytwo!(D, B, i, j, p, tmp)
         else
           push!(non_squares, i)
         end
@@ -955,6 +855,7 @@ function _normalize(G, p, normal_odd = true)
     if normal_odd && length(non_squares) != 0
       j = pop!(non_squares)
       swap_rows!(B, j, n)
+      swap_rows!(D, j, n)
     end
   else
     # squareclasses 1, 3, 5, 7 modulo 8
@@ -962,29 +863,23 @@ function _normalize(G, p, normal_odd = true)
       d = _unit_part(D[i, i], p)
       if !iszero(d)
         vv = R(mod(lift(d), 8))
-        for j in 1:ncols(B)
-          B[i, j] = B[i, j] * _sqrt(vv * inv(d), p)
-        end
+        c = _sqrt(vv * inv(d), p)
+        multiply_row!(B, c, i)
+        multiply_row!(D, c, i)
+        multiply_column!(D, c, i)
       end
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
-    D = B * G * transpose(B)
     for i in 1:(n - 1)
       if !iszero(D[i, i + 1])
         # there is a 2 x 2 block here
-        block = D[i:i+1, i:i+1]
-        trafo = _normalize_twobytwo(block, p)
-        Bv = @view B[i:i+1, :]
-        T = trafo * Bv
-        for i in 1:nrows(T)
-          for j in 1:ncols(T)
-            Bv[i, j] = T[i, j]
-          end
-        end
-        #mul!(Bv, trafo, Bv)
+
+        @hassert :Lattice 2 D == B * G * transpose(B)
+        D, B = _normalize_twobytwo!(D, B, i, i+1, p, G)
       end
     end
   end
-  D = B * G * transpose(B)
+  @hassert :Lattice 2 D == B * G * transpose(B)
   return D, B
 end
 
@@ -1035,97 +930,113 @@ end
 #    """
 #    from sage.rings.all import polynomial_ring
 #    from sage.modules.free_module_element import vector
+_normalize_twobytwo(G, p) = _normalize_twobytwo!(deepcopy(G), one(G), 1, 2, p, G)[2]
 
-function _normalize_twobytwo(G, p)
-  # p = ZZRingElem(2)
-
-  R = base_ring(G)
-  B = identity_matrix(R, nrows(G))
+function _normalize_twobytwo!(D, B, i, j, p, G)
+  @assert j==i+1
+  @hassert :Lattice 2 D == B * G * transpose(B)
+  R = base_ring(D)
+  oneR = one(R)
   P, x = polynomial_ring(R, "x", cached = false)
-  odd1 = _val(G[1, 1], p) < _val(G[2, 1], p)
-  odd2 = _val(G[2, 2], p) < _val(G[2, 1], p)
+  scale_val = _val(D[i, j], p)
+  vali = _val(D[i, i], p)
+  valj = _val(D[j, j], p)
+  odd1 = vali < scale_val
+  odd2 = valj < scale_val
   if odd1 || odd2
     error("Not a valid 2 x 2 block.")
   end
-  scale = p^(_val(G[1, 2], p))
-  D = map_entries(d -> divexact(d, R(scale)), G) # G is symmetric
+  Rscale = R(p)^scale_val
+  #Dred = map_entries(d -> divexact(d, Rscale ), G) # G is symmetric
   # now D is of the form
   # [2a b ]
   # [b  2c]
-  # where b has valuation 1.
-  G = deepcopy(D)
-  # Make sure G[2, 2] has valuation 1.
-  if _val(D[2, 2], p) > _val(D[1, 1], p)
-    swap_cols!(B, 1, 2)
-    swap_cols!(D, 1, 2)
-    swap_rows!(D, 1, 2)
+  # where b has valuation scale_val.
+  # Make sure G[2, 2] has valuation scale_val+1.
+  @hassert :Lattice 2 D == B * G * transpose(B)
+  if valj > vali
+    swap_rows!(B, i, j)
+    swap_cols!(D, i, j)
+    swap_rows!(D, i, j)
+    vali, valj = valj, vali
   end
-  if _val(D[2, 2], p) != 1
+  @hassert :Lattice 2 D == B * G * transpose(B)
+  if valj != scale_val+1
     # this works because
-    # D[0, 0] has valuation at least 2
-    for j in 1:ncols(B)
-      B[2, j] = B[2, j] + B[1, j]
-    end
-    D = B * G * transpose(B)
+    # D[i, i] has valuation at least 2
+    add_row!(B, oneR, i, j)
+    add_row!(D, oneR, i, j, i:j)
+    add_column!(D, oneR, i, j, i:j)
   end
-  @assert _val(D[2, 2], p) == 1
-
-  if mod(lift(det(D)), 8) == 3
+  @hassert :Lattice 2 D == B * G * transpose(B)
+  @assert _val(D[j, j], p) == scale_val+1
+  udet = mod(lift(_unit_part(det(D[[i,j],[i,j]]),p)), 8)
+  if udet == 3
 #        #  in this case we can transform D to
 #        #  2 1
 #        #  1 2
 #        # Find a point of norm 2
 #        # solve: 2 == D[1,1]*x^2 + 2*D[1,0]*x + D[0,0]
-    pol = map_coefficients(y -> divexact(y, R(2)), D[2, 2]*x^2 + 2*D[2, 1]*x + D[1, 1] - 2, parent = parent(x))
+    a = divexact!(D[i,i], 2*Rscale)
+    b = divexact!(D[i,j], Rscale)
+    c = divexact!(D[j,j], 2*Rscale)
+    pol = c*x^2+b*x+a-1
     sol = roots(pol, p, valuation(modulus(base_ring(G)), p))[1][1]
-    @assert pol(sol) == 0
     #pol = divexact(D[2, 2]*x^2 + 2*D[2, 1]*x + D[1, 1] - 2, R(2))
     #sol = _solve_quadratic_dyadic(pol)
-    B[1, 2] = sol
-    D = B * G * transpose(B)
-    # make D[1, 2] = 1
-    for j in 1:ncols(B)
-      B[2, j] = B[2, j] * inv(D[2, 1])
-    end
-    D = B * G * transpose(B)
-
-    if D[2, 2] != 2
-      v = matrix(P, 1, 2, [x, -2*x + 1])
-      pol = map_coefficients(y -> divexact(y, R(2)), (v * change_base_ring(P, D) * transpose(v))[1, 1] - 2, parent = P)
+    add_row!(B, sol, j, i)
+    add_row!(D, sol, j, i, i:j)
+    add_column!(D, sol, j, i, i:j)
+    @hassert :Lattice 2 D == B * G * transpose(B)
+    c = inv(_unit_part(D[i,j],p))
+    multiply_row!(B, c, j)
+    D[i, j] = D[j,i] = Rscale
+    D[j,j] *= c^2
+    @hassert :Lattice 2 D == B * G * transpose(B)
+    if _unit_part(D[j, j], p) != 2
+      a = divexact!(D[i,i], 2*Rscale)
+      b = divexact!(D[i,j], Rscale)
+      c = divexact!(D[j,j], 2*Rscale)
+      pol = (a - 2*b + 4*c)*x^2 + (b - 4*c)*x + c - 1
       sol = roots(pol, p, valuation(modulus(R), p))[1][1]
-      for j in 1:ncols(B)
-        B[2, j] = sol * B[1, j] + (-2 * sol + 1) * B[2, j]
-      end
-      D = B * G * transpose(B)
+      a = sol
+      b = -2*sol + 1
+      multiply_row!(B, b, j)
+      add_row!(B, a, i, j)
+      D[j, j] = 2*Rscale
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
     # check the result
-    @assert D == matrix(R, 2, 2, [2, 1, 1, 2])
-  elseif mod(lift(det(D)), 8) == 7
+    @hassert :Lattice 2 D[i:j,i:j] == Rscale*matrix(R, 2, 2, [2, 1, 1, 2])
+  elseif udet == 7
     # in this case we can transform D to
     #  0 1
     #  1 0
     # Find a point representing 0
-    # solve: 0 == D[1,1]*x^2 + 2*D[1,0]*x + D[0,0]
-    pol = map_coefficients(y -> divexact(y, R(2)), D[2, 2]*x^2 + 2*D[2,1]*x + D[1,1], parent = P)
+    # solve: 0 == D[2,2]*x^2 + 2*D[2,1]*x + D[1,1]
+    a = divexact!(D[i,i], 2*Rscale)
+    b = divexact!(D[i,j], Rscale)
+    c = divexact!(D[j,j], 2*Rscale)
+    pol = c*x^2+b*x+a
     sol = roots(pol, p, valuation(modulus(R), p))[1][1]
-    for j in 1:ncols(B)
-      B[1, j] = B[1, j] + sol * B[2, j]
-    end
-    D = B * G * transpose(B)
+    add_row!(B, sol, j, i)
+    add_row!(D, sol, j, i,i:j)
+    add_column!(D, sol, j, i,i:j)
+    @hassert :Lattice 2 D == B * G * transpose(B)
+
     # make the second basis vector have 0 square as well.
-    for j in 1:ncols(B)
-      B[2, j] = B[2, j] - divexact(D[2, 2], 2 * D[1, 2]) * B[1, j]
-    end
-    D = B * G * transpose(B)
+    c = - divexact!(D[j, j], 2 * D[i, j])
+    add_row!(B, c, i, j)
     # rescale to get D[0,1] = 1
-    for j in 1:ncols(B)
-      B[1, j] = B[1, j] * inv(D[2, 1])
-    end
-    D = B * G * transpose(B)
+    c = inv(_unit_part(D[j,i],p))
+    multiply_row!(B, c, i)
+    D[i,j] = D[j,i] = Rscale
+    D[j,j] = 0
     # check the result
-    @assert D == matrix(R, 2, 2, [0, 1, 1, 0])
+    @hassert :Lattice 1 D[[i,j],[i,j]] == Rscale*matrix(R, 2, 2, [0, 1, 1, 0])
   end
-  return B
+  @hassert :Lattice 2 D == B * G * transpose(B)
+  return D, B
 end
 
 #def _normalize_odd_2x2(G):
@@ -1152,24 +1063,39 @@ end
 #        [1 0]
 #        [0 1]
 #    """
-function _normalize_odd_twobytwo(G, p)
-  @assert G[1, 1] == G[2, 2]
-  u = G[1, 1]
-  y = zero(base_ring(G))
-  while !_issquare(inv(u) - y^2, p)
+function _normalize_odd_twobytwo!(D, B, i, j, p, tmp)
+  @hassert :Lattice 1 D[i, i] == D[j, j]
+  @assert nrows(tmp) == 2
+  @assert ncols(tmp) == ncols(B)
+  if i>j
+    (i,j) = (j,i)
+  end
+  v = _val(D[i, i], p)
+  u = _unit_part(D[i, i],  p)
+  uinv = inv(u)
+  y = zero(base_ring(D))
+  while !_issquare(uinv - y^2, p)
     y = y + 1
   end
-  x = _sqrt(inv(u) - y^2, p)
-  B = identity_matrix(base_ring(G), nrows(G))
-  B[1, 1] = x
-  B[1, 2] = y
-  B[2, 1] = y
-  B[2, 2] = -x
+  x = _sqrt(uinv - y^2, p)
+  T = zero_matrix(base_ring(D), 2, 2)
+  T[1, 1] = x
+  T[1, 2] = y
+  T[2, 1] = y
+  T[2, 2] = -x
+  # do B
+  # work around the fact that flint views only work in a window
+  swap_rows!(B, 1, i)
+  swap_rows!(B, 2, j)
+  mul!(tmp, T, @view B[1:2,:])
+  B[1:2, :] = tmp
+  swap_rows!(B, 2, j)
+  swap_rows!(B, 1, i)
 
-  D = B * G * transpose(B)
-  # check the result
-  @assert D == matrix(base_ring(G), 2, 2, [1, 0, 0, 1])
-  return B
+  # change D accordingly
+  D[i, i] = p^v
+  D[j, j] = D[i, i]
+  return D, B
 end
 
 #    B = copy(G.parent().identity_matrix())
@@ -1236,16 +1162,23 @@ end
 #        [0 0 0 0 0 0 0 0 0 0 3 0]
 #        [0 0 0 0 0 0 0 0 0 0 0 7]
 #    """
-function _partial_normal_form_of_block(G, p)
-  D = deepcopy(G)
-  n = ncols(G)
-  B = identity_matrix(G, n) # transformation matrixj
+_partial_normal_form_of_block(G, p) = _partial_normal_form_of_block!(deepcopy(G) ,one(G), G, p)
+
+function _partial_normal_form_of_block!(D, B, G, p)
+  n = ncols(D)
   blocks = _get_small_block_indices(D)
+  v = _val(D[1,1], p)
+  R = base_ring(G)
+  if ncols(D) > 1
+    v = min(v, _val(D[1,2],p))
+  end
+  Rscale = R(p)^v
   # collect the indices of forms of types U, V and W
   U = Int[]
   V = Int[]
   W = Int[]
   for (i,ni) in blocks
+    @hassert :Lattice 2 D == B * G * transpose(B)
     if ni == 1
       push!(W, i)
     else
@@ -1257,20 +1190,16 @@ function _partial_normal_form_of_block(G, p)
     end
     if length(W) == 3
       # W W W transforms to W U or W V
-      #B[W, :] = _relations(D[W, W], 2, p) * B[W, :]
-      _BB = _relations(D[W, W], 2, p) * B[W, :]
-      for (j, l) in enumerate(W)
-        for ll in 1:ncols(B)
-          B[l, ll] = _BB[j, ll]
-        end
-      end
-      D = B * G * transpose(B)
+      @hassert :Lattice 2 D == B * G * transpose(B)
+      DW = D[W, W]
+      T = _relations(DW, 2, p)
+      B[W,:] = T * B[W, :]
+      D[W,W] = T * DW * transpose(T)
+      @hassert :Lattice 2 D == B * G * transpose(B)
       # identify if U or V
       a = W[2]
       b = W[3]
-      v = _val(D[a,b],p)
       if _val(D[a,a],p)== v+1 && _val(D[b,b],p) == v+1
-      #if mod(lift(_unit_part(det(D[W[2:end], W[2:end]]), p)), 8) == 3 # bug because computing the determinant requires higher precision
         append!(V, W[2:end])
       else
         append!(U, W[2:end])
@@ -1278,17 +1207,20 @@ function _partial_normal_form_of_block(G, p)
       W = Int[W[1]]
     end
     if length(V) == 4
-      B[V, :] = _relations(D[V, V], 3, p) * B[V, :]
+      T = _relations(D[V, V], 3, p)
+      B[V, :] = T * B[V, :]
+      D[V,V] = T * D[V,V] * transpose(T)
       append!(U, V)
       V = Int[]
-      D = B * G * transpose(B)
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
   end
   # put everything into the right order
   UVW = append!(copy(U), V)
   UVW = append!(UVW, W)
-  B = B[UVW, :]
-  D = B * G * transpose(B)
+  @hassert :Lattice 2 D == B * G * transpose(B)
+  B[:,:] = B[UVW, :]
+  D[:,:] = D[UVW,UVW]
   return D, B, length(W)
 end
 #def _relations(G,n):
@@ -1371,8 +1303,8 @@ function _relations(G, n, p)
   else
     error("Relation ($n) must be between 1 and 10")
   end
-  D, B1 = _normalize(B * G * transpose(B), p)
-  return B1 * B
+  D, B = _normalize!(B * G * transpose(B), B, G,  p)
+  return B
 end
 
 #def _two_adic_normal_forms(G, partial=False):
@@ -1387,10 +1319,12 @@ end
 #    OUTPUT:
 #
 #    - ``D``, ``B`` -- such that ``D = B * G * B.T``
-function _two_adic_normal_forms(G, p; partial = false)
+_two_adic_normal_forms(G, p; partial = false) = _two_adic_normal_forms!(deepcopy(G), one(G), G, p; partial)
+
+function _two_adic_normal_forms!(D, B, G, p; partial)
+  @hassert :Lattice 2   D == B * G * transpose(B)
   RR = base_ring(G)
-  B = identity_matrix(G, nrows(G))
-  h, scales = _get_homogeneous_block_indices(G, p)
+  h, scales = _get_homogeneous_block_indices(D, p)
   push!(h, ncols(B) + 1)
   # UVlist[k] is a list of indices of the block of scale p^k.
   # It contains the indices of the part of types U or V.
@@ -1402,12 +1336,14 @@ function _two_adic_normal_forms(G, p; partial = false)
     if k + scales[1] in scales
       i = findfirst(isequal(k + scales[1]), scales)
       @assert i !== nothing
-      Gk = G[h[i]:h[i+1]-1, h[i]:h[i+1]-1]
-      Dk, Bk, wk = _partial_normal_form_of_block(Gk, p)
-      B[h[i]:h[i+1]-1, :] = Bk * B[h[i]:h[i+1]-1, :]
+      Dk = @view D[h[i]:h[i+1]-1, h[i]:h[i+1]-1]
+      Bk = @view B[h[i]:h[i+1]-1,:]
+      Dk, Bk, wk = _partial_normal_form_of_block!(Dk, Bk, G, p)
+      @hassert :Lattice 2 D == B * G * transpose(B)
+      @hassert :Lattice 2 D[h[i]:h[i+1]-1, h[i]:h[i+1]-1] == Dk
       if !partial
-        Dk, B1k = _homogeneous_normal_form(Dk, wk, p)
-        B[h[i]:h[i+1]-1,:] = B1k * B[h[i]:h[i+1]-1, :]
+        _homogeneous_normal_form!(Dk,Bk, G, wk, p)
+        @hassert :Lattice 2   D == B * G * transpose(B)
       end
       push!(UVlist, collect(h[i]:(h[i + 1] - wk - 1)))
       push!(Wlist, collect((h[i + 1] - wk):h[i + 1] - 1))
@@ -1416,12 +1352,11 @@ function _two_adic_normal_forms(G, p; partial = false)
       push!(Wlist, Int[])
     end
   end
-  D = B * G * transpose(B)
+  @hassert :Lattice 2   D == B * G * transpose(B)
 
   if partial
     return D, B
   end
-
   # use relations descending in k
   # we never leave partial normal form
   # but the homogeneous normal form may be destroyed
@@ -1447,16 +1382,18 @@ function _two_adic_normal_forms(G, p; partial = false)
     if length(Wm) != 0
       if length(V) == 2
         R = append!([Wm[1]], V)
-        B[R, :] = _relations(D[R, R], 7, p) * B[R, :]
+        T = _relations(D[R, R], 7, p)
+        B[R, :] = T * B[R, :]
+        D[R,R] = T*D[R,R]*transpose(T)
         V = Int[]
-        D = B * G * transpose(B)
       end
       E = [RR(3), RR(7)]
       for w in W
         if _unit_part(D[w, w], p) in E
           R = [Wm[1], w]
-          B[R, :] = _relations(D[R, R], 6, p) * B[R, :]
-          D = B * G * transpose(B)
+          T = _relations(D[R, R], 6, p)
+          B[R, :] = T * B[R, :]
+          D[R,R] = T*D[R,R]*transpose(T)
         end
       end
     end
@@ -1479,50 +1416,54 @@ function _two_adic_normal_forms(G, p; partial = false)
         # relation 10 should be applied to 3 to stay in homogeneous normal form
         w = W[1]
       end
+      flag = false
       if length(UVm) > 0
         R = push!(UVm[end-1:end], w)
-        B[R,:] = _relations(D[R,R], 8, p) * B[R,:]
+        T = _relations(D[R,R], 8, p)
+        flag = true
       elseif length(Wmm) > 0
         R = push!([Wmm[1]], w)
-        B[R,:] = _relations(D[R,R],10,p) * B[R,:]
+        T = _relations(D[R,R],10,p)
+        flag = true
       elseif length(Wm) == 2
         e0 = _unit_part(D[Wm,Wm][1,1], p)
         e1 = _unit_part(D[Wm,Wm][2,2], p)
         if mod(lift(e1-e0),4) == 0
           R = push!(copy(Wm), w)
-          B[R,:] = _relations(D[R,R], 9, p) * B[R,:]
+          T = _relations(D[R,R], 9, p)
+          flag = true
         end
       end
-    end
-    D = B * G * transpose(B)
-    # condition a) - stay in homogeneous normal form
-    R = append!(copy(UV), W)
-    Dk = D[R,R]
-    _, Bk = _homogeneous_normal_form(Dk, length(W), p)
-    #B[R,:] = Bk * B[R,:]
-    _B = Bk * B[R, :]
-    for (l, i) in enumerate(R)
-      for j in 1:ncols(B)
-        B[i, j] = _B[l, j]
+      if flag
+        B[R,:] = T * B[R,:]
+        D[R,R] = T * D[R,R] * transpose(T)
       end
     end
-    D = B * G * transpose(B)
+    @hassert :Lattice 2 D == B * G * transpose(B)
+
+    # condition a) - stay in homogeneous normal form
+    R = append!(copy(UV), W)
+    if length(R) > 0
+      s = R[1]:R[end]
+      @assert s == R
+      Dk = view(D, s, s)
+      Bk = view(B, s, :)
+      _homogeneous_normal_form!(Dk, Bk, G, length(W), p)
+      @hassert :Lattice 2 D == B * G * transpose(B)
+    end
+
     # we need to restore the homogeneous normal form of  k-1
     if length(Wm) > 0
       R = append!(copy(UVm), Wm)
-      Dkm = D[R,R]
-      _, Bkm = _homogeneous_normal_form(Dkm, length(Wm), p)
-      #B[R,:] = Bkm * B[R,:]
-      BB = Bkm * B[R,:]
-      for (i, r) in enumerate(R)
-        for j in 1:ncols(B)
-          B[r, j] = BB[i, j]
-        end
-      end
-
-      D = B * G * transpose(B)
+      s = R[1]:R[end]
+      @assert s == R
+      Dk = view(D, s, s)
+      Bk = view(B, s, :)
+      _homogeneous_normal_form!(Dk, Bk, G, length(Wm), p)
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
   end
+  @hassert :Lattice 2 D == B * G * transpose(B)
   return D, B
 end
 
@@ -1534,3 +1475,74 @@ end
 
 _val(x::Nemo.ZZModRingElem, y::IntegerUnion) = iszero(x) ? inf : valuation(lift(x), y)
 
+
+################################################################################
+#
+#  Helper functions
+#
+################################################################################
+
+#    Return the minimal nonsquare modulo the prime `p`.
+function _min_nonsquare(p)
+  Rx, x = polynomial_ring(GF(p, cached = false), "x", cached = false)
+  for i in 1:p
+    if length(factor(x^2 - i)) == 1
+      return Int(i)
+    end
+  end
+  error("this can't be reached")
+end
+
+function _issquare(d::Union{zzModRingElem,ZZModRingElem}, p)
+  #@assert valuation(lift(d), p) == 0
+  dZ = lift(d)
+  if p == 2
+    return isone(dZ,8)
+  else
+    return isone(kronecker_symbol(dZ,p))
+  end
+end
+
+
+function _sqrt(d::Union{zzModRingElem,ZZModRingElem})
+  R = parent(d)
+  b, p, v = is_prime_power_with_data(R.n)
+  @assert b
+  return _sqrt(d, p, Int(v))
+end
+
+function _sqrt(d::Union{zzModRingElem,ZZModRingElem}, p)
+  R = parent(d)
+  v, p = is_perfect_power_with_data(R.n)
+  return _sqrt(d, Int(p), Int(v))
+end
+
+function _sqrt(d::ZZModRingElem, p::Int, prec::Int)
+  R = parent(d)
+  if  modulus(R) > typemax(Int)  # overflow danger
+    # slow fallback with many allocations
+    Rx, x = polynomial_ring(parent(d), "x", cached = false)
+    rts = roots(x^2 - d, ZZ(p), valuation(modulus(parent(d)), p))
+    r = rts[1][1]
+    @assert r^2 == d
+    return r
+  end
+  dZ = Int(lift(d))
+  rt = Nemo.sqrtmod_pk(dZ, p, prec)
+  return ZZModRingElem(rt, R)
+end
+
+function _sqrt(d::zzModRingElem, p::Int, prec::Int)
+  R = parent(d)
+  dZ = Int(lift(d))
+  rt = Nemo.sqrtmod_pk(dZ, p, prec)
+  return zzModRingElem(rt, R)
+end
+
+# slow hacky
+function roots(f::zzModPolyRingElem, p::ZZRingElem, e::Int)
+  R = coefficient_ring(f)
+  RZn,_ = residue_ring(ZZ, ZZ(modulus(R)); cached=false)
+  fZn = change_base_ring(RZn, f)
+  return Tuple{elem_type(R),Int}[(R(lift(i)),j) for (i,j) in roots(fZn, p, e)]
+end
