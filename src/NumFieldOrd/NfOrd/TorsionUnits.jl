@@ -302,7 +302,14 @@ function _torsion_group_order_divisor(K::AbsSimpleNumField)
     p = next_prime(p)
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
-    gp = Rpt(K.pol)
+    gp = try 
+      Rpt(K.pol)
+    catch e
+      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+        continue
+      end
+      rethrow(e)
+    end
 
     if degree(gp) != degree(K) || !is_squarefree(gp)
       continue

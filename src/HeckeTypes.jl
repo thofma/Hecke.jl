@@ -1395,31 +1395,32 @@ mutable struct FactorBaseSingleP{T}
   lf::Vector{T}
 
   function FactorBaseSingleP(p::Integer, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
-    Fpx = polynomial_ring(residue_ring(ZZ, UInt(p), cached=false)[1], "x", cached=false)[1]
+    Fp = residue_ring(ZZ, UInt(p), cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
-    return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
+    return FactorBaseSingleP(Fp, lp)
   end
 
   function FactorBaseSingleP(p::ZZRingElem, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}})
-    Fpx = polynomial_ring(residue_ring(ZZ, p, cached=false)[1], "x", cached=false)[1]
+    Fp = residue_ring(ZZ, p, cached=false)[1]
     O = order(lp[1][2])
     K = O.nf
-    return FactorBaseSingleP(Fpx(Globals.Zx(K.pol)), lp)
+    return FactorBaseSingleP(Fp, lp)
   end
 
-  function FactorBaseSingleP(fp::S, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}) where {S}
-    FB = new{S}()
+  function FactorBaseSingleP(Fp::S, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}) where {S}
+    FB = new{dense_poly_type(S)}()
     FB.lp = lp
-    p = characteristic(base_ring(fp))
+    p = characteristic(Fp)
     FB.P = p
     O = order(lp[1][2])
     K = O.nf
 
     if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !is_index_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
-      Fpx = parent(fp)
-      lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two)))))::S for P = lp]
+      Fpx = polynomial_ring(Fp, cached = false)[1]
+      fp = Fpx(Globals.Zx(K.pol))
+      lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two))))) for P = lp]
       FB.lf = lf
       FB.pt = FactorBase(Set(lf), check = false)
     end
