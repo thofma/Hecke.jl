@@ -347,16 +347,16 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
       p = next_prime(p)
       continue
     end
-    m = modular_lift(mp, me)*den
+    m = modular_lift(mp, me)
     if isone(pp)
       re = m
-      rf = mod_sym(ZK(re), p)
+      rf = mod_sym(ZK(re*den), p)
       pp = p
     else
       p2 = pp*p
       last = rf
       re = induce_inner_crt(re, m, pp*invmod(pp, p), p2, div(p2, 2))
-      rf = mod_sym(ZK(re), p2)
+      rf = mod_sym(ZK(re*den), p2)
       if rf == last
         return nf(ZK)(rf)//dB//den
       end
