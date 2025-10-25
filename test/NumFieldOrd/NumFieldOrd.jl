@@ -153,5 +153,35 @@ end
   @test p1 != p2
 end
 
+let # extend_easy for bad polynomials
+  Qx, x = QQ[:x]
+  f = x^2 - 1//47
+  k, _ = number_field(f; cached = false)
+  ok = maximal_order(k)
+  lp = prime_ideals_over(ok, 11)
+  F, mF = Hecke.ResidueFieldSmallDegree1(ok, lp[1])
+  mFF = Hecke.extend_easy(mF, k)
+  @test is_zero(mFF(k(uniformizer(lp[1]))))
+  @test !is_zero(mFF(k(uniformizer(lp[2]))))
+  for i in 1:10
+    a = rand(ok, -2:2)
+    @test mF(a) == mFF(k(a))
+    @test mFF(k(a)//3) == mF(a) * inv(F(3))
+  end
 
-
+  f = 8*x^3 + 4*x^2 - 1//3*x-1
+  k, _ = number_field(f; cached = false)
+  ok = maximal_order(k)
+  lp = prime_ideals_over(ok, 17)
+  P = only(P for P in lp if degree(P) == 1)
+  Q = only(P for P in lp if degree(P) != 1)
+  F, mF = Hecke.ResidueFieldSmallDegree1(ok, P)
+  mFF = Hecke.extend_easy(mF, k)
+  @test is_zero(mFF(k(uniformizer(P))))
+  @test !is_zero(mFF(k(uniformizer(Q))))
+  for i in 1:10
+    a = rand(ok, -2:2)
+    @test mF(a) == mFF(k(a))
+    @test mFF(k(a)//3) == mF(a) * inv(F(3))
+  end
+end

@@ -1074,7 +1074,17 @@ mutable struct NfToGFMor_easy <: Map{AbsSimpleNumField, fpField, HeckeMap, NfToG
   function NfToGFMor_easy(a::NfOrdToGFMor, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
-    r.defining_pol = a.poly_of_the_field
+    if isdefined(a, :poly_of_the_field)
+      r.defining_pol = a.poly_of_the_field
+    else
+      # this happens if the defining polynomial is not nice
+      rt = roots(r.Fq, defining_polynomial(k))
+      gk = gen(k)
+      d = denominator(gk, order(a.P))
+      fa = findall(x -> (gen(k)-lift(x))*d in a.P, rt)
+      @assert length(fa) == 1
+      r.defining_pol = polynomial(r.Fq, [-rt[fa[1]], r.Fq(1)])
+    end
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
     r.t = zero(parent(r.defining_pol))
