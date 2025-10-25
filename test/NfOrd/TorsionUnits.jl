@@ -34,6 +34,13 @@
       @test order(A) == (is_odd(d) ? 2d : d)
       b = f(A[1])
       @test is_one(b^order(A)) && all(i -> !is_one(b^i), 2:order(A)-1)
+
+      g = 10 * minpoly(a//17)
+      K, = number_field(g; cached = false)
+      A, f = torsion_unit_group(K)
+      @test order(A) == (is_odd(d) ? 2d : d)
+      b = f(A[1])
+      @test is_one(b^order(A)) && all(i -> !is_one(b^i), 2:order(A)-1)
     end
   end
 end
