@@ -121,20 +121,10 @@ is_split_with_zero_divisor(Q)
 K, sqrt2 = quadratic_field(2)
 #----------------------------------------------------------------------------
 
-fl, a = is_norm(K, 2);
+fl, b = is_norm(K, 2);
 #----------------------------------------------------------------------------
 
 fl
-#----------------------------------------------------------------------------
-
-# Since elements with given norm are in general large, they are represented in special "factored" form:
-
-a
-#----------------------------------------------------------------------------
-
-# We can turn this into an ordinary elements using `evaluate`:
-
-b = evaluate(a)
 #----------------------------------------------------------------------------
 
 norm(b) == 2
