@@ -1005,16 +1005,10 @@ function _solve_conic_affine(A, B, a)
     D = -B//A
     de = denominator(D)
     L, _ = number_field(z^2 - de^2 * D)
-    fl, _n = is_norm(L, a//(A) * de^2)
+    fl, n = is_norm(L, a//(A) * de^2)
 
     if !fl
       return false, zero(K), zero(K)
-    end
-
-    if L isa AbsSimpleNumField
-      n = evaluate(_n)
-    else
-      n = _n
     end
 
     @hassert :Lattice 1 norm(n) == a//(A) * de^2
@@ -1054,15 +1048,9 @@ function _solve_conic_affine(A, B, a, t)
     D = -B//A
     de = denominator(D)
     L, _ = number_field(z^2 - de^2 * D)
-    fl, _n = is_norm(L, a//(A) * de^2)
+    fl, n = is_norm(L, a//(A) * de^2)
 
     @hassert :Lattice 1 fl
-
-    if L isa AbsSimpleNumField
-      n = evaluate(_n)
-    else
-      n = _n
-    end
 
     @hassert :Lattice 1 norm(n) == a//(A) * de^2
 
