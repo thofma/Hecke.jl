@@ -58,13 +58,9 @@ is_split_with_zero_divisor(Q)
 
 K, sqrt2 = quadratic_field(2)
 
-fl, a = is_norm(K, 2);
+fl, b = is_norm(K, 2);
 
 fl
-
-a
-
-b = evaluate(a)
 
 norm(b) == 2
 
