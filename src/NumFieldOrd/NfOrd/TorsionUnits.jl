@@ -298,11 +298,19 @@ function _torsion_group_order_divisor(K::AbsSimpleNumField)
   end
   threshold = 5*degree(K)
 
+  f = defining_polynomial(K)
+  d = denominator(f)
+
   while true
     p = next_prime(p)
+
+    if is_divisible_by(d, p)
+      continue
+    end
+
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
-    gp = Rpt(K.pol)
+    gp = Rpt(f)
 
     if degree(gp) != degree(K) || !is_squarefree(gp)
       continue
