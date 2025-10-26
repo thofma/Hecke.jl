@@ -591,6 +591,7 @@ end
 # If flag == true, then v is the center of the automorphism group
 # If flag == false, then v is contained in the center
 function _automorphisms_center(K::AbsSimpleNumField)
+  @assert is_defining_polynomial_nice(K)
   auts = morphism_type(K)[id_hom(K)]
   p = 2
   dp = denominator(K.pol)

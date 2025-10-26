@@ -66,7 +66,7 @@ function _induce_action_p(lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, Ab
   prm = Tuple{Int, Int}[]
   p = minimum(lp[1], copy = false)
 
-  if length(lp) < 3 || is_index_divisor(O, p) || !fits(Int, p)
+  if !is_defining_polynomial_nice(K) || length(lp) < 3 || is_index_divisor(O, p) || !fits(Int, p)
     #TODO: Put some more thought. At least, do not check ideals that have already been found!
     found = falses(length(lp))
     for (i, P) in enumerate(lp)
