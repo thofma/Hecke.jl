@@ -393,7 +393,7 @@ end
 function (T::TorQuadModule)(v::Vector{QQFieldElem})
   @req length(v) == degree(cover(T)) "Vector of wrong length"
   vv = matrix(QQ, 1, length(v), v)
-  vv = change_base_ring(ZZ, solve(basis_matrix(cover(T)), vv; side = :left))
+  vv = change_base_ring(ZZ, solve(_solve_init(cover(T)), vv; side = :left))
   return T(abelian_group(T)(vv * T.proj))
 end
 
@@ -1566,10 +1566,8 @@ end
 
 Return true if the underlying bilinear form is degenerate.
 """
-function is_degenerate(T::TorQuadModule)
-  return get_attribute!(T,:is_degenerate) do
-    return order(orthogonal_submodule(T,T)[1]) != 1
-  end
+@attr Bool function is_degenerate(T::TorQuadModule)
+  return order(orthogonal_submodule(T,T)[1]) != 1
 end
 
 @doc raw"""
@@ -1578,7 +1576,7 @@ end
 Return whether `T` is semi-regular, that is its quadratic radical is trivial
 (see [`radical_quadratic`](@ref)).
 """
-is_semi_regular(T::TorQuadModule) = is_trivial(abelian_group(radical_quadratic(T)[1]))
+@attr Bool is_semi_regular(T::TorQuadModule) = is_trivial(abelian_group(radical_quadratic(T)[1]))
 
 @doc raw"""
     radical_bilinear(T::TorQuadModule) -> TorQuadModule, TorQuadModuleMap
