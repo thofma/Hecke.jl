@@ -327,4 +327,13 @@ end
     O = maximal_order(K)
     @test class_number(O) == 1
   end
+
+  let
+    # factor base for bad polynomials
+    QQx, x = QQ[:x]
+    f = 3*x^2 - 1//47
+    k, _ = number_field(f; cached = false)
+    B = Hecke.NfFactorBase(lll(maximal_order(k)), 50; complete = false, degree_limit = 0)
+    @test length(B.fb) == 10
+  end
 end

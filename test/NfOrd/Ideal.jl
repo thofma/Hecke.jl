@@ -359,7 +359,7 @@
     @test is_subset(2*O, 1*O)
     @test !is_subset(1*O, 2*O)
   end
-  
+
   # lll
   let
     R, x = polynomial_ring(QQ, :x)
@@ -370,4 +370,18 @@
   end
 
   include("Ideal/Prime.jl")
+
+  let # simplify with evil defining polynomials
+    QQx, x = QQ[:x]
+    f = x^2 + 1//45
+    for i in 1:10
+      k, _ = number_field(f; cached = false)
+      ok = maximal_order(k)
+      P, = prime_ideals_over(ok, 3)
+      Q, = prime_ideals_over(ok, 5)
+      I = P * Q
+      II = simplify(I)
+      @test I == II
+    end
+  end
 end

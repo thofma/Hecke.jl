@@ -12,7 +12,7 @@
 
 export big_period_matrix, small_period_matrix
 
-
+#Computes a big period matrix for the Riemann surface.
 function big_period_matrix(RS::RiemannSurface)
   
   if isdefined(RS, :big_period_matrix)
@@ -33,6 +33,7 @@ function big_period_matrix(RS::RiemannSurface)
     gauss_legendre_path_parameters(disc_points_low_precision, path, RS.extra_error)
   end
   
+  #Compute the integration parameters r for all of the paths.
   int_parameters = ArbFieldElem[]
   for path in paths 
     if path_type(path) == 0
@@ -80,8 +81,12 @@ function big_period_matrix(RS::RiemannSurface)
   differentials = RS.differential_form_data[1]
 
   v = embedding(RS)
+  # Random precision. Probably needs to become a heuristic.
   max_prec = 187
   embedded_differentials = [embed_mpoly(g, v, max_prec) for g in differentials]
+
+  # Computed the bound M for every path. The bound M is the maximum value of
+  # the integrands along the boundary of the ellipse with radius r. 
 
   bound_temp = []
   for path in paths
@@ -97,6 +102,9 @@ function big_period_matrix(RS::RiemannSurface)
   #Maybe change error value.
   #Change max_prec
 
+ # Compute integration schemes. The number of abscissae N depends on r and M. 
+ # The goal is to minimize the size of N. r has strong influence on the size of N while the
+ # contribution of M is logarithmic. 
   RS.integration_schemes = [IntegrationScheme(r, max_prec, RS.extra_error, bound) for r in int_group_rs ]
 
   f = embed_mpoly(defining_polynomial(RS), v, max_prec)
@@ -108,9 +116,14 @@ function big_period_matrix(RS::RiemannSurface)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   m = degree(f, 2)
 
-  # Copied from monodromy representation to compute the monodromy representation
+  # Copied from monodromy_representation to compute the monodromy representation
   # we just computed while computing periods. 
   # There is probably a more clever way to avoid doubling code.
+
+  # The difference between this and the monodromy code is that
+  # we compute the integrals during analytic continuation here
+  # and that we use the Ns determined by the integration scheme.
+  # If we are only interested in the monodromy we need far less.
   s_m = SymmetricGroup(m)
 
   for path in paths
@@ -129,8 +142,13 @@ function big_period_matrix(RS::RiemannSurface)
       N = length(abscissae)
 			An = analytic_continuation(RS, subpath, abscissae, ys)[2:end]
 			
+      # For every path, we compute the integrals for all g differential forms
+      # at all m sheets at the same time.
 			if path_type(subpath) == 0
 				for i in (1:N)
+          # For every abscissa we compute the value of the function at that 
+          # point, multiply it with the correct weight and add it to the
+          # intrgral.
 					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials, An[i][1],An[i][2])
 					integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
           integral_matrix_contribution *= integration_scheme.weights[i]
@@ -143,6 +161,7 @@ function big_period_matrix(RS::RiemannSurface)
         for i in (1:N)
 					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials,An[i][1],An[i][2])
           integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
+          # For arcs and circles we need to multiply with an additional dx.
           integral_matrix_contribution *= integration_scheme.weights[i] * evaluate_d(path, abscissae[i])
 					path_difference_matrix += integral_matrix_contribution
 				end
@@ -150,7 +169,7 @@ function big_period_matrix(RS::RiemannSurface)
 			end
       ys = An[end][2]
 
-        # Copied from monodromy representation to compute the monodromy representation
+        # Copied from monodromy_representation to compute the monodromy representation
         # we just computed while computing periods. 
        # There is probably a more clever way to avoid doubling code.
       path_perm = sortperm(An[end][2], lt = sheet_ordering)
@@ -159,7 +178,7 @@ function big_period_matrix(RS::RiemannSurface)
     path.integral_matrix = integral_matrix
 	end
 
-  # Copied from monodromy representation to compute the monodromy representation
+  # Copied from monodromy_representation to compute the monodromy representation
   # we just computed while computing periods. 
   # There is probably a more clever way to avoid doubling code.
 
@@ -189,6 +208,8 @@ function big_period_matrix(RS::RiemannSurface)
 
  
 
+  # Here we add the computed integrals together when moving along a chain
+  # of paths corresponding to an element of the monodromy representation.
   chain_integrals = []
   for mon in mon_rep
     chain = mon[1]
@@ -199,20 +220,31 @@ function big_period_matrix(RS::RiemannSurface)
     
     for k in (1:chain_length)
       path = chain[k]
+      # Sheets are permuted after moving along path, so we need to add a
+      # permuted matrix.
       chain_integral += inv(sigma) * path.integral_matrix
       sigma *= permutation(path)
     end
     push!(chain_integrals, chain_integral)
   end
 
+  # The pre-period matrix is the matrix computed using the 2g + m - 1 cycles
+  # computed by homology_basis. We will later normalize this using the matrix S
+  # computed in homology_basis so that the first 2g cycles actually form
+  # a homology basis and we get a proper perios matrix.
   pre_period_matrix = Vector{AcbFieldElem}[]
+
+  #For all 2g + m - 1 cycles we compute the integrals of the g differential
+  #forms.
   for cycle in cycles
 		
 		cycle_integral = [zero(Cc) for x in 1:g]
 		l = 1
 		while l < length(cycle)
+      #Identify sheet we end up in after moving along the chain.
 			sheet = cycle[l]
 			while sheet != cycle[l+2]
+        # Add the correct contribution based on the sheet we are in.
 				cycle_integral += chain_integrals[cycle[l+1]][sheet,:]
 				sheet = mon_rep[cycle[l+1]][2][sheet]
 			end
@@ -221,16 +253,16 @@ function big_period_matrix(RS::RiemannSurface)
 		push!(pre_period_matrix, cycle_integral)
 	end
 
+  #Use symmetric transform S to normalize the polarization
 	PMAPMB = sym_transform * matrix(pre_period_matrix)
 
+  # Cut of the first 2g columns to get the actual period matrix.
 	big_period_matrix = transpose(PMAPMB[1:2*g,:])
   RS.big_period_matrix = big_period_matrix
   return big_period_matrix
 end
 
-#We use the convention that  
-#[0  1]
-#[-1 0] defines a polarization.
+#Compute the small period matrix. 
 function small_period_matrix(RS::RiemannSurface)
   if isdefined(RS, :small_period_matrix)
     return RS.small_period_matrix
@@ -244,6 +276,9 @@ function small_period_matrix(RS::RiemannSurface)
   return small_period_matrix
 end
 
+# Computes the bound M for every path. The bound M is the maximum value of
+# the integrands along the boundary of the ellipse with radius r. 
+# (Cf. Neurohr's thesis 4.7.2, page 87 - 88)
 function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurface)
   
   num_of_int_groups = length(int_group_rs)

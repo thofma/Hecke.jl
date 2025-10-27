@@ -213,10 +213,24 @@ function _automorphism_group_generic(K::AbsSimpleNumField)
   while mod(d, p) == 0
     p = next_prime(p)
   end
-  R = Native.GF(p, cached = false)
-  Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
-  pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
+  local pols
+  local fmod
+  while true
+    try
+      R = Native.GF(p, cached = false)
+      Rx, x = polynomial_ring(R, "x", cached = false)
+      fmod = Rx(K.pol)
+      pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
+      break
+    catch e
+      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+        p = next_prime(p)
+        continue
+      end
+      rethrow(e)
+    end
+  end
+
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)

@@ -14,12 +14,21 @@ export IntegrationScheme
 
 export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points, gauss_legendre_path_parameters
 
-
-
+  # An integration scheme
+  # consists of a list of abscissae, weights and a bunch of parameters. 
+  # Every path we integrate over gets assigned one of these integrations 
+  # schemes. Currently all integration schemes are Gauss-Legendre integration
+  # schemes. If we alow for different types of integration later on, we can
+  # extend this struct to also include those.
 mutable struct IntegrationScheme
 
   abscissae::Vector{ArbFieldElem}
   weights::Vector{ArbFieldElem}
+  
+ # r has strong influence on the size of N while the contribution of M is 
+ # merely logarithmic. So, in order to minimize N the priority is to
+ # maximize r such that M is still decent. 
+
   int_param_r::ArbFieldElem
   int_param_N::Int
   bounds::Vector{ArbFieldElem}
@@ -49,6 +58,7 @@ end
 #
 ################################################################################
 
+#Use arb to compute the abscissae and the weights.(Cf. Neurohr's thesis 3.2.2)
 function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
   
   Rc = ArbField(prec)
@@ -79,6 +89,8 @@ function gauss_legendre_parameters(r, error, bound = 10^5)
   return N
 end
 
+# Compute the parameters for the integration scheme for every path
+# based on the error bound we allow.
 function gauss_legendre_path_parameters(points, path::CPath, err)
 
   if path_type(path) == 0
@@ -93,6 +105,8 @@ function gauss_legendre_path_parameters(points, path::CPath, err)
   end
 end
 
+# Check if it is more efficient to split a line into two segments. 
+# (Cf. Neurohr 4.7.5)
 function split_line_segment(points, path::CPath, err)
   if !isdefined(path, :int_param_r)
     set_int_param_r(path, gauss_legendre_line_parameters(points, path))
@@ -131,6 +145,15 @@ function split_line_segment(points, path::CPath, err)
   return paths
 end
 
+# The following functions have the same purpose.
+# Given a set of points P. we compute the parameter r0 for the given path gamma. 
+# The parameter r_0 is the biggest radius smaller than 5 such that
+# none of the points in P are in the interior of gamma(E_r0). 
+# Here, E_r0 = {z in C : |z-1| + |z+1| = 2cosh(r0)}. The path we integrate over
+# corresponds to the interval [-1, 1] in E_r0). Usually P will
+# consist of the ramification points and the singular points.
+
+
 function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
@@ -150,6 +173,7 @@ function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPat
     @req r_p > 1 "Error in computation of r_p"
     if r_p < r_0
       r_0 = r_p
+      #The t_p is stored with the path
       set_t_of_closest_d_point(path, t_p)
     end
   end
@@ -163,6 +187,7 @@ function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPat
   
 end
 
+# Compute the parameter r0 for the given arc. 
 function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
@@ -209,6 +234,7 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
   
 end
 
+# Compute the parameter r0 for the given circle.
 function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
@@ -253,6 +279,8 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
   
 end
 
+# Compute the abscissae and the weights for Gauss-Chebyshev integration.
+# I don't think this is used anywhere right now.
 function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
   Rc = ArbField(prec)
   pi_N12 = const_pi(Rc)//(2*N)
@@ -270,6 +298,8 @@ function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: In
   return abscissae, fill(const_pi(Rc)//(N), N)  
 end
 
+# Compute the abscissae and the weights for the tanh_sinh quadrature
+# I don't think this is used anywhere right now.
 function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::ArbFieldElem = const_pi(parent(h))//2) where T <: IntegerUnion
   Rc = parent(h)
   N = Int(N)

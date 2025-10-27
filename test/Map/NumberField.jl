@@ -106,3 +106,13 @@ end
   @test G === GG && mG === mGG
 end
 
+# #2048
+let
+  Qx, x = QQ[:x]
+  f = x^4 - 1//6*x^3 - 1//3*x^2 + 2//15*x - 8//13
+  k, _ = Hecke.number_field(f)
+  a = automorphism_list(k)
+  G, = automorphism_group(k)
+  @test length(a) == 1
+  @test order(G) == 1
+end
