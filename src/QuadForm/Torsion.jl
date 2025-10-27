@@ -153,9 +153,14 @@ Gram matrix quadratic form:
 @attr TorQuadModule function discriminant_group(L::ZZLat)
   @req is_integral(L) "The lattice must be integral"
   if rank(L) == 0
-    T = torsion_quadratic_module(dual(L), L; modulus = one(QQ), modulus_qf = QQ(2))
+    T = torsion_quadratic_module(dual(L), L; modulus = one(QQ), modulus_qf = QQ(2), check=false)
   else
-    T = torsion_quadratic_module(dual(L), L)
+    if iseven(L)
+      modulus_qf = QQ(2)
+    else
+      modulus_qf = QQ(1)
+    end
+    T = torsion_quadratic_module(dual(L), L; modulus=one(QQ), modulus_qf)
   end
   set_attribute!(T, :is_degenerate => false)
   return T
@@ -290,17 +295,21 @@ function gram_matrix_quadratic(T::TorQuadModule)
   if isdefined(T, :gram_matrix_quadratic)
     return T.gram_matrix_quadratic
   end
-  g = gens(T)
-  r = length(g)
-  G = zero_matrix(QQ, r, r)
+  r = ngens(T)
+  V = ambient_space(cover(T))
+  G = gram_matrix(V)
+  r1 = value_module(T)
+  r2 = value_module_quadratic_form(T)
+  H = T.gens_lift_mat*G*transpose(T.gens_lift_mat)
   for i in 1:r
-    for j in 1:(i - 1)
-      G[i, j] = G[j, i] = lift(g[i] * g[j])
+    H[i,i] = lift(r2(H[i,i]))
+    for j in 1:(i-1)
+      H[i,j] = H[j,i] = lift(r1(H[i,j]))
     end
-    G[i, i] = lift(quadratic_product(g[i]))
   end
-  T.gram_matrix_quadratic = G
-  return G
+
+  T.gram_matrix_quadratic = H
+  return H
 end
 
 ################################################################################
@@ -388,6 +397,13 @@ function (T::TorQuadModule)(v::Vector)
     error("Cannot coerce elements to the rationals")
   end
   return T(vv::Vector{QQFieldElem})
+end
+
+function (T::TorQuadModule)(v::QQMatrix)
+  @req ncols(v) == degree(cover(T)) "matrix of wrong length"
+  @req nrows(v) == 1 "matrix of wrong length"
+  vv = change_base_ring(ZZ, solve(_solve_init(cover(T)), vv; side = :left))
+  return T(abelian_group(T)(vv * T.proj))
 end
 
 function (T::TorQuadModule)(v::Vector{QQFieldElem})
@@ -1457,6 +1473,18 @@ function sub(T::TorQuadModule, gens::Vector{TorQuadModuleElem})
   return S, inclusion
 end
 
+function _sub(T::TorQuadModule, _gens_mat::QQMatrix)
+  V = ambient_space(T.cover)
+  gens_new = [basis_matrix(T.rels); _gens_mat]::QQMatrix
+  cover = lattice(V, gens_new; isbasis = false)
+  S = torsion_quadratic_module(cover, T.rels;
+                               modulus=modulus_bilinear_form(T),
+                               modulus_qf=modulus_quadratic_form(T),
+                               check=false)
+  inclusion = hom(S, T, T.(S.gens_lift); check=false)
+  return S, inclusion
+end
+
 @doc raw"""
     torsion_quadratic_module(q::QQMatrix) -> TorQuadModule
 
@@ -1541,25 +1569,32 @@ primary_part(T::TorQuadModule,m::Int) = primary_part(T,ZZ(m))
 
 Return the orthogonal submodule to the submodule `S` of `T`.
 """
-function orthogonal_submodule(T::TorQuadModule, S::TorQuadModule)
-  @assert is_sublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
+function orthogonal_submodule(T::TorQuadModule, S::TorQuadModule; check=true)
+  check && @assert is_sublattice(cover(T), cover(S)) "The second argument is not a submodule of the first argument"
+  K = _orthogonal_submodule_raw(T, S)
+  ortho = K * T.gens_lift_mat
+  return _sub(T, ortho)
+end
+
+function _orthogonal_submodule_raw(T::TorQuadModule, S::TorQuadModule;check=true)
   V = ambient_space(cover(T))
   G = gram_matrix(V)
-  B = basis_matrix(cover(T))
-  C = basis_matrix(cover(S))
-  m = modulus_bilinear_form(T)
-  Y = B * G * transpose(C)
-  # Elements of the ambient module which pair integrally with cover(T)
-  integral = inv(Y) * B
-  # Element of the ambient module which pair in mZZ with cover(T)
-  orthogonal =  m * integral
-  # We have to make sure we get a submodule
-  ortho = intersect(lattice(V, B), lattice(V, orthogonal))
-  Borth = basis_matrix(ortho)
-  gens_orth = [T(vec(collect(Borth[i:i,:]))) for i in 1:nrows(Borth)]
-  filter!(!iszero, gens_orth)
-  return sub(T, gens_orth)
+  m = modulus_bilinear_form(T)*exponent(T)
+  R,_ = residue_ring(ZZ, ZZ(m); cached=false)
+  GG = T.gens_lift_mat * G * transpose(S.gens_lift_mat)
+  mul!(GG, m)
+  Y = map_entries(i->R(numerator(i)), GG)
+  K = kernel(Y; side=:left)
+  A = [order(i) for i in gens(T)]
+  Kz = lift(K)
+  for j in 1:ncols(K)
+    Kz[:,j:j] = reduce_mod(Kz[:,j:j], A[j])
+  end
+  k = [i for i in 1:nrows(Kz) if !is_zero_row(Kz,i)]
+  Kz = Kz[k,:]
+  return Kz
 end
+
 
 @doc raw"""
     is_degenerate(T::TorQuadModule) -> Bool
@@ -1567,7 +1602,14 @@ end
 Return true if the underlying bilinear form is degenerate.
 """
 @attr Bool function is_degenerate(T::TorQuadModule)
-  return order(orthogonal_submodule(T,T)[1]) != 1
+  if is_snf(T) || T.is_normal
+    K = _orthogonal_submodule_raw(T, T)
+    return !iszero(K)
+  else
+    Kb,_ = orthogonal_submodule(T,T)
+    return !isone(order(Kb))
+  end
+
 end
 
 @doc raw"""
@@ -1576,7 +1618,9 @@ end
 Return whether `T` is semi-regular, that is its quadratic radical is trivial
 (see [`radical_quadratic`](@ref)).
 """
-@attr Bool is_semi_regular(T::TorQuadModule) = is_trivial(abelian_group(radical_quadratic(T)[1]))
+@attr Bool function is_semi_regular(T::TorQuadModule)
+  return is_trivial(abelian_group(radical_quadratic(T)[1]))
+end
 
 @doc raw"""
     radical_bilinear(T::TorQuadModule) -> TorQuadModule, TorQuadModuleMap
@@ -1584,7 +1628,7 @@ Return whether `T` is semi-regular, that is its quadratic radical is trivial
 Return the radical `\{x \in T | b(x,T) = 0\}` of the bilinear form `b` on `T`.
 """
 function radical_bilinear(T::TorQuadModule)
-  return orthogonal_submodule(T,T)
+  return orthogonal_submodule(T, T)
 end
 
 @doc raw"""
@@ -1599,13 +1643,10 @@ function radical_quadratic(T::TorQuadModule)
   F = Native.GF(2; cached=false)
   G2 = matrix(F, nrows(G), 1, F.(diagonal(G)))
   kermat = kernel(G2, side = :left)
-  kermat = lift(kermat)
-  g = gens(Kb)
-  n = length(g)
-  kergen = TorQuadModuleElem[sum(kermat[i,j]*g[j] for j in 1:n) for i in 1:nrows(kermat)]
-  append!(kergen, TorQuadModuleElem[2*i for i in g])
-  Kq, iq = sub(Kb,kergen)
-  @assert iszero(gram_matrix_quadratic(Kq))
+  kermatZ = lift(kermat)*Kb.gens_lift_mat
+  kermatZ = vcat(kermatZ, 2*Kb.gens_lift_mat)
+  Kq, iq = _sub(Kb, kermatZ)
+  @hassert :Lattice 1 iszero(gram_matrix_quadratic(Kq))
   return Kq, compose(iq,ib)
 end
 
@@ -1621,8 +1662,8 @@ function rescale(T::TorQuadModule, k::RingElement)
   @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
   V = rescale(ambient_space(C), k)
-  M = lattice(V, basis_matrix(C))
-  N = lattice(V, basis_matrix(T.rels))
+  M = lattice(V, basis_matrix(C); check=false, isbasis=true)
+  N = lattice(V, basis_matrix(T.rels); check=false, isbasis=true)
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
   return torsion_quadratic_module(M, N; gens = gene,
                                         modulus = abs(k)*modulus_bilinear_form(T),
@@ -1646,7 +1687,7 @@ function normal_form(T::TorQuadModule; partial=false)
   if is_degenerate(T)
     K, _ = radical_quadratic(T)
     N = torsion_quadratic_module(cover(T), cover(K); modulus=modulus_bilinear_form(T), modulus_qf=modulus_quadratic_form(T))
-    i = hom(T, N, TorQuadModuleElem[N(lift(g)) for g in gens(T)])
+    i = hom(T, N, TorQuadModuleElem[N(lift(g)) for g in gens(T)]; check=false)
   else
     N = T
     i = id_hom(T)

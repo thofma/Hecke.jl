@@ -480,6 +480,7 @@ function _is_direct_summand_with_data_even(S1::ZZLocalGenus, S2::ZZLocalGenus)
     s = sym2[l]
     if s[1] == b[1]
       b[2] -= s[2]
+      b[2]< 0 && return false, ZZLocalGenus[]
       b[3] = 1
       iszero(b[4]) && !iszero(s[4]) && return false, ZZLocalGenus[]
       l = l+1
@@ -529,6 +530,7 @@ function _is_direct_summand_with_data_odd(S1::ZZLocalGenus, S2::ZZLocalGenus)
     s = sym2[l]
     if s[1] == b[1]
       b[2] -= s[2]
+      b[2]< 0 && return false, ZZLocalGenus[]
       b[3] *= s[3]
       l = l+1
     elseif s[1] < b[1]
