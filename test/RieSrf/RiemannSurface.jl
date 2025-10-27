@@ -20,6 +20,6 @@
   # the same but different
   f = x^3-1 - y^2
   RS = RiemannSurface(f, v)
-  @test_broken small_period_matrix(RS)
+  small_period_matrix(RS)
 
 end
