@@ -18,7 +18,7 @@
   @test contains(x, tau[1,1])
 
   # another elliptic curve
-  @test_broken f = x^3 + 2*x^2*y + 3*x - 4 + 5*y^2 # Redefining Kxy helps somehow
+  @test_broken f = x^3 + 2*x^2*y + 3*x - 4 + 5*y^2 # Redefining Kxy helps somehow? I don't understand what is going on here ...
   Kxy, (x,y) = polynomial_ring(K, ["x","y"])
   f = x^3 + 2*x^2*y + 3*x - 4 + 5*y^2
   RS = RiemannSurface(f, v)
