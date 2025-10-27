@@ -182,6 +182,19 @@
   @test Hecke._standard_mass(h3) ==  9//16
   @test direct_sum(g3,h3)==direct_sum(h3,g3)
 
+  @test Hecke.is_direct_summand_with_data(g3,g3)[1]
+
+  for g in genera((1,3),120)
+    for h in genera((2,2),40)
+      gh = g+h
+      @test g in gh - h
+      @test h in gh - g
+      @test all(gh == i + h for i in gh-h)
+    end
+  end
+
+
+
 
   # These examples are taken from Table 2 of [CS1988]_::
 
