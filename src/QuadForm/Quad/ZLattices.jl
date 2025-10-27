@@ -158,10 +158,10 @@ function rescale(L::ZZLat, r::RationalUnion)
     R.gram_matrix = r*L.gram_matrix
   end
   if isdefined(L,:scale)
-    R.scale = r*L.norm
+    R.scale = abs(r)*L.scale
   end
   if isdefined(L,:norm)
-    R.norm = r*L.norm
+    R.norm = abs(r)*L.norm
   end
   return R
 end
@@ -667,7 +667,7 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
      return false, basis_matrix(M)
    end
 
-   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
+   hassol, _rels = can_solve_with_solution(_solve_init(M), basis_matrix(N); side=:left)
 
    if !hassol || !isone(denominator(_rels))
      return false, basis_matrix(M)
@@ -1739,6 +1739,11 @@ function Base.in(v::Vector, L::ZZLat)
   return V in L
 end
 
+@attr AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix} function _solve_init(L::ZZLat)
+  return solve_init(basis_matrix(L))
+end
+
+
 @doc raw"""
     Base.in(v::QQMatrix, L::ZZLat) -> Bool
 
@@ -1747,8 +1752,7 @@ Return whether the row span of `v` lies in the lattice `L`.
 function Base.in(v::QQMatrix, L::ZZLat)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   @req nrows(v) == 1 "Must be a row vector."
-  B = basis_matrix(L)
-  fl, w = can_solve_with_solution(B, v; side=:left)
+  fl, w = can_solve_with_solution(_solve_init(L), v; side=:left)
   return fl && isone(denominator(w))
 end
 

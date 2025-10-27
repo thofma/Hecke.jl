@@ -180,22 +180,25 @@ end
 function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial::Bool = false)
   _G = G
   dd = denominator(G)
-  G0 = change_base_ring(ZZ, dd * G)
+  dp, du = ppio(dd,p)
+  _G0 = change_base_ring(ZZ, dd * G)
   d = valuation(dd, p)
   n = nrows(G)
-  r = rank(G0)
+  r = rank(_G0)
 
   if r == 0
     return (zero_matrix(QQ, n, n), zero_matrix(QQ, n, n))::Tuple{QQMatrix, QQMatrix}
   end
 
   if r != n
-    _, U = hnf_with_transform(G0)
+    _, U = hnf_with_transform(_G0)
     _ker = U[(r + 1):n, :]
     _nondeg = U[1:r, :]
-    G0 = _nondeg * G0 * transpose(_nondeg)
+    G0 = _nondeg * _G0 * transpose(_nondeg)
     ker = change_base_ring(QQ, _ker)
     nondeg = change_base_ring(QQ, _nondeg)
+  else
+    G0 = _G0
   end
   # continue with the non-degenerate part
 
@@ -203,14 +206,11 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
   if prec == -1
     prec = valuation(det(G0)::ZZRingElem, p) + 4
   end
-
   modu = p^prec
   R = residue_ring(ZZ, modu, cached = false)[1]
-  Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), G0) # this will probably fail
-
+  Gmod = inv(R(du))*R.(G0)
 
   # the transformation matrix is called B
-
   D = deepcopy(Gmod)
   B  = one(D)
   if p == 2
@@ -230,17 +230,16 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
     D, B = _two_adic_normal_forms!(D, B, Gmod, p, partial = partial)
   end
   @hassert :Lattice 1 B * Gmod * transpose(B) == D
-
   # assemble the result
   if r!=n
-    __nondeg = B*map_entries(x -> R(numerator(x)), nondeg)
-    B = vcat(__nondeg, map_entries(x -> R(numerator(x)), ker))
+    __nondeg = B*_nondeg
+    B = vcat(__nondeg, R.(_ker))
     D = diagonal_matrix([D, zero_matrix(base_ring(D), nrows(ker), nrows(ker))])
   end
   @hassert :Lattice 1 begin
-    _Gmod = map(q -> R(invmod(denominator(q), modu) * numerator(q)), p^d*_G)
+    _Gmod = inv(R(du))*R.(G0)
     if p == 2
-      B * _Gmod * transpose(B) == diagonal_matrix(collect_small_blocks(D)) == D
+       B * _Gmod * transpose(B) == diagonal_matrix(collect_small_blocks(D)) == D
     else
       B * _Gmod * transpose(B) == D && isdiag(D)
     end
@@ -1303,7 +1302,8 @@ function _relations(G, n, p)
   else
     error("Relation ($n) must be between 1 and 10")
   end
-  D, B = _normalize!(B * G * transpose(B), B, G,  p)
+  D = B * G * transpose(B)
+  D, B = _normalize!(D, B, G,  p)
   return B
 end
 
@@ -1519,15 +1519,7 @@ end
 
 function _sqrt(d::ZZModRingElem, p::Int, prec::Int)
   R = parent(d)
-  if  modulus(R) > typemax(Int)  # overflow danger
-    # slow fallback with many allocations
-    Rx, x = polynomial_ring(parent(d), "x", cached = false)
-    rts = roots(x^2 - d, ZZ(p), valuation(modulus(parent(d)), p))
-    r = rts[1][1]
-    @assert r^2 == d
-    return r
-  end
-  dZ = Int(lift(d))
+  dZ = lift(d)
   rt = Nemo.sqrtmod_pk(dZ, p, prec)
   return ZZModRingElem(rt, R)
 end
@@ -1535,7 +1527,7 @@ end
 function _sqrt(d::zzModRingElem, p::Int, prec::Int)
   R = parent(d)
   dZ = Int(lift(d))
-  rt = Nemo.sqrtmod_pk(dZ, p, prec)
+  rt = Nemo._sqrtmod_pk_small(dZ, p, prec)
   return zzModRingElem(rt, R)
 end
 
