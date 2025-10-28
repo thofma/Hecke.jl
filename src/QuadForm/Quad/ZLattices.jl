@@ -1357,7 +1357,7 @@ If $L_p$ is not even, the second output is `L` by default. Otherwise, either
 an overlattice `M` of `L` such that $M_p$ is even and $[M:L] = p$.
 """
 function is_maximal_even(L::ZZLat, p::IntegerUnion; check=true)
-  @req check || denominator(scale(L)) == 1 "The bilinear form is not integral"
+  @req !check || denominator(scale(L)) == 1 "The bilinear form is not integral"
   p != 2 || mod(ZZ(norm(L)), 2) == 0 || return false, L
 
   # o-maximal lattices are classified
@@ -1365,7 +1365,7 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion; check=true)
   if valuation(det(L), p) <= 1
     return true, L
   end
-  (G, d) = gram_matrix_integral(L)
+  G, d = gram_matrix_integral(L)
   k = Native.GF(p)
   Gmodp = change_base_ring(k, G)
   V = kernel(Gmodp, side = :left)
