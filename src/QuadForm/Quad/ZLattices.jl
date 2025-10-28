@@ -152,7 +152,7 @@ function rescale(L::ZZLat, r::RationalUnion)
   end
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
-  Vr = quadratic_space(QQ, r*gram_space)
+  Vr = quadratic_space(QQ, r*gram_space; check=false, cached=false)
   R = lattice(Vr, B; isbasis=true, check = false)
   if isdefined(L,:gram_matrix)
     R.gram_matrix = r*L.gram_matrix
@@ -1886,15 +1886,15 @@ with gram matrix
 
 julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
 9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([1 2 3 1 -1 3], 12, 3)
- ([2 4 6 2 1 3], 12, 3)
- ([1 2 3 1 -1 0], 12, 3)
- ([2 4 6 5 1 3], 12, 3)
- ([1 2 3 4 2 0], 12, 3)
- ([1 2 3 1 2 3], 12, 3)
- ([2 4 6 5 4 3], 12, 3)
- ([1 2 3 4 2 3], 12, 3)
- ([1 2 3 1 2 0], 12, 3)
+ ([-1 -2 -3 -4 -2 0], 12, 3)
+ ([-1 -2 -3 -1 1 -3], 12, 3)
+ ([-2 -4 -6 -2 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 -3], 12, 3)
+ ([-2 -4 -6 -5 -4 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 0], 12, 3)
+ ([-1 -2 -3 -4 -2 -3], 12, 3)
+ ([-2 -4 -6 -5 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 1 0], 12, 3)
 
 julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
 Integer lattice of rank 2 and degree 2
@@ -1904,7 +1904,7 @@ with gram matrix
 
 julia> vectors_of_square_and_divisibility(L, 8, 2)
 1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([2 0], 8, 2)
+ ([-2 0], 8, 2)
 
 julia> length(short_vectors(L, 8, 8))
 3
@@ -3473,33 +3473,7 @@ This implements the 23 holy constructions of the Leech lattice in [CS99](@cite).
 ```jldoctest leech
 julia> R = integer_lattice(gram=2 * identity_matrix(ZZ, 24));
 
-julia> N = maximal_even_lattice(R) # Some Niemeier lattice
-Integer lattice of rank 24 and degree 24
-with gram matrix
-[2   1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   0   1   1   0   0   0   0]
-[1   2   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   0   1   0   0   0   0]
-[1   1   2   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0]
-[1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   2   1   1   1   0   0   0   0   1   0   1   1   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   2   1   1   0   0   0   0   1   1   0   1   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   2   1   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0   1   1   1   0]
-[0   0   0   0   0   0   0   0   1   2   1   1   0   0   0   0   0   0   0   0   1   0   1   1]
-[0   0   0   0   0   0   0   0   1   1   2   1   0   0   0   0   0   0   0   0   1   1   0   1]
-[0   0   0   0   0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   1   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0]
-[0   0   0   0   0   1   1   0   0   0   0   0   1   2   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   0   1   0   0   0   0   0   1   0   2   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   0   0   0   0   0   0   1   0   0   2   0   0   0   0   0   0   0   0]
-[1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0]
-[0   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   2   0   0   0   0   0   0]
-[1   0   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   2   0   0   0   0   0]
-[1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   0   2   0   0   0   0]
-[0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0   2   1   1   1]
-[0   0   0   0   0   0   0   0   1   0   1   0   0   0   0   0   0   0   0   0   1   2   0   0]
-[0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   0   1   0   2   0]
-[0   0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   1   0   0   2]
+julia> N = maximal_even_lattice(R); # Some Niemeier lattice
 
 julia> minimum(N)
 2
