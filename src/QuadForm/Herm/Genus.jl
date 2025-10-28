@@ -1466,7 +1466,7 @@ function direct_sum(G1::HermGenus, G2::HermGenus)
   end
   sig1 = G1.signatures
   sig2 = G2.signatures
-  g3 = merge(+, sig1, sig2)
+  g3 = mergewith(+, sig1, sig2)
   # For genera of hermitian lattices, are bad all primes dividing 2 and those
   # dividing the discriminant of the field extension (discriminant of the
   # maximal order of the top field in E/K).
