@@ -146,13 +146,13 @@ julia> shortest_vectors(rescale(L, -1))
  [1, 0]
 ```
 """
-function rescale(L::ZZLat, r::RationalUnion)
+function rescale(L::ZZLat, r::RationalUnion; cached=false)
   if isone(r)
     return L
   end
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
-  Vr = quadratic_space(QQ, r*gram_space; check=false, cached=false)
+  Vr = quadratic_space(QQ, r*gram_space; check=false, cached)
   R = lattice(Vr, B; isbasis=true, check = false)
   if isdefined(L,:gram_matrix)
     R.gram_matrix = r*L.gram_matrix
