@@ -431,7 +431,7 @@ function is_direct_summand_with_data(S1::ZZGenus, S2::ZZGenus)
   sig_pair = (p1-p2, m1-m2)
   all(i>=0 for i in sig_pair) || return false, ZZGenus[]
   bad1 = bad_primes(S1)
-  all(p in bad1 for p in bad_primes(S1)) || return false, ZZGenus[]
+  all(p in bad1 for p in bad_primes(S2)) || return false, ZZGenus[]
   local_summands = Vector{ZZLocalGenus}[]
   for p in bad1
     S1p = local_symbol(S1, p)
