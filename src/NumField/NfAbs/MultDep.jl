@@ -231,7 +231,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   m = maximum(degree, first.(factor(GF(p), K.pol)))
   while m > 4
     p = next_prime(p)
-    m = maximum(degree, keys(factor(GF(p), K.pol).fac))
+    m = maximum(degree, first.(factor(GF(p), K.pol)))
   end
          #experimentally, the runtime is dominated by log
   u = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
