@@ -8,15 +8,7 @@ function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
   # TODO: this is a bad hack
   # extend_easy should throw more
-  mF1 = try
-    Hecke.extend_easy(mF, number_field(Zk))
-  catch e
-    if isa(e, UndefRefError)
-      throw(Hecke.BadPrime(p))
-    else
-      rethrow(e)
-    end
-  end
+  mF1 = Hecke.extend_easy(mF, number_field(Zk))
   oF = Int(size(F))-1
   @assert iszero(oF % p)
   pp, e = Hecke.ppio(oF, p)
