@@ -1579,10 +1579,11 @@ end
 function _orthogonal_submodule_raw(T::TorQuadModule, S::TorQuadModule;check=true)
   V = ambient_space(cover(T))
   G = gram_matrix(V)
-  m = 1//modulus_bilinear_form(T)*exponent(T)
+  mT = modulus_bilinear_form(T)
+  m = exponent(T)
   R,_ = residue_ring(ZZ, ZZ(m); cached=false)
   GG = T.gens_lift_mat * G * transpose(S.gens_lift_mat)
-  mul!(GG, m)
+  mul!(GG, inv(mT)*m)
   Y = map_entries(i->R(numerator(i)), GG)
   K = kernel(Y; side=:left)
   A = [order(i) for i in gens(T)]

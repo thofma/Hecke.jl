@@ -237,7 +237,7 @@ function _padic_normal_form(G::QQMatrix, p::ZZRingElem; prec::Int = -1, partial:
     D = diagonal_matrix([D, zero_matrix(base_ring(D), nrows(ker), nrows(ker))])
   end
   @hassert :Lattice 1 begin
-    _Gmod = inv(R(du))*R.(G0)
+    _Gmod = inv(R(du))*R.(_G0)
     if p == 2
        B * _Gmod * transpose(B) == diagonal_matrix(collect_small_blocks(D)) == D
     else
@@ -812,6 +812,7 @@ end
 _normalize(G, p, normal_odd=true) = _normalize!(deepcopy(G), one(G), G, p, normal_odd)
 
 function _normalize!(D, B, G, p, normal_odd = true)
+  @hassert :Lattice 2 D == B * G * transpose(B)
   R = base_ring(G)
   n = ncols(D)
   tmp = zero_matrix(R, 2, ncols(B)) # temporary variable for inplace multiplications
@@ -822,7 +823,7 @@ function _normalize!(D, B, G, p, normal_odd = true)
     non_squares = Int[]
     val = 0
     for i in 1:n
-      if _val(D[i, i], p) > val
+      if _val(D[i, i], p) != val
         # a new block starts
         val = _val(D[i, i], p)
         if normal_odd && length(non_squares) != 0
@@ -835,9 +836,11 @@ function _normalize!(D, B, G, p, normal_odd = true)
       end
       d = _unit_part(D[i, i], p)
       if _issquare(d, p)
+        @hassert :Lattice 2 D == B * G * transpose(B)
         c = _sqrt(inv(d), p)
         multiply_row!(B, c, i)
         D[i, i] = p^val
+        @hassert :Lattice 2 D == B * G * transpose(B)
       else
         D[i, i] = vv*p^val
         c = _sqrt(vv * inv(d), p)
@@ -846,16 +849,20 @@ function _normalize!(D, B, G, p, normal_odd = true)
           # we combine two non-squares to get the 2 x 2 identity matrix
           j = pop!(non_squares)
           D, B = _normalize_odd_twobytwo!(D, B, i, j, p, tmp)
+          @hassert :Lattice 2 D == B * G * transpose(B)
         else
           push!(non_squares, i)
         end
       end
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
     if normal_odd && length(non_squares) != 0
       j = pop!(non_squares)
       swap_rows!(B, j, n)
       swap_rows!(D, j, n)
+      swap_cols!(D, j, n)
     end
+    @hassert :Lattice 2 D == B * G * transpose(B)
   else
     # squareclasses 1, 3, 5, 7 modulo 8
     for i in 1:n
@@ -876,6 +883,7 @@ function _normalize!(D, B, G, p, normal_odd = true)
         @hassert :Lattice 2 D == B * G * transpose(B)
         D, B = _normalize_twobytwo!(D, B, i, i+1, p, G)
       end
+      @hassert :Lattice 2 D == B * G * transpose(B)
     end
   end
   @hassert :Lattice 2 D == B * G * transpose(B)
