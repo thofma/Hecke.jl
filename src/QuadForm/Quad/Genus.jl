@@ -1965,7 +1965,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
   end
   sig1 = G1.signatures
   sig2 = G2.signatures
-  sig3 = merge(+, sig1, sig2)
+  sig3 = mergewith(+, sig1, sig2)
   # We only keep local symbols which are defined at a bad prime or which are not
   # unimodular.
   filter!(g -> (prime(g) in bd) || scales(g) != Int[0], LGS)
