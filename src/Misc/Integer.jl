@@ -90,7 +90,9 @@ function sunit_group_fac_elem(S::Vector{T}) where {T<:Integer}
 end
 
 function sunit_group_fac_elem(S::Vector{ZZRingElem})
-  S = coprime_base(S)  #TODO: for S-units use factor???
+  if length(S) > 0
+    S = coprime_base(S)  #TODO: for S-units use factor???
+  end
   G = abelian_group(vcat(ZZRingElem[2], ZZRingElem[0 for i = S]))
   S = vcat(ZZRingElem[-1], S)
 
