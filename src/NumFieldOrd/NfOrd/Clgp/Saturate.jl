@@ -6,8 +6,6 @@ export saturate!
 function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
-  # TODO: this is a bad hack
-  # extend_easy should throw more
   mF1 = Hecke.extend_easy(mF, number_field(Zk))
   oF = Int(size(F))-1
   @assert iszero(oF % p)
