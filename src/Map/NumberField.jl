@@ -173,14 +173,15 @@ function is_cm_field(K::NumField)
   if !is_cm_field_easy(K)
     return false, id_hom(K)
   end
-  fl, auts = _automorphisms_center(K)
-  res, cm = _find_complex_conj(auts)
-  if res || fl
-    return res, cm
-  else
-    auts = automorphism_list(K, copy = false)
-    return _find_complex_conj(auts)
+  if is_defining_polynomial_nice(K)
+    fl, auts = _automorphisms_center(K)
+    res, cm = _find_complex_conj(auts)
+    if res || fl
+      return res, cm
+    end
   end
+  auts = automorphism_list(K, copy = false)
+  return _find_complex_conj(auts)
 end
 
 function is_cm_field_known(K::NumField)
@@ -300,7 +301,7 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
     elseif has_norm(x)
       int_in_ideal = norm(x, copy = false)
     end
-    if is_coprime(index(OK, copy = false), int_in_ideal) && fits(Int, int_in_ideal^2)
+    if is_defining_polynomial_nice(K) && is_coprime(index(OK, copy = false), int_in_ideal) && fits(Int, int_in_ideal^2)
     #The conjugate of the prime will still be a prime over the minimum
     #I just need to apply the automorphism modularly
       return induce_image_easy(f, x)
@@ -431,6 +432,7 @@ end
 #  Order of an automorphism in the automorphisms group
 #
 ################################################################################
+
 @doc raw"""
     is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}) -> Bool
 
@@ -438,21 +440,28 @@ Returns true if $f$ is an involution, i.e. if $f^2$ is the identity, false other
 """
 function is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   K = domain(f)
-  @assert K == codomain(f)
+  @assert K === codomain(f)
   if image_primitive_element(f) == gen(K)
     return false
   end
-  p = 2
-  R = residue_ring(ZZ, p, cached = false)[1]
-  Rt = polynomial_ring(R, "t", cached = false)[1]
-  fmod = Rt(K.pol)
-  while iszero(discriminant(fmod))
+  p = 1
+  g = defining_polynomial(K)
+  d = denominator(g)
+  local Rt
+  local fmod
+  while true
     p = next_prime(p)
+    if is_divisible_by(d, p)
+      continue
+    end
     R = residue_ring(ZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
-    fmod = Rt(K.pol)
+    fmod = Rt(g)
+    if degree(fmod) == degree(K) && !is_zero(discriminant(fmod))
+      break
+    end
   end
-  i = 2
+
   ap = Rt(image_primitive_element(f))
   fp = compose_mod(ap, ap, fmod)
   return fp == gen(Rt)
@@ -469,6 +478,7 @@ function _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   if image_primitive_element(f) == gen(K)
     return 1
   end
+  @assert is_defining_polynomial_nice(K)
   p = 2
   R = residue_ring(ZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
@@ -501,14 +511,22 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
   thirdtry = 30
 
 	K = domain(G[1])
-	p = 2
-  R = Native.GF(p, cached = false)
-	Rx = polynomial_ring(R, "x", cached = false)[1]
-	while iszero(discriminant(Rx(K.pol)))
-		p = next_prime(p)
+  p = 1
+  g = defining_polynomial(K)
+  d = denominator(g)
+  local R
+  local Rx
+  while true
+    p = next_prime(p)
+    if is_divisible_by(d, p)
+      continue
+    end
 	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
+    if degree(Rx(g)) == degree(g) && !is_zero(discriminant(Rx(g)))
+      break
+    end
+  end
 
   given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
 	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))

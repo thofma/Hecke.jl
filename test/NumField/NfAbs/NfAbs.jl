@@ -94,7 +94,7 @@ end
   h = zk.__attrs[:ClassGrpCtx]
   r = vcat(h.R_gen, h.R_rel);
   r = [x for x = r if isa(x, AbsSimpleNumFieldElem)]
-  q = Hecke.syzygies(r)  
+  q = Hecke.syzygies(r)
   @test all(isone, evaluate(FacElem(r, q[i, :])) for i=1:nrows(q))
 
   U, mU = Hecke.multiplicative_group(r)
