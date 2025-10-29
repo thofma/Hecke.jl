@@ -1579,7 +1579,7 @@ end
 function _orthogonal_submodule_raw(T::TorQuadModule, S::TorQuadModule;check=true)
   V = ambient_space(cover(T))
   G = gram_matrix(V)
-  m = modulus_bilinear_form(T)*exponent(T)
+  m = 1//modulus_bilinear_form(T)*exponent(T)
   R,_ = residue_ring(ZZ, ZZ(m); cached=false)
   GG = T.gens_lift_mat * G * transpose(S.gens_lift_mat)
   mul!(GG, m)
