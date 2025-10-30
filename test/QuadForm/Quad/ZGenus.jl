@@ -184,7 +184,7 @@
 
   @test Hecke.is_direct_summand_with_data(g3,g3)[1]
 
-  for g in genera((1,3),120)
+  for g in integer_genera((1,3),120)
     for h in genera((2,2),40)
       gh = g+h
       @test g in gh - h
