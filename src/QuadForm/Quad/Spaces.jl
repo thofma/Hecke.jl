@@ -1986,7 +1986,7 @@ end
 
 Return the number of (positive, zero, negative) inertia of this rational quadratic space.
 """
-function signature_tuple(q::QuadSpace{QQField,QQMatrix})
+@attr Tuple{Int,Int,Int} function signature_tuple(q::QuadSpace{QQField,QQMatrix})
   D = diagonal(q)
   pos = count(d>0 for d in D)
   zero = count(d==0 for d in D)

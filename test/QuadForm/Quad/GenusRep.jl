@@ -1134,7 +1134,7 @@ end
   # Tests for even and odd at an odd prime number
   gg = integer_genera((0,6), 2^3*7)
   lis = Vector{ZZLat}[enumerate_definite_genus(G) for G in gg]
-  @test length.(lis) == [10, 8, 4, 3, 14, 11, 6, 10, 8, 8, 8, 8, 10, 6]
+  @test multiset(length.(lis)) == multiset([10, 8, 4, 3, 14, 11, 6, 10, 8, 8, 8, 8, 10, 6])
 
   # Keep track of those tests, but too much for regular testing
 #  gg = integer_genera((0,10), 3^5; max_scale=3)

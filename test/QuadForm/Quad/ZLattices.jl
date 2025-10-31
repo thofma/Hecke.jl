@@ -596,7 +596,8 @@ end
   L = representative(integer_genera((2,1), -1)[1])
   LL = lll(L)
   @test L == LL
-  @test rescale(L, -1) == lll(rescale(L, -1))
+  Lm = rescale(L, -1)
+  @test Lm == lll(Lm)
 
   L = representative(integer_genera((3,11), 1)[2])
   LL = lll(L)
