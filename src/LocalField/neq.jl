@@ -1379,6 +1379,7 @@ function Hecke.unit_group(K::PadicField; n_quo::Int = -1)
 end
 
 function unit_group2(K::PadicField; n_quo::Int = -1)
+  p = prime(K)
   @assert p == 2
   A = abelian_group([0, 2, p^(precision(K)-2)])
   gn = K(1+p^2) #a generator for the 1 units
