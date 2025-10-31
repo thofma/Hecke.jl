@@ -824,7 +824,7 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldEle
     D[phi] = f
     return D
   end
-  vlfp = Vector{dense_poly_type(elem_type(k))}(undef, length(lfp))
+  vlfp = Vector{poly_type(elem_type(k))}(undef, length(lfp))
   ind = 1
   ks = Vector{Generic.Poly{T}}(undef, length(vlfp))
   for (k1, v) in lfp
