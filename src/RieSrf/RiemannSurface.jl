@@ -4,7 +4,7 @@
 #
 # (C) 2025 Jeroen Hanselman
 # This is a port of the Riemann surfaces package written by
-# Christian Neurohr. It is based on his Phd thesis 
+# Christian Neurohr. It is based on his Phd thesis
 # https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
 # Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
@@ -27,11 +27,11 @@ module RiemannSurfaces
 
 using Hecke
 
-export RiemannSurface, discriminant_points, embedding, genus, precision, 
-fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group, 
+export RiemannSurface, discriminant_points, embedding, genus, precision,
+fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
 homology_basis
 
-export max_radius, radius_factor, find_paths_to_end, sheet_ordering, 
+export max_radius, radius_factor, find_paths_to_end, sheet_ordering,
 embed_mpoly, analytic_continuation, minimal_spanning_tree
 
 import Hecke.AbstractAlgebra, Hecke.Nemo
@@ -50,7 +50,7 @@ include("NumIntegrate.jl")
 
 mutable struct RiemannSurface
   #A polynomial f(x,y) in K[x,y] for some number field K defining the Riemann
-  #surface (or equivalently) a not necessarily smooth plane curve in P_2 
+  #surface (or equivalently) a not necessarily smooth plane curve in P_2
   defining_polynomial::MPolyRingElem
   genus::Int
   function_field::AbstractAlgebra.Generic.FunctionField
@@ -62,42 +62,42 @@ mutable struct RiemannSurface
   small_period_matrix::AcbMatrix
   big_period_matrix::AcbMatrix
 
-  #The embedding used to embed X 
+  #The embedding used to embed X
   embedding::Union{PosInf, InfPlc}
 
-  #The points P for which disc(f(P,y)) = 0. This includes the ramification 
+  #The points P for which disc(f(P,y)) = 0. This includes the ramification
   #points and the singular points of the curve
   discriminant_points::Vector{AcbFieldElem}
 
   #A set of generators of the fundamental group pi_1 of P^1/D where D is the set
   #of discriminant points.
-  #It consists of a tuple (L, G) where 
+  #It consists of a tuple (L, G) where
   # - L is a list of paths
-  # - G consists of generators for pi_1. Each generator is encoded by a 
-  #sequence of indices. These indices refer to the paths in L. 
+  # - G consists of generators for pi_1. Each generator is encoded by a
+  #sequence of indices. These indices refer to the paths in L.
   #
-  # If for example G[1] = [1, 23, 12, -1]. Then the first 
-  # generator is given by composing the paths L[1], L[23], L[12] and 
+  # If for example G[1] = [1, 23, 12, -1]. Then the first
+  # generator is given by composing the paths L[1], L[23], L[12] and
   # reverse(L[1]).
   fundamental_group_of_P1::Tuple{Vector{CPath}, Vector{Vector{Int}}}
 
   #The permutations of the sheets that correspond to walking along the chains
-  #of paths that are generators of the fundamental group of P1. Every 
+  #of paths that are generators of the fundamental group of P1. Every
   #element is of the form (P, sigma) where P is a list of paths and sigma is
   #the permutation of sheets.
   #
-  # Continuing the above example, the first element could look like 
-  # ([L[1], L[23], L[12],reverse(L[1])], (1,3))) 
-  # where (1,3) is the permutation. 
+  # Continuing the above example, the first element could look like
+  # ([L[1], L[23], L[12],reverse(L[1])], (1,3)))
+  # where (1,3) is the permutation.
   monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
 
-  #Data encoding the homology basis. 
+  #Data encoding the homology basis.
   # We encode homology cycles in H_1(RS, Z) in the following way:
-  # Each cycle Gamma_i in L is given as a sequence of integers 
+  # Each cycle Gamma_i in L is given as a sequence of integers
   # [s_i1, b_i1, s_i2, b_i2, ..., s_in, b_in ].
   # Here each s_ij gives the index of the sheet we start or end up in
-  # and each b_ij gives the index of the branch point we circle around to get 
-  # there. 
+  # and each b_ij gives the index of the branch point we circle around to get
+  # there.
 
   # As an example, the cycle [1, 3, 5, 2, 1] means that we start in sheet 1,
   # circle around branch point nr 3 to move to sheet 5, circle around branch
@@ -107,25 +107,25 @@ mutable struct RiemannSurface
 
   # A basis of differential forms computed by either
   # - Riemann-Roch computations
-  # - Using Baker's Theorem. Baker's Theorem says that if the number of 
+  # - Using Baker's Theorem. Baker's Theorem says that if the number of
   # interior points of the Newton polygon associated to the defining polynomial
-  # is equal to g, a basis of differential forms is given by 
-  # the set of all x^iy^jdx/Df_y where (i,j) is an interior point of the 
+  # is equal to g, a basis of differential forms is given by
+  # the set of all x^iy^jdx/Df_y where (i,j) is an interior point of the
   # Newton polygon.
   basis_of_differentials::Vector{Any}
   #A boolean that checks whether a Baker basis was used or not.
   baker_basis::Bool
 
-  # The basis of differential forms often shares common factors. 
+  # The basis of differential forms often shares common factors.
   # We can reduce the number of polynomial evaluations we need to do
   # by evaluating all of the factors at every abscissa and taking products of
   # the computed values.
   #
   # The variable differential_form_data consists of four parts:
   # - factor_set: The set of n common factors used for integration
-  # - factor_matrix: A g by n matrix storing the exponents of the n factors 
+  # - factor_matrix: A g by n matrix storing the exponents of the n factors
   # for the g differential forms.
-  # - min_pows: A list of smallest exponents occurring in the factor set 
+  # - min_pows: A list of smallest exponents occurring in the factor set
   # for every given factor
   # - range_pows: The number of different powers we need to compute
   #
@@ -141,19 +141,19 @@ mutable struct RiemannSurface
   differential_form_data::Any
 
   #Evaluate differential_differential_factors_matrix is a function that
-  # takes as its input 
+  # takes as its input
   # - a list of factors
   # - The point x0 we want to integrate at
   # - a list of m ys such that f(y) = x0 for every y in ys.
-  # As output it gives an m by g matrix A such that A_ij = g_j(x0, y_i) 
+  # As output it gives an m by g matrix A such that A_ij = g_j(x0, y_i)
   # where the omega_j = g_jdx are the basis of differential forms.
-  # The function is constructed by using differential forms data. 
+  # The function is constructed by using differential forms data.
   # The factors are given as input to allow us to choose the precision of the
   # input factors.
   evaluate_differential_factors_matrix::Any
 
   # A list of integration schemes used for computations. An integration scheme
-  # consists of a list of abscissae, weights and a bunch of parameters. 
+  # consists of a list of abscissae, weights and a bunch of parameters.
   # For efficiency we want to reuse integrations schemes as much as possible.
   # Every path we integrate over gets assigned one of these integrations schemes.
   integration_schemes::Vector{IntegrationScheme}
@@ -176,12 +176,12 @@ mutable struct RiemannSurface
   #The constructor for a Riemann surface object
   function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
-    
+
     RS = new()
     RS.defining_polynomial = f
     RS.prec = prec
     RS.embedding = v
-    
+
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
     kxy, y = polynomial_ring(kx, "y")
@@ -209,12 +209,12 @@ mutable struct RiemannSurface
 	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
 
       factor_matrix = zero_matrix(Int, n, g)
-      
+
       for i in (1:g)
         factor_matrix[1, i] = inner_fac[i][1] - 1
         factor_matrix[2, i] = inner_fac[i][2] - 1
         factor_matrix[3, i] = -1
-      end 
+      end
 
     else
       RS.baker_basis = false
@@ -233,7 +233,7 @@ mutable struct RiemannSurface
         push!(factored_nums, num_diff_i_fac)
         push!(factored_denoms, denom_diff_i_fac)
       end
-    
+
       #Turn set into sequence so we can enumerate
       factor_set = collect(factor_set)
       number_of_factors = length(factor_set)
@@ -249,7 +249,7 @@ mutable struct RiemannSurface
             factor_matrix[i,j] = -get(factored_denoms[j], factor_set[i], 0)
           end
         end
-      end 
+      end
 
 		  min_pows= [minimum( [factor_matrix[j, 1:g] for j in 1:n])]
 	    range_pows= [maximum( [factor_matrix[j, 1:g] for j in 1:n])] - min_pows
@@ -272,7 +272,7 @@ mutable struct RiemannSurface
             push!(factor_at_xys, factor_at_xys[k]*fx0ys)
           end
           for k in 1:g
-            #Let omega_i = g_i * dx where the omega form a basis of 
+            #Let omega_i = g_i * dx where the omega form a basis of
             #differentials. Then result[s][k] = g_k(x0, ys) where the
             #ys are the m preimages in the fiber f^(-1)(x0).
             result[s, k] *= factor_at_xys[factor_matrix[l, k] - min_pows[l]+1]
@@ -291,9 +291,9 @@ mutable struct RiemannSurface
     RS.complex_field = AcbField(prec)
     Rc = ArbField(prec + extra_prec)
     RS.real_field = Rc
-    
-    
-    
+
+
+
     RS.weak_error = Rc(10)^(-(2//3) *b10_prec)
     RS.error = Rc(10)^(-b10_prec - 1)
     RS.extra_error = Rc(10)^(-b10_extra_prec - 1)
@@ -339,7 +339,7 @@ function defining_polynomial_univariate(RS::RiemannSurface)
   K = base_ring(f)
   Kx, x = polynomial_ring(K, "x")
   Kxy, y = polynomial_ring(Kx, "y")
-  
+
   return f(x, y)
 end
 
@@ -370,21 +370,21 @@ function assure_has_discriminant_points(RS::RiemannSurface)
     f = defining_polynomial_univariate(RS)
     Kxy = parent(f)
     Kx = base_ring(f)
-  
+
     v = embedding(RS)
     prec = precision(RS)
-  
+
     disc_y_factors = AcbPolyRingElem[]
     a0_factors = AcbPolyRingElem[]
-  
+
     for (f,e) in factor(discriminant(f))
       push!(disc_y_factors, embed_poly(f, v, prec))
     end
-  
+
     for (f,e) in factor(leading_coefficient(f))
       push!(a0_factors, embed_poly(f, v, prec))
     end
-  
+
     D1 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in disc_y_factors]...)
     D2 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in a0_factors]...)
     D_points = sort!(vcat(D1, D2), lt = sheet_ordering)
@@ -425,7 +425,7 @@ end
 
 function _monodromy_representation(RS::RiemannSurface)
 
-  # We first take a basis of the fundamental group. 
+  # We first take a basis of the fundamental group.
   # paths consists of a list of paths, pi1_gens consists of a set of generators
   # of p1. Every generated is represented as a list of integers. These integers
   # tell us which elements in paths we need to concatenate to get the path
@@ -433,9 +433,9 @@ function _monodromy_representation(RS::RiemannSurface)
   paths, pi1_gens = fundamental_group_of_punctured_P1(RS, true)
   f = defining_polynomial(RS)
   m = degree(f, 2)
-  
+
   s_m = SymmetricGroup(m)
-  
+
   for i in (1:length(paths))
     path = paths[i]
     # We compute the number of pieces we need to divide a path in in order to
@@ -446,49 +446,49 @@ function _monodromy_representation(RS::RiemannSurface)
     if path_type(path) in [1,2]
       N *= 4
     end
-      
-      
+
+
     Rc = ArbField(precision(RS))
-    
-    abscissae = [Rc(n//N) for n in (-N + 1: N - 1)] 
-     
-    # Perform analytic continuation along the closed loop path with 
-    # starting point x0. In the algorithm we start with the m ys lying 
+
+    abscissae = [Rc(n//N) for n in (-N + 1: N - 1)]
+
+    # Perform analytic continuation along the closed loop path with
+    # starting point x0. In the algorithm we start with the m ys lying
     # over x0 are first sorted according to the "sheet_ordering" function.
     # The output consists of the ys lying over x0 that we get when continuously
-    # moving them along the path. 
+    # moving them along the path.
     An = analytic_continuation(RS, path, abscissae)
 
     # As the order of the ys lying obev x0 changes after analytic continuation,
-    # we can reorder using sheet_ordering again to find out how they were 
+    # we can reorder using sheet_ordering again to find out how they were
     # permuted to get the corresponding element of the monodromy group.
     path_perm = sortperm(An[end][2], lt = sheet_ordering)
 
     # Store the permutation with the path
     assign_permutation(path, inv(s_m(path_perm)))
   end
-  
+
   mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
-  
+
   # Chain all permutations of a all the generators of pi1 together to find
   # the monodromy of the chosen generator.
   for gamma in pi1_gens
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
     gamma_perm = prod(map(permutation, chain))
-    
+
     if gamma_perm != one(s_m)
       push!(mon_rep, (chain, gamma_perm))
      end
   end
-  
+
   inf_chain = Vector{CPath}[]
   inf_perm = one(s_m)
-  
+
   for g in mon_rep
     inf_chain = vcat(inf_chain, map(reverse, g[1]))
     inf_perm *= g[2]
   end
-  
+
   #Additionally add the inverse of the chain around infinity.
   push!(mon_rep, (reverse(inf_chain), inv(inf_perm)))
   RS.monodromy_representation = mon_rep
@@ -511,25 +511,25 @@ end
 
 #Follows algorithm 4.3.1 in Neurohr
 function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true)
-  
+
   #Compute the exceptional values x_i
   D_points = discriminant_points(RS)
   d = length(D_points)
   Cc = parent(D_points[1])
   Rc = ArbField(precision(RS))
-  
+
   #Step 1 compute a minimal spanning tree
   edges = minimal_spanning_tree(D_points)
-  
+
   #Choose a suitable base point and connect it to the spanning tree
 
-  #Multiple ways to choose the base point. 
-  #This one is most suitable when computing abel-jacobi maps. 
+  #Multiple ways to choose the base point.
+  #This one is most suitable when computing abel-jacobi maps.
   #Take some integer point to the left of the point with the smallest real part
-    
-  
+
+
   if abel_jacobi
-    
+
     #Real part should already be minimal in D_points
     #x0 = Cc(min(floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS)), -1))
 
@@ -541,7 +541,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
          error("Precision too low")
        end
     end
-    
+
     #Connect base point to closest point in D_points
     closest = 1
     distance = abs(x0 - D_points[1])
@@ -555,9 +555,9 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     push!(D_points, Cc(x0))
     push!(edges, (d +1, closest))
   else
-  #Here we take the one that is most suitable if one doesn't need to compute Abel-Jacobi maps according to Neurohr, i.e. we split the longest edge in the middle. 
+  #Here we take the one that is most suitable if one doesn't need to compute Abel-Jacobi maps according to Neurohr, i.e. we split the longest edge in the middle.
   #(Last edge should be the longest in the way we compute minimal_spanning trees right now.)
-    
+
     left = edges[end][1]
     right = edges[end][2]
     pop!(edges)
@@ -571,69 +571,69 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   path_edges = Int[]
   past_nodes = [d + 1]
   current_node = d + 1
-  
+
   left_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), edges)
   right_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), map(reverse,edges))
-  
+
   leftright = vcat(left_edges, right_edges)
-  
+
   current_angle = zero(Rc)
-  
+
   angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
     return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
   end
-      
+
   sort!(leftright, lt = angle_ordering)
-  
+
   path_edges = vcat(path_edges, leftright)
   current_level = vcat(left_edges, right_edges)
-  
+
   while length(path_edges) < length(edges)
     next_level = Int[]
     for edge in current_level
-    
+
       previous_node = edge[1]
       current_node = edge[2]
       current_angle = angle(D_points[previous_node] - D_points[current_node])
-      
+
       left_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), edges)
       right_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), map(reverse, edges))
       leftright = vcat(left_edges, right_edges)
-    
+
       angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
         return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
       end
-      
+
       sort!(leftright, lt = angle_ordering)
       next_level = vcat(next_level, leftright)
       path_edges = vcat(path_edges, leftright)
-      
-      push!(past_nodes, current_node) 
+
+      push!(past_nodes, current_node)
     end
-    
+
     current_level = next_level
   end
-  
+
   #Construct paths to every end point starting at x0 using a Depth-First Search
-  
+
   #Paths to all nodes
   paths = [[(d+1, d+1)]]
-  
+
   ordered_disc_points = []
   find_paths_to_end([(d+1, d+1)], paths, path_edges, ordered_disc_points)
   ordered_disc_points = map(t -> D_points[t], ordered_disc_points)
-  
+
   radii = [min(max_radius(RS), radius_factor(RS) * minimum(map(t -> abs(t - D_points[j]), vcat(D_points[1:j-1], D_points[j+1:end])))) for j in (1:d)]
-  
+
   c_lines = CPath[]
-  
-  
+
+
   #Find the line pieces of the paths.
   for edge in path_edges
     a = D_points[edge[1]]
     b = D_points[edge[2]]
     ab_length = b - a
-    
+
     #Base point is not a discriminant point, so we don't need to circle around it
     if edge[1] == d + 1
       new_start_point = a
@@ -645,26 +645,26 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     new_end_point = b - (radii[edge[2]])*ab_length//(abs(ab_length))
     push!(c_lines, c_line(new_start_point, new_end_point))
   end
-  
+
   paths = map(t -> t[2:end], paths[2:end])
   path_indices = map(path -> map(t -> findfirst(x -> x == t, path_edges), path), paths)
 
   c_arcs = CPath[]
   paths_with_arcs = Vector{Int}[]
-  
-  #We reconstruct the paths 
+
+  #We reconstruct the paths
   for path in reverse(path_indices)
-    
+
     i = path[end]
     loop = Int[]
-    
+
     arc_start = arc_end = end_point(c_lines[i])
     center = D_points[path_edges[i][end]]
-    
+
     #We need to loop around the end of the path, but we may
     #have already constructed parts of the loop when constructing previous paths
     #We therefore find these first and add them.
-    
+
     n = length(c_arcs)
     for j in (1:n)
       arc = c_arcs[j]
@@ -673,7 +673,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
         arc_end = start_point(arc)
       end
     end
-    
+
     push!(c_arcs, c_arc(arc_start, arc_end, center))
     push!(loop, d + n + 1)
 
@@ -681,17 +681,17 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
 
     #Now we attach the line piece
     push!(path_to_loop, i)
-   
-    #We add the inverse arcs as moving towards the points we want to encircle we move clockwise 
-    for k in (length(path)-1:-1:1)  
-    
+
+    #We add the inverse arcs as moving towards the points we want to encircle we move clockwise
+    for k in (length(path)-1:-1:1)
+
       arc_buffer = Int[]
       old_line_piece = c_lines[path[k+1]]
       new_line_piece = c_lines[path[k]]
       arc_start = start_point(old_line_piece)
       arc_end = end_point(new_line_piece)
       center = D_points[path_edges[path[k]][end]]
-   
+
      #Similar to before. Maybe make a function out of it
       n = length(c_arcs)
       for j in (1:n)
@@ -701,18 +701,18 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
           arc_end = start_point(arc)
         end
       end
-     
+
       if arc_start != arc_end
         push!(c_arcs, c_arc(arc_start, arc_end, center))
         push!(arc_buffer, - d - n - 1)
       end
-     
+
       path_to_loop = vcat(path_to_loop, reverse(arc_buffer))
       push!(path_to_loop, path[k])
     end
     push!(paths_with_arcs, vcat(reverse(path_to_loop), reverse(loop), -path_to_loop))
   end
-  
+
   pi1 = vcat(c_lines, c_arcs), reverse(paths_with_arcs)
   RS.fundamental_group_of_P1 = pi1
   return vcat(c_lines, c_arcs), reverse(paths_with_arcs)
@@ -728,7 +728,7 @@ function find_paths_to_end(path, paths, edges, ordered_disc_points)
       push!(paths, newpath)
       find_paths_to_end(newpath, paths, edges, ordered_disc_points)
     end
-  end 
+  end
 end
 
 
@@ -736,42 +736,42 @@ end
 function minimal_spanning_tree(v::Vector{AcbFieldElem})
 
   edge_weights = []
-  
+
   N = length(v)
-  
+
   #Compute the weights for all the edges
   for i in (1:N)
     for j in (i+1: N)
       push!(edge_weights, (abs(v[i] - v[j]), (i, j)))
     end
   end
-  
-  sort!(edge_weights) 
-  
+
+  sort!(edge_weights)
+
   tree = Tuple{Int, Int}[]
-  
+
   disjoint_trees = [Set([i]) for i in (1:N)]
-  
+
   i = 1
-  
+
   while length(tree) < N - 1
-  
+
     (s1, s2) = edge_weights[i][2]
-    
+
     s1_index = findfirst(t -> s1 in t, disjoint_trees)
-    
+
     s1_tree = disjoint_trees[s1_index]
-    
+
     if s2 in s1_tree
       #continue
     else
       s2_tree = popat!(disjoint_trees, findfirst(t -> s2 in t, disjoint_trees))
       push!(tree, (s1, s2))
-      union!(s1_tree, s2_tree) 
+      union!(s1_tree, s2_tree)
     end
     i+= 1
   end
-  
+
   return tree
 end
 
@@ -786,19 +786,19 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   v = embedding(RS)
   prec = precision(RS)
   Rc = ArbField(prec)
-  
+
   #Embed the polynomial in CC
   f = embed_mpoly(defining_polynomial(RS), v, prec)
   Cc = base_ring(f)
-  
+
   f = change_base_ring(Cc, f, parent = parent(f))
 
   m = degree(f, 2)
-  
+
   #Add start and end point to the abscissae
   u = vcat([-one(Rc)], abscissae, [one(Rc)])
   N = length(u)
-  
+
   x_vals = zeros(Cc, N)
   dx_vals = zeros(Cc, N)
   y_vals = [zeros(Cc, m) for i in (1:N)]
@@ -810,7 +810,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
 
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
-  
+
   # If we are given initial values we use those. If we don't we compute the
   # roots of f(x0, y)  0 and sort them.
   if length(start_ys) == 0
@@ -819,7 +819,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
     y_vals[1] = start_ys
   end
 
-  # For every tiny path piece from x_vals[l-1] to x_vals[l] we compute how 
+  # For every tiny path piece from x_vals[l-1] to x_vals[l] we compute how
   # the ys that we lifted move along with them using recursive continuation.
   # We do this until we reach the end of the path
   for l in (2:N)
@@ -841,26 +841,26 @@ function recursive_continuation(f, x1, x2, z)
   temp_vec_res = acb_vec(m)
 
   #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
-  d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])]) 
+  d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])])
   W = [ f(x2, z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(Cc)) for i in (1:m)]
   w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
-  
+
   if w < d // (2*m)
     fillacb!(temp_vec, z)
     dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
 
     @assert dd == m
     z .= array(Cc, temp_vec_res, m)
-    
+
     acb_vec_clear(temp_vec, m)
     acb_vec_clear(temp_vec_res, m)
-    
+
     return z
   else
     midpoint = (x1 + x2)//2
     return recursive_continuation(f, midpoint, x2, recursive_continuation(f, x1, midpoint, z))
   end
-  
+
 end
 
 ################################################################################
@@ -879,7 +879,7 @@ end
 # The homology basis is computed using the Tretkoff algorithm described
 # in Neurohr's thesis 4.6.1 on page 82 and in the Appendix of the thesis.
 # Assuming the map C -> P1 is m to 1, the output consists of
-# - a list of cycles L corresponding to r := 2g + m - 1 cycles circling around at least 
+# - a list of cycles L corresponding to r := 2g + m - 1 cycles circling around at least
 # 2 ramification points. There will be m - 1 related cycles in here
 # - An r x r matrix K encoding the intersection pairing between the r cycles.
 # Its entries are either 1, 0. or -1 depending on whether the cycles intersect
@@ -891,10 +891,10 @@ end
 # [0 -I 0 ... 0]
 # [|  | | ... 0]
 # [0  0 0 ... 0]
-# This ensures that any period matrix P computed using L will have the 
+# This ensures that any period matrix P computed using L will have the
 # property that P * S = [P1, P2, O_{m-1}]
 # where [P1, P2] forms the big period matrix and O_{m-1} is supposed to be the
-# zero matrix. This matrix O_{m-1} can be used as a sanity check for the 
+# zero matrix. This matrix O_{m-1} can be used as a sanity check for the
 #numerical computations.
 
 # REMARK: The choice of the polarization is a convention. We could also opt
@@ -905,10 +905,10 @@ function _homology_basis(RS::RiemannSurface)
   s_n = parent(gens[1])
   n = s_n.n
   d = length(gens)
-  
+
   ramification_points = Tuple{Int64, SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true}, Perm{Int64}}[]
   ramification_indices = Int[]
-  
+
   for i in (1:d)
     for cyc in cycles(gens[i])
       push!(ramification_points, (i, cyc, s_n("("*string(cyc)[2:end-1]*")")))
@@ -917,16 +917,16 @@ function _homology_basis(RS::RiemannSurface)
   end
 
   genus = -n + 1 + divexact(sum(ramification_indices;init = zero(Int)), 2)
-  
+
   all_branches_terminated = false
   ram_pts_nr = length(ramification_points)
   vertices = Set([ram_pts_nr+1])
   edges_on_level = Vector{TretkoffEdge}[]
   terminated_edges = TretkoffEdge[]
-  
+
   level = 1
   push!(edges_on_level, [])
-  
+
   for i in (1:ram_pts_nr)
     if 1 in ramification_points[i][2]
       edge = TretkoffEdge(ram_pts_nr + 1, i, level, [ram_pts_nr + 1, i])
@@ -937,9 +937,9 @@ function _homology_basis(RS::RiemannSurface)
   while !all_branches_terminated
     level += 1
     push!(edges_on_level, [])
-    
+
     s = 0
-    
+
     for edge in edges_on_level[level - 1]
       if !is_terminated(edge)
         start_perm = ramification_points[end_point(edge)][3]
@@ -953,11 +953,11 @@ function _homology_basis(RS::RiemannSurface)
             set_position(new_edge, s)
             push!(edges_on_level[level], new_edge)
           end
-          perm *= start_perm 
-        end 
+          perm *= start_perm
+        end
       end
     end
-    
+
     sorted_edges = sort(edges_on_level[level], lt = (a,b) -> start_point(a) < start_point(b))
     for edge in sorted_edges
       if end_point(edge) in vertices
@@ -967,17 +967,17 @@ function _homology_basis(RS::RiemannSurface)
         push!(vertices, end_point(edge))
       end
     end
-    
+
     level += 1
     push!(edges_on_level, [])
-    
+
     s = 0
-    
+
     for edge in edges_on_level[level - 1]
       if !is_terminated(edge)
         l = end_point(edge) - ram_pts_nr
         k = mod(start_point(edge), ram_pts_nr) + 1
-        
+
         for i in (1:ram_pts_nr)
           if (l in ramification_points[k][2]) && !(k in branch(edge))
             new_edge = TretkoffEdge(end_point(edge), k, level, vcat(branch(edge), k))
@@ -986,10 +986,10 @@ function _homology_basis(RS::RiemannSurface)
             push!(edges_on_level[level], new_edge)
           end
           k = mod(k, ram_pts_nr) + 1
-        end 
+        end
       end
     end
-    
+
     sorted_edges = sort(edges_on_level[level], lt = (a,b) -> end_point(a) < end_point(b))
     for edge in sorted_edges
       if end_point(edge) in vertices
@@ -999,27 +999,27 @@ function _homology_basis(RS::RiemannSurface)
         push!(vertices, end_point(edge))
       end
     end
-    
+
     all_branches_terminated = true
     for edge in edges_on_level[level]
       if !is_terminated(edge)
         all_branches_terminated = false
       end
     end
-    
+
   end
-  
+
   terminated_edges_nr = (4*genus + 2*n - 2)
   PQ_size = divexact(terminated_edges_nr, 2)
   @req length(terminated_edges) == terminated_edges_nr "The number of terminated edges is wrong. There is a bug in the code."
-  
+
   function compare_branches(e1::TretkoffEdge, e2::TretkoffEdge)
     l1 = edge_level(e1)
     l2 = edge_level(e2)
     if l1 == l2
       return get_position(e1) < get_position(e2)
     elseif l1 < l2
-    
+
       e_temp = TretkoffEdge(branch(e2)[l1], branch(e2)[l1 + 1])
       i = findfirst(is_equal(e_temp), edges_on_level[l1])
       return compare_branches(e1, edges_on_level[l1][i])
@@ -1027,16 +1027,16 @@ function _homology_basis(RS::RiemannSurface)
       return !compare_branches(e2, e1)
     end
   end
-  
+
   sort!(terminated_edges, lt = compare_branches)
-  
+
   reverse!(terminated_edges)
-  
+
   P = TretkoffEdge[]
   QQ = TretkoffEdge[]
   Q = Vector{TretkoffEdge}(undef, PQ_size)
   l = 1
-  
+
   for k in (1:terminated_edges_nr)
     edge = terminated_edges[k]
     set_position(edge, k)
@@ -1048,15 +1048,15 @@ function _homology_basis(RS::RiemannSurface)
       push!(QQ,edge)
     end
   end
-  
+
   for edge in QQ
     l = findfirst(is_equal(reverse(edge)), P)
     set_label(edge, l)
     Q[l] = edge
   end
-  
+
   cycles_list = Vector{Int}[]
-  
+
   for i in (1:PQ_size)
     cycle = vcat(branch(P[i]), reverse(branch(Q[i])[1:end-2]))
     k = 1
@@ -1065,12 +1065,12 @@ function _homology_basis(RS::RiemannSurface)
       cycle[k+1] = ramification_points[cycle[k+1]][1]
       k +=2
     end
-    
+
     cycle[k] -= ram_pts_nr
     push!(cycles_list, cycle)
   end
-  
-  
+
+
   A = zero_matrix(Int, PQ_size, PQ_size)
   for i in (1:PQ_size)
     j = mod(get_position(P[i]), terminated_edges_nr) + 1
@@ -1088,17 +1088,17 @@ function _homology_basis(RS::RiemannSurface)
       j = mod(j, terminated_edges_nr) + 1
     end
   end
-  
+
   @req rank(A) == 2*genus "Computed matrix has the wrong rank. There is a bug in the code."
   K = matrix(ZZ, A)
-  
+
   RS.homology_basis = cycles_list, K, symplectic_reduction(K)
   return RS.homology_basis
 end
 
 # Given an input K this computes S as mentioned in the homology_basis function
 # i,e. the output is a symplectic matrix S that ensure that S^T K S is equal to
-# a matrix where the upper left block consists of the normalized polarization 
+# a matrix where the upper left block consists of the normalized polarization
 # and the rest consists of zeros.
 # [I  0 0 ... 0]
 # [0 -I 0 ... 0]
@@ -1106,11 +1106,11 @@ end
 # [0  0 0 ... 0]
 function symplectic_reduction(K::ZZMatrix)
 
-  @req is_zero(K + transpose(K)) "Matrix needs to be skew-symmetric" 
+  @req is_zero(K + transpose(K)) "Matrix needs to be skew-symmetric"
   @req nrows(K) == ncols(K) "Matrix needs to be square"
 
   n = nrows(K)
-  
+
   function find_one_above_pivot(K::ZZMatrix, pivot::Int)
     for i in (pivot:n)
       for j in (pivot:n)
@@ -1121,14 +1121,14 @@ function symplectic_reduction(K::ZZMatrix)
     end
     return [0, 0]
   end
-  
+
   A = deepcopy(K)
   B = one(parent(K))
-  
+
   ind1 = []
   ind2 = []
   pivot = 1
-  
+
   while pivot <= n
     next = find_one_above_pivot(A, pivot)
     if next == [0,0]
@@ -1143,22 +1143,17 @@ function symplectic_reduction(K::ZZMatrix)
       v = -A[pivot, j]
       if v != 0
         #The version with ! gave different results for some reason.
-        #add_row!(A, v, pivot_plus, j)
-        #add_column!(A, v, pivot_plus, j)
-        #add_row!(B, v, pivot_plus, j)
-        A = add_row(A, v, pivot_plus, j)
-        A = add_column(A, v, pivot_plus, j)
-        B = add_row(B, v, pivot_plus, j)
+        add_row!(A, v, pivot_plus, j)
+        add_column!(A, v, pivot_plus, j)
+        add_row!(B, v, pivot_plus, j)
+
         zeros_only = false
       end
       v = A[pivot_plus, j]
       if v != 0
-        A = add_row(A, v, pivot, j)
-        A = add_column(A, v, pivot, j)
-        B = add_row(B, v, pivot, j)
-        #add_row!(A, v, pivot, j)
-        #add_column!(A, v, pivot, j)
-        #add_row!(B, v, pivot, j)
+        add_row!(A, v, pivot, j)
+        add_column!(A, v, pivot, j)
+        add_row!(B, v, pivot, j)
         zeros_only = false
       end
     end
@@ -1175,7 +1170,7 @@ end
 
 function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::ZZMatrix, B::ZZMatrix)
   pivot_plus = pivot + 1
-  v = A[i, j] 
+  v = A[i, j]
   is_pivot = false
   if [i,j] == [pivot_plus, pivot] && A[pivot_plus, pivot] != v
     is_pivot = true
@@ -1193,7 +1188,7 @@ function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::ZZMatrix, B::ZZMa
     swap_rows!(A, pivot_plus, i)
     swap_cols!(A, pivot, j)
     swap_cols!(A, pivot_plus, i)
-  elseif j == pivot 
+  elseif j == pivot
     swap_rows!(B, pivot_plus, i)
     swap_rows!(A, pivot_plus, i)
     swap_cols!(A, pivot_plus, i)
@@ -1201,7 +1196,7 @@ function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::ZZMatrix, B::ZZMa
     swap_rows!(B, pivot, i)
     swap_rows!(A, pivot, i)
     swap_cols!(A, pivot, i)
-  elseif i == pivot 
+  elseif i == pivot
     swap_rows!(B, pivot_plus, j)
     swap_rows!(A, pivot_plus, j)
     swap_cols!(A, pivot_plus, j)
