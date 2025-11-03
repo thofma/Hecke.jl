@@ -85,6 +85,32 @@ end
     @test u == preimage(mU, mU(u))
   end
 
+  L = padic_field(3; precision = 10)
+  U, mU = unit_group(L)
+  a = U([rand(-2:10) for i=1:ngens(U)])
+  b = U([rand(-2:10) for i=1:ngens(U)])
+  c = mU(a+b) - mU(a)*mU(b)
+  @test is_zero(c) || valuation(c) > 0
+  @test preimage(mU, mU(a)) == a
+
+  L, _ = qadic_field(3, 4; precision = 10)
+  U, mU = unit_group(L)
+  a = U([rand(-2:10) for i=1:ngens(U)])
+  b = U([rand(-2:10) for i=1:ngens(U)])
+  c = mU(a+b) - mU(a)*mU(b)
+  @test is_zero(c) || valuation(c) > 0
+  @test preimage(mU, mU(a)) == a
+
+  L = padic_field(3; precision = 50)
+  Lt, t = L[:t]
+  f = 3*t+t^3
+  f = divexact(f, t)(f(f))
+  e, _ = eisenstein_extension(f)
+  U, mU = unit_group(e)
+  a = U(collect(0:ngens(U)-1))
+  c = mU(a+a) - mU(a)*mU(a)
+  @test is_zero(c) || valuation(c) > 0
+  @test preimage(mU, mU(a)) == a
 end
 
 

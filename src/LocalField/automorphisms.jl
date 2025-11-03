@@ -98,7 +98,7 @@ function _roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldE
   @assert length(rts) == 1
   x = gen(parent(f))
   #TODO: Is this setprecision call ok?
-  r = setprecision(lift(rts[1], K), precision(f))
+  r = setprecision(preimage(mk, rts[1]), precision(f))
   pi = uniformizer(K)
   g = f(pi*x+r)
   g = divexact(g, _content(g))
@@ -200,6 +200,11 @@ end
 #
 ################################################################################
 
+
+function automorphism_group(K::QadicField, k::PadicField)
+  @assert base_field(K) == k
+  return automorphism_group(K)
+end
 
 function automorphism_group(K::QadicField)
   aut = automorphism_list(K)

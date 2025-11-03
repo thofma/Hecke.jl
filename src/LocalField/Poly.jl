@@ -411,7 +411,7 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFiel
   if iszero(valuation(leading_coefficient(g)))
     q, f1 = divrem(f, g)
     d, u, v = gcdx(g, f1)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
-    @hassert :padic_poly 1  d == f*v+(u-v*q)*g
+    @hassert :padic_poly 1  iszero(setprecision(d - (f*v+(u-v*q)*g), precision(f)))
     return (d, v, u-v*q)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   ug, gg = fun_factor(g)
@@ -419,10 +419,10 @@ function gcdx(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFiel
     s = invmod(ug, f)
     to_be_div = setprecision(one(Kx)-s*ug, precision(f))
     t = divexact(to_be_div, f)
-    @hassert :padic_poly 1  t*f == 1-s*ug
+    @hassert :padic_poly 1  iszero(setprecision(t*f - (1-s*ug), precision(f)))
     d, u, v = gcdx(f, gg)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
-    @hassert :padic_poly 1  d == u*f + v*gg
-    @hassert :padic_poly 1  d == (u+v*t*gg)*f + v*s*g
+    @hassert :padic_poly 1  iszero(setprecision(d - (u*f + v*gg), precision(f)))
+    @hassert :padic_poly 1  iszero(setprecision(d - ((u+v*t*gg)*f + v*s*g), precision(f)))
     return (d, u+v*t*gg, v*s)::Tuple{Generic.Poly{T}, Generic.Poly{T}, Generic.Poly{T}}
   end
   uf, ff = fun_factor(f)
