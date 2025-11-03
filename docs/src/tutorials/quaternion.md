@@ -159,24 +159,12 @@ K, sqrt2 = quadratic_field(2)
 ````
 
 ````@repl bla
-fl, a = is_norm(K, 2);
+fl, b = is_norm(K, 2);
 nothing #hide
 ````
 
 ````@repl bla
 fl
-````
-
-Since elements with given norm are in general large, they are represented in special "factored" form:
-
-````@repl bla
-a
-````
-
-We can turn this into an ordinary elements using `evaluate`:
-
-````@repl bla
-b = evaluate(a)
 ````
 
 ````@repl bla

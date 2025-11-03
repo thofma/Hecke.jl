@@ -31,7 +31,13 @@
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
 
-        K, a = number_field(x^2-1//d, "a")
+        K, a = number_field(x^2-1//d, "a"; cached = false)
+        O = maximal_order(K)
+        Cl, mCl = Hecke.class_group(O, redo = true)
+        U, mU = Hecke.unit_group(O)
+        @test order(Cl) == h
+
+        K, a = number_field(d*x^2-1, "a"; cached = false)
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O, redo = true)
         U, mU = Hecke.unit_group(O)
@@ -276,8 +282,29 @@ end
     @test order(class_group(OK)[1]) == 1
   end
 
+  @testset "bad defining polynomial" begin
+    Qx, x = QQ[:x]
+    K, a = number_field(10*x^10 + 5//3*x^9 + 5//18*x^8 + 5//108*x^7 + 5//648*x^6 + 5//3888*x^5 + 5//23328*x^4 + 5//139968*x^3 + 5//839808*x^2 + 5//5038848*x + 5//30233088; cached = false)
+    OK = maximal_order(K)
+    @test order(class_group(OK)[1]) == 1
+
+    K, a = number_field(10*x^10 + 5//3*x^9 + 5//18*x^8 + 5//108*x^7 + 5//648*x^6 + 5//3888*x^5 + 5//23328*x^4 + 5//139968*x^3 + 5//839808*x^2 + 5//5038848*x + 5//30233088; cached = false)
+    OK = maximal_order(K)
+    automorphism_list(K)
+    @test order(class_group(OK; use_aut = true)[1]) == 1
+  end
+
+
   @testset "Class group proof" begin
     K, a = number_field(x^2 - 2)
+    OK = maximal_order(K)
+    class_group(OK, GRH = true)
+    c, mc = class_group(OK, GRH = false)
+    @test isone(order(c))
+    unit_group(OK, GRH = false)
+    unit_group(OK, GRH = true)
+
+    K, a = number_field(x^2 - 1//2)
     OK = maximal_order(K)
     class_group(OK, GRH = true)
     c, mc = class_group(OK, GRH = false)
@@ -332,5 +359,14 @@ end
     K, a = quadratic_field(-1)
     O = maximal_order(K)
     @test class_number(O) == 1
+  end
+
+  let
+    # factor base for bad polynomials
+    QQx, x = QQ[:x]
+    f = 3*x^2 - 1//47
+    k, _ = number_field(f; cached = false)
+    B = Hecke.NfFactorBase(lll(maximal_order(k)), 50; complete = false, degree_limit = 0)
+    @test length(B.fb) == 10
   end
 end

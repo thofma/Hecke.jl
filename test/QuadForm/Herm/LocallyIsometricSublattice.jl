@@ -46,7 +46,7 @@
   Lp = representative(g)
 
   @test !is_maximal(L,p)[1]
-  @test_throws AssertionError locally_isometric_sublattice(L, Lp, p)
+  @test_throws ArgumentError locally_isometric_sublattice(L, Lp, p)
   Mp = @inferred locally_isometric_sublattice(M, Lp, p)
   @test is_sublattice(M, Mp)
   @test Hecke._islocally_isometric_kirschmer(Lp, Mp, p)

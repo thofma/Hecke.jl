@@ -344,7 +344,7 @@ function map_data(K::RelSimpleNumField, L, ::Bool)
   return z
 end
 
-function _bubble_up(L, y::RingElement)
+function _bubble_up(L, y::NCRingElement)
   if parent(y) === L
     yy = y
   else
@@ -353,7 +353,7 @@ function _bubble_up(L, y::RingElement)
   return yy::elem_type(L)
 end
 
-function map_data_given_base_field_data(K::RelSimpleNumField, L, z, y::RingElement; check = true)
+function map_data_given_base_field_data(K::RelSimpleNumField, L, z, y::NCRingElement; check = true)
   yy = _bubble_up(L, y)
   if check
     yyy = evaluate(map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false), yy)
@@ -511,7 +511,7 @@ function map_data(K::RelNonSimpleNumField, L, ::Bool)
   return z
 end
 
-function _bubble_up(L, y::Vector{<: RingElement})
+function _bubble_up(L, y::Vector{<: NCRingElement})
   if all(x -> parent(x) === L, y)
     yy = y
   else

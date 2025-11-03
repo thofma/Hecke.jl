@@ -152,6 +152,11 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{QQPolyRingElem, ZZPolyRingElem
                                          have_approx::Bool = false)
   deg = degree(x)
 
+  # work around https://github.com/flintlib/flint/issues/2421
+  if x isa QQPolyRingElem
+    x = divexact(x, leading_coefficient(x))
+  end
+
   initial_prec = (initial_prec >= 2) ? initial_prec : abs_tol
 
   wp = initial_prec

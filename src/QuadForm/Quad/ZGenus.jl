@@ -510,7 +510,7 @@ function integer_genera(sig_pair::Tuple{Int,Int}, _determinant::RationalUnion;
   # clever way to directly match the symbols for different primes.
   for g in cartesian_product_iterator(local_symbols)
     # create a Genus from a list of local symbols
-    G = ZZGenus(sig_pair, copy(g))
+    G = ZZGenus(sig_pair, deepcopy(g))
     !is_equal(abs(det(G)), abs(determinant)) && continue
     even && !iseven(G) && continue
     # discard the empty genera
@@ -542,26 +542,23 @@ No input checks are done.
 function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
                        max_scale::Int, even::Bool)
   scales_rks = Vector{Vector{Int}}[] # contains possibilities for scales & ranks
-  for rkseq in _integer_lists(rank, min_scale, max_scale)
+  sc = max_scale-min_scale+1
+  symbols = Vector{ZZLocalGenus}()
+  if sc<= 0
+    return symbols
+  end
+  for rkseq in partitions_with_condition(rank, sc, det_val-rank*min_scale)
     # rank sequences
     # sum(rkseq) = rank
-    # length(rkseq) = max_scale - min_scale + 1
-    # now assure that we get the right determinant
-    d = 0
     pgensymbol = Vector{Int}[]
-    for i in min_scale:max_scale
-      d += i * rkseq[i-min_scale+1]
+    for i in 1:sc
       # blocks of rank 0 are omitted
-      if rkseq[i-min_scale+1] != 0
-        push!(pgensymbol, Int[i, rkseq[i-min_scale+1], 0])
-      end
+      iszero(rkseq[i]) && continue
+      push!(pgensymbol, Int[i-1+min_scale, rkseq[i], 0])
     end
-    if d == det_val
-      push!(scales_rks, pgensymbol)
-    end
+    push!(scales_rks, pgensymbol)
   end
   # add possible determinant square classes
-  symbols = Vector{ZZLocalGenus}()
   if p != 2
     for g in scales_rks
       n = length(g)
@@ -590,18 +587,16 @@ function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
       end
       for _g1 in cartesian_product_iterator(poss_blocks)
         if _is2adic_genus(_g1)
-          g1 = ZZLocalGenus(p, copy(_g1))
-          # some of our symbols have the same canonical symbol
-          # thus they are equivalent - we want only one in
-          # each equivalence class
-          if !(g1 in symbols)
-            push!(symbols, g1)
-          end
+          g1 = ZZLocalGenus(p, deepcopy(_g1))
+          push!(symbols, g1)
         end
       end
     end
   end
-  return symbols
+  # some of our symbols have the same canonical symbol
+  # thus they are equivalent - we want only one in
+  # each equivalence class
+  return unique!(symbols)  # use unique instead of Set to keep deterministic order
 end
 
 function _local_genera(p::Int, rank::Int, det_val::Int, min_scale::Int,
@@ -633,30 +628,30 @@ function _blocks(b::Array{Int}, even_only=false)
     @assert b[3] == 1
     @assert b[4] == 0
     @assert b[5] == 0
-    push!(blocks, copy(b))
+    push!(blocks, deepcopy(b))
   elseif rk == 1 && !even_only
     for det in [1, 3, 5, 7]
-      b1 = copy(b)
+      b1 = deepcopy(b)
       b1[3] = det
       b1[4] = 1
       b1[5] = det
       push!(blocks, b1)
     end
   elseif rk == 2
-    b1 = copy(b)
+    b1 = deepcopy(b)
     # even case
     b1[4] = 0
     b1[5] = 0
     b1[3] = 3
     push!(blocks, b1)
-    b1 = copy(b1)
+    b1 = deepcopy(b1)
     b1[3] = 7
     push!(blocks, b1)
     # odd case
     if !even_only
       # format (det, oddity)
       for s in Tuple{Int, Int}[(1,2), (5,6), (1,6), (5,2), (7,0), (3,4)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = s[1]
         b1[4] = 1
         b1[5] = s[2]
@@ -665,26 +660,26 @@ function _blocks(b::Array{Int}, even_only=false)
     end
   elseif rk % 2 == 0
     # the even case has even rank
-    b1 = copy(b)
+    b1 = deepcopy(b)
     b1[4] = 0
     b1[5] = 0
     d = mod((-1)^(rk//2), 8)
     for det in Int[d, mod(d * (-3) , 8)]
-      b1 = copy(b1)
+      b1 = deepcopy(b1)
       b1[3] = det
       push!(blocks, b1)
     end
     # odd case
     if !even_only
       for s in Tuple{Int, Int}[(1,2), (5,6), (1,6), (5,2), (7,0), (3,4)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = mod(s[1]*(-1)^(rk//2 -1) , 8)
         b1[4] = 1
         b1[5] = s[2]
         push!(blocks, b1)
       end
       for s in Tuple{Int, Int}[(1,4), (5,0)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = mod(s[1]*(-1)^(rk//2 - 2) , 8)
         b1[4] = 1
         b1[5] = s[2]
@@ -696,7 +691,7 @@ function _blocks(b::Array{Int}, even_only=false)
     for t in Int[1, 3, 5, 7]
       d = mod((-1)^div(rk, 2) * t , 8)
       for det in Int[d, mod(-3*d, 8)]
-        b1 = copy(b)
+        b1 = deepcopy(b)
         b1[3] = det
         b1[4] = 1
         b1[5] = t
@@ -826,10 +821,8 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
-
-  # make a copy and enforce sparsity
-  sym1 = [g for g in symbol(G1) if g[2] != 0]
-  sym2 = [g for g in symbol(G2) if g[2] != 0]
+  sym1 = symbol(G1)
+  sym2 = symbol(G2)
   if length(sym1) == 0 || length(sym2) == 0
     return sym1 == sym2
   end
@@ -838,28 +831,27 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
   end
   n = length(sym1)
   # scales && ranks
-  s1 = Vector{Int}[g[1:2] for g in sym1]
-  s2 = Vector{Int}[g[1:2] for g in sym2]
-  if s1 != s2
+  if !all(sym1[i][1] == sym2[i][1] && sym1[i][2] == sym2[i][2] for i in 1:n)
     return false
   end
   # parity
-  s1 = Int[g[4] for g in sym1]
-  s2 = Int[g[4] for g in sym2]
-  if s1 != s2
+  if !all(sym1[i][4] == sym2[i][4] for i in 1:n)
     return false
   end
   push!(sym1, Int[sym1[end][1]+1, 0, 1, 0, 0])
   push!(sym2, Int[sym1[end][1]+1, 0, 1, 0, 0])
-  pushfirst!(sym1, Int[-1, 0, 1, 0, 0])
-  pushfirst!(sym1, Int[-2, 0, 1, 0, 0])
-  pushfirst!(sym2, Int[-1, 0, 1, 0, 0])
-  pushfirst!(sym2, Int[-2, 0, 1, 0, 0])
+  s = sym1[1][1]
+  pushfirst!(sym1, Int[s-1, 0, 1, 0, 0])
+  pushfirst!(sym1, Int[s-2, 0, 1, 0, 0])
+  pushfirst!(sym2, Int[s-1, 0, 1, 0, 0])
+  pushfirst!(sym2, Int[s-2, 0, 1, 0, 0])
+
   n = length(sym1)
   # oddity && sign walking conditions
   det_differs = Int[i for i in 1:n if _kronecker_symbol(sym1[i][3], 2)
                   != _kronecker_symbol(sym2[i][3], 2)]
   odd = Int[sym1[i][1] for i in 1:n if sym1[i][4] == 1]
+  are_equal = true
   for m in sym2[1][1]:sym2[n][1]
     # "for each integer m for which f_{2^m} has type II, we have..."
     if m in odd
@@ -871,10 +863,18 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
     # where 2^a, 2^b are the values of q for which e_q!=e'_q
     r = 4*sum(min(ZZ(m), sym1[i][1]) for i in det_differs; init = ZZ(0))
     if 0 != mod(l-r, 8)
-      return false
+      are_equal = false
+      break
     end
   end
-  return true
+  # reinstate the original state
+  pop!(sym1)
+  pop!(sym2)
+  popfirst!(sym1)
+  popfirst!(sym1)
+  popfirst!(sym2)
+  popfirst!(sym2)
+  return are_equal
 end
 
 @doc raw"""
@@ -901,7 +901,7 @@ function Base.hash(G::ZZLocalGenus, u::UInt)
     h = xor(hash(prime(G)),  hash(symbol(G)))
   else
     # symbol is not unique but at least scales and ranks
-    h = reduce(xor, (hash(s[1:2]) for s in symbol(G)), init = hash(prime(G)))
+    h = reduce(xor, (hash(view(s, [1,2,4])) for s in symbol(G)), init = hash(prime(G)))
   end
   return xor(h, u)
 end
@@ -1124,7 +1124,7 @@ function symbol(S::ZZLocalGenus, scale::Int)
   sym = symbol(S)
   for s in sym
     if s[1] == scale
-      return copy(s)
+      return s
     end
   end
   if prime(S) != 2
@@ -1145,13 +1145,37 @@ $\prod_{i < j}(a_i, a_j)_p$.
 """
 function hasse_invariant(S::ZZLocalGenus)
   # Conway Sloane Chapter 15 5.3
+  if rank(S) == 0
+    return 1
+  end
   n = dim(S)
   d = det(S)
-  f0 = ZZRingElem[squarefree_part(numerator(d)*denominator(d))]
+  e = numerator(d)*denominator(d)
+  p = prime(S)
+  (v, u) = remove(e, p)
+  if p == 2
+    eps = mod(u, 8)
+    if v == 0
+      data = [[0, n, eps, 1, mod(u+n-1, 8)]]
+    else
+      data = [[0 , n-1, 1, 1, mod(n-1,8)], [v,1, eps, 1, eps]]
+    end
+  else
+    eps = kronecker_symbol(u, p)
+    if v == 0
+      data = [[0, n, eps]]
+    else
+      data = [[0 ,rank(S)-1, 1], [v,1, eps]]
+    end
+  end
+  g = ZZLocalGenus(p, data)
+  #=f0 = ZZRingElem[e]
   append!(f0, eltype(f0)[one(ZZ) for i in 2:n])
   mf0 = diagonal_matrix(f0)
   gf0 = genus(mf0, prime(S))
-  if excess(S) == excess(gf0)
+  @assert g == gf0
+  =#
+  if excess(S) == excess(g)
     return 1
   else
     return -1
@@ -2886,8 +2910,31 @@ function rescale(G::ZZLocalGenus, a::RationalUnion)
   @req !iszero(a) "a must be non-zero"
   a = QQ(a)
   p = prime(G)
-  m = gram_matrix(G)
-  return genus(a*m, p)
+  v, _u = remove(a, p)
+  u = numerator(_u)*denominator(_u)
+  data = deepcopy(symbol(G))
+  if p != 2
+    eps = kronecker_symbol(u,p)
+    for d in data
+      d[1]+= v
+      if !iszero(mod(d[2],2))
+        d[3]*=eps
+      end
+    end
+  else
+    eps = mod(u,8)
+    for d in data
+      d[1]+=v
+      if !iszero(mod(d[2],2))
+        d[3] = mod(d[3]*eps, 8)
+      end
+      d[5] = mod(d[5]*u, 8)
+    end
+  end
+  g = ZZLocalGenus(p, data)
+  #m = gram_matrix(G)
+  #@assert genus(a*m, p)==g
+  return g
 end
 
 @doc raw"""

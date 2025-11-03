@@ -392,4 +392,15 @@
     h = id_hom(QQ)
     @test domain(h) === QQ === codomain(h)
   end
+
+  let
+    k, _ = quadratic_field(2);
+    kx, x = k[:x]
+    K, _ = number_field(x^2 - k(5))
+    A = matrix_algebra(k, 2)
+    f = hom(K, A, A(representation_matrix(gen(K))))
+    @test domain(f) === K
+    @test codomain(f) === A
+    @test f(gen(K)) == A(k[0 1; 5 0])
+  end
 end

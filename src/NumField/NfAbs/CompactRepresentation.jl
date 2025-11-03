@@ -311,6 +311,11 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
     den = denominator(gen(K), ZK)^degree(K)
   end
 
+  den = ZZ(1)
+  if !(is_defining_polynomial_nice(K) && contains_equation_order(ZK))
+    den = denominator(gen(K), ZK)^degree(K)
+  end
+
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 

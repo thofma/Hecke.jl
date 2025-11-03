@@ -583,7 +583,16 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, d
   me = modular_env()
   pp = Int(p)
   me.Fpx = polynomial_ring(residue_ring(ZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
-  fp = me.Fpx(K.pol)
+  fp = try
+         me.Fpx(K.pol)
+       catch e
+         if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+           #indicates a denominator in a coefficient divisible by p
+           throw(BadPrime(p))
+         end
+         rethrow(e)
+       end
+
   if lazy
     if !is_squarefree(fp)
       throw(BadPrime(p))

@@ -105,12 +105,60 @@ mutable struct RiemannSurface
 
   homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
 
+  # A basis of differential forms computed by either
+  # - Riemann-Roch computations
+  # - Using Baker's Theorem. Baker's Theorem says that if the number of 
+  # interior points of the Newton polygon associated to the defining polynomial
+  # is equal to g, a basis of differential forms is given by 
+  # the set of all x^iy^jdx/Df_y where (i,j) is an interior point of the 
+  # Newton polygon.
   basis_of_differentials::Vector{Any}
+  #A boolean that checks whether a Baker basis was used or not.
   baker_basis::Bool
+
+  # The basis of differential forms often shares common factors. 
+  # We can reduce the number of polynomial evaluations we need to do
+  # by evaluating all of the factors at every abscissa and taking products of
+  # the computed values.
+  #
+  # The variable differential_form_data consists of four parts:
+  # - factor_set: The set of n common factors used for integration
+  # - factor_matrix: A g by n matrix storing the exponents of the n factors 
+  # for the g differential forms.
+  # - min_pows: A list of smallest exponents occurring in the factor set 
+  # for every given factor
+  # - range_pows: The number of different powers we need to compute
+  #
+  # Example: Basis is x^3*(x^2-5), (x^2-5)^10*(x-7)^3, x*(x-7), x^5*(x^2-5)
+  #  factor_set = [x, x-7, x^2-5]
+  #  factor_matrix is
+  #  [3, 0, 1, 5]
+  #  [0, 3, 1, 0]
+  #  [1, 10, 0, 1]
+  #  min_pows = [1,1,1]
+  #  range_pows = [4, 2, 9]
+
   differential_form_data::Any
+
+  #Evaluate differential_differential_factors_matrix is a function that
+  # takes as its input 
+  # - a list of factors
+  # - The point x0 we want to integrate at
+  # - a list of m ys such that f(y) = x0 for every y in ys.
+  # As output it gives an m by g matrix A such that A_ij = g_j(x0, y_i) 
+  # where the omega_j = g_jdx are the basis of differential forms.
+  # The function is constructed by using differential forms data. 
+  # The factors are given as input to allow us to choose the precision of the
+  # input factors.
   evaluate_differential_factors_matrix::Any
 
+  # A list of integration schemes used for computations. An integration scheme
+  # consists of a list of abscissae, weights and a bunch of parameters. 
+  # For efficiency we want to reuse integrations schemes as much as possible.
+  # Every path we integrate over gets assigned one of these integrations schemes.
   integration_schemes::Vector{IntegrationScheme}
+
+  # A list of bounds used duting computations
   bounds::Vector{ArbFieldElem}
 
   #A collection of fields and error bounds needed to ensure correctness
@@ -125,6 +173,7 @@ mutable struct RiemannSurface
   computational_precision_complex_field::AcbField
   max_precision_complex_field::AcbField
 
+  #The constructor for a Riemann surface object
   function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     K = base_ring(f)
     
@@ -145,7 +194,7 @@ mutable struct RiemannSurface
     RS.genus = g
 
 
-
+    #Computed a Newton polygon and decide whether we can use a Baker basis or not.
     inner_fac = inner_faces(f)
     if length(inner_fac) == g
       RS.baker_basis = true
@@ -169,6 +218,8 @@ mutable struct RiemannSurface
 
     else
       RS.baker_basis = false
+
+      #Compute the differential forms data mentioned above.
       factor_set = Set()
       factored_nums = []
       factored_denoms = []
@@ -373,6 +424,12 @@ function monodromy_representation(RS::RiemannSurface)
 end
 
 function _monodromy_representation(RS::RiemannSurface)
+
+  # We first take a basis of the fundamental group. 
+  # paths consists of a list of paths, pi1_gens consists of a set of generators
+  # of p1. Every generated is represented as a list of integers. These integers
+  # tell us which elements in paths we need to concatenate to get the path
+  # that corresponds to the generator of pi1.
   paths, pi1_gens = fundamental_group_of_punctured_P1(RS, true)
   f = defining_polynomial(RS)
   m = degree(f, 2)
@@ -381,24 +438,40 @@ function _monodromy_representation(RS::RiemannSurface)
   
   for i in (1:length(paths))
     path = paths[i]
+    # We compute the number of pieces we need to divide a path in in order to
+    # do analytic continuation
     N = ceil(Int, length(path)) +1
+
+    #If the path is a circle or an arc we multiply by an additional factor
     if path_type(path) in [1,2]
       N *= 4
     end
       
       
     Rc = ArbField(precision(RS))
-     
+    
     abscissae = [Rc(n//N) for n in (-N + 1: N - 1)] 
      
+    # Perform analytic continuation along the closed loop path with 
+    # starting point x0. In the algorithm we start with the m ys lying 
+    # over x0 are first sorted according to the "sheet_ordering" function.
+    # The output consists of the ys lying over x0 that we get when continuously
+    # moving them along the path. 
     An = analytic_continuation(RS, path, abscissae)
-    
+
+    # As the order of the ys lying obev x0 changes after analytic continuation,
+    # we can reorder using sheet_ordering again to find out how they were 
+    # permuted to get the corresponding element of the monodromy group.
     path_perm = sortperm(An[end][2], lt = sheet_ordering)
+
+    # Store the permutation with the path
     assign_permutation(path, inv(s_m(path_perm)))
   end
   
   mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
   
+  # Chain all permutations of a all the generators of pi1 together to find
+  # the monodromy of the chosen generator.
   for gamma in pi1_gens
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
     gamma_perm = prod(map(permutation, chain))
@@ -416,10 +489,10 @@ function _monodromy_representation(RS::RiemannSurface)
     inf_perm *= g[2]
   end
   
+  #Additionally add the inverse of the chain around infinity.
   push!(mon_rep, (reverse(inf_chain), inv(inf_perm)))
   RS.monodromy_representation = mon_rep
   return mon_rep
-  
 end
 
 function monodromy_group(RS::RiemannSurface)
@@ -458,8 +531,16 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   if abel_jacobi
     
     #Real part should already be minimal in D_points
-    x0 = Cc(min(floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS)), -1))
-    
+    #x0 = Cc(min(floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS)), -1))
+
+    #Catch the case where flooring an arb is not ambiguous. Floor to the smallest of the two options.
+    x0 = try floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS))
+       catch err
+       try  floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS) -0.5)
+         catch err
+         error("Precision too low")
+       end
+    end
     
     #Connect base point to closest point in D_points
     closest = 1
@@ -471,7 +552,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
         distance = new_distance
       end
     end
-    push!(D_points, x0)
+    push!(D_points, Cc(x0))
     push!(edges, (d +1, closest))
   else
   #Here we take the one that is most suitable if one doesn't need to compute Abel-Jacobi maps according to Neurohr, i.e. we split the longest edge in the middle. 
@@ -706,6 +787,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   prec = precision(RS)
   Rc = ArbField(prec)
   
+  #Embed the polynomial in CC
   f = embed_mpoly(defining_polynomial(RS), v, prec)
   Cc = base_ring(f)
   
@@ -713,6 +795,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
 
   m = degree(f, 2)
   
+  #Add start and end point to the abscissae
   u = vcat([-one(Rc)], abscissae, [one(Rc)])
   N = length(u)
   
@@ -722,16 +805,23 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
 
   z = zeros(Cc, m)
 
+  #Compute x0
   x_vals[1] = evaluate(path, u[1])
 
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   
+  # If we are given initial values we use those. If we don't we compute the
+  # roots of f(x0, y)  0 and sort them.
   if length(start_ys) == 0
     y_vals[1] = sort!(roots(f(x_vals[1], y), initial_prec = prec), lt = sheet_ordering)
   else
     y_vals[1] = start_ys
   end
+
+  # For every tiny path piece from x_vals[l-1] to x_vals[l] we compute how 
+  # the ys that we lifted move along with them using recursive continuation.
+  # We do this until we reach the end of the path
   for l in (2:N)
     x_vals[l] = evaluate(path, u[l])
     z .= y_vals[l-1]
@@ -740,6 +830,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   return collect(zip(x_vals, y_vals))
 end
 
+#
 function recursive_continuation(f, x1, x2, z)
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
@@ -748,6 +839,8 @@ function recursive_continuation(f, x1, x2, z)
   m = degree(f, 2)
   temp_vec = acb_vec(m)
   temp_vec_res = acb_vec(m)
+
+  #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
   d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])]) 
   W = [ f(x2, z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(Cc)) for i in (1:m)]
   w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
@@ -783,6 +876,29 @@ function homology_basis(RS::RiemannSurface)
   return _homology_basis(RS)
 end
 
+# The homology basis is computed using the Tretkoff algorithm described
+# in Neurohr's thesis 4.6.1 on page 82 and in the Appendix of the thesis.
+# Assuming the map C -> P1 is m to 1, the output consists of
+# - a list of cycles L corresponding to r := 2g + m - 1 cycles circling around at least 
+# 2 ramification points. There will be m - 1 related cycles in here
+# - An r x r matrix K encoding the intersection pairing between the r cycles.
+# Its entries are either 1, 0. or -1 depending on whether the cycles intersect
+# and how their orientation is when they do intersect.
+# - A symplectic matrix S that ensure that S^T K S is equal to a matrix
+# where the upper left block consists of the normalized polarization and the
+# rest consists of zeros.
+# [I  0 0 ... 0]
+# [0 -I 0 ... 0]
+# [|  | | ... 0]
+# [0  0 0 ... 0]
+# This ensures that any period matrix P computed using L will have the 
+# property that P * S = [P1, P2, O_{m-1}]
+# where [P1, P2] forms the big period matrix and O_{m-1} is supposed to be the
+# zero matrix. This matrix O_{m-1} can be used as a sanity check for the 
+#numerical computations.
+
+# REMARK: The choice of the polarization is a convention. We could also opt
+# to adopt a different convention if we want to.
 function _homology_basis(RS::RiemannSurface)
   mon_rep = monodromy_representation(RS)
   gens = map(t -> t[2], mon_rep)
@@ -980,6 +1096,14 @@ function _homology_basis(RS::RiemannSurface)
   return RS.homology_basis
 end
 
+# Given an input K this computes S as mentioned in the homology_basis function
+# i,e. the output is a symplectic matrix S that ensure that S^T K S is equal to
+# a matrix where the upper left block consists of the normalized polarization 
+# and the rest consists of zeros.
+# [I  0 0 ... 0]
+# [0 -I 0 ... 0]
+# [|  | | ... 0]
+# [0  0 0 ... 0]
 function symplectic_reduction(K::ZZMatrix)
 
   @req is_zero(K + transpose(K)) "Matrix needs to be skew-symmetric" 

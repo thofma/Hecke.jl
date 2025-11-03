@@ -1415,7 +1415,7 @@ Given a prime ideal $\mathfrak p$, returns all abstract Jordan decompositions
 of rank `r` with determinant valuation `det_val` and scales of the blocks
 bounded by `max_scale`.
 """
-function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = nothing)
+function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = nothing, min_scale::Int=0)
   local _max_scale::Int
 
   if max_scale === nothing
@@ -1424,21 +1424,23 @@ function local_jordan_decompositions(E, p; rank::Int, det_val::Int, max_scale = 
     _max_scale = max_scale
   end
 
+  sc = _max_scale - min_scale + 1
+  # possible scales and ranks
   scales_rks = Vector{Tuple{Int, Int}}[]
-
-  for rkseq in _integer_lists(rank, _max_scale + 1)
-    d = 0
-    pgensymbol = Tuple{Int, Int}[]
-    for i in 0:(_max_scale + 1) - 1
-      d += i * rkseq[i + 1]
-      if rkseq[i + 1] != 0
-        push!(pgensymbol, (i, rkseq[i + 1]))
+  if sc > 0
+    for rkseq in partitions_with_condition(rank, sc, det_val-rank*min_scale)
+      # rank sequences
+      # sum(rkseq) = rank
+      pgensymbol = Tuple{Int,Int}[]
+      for i in 1:sc
+        # blocks of rank 0 are omitted
+        iszero(rkseq[i]) && continue
+        push!(pgensymbol, (i-1+min_scale, rkseq[i]))
       end
-    end
-    if d == det_val
-        push!(scales_rks, pgensymbol)
+      push!(scales_rks, pgensymbol)
     end
   end
+
 
   res = JorDec{typeof(E), typeof(p), elem_type(E)}[]
 
@@ -1963,7 +1965,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
   end
   sig1 = G1.signatures
   sig2 = G2.signatures
-  sig3 = merge(+, sig1, sig2)
+  sig3 = mergewith(+, sig1, sig2)
   # We only keep local symbols which are defined at a bad prime or which are not
   # unimodular.
   filter!(g -> (prime(g) in bd) || scales(g) != Int[0], LGS)

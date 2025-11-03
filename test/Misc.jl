@@ -16,4 +16,5 @@
   include("Misc/MSet.jl")
   include("Misc/AVLTrees.jl")
   include("Misc/QQBar.jl")
+  include("Misc/PartitionsWithCondition.jl")
 end

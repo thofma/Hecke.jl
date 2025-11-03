@@ -1077,6 +1077,7 @@ mutable struct NfToGFMor_easy <: Map{AbsSimpleNumField, fpField, HeckeMap, NfToG
     if isdefined(a, :poly_of_the_field)
       r.defining_pol = a.poly_of_the_field
     else
+      # this happens if the defining polynomial is not nice
       rt = roots(r.Fq, defining_polynomial(k))
       gk = gen(k)
       d = denominator(gk, order(a.P))

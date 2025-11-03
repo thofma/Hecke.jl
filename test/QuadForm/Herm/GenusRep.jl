@@ -176,7 +176,7 @@
     OK = maximal_order(K);
     ps = AbsSimpleNumFieldOrderIdeal[ideal(OK, v) for v in Vector{AbsSimpleNumFieldOrderElem}[map(OK, [2, a^2 + a + 1]), map(OK, [2, a + 3]), map(OK, [11, a + 6]), map(OK, [239, a + 174]), map(OK, [1487, a + 881])]];
     datas = [[(0, 1, 1)], [(0, 1, 1)], [(-1, 1, -1)], [(3, 1, -1)], [(-1, 1, 1)]];
-    lgs = HermLocalGenus{typeof(E), AbsSimpleNumFieldOrderIdeal}[genus(HermLat, E, ps[i], datas[i]) for i in 1:5];
+    lgs = Hecke.local_genus_herm_type(E)[genus(HermLat, E, ps[i], datas[i]) for i in 1:5];
     G = HermGenus(E, 1, lgs, sig)
     GG = representative(G)
     @test GG in G
