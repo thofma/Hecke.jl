@@ -762,7 +762,7 @@ function order(K::S, a::Vector{T}; check::Bool = true, isbasis::Bool = false,
   end
 end
 
-function order(K, a::Vector; check::Bool = true, isbasis::Bool = false,
+function order(K::NumField{QQFieldElem}, a::Vector; check::Bool = true, isbasis::Bool = false,
                cached::Bool = true)
   local b::Vector{elem_type(K)}
   try
@@ -773,6 +773,7 @@ function order(K, a::Vector; check::Bool = true, isbasis::Bool = false,
   end
   return order(K, b, check = check, cached = cached, isbasis = isbasis)
 end
+
 
 @doc raw"""
     order(K::AbsSimpleNumField, A::QQMatrix; check::Bool = true) -> AbsSimpleNumFieldOrder
