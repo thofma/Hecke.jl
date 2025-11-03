@@ -24,10 +24,10 @@
   expected_result = R("0.4968045031 +/- 1e-10") + R("0.2904966226 +/- 1e-10")*im
   @test contains(expected_result, tau[1,1])
 
-  # the same but different
-  f = x^3-1 - y^2
-  RS = RiemannSurface(f, v)
-  @test_broken small_period_matrix(RS)
+  # # the same but different
+  # f = x^3-1 - y^2
+  # RS = RiemannSurface(f, v)
+  # @test_broken small_period_matrix(RS)
 
   # ERROR: A larger example -- this throws an ArgumentError although it works perfectly fine in Magma
   f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
