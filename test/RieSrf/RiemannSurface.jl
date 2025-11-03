@@ -29,4 +29,16 @@
   RS = RiemannSurface(f, v)
   @test_broken small_period_matrix(RS)
 
+  # an Elliptic curve
+  f = x^3 + 1 - y^2
+  RS = RiemannSurface(f, v)
+  tau = small_period_matrix(RS)
+  R = base_ring(tau)
+  t = R("0.5 +/- 1e-10") + R("0.86602540378443864676372317 +/- 1.91e-10")*im
+  @test contains(t, tau[1,1])
+
+  # the same but different
+  f = x^3-1 - y^2
+  RS = RiemannSurface(f, v)
+  small_period_matrix(RS)
 end
