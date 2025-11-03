@@ -431,6 +431,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
   K = Hecke.nf(U)
   @vprintln :Saturate 1 "Simplifying the context"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
+  
   success = false
   restart = false
   while true
@@ -441,6 +442,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = relations(c)
     @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
+ 
     if nrows(e) == 0
       @vprintln :Saturate 1 "sat yielded nothing new at $stable, $success"
       return success
@@ -463,6 +465,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
       end
 
       decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
+
       @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
@@ -529,10 +532,14 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
   new_rels = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}()
   vals_new_rels = Vector{SRow{ZZRingElem}}()
   @vprintln :Saturate 1 "Computing rels..."
+  scan = true
+  #basis is in HNF, the saturation only needs the "essential" bit,
+  #that is all starting at the first none-one entry
   for i=1:length(c.FB.ideals)
-    if cp != 0 && isone(c.M.basis.rows[i].values[1])
+    if cp != 0 && scan && isone(c.M.basis.rows[i].values[1])
       continue
     end
+    scan = false
     @assert all(x -> x > 0, c.M.basis.rows[i].values)
     x = zeros(ZZRingElem, length(R))
     x[i] = 1
@@ -547,6 +554,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
     end
     push!(new_rels, y)
     push!(vals_new_rels, deepcopy(c.M.basis.rows[i]))
+#    @assert evaluate(y)*order(c) == prod(c.FB.ideals[p]^v for (p,v) = c.M.basis.rows[i])
   end
   if use_LLL && !isempty(new_rels)
     M = sparse_matrix(ZZ)
