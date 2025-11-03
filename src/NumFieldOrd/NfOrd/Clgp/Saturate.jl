@@ -6,17 +6,7 @@ export saturate!
 function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::Int, T::Hecke.fpField, D::Vector, cached::Bool)
   Zk = order(Q)
   F, mF = Hecke.ResidueFieldSmallDegree1(Zk, Q)
-  # TODO: this is a bad hack
-  # extend_easy should throw more
-  mF1 = try
-    Hecke.extend_easy(mF, number_field(Zk))
-  catch e
-    if isa(e, UndefRefError)
-      throw(Hecke.BadPrime(p))
-    else
-      rethrow(e)
-    end
-  end
+  mF1 = Hecke.extend_easy(mF, number_field(Zk))
   oF = Int(size(F))-1
   @assert iszero(oF % p)
   pp, e = Hecke.ppio(oF, p)
@@ -431,7 +421,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
   K = Hecke.nf(U)
   @vprintln :Saturate 1 "Simplifying the context"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
-  
+
   success = false
   restart = false
   while true
@@ -442,7 +432,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = relations(c)
     @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
- 
+
     if nrows(e) == 0
       @vprintln :Saturate 1 "sat yielded nothing new at $stable, $success"
       return success

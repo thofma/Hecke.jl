@@ -306,10 +306,6 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
 
   ZK = order(B)
   dB = denominator(B)#*denominator(basis_matrix(ZK, copy = false))
-  den = ZZ(1)
-  if !(is_defining_polynomial_nice(K) && contains_equation_order(ZK))
-    den = denominator(gen(K), ZK)^degree(K)
-  end
 
   den = ZZ(1)
   if !(is_defining_polynomial_nice(K) && contains_equation_order(ZK))
