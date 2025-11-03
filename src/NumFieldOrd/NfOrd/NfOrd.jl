@@ -774,7 +774,6 @@ function order(K::NumField{QQFieldElem}, a::Vector; check::Bool = true, isbasis:
   return order(K, b, check = check, cached = cached, isbasis = isbasis)
 end
 
-
 @doc raw"""
     order(K::AbsSimpleNumField, A::QQMatrix; check::Bool = true) -> AbsSimpleNumFieldOrder
 
