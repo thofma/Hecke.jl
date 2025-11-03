@@ -183,6 +183,8 @@ function order(A::S, B::Vector{T}; check::Bool = true, isbasis::Bool = false, ca
   end
 end
 
+order(A::AbstractAssociativeAlgebra{QQFieldElem}, B::Vector; kw...) = order(A,A.(B)::Vector{elem_type(A)}; kw...)
+
 # legacy
 function order(A::S, M::FakeFmpqMat; kw...) where {S <: AbstractAssociativeAlgebra{QQFieldElem}}
   return order(A, QQMatrix(M); kw...)
