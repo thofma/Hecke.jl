@@ -522,14 +522,10 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
   new_rels = Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}()
   vals_new_rels = Vector{SRow{ZZRingElem}}()
   @vprintln :Saturate 1 "Computing rels..."
-  scan = true
-  #basis is in HNF, the saturation only needs the "essential" bit,
-  #that is all starting at the first none-one entry
   for i=1:length(c.FB.ideals)
-    if cp != 0 && scan && isone(c.M.basis.rows[i].values[1])
+    if cp != 0 && isone(c.M.basis.rows[i].values[1])
       continue
     end
-    scan = false
     @assert all(x -> x > 0, c.M.basis.rows[i].values)
     x = zeros(ZZRingElem, length(R))
     x[i] = 1
@@ -544,7 +540,8 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
     end
     push!(new_rels, y)
     push!(vals_new_rels, deepcopy(c.M.basis.rows[i]))
-#    @assert evaluate(y)*order(c) == prod(c.FB.ideals[p]^v for (p,v) = c.M.basis.rows[i])
+    # the following should hold, but is too expensive to test
+    # @assert evaluate(y)*order(c) == prod(c.FB.ideals[p]^v for (p,v) = c.M.basis.rows[i])
   end
   if use_LLL && !isempty(new_rels)
     M = sparse_matrix(ZZ)
