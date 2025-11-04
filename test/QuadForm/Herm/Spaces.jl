@@ -148,4 +148,13 @@ end
   @test !is_local_norm(EK,n, p)
   @test iszero(valuation(n, p))
 
+  Rx,x = polynomial_ring(QQ,:x)
+  f = x^3 + 52*x^2 + 629*x + 289
+  K, _a = number_field(f)
+  b = -4//17*_a^2 - 72//17*_a - 3
+  P = AbsSimpleNumFieldOrderIdeal[]
+  I = real_places(K)[2:3]
+  a = Hecke._find_quaternion_algebra(b,P,I)
+  @test all(hilbert_symbol(a,b, p) == -1 for p in P)
+  #@test all(v(a)< 0 && v(b)<0  for v in embedding.(I)) # .. doesnt work because domain complex
 end
