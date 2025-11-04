@@ -83,6 +83,9 @@ Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
 Typically, `a` is an element of some ideal with norm `d`.
 """
 function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
+   if !is_defining_polynomial_nice(parent(a))
+     return divexact(norm(a), d)
+   end
    z = QQFieldElem()
    # TODO:
    #CF the resultant code has trouble with denominators,
