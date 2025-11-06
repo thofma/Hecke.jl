@@ -542,7 +542,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
 
 
   if is_definite(L) && is_definite(M)
-    return _is_isometric_with_isometry_definite(L, M; ambient, depth, bacher_depth)
+    return _is_isometric_with_isometry_definite(L, M; ambient_representation, depth, bacher_depth)
   end
 
   if genus(L) != genus(M)
@@ -2871,7 +2871,7 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true, _snf=true)
       continue
     end
     push!(gens, g)
-    push!(imgs, DR(d * prR)[1,:])
+    push!(imgs, DR((d * prR)[1,:]))
   end
   HS, iS = sub(DS, gens)
   HR, iR = sub(DR, imgs)
