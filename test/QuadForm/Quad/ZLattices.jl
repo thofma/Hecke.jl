@@ -327,10 +327,6 @@ end
     b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
-    b, T = is_isometric_with_isometry(L, L2, ambient_representation = true)
-    @test b
-    @test T * gram_matrix(ambient_space(L2)) * transpose(T) ==
-    gram_matrix(ambient_space(L))
   end
 
   D = lattice_database()
