@@ -366,7 +366,12 @@ end
 # This is an internal function, which sets
 # L.automorphism_group_generators
 # L.automorphism_group_order
-function assert_has_automorphisms(L::ZZLat; redo::Bool = false,
+assert_has_automorphisms(L::ZZLat, kwargs...) = _assert_has_automorphisms_ZZLat(L; kwargs...)
+
+# this gets overwritten in Oscar with a faster / more stable method
+_assert_has_automorphisms_ZZLat(L; kwargs...) = __assert_has_automorphisms(L; kwargs...)
+
+function __assert_has_automorphisms(L::ZZLat; redo::Bool = false,
                                             try_small::Bool = true, depth::Int = -1,
                                             bacher_depth::Int = 0)
 
@@ -524,20 +529,34 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
 end
 
 function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
-  @req is_definite(L) && is_definite(M) "The lattices must be definite"
-
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
+  end
+
+  if rank(L) == 0
+    if ambient_representation
+      (degree(L) != degree(M) && error(
+            """Can compute ambient representation only if ambient spaces
+            have the same dimension.""")
+      return true, identity_matrix(QQ, degree(L))
+    else
+      return true, zero_matrix(QQ, 0, 0)
+    end
   end
 
   if genus(L) != genus(M)
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  if rank(L) == 0
-    return true, identity_matrix(QQ, 0, 0)
+  if is_definite(L) && is_definite(M) || error("The lattices must be definite")
+    return _is_isometric_with_isometry_definite(L, M; ambient, depth, bacher_depth)
   end
+end
 
+# assumes rank >0, definite, no genus check
+_is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
+
+function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
   i = sign(gram_matrix(L)[1,1])
   j = sign(gram_matrix(M)[1,1])
   @req i==j "The lattices must have the same signatures"
@@ -2825,7 +2844,7 @@ julia> is_bijective(glue)
 true
 ```
 """
-function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
+function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true, _snf=true)
   if check
     @req is_integral(L) "The lattices must be integral"
     @req is_primitive(L, S) && is_primitive(L, R) "S and R must be primitive in L"
@@ -2848,16 +2867,24 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   imgs = TorQuadModuleElem[]
   for i in 1:rank(L)
     d = bL[i:i,:]
-    g = DS(vec(collect(d * prS)))
-    if all(is_zero, lift(g))
+    g = DS((d * prS)[1,:])
+    if is_zero(g)
       continue
     end
     push!(gens, g)
-    push!(imgs, DR(vec(collect(d * prR))))
+    push!(imgs, DR(d * prR)[1,:])
   end
   HS, iS = sub(DS, gens)
   HR, iR = sub(DR, imgs)
   glue_map = hom(HS, HR, TorQuadModuleElem[HR(lift(i)) for i in imgs])
+  # massage to get an snf
+  if _snf
+    HS, is = snf(HS)
+    iS = is*iS
+    HR, ir = snf(HR)
+    iR = ir*iR
+    glue_map = is*glue_map*inv(ir)
+  end
   @hassert :Lattice 2 is_bijective(glue_map)
   @hassert :Lattice 2 overlattice(glue_map) == L
   return glue_map, iS, iR
