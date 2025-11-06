@@ -535,7 +535,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
 
   if rank(L) == 0
     if ambient_representation
-      (degree(L) != degree(M) && error(
+      degree(L) != degree(M) && error(
             """Can compute ambient representation only if ambient spaces
             have the same dimension.""")
       return true, identity_matrix(QQ, degree(L))
