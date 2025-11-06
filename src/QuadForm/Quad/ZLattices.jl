@@ -540,13 +540,16 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
     end
   end
 
+
+  if is_definite(L) && is_definite(M)
+    return _is_isometric_with_isometry_definite(L, M; ambient, depth, bacher_depth)
+  end
+
   if genus(L) != genus(M)
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  if is_definite(L) && is_definite(M) || error("The lattices must be definite")
-    return _is_isometric_with_isometry_definite(L, M; ambient, depth, bacher_depth)
-  end
+  error("Not implemented for indefinite lattices")
 end
 
 # assumes rank >0, definite, no genus check
