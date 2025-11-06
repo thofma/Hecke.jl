@@ -366,7 +366,7 @@ end
 # This is an internal function, which sets
 # L.automorphism_group_generators
 # L.automorphism_group_order
-assert_has_automorphisms(L::ZZLat, kwargs...) = _assert_has_automorphisms_ZZLat(L; kwargs...)
+assert_has_automorphisms(L::ZZLat; kwargs...) = _assert_has_automorphisms_ZZLat(L; kwargs...)
 
 # this gets overwritten in Oscar with a faster / more stable method
 _assert_has_automorphisms_ZZLat(L; kwargs...) = __assert_has_automorphisms(L; kwargs...)
