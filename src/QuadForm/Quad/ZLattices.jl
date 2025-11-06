@@ -503,10 +503,6 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
     return false
   end
 
-  if genus(L) != genus(M)
-    return false
-  end
-
   if rank(L) == 1
     return gram_matrix(L) == gram_matrix(M)
   end
