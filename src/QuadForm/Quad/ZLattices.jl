@@ -529,15 +529,11 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
     return false, zero_matrix(QQ, 0, 0)
   end
 
+  !ambient_representation || degree(L)==degree(M)==rank(L) || error(
+          """Can compute ambient representation only if lattices are full""")
   if rank(L) == 0
-    if ambient_representation
-      degree(L) != degree(M) && error(
-            """Can compute ambient representation only if ambient spaces
-            have the same dimension.""")
-      return true, identity_matrix(QQ, degree(L))
-    else
-      return true, zero_matrix(QQ, 0, 0)
-    end
+    # same rank
+    return true, zero_matrix(QQ, 0, 0)
   end
 
 
@@ -610,27 +606,8 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; ambient_repre
       @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
       return true, T
     else
-      V = ambient_space(L)
-      W = ambient_space(M)
-      if rank(L) == rank(V)
-        T = inv(basis_matrix(L)) * T * basis_matrix(M)
-      else
-        (!is_regular(V) || !is_regular(W)) &&
-          error(
-            """Can compute ambient representation only if ambient space is
-               regular""")
-          (rank(V) != rank(W)) &&
-          error(
-            """Can compute ambient representation only if ambient spaces
-            have the same dimension.""")
-
-        CV = orthogonal_complement(V, basis_matrix(L))
-        CV = vcat(basis_matrix(L), CV)
-        CW = orthogonal_complement(W, basis_matrix(M))
-        CW = vcat(basis_matrix(M), CW)
-        D = identity_matrix(QQ, rank(V) - rank(L))
-        T = inv(CV) * diagonal_matrix(T, D) * CW
-      end
+      degree(L)==degree(M)==rank(L) || error("Can compute ambient representation only if lattices are full")
+      T = inv(basis_matrix(L)) * T * basis_matrix(M)
       @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
                   gram_matrix(ambient_space(L))
       return true, T
