@@ -987,8 +987,8 @@ function _short_vectors_gram_integral(::Type{S}, _G, lb, ub, elem_type::Type{U} 
   return V
 end
 
-function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = ZZRingElem; hard=false, is_lll_reduced_known::Bool=false) where {S, U}
-  return _short_vectors_gram_integral(S, _G, ZZRingElem(0), ub, U; hard, is_lll_reduced_known)
+function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = ZZRingElem; kwargs...) where {S, U}
+  return _short_vectors_gram_integral(S, _G, ZZRingElem(0), ub, U; kwargs...)
 end
 
 function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bool=false) where {S}

@@ -149,7 +149,7 @@ function init(
   depth::Int=-1,
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
-  known_short_vectors=(QQFieldElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
+  known_short_vectors=(0, []),
 )
   # Compute the necessary short vectors
 
@@ -164,10 +164,13 @@ function init(
 
   @assert bound > 0
 
-  @vprintln :Lattice 1 "Computing short vectors of length $bound"
-  # If one already knows all the short vectors of square at most equal to alpha
+  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
+  # If one already knows all the short vectors of length at most equal to alpha
   alpha, V = known_short_vectors
 
+  # If _V is not empty, then it should contain (up to sign) all the short vectors
+  # of length at most equal to alpha. So if alpha is lower than bound, we add the
+  # missing vectors
   if alpha < bound
     @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
   end
@@ -308,7 +311,7 @@ function try_init_small(
   depth::Int=-1,
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
-  known_short_vectors=(QQFieldElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
+  known_short_vectors=(0, []),
  )
   automorphism_mode = bound == ZZRingElem(-1)
 
@@ -327,15 +330,17 @@ function try_init_small(
   @assert bound > 0
 
   # Compute the necessary short vectors
-  @vprintln :Lattice 1 "Computing short vectors of length $bound"
-  # If one already knows all the short vectors of square at most equal to alpha
-  alpha, _V = known_short_vectors
-  V = Tuple{Vector{Int}, QQFieldElem}[(Int.(v[1]), v[2]) for v in _V]
+  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
+  # If one already knows all the short vectors of length at most equal to alpha
+  alpha, V = known_short_vectors
+  @assert all(Base.Fix2(isa, Vector{Int})∘first, V)
 
-  if alpha < bound
+  # If _V is not empty, then it should contain (up to sign) all the short vectors
+  # of length at most equal to alpha. So if alpha is lower than bound, we add the
+  # missing vectors
+  if alpha <= bound
     @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound, Int; is_lll_reduced_known))
   end
-
   vectors = Vector{Vector{Int}}(undef, length(V))
 
   lengths = Vector{Vector{Int}}(undef, length(V))
@@ -403,7 +408,6 @@ function try_init_small(
   end
 
   V = VectorList(vectors, lengths, use_dict)
-
 
   Csmall.V = V
 

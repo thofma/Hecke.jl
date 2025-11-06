@@ -372,7 +372,7 @@ function assert_has_automorphisms(
   try_small::Bool=true,
   depth::Int=-1,
   bacher_depth::Int=0,
-  known_short_vectors=(ZZRingElem(0), Tuple{Vector{ZZRingElem}, QQFieldElem}[]),
+  known_short_vectors=(0, []),
 )
 
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -426,12 +426,10 @@ function assert_has_automorphisms(
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
     res[1] = Glll
-    sv = eltype(sv)[(solve(T, v[1]; side=left), v[2]) for v in sv]
   else
     T = one(res[1])
   end
   known_short_vectors = (alpha, sv)
-
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
