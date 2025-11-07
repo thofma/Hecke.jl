@@ -141,7 +141,16 @@ end
 
 dim(C::ZLatAutoCtx) = C.dim
 
-function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
+function init(
+  C::ZLatAutoCtx,
+  auto::Bool = true,
+  bound::ZZRingElem = ZZRingElem(-1),
+  use_dict::Bool = true;
+  depth::Int=-1,
+  bacher_depth::Int=0,
+  is_lll_reduced_known::Bool=false,
+  known_short_vectors=(0, []),
+)
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -155,9 +164,16 @@ function init(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(
 
   @assert bound > 0
 
-  @vprintln :Lattice 1 "Computing short vectors of length $bound"
+  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
+  # If one already knows all the short vectors of length at most equal to alpha
+  alpha, V = known_short_vectors
 
-  @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound)
+  # If _V is not empty, then it should contain (up to sign) all the short vectors
+  # of length at most equal to alpha. So if alpha is lower than bound, we add the
+  # missing vectors
+  if alpha < bound
+    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
+  end
 
   vectors = Vector{ZZMatrix}(undef, length(V))
 
@@ -287,7 +303,16 @@ end
 
 # The following functions tries to initialize a ZLatAutoCtx with entries in Int.
 # The return value is flag, Csmall
-function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = ZZRingElem(-1), use_dict::Bool = true; depth::Int = -1, bacher_depth::Int = 0)
+function try_init_small(
+  C::ZLatAutoCtx,
+  auto::Bool = true,
+  bound::ZZRingElem = ZZRingElem(-1),
+  use_dict::Bool = true;
+  depth::Int=-1,
+  bacher_depth::Int=0,
+  is_lll_reduced_known::Bool=false,
+  known_short_vectors=(0, []),
+ )
   automorphism_mode = bound == ZZRingElem(-1)
 
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -305,9 +330,17 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   @assert bound > 0
 
   # Compute the necessary short vectors
-  @vprintln :Lattice 1 "Computing short vectors of length $bound"
-  @vtime :Lattice 1 V = _short_vectors_gram_integral(Vector, C.G[1], bound, Int)
+  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
+  # If one already knows all the short vectors of length at most equal to alpha
+  alpha, V = known_short_vectors
+  @assert all(Base.Fix2(isa, Vector{Int})∘first, V)
 
+  # If _V is not empty, then it should contain (up to sign) all the short vectors
+  # of length at most equal to alpha. So if alpha is lower than bound, we add the
+  # missing vectors
+  if alpha <= bound
+    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound, Int; is_lll_reduced_known))
+  end
   vectors = Vector{Vector{Int}}(undef, length(V))
 
   lengths = Vector{Vector{Int}}(undef, length(V))
@@ -375,7 +408,6 @@ function try_init_small(C::ZLatAutoCtx, auto::Bool = true, bound::ZZRingElem = Z
   end
 
   V = VectorList(vectors, lengths, use_dict)
-
 
   Csmall.V = V
 

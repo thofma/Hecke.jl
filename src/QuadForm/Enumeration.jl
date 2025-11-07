@@ -761,7 +761,7 @@ end
 
 # This is the work horse
 # Assumes that G is a gram matrix, finds all vectors v with length l
-# lb <= v < ub. Also applies the transformation transform
+# lb <= l < ub. Also applies the transformation transform
 #
 # If transform === nothing, no transform in the vector case
 #
@@ -920,7 +920,7 @@ end
 
 # No assumption on _G, algorithm applies LLL
 function _short_vectors_gram(::Type{T}, _G, ub, elem_type::Type{S} = ZZRingElem; hard::Bool = false) where {T, S}
-  return _short_vectors_gram(T, _G, ZZRingElem(0), ub, S, hard = hard)
+  return _short_vectors_gram(T, _G, ZZRingElem(0), ub, S; hard)
 end
 
 ################################################################################
@@ -969,23 +969,35 @@ function _shortest_vectors_gram(_G, elem_type::Type{S} = ZZRingElem) where {S}
   return min, cur_vec
 end
 
-function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = ZZRingElem; hard = false) where {S, U}
-  if hard
+function _short_vectors_gram_integral(::Type{S}, _G, lb, ub, elem_type::Type{U} = ZZRingElem; hard=false, is_lll_reduced_known::Bool=false) where {S, U}
+  if is_lll_reduced_known
+    Glll = _G
+    T = one(_G)
+  elseif hard
     Glll, T = lll_gram_with_transform(_G, LLLContext(0.99999999999999, 0.500000000001, :gram))
   else
     Glll, T = lll_gram_with_transform(_G)
   end
   if S === Vector && isone(T)
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, nothing, one(ZZ), elem_type)
+    V = _short_vectors_gram_nolll_integral(S, Glll, lb, ub, nothing, one(ZZ), elem_type)
   else
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, ub, T, one(ZZ), elem_type)
+    V = _short_vectors_gram_nolll_integral(S, Glll, lb, ub, T, one(ZZ), elem_type)
   end
 
   return V
 end
 
-function _shortest_vectors_gram_integral(::Type{S}, _G) where {S}
-  Glll, T = lll_gram_with_transform(_G)
+function _short_vectors_gram_integral(::Type{S}, _G, ub, elem_type::Type{U} = ZZRingElem; kwargs...) where {S, U}
+  return _short_vectors_gram_integral(S, _G, ZZRingElem(0), ub, U; kwargs...)
+end
+
+function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bool=false) where {S}
+  if is_lll_reduced_known
+    Glll = _G
+    T = one(_G)
+  else
+    Glll, T = lll_gram_with_transform(_G)
+  end
   max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
   @assert max > 0
   if isone(T)

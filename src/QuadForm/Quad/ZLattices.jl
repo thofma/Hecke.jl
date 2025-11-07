@@ -371,9 +371,14 @@ assert_has_automorphisms(L::ZZLat; kwargs...) = _assert_has_automorphisms_ZZLat(
 # this gets overwritten in Oscar with a faster / more stable method
 _assert_has_automorphisms_ZZLat(L; kwargs...) = __assert_has_automorphisms(L; kwargs...)
 
-function __assert_has_automorphisms(L::ZZLat; redo::Bool = false,
-                                            try_small::Bool = true, depth::Int = -1,
-                                            bacher_depth::Int = 0)
+function __assert_has_automorphisms(
+  L::ZZLat;
+  redo::Bool=false,
+  try_small::Bool=true,
+  depth::Int=-1,
+  bacher_depth::Int=0,
+  known_short_vectors=(0, []),
+)
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -396,30 +401,51 @@ function __assert_has_automorphisms(L::ZZLat; redo::Bool = false,
     return nothing
   end
 
+  _alpha, sv = known_short_vectors
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
-  res = ZZMatrix[change_base_ring(ZZ, d * GL)]
+  if !isone(d)
+    res = ZZMatrix[change_base_ring(ZZ, d * GL)]
+    if !iszero(_alpha)
+      alpha = abs(numerator(d*_alpha))
+      sv = eltype(sv)[(v[1], d*v[2]) for v in sv]
+    else
+      alpha = _alpha
+    end
+  else
+    res = ZZMatrix[change_base_ring(ZZ, GL)]
+    if !iszero(_alpha)
+      alpha = abs(numerator(_alpha))
+    else
+      alpha = _alpha
+    end
+  end
+
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
-  # Make the Gram matrix small
-  Glll, T = lll_gram_with_transform(res[1])
-  res[1] = Glll
-
+  if !get_attribute(L, :is_lll_reduced, false)
+    # Make the Gram matrix small
+    Glll, T = lll_gram_with_transform(res[1])
+    res[1] = Glll
+  else
+    T = one(res[1])
+  end
+  known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
     if fl
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
   end
   if !try_small || !fl
-    init(C, depth = depth, bacher_depth = bacher_depth)
+    init(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
 
@@ -441,11 +467,14 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_generators(L::ZZLat; ambient_representation::Bool = true,
-                                                 depth::Int = -1, bacher_depth::Int = 0)
+function automorphism_group_generators(
+  L::ZZLat;
+  ambient_representation::Bool = true,
+  kwargs...,
+)
 
   @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
-  assert_has_automorphisms(L, depth = depth, bacher_depth = bacher_depth)
+  assert_has_automorphisms(L; kwargs...)
 
   gens = L.automorphism_group_generators
   if !ambient_representation
@@ -477,12 +506,15 @@ end
 
 # documented in ../Lattices.jl
 
-function automorphism_group_order(L::ZZLat, depth::Int = -1, bacher_depth::Int = 0)
+function automorphism_group_order(
+  L::ZZLat;
+  kwargs...,
+)
   if isdefined(L, :automorphism_group_order)
     return L.automorphism_group_order
   end
   @req is_definite(L) "The lattice must be definite"
-  assert_has_automorphisms(L; depth, bacher_depth)
+  assert_has_automorphisms(L; kwargs...)
   return L.automorphism_group_order
 end
 
@@ -2005,31 +2037,20 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    lll(L::ZZLat, same_ambient::Bool = true) -> ZZLat
-
-Given an integral $\mathbb Z$-lattice `L` with basis matrix `B`, compute a basis
-`C` of `L` such that the gram matrix $G_C$ of `L` with respect to `C` is LLL-reduced.
-
-By default, it creates the lattice in the same ambient space as `L`. This
-can be disabled by setting `same_ambient = false`.
-Works with both definite and indefinite lattices.
-"""
-function lll(L::ZZLat; same_ambient::Bool = true)
-  rank(L) == 0 && return L
-  def = is_definite(L)
-  G = gram_matrix(L)
-  d = denominator(G)
-  M = change_base_ring(ZZ, d*G)
+function _lll(
+  M::ZZMatrix,
+  def::Bool,
+  ctx::LLLContext = LLLContext(0.99, 0.51, :gram),
+)
   if def
     neg = M[1,1] < 0
     if neg
-      G2, U = lll_gram_with_transform(-M)
+      G2, U = lll_gram_with_transform(-M, ctx)
       G2 = -G2
     else
-      G2, U = lll_gram_with_transform(M)
+      G2, U = lll_gram_with_transform(M, ctx)
     end
-  elseif (rank(L) == 3) && (abs(det(M)) == 1)
+  elseif (nrows(M) == 3) && (abs(det(M)) == 1)
     G2, U = lll_gram_indef_ternary_hyperbolic(M)
   elseif det(M) == 1
     G2, U = lll_gram_indef_with_transform(M)
@@ -2040,12 +2061,55 @@ function lll(L::ZZLat; same_ambient::Bool = true)
     G2, U2 = lll_gram_indef_with_transform(G21)
     U = U2*U21
   end
+  return G2, U
+end
+
+@doc raw"""
+    lll(
+      L::ZZLat;
+      same_ambient::Bool=true,
+      redo::Bool=false,
+      ctx::LLLContext=LLLContext(0.99, 0.51, :gram),
+    ) -> ZZLat
+
+Given an integral $\mathbb Z$-lattice `L` with fixed basis matrix `B`,
+compute a basis `C` of `L` such that the gram matrix $G_C$ of `L` with
+respect to `C` is LLL-reduced.
+
+By default, it creates the lattice in the same ambient space as `L`. This
+can be disabled by setting `same_ambient = false`.
+
+After computation, the new lattice in output remembers that it has a fixed
+lll-reduced basis. If one wants to perform the computations again, one should
+set `redo` to `true`.
+
+The function works with both definite and indefinite lattices. In the definite
+case, one can also speficy the reduction parameters by creating the
+appropriate `LLLContext` (see also `lll_gram`).
+"""
+function lll(
+  L::ZZLat;
+  same_ambient::Bool=true,
+  redo::Bool=false,
+  ctx::LLLContext=LLLContext(0.99, 0.51, :gram),
+)
+  if !redo && get_attribute(L, :is_lll_reduced, false)
+    return L
+  end
+  rank(L) == 0 && return L
+  def = is_definite(L)
+  G = gram_matrix(L)
+  d = denominator(G)
+  M = change_base_ring(ZZ, d*G)
+  G2, U = _lll(M, def, ctx)
   if same_ambient
     B2 = U*basis_matrix(L)
-    return lattice(ambient_space(L), B2; check = false)::ZZLat
+    Llll = lattice(ambient_space(L), B2; check=false)
   else
-    return integer_lattice(; gram = (1//d)*change_base_ring(QQ, G2))
+    Llll = integer_lattice(; gram=(1//d)*change_base_ring(QQ, G2))
   end
+  set_attribute!(Llll, :is_lll_reduced, true)
+  return Llll
 end
 
 ###############################################################################
