@@ -146,11 +146,24 @@ julia> shortest_vectors(rescale(L, -1))
  [1, 0]
 ```
 """
-function rescale(L::ZZLat, r::RationalUnion)
+function rescale(L::ZZLat, r::RationalUnion; cached=false)
+  if isone(r)
+    return L
+  end
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
-  Vr = quadratic_space(QQ, r*gram_space)
-  return lattice(Vr, B; check = false)
+  Vr = quadratic_space(QQ, r*gram_space; check=false, cached)
+  R = lattice(Vr, B; isbasis=true, check = false)
+  if isdefined(L,:gram_matrix)
+    R.gram_matrix = r*L.gram_matrix
+  end
+  if isdefined(L,:scale)
+    R.scale = abs(r)*L.scale
+  end
+  if isdefined(L,:norm)
+    R.norm = abs(r)*L.norm
+  end
+  return R
 end
 
 ################################################################################
@@ -686,7 +699,7 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
      return false, basis_matrix(M)
    end
 
-   hassol, _rels = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side=:left)
+   hassol, _rels = can_solve_with_solution(_solve_init(M), basis_matrix(N); side=:left)
 
    if !hassol || !isone(denominator(_rels))
      return false, basis_matrix(M)
@@ -1022,7 +1035,7 @@ Return whether `L` is even.
 An integer lattice `L` in the rational quadratic space $(V,\Phi)$ is called even
 if $\Phi(x,x) \in 2\mathbb{Z}$ for all $x in L$.
 """
-iseven(L::ZZLat) = is_integral(L) && iseven(numerator(norm(L)))
+@attr Bool iseven(L::ZZLat) = is_integral(L) && iseven(numerator(norm(L)))
 
 ################################################################################
 #
@@ -1048,7 +1061,7 @@ discriminant(L::ZZLat) = discriminant(rational_span(L))
 
 Return the determinant of the gram matrix of `L`.
 """
-function det(L::ZZLat)
+@attr QQFieldElem function det(L::ZZLat)
   return det(gram_matrix(L))
 end
 
@@ -1120,8 +1133,8 @@ function intersect(M::ZZLat, N::ZZLat)
   BNint = change_base_ring(ZZ, d * BN)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
-  BI = divexact(change_base_ring(QQ, hnf(view(K, 1:nrows(K), 1:nrows(BM)) * BMint)), d)
-  return lattice(ambient_space(M), BI; check = false)
+  BI = view(K,:, 1:nrows(BM)) * BM
+  return lattice(ambient_space(M), BI; isbasis=true, check = false)
 end
 
 ################################################################################
@@ -1140,7 +1153,7 @@ function +(M::ZZLat, N::ZZLat)
   if nrows(BN) == 0
     return M
   end
-  B = QQMatrix(_hnf_integral(FakeFmpqMat(vcat(BM, BN))))
+  B = QQMatrix(_hnf!_integral(FakeFmpqMat(vcat(BM, BN))))
   i = 1
   while is_zero_row(B, i)
     i += 1
@@ -1319,11 +1332,16 @@ which agrees locally with `L` at all other places.
 """
 function maximal_even_lattice(L::ZZLat, p::IntegerUnion)
   while true
-    ok, L = is_maximal_even(L, p)
+    ok, L = is_maximal_even(L, p; check=false)
     if ok
       return L
     end
   end
+end
+
+@attr Tuple{ZZMatrix, ZZRingElem} function gram_matrix_integral(L::ZZLat)
+  G = gram_matrix(L)
+  return _fmpq_mat_to_fmpz_mat_den(G)
 end
 
 @doc raw"""
@@ -1346,6 +1364,18 @@ function maximal_integral_lattice(L::ZZLat)
   return rescale(LL2, QQ(1//2))
 end
 
+function maximal_integral_lattice(L::ZZLat, p)
+  @req denominator(norm(L)) == 1 "The norm of the lattice is not integral"
+  if p==2
+    L2 = rescale(L, 2)
+    L2 = maximal_even_lattice(L2, p)
+    L2 = rescale(L2, QQ(1//2))
+  else
+    L2 = maximal_even_lattice(L, p)
+  end
+  return L2
+end
+
 
 @doc raw"""
     is_maximal_even(L::ZZLat, p::IntegerUnion) -> Bool, ZZLat
@@ -1358,8 +1388,8 @@ If $L_p$ is not even, the second output is `L` by default. Otherwise, either
 `L` is maximal at `p` and the second output is `L`, or the second output is
 an overlattice `M` of `L` such that $M_p$ is even and $[M:L] = p$.
 """
-function is_maximal_even(L::ZZLat, p::IntegerUnion)
-  @req denominator(scale(L)) == 1 "The bilinear form is not integral"
+function is_maximal_even(L::ZZLat, p::IntegerUnion; check=true)
+  @req !check || denominator(scale(L)) == 1 "The bilinear form is not integral"
   p != 2 || mod(ZZ(norm(L)), 2) == 0 || return false, L
 
   # o-maximal lattices are classified
@@ -1367,7 +1397,7 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
   if valuation(det(L), p) <= 1
     return true, L
   end
-  G = change_base_ring(ZZ, gram_matrix(L))
+  G, d = gram_matrix_integral(L)
   k = Native.GF(p)
   Gmodp = change_base_ring(k, G)
   V = kernel(Gmodp, side = :left)
@@ -1396,7 +1426,7 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
-      v = zero_matrix(ZZ, 1, nrows(V))
+      v = zero_matrix(ZZ, 1, nrows(HR))
       if !(i isa Nothing)
         v[1, i] = 1
         return true, v
@@ -1404,37 +1434,39 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion)
         return false, v
       end
     end
-    HR8 = change_base_ring(R8, H)
+    n = min(4, nrows(H))
+    HR8 = change_base_ring(R8, view(H,1:n,1:n))
+    D = deepcopy(HR8)
     ok, v = findzero_mod4(HR8)
-    B = identity_matrix(R8, nrows(H))
+    B = identity_matrix(R8, n)
     if !ok
-      D, B = _jordan_2_adic(HR8)
+      D, B = _jordan_2_adic!(D, B, HR8)
       ok, v = findzero_mod4(D)
     end
     if !ok
-      D, B1 = Hecke._normalize(D, p)
-      B = B1 * B
+      D, B = _normalize!(D, B, HR8, p)
       ok, v = findzero_mod4(D)
     end
     if !ok
-      D, B1 = _two_adic_normal_forms(D, p; partial = true)
-      B = B1 * B
+      D, B = _two_adic_normal_forms!(D, B, HR8, p; partial = true)
       ok, v = _is_isotropic_with_vector_mod4(D)
       if !ok
         return true, L
       end
     end
     v = v * B
-    v = map_entries(ZZ, v)
-    v = v * VZ
+    v = map_entries(lift, v)
+    v = v * @view VZ[1:n,:]
     v = QQ(1,2) * change_base_ring(QQ, v)
   end
   v = v * basis_matrix(L)
   B = vcat(basis_matrix(L), v)
-  LL = lattice(ambient_space(L), B; isbasis=false)
-  @assert det(L) ==  det(LL) * p^2 && valuation(norm(LL), p) >= 0
-  @assert denominator(scale(LL))==1
-  @assert p!=2 || mod(ZZ(norm(LL)),2)==0
+  #B = _hnf!_integral(B)
+  #B = B[2:rank(L)+1, :]
+  LL = lattice(ambient_space(L), B; isbasis=false, check=false)
+  @hassert :Lattice 1 det(L) ==  det(LL) * p^2 && valuation(norm(LL), p) >= 0
+  @hassert :Lattice 1 denominator(scale(LL))==1
+  @hassert :Lattice 1 p!=2 || mod(ZZ(norm(LL)),2)==0
   return false, LL
 end
 
@@ -1564,9 +1596,9 @@ end
 
 function Base.hash(L::ZZLat, u::UInt)
   V = ambient_space(L)
-  B = _hnf_integral(FakeFmpqMat(basis_matrix(L)))
+  B = _canonical_basis_matrix(L)
   # We compare lattices in the same ambient space, and since hnf for the basis
-  # matric is unique, one just needs to compare them.
+  # matrix is unique, one just needs to compare them.
   h = xor(hash(V), hash(B))
   return xor(h, u)
 end
@@ -1588,30 +1620,46 @@ OUTPUT:
 an integral lattice `M'` in the ambient space of `M` such that `M` and `M'` are locally equal at all
 completions except at `p` where `M'` is locally isometric to the lattice `L`.
 """
-function local_modification(M::ZZLat, L::ZZLat, p)
+function local_modification(M::ZZLat, L::ZZLat, p; check=true)
   # notation
   _d = denominator(inv(gram_matrix(L)))
   level = valuation(_d, p)
   d = p^(level+1) # +1 since scale(M) <= 1/2 ZZ
 
-  @req is_isometric(L.space, M.space, p) "Quadratic spaces must be locally isometric at p"
+  check && @req is_isometric(L.space, M.space, p) "Quadratic spaces must be locally isometric at p"
   s = denominator(scale(L))
   L_max = rescale(L, s)
-  L_max = maximal_integral_lattice(L_max)
+  L_max = maximal_integral_lattice(L_max, p)
   L_max = rescale(L_max, 1//s)
 
   # invert the gerstein operations
   GLm, U = padic_normal_form(gram_matrix(L_max), p; prec=level+3)
-  B1 = inv(U*basis_matrix(L_max))
+  R, _ = residue_ring(ZZ, d)
+  UR = map_entries(x->(R(ZZ(x))), U)
+  UI = map_entries(lift, inv(UR))
+  B1 = mul!(inv(basis_matrix(L_max)), UI)
 
   GM, UM = padic_normal_form(gram_matrix(M), p; prec=level+3)
   # assert GLm == GM at least modulo p^prec
-  B2 = B1 * UM * basis_matrix(M)
-  Lp = lattice(M.space, B2; check = false)
+  @assert isone(denominator(B1))
+  @assert isone(denominator(UM))
+  n = ncols(GM)
+  #B2 = B1 * UM * basis_matrix(M)
+  #Lp = lattice(ambient_space(M), B2; check = false)
 
   # the local modification
-  S = intersect(Lp, M) + d * M
+  #SS = intersect(Lp + d * M, M)
+
+  B = vcat(mul!(B1,UM),mul!(identity_matrix(QQ,n),d))
+  B = _hnf!_integral!(B,:upperleft)
+  # equvalent to the following but with less allocations
+  #B = vcat(ZZ.(mul!(B1,UM)),mul!(identity_matrix(ZZ,n),d))
+  #B = hnf!(B)
+
+  V = ambient_space(M)
+  S = lattice(V, view(B,1:n,1:n)*basis_matrix(M);isbasis=true, check=false)
   # confirm result
+  #@assert S==SS
   @hassert :Lattice 2 genus(S, p) == genus(L, p)
   return S
 end
@@ -1723,6 +1771,11 @@ function Base.in(v::Vector, L::ZZLat)
   return V in L
 end
 
+@attr AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix} function _solve_init(L::ZZLat)
+  return solve_init(basis_matrix(L))
+end
+
+
 @doc raw"""
     Base.in(v::QQMatrix, L::ZZLat) -> Bool
 
@@ -1731,8 +1784,7 @@ Return whether the row span of `v` lies in the lattice `L`.
 function Base.in(v::QQMatrix, L::ZZLat)
   @req ncols(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   @req nrows(v) == 1 "Must be a row vector."
-  B = basis_matrix(L)
-  fl, w = can_solve_with_solution(B, v; side=:left)
+  fl, w = can_solve_with_solution(_solve_init(L), v; side=:left)
   return fl && isone(denominator(w))
 end
 
@@ -1866,15 +1918,15 @@ with gram matrix
 
 julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
 9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([1 2 3 1 -1 3], 12, 3)
- ([2 4 6 2 1 3], 12, 3)
- ([1 2 3 1 -1 0], 12, 3)
- ([2 4 6 5 1 3], 12, 3)
- ([1 2 3 4 2 0], 12, 3)
- ([1 2 3 1 2 3], 12, 3)
- ([2 4 6 5 4 3], 12, 3)
- ([1 2 3 4 2 3], 12, 3)
- ([1 2 3 1 2 0], 12, 3)
+ ([-1 -2 -3 -4 -2 0], 12, 3)
+ ([-1 -2 -3 -1 1 -3], 12, 3)
+ ([-2 -4 -6 -2 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 -3], 12, 3)
+ ([-2 -4 -6 -5 -4 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 0], 12, 3)
+ ([-1 -2 -3 -4 -2 -3], 12, 3)
+ ([-2 -4 -6 -5 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 1 0], 12, 3)
 
 julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
 Integer lattice of rank 2 and degree 2
@@ -1884,7 +1936,7 @@ with gram matrix
 
 julia> vectors_of_square_and_divisibility(L, 8, 2)
 1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([2 0], 8, 2)
+ ([-2 0], 8, 2)
 
 julia> length(short_vectors(L, 8, 8))
 3
@@ -2988,7 +3040,7 @@ function primitive_extension(glue_map::TorQuadModuleMap)
   z = zero_matrix(QQ, 0, degree(SR))
   B = reduce(vcat, QQMatrix[matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
   B = vcat(basis_matrix(S), basis_matrix(R), B)
-  B = _hnf_integral(B)
+  B = _hnf!_integral(B)
   return lattice(ambient_space(SR), B[end-rank(S)-rank(R)+1:end,:]; check=false), iS, iR
 end
 
@@ -3042,7 +3094,7 @@ function overlattice(glue_map::TorQuadModuleMap)
   z = zero_matrix(QQ, 0, degree(S))
   B = reduce(vcat, QQMatrix[matrix(QQ, 1, degree(S), g) for g in glue]; init=z)
   B = vcat(basis_matrix(S),basis_matrix(R), B)
-  B = _hnf_integral(B)
+  B = _hnf!_integral(B)
   return lattice(ambient_space(S), B[end-rank(S)-rank(R)+1:end,:]; check=false)
 end
 
@@ -3485,33 +3537,7 @@ This implements the 23 holy constructions of the Leech lattice in [CS99](@cite).
 ```jldoctest leech
 julia> R = integer_lattice(gram=2 * identity_matrix(ZZ, 24));
 
-julia> N = maximal_even_lattice(R) # Some Niemeier lattice
-Integer lattice of rank 24 and degree 24
-with gram matrix
-[2   1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   0   1   1   0   0   0   0]
-[1   2   1   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   0   1   0   0   0   0]
-[1   1   2   1   0   0   0   0   0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0]
-[1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   2   1   1   1   0   0   0   0   1   0   1   1   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   2   1   1   0   0   0   0   1   1   0   1   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   2   1   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0   1   1   1   0]
-[0   0   0   0   0   0   0   0   1   2   1   1   0   0   0   0   0   0   0   0   1   0   1   1]
-[0   0   0   0   0   0   0   0   1   1   2   1   0   0   0   0   0   0   0   0   1   1   0   1]
-[0   0   0   0   0   0   0   0   1   1   1   2   0   0   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   1   0   0   0   0   0   2   1   1   1   0   0   0   0   0   0   0   0]
-[0   0   0   0   0   1   1   0   0   0   0   0   1   2   0   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   0   1   0   0   0   0   0   1   0   2   0   0   0   0   0   0   0   0   0]
-[0   0   0   0   1   1   0   0   0   0   0   0   1   0   0   2   0   0   0   0   0   0   0   0]
-[1   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   2   1   1   1   0   0   0   0]
-[0   1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   2   0   0   0   0   0   0]
-[1   0   1   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   2   0   0   0   0   0]
-[1   1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   1   0   0   2   0   0   0   0]
-[0   0   0   0   0   0   0   0   1   1   1   0   0   0   0   0   0   0   0   0   2   1   1   1]
-[0   0   0   0   0   0   0   0   1   0   1   0   0   0   0   0   0   0   0   0   1   2   0   0]
-[0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   0   1   0   2   0]
-[0   0   0   0   0   0   0   0   0   1   1   0   0   0   0   0   0   0   0   0   1   0   0   2]
+julia> N = maximal_even_lattice(R); # Some Niemeier lattice
 
 julia> minimum(N)
 2
@@ -3584,7 +3610,7 @@ function leech_lattice(niemeier_lattice::ZZLat)
   FG = vcat(F, G)
   K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))), side = :right))
   B = change_base_ring(QQ, K) * FG
-  B = _hnf_integral(FakeFmpqMat(B))
+  B = _hnf!_integral(FakeFmpqMat(B))
   B = QQ(1, B.den) * change_base_ring(QQ, B.num[end-23:end, :])
   leech_lattice = lattice(V, B)
   leech_lattice = lll(leech_lattice) # make it a bit prettier
