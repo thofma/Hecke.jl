@@ -22,4 +22,10 @@
   RS = RiemannSurface(f, v)
   small_period_matrix(RS)
 
+  # ERROR: A larger example -- this throws an ArgumentError although it works perfectly fine in Magma
+  # Check example later again -- currently the crucial error bound handling is being processed
+  # f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
+  # RS = RiemannSurface(f, v)
+  # @test_broken small_period_matrix(RS)
+
 end
