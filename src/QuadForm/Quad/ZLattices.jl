@@ -524,25 +524,18 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  !ambient_representation || degree(L)==degree(M)==rank(L) || error(
-          """Can compute ambient representation only if lattices are full""")
+  # cornercase
   if rank(L) == 0
-    # same rank
     return true, zero_matrix(QQ, 0, 0)
   end
 
-
   if is_definite(L) && is_definite(M)
-    return _is_isometric_with_isometry_definite(L, M; ambient_representation, depth, bacher_depth)
-  end
-
-  if genus(L) != genus(M)
-    return false, zero_matrix(QQ, 0, 0)
+    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth)
   end
 
   error("Not implemented for indefinite lattices")
@@ -551,25 +544,26 @@ end
 # assumes rank >0, definite, no genus check
 _is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
 
-function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
   i = sign(gram_matrix(L)[1,1])
   j = sign(gram_matrix(M)[1,1])
   @req i==j "The lattices must have the same signatures"
 
   if i < 0
-    L = rescale(L, -1)
-    M = rescale(M, -1)
+    s = -1
+  else
+    s = 1
   end
 
   GL = gram_matrix(L)
   dL = denominator(GL)
-  GLint = change_base_ring(ZZ, dL * GL)
+  GLint = change_base_ring(ZZ, s * dL * GL)
   cL = content(GLint)
   GLint = divexact(GLint, cL)
 
   GM = gram_matrix(M)
   dM = denominator(GM)
-  GMint = change_base_ring(ZZ, dM * GM)
+  GMint = change_base_ring(ZZ, s * dM * GM)
   cM = content(GMint)
   GMint = divexact(GMint, cM)
 
@@ -579,8 +573,7 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; ambient_repre
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  # Now compute LLL reduces gram matrices
-
+  # Now compute LLL reduced gram matrices
   GLlll, TL = lll_gram_with_transform(GLint)
   @hassert :Lattice 1 TL * change_base_ring(ZZ, dL*GL) * transpose(TL) == GLlll *cL
   GMlll, TM = lll_gram_with_transform(GMint)
@@ -601,17 +594,10 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; ambient_repre
   end
 
   if b
+    # undo LLL
     T = change_base_ring(QQ, inv(TL)*T*TM)
-    if !ambient_representation
-      @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
-      return true, T
-    else
-      degree(L)==degree(M)==rank(L) || error("Can compute ambient representation only if lattices are full")
-      T = inv(basis_matrix(L)) * T * basis_matrix(M)
-      @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
-                  gram_matrix(ambient_space(L))
-      return true, T
-    end
+    @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+    return true, T
   else
     return false, zero_matrix(QQ, 0, 0)
   end
@@ -2636,7 +2622,7 @@ function _ADE_type_with_isometry_irreducible(L)
   if e == -1
     R = rescale(R, -1)
   end
-  t, T = is_isometric_with_isometry(R, L; ambient_representation=false)
+  t, T = is_isometric_with_isometry(R, L)
   @hassert :Lattice 1 t
   return ADE, T
 end

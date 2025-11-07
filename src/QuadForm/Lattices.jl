@@ -1615,7 +1615,7 @@ Setting the parameters `depth` and `bacher_depth` to a positive value may improv
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = is_isometric_with_isometry(L, M; ambient_representation=false, depth = depth, bacher_depth = bacher_depth)[1]
+is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = is_isometric_with_isometry(L, M; depth = depth, bacher_depth = bacher_depth)[1]
 
 
 @doc raw"""
@@ -1626,23 +1626,20 @@ is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int 
 Return whether the lattices `L` and `M` are isometric. If this is the case, the
 second returned value is an isometry `T` from `L` to `M`.
 
-By default, that isometry is represented with respect to the bases of the
-ambient spaces, that is, $T V_M T^t = V_L$ where $V_L$ and $V_M$ are the Gram
-matrices of the ambient spaces of `L` and `M` respectively. If
-`ambient_representation == false`, then the isometry is represented with respect
-to the (pseudo-)bases of `L` and `M`, that is, $T G_M T^t = G_L$ where $G_M$
-and $G_L$ are the Gram matrices of the (pseudo-)bases of `L` and `M`
+The isometry is represented with respect to the (pseudo-)bases of `L` and `M`,
+that is, $T G_M T^t = G_L$ where $G_M$ and $G_L$ are the Gram matrices of the
+(pseudo-)bases of `L` and `M`
 respectively.
 
 Setting the parameters `depth` and `bacher_depth` to a positive value may improve
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
+is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
-                                            ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0)
+                                    depth::Int = -1, bacher_depth::Int = 0)
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)
@@ -1694,21 +1691,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     @hassert :Lattice 1 T * gram_matrix(rational_span(M)) *
                             _map(transpose(T), involution(L)) ==
                                 gram_matrix(rational_span(L))
-    if !ambient_representation
-      return true, T
-    else
-      BL = basis_matrix_of_rational_span(L)
-      BL = vcat(orthogonal_complement(ambient_space(L), BL), BL)
-      BM = basis_matrix_of_rational_span(M)
-      BM = vcat(orthogonal_complement(ambient_space(M), BM), BM)
-      T = block_diagonal_matrix([identity_matrix(base_field(L), degree(L)-rank(L)), T])
-      T = inv(BL)*T*BM
-
-      @hassert :Lattice 1 T * gram_matrix(ambient_space(M)) *
-                              _map(transpose(T), involution(L)) ==
-                                  gram_matrix(ambient_space(L))
-      return true, T
-    end
+    return true, T
   else
     return false, zero_matrix(E, 0, 0)
   end
