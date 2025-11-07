@@ -159,7 +159,7 @@ mutable struct RiemannSurface
     return RS
   end
 
-  function RiemannSurface(f::MPolyRingElem, prec = 100) where T<:Union{PosInf, InfPlc}
+  function RiemannSurface(f::MPolyRingElem, prec = 100)
 
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
@@ -173,15 +173,15 @@ mutable struct RiemannSurface
       old_k = parent(f)
       k = rationals_as_number_field()[1]
       kx, s = polynomial_ring(k, old_k.S)
-      f = f(s)
+      f = f(s[1], s[2])
       kx, x = rational_function_field(k, "x")
       kxy, y = polynomial_ring(kx, "y")
       f_new = f(x, y)
       F, a = function_field(f_new)
-      diff_base = map(t -> evaluate(t, s))
+      #diff_base = map(t -> t(s[1],s[2]), diff_base)
     end
 
-    v = infinite_places(K)[1]
+    v = infinite_places(k)[1]
     RS.defining_polynomial = f
     RS.prec = prec
     RS.embedding = v
