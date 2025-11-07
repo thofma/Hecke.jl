@@ -123,9 +123,15 @@ function is_norm_fac_elem(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZR
   end
 
   SP = prime_ideals_over(L, [x for x = S])
+  @assert length(SP) >= length(S)
 
-  U, mU = sunit_group_fac_elem(SP)
-  u, mu = sunit_group_fac_elem(collect(S))
+  if length(SP) == 0
+    U, mU = unit_group_fac_elem(L)
+    u, mu = sunit_group_fac_elem(ZZRingElem[])
+  else
+    U, mU = sunit_group_fac_elem(SP)
+    u, mu = sunit_group_fac_elem(collect(S))
+  end
 
   h = elem_type(u)[]
   for i=1:ngens(U)

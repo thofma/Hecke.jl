@@ -902,7 +902,7 @@ function _find_quaternion_algebra(b, P, I)
         end
         o = order(mQ(mCl\(q)))
         c = -(hh\(o * (mCl\(q))))
-        fl, x = is_principal_with_data(q * prod(__P[i]^mod(Int(c.coeff[i]), Int(_orders[i])) for i in 1:length(__P)))
+        fl, x = is_principal_with_data(q^o * prod(__P[i]^mod(Int(c.coeff[i]), Int(_orders[i])) for i in 1:length(__P)))
         @assert fl
         v = sign_vector(elem_in_nf(x))
         if rank(M) == rank(vcat(M, v + target))

@@ -762,7 +762,7 @@ function order(K::S, a::Vector{T}; check::Bool = true, isbasis::Bool = false,
   end
 end
 
-function order(K, a::Vector; check::Bool = true, isbasis::Bool = false,
+function order(K::NumField{QQFieldElem}, a::Vector; check::Bool = true, isbasis::Bool = false,
                cached::Bool = true)
   local b::Vector{elem_type(K)}
   try
