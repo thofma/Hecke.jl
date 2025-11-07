@@ -152,13 +152,14 @@ mutable struct RiemannSurface
   max_precision_complex_field::AcbField
 
   #The constructor for a Riemann surface object
-  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
-    K = base_ring(f)
 
+  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
     RS = new()
-    RS.defining_polynomial = f
-    RS.prec = prec
-    RS.embedding = v
+    RS.v = v
+    return RS
+  end
+
+  function RiemannSurface(f::MPolyRingElem, prec = 100) where T<:Union{PosInf, InfPlc}
 
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
@@ -166,6 +167,24 @@ mutable struct RiemannSurface
     f_new = f(x, y)
     F, a = function_field(f_new)
     diff_base = basis_of_differentials(F)
+
+    RS = new()
+    if k == QQ
+      old_k = parent(f)
+      k = rationals_as_number_field()[1]
+      kx, s = polynomial_ring(k, old_k.S)
+      f = f(s)
+      kx, x = rational_function_field(k, "x")
+      kxy, y = polynomial_ring(kx, "y")
+      f_new = f(x, y)
+      F, a = function_field(f_new)
+      diff_base = map(t -> evaluate(t, s))
+    end
+
+    v = infinite_places(K)[1]
+    RS.defining_polynomial = f
+    RS.prec = prec
+    RS.embedding = v
     RS.function_field = F
     RS.basis_of_differentials = diff_base
     g = length(diff_base)
