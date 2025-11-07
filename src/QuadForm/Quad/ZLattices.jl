@@ -379,7 +379,12 @@ end
 # This is an internal function, which sets
 # L.automorphism_group_generators
 # L.automorphism_group_order
-function assert_has_automorphisms(
+assert_has_automorphisms(L::ZZLat; kwargs...) = _assert_has_automorphisms_ZZLat(L; kwargs...)
+
+# this gets overwritten in Oscar with a faster / more stable method
+_assert_has_automorphisms_ZZLat(L; kwargs...) = __assert_has_automorphisms(L; kwargs...)
+
+function __assert_has_automorphisms(
   L::ZZLat;
   redo::Bool=false,
   try_small::Bool=true,
@@ -543,10 +548,6 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
     return false
   end
 
-  if genus(L) != genus(M)
-    return false
-  end
-
   if rank(L) == 1
     return gram_matrix(L) == gram_matrix(M)
   end
@@ -568,39 +569,46 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
-  @req is_definite(L) && is_definite(M) "The lattices must be definite"
-
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  if genus(L) != genus(M)
-    return false, zero_matrix(QQ, 0, 0)
-  end
-
+  # cornercase
   if rank(L) == 0
-    return true, identity_matrix(QQ, 0, 0)
+    return true, zero_matrix(QQ, 0, 0)
   end
 
+  if is_definite(L) && is_definite(M)
+    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth)
+  end
+
+  error("Not implemented for indefinite lattices")
+end
+
+# assumes rank >0, definite, no genus check
+_is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
+
+function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
   i = sign(gram_matrix(L)[1,1])
   j = sign(gram_matrix(M)[1,1])
   @req i==j "The lattices must have the same signatures"
 
   if i < 0
-    L = rescale(L, -1)
-    M = rescale(M, -1)
+    s = -1
+  else
+    s = 1
   end
 
   GL = gram_matrix(L)
   dL = denominator(GL)
-  GLint = change_base_ring(ZZ, dL * GL)
+  GLint = change_base_ring(ZZ, s * dL * GL)
   cL = content(GLint)
   GLint = divexact(GLint, cL)
 
   GM = gram_matrix(M)
   dM = denominator(GM)
-  GMint = change_base_ring(ZZ, dM * GM)
+  GMint = change_base_ring(ZZ, s * dM * GM)
   cM = content(GMint)
   GMint = divexact(GMint, cM)
 
@@ -610,12 +618,11 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  # Now compute LLL reduces gram matrices
-
+  # Now compute LLL reduced gram matrices
   GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(ZZ, dL*GL) * transpose(TL) == GLlll *cL
+  @hassert :Lattice 1 TL * change_base_ring(ZZ, s*dL*GL) * transpose(TL) == GLlll *cL
   GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(ZZ, dM*GM) * transpose(TM) == GMlll *cM
+  @hassert :Lattice 1 TM * change_base_ring(ZZ, s*dM*GM) * transpose(TM) == GMlll *cM
 
   # Setup for Plesken--Souvignier
 
@@ -632,36 +639,10 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; ambient_representation::
   end
 
   if b
+    # undo LLL
     T = change_base_ring(QQ, inv(TL)*T*TM)
-    if !ambient_representation
-      @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
-      return true, T
-    else
-      V = ambient_space(L)
-      W = ambient_space(M)
-      if rank(L) == rank(V)
-        T = inv(basis_matrix(L)) * T * basis_matrix(M)
-      else
-        (!is_regular(V) || !is_regular(W)) &&
-          error(
-            """Can compute ambient representation only if ambient space is
-               regular""")
-          (rank(V) != rank(W)) &&
-          error(
-            """Can compute ambient representation only if ambient spaces
-            have the same dimension.""")
-
-        CV = orthogonal_complement(V, basis_matrix(L))
-        CV = vcat(basis_matrix(L), CV)
-        CW = orthogonal_complement(W, basis_matrix(M))
-        CW = vcat(basis_matrix(M), CW)
-        D = identity_matrix(QQ, rank(V) - rank(L))
-        T = inv(CV) * diagonal_matrix(T, D) * CW
-      end
-      @hassert :Lattice 1 T * gram_matrix(ambient_space(M))  * transpose(T) ==
-                  gram_matrix(ambient_space(L))
-      return true, T
-    end
+    @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+    return true, T
   else
     return false, zero_matrix(QQ, 0, 0)
   end
@@ -2757,7 +2738,7 @@ function _ADE_type_with_isometry_irreducible(L)
   if e == -1
     R = rescale(R, -1)
   end
-  t, T = is_isometric_with_isometry(R, L; ambient_representation=false)
+  t, T = is_isometric_with_isometry(R, L)
   @hassert :Lattice 1 t
   return ADE, T
 end
@@ -2941,7 +2922,7 @@ julia> is_bijective(glue)
 true
 ```
 """
-function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
+function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true, _snf=true)
   if check
     @req is_integral(L) "The lattices must be integral"
     @req is_primitive(L, S) && is_primitive(L, R) "S and R must be primitive in L"
@@ -2964,16 +2945,24 @@ function glue_map(L::ZZLat, S::ZZLat, R::ZZLat; check=true)
   imgs = TorQuadModuleElem[]
   for i in 1:rank(L)
     d = bL[i:i,:]
-    g = DS(vec(collect(d * prS)))
-    if all(is_zero, lift(g))
+    g = DS((d * prS)[1,:])
+    if is_zero(g)
       continue
     end
     push!(gens, g)
-    push!(imgs, DR(vec(collect(d * prR))))
+    push!(imgs, DR((d * prR)[1,:]))
   end
   HS, iS = sub(DS, gens)
   HR, iR = sub(DR, imgs)
   glue_map = hom(HS, HR, TorQuadModuleElem[HR(lift(i)) for i in imgs])
+  # massage to get an snf
+  if _snf
+    HS, is = snf(HS)
+    iS = is*iS
+    HR, ir = snf(HR)
+    iR = ir*iR
+    glue_map = is*glue_map*inv(ir)
+  end
   @hassert :Lattice 2 is_bijective(glue_map)
   @hassert :Lattice 2 overlattice(glue_map) == L
   return glue_map, iS, iR
