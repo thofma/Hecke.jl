@@ -227,6 +227,112 @@ using Hecke
 import Nemo, Nemo.zzModMPolyRingElem, Nemo.zzModMPolyRing
 import AbstractAlgebra
 import Hecke.RecoCtx
+import Base.//, Base.==
+
+struct Term{T}
+  f::T
+  i::Int
+  function Term(f::T, i::Int) where {T <: AbstractAlgebra.MPolyRingElem}
+    return new{T}(f, i)
+  end
+end
+
+function Base.show(io::IO, t::Term)
+  print(io, "$(t.i)-th term of $(t.f)")
+end
+
+struct Terms{T}
+  f::T
+  function Terms(f::T) where {T <: AbstractAlgebra.MPolyRingElem}
+    return new{T}(f)
+  end
+end
+
+function Base.show(io::IO, t::Terms)
+  print(io, "Iterator for the terms of $(t.f)")
+end
+
+function Base.iterate(T::Terms, st::Int = 0)
+  st += 1
+  if st > length(T.f)
+    return nothing
+  end
+  return Term(T.f, st), st
+end
+
+Base.IteratorEltype(M::Terms) = Base.HasEltype()
+Base.eltype(M::Terms{T}) where {T} = Term{T}
+
+Base.IteratorSize(M::Terms) = Base.HasLength()
+Base.length(M::Terms) = length(M.f)
+
+function Base.lastindex(a::Terms)
+  return length(a.f)
+end
+
+function Base.getindex(a::Terms, i::Int)
+  return Term(a.f, i)
+end
+
+function Base.isless(f::Term{T}, g::Term{T}) where T <: Generic.MPoly
+  R = parent(f.f)
+  @assert R == parent(g.f)
+  return AbstractAlgebra.Generic.monomial_isless(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))
+end
+
+function Base.cmp(f::Term{T}, g::Term{T}) where T <: Generic.MPoly
+  R = parent(f.f)
+  @assert R == parent(g.f)
+  return AbstractAlgebra.Generic.cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))
+end
+
+
+function Base.cmp(f::Term{T}, g::Term{T}) where T <: Union{FpMPolyRingElem, FqMPolyRingElem, QQMPolyRingElem, ZZMPolyRingElem, fpMPolyRingElem, fqPolyRepMPolyRingElem, zzModMPolyRingElem}
+  return Int(@ccall Nemo.libflint.mpoly_monomials_cmp(f.f.exps::Ptr{Nothing}, f.f.bits::Clong, g.f.exps::Ptr{Nothing}, g.f.bits::Clong, 1::Clong, pointer_from_objref(parent(f.f))::Ptr{Nothing})::Cint)
+end
+
+function ==(f::Term, g::Term, monomial_only::Bool = false)
+  R = parent(f.f)
+  @assert R == parent(g.f)
+
+  return cmp(f, g)==0 && (monomial_only || coeff(f.f, f.i) == coeff(g.f, g.i))
+end
+
+function Hecke.push_term!(M::MPolyBuildCtx{<:Generic.MPoly{T}}, t::Term{T}) where {T}
+  push_term!(M, coeff(t.f, t.f.i), exponent_vector(t.f, t.f.i))
+end
+
+function Hecke.coeff(t::Term)
+  return coeff(t.f, t.i)
+end
+
+function Hecke.exponent_vector(t::Term)
+  return exponent_vector(t.f, t.i)
+end
+
+function monomial(t::Term)
+  m = parent(r.f)()
+  set_exponent_vector!(m, 1, exponent_vector(t))
+  setcoeff!(m, one(base_ring(m)))
+  return m
+end
+
+function lead_term(f::AbstractAlgebra.MPolyRingElem)
+  return Term(f, 1)
+end
+
+#=TODO
+  fit! for zzModMPolyRingElem
+  coeff(fqPolyRepFieldElem) -> UInt (should be zzModRingElem)
+  zzModMPolyRingElem -> fpMPolyRingElem? at least in Nemo
+  set_coeff should accept UInt
+
+  deal with bad primes (wrong expo vectors)
+  reconstruction - and use it in the _hensel stuff elsewhere...
+  deal with content
+
+=#
+
 
 function Hecke.gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.MPoly{AbsSimpleNumFieldElem})
   # Recognize rational polynomials
@@ -405,7 +511,41 @@ function __gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.M
   end
 end
 
-function Hecke.induce_crt(a::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, p::ZZRingElem, b::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, q::ZZRingElem, signed::Bool = false)
+function expo_cmp(a::Hecke.Generic.MPoly, b::Hecke.Generic.MPoly)
+  Generic.monomial_cmp(a.exps, 1, b.exps, 1, N, parent(a), UInt(0))
+  return a.exps == b.exps
+end
+
+function expo_cmp(a::ZZMPolyRingElem, b::ZZMPolyRingElem)
+  a === b && return true
+  @assert a.length == 1 && b.length == 1
+  return Int(@ccall Nemo.libflint.mpoly_monomials_cmp(a.exps::Ptr{Nothing}, a.bits::Clong, b.exps::Ptr{Nothing}, b.bits::Clong, 1::Clong, a.parent::Ref{ZZMPolyRing})::Cint)
+end
+
+function Hecke.induce_inner_crt(a::ZZRingElem, b::ZZRingElem, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
+  return Hecke.inner_crt(a, b, pi, pq, pq2)
+end
+
+function induce_inner_crt!(a::Term{ZZMPolyRingElem}, b::Term{ZZMPolyRingElem}, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
+
+#  res = Hecke.inner_crt(coeff(a), coeff(b), pi, pq, pq2)
+
+  ap = reinterpret(Ptr{ZZRingElem}, a.f.coeffs + sizeof(ZZRingElem)*(a.i-1))
+  bp = reinterpret(Ptr{ZZRingElem}, b.f.coeffs + sizeof(ZZRingElem)*(b.i-1))
+
+  r = ZZRingElem(Val(:raw))
+
+  sub!(r, bp, ap)
+  mul!(r, r, pi)
+  add!(r, r, ap)
+  mod!(ap, r, pq)
+  if !iszero(pq2) && cmp(ap, pq2) > 0
+    sub!(ap, ap, pq)
+  end
+  Nemo._fmpz_clear_fn(r)
+end
+
+function Hecke.induce_crt(a::T, p::ZZRingElem, b::T, q::ZZRingElem, signed::Bool = false) where T <: Union{Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, ZZMPolyRingElem}
   pi = invmod(p, q)
   mul!(pi, pi, p)
   pq = p*q
@@ -424,55 +564,60 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, p::ZZRi
 
   N = ngens(parent(a))
 
-  ta = terms(a)
-  tb = terms(b)
+  ta = Terms(a)
+  tb = Terms(b)
   c = MPolyBuildCtx(parent(a))
   aa = iterate(ta)
-  if !(aa === nothing)   # allow a to be zero
+  if !isnothing(aa)   # allow a to be zero
     aa, sa = aa
   end
   bb = iterate(tb)
-  if !(bb === nothing)   # also allow b to be zero
+  if !isnothing(bb)   # also allow b to be zero
     bb, sb = bb
   end
 #  @assert length(a) == length(b)
 #  @assert ==(aa, bb, true) # leading terms must agree or else...
-  while !(aa === nothing) && !(bb === nothing)
-    if ==(aa.exps, bb.exps) #monomial equality
-      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), coeff(bb, 1), pi, pq, pq2), exponent_vector(aa, 1))
+  while !isnothing(aa) && !isnothing(bb)
+    cmp = Base.cmp(aa, bb)
+    if cmp == 0
+      induce_inner_crt!(aa, bb, pi, pq, pq2)
       aa = iterate(ta, sa)
       bb = iterate(tb, sb)
-      aa === nothing && break
+      isnothing(aa) && break
       aa, sa = aa
-      bb === nothing && break
+      isnothing(bb) && break
       bb, sb = bb
-    elseif Generic.monomial_isless(aa.exps, 1, bb.exps, 1, N, parent(aa), UInt(0)) #aa < bb
-      push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb, 1))
-      bb, sb = iterate(tb, sb)
-      bb === nothing && break
+    elseif cmp < 0
+      Hecke.push_term!(c, Hecke.induce_inner_crt(z, coeff(bb), pi, pq, pq2), exponent_vector(bb))
+      bb = iterate(tb, sb)
+      isnothing(bb) && break
       bb, sb = bb
     else
-      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa, 1))
+      induce_inner_crt!(aa, z, pi, pq, pq2)
       aa = iterate(ta, sa)
-      aa === nothing && break
+      isnothing(aa) && break
       aa, sa = aa
     end
   end
-  while !(aa === nothing)
-    push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa, 1))
+  while !isnothing(aa)
+    induce_inner_crt!(aa, z, pi, pq, pq2)
     aa = iterate(ta, sa)
-    if !aa === nothing
+    if !isnothing(aa)
       aa, sa = aa
     end
   end
-  while !(bb === nothing)
-    push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb, 1))
+  while !isnothing(bb)
+    Hecke.push_term!(c, Hecke.induce_inner_crt(z, coeff(bb), pi, pq, pq2), exponent_vector(bb))
     bb = iterate(tb, sb)
-    if !(bb === nothing)
+    if !isnothing(bb)
       bb, sb = bb
     end
   end
-  return finish(c), pq
+  fc = finish(c)
+  if length(fc) > 0
+    add!(a, fc)
+  end
+  return a, pq
 end
 
 function Hecke.induce_crt(a::ZZMatrix, p::ZZRingElem, b::ZZMatrix, q::ZZRingElem, signed::Bool = false)
@@ -602,105 +747,6 @@ function Hecke.modular_lift(g::Vector{T}, me::Hecke.modular_env) where T <: MPol
   return finish(bt)
 end
 
-
-#=
-import Base.//, Base.==
-
-struct Term{T}
-  f::T
-  i::Int
-  function Term(f::T, i::Int) where {T <: AbstractAlgebra.MPolyRingElem}
-    return new{T}(f, i)
-  end
-end
-
-function Base.show(io::IO, t::Term)
-  print(io, "$(t.i)-th term of $(t.f)")
-end
-
-struct Terms{T}
-  f::T
-  function Terms(f::T) where {T <: AbstractAlgebra.MPolyRingElem}
-    return new{T}(f)
-  end
-end
-
-function Base.show(io::IO, t::Terms)
-  print(io, "Iterator for the terms of $(t.f)")
-end
-
-function Base.iterate(T::Terms, st::Int = 0)
-  st += 1
-  if st > length(T.f)
-    return nothing
-  end
-  return Term(T.f, st), st
-end
-
-Base.IteratorEltype(M::Terms) = Base.HasEltype()
-Base.eltype(M::Terms{T}) where {T} = Term{T}
-
-Base.IteratorSize(M::Terms) = Base.HasLength()
-Base.length(M::Terms) = length(M.f)
-
-function Base.lastindex(a::Terms)
-  return length(a.f)
-end
-
-function Base.getindex(a::Terms, i::Int)
-  return Term(a.f, i)
-end
-
-function Base.isless(f::Term, g::Term)
-  R = parent(f.f)
-  @assert R == parent(g.f)
-  return AbstractAlgebra.Generic.monomial_isless(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))
-end
-
-function ==(f::Term, g::Term, monomial_only::Bool = false)
-  R = parent(f.f)
-  @assert R == parent(g.f)
-
-  return AbstractAlgebra.Generic.monomial_cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))==0 && (monomial_only || coeff(f.f, f.i) == coeff(g.f, g.i))
-end
-
-#=
-function push_term!(M::MPolyBuildCtx{<:Generic.MPoly{T}}, t::Term{T}) where {T}
-  push_term!(M, coeff(t.f, t.f.i), exponent_vector(t.f, t.f.i))
-end
-=#
-
-function Hecke.coeff(t::Term)
-  return coeff(t.f, t.i)
-end
-
-function Hecke.exponent_vector(t::Term)
-  return exponent_vector(t.f, t.i)
-end
-
-function monomial(t::Term)
-  m = parent(r.f)()
-  set_exponent_vector!(m, 1, exponent_vector(t))
-  setcoeff!(m, one(base_ring(m)))
-  return m
-end
-
-function lead_term(f::AbstractAlgebra.MPolyRingElem)
-  return Term(f, 1)
-end
-
-=#
-#=TODO
-  fit! for zzModMPolyRingElem
-  coeff(fqPolyRepFieldElem) -> UInt (should be zzModRingElem)
-  zzModMPolyRingElem -> fpMPolyRingElem? at least in Nemo
-  set_coeff should accept UInt
-
-  deal with bad primes (wrong expo vectors)
-  reconstruction - and use it in the _hensel stuff elsewhere...
-  deal with content
-
-=#
 
 
 end
