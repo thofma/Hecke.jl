@@ -575,9 +575,9 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
 
   # Now compute LLL reduced gram matrices
   GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(ZZ, dL*GL) * transpose(TL) == GLlll *cL
+  @hassert :Lattice 1 TL * change_base_ring(ZZ, s*dL*GL) * transpose(TL) == GLlll *cL
   GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(ZZ, dM*GM) * transpose(TM) == GMlll *cM
+  @hassert :Lattice 1 TM * change_base_ring(ZZ, s*dM*GM) * transpose(TM) == GMlll *cM
 
   # Setup for Plesken--Souvignier
 
