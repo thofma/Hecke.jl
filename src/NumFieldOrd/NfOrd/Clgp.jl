@@ -269,8 +269,11 @@ function _class_unit_group(O::AbsSimpleNumFieldOrder; saturate_at_2::Bool = true
         fl = false
         p = 2
         while !fl && p < 2*Int(idx)
+          #TODO: if p does not divide the "current index" it can not saturate
           fl = saturate!(c, U, p, stable)
-          p = next_prime(p)
+          if !fl
+            p = next_prime(p)
+          end
         end
         @assert fl  # so I can switch assertions off...
         c.sat_done = 2*Int(idx)

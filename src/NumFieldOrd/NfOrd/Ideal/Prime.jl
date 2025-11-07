@@ -535,7 +535,7 @@ with $\deg(\mathfrak p) > k$ will be discarded.
 """
 function prime_ideals_over(O::AbsSimpleNumFieldOrder,
                            lp::AbstractArray{T};
-                           degree_limit::Int = 0) where T <: IntegerUnion
+                           degree_limit::Int = degree(O)) where T <: IntegerUnion
   p = 1
   r = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for p in lp
