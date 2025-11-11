@@ -527,11 +527,15 @@ function Hecke.induce_inner_crt(a::ZZRingElem, b::ZZRingElem, pi::ZZRingElem, pq
 end
 
 function induce_inner_crt!(a::Term{ZZMPolyRingElem}, b::Term{ZZMPolyRingElem}, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
+  bp = reinterpret(Ptr{ZZRingElem}, b.f.coeffs + sizeof(ZZRingElem)*(b.i-1))
+  return induce_inner_crt!(a, bp, pi, pq, pq2)
+end
+
+function induce_inner_crt!(a::Term{ZZMPolyRingElem}, bp::Nemo.ZZRingElemOrPtr, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
 
 #  res = Hecke.inner_crt(coeff(a), coeff(b), pi, pq, pq2)
 
   ap = reinterpret(Ptr{ZZRingElem}, a.f.coeffs + sizeof(ZZRingElem)*(a.i-1))
-  bp = reinterpret(Ptr{ZZRingElem}, b.f.coeffs + sizeof(ZZRingElem)*(b.i-1))
 
   r = ZZRingElem(Val(:raw))
 
@@ -546,10 +550,13 @@ function induce_inner_crt!(a::Term{ZZMPolyRingElem}, b::Term{ZZMPolyRingElem}, p
 end
 
 function induce_inner_crt!(a::Term{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, b::Term{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
-
   a.f.coeffs[a.i] = Hecke.induce_inner_crt(a.f.coeffs[a.i], b.f.coeffs[b.i], pi, pq, pq2)
-  
 end
+
+function induce_inner_crt!(a::Term{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, b::AbsSimpleNumFieldElem, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
+  a.f.coeffs[a.i] = Hecke.induce_inner_crt(a.f.coeffs[a.i], b, pi, pq, pq2)
+end
+
 
 
 function Hecke.induce_crt(a::T, p::ZZRingElem, b::T, q::ZZRingElem, signed::Bool = false) where T <: Union{Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, ZZMPolyRingElem}
