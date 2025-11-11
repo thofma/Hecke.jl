@@ -283,7 +283,7 @@ end
 function Base.cmp(f::Term{T}, g::Term{T}) where T <: Generic.MPoly
   R = parent(f.f)
   @assert R == parent(g.f)
-  return AbstractAlgebra.Generic.cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))
+  return AbstractAlgebra.Generic.monomial_cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))
 end
 
 
@@ -544,6 +544,13 @@ function induce_inner_crt!(a::Term{ZZMPolyRingElem}, b::Term{ZZMPolyRingElem}, p
   end
   Nemo._fmpz_clear_fn(r)
 end
+
+function induce_inner_crt!(a::Term{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, b::Term{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, pi::ZZRingElem, pq::ZZRingElem, pq2::ZZRingElem)
+
+  a.f.coeffs[a.i] = Hecke.induce_inner_crt(a.f.coeffs[a.i], b.f.coeffs[b.i], pi, pq, pq2)
+  
+end
+
 
 function Hecke.induce_crt(a::T, p::ZZRingElem, b::T, q::ZZRingElem, signed::Bool = false) where T <: Union{Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, ZZMPolyRingElem}
   pi = invmod(p, q)
