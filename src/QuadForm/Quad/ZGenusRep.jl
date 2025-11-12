@@ -369,8 +369,8 @@ function neighbours(
       end
       push!(lifts, w0)
     end
-
     for v in lifts
+      @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       LL = lll(neighbour(L, v, p))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 

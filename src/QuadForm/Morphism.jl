@@ -2376,10 +2376,12 @@ function _isless(x::ZZMatrix, y::ZZMatrix)
   c = ncols(x)
   while i < c
     i += 1
-    if x[i] == y[i]
+    xi = mat_entry_ptr(x, 1, i)
+    yi = mat_entry_ptr(y, 1, i)
+    if cmp(xi,yi) == 0
       continue
     else
-      return x[i] < y[i]
+      return cmp(xi,yi)<0
     end
   end
   return false

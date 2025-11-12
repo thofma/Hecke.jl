@@ -403,6 +403,12 @@ function __assert_has_automorphisms(
     return nothing
   end
 
+  if rank(L) == 1
+    L.automorphism_group_generators = ZZMatrix[-identity_matrix(ZZ, 1)]
+    L.automorphism_group_order = ZZ(2)
+    return nothing
+  end
+
   if !is_definite(L)
     @assert rank(L) == 2
     G = gram_matrix(L)
@@ -1750,6 +1756,11 @@ function Base.in(v::Vector, L::ZZLat)
   @req length(v) == degree(L) "The vector should have the same length as the degree of the lattice."
   V = matrix(QQ, 1, length(v), v)
   return V in L
+end
+
+function coordinates(v::Union{QQMatrix,Vector{QQFieldElem}}, L::ZZLat)
+  S = _solve_init(L)
+  return solve(S, v; side=:left)
 end
 
 @attr AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix} function _solve_init(L::ZZLat)
