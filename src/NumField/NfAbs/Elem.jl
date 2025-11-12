@@ -607,7 +607,7 @@ function roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots::Int = degree(f
     if length(lp) > max_roots
       lp = lp[1:max_roots]
     end
-    return [roots(x)[1] for x = lp]
+    return AbsSimpleNumFieldElem[roots(x)[1] for x = lp]
   end
 
   f = divexact(f, leading_coefficient(f))
