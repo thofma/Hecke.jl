@@ -275,3 +275,15 @@ let
   r = roots(w^3 - (phi - srm)//2)
   @test length(r) == 1
 end
+
+let # issue #2079, Hanselmann
+
+  Kt, t = polynomial_ring(QQ, "t"; cached = false)
+  p = 1200*t^6 - 2800*t^5 - 2232*t^4 + 1444*t^3 + 346*t^2 - 384*t - 175
+  b = -25
+  c = 36//25*t^10 - 96//25*t^9 - 29//25*t^8 + 61//25*t^7 + 9//100*t^6 - 3//50*t^5 + 29//400*t^4 - 51//400*t^3 + 7//800*t^2 + 27//400*t + 9//400
+  L, o = number_field(p; cached = false)
+  Lu, u = polynomial_ring(L, "u"; cached = false)
+  f = L(b) * u^2 + L(c)
+  @test length(roots(f)) == 2
+end
