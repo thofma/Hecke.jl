@@ -403,6 +403,12 @@ function __assert_has_automorphisms(
     return nothing
   end
 
+  if rank(L) == 1
+    L.automorphism_group_generators = ZZMatrix[-identity_matrix(ZZ, 1)]
+    L.automorphism_group_order = ZZ(2)
+    return nothing
+  end
+
   if !is_definite(L)
     @assert rank(L) == 2
     G = gram_matrix(L)
@@ -1752,6 +1758,11 @@ function Base.in(v::Vector, L::ZZLat)
   return V in L
 end
 
+function coordinates(v::Union{QQMatrix,Vector{QQFieldElem}}, L::ZZLat)
+  S = _solve_init(L)
+  return solve(S, v; side=:left)
+end
+
 @attr AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix} function _solve_init(L::ZZLat)
   return solve_init(basis_matrix(L))
 end
@@ -2322,61 +2333,6 @@ function _irreducible_components(G::ZZMatrix, U::ZZMatrix)
   return components
 end
 
-@doc raw"""
-    _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
-                                           -> Bool, ZZRingElem, Vector{ZZMatrix}, ZZMatrix
-
-Given a Gram matrix ``G`` for a positive definite integral lattice ``L``, return
-the minimum ``m`` of a vector in ``L``, a system ``B`` of shortest vectors which
-span the shortest vectors sublattice of ``L``, and the Hermite normal form ``H``
-of such a system. The first output is a boolean which tells whether ``B`` generates
-the lattice ``L``.
-
-!!!
-Warning: the outputs are independent of a choice of a basis for ``L``, except for
-``B`` whose content depends on ``G``. So any other choice of a basis of ``L`` will
-change ``G``, and in turns will change ``B``.
-!!!
-"""
-function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
-  m = minimum(diagonal(G))
-  # We create an iterator to avoid creating very large lists for
-  # lattices with big kissing number
-  V = _short_vectors_gram_nolll_integral(Hecke.LatEnumCtx, G, 0, m, nothing, one(ZZ), ZZRingElem)
-  B = ZZMatrix[]
-  n = ncols(G)
-  H = zero_matrix(ZZ, n+1, n) # One row more for hnf
-  w = zero_matrix(ZZ, 1, n)
-  flag = false
-  for (_v, l) in V
-    if l > m
-      # m is our current minimum: if l is larger than that,
-      # then we do not have a shortest vector so we continue
-      continue
-    elseif l < m
-      # In that case, m was not the minimum so we have to start a new
-      # system of vectors from scratch
-      empty!(B)
-      zero!(H)
-      k = Int(0)
-      m = ZZ(l)
-    end
-    w[1:1, :] = _v
-    # test whether _v is in the span of B
-    reduce_mod_hnf_ur!(w, H)
-    iszero(w) && continue
-    push!(B, matrix(ZZ, 1, n, _v))
-    # We add w in the last row, and we do an hnf
-    # H will always have rank at most n
-    H[(n+1):(n+1), :] = w
-    hnf!(H)
-    if all(isone(H[i, i]) for i in 1:n) # We have a basis
-      flag = true
-      break
-    end
-  end
-  return flag, m, B, H
-end
 
 # Subprocedure for _irreducible_components; see the documentation above
 # for more details
@@ -2491,25 +2447,125 @@ function _connected_components_graph(B::T, G::T) where T <: MatElem
   return _connected_components_graph!(T[B[i:i, :] for i in 1:nrows(B)], G)
 end
 
-### Shortest vectors decomposition
+################################################################################
+#
+#  Shortest vectors lattices
+#
+################################################################################
+
+@doc raw"""
+    _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
+                                           -> Bool, ZZRingElem, Vector{ZZMatrix}, ZZMatrix
+
+Given a Gram matrix ``G`` for a positive definite integral lattice ``L``, return
+the minimum ``m`` of a vector in ``L``, a system ``B`` of shortest vectors which
+span the shortest vectors sublattice of ``L``, and the Hermite normal form ``H``
+of such a system. The first output is a boolean which tells whether ``B`` generates
+the lattice ``L``.
+
+!!!
+Warning: the outputs are independent of a choice of a basis for ``L``, except for
+``B`` whose content depends on ``G``. So any other choice of a basis of ``L`` will
+change ``G``, and in turns will change ``B``.
+!!!
+"""
+function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
+  m = minimum(diagonal(G))
+  # We create an iterator to avoid creating very large lists for
+  # lattices with big kissing number
+  V = _short_vectors_gram_nolll_integral(Hecke.LatEnumCtx, G, 0, m, nothing, one(ZZ), ZZRingElem)
+  B = ZZMatrix[]
+  n = ncols(G)
+  H = zero_matrix(ZZ, n+1, n) # One row more for hnf
+  w = zero_matrix(ZZ, 1, n)
+  flag = false
+  for (_v, l) in V
+    if l > m
+      # m is our current minimum: if l is larger than that,
+      # then we do not have a shortest vector so we continue
+      continue
+    elseif l < m
+      # In that case, m was not the minimum so we have to start a new
+      # system of vectors from scratch
+      empty!(B)
+      zero!(H)
+      k = Int(0)
+      m = ZZ(l)
+    end
+    w[1:1, :] = _v
+    # test whether _v is in the span of B
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    push!(B, matrix(ZZ, 1, n, _v))
+    # We add w in the last row, and we do an hnf
+    # H will always have rank at most n
+    H[(n+1):(n+1), :] = w
+    hnf!(H)
+    if all(isone(H[i, i]) for i in 1:n) # We have a basis
+      flag = true
+      break
+    end
+  end
+  return flag, m, B, H
+end
+
+function _row_span!(L::Vector{ZZMatrix})
+  l = length(L)
+  d = length(L[1])
+  m = min(d,l)
+  B = reduce(vcat, L[1:m])
+  h = hnf!(B)
+  b = similar(L[1])
+  for i in (m+1):l
+    copy!(b, L[i])
+    reduce_mod_hnf_ur!(b, h)
+    if iszero(b)
+      continue
+    else
+      h = vcat(h, b)
+      hnf!(h)
+    end
+  end
+  return h[1:rank(h), :]
+end
+
+function _row_span!(L::Vector{Vector{ZZRingElem}})
+  l = length(L)
+  d = length(L[1])
+  return _row_span!([matrix(ZZ,1,d, i) for i in L])
+end
+
+function _short_vector_generators(L::ZZLat; up_to_sign::Bool=false)
+  sv = shortest_vectors(L)
+  B = _row_span!(sv)*basis_matrix(L)
+  if !up_to_sign
+    append!(sv, [-i for i in sv])
+  end
+  nrows(B) == rank(L) && return sv
+  M = orthogonal_submodule(L, B)
+  svM = _short_vector_generators(M; up_to_sign)
+  T = ZZ.(coordinates(basis_matrix(M), L))
+  append!(sv, [i*T for i in svM])
+  return sv
+end
+
 
 @doc raw"""
     _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
-                                            -> ZZLat, Vector{ZZMatrix}
+                                            -> ZZLat, ZZLat Vector{ZZMatrix}
 
 Given a definite lattice ``L``, return the sublattice ``M`` of ``L`` spanned
 by the vectors of minimal norm in ``L``. The second output contains the
 said vectors, given in terms of the coordinates of ``L``.
 """
 function _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
-  V = ambient_space(L)
   @req !check || is_definite(L) "L must be definite"
+  V = ambient_space(L)
   sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L)]
-  sv_mat = reduce(vcat, sv)
-  hnf!(sv_mat)
-  B = sv_mat[1:rank(sv_mat), :]*basis_matrix(L)
+  B = _row_span!(sv)*basis_matrix(L)
   M = lattice(V, B; check=false)
-  return M, sv
+  P = primitive_closure(L, M)
+  return M, P, sv
 end
 
 @doc raw"""
@@ -2535,9 +2591,8 @@ function _shortest_vectors_decomposition(L::ZZLat; closed::Bool=false, check::Bo
   blocks = ZZLat[]
   _L = L
   while rank(_L) > 0
-    M, svM = _shortest_vectors_sublattice(_L; check=false)
-    map!(v -> v*basis_matrix(_L), svM, svM)
-    push!(blocks, primitive_closure(L, M))
+    M, P, svM = _shortest_vectors_sublattice(_L; check=false)
+    push!(blocks, P)
     append!(sv, svM)
     _L = orthogonal_submodule(_L, M)
   end
