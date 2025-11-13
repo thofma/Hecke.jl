@@ -2510,8 +2510,9 @@ function _row_span!(L::Vector{ZZMatrix})
   m = min(d,l)
   B = reduce(vcat, L[1:m])
   h = hnf!(B)
+  b = similar(L[1])
   for i in (m+1):l
-    b = L[i]
+    copy!(b, L[i])
     reduce_mod_hnf_ur!(b, h)
     if iszero(b)
       continue
