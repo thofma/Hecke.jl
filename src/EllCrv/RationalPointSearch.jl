@@ -91,6 +91,36 @@ function find_points(E::EllipticCurve{QQFieldElem}, bound::IntegerUnion, N = 2^1
 
 end
 
+@doc raw"""
+    find_points(C::HypellCrv{QQFieldElem}, bound::IntegerUnion) -> ArbField
+
+Given a hyperelliptic curve C over QQ with integral coefficients and
+a bound, return a list of points (x: y: 1) on the curve
+where writing x = a//b with gcd(a, b) = 1 the points are bounded by
+max(|a|, |b|) <= bound.
+"""
+function find_points(C::HypellCrv{QQFieldElem}, bound::IntegerUnion, N = 2^14, P = 40, Pfirst = 30)
+  @req is_integral_model(C) "Hyperelliptic Curve needs to be integral"
+  f, h = hyperelliptic_polynomials(C)
+  f_new = 4*f + h^2
+  n = degree(f_new)
+  coeffs = collect(coefficients(f_new))
+  coeffs = map(numerator, coeffs)
+  points = _find_points(coeffs, bound, N, P, Pfirst)
+
+  if iseven(n)
+    start = 3
+  else
+    start = 2
+  end
+
+  for i in (start:length(points))
+    points[i] = transform_ys(points[i], h)
+  end
+
+  return map(t -> C(collect(t)), points)
+
+end
 
 #Using transform ys is pretty inefficient. In principle one could test the x-coordinates directly on
 #E as the transformation to b only affects the y coordinate. On the other hand.. the set of points will probably be pretty small, so it won't matter that much.
@@ -99,6 +129,13 @@ function transform_ys(P::Tuple{QQFieldElem, QQFieldElem, QQFieldElem}, a1::QQFie
     return (zero(QQ), one(QQ), zero(QQ))
   end
   return (P[1], (P[2] - a1*P[1] - a3)//2, 1)
+end
+
+function transform_ys(P::Tuple{QQFieldElem, QQFieldElem, QQFieldElem}, h::QQPolyRingElem)
+  if P[3]== 0
+    return (zero(QQ), one(QQ), zero(QQ))
+  end
+  return (P[1], (P[2] - evaluate(h, P[1]))//2, 1)
 end
 
 function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N = 2^14, P = 40, Pfirst = 30)
