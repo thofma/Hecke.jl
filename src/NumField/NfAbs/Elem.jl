@@ -595,7 +595,6 @@ function roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots::Int = degree(f
     return AbsSimpleNumFieldElem[-coeff(f, 0)//coeff(f, 1)]
   end
 
-  f = divexact(f, leading_coefficient(f))
   rts = AbsSimpleNumFieldElem[]
 
   if iszero(constant_coefficient(f))
@@ -605,6 +604,17 @@ function roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots::Int = degree(f
     end
     _, f = remove(f, gen(parent(f)))
   end
+
+  if !is_defining_polynomial_nice(base_ring(f))
+    lf = factor(f)
+    lp = [x[1] for x = lf if degree(x[1]) == 1]
+    if length(lp) > max_roots
+      lp = lp[1:max_roots]
+    end
+    return AbsSimpleNumFieldElem[roots(x)[1] for x = lp]
+  end
+
+  f = divexact(f, leading_coefficient(f))
 
   if !is_squarefree && !Hecke.is_squarefree(f)
     g = gcd(f, derivative(f))
