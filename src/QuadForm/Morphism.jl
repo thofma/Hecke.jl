@@ -2371,7 +2371,7 @@ end
 #
 ##########################################
 
-function _isless(x::ZZMatrix, y::ZZMatrix)
+function _isless(x::T, y::T) where T<:Union{ZZMatrix,QQMatrix}
   i = 0
   c = ncols(x)
   while i < c
