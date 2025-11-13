@@ -2373,8 +2373,8 @@ end
 
 function _isless(x::T, y::T) where T<:Union{ZZMatrix,QQMatrix}
   i = 0
-  c = ncols(x)
-  while i < c
+  n = ncols(x)
+  while i < n
     i += 1
     xi = mat_entry_ptr(x, 1, i)
     yi = mat_entry_ptr(y, 1, i)
