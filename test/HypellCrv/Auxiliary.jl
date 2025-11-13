@@ -10,7 +10,7 @@
     image = [values[i]*lambda^wghts[i] for i in (1:length(wghts))]
     @test weighted_equality(values, image, wghts)
 
-    @test weighted_reduction(image, wghts) ==  [0, 3105562731008915782481344, 
+    @test @inferred weighted_reduction(image, wghts) ==  [0, 3105562731008915782481344, 
       1028562127914445898022660216566371312445952,
       7829078948476295033372631581424820715020840434928081930961883136,
      -5784350570423792583211668018672518864058132517697479844970637155487744]
@@ -19,9 +19,9 @@
     lambda = -3
     values = map(K, [200,-5,0,0,-7])
     image = [values[i]*lambda^wghts[i] for i in (1:length(wghts))]
-    @test weighted_equality(values, image, wghts)
+    @test @inferred weighted_equality(values, image, wghts)
 
-    @test weighted_reduction(image, wghts) == values
+    @test @inferred weighted_reduction(image, wghts) == values
     
     K, a = cyclotomic_field(8)
 
@@ -29,7 +29,7 @@
     lambda = -3
     values = map(K, [a-12,31*a+3,a^2-5,-7])
     image = [values[i]*lambda^wghts[i] for i in (1:length(wghts))]
-    @test weighted_equality(values, image, wghts)
+    @test @inferred weighted_equality(values, image, wghts)
 
     image = [image[i]+1 for i in (1:length(wghts))]
     @test !weighted_equality(values, image, wghts)
@@ -41,7 +41,7 @@
     lambda = -3
     values = map(K, [a-12,31*a+3,a^2-5,-7])
     image = [values[i]*lambda^wghts[i] for i in (1:length(wghts))]
-    @test weighted_equality(values, image, wghts)
+    @test @inferred weighted_equality(values, image, wghts)
     @test !weighted_equality(values, map(K, [0,31*a+3,a^2-5,-7]), wghts)
 
   end
