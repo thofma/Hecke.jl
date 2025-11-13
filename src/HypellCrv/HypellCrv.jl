@@ -578,7 +578,7 @@ Given a binary form over QQ that is stable (i.e. f is not divisible by a
 linear form of degree m with 2m >= deg(f)), compute the binary form with 
 minimal Julia covariant. 
 """
-function reduce_binary_form(f::MPolyRingElem)
+function reduce_binary_form(f::MPolyRingElem{T}) where T
   #Check stability
   n = total_degree(f)
   ms = values(factor(f).fac)
@@ -599,17 +599,18 @@ function reduce_binary_form(f::MPolyRingElem)
     f_inf = evaluate(f, [Qt(1), t])
     S2 = roots(f_fin;initial_prec = 200)
     S_inf = valuation(f_inf, t)
-
+    
     # repos(map(x-> x - a, S2), S_inf) returns whether Re(zF) >= a
     # The goal is to get -1/2 <= Re(z(F)) <= 1/2
     # We first find u and l such that l- 1/2 <= Re(z(F)) <= u - 1/2.
-    if repos(map(x-> x - CC(1/2), S2), S_inf)
+    S_new = map(x-> CC(x - 1/2), S2)
+    if repos(S_new, S_inf)
       k = 0
       l = 1
       u = 2
       # Note that in Stoll's preprint u + 1/2 is written, but to test
       # when the value is no longer >= u - 1/2, we need u - 1/2 instead.
-      while repos(map(x-> x - CC(u - 1/2), S2), S_inf)
+      while test_u(u, S2, S_inf)
         k += 1
         l = u
         u = u + 2^k
@@ -623,7 +624,7 @@ function reduce_binary_form(f::MPolyRingElem)
       l = -1
       # Note that in Stoll's preprint l + 1/2 is written, but to test
       # when the value is >= l - 1/2, we need l - 1/2 instead.
-      while !repos(map(x-> x - CC(l - 1/2), S2), S_inf)
+      while !test_u(l, S2, S_inf)
         k += 1
         u = l
         l = l - 2^k
@@ -641,7 +642,7 @@ function reduce_binary_form(f::MPolyRingElem)
       end
     end
 
-    f = evaluate(f, [x + l*z, z])
+    f = Rxz(evaluate(f, [x + l*z, z]))
     gamma = gamma * matrix(ZZ, [[1,l],[0,1]])
     f_fin = evaluate(f, [s, Cs(1)])
     S2 = roots(f_fin;initial_prec = 200)
@@ -661,11 +662,17 @@ function reduce_binary_form(f::MPolyRingElem)
     if repos(S2_flipped, S_inf_flipped)
       return f, gamma
     end
-    f = evaluate(f, [-z,x])
+    f = Rxz(evaluate(f, [-z,x]))
     gamma = gamma * matrix(ZZ, [[0,-1],[1,0]])
   end
 end
 
+
+function test_u(u, S2, S_inf)
+  CC = parent(S2[1])
+  S_new = map(x-> x - CC(u - 1/2), S2)
+  return repos(S_new, S_inf)
+end
 
 function repos(S2::Vector{AcbFieldElem}, S_inf::Int)
   CC = parent(S2[1])

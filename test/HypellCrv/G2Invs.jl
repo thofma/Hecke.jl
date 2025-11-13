@@ -17,8 +17,8 @@
     @test weighted_equality(ig_invs, [ QQ(-2880), QQ(190078), QQ(4428544), QQ(-12220963201), QQ(-91424898432) ] ,[2,4,6,8,10])
     @test g2_invs == [ QQ(171992678400000//79361891), QQ(563065344000//11337413), QQ(-31885516800//79361891) ]
 
-    @test weighted_equality(igusa_clebsch_from_igusa(ig_invs), ig_cl_invs(C), [2,4,6,10])
-    @test weighted_equality(clebsch_from_igusa_clebsch(ig_cl_invs(C)), cl_invs(C), [2,4,6,10])
+    @test weighted_equality(igusa_clebsch_from_igusa(ig_invs), ig_cl_invs, [2,4,6,10])
+    @test weighted_equality(clebsch_from_igusa_clebsch(ig_cl_invs), cl_invs, [2,4,6,10])
     @test weighted_equality(igusa_from_g2(g2_invs), ig_invs, [2,4,6,8,10])
 
 
