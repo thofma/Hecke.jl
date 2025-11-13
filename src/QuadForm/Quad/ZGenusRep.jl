@@ -293,6 +293,7 @@ function neighbours(
       gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
     end
     @hassert :ZGenRep 3 !isempty(gensp)
+    @vprintln :ZGenRep 3 "computing line orbits: $((p^rank(L)-1)/(p-1))"
     orbs = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)] # Hopefully we took care prior to this that `line_orbits`
                                                                       # terminates and do not blow the memory up...
     maxlines = length(orbs)
@@ -737,8 +738,8 @@ function enumerate_definite_genus(
       end
       use_mass && is_zero(missing_mass[]) && break
       if use_mass
-        @v_do :ZGenRep 1 perc = Float64(missing_mass[]//_mass) * 100
-        @vprintln :ZGenRep 1 "Lattices: $(length(res)), Target mass: $(_mass). missing: $(missing_mass[]) ($(perc)%)"
+        @v_do :ZGenRep 1 perc = Float64(missing_mass[]//_mass * 100)
+        @vprintln :ZGenRep 1 "Lattices: $(length(res)), Target mass: $(_mass). missing: $(missing_mass[]) ($(perc)%) Buckets: $(multiset(length.(values(inv_dict))))"
       else
         @vprintln :ZGenRep 1 "Lattices: $(length(res))"
       end

@@ -2378,11 +2378,9 @@ function _isless(x::T, y::T) where T<:Union{ZZMatrix,QQMatrix}
     i += 1
     xi = mat_entry_ptr(x, 1, i)
     yi = mat_entry_ptr(y, 1, i)
-    if cmp(xi,yi) == 0
-      continue
-    else
-      return cmp(xi,yi)<0
-    end
+    c = cmp(xi,yi)
+    c == 0 && continue
+    return c<0
   end
   return false
 end
