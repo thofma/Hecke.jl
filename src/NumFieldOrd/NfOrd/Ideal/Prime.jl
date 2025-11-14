@@ -392,7 +392,7 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
-  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P))
+  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P)) && is_defining_polynomial_nice(nf(order(P)))
     Pinv = inv(P)
     P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer
