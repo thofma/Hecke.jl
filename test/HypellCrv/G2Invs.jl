@@ -80,7 +80,7 @@
     @test weighted_equality(igusa_invariants(C),[ F(0), F(2), F(3), F(6), F(3)] ,[2,4,6,8,10])
     @test g2_invariants(C) == [ F(0), F(2), F(2) ]
 
-    @test weighted_equality(igusa_clebsch_from_igusa(igusa_invariants(C)), igusa_invariants(C), [2,4,6,10])
+    @test weighted_equality(igusa_clebsch_from_igusa(igusa_invariants(C)), igusa_clebsch_invariants(C), [2,4,6,10])
     @test weighted_equality(clebsch_from_igusa_clebsch(igusa_clebsch_invariants(C)), clebsch_invariants(C), [2,4,6,10])
     @test weighted_equality(igusa_from_g2(g2_invariants(C)), igusa_invariants(C), [2,4,6,8,10])
 
