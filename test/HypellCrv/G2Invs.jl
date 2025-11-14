@@ -66,7 +66,7 @@
     @test weighted_equality(ig_cl_invs,[ F(2), F(3), F(0), F(3) ] ,[2,4,6,10])
     @test weighted_equality(ig_invs,[ F(4), F(1), F(2), F(3), F(3)] ,[2,4,6,8,10])
     @test g2_invs == [ F(3), F(3), F(4) ]
-    @test weighted_equality(igusa_clebsch_from_igusa(ig_invs), ig_invs(C), [2,4,6,10])
+    @test weighted_equality(igusa_clebsch_from_igusa(ig_invs), ig_invs, [2,4,6,10])
     @test weighted_equality(igusa_from_g2(g2_invs(C)), ig_invs(C), [2,4,6,8,10])
 
 
