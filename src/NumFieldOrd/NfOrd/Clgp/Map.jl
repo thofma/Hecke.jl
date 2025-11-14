@@ -764,6 +764,9 @@ function coprime_deterministic(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
       continue
     end
     ant_val = anti_uniformizer(p)
+#    @assert valuation(p, p) == 1
+#    @assert valuation(ant_val, p) == -1
+#    @assert valuation(norm(ant_val), minimum(p)) == -valuation(norm(p), minimum(p))
     found = false
     ind = 1
     for i = 1:length(primes)
@@ -799,7 +802,12 @@ function coprime_deterministic(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
     end
     mo = mo*moduli[i]
   end
-  res = mod(res, minimum(m, copy = false))
+  if is_defining_polynomial_nice(nf(OK))
+    res = mod(res, minimum(m, copy = false))
+  else
+    d = denominator(res, OK)
+    res = elem_in_nf(OK([x % minimum(m, copy = false) for x = coordinates(OK(d*res))]))//d
+  end
   I = res*a
   I = simplify(I)
   return I.num, res*I.den
