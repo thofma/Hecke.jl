@@ -159,3 +159,12 @@ let
   P = lp[1]
   @test divides(P^2, P)
 end
+
+let
+  Qt, t = QQ[:t]
+  k, = number_field(492800*t^12 - 1766400*t^10 + 2458020*t^8 - 1713167*t^6 + 614505*t^4 - 110400*t^2 + 7700; cached = false)
+  Ok = maximal_order(k)
+  lp = prime_decomposition(Ok, 2)
+  @test length(lp) == 4
+  @test issetequal(norm.(first(lp)), [2, 2, 4, 4])
+end
