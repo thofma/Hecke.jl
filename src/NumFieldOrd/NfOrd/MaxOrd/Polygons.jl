@@ -748,7 +748,12 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
         else
           Ba = basis(P, copy = false)
           for i in 1:degree(O)
-            if !is_norm_divisible_pp((v*Ba[i] + u).elem_in_nf, modulo)
+            if is_defining_polynomial_nice(nf(O))
+              if !is_norm_divisible_pp((v*Ba[i] + u).elem_in_nf, modulo)
+                u = v*Ba[i] + u
+                break
+              end
+            elseif norm(v*Ba[i] + u) % modulo != 0
               u = v*Ba[i] + u
               break
             end
