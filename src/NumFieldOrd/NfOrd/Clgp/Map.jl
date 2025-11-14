@@ -802,12 +802,15 @@ function coprime_deterministic(a::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSi
     end
     mo = mo*moduli[i]
   end
-  if is_defining_polynomial_nice(nf(OK))
-    res = mod(res, minimum(m, copy = false))
-  else
-    d = denominator(res, OK)
-    res = elem_in_nf(OK([x % minimum(m, copy = false) for x = coordinates(OK(d*res))]))//d
-  end
+# seems to be wrong...and was always wrong. adjusting by m can change the
+# critical valuations, again
+#  m2 = minimum(m, copy = false)^2
+#  if is_defining_polynomial_nice(nf(OK))
+#    res = mod(res, m2)
+#  else
+#    d = denominator(res, OK)
+#    res = elem_in_nf(OK([x % m2 for x = coordinates(OK(d*res))]))//d
+#  end
   I = res*a
   I = simplify(I)
   return I.num, res*I.den
