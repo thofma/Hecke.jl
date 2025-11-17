@@ -88,15 +88,15 @@ function big_period_matrix(RS::RiemannSurface)
   # Computed the bound M for every path. The bound M is the maximum value of
   # the integrands along the boundary of the ellipse with radius r. 
 
-  bound_temp = []
+  bound_temp = Vector{ArbFieldElem}()
   for path in paths
     for subpath in get_subpaths(path)
       compute_ellipse_bound(subpath, embedded_differentials, int_group_rs, RS)
       append!(bound_temp, subpath.bounds)
     end
   end
-  bound_temp = maximum(bound_temp)
-  push!(RS.bounds, bound_temp)
+  bound_temp_max = maximum(bound_temp)
+  push!(RS.bounds, bound_temp_max)
   bound = maximum(RS.bounds)
 
   #Maybe change error value.
@@ -114,7 +114,7 @@ function big_period_matrix(RS::RiemannSurface)
 
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
-  m = degree(f, 2)
+  m = degree(f, 2)::Int64
 
   # Copied from monodromy_representation to compute the monodromy representation
   # we just computed while computing periods. 
@@ -124,7 +124,7 @@ function big_period_matrix(RS::RiemannSurface)
   # we compute the integrals during analytic continuation here
   # and that we use the Ns determined by the integration scheme.
   # If we are only interested in the monodromy we need far less.
-  s_m = SymmetricGroup(m)
+  s_m = SymmetricGroup(m)::AbstractAlgebra.Generic.SymmetricGroup{Int64}
 
   for path in paths
     Cc = AcbField(max_prec)
@@ -194,7 +194,7 @@ function big_period_matrix(RS::RiemannSurface)
   end
   
   inf_chain = Vector{CPath}[]
-  inf_perm = one(s_m)
+  inf_perm = one(s_m)::Perm{Int64}
   
   for g in mon_rep
     inf_chain = vcat(inf_chain, map(reverse, g[1]))
