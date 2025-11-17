@@ -328,4 +328,4 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
   else 
     subpath.integration_scheme_index = num_of_int_groups
   end
-end 
+end
