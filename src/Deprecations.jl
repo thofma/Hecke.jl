@@ -7,9 +7,6 @@
 # ALL aliases here are only a temporary measure to allow for a smooth transition downstream.
 # they will be replaced by deprecations eventually
 
-#renamed in AbstractAlgebra 0.47.4
-@alias dense_poly_type  poly_type
-
 #= End of list =#
 
 ###############################################################################
