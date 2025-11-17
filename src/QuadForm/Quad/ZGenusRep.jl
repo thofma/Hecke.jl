@@ -395,7 +395,7 @@ function neighbours(
 
         if save_partial
           if !isone(scaling_factor)
-            _LL = rescale(LL, 1//rescale_factor)
+            _LL = rescale(LL, 1//scaling_factor)
             if isdefined(LL, :automorphism_group_order)
               _LL.automorphism_group_order = LL.automorphism_group_order
             end
@@ -607,9 +607,8 @@ There are possible extra optional arguments:
 - `max::IntExt` (default = `inf`) -> the algorithm stops after finding `max`
   new isometry classes;
 - `add_spinor_generators::Bool` (default = `true`) -> in the case where the
-  first input consists of a list of lattices, the function adds a
-  representative for each of the spinor genera of the given genus in the
-  list of known lattices.
+  first input consists of a list of lattices, the function adds to `known` a
+  representative for each of the spinor genera of the given genus ``G``.
 
 In the case where one gives a list of `known` lattices in input, the output
 list contains a copy of `known` together with any new lattice computed. The
@@ -686,7 +685,7 @@ function enumerate_definite_genus(
       end
       push!(res, L)
     end
-  else  
+  else
     res = copy(known)
   end
 
