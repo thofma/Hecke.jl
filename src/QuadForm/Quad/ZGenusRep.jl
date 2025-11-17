@@ -943,6 +943,7 @@ function enumerate_definite_genus(
                                                      vain,
                                                      stop_after,
                                                      max=max-length(edg)-length(_edg),
+                                                     add_spinor_generators=false,
                                                      scaling_factor=sc,
                                                     )
     end
