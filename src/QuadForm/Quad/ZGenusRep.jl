@@ -569,8 +569,8 @@ in the given genus.
 
 For the first argument, one can choose to give directly a genus symbol ``G`` or
 a lattice ``L`` in ``G``. Otherwise, one can give a list of known lattices
-``G`` to continue an incomplete enumeration (in which case the lattices are
-assumed to be in the same spinor genus).
+``known`` to continue an incomplete enumeration (in which case the lattices are
+assumed to be in the same spinor genus and integral).
 
 The second argument gives the choice to which algorithm to use for the
 enumeration. We currently support two algorithms:
@@ -613,10 +613,13 @@ Moreover, there are two other possible extra optional arguments:
 If `distinct == false`, the function first compares all the lattices in `known`
 to only keep one representative for each isometry class represented.
 
-If `save_partial == true`, the lattices are stored in a compact way in a `.txt`
-file. The storing only remembers the rank of a lattice, half of its Gram matrix
-(which is enough to reconstruct the lattice as a standalone object) and the
-order of the isometry group of the lattice if it has been computed.
+If `save_partial == true`, the lattices are stored in the folder with relative
+path `save_path`: each of them is saved in a compact way in a `.txt` file. The
+storing only remembers the rank of a lattice, half of its Gram matrix (which
+is enough to reconstruct the lattice as a standalone object) and the order of
+the isometry group of the lattice if it has been computed. One can then use
+the function `Hecke.load_genus(save_path)` to load the lattices that have
+been saved.
 
 The `default_invariant_function` currently computes:
 - the absolute length of a shortest vector in the given lattice (also known as
@@ -683,7 +686,7 @@ function enumerate_definite_genus(
   end
 
   if use_mass
-    _mass = mass(L)
+    _mass = mass(L)//length(spinor_genera_in_genus(L))
     if isnothing(_missing_mass)
       found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
