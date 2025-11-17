@@ -51,19 +51,19 @@ function big_period_matrix(RS::RiemannSurface)
   #have to compute fewer integration schemes later making the algorithm faster.
   #According to Neurohr p101 of his thesis it suffices to have 5 for the Gauss-Legendre method.
   int_groups = [ [],[],[],[],[] ]
-		for r in int_parameters
-			if r < r_minimum + RR(0.1)
-        push!(int_groups[1],r)
-      elseif r < r_minimum + RR(0.4)
-        push!(int_groups[2],r)
-			elseif r < r_minimum + RR(0.9)
-        push!(int_groups[3],r)
-      elseif r < r_minimum + RR(2.0)
-        push!(int_groups[4],r)
-			else 
-        push!(int_groups[5],r)
-      end
-		end
+	for r in int_parameters
+		if r < r_minimum + RR(0.1)
+      push!(int_groups[1],r)
+    elseif r < r_minimum + RR(0.4)
+      push!(int_groups[2],r)
+		elseif r < r_minimum + RR(0.9)
+      push!(int_groups[3],r)
+    elseif r < r_minimum + RR(2.0)
+      push!(int_groups[4],r)
+		else 
+      push!(int_groups[5],r)
+    end
+	end
 
   #Make r_minimum slightly smaller than what it was. (But still larger than 1)
   if r_minimum <= RR(1) + 2 * eps
@@ -126,6 +126,7 @@ function big_period_matrix(RS::RiemannSurface)
   # If we are only interested in the monodromy we need far less.
   s_m = SymmetricGroup(m)::AbstractAlgebra.Generic.SymmetricGroup{Int64}
 
+  ys = Vector{AcbFieldElem}()
   for path in paths
     Cc = AcbField(max_prec)
 		integral_matrix = zero_matrix(Cc, m, g)
