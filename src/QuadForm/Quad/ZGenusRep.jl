@@ -719,8 +719,7 @@ function enumerate_definite_genus(
   end
 
   spins = spinor_genera_in_genus(first(res))
-  if length(spins) > 1
-    !add_spinor_generators && continue
+  if (length(spins) > 1) && add_spinor_generators
     for LL in spins
       keep = callback(LL)
       if !keep
