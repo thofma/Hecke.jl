@@ -686,7 +686,7 @@ function enumerate_definite_genus(
   end
 
   if use_mass
-    _mass = mass(L)//length(spinor_genera_in_genus(L))
+    _mass = mass(first(known))//_number_of_spinor_genera_in_genus(first(known))
     if isnothing(_missing_mass)
       found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
@@ -790,7 +790,6 @@ function spinor_genera_in_genus(L::ZZLat)
   @req !is_definite(L) || rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
-  is_empty(primes) && return res
   for p in primes
     N = only(neighbours(L, p, :spinor))
     for i in 1:length(res)
@@ -799,7 +798,16 @@ function spinor_genera_in_genus(L::ZZLat)
       push!(res, LL)
     end
   end
+  set_attribute!(L, :number_of_spinor_genera_in_genus, length(res))
   return res
+end
+
+function _number_of_spinor_genera_in_genus(L::ZZLat)
+  s = get_attribute!(L, :number_of_spinor_genera_in_genus) do
+    spinor_genera = spinor_genera_in_genus(L)
+    length(spinor_genera)
+  end
+  return s
 end
 
 function enumerate_definite_genus(
