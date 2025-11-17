@@ -29,7 +29,7 @@ tau = small_period_matrix(RS)
 mutable struct RiemannSurface
   #A polynomial f(x,y) in K[x,y] for some number field K defining the Riemann
   #surface (or equivalently) a not necessarily smooth plane curve in P_2
-  defining_polynomial::MPolyRingElem
+  defining_polynomial::AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}
   genus::Int
   function_field::AbstractAlgebra.Generic.FunctionField
 
@@ -154,8 +154,8 @@ mutable struct RiemannSurface
   #The constructor for a Riemann surface object
 
   function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
-    RS = new()
-    RS.v = v
+    RS = RiemannSurface(f, prec)
+    RS.embedding = v
     return RS
   end
 
@@ -439,13 +439,14 @@ function _monodromy_representation(RS::RiemannSurface)
 
     #If the path is a circle or an arc we multiply by an additional factor
     if path_type(path) in [1,2]
-      N *= 4
+      N = 4*N
     end
 
 
     Rc = ArbField(precision(RS))
 
-    abscissae = [Rc(n//N) for n in (-N + 1: N - 1)]
+    t = 1/N
+    abscissae = [Rc(n*t) for n in (-N + 1: N - 1)]
 
     # Perform analytic continuation along the closed loop path with
     # starting point x0. In the algorithm we start with the m ys lying
@@ -476,7 +477,7 @@ function _monodromy_representation(RS::RiemannSurface)
      end
   end
 
-  inf_chain = Vector{CPath}[]
+  inf_chain = CPath[]
   inf_perm = one(s_m)
 
   for g in mon_rep
@@ -826,7 +827,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
 end
 
 #
-function recursive_continuation(f, x1, x2, z)
+function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem})
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   Cc = base_ring(f)
@@ -842,7 +843,7 @@ function recursive_continuation(f, x1, x2, z)
 
   if w < d // (2*m)
     fillacb!(temp_vec, z)
-    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
+    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
 
     @assert dd == m
     z .= array(Cc, temp_vec_res, m)
