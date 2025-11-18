@@ -988,7 +988,11 @@ function pradical(O::RelNumFieldOrder{S, T, U}, P::AbsNumFieldOrderIdeal{AbsSimp
         elM1 = imF(B[j, i]).elem_in_nf
         mul!(elM1, elM1, elts_with_val[j])
         divexact!(elM1, elM1, t)
-        M1[i, j] = mod(elM1, p)
+        if is_defining_polynomial_nice(K)
+          M1[i, j] = mod(elM1, p)
+        else
+          M1[i, j] = elM1
+        end
       end
     end
   end
