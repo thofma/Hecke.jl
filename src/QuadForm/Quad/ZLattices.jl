@@ -576,9 +576,6 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
 end
 
 function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
-  if rank(L) != rank(M)
-    return false, zero_matrix(QQ, 0, 0)
-  end
 
   # cornercase
   if rank(L) == 0
@@ -596,6 +593,15 @@ end
 _is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
 
 function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+  if rank(L) != rank(M)
+    return false, zero_matrix(QQ, 0, 0)
+  end
+
+  # cornercase
+  if rank(L) == 0
+    return true, zero_matrix(QQ, 0, 0)
+  end
+
   i = sign(gram_matrix(L)[1,1])
   j = sign(gram_matrix(M)[1,1])
   @req i==j "The lattices must have the same signatures"
