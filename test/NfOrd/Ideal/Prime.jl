@@ -166,5 +166,6 @@ let
   Ok = maximal_order(k)
   lp = prime_decomposition(Ok, 2)
   @test length(lp) == 4
-  @test issetequal(norm.(first(lp)), [2, 2, 4, 4])
+  @test issetequal([norm(x[1]) for x = lp], [2, 2, 4, 4])
+
 end
