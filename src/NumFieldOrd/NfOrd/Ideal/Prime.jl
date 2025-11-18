@@ -408,15 +408,16 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   ai = elem_in_nf(order(P)([x % p^2 for x = coordinates(order(P)(p*ai))]))//p
   P.anti_uniformizer = ai
   return ai
-  #Belabas does not promise the valuation being 0..0 -1 0..0
-  #the 0 can be >=0
-  M = representation_matrix(uniformizer(P))
-  #Mp = matrix_space(residue_field(ZZ, p)[1], nrows(M), ncols(M), false)(M)
-  Mp = change_base_ring(GF(p, check = false, cached = false), M)
-  K = kernel(Mp, side = :left)
-  @assert nrows(K) > 0
-  P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1, :])))//p
-  return P.anti_uniformizer
+  # Remove the following?
+  # #Belabas does not promise the valuation being 0..0 -1 0..0
+  # #the 0 can be >=0
+  # M = representation_matrix(uniformizer(P))
+  # #Mp = matrix_space(residue_field(ZZ, p)[1], nrows(M), ncols(M), false)(M)
+  # Mp = change_base_ring(GF(p, check = false, cached = false), M)
+  # K = kernel(Mp, side = :left)
+  # @assert nrows(K) > 0
+  # P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1, :])))//p
+  # return P.anti_uniformizer
 end
 
 function _factor_distinct_deg(x::fpPolyRingElem)
