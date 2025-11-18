@@ -257,7 +257,7 @@ let
   L, b = number_field(4*3*a*t^2+(a+1)^4*t+(a+2)^3)
   La, _ = absolute_simple_field(L)
 
-  @test abs(absolute_discriminant(maximal_order(L))) == abs(discriminant(maximl_order(La)))
+  @test abs(absolute_discriminant(maximal_order(L))) == abs(discriminant(maximal_order(La)))
 
   b = lll_basis(maximal_order(L))
   @test all([t2(x) < 10^14 for x = b])
