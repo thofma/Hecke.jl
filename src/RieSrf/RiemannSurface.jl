@@ -1139,17 +1139,17 @@ function symplectic_reduction(K::ZZMatrix)
       v = -A[pivot, j]
       if v != 0
         #The version with ! gave different results for some reason.
-        add_row!(A, v, pivot_plus, j)
-        add_column!(A, v, pivot_plus, j)
-        add_row!(B, v, pivot_plus, j)
+        A = add_row(A, v, pivot_plus, j)
+        A = add_column(A, v, pivot_plus, j)
+        B = add_row(B, v, pivot_plus, j)
 
         zeros_only = false
       end
       v = A[pivot_plus, j]
       if v != 0
-        add_row!(A, v, pivot, j)
-        add_column!(A, v, pivot, j)
-        add_row!(B, v, pivot, j)
+        A = add_row(A, v, pivot, j)
+        A = add_column(A, v, pivot, j)
+        B = add_row(B, v, pivot, j)
         zeros_only = false
       end
     end
