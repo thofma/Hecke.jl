@@ -2371,16 +2371,16 @@ end
 #
 ##########################################
 
-function _isless(x::ZZMatrix, y::ZZMatrix)
+function _isless(x::T, y::T) where T<:Union{ZZMatrix,QQMatrix}
   i = 0
-  c = ncols(x)
-  while i < c
+  n = ncols(x)
+  while i < n
     i += 1
-    if x[i] == y[i]
-      continue
-    else
-      return x[i] < y[i]
-    end
+    xi = mat_entry_ptr(x, 1, i)
+    yi = mat_entry_ptr(y, 1, i)
+    c = cmp(xi,yi)
+    c == 0 && continue
+    return c<0
   end
   return false
 end
