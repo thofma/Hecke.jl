@@ -67,7 +67,7 @@ mutable struct RiemannSurface
   # Continuing the above example, the first element could look like
   # ([L[1], L[23], L[12],reverse(L[1])], (1,3)))
   # where (1,3) is the permutation.
-  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
+  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int}}}
 
   #Data encoding the homology basis.
   # We encode homology cycles in H_1(RS, Z) in the following way:
@@ -81,7 +81,7 @@ mutable struct RiemannSurface
   # circle around branch point nr 3 to move to sheet 5, circle around branch
   # point number 2 to finish in sheet 1 again and complete a full circle.
 
-  homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
+  homology_basis::Tuple{Vector{Vector{Int}}, ZZMatrix, ZZMatrix}
 
   # A basis of differential forms computed by either
   # - Riemann-Roch computations
@@ -116,7 +116,7 @@ mutable struct RiemannSurface
   #  min_pows = [1,1,1]
   #  range_pows = [4, 2, 9]
 
-  differential_form_data::Tuple{Vector{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, Matrix{Int64}, Vector{Int64}, Vector{Int64}}
+  differential_form_data::Tuple{Vector{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, Matrix{Int}, Vector{Int}, Vector{Int}}
 
   #Evaluate differential_differential_factors_matrix is a function that
   # takes as its input
@@ -444,7 +444,7 @@ function _monodromy_representation(RS::RiemannSurface)
     assign_permutation(path, inv(s_m(path_perm)))
   end
 
-  mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
+  mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
 
   # Chain all permutations of a all the generators of pi1 together to find
   # the monodromy of the chosen generator.
@@ -882,7 +882,7 @@ function _homology_basis(RS::RiemannSurface)
   n = s_n.n
   d = length(gens)
 
-  ramification_points = Tuple{Int64, SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true}, Perm{Int64}}[]
+  ramification_points = Tuple{Int, SubArray{Int, 1, Vector{Int}, Tuple{UnitRange{Int}}, true}, Perm{Int}}[]
   ramification_indices = Int[]
 
   for i in (1:d)

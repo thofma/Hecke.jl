@@ -114,7 +114,7 @@ function big_period_matrix(RS::RiemannSurface)
 
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
-  m = degree(f, 2)::Int64
+  m = degree(f, 2)::Int
 
   # Copied from monodromy_representation to compute the monodromy representation
   # we just computed while computing periods. 
@@ -124,7 +124,7 @@ function big_period_matrix(RS::RiemannSurface)
   # we compute the integrals during analytic continuation here
   # and that we use the Ns determined by the integration scheme.
   # If we are only interested in the monodromy we need far less.
-  s_m = SymmetricGroup(m)::AbstractAlgebra.Generic.SymmetricGroup{Int64}
+  s_m = SymmetricGroup(m)::AbstractAlgebra.Generic.SymmetricGroup{Int}
 
   ys = Vector{AcbFieldElem}()
   for path in paths
@@ -183,7 +183,7 @@ function big_period_matrix(RS::RiemannSurface)
   # we just computed while computing periods. 
   # There is probably a more clever way to avoid doubling code.
 
-  mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
+  mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
   
   for gamma in pi1_gens
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
@@ -195,7 +195,7 @@ function big_period_matrix(RS::RiemannSurface)
   end
   
   inf_chain = Vector{CPath}[]
-  inf_perm = one(s_m)::Perm{Int64}
+  inf_perm = one(s_m)::Perm{Int}
   
   for g in mon_rep
     inf_chain = vcat(inf_chain, map(reverse, g[1]))
