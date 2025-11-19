@@ -32,6 +32,20 @@
   @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
   @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
 
+  G = @inferred sparse_row(R, 1, 1)
+  @test base_ring(G) === R
+  H = @inferred sparse_row(R, 1, 0)
+  @test is_empty(H)
+
+  G = @inferred sparse_row(S, 1, 1)
+  @test base_ring(G) === S
+  H = @inferred sparse_row(S, 1, 0)
+  @test is_empty(H)
+  # incorrectly stored element at the user's responsibility
+  H = @inferred sparse_row(S, 1, zero(S); check=false)
+  @test !is_empty(H)
+  @test all(is_zero(c) for (_, c) in H)
+
   # Equality
 
   @test @inferred ==(D, E)

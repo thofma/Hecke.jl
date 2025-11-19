@@ -20,9 +20,29 @@ $N(T) = a$. Raises an error if unsuccessful.
 function norm_equation(K::AbsSimpleNumField, a)
   fl, s = is_norm(K, a)
   if fl
-    return evaluate(s)
+    return s
   end
   error("no solution")
+end
+
+@doc raw"""
+    is_norm_fac_elem(K::AbsSimpleNumField, a) -> Bool, AbsSimpleNumFieldElem
+
+For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
+holds. If successful, return true and $T$, otherwise false and some element.
+The element will be returned in factored form.
+"""
+function is_norm_fac_elem(K::AbsSimpleNumField, a::Integer)
+  return is_norm_fac_elem(K, ZZRingElem(a))
+end
+
+function is_norm_fac_elem(K::AbsSimpleNumField, a::QQFieldElem)
+  fl, s = is_norm(K, numerator(a)*denominator(a)^(degree(K)-1))
+  return fl, s * FacElem(Dict(K(denominator(a)) => ZZRingElem(-1)))
+end
+
+function is_norm_fac_elem(K::AbsSimpleNumField, a::Rational)
+  return is_norm_fac_elem(K, QQFieldElem(a))
 end
 
 @doc raw"""
@@ -30,21 +50,14 @@ end
 
 For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
-The element will be returned in factored form.
 """
-function is_norm(K::AbsSimpleNumField, a::Integer)
-  return is_norm(K, ZZRingElem(a))
-end
-function is_norm(K::AbsSimpleNumField, a::QQFieldElem)
-  fl, s = is_norm(K, numerator(a)*denominator(a)^(degree(K)-1))
-  return fl, s * FacElem(Dict(K(denominator(a)) => ZZRingElem(-1)))
-end
-function is_norm(K::AbsSimpleNumField, a::Rational)
-  return is_norm(K, QQFieldElem(a))
+function is_norm(K::AbsSimpleNumField, a)
+  fl, s = is_norm_fac_elem(K, a)
+  return fl, evaluate(s)
 end
 
 @doc raw"""
-    is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}) -> Bool, AbsSimpleNumFieldElem
+    is_norm_fac_elem(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}) -> Bool, AbsSimpleNumFieldElem
 
 For a ZZRingElem $a$, try to find $T \in K$ s.th. $N(T) = a$
 holds. If successful, return true and $T$, otherwise false and some element.
@@ -52,7 +65,7 @@ In \testtt{extra} one can pass in additional prime numbers that
 are allowed to occur in the solution. This will then be supplemented.
 The element will be returned in factored form.
 """
-function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=ZZRingElem[])
+function is_norm_fac_elem(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=ZZRingElem[])
   L = lll(maximal_order(K))
   C, mC = narrow_class_group(L)
 #  println("narrow group is : $C")
@@ -110,9 +123,15 @@ function is_norm(K::AbsSimpleNumField, a::ZZRingElem; extra::Vector{ZZRingElem}=
   end
 
   SP = prime_ideals_over(L, [x for x = S])
+  @assert length(SP) >= length(S)
 
-  U, mU = sunit_group_fac_elem(SP)
-  u, mu = sunit_group_fac_elem(collect(S))
+  if length(SP) == 0
+    U, mU = unit_group_fac_elem(L)
+    u, mu = sunit_group_fac_elem(ZZRingElem[])
+  else
+    U, mU = sunit_group_fac_elem(SP)
+    u, mu = sunit_group_fac_elem(collect(S))
+  end
 
   h = elem_type(u)[]
   for i=1:ngens(U)

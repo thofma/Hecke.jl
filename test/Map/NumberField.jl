@@ -81,6 +81,14 @@ end
   Qt, t = QQ["t"]
   K, _ = number_field(t+1; cached=false)
   @test length(automorphism_list(K)) == 1
+
+  let
+    # bad defining polynomial
+    Qx, x = QQ[:x]
+    K, a = number_field(3*x^2 + 1//10; cached = false)
+    fl, tau = Hecke.is_cm_field(K)
+    @test fl
+  end
 end
 
 @testset "parents" begin
@@ -104,5 +112,27 @@ end
   G, mG = @inferred automorphism_group(K)
   GG, mGG = @inferred automorphism_group(K)
   @test G === GG && mG === mGG
+end
+
+# #2048
+let
+  Qx, x = QQ[:x]
+  f = x^4 - 1//6*x^3 - 1//3*x^2 + 2//15*x - 8//13
+  k, _ = Hecke.number_field(f)
+  a = automorphism_list(k)
+  G, = automorphism_group(k)
+  @test length(a) == 1
+  @test order(G) == 1
+end
+
+# involution
+let
+  Qx, x = QQ[:x]
+  K, a = number_field(3*x^2 - 1//10; cached = false)
+  A = automorphism_list(K)
+  idK = hom(K, K)
+  @test !Hecke.is_involution(idK)
+  f = hom(K, K, -a)
+  @test Hecke.is_involution(f)
 end
 

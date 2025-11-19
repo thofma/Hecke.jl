@@ -320,17 +320,13 @@ end
     X = _random_invertible_matrix(n, -3:3)
     @assert abs(det(X)) == 1
     L2 = integer_lattice(gram = X * G * transpose(X))
-    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
+    b, T = is_isometric_with_isometry(L, L2)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
     L2 = integer_lattice(X, gram = G)
-    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
+    b, T = is_isometric_with_isometry(L, L2)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
-    b, T = is_isometric_with_isometry(L, L2, ambient_representation = true)
-    @test b
-    @test T * gram_matrix(ambient_space(L2)) * transpose(T) ==
-    gram_matrix(ambient_space(L))
   end
 
   D = lattice_database()
@@ -342,7 +338,7 @@ end
     X = change_base_ring(QQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
     L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
-    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false)
+    b, T = is_isometric_with_isometry(L, L2)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -354,7 +350,7 @@ end
     X = change_base_ring(QQ, _random_invertible_matrix(n, -3:3))
     @assert abs(det(X)) == 1
     L2 = integer_lattice(gram = X * gram_matrix(L) * transpose(X))
-    b, T = is_isometric_with_isometry(L, L2, ambient_representation = false, bacher_depth = 1)
+    b, T = is_isometric_with_isometry(L, L2, bacher_depth = 1)
     @test b
     @test T * gram_matrix(L2) * transpose(T) == gram_matrix(L)
   end
@@ -596,7 +592,8 @@ end
   L = representative(integer_genera((2,1), -1)[1])
   LL = lll(L)
   @test L == LL
-  @test rescale(L, -1) == lll(rescale(L, -1))
+  Lm = rescale(L, -1)
+  @test Lm == lll(Lm)
 
   L = representative(integer_genera((3,11), 1)[2])
   LL = lll(L)

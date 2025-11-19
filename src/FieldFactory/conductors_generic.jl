@@ -311,7 +311,7 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
         if nn>bound
           continue
         end
-        d2 = merge(max, d1, wild_list[s][2])
+        d2 = mergewith(max, d1, wild_list[s][2])
         if nisc!=1
           push!(wild_list, (q*wild_list[s][1], d2, nn))
         else

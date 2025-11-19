@@ -331,7 +331,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
         v = real_plc[i]
         w = [real_plc[j] for j = 1:length(real_plc) if j != i]
         lf = factor(I)
-        newc = merge(max, c, lf)
+        newc = mergewith(max, c, lf)
         r, mr = ray_class_group_quo(OK, newc, w, ctx)
         gens, group_gens = find_gens(mr)
         images = FinGenAbGroupElem[mQ(mR\J) for J in gens]

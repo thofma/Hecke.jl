@@ -227,6 +227,7 @@ function neighbours(
     vain::Base.RefValue{Int}=Ref{Int}(0),
     stop_after::IntExt=inf,
     max::IntExt=inf,
+    scaling_factor=1,
   )
   @assert !save_partial || !isnothing(save_path)
   bad = is_divisible_by(numerator(det(L)), p)
@@ -293,6 +294,7 @@ function neighbours(
       gensp = dense_matrix_type(K)[map_entries(K, g) for g in G]
     end
     @hassert :ZGenRep 3 !isempty(gensp)
+    @vprintln :ZGenRep 3 "computing line orbits: $((p^rank(L)-1)/(p-1))"
     orbs = Vector{elem_type(K)}[orb[1] for orb in line_orbits(gensp)] # Hopefully we took care prior to this that `line_orbits`
                                                                       # terminates and do not blow the memory up...
     maxlines = length(orbs)
@@ -369,8 +371,8 @@ function neighbours(
       end
       push!(lifts, w0)
     end
-
     for v in lifts
+      @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       LL = lll(neighbour(L, v, p))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
@@ -392,7 +394,15 @@ function neighbours(
         push!(result, LL)
 
         if save_partial
-          save_lattice(LL, save_path)
+          if !isone(scaling_factor)
+            _LL = rescale(LL, 1//scaling_factor)
+            if isdefined(LL, :automorphism_group_order)
+              _LL.automorphism_group_order = LL.automorphism_group_order
+            end
+          else
+            _LL = LL
+          end
+          save_lattice(_LL, save_path)
         end
 
         if use_mass
@@ -560,16 +570,15 @@ smallest_kneser_prime(L::ZZLat) = smallest_kneser_prime(genus(L))
     enumerate_definite_genus(L::ZZLat, algorithm::Symbol = :default) -> Vector{ZZLat}
     enumerate_definite_genus(G::ZZGenus, algorithm::Symbol = :default) -> Vector{ZZLat}
 
-Enumerate lattices in a given genus of integral definite lattices of rank at
-least `3`, using Kneser's neighbour algorithm.
+Enumerate lattices in a given genus of definite lattices of rank at least `3`,
+using Kneser's neighbour algorithm.
 
 The output consists of a list of lattices representing the isometry classes
 in the given genus.
 
 For the first argument, one can choose to give directly a genus symbol ``G`` or
-a lattice ``L`` in ``G``. Otherwise, one can give a list of known lattices
-``G`` to continue an incomplete enumeration (in which case the lattices are
-assumed to be in the same spinor genus).
+a lattice ``L`` in ``G``. Otherwise, one can give a list `known` of lattices in
+``G`` to continue an incomplete enumeration.
 
 The second argument gives the choice to which algorithm to use for the
 enumeration. We currently support two algorithms:
@@ -596,7 +605,10 @@ There are possible extra optional arguments:
   specified amount of vain iterations without finding a new isometry class
   is reached;
 - `max::IntExt` (default = `inf`) -> the algorithm stops after finding `max`
-  new isometry classes.
+  new isometry classes;
+- `add_spinor_generators::Bool` (default = `true`) -> in the case where the
+  first input consists of a list of lattices, the function adds to `known` a
+  representative for each of the spinor genera of the given genus ``G``.
 
 In the case where one gives a list of `known` lattices in input, the output
 list contains a copy of `known` together with any new lattice computed. The
@@ -612,10 +624,13 @@ Moreover, there are two other possible extra optional arguments:
 If `distinct == false`, the function first compares all the lattices in `known`
 to only keep one representative for each isometry class represented.
 
-If `save_partial == true`, the lattices are stored in a compact way in a `.txt`
-file. The storing only remembers the rank of a lattice, half of its Gram matrix
-(which is enough to reconstruct the lattice as a standalone object) and the
-order of the isometry group of the lattice if it has been computed.
+If `save_partial == true`, the lattices are stored in the folder with relative
+path `save_path`: each of them is saved in a compact way in a `.txt` file. The
+storing only remembers the rank of a lattice, half of its Gram matrix (which
+is enough to reconstruct the lattice as a standalone object) and the order of
+the isometry group of the lattice if it has been computed. One can then use
+the function `Hecke.load_genus(save_path)` to load the lattices that have
+been saved.
 
 The `default_invariant_function` currently computes:
 - the absolute length of a shortest vector in the given lattice (also known as
@@ -641,6 +656,8 @@ function enumerate_definite_genus(
     vain::Base.RefValue{Int}=Ref{Int}(0),
     stop_after::IntExt=inf,
     max::IntExt=inf,
+    add_spinor_generators::Bool=true,
+    scaling_factor=nothing,
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
@@ -651,7 +668,27 @@ function enumerate_definite_genus(
 
   @req !is_finite(max) || max > 0 "max must be infinite or positive"
 
-  res = copy(known)
+  if isnothing(scaling_factor)
+    sc = denominator(scale(first(known)))
+    scaling_factor = sc
+  else
+    @assert is_integral(first(known))
+    sc = 1
+  end
+
+  if !isone(sc)
+    res = empty(known)
+    for _L in known
+      L = rescale(_L, sc)
+      if isdefined(_L, :automorphism_group_order)
+        L.automorphism_group_order = _L.automorphism_group_order
+      end
+      push!(res, L)
+    end
+  else
+    res = copy(known)
+  end
+
   !distinct && _unique_iso_class!(res)
 
   L, itk = Iterators.peel(res)
@@ -681,8 +718,39 @@ function enumerate_definite_genus(
     return keep
   end
 
+  spins = spinor_genera_in_genus(first(res))
+  if (length(spins) > 1) && add_spinor_generators
+    for LL in spins
+      keep = callback(LL)
+      if !keep
+        continue
+      end
+
+      invLL = _invariants(LL)
+      if haskey(inv_dict, invLL)
+        push!(inv_dict[invLL], LL)
+      else
+        inv_dict[invLL] = ZZLat[LL]
+      end
+      push!(res, LL)
+
+      if save_partial
+        if !isone(sc)
+          _LL = rescale(LL, 1//sc)
+          if isdefined(LL, :automorphism_group_order)
+            _LL.automorphism_group_order = LL.automorphism_group_order
+          end
+        else
+          _LL = LL
+        end
+        save_lattice(_LL, save_path)
+      end
+    end
+  end
+
+
   if use_mass
-    _mass = mass(L)
+    _mass = mass(first(res))
     if isnothing(_missing_mass)
       found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
@@ -725,6 +793,7 @@ function enumerate_definite_genus(
                    vain,
                    stop_after,
                    max,
+                   scaling_factor,
                   )
 
     if !is_empty(N)
@@ -737,8 +806,8 @@ function enumerate_definite_genus(
       end
       use_mass && is_zero(missing_mass[]) && break
       if use_mass
-        @v_do :ZGenRep 1 perc = Float64(missing_mass[]//_mass) * 100
-        @vprintln :ZGenRep 1 "Lattices: $(length(res)), Target mass: $(_mass). missing: $(missing_mass[]) ($(perc)%)"
+        @v_do :ZGenRep 1 perc = Float64(missing_mass[]//_mass * 100)
+        @vprintln :ZGenRep 1 "Lattices: $(length(res)), Target mass: $(_mass). missing: $(missing_mass[]) ($(perc)%) Buckets: $(multiset(length.(values(inv_dict))))"
       else
         @vprintln :ZGenRep 1 "Lattices: $(length(res))"
       end
@@ -786,7 +855,6 @@ function spinor_genera_in_genus(L::ZZLat)
   @req !is_definite(L) || rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
-  is_empty(primes) && return res
   for p in primes
     N = only(neighbours(L, p, :spinor))
     for i in 1:length(res)
@@ -795,7 +863,16 @@ function spinor_genera_in_genus(L::ZZLat)
       push!(res, LL)
     end
   end
+  set_attribute!(L, :number_of_spinor_genera_in_genus, length(res))
   return res
+end
+
+function _number_of_spinor_genera_in_genus(L::ZZLat)
+  s = get_attribute!(L, :number_of_spinor_genera_in_genus) do
+    spinor_genera = spinor_genera_in_genus(L)
+    length(spinor_genera)
+  end
+  return s
 end
 
 function enumerate_definite_genus(
@@ -839,6 +916,17 @@ function enumerate_definite_genus(
       _missing_mass = QQ(-1)
     end
     _edg = ZZLat[M]
+    if save_partial
+      if !isone(sc)
+        _M = rescale(M, 1//sc)
+        if isdefined(M, :automorphism_group_order)
+          _M.automorphism_group_order = M.automorphism_group_order
+        end
+      else
+        _M = M
+      end
+      save_lattice(_M, save_path)
+    end
     while vain[] <= stop_after && length(edg) + length(_edg) < max
       use_mass && is_zero(_missing_mass) && break
       _edg, _missing_mass = enumerate_definite_genus(
@@ -854,6 +942,8 @@ function enumerate_definite_genus(
                                                      vain,
                                                      stop_after,
                                                      max=max-length(edg)-length(_edg),
+                                                     add_spinor_generators=false,
+                                                     scaling_factor=sc,
                                                     )
     end
     append!(edg, _edg)

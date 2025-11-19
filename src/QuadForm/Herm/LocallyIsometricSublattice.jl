@@ -293,17 +293,18 @@ Given rationally isometric hermitian lattices `M` and `L` over $E/K$ and a prime
 of $\mathcal O_K$, return a sublattice `N` of `M` with $N_q = M_q$ for $q \neq p$ and
 $N_p$ isometric to $L_p$.
 """
-function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
+function locally_isometric_sublattice(M::HermLat, L::HermLat, p ; check=true)
   @assert base_ring(M) == base_ring(L)
-  @assert is_rationally_isometric(M, L, p)
-  @assert is_maximal_integral(M, p)[1]
+  if check
+    @req is_rationally_isometric(M, L, p) "M and L must be rationally isometric at p"
+    @req is_maximal_integral(M, p)[1] || rank(M)==1 "M must be maximally integral or of rank 1"
+  end
 
   D = prime_decomposition(base_ring(L), p)
 
   absolute_map = absolute_simple_field(ambient_space(M))[2]
 
   P = D[1][1]
-
   if length(D) == 2 # split case
     LL = _locally_isometric_sublattice_split(M, L, p, P, absolute_map)
   elseif length(D) == 1 && D[1][2] == 1 # inert case
@@ -313,7 +314,7 @@ function locally_isometric_sublattice(M::HermLat, L::HermLat, p)
   else # even ramified
     LL = _locally_isometric_sublattice_even_ramified(M, L, p, P, absolute_map)
   end
-  @assert is_locally_isometric(L, LL, p)
+  @hassert :Lattice 0 is_locally_isometric(L, LL, p)
   return LL::typeof(L)
 end
 

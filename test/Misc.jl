@@ -6,6 +6,7 @@
   include("Misc/meataxe.jl")
   include("Misc/stable_subgroups.jl")
   include("Misc/NumberField.jl")
+  include("Misc/nmod_poly.jl")
   include("Misc/Poly.jl")
   include("Misc/OrdLocalization.jl")
   include("Misc/jordan_test.jl")
@@ -16,4 +17,5 @@
   include("Misc/MSet.jl")
   include("Misc/AVLTrees.jl")
   include("Misc/QQBar.jl")
+  include("Misc/PartitionsWithCondition.jl")
 end

@@ -83,6 +83,9 @@ Computes `divexact(norm(a), d)` provided the result has at most `nb` bits.
 Typically, `a` is an element of some ideal with norm `d`.
 """
 function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
+   if !is_defining_polynomial_nice(parent(a))
+     return divexact(norm(a), d)
+   end
    z = QQFieldElem()
    # TODO:
    #CF the resultant code has trouble with denominators,
@@ -373,6 +376,7 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
   K = base_ring(Kx)
 
   Zx = Hecke.Globals.Zx
+  Qx = Hecke.Globals.Qx
   @vtime :PolyFactor Np = norm_mod(g, p, Zx)
   while is_constant(Np) || !is_squarefree(map_coefficients(F, Np, cached = false))
     k = k + 1
@@ -390,10 +394,10 @@ function factor_trager(f::PolyRingElem{AbsSimpleNumFieldElem})
 #    d = mapreduce(x->denominator(x, A), lcm, coefficients(g), init = ZZRingElem(1))
 #    @vtime :PolyFactor 2 N = norm_mod(g*d, Zx)
 #    N = Hecke.Globals.Qx(N) * QQFieldElem(1, d)^degree(K)
-    @vtime :PolyFactor 2 N = Hecke.Globals.Qx(norm(g))
+    @vtime :PolyFactor 2 N = map_coefficients(identity, norm(g); parent=Qx)
   else
     @vtime :PolyFactor 2 N = norm_mod(g, Zx)
-    @hassert :PolyFactor 1 N == Zx(norm(g))
+    @hassert :PolyFactor 1 N == map_coefficients(identity, norm(g); parent=Zx)
   end
 
   while is_constant(N) || !is_squarefree(N)
@@ -591,7 +595,6 @@ function roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots::Int = degree(f
     return AbsSimpleNumFieldElem[-coeff(f, 0)//coeff(f, 1)]
   end
 
-  f = divexact(f, leading_coefficient(f))
   rts = AbsSimpleNumFieldElem[]
 
   if iszero(constant_coefficient(f))
@@ -601,6 +604,17 @@ function roots(f::Generic.Poly{AbsSimpleNumFieldElem}; max_roots::Int = degree(f
     end
     _, f = remove(f, gen(parent(f)))
   end
+
+  if !is_defining_polynomial_nice(base_ring(f))
+    lf = factor(f)
+    lp = [x[1] for x = lf if degree(x[1]) == 1]
+    if length(lp) > max_roots
+      lp = lp[1:max_roots]
+    end
+    return AbsSimpleNumFieldElem[roots(x)[1] for x = lp]
+  end
+
+  f = divexact(f, leading_coefficient(f))
 
   if !is_squarefree && !Hecke.is_squarefree(f)
     g = gcd(f, derivative(f))

@@ -99,4 +99,10 @@
         @test is_injective(Hom) == true
         @test is_bijective(Hom) == true
     end
+
+    @testset "small_group" begin
+      G = small_group(6, 1)
+      @test Hecke._is_small_group(G, (6, 1))
+      @test !Hecke._is_small_group(G, (6, 2))
+    end
 end

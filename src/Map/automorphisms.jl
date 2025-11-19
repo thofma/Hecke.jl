@@ -213,10 +213,24 @@ function _automorphism_group_generic(K::AbsSimpleNumField)
   while mod(d, p) == 0
     p = next_prime(p)
   end
-  R = Native.GF(p, cached = false)
-  Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
-  pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
+  local pols
+  local fmod
+  while true
+    try
+      R = Native.GF(p, cached = false)
+      Rx, x = polynomial_ring(R, "x", cached = false)
+      fmod = Rx(K.pol)
+      pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
+      break
+    catch e
+      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+        p = next_prime(p)
+        continue
+      end
+      rethrow(e)
+    end
+  end
+
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)
@@ -577,6 +591,7 @@ end
 # If flag == true, then v is the center of the automorphism group
 # If flag == false, then v is contained in the center
 function _automorphisms_center(K::AbsSimpleNumField)
+  @assert is_defining_polynomial_nice(K)
   auts = morphism_type(K)[id_hom(K)]
   p = 2
   dp = denominator(K.pol)

@@ -39,7 +39,7 @@
 
   @testset "Vector space dimension" begin
     G1 = abelian_group(2,3)
-    G2 = abelian_group(0) 
+    G2 = abelian_group(0)
     R1 = group_algebra(QQ, G1)
     R2 = group_algebra(QQ, G2)
     @test vector_space_dim(R1) == 6
@@ -164,5 +164,14 @@
     B = basis(QG)
     b = B[1]
     @test sprint(show, MIME"text/plain"(), b) isa String
+  end
+
+  let
+    # coefficient rings
+    R = ZZ
+    G = small_group(4, 2)
+    RG = group_algebra(R, G)
+    @test base_ring(RG) === ZZ
+    @test is_one(one(RG))
   end
 end

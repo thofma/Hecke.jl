@@ -535,7 +535,7 @@ with $\deg(\mathfrak p) > k$ will be discarded.
 """
 function prime_ideals_over(O::AbsSimpleNumFieldOrder,
                            lp::AbstractArray{T};
-                           degree_limit::Int = 0) where T <: IntegerUnion
+                           degree_limit::Int = degree(O)) where T <: IntegerUnion
   p = 1
   r = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for p in lp
@@ -616,6 +616,12 @@ Checks if $B$ divides $A$.
 function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   @assert order(A) === order(B)
   minimum(A, copy = false) % minimum(B, copy = false) == 0 || return false
+
+  O = order(A)
+  if !(is_defining_polynomial_nice(nf(O)) && contains_equation_order(O))
+    return (valuation(A, B) > 0)::Bool
+  end
+
   if B.is_prime == 1 && has_2_elem(A) && !is_index_divisor(order(A), minimum(B, copy = false))
     #I can just test the polynomials!
     K = nf(order(A))

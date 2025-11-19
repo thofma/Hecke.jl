@@ -161,7 +161,7 @@
   L = root_lattice(:E, 8)
   R = @inferred fixed_ring(L)
   @test R == ZZ
-  @test R != base_ring(base_ring(L))
+  @test R == base_ring(L)
 
   # Use ZZRingElem in the automorphism group computation (issue 1054)
   Qx, x = QQ["x"]

@@ -421,6 +421,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
   K = Hecke.nf(U)
   @vprintln :Saturate 1 "Simplifying the context"
   @vtime :Saturate 1 c = simplify(d, U, n, use_LLL = use_LLL)
+
   success = false
   restart = false
   while true
@@ -431,6 +432,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
     @vprintln :Saturate 1 "Computing candidates for the saturation"
     R = relations(c)
     @vtime :Saturate 1 e = compute_candidates_for_saturate(R, n, stable)
+
     if nrows(e) == 0
       @vprintln :Saturate 1 "sat yielded nothing new at $stable, $success"
       return success
@@ -453,6 +455,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
       end
 
       decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
+
       @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)
       if fl
@@ -537,6 +540,8 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, cp::Int = 0; use_LL
     end
     push!(new_rels, y)
     push!(vals_new_rels, deepcopy(c.M.basis.rows[i]))
+    # the following should hold, but is too expensive to test
+    # @assert evaluate(y)*order(c) == prod(c.FB.ideals[p]^v for (p,v) = c.M.basis.rows[i])
   end
   if use_LLL && !isempty(new_rels)
     M = sparse_matrix(ZZ)

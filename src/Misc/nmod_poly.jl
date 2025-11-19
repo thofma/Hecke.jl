@@ -808,13 +808,13 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
   while !iszero(g)
     if !is_unit(leading_coefficient(g))
       cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))
-      cp = [x for x = cp if !is_unit(x)]
+      cp = [x for x in cp if !is_unit(x)]
       gc = NTuple{3, ZZPolyRingElem}[]
-      for p = cp
+      for p in cp
         F, mF = quo(parent(p), p^valuation(modulus(R), p))
-        gp = map_coefficients(mF, g, cached = false)
+        gp = map_coefficients(x -> mF(lift(ZZ, x)), g; cached = false)
         @assert base_ring(gp) == F
-        fp = map_coefficients(mF, f, parent = parent(gp))
+        fp = map_coefficients(x -> mF(lift(ZZ, x)), f; parent = parent(gp))
         if !is_unit(leading_coefficient(fp))
           if iszero(fp)
             fp = zero(parent(fp))

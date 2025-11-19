@@ -744,6 +744,7 @@ export prime_ideals_over
 export prime_ideals_up_to
 export primes
 export primitive_closure
+export primitive_extension
 export primitive_root
 export principal_generator
 export principal_subfields
