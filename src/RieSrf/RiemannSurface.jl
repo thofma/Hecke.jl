@@ -116,7 +116,7 @@ mutable struct RiemannSurface
   #  min_pows = [1,1,1]
   #  range_pows = [4, 2, 9]
 
-  differential_form_data::Tuple{Vector{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}}, Matrix{Int}, Vector{Int}, Vector{Int}}
+  differential_form_data::Tuple{Vector{mpoly_type(AbsSimpleNumFieldElem)}, Matrix{Int}, Vector{Int}, Vector{Int}}
 
   #Evaluate differential_differential_factors_matrix is a function that
   # takes as its input
