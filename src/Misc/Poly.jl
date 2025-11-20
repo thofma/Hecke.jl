@@ -728,6 +728,16 @@ function roots(R::AcbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return map(R, reduce(vcat, [_roots(g, abs_tol, initial_prec...) for (g, _) in lf if degree(g) > 0]))
 end
 
+function roots(R::ComplexField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(Balls), initial_prec::Int...)
+  lf = factor(f)
+  return map(reduce(vcat, [_roots(g, abs_tol, initial_prec...) for (g, _) in lf if degree(g) > 0])) do x
+    # _roots returns AcbFieldElem with the correct ball radius
+    z = ComplexFieldElem()
+    ccall((:acb_set, libflint), Nothing, (Ref{ComplexFieldElem}, Ref{AcbFieldElem}), z, x)
+    return z
+  end
+end
+
 function roots(x::RealPolyRingElem)
   rt = roots(map_coefficients(ComplexField(), x), isolate_real=true)
   return real.(filter(isreal, rt))
@@ -775,6 +785,29 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
     s, _ = signature(k)
     rt = roots(C, k)
     append!(r, map(real, rt[1:s]))
+  end
+  return r
+end
+
+function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
+  g = factor(f)
+  r = elem_type(R)[]
+  C = AcbField(precision(R))
+  for (k, _) in g
+    s, _ = signature(k)
+    rt = roots(C, k)
+    append!(r, map(real, rt[1:s]))
+  end
+  return r
+end
+
+function roots(R::RealField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(Balls), initial_prec::Int...)
+  g = factor(f)
+  r = elem_type(R)[]
+  C = complex_field()
+  for (k, _) in g
+    rt = roots(C, k)
+    append!(r, map(real, filter!(is_real, rt)))
   end
   return r
 end

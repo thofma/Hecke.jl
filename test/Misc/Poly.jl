@@ -278,3 +278,16 @@ let
   g = numerator(x)
   @test g == gen(parent(g)) && g isa ZZPolyRingElem
 end
+
+let
+  for R in (ZZ, QQ)
+    _, x = R[:x]
+    set_precision!(Balls, 1000) do
+      rt = roots(real_field(), x^2 - 2)
+      @test all(p -> Hecke.radiuslttwopower(p, -1000), rt)
+
+      rt = roots(complex_field(), x^2 + 2)
+      @test all(p -> Hecke.radiuslttwopower(p, -1000), rt)
+    end
+  end
+end
