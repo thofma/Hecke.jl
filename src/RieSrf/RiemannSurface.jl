@@ -1093,11 +1093,11 @@ function _homology_basis(RS::RiemannSurface)
 end
 
 # Given an input K this computes S as mentioned in the homology_basis function
-# i,e. the output is a symplectic matrix S that ensure that S^T K S is equal to
+# i,e. the output is a symplectic matrix S that ensure that S K S^T is equal to
 # a matrix where the upper left block consists of the normalized polarization
 # and the rest consists of zeros.
-# [I  0 0 ... 0]
-# [0 -I 0 ... 0]
+# [0  I 0 ... 0]
+# [-I 0 0 ... 0]
 # [|  | | ... 0]
 # [0  0 0 ... 0]
 function symplectic_reduction(K::ZZMatrix)
