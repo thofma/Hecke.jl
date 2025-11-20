@@ -392,19 +392,32 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
-  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P))
+  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P)) && is_defining_polynomial_nice(nf(order(P)))
     Pinv = inv(P)
     P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer
   end
   p = minimum(P)
-  M = representation_matrix(uniformizer(P))
-  #Mp = matrix_space(residue_field(ZZ, p)[1], nrows(M), ncols(M), false)(M)
-  Mp = change_base_ring(GF(p, cached = false), M)
-  K = kernel(Mp, side = :left)
-  @assert nrows(K) > 0
-  P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1, :])))//p
-  return P.anti_uniformizer
+  ai = inv(elem_in_nf(uniformizer(P)))
+  d = denominator(ai, order(P))
+  ai *= ppio(d, p)[2]
+  #p^2 since ai has valuation 0...0,  -1, 0...0, so
+  #ai*p         has           e...e, e-1, e...e (all e are differnt)
+  #(ai*p) %p    can, since v(p) = e, increase the valuations
+  #(ai*p % p^2  cannot...
+  ai = elem_in_nf(order(P)([x % p^2 for x = coordinates(order(P)(p*ai))]))//p
+  P.anti_uniformizer = ai
+  return ai
+  # Remove the following?
+  # #Belabas does not promise the valuation being 0..0 -1 0..0
+  # #the 0 can be >=0
+  # M = representation_matrix(uniformizer(P))
+  # #Mp = matrix_space(residue_field(ZZ, p)[1], nrows(M), ncols(M), false)(M)
+  # Mp = change_base_ring(GF(p, check = false, cached = false), M)
+  # K = kernel(Mp, side = :left)
+  # @assert nrows(K) > 0
+  # P.anti_uniformizer = elem_in_nf(order(P)(map(x -> lift(ZZ, x), K[1, :])))//p
+  # return P.anti_uniformizer
 end
 
 function _factor_distinct_deg(x::fpPolyRingElem)

@@ -546,7 +546,8 @@ function assure_trace_basis(K::RelSimpleNumField{T}) where T
   end
   F = base_field(K)
   trace_basis = T[F(degree(K))]
-  append!(trace_basis, polynomial_to_power_sums(K.pol, degree(K)-1))
+  l = leading_coefficient(K.pol)
+  append!(trace_basis, polynomial_to_power_sums(K.pol*inv(l), degree(K)-1))
   K.trace_basis = trace_basis
   return nothing
 end

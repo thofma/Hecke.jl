@@ -183,7 +183,7 @@ function lll_basis(L::NfLat{T}) where T
   K = nf(L)
   l, t = lll(L)
   L1 = apply(L, t)
-  return basis(L)
+  return basis(L1)
 end
 
 _abs_disc(O::RelNumFieldOrder) = absolute_discriminant(O)
@@ -197,7 +197,8 @@ function _get_nice_basis(OL::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFi
     if haskey(ideals, B[i][2])
       continue
     end
-    ideals[B[i][2]] = lll_basis(B[i][2])
+    sB, b = reduce_ideal(B[i][2]) #sB = b*B[i][2]
+    ideals[B[i][2]] = inv(b) .* lll_basis(sB)
   end
   abs_bas = Vector{elem_type(L)}(undef, absolute_degree(L))
   ind = 1

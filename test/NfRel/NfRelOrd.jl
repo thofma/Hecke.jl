@@ -242,3 +242,23 @@ let
   @test order(L, P) !== order(L, P)
   @test hash(order(L, P)) == hash(order(L, P))
 end
+
+# more non-nice stuff
+let
+  Qt, t = QQ[:t]
+  k, a1 = number_field(492800*t^12 - 1766400*t^10 + 2458020*t^8 - 1713167*t^6 + 614505*t^4 - 110400*t^2 + 7700; cached = false);
+  kt1, t1 = k[:t1];
+  K, = number_field(t1^2 + 379160320//15532761*a1^10 - 3910638080//46598283*a1^8 + 4993275364//46598283*a1^6 - 4945308049//77663805*a1^4 + 712176451//46598283*a1^2 - 110709362//46598283)
+  OK = maximal_order(K)
+
+  Qx, x = QQ["x"]
+  K, a = number_field(3*17*11*x^2+123*x+321)
+  Kt, t = K[:t]
+  L, b = number_field(4*3*a*t^2+(a+1)^4*t+(a+2)^3)
+  La, _ = absolute_simple_field(L)
+
+  @test abs(absolute_discriminant(maximal_order(L))) == abs(discriminant(maximal_order(La)))
+
+  b = lll_basis(maximal_order(L))
+  @test all([t2(x) < 10^14 for x = b])
+end
