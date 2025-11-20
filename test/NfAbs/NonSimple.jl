@@ -66,7 +66,7 @@
       end
 
       u = rand(-10:10)
-      @test @inferred z^u == @inferred z^ZZRingElem(u)
+      @test (@inferred z^u) == (@inferred z^ZZRingElem(u))
 
       M = zero_matrix(QQ, 1, 6)
       Hecke.elem_to_mat_row!(M, 1, z)
@@ -119,10 +119,10 @@
         z = rand(L, -10:10)
       end
 
-      @test @inferred m(z + zz) == m(z) + m(zz)
-      @test @inferred m(z * zz) == m(z) * m(zz)
-      @test @inferred m(-z) == -m(z)
-      @test @inferred m(inv(z)) == inv(m(z))
+      @test (@inferred m(z + zz)) == m(z) + m(zz)
+      @test (@inferred m(z * zz)) == m(z) * m(zz)
+      @test (@inferred m(-z)) == -m(z)
+      @test (@inferred m(inv(z))) == inv(m(z))
       @test m\m(z) == z
     end
 
@@ -133,10 +133,10 @@
         z = rand(K, -10:10)
       end
 
-      @test @inferred m\(z + zz) == m\(z) + m\(zz)
-      @test @inferred m\(z * zz) == m\(z) * (m\(zz))
-      @test @inferred m\(-z) == -(m\(z))
-      @test @inferred m\(inv(z)) == inv(m\z)
+      @test (@inferred m\(z + zz)) == m\(z) + m\(zz)
+      @test (@inferred m\(z * zz)) == m\(z) * (m\(zz))
+      @test (@inferred m\(-z)) == -(m\(z))
+      @test (@inferred m\(inv(z))) == inv(m\z)
       @test m(m\z) == z
     end
   end

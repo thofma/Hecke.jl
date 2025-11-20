@@ -353,7 +353,7 @@
 
     P1 = E116_1_a1([K(0), -K(a)])
     @test (3*P1)//3 == P1
-    @test @inferred 3*(3*P1)//(-3) == -3*P1
+    @test -3 * P1 == @inferred 3*(3*P1)//(-3)
     @test_throws ErrorException P1//5
   end
 end

@@ -287,15 +287,15 @@
 
     E = elliptic_curve([1, 1, 0, 40050, 7557750])
     @test conductor(E) == 25350
-    @test @inferred tamagawa_numbers(E) == [1, 2 ,2, 1]
-    @test @inferred kodaira_symbols(E) == ["I1", "I2", "III*", "IV*"]
+    @test (@inferred tamagawa_numbers(E)) == [1, 2 ,2, 1]
+    @test (@inferred kodaira_symbols(E)) == ["I1", "I2", "III*", "IV*"]
 
     Rx, x = polynomial_ring(QQ, "x")
     K, a = number_field(x^2-x+3)
     E = elliptic_curve(K, [0, -1, 1, -7820, -263580])
     OK = ring_of_integers(K)
     I = (-2*a+1)*OK
-    @test @inferred conductor(E) == I
+    @test I == @inferred conductor(E)
 
     L, a = number_field(x^2-x+1)
     E = elliptic_curve(L, [0, 0, 0, -15, 22])
@@ -317,7 +317,7 @@
   else
     P = lp[2][1]
   end
-  @test @inferred kodaira_symbol(E, P) == "I0"
+  @test "I0" == @inferred kodaira_symbol(E, P)
 
   # rational function field
   QQt, t = rational_function_field(QQ, "t")
