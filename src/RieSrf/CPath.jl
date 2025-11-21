@@ -278,7 +278,7 @@ function reverse(G::CPath)
   assign_permutation(G_rev, inv(permutation(G)))
 
   if isdefined(G, :integral_matrix)
-    G_rev.integral_matrix =  permutation(G_rev) * -G.integral_matrix
+    G_rev.integral_matrix =  permutation(G) * -G.integral_matrix
   end
 
   return G_rev
