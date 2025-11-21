@@ -789,18 +789,6 @@ function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::I
   return r
 end
 
-function roots(R::ArbField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=R.prec, initial_prec::Int...)
-  g = factor(f)
-  r = elem_type(R)[]
-  C = AcbField(precision(R))
-  for (k, _) in g
-    s, _ = signature(k)
-    rt = roots(C, k)
-    append!(r, map(real, rt[1:s]))
-  end
-  return r
-end
-
 function roots(R::RealField, f::Union{ZZPolyRingElem, QQPolyRingElem}, abs_tol::Int=precision(Balls), initial_prec::Int...)
   g = factor(f)
   r = elem_type(R)[]
