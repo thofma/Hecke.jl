@@ -372,7 +372,6 @@ function neighbours(
       push!(lifts, w0)
     end
     for v in lifts
-      @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       LL = lll(neighbour(L, v, p))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
@@ -384,6 +383,7 @@ function neighbours(
 
       vain[] = Int(0)
       @vprintln :ZGenRep 3 "Keep an isometry class"
+      @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       if algorithm != :spinor
         invLL = _invariants(LL)
         if haskey(inv_dict, invLL)
@@ -459,6 +459,28 @@ function _unique_iso_class!(A::Vector{T}) where T <: Union{ZZLat, HermLat}
   end
   # Now the lattices to keep are at the first `count` entries of `A`
   resize!(A, count)::typeof(A)
+end
+
+function _unique_iso_class_dec!(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
+  if length(A) ==0
+    return A
+  end
+  L = first(A)
+  inv_lat = invariant_function(L)
+  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  for i in 2:length(A)
+    N = A[i]
+    inv_lat = invariant_function(N)
+    if haskey(inv_dict, inv_lat)
+      push!(inv_dict[inv_lat], N)
+    else
+      inv_dict[inv_lat] = ZZLat[N]
+    end
+  end
+  for l in values(inv_dict)
+    _unique_iso_class!(l)
+  end
+  return reduce(append!, values(inv_dict);init=ZZLat[])
 end
 
 @doc raw"""
@@ -773,9 +795,9 @@ function enumerate_definite_genus(
       found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
     else
-      @hassert :GenRep 3 _missing_mass <= _mass
       missing_mass = Ref{QQFieldElem}(_missing_mass)
     end
+    @hassert :GenRep 3 _missing_mass <= _mass
   else
     missing_mass = Ref{QQFieldElem}(0)
   end
