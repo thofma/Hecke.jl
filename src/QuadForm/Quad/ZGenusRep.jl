@@ -471,13 +471,25 @@ the invariants by default are:
 - the kissing numbe of ``L``;
 - the order of the isometry group of ``L``.
 """
-function default_invariant_function(L::ZZLat)
-  m = minimum(L)
-  rlr, _ = root_lattice_recognition(L)
+function _default_invariant_function(L::ZZLat)
   kn = kissing_number(L)::Int
+  rlr, _ = root_lattice_recognition(L)
+  m = minimum(L)
   ago = automorphism_group_order(L)::ZZRingElem
   return (m, rlr, kn, ago)
 end
+
+function default_invariant_function(L::ZZLat)
+  _invariants = Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}[]
+  _L = L
+  while rank(_L) > 0
+    M, P, _ = _shortest_vectors_sublattice(_L; check=false)
+    push!(_invariants, _default_invariant_function(rescale(P, 1//scale(P))))
+    _L = orthogonal_submodule(_L, P)
+  end
+  return _invariants
+end
+
 
 ###############################################################################
 #
