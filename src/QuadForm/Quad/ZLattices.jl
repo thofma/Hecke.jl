@@ -3464,7 +3464,7 @@ function index(L::ZZLat, M::ZZLat)
   if rank(L)>rank(M)
     return inf
   end
-  return abs(det(M))
+  return ZZ(abs(det(M)))
 end
 
 function _norm_generator(gram_normal, p)
