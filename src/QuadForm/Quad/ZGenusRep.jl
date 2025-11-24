@@ -480,11 +480,12 @@ function _default_invariant_function(L::ZZLat)
 end
 
 function default_invariant_function(L::ZZLat)
-  _invariants = Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}[]
+  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}, ZZRingElem}[]
   _L = L
   while rank(_L) > 0
     M, P, _ = _shortest_vectors_sublattice(_L; check=false)
-    push!(_invariants, _default_invariant_function(rescale(P, 1//scale(P))))
+    i = index(P,M)
+    push!(_invariants, (_default_invariant_function(rescale(P, 1//scale(P))),i))
     _L = orthogonal_submodule(_L, P)
   end
   return _invariants
@@ -701,7 +702,6 @@ function enumerate_definite_genus(
     res = copy(known)
   end
 
-  !distinct && _unique_iso_class!(res)
 
   L, itk = Iterators.peel(res)
   inv_lat = invariant_function(L)
@@ -712,6 +712,12 @@ function enumerate_definite_genus(
       push!(inv_dict[inv_lat], N)
     else
       inv_dict[inv_lat] = ZZLat[N]
+    end
+  end
+
+  if !distinct
+    for l in values(inv_dict)
+      _unique_iso_class!(l)
     end
   end
 
