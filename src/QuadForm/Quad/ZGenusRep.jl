@@ -461,7 +461,7 @@ function _unique_iso_class!(A::Vector{T}) where T <: Union{ZZLat, HermLat}
   resize!(A, count)::typeof(A)
 end
 
-function _unique_iso_class_dec!(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
+function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
   if length(A) ==0
     return A
   end
@@ -478,7 +478,7 @@ function _unique_iso_class_dec!(A::Vector{T},invariant_function::Function=Hecke.
     end
   end
   for l in values(inv_dict)
-    _unique_iso_class!(l)
+    Hecke._unique_iso_class!(l)
   end
   return reduce(append!, values(inv_dict);init=ZZLat[])
 end
