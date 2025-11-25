@@ -817,7 +817,7 @@ function enumerate_definite_genus(
   count_new = Int(0)
   i = Int(0)
   while true
-    i = rand(1:length(res))
+    i = i+1
     N = neighbours(
                    res[i],
                    p,
@@ -835,7 +835,10 @@ function enumerate_definite_genus(
                    max,
                    scaling_factor,
                   )
-
+    if i == length(res)
+      # restart the cycle
+      i = 0
+    end
     if !is_empty(N)
       for M in N
         count_new += 1
