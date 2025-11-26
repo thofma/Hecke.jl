@@ -21,6 +21,6 @@
   RS = RiemannSurface(f)
   small_period_matrix(RS)
 
-  #f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
-
+  f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
+RS = RiemannSurface(f)
 end

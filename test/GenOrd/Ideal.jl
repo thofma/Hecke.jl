@@ -88,5 +88,5 @@ let
   O = integral_closure(kt, F)
   @test hash(a*O) == hash(a*O)
 
-  @test fractional_ideal(a * O) + fractional_ideal(a * O) == fractional_ideal(a * O)
+  @test a * O + a * O == a * O
 end
