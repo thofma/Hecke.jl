@@ -114,7 +114,7 @@ function big_period_matrix(RS::RiemannSurface)
 
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
-  m = degree(f, 2)::Int
+  m = degree(f, 2)
 
   # Copied from monodromy_representation to compute the monodromy representation
   # we just computed while computing periods. 
