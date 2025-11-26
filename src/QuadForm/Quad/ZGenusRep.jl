@@ -280,6 +280,7 @@ function neighbours(
 
   if use_mass
     __mass = missing_mass[]
+    @assert __mass >0
   end
 
   # For the orbit algorithm, we identify isotropic lines in `L0/p*L0` which are in
@@ -409,6 +410,7 @@ function neighbours(
           s = automorphism_group_order(LL)
           sub!(__mass, __mass, 1//s)
           is_zero(__mass) && return result
+          @assert __mass >= 0
         end
 
         length(result) == max && return result
@@ -794,10 +796,11 @@ function enumerate_definite_genus(
     if isnothing(_missing_mass)
       found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
+      @assert missing_mass[] >= 0
     else
       missing_mass = Ref{QQFieldElem}(_missing_mass)
+      @assert missing_mass[] <= _mass
     end
-    @hassert :GenRep 3 missing_mass[] <= _mass
   else
     missing_mass = Ref{QQFieldElem}(0)
   end
