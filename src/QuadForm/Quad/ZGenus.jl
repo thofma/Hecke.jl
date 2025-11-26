@@ -1680,6 +1680,18 @@ function discriminant_group(G::ZZGenus)
   return torsion_quadratic_module(q)
 end
 
+function discriminant_group(G::ZZLocalGenus)
+  qL = QQMatrix[]
+  p = prime(G)
+  for block in G._symbol
+    @req block[1]>=0 "G must be a local genus of integral lattices"
+    q = _gram_from_jordan_block(p, block, true)
+    push!(qL, q)
+  end
+  q = diagonal_matrix(qL)
+  return torsion_quadratic_module(q)
+end
+
 @doc raw"""
     representative(G::ZZGenus) -> ZZLat
 

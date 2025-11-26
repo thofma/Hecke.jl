@@ -3375,7 +3375,7 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
     return true
   end
   f, r = _is_isometric_indef_approx(L, M)
-  return is_zero(isS(r))
+  return is_zero(isS(QQ(r)))
 end
 
 function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
