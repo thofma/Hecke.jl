@@ -278,6 +278,9 @@ function neighbours(
     m = p^2
   end
 
+  if algorithm == :spinor
+    use_mass = false
+  end
   if use_mass
     __mass = missing_mass[]
     @assert __mass >= 0
