@@ -797,7 +797,7 @@ function enumerate_definite_genus(
     else
       missing_mass = Ref{QQFieldElem}(_missing_mass)
     end
-    @hassert :GenRep 3 _missing_mass <= _mass
+    @hassert :GenRep 3 missing_mass[] <= _mass
   else
     missing_mass = Ref{QQFieldElem}(0)
   end
