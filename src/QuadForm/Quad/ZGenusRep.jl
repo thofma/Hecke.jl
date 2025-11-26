@@ -280,7 +280,7 @@ function neighbours(
 
   if use_mass
     __mass = missing_mass[]
-    @assert __mass >0
+    @assert __mass >= 0
   end
 
   # For the orbit algorithm, we identify isotropic lines in `L0/p*L0` which are in
