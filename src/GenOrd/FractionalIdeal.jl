@@ -10,6 +10,8 @@ function Base.isone(A::GenOrdFracIdl)
   return isone(denominator(A)) && isone(numerator(A))
 end
 
+
+
 ################################################################################
 #
 #  Fractional Ideals
@@ -248,7 +250,16 @@ function Base.:*(x::GenOrdElem, y::GenOrdFracIdl)
   return GenOrdIdl(parent(x), x) * y
 end
 
+function Base.:*(f::Generic.FunctionFieldElem, O::GenOrd)
+  @assert parent(f) == O.F
+  f_num, f_denom = integral_split(f, O)
+  return GenOrdFracIdl(ideal(O, f_num), f_denom)
+end
+
+
+
 Base.:*(x::GenOrdFracIdl, y::GenOrdElem) = y * x
+Base.:*(x::GenOrd, y::Generic.FunctionFieldElem) = y * x
 
 ################################################################################
 #

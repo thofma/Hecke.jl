@@ -190,5 +190,13 @@ end
 Return a basis of the first order differential forms of F.
 """
 function basis_of_differentials(F::AbstractAlgebra.Generic.FunctionField)
-  return map(t-> FunFldDiff(t), riemann_roch_space(canonical_divisor(F)))
+  dx = differential(separating_element(F))
+  x = separating_element(F)
+  codiff_divisor = divisor(codifferent(finite_maximal_order(F)), codifferent(infinite_maximal_order(F)))
+  D = (-divisor(dx.f) + 2*pole_divisor(F(x)) + codiff_divisor)
+  J_fin, J_inf = ideals(D)
+  F = function_field(D)
+  RR = _riemann_roch_space(J_fin, J_inf, F)
+  map(t-> FunFldDiff(t), RR)
+  #return map(t-> FunFldDiff(t), riemann_roch_space(canonical_divisor(F)))
 end

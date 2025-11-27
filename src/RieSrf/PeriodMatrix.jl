@@ -91,7 +91,7 @@ function big_period_matrix(RS::RiemannSurface)
   bound_temp = []
   for path in paths
     for subpath in get_subpaths(path)
-      compute_ellipse_bound(subpath, embedded_differentials, int_group_rs, RS)
+      compute_ellipse_bound_heuristic(subpath, embedded_differentials, int_group_rs, RS)
       append!(bound_temp, subpath.bounds)
     end
   end
@@ -299,20 +299,23 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
     Ky, y = polynomial_ring(base_ring(Kxy), "y")
 
     piC = const_pi(Cc)
+    piR = const_pi(Rc)
 
     #This should be done in a more clever way by sampling with less points with
     #bigger radius in the beginning and then zooming in
     n = 2000
-    test_points = [k*2*pi/n for k in 0:n-1]
+    test_points = [Cc(k*2*piC/n) for k in 0:n-1]
 
     b = sqrt(r^2-1)
 
     max_bound_t = []
       for t in test_points
+        #radius = piR/n
+        #ccall((:acb_add_error_arb, Hecke.libflint), Cvoid, (Ref{AcbFieldElem}, 
+        #Ref{ArbFieldElem}), t, radius)
         e_t = r*cos(t) + b*sin(t)*I
-        radius = real(piC/n)
-        #ccall((:acb_add_error_arb, libflint), Cvoid, (Ref{AcbFieldElem}, 
-        #Ref{ArbFieldElem}), e_t, radius)
+
+
         x_ball = evaluate(subpath, e_t)
         ys = roots(f(x_ball, y), initial_prec = prec)
         g = RS.evaluate_differential_factors_matrix
@@ -328,3 +331,73 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
     subpath.integration_scheme_index = num_of_int_groups
   end
 end 
+
+function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurface)
+  
+  num_of_int_groups = length(int_group_rs)
+  if length(subpath.bounds) == 0
+    i = maximum(filter(x -> (subpath.int_param_r > int_group_rs[x]), 1:num_of_int_groups);init = 1)
+    subpath.integration_scheme_index = i
+    r = int_group_rs[i]
+
+    v = embedding(RS)
+    prec = precision(RS)
+    Rc = ArbField(prec)
+    f = embed_mpoly(defining_polynomial(RS), v, prec)
+    Cc = base_ring(f)
+    I = onei(Cc)
+    f = change_base_ring(Cc, f, parent = parent(f))
+
+    Kxy = parent(f)
+    Ky, y = polynomial_ring(base_ring(Kxy), "y")
+
+    piC = const_pi(Cc)
+    piR = const_pi(Rc)
+	  b = sqrt(r^2-1)
+    x = subpath.t_of_closest_d_point
+
+	if abs(imag(x)) < Rc(10^-10) 
+		xr = sign(Int, real(x))*r
+  elseif abs(real(x)) < Rc(10^-10) 
+		xr = sign(Int, imag(x))*b*I
+	else
+
+	  ImSgn = sign(Int, imag(x))
+	  ReSgn = sign(Int, real(x))
+	
+	  x = abs(real(x)) + I*abs(imag(x))
+	  s = function(t)
+		  return cos(t)*sin(t)-r*real(x)*sin(t)+b*imag(x)*cos(t)
+	  end
+
+	  sp = function(t)
+		  return (cos(t)^2 - sin(t)^2) - r*real(x)*cos(t) - b*imag(x)*sin(t)
+	  end
+    nt = real(acos(x))
+	  t = nt - s(nt)/sp(nt)
+	  while abs(t-nt) > 10^-3
+		  nt = t
+		  t -= s(t)/sp(t)
+    end
+	  xr = ReSgn * r*cos(t) + ImSgn*I*b*sin(t)
+  end
+
+   x_ball = evaluate(subpath, xr)
+   ys = roots(f(x_ball, y), initial_prec = prec)
+   g = RS.evaluate_differential_factors_matrix
+   bounds_matrix = g(differentials_test, x_ball, ys)
+   bounds_matrix *= evaluate_d(subpath, xr)
+   max_bound = 10 * maximum([Rc(abs(v)) for v in bounds_matrix]; init = Rc(0))
+   push!(subpath.bounds, max_bound)
+
+  else 
+    subpath.integration_scheme_index = num_of_int_groups
+  end
+end 
+
+function acos(x::AcbFieldElem)
+  z = parent(x)()
+  prec = precision(parent(x))
+  @ccall libflint.acb_acos(z::Ref{AcbFieldElem}, x::Ref{AcbFieldElem}, prec::Int)::Nothing
+  return z
+end
