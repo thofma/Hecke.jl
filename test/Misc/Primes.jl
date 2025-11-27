@@ -1,9 +1,9 @@
 @testset "Primes" begin
   @testset "Next prime" begin
     for T in [UInt32, UInt64, UInt128, Int32, Int64, Int128, BigInt, ZZRingElem]
-      @test @inferred next_prime(T(0)) == T(2)
-      @test @inferred next_prime(T(2)) == T(3)
-      @test @inferred next_prime(T(3)) == T(5)
+      @test T(2) == @inferred next_prime(T(0))
+      @test T(3) == @inferred next_prime(T(2))
+      @test T(5) == @inferred next_prime(T(3))
     end
 
     if Int == Int64
