@@ -1511,10 +1511,11 @@ function _issquare(d::Union{zzModRingElem,ZZModRingElem}, p)
   end
 end
 
+kronecker_symbol(x::ZZRingElem, p::Int) = kronecker_symbol(x,ZZ(p))
 
 function _sqrt(d::Union{zzModRingElem,ZZModRingElem})
   R = parent(d)
-  b, p, v = is_prime_power_with_data(R.n)
+  b, v, p = is_prime_power_with_data(R.n)
   @assert b
   return _sqrt(d, p, Int(v))
 end
