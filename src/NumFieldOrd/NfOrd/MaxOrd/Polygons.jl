@@ -941,7 +941,7 @@ function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingEl
     end
     Nl = filter(x -> slope(x)<0, N.lines)
     F, a = Native.finite_field(g, "a", cached = false)
-    pols = dense_poly_type(elem_type(F))[]
+    pols = poly_type(elem_type(F))[]
     for ll in Nl
       rp = residual_polynomial(F, ll, dev, p)
       if is_squarefree(rp)

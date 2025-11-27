@@ -53,7 +53,7 @@ var(F::RelFinField) = F.var
 prime_field(F::RelFinField; cached::Bool = true) = prime_field(base_field(F), cached = cached)
 
 function defining_polynomial(F::RelFinField{T}) where T
-  return F.defining_polynomial::dense_poly_type(T)
+  return F.defining_polynomial::poly_type(T)
 end
 
 base_field_type(::Type{RelFinField{S}}) where S = parent_type(S)
@@ -156,7 +156,7 @@ function zero!(x::RelFinFieldElem)
   return x
 end
 
-elem_type(::Type{RelFinField{T}}) where T = RelFinFieldElem{RelFinField{T}, dense_poly_type(T)}
+elem_type(::Type{RelFinField{T}}) where T = RelFinFieldElem{RelFinField{T}, poly_type(T)}
 
 parent_type(::Type{RelFinFieldElem{S, T}}) where {S, T}  = S
 
