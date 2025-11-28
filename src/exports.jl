@@ -57,7 +57,6 @@ export HermLat
 export HermLocalGenus
 export HypellCrv
 export HypellCrvPt
-export HyperellipticCurve
 export IdealSet
 export InfPlc
 export Isogeny
@@ -197,6 +196,9 @@ export chain_complex
 export class_group
 export class_number
 export classical_modular_polynomial
+export clebsch_from_igusa_clebsch
+export clebsch_from_igusa
+export clebsch_invariants
 export close_vectors
 export close_vectors_iterator
 export closure
@@ -353,6 +355,8 @@ export free_resolution
 export frobenius_map
 export function_field
 export fundamental_discriminant
+export g2_from_igusa
+export g2_invariants
 export galois_module
 export gcd
 export gcd_into!
@@ -406,6 +410,7 @@ export hom_tensor
 export homogeneous_equation
 export howell_form
 export hyperbolic_plane_lattice
+export hyperelliptic_curve
 export hyperelliptic_polynomials
 export hyperkaehler_lattice
 export id
@@ -416,6 +421,13 @@ export ideal_type
 export ideals
 export idempotents
 export identity_isogeny
+export igusa_clebsch_from_clebsch
+export igusa_clebsch_from_igusa
+export igusa_clebsch_invariants
+export igusa_from_g2
+export igusa_from_igusa_clebsch
+export igusa_invariants
+export igusa_invariant_J15
 export image
 export in
 export index
@@ -792,6 +804,7 @@ export real_embeddings
 export real_period
 export real_places
 export reduce_full
+export reduce_binary_form
 export reduced_charpoly
 export reduced_discriminant
 export reduced_resultant
@@ -924,6 +937,7 @@ export trace_of_frobenius
 export trailing_coefficient
 export transform
 export transform_rstu
+export transvectant
 export triangularize
 export trivial_divisor
 export trivial_morphism
@@ -944,6 +958,8 @@ export vcat!
 export vectors_of_square_and_divisibility
 export vector_space_dim
 export volume
+export weighted_equality
+export weighted_reduction
 export weil_pairing
 export wildanger_field
 export witt_invariant
