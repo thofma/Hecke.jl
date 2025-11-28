@@ -43,6 +43,22 @@ function derivative(f::MPolyRingElem{T}, x::MPolyRingElem{T}, n::Int) where T
 return f
 end
 
+function gcdx(f::ZZRingElem, g::ZZRingElem, hs::ZZRingElem...)
+  fs = [f,g,hs...]
+  n = length(fs)
+  M = matrix(ZZ,n,1,v)
+  result = hnf_with_transform(M)
+  return Tuple(vcat(result[1][1,1], result[2][1,:]))
+end
+
+function gcdx(fs::AbstractArray{ZZRingElem}) 
+  length(fs) > 0 || error("Empty collection")
+  n = length(fs)
+  M = matrix(ZZ,n,1,fs)
+  result = hnf_with_transform(M)
+  return Tuple(vcat(result[1][1,1], result[2][1,:]))
+end
+
 @doc raw"""
     weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) -> Bool
 
@@ -59,8 +75,8 @@ function weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) where T
   end
 
 #Compute gcd of the weights
-  A = gcdx(ws[non_zero]...)
-  gcd_ws = A[1]
+  A = gcdx(Vector{ZZRingElem}(ws[non_zero]))
+  gcd_ws = Int(A[1])
   
 #And Bezout coefficients
   B_coeffs = A[2:end]
