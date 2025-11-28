@@ -420,6 +420,8 @@
   S, = sub(T, [T([1, 0, 0, 0]), T([0, 1, 0, 0]), T([0, 0, 1, 0]), T([0, 0, 0, 1])])
   @test @inferred is_totally_isotropic(S)
   @test @inferred !is_totally_isotropic(T)
+  D = discriminant_group(integer_lattice(gram=ZZ[1 0 0; 0 0 2; 0 2 0;]))
+  @test !is_totally_isotropic(D)
 
   # submodules
   T = torsion_quadratic_module(QQ[1//2 1//4; 1//4 1//2])
