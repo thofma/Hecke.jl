@@ -149,10 +149,7 @@
     @test rand(rng, I) isa E
     @test rand(rng, Hecke.RandomExtensions.make(I), 2, 3) isa Matrix{E}
 
-    Random.seed!(rng, rand_seed)
-    a = rand(rng, I)
-    Random.seed!(rng, rand_seed)
-    @test a == rand(rng, I)
+    @test reproducible(I)
   end
 
   let

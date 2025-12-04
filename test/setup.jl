@@ -10,7 +10,6 @@ import Hecke.AbstractAlgebra
 import Hecke: mul!
 
 const rng = MersenneTwister()
-const rand_seed = rand(UInt128)
 
 # tests if rand(rng, args...) gives reproducible results
 function reproducible(args...)

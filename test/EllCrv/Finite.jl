@@ -1,8 +1,5 @@
 #using Hecke.Random
 #using Hecke.RandomExtensions
-#
-#const rng = MersenneTwister()
-#const rand_seed = rand(UInt128)
 
 @testset "Elliptic curves over finite fields" begin
 
@@ -31,10 +28,7 @@
     @test rand(rng, E1) isa T
     @test rand(rng, E1, 3) isa Vector{T}
 
-    Random.seed!(rng, rand_seed)
-    a = rand(rng, E1)
-    Random.seed!(rng, rand_seed)
-    @test a == rand(rng, E1)
+    @test reproducible(E1)
   end
 
   @testset "Order computation (Exhaustive_search)" begin

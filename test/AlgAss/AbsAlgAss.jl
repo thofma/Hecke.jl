@@ -182,10 +182,7 @@
     @test rand(rng, A) isa E
     @test rand(A, 2, 3) isa Matrix{E}
 
-    Random.seed!(rng, rand_seed)
-    a = rand(rng, A)
-    Random.seed!(rng, rand_seed)
-    @test a == rand(rng, A)
+    @test reproducible(A)
   end
 
   K, a = quadratic_field(2)
