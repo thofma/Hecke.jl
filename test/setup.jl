@@ -14,10 +14,10 @@ const rand_seed = rand(UInt128)
 
 # tests if rand(rng, args...) gives reproducible results
 function reproducible(args...)
-  Random.seed!(rng)
-  x = rand(rng, args...)
-  Random.seed!(rng, rng.seed)
-  x == rand(rng, args...)
+  rng1 = copy(rng)
+  x = rand(rng1, args...)
+  rng2 = copy(rng)
+  return x == rand(rng2, args...)
 end
 
 Hecke.assertions(true)
