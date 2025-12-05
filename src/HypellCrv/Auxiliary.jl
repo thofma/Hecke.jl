@@ -27,7 +27,7 @@ function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, k::Int) where T
   for mon in monomials(diff_op)
     dfxy_part = derivative(derivative(f, x, degree(mon, dfx)), y, degree(mon, dfy))
     dgxy_part = derivative(derivative(g, x, degree(mon, dgx)), y, degree(mon, dgy))
-    
+
     result += coeff(diff_op,mon) * dfxy_part * dgxy_part
   end
   return result
@@ -36,7 +36,7 @@ end
 function derivative(f::MPolyRingElem{T}, x::MPolyRingElem{T}, n::Int) where T
   @req n >= 0 "n needs to be non-zero."
   i = 0
-  while n > i 
+  while n > i
     f = derivative(f, x)
     i += 1
   end
@@ -44,26 +44,26 @@ return f
 end
 
 function gcdx(f::ZZRingElem, g::ZZRingElem, hs::ZZRingElem...)
-  fs = [f,g,hs...]
+  fs = ZZRingElem[f,g,hs...]
   n = length(fs)
-  M = matrix(ZZ,n,1,v)
+  M = matrix(ZZ,n,1,fs)
   result = hnf_with_transform(M)
-  return Tuple(vcat(result[1][1,1], result[2][1,:]))
+  return tuple(result[1][1,1], result[2][1,:]...)
 end
 
-function gcdx(fs::AbstractArray{ZZRingElem}) 
+function gcdx(fs::AbstractArray{ZZRingElem})
   length(fs) > 0 || error("Empty collection")
   n = length(fs)
   M = matrix(ZZ,n,1,fs)
   result = hnf_with_transform(M)
-  return Tuple(vcat(result[1][1,1], result[2][1,:]))
+  return result[1][1,1], result[2][1,:]
 end
 
 @doc raw"""
     weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) -> Bool
 
 Given two points w1 and w2 in weighted projective space P with weights ws,
-return true when w1 and w2 are equal. 
+return true when w1 and w2 are equal.
 """
 function weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) where T
 #Only consider invertible elements
@@ -71,20 +71,17 @@ function weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) where T
   non_zero_w2 = findall(map(is_unit, w2))
 
   if non_zero != non_zero_w2
-    return false 
+    return false
   end
 
 #Compute gcd of the weights
-  A = gcdx(Vector{ZZRingElem}(ws[non_zero]))
-  gcd_ws = Int(A[1])
-  
-#And Bezout coefficients
-  B_coeffs = A[2:end]
+  _gcd_ws, B_coeffs = gcdx(Vector{ZZRingElem}(ws[non_zero]))
+  gcd_ws = Int(_gcd_ws)
 
-# Use Bezout coefficients to the scaling factors to get equality for an 
-# invariant whose weight is equal to the gcd of the weights. 
+# Use Bezout coefficients to the scaling factors to get equality for an
+# invariant whose weight is equal to the gcd of the weights.
 # I.e. we want gcd_w1_scaling * gcd_w1 = gcd_w2_scaling * gcd_w2
-# where gcd_wi is the value gotten by applying the B_coeffs to wi to 
+# where gcd_wi is the value gotten by applying the B_coeffs to wi to
 # get an invariant of weight gcd_w.
   gcd_w1_scaling = 1
   gcd_w2_scaling = 1
@@ -124,7 +121,7 @@ end
 @doc raw"""
     weighted_reduction(w1::Vector{T}, ws::Vector{Int}) -> Bool
 
-Given a point w1 in weighted projective space P over the rationals with 
+Given a point w1 in weighted projective space P over the rationals with
 weights ws, return the smallest equivalent point with integral coefficients.
 """
 function weighted_reduction(w1::Vector{QQFieldElem}, ws::Vector{Int})
@@ -141,18 +138,18 @@ function weighted_reduction(w1::Vector{QQFieldElem}, ws::Vector{Int})
     non_zero_i = filter(k -> w1_min[k]!=0, (1:length(w1_min)))
 
     #Divide out any common prime factors
-    for p in primes 
+    for p in primes
 	    while all([valuation(w1_min[k], p) >= ws[k] for k in non_zero_i ])
         for k in non_zero_i
 	        w1_min[k] = divexact(w1_min[k], p^ws[k])
-        end 
+        end
 	    end
     end
 
     return w1_min
 end
 
-# Given a linear equation of the form f(x, y) = a * x + b * y = 0, 
+# Given a linear equation of the form f(x, y) = a * x + b * y = 0,
 # find the minimal x_0, y_0 such that f(x_0, y_0) = 0.
 function minimize_linear_equation(f::MPolyRingElem{QQFieldElem})
   R = parent(f)
