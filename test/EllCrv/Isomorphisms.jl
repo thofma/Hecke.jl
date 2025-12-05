@@ -53,12 +53,12 @@
   @test (psi5 * inv(phi5)) == id_hom(E5) || (psi5 * inv(phi5)) == negation_map(E5)
 
   P = points_with_x_coordinate(E4, b)[1]
-  @test @inferred preimage(psi4, psi4(P)) == P
+  @test P == @inferred preimage(psi4, psi4(P))
   E4oo = infinity(E4)
-  @test @inferred preimage(psi4, psi4(E4oo)) == E4oo
+  @test E4oo == @inferred preimage(psi4, psi4(E4oo))
 
 
-  @test @inferred degree(phi1) == 1
+  @test 1 == @inferred degree(phi1)
 
   # automorphism group
   E6 = elliptic_curve([1, 2])

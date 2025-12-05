@@ -41,14 +41,14 @@ import Hecke: divisor
       @test is_zero(D - D)
 
       @test D == Do
-      @test @inferred valuation(D, p3) == 3
-      @test @inferred valuation(D, p1) == -1
-      @test @inferred valuation(D, p2) == 0
+      @test 3 == @inferred valuation(D, p3)
+      @test -1 == @inferred valuation(D, p1)
+      @test 0 == @inferred valuation(D, p2)
 
-      @test @inferred degree(D) == 2
+      @test 2 == @inferred degree(D)
 
-      @test @inferred dimension(D) == 2
-      @test @inferred index_of_speciality(D) == 0
+      @test 2 == @inferred dimension(D)
+      @test 0 == @inferred index_of_speciality(D)
 
       DD = 3*D
       @test !(DD > D)
@@ -67,18 +67,18 @@ import Hecke: divisor
       @test !is_effective(D)
       @test (D_z - D_p) == divisor(F(x-3))
 
-      @test @inferred function_field(D) == F
+      @test F == @inferred function_field(D)
       Dfin, Dinf = ideals(D)
       @test divisor(Dfin) + divisor(Dinf) == D
 
       Df = different_divisor(F)
       @test degree(Df) == 4
-      @test @inferred dimension(Df - 6*divisor(p3)) == 0
-      @test @inferred index_of_speciality(Df-6*divisor(p3)) == 2
+      @test 0 == @inferred dimension(Df - 6*divisor(p3))
+      @test 2 == @inferred index_of_speciality(Df-6*divisor(p3))
 
       KF = canonical_divisor(F)
-      @test @inferred degree(KF) == 0
-      @test @inferred genus(F) == 1
+      @test 0 == @inferred degree(KF)
+      @test 1 == @inferred genus(F)
 
     end
 
@@ -97,26 +97,26 @@ import Hecke: divisor
       D2 = @inferred divisor(inv(p1), p3^3)
 
       @test D == D2
-      @test @inferred valuation(D, p3) == 3
-      @test @inferred valuation(D, p1) == -1
+      @test 3 == @inferred valuation(D, p3)
+      @test -1 == @inferred valuation(D, p1)
 
       @test degree(D) == 2
 
-      @test @inferred dimension(D) == 1
-      @test @inferred index_of_speciality(D) == 5
+      @test 1 == @inferred dimension(D)
+      @test 5 == @inferred index_of_speciality(D)
 
-      @test @inferred function_field(D) == F
+      @test F == @inferred function_field(D)
       Dfin, Dinf = ideals(D)
       @test divisor(Dfin) + divisor(Dinf) == D
 
       Df = different_divisor(F)
-      @test @inferred degree(Df) == 20
-      @test @inferred dimension(Df-6*divisor(p3)) == 4
-      @test @inferred index_of_speciality(Df-6*divisor(p3)) == 2
+      @test 20 == @inferred degree(Df)
+      @test 4 == @inferred dimension(Df-6*divisor(p3))
+      @test 2 == @inferred index_of_speciality(Df-6*divisor(p3))
 
       KF = canonical_divisor(F)
-      @test @inferred degree(KF) == 12
-      @test @inferred genus(F) == 7
+      @test 12 == @inferred degree(KF)
+      @test 7 == @inferred genus(F)
 
       L = @inferred basis_of_differentials(F)
       for df in L
