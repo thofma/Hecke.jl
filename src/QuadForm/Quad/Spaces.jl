@@ -1856,7 +1856,7 @@ has gram matrix `Gi` and ``H_i`` is the row span of `Bi` for ``i=1,2``.
 
 Explicitly, returns whether a matrix``F`` with
 `G1 = F * G2 * transpose(F)` and
-`rref(B1*F) == rref(B2)` exists and `F`
+`rref(B1*F) == rref(B2)` exists and the matrix `F`.
 
 # Arguments
 - `G1`, G2` -- symmetric ``n \times n`` matrices, the gram matrices of some quadratic spaces
