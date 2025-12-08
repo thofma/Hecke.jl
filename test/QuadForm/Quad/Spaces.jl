@@ -545,4 +545,20 @@ let
   @test cls1 !== Hecke.isometry_class(q, p)
   @test hash(cls1) == hash(Hecke.isometry_class(q, p))
 end
- 
+
+@testset "witts theorem" begin
+  k = GF(3)
+  G = k[0 1 0 0 0 0;
+        1 0 0 0 0 0;
+        0 0 1 0 0 0;
+        0 0 0 1 0 0;
+        0 0 0 0 0 0;
+        0 0 0 0 0 0]
+  B1 = k[0 1 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 1 0;]
+  B2 = k[1 0 0 0 0 0; 0 0 0 1 0 0; 0 0 0 0 1 1;]
+
+  b, F = Hecke._witts_theorem(G, B1, G, B2)
+  @test b
+  @test F*G*transpose(F) == G
+  @test rref(B1*F) == rref(B2)
+end

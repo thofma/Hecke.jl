@@ -1732,6 +1732,14 @@ function _isisotropic_with_vector(F::MatrixElem)
   end
 end
 
+
+################################################################################
+#
+#  Isometry and Witts theorem
+#
+################################################################################
+
+
 function _quadratic_form_decomposition(F::MatrixElem)
   # Decompose F into an anisotropic kernel, an hyperbolic space and its radical
   @req is_symmetric(F) "Matrix must be symmetric"
@@ -1837,6 +1845,112 @@ end
 function _maximal_isotropic_subspace(F::MatElem)
   _, H, R = _quadratic_form_decomposition(F)
   return vcat(sub(H, collect(1:2:nrows(H)), collect(1:ncols(H))), R)
+end
+
+"""
+    _witts_theorem(G1::T, B1::T, G2::T, B2::T) where {T<:MatElem{<:FinFieldElem}} -> Bool, MatElem
+
+Return whether there exists an isometry between two quadratic spaces
+``V_1`` and ``V_2`` mapping the subspace ``H_1`` to ``H_2`` where ``V_i``
+has gram matrix `Gi` and ``H_i`` is the row span of `Bi` for ``i=1,2``.
+
+Explicitly, returns whether a matrix``F`` with
+`G1 = F * G2 * transpose(F)` and
+`rref(B1*F) == rref(B2)` exists and the matrix `F`.
+
+# Arguments
+- `G1`, G2` -- symmetric ``n \times n`` matrices, the gram matrices of some quadratic spaces
+- `B1`,`B2` -- ``k \times n`` matrices of rank `k` whose row span describes a subspace
+"""
+function _witts_theorem(G1::T, B1::T, G2::T, B2::T) where {T<:MatElem{<:FinFieldElem}}
+  nrows(B1) == nrows(B2) || return false, zero(G1)
+  T1 = _witts_theorem(G1, B1)
+  T2 = _witts_theorem(G2, B2)
+  F = inv(T1)*T2
+  @hassert :Lattice 0 rref(B1*F) == rref(B2)
+  return G1 == F*G2 * transpose(F), F
+end
+
+function _witts_theorem(G::T, B::T) where {T<:MatElem{<:FinFieldElem}}
+  @assert isodd(characteristic(base_ring(G)))
+  rad = kernel(G)
+  # write B
+  # as
+  # K + R
+  # where rad(G|_B) = K+R
+  # and K < rad(G) take K_1 with K + K_1 = rad(G)
+  # pick a basis of G of the form
+  # K_1 + K + R_0 + R_1 + R_0_dual + complement
+  # 0 0 0 0 0 0
+  #   0 0 0 0 0  # B
+  #     0 0 I 0  # B
+  #       G 0 0  # B
+  #         0 0
+  #           H
+  # and put G and H in some normal form
+  # intersect the row spans of B and the radical of G
+  K0 = kernel(vcat(rad, B); side=:left)
+  Krad = K0[:,1:nrows(rad)]
+  Kb = K0[:,nrows(rad)+1:end]
+  Rb = _basis_complement(rref(Kb)[2])
+  K_1 = _basis_complement(rref(Krad)[2])*rad
+
+  # Kr = Kr*rad # equal to - R
+  K = Kb*B
+  R = Rb*B
+
+  #D = Db*B
+  B1 = vcat(K_1, K, R)
+  R_0_dual_and_complement = _basis_complement(rref(B1)[2])
+  nondeg = vcat(R, R_0_dual_and_complement)
+
+  Gnondeg = nondeg*G*transpose(nondeg)
+  @assert det(Gnondeg)!=0
+  r = nrows(R)
+  E = identity_matrix(base_ring(B),nrows(Gnondeg))[1:r,:]
+  N, GN = _witts_theorem_nondeg(Gnondeg, E)
+  @assert rank(vcat(N[1:r,:], E))==r
+  # assemble a basis
+  return vcat(K, N*nondeg, K_1)
+end
+
+# some compatibility stuff for generic code
+_val(x::FinFieldElem) = iszero(x) ? 1 : 0
+_val(x::FinFieldElem, p::ZZRingElem) = iszero(x) ? 1 : 0
+_issquare(x::FinFieldElem, p::ZZRingElem) = is_square(x)
+_sqrt(x::FinFieldElem, p::ZZRingElem) = sqrt(x)
+
+function _witts_theorem_nondeg(G::T, B::T)  where {T<:MatElem{<:FinFieldElem}}
+  @assert isodd(characteristic(base_ring(G)))
+  @assert !iszero(det(G))
+  p = characteristic(base_ring(G))
+  GB = B*G*transpose(B)
+  A,H,R = Hecke._quadratic_form_decomposition(GB)
+  # complete R1 to a hyperbolic plane.
+  if nrows(A)>0
+    An, Ba = Hecke._normalize(A*GB*transpose(A), p)
+    A = An*A
+  end
+  K = base_ring(G)
+  r = nrows(R)
+
+  Rb = solve(G*transpose(R*B), identity_matrix(K, r); side=:left)
+  C = Rb*G*transpose(Rb)
+  Ra = R*B
+  # Modify
+  # 0 I
+  # I C
+  # to
+  # 0 I
+  # I 0
+  Rb -= C*Ra
+  N = vcat(vcat(A,H)*B,Ra,Rb)
+  # normalize the orthogonal complement of N
+  P = kernel(G*transpose(N); side=:left)
+  GP = P*G*transpose(P)
+  GP, BP = _normalize(GP,p)
+  NP = vcat(N,BP*P)
+  return NP, NP*G*transpose(NP)
 end
 
 function _isisometric_with_isometry(F, G)
