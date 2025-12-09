@@ -330,7 +330,7 @@ end
 Return f, h such that C is given by y^2 + h*y = f
 """
 function hyperelliptic_polynomials(C::HypellCrv{T}) where T
-  return (C.f, C.h)::Tuple{dense_poly_type(T), dense_poly_type(T)}
+  return (C.f, C.h)::Tuple{poly_type(T), poly_type(T)}
 end
 
 @doc raw"""
