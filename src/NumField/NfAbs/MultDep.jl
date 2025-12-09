@@ -572,10 +572,14 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
   if task == :all
     Ut, _, o = syzygies_tor(u)
 
-    t = evaluate(Hecke._transform(u, transpose(Ut))[1])
-
-    G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
-    g = vcat(g1, g2, [FacElem(t)])
+    if is_one(o)
+      G = abelian_group([0 for i=1:length(g1)+length(g2)])
+      g = vcat(g1, g2)
+    else
+      G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
+      t = evaluate(Hecke._transform(u, transpose(Ut))[1])
+      g = vcat(g1, g2, [FacElem(t)])
+    end
   elseif task == :modulo_tor
     G = free_abelian_group(length(g1)+length(g2))
     g = vcat(g1, g2)
@@ -648,7 +652,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
       push!(c, divexact(gamma[i], -gamma[end]))
     end
 
-    if task == :modulo_tor
+    if task == :modulo_tor || is_one(o)
       return G(c)
     end
 
