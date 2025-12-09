@@ -113,8 +113,16 @@ function Hecke.charpoly(a::Generic.FunctionFieldElem)
   return charpoly(representation_matrix(a))
 end
 
+function Hecke.charpoly(R::PolyRing, a::Generic.FunctionFieldElem)
+  return charpoly(R, representation_matrix(a))
+end
+
 function Hecke.minpoly(a::Generic.FunctionFieldElem)
   return minpoly(representation_matrix(a))
+end
+
+function Hecke.minpoly(R::PolyRing, a::Generic.FunctionFieldElem)
+  return minpoly(R, representation_matrix(a))
 end
 
 function Hecke.discriminant(F::Generic.FunctionField)

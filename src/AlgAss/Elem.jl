@@ -834,14 +834,11 @@ Returns the minimal polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
 """
 function Generic.minpoly(a::AbstractAssociativeAlgebraElem)
-  M = representation_matrix(a)
-  R = polynomial_ring(base_ring(parent(a)), "x", cached=false)[1]
-  return minpoly(R, a)
+  return minpoly(representation_matrix(a))
 end
 
 function Generic.minpoly(R::PolyRing, a::AbstractAssociativeAlgebraElem)
-  M = representation_matrix(a)
-  return minpoly(R, M)
+  return minpoly(R, representation_matrix(a))
 end
 
 @doc raw"""
@@ -851,9 +848,11 @@ Returns the characteristic polynomial of $a$ as a polynomial over
 `base_ring(algebra(a))`.
 """
 function charpoly(a::AbstractAssociativeAlgebraElem)
-  M = representation_matrix(a)
-  R = polynomial_ring(base_ring(parent(a)), "x", cached = false)[1]
-  return charpoly(R, M)
+  return charpoly(representation_matrix(a))
+end
+
+function charpoly(R::PolyRing, a::AbstractAssociativeAlgebraElem)
+  return charpoly(R, representation_matrix(a))
 end
 
 function _reduced_charpoly_simple(a::AbstractAssociativeAlgebraElem, R::PolyRing)

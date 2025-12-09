@@ -653,7 +653,7 @@ function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbstractAssoci
   f = minpoly(a)
   while degree(f) < d
     a = rand(A)
-    f = minpoly(a)
+    f = minpoly(parent(f), a)
   end
   return a, f
 end
