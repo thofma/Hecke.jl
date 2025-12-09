@@ -790,6 +790,11 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
       return a
     end
 
+    function disclog(J::AbsSimpleNumFieldOrderFractionalIdeal)
+      n, d = integral_split(J)
+      return disclog(n) - disclog(d)
+    end
+
     function disclog(J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       @hassert :RayFacElem 1 is_coprime(J, m)
       if isone(J)
