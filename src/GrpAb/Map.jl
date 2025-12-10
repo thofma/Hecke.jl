@@ -558,6 +558,23 @@ end
 
 (p::QQPolyRingElem)(f::FinGenAbGroupHom) = evaluate(p, f)
 
+function matrix(f::InverseMap{FinGenAbGroup, FinGenAbGroup})
+  if isa(f.origin, FinGenAbGroupHom)
+    if isdefined(f.origin, :imap)
+      return f.origin.imap
+    else
+      f.origin.imap = reduce(vcat, [f(d).coeff for d=gens(D)])
+      return f.origin.imap
+    end
+  end
+  return reduce(vcat, [f(d).coeff for d=gens(D)])
+end
+
+function matrix(f::Generic.CompositeMap{FinGenAbGroup, FinGenAbGroup})
+  return matrix(f.map1)*matrix(f.map2)
+end
+
+
 ###############################################################################
 
 struct MapParent

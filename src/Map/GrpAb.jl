@@ -42,6 +42,10 @@ mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
     return r
   end
 
+  function FinGenAbGroupHom(M::T) where T <: Union{InverseMap{FinGenAbGroup, FinGenAbGroup}, Generic.CompositeMap{FinGenAbGroup, FinGenAbGroup}}
+    return FinGenAbGroupHom(domain(M), codomain(M), matrix(M))
+  end
+
   function FinGenAbGroupHom(M::T) where T <: Map{FinGenAbGroup, FinGenAbGroup}
     r = new()
     D = domain(M)
