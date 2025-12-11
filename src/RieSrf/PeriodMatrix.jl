@@ -124,7 +124,7 @@ function big_period_matrix(RS::RiemannSurface)
   # we compute the integrals during analytic continuation here
   # and that we use the Ns determined by the integration scheme.
   # If we are only interested in the monodromy we need far less.
-  s_m = SymmetricGroup(m)::AbstractAlgebra.Generic.SymmetricGroup{Int}
+  s_m = SymmetricGroup(m) # ::AbstractAlgebra.Generic.SymmetricGroup{Int}
 
   ys = Vector{AcbFieldElem}()
   for path in paths
