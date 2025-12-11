@@ -3375,7 +3375,7 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
     return true
   end
   f, r = _is_isometric_indef_approx(L, M)
-  return is_zero(isS(r))
+  return is_zero(isS(QQ(r)))
 end
 
 function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
@@ -3464,7 +3464,7 @@ function index(L::ZZLat, M::ZZLat)
   if rank(L)>rank(M)
     return inf
   end
-  return abs(det(M))
+  return ZZ(abs(det(M)))
 end
 
 function _norm_generator(gram_normal, p)

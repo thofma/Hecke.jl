@@ -3,7 +3,7 @@
   @testset "Periods" begin
     K, a = quadratic_field(-5)
     E = elliptic_curve(K, [1-a, a-4, 1, 0, 2])
-    L = @inferred periods(E)
+    L = @inferred periods(E, 200)
     C = AcbField(100)
     R = ArbField(100)
 
@@ -15,7 +15,7 @@
 
     K, a = quadratic_field(7)
     E = elliptic_curve(K, [1, a, 3, a+7, -2])
-    L = @inferred periods(E)
+    L = @inferred periods(E, 200)
 
     @test contains(C("2.7629221426067257179910708730994041505062373525092", "0"), L[1][1])
     @test contains(C("-1.3814610713033628589955354365497020752531186762546", "1.0723061100392989886753176174505371703784396785786"), L[1][2])
@@ -23,7 +23,7 @@
     @test contains(C("-0.93660757761739743814590521148684636762046104301596", "1.1499337130709974851637683595038472294320843580688"), L[2][2])
 
     E = elliptic_curve([0, -6, 0, 11, -6])
-    L = @inferred periods(E)
+    L = @inferred periods(E, 200)
 
     @test contains(C("2.6220575542921198104648395898911194136827549514316", "0"), L[1][1])
     @test contains(C("0", "2.6220575542921198104648395898911194136827549514316"), L[1][2])

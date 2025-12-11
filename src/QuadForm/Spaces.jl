@@ -376,7 +376,7 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             end
           else
             j = ok
-            T[i, j] = 1 // (2 * F[j, i])
+            T[i, j] = inv(2 * F[j, i])
           end
         end
         if ok == 0

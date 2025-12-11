@@ -19,10 +19,7 @@ end
   end
   @test rand(Q, 2) isa Vector{elem_type(Q)}
 
-  Random.seed!(rng, rand_seed)
-  x = rand(rng, Q)
-  Random.seed!(rng, rand_seed)
-  @test x == rand(rng, Q)
+  @test reproducible(Q)
 end
 
 @testset "projection" begin

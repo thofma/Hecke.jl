@@ -651,6 +651,7 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
     while true
       local gamma
       while true
+        #TODO: solve over residue field first, then any lift should work!
         gamma = random_elem(E)#*uniformizer(E, -absolute_ramification_index(E))
         if !iszero(gamma) && valuation(gamma) == 0
           break

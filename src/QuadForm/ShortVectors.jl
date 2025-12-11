@@ -154,7 +154,7 @@ Return the Kissing number of the sphere packing defined by `L`.
 This is the number of non-overlapping spheres touching any
 other given sphere.
 """
-function kissing_number(L::ZZLat)
+@attr Int function kissing_number(L::ZZLat)
   @req rank(L) > 0 "Lattice must have positive rank"
   return 2 * length(shortest_vectors(L))
 end
