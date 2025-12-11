@@ -193,7 +193,7 @@ The minimal polynomial of $a$. The parent of the polynomial can be supplied
 as a first argument.
 """
 function minpoly(R::ZZPolyRing, a::AbsNumFieldOrderElem)
-  return R(minpoly(Globals.Qx, elem_in_nf(a)))
+  return minpoly(R, elem_in_nf(a))
 end
 
 minpoly(a::AbsNumFieldOrderElem) = minpoly(Hecke.Globals.Zx, a)

@@ -525,11 +525,11 @@ function minpoly_sparse(a::AbsNonSimpleNumFieldElem)
 end
 
 function minpoly(a::AbsNonSimpleNumFieldElem)
-  return minpoly_via_trace(a)::QQPolyRingElem
+  return minpoly(Globals.Qx, a)
 end
 
 function minpoly(Qx::QQPolyRing, a::AbsNonSimpleNumFieldElem)
-  return Qx(minpoly(a))
+  return minpoly_via_trace(Qx, a)::QQPolyRingElem
 end
 
 function minpoly(Rx::ZZPolyRing, a::AbsNonSimpleNumFieldElem)
@@ -537,7 +537,7 @@ function minpoly(Rx::ZZPolyRing, a::AbsNonSimpleNumFieldElem)
   if !isone(denominator(f))
     error("element is not integral")
   end
-  return Rx(denominator(f)*f)
+  return Rx(f)
 end
 
 function minpoly(a::AbsNonSimpleNumFieldElem, R::ZZRing)
@@ -555,12 +555,12 @@ end
 ################################################################################
 
 function charpoly(a::AbsNonSimpleNumFieldElem)
-  f = minpoly(a)
-  return f^div(degree(parent(a)), degree(f))
+  return charpoly(Globals.Qx, a)
 end
 
 function charpoly(Rx::QQPolyRing, a::AbsNonSimpleNumFieldElem)
-  return Qx(charpoly(a))
+  f = minpoly(Rx, a)
+  return f^div(degree(parent(a)), degree(f))
 end
 
 function charpoly(Rx::ZZPolyRing, a::AbsNonSimpleNumFieldElem)
@@ -568,7 +568,7 @@ function charpoly(Rx::ZZPolyRing, a::AbsNonSimpleNumFieldElem)
   if !isone(denominator(f))
     error("element is not integral")
   end
-  return Rx(denominator(f)*f)
+  return Rx(f)
 end
 
 function charpoly(a::AbsNonSimpleNumFieldElem, R::ZZRing)
@@ -1045,7 +1045,7 @@ end
 #TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
-function minpoly_via_trace(a::AbsNonSimpleNumFieldElem)
+function minpoly_via_trace(Qx::QQPolyRing, a::AbsNonSimpleNumFieldElem)
   k = parent(a)
   d = degree(k)
   b = a
@@ -1058,7 +1058,7 @@ function minpoly_via_trace(a::AbsNonSimpleNumFieldElem)
       i += 1
     end
     q = QQFieldElem(1, div(d, i))
-    f = power_sums_to_polynomial([x*q for x = l])
+    f = power_sums_to_polynomial([x*q for x = l]; parent = Qx)
     if iszero(subst(f, a))  #TODO: to checks first...
       return f::QQPolyRingElem
     end
