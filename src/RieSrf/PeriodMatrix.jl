@@ -51,19 +51,19 @@ function big_period_matrix(RS::RiemannSurface)
   #have to compute fewer integration schemes later making the algorithm faster.
   #According to Neurohr p101 of his thesis it suffices to have 5 for the Gauss-Legendre method.
   int_groups = [ [],[],[],[],[] ]
-		for r in int_parameters
-			if r < r_minimum + RR(0.1)
-        push!(int_groups[1],r)
-      elseif r < r_minimum + RR(0.4)
-        push!(int_groups[2],r)
-			elseif r < r_minimum + RR(0.9)
-        push!(int_groups[3],r)
-      elseif r < r_minimum + RR(2.0)
-        push!(int_groups[4],r)
-			else 
-        push!(int_groups[5],r)
-      end
-		end
+	for r in int_parameters
+		if r < r_minimum + RR(0.1)
+      push!(int_groups[1],r)
+    elseif r < r_minimum + RR(0.4)
+      push!(int_groups[2],r)
+		elseif r < r_minimum + RR(0.9)
+      push!(int_groups[3],r)
+    elseif r < r_minimum + RR(2.0)
+      push!(int_groups[4],r)
+		else 
+      push!(int_groups[5],r)
+    end
+	end
 
   #Make r_minimum slightly smaller than what it was. (But still larger than 1)
   if r_minimum <= RR(1) + 2 * eps
@@ -88,15 +88,15 @@ function big_period_matrix(RS::RiemannSurface)
   # Computed the bound M for every path. The bound M is the maximum value of
   # the integrands along the boundary of the ellipse with radius r. 
 
-  bound_temp = []
+  bound_temp = Vector{ArbFieldElem}()
   for path in paths
     for subpath in get_subpaths(path)
       compute_ellipse_bound_heuristic(subpath, embedded_differentials, int_group_rs, RS)
       append!(bound_temp, subpath.bounds)
     end
   end
-  bound_temp = maximum(bound_temp)
-  push!(RS.bounds, bound_temp)
+  bound_temp_max = maximum(bound_temp)
+  push!(RS.bounds, bound_temp_max)
   bound = maximum(RS.bounds)
 
   #Maybe change error value.
@@ -124,8 +124,9 @@ function big_period_matrix(RS::RiemannSurface)
   # we compute the integrals during analytic continuation here
   # and that we use the Ns determined by the integration scheme.
   # If we are only interested in the monodromy we need far less.
-  s_m = SymmetricGroup(m)
+  s_m = SymmetricGroup(m) # ::AbstractAlgebra.Generic.SymmetricGroup{Int}
 
+  ys = Vector{AcbFieldElem}()
   for path in paths
     Cc = AcbField(max_prec)
 		integral_matrix = zero_matrix(Cc, m, g)
@@ -182,7 +183,7 @@ function big_period_matrix(RS::RiemannSurface)
   # we just computed while computing periods. 
   # There is probably a more clever way to avoid doubling code.
 
-  mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
+  mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
   
   for gamma in pi1_gens
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
@@ -194,7 +195,7 @@ function big_period_matrix(RS::RiemannSurface)
   end
   
   inf_chain = Vector{CPath}[]
-  inf_perm = one(s_m)
+  inf_perm = one(s_m)::Perm{Int}
   
   for g in mon_rep
     inf_chain = vcat(inf_chain, map(reverse, g[1]))
@@ -330,7 +331,7 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
   else 
     subpath.integration_scheme_index = num_of_int_groups
   end
-end 
+end
 
 function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurface)
   
