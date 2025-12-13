@@ -55,17 +55,17 @@ matrix over `K` of size the number of columns of `B`.
 By default, `B` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = true)
+function quadratic_lattice(K::Field, B::PMat ; gram = nothing, check::Bool = true, cached::Bool=true)
   @req nf(base_ring(B)) == K "Incompatible arguments: B must be defined over K"
   @req (K isa NumField || K isa QQField) "K must be a number field"
   if gram === nothing
-    V = quadratic_space(K, ncols(B))
+    V = quadratic_space(K, ncols(B); cached)
   else
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, gram; check)
+    V = quadratic_space(K, gram; check, cached)
   end
   return lattice(V, B; check)
 end
@@ -87,7 +87,7 @@ By default, `basis` is checked to be of full rank. This test can be disabled by 
 If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
 over the ring $\mathbb{Z}$.
 """
-quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true) = quadratic_lattice(K, pseudo_matrix(basis); gram, check)
+quadratic_lattice(K::Field, basis::MatElem ; gram = nothing, check::Bool = true, cached::Bool=true) = quadratic_lattice(K, pseudo_matrix(basis); gram, check, cached)
 
 @doc raw"""
     quadratic_lattice(K::Field, gens::Vector ; gram = nothing) -> Union{ZZLat, QuadLat}
@@ -105,24 +105,24 @@ in the quadratic space over `K` with gram matrix `gram`.
 If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
 over the ring $\mathbb{Z}$.
 """
-function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool = true)
+function quadratic_lattice(K::Field, gens::Vector; gram = nothing, check::Bool = true, cached::Bool=true)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(K, 0, nrows(gram), []))
-    L = quadratic_lattice(K, pm; gram)
+    L = quadratic_lattice(K, pm; gram, cached)
     return L
   end
   @assert length(gens[1]) > 0
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
 
   if gram === nothing
-    V = quadratic_space(K, length(gens[1]))
+    V = quadratic_space(K, length(gens[1]); cached)
   else
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gram = map_entries(K, gram)
-    V = quadratic_space(K, gram; check)
+    V = quadratic_space(K, gram; check, cached)
   end
   return lattice(V, gens)
 end
@@ -136,11 +136,11 @@ lattice inside the quadratic space over `K` with Gram matrix `gram`.
 If $K = \mathbb{Q}$, then the output lattice is of type `ZZLat`, seen as a lattice
 over the ring $\mathbb{Z}$.
 """
-function quadratic_lattice(K::Field ; gram::MatElem, check::Bool = true)
+function quadratic_lattice(K::Field ; gram::MatElem, check::Bool = true, cached::Bool=true)
   @req is_square(gram) "gram must be a square matrix"
   gram = map_entries(K, gram)
   B = pseudo_matrix(identity_matrix(K, ncols(gram)))
-  return quadratic_lattice(K, B; gram, check)
+  return quadratic_lattice(K, B; gram, check, cached)
 end
 
 ################################################################################
@@ -156,7 +156,7 @@ function rational_span(L::QuadLat)
     return L.rational_span
   else
     G = gram_matrix_of_rational_span(L)
-    V = quadratic_space(base_field(L), G)
+    V = quadratic_space(base_field(L), G; cached=false)
     L.rational_span = V
     return V
   end
@@ -249,14 +249,14 @@ end
 
 Rescale the quadratic form `q` of the ambient space to `a \cdot q`
 """
-function rescale(L::QuadLat, a)
+function rescale(L::QuadLat, a; cached::Bool=true)
   if isone(a)
     return L
   end
   K = fixed_field(L)
   b = K(a)
   gramamb = gram_matrix(ambient_space(L))
-  return quadratic_lattice(base_field(L), pseudo_matrix(L); gram = b * gramamb)
+  return quadratic_lattice(base_field(L), pseudo_matrix(L); gram = b * gramamb, cached)
 end
 
 ################################################################################
@@ -551,11 +551,12 @@ function is_maximal(L::QuadLat, p)
   #end
   v = valuation(norm(L), p)
   x = elem_in_nf(uniformizer(p))^(-v)
-  ok, LL = is_maximal_integral(rescale(L, x), p)
+  ok, LL = is_maximal_integral(rescale(L, x; cached=false), p)
   if ok
     return true, L
   else
-    return false, rescale(LL, inv(elem_in_nf(x)))
+    V = ambient_space(L)
+    return false, lattice(V, pseudo_matrix(LL))
   end
 end
 

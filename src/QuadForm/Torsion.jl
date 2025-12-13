@@ -1427,7 +1427,7 @@ function is_anti_isometric_with_anti_isometry(T::TorQuadModule, U::TorQuadModule
     is_zero(gram_matrix_quadratic(U)) && return (false, hz)
   end
 
-  Ue = rescale(U, -1)
+  Ue = rescale(U, -1; cached=false)
   UetoU = hom(Ue, U, U.(lift.(gens(Ue))))
   if is_semi_regular(T)
     bool, TtoUe = _isometry_semiregular(T, Ue)
@@ -1659,10 +1659,10 @@ where k is a non-zero rational number.
 If the old form was defined modulo `n`, then the new form is defined
 modulo `n k`.
 """
-function rescale(T::TorQuadModule, k::RingElement)
+function rescale(T::TorQuadModule, k::RingElement; cached=false)
   @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
-  V = rescale(ambient_space(C), k)
+  V = rescale(ambient_space(C), k; cached=false)
   M = lattice(V, basis_matrix(C); check=false, isbasis=true)
   N = lattice(V, basis_matrix(T.rels); check=false, isbasis=true)
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
@@ -2103,14 +2103,14 @@ function +(T::TorQuadModule, U::TorQuadModule)
   return S
 end
 
-function _biproduct(x::Vector{TorQuadModule}; proj = true)
+function _biproduct(x::Vector{TorQuadModule}; proj = true, cached=false)
   mbf = modulus_bilinear_form(x[1])
   mqf = modulus_quadratic_form(x[1])
   @req all(q -> modulus_bilinear_form(q) == mbf, x) "All torsion quadratic modules must have the same bilinear modulus"
   @req all(q -> modulus_quadratic_form(q) == mqf, x) "All torsion quadratic modules must have the same quadratic modulus"
   cs = cover.(x)
   rs = relations.(x)
-  C, injC, projC = biproduct(cs)
+  C, injC, projC = biproduct(cs; cached)
   R = lattice(ambient_space(C), block_diagonal_matrix(basis_matrix.(rs)))
   gensinj = Vector{Vector{QQFieldElem}}[]
   gensproj = Vector{Vector{QQFieldElem}}[]
@@ -2155,12 +2155,12 @@ one should call `direct_product(x)`.
 If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
 projections $T \to T_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{TorQuadModule})
-  T, inj, = _biproduct(x, proj=false)
+function direct_sum(x::Vector{TorQuadModule};cached=false)
+  T, inj, = _biproduct(x, proj=false; cached)
   return T, inj
 end
 
-direct_sum(x::Vararg{TorQuadModule}) = direct_sum(collect(x))
+direct_sum(x::Vararg{TorQuadModule};cached=false) = direct_sum(collect(x);cached)
 
 @doc raw"""
     direct_product(x::Vararg{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMap}
@@ -2177,12 +2177,12 @@ one should call `direct_sum(x)`.
 If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
 projections $T \to T_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{TorQuadModule})
-  T, _, proj = _biproduct(x)
+function direct_product(x::Vector{TorQuadModule};cached=false)
+  T, _, proj = _biproduct(x; cached)
   return T, proj
 end
 
-direct_product(x::Vararg{TorQuadModule}) = direct_product(collect(x))
+direct_product(x::Vararg{TorQuadModule};cached=false) = direct_product(collect(x);cached)
 
 @doc raw"""
     biproduct(x::Vararg{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMap}, Vector{TorQuadModuleMap}
@@ -2199,11 +2199,11 @@ one should call `direct_sum(x)`.
 If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{TorQuadModule})
-  return _biproduct(x)
+function biproduct(x::Vector{TorQuadModule};cached=false)
+  return _biproduct(x;cached)
 end
 
-biproduct(x::Vararg{TorQuadModule}) = biproduct(collect(x))
+biproduct(x::Vararg{TorQuadModule}; cached=false) = biproduct(collect(x);cached)
 
 ###############################################################################
 #
