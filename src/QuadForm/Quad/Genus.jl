@@ -358,7 +358,7 @@ function direct_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
     return JorDec(J1.p, _sca, _rk, _dets)
   else
     # Lazy
-    return JorDec(direct_sum(lattice(J1), lattice(J2))[1], J1.p)
+    return JorDec(direct_sum(lattice(J1), lattice(J2);cached=false)[1], J1.p)
   end
 end
 
@@ -1082,7 +1082,7 @@ function direct_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3, = direct_sum(L1, L2)
+    L3, = direct_sum(L1, L2; cached=false)
     G3 = genus(L3, prime(G1))
   end
 

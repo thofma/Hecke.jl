@@ -1702,8 +1702,8 @@ function representative(G::ZZGenus)
     return G._representative
   end
   if denominator(scale(G)) != 1
-    L = representative(rescale(G, denominator(scale(G))))
-    L = rescale(L, 1//denominator(scale(G)))
+    L = representative(rescale(G, denominator(scale(G));cached=false))
+    L = rescale(L, 1//denominator(scale(G));cached=false)
     G._representative = L
     return L
   end
@@ -3088,9 +3088,6 @@ rescale(::ZZGenus, ::RationalUnion)
 function rescale(G::ZZGenus, a::IntegerUnion)
   @req !iszero(a) "a must be non-zero"
   a = ZZ(a)
-  if isdefined(G, :_representative)
-    return genus(rescale(G._representative, a))
-  end
   sig_pair = signature_pair(G)
   sig_pair = a < 0 ? reverse(sig_pair) : sig_pair
   pd = prime_divisors(a)
@@ -3103,7 +3100,11 @@ function rescale(G::ZZGenus, a::IntegerUnion)
     p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
     push!(sym, s)
   end
-  return ZZGenus(sig_pair, sym)
+  Grescaled = ZZGenus(sig_pair, sym)
+  if isdefined(G, :_representative)
+    Grescaled._representative = rescale(G._representative, a; cached=false)
+  end
+  return Grescaled
 end
 
 function rescale(G::ZZGenus, a::RationalUnion)
@@ -3125,6 +3126,10 @@ function rescale(G::ZZGenus, a::RationalUnion)
     p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
     push!(sym, s)
   end
-  return ZZGenus(sig_pair, sym)
+  Grescaled = ZZGenus(sig_pair, sym)
+  if isdefined(G, :_representative)
+    Grescaled._representative = rescale(G._representative, a; cached=false)
+  end
+  return Grescaled
 end
 

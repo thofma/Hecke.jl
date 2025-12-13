@@ -1292,7 +1292,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     s = (0, a)
   end
   R = representative(genus(D, s))
-  LL, inj = direct_sum(M, R)
+  LL, inj = direct_sum(M, R; cached=false)
   MM = maximal_even_lattice(LL)
   # MM is sum of hyperbolic planes -> Simon should succeed
   ok, H = _maximal_isotropic_subspace_unimodular(MM)

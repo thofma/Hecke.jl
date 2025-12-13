@@ -1498,12 +1498,12 @@ function _genus_representatives_binary_quadratic_definite(L::QuadLat; max = inf,
   _, i = findmin(abs.(norm.(D)))
   d = D[i]
   # Do G -> d * G
-  _L = rescale(L, d)
+  _L = rescale(L, d; cached=false)
   lat = _genus_representatives_binary_quadratic_definite_helper(_L; max = max, use_auto = use_auto, use_mass = use_mass)
   G = genus(L)
   res = typeof(L)[]
   for M in lat
-    Mre = rescale(M, inv(d))
+    Mre = rescale(M, inv(d); cached=false)
     @assert genus(Mre) == G
     push!(res, Mre)
   end

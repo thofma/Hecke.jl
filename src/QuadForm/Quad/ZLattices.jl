@@ -229,12 +229,12 @@ with gram matrix
 [-2    5]
 ```
 """
-function rational_span(L::ZZLat; cached=false)
+function rational_span(L::ZZLat)
   if isdefined(L, :rational_span)
     return L.rational_span
   else
     G = gram_matrix(L)
-    V = quadratic_space(QQ, G; cached)
+    V = quadratic_space(QQ, G; cached=false)
     L.rational_span = V
     return V
   end
@@ -3078,7 +3078,7 @@ julia> det(L)
 function primitive_extension(glue_map::TorQuadModuleMap)
   S = relations(domain(glue_map))
   R = relations(codomain(glue_map))
-  SR, (iS, iR) = direct_sum(S, R)
+  SR, (iS, iR) = direct_sum(S, R; cached=false)
   S = iS(S)
   R = iR(R)
   glue = Vector{QQFieldElem}[iS(lift(g)) + iR(lift(glue_map(g))) for g in gens(domain(glue_map))]

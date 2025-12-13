@@ -676,7 +676,7 @@ function spinor_genera_in_genus(
   )
   @req rank(L) >= 2 "Lattice must have rank >= 2"
   s = denominator(scale(L))
-  L = rescale(L, s)
+  L = rescale(L, s; cached=false)
   R = base_ring(L)
   gens, def, P0 = genus_generators(L)
   a = involution(L)
@@ -704,7 +704,8 @@ function spinor_genera_in_genus(
   @assert all(X -> genus(X) == genus(L), res)
 
   n = min(max, length(res))
-  return typeof(L)[rescale(res[i], 1//s) for i in 1:n], P0
+  V = ambient_space(L)
+  return typeof(L)[lattice(V, pseudo_matrix(res[i]); check=false) for i in 1:n], P0
 end
 
 function _short_vectors_trace_form(L::HermLat)
@@ -933,7 +934,7 @@ function enumerate_definite_genus(
   @req is_definite(L) "Lattice must be definite"
   edg = typeof(L)[]
   sc = denominator(scale(L))
-  _L = rescale(L, sc)
+  _L = rescale(L, sc; cached=false)
 
   spinor_genera, P0 = spinor_genera_in_genus(_L)
 
@@ -968,7 +969,8 @@ function enumerate_definite_genus(
     append!(edg, _edg)
     length(edg) >= max && break
   end
-  sc != 1 && map!(L -> rescale(L, 1//sc), edg, edg)
+  V = ambient_space(L)
+  sc != 1 && map!(L -> lattice(V, pseudo_matrix(L); check=false), edg, edg)
   return edg
 end
 

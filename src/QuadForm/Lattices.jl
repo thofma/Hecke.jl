@@ -735,9 +735,9 @@ scale(L::AbstractLat)
 Return the rescaled lattice $L^a$. Note that this has a different ambient
 space than the lattice `L`.
 """
-rescale(::AbstractLat, ::NumFieldElem)
+rescale(::AbstractLat, ::NumFieldElem; cached=true)
 
-Base.:(^)(L::AbstractLat, a::RingElement) = rescale(L, a)
+Base.:(^)(L::AbstractLat, a::RingElement) = rescale(L, a; cached=false)
 
 ################################################################################
 #

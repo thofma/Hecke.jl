@@ -1181,7 +1181,7 @@ function direct_sum(G1::HermLocalGenus, G2::HermLocalGenus)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3, = direct_sum(L1, L2)
+    L3, = direct_sum(L1, L2;cached=false)
     return genus(L3, prime(G1))
   end
 end
@@ -1693,8 +1693,8 @@ end
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return a hermitian
 lattice over $E/K$ which admits `G` as global genus symbol.
 """
-function representative(G::HermGenus)
-  if isdefined(G, :representative)
+function representative(G::HermGenus; recompute::Bool=false)
+  if isdefined(G, :representative) && !recompute
     return G.representative
   end
   if rank(G) == 1
@@ -1705,8 +1705,8 @@ function representative(G::HermGenus)
   end
   if !is_integral(G)
     s = denominator(_scale(G))
-    L = representative(rescale(G, s))
-    L = rescale(L, 1//s)
+    L = representative(rescale(G, s; cached=false))
+    L = rescale(L, 1//s; cached=false)
     G.representative = L
     L.scale = scale(G)
     return L
@@ -2075,7 +2075,7 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
 
   @hassert :Lattice 1 begin
     L = representative(g)
-    L = rescale(L, a)
+    L = rescale(L, a; cached=false)
     h =  genus(L, prime(g))
     h==G
   end
