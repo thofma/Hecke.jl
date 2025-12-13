@@ -269,7 +269,7 @@ function rescale(L::HermLat, a::Union{FieldElem, RationalUnion}; cached::Bool=tr
   b = base_field(L)(K(a))
   gramamb = gram_matrix(ambient_space(L))
   return hermitian_lattice(base_field(L), pseudo_matrix(L);
-                           gram = b * gramamb; cached)
+                           gram = b * gramamb, cached)
 end
 
 ################################################################################

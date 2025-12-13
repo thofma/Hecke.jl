@@ -1757,7 +1757,7 @@ function _representative_rk_1(G::HermGenus)
     s *= fractional_ideal(order(P), PP)^k
   end
   L = s*M
-  L.scale = scale(G)
+  # L.scale = scale(G)  # somehow expensive
   return L
 end
 
