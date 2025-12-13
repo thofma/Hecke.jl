@@ -1271,13 +1271,14 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   n = multiplicative_order(f)
 
-  n2 = degree(minpoly(f))
+  mpf = minpoly(f)
+  n2 = degree(mpf)
 
   @req !is_finite(n) || n > 2 "Isometry must have infinite order or order bigger than 2"
 
   if check
     gram = gram_matrix(ambient_space(L))
-    @req is_irreducible(minpoly(f)) "The minimal polynomial of f must be irreducible"
+    @req is_irreducible(mpf) "The minimal polynomial of f must be irreducible"
     @req f*gram*transpose(f) == gram "f does not define an isometry of the space of L"
     @req is_divisible_by(rank(L), n2) "The degree of the minimal polynomial of f must divide the rank of L"
   end
@@ -1290,7 +1291,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
     if is_finite(n)
       E, b = cyclotomic_field_as_cm_extension(n)
     else
-      Etemp, btemp = number_field(minpoly(f))
+      Etemp, btemp = number_field(mpf)
       K, a = number_field(minpoly(btemp + inv(btemp)), "a"; cached=false)
       Kt, t = K["t"]
       E, b = number_field(t^2-a*t+1, "b"; cached=false)

@@ -538,7 +538,7 @@ end
 #
 ################################################################################
 
-function minpoly(Kx::PolyRing, a::T)  where T <: Union{LocalFieldElem, QadicFieldElem}
+function minpoly(Kx::PolyRing, a::Union{LocalFieldElem, QadicFieldElem})
   return squarefree_part(norm(gen(Kx)-a))
 end
 

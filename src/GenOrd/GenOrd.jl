@@ -368,6 +368,10 @@ function charpoly(a::GenOrdElem)
   return charpoly(representation_matrix(a))
 end
 
+function charpoly(R::PolyRing, a::GenOrdElem)
+  return charpoly(R, representation_matrix(a))
+end
+
 ################################################################################
 #
 #  Minimal polynomial
@@ -376,6 +380,10 @@ end
 
 function minpoly(a::GenOrdElem)
   return minpoly(representation_matrix(a))
+end
+
+function minpoly(R::PolyRing, a::GenOrdElem)
+  return minpoly(R, representation_matrix(a))
 end
 
 ################################################################################
