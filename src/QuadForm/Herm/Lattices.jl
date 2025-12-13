@@ -97,7 +97,7 @@ matrix over `E` of size the length of the elements of `gens`.
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
 in the hermitan space over `E` with Gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField, gens::Vector; gram = nothing, cached)
+function hermitian_lattice(E::NumField, gens::Vector; gram = nothing, cached::Bool=true)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))

@@ -512,7 +512,7 @@ function default_invariant_function(L::ZZLat)
   while rank(_L) > 0
     M, P, _ = _shortest_vectors_sublattice(_L; check=false)
     i = index(P,M)
-    push!(_invariants, (_default_invariant_function(rescale(P, 1//scale(P)); cached=false),i))
+    push!(_invariants, (_default_invariant_function(rescale(P, 1//scale(P); cached=false)),i))
     _L = orthogonal_submodule(_L, P)
   end
   return _invariants

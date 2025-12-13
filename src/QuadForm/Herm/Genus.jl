@@ -1629,14 +1629,18 @@ end
 #
 ################################################################################
 
-function _hermitian_form_with_invariants(E, dim, P, N)
+function _hermitian_form_with_invariants(E, dim, P, N;all_non_split=false)
   K = base_field(E)
   R = maximal_order(K)
   @req all(n -> n in 0:dim, values(N)) "Number of negative entries is impossible"
   infinite_pl = [ p for p in real_places(K) if length(extend(p, E)) == 1 ]
   length(N) != length(infinite_pl) && error("Wrong number of real places")
   S = maximal_order(E)
-  prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
+  if !all_non_split
+    prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
+  else
+    prim = P
+  end
   I = [ p for p in keys(N) if isodd(N[p]) ]
   !iseven(length(I) + length(P)) && error("Invariants do not satisfy the product formula")
   e = gen(E)
@@ -1713,7 +1717,7 @@ function representative(G::HermGenus; recompute::Bool=false)
   end
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
-  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures;all_non_split=true))
   @vprintln :Lattice 1 "Finding maximal integral lattice"
 
   M = maximal_integral_lattice(V)
@@ -1735,7 +1739,7 @@ end
 function _representative_rk_1(G::HermGenus)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
-  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures; all_non_split=true))
   @vprintln :Lattice 1 "Finding maximal integral lattice"
   M = maximal_integral_lattice(V)
 
