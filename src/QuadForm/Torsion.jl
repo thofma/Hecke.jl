@@ -1662,7 +1662,7 @@ modulo `n k`.
 function rescale(T::TorQuadModule, k::RingElement)
   @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
-  V = rescale(ambient_space(C), k)
+  V = rescale(ambient_space(C), k; cached=false)
   M = lattice(V, basis_matrix(C); check=false, isbasis=true)
   N = lattice(V, basis_matrix(T.rels); check=false, isbasis=true)
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
@@ -2103,14 +2103,14 @@ function +(T::TorQuadModule, U::TorQuadModule)
   return S
 end
 
-function _biproduct(x::Vector{TorQuadModule}; proj = true)
+function _biproduct(x::Vector{TorQuadModule}; proj = true, cached=false)
   mbf = modulus_bilinear_form(x[1])
   mqf = modulus_quadratic_form(x[1])
   @req all(q -> modulus_bilinear_form(q) == mbf, x) "All torsion quadratic modules must have the same bilinear modulus"
   @req all(q -> modulus_quadratic_form(q) == mqf, x) "All torsion quadratic modules must have the same quadratic modulus"
   cs = cover.(x)
   rs = relations.(x)
-  C, injC, projC = biproduct(cs)
+  C, injC, projC = biproduct(cs; cached)
   R = lattice(ambient_space(C), block_diagonal_matrix(basis_matrix.(rs)))
   gensinj = Vector{Vector{QQFieldElem}}[]
   gensproj = Vector{Vector{QQFieldElem}}[]
@@ -2156,7 +2156,7 @@ If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and th
 projections $T \to T_i$, one should call `biproduct(x)`.
 """
 function direct_sum(x::Vector{TorQuadModule})
-  T, inj, = _biproduct(x, proj=false)
+  T, inj, = _biproduct(x, proj=false; cached=false)
   return T, inj
 end
 
@@ -2178,7 +2178,7 @@ If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and th
 projections $T \to T_i$, one should call `biproduct(x)`.
 """
 function direct_product(x::Vector{TorQuadModule})
-  T, _, proj = _biproduct(x)
+  T, _, proj = _biproduct(x;cached=false)
   return T, proj
 end
 
@@ -2200,10 +2200,10 @@ If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
 one should call `direct_product(x)`.
 """
 function biproduct(x::Vector{TorQuadModule})
-  return _biproduct(x)
+  return _biproduct(x;cached=false)
 end
 
-biproduct(x::Vararg{TorQuadModule}) = biproduct(collect(x))
+biproduct(x::Vararg{TorQuadModule}; cached=false) = biproduct(collect(x);cached)
 
 ###############################################################################
 #

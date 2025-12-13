@@ -45,33 +45,33 @@ julia> gram_matrix(L) == matrix(ZZ, [2 -1; -1 2])
 true
 ```
 """
-function integer_lattice(B::QQMatrix; gram = identity_matrix(QQ, ncols(B)), check::Bool=true)
-  V = quadratic_space(QQ, gram; check)
+function integer_lattice(B::QQMatrix; gram = identity_matrix(QQ, ncols(B)), check::Bool=true, cached::Bool=true)
+  V = quadratic_space(QQ, gram; check, cached)
   return lattice(V, B; check)
 end
 
-function integer_lattice(B::ZZMatrix; gram = identity_matrix(QQ, ncols(B)), check::Bool=true)
-  V = quadratic_space(QQ, gram; check)
+function integer_lattice(B::ZZMatrix; gram = identity_matrix(QQ, ncols(B)), check::Bool=true, cached::Bool=true)
+  V = quadratic_space(QQ, gram; check, cached)
   return lattice(V, B; check)
 end
 
 ### Documentation in ./Lattices.jl
 quadratic_lattice(::QQField, B::Union{ZZMatrix, QQMatrix}; gram = identity_matrix(QQ, ncols(B)), check::Bool = true) = integer_lattice(B; gram, check)
 
-function integer_lattice(;gram, check=true)
+function integer_lattice(;gram, check=true, cached=true)
   n = nrows(gram)
-  return lattice(quadratic_space(QQ, gram; check), identity_matrix(QQ, n); check)
+  return lattice(quadratic_space(QQ, gram; check, cached), identity_matrix(QQ, n); check)
 end
 
 ### Documentation in ./Lattices.jl
-quadratic_lattice(::QQField; gram, check::Bool = true) = integer_lattice(; gram, check)
+quadratic_lattice(::QQField; gram, check::Bool = true, cached=true) = integer_lattice(; gram, check, cached)
 
 ### Documentation in ./Lattices.jl
-function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bool = true) where T <: Union{QQMatrix, ZZMatrix, Vector{RationalUnion}}
+function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bool = true, cached=true) where T <: Union{QQMatrix, ZZMatrix, Vector{RationalUnion}}
   if length(gens) == 0
     @assert gram !== nothing
     B = zero_matrix(QQ, 0, nrows(gram))
-    return quadratic_lattice(QQ, B; gram, check)
+    return quadratic_lattice(QQ, B; gram, check, cached)
   end
   @assert length(gens[1]) > 0
   if gram === nothing
@@ -83,7 +83,7 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
     @req all(v -> length(v) == ncols(gram), gens) "Incompatible arguments: elements in gens must all have the same number of entries. This number must be equal to the size of the square matrix gram (if specified)"
   end
   gram = map_entries(QQ, gram)
-  V = quadratic_space(QQ, gram)
+  V = quadratic_space(QQ, gram; cached)
   B = zero_matrix(QQ, length(gens), length(gens[1]))
   for i in 1:length(gens)
     B[i:i,:] = gens[i]
@@ -119,10 +119,10 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; 
   end
 end
 
-function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true)
+function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true, isbasis::Bool=true)
   @req !check || (rank(B) == nrows(B)) "The rows of B must define a free system of vectors"
   V = ambient_space(L)
-  return lattice(V, B; check = false)
+  return lattice(V, B; check = false, isbasis)
 end
 
 @doc raw"""
@@ -146,7 +146,7 @@ julia> shortest_vectors(rescale(L, -1))
  [1, 0]
 ```
 """
-function rescale(L::ZZLat, r::RationalUnion; cached=false)
+function rescale(L::ZZLat, r::RationalUnion; cached::Bool=false)
   if isone(r)
     return L
   end
@@ -229,12 +229,12 @@ with gram matrix
 [-2    5]
 ```
 """
-function rational_span(L::ZZLat)
+function rational_span(L::ZZLat; cached=false)
   if isdefined(L, :rational_span)
     return L.rational_span
   else
     G = gram_matrix(L)
-    V = quadratic_space(QQ, G)
+    V = quadratic_space(QQ, G; cached)
     L.rational_span = V
     return V
   end
@@ -268,13 +268,13 @@ one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{ZZLat})
-  W, inj = direct_sum(ambient_space.(x))
+function direct_sum(x::Vector{ZZLat}; cached::Bool=true)
+  W, inj = direct_sum(ambient_space.(x); cached)
   B = _biproduct(x)
   return lattice(W, B; check = false), inj
 end
 
-direct_sum(x::Vararg{ZZLat}) = direct_sum(collect(x))
+direct_sum(x::Vararg{ZZLat}; cached=true) = direct_sum(collect(x); cached)
 
 @doc raw"""
     direct_product(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
@@ -292,13 +292,13 @@ one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{ZZLat})
-  W, proj = direct_product(ambient_space.(x))
+function direct_product(x::Vector{ZZLat}; cached::Bool=true)
+  W, proj = direct_product(ambient_space.(x); cached)
   B = _biproduct(x)
   return lattice(W, B; check = false), proj
 end
 
-direct_product(x::Vararg{ZZLat}) = direct_product(collect(x))
+direct_product(x::Vararg{ZZLat}; cached::Bool=true) = direct_product(collect(x);cached)
 
 @doc raw"""
     biproduct(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
@@ -316,13 +316,13 @@ one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{ZZLat})
-  W, inj, proj = biproduct(ambient_space.(x))
+function biproduct(x::Vector{ZZLat}; cached::Bool=true)
+  W, inj, proj = biproduct(ambient_space.(x); cached)
   B = _biproduct(x)
   return lattice(W, B; check = false), inj, proj
 end
 
-biproduct(x::Vararg{ZZLat}) = biproduct(collect(x))
+biproduct(x::Vararg{ZZLat};cached::Bool=true) = biproduct(collect(x); cached)
 
 @doc raw"""
     orthogonal_submodule(L::ZZLat, S::ZZLat) -> ZZLat
@@ -1246,7 +1246,7 @@ function genus_representatives(_L::ZZLat)
   end
   s = scale(_L)
   if s != 1
-    L = rescale(_L, 1//s)
+    L = rescale(_L, 1//s; cached=false)
   else
     L = _L
   end
@@ -1263,7 +1263,7 @@ function genus_representatives(_L::ZZLat)
   else
     res = spinor_genera_in_genus(L)
   end
-  s != 1 && map!(L -> rescale(L, s), res, res)
+  s != 1 && map!(L -> rescale(L, s; cached=false), res, res)
   return res
 end
 
@@ -1352,17 +1352,18 @@ end
 
 function maximal_integral_lattice(L::ZZLat)
   @req denominator(norm(L)) == 1 "The norm of the lattice is not integral"
-  L2 = rescale(L, 2)
+  L2 = rescale(L, 2; cached=false)
   LL2 = maximal_even_lattice(L2)
-  return rescale(LL2, QQ(1//2))
+  V = ambient_space(L)
+  return lattice(V, basis_matrix(LL2); check=false, isbasis=true)
 end
 
 function maximal_integral_lattice(L::ZZLat, p)
   @req denominator(norm(L)) == 1 "The norm of the lattice is not integral"
   if p==2
-    L2 = rescale(L, 2)
+    L2 = rescale(L, 2; cached=false)
     L2 = maximal_even_lattice(L2, p)
-    L2 = rescale(L2, QQ(1//2))
+    L2 = lattice_in_same_ambient_space(L, basis_matrix(L2))
   else
     L2 = maximal_even_lattice(L, p)
   end
@@ -1621,10 +1622,9 @@ function local_modification(M::ZZLat, L::ZZLat, p; check=true)
 
   check && @req is_isometric(L.space, M.space, p) "Quadratic spaces must be locally isometric at p"
   s = denominator(scale(L))
-  L_max = rescale(L, s)
+  L_max = rescale(L, s; cached=false)
   L_max = maximal_integral_lattice(L_max, p)
-  L_max = rescale(L_max, 1//s)
-
+  L_max = lattice_in_same_ambient_space(L, basis_matrix(L_max);isbasis=true, check=false)
   # invert the gerstein operations
   GLm, U = padic_normal_form(gram_matrix(L_max), p; prec=level+3)
   R, _ = residue_ring(ZZ, d)
@@ -1959,7 +1959,7 @@ function vectors_of_square_and_divisibility(
   nQQ = abs(QQ(n))
   de = denominator(n)
   if de > 1
-    L = rescale(L, de)
+    L = rescale(L, de; cached=false)
     S = lattice_in_same_ambient_space(L, basis_matrix(S))
     n = n*de^2
     d = d*de
@@ -2049,7 +2049,7 @@ function vectors_of_square_and_divisibility(
     @req all(!iszero, vector_type[d]) "Squares for the divisibility $d must be nonzero"
     de = lcm(denominator.(vector_type[d]))
     if de > 1
-      _L = rescale(L, de)
+      _L = rescale(L, de; cached=false)
       _S = lattice_in_same_ambient_space(_L, basis_matrix(S))
       _d = d*de
     else
@@ -2797,7 +2797,7 @@ function _ADE_type_with_isometry_irreducible(L)
   R = root_lattice(ADE...)
   e = sign(gram_matrix(L)[1, 1])
   if e == -1
-    R = rescale(R, -1)
+    R = rescale(R, -1; check=false)
   end
   t, T = is_isometric_with_isometry(R, L)
   @hassert :Lattice 1 t
@@ -2836,12 +2836,12 @@ function root_sublattice(L::ZZLat)
   @req is_integral(L) "L must be integral"
   @req is_definite(L) "L must be definite"
   if is_negative_definite(L)
-    L = rescale(L,-1)
+    L = rescale(L,-1; cached=false)
   end
   sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
   hnf!(sv)
   B = sv[1:rank(sv), :]*basis_matrix(L)
-  return lattice(V, B; check=false)
+  return lattice(V, B; check=false, isbasis=true)
 end
 
 ################################################################################
@@ -3361,8 +3361,8 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
   # scale integral
   n = rank(L)
   s = scale(M)
-  M = rescale(M,s^-1)
-  L = rescale(L,s^-1)
+  M = rescale(M, s^-1; cached=false)
+  L = rescale(L, s^-1; cached=false)
   @assert scale(M)==1
   @assert scale(L)==1
   g = genus(L)

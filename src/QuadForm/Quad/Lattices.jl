@@ -249,14 +249,14 @@ end
 
 Rescale the quadratic form `q` of the ambient space to `a \cdot q`
 """
-function rescale(L::QuadLat, a)
+function rescale(L::QuadLat, a; cached::Bool=true)
   if isone(a)
     return L
   end
   K = fixed_field(L)
   b = K(a)
   gramamb = gram_matrix(ambient_space(L))
-  return quadratic_lattice(base_field(L), pseudo_matrix(L); gram = b * gramamb)
+  return quadratic_lattice(base_field(L), pseudo_matrix(L); gram = b * gramamb, cached)
 end
 
 ################################################################################
@@ -551,11 +551,12 @@ function is_maximal(L::QuadLat, p)
   #end
   v = valuation(norm(L), p)
   x = elem_in_nf(uniformizer(p))^(-v)
-  ok, LL = is_maximal_integral(rescale(L, x), p)
+  ok, LL = is_maximal_integral(rescale(L, x; cached=false), p)
   if ok
     return true, L
   else
-    return false, rescale(LL, inv(elem_in_nf(x)))
+    V = ambient_space(L)
+    return false, lattice(V, pseudo_matrix(LL))
   end
 end
 

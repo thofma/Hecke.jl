@@ -1263,11 +1263,11 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   if d!=1
     e = e*d
   end
-  q = rescale(q, e)
+  q = rescale(q, e; cached=false)
   L = lattice(q)
   if mod(norm(L)//scale(L),2) == 1
     e = 2*e
-    L = rescale(L, 2)
+    L = rescale(L, 2; cached=false)
   end
   # Denis Simon's indefinite LLL may succeed in finding a zero for a
   # unimodular lattice and maybe we are lucky for a non-unimodular one
@@ -1283,7 +1283,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     return true, v
   end
   # embed in H^k for H the hyperbolic plane
-  D = rescale(discriminant_group(M),-1)
+  D = rescale(discriminant_group(M),-1; cached=false)
   (p,_,n) = signature_tuple(q)
   a = p - n
   if a == 0 && !is_trivial(D.ab_grp)

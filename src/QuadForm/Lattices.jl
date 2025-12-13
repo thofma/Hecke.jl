@@ -1843,13 +1843,13 @@ one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{T}) where T <: AbstractLat
-  W, inj = direct_sum(ambient_space.(x))
+function direct_sum(x::Vector{T};cached::Bool=true) where T <: AbstractLat
+  W, inj = direct_sum(ambient_space.(x); cached)
   H = _biproduct(x)
   return lattice(W, H), inj
 end
 
-direct_sum(x::Vararg{AbstractLat}) = direct_sum(collect(x))
+direct_sum(x::Vararg{AbstractLat};cached::Bool=true) = direct_sum(collect(x);cached)
 
 @doc raw"""
     direct_product(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
@@ -1866,8 +1866,8 @@ one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{T}) where T <: AbstractLat
-  W, proj = direct_product(ambient_space.(x))
+function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractLat
+  W, proj = direct_product(ambient_space.(x); cached)
   H = _biproduct(x)
   return lattice(W, H), proj
 end
@@ -1890,13 +1890,13 @@ one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{T}) where T <: AbstractLat
-  W, inj, proj = biproduct(ambient_space.(x))
+function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractLat
+  W, inj, proj = biproduct(ambient_space.(x); cached)
   H = _biproduct(x)
   return lattice(W, H), inj, proj
 end
 
-biproduct(x::Vararg{AbstractLat}) = biproduct(collect(x))
+biproduct(x::Vararg{AbstractLat}; cached::Bool=true) = biproduct(collect(x);cached)
 
 function _biproduct(x::Vector{T}) where T <: AbstractLat
   px = pseudo_matrix.(x)
