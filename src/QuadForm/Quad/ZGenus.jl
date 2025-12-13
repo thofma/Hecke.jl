@@ -1702,7 +1702,7 @@ function representative(G::ZZGenus)
     return G._representative
   end
   if denominator(scale(G)) != 1
-    L = representative(rescale(G, denominator(scale(G));cached=false))
+    L = representative(rescale(G, denominator(scale(G))))
     L = rescale(L, 1//denominator(scale(G));cached=false)
     G._representative = L
     return L
