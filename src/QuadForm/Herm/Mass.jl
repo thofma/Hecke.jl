@@ -316,6 +316,10 @@ Given a definite hermitian lattice `L`, return the mass of its genus.
   if m == 0
     return one(QQFieldElem)
   end
+  # rescale integral
+  s = denominator(scale(L))
+  L = rescale(L, s; cached=false)
+
 
   lm = local_mass(L)
 
