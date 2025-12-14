@@ -1709,7 +1709,7 @@ function representative(G::HermGenus; recompute::Bool=false)
   end
   if !is_integral(G)
     s = denominator(_scale(G))
-    L = representative(rescale(G, s; cached=false))
+    L = representative(rescale(G, s))
     L = rescale(L, 1//s; cached=false)
     G.representative = L
     L.scale = scale(G)
