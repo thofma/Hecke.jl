@@ -345,8 +345,8 @@ end
 function rres_bez(f::ZZPolyRingElem, g::ZZPolyRingElem)
   Nemo.check_parent(f, g)
   Qx = polynomial_ring(QQ, "x", cached = false)[1]
-  f1 = Qx(f)
-  g1 = Qx(g)
+  f1 = QQPolyRingElem(Qx, f)
+  g1 = QQPolyRingElem(Qx, g)
   d, q, w = gcdx(f1, g1)
   if iszero(q) || iszero(w)
     if is_constant(f) || is_constant(g)
@@ -437,7 +437,7 @@ end
 function n_positive_roots(f::QQPolyRingElem; multiplicities::Bool = false)
   d = denominator(f)
   @assert d > 0
-  g = Hecke.Globals.Zx(d * f)
+  g = numerator(d * f, Globals.Zx)
   return n_positive_roots(g; multiplicities)
 end
 

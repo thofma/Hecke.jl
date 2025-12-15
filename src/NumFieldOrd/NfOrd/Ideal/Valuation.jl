@@ -16,17 +16,18 @@ function val_func_no_index_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
   @assert P <= typemax(UInt)
   K = nf(order(p))
   Rx = polynomial_ring(Native.GF(UInt(P), cached=false), cached=false)[1]
-  Zx = polynomial_ring(ZZ, cached = false)[1]
+  Zx = Globals.Zx
   gR = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
   gR = gcd!(gR, gR, f)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
+  @assert is_one(denominator(defining_polynomial(K)))
   if degree(p) == degree(K)
     # inert prime, K.pol is irreducible mod p
-    g = Zx(K.pol)
+    g = numerator(defining_polynomial(K), Zx)
   else
-    g = hensel_lift(Zx(K.pol), g, P, k)
+    g = hensel_lift(numerator(defining_polynomial(K), Zx), g, P, k)
   end
   Sx = polynomial_ring(residue_ring(ZZ, UInt(P)^k, cached=false)[1], cached=false)[1]
   g = Sx(g)

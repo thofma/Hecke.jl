@@ -271,8 +271,8 @@ function _fac_and_lift(f::ZZPolyRingElem, p, degree_limit, lower_limit)
     return _fac_and_lift_deg1(f, p)
   end
   Zx = parent(f)
-  Zmodpx, x = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)
-  fmodp = Zmodpx(f)
+  fmodp = change_base_ring(Native.GF(p, cached = false), f; cached = false)
+  x = gen(parent(fmodp))
   if isone(degree_limit)
     fmodp = ppio(fmodp, powermod(x, p, fmodp)-x)[1]
   end
@@ -289,8 +289,8 @@ end
 function _fac_and_lift_deg1(f::ZZPolyRingElem, p)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
   Zx = parent(f)
-  Zmodpx, x = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)
-  fmodp = Zmodpx(f)
+  fmodp = change_base_ring(Native.GF(p, cached = false), f; cached = false)
+  x = gen(parent(fmodp))
   fsq = factor_squarefree(fmodp)
   pw = powermod(x, div(p-1, 2), fmodp)
   for (g, v) in fsq
@@ -320,10 +320,11 @@ end
 function prime_dec_nonindex(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_limit::Int = 0, lower_limit::Int = 0)
 
   K = nf(O)
-  f = K.pol
+  f = defining_polynomial(K)
   R = parent(f)
-  Zx, x = polynomial_ring(ZZ, "x", cached = false)
-  Zf = Zx(f)
+  Zx = Globals.Zx
+  @assert is_one(denominator(f))
+  Zf = numerator(f, Zx)
 
   if degree_limit == 0
     degree_limit = degree(K)
@@ -337,7 +338,7 @@ function prime_dec_nonindex(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_l
     fi = fac[k][1]
     ei = fac[k][2]
     #ideal = ideal_from_poly(O, p, fi, ei)
-    t = parent(f)(fi)
+    t = QQPolyRingElem(parent(f), fi)
     b = K(t)
     I = AbsNumFieldOrderIdeal(O)
     I.gen_one = p
@@ -481,11 +482,12 @@ function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: In
   end
   if (mod(discriminant(O), p)) != 0 && (mod(ZZRingElem(index(O)), p) != 0)
     K = nf(O)
-    f = K.pol
+    f = defining_polynomial(K)
     R = parent(f)
-    Zx, x = polynomial_ring(ZZ,"x", cached = false)
-    Zf = Zx(f)
-    fmodp = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1](Zf)
+    Zx = Globals.Zx
+    @assert is_one(denominator(f))
+    Zf = numerator(f, Zx)
+    fmodp = change_base_ring(Native.GF(p, cached = false), Zf; cached = false)
     return _prime_decomposition_type(fmodp)
   else
     @assert O.is_maximal == 1 || p in O.primesofmaximality
@@ -904,8 +906,9 @@ function _prefactorization(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   K = nf(I)
   el = I.gen_two.elem_in_nf
   Zx = polynomial_ring(ZZ, "x")[1]
-  f = Zx(K.pol)
-  f1 = Zx(denominator(el)*el)
+  @assert is_one(denominator(defining_polynomial(K)))
+  f = numerator(defining_polynomial(K), Zx)
+  f1 = numerator(denominator(el)*el, Zx)
   return prefactorization(f, n, f1)
 end
 

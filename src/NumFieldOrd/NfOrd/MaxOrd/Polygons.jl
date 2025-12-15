@@ -404,7 +404,7 @@ function gens_overorder_polygons(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   Zx, x = polynomial_ring(ZZ, "x", cached = false)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
-  f1 = Rx(K.pol)
+  f1 = Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(Rx(), defining_polynomial(K))
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
   regular = true
@@ -466,9 +466,10 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Kx, x = polynomial_ring(Native.GF(p, cached=false), "x", cached=false)
 
-  f = nf(O).pol
+  f = defining_polynomial(nf(O))
 
-  Zyf = Zy(f)
+  @assert is_one(denominator(f))
+  Zyf = numerator(f, Zy)
 
   fmodp = Kx(Zyf)
 
@@ -917,8 +918,9 @@ end
 
 function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingElem, Int})
   K = nf(O)
-  Zx, x = polynomial_ring(ZZ, "x", cached = false)
-  f = Zx(K.pol)
+  Zx = Globals.Zx
+  @assert is_one(denominator(defining_polynomial(K)))
+  f = numerator(defining_polynomial(K), Zx)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
