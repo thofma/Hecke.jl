@@ -810,7 +810,7 @@ function _muleq!(x::FqMatrix, y::FqFieldElem)
   GC.@preserve x begin
     for i in 1:nrows(x)
       for j in 1:ncols(x)
-        el = Nemo.fq_default_mat_entry_ptr(x, i, j)
+        el = mat_entry_ptr(x, i, j)
         ccall((:fq_default_mul, libflint), Cvoid,
               (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), el, el, y, R)
       end
@@ -825,7 +825,7 @@ function _normalize!(x::FqMatrix)
   local ell
   GC.@preserve x begin
     for j in 1:ncols(x)
-      el = Nemo.fq_default_mat_entry_ptr(x, 1, j)
+      el = mat_entry_ptr(x, 1, j)
       b = ccall((:fq_default_is_zero, libflint), Cint,
                 (Ptr{FqFieldElem}, Ref{FqField}), el, R)
       if !Bool(b)
@@ -840,7 +840,7 @@ function _normalize!(x::FqMatrix)
     @assert piv != 0
 
     for j in (piv+1):ncols(x)
-      el = Nemo.fq_default_mat_entry_ptr(x, 1, j)
+      el = mat_entry_ptr(x, 1, j)
       ccall((:fq_default_mul, libflint), Cvoid,
             (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), el, el, ell, R)
     end
@@ -898,7 +898,7 @@ function _isless(x::Vector{FqFieldElem}, y::FqMatrix, tx::ZZRingElem = ZZRingEle
   GC.@preserve y begin
     for i in 1:d
       xi = x[i]
-      el = Nemo.fq_default_mat_entry_ptr(y, 1, i)
+      el = mat_entry_ptr(y, 1, i)
       #el = ccall((:fq_default_mat_entry, libflint), Ptr{FqFieldElem},
       #           (Ref{FqMatrix}, Int, Int), y, 0, i - 1)
       b = ccall((:fq_default_equal, libflint), Cint,
