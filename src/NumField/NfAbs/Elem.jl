@@ -175,12 +175,15 @@ function is_norm_divisible_pp(a::AbsSimpleNumFieldElem, n::ZZRingElem)
   if fits(Int, m)
     R1 = residue_ring(ZZ, Int(m), cached = false)[1]
     R1x = polynomial_ring(R1, "x", cached = false)[1]
-    el = resultant_ideal_pp(R1x(numerator(a)), R1x(K.pol))
-    return iszero(el)
+
+    el1 = resultant_ideal_pp(Nemo.nf_elem_to_nmod_poly!(R1x(), numerator(a)),
+                             Nemo.fmpq_poly_to_nmod_poly_raw!(R1x(), defining_polynomial(K)))
+    return iszero(el1)
   end
   R = residue_ring(ZZ, m, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  el = resultant_ideal_pp(Rx(numerator(a)), Rx(K.pol))
+  el = resultant_ideal_pp(Nemo.nf_elem_to_fmpz_mod_poly!(Rx(), numerator(a)),
+                          Nemo.fmpq_poly_to_fmpz_mod_poly_raw!(Rx(), defining_polynomial(K)))
   return iszero(el)
 end
 

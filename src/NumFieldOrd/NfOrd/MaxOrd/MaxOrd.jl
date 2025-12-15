@@ -105,8 +105,8 @@ function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingE
   K = nf(O)
   EO = equation_order(K)
   M = zero_matrix(ZZ, 2 * degree(O), degree(O))
-  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
-  f = Zx(K.pol)
+  Zx = Globals.Zx
+  f = numerator(defining_polynomial(K), Zx)
   for i in 1:length(primes1)
     p = primes1[i]
     @vprintln :AbsNumFieldOrder 1 "Computing p-maximal overorder for $p ..."
@@ -152,8 +152,8 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   end
 
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
-    Zx, x = polynomial_ring(ZZ, "x", cached = false)
-    f1 = Zx(K.pol)
+    Zx = Globals.Zx
+    f1 = numerator(defining_polynomial(K), Zx)
     ds = gcd(reduced_resultant(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
   else

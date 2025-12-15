@@ -1028,7 +1028,8 @@ function _minmod_easy_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
-    F = St(k.pol)
+    F = St()
+    Nemo.fmpq_poly_to_nmod_poly_raw!(F, defining_polynomial(k))
     m = lift(rres_sircana_pp(B, F))
     return gcd(a, m)
   else
@@ -1196,7 +1197,7 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S1 = residue_ring(ZZ, Int(mod_r), cached=false)[1]
     S1t = polynomial_ring(S1, cached=false)[1]
     B1 = S1t(d*b.elem_in_nf)
-    F1 = S1t(k.pol)
+    F1 = Nemo.fmpq_poly_to_nmod_poly_raw!(S1t(), defining_polynomial(k))
     m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
     if iszero(m1)
       m1 = mod_r
@@ -1292,7 +1293,7 @@ function _normmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     R = residue_ring(ZZ, Int(mod), cached=false)[1]
     Rt = polynomial_ring(R, cached=false)[1]
     B1 = Rt(d*b.elem_in_nf)
-    F1 = Rt(k.pol)
+    F1 = Nemo.fmpq_poly_to_nmod_poly_raw!(Rt(), defining_polynomial(k))
     m2 = resultant_ideal(B1, F1)  # u*B + v*F = m mod modulus(S)
     m3 = gcd(modulus(R), lift(m2))
     return divexact(m3, com^degree(parent(b)))
