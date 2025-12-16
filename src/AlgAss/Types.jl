@@ -400,3 +400,32 @@ mutable struct MatAlgebraElem{T, S <: MatElem} <: AbstractAssociativeAlgebraElem
     return z
   end
 end
+
+"""
+Central, simple, cyclic algebra.
+
+See also [`cyclic_algebra`](@ref).
+
+# Examples
+
+Create cyclic algebras using [`cyclic_algebra`](@ref).
+
+```julia
+julia> QQx, x = QQ[:x];
+julia> k, g = number_field(x^2 + 1);
+julia> c = cyclic_algebra(k, hom(k, k, -g), QQ(4));
+```
+"""
+struct CyclicAlgebra{T, S<:Field} <: AbstractAssociativeAlgebra{T}
+  sca::StructureConstantAlgebra{T}
+  # Distinguished maximal cyclic subfield of the cyclic algebra.
+  cyc_fld::S
+  # Embedding of this cyclic subfield.
+  cyc_fld_emb::Map{S, StructureConstantAlgebra{T}}
+  # Generator of galois group of this cyclic subfield.
+  sigma::Map{S, S}
+  # Generating element π of algebra over maximal cyclic subfield.
+  pi::AssociativeAlgebraElem{T}
+  # Element such that π^d = a.
+  a::T
+end
