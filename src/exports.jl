@@ -254,6 +254,7 @@ export crt_env
 export crt_inv
 export crt_signed
 export cycle
+export cyclic_algebra
 export cyclotomic_extension
 export cyclotomic_field
 export cyclotomic_field_as_cm_extension
@@ -570,6 +571,7 @@ export is_simplified_model
 export is_smooth
 export is_snf
 export is_split
+export is_split_with_map
 export is_split_with_zero_divisor
 export is_squarefree
 export is_subfield

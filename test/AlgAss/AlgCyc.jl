@@ -3,7 +3,6 @@
   QQx, x = QQ[:x]
   k1, g1 = number_field(x^2 + 1)
   sigma1 = hom(k1, k1, -g1)
-  @test false
   @test is_split(cyclic_algebra(k1, sigma1, QQ(1)))
   @test !is_split(cyclic_algebra(k1, sigma1, QQ(3)))
 

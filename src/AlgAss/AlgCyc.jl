@@ -1,9 +1,9 @@
 
-"""
+@doc raw"""
 Create a cyclic algebra.
 
 The field is expected to be a cyclic extension over its base field,
-and `sigma` a generator of its galois group. This creates the algebra commonly
+and $sigma a generator of its galois group. This creates the algebra commonly
 denoted (K/k, σ, a). Its basis is chosen to be xᵢ⋅πʲ, where xᵢ is the basis
 of K/k, and π a generating element, i.e. whose conjugation on K acts as σ and satisfies
 πⁿ = a.
@@ -34,10 +34,10 @@ function cyclic_algebra(
   return CyclicAlgebra(sca, fld, cyc_fld_emb, sigma, pi, a)
 end
 
-"""
+@doc raw"""
 Return the maximal, cyclic base field over which the cyclic algebra is represented.
 
-Returns the field `k` and the embedding `k → c`.
+Returns the cyclic field and its embedding in $c.
 """
 function maximal_cyclic_subfield(
   c::CyclicAlgebra{T, S},
@@ -54,7 +54,7 @@ function generating_element(
   return c.pi
 end
 
-"""Return the base field `k` of the cyclic k-algebra `c`."""
+"""Return the base field of the cyclic algebra."""
 function base_ring(
   c::CyclicAlgebra{T, S},
 ) where {T, S}
@@ -69,7 +69,7 @@ function structure_constant_algebra(
 end
 
 """
-Return the default basis of `c`.
+Return the default basis.
 
 If (xᵢ)ᵢ is the basis of the distinguished cyclic subfield, and π the
 generating element, this basis is colex ordered (xᵢ⋅πʲ)ᵢⱼ.
@@ -191,7 +191,7 @@ function is_split_with_map(
   mat_alg = matrix_algebra(base_field(k), d)
   emb1 = hom(k, mat_alg, mat_alg(representation_matrix(g)); check=false)
   emb2 = hom(k, mat_alg, mat_alg(representation_matrix(c.sigma(g))); check=false)
-  sn = skolem_noether_conjugator(emb2, emb1)
+  sn = skolem_noether_conjugator(emb2, emb1; check=false)
   if first(local _, sol = is_norm(k, c.a / (sn^d)[1, 1]))
     m_pi = emb1(sol)*sn
     return true, hom(c.sca, mat_alg, collect(
@@ -234,7 +234,7 @@ true
 
 # References
 
-Algorithm as described in [Han07](@cite).
+Algorithm as described in [han07](@cite).
 """
 function is_isomorphic_with_map(
   c1::CyclicAlgebra{T},
@@ -273,7 +273,8 @@ function is_isomorphic_with_map(
   if linearly_disjoint || is_linearly_disjoint(k1, k2)
     # Solve the norm equation N₁(x₁) = a₁ for x₁ where N₁:k₁k₂ → k₂.
     k1k2, k1_to_k1k2, k2_to_k1k2 = compositum(k1, k2)
-    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2)
+    k2_abs, _ = absolute_simple_field(k2)
+    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2_abs)
     if !first(local _, x1 = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1))))
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
@@ -346,7 +347,7 @@ function is_isomorphic_with_map(
     end
     phi1 = hom(c1, mm, mm(phi1_g1), mm(phi1_pi1); check=false)
     # Get conjugating element of the two embeddings.
-    sn = skolem_noether_conjugator(left, phi1)
+    sn = skolem_noether_conjugator(left, phi1; check=false)
 
     # Construct the image under the anti-embedding.
     alphas = collect(Iterators.accumulate(1:d; init = k1k2(1)) do prev, _ x2 * sigma2(prev) end)
@@ -449,7 +450,7 @@ function is_isomorphic_with_map(
   z2_over_k, emb2 = _subalgebra(c2.sca, z2b)
   emb1 = hom(z2_over_k, c2.sca, ims; check=false)
 
-  sn = skolem_noether_conjugator(emb1, emb2)
+  sn = skolem_noether_conjugator(emb1, emb2; check=false)
   u = z2_to_c2(iso(z1.pi)) / sn^d0
   # Result must be in base field k of algebra.
   if !first(local _, nu = is_norm(k0, k(u)))

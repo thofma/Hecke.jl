@@ -582,6 +582,20 @@ function compositum(K::AbsSimpleNumField, L::AbsSimpleNumField)
   return Ka, mK, mL
 end
 
+function compositum(
+  k1::RelSimpleNumField,
+  k2::RelSimpleNumField,
+)
+  k1_abs, k1_abs_to_k1 = absolute_simple_field(k1)
+  k2_abs, k2_abs_to_k2 = absolute_simple_field(k2)
+  k1k2, k1_to_k1k2, k2_to_k1k2 = compositum(k1_abs, k2_abs)
+  k1_to_k1_abs = inv(k1_abs_to_k1)
+  k2_to_k2_abs = inv(k2_abs_to_k2)
+  return k1k2,
+    hom(k1, k1k2, k1_to_k1k2(k1_to_k1_abs(k1(gen(base_field(k1))))), k1_to_k1k2(k1_to_k1_abs(gen(k1)))),
+    hom(k2, k1k2, k2_to_k1k2(k2_to_k2_abs(k2(gen(base_field(k2))))), k2_to_k1k2(k2_to_k2_abs(gen(k2))))
+end
+
 ################################################################################
 #
 #  Serialization
