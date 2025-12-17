@@ -189,7 +189,7 @@ julia> c = cyclic_algebra(k, hom(k, k, -g), QQ(4));
 
 julia> _, f = is_split_with_map(c);
 
-julia> f(generating_element(c))
+julia> f(Hecke.generating_element(c))
 [2 0; 0 -2]
 ```
 """
@@ -258,7 +258,7 @@ function is_isomorphic_with_map(
 ) where T
   d = degree(c1.cyc_fld)
   k, k1, k2 = parent(c1.a), c1.cyc_fld, c2.cyc_fld
-  g, g1, g2 = gen(k), gen(k1), gen(k2)
+  g1, g2 = gen(k1), gen(k2)
   a1, a2 = c1.a, c2.a
 
   if dim(c1.sca)!= dim(c2.sca)
@@ -268,7 +268,7 @@ function is_isomorphic_with_map(
   # Case: Base fields are isomorphic
   if !linearly_disjoint && first(local _, iso = is_isomorphic_with_map(k1, k2))
     i = 1
-    while ((iso ∘ c1.sigma^i ∘ inv(iso))(g2) != c2.sigma(g2))
+    while (iso((c1.sigma^i)(inv(iso)))(g2) != c2.sigma(g2))
       i += 1
     end
     if first(local _, x2 = is_norm(k2, a1/a2^i))
@@ -276,8 +276,10 @@ function is_isomorphic_with_map(
       return true, hom(
         c1.sca,
         c2.sca,
-        collect(c2.cyc_fld_emb(iso(x)) * (c2.cyc_fld_emb(x2) * c2.pi)^i
-        for (x, i) in Iterators.product(basis(k1), 0:d-1))[:];
+        collect(
+          c2.cyc_fld_emb(iso(x)) * (c2.cyc_fld_emb(x2) * c2.pi)^i
+          for (x, i) in Iterators.product(basis(k1), 0:d-1)
+        )[:];
         check = false
       )
     end
@@ -287,7 +289,11 @@ function is_isomorphic_with_map(
   # Case: Maximally cyclic subfields are linearly disjoint.
   if linearly_disjoint || is_linearly_disjoint(k1, k2)
     # Solve the norm equation N₁(x₁) = a₁ for x₁ where N₁:k₁k₂ → k₂.
-    k1k2, k1_to_k1k2, k2_to_k1k2 = compositum(k1, k2)
+    if k1 isa RelSimpleNumField && k2 isa RelSimpleNumField
+      k1k2, k1_to_k1k2, k2_to_k1k2 = _abs_compositum(k1, k2)
+    else
+      k1k2, k1_to_k1k2, k2_to_k1k2 = compositum(k1, k2)
+    end
     k2_abs, _ = absolute_simple_field(k2)
     k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2_abs)
     if !first(local _, x1 = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1))))

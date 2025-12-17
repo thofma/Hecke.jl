@@ -582,7 +582,13 @@ function compositum(K::AbsSimpleNumField, L::AbsSimpleNumField)
   return Ka, mK, mL
 end
 
-function compositum(
+"""
+Given two relative simple number fields, return their compositum with the embeddings.
+
+The compositum is returned as an absolute number field. As with `compositum`, the condition
+of normality on either of the fields is not checked.
+"""
+function _abs_compositum(
   k1::RelSimpleNumField,
   k2::RelSimpleNumField,
 )
