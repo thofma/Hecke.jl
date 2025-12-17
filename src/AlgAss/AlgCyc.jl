@@ -3,7 +3,7 @@
 Create a cyclic algebra.
 
 The field is expected to be a cyclic extension over its base field,
-and $sigma a generator of its galois group. This creates the algebra commonly
+and $sigma a generator of its Galois group. This creates the algebra commonly
 denoted (K/k, σ, a). Its basis is chosen to be xᵢ⋅πʲ, where xᵢ is the basis
 of K/k, and π a generating element, i.e. whose conjugation on K acts as σ and satisfies
 πⁿ = a.
@@ -12,7 +12,7 @@ function cyclic_algebra(
   fld::NumField{T},
   sigma::NumFieldHom{S, S},
   a::T
-)::CyclicAlgebra{T, S} where {T, S<:NumField{T}}
+) where {T, S<:NumField{T}}
   k = base_field(fld)
   alpha = fld(a)
   d = degree(fld)
@@ -37,12 +37,12 @@ end
 @doc raw"""
 Return the maximal, cyclic base field over which the cyclic algebra is represented.
 
-Returns the cyclic field and its embedding in $c.
+Returns the cyclic field and its embedding in $c$.
 """
 function maximal_cyclic_subfield(
   c::CyclicAlgebra{T, S},
-)::Tuple{S, NumFieldHom{S, CyclicAlgebra{T, S}}} where {T, S}
-  return c.cyc_fld, c.cyc_fld_emb
+) where {T, S}
+  return c.cyc_fld, c.cyc_fld_emb::Tuple{S, NumFieldHom{S, CyclicAlgebra{T, S}}}
 end
 
 """
@@ -64,8 +64,8 @@ end
 """Return the cyclic algebra as a structure constant algebra."""
 function structure_constant_algebra(
   c::CyclicAlgebra{T, S},
-)::StructureConstantAlgebra{T} where {T, S}
-  return StructureConstantAlgebra(c.sca)
+) where {T, S}
+  return StructureConstantAlgebra(c.sca)::StructureConstantAlgebra{T}
 end
 
 """
@@ -100,13 +100,13 @@ end
 
 function has_one(
   _::CyclicAlgebra{T, S},
-)::Bool where {T, S}
+) where {T, S}
   return true
 end
 
 function is_commutative(
   c::CyclicAlgebra{T, S},
-)::Bool where {T, S}
+) where {T, S}
   return dim(c) == 1
 end
 
@@ -120,12 +120,17 @@ Create a ring homomorphism from a cyclic algebra.
 
 # Examples
 
-```julia
+```jldoctest
 julia> QQx, x = QQ[:x];
+
 julia> k, g = number_field(x^4 + x^3 + x^2 + x^1 + 1);
-julia> _, phi = automorphism_group(k)
+
+julia> _, phi = automorphism_group(k);
+
 julia> c = cyclic_algebra(k, phi(first(gens(domain(phi)))), QQ(17));
-julia> aut = hom(c, c, gen(maximal_cyclic_subfield(c)), c.a * QQ(3)^4)
+
+julia> aut = hom(c, c, gen(maximal_cyclic_subfield(c)), c.a * QQ(3)^4);
+
 ```
 """
 function hom(
@@ -149,18 +154,20 @@ Determine whether the cyclic algebra splits.
 
 See also [`is_split_with_map`](@ref).
 
-# Example
+# Examples
 
-```julia
+```jldoctest
 julia> QQx, x = QQ[:x];
+
 julia> k, g = number_field(x^2 + 1);
+
 julia> is_split(cyclic_algebra(k, hom(k, k, -g), QQ(4)))
 true
 ```
 """
 function is_split(
   c::CyclicAlgebra{T, S},
-)::Bool where {T, S}
+) where {T, S}
   return first(is_norm(c.cyc_fld, c.a))
 end
 
@@ -171,20 +178,24 @@ If the algebra does not split, the null map is returned. This function is not pu
 
 See also [`is_split`](@ref).
 
-# Example
+# Examples
 
-```julia
+```jldoctest
 julia> QQx, x = QQ[:x];
+
 julia> k, g = number_field(x^2 + 1);
+
 julia> c = cyclic_algebra(k, hom(k, k, -g), QQ(4));
+
 julia> _, f = is_split_with_map(c);
+
 julia> f(generating_element(c))
 [2 0; 0 -2]
 ```
 """
 function is_split_with_map(
   c::CyclicAlgebra{T, S},
-)::Tuple{Bool, Map} where {T, S}
+) where {T, S}
   d = degree(c.cyc_fld)
   g = gen(c.cyc_fld)
   k = c.cyc_fld
@@ -208,7 +219,7 @@ Determine whether the given cyclic algebras are isomorphic.
 function is_isomorphic(
   c1::CyclicAlgebra{T, S},
   c2::CyclicAlgebra{T, S},
-)::Bool where {T, S}
+) where {T, S}
   return first(is_isomorphic_with_map(c1, c2))
 end
 
@@ -223,11 +234,15 @@ See also [`is_isomorphic`](@ref).
 
 # Examples
 
-```julia
+```jldoctest
 julia> QQx, x = QQ[:x];
+
 julia> k, g = number_field(x^2 - 5);
+
 julia> c1 = cyclic_algebra(k, hom(k, k, -g), QQ(5));
+
 julia> c2 = cyclic_algebra(k, hom(k, k, -g), QQ(5 * 3^2));
+
 julia> first(is_isomorphic_with_map(c1, c2))
 true
 ```
@@ -240,7 +255,7 @@ function is_isomorphic_with_map(
   c1::CyclicAlgebra{T},
   c2::CyclicAlgebra{T};
   linearly_disjoint::Bool = false,
-)::Tuple{Bool, Map} where T
+) where T
   d = degree(c1.cyc_fld)
   k, k1, k2 = parent(c1.a), c1.cyc_fld, c2.cyc_fld
   g, g1, g2 = gen(k), gen(k1), gen(k2)

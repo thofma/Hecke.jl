@@ -1269,6 +1269,8 @@ end
 ################################################################################
 
 """
+    skolem_noether_conjugator(emb1, emb2; check) -> NCRingElem
+
 Compute a conjugating element as guaranteed by the Skolem-Noether theorem.
 
 Given two embeddings of a subalgebra `embⱼ: U → S`, compute an element

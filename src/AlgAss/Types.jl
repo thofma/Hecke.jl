@@ -410,9 +410,11 @@ See also [`cyclic_algebra`](@ref).
 
 Create cyclic algebras using [`cyclic_algebra`](@ref).
 
-```julia
+```jldoctest
 julia> QQx, x = QQ[:x];
+
 julia> k, g = number_field(x^2 + 1);
+
 julia> c = cyclic_algebra(k, hom(k, k, -g), QQ(4));
 ```
 """
