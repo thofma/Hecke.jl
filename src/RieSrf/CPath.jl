@@ -141,7 +141,7 @@ mutable struct CPath
     
     #Round real or imaginary part to zero to compute angle if necessary
     prec = precision(Cc)
-    zero_sens = floor(Int64, prec*log(2)/log(10)) - 5
+    zero_sens = floor(Int, prec*log(2)/log(10)) - 5
     
     a_diff = trim_zero(a - c, zero_sens)
     b_diff = trim_zero(b - c, zero_sens)
