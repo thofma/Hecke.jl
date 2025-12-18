@@ -1642,7 +1642,7 @@ function quadratic_space(G::ZZGenus; cached=false)
   dimension = dim(G)
   if dimension == 0
     qf = zero_matrix(QQ, 0, 0)
-    return quadratic_space(QQ, qf)
+    return quadratic_space(QQ, qf; cached=false)
   end
   determinant = det(G)
   prime_neg_hasse = [prime(s) for s in local_symbols(G) if hasse_invariant(s)==-1]
@@ -2759,7 +2759,7 @@ function represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
     push!(gen1_square, ZZLocalGenus(p, g1))
   end
 
-  FH = isometry_class(quadratic_space(QQ, QQ[0 1; 1 0]), p)
+  FH = isometry_class(quadratic_space(QQ, QQ[0 1; 1 0]; cached=false), p)
   for i in 1:(level+1)
     scale = i - 1
     # I
@@ -2788,8 +2788,8 @@ function represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
       end
     end
     # IV
-    ti1 = isometry_class(quadratic_space(QQ, ZZ[ZZ(2)^scale;]), p)
-    ti2 = isometry_class(quadratic_space(QQ, ZZ[5*ZZ(2)^scale;]), p)
+    ti1 = isometry_class(quadratic_space(QQ, ZZ[ZZ(2)^scale;];cached=false), p)
+    ti2 = isometry_class(quadratic_space(QQ, ZZ[5*ZZ(2)^scale;];cached=false), p)
     S = (ti1 + rational_isometry_class(gen2_round[i+1]))
     S -= rational_isometry_class(gen1[i])
     if !(represents(S, ti1) || represents(S,ti2))

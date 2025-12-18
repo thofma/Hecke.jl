@@ -1188,7 +1188,7 @@ end
 
 function _to_number_field_lattice(L::ZZLat;
                                   K::AbsSimpleNumField = rationals_as_number_field()[1],
-                                  V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L))))
+                                  V::QuadSpace = quadratic_space(K, gram_matrix(ambient_space(L));cached=false))
   return _to_number_field_lattice(L, K, V)
 end
 
@@ -1209,7 +1209,7 @@ end
 
 function _to_ZLat(L::QuadLat;
                   K::QQField = QQ,
-                  V::QuadSpace = quadratic_space(K, map_entries(QQ, gram_matrix(ambient_space(L)))))
+                  V::QuadSpace = quadratic_space(K, map_entries(QQ, gram_matrix(ambient_space(L)));cached=false))
   return _to_ZLat(L, K, V)
 end
 
@@ -3382,7 +3382,7 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
   # move to same ambient space
   qL = ambient_space(L)
   diag, trafo = Hecke._gram_schmidt(gram_matrix(qL), identity)
-  qL1 = quadratic_space(QQ, diag)
+  qL1 = quadratic_space(QQ, diag; cached=false)
 
   L1 = lattice(qL1, basis_matrix(L)*inv(trafo), check=false)
   @hassert :Lattice 1 genus(L1) == genus(L)

@@ -645,7 +645,7 @@ completion at $\mathfrak p$ admits `g` as local genus symbol.
 """
 function representative(G::HermLocalGenus)
   E = base_field(G)
-  L = lattice(hermitian_space(E, gram_matrix(G)))
+  L = lattice(hermitian_space(E, gram_matrix(G));  cached=false)
   L.scale = scale(G)
   return L
 end
@@ -1717,7 +1717,7 @@ function representative(G::HermGenus; recompute::Bool=false)
   end
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
-  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures;all_non_split=true))
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures;all_non_split=true); cached=false)
   @vprintln :Lattice 1 "Finding maximal integral lattice"
 
   M = maximal_integral_lattice(V)
@@ -1739,7 +1739,7 @@ end
 function _representative_rk_1(G::HermGenus)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
-  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures; all_non_split=true))
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures; all_non_split=true); cached=false)
   @vprintln :Lattice 1 "Finding maximal integral lattice"
   M = maximal_integral_lattice(V)
 

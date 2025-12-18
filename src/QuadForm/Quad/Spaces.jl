@@ -1246,7 +1246,7 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     B = kernel(g, side = :left)
     C = _basis_complement(B)
     G = gram_matrix(q,C)
-    q1 = quadratic_space(QQ, G)
+    q1 = quadratic_space(QQ, G; cached=false)
     @hassert :Lattice 1 is_regular(q1)
     ok, v = _isotropic_subspace(q1)
     @hassert :Lattice 0 ok
@@ -2358,7 +2358,7 @@ function represents(V::LocalQuadSpaceCls, x)
   if x == 0
     return true
   end
-  q = quadratic_space(base_ring(V), base_ring(V)[x;])
+  q = quadratic_space(base_ring(V), base_ring(V)[x;]; cached=false)
   V2 = isometry_class(q, prime(V))
   return represents(V, V2)
 end
@@ -2372,7 +2372,7 @@ function is_isotropic(G1::LocalQuadSpaceCls)
     return false
   end
   # if it is isotropic there is a hyperbolic plane
-  H = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0])
+  H = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0]; cached=false)
   G2 = isometry_class(H, prime(G1))
   return represents(G1, G2)
 end
@@ -2600,7 +2600,7 @@ function is_isotropic(G1::QuadSpaceCls)
     return false
   end
   # if it is isotropic there is a hyperbolic plane
-  H = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0])
+  H = quadratic_space(base_ring(G1), base_ring(G1)[0 1; 1 0]; cached=false)
   G2 = isometry_class(H)
   return represents(G1, G2)
 end
@@ -2629,7 +2629,7 @@ function represents(g1::QuadSpaceCls, x)
   if x == 0
     return true
   end
-  q = quadratic_space(K, matrix(K, 1, 1, [x]))
+  q = quadratic_space(K, matrix(K, 1, 1, [x]); cached=false)
   g2 = isometry_class(q)
   return represents(g1, g2)
 end
@@ -2737,7 +2737,7 @@ function representative(g::QuadSpaceCls)
   q = _quadratic_form_with_invariants(n-k,d,finite,negative)
   ker = zero_matrix(K, k, k)
   q = diagonal_matrix([q,ker])
-  return quadratic_space(K, q)
+  return quadratic_space(K, q; cached=false)
 end
 
 @doc raw"""
@@ -2758,7 +2758,7 @@ function representative(g::QuadSpaceCls{QQField,ZZIdl,QQFieldElem})
   q = _quadratic_form_with_invariants(n-k, d, finite, negative)
   ker = zero_matrix(K, k, k)
   q = diagonal_matrix([q,ker])
-  return quadratic_space(K, q)
+  return quadratic_space(K, q; cached=false)
 end
 
 

@@ -1289,7 +1289,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
     b = gen(base_ring(codomain(res)))
   elseif E === nothing
     if is_finite(n)
-      E, b = cyclotomic_field_as_cm_extension(n)
+      E, b = cyclotomic_field_as_cm_extension(n; cached=false)
     else
       Etemp, btemp = number_field(mpf)
       K, a = number_field(minpoly(btemp + inv(btemp)), "a"; cached=false)
@@ -1351,7 +1351,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   @assert transpose(map_entries(s, gram)) == gram
 
-  W = hermitian_space(E, gram)
+  W = hermitian_space(E, gram; cached=false)
 
   # we create the map for extending/restricting scalars
   # considering our "nice" basis keeping track of the action of the isometry
