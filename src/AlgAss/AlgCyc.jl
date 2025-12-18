@@ -29,7 +29,7 @@ function cyclic_algebra(
   end
   one = [i == 1 ? 1 : 0 for i in 1:d^2]
   sca = structure_constant_algebra(k, sc; check=false, one=one)
-  pi = d > 1 ? sca(collect(map(x -> x == d + 1 ? 1 : 0, 1:d^2))) : sca(1)
+  pi = d > 1 ? sca(collect(map(x -> x == d + 1 ? 1 : 0, 1:d^2))) : sca(a)
   cyc_fld_emb = hom(fld, sca, basis(sca)[d == 1 ? 1 : 2]; check=false)
   return CyclicAlgebra(sca, fld, cyc_fld_emb, sigma, pi, a)
 end
@@ -129,7 +129,7 @@ julia> _, phi = automorphism_group(k);
 
 julia> c = cyclic_algebra(k, phi(first(gens(domain(phi)))), QQ(17));
 
-julia> aut = hom(c, c, gen(maximal_cyclic_subfield(c)), c.a * QQ(3)^4);
+julia> aut = hom(c, c, gen(Hecke.maximal_cyclic_subfield(c)), c.a * QQ(3)^4);
 
 ```
 """
@@ -268,7 +268,7 @@ function is_isomorphic_with_map(
   # Case: Base fields are isomorphic
   if !linearly_disjoint && first(local _, iso = is_isomorphic_with_map(k1, k2))
     i = 1
-    while (iso((c1.sigma^i)(inv(iso)))(g2) != c2.sigma(g2))
+    while (iso((c1.sigma^i)(inv(iso))(g2)) != c2.sigma(g2))
       i += 1
     end
     if first(local _, x2 = is_norm(k2, a1/a2^i))
@@ -289,11 +289,7 @@ function is_isomorphic_with_map(
   # Case: Maximally cyclic subfields are linearly disjoint.
   if linearly_disjoint || is_linearly_disjoint(k1, k2)
     # Solve the norm equation N₁(x₁) = a₁ for x₁ where N₁:k₁k₂ → k₂.
-    if k1 isa RelSimpleNumField && k2 isa RelSimpleNumField
-      k1k2, k1_to_k1k2, k2_to_k1k2 = _abs_compositum(k1, k2)
-    else
-      k1k2, k1_to_k1k2, k2_to_k1k2 = compositum(k1, k2)
-    end
+    k1k2, k1_to_k1k2, k2_to_k1k2 = _compositum(k1, k2)
     k2_abs, _ = absolute_simple_field(k2)
     k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2_abs)
     if !first(local _, x1 = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1))))
@@ -501,4 +497,32 @@ function _left_regular_representation(
   pi_mm[1:d, d^2-d+1:d^2] = c.a .* s_m
   mm = matrix_algebra(base_field(k), d^2)
   return hom(c, mm, mm(g_mm), mm(pi_mm); check=false)
+end
+
+
+"""
+Given two relative simple number fields, return their compositum with the embeddings.
+
+The compositum is returned as an absolute number field. As with `_compositum`, the condition
+of normality on either of the fields is not checked.
+"""
+function _compositum(
+  k1::RelSimpleNumField,
+  k2::RelSimpleNumField,
+)
+  k1_abs, k1_abs_to_k1 = absolute_simple_field(k1)
+  k2_abs, k2_abs_to_k2 = absolute_simple_field(k2)
+  k1k2, k1_to_k1k2, k2_to_k1k2 = compositum(k1_abs, k2_abs)
+  k1_to_k1_abs = inv(k1_abs_to_k1)
+  k2_to_k2_abs = inv(k2_abs_to_k2)
+  return k1k2,
+    hom(k1, k1k2, k1_to_k1k2(k1_to_k1_abs(k1(gen(base_field(k1))))), k1_to_k1k2(k1_to_k1_abs(gen(k1)))),
+    hom(k2, k1k2, k2_to_k1k2(k2_to_k2_abs(k2(gen(base_field(k2))))), k2_to_k1k2(k2_to_k2_abs(gen(k2))))
+end
+
+function _compositum(
+  k1::AbsSimpleNumField,
+  k2::AbsSimpleNumField,
+)
+  return compositum(k1, k2)
 end
