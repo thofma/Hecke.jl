@@ -684,7 +684,7 @@ end
 #
 ################################################################################
 
-function _biproduct(x::Vector{T}; cached) where T <: AbstractSpace
+function _biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
   @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> is_hermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
