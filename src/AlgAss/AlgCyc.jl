@@ -42,7 +42,7 @@ Returns the cyclic field and its embedding in $c$.
 function maximal_cyclic_subfield(
   c::CyclicAlgebra{T, S},
 ) where {T, S}
-  return c.cyc_fld, c.cyc_fld_emb::Tuple{S, NumFieldHom{S, CyclicAlgebra{T, S}}}
+  return c.cyc_fld, c.cyc_fld_emb
 end
 
 """
@@ -129,7 +129,11 @@ julia> _, phi = automorphism_group(k);
 
 julia> c = cyclic_algebra(k, phi(first(gens(domain(phi)))), QQ(17));
 
-julia> aut = hom(c, c, gen(Hecke.maximal_cyclic_subfield(c)), c.a * QQ(3)^4);
+julia> l, emb = Hecke.maximal_cyclic_subfield(c);
+
+julia> p = Hecke.generating_element(c);
+
+julia> aut = hom(c, c.sca, p * emb(gen(l)) / p, p);
 
 ```
 """
@@ -268,11 +272,10 @@ function is_isomorphic_with_map(
   # Case: Base fields are isomorphic
   if !linearly_disjoint && first(local _, iso = is_isomorphic_with_map(k1, k2))
     i = 1
-    while (iso((c1.sigma^i)(inv(iso))(g2)) != c2.sigma(g2))
+    while (iso((c1.sigma^i)(inv(iso)(g2))) != c2.sigma(g2))
       i += 1
     end
     if first(local _, x2 = is_norm(k2, a1/a2^i))
-      x2 = evaluate(x2)
       return true, hom(
         c1.sca,
         c2.sca,
