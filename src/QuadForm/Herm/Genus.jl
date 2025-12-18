@@ -645,7 +645,7 @@ completion at $\mathfrak p$ admits `g` as local genus symbol.
 """
 function representative(G::HermLocalGenus)
   E = base_field(G)
-  L = lattice(hermitian_space(E, gram_matrix(G));  cached=false)
+  L = lattice(hermitian_space(E, gram_matrix(G);  cached=false))
   L.scale = scale(G)
   return L
 end
