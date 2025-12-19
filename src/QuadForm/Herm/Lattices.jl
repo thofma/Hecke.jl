@@ -54,17 +54,17 @@ identity matrix over `E` of size the number of columns of `B`.
 By default, `B` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-function hermitian_lattice(E::NumField, B::PMat; gram = nothing, check::Bool = true)
+function hermitian_lattice(E::NumField, B::PMat; gram = nothing, check::Bool = true, cached::Bool=true)
   @req nf(base_ring(B)) == E "Incompatible arguments: B must be defined over E"
   @req degree(E) == 2 "E must be a quadratic extension"
   if gram === nothing
-    V = hermitian_space(E, ncols(B))
+    V = hermitian_space(E, ncols(B); cached)
   else
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req ncols(B) == nrows(gram) "Incompatible arguments: the number of columns of B must correspond to the size of gram"
     gramE = map_entries(E, gram)
-    V = hermitian_space(E, gramE)
+    V = hermitian_space(E, gramE; cached)
   end
   return lattice(V, B; check)
 end
@@ -82,7 +82,7 @@ matrix over `E` of size the number of columns of `basis`.
 By default, `basis` is checked to be of full rank. This test can be disabled by setting
 `check` to false.
 """
-hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true) = hermitian_lattice(E, pseudo_matrix(basis); gram, check)
+hermitian_lattice(E::NumField, basis::MatElem; gram = nothing, check::Bool = true, cached=true) = hermitian_lattice(E, pseudo_matrix(basis); gram, check, cached)
 
 @doc raw"""
     hermitian_lattice(E::NumField, gens::Vector ; gram = nothing) -> HermLat
@@ -97,24 +97,24 @@ matrix over `E` of size the length of the elements of `gens`.
 If `gens` is empty, `gram` must be supplied and the function returns the zero lattice
 in the hermitan space over `E` with Gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField, gens::Vector; gram = nothing)
+function hermitian_lattice(E::NumField, gens::Vector; gram = nothing, cached::Bool=true)
   if length(gens) == 0
     @assert gram !== nothing
     pm = pseudo_matrix(matrix(E, 0, nrows(gram), []))
-    L = hermitian_lattice(E, pm; gram, check = false)
+    L = hermitian_lattice(E, pm; gram, check = false, cached)
     return L
   end
   @assert length(gens[1]) > 0
   @req all(v -> length(v) == length(gens[1]), gens) "All vectors in gens must be of the same length"
 
   if gram === nothing
-    V = hermitian_space(E, length(gens[1]))
+    V = hermitian_space(E, length(gens[1]); cached)
   else
     @assert gram isa MatElem
     @req is_square(gram) "gram must be a square matrix"
     @req length(gens[1]) == nrows(gram) "Incompatible arguments: the length of the elements of gens must correspond to the size of gram"
     gramE = map_entries(E, gram)
-    V = hermitian_space(E, gramE)
+    V = hermitian_space(E, gramE; cached)
   end
   return lattice(V, gens)
 end
@@ -125,11 +125,11 @@ end
 Given a matrix `gram` and a number field `E` of degree 2, return the free hermitian
 lattice inside the hermitian space over `E` with Gram matrix `gram`.
 """
-function hermitian_lattice(E::NumField; gram::MatElem)
+function hermitian_lattice(E::NumField; gram::MatElem, cached::Bool=true)
   @req is_square(gram) "gram must be a square matrix"
   gramE = map_entries(E, gram)
   B = pseudo_matrix(identity_matrix(E, ncols(gramE)))
-  return hermitian_lattice(E, B; gram = gramE, check = false)
+  return hermitian_lattice(E, B; gram = gramE, check = false, cached)
 end
 
 ################################################################################
@@ -163,7 +163,7 @@ function rational_span(L::HermLat)
     return L.rational_span
   else
     G = gram_matrix_of_rational_span(L)
-    V = hermitian_space(base_field(L), G)
+    V = hermitian_space(base_field(L), G; cached=false)
     L.rational_span = V
     return V
   end
@@ -260,7 +260,7 @@ end
 #
 ################################################################################
 
-function rescale(L::HermLat, a::Union{FieldElem, RationalUnion})
+function rescale(L::HermLat, a::Union{FieldElem, RationalUnion}; cached::Bool=true)
   @req typeof(a) <: RationalUnion || parent(a) === fixed_field(L) "a must be in the fixed field of L"
   if isone(a)
     return L
@@ -269,7 +269,7 @@ function rescale(L::HermLat, a::Union{FieldElem, RationalUnion})
   b = base_field(L)(K(a))
   gramamb = gram_matrix(ambient_space(L))
   return hermitian_lattice(base_field(L), pseudo_matrix(L);
-                           gram = b * gramamb)
+                           gram = b * gramamb, cached)
 end
 
 ################################################################################
@@ -708,7 +708,7 @@ function is_maximal(L::HermLat, p)
   #iszero(L) && error("The lattice must be non-zero")
   v = valuation(norm(L), p)
   x = elem_in_nf(p_uniformizer(p))^(-v)
-  b, LL = is_maximal_integral(rescale(L, x), p)
+  b, LL = is_maximal_integral(rescale(L, x; cached=false), p)
   if b
     return b, L
   else

@@ -1498,12 +1498,12 @@ function _genus_representatives_binary_quadratic_definite(L::QuadLat; max = inf,
   _, i = findmin(abs.(norm.(D)))
   d = D[i]
   # Do G -> d * G
-  _L = rescale(L, d)
+  _L = rescale(L, d; cached=false)
   lat = _genus_representatives_binary_quadratic_definite_helper(_L; max = max, use_auto = use_auto, use_mass = use_mass)
   G = genus(L)
   res = typeof(L)[]
   for M in lat
-    Mre = rescale(M, inv(d))
+    Mre = rescale(M, inv(d); cached=false)
     @assert genus(Mre) == G
     push!(res, Mre)
   end
@@ -1516,7 +1516,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
   # Then in (F, Tr/2) we use Kirschmer, Pfeuffer and Körrner.
 
   K = base_field(L)
-  L = lattice(quadratic_space(base_field(L), gram_matrix_of_rational_span(L)),
+  L = lattice(quadratic_space(base_field(L), gram_matrix_of_rational_span(L); cached=false),
                               pseudo_matrix(identity_matrix(K, 2), coefficient_ideals(L)))
 
   @assert is_definite(L)
@@ -1558,7 +1558,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     (x, y) -> K((x * sigma(y) + y * sigma(x))//2)
   end
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
-  W = quadratic_space(K, G)
+  W = quadratic_space(K, G; cached=false)
   fl, T = is_isometric_with_isometry(V, W)
   # Note that this is an isometry of KL with W
   @assert fl
@@ -2028,7 +2028,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
 
   # so G -> G/d
 
-  L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L))), pseudo_matrix(_L))
+  L = lattice(quadratic_space(base_ring(V), 1//d * gram_matrix(ambient_space(_L)); cached=false), pseudo_matrix(_L))
 
   V = rational_span(L)
 
@@ -2055,7 +2055,7 @@ function _genus_representatives_binary_quadratic_indefinite(_L::QuadLat)
   inv2 = inv(A(2))
   phi(x, y) = (x * sigma(y) + y * sigma(x)) * inv2
   G = matrix(K, 2, 2, [phi(B[1], B[1]), phi(B[1], B[2]), phi(B[2], B[1]), phi(B[2], B[2])])
-  W = quadratic_space(K, G)
+  W = quadratic_space(K, G; cached=false)
   fl, T = is_isometric_with_isometry(V, W)
   @assert fl
 
@@ -2215,7 +2215,7 @@ function _binary_quadratic_form_to_lattice(f::QuadBin{ZZRingElem}, K, e::ZZRingE
   b = f[2]
   c = f[3]
   G = matrix(K, 2, 2, [a//(e), b//(2*e), b//(2*e), c//e])
-  L = lattice(quadratic_space(K, G), identity_matrix(K, 2))
+  L = lattice(quadratic_space(K, G;cached=false), identity_matrix(K, 2))
 end
 
 function _form_to_ideal(f::QuadBin{ZZRingElem}, O, a)

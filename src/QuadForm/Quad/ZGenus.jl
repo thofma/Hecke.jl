@@ -1642,7 +1642,7 @@ function quadratic_space(G::ZZGenus; cached=false)
   dimension = dim(G)
   if dimension == 0
     qf = zero_matrix(QQ, 0, 0)
-    return quadratic_space(QQ, qf)
+    return quadratic_space(QQ, qf; cached=false)
   end
   determinant = det(G)
   prime_neg_hasse = [prime(s) for s in local_symbols(G) if hasse_invariant(s)==-1]
@@ -1703,7 +1703,7 @@ function representative(G::ZZGenus)
   end
   if denominator(scale(G)) != 1
     L = representative(rescale(G, denominator(scale(G))))
-    L = rescale(L, 1//denominator(scale(G)))
+    L = rescale(L, 1//denominator(scale(G));cached=false)
     G._representative = L
     return L
   end
@@ -2759,7 +2759,7 @@ function represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
     push!(gen1_square, ZZLocalGenus(p, g1))
   end
 
-  FH = isometry_class(quadratic_space(QQ, QQ[0 1; 1 0]), p)
+  FH = isometry_class(quadratic_space(QQ, QQ[0 1; 1 0]; cached=false), p)
   for i in 1:(level+1)
     scale = i - 1
     # I
@@ -2788,8 +2788,8 @@ function represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
       end
     end
     # IV
-    ti1 = isometry_class(quadratic_space(QQ, ZZ[ZZ(2)^scale;]), p)
-    ti2 = isometry_class(quadratic_space(QQ, ZZ[5*ZZ(2)^scale;]), p)
+    ti1 = isometry_class(quadratic_space(QQ, ZZ[ZZ(2)^scale;];cached=false), p)
+    ti2 = isometry_class(quadratic_space(QQ, ZZ[5*ZZ(2)^scale;];cached=false), p)
     S = (ti1 + rational_isometry_class(gen2_round[i+1]))
     S -= rational_isometry_class(gen1[i])
     if !(represents(S, ti1) || represents(S,ti2))
@@ -3088,9 +3088,6 @@ rescale(::ZZGenus, ::RationalUnion)
 function rescale(G::ZZGenus, a::IntegerUnion)
   @req !iszero(a) "a must be non-zero"
   a = ZZ(a)
-  if isdefined(G, :_representative)
-    return genus(rescale(G._representative, a))
-  end
   sig_pair = signature_pair(G)
   sig_pair = a < 0 ? reverse(sig_pair) : sig_pair
   pd = prime_divisors(a)
@@ -3103,7 +3100,11 @@ function rescale(G::ZZGenus, a::IntegerUnion)
     p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
     push!(sym, s)
   end
-  return ZZGenus(sig_pair, sym)
+  Grescaled = ZZGenus(sig_pair, sym)
+  if isdefined(G, :_representative)
+    Grescaled._representative = rescale(G._representative, a; cached=false)
+  end
+  return Grescaled
 end
 
 function rescale(G::ZZGenus, a::RationalUnion)
@@ -3125,6 +3126,10 @@ function rescale(G::ZZGenus, a::RationalUnion)
     p != 2 && length(ss) == 1 && ss[1][1] == 0 && continue
     push!(sym, s)
   end
-  return ZZGenus(sig_pair, sym)
+  Grescaled = ZZGenus(sig_pair, sym)
+  if isdefined(G, :_representative)
+    Grescaled._representative = rescale(G._representative, a; cached=false)
+  end
+  return Grescaled
 end
 
