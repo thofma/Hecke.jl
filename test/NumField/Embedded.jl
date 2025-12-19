@@ -138,4 +138,12 @@
       @test round(ZZRingElem, e, RoundNearest) == rn && round(ZZRingElem, e, RoundNearest) isa ZZRingElem
     end
   end
+
+  let
+    C, = cyclotomic_real_subfield(19)
+    K, a = embedded_number_field(minpoly(gen(C)), 1.1)
+    u = algebraic_closure(QQ)(a)
+    @test is_zero(minpoly(data(a))(u))
+    @test 1.08 < real_field()(u) < 1.1
+  end
 end
