@@ -242,7 +242,7 @@
     X = rand(A, -1:1)
   end
   h = hom(A, A, inv(X) .* basis(A) .* X)
-  a = Hecke._skolem_noether(h)
+  a = Hecke.skolem_noether_conjugator(identity_map(A), h)
   @test all(h(b) == inv(a) * b * a for b in basis(A))
 
   let
