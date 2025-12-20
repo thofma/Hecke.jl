@@ -317,3 +317,8 @@ function H2_G_QmodZ_restriction(G::FinGenAbGroup, U::Vector{FinGenAbGroup})
   return phi
 end
 
+matrix(::Hecke.GrpAbFinGenToQmodnZ) = nothing
+matrix(::Map{QmodnZ, FinGenAbGroup}) = nothing
+matrix(::Map{FinGenAbGroup, QmodnZ}) = nothing
+
+
