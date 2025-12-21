@@ -353,7 +353,7 @@ function is_rational(x::EmbeddedNumFieldElem)
 end
 
 function (Qb::QQBarField)(x::EmbeddedNumFieldElem)
-  f = minpoly(data(x))
+  f = absolute_minpoly(data(x))
   r = roots(Qb, f)
   e = embedding(parent(x))
   prec = 2
