@@ -287,3 +287,35 @@ let # issue #2079, Hanselmann
   f = L(b) * u^2 + L(c)
   @test length(roots(f)) == 2
 end
+
+let
+  Qx, x = QQ["x"]
+  K, a = number_field([x^2 - 2, x^2 - 3])
+  @test absolute_minpoly(a[1])(x) == x^2 - 2
+end
+
+let # norm of polynomials
+  QQ, = rationals_as_number_field()
+  Qx, xQ = QQ["x"]
+  F, _ = number_field(xQ^2-2)
+  Fx, xF = F["x"]
+  d = degree(F)
+  @test norm(xF)(xQ) == xQ^(d)
+  for i in 1:11
+    @test norm(xF^i + xF^(i+1))(xQ) == xQ^(i*d) * norm(xF+1)(xQ)
+  end
+end
+
+let
+  QQ, = rationals_as_number_field()
+  Qx, xQ = QQ["x"]
+  F, a = number_field(xQ^2 - 2)
+  Fx, xF = F["x"]
+  L, z = number_field(xF^2 - 3)
+  Lt, t = L["t"]
+  d = degree(F)
+  @test norm(xF, F)(xQ) == xQ^(d)
+  for i in 1:11
+    @test norm(t^i + t^(i+1), F)(xF) == xF^(i*d) * norm(t + 1, F)(xF)
+  end
+end
