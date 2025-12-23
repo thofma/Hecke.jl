@@ -997,7 +997,7 @@ end
 
 function _addmul!(M::FqMatrix, i, j, a::FqFieldElem, b::FqFieldElem, temp = base_ring(M)())
   GC.@preserve M begin
-    c = Nemo.fq_default_mat_entry_ptr(M, i, j)
+    c = mat_entry_ptr(M, i, j)
     mul!(temp, a, b)
     ccall((:fq_default_add, libflint), Nothing, (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), c, c, temp, base_ring(M))
   end
