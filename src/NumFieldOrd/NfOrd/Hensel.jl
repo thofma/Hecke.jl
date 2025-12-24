@@ -120,7 +120,7 @@ function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
 
     Rp = Nemo.Native.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
-    gp = Rpt(K.pol)
+    gp = change_base_ring(Rp, defining_polynomial(K); parent = Rpt)
     if degree(gp) < degree(K) || iszero(discriminant(gp))
       continue
     end

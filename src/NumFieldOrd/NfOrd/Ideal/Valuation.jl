@@ -18,7 +18,7 @@ function val_func_no_index_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
   Rx = polynomial_ring(Native.GF(UInt(P), cached=false), cached=false)[1]
   Zx = Globals.Zx
   gR = Rx(p.gen_two.elem_in_nf)
-  f = Rx(K.pol)
+  f = change_base_ring(base_ring(Rx), defining_polynomial(K); parent = Rx)
   gR = gcd!(gR, gR, f)
   g = lift(Zx, gR)
   k = flog(ZZRingElem(typemax(UInt)), P)
@@ -30,7 +30,7 @@ function val_func_no_index_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
     g = hensel_lift(numerator(defining_polynomial(K), Zx), g, P, k)
   end
   Sx = polynomial_ring(residue_ring(ZZ, UInt(P)^k, cached=false)[1], cached=false)[1]
-  g = Sx(g)
+  g = change_base_ring(base_ring(Sx), g; parent = Sx)
   h = Sx()
   uP = UInt(P)
   local vfunc
@@ -58,10 +58,10 @@ function val_func_no_index(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   Rx, g = polynomial_ring(Native.GF(P, cached=false), cached=false)
   Zx = polynomial_ring(ZZ, cached = false)[1]
   Nemo.nf_elem_to_gfp_fmpz_poly!(g, p.gen_two.elem_in_nf, false)
-  f = Rx(K.pol)
+  f = change_base_ring(base_ring(Rx), defining_polynomial(K); parent = Rx)
   g = gcd(g, f)
   g = lift(Zx, g)
-  g = hensel_lift(Zx(K.pol), g, P, 10)
+  g = hensel_lift(change_base_ring(ZZ, defining_polynomial(K); parent = Zx), g, P, 10)
   Sx = polynomial_ring(residue_ring(ZZ, P^5, cached=false)[1], cached=false)[1]
   g = Sx(g)
   h = Sx()
@@ -231,7 +231,7 @@ function _isindex_divisor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{Ab
   end
   R = Native.GF(Int(minimum(P)), cached = false)
   Rt, t = polynomial_ring(R, "x", cached = false)
-  f = Rt(nf(P).pol)
+  f = change_base_ring(R, defining_polynomial(nf(P)); parent = Rt)
   g = Rt(P.gen_two.elem_in_nf)
   d = gcd(f, g)
   if !divides(f, d^2)[1] && is_irreducible(d)

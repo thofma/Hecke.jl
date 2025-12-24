@@ -1419,8 +1419,8 @@ mutable struct FactorBaseSingleP{T}
     if isone(leading_coefficient(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !is_index_divisor(O, p)) # ie. index divisor or so
       Qx = parent(K.pol)
       Fpx = polynomial_ring(Fp, cached = false)[1]
-      fp = Fpx(Globals.Zx(K.pol))
-      lf = [ gcd(fp, Fpx(Globals.Zx(Qx(K(P[2].gen_two))))) for P = lp]
+      fp = change_base_ring(Fp, numerator(defining_polynomial(K), Globals.Zx); parent = Fpx)
+      lf = [ gcd(fp, change_base_ring(Fp, numerator(Qx(K(P[2].gen_two)), Globals.Zx); parent = Fpx)) for P = lp]
       FB.lf = lf
       FB.pt = FactorBase(Set(lf), check = false)
     end
@@ -2187,7 +2187,7 @@ mutable struct HenselCtx
     Rx,x = polynomial_ring(Native.GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, libflint), UInt,
-          (Ref{Nemo.nmod_poly_factor}, Ref{fpPolyRingElem}), (a.lf), Rx(f))
+          (Ref{Nemo.nmod_poly_factor}, Ref{fpPolyRingElem}), (a.lf), change_base_ring(base_ring(Rx), f; parent = Rx))
     r = a.lf.num
     a.r = r
     a.LF = fmpz_poly_factor()
