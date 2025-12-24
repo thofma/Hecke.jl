@@ -153,7 +153,7 @@ mutable struct qAdicConj
     Dp = get_cached!(D, p, cached) do
       Zx = polynomial_ring(ZZ, cached = false)[1]
       d = lcm(map(denominator, coefficients(K.pol)))
-      C = qAdicRootCtx(Zx(K.pol*d), p)
+      C = qAdicRootCtx(numerator(K.pol*d, Zx), p)
       return (C, Dict{AbsSimpleNumFieldElem, Any}())
     end
 

@@ -105,8 +105,8 @@ function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingE
   K = nf(O)
   EO = equation_order(K)
   M = zero_matrix(ZZ, 2 * degree(O), degree(O))
-  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
-  f = Zx(K.pol)
+  Zx = Globals.Zx
+  f = numerator(defining_polynomial(K), Zx)
   for i in 1:length(primes1)
     p = primes1[i]
     @vprintln :AbsNumFieldOrder 1 "Computing p-maximal overorder for $p ..."
@@ -152,8 +152,8 @@ function new_maximal_order(O::AbsSimpleNumFieldOrder; index_divisors::Vector{ZZR
   end
 
   if is_defining_polynomial_nice(K) && (is_equation_order(O) || contains_equation_order(O))
-    Zx, x = polynomial_ring(ZZ, "x", cached = false)
-    f1 = Zx(K.pol)
+    Zx = Globals.Zx
+    f1 = numerator(defining_polynomial(K), Zx)
     ds = gcd(reduced_resultant(f1, derivative(f1)), discriminant(O))
     l = prefactorization(f1, ds)
   else
@@ -723,13 +723,13 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
   d = degree(O)
   K = nf(O)
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  res = factor_shape_refined(Rx(K.pol))
+  res = factor_shape_refined(change_base_ring(R, defining_polynomial(K); parent = Rx))
   md = 1
   for i = 1:length(res)
     md = max(md, res[i][2])
   end
   j = clog(ZZRingElem(md), p)
-  sqf = factor_squarefree(Rx(K.pol))
+  sqf = factor_squarefree(change_base_ring(R, defining_polynomial(K); parent = Rx))
   p1 = one(Rx)
   for (x, v) in sqf
     if v > 1
@@ -839,13 +839,14 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
   d = degree(O)
   K = nf(O)
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  res = factor_shape_refined(Rx(K.pol))
+  fmodp = change_base_ring(R, defining_polynomial(K); parent = Rx)
+  res = factor_shape_refined(fmodp)
   md = 1
   for i = 1:length(res)
     md = max(md, res[i][2])
   end
   j = clog(ZZRingElem(md), p)
-  sqf = factor_squarefree(Rx(K.pol))
+  sqf = factor_squarefree(fmodp)
   p1 = one(Rx)
   for (x, v) in sqf
     if v > 1
@@ -932,7 +933,7 @@ function pradical_trace1(O::AbsSimpleNumFieldOrder, p::IntegerUnion)
   K = nf(O)
   F = Native.GF(p, cached = false)
   Fx = polynomial_ring(F, "x", cached = false)[1]
-  sqf = factor_squarefree(Fx(K.pol))
+  sqf = factor_squarefree(change_base_ring(F, defining_polynomial(K); parent = Fx))
   p1 = one(Fx)
   for (x, v) in sqf
     if v > 1

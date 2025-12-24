@@ -120,7 +120,7 @@ function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
 
     Rp = Nemo.Native.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
-    gp = Rpt(K.pol)
+    gp = change_base_ring(Rp, defining_polynomial(K); parent = Rpt)
     if degree(gp) < degree(K) || iszero(discriminant(gp))
       continue
     end
@@ -382,10 +382,10 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
 
   if degree(fac_pol_mod_p) != degree(K)
     g1 = lift(ZX, fac_pol_mod_p)
-    ff = ZX(d_pol*K.pol)
+    ff = numerator(d_pol * K.pol, ZX)
     gg = hensel_lift(ff, g1, ZZRingElem(p), k)
   else
-    gg = ZX(d_pol * K.pol)
+    gg = numerator(d_pol * K.pol, ZX)
     pk = ZZRingElem(p)^k
     gg *= invmod(leading_coefficient(gg), pk)
     mod_sym!(gg, pk)

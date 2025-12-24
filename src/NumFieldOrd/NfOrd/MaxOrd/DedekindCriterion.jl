@@ -109,7 +109,7 @@ function dedekind_test_composite(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   R = residue_ring(ZZ, p, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached=false)[1]
 
-  f = Zy(nf(O).pol)
+  f = change_base_ring(ZZ, defining_polynomial(nf(O)); parent = Zy)
 
   fmodp = Rx(f)
 

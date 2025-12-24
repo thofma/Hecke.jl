@@ -34,8 +34,14 @@
 
   function GenOrd(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true)
     F = base_field(O.F)
-    T = map_entries(F, T)
-    T = divexact(T, base_ring(T)(d))
+    if base_ring(T) isa ZZPolyRing
+      R = base_ring(Hecke.AbstractAlgebra.Generic.underlying_fraction_field(F))
+      T = map_entries(x -> F(change_base_ring(QQ, x; parent = R)), T)
+      T = divexact(T, F(change_base_ring(QQ, d; parent = R)))
+    else
+      T = map_entries(F, T)
+      T = divexact(T, base_ring(T)(d))
+    end
     Ti = inv(T)
     r = GenOrd(O.R, O.F, true)
     r.is_standard = false

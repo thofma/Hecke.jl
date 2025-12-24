@@ -783,6 +783,7 @@ end
 function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{QQFieldElem}})
   Zx = Hecke.Globals.Zx
   K = base_field(E)
+  KK = AbstractAlgebra.Generic.underlying_fraction_field(K)
   ai = collect(a_invariants(E))
   aiorig = ai
   wts = [1, 2, 3, 4, 6]
@@ -791,7 +792,7 @@ function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunct
     if !is_one(d)
       for (p, _) in factor(d)
         e = floor(Int, minimum([_fake_valuation(ai[i], p)//wts[i] for i in 1:5 if !is_zero(ai[i])]))
-        ai = [ai[i]/K(p)^(Int(e * wts[i])) for i in 1:5]
+        ai = [ai[i]/K(change_base_ring(QQ, p; parent = base_ring(KK)))^(Int(e * wts[i])) for i in 1:5]
       end
     end
   end
