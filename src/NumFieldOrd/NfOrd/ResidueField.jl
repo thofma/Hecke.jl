@@ -93,8 +93,8 @@ function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRing
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
 
-  gmodp = Rx(g)
-  fmodp = Rx(f)
+  gmodp = change_base_ring(R, g; parent = Rx)
+  fmodp = change_base_ring(R, f; parent = Rx)
 
   h = gcd(gmodp,fmodp)
 

@@ -95,7 +95,7 @@ canonical lift of $f$ to a polynomial over the integers.
 """
 function lift(K::AbsSimpleNumField, f::T) where {T <: Zmodn_poly}
   if degree(f)>=degree(K)
-    f = mod(f, parent(f)(K.pol))
+    f = mod(f, change_base_ring(base_ring(parent(f)), K.pol; parent = parent(f)))
   end
   r = K()
   for i=0:f.length-1
@@ -644,8 +644,8 @@ function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
     if !fits(Int, minimum(B))
       R = residue_ring(ZZ, minimum(B), cached = false)[1]
       Rx = polynomial_ring(R, "t", cached = false)[1]
-      f1 = Rx(Qx(A.gen_two.elem_in_nf))
-      f2 = Rx(Qx(B.gen_two.elem_in_nf))
+      f1 = change_base_ring(R, Qx(A.gen_two.elem_in_nf); parent = Rx)
+      f2 = change_base_ring(R, Qx(B.gen_two.elem_in_nf); parent = Rx)
       if iszero(f2)
         res = iszero(f1)
       else
@@ -654,8 +654,8 @@ function divides(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldEl
     else
       R1 = residue_ring(ZZ, Int(minimum(B)), cached = false)[1]
       R1x = polynomial_ring(R1, "t", cached = false)[1]
-      f11 = R1x(Qx(A.gen_two.elem_in_nf))
-      f21 = R1x(Qx(B.gen_two.elem_in_nf))
+      f11 = change_base_ring(R1, Qx(A.gen_two.elem_in_nf); parent = R1x)
+      f21 = change_base_ring(R1, Qx(B.gen_two.elem_in_nf); parent = R1x)
       if iszero(f21)
         res = iszero(f11)
       else
@@ -905,10 +905,10 @@ function _prefactorization(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   end
   K = nf(I)
   el = I.gen_two.elem_in_nf
-  Zx = polynomial_ring(ZZ, "x")[1]
+  Zx = Globals.Zx
   @assert is_one(denominator(defining_polynomial(K)))
   f = numerator(defining_polynomial(K), Zx)
-  f1 = numerator(denominator(el)*el, Zx)
+  f1 = Zx(denominator(el)*el)
   return prefactorization(f, n, f1)
 end
 
@@ -1323,7 +1323,7 @@ end
 function _fac_and_lift(f::QQMPolyRingElem, p, degree_limit, lower_limit)
   Zx, x = polynomial_ring(ZZ, cached = false)
   Zmodpx = polynomial_ring(Native.GF(p, cached = false), "y", cached = false)[1]
-  fmodp = Zmodpx(to_univariate(Globals.Qx, f))
+  fmodp = change_base_ring(base_ring(Zmodpx), to_univariate(Globals.Qx, f); parent = Zmodpx)
   fac = factor(fmodp)
   lifted_fac = Vector{Tuple{ZZPolyRingElem, Int}}()
   for (k, v) in fac
@@ -1387,7 +1387,7 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
     for x = Base.Iterators.product(fac...)
       k = lcm([degree(t[1]) for t = x])
       Fq = Native.finite_field(p, k, "y", cached = false)[1]
-      Fq2 = residue_ring(Rx, lift(Zx, minpoly(gen(Fq))))[1]
+      Fq2, = residue_ring(Rx, change_base_ring(R, lift(Zx, minpoly(gen(Fq))); parent = Rx))
       rt = Vector{Vector{elem_type(Fq)}}()
       RT = []
       d = 1
@@ -1410,7 +1410,7 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
           end
           push!(rt, a)
         end
-        push!(RT, [_lift_p2(Fq2, Zx(to_univariate(Globals.Qx, all_f[ti])), i) for i = rt[end]])
+        push!(RT, [_lift_p2(Fq2, change_base_ring(ZZ, to_univariate(Globals.Qx, all_f[ti]); parent = Zx), i) for i = rt[end]])
       end
       append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
       append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
@@ -1691,7 +1691,7 @@ function decomposition_group_easy(G, P)
   K = nf(O)
   R = residue_ring(ZZ, Int(minimum(P, copy = false)), cached = false)[1]
   Rt, t = polynomial_ring(R, "t", cached = false)
-  fmod = Rt(K.pol)
+  fmod = change_base_ring(R, defining_polynomial(K); parent = Rt)
   pols = zzModPolyRingElem[Rt(image_primitive_element(x)) for x in G]
   indices = Int[]
   second_gen = Rt(P.gen_two.elem_in_nf)

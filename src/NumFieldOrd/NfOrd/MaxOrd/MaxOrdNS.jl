@@ -188,7 +188,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
   gens = elem_type(O)[O(p)]
   for i = 1:ngens(K)
     g = to_univariate(Globals.Qx, K.pol[i])
-    sqf = factor_squarefree(Rx(g))
+    sqf = factor_squarefree(change_base_ring(R, g; parent = Rx))
     p1 = one(Rx)
     for (x, v) in sqf
       if v > 1

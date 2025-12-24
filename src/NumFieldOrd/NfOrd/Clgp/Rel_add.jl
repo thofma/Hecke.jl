@@ -17,7 +17,7 @@ function special_prime_ideal(p::ZZRingElem, a::AbsSimpleNumFieldElem)
   Zx = polynomial_ring(ZZ)[1]
   Zpx = polynomial_ring(Native.GF(UInt(p), cached=false), "\$x_p", cached=false)[1]
   g = Zpx(a)
-  ff = Zpx(f)
+  ff = change_base_ring(base_ring(Zpx), f; parent = Zpx)
   gcd!(g, g, ff)
   return lift(Zx, g)
 end

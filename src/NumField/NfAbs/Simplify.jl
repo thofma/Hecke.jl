@@ -39,7 +39,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
     b = _simplify(OK)
     if b != gen(K)
       @vprintln :Simplify 1 "The basis of the maximal order contains a better primitive element"
-      f1 = Qx(minpoly(representation_matrix(OK(b))))
+      f1 = change_base_ring(QQ, minpoly(representation_matrix(OK(b))); parent = Qx)
       L1 = number_field(f1, cached = cached, check = false)[1]
       #Before calling again the simplify on L1, we need to define the maximal order of L1
       mp = hom(L1, K, b, check = false)
@@ -65,7 +65,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
   if a == gen(K) && is_monic(K.pol) # K.pol is minpoly of a
     f = K.pol
   else
-    @vtime :Simplify 3 f = Qx(minpoly(representation_matrix(OK(a))))
+    @vtime :Simplify 3 f = change_base_ring(QQ, minpoly(representation_matrix(OK(a))); parent = Qx)
   end
   L = number_field(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
@@ -205,9 +205,10 @@ end
 
 function _sieve_primitive_elements(B::Vector{AbsSimpleNumFieldElem})
   K = parent(B[1])
-  Zx = polynomial_ring(ZZ, "x", cached = false)[1]
-  f = Zx(K.pol*denominator(K.pol))
-  a = gen(K)*denominator(K.pol)
+  Zx = Globals.Zx
+  _f = defining_polynomial(K)
+  f = numerator(_f * denominator(_f), Zx)
+  a = gen(K) * denominator(_f)
 
   p, d = _find_prime(ZZPolyRingElem[f])
 
@@ -347,7 +348,7 @@ function polredabs(K::AbsSimpleNumField)
   D = discriminant(ZK)
   B = basis(ZK, copy = false)
   Zx = ZZ["x"][1]
-  f = Zx(K.pol)
+  f = change_base_ring(ZZ, defining_polynomial(K); parent = Zx)
   p, d = _find_prime(ZZPolyRingElem[f])
 
   F = Native.finite_field(p, d, "w", cached = false)[1]

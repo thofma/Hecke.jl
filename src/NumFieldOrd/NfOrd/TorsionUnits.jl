@@ -310,7 +310,7 @@ function _torsion_group_order_divisor(K::AbsSimpleNumField)
 
     Rp = Nemo.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
-    gp = Rpt(f)
+    gp = change_base_ring(Rp, f; parent = Rpt)
 
     if degree(gp) != degree(K) || !is_squarefree(gp)
       continue

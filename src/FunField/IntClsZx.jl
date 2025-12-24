@@ -74,7 +74,7 @@ function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R
     k = Native.GF(p)
     kt = polynomial_ring(k, cached = false)[1]
     while true
-      H = map(kt, MM)
+      H = map(f -> change_base_ring(k, f, parent = kt), MM)
       piv = 1
       for i=1:n
         if iszero(H[i,piv])
@@ -94,8 +94,8 @@ function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R
             q, r = divrem(H[i, j], H[i,piv])
             H[:, j:j] = H[:, j:j] - q*H[:, piv:piv]
             @assert H[i, j] == r
-            T2[:, j] = T2[:, j:j] - Qt(Hecke.lift(Hecke.Globals.Zx, q))*T2[:, piv:piv]
-            MM[:, j] = MM[:, j:j] - R(Hecke.lift(Hecke.Globals.Zx, q))*MM[:, piv:piv]
+            T2[:, j] = T2[:, j:j] - Qt(change_base_ring(QQ, Hecke.lift(Hecke.Globals.Zx, q); parent = R))*T2[:, piv:piv]
+            MM[:, j] = MM[:, j:j] - change_base_ring(QQ, Hecke.lift(Hecke.Globals.Zx, q); parent = R)*MM[:, piv:piv]
             if iszero(r)
               break
             end
@@ -185,8 +185,8 @@ function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem},
   d = denominator(a)
   dn = reduce(lcm, map(denominator, coefficients(n)), init = ZZRingElem(1))
   dd = reduce(lcm, map(denominator, coefficients(d)), init = ZZRingElem(1))
-  zn = S(n*dn)
-  zd = S(d*dd)
+  zn = change_base_ring(ZZ, n*dn; parent = S)
+  zd = change_base_ring(ZZ, d*dd; parent = S)
   cn = content(zn)
   cd = content(zd)
   zn = divexact(zn, cn)
