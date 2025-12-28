@@ -5,17 +5,13 @@ DocTestSetup = Hecke.doctestsetup()
 ```
 # Conventions
 
-By an absolute number field we mean finite extensions of $\mathbf Q$, which is
-of type `AbsSimpleNumField` and whose elements are of type `AbsSimpleNumFieldElem`. Such an
-absolute number field $K$ is always given in the form $K = \mathbf Q(\alpha) =
-\mathbf Q[X]/(f)$, where $f \in \mathbf Q[X]$ is an irreducible polynomial.
-See [here](@ref NumberFieldsLink) for more information on the different
-types of fields supported.
+By an *absolute number field* we mean a finite extension of $\mathbf{Q}$. Absolute number fields are implemented as the type `AbsSimpleNumField` and have elements of type `AbsSimpleNumFieldElem`. In Hecke, an
+absolute number field $K$ is always given in the form $K = \mathbf{Q}(\alpha) =
+\mathbf{Q}[X]/(f)$, where $f \in \mathbf{Q}[X]$ is an irreducible polynomial.
 
-We
-call $(1,\alpha,\alpha^2,\dotsc,\alpha^{d-1})$, where $d$ is the degree $[K :
-\mathbf Q]$ the *power basis* of $K$. If $\beta$ is any element of $K$, then
-the *representation matrix* of $\beta$ is the matrix representing $K \to K,
+Given an absolute number field $K/\mathbf{Q}$ of degree $d=[K:\mathbf{Q}]$ presented as a simple extension $K=\mathbf{Q}(\alpha)$, we
+call $(1,\alpha,\alpha^2,\dotsc,\alpha^{d-1})$ a *power basis* of $K$. If $\beta$ is any element of $K$, then
+the *representation matrix* of $\beta$ is the matrix representing $K \rightarrow K,
 \gamma \mapsto \beta \gamma$ with respect to the power basis, that is,
 
 ```math
