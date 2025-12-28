@@ -1,93 +1,40 @@
-@import url(https://fonts.googleapis.com/css?family=Space+Mono:regular,italic,700,700italic);
-@import url(https://fonts.googleapis.com/css?family=Space+Grotesk:regular,italic,700,700italic);
-
 /* Customize default theme styling by overriding CSS variables:
-https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
- */
-
-/* Layouts */
-
-:root {
-  --vp-font-family-mono: "Fira Code", Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
-/* Hero Name Color */
-:root {
-  --vp-home-hero-name-color: #bd0036;
-}
-
-.dark {
-  --vp-home-hero-name-color: #bd0036;
-
-/* Highlighted gradient to match modular logo
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(
-    120deg,
-    #bd0036 45%,
-    #ffbc00 65%,
-    #ab7b9b 98%
-  );
-
+   https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
 */
-}
 
-.VPHero .clip {
-  white-space: pre;
-  max-width: 600px;
-}
-
-/* Fonts */
-
- :root {
-  /* Typography */
+/* =========================================
+   Global Variables (:root)
+   ========================================= */
+:root {
+  /* --- Typography --- */
   --vp-font-family-base: "Barlow", "Inter var experimental", "Inter var",
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
     Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --vp-font-family-mono: "Fira Code", Menlo, Monaco, Consolas, "Courier New", monospace;
 
-  /* Code Snippet font */
-  --vp-font-family-mono: Menlo, Monaco, Consolas, "Courier New", monospace;
-}
+  /* --- Julia Brand Colors --- */
+  --julia-blue: rgb(56.475, 87.3, 190.575);
+  --julia-purple: rgb(131.4, 77.625, 157.05);
+  --julia-red: rgb(179.10, 52.875, 45.0);
+  --julia-green: rgb(49.5, 134.1, 33.525);
 
-.mono {
-  /*
-  Disable contextual alternates (kind of like ligatures but different) in monospace,
-  which turns `/>` to an up arrow and `|>` (the Julia pipe symbol) to an up arrow as well.
-  This is pretty bad for Julia folks reading even though copy+paste retains the same text.
-  */
-  font-feature-settings: 'calt' 0;
-}
+  /* --- VitePress Brand Colors (Red Theme) --- */
+  --vp-c-brand: #bd0036;
+  --vp-c-brand-light: #f00044;
+  --vp-c-brand-lighter: #ff2362;
+  --vp-c-brand-lightest: #ff5786;
+  --vp-c-brand-dark: #8a0027;
+  --vp-c-brand-darker: #570018;
+  --vp-c-brand-dimm: rgba(189, 0, 54, 0.08);
 
-/* Colors */
+  /* --- Link Colors (Light Mode) --- */
+  --vp-c-brand-1: var(--vp-c-brand);
+  --vp-c-brand-2: var(--vp-c-brand-light);
+  --vp-c-brand-3: var(--vp-c-brand-lighter);
+  --vp-c-sponsor: #ca2971;
+  --vitest-c-sponsor-hover: #c13071;
 
-:root {
-    --julia-blue: rgb(56.475, 87.3, 190.575);
-    --julia-purple: rgb(131.4, 77.625, 157.05);
-    --julia-red: rgb(179.10, 52.875, 45.0);
-    --julia-green: rgb(49.5, 134.1, 33.525);
-
-/* Red brand colors */
-    --vp-c-brand: #bd0036;
-    --vp-c-brand-light: #f00044;
-    --vp-c-brand-lighter: #ff2362;
-    --vp-c-brand-lightest: #ff5786;
-    --vp-c-brand-dark: #8a0027;
-    --vp-c-brand-darker: #570018;
-    --vp-c-brand-dimm: rgba(189, 0, 54, 0.08);
-
-/* Purple brand colors (omitted)
-    --vp-c-brand: #646cff;
-    --vp-c-brand-light: #747bff;
-    --vp-c-brand-lighter: #9499ff;
-    --vp-c-brand-lightest: #bcc0ff;
-    --vp-c-brand-dark: #535bf2;
-    --vp-c-brand-darker: #454ce1;
-    --vp-c-brand-dimm: rgba(100, 108, 255, 0.08);
-*/
-}
-
- /* Component: Button */
-
-:root {
+  /* --- Component: Buttons --- */
   --vp-button-brand-border: var(--vp-c-brand-light);
   --vp-button-brand-text: var(--vp-c-white);
   --vp-button-brand-bg: var(--vp-c-brand);
@@ -97,15 +44,46 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
   --vp-button-brand-active-border: var(--vp-c-brand-light);
   --vp-button-brand-active-text: var(--vp-c-white);
   --vp-button-brand-active-bg: var(--vp-button-brand-bg);
-}
 
-/* Component: Home */
-
-:root {
+  /* --- Component: Home Hero --- */
+  --vp-home-hero-name-color: #bd0036;
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: blur(40px);
+
+  /* --- Component: Algolia --- */
+  --docsearch-primary-color: var(--vp-c-brand) !important;
 }
 
+/* =========================================
+   Dark Mode Overrides
+   ========================================= */
+:root.dark {
+  /* --- Theme Palette (Blacks & Grays) --- */
+  --vp-c-black: hsl(220 20% 9%);
+  --vp-c-black-pure: hsl(220, 24%, 4%);
+  --vp-c-black-soft: hsl(220 16% 13%);
+  --vp-c-black-mute: hsl(220 14% 17%);
+  --vp-c-gray: hsl(220 8% 56%);
+  --vp-c-gray-dark-1: hsl(220 10% 39%);
+  --vp-c-gray-dark-2: hsl(220 12% 28%);
+  --vp-c-gray-dark-3: hsl(220 12% 23%);
+  --vp-c-gray-dark-4: hsl(220 14% 17%);
+  --vp-c-gray-dark-5: hsl(220 16% 13%);
+
+  /* --- Link Colors (Dark Mode) --- */
+  --vp-c-brand-1: var(--vp-c-brand-light);
+  --vp-c-brand-2: var(--vp-c-brand-lighter);
+  --vp-c-brand-3: var(--vp-c-brand-lightest);
+  --vp-c-sponsor: #91dd33;
+  --vitest-c-sponsor-hover: #e51370;
+
+  /* --- Hero Colors --- */
+  --vp-home-hero-name-color: #bd0036;
+}
+
+/* =========================================
+   Media Queries (Hero Blur)
+   ========================================= */
 @media (min-width: 640px) {
   :root {
     --vp-home-hero-image-filter: blur(56px);
@@ -118,110 +96,48 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
   }
 }
 
+/* =========================================
+   Layout & Typography Classes
+   ========================================= */
+
+/* Fix margin for Doc H1 inside Home component */
 .VPHome .vp-doc h1 {
   margin-top: var(--vp-nav-height);
 }
 
-/* Component: Custom Block */
-
-:root.dark {
-  --vp-custom-block-tip-border: var(--vp-c-brand);
-  --vp-custom-block-tip-text: var(--vp-c-brand-lightest);
-  --vp-custom-block-tip-bg: var(--vp-c-brand-dimm);
-
-    /* // Tweak the color palette for blacks and dark grays */
-    --vp-c-black: hsl(220 20% 9%);
-    --vp-c-black-pure: hsl(220, 24%, 4%);
-    --vp-c-black-soft: hsl(220 16% 13%);
-    --vp-c-black-mute: hsl(220 14% 17%);
-    --vp-c-gray: hsl(220 8% 56%);
-    --vp-c-gray-dark-1: hsl(220 10% 39%);
-    --vp-c-gray-dark-2: hsl(220 12% 28%);
-    --vp-c-gray-dark-3: hsl(220 12% 23%);
-    --vp-c-gray-dark-4: hsl(220 14% 17%);
-    --vp-c-gray-dark-5: hsl(220 16% 13%);
-
-    /* // Backgrounds */
-    /* --vp-c-bg: hsl(240, 2%, 11%); */
-    --vp-custom-block-info-bg: hsl(220 14% 17%);
-    /* --vp-c-gutter: hsl(220 20% 9%);
-
-    --vp-c-bg-alt: hsl(220 20% 9%);
-    --vp-c-bg-soft: hsl(220 14% 17%);
-    --vp-c-bg-mute: hsl(220 12% 23%);
-     */
+/* Restrict Hero Clip width */
+.VPHero .clip {
+  white-space: pre;
+  max-width: 600px;
 }
 
- /* Component: Algolia */
-
-.DocSearch {
-  --docsearch-primary-color: var(--vp-c-brand) !important;
+/* Disable contextual alternates in monospace.
+   Prevents `|>` (Julia pipe) turning into an arrow.
+*/
+.mono {
+  font-feature-settings: 'calt' 0;
 }
 
-/* Component: MathJax */
-
-mjx-container > svg {
-  display: block;
-  margin: auto;
-}
-
+/* =========================================
+   Component: MathJax
+   ========================================= */
 mjx-container {
   padding: 0;
-}
-
-mjx-container {
   display: inline;
   margin: auto 2px -2px;
 }
 
 mjx-container > svg {
-  margin: auto;
   display: inline-block;
+  margin: auto;
 }
 
-/**
- * Colors links
- * -------------------------------------------------------------------------- */
-
- :root {
-/* omitted light/alt theme link colors
-  --vp-c-brand-1: #CB3C33;
-  --vp-c-brand-2: #CB3C33;
-  --vp-c-brand-3: #CB3C33;
-  --vp-c-sponsor: #ca2971;
-  --vitest-c-sponsor-hover: #c13071;
-*/
-
-/* red light/alt theme link colors */
-  --vp-c-brand-1: var(--vp-c-brand);
-  --vp-c-brand-2: var(--vp-c-brand-light);
-  --vp-c-brand-3: var(--vp-c-brand-lighter);
-  --vp-c-sponsor: #ca2971;
-  --vitest-c-sponsor-hover: #c13071;
-}
-
-.dark {
-/* omitted dark theme link colors
-  --vp-c-brand-1: #91dd33;
-  --vp-c-brand-2: #91dd33;
-  --vp-c-brand-3: #91dd33;
-  --vp-c-sponsor: #91dd33;
-  --vitest-c-sponsor-hover: #e51370;
-*/
-
-/* red light/alt theme link colors */
-  --vp-c-brand-1: var(--vp-c-brand-light);
-  --vp-c-brand-2: var(--vp-c-brand-lighter);
-  --vp-c-brand-3: var(--vp-c-brand-lightest);
-  --vp-c-sponsor: #91dd33;
-  --vitest-c-sponsor-hover: #e51370;
-}
-
-/* Component: Docstring Custom Block */
-
+/* =========================================
+   Component: Julia Docstrings
+   ========================================= */
 .jldocstring.custom-block {
   border: 1px solid var(--vp-c-gray-2);
-  color: var(--vp-c-text-1)
+  color: var(--vp-c-text-1);
 }
 
 .jldocstring.custom-block summary {
@@ -235,128 +151,162 @@ mjx-container > svg {
   pointer-events: none;
 }
 
-/* Overlay thing for outdated doc warner */
+/* =========================================
+   Component: Custom Blocks (Tips/Warnings/etc)
+   ========================================= */
 
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 700; /* Bold */
+}
+
+/* -----------------------------------------
+   Light Mode Mixes
+   (Mix background with 15% black for border)
+   ----------------------------------------- */
+
+.custom-block.tip {
+  border-color: color-mix(in srgb, var(--vp-custom-block-tip-bg), black 15%);
+}
+
+.custom-block.info {
+  border-color: color-mix(in srgb, var(--vp-custom-block-info-bg), black 15%);
+}
+
+.custom-block.warning {
+  border-color: color-mix(in srgb, var(--vp-custom-block-warning-bg), black 15%);
+}
+
+.custom-block.danger {
+  border-color: color-mix(in srgb, var(--vp-custom-block-danger-bg), black 15%);
+}
+
+.custom-block.details {
+  border-color: color-mix(in srgb, var(--vp-custom-block-details-bg), black 15%);
+}
+
+/* -----------------------------------------
+   Dark Mode Mixes
+   (Mix background with 15% white for border)
+   ----------------------------------------- */
+
+.dark .custom-block.tip {
+  border-color: color-mix(in srgb, var(--vp-custom-block-tip-bg), white 15%);
+}
+
+.dark .custom-block.info {
+  border-color: color-mix(in srgb, var(--vp-custom-block-info-bg), white 15%);
+}
+
+.dark .custom-block.warning {
+  border-color: color-mix(in srgb, var(--vp-custom-block-warning-bg), white 15%);
+}
+
+.dark .custom-block.danger {
+  border-color: color-mix(in srgb, var(--vp-custom-block-danger-bg), white 15%);
+}
+
+.dark .custom-block.details {
+  border-color: color-mix(in srgb, var(--vp-custom-block-details-bg), white 15%);
+}
+
+/* =========================================
+   Component: Outdated Warning Overlay
+   ========================================= */
 .outdated-warning-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    z-index: 999;
-    background-color: #282f2f;
-    color: #fff;
-    border-bottom: 3px solid rgba(0,0,0,0);
-    padding: 10px 35px;
-    text-align: center;
-    font-size: 15px
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  z-index: 999;
+  background-color: #282f2f;
+  color: #fff;
+  border-bottom: 3px solid rgba(0,0,0,0);
+  padding: 10px 35px;
+  text-align: center;
+  font-size: 15px;
 }
 
-.dark .outdated-warning-overlay .outdated-warning-closer, .outdated-warning-overlay .outdated-warning-closer {
-    position: absolute;
-    top: calc(50% - 10px);
-    right: 18px;
-    cursor: pointer;
-    width: 12px
-}
-
-.outdated-warning-overlay a {
-    color: var(--vp-c-brand-1);
-}
-
+.outdated-warning-overlay a,
 .dark .outdated-warning-overlay a {
-    color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
 }
 
-.outdated-warning-overlay a:hover {
-    color: var(--vp-c-white);
-}
-
+.outdated-warning-overlay a:hover,
 .dark .outdated-warning-overlay a:hover {
-    color: var(--vp-c-white);
+  color: var(--vp-c-white);
 }
 
-.dark .delete{
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    background-color: rgba(20,20,20,0.2);
-    border: none;
-    border-radius: 9999px;
-    cursor: pointer;
-    pointer-events: auto;
-    display: inline-block;
-    flex-grow: 0;
-    flex-shrink: 0;
-    font-size: 0;
-    height: 20px;
-    max-height: 20px;
-    max-width: 20px;
-    min-height: 20px;
-    min-width: 20px;
-    outline: none;
-    position: relative;
-    vertical-align: top;
-    width: 20px
+.outdated-warning-overlay .outdated-warning-closer,
+.dark .outdated-warning-overlay .outdated-warning-closer {
+  position: absolute;
+  top: calc(50% - 10px);
+  right: 18px;
+  cursor: pointer;
+  width: 12px;
 }
 
+/* =========================================
+   Component: Delete Icon (Custom UI)
+   ========================================= */
 .delete {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    background-color: rgba(10,10,10,0.2);
-    border: none;
-    border-radius: 9999px;
-    cursor: pointer;
-    pointer-events: auto;
-    display: inline-block;
-    flex-grow: 0;
-    flex-shrink: 0;
-    font-size: 0;
-    height: 20px;
-    max-height: 20px;
-    max-width: 20px;
-    min-height: 20px;
-    min-width: 20px;
-    outline: none;
-    position: relative;
-    vertical-align: top;
-    width: 20px
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(10,10,10,0.2);
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  pointer-events: auto;
+  display: inline-block;
+  flex-grow: 0;
+  flex-shrink: 0;
+  font-size: 0;
+  height: 20px;
+  max-height: 20px;
+  max-width: 20px;
+  min-height: 20px;
+  min-width: 20px;
+  outline: none;
+  position: relative;
+  vertical-align: top;
+  width: 20px;
 }
 
-.delete::before,.delete::after {
-    background-color: #fff;
-    content: "";
-    display: block;
-    left: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translateX(-50%) translateY(-50%) rotate(45deg);
-    transform-origin: center center
+.dark .delete {
+  background-color: rgba(20,20,20,0.2);
 }
 
-.delete::before {
-    height: 2px;
-    width: 50%;
-}
-
-.delete::after {
-    height: 50%;
-    width: 2px
-}
-
-.delete:hover,.delete:focus {
-    background-color: rgba(10,10,10,0.3)
+.delete:hover, .delete:focus {
+  background-color: rgba(10,10,10,0.3);
 }
 
 .delete:active {
-    background-color: rgba(10,10,10,0.4)
+  background-color: rgba(10,10,10,0.4);
+}
+
+/* Delete Icon X shape */
+.delete::before, .delete::after {
+  background-color: #fff;
+  content: "";
+  display: block;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%) rotate(45deg);
+  transform-origin: center center;
+}
+
+.delete::before {
+  height: 2px;
+  width: 50%;
+}
+
+.delete::after {
+  height: 50%;
+  width: 2px;
 }
