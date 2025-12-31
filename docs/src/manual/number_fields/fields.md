@@ -148,7 +148,7 @@ inertia_subgroup(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,
 infinite_places(K::NumField)
 real_places(K::AbsSimpleNumField)
 complex_places(K::AbsSimpleNumField)
-isreal(::Plc)
+is_real(::Plc)
 is_complex(::Plc)
 ```
 

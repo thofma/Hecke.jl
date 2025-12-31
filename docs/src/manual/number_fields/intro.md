@@ -22,7 +22,7 @@ A useful dichotomy comes from the origin of the base field in the definition of 
 We call $L$ an *absolute* number field if the base field is equal to the rational numbers $\mathbf{Q}$.
 We call $L$ a *relative* number field if the base field is strictly larger than $\mathbf{Q}$.
 
-There are four concrete types that can be used in the implementation of a number field:
+There are (at least) four concrete types that can be used in the implementation of a number field:
  - `AbsSimpleNumField` for absolute simple number fields $\mathbf{Q}(\alpha)/\mathbf{Q}$,
  - `AbsNonSimpleNumField` for absolute non-simple number fields $\mathbf{Q}(\alpha_1,...,\alpha_n)/\mathbf{Q}$,
  - `RelSimpleNumField` for simple relative extensions $K(\alpha)/K$,
@@ -31,6 +31,8 @@ There are four concrete types that can be used in the implementation of a number
 Both the absolute and relative simple number field types are concrete subtypes of the abstract type `SimpleNumField{T}` parametrized by the element type of `T` of the corresponding base field.
 Both absolute and relative non-simple number field types are subtypes of the abstract type `NonSimpleNumField{T}` parametrized similarly.
 Both of these coarse types are subtypes of the abstract parametrized type `NumField{T}`.
+
+Thus a (simplified) graph of the type tree for number fields is:
 
 ```text
 NumField{QQFieldElem}                   NumField{T}
