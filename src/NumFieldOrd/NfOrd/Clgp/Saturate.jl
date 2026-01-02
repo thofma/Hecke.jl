@@ -127,13 +127,17 @@ function relations_matrix(c::Hecke.ClassGrpCtx)
 end
 
 
-function compute_candidates_for_saturate(v::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, p::Int, stable::Float64 = 1.5)
+function compute_candidates_for_saturate(v::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, p::Int, stable::Float64 = 1.5; has_p_torsion::Bool = false)
   K = base_ring(v[1])
   OK = maximal_order(K)
-  zeta, sT = Hecke.torsion_units_gen_order(K)
-  v1 = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[_mod_exponents(x, p) for x in v]
-  if gcd(sT, p) != 1
-    push!(v1, FacElem(zeta))
+  if !has_p_torsion
+    zeta, sT = Hecke.torsion_units_gen_order(K)
+    v1 = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[_mod_exponents(x, p) for x in v]
+    if gcd(sT, p) != 1
+      push!(v1, FacElem(zeta))
+    end
+  else
+    v1 = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[_mod_exponents(x, p) for x in v]
   end
 
   T = Native.GF(p, cached = false)

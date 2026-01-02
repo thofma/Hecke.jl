@@ -1,7 +1,26 @@
 module MultDep
 
-using Hecke
+using ..Hecke
+
 import Base.*
+
+struct MultiplicativeGroupNumField
+  G
+  f
+  known_saturated_primes::Vector{Int}
+
+  function MultiplicativeGroupNumField(G, f)
+    return new(G, f, Int[])
+  end
+end
+
+function group(M::MultiplicativeGroupNumField)
+  return M.G
+end
+
+function Hecke.map(M::MultiplicativeGroupNumField)
+  return M.f
+end
 
 """
 Given A[i] elements in K, find matrices I and U s.th.
@@ -533,16 +552,11 @@ function syzygies(A::Vector{AbsSimpleNumFieldElem}; use_ge::Bool = false, max_or
   return ttt*tt*t
 end
 
-@doc raw"""
-    multiplicative_group(A::Vector{AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
-
-Return the subgroup of the multiplicative group of the number field generated
-by the elements in `A` as an abstract abelian group together with a map
-mapping group elements to number field elements and vice-versa.
-"""
-function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}}=nothing)
+function _multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}}=nothing)
 
   @req (!isa(A[1], FacElem)) || !isnothing(support) "For elements in factored form, the support has to be passed in as well"
+
+  local u::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
 
   if isa(A[1], FacElem)
     K = base_ring(parent(A[1]))
@@ -664,56 +678,134 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
   return G, MapFromFunc(G, parent(u[1]), im, pr)
 end
 
-function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
-  G = domain(f)
-  @assert is_free(G) # now now due to difficulties with torsion in the saturation
-  c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, 3.5)
-  if nrows(c) == 0
-    return f
-  end
+@doc raw"""
+    multiplicative_group(A::Vector{AbsSimpleNumFieldElem}) -> FinGenAbGroup, Map
 
-  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}() 
-
-  cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
-  if nrows(c) > ngens(G) #torsion added
-    K = base_ring(parent(cand[1]))
-    zeta = Hecke.torsion_units_generator(K)
-    for i=1:ncols(c)
-      cand[i] *= zeta^c[end, i]
-    end
-  end
-
-  new = typeof(cand[1])[]
-  for a = cand
-    @vprintln :Saturate 1 "Testing if element is an n-th power"
-    decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
-    if !isnothing(support)
-      for P = support
-        decom[P] = valuation(a, P)
-      end
-    end
-    @vtime :Saturate 1 fl, x = is_power(a, p; decom)
-    if fl
-      @vprintln :Saturate 1  "The element is an n-th power"
-      push!(new, x)
-    else
-#      @show :bad
-    end
-  end
-  #TODO: MultGrp needs to be a "special" type, ie. attributes
-  #      can be on the map
-  #       -> suport can be inherited
-  #       -> the valuations
-  #       -> the data for disc log and such could to be updated 
-  #      possibly the result should be the injection into the larger group?
-  #      deal with torsion
-  return multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
+Return the subgroup of the multiplicative group of the number field generated
+by the elements in `A` as an abstract abelian group together with a map
+mapping group elements to number field elements and vice-versa.
+"""
+function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}; use_ge::Bool = false, max_ord::Union{Nothing, AbsSimpleNumFieldOrder} = nothing, task::Symbol = :all, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}}=nothing)
+  G, f = _multiplicative_group(A; use_ge, max_ord, task, support)
+  return MultiplicativeGroupNumField(G, f)
 end
 
-export syzygies
+function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  K = base_ring(codomain(f))
+  T, = torsion_subgroup(G)
+  zeta, sT = Hecke.torsion_units_gen_order(K)
+  q, s = ppio(sT, p)
+  if !is_divisible_by(order(T), q)
+    return multiplicative_group(push!(map(f, gens(G)), FacElem(zeta^s)); support)[2]
+  end
+
+  @assert is_free(G) # now now due to difficulties with torsion in the saturation
+
+  stab = 3.5
+  while true
+    stab *= 1.5
+    @info map(f, gens(G))
+    c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab)
+    @info c
+    if nrows(c) == 0
+      return f
+    end
+
+    decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+
+    cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
+    @info cand
+    if nrows(c) > ngens(G) #torsion added
+      K = base_ring(parent(cand[1]))
+      zeta = Hecke.torsion_units_generator(K)
+      for i=1:ncols(c)
+        cand[i] *= zeta^c[end, i]
+      end
+    end
+
+    new = typeof(cand[1])[]
+    for a = cand
+      @vprintln :Saturate 1 "Testing if element is an n-th power"
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+      if !isnothing(support)
+        for P = support
+          decom[P] = valuation(a, P)
+        end
+      end
+      @vtime :Saturate 1 fl, x = is_power(a, p; decom)
+      if fl
+        @vprintln :Saturate 1  "The element is an n-th power"
+        push!(new, x)
+      end
+    end
+
+    if !isempty(new)
+      #TODO: MultGrp needs to be a "special" type, ie. attributes
+      #      can be on the map
+      #       -> suport can be inherited
+      #       -> the valuations
+      #       -> the data for disc log and such could to be updated
+      #      possibly the result should be the injection into the larger group?
+      #      deal with torsion
+      return multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
+    end
+  end
+end
+
+function is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  G = domain(f)
+
+  K = base_ring(codomain(f))
+  T, = torsion_subgroup(G)
+  zeta, sT = Hecke.torsion_units_gen_order(K)
+  q, s = ppio(sT, p)
+  if !is_divisible_by(order(T), q)
+    return false
+  end
+
+  stab = 3.5
+
+  while true
+    stab *= 1.5
+    c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab; has_p_torsion = true)
+    @info c
+    if nrows(c) == 0
+      return true
+    end
+
+    decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+
+    cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
+    @info "" cand
+    #if nrows(c) > ngens(G) #torsion added
+    #  K = base_ring(parent(cand[1]))
+    #  zeta = Hecke.torsion_units_generator(K)
+    #  for i=1:ncols(c)
+    #    cand[i] *= zeta^c[end, i]
+    #  end
+    #end
+
+    new = typeof(cand[1])[]
+    for a = cand
+      @vprintln :Saturate 1 "Testing if element is an n-th power"
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+      if !isnothing(support)
+        for P = support
+          decom[P] = valuation(a, P)
+        end
+      end
+      @info a
+      @vtime :Saturate 1 fl, x = is_power(a, p; decom)
+      if fl
+        @vprintln :Saturate 1  "The element is an n-th power"
+        return false
+      end
+    end
+  end
+end
+
+export syzygies, is_saturated
 
 end
 
 using .MultDep
-
-
