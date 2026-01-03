@@ -1161,6 +1161,7 @@ end
 
 # Todo: Improve this
 function ==(R::AbsNumFieldOrder, S::AbsNumFieldOrder)
+  R === S && return true
   nf(R) != nf(S) && return false
   if discriminant(R) != discriminant(S)
     return false

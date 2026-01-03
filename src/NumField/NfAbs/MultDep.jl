@@ -21,10 +21,14 @@ function syzygies_sunits_mod_units(A::Vector{<:Union{AbsSimpleNumFieldElem, FacE
   k = parent(A[1])
   @assert all(i->parent(i) === k, A)
   if !isnothing(support)
-    @assert length(support) > 0
     cp = support
-    zk = order(support[1])
-    @assert isnothing(max_ord) || max_ord === zk
+    if length(support) > 0
+      zk = order(support[1])
+      @assert isnothing(max_ord) || max_ord === zk
+    else
+      @assert !isnothing(max_ord)
+      zk = max_ord
+    end
   elseif !use_ge
     if max_ord === nothing
       zk = maximal_order(k)
@@ -252,7 +256,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   p = next_prime(100)
   K = base_ring(parent(A[1]))
   m = maximum(degree, first.(factor(GF(p), K.pol)))
-  while m > 4
+  while m > 4 || discriminant(map_coefficients(Native.GF(p), K.pol)) == 0
     p = next_prime(p)
     m = maximum(degree, first.(factor(GF(p), K.pol)))
   end
@@ -412,21 +416,21 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
   #    But here we know more
   #    the p-adic logs are all 0 (mod p^v) , so this should mean
   #    that the element is torsion or LARGE (since p^? has to divide s.th.)
-  # 
+  #
   t = prod([a[i]^g[i] for i=1:length(a)])
   pr = 20
   n = degree(base_ring(t))
   while true
     b = sum(x*x for x = conjugates_arb_log(t, pr))
     D = 21/128*log(parent(b)(n))/n^2 #plain Dobrowski
-    if b > D 
+    if b > D
       return false
     elseif b < D
       return true
     end
     pr *= 2
   end
-  
+
   #= I claim N(1-a) > v^n for n the field degree:
    Let K be one of the p-adic fields involved, set b = a^g
    then log(K(b)) = 0 (v = p^l) by assumption
@@ -694,49 +698,63 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
 end
 
 function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  fl, u = _is_saturated(f, p; decom, support)
+  return u
+end
+
+function _is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  @assert is_prime(p)
   G = domain(f)
   @assert is_free(G) # now now due to difficulties with torsion in the saturation
-  c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, 3.5)
-  if nrows(c) == 0
-    return f
-  end
 
-  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
-
-  cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
-  if nrows(c) > ngens(G) #torsion added
-    K = base_ring(parent(cand[1]))
-    zeta = Hecke.torsion_units_generator(K)
-    for i=1:ncols(c)
-      cand[i] *= zeta^c[end, i]
+  stab = 3.5
+  while true
+    stab *= 1.5
+    c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab)
+    if nrows(c) == 0
+      return true, f
     end
-  end
 
-  new = typeof(cand[1])[]
-  for a = cand
-    @vprintln :Saturate 1 "Testing if element is an n-th power"
     decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
-    if !isnothing(support)
-      for P = support
-        decom[P] = valuation(a, P)
+
+    cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
+    if nrows(c) > ngens(G) #torsion added
+      K = base_ring(parent(cand[1]))
+      zeta = Hecke.torsion_units_generator(K)
+      for i=1:ncols(c)
+        cand[i] *= zeta^c[end, i]
       end
     end
-    @vtime :Saturate 1 fl, x = is_power(a, p; decom)
-    if fl
-      @vprintln :Saturate 1  "The element is an n-th power"
-      push!(new, x)
-    else
-#      @show :bad
+
+    new = typeof(cand[1])[]
+    for a = cand
+      @vprintln :Saturate 1 "Testing if element is an n-th power"
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+      if !isnothing(support)
+        for P = support
+          decom[P] = valuation(a, P)
+        end
+      end
+      @vtime :Saturate 1 fl, x = is_power(a, p; decom)
+      if fl
+        @vprintln :Saturate 1  "The element is an n-th power"
+        push!(new, x)
+      else
+  #      @show :bad
+      end
+    end
+
+    if !isempty(new)
+      #TODO: MultGrp needs to be a "special" type, ie. attributes
+      #      can be on the map
+      #       -> suport can be inherited
+      #       -> the valuations
+      #       -> the data for disc log and such could to be updated
+      #      possibly the result should be the injection into the larger group?
+      #      deal with torsion
+      return false, multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
     end
   end
-  #TODO: MultGrp needs to be a "special" type, ie. attributes
-  #      can be on the map
-  #       -> suport can be inherited
-  #       -> the valuations
-  #       -> the data for disc log and such could to be updated
-  #      possibly the result should be the injection into the larger group?
-  #      deal with torsion
-  return multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
 end
 
 export syzygies
