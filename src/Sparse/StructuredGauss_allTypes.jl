@@ -41,8 +41,12 @@ mutable struct data_Det
  content #tracks reduction of polys by content -> multiply det by prod
  pivprod #product of pivot elements
  npiv #number of pivots
- function data_Det(R)
-  return new(one(R), one(R), one(coefficient_ring(R)), one(R), 1)
+ function data_Det(R, _det=false)
+  if _det
+   return new(one(R), one(R), one(coefficient_ring(R)), one(R), 1)
+  else
+   return new(zero(R), zero(R), zero(coefficient_ring(R)), zero(R), 0)
+  end
  end
 end
 
@@ -75,9 +79,7 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
  SG = data_StructGauss(A)
  single_rows_to_top!(SG)
 
- if _det
-  Det=Hecke.data_Det(base_ring(A))
- end
+ Det=Hecke.data_Det(base_ring(A), _det)
 
  t = ncols(SG.A) - trybound
  while SG.nlight > 0 && SG.base <= n
@@ -89,7 +91,7 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
   best_single_row < 0 && @assert(SG.base == SG.single_row_limit)
   
   if best_single_row < 0
-   turn_heavy(SG)
+   mark_col_as_dense(SG)
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
   eliminate_and_update2!(best_single_row, SG, Det)
@@ -201,20 +203,23 @@ function find_best_single_row(SG::data_StructGauss{<:FieldElem})::Int64
  return best_single_row
 end
 
-function turn_heavy(SG::data_StructGauss)
- heavy_col_idx = 0
- heavy_col_len = 0
+#doc: Marks rightmost light column with most entries as dense.
+
+#TODO: check for additional criteria like entry size?
+function mark_col_as_dense(SG::data_StructGauss)
+ dense_col_idx = 0
+ dense_col_len = 0
  for i = ncols(SG.A):-1:1
   if SG.is_light_col[i]
-   if length(SG.col_list[i]) > heavy_col_len
-    heavy_col_len = length(SG.col_list[i])
-    heavy_col_idx = i
+   if length(SG.col_list[i]) > dense_col_len
+    dense_col_len = length(SG.col_list[i])
+    dense_col_idx = i
    end
   end
  end
- SG.is_light_col[heavy_col_idx] = false
- lt2hvy_col = SG.col_list[heavy_col_idx]
- for i_origin in lt2hvy_col
+ SG.is_light_col[dense_col_idx] = false
+ marked_col = SG.col_list[dense_col_idx]
+ for i_origin in marked_col
   i_current = SG.col_list_permi[i_origin]
   @assert SG.light_weight[i_current] > 0
   SG.light_weight[i_current]-=1
