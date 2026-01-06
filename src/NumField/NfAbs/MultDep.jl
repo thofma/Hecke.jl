@@ -308,7 +308,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            lu = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u]))
+            lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
             break
           end
           push!(s, y)
@@ -657,10 +657,15 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     end
 
     _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
-
-    push!(c, divexact(_c[1,1], _c[1,2]))
+    
+    c .*= _c[1,1]
+    push!(c, _c[1,2])
     return G(c)
   end
+  function pr(a::AbsSimpleNumFieldElem)
+    return pr(FacElem(a))
+  end
+
   return G, MapFromFunc(G, parent(u[1]), im, pr)
 end
 
