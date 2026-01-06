@@ -101,4 +101,9 @@ end
   @test preimage(mU, mU(U[2])) == U[2]
 end
 
-
+@testset "is_lin_disjoint" begin
+  R,x=polynomial_ring(QQ, "x")
+  K,a=number_field(x^2+1)
+  L,b=number_field(x^2+x+1//2)
+  @test !is_linearly_disjoint(L,K)
+end
