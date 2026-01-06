@@ -657,9 +657,11 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     end
 
     _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
+
+#    push!(c, divexact(_c[1,1], _c[1,2]))
     
-    c .*= _c[1,1]
-    push!(c, _c[1,2])
+    c .*= _c[1,2]
+    push!(c, _c[1,1])
     return G(c)
   end
   function pr(a::AbsSimpleNumFieldElem)
