@@ -892,10 +892,12 @@ function is_linearly_disjoint(K1::AbsSimpleNumField, K2::AbsSimpleNumField)
   if gcd(degree(K1), degree(K2)) == 1
     return true
   end
-  d1 = numerator(discriminant(K1.pol))
-  d2 = numerator(discriminant(K2.pol))
-  if gcd(d1, d2) == 1
-    return true
+  if is_defining_polynomial_nice(K1) && is_defining_polynomial_nice(K2)
+    d1 = numerator(discriminant(K1.pol))
+    d2 = numerator(discriminant(K2.pol))
+    if gcd(d1, d2) == 1
+      return true
+    end
   end
   if is_maximal_order_known(K1) && is_maximal_order_known(K2)
     OK1 = maximal_order(K1)
