@@ -411,3 +411,11 @@ let # cornercase with trivial automorphism group
   L = number_field(ab[1])
   @test degree(L) == 4
 end
+
+@testset "Candy" begin
+  C = cyclotomic_field(ClassField, 12)
+  @test ngens(number_field(C)) == 2
+  @test ngens(number_field(SimpleNumField, C)) == 1
+  @test degree(number_field(AbsSimpleNumField, C)) == 4
+end
+
