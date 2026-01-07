@@ -322,7 +322,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          lu = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u]))
+          lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
           continue
         end
         @assert length(gamma) == length(u)+1
