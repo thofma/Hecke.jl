@@ -1134,16 +1134,10 @@ function common_super(A::NumField, B::NumField)
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
-  first = true
   m = nothing
-  for C = c
-    if first
+  for C in c
+    if m === nothing || absolute_degree(C) < absolute_degree(m)
       m = C
-      first = false
-    else
-      if absolute_degree(C) < absolute_degree(m)
-        m = C
-      end
     end
   end
   return m

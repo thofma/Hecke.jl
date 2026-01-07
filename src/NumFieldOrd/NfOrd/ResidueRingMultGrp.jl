@@ -1464,12 +1464,14 @@ function _direct_product!(ideals_and_maps::Vector{Tuple{AbsNumFieldOrderIdeal{Ab
   generators = Vector{AbsSimpleNumFieldOrderQuoRingElem}()
   if length(ideals) != 1
     moduli = _compute_products_for_make_coprime(ideals)
+  else
+    moduli = nothing
   end
   for i = 1:length(ideals)
     for map in ideals_and_maps[i][2]
       push!(groups, domain(map))
       for j = 1:length(map.generators)
-        if length(ideals) == 1
+        if moduli === nothing
           push!(generators, Q(map.generators[j]))
         else
           g = crt(map.generators[j], ideals[i], oneO, moduli[i])
