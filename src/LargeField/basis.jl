@@ -2,7 +2,7 @@ function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   c = Hecke.minkowski_matrix(Hecke.nf(order(A)), prec)
   l = lll(basis_matrix(A))
   b = FakeFmpqMat(l)*basis_matrix(order(A))
-  if !isdefined(rt_c, :cache)
+  if !isdefined(rt_c, :cache)  # FIXME: rt_c is not defined
     rt_c.cache = 0*c
   end
   d = rt_c.cache
@@ -105,7 +105,7 @@ function random_ideal_with_norm_up_to(a::Hecke.NfFactorBase, B::Integer)
   K = Hecke.nf(O)
   I = Hecke.ideal(O, K(1))
   while B >= norm(a.ideals[end])
-    J = a.ideals[rand(find(x -> (norm(x) <= B), a.ideals))]
+    J = a.ideals[rand(find(x -> (norm(x) <= B), a.ideals))]  # FIXME: find is not defined
     B = div(B, norm(J))
     I = I*J
   end
