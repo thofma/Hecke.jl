@@ -584,7 +584,7 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, d
   pp = Int(p)
   me.Fpx = polynomial_ring(residue_ring(ZZ, Int(p), cached = false)[1], "_x", cached=false)[1]
   fp = try
-         me.Fpx(K.pol)
+       Nemo.fmpq_poly_to_nmod_poly_raw!(me.Fpx(), defining_polynomial(K))
        catch e
          if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
            #indicates a denominator in a coefficient divisible by p

@@ -199,7 +199,8 @@ function gcd_modular_kronnecker(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Gener
     p = next_prime(p)
     F = GF(p, cached = false)
     Fx = polynomial_ring(F, "x", cached = false)[1]
-    Fp = Fx(K.pol)
+    Fp = Fx()
+    Nemo.fmpq_poly_to_fq_default_poly_raw!(Fp, defining_polynomial(K))
     if !is_squarefree(Fp)
       continue
     end

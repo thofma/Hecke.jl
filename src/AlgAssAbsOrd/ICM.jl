@@ -272,7 +272,7 @@ end
 function matrix_to_ideal(O::AbsNumFieldOrder, M::ZZMatrix)
   f = charpoly(M)
   K = nf(O)
-  @assert K.pol == parent(K.pol)(f)
+  @assert K.pol == change_base_ring(QQ, f; parent = parent(K.pol))
   result = zeros(K, degree(K))
   MK = change_base_ring(K, M) - gen(K)*identity_matrix(K, degree(K))
   B = kernel(MK, side = :right)

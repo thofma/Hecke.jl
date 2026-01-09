@@ -88,7 +88,7 @@ function _induce_action_p(lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, Ab
   else
     px = polynomial_ring(Native.GF(Int(p), cached=false), "x", cached=false)[1]
     fpx = px(A(gen(K)))
-    gpx = px(K.pol)
+    gpx = change_base_ring(base_ring(px), defining_polynomial(K); parent = px)
     #idea/ reason
     # if p is no index divisor, then a second generator is just
     #   an irreducible factor of gpx (Kummer/ Dedekind)
@@ -260,12 +260,12 @@ function class_group_add_auto(ctx::ClassGrpCtx, auts::Vector{<:NumFieldHom{AbsSi
   p = 11
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
   while degree(fmod) != degree(K) || !is_squarefree(fmod)
     p = next_prime(p)
     R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
-    fmod = Rx(K.pol)
+    fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
   end
   S = small_generating_set(auts)
 

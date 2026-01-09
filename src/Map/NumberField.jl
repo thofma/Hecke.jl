@@ -124,7 +124,7 @@ function is_normal_easy(K::AbsSimpleNumField)
     p = next_prime(p)
     F = GF(p, cached = false)
     Fx = polynomial_ring(F, cached = false)[1]
-    fF = Fx(K.pol)
+    fF = change_base_ring(F, defining_polynomial(K); parent = Fx)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end
@@ -361,7 +361,7 @@ function induce_image_easy(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField},
   K = nf(OK)
   R = residue_ring(ZZ, Int(minimum(P, copy = false))^2, cached = false)[1]
   Rx = polynomial_ring(R, "t", cached = false)[1]
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
   prim_img = Rx(image_primitive_element(f))
   gen_two = Rx(P.gen_two.elem_in_nf)
   img = compose_mod(gen_two, prim_img, fmod)
@@ -456,7 +456,7 @@ function is_involution(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
     end
     R = residue_ring(ZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
-    fmod = Rt(g)
+    fmod = change_base_ring(R, g; parent = Rt)
     if degree(fmod) == degree(K) && !is_zero(discriminant(fmod))
       break
     end
@@ -523,18 +523,20 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
     end
 	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
-    if degree(Rx(g)) == degree(g) && !is_zero(discriminant(Rx(g)))
+    gmodp = change_base_ring(R, g; parent = Rx)
+    if degree(gmodp) == degree(g) && !is_zero(discriminant(gmodp))
       break
     end
   end
 
+  gmodp = change_base_ring(R, g; parent = Rx)
   given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
-	orderG = length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
+	orderG = length(closure(given_gens, (x, y) -> compose_mod(x, y, gmodp), gen(Rx)))
   # First try one element
 
   for i in 1:firsttry
     trygen = _non_trivial_randelem(G, id_hom(K))
-    if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(fpPolyRingElem[Rx(image_primitive_element(trygen))], (x, y) -> compose_mod(x, y, gmodp), gen(Rx))) == orderG
       return morphism_type(AbsSimpleNumField, AbsSimpleNumField)[trygen]
     end
   end
@@ -542,7 +544,7 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
   for i in 1:secondtry
     gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:2]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
-    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, gmodp), gen(Rx))) == orderG
       return unique(gens)
     end
   end
@@ -550,7 +552,7 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
   for i in 1:thirdtry
     gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:3]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
-    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, gmodp), gen(Rx))) == orderG
       return unique(gens)
     end
   end
@@ -568,7 +570,7 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
     j = j + 1
     gens = morphism_type(AbsSimpleNumField, AbsSimpleNumField)[_non_trivial_randelem(G, id_hom(K)) for i in 1:b]
     gens_mod = fpPolyRingElem[Rx(image_primitive_element(x)) for x in gens]
-    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx))) == orderG
+    if length(closure(gens_mod, (x, y) -> Hecke.compose_mod(x, y, gmodp), gen(Rx))) == orderG
       return unique(gens)
     end
   end
@@ -579,13 +581,13 @@ function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 	p = 2
   R = Native.GF(p, cached = false)
 	Rx = polynomial_ring(R, "x", cached = false)[1]
-	while iszero(discriminant(Rx(K.pol)))
+  while iszero(discriminant(change_base_ring(R, defining_polynomial(K); parent = Rx)))
 		p = next_prime(p)
 	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
 	end
   given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
-	return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), gen(Rx)))
+  return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, change_base_ring(R, defining_polynomial(K); parent = Rx)), gen(Rx)))
 end
 
 ################################################################################

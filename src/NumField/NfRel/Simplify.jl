@@ -98,11 +98,11 @@ function _find_prime(L::RelSimpleNumField{AbsSimpleNumFieldElem})
   den = lcm(ZZRingElem[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
-    if is_divisible_by(den, p) || is_divisible_by(absolute_discriminant(OL), p) 
+    if is_divisible_by(den, p) || is_divisible_by(absolute_discriminant(OL), p)
       continue
     end
     lp = prime_decomposition(OK, p)
-    if lp[1][2] > 1 #non-monic polynomials make it hard to 
+    if lp[1][2] > 1 #non-monic polynomials make it hard to
       continue      #dismiss this case earlier
     end
     P = lp[1][1]
@@ -158,7 +158,7 @@ function _setup_block_system(Lrel::RelSimpleNumField{AbsSimpleNumFieldElem})
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = Native.finite_field(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
-  rt_base_field = roots(F, Zx(K.pol))
+  rt_base_field = roots(F, change_base_ring(ZZ, defining_polynomial(K); parent = Zx))
   tmp = Fpx()
   g = Lrel.pol
   rt = Dict{FqPolyRepFieldElem, Vector{FqPolyRepFieldElem}}()
@@ -282,7 +282,7 @@ function _setup_block_system(Lrel::RelNonSimpleNumField{AbsSimpleNumFieldElem})
   Fpx = polynomial_ring(Fp, cached = false)[1]
   F = Native.finite_field(p, abs_deg, "w", cached = false)[1]
   Fx = polynomial_ring(F, cached = false)[1]
-  rt_base_field = roots(F, Zx(K.pol))
+  rt_base_field = roots(F, change_base_ring(ZZ, defining_polynomial(K); parent = Zx))
   rt = Dict{FqPolyRepFieldElem, Vector{Vector{FqPolyRepFieldElem}}}()
   Rxy = polynomial_ring(F, ngens(Lrel), cached = false)[1]
   tmp = Fpx()
