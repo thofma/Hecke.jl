@@ -9,7 +9,9 @@
   K, a = number_field(x^3 + 42*x - 192, "a", cached = false);
   Kt, t = K["t"]
   L, = number_field(t^2 + 3, cached = false)
-  k, = @inferred  Hecke.simplified_absolute_field(L)
+  k, = @inferred Hecke.simplified_absolute_field(L)
+  kk, = @inferred absolute_simple_field(L; simplify = true)
+  @test is_isomorphic(k, kk)
 
   K, a = number_field(x^6 - 2*x^5 + x^4 - 398*x^3 - 15961*x^2 + 41496*x + 829621)
   Kx, x = K["x"]

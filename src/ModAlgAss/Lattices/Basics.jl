@@ -260,7 +260,7 @@ end
 
 function index(L::T, M::T) where {T <: ModAlgAssLat}
   t = basis_matrix(L) * basis_matrix_inverse(M)
-  @req !isone(denominator(t)) "First lattice not contained in second lattice"
+  @req isone(denominator(t)) "First lattice not contained in second lattice"
   return abs(det(t))
 end
 
