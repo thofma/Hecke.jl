@@ -228,16 +228,20 @@ end
 #TODO: implement a proper Frobenius - with caching of the frobenius_a element
 function _conjugates(a::AbsSimpleNumFieldElem, C::qAdicConj, n::Int, op::Function)
   R = roots(C.C, n)
-  @assert parent(a) == C.K
-  Zx = polynomial_ring(ZZ, cached = false)[1]
-  d = denominator(a)
-  f = Zx(d*a)
-  res = QadicFieldElem[]
-  for x = R
-    a = op(inv(parent(x)(d))*f(x))::QadicFieldElem
-    push!(res, a)
+  setprecision(parent(R[1]), n) do
+    setprecision(base_field(parent(R[1])), n) do
+      @assert parent(a) == C.K
+      Zx = polynomial_ring(ZZ, cached = false)[1]
+      d = denominator(a)
+      f = Zx(d*a)
+      res = QadicFieldElem[]
+      for x = R
+        a = op(inv(parent(x)(d))*f(x))::QadicFieldElem
+        push!(res, a)
+      end
+      return res
+    end
   end
-  return res
 end
 
 function _log(a::QadicFieldElem)
