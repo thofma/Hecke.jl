@@ -1171,7 +1171,7 @@ function __is_maximal_norm_splitting(gram_matrices, scales, norms, p)
 end
 
 function _is_maximal_norm_splitting(G, p)
-  sL, aL, _, _ = scales_and_norms(G, p, uniformizer(p))
+  sL, aL, _, _ = _scales_and_norms(G, p, uniformizer(p))
   return __is_maximal_norm_splitting(G, sL, aL, p)
 end
 

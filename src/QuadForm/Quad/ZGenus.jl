@@ -2861,7 +2861,7 @@ function embed(S::ZZLat, G::ZZGenus, primitive::Bool=true)
     pos, neg = signature_pair(G)
     return embed_in_unimodular(S, pos, neg; primitive, even = iseven(G))
   end
-  raise(NotImplementedError("for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases"))
+  throw(NotImplementedError("for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases"))
 end
 
 @doc raw"""
@@ -2913,7 +2913,7 @@ function embed_in_unimodular(S::ZZLat, pos::IntegerUnion, neg::IntegerUnion; pri
   @vprintln :Lattice 1 "computing embedding in L_$(n)"
   pS, kS, nS = signature_tuple(S)
   @req kS == 0 "S must be non-degenerate"
-  even || raise(NotImplementedError("for now we need the unimodular lattice to be even."))
+  even || throw(NotImplementedError("for now we need the unimodular lattice to be even."))
   pR = pos - pS
   nR = neg - nS
   DS = discriminant_group(S)

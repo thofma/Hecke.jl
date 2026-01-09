@@ -1307,7 +1307,7 @@ snf(GtoR::Union{GrpAbFinGenToAbsOrdQuoRingMultMap, GrpAbFinGenToAbsOrdMap}, modu
 # product to O/(IJ).
 # It is assumed that I and J are coprime.
 function direct_product(G::FinGenAbGroup, GtoQ::GrpAbFinGenToAbsOrdQuoRingMultMap, H::FinGenAbGroup, HtoQ::GrpAbFinGenToAbsOrdQuoRingMultMap)
-  return direct_product([G, H], [GtoQ, GtoH])
+  return direct_product([G, H], [GtoQ, HtoQ])
 end
 
 # Let G_i be the groups and Q_i be the codomains of the maps such that

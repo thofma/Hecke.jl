@@ -733,7 +733,7 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
 
       for k in reducers
         d = -coeffs[k]//new_bmatJinI[k, k]
-        coeffs_c = coeffs_c + d .* rows_new_bmatJinI[k]
+        coeffs += d .* rows_new_bmatJinI[k]
       end
       for k in 1:degree(O)
         if !(k in basis_elts)
@@ -765,7 +765,7 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
       coeffs = _coeff(c)
       for k in reducers
         d = -coeffs[k]//new_bmatJinI[k, k]
-        coeffs_c = coeffs_c + d .* rows_new_bmatJinI[k]
+        coeffs += d .* rows_new_bmatJinI[k]
       end
       for k in 1:degree(O)
         if !(k in basis_elts)

@@ -582,7 +582,7 @@ function _reduction_indefinite(_ff)
       if b < 0
         T = matrix(ZZ, 2, 2, [1, 0, 0, -1])
         U = U * T
-        _f = binar_quadratic_form(a, -b, c)
+        _f = binary_quadratic_form(a, -b, c)
         @assert _buchmann_vollmer_action(f, T) == _f
         f = _f
       else

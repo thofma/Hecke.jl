@@ -336,7 +336,7 @@ function __gcd(f::Hecke.Generic.MPoly{AbsSimpleNumFieldElem}, g::Hecke.Generic.M
         end
         continue
       end
-      if length(__g) == 1 && iszero(exponent_vector(_g, 1))
+      if length(__g) == 1 && iszero(exponent_vector(__g, 1))
         return inflate(one(parent(f)), shiftr, deflr)
       end
       push!(_gcd_p, glp[1]*__g)
