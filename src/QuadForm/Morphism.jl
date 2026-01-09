@@ -107,34 +107,6 @@ function has_point(w, V::VectorList)
   end
 end
 
-function _find_point(w::ZZMatrix, V::VectorList{ZZMatrix, T}) where T
-  positive = false
-  for k in 1:length(w)
-    if !iszero(w[1, k])
-      positive = w[1, k] > 0
-      break
-    end
-  end
-  if positive
-    if issorted(V)
-      k = searchsortedfirst(V.vectors, w)
-    else
-      k = findfirst(isequal(w), V.vectors)
-    end
-    @assert k !== nothing
-    return k
-  else
-    mw = -w
-    if issorted(V)
-      k = searchsortedfirst(V.vectos, mw)
-    else
-      k = findfirst(isequal(mw), V.vectors)
-    end
-    @assert k !== nothing
-    return -k
-  end
-end
-
 function Base.show(io::IO, C::ZLatAutoCtx)
   print(io, "Automorphism context for ", C.G)
 end
@@ -1137,63 +1109,6 @@ function _operate(point, A, V, tmp)
   k = find_point(tmp, V)
   #@assert V[k] == tmp
   return k
-end
-
-function _find_point(w::Vector{Int}, V)
-  positive = false
-  for k in 1:length(w)
-    if !iszero(w[k])
-      positive = w[k] > 0
-      break
-    end
-  end
-  if positive
-    if sorted
-      k = searchsortedfirst(V, w)
-    else
-      k = findfirst(isequal(w), V)
-    end
-    @assert k !== nothing
-    return k
-  else
-    w .*= -1 # w = -w
-    if sorted
-      k = searchsortedfirst(V, w)
-    else
-      k = findfirst(isequal(w), V)
-    end
-    @assert k !== nothing
-    w .*= -1 # w = -w
-    return -k
-  end
-end
-
-function _find_point(w::ZZMatrix, V)
-  positive = false
-  for k in 1:length(w)
-    if !iszero(w[1, k])
-      positive = w[1, k] > 0
-      break
-    end
-  end
-  if positive
-    if sorted
-      k = searchsortedfirst(V, w)
-    else
-      k = findfirst(isequal(w), V)
-    end
-    @assert k !== nothing
-    return k
-  else
-    mw = -w
-    if sorted
-      k = searchsortedfirst(V, mw)
-    else
-      k = findfirst(isequal(mw), V)
-    end
-    @assert k !== nothing
-    return -k
-  end
 end
 
 function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, V)

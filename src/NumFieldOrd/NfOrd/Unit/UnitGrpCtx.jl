@@ -190,35 +190,6 @@ function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
   end
 end
 
-function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
-  K = _base_ring(x[1])
-  p = u.indep_prec
-
-  deg = degree(K)
-  r1, r2 = signature(K)
-  rr = r1 + r2
-  r = rr - 1 # unit rank
-
-  # This can be made more memory friendly
-  while true
-    @assert p != 0
-
-    A = _conj_log_mat(u.units, p)
-
-    B = A*transpose(A)
-    @vprintln :UnitGroup 1 "Computing det of $(nrows(B))x$(ncols(B)) matrix with precision $(p) ..."
-    d = det(B)
-
-    y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
-    if isfinite(d) && is_positive(y - d)
-      return false, p
-    elseif isfinite(d) && is_positive(d)
-      return true, p
-    end
-    p = 2*p
-  end
-end
-
 function _rel_add_precision(U)
   return U.rel_add_prec
 end
