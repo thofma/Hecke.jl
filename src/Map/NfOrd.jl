@@ -1270,7 +1270,7 @@ function image(mF::NfToGFFmpzMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
       if denominator(k) % characteristic(Fq) == 0
         throw(BadPrime(characteristic(Fq)))
       end
-      s = _nf_to_gfp_fmpz_elem(k, t, p)
+      s = _nf_to_gfp_fmpz_elem(k, t, p)  # FIXME: _nf_to_gfp_fmpz_elem is not defined
       if iszero(s)
         throw(BadPrime(1))
       end
@@ -1292,7 +1292,7 @@ function image(mF::NfToGFFmpzMor_easy, a::AbsSimpleNumFieldElem, n_quo::Int = 0)
   if denominator(a) % characteristic(Fq) == 0
     throw(BadPrime(characteristic(Fq)))
   end
-  return _nf_to_gfp_fmpz_elem(a, t, p)
+  return _nf_to_gfp_fmpz_elem(a, t, p)  # FIXME: _nf_to_gfp_fmpz_elem is not defined
 end
 
 ################################################################################

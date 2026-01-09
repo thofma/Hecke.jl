@@ -689,7 +689,7 @@ end
 
 function ^(phi::Isogeny, n::Int)
 
-  res = identity_isogeny(E)
+  res = identity_isogeny(E)  # FIXME: E is not defined
 
   for i in (1:n)
     res = phi*res

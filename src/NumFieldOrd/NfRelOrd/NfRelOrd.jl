@@ -966,7 +966,7 @@ function relative_order(O::AbsSimpleNumFieldOrder, m::NumFieldHom{AbsSimpleNumFi
     els = elem_type(L)[m(x) for x in B]
     return add_to_order(E, els)
   else
-    return _order(elem_type(L)[mp(x) for x in B])
+    return _order(elem_type(L)[mp(x) for x in B])  # FIXME: mp is not defined
   end
 end
 
@@ -1084,7 +1084,7 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{RelSimple
       end
     end
   end
-  if nrows(B) != degree(K)
+  if nrows(B) != degree(K)  # FIXME: B not defined (only inside the loop, *maybe*)
     error("Data does not define an order")
   end
 
@@ -1098,7 +1098,7 @@ function _get_gens(M::PMat)
   ids = M.coeffs
   gens = Vector{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}()
   for i = 1:nrows(M)
-    el = elem_from_mat_row(K, B.matrix, i)
+    el = elem_from_mat_row(K, B.matrix, i)  # FIXME: K not defined
     if isone(ids[i].num)
       push!(gens, divexact(el, ids[i].den))
     else
