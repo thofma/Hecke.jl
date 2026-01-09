@@ -1,27 +1,5 @@
 ################################################################################
 #
-#  Naive relation search: Based on coefficient size only
-#
-################################################################################
-
-function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
-                                           I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} = rand(clg.FB.ideals))
-  s = 1
-  if r < 2
-    r = 2
-  end
-  for i = 1:r
-    I = I*rand(clg.FB.ideals)
-    I, g = reduce_ideal_class(I)
-    s *= g
-  end
-  return s;
-end
-
-# Do better: re-use partial hnf, check rank mod p, ...
-
-################################################################################
-#
 #  Relation matrix processing
 #
 ################################################################################

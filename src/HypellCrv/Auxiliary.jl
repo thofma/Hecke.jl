@@ -148,26 +148,3 @@ function weighted_reduction(w1::Vector{QQFieldElem}, ws::Vector{Int})
 
     return w1_min
 end
-
-# Given a linear equation of the form f(x, y) = a * x + b * y = 0,
-# find the minimal x_0, y_0 such that f(x_0, y_0) = 0.
-function minimize_linear_equation(f::MPolyRingElem{QQFieldElem})
-  R = parent(f)
-  x, y = gens(R)
-
-  a_num = numerator(coeff(f, u))
-  a_den = denominator(coeff(f, u))
-
-  b_num = numerator(coeff(f, v))
-  b_den = denominator(coeff(f, v))
-
-  gcd_ab = gcd([a_num * b_den, b_num * a_den, a_den * b_den])
-
-  C1 = divexact(a_num * b_den, gcd_ab)
-  C2 = divexact(b_num * a_den, gcd_ab)
-  C3 = divexact(a_den * b_den, gcd_ab)
-
-  _, x0, y0 = C3 * collect(gcdx(C1, C2))
-
-  return x0, y0
-end

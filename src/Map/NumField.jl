@@ -656,10 +656,6 @@ __convert_map_data(d::MapDataFromNfRel, L) = MapDataFromNfReld{elem_type(L)}(L(d
 #
 ################################################################################
 
-@inline _validate_data(L, K, inverse) = validate_data(L, K, inverse)
-
-@inline _validate_data(L, K, inverse::Tuple) = validate_data(L, K, inverse...)
-
 @inline _map_data(L, K, inverse; check::Bool) = map_data(L, K, inverse, check = check)
 
 @inline _map_data(L, K, inverse::Tuple; check::Bool) = map_data(L, K, inverse..., check = check)

@@ -392,12 +392,6 @@ mutable struct RootCtxSingle{T}
   R::T  # the root
   o::T  # inv(f'(R)) for the double lifting.
 
-  function RootCtxSingle(f::PolyRingElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
-    #not used I think
-    RR,  = power_series_ring(K, max_precision(R), var(R), cached = false) #can't get the model
-    return RootCtxSingle(f, RR)
-  end
-
   function RootCtxSingle(f::PolyRingElem{<:SeriesElem{T}}, r::T) where {T}
     R = base_ring(parent(f))
     k, mk = residue_field(R)
