@@ -26,7 +26,7 @@ function showprogress(io::IO, p::MiniProgressBar, info)
   end
   if !isinteractive()
     t = time()
-    if p.has_shown && (t - p.time_shown) < NONINTERACTIVE_TIME_GRANULARITY[]
+    if p.has_shown && (t - p.time_shown) < NONINTERACTIVE_TIME_GRANULARITY[]  # FIXME: NONINTERACTIVE_TIME_GRANULARITY is not defined
       return
     end
     p.time_shown = t

@@ -180,7 +180,7 @@ function to_hecke(f::IOStream, clg::ClassGrpCtx; field_name = "K")
   O = order(clg.FB.ideals[1])
   L = nf(O)
   varr = string(L.S)
-  print(f, "$field_name, $vvar = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$varr\");\n");
+  print(f, "$field_name, $vvar = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$varr\");\n"); # FIXME: vvar is not defined
   O = order(clg.FB.ideals[1])
   to_hecke(f, basis(O))
   print(f, "O = order($field_name, map($field_name, R))\n")
