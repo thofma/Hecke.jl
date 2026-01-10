@@ -469,7 +469,7 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
   end
   if length(g.values) > 0 && is_negative(getindex!(p_v, g.values, 1))
     scale_row!(g, -1)
-    with_transform ? push!(trafos, sparse_trafo_scale!{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
+    with_transform ? push!(trafos, sparse_trafo_scale{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
   end
 
   if A.r == A.c

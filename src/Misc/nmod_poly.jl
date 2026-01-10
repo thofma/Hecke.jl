@@ -804,7 +804,7 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
   # cannot ignore the contents as it can contribute...
   @assert isone(content(f))
   @assert isone(content(g))
-
+  local qf, qg
   while !iszero(g)
     if !is_unit(leading_coefficient(g))
       cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))

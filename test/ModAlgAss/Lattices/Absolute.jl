@@ -45,3 +45,32 @@ end
   S = Hecke.sublattices(L, 3)
   @test length(S) == 216
 end
+
+@testset "Basic" begin
+  let
+    A = matrix_algebra(QQ, 2)
+    O = order(A, basis(A))
+    L = Hecke.natural_lattice(O)
+    @test L == intersect(L, L)
+  end
+
+  let
+    A = matrix_algebra(QQ, 2)
+    O = order(A, basis(A))
+    L = Hecke.natural_lattice(O)
+    @test index(L, L) == 1
+    @test index(2*L, L) == 4
+    @test_throws ArgumentError index(L, 2*L)
+  end
+
+  let
+    A = matrix_algebra(QQ, 2)
+    O = order(A, basis(A))
+    L = Hecke.natural_lattice(O)
+    V = L.V
+    h = hom(V, V, identity_matrix(QQ, 2))
+    @test Hecke.restricts_to_isomorphism(h, L, L)
+    h = hom(V, V, 2*identity_matrix(QQ, 2))
+    @test !Hecke.restricts_to_isomorphism(h, L, L)
+  end
+end

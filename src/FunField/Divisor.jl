@@ -224,7 +224,7 @@ end
 
 
 Base.:(==)(D1::Divisor, D2::Divisor) = ideals(D1) == ideals(D2)
-Base.isequal(D1::Divisor, D2::Divisor) = a == b
+Base.isequal(D1::Divisor, D2::Divisor) = D1 == D2
 
 Base.hash(D::Divisor, h::UInt) = hash(ideals(D), h)
 

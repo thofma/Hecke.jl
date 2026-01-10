@@ -648,8 +648,6 @@ _convert_map_data(g::NumFieldHom, L) = __convert_map_data(g.image_data, L)
 
 __convert_map_data(d::MapDataFromAnticNumberField, L) = MapDataFromAnticNumberField{elem_type(L)}(d.isid ? true : L(d.prim_image))
 
-__convert_map_data(d::MapDataFromNfRel, L) = MapDataFromNfReld{elem_type(L)}(L(d.prim_image), d.isid ? true : __convert_map_data(d.base_field_map_data), d.isid)
-
 ################################################################################
 #
 #  Helper functions to pass through inverse data

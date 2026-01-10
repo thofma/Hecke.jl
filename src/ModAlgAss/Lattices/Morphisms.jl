@@ -70,7 +70,7 @@ end
 
 function restricts_to_isomorphism(f::ModAlgHom, L::ModAlgAssLat, M::ModAlgAssLat)
   Lf = image(f, L)
-  return issubset(LF, M) && isone(index(Lf, M))
+  return issubset(Lf, M) && isone(index(Lf, M))
 end
 
 ################################################################################

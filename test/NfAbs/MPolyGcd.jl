@@ -22,4 +22,10 @@
   R, (u, v) = polynomial_ring(K, ["u", "v"])
   @test gcd(a*u, a*u) == u
   @test is_one(gcd(a*u, a^2*v))
+
+  let
+    k, a = quadratic_field(2)
+    kxy, (x, y) = k[:x, :y]
+    @test x == Hecke.MPolyGcd._gcd(a*x, x, :lazy)
+  end
 end

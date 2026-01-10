@@ -131,7 +131,7 @@ function _inner_product!(res, V::MatElem{T}, _v::Vector, _w::Vector) where {T}
   R = base_ring(V)
   temp1 = [R() for i in 1:length(_v)]
   temp2 = R()
-  return _inner_product!(ves, V, _v, _w, temp1, temp2)
+  return _inner_product!(res, V, _v, _w, temp1, temp2)
 end
 
 function _inner_product!(res, V::MatElem{T}, v::Vector{T}, w::Vector{T},
