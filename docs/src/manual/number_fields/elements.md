@@ -97,6 +97,10 @@ is_norm(::AbsSimpleNumField, ::ZZRingElem)
 ```
 ### Conjugates
 
+Given an absolute simple number field $K$, the signature of $K$ is a pair of integers $(r,s)$ such that $K$ has $r$ real embeddings
+$\sigma_i \colon K \to \mathbf{R}$, $1 \leq i \leq r$, and $2s$ complex embeddings $\sigma_{r+i} \colon K \to \mathbf{C}$, $1 \leq i \leq 2s$.
+In Hecke the complex embeddings are always ordered such that $\sigma_i = \overline{\sigma_{i+s}}$ for $r + 1 \leq i \leq r + s$.
+
 ```@docs
 conjugates(::NumFieldElem, ::AcbField)
 conjugates(::NumFieldElem)
@@ -104,6 +108,19 @@ conjugates_log(::AbsSimpleNumFieldElem, ::Int)
 conjugates_real(::AbsSimpleNumFieldElem)
 conjugates_complex(::AbsSimpleNumFieldElem)
 conjugates_arb_log_normalise(::AbsSimpleNumFieldElem)
+```
+
+The $\mathbf{Q}$-linear function
+```math
+\begin{gather*}
+  K \longrightarrow \mathbf R^{d} \\
+  \alpha \longmapsto \Bigl( \sigma_1(\alpha), \dotsc, \sigma_r(\alpha), \sqrt{2}\operatorname{Re}\bigl(\sigma_{r+1}(\alpha)\bigr), \sqrt{2}\operatorname{Im}\bigl(\sigma_{r+1}(\alpha)\bigr), \dotsc, \sqrt{2}\operatorname{Re}\bigl(\sigma_{r+s}(\alpha)\bigr), \sqrt{2}\operatorname{Im}\bigl(\sigma_{r+s}(\alpha)\bigr) \Bigr)
+\end{gather*}
+```
+is called the *Minkowski map* (or *Minkowski embedding*).
+We provide a function that returns the image of an element under the Minkowski map.
+
+```@docs
 minkowski_map(::AbsSimpleNumFieldElem)
 ```
 
