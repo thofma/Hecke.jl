@@ -179,20 +179,18 @@ end
       A.base_ring = K
       A.group = G
       A.group_to_base = Dict{elem_type(G), Int}()
-      if !sparse
-        @assert is_finite(G)
-        d = order(Int, G)
-        A.base_to_group = Vector{elem_type(G)}(undef, d)
-      else
-        A.base_to_group = Vector{elem_type(G)}(undef, 1)
-      end
 
       if A.sparse
+        A.base_to_group = Vector{elem_type(G)}(undef, 1)
         el = _identity_elem(G)
         A.group_to_base[el] = 1
         A.base_to_group[1] = el
         A.sparse_one = sparse_row(K, [(1,one(K))])
       else
+        @assert is_finite(G)
+        d = order(Int, G)
+        A.base_to_group = Vector{elem_type(G)}(undef, d)
+
         # dense
         A.mult_table = zeros(Int, d, d)
         i = 2
