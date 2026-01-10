@@ -685,6 +685,7 @@ Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
 function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} = Val(false); truncate::Bool = false, full_hnf::Bool = true, auto::Bool = false, limit::Int = typemax(Int)) where {T, with_transform}
 
+  trt = rt = UInt64(0)  # help JET to understand these variables are not used uninitialized
   @vprintln :HNF 1 "Starting Kannan Bachem HNF on:"
   @vprint :HNF 1 A
   @vprintln :HNF 1 " with density $(density(A)); truncating $truncate"
