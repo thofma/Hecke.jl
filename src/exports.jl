@@ -262,6 +262,7 @@ export cyclotomic_polynomial
 export cyclotomic_regulator
 export cyclotomic_units_totally_real
 export decompose
+export decomposition_field
 export decomposition_group
 export deepcopy
 export defining_modulus
@@ -439,6 +440,7 @@ export induce_rational_reconstruction
 export induces_to_quotient
 export induces_to_subgroup
 export inertia_degree
+export inertia_field
 export inertia_subgroup
 export infinite_divisor
 export infinite_maximal_order
