@@ -197,4 +197,5 @@ end
   @test_throws AssertionError subsets(3, 4)
   @test length(subsets(3, 3)) == 1
   @test length(subsets(3, 2)) == 3
+  @test length(subsets(3, 4)) == 0
 end
