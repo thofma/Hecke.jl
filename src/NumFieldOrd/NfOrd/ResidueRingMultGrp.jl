@@ -888,7 +888,11 @@ function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
       obcs_inv = gcdx(nq, obcs)[2]
 
       disc_log2 = function(x::AbsSimpleNumFieldOrderElem)
-        y = Q(x)^Int(nq)
+        if fits(Int, nq)
+          y = Q(x)^Int(nq)
+        else
+          y = Q(x)^nq
+        end
         z = G2toO.discrete_logarithm(y.elem)
         for i = 1:length(z)
           z[i] *= obcs_inv
