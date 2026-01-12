@@ -215,6 +215,33 @@ function enumerate_quadratic_triples(
   return cv
 end
 
+function enumerate_quadratic_triples_iterator(
+    Q::MatrixElem{T},
+    b::MatrixElem{T},
+    c::RationalUnion;
+    algorithm::Symbol=:short_vectors,
+    equal::Bool=false
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  if algorithm == :short_vectors
+    if T == ZZRingElem
+      _Q = map_entries(QQ, Q)
+      _b = map_entries(QQ, b)
+      L, p, dist = _convert_type(_Q, _b, QQ(c))
+    else
+      L, p, dist = _convert_type(Q, b, QQ(c))
+    end
+    dist < 0 && return Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+    if equal
+      cv = close_vectors_iterator(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
+    else
+      cv = close_vectors_iterator(L, vec(collect(p)), dist, ZZRingElem; check=false)
+    end
+  else
+    error("Algorithm ($(algorithm)) not (yet) implemented for this function")
+  end
+  return cv
+end
+
 @doc raw"""
     short_vectors_affine(
         S::ZZLat,
@@ -292,6 +319,15 @@ function short_vectors_affine(
   return _short_vectors_affine(gram, v, alpha, d)
 end
 
+function short_vectors_affine_iterator(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return _short_vectors_affine_iterator(gram, v, alpha, d)
+end
+
 # In this function we assume that gram is the Gram matrix of a definite or
 # hyperbolic lattice. If not, then close_vectors will complain
 function _short_vectors_affine(
@@ -337,4 +373,79 @@ function _short_vectors_affine(
   xt = map_entries(base_ring(gram), transpose(x))
   cv = MatrixElem{T}[xt + matrix(base_ring(gram), 1, nrows(Q), u[1])*K for u in cv_vec]
   return cv
+end
+
+function _short_vectors_affine_iterator(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  # find a solution <x,v> = alpha with x in L if it exists
+  res = MatrixElem{T}[]
+  w = gram*transpose(v)
+  if T == QQFieldElem
+    wd = lcm(denominator(w), denominator(alpha))
+    wn = map_entries(ZZ, wd*w)
+    beta = numerator(alpha*wd)
+  else
+    wd = ZZ(denominator(alpha))
+    wn = wd*w
+    beta = numerator(alpha*wd)
+  end
+
+  ok, x = can_solve_with_solution(transpose(wn), matrix(ZZ, 1, 1, [beta]); side=:right)
+  if !ok
+    return res
+  end
+
+  K = kernel(wn; side=:left)
+  # (x + y*K)*gram*(x + y*K) = x gram x + 2xGKy + y K G K y
+
+  # now we want to formulate this as a cvp
+  # (x +y K) gram (x+yK) == d
+  GK = gram*transpose(K)
+  Q = K * GK
+  b = transpose(x) * GK
+  c = (transpose(x)*gram*x)[1,1] - d
+  # solve the quadratic triple
+  if Q[1, 1] < 0
+    map_entries!(-, Q, Q)
+    cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(-b), -c; equal=true)
+  else
+    cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(b), c; equal=true)
+  end
+  xt = map_entries(base_ring(gram), transpose(x))
+
+  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec)}(cv_vec, base_ring = base_ring(gram), n = nrows(Q), K, xt)
+  return sv_affine_iterator
+end
+
+struct ShortVectorsAffineIterator{S}
+  cv_vec::S
+  base_ring
+  n::Int
+  K
+  xt
+end
+
+function Base.iterate(C::ShortVectorsAffineIterator{X}, start = nothing) where {X}
+
+  cv_vec, base_ring, n, K, xt = C
+
+  if start === nothing
+    it = iterate(cv_vec)
+  else
+    it = iterate(cv_vec, start)
+  end
+
+  if it === nothing
+    return nothing
+  end
+
+  cv = xt + matrix(base_ring, 1, n, it[1][1])*K
+
+  start = it[2]
+
+  return (cv), start
 end
