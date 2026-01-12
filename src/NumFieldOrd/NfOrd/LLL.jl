@@ -434,7 +434,7 @@ end
 Return a vector of all ordered `k`-element subsets of `1..n`.
 """
 function subsets(n::Int, k::Int)
-  @assert n >= k >= 0
+  @req (n >= 0 && k >= 0) "inputs must be non-negative"
   if n < k
     return Vector{Int}[]
   end
@@ -462,7 +462,6 @@ end
 Return a vector of all ordered `k`-element sub-vectors of `v`.
 """
 function subsets(v::Vector{T}, k::Int) where T
-  @assert k <= length(v)
   indices = subsets(length(v), k)
   res = Vector{T}[]
   for i in indices
