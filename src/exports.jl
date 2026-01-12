@@ -871,6 +871,7 @@ export set_verbosity_level
 export shift
 export short_vectors
 export short_vectors_affine
+export short_vectors_affine_iterator
 export short_vectors_iterator
 export short_weierstrass_model
 export shortest_vectors
