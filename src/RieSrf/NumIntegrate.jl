@@ -4,7 +4,7 @@
 #
 # (C) 2025 Jeroen Hanselman
 # This is a port of the Riemann surfaces package written by
-# Christian Neurohr. It is based on his Phd thesis 
+# Christian Neurohr. It is based on his Phd thesis
 # https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
 # Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
@@ -15,8 +15,8 @@ export IntegrationScheme
 export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points, gauss_legendre_path_parameters
 
   # An integration scheme
-  # consists of a list of abscissae, weights and a bunch of parameters. 
-  # Every path we integrate over gets assigned one of these integrations 
+  # consists of a list of abscissae, weights and a bunch of parameters.
+  # Every path we integrate over gets assigned one of these integrations
   # schemes. Currently all integration schemes are Gauss-Legendre integration
   # schemes. If we alow for different types of integration later on, we can
   # extend this struct to also include those.
@@ -24,20 +24,20 @@ mutable struct IntegrationScheme
 
   abscissae::Vector{ArbFieldElem}
   weights::Vector{ArbFieldElem}
-  
- # r has strong influence on the size of N while the contribution of M is 
+
+ # r has strong influence on the size of N while the contribution of M is
  # merely logarithmic. So, in order to minimize N the priority is to
- # maximize r such that M is still decent. 
+ # maximize r such that M is still decent.
 
   int_param_r::ArbFieldElem
   int_param_N::Int
   bounds::Vector{ArbFieldElem}
   prec::Int
 
-  
+
   #Compute a Gauss-Legendre integration scheme
   function IntegrationScheme(r, prec, error, bound)
-  
+
     integration_scheme = new()
     N = gauss_legendre_parameters(r, error, bound)
     integration_scheme.int_param_N = N
@@ -47,7 +47,7 @@ mutable struct IntegrationScheme
     integration_scheme.int_param_r = r
     integration_scheme.bounds = [bound]
     integration_scheme.prec = prec
-    return integration_scheme 
+    return integration_scheme
   end
 
 end
@@ -60,19 +60,19 @@ end
 
 #Use arb to compute the abscissae and the weights.(Cf. Neurohr's thesis 3.2.2)
 function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
-  
+
   Rc = ArbField(prec)
 
   N = Int(N)
   m = floor(Int, (N +1)//2)
-  
+
   ab = zeros(Rc, m)
   w = zeros(Rc, m)
-  
+
   for l in (0:m-1)
     ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
   end
-  
+
   if isodd(N)
     abscissae = vcat(-ab, reverse(ab[1:m-1]))
     weights = vcat(w, reverse(w[1:m-1]))
@@ -105,39 +105,39 @@ function gauss_legendre_path_parameters(points, path::CPath, err)
   end
 end
 
-# Check if it is more efficient to split a line into two segments. 
+# Check if it is more efficient to split a line into two segments.
 # (Cf. Neurohr 4.7.5)
 function split_line_segment(points, path::CPath, err)
   if !isdefined(path, :int_param_r)
     set_int_param_r(path, gauss_legendre_line_parameters(points, path))
-  end 
-  
+  end
+
   paths = [path]
   prec = precision(parent(points[1]))
   Rc = ArbField(prec)
 
   if get_int_param_r(path) < 1.2
     t = get_t_of_closest_d_point(path)
-    if abs(real(t)) < (3/4) 
+    if abs(real(t)) < (3/4)
       x = evaluate(path, t)
     else
       x = evaluate(path,Rc(sign(Int, real(t))*3/4))
     end
     gam1 = c_line(start_point(path), x)
     gam2 = c_line(x, end_point(path))
-    
+
     set_int_param_r(gam1, gauss_legendre_line_parameters(points, gam1))
     set_int_param_r(gam2, gauss_legendre_line_parameters(points, gam2))
-    
+
     N = gauss_legendre_parameters(get_int_param_r(path), err)
     N1 = gauss_legendre_parameters(get_int_param_r(gam1), err)
     N2 = gauss_legendre_parameters(get_int_param_r(gam2), err)
-    
-    
+
+
     set_int_params_N(path, N)
     set_int_params_N(gam1, N1)
     set_int_params_N(gam2, N2)
-    
+
     if N - N1 - N2 >= 10
       paths = vcat(split_line_segment(points, gam1, err), split_line_segment(points, gam2, err))
     end
@@ -146,9 +146,9 @@ function split_line_segment(points, path::CPath, err)
 end
 
 # The following functions have the same purpose.
-# Given a set of points P. we compute the parameter r0 for the given path gamma. 
+# Given a set of points P. we compute the parameter r0 for the given path gamma.
 # The parameter r_0 is the biggest radius smaller than 5 such that
-# none of the points in P are in the interior of gamma(E_r0). 
+# none of the points in P are in the interior of gamma(E_r0).
 # Here, E_r0 = {z in C : |z-1| + |z+1| = 2cosh(r0)}. The path we integrate over
 # corresponds to the interval [-1, 1] in E_r0). Usually P will
 # consist of the ramification points and the singular points.
@@ -158,17 +158,17 @@ function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPat
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
   r_0 = Rr(5.0)
-  
+
   a = start_point(path)
   b = end_point(path)
-  
+
   for p in points
     #We find t_p such that path(t_p) = p , i.e. (a + b)/2 + (b - a)/2 * t_p = p
     t_p = (2*p - a - b)//(b - a)
-    
+
     #Consider ellipse E = {z in C : |z-1| + |z+1| = 2cosh(r)}
     #Now picking r_k to be the following, we ensure that t_p lies on the boundary
-    #and not on the ellipse if radius < r_k  
+    #and not on the ellipse if radius < r_k
     r_p = (abs(t_p + 1) + abs(t_p - 1))//2
     @req r_p > 1 "Error in computation of r_p"
     if r_p < r_0
@@ -177,37 +177,37 @@ function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPat
       set_t_of_closest_d_point(path, t_p)
     end
   end
-  
+
   #Not sure why yet
   if r_0 == Rr(5.0)
     push!(path.bounds, Rr(1))
   end
 
   return r_0
-  
+
 end
 
-# Compute the parameter r0 for the given arc. 
+# Compute the parameter r0 for the given arc.
 function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath)
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
   r_0 = Rr(5.0)
-  
+
   Rpi = Rr(pi)
   I = onei(Cc)
-  
+
   a = start_arc(path)
   b = end_arc(path)
   c = center(path)
   r = radius(path)
   or = orientation(path)
-  
+
   for p in points
     r_p = r_0
     if p != c
       prec = precision(Cc)
       zero_sens = floor(Int, prec*log(2)/log(10)) - 5
-      #We find t_p such that path(t_p) = p 
+      #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
@@ -216,22 +216,22 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
 
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
-   
-    
+
+
     @req r_p > 1 "Error in computation of r_p"
     if r_p < r_0
       r_0 = r_p
       set_t_of_closest_d_point(path, t_p)
     end
   end
-  
+
   #Not sure why yet
   if r_0 == Rr(5.0)
     push!(path.bounds, Rr(1))
   end
 
   return r_0
-  
+
 end
 
 # Compute the parameter r0 for the given circle.
@@ -239,10 +239,10 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
   Cc = parent(points[1])
   Rr = ArbField(precision(Cc))
   r_0 = Rr(5.0)
-  
+
   Rpi = Rr(pi)
   I = onei(Cc)
-  
+
   a = start_arc(path)
   b = end_arc(path)
   c = center(path)
@@ -251,7 +251,7 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
   for p in points
     r_p = r_0
     if p != c
-      #We find t_p such that path(t_p) = p 
+      #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
@@ -263,21 +263,21 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
 
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
-    
+
     @req r_p > 1 "Error in computation of r_p"
     if r_p < r_0
       r_0 = r_p
       set_t_of_closest_d_point(path, t_p)
     end
   end
-  
+
   #Not sure why yet
   if r_0 == Rr(5.0)
     push!(path.bounds, Rr(1))
   end
 
   return r_0
-  
+
 end
 
 # Compute the abscissae and the weights for Gauss-Chebyshev integration.
@@ -285,18 +285,18 @@ end
 function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
   Rc = ArbField(prec)
   pi_N12 = const_pi(Rc)//(2*N)
-  
+
   m = floor(Int, N//2)
-  
+
   ab = zeros(Rc, m)
   w = zeros(Rc, m)
-  
+
   for l in (1:m)
     ab[l] = cos(pi_N12 * (2*l - 1))
   end
-  
+
   isodd(N) ? abscissae = vcat(-ab, [zero(Rc)], reverse(ab)) : abscissae = vcat(-ab, reverse(ab))
-  return abscissae, fill(const_pi(Rc)//(N), N)  
+  return abscissae, fill(const_pi(Rc)//(N), N)
 end
 
 # Compute the abscissae and the weights for the tanh_sinh quadrature
@@ -307,20 +307,20 @@ function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::
 
   abscissae = zeros(Rc, N)
   weights = zeros(Rc, N)
-  
+
   lamh = lambda * h
-  
+
   for l in (1:N)
     lh = l*h
     lamsin_lh = lambda*sinh(lh)
-    
+
     abscissae[l] = tanh(lamsin_lh)
-    weights[l] = lamh * cosh(lh)//(cosh(lamsin_lh))^2 
+    weights[l] = lamh * cosh(lh)//(cosh(lamsin_lh))^2
   end
-  
+
   abscissae = vcat(-reverse(abscissae), [zero(Rc)], abscissae)
   weights = vcat(reverse(weights), [lamh], weights)
-  
+
   return abscissae, weights
 end
 

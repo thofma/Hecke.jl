@@ -1,4 +1,4 @@
-function find_12t118(f, B) 
+function find_12t118(f, B)
   g, s = galois_group(f)
   @assert transitive_group_identification(g) == (4, 3)
   k, a = number_field(f, cached = false)
@@ -165,7 +165,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
   pos = 0
   function fil(x)
     cnt += 1
-    res = norm(x) <= nB && 
+    res = norm(x) <= nB &&
           (norm(x) % 3 == 1 ||
              norm(x)^prime_decomposition_type(kr, x)[2] % 3 == 1)
     pos += res
@@ -219,7 +219,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
       @show minimum(conductor(A)[1]), minimum(C)
       minimum(conductor(A)[1]) == minimum(C) || continue
       AA = fixed_field(r, CC)
-#      @assert degree(normal_closure(A)) == 27 
+#      @assert degree(normal_closure(A)) == 27
 
       G, s = galois_group(AA, QQ)
       if small_group_identification(G) == (216, 159)
@@ -338,7 +338,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
               if order(ima) == 1
                 break
               end
-              ima = intersect(ima, stau(ima)[1]) 
+              ima = intersect(ima, stau(ima)[1])
               if order(ima) == 1 || order(ima) == s
                 break
               end
@@ -355,7 +355,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
             _A = fixed_field(r, B)
             @assert degree(_A) == 3
 
-            con = conductor(_A)[1] 
+            con = conductor(_A)[1]
             @show con_cnt += 1
             @show minimum(con), minimum(C)
             minimum(con) != minimum(C) && continue
@@ -402,7 +402,7 @@ function s3_extensions(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
 
   id_cnt = 0
 
-  for I = S 
+  for I = S
     for J = wild
       id_cnt += 1
       nIJ = norm(I) * norm(J)
@@ -502,7 +502,7 @@ function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
   pos = 0
   function fil(x)
     cnt += 1
-    res = norm(x) <= nB && 
+    res = norm(x) <= nB &&
           (norm(x) % 3 == 1 ||
              norm(x)^prime_decomposition_type(kr, x)[2] % 3 == 1)
     if res
@@ -511,7 +511,7 @@ function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
       i = indecomposition(G)
       res = any(x->dim(x[1]) == 2 || natural_character(x[1]) == T, i)
       if !res
-        #TODO: suboptimal: we need ONLY ideals where there is a 
+        #TODO: suboptimal: we need ONLY ideals where there is a
         #      either a deg 2 or a 'T' component in the module
       end
     end
@@ -645,7 +645,7 @@ function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
               if order(ima) == 1
                 break
               end
-              ima = intersect(ima, stau(ima)[1]) 
+              ima = intersect(ima, stau(ima)[1])
               if order(ima) == 1 || order(ima) == s
                 break
               end
@@ -662,7 +662,7 @@ function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
             _A = fixed_field(r, B)
             @assert degree(_A) == 3
 
-            con = conductor(_A)[1] 
+            con = conductor(_A)[1]
             @show con_cnt += 1
 #            norm(con) <= nB || continue
 
@@ -714,7 +714,7 @@ function s3_extensions2(k::AbsSimpleNumField, d::ZZRingElem, _T::Int = 0)
 
   id_cnt = 0
 
-  for I = S 
+  for I = S
     for J = _wild
       id_cnt += 1
       nIJ = I*J
@@ -758,14 +758,14 @@ function eval_par(S::Sqfr, F::Function, n::Int = 4, limit::Int = 10)
   chn = []
   res = Int[]
   for I = S
-    limit -=1 
+    limit -=1
     if limit < 0
       return res, chn
     end
     while length(chn) >= n
       for i = 4:-1:1
         if istaskdone(chn[i][2])
-          try 
+          try
             push!(res, fetch(chn[i][2]))
           catch e
             if !isa(e, TaskFailedException)

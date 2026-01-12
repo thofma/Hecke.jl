@@ -4,7 +4,7 @@
 #
 # (C) 2025 Jeroen Hanselman
 # This is a port of the Riemann surfaces package written by
-# Christian Neurohr. It is based on his Phd thesis 
+# Christian Neurohr. It is based on his Phd thesis
 # https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
 # Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
 #
@@ -22,18 +22,18 @@ end_point
 #
 ###############################################################################
 
-#The edges of the tree graph in the Tretkoff algorithm. 
-# - Each edge has a start point and an end point. 
-# - Each edge has a level. The first vertex has level 1. The odd levels 
+#The edges of the tree graph in the Tretkoff algorithm.
+# - Each edge has a start point and an end point.
+# - Each edge has a level. The first vertex has level 1. The odd levels
 #   correspond to ramification points and the even levels correspond to sheets.
 # - An edge is labeled terminated if the algorithm is done with this edge
 # - A branch of the graph is a sequence of edges that ends traces back to the
 #   starting vertex.
-# - In the algorithm the Tretkoff edges get sorted by the function 
+# - In the algorithm the Tretkoff edges get sorted by the function
 #   compare_branches. The position variable gives the position of the
 #  terminated edges in this ordering
-# - For "even" edges the label gives the position in the list of ordered even 
-#   edges. The "odd" edges have the same label as their even counterpart 
+# - For "even" edges the label gives the position in the list of ordered even
+#   edges. The "odd" edges have the same label as their even counterpart
 # (with start point and end point reversed).
 
 mutable struct TretkoffEdge
@@ -44,7 +44,7 @@ mutable struct TretkoffEdge
   branch::Vector{Int}
   position::Int
   label::Int
-  
+
   function TretkoffEdge(a::Int, b::Int, L::Int = 0,  B::Vector{Int} = [a, b], term::Bool = false)
     TE = new()
     TE.start_point = a
@@ -52,7 +52,7 @@ mutable struct TretkoffEdge
     TE.level = L
     TE.terminated = term
     TE.branch = B
-  
+
     return TE
   end
 end
@@ -122,32 +122,32 @@ function Base.mod2pi(x::ArbFieldElem)
   while x < 0
     x += pi2
   end
-  
+
   while x > pi2
     x -= pi2
   end
-  
+
   return x
 end
 
 @doc raw"""
     embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
 
-Embed a polynomial into the polynomial ring over the complex numbers using the given place. 
+Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
   coeffs = coefficients(f)
   coeffs = map(t -> evaluate(t, v.embedding, prec), coeffs)
-  
+
   Cx, x = polynomial_ring(AcbField(prec), "x")
-  
+
   return sum(coeffs[i]*x^(i - 1) for i in (1:length(coeffs)))
 end
 
 @doc raw"""
     embed_mpoly(f::MPolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
 
-Embed a polynomial into the polynomial ring over the complex numbers using the given place. 
+Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
   return map_coefficients(x -> evaluate(x, v.embedding, prec), f)
@@ -157,13 +157,13 @@ end
 @doc raw"""
     sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem) -> Bool
 
-An ordering on the complex numbers. The number z2 = x2 + y2 is greater 
+An ordering on the complex numbers. The number z2 = x2 + y2 is greater
 than z1 = x1 + y1 if x2 > x1. In case of equality z2 is greater than z1 if y2 > y1.
 """
 function sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem)
-  if real(z1) < real(z2) 
+  if real(z1) < real(z2)
     return true
-  elseif real(z1) > real(z2) 
+  elseif real(z1) > real(z2)
     return false
   elseif imag(z1) < imag(z2)
     return true
@@ -172,7 +172,7 @@ function sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem)
   end
 end
 
-#This is mainly useful when plugging an acb ball centered around zero into a 
+#This is mainly useful when plugging an acb ball centered around zero into a
 #function like arg where its output would suddenly have a radius of length pi.
 @doc raw"""
     trim_zero(x::AcbFieldElem, n::Int) -> Bool
@@ -205,8 +205,8 @@ end
 @doc raw"""
     inner_faces(f::MPolyRingElem) -> Array
 
-Compute the inner faces of the Newton polygon corresponding to the multivariate 
-polynomial f(x,y). The Newton polygon is the convex hull of the points (i,j) 
+Compute the inner faces of the Newton polygon corresponding to the multivariate
+polynomial f(x,y). The Newton polygon is the convex hull of the points (i,j)
 for which x^i * y^j is a monomial of f.
 """
 function inner_faces(f)
@@ -227,13 +227,13 @@ function inner_faces(f)
 	end
 
   return result
-end 
+end
 
 @doc raw"""
     convex_hull(points::Vector{Vector{Int}}) -> Vector{Vector{Int}}
 
-Computes the convex hull of the points [i,j] in the plane. 
-The convex hull is returned as a list of points that form the 
+Computes the convex hull of the points [i,j] in the plane.
+The convex hull is returned as a list of points that form the
 vertices of the polygon. The edges of the polygon correspond to the
 lines connecting the succesive vertices.
 """
@@ -258,7 +258,7 @@ function convex_hull(points::Vector{Vector{Int}})
       push!(points_lower_convex_hull, points[p+i-1])
       i += p
     end
-    
+
     points = reverse(points)
     points_upper_convex_hull = Vector{Int}[points[1]]
     i = 2

@@ -50,7 +50,7 @@ end
 @doc raw"""
     number_field(AbsSimpleNumField, CF::ClassField) -> RelNonSimpleNumField{AbsSimpleNumFieldElem}
 
-Given a (formal) abelian extension, compute the class field by finding an 
+Given a (formal) abelian extension, compute the class field by finding an
 absolute primitive element thus return a simple extension of Q.
 """
 function number_field(::Type{AbsSimpleNumField}, CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false, simplify::Bool = false) where {S, T}
@@ -61,8 +61,8 @@ end
 @doc raw"""
     number_field(SimpleNumField, CF::ClassField) -> RelNonSimpleNumField{AbsSimpleNumFieldElem}
 
-Given a (formal) abelian extension, compute the class field by finding an 
-primitive element over the base field of the class field, thus return a simple 
+Given a (formal) abelian extension, compute the class field by finding an
+primitive element over the base field of the class field, thus return a simple
 extension of the base field.
 """
 function number_field(::Type{SimpleNumField}, CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}

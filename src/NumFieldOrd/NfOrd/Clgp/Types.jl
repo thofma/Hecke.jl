@@ -41,7 +41,7 @@ mutable struct NormCtx_split <: NormCtx
   lC::Vector{fpMatrix} # for each p in lp, the conjugates of the basis of O
   mp::Vector{fpMatrix} # temp. variable
   np::Vector{fpMatrix} # temp. variable
-  #= used in 
+  #= used in
     NumFieldOrder/AbsSimpleNumFieldOrder/Clgp/Rel_LLL.jl
     a coordinate vector of an order element is mapped mod p into mp
     multiplied by lC into np
@@ -99,7 +99,7 @@ mutable struct NormCtx_simple <: NormCtx
     return NC
   end
 end
- 
+
 mutable struct NormCtx_gen <: NormCtx
   nb::Int
   O::AbsNumFieldOrder

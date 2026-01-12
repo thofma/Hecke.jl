@@ -98,11 +98,11 @@ function _find_prime(L::RelSimpleNumField{AbsSimpleNumFieldElem})
   den = lcm(ZZRingElem[denominator(coeff(f, i)) for i = 0:degree(f)])
   while i < n_attempts+1
     p = next_prime(p)
-    if is_divisible_by(den, p) || is_divisible_by(absolute_discriminant(OL), p) 
+    if is_divisible_by(den, p) || is_divisible_by(absolute_discriminant(OL), p)
       continue
     end
     lp = prime_decomposition(OK, p)
-    if lp[1][2] > 1 #non-monic polynomials make it hard to 
+    if lp[1][2] > 1 #non-monic polynomials make it hard to
       continue      #dismiss this case earlier
     end
     P = lp[1][1]

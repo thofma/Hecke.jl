@@ -18,7 +18,7 @@ get_t_of_closest_d_point, evaluate_d
 #
 ################################################################################
 
-#The class Cpath represents a path in the complex plane. It can be either 
+#The class Cpath represents a path in the complex plane. It can be either
 # a line, an arc or a circle.
 
 mutable struct CPath
@@ -28,7 +28,7 @@ mutable struct CPath
   #0 is a line
   #1 is an arc
   #2 is a circle
-  
+
   #The field in which the path lies
   C::AcbField
 
@@ -47,7 +47,7 @@ mutable struct CPath
   #If the orientation is 1 we move counterclockwise and if the orientatoin
   # is -1 we move clockwise.
   orientation::Int
-  
+
   #The length of the path
   length::ArbFieldElem
 
@@ -59,13 +59,13 @@ mutable struct CPath
 
   #Let f be the equation defining a plane curve in RiemannSurface.jl
   #Let x_0 = gamma(start_point) and let (y_1, ..., y_d) be the roots
-  #of the equation f(x_0, y) sorted by the sheet_ordering function 
+  #of the equation f(x_0, y) sorted by the sheet_ordering function
   #from Auxiliary.jl. Using analytic continuation along the path gamma
   #to x_end = gamma(end_point) gives us a new set of roots (z_1, ..., z_d)
   #solving f(x_end, y). Sorting these once again using the sheet_ordering
   #function gives us a permutation (z_sigma(1), ..., z_sigma(d)). The variable
   #sigma stores this permutation. In the case that gamma is a closed path,
-  #sigma will tell us exactly how the sheets got permuted. 
+  #sigma will tell us exactly how the sheets got permuted.
   permutation::Perm{Int}
 
   #For the purposes of integrating along a path to compute the period matrix
@@ -73,10 +73,10 @@ mutable struct CPath
   #of their meanings. Most of these are discussed in  Chapter 3
   #of Neurohr's thesis.
 
-  #For integration we want the function f we integrate along gamma to be 
-  #bounded. For this we take an ellipsoid e_r with focal points -1,1 
-  #paramatrized by r*cos(t) + i*sqrt(1-r^2) which contains the path gamma. 
-  #And then we determine an M such that |gamma(e_r)|< M. 
+  #For integration we want the function f we integrate along gamma to be
+  #bounded. For this we take an ellipsoid e_r with focal points -1,1
+  #paramatrized by r*cos(t) + i*sqrt(1-r^2) which contains the path gamma.
+  #And then we determine an M such that |gamma(e_r)|< M.
   #During computations we determine an optimal r to find proper error bounds
   #This r is stored with the path and called int_param_r.
   int_param_r::ArbFieldElem
@@ -103,15 +103,15 @@ mutable struct CPath
   #Let X be a Riemann surface X defined by an equation f(x,y) = 0.
   #Let g be the genus of X, and let m be the degree of the map pi:X -> P^1
   #given by (x,y)-> x. Then integral_matrix will is the m x g matrix one gets
-  #by integrating the g differential forms forming a basis of H^0(X, K_X) 
-  #(computed in RiemannSurface.jl) along the m distinct paths that are lifts 
-  #of gamma along pi. 
+  #by integrating the g differential forms forming a basis of H^0(X, K_X)
+  #(computed in RiemannSurface.jl) along the m distinct paths that are lifts
+  #of gamma along pi.
   integral_matrix::AcbMatrix
 
 
   #Constructor of CPath.
   function CPath(a::AcbFieldElem, b::AcbFieldElem, path_type::Int, c::AcbFieldElem = zero(parent(a)), radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
-  
+
     P = new()
     P.C = parent(a)
     P.start_point = a
@@ -121,8 +121,8 @@ mutable struct CPath
     P.radius = radius
     P.orientation = orientation
     P.bounds = []
-    
-    #If the path is a line 
+
+    #If the path is a line
     if path_type == 0
       gamma = function(t::FieldElem)
         return (a + b)//2 + (b - a)//2 * t
@@ -132,24 +132,24 @@ mutable struct CPath
       end
       length = abs(b - a)
     end
-    
+
     #If the path is not a line we need some additional constants to compute
     #length, parametrization, etc.
     Cc = P.C
     i = onei(Cc)
     piC = real(const_pi(Cc))
-    
+
     #Round real or imaginary part to zero to compute angle if necessary
     prec = precision(Cc)
     zero_sens = floor(Int, prec*log(2)/log(10)) - 5
-    
+
     a_diff = trim_zero(a - c, zero_sens)
     b_diff = trim_zero(b - c, zero_sens)
-    
+
     phi_a = mod2pi(angle(a_diff))
     phi_b = mod2pi(angle(b_diff))
-    
-    
+
+
     if orientation == 1
       if phi_b < phi_a
         phi_b += 2*piC
@@ -159,10 +159,10 @@ mutable struct CPath
         phi_a += 2*piC
       end
     end
-   
+
     P.start_arc = phi_a
     P.end_arc = phi_b
-   
+
     #If the path is an arc
     if path_type == 1
       gamma = function(t::FieldElem)
@@ -173,9 +173,9 @@ mutable struct CPath
       end
 
       length = abs((phi_b - phi_a)) * radius
-      
+
     end
-    
+
     #If the path is a circle
     if path_type == 2
       gamma = function(t::FieldElem)
@@ -183,12 +183,12 @@ mutable struct CPath
         return c - radius * exp(i * (phi_a + orientation * piC * t ))
       end
       dgamma = function(t::FieldElem)
-        return orientation * i * (piC ) * (-1) * radius * exp(i * (phi_a + orientation * piC * t )) 
+        return orientation * i * (piC ) * (-1) * radius * exp(i * (phi_a + orientation * piC * t ))
       end
 
       length = 2 * piC * radius
     end
-    
+
     P.gamma = gamma
     P.dgamma = dgamma
     P.length = length
@@ -207,15 +207,15 @@ function c_line(start_point::AcbFieldElem, end_point::AcbFieldElem)
 end
 
 @doc raw"""
-c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1) 
+c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
   -> CPath
 
-Constructs an arc around ''center'' in C from ''start_point'' to 
+Constructs an arc around ''center'' in C from ''start_point'' to
 ''end_point''. If orientation is 1 the path goes counterclockwise.
 If it is -1 it goes clockwise. If start_point and end_point are identical
-a circle is created instead. 
+a circle is created instead.
 """
-function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; 
+function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem;
   orientation::Int = 1)
   #TODO: We might need a check that start point and end_point are equally
   #far away from center.
@@ -238,7 +238,7 @@ function show(io::IO, gamma::CPath)
   if p_type< 0 || p_type > 2
     error("Path type does not exist")
   end
-  
+
   x0 = start_point(gamma)
   x1 = end_point(gamma)
   if p_type == 0
@@ -263,13 +263,13 @@ function show(io::IO, gamma::CPath)
 @doc raw"""
 reverse(G::CPath) -> CPath
 
-Given a path G:[-1,1] -> C returns the reverse of the path 
+Given a path G:[-1,1] -> C returns the reverse of the path
 G_rev:[-1,1] -> C defined by G_rev(t) = G(-t).
 """
 function reverse(G::CPath)
-  
+
   p_type = path_type(G)
-  
+
   if p_type == 0
     G_rev = c_line(end_point(G), start_point(G))
   else #Circle or arc

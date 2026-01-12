@@ -22,7 +22,7 @@ function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem
   FF, FFprim = function_field(g, :b; cached = false)
   # now the maps ...
   FtoFF = function(a)
-    anum = numerator(a)    
+    anum = numerator(a)
     aden = denominator(a) # parent(aden) == R
     abiv = (map_coefficients(c -> c(y), anum)(x))
     abivswap = abiv(gen(base_ring(fint)), FFprim)/aden(FFprim)
@@ -30,7 +30,7 @@ function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem
   end
 
   FFtoF = function(b)
-    bnum = numerator(b)    
+    bnum = numerator(b)
     bden = denominator(b) # parent(aden) == R
     bbiv = (map_coefficients(c -> c(y), bnum)(x))
     bbivswap = bbiv(gen(base_ring(fint)), gen(F))/bden(gen(F))
@@ -143,7 +143,7 @@ end
 
 function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem})
   @req is_separable(defining_polynomial(base_ring(f))) "Defining polynomial must be separable"
-  D = Dict{typeof(f), Int}() 
+  D = Dict{typeof(f), Int}()
   un = leading_coefficient(f)
   f = divexact(f, leading_coefficient(f))
   p = characteristic(base_ring(f))
@@ -174,7 +174,7 @@ function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return is_unit(gcd(f, derivative(f)))
   end
-  return all(e == 1 for (_, e) in factor_squarefree(f)) 
+  return all(e == 1 for (_, e) in factor_squarefree(f))
 end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})

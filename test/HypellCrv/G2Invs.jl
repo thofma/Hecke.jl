@@ -1,7 +1,7 @@
 @testset "G2 Invariants" begin
 
-    
-    Qx, x = polynomial_ring(QQ, "x") 
+
+    Qx, x = polynomial_ring(QQ, "x")
     f1 = x^6+3*x+5
     h1 = x+2
     C = hyperelliptic_curve(f1, h1)
@@ -84,5 +84,5 @@
     @test weighted_equality(clebsch_from_igusa_clebsch(igusa_clebsch_invariants(C)), clebsch_invariants(C), [2,4,6,10])
     @test weighted_equality(igusa_from_g2(g2_invariants(C)), igusa_invariants(C), [2,4,6,8,10])
 
-    
+
   end

@@ -88,17 +88,17 @@ function _theta_jet(zs::Vector{AcbFieldElem},number_of_z::Int, tau::AcbMatrix,
   zzs = acb_vec(zs)
   g = nrows(tau)
 
-  #I haven't quite figured out yet how much space needs to be allocated. 
+  #I haven't quite figured out yet how much space needs to be allocated.
   #I got an error when computing a single theta and only having a 1 dimensional
   #array. Having a slightly bigger array gave no error, but the wrong answer.
-  #With a big enough array the answer became correct. But I do not know what 
+  #With a big enough array the answer became correct. But I do not know what
   #"big enough" means. I currently simply default to having enough space
   #to potentially compute all thetas as that seems to work. But I would like
   #to have something more tight before introducing theta derivatives.
   output_length = number_of_z * 2^(2*g)
   th = acb_vec(output_length)
-  
-  @ccall libflint.acb_theta_jet(th::Ptr{acb_struct}, 
+
+  @ccall libflint.acb_theta_jet(th::Ptr{acb_struct},
   zzs::Ptr{acb_struct}, number_of_z::Int, tau::Ref{AcbMatrix},
   order_of_derivative::Int, theta_characteristic::Cint, all::Int, squares::Int,
   100::Int)::Nothing

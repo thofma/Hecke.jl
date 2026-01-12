@@ -659,7 +659,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
 
 #    push!(c, divexact(_c[1,1], _c[1,2]))
-    
+
     c .*= _c[1,2]
     push!(c, _c[1,1])
     return G(c)
@@ -679,7 +679,7 @@ function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumFie
     return f
   end
 
-  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}() 
+  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
 
   cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
   if nrows(c) > ngens(G) #torsion added
@@ -711,7 +711,7 @@ function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumFie
   #      can be on the map
   #       -> suport can be inherited
   #       -> the valuations
-  #       -> the data for disc log and such could to be updated 
+  #       -> the data for disc log and such could to be updated
   #      possibly the result should be the injection into the larger group?
   #      deal with torsion
   return multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]

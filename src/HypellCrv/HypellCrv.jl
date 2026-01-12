@@ -37,11 +37,11 @@ mutable struct HypellCrv{T}
       check = false
       #TODO: Check what d is
       d = zero(R)
-    else 
+    else
       d = 2^(4*g)*discriminant(f + divexact(h^2,4))
     end
     if d != 0 || check == false
-      
+
       C = new{T}()
 
       C.f = f
@@ -554,8 +554,8 @@ end
 @doc raw"""
     reduce_binary_form(f::PolyRingElem) -> PolyRingElem
 
-Given a binary form over QQ, compute the binary form with 
-minimal Julia covariant. 
+Given a binary form over QQ, compute the binary form with
+minimal Julia covariant.
 """
 #Following the preprint "Efficient reduction of binary forms"
 # by Michael Stoll.
@@ -574,16 +574,16 @@ end
 @doc raw"""
     reduce_binary_form(f::MPolyRingElem) -> MPolyRingElem
 
-Given a binary form over QQ that is stable (i.e. f is not divisible by a 
-linear form of degree m with 2m >= deg(f)), compute the binary form with 
-minimal Julia covariant. 
+Given a binary form over QQ that is stable (i.e. f is not divisible by a
+linear form of degree m with 2m >= deg(f)), compute the binary form with
+minimal Julia covariant.
 """
 function reduce_binary_form(f::MPolyRingElem{T}) where T
   #Check stability
   n = total_degree(f)
   ms = values(factor(f).fac)
   for m in ms
-    if 2*m >= n 
+    if 2*m >= n
       error("Binary form is not stable.")
     end
   end
@@ -599,7 +599,7 @@ function reduce_binary_form(f::MPolyRingElem{T}) where T
     f_inf = evaluate(f, [Qt(1), t])
     S2 = roots(f_fin;initial_prec = 200)
     S_inf = valuation(f_inf, t)
-    
+
     # repos(map(x-> x - a, S2), S_inf) returns whether Re(zF) >= a
     # The goal is to get -1/2 <= Re(z(F)) <= 1/2
     # We first find u and l such that l- 1/2 <= Re(z(F)) <= u - 1/2.
@@ -637,7 +637,7 @@ function reduce_binary_form(f::MPolyRingElem{T}) where T
       # when the value is >= m - 1/2, we need m - 1/2 instead.
       if repos(map(x-> x - CC(m - 1/2), S2), S_inf)
         l = m
-      else 
+      else
         u = m
       end
     end
@@ -720,7 +720,7 @@ function repos(S2::Vector{AcbFieldElem}, S_inf::Int)
   I = RR(0)
   add_error!(I, RR(10^-20))
   while (!contains(I, dh(eta0)))
-    
+
     if dh(eta0) > 0
       v = eta0
     else
@@ -733,7 +733,7 @@ function repos(S2::Vector{AcbFieldElem}, S_inf::Int)
     #Not sure what the optimal way to balance this is.
     if abs(dh(etatest)) / abs(dh(eta0)) < RR(0.5)
       eta0 = etatest
-    else 
+    else
       if dh(eta0) > 0
         eta0 = (eta0+u)/2
       else
