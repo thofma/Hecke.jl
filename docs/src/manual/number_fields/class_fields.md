@@ -55,6 +55,7 @@ ray_class_field(I::Hecke.AbsNumFieldOrderIdeal; n_quo, p_part)
 ray_class_field(I::Hecke.AbsNumFieldOrderIdeal, ::Vector{InfPlc}; n_quo, p_part)
 hilbert_class_field(k::AbsSimpleNumField)
 ring_class_field(::AbsNumFieldOrder)
+cyclotomic_field(::Type{ClassField}, n::Int)
 ```
 
 ### Example
@@ -91,6 +92,8 @@ where $0\le n\le 3$
 
 ```@docs
 number_field(C::ClassField)
+number_field(::Type{SimpleNumField}, C::ClassField)
+number_field(::Type{AbsSimpleNumField}, C::ClassField)
 ```
 
 ```jldoctest
@@ -133,20 +136,33 @@ ray_class_field(K::RelSimpleNumField{AbsSimpleNumFieldElem})
 genus_field(A::ClassField, k::AbsSimpleNumField)
 maximal_abelian_subfield(A::ClassField, k::AbsSimpleNumField)
 maximal_abelian_subfield(K::RelSimpleNumField{AbsSimpleNumFieldElem})
+decomposition_field(C::ClassField, p::AbsSimpleNumFieldOrderIdeal)
+inertia_field(C::ClassField, p::AbsSimpleNumFieldOrderIdeal)
+fixed_field(A::ClassField, U::FinGenAbGroup)
+grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int64}, di::Dict{<:Hecke.NumFieldEmb, Int64})
+cyclotomic_extension(::ClassField, ::Int)
+cyclotomic_extension(::Type{ClassField}, k::AbsSimpleNumField, n::Int)
 ```
 
 ## Invariants
 ```@docs
 degree(C::ClassField)
+exponent(C::ClassField)
 base_ring(A::Hecke.ClassField)
 base_field(A::Hecke.ClassField)
 discriminant(C::Hecke.ClassField)
 conductor(C::Hecke.ClassField)
+signature(C::Hecke.ClassField)
 defining_modulus(C::ClassField)
 is_cyclic(C::ClassField)
 is_conductor(C::Hecke.ClassField, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, inf_plc::Vector{InfPlc})
 is_normal(C::ClassField)
 is_central(C::ClassField)
+automorphism_group(C::ClassField)
+absolute_automorphism_group(C::ClassField)
+decomposition_group(C::ClassField, p::InfPlc)
+frobenius_map(C::ClassField)
+complex_conjugation(C::ClassField, p::InfPlc)
 ```
 
 ## Operations
@@ -159,7 +175,7 @@ prime_decomposition_type(C::Hecke.ClassField, p::Hecke.AbsNumFieldOrderIdeal)
 Hecke.is_subfield(a::ClassField, b::ClassField)
 Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.AbsNumFieldOrderElem)
 Hecke.is_local_norm(r::Hecke.ClassField, a::Hecke.AbsNumFieldOrderElem, p::Hecke.AbsNumFieldOrderIdeal)
-Hecke.normal_closure(r::Hecke.ClassField)
+normal_closure(r::Hecke.ClassField)
 subfields(r::ClassField)
 ```
 

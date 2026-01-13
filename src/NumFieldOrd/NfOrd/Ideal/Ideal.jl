@@ -615,6 +615,7 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
 
 
   if has_weakly_normal(A)
+    K = nf(order(A))
     d = denominator(inv(K(A.gen_two)), order(A))
     d = gcd(d, ZZ(A.gen_one))
     A.minimum = d

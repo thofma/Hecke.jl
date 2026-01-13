@@ -42,6 +42,7 @@ quadratic_field(d::ZZRingElem)
 wildanger_field(n::Int, B::ZZRingElem)
 radical_extension(n::Int, a::NumFieldElem)
 rationals_as_number_field()
+splitting_field
 ```
 
 ## Basic properties

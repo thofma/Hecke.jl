@@ -892,10 +892,12 @@ function is_linearly_disjoint(K1::AbsSimpleNumField, K2::AbsSimpleNumField)
   if gcd(degree(K1), degree(K2)) == 1
     return true
   end
-  d1 = numerator(discriminant(K1.pol))
-  d2 = numerator(discriminant(K2.pol))
-  if gcd(d1, d2) == 1
-    return true
+  if is_defining_polynomial_nice(K1) && is_defining_polynomial_nice(K2)
+    d1 = numerator(discriminant(K1.pol))
+    d2 = numerator(discriminant(K2.pol))
+    if gcd(d1, d2) == 1
+      return true
+    end
   end
   if is_maximal_order_known(K1) && is_maximal_order_known(K2)
     OK1 = maximal_order(K1)
@@ -1132,16 +1134,10 @@ function common_super(A::NumField, B::NumField)
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
-  first = true
   m = nothing
-  for C = c
-    if first
+  for C in c
+    if m === nothing || absolute_degree(C) < absolute_degree(m)
       m = C
-      first = false
-    else
-      if absolute_degree(C) < absolute_degree(m)
-        m = C
-      end
     end
   end
   return m

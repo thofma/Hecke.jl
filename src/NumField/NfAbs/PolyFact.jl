@@ -703,13 +703,12 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
 
     while length(have) > length(used)
       local m
-      m_empty = true
+      m = nothing
       for i=1:length(have)
         if have[i] in used
           continue
         end
-        if m_empty || b[i] < m[1]
-          m_empty = false
+        if m === nothing || b[i] < m[1]
           m = (b[i], i)
         end
       end

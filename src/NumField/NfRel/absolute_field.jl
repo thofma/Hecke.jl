@@ -165,7 +165,7 @@ function absolute_simple_field(K::RelSimpleNumField{AbsSimpleNumFieldElem}; cach
   local Ka::AbsSimpleNumField
   if simplify
     Ka, mp = simplified_absolute_field(K, cached = cached)
-    abs[simplify] = (Kabs, mp)
+    abs[simplify] = (Ka, mp)
     return Ka, mp
   end
   Ka, a, b, c = _absolute_field(K, cached = cached)

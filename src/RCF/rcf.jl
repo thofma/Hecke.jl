@@ -47,6 +47,30 @@ function number_field(CF::ClassField{S, T}; redo::Bool = false, using_norm_relat
   return CF.A
 end
 
+@doc raw"""
+    number_field(AbsSimpleNumField, CF::ClassField) -> RelNonSimpleNumField{AbsSimpleNumFieldElem}
+
+Given a (formal) abelian extension, compute the class field by finding an 
+absolute primitive element thus return a simple extension of Q.
+"""
+function number_field(::Type{AbsSimpleNumField}, CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false, simplify::Bool = false) where {S, T}
+  K = number_field(CF; redo, using_norm_relation, over_subfield, using_stark_units)
+  return absolute_simple_field(K; simplify)[1]
+end
+
+@doc raw"""
+    number_field(SimpleNumField, CF::ClassField) -> RelNonSimpleNumField{AbsSimpleNumFieldElem}
+
+Given a (formal) abelian extension, compute the class field by finding an 
+primitive element over the base field of the class field, thus return a simple 
+extension of the base field.
+"""
+function number_field(::Type{SimpleNumField}, CF::ClassField{S, T}; redo::Bool = false, using_norm_relation::Bool = false, over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
+  K = number_field(CF; redo, using_norm_relation, over_subfield, using_stark_units)
+  return simple_extension(K)[1]
+end
+
+
 function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::FinGenAbGroupHom; over_subfield::Bool = false, using_stark_units::Bool = false) where {S, T}
   @vprintln :ClassField 1 "cyclic prime power class field of degree $(degree(CF))"
   CFpp = ClassField_pp{S, T}()

@@ -524,7 +524,7 @@ function _action_on_quo(mq::FinGenAbGroupHom, act::Vector{FinGenAbGroupHom})
   R=residue_field(ZZ, n, cached=false)[1]
   quo_action=Vector{zzModMatrix}(undef, length(act))
   for s=1:length(act)
-    quo_action[s]= change_base_ring(mS.map*act[i].map*mS.imap, R)
+    quo_action[s]= change_base_ring(mS.map*act[s].map*mS.imap, R)
   end
   return ZpnGModule(S, quo_action)
 

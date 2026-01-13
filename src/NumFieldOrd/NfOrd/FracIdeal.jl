@@ -602,7 +602,7 @@ function //(A::AbsNumFieldOrderIdeal{S, T}, B::AbsNumFieldOrderFractionalIdeal{S
 end
 
 function //(A::AbsNumFieldOrderFractionalIdeal{S, T}, a::T) where {S <: NumField, T <: NumFieldElem}
-  C = prod(A, Idl((order(A), inv(a))))
+  C = prod(A, fractional_ideal(order(A), inv(a)))
   return C
 end
 
