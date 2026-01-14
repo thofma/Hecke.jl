@@ -435,7 +435,7 @@ end
 @doc raw"""
     c_invariants(E::EllipticCurve{T}) -> Tuple{T, T}
 
-Return the c-invariants of $E as a tuple $(c_4, c_6)$.
+Return the c-invariants of $E$ as a tuple $(c_4, c_6)$.
 """
 function c_invariants(E::EllipticCurve)
   if isdefined(E, :c_invariants)
