@@ -470,8 +470,8 @@ function lift_root(K::AbsSimpleNumField, b, bound::Int)
   R = residue_ring(ZZ, modu, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
   fR = map_coefficients(R, change_base_ring(ZZ, defining_polynomial(K); parent = Zx); parent = Rx)
-  Rb_0 = Rx(b_0)
-  Rw_0 = Rx(w_0)
+  Rb_0 = change_base_ring(R, b_0; parent = Rx)
+  Rw_0 = change_base_ring(R, w_0; parent = Rx)
   bi = compose_mod(fR, Rb_0, fR)
   bi = mulmod(Rw_0, bi, fR)
   bi = sub!(bi, Rb_0, bi)
@@ -487,8 +487,8 @@ function lift_root(K::AbsSimpleNumField, b, bound::Int)
     R = residue_ring(ZZ, modu, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
     fR = change_base_ring(R, defining_polynomial(K); parent = Rx)
-    Rb_0 = Rx(b_0)
-    Rw_0 = Rx(w_0)
+    Rb_0 = change_base_ring(R, b_0; parent = Rx)
+    Rw_0 = change_base_ring(R, w_0; parent = Rx)
     @vtime :Automorphisms 4 A, fRinv = precomp_compose_mod(Rb_0, fR)
     @vtime :Automorphisms 4 wi = compose_mod_precomp(derivative(fR), A, fR, fRinv)
     wi = wi * Rw_0

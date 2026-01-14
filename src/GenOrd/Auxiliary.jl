@@ -235,7 +235,7 @@ end
 ########################################################################
 
 function Hecke.integral_split(M::Vector{<:AbstractAlgebra.FieldElem}, S::Generic.Ring)
-  m = [zero(S) for i in 1:length(M)]
+  m = zeros_array(S, length(M))
   den = one(S)
   for i=1:length(M)
       n, d = integral_split(M[i], S)

@@ -109,11 +109,11 @@ end
 function get_tmp_scalar(A::SMat, i::Int)
 #  return zeros(base_ring(A), i)
   if !isdefined(A, :tmp_scalar)
-    A.tmp_scalar = zeros(base_ring(A), i)
+    A.tmp_scalar = zeros_array(base_ring(A), i)
   end
   s = A.tmp_scalar
   if length(s) < i
-    append!(s, zeros(base_ring(A), i+1-length(s)))
+    append!(s, zeros_array(base_ring(A), i+1-length(s)))
   end
   @inbounds ret = s[length(s)-i+1:length(s)]
   resize!(s, length(s)-i)
@@ -1681,7 +1681,7 @@ end
 The same matrix, but as a julia matrix.
 """
 function Matrix(A::SMat)
-  M = elem_type(base_ring(A))[zero(base_ring(A)) for _ in 1:nrows(A), _ in 1:ncols(A)]
+  M = zeros_array(base_ring(A), nrows(A), ncols(A))
   for i in 1:nrows(A)
     for (k, c) in A[i]
       M[i, k] = c
@@ -1696,7 +1696,7 @@ end
 The same matrix, but as a two-dimensional julia array.
 """
 function Array(A::SMat)
-  M = elem_type(base_ring(A))[zero(base_ring(A)) for _ in 1:nrows(A), _ in 1:ncols(A)]
+  M = zeros_array(base_ring(A), nrows(A), ncols(A))
   for i in 1:nrows(A)
     for (k, c) in A[i]
       M[i, k] = c

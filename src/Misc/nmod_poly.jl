@@ -1071,10 +1071,10 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
   R1x, x = polynomial_ring(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
   t = zero(R1x)
-  u = R1x(lift(Zy, u0))
-  g = R1x(lift(Zy, g0))
+  u = change_base_ring(R1, lift(Zy, u0); parent = R1x)
+  g = change_base_ring(R1, lift(Zy, g0); parent = R1x)
 
-  f1 = R1x(f2)
+  f1 = change_base_ring(R1, f2; parent = R1x)
   u, g, s, t = _hensel(f1, u, g, s, t)
   @hassert :AbsNumFieldOrder 1 f1 == u*g
   i = 1
@@ -1087,11 +1087,11 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
     end
     R1 = residue_ring(ZZ, mod, cached = false)[1]
     R1x, x = polynomial_ring(R1, "x", cached = false)
-    u = R1x(lift(Zy, u))
-    g = R1x(lift(Zy, g))
-    s = R1x(lift(Zy, s))
-    t = R1x(lift(Zy, t))
-    f1 = R1x(f2)
+    u = change_base_ring(R1, lift(Zy, u); parent = R1x)
+    g = change_base_ring(R1, lift(Zy, g); parent = R1x)
+    s = change_base_ring(R1, lift(Zy, s); parent = R1x)
+    t = change_base_ring(R1, lift(Zy, t); parent = R1x)
+    f1 = change_base_ring(R1, f2; parent = R1x)
     i += 1
 
     u, g, s, t = _hensel(f1, u, g, s, t)

@@ -63,7 +63,7 @@ function val_func_no_index(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   g = lift(Zx, g)
   g = hensel_lift(change_base_ring(ZZ, defining_polynomial(K); parent = Zx), g, P, 10)
   Sx = polynomial_ring(residue_ring(ZZ, P^5, cached=false)[1], cached=false)[1]
-  g = Sx(g)
+  g = change_base_ring(base_ring(Sx), g; parent = Sx)
   h = Sx()
   c = ZZRingElem()
   local vfunc

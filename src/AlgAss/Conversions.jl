@@ -84,7 +84,7 @@ function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::U
   end
 
   if isone(BO[1])
-    one = zeros(Fp, r)
+    one = zeros_array(Fp, r)
     one[1] = Fp(1)
     A = StructureConstantAlgebra(Fp, mult_table, one)
   else
@@ -595,7 +595,7 @@ function StructureConstantAlgebra(O::Union{ RelNumFieldOrder{T, S}, AlgAssRelOrd
   end
 
   if isone(new_basisO[basis_elts[1]][1])
-    one = zeros(Fp, length(basis_elts))
+    one = zeros_array(Fp, length(basis_elts))
     one[1] = Fp(1)
     A = StructureConstantAlgebra(Fp, mult_table, one)
   else
@@ -747,7 +747,7 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
   end
 
   if isone(new_basisI[basis_elts[1]][1])
-    one = zeros(Fp, length(basis_elts))
+    one = zeros_array(Fp, 1:length(basis_elts))
     one[1] = Fp(1)
     A = StructureConstantAlgebra(Fp, mult_table, one)
   else
@@ -810,7 +810,7 @@ function StructureConstantAlgebra(A::Generic.MatRing{T}) where { T <: FieldElem 
   # We use the matrices M_{ij} with a 1 at row i and column j and zeros everywhere else as the basis for A.
   # We sort "column major", so A[i + (j - 1)*n] corresponds to the matrix M_{ij}.
   # M_{ik}*M_{lj} = 0, if k != l, and M_{ik}*M_{kj} = M_{ij}
-  mult_table = zeros(K, n2, n2, n2)
+  mult_table = zeros_array(K, n2, n2, n2)
   oneK = one(K)
   for j = 0:n:(n2 - n)
     for k = 1:n
@@ -820,7 +820,7 @@ function StructureConstantAlgebra(A::Generic.MatRing{T}) where { T <: FieldElem 
       end
     end
   end
-  oneA = zeros(K, n2)
+  oneA = zeros_array(K, n2)
   for i = 1:n
     oneA[i + (i - 1)*n] = oneK
   end

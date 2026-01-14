@@ -795,11 +795,11 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   u = vcat([-one(Rc)], abscissae, [one(Rc)])
   N = length(u)
 
-  x_vals = zeros(Cc, N)
-  dx_vals = zeros(Cc, N)
-  y_vals = [zeros(Cc, m) for i in (1:N)]
+  x_vals = zeros_array(Cc, N)
+  dx_vals = zeros_array(Cc, N)
+  y_vals = [zeros_array(Cc, m) for i in (1:N)]
 
-  z = zeros(Cc, m)
+  z = zeros_array(Cc, m)
 
   #Compute x0
   x_vals[1] = evaluate(path, u[1])
@@ -1139,7 +1139,7 @@ function symplectic_reduction(K::ZZMatrix)
       v = -A[pivot, j]
       if v != 0
         #The version with ! gave different results for some reason.
-        
+
         add_row!(A, v, pivot_plus, j)
         add_column!(A,v, pivot_plus, j)
         add_row!(B, v, pivot_plus, j)

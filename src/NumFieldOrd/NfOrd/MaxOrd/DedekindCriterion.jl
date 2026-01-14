@@ -111,7 +111,7 @@ function dedekind_test_composite(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
 
   f = change_base_ring(ZZ, defining_polynomial(nf(O)); parent = Zy)
 
-  fmodp = Rx(f)
+  fmodp = change_base_ring(R, f; parent = Rx)
 
   # Now, I would like to have the squarefree factorization of fmodp
   # I go for the f/gcd(f,f')
@@ -132,7 +132,7 @@ function dedekind_test_composite(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   g1 = f - gZ*hZ
   g1 = divexact(g1, p)
 
-  g1modp = Rx(g1)
+  g1modp = change_base_ring(R, g1; parent = Rx)
 
   divs, par1 = _gcd_with_failure(gcdfderf, sqff)
   if !isone(divs)

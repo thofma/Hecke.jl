@@ -1307,8 +1307,8 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   R = parent(a)
   K = base_ring(R)
 
-  alphas = zeros(ZZ, nvars(R))
-  bi_sub = zeros(Qxy, nvars(R))
+  alphas = [zero(ZZ) for _ in 1:nvars(R)]
+  bi_sub = [zero(Qxy) for _ in 1:nvars(R)]
 
   @assert length(a) > 0
 
@@ -1336,7 +1336,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
     # linear is irreducible by assumption
     return (unit, [a, parent(a)(1)])
   elseif length(vars) == 1
-    uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
+    uni_sub = [zero(Hecke.Globals.Qx) for _ in 1:nvars(R)]
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
     K1, alpha = number_field(evaluate(a, uni_sub), cached = false)
     R1 = polynomial_ring(K1, map(string, symbols(R)), internal_ordering = internal_ordering(R), cached = false)[1]

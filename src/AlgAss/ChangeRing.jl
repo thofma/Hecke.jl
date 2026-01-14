@@ -132,7 +132,7 @@ function _restrict_scalars(A::AbstractAssociativeAlgebra{T}, prime_field) where 
   end
 
   m1 = m - 1
-  mult_table = zeros(F, nm, nm, nm)
+  mult_table = zeros_array(F, nm, nm, nm)
 
   Aij = A()
   t = A()
@@ -324,7 +324,7 @@ function __as_algebra_over_center(A, K, L, CtoA, CtoL)
 
   @assert dC * m == dim(A)
 
-  mult_table = zeros(L, m, m, m)
+  mult_table = zeros_array(L, m, m, m)
   Aij = A()
   for i = 1:m
     for j = 1:m

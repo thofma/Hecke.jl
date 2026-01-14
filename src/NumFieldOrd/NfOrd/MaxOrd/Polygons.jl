@@ -370,7 +370,7 @@ function is_regular_at(f::ZZPolyRingElem, p::ZZRingElem)
   Zx = parent(f)
   R = Native.GF(p, cached = false)
   Rx = polynomial_ring(R, "y", cached = false)[1]
-  f1 = Rx(f)
+  f1 = change_base_ring(R, f; parent = Rx)
   sqf = factor_squarefree(f1)
   for (g, v) in sqf
     isone(v) && continue
@@ -471,7 +471,7 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   @assert is_one(denominator(f))
   Zyf = numerator(f, Zy)
 
-  fmodp = Kx(Zyf)
+  fmodp = change_base_ring(base_ring(Kx), Zyf; parent = Kx)
 
   fac = factor_squarefree(fmodp)
 
@@ -490,7 +490,7 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
     setcoeff!(g1,i,q)
   end
 
-  g1modp = Kx(g1)
+  g1modp = change_base_ring(base_ring(Kx), g1; parent = Kx)
   U = gcd(gcd(g,h), g1modp)
   if isone(U)
     return O

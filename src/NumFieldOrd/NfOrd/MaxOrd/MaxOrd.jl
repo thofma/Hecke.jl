@@ -799,7 +799,7 @@ function new_pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
     #First, find the generators
     new_gens = Vector{AbsSimpleNumFieldOrderElem}()
     for i = 1:ncols(X)
-      coords = zeros(ZZ, d)
+      coords = zeros_array(ZZ, d)
       for j=1:nr
         coords[indices[j]] = lift(X[j, i])
       end
@@ -895,7 +895,7 @@ function pradical_frobenius1(O::AbsSimpleNumFieldOrder, p::Int)
   end
   #First, find the generators
   for i = 1:ncols(X)
-    coords = zeros(ZZ, d)
+    coords = zeros_array(ZZ, d)
     for j=1:nr
       coords[indices[j]] = lift(X[j, i])
     end
@@ -1024,8 +1024,8 @@ function prefactorization(f::ZZPolyRingElem, d::ZZRingElem, f1::ZZPolyRingElem =
 
     R = residue_ring(ZZ, d1, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
-    ff = Rx(f)
-    ff1 = Rx(f1)
+    ff = change_base_ring(R, f; parent = Rx)
+    ff1 = change_base_ring(R, f1; parent = Rx)
     fd = _gcd_with_failure(ff, ff1)[1]
     fdl = gcd(fd, d1)
     if !isone(fd) && d1 != fdl

@@ -1275,7 +1275,7 @@ function jordan_chevalley_decomposition(x::AbstractAssociativeAlgebraElem)
       m[i + 1, l + 1] = coeff(h, l)
     end
   end
-  v = [zero(QQ) for k in 1:degree(ggpgcd)]
+  v = zeros_array(QQ, degree(ggpgcd))
   if length(v) > 0
     v[1] = 1
   end

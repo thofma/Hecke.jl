@@ -245,7 +245,8 @@ end
 """
 function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p::ZZRingElem, k::Int)
   Rx, x = polynomial_ring(Native.GF(p, cached=false), cached=false)
-  fl, a, b = gcdx(Rx(g), Rx(h))
+  fl, a, b = gcdx(change_base_ring(base_ring(Rx), g; parent = Rx),
+                  change_base_ring(base_ring(Rx), h; parent = Rx))
   @assert isone(fl)
   @assert k>= 2
   ## if one of the cofactors is zero, this crashes.
@@ -311,7 +312,8 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int
     mod_sym!(f, pk)
   end
   @assert is_monic(f)
-  q, r = divrem(Rx(f), Rx(g))
+  q, r = divrem(change_base_ring(base_ring(Rx), f; parent = Rx),
+                change_base_ring(base_ring(Rx), g; parent = Rx))
   @assert iszero(r)
   h = lift(parent(f), q)
   return hensel_lift(f, g, h, p, k)[1]

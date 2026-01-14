@@ -1897,7 +1897,11 @@ function matgen(x, dim, per, v)
 #/*****	generates the matrix X which has as row
 #					per[i] the vector nr. x[i] from the
 #					list v	*****
-  X = zero_matrix(base_ring(v[1]), dim, dim)
+  if base_ring(v[1]) === Int
+    X = zeros(Int, dim, dim)
+  else
+    X = zero_matrix(base_ring(v[1]), dim, dim)
+  end
   #@show x
   for i in 1:dim
     xi = x[i]
