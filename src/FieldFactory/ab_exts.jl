@@ -259,7 +259,7 @@ function abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
       # see Cohen, Advanced topics, Proposition 3.5.8
       num_ramified = div(r * n - R, n)
       # Sanity check for complex places
-      if S != (s + num_ramified//2)*n
+      if S != (s + num_ramified//2)*n || num_ramified < 0
         continue
       end
       for s in subsets(onetor, num_ramified)

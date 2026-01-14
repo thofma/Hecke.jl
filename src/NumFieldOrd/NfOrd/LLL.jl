@@ -434,6 +434,7 @@ end
 Return a vector of all ordered `k`-element subsets of `1..n`.
 """
 function subsets(n::Int, k::Int)
+  @req (n >= 0 && k >= 0) "inputs must be non-negative"
   if n < k
     return Vector{Int}[]
   end
