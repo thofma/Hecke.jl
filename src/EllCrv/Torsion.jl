@@ -69,8 +69,7 @@ end
 @doc raw"""
     torsion_points_lutz_nagell(E::EllipticCurve{QQFieldElem}) -> Vector{EllipticCurvePoint}
 
-Computes the rational torsion points of an elliptic curve using the
->Lutz-Nagell theorem.
+Computes the rational torsion points of an elliptic curve using the Lutz-Nagell theorem.
 """
 function torsion_points_lutz_nagell(F::EllipticCurve{QQFieldElem})
 
@@ -266,11 +265,22 @@ end
                                            B::Vector{EllipticCurvePoint{QQFieldElem}}
 
 Compute the structure of the rational torsion group of an elliptic curve $E$.
-Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
+
+The output vector `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
 rational torsion of $E$ is isomorphic to $\mathbf Z/n\mathbf Z$ resp.
 $\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
-And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
-`B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
+
+The output vector `B` is an array of points with either `B = [P]`, where $P$ has order $n$, resp.
+`B = [P, Q]` where $P$ has order $n$ and $Q$ has order $m$.
+
+# Examples
+
+```jldoctest
+julia> E=elliptic_curve(QQ, [-64052311707,6090910426477494]);
+
+julia> torsion_structure(E)
+(ZZRingElem[2, 8], EllipticCurvePoint{QQFieldElem}[(164163 : 0 : 1), (1028163 : -1013472000 : 1)])
+```
 """
 function torsion_structure(E::EllipticCurve{QQFieldElem})
   T = torsion_points(E)
@@ -315,9 +325,9 @@ end
     torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int) -> ZZRingElem
 
 
-Bound the order of the torsion subgroup of $E by considering
+Bound the order of the torsion subgroup of $E$ by considering
 the order of the reduction of $E$ modulo $n$ distinct primes
-with good reduction
+with good reduction.
 """
 function torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int)
   K = base_field(E)
@@ -486,12 +496,14 @@ end
     torsion_structure(E::EllipticCurve{AbsSimpleNumFieldElem}) -> (A::Vector{ZZRingElem},
                                            B::Vector{EllipticCurvePoint{AbsSimpleNumFieldElem}}
 
-Compute the structure of the rational torsion group of an elliptic curve $E$.
-Then `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
-rational torsion of $E$ is isomorphic to $\mathbf Z/n\mathbf Z$ resp.
+Compute the structure of the torsion subgroup of an elliptic curve $E$.
+
+The output vector `A` is an array with `A = [n]` resp. `A = [n,m]` such that the
+torsion subgroup of $E$ is isomorphic to $\mathbf Z/n\mathbf Z$ resp.
 $\mathbf Z/n\mathbf Z \times \mathbf Z/m\mathbf Z$.
-And `B` is an array of points with `B = [P]` and $P$ has order $n$ resp.
-`B = [P, Q]` and $P$ has order $n$, $Q$ has order $m$.
+
+The output vector `B` is an array of points with either `B = [P]`, where $P$ has order $n$, resp.
+`B = [P, Q]` where $P$ has order $n$ and $Q$ has order $m$.
 """
 function torsion_structure(E::EllipticCurve{AbsSimpleNumFieldElem})
 
@@ -563,7 +575,9 @@ end
     division_polynomial_univariate(E::EllipticCurve, n::Int, [x]) -> Poly
 
 Compute the n-th univariate division polynomial of an elliptic curve defined
-over a field k following Mazur and Tate. By default the result is a univariate polynomial over the base ring of `E`.
+over a field k following Mazur and Tate.
+
+By default the result is a univariate polynomial over the base ring of `E`.
 When `x` is given, the output is evaluated using the given value for `x`.
 
 A triple of objects is returned:

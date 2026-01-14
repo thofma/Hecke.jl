@@ -174,7 +174,7 @@ end
     elem_order_bsgs(P::EllipticCurvePoint) -> ZZRingElem
 
 Calculate the order of a point $P$ on an elliptic curve given over a finite
-field using BSGS.
+field using Baby-step Giant-step (BSGS).
 """
 function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
   R = base_field(P.parent)
@@ -324,9 +324,9 @@ end
 @doc raw"""
     order_via_bsgs(E::EllipticCurve) -> Vector{ZZRingElem}
 
-Calculate candidates for the number of points on an elliptic curve $E$ given
-over a finite field $\mathbf F_q$, using the baby step giant step method. If
-$q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
+Returns a vector of candidates for the number of points on an elliptic curve $E$ given
+over a finite field $\mathbf{F}_q$, using the Baby-step Giant-step method. If
+$q$ is prime, and if $q > 229$, then the order is determined uniquely by this algorithm.
 It is assumed that the characteristic is not 2.
 """
 function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
@@ -423,8 +423,8 @@ end
 @doc raw"""
     order_via_schoof(E::EllipticCurve) -> ZZRingElem
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$,
-this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
+Given an elliptic curve $E$ over a finite field $\mathbf{F}$,
+this function computes the order of $E(\mathbf{F})$ using Schoof's algorithm
 The characteristic must not be $2$ or $3$.
 """
 function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
@@ -789,8 +789,8 @@ end
 @doc raw"""
     order(E::EllipticCurve{<: FinFieldElem}) -> ZZRingElem
 
-Given an elliptic curve $E$ over a finite field $\mathbf F$, compute
-$\#E(\mathbf F)$.
+Given an elliptic curve $E$ over a finite field $\mathbf{F}$, compute
+$\#E(\mathbf{F})$.
 
 # Examples
 
@@ -1128,7 +1128,9 @@ end
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
 @doc raw"""
     is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
-Return true when the elliptic curve is supersingular. The result is proven to be correct.
+
+Returns `true` when the elliptic curve is supersingular and `false` otherwise.
+The result is proven to be correct.
 """
 function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   K = base_field(E)
@@ -1206,7 +1208,8 @@ end
 
 @doc raw"""
     is_ordinary(E::EllipticCurve{T}) where T <: FinFieldElem
-Return true when the elliptic curve is ordinary, i.e. not supersingular.
+
+Returns `true` when the elliptic curve is ordinary and `false` otherwise.
 """
 function is_ordinary(E::EllipticCurve{T}) where T <: FinFieldElem
   return !is_supersingular(E)
@@ -1215,10 +1218,11 @@ end
 #Following Identifying supersingular elliptic curves - Andrew V. Sutherland
 @doc raw"""
     is_probable_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
-Uses a probabilistic algorithm to test whether E is supersingular or not.
-If the function returns false, the curve is proven to be ordinary.
-If the function returns true, there is a high chance the curve is supersingular,
-but the result hasn't been proven.
+
+Uses a probabilistic algorithm to test whether $E$ is supersingular.
+A return value of `false` constitutes a proof that the curve $E$ is ordinary.
+A return value of `true` indicates that the curve $E$ is supersingular with high probability,
+but it does not prove that $E$ is supersingular.
 """
 function is_probable_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   j = j_invariant(E)
@@ -1258,7 +1262,8 @@ end
 # Inspired from Sage implementation in ell_finite_field.py
 @doc raw"""
     supersingular_polynomial(p::IntegerUnion)
-Return the polynomial whose roots correspond to j-invariants
+
+Returns the polynomial whose roots correspond to j-invariants
 of supersingular elliptic curves of characteristic p.
 """
 function supersingular_polynomial(p::IntegerUnion)
