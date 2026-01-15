@@ -133,7 +133,7 @@ true
 !!! tip
     The algorithm employed is based on Kummer-theory and requires the addition of a suitable root of unity.
 
-    Computation progress can be monitored by setting `set_verbose_level(:ClassField, n)` where $0\le n\le 3$
+    Computation progress can be monitored by setting `set_verbose_level(:ClassField, n)` where $0\le n\le 3$.
 
 ```@docs
 ray_class_field(K::RelSimpleNumField{AbsSimpleNumFieldElem})

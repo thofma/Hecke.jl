@@ -35,9 +35,14 @@ number_field(::DocuDummy2)
     polynomial ring and the same (identical) symbol/string will be identical if
     `cached == true` and different if `cached == false`.
 
+One can directly construct the splitting field of polynomial as an absolute simple number field.
+
+```@docs
+splitting_field
+```
 
 For frequently used number fields like quadratic fields, cyclotomic fields
-or radical extensions, the following functions are provided:
+or radical extensions, the following functions are also provided:
 
 ```@docs
 cyclotomic_field(n::Int)
@@ -52,7 +57,6 @@ For cases of compatibility, we also provide a method for considering the rationa
 
 ```@docs
 rationals_as_number_field()
-splitting_field
 ```
 
 ## Basic properties
