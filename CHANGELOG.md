@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+tries to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.39.8](https://github.com/thofma/Hecke.jl/releases/tag/v0.39.8) - 2026-01-16
+
+The following gives an overview of the changes compared to the previous release. This list is not
+complete, many more internal or minor changes were made, but we tried to only list those changes
+which we think might affect some users directly.
+
+### **TODO** Uncategorized PR
+
+If there are any PRs listed below, either apply the same steps
+as above, or change their label to "release notes: not needed".
+
+- [#2109](https://github.com/thofma/Hecke.jl/pull/2109) Adapt to Nemo change around `fq_default_mat_entry_ptr`
+- [#2118](https://github.com/thofma/Hecke.jl/pull/2118) Updates to website and documentation
+- [#2122](https://github.com/thofma/Hecke.jl/pull/2122) chore(deps): bump actions/checkout from 5 to 6
+- [#2125](https://github.com/thofma/Hecke.jl/pull/2125) fix #2124
+- [#2126](https://github.com/thofma/Hecke.jl/pull/2126) fix #2121
+- [#2127](https://github.com/thofma/Hecke.jl/pull/2127) allow conversion of RCF to (abs)simple in 1 step
+- [#2128](https://github.com/thofma/Hecke.jl/pull/2128) Address several JET reports
+- [#2130](https://github.com/thofma/Hecke.jl/pull/2130) Fix a bunch of "foo is not defined" JET warnings
+- [#2131](https://github.com/thofma/Hecke.jl/pull/2131) Fix some more JET warnings
+- [#2133](https://github.com/thofma/Hecke.jl/pull/2133) impossible subsets, like (3, 4), would be infinite recursive
+- [#2136](https://github.com/thofma/Hecke.jl/pull/2136) Avoid re-computing derivatives
+- [#2137](https://github.com/thofma/Hecke.jl/pull/2137) fix 2135 -not optimal
+- [#2139](https://github.com/thofma/Hecke.jl/pull/2139) Fix a typo
+- [#2140](https://github.com/thofma/Hecke.jl/pull/2140) Add workflow for changelog script
+
 ## [0.36.0](https://github.com/thofma/Hecke/releases/tag/v0.36.0) - 2025-05-19
 
 The following gives an overview of the changes compared to the previous release. This list is not
