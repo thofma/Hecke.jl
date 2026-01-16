@@ -1645,12 +1645,12 @@ function decomposition_group(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
     q = 2
     R = residue_ring(ZZ, q, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
-    fmod = Rx(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rx)
     while iszero(discriminant(fmod))
       q = next_prime(q)
       R = residue_ring(ZZ, q, cached = false)[1]
       Rx = polynomial_ring(R, "x", cached = false)[1]
-      fmod = Rx(K.pol)
+      fmod = change_base_ring(R, K.pol; parent = Rx)
     end
     D = Dict{zzModPolyRingElem, Int}()
     for i = 1:length(G)
@@ -1755,12 +1755,12 @@ function inertia_subgroup(P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleN
   q = 2
   R = residue_ring(ZZ, q, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rx)
   while iszero(discriminant(fmod))
     q = next_prime(q)
     R = residue_ring(ZZ, q, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
-    fmod = Rx(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rx)
   end
   D = Dict{zzModPolyRingElem, Int}()
   for i = 1:length(G)
@@ -1797,7 +1797,7 @@ function inertia_subgroup_easy(F, mF, G::Vector{<:NumFieldHom{AbsSimpleNumField,
   p = minimum(P, copy = false)
   R = residue_ring(ZZ, Int(p), cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
-  fmod = Rt(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rt)
   gF = gen(F)
   igF = K(mF\gF)
   igFq = Rt(igF)

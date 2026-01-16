@@ -133,7 +133,7 @@ end
 function _sieve_primitive_elements(B::Vector{AbsNonSimpleNumFieldElem})
   K = parent(B[1])
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
-  pols = [Zx(to_univariate(Globals.Qx, x)) for x in K.pol]
+  pols = [change_base_ring(ZZ, to_univariate(Globals.Qx, x); parent = Zx) for x in K.pol]
   p, d = _find_prime(pols)
   F = Native.finite_field(p, d, "w", cached = false)[1]
   Fp = Native.GF(p, cached = false)

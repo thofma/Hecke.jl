@@ -482,12 +482,12 @@ function _order(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField})
   p = 2
   R = residue_ring(ZZ, p, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
-  fmod = Rt(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rt)
   while iszero(discriminant(fmod))
     p = next_prime(p)
     R = residue_ring(ZZ, p, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
-    fmod = Rt(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rt)
   end
   i = 2
   ap = Rt(image_primitive_element(f))

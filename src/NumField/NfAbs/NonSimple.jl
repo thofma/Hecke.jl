@@ -915,7 +915,7 @@ end
 
 function number_field(f::Vector{ZZPolyRingElem}, s::VarName="_\$"; cached::Bool = false, check::Bool = true)
   Qx, _ = polynomial_ring(QQ, var(parent(f[1])), cached = false)
-  return number_field(QQPolyRingElem[Qx(x) for x = f], s, cached = cached, check = check)
+  return number_field(QQPolyRingElem[change_base_ring(QQ, x; parent = Qx) for x = f], s, cached = cached, check = check)
 end
 
 function number_field(f::Vector{ZZPolyRingElem}, s::Vector{<:VarName}; cached::Bool = false, check::Bool = true)
