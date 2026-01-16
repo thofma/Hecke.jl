@@ -296,7 +296,7 @@ coeff(::SimpleNumFieldElem, ::Int)
 # copy does not do anything (so far), this is only for compatibility with coefficients(::AbstractAssociativeAlgebraElem)
 
 @doc raw"""
-    coefficients(a::SimpleNumFieldElem, i::Int) -> Vector{FieldElem}
+    coefficients(a::SimpleNumFieldElem) -> Vector{FieldElem}
 
 Given a number field element `a` of a simple number field extension `L/K`, this
 function returns the coefficients of `a`, when expanded in the canonical
