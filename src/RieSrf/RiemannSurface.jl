@@ -205,7 +205,7 @@ mutable struct RiemannSurface
       min_pows = [min_x - 1, min_y - 1, -1]
 	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
 
-      factor_matrix = zero_matrix(Int, n, g)
+      factor_matrix = zeros(Int, n, g)
 
       for i in (1:g)
         factor_matrix[1, i] = inner_fac[i][1] - 1
@@ -1067,7 +1067,7 @@ function _homology_basis(RS::RiemannSurface)
   end
 
 
-  A = zero_matrix(Int, PQ_size, PQ_size)
+  A = zeros(Int, PQ_size, PQ_size)
   for i in (1:PQ_size)
     j = mod(get_position(P[i]), terminated_edges_nr) + 1
     while true
