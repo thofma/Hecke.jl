@@ -1,0 +1,20 @@
+reponame = "thofma/Hecke.jl"
+enabletwolevel = true
+requiretwolevel = true
+extra = """f'-label:"backport {major}.{minor}.x done"'"""
+
+[topics]
+"release notes: highlight" =    "Highlights"
+"topic: number fields" =        "Number fields"
+"topic: function fields" =      "Function fields"
+"topic: algebras" =             "Noncommutative algebras"
+"package: AbstractAlgebra" =    "Changes related to the package AbstractAlgebra"
+"package: Nemo" =               "Changes related to the package Nemo"
+
+[prtypes]
+"bug" =             "Bugfix"
+"renaming" =        "Renamings"
+"enhancement" =     "New features or extended functionality"
+"optimization" =    "Performance improvements"
+"documentation" =   "Improvements or additions to documentation"
+"experimental" =    "Experimental features"
