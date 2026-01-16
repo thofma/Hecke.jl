@@ -916,7 +916,7 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 
   newjs = [jL, jL, jL]
-  f = zeros_arrays(Lx, 3)
+  f = zeros_array(Lx, 3)
 
   m = nbits(p) - 1
   for k in (1 : m)
