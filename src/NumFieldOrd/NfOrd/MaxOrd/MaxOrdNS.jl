@@ -261,7 +261,7 @@ function new_pradical_frobenius1(O::AbsNumFieldOrder{AbsNonSimpleNumField, AbsNo
     #First, find the generators
     new_gens = Vector{elem_type(O)}()
     for i = 1:ncols(X)
-      coords = zeros(ZZ, d)
+      coords = zeros_array(ZZ, d)
       for j=1:nr
         coords[indices[j]] = lift(X[j, i])
       end
