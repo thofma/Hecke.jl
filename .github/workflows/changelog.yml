@@ -30,7 +30,7 @@ jobs:
       uses: oscar-system/changelog-script@master
       with:
         conffile: "dev/releases/config.toml"
-        changelogfile: "CHANGELOG.md"
+        releasenotesfile: "CHANGELOG.md"
         version: ${{ inputs.version }}
 
     # Configure git for the PR
