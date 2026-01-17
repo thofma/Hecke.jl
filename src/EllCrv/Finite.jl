@@ -808,8 +808,21 @@ julia> order(E)
 
   p == 0 && error("Characteristic must be nonzero")
 
-  # char 2 or 3
-  if p == 2 || p == 3
+  # in characteristic 2:
+  #  for supersingular curves we count points by finding isomorphism class
+  #  TODO: when j is in F_4 we cout points via "subfield" approach
+  #  TODO: otherwise we can use p-adic algorithms (we will use AGM)
+  if p == 2
+    j = j_invariant(E)
+    if j == 0
+      return ZZ(_order_supersingular_char2(E))
+    else
+      return ZZ(order_via_exhaustive_search(E))
+    end
+  end
+
+  # char 3
+  if p == 3
     return ZZ(order_via_exhaustive_search(E))
   end
 
@@ -873,6 +886,118 @@ function trace_of_frobenius(E::EllipticCurve{T}, n::Int) where T<:FinFieldElem
   else
     _alpha = roots(f)[1]
     return 2 * ZZ(_alpha^n)
+  end
+end
+
+################################################################################
+#
+#  Point counting in characteristic 2
+#
+################################################################################
+
+# finds order of a supersingular elliptic curve defined over finite field of characteristic 2
+# This implements sections 3.4 and 3.5 of Menezes' "Elliptic Curve Public Key Cryptosystems"
+function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
+  R = base_field(E)
+  _, X = polynomial_ring(R,"X")
+
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req iszero(j_invariant(E)) "Curve must be supersingular (j not zero)"
+  @req iszero(E.a_invariants[1]) "Curve must be supersingular (a_1 not zero)"
+
+  q = order(R)
+  d = degree(R)
+
+  # transform to canonical supersingular form: y^2 + a_3*y = x^3 + a_4*x + a_6
+  # change of variables (x,y) -> (x+a_2,y)
+  a3 = E.a_invariants[3]
+  a4 = E.a_invariants[2]^2 + E.a_invariants[4]
+  a6 = E.a_invariants[2]*E.a_invariants[4] + E.a_invariants[5]
+
+  # this is common for both odd/even d: for a3 cube we transform to a form with a3=1
+  function _update_coeffs_when_a3_cube(r::T, a4::T, a6::T)
+    r_inv = divexact(one(R), r)
+    return (a4*r_inv^4, a6*r_inv^6)
+  end
+
+  # see Menezes "Elliptic Curve Public Key Cryptosystems" sections 3.4 and 3.5
+  if isodd(d)
+    # bring to the form y^2 + y = x^3 + a_4*x + a_6
+    if a3 != one(R)
+      # r = cube root of a_3, (x,y) -> (r^2*x, r^3*y)
+      # to find r: let q = 3k+2 [d is odd!]
+      # a_3^( (q+1)/3 ) = a_3^(k+1) = r^(3k+3) = r^(q+1) = r^2
+      r = sqrt(a3^(divexact(q+1,3)))
+      (a4, a6) = _update_coeffs_when_a3_cube(r, a4, a6)
+    end
+
+    # 1) y^2 + y = x^3 : q+1 points
+    # for s root of X^4 + X + a_4, we need t^2 + t + (s^6 + a_6) to be solvable
+    # which is equivalent to Tr(s^6 + a_6) == 0
+    # for a root s, s+1 is also a root and Tr((s+1)^6 + a_6) = Tr(s^6 + a_6) + 1
+    # thus we only need to check for root existence
+    if !isempty(roots(X^4 + X + a4))
+      return q + 1
+    end
+
+    # 2) y^2 + y = x^3 + x     : q + 1 +- sqrt(2q) points with + for d = 1,7 mod 8
+    # 3) y^2 + y = x^3 + x + 1 : q + 1 +- sqrt(2q) points with + for d = 3,5 mod 8
+    # there should be a root s of X^4 + X + a_4 + 1
+    # to distinguish curves we check if Tr(s^6 + s^2 + a_6) == 0 (then curve 2)
+    ss = roots(X^4 + X + a4 + one(R))
+    @assert !isempty(ss)
+
+    sqrt_2q = ZZ(2)^divexact(d+1,2)
+    if iszero(tr(ss[1]^6 + ss[1]^2 + a6))
+      return mod(d, 8) in (1, 7) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
+    else
+      return mod(d, 8) in (3, 5) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
+    end
+  else
+
+    # check if a3 is a cube (type II and III)
+    a3_cbrt = roots(X^3 - a3)
+    if !isempty(a3_cbrt)
+      (a4, a6) = _update_coeffs_when_a3_cube(a3_cbrt[1], a4, a6)
+
+      function _trace_4(x)  # x + x^(2^2) + ... + x^(2^[d-2])
+        ret = x; term = x
+        for e in 2:2:d-2
+          term = term^4
+          ret = ret + term
+        end
+        return ret
+      end
+
+      if iszero(_trace_4(a4))
+        # type III: we can assume u = 1, find root s of X^4 + X + a_4 (we have 4)
+        # and check the trace of s^6 + a_6 to select a correct class
+        ss = roots(X^4 + X + a4)
+        @assert length(ss) == 4
+
+        sqrt_q = ZZ(2)^divexact(d,2)
+        if iszero(tr(ss[1]^6 + a6))
+          return mod(d, 4) == 2 ? q + 1 + 2*sqrt_q : q + 1 - 2*sqrt_q
+        else
+          return mod(d, 4) == 0 ? q + 1 + 2*sqrt_q : q + 1 - 2*sqrt_q
+        end
+      else
+        # type II
+        return q + 1
+      end
+
+    else
+      # type I: we can assume u = 1, find root s of X^4 + a_3 X + a_4,
+      # and check the Trace of [s^6 + a_6] / a_3^2 to select a correct class
+      s = only(roots(X^4 + a3*X + a4))
+
+      sqrt_q = ZZ(2)^divexact(d,2)
+      if iszero(tr(divexact(s^6+a6, a3^2)))
+        return mod(d, 4) == 0 ? q + 1 + sqrt_q : q + 1 - sqrt_q
+      else
+        return mod(d, 4) == 2 ? q + 1 + sqrt_q : q + 1 - sqrt_q
+      end
+    end
   end
 end
 

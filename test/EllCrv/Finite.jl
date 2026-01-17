@@ -103,6 +103,87 @@
     @test 576 == @inferred order(E4_)
   end
 
+  @testset "Point counting for supersingular curves in characteristic 2" begin
+    function _order_of(K::Field, a3, a4, a6)::ZZRingElem
+      return Hecke._order_supersingular_char2(elliptic_curve(elem_type(K)[K(0),K(0),K(a3),K(a4),K(a6)]))
+    end
+
+    # the representatives of isomorphism classes taken from Menezes
+    # we make sure we exercise all the choices made computing the number of points
+    R1 = GF(2, 1)
+    @test 3 == @inferred _order_of(R1, 1,0,0) # d = 1, y^2 + y = x^3
+    @test 5 == @inferred _order_of(R1, 1,1,0) # d = 1, y^2 + y = x^3 + x
+    @test 1 == @inferred _order_of(R1, 1,1,1) # d = 1, y^2 + y = x^3 + x + 1
+
+    R3 = GF(2, 3)
+    @test 9 == @inferred _order_of(R3, 1,0,0)  # d = 3, y^2 + y = x^3
+    @test 5 == @inferred _order_of(R3, 1,1,0)  # d = 3, y^2 + y = x^3 + x
+    @test 13 == @inferred _order_of(R3, 1,1,1) # d = 3, y^2 + y = x^3 + x + 1
+
+    R5 = GF(2, 5)
+    @test 33 == @inferred _order_of(R5, 1,0,0)  # d = 5, y^2 + y = x^3
+    @test 25 == @inferred _order_of(R5, 1,1,0)  # d = 5, y^2 + y = x^3 + x
+    @test 41 == @inferred _order_of(R5, 1,1,1)  # d = 5, y^2 + y = x^3 + x + 1
+
+    R7 = GF(2, 7)
+    @test 129 == @inferred _order_of(R7, 1,0,0)  # d = 7, y^2 + y = x^3
+    @test 145 == @inferred _order_of(R7, 1,1,0)  # d = 7, y^2 + y = x^3 + x
+    @test 113 == @inferred _order_of(R7, 1,1,1)  # d = 7, y^2 + y = x^3 + x + 1
+
+    R2, c1_R2 = finite_field(2, 2, "x"); c2_R2 = c1_R2 + one(R2)
+    @test 3 == @inferred _order_of(R2, c1_R2,0,0) # d = 2, y^2 + c_1*y = x^3
+    @test 7 == @inferred _order_of(R2, c1_R2,0,1) # d = 2, y^2 + c_1*y = x^3 + 1
+    @test 3 == @inferred _order_of(R2, c2_R2,0,0) # d = 2, y^2 + c_2*y = x^3
+    @test 7 == @inferred _order_of(R2, c2_R2,0,1) # d = 2, y^2 + c_2*y = x^3 + 1
+    @test 5 == @inferred _order_of(R2, 1,1,0)     # d = 2, y^2 + y = x^3 + x
+    @test 9 == @inferred _order_of(R2, 1,0,0)     # d = 2, y^2 + y = x^3
+    @test 1 == @inferred _order_of(R2, 1,0,c1_R2) # d = 2, y^2 + y = x^3 + c_1
+
+    R4, c1_R4 = finite_field(2, 4, "x"); c2_R4 = c1_R4 + one(R4);
+    @test 21 == @inferred _order_of(R4, c1_R4,0,0) # d = 4, y^2 + c_1*y = x^3
+    @test 13 == @inferred _order_of(R4, c1_R4,0,1) # d = 4, y^2 + c_1*y = x^3 + 1
+    @test 21 == @inferred _order_of(R4, c2_R4,0,0) # d = 4, y^2 + c_2*y = x^3
+    @test 13 == @inferred _order_of(R4, c2_R4,0,1) # d = 4, y^2 + c_2*y = x^3 + 1
+    @test 9  == @inferred _order_of(R4, 1,0,0)     # d = 4, y^2 + y = x^3
+    # d = 4, y^2 + y = x^3 + omega, with tr(omega) = 1. Take omega = c1^3
+    @test 25 == @inferred _order_of(R4, 1,0,c1_R4^3)
+
+    # test the coordinate transform when a_2 != 0
+    E1 = elliptic_curve(R1, [0,1,1,0,0]) # y^2 + y = x^3 + x^2
+    @test @inferred Hecke._order_supersingular_char2(E1) == @inferred Hecke.order_via_exhaustive_search(E1)
+    E2 = elliptic_curve(R2, [0,1,1,0,0]) # y^2 + y = x^3 + x^2
+    @test @inferred Hecke._order_supersingular_char2(E2) == @inferred Hecke.order_via_exhaustive_search(E2)
+    E3 = elliptic_curve(R3, [0,1,1,1,0]) # y^2 + y = x^3 + x^2 + x
+    @test @inferred Hecke._order_supersingular_char2(E3) == @inferred Hecke.order_via_exhaustive_search(E3)
+    E4 = elliptic_curve(R5, [0,1,1,1,1]) # y^2 + y = x^3 + x^2 + x + 1
+    @test @inferred Hecke._order_supersingular_char2(E4) == @inferred Hecke.order_via_exhaustive_search(E4)
+  end
+
+  @testset "Point counting for supersingular curves in characteristic 2 (Exhaustive d=1..4)" begin
+    # do a bruteforce enumeration: for a fixed exponent d, enumerate all a_3,a_4,a_6 with a_3 non-zero
+    # compare _order_supersingular_char2 to order_via_exhaustive_search
+    # note that the order_via_exhaustive_search is pretty slow, so we need to limit ourselves in the range of d
+    function test_supersingular_exhaustive(max_degree)::Bool
+      for d in 1:max_degree
+        R = GF(2, d, "t")
+        for a3 in R
+          if iszero(a3) continue end
+
+          for (a4, a6) in Iterators.product(R, R)
+            E = elliptic_curve(R, [0,0,a3,a4,a6])
+            if Hecke._order_supersingular_char2(E) != Hecke.order_via_exhaustive_search(E)
+              println("Wrong point count for supersingular curve $E over $R")
+              return false
+            end
+          end
+        end
+      end
+      return true
+    end
+
+    @test test_supersingular_exhaustive(4)
+  end
+
   @testset "Supersingular" begin
     g = @inferred supersingular_polynomial(2)
     R = parent(g)
