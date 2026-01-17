@@ -156,7 +156,7 @@
       @test isempty(pmat20)
       @test !is_empty(pmat11)
       @test !is_empty(pmat23)
-      
+
       @test sprint(show, pmat00) isa String
       @test sprint(show, pmat02) isa String
       @test sprint(show, pmat20) isa String

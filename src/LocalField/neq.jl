@@ -1362,7 +1362,7 @@ function Hecke.unit_group(K::PadicField; n_quo::Int = -1)
   g = teichmuller(preimage(mr, mu(u[1])))
   A = abelian_group([0, order(u), p^(precision(K)-2)])
   gn = K(1+p) #a generator for the 1 units
-  lg = log(gn) 
+  lg = log(gn)
   function fl(y::PadicFieldElem)
     v = valuation(y)
     y *= K(p)^-v
@@ -1384,7 +1384,7 @@ function unit_group2(K::PadicField; n_quo::Int = -1)
   @assert p == 2
   A = abelian_group([0, 2, p^(precision(K)-2)])
   gn = K(1+p^2) #a generator for the 1 units
-  lg = log(gn) 
+  lg = log(gn)
 
   function fl(y::PadicFieldElem)
     v = valuation(y)

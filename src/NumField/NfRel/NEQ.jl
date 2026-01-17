@@ -71,7 +71,7 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   local vv
   while true
     R = ArbField(pr)
-    try 
+    try
       vv = matrix([[round(ZZRingElem, x*1000) for x = conjugates_arb_log(g, R)] for g = gk])
       break
     catch e

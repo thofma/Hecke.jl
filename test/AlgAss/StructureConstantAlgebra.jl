@@ -50,7 +50,7 @@ end
 
   @test_throws ArgumentError structure_constant_algebra(QQ, map(QQ, reshape([1 2 1 2; 1 2 1 2], 2, 2, 2)))
   @test_throws ArgumentError structure_constant_algebra(QQ, reshape([2], 1, 1, 1); one = QQFieldElem[2, 3])
-  
+
   A = structure_constant_algebra(QQ, reshape([1], 1, 1, 1); one = QQFieldElem[1])
   A = structure_constant_algebra(QQ, reshape([1], 1, 1, 1); one = Int[1])
   A = structure_constant_algebra(QQ, reshape([], 0, 0, 0); one = [])

@@ -528,7 +528,7 @@
     @test beta * Gamma == I
   end
 
-  let 
+  let
     # Some random example
     G = Hecke.small_group(36, 1; DB = Hecke.DefaultSmallGroupDB())
     QG = QQ[G]

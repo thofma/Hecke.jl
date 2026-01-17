@@ -39,7 +39,7 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
   # We definitely want to isolate the real roots as well as identify conjugated roots
   local rts::Vector{AcbFieldElem}
   P = _P isa InfPlc ? _embedding(_P) : _P
-  
+
   while true
     con = AcbFieldElem[evaluate(coeff(f, i), P, wprec) for i in 0:degree(f)]
     isreal(P) && @assert all(isreal, con)

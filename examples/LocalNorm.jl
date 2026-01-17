@@ -19,7 +19,7 @@ function stabilizer(S::GaloisCtx, A::AbsSimpleNumFieldElem)
    return stabilizer(S.G, blocks(S, A)[1], on_sets)
 end
 
-""" 
+"""
 The projection from the Galois group onto the Galois group of the
 subfield defined by A, as well as a map giving the relative galois group:
 
@@ -43,7 +43,7 @@ end
 #=
    B
    |   so A is abelian over l (base_field(A))
-   |      L is the normal closure (over Q) of l 
+   |      L is the normal closure (over Q) of l
    AL     B is the normal closure (over Q) of A
   /|
  / |   Let G be the Galois group of B/Q
@@ -57,7 +57,7 @@ Q      Ideally we want "A to be central" which we translate into
          AL == B & Fix(G, L) <= center(G)
        (We also want Gal(AL/L) == Gal(A/l) but this we can get via
        coprime conductors)
-=#      
+=#
 function stays_normal(A::ClassField)
   k = number_field(A)
   ka, mka = absolute_simple_field(k)
@@ -77,7 +77,7 @@ function stays_normal(A::ClassField)
   #should be there
   #A/base_field stays normal if stab(1) cap s = {1}
   t = stabilizer(g, 1)[1]
-  return order(intersect(t, s)[1]) == 1  
+  return order(intersect(t, s)[1]) == 1
 end
 
 function is_central(A::ClassField)
@@ -87,7 +87,7 @@ function is_central(A::ClassField)
   b = blocks(s, preimage(mka, k(gen(base_field(A)))))
   s = core(g, stabilizer(g, b[1], on_sets)[1])[1]
   t = stabilizer(g, 1)[1]
-  return issubset(s, center(g)[1]) && order(intersect(t, s)[1]) == 1  
+  return issubset(s, center(g)[1]) && order(intersect(t, s)[1]) == 1
 end
 
 
@@ -110,8 +110,8 @@ function galois_group_non_normal2(A::ClassField, ::QQField)
   o = orbits(s)
   @assert all(x->length(o[1]) == length(x), o)
   @show o, [x.seeds for x = o]
-  q = Oscar.GaloisGrp.action_on_block_system(G, [x.seeds for x = o])  
+  q = Oscar.GaloisGrp.action_on_block_system(G, [x.seeds for x = o])
   #the small_knot is correct, hopefully, if
-  # kernel(q) == image(ms) 
+  # kernel(q) == image(ms)
   return ms, q
 end

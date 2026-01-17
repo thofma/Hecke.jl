@@ -76,10 +76,10 @@ Here is a quick example of using Hecke:
 
 ```
 julia> using Hecke
- _    _           _          
+ _    _           _
 | |  | |         | |         |  Software package for
 | |__| | ___  ___| | _____   |  algorithmic algebraic number theory
-|  __  |/ _ \/ __| |/ / _ \  |  
+|  __  |/ _ \/ __| |/ / _ \  |
 | |  | |  __/ (__|   <  __/  |  Manual: https://thofma.github.io/Hecke.jl
 |_|  |_|\___|\___|_|\_\___|  |  Version 0.34.6
 

@@ -68,7 +68,7 @@
   EE, = integral_model(E)
   EE = Hecke.reduce_model(E)
 
-  let 
+  let
     Qx, x = QQ["x"]
     K, a = number_field(x^16 + 36*x^12 - 120*x^10 + 392*x^8 - 432*x^6 + 216*x^4 - 48*x^2 + 4, "x")
     Kt, t = rational_function_field(K, "t")
