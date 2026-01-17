@@ -53,7 +53,7 @@
   @testset "maximal integral ideal" begin
     K,z = cyclotomic_field(7)
     o = maximal_order(K)
-    M = zeros(K,2,2,2)
+    M = Hecke.zeros_array(K,2,2,2)
     M[1,1,1] = one(K)
     M[1,2,2] = one(K)
     M[2,1,2] = one(K)

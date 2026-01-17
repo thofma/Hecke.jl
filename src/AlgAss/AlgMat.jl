@@ -602,7 +602,7 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(
     if short
       return false
     end
-    return false, zeros(base_ring(A), dim(A))
+    return false, zeros_array(base_ring(A), dim(A))
   end
 
   d2 = _matdeg(A)^2

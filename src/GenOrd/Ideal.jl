@@ -792,7 +792,7 @@ function StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem, phi)
   end
 
   if isone(BO[1])
-    one = zeros(FQ, r)
+    one = [zero(FQ) for _ in 1:r]
     one[1] = FQ(1)
     A = StructureConstantAlgebra(FQ, mult_table, one)
   else

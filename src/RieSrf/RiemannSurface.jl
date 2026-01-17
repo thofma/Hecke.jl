@@ -205,7 +205,7 @@ mutable struct RiemannSurface
       min_pows = [min_x - 1, min_y - 1, -1]
 	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
 
-      factor_matrix = zero_matrix(Int, n, g)
+      factor_matrix = zeros(Int, n, g)
 
       for i in (1:g)
         factor_matrix[1, i] = inner_fac[i][1] - 1
@@ -795,11 +795,11 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   u = vcat([-one(Rc)], abscissae, [one(Rc)])
   N = length(u)
 
-  x_vals = zeros(Cc, N)
-  dx_vals = zeros(Cc, N)
-  y_vals = [zeros(Cc, m) for i in (1:N)]
+  x_vals = zeros_array(Cc, N)
+  dx_vals = zeros_array(Cc, N)
+  y_vals = [zeros_array(Cc, m) for i in (1:N)]
 
-  z = zeros(Cc, m)
+  z = zeros_array(Cc, m)
 
   #Compute x0
   x_vals[1] = evaluate(path, u[1])
@@ -1067,7 +1067,7 @@ function _homology_basis(RS::RiemannSurface)
   end
 
 
-  A = zero_matrix(Int, PQ_size, PQ_size)
+  A = zeros(Int, PQ_size, PQ_size)
   for i in (1:PQ_size)
     j = mod(get_position(P[i]), terminated_edges_nr) + 1
     while true
@@ -1139,7 +1139,7 @@ function symplectic_reduction(K::ZZMatrix)
       v = -A[pivot, j]
       if v != 0
         #The version with ! gave different results for some reason.
-        
+
         add_row!(A, v, pivot_plus, j)
         add_column!(A,v, pivot_plus, j)
         add_row!(B, v, pivot_plus, j)

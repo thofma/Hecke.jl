@@ -47,7 +47,7 @@ const QuadSpaceID = AbstractAlgebra.CacheDictType{Any, Any}()
   function QuadSpace(K::S, G::T, cached::Bool) where {S, T}
     return AbstractAlgebra.get_cached!(QuadSpaceID, DictWrapper(G), cached) do
       z = new{S, T}(K, G)
-      z.temp1 = zeros(K, nrows(G))
+      z.temp1 = [zero(K) for _ in 1:nrows(G)]
       z.temp2 = K()
       return z
     end::QuadSpace{S, T}

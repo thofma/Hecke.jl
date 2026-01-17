@@ -1120,7 +1120,7 @@ function _in_span(v::Vector{AbsSimpleNumFieldElem}, P::PMat)
    m = nrows(P)
    n = ncols(P)
    K = base_ring(P.matrix)
-   x = zeros(K, m)
+   x = [zero(K) for _ in 1:m]
    t = K()
    k = 1
    for i = 1:n

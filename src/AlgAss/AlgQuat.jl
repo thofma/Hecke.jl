@@ -39,7 +39,7 @@ end
 function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
   if characteristic(K)!=2
     @assert a != zero(K) && b != zero(K)
-    M = zeros(K, 4, 4, 4)
+    M = zeros_array(K, 4, 4, 4)
 
     M[1, 1, 1] = one(K) # 1*1=1
     M[1, 2, 2] = one(K) # 1*i=i
@@ -70,7 +70,7 @@ function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
     return z
   else #if characteristic(K)=2
     @assert b != zero(K)
-    M = zeros(K, 4, 4, 4)
+    M = zeros_array(K, 4, 4, 4)
 
     M[1, 1, 1] = one(K) # 1*1=1*1
     M[1, 2, 2] = one(K) # 1*i=1*i
