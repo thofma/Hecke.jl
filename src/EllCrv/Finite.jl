@@ -808,16 +808,12 @@ julia> order(E)
 
   p == 0 && error("Characteristic must be nonzero")
 
-  # in characteristic 2:
-  #  for supersingular curves we count points by finding isomorphism class
-  #  TODO: when j is in F_4 we cout points via "subfield" approach
-  #  TODO: otherwise we can use p-adic algorithms (we will use AGM)
   if p == 2
     j = j_invariant(E)
     if j == 0
       return ZZ(_order_supersingular_char2(E))
     else
-      return ZZ(order_via_exhaustive_search(E))
+      return ZZ(_order_ordinary_char2(E))
     end
   end
 
@@ -999,6 +995,127 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
       end
     end
   end
+end
+
+# Univariate AGM method of finding trace of Frobenius (in the characteristic 2)
+# it is assumed that the j-invariant does not lie in F_4
+# see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", section 17.3.2.b
+function _trace_frobenius_char2_agm(a6::T) where T <: FinFieldElem
+  R = parent(a6)
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req a6^4 != a6 "j-invariant must not lie in F_4"
+
+  q = order(R)
+  d = degree(R)
+
+  # for d = 3 the Hecke bound greatly overshoots the possible values of trace
+  # it is easy to precompute trace for all a_6 in F_8 \ F_2
+  # 1  for t, t^2, t^2 + t
+  # -3 for t+1, t^2 + 1, t^2 + t + 1
+  if d == 3
+    return iszero(coeff(a6, 0)) ? ZZ(1) : ZZ(-3)
+  end
+
+  N = div(d+1,2) + 3
+
+  # WARNING: currently FLINT does not expose creating qadic context with custom modulus
+  # WARNING: so for a large exponent (where Conway polynomial is not available)
+  # WARNING:   the random polynomial will be used to create a context
+  # WARNING: clearly it is certain to be different from the modulus used
+  # WARNING:   to create the finite field over which curve is defined
+  # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
+  # WARNING: for now we err for the exponent bigger than 92 (flint limit)
+  d >= 92 && error("Currently exponents above 92 are not supported")
+  Qp = padic_field(2, precision=N)
+  Qq,_ = qadic_field(2, d, "t", precision=N)
+
+  # TODO: we should implement a lift from F_q to Q_q (in Nemo) directly
+  # TODO: instead of going through full padic coefficients
+
+  # z = 1 + 8*a_6 [4 digits precision]
+  z = Qq(0, precision=4)
+  setcoeff!(z, 0, Qp(1+8*lift(ZZ, coeff(a6, 0))))
+  for i in 1:d-1
+    if !iszero(coeff(a6, i))
+      setcoeff!(z, i, ZZ(8))
+    end
+  end
+
+  for k in 5:N  # get k correct digits
+    # iteration: z <- [1 + z] / [2 * sqrt(z)] = [(1+z)/2] / sqrt(z)
+    setprecision!(z, k+1) # we divide by 2 below so we need extra digit
+    z = divexact(shift_right(Qq(1,precision=k+1) + z, 1), sqrt(z))
+    setprecision!(z, k) # we have z modulo 2^k
+  end
+
+  # we need Norm(2z / [1+z]) = Norm(z / ([1+z]/2) )
+  setprecision!(z, N+1) # we divide by 2 below so we need extra digit
+  zz = shift_right(Qq(1,precision=N+1) + z, 1)
+
+  norm_z = norm(divexact(z, zz))
+  setprecision!(norm_z, N-1) # we have norm modulo 2^(N-1)
+  t = lift(ZZ, norm_z)
+
+  if t^2 > 4*q # bring inside Hasse interval
+    t = t - 2^(N-1)
+  end
+
+  return t
+end
+
+# finds order of an ordinary elliptic curve defined over finite field of characteristic 2
+# it uses the univariate AGM in general case
+# if the j-invariant lies in F_4 it uses "Subfield Curve" approach
+function _order_ordinary_char2(E::EllipticCurve{T}) where T <: FinFieldElem
+  R = base_field(E)
+  j = j_invariant(E)
+
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req !iszero(j) "Curve must be ordinary (j is zero)"
+  @req !iszero(E.a_invariants[1]) "Curve must be ordinary (a_1 is zero)"
+
+  q = order(R)
+  d = degree(R)
+
+  # transform to canonical ordinary form: y^2 + xy = x^3 + a_2*x^2 + a_6
+  # change of variables (x,y) -> ( a_1^2 * x + a_3/a_1, a_1^3 * y + [a_1^2 * a_4 + a_3^2]/a_1^3 )
+  a2 = divexact(E.a_invariants[1]^4*E.a_invariants[2] + E.a_invariants[1]^3*E.a_invariants[3], E.a_invariants[1]^6)
+  a6 = divexact(one(R), j_invariant(E))
+
+  # if Tr(a2) == 0, E is isomorphic to E': y^2 + xy = x^3 + a_6 and |E| = |E'|
+  # otherwise it is (isomorphic to) a quadratic twist of E'
+  #   and |E| = 2q + 2 - |E'| points
+
+  # compute trace of frobenius for E'
+  if j^4 == j
+    # see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", section 17.1.2
+    # if our curve is actually defined over F_{2^d}
+    # t_0 = 2, t_1 = tr(phi_{2^d})
+    # t_k = t_1 * t_{k-1} - 2^d * t_{k-2} [= tr(phi_{2^{dk}})]
+    t_0 = ZZ(2)
+    if isone(j)
+      if iseven(d)  # defined over F_4: |E| = 8
+        t_1 = ZZ(-3); N = divexact(d,2); q_base = ZZ(4)
+      else          # defined over F_2: |E| = 4
+        t_1 = ZZ(-1); N = d; q_base = ZZ(2)
+      end
+    else
+      # defined over F_4: for a_6 = c_1 or 1/c_1 we have |E| = 4
+      @assert iseven(d)
+      t_1 = ZZ(1); N = divexact(d,2); q_base = ZZ(4)
+    end
+
+    t_prev = t_0; t_cur = t_1
+    for _ in 2:N
+      t_cur, t_prev = t_1*t_cur - q_base*t_prev, t_cur
+    end
+
+    trace_frob = t_cur
+  else
+    trace_frob = _trace_frobenius_char2_agm(a6)
+  end
+
+  return iszero(tr(a2)) ? q + 1 - trace_frob : q + 1 + trace_frob
 end
 
 ################################################################################
