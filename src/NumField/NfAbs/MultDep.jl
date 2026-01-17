@@ -362,7 +362,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   =#
 
   for i=1:length(uu)-1
-    append!(uu[i][2], zeros(ZZ, length(uu[end][2])-length(uu[i][2])))
+    append!(uu[i][2], [zero(ZZ) for _ in 1:length(uu[end][2])-length(uu[i][2])])
   end
   if length(uu) == 0 #all torsion
     return identity_matrix(ZZ, length(A)), matrix(ZZ, 0, length(A), []), C
@@ -403,6 +403,30 @@ end
 function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, g::Vector{ZZRingElem}, v::ZZRingElem)
   #knowing that sum g[i] log(a[i]) == 0 mod v, prove that prod a[i]^g[i] is
   #torsion
+
+  #CF: philosophically, this is correct, but somewhere there is a
+  #    small problem.
+  #    The basic idea is that Dobrowski said
+  #      t is torsion or there is a conjugate >1+sth.
+  #      this then gives non-trivial lower bound on |L(t)|
+  #    But here we know more
+  #    the p-adic logs are all 0 (mod p^v) , so this should mean
+  #    that the element is torsion or LARGE (since p^? has to divide s.th.)
+  # 
+  t = prod([a[i]^g[i] for i=1:length(a)])
+  pr = 20
+  n = degree(base_ring(t))
+  while true
+    b = sum(x*x for x = conjugates_arb_log(t, pr))
+    D = 21/128*log(parent(b)(n))/n^2 #plain Dobrowski
+    if b > D 
+      return false
+    elseif b < D
+      return true
+    end
+    pr *= 2
+  end
+  
   #= I claim N(1-a) > v^n for n the field degree:
    Let K be one of the p-adic fields involved, set b = a^g
    then log(K(b)) = 0 (v = p^l) by assumption
@@ -411,7 +435,7 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
    This is true for all completions involved, and sum degrees is n
  =#
 
-  t = prod([a[i]^g[i] for i=1:length(a)])
+
   # t is either 1 or 1-t is large, norm(1-t) is div. by p^ln
   #in this case T2(1-t) is large, by the arguments above: T2>= (np^l)^2=:B
   # and, see the bottom, \|Log()\|_2^2 >= 1/4 arcosh((B-2)/2)^2
@@ -420,8 +444,6 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
   p = Hecke.upper_bound(ZZRingElem, log(B)/log(parent(B)(2)))
   @vprintln :qAdic 1  "using", p, nbits(v)*2
   b = conjugates_arb_log(t, max(-Int(div(p, 2)), 2))
-#  @show B , sum(x*x for x = b), is_torsion_unit(t)[1]
-  @hassert :qAdic 1 (B > sum(x*x for x = b)) == is_torsion_unit(t)[1]
   fl =  B > sum(x*x for x = b)
   @hassert :qAdic 2 fl == is_torsion_unit(evaluate(t))
   return fl

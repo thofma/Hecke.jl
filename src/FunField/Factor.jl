@@ -58,7 +58,7 @@ function from_mpoly(f::MPolyRingElem, S::PolyRing{<:Generic.RationalFunctionFiel
   @assert base_ring(f) == base_ring(base_ring(S))
   R = parent(numerator(gen(base_ring(S))))
   @assert isa(R, PolyRing)
-  F = [zero(R) for i=0:degree(f, 1)]
+  F = zeros_array(R, degree(f, 1) + 1)
   for (c, e) = zip(coefficients(f), exponent_vectors(f))
     setcoeff!(F[e[1]+1], e[2], c)
   end

@@ -199,7 +199,7 @@ function _diagonal(V::QuadSpace, with_transform::Bool = true)
   B = complete_to_basis(K)
   g = B[k+1:end, :]*g*transpose(B[k+1:end,:])
   D, U = _gram_schmidt(g, involution(V))
-  diag = append!(zeros(base_ring(V), k), diagonal(D))
+  diag = append!([zero(base_ring(V)) for i in 1:k], diagonal(D))
   !with_transform && return diag, matrix(E, 0, 0, elem_type(E)[])
   B[k+1:end, :] = U*view(B, k+1:nrows(B), :)
   return diag, B
@@ -1209,7 +1209,7 @@ _to_gf2(x) = x == 1 ? 0 : 1
 function is_isotropic_with_vector(q::QuadSpace{QQField, QQMatrix})
   ok, S = _isotropic_subspace(q)
   if !ok
-    z = zeros(base_ring(q), dim(q))
+    z = [zero(base_ring(q)) for _ in 1:dim(q)]
     return false, z
   end
   # confirm the computation

@@ -66,8 +66,8 @@ function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: Int
   N = Int(N)
   m = floor(Int, (N +1)//2)
 
-  ab = zeros(Rc, m)
-  w = zeros(Rc, m)
+  ab = zeros_array(Rc, m)
+  w = zeros_array(Rc, m)
 
   for l in (0:m-1)
     ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
@@ -288,8 +288,8 @@ function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: In
 
   m = floor(Int, N//2)
 
-  ab = zeros(Rc, m)
-  w = zeros(Rc, m)
+  ab = zeros_array(Rc, m)
+  w = zeros_array(Rc, m)
 
   for l in (1:m)
     ab[l] = cos(pi_N12 * (2*l - 1))
@@ -305,8 +305,8 @@ function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::
   Rc = parent(h)
   N = Int(N)
 
-  abscissae = zeros(Rc, N)
-  weights = zeros(Rc, N)
+  abscissae = zeros_array(Rc, N)
+  weights = zeros_array(Rc, N)
 
   lamh = lambda * h
 

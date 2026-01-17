@@ -152,9 +152,9 @@ function intersect_nonindex(f::Map, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, 
   h = Qx(f(gen(k)))
 
   Fp, xp = polynomial_ring(Native.GF(Int(minimum(P)), cached=false), cached=false)
-  gp = factor(Fp(g))
-  hp = Fp(h)
-  Gp = gcd(Fp(K(P.gen_two)), Fp(G))
+  gp = factor(change_base_ring(base_ring(Fp), g; parent = Fp))
+  hp = change_base_ring(base_ring(Fp), h; parent = Fp)
+  Gp = gcd(Fp(K(P.gen_two)), change_base_ring(base_ring(Fp), G; parent = Fp))
   for (s, e) in gp
     if iszero(s(hp) % Gp)
       p = ideal_from_poly(Zk, Int(minimum(P)), s, e)
@@ -209,14 +209,15 @@ function prime_decomposition_nonindex(f::Map, p::AbsNumFieldOrderIdeal{AbsSimple
   res = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[]
   if fits(Int, minimum(p))
     Fp = polynomial_ring(Native.GF(Int(minimum(p)), cached = false), cached = false)[1]
-    Gp = factor(ppio(Fp(G), Fp(f(p.gen_two.elem_in_nf)))[1])
+    Gp = factor(ppio(change_base_ring(base_ring(Fp), G; parent = Fp), Fp(f(p.gen_two.elem_in_nf)))[1])
     for (ke, e) in Gp
       P = ideal_from_poly(ZK, Int(minimum(p)), ke, e)
       push!(res, (P, divexact(e, ramification_index(p))))
     end
   else
     Fp1 = polynomial_ring(GF(minimum(p), cached = false), cached = false)[1]
-    Gp1 = factor(ppio(Fp1(G), Fp1(Qx(f(K(p.gen_two)))))[1])
+    Gp1 = factor(ppio(change_base_ring(base_ring(Fp1), G; parent = Fp1),
+                      change_base_ring(base_ring(Fp1), Qx(f(K(p.gen_two))); parent = Fp1))[1])
     for (ke, e) in Gp1
       P = ideal_from_poly(ZK, minimum(p), ke, e)
       push!(res, (P, divexact(e, ramification_index(p))))
@@ -247,10 +248,11 @@ function prime_decomposition_type_nonindex(f::Map, p::AbsNumFieldOrderIdeal{AbsS
 
   if fits(Int, minimum(p, copy = false))
     Fp = polynomial_ring(Native.GF(Int(minimum(p)), cached = false), cached = false)[1]
-    Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), Fp(G)))
+    Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), change_base_ring(base_ring(Fp), G; parent = Fp)))
   else
     Fpp = polynomial_ring(Native.GF(minimum(p), cached = false), cached = false)[1]
-    Gp = factor_shape(gcd(Fpp(f(K(p.gen_two))), Fpp(G)))
+    Gp = factor_shape(gcd(Fpp(f(K(p.gen_two))),
+                          change_base_ring(base_ring(Fpp), G; parent = Fpp)))
   end
   res = Vector{Tuple{Int, Int}}(undef, sum(values(Gp)))
   ind = 1

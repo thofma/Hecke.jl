@@ -57,7 +57,7 @@ function _radical_zero(A::AbstractAssociativeAlgebra{T}) where { T <: Union{ QQF
   N = kernel(M; side = :right)
   n = ncols(N)
   b = Vector{elem_type(A)}(undef, n)
-  t = zeros(base_ring(A), dim(A))
+  t = zeros_array(base_ring(A), dim(A))
   # the construct A(t) will make a copy (hopefully :))
   for i = 1:n
     for j = 1:dim(A)

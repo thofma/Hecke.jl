@@ -206,8 +206,8 @@ function rational_reconstruction_mod(g::QQPolyRingElem, f::QQPolyRingElem, bnd::
       if error_tolerant
         return false, g, f
       end
-      rethrow(e)
     end
+    rethrow(e)
   end
                                        # bound n and a starting p
   kp = 10

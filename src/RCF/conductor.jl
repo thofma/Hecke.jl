@@ -1325,7 +1325,7 @@ If the optional keyword `is_normal` is set to a list of automorphisms, then
 only those wil be considered.
 
 `type` can be set to the desired relative Galois group, given as a vector
-of integers descibing the structure.
+of integers describing the structure.
 
 !!! note
     This will not find all subfields over $\mathbf{Q}$, but only the ones

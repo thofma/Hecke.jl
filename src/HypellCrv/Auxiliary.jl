@@ -155,10 +155,10 @@ function minimize_linear_equation(f::MPolyRingElem{QQFieldElem})
   R = parent(f)
   x, y = gens(R)
 
-  a_num = numerator(coeff(f, u))
+  a_num = numerator(coeff(f, u))  # FIXME: there this no u (maybe u = x?)
   a_den = denominator(coeff(f, u))
 
-  b_num = numerator(coeff(f, v))
+  b_num = numerator(coeff(f, v))  # FIXME: there this no v (maybe v = y?)
   b_den = denominator(coeff(f, v))
 
   gcd_ab = gcd([a_num * b_den, b_num * a_den, a_den * b_den])

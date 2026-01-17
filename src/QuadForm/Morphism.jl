@@ -107,34 +107,6 @@ function has_point(w, V::VectorList)
   end
 end
 
-function _find_point(w::ZZMatrix, V::VectorList{ZZMatrix, T}) where T
-  positive = false
-  for k in 1:length(w)
-    if !iszero(w[1, k])
-      positive = w[1, k] > 0
-      break
-    end
-  end
-  if positive
-    if issorted(V)
-      k = searchsortedfirst(V.vectors, w)
-    else
-      k = findfirst(isequal(w), V.vectors)
-    end
-    @assert k !== nothing
-    return k
-  else
-    mw = -w
-    if issorted(V)
-      k = searchsortedfirst(V.vectos, mw)
-    else
-      k = findfirst(isequal(mw), V.vectors)
-    end
-    @assert k !== nothing
-    return -k
-  end
-end
-
 function Base.show(io::IO, C::ZLatAutoCtx)
   print(io, "Automorphism context for ", C.G)
 end
@@ -1139,63 +1111,6 @@ function _operate(point, A, V, tmp)
   return k
 end
 
-function _find_point(w::Vector{Int}, V)
-  positive = false
-  for k in 1:length(w)
-    if !iszero(w[k])
-      positive = w[k] > 0
-      break
-    end
-  end
-  if positive
-    if sorted
-      k = searchsortedfirst(V, w)
-    else
-      k = findfirst(isequal(w), V)
-    end
-    @assert k !== nothing
-    return k
-  else
-    w .*= -1 # w = -w
-    if sorted
-      k = searchsortedfirst(V, w)
-    else
-      k = findfirst(isequal(w), V)
-    end
-    @assert k !== nothing
-    w .*= -1 # w = -w
-    return -k
-  end
-end
-
-function _find_point(w::ZZMatrix, V)
-  positive = false
-  for k in 1:length(w)
-    if !iszero(w[1, k])
-      positive = w[1, k] > 0
-      break
-    end
-  end
-  if positive
-    if sorted
-      k = searchsortedfirst(V, w)
-    else
-      k = findfirst(isequal(w), V)
-    end
-    @assert k !== nothing
-    return k
-  else
-    mw = -w
-    if sorted
-      k = searchsortedfirst(V, mw)
-    else
-      k = findfirst(isequal(mw), V)
-    end
-    @assert k !== nothing
-    return -k
-  end
-end
-
 function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, V)
   working_list = Int[point]
   orbit = Int[point]
@@ -1897,7 +1812,11 @@ function matgen(x, dim, per, v)
 #/*****	generates the matrix X which has as row
 #					per[i] the vector nr. x[i] from the
 #					list v	*****
-  X = zero_matrix(base_ring(v[1]), dim, dim)
+  if base_ring(v[1]) === Int
+    X = zeros(Int, dim, dim)
+  else
+    X = zero_matrix(base_ring(v[1]), dim, dim)
+  end
   #@show x
   for i in 1:dim
     xi = x[i]

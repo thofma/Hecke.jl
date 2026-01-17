@@ -664,12 +664,12 @@ function _obstruction_prime_no_extend(x::FieldsTower, cocycles, p::Int)
   Pcomp = 2
   R = Native.GF(Pcomp, cached = false)
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  ff = Rx(K.pol)
+  ff = change_base_ring(R, K.pol; parent = Rx)
   while iszero(mod(p, Pcomp)) || iszero(discriminant(ff))
     Pcomp = next_prime(Pcomp)
     R = Native.GF(Pcomp, cached = false)
     Rx = polynomial_ring(R, "x", cached = false)[1]
-    ff = Rx(K.pol)
+    ff = change_base_ring(R, K.pol; parent = Rx)
   end
   permGC = _from_autos_to_perm(GC)
   Gperm = _perm_to_gap_grp(permGC)
@@ -803,12 +803,12 @@ function action_on_roots(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNu
   Qx = parent(K.pol)
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rx)
   while iszero(discriminant(fmod)) || iszero(mod(pv, p))
     p = next_prime(p)
     R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
-    fmod = Rx(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rx)
   end
   polsG = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
   zetaP = Rx(zeta)
@@ -835,14 +835,14 @@ function restriction(autsK1::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleN
   p = 11
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  ff1 = Rx(K.pol)
-  fmod = Rx(K1.pol)
+  ff1 = change_base_ring(R, K.pol; parent = Rx)
+  fmod = change_base_ring(R, K1.pol; parent = Rx)
   while iszero(discriminant(ff1)) || iszero(discriminant(fmod))
     p = next_prime(p)
     R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
-    ff1 = Rx(K.pol)
-    fmod = Rx(K1.pol)
+    ff1 = change_base_ring(R, K.pol; parent = Rx)
+    fmod = change_base_ring(R, K1.pol; parent = Rx)
   end
   mp_pol = Rx(image_primitive_element(mp))
   imgs = Vector{fpPolyRingElem}(undef, length(autsK))
@@ -916,14 +916,14 @@ function _obstruction_pp(F::FieldsTower, cocycles::Vector{cocycle_ctx}, pv::Int)
   Pcomp = 7
   R = Native.GF(Pcomp, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  ff1 = Rx(K.pol)
-  ff2 = Rx(K1.pol)
+  ff1 = change_base_ring(R, K.pol; parent = Rx)
+  ff2 = change_base_ring(R, K1.pol; parent = Rx)
   while iszero(discriminant(ff1)) || iszero(discriminant(ff2))
     Pcomp = next_prime(Pcomp)
     R = Native.GF(Pcomp, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
-    ff1 = Rx(K.pol)
-    ff2 = Rx(K1.pol)
+    ff1 = change_base_ring(R, K.pol; parent = Rx)
+    ff2 = change_base_ring(R, K1.pol; parent = Rx)
   end
   dautsK1 = Dict{fpPolyRingElem, Int}()
   for w = 1:length(autsK1)
@@ -1150,12 +1150,12 @@ function _find_theta(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumFie
   q = 2
   R = residue_ring(ZZ, q, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
-  fmod = Rt(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rt)
   while iszero(discriminant(fmod))
     q = next_prime(q)
     R = residue_ring(ZZ, q, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
-    fmod = Rt(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rt)
   end
   theta = G[1]
   for i = 1:length(G)
@@ -1185,12 +1185,12 @@ function _find_frob(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumFiel
   q1 = 2
   R = residue_ring(ZZ, q1, cached = false)[1]
   Rt = polynomial_ring(R, "t", cached = false)[1]
-  fmod = Rt(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rt)
   while iszero(discriminant(fmod))
     q1 = next_prime(q1)
     R = residue_ring(ZZ, q1, cached = false)[1]
     Rt = polynomial_ring(R, "t", cached = false)[1]
-    fmod = Rt(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rt)
   end
   gK = gen(K)
   p = is_perfect_power_with_data(e)[2]
@@ -1287,7 +1287,7 @@ function issplit_at_P(O::AbsSimpleNumFieldOrder, G::Vector{<: NumFieldHom{AbsSim
   theta1 = _find_theta(InGrp, F, mF, e)
 
   theta = Rx(image_primitive_element(theta1))
-  fmod = Rx(Hecke.nf(O).pol)
+  fmod = change_base_ring(base_ring(Rx), Hecke.nf(O).pol; parent = Rx)
   #I have found my generators. Now, we find the elements to test if it splits.
   if !iszero(mod(c, n))
     powtheta = theta

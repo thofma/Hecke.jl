@@ -121,8 +121,8 @@ function Hecke.integral_split(a::Generic.RationalFunctionFieldElem{QQFieldElem},
   d = denominator(a)
   dn = reduce(lcm, map(denominator, coefficients(n)), init = ZZRingElem(1))
   dd = reduce(lcm, map(denominator, coefficients(d)), init = ZZRingElem(1))
-  zn = S.R(n*dn)
-  zd = S.R(d*dd)
+  zn = change_base_ring(base_ring(S.R), n*dn; parent = S.R)
+  zd = change_base_ring(base_ring(S.R), d*dd; parent = S.R)
   cn = content(zn)
   cd = content(zd)
   zn = divexact(zn, cn)
@@ -157,7 +157,11 @@ Base.parent(a::HessQRElem) = a.parent
 (R::HessQR)(a::HessQRElem) = a
 (R::HessQR)() = R(0)
 
-(F::Generic.RationalFunctionField)(a::HessQRElem) = a.c*F(a.f)//F(a.g)
+function (F::Generic.RationalFunctionField)(a::HessQRElem)
+  K = AbstractAlgebra.Generic.underlying_fraction_field(F)
+  R = base_ring(K)
+  a.c*F(change_base_ring(base_ring(R), a.f; parent = R))//F(change_base_ring(base_ring(R), a.g; parent = R))
+end
 
 
 Nemo.iszero(a::HessQRElem) = iszero(a.c)

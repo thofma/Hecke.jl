@@ -144,7 +144,7 @@ mutable struct NormCtx_gen <: NormCtx
       push!(NC.mp, zero_matrix(k, 1, degree(O)))
       push!(NC.np, zero_matrix(k, 1, degree(O)))
 
-      push!(NC.fp, kx(f))
+      push!(NC.fp, change_base_ring(k, f; parent = kx))
       push!(NC.gp, kx())
       nb -= nbits(p)
       if nb < 0

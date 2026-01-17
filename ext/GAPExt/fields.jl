@@ -175,12 +175,12 @@ function permutations(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumFi
   p = 11
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rx)
   while iszero(discriminant(fmod))
     p = next_prime(p)
     R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
-    fmod = Rx(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rx)
   end
   pols = fpPolyRingElem[x]
   gpol = Rx(image_primitive_element(G[1]))
@@ -266,12 +266,12 @@ function _from_autos_to_perm(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimp
   p = 3
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, K.pol; parent = Rx)
   while iszero(discriminant(fmod))
     p = next_prime(p)
     R = Native.GF(p, cached = false)
     Rx, x = polynomial_ring(R, "x", cached = false)
-    fmod = Rx(K.pol)
+    fmod = change_base_ring(R, K.pol; parent = Rx)
   end
   pols = Vector{Tuple{fpPolyRingElem, Int}}(undef, n)
   for i = 1:n

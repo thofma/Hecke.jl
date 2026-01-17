@@ -1,0 +1,11 @@
+name: Changelog
+on:
+  workflow_dispatch:
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        shell: bash
+        run: true

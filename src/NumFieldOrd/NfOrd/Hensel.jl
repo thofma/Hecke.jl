@@ -120,7 +120,7 @@ function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
 
     Rp = Nemo.Native.GF(p, cached=false)
     Rpt, t = polynomial_ring(Rp, "t", cached=false)
-    gp = Rpt(K.pol)
+    gp = change_base_ring(Rp, defining_polynomial(K); parent = Rpt)
     if degree(gp) < degree(K) || iszero(discriminant(gp))
       continue
     end
@@ -382,10 +382,10 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
 
   if degree(fac_pol_mod_p) != degree(K)
     g1 = lift(ZX, fac_pol_mod_p)
-    ff = ZX(d_pol*K.pol)
+    ff = numerator(d_pol * K.pol, ZX)
     gg = hensel_lift(ff, g1, ZZRingElem(p), k)
   else
-    gg = ZX(d_pol * K.pol)
+    gg = numerator(d_pol * K.pol, ZX)
     pk = ZZRingElem(p)^k
     gg *= invmod(leading_coefficient(gg), pk)
     mod_sym!(gg, pk)
@@ -476,13 +476,13 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
     #possibly this should be done with max precision and then adjusted down
     #the poly mod P^??
     if !ispure
-      fpp = ZZModPolyRingElem[Qt(f_coeff_ZX[k + 1]) for k=0:degree(f)]
+      fpp = ZZModPolyRingElem[change_base_ring(Q, f_coeff_ZX[k + 1]; parent = Qt) for k=0:degree(f)]
     end
 
     #we need to evaluate fp and fp' at the roots (later)
     #given that we evaluate "by hand" we don't need polynomials
 
-    pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
+    pgg = change_base_ring(Q, gg; parent = Qt) #we'll do the reductions by hand - possibly not optimal
 
     ctx_lll = LLLContext(0.3, 0.51)
     if caching && haskey(_cache_lll, pr[i])
@@ -496,7 +496,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
       ppint = ZZRingElem(p)^pr_intermediate
       Qint = residue_ring(ZZ, ppint, cached = false)[1]
       Qintt = polynomial_ring(Qint, "t", cached = false)[1]
-      pggQint = Qintt(gg)
+      pggQint = change_base_ring(Qint, gg; parent = Qintt)
       Mint = _get_basis(ppint, n, pggQint, Qintt)
       mul!(Mint, Mint, Miold)
       divexact!(Mint, Mint, dold)
@@ -568,7 +568,7 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
       #evaluation point - to save on large products...
 
       if !ispure
-        pow = ZZModPolyRingElem[Qt(1), Qt(RT[j])]
+        pow = ZZModPolyRingElem[Qt(1), change_base_ring(Q, RT[j]; parent = Qt)]
         while length(pow) <= degree(f)+1
           push!(pow, pow[2]*pow[end] % pgg)
         end
@@ -590,19 +590,19 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
         #double lift:
         #IRT = invmod(fp'(rt), p^k)
         # using x -> x(2-xy) to compute the inverse of y
-        IRT[j] = lift(ZX, Qt(IRT[j])*(Qt(2-Qt(IRT[j])*eval_fs) % pgg) %pgg)
+        IRT[j] = lift(ZX, change_base_ring(Q, IRT[j]; parent = Qt)*(Qt(2-change_base_ring(Q, IRT[j]; parent = Qt)*eval_fs) % pgg) %pgg)
         #RT = rt mod p^k normal Newton
         # using x -> x-fp(x)//fp'(x) = x-fp(x) * IRT
-        RT[j] = lift(ZX, Qt(pow[2] - eval_f*Qt(IRT[j])) % pgg)
+        RT[j] = lift(ZX, Qt(pow[2] - eval_f*change_base_ring(Q, IRT[j]; parent = Qt)) % pgg)
 
         #before the reconstruction, we need to scale by den
-        cf = lift(ZX, Qt(RT[j]*den) % pgg)
+        cf = lift(ZX, change_base_ring(Q, RT[j]*den; parent = Qt) % pgg)
       else
-        RTjp = Qt(RT[j])
+        RTjp = change_base_ring(Q, RT[j]; parent = Qt)
         RT[j] = lift(ZX, (RTjp*(1+minv) - bp*minv* powermod(RTjp, degree(f)+1, pgg)) % pgg)
 
         #before the reconstruction, we need to scale by den and by a
-        cf = lift(ZX, (Qt(RT[j]*den) % pgg)*ap % pgg)
+        cf = lift(ZX, (change_base_ring(Q, RT[j]*den; parent = Qt) % pgg)*ap % pgg)
       end
 
       ve = matrix(ZZ, 1, n, [coeff(cf, k) for k=0:n-1])

@@ -462,8 +462,8 @@ function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResEl
         R1 = residue_ring(ZZ, S(lg), cached=false)[1]
         R1t = polynomial_ring(R1, cached=false)[1]
         #g is bad in R1, so factor it
-        gR1 = R1t(lift(Zx, g))
-        fR1 = R1t(lift(Zx, f))
+        gR1 = change_base_ring(R1, lift(Zx, g); parent = R1t)
+        fR1 = change_base_ring(R1, lift(Zx, f); parent = R1t)
         res1 = one(R1)
         if is_unit(leading_coefficient(gR1))
           g2 = gR1
@@ -626,8 +626,8 @@ function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResEl
         R1 = residue_ring(ZZ, S(lg), cached=false)[1]
         R1t = polynomial_ring(R1, cached=false)[1]
         #g is bad in R1, so factor it
-        gR1 = R1t(lift(Zx, g))
-        fR1 = R1t(lift(Zx, f))
+        gR1 = change_base_ring(R1, lift(Zx, g); parent = R1t)
+        fR1 = change_base_ring(R1, lift(Zx, f); parent = R1t)
 
         if iszero(R1(lift(c)))
           push!(resp, ZZRingElem(0))
@@ -646,12 +646,12 @@ function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResEl
         end
       end
       if length(cp) == 1
-        res, u_, v_ = R(resp[1]), Rt(lift(Zx, resB[1][1])), Rt(lift(Zx, resB[1][2]))
+        res, u_, v_ = R(resp[1]), change_base_ring(R, lift(Zx, resB[1][1]); parent = Rt), change_base_ring(R, lift(Zx, resB[1][2]); parent = Rt)
       else
         ce = crt_env(pg)
         res = R(crt(resp, ce))
-        u_ = Rt(induce_crt(typeof(f)[x[1] for x = resB], ce))
-        v_ = Rt(induce_crt(typeof(f)[x[2] for x = resB], ce))
+        u_ = change_base_ring(R, induce_crt(typeof(f)[x[1] for x = resB], ce); parent = Rt)
+        v_ = change_base_ring(R, induce_crt(typeof(f)[x[2] for x = resB], ce); parent = Rt)
       end
       # f = U*f_in + V*g_in
       # g = u*f_in + v*g_in
@@ -1071,10 +1071,10 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
   R1x, x = polynomial_ring(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
   t = zero(R1x)
-  u = R1x(lift(Zy, u0))
-  g = R1x(lift(Zy, g0))
+  u = change_base_ring(R1, lift(Zy, u0); parent = R1x)
+  g = change_base_ring(R1, lift(Zy, g0); parent = R1x)
 
-  f1 = R1x(f2)
+  f1 = change_base_ring(R1, f2; parent = R1x)
   u, g, s, t = _hensel(f1, u, g, s, t)
   @hassert :AbsNumFieldOrder 1 f1 == u*g
   i = 1
@@ -1087,11 +1087,11 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
     end
     R1 = residue_ring(ZZ, mod, cached = false)[1]
     R1x, x = polynomial_ring(R1, "x", cached = false)
-    u = R1x(lift(Zy, u))
-    g = R1x(lift(Zy, g))
-    s = R1x(lift(Zy, s))
-    t = R1x(lift(Zy, t))
-    f1 = R1x(f2)
+    u = change_base_ring(R1, lift(Zy, u); parent = R1x)
+    g = change_base_ring(R1, lift(Zy, g); parent = R1x)
+    s = change_base_ring(R1, lift(Zy, s); parent = R1x)
+    t = change_base_ring(R1, lift(Zy, t); parent = R1x)
+    f1 = change_base_ring(R1, f2; parent = R1x)
     i += 1
 
     u, g, s, t = _hensel(f1, u, g, s, t)
@@ -1109,8 +1109,8 @@ function fun_factor(f::T) where T <: Union{ZZModPolyRingElem, zzModPolyRingElem}
       error("too long")
     end
   end
-  u0 = Rx(lift(Zy, u))
-  g0 = Rx(lift(Zy, g))
+  u0 = change_base_ring(R, lift(Zy, u); parent = Rx)
+  g0 = change_base_ring(R, lift(Zy, g); parent = Rx)
   @hassert :AbsNumFieldOrder 1 g0*u0 == f
   return u0, g0
 end
@@ -1497,9 +1497,9 @@ function _coprimality_test(f::T, g::T, h::T) where T <: Union{zzModPolyRingElem,
         end
         R = residue_ring(ZZ, Int(p), cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
-        f1 = Rx(lift(Zx, c*f))
-        g1 = Rx(lift(Zx, c1*g))
-        h1 = Rx(lift(Zx, h))
+        f1 = change_base_ring(R, lift(Zx, c*f); parent = Rx)
+        g1 = change_base_ring(R, lift(Zx, c1*g); parent = Rx)
+        h1 = change_base_ring(R, lift(Zx, h); parent = Rx)
         if !_coprimality_test(f1, g1, h1)
           return false
         end

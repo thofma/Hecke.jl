@@ -70,7 +70,7 @@ function _order_bound(K::AbsSimpleNumField)
     p = next_prime(p)
     F = GF(p, cached = false)
     Fx, x = polynomial_ring(F, cached = false)
-    fF = Fx(K.pol)
+    fF = change_base_ring(F, defining_polynomial(K); parent = Fx)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end
@@ -219,7 +219,7 @@ function _automorphism_group_generic(K::AbsSimpleNumField)
     try
       R = Native.GF(p, cached = false)
       Rx, x = polynomial_ring(R, "x", cached = false)
-      fmod = Rx(K.pol)
+      fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
       pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
       break
     catch e
@@ -312,7 +312,7 @@ function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
   end
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
 
   t = length(S)
   order = 1
@@ -392,7 +392,7 @@ function generic_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumFi
   end
   R = Native.GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = Rx(K.pol)
+  fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
   pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
@@ -435,7 +435,7 @@ function _automorphisms_abelian(K::AbsSimpleNumField)
     end
     F = GF(p, cached = false)
     Fx = polynomial_ring(F, cached = false)[1]
-    fF = Fx(K.pol)
+    fF = change_base_ring(F, defining_polynomial(K); parent = Fx)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end
@@ -454,7 +454,7 @@ end
 
 function lift_root(K::AbsSimpleNumField, b, bound::Int)
   Fx = parent(b)
-  fF = Fx(K.pol)
+  fF = change_base_ring(base_ring(Fx), defining_polynomial(K); parent = Fx)
   Zx = polynomial_ring(ZZ, "x")[1]
   p = modulus(Fx)
   test = 2^10
@@ -469,14 +469,14 @@ function lift_root(K::AbsSimpleNumField, b, bound::Int)
   modu = ZZRingElem(p)^2
   R = residue_ring(ZZ, modu, cached = false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  fR = map_coefficients(R, Zx(K.pol), parent = Rx)
-  Rb_0 = Rx(b_0)
-  Rw_0 = Rx(w_0)
+  fR = map_coefficients(R, change_base_ring(ZZ, defining_polynomial(K); parent = Zx); parent = Rx)
+  Rb_0 = change_base_ring(R, b_0; parent = Rx)
+  Rw_0 = change_base_ring(R, w_0; parent = Rx)
   bi = compose_mod(fR, Rb_0, fR)
   bi = mulmod(Rw_0, bi, fR)
   bi = sub!(bi, Rb_0, bi)
   b_0 = lift(Zx, bi)
-  r = K(parent(K.pol)(b_0))
+  r = K(change_base_ring(QQ, b_0; parent = parent(defining_polynomial(K))))
   r_old = r + 1
   mul!(r, r, dF)
   mod_sym!(r, modu)
@@ -486,9 +486,9 @@ function lift_root(K::AbsSimpleNumField, b, bound::Int)
     modu = modu^2
     R = residue_ring(ZZ, modu, cached = false)[1]
     Rx = polynomial_ring(R, "x", cached = false)[1]
-    fR = Rx(K.pol)
-    Rb_0 = Rx(b_0)
-    Rw_0 = Rx(w_0)
+    fR = change_base_ring(R, defining_polynomial(K); parent = Rx)
+    Rb_0 = change_base_ring(R, b_0; parent = Rx)
+    Rw_0 = change_base_ring(R, w_0; parent = Rx)
     @vtime :Automorphisms 4 A, fRinv = precomp_compose_mod(Rb_0, fR)
     @vtime :Automorphisms 4 wi = compose_mod_precomp(derivative(fR), A, fR, fRinv)
     wi = wi * Rw_0
@@ -499,7 +499,7 @@ function lift_root(K::AbsSimpleNumField, b, bound::Int)
     bi = Rb_0 - bi
     b_0 = lift(Zx, bi)
     w_0 = lift(Zx, wi)
-    r = K(parent(K.pol)(b_0))
+    r = K(change_base_ring(QQ, b_0; parent = parent(K.pol)))
     r = mul!(r, r, dF)
     r = mod_sym!(r, modu)
   end
@@ -519,7 +519,7 @@ function _frobenius_at(K::AbsSimpleNumField, p::Int, auts::Vector{<:NumFieldHom{
   Zx = ZZ["x"][1]
   F = residue_ring(ZZ, p, cached = false)[1]
   Fx, gFx = polynomial_ring(F, "x", cached = false)
-  fF = map_coefficients(F, Zx(K.pol), parent = Fx)
+  fF = map_coefficients(F, change_base_ring(ZZ, defining_polynomial(K); parent = Zx), parent = Fx)
   b = powermod(gFx, p, fF)
   if b in zzModPolyRingElem[Fx(image_primitive_element(x)) for x in auts]
     return false, id_hom(K)
@@ -570,7 +570,7 @@ function check_root(K::AbsSimpleNumField, p::Int, el::AbsSimpleNumFieldElem)
     q = next_prime(q)
     F = Native.GF(q, cached = false)
     Fx = polynomial_ring(F, cached = false)[1]
-    fF = Fx(K.pol)
+    fF = change_base_ring(F, defining_polynomial(K); parent = Fx)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end
@@ -607,7 +607,7 @@ function _automorphisms_center(K::AbsSimpleNumField)
     end
     F = GF(p, cached = false)
     Fx = polynomial_ring(F, cached = false)[1]
-    fF = Fx(K.pol)
+    fF = change_base_ring(F, defining_polynomial(K); parent = Fx)
     if degree(fF) != degree(K) || iszero(discriminant(fF))
       continue
     end

@@ -185,3 +185,19 @@ let # extend_easy for bad polynomials
     @test mFF(k(a)//3) == mF(a) * inv(F(3))
   end
 end
+
+@testset "Misc-subsets" begin
+  #without 
+  # a=[314721,x^4-x^3-46*x^2-47*x+2209]
+  # bnd=ZZ(10)^11
+  # k, _ = number_field(a[2]; cached = false, check = false)
+  # L = abelian_extensions(k, [2], bnd, signatures = [(2,3)])
+  #will encounter an infinite recursion in subsets (Malle)
+
+  @test_throws ArgumentError subsets(3, -1)
+  @test_throws ArgumentError subsets(-3, 1)
+  @test_throws ArgumentError subsets(-3, -1)
+  @test length(subsets(3, 3)) == 1
+  @test length(subsets(3, 2)) == 3
+  @test length(subsets(3, 4)) == 0
+end

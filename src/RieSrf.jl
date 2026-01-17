@@ -12,7 +12,7 @@ embed_mpoly, analytic_continuation, minimal_spanning_tree
 
 import Hecke.AbstractAlgebra, Hecke.Nemo
 import Hecke.IntegerUnion
-import Hecke:function_field, basis_of_differentials, genus, embedding, evaluate, fillacb!, length, reverse, precision, round_scale!, shortest_vectors, radius
+import Hecke:function_field, basis_of_differentials, genus, embedding, evaluate, fillacb!, length, reverse, precision, round_scale!, shortest_vectors, radius, zeros_array
 import Base:show, isequal, mod2pi
 using FLINT_jll: libflint
 

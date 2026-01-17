@@ -25,7 +25,7 @@ function __unit_reps_simple(M, F; GRH::Bool = true)
   @vprintln :PIP _describe(B)
   @vprintln :PIP "Computing generators of the maximal order"
   if dim(B) == 0
-    return [zero(B)]
+    return elem_type(B)[zero(B)]
   end
   UB = _unit_group_generators_maximal_simple(M; GRH = GRH)
   Q, MtoQ = quo(M, F)
@@ -366,7 +366,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
 end
 
 function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
-  vtemp = [zero(QQFieldElem) for i in 1:dd]
+  vtemp = zeros_array(QQ, dd)
   k = 0
   l = 0
   ll = [0 for i in 1:length(local_coeffs)]
@@ -502,7 +502,7 @@ end
 function recursive_iterator(lengths::Vector{Int}, d::Int, elts::Vector, bases_offsets::Vector{Tuple{Int, Int}}, indices_integral, indices_nonintegral)
   k = length(lengths)
   x = zeros(Int, k)
-  vtemp = QQFieldElem[zero(QQFieldElem) for i in 1:d]
+  vtemp = zeros_array(QQ, d)
   if _recursive_iterator!(x, lengths, d, elts, bases_offsets, indices_integral, indices_nonintegral, k, 1, vtemp)
     return true, x
   else
@@ -516,7 +516,7 @@ function _local_coeffs_buffer(A, l)
   end::Dict{Vector{Int}, Vector{Vector{Vector{QQFieldElem}}}}
 
   return get!(D, l) do
-    Vector{Vector{QQFieldElem}}[Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:dim(A)] for ii in 1:l[j]] for j in 1:length(l)]
+    Vector{Vector{QQFieldElem}}[Vector{QQFieldElem}[ zeros_array(QQ, dim(A)) for ii in 1:l[j]] for j in 1:length(l)]
   end::Vector{Vector{Vector{QQFieldElem}}}
 end
 

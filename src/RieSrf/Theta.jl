@@ -250,7 +250,7 @@ function _theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, char::Vector{Vector{Int
   ellipsoid_points = Hecke.enumerate_using_gram(Y, R1^2//piR)
   for i in (1:g)
     Lat1 = Vector{ZZRingElem}[]
-    pad = zeros(ZZRingElem, g)
+    pad = zeros_array(ZZ, g)
     pad[i] = 1
     for l in ellipsoid_points
       push!(Lat1, l + pad)

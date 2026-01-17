@@ -735,7 +735,7 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
     end
   else
     el = mq\(mp\(mF(OK(gen(K)))))
-    img = newton_lift(Zx(K.pol), el)
+    img = newton_lift(change_base_ring(ZZ, defining_polynomial(K); parent = Zx), el)
   end
   completion_map = CompletionMap(K, Qq, img, gq_in_K, precision)
   completion_map.P = P
@@ -761,7 +761,7 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
     f.inv_img = (gq, u)
     setprecision!(Kp, new_prec)
     #To increase the precision of the image of the primitive element, I use Hensel lifting
-    f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, precision(f.prim_img))
+    f.prim_img = newton_lift(change_base_ring(ZZ, defining_polynomial(domain(f)); parent = Zx), f.prim_img, new_prec, precision(f.prim_img))
   end
   f.precision = new_prec
   return nothing

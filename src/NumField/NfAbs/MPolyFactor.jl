@@ -83,7 +83,7 @@ function hlift_have_lcs_generic(
   @assert n > 0
   @assert r > 1
 
-  lc_evals = zeros(R, n + 1, r)
+  lc_evals = zeros_array(R, n + 1, r)
   for j in 1:r
     lc_evals[n + 1, j] = lcs[j]
     for i in n:-1:1
@@ -92,14 +92,14 @@ function hlift_have_lcs_generic(
     end
   end
 
-  A_evals = zeros(R, n + 1)
+  A_evals = zeros_array(R, n + 1)
   A_evals[n + 1] = A
   for i in n:-1:1
     A_evals[i] = AbstractAlgebra.MPolyFactor.eval_one(A_evals[i + 1],
                                                        minorvars[i], alphas[i])
   end
 
-  fac = zeros(R, r)
+  fac = zeros_array(R, r)
   for j in 1:r
     @assert is_constant(lc_evals[1, j])
     fac[j] = Auf[j]*divexact(lc_evals[1, j],
@@ -205,7 +205,7 @@ function hlift_have_lcs_crt(
   nf_lcc, bits = mfactor_martin_bounds(A)
 
   m = ZZRingElem(1)
-  Af = zeros(R, r)
+  Af = zeros_array(R, r)
 
   for p in PrimesSet(Hecke.p_start, -1)
 

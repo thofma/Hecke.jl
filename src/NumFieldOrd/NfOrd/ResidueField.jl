@@ -79,13 +79,9 @@ end
 function _residue_field_nonindex_divisor_helper_fq_default(f::QQPolyRingElem, g::QQPolyRingElem, p)
   R = finite_field(p, 1, :o, cached = false, check = false)[1]
 
-  Zy, y = polynomial_ring(ZZ, "y", cached = false)
-  Rx, x = polynomial_ring(R, "x", cached = false)
+  Rx, _ = polynomial_ring(R, "x", cached = false)
 
-  gmodp = Rx(g)
-  fmodp = Rx(f)
-
-  h = gcd(gmodp, fmodp)
+  h = gcd(Nemo.fmpq_poly_to_fq_default_poly_raw!(Rx(), g), Nemo.fmpq_poly_to_fq_default_poly_raw!(Rx(), f))
 
   return Nemo._residue_field(h, check = false)[1], h
 end
@@ -97,8 +93,8 @@ function _residue_field_nonindex_divisor_helper(f::QQPolyRingElem, g::QQPolyRing
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
 
-  gmodp = Rx(g)
-  fmodp = Rx(f)
+  gmodp = change_base_ring(R, g; parent = Rx)
+  fmodp = change_base_ring(R, f; parent = Rx)
 
   h = gcd(gmodp,fmodp)
 
