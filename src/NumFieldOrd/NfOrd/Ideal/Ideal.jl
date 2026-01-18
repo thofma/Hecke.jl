@@ -615,6 +615,7 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
 
 
   if has_weakly_normal(A)
+    K = nf(order(A))
     d = denominator(inv(K(A.gen_two)), order(A))
     d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
@@ -761,7 +762,7 @@ function _test(p::Union{Int, ZZRingElem}, f::AbsSimpleNumFieldElem, g::AbsSimple
   Rx = polynomial_ring(R, "x", cached = false)[1]
   f1 = Rx(f)
   f2 = Rx(g)
-  f = Rx(h)
+  f = change_base_ring(R, h; parent = Rx)
   #the problem was f1 and f2 included a unit mod f, thus the gcd was non-trivial
   f1 = gcd(f, f1)
   f2 = gcd(f, f2)
@@ -1004,14 +1005,14 @@ function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
-    F = St(k.pol)
+    F = change_base_ring(S, defining_polynomial(k); parent = St)
     m = data(reduced_resultant(B, F))
     return gcd(a, m)
   else
     S1 = residue_ring(ZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
-    F1 = St1(k.pol)
+    F1 = change_base_ring(S1, defining_polynomial(k); parent = St1)
     m1 = data(reduced_resultant(B1, F1))
     return gcd(a, m1)
   end
@@ -1027,14 +1028,15 @@ function _minmod_easy_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, Int(a), cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(b.elem_in_nf)
-    F = St(k.pol)
+    F = St()
+    Nemo.fmpq_poly_to_nmod_poly_raw!(F, defining_polynomial(k))
     m = lift(rres_sircana_pp(B, F))
     return gcd(a, m)
   else
     S1 = residue_ring(ZZ, a, cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(b.elem_in_nf)
-    F1 = St1(k.pol)
+    F1 = change_base_ring(S1, defining_polynomial(k); parent = St1)
     m1 = lift(rres_sircana_pp(B1, F1))
     return gcd(a, m1)
   end
@@ -1083,7 +1085,7 @@ function _minmod_comp_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S1 = residue_ring(ZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
-    F1 = St1(k.pol)
+    F1 = change_base_ring(S1, defining_polynomial(k); parent = St1)
     m1, u1, v1 = rresx_sircana_pp(B1, F1)  # u*B + v*F = m mod modulus(S)
     U1 = lift(ZZ["x"][1], u1)
     # m can be zero...
@@ -1098,7 +1100,7 @@ function _minmod_comp_pp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
-    F = St(k.pol)
+    F = change_base_ring(S, defining_polynomial(k); parent = St)
     m, u, v = rresx_sircana_pp(B, F)  # u*B + v*F = m mod modulus(S)
     U = lift(ZZ["x"][1], u)
     # m can be zero...
@@ -1130,7 +1132,7 @@ function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S1 = residue_ring(ZZ, Int(mod), cached = false)[1]
     St1 = polynomial_ring(S1, cached=false)[1]
     B1 = St1(d*b.elem_in_nf)
-    F1 = St1(k.pol)
+    F1 = change_base_ring(S1, defining_polynomial(k); parent = St1)
     m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
     U1 = lift(ZZ["x"][1], u1)
     # m can be zero...
@@ -1145,7 +1147,7 @@ function _minmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, mod, cached = false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
-    F = St(k.pol)
+    F = change_base_ring(S, defining_polynomial(k); parent = St)
     m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
     U = lift(ZZ["x"][1], u)
     # m can be zero...
@@ -1195,7 +1197,7 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S1 = residue_ring(ZZ, Int(mod_r), cached=false)[1]
     S1t = polynomial_ring(S1, cached=false)[1]
     B1 = S1t(d*b.elem_in_nf)
-    F1 = S1t(k.pol)
+    F1 = Nemo.fmpq_poly_to_nmod_poly_raw!(S1t(), defining_polynomial(k))
     m1, u1, v1 = rresx(B1, F1)  # u*B + v*F = m mod modulus(S)
     if iszero(m1)
       m1 = mod_r
@@ -1211,7 +1213,7 @@ function __invmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, mod_r, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
-    F = St(k.pol)
+    F = change_base_ring(S, defining_polynomial(k); parent = St)
 
     m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
     if iszero(m)
@@ -1291,7 +1293,7 @@ function _normmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     R = residue_ring(ZZ, Int(mod), cached=false)[1]
     Rt = polynomial_ring(R, cached=false)[1]
     B1 = Rt(d*b.elem_in_nf)
-    F1 = Rt(k.pol)
+    F1 = change_base_ring(R, defining_polynomial(k); parent = Rt)
     m2 = resultant_ideal(B1, F1)  # u*B + v*F = m mod modulus(S)
     m3 = gcd(modulus(R), lift(m2))
     return divexact(m3, com^degree(parent(b)))
@@ -1299,7 +1301,7 @@ function _normmod_comp(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     S = residue_ring(ZZ, mod, cached=false)[1]
     St = polynomial_ring(S, cached=false)[1]
     B = St(d*b.elem_in_nf)
-    F = St(k.pol)
+    F = change_base_ring(S, defining_polynomial(k); parent = St)
     m = resultant_ideal(B, F)  # u*B + v*F = m mod modulus(S)
     m1 = gcd(modulus(S), lift(m))
     return divexact(m1, com^degree(parent(b)))
@@ -2371,14 +2373,14 @@ function is_coprime(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal)
         RIx = polynomial_ring(RI, "x", cached = false)[1]
         fI1 = RIx(I.gen_two.elem_in_nf)
         fI2 = RIx(J.gen_two.elem_in_nf)
-        fI3 = RIx(K.pol)
+        fI3 = change_base_ring(RI, defining_polynomial(K); parent = RIx)
         fl = _coprimality_test(fI1, fI2, fI3)
       else
         R = residue_ring(ZZ, m, cached = false)[1]
         Rx = polynomial_ring(R, "x", cached = false)[1]
         f1 = Rx(I.gen_two.elem_in_nf)
         f2 = Rx(J.gen_two.elem_in_nf)
-        f3 = Rx(K.pol)
+        f3 = change_base_ring(R, defining_polynomial(K); parent = Rx)
         fl = _coprimality_test(f1, f2, f3)
       end
       @hassert :AbsNumFieldOrder 1 fl == isone(I+J)

@@ -591,7 +591,7 @@ function genus_generators(L::HermLat)
         x = x * u
         @assert norm(x) == 1
         if evaluate(x) == 1
-          y = w(V(zeros(F,length(PP))))
+          y = w(V([zero(F) for _ in 1:length(PP)]))
         else
           y = w(V([ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
         end
@@ -621,7 +621,7 @@ function genus_generators(L::HermLat)
       x = x * u
       @assert norm(x) == 1
       if evaluate(x) == 1
-        y = zeros(F,length(PP))
+        y = [zero(F) for _ in 1:length(PP)]
       else
         y = [ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]
       end

@@ -474,7 +474,7 @@ function quo(A::S, a::AbsAlgAssIdl{S}) where {S}
 
   # Lift a basis of the quotient to A
   quotient_basis = Vector{elem_type(A)}(undef, n)
-  b = elem_type(K)[zero(K) for i in 1:n]
+  b = zeros_array(K, n)
   for i = 1:n
     b[i] = oneK
     bN = b*N
@@ -484,7 +484,7 @@ function quo(A::S, a::AbsAlgAssIdl{S}) where {S}
 
   # Build the multiplication table
   t = A()
-  s = elem_type(K)[zero(K) for i in d]
+  s = zeros_array(K, d)
   mult_table = Array{elem_type(K), 3}(undef, n, n, n)
   for i in 1:n
     for j in 1:n
@@ -545,7 +545,7 @@ function quo(a::AbsAlgAssIdl{S}, b::AbsAlgAssIdl{S}) where {S}
 
   # Lift a basis of the quotient to A
   quotient_basis = Vector{elem_type(A)}(undef, n)
-  b = [zero(K) for i in 1:n]
+  b = zeros_array(K, n)
   for i = 1:n
     b[i] = one(K)
     bM = b*M
@@ -768,7 +768,7 @@ function maximal_ideals(A::MatAlgebra{<:FinFieldElem, <:Any}; side::Symbol)
   @req dim(A) == _matdeg(A)^2 "Must be a full matrix algebra"
   res = AbsAlgAssIdl{typeof(A)}[]
   if side == :left
-    zrow = [zero(F) for i in 1:n]
+    zrow = zeros_array(F, n)
     t = zero_matrix(F, n, n)
     for M in maximal_subspaces(F, n)
       bas = elem_type(A)[]
@@ -787,7 +787,7 @@ function maximal_ideals(A::MatAlgebra{<:FinFieldElem, <:Any}; side::Symbol)
     return res
   else
     @req side == :right "Side (:$(side)) must be :left or :right."
-    zcol = [zero(F) for i in 1:n]
+    zcol = zeros_array(F, n)
     t = zero_matrix(F, n, n)
     for M in maximal_subspaces(F, n)
       bas = elem_type(A)[]

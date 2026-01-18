@@ -669,7 +669,7 @@ function _my_direct_product(algebras)
   K = base_ring(algebras[1])
   maps = dense_matrix_type(K)[]
   pre_maps = dense_matrix_type(K)[]
-  mt = zeros(K, d, d, d)
+  mt = zeros_array(K, d, d, d)
   offset = 0
   for l in 1:length(algebras)
     B = algebras[l]

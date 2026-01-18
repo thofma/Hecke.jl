@@ -214,7 +214,7 @@ function _std_basis_vector(C::CommutatorAlgebra, i::Int, j::Int)
   @assert 1 <= i <= length(C.invariant_factors_grouped)
   @assert 1 <= j <= length(C.invariant_factors_grouped[i][3])
   for k in 1:length(C.invariant_factors_grouped)
-    push!(z, zeros(Hecke.Globals.Qx, length(C.invariant_factors_grouped[k][3])))
+    push!(z, zeros_array(Hecke.Globals.Qx, length(C.invariant_factors_grouped[k][3])))
   end
   z[i][j] = one(Hecke.Globals.Qx)
   return z

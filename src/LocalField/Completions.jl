@@ -13,14 +13,14 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
   C = codomain(f)
 
   v = Int(valuation(denominator(a), minimum(f.P)))
-  
+
 #  if pr > 1000
 #    error("ASD")
 #  end
 
   old = f.precision
 
-  if f.precision < pr + absolute_ramification_index(C)*v 
+  if f.precision < pr + absolute_ramification_index(C)*v
     setprecision!(f, pr + absolute_ramification_index(C)*v)
   end
   z = setprecision(C, precision(C)+absolute_ramification_index(C)*v) do
@@ -74,7 +74,7 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
 end
 
 function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool, precision::Int)
-  if !haskey(f.lift_data, precision) 
+  if !haskey(f.lift_data, precision)
     l = lll(basis_matrix(f.P^precision))
     f.lift_data[precision] = (l, solve_init(map_entries(QQ, l)))
   end
@@ -236,17 +236,17 @@ function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::
   # we assume valuation(f'(a)) == l == 0 here
 
   @assert prec < new_prec
-  i = new_prec 
+  i = new_prec
   chain = [new_prec]
   while i > prec
     i = div(i+1, 2)
     pushfirst!(chain, max(i, prec))
   end
-  
+
   local minP2i::ZZRingElem
   for i = 2:length(chain)
     ex = chain[i]
-    
+
     minP2i = p^ex
     a = a - f(a)*ia
     ia = ia*(2-ia*der(a))
@@ -435,12 +435,12 @@ if true
   # x inv(u)   s   = b v
   # x = b v inv(s) u
   #lets try:
-  
+
   s, _u, v = snf_with_transform(MK.num)
   bv = bK.num * v
-  
+
   bv = map_entries(Zp, bv)
-  
+
 #  sZ = solve(MK.num, bK.num; side = :left)
 #   xZp = map_entries(Zp, sZ)
   for i=1:ncols(s)
@@ -499,7 +499,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       new_prec += e - new_prec % e
       @assert new_prec % e == 0
       asked = new_prec
-      new_prec = max(new_prec, 2*e*maximum(keys(Kp.def_poly_cache))) 
+      new_prec = max(new_prec, 2*e*maximum(keys(Kp.def_poly_cache)))
       #to not do this too frequently
       gq, u = f.inv_img
       ex = div(new_prec+e-1, e)
@@ -539,7 +539,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       if asked < new_prec
         setprecision!(Kp, asked)
         setprecision!(base_field(Kp), div(asked+e-1, e)+1)
-        return 
+        return
       end
     else
 #      f.precision = max(new_prec, f.precision)
@@ -720,7 +720,7 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
     bK = basis_matrix(AbsSimpleNumFieldElem[gen(K)], FakeFmpqMat)
     d = lcm(denominator(MK, copy = false), denominator(bK, copy = false))
     if d != denominator(MK, copy = false)
-      mul!(MK.num, mK.num, divexact(d, denominator(MK, copy = false)))
+      mul!(MK.num, MK.num, divexact(d, denominator(MK, copy = false)))
     end
     if d != denominator(bK, copy = false)
       mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
@@ -735,7 +735,7 @@ function unramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{Ab
     end
   else
     el = mq\(mp\(mF(OK(gen(K)))))
-    img = newton_lift(Zx(K.pol), el)
+    img = newton_lift(change_base_ring(ZZ, defining_polynomial(K); parent = Zx), el)
   end
   completion_map = CompletionMap(K, Qq, img, gq_in_K, precision)
   completion_map.P = P
@@ -761,7 +761,7 @@ function setprecision!(f::CompletionMap{QadicField, QadicFieldElem}, new_prec::I
     f.inv_img = (gq, u)
     setprecision!(Kp, new_prec)
     #To increase the precision of the image of the primitive element, I use Hensel lifting
-    f.prim_img = newton_lift(Zx(defining_polynomial(domain(f))), f.prim_img, new_prec, precision(f.prim_img))
+    f.prim_img = newton_lift(change_base_ring(ZZ, defining_polynomial(domain(f)); parent = Zx), f.prim_img, new_prec, precision(f.prim_img))
   end
   f.precision = new_prec
   return nothing

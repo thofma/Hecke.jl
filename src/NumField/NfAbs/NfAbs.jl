@@ -36,12 +36,12 @@ end
 
 function number_field(f::ZZPolyRingElem, s::VarName; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
-  return number_field(Qx(f), Symbol(s), cached = cached, check = check)
+  return number_field(change_base_ring(QQ, f; parent = Qx), Symbol(s), cached = cached, check = check)
 end
 
 function number_field(f::ZZPolyRingElem; cached::Bool = true, check::Bool = true)
   Qx = Globals.Qx
-  return number_field(Qx(f), cached = cached, check = check)
+  return number_field(change_base_ring(QQ, f; parent = Qx), cached = cached, check = check)
 end
 
 function radical_extension(n::Int, gen::Integer; cached::Bool = true, check::Bool = true)
@@ -367,7 +367,7 @@ function normal_basis(K::AbsSimpleNumField)
     #Now, I check if p is totally split
     R = GF(q, cached = false)
     Rt, t = polynomial_ring(R, "t", cached = false)
-    ft = Rt(K.pol)
+    ft = change_base_ring(R, defining_polynomial(K); parent = Rt)
     pt = powermod(t, q, ft)
     if degree(gcd(ft, pt-t)) == degree(ft)
       p = q
@@ -384,7 +384,7 @@ function _normal_basis_generator(K, p)
   #Now, I only need to lift an idempotent of O/pO
   R = GF(p, cached = false)
   Rx, x = polynomial_ring(R, "x", cached = false)
-  f = Rx(K.pol)
+  f = change_base_ring(R, defining_polynomial(K); parent = Rx)
   fac = factor(f)
   g = divexact(f, first(fac)[1])
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
@@ -430,8 +430,8 @@ function _issubfield_first_checks(K::AbsSimpleNumField, L::AbsSimpleNumField)
   while cnt < cnt_threshold
     F = GF(p, cached = false)
     Fx = polynomial_ring(F, "x", cached = false)[1]
-    fp = Fx(f)
-    gp = Fx(g)
+    fp = change_base_ring(F, f; parent = Fx)
+    gp = change_base_ring(F, g; parent = Fx)
     if !is_squarefree(fp) || !is_squarefree(gp)
       p = next_prime(p)
 	    continue
@@ -532,11 +532,11 @@ function is_isomorphic_with_map(K::AbsSimpleNumField, L::AbsSimpleNumField)
     end
     F = GF(p, cached = false)
     Fx = polynomial_ring(F, "x", cached = false)[1]
-    fp = Fx(f)
+    fp = change_base_ring(F, f; parent = Fx)
     if degree(fp) != degree(f) || !is_squarefree(fp)
       continue
     end
-    gp = Fx(g)
+    gp = change_base_ring(F, g; parent = Fx)
     if degree(gp) != degree(g) || !is_squarefree(gp)
       continue
     end
@@ -724,7 +724,7 @@ Computes the splitting field of $f$ as an absolute field.
 """
 function splitting_field(f::ZZPolyRingElem; do_roots::Bool = false)
   Qx = polynomial_ring(QQ, parent(f).S, cached = false)[1]
-  return splitting_field(Qx(f), do_roots = do_roots)
+  return splitting_field(change_base_ring(QQ, f; parent = Qx), do_roots = do_roots)
 end
 
 function splitting_field(f::QQPolyRingElem; do_roots::Bool = false)
@@ -733,7 +733,7 @@ end
 
 function splitting_field(fl::Vector{ZZPolyRingElem}; coprime::Bool = false, do_roots::Bool = false)
   Qx = polynomial_ring(QQ, parent(fl[1]).S, cached = false)[1]
-  return splitting_field([Qx(x) for x = fl], coprime = coprime, do_roots = do_roots)
+  return splitting_field([change_base_ring(QQ, x; parent = Qx) for x = fl], coprime = coprime, do_roots = do_roots)
 end
 
 function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_roots::Bool = false)
@@ -1134,16 +1134,10 @@ function common_super(A::NumField, B::NumField)
   end
 
   c = intersect(find_all_super(A), find_all_super(B))
-  first = true
   m = nothing
-  for C = c
-    if first
+  for C in c
+    if m === nothing || absolute_degree(C) < absolute_degree(m)
       m = C
-      first = false
-    else
-      if absolute_degree(C) < absolute_degree(m)
-        m = C
-      end
     end
   end
   return m
@@ -1274,5 +1268,5 @@ function force_coerce_cyclo(a::AbsSimpleNumField, b::AbsSimpleNumFieldElem, ::Va
   end
 
   # now ff is a polynomial for b w.r.t. the fa-th cyclotomic field
-  return a(ff)
+  return a(change_base_ring(QQ, ff; parent = parent(a.pol)))
 end

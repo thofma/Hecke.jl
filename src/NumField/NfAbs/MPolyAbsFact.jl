@@ -392,12 +392,6 @@ mutable struct RootCtxSingle{T}
   R::T  # the root
   o::T  # inv(f'(R)) for the double lifting.
 
-  function RootCtxSingle(f::PolyRingElem{S}, K::fqPolyRepField) where {S <: SeriesElem}
-    #not used I think
-    RR,  = power_series_ring(K, max_precision(R), var(R), cached = false) #can't get the model
-    return RootCtxSingle(f, RR)
-  end
-
   function RootCtxSingle(f::PolyRingElem{<:SeriesElem{T}}, r::T) where {T}
     R = base_ring(parent(f))
     k, mk = residue_field(R)
@@ -1307,8 +1301,8 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   R = parent(a)
   K = base_ring(R)
 
-  alphas = zeros(ZZ, nvars(R))
-  bi_sub = zeros(Qxy, nvars(R))
+  alphas = [zero(ZZ) for _ in 1:nvars(R)]
+  bi_sub = [zero(Qxy) for _ in 1:nvars(R)]
 
   @assert length(a) > 0
 
@@ -1336,7 +1330,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
     # linear is irreducible by assumption
     return (unit, [a, parent(a)(1)])
   elseif length(vars) == 1
-    uni_sub = zeros(Hecke.Globals.Qx, nvars(R))
+    uni_sub = [zero(Hecke.Globals.Qx) for _ in 1:nvars(R)]
     uni_sub[vars[1]] = gen(Hecke.Globals.Qx)
     K1, alpha = number_field(evaluate(a, uni_sub), cached = false)
     R1 = polynomial_ring(K1, map(string, symbols(R)), internal_ordering = internal_ordering(R), cached = false)[1]

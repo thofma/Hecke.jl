@@ -16,7 +16,7 @@ function cyclic_algebra(
   k = base_field(fld)
   alpha = fld(a)
   d = degree(fld)
-  sc = zeros(k, d^2, d^2, d^2)
+  sc = zeros_array(k, d^2, d^2, d^2)
   # Calculate xᵢ⋅πʲ⋅xₘ⋅πⁿ = xᵢ⋅σʲ(xₘ)⋅πʲ⁺ⁿ
   for (i, (xi, j)) in enumerate(Iterators.product(basis(fld), 1:d))
     c_sigma = sigma^(j - 1)

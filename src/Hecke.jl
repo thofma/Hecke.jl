@@ -261,6 +261,17 @@ end
 
 using .Globals
 
+# no aliasing between elements
+function zeros_array(R::NCRing, r::Int...)
+  A = Array{elem_type(R)}(undef, r)
+  for i in eachindex(A)
+    A[i] = zero(R)
+  end
+  return A
+end
+
+zeros_array(x...) = zeros(x...)
+
 ################################################################################
 #
 #  Aliases
@@ -555,7 +566,6 @@ include("FunField.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("analytic.jl")
-include("helper.jl")
 include("HypellCrv.jl")
 include("EllCrv.jl")
 include("LargeField.jl")

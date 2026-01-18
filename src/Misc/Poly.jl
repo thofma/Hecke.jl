@@ -245,7 +245,8 @@ end
 """
 function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, h::ZZPolyRingElem, p::ZZRingElem, k::Int)
   Rx, x = polynomial_ring(Native.GF(p, cached=false), cached=false)
-  fl, a, b = gcdx(Rx(g), Rx(h))
+  fl, a, b = gcdx(change_base_ring(base_ring(Rx), g; parent = Rx),
+                  change_base_ring(base_ring(Rx), h; parent = Rx))
   @assert isone(fl)
   @assert k>= 2
   ## if one of the cofactors is zero, this crashes.
@@ -311,7 +312,8 @@ function hensel_lift(f::ZZPolyRingElem, g::ZZPolyRingElem, p::ZZRingElem, k::Int
     mod_sym!(f, pk)
   end
   @assert is_monic(f)
-  q, r = divrem(Rx(f), Rx(g))
+  q, r = divrem(change_base_ring(base_ring(Rx), f; parent = Rx),
+                change_base_ring(base_ring(Rx), g; parent = Rx))
   @assert iszero(r)
   h = lift(parent(f), q)
   return hensel_lift(f, g, h, p, k)[1]
@@ -345,8 +347,8 @@ end
 function rres_bez(f::ZZPolyRingElem, g::ZZPolyRingElem)
   Nemo.check_parent(f, g)
   Qx = polynomial_ring(QQ, "x", cached = false)[1]
-  f1 = Qx(f)
-  g1 = Qx(g)
+  f1 = QQPolyRingElem(Qx, f)
+  g1 = QQPolyRingElem(Qx, g)
   d, q, w = gcdx(f1, g1)
   if iszero(q) || iszero(w)
     if is_constant(f) || is_constant(g)
@@ -416,7 +418,7 @@ Return the number of positive roots of $f$. If `multiplicities` is true,
 than the roots are counted with multiplicities.
 """
 function n_positive_roots(f::ZZPolyRingElem; multiplicities::Bool = false)
-  ff = Globals.Qx(f)
+  ff = change_base_ring(QQ, f; parent = Globals.Qx)
   if !multiplicities
     ffp = derivative(ff)
     g = gcd(ff, ffp)
@@ -437,7 +439,7 @@ end
 function n_positive_roots(f::QQPolyRingElem; multiplicities::Bool = false)
   d = denominator(f)
   @assert d > 0
-  g = Hecke.Globals.Zx(d * f)
+  g = numerator(d * f, Globals.Zx)
   return n_positive_roots(g; multiplicities)
 end
 
@@ -464,7 +466,7 @@ end
 # Number of real roots
 #
 function n_real_roots(f::ZZPolyRingElem)
-  ff = Hecke.Globals.Qx(f)
+  ff = change_base_ring(QQ, f; parent = Globals.Qx)
   ffp = derivative(ff)
   g = gcd(ff, ffp)
   if is_constant(g)
@@ -475,9 +477,7 @@ function n_real_roots(f::ZZPolyRingElem)
 end
 
 function n_real_roots(f::QQPolyRingElem)
-  d = denominator(f)
-  @assert d > 0
-  g = Hecke.Globals.Zx(d * f)
+  g = numerator(f, Globals.Zx)
   return n_real_roots(g)
 end
 
@@ -718,8 +718,7 @@ function roots(f::ZZPolyRingElem; max_roots::Int=degree(f))
 end
 
 function roots(f::QQPolyRingElem; max_roots::Int=degree(f))
-  Zx, x = polynomial_ring(ZZ, cached = false)
-  g = Zx(denominator(f)*f)
+  g = numerator(f, Globals.Zx)
   return roots(QQ, g)
 end
 

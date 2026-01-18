@@ -119,8 +119,6 @@ end
 @deprecate iseq is_eq
 @deprecate isequation_order is_equation_order
 @deprecate isequivalent is_equivalent
-@deprecate isfinite_gen is_finite_gen
-@deprecate isfinite_snf is_finite_snf
 @deprecate isfixed_point_free is_fixed_point_free
 @deprecate isfree is_free
 @deprecate isfree_a4_fabi is_free_a4_fabi
@@ -246,8 +244,6 @@ end
 
 @deprecate Zgenera integer_genera
 @deprecate Zlattice integer_lattice
-
-@deprecate real_field real_number_field
 
 @deprecate points_with_x points_with_x_coordinate
 

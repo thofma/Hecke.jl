@@ -48,23 +48,18 @@ end
 
 function _ideal_pid(R::Ring, x::Vector)
   return _ideal_pid(R, mapreduce(x -> parent(x) === R ? x : R(x), gcd, x; init = zero(R)))
-  if parent(x) === R
-    return PIDIdeal(x)
-  else
-    return PIDIdeal(R(x))
-  end
 end
 
-function ideal(R::PolyRing{<:FieldElem}, x...)
-  return _ideal_pid(R, x...)
+function ideal(R::PolyRing{<:FieldElem}, x::RingElement, y::RingElement...)
+  return _ideal_pid(R, x, y...)
 end
 
-function ideal(R::PolyRing{<:FieldElem}, xs::AbstractVector{T}) where T<:RingElement
+function ideal(R::PolyRing{<:FieldElem}, xs::Vector)
   return _ideal_pid(R, xs)
 end
 
-function ideal(R::Field, x...)
-  return _ideal_pid(R, x...)
+function ideal(R::Field, x::RingElement, y::RingElement...)
+  return _ideal_pid(R, x, y...)
 end
 
 function ideal(R::Field, xs::AbstractVector{T}) where T<:RingElement

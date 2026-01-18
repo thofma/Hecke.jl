@@ -7,10 +7,11 @@ DocTestSetup = Hecke.doctestsetup()
 
 ## Creation of number fields
 
-General number fields can be created using the function `number_field`.
-To create a simple number field given by a defining
-polynomial or a non-simple number field given by defining polynomials, the
-following functions can be used.
+Number fields can be created using the `number_field` function.
+
+To create a simple number field, one passes the defining polynomial directly to `number_field`. This returns the corresponding extension and a generator.
+
+To create a non-simple number field, one passes a vector of defining polynomials to `number_field`. This returns the extension and a vector of generators.
 
 ```@docs
 number_field(::DocuDummy)
@@ -18,29 +19,43 @@ number_field(::DocuDummy2)
 ```
 
 !!! tip
-    Many of the constructors have arguments of type `VarName`.
-    If used, they define the appearance in printing, and
-    printing only.  The named parameter `check` can be `true` or `false`, the
-    default being `true`.  This parameter controls whether the polynomials
-    defining the number field are tested for irreducibility or not. Given that
-    this can be potentially very time consuming if the degree if large, one can
-    disable this test. Note however, that the behaviour of Hecke is undefined
+    Many of the constructors here have an argument of type `VarName`.
+    If this argument is used, it determines the appearance in printing and
+    printing only.
+
+    The named argument `check` can be set to `true` or `false` with the
+    default being `true`. This parameter controls whether or not the extension
+    defined by the given inputs is a field. Given that
+    this can be potentially very time consuming if the degree is large, one can
+    disable this test. Note, however, that the behaviour of Hecke is undefined
     if a reducible polynomial is used to define a *field*.
 
-    The named boolean parameter `cached` can be used to disable caching. Two
+    The named boolean argument `cached` can be used to disable caching. Two
     number fields defined using the same polynomial from the identical
     polynomial ring and the same (identical) symbol/string will be identical if
     `cached == true` and different if `cached == false`.
 
+One can directly construct the splitting field of polynomial as an absolute simple number field.
+
+```@docs
+splitting_field
+```
 
 For frequently used number fields like quadratic fields, cyclotomic fields
-or radical extensions, the following functions are provided:
+or radical extensions, the following functions are also provided:
 
 ```@docs
 cyclotomic_field(n::Int)
 quadratic_field(d::ZZRingElem)
 wildanger_field(n::Int, B::ZZRingElem)
 radical_extension(n::Int, a::NumFieldElem)
+```
+
+Occasionally, algorithms written with Hecke may be written specifically to target generic number fields.
+The default implementation of the rational numbers `QQ` utilizes a specialized wrapper for the FLINT `fmpq_t` type and is not implemented as a generic number field.
+For cases of compatibility, we also provide a method for considering the rationals as a generic number field.
+
+```@docs
 rationals_as_number_field()
 ```
 
@@ -138,7 +153,7 @@ inertia_subgroup(::AbsSimpleNumField, ::AbsNumFieldOrderIdeal{AbsSimpleNumField,
 infinite_places(K::NumField)
 real_places(K::AbsSimpleNumField)
 complex_places(K::AbsSimpleNumField)
-isreal(::Plc)
+is_real(::Plc)
 is_complex(::Plc)
 ```
 

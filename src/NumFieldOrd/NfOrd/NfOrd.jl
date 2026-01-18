@@ -668,8 +668,11 @@ function _norm_change_const(v::Vector{AbsSimpleNumFieldElem})
         break
       end
     end
+    if !fl1
+      fl1 = !(r[1] > 0)
+    end
   end
-  if fl1 || !(r[1] > 0)
+  if fl1
     # more complicated methods are called for...
     m = ceil(Int, log(d)/log(2))
     m += m%2

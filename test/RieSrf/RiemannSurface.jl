@@ -21,7 +21,7 @@
   f = x^3 + 1 - y^2
   RS = RiemannSurface(f)
   tau = small_period_matrix(RS)
-  
+
   R = base_ring(tau)
   t = R("0.5 +/- 1e-10") + R("0.86602540378443864676372317 +/- 1.91e-10")*im
   @test contains(t, tau[1,1])

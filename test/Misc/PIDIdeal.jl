@@ -74,7 +74,7 @@
     #@test J == K * 0
 
     @test sprint(show, "text/plain", I) isa String
-    
+
     @test ideal(K, gen(I)) == I
     @test ideal(K, gen(J)) == J
     @test ideal(K, gens(I)) == I

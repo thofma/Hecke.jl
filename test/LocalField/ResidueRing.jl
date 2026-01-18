@@ -149,7 +149,7 @@ end
   end
 
   N = zero_matrix(S, 2, 1)
-  b = zeros(S, 2)
+  b = Hecke.zeros_array(S, 2)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(N, b, side = :right)
   @test fl
   @test N*x == b
@@ -158,7 +158,7 @@ end
   @test K == identity_matrix(S, 1)
 
   N = zero_matrix(S, 1, 2)
-  b = zeros(S, 1)
+  b = Hecke.zeros_array(S, 1)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(N, b, side = :right)
   @test fl
   @test N*x == b
@@ -235,7 +235,7 @@ end
   end
 
   N = zero_matrix(S, 2, 1)
-  b = zeros(S, 2)
+  b = Hecke.zeros_array(S, 2)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(N, b, side = :right)
   @test fl
   @test N*x == b
@@ -244,7 +244,7 @@ end
   @test K == identity_matrix(S, 1)
 
   N = zero_matrix(S, 1, 2)
-  b = zeros(S, 1)
+  b = Hecke.zeros_array(S, 1)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(N, b, side = :right)
   @test fl
   @test N*x == b
@@ -344,7 +344,7 @@ end
 
   N = zero_matrix(S, 2, 1)
   C = solve_init(N)
-  b = zeros(S, 2)
+  b = Hecke.zeros_array(S, 2)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(C, b, side = :right)
   @test fl
   @test N*x == b
@@ -354,7 +354,7 @@ end
 
   N = zero_matrix(S, 1, 2)
   C = solve_init(N)
-  b = zeros(S, 1)
+  b = Hecke.zeros_array(S, 1)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(C, b, side = :right)
   @test fl
   @test N*x == b
@@ -444,7 +444,7 @@ end
 
   N = zero_matrix(S, 2, 1)
   C = solve_init(N)
-  b = zeros(S, 2)
+  b = Hecke.zeros_array(S, 2)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(C, b, side = :right)
   @test fl
   @test N*x == b
@@ -454,7 +454,7 @@ end
 
   N = zero_matrix(S, 1, 2)
   C = solve_init(N)
-  b = zeros(S, 1)
+  b = Hecke.zeros_array(S, 1)
   fl, x, K = @inferred can_solve_with_solution_and_kernel(C, b, side = :right)
   @test fl
   @test N*x == b

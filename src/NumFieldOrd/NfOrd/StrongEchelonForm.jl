@@ -482,13 +482,13 @@ function test_pseudohnf()
 
     @show length(ideals)
 
-    gc()
+    GC.gc()
     @time pseudo_hnf_mod(pm, d, strategy = :split)
-    gc()
+    GC.gc()
     @time pseudo_hnf_mod(pm, d, strategy = :no_split)
-    gc()
+    GC.gc()
     @time pseudo_hnf_kb(pm)
-    gc()
+    GC.gc()
 
     hnf_new = pseudo_hnf_mod(pm, d)
     hnf_old = pseudo_hnf_kb(pm)

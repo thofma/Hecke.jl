@@ -54,7 +54,7 @@
   end
 
   # Creating embeddings from roots
-  
+
   K, a = quadratic_field(2)
   r = Hecke.real_embedding(K, 1.41)
   s = Hecke.real_embedding(K, -1.41)

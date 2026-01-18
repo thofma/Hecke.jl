@@ -234,7 +234,7 @@ function map_data_given_base_field_data(K::LocalField, L, z, y; check = true)
     setprecision(base_field(K), precision(yy)) do
       f = map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false)
       y = evaluate(f, yy)
-      if !iszero(y) 
+      if !iszero(y)
         @show valuation(y), precision(y), y, precision(yy)
       end
 

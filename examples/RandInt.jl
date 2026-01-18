@@ -55,7 +55,7 @@ end
 """
     rand_fac_int(N::ZZRingElem; proof::Bool = true)
 
-Returns a uniform-random integer in (N/2..N) in factored form, based on 
+Returns a uniform-random integer in (N/2..N) in factored form, based on
 Bach's paper above.
 
 "proof" controls if the primality of the factors is proven.

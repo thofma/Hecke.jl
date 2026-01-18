@@ -1330,7 +1330,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
   # we use the transfer formula to revert the trace construction (this is
   # where we actually need a basis on which the isometry is given by multiplication
   # by `b`.
-  gram = matrix(zeros(E, m, m))
+  gram = zero_matrix(E, m, m)
   s = involution(E)
   G = l*gram_matrix(ambient_space(L))*transpose(l)
   bs = absolute_basis(E)

@@ -469,7 +469,7 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
   end
   if length(g.values) > 0 && is_negative(getindex!(p_v, g.values, 1))
     scale_row!(g, -1)
-    with_transform ? push!(trafos, sparse_trafo_scale!{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
+    with_transform ? push!(trafos, sparse_trafo_scale{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
   end
 
   if A.r == A.c
@@ -685,6 +685,7 @@ Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 """
 function hnf_kannan_bachem(A::SMat{T}, with_transform_val::Val{with_transform} = Val(false); truncate::Bool = false, full_hnf::Bool = true, auto::Bool = false, limit::Int = typemax(Int)) where {T, with_transform}
 
+  trt = rt = UInt64(0)  # help JET to understand these variables are not used uninitialized
   @vprintln :HNF 1 "Starting Kannan Bachem HNF on:"
   @vprint :HNF 1 A
   @vprintln :HNF 1 " with density $(density(A)); truncating $truncate"

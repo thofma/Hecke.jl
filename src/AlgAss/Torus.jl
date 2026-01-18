@@ -46,7 +46,7 @@ function _maximal_torus(A::MatAlgebra)
     for b in S
       for c in S
         dd = (b + c)^e
-        fl = can_solve(Tbasismat, coefficients(dd); side = :left) 
+        fl = can_solve(Tbasismat, coefficients(dd); side = :left)
         if !fl
           push!(Tbasis, dd)
           Tbasis = _subalgebra_basis(A, Tbasis)
@@ -95,7 +95,7 @@ end
 
 # determines a basis of C_A(B), the matrices in the span of A
 # commuting with all matrices in the span of B
-# 
+#
 # currently only works for matrices, but could be written more generically
 # caveat: in the matrix algebra case, one should represent everything
 # with respect to the overalgebra M_n(K)

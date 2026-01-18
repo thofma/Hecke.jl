@@ -997,7 +997,7 @@ end
 
 function _addmul!(M::FqMatrix, i, j, a::FqFieldElem, b::FqFieldElem, temp = base_ring(M)())
   GC.@preserve M begin
-    c = Nemo.fq_default_mat_entry_ptr(M, i, j)
+    c = mat_entry_ptr(M, i, j)
     mul!(temp, a, b)
     ccall((:fq_default_add, libflint), Nothing, (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), c, c, temp, base_ring(M))
   end
@@ -1275,7 +1275,7 @@ function jordan_chevalley_decomposition(x::AbstractAssociativeAlgebraElem)
       m[i + 1, l + 1] = coeff(h, l)
     end
   end
-  v = [zero(QQ) for k in 1:degree(ggpgcd)]
+  v = zeros_array(QQ, degree(ggpgcd))
   if length(v) > 0
     v[1] = 1
   end

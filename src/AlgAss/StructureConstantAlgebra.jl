@@ -680,7 +680,7 @@ function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool 
   l = length(fi)
   R = parent(f)
   if only_one
-    r = zeros(R, l)
+    r = zeros_array(R, l)
     r[1] = one(R)
     g = crt(r, fi)
     return g(a)
@@ -688,7 +688,7 @@ function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool 
     oneR = one(R)
     zeroR = zero(R)
     gi = Vector{elem_type(R)}(undef, l)
-    r = zeros(R, l)
+    r = zeros_array(R, l)
     for i = 1:l
       r[i] = oneR
       gi[i] = crt(r, fi)
@@ -854,7 +854,7 @@ end
 
 function direct_product(K, algebras::Vector{<: StructureConstantAlgebra{T}}; task::Symbol = :sum) where T
   if length(algebras) == 0
-    mt = zeros(K, 0, 0, 0)
+    mt = Array{elem_type(K)}(undef, 0, 0, 0)
     A = StructureConstantAlgebra(K, mt; check = false)
     return A, morphism_type(eltype(algebras), typeof(A))[]
   end
@@ -868,7 +868,7 @@ function direct_product(a::StructureConstantAlgebra{T}, _algebras::StructureCons
   @assert task in [ :prod, :sum, :both, :none ]
 
   d = sum( dim(A) for A in algebras )
-  mt = zeros(base_ring(algebras[1]), d, d, d)
+  mt = zeros_array(base_ring(algebras[1]), d, d, d)
   offset = 0
   for B in algebras
     mtB = structure_constant_table(B, copy = false)
@@ -953,7 +953,7 @@ end
 
 # internal use only
 function quaternion_algebra2(K::Field, a::T, b::T) where { T <: FieldElem }
-  M = zeros(K, 4, 4, 4)
+  M = zeros_array(K, 4, 4, 4)
 
   M[1, 1, 1] = one(K) # 1*1=1
   M[1, 2, 2] = one(K) # 1*i=i

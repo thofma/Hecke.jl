@@ -222,7 +222,7 @@ function _find_nearest_complex_embedding(K::AbsNonSimpleNumField, x)
         end
       end
       ss = String(take!(s))
-      error("""Given approximation not close enough to a vector of roots. \n 
+      error("""Given approximation not close enough to a vector of roots. \n
             Possible vector of roots are:
             $ss
             """)

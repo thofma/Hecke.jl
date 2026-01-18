@@ -313,7 +313,7 @@ Computes the residual polynomial of the side $L$ of the Newton Polygon $N$.
 function residual_polynomial(N::NewtonPolygon{ZZPolyRingElem}, L::Line)
   F = GF(N.p, cached = false)
   Ft = polynomial_ring(F, "t", cached = false)[1]
-  FF = finite_field(Ft(N.phi), "a", cached = false)[1]
+  FF = finite_field(change_base_ring(F, N.phi; parent = Ft), "a", cached = false)[1]
   return residual_polynomial(FF, L, N.development, N.p)
 end
 
@@ -326,7 +326,7 @@ function residual_polynomial(F, L::Line, dev::Vector{ZZPolyRingElem}, p::Union{I
   e = denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
-      el=Rx(divexact(dev[Int(s+e*i+1)], ZZRingElem(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
+      el= change_base_ring(R, divexact(dev[Int(s+e*i+1)], ZZRingElem(p)^(Int(L.points[1][2]+numerator(L.slope*i*e)))); parent = Rx)
       push!(cof, F(el))
     else
       push!(cof, F(0))
@@ -370,7 +370,7 @@ function is_regular_at(f::ZZPolyRingElem, p::ZZRingElem)
   Zx = parent(f)
   R = Native.GF(p, cached = false)
   Rx = polynomial_ring(R, "y", cached = false)[1]
-  f1 = Rx(f)
+  f1 = change_base_ring(R, f; parent = Rx)
   sqf = factor_squarefree(f1)
   for (g, v) in sqf
     isone(v) && continue
@@ -399,12 +399,12 @@ end
 
 function gens_overorder_polygons(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   K = nf(O)
-  f = K.pol
+  f = defining_polynomial(K)
   Qx = parent(f)
   Zx, x = polynomial_ring(ZZ, "x", cached = false)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
-  f1 = Rx(K.pol)
+  f1 = Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(Rx(), defining_polynomial(K))
   sqf = factor_squarefree(f1)
   l = powers(gen(K), degree(K)-1)
   regular = true
@@ -415,7 +415,7 @@ function gens_overorder_polygons(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
     for (g, m1) in fac
       F, a = Native.finite_field(g, "a", cached = false)
       phi = lift(Zx, g)
-      dev, quos = phi_development_with_quos(Zx(f), phi)
+      dev, quos = phi_development_with_quos(numerator(f, Zx), phi)
       N = _newton_polygon(dev, p)
       if regular
         for lin in N.lines
@@ -466,11 +466,12 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
   Zy, y = polynomial_ring(ZZ, "y", cached = false)
   Kx, x = polynomial_ring(Native.GF(p, cached=false), "x", cached=false)
 
-  f = nf(O).pol
+  f = defining_polynomial(nf(O))
 
-  Zyf = Zy(f)
+  @assert is_one(denominator(f))
+  Zyf = numerator(f, Zy)
 
-  fmodp = Kx(Zyf)
+  fmodp = change_base_ring(base_ring(Kx), Zyf; parent = Kx)
 
   fac = factor_squarefree(fmodp)
 
@@ -489,7 +490,7 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
     setcoeff!(g1,i,q)
   end
 
-  g1modp = Kx(g1)
+  g1modp = change_base_ring(base_ring(Kx), g1; parent = Kx)
   U = gcd(gcd(g,h), g1modp)
   if isone(U)
     return O
@@ -498,7 +499,7 @@ function polygons_overorder(O::AbsSimpleNumFieldOrder, p::ZZRingElem)
     U = divexact(fmodp, U)
 
     @hassert :AbsNumFieldOrder 1 rem(O.disc, p^2) == 0
-    alpha = nf(O)(parent(f)(lift(Zy, U)))
+    alpha = nf(O)(change_base_ring(QQ, lift(Zy, U); parent = parent(f)))
 
     # build the new basis matrix
     # we have to take the representation matrix of alpha!
@@ -917,8 +918,9 @@ end
 
 function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingElem, Int})
   K = nf(O)
-  Zx, x = polynomial_ring(ZZ, "x", cached = false)
-  f = Zx(K.pol)
+  Zx = Globals.Zx
+  @assert is_one(denominator(defining_polynomial(K)))
+  f = numerator(defining_polynomial(K), Zx)
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
   f1 = change_base_ring(R, f, parent = Rx)
@@ -951,10 +953,11 @@ function decomposition_type_polygon(O::AbsSimpleNumFieldOrder, p::Union{ZZRingEl
       end
     end
     if length(Nl) != length(pols)
-      I1 = ideal(O, ZZRingElem(p), O(K(parent(K.pol)(lift(Zx, g^m)))))
+      Qx = parent(defining_polynomial(K))
+      I1 = ideal(O, ZZRingElem(p), O(K(change_base_ring(QQ, lift(Zx, g^m); parent = Qx))))
       I1.minimum = ZZRingElem(p)
       I1.norm = ZZRingElem(p)^(degree(g)*m)
-      I2 = ideal(O, ZZRingElem(p), O(K(parent(K.pol)(lift(Zx, divexact(f1, g^m))))))
+      I2 = ideal(O, ZZRingElem(p), O(K(change_base_ring(QQ, lift(Zx, divexact(f1, g^m)); parent = Qx))))
       if isone(I2.gen_two)
         I2.minimum = ZZRingElem(1)
       else
@@ -1001,7 +1004,7 @@ function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRing
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   R = Native.GF(p, cached = false)
   Rx, y = polynomial_ring(R, "y", cached = false)
-  f1 = Rx(K.pol)
+  f1 = change_base_ring(R, K.pol; parent = Rx)
   @vprintln :AbsNumFieldOrder 1 "Factoring the polynomial"
   @vtime :AbsNumFieldOrder 1 fac = factor(f1)
   res = Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[]
@@ -1014,7 +1017,7 @@ function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRing
     phi = lift(Zx, g)
     if isone(m)
       ei = m
-      t = parent(f)(phi)
+      t = change_base_ring(QQ, phi; parent = parent(f))
       b = K(t)
       J = AbsNumFieldOrderIdeal(O)
       J.gen_one = ZZRingElem(p)
@@ -1040,9 +1043,9 @@ function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRing
       continue
     end
     #TODO: p-adic factorization of the polynomial.
-    i1 = ideal(O, ZZRingElem(p), O(K(parent(f)(lift(Zx, g^m))), false))
+    i1 = ideal(O, ZZRingElem(p), O(K(change_base_ring(QQ, lift(Zx, g^m); parent = parent(f))), false))
     i1.minimum = p
-    i2 = ideal(O, ZZRingElem(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))), false))
+    i2 = ideal(O, ZZRingElem(p), O(K(change_base_ring(QQ, lift(Zx, divexact(f1, g^m)); parent = parent(f))), false))
     i2.minimum = p
     push!(l, (i1, i2))
   end

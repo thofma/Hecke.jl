@@ -1,7 +1,7 @@
 @testset "Auxiliary" begin
 
   @testset "Weighted projective space" begin
-    
+
     K = QQ
 
     wghts = [3,5,8,12,13]
@@ -10,7 +10,7 @@
     image = [values[i]*lambda^wghts[i] for i in (1:length(wghts))]
     @test weighted_equality(values, image, wghts)
 
-    @test @inferred weighted_reduction(image, wghts) ==  [0, 3105562731008915782481344, 
+    @test @inferred weighted_reduction(image, wghts) ==  [0, 3105562731008915782481344,
       1028562127914445898022660216566371312445952,
       7829078948476295033372631581424820715020840434928081930961883136,
      -5784350570423792583211668018672518864058132517697479844970637155487744]
@@ -22,7 +22,7 @@
     @test @inferred weighted_equality(values, image, wghts)
 
     @test @inferred weighted_reduction(image, wghts) == values
-    
+
     K, a = cyclotomic_field(8)
 
     wghts = [2,4,8,12]

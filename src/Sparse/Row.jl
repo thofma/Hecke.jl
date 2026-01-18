@@ -66,16 +66,12 @@ ConformanceTests.equality(A::SRow, B::SRow) = A == B
 ################################################################################
 
 function _assert_is_unique_sorted(pos)
-  local f
-  for (i, p) in enumerate(pos)
-    if i == 1
-      f = p
-    else
-      if p == f
-        error("positions must be unique")
-      end
-      f = p
+  f = nothing
+  for p in pos
+    if f !== nothing && p == f
+      error("positions must be unique")
     end
+    f = p
   end
 end
 
