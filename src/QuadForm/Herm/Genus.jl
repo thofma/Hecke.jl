@@ -645,7 +645,7 @@ completion at $\mathfrak p$ admits `g` as local genus symbol.
 """
 function representative(G::HermLocalGenus)
   E = base_field(G)
-  L = lattice(hermitian_space(E, gram_matrix(G)))
+  L = lattice(hermitian_space(E, gram_matrix(G);  cached=false))
   L.scale = scale(G)
   return L
 end
@@ -1181,7 +1181,7 @@ function direct_sum(G1::HermLocalGenus, G2::HermLocalGenus)
   else
     L1 = representative(G1)
     L2 = representative(G2)
-    L3, = direct_sum(L1, L2)
+    L3, = direct_sum(L1, L2;cached=false)
     return genus(L3, prime(G1))
   end
 end
@@ -1629,14 +1629,18 @@ end
 #
 ################################################################################
 
-function _hermitian_form_with_invariants(E, dim, P, N)
+function _hermitian_form_with_invariants(E, dim, P, N;all_non_split=false)
   K = base_field(E)
   R = maximal_order(K)
   @req all(n -> n in 0:dim, values(N)) "Number of negative entries is impossible"
   infinite_pl = [ p for p in real_places(K) if length(extend(p, E)) == 1 ]
   length(N) != length(infinite_pl) && error("Wrong number of real places")
   S = maximal_order(E)
-  prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
+  if !all_non_split
+    prim = [ p for p in P if length(prime_decomposition(S, p)) == 1 ] # only take non-split primes
+  else
+    prim = P
+  end
   I = [ p for p in keys(N) if isodd(N[p]) ]
   !iseven(length(I) + length(P)) && error("Invariants do not satisfy the product formula")
   e = gen(E)
@@ -1693,8 +1697,8 @@ end
 Given a global genus symbol `G` for hermitian lattices over $E/K$, return a hermitian
 lattice over $E/K$ which admits `G` as global genus symbol.
 """
-function representative(G::HermGenus)
-  if isdefined(G, :representative)
+function representative(G::HermGenus; recompute::Bool=false)
+  if isdefined(G, :representative) && !recompute
     return G.representative
   end
   if rank(G) == 1
@@ -1706,14 +1710,14 @@ function representative(G::HermGenus)
   if !is_integral(G)
     s = denominator(_scale(G))
     L = representative(rescale(G, s))
-    L = rescale(L, 1//s)
+    L = rescale(L, 1//s; cached=false)
     G.representative = L
     L.scale = scale(G)
     return L
   end
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
-  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures;all_non_split=true); cached=false)
   @vprintln :Lattice 1 "Finding maximal integral lattice"
 
   M = maximal_integral_lattice(V)
@@ -1735,7 +1739,7 @@ end
 function _representative_rk_1(G::HermGenus)
   P = _non_norm_primes(G.LGS)
   E = base_field(G)
-  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures))
+  V = hermitian_space(E, _hermitian_form_with_invariants(base_field(G), rank(G), P, G.signatures; all_non_split=true); cached=false)
   @vprintln :Lattice 1 "Finding maximal integral lattice"
   M = maximal_integral_lattice(V)
 
@@ -1757,7 +1761,7 @@ function _representative_rk_1(G::HermGenus)
     s *= fractional_ideal(order(P), PP)^k
   end
   L = s*M
-  L.scale = scale(G)
+  # L.scale = scale(G)  # somehow expensive
   return L
 end
 
@@ -2075,7 +2079,7 @@ function rescale(g::T, a::Union{FieldElem, RationalUnion}) where {T<:HermLocalGe
 
   @hassert :Lattice 1 begin
     L = representative(g)
-    L = rescale(L, a)
+    L = rescale(L, a; cached=false)
     h =  genus(L, prime(g))
     h==G
   end

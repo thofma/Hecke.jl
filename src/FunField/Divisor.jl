@@ -91,10 +91,7 @@ function divisor(f::Generic.FunctionFieldElem)
   Ofin = finite_maximal_order(F)
   Oinf = infinite_maximal_order(F)
 
-  f_num, f_denom = integral_split(f, Ofin)
-  g_num, g_denom = integral_split(f, Oinf)
-
-  return divisor(colon(ideal(Ofin, f_num), ideal(Ofin, f_denom)), colon(ideal(Oinf, g_num), ideal(Oinf, g_denom)))
+  return divisor(Ofin * f, Oinf * f)
 end
 
 @doc raw"""
@@ -590,6 +587,15 @@ function riemann_roch_space(D::Divisor)
   J_inf = inv(I_inf)
 
   F = function_field(D)
+  return _riemann_roch_space(J_fin, J_inf, F)
+end
+
+
+#J_fin is inverse of finite ideal
+#J_inf is inverse of infinite ideal
+#F is functionfield
+function _riemann_roch_space(J_fin, J_inf, F)
+
   x = gen(base_ring(F))
   n = degree(F)
 

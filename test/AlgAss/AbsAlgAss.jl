@@ -182,10 +182,7 @@
     @test rand(rng, A) isa E
     @test rand(A, 2, 3) isa Matrix{E}
 
-    Random.seed!(rng, rand_seed)
-    a = rand(rng, A)
-    Random.seed!(rng, rand_seed)
-    @test a == rand(rng, A)
+    @test reproducible(A)
   end
 
   K, a = quadratic_field(2)
@@ -245,7 +242,7 @@
     X = rand(A, -1:1)
   end
   h = hom(A, A, inv(X) .* basis(A) .* X)
-  a = Hecke._skolem_noether(h)
+  a = Hecke.skolem_noether_conjugator(identity_map(A), h)
   @test all(h(b) == inv(a) * b * a for b in basis(A))
 
   let

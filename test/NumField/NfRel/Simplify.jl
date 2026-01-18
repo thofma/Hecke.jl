@@ -39,4 +39,12 @@
   K, = number_field([y])
   b = absolute_primitive_element(K)
   @test parent(b) === K # b could be anything in K
+
+  # something non-monic
+  Qt, t = QQ[:t]
+  k, a1 = number_field(492800*t^12 - 1766400*t^10 + 2458020*t^8 - 1713167*t^6 + 614505*t^4 - 110400*t^2 + 7700; cached = false);
+  kt1, t1 = k[:t1];
+  K, = number_field(t1^2 + 379160320//15532761*a1^10 - 3910638080//46598283*a1^8 + 4993275364//46598283*a1^6 - 4945308049//77663805*a1^4 + 712176451//46598283*a1^2 - 110709362//46598283)
+  KK, = simplify(K)
+  @test KK isa typeof(K)
 end

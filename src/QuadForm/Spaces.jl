@@ -376,7 +376,7 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             end
           else
             j = ok
-            T[i, j] = 1 // (2 * F[j, i])
+            T[i, j] = inv(2 * F[j, i])
           end
         end
         if ok == 0
@@ -684,12 +684,12 @@ end
 #
 ################################################################################
 
-function _biproduct(x::Vector{T}) where T <: AbstractSpace
+function _biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
   K = base_ring(x[1])
   @req all(i -> base_ring(x[i]) === K, 2:length(x)) "All spaces must be defined over the same field"
   @req is_quadratic(x[1]) ? all(i -> is_quadratic(x[i]), 2:length(x)) : all(i -> is_hermitian(x[i]), 1:length(x)) "Spaces must be all hermitian or all quadratic"
   G = diagonal_matrix(gram_matrix.(x))
-  V = is_quadratic(x[1]) ? quadratic_space(K, G) : hermitian_space(K, G)
+  V::T = is_quadratic(x[1]) ? quadratic_space(K, G;cached) : hermitian_space(K, G;cached)
   n = sum(dim.(x))
   inj = AbstractSpaceMor[]
   proj = AbstractSpaceMor[]
@@ -726,12 +726,12 @@ one should call `direct_product(x)`.
 If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
 the projections $V \to V_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{T}) where T <: AbstractSpace
-  V, inj, = _biproduct(x)
+function direct_sum(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
+  V, inj, = _biproduct(x; cached)
   return V, inj
 end
 
-direct_sum(x::Vararg{AbstractSpace}) = direct_sum(collect(x))
+direct_sum(x::Vararg{AbstractSpace}; cached::Bool=true) = direct_sum(collect(x); cached)
 
 @doc raw"""
     direct_product(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
@@ -748,12 +748,12 @@ one should call `direct_sum(x)`.
 If one wants to obtain `V` as a biproduct with the injections $V_i \to V$ and
 the projections $V \to V_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{T}) where T <: AbstractSpace
-  V, _, proj = _biproduct(x)
+function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractSpace
+  V, _, proj = _biproduct(x; cached)
   return V, proj
 end
 
-direct_product(x::Vararg{AbstractSpace}) = direct_product(collect(x))
+direct_product(x::Vararg{AbstractSpace}; cached::Bool=true) = direct_product(collect(x); cached)
 
 @doc raw"""
     biproduct(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
@@ -770,11 +770,11 @@ one should call `direct_sum(x)`.
 If one wants to obtain `V` as a direct product with the projections $V \to V_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{T}) where T <: AbstractSpace
-  return _biproduct(x)
+function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
+  return _biproduct(x; cached)
 end
 
-biproduct(x::Vararg{AbstractSpace}) = biproduct(collect(x))
+biproduct(x::Vararg{AbstractSpace}; cached::Bool=true) = biproduct(collect(x); cached)
 
 ################################################################################
 #

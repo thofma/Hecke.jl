@@ -10,7 +10,9 @@ end
 # The following is taken from https://github.com/JuliaLang/julia/blob/master/test/runtests.jl\
 # Part of Julia. License is MIT: https://julialang.org/license
 
-addprocs(n_procs)
+mem = max(2, trunc(Int, Sys.total_memory() / (n_procs * 1024^3)))
+
+addprocs(n_procs; exeflags="--heap-size-hint=$(mem)G")
 
 const max_worker_rss = if haskey(ENV, "JULIA_TEST_MAXRSS_MB")
     parse(Int, ENV["JULIA_TEST_MAXRSS_MB"]) * 2^20

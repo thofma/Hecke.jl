@@ -217,21 +217,21 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{QQPolyRingElem, ZZPolyRingElem
   return wp
 end
 
-function radiuslttwopower(x::ArbFieldElem, e::Int)
+function radiuslttwopower(x::T, e::Int) where {T <: Union{RealFieldElem, ArbFieldElem}}
   GC.@preserve x begin
-    t = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ref{ArbFieldElem}, ), x)
+    t = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ref{T}, ), x)
     b = ccall((:mag_cmp_2exp_si, libflint), Cint,
             (Ptr{Nemo.mag_struct}, Int), t, e) <= 0
   end
   return b
 end
 
-function radiuslttwopower(x::AcbFieldElem, e::Int)
+function radiuslttwopower(x::T, e::Int) where {T <: Union{ComplexFieldElem, AcbFieldElem}}
   GC.@preserve x begin
     re = ccall((:acb_real_ptr, libflint), Ptr{Nemo.arb_struct},
-            (Ref{AcbFieldElem}, ), x)
+               (Ref{T}, ), x)
     im = ccall((:acb_imag_ptr, libflint), Ptr{Nemo.arb_struct},
-            (Ref{AcbFieldElem}, ), x)
+               (Ref{T}, ), x)
     t = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ptr{ArbFieldElem}, ), re)
     u = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ptr{ArbFieldElem}, ), im)
     ok = (ccall((:mag_cmp_2exp_si, libflint), Cint,

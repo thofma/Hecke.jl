@@ -74,7 +74,7 @@ function roots(f::PolyRingElem{QQBarFieldElem})
   K = parent(cfs[1])
   Kt, t = polynomial_ring(K; cached = false)
   fK = Kt(cfs)
-  rts = unique!(roots(QQbar, norm(fK)::dense_poly_type(QQ)))
+  rts = unique!(roots(QQbar, norm(fK)::poly_type(QQ)))
   if no_0 > 0
     push!(rts, zero(base_ring(f)))
   end

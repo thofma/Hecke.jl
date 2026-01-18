@@ -653,7 +653,7 @@ function __primitive_element(A::S) where {T <: FinFieldElem, S <: AbstractAssoci
   f = minpoly(a)
   while degree(f) < d
     a = rand(A)
-    f = minpoly(a)
+    f = minpoly(parent(f), a)
   end
   return a, f
 end
@@ -1268,45 +1268,45 @@ end
 #
 ################################################################################
 
-function _skolem_noether(h::AbsAlgAssMor)
-  A = domain(h)
-  @req A === codomain(h) "Morphism must be an isomorphism"
-  @req is_simple(A) "Algebra must be simple"
-  @req is_central(A) "Algebra must be central"
-  # for b, consider the map f_b : A -> A, x -> b * x - x * h(b)
-  # we look for something in the intersection ker(f_b), where b runs through
-  # a basis of A. We are tad more clever and consider only the restriction
-  # on the kernel (intersection) we found so far
-  #
-  # Also if we hit something one-dimensional, we are done
-  B = basis(A)
-  C = B
-  Cmat = basis_matrix(C)
-  for b in B
-    M = basis_matrix(elem_type(A)[b * c - c * h(b) for c in C])
-    K = kernel(M, side = :left)
-    Cmat = K * Cmat
-    C = elem_type(A)[A(Cmat[i, :]) for i in 1:nrows(Cmat)]
-    if length(C) == 1
-      break
-    end
+"""
+    skolem_noether_conjugator(emb1, emb2; check) -> NCRingElem
+
+Compute a conjugating element as guaranteed by the Skolem-Noether theorem.
+
+Given two embeddings of a subalgebra `embⱼ: U → S`, compute an element
+`x∈S` such that `x emb₂(u) x⁻¹ = emb₁(u)` for `u∈U`.
+"""
+function skolem_noether_conjugator(
+  emb1::Map{U, S},
+  emb2::Map{U, S};
+  check::Bool = true,
+) where {U, T, S<:AbstractAssociativeAlgebra{T}}
+  if check
+    @req codomain(emb1) == codomain(emb2) "Codomains of embeddings must be identical"
+    @req domain(emb1) == domain(emb2) "Domains of embeddings must be identical"
+    @req is_simple(domain(emb1)) "Domain of embedding must be simple"
+    @req is_simple(codomain(emb1)) "Codomain of embedding must be simple"
+    @req is_central(codomain(emb1)) "Codomain of embedding must be central"
   end
-  if length(C) == 1
-    a = C[1]
-    fl, _ = is_invertible(a)
-    @assert fl
-    return a
-  else
-    for i in 1:length(C)
-      a = C[i]
-      fl, _ = is_invertible(a)
-      if fl
-        return a
-      end
-    end
-    # do some random combination
-    error("Not impelemented yet")
+
+  alg = codomain(emb1)
+  ker = basis(alg)
+  ker_mat = basis_matrix(ker)
+  for x in basis(domain(emb1))
+    bb = basis_matrix(elem_type(alg)[emb1(x) * y - y * emb2(x) for y in ker])
+    K = kernel(bb, side=:left)
+    ker_mat = K * ker_mat
+    ker = elem_type(alg)[alg(ker_mat[i, :]) for i in 1:number_of_rows(ker_mat)]
   end
+  sn = ker[1]
+  while !first(is_invertible(sn))
+    cc = [rand(base_ring(alg), -length(ker):length(ker)) for _ in 1:length(ker)]
+    sn = sum(cc .* ker)
+  end
+  for x in basis(domain(emb1))
+    @assert sn * emb2(x) * inv(sn) == emb1(x)
+  end
+  return sn
 end
 
 ################################################################################

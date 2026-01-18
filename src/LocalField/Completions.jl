@@ -108,7 +108,6 @@ function preimage(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLocalFie
     return zero(domain(f))
   end
   if abs(valuation(a)) > 100
-    global last_a = a
     error("elem too large")
   end
   pr = ceil(Int, min(f.precision, precision(a)) / ramification_index(Kp))

@@ -558,6 +558,36 @@ end
 
 (p::QQPolyRingElem)(f::FinGenAbGroupHom) = evaluate(p, f)
 
+function matrix(f::InverseMap{FinGenAbGroup, FinGenAbGroup})
+  if isa(f.origin, FinGenAbGroupHom)
+    if isdefined(f.origin, :imap)
+      return f.origin.imap
+    end
+  end
+  im = try
+    reduce(vcat, [f(d).coeff for d=gens(domain(f))])
+  catch e
+    #can happen if the map was e.g. subgroup inclusion
+    if isa(e, ErrorException) && e.msg == "element is not in the image"
+      return nothing
+    else
+      rethrow(e)
+    end
+  end
+  f.origin.imap = im
+  return im
+end
+
+function matrix(f::Generic.CompositeMap{FinGenAbGroup, FinGenAbGroup})
+  m1 = matrix(f.map1)
+  m2 = matrix(f.map2)
+  if !isa(m1, Nothing) && !isa(m2, Nothing)
+    return m1*m2
+  end
+  return reduce(vcat, [f(d).coeff for d=gens(domain(f))])
+end
+
+
 ###############################################################################
 
 struct MapParent

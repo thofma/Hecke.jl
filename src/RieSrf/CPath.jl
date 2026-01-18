@@ -141,7 +141,7 @@ mutable struct CPath
     
     #Round real or imaginary part to zero to compute angle if necessary
     prec = precision(Cc)
-    zero_sens = floor(Int64, prec*log(2)/log(10)) - 5
+    zero_sens = floor(Int, prec*log(2)/log(10)) - 5
     
     a_diff = trim_zero(a - c, zero_sens)
     b_diff = trim_zero(b - c, zero_sens)
@@ -278,7 +278,7 @@ function reverse(G::CPath)
   assign_permutation(G_rev, inv(permutation(G)))
 
   if isdefined(G, :integral_matrix)
-    G_rev.integral_matrix =  permutation(G_rev) * -G.integral_matrix
+    G_rev.integral_matrix =  permutation(G) * -G.integral_matrix
   end
 
   return G_rev

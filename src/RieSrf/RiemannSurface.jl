@@ -29,7 +29,7 @@ tau = small_period_matrix(RS)
 mutable struct RiemannSurface
   #A polynomial f(x,y) in K[x,y] for some number field K defining the Riemann
   #surface (or equivalently) a not necessarily smooth plane curve in P_2
-  defining_polynomial::MPolyRingElem
+  defining_polynomial::AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}
   genus::Int
   function_field::AbstractAlgebra.Generic.FunctionField
 
@@ -67,7 +67,7 @@ mutable struct RiemannSurface
   # Continuing the above example, the first element could look like
   # ([L[1], L[23], L[12],reverse(L[1])], (1,3)))
   # where (1,3) is the permutation.
-  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int64}}}
+  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int}}}
 
   #Data encoding the homology basis.
   # We encode homology cycles in H_1(RS, Z) in the following way:
@@ -81,7 +81,7 @@ mutable struct RiemannSurface
   # circle around branch point nr 3 to move to sheet 5, circle around branch
   # point number 2 to finish in sheet 1 again and complete a full circle.
 
-  homology_basis::Tuple{Vector{Vector{Int64}}, ZZMatrix, ZZMatrix}
+  homology_basis::Tuple{Vector{Vector{Int}}, ZZMatrix, ZZMatrix}
 
   # A basis of differential forms computed by either
   # - Riemann-Roch computations
@@ -116,7 +116,7 @@ mutable struct RiemannSurface
   #  min_pows = [1,1,1]
   #  range_pows = [4, 2, 9]
 
-  differential_form_data::Any
+  differential_form_data::Tuple{Vector{mpoly_type(AbsSimpleNumFieldElem)}, Matrix{Int}, Vector{Int}, Vector{Int}}
 
   #Evaluate differential_differential_factors_matrix is a function that
   # takes as its input
@@ -152,13 +152,14 @@ mutable struct RiemannSurface
   max_precision_complex_field::AcbField
 
   #The constructor for a Riemann surface object
-  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
-    K = base_ring(f)
 
-    RS = new()
-    RS.defining_polynomial = f
-    RS.prec = prec
+  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
+    RS = RiemannSurface(f, prec)
     RS.embedding = v
+    return RS
+  end
+
+  function RiemannSurface(f::MPolyRingElem, prec = 100)
 
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
@@ -166,6 +167,24 @@ mutable struct RiemannSurface
     f_new = f(x, y)
     F, a = function_field(f_new)
     diff_base = basis_of_differentials(F)
+
+    RS = new()
+    if k == QQ
+      old_k = parent(f)
+      k = rationals_as_number_field()[1]
+      kx, s = polynomial_ring(k, old_k.S)
+      f = f(s[1], s[2])
+      kx, x = rational_function_field(k, "x")
+      kxy, y = polynomial_ring(kx, "y")
+      f_new = f(x, y)
+      F, a = function_field(f_new)
+      #diff_base = map(t -> t(s[1],s[2]), diff_base)
+    end
+
+    v = infinite_places(k)[1]
+    RS.defining_polynomial = f
+    RS.prec = prec
+    RS.embedding = v
     RS.function_field = F
     RS.basis_of_differentials = diff_base
     g = length(diff_base)
@@ -420,13 +439,14 @@ function _monodromy_representation(RS::RiemannSurface)
 
     #If the path is a circle or an arc we multiply by an additional factor
     if path_type(path) in [1,2]
-      N *= 4
+      N = 4*N
     end
 
 
     Rc = ArbField(precision(RS))
 
-    abscissae = [Rc(n//N) for n in (-N + 1: N - 1)]
+    t = 1/N
+    abscissae = [Rc(n*t) for n in (-N + 1: N - 1)]
 
     # Perform analytic continuation along the closed loop path with
     # starting point x0. In the algorithm we start with the m ys lying
@@ -444,7 +464,7 @@ function _monodromy_representation(RS::RiemannSurface)
     assign_permutation(path, inv(s_m(path_perm)))
   end
 
-  mon_rep = Tuple{Vector{CPath}, Perm{Int64}}[]
+  mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
 
   # Chain all permutations of a all the generators of pi1 together to find
   # the monodromy of the chosen generator.
@@ -457,7 +477,7 @@ function _monodromy_representation(RS::RiemannSurface)
      end
   end
 
-  inf_chain = Vector{CPath}[]
+  inf_chain = CPath[]
   inf_perm = one(s_m)
 
   for g in mon_rep
@@ -807,7 +827,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
 end
 
 #
-function recursive_continuation(f, x1, x2, z)
+function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem})
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   Cc = base_ring(f)
@@ -823,7 +843,7 @@ function recursive_continuation(f, x1, x2, z)
 
   if w < d // (2*m)
     fillacb!(temp_vec, z)
-    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, f(x2, y), temp_vec, 0, prec)
+    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
 
     @assert dd == m
     z .= array(Cc, temp_vec_res, m)
@@ -882,7 +902,7 @@ function _homology_basis(RS::RiemannSurface)
   n = s_n.n
   d = length(gens)
 
-  ramification_points = Tuple{Int64, SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true}, Perm{Int64}}[]
+  ramification_points = Tuple{Int, SubArray{Int, 1, Vector{Int}, Tuple{UnitRange{Int}}, true}, Perm{Int}}[]
   ramification_indices = Int[]
 
   for i in (1:d)
@@ -1073,11 +1093,11 @@ function _homology_basis(RS::RiemannSurface)
 end
 
 # Given an input K this computes S as mentioned in the homology_basis function
-# i,e. the output is a symplectic matrix S that ensure that S^T K S is equal to
+# i,e. the output is a symplectic matrix S that ensure that S K S^T is equal to
 # a matrix where the upper left block consists of the normalized polarization
 # and the rest consists of zeros.
-# [I  0 0 ... 0]
-# [0 -I 0 ... 0]
+# [0  I 0 ... 0]
+# [-I 0 0 ... 0]
 # [|  | | ... 0]
 # [0  0 0 ... 0]
 function symplectic_reduction(K::ZZMatrix)
@@ -1119,8 +1139,9 @@ function symplectic_reduction(K::ZZMatrix)
       v = -A[pivot, j]
       if v != 0
         #The version with ! gave different results for some reason.
+        
         add_row!(A, v, pivot_plus, j)
-        add_column!(A, v, pivot_plus, j)
+        add_column!(A,v, pivot_plus, j)
         add_row!(B, v, pivot_plus, j)
 
         zeros_only = false

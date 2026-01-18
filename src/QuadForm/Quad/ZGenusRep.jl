@@ -278,8 +278,12 @@ function neighbours(
     m = p^2
   end
 
+  if algorithm == :spinor
+    use_mass = false
+  end
   if use_mass
     __mass = missing_mass[]
+    @assert __mass >= 0
   end
 
   # For the orbit algorithm, we identify isotropic lines in `L0/p*L0` which are in
@@ -372,7 +376,6 @@ function neighbours(
       push!(lifts, w0)
     end
     for v in lifts
-      @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       LL = lll(neighbour(L, v, p))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
@@ -384,6 +387,7 @@ function neighbours(
 
       vain[] = Int(0)
       @vprintln :ZGenRep 3 "Keep an isometry class"
+      @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       if algorithm != :spinor
         invLL = _invariants(LL)
         if haskey(inv_dict, invLL)
@@ -395,7 +399,7 @@ function neighbours(
 
         if save_partial
           if !isone(scaling_factor)
-            _LL = rescale(LL, 1//scaling_factor)
+            _LL = rescale(LL, 1//scaling_factor; cached=false)
             if isdefined(LL, :automorphism_group_order)
               _LL.automorphism_group_order = LL.automorphism_group_order
             end
@@ -409,6 +413,7 @@ function neighbours(
           s = automorphism_group_order(LL)
           sub!(__mass, __mass, 1//s)
           is_zero(__mass) && return result
+          @assert __mass >= 0
         end
 
         length(result) == max && return result
@@ -461,6 +466,28 @@ function _unique_iso_class!(A::Vector{T}) where T <: Union{ZZLat, HermLat}
   resize!(A, count)::typeof(A)
 end
 
+function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
+  if length(A) ==0
+    return A
+  end
+  L = first(A)
+  inv_lat = invariant_function(L)
+  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  for i in 2:length(A)
+    N = A[i]
+    inv_lat = invariant_function(N)
+    if haskey(inv_dict, inv_lat)
+      push!(inv_dict[inv_lat], N)
+    else
+      inv_dict[inv_lat] = ZZLat[N]
+    end
+  end
+  for l in values(inv_dict)
+    Hecke._unique_iso_class!(l)
+  end
+  return reduce(append!, values(inv_dict);init=ZZLat[])
+end
+
 @doc raw"""
     default_invariant_function(L::ZZLat) -> Tuple
 
@@ -471,13 +498,26 @@ the invariants by default are:
 - the kissing numbe of ``L``;
 - the order of the isometry group of ``L``.
 """
-function default_invariant_function(L::ZZLat)
-  m = minimum(L)
-  rlr, _ = root_lattice_recognition(L)
+function _default_invariant_function(L::ZZLat)
   kn = kissing_number(L)::Int
+  rlr, _ = root_lattice_recognition(L)
+  m = minimum(L)
   ago = automorphism_group_order(L)::ZZRingElem
   return (m, rlr, kn, ago)
 end
+
+function default_invariant_function(L::ZZLat)
+  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}, ZZRingElem}[]
+  _L = L
+  while rank(_L) > 0
+    M, P, _ = _shortest_vectors_sublattice(_L; check=false)
+    i = index(P,M)
+    push!(_invariants, (_default_invariant_function(rescale(P, 1//scale(P); cached=false)),i))
+    _L = orthogonal_submodule(_L, P)
+  end
+  return _invariants
+end
+
 
 ###############################################################################
 #
@@ -679,7 +719,7 @@ function enumerate_definite_genus(
   if !isone(sc)
     res = empty(known)
     for _L in known
-      L = rescale(_L, sc)
+      L = rescale(_L, sc; cached=false)
       if isdefined(_L, :automorphism_group_order)
         L.automorphism_group_order = _L.automorphism_group_order
       end
@@ -689,7 +729,6 @@ function enumerate_definite_genus(
     res = copy(known)
   end
 
-  !distinct && _unique_iso_class!(res)
 
   L, itk = Iterators.peel(res)
   inv_lat = invariant_function(L)
@@ -700,6 +739,12 @@ function enumerate_definite_genus(
       push!(inv_dict[inv_lat], N)
     else
       inv_dict[inv_lat] = ZZLat[N]
+    end
+  end
+
+  if !distinct
+    for l in values(inv_dict)
+      _unique_iso_class!(l)
     end
   end
 
@@ -736,7 +781,7 @@ function enumerate_definite_genus(
 
       if save_partial
         if !isone(sc)
-          _LL = rescale(LL, 1//sc)
+          _LL = rescale(LL, 1//sc; cached=false)
           if isdefined(LL, :automorphism_group_order)
             _LL.automorphism_group_order = LL.automorphism_group_order
           end
@@ -754,9 +799,10 @@ function enumerate_definite_genus(
     if isnothing(_missing_mass)
       found = sum(1//automorphism_group_order(M) for M in res; init=QQ(0))
       missing_mass = Ref{QQFieldElem}(_mass-found)
+      @assert missing_mass[] >= 0
     else
-      @hassert :GenRep 3 _missing_mass <= _mass
       missing_mass = Ref{QQFieldElem}(_missing_mass)
+      @assert missing_mass[] <= _mass
     end
   else
     missing_mass = Ref{QQFieldElem}(0)
@@ -776,8 +822,8 @@ function enumerate_definite_genus(
 
   count_new = Int(0)
   i = Int(0)
-  while i != length(res)
-    i += 1
+  while true
+    i = i+1
     N = neighbours(
                    res[i],
                    p,
@@ -795,7 +841,10 @@ function enumerate_definite_genus(
                    max,
                    scaling_factor,
                   )
-
+    if i == length(res)
+      # restart the cycle
+      i = 0
+    end
     if !is_empty(N)
       for M in N
         count_new += 1
@@ -892,7 +941,7 @@ function enumerate_definite_genus(
 
   sc = scale(_L)
   if sc != 1
-    L = rescale(_L, 1//sc)
+    L = rescale(_L, 1//sc; cached=false)
   else
     L = _L
   end
@@ -918,7 +967,7 @@ function enumerate_definite_genus(
     _edg = ZZLat[M]
     if save_partial
       if !isone(sc)
-        _M = rescale(M, 1//sc)
+        _M = rescale(M, 1//sc; cached=false)
         if isdefined(M, :automorphism_group_order)
           _M.automorphism_group_order = M.automorphism_group_order
         end
@@ -949,7 +998,7 @@ function enumerate_definite_genus(
     append!(edg, _edg)
     length(edg) >= max && return edg
   end
-  sc != 1 && map!(L -> rescale(L, sc), edg, edg)
+  sc != 1 && map!(L -> lattice_in_same_ambient_space(_L, basis_matrix(L); check=false, isbasis=true), edg, edg)
   return edg
 end
 

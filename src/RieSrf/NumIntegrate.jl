@@ -85,7 +85,7 @@ end
 
 function gauss_legendre_parameters(r, error, bound = 10^5)
 
-  N = ceil(Int64, (log(64*(bound/15))-log(error)-log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
+  N = ceil(Int, (log(64*(bound/15))-log(error)-log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
   return N
 end
 
@@ -206,13 +206,13 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
     r_p = r_0
     if p != c
       prec = precision(Cc)
-      zero_sens = floor(Int64, prec*log(2)/log(10)) - 5
+      zero_sens = floor(Int, prec*log(2)/log(10)) - 5
       #We find t_p such that path(t_p) = p 
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
-      t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/
-      (r * exp(I*(b + a)/2)), zero_sens)))
+      #t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/(r * exp(I*(b + a)/2)), zero_sens)))
+      t_p = or/(b - a) * (-2 * I * (log((p - c)/r) - I*(b + a)/2))
 
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
@@ -227,7 +227,7 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
   
   #Not sure why yet
   if r_0 == Rr(5.0)
-    push!(path.bounds, 1)
+    push!(path.bounds, Rr(1))
   end
 
   return r_0
@@ -256,10 +256,11 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
       prec = precision(Cc)
-      zero_sens = floor(Int64, prec*log(2)/log(10)) - 5
+      zero_sens = floor(Int, prec*log(2)/log(10)) - 5
 
-      t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a)), zero_sens));
-      
+      #t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a)), zero_sens));
+      t_p = -or/Rpi * I * (log((c - p) /r) - I * a)
+
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
     
@@ -272,7 +273,7 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
   
   #Not sure why yet
   if r_0 == Rr(5.0)
-    push!(path.bounds, 1)
+    push!(path.bounds, Rr(1))
   end
 
   return r_0

@@ -735,9 +735,9 @@ scale(L::AbstractLat)
 Return the rescaled lattice $L^a$. Note that this has a different ambient
 space than the lattice `L`.
 """
-rescale(::AbstractLat, ::NumFieldElem)
+rescale(::AbstractLat, ::NumFieldElem; cached=true)
 
-Base.:(^)(L::AbstractLat, a::RingElement) = rescale(L, a)
+Base.:(^)(L::AbstractLat, a::RingElement) = rescale(L, a; cached=false)
 
 ################################################################################
 #
@@ -1271,13 +1271,14 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   n = multiplicative_order(f)
 
-  n2 = degree(minpoly(f))
+  mpf = minpoly(f)
+  n2 = degree(mpf)
 
   @req !is_finite(n) || n > 2 "Isometry must have infinite order or order bigger than 2"
 
   if check
     gram = gram_matrix(ambient_space(L))
-    @req is_irreducible(minpoly(f)) "The minimal polynomial of f must be irreducible"
+    @req is_irreducible(mpf) "The minimal polynomial of f must be irreducible"
     @req f*gram*transpose(f) == gram "f does not define an isometry of the space of L"
     @req is_divisible_by(rank(L), n2) "The degree of the minimal polynomial of f must divide the rank of L"
   end
@@ -1288,9 +1289,9 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
     b = gen(base_ring(codomain(res)))
   elseif E === nothing
     if is_finite(n)
-      E, b = cyclotomic_field_as_cm_extension(n)
+      E, b = cyclotomic_field_as_cm_extension(n; cached=false)
     else
-      Etemp, btemp = number_field(minpoly(f))
+      Etemp, btemp = number_field(mpf)
       K, a = number_field(minpoly(btemp + inv(btemp)), "a"; cached=false)
       Kt, t = K["t"]
       E, b = number_field(t^2-a*t+1, "b"; cached=false)
@@ -1350,7 +1351,7 @@ function hermitian_structure_with_transfer_data(_L::ZZLat, f::QQMatrix; check::B
 
   @assert transpose(map_entries(s, gram)) == gram
 
-  W = hermitian_space(E, gram)
+  W = hermitian_space(E, gram; cached=false)
 
   # we create the map for extending/restricting scalars
   # considering our "nice" basis keeping track of the action of the isometry
@@ -1843,13 +1844,13 @@ one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_sum(x::Vector{T}) where T <: AbstractLat
-  W, inj = direct_sum(ambient_space.(x))
+function direct_sum(x::Vector{T};cached::Bool=true) where T <: AbstractLat
+  W, inj = direct_sum(ambient_space.(x); cached)
   H = _biproduct(x)
   return lattice(W, H), inj
 end
 
-direct_sum(x::Vararg{AbstractLat}) = direct_sum(collect(x))
+direct_sum(x::Vararg{AbstractLat};cached::Bool=true) = direct_sum(collect(x);cached)
 
 @doc raw"""
     direct_product(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
@@ -1866,8 +1867,8 @@ one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
 """
-function direct_product(x::Vector{T}) where T <: AbstractLat
-  W, proj = direct_product(ambient_space.(x))
+function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractLat
+  W, proj = direct_product(ambient_space.(x); cached)
   H = _biproduct(x)
   return lattice(W, H), proj
 end
@@ -1890,13 +1891,13 @@ one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 """
-function biproduct(x::Vector{T}) where T <: AbstractLat
-  W, inj, proj = biproduct(ambient_space.(x))
+function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractLat
+  W, inj, proj = biproduct(ambient_space.(x); cached)
   H = _biproduct(x)
   return lattice(W, H), inj, proj
 end
 
-biproduct(x::Vararg{AbstractLat}) = biproduct(collect(x))
+biproduct(x::Vararg{AbstractLat}; cached::Bool=true) = biproduct(collect(x);cached)
 
 function _biproduct(x::Vector{T}) where T <: AbstractLat
   px = pseudo_matrix.(x)

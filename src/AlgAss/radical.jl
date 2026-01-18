@@ -112,28 +112,28 @@ function _radical_finite(A::MatAlgebra{FqFieldElem})
   # We first pass to a 'native' type (except in the Zech representation)
   F = base_ring(A)
   type = Nemo._fq_default_ctx_type(F)
-  if type == 2
+  if type == Nemo._FQ_DEFAULT_FQ_NMOD
     let f = Nemo.canonical_raw_type(fqPolyRepField, F),
       FF = codomain(f),
       AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
       RR = _radical_finite(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end
-  elseif type == 3
+  elseif type == Nemo._FQ_DEFAULT_FQ
     let f = Nemo.canonical_raw_type(FqPolyRepField, F),
       FF = codomain(f),
       AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
       RR = _radical_finite(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end
-  elseif type == 4
+  elseif type == Nemo._FQ_DEFAULT_NMOD
     let f = Nemo.canonical_raw_type(fpField, F),
       FF = codomain(f),
       AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
       RR = _radical_finite(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end
-  elseif type == 5
+  elseif type == Nemo._FQ_DEFAULT_FMPZ_NMOD
     let f = Nemo.canonical_raw_type(FpField, F),
       FF = codomain(f),
       AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),

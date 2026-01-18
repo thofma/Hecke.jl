@@ -279,8 +279,8 @@ end
     return new{S, T, U}()
   end
 
-  function QuadLat(K::S, G::T, P::U) where {S, T, U}
-    space = quadratic_space(K, G)
+  function QuadLat(K::S, G::T, P::U; cached=false) where {S, T, U}
+    space = quadratic_space(K, G; cached)
     z = new{S, T, U}(space, P)
     z.base_algebra = K
     return z

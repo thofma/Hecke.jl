@@ -1409,7 +1409,7 @@ mutable struct FactorBaseSingleP{T}
   end
 
   function FactorBaseSingleP(Fp::S, lp::Vector{Tuple{Int, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}}) where {S}
-    FB = new{dense_poly_type(S)}()
+    FB = new{poly_type(S)}()
     FB.lp = lp
     p = characteristic(Fp)
     FB.P = p

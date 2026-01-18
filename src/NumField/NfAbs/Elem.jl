@@ -268,8 +268,10 @@ function norm(f::PolyRingElem{AbsSimpleNumFieldElem})
     Qxy = polynomial_ring(Qx, "y", cached = false)[1]
 
     T = change_base_ring(Qx, K.pol, parent = Qxy)
-    h = nf_poly_to_xy(f, Qxy, Qx)
+    ff = f * inv(leading_coefficient(f)) #make monic
+    h = nf_poly_to_xy(ff, Qxy, Qx)
     N = resultant(T, h)
+    N = inv(leading_coefficient(N))*N * norm(leading_coefficient(f))
   end
   N.parent = parent(defining_polynomial(base_ring(parent(f))))
   return inflate(N, i)
