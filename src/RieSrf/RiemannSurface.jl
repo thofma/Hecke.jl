@@ -302,7 +302,7 @@ mutable struct RiemannSurface
 end
 
 #Nicer printing
-Base.show(io::IO, rs::RiemannSurface) = print(io, "Riemann Surface of genus $(rs.genus) defined by $(rs.defining_polynomial) = 0.")
+Base.show(io::IO, rs::RiemannSurface) = print(io, "Riemann surface of genus $(rs.genus) defined by $(rs.defining_polynomial) = 0")
 
 
 ################################################################################
