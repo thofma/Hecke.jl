@@ -257,16 +257,20 @@ end
     direct_sum(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
-return their direct sum $L := L_1 \oplus \ldots \oplus L_n$,
+return their direct sum $L := L_1 \oplus \ldots \oplus L_n$ as modules,
 together with the injections $L_i \to L$.
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `ZZLat`, finite direct sums and finite direct products
-agree and they are therefore called biproducts.
+For modules, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
+
+!!! warning
+    The projections $L\to L_i$ are morphisms of modules but not of lattices,
+    since the associated quadratic/hermitian forms are not preserved.
 """
 function direct_sum(x::Vector{ZZLat}; cached::Bool=true)
   W, inj = direct_sum(ambient_space.(x); cached)
@@ -281,16 +285,20 @@ direct_sum(x::Vararg{ZZLat}; cached=true) = direct_sum(collect(x); cached)
     direct_product(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
-return their direct product $L := L_1 \times \ldots \times L_n$,
+return their direct product $L := L_1 \times \ldots \times L_n$ as modules,
 together with the projections $L \to L_i$.
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `ZZLat`, finite direct sums and finite direct products
-agree and they are therefore called biproducts.
+For modules, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and
 the projections $L \to L_i$, one should call `biproduct(x)`.
+
+!!! warning
+    The projections $L\to L_i$ are morphisms of modules but not of lattices,
+    since the associated quadratic/hermitian forms are not preserved.
 """
 function direct_product(x::Vector{ZZLat}; cached::Bool=true)
   W, proj = direct_product(ambient_space.(x); cached)
@@ -305,16 +313,20 @@ direct_product(x::Vararg{ZZLat}; cached::Bool=true) = direct_product(collect(x);
     biproduct(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
-return their biproduct $L := L_1 \oplus \ldots \oplus L_n$,
+return their biproduct $L := L_1 \oplus \ldots \oplus L_n$ as modules,
 together with the injections $L_i \to L$ and the projections $L \to L_i$.
 (seen as maps between the corresponding ambient spaces).
 
-For objects of type `ZZLat`, finite direct sums and finite direct products
-agree and they are therefore called biproducts.
+For modules, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
+
+!!! warning
+    The projections $L\to L_i$ are morphisms of modules but not of lattices,
+    since the associated quadratic/hermitian forms are not preserved.
 """
 function biproduct(x::Vector{ZZLat}; cached::Bool=true)
   W, inj, proj = biproduct(ambient_space.(x); cached)
