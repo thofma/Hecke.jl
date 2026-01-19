@@ -251,9 +251,10 @@ function _modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem, M::In
    l1 = fpPolyRingElem[]; l2 = fpPolyRingElem[];l3 = ZZRingElem[]
    L = listprimes([f,g], p, M)
    for j in 1:length(L)
-     Rp, t = polynomial_ring(Native.GF(Int(L[j]), cached=false), cached=false)
-     gp = Rp(g)
-     fp = Rp(f)
+     R = Native.GF(Int(L[j]), cached=false)
+     Rp, t = polynomial_ring(R, cached=false)
+     gp = change_base_ring(R, g; parent = Rp)
+     fp = change_base_ring(R, f; parent = Rp)
      fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, -1, error_tolerant = error_tolerant)
      if fl
         ut = Rp(inv(leading_coefficient(de_p)))
@@ -273,9 +274,10 @@ function _inner_modp_results(g::QQPolyRingElem,f::QQPolyRingElem, p::ZZRingElem,
    while true
      np += 1
      if testPrime_jl(f,p) == true && testPrime_jl(g,p) == true
-         Rp, t = polynomial_ring(residue_ring(ZZ, p, cached=false)[1], cached=false)
-         gp = Rp(g)
-         fp = Rp(f)
+         R = residue_ring(ZZ, p, cached=false)[1]
+         Rp, t = polynomial_ring(R, cached=false)
+         gp = change_base_ring(R, g; parent = Rp)
+         fp = change_base_ring(R, f; parent = Rp)
          fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, bnd, error_tolerant = error_tolerant)
          if fl
              return degree(nu_p), p
@@ -376,11 +378,10 @@ function _modpResults(f, p::ZZRingElem, M::Int)
    Rc = f.parent
    l1 = fpPolyRingElem[]; l3 = ZZRingElem[]
    Np = listprimes([f], p, M)
-   Zx, Y = polynomial_ring(ZZ, "Y", cached=false)
    for j in 1:length(Np)
      RNp = Native.GF(Int(Np[j]), cached=false)
      Rp, t = polynomial_ring(RNp, "t", cached=false)
-     fp = Rp(f)
+     fp = change_base_ring(RNp, f; parent = Rp)
      if degree(fp) != degree(f)
        continue #bad prime...
      end
