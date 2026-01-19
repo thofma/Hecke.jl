@@ -302,7 +302,14 @@ mutable struct RiemannSurface
 end
 
 #Nicer printing
-Base.show(io::IO, rs::RiemannSurface) = print(io, "Riemann surface of genus $(rs.genus) defined by $(rs.defining_polynomial) = 0")
+import AbstractAlgebra.is_terse
+function Base.show(io::IO, rs::RiemannSurface)
+  if is_terse(io)
+    print(io, "Riemann surface")
+  else
+    print(io, "Riemann surface of genus $(rs.genus) defined by $(rs.defining_polynomial) = 0")
+  end
+end
 
 
 ################################################################################
