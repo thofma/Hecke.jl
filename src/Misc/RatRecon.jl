@@ -92,7 +92,7 @@ function rational_reconstruction(a::AbsSimpleNumFieldElem, b::ZZRingElem; error_
 end
 
 # to appease the Singular crowd...
-farey_lift = rational_reconstruction
+const farey_lift = rational_reconstruction
 
 # in at least 2 examples produces the same result as Magma
 # can do experiments to see if dedicated Berlekamp Massey would be
