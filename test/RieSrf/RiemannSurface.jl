@@ -16,6 +16,7 @@
     R("0.5515666804208422259") + R("0.7989131245853492630")*im]])
 
   @test contains(matrix(R2,tau), test_tau)
+  @test sprint(show, "text/plain", RS) isa String
 
   # an Elliptic curve
   f = x^3 + 1 - y^2
