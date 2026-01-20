@@ -253,7 +253,7 @@ true
 
 # References
 
-Algorithm as described in [han07](@cite).
+Algorithm as described in [Han07](@cite).
 """
 function is_isomorphic_with_map(
   c1::CyclicAlgebra{T},
