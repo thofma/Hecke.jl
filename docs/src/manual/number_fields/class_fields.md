@@ -23,7 +23,7 @@ of ideals coprime to $m_0$ modulo the elements $a\in K^*$ such that
 v_p(a-1) \ge v_p(m_0) \mbox{ and for all } v\in m_\infty,\, a^{(v)}>0.
 ```
 
-This is a finite abelian group, cf. [milneCFT](@cite) (Theorem 1.7, Chapter V).
+This is a finite abelian group, cf. [Mil20](@cite) (Theorem 1.7, Chapter V).
 
 For $m_0 = \mathcal{O}_K$ and $m_\infty = \emptyset$ the empty list, we
 get a ray class group $Cl$ that is simply the class group of $K$.
