@@ -166,6 +166,41 @@ function rescale(L::ZZLat, r::RationalUnion; cached::Bool=false)
   return R
 end
 
+@doc raw"""
+    integer_lattice(x::Vararg{RationalUnion}) -> ZZLat
+    integer_lattice(x::Vector)                -> ZZLat
+
+Return the integer lattice whose Gram matrix is diagonal with coefficients
+given by `x`.
+
+# Examples
+```jldoctest
+julia> integer_lattice(2,2,2,2)
+Integer lattice of rank 4 and degree 4
+with gram matrix
+[2   0   0   0]
+[0   2   0   0]
+[0   0   2   0]
+[0   0   0   2]
+
+julia> integer_lattice([1,2,3])
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[1   0   0]
+[0   2   0]
+[0   0   3]
+```
+"""
+function integer_lattice(x::Vararg{RationalUnion})
+  G = diagonal_matrix(QQ, QQFieldElem[x...])
+  return integer_lattice(; gram=G)
+end
+
+function integer_lattice(x::Vector)
+  G = diagonal_matrix(QQ, QQFieldElem[x...])
+  return integer_lattice(; gram=G)
+end
+
 ################################################################################
 #
 #  Gram matrix
@@ -708,26 +743,63 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
 ################################################################################
 
 @doc raw"""
-    root_lattice(R::Symbol, n::Int) -> ZZLat
+    root_lattice(R::Symbol, n::Int, s::RationalUnion = 1) -> ZZLat
 
-Return the root lattice of type `R` given by `:A`, `:D` or `:E` with parameter `n`.
+Return the root lattice ``L`` of type `R` given by `:A`, `:D` or `:E` with
+parameter `n`.
 
 The type `:I` with parameter `n = 1` is also allowed and denotes the odd
 unimodular lattice of rank 1.
+
+The nonzero rational number `s`, which is ``1`` by default, is a scaling factor: if
+`s` is different from ``1``, then return the rescaled lattice ``L(s)``.
+
+# Examples
+```jldoctest
+julia> root_lattice(:E, 8)
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[ 2   -1    0    0    0    0    0    0]
+[-1    2   -1    0    0    0    0    0]
+[ 0   -1    2   -1    0    0    0   -1]
+[ 0    0   -1    2   -1    0    0    0]
+[ 0    0    0   -1    2   -1    0    0]
+[ 0    0    0    0   -1    2   -1    0]
+[ 0    0    0    0    0   -1    2    0]
+[ 0    0   -1    0    0    0    0    2]
+
+julia> root_lattice(:I, 1)
+Integer lattice of rank 1 and degree 1
+with gram matrix
+[1]
+
+julia> root_lattice(:D, 4, -1)
+Integer lattice of rank 4 and degree 4
+with gram matrix
+[-2    0    1    0]
+[ 0   -2    1    0]
+[ 1    1   -2    1]
+[ 0    0    1   -2]
+```
 """
-function root_lattice(R::Symbol, n::Int)
+function root_lattice(R::Symbol, n::Int, s::RationalUnion = 1)
+  @req !iszero(s) "Scaling factor must be nonzero"
   if R === :A
-    return integer_lattice(; gram = _root_lattice_A(n))
+    G = _root_lattice_A(n)
   elseif R === :E
-    return integer_lattice(; gram = _root_lattice_E(n))
+    G = _root_lattice_E(n)
   elseif R === :D
-    return integer_lattice(; gram = _root_lattice_D(n))
+    G = _root_lattice_D(n)
   elseif R === :I
     @req n == 1 "Parameter ($n) for odd root lattice (type $R) must be 1"
-    return integer_lattice(; gram = QQ[1;])
+    G = QQ[1;]
   else
     error("Type (:$R) must be :A, :D, :E or :I")
   end
+  if !isone(s)
+    mul!(G, G, s)
+  end
+  return integer_lattice(; gram=G)
 end
 
 @doc raw"""
