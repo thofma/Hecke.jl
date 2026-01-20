@@ -302,7 +302,6 @@ mutable struct RiemannSurface
 end
 
 #Nicer printing
-import AbstractAlgebra.is_terse
 function Base.show(io::IO, rs::RiemannSurface)
   if is_terse(io)
     print(io, "Riemann surface")

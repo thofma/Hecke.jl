@@ -11,6 +11,7 @@ export max_radius, radius_factor, find_paths_to_end, sheet_ordering,
 embed_mpoly, analytic_continuation, minimal_spanning_tree
 
 import Hecke.AbstractAlgebra, Hecke.Nemo
+import Hecke.AbstractAlgebra.is_terse
 import Hecke.IntegerUnion
 import Hecke:function_field, basis_of_differentials, genus, embedding, evaluate, fillacb!, length, reverse, precision, round_scale!, shortest_vectors, radius, zeros_array
 import Base:show, isequal, mod2pi
