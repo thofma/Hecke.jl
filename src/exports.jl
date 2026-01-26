@@ -321,6 +321,7 @@ export embedding
 export embeddings
 export enumerate_definite_genus
 export enumerate_quadratic_triples
+export enumerate_quadratic_triples_iterator
 export equation
 export equation_order
 export euclid
