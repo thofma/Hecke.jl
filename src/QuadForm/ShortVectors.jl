@@ -398,6 +398,53 @@ function _short_vectors_affine(
   return cv
 end
 
+@doc raw"""
+    short_vectors_affine_iterator(
+        S::ZZLat,
+        v::QQMatrix,
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) -> Vector{QQMatrix}
+
+Given a hyperbolic or negative definite $\mathbb{Z}$-lattice ``S``, return the
+iterator that returns vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector in the ambient space of ``S`` with positive square,
+and ``\alpha`` and ``d`` are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the ambient
+space of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine_iterator(
+    S::ZZLat,
+    v::QQMatrix,
+    alpha::RationalUnion,
+    d::RationalUnion
+  )
+  p, _, n = signature_tuple(S)
+  @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
+  _alpha = QQ(alpha)
+  _d = QQ(d)
+  gram = gram_matrix(S)
+  tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
+  v_S = solve(gram_matrix(S), tmp; side=:left)
+  if n > 1
+    sol = _short_vectors_affine_iterator(gram, v_S, _alpha, _d)
+  else
+    map_entries!(-, gram, gram)
+    sol = _short_vectors_affine_iterator(gram, v_S, -_alpha, -_d)
+  end
+  B = basis_matrix(S)
+  elem_type = typeof(v)
+  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B)
+  return sv_affine_iterator
+end
+
 function _short_vectors_affine_iterator(
     gram::MatrixElem{T},
     v::MatrixElem{T},
@@ -439,22 +486,28 @@ function _short_vectors_affine_iterator(
     cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(b), c; equal=true)
   end
   xt = map_entries(base_ring(gram), transpose(x))
-
-  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec)}(cv_vec, base_ring = base_ring(gram), n = nrows(Q), K, xt)
+  elem_type = typeof(v)
+  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt)
   return sv_affine_iterator
 end
 
-struct ShortVectorsAffineIterator{S}
+struct ShortVectorsAffineIterator{S, elem_type}
   cv_vec::S
-  base_ring
-  n::Int
+  b_ring
+  nrows
   K
   xt
 end
 
-function Base.iterate(C::ShortVectorsAffineIterator{X}, start = nothing) where {X}
+Base.IteratorSize(::Type{<:ShortVectorsAffineIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{ShortVectorsAffineIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
 
-  cv_vec, base_ring, n, K, xt = C
+function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothing) where {X, elem_type}
+  cv_vec = C.cv_vec
+  b_ring = C.b_ring
+  nrows = C.nrows
+  K = C.K
+  xt = C.xt
 
   if start === nothing
     it = iterate(cv_vec)
@@ -466,9 +519,35 @@ function Base.iterate(C::ShortVectorsAffineIterator{X}, start = nothing) where {
     return nothing
   end
 
-  cv = xt + matrix(base_ring, 1, n, it[1][1])*K
+  cv = xt + matrix(b_ring, 1, nrows, it[1][1])*K
 
-  start = it[2]
+  return (cv), it[2]
+end
 
-  return (cv), start
+struct ShortVectorsAffineLatIterator{S, elem_type}
+  sv_it::S
+  B
+end
+
+
+Base.IteratorSize(::Type{<:ShortVectorsAffineLatIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{ShortVectorsAffineLatIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
+
+function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = nothing) where {X, elem_type}
+  sv_it = C.sv_it
+  B = C.B
+
+  if start === nothing
+    it = iterate(sv_it)
+  else
+    it = iterate(sv_it, start)
+  end
+
+  if it === nothing
+    return nothing
+  end
+
+  sv = it[1]*B
+
+  return (sv), it[2]
 end

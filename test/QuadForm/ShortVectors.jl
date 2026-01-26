@@ -129,7 +129,7 @@ end
   vT = transpose(v)
   sva = []
   for v in short_vectors_affine_iterator(L, v, QQ(-2), QQ(-2))
-    !push(sva, v)
+    push!(sva, v)
   end
   @test length(sva) == 492
   @test all(w -> w*G*transpose(w) == -2, sva)
