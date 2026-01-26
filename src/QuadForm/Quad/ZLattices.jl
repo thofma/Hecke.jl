@@ -558,6 +558,10 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
     return gram_matrix(L) == gram_matrix(M)
   end
 
+  if is_definite(L) && is_definite(M)
+    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
+  end
+
   if rank(L) == 2
     _A = gram_matrix(L)
     _B = gram_matrix(M)
@@ -569,9 +573,6 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
     return is_isometric(q1, q2)
   end
 
-  if is_definite(L) && is_definite(M)
-    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
-  end
   return _is_isometric_indef(L, M)
 end
 
