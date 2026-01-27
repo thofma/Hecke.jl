@@ -166,41 +166,6 @@ function rescale(L::ZZLat, r::RationalUnion; cached::Bool=false)
   return R
 end
 
-@doc raw"""
-    integer_lattice(x::Vararg{RationalUnion}) -> ZZLat
-    integer_lattice(x::Vector)                -> ZZLat
-
-Return the integer lattice whose Gram matrix is diagonal with coefficients
-given by `x`.
-
-# Examples
-```jldoctest
-julia> integer_lattice(2,2,2,2)
-Integer lattice of rank 4 and degree 4
-with gram matrix
-[2   0   0   0]
-[0   2   0   0]
-[0   0   2   0]
-[0   0   0   2]
-
-julia> integer_lattice([1,2,3])
-Integer lattice of rank 3 and degree 3
-with gram matrix
-[1   0   0]
-[0   2   0]
-[0   0   3]
-```
-"""
-function integer_lattice(x::Vararg{RationalUnion})
-  G = diagonal_matrix(QQ, QQFieldElem[x...])
-  return integer_lattice(; gram=G)
-end
-
-function integer_lattice(x::Vector)
-  G = diagonal_matrix(QQ, QQFieldElem[x...])
-  return integer_lattice(; gram=G)
-end
-
 ################################################################################
 #
 #  Gram matrix
