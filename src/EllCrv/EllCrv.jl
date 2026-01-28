@@ -676,7 +676,7 @@ end
 @doc raw"""
     infinity(E::EllipticCurve) -> EllipticCurvePoint
 
-Return the point at infinity with project coordinates $(0 : 1 : 0)$.
+Return the point at infinity with projective coordinates $(0 : 1 : 0)$.
 """
 function infinity(E::EllipticCurve{T}) where T
   infi = EllipticCurvePoint{T}(E)
@@ -886,61 +886,7 @@ julia> P + P
 ```
 """
 function +(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
-  parent(P) != parent(Q) && error("Points must live on the same curve")
-
-  # Is P = infinity or Q = infinity?
-  if P.is_infinite
-      return Q
-  elseif Q.is_infinite
-      return P
-  end
-
-  E = P.parent
-
-  # Distinguish between long and short form
-  if E.short
-    if P[1] != Q[1]
-        m = divexact(Q[2] - P[2], Q[1] - P[1])
-        x = m^2 - P[1] - Q[1]
-        y = m * (P[1] - x) - P[2]
-    elseif P[2] != Q[2]
-        return infinity(E)
-    elseif P[2] != 0
-        _, _, _, a4 = a_invariants(E)
-        m = divexact(3*(P[1])^2 + a4, 2*P[2])
-        x = m^2 - 2*P[1]
-        y = m* (P[1] - x) - P[2]
-    else
-        return infinity(E)
-    end
-
-    Erg = E([x, y], check = false)
-
-  else
-  a1, a2, a3, a4, a6 = a_invariants(E)
-
-    # Use [Cohen, p. 270]
-    if P[1] == Q[1]
-      if Q[2] == -a1*P[1] - a3 - P[2] # then P = -Q
-        return infinity(E)
-      elseif P[2] == Q[2] # then P = Q
-        m = divexact(3*((P[1])^2) + 2*a2*P[1] + a4 - a1*P[2], 2*P[2] + a1*P[1] + a3)
-        x = -P[1] - Q[1] - a2 + a1*m + m^2
-        y = -P[2] - m*(x - P[1]) - a1*x - a3
-      else # then P != +-Q
-        m = divexact(Q[2] - P[2], Q[1] - P[1])
-        x = -P[1] - Q[1] - a2 + a1*m + m^2
-        y = -P[2] - m*(x - P[1]) - a1*x - a3
-      end
-    else # now P != +-Q
-      m = divexact(Q[2] - P[2], Q[1] - P[1])
-      x = -P[1] - Q[1] - a2 + a1*m + m^2
-      y = -P[2] - m*(x - P[1]) - a1*x - a3
-    end
-
-    Erg = E([x, y], check = false)
-  end
-  return Erg
+  return add!(infinity(parent(P)),P,Q)
 end
 
 #@doc raw"""
@@ -949,7 +895,7 @@ end
 #Subtract two points on an elliptic curve.
 #"""
 function -(P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
-  return P + (-Q)
+  return sub!(infinity(parent(P)),P,Q)
 end
 
 ################################################################################
@@ -964,20 +910,7 @@ end
 #Compute the inverse of the point $P$ on an elliptic curve.
 #"""
 function -(P::EllipticCurvePoint)
-  E = P.parent
-
-  if !is_finite(P)
-    return infinity(E)
-  end
-
-  if E.short == true
-    Q = E([P[1], -P[2]], check = false)
-  else
-    a1,_, a3 = a_invariants(E)
-    Q = E([P[1], -a1*P[1] - a3 - P[2]], check = false)
-  end
-
-  return Q
+  return neg!(infinity(parent(P)), P)
 end
 
 function iszero(P::EllipticCurvePoint)
@@ -1022,30 +955,265 @@ end
 Compute the point $nP$.
 """
 function *(n::S, P::EllipticCurvePoint) where S<:Union{Integer, ZZRingElem}
-  B = infinity(P.parent)
-  C = P
+  return mul!(infinity(parent(P)),n,P)
+end
 
-  if n >= 0
-      a = n
-  else
-      a = -n
+################################################################################
+#
+#  In-place operations
+#
+################################################################################
+
+# @doc raw"""
+#     set!(R::EllipticCurvePoint, P::EllipticCurvePoint)
+#
+# Copies the point $P$ onto the point $R$, mutating $R$. Points must have the same parent curve.
+# """
+function set!(R::EllipticCurvePoint{T}, P::EllipticCurvePoint{T}) where T
+  @req(parent(R) == parent(P), "Can only write to a point on the same curve")
+
+  R.is_infinite = P.is_infinite
+  if !P.is_infinite
+    R.coordx = P.coordx
+    R.coordy = P.coordy
+  end
+  return R
+end
+
+# @doc raw"""
+#     add!(R::EllipticCurvePoint, P::EllipticCurvePoint, Q::EllipticCurvePoint)
+#
+# Add two points on an elliptic curve, mutating $R$ to $P+Q$.
+# Allows for $R$ to be $P$ or $Q$ to reduce allocations.
+#
+# # Examples
+#
+# ```jldoctest
+# julia> E = elliptic_curve(QQ, [-43,166]);
+#
+# julia> P = E([3, 8]);
+#
+# julia> Q = E([-5,16]);
+#
+# julia> R = infinity(E);
+#
+# julia> add!(R, P, Q);
+#
+# julia> R
+# (3 : -8 : 1)
+# ```
+# """
+function add!(R::EllipticCurvePoint{T}, P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
+  @req(parent(P) == parent(Q), "Points must live on the same curve")
+  @req(parent(R) == parent(P), "Can only write to a point on the same curve")
+
+  # Is P = infinity or Q = infinity?
+  if P.is_infinite
+    if R !== Q
+      set!(R,Q)
+    end
+    return R
+  elseif Q.is_infinite
+    if R !== P
+      set!(R,P)
+    end
+    return R
   end
 
-  while a != 0
-    if mod(a,2) == 0
-      a = div(a,2)
-      C = C + C
+  E = P.parent
+  local x,y # we'll compute the x-coord,y-coord of P+Q
+
+  # Distinguish between long and short form
+  if E.short
+    if P[1] != Q[1]
+      m = divexact(Q[2] - P[2], Q[1] - P[1])
+      x = m^2 - P[1] - Q[1]
+      y = m * (P[1] - x) - P[2]
+    elseif P[2] != Q[2]
+      # if P[1] == Q[1] and P[2] != Q[2], then P = -Q
+      R.is_infinite = true
+      return R
+    elseif P[2] != 0
+      # if P[i] == Q[i] for i=1,2 and P[2] != 0, then we compute P+P as
+      a4 = (a_invariants(E))[4]
+      m = divexact(3*(P[1])^2 + a4, 2*P[2])
+      x = m^2 - 2*P[1]
+      y = m*(P[1] - x) - P[2]
     else
-      a = a - 1
-      B = B + C
+      # if we get here, P=Q, and P[2]==0 implies 2*P=0
+      R.is_infinite = true
+      return R
+    end
+  else
+    a1, a2, a3, a4, a6 = a_invariants(E)
+    # Use [Cohen, p. 270]
+    if P[1] == Q[1]
+      if Q[2] == -a1*P[1] - a3 - P[2] # then P = -Q
+        R.is_infinite = true
+        return R
+      else # P != -Q
+        m = divexact(3*((P[1])^2) + 2*a2*P[1] + a4 - a1*P[2], 2*P[2] + a1*P[1] + a3)
+        x = -P[1] - Q[1] - a2 + a1*m + m^2
+        y = -P[2] - m*(x - P[1]) - a1*x - a3
+      end
+    else # now P != +-Q
+      m = divexact(Q[2] - P[2], Q[1] - P[1])
+      x = -P[1] - Q[1] - a2 + a1*m + m^2
+      y = -P[2] - m*(x - P[1]) - a1*x - a3
+    end
+  end
+
+  # Finally, update and return R
+  R.is_infinite = false
+  R.coordx = x
+  R.coordy = y
+
+  return R
+end
+
+# @doc raw"""
+#     neg!(R::EllipticCurvePoint, P::EllipticCurvePoint)
+#
+# Computes the inverse $-P$ of $P$ and mutates $R$ to $-P$.
+# Allows for $R$ to be $P$ to reduce allocations.
+#
+# # Examples
+#
+# ```jldoctest
+# julia> E = elliptic_curve(QQ, [-43, 166]);
+#
+# julia> P = E([3, 8]);
+#
+# julia> neg!(P,P)
+# (3 : -8 : 1)
+#
+# julia> P
+# (3 : -8 : 1)
+# ```
+# """
+function neg!(R::EllipticCurvePoint{T}, P::EllipticCurvePoint{T}) where T
+  @req(parent(R) == parent(P), "Can only write to a point on the same curve")
+
+  E = P.parent
+
+  if !is_finite(P)
+    R.is_infinite = true
+    return R
+  end
+
+  R.is_infinite = false
+
+  if E.short == true
+    R.coordx = P[1]
+    R.coordy = -P[2]
+  else
+    a1,_, a3 = a_invariants(E)
+    R.coordx = P[1]
+    R.coordy = -a1*P[1] - a3 - P[2]
+  end
+
+  return R
+end
+
+# @doc raw"""
+#     sub!(R::EllipticCurvePoint, P::EllipticCurvePoint, Q::EllipticCurvePoint)
+#
+# Computes the difference $P-Q$ and mutates $R$ to $P-Q$.
+#
+# # Examples
+#
+# ```jldoctest
+# julia> E = elliptic_curve(QQ, [-43, 166]);
+#
+# julia> P = E([3, 8]);
+#
+# julia> Q = E([-5,16]);
+#
+# julia> C = infinity(E);
+#
+# julia> sub!(P, P, Q)
+# (11 : -32 : 1)
+#
+# julia> P
+# (11 : -32 : 1)
+# ```
+# """
+function sub!(R::EllipticCurvePoint{T}, P::EllipticCurvePoint{T}, Q::EllipticCurvePoint{T}) where T
+
+  if P == Q
+    R.is_infinite = true
+    return R
+
+  elseif R === P
+    neg!(P, P)
+    return neg!(P, add!(P, P, Q))
+
+  else
+    set!(R, Q)
+    neg!(R, R)
+    return add!(R, P, R)
+  end
+
+end
+
+
+# @doc raw"""
+#     mul!(R::EllipticCurvePoint, n::Int, P::EllipticCurvePoint, C::EllipticCurvePoint = infinity(parent(P)))
+#
+# Compute the point $nP$ and mutate $R$ to $nP$.
+# Uses a buffer point $C$, which can be passed as an optional argument, and which will mutate under `mul!`.
+#
+# !!! info
+#     The point $P$ can be used for either the buffer point $C$ or for the result point $R$.
+#     However, $P$ can't be used for both $C$ and $R$ because the points become distinct in the computation
+#     of $nP$.
+#
+# # Examples
+#
+# ```jldoctest
+# julia> E = elliptic_curve(QQ, [-43, 166]);
+#
+# julia> P = E([3, 8]);
+#
+# julia> Q = E([-5,16]);
+#
+# julia> C = infinity(E);
+#
+# julia> mul!(Q, 24, P, C)
+# (11 : -32 : 1)
+#
+# julia> Q
+# (11 : -32 : 1)
+#
+# julia> C
+# (-5 : -16 : 1)
+# ```
+# """
+function mul!(R::EllipticCurvePoint, n::S, P::EllipticCurvePoint, C::EllipticCurvePoint = infinity(parent(P))) where S<:Union{Integer, ZZRingElem}
+  @req(parent(R) == parent(P), "Can only write to a point on the same curve")
+  @req(R !== C, "Result point R can not alias the buffer point C")
+
+  # Have to copy first, in case R === P
+  set!(C,P)
+  R.is_infinite = true
+
+  a = (n >= 0) ? n : -n
+
+  while a != 0
+    if !isodd(a)
+      a >>= 1
+      add!(C,C,C)
+    else
+      a += -1
+      add!(R,R,C)
     end
   end
 
   if n < 0
-    B = -B
+    neg!(R,R)
   end
 
-  return B
+  return R
 end
 
 ################################################################################

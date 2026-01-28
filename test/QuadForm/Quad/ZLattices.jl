@@ -236,6 +236,11 @@ end
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
   @test is_isometric(C1m, C1m)
+  L1 = integer_lattice(gram=QQ[126 16; 16 4])
+  L2 = integer_lattice(gram=QQ[14 2; 2 18])
+  @test genus(L1)==genus(L2)
+  @test !is_isometric(L1,L2)
+
   # automorphisms
   C2 = (1//3)*C1
 
