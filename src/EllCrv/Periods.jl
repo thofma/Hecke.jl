@@ -15,6 +15,7 @@
 #elliptic logarithms by John E. Cremona and Thotsaphon Thongjunthug
 @doc raw"""
     real_period(E::EllipticCurve{QQFieldElem}, prec::Int) -> Float64
+
 Return the real period of an elliptic curve $E$ over QQ
 """
 function real_period(E::EllipticCurve{QQFieldElem}, prec::Int = 100)
@@ -23,6 +24,7 @@ end
 
 @doc raw"""
     periods(E::EllipticCurve{ZZRingElem}, prec::Int) -> Float64
+
 Return the period lattices of an elliptic curve $E$ over a number field for each possible
 embedding in $mathb{C}$.
 """

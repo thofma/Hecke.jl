@@ -209,13 +209,30 @@ end
 @doc raw"""
     elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem) -> EllipticCurve
 
-Construct an elliptic curve from a bivariate polynomial `f` in long Weierstrass form.
+Construct an elliptic curve from a polynomial `f` in a bivariate polynomial ring using long Weierstrass form.
 The second and third argument specify variables of the `parent` of `f` so that
-``f = c ⋅ (-y² + x³ - a₁ ⋅ xy + a₂ ⋅ x² - a₃ ⋅ y + a₄ ⋅ x + a₆)``.
+
+$$f = c ⋅ (-y² + x³ - a₁ ⋅ xy + a₂ ⋅ x² - a₃ ⋅ y + a₄ ⋅ x + a₆).$$
+
+Note that $c$ is the coefficient of $x^3$ in `f` and that the coefficient of $y^2$ in `f` must be $-c$ in this form.
+
+# Examples
+
+```jldoctest
+julia> R, (x,y) = polynomial_ring(QQ, [:x, :y]);
+
+julia> f = y^2 + x*y - x^3 - 1;
+
+julia> E = elliptic_curve(f,x,y)
+Elliptic curve
+  over rational field
+with equation
+  y^2 + x*y = x^3 + 1
+```
 """
 function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
   R = parent(f)
-  @assert ngens(R) == 2 "polynomial must be bivariate"
+  @assert ngens(R) == 2 "polynomial ring containing f must be bivariate"
   @assert x in gens(R) && y in gens(R) "second and third argument must be ring variables"
   k = coefficient_ring(f)
   kf = k
@@ -227,7 +244,7 @@ function elliptic_curve(f::MPolyRingElem, x::MPolyRingElem, y::MPolyRingElem)
   c = my_const(coeff(f, [x, y], [3, 0])::MPolyRingElem)
   @assert parent(c)===k
   f = inv(c)*f
-  @assert coeff(f, [x,y], [0,2]) == -1 "coefficient of y^2 must be -1"
+  @assert coeff(f, [x,y], [0,2]) == -1 "coefficient of y^2 must be the negative of the coefficient of x^3"
   a6 = coeff(f, [x,y], [0,0])
   a4 = coeff(f, [x,y], [1,0])
   a2 = coeff(f, [x,y], [2,0])
@@ -407,8 +424,8 @@ end
 @doc raw"""
     coefficients(E::EllipticCurve{T}) -> Tuple{T, T, T, T, T}
 
-Return the Weierstrass coefficients of $E$ as a tuple (a1, a2, a3, a4, a6)
-such that $E$ is given by y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6.
+Return the Weierstrass coefficients of $E$ as a tuple $(a1, a2, a3, a4, a6)$
+such that $E$ is given by $y^2 + a1xy + a3y = x^3 + a2x^2 + a4x + a6$.
 """
 coefficients(E::EllipticCurve) = a_invariants(E)
 
@@ -519,7 +536,7 @@ end
     equation([R::MPolyRing,] E::EllipticCurve) -> MPolyRingElem
 
 Return the equation defining the elliptic curve $E$ as a bivariate polynomial.
-If the polynomial ring $R$ is specified, it must by a bivariate polynomial
+If the polynomial ring $R$ is specified, it must be a bivariate polynomial
 ring.
 
 # Examples
@@ -602,7 +619,7 @@ julia> E([2, -4, 2])
 """
 function (E::EllipticCurve{T})(coords::Vector{S}; check::Bool = true) where {S, T}
   if !(2 <= length(coords) <= 3)
-    error("Points need to be given in either affine coordinates (x, y) or projective coordinates (x, y, z)")
+    error("Points need to be given in either affine coordinates (x, y) or projective coordinates (x : y : z)")
   end
 
   if length(coords) == 3
@@ -610,7 +627,7 @@ function (E::EllipticCurve{T})(coords::Vector{S}; check::Bool = true) where {S, 
       if coords[2] != 0
         return infinity(E)
       else
-        error("The triple [0: 0: 0] does not define a point in projective space.")
+        error("The triple (0: 0: 0) does not define a point in projective space.")
       end
     end
     coords = [coords[1]//coords[3], coords[2]//coords[3]]
