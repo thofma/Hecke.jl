@@ -166,12 +166,12 @@ function torsion_points_division_poly(F::EllipticCurve{QQFieldElem})
   # points of order 2 (point has order 2 iff y-coordinate is zero)
   # (note: these points are not detected by the division polynomials)
 
-  Zx, x = polynomial_ring(ZZ, "x")
+  x = gen(Globals.Zx)
 
-  s = zeros(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
-  if length(s) != 0
-    for i = 1:length(s)
-      P = E([s[i], 0])
+  sols = roots(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
+  if !isempty(sols)
+    for sol in sols
+      P = E([sol, 0])
       push!(torsionpoints, P)
     end
   end
