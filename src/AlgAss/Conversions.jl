@@ -747,7 +747,7 @@ function StructureConstantAlgebra(I::Union{ RelNumFieldOrderIdeal{T, S}, AlgAssR
   end
 
   if isone(new_basisI[basis_elts[1]][1])
-    one = zeros_array(Fp, 1:length(basis_elts))
+    one = zeros_array(Fp, length(basis_elts))
     one[1] = Fp(1)
     A = StructureConstantAlgebra(Fp, mult_table, one)
   else
