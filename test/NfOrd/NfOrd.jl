@@ -498,3 +498,14 @@
   K, a = number_field(f, cached = false)
   @test discriminant(maximal_order(K)) == 28975330946137036032
 end
+
+let # 2093
+  Qx, x = QQ[:x]
+  f = x^5 + 2560*x^4 - 692224*x^3 - 6290931712*x^2 - 4791740661760*x - 736011365646336
+  E, _a = number_field(f,:a)
+  OE = maximal_order(E)
+  D = different(OE)
+  @test D isa AbsSimpleNumFieldOrderIdeal
+  @test norm(D) == 321663308
+  @test is_one(D * codifferent(OE))
+end
