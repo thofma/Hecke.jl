@@ -1,5 +1,15 @@
 ################################################################################
 #
+#  Ring interface functions
+#
+################################################################################
+
+function is_exact_type(::Type{FiniteRingElem})
+  return true
+end
+
+################################################################################
+#
 #  Printing
 #
 ################################################################################
@@ -21,19 +31,23 @@ end
 #
 ################################################################################
 
-function zero(R::FiniteRing)
-  return FiniteRingElem(R, zero(underlying_abelian_group(R)))
-end
-
-function (R::FiniteRing)(x::FiniteRingElem)
-  @assert parent(x) === R
-  return x
-end
-
 (R::FiniteRing)() = zero(R)
 
 (R::FiniteRing)(a::IntegerUnion) = FiniteRingElem(R, a * data(one(R)))
 
+(R::FiniteRing)(x::Vector) = FiniteRingElem(R, underlying_abelian_group(R)(x))
+
+function (R::FiniteRing)(x::FiniteRingElem)
+  @req parent(x) === R "Coercion only allowed if parent and ring are equal"
+  return x
+end
+
+# zero
+function zero(R::FiniteRing)
+  return FiniteRingElem(R, zero(underlying_abelian_group(R)))
+end
+
+# one
 function one(R::FiniteRing)
   # we cache the one, because it is expensive to compute
   if isdefined(R, :one)
@@ -43,17 +57,11 @@ function one(R::FiniteRing)
   B, Btohoms = hom(A, A)
   S, StoB = sub(B, [Btohoms\(R.mult[i]) for i in 1:length(R.mult)])
   fl, x = has_preimage_with_preimage(StoB, Btohoms\(id_hom(A)))
-  if !fl
-    error("Ring does not have multiplicative identity")
-  end
+  fl || error("Ring does not have multiplicative identity")
   o = R([c for c in x.coeff[1,:]])
   R.one = o
   return o::FiniteRingElem
 end
-
-(R::FiniteRing)(x::Vector) = FiniteRingElem(R, underlying_abelian_group(R)(x))
-
-Base.one(x::FiniteRingElem) = one(parent(x))
 
 function is_invertible(a::FiniteRingElem)
   if isassigned(a.inv::Base.RefValue{FiniteRingElem})
@@ -125,12 +133,12 @@ function Base.:(-)(a::FiniteRingElem)
 end
 
 function Base.:(+)(a::FiniteRingElem, b::FiniteRingElem)
-  @req parent(a) == parent(b) "Elements must have same parent"
+  @req parent(a) === parent(b) "Elements must have same parent"
   return FiniteRingElem(parent(a), data(a) + data(b))
 end
 
 function Base.:(-)(a::FiniteRingElem, b::FiniteRingElem)
-  @req parent(a) == parent(b) "Elements must have same parent"
+  @req parent(a) === parent(b) "Elements must have same parent"
   return FiniteRingElem(parent(a), data(a) - data(b))
 end
 
@@ -139,8 +147,7 @@ end
 #  Random
 #
 ################################################################################
+
 function Base.rand(R::FiniteRing)
   return FiniteRingElem(R, rand(R.A))
 end
-
-
