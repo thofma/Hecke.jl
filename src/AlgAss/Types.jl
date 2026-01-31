@@ -70,6 +70,7 @@ end
   std_inv# standard involution
   decomposition
   center
+  gens
 
   function QuaternionAlgebra{T}() where {T}
     z = new{T}()
