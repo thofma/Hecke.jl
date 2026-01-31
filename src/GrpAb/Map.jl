@@ -232,6 +232,7 @@ function hom(
     M::ZZMatrix;
     check::Bool=true,
   )
+  @req nrows(M) == ngens(G) && ncols(M) == ngens(H) "Matrix has wrong dimension"
   if check
     @req check_mat(G, H, M) "Matrix does not define a morphism of abelian groups"
   end
