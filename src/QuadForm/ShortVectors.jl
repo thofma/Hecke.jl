@@ -195,24 +195,7 @@ function enumerate_quadratic_triples(
     algorithm::Symbol=:short_vectors,
     equal::Bool=false
   ) where T <: Union{ZZRingElem, QQFieldElem}
-  if algorithm == :short_vectors
-    if T == ZZRingElem
-      _Q = map_entries(QQ, Q)
-      _b = map_entries(QQ, b)
-      L, p, dist = _convert_type(_Q, _b, QQ(c))
-    else
-      L, p, dist = _convert_type(Q, b, QQ(c))
-    end
-    dist < 0 && return Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-    if equal
-      cv = close_vectors(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
-    else
-      cv = close_vectors(L, vec(collect(p)), dist, ZZRingElem; check=false)
-    end
-  else
-    error("Algorithm ($(algorithm)) not (yet) implemented for this function")
-  end
-  return cv
+  return [copy(i) for i in enumerate_quadratic_triples_iterator(Q,b,c,algorithm,equal)]
 end
 
 function enumerate_quadratic_triples_iterator(
@@ -359,43 +342,7 @@ function _short_vectors_affine(
     alpha::RationalUnion,
     d::RationalUnion
   ) where T <: Union{ZZRingElem, QQFieldElem}
-  # find a solution <x,v> = alpha with x in L if it exists
-  res = MatrixElem{T}[]
-  w = gram*transpose(v)
-  if T == QQFieldElem
-    wd = lcm(denominator(w), denominator(alpha))
-    wn = map_entries(ZZ, wd*w)
-    beta = numerator(alpha*wd)
-  else
-    wd = ZZ(denominator(alpha))
-    wn = wd*w
-    beta = numerator(alpha*wd)
-  end
-
-  ok, x = can_solve_with_solution(transpose(wn), matrix(ZZ, 1, 1, [beta]); side=:right)
-  if !ok
-    return res
-  end
-
-  K = kernel(wn; side=:left)
-  # (x + y*K)*gram*(x + y*K) = x gram x + 2xGKy + y K G K y
-
-  # now we want to formulate this as a cvp
-  # (x +y K) gram (x+yK) == d
-  GK = gram*transpose(K)
-  Q = K * GK
-  b = transpose(x) * GK
-  c = (transpose(x)*gram*x)[1,1] - d
-  # solve the quadratic triple
-  if Q[1, 1] < 0
-    map_entries!(-, Q, Q)
-    cv_vec = enumerate_quadratic_triples(Q, transpose(-b), -c; equal=true)
-  else
-    cv_vec = enumerate_quadratic_triples(Q, transpose(b), c; equal=true)
-  end
-  xt = map_entries(base_ring(gram), transpose(x))
-  cv = MatrixElem{T}[xt + matrix(base_ring(gram), 1, nrows(Q), u[1])*K for u in cv_vec]
-  return cv
+  return [copy(i) for i in _short_vectors_affine_iterator(gram,v,alpha,d)]
 end
 
 @doc raw"""
@@ -441,7 +388,7 @@ function short_vectors_affine_iterator(
   end
   B = basis_matrix(S)
   elem_type = typeof(v)
-  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B)
+  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B, zero(B))
   return sv_affine_iterator
 end
 
@@ -487,7 +434,7 @@ function _short_vectors_affine_iterator(
   end
   xt = map_entries(base_ring(gram), transpose(x))
   elem_type = typeof(v)
-  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt)
+  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt, zero_matrix(base_ring(gram), 1, nrows(Q)))
   return sv_affine_iterator
 end
 
@@ -497,36 +444,36 @@ struct ShortVectorsAffineIterator{S, elem_type}
   nrows
   K
   xt
+  v
 end
 
 Base.IteratorSize(::Type{<:ShortVectorsAffineIterator}) = Base.SizeUnknown()
 Base.eltype(::Type{ShortVectorsAffineIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
 
 function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothing) where {X, elem_type}
-  cv_vec = C.cv_vec
-  b_ring = C.b_ring
-  nrows = C.nrows
-  K = C.K
-  xt = C.xt
-
   if start === nothing
-    it = iterate(cv_vec)
+    it = iterate(C.cv_vec)
   else
-    it = iterate(cv_vec, start)
+    it = iterate(C.cv_vec, start)
   end
 
   if it === nothing
     return nothing
   end
 
-  cv = xt + matrix(b_ring, 1, nrows, it[1][1])*K
+  #C.v = xt + xt, matrix(b_ring, 1, nrows, it[1][1])*K
+  for i in 1:C.nrows 
+    C.v[i] = it[1][1][i]
+  end
+  add!(C.v, C.xt, mul!(C.v, C.v, C.K))
 
-  return (cv), it[2]
+  return (C.v), it[2]
 end
 
 struct ShortVectorsAffineLatIterator{S, elem_type}
   sv_it::S
   B
+  sv
 end
 
 
@@ -534,20 +481,17 @@ Base.IteratorSize(::Type{<:ShortVectorsAffineLatIterator}) = Base.SizeUnknown()
 Base.eltype(::Type{ShortVectorsAffineLatIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
 
 function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = nothing) where {X, elem_type}
-  sv_it = C.sv_it
-  B = C.B
-
   if start === nothing
-    it = iterate(sv_it)
+    it = iterate(C.sv_it)
   else
-    it = iterate(sv_it, start)
+    it = iterate(C.sv_it, start)
   end
 
   if it === nothing
     return nothing
   end
 
-  sv = it[1]*B
+  mul!(C.sv, it[1]*C.B)
 
-  return (sv), it[2]
+  return (C.sv), it[2]
 end
