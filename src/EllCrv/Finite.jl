@@ -809,17 +809,19 @@ julia> order(E)
   p == 0 && error("Characteristic must be nonzero")
 
   if p == 2
-    j = j_invariant(E)
-    if j == 0
+    if j_invariant(E) == 0
       return ZZ(_order_supersingular_char2(E))
     else
       return ZZ(_order_ordinary_char2(E))
     end
   end
 
-  # char 3
   if p == 3
-    return ZZ(order_via_exhaustive_search(E))
+    if j_invariant(E) == 0
+      return ZZ(_order_supersingular_char3(E))
+    else
+      return ZZ(_order_ordinary_char3(E))
+    end
   end
 
   A = order_via_bsgs(E)
@@ -887,25 +889,61 @@ end
 
 ################################################################################
 #
+#  Helpers for p-adic point counting
+#
+################################################################################
+
+# TODO: This should probably be part of Nemo, where we can do things more efficiently
+#   by working with padic_poly coefficients directly (instead of going through p-adic "coefficients")
+function _qadic_from_residue_element(R::QadicField, x::T; precision::Int=precision(R)) where T <: FinFieldElem
+  z = R(precision=precision)
+  for i in 0:degree(R)-1
+    setcoeff!(z, i, lift(ZZ, coeff(x, i)))
+  end
+  return z
+end
+
+# Let q=p^d, and E be the elliptic curve over F_{p^m}
+# If E is defined over F_q, we can compute the trace of Frobenius of E/F_{p^m} from the trace of Frobenius of E/F_{p^d}
+# The recurrence is: t_k = t_1 * t_{k-1} - q * t_{k-2} with t_0 = 2,
+#   where t_k is the trace of Frobenius of E/F_{q^k}
+# We compute t_n with n = m/d
+# see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", section 17.1.2
+function _trace_of_frobenius_subfield_curve(q, t_1, n::Int)
+  @assert n >= 1
+  t_prev = ZZ(2); t_cur = t_1
+  for _ in 2:n
+    t_cur, t_prev = t_1*t_cur - q*t_prev, t_cur
+  end
+  return t_cur
+end
+
+################################################################################
+#
 #  Point counting in characteristic 2
 #
 ################################################################################
+
+# common knowledge
+# j = 0: supersingular curve
+#   Canonical form is y^2 + a_3*y = x^3 + a_4*x + a_6
+#   Isomorphism classes and point counts are known
+# j != 0: ordinary curve
+#   Canonical form is y^2 + xy = x^3 + a_2*x^2 + a_6
+#   If Tr(a2) == 0, it is isomorphic to y^2 + xy = x^3 + a_6
+#   Otherwise, it is isomorphic to quadratic twist of y^2 + xy = x^3 + a_6
 
 # finds order of a supersingular elliptic curve defined over finite field of characteristic 2
 # This implements sections 3.4 and 3.5 of Menezes' "Elliptic Curve Public Key Cryptosystems"
 function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
-  _, X = polynomial_ring(R,"X")
-
-  @req characteristic(R) == 2 "Characteristic must be 2"
-  @req iszero(j_invariant(E)) "Curve must be supersingular (j not zero)"
-  @req iszero(E.a_invariants[1]) "Curve must be supersingular (a_1 not zero)"
-
   q = order(R)
   d = degree(R)
 
-  # transform to canonical supersingular form: y^2 + a_3*y = x^3 + a_4*x + a_6
-  # change of variables (x,y) -> (x+a_2,y)
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req iszero(j_invariant(E)) "Curve must be supersingular"
+
+  # transform to canonical form: (x,y) -> (x+a_2,y)
   a3 = E.a_invariants[3]
   a4 = E.a_invariants[2]^2 + E.a_invariants[4]
   a6 = E.a_invariants[2]*E.a_invariants[4] + E.a_invariants[5]
@@ -917,6 +955,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 
   # see Menezes "Elliptic Curve Public Key Cryptosystems" sections 3.4 and 3.5
+  _, X = polynomial_ring(R, "X")
   if isodd(d)
     # bring to the form y^2 + y = x^3 + a_4*x + a_6
     if a3 != one(R)
@@ -943,7 +982,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
     ss = roots(X^4 + X + a4 + one(R))
     @assert !isempty(ss)
 
-    sqrt_2q = ZZ(2)^divexact(d+1,2)
+    sqrt_2q = ZZ(2)^divexact(d + 1, 2)
     if iszero(tr(ss[1]^6 + ss[1]^2 + a6))
       return mod(d, 8) in (1, 7) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
     else
@@ -997,16 +1036,17 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 end
 
-# Univariate AGM method of finding trace of Frobenius (in the characteristic 2)
-# it is assumed that the j-invariant does not lie in F_4
+# Univariate AGM method of finding trace of Frobenius (in characteristic 2)
+# assumes the curve is in the form E: y^2 + xy = x^3 + a_6
+# assumes that j-invariant (j = a_6^{-1}) does not lie in F_4
 # see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", section 17.3.2.b
-function _trace_frobenius_char2_agm(a6::T) where T <: FinFieldElem
+function _trace_of_frobenius_char2_agm(a6::T) where T <: FinFieldElem
   R = parent(a6)
-  @req characteristic(R) == 2 "Characteristic must be 2"
-  @req a6^4 != a6 "j-invariant must not lie in F_4"
-
   q = order(R)
   d = degree(R)
+
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req a6^4 != a6 "j-invariant must not lie in F_4"
 
   # for d = 3 the Hecke bound greatly overshoots the possible values of trace
   # it is easy to precompute trace for all a_6 in F_8 \ F_2
@@ -1024,33 +1064,26 @@ function _trace_frobenius_char2_agm(a6::T) where T <: FinFieldElem
   # WARNING: clearly it is certain to be different from the modulus used
   # WARNING:   to create the finite field over which curve is defined
   # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
-  # WARNING: for now we err for the exponent bigger than 92 (flint limit)
-  d >= 92 && error("Currently exponents above 92 are not supported")
-  Qp = padic_field(2, precision=N)
-  Qq,_ = qadic_field(2, d, "t", precision=N)
+  # WARNING: for now we err for the exponent bigger than 91 (flint limit)
+  d >= 92 && error("Currently exponents above 91 are not supported")
+  Qq,_ = qadic_field(2, d, precision=N)
 
   # TODO: we should implement a lift from F_q to Q_q (in Nemo) directly
   # TODO: instead of going through full padic coefficients
 
   # z = 1 + 8*a_6 [4 digits precision]
-  z = Qq(0, precision=4)
-  setcoeff!(z, 0, Qp(1+8*lift(ZZ, coeff(a6, 0))))
-  for i in 1:d-1
-    if !iszero(coeff(a6, i))
-      setcoeff!(z, i, ZZ(8))
-    end
-  end
+  z = 1 + 8*_qadic_from_residue_element(Qq, a6, precision=4)
 
   for k in 5:N  # get k correct digits
     # iteration: z <- [1 + z] / [2 * sqrt(z)] = [(1+z)/2] / sqrt(z)
     setprecision!(z, k+1) # we divide by 2 below so we need extra digit
-    z = divexact(shift_right(Qq(1,precision=k+1) + z, 1), sqrt(z))
+    z = divexact(shift_right(Qq(1, precision=k+1) + z, 1), sqrt(z))
     setprecision!(z, k) # we have z modulo 2^k
   end
 
   # we need Norm(2z / [1+z]) = Norm(z / ([1+z]/2) )
   setprecision!(z, N+1) # we divide by 2 below so we need extra digit
-  zz = shift_right(Qq(1,precision=N+1) + z, 1)
+  zz = shift_right(Qq(1, precision=N+1) + z, 1)
 
   norm_z = norm(divexact(z, zz))
   setprecision!(norm_z, N-1) # we have norm modulo 2^(N-1)
@@ -1063,59 +1096,284 @@ function _trace_frobenius_char2_agm(a6::T) where T <: FinFieldElem
   return t
 end
 
+# implements Subfield Curve approach for the case of j being in F_4
+# assumes E/F_{2^d}: y^2 + xy = x^3 + a_6 (j = 1/a_6)
+function _trace_of_frobenius_j_nonzero_in_f4(a6::T, d::Int) where T <: FinFieldElem
+  R = parent(a6)
+
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req a6 == a6^4 "j invariant must lie in F_4"
+
+  # j = 1: y^2 + xy = x^3 + 1
+  # - for even d, we can "define" it over F_4: trace = -3
+  # - for odd d, we define over F_2: trace = -1
+  # j in F_4\F_2. Writing c for a generator of F_4
+  # both E: y^2 + xy = x^3 + c and E': y^2 + xy = x^3 + 1/c have trace = 1 over F_4
+  @assert isone(a6) || iseven(d)
+  q = isone(a6) && isodd(d) ? ZZ(2) : ZZ(4)
+  n = isone(a6) && isodd(d) ? d : divexact(d, 2)
+
+  local t_1
+  if isone(a6)
+    t_1 = iseven(d) ? ZZ(-3) : ZZ(-1)
+  else
+    t_1 = ZZ(1)
+  end
+
+  return _trace_of_frobenius_subfield_curve(q, t_1, n)
+end
+
 # finds order of an ordinary elliptic curve defined over finite field of characteristic 2
 # it uses the univariate AGM in general case
 # if the j-invariant lies in F_4 it uses "Subfield Curve" approach
 function _order_ordinary_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   j = j_invariant(E)
-
-  @req characteristic(R) == 2 "Characteristic must be 2"
-  @req !iszero(j) "Curve must be ordinary (j is zero)"
-  @req !iszero(E.a_invariants[1]) "Curve must be ordinary (a_1 is zero)"
-
   q = order(R)
   d = degree(R)
 
-  # transform to canonical ordinary form: y^2 + xy = x^3 + a_2*x^2 + a_6
-  # change of variables (x,y) -> ( a_1^2 * x + a_3/a_1, a_1^3 * y + [a_1^2 * a_4 + a_3^2]/a_1^3 )
-  a2 = divexact(E.a_invariants[1]^4*E.a_invariants[2] + E.a_invariants[1]^3*E.a_invariants[3], E.a_invariants[1]^6)
-  a6 = divexact(one(R), j_invariant(E))
+  @req characteristic(R) == 2 "Characteristic must be 2"
+  @req !iszero(j) "Curve must be ordinary"
 
-  # if Tr(a2) == 0, E is isomorphic to E': y^2 + xy = x^3 + a_6 and |E| = |E'|
-  # otherwise it is (isomorphic to) a quadratic twist of E'
-  #   and |E| = 2q + 2 - |E'| points
+  # transform to canonical form:
+  # (x,y) -> ( a_1^2 * x + a_3/a_1, a_1^3 * y + [a_1^2 * a_4 + a_3^2]/a_1^3 )
+  a2 = divexact(E.a_invariants[1]^4*E.a_invariants[2] + E.a_invariants[1]^3*E.a_invariants[3], E.a_invariants[1]^6)
+  a6 = inv(j)
 
   # compute trace of frobenius for E'
   if j^4 == j
-    # see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", section 17.1.2
-    # if our curve is actually defined over F_{2^d}
-    # t_0 = 2, t_1 = tr(phi_{2^d})
-    # t_k = t_1 * t_{k-1} - 2^d * t_{k-2} [= tr(phi_{2^{dk}})]
-    t_0 = ZZ(2)
-    if isone(j)
-      if iseven(d)  # defined over F_4: |E| = 8
-        t_1 = ZZ(-3); N = divexact(d,2); q_base = ZZ(4)
-      else          # defined over F_2: |E| = 4
-        t_1 = ZZ(-1); N = d; q_base = ZZ(2)
-      end
-    else
-      # defined over F_4: for a_6 = c_1 or 1/c_1 we have |E| = 4
-      @assert iseven(d)
-      t_1 = ZZ(1); N = divexact(d,2); q_base = ZZ(4)
-    end
-
-    t_prev = t_0; t_cur = t_1
-    for _ in 2:N
-      t_cur, t_prev = t_1*t_cur - q_base*t_prev, t_cur
-    end
-
-    trace_frob = t_cur
+    trace_frob = _trace_of_frobenius_j_nonzero_in_f4(a6, d)
   else
-    trace_frob = _trace_frobenius_char2_agm(a6)
+    trace_frob = _trace_of_frobenius_char2_agm(a6)
   end
 
   return iszero(tr(a2)) ? q + 1 - trace_frob : q + 1 + trace_frob
+end
+
+################################################################################
+#
+#  Point counting in characteristic 3
+#
+################################################################################
+
+# common knowledge
+# j = 0: supersingular curve
+#   Canonical form is y^2 = x^3 + a_4*x + a_6
+#   Isomorphism classes and point counts are known
+# j != 0: ordinary curve
+#   Canonical form is y^2 = x^3 + a_2*x^2 + a_6
+#   If a_2 is a square, it is isomorphic to y^2 = x^3 + x^2 + a_6/a_2^3
+#   Otherwise, it is isomorphic to quadratic twist of y^2 = x^3 + x^2 + a_6/a_2^3
+
+# finds order of a supersingular elliptic curve defined over finite field of characteristic 3
+# since no definitive source was found, a short report was created
+# arxiv: http://arxiv.org/abs/2601.21756
+function _order_supersingular_char3(E::EllipticCurve{T}) where T <: FinFieldElem
+  R = base_field(E)
+  q = order(R)
+  d = degree(R)
+
+  @req characteristic(R) == 3 "Characteristic must be 3"
+  @req iszero(j_invariant(E)) "Curve must be supersingular"
+
+  # transform to canonical form
+  # change of variables (x,y) -> (x,[y-a_1x-a_3]/2)
+  # transforms into y^2 = x^3 + b_2*x^2 - b_4*x + b_6 (b_i the usual values, b_2 = 0)
+  a4 = -(2*E.a_invariants[4] + E.a_invariants[1]*E.a_invariants[3])
+  a6 = E.a_invariants[3]^2 + E.a_invariants[5]
+
+  # here is the short description of the process. E: y^2 = x^3 + a_4*x + a_6 (q = 3^d)
+  # * d odd and -a_4 = v^4
+  #   - Tr(a_6*v^(-6)) =  0: #E = q + 1
+  #   - Tr(a_6*v^(-6)) =  1: #E = q + 1 +- sqrt(3*q) [+ when d = 1 mod 4]
+  #   - Tr(a_6*v^(-6)) = -1: #E = q + 1 -+ sqrt(3*q) [- when d = 1 mod 4]
+  # * d odd and -a_4 is not a fourth power: #E = q + 1
+  # * d even and -a_4 = v^2, with v square
+  #   - Tr(a_6*v^(-3))  = 0: #E = q + 1 -+ 2*sqrt(q) [- when d = 0 mod 4]
+  #   - Tr(a_6*v^(-3)) != 0: #E = q + 1 +- sqrt(q)   [+ when d = 0 mod 4]
+  # * d even and -a_4 = v^2, with v not a square
+  #   - Tr(a_6*v^(-3))  = 0: #E = q + 1 +- 2*sqrt(q) [+ when d = 0 mod 4]
+  #   - Tr(a_6*v^(-3)) != 0: #E = q + 1 -+ sqrt(q)   [- when d = 0 mod 4]
+  # * d even and -a_4 is not a square: #E = q + 1
+
+  # for d odd, being a square and a being fourth power are equivalent
+  # considering gamma (sqrt of -a_4) for odd d allows us to unify the implementation
+  a4_square, gamma = Nemo.is_square_with_sqrt(-a4)
+  if !a4_square
+    return q + 1
+  end
+
+  # trace of b in representative y^2 = x^3 - x + b (if gamma is a square)
+  # or trace of b in twist y^2 = x^3 - x + b (if gamma is not a square)
+  trace_b = tr(a6*inv(gamma^3))
+
+  if isodd(d)
+    # of course there is a catch to the above:
+    # only one of {gamma, -gamma} is a square (giving rise to a fourth root of -a_4)
+    # if gamma is not a square, gamma^3 has opposite sign to v^6, where v^4 = -a_4
+    if !Nemo.is_square(gamma)
+      trace_b = -trace_b
+    end
+
+    sqrt_3q = ZZ(3)^divexact(d + 1, 2)
+    if iszero(trace_b)
+      return q + 1
+    else
+      return mod(d, 4) == (isone(trace_b) ? 1 : 3) ? q + 1 + sqrt_3q : q + 1 - sqrt_3q
+    end
+  else
+    sqrt_q = ZZ(3)^divexact(d, 2)
+    typeI = Nemo.is_square(gamma)
+    if iszero(trace_b)
+      return mod(d, 4) == (typeI ? 2 : 0) ? q + 1 + ZZ(2)*sqrt_q : q + 1 - ZZ(2)*sqrt_q
+    else
+      return mod(d, 4) == (typeI ? 0 : 2) ? q + 1 + sqrt_q : q + 1 - sqrt_q
+    end
+  end
+end
+
+# AGM method of finding trace of Frobenius (in characteristic 3)
+# assumes the curve is in the form E: y^2 = x^3 + x^2 + a_6
+# assumes that j-invariant (j = -a_6^{-1}) does not lie in F_9
+# see "An AGM-Type Elliptic Curve Point Counting Algorithm in Characteristic Three" by Gustavsen, Ranestad
+function _trace_of_frobenius_char3_agm(j::T) where T <: FinFieldElem
+  R = parent(j)
+  q = order(R)
+  d = degree(R)
+  N = div(d, 2) + 2
+
+  @req characteristic(R) == 3 "Characteristic must be 3"
+  @req j^9 != j "j-invariant must not lie in F_9"
+
+  # Hesse form x^3 + y^3 + 1 = dxy, d^3 = j
+  D = pth_root(j)
+
+  # WARNING: currently FLINT does not expose creating qadic context with custom modulus
+  # WARNING: so for a large exponent (where Conway polynomial is not available)
+  # WARNING:   the random polynomial will be used to create a context
+  # WARNING: clearly it is certain to be different from the modulus used
+  # WARNING:   to create the finite field over which curve is defined
+  # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
+  # WARNING: for now we err for the exponent bigger than 57 (flint limit)
+  d >= 58 && error("Currently exponents above 57 are not supported")
+  Qq,_ = qadic_field(3, d, precision=N)
+
+  # we are solving (z + 6)^3 − (z^2 + 3*z + 9)*D_k^3
+  # j(E_{D_k}) = j(\mathcal{E}^k) mod 3^{k+1}
+  # the starting value of Newton iteration is the lift of d^{3^k}
+  # same "recursion unroll" as in newton_lift in LocalField/Conjugates.jl
+  #
+  # WARNING: I did attempt to tweak newton_lift in LocalField/Conjugates.jl
+  # WARNING:   to support qadic polynomials, but that gives erroneous results
+  # TODO:    It is worth checking where exactly the issue is
+  function newton_iteration(a::QadicFieldElem, D::QadicFieldElem, n::Int)
+    prec_chain = [n]
+    i = n
+    while i > 2 # precision=1 is handled separately
+      i = div(i+1, 2)
+      push!(prec_chain, i)
+    end
+
+    z = a
+    prev_prec = 1
+    for prec = reverse(prec_chain)
+      setprecision!(z, prev_prec)  # precision of denominator N'
+      dfz = 3*(z + 6)^2 - (2*z + 3)*D^3
+      prev_prec = prec
+
+      setprecision!(z, prec)   # precision of numerator N
+      fz  = (z + 6)^3 - (z^2 + 3*z + 9)*D^3
+
+      z = z - fz/dfz
+      setprecision!(z, prec)   # ensure final precision
+    end
+
+    return z
+  end
+
+  d_base = D
+  D_lift = _qadic_from_residue_element(Qq, d_base; precision=1)
+  for k in 2:N
+    d_base = d_base^3
+    a = _qadic_from_residue_element(Qq, d_base; precision=1)
+    D_lift = newton_iteration(a, D_lift, k)
+  end
+
+  norm_d = norm(1 + 6*inv(D_lift))
+  setprecision!(norm_d, N)
+
+  t = lift(ZZ, norm_d)
+  if t^2 > 4*q
+    t = t - 3^N
+  end
+
+  return t
+end
+
+# implements Subfield Curve approach for the case of j being in F_9
+# assumes E/F_{3^d}: y^2 = x^3 + x^2 + a_6 (j = -a_6^{-1})
+function _trace_of_frobenius_j_nonzero_in_f9(a6::T, d) where T <: FinFieldElem
+  R = parent(a6)
+
+  @req characteristic(R) == 3 "Characteristic must be 3"
+  @req a6 == a6^9 "j invariant must lie in F_9"
+
+  # j = -1: y^2 = x^3 + x^2 + 1
+  # - for even d, we can "define" it over F_9: trace = -2
+  # - for odd d, we define over F_3: trace = -2
+  # j = 1: y^2 = x^3 + x^2 - 1
+  # - for even d, we can "define" it over F_9: trace = -5
+  # - for odd d, we define over F_3: trace = 1
+  # j in F_9 \ F_3: the only option is to do an embedding and compute the trace (via exhaustive search)
+  j_in_F3 = isone(a6) || isone(-a6)
+  @assert j_in_F3 || iseven(d)
+  q = j_in_F3 && isodd(d) ? ZZ(3) : ZZ(9)
+  n = j_in_F3 && isodd(d) ? d : divexact(d, 2)
+
+  local t_1
+  if isone(a6)
+    t_1 = ZZ(-2)
+  elseif isone(-a6)
+    t_1 = iseven(d) ? ZZ(-5) : ZZ(1)
+  else
+    R_base,_ = finite_field(3, 2)
+    a6_base = preimage(embed(R_base, R), a6)
+    E = elliptic_curve(R_base, [0,1,0,0,a6])
+    t_1 = q + 1 - Hecke.order_via_exhaustive_search(E)
+  end
+
+  return _trace_of_frobenius_subfield_curve(q, t_1, n)
+end
+
+# finds order of an ordinary elliptic curve defined over finite field of characteristic 3
+# it uses the AGM in general case
+# if the j-invariant lies in F_9 it uses "Subfield Curve" approach
+function _order_ordinary_char3(E::EllipticCurve{T}) where T <: FinFieldElem
+  R = base_field(E)
+  j = j_invariant(E)
+  q = order(R)
+  d = degree(R)
+
+  @req characteristic(R) == 3 "Characteristic must be 3"
+  @req !iszero(j) "Curve must be ordinary"
+
+  # transform to canonical form
+  # change of variables (x,y) -> (x,[y-a_1x-a_3]/2)
+  # transforms into y^2 = x^3 + b_2*x^2 - b_4*x + b_6 (b_i the usual values)
+  # setting v = b_4/b_2, change of variables (x,y) -> (x - v, y)
+  # transforms into y^2 = x^3 + a_2*x^2 + a_6 [with a_2 = b_2]
+  # we consider E: y^2 = x^3 + x^2 + a_6/a_2^3, with j = -(a_6/a_2^3)^{-1}
+  # NOTE: we need the value of a_2 = b_2 to determine
+  # NOTE: if original curve is isomorphic to E or to its quadratic twist
+  b2 = E.a_invariants[1]^2 + E.a_invariants[2]
+
+  if j^9 == j
+    trace_frob = _trace_of_frobenius_j_nonzero_in_f9(-inv(j), d)
+  else
+    trace_frob = _trace_of_frobenius_char3_agm(j)
+  end
+
+  return Nemo.is_square(b2) ? q + 1 - trace_frob : q + 1 + trace_frob
 end
 
 ################################################################################
