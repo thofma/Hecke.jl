@@ -7,7 +7,7 @@
 #
 ###############################################################################
 
-mutable struct Isogeny{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, Isogeny} where T<: RingElem
+mutable struct Isogeny{T <: RingElem} <: Map{EllipticCurve, EllipticCurve, HeckeMap, Isogeny}
   header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
   domain::EllipticCurve{T}
   codomain::EllipticCurve{T}
@@ -124,13 +124,10 @@ function is_kernel_polynomial(E::EllipticCurve{T}, f::PolyRingElem{T}, check::Bo
 end
 
 
-
-
 @doc raw"""
     is_prime_cyclic_kernel_polynomial(E::EllipticCurve, p::IntegerUnion, f::PolyRingElem)
 
-Return whether `E` has a cyclic isogeny of with kernel polynomial
-`f`.
+Return whether `E` has a cyclic isogeny with kernel polynomial `f`.
 """
 function is_cyclic_kernel_polynomial(E::EllipticCurve, f::PolyRingElem)
   return is_kernel_polynomial(E, f, true)
@@ -188,7 +185,7 @@ end
 @doc raw"""
     isogeny_from_kernel(E::EllipticCurve, psi::RingElem) -> Isogeny
 
-Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
+Compute the isogeny $\phi: E \to E'$ where the kernel of $\phi$ contains
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
 """
 function isogeny_from_kernel(E::EllipticCurve, psi::RingElem)
@@ -197,12 +194,14 @@ end
 
 #Input polynomial needs to be separable. (2^r-torsion is allowed however)
 @doc raw"""
-    isogeny_from_kernel_factored(E::EllipticCurve, psi::RingElem) -> Isogeny
+    isogeny_from_kernel_factored(E::EllipticCurve, psi::RingElem) -> Vector{Isogeny}
 
-Compute the isogeny $\phi$: $E$ -> $E'$ where the kernel of $\phi$ contains
+Compute the isogeny $\phi: E \to E'$ where the kernel of $\phi$ contains
 the points whose $x$-coordinates are roots of the input polynomial $\psi$.
-Return an array of isogenies whose composition equals the isogeny with the given
-kernel. The factorisation is determined in the following way: The first maps
+Returns an array of isogenies whose composition equals the isogeny with the given
+kernel $\psi$.
+
+The factorisation of $\phi$ is determined in the following way: the maps at first
 will purely contain 2-torsion points in the kernel. When there is no 2-torsion left
 the remaining maps will consist of an isogeny with kernel contained in the p-torsion
 for every prime divisor p of the degree of the isogeny.
@@ -270,7 +269,7 @@ end
 
 Return the denominator of the first coordinate of $f$,
 which will usually be the square of the kernel polynomial
-(unless the kernel contains 2-torsion, in which case it will almost be a square)
+(unless the kernel contains 2-torsion, in which case it will almost be a square).
 """
 function isogeny_map_psi_squared(f::Isogeny)
   return denominator(f.coordx)
@@ -320,8 +319,8 @@ end
 @doc raw"""
     image(fs::Vector{Isogeny}, P::EllipticCurvePoint) -> EllipticCurvePoint
 
-Return phi_n \circ phi_(n-1) \circ phi_1(P) where fs is a list of compatible
-isogenies [phi_1, ..., phi_n].
+Return $phi_n \circ phi_(n-1) \circ phi_1(P)$ where `fs` is a list of compatible
+isogenies $[phi_1, ..., phi_n]$.
 """
 function image(fs::Vector{Isogeny}, P::EllipticCurvePoint)
 
@@ -467,7 +466,7 @@ end
 @doc raw"""
     identity_isogeny((E::EllipticCurve) -> Isogeny
 
-Return the isogeny corresponding to the identity map on $E$
+Return the isogeny corresponding to the identity map on $E$.
 """
 function identity_isogeny(E::EllipticCurve)
   return isomorphism_to_isogeny(id_hom(E))
@@ -476,7 +475,7 @@ end
 @doc raw"""
     multiplication_by_m_map((E::EllipticCurve, m::Int) -> Isogeny
 
-Return the isogeny corresponding to the multiplication by m map on $E$
+Return the isogeny corresponding to the multiplication by m map on $E$.
 """
 function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer, ZZRingElem}
 
@@ -675,8 +674,8 @@ end
 @doc raw"""
     compose(fs::Vector{Isogeny}) -> Isogeny
 
-Return the composition phi_n \circ phi_(n-1) \circ phi_1 where fs is a list of compatible
-isogenies [phi_1, ..., phi_n].
+Return the composition $phi_n \circ phi_(n-1) \circ phi_1$ where `fs` is a list of compatible
+isogenies $[phi_1, ..., phi_n]$.
 """
 function compose(fs::Vector{Isogeny})
   g = fs[1]
