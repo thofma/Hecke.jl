@@ -10,7 +10,7 @@ end
 
 function mul2exp!(z::ArbFieldElem, x::ArbFieldElem, y::Int)
   ccall((:arb_mul_2exp_si, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, y)
-  return nothing
+  return z
 end
 
 function muleq!(z::ArbFieldElem, x::ArbFieldElem, y::ArbFieldElem)
