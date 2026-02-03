@@ -50,7 +50,7 @@ jobs:
         uses: julia-actions/julia-runtest@v1
         env:
           HECKE_TESTLONG: "1"
-          HECKE_TEST_PARALLEL: "1"
+          HECKE_TEST_PARALLEL: "false"
       - name: "Process code coverage"
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
