@@ -1,6 +1,7 @@
 @testset "Elliptic curves" begin
   include("EllCrv/EllCrv.jl")
   include("EllCrv/Finite.jl")
+  include("EllCrv/FinitePointCount.jl")
   include("EllCrv/FormalGroupLaw.jl")
   include("EllCrv/Heights.jl")
   include("EllCrv/Isogeny.jl")
