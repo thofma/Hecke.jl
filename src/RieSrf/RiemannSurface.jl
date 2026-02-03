@@ -281,10 +281,6 @@ mutable struct RiemannSurface
       return result
       end
 
-    print(factor_set)
-    print(factor_matrix)
-    print(min_pows)
-    print(range_pows)
     RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
     RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
 
