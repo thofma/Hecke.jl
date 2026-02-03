@@ -195,7 +195,7 @@ function enumerate_quadratic_triples(
     algorithm::Symbol=:short_vectors,
     equal::Bool=false
   ) where T <: Union{ZZRingElem, QQFieldElem}
-  return [copy(i) for i in enumerate_quadratic_triples_iterator(Q,b,c,algorithm,equal)]
+  return [deepcopy(i) for i in enumerate_quadratic_triples_iterator(Q,b,c,algorithm,equal)]
 end
 
 function enumerate_quadratic_triples_iterator(
@@ -342,7 +342,7 @@ function _short_vectors_affine(
     alpha::RationalUnion,
     d::RationalUnion
   ) where T <: Union{ZZRingElem, QQFieldElem}
-  return [copy(i) for i in _short_vectors_affine_iterator(gram,v,alpha,d)]
+  return [deepcopy(i) for i in _short_vectors_affine_iterator(gram,v,alpha,d)]
 end
 
 @doc raw"""
@@ -388,7 +388,7 @@ function short_vectors_affine_iterator(
   end
   B = basis_matrix(S)
   elem_type = typeof(v)
-  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B, zero(B))
+  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B, zero(B, 1, number_of_columns(B)))
   return sv_affine_iterator
 end
 
@@ -434,7 +434,7 @@ function _short_vectors_affine_iterator(
   end
   xt = map_entries(base_ring(gram), transpose(x))
   elem_type = typeof(v)
-  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt, zero_matrix(base_ring(gram), 1, nrows(Q)))
+  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt, zero_matrix(base_ring(gram), 1, number_of_columns(xt)), zero_matrix(base_ring(gram), 1, nrows(Q)))
   return sv_affine_iterator
 end
 
@@ -445,6 +445,7 @@ struct ShortVectorsAffineIterator{S, elem_type}
   K
   xt
   v
+  u
 end
 
 Base.IteratorSize(::Type{<:ShortVectorsAffineIterator}) = Base.SizeUnknown()
@@ -460,14 +461,12 @@ function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothi
   if it === nothing
     return nothing
   end
-
-  #C.v = xt + xt, matrix(b_ring, 1, nrows, it[1][1])*K
+  #Cv = C.xt + matrix(C.b_ring, 1, C.nrows, it[1][1])*C.K
   for i in 1:C.nrows 
-    C.v[i] = it[1][1][i]
+    C.u[i] = it[1][1][i]
   end
-  add!(C.v, C.xt, mul!(C.v, C.v, C.K))
-
-  return (C.v), it[2]
+  add!(C.v, C.xt, mul!(C.v, C.u, C.K))
+  return (deepcopy(C.v)), it[2]
 end
 
 struct ShortVectorsAffineLatIterator{S, elem_type}
@@ -491,7 +490,6 @@ function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = no
     return nothing
   end
 
-  mul!(C.sv, it[1]*C.B)
-
-  return (C.sv), it[2]
+  mul!(C.sv, it[1], C.B)
+  return (deepcopy(C.sv)), it[2]
 end
