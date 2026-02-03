@@ -212,11 +212,9 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
       #t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/(r * exp(I*(b + a)/2)), zero_sens)))
-      t_p = or/(b - a) * (-2 * I * (log((p - c)/r) - I*(b + a)/2))
-
+      t_p = or/(b - a) * (-2 * I * (log(trim_zero(p - c, zero_sens)) -log(r) - I*(b + a)/2))
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
-
 
     @req r_p > 1 "Error in computation of r_p"
     if r_p < r_0
@@ -259,8 +257,7 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
       zero_sens = floor(Int, prec*log(2)/log(10)) - 5
 
       #t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a)), zero_sens));
-      t_p = -or/Rpi * I * (log((c - p) /r) - I * a)
-
+      t_p = -or/Rpi * I * (log(trim_zero(c - p, zero_sens)) - log(r) - I * a)
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
 

@@ -190,6 +190,8 @@ mutable struct RiemannSurface
     g = length(diff_base)
     RS.genus = g
 
+    mpoly_kxy = parent(f)
+    mpoly_x, mpol_y = gens(mpoly_kxy)
 
     #Computed a Newton polygon and decide whether we can use a Baker basis or not.
     inner_fac = inner_faces(f)
@@ -217,13 +219,13 @@ mutable struct RiemannSurface
       RS.baker_basis = false
 
       #Compute the differential forms data mentioned above.
-      factor_set = Set()
+      factor_set = Set{MPolyRingElem}()
       factored_nums = []
       factored_denoms = []
       #Gather all the factors occurring in the basis of differential forms
       for i in 1:g
-        num_diff_i_fac = factor(numerator(diff_base[i].f)).fac
-        denom_diff_i_fac = factor(denominator(diff_base[i].f)).fac
+        num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[1].f))))
+        denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[1].f)(mpoly_x)))
 
         union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
 
@@ -248,8 +250,8 @@ mutable struct RiemannSurface
         end
       end
 
-		  min_pows= [minimum( [factor_matrix[j, 1:g] for j in 1:n])]
-	    range_pows= [maximum( [factor_matrix[j, 1:g] for j in 1:n])] - min_pows
+		  min_pows= [minimum( factor_matrix[j, 1:g]) for j in 1:n]
+	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
     end
 
     function evaluate_differential_factors_matrix(factors, x0, ys)
@@ -279,6 +281,10 @@ mutable struct RiemannSurface
       return result
       end
 
+    print(factor_set)
+    print(factor_matrix)
+    print(min_pows)
+    print(range_pows)
     RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
     RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
 
@@ -299,6 +305,13 @@ mutable struct RiemannSurface
 
     return RS
   end
+end
+
+#Coerce univariate polynomial over univariate polynomial ring to R.
+function to_mpoly(R, h)
+  kxy = R
+  x, y = gens(R)
+  return sum([coeff(h, i)(x)*y^i for i in (0:degree(h))])
 end
 
 #Nicer printing
