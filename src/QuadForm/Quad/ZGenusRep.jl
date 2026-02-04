@@ -406,6 +406,7 @@ function neighbours(
           else
             _LL = LL
           end
+          automorphism_group_order(_LL)
           save_lattice(_LL, save_path)
         end
 
@@ -489,7 +490,7 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
 end
 
 @doc raw"""
-    default_invariant_function(L::ZZLat) -> Tuple
+    _default_invariant_function(L::ZZLat) -> Tuple
 
 Return a list of isometry invariants of the definite lattice ``L``. For now,
 the invariants by default are:
@@ -503,11 +504,12 @@ function _default_invariant_function(L::ZZLat)
   rlr, _ = root_lattice_recognition(L)
   m = minimum(L)
   ago = automorphism_group_order(L)::ZZRingElem
-  return (m, rlr, kn, ago)
+  t = NTuple{4,Int}(_theta_series(L, 4))
+  return (m, rlr, kn, ago,t)
 end
 
 function default_invariant_function(L::ZZLat)
-  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}, ZZRingElem}[]
+  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem,NTuple{4,Int}}, ZZRingElem}[]
   _L = L
   while rank(_L) > 0
     M, P, _ = _shortest_vectors_sublattice(_L; check=false)
@@ -518,6 +520,13 @@ function default_invariant_function(L::ZZLat)
   return _invariants
 end
 
+function _theta_series(L, n)
+  r = zeros(ZZRingElem,n)
+  for (_,i) in short_vectors_iterator(L,n, Int64)
+    r[Int(i)] += 1
+  end
+  return r
+end
 
 ###############################################################################
 #
@@ -697,7 +706,7 @@ function enumerate_definite_genus(
     stop_after::IntExt=inf,
     max::IntExt=inf,
     add_spinor_generators::Bool=true,
-    scaling_factor=nothing,
+    scaling_factor=nothing
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
@@ -746,6 +755,7 @@ function enumerate_definite_genus(
     for l in values(inv_dict)
       _unique_iso_class!(l)
     end
+    res = reduce(append!,values(inv_dict);init=ZZLat[])
   end
 
   function _invariants(M::ZZLat)
@@ -822,7 +832,7 @@ function enumerate_definite_genus(
 
   count_new = Int(0)
   i = Int(0)
-  while true
+  while missing_mass[]>0
     i = i+1
     N = neighbours(
                    res[i],
@@ -901,7 +911,7 @@ with gram matrix
 ```
 """
 function spinor_genera_in_genus(L::ZZLat)
-  @req !is_definite(L) || rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
+  @req is_definite(L) && rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
   for p in primes
@@ -1099,6 +1109,7 @@ function load_genus(f::String)
   gg = ZZLat[]
   files = readdir(f; join=true)
   for file in files
+    contains(file,"lat_") && endswith(file,".txt") || continue
     rl = readlines(file)
     n = Base.parse(Int, rl[1])
     _, V = _parse(Vector{QQFieldElem}, IOBuffer(rl[2]))

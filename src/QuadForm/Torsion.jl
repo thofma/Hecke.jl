@@ -166,7 +166,7 @@ Gram matrix quadratic form:
   return T
 end
 
-discriminant_group(L::ZZLat, n::Int) = primary_part(discriminant_group(L), n)[1]
+discriminant_group(L::ZZLat, n::Union{Integer,ZZRingElem}) = primary_part(discriminant_group(L), n)[1]
 
 @doc raw"""
     order(T::TorQuadModule) -> ZZRingElem
