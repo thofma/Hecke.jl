@@ -1,16 +1,18 @@
 #XXX: valuation(Q(0)) == 0 !!!!!
-function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
-  Q = parent(r)
 
-  fs = derivative(f)
-  qf = change_base_ring(Q, f, cached = false)
-  qfs = change_base_ring(Q, fs, cached = false)
+# silently assumes that f \in Z_q[X]
+# silently assumes that the lift is possible, that is v_p(f(r)) > 2*v_p(f'(r))
+#   see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", lemma 12.8
+# since we assume the test for Newton Lift precondition to be done by the caller
+#   the derivative was already computed, so we can take it as an input argument
+function _newton_lift(f::PolyRingElem{QadicFieldElem}, df::PolyRingElem{QadicFieldElem}, r::QadicFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
+  Q = parent(r)
 
   o = Q(r)
   starting_prec = min(starting_prec, precision(o))
   @assert precision(o) >= starting_prec
 
-  o = qfs(o)
+  o = df(o)
   vo = valuation(o)
   o = inv(o)
 
@@ -27,17 +29,31 @@ function newton_lift(f::ZZPolyRingElem, r::QadicFieldElem, prec::Int = precision
     setprecision!(o, p)
     setprecision!(Q, r.N)
     if r.N > precision(Q)
-      setprecision!(qf, r.N)
-      setprecision!(qfs, r.N)
+      setprecision!(f, r.N)
+      setprecision!(df, r.N)
     end
-    r = r - qf(r)*o
+    r = r - f(r)*o
     if r.N >= n
       setprecision!(Q, n)
       return r
     end
-    o = o*(2-qfs(r)*o)
+    o = o*(2-df(r)*o)
   end
   return r
+end
+
+function newton_lift(f::Union{PolyRingElem{ZZRingElem}, PolyRingElem{QadicFieldElem}}, r::QadicFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
+  Q = parent(r)
+
+  if base_ring(f) == ZZ
+    qf = change_base_ring(Q, f, cached = false)
+    qfs = change_base_ring(Q, derivative(f), cached = false)
+  else
+    qf = f
+    qfs = derivative(f)
+  end
+
+  return _newton_lift(qf, qfs, r, prec, starting_prec)
 end
 
 function newton_lift(f::ZZPolyRingElem, r::LocalFieldElem, precision::Int = precision(parent(r)), starting_prec::Int = 2)
@@ -75,14 +91,21 @@ end
 @doc raw"""
     roots(Q::QadicField, f::ZZPolyRingElem; max_roots::Int = degree(f)) -> Vector{QadicFieldElem}
 
-The roots of $f$ in $Q$, $f$ has to be square-free (at least the roots have to be simple roots).
+The roots of $f$ in $Q$. Currently only simple roots are supported: that is
+if $f(a)=0$ then $f'(a) \neq 0$.
 """
 function roots(Q::QadicField, f::ZZPolyRingElem; max_roots::Int = degree(f))
   k, mk = residue_field(Q)
   rt = roots(k, f)
+
+  qf = change_base_ring(Q, f, cached = false)
+  qfs = change_base_ring(Q, derivative(f), cached = false)
+
   RT = QadicFieldElem[]
   for r = rt
-    push!(RT, newton_lift(f, preimage(mk, r)))
+    qr = preimage(mk, r)
+    valuation(qfs(qr)) > 0 && continue # for now we handle only simple roots
+    push!(RT, _newton_lift(qf, qfs, qr))
     if length(RT) >= max_roots
       return RT
     end
