@@ -707,13 +707,16 @@ function _is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumFiel
   G = domain(f)
   @assert is_free(G) # now now due to difficulties with torsion in the saturation
 
-  stab = 3.5
+  stab = 15.5
   while true
     stab *= 1.5
     c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab)
+    # this is so odd: if c is empty, then it is transposed?!
     if nrows(c) == 0
       return true, f
     end
+
+    @vprintln :Saturate 1 "Dimension of kernel: $(ncols(c))"
 
     decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
 
