@@ -1052,47 +1052,20 @@ function _trace_of_frobenius_char3_agm(j::T) where T <: FinFieldElem
   # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
   # WARNING: for now we err for the exponent bigger than 57 (flint limit)
   d >= 58 && error("Currently exponents above 57 are not supported")
-  Qq,_ = qadic_field(3, d, precision=N)
+  Q = qadic_field(3, d, precision=N)[1]
+  z = polynomial_ring(Q, "z")[2]
 
-  # we are solving (z + 6)^3 − (z^2 + 3*z + 9)*D_k^3
+  # we are solving (z + 6)^3 − (z^2 + 3*z + 9)*D_k^3 = 0
   # j(E_{D_k}) = j(\mathcal{E}^k) mod 3^{k+1}
   # the starting value of Newton iteration is the lift of d^{3^k}
-  # same "recursion unroll" as in newton_lift in LocalField/Conjugates.jl
-  #
-  # WARNING: I did attempt to tweak newton_lift in LocalField/Conjugates.jl
-  # WARNING:   to support qadic polynomials, but that gives erroneous results
-  # TODO:    It is worth checking where exactly the issue is
-  function newton_iteration(a::QadicFieldElem, D::QadicFieldElem, n::Int)
-    prec_chain = [n]
-    i = n
-    while i > 2 # precision=1 is handled separately
-      i = div(i+1, 2)
-      push!(prec_chain, i)
-    end
-
-    z = a
-    prev_prec = 1
-    for prec = reverse(prec_chain)
-      setprecision!(z, prev_prec)  # precision of denominator N'
-      dfz = 3*(z + 6)^2 - (2*z + 3)*D^3
-      prev_prec = prec
-
-      setprecision!(z, prec)   # precision of numerator N
-      fz  = (z + 6)^3 - (z^2 + 3*z + 9)*D^3
-
-      z = z - fz/dfz
-      setprecision!(z, prec)   # ensure final precision
-    end
-
-    return z
-  end
 
   d_base = D
-  D_lift = _qadic_from_residue_element(Qq, d_base; precision=1)
+  D_lift = _qadic_from_residue_element(Q, d_base; precision=2)
   for k in 2:N
     d_base = d_base^3
-    a = _qadic_from_residue_element(Qq, d_base; precision=1)
-    D_lift = newton_iteration(a, D_lift, k)
+    a = _qadic_from_residue_element(Q, d_base; precision=k)
+    setprecision!(D_lift, k) # important to have proper precision of the polynomial
+    D_lift = newton_lift((z + 6)^3 - (z^2 + 3*z + 9)*D_lift^3, a, k)
   end
 
   norm_d = norm(1 + 6*inv(D_lift))
