@@ -287,6 +287,16 @@ function is_cyclotomic_type(L::Union{AbsSimpleNumField, RelSimpleNumField})
   return true, f
 end
 
+is_real_cyclotomic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
+
+function is_real_cyclotomic_type(L::Union{AbsSimpleNumField, RelSimpleNumField})
+  f = get_attribute(L, :maxreal)::Union{Nothing,Int}
+  if f === nothing
+    return false, ZZRingElem(1)
+  end
+  return true, f
+end
+
 is_quadratic_type(K::NonSimpleNumField{T}) where {T} = false, ZZRingElem(1)
 is_quadratic_type(K::RelSimpleNumField) = false, ZZRingElem(1)
 function is_quadratic_type(L::AbsSimpleNumField)
