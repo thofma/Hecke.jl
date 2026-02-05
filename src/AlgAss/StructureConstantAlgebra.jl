@@ -314,7 +314,7 @@ function find_one(A::StructureConstantAlgebra)
   end
   fl, cc = can_solve_with_solution(M, c; side = :right)
   one = elem_type(base_ring(A))[cc[i, 1] for i = 1:n]
-  return true, one
+  return fl, one
 end
 
 associative_algebra(f::PolyRingElem) = StructureConstantAlgebra(f)
