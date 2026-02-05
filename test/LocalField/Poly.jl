@@ -113,17 +113,15 @@
     X = polynomial_ring(ZZ, "X")[2]
     Y = polynomial_ring(Q, "Y")[2]
 
+    R, QtoR = residue_field(Q)
+    a = gen(R)
+
     # For X^4-1 we have 4 roots:
-    # 1, -1, and a^3+a^2+1, -(a^3+a^2+1), where a is the generator of the residue field
+    # 1, -1, and a^3+a^2+1, -(a^3+a^2+1)
     f1 = X^4-1
 
     # lift a^3+a^2+1
-    # TODO: we have _qadic_from_residue_element in src/EllCrv/FinitePointCount.jl
-    # TODO: we should move this to Nemo and use better api
-    z = Q()
-    setcoeff!(z, 3, ZZ(1))
-    setcoeff!(z, 2, ZZ(1))
-    setcoeff!(z, 0, ZZ(1))
+    z = preimage(QtoR, a^3 + a^2 + 1)
 
     z_lift = @inferred newton_lift(f1, z)
     @test is_zero(f1(z_lift))
@@ -132,16 +130,8 @@
     # Now consider (we write with precision 2)
     # sqrt(3*a^2 + a + 1) = a^3 + (1 + 3^1)*a^2 + (1 + 2*3^1)*a + (2 + 2*3^1)
     # Thus, starting from residue field, we may lift a^3 + a^2 + a + 2 as a solution to Y^2 - (a+1)
-    # As above, we write a for the generator of the residue field
-    c = Q()
-    setcoeff!(c, 1, ZZ(1))
-    setcoeff!(c, 0, ZZ(1))
-
-    z = Q()
-    setcoeff!(z, 3, ZZ(1))
-    setcoeff!(z, 2, ZZ(1))
-    setcoeff!(z, 1, ZZ(1))
-    setcoeff!(z, 0, ZZ(2))
+    c = preimage(QtoR, a + 1)
+    z = preimage(QtoR, a^3 + a^2 + a + 2)
 
     f2 = Y^2 - c
     z_lift = @inferred newton_lift(f2, z)

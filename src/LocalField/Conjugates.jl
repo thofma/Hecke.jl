@@ -1,10 +1,10 @@
 #XXX: valuation(Q(0)) == 0 !!!!!
 
-# silently assumes that f \in Z_q[X]
-# silently assumes that the lift is possible, that is v_p(f(r)) > 2*v_p(f'(r))
-#   see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", lemma 12.8
-# since we assume the test for Newton Lift precondition to be done by the caller
-#   the derivative was already computed, so we can take it as an input argument
+# Assumes f has integral coefficients (i.e., f in Z_q[X])
+# Assumes the lift is possible, i.e., v_p(f(r)) > 2*v_p(f'(r));
+#   see "Handbook of Elliptic and Hyperelliptic Curve Cryptography", Lemma 12.8.
+# Takes the derivative df as input for efficiency (caller typically needs it
+#   anyway to verify the Newton lift precondition).
 function _newton_lift(f::PolyRingElem{QadicFieldElem}, df::PolyRingElem{QadicFieldElem}, r::QadicFieldElem, prec::Int = precision(parent(r)), starting_prec::Int = 2)
   Q = parent(r)
 
@@ -91,8 +91,10 @@ end
 @doc raw"""
     roots(Q::QadicField, f::ZZPolyRingElem; max_roots::Int = degree(f)) -> Vector{QadicFieldElem}
 
-The roots of $f$ in $Q$. Currently only simple roots are supported: that is
-if $f(a)=0$ then $f'(a) \neq 0$.
+The roots of $f$ in $Q$. The current implementation uses Newton lifting from
+the residue field, so only simple roots (in the residue field) are considered:
+a root $r$ in the residue field with $f(r) = 0$ is lifted to a root in $Q$
+only if $f'(r) \neq 0$.
 """
 function roots(Q::QadicField, f::ZZPolyRingElem; max_roots::Int = degree(f))
   k, mk = residue_field(Q)

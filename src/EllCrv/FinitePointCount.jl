@@ -689,8 +689,11 @@ end
 #
 ################################################################################
 
-# TODO: This should probably be part of Nemo, where we can do things more efficiently
-#   by working with padic_poly coefficients directly (instead of going through p-adic "coefficients")
+# NOTE: residue_field(R) creates a non-cached finite field and a map using it.
+#   In our context, the finite field element comes from outside, and although we
+#   create a qadic_field with the same residue field, the field objects differ,
+#   causing preimage(f::MapFromFunc, y) to fail its assertions.
+#   Thus we lift from the residue field to the qadic field manually.
 function _qadic_from_residue_element(R::QadicField, x::T; precision::Int=precision(R)) where T <: FinFieldElem
   z = R(precision=precision)
   for i in 0:degree(R)-1
@@ -862,7 +865,7 @@ function _trace_of_frobenius_char2_agm(a6::T) where T <: FinFieldElem
   # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
   # WARNING: for now we err for the exponent bigger than 91 (flint limit)
   d >= 92 && error("Currently exponents above 91 are not supported")
-  Qq,_ = qadic_field(2, d, precision=N)
+  Qq,_ = qadic_field(2, d, precision=N, cached=false)
 
   # TODO: we should implement a lift from F_q to Q_q (in Nemo) directly
   # TODO: instead of going through full padic coefficients
@@ -1052,8 +1055,8 @@ function _trace_of_frobenius_char3_agm(j::T) where T <: FinFieldElem
   # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
   # WARNING: for now we err for the exponent bigger than 57 (flint limit)
   d >= 58 && error("Currently exponents above 57 are not supported")
-  Q = qadic_field(3, d, precision=N)[1]
-  z = polynomial_ring(Q, "z")[2]
+  Q = qadic_field(3, d, precision=N, cached=false)[1]
+  z = polynomial_ring(Q, "z", cached=false)[2]
 
   # we are solving (z + 6)^3 − (z^2 + 3*z + 9)*D_k^3 = 0
   # j(E_{D_k}) = j(\mathcal{E}^k) mod 3^{k+1}
