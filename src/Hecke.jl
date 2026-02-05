@@ -368,17 +368,23 @@ function conjugate_data_arb_roots(K::AbsSimpleNumField, p::Int)
     @assert fl
     L, = cyclotomic_field(f; cached = false)
     # we need a bit more precsion, since we multiply the real part by two
-    cp = conjugate_data_arb_roots(L, p + 2)
-    rreal = ArbFieldElem[]
-    rall = AcbFieldElem[]
-    @assert length(cp.complex_roots) == d
-    for c in cp.complex_roots
-      cc = real(c)
-      mul2exp!(cc, cc, 1)
-      push!(rreal, cc)
-      push!(rall, parent(c)(cc))
+    i = 1
+    while true
+      i += 1
+      cp = conjugate_data_arb_roots(L, p + i)
+      rreal = ArbFieldElem[]
+      rall = AcbFieldElem[]
+      @assert length(cp.complex_roots) == d
+      for c in cp.complex_roots
+        cc = real(c)
+        mul2exp!(cc, cc, 1)
+        push!(rreal, cc)
+        push!(rall, parent(c)(cc))
+      end
+      if all(!overlaps(rreal[i], rreal[j]) for i in 1:d for j in 1:i-1)
+        break
+      end
     end
-    @assert all(!overlaps(rreal[i], rreal[j]) for i in 1:d for j in 1:i-1)
     P = sortperm(rreal)
     rreal = rreal[P]
     rall = rall[P]

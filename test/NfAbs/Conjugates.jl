@@ -154,5 +154,10 @@ end
   f = defining_polynomial(K)
   c = conjugates(a)
   @test all(z -> contains(f(z), 0), c)
+
+  K, a = cyclotomic_real_subfield(632)
+  f = defining_polynomial(K)
+  c = conjugates(a)
+  @test all(z -> contains(f(z), 0), c)
 end
 end
