@@ -15,7 +15,7 @@ function unit_group(::Type{Oscar.DirectProductGroup}, R::Union{FiniteRing, Oscar
     end
   end
 
-  return D, RingMultMap(R, D, 
+  return D, RingMultMap(R, D,
                      x -> prod(injs[i](grps[i](rprojs[i](x))) for i in 1:length(rngs)),
                      y -> sum(_preim(rprojs[i], preimage(grps[i], (projs[i](y)))) for i in 1:length(rngs)))
 end
@@ -38,7 +38,7 @@ end
     end
   end
 
-  codomain(Dtofp), RingMultMap(R, codomain(Dtofp), 
+  codomain(Dtofp), RingMultMap(R, codomain(Dtofp),
                         x -> Dtofp(prod(injs[i](grps[i](rprojs[i](x))) for i in 1:length(rngs))),
                         y -> sum(_preim(rprojs[i], preimage(grps[i], (projs[i](preimage(Dtofp, y))))) for i in 1:length(rngs)))
 end
@@ -136,4 +136,97 @@ function _unit_group_semisimple(A)
     sum([ idems[i] * grps[i][2]((grps[i][3].backward(proj[i](Oscar.Hecke.preimage(GGtoPP, y))))) for i in 1:length(grps)])
   end
   return EffectivePresentation(A, PP, f, g)
+end
+
+################################################################################
+#
+#  1 + J
+#
+################################################################################
+
+
+function EffectivePresentation(Q::OnePlusIdealModuloOnePlusIdeal)
+ A, AtoQQ, QQtoA = isomorphism(FinGenAbGroup, Q.Q)
+ AbsA = EffectivePresentation(A)
+ AbsQ = EffectivePresentation(Q, AbsA.G,
+                      x -> begin
+                        @assert parent(x) === Q
+                        y = QQtoA(x.elem)
+                        @assert parent(y) === A
+                        z = AbsA.forward(y)
+                        @assert parent(z) === AbsA.G
+                        return z
+                      end,
+                      y -> begin
+                        @assert parent(y) === AbsA.G
+                        zz = AtoQQ(AbsA.backward(y))
+                        @assert parent(zz) === Q.Q
+                        return OnePlusIdealModuloOnePlusIdealElem(Q, zz)
+                      end)
+ for i in 1:10
+   y = rand(AbsQ.G)
+   z = rand(AbsQ.G)
+   @assert AbsQ.forward(AbsQ.backward(y)) == y
+   @assert AbsQ.backward(y * z) == AbsQ.backward(y) * AbsQ.backward(z)
+ end
+ return AbsQ
+end
+
+function EffectivePresentation(OI::OnePlusIdeal, originalI = ideal(OI); chain = nothing)
+  if is_zero(ideal(OI))
+    G = free_group(0)
+    return EffectivePresentation(OI, G,
+                                x -> one(G),
+                                y -> one(OI))
+  end
+  #A = algebra(OI)
+  I = ideal(OI)
+  # let's do 1 + I^2 -> 1 + I -> (1 + I)/(1 + I^2) -> 1
+  if chain === nothing || chain[1] === nothing
+    I2 = I * I
+  else
+    I2 = chain[1][chain[2]]
+    #@assert I2 == I * I
+  end
+  #I2 = I * originalI
+  #OI2 = OnePlusIdeal(I2)
+  OI2 = OnePlusIdeal(I2) #originalI)
+  Q, f = quo(OI, OI2)
+  #@info "Structure of (1 + J)/(1 + J^2): $(elementary_divisors(Q.Q.A))"
+  AbsQ = EffectivePresentation(Q)
+  if is_zero(I2)
+    # need to break the cursion
+    # f is an isomorphism
+    AbsOI = EffectivePresentation(AbsQ, OI, x -> begin @assert parent(x) === OI; z = f(x); @assert parent(z) === Q; return z end,
+                                 y -> preimage(f, y))
+    return AbsOI
+  else
+    AbsOI2 = EffectivePresentation(OI2, originalI; chain = (chain[1], chain[2] + 1))
+    #@show AbsOI2.G
+    #@info "extending"
+    # now construct the extension
+    res = extension(AbsOI2, AbsQ, OI,
+                       # need to supply all the maps
+                       # 1 + J^2 -> 1 + J
+                       xx -> begin
+                         @assert parent(xx) === OI2
+                         return OI(xx.elem)
+                       end,
+                       # preimage under 1 + J^2 -> 1 + J,
+                       x -> begin
+                         @assert parent(x) === OI
+                         return OI2(x.elem)
+                       end,
+                       # 1 + J -> (1 + J)/(1 + J^2),
+                       x -> begin
+                         @assert parent(x) === OI
+                         return f(x)
+                       end,
+                       # preimage under 1 + J -> (1 + J)/(1 + J^2)
+                       x -> begin
+                         @assert parent(x) === Q
+                         return preimage(f, x)
+                       end)
+    return res
+  end
 end

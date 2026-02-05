@@ -8,6 +8,28 @@ function is_exact_type(::Type{FiniteRingElem})
   return true
 end
 
+parent(x::FiniteRingElem) = x.parent
+
+function data(a::FiniteRingElem)
+  return a.a
+end
+
+################################################################################
+#
+#  Copy
+#
+################################################################################
+
+function Base.deepcopy_internal(x::FiniteRingElem, stackdict::IdDict)
+  return FiniteRingElem(parent(x), Base.deepcopy_internal(data(x), stackdict))
+end
+
+function Base.hash(x::FiniteRingElem, h::UInt)
+  return Base.hash(data(x), h)
+end
+
+Base.copy(x::FiniteRingElem) = x
+
 ################################################################################
 #
 #  Printing

@@ -30,7 +30,7 @@ struct EffectivePresentation{S}
   end
 end
 
-@attributes mutable struct FiniteRing <: Ring
+@attributes mutable struct FiniteRing <: NCRing
   A::FinGenAbGroup
   mult::Vector{FinGenAbGroupHom}
   one
@@ -38,7 +38,7 @@ end
   FiniteRing(A, mult) = new(A, mult)
 end
 
-struct FiniteRingElem <: RingElem
+struct FiniteRingElem <: NCRingElem
   parent::FiniteRing
   a::FinGenAbGroupElem
   inv#=Ref{FiniteRingElem=# # we want to cache the inverse, but we want to keep
@@ -64,6 +64,20 @@ struct FiniteRingHom
   S::FiniteRing
   f
   g
+end
+
+mutable struct FiniteRingHom2
+  R::FiniteRing
+  S::FiniteRing
+  is_unitary::Bool # we internally use the type to represent non-unitary morphisms
+  f::FinGenAbGroupHom
+  g
+
+  function FiniteRingHom2(R::FiniteRing, S::FiniteRing, is_unitary::Bool, f::FinGenAbGroupHom)
+    @assert domain(f) === underlying_abelian_group(R)
+    @assert codomain(f) === underlying_abelian_group(S)
+    return new(R, S, is_unitary, f)
+  end
 end
 
 @attributes mutable struct FiniteRingMap{S, T}

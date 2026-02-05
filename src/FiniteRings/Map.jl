@@ -1,3 +1,52 @@
+function id_hom(R::FiniteRing)
+  f = FiniteRingHom2(R, R, true, id_hom(underlying_abelian_group(R)))
+  f.g = f
+  return f
+end
+
+function hom(R::FiniteRing, S::FiniteRing, imgs::Vector{FiniteRingElem}; check::Bool = true)
+  @req length(imgs) == _nzgens(R) "Wrong number of images"
+  f = FiniteRingHom2(R, S, true, hom(underlying_abelian_group(R), underlying_abelian_group(S), data.(imgs)))
+  if check
+    @req is_one(f(one(R))) "Not a ring homomorphism"
+    for x in _zgens(R), y in _zgens(R)
+      @req f(x + y) == f(x) + f(y) "Not a ring homomorphism"
+      @req f(x * y) == f(x) * f(y) "Not a ring homomorphism"
+    end
+  end
+  return f
+end
+
+domain(f::FiniteRingHom2) = f.R
+
+codomain(f::FiniteRingHom2) = f.S
+
+(f::FiniteRingHom2)(a::FiniteRingElem) = image(f, a)
+
+function image(f::FiniteRingHom2, a::FiniteRingElem)
+  @assert parent(a) === domain(f)
+  return FiniteRingElem(codomain(f), f.f(a.a))
+end
+
+function preimage(f::FiniteRingHom2, a::FiniteRingElem)
+  @assert parent(a) === codomain(f)
+  if isdefined(f, :g)
+    return image(f.g::FiniteRingHom2, a)
+  else
+    return FiniteRingElem(S, preimage(f.f, a.a))
+  end
+end
+
+function Base.:(\)(f::FiniteRingHom2, a::FiniteRingElem)
+  return preimage(f, a)
+end
+
+###
+
+domain(f::FiniteRingHom) = f.R
+
+codomain(f::FiniteRingHom) = f.S
+
 function image(f::FiniteRingHom, a::FiniteRingElem)
   @assert parent(a) === f.R
   return f.f(a)#FiniteRingElem(S, f.f(a.a))

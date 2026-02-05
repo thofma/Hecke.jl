@@ -1,48 +1,38 @@
 ################################################################################
 #
-#  Basics
+#  Ring interface functions
 #
 ################################################################################
 
-base_ring(R::FiniteRing) = Union{}
-
-base_ring_type(::Type{FiniteRing}) = typeof(Union{})
-
-elem_type(::Type{FiniteRing}) = FiniteRingElem
-
-parent_type(::Type{FiniteRingElem}) = FiniteRing
-
-parent(x::FiniteRingElem) = x.parent
-
-Base.copy(x::FiniteRingElem) = x
-
-function data(a::FiniteRingElem)
-  return a.a
+function is_known(::typeof(is_finite), ::FiniteRing)
+  return true
 end
 
-function underlying_abelian_group(R::FiniteRing)
-  return R.A
+function is_finite(R::FiniteRing)
+  return true
 end
 
-elementary_divisors(R::FiniteRing) = elementary_divisors(underlying_abelian_group(R))
+#function base_ring(R::FiniteRing)
+#  return Union{}
+#end
+#
+#base_ring_type(::Type{FiniteRing}) = typeof(Union{})
 
-function Base.deepcopy_internal(x::FiniteRingElem, stackdict::IdDict)
-  return FiniteRingElem(parent(x), Base.deepcopy_internal(data(x), stackdict))
+function elem_type(::Type{FiniteRing})
+  return FiniteRingElem
 end
 
-function Base.hash(x::FiniteRingElem, h::UInt)
-  return Base.hash(data(x), h)
-end
-
-function order(R::FiniteRing)
-  return order(underlying_abelian_group(R))
+function parent_type(::Type{FiniteRingElem})
+  return FiniteRing
 end
 
 function characteristic(R::FiniteRing)
   return exponent(underlying_abelian_group(R))
 end
 
-is_finite(R::FiniteRing) = true
+function order(R::FiniteRing)
+  return order(underlying_abelian_group(R))
+end
 
 # Generators of R as a Z-module, that is, the underlying
 # concrete abelian group
@@ -50,6 +40,22 @@ is_finite(R::FiniteRing) = true
   A = underlying_abelian_group(R)
   return FiniteRingElem.(Ref(R), gens(A))
 end
+
+@attr Int function _nzgens(R::FiniteRing)
+  return ngens(underlying_abelian_group(R))
+end
+
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+function underlying_abelian_group(R::FiniteRing)
+  return R.A
+end
+
+elementary_divisors(R::FiniteRing) = elementary_divisors(underlying_abelian_group(R))
 
 ################################################################################
 #
@@ -221,32 +227,40 @@ end
 #
 ################################################################################
 
-function maximal_psubring(R::FiniteRing, p)
+function maximal_p_quotient_ring(R::FiniteRing, p)
   A = underlying_abelian_group(R)
   B, BtoA = sylow_subgroup(A, p)
+  fl, j = Hecke.has_complement(BtoA)
+  @assert fl
+  C, AtoC = quo(A, j)
   homss = FinGenAbGroupHom[]
-  for b in gens(B)
-    h = hom(B, B, [preimage(BtoA, data(FiniteRingElem(R, BtoA(b)) * FiniteRingElem(R, BtoA(bb)))) for bb in gens(B)])
+  for c in gens(C)
+    h = hom(C, C, [AtoC(data(FiniteRingElem(R, preimage(AtoC, c)) * FiniteRingElem(R, preimage(AtoC, cc)))) for cc in gens(C)])
     push!(homss, h)
   end
-  S = FiniteRing(B, homss)
-  return S, FiniteRingHom(S, R, x -> FiniteRingElem(R, BtoA(data(x))), y -> FiniteRingElem(S, preimage(BtoA, data(y))))
+  S = FiniteRing(C, homss)
+  f = FiniteRingHom2(R, S, true, AtoC)
+  g = FiniteRingHom2(S, R, false, inv(BtoA * AtoC) * BtoA)
+  f.g = g
+  return S, f
 end
 
-@attr Tuple function decompose_into_prings(R::FiniteRing)
+@attr Tuple function decompose_into_p_rings(R::FiniteRing)
   ps = prime_divisors(characteristic(R))
   if length(ps) == 1
-    return [R], [FiniteRingHom(R, R, x -> x, x -> x)], [FiniteRingHom(R, R, x -> x, x -> x)]
+    return FiniteRing[R], FiniteRingHom2[id_hom(R)]
   end
   idems = elem_type(R)[]
-  subs = Tuple{FiniteRing, FiniteRingHom}[]
+  quorings = FiniteRing[]
+  projs = FiniteRingHom2[]
   for p in ps
-    S, StoR = maximal_psubring(R, p)
-    push!(idems, StoR(one(S)))
-    push!(subs, (S, StoR))
+    S, RtoS = maximal_p_quotient_ring(R, p)
+    push!(idems, preimage(RtoS, one(S)))
+    push!(quorings, S)
+    push!(projs, RtoS)
   end
-  proj = [FiniteRingHom(R, subs[i][1], x-> preimage(subs[i][2], idems[i] * x), y -> subs[i][2](y)) for i in 1:length(ps)]
-  return first.(subs), proj, [x[2] for x in subs]
+  @assert is_one(sum(idems))
+  return quorings, projs
 end
 
 ################################################################################
@@ -255,18 +269,21 @@ end
 #
 ################################################################################
 
-function decompose_semisimple_pring(R::FiniteRing)
+function decompose_semisimple_p_ring(R::FiniteRing)
   @assert is_prime(characteristic(R))
   A, AtoRs = isomorphism(MatAlgebra, R)
   dec = decompose(A)
   rngs = FiniteRing[]
-  projs = FiniteRingHom[]
+  projs = FiniteRingHom2[]
   for (B, mB) in dec
     S, StoB = finite_ring(B)
-    h = FiniteRingHom(R, S, x -> preimage(StoB, mB\(preimage(AtoRs, x))), y -> AtoRs(mB(StoB(y))))
+    h = hom(R, S, [preimage(StoB, mB\(preimage(AtoRs, x))) for x in _zgens(R)])#, y -> AtoRs(mB(StoB(y))))
+    g = FiniteRingHom2(S, R, false, hom(underlying_abelian_group(S), underlying_abelian_group(R), [data(AtoRs(mB(StoB(y)))) for y in _zgens(S)]))
+    h.g = g
     push!(rngs, S)
     push!(projs, h)
   end
+  @assert is_one(sum(preimage(p, one(D)) for (D, p) in zip(rngs, projs)))
   return rngs, projs
 end
 
@@ -309,13 +326,13 @@ end
 end
 
 function _central_idempotents(R::FiniteRing)
-  prings, _, injs = decompose_into_prings(R)
+  prings, projs = decompose_into_p_rings(R)
   res = elem_type(R)[]
   for i in 1:length(prings)
     S = prings[i]
     c = _central_idempotents_pring(S)
     for cc in c
-      push!(res, injs[i](cc))
+      push!(res, preimage(projs[i], cc))
     end
   end
   return res
@@ -325,7 +342,7 @@ function _central_idempotents_pring(R::FiniteRing)
   C, CtoR = center(R)
   J = radical(C)
   Q, CtoQ = quo(C, J)
-  rngs, projs = decompose_semisimple_pring(Q)
+  rngs, projs = decompose_semisimple_p_ring(Q)
   res = elem_type(R)[]
   for i in 1:length(rngs)
     e = preimage(CtoQ, preimage(projs[i], one(rngs[i])))
@@ -344,34 +361,62 @@ function _lift_idempotent(x)
     i += 1
     x = xx
     xx = f(x)
-    if i > 100
-      error("asds")
-    end
+    i > 100 && error("Error in idempotent lifting: nilpotency index too large?")
   end
   @assert x^2 == x
   return x
 end
 
-function _subring_from_subgroup(R::FiniteRing, f)
-  H = domain(f)
+function _quotient_ring_from_quotient_group(R::FiniteRing, f)
+  H = codomain(f)
+  @assert domain(f) === underlying_abelian_group(R)
   gH = gens(H)
   mult = FinGenAbGroupHom[]
   for k in gH
-    h = hom(H, H, [preimage(f, data(FiniteRingElem(R, f(k)) * FiniteRingElem(R, f(l)))) for l in gH])
+    h = hom(H, H, [f(data(FiniteRingElem(R, f\k) * FiniteRingElem(R, f\l))) for l in gH])
     push!(mult, h)
   end
-  Z = FiniteRing(H, mult)
-  ZtoR = FiniteRingHom(Z, R, x -> FiniteRingElem(R, f(data(x))), y -> FiniteRingElem(Z, preimage(f, data(y))))
-  return Z, ZtoR
+  S = FiniteRing(H, mult)
+  RtoS = FiniteRingHom2(R, S, true, f)
+  return S, RtoS
 end
 
-function _subring_from_central_idempotent(R::FiniteRing, e::FiniteRingElem)
+#function _subring_from_subgroup(R::FiniteRing, f)
+#  H = domain(f)
+#  gH = gens(H)
+#  mult = FinGenAbGroupHom[]
+#  for k in gH
+#    h = hom(H, H, [preimage(f, data(FiniteRingElem(R, f(k)) * FiniteRingElem(R, f(l)))) for l in gH])
+#    push!(mult, h)
+#  end
+#  Z = FiniteRing(H, mult)
+#  ZtoR = FiniteRingHom(Z, R, x -> FiniteRingElem(R, f(data(x))), y -> FiniteRingElem(Z, preimage(f, data(y))))
+#  return Z, ZtoR
+#end
+
+function _quotient_ring_from_central_idempotent(R::FiniteRing, e::FiniteRingElem)
   A = underlying_abelian_group(R)
-  S = [data(z * e) for z in _zgens(R)]
-  _B, BtoA = sub(A, S)
-  B, Bto_B = snf(_B)
-  return _subring_from_subgroup(R, Bto_B * BtoA)
+  ee = one(R) - e
+  S = [data(z * ee) for z in _zgens(R)] # generators for the complement
+  Q, AtoQ = quo(A, S)
+  QQ, QQtoQ = snf(Q)
+  QtoQQ = inv(QQtoQ)
+  S, RtoS = _quotient_ring_from_quotient_group(R, AtoQ * QtoQQ)
+  # we also build the non-unitary section
+  SS = [data(z * e) for z in _zgens(R)]
+  B, BtoA = sub(A, SS)
+  g = FiniteRingHom2(S, R, false, inv(BtoA * AtoQ * QtoQQ) * BtoA)
+  RtoS.g = g
+  return S, RtoS
 end
+
+#function _subring_from_central_idempotent(R::FiniteRing, e::FiniteRingElem)
+#  A = underlying_abelian_group(R)
+#  S = [data(z * e) for z in _zgens(R)]
+#  _B, BtoA = sub(A, S)
+#  B, Bto_B = snf(_B)
+#  return _subring_from_subgroup(R, Bto_B * BtoA)
+#end
 
 @attr Tuple function decompose_into_indecomposable_rings(R::Hecke.AbstractAssociativeAlgebra)
   ZR, ZRtoR = center(R)
@@ -394,12 +439,11 @@ end
 @attr Tuple function decompose_into_indecomposable_rings(R::FiniteRing)
   es = _central_idempotents(R)
   rngs = FiniteRing[]
-  projs = FiniteRingHom[]
+  projs = FiniteRingHom2[]
   for e in es
-    S, StoR = _subring_from_central_idempotent(R, e)
+    S, RtoS = _quotient_ring_from_central_idempotent(R, e)
     push!(rngs, S)
-    proj = FiniteRingHom(R, S, x -> preimage(StoR, e * x), y -> StoR(y))
-    push!(projs, proj)
+    push!(projs, RtoS)
   end
   return rngs, projs
 end

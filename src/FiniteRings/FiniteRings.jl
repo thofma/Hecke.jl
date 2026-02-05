@@ -3,6 +3,16 @@ module FiniteRings
 import ..Hecke
 
 import ..Hecke:
+  data,
+  parent,
+  one,
+  inv,
+  basis_matrix,
+  get_attribute,
+  prime_divisors,
+  is_known,
+  is_exact_type,
+  zero,
   AbstractAssociativeAlgebra,
   AbstractAlgebra,
   set_attribute!,
@@ -103,10 +113,10 @@ end
 
 include("Types.jl")
 #include("EffectivePresentation.jl")
-include("OnePlusIdeal.jl")
 #include("GL.jl")
 include("Ring.jl")
 include("Elem.jl")
+include("OnePlusIdeal.jl")
 #include("Units.jl")
 include("Ideal.jl")
 include("Map.jl")
@@ -131,9 +141,15 @@ end
 Hecke.base_ring(I::Hecke.AbsAlgAssIdl) = Hecke.algebra(I)
 
 export finite_ring
+export maximal_p_quotient_ring
+export decompose_into_p_rings
+export decompose_into_indecomposable_rings
 
 end
 
 using .FiniteRings
 
 export finite_ring
+export maximal_p_quotient_ring
+export decompose_into_p_rings
+export decompose_into_indecomposable_rings

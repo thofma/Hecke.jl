@@ -9,14 +9,14 @@ function Base.show(io::IO, A::FiniteRingIdeal)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", I::FiniteRingIdeal)
-  io = pretty(io)
+  io = AbstractAlgebra.pretty(io)
   println(io, "Ideal of")
-  print(io, Indent())
-  println(terse(io), Lowercase(), base_ring(I))
+  print(io, AbstractAlgebra.Indent())
+  println(AbstractAlgebra.terse(io), AbstractAlgebra.Lowercase(), base_ring(I))
   print(io, "with additive group isomorphic to ")
   Hecke.show_snf_structure(io, snf(underlying_abelian_group(I))[1])
   #print(io, "and with ", ItemQuantity(ncols(rels(A)), "generator"), " and ", ItemQuantity(nrows(rels(A)), "relation"))
-  print(io, Dedent())
+  print(io, AbstractAlgebra.Dedent())
 end
 
 underlying_abelian_group(I::FiniteRingIdeal) = I.B
@@ -33,11 +33,13 @@ function Base.in(x::FiniteRingElem, I::FiniteRingIdeal)
   return fl
 end
 
+function Base.issubset(I::FiniteRingIdeal, J::FiniteRingIdeal)
+  return all(x -> in(x, J), _zgens(I))
+end
+
 function Base.:(==)(I::FiniteRingIdeal, J::FiniteRingIdeal)
   return all(in(J), _zgens(I)) && all(in(I), _zgens(J))
 end
-
-#Hecke.algebra(I::FiniteRingIdeal) = I.R
 
 function _ideal_zgens(R::FiniteRing, v::Vector{FiniteRingElem}; side, check::Bool = true)
   S, StoA = sub(R.A, [x.a for x in v])
@@ -133,6 +135,7 @@ end
 
 function Hecke.ideal(R::FiniteRing, g::Vector; side)
   idzgens = elem_type(R)[]
+  @req side in (:left, :right, :twosided) "side keyword (:$(side)) must be one of :left, :right or :twosided"
   for el in g
     for b in _zgens(R)
       if side == :left || side == :twosided
