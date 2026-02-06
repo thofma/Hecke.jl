@@ -3,6 +3,9 @@ module FiniteRings
 import ..Hecke
 
 import ..Hecke:
+  right_ideal,
+  left_ideal,
+  mul!,
   data,
   parent,
   one,

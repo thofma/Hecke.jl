@@ -42,6 +42,7 @@ import AbstractAlgebra:
   clearindent,
   get_assertion_level,
   get_verbosity_level,
+  is_known,
   popindent,
   pushindent,
   set_assertion_level,

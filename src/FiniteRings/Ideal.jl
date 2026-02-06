@@ -25,6 +25,8 @@ _embedding(I::FiniteRingIdeal) = I.BtoA
 
 base_ring(I::FiniteRingIdeal) = I.R
 
+order(I::FiniteRingIdeal) = order(underlying_abelian_group(I))
+
 # Basics
 is_zero(I::FiniteRingIdeal) = is_trivial(underlying_abelian_group(I))
 
@@ -72,12 +74,10 @@ Base.:(*)(R::FiniteRing, n::IntegerUnion) = n * R
 
 @attr FiniteRingIdeal function radical(R::FiniteRing)
   if is_one(order(R))
-    return _ideal_zgens(R, [one(R)]; check = false)
+    return _ideal_zgens(R, [one(R)]; check = false, side = :twosided)
   end
   fl, e, p = is_prime_power_with_data(order(R))
-  if !fl
-    error("Radical implemented only for rings of prime power order")
-  end
+  !fl && error("Radical implemented only for rings of prime power order")
   # If the order is a power of p, then p is nilpotent. So the radical contains
   # p * R, and we can look at R/p*R, which is an Fp-algebra.
   Q, RtoQ = quo(underlying_abelian_group(R), p)
@@ -100,22 +100,6 @@ Base.:(*)(R::FiniteRing, n::IntegerUnion) = n * R
   return _ideal_zgens(R, append!(ss, _zgens(p * R)); side = :twosided, check = false)
 end
 
-# debugging purposes
-function quotient_by_radical_as_algebra(R::FiniteRing)
-  fl, e, p = is_prime_power_with_data(Hecke.order(R))
-  @assert fl
-  Q, RtoQ = quo(R.A, p)
-  G = gens(Q)
-  @assert length(G) == length(elementary_divisors(Q))
-  liftgens = Hecke.preimage.(Ref(RtoQ), gens(Q))
-  mats = []
-  for g in liftgens
-    push!(mats, reduce(vcat, [RtoQ((FiniteRingElem(R, g) * FiniteRingElem(R, h)).a).coeff for h in liftgens]))
-  end
-  MA = matrix_algebra(GF(p), map_entries.(Ref(GF(p)), mats); isbasis = true) # isbasis = true is important
-  return quo(MA, Hecke.radical(MA))[1]
-end
-
 ################################################################################
 #
 #  Multiplication
@@ -123,8 +107,8 @@ end
 ################################################################################
 
 function Base.:(*)(I::FiniteRingIdeal, J::FiniteRingIdeal)
-  @assert I.R === J.R
-  return _ideal_zgens(I.R, [a * b for a in _zgens(I) for b in _zgens(J)]; side = :twosided, check = false)
+  @assert base_ring(I) === base_ring(J)
+  return _ideal_zgens(base_ring(I), [a * b for a in _zgens(I) for b in _zgens(J)]; side = :twosided, check = false)
 end
 
 ################################################################################
@@ -166,11 +150,11 @@ Hecke.twosided_ideal(A::FiniteRing, x...; kw...) = ideal(A, x...; side = :twosid
 
 Base.:(*)(A::FiniteRing, x::NCRingElement) = left_ideal(A, x)
 
-Base.:(*)(A::FiniteRing, x::RingElement) = left_ideal(A, x)
+#Base.:(*)(A::FiniteRing, x::RingElement) = left_ideal(A, x)
 
 Base.:(*)(x::NCRingElement, A::FiniteRing) = right_ideal(A, x)
 
-Base.:(*)(x::RingElement, A::FiniteRing) = right_ideal(A, x)
+#Base.:(*)(x::RingElement, A::FiniteRing) = right_ideal(A, x)
 
 ################################################################################
 #
@@ -196,13 +180,12 @@ function _test_ideal_sidedness(a::FiniteRingIdeal, side::Symbol)
         if !(t in a)
           return false
         end
-      elseif side === :right || side === :twosided
+      else
+        @assert side === :right || side === :twosided
         t = mul!(t, c, b)
         if !(t in a)
           return false
         end
-      else
-        error("side must be either :left or :right")
       end
     end
   end
@@ -216,7 +199,7 @@ end
 ################################################################################
 
 function Base.rand(I::FiniteRingIdeal)
-  x = FiniteRingElem(I.R, I.BtoA(rand(I.B)))
+  x = FiniteRingElem(base_ring(I), I.BtoA(rand(I.B)))
   @assert x in I
   return x
 end
