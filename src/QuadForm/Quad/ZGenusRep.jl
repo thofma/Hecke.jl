@@ -473,7 +473,7 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
   end
   L = first(A)
   inv_lat = invariant_function(L)
-  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
   for i in 2:length(A)
     N = A[i]
     inv_lat = invariant_function(N)
@@ -772,7 +772,7 @@ function _enumerate_definite_genus(
 
   L, itk = Iterators.peel(res)
   inv_lat = invariant_function(L)
-  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
   for N in itk
     inv_lat = invariant_function(N)
     if haskey(inv_dict, inv_lat)
