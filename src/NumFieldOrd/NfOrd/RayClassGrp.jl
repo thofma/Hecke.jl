@@ -1412,7 +1412,7 @@ function has_principal_generator_1_mod_m(I::Union{AbsNumFieldOrderIdeal{AbsSimpl
     ii += ngens(groups_and_maps[i][1])
   end
   if !isempty(inf_plc)
-    H, eH, lH = infinite_primes_map(O, inf_plc, m)
+    H, eH, lH = infinite_primes_map(O, inf_plc, m)  # FIXME: infinite_primes_map is not defined
     for t = 1:length(tobeeval)
       el = lH(tobeeval[i])
       for s = 1:ngens(H)

@@ -2109,7 +2109,7 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ ZZRingE
   B, BtoOP = _as_algebra_over_center(OP)
   C, toC = _as_matrix_algebra(B)
 
-  JinC = _ideal_from_kgens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])
+  JinC = _ideal_from_kgens(C, [ toC(OPtoB(toOP(O(b)))) for b in absolute_basis(J) ])  # FIXME: OPtoB is not defined
   y = left_principal_generator(JinC)
   m = matrix(y)
   r = rref!(m)

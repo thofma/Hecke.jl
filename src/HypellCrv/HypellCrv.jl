@@ -277,7 +277,7 @@ function discriminant(C::HypellCrv{T}) where T
   K = base_field(C)
   if characteristic(K) != 2
     f, h = hyperelliptic_polynomials(C)
-    d = 2^(4*g)*discriminant(f(x) + 1//4*h(x)^2)
+    d = 2^(4*g)*discriminant(f(x) + 1//4*h(x)^2)  # FIXME: g not defined
     C.disc = d
     return d::T
   else
