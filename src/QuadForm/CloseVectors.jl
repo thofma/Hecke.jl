@@ -233,8 +233,7 @@ function _closest_vectors(L::ZZLat, v::Vector, elem_type::Type{S} = ZZRingElem; 
     end
   end
 
-  min = cur_min
-  return min, cur_vec
+  return cur_min, cur_vec
 end
 
 ################################################################################
