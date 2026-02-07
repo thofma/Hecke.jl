@@ -299,20 +299,18 @@ end
 Return $\phi(P)$.
 """
 function image(f::Isogeny, P::EllipticCurvePoint)
-  @assert domain(f) == parent(P)
+  @req domain(f) == parent(P) "point is not in the domain of isogeny"
+
+  is_infinite(P) && return infinity(codomain(f))
+
   x = P.coordx
   y = P.coordy
-
-  if evaluate(isogeny_map_psi(f),x) == 0
+  if evaluate(isogeny_map_psi(f), x) == 0
     return infinity(codomain(f))
   end
 
-  coordx = f.coordx
-  coordy = f.coordy
-
-  phix = evaluate(coordx, x)
-  phiy = evaluate(evaluate(coordy,y), x)
-
+  phix = evaluate(f.coordx, x)
+  phiy = evaluate(evaluate(f.coordy, y), x)
   return codomain(f)([phix, phiy])
 end
 

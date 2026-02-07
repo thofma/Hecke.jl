@@ -7,6 +7,9 @@
   @test @inferred codomain(phi) == E2
   @test is_isomorphic(E1, codomain(phi))
   @test @inferred image(phi, E1([1,1])) == E2([6,2])
+  @test @inferred image(phi, infinity(E1)) == infinity(E2)
+  @test @inferred phi(infinity(E1)) == infinity(E2)
+  @test_throws ArgumentError image(phi, infinity(E2))
   @test @inferred degree(phi) == 9
 
   K = GF(3)
