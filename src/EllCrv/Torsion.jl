@@ -352,7 +352,7 @@ map has trivial kernel when restricted to the torsion subgroup of $E$.
 function torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int)
   K = base_field(E)
   R = ring_of_integers(K)
-  disc_K = ZZ(discriminant(K))
+  disc_K = ZZ(discriminant(R))
   disc_E = R(discriminant(E))
 
   # If p>2 does not divide disc_K, then the kernel of the reduction
