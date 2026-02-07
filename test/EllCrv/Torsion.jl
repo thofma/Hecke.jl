@@ -1,5 +1,10 @@
 @testset "Torsion points" begin
 
+  Rx, x = polynomial_ring(QQ, "x")
+  K1, _ = number_field(x^2 - x - 1)
+  K2, _ = number_field(x^2 +2)
+  K3, _ = number_field(x^2+1)
+  K4, _ = cyclotomic_field(15)
 
   E43_a1 = @inferred elliptic_curve([0, 1, 1, 0, 0])
 
@@ -10,7 +15,6 @@
   ([1, 0], 2),
   ([1, 1], 1)
   ]
-
 
   curves_to_test_tor_struc =
   [
@@ -31,21 +35,12 @@
   ([1, 0, 0, -1070, 7812], [2, 8]),
   ]
 
-  Rx, x = polynomial_ring(QQ, "x")
-  K1, a = number_field(x^2 - x - 1)
-  K2, a = number_field(x^2 +2)
-  K3, a = number_field(x^2+1)
-  K4, a = cyclotomic_field(15)
-
-
   curves_to_test_tor_struc_nf =
    [(map(K1, [1, 1, 1, -3, 1]), [15]),
     (map(K2, [1, 0, 0, 115, 561]), [10, 2]),
     (map(K3, [1, 1, 1, -10, -10]), [4, 4]),
     (map(K4, [1, 1, 1, -5, 2]), [16, 2])
    ]
-
-
 
   @testset "Point order computation" begin
     E = elliptic_curve([0, -1, 1, -7820, -263580])
@@ -96,7 +91,7 @@
     end
   end
 
-  @testset "Torsion points (division polynomials" begin
+  @testset "Torsion points (division polynomials)" begin
     for c in curves_to_test_tor_short
       E = elliptic_curve(c[1])
       T = @inferred torsion_points_division_poly(E)
@@ -172,11 +167,9 @@
   end
 
   @testset "Division polynomial" begin
-
     Kx, x = polynomial_ring(base_field(E43_a1), "x")
     Kxy, y = polynomial_ring(Kx, "y")
     f = @inferred division_polynomial(E43_a1, 4, x, y)
     @test  f == (4*x^6 + 8*x^5 + 20*x^3 + 20*x^2 + 8*x - 2)*y + 2*x^6 + 4*x^5 + 10*x^3 + 10*x^2 + 4*x - 1
-
   end
 end
