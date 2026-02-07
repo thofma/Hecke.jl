@@ -133,6 +133,18 @@
     @test 2*P == phi(P)
   end
 
+  @testset "Multiplication by non-positive scalar" begin
+    E = elliptic_curve(QQ, [-1, 1])
+    m1 = multiplication_by_m_map(E, 2)
+    m2 = multiplication_by_m_map(E, -2)
+    P1 = m1(E([-1,1]))
+    P2 = m2(E([-1,1]))
+    @test P1[1] ==  P2[1]
+    @test P1[2] == -P2[2]
+
+    @test_throws ArgumentError multiplication_by_m_map(E, 0)
+  end
+
   @testset "Isogeny powering" begin
     E = elliptic_curve(QQ, [1, 1])
     m = multiplication_by_m_map(E, 2)
@@ -141,6 +153,13 @@
     @test @inferred degree(m^1) == 4
     @test @inferred degree(m^2) == 4^2
     @test @inferred degree(m^4) == 4^4
+
+    m = multiplication_by_m_map(E, -1)
+    @test @inferred degree(m) == 1
+    @test @inferred degree(m^2) == 1
+    @test @inferred degree(m^3) == 1
+    @test rational_maps(m^2) == rational_maps(identity_isogeny(E))
+    @test rational_maps(m^3) == rational_maps(negation_map(E))
 
     E = elliptic_curve(GF(5^4), [1, 1])
     m = multiplication_by_m_map(E, 2)

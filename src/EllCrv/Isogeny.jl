@@ -476,12 +476,14 @@ end
     multiplication_by_m_map((E::EllipticCurve, m::Int) -> Isogeny
 
 Return the isogeny corresponding to the multiplication by m map on $E$.
+
+Throws an error for $m = 0$, otherwise supports both positive and negative values of $m$.
 """
 function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer, ZZRingElem}
+  @req !iszero(m) "m must be non-zero"
 
-  if m==1
-    return isomorphism_to_isogeny(id_hom(E))
-  end
+  m < 0 && return negation_map(E) * multiplication_by_m_map(E, -m)
+  m == 1 && return identity_isogeny(E)
 
   p = characteristic(base_field(E))
 
