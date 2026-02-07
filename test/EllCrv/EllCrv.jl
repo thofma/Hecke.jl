@@ -171,7 +171,11 @@
     L = @inferred points_with_x_coordinate(E,0)
     @test E([0,5]) in L && E([0, 6]) in L
 
-
+    # this is a docs example. make sure it works
+    E = elliptic_curve(QQ, [1, 2]);
+    @test 2 == length(@inferred points_with_x_coordinate(E,  1))
+    @test 1 == length(@inferred points_with_x_coordinate(E, -1))
+    @test 0 == length(@inferred points_with_x_coordinate(E, -2))
   end
 
   @testset "Equation" begin
