@@ -674,26 +674,22 @@ end
 @doc raw"""
     compose(fs::Vector{Isogeny}) -> Isogeny
 
-Return the composition $phi_n \circ phi_(n-1) \circ phi_1$ where `fs` is a list of compatible
+Return the composition $phi_n \circ phi_(n-1) \circ ... \circ phi_1$ where `fs` is a list of compatible
 isogenies $[phi_1, ..., phi_n]$.
+
+Throws an error when called with the empty list.
 """
-function compose(fs::Vector{Isogeny})
-  g = fs[1]
-  n = length(fs)
-  for i in (2:n)
-    g = g*fs[i]
-  end
-  return g
-end
+compose(fs::Vector{Isogeny}) = foldl(*, fs)
 
 function ^(phi::Isogeny, n::Int)
+  @req n >= 0 "exponent must be non-negative"
+  @req domain(phi) == codomain(phi) "isogeny must be an endomorphism"
+  n == 0 && return identity_isogeny(domain(phi))
+  n == 1 && return phi
 
-  res = identity_isogeny(E)
-
-  for i in (1:n)
-    res = phi*res
-  end
-  return res
+  # TODO: Base.power_by_squaring should be more efficient, but it is not (and uses way more memory)
+  # NOTE: large exponents are not feasible anyway due to coefficient explosion
+  return reduce(*, Iterators.repeated(phi, n))
 end
 
 @doc raw"""

@@ -35,34 +35,6 @@
   g = @inferred multiplication_by_m_map(E1, 32)
   g(P) == 32*P
 
-  #multiplication by p map in char p
-  p = 11
-  E = elliptic_curve(GF(p), [1, 1])
-  phi = @inferred multiplication_by_m_map(E, p)
-  P = points_with_x_coordinate(E, 4)[1]
-  @test 11*P == phi(P)
-
-  psi = frobenius_map(E)
-  psihat = @inferred dual_of_frobenius(E)
-  @test rational_maps(psi * psihat) ==  rational_maps(psihat *psi)
-  @test 11*P == (psi*psihat)(P)
-
-  p = 2
-  K = GF(2,4)
-  a = gen(K)
-  E = elliptic_curve_from_j_invariant(a)
-  phi = @inferred multiplication_by_m_map(E, p)
-  P = points_with_x_coordinate(E, a^2)[1]
-  @test 2*P == phi(P)
-
-  K = GF(2,6)
-  a = gen(K)
-  E = elliptic_curve_from_j_invariant(zero(K))
-  phi = @inferred multiplication_by_m_map(E, p)
-  P = points_with_x_coordinate(E, a^3)[1]
-  @test 2*P == phi(P)
-
-
   K= GF(2,4)
   a = gen(K)
   E1 = elliptic_curve(K,[a^2,1-a,1,0,a])
@@ -135,4 +107,56 @@
   h = x^4 + 26*x^3 + 61*x^2 + 4*x + 19
   @test !is_kernel_polynomial(E, h)
 
+  @testset "Multiplication by p in characteristic p" begin
+    p = 11
+    E = elliptic_curve(GF(p), [1, 1])
+    phi = @inferred multiplication_by_m_map(E, p)
+    P = points_with_x_coordinate(E, 4)[1]
+    @test 11*P == phi(P)
+
+    psi = frobenius_map(E)
+    psihat = @inferred dual_of_frobenius(E)
+    @test rational_maps(psi * psihat) == rational_maps(psihat * psi)
+    @test 11*P == (psi*psihat)(P)
+
+    p = 2
+    K, a = finite_field(2,4)
+    E = elliptic_curve_from_j_invariant(a)
+    phi = @inferred multiplication_by_m_map(E, p)
+    P = points_with_x_coordinate(E, a^2)[1]
+    @test 2*P == phi(P)
+
+    K, a = finite_field(2,6)
+    E = elliptic_curve_from_j_invariant(zero(K))
+    phi = @inferred multiplication_by_m_map(E, p)
+    P = points_with_x_coordinate(E, a^3)[1]
+    @test 2*P == phi(P)
+  end
+
+  @testset "Isogeny powering" begin
+    E = elliptic_curve(QQ, [1, 1])
+    m = multiplication_by_m_map(E, 2)
+    @test @inferred degree(m) == 4
+    @test @inferred degree(m^0) == 1
+    @test @inferred degree(m^1) == 4
+    @test @inferred degree(m^2) == 4^2
+    @test @inferred degree(m^4) == 4^4
+
+    E = elliptic_curve(GF(5^4), [1, 1])
+    m = multiplication_by_m_map(E, 2)
+    @test @inferred degree(m) == 4
+    @test @inferred degree(m^0) == 1
+    @test @inferred degree(m^1) == 4
+    @test @inferred degree(m^2) == 4^2
+    @test @inferred degree(m^4) == 4^4
+
+    phi = frobenius_map(E)
+    for n in 0:4
+      @test rational_maps(phi^n) == rational_maps(frobenius_map(E,n))
+    end
+
+    E = elliptic_curve(GF(7), [1, 2, 3, 4, 5])
+    phi = @inferred isogeny_from_kernel(E, division_polynomial_univariate(E,3)[1])
+    @test_throws ArgumentError phi^2
+  end
 end
