@@ -235,56 +235,66 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   p = characteristic(K)
   j = j_invariant(E)
 
+  p <= 3 && return iszero(j)
+  iszero(j) && return mod(p,3) == 2    # supersingular <=> p != 1 mod 3
+  j == K(1728) && return mod(p,4) == 3 # supersingular <=> p != 1 mod 4
+
   if j^(p^2) != j
     return false
   end
 
-  if p<= 3
-    return j == 0
-  end
-
-  L = Native.GF(p, 2)
+  L = finite_field(p, 2)[1]
   Lx, X = polynomial_ring(L, "X")
   Lxy, Y = polynomial_ring(Lx, "Y")
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
 
   jL = _embed_into_p2(j, L)
 
-  js = roots(Phi2(jL))
+  # In Sutherland's algorithm we must consider roots with multiplicity!
+  # According to pari/gp source code comments, we can get multiple roots
+  #   when E has complex multiplication over Q(sqrt(-13))
+  #   that is for p = 3, 5, 7, 11, 13, 14 (mod 15)
+  # We check if we got 3 roots (with multiplicity)
+  #   but there is no need to do a duplicated path search thus we store unique roots
+  # TODO: redo once we have roots function with multiplicities
 
-  if length(js) < 3
-    return false
+  js = elem_type(L)[]
+  sizehint!(js, 3)
+
+  total_count = 0
+  for (g, e) in factor(Phi2(jL))
+    if degree(g) == 1
+      total_count += e
+      @assert isone(coeff(g, 1))
+      push!(js, -coeff(g, 0))
+    end
   end
 
-  newjs = [jL, jL, jL]
-  f = zeros_array(Lx, 3)
+  total_count < 3 && return false
+  path_count = length(js)
 
-  m = nbits(p) - 1
-  for k in (1 : m)
-    for i in (1 : 3)
+  newjs = fill(jL, path_count)
+  f = zeros_array(Lx, path_count)
+
+  # in Sutherland paper the path length is checked up to floor( log_2(p) ) + 1
+  # which is exactly the bitlength of p
+  m = nbits(p)
+  for _ in 1:m
+    for i in 1:path_count
       f[i] = divexact(Phi2(js[i]), X - newjs[i])
       newjs[i] = js[i]
+
       froots = roots(f[i])
-      if isempty(froots)
-        return false
-      end
+      isempty(froots) && return false
       js[i] = froots[1]
     end
   end
   return true
 end
 
-function _to_z(a::Union{fpFieldElem, FpFieldElem})
-  return lift(a)
-end
-
-function _to_z(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem})
-  return coeff(a, 0)
-end
-
-function _to_z(a::FqFieldElem)
-  return lift(ZZ, a)
-end
+_to_z(a::Union{fpFieldElem, FpFieldElem}) = lift(a)
+_to_z(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem}) = coeff(a, 0)
+_to_z(a::FqFieldElem) = lift(ZZ, a)
 
 function _embed_into_p2(j, L)
   K = parent(j)
@@ -297,9 +307,8 @@ function _embed_into_p2(j, L)
     if degree(p) <= 1
       return L(_to_z(j))
     end
-    F, a = finite_field(p)
-    e = embed(F, L)
-    return e(gen(F))
+    e = embed(L, K)
+    return preimage(e, j)
   end
 end
 
