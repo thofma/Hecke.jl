@@ -689,7 +689,9 @@ end
 
 function ^(phi::Isogeny, n::Int)
 
-  res = identity_isogeny(E)  # FIXME: E is not defined
+  @req domain(phi)===codomain(phi) "isogeny must be an endomorphism"
+  E = domain(phi)
+  res = identity_isogeny(E)
 
   for i in (1:n)
     res = phi*res
