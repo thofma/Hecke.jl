@@ -189,6 +189,7 @@ export canonical_injection
 export canonical_injections
 export canonical_projection
 export canonical_projections
+export canonical_symbol
 export carmichael_lambda
 export center
 export central_primitive_idempotents

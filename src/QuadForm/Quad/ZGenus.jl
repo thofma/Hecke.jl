@@ -723,10 +723,27 @@ function _local_genera(p::ZZRingElem, rank::Int, det_val::Int, min_scale::Int,
   return symbols
 end
 
-
 function _local_genera(p::Int, rank::Int, det_val::Int, min_scale::Int,
                        max_scale::Int, even::Bool)
   return _local_genera(ZZ(p), rank, det_val, min_scale, max_scale, even)
+end
+
+# Useful for testing or enumerating over ranges
+function _local_genera(
+  p::IntegerUnion,
+  rank::AbstractVector{Int},
+  det_val::AbstractVector{Int},
+  min_scale::Int,
+  max_scale::Int,
+  even::Bool,
+)
+  symbols = Set{ZZLocalGenus}()
+  for x in cartesian_product_iterator([rank, det_val])
+    for g in _local_genera(p, x[1], x[2], min_scale, max_scale, even)
+      push!(symbols, g)
+    end
+  end
+  return symbols
 end
 
 @doc raw"""
@@ -932,7 +949,7 @@ end
 
 ###############################################################################
 #
-# Reduction of definite genera and canonical symbols
+# Reduction and canonical symbols
 #
 ###############################################################################
 
@@ -940,46 +957,51 @@ end
     genus_info(
       G::ZZGenus;
       check::Bool=true,
-   ) -> Symbol, Int, QQFieldElem, QQFieldElem, String
+    ) -> Symbol, Int, Int, QQFieldElem, QQFieldElem, String
 
-Given a genus `G` of positive definite indivisible integral integer lattices,
-return the tuple consisting of, in the following order:
-- the type of `G` -- `:I` if `G` is odd, `:II` otherwise,
+Given a genus `G` of nondegenerate indivisible integral integer lattices,
+return a tuple consisting of invariants of ``G``, given in the following order:
+
+- the parity of `G` -- `:I` if `G` is odd, `:II` otherwise,
 - the rank of `G`,
-- the determinant of `G`,
+- the signature of `G`
+- the absolute value of the determinant of `G`,
 - the level of `G`,
-- the canonical symbol of `G`, without signature and unimodular constituents
+- the canonical symbol of `G`, without signature and unimodular factors
   at odd primes.
 
-Note the latter indeed determines the first four invariants of `G`.
+!!! note
+    If `G` consists of positive definite lattices, then the last invariant
+    uniquely determined the other ones.
 """
-function genus_info(G::ZZGenus; check=true)
-  if check
-    @assert iszero(last(signature_pair(G)))
-    @assert isone(scale(G))
-  end
+function genus_info(G::ZZGenus)
+  @req isone(scale(G)) "G must represent indivisible integral lattices"
   t = is_even(G) ? :II : :I
   r = rank(G)
-  d = det(G)
+  s = signature(G)
+  d = abs(det(G))
   l = level(G)
-  return t, r, d, l, canonical_symbol(G; with_signature=false, odd_ones=false)
+  return t, r, s, d, l, canonical_symbol(G; with_signature=false, odd_ones=false)
 end
 
 @doc raw"""
-    reduced_definite_genus_with_data(
+    reduced_genus_with_data(
       G::ZZGenus,
     ) -> ZZGenus, QQFieldElem
 
-Given a genus `G` of definite lattices return a pair consisting of a
-genus `Gred` of positive definite indivisible integral integer lattices
-and a rational number `s` satisfying that `G` is obtained by rescaling
-`Gred` by `s`.
+Given a genus `G` of nondegenerate integer lattices, return a pair consisting
+of a genus `Gred` of nondegenerate indivisible integral integer lattices and
+a rational number `s` satisfying both of the following:
+- `Gred` has nonnegative signature;
+- `G` is obtained by rescaling `Gred` by `s`.
 
-Note that `Gred` and `s` are uniquely determined by `G`.
+!!! note
+    `Gred` and `s` are uniquely determined only when `Gred` has positive
+    signature.
 """
-function reduced_definite_genus_with_data(G::ZZGenus)
-  @assert is_definite(G)
-  e = iszero(first(signature_pair(G))) ? Int(-1) : Int(1)
+function reduced_genus_with_data(G::ZZGenus)
+  p, n = signature_tuple(G)
+  e = (p < n) ? Int(-1) : Int(1)
   s = e*scale(G)
   Gred = rescale(G, inv(s))
   return Gred, s
@@ -988,19 +1010,19 @@ end
 @doc raw"""
     canonical_symbol(
       G::ZZGenus;
-      with_signatures::Bool=true,
+      with_signature::Bool=true,
       odd_ones::Bool=true,
     ) -> String
 
-Return the canonical symbol for the genus of integer lattices `G`. See
-[`canonical_symbol(::ZZLocalGenus)`](@ref) for canonical symbols of
+Return the canonical symbol for the genus of nondegenerate integer lattices
+`G`. See [`canonical_symbol(::ZZLocalGenus)`](@ref) for canonical symbols of
 local genera.
 
-If `with_signatures` is false, then the signature pair of `G` does not appear
+If `with_signature` is false, then the signature pair of `G` does not appear
 in the output.
 
 If `odd_ones` is false, then the factor for the unimodular constituent at
-each odd bad prime of `G` do not appear in the output.
+each odd prime do not appear in the output.
 """
 function canonical_symbol(G::ZZGenus; with_signature::Bool=true, odd_ones::Bool=true)
   bps = sort!(bad_primes(G))
@@ -1012,7 +1034,6 @@ function canonical_symbol(G::ZZGenus; with_signature::Bool=true, odd_ones::Bool=
   for p in bps
     cas *= canonical_symbol(local_symbol(G, p); odd_ones)
   end
-  cas = replace(cas, "//" => "/")
   return cas
 end
 
@@ -1025,79 +1046,115 @@ by `g`. The ouput is given in the form of a string.
 If ``p`` is odd, the symbol is uniquely determined by the invariants of `g`.
 
 If ``p == 2``, then we use Conway--Sloane canonicalization procedure following
-the proof and description from Allcock, Gal and Mark in
-"The Conway--Sloane calculus for 2-adic lattices".
+[AGM20](@cite)
 
 If ``p`` is odd and `odd_ones` is false, then the output does not contain
 the factor for the unimodular constituent in `g`.
 """
 function canonical_symbol(g::ZZLocalGenus; odd_ones::Bool=true)
   p = QQ(prime(g))
-  if p == 2
-    return _canonical_2adic_symbol(symbol(g))
-  else # In the odd cases, the symbol is unique
+  if p == 2 || odd_ones
+    return _canonical_symbol(g)
+  else
     cas = ""
     for s in symbol(g)
-      !odd_ones && iszero(s[1]) && continue
+      iszero(s[1]) && continue
       cas *= "{$(p^(s[1]))}^{$(s[3]*s[2])}"
     end
+    cas = replace(cas, "//" => "/")
     return cas
   end
 end
 
-function _canonical_2adic_symbol(_sym::Vector{Vector{Int64}})
-  sym = reverse!(deepcopy(_sym))
-  filter!(s -> !iszero(s[2]), sym)
+# Same as before, but we always keep the ones
+function _canonical_symbol(g::ZZLocalGenus)
+  if isdefined(g, :canonical_symbol)
+    return g.canonical_symbol
+  end
+  p = QQ(prime(g))
+  if p == 2
+    cas = _canonical_2adic_symbol(symbol(g))
+  else # In the odd cases, the symbol is unique
+    cas = ""
+    for s in symbol(g)
+      cas *= "{$(p^(s[1]))}^{$(s[3]*s[2])}"
+    end
+    cas = replace(cas, "//" => "/")
+  end
+  g.canonical_symbol = cas
+  return cas
+end
+
+# We proceed iteratively by reading the symbol from right to left.
+# In order to understand which sign walking is allowed, we follow
+# Lemma 6.1 from [AGM20].
+#
+# We assume no constituent of rank 0 in sym.
+function _canonical_2adic_symbol(sym::Vector{Vector{Int64}})
   q = QQ(2)
   cas = "" # Final string
-  e = Int(1) # Keep track of sign walking
-  o = Int(0) # Keep track of local oddity
-  while !isempty(sym)
-    s = popfirst!(sym)
-    # We first treat the case where the constituent is the head of a train
-    # outside of a compartment
-    # Such constituents are either:
-    # - the last constituent of the symbols,
-    # - a constituent with trivial left adjacent constituent (rank 0),
-    # - an even constituent whose left adjacent is even.
-    if isempty(sym) || sym[1][1] < s[1]-1 || (iszero(s[4]) && iszero(sym[1][4]))
-      # If e < 0, there is a sign walking from the right; and since the constituent
-      # is the head of a train, there are no sign walking to the left.
-      # So if the constituent is odd, we must modify its oddity
-      if e < 0 && !iszero(s[4])
-        o = mod(s[5]+4, 8)
-      elseif !iszero(s[4])
-        o = s[5]
+  e = Int(1) # Keep track of sign in a train
+  o = Int(0) # Keep track of oddity in a compartment
+  i = length(sym) # Next index to check
+  while !iszero(i)
+    s = sym[i]
+    i -= 1
+
+    # We first treat the case where the current constituent is the head of a
+    # train, i.e. there is no possible sign walking to the left. This happens
+    # when the current constituent is:
+    # - the last constituent of the symbol,
+    # - even and the next constituent is even or with non-adjacent scale
+    #   (differ by a factor at least 4),
+    # - odd and the next constituent is either even with non-adjacent scale,
+    #   or odd with scale differing by a factor of at least 8
+    if iszero(i) || (iszero(s[4]) && (iszero(sym[i][4]) || sym[i][1] < s[1]-1)) || (!iszero(s[4]) && sym[i][1] < s[1]-1 && (iszero(sym[i][4]) || sym[i][1] < s[1]-2))
+      # If e < 0, then the constituent receives a negative sign:
+      # If the constituent is odd, we must modify its oddity
+      if !iszero(s[4])
+        o = (e < 0) ? mod(s[5]+4, 8) : s[5]
       end
-      e *= kronecker_symbol(s[3], 2)
-      tmp = "{$(q^(s[1]))}^{$(e*s[2])}" # Head of train obtains the sign of the train
+      e *= kronecker_symbol(s[3], 2) # New sign of current constituent
+
+      # Head of a train carries its current sign in the symbol, after sign walking
+      tmp = "{$(q^(s[1]))}^{$(e*s[2])}"
+
       if !iszero(s[4])
         tmp *= "_{$o}"
       else
         tmp *= "_{II}"
       end
-      cas = tmp*cas # Append to the left
-      # Next scale is the end of another train so we put back these invariants as initially
+      cas = tmp*cas
+
+      # Next constituent is the tail of a train so we re-initialize `e` and `o`
       e = Int(1)
       o = Int(0)
 
-    # Next case is when the constituent is not the head of its train, and it is of different type
-    # as the left (adjacent) constituent.
-    # In that case, there is possible sign walking to the left but the constituent is not part
-    # of a nontrivial compartment (i.e. a compartment with more than one adjacent odd constituent)
-    elseif iszero(s[4]) || iszero(sym[1][4])
-      # If the constituent `s` has positive sign, there is either no sign walking from the right (e > 0)
-      # or the sign walks through the constituent (e < 0) so no change of oddity.
-      # Otherwise, there is a unique sign walk: from the right (e < 0) or to the left (e > 0), in
-      # which case we must modify the oddity.
+    # The next case covers isolated constituents which are not the head
+    # of a train. This happens when the constituent is:
+    # - even and the next consituent is odd with adjacent scale,
+    # - odd and the next constituent is either even with adjacent scale,
+    #   or odd with scale valuation differing exactly by a factor 4
+    #
+    # In that case, there is a possible sign walking to the left and the
+    # current constituent is not part of a nontrivial compartment
+    # (i.e. a compartment with more than one adjacent odd constituent)
+    elseif (sym[i][1] == s[1]-1 && iszero(s[4]*sym[i][4])) || (sym[i][1] == s[1]-2 && !iszero(s[4]*sym[i][4]))
+      # If the current constituent has positive sign, then either it
+      # receives a positive sign (e > 0) or it receives a negative sign
+      # and then gives it (e < 0)
+      # ---> even number of sign walks, no change of oddity.
+      #
+      # Otherwise, it either receives a negative sign (e < 0) or gives
+      # a negative sign (e > 0)
+      # ---> odd number of sign walks, change of oddity.
       d = kronecker_symbol(s[3], 2)
-      if !iszero(s[4]) && d < 0
-        o = mod(s[5] + 4, 8)
-      elseif !iszero(s[4])
-        o = s[5]
+      if !iszero(s[4])
+        o = (d < 0) ? mod(s[5] + 4, 8) : s[5]
       end
-      e *= d
-      tmp = "{$(q^(s[1]))}^{$(s[2])}" # Constituents which are not the head of a train obtain a + sign
+      e *= d # Sign given by the current constituent
+      # Since it gives its sign, it carries a positive sign in the symbol
+      tmp = "{$(q^(s[1]))}^{$(s[2])}"
       if !iszero(s[4])
         tmp *= "_{$o}"
       else
@@ -1106,51 +1163,53 @@ function _canonical_2adic_symbol(_sym::Vector{Vector{Int64}})
       cas = tmp*cas
       o = Int(0)
 
-    # Next case: the constituent is odd, its left adjacent is odd and not adjacent to another odd constituent
-    # The two constituents then form a short compartment where sign walking is not always allowed, so we must
-    # treat them in a different way
-    elseif length(sym) == 1 || iszero(sym[2][4]) || sym[2][1] < sym[1][1] - 1
-      s2 = popfirst!(sym)
-      if e < 0 # Sign walking from the right of the compartment
-        o = Int(4)
-      else
-        o = Int(0)
-      end
-      o += s[5] + s2[5] # Oddity fusion + the sign walking from the right
+    # Next case: the current constituent and the next one form a compartment
+    # of rank 2. If the compartment is "bad", meaning oddity fusion is 0
+    # modulo 4, there is no sign walking within the compartment, which splits
+    # into two trains.
+    elseif (isone(i) || iszero(sym[i-1][4]) || sym[i-1][1] < sym[i][1] - 1) && (s[2] == sym[i][2] == 1)
+      s2 = sym[i]
+      i -= 1
+      o = (e < 0) ? Int(4) : Int(0) # Compartment receives a negative sign -> change of oddity
+      o += (s[5] + s2[5]) # Oddity fusion
 
-      # At that stage, if o is 0 modulo 4, there is no sign walking within the (short) compartment
-      # The rightmost constituent is the head of its train, and the leftmost constituent is the
-      # end of its own respective train. Thus, the constituent `s` obtains the sign of its train.
-      # For the constituent `s2`, we must decide whether it defines its own train, and if not,
-      # whether it has negative sign walking to the left of the compartment, modifying the oddity
-      # fusion within that short compartment
-      d = kronecker_symbol(s[3], 2)
-      d2 = kronecker_symbol(s2[3], 2)
+      e *= kronecker_symbol(s[3], 2) # New sign of right constituent
+      d2 = kronecker_symbol(s2[3], 2) # Current sign of left constituent
+
+      # If o is 0 modulo 4, then the compartment is bad and splits into two
+      # trains: The right constituent is the head of one train, and the
+      # left constituent is the tail of another train.
+      # Thus, the right constituent `s` carries it current sign into the
+      # symbol.
+      #
+      # For the left constituent `s2`, we must decide whether it gives a
+      # negative sign to the next constituent. This happens if `s2` has
+      # negative sign and is not the head of its train.
       if iszero(mod(o, 4))
-        if d2 > 0 || isempty(sym) || sym[1][1] < s2[1] - 1 # s2 is positive or the head of its train, no more sign walking
+        if d2 > 0 || iszero(i) || (iszero(sym[i][4]) && sym[i][1] < s2[1] - 1) || sym[i][1] < s2[1] - 2
           o = mod(o, 8)
-          tmp = "[{$(q^(s2[1]))}^{$(d2 * s2[2])}{$(q^(s[1]))}^{$(e * d * s[2])}]_{$o}"
-          # Re-initialize the walking sign since we change train
+          tmp = "[{$(q^(s2[1]))}^{$(d2 * s2[2])}{$(q^(s[1]))}^{$(e * s[2])}]_{$o}"
+          # Re-initialize the received sign
           e = Int(1)
         else
-          # s2 is negative and give its sign to the left, so the oddity fusion changes
+          # s2 has negative sign and gives it, so the oddity fusion changes
           o = mod(o+4, 8)
-          tmp = "[{$(q^(s2[1]))}^{$(s2[2])}{$(q^(s[1]))}^{$(e * d * s[2])}]_{$o}"
-          # There is a sign walking in this new train
+          tmp = "[{$(q^(s2[1]))}^{$(s2[2])}{$(q^(s[1]))}^{$(e * s[2])}]_{$o}"
           e = Int(-1)
         end
       else
-        # Now there is a sign walking within the compartment if the
-        # current sign at the rightmost constituent is negative, in which
-        # case we must modify the oddity fusion of that compartment
-        e *= d
+        # If the right constituent, after receiving a sign, is negative,
+        # it gives it to the left constituent of the compartment, and
+        # there is an interior sign walk, meaning we must modify the
+        # oddity fusion
         if e < 0
           o += 4
         end
         e *= d2
-        # After that, we do as in the previous case, depending on whether the leftmost constituent
-        # can give its current sign to the left, when it is negative
-        if e > 0 || isempty(sym) || sym[1][1] < s2[1] - 1 # No sign walking to the left
+
+        # After that, we do as in the previous case, depending on whether
+        # the left constituent gives a negative sign.
+        if e > 0 || iszero(i) || (iszero(sym[i][4]) && sym[i][1] < s2[1] - 1) || sym[i][1] < s2[1] - 2
           o = mod(o, 8)
           tmp = "[{$(q^(s2[1]))}^{$(e * s2[2])}{$(q^(s[1]))}^{$(s[2])}]_{$o}"
           e = Int(1)
@@ -1162,32 +1221,28 @@ function _canonical_2adic_symbol(_sym::Vector{Vector{Int64}})
       cas = tmp*cas
       o = Int(0)
 
-    # Last case, we have a long compartment and we proceed iteratively by sign walking and modification
-    # of oddity fusion until we reach the leftmost constituent of the compartment.
-    # Arriving at the point, we must still decide whether there is an extra sign walking to the left
-    # of the compartment, in order to decide the sign of the leftmost constituent and the
-    # oddity fusion modulo 8
+    # Last case, we have a good compartment and we proceed iteratively by sign
+    # walking and modification of oddity fusion until we reach the leftmost
+    # constituent of the compartment. Arriving at this constituent, we must
+    # still decide whether it gives a negative sign to the next constituent.
     else
       tmp = "]"
       s2 = s
       tmp = "{$(q^(s2[1]))}^{$(s2[2])}"*tmp
-      if e < 0 # Sign walking when entering the compartment
-        o = Int(4)
-      else
-        o = Int(0)
-      end
+      o = (e < 0) ? Int(4) : Int(0) # If the compartment receives a negative sign, the oddity fusion changes
       d = kronecker_symbol(s2[3], 2)
-      e *= d
-      o += s2[5]
-      while !isempty(sym) && !iszero(sym[1][4]) && sym[1][1] == s2[1]-1 # We are still in the compartment
-        s2 = popfirst!(sym)
-        if e < 0 # Interior sign walking
+      e *= d # New sign of the current constituent
+      o += s2[5] # New modified oddity fusion
+      while !iszero(i) && !iszero(sym[i][4]) && sym[i][1] == s2[1]-1 # We are still in the compartment
+        s2 = sym[i]
+        i -= 1
+        if e < 0 # Receives negative sign ---> interior sign walking
           o += 4
         end
-        e *= kronecker_symbol(s2[3], 2)
-        o += s2[5]
-        if isempty(sym) || iszero(sym[1][4]) || sym[1][1] < s2[1]-1 # Leftmost constituent of the compartment
-          if e > 0 || isempty(sym) || sym[1][1] < s2[1] -1 # No more sign walking
+        e *= kronecker_symbol(s2[3], 2) # New sign of the current constituent
+        o += s2[5] # New modified oddity fusion
+        if iszero(i) || iszero(sym[i][4]) || sym[i][1] < s2[1]-1 # Leftmost constituent of the compartment
+          if e > 0 || iszero(i) || (iszero(sym[i][4]) && sym[i][1] < s2[1] - 1) || sym[i][1] < s2[1] - 2
             o = mod(o, 8)
             tmp = "[{$(q^(s2[1]))}^{$(e * s2[2])}"*tmp*"_{$o}"
             e = Int(1)
@@ -1195,7 +1250,7 @@ function _canonical_2adic_symbol(_sym::Vector{Vector{Int64}})
             o = mod(o+4, 8)
             tmp = "[{$(q^(s2[1]))}^{$(s2[2])}"*tmp*"_{$o}"
           end
-        else # Within a compartment, so positive sign and we keep iterating
+        else
           tmp = "{$(q^(s2[1]))}^{$(s2[2])}"*tmp
         end
       end
@@ -1214,29 +1269,84 @@ end
 ###############################################################################
 
 @doc raw"""
-   (==)(G1::ZZLocalGenus, G2::ZZLocalGenus) -> Bool
+   (==)(G1::ZZLocalGenus, G2::ZZLocalGenus; use_canonical_symbol::Bool=true) -> Bool
 
 Return whether the local genus symbols `G1` and `G2` define the same local
 genus.
 """
-function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus)
+function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus; use_canonical_symbol::Bool=true)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
   @req prime(G1) == prime(G2) ("Symbols must be over the same prime "
                                 *"to be comparable")
   sym1 = symbol(G1)
   sym2 = symbol(G2)
-  if isempty(sym1) || isempty(sym2) || isodd(p)
+  if length(sym1) == 0 || length(sym2) == 0 || isodd(prime(G1))
     return sym1 == sym2
+  elseif length(sym1) != length(sym2)
+    return false
   end
-  return _canonical_2adic_symbol(sym1) == _canonical_2adic_symbol(sym2)
+
+  if use_canonical_symbol
+    return _canonical_symbol(G1) == _canonical_symbol(G2)
+  end
+
+  n = length(sym1)
+  # scales && ranks
+  if !all(sym1[i][1] == sym2[i][1] && sym1[i][2] == sym2[i][2] for i in 1:n)
+    return false
+  end
+  # parity
+  if !all(sym1[i][4] == sym2[i][4] for i in 1:n)
+    return false
+  end
+  push!(sym1, Int[sym1[end][1]+1, 0, 1, 0, 0])
+  push!(sym2, Int[sym1[end][1]+1, 0, 1, 0, 0])
+  s = sym1[1][1]
+  pushfirst!(sym1, Int[s-1, 0, 1, 0, 0])
+  pushfirst!(sym1, Int[s-2, 0, 1, 0, 0])
+  pushfirst!(sym2, Int[s-1, 0, 1, 0, 0])
+  pushfirst!(sym2, Int[s-2, 0, 1, 0, 0])
+
+  n = length(sym1)
+  # oddity && sign walking conditions
+  det_differs = Int[i for i in 1:n if _kronecker_symbol(sym1[i][3], 2)
+                  != _kronecker_symbol(sym2[i][3], 2)]
+  odd = Int[sym1[i][1] for i in 1:n if sym1[i][4] == 1]
+  are_equal = true
+  for m in sym2[1][1]:sym2[n][1]
+    # "for each integer m for which f_{2^m} has type II, we have..."
+    if m in odd
+      continue
+    end
+    # sum_{q<2^m}(t_q-t'_q)
+    l = sum(sym1[i][5]-sym2[i][5] for i in 1:n if sym1[i][1] < m; init = 0)
+    # 4 (min(a,m)+min(b,m)+...)
+    # where 2^a, 2^b are the values of q for which e_q!=e'_q
+    r = 4*sum(min(m, sym1[i][1]) for i in det_differs; init = 0)
+    if 0 != mod(l-r, 8)
+      are_equal = false
+      break
+    end
+  end
+  # reinstate the original state
+  pop!(sym1)
+  pop!(sym2)
+  popfirst!(sym1)
+  popfirst!(sym1)
+  popfirst!(sym2)
+  popfirst!(sym2)
+  return are_equal
 end
 
 @doc raw"""
-    (==)(G1::ZZGenus, G2::ZZGenus) -> Bool
+    (==)(G1::ZZGenus, G2::ZZGenus; use_canonical_symbol::Bool=true) -> Bool
 
 Return if the genus symbols `G1` and `G2` define the same genus.
 """
-function Base.:(==)(G1::ZZGenus, G2::ZZGenus)
+function Base.:(==)(G1::ZZGenus, G2::ZZGenus; use_canonical_symbol::Bool=true)
+  if use_canonical_symbol
+    return canonical_symbol(G1) == canonical_symbol(G2)
+  end
   if signature_tuple(G1) != signature_tuple(G2)
     return false
   end
@@ -1244,13 +1354,27 @@ function Base.:(==)(G1::ZZGenus, G2::ZZGenus)
   return local_symbols(G1) == local_symbols(G2)
 end
 
-function Base.hash(G::ZZGenus, u::UInt)
-  h = hash(canonical_symbol(G))
+function Base.hash(G::ZZGenus, u::UInt; use_canonical_symbol::Bool=true)
+  if use_canonical_symbol
+    h = hash(canonical_symbol(G))
+    return xor(h, u)
+  end
+  h = reduce(xor,(hash(x) for x in local_symbols(G)); init=hash(signature_pair(G)))
   return xor(h, u)
 end
 
-function Base.hash(G::ZZLocalGenus, u::UInt)
-  h = hash(canonical_symbol(G))
+function Base.hash(G::ZZLocalGenus, u::UInt; use_canonical_symbol::Bool=true)
+  if use_canonical_symbol
+    h = hash(_canonical_symbol(G))
+    return xor(h, u)
+  end
+  if prime(G)!=2
+    # unique symbol
+    h = xor(hash(prime(G)),  hash(symbol(G)))
+  else
+    # symbol is not unique but at least scales and ranks
+    h = reduce(xor, (hash(view(s, [1,2,4])) for s in symbol(G)); init=hash(prime(G)))
+  end
   return xor(h, u)
 end
 
