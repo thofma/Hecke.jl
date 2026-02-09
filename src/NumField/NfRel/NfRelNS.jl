@@ -227,7 +227,7 @@ function Base.:(-)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T
 end
 
 function Base.:(*)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::RelNonSimpleNumFieldElem{T}
+  parent(a) == parent(b) || force_op(*, a, b)::RelNonSimpleNumFieldElem{T}
   return parent(a)(data(a) * data(b))
 end
 
