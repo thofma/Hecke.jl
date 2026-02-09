@@ -462,6 +462,8 @@ end
 #
 ################################################################################
 
+#TODO: track det sign while swapping
+
 function swap_entries(v::Vector{Int64}, i::Int64, j::Int64)
  v[i],v[j] = v[j],v[i]
 end

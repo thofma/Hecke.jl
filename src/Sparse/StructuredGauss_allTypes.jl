@@ -38,14 +38,14 @@ end
 mutable struct data_Det
  scaling #tracks scaling -> divide det by product in the end
  divisions #tracks divisions -> multiply det by product
- content #tracks reduction of polys by content -> multiply det by prod
+ #content #tracks reduction of polys by content -> multiply det by prod
  pivprod #product of pivot elements
  npiv #number of pivots
  function data_Det(R, _det=false)
   if _det
-   return new(one(R), one(R), one(coefficient_ring(R)), one(R), 1)
+   return new(one(R), one(R), one(R), 0)
   else
-   return new(zero(R), zero(R), zero(coefficient_ring(R)), zero(R), 0)
+   return new(zero(R), zero(R), zero(R), 0)
   end
  end
 end
@@ -83,7 +83,7 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
 
  t = ncols(SG.A) - trybound
  while SG.nlight > 0 && SG.base <= n
-  build_part_ref!(SG, _det)
+  build_part_ref!(SG, Det)
   #@show SG.npivots, SG.nlight
   (SG.npivots >= pivbound || t >= SG.nlight) && break
   (SG.nlight == 0 || SG.base > n) && break
@@ -114,7 +114,7 @@ function single_rows_to_top!(SG::data_StructGauss)::data_StructGauss
  return SG
 end
 
-function build_part_ref!(SG::data_StructGauss, _det::Bool)
+function build_part_ref!(SG::data_StructGauss, Det::data_Det)
  queue = collect(ncols(SG.A):-1:1)
  while !isempty(queue)
   queue_new = Int[]
@@ -134,7 +134,9 @@ function build_part_ref!(SG::data_StructGauss, _det::Bool)
     SG.is_light_col[j] = false
     SG.is_pivot_col[j] = true
     SG.pivot_col[singleton_row_idx] = j
-    _det && Det.pivprod*=SG.A[singleton_row_idx, j]#improve?
+    if !is_zero(Det.pivprod)
+     Det.pivprod*=SG.A[singleton_row_idx, j]#improve?
+    end
     SG.nlight-=1
     SG.npivots+=1
     swap_i_into_base(singleton_row_idx, SG)
@@ -160,7 +162,7 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Int64
   @assert w == 1
   light_idx = find_light_entry(single_row.pos, SG.is_light_col)
   j_light = single_row.pos[light_idx]
-  single_row_val = SG.A[i, j_light]
+  single_row_val = SG.A[i, j_light] #TODO
   @assert length(SG.col_list[j_light]) > 1
   is_one = isone(single_row_val)||isone(-single_row_val)
   if best_single_row < 0
@@ -186,6 +188,7 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Int64
  return best_single_row
 end
 
+#TODO: rename to find_elimination_pivot_row
 #prio: shortest row
 function find_best_single_row(SG::data_StructGauss{<:FieldElem})::Int64
  best_single_row = -1
@@ -250,16 +253,17 @@ function handle_new_light_weight!(i::Int64, SG::data_StructGauss)::data_StructGa
  return SG
 end
 
+#best_single_row = row to eliminate with (next pivot row)
 function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss{T}, Det::data_Det)::data_StructGauss{T}
  @assert !iszero(best_single_row)
- L_best = deepcopy(SG.col_list_perm[best_single_row])
- #L_best == 85 && @show SG.A[best_single_row].pos
- light_idx = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col)
- best_col = SG.A[best_single_row].pos[light_idx]
- #@show L_best, best_col
+ L_best = deepcopy(SG.col_list_perm[best_single_row]) #old index 
+ light_idx = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col) #idx in pos array (not col idx in matrix)
+ best_col = SG.A[best_single_row].pos[light_idx] #col idx of elim-piv in matrix
  @assert length(SG.col_list[best_col]) > 1
+
  best_val = SG.A[best_single_row].values[light_idx] #test
  @assert !iszero(best_val) #test
+ 
  row_idx = 0
  while length(SG.col_list[best_col]) > 1
   best_single_row = SG.col_list_permi[L_best]
@@ -378,6 +382,7 @@ function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_single_row::Int64,
  end
  return SG
 end
+=#
 
 ################################################################################
 #
@@ -386,6 +391,8 @@ end
 ################################################################################
 
 #allTypes
+
+#TODO: add sign changes in det for swap functions
 
 function delete_zero_rows!(A::SMat{T}) where T
   filter!(!isempty, A.rows)
