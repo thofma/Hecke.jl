@@ -102,21 +102,21 @@ Return a tuple $(\nu, N)$ consisting of the nullity $\nu$ of `A` and a basis `N`
 `A*N` is the zero matrix.
 """
 function structured_gauss(A::SMat{T}, kernel_basis::Bool=false) where T <: ZZRingElem
- SG, SG_test = part_echolonize!(A)
+ SG, SG_test = part_echelonize!(A)
  return compute_kernel(SG, kernel_basis)
 end
 
 ################################################################################
 #
-#  Partial Echolonization
+#  Partial Echelonization
 #
 ################################################################################
 
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-#function part_echolonize!(A::SMat{T})::data_ZZStructGauss where T <: ZZRingElem
-function part_echolonize!(A::SMat{T})::Tuple{data_ZZStructGauss{ZZRingElem}, test_ZZStructGauss{ZZRingElem}} where T <: ZZRingElem #test
+#function part_echelonize!(A::SMat{T})::data_ZZStructGauss where T <: ZZRingElem
+function part_echelonize!(A::SMat{T})::Tuple{data_ZZStructGauss{ZZRingElem}, test_ZZStructGauss{ZZRingElem}} where T <: ZZRingElem #test
  A = delete_zero_rows!(A)
  n = nrows(A)
  SG = data_ZZStructGauss(A)
@@ -459,7 +459,7 @@ end
 #
 ################################################################################
 
-#Compute the kernel corresponding to the non echolonized part from above and
+#Compute the kernel corresponding to the non echelonized part from above and
 #insert backwards using the triangular part to get the full kernel.
 
 mutable struct data_ZZKernel
