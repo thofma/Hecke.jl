@@ -277,8 +277,6 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
 
   u = elem_in_nf(p_uniformizer(P))
 
-  @show is_integral(u)
-
   umat = zero_matrix(QQ, d, d)
 
   for i in 1:d
@@ -304,7 +302,7 @@ function absolute_anti_uniformizer(P::RelNumFieldOrderIdeal)
   K = kernel(z, side = :left)
 
   k = K[1, :]
-  return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(k[i]) for i in 1:d]))
+  return inv(L(p)) * elem_in_nf(sum(elem_type(OL)[A[i] * lift(ZZ, k[i]) for i in 1:d]))
 end
 
 ################################################################################
