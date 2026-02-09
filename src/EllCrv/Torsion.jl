@@ -16,22 +16,40 @@
 Returns the order of the point $P$ or $0$ if the order is infinite.
 """
 function order(P::EllipticCurvePoint{T}) where T<:Union{AbsSimpleNumFieldElem, QQFieldElem}
-  if T==QQFieldElem
-    N = 12
+  if T == QQFieldElem
+    N = 2520 # = lcm(1,2,3,4,5,6,7,8,9,10,12)
   else
     E = parent(P)
     N = torsion_bound(E, 20)
   end
 
-  Q = P
-  for i in 1:N
-    if !is_finite(Q)
-      return ZZRingElem(i)
-    end
-    Q = Q + P
+  # Points that will be reallocated if order(P) is finite
+  # C will be a buffer, we will write to Q
+  C = infinity(parent(P))
+  Q = infinity(parent(P))
+
+  # Is the order finite?
+  mul!(Q,N,P,C)
+  if is_finite(Q)
+    return ZZRingElem(0)
   end
 
-  return ZZRingElem(0)
+  # We'll use N to check for the order.
+  factors = factor(N)
+
+  for (p, exp) in factors
+    for i in 1:exp
+      cand = div(N, p)
+      mul!(Q,cand,P,C)
+      if !is_finite(Q)
+        N = cand
+      else
+        break
+      end
+    end
+  end
+
+  return ZZRingElem(N)
 end
 
 ################################################################################
@@ -166,12 +184,12 @@ function torsion_points_division_poly(F::EllipticCurve{QQFieldElem})
   # points of order 2 (point has order 2 iff y-coordinate is zero)
   # (note: these points are not detected by the division polynomials)
 
-  Zx, x = polynomial_ring(ZZ, "x")
+  x = gen(Globals.Zx)
 
-  s = zeros(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
-  if length(s) != 0
-    for i = 1:length(s)
-      P = E([s[i], 0])
+  sols = roots(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
+  if !isempty(sols)
+    for sol in sols
+      P = E([sol, 0])
       push!(torsionpoints, P)
     end
   end
@@ -324,33 +342,50 @@ end
 @doc raw"""
     torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int) -> ZZRingElem
 
+Returns an upper bound for the order of the torsion subgroup of $E$.
+This bound is obtained by considering the order of $E$ modulo $n$ distinct
+primes where $E$ has good reduction.
 
-Bound the order of the torsion subgroup of $E$ by considering
-the order of the reduction of $E$ modulo $n$ distinct primes
-with good reduction.
+We limit the primes considered in this process to those where the reduction
+map has trivial kernel when restricted to the torsion subgroup of $E$.
 """
 function torsion_bound(E::EllipticCurve{AbsSimpleNumFieldElem}, n::Int)
   K = base_field(E)
   R = ring_of_integers(K)
-  badp = bad_primes(E)
-  #First prime is 3
-  p = next_prime(2)
+  disc_K = ZZ(discriminant(R))
+  disc_E = R(discriminant(E))
+
+  # If p>2 does not divide disc_K, then the kernel of the reduction
+  # map mod P is trivial on the torsion subgroup of E for any prime
+  # P of K lying over p.
+  #
+  # Since E(K) includes in E(K_P) for the completion K_P, we can work with E(K_P).
+  # The kernel of the reduction map from E(K_P) to E(R/P) is determined by
+  # the formal group of E, see "Arithmetic of Elliptic Curves (2nd Edition)"
+  # by Silverman, VII Proposition 2.2. Now the claim is IV Theorem 6.1.
+
+  # The first prime we consider is thus 3.
+  p = 3
   i = 0
   bound = 0
-  disc_K = ZZ(discriminant(K))
-  disc_E = R(discriminant(E))
-  while i < n
-    L = prime_ideals_over(R, p)
-    for P in L
-      if !divides(disc_K, p)[1] && !divides(disc_E, R(p))[1]
-        i=i+1
-        EP = modp_reduction(E,P)
-        bound = gcd(bound, order(EP))
+    while i < n
+      if !divides(disc_K, p)[1]
+        L = prime_ideals_over(R, p)
+        for P in L
+          if valuation(disc_E, P) == 0
+            EP = modp_reduction(E,P)
+            bound = gcd(bound, order(EP))
+            # Early return if the group is trivial, or if we've checked n primes
+            if bound == 1 || i >= n
+              return ZZRingElem(bound)
+            end
+            i+=1
+          end
+        end
       end
+      p = next_prime(p)
     end
-    p = next_prime(p)
-  end
-  return(ZZRingElem(bound))
+  return ZZRingElem(bound)
 end
 
 ################################################################################

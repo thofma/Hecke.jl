@@ -683,18 +683,37 @@ function infinity(E::EllipticCurve{T}) where T
   return infi
 end
 
+@doc raw"""
+    points_with_x_coordinate(E::EllipticCurve{T}, x) -> Vector{EllipticCurvePoint{T}}
+
+Return all points on $E$ with the given $x$-coordinate that are defined over the
+base field of $E$. The result may contains 0, 1, or 2 points.
+
+# Examples
+
+```jldoctest
+julia> E = elliptic_curve(QQ, [1, 2]);
+
+julia> points_with_x_coordinate(E, 1)
+2-element Vector{EllipticCurvePoint{QQFieldElem}}:
+ (1 : 2 : 1)
+ (1 : -2 : 1)
+
+julia> points_with_x_coordinate(E, -1)
+1-element Vector{EllipticCurvePoint{QQFieldElem}}:
+ (-1 : 0 : 1)
+
+julia> points_with_x_coordinate(E, -2)
+EllipticCurvePoint{QQFieldElem}[]
+```
+"""
 function points_with_x_coordinate(E::EllipticCurve{T}, x) where T
   R = base_field(E)
   x = R(x)
   a1, a2, a3, a4, a6 = a_invariants(E)
   Ry, y = polynomial_ring(R,"y")
   f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
-  ys = roots(f)
-  pts = elem_type(E)[]
-   for yi in ys
-     push!(pts, E([x, yi]))
-   end
-  return pts
+  return [E([x, yi]) for yi in roots(f)]
 end
 
 

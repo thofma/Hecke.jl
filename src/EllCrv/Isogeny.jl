@@ -299,20 +299,18 @@ end
 Return $\phi(P)$.
 """
 function image(f::Isogeny, P::EllipticCurvePoint)
-  @assert domain(f) == parent(P)
+  @req domain(f) == parent(P) "point is not in the domain of isogeny"
+
+  is_infinite(P) && return infinity(codomain(f))
+
   x = P.coordx
   y = P.coordy
-
-  if evaluate(isogeny_map_psi(f),x) == 0
+  if evaluate(isogeny_map_psi(f), x) == 0
     return infinity(codomain(f))
   end
 
-  coordx = f.coordx
-  coordy = f.coordy
-
-  phix = evaluate(coordx, x)
-  phiy = evaluate(evaluate(coordy,y), x)
-
+  phix = evaluate(f.coordx, x)
+  phiy = evaluate(evaluate(f.coordy, y), x)
   return codomain(f)([phix, phiy])
 end
 
@@ -476,12 +474,14 @@ end
     multiplication_by_m_map((E::EllipticCurve, m::Int) -> Isogeny
 
 Return the isogeny corresponding to the multiplication by m map on $E$.
+
+Throws an error for $m = 0$, otherwise supports both positive and negative values of $m$.
 """
 function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer, ZZRingElem}
+  @req !iszero(m) "m must be non-zero"
 
-  if m==1
-    return isomorphism_to_isogeny(id_hom(E))
-  end
+  m < 0 && return negation_map(E) * multiplication_by_m_map(E, -m)
+  m == 1 && return identity_isogeny(E)
 
   p = characteristic(base_field(E))
 
@@ -674,26 +674,22 @@ end
 @doc raw"""
     compose(fs::Vector{Isogeny}) -> Isogeny
 
-Return the composition $phi_n \circ phi_(n-1) \circ phi_1$ where `fs` is a list of compatible
+Return the composition $phi_n \circ phi_(n-1) \circ ... \circ phi_1$ where `fs` is a list of compatible
 isogenies $[phi_1, ..., phi_n]$.
+
+Throws an error when called with the empty list.
 """
-function compose(fs::Vector{Isogeny})
-  g = fs[1]
-  n = length(fs)
-  for i in (2:n)
-    g = g*fs[i]
-  end
-  return g
-end
+compose(fs::Vector{Isogeny}) = foldl(*, fs)
 
 function ^(phi::Isogeny, n::Int)
+  @req n >= 0 "exponent must be non-negative"
+  @req domain(phi) == codomain(phi) "isogeny must be an endomorphism"
+  n == 0 && return identity_isogeny(domain(phi))
+  n == 1 && return phi
 
-  res = identity_isogeny(E)
-
-  for i in (1:n)
-    res = phi*res
-  end
-  return res
+  # TODO: Base.power_by_squaring should be more efficient, but it is not (and uses way more memory)
+  # NOTE: large exponents are not feasible anyway due to coefficient explosion
+  return reduce(*, Iterators.repeated(phi, n))
 end
 
 @doc raw"""
