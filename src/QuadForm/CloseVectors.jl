@@ -209,6 +209,33 @@ function Base.iterate(C::LatCloseEnumCtx{X, elem_type}, start = nothing) where {
 end
 
 
+function _closest_vectors(L::ZZLat, v::Vector, elem_type::Type{S} = ZZRingElem; kw...) where S
+  lowerbound = 0
+  if gram_matrix(L)[1,1]<0
+    L = rescale(L,-1)
+  end
+  upperbound = abs(sum(diagonal(gram_matrix(L))))  # too big, better?
+  cur_min = upperbound #
+  cur_vec = Vector{S}[]
+
+  done = false
+  while !done
+    done = true
+    for (v, l) in close_vectors_iterator(L, v, lowerbound, cur_min, elem_type; kw...)
+      if l < cur_min
+        empty!(cur_vec)
+        cur_min = l
+        done = false
+        break
+      elseif l == cur_min
+        push!(cur_vec, v)
+      end
+    end
+  end
+
+  return cur_min, cur_vec
+end
+
 ################################################################################
 #
 #  Legacy interface
