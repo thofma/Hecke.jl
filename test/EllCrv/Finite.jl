@@ -127,6 +127,40 @@
       @test @inferred is_ordinary(E) == true
     end
 
+    # brute-force check for small primes:
+    # it is trivial to factor supersingular_polynomial, and check all the candidates for j-invariant
+    p = 2
+    for _ in 1:10
+      K = GF(p,2)
+      jss = roots(change_base_ring(K, supersingular_polynomial(p)))
+      for jc in K
+        E = elliptic_curve_from_j_invariant(jc)
+        expected_supersingular = jc in jss
+        @test @inferred is_supersingular(E) == expected_supersingular
+      end
+      p = next_prime(p)
+    end
+
+    K = GF(103)
+    E = elliptic_curve_from_j_invariant(K(24))
+    @test @inferred is_supersingular(E) == true
+
+    K = GF(15485863)
+    @test @inferred !is_supersingular(elliptic_curve_from_j_invariant(K(0)))
+    @test @inferred is_supersingular(elliptic_curve_from_j_invariant(K(1728)))
+
+    K = GF(15485917)
+    @test @inferred !is_supersingular(elliptic_curve_from_j_invariant(K(0)))
+    @test @inferred !is_supersingular(elliptic_curve_from_j_invariant(K(1728)))
+
+    K = GF(15485927)
+    @test @inferred is_supersingular(elliptic_curve_from_j_invariant(K(0)))
+    @test @inferred is_supersingular(elliptic_curve_from_j_invariant(K(1728)))
+
+    K = GF(15485933)
+    @test @inferred is_supersingular(elliptic_curve_from_j_invariant(K(0)))
+    @test @inferred !is_supersingular(elliptic_curve_from_j_invariant(K(1728)))
+
     K = GF(193, 3)
     a = gen(K)
     E = elliptic_curve_from_j_invariant(a)
