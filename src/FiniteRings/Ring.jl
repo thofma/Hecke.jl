@@ -252,8 +252,8 @@ function finite_ring(A::AbstractAssociativeAlgebra)
     push!(mult, hom(AA, AA, lift.(Ref(ZZ), representation_matrix(b))))
   end
   R = FiniteRing(AA, mult)
-  inv = hom(A, R, x -> lift(ZZ, x), [R(lift.(Ref(ZZ), coefficients(x))) for x in basis(A)])
-  f = hom(R, A, [A(F.(_eltseq(x.a.coeff))) for x in _zgens(R)]; inverse = inv)
+  inv = hom(A, R, x -> lift(ZZ, x), [R(lift.(Ref(ZZ), coefficients(x))) for x in basis(A)]; check = false)
+  f = hom(R, A, [A(F.(_eltseq(x.a.coeff))) for x in _zgens(R)]; inverse = inv, check = false)
   inv.inverse = f
   f.inv = inv
   if is_prime(order(F))
@@ -321,7 +321,7 @@ function finite_ring(M::AbstractAlgebra.Generic.MatRing{FiniteRingElem})
   homs = [ hom(D, D, [ hinv(h(D[i]) * h(D[j])) for j in 1:ngens(D)]) for i in 1:ngens(D)]
   MR = FiniteRing(D, homs)
   hhinv = m -> FiniteRingElem(MR, hinv(m))
-  hh = hom(MR, M, h.(data.(additive_generators(MR))); inverse = hhinv)
+  hh = hom(MR, M, h.(data.(additive_generators(MR))); inverse = hhinv, check = false)
   #hh = r -> h(data(r))
 
   # Let's compute the radical (chain)
@@ -333,7 +333,7 @@ function finite_ring(M::AbstractAlgebra.Generic.MatRing{FiniteRingElem})
   end
   set_attribute!(MR, :radical => rad_chain[1])
   set_attribute!(MR, :radical_chain => rad_chain)
-  return MR, hh, hhinv
+  return MR, hh
 end
 
 function finite_ring(A::AbsOrdQuoRing)
@@ -344,7 +344,7 @@ function finite_ring(A::AbsOrdQuoRing)
     push!(mult, hom(AA, AA, [AtoAA(AAtoA(b) * AAtoA(a)) for a in B]))
   end
   R = FiniteRing(AA, mult)
-  iso = hom(R, A, [AAtoA(x.a) for x in _zgens(R)])
+  iso = hom(R, A, [AAtoA(x.a) for x in _zgens(R)]; check = false)
   isoinv = hom(A, R, [FiniteRingElem(R, AtoAA(A(x))) for x in basis(base_ring(A))])
   iso.inv = isoinv
   #fw = x -> AAtoA(x.a)
