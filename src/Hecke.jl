@@ -42,6 +42,7 @@ import AbstractAlgebra:
   clearindent,
   get_assertion_level,
   get_verbosity_level,
+  is_known,
   popindent,
   pushindent,
   set_assertion_level,
@@ -607,6 +608,7 @@ include("QuadForm.jl")
 include("FieldFactory.jl")
 include("RieSrf.jl")
 include("../examples/NFDB.jl")
+include("FiniteRings/FiniteRings.jl")
 
 const _RealRings = _RealRing[_RealRing()]
 

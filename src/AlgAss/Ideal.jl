@@ -5,6 +5,8 @@ Returns the algebra containing $a$.
 """
 algebra(a::AbsAlgAssIdl) = a.algebra
 
+base_ring(I::AbsAlgAssIdl) = algebra(I)
+
 iszero(a::AbsAlgAssIdl) = (a.iszero == 1)
 
 @doc raw"""

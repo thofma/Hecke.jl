@@ -47,7 +47,11 @@ export GenOrdFracIdl
 export FinGenAbGroup
 export FinGenAbGroupElem
 export FinGenAbGroupHom
-export FinGenAbGroupToGroupHom
+export FinGenAbGroupToGroupHo
+export FiniteRing
+export FiniteRingElem
+export FiniteRingHom
+export FiniteRingMap
 export MultTableGroup
 export MultTableGroupElem
 export MultTableGroupToGroupHom
@@ -143,6 +147,7 @@ export add_assertion_scope
 export add_right_scaled_row
 export add_scaled_row
 export add_verbosity_scope
+export additive_generators
 export algebra
 export ambient_space
 export angle
@@ -262,6 +267,8 @@ export cyclotomic_polynomial
 export cyclotomic_regulator
 export cyclotomic_units_totally_real
 export decompose
+export decompose_into_indecomposable_rings
+export decompose_into_p_rings
 export decomposition_field
 export decomposition_group
 export deepcopy
@@ -341,6 +348,7 @@ export farey_lift
 export find_points
 export finite_divisor
 export finite_maximal_order
+export finite_ring
 export fixed_field
 export fixed_ring
 export flat
@@ -506,6 +514,7 @@ export is_genus
 export is_gorenstein
 export is_hermitian
 export is_idempotent
+export is_indecomposable
 export is_indefinite
 export is_independent
 export is_index_divisor
@@ -664,6 +673,7 @@ export maximal_abelian_subfield
 export maximal_even_lattice
 export maximal_integral_lattice
 export maximal_order
+export maximal_p_quotient_ring
 export maximal_submodules
 export meataxe
 export min
@@ -715,6 +725,7 @@ export normic_defect
 export normred
 export norms
 export number_field
+export number_of_additive_generators
 export number_of_lattices
 export number_of_relations
 #export number_of_small_groups #(conflict with Oscar?)

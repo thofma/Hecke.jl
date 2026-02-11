@@ -498,7 +498,7 @@ function _hom(R::AbstractAssociativeAlgebra, S::NCRing, f, imgbasis, inverse, ch
   f = AbstractAssociativeAlgebraMap(R, S, f, imgbasis, inverse)
   if check
     @req f(one(R)) == one(S) "Data does not define a morphism"
-    B = basis(R; copy = false)
+    B = basis(R)
     for x in B, y in B
       @req f(x * y) == f(x) * f(y) "Data does not define a morphism"
     end

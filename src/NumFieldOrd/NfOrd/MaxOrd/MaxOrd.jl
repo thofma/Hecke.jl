@@ -41,10 +41,9 @@ julia> O = maximal_order(K);
 function maximal_order(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     E = any_order(K)
-    O = new_maximal_order(E, ramified_primes = ramified_primes)
+    O = new_maximal_order(E, disc = discriminant, ramified_primes = ramified_primes)
     O.is_maximal = 1
     if E === O
-      E.is_maximal == 1
       if isdefined(E, :lllO)
         E.lllO.is_maximal = 1
       end

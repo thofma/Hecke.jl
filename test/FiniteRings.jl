@@ -1,0 +1,6 @@
+include("FiniteRings/Conversions.jl")
+include("FiniteRings/Elem.jl")
+include("FiniteRings/Ideal.jl")
+include("FiniteRings/Map.jl")
+include("FiniteRings/OnePlusIdeal.jl")
+include("FiniteRings/Ring.jl")
