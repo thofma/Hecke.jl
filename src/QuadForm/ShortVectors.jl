@@ -311,7 +311,7 @@ end
       ) where T <: Union{ZZRingElem, QQFieldElem} -> Vector{MatrixElem{T}}
 
 Given the Gram matrix `gram` of a hyperbolic or negative definite
-$\mathbb{Z}$-lattice ``S``, return iterator that returns vectors
+$\mathbb{Z}$-lattice ``S``, return an iterator over the following set of vectors
 
 ```math
 \{x \in S : x^2=d, x.v=\alpha \}.
