@@ -955,16 +955,15 @@ end
 
 @doc raw"""
     genus_info(
-      G::ZZGenus;
-      check::Bool=true,
+      G::ZZGenus,
     ) -> Symbol, Int, Int, QQFieldElem, QQFieldElem, String
 
 Given a genus `G` of nondegenerate indivisible integral integer lattices,
 return a tuple consisting of invariants of ``G``, given in the following order:
 
-- the parity of `G` -- `:I` if `G` is odd, `:II` otherwise,
+- the type of `G` -- `:I` if `G` consists of odd lattices, `:II` otherwise,
 - the rank of `G`,
-- the signature of `G`
+- the signature of `G`,
 - the absolute value of the determinant of `G`,
 - the level of `G`,
 - the canonical symbol of `G`, without signature and unimodular factors
@@ -972,10 +971,22 @@ return a tuple consisting of invariants of ``G``, given in the following order:
 
 !!! note
     If `G` consists of positive definite lattices, then the last invariant
-    uniquely determined the other ones.
+    uniquely determines the other ones.
+
+# Examples
+```jldoctest
+julia> G = genus(root_lattice(:E, 7))
+Genus symbol for integer lattices
+Signatures: (7, 0, 0)
+Local symbol:
+  Local genus symbol at 2: 1^6 2^1_7
+
+julia> Hecke.genus_info(G)
+(:II, 7, 7, 2, 2, "{1}^{6}_{II}{2}^{1}_{7}")
+```
 """
 function genus_info(G::ZZGenus)
-  @req isone(scale(G)) "G must represent indivisible integral lattices"
+  @req isone(scale(G)) "G should consist of indivisible integral lattices"
   t = is_even(G) ? :II : :I
   r = rank(G)
   s = signature(G)
@@ -990,17 +1001,31 @@ end
     ) -> ZZGenus, QQFieldElem
 
 Given a genus `G` of nondegenerate integer lattices, return a pair consisting
-of a genus `Gred` of nondegenerate indivisible integral integer lattices and
-a rational number `s` satisfying both of the following:
-- `Gred` has nonnegative signature;
-- `G` is obtained by rescaling `Gred` by `s`.
+of a genus `Gred` of nondegenerate integer lattices and a rational number `s`
+satisfying both of the following:
+- The lattices in `Gred` have scale ``1``,
+- The genus `Gred` has nonnegative signature,
+- The genus `G` is obtained by rescaling `Gred` by `s`.
 
-!!! note
-    `Gred` and `s` are uniquely determined only when `Gred` has positive
-    signature.
+!!! warning
+    `Gred` and `s` are uniquely determined only when `G` has nonzero signature.
+
+# Examples
+```jldoctest
+julia> G = genus(rescale(root_lattice(:A, 5), -16//3))
+Genus symbol for integer lattices
+Signatures: (0, 0, 5)
+Local symbols:
+  Local genus symbol at 2: 16^-4 32^-1_3
+  Local genus symbol at 3: (1/3)^-4 1^-1
+
+julia> Hecke.reduced_genus_with_data(G)
+(Genus symbol: II_(5, 0) 2^1_7 3^1, -16//3)
+```
 """
 function reduced_genus_with_data(G::ZZGenus)
-  p, n = signature_tuple(G)
+  p, z, n = signature_tuple(G)
+  @req iszero(z) "G should consist of nondegenerate lattices"
   e = (p < n) ? Int(-1) : Int(1)
   s = e*scale(G)
   Gred = rescale(G, inv(s))
@@ -1023,14 +1048,30 @@ in the output.
 
 If `odd_ones` is false, then the factor for the unimodular constituent at
 each odd prime do not appear in the output.
+
+# Examples
+```jldoctest
+julia> G = first(integer_genera((5, 1), 4//3, min_scale = 1//18, max_scale = 12))
+Genus symbol for integer lattices
+Signatures: (5, 0, 1)
+Local symbols:
+  Local genus symbol at 2: (1/2)^1_1 1^2 2^-3_5
+  Local genus symbol at 3: (1/9)^-1 (1/3)^-1 1^2 3^-2
+
+julia> canonical_symbol(G)
+"{(5, 1)}{1/2}^{-1}_{5}{1}^{2}_{II}{2}^{3}_{1}{1/9}^{-1}{1/3}^{-1}{1}^{2}{3}^{-2}"
+
+julia> canonical_symbol(G; with_signature=false, odd_ones=false)
+"{1/2}^{-1}_{5}{1}^{2}_{II}{2}^{3}_{1}{1/9}^{-1}{1/3}^{-1}{3}^{-2}"
+```
 """
-function canonical_symbol(G::ZZGenus; with_signature::Bool=true, odd_ones::Bool=true)
+function canonical_symbol(
+  G::ZZGenus;
+  with_signature::Bool=true,
+  odd_ones::Bool=true,
+)
   bps = sort!(bad_primes(G))
-  if with_signature
-    cas = "{$(signature_pair(G))}"
-  else
-    cas = ""
-  end
+  cas = with_signature ? "{$(signature_pair(G))}" : ""
   for p in bps
     cas *= canonical_symbol(local_symbol(G, p); odd_ones)
   end
@@ -1050,6 +1091,20 @@ If ``p == 2``, then we use Conway--Sloane canonicalization procedure following
 
 If ``p`` is odd and `odd_ones` is false, then the output does not contain
 the factor for the unimodular constituent in `g`.
+
+# Examples
+```jldoctest
+julia> g = first(Hecke._local_genera(ZZ(2), 7, 6, 0, 4, false))
+Local genus symbol for integer lattices
+Prime: 2
+Jordan blocks (val, rank, det, sign, oddity):
+  (0, 4, 7, 1, 2)
+  (1, 2, 3, 1, 4)
+  (4, 1, 1, 1, 1)
+
+julia> canonical_symbol(g)
+"[{1}^{-4}{2}^{2}]_{2}{16}^{1}_{1}"
+```
 """
 function canonical_symbol(g::ZZLocalGenus; odd_ones::Bool=true)
   p = QQ(prime(g))
@@ -1271,8 +1326,7 @@ end
 @doc raw"""
    (==)(G1::ZZLocalGenus, G2::ZZLocalGenus; use_canonical_symbol::Bool=true) -> Bool
 
-Return whether the local genus symbols `G1` and `G2` define the same local
-genus.
+Return whether `G1` and `G2` define the same genus of ``p``-adic lattices.
 """
 function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus; use_canonical_symbol::Bool=true)
   # This follows p.381 Chapter 15.7 Theorem 10 in Conway Sloane's book
@@ -1338,10 +1392,25 @@ function Base.:(==)(G1::ZZLocalGenus, G2::ZZLocalGenus; use_canonical_symbol::Bo
   return are_equal
 end
 
+function Base.hash(G::ZZLocalGenus, u::UInt; use_canonical_symbol::Bool=true)
+  if use_canonical_symbol
+    h = hash(_canonical_symbol(G))
+    return xor(h, u)
+  end
+  if prime(G)!=2
+    # unique symbol
+    h = xor(hash(prime(G)),  hash(symbol(G)))
+  else
+    # symbol is not unique but at least scales and ranks
+    h = reduce(xor, (hash(view(s, [1,2,4])) for s in symbol(G)); init=hash(prime(G)))
+  end
+  return xor(h, u)
+end
+
 @doc raw"""
     (==)(G1::ZZGenus, G2::ZZGenus; use_canonical_symbol::Bool=true) -> Bool
 
-Return if the genus symbols `G1` and `G2` define the same genus.
+Return whether `G1` and `G2` define the same genus of integer lattices.
 """
 function Base.:(==)(G1::ZZGenus, G2::ZZGenus; use_canonical_symbol::Bool=true)
   if use_canonical_symbol
@@ -1360,21 +1429,6 @@ function Base.hash(G::ZZGenus, u::UInt; use_canonical_symbol::Bool=true)
     return xor(h, u)
   end
   h = reduce(xor,(hash(x) for x in local_symbols(G)); init=hash(signature_pair(G)))
-  return xor(h, u)
-end
-
-function Base.hash(G::ZZLocalGenus, u::UInt; use_canonical_symbol::Bool=true)
-  if use_canonical_symbol
-    h = hash(_canonical_symbol(G))
-    return xor(h, u)
-  end
-  if prime(G)!=2
-    # unique symbol
-    h = xor(hash(prime(G)),  hash(symbol(G)))
-  else
-    # symbol is not unique but at least scales and ranks
-    h = reduce(xor, (hash(view(s, [1,2,4])) for s in symbol(G)); init=hash(prime(G)))
-  end
   return xor(h, u)
 end
 
