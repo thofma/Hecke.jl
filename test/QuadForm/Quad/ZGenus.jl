@@ -615,7 +615,7 @@ end
 end
 
 @testset "Canonical symbols" begin
-  # From Allcock, Gal, Mark "The Conway--Sloane calculues for 2-adic lattices"
+  # From Allcock, Gal, Mark "The Conway--Sloane calculus for 2-adic lattices"
   sym = Vector{Int}[[0,2,1,0,0], [1,2,3,1,4], [2,3,1,1,7], [4,1,1,1,1], [5,2,1,0,0], [6,2,3,0,0], [7,1,1,1,7], [8,1,1,1,1], [9,4,3,0,0]]
   @test Hecke._canonical_2adic_symbol(sym) == "{1}^{-2}_{II}[{2}^{2}{4}^{3}]_{7}{16}^{1}_{1}{32}^{2}_{II}{64}^{-2}_{II}[{128}^{1}{256}^{-1}]_{4}{512}^{4}_{II}"
 
