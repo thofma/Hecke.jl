@@ -1086,7 +1086,7 @@ by `g`. The ouput is given in the form of a string.
 
 If ``p`` is odd, the symbol is uniquely determined by the invariants of `g`.
 
-If ``p == 2``, then we use Conway--Sloane canonicalization procedure following
+If ``p == 2``, then we use the Conway--Sloane canonicalization procedure following
 [AGM20](@cite)
 
 If ``p`` is odd and `odd_ones` is false, then the output does not contain
