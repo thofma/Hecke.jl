@@ -1002,7 +1002,7 @@ end
 
 Given a genus `G` of nondegenerate integer lattices, return a pair consisting
 of a genus `Gred` of nondegenerate integer lattices and a rational number `s`
-satisfying both of the following:
+satisfying all of the following:
 - The lattices in `Gred` have scale ``1``,
 - The genus `Gred` has nonnegative signature,
 - The genus `G` is obtained by rescaling `Gred` by `s`.
@@ -1420,7 +1420,12 @@ function Base.:(==)(G1::ZZGenus, G2::ZZGenus; use_canonical_symbol::Bool=true)
     return false
   end
   bad_primes(G1) == bad_primes(G2) || return false
-  return local_symbols(G1) == local_symbols(G2)
+  for p in bad_primes(G1)
+    if !(==(local_symbol(G1, p), local_symbol(G2, p); use_canonical_symbol))
+      return false
+    end
+  end
+  return true
 end
 
 function Base.hash(G::ZZGenus, u::UInt; use_canonical_symbol::Bool=true)
@@ -1428,7 +1433,7 @@ function Base.hash(G::ZZGenus, u::UInt; use_canonical_symbol::Bool=true)
     h = hash(canonical_symbol(G))
     return xor(h, u)
   end
-  h = reduce(xor,(hash(x) for x in local_symbols(G)); init=hash(signature_pair(G)))
+  h = reduce(xor,(hash(x, zero(UInt); use_canonical_symbol) for x in local_symbols(G)); init=hash(signature_pair(G)))
   return xor(h, u)
 end
 

@@ -628,4 +628,18 @@ end
   sym3 = [[0, 2, 1, 0, 0], [1,2,1,1,1],[2,3,3,1,6],[4,1,1,1,1],[5,2,1,0,0]];
   @test Hecke._canonical_2adic_symbol(sym1) == Hecke._canonical_2adic_symbol(sym2) == Hecke._canonical_2adic_symbol(sym3)
 
+  # Completeness tests
+  @test length(Hecke._local_genera(ZZ(2), 8, 10, 0, 6, false)) == 2612
+  l1 = Hecke._local_genera(ZZ(2), 4, 5, -2, 4, false)
+  @test length(l1) == 752
+
+  @test length(integer_genera((2,7), 192)) == 116
+  l2 = integer_genera((2,7), 192; min_scale = 1//15)
+  @test length(l2) == 928
+
+  # Run old code to see that nothing breaks
+  test1 = [hash(g, zero(UInt); use_canonical_symbol=false) for g in l1]
+  test2 = [hash(G, zero(UInt); use_canonical_symbol=false) for G in l2]
+  @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l1) == 1, l1)
+  @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l2) == 1, l2)
 end
