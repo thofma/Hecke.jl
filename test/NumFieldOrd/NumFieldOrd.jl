@@ -201,3 +201,13 @@ end
   @test length(subsets(3, 2)) == 3
   @test length(subsets(3, 4)) == 0
 end
+
+@testset "Misc-rcf(QQ)" begin
+  G = Hecke.ray_class_groupQQ(maximal_order(rationals_as_number_field()[1]), 100, false, 0)[1]
+  @test order(G) == 20
+
+  G = Hecke.ray_class_groupQQ(maximal_order(rationals_as_number_field()[1]), 100, true, 0)[1]
+  @test order(G) == 40
+end
+
+
