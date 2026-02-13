@@ -768,7 +768,6 @@ function __is_saturated_definitely(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsS
   stab = 30.5
   c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab)
   # this is so odd: if c is empty, then it is transposed?!
-  @vprintln :Saturate 1 "Dimension of kernel: $(ncols(c))"
   if nrows(c) == 0
     return true
   end
