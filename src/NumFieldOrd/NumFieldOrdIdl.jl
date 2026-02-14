@@ -367,19 +367,16 @@ end
 #
 ################################################################################
 
+# for absolute number fields, the trace of I = <w_1, ..., w_k> is span_{Z}(Tr(w_1), ..., Tr(w_k))
+# this means a greatest common divisor of traces (since Z is PID)
+# NOTE: the gcd of rationals is well defined, AbstractAlgebra defines gcd for fractions
+
 function tr(I::AbsNumFieldOrderIdeal)
-  E = nf(order(I))
-  K = base_field(E)
-  return gcd(ZZRingElem[tr(x) for x in basis(I)])
+  return reduce(gcd, ZZRingElem[trace(x) for x in basis(I)]; init = ZZ(0))
 end
 
-
 function tr(I::AbsNumFieldOrderFractionalIdeal)
-  E = nf(order(I))
-  K = base_field(E)
-  traces = QQFieldElem[trace(b) for b in basis(I)]
-  #TODO: This is deeply wrong.
-  return reduce(gcd, traces; init = QQFieldElem(0))
+  return reduce(gcd, QQFieldElem[trace(x) for x in basis(I)]; init = QQ(0))
 end
 
 function tr(I::T) where T <: Union{RelNumFieldOrderIdeal, RelNumFieldOrderFractionalIdeal}
