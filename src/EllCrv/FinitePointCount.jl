@@ -782,13 +782,9 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
     @assert !isempty(ss)
 
     sqrt_2q = ZZ(2)^divexact(d + 1, 2)
-    if iszero(tr(ss[1]^6 + ss[1]^2 + a6))
-      return mod(d, 8) in (1, 7) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
-    else
-      return mod(d, 8) in (3, 5) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
-    end
+    t = iszero(tr(ss[1]^6 + ss[1]^2 + a6)) ? sqrt_2q : -sqrt_2q
+    return mod(d, 8) in (1, 7) ? q + 1 + t : q + 1 - t
   else
-
     # check if a3 is a cube (type II and III)
     a3_cbrt = roots(X^3 - a3)
     if !isempty(a3_cbrt)
@@ -809,28 +805,21 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
         ss = roots(X^4 + X + a4)
         @assert length(ss) == 4
 
-        sqrt_q = ZZ(2)^divexact(d,2)
-        if iszero(tr(ss[1]^6 + a6))
-          return mod(d, 4) == 2 ? q + 1 + 2*sqrt_q : q + 1 - 2*sqrt_q
-        else
-          return mod(d, 4) == 0 ? q + 1 + 2*sqrt_q : q + 1 - 2*sqrt_q
-        end
+        sqrt_q_times2 = ZZ(2)^(divexact(d,2)+1)
+        t = iszero(tr(ss[1]^6 + a6)) ? sqrt_q_times2 : -sqrt_q_times2
+        return mod(d, 4) == 2 ? q + 1 + t : q + 1 - t
       else
         # type II
         return q + 1
       end
-
     else
       # type I: we can assume u = 1, find root s of X^4 + a_3 X + a_4,
       # and check the Trace of [s^6 + a_6] / a_3^2 to select a correct class
       s = only(roots(X^4 + a3*X + a4))
 
       sqrt_q = ZZ(2)^divexact(d,2)
-      if iszero(tr(divexact(s^6+a6, a3^2)))
-        return mod(d, 4) == 0 ? q + 1 + sqrt_q : q + 1 - sqrt_q
-      else
-        return mod(d, 4) == 2 ? q + 1 + sqrt_q : q + 1 - sqrt_q
-      end
+      t = iszero(tr(divexact(s^6+a6, a3^2))) ? sqrt_q : -sqrt_q
+      return mod(d, 4) == 0 ? q + 1 + t : q + 1 - t
     end
   end
 end
