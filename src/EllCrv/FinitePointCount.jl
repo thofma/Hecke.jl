@@ -956,6 +956,9 @@ end
 # finds order of a supersingular elliptic curve defined over finite field of characteristic 3
 # since no definitive source was found, a short report was created
 # arxiv: http://arxiv.org/abs/2601.21756
+# after the first version, we found a paper by Francois Morain
+# http://www.lix.polytechnique.fr/Labo/Francois.Morain/Articles/sseclassif.ps.gz
+# both classifications agree; ours is more suitable for implementation
 function _order_supersingular_char3(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   q = order(R)
