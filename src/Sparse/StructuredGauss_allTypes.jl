@@ -314,20 +314,28 @@ function handle_new_light_weight!(i::Int64, SG::data_StructGauss, Det::data_Det)
 end
 
 #best_single_row = row to eliminate with (next pivot row)
-function eliminate_and_update!(best_single_row::Int64, light_idx::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
+function eliminate_and_update!(best_single_row::Int64, best_col_idx::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
  @assert !iszero(best_single_row)
  L_best = deepcopy(SG.col_list_perm[best_single_row]) #old index 
- best_col = SG.A[best_single_row].pos[light_idx] #col idx of elim-piv in matrix
+ best_col = SG.A[best_single_row].pos[best_col_idx] #col idx of elim-piv in matrix
  @assert length(SG.col_list[best_col]) > 1
 
- best_val = SG.A[best_single_row].values[light_idx] #test
+ best_val = SG.A[best_single_row].values[best_col_idx] #test
  @assert !iszero(best_val) #test
  
  row_idx = 0
  while length(SG.col_list[best_col]) > 1
   best_single_row = SG.col_list_permi[L_best]
+
+  #Find row to add to
   L_row, row_idx = find_row_to_add_on(L_best, best_col, SG)
   @assert best_single_row != row_idx > 0
+
+  #=FAILS for some reason
+  L_row = findlast(!isequal(L_best), SG.col_list[best_col])
+  row_idx = SG.col_list_permi[L_row]
+  @assert SG.base <= row_idx != best_single_row
+  =#
   add_to_eliminate!(L_row, row_idx, best_single_row, best_col, SG, Det)
   #g = gcd(SG.A[row_idx].values)
   #Det.divisions*=g
