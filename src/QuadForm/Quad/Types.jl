@@ -42,6 +42,7 @@ Reference: [CS99](@cite) Chapter 15, Section 7.
 mutable struct ZZLocalGenus
   _prime::ZZRingElem
   _symbol::Vector{Vector{Int}}
+  canonical_symbol::String
 
   function ZZLocalGenus(prime, symbol, check=true)
     if check
