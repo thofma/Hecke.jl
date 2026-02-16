@@ -365,7 +365,7 @@
       @test @inferred Hecke._order_j_0(E) == Hecke.order_via_exhaustive_search(E)
     end
 
-    # p = 1 mod 3 is equivalent to p = 1 mod 6, so F_p has all 6-th roots of unity
+    # p = 1 mod 3 is equivalent to p = 1 mod 6, so F_p has all 6 twists
     R, t = finite_field(7, 1, :t)
     for b in R
       iszero(b) && continue
@@ -380,17 +380,59 @@
 
     # secp256k1
     p = ZZ("115792089237316195423570985008687907853269984665640564039457584007908834671663")
-    R, t = finite_field(p, 1, :t)
+    R, t = finite_field(p, 1, :t, cached = false)
     E = elliptic_curve(R, [0,7])
     secp256k1_count = ZZ("115792089237316195423570985008687907852837564279074904382605163141518161494337")
     @test @inferred Hecke._order_j_0(E) == secp256k1_count
 
     # bn254
     p = ZZ("16798108731015832284940804142231733909889187121439069848933715426072753864723")
-    R, t = finite_field(p, 1, :t)
+    R, t = finite_field(p, 1, :t, cached = false)
     E = elliptic_curve(R, [0,2])
     bn254_count = p + 1 - ZZ("129607518034317099905336561907183648775")
     @test @inferred Hecke._order_j_0(E) == bn254_count
   end
 
+  @testset "j = 1728 (p >= 5)" begin
+    # p = 7: curve is supersingular
+    # d = 1: trace is always zero
+    R, t = finite_field(7, 1, :t)
+    for a in R
+      iszero(a) && continue
+      E = elliptic_curve(R, [a,0])
+      @test @inferred Hecke._order_j_1728(E) == 8
+    end
+    # d = 2: exercise all three codepaths in implementation
+    R, t = finite_field(7, 2, :t)
+    for a in [1,t,t^2]
+      E = elliptic_curve(R, [a,0])
+      @test @inferred Hecke._order_j_1728(E) == Hecke.order_via_exhaustive_search(E)
+    end
+
+    # p = 1 mod 4: F_p has all 4 twists
+    R, t = finite_field(5, 1, :t)
+    for a in R
+      iszero(a) && continue
+      E = elliptic_curve(R, [a,0])
+      @test @inferred Hecke._order_j_1728(E) == Hecke.order_via_exhaustive_search(E)
+    end
+    R, t = finite_field(5, 2, :t)
+    for a in [1,t,t^2,t^3]
+      E = elliptic_curve(R, [a,0])
+      @test @inferred Hecke._order_j_1728(E) == Hecke.order_via_exhaustive_search(E)
+    end
+
+    # SIKEp434
+    p = ZZ(2)^216 * ZZ(3)^137 - 1
+
+    R, t = finite_field(p, 1, :t, cached = false)
+    E = elliptic_curve(R, [1,0])
+    sikep434_count1 = p + 1
+    @test @inferred Hecke._order_j_1728(E) == sikep434_count1
+
+    R, t = finite_field(p, 2, :t, cached = false)
+    E = elliptic_curve(R, [1,0])
+    sikep434_count2 = (p + 1)^2
+    @test @inferred Hecke._order_j_1728(E) == sikep434_count2
+  end
 end

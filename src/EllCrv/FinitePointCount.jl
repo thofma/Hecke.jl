@@ -1178,12 +1178,12 @@ function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
     isone(w^3)  && return q + 1 +   base_t  # non-cube - cubic twist
     return                q + 1 -   base_t  # not square nor cube - sextic twist
   else
-    # p is split in Q(sqrt(-3)), p = pi*pi'
-    # find pi: do the prime decomposition
     X = polynomial_ring(ZZ, "X", cached=false)[2]
     K, t = number_field(X^2 - X + 1, :t, cached=false)
-
     OK = maximal_order(K)
+
+    # p is split in Q(sqrt(-3)), p = pi*pi'
+    # find pi: it is a generator of a prime above p
     principal_check, pp = is_principal_with_data(prime_decomposition(OK, p)[1][1])
     @assert principal_check "Q(sqrt(-3)) should have class order 1"
 
@@ -1196,6 +1196,7 @@ function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
 
     # pi = a + b \zeta_6, N(pi-1) = 0 mod 12
     # we need conjugate (inverse) of primitive 6-th root of unity
+    # recall that in the formula we have Tr(chi'(b) pi)
     pp_a, pp_b = coordinates(pp)
     z = divexact(R(-pp_b), R(pp_a))
 
@@ -1216,5 +1217,86 @@ function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
     w == z^2    && return q + 1 + (pp_a + 2*pp_b) # Tr(pi * \zeta_6^2)
     w == z^4    && return q + 1 + (pp_a - pp_b)   # Tr(pi * \zeta_6^4)
     return                q + 1 - (pp_a + 2*pp_b) # Tr(pi * \zeta_6^5)
+  end
+end
+
+################################################################################
+#
+#  Point counting for j = 1728
+#
+################################################################################
+
+function _order_j_1728(E::EllipticCurve{T}) where T <: FinFieldElem
+  R = base_field(E)
+  @req j_invariant(E) == R(1728) "j-invariant must be 1728"
+
+  p = characteristic(R)
+  q = order(R)
+  d = degree(R)
+
+  # p = 2, 3: we have a supersingular curve, dispatch to specialized procedures
+  p == 2 && return _order_supersingular_char2(E)
+  p == 3 && return _order_supersingular_char3(E)
+
+  if mod(p, 4) == 3
+    # supersingular: p divides trace of frobenius
+
+    # t^2 in {0, q, 2q, 3q, 4q}, for odd d the only possibility is 0
+    mod(d, 2) == 1 && return q + 1
+
+    # p is inert in Q(sqrt(-1))
+    # Frob^2 acts on y^2 = x^3 + x over F_{p^2} as [-p]
+    # the "base" trace over F_q is then 2 (-p)^{d/2}
+    base_t = ZZ(2) * (-p)^divexact(d,2)
+
+    # from short form to y^2 = x^3 - ax, with a = c_4/48
+    a = divexact(c_invariants(E)[1], 48)
+
+    # find the twist
+    w = a^divexact(q-1, 4)
+    isone(w)    && return q + 1 - base_t  # isomorphic
+    isone(-w)   && return q + 1 + base_t  # not 4th power - quadratic twist
+    return                q + 1           # not square - quartic twist
+  else
+    X = polynomial_ring(ZZ, "X", cached=false)[2]
+    K, t = number_field(X^2 + 1, :t, cached=false)
+    OK = maximal_order(K)
+
+    # p is split in Q(sqrt(-1)), p = pi*pi'
+    # find pi: it is a generator of a prime above p
+    principal_check, pp = is_principal_with_data(prime_decomposition(OK, p)[1][1])
+    @assert principal_check "Q(sqrt(-1)) should have class order 1"
+
+    # find associate so that pi = 1 mod (1+i)^3 [= 2i-2]
+    # this becomes for a + b*i: (a,b) = (1,0) or (3,2) mod 4
+    pp_a, pp_b = coordinates(pp)
+    if iseven(pp_a)
+      pp_a, pp_b = -pp_b, pp_a  # mul by i
+    end
+    if mod(pp_a + pp_b, 4) != 1
+      pp_a, pp_b = -pp_a, -pp_b # mul by i^2
+    end
+    pp = pp_a + pp_b*OK(t)
+
+    # pi = a + b*i
+    # we need conjugate (inverse) of primitive 4-th root of unity
+    # recall that in the formula we have Tr(chi'(a) pi)
+    z = divexact(R(-pp_b), R(pp_a))
+
+    # lift to F_q
+    if d > 1
+      pp = pp^d
+      pp_a, pp_b = coordinates(pp)
+    end
+
+    # from short form to y^2 = x^3 - ax, with a = c_4/48
+    a = divexact(c_invariants(E)[1], 48)
+
+    # find the (quartic) twist
+    w = a^divexact(q-1, 4)
+    isone(w)    && return q + 1 - (2*pp_a) # Tr(pi)
+    isone(-w)   && return q + 1 + (2*pp_a) # Tr(-pi)
+    w == z      && return q + 1 + (2*pp_b) # Tr(pi * i)
+    return                q + 1 - (2*pp_b) # Tr(pi * (-i))
   end
 end
