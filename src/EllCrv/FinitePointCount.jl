@@ -1139,3 +1139,82 @@ function _order_ordinary_char3(E::EllipticCurve{T}) where T <: FinFieldElem
 
   return Nemo.is_square(b2) ? q + 1 - trace_frob : q + 1 + trace_frob
 end
+
+################################################################################
+#
+#  Point counting for j = 0
+#
+################################################################################
+
+function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
+  @req iszero(j_invariant(E)) "j-invariant must be zero"
+  R = base_field(E)
+  p = characteristic(R)
+  q = order(R)
+  d = degree(R)
+
+  # p = 2, 3: we have a supersingular curve, dispatch to specialized procedures
+  p == 2 && return _order_supersingular_char2(E)
+  p == 3 && return _order_supersingular_char3(E)
+
+  if mod(p, 3) == 2
+    # supersingular: p divides trace of frobenius
+
+    # t^2 in {0, q, 2q, 3q, 4q}, for odd d the only possibility is 0
+    mod(d, 2) == 1 && return q + 1
+
+    # p is inert in Q(sqrt(-3))
+    # Frob^2 acts on y^2 = x^3 + 1 over F_{p^2} as [-p]
+    # the "base" trace over F_q is then 2 (-p)^{d/2}
+    base_t = (-p)^divexact(d,2)
+
+    # from short form to y^2 = x^3 + b, with b = -c_6/864
+    b = divexact(c_invariants(E)[2], -864)
+
+    # find the twist
+    w = b^divexact(q-1, 6)
+    isone(w)    && return q + 1 - 2*base_t  # isomorphic
+    isone(-w)   && return q + 1 + 2*base_t  # non-square - quadratic twist
+    isone(w^3)  && return q + 1 +   base_t  # non-cube - cubic twist
+    return                q + 1 -   base_t  # not square nor cube - sextic twist
+  else
+    # p is split in Q(sqrt(-3)), p = pi*pi'
+    # find pi: do the prime decomposition
+    X = polynomial_ring(ZZ, "X", cached=false)[2]
+    K, t = number_field(X^2 - X + 1, :t, cached=false)
+
+    OK = maximal_order(K)
+    principal_check, pp = is_principal_with_data(prime_decomposition(OK, p)[1][1])
+    @assert principal_check "Q(sqrt(-3)) should have class order 1"
+
+    # find associate so that pi = 1 mod 3, pi = 1 mod 2 [Norm(2) = 4]
+    # this way we pick unique one out of six associates
+    ot = OK(t)
+    while mod(norm(pp-1), 12) != 0
+      pp *= ot
+    end
+
+    # pi = a + b \zeta_6, N(pi-1) = 0 mod 12
+    # we need conjugate (inverse) of primitive 6-th root of unity
+    pp_a, pp_b = coordinates(pp)
+    z = divexact(R(-pp_b), R(pp_a))
+
+    # lift to F_q
+    if d > 1
+      pp = pp^d
+      pp_a, pp_b = coordinates(pp)
+    end
+
+    # from short form to y^2 = x^3 + b, with b = -c_6/864
+    b = divexact(c_invariants(E)[2], -864)
+
+    # find the (sextic) twist
+    w = b^divexact(q-1, 6)
+    isone(w)    && return q + 1 - (2*pp_a + pp_b) # Tr(pi)
+    isone(-w)   && return q + 1 + (2*pp_a + pp_b) # Tr(-pi)
+    w == z      && return q + 1 - (pp_a - pp_b)   # Tr(pi * \zeta_6)
+    w == z^2    && return q + 1 + (pp_a + 2*pp_b) # Tr(pi * \zeta_6^2)
+    w == z^4    && return q + 1 + (pp_a - pp_b)   # Tr(pi * \zeta_6^4)
+    return                q + 1 - (pp_a + 2*pp_b) # Tr(pi * \zeta_6^5)
+  end
+end
