@@ -1,4 +1,5 @@
 #TODO: input/output types and return
+#important types: ZZ, Fq (small q), Z/nZ (n arb. large)
 
 
 #=
@@ -106,7 +107,7 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
    mark_col_as_dense(SG)
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
-  eliminate_and_update2!(best_single_row, SG, Det)
+  eliminate_and_update!(best_single_row, SG, Det)
  end
  return SG, Det
 end
@@ -201,7 +202,7 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Int64
 end
 
 #prio: shortest row
-function find_best_single_row(SG::data_StructGauss{<:FieldElem})::Int64
+function find_best_single_row(SG::data_StructGauss{<:FinFieldElem})::Int64
  best_single_row = -1
  best_len = -1
  for i = SG.base:SG.single_row_limit-1
@@ -217,46 +218,31 @@ function find_best_single_row(SG::data_StructGauss{<:FieldElem})::Int64
  return best_single_row
 end
 
+#entry size not relevant
+#prio: first length or first one? TODO: test
+#for now:
 #1st prio: 
-#2nd prio: 
-
-#TODO: optional parameters in Poly Case?
-function find_best_single_row(SG::data_StructGauss{PolyRingElem})::Int64
+function find_best_single_row(SG::data_StructGauss{zzModRing})::Int64
  best_single_row = -1
  best_col = NaN
  best_val = NaN
  best_len = -1
  best_is_one = false
  for i = SG.base:SG.single_row_limit-1
-  single_row = SG.A[i]
-  single_row_len = length(single_row)
-  w = SG.light_weight[i]
-  @assert w == 1
-  light_idx = find_light_entry(single_row.pos, SG.is_light_col)
-  j_light = single_row.pos[light_idx]
-  single_row_val = SG.A[i, j_light]
-  @assert length(SG.col_list[j_light]) > 1
-  is_one = isone(single_row_val)||isone(-single_row_val)
-  #TODO: look for useful equivalent in polyrings
-  if best_single_row < 0
-   best_single_row = i
-   best_col = j_light
-   best_len = single_row_len
-   best_is_one = is_one
-   best_val = single_row_val
-  elseif !best_is_one && is_one
-   best_single_row = i
-   best_col = j_light
-   best_len = single_row_len
-   best_is_one = true
-   best_val = single_row_val
-  elseif (is_one == best_is_one && single_row_len < best_len)
-   best_single_row = i
-   best_col = j_light
-   best_len = single_row_len
-   best_is_one = is_one
-   best_val = single_row_val
-  end
+  #TODO
+ end
+ return best_single_row
+end
+
+#entry size is relevant
+function find_best_single_row(SG::data_StructGauss{ZZModRing})::Int64
+ best_single_row = -1
+ best_col = NaN
+ best_val = NaN
+ best_len = -1
+ best_is_one = false
+ for i = SG.base:SG.single_row_limit-1
+  #TODO
  end
  return best_single_row
 end
