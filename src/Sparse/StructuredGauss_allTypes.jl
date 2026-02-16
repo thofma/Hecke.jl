@@ -58,7 +58,7 @@ mutable struct data_Det
   if _det
    return new(one(R), one(R), one(R), one(R), 0)
   else
-   return new(zero(R), zero(R), zero(R), zero(R) -1)
+   return new(zero(R), zero(R), zero(R), zero(R), -1)
   end
  end
 end
@@ -90,9 +90,10 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
  n = nrows(A)
  m = ncols(A)
  SG = data_StructGauss(A)
- single_rows_to_top!(SG)
+ Det = Hecke.data_Det(base_ring(A), _det)
+ single_rows_to_top!(SG, Det)
 
- Det=Hecke.data_Det(base_ring(A), _det)
+ 
 
  t = ncols(SG.A) - trybound
  while SG.nlight > 0 && SG.base <= n
@@ -100,14 +101,14 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
   #@show SG.npivots, SG.nlight
   (SG.npivots >= pivbound || t >= SG.nlight) && break
   (SG.nlight == 0 || SG.base > n) && break
-  best_single_row = find_best_single_row(SG)
-  best_single_row < 0 && @assert(SG.base == SG.single_row_limit)
+  best_single_row, best_col_idx = find_best_single_row(SG)
+  best_single_row == 0 && @assert(SG.base == SG.single_row_limit)
   
-  if best_single_row < 0
-   mark_col_as_dense(SG)
+  if best_single_row == 0
+   mark_col_as_dense(SG, Det)
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
-  eliminate_and_update!(best_single_row, SG, Det)
+  eliminate_and_update!(best_single_row, best_col_idx, SG, Det)
  end
  return SG, Det
 end
@@ -148,7 +149,7 @@ function build_part_ref!(SG::data_StructGauss{<:RingElem}, Det::data_Det)
     end
     SG.nlight-=1
     SG.npivots+=1
-    swap_i_into_base(singleton_row_idx, SG)
+    swap_i_into_base(singleton_row_idx, SG, Det)
     SG.base+=1
    end
   end
@@ -157,28 +158,91 @@ function build_part_ref!(SG::data_StructGauss{<:RingElem}, Det::data_Det)
 end
 
 #find_best_single_row (type dependent)
-
+#TODO: avoid copy-paste
 #TODO: rename to find_elimination_pivot_row
 
 # first prio: 1 as pivot entry
 # second prio: length of row
-function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Int64
- best_single_row = -1
- best_col = NaN
- best_val = NaN
- best_len = -1
+function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Tuple{Int64, Int64}
+ best_single_row = 0
+ best_len = 0
  best_is_one = false
+ single_row_val = ZZ(0)
+ best_col_idx = 0
+ for i = SG.base:SG.single_row_limit-1
+  single_row = SG.A[i]
+  single_row_len = length(single_row)
+  @assert SG.light_weight[i] == 1
+  light_idx = find_light_entry(single_row.pos, SG.is_light_col)
+  single_row_val = getindex!(single_row_val, SG.A[i].values, light_idx)
+  is_one = is_unit(single_row_val)
+  if best_single_row == 0 || (is_one == best_is_one && single_row_len < best_len)
+   best_single_row = i
+   best_len = single_row_len
+   best_is_one = is_one
+   best_col_idx = light_idx
+  elseif !best_is_one && is_one
+   best_single_row = i
+   best_len = single_row_len
+   best_is_one = true
+   best_col_idx = light_idx
+  end
+ end
+ return best_single_row, best_col_idx
+end
+
+#prio: shortest row
+function find_best_single_row(SG::data_StructGauss{<:FinFieldElem})::Tuple{Int64, Int64}
+ best_single_row = 0
+ best_len = 0
  for i = SG.base:SG.single_row_limit-1
   single_row = SG.A[i]
   single_row_len = length(single_row)
   w = SG.light_weight[i]
   @assert w == 1
+  if best_single_row == 0 || single_row_len < best_len
+   best_single_row = i
+   best_len = single_row_len
+  end
+ end
+ return best_single_row, find_light_entry(best_single_row.pos, SG.is_light_col)
+end
+
+#entry size not relevant
+#prio: first length or first one? TODO: test
+#for now:
+#1st prio: 
+function find_best_single_row(SG::data_StructGauss{zzModRingElem})::Int64
+ best_single_row = 0
+ best_col = 0
+ best_val = SG.R(0)
+ best_len = 0
+ best_is_one = false
+ for i = SG.base:SG.single_row_limit-1
+  #TODO
+ end
+ return best_single_row
+end
+
+#entry size is relevant
+function find_best_single_row(SG::data_StructGauss{ZZModRingElem})::Int64
+ best_single_row = 0
+ best_col = 0
+ best_val = SG.R(0)
+ best_len = 0
+ best_is_one = false
+ for i = SG.base:SG.single_row_limit-1
+  single_row = SG.A[i]
+  single_row_len = length(single_row)
+  w = SG.light_weight[i]
+  !isone(w) && @show w, i, SG.col_list_perm[i]
+  @assert w == 1
   light_idx = find_light_entry(single_row.pos, SG.is_light_col)
   j_light = single_row.pos[light_idx]
-  single_row_val = SG.A[i, j_light] #TODO
+  single_row_val = SG.A[i].values[light_idx]
   @assert length(SG.col_list[j_light]) > 1
-  is_one = isone(single_row_val)||isone(-single_row_val)
-  if best_single_row < 0
+  is_one = single_row_val.data == 1 #|| single_row_val.data == R.n-1#TODO
+  if best_single_row == 0
    best_single_row = i
    best_col = j_light
    best_len = single_row_len
@@ -190,7 +254,8 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Int64
    best_len = single_row_len
    best_is_one = true
    best_val = single_row_val
-  elseif (is_one == best_is_one && single_row_len < best_len)
+   #TODO: merge with first condition
+  elseif (is_one == best_is_one && single_row_len < best_len) #TODO: first part unnecessary?
    best_single_row = i
    best_col = j_light
    best_len = single_row_len
@@ -201,56 +266,10 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Int64
  return best_single_row
 end
 
-#prio: shortest row
-function find_best_single_row(SG::data_StructGauss{<:FinFieldElem})::Int64
- best_single_row = -1
- best_len = -1
- for i = SG.base:SG.single_row_limit-1
-  single_row = SG.A[i]
-  single_row_len = length(single_row)
-  w = SG.light_weight[i]
-  @assert w == 1
-  if best_single_row < 0 || single_row_len < best_len
-   best_single_row = i
-   best_len = single_row_len
-  end
- end
- return best_single_row
-end
-
-#entry size not relevant
-#prio: first length or first one? TODO: test
-#for now:
-#1st prio: 
-function find_best_single_row(SG::data_StructGauss{zzModRing})::Int64
- best_single_row = -1
- best_col = NaN
- best_val = NaN
- best_len = -1
- best_is_one = false
- for i = SG.base:SG.single_row_limit-1
-  #TODO
- end
- return best_single_row
-end
-
-#entry size is relevant
-function find_best_single_row(SG::data_StructGauss{ZZModRing})::Int64
- best_single_row = -1
- best_col = NaN
- best_val = NaN
- best_len = -1
- best_is_one = false
- for i = SG.base:SG.single_row_limit-1
-  #TODO
- end
- return best_single_row
-end
-
 #doc: Marks rightmost light column with most entries as dense.
 
 #TODO: check for additional criteria like entry size?
-function mark_col_as_dense(SG::data_StructGauss)
+function mark_col_as_dense(SG::data_StructGauss, Det::data_Det)
  dense_col_idx = 0
  dense_col_len = 0
  for i = ncols(SG.A):-1:1
@@ -267,16 +286,16 @@ function mark_col_as_dense(SG::data_StructGauss)
   i_current = SG.col_list_permi[i_origin]
   @assert SG.light_weight[i_current] > 0
   SG.light_weight[i_current]-=1
-  handle_new_light_weight!(i_current, SG)
+  handle_new_light_weight!(i_current, SG, Det)
  end
  SG.nlight -= 1
 end
 
-function handle_new_light_weight!(i::Int64, SG::data_StructGauss)::data_StructGauss
+function handle_new_light_weight!(i::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
  w = SG.light_weight[i]
  if w == 0
   #println("Case1")
-  swap_i_into_base(i, SG)
+  swap_i_into_base(i, SG, Det)
   SG.pivot_col[SG.base] = 0
   move_into_Y(SG.base, SG)
   SG.base+=1
@@ -295,10 +314,9 @@ function handle_new_light_weight!(i::Int64, SG::data_StructGauss)::data_StructGa
 end
 
 #best_single_row = row to eliminate with (next pivot row)
-function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
+function eliminate_and_update!(best_single_row::Int64, light_idx::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
  @assert !iszero(best_single_row)
  L_best = deepcopy(SG.col_list_perm[best_single_row]) #old index 
- light_idx = find_light_entry(SG.A[best_single_row].pos, SG.is_light_col) #idx in pos array (not col idx in matrix)
  best_col = SG.A[best_single_row].pos[light_idx] #col idx of elim-piv in matrix
  @assert length(SG.col_list[best_col]) > 1
 
@@ -308,18 +326,15 @@ function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss, Det
  row_idx = 0
  while length(SG.col_list[best_col]) > 1
   best_single_row = SG.col_list_permi[L_best]
-  row_idx = find_row_to_add_on2(best_single_row, best_col, SG)
-  @assert row_idx > 0
-  L_row = SG.col_list_perm[row_idx]
-  @assert L_row != L_best
-  @assert SG.col_list_perm[best_single_row] == L_best #test
+  L_row, row_idx = find_row_to_add_on(L_best, best_col, SG)
+  @assert best_single_row != row_idx > 0
   add_to_eliminate!(L_row, row_idx, best_single_row, best_col, SG, Det)
   #g = gcd(SG.A[row_idx].values)
   #Det.divisions*=g
   #SG.A[row_idx].values./=g
   @assert iszero(SG.A[row_idx, best_col])
   @assert SG.col_list_perm[best_single_row] == L_best #test
-  update_after_addition2!(L_row, row_idx, best_col, SG)
+  update_after_addition!(L_row, row_idx, best_col, SG)
   #TODO: divide (row_idx) by gcd and test time diff
   @assert SG.col_list_perm[best_single_row] == L_best #test
   #@show L_row
@@ -330,7 +345,7 @@ function eliminate_and_update!(best_single_row::Int64, SG::data_StructGauss, Det
      L_best in C && @assert SG.A[best_single_row, i] != 0
     end
   end
-  handle_new_light_weight!(row_idx, SG)
+  handle_new_light_weight!(row_idx, SG, Det)
  end
  return SG
 end
@@ -351,24 +366,22 @@ function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, S
  return SG
 end
 
-function find_row_to_add_on(best_single_row::Int64, best_col::Int64, SG::data_StructGauss)::Int64
- row_idx = 0
- for L_row in SG.col_list[best_col][end:-1:1]
+#uses old indicies
+function find_row_to_add_on(L_best::Int64, best_col::Int64, SG::data_StructGauss)::Tuple{Int64, Int64}
+ L_row = 0
+ for L_row in SG.col_list[best_col][end:-1:1] #findlast
+  L_row == L_best && continue
   row_idx = SG.col_list_permi[L_row]
-  row_idx == best_single_row && continue #TODO: work with origin idces here
   @assert SG.base <= row_idx
-  break
+  return L_row, row_idx
  end
- return row_idx
 end
 
-function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
- L_best = SG.col_list_perm[best_single_row]
- @assert L_row in SG.col_list[best_col]
- @assert L_best != L_row
- @assert L_row == SG.col_list_perm[row_idx] #test
- @assert !(0 in SG.A[row_idx].values)
- #test_col_list(SG)
+function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_StructGauss{ZZRingElem}, Det::data_Det)::data_StructGauss{ZZRingElem}
+ L_best = SG.col_list_perm[best_single_row] #old index
+ @assert L_best != L_row in SG.col_list[best_col]
+
+ #delete indices of non-zeros in A[row_idx] from col_list
  for c in SG.A[row_idx].pos 
   @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
   if SG.is_light_col[c]
@@ -453,11 +466,11 @@ function swap_rows_perm(i::Int64, j, SG::data_StructGauss{<:RingElem}, Det::data
   swap_entries(SG.col_list_perm, i, j)
   swap_entries(SG.col_list_permi, SG.col_list_perm[i], SG.col_list_perm[j])
   swap_entries(SG.light_weight, i, j)
-  Det.sign*=-1
+  Det.npiv > -1 && (Det.sign*=-1)
  end
 end 
 
-function swap_i_into_base(i::Int64, SG::data_StructGauss)
+function swap_i_into_base(i::Int64, SG::data_StructGauss, Det::data_Det)
  if i < SG.single_row_limit
   swap_rows_perm(i, SG.base, SG, Det)
  else
