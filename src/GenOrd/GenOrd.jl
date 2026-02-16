@@ -415,7 +415,13 @@ julia> integral_split(1//a, zk)
 """
 function Hecke.integral_split(a::Generic.FunctionFieldElem, O::GenOrd)
   d = integral_split(coordinates(a, O), base_ring(O))[2]
-  return O(base_ring(parent(a))(d)*a, check = false), d
+  k = base_ring(parent(a))
+  if d isa ZZPolyRingElem
+    @assert k isa AbstractAlgebra.Generic.RationalFunctionField{QQFieldElem, QQPolyRingElem}
+    dd = change_base_ring(QQ, d; parent = base_ring(Generic.underlying_fraction_field(k)))
+    return O(dd*a, check = false), d
+  end
+  return O(k(d)*a, check = false), d
 end
 
 function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd)
