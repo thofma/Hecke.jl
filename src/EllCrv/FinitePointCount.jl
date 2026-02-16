@@ -604,21 +604,10 @@ julia> order(E)
 
   p == 0 && error("Characteristic must be nonzero")
 
-  if p == 2
-    if j_invariant(E) == 0
-      return ZZ(_order_supersingular_char2(E))
-    else
-      return ZZ(_order_ordinary_char2(E))
-    end
-  end
-
-  if p == 3
-    if j_invariant(E) == 0
-      return ZZ(_order_supersingular_char3(E))
-    else
-      return ZZ(_order_ordinary_char3(E))
-    end
-  end
+  j_invariant(E) == 0 && return _order_j_0(E)
+  p == 2 && return _order_ordinary_char2(E)
+  p == 3 && return _order_ordinary_char3(E)
+  j_invariant(E) == R(1728) && return _order_j_1728(E)
 
   A = order_via_bsgs(E)
   if length(A) == 1
