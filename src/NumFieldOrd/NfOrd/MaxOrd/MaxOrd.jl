@@ -305,7 +305,7 @@ function _radical_by_poly(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   K = nf(O)
   R = residue_ring(ZZ, q, cached=false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  f = Rx(K.pol)
+  f = change_base_ring(R, K.pol; parent=Rx)
   f1 = derivative(f)
   fd, p1 = _gcd_with_failure(f, f1)
   if !isone(fd)
