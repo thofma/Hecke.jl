@@ -743,7 +743,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 
   # see Menezes "Elliptic Curve Public Key Cryptosystems" sections 3.4 and 3.5
-  _, X = polynomial_ring(R, "X")
+  _, X = polynomial_ring(R, "X", cached=false)
   if isodd(d)
     # bring to the form y^2 + y = x^3 + a_4*x + a_6
     if a3 != one(R)
