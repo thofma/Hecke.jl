@@ -25,8 +25,9 @@ mutable struct data_StructGauss{T}
  is_light_col::Vector{Bool}
  is_pivot_col::Vector{Bool}
  pivot_col::Vector{Int64} #pivot_col[i] = c >= 0 if col c has its only entry in row i, i always recent position
+ unimodular_trafos::Bool
 
- function data_StructGauss(A::SMat{T}) where T <: RingElem
+ function data_StructGauss(A::SMat{T}, unimodular_trafos::Bool) where T <: RingElem
   Y = sparse_matrix(base_ring(A), 0, ncols(A))
   col_list = _col_list(A)
   return new{T}(A,
@@ -43,6 +44,7 @@ mutable struct data_StructGauss{T}
   fill(true, ncols(A)),
   fill(false, ncols(A)),
   fill(0, nrows(A)),
+  unimodular_trafos,
   )
  end
 end
@@ -54,7 +56,7 @@ mutable struct data_Det
  #content #tracks reduction of polys by content -> multiply det by prod
  pivprod #product of pivot elements
  npiv #number of pivots
- function data_Det(R, _det=false)
+ function data_Det(R, _det::Bool)
   if _det
    return new(one(R), one(R), one(R), one(R), 0)
   else
@@ -85,20 +87,18 @@ end
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=ncols(A))::Tuple{data_StructGauss{T}, data_Det} where T <: RingElem
+function part_echelonize!(A::SMat{T}, _det=false, unimodular_trafos = false; pivbound=ncols(A), trybound=ncols(A))::Tuple{data_StructGauss{T}, data_Det} where T <: RingElem
  A = delete_zero_rows!(A) #TODO: track number or move into base
  n = nrows(A)
  m = ncols(A)
- SG = data_StructGauss(A)
+ SG = data_StructGauss(A, unimodular_trafos)
  Det = Hecke.data_Det(base_ring(A), _det)
  single_rows_to_top!(SG, Det)
-
- 
 
  t = ncols(SG.A) - trybound
  while SG.nlight > 0 && SG.base <= n
   build_part_ref!(SG, Det)
-  #@show SG.npivots, SG.nlight
+  
   (SG.npivots >= pivbound || t >= SG.nlight) && break
   (SG.nlight == 0 || SG.base > n) && break
   best_single_row, best_col_idx = find_best_single_row(SG)
@@ -109,6 +109,10 @@ function part_echelonize!(A::SMat{T}, _det=false; pivbound=ncols(A), trybound=nc
    continue #while SG.nlight > 0 && SG.base <= SG.A.r
   end
   eliminate_and_update!(best_single_row, best_col_idx, SG, Det)
+  for i = SG.base:SG.single_row_limit-1 #test
+   test_light_weight(i, SG)
+   @assert SG.light_weight[i] == 1
+  end
  end
  return SG, Det
 end
@@ -144,8 +148,8 @@ function build_part_ref!(SG::data_StructGauss{<:RingElem}, Det::data_Det)
     SG.is_light_col[j] = false
     SG.is_pivot_col[j] = true
     SG.pivot_col[singleton_row_idx] = j
-    if !is_zero(Det.pivprod)
-     Det.pivprod*=SG.A[singleton_row_idx, j]#improve?
+    if Det.npiv > -1
+     mul!(Det.pivprod, Det.pivprod, SG.A[singleton_row_idx, j])
     end
     SG.nlight-=1
     SG.npivots+=1
@@ -172,6 +176,7 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Tuple{Int64, In
  for i = SG.base:SG.single_row_limit-1
   single_row = SG.A[i]
   single_row_len = length(single_row)
+  SG.light_weight[i] != 1 && (@show SG.col_list_perm[i])
   @assert SG.light_weight[i] == 1
   light_idx = find_light_entry(single_row.pos, SG.is_light_col)
   single_row_val = getindex!(single_row_val, SG.A[i].values, light_idx)
@@ -291,22 +296,24 @@ function mark_col_as_dense(SG::data_StructGauss, Det::data_Det)
  SG.nlight -= 1
 end
 
+#unimodular: light_weight can increase! -> swap out of single_row area
 function handle_new_light_weight!(i::Int64, SG::data_StructGauss, Det::data_Det)::data_StructGauss
  w = SG.light_weight[i]
  if w == 0
-  #println("Case1")
+  @vprintln :StructGauss "Case1 (weight)"
   swap_i_into_base(i, SG, Det)
   SG.pivot_col[SG.base] = 0
   move_into_Y(SG.base, SG)
   SG.base+=1
  elseif w == 1
-  #println("Case2")
+  @vprintln :StructGauss "Case2 (weight)"
   if i > SG.single_row_limit
    swap_rows_perm(i, SG.single_row_limit, SG, Det)
+   SG.single_row_limit += 1
   end
-  SG.single_row_limit += 1
- elseif SG.base <= i < SG.single_row_limit #TODO: check if necessary
-  #println("Case3")
+ elseif SG.base <= i < SG.single_row_limit
+  #unimodular: light_weight can increase! -> swap out of single_row area
+  @vprintln :StructGauss "Case3 (weight)"
   swap_rows_perm(i, SG.single_row_limit-1, SG, Det)
   SG.single_row_limit-=1
  end
@@ -319,52 +326,45 @@ function eliminate_and_update!(best_single_row::Int64, best_col_idx::Int64, SG::
  L_best = deepcopy(SG.col_list_perm[best_single_row]) #old index 
  best_col = SG.A[best_single_row].pos[best_col_idx] #col idx of elim-piv in matrix
  @assert length(SG.col_list[best_col]) > 1
-
- best_val = SG.A[best_single_row].values[best_col_idx] #test
- @assert !iszero(best_val) #test
- 
+ best_val = SG.R(0) #TODO: tmp?
  row_idx = 0
  while length(SG.col_list[best_col]) > 1
   best_single_row = SG.col_list_permi[L_best]
+  #best_col_idx might change when scaling causes zeroes in Z/nZ
+  best_val = getindex!(best_val, SG.A[best_single_row].values, best_col_idx)
 
   #Find row to add to
+  @vprintln :StructGauss "before find"
   L_row, row_idx = find_row_to_add_on(L_best, best_col, SG)
-  @assert best_single_row != row_idx > 0
-
-  #=FAILS for some reason
-  L_row = findlast(!isequal(L_best), SG.col_list[best_col])
-  row_idx = SG.col_list_permi[L_row]
+  @vprintln :StructGauss "after find"
   @assert SG.base <= row_idx != best_single_row
-  =#
-  add_to_eliminate!(L_row, row_idx, best_single_row, best_col, SG, Det)
+
+  best_col_idx, SG = add_to_eliminate!(L_row, row_idx, L_best, best_single_row, best_col, best_col_idx, best_val, SG, Det)
   #g = gcd(SG.A[row_idx].values)
   #Det.divisions*=g
   #SG.A[row_idx].values./=g
   @assert iszero(SG.A[row_idx, best_col])
-  @assert SG.col_list_perm[best_single_row] == L_best #test
-  update_after_addition!(L_row, row_idx, best_col, SG)
+  @assert L_row !=L_best
+  update_after_addition!(L_row, row_idx, SG)
+  @vprintln :StructGauss "after update"
   #TODO: divide (row_idx) by gcd and test time diff
-  @assert SG.col_list_perm[best_single_row] == L_best #test
-  #@show L_row
   #test_col_list(SG) #FAILS
-  for i in 1:length(SG.col_list) #test works
-    C = SG.col_list[i]
-    if SG.is_light_col[i]
-     L_best in C && @assert SG.A[best_single_row, i] != 0
-    end
-  end
+  SG.unimodular_trafos && handle_new_light_weight!(best_single_row, SG, Det) #TODO: necessary?
   handle_new_light_weight!(row_idx, SG, Det)
+  @vprintln :StructGauss "after weight"
  end
  return SG
 end
 
-function update_after_addition!(L_row::Int64, row_idx::Int64, best_col::Int64, SG::data_StructGauss)::data_StructGauss
+#TODO: update best_row in Z/nZ case (new zeros might appear by scaling)
+#TODO: update best_row after transform with gcd
+function update_after_addition!(L_row::Int64, row_idx::Int64, SG::data_StructGauss)::data_StructGauss
  @assert L_row == SG.col_list_perm[row_idx]
  @assert !(0 in SG.A[row_idx].values)
  SG.light_weight[row_idx] = 0
  for c_idx in 1:length(SG.A[row_idx].pos)
   c = SG.A[row_idx].pos[c_idx]
-  @assert c != best_col
+  #@assert c != best_col
   @assert SG.A[row_idx].values[c_idx] != 0
   if SG.is_light_col[c]
    insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], L_row), L_row)
@@ -376,7 +376,6 @@ end
 
 #uses old indicies
 function find_row_to_add_on(L_best::Int64, best_col::Int64, SG::data_StructGauss)::Tuple{Int64, Int64}
- L_row = 0
  for L_row in SG.col_list[best_col][end:-1:1] #findlast
   L_row == L_best && continue
   row_idx = SG.col_list_permi[L_row]
@@ -385,63 +384,135 @@ function find_row_to_add_on(L_best::Int64, best_col::Int64, SG::data_StructGauss
  end
 end
 
-function add_to_eliminate!(L_row::Int64, row_idx::Int64, best_single_row::Int64, best_col::Int64, SG::data_StructGauss{ZZRingElem}, Det::data_Det)::data_StructGauss{ZZRingElem}
- L_best = SG.col_list_perm[best_single_row] #old index
- @assert L_best != L_row in SG.col_list[best_col]
-
- #delete indices of non-zeros in A[row_idx] from col_list
+function add_to_eliminate!(L_row::Int64, row_idx::Int64, L_best::Int64, best_single_row::Int64, best_col::Int64, best_col_idx::Int64, best_val::ZZRingElem, SG::data_StructGauss{ZZRingElem}, Det::data_Det)::Tuple{Int64, data_StructGauss{ZZRingElem}}
  for c in SG.A[row_idx].pos 
   @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
   if SG.is_light_col[c]
-   jj = searchsortedfirst(SG.col_list[c], L_row)
+   jj = searchsortedfirst(SG.col_list[c], L_row)#or searchsortedlast?
    @assert SG.col_list[c][jj] == L_row
    deleteat!(SG.col_list[c], jj)
   end
  end
- best_val = SG.A[best_single_row].values[searchsortedfirst(SG.A[best_single_row].pos, best_col)]
- #TODO: if best_row not changed (zerodiv), use jlight as input
- val = SG.A[row_idx].values[searchsortedfirst(SG.A[row_idx].pos, best_col)]
+
+ tmpa = Hecke.get_tmp(SG.A)
+ tmpb = Hecke.get_tmp(SG.A)
+ tmp, g, a_best, a_row, best_val, val = tmp_scalar = Hecke.get_tmp_scalar(SG.A, 6)
+ 
+ best_val = getindex!(best_val, SG.A[best_single_row].values, best_col_idx)
+ val = getindex!(val, SG.A[row_idx].values, searchsortedfirst(SG.A[row_idx].pos, best_col))
  @assert !iszero(val)
- fl, tmp = divides(val, best_val)
+
+ fl, tmp = Nemo.divides!(tmp, val, best_val)
  if fl #best_val divides val
-  #println("add Case1, $fl, $tmp")
+  #@vprintln :StructGauss "Case1:"
   tmp = neg!(tmp)
   SG.A.nnz -= length(SG.A[row_idx])
-  SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp)
+  SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
   SG.A.nnz += length(SG.A[row_idx])
-  @assert iszero(SG.A[row_idx, best_col])
  else
-  fl, tmp = divides(best_val, val)
+  !SG.unimodular_trafos && (fl, tmp = Nemo.divides!(tmp, best_val, val))
   if fl #val divides best_val
-   #println("add Case2, $fl, $tmp")
-   SG.A.nnz -= length(SG.A[row_idx])
-   tmp = neg!(tmp)
-   scale_row!(SG.A, row_idx, tmp)
-   Det.scaling *= tmp
-   tmp = one!(tmp)
-   SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp)
-   SG.A.nnz += length(SG.A[row_idx])
-   @assert iszero(SG.A[row_idx, best_col])
-  else
-   #println("add Case3, $fl, $tmp")
-   zero!(tmp)
-   g = gcd(best_val, val)
-   #TODO: find out why gcdx so slow
-   val_red = div(val, g)
-   val_red = neg!(val_red)
-   best_val_red = div(best_val, g)
-   SG.A.nnz -= length(SG.A[row_idx])
-   #@show SG.A[best_single_row]
-   Hecke.transform_row!(SG.A, best_single_row, row_idx, SG.R(1), tmp, val_red, best_val_red)
-   Det.scaling*=best_val_red
-   #@show SG.A[best_single_row]
-   #TODO: write transform_rows for rows
-   SG.A.nnz += length(SG.A[row_idx])
-   @assert iszero(SG.A[row_idx, best_col])
-   @assert !iszero(SG.A[best_single_row, best_col])
-   @assert L_best != SG.col_list_perm[row_idx]
+    #@vprintln :StructGauss "Case2:"
+    SG.A.nnz -= length(SG.A[row_idx])
+    tmp = neg!(tmp)
+    scale_row!(SG.A, row_idx, tmp)
+    Det.npiv > -1 && (Det.scaling*=tmp)
+    tmp = one!(tmp)
+    SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
+    SG.A.nnz += length(SG.A[row_idx])
+  else #best_val and val don't divide the other or unimodular ans val divides best_val
+    @vprintln :StructGauss "Case3:"
+    @vprintln :StructGauss "$divides(best_val, val)"
+
+    #necessary to check whole row since transform generates new light entries in best_row
+    for c in SG.A[best_single_row].pos 
+     @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
+     if SG.is_light_col[c]
+      jj = searchsortedfirst(SG.col_list[c], L_best)#or searchsortedlast?
+      @assert SG.col_list[c][jj] == L_best
+      deleteat!(SG.col_list[c], jj)
+     end
+    end
+    g, a_best, a_row = gcdx!(g, a_best, a_row, best_val, val) #g = gcd(best_val, val) = a_best*best_val + a_row*val
+    val = div!(tmp, val, g)
+    val = neg!(val)
+    best_val = div!(best_val, best_val, g) #TODO: check if best_val changed afterwards
+    SG.A.nnz -= length(SG.A[row_idx])
+    #TODO: optional parameter unimodular, to reduce fill-in in other cases
+    @assert !(L_best in SG.col_list[best_col])
+    if SG.unimodular_trafos
+     Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], a_best, a_row, val, best_val, tmpa, tmpb)
+    else
+     #TODO: replace by scaling + add scaled row?
+     Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], one!(a_best), zero!(a_row), val, best_val, tmpa, tmpb)
+     Det.npiv > -1 && (Det.scaling*=best_val)
+    end
+    SG.A.nnz += length(SG.A[row_idx])
+    #update best_row related stuff (potential new (light) entries from addition)
+    best_col_idx = searchsortedfirst(SG.A[best_single_row].pos, best_col)
+    @assert !(L_best in SG.col_list[best_col])
+    update_after_addition!(L_best, best_single_row, SG)
   end
  end
+
+ Hecke.release_tmp_scalar(SG.A, tmp_scalar)
+ Hecke.release_tmp(SG.A, tmpa)
+ Hecke.release_tmp(SG.A, tmpb)
+ return best_col_idx, SG
+end
+
+function add_to_eliminate_old!(L_row::Int64, row_idx::Int64, L_best::Int64, best_single_row::Int64, best_col::Int64, best_col_idx::Int64, best_val::ZZRingElem, SG::data_StructGauss{ZZRingElem}, Det::data_Det)::data_StructGauss{ZZRingElem}
+ for c in SG.A[row_idx].pos 
+  @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
+  if SG.is_light_col[c]
+   jj = searchsortedfirst(SG.col_list[c], L_row)#or searchsortedlast?
+   @assert SG.col_list[c][jj] == L_row
+   deleteat!(SG.col_list[c], jj)
+  end
+ end
+
+ tmpa = Hecke.get_tmp(SG.A)
+ tmpb = Hecke.get_tmp(SG.A)
+ tmp, g, a_best, a_row, best_val, val = tmp_scalar = Hecke.get_tmp_scalar(SG.A, 6)
+ 
+ best_val = getindex!(best_val, SG.A[best_single_row].values, best_col_idx)
+ val = getindex!(val, SG.A[row_idx].values, searchsortedfirst(SG.A[row_idx].pos, best_col))
+ @assert !iszero(val)
+
+ fl, tmp = Nemo.divides!(tmp, val, best_val)
+ if fl #best_val divides val
+  #@vprintln :StructGauss "Case1:"
+  tmp = neg!(tmp)
+  SG.A.nnz -= length(SG.A[row_idx])
+  SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
+  SG.A.nnz += length(SG.A[row_idx])
+ else
+  fl, tmp = Nemo.divides!(tmp, best_val, val)
+  if fl #val divides best_val
+   #@vprintln :StructGauss "Case2:"
+   SG.A.nnz -= length(SG.A[row_idx])
+   tmp = neg!(tmp)
+   scale_row!(SG.A, row_idx, tmp) #TODO:make unimodular
+   tmp = one!(tmp)
+   SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
+   SG.A.nnz += length(SG.A[row_idx])
+  else #best_val and val don't divide the other
+   @vprintln :StructGauss "Case3:"
+   @vprintln :StructGauss "$tmp, $fl"
+   g, a_best, a_row = gcdx!(g, a_best, a_row, best_val, val) #g = gcd(best_val, val) = a_best*best_val + a_row*val
+   val_red = div!(tmp, val, g)
+   val_red = neg!(val_red)
+   best_val_red = div!(best_val, best_val, g) #TODO: check if best_val changed afterwards
+   SG.A.nnz -= length(SG.A[row_idx])
+   #TODO: optional parameter unimodular, to reduce fill-in in other cases
+   #Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], a_best, a_row, val_red, best_val_red, tmpa, tmpb) #wrong
+   Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], one!(a_best), tmp, val_red, best_val_red, tmpa, tmpb)
+   SG.A.nnz += length(SG.A[row_idx])
+  end
+ end
+ Hecke.release_tmp_scalar(SG.A, tmp_scalar)
+ Hecke.release_tmp(SG.A, tmpa)
+ Hecke.release_tmp(SG.A, tmpb)
  return SG
 end
 
@@ -505,4 +576,19 @@ function move_into_Y(i::Int64, SG::data_StructGauss)
  end#
  SG.A.nnz-=length(SG.A[SG.base])
  empty!(SG.A[SG.base].pos), empty!(SG.A[SG.base].values)
+end
+
+
+function test_col_list(best_col, SG)
+ for i in SG.col_list[best_col]
+  @assert SG.col_list_permi[i]>=SG.base
+ end
+end
+
+function test_light_weight(i, SG)
+ _count = 0
+ for j in SG.A[i].pos
+  SG.is_light_col[j]&&(_count+=1)
+ end
+ @assert _count == SG.light_weight[i]
 end
