@@ -808,3 +808,45 @@ function group_structure(Q::AbsSimpleNumFieldOrderQuoRing)
   S, Smap = snf(G)
   return S
 end
+
+### AbsOrdQuoRign
+#
+@attributes mutable struct AbsOrdQuoRingMap{D, C, T} <: Map{D, C, HeckeMap, AbsOrdQuoRingMap}
+
+  R::D
+  S::C
+  imgbasis::T
+  inv
+
+  function AbsOrdQuoRingMap(R::Hecke.AbsOrdQuoRing, S::NCRing, imgbasis, inv)
+    inv isa Nothing && return new{typeof(R), typeof(S), typeof(imgbasis)}(R, S, imgbasis)
+    return new{typeof(R), typeof(S), typeof(imgbasis)}(R, S, imgbasis, inv)
+  end
+end
+
+function hom(R::Hecke.AbsOrdQuoRing, S::NCRing, imgbasis; inverse = nothing, check::Bool = true)
+  @req length(imgbasis) == degree(base_ring(R)) "Wrong number of images"
+  f = AbsOrdQuoRingMap(R, S, imgbasis, inverse)
+  if check
+    @req f(one(R)) == one(S) "Data does not define a morphism"
+    B = R.(basis(base_ring(R); copy = false))
+    for x in B, y in B
+      @req f(x * y) == f(x) * f(y) "Data does not define a morphism"
+    end
+  end
+  return f
+end
+
+domain(f::AbsOrdQuoRingMap) = f.R
+
+codomain(f::AbsOrdQuoRingMap) = f.S
+
+function image(f::AbsOrdQuoRingMap, x)
+  @req domain(f) === parent(x) "Parent of element must be domain"
+  c = coordinates(x.elem)
+  return sum(c[i] * f.imgbasis[i] for i in 1:length(c))::elem_type(codomain(f))
+end
+
+function preimage(f::AbsOrdQuoRingMap, y)
+  throw(AbstractAlgebra.NotImplementedError(:preimage, (f, y)))
+end

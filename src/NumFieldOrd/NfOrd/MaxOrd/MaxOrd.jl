@@ -41,10 +41,9 @@ julia> O = maximal_order(K);
 function maximal_order(K::AbsSimpleNumField; discriminant::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   return get_attribute!(K, :maximal_order) do
     E = any_order(K)
-    O = new_maximal_order(E, ramified_primes = ramified_primes)
+    O = new_maximal_order(E, disc = discriminant, ramified_primes = ramified_primes)
     O.is_maximal = 1
     if E === O
-      E.is_maximal == 1
       if isdefined(E, :lllO)
         E.lllO.is_maximal = 1
       end
@@ -306,7 +305,7 @@ function _radical_by_poly(O::AbsSimpleNumFieldOrder, q::ZZRingElem)
   K = nf(O)
   R = residue_ring(ZZ, q, cached=false)[1]
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  f = Rx(K.pol)
+  f = change_base_ring(R, K.pol; parent=Rx)
   f1 = derivative(f)
   fd, p1 = _gcd_with_failure(f, f1)
   if !isone(fd)

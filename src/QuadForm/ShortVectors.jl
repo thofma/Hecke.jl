@@ -195,6 +195,16 @@ function enumerate_quadratic_triples(
     algorithm::Symbol=:short_vectors,
     equal::Bool=false
   ) where T <: Union{ZZRingElem, QQFieldElem}
+  return [deepcopy(i) for i in enumerate_quadratic_triples_iterator(Q,b,c,algorithm,equal)]
+end
+
+function enumerate_quadratic_triples_iterator(
+    Q::MatrixElem{T},
+    b::MatrixElem{T},
+    c::RationalUnion;
+    algorithm::Symbol=:short_vectors,
+    equal::Bool=false
+  ) where T <: Union{ZZRingElem, QQFieldElem}
   if algorithm == :short_vectors
     if T == ZZRingElem
       _Q = map_entries(QQ, Q)
@@ -205,9 +215,9 @@ function enumerate_quadratic_triples(
     end
     dist < 0 && return Tuple{Vector{ZZRingElem}, QQFieldElem}[]
     if equal
-      cv = close_vectors(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
+      cv = close_vectors_iterator(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
     else
-      cv = close_vectors(L, vec(collect(p)), dist, ZZRingElem; check=false)
+      cv = close_vectors_iterator(L, vec(collect(p)), dist, ZZRingElem; check=false)
     end
   else
     error("Algorithm ($(algorithm)) not (yet) implemented for this function")
@@ -292,9 +302,97 @@ function short_vectors_affine(
   return _short_vectors_affine(gram, v, alpha, d)
 end
 
+@doc raw"""
+    short_vectors_affine_iterator
+        gram::MatrixElem{T},
+        v::MatrixElem{T},
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) where T <: Union{ZZRingElem, QQFieldElem} -> Vector{MatrixElem{T}}
+
+Given the Gram matrix `gram` of a hyperbolic or negative definite
+$\mathbb{Z}$-lattice ``S``, return an iterator over the following set of vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector of positive square, represented by its coordinates
+in the standard basis of the rational span of ``S``, and ``\alpha`` and ``d``
+are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the rational
+span of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine_iterator(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return _short_vectors_affine_iterator(gram, v, alpha, d)
+end
+
 # In this function we assume that gram is the Gram matrix of a definite or
 # hyperbolic lattice. If not, then close_vectors will complain
 function _short_vectors_affine(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return [deepcopy(i) for i in _short_vectors_affine_iterator(gram,v,alpha,d)]
+end
+
+@doc raw"""
+    short_vectors_affine_iterator(
+        S::ZZLat,
+        v::QQMatrix,
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) -> Vector{QQMatrix}
+
+Given a hyperbolic or negative definite $\mathbb{Z}$-lattice ``S``, return the
+iterator that returns vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector in the ambient space of ``S`` with positive square,
+and ``\alpha`` and ``d`` are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the ambient
+space of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine_iterator(
+    S::ZZLat,
+    v::QQMatrix,
+    alpha::RationalUnion,
+    d::RationalUnion
+  )
+  p, _, n = signature_tuple(S)
+  @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
+  _alpha = QQ(alpha)
+  _d = QQ(d)
+  gram = gram_matrix(S)
+  tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
+  v_S = solve(gram_matrix(S), tmp; side=:left)
+  if n > 1
+    sol = _short_vectors_affine_iterator(gram, v_S, _alpha, _d)
+  else
+    map_entries!(-, gram, gram)
+    sol = _short_vectors_affine_iterator(gram, v_S, -_alpha, -_d)
+  end
+  B = basis_matrix(S)
+  elem_type = typeof(v)
+  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B, zero(B, 1, number_of_columns(B)))
+  return sv_affine_iterator
+end
+
+function _short_vectors_affine_iterator(
     gram::MatrixElem{T},
     v::MatrixElem{T},
     alpha::RationalUnion,
@@ -330,11 +428,68 @@ function _short_vectors_affine(
   # solve the quadratic triple
   if Q[1, 1] < 0
     map_entries!(-, Q, Q)
-    cv_vec = enumerate_quadratic_triples(Q, transpose(-b), -c; equal=true)
+    cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(-b), -c; equal=true)
   else
-    cv_vec = enumerate_quadratic_triples(Q, transpose(b), c; equal=true)
+    cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(b), c; equal=true)
   end
   xt = map_entries(base_ring(gram), transpose(x))
-  cv = MatrixElem{T}[xt + matrix(base_ring(gram), 1, nrows(Q), u[1])*K for u in cv_vec]
-  return cv
+  elem_type = typeof(v)
+  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt, zero_matrix(base_ring(gram), 1, number_of_columns(xt)), zero_matrix(base_ring(gram), 1, nrows(Q)))
+  return sv_affine_iterator
+end
+
+struct ShortVectorsAffineIterator{S, elem_type}
+  cv_vec::S
+  b_ring
+  nrows
+  K
+  xt
+  v
+  u
+end
+
+Base.IteratorSize(::Type{<:ShortVectorsAffineIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{ShortVectorsAffineIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
+
+function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothing) where {X, elem_type}
+  if start === nothing
+    it = iterate(C.cv_vec)
+  else
+    it = iterate(C.cv_vec, start)
+  end
+
+  if it === nothing
+    return nothing
+  end
+  #Cv = C.xt + matrix(C.b_ring, 1, C.nrows, it[1][1])*C.K
+  for i in 1:C.nrows 
+    C.u[i] = it[1][1][i]
+  end
+  add!(C.v, C.xt, mul!(C.v, C.u, C.K))
+  return (deepcopy(C.v)), it[2]
+end
+
+struct ShortVectorsAffineLatIterator{S, elem_type}
+  sv_it::S
+  B
+  sv
+end
+
+
+Base.IteratorSize(::Type{<:ShortVectorsAffineLatIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{ShortVectorsAffineLatIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
+
+function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = nothing) where {X, elem_type}
+  if start === nothing
+    it = iterate(C.sv_it)
+  else
+    it = iterate(C.sv_it, start)
+  end
+
+  if it === nothing
+    return nothing
+  end
+
+  mul!(C.sv, it[1], C.B)
+  return (deepcopy(C.sv)), it[2]
 end

@@ -185,6 +185,15 @@ export default defineConfig({
               ]
             },
             {
+              text: 'Finite rings',
+              collapsed: true,
+              items: [
+                { text: 'Introduction', link: '/manual/finiterings/intro'},
+                { text: 'Basic', link: '/manual/finiterings/basics'},
+                { text: 'Ideals', link: '/manual/finiterings/ideal'},
+              ]
+            },
+            {
               text: 'Miscellaneous',
               collapsed: true,
               items: [

@@ -27,10 +27,10 @@ function _maximal_order_round_four(O::AbsNumFieldOrder{<:NumField{QQFieldElem}, 
   M = trace_matrix(O)
   l = divisors(M, discriminant(O))
   if !isempty(index_divisors)
-    push!(l, index_divisors)
+    append!(l, index_divisors)
   end
   if !isempty(ramified_primes)
-    push!(l, ramified_primes)
+    append!(l, ramified_primes)
   end
   l = isempty(l) ? l : coprime_base(l)
   for s in l

@@ -585,7 +585,7 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   MK = basis_matrix(pows_u, FakeFmpqMat)
   d = lcm(denominator(MK, copy = false), denominator(bK, copy = false))
   if d != denominator(MK, copy = false)
-    mul!(MK.num, mK.num, divexact(d, denominator(MK, copy = false)))
+    mul!(MK.num, MK.num, divexact(d, denominator(MK, copy = false)))
   end
   if d != denominator(bK, copy = false)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))

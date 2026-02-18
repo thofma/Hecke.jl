@@ -257,16 +257,11 @@ Base.:(^)(a::RelSimpleNumFieldElem, n::UInt) = a^Int(n)
 
 function Base.:(^)(a::RelSimpleNumFieldElem, n::Int)
   K = parent(a)
+
+  n == 0 && return one(K)
   if iszero(a)
+    @req n >= 0 "Element is not invertible"
     return zero(K)
-  end
-
-  if n == 0
-    return one(K)
-  end
-
-  if n < 0 && iszero(a)
-    error("Element is not invertible")
   end
 
   return K(powermod(data(a), n, K.pol))

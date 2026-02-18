@@ -11,6 +11,25 @@
     @test_throws ArgumentError lift(Kt, o)
   end
 
+  @testset "Arithmetic" begin
+    x = QQ["x"][2]
+    K, a = number_field(x^2 + 12x - 92, "a")
+
+    y = K["y"][2]
+    L, b = number_field(y^5 - 5, "b")
+
+    @test b + b == 2*b
+    @test b - b == zero(L)
+    @test (a + b) - b == a
+    @test b * b == b^2
+    @test (b^2) // b == b
+    @test (a*b) // b == a
+    @test b^0 == one(L)
+    @test L(0)^0 == one(L)
+    @test L(0)^1 == zero(L)
+    @test_throws ArgumentError L(0)^(-1)
+  end
+
   @testset "is_subfield" begin
     Qx, x = QQ["x"]
     f = x^2 + 12x - 92
@@ -25,8 +44,6 @@
     @test d == true
     @test parent(LtoM(b)) == M
   end
-
-
 
   @testset "is_isomorphic" begin
     Qx, x = QQ["x"]
