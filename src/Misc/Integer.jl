@@ -584,17 +584,6 @@ function radical(a::T) where {T<:Integer}
   return T(radical(ZZRingElem(a)))
 end
 
-function quo(::ZZRing, a::ZZRingElem)
-  R, f = residue_ring(ZZ, a)
-  return R, f
-end
-
-function quo(::ZZRing, a::Integer)
-  R, f = residue_ring(ZZ, a)
-  return R, f
-end
-
-
 ^(a::AbsNumFieldOrderIdeal, n::IntegerUnion) = Nemo._generic_power(a, n)
 
 #^(a::RelNumFieldOrderIdeal, n::IntegerUnion)  = Nemo._generic_power(a, n)
