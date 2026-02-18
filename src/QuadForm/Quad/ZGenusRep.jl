@@ -471,6 +471,14 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
   if length(A) ==0
     return A
   end
+  inv_dict = invariant_dict(A, invariant_function)
+  for l in values(inv_dict)
+    Hecke._unique_iso_class!(l)
+  end
+  return reduce(append!, values(inv_dict);init=ZZLat[])
+end
+
+function  invariant_dict(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
   L = first(A)
   inv_lat = invariant_function(L)
   inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
@@ -483,10 +491,7 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
       inv_dict[inv_lat] = ZZLat[N]
     end
   end
-  for l in values(inv_dict)
-    Hecke._unique_iso_class!(l)
-  end
-  return reduce(append!, values(inv_dict);init=ZZLat[])
+  return inv_dict
 end
 
 @doc raw"""
@@ -942,7 +947,7 @@ with gram matrix
 ```
 """
 function spinor_genera_in_genus(L::ZZLat)
-  @req is_definite(L) && rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
+  @req !is_definite(L) || rank(L) >= 3 "The lattice must be indefinite or of rank at least 3"
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
   for p in primes

@@ -1544,7 +1544,7 @@ function torsion_quadratic_module(q::QQMatrix; check::Bool=true)
   D = change_base_ring(QQ, U) * q * change_base_ring(QQ, V)
   L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q, check=false)
   denoms = QQFieldElem[denominator(D[i, i]) for i in 1:ncols(D)]
-  rels = diagonal_matrix(denoms) * U
+  rels = diagonal_matrix(QQ, denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
   return torsion_quadratic_module(L, LL; modulus = QQFieldElem(1), check=false)
 end

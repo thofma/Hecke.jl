@@ -1676,7 +1676,7 @@ function discriminant_group(G::ZZGenus)
       push!(qL, q)
     end
   end
-  q = diagonal_matrix(qL)
+  q = diagonal_matrix(QQ, qL)
   return torsion_quadratic_module(q)
 end
 

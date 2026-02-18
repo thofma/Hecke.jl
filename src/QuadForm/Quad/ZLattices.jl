@@ -403,8 +403,9 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
+  use_weyl::Bool=false
 )
-
+  use_weyl && error(" use_weyl still buggy don't trust it")
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
@@ -420,6 +421,7 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = ZZ(2)
     return nothing
   end
+  use_weyl = is_even(L) && use_weyl
 
   if !is_definite(L)
     @assert rank(L) == 2
@@ -452,18 +454,28 @@ function __assert_has_automorphisms(
       alpha = _alpha
     end
   end
-
+  if use_weyl
+    weyl_group_gens, weyl_matrix = _weyl_group(L)
+  end
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
-  if !get_attribute(L, :is_lll_reduced, false)
+  is_lll = get_attribute(L, :is_lll_reduced, false)
+  if !is_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
     res[1] = Glll
   else
     T = one(res[1])
+  end
+  if use_weyl
+    if is_lll
+      push!(res,ZZ.(weyl_matrix))
+    else
+      push!(res, ZZ.(T*weyl_matrix*transpose(T)))
+    end
   end
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
@@ -481,18 +493,26 @@ function __assert_has_automorphisms(
   end
 
   # Now translate back
-  Tinv = inv(T)
-  for i in 1:length(gens)
-    gens[i] = Tinv * gens[i] * T
+  if !is_lll
+    Tinv = inv(T)
+    for i in 1:length(gens)
+      gens[i] = Tinv * gens[i] * T
+    end
   end
-
+  if use_weyl
+    append!(gens,[ZZ.(i) for i in weyl_group_gens])
+  end
   # Now gens are with respect to the basis of L
   @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
-  L.automorphism_group_order = order
+  if use_weyl
+    # need to multiply with the order of the weyl group
 
+  else
+    L.automorphism_group_order = order
+  end
   return nothing
 end
 
@@ -1254,7 +1274,7 @@ end
 Return representatives for the isometry classes in the genus of `L`.
 """
 function genus_representatives(_L::ZZLat)
-  if rank(_L) == 1
+  if rank(_L) <= 1
     return ZZLat[_L]
   end
   s = scale(_L)
@@ -1263,7 +1283,6 @@ function genus_representatives(_L::ZZLat)
   else
     L = _L
   end
-
   if rank(L) == 2
     LL = _to_number_field_lattice(L)
     G = genus_representatives(LL)
@@ -2810,7 +2829,7 @@ function _ADE_type_with_isometry_irreducible(L)
   R = root_lattice(ADE...)
   e = sign(gram_matrix(L)[1, 1])
   if e == -1
-    R = rescale(R, -1; check=false)
+    R = rescale(R, -1; cached=false)
   end
   t, T = is_isometric_with_isometry(R, L)
   @hassert :Lattice 1 t
@@ -2855,6 +2874,31 @@ function root_sublattice(L::ZZLat)
   hnf!(sv)
   B = sv[1:rank(sv), :]*basis_matrix(L)
   return lattice(V, B; check=false, isbasis=true)
+end
+
+function _reflection(gram::MatElem, v::MatElem)
+  n = ncols(gram)
+  E = identity_matrix(base_ring(gram), n)
+  c = (v * gram * transpose(v))[1,1]
+  ref = zero_matrix(base_ring(gram), n, n)
+  for k in 1:n
+    ref[k:k,:] = E[k:k,:] - divexact(2*(E[k:k,:] * gram * transpose(v))[1,1], c)*v
+  end
+  return ref
+end
+
+
+function _weyl_group(L::ZZLat)
+  L = lll(L)
+  BR = reduce(vcat,[basis_matrix(i) for i in root_lattice_recognition_fundamental(L)[end]])
+  R = lattice_in_same_ambient_space(L, BR)
+  rho = _weyl_vector(R)
+  rho = coordinates(rho,L)
+  roots = coordinates(basis_matrix(R),L)
+  gram_rho = 4*transpose(rho)*rho
+  gram = gram_matrix(L)
+  weyl_group_gens = [_reflection(gram, roots[i:i,:]) for i in 1:nrows(roots)]
+  return weyl_group_gens, gram_rho
 end
 
 ################################################################################
