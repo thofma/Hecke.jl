@@ -194,6 +194,7 @@ export canonical_injection
 export canonical_injections
 export canonical_projection
 export canonical_projections
+export canonical_symbol
 export carmichael_lambda
 export center
 export central_primitive_idempotents
@@ -329,6 +330,7 @@ export embedding
 export embeddings
 export enumerate_definite_genus
 export enumerate_quadratic_triples
+export enumerate_quadratic_triples_iterator
 export equation
 export equation_order
 export euclid
@@ -871,6 +873,7 @@ export set_verbosity_level
 export shift
 export short_vectors
 export short_vectors_affine
+export short_vectors_affine_iterator
 export short_vectors_iterator
 export short_weierstrass_model
 export shortest_vectors

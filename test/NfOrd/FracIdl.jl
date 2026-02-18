@@ -146,3 +146,23 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test !is_subset(K(4) * O, K(3) * O)
   end
 end
+
+@testset "Fractional ideal Trace" begin
+  x = polynomial_ring(QQ, "x")[2]
+  K, t = number_field(x^2 - 2, :t)
+  O = maximal_order(K)
+
+  @test @inferred tr(K(1) * O) == 2
+  @test @inferred tr(K(1//2) * O) == 1
+  @test @inferred tr(K(1//4) * O) == 1//2
+  @test @inferred tr(inv(different(O))) == 1
+
+  K, t = number_field(x^2 + 23, :t)
+  O = maximal_order(K)
+  @test @inferred tr(inv(different(O))) == 1
+  @test @inferred tr(ideal(O, 1)//2) == 1//2
+  @test @inferred tr(ideal(O, 3)//2) == 3//2
+
+  @test @inferred tr(K(0) * O) == 0
+  @test @inferred tr(ideal(O, 0)//2) == 0
+end
