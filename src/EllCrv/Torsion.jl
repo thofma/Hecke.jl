@@ -94,23 +94,23 @@ function torsion_points_lutz_nagell(F::EllipticCurve{QQFieldElem})
 
   pcand = Tuple{ZZRingElem, ZZRingElem}[] # candidates for torsion points
 
-  Zx, x = polynomial_ring(ZZ, "x")
+  x = gen(Globals.Zx)
 
   _, _, _, a4, a6 = a_invariants(E)
 
   # Lutz-Nagell: coordinates of torsion points need to be in ZZ
   for i = 1:length(ycand)
     # are there corresponding integer x-values?
-    xcand = zeros(x^3 + numerator(a4)*x + numerator(a6) - ycand[i]^2)
-    if length(xcand) != 0
-      for j = 1: length(xcand)
-        push!(pcand, (xcand[j], ycand[i])) # add to candidates
+    xcands = roots(x^3 + numerator(a4)*x + numerator(a6) - ycand[i]^2)
+    if !isempty(xcand)
+      for xcand in xcands
+        push!(pcand, (xcand, ycand[i])) # add to candidates
       end
     end
   end
 
   # check if candidates are torsion points
-  if length(pcand) != 0
+  if !isempty(pcand)
     for i = 1:length(pcand)
       P = E([pcand[i][1],pcand[i][2]])
 
