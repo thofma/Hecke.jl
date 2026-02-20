@@ -12,12 +12,12 @@
   @test is_commutative(OK)
   @test @inferred is_equation_order(OK)
   @test @inferred is_maximal(OK)
-  @test @inferred degree(OK) == 2
-  @test @inferred absolute_degree(OK) == 2
+  @test 2 == @inferred degree(OK)
+  @test 2 == @inferred absolute_degree(OK)
   BOK = absolute_basis(OK)
-  @test @inferred discriminant(BOK) == @inferred discriminant(OK)
-  @test @inferred signature(OK) == (0, 1)
-  @test @inferred discriminant(OK, QQ) == discriminant(OK)
+  @test (@inferred discriminant(BOK)) == (@inferred discriminant(OK))
+  @test (@inferred signature(OK)) == (0, 1)
+  @test (@inferred discriminant(OK, QQ)) == discriminant(OK)
 
   OKns = maximal_order(Kns)
   @inferred Hecke.nf(OKns)
@@ -25,12 +25,12 @@
   @test is_commutative(OKns)
   @test @inferred !is_equation_order(OKns)
   @test @inferred is_maximal(OKns)
-  @test @inferred degree(OKns) == 2
-  @test @inferred absolute_degree(OKns) == 2
+  @test 2 == @inferred degree(OKns)
+  @test 2 == @inferred absolute_degree(OKns)
   BOKns = absolute_basis(OKns)
-  @test @inferred discriminant(BOKns) == @inferred discriminant(OKns)
-  @test @inferred signature(OKns) == (0, 1)
-  @test @inferred discriminant(OKns, QQ) == discriminant(OKns)
+  @test (@inferred discriminant(BOKns)) == (@inferred discriminant(OKns))
+  @test (@inferred signature(OKns)) == (0, 1)
+  @test (@inferred discriminant(OKns, QQ)) == discriminant(OKns)
 
   OL = maximal_order(L)
   @inferred Hecke.nf(OL)
@@ -38,12 +38,12 @@
   @test is_commutative(OL)
   @test @inferred !is_equation_order(OL)
   @test @inferred is_maximal(OL)
-  @test @inferred degree(OL) == 2
-  @test @inferred absolute_degree(OL) == 4
+  @test 2 == @inferred degree(OL)
+  @test 4 == @inferred absolute_degree(OL)
   BOL = absolute_basis(OL)
   @test numerator(det(trace_matrix(map(elem_in_nf, BOL)))) == @inferred absolute_discriminant(OL)
-  @test @inferred signature(OL) == (0, 2)
-  @test @inferred discriminant(OL, QQ) == absolute_discriminant(OL)
+  @test (@inferred signature(OL)) == (0, 2)
+  @test (@inferred discriminant(OL, QQ)) == absolute_discriminant(OL)
 
   OLns = maximal_order(Lns)
   @inferred Hecke.nf(OLns)
@@ -51,12 +51,12 @@
   @test is_commutative(OLns)
   @test @inferred !is_equation_order(OLns)
   @test @inferred is_maximal(OLns)
-  @test @inferred degree(OLns) == 2
-  @test @inferred absolute_degree(OLns) == 4
+  @test 2 == @inferred degree(OLns)
+  @test 4 == @inferred absolute_degree(OLns)
   BOLns = absolute_basis(OLns)
   @test numerator(det(trace_matrix(map(elem_in_nf, BOLns)))) == @inferred absolute_discriminant(OLns)
-  @test @inferred signature(OLns) == (0, 2)
-  @test @inferred discriminant(OLns, QQ) == absolute_discriminant(OLns)
+  @test (@inferred signature(OLns)) == (0, 2)
+  @test (@inferred discriminant(OLns, QQ)) == absolute_discriminant(OLns)
 
 end
 
