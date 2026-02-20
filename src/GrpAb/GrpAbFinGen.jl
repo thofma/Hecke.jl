@@ -1517,7 +1517,7 @@ function Base.intersect(A::Vector{FinGenAbGroup})
 end
 
 @doc raw"""
-  issubset(G::FinGenAbGroup, H::FinGenAbGroup) -> Bool
+    issubset(G::FinGenAbGroup, H::FinGenAbGroup) -> Bool
 
 Return true if G is contained in H, false otherwise.
 """
