@@ -102,7 +102,7 @@ function torsion_points_lutz_nagell(F::EllipticCurve{QQFieldElem})
   for i = 1:length(ycand)
     # are there corresponding integer x-values?
     xcands = roots(x^3 + numerator(a4)*x + numerator(a6) - ycand[i]^2)
-    if !isempty(xcand)
+    if !isempty(xcands)
       for xcand in xcands
         push!(pcand, (xcand, ycand[i])) # add to candidates
       end
