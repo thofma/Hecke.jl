@@ -176,7 +176,6 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Tuple{Int64, In
  for i = SG.base:SG.single_row_limit-1
   single_row = SG.A[i]
   single_row_len = length(single_row)
-  SG.light_weight[i] != 1 && (@show SG.col_list_perm[i])
   @assert SG.light_weight[i] == 1
   light_idx = find_light_entry(single_row.pos, SG.is_light_col)
   single_row_val = getindex!(single_row_val, SG.A[i].values, light_idx)
@@ -240,7 +239,6 @@ function find_best_single_row(SG::data_StructGauss{ZZModRingElem})::Int64
   single_row = SG.A[i]
   single_row_len = length(single_row)
   w = SG.light_weight[i]
-  !isone(w) && @show w, i, SG.col_list_perm[i]
   @assert w == 1
   light_idx = find_light_entry(single_row.pos, SG.is_light_col)
   j_light = single_row.pos[light_idx]
@@ -416,7 +414,7 @@ function add_to_eliminate!(L_row::Int64, row_idx::Int64, L_best::Int64, best_sin
     SG.A.nnz -= length(SG.A[row_idx])
     tmp = neg!(tmp)
     scale_row!(SG.A, row_idx, tmp)
-    Det.npiv > -1 && (Det.scaling*=tmp)
+    Det.npiv > -1 && mul!(Det.scaling, Det.scaling, tmp)
     tmp = one!(tmp)
     SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
     SG.A.nnz += length(SG.A[row_idx])
@@ -424,34 +422,41 @@ function add_to_eliminate!(L_row::Int64, row_idx::Int64, L_best::Int64, best_sin
     @vprintln :StructGauss "Case3:"
     @vprintln :StructGauss "$divides(best_val, val)"
 
-    #necessary to check whole row since transform generates new light entries in best_row
-    for c in SG.A[best_single_row].pos 
-     @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
-     if SG.is_light_col[c]
-      jj = searchsortedfirst(SG.col_list[c], L_best)#or searchsortedlast?
-      @assert SG.col_list[c][jj] == L_best
-      deleteat!(SG.col_list[c], jj)
-     end
-    end
-    g, a_best, a_row = gcdx!(g, a_best, a_row, best_val, val) #g = gcd(best_val, val) = a_best*best_val + a_row*val
-    val = div!(tmp, val, g)
-    val = neg!(val)
-    best_val = div!(best_val, best_val, g) #TODO: check if best_val changed afterwards
-    SG.A.nnz -= length(SG.A[row_idx])
-    #TODO: optional parameter unimodular, to reduce fill-in in other cases
-    @assert !(L_best in SG.col_list[best_col])
     if SG.unimodular_trafos
-     Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], a_best, a_row, val, best_val, tmpa, tmpb)
+     @assert best_val == SG.A[best_single_row, best_col] #test
+     @assert val == SG.A[row_idx, best_col] #test
+     g, a_best, a_row = gcdx!(g, a_best, a_row, best_val, val) #g = gcd(best_val, val) = a_best*best_val + a_row*val
     else
-     #TODO: replace by scaling + add scaled row?
-     Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], one!(a_best), zero!(a_row), val, best_val, tmpa, tmpb)
-     Det.npiv > -1 && (Det.scaling*=best_val)
+     g = gcd!(g, best_val, val)
+    end
+    val = div!(val, val, g)
+    val = neg!(val)
+    best_val = div!(best_val, best_val, g)
+    SG.A.nnz -= length(SG.A[row_idx])
+    if SG.unimodular_trafos
+     #necessary to check whole row since transform generates new light entries in best_row
+     for c in SG.A[best_single_row].pos 
+      @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
+      if SG.is_light_col[c]
+       jj = searchsortedfirst(SG.col_list[c], L_best)#or searchsortedlast?
+       @assert SG.col_list[c][jj] == L_best
+       deleteat!(SG.col_list[c], jj)
+      end
+     end
+     Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], a_best, a_row, val, best_val, tmpa, tmpb)
+     @assert iszero(SG.A[row_idx, best_col])
+     #update best_row related stuff (potential new (light) entries from addition)
+     update_after_addition!(L_best, best_single_row, SG)
+     best_col_idx = searchsortedfirst(SG.A[best_single_row].pos, best_col)
+    else
+     #Attention: might run into problem if a_best = 0
+     #Hecke.transform_row!(SG.A[best_single_row], SG.A[row_idx], one!(a_best), zero!(a_row), val, best_val, tmpa, tmpb)
+     scale_row!(SG.A, row_idx, best_val)
+     mul!(Det.scaling, Det.scaling, best_val)
+     SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], val, tmpa)
+     Det.npiv > -1 && mul!(Det.scaling, Det.scaling, best_val)
     end
     SG.A.nnz += length(SG.A[row_idx])
-    #update best_row related stuff (potential new (light) entries from addition)
-    best_col_idx = searchsortedfirst(SG.A[best_single_row].pos, best_col)
-    @assert !(L_best in SG.col_list[best_col])
-    update_after_addition!(L_best, best_single_row, SG)
   end
  end
 
@@ -545,7 +550,8 @@ function swap_rows_perm(i::Int64, j, SG::data_StructGauss{<:RingElem}, Det::data
   swap_entries(SG.col_list_perm, i, j)
   swap_entries(SG.col_list_permi, SG.col_list_perm[i], SG.col_list_perm[j])
   swap_entries(SG.light_weight, i, j)
-  Det.npiv > -1 && (Det.sign*=-1)
+  #TODO: no inplace for zzMod
+  Det.npiv > -1 && neg!(Det.sign)
  end
 end 
 
@@ -576,6 +582,10 @@ function move_into_Y(i::Int64, SG::data_StructGauss)
  end#
  SG.A.nnz-=length(SG.A[SG.base])
  empty!(SG.A[SG.base].pos), empty!(SG.A[SG.base].values)
+end
+
+function track_swapping(Det)
+ #TODO
 end
 
 
