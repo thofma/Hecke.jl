@@ -1,14 +1,13 @@
 #TODO: input/output types and return
 #important types: ZZ, Fq (small q), Z/nZ (n arb. large)
-#TODO: keep SG.base for break condition
-
+#TODO: modify Struct (row_marker, dense related stuff and starting number of pivots) to run a second time without extracting dense matrix
 
 #=
 add_verbosity_scope(:StructGauss)
-set_verbosity_level(:StructGauss, 1)
+set_verbosity_level(:StructGauss, 0)
 
 add_assertion_scope(:StructGauss)
-set_assertion_level(:StructGauss, 1)
+set_assertion_level(:StructGauss, 0)
 =#
 
 mutable struct data_StructGauss{T}
@@ -16,7 +15,8 @@ mutable struct data_StructGauss{T}
  R::Ring #TODO: type declaration
  nlight::Int64
  npivots::Int64
- nusedrows::Int64
+ nzero_rows::Int64
+ nused_rows::Int64
  light_weight::Vector{Int64}
  col_list::Vector{Vector{Int64}}
  #col_list_perm::Vector{Int64} #perm gives new ordering of original A[i] via their indices
@@ -32,6 +32,7 @@ mutable struct data_StructGauss{T}
   return new{T}(A,
   base_ring(A),
   ncols(A),
+  0,
   0,
   0,
   [length(A[i]) for i in 1:nrows(A)],
@@ -76,6 +77,18 @@ function _col_list(A::SMat{<:RingElem})::Vector{Vector{Int64}}
  return col_list
 end
 
+mutable struct data_DensePart
+ dense_idx::Vector{Int64} #ascending list of dense col indices (dense_idx[t]=c -> dense_map[c] = t)
+ dense_map::Vector{Int64} #col c is dense, then dense_map[c] = position of c in dense_idx, else 0
+
+ function data_DensePart(SG::data_StructGauss, ndense::Int64)
+  return new(
+  sizehint!(Int[], ndense),
+  fill(0, ncols(SG.A))
+  )
+ end
+end
+
 ################################################################################
 #
 #  Partial Echolonization
@@ -93,18 +106,19 @@ function part_echelonize!(A::SMat{T}, _det=false, unimodular_trafos = false; piv
  #mark zero rows and single_rows
  for i = 1:n
   if iszero(length(A[i]))
-   (SG.row_marker[i]=-3)
+   (SG.row_marker[i] = -3)
+   SG.nzero_rows += 1
   elseif isone(length(A[i]))
-   SG.row_marker[i]=-1
+   SG.row_marker[i] = -1
   end
  end
 
  t = ncols(SG.A) - trybound
- while SG.nlight > 0 && SG.nusedrows < n #TODO: find alternative for base (nothing marked 0?)
+ while SG.nlight > 0 && SG.nused_rows < n #TODO: find alternative for base (nothing marked 0?)
   build_part_ref!(SG, Det)
   
   (SG.npivots >= pivbound || t >= SG.nlight) && break
-  (SG.nlight == 0 || SG.nusedrows >= n) && break #TODO: alternative
+  (SG.nlight == 0 || SG.nused_rows >= n) && break #TODO: alternative
   best_single_row, best_col_idx = find_best_single_row(SG)
   best_single_row == 0 && @assert(!(-1 in SG.row_marker))
   
@@ -139,11 +153,11 @@ function build_part_ref!(SG::data_StructGauss{<:RingElem}, Det::data_Det)
     if Det.npiv > -1
      mul!(Det.pivprod, Det.pivprod, SG.A[singleton_row_idx, j])
     end
-    SG.nlight-=1
-    SG.npivots+=1
+    SG.nlight -= 1
+    SG.npivots += 1
     SG.row_marker[singleton_row] = SG.npivots
     #swap_i_into_base(singleton_row_idx, SG, Det)
-    SG.nusedrows+=1
+    SG.nused_rows += 1
    end
   end
   queue = queue_new
@@ -162,7 +176,7 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Tuple{Int64, In
  best_is_one = false
  single_row_val = ZZ(0)
  best_col_idx = 0
- for i = 1:n
+ for i = 1:nrows(SG.A)
   SG.row_marker[i]!=-1 && continue
   single_row = SG.A[i]
   single_row_len = length(single_row)
@@ -277,7 +291,7 @@ function mark_col_as_dense(SG::data_StructGauss, Det::data_Det)
  marked_col = SG.col_list[dense_col_idx]
  for i in marked_col
   @assert SG.light_weight[i] > 0
-  SG.light_weight[i]-=1
+  SG.light_weight[i] -= 1
   handle_new_light_weight!(i, SG, Det)
  end
  SG.nlight -= 1
@@ -290,6 +304,7 @@ function handle_new_light_weight!(i::Int64, SG::data_StructGauss, Det::data_Det)
   @vprintln :StructGauss "Case1 (weight)"
   if iszero(length(SG.A[i]))
    SG.row_marker[i] = -3
+   SG.nzero_rows += 1
   else
     SG.row_marker[i] = -2
   end
@@ -297,11 +312,11 @@ function handle_new_light_weight!(i::Int64, SG::data_StructGauss, Det::data_Det)
   #swap_i_into_base(i, SG, Det)
   #SG.pivot_col[SG.base] = 0
   #move_into_Y(SG.base, SG)
-  SG.nusedrows+=1
+  SG.nused_rows += 1
  elseif w == 1
   @vprintln :StructGauss "Case2 (weight)"
   SG.row_marker[i] = -1
- elseif SG.base <= i < SG.single_row_limit
+ elseif SG.row_marker[i] == -1
   #unimodular: light_weight can increase! -> swap out of single_row area
   @vprintln :StructGauss "Case3 (weight)"
   SG.row_marker[i] = 0
@@ -315,15 +330,16 @@ function eliminate_and_update!(best_single_row::Int64, best_col_idx::Int64, SG::
  #L_best = deepcopy(SG.col_list_perm[best_single_row]) #old index 
  best_col = SG.A[best_single_row].pos[best_col_idx] #col idx of elim-piv in matrix
  @assert length(SG.col_list[best_col]) > 1
+ @assert best_single_row in SG.col_list[best_col] #test
  best_val = SG.R(0) #TODO: tmp?
  row_idx = 0
  while length(SG.col_list[best_col]) > 1
   #best_col_idx might change when scaling causes zeroes in Z/nZ
   best_val = getindex!(best_val, SG.A[best_single_row].values, best_col_idx)
-
+  @assert best_single_row in SG.col_list[best_col] #test
   #Find row to add to
   @vprintln :StructGauss "before find"
-  row_idx = find_row_to_add_on(best_single_row, best_col SG)
+  row_idx = find_row_to_add_on(best_single_row, best_col, SG)
   @vprintln :StructGauss "after find"
   @assert row_idx != best_single_row
 
@@ -354,7 +370,7 @@ function update_after_addition!(row_idx::Int64, SG::data_StructGauss)::data_Stru
   @assert SG.A[row_idx].values[c_idx] != 0
   if SG.is_light_col[c]
    insert!(SG.col_list[c], searchsortedfirst(SG.col_list[c], row_idx), row_idx)
-   SG.light_weight[row_idx]+=1
+   SG.light_weight[row_idx] += 1
   end
  end
  return SG
@@ -372,8 +388,8 @@ function add_to_eliminate!(row_idx::Int64, best_single_row::Int64, best_col::Int
  for c in SG.A[row_idx].pos 
   @assert !isempty(SG.col_list[c]) #TODO: check why empty dense cols exist
   if SG.is_light_col[c]
-   jj = searchsortedfirst(SG.col_list[c], best_single_row)#or searchsortedlast?
-   @assert SG.col_list[c][jj] == best_single_row
+   jj = searchsortedfirst(SG.col_list[c], row_idx)#or searchsortedlast?
+   @assert SG.col_list[c][jj] == row_idx
    deleteat!(SG.col_list[c], jj)
   end
  end
@@ -388,7 +404,7 @@ function add_to_eliminate!(row_idx::Int64, best_single_row::Int64, best_col::Int
 
  fl, tmp = Nemo.divides!(tmp, val, best_val)
  if fl #best_val divides val
-  #@vprintln :StructGauss "Case1:"
+  @vprintln :StructGauss "Case1:"
   tmp = neg!(tmp)
   SG.A.nnz -= length(SG.A[row_idx])
   SG.A[row_idx] = Hecke.add_scaled_row!(SG.A[best_single_row], SG.A[row_idx], tmp, tmpa)
@@ -396,7 +412,7 @@ function add_to_eliminate!(row_idx::Int64, best_single_row::Int64, best_col::Int
  else
   !SG.unimodular_trafos && (fl, tmp = Nemo.divides!(tmp, best_val, val))
   if fl #val divides best_val
-    #@vprintln :StructGauss "Case2:"
+    @vprintln :StructGauss "Case2:"
     SG.A.nnz -= length(SG.A[row_idx])
     tmp = neg!(tmp)
     scale_row!(SG.A, row_idx, tmp)
@@ -494,6 +510,57 @@ function track_swapping(Det)
  #TODO
 end
 
+
+################################################################################
+#
+#  Extract dense part
+#
+################################################################################
+
+function collect_dense_indices(SG::data_StructGauss)::data_DensePart
+ m = ncols(SG.A)
+ ndense = m - SG.nlight - SG.npivots
+ DPart = data_DensePart(SG, ndense)
+ j = 1
+ for i = 1:m
+  if !SG.is_light_col[i] && !SG.is_pivot_col[i]
+   DPart.dense_map[i] = j
+   push!(DPart.dense_idx, i)
+   j += 1
+  end
+ end
+ @assert length(DPart.dense_idx) == ndense
+ return DPart
+end
+
+function extract_dense_matrix(SG, DPart)
+ #remove zero_rows
+ D = ZZMatrix(nrows(SG.A) - SG.npivots - SG.nzero_rows, length(DPart.dense_idx))
+	r = 0 
+ for i in 1:length(SG.A)
+   SG.row_marker[i] != -2 && continue
+   r+=1
+   idx = 0
+   for j in SG.A[i].pos
+    idx+=1
+    c = DPart.dense_map[j] 
+    @assert !iszero(c)
+    #D[r,c] = SG.A[i,j]:
+    setindex!(D, SG.A[i], r, c, idx)
+	  end
+	 end
+ return D
+end
+
+function Base.setindex!(A::ZZMatrix, B::SRow{ZZRingElem}, ar::Int64, ac::Int64, bidx::Int64) #TODO: why not working with searchsortedfirst?
+ ccall((:fmpz_set, Nemo.libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{Int}), Nemo.mat_entry_ptr(A, ar, ac), Hecke.get_ptr(B.values, bidx))
+end
+
+################################################################################
+#
+#  TESTs (to be removed later)
+#
+################################################################################
 
 function test_col_list(best_col, SG)
  for i in SG.col_list[best_col]
