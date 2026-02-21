@@ -351,9 +351,7 @@ Return the transformation of E under the isomorphism given by
 the isomorphism
 """
 function transform_rstu(E::EllipticCurve, T::Vector{S}) where S
-
   phi = isomorphism(E, T)
-
   return codomain(phi), phi, inv(phi)
 end
 
@@ -365,22 +363,15 @@ Return the isomorphism with domain E given by
 is calculated automatically.
 """
 function isomorphism(E::EllipticCurve{T}, isodata::Vector{T}) where T
+  @req length(isodata) == 4 "isomorphism data should be in the form [r,s,t,u]"
 
-  if length(isodata)!= 4
-    throw(DomainError(data, "Array needs to have length 4"))
-  end
   return EllCrvIso(E, isodata)
 end
 
-function isomorphism(E::EllipticCurve, data::Vector)
+function isomorphism(E::EllipticCurve, isodata::Vector)
+  @req length(isodata) == 4 "isomorphism data should be in the form [r,s,t,u]"
 
-  if length(data)!= 4
-    throw(DomainError(data, "Array needs to have length 4"))
-   end
-
-  K = base_field(E)
-  isodata = map(K, data)
-  return EllCrvIso(E, isodata)
+  return EllCrvIso(E, map(base_field(E), isodata))
 end
 
 function degree(f::EllCrvIso)
