@@ -2,13 +2,13 @@
 #important types: ZZ, Fq (small q), Z/nZ (n arb. large)
 #TODO: modify Struct (row_marker, dense related stuff and starting number of pivots) to run a second time without extracting dense matrix
 
-#=
+
 add_verbosity_scope(:StructGauss)
 set_verbosity_level(:StructGauss, 0)
 
 add_assertion_scope(:StructGauss)
 set_assertion_level(:StructGauss, 0)
-=#
+
 
 mutable struct data_StructGauss{T}
  A::SMat{T}
@@ -98,10 +98,8 @@ end
 #Build an upper triangular matrix for as many columns as possible compromising
 #the loss of sparsity during this process.
 
-function part_echelonize!(A::SMat{T}, _det=false, unimodular_trafos = false; pivbound=ncols(A), trybound=ncols(A))::Tuple{data_StructGauss{T}, data_Det} where T <: RingElem
+function part_echelonize!(A::SMat{T}, unimodular_trafos = false, _det=false, SG = data_StructGauss(A, unimodular_trafos), Det = data_Det(base_ring(A), _det); pivbound=ncols(A), trybound=ncols(A))::Tuple{data_StructGauss{T}, data_Det} where T <: RingElem
  n = nrows(A)
- SG = data_StructGauss(A, unimodular_trafos)
- Det = Hecke.data_Det(base_ring(A), _det)
  #TODO: mark zero_rows later?
  #mark zero rows and single_rows
  for i = 1:n
