@@ -18,7 +18,7 @@
     Qxy, (x, y) = polynomial_ring(QQ, ["x", "y"])
     @test (@inferred equation(C)) == -x^6 + x*y - 3*x + y^2 + 2*y - 5
     Qxyz, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
-    @test (@inferred homogeneous_equation(C)) == -x^6 + x*y*z^2 - 3*x*z^5 + y^2 + 2*y*z^3 - 5*z^6
+    @test (@inferred homogeneous_equation(C))(x, y, z) == -x^6 + x*y*z^2 - 3*x*z^5 + y^2 + 2*y*z^3 - 5*z^6
     @test C == C
 
     Fx, x = polynomial_ring(GF(37), "x")
