@@ -559,6 +559,8 @@ end
 # To stop the wrong julia behavior for I^2 and I^-2
 Base.literal_pow(::typeof(^), A::AbsNumFieldOrderIdeal, ::Val{p}) where {p} = A^p
 
+^(a::AbsNumFieldOrderIdeal, n::IntegerUnion) = Base.power_by_squaring(a, BigInt(n))
+
 ################################################################################
 #
 #  Ad hoc multiplication

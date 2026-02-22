@@ -595,8 +595,6 @@ function quo(::ZZRing, a::Integer)
 end
 
 
-^(a::AbsNumFieldOrderIdeal, n::IntegerUnion) = Nemo._generic_power(a, n)
-
 #^(a::RelNumFieldOrderIdeal, n::IntegerUnion)  = Nemo._generic_power(a, n)
 
 
