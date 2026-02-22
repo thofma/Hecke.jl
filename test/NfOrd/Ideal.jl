@@ -367,6 +367,8 @@
     OK = maximal_order(K);
     B = lll_basis(3*OK)
     @test length(B) == 3
+
+    @test length(Hecke.lll_basis_profile(3*OK)) == 3
   end
 
   include("Ideal/Prime.jl")
