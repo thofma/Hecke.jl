@@ -415,9 +415,9 @@ end
 function Hecke.minimum(A::GenOrdIdl; copy::Bool = true)
   assure_has_minimum(A)
   if copy
-    return deepcopy(A.minimum)
+    return deepcopy(A.minimum)::elem_type(base_ring(order(A)))
   else
-    return A.minimum
+    return A.minimum::elem_type(base_ring(order(A)))
   end
 end
 
@@ -507,9 +507,9 @@ $\mathcal O$ is the order of $A$.
 function Hecke.norm(A::GenOrdIdl; copy::Bool = true)
   assure_has_norm(A)
   if copy
-    return deepcopy(A.norm)
+    return deepcopy(A.norm)::elem_type(base_ring(order(A)))
   else
-    return A.norm
+    return A.norm::elem_type(base_ring(order(A)))
   end
 end
 

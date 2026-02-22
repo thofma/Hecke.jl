@@ -67,7 +67,7 @@ import Hecke: divisor
       @test !is_effective(D)
       @test (D_z - D_p) == divisor(F(x-3))
 
-      @test F == @inferred function_field(D)
+      @test F == function_field(D)
       Dfin, Dinf = ideals(D)
       @test divisor(Dfin) + divisor(Dinf) == D
 
@@ -105,7 +105,7 @@ import Hecke: divisor
       @test 1 == @inferred dimension(D)
       @test 5 == @inferred index_of_speciality(D)
 
-      @test F == @inferred function_field(D)
+      @test F == function_field(D)
       Dfin, Dinf = ideals(D)
       @test divisor(Dfin) + divisor(Dinf) == D
 
