@@ -593,7 +593,7 @@ end
 function Hecke.index(O::GenOrd)
   index = O.R(1)
   if isdefined(O, :itrans)
-    index = O.R(det(O.itrans))
+    index = O.R(det(basis_matrix_inverse(O)))
   end
   return index
 end
