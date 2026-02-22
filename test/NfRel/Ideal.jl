@@ -153,9 +153,9 @@
   end
 
   @testset "Idempotents and uniformizers" begin
-     Qx, x = QQ["x"]
+    Qx, x = QQ["x"]
     f = x^2 + 12*x - 92
-     K, a = number_field(f, "a")
+    K, a = number_field(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -184,34 +184,45 @@
 
     u2 = anti_uniformizer(p1)
     @test valuation(u2, p1) == -1
+    @test valuation(u2, p2) == 0
+
+    u3 = Hecke.absolute_anti_uniformizer(p1)
+    @test valuation(u3, p1) == -1
+    @test valuation(u3, p2) == 0
 
     p = prime_decomposition(OK, 401)[1][1]
     P = prime_decomposition(OL, p)[1][1]
 
     # P.splitting_type[1] == 2
-    u3 = uniformizer(P)
-    @test u3 in P
-    @test valuation(u3, P) == 1
+    u1 = uniformizer(P)
+    @test u1 in P
+    @test valuation(u1, P) == 1
 
-    u4 = anti_uniformizer(P)
-    @test valuation(u4, P) == -1
+    u2 = anti_uniformizer(P)
+    @test valuation(u2, P) == -1
+
+    u3 = Hecke.absolute_anti_uniformizer(P)
+    @test valuation(u3, P) == -1
 
     Q, q = number_field(x, "q")
     Z = maximal_order(Q)
     Qy, y = Q["y"]
     f = y^2 + 12*y - 92
-     K, a = number_field(f, "a")
+    K, a = number_field(f, "a")
     OK = maximal_order(K)
 
     p = prime_decomposition(Z, 2)[1][1]
     P = prime_decomposition(OK, p)[1][1]
 
-    u5 = uniformizer(P)
-    @test u5 in P
-    @test valuation(u5, P) == 1
+    u1 = uniformizer(P)
+    @test u1 in P
+    @test valuation(u1, P) == 1
 
-    u6 = anti_uniformizer(P)
-    @test valuation(u6, P) == -1
+    u2 = anti_uniformizer(P)
+    @test valuation(u2, P) == -1
+
+    u3 = Hecke.absolute_anti_uniformizer(P)
+    @test valuation(u3, P) == -1
 
     f = x^4 - x^3 - 4x^2 + 4x + 1
     K, a = number_field(f, "a")
@@ -224,12 +235,13 @@
     pdec = prime_decomposition(OL, p)
     for i = 1:2
       P = pdec[i][1]
-      u7 = anti_uniformizer(P)
-      for (Q, e) in factor(u7*OL)
-        if Q == P
-          @test e == -1
-        else
-          @test e >= 0
+      for u in [anti_uniformizer(P), Hecke.absolute_anti_uniformizer(P)]
+        for (Q, e) in factor(u*OL)
+          if Q == P
+            @test e == -1
+          else
+            @test e >= 0
+          end
         end
       end
     end

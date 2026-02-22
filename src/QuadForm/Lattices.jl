@@ -1834,15 +1834,20 @@ end
     direct_sum(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
-return their direct sum $L := L_1 \oplus \ldots \oplus L_n$, together with
-the injections $L_i \to L$ (seen as maps between the corresponding ambient spaces).
+return their direct sum $L := L_1 \oplus \ldots \oplus L_n$ as modules, together
+with the injections $L_i \to L$ (seen as maps between the corresponding
+ambient spaces).
 
-For objects of type `AbstractLat`, finite direct sums and finite direct
-products agree and they are therefore called biproducts.
+For modules, finite direct sums and finite direct products agree and they are
+therefore called biproducts.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
+
+!!! warning
+    The projections $L\to L_i$ are morphisms of modules but not of lattices,
+    since the associated quadratic/hermitian forms are not preserved.
 """
 function direct_sum(x::Vector{T};cached::Bool=true) where T <: AbstractLat
   W, inj = direct_sum(ambient_space.(x); cached)
@@ -1857,15 +1862,20 @@ direct_sum(x::Vararg{AbstractLat};cached::Bool=true) = direct_sum(collect(x);cac
     direct_product(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
-return their direct product $L := L_1 \times \ldots \times L_n$, together with
-the projections $L \to L_i$ (seen as maps between the corresponding ambient spaces).
+return their direct product $L := L_1 \times \ldots \times L_n$ as modules, together
+with the projections $L \to L_i$ (seen as maps between the corresponding
+ambient spaces).
 
-For objects of type `AbstractLat`, finite direct sums and finite direct
-products agree and they are therefore called biproducts.
+For modules, finite direct sums and finite direct products agree and they are
+therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a biproduct with the injections $L_i \to L$ and the
 projections $L \to L_i$, one should call `biproduct(x)`.
+
+!!! warning
+    The projections $L\to L_i$ are morphisms of modules but not of lattices,
+    since the associated quadratic/hermitian forms are not preserved.
 """
 function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractLat
   W, proj = direct_product(ambient_space.(x); cached)
@@ -1880,16 +1890,20 @@ direct_product(x::Vararg{AbstractLat}) = direct_product(collect(x))
     biproduct(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
-return their biproduct $L := L_1 \oplus \ldots \oplus L_n$, together with
-the injections $L_i \to L$ and the projections $L \to L_i$ (seen as maps
+return their biproduct $L := L_1 \oplus \ldots \oplus L_n$ as modules, together
+with the injections $L_i \to L$ and the projections $L \to L_i$ (seen as maps
 between the corresponding ambient spaces).
 
-For objects of type `AbstractLat`, finite direct sums and finite direct
-products agree and they are therefore called biproducts.
+For modules, finite direct sums and finite direct products agree and they are
+therefore called biproducts.
 If one wants to obtain `L` as a direct sum with the injections $L_i \to L$,
 one should call `direct_sum(x)`.
 If one wants to obtain `L` as a direct product with the projections $L \to L_i$,
 one should call `direct_product(x)`.
+
+!!! warning
+    The projections $L\to L_i$ are morphisms of modules but not of lattices,
+    since the associated quadratic/hermitian forms are not preserved.
 """
 function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractLat
   W, inj, proj = biproduct(ambient_space.(x); cached)

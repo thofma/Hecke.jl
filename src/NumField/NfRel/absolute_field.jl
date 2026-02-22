@@ -54,9 +54,9 @@ end
 function is_absolutely_primitive(a::NumFieldElem)
   c = conjugates_arb(a, 16)
   is_primitive = true
-  for i = 2:length(c)
+  for i = 1:length(c)
     for j = i+1:length(c)
-      if overlaps(c[i], c[i])
+      if overlaps(c[i], c[j])
         is_primitive = false
         break
       end

@@ -144,4 +144,20 @@ end
   @test 19619386 >= t2(a) >= 19619385
 end
 
+@testset "(real) cyclotomic fields" begin
+  K, a = cyclotomic_field(599)
+  f = defining_polynomial(K)
+  c = conjugates(a)
+  @test all(z -> contains(f(z), 0), c)
+
+  K, a = cyclotomic_real_subfield(599)
+  f = defining_polynomial(K)
+  c = conjugates(a)
+  @test all(z -> contains(f(z), 0), c)
+
+  K, a = cyclotomic_real_subfield(632)
+  f = defining_polynomial(K)
+  c = conjugates(a)
+  @test all(z -> contains(f(z), 0), c)
+end
 end

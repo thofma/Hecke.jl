@@ -974,7 +974,10 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
 
   R=residue_ring(ZZ, modulus, cached=false)[1]
   U, mU = unit_group_mod(R, n_quo)
-  U.exponent = n_quo
+  if !isdefined(U, :exponent)
+    U.exponent = carmichael_lambda(modulus)
+  end
+  U.exponent = gcd(U.exponent, n_quo)
   if inf_plc
     function disc_log1(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       @assert gcd(minimum(I),modulus)==1

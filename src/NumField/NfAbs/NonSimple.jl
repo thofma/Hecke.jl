@@ -27,9 +27,7 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(a::AbsNonSimpleNumFieldElem, dict::IdDict)
-  # TODO: Fix this once deepcopy is fixed for QQMPolyRingElem
-  # z = AbsNonSimpleNumFieldElem(Base.deepcopy_internal(data(a), dict))
-  z = AbsNonSimpleNumFieldElem(parent(a), Base.deepcopy(data(a)))
+  z = AbsNonSimpleNumFieldElem(parent(a), Base.deepcopy_internal(data(a), dict))
   return z
 end
 

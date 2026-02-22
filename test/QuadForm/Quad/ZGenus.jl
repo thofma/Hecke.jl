@@ -613,3 +613,33 @@ end
   ## Issue 1103
   @test sprint(show, "text/plain", genus(root_lattice(:E, 8), 2)) isa String
 end
+
+@testset "Canonical symbols" begin
+  # From Allcock, Gal, Mark "The Conway--Sloane calculus for 2-adic lattices"
+  sym = Vector{Int}[[0,2,1,0,0], [1,2,3,1,4], [2,3,1,1,7], [4,1,1,1,1], [5,2,1,0,0], [6,2,3,0,0], [7,1,1,1,7], [8,1,1,1,1], [9,4,3,0,0]]
+  @test Hecke._canonical_2adic_symbol(sym) == "{1}^{-2}_{II}[{2}^{2}{4}^{3}]_{7}{16}^{1}_{1}{32}^{2}_{II}{64}^{-2}_{II}[{128}^{1}{256}^{-1}]_{4}{512}^{4}_{II}"
+
+  # From Conway--Sloane's book
+  sym = Vector{Int}[[0, 2, 1, 0, 0], [1,2,3,1,6], [2,3,1,1,5],[4,1,1,1,1],[5,2,1,0,0],[6,2,3,0,0],[7,4,3,0,0],[8,1,3,1,3]]
+  @test Hecke._canonical_2adic_symbol(sym) == "{1}^{-2}_{II}[{2}^{2}{4}^{3}]_{7}{16}^{1}_{1}{32}^{2}_{II}{64}^{-2}_{II}{128}^{4}_{II}{256}^{1}_{7}"
+
+  sym1 = [[0, 2, 1, 0, 0], [1,2,3,1,1],[2,3,1,1,2],[4,1,1,1,1],[5,2,1,0,0]];
+  sym2 = [[0, 2, 1, 0, 0], [1,2,1,1,1],[2,3,1,1,2],[4,1,3,1,5],[5,2,1,0,0]];
+  sym3 = [[0, 2, 1, 0, 0], [1,2,1,1,1],[2,3,3,1,6],[4,1,1,1,1],[5,2,1,0,0]];
+  @test Hecke._canonical_2adic_symbol(sym1) == Hecke._canonical_2adic_symbol(sym2) == Hecke._canonical_2adic_symbol(sym3)
+
+  # Completeness tests
+  @test length(Hecke._local_genera(ZZ(2), 8, 10, 0, 6, false)) == 2612
+  l1 = Hecke._local_genera(ZZ(2), 4, 5, -2, 4, false)
+  @test length(l1) == 752
+
+  @test length(integer_genera((2,7), 192)) == 116
+  l2 = integer_genera((2,7), 192; min_scale = 1//15)
+  @test length(l2) == 928
+
+  # Run old code to see that nothing breaks
+  test1 = [hash(g, zero(UInt); use_canonical_symbol=false) for g in l1]
+  test2 = [hash(G, zero(UInt); use_canonical_symbol=false) for G in l2]
+  @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l1) == 1, l1)
+  @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l2) == 1, l2)
+end

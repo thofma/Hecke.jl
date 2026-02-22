@@ -171,7 +171,11 @@
     L = @inferred points_with_x_coordinate(E,0)
     @test E([0,5]) in L && E([0, 6]) in L
 
-
+    # this is a docs example. make sure it works
+    E = elliptic_curve(QQ, [1, 2]);
+    @test 2 == length(@inferred points_with_x_coordinate(E,  1))
+    @test 1 == length(@inferred points_with_x_coordinate(E, -1))
+    @test 0 == length(@inferred points_with_x_coordinate(E, -2))
   end
 
   @testset "Equation" begin
@@ -218,8 +222,17 @@
 
     @test P == @inferred P + O
     @test !is_zero(P)
-    @test E43_a1([2, -4]) == P + P
-    @test E43_a1([QQFieldElem(-2, 9), QQFieldElem(1, 27)]) == P + P + P
+    R = infinity(E43_a1)
+    @test P == @inferred add!(R, P, O)
+    @test R == P
+
+    P_mut = E43_a1([QQ(-1), QQ(0)])
+    P2 = @inferred P + P
+    P3 = @inferred P + P + P
+    @test E43_a1([2, -4]) == P2
+    @test E43_a1([QQFieldElem(-2, 9), QQFieldElem(1, 27)]) == P3
+    @test P2 == @inferred add!(P_mut, P_mut, P_mut)
+    @test P3 == @inferred add!(P_mut, P_mut, P)
 
     P = @inferred E116_1_a1([K(0), -K(a)])
     @test E116_1_a1([1, -1]) == @inferred P + P
@@ -234,17 +247,23 @@
     @test Eshort([0, 0]) == @inferred P + P
     @test P == @inferred O + P
 
+    # inversion
     P = Eshort([2, 4])
+    R = infinity(Eshort)
     @test Eshort([2, -4]) == @inferred -P
+    @test Eshort([2, -4]) == @inferred neg!(R,P)
+    @test R == @inferred -P
+    @test P == @inferred neg!(R,R)
+
     P = infinity(Eshort)
     @test P == @inferred -P
+    @test infinity(Eshort) == @inferred neg!(P,P)
 
     P = E43_a1([-1, 0])
     @test E43_a1([-1, -1]) == @inferred -P
     P = infinity(E43_a1)
     @test P == @inferred -P
 
-    # inversion
     P = @inferred E116_1_a1([K(0), -K(a)])
     @test E116_1_a1([0, 0]) == @inferred -P
     P = infinity(E116_1_a1)
@@ -269,20 +288,65 @@
     @test @inferred ==(P2, P2)
     @test @inferred !==(P2, P1)
 
+    # copy coords
+    P = Eshort([2, 4])
+    R = Eshort([2, -4])
+    O = infinity(Eshort)
+    @test R == @inferred Hecke.set!(P, R)
+    @test P == R
+    @test O == @inferred Hecke.set!(P, O)
+    @test P == infinity(Eshort)
+    @test R == @inferred Hecke.set!(O, R)
+    @test O == R
+
+    # subtraction
+    P = E43_a1([-1, 0])
+    O = infinity(E43_a1)
+    @test O == @inferred P - P
+    @test O == @inferred sub!(P, P, P)
+    @test O == P
+
+    P = E116_1_a1([K(0), -K(a)])
+    Q = E116_1_a1([K(1), -a])
+    R = infinity(E116_1_a1)
+    @test E116_1_a1([1, -1]) == @inferred sub!(R, Q, P)
+    @test E116_1_a1([1, -1]) == R
+    @test P == @inferred sub!(R, Q, R)
+    @test E116_1_a1([1, -1]) == @inferred sub!(P, Q, P)
+    @test E116_1_a1([1, -1]) == P
+
     # scalar multiplication
+    P = Eshort([2,4])
+    N = @inferred -P
+    O = infinity(Eshort)
+    @test O == @inferred 0*P
+    @test P == @inferred 1*P
+    @test N == @inferred -1*P
+
     P1 = Eshort([2, 4])
     @test Eshort([0, 0]) == @inferred 2*P1
     @test infinity(Eshort) == @inferred 4*P1
+    R = infinity(Eshort)
+    @test Eshort([0, 0]) == @inferred mul!(R, 2, P1)
+    @test infinity(Eshort) == @inferred mul!(R, 2, R)
+    @test infinity(Eshort) == @inferred mul!(P1, 4, P1)
 
     P1 = E43_a1([-1, 0])
     @test E43_a1([QQFieldElem(11, 49), QQFieldElem(-363, 343)]) == @inferred 4*P1
+    R = infinity(E43_a1)
+    @test E43_a1([QQFieldElem(11, 49), QQFieldElem(-363, 343)]) == @inferred mul!(P1, 4, P1, R)
+    P1 = E43_a1([-1, 0])
+    @test E43_a1([QQFieldElem(11, 49), QQFieldElem(-363, 343)]) == @inferred mul!(R, 4, P1)
 
     P1 = E116_1_a1([K(0), -K(a)])
+    P2 = @inferred 2*P1
     @test E116_1_a1([K(0), K(0)]) == @inferred 4*P1
     @test infinity(E116_1_a1) == @inferred 5*P1
+    @test P2 == mul!(P1, 2, P1)
+    @test E116_1_a1([K(0), K(0)]) == @inferred mul!(P1, 2, P2)
+    @test E116_1_a1([K(0), K(0)]) == P1
 
     #division
-
     P1 = Eshort([2, 4])
     Q = (2*P1)//2
     @test Q == P1 || Q == -P1

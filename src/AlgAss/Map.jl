@@ -469,3 +469,65 @@ function (f::AbsAlgAssMor)(I::AlgAssAbsOrdIdl)
   J = ideal_from_lattice_gens(B, elem_type(B)[f(b) for b in basis(I)])
   return J
 end
+
+################################################################################
+#
+#  Maps to arbitraray rings
+#
+################################################################################
+
+@attributes mutable struct AbstractAssociativeAlgebraMap{D, C, S, T} <: Map{D, C, HeckeMap, AbstractAssociativeAlgebraMap}
+  R::D
+  S::C
+  base_ring_map::S
+  imgbasis::T
+  inverse
+
+  function AbstractAssociativeAlgebraMap(R::AbstractAssociativeAlgebra, S::NCRing, base_ring_map, imgbasis, inverse; check::Bool = true)
+    if inverse === nothing
+      f = new{typeof(R), typeof(S), typeof(base_ring_map), typeof(imgbasis)}(R, S, base_ring_map, imgbasis)
+    else
+      f = new{typeof(R), typeof(S), typeof(base_ring_map), typeof(imgbasis)}(R, S, base_ring_map, imgbasis, inverse)
+    end
+    return f
+  end
+end
+
+function _hom(R::AbstractAssociativeAlgebra, S::NCRing, f, imgbasis, inverse, check)
+  @req length(imgbasis) == dim(R) "Wrong number of images"
+  f = AbstractAssociativeAlgebraMap(R, S, f, imgbasis, inverse)
+  if check
+    @req f(one(R)) == one(S) "Data does not define a morphism"
+    B = basis(R)
+    for x in B, y in B
+      @req f(x * y) == f(x) * f(y) "Data does not define a morphism"
+    end
+  end
+  return f
+end
+
+function hom(R::AbstractAssociativeAlgebra, S::NCRing, imgbasis::Vector; inverse = nothing, check::Bool = true)
+  return _hom(R, S, identity, imgbasis, inverse, check)
+end
+
+function hom(R::AbstractAssociativeAlgebra, S::NCRing, f, imgbasis::Vector; inverse = nothing, check::Bool = true)
+  return _hom(R, S, f, imgbasis, inverse, check)
+end
+
+domain(f::AbstractAssociativeAlgebraMap) = f.R
+
+codomain(f::AbstractAssociativeAlgebraMap) = f.S
+
+function image(f::AbstractAssociativeAlgebraMap, x)
+  @req domain(f) === parent(x) "Parent of element must be domain"
+  c = coefficients(x)
+  return sum(f.base_ring_map(c[i]) * f.imgbasis[i] for i in 1:length(c); init = zero(codomain(f)))::elem_type(codomain(f))
+end
+
+function preimage(f::AbstractAssociativeAlgebraMap, y)
+  @req codomain(f) === parent(y) "Parent of element must be codomain"
+  if !isdefined(f, :inverse)
+    throw(AbstractAlgebra.NotImplementedError(:preimage, (f, y)))
+  end
+  return f.inverse(y)::elem_type(domain(f))
+end

@@ -2145,15 +2145,19 @@ end
     direct_sum(x::Vector{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMap}
 
 Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
-their direct sum $T := T_1\oplus \ldots \oplus T_n$, together with the
-injections $T_i \to T$.
+their direct sum $T := T_1\oplus \ldots \oplus T_n$ as finite abelian groups,
+together with the injections $T_i \to T$.
 
-For objects of type `TorQuadModule`, finite direct sums and finite direct products
-agree and they are therefore called biproducts.
+For abelian groups, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
 If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
 one should call `direct_product(x)`.
 If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
 projections $T \to T_i$, one should call `biproduct(x)`.
+
+!!! warning
+    The projections $T\to T_i$ are group homomomorphisms but do not define
+    morphisms of torsion quadratic modules.
 """
 function direct_sum(x::Vector{TorQuadModule};cached=false)
   T, inj, = _biproduct(x, proj=false; cached)
@@ -2167,15 +2171,19 @@ direct_sum(x::Vararg{TorQuadModule};cached=false) = direct_sum(collect(x);cached
     direct_product(x::Vector{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMap}
 
 Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
-their direct product $T := T_1\times \ldots \times T_n$, together with the
-projections $T \to T_i$.
+their direct product $T := T_1\times \ldots \times T_n$ as abelian groups,
+together with the projections $T \to T_i$.
 
-For objects of type `TorQuadModule`, finite direct sums and finite direct products
-agree and they are therefore called biproducts.
+For abelian groups, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
 If one wants to obtain `T` as a direct sum with the inctions $T_i \to T$,
 one should call `direct_sum(x)`.
 If one wants to obtain `T` as a biproduct with the injections $T_i \to T$ and the
 projections $T \to T_i$, one should call `biproduct(x)`.
+
+!!! warning
+    The projections $T\to T_i$ are group homomomorphisms but do not define
+    morphisms of torsion quadratic modules.
 """
 function direct_product(x::Vector{TorQuadModule};cached=false)
   T, _, proj = _biproduct(x; cached)
@@ -2189,15 +2197,19 @@ direct_product(x::Vararg{TorQuadModule};cached=false) = direct_product(collect(x
     biproduct(x::Vector{TorQuadModule}) -> TorQuadModule, Vector{TorQuadModuleMap}, Vector{TorQuadModuleMap}
 
 Given a collection of torsion quadratic modules $T_1, \ldots, T_n$, return
-their biproduct $T := T_1\oplus \ldots \oplus T_n$, together with the
-injections $T_i \to T$ and the projections $T \to T_i$.
+their biproduct $T := T_1\oplus \ldots \oplus T_n$ as abelian groups, together
+with the injections $T_i \to T$ and the projections $T \to T_i$.
 
-For objects of type `TorQuadModule`, finite direct sums and finite direct products
-agree and they are therefore called biproducts.
+For abelian groups, finite direct sums and finite direct products agree and
+they are therefore called biproducts.
 If one wants to obtain `T` as a direct sum with the inctions $T_i \to T$,
 one should call `direct_sum(x)`.
 If one wants to obtain `T` as a direct product with the projections $T \to T_i$,
 one should call `direct_product(x)`.
+
+!!! warning
+    The projections $T\to T_i$ are group homomomorphisms but do not define
+    morphisms of torsion quadratic modules.
 """
 function biproduct(x::Vector{TorQuadModule};cached=false)
   return _biproduct(x;cached)

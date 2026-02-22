@@ -966,7 +966,7 @@ function relative_order(O::AbsSimpleNumFieldOrder, m::NumFieldHom{AbsSimpleNumFi
     els = elem_type(L)[m(x) for x in B]
     return add_to_order(E, els)
   else
-    return _order(elem_type(L)[mp(x) for x in B])  # FIXME: mp is not defined
+    return _order(elem_type(L)[m(x) for x in B])
   end
 end
 
