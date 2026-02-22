@@ -1060,7 +1060,7 @@ Return the conductor of $E$ over QQ.
 function conductor(E::EllipticCurve{QQFieldElem})
   badp = bad_primes(E)
 
-  result = one(QQ)
+  result = one(ZZ)
   for p in badp
     result = result*(p^tates_algorithm_local(E,p)[3])
   end
