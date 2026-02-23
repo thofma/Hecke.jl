@@ -32,7 +32,7 @@
   F, a = function_field(y^2+x*y+x^3+y^3)
   O = integral_closure(kt, F)
 
-  @test @inferred index(O) == x^2 - 1//3*x
+  @test (@inferred index(O)) == x^2 - 1//3*x
   h = O.R(x)
   L = prime_decomposition(O, h)
   @test prod([f[1]^f[2] for f in L]) == Hecke.GenOrdIdl(O, h)

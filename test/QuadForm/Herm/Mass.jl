@@ -21,7 +21,7 @@
   L = hermitian_lattice(E, gens, gram = D)
   @test is_definite(L)
   @test rank(L) == 0
-  @test @inferred mass(L) == 1
+  @test 1 == @inferred mass(L)
 
   #
   # Bunch of examples

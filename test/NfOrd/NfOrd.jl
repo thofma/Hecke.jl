@@ -9,13 +9,13 @@
      K1, a1 = number_field(x^3 - 2, "a")
     O1 = equation_order(K1, true)
 
-    @test @inferred Hecke.nf(O1) == K1
+    @test K1 == @inferred Hecke.nf(O1)
 
 
      K2, a2 = number_field(x - 2, "a")
     O2 = equation_order(K2, true)
 
-    @test @inferred Hecke.nf(O2) == K2
+    @test K2 == @inferred Hecke.nf(O2)
 
 
     f3 = x^64 - 64*x^62 +

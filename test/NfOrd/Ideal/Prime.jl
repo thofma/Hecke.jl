@@ -4,31 +4,31 @@
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, 2, 100)
-  @test @inferred length(collect(S)) == 25
+  @test 25 == @inferred length(collect(S))
 
   S = @inferred PrimeIdealsSet(O, 2, 100, indexdivisors = false, ramified = false, degreebound = 100, coprimeto = 3*5*7)
-  @test @inferred length(collect(S)) == 22
+  @test 22 == @inferred length(collect(S))
 
   K, a = number_field(x^2 - 5, "a")
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100))
-  @test @inferred length(collect(S)) == 35
+  @test 35 == @inferred length(collect(S))
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false)
-  @test @inferred length(collect(S)) == 34
+  @test 34 == @inferred length(collect(S))
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false, ramified = false)
-  @test @inferred length(collect(S)) == 33
+  @test 33 == @inferred length(collect(S))
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), indexdivisors = false, ramified = false, degreebound = 1)
-  @test @inferred length(collect(S)) == 20
+  @test 20 == @inferred length(collect(S))
 
   K, a = number_field(x^5 - x + 1, "a")
   O = maximal_order(K)
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100))
-  @test @inferred length(collect(S)) == 51
+  @test 51 == @inferred length(collect(S))
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), degreebound = 1)
-  @test @inferred length(collect(S)) == 18
+  @test 18 == @inferred length(collect(S))
   SS = collect(S)
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), -1, degreebound = 1)
@@ -45,19 +45,19 @@
 
   P = prime_decomposition(O, 2)[1][1]
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = P)
-  @test @inferred length(collect(S)) == 50
+  @test 50 == @inferred length(collect(S))
 
   el = Hecke.find_elem_of_valuation_1(P, P^2)
   @test valuation(el, P) == 1
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = 2)
-  @test @inferred length(collect(S)) == 49
+  @test 49 == @inferred length(collect(S))
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = ZZRingElem(6))
-  @test @inferred length(collect(S)) == 48
+  @test 48 == @inferred length(collect(S))
 
   S = @inferred PrimeIdealsSet(O, ZZRingElem(2), ZZRingElem(100), coprimeto = O(30))
-  @test @inferred length(collect(S)) == 47
+  @test 47 == @inferred length(collect(S))
 
   @test_throws ErrorException PrimeIdealsSet(O, ZZRingElem(-1), ZZRingElem(1))
   @test_throws ErrorException PrimeIdealsSet(O, ZZRingElem(1), -2)

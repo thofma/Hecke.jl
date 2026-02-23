@@ -74,15 +74,15 @@
   @testset "Field access" begin
     S = abelian_group([3, 0])
     @test @inferred is_snf(S)
-    @test @inferred ngens(S) == 2
-    @test @inferred nrels(S) == 2
-    @test @inferred rels(S) == matrix(ZZ, 2, 2, [3, 0, 0, 0])
+    @test 2 == @inferred ngens(S)
+    @test 2 == @inferred nrels(S)
+    @test (@inferred rels(S)) == matrix(ZZ, 2, 2, [3, 0, 0, 0])
 
     G = abelian_group([3, 5])
     @test @inferred !is_snf(G)
-    @test @inferred ngens(G) == 2
-    @test @inferred nrels(G) == 2
-    @test @inferred rels(G) == matrix(ZZ, 2, 2, [3, 0, 0, 5])
+    @test 2 == @inferred ngens(G)
+    @test 2 == @inferred nrels(G)
+    @test (@inferred rels(G)) == matrix(ZZ, 2, 2, [3, 0, 0, 5])
   end
 
   @testset "Hermite normal form" begin
@@ -130,36 +130,36 @@
 
   @testset "Rank" begin
     G = abelian_group([3, 15])
-    @test @inferred torsion_free_rank(G) == 0
-    #@test @inferred rank(G) == 2
+    @test 0 == @inferred torsion_free_rank(G)
+    #@test 2 == @inferred rank(G)
 
     G = abelian_group([3, 5])
-    @test @inferred torsion_free_rank(G) == 0
-    #@test @inferred rank(G) == 1
+    @test 0 == @inferred torsion_free_rank(G)
+    #@test 1 == @inferred rank(G)
 
     G = abelian_group([3, 15, 0])
-    @test @inferred torsion_free_rank(G) == 1
-    #@test @inferred rank(G) == 3
+    @test 1 == @inferred torsion_free_rank(G)
+    #@test 3 == @inferred rank(G)
 
     G = abelian_group([3, 5, 0])
-    @test @inferred torsion_free_rank(G) == 1
-    #@test @inferred rank(G) == 2
+    @test 1 == @inferred torsion_free_rank(G)
+    #@test 2 == @inferred rank(G)
   end
 
   @testset "Order" begin
     G = abelian_group([3, 5])
-    @test @inferred order(G) == 15
+    @test 15 == @inferred order(G)
     G = abelian_group([3, 15])
-    @test @inferred order(G) == 45
+    @test 45 == @inferred order(G)
     G = abelian_group([3, 5, 0])
     @test_throws ErrorException order(G)
   end
 
   @testset "Exponent" begin
     G = abelian_group([3, 5])
-    @test @inferred exponent(G) == 15
+    @test 15 == @inferred exponent(G)
     G = abelian_group([3, 15])
-    @test @inferred exponent(G) == 15
+    @test 15 == @inferred exponent(G)
   end
 
   @testset "Trivial" begin

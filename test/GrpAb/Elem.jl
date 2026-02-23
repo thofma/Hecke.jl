@@ -12,18 +12,18 @@
     G = @inferred abelian_group([3, 0])
     N = ZZ[1 1]
     a = @inferred FinGenAbGroupElem(G, N)
-    @test @inferred parent(a) == G
+    @test G == @inferred parent(a)
     @test a.coeff == N
     @test a[begin:end] == [1, 1]
     @test a[:] == [1, 1]
 
     N = matrix(ZZ, 1, 2, [ 1, 1 ])
     a = @inferred G(N)
-    @test @inferred parent(a) == G
+    @test G == @inferred parent(a)
     @test a.coeff == N
     N = transpose(N)
     a = @inferred G(N)
-    @test @inferred parent(a) == G
+    @test G == @inferred parent(a)
     @test a.coeff == transpose(N)
     @test a[begin:end] == [1, 1]
     @test a[:] == [1, 1]
@@ -43,7 +43,7 @@
     G = @inferred abelian_group([3, 0])
     N = ZZ[1 1]
     a = @inferred FinGenAbGroupElem(G, N)
-    @test @inferred parent(a) == G
+    @test G == @inferred parent(a)
   end
 
   @testset "String I/O" begin
@@ -64,8 +64,8 @@
     G = abelian_group([3, 0])
     N = ZZ[1 2]
     a = FinGenAbGroupElem(G, N)
-    @test @inferred a[1] == 1
-    @test @inferred a[2] == 2
+    @test 1 == @inferred a[1]
+    @test 2 == @inferred a[2]
   end
 
   @testset "Comparison" begin
@@ -183,11 +183,11 @@
   @testset "Order" begin
     G = abelian_group([3, 3, 0])
     a = G[1]
-    @test @inferred order(a) == 3
+    @test 3 == @inferred order(a)
 
     G = abelian_group([3, 5, 0])
     a = G[1]
-    @test @inferred order(a) == 3
+    @test 3 == @inferred order(a)
 
     a = G[3]
     @test_throws ErrorException order(a)

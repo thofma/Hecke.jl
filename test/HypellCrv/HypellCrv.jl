@@ -11,14 +11,14 @@
     @test hash(C) == hash(hyperelliptic_curve(f1, h1))
     f2, h2 = @inferred hyperelliptic_polynomials(C)
     @test f1 == f2 && h1 == h2
-    @test @inferred genus(C) == 2
-    @test @inferred base_field(C) == QQ
-    @test @inferred discriminant(C) == -91424898432
+    @test (@inferred genus(C)) == 2
+    @test (@inferred base_field(C)) == QQ
+    @test (@inferred discriminant(C)) == -91424898432
 
     Qxy, (x, y) = polynomial_ring(QQ, ["x", "y"])
-    @test @inferred equation(C) == -x^6 + x*y - 3*x + y^2 + 2*y - 5
+    @test (@inferred equation(C)) == -x^6 + x*y - 3*x + y^2 + 2*y - 5
     Qxyz, (x, y, z) = polynomial_ring(QQ, ["x", "y", "z"])
-    @test @inferred homogeneous_equation(C) == -x^6 + x*y*z^2 - 3*x*z^5 + y^2 + 2*y*z^3 - 5*z^6
+    @test (@inferred homogeneous_equation(C))(x, y, z) == -x^6 + x*y*z^2 - 3*x*z^5 + y^2 + 2*y*z^3 - 5*z^6
     @test C == C
 
     Fx, x = polynomial_ring(GF(37), "x")
@@ -28,13 +28,13 @@
     C = @inferred hyperelliptic_curve(f1)
     f2, h2 = @inferred hyperelliptic_polynomials(C)
     @test f1 == f2 && h1 == h2
-    @test @inferred genus(C) == 4
-    @test @inferred base_field(C) == GF(37)
-    @test @inferred discriminant(C) == 29
+    @test (@inferred genus(C)) == 4
+    @test (@inferred base_field(C)) == GF(37)
+    @test (@inferred discriminant(C)) == 29
 
     F = GF(37, 3)
     C = base_change(F, C)
-    @test @inferred base_field(C) == F
+    @test (@inferred base_field(C)) == F
 
   end
 
