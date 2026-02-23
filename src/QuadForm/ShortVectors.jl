@@ -146,7 +146,7 @@ end
 #
 ###############################################################################
 
-@attr function center_of_density(L::ZZLat)
+@attr Float64 function center_of_density(L::ZZLat)
   @req is_definite(L) "Only implemented for definite lattices"
   mu = Float64(minimum(L))
   d = Float64(abs(det(L)))
@@ -160,7 +160,7 @@ end
 #
 ###############################################################################
 
-@attr function hermite_number(L::ZZLat)
+@attr Float64 function hermite_number(L::ZZLat)
   @req is_definite(L) "Only implemented for definite lattices"
   mu = Float64(minimum(L))
   d = Float64(abs(det(L)))^(1/rank(L))

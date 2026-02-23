@@ -162,7 +162,7 @@ end
 ################################################################################
 
 @doc raw"""
-    neighbours(
+    _neighbours(
       L::ZZLat,
       p::ZZRingElem,
       algorithm::Symbol = :orbit;
@@ -212,7 +212,7 @@ Input:
    classes in the genus of ``L`` to compute in the outer scope before stopping
    the enumeration.
 """
-function neighbours(
+function _neighbours(
     L::ZZLat,
     p::ZZRingElem,
     algorithm::Symbol = :orbit;
@@ -233,7 +233,7 @@ function neighbours(
   bad = is_divisible_by(numerator(det(L)), p)
   even = is_even(L)
   K = GF(p; cached=false)
-  @assert algorithm in [:orbit, :random, :spinor]
+  @assert algorithm in [:orbit, :random, :spinor, :isometry_classes]
 
   # A vector in `L\p*L` is called admissible if it gives rise to a neighbour
   # of `L` which is in the genus of `L`.
@@ -278,7 +278,7 @@ function neighbours(
     m = p^2
   end
 
-  if algorithm == :spinor
+  if algorithm in [:spinor, :isometry_classes]
     use_mass = false
   end
   if use_mass
@@ -318,7 +318,7 @@ function neighbours(
     elseif algorithm == :random
       x = rand(P)
     else
-      x = next(P) # Only trigerred for :spinor, where we compute a representative in each spinor genus
+      x = next(P) # Only trigerred for :spinor or :isometry_classes
     end
     w0 = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
     a = numerator(only(w0*form0*transpose(w0)))
@@ -379,7 +379,11 @@ function neighbours(
       LL = lll(neighbour(L, v, p))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
-      keep = callback(LL)
+      if algorithm == :isometry_classes
+        keep = all(Base.Fix2(!is_isometric, LL), result)
+      else
+        keep = callback(LL)
+      end
       if !keep
         vain[] += 1
         continue
@@ -824,7 +828,7 @@ function enumerate_definite_genus(
   i = Int(0)
   while true
     i = i+1
-    N = neighbours(
+    N = _neighbours(
                    res[i],
                    p,
                    algorithm;
@@ -905,7 +909,7 @@ function spinor_genera_in_genus(L::ZZLat)
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
   for p in primes
-    N = only(neighbours(L, p, :spinor))
+    N = only(_neighbours(L, p, :spinor))
     for i in 1:length(res)
       M = res[i]
       LL = lll(intersect(p*M+N, 1//p*M))

@@ -190,7 +190,7 @@ shortest_vectors
 shortest_vectors_sublattice
 short_vectors_iterator
 minimum(L::ZZLat)
-center_of_densite
+center_of_density
 hermite_number
 kissing_number(L::ZZLat)
 ```

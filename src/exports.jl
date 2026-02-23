@@ -712,6 +712,7 @@ export multiset
 export naive_height
 export narrow_class_group
 export negation_map
+export neighbours
 export neron_tate_height
 export next_prime
 export ngens

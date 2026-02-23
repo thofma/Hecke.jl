@@ -1307,7 +1307,7 @@ end
 Return representatives for the isometry classes in the genus of `L`.
 """
 function genus_representatives(_L::ZZLat)
-  if rank(_L) == 1
+  if rank(_L) <= 1
     return ZZLat[_L]
   end
   s = scale(_L)
@@ -1331,6 +1331,39 @@ function genus_representatives(_L::ZZLat)
   end
   s != 1 && map!(L -> rescale(L, s; cached=false), res, res)
   return res
+end
+
+@doc raw"""
+    neighbours(L::ZZLat, p::IntegerUnion) -> Vector{ZZLat}
+
+Return all $p$-neighbours of the definite lattice $L$, up to isometry.
+
+# Examples
+```jldoctest
+julia> L = integer_lattice(gram = matrix(QQ, 3, 3, [2,1,-1,1,2,-1,-1,-1,8]));
+
+julia> N1, N2 = neighbours(L, 3);
+
+julia> N1
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[2   0   1]
+[0   2   0]
+[1   0   6]
+
+julia> N2
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[2   1   1]
+[1   2   1]
+[1   1   8]
+```
+"""
+function neighbours(
+  L::ZZLat,
+  p::Hecke.IntegerUnion,
+)
+  return _neighbours(L, ZZ(p), :isometry_classes)
 end
 
 ################################################################################

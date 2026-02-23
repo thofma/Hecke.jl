@@ -518,6 +518,13 @@ Return whether the rational span of the lattice `L` is definite.
 @attr Bool is_definite(L::AbstractLat) = is_definite(rational_span(L))
 
 @doc raw"""
+    is_indefinite(L::AbstractLat) -> Bool
+
+Return whether the rational space of the lattice `L` is indefinite.
+"""
+is_indefinite(L::AbstractLat) = !is_definite(L)
+
+@doc raw"""
     can_scale_totally_positive(L::AbstractLat) -> Bool, NumFieldElem
 
 Return whether there is a totally positive rescaled lattice of the lattice `L`.

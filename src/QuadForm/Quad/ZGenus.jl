@@ -2161,7 +2161,7 @@ julia> class_number(genus(L))
 1
 ```
 """
-@attr Int function class_number(G)
+@attr Int function class_number(G::ZZGenus)
   return length(representatives(G))
 end
 
@@ -2778,6 +2778,9 @@ of the isometry classes in this genus.
 Its mass is defined as $\sum_{i=1}^n \frac{1}{|O(L_i)|}$.
 """
 function mass(G::ZZGenus)
+  if rank(G) == 0
+    return QQ(1)
+  end
   if denominator(scale(G)) != 1
     return mass(rescale(G, denominator(scale(G))))
   end
