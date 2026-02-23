@@ -2149,6 +2149,23 @@ function representatives(G::ZZGenus)
 end
 
 @doc raw"""
+    class_number(G::ZZGenus) -> Int
+
+Return the number of isometry classes of lattices in $G$.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 8);
+
+julia> class_number(genus(L))
+1
+```
+"""
+@attr Int function class_number(G)
+  return length(representatives(G))
+end
+
+@doc raw"""
     gram_matrix(S::ZZLocalGenus) -> MatElem
 
 Return a gram matrix of some representative of this local genus.

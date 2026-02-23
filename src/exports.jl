@@ -197,6 +197,7 @@ export canonical_projections
 export canonical_symbol
 export carmichael_lambda
 export center
+export center_of_density
 export central_primitive_idempotents
 export chain_complex
 export class_group
@@ -407,6 +408,7 @@ export hensel_lift
 export hermitian_genera
 export hermitian_lattice
 export hermitian_local_genera
+export hermite_number
 export hermitian_space
 export hermitian_structure
 export hermitian_structure_with_transfer_data
@@ -877,6 +879,7 @@ export short_vectors_affine_iterator
 export short_vectors_iterator
 export short_weierstrass_model
 export shortest_vectors
+export shortest_vectors_sublattice
 export show
 export show_psi
 export siegel_reduction

@@ -68,6 +68,7 @@ rank(L::ZZLat)
 det(L::ZZLat)
 
 scale(L::ZZLat)
+level(::ZZLat)
 norm(L::ZZLat)
 iseven(L::ZZLat)
 is_integral(L::ZZLat)
@@ -186,8 +187,11 @@ lll(L::ZZLat; same_ambient::Bool = true)
 ```@docs
 short_vectors
 shortest_vectors
+shortest_vectors_sublattice
 short_vectors_iterator
 minimum(L::ZZLat)
+center_of_densite
+hermite_number
 kissing_number(L::ZZLat)
 ```
 

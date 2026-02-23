@@ -140,6 +140,33 @@ function minimum(L::ZZLat)
   return L.minimum
 end
 
+###############################################################################
+#
+#  Density
+#
+###############################################################################
+
+@attr function center_of_density(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  mu = Float64(minimum(L))
+  d = Float64(abs(det(L)))
+  rho = sqrt(mu)
+  return rho^(rank(L))/sqrt(d)
+end
+
+###############################################################################
+#
+#  Hermite number
+#
+###############################################################################
+
+@attr function hermite_number(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  mu = Float64(minimum(L))
+  d = Float64(abs(det(L)))^(1/rank(L))
+  return mu/d
+end
+
 ################################################################################
 #
 #  Kissing number

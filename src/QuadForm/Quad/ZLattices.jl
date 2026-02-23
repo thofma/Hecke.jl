@@ -1064,11 +1064,27 @@ function norm(L::ZZLat)
   return n
 end
 
-################################################################################
+###############################################################################
 #
-#  Eveness
+#  Level
 #
-################################################################################
+###############################################################################
+
+@doc raw"""
+    level(L::ZZLat) -> QQFieldElem
+
+Return the level of $L$, that is the smallest positive rational number $l$ such
+that $lL^\vee \subset L$ where $L^\vee$ is the dual lattice of $L$.
+"""
+function level(L::ZZLat)
+  return 1//scale(dual(L))
+end
+
+###############################################################################
+#
+#  Parity
+#
+###############################################################################
 
 @doc raw"""
     iseven(L::ZZLat) -> Bool
@@ -2611,6 +2627,33 @@ end
                                             -> ZZLat, ZZLat Vector{ZZMatrix}
 
 Given a definite lattice ``L``, return the sublattice ``M`` of ``L`` spanned
+by the vectors of minimal norm in ``L``.
+
+# Examples
+```jldoctest
+julia> L = integer_lattice(gram = matrix(QQ, 3, 3, [2,0,0,0,2,1,0,1,6]))
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[2   0   0]
+[0   2   1]
+[0   1   6]
+
+julia> shortest_vectors_sublattice(L)
+Integer lattice of rank 2 and degree 3
+with gram matrix
+[2   0]
+[0   2]
+```
+"""
+function shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
+  return first(_shortest_vectors_sublattice(L; check))
+end
+
+@doc raw"""
+    _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
+                                            -> ZZLat, ZZLat Vector{ZZMatrix}
+
+Given a definite lattice ``L``, return the sublattice ``M`` of ``L`` spanned
 by the vectors of minimal norm in ``L``. The second output contains the
 said vectors, given in terms of the coordinates of ``L``.
 """
@@ -2855,9 +2898,12 @@ function _ADE_type_with_isometry_irreducible(L)
 end
 
 @doc raw"""
-    root_sublattice(L::ZZLat) -> ZZLat
+    root_sublattice(L::ZZLat; max_length=2) -> ZZLat
 
 Return the sublattice spanned by the roots of length at most $2$.
+
+If $L$ is odd, one can return the sublattice splanned by roots
+of length $1$ by setting `max_length` to $1$.
 
 Input:
 
@@ -2881,14 +2927,14 @@ julia> basis_matrix(root_sublattice(L))
 [1   0]
 ```
 """
-function root_sublattice(L::ZZLat)
+function root_sublattice(L::ZZLat; max_length::Int=2)
   V = ambient_space(L)
   @req is_integral(L) "L must be integral"
   @req is_definite(L) "L must be definite"
   if is_negative_definite(L)
     L = rescale(L,-1; cached=false)
   end
-  sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+  sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, max_length)]; init=zero_matrix(ZZ, 0, rank(L)))
   hnf!(sv)
   B = sv[1:rank(sv), :]*basis_matrix(L)
   return lattice(V, B; check=false, isbasis=true)
