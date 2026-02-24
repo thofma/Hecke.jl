@@ -604,21 +604,10 @@ julia> order(E)
 
   p == 0 && error("Characteristic must be nonzero")
 
-  if p == 2
-    if j_invariant(E) == 0
-      return ZZ(_order_supersingular_char2(E))
-    else
-      return ZZ(_order_ordinary_char2(E))
-    end
-  end
-
-  if p == 3
-    if j_invariant(E) == 0
-      return ZZ(_order_supersingular_char3(E))
-    else
-      return ZZ(_order_ordinary_char3(E))
-    end
-  end
+  j_invariant(E) == 0 && return _order_j_0(E)
+  p == 2 && return _order_ordinary_char2(E)
+  p == 3 && return _order_ordinary_char3(E)
+  j_invariant(E) == R(1728) && return _order_j_1728(E)
 
   A = order_via_bsgs(E)
   if length(A) == 1
@@ -754,7 +743,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 
   # see Menezes "Elliptic Curve Public Key Cryptosystems" sections 3.4 and 3.5
-  _, X = polynomial_ring(R, "X")
+  _, X = polynomial_ring(R, "X", cached=false)
   if isodd(d)
     # bring to the form y^2 + y = x^3 + a_4*x + a_6
     if a3 != one(R)
@@ -782,13 +771,9 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
     @assert !isempty(ss)
 
     sqrt_2q = ZZ(2)^divexact(d + 1, 2)
-    if iszero(tr(ss[1]^6 + ss[1]^2 + a6))
-      return mod(d, 8) in (1, 7) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
-    else
-      return mod(d, 8) in (3, 5) ? q + 1 + sqrt_2q : q + 1 - sqrt_2q
-    end
+    t = iszero(tr(ss[1]^6 + ss[1]^2 + a6)) ? sqrt_2q : -sqrt_2q
+    return mod(d, 8) in (1, 7) ? q + 1 + t : q + 1 - t
   else
-
     # check if a3 is a cube (type II and III)
     a3_cbrt = roots(X^3 - a3)
     if !isempty(a3_cbrt)
@@ -809,28 +794,21 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
         ss = roots(X^4 + X + a4)
         @assert length(ss) == 4
 
-        sqrt_q = ZZ(2)^divexact(d,2)
-        if iszero(tr(ss[1]^6 + a6))
-          return mod(d, 4) == 2 ? q + 1 + 2*sqrt_q : q + 1 - 2*sqrt_q
-        else
-          return mod(d, 4) == 0 ? q + 1 + 2*sqrt_q : q + 1 - 2*sqrt_q
-        end
+        sqrt_q_times2 = ZZ(2)^(divexact(d,2)+1)
+        t = iszero(tr(ss[1]^6 + a6)) ? sqrt_q_times2 : -sqrt_q_times2
+        return mod(d, 4) == 2 ? q + 1 + t : q + 1 - t
       else
         # type II
         return q + 1
       end
-
     else
       # type I: we can assume u = 1, find root s of X^4 + a_3 X + a_4,
       # and check the Trace of [s^6 + a_6] / a_3^2 to select a correct class
       s = only(roots(X^4 + a3*X + a4))
 
       sqrt_q = ZZ(2)^divexact(d,2)
-      if iszero(tr(divexact(s^6+a6, a3^2)))
-        return mod(d, 4) == 0 ? q + 1 + sqrt_q : q + 1 - sqrt_q
-      else
-        return mod(d, 4) == 2 ? q + 1 + sqrt_q : q + 1 - sqrt_q
-      end
+      t = iszero(tr(divexact(s^6+a6, a3^2))) ? sqrt_q : -sqrt_q
+      return mod(d, 4) == 0 ? q + 1 + t : q + 1 - t
     end
   end
 end
@@ -967,6 +945,9 @@ end
 # finds order of a supersingular elliptic curve defined over finite field of characteristic 3
 # since no definitive source was found, a short report was created
 # arxiv: http://arxiv.org/abs/2601.21756
+# after the first version, we found a paper by Francois Morain
+# http://www.lix.polytechnique.fr/Labo/Francois.Morain/Articles/sseclassif.ps.gz
+# both classifications agree; ours is more suitable for implementation
 function _order_supersingular_char3(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   q = order(R)
@@ -1146,4 +1127,165 @@ function _order_ordinary_char3(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 
   return Nemo.is_square(b2) ? q + 1 - trace_frob : q + 1 + trace_frob
+end
+
+################################################################################
+#
+#  Point counting for j = 0
+#
+################################################################################
+
+function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
+  @req iszero(j_invariant(E)) "j-invariant must be zero"
+  R = base_field(E)
+  p = characteristic(R)
+  q = order(R)
+  d = degree(R)
+
+  # p = 2, 3: we have a supersingular curve, dispatch to specialized procedures
+  p == 2 && return _order_supersingular_char2(E)
+  p == 3 && return _order_supersingular_char3(E)
+
+  if mod(p, 3) == 2
+    # supersingular: p divides trace of frobenius
+
+    # t^2 in {0, q, 2q, 3q, 4q}, for odd d the only possibility is 0
+    mod(d, 2) == 1 && return q + 1
+
+    # p is inert in Q(sqrt(-3))
+    # Frob^2 acts on y^2 = x^3 + 1 over F_{p^2} as [-p]
+    # the "base" trace over F_q is then 2 (-p)^{d/2}
+    base_t = (-p)^divexact(d,2)
+
+    # from short form to y^2 = x^3 + b, with b = -c_6/864
+    b = divexact(c_invariants(E)[2], -864)
+
+    # find the twist
+    w = b^divexact(q-1, 6)
+    isone(w)    && return q + 1 - 2*base_t  # isomorphic
+    isone(-w)   && return q + 1 + 2*base_t  # non-square - quadratic twist
+    isone(w^3)  && return q + 1 +   base_t  # non-cube - cubic twist
+    return                q + 1 -   base_t  # not square nor cube - sextic twist
+  else
+    X = polynomial_ring(ZZ, "X", cached=false)[2]
+    K, t = number_field(X^2 - X + 1, :t, cached=false)
+    OK = maximal_order(K)
+
+    # p is split in Q(sqrt(-3)), p = pi*pi'
+    # find pi: it is a generator of a prime above p
+    principal_check, pp = is_principal_with_data(prime_decomposition(OK, p)[1][1])
+    @assert principal_check "Q(sqrt(-3)) should have class order 1"
+
+    # find associate so that pi = 1 mod 3, pi = 1 mod 2 [Norm(2) = 4]
+    # this way we pick unique one out of six associates
+    ot = OK(t)
+    while mod(norm(pp-1), 12) != 0
+      pp *= ot
+    end
+
+    # pi = a + b \zeta_6, N(pi-1) = 0 mod 12
+    # we need conjugate (inverse) of primitive 6-th root of unity
+    # recall that in the formula we have Tr(chi'(b) pi)
+    pp_a, pp_b = coordinates(pp)
+    z = divexact(R(-pp_b), R(pp_a))
+
+    # lift to F_q
+    if d > 1
+      pp = pp^d
+      pp_a, pp_b = coordinates(pp)
+    end
+
+    # from short form to y^2 = x^3 + b, with b = -c_6/864
+    b = divexact(c_invariants(E)[2], -864)
+
+    # find the (sextic) twist
+    w = b^divexact(q-1, 6)
+    isone(w)    && return q + 1 - (2*pp_a + pp_b) # Tr(pi)
+    isone(-w)   && return q + 1 + (2*pp_a + pp_b) # Tr(-pi)
+    w == z      && return q + 1 - (pp_a - pp_b)   # Tr(pi * \zeta_6)
+    w == z^2    && return q + 1 + (pp_a + 2*pp_b) # Tr(pi * \zeta_6^2)
+    w == z^4    && return q + 1 + (pp_a - pp_b)   # Tr(pi * \zeta_6^4)
+    return                q + 1 - (pp_a + 2*pp_b) # Tr(pi * \zeta_6^5)
+  end
+end
+
+################################################################################
+#
+#  Point counting for j = 1728
+#
+################################################################################
+
+function _order_j_1728(E::EllipticCurve{T}) where T <: FinFieldElem
+  R = base_field(E)
+  @req j_invariant(E) == R(1728) "j-invariant must be 1728"
+
+  p = characteristic(R)
+  q = order(R)
+  d = degree(R)
+
+  # p = 2, 3: we have a supersingular curve, dispatch to specialized procedures
+  p == 2 && return _order_supersingular_char2(E)
+  p == 3 && return _order_supersingular_char3(E)
+
+  if mod(p, 4) == 3
+    # supersingular: p divides trace of frobenius
+
+    # t^2 in {0, q, 2q, 3q, 4q}, for odd d the only possibility is 0
+    mod(d, 2) == 1 && return q + 1
+
+    # p is inert in Q(sqrt(-1))
+    # Frob^2 acts on y^2 = x^3 + x over F_{p^2} as [-p]
+    # the "base" trace over F_q is then 2 (-p)^{d/2}
+    base_t = ZZ(2) * (-p)^divexact(d,2)
+
+    # from short form to y^2 = x^3 - ax, with a = c_4/48
+    a = divexact(c_invariants(E)[1], 48)
+
+    # find the twist
+    w = a^divexact(q-1, 4)
+    isone(w)    && return q + 1 - base_t  # isomorphic
+    isone(-w)   && return q + 1 + base_t  # not 4th power - quadratic twist
+    return                q + 1           # not square - quartic twist
+  else
+    X = polynomial_ring(ZZ, "X", cached=false)[2]
+    K, t = number_field(X^2 + 1, :t, cached=false)
+    OK = maximal_order(K)
+
+    # p is split in Q(sqrt(-1)), p = pi*pi'
+    # find pi: it is a generator of a prime above p
+    principal_check, pp = is_principal_with_data(prime_decomposition(OK, p)[1][1])
+    @assert principal_check "Q(sqrt(-1)) should have class order 1"
+
+    # find associate so that pi = 1 mod (1+i)^3 [= 2i-2]
+    # this becomes for a + b*i: (a,b) = (1,0) or (3,2) mod 4
+    pp_a, pp_b = coordinates(pp)
+    if iseven(pp_a)
+      pp_a, pp_b = -pp_b, pp_a  # mul by i
+    end
+    if mod(pp_a + pp_b, 4) != 1
+      pp_a, pp_b = -pp_a, -pp_b # mul by i^2
+    end
+    pp = pp_a + pp_b*OK(t)
+
+    # pi = a + b*i
+    # we need conjugate (inverse) of primitive 4-th root of unity
+    # recall that in the formula we have Tr(chi'(a) pi)
+    z = divexact(R(-pp_b), R(pp_a))
+
+    # lift to F_q
+    if d > 1
+      pp = pp^d
+      pp_a, pp_b = coordinates(pp)
+    end
+
+    # from short form to y^2 = x^3 - ax, with a = c_4/48
+    a = divexact(c_invariants(E)[1], 48)
+
+    # find the (quartic) twist
+    w = a^divexact(q-1, 4)
+    isone(w)    && return q + 1 - (2*pp_a) # Tr(pi)
+    isone(-w)   && return q + 1 + (2*pp_a) # Tr(-pi)
+    w == z      && return q + 1 + (2*pp_b) # Tr(pi * i)
+    return                q + 1 - (2*pp_b) # Tr(pi * (-i))
+  end
 end

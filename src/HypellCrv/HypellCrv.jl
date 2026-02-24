@@ -314,12 +314,12 @@ Return the homogeneous equation defining the hyperelliptic curve C.
 """
 function homogeneous_equation(C::HypellCrv)
   K = base_field(C)
-  Kxyz, (x, y, z) = polynomial_ring(K, ["x", "y", "z"])
+  Kxyz, (x, y, z) = polynomial_ring(K, ["x", "y", "z"]; cached = false)
 
-  f = C.f_hom
-  h = C.h_hom
+  f = C.f_hom::mpoly_type(K)
+  h = C.h_hom::mpoly_type(K)
 
-  return y^2 + h(x, z)*y - f(x, z)
+  return y^2 + evaluate(h, [x, z])*y - evaluate(f, [x, z])
 end
 
 

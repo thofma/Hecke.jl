@@ -3,14 +3,14 @@
   E1 = elliptic_curve(K, [1, 2, 3, 4, 5])
   E2 = elliptic_curve(K, [1, 2, 3, 1, 1])
   phi = @inferred isogeny_from_kernel(E1, division_polynomial_univariate(E1,3)[1])
-  @test @inferred domain(phi) == E1
-  @test @inferred codomain(phi) == E2
+  @test E1 == @inferred domain(phi)
+  @test E2 == @inferred codomain(phi)
   @test is_isomorphic(E1, codomain(phi))
-  @test @inferred image(phi, E1([1,1])) == E2([6,2])
-  @test @inferred image(phi, infinity(E1)) == infinity(E2)
-  @test @inferred phi(infinity(E1)) == infinity(E2)
+  @test E2([6, 2]) == @inferred image(phi, E1([1, 1]))
+  @test infinity(E2) == @inferred image(phi, infinity(E1))
+  @test infinity(E2) == @inferred phi(infinity(E1))
   @test_throws ArgumentError image(phi, infinity(E2))
-  @test @inferred degree(phi) == 9
+  @test 9 == @inferred degree(phi)
 
   K = GF(3)
   E1 = elliptic_curve(K, [1, 0, 1, 1, 0])
@@ -18,8 +18,8 @@
   Kx, x = polynomial_ring(K);
   f = x+2
   phi = @inferred isogeny_from_kernel(E1, f)
-  @test @inferred domain(phi) == E1
-  @test @inferred codomain(phi) == E2
+  @test E1 == @inferred domain(phi)
+  @test E2 == @inferred codomain(phi)
   @test @inferred is_infinite(image(phi, E1([1,2])))
   phihat = @inferred dual_isogeny(phi)
   P = points_with_x_coordinate(E1, 0)[1]
@@ -31,8 +31,8 @@
   E1 = elliptic_curve([1, 2, 3, 4, 5])
   E2 = elliptic_curve([1, 2, 3, 979//16, 19067//64])
   phi = @inferred isogeny_from_kernel(E1, division_polynomial_univariate(E1,2)[1])
-  @test @inferred domain(phi) == E1
-  @test @inferred codomain(phi) == E2
+  @test E1 == @inferred domain(phi)
+  @test E2 == @inferred codomain(phi)
   @test is_isomorphic(E1, codomain(phi))
   P = points_with_x_coordinate(E1, 1)[1]
   g = @inferred multiplication_by_m_map(E1, 32)
@@ -44,9 +44,9 @@
   E2 = elliptic_curve(K,[a^2,1-a,1,a^8,1])
   f = division_polynomial_univariate(E1,5)[1]
   phi = @inferred isogeny_from_kernel(E1, f)
-  @test @inferred domain(phi) == E1
-  @test @inferred codomain(phi) == E2
-  @test @inferred image(phi, E1([a^2,a^2])) == E2([1,a^14])
+  @test E1 == @inferred domain(phi)
+  @test E2 == @inferred codomain(phi)
+  @test E2([1, a^14]) == @inferred image(phi, E1([a^2,a^2]))
 
   K = GF(13,2)
   E = elliptic_curve_from_j_invariant(K(2))

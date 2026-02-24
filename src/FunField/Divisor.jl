@@ -488,7 +488,7 @@ Return the degree of D.
 """
 function degree(D::Divisor)
   L = support(D)
-  return sum(degree(f)*e for (f,e) in L; init = zero(ZZ))
+  return sum(degree(f)*e for (f, e) in L; init = zero(Int))::Int
 end
 
 @doc raw"""
