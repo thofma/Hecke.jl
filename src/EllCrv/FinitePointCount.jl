@@ -46,35 +46,26 @@ $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
 function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
-
-
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
-  grouporder = ZZ(0)
-  p == 0 && error("Base field must be finite")
+  @req p != 0 "Base field must be finite"
+  @req p == q "Finite field must have degree 1"
 
-  if p != q
-    error("Finite field must have degree 1")
-  end
-
-  if E.short == false
+  if !E.short
     E = short_weierstrass_model(E)[1]
   end
   _, _, _, a4, a6 = a_invariants(E)
-  x = ZZ(0)
 
+  s = ZZ(0)
+  x = ZZ(0)
   while x < p
     C = x^3 + a4*x + a6
-    Cnew = lift(ZZ, C) # convert to ZZRingElem
-    a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
-    grouporder = grouporder + a
+    s = s + jacobi_symbol(lift(ZZ, C), p)
     x = x + 1
   end
 
-  grouporder = grouporder + p + 1
-
-#  return grouporder
+  return p + 1 + s
 end
 
 ################################################################################
