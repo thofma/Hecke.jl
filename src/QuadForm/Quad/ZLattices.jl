@@ -2656,7 +2656,7 @@ end
 
 
 @doc raw"""
-    _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
+    shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
                                             -> ZZLat, ZZLat Vector{ZZMatrix}
 
 Given a definite lattice ``L``, return the sublattice ``M`` of ``L`` spanned

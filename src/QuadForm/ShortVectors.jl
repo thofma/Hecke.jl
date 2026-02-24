@@ -146,12 +146,56 @@ end
 #
 ###############################################################################
 
-@attr Float64 function center_of_density(L::ZZLat)
+@doc raw"""
+    center_density(L::ZZLat) -> RealFieldElem
+
+Return the center density of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n``, absolute determinant ``d`` and
+minimum ``m`` (in absolute value), we define the **center density** of ``L``
+to be the real number defined by:
+
+```math
+\delta := \frac{(\sqrt{m}/2)^n}{\sqrt{d}}
+```
+"""
+@attr RealFieldElem function center_density(L::ZZLat)
   @req is_definite(L) "Only implemented for definite lattices"
-  mu = Float64(minimum(L))
-  d = Float64(abs(det(L)))
-  rho = sqrt(mu)
+  RR = real_field()
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))
+  rho = sqrt(mu)/2
   return rho^(rank(L))/sqrt(d)
+end
+
+@doc raw"""
+    density(L::ZZLat) -> RealFieldElem
+
+Return the density of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n`` and minimum ``m``, the density of
+``L`` is the proportion of the real space ``L\otimes \mathbb{R}`` covered by
+non-overlapping balls of radius ``m`` centered in points of ``L``. It can
+be computed as the product of the [`center_density(::ZZLat)`](@ref) of ``L``
+times the volume of the unit ``n``-ball.
+"""
+@attr RealFieldElem function density(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  n = rank(L)
+  RR = real_field()
+  RRpi = RR(pi)
+  m = div(n, 2, RoundDown)
+
+  # Volume unit n-sphere
+  if iseven(n)
+    Vn = RRpi^m/RR(factorial(m))
+  else
+    Vn = RR(2^n)*RRpi^m*RR(factorial(m))/RR(factorial(n))
+  end
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))
+  rho = sqrt(mu)/2
+  return Vn*rho^n/sqrt(d)
 end
 
 ###############################################################################
@@ -160,10 +204,23 @@ end
 #
 ###############################################################################
 
-@attr Float64 function hermite_number(L::ZZLat)
+@doc raw"""
+    hermite_number(L::ZZLat) -> RealFieldElem
+
+Return the Hermite number of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n``, absolute determinant ``d`` and
+minimum ``m``, the Hermite number of ``L`` is defined by:
+
+```math
+\gamma := \frac{m}{d^{1/n}}.
+```
+"""
+@attr RealFieldElem function hermite_number(L::ZZLat)
   @req is_definite(L) "Only implemented for definite lattices"
-  mu = Float64(minimum(L))
-  d = Float64(abs(det(L)))^(1/rank(L))
+  RR = real_field()
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))^(1/rank(L))
   return mu/d
 end
 

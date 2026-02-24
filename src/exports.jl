@@ -197,7 +197,7 @@ export canonical_projections
 export canonical_symbol
 export carmichael_lambda
 export center
-export center_of_density
+export center_density
 export central_primitive_idempotents
 export chain_complex
 export class_group
