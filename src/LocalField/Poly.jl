@@ -123,7 +123,7 @@ function lift(x::fqPolyRepPolyRingElem, Kt)
   return Kt(coeffs)
 end
 
-function _content(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
+function _content(f::PolyRingElem{T}) where T <: Union{NonArchLocalFieldElemTypes, NonArchLocalFieldValuationRingElem}
   K = base_ring(f)
   @assert !iszero(f)
   c = coeff(f, 0)
@@ -133,19 +133,17 @@ function _content(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFiel
     i > length(f) && error("bad poly")
     c = coeff(f, i)
   end
-  v = valuation(c)
-  for j = i+1:degree(f)
+  v = _valuation_integral(c)
+  for j = i + 1:degree(f)
     c = coeff(f, j)
     if !iszero(c)
-      v = min(v, valuation(c))
+      v = min(v, _valuation_integral(c))
     end
   end
   if iszero(v)
     return one(K)
   end
-  e = v*absolute_ramification_index(K)
-  @assert isone(denominator(e))
-  return uniformizer(K)^numerator(e)
+  return uniformizer(K)^v
 end
 
 function rem!(x::AbstractAlgebra.Generic.Poly{T}, y::AbstractAlgebra.Generic.Poly{T}, z::AbstractAlgebra.Generic.Poly{T}) where {T<:LocalFieldElem}
@@ -232,14 +230,14 @@ end
 ################################################################################
 
 
-function Nemo.precision(g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem, LocalFieldValuationRingElem}
+function Nemo.precision(g::PolyRingElem{<: Union{NonArchLocalFieldElemTypes, NonArchLocalFieldValuationRingElem}})
   N = precision(coeff(g, 0))
   for i = 1:degree(g)
+    is_zero(coeff(g, i)) && continue
     N = min(N, precision(coeff(g, i)))
   end
   return N
 end
-
 
 function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   if degree(f) < degree(g)
@@ -722,11 +720,11 @@ end
 @doc raw"""
     characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem} -> Generic.Poly{T}
 
-Computes $\mathrm{ResidueRingElem}_x(f(x), t- g(x))$.
+Compute $\mathrm{Res}_x(f(x), t - g(x))$.
 """
-function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
+function characteristic_polynomial(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem, LocalFieldValuationRingResidueRingElem}
   Kt = parent(f)
-  Ktx, x = polynomial_ring(Kt, "x")
+  Ktx, x = polynomial_ring(Kt, "x", cached = false)
   fcoeffs = typeof(f)[Kt(coeff(f, i)) for i = 0:degree(f)]
   gcoeffs = typeof(f)[Kt(-coeff(g, i)) for i = 0:degree(g)]
   f1 = Ktx(fcoeffs)
@@ -914,6 +912,36 @@ mutable struct HenselCtxdr{S}
     end
     return HenselCtxQadic{S}(f, lfp)
   end
+
+  function HenselCtxdr{S}(f::PolyRingElem{S}, lfp::Vector{T}) where {S <: LocalFieldValuationRingResidueRingElem, T}
+    R = base_ring(f)
+    Rx = parent(f)
+    K = _field(R)
+    @assert residue_field(K)[1] === coefficient_ring(lfp[1])
+    k, Ktok = residue_field(K)
+    R1 = LocalFieldValuationRingResidueRing(valuation_ring(K), 1)
+    R1x, _ = polynomial_ring(R1, "x", cached = false)
+    i = 1
+    la = Vector{typeof(f)}()
+    n = length(lfp)
+    while i < length(lfp)
+      f1 = lfp[i]
+      f2 = lfp[i+1]
+      g, a, b = gcdx(f1, f2)
+      @assert isone(g)
+      push!(la, map_coefficients(x -> R1(Ktok\x), a, parent = R1x))
+      push!(la, map_coefficients(x -> R1(Ktok\x), b, parent = R1x))
+      push!(lfp, f1*f2)
+      i += 2
+    end
+
+    z = new{S}()
+    z.f = f
+    z.lf = map(x -> map_coefficients(y -> R1(Ktok\y), x, parent = R1x), lfp)
+    z.la = la
+    z.n = n
+    return z
+  end
 end
 
 function lift(C::HenselCtxdr, mx::Int)
@@ -987,16 +1015,23 @@ end
 ################################################################################
 
 @doc raw"""
-    slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem} -> Dict{Generic.Poly{T}, Int}
+    slope_factorization(f::T) where {T <: PolyRingElem{<: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}}} -> Dict{T, Int}
 
-Computes a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
-The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the multiplicity.
+Compute a factorization of $f$ such that every factor has a one-sided generalized Newton polygon.
+The output is a dictionary whose keys are the factors of $f$ and the corresponding value is the
+multiplicity.
 """
-function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
+function slope_factorization(f::PolyRingElem{<: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}})
+  @assert all(c -> is_zero(c) || valuation(c) >= 0, coefficients(f)) "Coefficients must have non-negative valuation"
+
+  # Reference: Carlo Sircana, "Factoring polynomials over ZZ/(n)", Master's Thesis,
+  #            Università di Pisa, 2016,
+  #            http://poisson.phc.dm.unipi.it/~sircana/tesi1.pdf
+  #            Section 2.1.1
 
   K = base_ring(f)
   Kt = parent(f)
-  fact = Dict{Generic.Poly{T}, Int}()
+  fact = Dict{typeof(f), Int}()
   cf = _content(f)
   f = divexact(f, cf)
   if !iszero(valuation(leading_coefficient(f)))
