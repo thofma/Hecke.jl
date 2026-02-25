@@ -771,7 +771,7 @@ function _enumerate_definite_genus(
       push!(res, L)
     end
   else
-    res = copy(known)
+    res = known#copy(known)
   end
 
 

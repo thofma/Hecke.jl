@@ -802,6 +802,29 @@ end
 
 ################################################################################
 #
+#  Automorphisms for lattices with roots
+#
+################################################################################
+function init_auto_weyl(C::ZLatAutoCtx{S,T,V}, fundamental_roots) where {S, T, V}
+  vv = C.V.vectors
+  n = length(V)
+  # convert
+  _fund = V[S.(i) for i in fundamental_roots]
+  # TODO replace multiset by something more efficient?
+  invariants = Vector{MSet{S}}(undef, n)
+  for i in 1:n
+    m = MSet{S}()
+    for w in _fund
+      a = dot(w, C.v[i])
+      push!(m, a)
+    end
+    invariants[i] = m
+  end
+  C.V.invariants = invariants
+end
+
+################################################################################
+#
 #  Short vectors
 #
 ################################################################################
