@@ -435,4 +435,12 @@
     sikep434_count2 = (p + 1)^2
     @test @inferred Hecke._order_j_1728(E) == sikep434_count2
   end
+
+  @testset "Schoof in large characteristic" begin
+    # TODO: This test needs to be expanded.
+    # Currently we test for a bug we had with characteristic not fitting into Int
+    R, t = finite_field(1000000000039, 1, :t, cached = false)
+    E = elliptic_curve(R, [1,2])
+    @test @inferred Hecke.order_via_schoof(E) == 999999251680
+  end
 end
