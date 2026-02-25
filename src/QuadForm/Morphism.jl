@@ -805,7 +805,7 @@ end
 #  Automorphisms for lattices with roots
 #
 ################################################################################
-function init_auto_weyl(C::ZLatAutoCtx{S,T,V}, fundamental_roots) where {S, T, V}
+function init_weyl(C::ZLatAutoCtx{S,T,V}, fundamental_roots) where {S, T, V}
   vv = C.V.vectors
   n = length(V)
   # convert

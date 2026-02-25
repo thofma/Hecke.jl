@@ -513,10 +513,16 @@ function __assert_has_automorphisms(
   L.automorphism_group_generators = gens
   if use_weyl
     # need to multiply with the order of the weyl group
+    @show order
+    # TODO: for now this is still wrong because
+    # the weyl vector is preserved only up to sign
+    # and therefore the order can be off by 2 if -1 is in the weyl group
+    L.automorphism_group_order = 0
     L.automorphism_group_order = order*weyl_group_order
   else
     L.automorphism_group_order = order
   end
+  @show L.automorphism_group_order
   return nothing
 end
 
@@ -2925,16 +2931,53 @@ function _reflection(gram::MatElem, v::MatElem)
   for k in 1:n
     ref[k:k,:] = E[k:k,:] - divexact(2*(E[k:k,:] * gram * transpose(v))[1,1], c)*v
   end
+  @assert ref == _reflection2(gram, v)
+  return ref
+end
+
+function _reflection2(gram::MatElem, v::MatElem)
+  n = ncols(gram)
+  gram_v = gram*transpose(v)
+  c = (v * gram_v)[1,1]
+  ref = zero_matrix(base_ring(gram), n, n)
+  # special cases for roots
+  if c == 2
+    for k in 1:n
+      ref[k:k,:] = neg!(gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == 1
+    for k in 1:n
+      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == -2
+    for k in 1:n
+      ref[k:k,:] = gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  elseif c == -1
+    for k in 1:n
+      ref[k:k,:] = 2*gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  else
+    for k in 1:n
+      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
+      ref[k,k] += 1
+    end
+  end
+
   return ref
 end
 
 
 function _weyl_group(L::ZZLat)
-  root_sublat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
+  root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
   if length(root_types) == 0
     return ZZMatrix[], ZZMatrix[], ZZ(1)
   end
-  BR = reduce(vcat,QQMatrix[basis_matrix(i) for i in irreducible_root_lattices])
+  BR = basis_matrix(root_lat)
 
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
@@ -2949,18 +2992,20 @@ function _weyl_group(L::ZZLat)
     end
     append!(invariant_vectors, ZZMatrix[ZZ.(coordinates(i, L)) for i in V])
   end
+  gramZ = ZZ.(gram_matrix(L))
   for v in invariant_vectors
-    push!(invariant_grams, transpose(v)*v)
+    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
   end
 
-  R = lattice_in_same_ambient_space(L, BR)
-  rho = _weyl_vector(R)
-  rho = coordinates(rho, L)
-  roots = coordinates(basis_matrix(R), L)
-  gram_rho = ZZ.(4*transpose(rho)*rho)
-  push!(invariant_grams, gram_rho)
+  rho = coordinates(_weyl_vector(root_lat), L)
+
+  fundamental_roots = coordinates(basis_matrix(root_lat), L)
+
   gram = gram_matrix(L)
-  weyl_group_gens = [_reflection(gram, roots[i:i,:]) for i in 1:nrows(roots)]
+  gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
+  push!(invariant_grams, gram_rho)
+  weyl_group_gens = [_reflection(gram, fundamental_roots[i:i,:]) for i in 1:nrows(fundamental_roots)]
+
   ord = one(ZZ)
   for s in root_types
     mul!(ord, _weyl_group_order(s...))
@@ -3040,6 +3085,8 @@ function _invariant_vectors(s::Symbol, n::IntegerUnion)
         push!(invs, e(i))
       end
     end
+  elseif s == :I
+    push!(invs, e(1))
   else
     error("invalid root system")
   end
