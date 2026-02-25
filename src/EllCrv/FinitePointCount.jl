@@ -207,6 +207,47 @@ end
 #
 ################################################################################
 
+# prepare division polynomials: n = -1 .. l+1
+# TODO: this needs revisiting
+# WARNING: this is essentially a copy of divpol_g_short, but uses different convention
+#   for even n: f_n = Psi_n / y (like in Schoof paper)
+# WARNING: since we start f_n from n = -1, we need to add 2 for indexing
+function _generate_division_polynomials_for_schoof(x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T<:FinFieldElem
+  @assert l >= 3
+
+  Rx = parent(x)
+  R  = base_ring(Rx)
+  @assert R == parent(a4) && R == parent(a6)
+
+  inv_2 = inv(R(2))
+  f_sqr = (x^3 + a4*x + a6)^2
+
+  fn = Array{elem_type(Rx)}(undef, l+3)
+  fn[-1 + 2] = -one(Rx)
+  fn[ 0 + 2] = zero(Rx)
+  fn[ 1 + 2] = one(Rx)
+  fn[ 2 + 2] = 2*one(Rx)
+  fn[ 3 + 2] = 3*x^4 + 6*a4*x^2 + 12*a6*x - a4^2
+  fn[ 4 + 2] = 4*(x^6 + 5*a4*x^4 + 20*a6*x^3 - 5*a4^2*x^2 - 4*a4*a6*x - 8*a6^2 - a4^3)
+  for n = 5:l+1
+    if mod(n, 2) == 0
+      m = divexact(n, 2)
+      fn[n + 2] = ( fn[m + 2] * (fn[m+2 + 2]*fn[m-1 + 2]^2 - fn[m-2 + 2]*fn[m+1 + 2]^2) ) * inv_2
+    else
+      m = divexact(n-1, 2)
+      part1 = fn[m+2 + 2] * fn[m + 2]^3
+      part2 = fn[m-1 + 2] * fn[m+1 + 2]^3
+      if mod(m, 2) == 0
+        fn[n + 2] = f_sqr * part1 - part2
+      else
+        fn[n + 2] = part1 - f_sqr * part2
+      end
+    end
+  end
+
+  return fn
+end
+
 @doc raw"""
     order_via_schoof(E::EllipticCurve) -> ZZRingElem
 
@@ -229,26 +270,30 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   # generates set of primes S such that
   # 1. characteristic p is not in S
   # 2. product of elements of S is larger than the Hasse interval length
-  function prime_set(N)
-    S = Nemo.ZZRingElem[]
+  hasse_length = 4*(isqrtrem(q)[1] + 1)
 
-    S_product = 1
-    l = 2
-    while S_product < N
-      if l != p
-        push!(S, l)
-        S_product = S_product * l
-      end
-      l = next_prime(l)
+  # note that we need to know the largest prime in S, to know the limit on division polynomials
+  l = 1
+
+  S = Nemo.ZZRingElem[]
+  S_product = 1
+  while S_product < hasse_length
+    l = next_prime(l)
+    if l != p
+      push!(S, l)
+      S_product = S_product * l
     end
-
-    return S
   end
 
-  S = prime_set(4*(isqrtrem(q)[1] + 1))
-  t_mod_l = ZZRingElem[t_mod_prime(s, E) for s in S]
+  # prepare data
+  Rx, x = polynomial_ring(R, :x, cached = false)
+  _, _, _, a4, a6 = a_invariants(E)
 
+  fn = _generate_division_polynomials_for_schoof(x, a4, a6, l)
+
+  t_mod_l = ZZRingElem[_trace_of_frobenius_mod_l_schoof(E, fn, x, a4, a6, Int(l)) for l in S]
   t = crt_signed(t_mod_l, crt_env(S))
+
   return q + 1 - t
 end
 
@@ -285,129 +330,84 @@ function fn_from_schoof2(E::EllipticCurve, n::Int, x)
   end
 end
 
+function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::AbstractVector{<:PolyRingElem{T}}, x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T <: FinFieldElem
+  Rx = parent(x)
+  R  = base_ring(Rx)
+  @assert R == parent(a4) && R == parent(a6)
+  @assert R == base_field(E)
 
-# t_mod_prime(l::Nemo.ZZRingElem, E::EllipticCurve) -> Nemo.ZZRingElem
-# determines the value of t modulo some prime l (used in Schoof's algorithm)
-function t_mod_prime(l, E)
-  R = base_field(E)
   q = order(R)
-  l = Int(l)
-
-  S, x = polynomial_ring(R, "x")
-  T, y = polynomial_ring(S, "y")
-  Z = Native.GF(l, cached = false)
-
-  _, _, _, a4, a6 = a_invariants(E)
   f = x^3 + a4*x + a6
-  fl = division_polynomial_univariate(E, l, x)[2]
-  if iseven(l)
-    fl = 2*fl
+
+  # |E| = t mod 2, so t = 0 mod 2 iff E has non-trivial 2-torsion point
+  # this is equivalent to f having a root that is (x^q - x, f) != 1
+  if l == 2
+    return isone(gcd(f, powermod(x, q, f) - x)) ? ZZ(1) : ZZ(0)
   end
-  U = residue_ring(S, fl)[1]
+
+  fl = div_poly[l + 2]
+  Rx_fl = residue_ring(Rx, fl)[1]
+  ffl = Rx_fl(f)
+
+  Rxy, y = polynomial_ring(Rx, :y)
+  Z = Native.GF(l, cached = false)
 
   PsiPoly = [] # list of psi-polynomials
   for i = -1:(l + 1)
     push!(PsiPoly, psi_poly_field(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
   end
 
-  #Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
-  #for i = -1:(l + 1)
-  #  push!(Fnschoof, fn_from_schoof(E,i,x))
-  #end
+  k = Int(mod(q, l))
 
-  #push!(PsiPoly, -one(T))
-  #push!(PsiPoly, zero(T))
-  #for i = 1:(l + 1)
-  #  push!(PsiPoly, division_polynomial(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
-  #end
+  f_k   = Rx_fl(div_poly[k   + 2])
+  f_km1 = Rx_fl(div_poly[k-1 + 2])
+  f_kp1 = Rx_fl(div_poly[k+1 + 2])
 
+  # first check if phi^2(P) == +-kP for *some* point P
+  # for this we need to compare only x-coordinates
+  Frob_X  = powermod(x, q, fl)
+  Frob2_X = powermod(Frob_X, q, fl)
+  # for q = 2n+1, y^q = y * y^{2n} = y * f^n
+  # y(phi(x)) = y * Frob_Yc
+  Frob_Yc = powermod(f, divexact(q-1, 2), fl)
 
-  Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
-  push!(Fnschoof, -one(S))
-  push!(Fnschoof, zero(S))
-  for i = 1:(l + 1)
-    poly = division_polynomial_univariate(E, i, x)[2]
-    if iseven(i)
-      poly = 2*poly
-    end
-    push!(Fnschoof,poly)
-  end
+  # x([k]P) = x - kP_xn / kP_xd
+  kP_xn = iseven(k) ? f_km1 * f_kp1 : f_km1 * f_kp1 * ffl
+  kP_xd = iseven(k) ? ffl * f_k^2 : f_k^2
 
-  # case where l == 2. value of t mod l determined by some gcd, see p. 124
-  if l == 2
-    x_q = powermod(x, q, f)
-    ggt = gcd(f, x_q - x)
-    if ggt == 1
-      t = ZZ(1)
-    else
-      t = ZZ(0)
-    end
-
-    return t
-  end
-
-  # case where l != 2
-  k = Int(mod(q, l)) # reduce q mod l
-  k_mod = Z(k)
-
-  fk = Fnschoof[k+2]
-  fkme = Fnschoof[k+1]
-  fkpe = Fnschoof[k+3]
-  fkpz = Fnschoof[k+4]
-
-  # is there a nonzero P = (x,y) in E[l] with phi^2(P) == +-kP ?
-  if mod(k,2) == 0
-    g = U( (powermod(x, q^2, fl) - x) * fk^2 * f + fkme * fkpe).data
-    ggT = gcd(g, fl)
-  else
-    g = U( (powermod(x, q^2, fl) - x) * fk^2 + fkme * fkpe * f).data
-    ggT = gcd(g, fl)
-  end
-
-  if ggT != 1 # case 1
-    if jacobi_symbol(ZZ(k), ZZ(l)) == -1
+  h_x = (Rx_fl(Frob2_X - x)*kP_xd + kP_xn).data
+  if !isone(gcd(h_x, fl))  # case 1 in schoof original paper
+    is_square, w_mod = is_square_with_sqrt(Z(k))
+    if !is_square # t = 0 mod l is the only possibility
       return ZZ(0)
-    else
-      # need square root of q (mod l)
-      w = is_square_with_sqrt(k_mod)[2]
-      if w.data < 0
-        w = w + l
-      end
-      w_int = Int(w.data)
-
-      fw = Fnschoof[w_int+2]
-      fwme = Fnschoof[w_int+1]
-      fwpe = Fnschoof[w_int+3]
-
-      if mod(w_int, 2) == 0
-        g = U((powermod(x,q,fl) - x) * fw^2*f + fwme*fwpe).data # reduce mod fl
-        ggT = gcd(g, fl)
-      else
-        g = U((powermod(x,q,fl) - x) * fw^2 + fwme*fwpe*f).data
-        ggT = gcd(g, fl)
-      end
-
-      if ggT == 1
-        return ZZ(0)
-      else
-        fwmz = Fnschoof[w_int]
-        fwpz = Fnschoof[w_int+4]
-
-        if mod(w_int, 2) == 0
-          g = U(4 * powermod(f,div(q + 3, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
-          ggT2 = gcd(g, fl)
-        else
-          g = U(4 * powermod(f,div(q - 1, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
-          ggT2 = gcd(g, fl)
-        end
-
-        if ggT2 == 1
-          return -2*ZZRingElem(w.data)
-        else
-          return 2*ZZRingElem(w.data)
-        end
-      end
     end
+
+    w = w_mod.data >= 0 ? Int(w_mod.data) : l + Int(w_mod.data)
+
+    # check if +-w is eigenvalue of frobenius
+    f_w   = Rx_fl(div_poly[w   + 2])
+    f_wm1 = Rx_fl(div_poly[w-1 + 2])
+    f_wp1 = Rx_fl(div_poly[w+1 + 2])
+
+    # x([w]P) = x - wP_xn / wP_xd
+    wP_xn = iseven(w) ? f_wm1 * f_wp1 : f_wm1 * f_wp1 * ffl
+    wP_xd = iseven(w) ? ffl * f_w^2 : f_w^2
+
+    h_x = (Rx_fl(Frob_X - x)*wP_xd + wP_xn).data
+    if isone(gcd(h_x, fl)) # +-w not an eigenvalue, so t = 0 mod l
+      return ZZ(0)
+    end
+
+    # check y coordinate to determine sign
+    f_wm2 = Rx_fl(div_poly[w-2 + 2])
+    f_wp2 = Rx_fl(div_poly[w+2 + 2])
+
+    # y([w]P) = y * wP_yn / wP_yd
+    wP_yn = f_wp2 * f_wm1^2 - f_wm2 * f_wp1^2
+    wP_yd = iseven(w) ? 4 * ffl^2 * f_w^3 : 4 * f_w^3
+
+    h_y = (Rx_fl(Frob_Yc)*wP_yd - wP_yn).data
+    return isone(gcd(h_y, fl)) ? -2*ZZ(w) : 2*ZZ(w)
   else # case 2
     Fkmz = PsiPoly[k]
     Fkme = PsiPoly[k+1]
@@ -427,10 +427,10 @@ function t_mod_prime(l, E)
       ftaupe = PsiPoly[tau+3]
       ftaupz = PsiPoly[tau+4]
 
-      fntaumz = Fnschoof[tau]
-      fntaume = Fnschoof[tau+1]
-      fntaupe = Fnschoof[tau+3]
-      fntaupz = Fnschoof[tau+4]
+      fntaumz = div_poly[tau]
+      fntaume = div_poly[tau+1]
+      fntaupe = div_poly[tau+3]
+      fntaupz = div_poly[tau+4]
 
       gammahelp = powermod(fntaupz*fntaume^2- fntaumz * fntaupe^2,q,fl)
 
@@ -447,7 +447,7 @@ function t_mod_prime(l, E)
       end
 
       monster1_1 = replace_all_squares_modulo(monster1, f, fl)
-      monster1_2 = U(monster1_1).data # monster1_1 reduced
+      monster1_2 = Rx_fl(monster1_1).data # monster1_1 reduced
 
       if monster1_2 != 0
         tau = tau + 1
@@ -459,7 +459,7 @@ function t_mod_prime(l, E)
         end
 
         monster2_1 = replace_all_squares_modulo(monster2, f,fl)
-        monster2_2 = U(monster2_1).data # monster2_1 mod fl
+        monster2_2 = Rx_fl(monster2_1).data # monster2_1 mod fl
 
         if monster2_2 != 0
           tau = tau + 1
