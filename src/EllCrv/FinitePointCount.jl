@@ -212,52 +212,44 @@ end
 
 Given an elliptic curve $E$ over a finite field $\mathbf{F}$,
 this function computes the order of $E(\mathbf{F})$ using Schoof's algorithm
-The characteristic must not be $2$ or $3$.
+The characteristic must be $5$ or greater.
 """
 function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   q = order(R)
   p = characteristic(R)
 
-  if (p == 2) || (p == 3) || (p == 0)
-    error("Characteristic must not be 2 or 3 or 0")
-  end
+  @req p != 0 "Base field must be finite"
+  @req p >= 5 "Characteristic must be 5 or greater"
 
-  if E.short == false
+  if !E.short
     E = short_weierstrass_model(E)[1]
   end
 
-  # step 1: get suitable set S of prime numbers
-  sqrt_q = isqrtrem(q)[1]
-  S = prime_set(4*(sqrt_q + 1), p)
+  # generates set of primes S such that
+  # 1. characteristic p is not in S
+  # 2. product of elements of S is larger than the Hasse interval length
+  function prime_set(N)
+    S = Nemo.ZZRingElem[]
 
-  L = length(S)
-  product = 1
+    S_product = 1
+    l = 2
+    while S_product < N
+      if l != p
+        push!(S, l)
+        S_product = S_product * l
+      end
+      l = next_prime(l)
+    end
 
-  # step 2: compute t (mod l) for every l in S
-  t_mod_l = []
-  for i = 1:L
-    a = S[i]
-    push!(t_mod_l, t_mod_prime(S[i], E))
-    product = product * S[i]
+    return S
   end
 
-  # step 3: use chinese remainder theorem to get value of t
-  t = 0
-  for i = 1:L
-    n_i = div(product, S[i])
-    B = residue_ring(ZZ, S[i], cached = false)[1]
-    M_i = inv(B(n_i))
-    M_i = M_i.data
-    t = t + (M_i * n_i * t_mod_l[i])
-  end
+  S = prime_set(4*(isqrtrem(q)[1] + 1))
+  t_mod_l = ZZRingElem[t_mod_prime(s, E) for s in S]
 
-  t = mod(t, product)
-  if t > product//2
-    t = t - product
-  end
-
-  return (q + 1 - t)::ZZRingElem
+  t = crt_signed(t_mod_l, crt_env(S))
+  return q + 1 - t
 end
 
 
@@ -291,31 +283,8 @@ function fn_from_schoof2(E::EllipticCurve, n::Int, x)
   else
     return replace_all_squares(divexact(f, y), g)
   end
-
-
 end
 
-#prime_set(M::Nemo.ZZRingElem, char::Nemo.ZZRingElem) -> Array{Nemo.ZZRingElem}
-#  returns a set S of primes with:
-# 1) char not contained in S
-# 2) product of elements in S is greater than M
-function prime_set(M, char)
-  S = Nemo.ZZRingElem[]
-
-  p = 1
-  product = 1
-
-  while product < M
-    p = next_prime(p)
-
-    if p != char
-      push!(S,p)
-      product = product * p
-    end
-  end
-
-  return S
-end
 
 # t_mod_prime(l::Nemo.ZZRingElem, E::EllipticCurve) -> Nemo.ZZRingElem
 # determines the value of t modulo some prime l (used in Schoof's algorithm)
