@@ -436,28 +436,15 @@
     @test @inferred Hecke._order_j_1728(E) == sikep434_count2
   end
 
-  @testset "Schoof in small characteristic (Exhaustive)" begin
+  @testset "Schoof in small prime field (Exhaustive)" begin
     for p in [5,7,11]
       R, t = finite_field(p, 1, :t, cached = false)
-      delta_check = R(-4)//R(27) # disc = -16(4*A^3 + 27*B^2)
-      for a in R
-        if !iszero(a)
-          E = elliptic_curve(R, [0,a])  # j = 0
-          @test @inferred Hecke.order_via_schoof(E) == Hecke.order_via_exhaustive_search(E)
+      for a in R, b in R
+        disc = -16*(4*a^3 + 27*b^2)
+        iszero(disc) && continue
 
-          E = elliptic_curve(R, [a,0])  # j = 1728
-          @test @inferred Hecke.order_via_schoof(E) == Hecke.order_via_exhaustive_search(E)
-        end
-
-        if a^2 != delta_check
-          E = elliptic_curve(R, [1,a])
-          @test @inferred Hecke.order_via_schoof(E) == Hecke.order_via_exhaustive_search(E)
-        end
-
-        if !isone(a^3 * delta_check) # a^3 != 1/delta_check
-          E = elliptic_curve(R, [a,1])
-          @test @inferred Hecke.order_via_schoof(E) == Hecke.order_via_exhaustive_search(E)
-        end
+        E = elliptic_curve(R, [a,b])
+        @test @inferred Hecke.order_via_schoof(E) == Hecke.order_via_exhaustive_search(E)
       end
     end
   end
@@ -465,7 +452,7 @@
   @testset "Schoof in small characteristic (Subfield)" begin
     function test_schoof_subfield(p, d, N)
       Rb,_ = finite_field(p, d, :x, cached = false)
-      q = p^d
+      q = ZZ(p)^d
 
       E = elliptic_curve(Rb, [0,1])
       t_1 = q + 1 - Hecke.order_via_exhaustive_search(E)
@@ -476,23 +463,27 @@
 
         R,_ = finite_field(p, d*n, :y, cached = false)
         E = elliptic_curve(R, [0,1])
-        t = q^n + 1 - Hecke.order_via_schoof(E)
+        t = q^n + 1 - @inferred Hecke.order_via_schoof(E)
 
         @test t == t_cur
       end
     end
 
-    test_schoof_subfield(5,1,5)
-    test_schoof_subfield(5,2,5)
-    test_schoof_subfield(7,1,5)
-    test_schoof_subfield(7,2,5)
+    test_schoof_subfield(5,1,10)
+    test_schoof_subfield(5,2,10)
+    test_schoof_subfield(7,1,10)
+    test_schoof_subfield(7,2,10)
+    test_schoof_subfield(11,1,10)
+    test_schoof_subfield(13,1,10)
   end
 
   @testset "Schoof in large characteristic" begin
-    # TODO: This test needs to be expanded.
-    # Currently we test for a bug we had with characteristic not fitting into Int
-    R, t = finite_field(1000000000039, 1, :t, cached = false)
-    E = elliptic_curve(R, [1,2])
-    @test @inferred Hecke.order_via_schoof(E) == 999999251680
+    for (p, expected) in [(1000000000039, 999998450724), (10000000000037, 10000000000038), (100000000000031, 100000000000032),
+                          (1000000000000037, 1000000000000038), (10000000000000061, 10000000000000062), (10000000000000000051, 10000000000944446556),
+                          (100000000000000000039, 100000000017939870732), (1000000000000000000117, 999999999942722249052)]
+      R, t = finite_field(p, 1, :t, cached = false)
+      E = elliptic_curve(R, [0,1])
+      @test @inferred Hecke.order_via_schoof(E) == expected
+    end
   end
 end
