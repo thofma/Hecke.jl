@@ -522,7 +522,7 @@ Return whether the rational span of the lattice `L` is definite.
 
 Return whether the lattice `L` is indefinite.
 """
-is_indefinite(L::AbstractLat) = !is_definite(L) && !is_degenerate(L)
+is_indefinite(L::AbstractLat) = is_indefinite(rational_span(L))
 
 @doc raw"""
     can_scale_totally_positive(L::AbstractLat) -> Bool, NumFieldElem

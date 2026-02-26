@@ -1074,7 +1074,8 @@ end
     level(L::ZZLat) -> QQFieldElem
 
 Return the level of $L$, that is the smallest positive rational number $l$ such
-that $lL^\vee \subset L$ where $L^\vee$ is the dual lattice of $L$.
+that $lL^\vee \subset L$ where $L^\vee$ is the dual lattice of $L$. If $L$ is
+non-zero, this is the inverse of the scale of the dual.
 
 # Examples
 ```jldoctest
@@ -1085,6 +1086,9 @@ julia> level(L)
 ```
 """
 function level(L::ZZLat)
+  if rank(L) == 0
+    return QQ(1)
+  end
   return 1//scale(dual(L))
 end
 
@@ -2939,43 +2943,46 @@ function _ADE_type_with_isometry_irreducible(L)
 end
 
 @doc raw"""
-    root_sublattice(L::ZZLat; max_length=2) -> ZZLat
+    root_sublattice(L::ZZLat; length = [1, 2]) -> ZZLat
 
-Return the sublattice spanned by the roots of length at most $2$.
-
-If $L$ is odd, one can return the sublattice splanned by roots
-of length $1$ by setting `max_length` to $1$.
-
-Input:
-
-`L` - a definite integral lattice
-
-Output:
-
-The sublattice of `L` spanned by all
-vectors `x` of `L` with $|x^2|\leq 2$.
+Return the sublattice spanned by the roots of length specified by `length`,
+which by default are all roots of length at most $2$, and which must be
+a subset of `[1, 2]` with unique entries.
 
 # Examples
 ```jldoctest
-julia> L = integer_lattice(gram = ZZ[2 0; 0 4]);
-
-julia> root_sublattice(L)
-Integer lattice of rank 1 and degree 2
-with gram matrix
-[2]
+julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
 
 julia> basis_matrix(root_sublattice(L))
-[1   0]
+[1   0   0]
+[0   1   0]
+
+julia> basis_matrix(root_sublattice(L; length = [2]))
+[0   1   0]
+
+julia> basis_matrix(root_sublattice(L; length = [1]))
+[1   0   0]
 ```
 """
-function root_sublattice(L::ZZLat; max_length::Int=2)
+function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2])
   V = ambient_space(L)
   @req is_integral(L) "L must be integral"
   @req is_definite(L) "L must be definite"
+  @req issubset(length, [1, 2]) "Root lengths must be in [1, 2]"
   if is_negative_definite(L)
     L = rescale(L,-1; cached=false)
   end
-  sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, max_length)]; init=zero_matrix(ZZ, 0, rank(L)))
+  # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
+  # short_vectors(L, ub)
+  if Base.length(length) == 2
+    sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+  else
+    if length[1] == 1
+      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 1)]; init=zero_matrix(ZZ, 0, rank(L)))
+    else
+      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+    end
+  end
   hnf!(sv)
   B = sv[1:rank(sv), :]*basis_matrix(L)
   return lattice(V, B; check=false, isbasis=true)

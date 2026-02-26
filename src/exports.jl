@@ -921,6 +921,8 @@ export subfields
 export subgroups
 export submodules
 export subsets
+export successive_minima
+export successive_minima_with_vectors
 export sunit_group
 export sunit_group_fac_elem
 export sunit_mod_units_group_fac_elem

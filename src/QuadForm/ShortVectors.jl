@@ -263,15 +263,80 @@ This is the number of non-overlapping spheres touching any
 other given sphere.
 """
 @attr Int function kissing_number(L::ZZLat)
-  @req rank(L) > 0 "Lattice must have positive rank"
+  @req is_definite(L) > 0 "Lattice must have positive rank"
+  if rank(L) == 0
+    return 0
+  end
   return 2 * length(shortest_vectors(L))
 end
 
-###############################################################################
+################################################################################
+#
+#  Successive minima
+#
+################################################################################
+
+@doc raw"""
+    successive_minima(L::ZZLat) -> Vector{QQFieldElem}
+
+Given a positive definite lattice $L$, return the successive minima of $L$.
+See also [`successive_minima_with_vectors`](@ref).
+"""
+function successive_minima(L::ZZLat)
+  return successive_minima_with_vectors(L)[1]
+end
+
+@doc raw"""
+    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem}, Vector{ZZRingElem}
+
+Given a positive definite lattice $L$, return the successive minima of $L$ and
+a list of vectors realizing the minima.
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
+
+julia> successive_minima_with_vectors(L)
+(QQFieldElem[1, 2, 3], Vector{ZZRingElem}[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+```
+"""
+function successive_minima_with_vectors(L::ZZLat)
+  @req is_positive_definite(L) "Lattice must be positive definite"
+  if rank(L) == 0
+    return Int[]
+  end
+  n = rank(L)
+  m = maximum(diagonal(gram_matrix(lll(L))); init = zero(ZZ))
+  S = short_vectors(L, m)
+  sort!(S; by = x -> x[2])
+  mi = S[1][2]
+  cur_mi = mi
+  res = QQFieldElem[cur_mi]
+  resv = [S[1][1]]
+  cur_i = findlast(x -> x[2] == mi, S)
+  B = echelon_form(matrix(QQ, [x[1] for x in view(S, 1:cur_i)]); trim = true)
+  while length(res) < n
+    cur_mi = S[cur_i + 1][2]
+    next_i = findlast(x -> x[2] == cur_mi, S)
+    @assert next_i > cur_i
+    B = echelon_form(vcat(B, matrix(QQ, [x[1] for x in view(S, cur_i+1:next_i)])); trim = true)
+    if nrows(B) > length(res)
+      for _ in 1:(nrows(B) - length(res))
+        push!(res, cur_mi)
+        push!(resv, S[cur_i + 1][1])
+      end
+    end
+    cur_i = next_i
+  end
+  return res, resv
+end
+
+################################################################################
 #
 # Short vectors affine
 #
-###############################################################################
+################################################################################
 
 @doc raw"""
     enumerate_quadratic_triples(
@@ -570,7 +635,7 @@ function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothi
     return nothing
   end
   #Cv = C.xt + matrix(C.b_ring, 1, C.nrows, it[1][1])*C.K
-  for i in 1:C.nrows 
+  for i in 1:C.nrows
     C.u[i] = it[1][1][i]
   end
   add!(C.v, C.xt, mul!(C.v, C.u, C.K))

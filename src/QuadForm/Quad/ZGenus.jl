@@ -2141,7 +2141,7 @@ is_definite(G::ZZGenus) = any(is_zero, signature_pair(G))
 
 Return a list of representatives of the isometry classes in this genus.
 """
-function representatives(G::ZZGenus)
+@attr Vector{ZZLat} function representatives(G::ZZGenus)
   L = representative(G)
   rep = genus_representatives(L)
   @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep]; init=QQ(0))
