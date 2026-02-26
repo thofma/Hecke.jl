@@ -512,6 +512,7 @@ end
   # Printing
   G = genus(rescale(root_lattice(:E, 8), 1//(2*3*5*7*11*13*17)))
   @test sprint(show, G) isa String
+  @test conway_symbol(G) isa String
 
   # Representative
   L = hyperbolic_plane_lattice(4)
