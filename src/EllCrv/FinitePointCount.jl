@@ -207,12 +207,35 @@ end
 #
 ################################################################################
 
-# prepare division polynomials: n = -1 .. l+1
-# WARNING: this is essentially a copy of divpol_g_short, but uses different convention
-#   for even n: f_n = Psi_n / y (like in Schoof paper)
+# division polynomials for Schoof
+# this is essentially a copy of divpol_g_short, but uses different convention:
+# for even n we define f_n = Psi_n / y (like in Schoof paper)
+# we know that we will be accessing them in order (doing tau search)
+# and that we need f[l] (we work modulo f[l] and equation of E)
+# thus we just generate them bottom-up
+# we factor out the recurrence step so it can be reused for computing f_n(x^q)
+#
 # to compute [k]P we need f[k-2], ..., f[k+2]
 # thus for k in [1,l-1] we need to precompute f[-1], ..., f[l+2]
 # WARNING: since we start f_n from n = -1, we always add 2 for indexing
+
+function _compute_division_polynomial_for_schoof(n::Integer, x::S, a4::T, a6::T, inv_2::T, F2::S, fn::AbstractVector{<:S}) where {T<:FinFieldElem, S <: RingElem}
+  @assert n > 2
+
+  n == 3 && return 3*x^4 + 6*a4*x^2 + 12*a6*x - a4^2
+  n == 4 && return 4*(x^6 + 5*a4*x^4 + 20*a6*x^3 - 5*a4^2*x^2 - 4*a4*a6*x - 8*a6^2 - a4^3)
+
+  if iseven(n)
+    m = divexact(n, 2)
+    return ( fn[(m) + 2] * (fn[(m+2) + 2]*fn[(m-1) + 2]^2 - fn[(m-2) + 2]*fn[(m+1) + 2]^2) ) * inv_2
+  else
+    m = divexact(n-1, 2)
+    part1 = fn[(m+2) + 2] * fn[(m) + 2]^3
+    part2 = fn[(m-1) + 2] * fn[(m+1) + 2]^3
+    return iseven(m) ? F2 * part1 - part2 : part1 - F2 * part2
+  end
+end
+
 function _generate_division_polynomials_for_schoof(x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T<:FinFieldElem
   @assert l >= 3
 
@@ -228,25 +251,50 @@ function _generate_division_polynomials_for_schoof(x::PolyRingElem{T}, a4::T, a6
   fn[ 0 + 2] = zero(Rx)
   fn[ 1 + 2] = one(Rx)
   fn[ 2 + 2] = 2*one(Rx)
-  fn[ 3 + 2] = 3*x^4 + 6*a4*x^2 + 12*a6*x - a4^2
-  fn[ 4 + 2] = 4*(x^6 + 5*a4*x^4 + 20*a6*x^3 - 5*a4^2*x^2 - 4*a4*a6*x - 8*a6^2 - a4^3)
+  fn[ 3 + 2] = _compute_division_polynomial_for_schoof(3, x, a4, a6, inv_2, f_sqr, fn)
+  fn[ 4 + 2] = _compute_division_polynomial_for_schoof(4, x, a4, a6, inv_2, f_sqr, fn)
+
   for n = 5:l+1
-    if mod(n, 2) == 0
-      m = divexact(n, 2)
-      fn[n + 2] = ( fn[m + 2] * (fn[m+2 + 2]*fn[m-1 + 2]^2 - fn[m-2 + 2]*fn[m+1 + 2]^2) ) * inv_2
-    else
-      m = divexact(n-1, 2)
-      part1 = fn[m+2 + 2] * fn[m + 2]^3
-      part2 = fn[m-1 + 2] * fn[m+1 + 2]^3
-      if mod(m, 2) == 0
-        fn[n + 2] = f_sqr * part1 - part2
-      else
-        fn[n + 2] = part1 - f_sqr * part2
-      end
-    end
+    fn[n + 2] = _compute_division_polynomial_for_schoof(n, x, a4, a6, inv_2, f_sqr, fn)
   end
 
   return fn
+end
+
+# Schoof algorithm is best formulated in terms of Jacobian coordinates
+# these compute coordinate functions [n]P = (X : y*Y : Z)
+# writing y^2 = F(x), we have
+# even n: X = 4*F * (x*F*f[n]^2 - f[n-1]*f[n+1])
+#         Y = y * 2*F * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
+#         Z = 2 * F*f[n]
+# odd  n: X = 4 * (x*f[n]^2 - F*f[n-1]*f[n+1])
+#         Y = y * 2 * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
+#         Z = 2 * f[n]
+# NOTE: usually the formulae are written with Z = f[n] or Z = F*f[n]
+#       resulting in 4 in the denominator in Y (and without 4 in numerator in X)
+#       we keep it this way to avoid extra divisions
+# NOTE: we pass division polynomials individually, because we need
+#   to compute both [n]P and [n]phi(P), and the latter needs q-th powers of division polynomials
+function _kP_jacobian_x(k::Integer, x::T, F::T, f_km1::T, f_k::T, f_kp1::T) where T <: RingElem
+  if iseven(k)
+    return 4 * F * (x * F * f_k^2 - f_km1 * f_kp1)
+  else
+    return 4 * (x * f_k^2 - F * f_km1 * f_kp1)
+  end
+end
+function _kP_jacobian_y(k::Integer, F::T, f_km2::T, f_km1::T, f_kp1::T, f_kp2::T) where T <: RingElem
+  if iseven(k)
+    return 2 * F * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
+  else
+    return 2 * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
+  end
+end
+function _kP_jacobian_z(k::Integer, F::T, f_k::T) where T <: RingElem
+  if iseven(k)
+    return 2 * F * f_k
+  else
+    return 2 * f_k
+  end
 end
 
 @doc raw"""
@@ -297,42 +345,6 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   return q + 1 - t
 end
 
-# Schoof algorithm is best formulated in terms of Jacobian coordinates
-# these compute coordinate functions [n]P = (X : y*Y : Z)
-# writing y^2 = F(x), we have
-# even n: X = 4*F * (x*F*f[n]^2 - f[n-1]*f[n+1])
-#         Y = y * 2*F * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
-#         Z = 2 * F*f[n]
-# odd  n: X = 4 * (x*f[n]^2 - F*f[n-1]*f[n+1])
-#         Y = y * 2 * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
-#         Z = 2 * f[n]
-# NOTE: usually the formulae are written with Z = f[n] or Z = F*f[n]
-#       resulting in 4 in the denominator in Y (and without 4 in numerator in X)
-#       we keep it this way to avoid extra divisions
-# NOTE: we pass division polynomials individually, because we need
-#   to compute both [n]P and [n]phi(P), and the latter needs q-th powers of division polynomials
-function _kP_jacobian_x(k::Integer, x::T, F::T, f_km1::T, f_k::T, f_kp1::T) where T <: EuclideanRingResidueRingElem{FqPolyRingElem}
-  if iseven(k)
-    return 4 * F * (x * F * f_k^2 - f_km1 * f_kp1)
-  else
-    return 4 * (x * f_k^2 - F * f_km1 * f_kp1)
-  end
-end
-function _kP_jacobian_y(k::Integer, F::T, f_km2::T, f_km1::T, f_kp1::T, f_kp2::T) where T <: EuclideanRingResidueRingElem{FqPolyRingElem}
-  if iseven(k)
-    return 2 * F * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
-  else
-    return 2 * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
-  end
-end
-function _kP_jacobian_z(k::Integer, F::T, f_k::T) where T <: EuclideanRingResidueRingElem{FqPolyRingElem}
-  if iseven(k)
-    return 2 * F * f_k
-  else
-    return 2 * f_k
-  end
-end
-
 function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::AbstractVector{<:PolyRingElem{T}}, x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T <: FinFieldElem
   Rx = parent(x)
   R  = base_ring(Rx)
@@ -359,13 +371,11 @@ function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::Abstrac
   k = Int(mod(q, l))
 
   # tiny helper to simplify indexing division polynomials, and bringing to residue ring
-  function _div_poly(n::Integer)
+  function _fn(n::Integer)
     return Rx_fl(div_poly[n + 2])
   end
 
-  f_km2, f_km1  = _div_poly(k-2), _div_poly(k-1)
-  f_k           = _div_poly(k)
-  f_kp1, f_kp2  = _div_poly(k+1), _div_poly(k+2)
+  f_km2, f_km1, f_k, f_kp1, f_kp2  = _fn(k-2), _fn(k-1), _fn(k), _fn(k+1), _fn(k+2)
 
   # first check if phi^2(P) == +-kP for *some* point P
   # for this we need to compare only x-coordinates
@@ -389,7 +399,7 @@ function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::Abstrac
     w = w_mod.data >= 0 ? Int(w_mod.data) : l + Int(w_mod.data)
 
     # check if +-w is eigenvalue of frobenius
-    f_wm1, f_w, f_wp1 = _div_poly(w-1), _div_poly(w), _div_poly(w+1)
+    f_wm1, f_w, f_wp1 = _fn(w-1), _fn(w), _fn(w+1)
     wP_X = _kP_jacobian_x(w, x, f, f_wm1, f_w, f_wp1)
     wP_Z = _kP_jacobian_z(w,    f, f_w)
 
@@ -399,7 +409,7 @@ function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::Abstrac
     end
 
     # check y coordinate to determine sign
-    f_wm2, f_wp2 = _div_poly(w-2), _div_poly(w+2)
+    f_wm2, f_wp2 = _fn(w-2), _fn(w+2)
 
     wP_Y = _kP_jacobian_y(w, f, f_wm2, f_wm1, f_wp1, f_wp2)
     h_y = (Frob_Y * wP_Z^3 - wP_Y).data
@@ -427,14 +437,25 @@ function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::Abstrac
 
     # on RHS we have [tau]phi(P)
     # this involves q-th powers of division polynomials
-    #   we will do a rolling update to avoid recomputing them
+    # we will do an incremental computation, with rolling window
+    f_to_q  = f^q
+    f_to_q2 = f_to_q^2
+    inv_2 = inv(R(2))
+
+    # NOTE: it seems that computing f_n(x^q) using usual recursion is way faster
+    #   than computing f_n(x)^q (usually recommended in old papers on Schoof algorithm)
+    # we see this being the case across both large characteristic and small characteristic (big exponent)
+    # NOTE: it might be a bit slower for very small q, but then the whole procedure is instant anyway
+    div_poly_q = Array{elem_type(Rx_fl)}(undef, l+3)
     f_tm2 = zero(Rx_fl)
-    f_tm1, f_t, f_tp1, f_tp2 = _div_poly(-1)^q, _div_poly(0)^q, _div_poly(1)^q, _div_poly(2)^q
-    f_to_q = f^q
+    f_tm1 = div_poly_q[-1 + 2] = -one(Rx_fl)
+    f_t   = div_poly_q[ 0 + 2] = zero(Rx_fl)
+    f_tp1 = div_poly_q[ 1 + 2] = one(Rx_fl)
+    f_tp2 = div_poly_q[ 2 + 2] = 2*one(Rx_fl)
 
     for tau in 1:divexact(l-1,2)
       f_tm2, f_tm1, f_t, f_tp1 = f_tm1, f_t, f_tp1, f_tp2
-      f_tp2 = _div_poly(tau+2)^q
+      f_tp2 = div_poly_q[tau+2 + 2] = _compute_division_polynomial_for_schoof(tau+2, Frob_X, a4, a6, inv_2, f_to_q2, div_poly_q)
 
       # compute Jacobian coordinates of [tau]P
       tauP_X = _kP_jacobian_x(tau, Frob_X, f_to_q, f_tm1, f_t, f_tp1)
