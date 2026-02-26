@@ -1075,6 +1075,14 @@ end
 
 Return the level of $L$, that is the smallest positive rational number $l$ such
 that $lL^\vee \subset L$ where $L^\vee$ is the dual lattice of $L$.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:D, 4);
+
+julia> level(L)
+2
+```
 """
 function level(L::ZZLat)
   return 1//scale(dual(L))

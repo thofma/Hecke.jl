@@ -158,6 +158,14 @@ to be the real number defined by:
 ```math
 \delta := \frac{(\sqrt{m}/2)^n}{\sqrt{d}}
 ```
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 6);
+
+julia> center_density(L)
+[0.0721687836487032205 +/- 9.72e-20]
+```
 """
 @attr RealFieldElem function center_density(L::ZZLat)
   @req is_definite(L) "Only implemented for definite lattices"
@@ -178,6 +186,14 @@ For a definite lattice ``L`` of rank ``n`` and minimum ``m``, the density of
 non-overlapping balls of radius ``m`` centered in points of ``L``. It can
 be computed as the product of the [`center_density(::ZZLat)`](@ref) of ``L``
 times the volume of the unit ``n``-ball.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 8);
+
+julia> density(L)
+[0.253669507901048014 +/- 6.66e-19]
+```
 """
 @attr RealFieldElem function density(L::ZZLat)
   @req is_definite(L) "Only implemented for definite lattices"
@@ -214,6 +230,14 @@ minimum ``m``, the Hermite number of ``L`` is defined by:
 
 ```math
 \gamma := \frac{m}{d^{1/n}}.
+```
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 7);
+
+julia> hermite_number(L)
+[1.811447328527813353 +/- 5.13e-19]
 ```
 """
 @attr RealFieldElem function hermite_number(L::ZZLat)
