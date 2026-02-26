@@ -208,10 +208,11 @@ end
 ################################################################################
 
 # prepare division polynomials: n = -1 .. l+1
-# TODO: this needs revisiting
 # WARNING: this is essentially a copy of divpol_g_short, but uses different convention
 #   for even n: f_n = Psi_n / y (like in Schoof paper)
-# WARNING: since we start f_n from n = -1, we need to add 2 for indexing
+# to compute [k]P we need f[k-2], ..., f[k+2]
+# thus for k in [1,l-1] we need to precompute f[-1], ..., f[l+2]
+# WARNING: since we start f_n from n = -1, we always add 2 for indexing
 function _generate_division_polynomials_for_schoof(x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T<:FinFieldElem
   @assert l >= 3
 
@@ -275,7 +276,7 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   # note that we need to know the largest prime in S, to know the limit on division polynomials
   l = 1
 
-  S = Nemo.ZZRingElem[]
+  S = ZZRingElem[]
   S_product = 1
   while S_product < hasse_length
     l = next_prime(l)
@@ -288,45 +289,47 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   # prepare data
   Rx, x = polynomial_ring(R, :x, cached = false)
   _, _, _, a4, a6 = a_invariants(E)
+  div_poly = _generate_division_polynomials_for_schoof(x, a4, a6, l)
 
-  fn = _generate_division_polynomials_for_schoof(x, a4, a6, l)
-
-  t_mod_l = ZZRingElem[_trace_of_frobenius_mod_l_schoof(E, fn, x, a4, a6, Int(l)) for l in S]
+  t_mod_l = ZZRingElem[_trace_of_frobenius_mod_l_schoof(E, div_poly, x, a4, a6, Int(l)) for l in S]
   t = crt_signed(t_mod_l, crt_env(S))
 
   return q + 1 - t
 end
 
-
-function fn_from_schoof(E::EllipticCurve, n::Int, x)
-
-  poly = division_polynomial_univariate(E, n, x)[2]
-    if iseven(n)
-      poly = 2*poly
-    end
-
-  return(poly)
-
-end
-
-
-function fn_from_schoof2(E::EllipticCurve, n::Int, x)
-
-  R = base_field(E)
-  S, y = polynomial_ring(parent(x),"y")
-
-  f = psi_poly_field(E, n, x, y)
-
- # println("f: $f, $(degree(f))")
-    A = E.a_invariants[4]
-    B = E.a_invariants[5]
-
-  g = x^3 + A*x + B
-
-  if isodd(n)
-    return replace_all_squares(f, g)
+# Schoof algorithm is best formulated in terms of Jacobian coordinates
+# these compute coordinate functions [n]P = (X : y*Y : Z)
+# writing y^2 = F(x), we have
+# even n: X = 4*F * (x*F*f[n]^2 - f[n-1]*f[n+1])
+#         Y = y * 2*F * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
+#         Z = 2 * F*f[n]
+# odd  n: X = 4 * (x*f[n]^2 - F*f[n-1]*f[n+1])
+#         Y = y * 2 * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
+#         Z = 2 * f[n]
+# NOTE: usually the formulae are written with Z = f[n] or Z = F*f[n]
+#       resulting in 4 in the denominator in Y (and without 4 in numerator in X)
+#       we keep it this way to avoid extra divisions
+# NOTE: we pass division polynomials individually, because we need
+#   to compute both [n]P and [n]phi(P), and the latter needs q-th powers of division polynomials
+function _kP_jacobian_x(k::Integer, x::T, F::T, f_km1::T, f_k::T, f_kp1::T) where T <: EuclideanRingResidueRingElem{FqPolyRingElem}
+  if iseven(k)
+    return 4 * F * (x * F * f_k^2 - f_km1 * f_kp1)
   else
-    return replace_all_squares(divexact(f, y), g)
+    return 4 * (x * f_k^2 - F * f_km1 * f_kp1)
+  end
+end
+function _kP_jacobian_y(k::Integer, F::T, f_km2::T, f_km1::T, f_kp1::T, f_kp2::T) where T <: EuclideanRingResidueRingElem{FqPolyRingElem}
+  if iseven(k)
+    return 2 * F * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
+  else
+    return 2 * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
+  end
+end
+function _kP_jacobian_z(k::Integer, F::T, f_k::T) where T <: EuclideanRingResidueRingElem{FqPolyRingElem}
+  if iseven(k)
+    return 2 * F * f_k
+  else
+    return 2 * f_k
   end
 end
 
@@ -347,192 +350,103 @@ function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::Abstrac
 
   fl = div_poly[l + 2]
   Rx_fl = residue_ring(Rx, fl)[1]
-  ffl = Rx_fl(f)
 
-  Rxy, y = polynomial_ring(Rx, :y)
+  # from here on we do ALL calculation modulo f_l
+  x = Rx_fl(x)
+  f = Rx_fl(f)
+
   Z = Native.GF(l, cached = false)
-
-  PsiPoly = [] # list of psi-polynomials
-  for i = -1:(l + 1)
-    push!(PsiPoly, psi_poly_field(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
-  end
-
   k = Int(mod(q, l))
 
-  f_k   = Rx_fl(div_poly[k   + 2])
-  f_km1 = Rx_fl(div_poly[k-1 + 2])
-  f_kp1 = Rx_fl(div_poly[k+1 + 2])
+  # tiny helper to simplify indexing division polynomials, and bringing to residue ring
+  function _div_poly(n::Integer)
+    return Rx_fl(div_poly[n + 2])
+  end
+
+  f_km2, f_km1  = _div_poly(k-2), _div_poly(k-1)
+  f_k           = _div_poly(k)
+  f_kp1, f_kp2  = _div_poly(k+1), _div_poly(k+2)
 
   # first check if phi^2(P) == +-kP for *some* point P
   # for this we need to compare only x-coordinates
-  Frob_X  = powermod(x, q, fl)
-  Frob2_X = powermod(Frob_X, q, fl)
+  Frob_X  = x^q
+  Frob2_X = Frob_X^q
   # for q = 2n+1, y^q = y * y^{2n} = y * f^n
-  # y(phi(x)) = y * Frob_Yc
-  Frob_Yc = powermod(f, divexact(q-1, 2), fl)
+  # y(phi(x)) = y * Frob_Y
+  Frob_Y = f^divexact(q-1, 2)
 
-  # x([k]P) = x - kP_xn / kP_xd
-  kP_xn = iseven(k) ? f_km1 * f_kp1 : f_km1 * f_kp1 * ffl
-  kP_xd = iseven(k) ? ffl * f_k^2 : f_k^2
+  # compute Jacobian coordinates of [k]P
+  kP_X = _kP_jacobian_x(k, x, f, f_km1, f_k, f_kp1)
+  kP_Y = _kP_jacobian_y(k,    f, f_km2, f_km1, f_kp1, f_kp2)
+  kP_Z = _kP_jacobian_z(k,    f, f_k)
 
-  h_x = (Rx_fl(Frob2_X - x)*kP_xd + kP_xn).data
+  h_x = (Frob2_X * kP_Z^2 - kP_X).data
   if !isone(gcd(h_x, fl))  # case 1 in schoof original paper
     is_square, w_mod = is_square_with_sqrt(Z(k))
     if !is_square # t = 0 mod l is the only possibility
       return ZZ(0)
     end
-
     w = w_mod.data >= 0 ? Int(w_mod.data) : l + Int(w_mod.data)
 
     # check if +-w is eigenvalue of frobenius
-    f_w   = Rx_fl(div_poly[w   + 2])
-    f_wm1 = Rx_fl(div_poly[w-1 + 2])
-    f_wp1 = Rx_fl(div_poly[w+1 + 2])
+    f_wm1, f_w, f_wp1 = _div_poly(w-1), _div_poly(w), _div_poly(w+1)
+    wP_X = _kP_jacobian_x(w, x, f, f_wm1, f_w, f_wp1)
+    wP_Z = _kP_jacobian_z(w,    f, f_w)
 
-    # x([w]P) = x - wP_xn / wP_xd
-    wP_xn = iseven(w) ? f_wm1 * f_wp1 : f_wm1 * f_wp1 * ffl
-    wP_xd = iseven(w) ? ffl * f_w^2 : f_w^2
-
-    h_x = (Rx_fl(Frob_X - x)*wP_xd + wP_xn).data
+    h_x = (Frob_X * wP_Z^2 - wP_X).data
     if isone(gcd(h_x, fl)) # +-w not an eigenvalue, so t = 0 mod l
       return ZZ(0)
     end
 
     # check y coordinate to determine sign
-    f_wm2 = Rx_fl(div_poly[w-2 + 2])
-    f_wp2 = Rx_fl(div_poly[w+2 + 2])
+    f_wm2, f_wp2 = _div_poly(w-2), _div_poly(w+2)
 
-    # y([w]P) = y * wP_yn / wP_yd
-    wP_yn = f_wp2 * f_wm1^2 - f_wm2 * f_wp1^2
-    wP_yd = iseven(w) ? 4 * ffl^2 * f_w^3 : 4 * f_w^3
-
-    h_y = (Rx_fl(Frob_Yc)*wP_yd - wP_yn).data
+    wP_Y = _kP_jacobian_y(w, f, f_wm2, f_wm1, f_wp1, f_wp2)
+    h_y = (Frob_Y * wP_Z^3 - wP_Y).data
     return isone(gcd(h_y, fl)) ? -2*ZZ(w) : 2*ZZ(w)
+
   else # case 2
-    Fkmz = PsiPoly[k]
-    Fkme = PsiPoly[k+1]
-    Fk = PsiPoly[k+2]
-    Fkpe = PsiPoly[k+3]
-    Fkpz = PsiPoly[k+4]
+    # y^(q^2) = (y^q)^q = (y*Frob_Y)^q = y*Frob_Y * Frob_Y^q
+    Frob2_Y = Frob_Y^(q+1)
 
-    alpha = Fkpz*psi_power_mod_poly(k-1, E, x, y, 2, fl) - Fkmz*psi_power_mod_poly(k+1, E, x, y, 2, fl) - 4*powermod(f, div(q^2+1, 2), fl)*psi_power_mod_poly(k, E, x, y, 3, fl)
-    beta = ((x - powermod(x, (q^2), fl))*psi_power_mod_poly(k, E, x, y, 2, fl)- Fkme*Fkpe)*4*y*Fk
+    # LHS is phi^2(P) + [k]P
+    # (x_1, y*y_1) + (x_2, y*y_2) = (x_3, y*y_3)
+    #   point 1 is frobenius (z_1 = 1), and point 2 is [k]P (z_2 = kP_Z)
+    # setting lambda = y * (y_2 - y_1)/(x_2 - x_1) we have
+    # x_3 = lambda^2 - (x_1 + x_2), y_3 = (x_1 - x_3)*lambda - y_1
+    #
+    # we write lambda = y * LN / (LD * z_2), lambda^2 = (f * LN^2) / (LD^2 * z_2^2)
+    # x_3 = [f * LN^2 - LD^2 * (x_1 + x_2)] / (z_2^2 * LD^2)
+    # y_3 = (x_1 - x_3) * LN / (LD * z_2) - y_1
+    LN = kP_Y - Frob2_Y * kP_Z^3
+    LD = kP_X - Frob2_X * kP_Z^2
+    LHS_X_numer = LN^2 * f - LD^2 * (kP_X + Frob2_X*kP_Z^2)
+    LHS_X_denom = kP_Z^2 * LD^2
+    LHS_Y_denom = LHS_X_denom * kP_Z * LD
+    LHS_Y_numer = (Frob2_X * LHS_X_denom - LHS_X_numer)*LN - Frob2_Y * LHS_Y_denom
 
-    tau = 1
-    while tau < l
+    # on RHS we have [tau]phi(P)
+    # this involves q-th powers of division polynomials
+    #   we will do a rolling update to avoid recomputing them
+    f_tm2 = zero(Rx_fl)
+    f_tm1, f_t, f_tp1, f_tp2 = _div_poly(-1)^q, _div_poly(0)^q, _div_poly(1)^q, _div_poly(2)^q
+    f_to_q = f^q
 
-      ftaumz = PsiPoly[tau]
-      ftaume = PsiPoly[tau+1]
-      ftau = PsiPoly[tau+2]
-      ftaupe = PsiPoly[tau+3]
-      ftaupz = PsiPoly[tau+4]
+    for tau in 1:divexact(l-1,2)
+      f_tm2, f_tm1, f_t, f_tp1 = f_tm1, f_t, f_tp1, f_tp2
+      f_tp2 = _div_poly(tau+2)^q
 
-      fntaumz = div_poly[tau]
-      fntaume = div_poly[tau+1]
-      fntaupe = div_poly[tau+3]
-      fntaupz = div_poly[tau+4]
+      # compute Jacobian coordinates of [tau]P
+      tauP_X = _kP_jacobian_x(tau, Frob_X, f_to_q, f_tm1, f_t, f_tp1)
+      tauP_Z = _kP_jacobian_z(tau,         f_to_q, f_t)
 
-      gammahelp = powermod(fntaupz*fntaume^2- fntaumz * fntaupe^2,q,fl)
-
-      if mod(tau, 2) == 0
-        gamma = y * powermod(f,div(q-1,2),fl) * gammahelp
-      else
-        gamma = powermod(f,q,fl) * gammahelp
-      end
-
-      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k, E, x, y, 2, fl)*(powermod(x, q^2, fl) + powermod(x, q, fl) + x)) * beta^2 + psi_power_mod_poly(k, E, x, y, 2, fl)*alpha^2) * psi_power_mod_poly(tau, E, x, y, 2*q, fl) + psi_power_mod_poly(tau-1, E, x,y,q,fl)*psi_power_mod_poly(tau+1, E, x,y,q, fl)*beta^2*psi_power_mod_poly(k, E, x, y, 2, fl)
-
-      if divrem(degree(monster1), 2)[2] == 1
-        monster1 = divexact(monster1, y)
-      end
-
-      monster1_1 = replace_all_squares_modulo(monster1, f, fl)
-      monster1_2 = Rx_fl(monster1_1).data # monster1_1 reduced
-
-      if monster1_2 != 0
-        tau = tau + 1
-      else
-        monster2 = 4*y*powermod(f,div(q-1,2),fl)*psi_power_mod_poly(tau,E,x,y,3*q,fl) * (alpha * (((2*powermod(x, q^2, fl) + x) * psi_power_mod_poly(k,E,x,y,2,fl) - Fkme*Fkpe )*beta^2 - alpha^2*psi_power_mod_poly(k,E,x,y,2,fl)) - y*powermod(f,div(q^2-1,2),fl)*beta^3 * Fk^2) - beta^3*psi_power_mod_poly(k,E,x,y,2,fl)*gamma
-
-        if divrem(degree(monster2), 2)[2] == 1
-          monster2 = divexact(monster2, y)
-        end
-
-        monster2_1 = replace_all_squares_modulo(monster2, f,fl)
-        monster2_2 = Rx_fl(monster2_1).data # monster2_1 mod fl
-
-        if monster2_2 != 0
-          tau = tau + 1
-        else
-          return tau
-        end
+      if iszero(LHS_X_numer*tauP_Z^2 - LHS_X_denom*tauP_X)
+        # we know that +- tau gives a solution. to determine sign, compare y coordinates
+        tauP_Y = _kP_jacobian_y(tau, f_to_q, f_tm2, f_tm1, f_tp1, f_tp2) * Frob_Y
+        return iszero(LHS_Y_numer*tauP_Z^3 - LHS_Y_denom*tauP_Y) ? ZZ(tau) : ZZ(l - tau)
       end
     end
   end
-end
-
-
-# Division polynomials in general for an elliptic curve over an arbitrary field
-
-# standard division polynomial Psi (as needed in Schoof's algorithm)
-function psi_poly_field(E::EllipticCurve, n::Int, x, y)
-
-    R = base_field(E)
-    A = E.a_invariants[4]
-    B = E.a_invariants[5]
-
-    if n == -1
-        return -y^0
-    elseif n == 0
-        return zero(parent(y))
-    elseif n == 1
-        return y^0
-    elseif n == 2
-        return 2*y
-    elseif n == 3
-        return (3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2)*y^0
-    elseif n == 4
-        return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
-    elseif mod(n,2) == 0
-        m = div(n,2)
-        return divexact( (psi_poly_field(E,m,x,y))*(psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m-1,x,y)^2 - psi_poly_field(E,m-2,x,y)*psi_poly_field(E,m+1,x,y)^2), 2*y)
-    else m = div(n-1,2)
-        return psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m,x,y)^3 - psi_poly_field(E,m-1,x,y)*psi_poly_field(E,m+1,x,y)^3
-    end
-end
-
-# computes psi_n^power mod g
-function psi_power_mod_poly(n, E, x, y, power, g)
-
-    A = E.a_invariants[4]
-    B = E.a_invariants[5]
-
-    fn = fn_from_schoof2(E, n, x)
-    f = x^3 + A*x + B
-    p = powermod(fn,power,g)
-
-    if mod(n, 2) == 0
-        if mod(power, 2) == 0
-            p1 = powermod(f, div(power, 2), g)
-        else
-            p1 = powermod(f, div(power - 1, 2), g) * y
-        end
-    else p1 = 1
-    end
-
-    return p * p1
-end
-
-
-function replace_all_squares(f, g)
-    # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
-    # the result will be in Z[x]
-    z = zero(parent(g)) # this is the zero in Z[x]
-    d = div(degree(f), 2) # degree of f in y^2 should be even
-    for i in 0:d
-        z = z + coeff(f, 2*i)*g^i
-    end
-    return z
 end
 
 ################################################################################
