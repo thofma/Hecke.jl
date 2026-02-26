@@ -403,7 +403,9 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
-  use_weyl::Bool=true
+  use_weyl::Bool=false,
+  reduced::Bool=false,
+  use_projections::Bool=false,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -439,7 +441,7 @@ function __assert_has_automorphisms(
   GL = gram_matrix(L)
   d = denominator(GL)
   if !isone(d)
-    res = ZZMatrix[change_base_ring(ZZ, d * GL)]
+    res = ZZMatrix[numerator(GL)]
     if !iszero(_alpha)
       alpha = abs(numerator(d*_alpha))
       sv = eltype(sv)[(v[1], d*v[2]) for v in sv]
@@ -454,11 +456,21 @@ function __assert_has_automorphisms(
       alpha = _alpha
     end
   end
-  if use_weyl
-    weyl_group_gens, weyl_gram_matrices, weyl_group_order = _weyl_group(L)
-  end
+
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
+  if use_weyl
+    weyl_group_gens, weyl_gram_matrices, weyl_group_order,  contains_minus_one = _weyl_group(L)
+    append!(res, weyl_gram_matrices)
+  end
+  if use_projections
+    proj = _invariant_projections(L)
+    projZ = numerator.(proj)
+    GZ = res[1]
+    projgramZ = [i*GZ*transpose(i) for i in projZ]
+    append!(res, projgramZ)
+  end
+
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
@@ -466,21 +478,10 @@ function __assert_has_automorphisms(
   if !is_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
-    res[1] = Glll
-  else
-    T = one(res[1])
+    Ttr = transpose(T)
+    res = ZZMatrix[T*g*Ttr for g in res]
   end
-  if use_weyl
-    if is_lll
-      for g in weyl_gram_matrices
-        push!(res, g)
-      end
-    else
-      for g in weyl_gram_matrices
-        push!(res, ZZ.(T*g*transpose(T)))
-      end
-    end
-  end
+
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
   fl = false
@@ -503,7 +504,7 @@ function __assert_has_automorphisms(
       gens[i] = Tinv * gens[i] * T
     end
   end
-  if use_weyl
+  if use_weyl && !reduced
     append!(gens, [ZZ.(i) for i in weyl_group_gens])
   end
   # Now gens are with respect to the basis of L
@@ -511,18 +512,21 @@ function __assert_has_automorphisms(
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
-  if use_weyl
+  if use_weyl && !reduced
     # need to multiply with the order of the weyl group
     @show order
-    # TODO: for now this is still wrong because
-    # the weyl vector is preserved only up to sign
-    # and therefore the order can be off by 2 if -1 is in the weyl group
-    L.automorphism_group_order = 0
-    L.automorphism_group_order = order*weyl_group_order
+    # We have O(L) = W(L)x|Aut_red(L)
+    # where Aut_red(L) = Aut(L,\rho) is the stabilizer of rho in O(L)
+    # the Weyl vector \rho is preserved only up to sign
+    # so we compute Aut(S,{\pm \rho})
+    # and therefore the order is off by 2 if -1 is in the weyl group
+    order_reduced = divexact(order, 2)
+    @show order_reduced
+    L.automorphism_group_order = order_reduced*weyl_group_order
+    @show L.automorphism_group_order/weyl_group_order
   else
     L.automorphism_group_order = order
   end
-  @show L.automorphism_group_order
   return nothing
 end
 
@@ -577,6 +581,29 @@ function automorphism_group_order(
   @req is_definite(L) "The lattice must be definite"
   assert_has_automorphisms(L; kwargs...)
   return L.automorphism_group_order
+end
+
+function _invariant_projections(L::ZZLat)
+  if !isone(basis_matrix(L))
+    L = lattice(rational_span(L))
+  end
+  LL, sv = _short_vector_generators_with_sublattice(L; up_to_sign=true)
+  B = vcat(basis_matrix.(LL)...)
+  Bi = inv(B)
+  n = degree(L)
+  projections = QQMatrix[]
+  k = 0
+  for i in 1:length(LL)
+    k_i = rank(LL[i])
+    E = zero_matrix(QQ, n, n)
+    knew = k + k_i
+    for j in k+1:knew
+      E[j,j] =1
+    end
+    k = knew
+    push!(projections, Bi*E*B)
+  end
+  return projections
 end
 
 ################################################################################
@@ -2620,18 +2647,22 @@ function _row_span!(L::Vector{Vector{ZZRingElem}})
   return _row_span!([matrix(ZZ,1,d, i) for i in L])
 end
 
-function _short_vector_generators(L::ZZLat; up_to_sign::Bool=false)
+_short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
+
+function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
   sv = shortest_vectors(L)
   B = _row_span!(sv)*basis_matrix(L)
   if !up_to_sign
     append!(sv, [-i for i in sv])
   end
-  nrows(B) == rank(L) && return sv
+  SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
+  nrows(B) == rank(L) && return SL, sv
   M = orthogonal_submodule(L, B)
-  svM = _short_vector_generators(M; up_to_sign)
+  SM, svM = _short_vector_generators_with_sublattice(M; up_to_sign)
   T = ZZ.(coordinates(basis_matrix(M), L))
   append!(sv, [i*T for i in svM])
-  return sv
+  append!(SL, SM)
+  return SL, sv
 end
 
 
@@ -2923,19 +2954,8 @@ function root_sublattice(L::ZZLat)
   return lattice(V, B; check=false, isbasis=true)
 end
 
-function _reflection(gram::MatElem, v::MatElem)
-  n = ncols(gram)
-  E = identity_matrix(base_ring(gram), n)
-  c = (v * gram * transpose(v))[1,1]
-  ref = zero_matrix(base_ring(gram), n, n)
-  for k in 1:n
-    ref[k:k,:] = E[k:k,:] - divexact(2*(E[k:k,:] * gram * transpose(v))[1,1], c)*v
-  end
-  @assert ref == _reflection2(gram, v)
-  return ref
-end
 
-function _reflection2(gram::MatElem, v::MatElem)
+function _reflection(gram::MatElem, v::MatElem)
   n = ncols(gram)
   gram_v = gram*transpose(v)
   c = (v * gram_v)[1,1]
@@ -2971,11 +2991,11 @@ function _reflection2(gram::MatElem, v::MatElem)
   return ref
 end
 
-
+# Preprocessing for Plesken Souvignier
 function _weyl_group(L::ZZLat)
   root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
   if length(root_types) == 0
-    return ZZMatrix[], ZZMatrix[], ZZ(1)
+    return ZZMatrix[], ZZMatrix[], ZZ(1), false
   end
   BR = basis_matrix(root_lat)
 
@@ -2994,7 +3014,7 @@ function _weyl_group(L::ZZLat)
   end
   gramZ = ZZ.(gram_matrix(L))
   for v in invariant_vectors
-    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
+    #push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
   end
 
   rho = coordinates(_weyl_vector(root_lat), L)
@@ -3010,7 +3030,19 @@ function _weyl_group(L::ZZLat)
   for s in root_types
     mul!(ord, _weyl_group_order(s...))
   end
-  return weyl_group_gens, invariant_grams, ord
+  contains_minus_one = all(_contains_minus_one, root_types)
+  return weyl_group_gens, invariant_grams, ord, contains_minus_one
+end
+
+function _contains_minus_one(S::Tuple{Symbol,Int})
+  s, n = S
+  if s == :A
+    return n==1
+  elseif s == :D
+    return iszero(mod(n,2))
+  elseif s == :E
+    return n !=6
+  end
 end
 
 function _weyl_group_order(s::Symbol, n::IntegerUnion)
@@ -3025,7 +3057,7 @@ function _weyl_group_order(s::Symbol, n::IntegerUnion)
     ord = ZZ(2)^n * factorial(n)
   elseif s == :D
     @assert n>=4
-    ord = ZZ(2)^n * factorial(n-1)
+    ord = ZZ(2)^(n-1) * factorial(n)
   elseif s == :E
     @assert 8>=n>=6
     if n == 6
@@ -3064,7 +3096,7 @@ function _invariant_vectors(s::Symbol, n::IntegerUnion)
   elseif s == :D
     @assert n>=4
     if n == 4
-      push!(invs, e(1) + e(2) + e(3))
+      push!(invs, e(1) + e(2) + e(4))
       push!(invs, e(3))
     else
       for i in 3:n

@@ -28,7 +28,6 @@ function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}},
     V.vectors = vectors
     V.lengths = lengths
   end
-
   return V
 end
 
@@ -304,18 +303,13 @@ function try_init_small(
   # Compute the necessary short vectors
   @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
-  alpha, V = known_short_vectors
-  @assert all(Base.Fix2(isa, Vector{Int})∘first, V)
-
+  alpha, _V = known_short_vectors
+  @assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
-  if alpha <= bound
-    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound, Int; is_lll_reduced_known))
-  end
-  vectors = Vector{Vector{Int}}(undef, length(V))
 
-  lengths = Vector{Vector{Int}}(undef, length(V))
+  V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], alpha+1, bound, Int; is_lll_reduced_known)
 
   r = length(C.G)
 
@@ -340,9 +334,13 @@ function try_init_small(
 
   tmp = Vector{Int}(undef, n)
 
-  for i in 1:length(V)
+  vectors = Vector{Int}[]
+  lengths = Vector{Int}[]
+  target_lengths = Set{Vector{Int}}([i[j,j] for i in C.G] for j in 1:n)
+
+
+  for cand in V
     # First canonicalize them
-    cand = V[i]
     v = cand[1]
     vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
     k = 1
@@ -375,10 +373,14 @@ function try_init_small(
       w[k] = _norm(_v, Gsmall[k], tmp)
     end
 
-    lengths[i] = w
-    vectors[i] = _v
-  end
+    w in target_lengths || continue
 
+    push!(lengths, w)
+    push!(vectors, _v)
+  end
+  if n > 10
+    @show length(vectors)
+  end
   V = VectorList(vectors, lengths, use_dict)
 
   Csmall.V = V
@@ -864,7 +866,6 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
     C.V[i] = m
     C.V_length[i] = z
   end
-  #@show length(C.V)
   C.max = max
   return C
 end
@@ -887,7 +888,7 @@ end
 function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   V = C.V.vectors
   W = C.V.lengths
-  W1 = C.V.invariants
+  #W1 = C.V.invariants
   F = C.G
   _issymmetric = C.is_symmetric
 
@@ -903,7 +904,7 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
 
   for j in 1:length(W)
     Wj = W[j]
-    W1j = W1[j]
+    #W1j = W1[j]
     Vj = V[j]
     good_length = true
     @inbounds for k in 1:length(F)
