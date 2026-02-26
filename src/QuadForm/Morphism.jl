@@ -337,6 +337,7 @@ function try_init_small(
   vectors = Vector{Int}[]
   lengths = Vector{Int}[]
   target_lengths = Set{Vector{Int}}([i[j,j] for i in C.G] for j in 1:n)
+  target_length2 = [Set([i[j,j] for j in 1:n]) for i in C.G] # use for early abort not sure if worth it
 
 
   for cand in V
@@ -369,9 +370,15 @@ function try_init_small(
 
     w = Vector{Int}(undef, r)
     w[1] = Int(numerator(cand[2]))
+    flag = false
     for k in 2:r
       w[k] = _norm(_v, Gsmall[k], tmp)
+      if !(w[k] in target_length2[k])
+        flag = true
+        break
+      end
     end
+    flag && continue
 
     w in target_lengths || continue
 

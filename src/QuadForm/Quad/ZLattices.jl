@@ -3009,7 +3009,7 @@ function _weyl_group(L::ZZLat)
   end
   gramZ = ZZ.(gram_matrix(L))
   for v in invariant_vectors
-    #push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
+    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
   end
 
   rho = coordinates(_weyl_vector(root_lat), L)
