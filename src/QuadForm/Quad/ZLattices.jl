@@ -513,17 +513,12 @@ function __assert_has_automorphisms(
 
   L.automorphism_group_generators = gens
   if use_weyl && !reduced
-    # need to multiply with the order of the weyl group
-    @show order
     # We have O(L) = W(L)x|Aut_red(L)
     # where Aut_red(L) = Aut(L,\rho) is the stabilizer of rho in O(L)
     # the Weyl vector \rho is preserved only up to sign
-    # so we compute Aut(S,{\pm \rho})
-    # and therefore the order is off by 2 if -1 is in the weyl group
-    order_reduced = divexact(order, 2)
-    @show order_reduced
+    # so we have computed Aut(L,{\pm \rho}) and its order
+    order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
     L.automorphism_group_order = order_reduced*weyl_group_order
-    @show L.automorphism_group_order/weyl_group_order
   else
     L.automorphism_group_order = order
   end
