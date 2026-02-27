@@ -324,6 +324,10 @@ function successive_minima_with_vectors(L::ZZLat)
     cur_mi = S[cur_i + 1][2]
     next_i = findlast(x -> x[2] == cur_mi, S)
     @assert next_i > cur_i
+    # the following constructs a potential large marix
+    # better would be a "streaming" version which takes as input only the vector
+    # but we don't have this for rational matrices
+    # (we only care about rank = dimension of rational span)
     B = echelon_form(vcat(B, matrix(QQ, [x[1] for x in view(S, cur_i+1:next_i)])); trim = true)
     if nrows(B) > length(res)
       for _ in 1:(nrows(B) - length(res))
