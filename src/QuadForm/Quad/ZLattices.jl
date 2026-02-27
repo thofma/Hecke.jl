@@ -403,9 +403,9 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
-  use_weyl::Bool=false,
+  use_weyl::Bool=true,
   reduced::Bool=false,
-  use_projections::Bool=false,
+  use_projections::Bool=true,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -579,7 +579,8 @@ function automorphism_group_order(
 end
 
 function _invariant_projections(L::ZZLat)
-  if !isone(basis_matrix(L))
+  # the first condition is a safeguard from a flint convention for isone
+  if rank(L) != degree(L) || !isone(basis_matrix(L))
     L = lattice(rational_span(L))
   end
   LL, sv = _short_vector_generators_with_sublattice(L; up_to_sign=true)
