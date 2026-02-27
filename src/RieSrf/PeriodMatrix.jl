@@ -84,6 +84,7 @@ function big_period_matrix(RS::RiemannSurface)
   # Random precision. Probably needs to become a heuristic.
   max_prec = 187
   embedded_differentials = [embed_mpoly(g, v, max_prec) for g in differentials]
+  dif_basis = [omega.f for omega in basis_of_differentials(RS)]
 
   # Computed the bound M for every path. The bound M is the maximum value of
   # the integrands along the boundary of the ellipse with radius r.
@@ -91,7 +92,11 @@ function big_period_matrix(RS::RiemannSurface)
   bound_temp = Vector{ArbFieldElem}()
   for path in paths
     for subpath in get_subpaths(path)
-      compute_ellipse_bound_heuristic(subpath, embedded_differentials, int_group_rs, RS)
+      if path_type(subpath) == 0
+        compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
+      else 
+        compute_ellipse_bound_heuristic(subpath, embedded_differentials, int_group_rs, RS)
+      end
       append!(bound_temp, subpath.bounds)
     end
   end
@@ -332,6 +337,61 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
     subpath.integration_scheme_index = num_of_int_groups
   end
 end
+
+function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
+
+  subpath.integration_scheme_index = length(int_group_rs)
+
+  v_start = start_point(subpath)
+  v_end = end_point(subpath)
+  
+  #these values are the 't values' 
+  rs = [(2 * alpha - (v_start + v_end))/(v_end - v_start) for alpha in discriminant_points(RS)]
+
+  function construct_M(g, RS, centre, radius, rs, v_start, v_end)
+    #it is required that the radius = (delta_i) is such that the critical points are not contained in D(centre, radius)
+    gmin = minpoly(g)
+    lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
+    gmin = lcm(lis) * gmin
+    CC = RS.complex_field
+    v = embedding(RS)
+    _, CCx = polynomial_ring(CC, "x")
+    coeffs = [numerator(coeff(gmin,i)) for i in (0:degree(gmin))]
+    #precompose with the path
+    if base_ring(base_ring(parent(gmin))) == QQ
+      coeffs = [sum(CC(coeff(a,i)) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
+    else 
+      coeffs = [sum(CC(embedding(v)(coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
+    end 
+
+    A_0 = CC(abs((coeff(coeffs[end], degree(coeffs[end]))) ) * prod( [abs(centre - alpha) - radius for alpha in rs] , init = one(CC)))
+    A_i = [ (sum([CC(abs(coeff(a, i)) * (abs(centre) + radius)^i) for i in (0:length(coefficients(a)))], init = zero(CC))) for a in coeffs[1:end - 1] ]
+
+    M_tilde = 2 * maximum([ real((A_i[i]/A_0)^(1/i)) for i in (1:length(A_i)) ])
+
+    return M_tilde
+  end
+
+  for g in dif_basis
+    interval = [-1]
+    current_endpoint = 1
+    while (interval[end] != 1)
+      if minimum([abs(alpha - (1//2) * (interval[end] + current_endpoint)) for alpha in rs]) > (1//2) * abs(current_endpoint - interval[end])
+        push!(interval, current_endpoint)
+        current_endpoint = 1
+      else 
+        current_endpoint = (1//2) * (current_endpoint + interval[end])
+      end
+    end
+    M_tilde_values = []
+    for j in (2:length(interval))
+      z_0 = (interval[j] + interval[j-1])/2
+      delta = minimum([abs(alpha - z_0) for alpha in rs]) + (abs(interval[j] - interval[j-1]))/2 
+      push!(M_tilde_values, construct_M(g, RS, z_0, delta, rs, v_start, v_end))
+    end
+    push!(subpath.bounds, maximum(M_tilde_values))
+  end
+end 
 
 function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurface)
 
