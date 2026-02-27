@@ -232,6 +232,13 @@ end
   @test length(ADE) == 2
   @test all(R -> R[2] == 1, ADE)
 
+  let
+    L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
+    @test hnf(basis_matrix(root_sublattice(L))) == ZZ[1 0 0; 0 1 0]
+    @test basis_matrix(root_sublattice(L; length = [2])) == ZZ[0 1 0]
+    @test basis_matrix(root_sublattice(L; length = [1])) == ZZ[1 0 0]
+  end
+
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
@@ -374,6 +381,7 @@ end
   L = integer_lattice(gram=G)
   @test norm(L) == 0
   @test scale(L) == 0
+  @test level(L) == 1
 
 
   #orthogonal submodule of a lattice
@@ -383,6 +391,7 @@ end
   submod = orthogonal_submodule(L, S)
   @test  basis_matrix(submod) == matrix(QQ, 1, 3, [1 1 -2])
 
+  @test !is_indefinite(L)
   @test is_definite(L)
   @test is_positive_definite(L)
   @test !is_negative_definite(L)
@@ -882,4 +891,18 @@ end
   rs6 = Set.(root_symbols(6))
   rl6 = Set.(first.(root_lattice_recognition.(root_lattices(6))))
   @test issetequal(rs6, rl6)
+end
+
+@testset "Neighbors" begin
+  L = integer_lattice(gram = matrix(QQ, 3, 3, [2, 1, -1, 1, 2, -1, -1, -1, 8]))
+  N = neighbours(L, 3)
+  @test length(N) == 2
+  @test !is_isometric(N[1], N[2])
+  @test index(L, intersect(L, N[1])) == 3
+  @test index(L, intersect(L, N[2])) == 3
+end
+
+@testset "Shortest vectors sublattice" begin
+  L = integer_lattice(gram = matrix(QQ, 3, 3, [2,0,0,0,2,1,0,1,6]))
+  @test shortest_vectors_sublattice(L) == lattice(ambient_space(L), ZZ[1 0 0; 0 1 0])
 end

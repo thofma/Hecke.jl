@@ -2141,11 +2141,28 @@ is_definite(G::ZZGenus) = any(is_zero, signature_pair(G))
 
 Return a list of representatives of the isometry classes in this genus.
 """
-function representatives(G::ZZGenus)
+@attr Vector{ZZLat} function representatives(G::ZZGenus)
   L = representative(G)
   rep = genus_representatives(L)
   @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep]; init=QQ(0))
   return rep
+end
+
+@doc raw"""
+    class_number(G::ZZGenus) -> Int
+
+Return the number of isometry classes of lattices in $G$.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 8);
+
+julia> class_number(genus(L))
+1
+```
+"""
+@attr Int function class_number(G::ZZGenus)
+  return length(representatives(G))
 end
 
 @doc raw"""
@@ -2761,6 +2778,9 @@ of the isometry classes in this genus.
 Its mass is defined as $\sum_{i=1}^n \frac{1}{|O(L_i)|}$.
 """
 function mass(G::ZZGenus)
+  if rank(G) == 0
+    return QQ(1)
+  end
   if denominator(scale(G)) != 1
     return mass(rescale(G, denominator(scale(G))))
   end
