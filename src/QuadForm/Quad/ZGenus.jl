@@ -1605,26 +1605,6 @@ function Base.show(io::IO, ::MIME"text/latex", g::ZZLocalGenus)
   print(io, str)
 end
 
-@doc"""
-    conway_symbol(G::ZZGenus) -> String
-
-Return a Conway symbol describing the genus $G$. Note that this is
-in general not unique.
-"""
-function conway_symbol(G::ZZGenus)
-  io = IOBuffer()
-  str = iseven(G) ? "II" : "I"
-  p, n = signature_pair(G)
-  str *= "_{$p,$n}"
-  print(io, str)
-  s = local_symbols(G)
-  sort!(s, lt = (l1, l2) -> prime(l1) < prime(l2))
-  length(s) > 0 && print(io, "(")
-  join(io, [lstrip(_write_local_symbol(g, ones = false)) for g in s], " ")
-  length(s) > 0 && print(io, ")")
-  return String(take!(io))
-end
-
 ###############################################################################
 #
 # Invariants and properties

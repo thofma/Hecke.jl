@@ -249,7 +249,6 @@ export constant_field
 export contains_equation_order
 export content_ideal
 export contract
-export conway_symbol
 export coordinates
 export coprime_base
 export coprime_residues
