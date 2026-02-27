@@ -1374,7 +1374,7 @@ function neighbours(
   L::ZZLat,
   p::Hecke.IntegerUnion,
 )
-  return _neighbours(L, ZZ(p), :isometry_classes)
+  return _neighbours(L, ZZ(p); mode=:isometry_classes)
 end
 
 ################################################################################
