@@ -263,7 +263,7 @@ This is the number of non-overlapping spheres touching any
 other given sphere.
 """
 @attr Int function kissing_number(L::ZZLat)
-  @req is_definite(L) > 0 "Lattice must have positive rank"
+  @req is_definite(L) "Lattice must have positive rank"
   if rank(L) == 0
     return 0
   end
@@ -280,7 +280,7 @@ end
     successive_minima(L::ZZLat) -> Vector{QQFieldElem}
 
 Given a positive definite lattice $L$, return the successive minima of $L$.
-See also [`successive_minima_with_vectors`](@ref).
+See [`successive_minima_with_vectors`](@ref) for the definition.
 """
 function successive_minima(L::ZZLat)
   return successive_minima_with_vectors(L)[1]
@@ -291,6 +291,10 @@ end
 
 Given a positive definite lattice $L$, return the successive minima of $L$ and
 a list of vectors realizing the minima.
+
+By definition, the $i$-th successive minima of $L$ is the smallest non-negative
+integer $\lambda_i$, such that the vectors of $L$ of norm bounded by
+$\lambda_i$ span a lattice of rank $i$.
 
 # Examples
 

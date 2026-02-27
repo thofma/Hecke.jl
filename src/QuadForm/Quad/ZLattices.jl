@@ -1073,9 +1073,8 @@ end
 @doc raw"""
     level(L::ZZLat) -> QQFieldElem
 
-Return the level of $L$, that is the smallest positive rational number $l$ such
-that $lL^\vee \subset L$ where $L^\vee$ is the dual lattice of $L$. If $L$ is
-non-zero, this is the inverse of the scale of the dual.
+Return the level of $L$, that is, the inverse of the scale of the dual if $L$
+is non-zero and $1$ otherwise.
 
 # Examples
 ```jldoctest
