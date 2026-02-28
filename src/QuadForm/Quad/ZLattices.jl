@@ -403,8 +403,9 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
+  use_weyl::Bool=true
 )
-
+  use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
@@ -420,6 +421,7 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = ZZ(2)
     return nothing
   end
+  use_weyl = is_even(L) && use_weyl
 
   if !is_definite(L)
     @assert rank(L) == 2
@@ -452,18 +454,32 @@ function __assert_has_automorphisms(
       alpha = _alpha
     end
   end
-
+  if use_weyl
+    weyl_group_gens, weyl_gram_matrices, weyl_group_order = _weyl_group(L)
+  end
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
-  if !get_attribute(L, :is_lll_reduced, false)
+  is_lll = get_attribute(L, :is_lll_reduced, false)
+  if !is_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
     res[1] = Glll
   else
     T = one(res[1])
+  end
+  if use_weyl
+    if is_lll
+      for g in weyl_gram_matrices
+        push!(res, g)
+      end
+    else
+      for g in weyl_gram_matrices
+        push!(res, ZZ.(T*g*transpose(T)))
+      end
+    end
   end
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
@@ -481,18 +497,32 @@ function __assert_has_automorphisms(
   end
 
   # Now translate back
-  Tinv = inv(T)
-  for i in 1:length(gens)
-    gens[i] = Tinv * gens[i] * T
+  if !is_lll
+    Tinv = inv(T)
+    for i in 1:length(gens)
+      gens[i] = Tinv * gens[i] * T
+    end
   end
-
+  if use_weyl
+    append!(gens, [ZZ.(i) for i in weyl_group_gens])
+  end
   # Now gens are with respect to the basis of L
   @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
-  L.automorphism_group_order = order
-
+  if use_weyl
+    # need to multiply with the order of the weyl group
+    @show order
+    # TODO: for now this is still wrong because
+    # the weyl vector is preserved only up to sign
+    # and therefore the order can be off by 2 if -1 is in the weyl group
+    L.automorphism_group_order = 0
+    L.automorphism_group_order = order*weyl_group_order
+  else
+    L.automorphism_group_order = order
+  end
+  @show L.automorphism_group_order
   return nothing
 end
 
@@ -1327,7 +1357,6 @@ function genus_representatives(_L::ZZLat)
   else
     L = _L
   end
-
   if rank(L) == 2
     LL = _to_number_field_lattice(L)
     G = genus_representatives(LL)
@@ -2934,7 +2963,7 @@ function _ADE_type_with_isometry_irreducible(L)
   R = root_lattice(ADE...)
   e = sign(gram_matrix(L)[1, 1])
   if e == -1
-    R = rescale(R, -1; check=false)
+    R = rescale(R, -1; cached=false)
   end
   t, T = is_isometric_with_isometry(R, L)
   @hassert :Lattice 1 t
@@ -2986,6 +3015,177 @@ function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2])
   B = sv[1:rank(sv), :]*basis_matrix(L)
   return lattice(V, B; check=false, isbasis=true)
 end
+
+function _reflection(gram::MatElem, v::MatElem)
+  n = ncols(gram)
+  E = identity_matrix(base_ring(gram), n)
+  c = (v * gram * transpose(v))[1,1]
+  ref = zero_matrix(base_ring(gram), n, n)
+  for k in 1:n
+    ref[k:k,:] = E[k:k,:] - divexact(2*(E[k:k,:] * gram * transpose(v))[1,1], c)*v
+  end
+  @assert ref == _reflection2(gram, v)
+  return ref
+end
+
+function _reflection2(gram::MatElem, v::MatElem)
+  n = ncols(gram)
+  gram_v = gram*transpose(v)
+  c = (v * gram_v)[1,1]
+  ref = zero_matrix(base_ring(gram), n, n)
+  # special cases for roots
+  if c == 2
+    for k in 1:n
+      ref[k:k,:] = neg!(gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == 1
+    for k in 1:n
+      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == -2
+    for k in 1:n
+      ref[k:k,:] = gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  elseif c == -1
+    for k in 1:n
+      ref[k:k,:] = 2*gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  else
+    for k in 1:n
+      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
+      ref[k,k] += 1
+    end
+  end
+
+  return ref
+end
+
+
+function _weyl_group(L::ZZLat)
+  root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
+  if length(root_types) == 0
+    return ZZMatrix[], ZZMatrix[], ZZ(1)
+  end
+  BR = basis_matrix(root_lat)
+
+  invariant_grams = ZZMatrix[]
+  invariant_vectors = ZZMatrix[]
+  for t in Set(root_types)
+    inv_vec = _invariant_vectors(t...)
+    k = length(inv_vec)
+    V = [zero_matrix(QQ, 1, degree(L)) for i in 1:k]
+    for i in 1:length(root_types)
+      if root_types[i] == t
+        V = V + [v*basis_matrix(irreducible_root_lattices[i]) for v in inv_vec]
+      end
+    end
+    append!(invariant_vectors, ZZMatrix[ZZ.(coordinates(i, L)) for i in V])
+  end
+  gramZ = ZZ.(gram_matrix(L))
+  for v in invariant_vectors
+    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
+  end
+
+  rho = coordinates(_weyl_vector(root_lat), L)
+
+  fundamental_roots = coordinates(basis_matrix(root_lat), L)
+
+  gram = gram_matrix(L)
+  gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
+  push!(invariant_grams, gram_rho)
+  weyl_group_gens = [_reflection(gram, fundamental_roots[i:i,:]) for i in 1:nrows(fundamental_roots)]
+
+  ord = one(ZZ)
+  for s in root_types
+    mul!(ord, _weyl_group_order(s...))
+  end
+  return weyl_group_gens, invariant_grams, ord
+end
+
+function _weyl_group_order(s::Symbol, n::IntegerUnion)
+  n = ZZ(n)
+  if s == :A
+    ord = factorial(n+1)
+  elseif s == :B
+    @assert n>=2
+    ord = ZZ(2)^n * factorial(n)
+  elseif s == :C
+    @assert n>=3
+    ord = ZZ(2)^n * factorial(n)
+  elseif s == :D
+    @assert n>=4
+    ord = ZZ(2)^n * factorial(n-1)
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      ord = 51840
+    elseif n == 7
+      ord = 2903040
+    elseif n == 8
+      ord = 696729600
+    end
+  elseif s == :F
+    @assert n==4
+    ord = 1152
+  elseif s == :G
+    @assert n==2
+    ord = 12
+  elseif s == :I
+    @assert n==1
+    ord = 2
+  else
+    error("invalid root system")
+  end
+  return ord
+end
+
+function _invariant_vectors(s::Symbol, n::IntegerUnion)
+  E = identity_matrix(ZZ, n)
+  invs = ZZMatrix[]
+  e(n) = E[n:n,:]
+  if s == :A
+    for i in 1:div(n,2)
+      push!(invs, e(i)+e(n+1-i))
+    end
+    if !iszero(n%2)
+      push!(invs, e(div(n+1,2)))
+    end
+  elseif s == :D
+    @assert n>=4
+    if n == 4
+      push!(invs, e(1) + e(2) + e(3))
+      push!(invs, e(3))
+    else
+      for i in 3:n
+        push!(invs, e(i))
+      end
+      push!(invs, e(1)+e(2))
+    end
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      for i in [3,6]
+        push!(invs, e(i))
+      end
+      push!(invs, e(1) + e(5))
+      push!(invs, e(2) + e(4))
+    elseif n == 7 || n == 8
+      for i in 1:n
+        push!(invs, e(i))
+      end
+    end
+  elseif s == :I
+    push!(invs, e(1))
+  else
+    error("invalid root system")
+  end
+  return invs
+end
+
 
 ################################################################################
 #

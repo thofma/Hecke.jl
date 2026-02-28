@@ -802,6 +802,30 @@ end
 
 ################################################################################
 #
+#  Automorphisms for lattices with roots
+#
+################################################################################
+function init_weyl(C::ZLatAutoCtx{S,T,V}, fundamental_roots) where {S, T, V}
+  vv = C.V.vectors
+  n = length(C.V)
+  # convert
+  _fund = V[S.(i) for i in fundamental_roots]
+  # TODO replace multiset by something more efficient?
+  invariants = Vector{MSet{S}}(undef, n)
+  for i in 1:n
+    m = MSet{S}()
+    for w in _fund
+      a = dot(w, C.v[1][i])
+      push!(m, a)
+    end
+    invariants[i] = m
+  end
+  C.V.invariants = invariants
+  return nothing
+end
+
+################################################################################
+#
 #  Short vectors
 #
 ################################################################################
@@ -863,6 +887,7 @@ end
 function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   V = C.V.vectors
   W = C.V.lengths
+  W1 = C.V.invariants
   F = C.G
   _issymmetric = C.is_symmetric
 
@@ -878,6 +903,7 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
 
   for j in 1:length(W)
     Wj = W[j]
+    W1j = W1[j]
     Vj = V[j]
     good_length = true
     @inbounds for k in 1:length(F)

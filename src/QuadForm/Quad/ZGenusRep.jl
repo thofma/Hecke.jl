@@ -416,6 +416,7 @@ function _neighbours(
           else
             _LL = LL
           end
+          automorphism_group_order(_LL)
           save_lattice(_LL, save_path)
         end
 
@@ -480,9 +481,17 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
   if length(A) ==0
     return A
   end
+  inv_dict = invariant_dict(A, invariant_function)
+  for l in values(inv_dict)
+    Hecke._unique_iso_class!(l)
+  end
+  return reduce(append!, values(inv_dict);init=ZZLat[])
+end
+
+function  invariant_dict(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
   L = first(A)
   inv_lat = invariant_function(L)
-  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
   for i in 2:length(A)
     N = A[i]
     inv_lat = invariant_function(N)
@@ -492,14 +501,11 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
       inv_dict[inv_lat] = ZZLat[N]
     end
   end
-  for l in values(inv_dict)
-    Hecke._unique_iso_class!(l)
-  end
-  return reduce(append!, values(inv_dict);init=ZZLat[])
+  return inv_dict
 end
 
 @doc raw"""
-    default_invariant_function(L::ZZLat) -> Tuple
+    _default_invariant_function(L::ZZLat) -> Tuple
 
 Return a list of isometry invariants of the definite lattice ``L``. For now,
 the invariants by default are:
@@ -513,11 +519,12 @@ function _default_invariant_function(L::ZZLat)
   rlr, _ = root_lattice_recognition(L)
   m = minimum(L)
   ago = automorphism_group_order(L)::ZZRingElem
-  return (m, rlr, kn, ago)
+  t = NTuple{4,Int}(_theta_series(L, 4))
+  return (m, rlr, kn, ago,t)
 end
 
 function default_invariant_function(L::ZZLat)
-  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}, ZZRingElem}[]
+  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem,NTuple{4,Int}}, ZZRingElem}[]
   _L = L
   while rank(_L) > 0
     M, P, _ = _shortest_vectors_sublattice(_L; check=false)
@@ -528,6 +535,13 @@ function default_invariant_function(L::ZZLat)
   return _invariants
 end
 
+function _theta_series(L, n)
+  r = zeros(ZZRingElem,n)
+  for (_,i) in short_vectors_iterator(L,n, Int64)
+    r[Int(i)] += 1
+  end
+  return r
+end
 
 ###############################################################################
 #
@@ -707,9 +721,40 @@ function enumerate_definite_genus(
     stop_after::IntExt=inf,
     max::IntExt=inf,
     add_spinor_generators::Bool=true,
-    scaling_factor=nothing,
+    scaling_factor=nothing
   )
-  @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
+return _enumerate_definite_genus(known, algorithm;
+    rand_neigh,
+    distinct,
+    invariant_function,
+    save_partial,
+    save_path,
+    use_mass,
+    _missing_mass,
+    vain,
+    stop_after,
+    max,
+    add_spinor_generators,
+    scaling_factor)[1:2]
+end
+
+function _enumerate_definite_genus(
+    known::Vector{ZZLat},
+    algorithm::Symbol = :default;
+    rand_neigh::Int=10,
+    distinct::Bool=false,
+    invariant_function::Function=default_invariant_function,
+    save_partial::Bool=false,
+    save_path::Union{String, Nothing}=nothing,
+    use_mass::Bool=true,
+    _missing_mass::Union{QQFieldElem, Nothing}=nothing,
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+    add_spinor_generators::Bool=true,
+    scaling_factor=nothing
+  )
+@req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
   @req all(LL -> genus(LL) == genus(known[1]), known) "Known lattices must be in the same genus"
   if algorithm != :default
@@ -736,13 +781,13 @@ function enumerate_definite_genus(
       push!(res, L)
     end
   else
-    res = copy(known)
+    res = known#copy(known)
   end
 
 
   L, itk = Iterators.peel(res)
   inv_lat = invariant_function(L)
-  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
   for N in itk
     inv_lat = invariant_function(N)
     if haskey(inv_dict, inv_lat)
@@ -756,6 +801,7 @@ function enumerate_definite_genus(
     for l in values(inv_dict)
       _unique_iso_class!(l)
     end
+    res = reduce(append!,values(inv_dict);init=ZZLat[])
   end
 
   function _invariants(M::ZZLat)
@@ -832,7 +878,7 @@ function enumerate_definite_genus(
 
   count_new = Int(0)
   i = Int(0)
-  while true
+  while missing_mass[]>0
     i = i+1
     N = _neighbours(
                    res[i],
@@ -874,7 +920,7 @@ function enumerate_definite_genus(
       break
     end
   end
-  return res, missing_mass[]
+  return res, missing_mass[], inv_dict
 end
 
 @doc raw"""
@@ -1050,13 +1096,11 @@ end
 Return a chain of characters containing a minimal set of data to store and
 reconstruct ``L``. The lattice ``L`` is assumed to be integral
 
-When written on a .txt file, it consists of two lines:
-- One containing an integer representing the rank of ``L``;
-- One containing a list of integers representing half of the Gram matrix of
-  ``L``.
-
-In the case where the order of the automorphisms group of ``L`` is known, the
-value is stored using an integer on a third line.
+When written on a .txt file, it consists of three lines:
+- an integer representing the rank of ``L``;
+- a list of integers representing half of the Gram matrix of
+  ``L``
+- the automorphism group order of ``L``
 """
 function _storing_data(L::ZZLat)
   M = gram_matrix(L)
@@ -1065,9 +1109,7 @@ function _storing_data(L::ZZLat)
     str *= "$(M[i,j]),"
   end
   str = str[1:end-1]*"]"
-  if isdefined(L, :automorphism_group_order)
-    str *= "\n$(automorphism_group_order(L))"
-  end
+  str *= "\n$(automorphism_group_order(L))"
   return str
 end
 
@@ -1109,6 +1151,7 @@ function load_genus(f::String)
   gg = ZZLat[]
   files = readdir(f; join=true)
   for file in files
+    contains(file,"lat_") && endswith(file,".txt") || continue
     rl = readlines(file)
     n = Base.parse(Int, rl[1])
     _, V = _parse(Vector{QQFieldElem}, IOBuffer(rl[2]))

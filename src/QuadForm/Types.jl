@@ -456,6 +456,7 @@ end
 mutable struct VectorList{S, T}
   vectors::Vector{S} # list of (short) vectors
   lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
+  invariants::Vector{MSet{T}} # invariants[i] contains the invariants of vectors[i]
   lookup::Dict{S, Int} # v => i iff vectors[i] == v
   issorted::Bool # whether the vectors are sorted
   use_dict::Bool # whether lookup is used
