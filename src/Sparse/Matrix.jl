@@ -1032,7 +1032,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
     while length(v) <= d
       mm(c2, A, c1, p)
       if length(trans) >0
-        apply_t!(c2, trans)
+        apply_t!(c2, trans)  # FIXME: apply_t! is not defined
         apply!(c2, trans)
       end
       mm(c1, At, c2, p)
@@ -1060,7 +1060,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{
       for i=1:2*degree(f)
         mm(c2, A, c1, p)
         if length(trans) >0
-          apply_t!(c2, trans)
+          apply_t!(c2, trans)  # FIXME: apply_t! is not defined
           apply!(c2, trans)
         end
         mm(c1, At, c2, p)

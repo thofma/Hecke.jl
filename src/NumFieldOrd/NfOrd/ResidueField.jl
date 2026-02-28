@@ -140,6 +140,7 @@ function _residue_field_nonindex_divisor(O, P, ::Val{small} = Val(false), degree
     mF.P = P
     return F, mF
   else
+    @info "asds"
     F, h = _residue_field_nonindex_divisor_helper_fq_default(f, g, minimum(P))
     mF = Mor(O, F, h)
     mF.P = P
