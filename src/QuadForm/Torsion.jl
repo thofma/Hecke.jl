@@ -402,7 +402,7 @@ end
 function (T::TorQuadModule)(v::QQMatrix)
   @req ncols(v) == degree(cover(T)) "matrix of wrong length"
   @req nrows(v) == 1 "matrix of wrong length"
-  vv = change_base_ring(ZZ, solve(_solve_init(cover(T)), vv; side = :left))
+  vv = change_base_ring(ZZ, solve(_solve_init(cover(T)), v; side = :left))
   return T(abelian_group(T)(vv * T.proj))
 end
 
