@@ -197,6 +197,7 @@ export canonical_projections
 export canonical_symbol
 export carmichael_lambda
 export center
+export center_density
 export central_primitive_idempotents
 export chain_complex
 export class_group
@@ -407,6 +408,7 @@ export hensel_lift
 export hermitian_genera
 export hermitian_lattice
 export hermitian_local_genera
+export hermite_number
 export hermitian_space
 export hermitian_structure
 export hermitian_structure_with_transfer_data
@@ -710,6 +712,7 @@ export multiset
 export naive_height
 export narrow_class_group
 export negation_map
+export neighbours
 export neron_tate_height
 export next_prime
 export ngens
@@ -877,6 +880,7 @@ export short_vectors_affine_iterator
 export short_vectors_iterator
 export short_weierstrass_model
 export shortest_vectors
+export shortest_vectors_sublattice
 export show
 export show_psi
 export siegel_reduction
@@ -917,6 +921,8 @@ export subfields
 export subgroups
 export submodules
 export subsets
+export successive_minima
+export successive_minima_with_vectors
 export sunit_group
 export sunit_group_fac_elem
 export sunit_mod_units_group_fac_elem

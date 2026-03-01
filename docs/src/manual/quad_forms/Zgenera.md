@@ -84,6 +84,7 @@ quadratic_space(G::ZZGenus)
 rational_representative(G::ZZGenus)
 representative(G::ZZGenus)
 representatives(G::ZZGenus)
+class_number(G::ZZGenus)
 mass(G::ZZGenus)
 rescale(::ZZGenus, ::RationalUnion)
 ```
