@@ -121,6 +121,7 @@ function init(
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
   known_short_vectors=(0, []),
+  D::ZLatAutoCtx=C
 )
   # Compute the necessary short vectors
 
@@ -142,20 +143,24 @@ function init(
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
-  if alpha < bound
-    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
-  end
+  #if alpha < bound
+  #  @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
+  #end
+  V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound; is_lll_reduced_known)
 
-  vectors = Vector{ZZMatrix}(undef, length(V))
 
-  lengths = Vector{Vector{ZZRingElem}}(undef, length(V))
+  vectors = Vector{ZZMatrix}[]
+
+  lengths = Vector{Vector{ZZRingElem}}[]
+
+  target_lengths = Set{Vector{ZZRingElem}}([i[j,j] for i in D.G] for j in 1:n)
+  # use for early abort in norm computation not sure if worth it
+  target_length2 = [Set([i[j,j] for j in 1:n]) for i in D.G]
 
   tmp = zero_matrix(ZZ, 1, n)
 
-  for i in 1:length(V)
+  for (v, sq) in V
     # First canonicalize them
-    cand = V[i]
-    v = cand[1]
     k = 1
     while iszero(v[k])
       k += 1
@@ -168,12 +173,20 @@ function init(
 
     w = Vector{ZZRingElem}(undef, r)
     w[1] = numerator(cand[2])
+    flag = false
     for k in 2:r
-      w[2] = _norm(vfmpz, C.G[k], tmp)
+      w[k] = _norm(vfmpz, C.G[k], tmp)
+      if !(w[k] in target_length2)
+        flag = true
+        break
+      end
     end
+    flag && continue
 
-    lengths[i] = w
-    vectors[i] = vfmpz
+    w in target_lengths || continue
+
+    push!(lengths, w)
+    push!(vectors, vfmpz)
   end
 
   V = VectorList(vectors, lengths, use_dict)
@@ -283,6 +296,7 @@ function try_init_small(
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
   known_short_vectors=(0, []),
+  D::ZLatAutoCtx=C
  )
   automorphism_mode = bound == ZZRingElem(-1)
 
@@ -303,13 +317,13 @@ function try_init_small(
   # Compute the necessary short vectors
   @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
-  alpha, _V = known_short_vectors
+  #alpha, _V = known_short_vectors
   @assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
 
-  V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], alpha+1, bound, Int; is_lll_reduced_known)
+  V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
 
   r = length(C.G)
 
@@ -336,8 +350,9 @@ function try_init_small(
 
   vectors = Vector{Int}[]
   lengths = Vector{Int}[]
-  target_lengths = Set{Vector{Int}}([i[j,j] for i in C.G] for j in 1:n)
-  target_length2 = [Set([i[j,j] for j in 1:n]) for i in C.G] # use for early abort not sure if worth it
+  target_lengths = Set{Vector{Int}}([i[j,j] for i in D.G] for j in 1:n)
+  # use for early abort in norm computation not sure if worth it
+  target_length2 = [Set([i[j,j] for j in 1:n]) for i in D.G]
 
 
   for cand in V
@@ -373,7 +388,7 @@ function try_init_small(
     flag = false
     for k in 2:r
       w[k] = _norm(_v, Gsmall[k], tmp)
-      if !(w[k] in target_length2[k])
+      if !(w[k] in target_length2)
         flag = true
         break
       end
@@ -1839,12 +1854,11 @@ function matgen(x, dim, per, v)
 end
 
 # Isomorphism computation
-
 function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   # We only need to initialize the vector sums and Bacher polynomials for the
   # first lattice
-  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth)
+  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth, D=Go)
   if fl
     Co = ZLatAutoCtx(Go)
     fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0)
@@ -1861,7 +1875,7 @@ function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1,
   Co = ZLatAutoCtx(Go)
   # We only need to initialize the vector sums and Bacher polynomials for the
   # first lattice
-  init(Ci, true, depth = depth, bacher_depth = bacher_depth)
+  init(Ci, true, depth = depth, bacher_depth = bacher_depth, D=Go)
   init(Co, false, Ci.max, depth = 0, bacher_depth = 0)
   return Ci, Co
 end

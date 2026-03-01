@@ -403,9 +403,9 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
-  use_weyl::Bool=true,
+  use_weyl::Bool=false,
   reduced::Bool=false,
-  use_projections::Bool=true,
+  use_projections::Bool=false,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -517,7 +517,12 @@ function __assert_has_automorphisms(
     # where Aut_red(L) = Aut(L,\rho) is the stabilizer of rho in O(L)
     # the Weyl vector \rho is preserved only up to sign
     # so we have computed Aut(L,{\pm \rho}) and its order
-    order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
+    if weyl_group_order > 1
+      order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
+    else
+      # when rho is trivial
+      order_reduced = order
+    end
     L.automorphism_group_order = order_reduced*weyl_group_order
   else
     L.automorphism_group_order = order
