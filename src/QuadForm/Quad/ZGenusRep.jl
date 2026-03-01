@@ -212,8 +212,9 @@ Input:
  - An integer `vain` refering the number of vain iteration, i.e. how many new
    neighbours did not give rise to a non-explored isometry class in the
    neighbour graph;
- - A value `stop_after` telling after how many vain iterations the algorithm
-   should stop;
+ - A value `stop_after` the algorithm stops after the
+  specified amount of vain iterations without finding a new isometry class
+  is reached;
  - A value `max` telling the maximum number of representatives of isometry
    classes in the genus of ``L`` to compute in the outer scope before stopping
    the enumeration.
@@ -329,7 +330,6 @@ function _neighbours(
     w0 = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
     a = numerator(only(w0*form0*transpose(w0)))
     if !is_divisible_by(a, mqf)
-      vain[] += 1
       continue
     end
 
@@ -339,7 +339,6 @@ function _neighbours(
       if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L`
         w = w0*basis_matrix(L0)
         if is_zero(mod(divisibility(L, w), p)) # L_{w, 2} == L iff w lies in 2*L^#
-          vain[] += 1
           continue
         end
         make_admissible!(w0, form0, m, K, a)
@@ -349,7 +348,6 @@ function _neighbours(
       elseif !even && bo # Another corner case: `wL` is admissible but if `L_{wL, 2}` is even then the neighbour is even, and we want an odd one
         wL = w0*L0toL
         if is_even(prime_dual(L, wL, p))
-          vain[] += 1
           continue
         end
         push!(lifts, wL)
@@ -393,9 +391,12 @@ function _neighbours(
       if !keep
         vain[] += 1
         continue
+      else
+        # we want the vain iterations since the last time we found a new class
+        vain[] = 0
       end
 
-      vain[] = Int(0)
+      vain[] = 0
       @vprintln :ZGenRep 3 "Keep an isometry class"
       @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       if mode != :spinor_generators
@@ -723,7 +724,7 @@ function enumerate_definite_genus(
     add_spinor_generators::Bool=true,
     scaling_factor=nothing
   )
-return _enumerate_definite_genus(known, algorithm;
+return _enumerate_definite_genus!(copy(known), algorithm;
     rand_neigh,
     distinct,
     invariant_function,
@@ -738,7 +739,7 @@ return _enumerate_definite_genus(known, algorithm;
     scaling_factor)[1:2]
 end
 
-function _enumerate_definite_genus(
+function _enumerate_definite_genus!(
     known::Vector{ZZLat},
     algorithm::Symbol = :default;
     rand_neigh::Int=10,
@@ -781,7 +782,7 @@ function _enumerate_definite_genus(
       push!(res, L)
     end
   else
-    res = known#copy(known)
+    res = known
   end
 
 
