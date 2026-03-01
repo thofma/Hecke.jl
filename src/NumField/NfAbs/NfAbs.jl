@@ -1087,7 +1087,7 @@ function has_embedding(F::NumField, G::NumField)
   if absolute_degree(G) % absolute_degree(F) != 0
     return false
   end
-  cn = find_one_chain(d, c)
+  cn = find_one_chain(F, G)
   return cn !== nothing
 end
 
