@@ -1631,7 +1631,7 @@ function is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_de
   if isone(length(spinor_genera_in_genus(L)[1]))
     return true
   end
-  error("isometry testing for hermitian lattices with several spinor genera is not yet implemented")
+  error("isometry testing for lattices over number fields with several special genera is not yet implemented")
 end
 
 @doc raw"""
