@@ -1666,7 +1666,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   K = base_field(E)
   @assert base_ring(V) == base_ring(W)
   @assert base_ring(L) == base_ring(M)
-  is_definite(L) || error("not implemented")
+  @req is_definite(L) "Only implemented for definite lattices"
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M, generatorsL)
   @assert generatorsL == generatorsM
