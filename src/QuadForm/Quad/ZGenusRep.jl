@@ -755,7 +755,7 @@ function _enumerate_definite_genus!(
     add_spinor_generators::Bool=true,
     scaling_factor=nothing
   )
-@req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
+  @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
   @req all(LL -> genus(LL) == genus(known[1]), known) "Known lattices must be in the same genus"
   if algorithm != :default
