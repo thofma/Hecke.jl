@@ -391,11 +391,7 @@ function _neighbours(
       if !keep
         vain[] += 1
         continue
-      else
-        # we want the vain iterations since the last time we found a new class
-        vain[] = 0
       end
-
       vain[] = 0
       @vprintln :ZGenRep 3 "Keep an isometry class"
       @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
