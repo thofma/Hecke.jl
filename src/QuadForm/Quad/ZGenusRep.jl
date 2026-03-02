@@ -212,8 +212,9 @@ Input:
  - An integer `vain` refering the number of vain iteration, i.e. how many new
    neighbours did not give rise to a non-explored isometry class in the
    neighbour graph;
- - A value `stop_after` telling after how many vain iterations the algorithm
-   should stop;
+ - A value `stop_after` the algorithm stops after the
+  specified amount of vain iterations without finding a new isometry class
+  is reached;
  - A value `max` telling the maximum number of representatives of isometry
    classes in the genus of ``L`` to compute in the outer scope before stopping
    the enumeration.
@@ -329,7 +330,6 @@ function _neighbours(
     w0 = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
     a = numerator(only(w0*form0*transpose(w0)))
     if !is_divisible_by(a, mqf)
-      vain[] += 1
       continue
     end
 
@@ -339,7 +339,6 @@ function _neighbours(
       if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L`
         w = w0*basis_matrix(L0)
         if is_zero(mod(divisibility(L, w), p)) # L_{w, 2} == L iff w lies in 2*L^#
-          vain[] += 1
           continue
         end
         make_admissible!(w0, form0, m, K, a)
@@ -349,7 +348,6 @@ function _neighbours(
       elseif !even && bo # Another corner case: `wL` is admissible but if `L_{wL, 2}` is even then the neighbour is even, and we want an odd one
         wL = w0*L0toL
         if is_even(prime_dual(L, wL, p))
-          vain[] += 1
           continue
         end
         push!(lifts, wL)
@@ -394,8 +392,7 @@ function _neighbours(
         vain[] += 1
         continue
       end
-
-      vain[] = Int(0)
+      vain[] = 0
       @vprintln :ZGenRep 3 "Keep an isometry class"
       @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
       if mode != :spinor_generators
@@ -416,6 +413,7 @@ function _neighbours(
           else
             _LL = LL
           end
+          automorphism_group_order(_LL)
           save_lattice(_LL, save_path)
         end
 
@@ -480,9 +478,17 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
   if length(A) ==0
     return A
   end
+  inv_dict = invariant_dict(A, invariant_function)
+  for l in values(inv_dict)
+    Hecke._unique_iso_class!(l)
+  end
+  return reduce(append!, values(inv_dict);init=ZZLat[])
+end
+
+function  invariant_dict(A::Vector{T},invariant_function::Function=Hecke.default_invariant_function) where T <: Union{ZZLat, HermLat}
   L = first(A)
   inv_lat = invariant_function(L)
-  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
   for i in 2:length(A)
     N = A[i]
     inv_lat = invariant_function(N)
@@ -492,14 +498,11 @@ function _unique_iso_class_dec(A::Vector{T},invariant_function::Function=Hecke.d
       inv_dict[inv_lat] = ZZLat[N]
     end
   end
-  for l in values(inv_dict)
-    Hecke._unique_iso_class!(l)
-  end
-  return reduce(append!, values(inv_dict);init=ZZLat[])
+  return inv_dict
 end
 
 @doc raw"""
-    default_invariant_function(L::ZZLat) -> Tuple
+    _default_invariant_function(L::ZZLat) -> Tuple
 
 Return a list of isometry invariants of the definite lattice ``L``. For now,
 the invariants by default are:
@@ -513,11 +516,12 @@ function _default_invariant_function(L::ZZLat)
   rlr, _ = root_lattice_recognition(L)
   m = minimum(L)
   ago = automorphism_group_order(L)::ZZRingElem
-  return (m, rlr, kn, ago)
+  t = NTuple{4,Int}(_theta_series(L, 4))
+  return (m, rlr, kn, ago,t)
 end
 
 function default_invariant_function(L::ZZLat)
-  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem}, ZZRingElem}[]
+  _invariants = Tuple{Tuple{QQFieldElem, Vector{Tuple{Symbol, Int64}}, Int64, ZZRingElem,NTuple{4,Int}}, ZZRingElem}[]
   _L = L
   while rank(_L) > 0
     M, P, _ = _shortest_vectors_sublattice(_L; check=false)
@@ -528,6 +532,13 @@ function default_invariant_function(L::ZZLat)
   return _invariants
 end
 
+function _theta_series(L, n)
+  r = zeros(ZZRingElem,n)
+  for (_,i) in short_vectors_iterator(L,n, Int64)
+    r[Int(i)] += 1
+  end
+  return r
+end
 
 ###############################################################################
 #
@@ -707,7 +718,38 @@ function enumerate_definite_genus(
     stop_after::IntExt=inf,
     max::IntExt=inf,
     add_spinor_generators::Bool=true,
-    scaling_factor=nothing,
+    scaling_factor=nothing
+  )
+return _enumerate_definite_genus!(copy(known), algorithm;
+    rand_neigh,
+    distinct,
+    invariant_function,
+    save_partial,
+    save_path,
+    use_mass,
+    _missing_mass,
+    vain,
+    stop_after,
+    max,
+    add_spinor_generators,
+    scaling_factor)[1:2]
+end
+
+function _enumerate_definite_genus!(
+    known::Vector{ZZLat},
+    algorithm::Symbol = :default;
+    rand_neigh::Int=10,
+    distinct::Bool=false,
+    invariant_function::Function=default_invariant_function,
+    save_partial::Bool=false,
+    save_path::Union{String, Nothing}=nothing,
+    use_mass::Bool=true,
+    _missing_mass::Union{QQFieldElem, Nothing}=nothing,
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+    add_spinor_generators::Bool=true,
+    scaling_factor=nothing
   )
   @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
@@ -736,13 +778,13 @@ function enumerate_definite_genus(
       push!(res, L)
     end
   else
-    res = copy(known)
+    res = known
   end
 
 
   L, itk = Iterators.peel(res)
   inv_lat = invariant_function(L)
-  inv_dict = Dict{typeof(inv_lat), Vector{ZZLat}}(inv_lat => ZZLat[L])
+  inv_dict = Dict{Any, Vector{ZZLat}}(inv_lat => ZZLat[L])
   for N in itk
     inv_lat = invariant_function(N)
     if haskey(inv_dict, inv_lat)
@@ -756,6 +798,7 @@ function enumerate_definite_genus(
     for l in values(inv_dict)
       _unique_iso_class!(l)
     end
+    res = reduce(append!,values(inv_dict);init=ZZLat[])
   end
 
   function _invariants(M::ZZLat)
@@ -832,7 +875,7 @@ function enumerate_definite_genus(
 
   count_new = Int(0)
   i = Int(0)
-  while true
+  while missing_mass[]>0
     i = i+1
     N = _neighbours(
                    res[i],
@@ -874,7 +917,7 @@ function enumerate_definite_genus(
       break
     end
   end
-  return res, missing_mass[]
+  return res, missing_mass[], inv_dict
 end
 
 @doc raw"""
@@ -1050,13 +1093,11 @@ end
 Return a chain of characters containing a minimal set of data to store and
 reconstruct ``L``. The lattice ``L`` is assumed to be integral
 
-When written on a .txt file, it consists of two lines:
-- One containing an integer representing the rank of ``L``;
-- One containing a list of integers representing half of the Gram matrix of
-  ``L``.
-
-In the case where the order of the automorphisms group of ``L`` is known, the
-value is stored using an integer on a third line.
+When written on a .txt file, it consists of three lines:
+- an integer representing the rank of ``L``;
+- a list of integers representing half of the Gram matrix of
+  ``L``
+- the automorphism group order of ``L``
 """
 function _storing_data(L::ZZLat)
   M = gram_matrix(L)
@@ -1065,9 +1106,7 @@ function _storing_data(L::ZZLat)
     str *= "$(M[i,j]),"
   end
   str = str[1:end-1]*"]"
-  if isdefined(L, :automorphism_group_order)
-    str *= "\n$(automorphism_group_order(L))"
-  end
+  str *= "\n$(automorphism_group_order(L))"
   return str
 end
 
@@ -1109,6 +1148,7 @@ function load_genus(f::String)
   gg = ZZLat[]
   files = readdir(f; join=true)
   for file in files
+    contains(file,"lat_") && endswith(file,".txt") || continue
     rl = readlines(file)
     n = Base.parse(Int, rl[1])
     _, V = _parse(Vector{QQFieldElem}, IOBuffer(rl[2]))
