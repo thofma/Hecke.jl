@@ -166,7 +166,7 @@ Gram matrix quadratic form:
   return T
 end
 
-discriminant_group(L::ZZLat, n::Int) = primary_part(discriminant_group(L), n)[1]
+discriminant_group(L::ZZLat, n::IntegerUnion) = primary_part(discriminant_group(L), n)[1]
 
 @doc raw"""
     order(T::TorQuadModule) -> ZZRingElem
@@ -402,7 +402,7 @@ end
 function (T::TorQuadModule)(v::QQMatrix)
   @req ncols(v) == degree(cover(T)) "matrix of wrong length"
   @req nrows(v) == 1 "matrix of wrong length"
-  vv = change_base_ring(ZZ, solve(_solve_init(cover(T)), vv; side = :left))
+  vv = change_base_ring(ZZ, solve(_solve_init(cover(T)), v; side = :left))
   return T(abelian_group(T)(vv * T.proj))
 end
 
@@ -1544,7 +1544,7 @@ function torsion_quadratic_module(q::QQMatrix; check::Bool=true)
   D = change_base_ring(QQ, U) * q * change_base_ring(QQ, V)
   L = integer_lattice(1//d * identity_matrix(QQ, nrows(q)); gram = d^2 * q, check=false)
   denoms = QQFieldElem[denominator(D[i, i]) for i in 1:ncols(D)]
-  rels = diagonal_matrix(denoms) * U
+  rels = diagonal_matrix(QQ, denoms) * U
   LL = lattice(ambient_space(L), 1//d * change_base_ring(QQ, rels))
   return torsion_quadratic_module(L, LL; modulus = QQFieldElem(1), check=false)
 end

@@ -517,6 +517,13 @@ function is_definite(V::AbstractSpace)
   return is_positive_definite(V) || is_negative_definite(V)
 end
 
+@doc raw"""
+    is_indefinite(V::AbstractSpace) -> Bool
+
+Return whether the space `V` is indefinite.
+"""
+is_indefinite(V::AbstractSpace) = is_regular(V) && !is_definite(V)
+
 ################################################################################
 #
 #  Isotropic

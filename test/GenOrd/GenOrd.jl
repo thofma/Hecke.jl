@@ -24,4 +24,14 @@
   u = canonical_unit(one(Ofin))
   @test parent(u) === Ofin
   @test is_unit(u)
+
+  let # some weird rings
+    Qt,t = rational_function_field(QQ, :t)
+    Qtx, x= Qt[:x]
+    f = x^2-4*t^3-1
+    F, a = function_field(f)
+    Zx, x = ZZ[:x]
+    O = integral_closure(Zx, F)
+    @test length(basis(O)) == 2
+  end
 end

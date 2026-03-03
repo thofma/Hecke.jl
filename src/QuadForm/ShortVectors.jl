@@ -140,6 +140,114 @@ function minimum(L::ZZLat)
   return L.minimum
 end
 
+###############################################################################
+#
+#  Density
+#
+###############################################################################
+
+@doc raw"""
+    center_density(L::ZZLat) -> RealFieldElem
+
+Return the center density of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n``, absolute determinant ``d`` and
+minimum ``m`` (in absolute value), we define the **center density** of ``L``
+to be the real number defined by:
+
+```math
+\delta := \frac{(\sqrt{m}/2)^n}{\sqrt{d}}
+```
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 6);
+
+julia> center_density(L)
+[0.0721687836487032205 +/- 9.72e-20]
+```
+"""
+@attr RealFieldElem function center_density(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  RR = real_field()
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))
+  rho = sqrt(mu)/2
+  return rho^(rank(L))/sqrt(d)
+end
+
+@doc raw"""
+    density(L::ZZLat) -> RealFieldElem
+
+Return the density of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n`` and minimum ``m``, the density of
+``L`` is the proportion of the real space ``L\otimes \mathbb{R}`` covered by
+non-overlapping balls of radius ``m`` centered in points of ``L``. It can
+be computed as the product of the [`center_density(::ZZLat)`](@ref) of ``L``
+times the volume of the unit ``n``-ball.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 8);
+
+julia> density(L)
+[0.253669507901048014 +/- 6.66e-19]
+```
+"""
+@attr RealFieldElem function density(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  n = rank(L)
+  RR = real_field()
+  RRpi = RR(pi)
+  m = div(n, 2, RoundDown)
+
+  # Volume unit n-sphere
+  if iseven(n)
+    Vn = RRpi^m/RR(factorial(m))
+  else
+    Vn = RR(2^n)*RRpi^m*RR(factorial(m))/RR(factorial(n))
+  end
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))
+  rho = sqrt(mu)/2
+  return Vn*rho^n/sqrt(d)
+end
+
+###############################################################################
+#
+#  Hermite number
+#
+###############################################################################
+
+@doc raw"""
+    hermite_number(L::ZZLat) -> RealFieldElem
+
+Return the Hermite number of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n``, absolute determinant ``d`` and
+minimum ``m``, the Hermite number of ``L`` is defined by:
+
+```math
+\gamma := \frac{m}{d^{1/n}}.
+```
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 7);
+
+julia> hermite_number(L)
+[1.811447328527813353 +/- 5.13e-19]
+```
+"""
+@attr RealFieldElem function hermite_number(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  RR = real_field()
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))^(1/rank(L))
+  return mu/d
+end
+
 ################################################################################
 #
 #  Kissing number
@@ -155,15 +263,88 @@ This is the number of non-overlapping spheres touching any
 other given sphere.
 """
 @attr Int function kissing_number(L::ZZLat)
-  @req rank(L) > 0 "Lattice must have positive rank"
+  @req is_definite(L) "Lattice must have positive rank"
+  if rank(L) == 0
+    return 0
+  end
   return 2 * length(shortest_vectors(L))
 end
 
-###############################################################################
+################################################################################
+#
+#  Successive minima
+#
+################################################################################
+
+@doc raw"""
+    successive_minima(L::ZZLat) -> Vector{QQFieldElem}
+
+Given a positive definite lattice $L$, return the successive minima of $L$.
+See [`successive_minima_with_vectors`](@ref) for the definition.
+"""
+function successive_minima(L::ZZLat)
+  return successive_minima_with_vectors(L)[1]
+end
+
+@doc raw"""
+    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem}, Vector{ZZRingElem}
+
+Given a positive definite lattice $L$, return the successive minima of $L$ and
+a list of vectors realizing the minima.
+
+By definition, the $i$-th successive minima of $L$ is the smallest non-negative
+integer $\lambda_i$, such that the vectors of $L$ of norm bounded by
+$\lambda_i$ span a lattice of rank $i$.
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
+
+julia> successive_minima_with_vectors(L)
+(QQFieldElem[1, 2, 3], Vector{ZZRingElem}[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+```
+"""
+function successive_minima_with_vectors(L::ZZLat)
+  @req is_positive_definite(L) "Lattice must be positive definite"
+  if rank(L) == 0
+    return Int[]
+  end
+  n = rank(L)
+  m = maximum(diagonal(gram_matrix(lll(L))); init = zero(ZZ))
+  S = short_vectors(L, m)
+  sort!(S; by = x -> x[2])
+  mi = S[1][2]
+  cur_mi = mi
+  res = QQFieldElem[cur_mi]
+  resv = [S[1][1]]
+  cur_i = findlast(x -> x[2] == mi, S)
+  B = echelon_form(matrix(QQ, [x[1] for x in view(S, 1:cur_i)]); trim = true)
+  while length(res) < n
+    cur_mi = S[cur_i + 1][2]
+    next_i = findlast(x -> x[2] == cur_mi, S)
+    @assert next_i > cur_i
+    # the following constructs a potential large marix
+    # better would be a "streaming" version which takes as input only the vector
+    # but we don't have this for rational matrices
+    # (we only care about rank = dimension of rational span)
+    B = echelon_form(vcat(B, matrix(QQ, [x[1] for x in view(S, cur_i+1:next_i)])); trim = true)
+    if nrows(B) > length(res)
+      for _ in 1:(nrows(B) - length(res))
+        push!(res, cur_mi)
+        push!(resv, S[cur_i + 1][1])
+      end
+    end
+    cur_i = next_i
+  end
+  return res, resv
+end
+
+################################################################################
 #
 # Short vectors affine
 #
-###############################################################################
+################################################################################
 
 @doc raw"""
     enumerate_quadratic_triples(
@@ -462,7 +643,7 @@ function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothi
     return nothing
   end
   #Cv = C.xt + matrix(C.b_ring, 1, C.nrows, it[1][1])*C.K
-  for i in 1:C.nrows 
+  for i in 1:C.nrows
     C.u[i] = it[1][1][i]
   end
   add!(C.v, C.xt, mul!(C.v, C.u, C.K))

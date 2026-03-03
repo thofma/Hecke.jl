@@ -607,6 +607,18 @@ end
   @test Hecke.improper_spinor_generators(G) == Hecke.improper_spinor_generators(G2)
   @test Hecke.proper_spinor_generators(G) == Hecke.proper_spinor_generators(G2)
 
+  # Class number
+  let
+    L = root_lattice(:E, 8)
+    @test class_number(genus(L)) == 1
+  end
+
+  # zero lattice
+  let
+    G = genus(integer_lattice(ZZ[;]))
+    @test mass(G) == 1
+    @test length(representatives(G)) == 1
+  end
 end
 
 @testset "Fix issues" begin

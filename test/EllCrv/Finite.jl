@@ -120,11 +120,11 @@
               GF(193, 3), GF(ZZ(193), 3)]
 
       E = elliptic_curve_from_j_invariant(K(169))
-      @test @inferred is_supersingular(E) == true
+      @test @inferred is_supersingular(E)
       @inferred is_probable_supersingular(E)
 
       E = elliptic_curve_from_j_invariant(K(170))
-      @test @inferred is_ordinary(E) == true
+      @test @inferred is_ordinary(E)
     end
 
     # brute-force check for small primes:
@@ -164,7 +164,7 @@
     K = GF(193, 3)
     a = gen(K)
     E = elliptic_curve_from_j_invariant(a)
-    @test @inferred is_supersingular(E) == false
+    @test !(@inferred is_supersingular(E))
     @inferred is_probable_supersingular(E)
   end
 
