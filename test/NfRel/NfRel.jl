@@ -1,5 +1,16 @@
 @testset "RelSimpleNumField" begin
-  let
+  @testset "conformance" begin
+    Qx, x = QQ["x"]
+    f = x^2 + 12x - 92
+    K, a = number_field(f, "a")
+    Ky, y = K["y"]
+
+    L, b = number_field(y^2 + y + 1, "b")
+
+    ConformanceTests.test_Field_interface_recursive(L)
+  end
+
+  @testset "lift" begin
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
     L, b = number_field(t - 1, "b")
