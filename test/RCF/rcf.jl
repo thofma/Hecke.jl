@@ -420,9 +420,9 @@ end
 
   k, a = wildanger_field(3, 13)
   H = hilbert_class_field(k)
-  d = discrimiant(FacElem, H)
+  d = discriminant(FacElem, H)
   @test is_one(evaluate(d))
   d = absolute_discriminant(FacElem, H)
-  @test d == discriminant(maximal_order(k))^9
+  @test evaluate(d) == discriminant(maximal_order(k))^9
 end
 
