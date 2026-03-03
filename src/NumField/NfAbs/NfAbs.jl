@@ -1057,16 +1057,8 @@ function embed(f::Map{<:NumField, <:NumField})
   @assert absolute_degree(d) <= absolute_degree(c)
   cn = find_one_chain(d, c)
   if cn !== nothing
-    if is_simple(d)
-      cgend = force_coerce(c, gen(d))
-      if cgend != f(gen(d))
-        error("different embedding already installed")
-        return
-      end
-    else
-      if any(x->c(x) != f(x), gens(d))
-        error("different embedding already installed")
-      end
+    if any(x->force_coerce(c, x) != f(x), gens(d))
+      error("different embedding already installed")
     end
   end
   s = get_attribute!(c, :subs, [])::Vector{Any}
