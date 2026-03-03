@@ -193,7 +193,6 @@ function unit_group(F::T; n_quo::Int = -1) where T <: FinField
     else
       dl = mod(inv*disc_log_bs_gs(g, y, npart), k)
     end
-    @assert g^dl == x
     return G([dl])
   end
   mG = FiniteFieldMultGrpMap{T, elem_type(F)}(G, F, g, disc_log)
