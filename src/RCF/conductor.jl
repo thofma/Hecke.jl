@@ -453,14 +453,14 @@ end
 function absolute_discriminant(::Type{FacElem}, C::ClassField)
   OK = base_ring(C)
   d = factored_norm(discriminant(FacElem, C))
-  d *= parent(d)(discriminant_sign(C))
-  d *= parent(d)(QQ(discriminant(OK)))^degree(C)
+  d *= parent(d)(discriminant_sign(C)) 
+  d *= parent(d)(abs(QQ(discriminant(OK))))^degree(C)
   return d
 end
 
 function absolute_discriminant(C::ClassField)
   OK = base_ring(C)
-  return discriminant_sign(C) * norm(discriminant(C))*discriminant(OK)^degree(C)
+  return discriminant_sign(C) * norm(discriminant(C))*abs(discriminant(OK))^degree(C)
 end
 
 function discriminant(C::ClassField, ::QQField)
