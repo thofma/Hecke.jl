@@ -320,18 +320,8 @@ function kernel(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   H = codomain(h)
   m = zero_matrix(ZZ, nrows(h.map)+nrows(rels(H)), ncols(h.map))
   view(m, 1:nrows(h.map), :) .= h.map
-#  for i=1:nrows(h.map)
-#    for j=1:ncols(h.map)
-#      m[i,j]=h.map[i,j]
-#    end
-#  end
   if !is_snf(H)
     view(m, nrows(h.map)+1:nrows(h.map)+nrows(H.rels), :) .= H.rels
-#    for i=1:nrels(H)
-#      for j=1:ngens(H)
-#        m[nrows(h.map) + i, j] = H.rels[i, j]
-#      end
-#    end
   else
     for i=1:length(H.snf)
       m[nrows(h.map) + i, i] = H.snf[i]
