@@ -702,7 +702,8 @@ function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumFie
   return u
 end
 
-function _is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+function _is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing, maxext = true)
+  # maxext = false: if not saturated, find only one non-p-th root (instead of all)
   @assert is_prime(p)
   G = domain(f)
   @assert is_free(G) # now now due to difficulties with torsion in the saturation
@@ -742,6 +743,10 @@ function _is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumFiel
       if fl
         @vprintln :Saturate 1  "The element is an n-th power"
         push!(new, x)
+        if !maxext
+          @vprintln :Saturate 1  "We only want info on saturateness, so we are done"
+          break
+        end
       else
   #      @show :bad
       end
