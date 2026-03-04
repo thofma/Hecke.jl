@@ -338,6 +338,9 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
   end
 end
 
+###  The following function compute_ellipse_bound_rigorous, together with the function construct_M,
+###  are an implementation of the algorithm for rigorous integration along straight lines by Nils Bruin, Linden
+###  Disney-Hogg, and Wuqian Effie Gao, as presented in https://arxiv.org/pdf/2208.12377.
 function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
 
   subpath.integration_scheme_index = length(int_group_rs)
