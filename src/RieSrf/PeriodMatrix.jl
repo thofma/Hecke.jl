@@ -340,44 +340,22 @@ end
 
 ###  The following function compute_ellipse_bound_rigorous, together with the function construct_M,
 ###  are an implementation of the algorithm for rigorous integration along straight lines by Nils Bruin, Linden
-###  Disney-Hogg, and Wuqian Effie Gao, as presented in https://arxiv.org/pdf/2208.12377.
+###  Disney-Hogg, and Wuqian Effie Gao, as presented in https://arxiv.org/pdf/2208.12377. The implementation 
+###  here is Strategy 1 from this paper.
 function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
 
   subpath.integration_scheme_index = length(int_group_rs)
 
   v_start = start_point(subpath)
   v_end = end_point(subpath)
-  
-  #these values are the 't values' 
+
+  #these values are the 't values' of the discriminant points 
   rs = [(2 * alpha - (v_start + v_end))/(v_end - v_start) for alpha in discriminant_points(RS)]
-
-  function construct_M(g, RS, centre, radius, rs, v_start, v_end)
-    #it is required that the radius = (delta_i) is such that the critical points are not contained in D(centre, radius)
-    gmin = minpoly(g)
-    lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
-    gmin = lcm(lis) * gmin
-    CC = RS.complex_field
-    v = embedding(RS)
-    _, CCx = polynomial_ring(CC, "x")
-    coeffs = [numerator(coeff(gmin,i)) for i in (0:degree(gmin))]
-    #precompose with the path
-    if base_ring(base_ring(parent(gmin))) == QQ
-      coeffs = [sum(CC(coeff(a,i)) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
-    else 
-      coeffs = [sum(CC(embedding(v)(coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
-    end 
-
-    A_0 = CC(abs((coeff(coeffs[end], degree(coeffs[end]))) ) * prod( [abs(centre - alpha) - radius for alpha in rs] , init = one(CC)))
-    A_i = [ (sum([CC(abs(coeff(a, i)) * (abs(centre) + radius)^i) for i in (0:length(coefficients(a)))], init = zero(CC))) for a in coeffs[1:end - 1] ]
-
-    M_tilde = 2 * maximum([ real((A_i[i]/A_0)^(1/i)) for i in (1:length(A_i)) ])
-
-    return M_tilde
-  end
 
   for g in dif_basis
     interval = [-1]
     current_endpoint = 1
+    gmin = minpoly(g)
     while (interval[end] != 1)
       if minimum([abs(alpha - (1//2) * (interval[end] + current_endpoint)) for alpha in rs]) > (1//2) * abs(current_endpoint - interval[end])
         push!(interval, current_endpoint)
@@ -387,10 +365,32 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
       end
     end
     M_tilde_values = []
+
     for j in (2:length(interval))
       z_0 = (interval[j] + interval[j-1])/2
       delta = minimum([abs(alpha - z_0) for alpha in rs]) + (abs(interval[j] - interval[j-1]))/2 
-      push!(M_tilde_values, construct_M(g, RS, z_0, delta, rs, v_start, v_end))
+      lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
+      gmin = lcm(lis) * gmin
+      CC = RS.complex_field
+      v = embedding(RS)
+      _, CCx = polynomial_ring(CC, "x")
+      coeffs = [numerator(coeff(gmin,i)) for i in (0:degree(gmin))]
+      #precompose with the path
+      #the coefficients in the minimal polynomial of g are rational functions from the path P to CC.
+      #The paper [BDG24] requires this equation to hold on [-1,1]. The straight path P is encoded as a fucntion [-1,1] -> P 
+      #so in order to get an equation on [-1,1] we precompose the coefficients with the formula for the straight path. 
+      if base_ring(base_ring(parent(gmin))) == QQ
+        coeffs = [sum(CC(coeff(a,i)) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
+      else 
+        coeffs = [sum(CC(embedding(v)(coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
+      end 
+
+      A_0 = CC(abs((coeff(coeffs[end], degree(coeffs[end]))) ) * prod( [abs(z_0 - alpha) - delta for alpha in rs] , init = one(CC)))
+      A_i = [ (sum([CC(abs(coeff(a, i)) * (abs(z_0) + delta)^i) for i in (0:length(coefficients(a)))], init = zero(CC))) for a in coeffs[1:end - 1] ]
+
+      M_tilde = 2 * maximum([ real((A_i[i]/A_0)^(1/i)) for i in (1:length(A_i)) ])
+
+      push!(M_tilde_values, M_tilde)
     end
     push!(subpath.bounds, maximum(M_tilde_values))
   end
