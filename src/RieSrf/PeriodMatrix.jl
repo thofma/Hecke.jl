@@ -84,7 +84,7 @@ function big_period_matrix(RS::RiemannSurface)
   # Random precision. Probably needs to become a heuristic.
   max_prec = 187
   embedded_differentials = [embed_mpoly(g, v, max_prec) for g in differentials]
-  dif_basis = [omega.f for omega in basis_of_differentials(RS)]
+  dif_basis = [omega.f for omega in diff_base]
 
   # Computed the bound M for every path. The bound M is the maximum value of
   # the integrands along the boundary of the ellipse with radius r.
