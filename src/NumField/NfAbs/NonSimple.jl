@@ -776,36 +776,23 @@ end
 #
 ################################################################################
 
-function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check = true, simplified::Bool = false)
+function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check::Bool = true, simplified::Bool = false)
   if simplified
     return simplified_simple_extension(K, cached = cached)
   end
+
   n = ngens(K)
   g = gens(K)
+
   if n == 1
-    #The extension is already simple
-    f = to_univariate(Globals.Qx, K.pol[1])
-    Ka, a = number_field(f, "a", cached = cached, check = check)
+    Ka, a = number_field(K.abs_pol[1]; cached = cached, check = check)
     mp = hom(Ka, K, g[1], inverse = [a])
     return Ka, mp
   end
-  pe = g[1]
-  i = 1
-  ind = Int[1]
-  f = minpoly(pe)
-  #TODO: use resultants rather than minpoly??
-  while i < n
-    i += 1
-    j = 1
-    f = minpoly(pe + j * g[i])
-    while degree(f) < prod(total_degree(K.pol[k]) for k in 1:i)
-      j += 1
-      f = minpoly(pe + j * g[i])
-    end
-    push!(ind, j)
-    pe += j * g[i]
-  end
-  Ka, a = number_field(f, check = check, cached = cached)
+
+  pe, f = _primitive_element_via_resultant(K; need_minpoly = true)
+  Ka, a = number_field(f; check = check, cached = cached)
+
   k = base_ring(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)
@@ -1094,24 +1081,6 @@ end
 #TODO: find a better algo.
 function degree(a::AbsNonSimpleNumFieldElem)
   return degree(minpoly(a))
-end
-
-#TODO: Improve the algorithm
-function primitive_element(K::AbsNonSimpleNumField)
-  g = gens(K)
-  pe = g[1]
-  d = total_degree(K.pol[1])
-  i = 1
-  while i < length(g)
-    i += 1
-    d *= total_degree(K.pol[i])
-    while true
-      pe += g[i]
-      f = minpoly(pe)
-      degree(f) == d && break
-    end
-  end
-  return pe
 end
 
 function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})

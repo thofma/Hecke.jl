@@ -101,37 +101,91 @@ simple_extension(::NonSimpleNumField)
 #
 ################################################################################
 
-# This is used for the check in the constructor
+# Check that the component fields are linearly disjoint (used by the constructor).
+# Fast checks first:
+#   1. each defining polynomial must be irreducible
+#   2. pairwise coprimality of degrees
+# Otherwise, we verify by computing the primitive element.
+# This may seem counterintuitive for a non-simple extension,
+#   but we have not found a better approach.
 function _check_consistency(K::NonSimpleNumField)
-  QQz, z = polynomial_ring(base_field(K), "z")
-  for i = 1:length(K.pol)
-    v = [zero(QQz) for i in 1:length(K.pol)]
-    v[i] = z
-    p = evaluate(K.pol[i], v)
-    if !is_irreducible(p)
+  for i = 1:length(K.abs_pol)
+    if !is_irreducible(K.abs_pol[i])
       return false
     end
   end
-  lg = gens(K)
-  el = lg[1]
-  f = minpoly(el)
-  d = degree(f)
-  for i = 2:length(lg)
-    el += lg[i]
-    f = minpoly(el)
-    while !is_squarefree(f)
-      el += lg[i]
-      f = minpoly(el)
-    end
-    if degree(f) != prod(degree(K.pol[j], j) for j = 1:i)
-      return false
-    end
-    if !is_irreducible(f)
-      return false
-    end
+
+  if length(K.abs_pol) == 1
+    return true
   end
-  return true
+
+  if lcm([degree(K.abs_pol[i]) for i = 1:length(K.abs_pol)]) == degree(K)
+    return true
+  end
+
+  f = _primitive_element_via_resultant(K; need_minpoly = true)[2]
+  return is_irreducible(f)
 end
+
+################################################################################
+#
+#  Primitive element via resultant
+#
+################################################################################
+
+# Compute the primitive element via resultants, constructing its minpoly along the way.
+# Currently used in three places:
+#   primitive_element: only needs the primitive element
+#   simple_extension: needs both the primitive element and its minpoly
+#   _check_consistency: checks linear disjointness via the primitive element computation
+# TODO: can be improved using algorithms from Cohen's book,
+#   section 4.5 "The Subfield Problem and Applications"
+function _primitive_element_via_resultant(K::NonSimpleNumField; need_minpoly::Bool = true)
+  g = gens(K)
+
+  if length(g) == 1
+    return g[1], need_minpoly ? K.abs_pol[1] : nothing
+  end
+
+  if lcm([degree(K.abs_pol[i]) for i = 1:length(g)]) == degree(K)
+    # When we need the minpoly, the resultant path below is faster than calling minpoly() directly
+    if !need_minpoly
+      return sum(g), nothing
+    end
+  end
+
+  # we will be using absolute polynomials (each is univariate polynomial)
+  # at every step we need only two indeterminates, so we create a ring R[x,y]
+  # we will return result in the user's polynomial ring (for the first defining polynomial)
+  s = var(parent(K.abs_pol[1]))
+  Rxy, (x, y) = polynomial_ring(base_field(K), ["$s", "$(s)1"], cached = false)
+  ResR = parent(K.abs_pol[1])
+
+  pe = g[1]
+  f = K.abs_pol[1](x) # tracks the minimal polynomial, univariate in x
+
+  for i in 2:length(g)
+    gy = K.abs_pol[i](y)
+
+    c = 0
+    while true
+      c += 1
+      pe += g[i]
+      h = resultant(evaluate(f, [1], [x - c*y]), gy, 2)
+      if is_squarefree(h)
+        f = h
+        break
+      end
+    end
+  end
+
+  return pe, need_minpoly ? to_univariate(ResR, f) : nothing
+end
+
+function primitive_element(K::NonSimpleNumField)
+  return _primitive_element_via_resultant(K; need_minpoly = false)[1]
+end
+
 
 ################################################################################
 #
