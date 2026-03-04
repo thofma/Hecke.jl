@@ -362,3 +362,48 @@ function simplified_simple_extension(K::AbsNonSimpleNumField; cached::Bool = tru
   mp = hom(L, K, el, check = false)
   return L, mp
 end
+
+################################################################################
+#
+#  Simple extension
+#
+################################################################################
+
+function _simple_extension(K::NonSimpleNumField{T}; check::Bool = false, cached::Bool = true) where {T}
+  n = ngens(K)
+  g = gens(K)
+
+  if n == 1
+    Ka, a = number_field(K.abs_pol[1]; cached = cached, check = check)
+    return Ka, hom(Ka, K, g[1], inverse = [a])
+  end
+
+  pe, f = _primitive_element_via_resultant(K; need_minpoly = true)
+  Ka, a = number_field(f; cached = cached, check = check)
+
+  k = base_field(K)
+  M = zero_matrix(k, degree(K), degree(K))
+  z = one(K)
+  elem_to_mat_row!(M, 1, z)
+  for i=2:degree(K)
+    z = mul!(z, z, pe)
+    elem_to_mat_row!(M, i, z)
+  end
+
+  N = zero_matrix(k, n, degree(K))
+  for i = 1:n
+    elem_to_mat_row!(N, i, g[i])
+  end
+  s = solve(transpose(M), transpose(N); side = :right)
+
+  emb = Vector{elem_type(Ka)}(undef, n)
+  b = basis(Ka)
+  for i = 1:n
+    emb[i] = zero(Ka)
+    for j = 1:degree(Ka)
+      emb[i] += b[j] * s[j, i]
+    end
+  end
+
+  return Ka, hom(Ka, K, pe, inverse = emb)
+end

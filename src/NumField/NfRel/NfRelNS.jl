@@ -654,40 +654,7 @@ function simple_extension(K::RelNonSimpleNumField{T}; simplified::Bool = false, 
     return simplified_simple_extension(K; cached = cached)
   end
 
-  n = ngens(K)
-  g = gens(K)
-
-  if n == 1
-    Ka, a = number_field(K.abs_pol[1]; cached = cached, check = false)
-    return Ka, hom(Ka, K, g[1], inverse = [a])
-  end
-
-  pe, f = _primitive_element_via_resultant(K; need_minpoly = true)
-  Ka, a = number_field(f; check = false, cached = cached)
-
-  k = base_field(K)
-  M = zero_matrix(k, degree(K), degree(K))
-  z = one(K)
-  elem_to_mat_row!(M, 1, z)
-  elem_to_mat_row!(M, 2, pe)
-  mul!(z, z, pe)
-  for i = 3:degree(K)
-    mul!(z, z, pe)
-    elem_to_mat_row!(M, i, z)
-  end
-  N = zero_matrix(k, 1, degree(K))
-  b1 = basis(Ka)
-  emb = Vector{RelSimpleNumFieldElem{T}}(undef, n)
-  for i = 1:n
-    elem_to_mat_row!(N, 1, g[i])
-    s = solve(transpose(M), transpose(N); side = :right)
-    emb[i] = zero(Ka)
-    for j = 1:degree(Ka)
-      emb[i] += b1[j]*s[j, 1]
-    end
-  end
-
-  return Ka, hom(Ka, K, pe, inverse = emb)
+  return _simple_extension(K; cached = cached, check = false)
 end
 
 

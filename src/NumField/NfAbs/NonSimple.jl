@@ -781,44 +781,8 @@ function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check::B
     return simplified_simple_extension(K, cached = cached)
   end
 
-  n = ngens(K)
-  g = gens(K)
+  Ka, h = _simple_extension(K; cached = cached, check = check)
 
-  if n == 1
-    Ka, a = number_field(K.abs_pol[1]; cached = cached, check = check)
-    mp = hom(Ka, K, g[1], inverse = [a])
-    return Ka, mp
-  end
-
-  pe, f = _primitive_element_via_resultant(K; need_minpoly = true)
-  Ka, a = number_field(f; check = check, cached = cached)
-
-  k = base_ring(K)
-  M = zero_matrix(k, degree(K), degree(K))
-  z = one(K)
-  elem_to_mat_row!(M, 1, z)
-  if degree(K) > 1
-    elem_to_mat_row!(M, 2, pe)
-    z = mul!(z, z, pe)
-    for i=3:degree(K)
-      z = mul!(z, z, pe)
-      elem_to_mat_row!(M, i, z)
-    end
-  end
-  N = zero_matrix(k, n, degree(K))
-  for i = 1:n
-    elem_to_mat_row!(N, i, g[i])
-  end
-  s = solve(transpose(M), transpose(N); side = :right)
-  b = basis(Ka)
-  emb = Vector{AbsSimpleNumFieldElem}(undef, n)
-  for i = 1:n
-    emb[i] = zero(Ka)
-    for j = 1:degree(Ka)
-      emb[i] += b[j] * s[j, i]
-    end
-  end
-  h = hom(Ka, K, pe, inverse = emb)
   embed(h)
   embed(MapFromFunc(K, Ka, x->preimage(h, x)))
   return Ka, h
