@@ -318,7 +318,7 @@ function try_init_small(
   @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
   #alpha, _V = known_short_vectors
-  @assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
+  #@assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
