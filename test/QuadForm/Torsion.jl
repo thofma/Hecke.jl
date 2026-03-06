@@ -412,6 +412,8 @@
   qL = discriminant_group(L)
   a = @inferred id(qL)
   @test iszero(a)
+  @test qL(matrix(QQ, 1, 7, lift(qL[1]))) == qL[1]
+
 
   # totally isotropic check
   V = quadratic_space(QQ, QQ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2])
