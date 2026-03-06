@@ -586,6 +586,7 @@ is_modular(::AbstractLat, p)
 is_positive_definite(L::AbstractLat)
 is_negative_definite(L::AbstractLat)
 is_definite(L::AbstractLat)
+is_indefinite(L::AbstractLat)
 can_scale_totally_positive(L::AbstractLat)
 ```
 

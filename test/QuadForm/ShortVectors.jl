@@ -135,3 +135,34 @@ end
   @test all(w -> w*G*transpose(w) == -2, sva)
   @test all(w -> w*G*vT == -2, sva)
 end
+
+@testset "Center density" begin
+  L = root_lattice(:E, 6)
+  r = center_density(L)
+  @test contains(parent(r)("[0.0721687836487032205 +/- 9.72e-20]"), r)
+
+  L = root_lattice(:E, 8)
+  r = density(L)
+  @test contains(parent(r)("[0.253669507901048014 +/- 6.66e-19]"), r)
+
+  L = root_lattice(:E, 7)
+  r =  hermite_number(L)
+  @test contains(parent(r)("[1.811447328527813353 +/- 5.13e-19]"), r)
+end
+
+@testset "Successive minima" begin
+  L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
+  @test successive_minima(L) == [1, 2, 3]
+  s, v = successive_minima_with_vectors(L)
+  @test s == [1, 2, 3]
+  @test all(inner_product(L, v[i], v[i]) == s[i] for i in 1:length(s))
+  L = integer_lattice(; gram = matrix(ZZ, [[1,0,0,0,0,0,0], [0,3,0,0,-1,-1,1], [0,0,3,1,0,1,-1], [0,0,1,3,0,1,1], [0,-1,0,0,3,1,1], [0,-1,1,1,1,3,0], [0,1,-1,1,1,0,6]]))
+  s, v = successive_minima_with_vectors(L)
+  @test s == [1, 3, 3, 3, 3, 3, 6]
+  @test all(inner_product(L, v[i], v[i]) == s[i] for i in 1:length(s))
+
+  L = integer_lattice(gram = QQ[1//2 0 0; 0 2//3 0; 0 0 3//4]);
+  s, v = successive_minima_with_vectors(L)
+  @test s == [1//2, 2//3, 3//4]
+  @test all(inner_product(L, v[i], v[i]) == s[i] for i in 1:length(s))
+end
