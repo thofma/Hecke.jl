@@ -92,8 +92,10 @@ function big_period_matrix(RS::RiemannSurface)
   bound_temp = Vector{ArbFieldElem}()
   for path in paths
     for subpath in get_subpaths(path)
-      if path_type(subpath) == 0
+      if path_type(subpath) == 0 && RS.integration_method == "rigorous"
         compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
+      elseif path_type(subpath) == 0 && RS.integration_method == "heuristic"
+        compute_ellipse_bound_heuristic(subpath, embedded_differentials, int_group_rs, RS)
       else 
         compute_ellipse_bound_heuristic(subpath, embedded_differentials, int_group_rs, RS)
       end
@@ -343,7 +345,6 @@ end
 ###  Disney-Hogg, and Wuqian Effie Gao, as presented in https://arxiv.org/pdf/2208.12377. The implementation 
 ###  here is Strategy 1 from this paper.
 function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
-
   subpath.integration_scheme_index = length(int_group_rs)
 
   v_start = start_point(subpath)
