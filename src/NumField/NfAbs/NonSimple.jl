@@ -358,31 +358,21 @@ end
 
 function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNumFieldElem)
   K = parent(a)
-  # TODO: This is super bad
-  # Proper implementation needs access to the content of the underlying
-  # QQMPolyRingElem
 
   for j in 1:ncols(M)
     M[i, j] = zero(ZZ)
   end
 
-  one!(d)
+  a_poly = data(a)
+  set!(d, denominator(a_poly))
 
-  if length(data(a)) == 0
-    return nothing
+  for j in 1:length(a_poly)
+    k = monomial_to_index(K, exponent_vector(a_poly, j))
+    # TODO: we can tweak flint (and add nemo bindings) to extract primitive part coefficients directly
+    M[i, k] = numerator(coeff(a_poly, j) * d)
   end
 
-  z = zero_matrix(QQ, 1, ncols(M))
-  elem_to_mat_row!(z, 1, a)
-  z_q = FakeFmpqMat(z)
-
-  for j in 1:ncols(M)
-    M[i, j] = z_q.num[1, j]
-  end
-
-  set!(d, z_q.den)
-
-  return nothing
+  return M
 end
 
 function elem_to_mat_row!(M::QQMatrix, i::Int, a::AbsNonSimpleNumFieldElem)
