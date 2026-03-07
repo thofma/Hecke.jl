@@ -388,10 +388,10 @@ function try_init_small(
     flag = false
     for k in 2:r
       w[k] = _norm(_v, Gsmall[k], tmp)
-      if !(w[k] in target_length2)
-        flag = true
-        break
-      end
+      #if !(w[k] in target_length2)
+      #  flag = true
+      #  break
+      #end
     end
     flag && continue
 
