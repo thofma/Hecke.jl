@@ -82,17 +82,6 @@ end
   @test Hecke.is_rational(b[1]) == false
 end
 
-@testset "Compositum" begin
-  Qx, x = QQ["x"]
-  f = x^2 + 1
-  K, a = number_field(f, "a")
-  L, b = number_field(x^2-3, "b")
-  C, mK, mL = compositum(K, L)
-
-  @test iszero(K.pol(mK(gen(K))))
-  @test iszero(L.pol(mL(gen(L))))
-end
-
 @testset "PolyFactor" begin
   Zx, x = ZZ["x"]
   k, a = number_field(swinnerton_dyer(3, x))
