@@ -139,6 +139,10 @@ mutable struct RiemannSurface
   # A list of bounds used duting computations
   bounds::Vector{ArbFieldElem}
 
+  #String specifying the integration method used when integrating differential forms.
+  #The options are "heuristic" and "rigorous". It is set to "heuristic" by default
+  integration_method::String
+
   #A collection of fields and error bounds needed to ensure correctness
   #TODO: Check which ones are actually used and necessary. Optimize this.
   prec::Int
@@ -153,13 +157,13 @@ mutable struct RiemannSurface
 
   #The constructor for a Riemann surface object
 
-  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100) where T<:Union{PosInf, InfPlc}
-    RS = RiemannSurface(f, prec)
+  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100; integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
+    RS = RiemannSurface(f, prec, integration_method)
     RS.embedding = v
     return RS
   end
 
-  function RiemannSurface(f::MPolyRingElem, prec = 100)
+  function RiemannSurface(f::MPolyRingElem, prec = 100; integration_method::String = "rigorous")
 
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
@@ -189,6 +193,10 @@ mutable struct RiemannSurface
     RS.basis_of_differentials = diff_base
     g = length(diff_base)
     RS.genus = g
+    if integration_method != "heuristic" && integration_method != "rigorous"
+      error("invalid integration method. Valid options are \"rigorous\" or \"heuristic\"")
+    end
+    RS.integration_method = integration_method
 
     mpoly_kxy = parent(f)
     mpoly_x, mpol_y = gens(mpoly_kxy)
