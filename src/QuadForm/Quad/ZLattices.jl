@@ -382,6 +382,22 @@ function show(io::IO, L::ZZLat)
   end
 end
 
+function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector)
+  M = matrix(ZZ, first.(sv))
+  # TODO: avoid the rational_span?
+  V = rational_span(L)
+  S = lattice(V, M; isbasis = true, check = false)
+  s = rank(S)
+  T = orthogonal_submodule(lattice(V), S)
+  gensOS = [diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))] # diag(-1,1,...,1)
+  for g in gens(SymmetricGroup(s))
+    push!(gensOS, identity_matrix(ZZ, s) * g) # generators of S_n
+  end
+  orderOS = ZZ(2)^s * factorial(ZZ(s))
+  @hassert :Lattice 1 all(g -> g * gram_matrix(S) * transpose(g) == gram_matrix(S), gensOS)
+  return S, T, gensOS, orderOS
+end
+
 ################################################################################
 #
 #  Automorphism groups
@@ -406,6 +422,7 @@ function __assert_has_automorphisms(
   use_weyl::Bool=false,
   reduced::Bool=false,
   use_projections::Bool=false,
+  use_norm_one::Bool=false,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -423,6 +440,8 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = ZZ(2)
     return nothing
   end
+
+  # use weyl vector only if L is even
   use_weyl = is_even(L) && use_weyl
 
   if !is_definite(L)
@@ -435,6 +454,27 @@ function __assert_has_automorphisms(
     L.automorphism_group_generators = gens
     return nothing
   end
+
+  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
+    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
+    # not sure if it makes sense to pass everything along
+    assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one)
+    # we call directly .automorphism_group_generators, since we want the automorphisms in as ZZMatrix
+    # (with respect to the basis of T)
+    gensOT = T.automorphism_group_generators
+    orderOT = automorphism_group_order(T)
+    ST = (vcat(basis_matrix(S), basis_matrix(T)))
+    oneS = identity_matrix(ZZ, rank(S))
+    oneT = identity_matrix(ZZ, rank(T))
+    gens = ZZMatrix[numerator(inv(ST) * diagonal_matrix(g, oneT) * ST) for g in gensOS]
+    append!(gens, (numerator(inv(ST) * diagonal_matrix(oneS, g) * ST) for g in gensOT))
+    @hassert :Lattice 1 all(let gens = gens, GL = gram_matrix(L); i -> gens[i] * GL *
+                            transpose(gens[i]) == GL; end, 1:length(gens))
+    L.automorphism_group_generators = gens
+    L.automorphism_group_order = orderOS * orderOT
+    return nothing
+  end
+
 
   _alpha, sv = known_short_vectors
   V = ambient_space(L)
