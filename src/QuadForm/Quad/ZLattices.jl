@@ -419,10 +419,10 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
-  use_weyl::Bool=false,
+  use_weyl::Bool=true,
   reduced::Bool=false,
-  use_projections::Bool=false,
-  use_norm_one::Bool=false,
+  use_projections::Bool=true,
+  use_norm_one::Bool=true,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
