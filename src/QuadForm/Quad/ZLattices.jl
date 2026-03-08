@@ -422,7 +422,7 @@ function __assert_has_automorphisms(
   use_weyl::Bool=true,
   reduced::Bool=false,
   use_projections::Bool=true,
-  use_norm_one::Bool=true,
+  use_norm_one::Bool=false,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
