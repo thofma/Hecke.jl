@@ -441,9 +441,6 @@ function __assert_has_automorphisms(
     return nothing
   end
 
-  # use weyl vector only if L is even
-  use_weyl = is_even(L) && use_weyl
-
   if !is_definite(L)
     @assert rank(L) == 2
     G = gram_matrix(L)
