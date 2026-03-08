@@ -518,6 +518,13 @@ Return whether the rational span of the lattice `L` is definite.
 @attr Bool is_definite(L::AbstractLat) = is_definite(rational_span(L))
 
 @doc raw"""
+    is_indefinite(L::AbstractLat) -> Bool
+
+Return whether the lattice `L` is indefinite.
+"""
+is_indefinite(L::AbstractLat) = is_indefinite(rational_span(L))
+
+@doc raw"""
     can_scale_totally_positive(L::AbstractLat) -> Bool, NumFieldElem
 
 Return whether there is a totally positive rescaled lattice of the lattice `L`.
@@ -1624,7 +1631,7 @@ function is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_de
   if isone(length(spinor_genera_in_genus(L)[1]))
     return true
   end
-  error("isometry testing for hermitian lattices with several spinor genera is not yet implemented")
+  error("isometry testing for lattices over number fields with several special genera is not yet implemented")
 end
 
 @doc raw"""
@@ -1643,6 +1650,8 @@ respectively.
 Setting the parameters `depth` and `bacher_depth` to a positive value may improve
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
+
+The underlying algorithm is by Plesken and Souvignier [PS97](@cite).
 """
 is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 
@@ -1655,7 +1664,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   K = base_field(E)
   @assert base_ring(V) == base_ring(W)
   @assert base_ring(L) == base_ring(M)
-  is_definite(L) || error("not implemented")
+  @req is_definite(L) "Only implemented for definite lattices"
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M, generatorsL)
   @assert generatorsL == generatorsM

@@ -162,10 +162,11 @@ end
 ################################################################################
 
 @doc raw"""
-    neighbours(
+    _neighbours(
       L::ZZLat,
-      p::ZZRingElem,
-      algorithm::Symbol = :orbit;
+      p::ZZRingElem;
+      mode::Symbol=:enumeration,
+      algorithm::Symbol=:orbit,
       rand_neigh::Int=10,
       callback::Function=(M -> M != L),
       inv_dict::Dict=Dict(),
@@ -186,8 +187,13 @@ Input:
  - A prime number ``p`` which is the smallest prime number at which
    Kneser's neighbour algorithm retrieves all ``p``-neighbours of ``L``
    in the spinor genus of ``L`` (called here "Kneser prime");
- - A symbol `algorithm` to choose which algorithm between `:orbit` and
-   `:random`;
+ - A symbol `mode` to choose on which mode to run the algorithm. The current
+   choices are: `spinor_generators` to only return one neighbour for spinor
+   genera representatives, `enumeration` for the iterations of genus
+   enumeration, or `isometry_classes` to return a list of representatives for
+   all the isometry classes of ``p``-neighbours of ``L``;
+ - A symbol `algorithm` to choose an algorithm between `:orbit` and
+   `:random`  when `mode == :enumeration`;
  - An integer `rand_neigh` to specify how many lines to try for the algorithm
    `:random`;
  - A function `callback` to compare new neighbours with lattices already
@@ -206,16 +212,18 @@ Input:
  - An integer `vain` refering the number of vain iteration, i.e. how many new
    neighbours did not give rise to a non-explored isometry class in the
    neighbour graph;
- - A value `stop_after` telling after how many vain iterations the algorithm
-   should stop;
+ - A value `stop_after` the algorithm stops after the
+  specified amount of vain iterations without finding a new isometry class
+  is reached;
  - A value `max` telling the maximum number of representatives of isometry
    classes in the genus of ``L`` to compute in the outer scope before stopping
    the enumeration.
 """
-function neighbours(
+function _neighbours(
     L::ZZLat,
-    p::ZZRingElem,
-    algorithm::Symbol = :orbit;
+    p::ZZRingElem;
+    mode::Symbol=:enumeration,
+    algorithm::Symbol=:orbit,
     rand_neigh::Int=10,
     callback::Function=(M -> M != L),
     inv_dict::Dict=Dict(),
@@ -233,7 +241,8 @@ function neighbours(
   bad = is_divisible_by(numerator(det(L)), p)
   even = is_even(L)
   K = GF(p; cached=false)
-  @assert algorithm in [:orbit, :random, :spinor]
+  @assert mode in [:spinor_generators, :enumeration, :isometry_classes]
+  @assert algorithm in [:orbit, :random]
 
   # A vector in `L\p*L` is called admissible if it gives rise to a neighbour
   # of `L` which is in the genus of `L`.
@@ -278,7 +287,7 @@ function neighbours(
     m = p^2
   end
 
-  if algorithm == :spinor
+  if mode != :enumeration
     use_mass = false
   end
   if use_mass
@@ -289,7 +298,7 @@ function neighbours(
   # For the orbit algorithm, we identify isotropic lines in `L0/p*L0` which are in
   # the same `O(L)`-orbit (because they give rise to isometric `p`-neighbours of
   # `L`).
-  if algorithm == :orbit
+  if mode == :enumeration && algorithm == :orbit
     G = automorphism_group_generators(L; ambient_representation=false)
     if flag
       LtoL0 = inv(L0toL)
@@ -313,17 +322,14 @@ function neighbours(
 
   for i in 1:maxlines
     vain[] > stop_after && break
-    if algorithm == :orbit
-      x = orbs[i]
-    elseif algorithm == :random
-      x = rand(P)
+    if mode == :enumeration
+      x = algorithm == :orbit ? orbs[i] : rand(P)
     else
-      x = next(P) # Only trigerred for :spinor, where we compute a representative in each spinor genus
+      x = next(P) # Only trigerred for non-enumeration mode
     end
     w0 = matrix(QQ, 1, rank(L0), ZZRingElem[lift(ZZ, k) for k in x])
     a = numerator(only(w0*form0*transpose(w0)))
     if !is_divisible_by(a, mqf)
-      vain[] += 1
       continue
     end
 
@@ -333,7 +339,6 @@ function neighbours(
       if even && !bo # Corner case: `w` is admissible if `bo`; if not, we can make it admissible only if `L_{w, 2} != L`
         w = w0*basis_matrix(L0)
         if is_zero(mod(divisibility(L, w), p)) # L_{w, 2} == L iff w lies in 2*L^#
-          vain[] += 1
           continue
         end
         make_admissible!(w0, form0, m, K, a)
@@ -343,7 +348,6 @@ function neighbours(
       elseif !even && bo # Another corner case: `wL` is admissible but if `L_{wL, 2}` is even then the neighbour is even, and we want an odd one
         wL = w0*L0toL
         if is_even(prime_dual(L, wL, p))
-          vain[] += 1
           continue
         end
         push!(lifts, wL)
@@ -379,16 +383,19 @@ function neighbours(
       LL = lll(neighbour(L, v, p))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
-      keep = callback(LL)
+      if mode == :isometry_classes
+        keep = all(Base.Fix2(!is_isometric, LL), result)
+      else
+        keep = callback(LL)
+      end
       if !keep
         vain[] += 1
         continue
       end
-
-      vain[] = Int(0)
+      vain[] = 0
       @vprintln :ZGenRep 3 "Keep an isometry class"
       @vprintln :ZGenRep 4 "$(multiset(length.(values(inv_dict)))) buckets for invariants"
-      if algorithm != :spinor
+      if mode != :spinor_generators
         invLL = _invariants(LL)
         if haskey(inv_dict, invLL)
           push!(inv_dict[invLL], LL)
@@ -713,6 +720,37 @@ function enumerate_definite_genus(
     add_spinor_generators::Bool=true,
     scaling_factor=nothing
   )
+return _enumerate_definite_genus!(copy(known), algorithm;
+    rand_neigh,
+    distinct,
+    invariant_function,
+    save_partial,
+    save_path,
+    use_mass,
+    _missing_mass,
+    vain,
+    stop_after,
+    max,
+    add_spinor_generators,
+    scaling_factor)[1:2]
+end
+
+function _enumerate_definite_genus!(
+    known::Vector{ZZLat},
+    algorithm::Symbol = :default;
+    rand_neigh::Int=10,
+    distinct::Bool=false,
+    invariant_function::Function=default_invariant_function,
+    save_partial::Bool=false,
+    save_path::Union{String, Nothing}=nothing,
+    use_mass::Bool=true,
+    _missing_mass::Union{QQFieldElem, Nothing}=nothing,
+    vain::Base.RefValue{Int}=Ref{Int}(0),
+    stop_after::IntExt=inf,
+    max::IntExt=inf,
+    add_spinor_generators::Bool=true,
+    scaling_factor=nothing
+  )
 return _enumerate_definite_genus(known, algorithm;
     rand_neigh,
     distinct,
@@ -771,7 +809,7 @@ function _enumerate_definite_genus(
       push!(res, L)
     end
   else
-    res = copy(known)
+    res = known
   end
 
 
@@ -870,10 +908,10 @@ function _enumerate_definite_genus(
   i = Int(0)
   while missing_mass[]>0
     i = i+1
-    N = neighbours(
+    N = _neighbours(
                    res[i],
-                   p,
-                   algorithm;
+                   p;
+                   algorithm,
                    rand_neigh,
                    callback,
                    inv_dict,
@@ -951,7 +989,7 @@ function spinor_genera_in_genus(L::ZZLat)
   res = ZZLat[L]
   primes = improper_spinor_generators(genus(L))
   for p in primes
-    N = only(neighbours(L, p, :spinor))
+    N = only(_neighbours(L, p; mode=:spinor_generators))
     for i in 1:length(res)
       M = res[i]
       LL = lll(intersect(p*M+N, 1//p*M))

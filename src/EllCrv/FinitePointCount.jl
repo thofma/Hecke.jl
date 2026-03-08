@@ -46,35 +46,26 @@ $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
 function order_via_legendre(E::EllipticCurve{T}) where T<:FinFieldElem
-
-
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
-  grouporder = ZZ(0)
-  p == 0 && error("Base field must be finite")
+  @req p != 0 "Base field must be finite"
+  @req p == q "Finite field must have degree 1"
 
-  if p != q
-    error("Finite field must have degree 1")
-  end
-
-  if E.short == false
+  if !E.short
     E = short_weierstrass_model(E)[1]
   end
   _, _, _, a4, a6 = a_invariants(E)
-  x = ZZ(0)
 
+  s = ZZ(0)
+  x = ZZ(0)
   while x < p
     C = x^3 + a4*x + a6
-    Cnew = lift(ZZ, C) # convert to ZZRingElem
-    a = jacobi_symbol(Cnew, p) # can be used to compute (C/F_p) since p prime
-    grouporder = grouporder + a
+    s = s + jacobi_symbol(lift(ZZ, C), p)
     x = x + 1
   end
 
-  grouporder = grouporder + p + 1
-
-#  return grouporder
+  return p + 1 + s
 end
 
 ################################################################################
@@ -216,364 +207,267 @@ end
 #
 ################################################################################
 
+# division polynomials for Schoof
+# this is essentially a copy of divpol_g_short, but uses different convention:
+# for even n we define f_n = Psi_n / y (like in Schoof paper)
+# we know that we will be accessing them in order (doing tau search)
+# and that we need f[l] (we work modulo f[l] and equation of E)
+# thus we just generate them bottom-up
+# we factor out the recurrence step so it can be reused for computing f_n(x^q)
+#
+# to compute [k]P we need f[k-2], ..., f[k+2]
+# thus for k in [1,l-1] we need to precompute f[-1], ..., f[l+2]
+# WARNING: since we start f_n from n = -1, we always add 2 for indexing
+
+function _compute_division_polynomial_for_schoof(n::Integer, x::S, a4::T, a6::T, inv_2::T, F2::S, fn::AbstractVector{<:S}) where {T<:FinFieldElem, S <: RingElem}
+  @assert n > 2
+
+  n == 3 && return 3*x^4 + 6*a4*x^2 + 12*a6*x - a4^2
+  n == 4 && return 4*(x^6 + 5*a4*x^4 + 20*a6*x^3 - 5*a4^2*x^2 - 4*a4*a6*x - 8*a6^2 - a4^3)
+
+  if iseven(n)
+    m = divexact(n, 2)
+    return ( fn[(m) + 2] * (fn[(m+2) + 2]*fn[(m-1) + 2]^2 - fn[(m-2) + 2]*fn[(m+1) + 2]^2) ) * inv_2
+  else
+    m = divexact(n-1, 2)
+    part1 = fn[(m+2) + 2] * fn[(m) + 2]^3
+    part2 = fn[(m-1) + 2] * fn[(m+1) + 2]^3
+    return iseven(m) ? F2 * part1 - part2 : part1 - F2 * part2
+  end
+end
+
+function _generate_division_polynomials_for_schoof(x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T<:FinFieldElem
+  @assert l >= 3
+
+  Rx = parent(x)
+  R  = base_ring(Rx)
+  @assert R == parent(a4) && R == parent(a6)
+
+  inv_2 = inv(R(2))
+  f_sqr = (x^3 + a4*x + a6)^2
+
+  fn = Array{elem_type(Rx)}(undef, l+3)
+  fn[-1 + 2] = -one(Rx)
+  fn[ 0 + 2] = zero(Rx)
+  fn[ 1 + 2] = one(Rx)
+  fn[ 2 + 2] = 2*one(Rx)
+  fn[ 3 + 2] = _compute_division_polynomial_for_schoof(3, x, a4, a6, inv_2, f_sqr, fn)
+  fn[ 4 + 2] = _compute_division_polynomial_for_schoof(4, x, a4, a6, inv_2, f_sqr, fn)
+
+  for n = 5:l+1
+    fn[n + 2] = _compute_division_polynomial_for_schoof(n, x, a4, a6, inv_2, f_sqr, fn)
+  end
+
+  return fn
+end
+
+# Schoof algorithm is best formulated in terms of Jacobian coordinates
+# these compute coordinate functions [n]P = (X : y*Y : Z)
+# writing y^2 = F(x), we have
+# even n: X = 4*F * (x*F*f[n]^2 - f[n-1]*f[n+1])
+#         Y = y * 2*F * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
+#         Z = 2 * F*f[n]
+# odd  n: X = 4 * (x*f[n]^2 - F*f[n-1]*f[n+1])
+#         Y = y * 2 * (f[n+2]*f[n-1]^2 - f[n-2]*f[n+1]^2)
+#         Z = 2 * f[n]
+# NOTE: usually the formulae are written with Z = f[n] or Z = F*f[n]
+#       resulting in 4 in the denominator in Y (and without 4 in numerator in X)
+#       we keep it this way to avoid extra divisions
+# NOTE: we pass division polynomials individually, because we need
+#   to compute both [n]P and [n]phi(P), and the latter needs q-th powers of division polynomials
+function _kP_jacobian_x(k::Integer, x::T, F::T, f_km1::T, f_k::T, f_kp1::T) where T <: RingElem
+  if iseven(k)
+    return 4 * F * (x * F * f_k^2 - f_km1 * f_kp1)
+  else
+    return 4 * (x * f_k^2 - F * f_km1 * f_kp1)
+  end
+end
+function _kP_jacobian_y(k::Integer, F::T, f_km2::T, f_km1::T, f_kp1::T, f_kp2::T) where T <: RingElem
+  if iseven(k)
+    return 2 * F * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
+  else
+    return 2 * (f_kp2 * f_km1^2 - f_km2 * f_kp1^2)
+  end
+end
+function _kP_jacobian_z(k::Integer, F::T, f_k::T) where T <: RingElem
+  if iseven(k)
+    return 2 * F * f_k
+  else
+    return 2 * f_k
+  end
+end
+
 @doc raw"""
     order_via_schoof(E::EllipticCurve) -> ZZRingElem
 
 Given an elliptic curve $E$ over a finite field $\mathbf{F}$,
 this function computes the order of $E(\mathbf{F})$ using Schoof's algorithm
-The characteristic must not be $2$ or $3$.
+The characteristic must be $5$ or greater.
 """
 function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   q = order(R)
   p = characteristic(R)
 
-  if (p == 2) || (p == 3) || (p == 0)
-    error("Characteristic must not be 2 or 3 or 0")
-  end
+  @req p != 0 "Base field must be finite"
+  @req p >= 5 "Characteristic must be 5 or greater"
 
-  if E.short == false
+  if !E.short
     E = short_weierstrass_model(E)[1]
   end
 
-  # step 1: get suitable set S of prime numbers
-  sqrt_q = isqrtrem(q)[1]
-  S = prime_set(4*(sqrt_q + 1), p)
+  # generates set of primes S such that
+  # 1. characteristic p is not in S
+  # 2. product of elements of S is larger than the Hasse interval length
+  hasse_length = 4*(isqrtrem(q)[1] + 1)
 
-  L = length(S)
-  product = 1
+  # note that we need to know the largest prime in S, to know the limit on division polynomials
+  l = 1
 
-  # step 2: compute t (mod l) for every l in S
-  t_mod_l = []
-  for i = 1:L
-    a = S[i]
-    push!(t_mod_l, t_mod_prime(S[i], E))
-    product = product * S[i]
-  end
-
-  # step 3: use chinese remainder theorem to get value of t
-  t = 0
-  for i = 1:L
-    n_i = div(product, S[i])
-    B = residue_ring(ZZ, S[i], cached = false)[1]
-    M_i = inv(B(n_i))
-    M_i = M_i.data
-    t = t + (M_i * n_i * t_mod_l[i])
-  end
-
-  t = mod(t, product)
-  if t > product//2
-    t = t - product
-  end
-
-  return (q + 1 - t)::ZZRingElem
-end
-
-
-function fn_from_schoof(E::EllipticCurve, n::Int, x)
-
-  poly = division_polynomial_univariate(E, n, x)[2]
-    if iseven(n)
-      poly = 2*poly
-    end
-
-  return(poly)
-
-end
-
-
-function fn_from_schoof2(E::EllipticCurve, n::Int, x)
-
-  R = base_field(E)
-  S, y = polynomial_ring(parent(x),"y")
-
-  f = psi_poly_field(E, n, x, y)
-
- # println("f: $f, $(degree(f))")
-    A = E.a_invariants[4]
-    B = E.a_invariants[5]
-
-  g = x^3 + A*x + B
-
-  if isodd(n)
-    return replace_all_squares(f, g)
-  else
-    return replace_all_squares(divexact(f, y), g)
-  end
-
-
-end
-
-#prime_set(M::Nemo.ZZRingElem, char::Nemo.ZZRingElem) -> Array{Nemo.ZZRingElem}
-#  returns a set S of primes with:
-# 1) char not contained in S
-# 2) product of elements in S is greater than M
-function prime_set(M, char)
-  S = Nemo.ZZRingElem[]
-
-  p = 1
-  product = 1
-
-  while product < M
-    p = next_prime(p)
-
-    if p != char
-      push!(S,p)
-      product = product * p
+  S = ZZRingElem[]
+  S_product = 1
+  while S_product < hasse_length
+    l = next_prime(l)
+    if l != p
+      push!(S, l)
+      S_product = S_product * l
     end
   end
 
-  return S
-end
-
-# t_mod_prime(l::Nemo.ZZRingElem, E::EllipticCurve) -> Nemo.ZZRingElem
-# determines the value of t modulo some prime l (used in Schoof's algorithm)
-function t_mod_prime(l, E)
-  R = base_field(E)
-  q = order(R)
-  q_int = Int(q)
-  l = Int(l)
-
-  S, x = polynomial_ring(R, "x")
-  T, y = polynomial_ring(S, "y")
-  Z = Native.GF(l, cached = false)
-
+  # prepare data
+  Rx, x = polynomial_ring(R, :x, cached = false)
   _, _, _, a4, a6 = a_invariants(E)
+  div_poly = _generate_division_polynomials_for_schoof(x, a4, a6, l)
+
+  t_mod_l = ZZRingElem[_trace_of_frobenius_mod_l_schoof(E, div_poly, x, a4, a6, Int(l)) for l in S]
+  t = crt_signed(t_mod_l, crt_env(S))
+
+  return q + 1 - t
+end
+
+function _trace_of_frobenius_mod_l_schoof(E::EllipticCurve{T}, div_poly::AbstractVector{<:PolyRingElem{T}}, x::PolyRingElem{T}, a4::T, a6::T, l::Integer) where T <: FinFieldElem
+  Rx = parent(x)
+  R  = base_ring(Rx)
+  @assert R == parent(a4) && R == parent(a6)
+  @assert R == base_field(E)
+
+  q = order(R)
   f = x^3 + a4*x + a6
-  fl = division_polynomial_univariate(E, l, x)[2]
-  if iseven(l)
-    fl = 2*fl
-  end
-  U = residue_ring(S, fl)[1]
 
-  PsiPoly = [] # list of psi-polynomials
-  for i = -1:(l + 1)
-    push!(PsiPoly, psi_poly_field(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
-  end
-
-  #Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
-  #for i = -1:(l + 1)
-  #  push!(Fnschoof, fn_from_schoof(E,i,x))
-  #end
-
-  #push!(PsiPoly, -one(T))
-  #push!(PsiPoly, zero(T))
-  #for i = 1:(l + 1)
-  #  push!(PsiPoly, division_polynomial(E, i, x, y)) # Psi[n] is now found in PsiPoly[n+2]
-  #end
-
-
-  Fnschoof = [] # list of the fn- functions # Psi[n] is now found in PsiPoly[n+2]
-  push!(Fnschoof, -one(S))
-  push!(Fnschoof, zero(S))
-  for i = 1:(l + 1)
-    poly = division_polynomial_univariate(E, i, x)[2]
-    if iseven(i)
-      poly = 2*poly
-    end
-    push!(Fnschoof,poly)
-  end
-
-  # case where l == 2. value of t mod l determined by some gcd, see p. 124
+  # |E| = t mod 2, so t = 0 mod 2 iff E has non-trivial 2-torsion point
+  # this is equivalent to f having a root that is (x^q - x, f) != 1
   if l == 2
-    x_q = powermod(x, q_int, f)
-    ggt = gcd(f, x_q - x)
-    if ggt == 1
-      t = ZZ(1)
-    else
-      t = ZZ(0)
-    end
-
-    return t
+    return isone(gcd(f, powermod(x, q, f) - x)) ? ZZ(1) : ZZ(0)
   end
 
-  # case where l != 2
-  k = Int(mod(q, l)) # reduce q mod l
-  k_mod = Z(k)
+  fl = div_poly[l + 2]
+  Rx_fl = residue_ring(Rx, fl)[1]
 
-  fk = Fnschoof[k+2]
-  fkme = Fnschoof[k+1]
-  fkpe = Fnschoof[k+3]
-  fkpz = Fnschoof[k+4]
+  # from here on we do ALL calculation modulo f_l
+  x = Rx_fl(x)
+  f = Rx_fl(f)
 
-  # is there a nonzero P = (x,y) in E[l] with phi^2(P) == +-kP ?
-  if mod(k,2) == 0
-    g = U( (powermod(x, q_int^2, fl) - x) * fk^2 * f + fkme * fkpe).data
-    ggT = gcd(g, fl)
-  else
-    g = U( (powermod(x, q_int^2, fl) - x) * fk^2 + fkme * fkpe * f).data
-    ggT = gcd(g, fl)
+  Z = Native.GF(l, cached = false)
+  k = Int(mod(q, l))
+
+  # tiny helper to simplify indexing division polynomials, and bringing to residue ring
+  function _fn(n::Integer)
+    return Rx_fl(div_poly[n + 2])
   end
 
-  if ggT != 1 # case 1
-    if jacobi_symbol(ZZ(k), ZZ(l)) == -1
+  f_km2, f_km1, f_k, f_kp1, f_kp2  = _fn(k-2), _fn(k-1), _fn(k), _fn(k+1), _fn(k+2)
+
+  # first check if phi^2(P) == +-kP for *some* point P
+  # for this we need to compare only x-coordinates
+  Frob_X  = x^q
+  Frob2_X = Frob_X^q
+  # for q = 2n+1, y^q = y * y^{2n} = y * f^n
+  # y(phi(x)) = y * Frob_Y
+  Frob_Y = f^divexact(q-1, 2)
+
+  # compute Jacobian coordinates of [k]P
+  kP_X = _kP_jacobian_x(k, x, f, f_km1, f_k, f_kp1)
+  kP_Y = _kP_jacobian_y(k,    f, f_km2, f_km1, f_kp1, f_kp2)
+  kP_Z = _kP_jacobian_z(k,    f, f_k)
+
+  h_x = (Frob2_X * kP_Z^2 - kP_X).data
+  if !isone(gcd(h_x, fl))  # case 1 in schoof original paper
+    is_square, w_mod = is_square_with_sqrt(Z(k))
+    if !is_square # t = 0 mod l is the only possibility
       return ZZ(0)
-    else
-      # need square root of q (mod l)
-      w = is_square_with_sqrt(k_mod)[2]
-      if w.data < 0
-        w = w + l
-      end
-      w_int = Int(w.data)
-
-      fw = Fnschoof[w_int+2]
-      fwme = Fnschoof[w_int+1]
-      fwpe = Fnschoof[w_int+3]
-
-      if mod(w_int, 2) == 0
-        g = U((powermod(x,q_int,fl) - x) * fw^2*f + fwme*fwpe).data # reduce mod fl
-        ggT = gcd(g, fl)
-      else
-        g = U((powermod(x,q_int,fl) - x) * fw^2 + fwme*fwpe*f).data
-        ggT = gcd(g, fl)
-      end
-
-      if ggT == 1
-        return ZZ(0)
-      else
-        fwmz = Fnschoof[w_int]
-        fwpz = Fnschoof[w_int+4]
-
-        if mod(w_int, 2) == 0
-          g = U(4 * powermod(f,div(q_int + 3, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
-          ggT2 = gcd(g, fl)
-        else
-          g = U(4 * powermod(f,div(q_int - 1, 2),fl)*fw^3 - (fwpz * fwme^2) + (fwmz*fwpe^2)).data
-          ggT2 = gcd(g, fl)
-        end
-
-        if ggT2 == 1
-          return -2*ZZRingElem(w.data)
-        else
-          return 2*ZZRingElem(w.data)
-        end
-      end
     end
+    w = w_mod.data >= 0 ? Int(w_mod.data) : l + Int(w_mod.data)
+
+    # check if +-w is eigenvalue of frobenius
+    f_wm1, f_w, f_wp1 = _fn(w-1), _fn(w), _fn(w+1)
+    wP_X = _kP_jacobian_x(w, x, f, f_wm1, f_w, f_wp1)
+    wP_Z = _kP_jacobian_z(w,    f, f_w)
+
+    h_x = (Frob_X * wP_Z^2 - wP_X).data
+    if isone(gcd(h_x, fl)) # +-w not an eigenvalue, so t = 0 mod l
+      return ZZ(0)
+    end
+
+    # check y coordinate to determine sign
+    f_wm2, f_wp2 = _fn(w-2), _fn(w+2)
+
+    wP_Y = _kP_jacobian_y(w, f, f_wm2, f_wm1, f_wp1, f_wp2)
+    h_y = (Frob_Y * wP_Z^3 - wP_Y).data
+    return isone(gcd(h_y, fl)) ? -2*ZZ(w) : 2*ZZ(w)
+
   else # case 2
-    Fkmz = PsiPoly[k]
-    Fkme = PsiPoly[k+1]
-    Fk = PsiPoly[k+2]
-    Fkpe = PsiPoly[k+3]
-    Fkpz = PsiPoly[k+4]
+    # y^(q^2) = (y^q)^q = (y*Frob_Y)^q = y*Frob_Y * Frob_Y^q
+    Frob2_Y = Frob_Y^(q+1)
 
-    alpha = Fkpz*psi_power_mod_poly(k-1, E, x, y, 2, fl) - Fkmz*psi_power_mod_poly(k+1, E, x, y, 2, fl) - 4*powermod(f, div(q_int^2+1, 2), fl)*psi_power_mod_poly(k, E, x, y, 3, fl)
-    beta = ((x - powermod(x, (q_int^2), fl))*psi_power_mod_poly(k, E, x, y, 2, fl)- Fkme*Fkpe)*4*y*Fk
+    # LHS is phi^2(P) + [k]P
+    # (x_1, y*y_1) + (x_2, y*y_2) = (x_3, y*y_3)
+    #   point 1 is frobenius (z_1 = 1), and point 2 is [k]P (z_2 = kP_Z)
+    # setting lambda = y * (y_2 - y_1)/(x_2 - x_1) we have
+    # x_3 = lambda^2 - (x_1 + x_2), y_3 = (x_1 - x_3)*lambda - y_1
+    #
+    # we write lambda = y * LN / (LD * z_2), lambda^2 = (f * LN^2) / (LD^2 * z_2^2)
+    # x_3 = [f * LN^2 - LD^2 * (x_1 + x_2)] / (z_2^2 * LD^2)
+    # y_3 = (x_1 - x_3) * LN / (LD * z_2) - y_1
+    LN = kP_Y - Frob2_Y * kP_Z^3
+    LD = kP_X - Frob2_X * kP_Z^2
+    LHS_X_numer = LN^2 * f - LD^2 * (kP_X + Frob2_X*kP_Z^2)
+    LHS_X_denom = kP_Z^2 * LD^2
+    LHS_Y_denom = LHS_X_denom * kP_Z * LD
+    LHS_Y_numer = (Frob2_X * LHS_X_denom - LHS_X_numer)*LN - Frob2_Y * LHS_Y_denom
 
-    tau = 1
-    while tau < l
+    # on RHS we have [tau]phi(P)
+    # this involves q-th powers of division polynomials
+    # we will do an incremental computation, with rolling window
+    f_to_q  = f^q
+    f_to_q2 = f_to_q^2
+    inv_2 = inv(R(2))
 
-      ftaumz = PsiPoly[tau]
-      ftaume = PsiPoly[tau+1]
-      ftau = PsiPoly[tau+2]
-      ftaupe = PsiPoly[tau+3]
-      ftaupz = PsiPoly[tau+4]
+    # NOTE: it seems that computing f_n(x^q) using usual recursion is way faster
+    #   than computing f_n(x)^q (usually recommended in old papers on Schoof algorithm)
+    # we see this being the case across both large characteristic and small characteristic (big exponent)
+    # NOTE: it might be a bit slower for very small q, but then the whole procedure is instant anyway
+    div_poly_q = Array{elem_type(Rx_fl)}(undef, l+3)
+    f_tm2 = zero(Rx_fl)
+    f_tm1 = div_poly_q[-1 + 2] = -one(Rx_fl)
+    f_t   = div_poly_q[ 0 + 2] = zero(Rx_fl)
+    f_tp1 = div_poly_q[ 1 + 2] = one(Rx_fl)
+    f_tp2 = div_poly_q[ 2 + 2] = 2*one(Rx_fl)
 
-      fntaumz = Fnschoof[tau]
-      fntaume = Fnschoof[tau+1]
-      fntaupe = Fnschoof[tau+3]
-      fntaupz = Fnschoof[tau+4]
+    for tau in 1:divexact(l-1,2)
+      f_tm2, f_tm1, f_t, f_tp1 = f_tm1, f_t, f_tp1, f_tp2
+      f_tp2 = div_poly_q[tau+2 + 2] = _compute_division_polynomial_for_schoof(tau+2, Frob_X, a4, a6, inv_2, f_to_q2, div_poly_q)
 
-      gammahelp = powermod(fntaupz*fntaume^2- fntaumz * fntaupe^2,q_int,fl)
+      # compute Jacobian coordinates of [tau]P
+      tauP_X = _kP_jacobian_x(tau, Frob_X, f_to_q, f_tm1, f_t, f_tp1)
+      tauP_Z = _kP_jacobian_z(tau,         f_to_q, f_t)
 
-      if mod(tau, 2) == 0
-        gamma = y * powermod(f,div(q_int-1,2),fl) * gammahelp
-      else
-        gamma = powermod(f,q_int,fl) * gammahelp
-      end
-
-      monster1 = ((Fkme*Fkpe - psi_power_mod_poly(k, E, x, y, 2, fl)*(powermod(x, q_int^2, fl) + powermod(x, q_int, fl) + x)) * beta^2 + psi_power_mod_poly(k, E, x, y, 2, fl)*alpha^2) * psi_power_mod_poly(tau, E, x, y, 2*q_int, fl) + psi_power_mod_poly(tau-1, E, x,y,q_int,fl)*psi_power_mod_poly(tau+1, E, x,y,q_int, fl)*beta^2*psi_power_mod_poly(k, E, x, y, 2, fl)
-
-      if divrem(degree(monster1), 2)[2] == 1
-        monster1 = divexact(monster1, y)
-      end
-
-      monster1_1 = replace_all_squares_modulo(monster1, f, fl)
-      monster1_2 = U(monster1_1).data # monster1_1 reduced
-
-      if monster1_2 != 0
-        tau = tau + 1
-      else
-        monster2 = 4*y*powermod(f,div(q_int-1,2),fl)*psi_power_mod_poly(tau,E,x,y,3*q_int,fl) * (alpha * (((2*powermod(x, q_int^2, fl) + x) * psi_power_mod_poly(k,E,x,y,2,fl) - Fkme*Fkpe )*beta^2 - alpha^2*psi_power_mod_poly(k,E,x,y,2,fl)) - y*powermod(f,div(q_int^2-1,2),fl)*beta^3 * Fk^2) - beta^3*psi_power_mod_poly(k,E,x,y,2,fl)*gamma
-
-        if divrem(degree(monster2), 2)[2] == 1
-          monster2 = divexact(monster2, y)
-        end
-
-        monster2_1 = replace_all_squares_modulo(monster2, f,fl)
-        monster2_2 = U(monster2_1).data # monster2_1 mod fl
-
-        if monster2_2 != 0
-          tau = tau + 1
-        else
-          return tau
-        end
+      if iszero(LHS_X_numer*tauP_Z^2 - LHS_X_denom*tauP_X)
+        # we know that +- tau gives a solution. to determine sign, compare y coordinates
+        tauP_Y = _kP_jacobian_y(tau, f_to_q, f_tm2, f_tm1, f_tp1, f_tp2) * Frob_Y
+        return iszero(LHS_Y_numer*tauP_Z^3 - LHS_Y_denom*tauP_Y) ? ZZ(tau) : ZZ(l - tau)
       end
     end
   end
-end
-
-
-# Division polynomials in general for an elliptic curve over an arbitrary field
-
-# standard division polynomial Psi (as needed in Schoof's algorithm)
-function psi_poly_field(E::EllipticCurve, n::Int, x, y)
-
-    R = base_field(E)
-    A = E.a_invariants[4]
-    B = E.a_invariants[5]
-
-    if n == -1
-        return -y^0
-    elseif n == 0
-        return zero(parent(y))
-    elseif n == 1
-        return y^0
-    elseif n == 2
-        return 2*y
-    elseif n == 3
-        return (3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2)*y^0
-    elseif n == 4
-        return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
-    elseif mod(n,2) == 0
-        m = div(n,2)
-        return divexact( (psi_poly_field(E,m,x,y))*(psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m-1,x,y)^2 - psi_poly_field(E,m-2,x,y)*psi_poly_field(E,m+1,x,y)^2), 2*y)
-    else m = div(n-1,2)
-        return psi_poly_field(E,m+2,x,y)*psi_poly_field(E,m,x,y)^3 - psi_poly_field(E,m-1,x,y)*psi_poly_field(E,m+1,x,y)^3
-    end
-end
-
-# computes psi_n^power mod g
-function psi_power_mod_poly(n, E, x, y, power, g)
-
-    A = E.a_invariants[4]
-    B = E.a_invariants[5]
-
-    fn = fn_from_schoof2(E, n, x)
-    f = x^3 + A*x + B
-    p = powermod(fn,power,g)
-
-    if mod(n, 2) == 0
-        if mod(power, 2) == 0
-            p1 = powermod(f, div(power, 2), g)
-        else
-            p1 = powermod(f, div(power - 1, 2), g) * y
-        end
-    else p1 = 1
-    end
-
-    return p * p1
-end
-
-
-function replace_all_squares(f, g)
-    # assumes that f is in Z[x,y^2] and g in Z[x]. Replaces y^2 with g.
-    # the result will be in Z[x]
-    z = zero(parent(g)) # this is the zero in Z[x]
-    d = div(degree(f), 2) # degree of f in y^2 should be even
-    for i in 0:d
-        z = z + coeff(f, 2*i)*g^i
-    end
-    return z
 end
 
 ################################################################################

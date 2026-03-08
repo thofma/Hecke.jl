@@ -382,6 +382,22 @@ function show(io::IO, L::ZZLat)
   end
 end
 
+function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector)
+  M = matrix(ZZ, first.(sv))
+  # TODO: avoid the rational_span?
+  V = rational_span(L)
+  S = lattice(V, M; isbasis = true, check = false)
+  s = rank(S)
+  T = orthogonal_submodule(lattice(V), S)
+  gensOS = [diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))] # diag(-1,1,...,1)
+  for g in gens(SymmetricGroup(s))
+    push!(gensOS, identity_matrix(ZZ, s) * g) # generators of S_n
+  end
+  orderOS = ZZ(2)^s * factorial(ZZ(s))
+  @hassert :Lattice 1 all(g -> g * gram_matrix(S) * transpose(g) == gram_matrix(S), gensOS)
+  return S, T, gensOS, orderOS
+end
+
 ################################################################################
 #
 #  Automorphism groups
@@ -403,9 +419,12 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
-  use_weyl::Bool=false
+  use_weyl::Bool=false,
+  reduced::Bool=false,
+  use_projections::Bool=false,
+  use_norm_one::Bool=false,
 )
-  use_weyl && error(" use_weyl still buggy don't trust it")
+  use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
@@ -421,6 +440,8 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = ZZ(2)
     return nothing
   end
+
+  # use weyl vector only if L is even
   use_weyl = is_even(L) && use_weyl
 
   if !is_definite(L)
@@ -434,12 +455,33 @@ function __assert_has_automorphisms(
     return nothing
   end
 
+  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
+    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
+    # not sure if it makes sense to pass everything along
+    assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one)
+    # we call directly .automorphism_group_generators, since we want the automorphisms in as ZZMatrix
+    # (with respect to the basis of T)
+    gensOT = T.automorphism_group_generators
+    orderOT = automorphism_group_order(T)
+    ST = (vcat(basis_matrix(S), basis_matrix(T)))
+    oneS = identity_matrix(ZZ, rank(S))
+    oneT = identity_matrix(ZZ, rank(T))
+    gens = ZZMatrix[numerator(inv(ST) * diagonal_matrix(g, oneT) * ST) for g in gensOS]
+    append!(gens, (numerator(inv(ST) * diagonal_matrix(oneS, g) * ST) for g in gensOT))
+    @hassert :Lattice 1 all(let gens = gens, GL = gram_matrix(L); i -> gens[i] * GL *
+                            transpose(gens[i]) == GL; end, 1:length(gens))
+    L.automorphism_group_generators = gens
+    L.automorphism_group_order = orderOS * orderOT
+    return nothing
+  end
+
+
   _alpha, sv = known_short_vectors
   V = ambient_space(L)
   GL = gram_matrix(L)
   d = denominator(GL)
   if !isone(d)
-    res = ZZMatrix[change_base_ring(ZZ, d * GL)]
+    res = ZZMatrix[numerator(GL)]
     if !iszero(_alpha)
       alpha = abs(numerator(d*_alpha))
       sv = eltype(sv)[(v[1], d*v[2]) for v in sv]
@@ -454,11 +496,21 @@ function __assert_has_automorphisms(
       alpha = _alpha
     end
   end
-  if use_weyl
-    weyl_group_gens, weyl_matrix = _weyl_group(L)
-  end
+
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
+  if use_weyl
+    weyl_group_gens, weyl_gram_matrices, weyl_group_order,  contains_minus_one = _weyl_group(L)
+    append!(res, weyl_gram_matrices)
+  end
+  if use_projections
+    proj = _invariant_projections(L)
+    projZ = numerator.(proj)
+    GZ = res[1]
+    projgramZ = [i*GZ*transpose(i) for i in projZ]
+    append!(res, projgramZ)
+  end
+
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
@@ -466,17 +518,10 @@ function __assert_has_automorphisms(
   if !is_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
-    res[1] = Glll
-  else
-    T = one(res[1])
+    Ttr = transpose(T)
+    res = ZZMatrix[T*g*Ttr for g in res]
   end
-  if use_weyl
-    if is_lll
-      push!(res,ZZ.(weyl_matrix))
-    else
-      push!(res, ZZ.(T*weyl_matrix*transpose(T)))
-    end
-  end
+
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
   fl = false
@@ -499,17 +544,26 @@ function __assert_has_automorphisms(
       gens[i] = Tinv * gens[i] * T
     end
   end
-  if use_weyl
-    append!(gens,[ZZ.(i) for i in weyl_group_gens])
+  if use_weyl && !reduced
+    append!(gens, [ZZ.(i) for i in weyl_group_gens])
   end
   # Now gens are with respect to the basis of L
   @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
-  if use_weyl
-    # need to multiply with the order of the weyl group
-
+  if use_weyl && !reduced
+    # We have O(L) = W(L)x|Aut_red(L)
+    # where Aut_red(L) = Aut(L,\rho) is the stabilizer of rho in O(L)
+    # the Weyl vector \rho is preserved only up to sign
+    # so we have computed Aut(L,{\pm \rho}) and its order
+    if weyl_group_order > 1
+      order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
+    else
+      # when rho is trivial
+      order_reduced = order
+    end
+    L.automorphism_group_order = order_reduced*weyl_group_order
   else
     L.automorphism_group_order = order
   end
@@ -567,6 +621,30 @@ function automorphism_group_order(
   @req is_definite(L) "The lattice must be definite"
   assert_has_automorphisms(L; kwargs...)
   return L.automorphism_group_order
+end
+
+function _invariant_projections(L::ZZLat)
+  # the first condition is a safeguard from a flint convention for isone
+  if rank(L) != degree(L) || !isone(basis_matrix(L))
+    L = lattice(rational_span(L))
+  end
+  LL, sv = _short_vector_generators_with_sublattice(L; up_to_sign=true)
+  B = vcat(basis_matrix.(LL)...)
+  Bi = inv(B)
+  n = degree(L)
+  projections = QQMatrix[]
+  k = 0
+  for i in 1:length(LL)
+    k_i = rank(LL[i])
+    E = zero_matrix(QQ, n, n)
+    knew = k + k_i
+    for j in k+1:knew
+      E[j,j] =1
+    end
+    k = knew
+    push!(projections, Bi*E*B)
+  end
+  return projections
 end
 
 ################################################################################
@@ -1084,11 +1162,38 @@ function norm(L::ZZLat)
   return n
 end
 
-################################################################################
+###############################################################################
 #
-#  Eveness
+#  Level
 #
-################################################################################
+###############################################################################
+
+@doc raw"""
+    level(L::ZZLat) -> QQFieldElem
+
+Return the level of $L$, that is, the inverse of the scale of the dual if $L$
+is non-zero and $1$ otherwise.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:D, 4);
+
+julia> level(L)
+2
+```
+"""
+function level(L::ZZLat)
+  if rank(L) == 0
+    return QQ(1)
+  end
+  return 1//scale(dual(L))
+end
+
+###############################################################################
+#
+#  Parity
+#
+###############################################################################
 
 @doc raw"""
     iseven(L::ZZLat) -> Bool
@@ -1334,6 +1439,39 @@ function genus_representatives(_L::ZZLat)
   end
   s != 1 && map!(L -> rescale(L, s; cached=false), res, res)
   return res
+end
+
+@doc raw"""
+    neighbours(L::ZZLat, p::IntegerUnion) -> Vector{ZZLat}
+
+Return all $p$-neighbours of the definite lattice $L$, up to isometry.
+
+# Examples
+```jldoctest
+julia> L = integer_lattice(gram = matrix(QQ, 3, 3, [2,1,-1,1,2,-1,-1,-1,8]));
+
+julia> N1, N2 = neighbours(L, 3);
+
+julia> N1
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[2   0   1]
+[0   2   0]
+[1   0   6]
+
+julia> N2
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[2   1   1]
+[1   2   1]
+[1   1   8]
+```
+"""
+function neighbours(
+  L::ZZLat,
+  p::Hecke.IntegerUnion,
+)
+  return _neighbours(L, ZZ(p); mode=:isometry_classes)
 end
 
 ################################################################################
@@ -2610,20 +2748,51 @@ function _row_span!(L::Vector{Vector{ZZRingElem}})
   return _row_span!([matrix(ZZ,1,d, i) for i in L])
 end
 
-function _short_vector_generators(L::ZZLat; up_to_sign::Bool=false)
+_short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
+
+function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
   sv = shortest_vectors(L)
   B = _row_span!(sv)*basis_matrix(L)
   if !up_to_sign
     append!(sv, [-i for i in sv])
   end
-  nrows(B) == rank(L) && return sv
+  SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
+  nrows(B) == rank(L) && return SL, sv
   M = orthogonal_submodule(L, B)
-  svM = _short_vector_generators(M; up_to_sign)
+  SM, svM = _short_vector_generators_with_sublattice(M; up_to_sign)
   T = ZZ.(coordinates(basis_matrix(M), L))
   append!(sv, [i*T for i in svM])
-  return sv
+  append!(SL, SM)
+  return SL, sv
 end
 
+
+@doc raw"""
+    shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
+                                            -> ZZLat, ZZLat Vector{ZZMatrix}
+
+Given a definite lattice ``L``, return the sublattice ``M`` of ``L`` spanned
+by the vectors of minimal norm in ``L``.
+
+# Examples
+```jldoctest
+julia> L = integer_lattice(gram = matrix(QQ, 3, 3, [2,0,0,0,2,1,0,1,6]))
+Integer lattice of rank 3 and degree 3
+with gram matrix
+[2   0   0]
+[0   2   1]
+[0   1   6]
+
+julia> shortest_vectors_sublattice(L)
+Integer lattice of rank 2 and degree 3
+with gram matrix
+[2   0]
+[0   2]
+```
+"""
+function shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
+  return first(_shortest_vectors_sublattice(L; check))
+end
 
 @doc raw"""
     _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
@@ -2874,69 +3043,222 @@ function _ADE_type_with_isometry_irreducible(L)
 end
 
 @doc raw"""
-    root_sublattice(L::ZZLat) -> ZZLat
+    root_sublattice(L::ZZLat; length = [1, 2]) -> ZZLat
 
-Return the sublattice spanned by the roots of length at most $2$.
-
-Input:
-
-`L` - a definite integral lattice
-
-Output:
-
-The sublattice of `L` spanned by all
-vectors `x` of `L` with $|x^2|\leq 2$.
+Return the sublattice spanned by the roots of length specified by `length`,
+which by default are all roots of length at most $2$, and which must be
+a subset of `[1, 2]` with unique entries.
 
 # Examples
 ```jldoctest
-julia> L = integer_lattice(gram = ZZ[2 0; 0 4]);
-
-julia> root_sublattice(L)
-Integer lattice of rank 1 and degree 2
-with gram matrix
-[2]
+julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
 
 julia> basis_matrix(root_sublattice(L))
-[1   0]
+[1   0   0]
+[0   1   0]
+
+julia> basis_matrix(root_sublattice(L; length = [2]))
+[0   1   0]
+
+julia> basis_matrix(root_sublattice(L; length = [1]))
+[1   0   0]
 ```
 """
-function root_sublattice(L::ZZLat)
+function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2])
   V = ambient_space(L)
   @req is_integral(L) "L must be integral"
   @req is_definite(L) "L must be definite"
+  @req issubset(length, [1, 2]) "Root lengths must be in [1, 2]"
   if is_negative_definite(L)
     L = rescale(L,-1; cached=false)
   end
-  sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+  # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
+  # short_vectors(L, ub)
+  if Base.length(length) == 2
+    sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+  else
+    if length[1] == 1
+      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 1)]; init=zero_matrix(ZZ, 0, rank(L)))
+    else
+      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+    end
+  end
   hnf!(sv)
   B = sv[1:rank(sv), :]*basis_matrix(L)
   return lattice(V, B; check=false, isbasis=true)
 end
 
+
 function _reflection(gram::MatElem, v::MatElem)
   n = ncols(gram)
-  E = identity_matrix(base_ring(gram), n)
-  c = (v * gram * transpose(v))[1,1]
+  gram_v = gram*transpose(v)
+  c = (v * gram_v)[1,1]
   ref = zero_matrix(base_ring(gram), n, n)
-  for k in 1:n
-    ref[k:k,:] = E[k:k,:] - divexact(2*(E[k:k,:] * gram * transpose(v))[1,1], c)*v
+  # special cases for roots
+  if c == 2
+    for k in 1:n
+      ref[k:k,:] = neg!(gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == 1
+    for k in 1:n
+      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == -2
+    for k in 1:n
+      ref[k:k,:] = gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  elseif c == -1
+    for k in 1:n
+      ref[k:k,:] = 2*gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  else
+    for k in 1:n
+      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
+      ref[k,k] += 1
+    end
   end
+
   return ref
 end
 
-
+# Preprocessing for Plesken Souvignier
 function _weyl_group(L::ZZLat)
-  L = lll(L)
-  BR = reduce(vcat,[basis_matrix(i) for i in root_lattice_recognition_fundamental(L)[end]])
-  R = lattice_in_same_ambient_space(L, BR)
-  rho = _weyl_vector(R)
-  rho = coordinates(rho,L)
-  roots = coordinates(basis_matrix(R),L)
-  gram_rho = 4*transpose(rho)*rho
+  root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
+  if length(root_types) == 0
+    return ZZMatrix[], ZZMatrix[], ZZ(1), false
+  end
+  BR = basis_matrix(root_lat)
+
+  invariant_grams = ZZMatrix[]
+  invariant_vectors = ZZMatrix[]
+  for t in Set(root_types)
+    inv_vec = _invariant_vectors(t...)
+    k = length(inv_vec)
+    V = [zero_matrix(QQ, 1, degree(L)) for i in 1:k]
+    for i in 1:length(root_types)
+      if root_types[i] == t
+        V = V + [v*basis_matrix(irreducible_root_lattices[i]) for v in inv_vec]
+      end
+    end
+    append!(invariant_vectors, ZZMatrix[ZZ.(coordinates(i, L)) for i in V])
+  end
+  gramZ = ZZ.(gram_matrix(L))
+  for v in invariant_vectors
+    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
+  end
+
+  rho = coordinates(_weyl_vector(root_lat), L)
+
+  fundamental_roots = coordinates(basis_matrix(root_lat), L)
+
   gram = gram_matrix(L)
-  weyl_group_gens = [_reflection(gram, roots[i:i,:]) for i in 1:nrows(roots)]
-  return weyl_group_gens, gram_rho
+  gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
+  push!(invariant_grams, gram_rho)
+  weyl_group_gens = [_reflection(gram, fundamental_roots[i:i,:]) for i in 1:nrows(fundamental_roots)]
+
+  ord = one(ZZ)
+  for s in root_types
+    mul!(ord, _weyl_group_order(s...))
+  end
+  contains_minus_one = all(_contains_minus_one, root_types)
+  return weyl_group_gens, invariant_grams, ord, contains_minus_one
 end
+
+function _contains_minus_one(S::Tuple{Symbol,Int})
+  s, n = S
+  if s == :A
+    return n==1
+  elseif s == :D
+    return iszero(mod(n,2))
+  elseif s == :E
+    return n !=6
+  end
+end
+
+function _weyl_group_order(s::Symbol, n::IntegerUnion)
+  n = ZZ(n)
+  if s == :A
+    ord = factorial(n+1)
+  elseif s == :B
+    @assert n>=2
+    ord = ZZ(2)^n * factorial(n)
+  elseif s == :C
+    @assert n>=3
+    ord = ZZ(2)^n * factorial(n)
+  elseif s == :D
+    @assert n>=4
+    ord = ZZ(2)^(n-1) * factorial(n)
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      ord = 51840
+    elseif n == 7
+      ord = 2903040
+    elseif n == 8
+      ord = 696729600
+    end
+  elseif s == :F
+    @assert n==4
+    ord = 1152
+  elseif s == :G
+    @assert n==2
+    ord = 12
+  elseif s == :I
+    @assert n==1
+    ord = 2
+  else
+    error("invalid root system")
+  end
+  return ord
+end
+
+function _invariant_vectors(s::Symbol, n::IntegerUnion)
+  E = identity_matrix(ZZ, n)
+  invs = ZZMatrix[]
+  e(n) = E[n:n,:]
+  if s == :A
+    for i in 1:div(n,2)
+      push!(invs, e(i)+e(n+1-i))
+    end
+    if !iszero(n%2)
+      push!(invs, e(div(n+1,2)))
+    end
+  elseif s == :D
+    @assert n>=4
+    if n == 4
+      push!(invs, e(1) + e(2) + e(4))
+      push!(invs, e(3))
+    else
+      for i in 3:n
+        push!(invs, e(i))
+      end
+      push!(invs, e(1)+e(2))
+    end
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      for i in [3,6]
+        push!(invs, e(i))
+      end
+      push!(invs, e(1) + e(5))
+      push!(invs, e(2) + e(4))
+    elseif n == 7 || n == 8
+      for i in 1:n
+        push!(invs, e(i))
+      end
+    end
+  elseif s == :I
+    push!(invs, e(1))
+  else
+    error("invalid root system")
+  end
+  return invs
+end
+
 
 ################################################################################
 #
