@@ -392,6 +392,7 @@ function try_init_small(
       end
     end
     flag && continue
+
     w in target_lengths || continue
 
     push!(lengths, w)
