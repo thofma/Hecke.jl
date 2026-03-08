@@ -303,7 +303,7 @@ function try_init_small(
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
 
   if bound == -1
-    bound = maximum(diagonal(C.G[1]))
+    bound = maximum(diagonal(D.G[1]))
     if fits(Int, bound)
       Csmall.max = Int(bound)
     else
@@ -352,9 +352,7 @@ function try_init_small(
   lengths = Vector{Int}[]
   target_lengths = Set{Vector{Int}}([i[j,j] for i in D.G] for j in 1:n)
   # use for early abort in norm computation not sure if worth it
-  target_length2 = [Set([i[j,j] for j in 1:n]) for i in D.G]
-
-
+  target_length2 = [Set(i[j,j] for j in 1:n) for i in D.G]
   for cand in V
     # First canonicalize them
     v = cand[1]
@@ -388,18 +386,18 @@ function try_init_small(
     flag = false
     for k in 2:r
       w[k] = _norm(_v, Gsmall[k], tmp)
-      if !(w[k] in target_length2)
+      if !(w[k] in target_length2[k])
         flag = true
         break
       end
     end
     flag && continue
-
     w in target_lengths || continue
 
     push!(lengths, w)
     push!(vectors, _v)
   end
+  @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   V = VectorList(vectors, lengths, use_dict)
 
   Csmall.V = V
@@ -1856,9 +1854,10 @@ end
 # Isomorphism computation
 function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
+  Co = ZLatAutoCtx(Go)
   # We only need to initialize the vector sums and Bacher polynomials for the
   # first lattice
-  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth, D=Go)
+  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth, D=Co)
   if fl
     Co = ZLatAutoCtx(Go)
     fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0)
