@@ -114,7 +114,7 @@ dim(C::ZLatAutoCtx) = C.dim
 
 function init(
   C::ZLatAutoCtx,
-  auto::Bool = true,
+  automorphism_mode::Bool = true,
   bound::ZZRingElem = ZZRingElem(-1),
   use_dict::Bool = true;
   depth::Int=-1,
@@ -130,7 +130,7 @@ function init(
   n = nrows(C.G[1])
 
   if bound == -1
-    bound = maximum(diagonal(C.G[1]))
+    bound = maximum(diagonal(D.G[1]))
     C.max = bound
   end
 
@@ -201,12 +201,12 @@ function init(
 
   # Compute the fingerprint
   @vprint :Lattice 1 "Computing fingerprint: "
-  if auto
+  if automorphism_mode
     @vtime :Lattice 1 fingerprint(C)
     @vprintln :Lattice 1 "$(C.fp_diagonal)"
   end
 
-  if auto
+  if automorphism_mode
     # Find the standard basis vectors
     C.std_basis = Vector{Int}(undef, dim(C))
     z = zero_matrix(ZZ, 1, dim(C))
@@ -261,7 +261,7 @@ function init(
 
   H = Vector{ZZMatrix}(undef, nH)
 
-  if auto
+  if automorphism_mode
     for i in 1:dim(C)
       if !isempty(C.g[i])
         nH = 0
@@ -279,8 +279,12 @@ function init(
     end
   end
 
-  init_vector_sums(C, depth)
-  init_bacher_polynomials(C, bacher_depth)
+  if automorphism_mode && C===D
+    init_vector_sums(C, depth)  # sets C.GZZ
+    init_bacher_polynomials(C, bacher_depth)
+  else
+    C.GZZ = [ matrix(ZZ, M) for M in C.G ]
+  end
 
   return C
 end
@@ -289,7 +293,7 @@ end
 # The return value is flag, Csmall
 function try_init_small(
   C::ZLatAutoCtx,
-  auto::Bool = true,
+  automorphism_mode::Bool = true,
   bound::ZZRingElem = ZZRingElem(-1),
   use_dict::Bool = true;
   depth::Int=-1,
@@ -298,10 +302,7 @@ function try_init_small(
   known_short_vectors=(0, []),
   D::ZLatAutoCtx=C
  )
-  automorphism_mode = bound == ZZRingElem(-1)
-
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
-
   if bound == -1
     bound = maximum(diagonal(D.G[1]))
     if fits(Int, bound)
@@ -322,7 +323,6 @@ function try_init_small(
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
-
   V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
 
   r = length(C.G)
@@ -415,14 +415,15 @@ function try_init_small(
   @assert C.is_symmetric[1]
 
   # Compute the fingerprint
-  if automorphism_mode
+  if C === D && automorphism_mode
     @vprint :Lattice 1 "Computing fingerprint: "
-    @vtime :Lattice 1 fingerprint(Csmall)
+    @vtime :Lattice 1 fingerprint(Csmall, D)
     @vprintln :Lattice 1 "$(Csmall.fp_diagonal)"
   end
 
-  if automorphism_mode
+  if C === D && automorphism_mode
     # Find the standard basis vectors
+    # In general we can can only find them if C === D
     Csmall.std_basis = Vector{Int}(undef, dim(Csmall))
     z = zeros(Int, dim(Csmall))
     for i in 1:dim(Csmall)
@@ -486,7 +487,7 @@ function try_init_small(
 
   H = Vector{Matrix{Int}}(undef, nH)
 
-  if automorphism_mode
+  if automorphism_mode && C === D
     for i in 1:dim(Csmall)
       if !isempty(Csmall.g[i])
         nH = 0
@@ -504,8 +505,12 @@ function try_init_small(
     end
   end
 
-  init_vector_sums(Csmall, depth)
-  init_bacher_polynomials(Csmall, bacher_depth)
+  if C === D && automorphism_mode
+    init_vector_sums(Csmall, depth)
+    init_bacher_polynomials(Csmall, bacher_depth)
+  else
+    Csmall.GZZ = [ matrix(ZZ, M) for M in C.G ]
+  end
 
   return true, Csmall
 end
@@ -998,7 +1003,7 @@ end
 #	this vector with respect to all
 #	invariant forms
 
-function fingerprint(C::ZLatAutoCtx)
+function fingerprint(C::ZLatAutoCtx, D::ZLatAutoCtx=C)
   V = C.V
   n = dim(C)
   k = length(C.G)
@@ -1015,7 +1020,7 @@ function fingerprint(C::ZLatAutoCtx)
       good = true
       cvl = @inbounds V.lengths[j]
       for l in 1:k
-        if cvl[l] != C.G[l][i, i]
+        if cvl[l] != D.G[l][i, i]
           good = false
           break
         end
@@ -1856,12 +1861,14 @@ end
 function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
+  # Co is the source
+  # Ci is the target
   # We only need to initialize the vector sums and Bacher polynomials for the
-  # first lattice
-  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth, D=Co)
+  # target lattice
+  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0)
+    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -1875,8 +1882,8 @@ function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1,
   Co = ZLatAutoCtx(Go)
   # We only need to initialize the vector sums and Bacher polynomials for the
   # first lattice
-  init(Ci, true, depth = depth, bacher_depth = bacher_depth, D=Go)
-  init(Co, false, Ci.max, depth = 0, bacher_depth = 0)
+  init(Ci, true, depth = depth, bacher_depth = bacher_depth)
+  init(Co, false, Ci.max, depth = 0, bacher_depth = 0, D=Ci)
   return Ci, Co
 end
 
