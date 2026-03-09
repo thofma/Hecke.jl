@@ -1,0 +1,361 @@
+
+#careful with heights - there are many of them...
+
+#https://mysite.science.uottawa.ca/droy/summer-school-2008/miw_chap3.pdf
+#Note: this is the "multipicative relative heigth" of https://arxiv.org/pdf/1111.4963
+# in particular it depends on the field as well as the number
+# in a deg n field 1/2 will have height 2^n. In the (abs) height it should stay 2
+#
+# its a mess
+# for units: height is easy as is log_height. There are no contributions
+#  at finite places, all you need are conjugates (and for the abs vs. rel you'd
+#   need to know the field degree of the element - hard)
+# for non-units:
+#  arxive: H(a) = N(num(a)*zk + den(a)*zk)^-1 * prod max(num(a)^i, den(a)^i)
+#    advantage: H(a*eps): has the same (num, den) ideal
+#    can I compute some useful num(a), den(a) from FacElem and the gcd?
+#    maybe use the coprime_factor to get some relevant finite primes?
+#    use coprime to get den-ideal. the min is a valid den-Int!
+#    num-ideal/den-ideal = num-ideal*X/num_int and N(X) is the correct norm
+#    of gcd(num, den). This den can be passed into the inf_log_height variant
+#    I think this is equivalent to doing nothing and mult by den-ideal:
+#     log_H(a*den_int, den_int) = sum(max(log(a)*log(den), log(den)) - log(N(X))
+#                               = sum(max(log(a), 0)) + n*log(den) - log(N(X))
+#          n*log(den) = log(N(den)), so n*log(den) - log(N(X)) =
+#                                      log(N(den/X)) = log(N(den_ideal))
+#     so inf_log_h = sum(max(0, log(a))) + log(N(den_ideal))
+#     should be correct
+# 
+
+#absolute height should be root by the degree
+
+function height(a::AbsSimpleNumFieldOrderElem)
+  return a.elem_in_nf
+end
+
+function height(a::AbsSimpleNumFieldElem)
+  k = parent(a)
+  zk = maximal_order(k)
+  _, d = integral_split(a*zk)
+  n = a
+  lh = one(ArbField())
+  o = lh
+  for x = real_places(k)
+    p = embedding(x)
+    lh *= max(o, abs(p(n)))
+  end
+  for x = complex_places(k)
+    p = embeddings(x)[1]
+    lh *= max(o, abs(p(n)))^2
+  end
+  return lh * norm(d)
+end
+#= |.|infty <= D => |.|_2 <= sqrt(n) D, so we can enumerate in the 2-norm
+
+x unit
+h(x) = prod max(1, |x_i|) so
+log(h(x)) = sum max(0, log(|x_i|)) <= |log(x)|_1 <= sqrt(n) |log(x)|_2
+
+=#
+
+function inf_log_height(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  #correct for units.
+  c = conjugates_arb_log(a, 100)
+  return sum(x for x = c if x > 0 ; init = zero(parent(c[1])))
+end
+
+#N has to be the norm of the denominator ideal of a
+function inf_log_height(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, N::ZZRingElem)
+  c = conjugates_arb_log(a, 100)
+  A = parent(c[1])
+  return sum(x for x = c if x > 0; init = zero(A)) + log(A(N))
+end
+
+#hopefully all a*eps s.th. H(a*eps) <= B  (modulo torsion)
+#    a*ZK = A/B (integral_split as ideal) and N = N(B)
+function bounded_height_units(zk::AbsSimpleNumFieldOrder, a::FacElem, B::ZZRingElem, N::ZZRingElem)
+  u, mu = unit_group_fac_elem(zk)
+  if ngens(u) == 1 #imquad, the units are all torsion of height 0
+    if exp(inf_log_height(a, N)) <= B
+      return [a]
+    else
+      return typeof(a)[]
+    end
+  end
+  e = [mu(u[i]) for i=2:ngens(u)]
+  #XXX: this is not exact. To get guarateed results, the errors have to be 
+  #     analysed....
+  map = [conjugates_arb_log(x, 100) for x = e]
+  g = matrix(QQ, [[QQFieldElem(round(ZZRingElem, x*ZZ(2)^100), ZZ(2)^100) for x = y] for y = map])
+  ma = [QQ(round(ZZRingElem, x*ZZ(2)^100), ZZ(2)^100) for x in conjugates_arb_log(a, 100)]
+  c = sum(ma)//length(ma)
+  ma = [x-c for x = ma]
+  s = solve(view(g, :, 1:length(e)), ma[1:end-1])
+
+  g = gram(g)
+
+  L = Zlattice(; gram = g)
+
+  s = close_vectors(L, -s, ceil(ZZRingElem, degree(k)*log(B)^2))
+
+  e = [a*prod(e[i]^s[j][1][i] for i=1:length(e)) for j=1:length(s)]
+  e = [x for x = e if exp(inf_log_height(x, N)) <= B]
+  return e
+end
+
+#all eps s.th. H(eps) <= B (modulo torsion)
+#well: since H(eps) == H(1/eps) only one is returned
+function bounded_height_units(zk::AbsSimpleNumFieldOrder, B::ZZRingElem)
+  u, mu = unit_group_fac_elem(zk)
+  if ngens(u) == 1 #imquad, the units are all torsion of height 0
+    return []
+  end
+  e = [mu(u[i]) for i=2:ngens(u)]
+  map = [conjugates_arb_log(x, 100) for x = e]
+  g = matrix(QQ, [[QQFieldElem(round(ZZRingElem, x*ZZ(2)^100), ZZ(2)^100) for x = y] for y = map])
+  r = length(map[1])
+  g = gram(g)
+
+  L = Zlattice(; gram = g)
+  s = short_vectors(L, ceil(ZZRingElem, degree(k)*log(B)^2))
+  e = [prod(e[i]^s[j][1][i] for i=1:length(e)) for j=1:length(s)]
+  return [x for x = e if exp(inf_log_height(x)) <= B]
+end
+
+#we need this for all ideal reps, so in particular for 1 rep 0.
+#then we need all PI of norm <= B
+#actually, we always need them. So "Plan": eliminate polymake!
+#  for all PI of norm <= B, compute the image in the class group
+#  enumerate all ideals of norm <= B, as an iterator, also with the
+#  class group element
+#  for each such ideal, use the class rep for the inverse to get a 
+#  principal ideal
+#  so iterator for ideals of norm <= B, generated by S, sorted
+#  start I = 1, s = 1
+#  if I*S[s] < B, use it
+#  if not, remove the last S that was added and try the next
+
+#an iterator to compute all products of elements in I
+# such that the product has norm <= B
+# should be close to optimal (or would be if we test the norm
+# before computing the ideal)
+struct IdealIter
+  I::Vector{AbsSimpleNumFieldOrderIdeal}
+  B::ZZRingElem
+  function IdealIter(a::Vector{AbsSimpleNumFieldOrderIdeal}, B::ZZRingElem)
+    sort!(a, lt = (a,b) -> norm(a) <= norm(b))
+    return new(a, B)
+  end
+end
+
+function Base.iterate(Q::IdealIter)
+  zk = order(Q.I[1])
+  return 1*zk, [(1*zk, 1)]
+end
+
+function Base.iterate(Q::IdealIter, st::Vector)
+  i = st[end][2]
+  n = st[end][1]*Q.I[i]
+  if norm(n) <= Q.B
+    return n, push!(st, (n, i))
+  end
+  while true
+    _, i = pop!(st)
+    if length(st) == 0
+      return nothing
+    end
+    i += 1
+    i > length(Q.I) && continue
+    n = st[end][1] * Q.I[i]
+    if norm(n) <= Q.B
+      return n, push!(st, (n, i))
+    end
+  end
+end
+
+Base.IteratorSize(::IdealIter) = Base.SizeUnknown()
+Base.HasEltype(::IdealIter) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+Base.eltype(::Type{PrimeIdealsSet}) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+
+#not used (anymore) but "functional" and cool
+function ideal_norm_ineq(A::AbsSimpleNumFieldOrderIdeal, B::ZZRingElem)
+  #= 
+  want x in A s.th. N(x) <= N(A)*B
+
+  x in A <=> v_P(x) >= v_P(A) for all P 
+  x is an integral S-Unit for S containing
+    all P | A
+    all N(P) <= B
+  =#
+  fA = factor(A)
+  S = collect(keys(fA))
+  vA = [fA[P] for P = S]
+  #for larger numbers of primes: terrible...
+  # probably break down, primes > sqrt(B) have to contribute 1
+  # or else are pointless
+  for P = prime_ideals_up_to(order(A), Int(B))
+    if !(P in S)
+      push!(S, P)
+      push!(vA, 0)
+    end
+  end
+  s, ms = sunit_mod_units_group_fac_elem(S)
+  vs = transpose(matrix(ZZ, [[valuation(ms(t), P) for P = S] for t = gens(s)]))
+  #want power products 
+  # where vs^x >= vA
+  # sum((vs^x)[i] log(N(P_i)) : i) <= log(N(A) B)
+  # since vs^x >= 0 it works if all the log(N(P)) are rounded down
+  # and log(N(A) B) rounded up
+
+  vs = vcat(vs, matrix(ZZ, 1, ngens(s), [-floor(ZZRingElem, 10*log(abs(norm(ms(t))))) for t = gens(s)]))
+  push!(vA, -ceil(ZZRingElem, 10*log(norm(A)*B)))
+
+  vs = solve_mixed(zero_matrix(ZZ, 0, ngens(s)), zero_matrix(ZZ, 0, 1), vs, matrix(ZZ, length(vA), 1, vA); permit_unbounded = !true) 
+  return [ms(s(vs[i, :])) for i = 1:nrows(vs)]
+end
+
+#https://arxiv.org/pdf/1111.4963v4
+#using the ideal_neq stuff, inefficient, possibly correct
+"""
+    bounded_height(k::AbsSimpleNumField, B::ZZRingElem)
+
+A list of all elements in k of height bounded by B. The height
+is defined as the product over all places (finite and infinite)
+    max(1, abs(|x^(i)|))
+
+"""
+function bounded_height(k::AbsSimpleNumField, B::ZZRingElem; complete::Bool = true)
+  zk = maximal_order(k)
+  c, mc = class_group(zk)
+
+  rep = Dict(i => mc(i) for i = c)
+
+  l = IdealIter(prime_ideals_up_to(zk, Int(B)), B)
+  I = collect(l)
+  d = Dict{elem_type(c), Vector}()
+  for i = I
+#    @assert norm(i) <= B
+    j = preimage(mc, i)
+    fl, g = is_principal_fac_elem(i*rep[-j])
+    @assert fl
+#    @assert evaluate(g) in rep[-j]
+#    @assert norm(g) <= B* norm(rep[-j])
+    if haskey(d, -j)
+      push!(d[-j], (g, i))
+    else
+      d[-j] = [(g, i)]
+    end
+  end
+  u = bounded_height_units(zk, B)
+
+  for i = c
+    if !haskey(d, i)
+      continue
+    end
+    I = rep[i]
+    l = d[i]
+    for x = 1:length(l)
+      for y = x+1:length(l)
+#        @assert evaluate(l[x]) in I
+#        @assert evaluate(l[y]) in I
+        a = l[x][1]*inv(l[y][1])
+        # in the construction we have the ideals
+        # they are rep * I where N(I) <= B
+        # the gcd down here will be rep*gcd(I[i], I[j])
+        # which should be much faster than to check
+        # evaluate(l[x][1])*zk + evaluate(l[y][1])*zk != I
+        if !is_one(l[x][2] + l[y][2]) 
+          continue
+        end
+        # same as above: the denominator (as an ideal) is just l[y][2]
+        N = norm(l[y][2])
+        v = bounded_height_units(zk, a, B, N)    
+        for z = v
+ #         if exp(inf_log_height(z, N)) <= B
+            push!(u, z)
+ #         else
+ #           @show height(evaluate(z))
+ #         end
+        end
+      end
+    end
+  end
+
+  # finally: essentially each element gives rise to
+  # several: z*a and z/a for all torsion units z
+  # the units are non-complete (hence also give orbits!)
+  # since the enum will only give half (x works iff -x works)
+  # The call to v does not have/ use any symmetry
+
+  if complete
+    lu = length(u)
+    t, mt = torsion_unit_group(zk)
+    allt = [mt(x) for x = t if !iszero(x)]
+    for i=1:lu
+      iu = inv(u[i])
+      push!(u, iu)
+      for x = allt
+        push!(u, u[i]*x)
+        push!(u, iu*x)
+      end
+    end
+    push!(u, FacElem(k(0)))
+    push!(u, FacElem(k(1)))
+    for x = allt
+      push!(u, FacElem(k(x)))
+    end
+  end
+
+  return u
+end
+    
+
+function draw_bounded_height(k, B)
+  pts = bounded_height(k, ZZ(B))
+  function disc_size(x)
+    return Float64(0.02/height(x))
+  end
+
+  c_emb = complex_embeddings(k)
+  n = degree(k)
+
+  x = [0.0]
+  y = [0.0]
+  c = [RGBA(0,0,0,0)]
+  sz = [0.0]
+
+  for _pt = pts
+    pt = evaluate(_pt)
+    s = min(5.0, 10000*disc_size(pt))
+    if s > 0.001
+      i = 1
+      for p = c_emb
+        z = p(pt)
+        xx = Float64(real(z))
+        yy = Float64(imag(z))
+        if -3 <= xx <= 3 && -3 <= yy <= 3
+          push!(x, xx)
+          push!(y, yy)
+          push!(c, RGBA(1.0-i/n, 0.0, i/n, 1.0))
+          push!(sz, s)
+        end
+        i += 1
+      end
+    end
+  end
+  scatter(x, y, markersize = sz, markercolor = c)
+end
+
+#=
+try
+  using Plots
+  Qx, x = QQ[:x]
+k, a = number_field(x^4 + 7*x^2 + 13)
+draw_bounded_height(k, 20)
+draw_bounded_height(k, 50)
+
+there are other suggestions in 
+
+https://davidlowryduda.com/pcmi-vis-nf/
+
+=#
