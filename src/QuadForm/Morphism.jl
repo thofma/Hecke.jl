@@ -149,9 +149,9 @@ function init(
   V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound; is_lll_reduced_known)
 
 
-  vectors = Vector{ZZMatrix}[]
+  vectors = ZZMatrix[]
 
-  lengths = Vector{Vector{ZZRingElem}}[]
+  lengths = Vector{ZZRingElem}[]
 
   target_lengths = Set{Vector{ZZRingElem}}([i[j,j] for i in D.G] for j in 1:n)
   # use for early abort in norm computation not sure if worth it
@@ -172,11 +172,11 @@ function init(
     vfmpz = matrix(ZZ, 1, n, v)
 
     w = Vector{ZZRingElem}(undef, r)
-    w[1] = numerator(cand[2])
+    w[1] = numerator(sq)
     flag = false
     for k in 2:r
       w[k] = _norm(vfmpz, C.G[k], tmp)
-      if !(w[k] in target_length2)
+      if !(w[k] in target_length2[k])
         flag = true
         break
       end
