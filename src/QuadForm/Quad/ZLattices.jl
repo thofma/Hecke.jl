@@ -2648,7 +2648,7 @@ function _connected_components_graph!(B::Vector{T}, G::T) where T <: MatElem
     end
     push!(components, reduce(vcat, basis))
   end
-  @hassert :Lattice 0 sum(rank(i) for i in components; init=0) == nrows(G)
+  #@hassert :Lattice 0 sum(rank(i) for i in components; init=0) == nrows(G)
   sort!(components; by=rank)
   return components
 end
@@ -2989,6 +2989,60 @@ function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
   return C, ADE, components_new
 end
 
+# For all i
+# replace x[i] by -x[i] if its first non-zero coefficient is negative.
+function _canonicalize!(x::Vector)
+  i = 1
+  while i<length(x) && iszero(x[i])
+    i = i+1
+  end
+  if is_negative(x[i])
+    neg!.(x)
+  end
+  return x
+end
+
+# For sv a set of roots compute the fundamental roots
+# where a root is positive iff its first nonzero coefficient is positive.
+function _fundamental_roots(sv::Vector{S}) where {S}
+  _canonicalize!.(sv)
+  sort!(sv)
+  n = length(first(sv))
+  B = zero_matrix(ZZ, 0, n)
+  tmp = zero_matrix(ZZ, 1, n)
+  fundamental = S[]
+  for v in sv
+    for i in 1:n
+      tmp[1, i] = v[i]
+    end
+    reduce_mod_hnf_ur!(tmp, B)
+    if iszero(tmp)
+      continue
+    else
+      B = vcat(B, tmp)
+      hnf!(B)
+      push!(fundamental, v)
+    end
+  end
+  return fundamental
+end
+
+# return the root types of the root sublattice of L
+function _root_lattice_recognition(L::ZZLat)
+  sv = first.(short_vectors(L,2))
+  fund = _fundamental_roots(sv)
+  Fund = ZZMatrix[matrix(ZZ,1,rank(L),i) for i in fund]
+  G = ZZ.(gram_matrix(L))
+  comp = _connected_components_graph!(Fund, G)
+  types = Tuple{Symbol,Int}[]
+  for c in comp
+    g = c*G*transpose(c)
+    tau = ADE_type(g)
+    push!(types, tau)
+  end
+  return types
+end
+
 @doc raw"""
     ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}
 
@@ -3072,17 +3126,21 @@ function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=tru
   # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
   # short_vectors(L, ub)
   if Base.length(length) == 2
-    sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
+    sv = short_vectors(L, 2; check=false)
   else
     if length[1] == 1
-      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 1; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
+      sv = short_vectors(L, 1; check=false)
     else
-      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2, 2; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
+      sv = short_vectors(L, 2, 2; check=false)
     end
   end
-  hnf!(sv)
-  B = sv[1:rank(sv), :]*basis_matrix(L)
-  return lattice(V, B; check=false, isbasis=true)
+  if Base.length(sv) == 0
+    B = zero_matrix(ZZ, 0, rank(L))
+  else
+    BZ = _row_span!(first.(sv))
+  end
+  BQ = BZ*basis_matrix(L)
+  return lattice(V, BQ; check=false, isbasis=true)
 end
 
 
