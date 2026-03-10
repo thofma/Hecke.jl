@@ -497,7 +497,7 @@ function __assert_has_automorphisms(
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
   if use_weyl
-    weyl_group_gens, weyl_gram_matrices, weyl_group_order,  contains_minus_one = _weyl_group(L)
+    weyl_group_gens, weyl_gram_matrices, weyl_group_order = _weyl_group(L)
     append!(res, weyl_gram_matrices)
   end
   if use_projections
@@ -2425,8 +2425,8 @@ julia> genus.(irr_comp)
  Genus symbol: II_(8, 0)
 ```
 """
-function irreducible_components(L::ZZLat)
-  @req is_definite(L) "Lattice must be definite"
+function irreducible_components(L::ZZLat; check::Bool=true)
+  @req !check || is_definite(L) "Lattice must be definite"
   # Take care of the trivial cases
   rank(L) == 0 && return ZZLat[]
   rank(L) == 1 && return ZZLat[L]
@@ -2909,8 +2909,8 @@ julia> root_lattice_recognition(L)
 ([(:A, 1), (:I, 1)], ZZLat[Integer lattice of rank 1 and degree 4, Integer lattice of rank 1 and degree 4])
 ```
 """
-function root_lattice_recognition(L::ZZLat)
-  irr = irreducible_components(root_sublattice(L))
+function root_lattice_recognition(L::ZZLat; check::Bool=true)
+  irr = irreducible_components(root_sublattice(L; check); check=false)
   rlr = Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr]
   sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
   return rlr[sp], irr[sp]
@@ -2971,9 +2971,9 @@ julia> gram_matrix(R[1])
 
 ```
 """
-function root_lattice_recognition_fundamental(L::ZZLat)
+function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
   V = ambient_space(L)
-  ADE, components = root_lattice_recognition(L)
+  ADE, components = root_lattice_recognition(L; check)
   components_new = ZZLat[]
   basis = zero_matrix(QQ, 0, degree(L))
   for i in 1:length(ADE)
@@ -3034,7 +3034,7 @@ function _ADE_type_with_isometry_irreducible(L)
   if e == -1
     R = rescale(R, -1; cached=false)
   end
-  t, T = is_isometric_with_isometry(R, L)
+  t, T = __is_isometric_with_isometry_definite(R, L)
   @hassert :Lattice 1 t
   return ADE, T
 end
@@ -3061,23 +3061,23 @@ julia> basis_matrix(root_sublattice(L; length = [1]))
 [1   0   0]
 ```
 """
-function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2])
+function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=true)
   V = ambient_space(L)
-  @req is_integral(L) "L must be integral"
-  @req is_definite(L) "L must be definite"
+  @req !check || is_integral(L) "L must be integral"
+  @req !check || is_definite(L) "L must be definite"
   @req issubset(length, [1, 2]) "Root lengths must be in [1, 2]"
-  if is_negative_definite(L)
+  if is_negative_entry(gram_matrix(L),1,1)#is_negative_definite(L)
     L = rescale(L,-1; cached=false)
   end
   # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
   # short_vectors(L, ub)
   if Base.length(length) == 2
-    sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+    sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
   else
     if length[1] == 1
-      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 1)]; init=zero_matrix(ZZ, 0, rank(L)))
+      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 1; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
     else
-      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2, 2)]; init=zero_matrix(ZZ, 0, rank(L)))
+      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2, 2; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
     end
   end
   hnf!(sv)
@@ -3161,19 +3161,7 @@ function _weyl_group(L::ZZLat)
   for s in root_types
     mul!(ord, _weyl_group_order(s...))
   end
-  contains_minus_one = all(_contains_minus_one, root_types)
-  return weyl_group_gens, invariant_grams, ord, contains_minus_one
-end
-
-function _contains_minus_one(S::Tuple{Symbol,Int})
-  s, n = S
-  if s == :A
-    return n==1
-  elseif s == :D
-    return iszero(mod(n,2))
-  elseif s == :E
-    return n !=6
-  end
+  return weyl_group_gens, invariant_grams, ord
 end
 
 function _weyl_group_order(s::Symbol, n::IntegerUnion)

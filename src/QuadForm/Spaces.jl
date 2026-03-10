@@ -473,7 +473,7 @@ end
 
 Return whether the space `V` is positive definite.
 """
-function is_positive_definite(V::AbstractSpace)
+@attr Bool function is_positive_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
   if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
@@ -493,7 +493,7 @@ end
 
 Return whether the space `V` is negative definite.
 """
-function is_negative_definite(V::AbstractSpace)
+@attr Bool function is_negative_definite(V::AbstractSpace)
   E = base_ring(V)
   K = fixed_field(V)
   if (!is_totally_real(K)) || (is_hermitian(V) && !is_totally_complex(E))
@@ -513,7 +513,7 @@ end
 
 Return whether the space `V` is definite.
 """
-function is_definite(V::AbstractSpace)
+@attr Bool function is_definite(V::AbstractSpace)
   return is_positive_definite(V) || is_negative_definite(V)
 end
 
@@ -522,7 +522,7 @@ end
 
 Return whether the space `V` is indefinite.
 """
-is_indefinite(V::AbstractSpace) = is_regular(V) && !is_definite(V)
+@attr Bool is_indefinite(V::AbstractSpace) = is_regular(V) && !is_definite(V)
 
 ################################################################################
 #

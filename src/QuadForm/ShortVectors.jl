@@ -691,7 +691,16 @@ function _short_vectors_with_condition(L::ZZLat)
   return _short_vectors_with_condition(L, proj, target_norms)
 end
 
+"""
+    _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_norms::Vector{Vector{QQFieldElem}})
+
+Return all vectors ``v`` of ``L`` such that
+proj[i](v)^2 = target_norms[i] for all i.
+"""
 function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_norms::Vector{Vector{QQFieldElem}})
+#   perm = sortperm(proj;by=rank)
+#   proj = proj[perm]
+#   target_norms =[i[perm] for i in target_norms]
   n = rank(L)
   V = ambient_space(L)
   projL = [lattice(V, p; check=false, isbasis=false) for p in proj]
@@ -700,30 +709,32 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   short_vectors1 = Vector{QQFieldElem}[]
   #norms = Vector{QQFieldElem}[]
   flag_projection = zero_matrix(QQ,n,n)
+  tmpZZ = ZZ()
   for i in 1:length(proj)
     short_vectors2 = Vector{QQFieldElem}[]
     flag_projection = flag_projection + proj[i]
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
     flag_projectionZ = coordinates(flag_projection, Lflag)
-    @show flag_projectionZ
+    tmp = zeros(QQFieldElem, nrows(flag_projectionZ))
+    tmp2 = zeros(QQFieldElem, n)
     target_norm = Set(n[i] for n in target_norms)
     mi = minimum(target_norm)
     ma = maximum(target_norm)
-    @show target_norm
+    short_vectors3 = Vector{QQFieldElem}[]
     for b in short_vectors1
-      _is_integral(b*flag_projectionZ) && push!(short_vectors2, b)
+      _is_integral(mul!(tmp, b, flag_projectionZ),tmpZZ) && push!(short_vectors2, b)
     end
-    for (s,q) in short_vectors(projL[i], mi, ma)
+    for (s, q) in short_vectors(projL[i], mi, ma)
       q in target_norm || continue
       a = s*basis_matrix(projL[i])
       if i == 1
         push!(short_vectors2, a)
       else
         for b in short_vectors1
-          c = a + b
-          _is_integral(c*flag_projectionZ) && push!(short_vectors2, c)
-          c = a - b
-          _is_integral(c*flag_projectionZ) && push!(short_vectors2, c)
+          c = add!(tmp2, a, b)
+          _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ) && push!(short_vectors2, deepcopy(c))
+          c = sub!(tmp2, a , b)
+          _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ) && push!(short_vectors2, deepcopy(c))
         end
       end
     end
@@ -732,6 +743,6 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   return short_vectors1
 end
 
-function _is_integral(x::Vector)
-  return all(isone(denominator(i)) for i in x)
+function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
+  return all(isone(denominator!(tmp, i)) for i in x)
 end
