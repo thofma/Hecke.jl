@@ -701,6 +701,36 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat)
   return proj, target_proj_root_inv, target_norms
 end
 
+@inline function add!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{QQFieldElem})
+  @inbounds for i in 1:length(x)
+    z[i] = add!(z[i], x[i], y[i])
+  end
+  return z
+end
+
+@inline function sub!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{QQFieldElem})
+  @inbounds for i in 1:length(x)
+    z[i] = sub!(z[i], x[i], y[i])
+  end
+  return z
+end
+
+function _is_product_integral(b, flag_project2, tmp, tmpZZ)
+  z = tmp
+  for i in 1:ncols(flag_project2)
+    mul!(z, b, @view flag_project2[:, i:i])
+    if !is_integral(z[1])
+      return false
+    end
+  end
+  return true
+end
+
+function mul!(z::Vector{QQFieldElem}, a::Vector{ZZRingElem}, b::QQMatrix)
+  @ccall libflint.fmpq_mat_fmpz_vec_mul_ptr(z::Ptr{Ref{QQFieldElem}}, a::Ptr{Ref{ZZRingElem}}, length(a)::Int, b::Ref{QQMatrix})::Nothing
+  return z
+end
+
 """
     _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_norms::Vector{Vector{QQFieldElem}})
 
@@ -723,41 +753,64 @@ function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_i
   short_vectors1 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[(i[1,:],n[1:1]) for (i,n) in zip(target_invariant,target_norms)]
   unique!(short_vectors1) # different targets can have the same first projection
   k = length(proj)
+  zeroQQ = zero(QQ)
+  good = 0
+  miss = 0
+  tmpv = [zero(QQ)]
   for i in 2:k
     short_vectors2 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[]
     flag_projection = flag_projection + proj[i]
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
     flag_projectionZ = coordinates(flag_projection, Lflag)
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
-    tmp2 = zeros(QQFieldElem, n)
+    tmp2 = zeros_array(QQ, n)
     target_norm_i = Set(n[i] for n in target_norms)
     target_norm = Set(n[1:i] for n in target_norms)
+    #@info target_norm
     mi = minimum(target_norm_i)
     ma = maximum(target_norm_i)
-    if zero(QQ) in target_norm_i
+    if zeroQQ in target_norm_i
       # make up for the fact that short_vectors returns only non-zero vectors.
       for (b, normb) in short_vectors1
-        norm_a_b = vcat(normb,[zero(QQ)])
-        norm_a_b in target_norm || continue
-        if _is_integral(mul!(tmp, b, flag_projectionZ),tmpZZ)
-          push!(short_vectors2, (b, norm_a_b))
+        # we want to look at norm_a_b = vcat(normb,[zero(QQ)]), but this allocates too much
+        # we want to check properties of [normb..., zeroQQ]
+        # we push! zeroQQ to normb and call it norm_a_b
+        # if it is good, we take a copy of this
+        # if not, we pop zeroQQ from it
+        norm_a_b = push!(normb, zeroQQ)
+        if !(norm_a_b in target_norm)
+          pop!(norm_a_b)
+          continue
         end
+        if _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
+        # if _is_integral(mul!(tmp, b, flag_projectionZ), tmpZZ)
+          push!(short_vectors2, (b, copy(norm_a_b)))
+        end
+        pop!(norm_a_b)
       end
     end
-    for (s, q) in short_vectors(projL[i], mi, ma)
+    a = zeros_array(QQ, ncols(basis_matrix(projL[i])))
+    for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma)
       q in target_norm_i || continue
-      a = s*basis_matrix(projL[i])
+      a = mul!(a, s, basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
       for (b, normb) in short_vectors1
-        norm_a_b = vcat(normb,[q])
-        norm_a_b in target_norm || continue
+        #norm_a_b = vcat(normb,[q])
+        norm_a_b = push!(normb, q)
+        if !(norm_a_b in target_norm)
+          pop!(norm_a_b)
+          continue
+        end
         c = add!(tmp2, b, a)
-        if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-          push!(short_vectors2, (deepcopy(c), norm_a_b))
+        #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
+        if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+          push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
         end
         c = sub!(tmp2, b, a)
-        if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-          push!(short_vectors2, (deepcopy(c), norm_a_b))
+        #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
+        if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+          push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
         end
+        pop!(norm_a_b)
       end
     end
     short_vectors1 = short_vectors2
