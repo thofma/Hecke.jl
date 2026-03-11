@@ -1861,10 +1861,10 @@ end
 function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
-  # Co is the source
-  # Ci is the target
+  # Ci is the source
+  # Co is the target
   # We only need to initialize the vector sums and Bacher polynomials for the
-  # target lattice
+  # source lattice
   fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth)
   if fl
     Co = ZLatAutoCtx(Go)
@@ -1924,7 +1924,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   if found
     ISO = matgen(x, d, Ci.per, Co.V)
     for k in 1:length(Ci.G)
-      ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
+      @hassert :Lattice 1 ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
     end
     return true, ISO
   else

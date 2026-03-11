@@ -3181,13 +3181,18 @@ function _reflection(gram::MatElem, v::MatElem)
 end
 
 # Preprocessing for Plesken Souvignier
+# return generators for the weyl group
+# invariant gram matrices
+# invariant vectors
 function _weyl_group(L::ZZLat)
+  if !isone(basis_matrix(L))
+    L = lattice(rational_span(L))
+  end
   root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
   if length(root_types) == 0
     return ZZMatrix[], ZZMatrix[], ZZ(1), false
   end
   BR = basis_matrix(root_lat)
-
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
   for t in Set(root_types)
@@ -3199,27 +3204,34 @@ function _weyl_group(L::ZZLat)
         V = V + [v*basis_matrix(irreducible_root_lattices[i]) for v in inv_vec]
       end
     end
-    append!(invariant_vectors, ZZMatrix[ZZ.(coordinates(i, L)) for i in V])
+    append!(invariant_vectors, ZZMatrix[ZZ.(i) for i in V])
   end
   gramZ = ZZ.(gram_matrix(L))
   for v in invariant_vectors
     push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
   end
 
-  rho = coordinates(_weyl_vector(root_lat), L)
 
-  fundamental_roots = coordinates(basis_matrix(root_lat), L)
-
+  fundamental_roots = basis_matrix(root_lat)
   gram = gram_matrix(L)
-  gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
-  push!(invariant_grams, gram_rho)
+  # not needed because in the linear span of the invariant vectors.
+  #rho = coordinates(_weyl_vector(root_lat), L)
+  #gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
+  #push!(invariant_grams, gram_rho)
   weyl_group_gens = [_reflection(gram, fundamental_roots[i:i,:]) for i in 1:nrows(fundamental_roots)]
 
   ord = one(ZZ)
   for s in root_types
     mul!(ord, _weyl_group_order(s...))
   end
-  return weyl_group_gens, invariant_grams, ord
+  fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
+  cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
+  V = ambient_space(L)
+  to_fix = 1 - matrix(orthogonal_projection(V, fixed_lattice))
+  to_cofix = 1 - matrix(orthogonal_projection(V, cofix_lattice))
+  @assert rank(to_fix+to_cofix)==rank(root_lat)
+
+  return weyl_group_gens, invariant_grams, ord, [to_fix,to_cofix]
 end
 
 function _weyl_group_order(s::Symbol, n::IntegerUnion)
