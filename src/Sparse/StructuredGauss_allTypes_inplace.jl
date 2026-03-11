@@ -16,6 +16,8 @@
 
 #TODO: nzero could change when scaling with zero_divisor!!
 
+#TODO: find_best_single_row min col length instead of row length -> reduces number of eliminations
+
 add_verbosity_scope(:StructGauss)
 set_verbosity_level(:StructGauss, 0)
 
@@ -30,6 +32,7 @@ mutable struct data_StructGauss{T}
  nlight::Int64 #number of non-pivot and non-dense columns 
  npivot::Int64 #number of pivot columns
  nzero_rows::Int64 #number of zero_rows
+ nsingle_rows::Int64
  nused_rows::Int64 #number of rows without any light entry (zero+pivot+dense rows)
  light_weight::Vector{Int64} #light_weight[i] = number of entries in row i outside of dense columns 
  col_list::Vector{Vector{Int64}} #col_list[j] = row indices of entries in column j outside of pivot rows
@@ -45,6 +48,7 @@ mutable struct data_StructGauss{T}
   base_ring(A),
   0,
   ncols(A),
+  0,
   0,
   0,
   0,
@@ -177,7 +181,11 @@ function part_echelonize!(A::SMat{<:RingElem}, unimodular_trafos = false, _det=f
 
   (SG.npivot >= pivbound || t >= SG.nlight) && break
   (SG.nlight-SG.nzero == 0 || SG.nused_rows >= n) && break #TODO: alternative
-  best_single_row, best_col_idx = find_best_single_row(SG)
+  if SG.unimodular_trafos
+   best_single_row, best_col_idx = find_best_row_unimodular(SG)
+  else
+   best_single_row, best_col_idx = find_best_single_row(SG)
+  end
   best_single_row == 0 && @assert(!(-1 in SG.row_marker)) #test
   
   if best_single_row == 0
@@ -274,6 +282,98 @@ function find_best_single_row(SG::data_StructGauss{ZZRingElem})::Tuple{Int64, In
   end
  end
  return best_single_row, best_col_idx
+end
+
+#1st prio: unit
+#2nd prio:light_weight
+#3rd prio: length of row if row_len = true, length of col else
+#look at -1 and -2 in same loop
+#TODO: What shall happen, when there is no -1...?
+function find_best_row_unimodular(SG::data_StructGauss, row_len = true)::Tuple{Int64, Int64}
+ best_single_row = 0
+ best_len = 0
+ best_light_weight = 0
+ best_is_unit = false
+ best_is_single = false
+ best_col_idx = 0
+ candidate_row_val = SG.R(0)
+ for i = 1:nrows(SG.A)
+  #only consider SG.row_marker[i]=-1, -2
+  if SG.row_marker[i] == -1 #is_single
+   @assert SG.light_weight[i] == 1 #TODO: think about not using -1 at all in row_marker
+   candidate_row = SG.A[i]
+   light_idx = find_light_entry(candidate_row.pos, SG.is_light_col)
+   candidate_row_val = getindex!(candidate_row_val, candidate_row.values, light_idx)
+   if row_len #minimize length of row
+    candidate_len = length(candidate_row)
+   else #minimize length of column
+    candidate_col = SG.A[i].pos[light_idx]
+    candidate_len = length(SG.col_list[candidate_col])
+   end
+   _is_unit = is_unit(candidate_row_val)
+   if best_is_unit == _is_unit
+    if !best_is_single || candidate_len < best_len
+     best_candidate_row = i
+     best_len = candidate_len
+     best_is_single = true #not needed in second case
+     best_col_idx = light_idx
+    end
+   elseif !best_is_unit && _is_unit || best_single_row == 0
+    best_candidate_row = i
+    best_len = candidate_len
+    best_is_unit = true
+    best_is_single = true
+    best_col_idx = light_idx
+   end
+  elseif SG.row_marker[i] == -2 #!is_single_row
+   @assert SG.light_weight[i] > 1
+   #search for unit, if none exists in light part, then continue
+   _is_unit = false
+   light_idx = 0
+   for idx in 1:length(SG.A[i].pos)
+     j = SG.A[i].pos[idx]
+     if SG.is_light_col[j] && is_unit(SG.A[i].values[idx])
+       _is_unit = true
+       light_idx = idx
+       break
+     end
+   end
+   #!_is_unit && continue
+   if !best_is_unit && _is_unit
+    best_single_row = i
+    best_len = length(SG.A[i])
+    best_light_weight = SG.light_weight[i]
+    best_is_unit = true
+    best_col_idx = light_idx
+   elseif best_is_unit && _is_unit && !best_is_single
+    #look after light_weight, then row/col len
+    if row_len #minimize length of row
+     candidate_len = length(candidate_row)
+    else #minimize length of column
+     candidate_col = SG.A[i].pos[light_idx]
+     candidate_len = length(SG.col_list[candidate_col])
+    end
+    if SG.light_weight[i] < best_light_weight
+     best_candidate_row = i
+     best_len = candidate_len
+     best_light_weight = SG.light_weight[i]
+     best_is_unit = true
+     best_is_single = true
+     best_col_idx = light_idx
+    elseif SG.light_weight[i] == best_light_weight
+     if candidate_len < best_len
+      best_candidate_row = i
+      best_len = candidate_len
+      #light_weight doesn't change
+      best_is_unit = true
+      best_is_single = true
+      best_col_idx = light_idx
+     end
+    end
+   end
+  end
+ end
+ return best_single_row, best_col_idx #if best_col_idx for -2, use other function later!!!
 end
 
 #prio: shortest row
@@ -468,6 +568,7 @@ end
 
 #TODO: update best_row in Z/nZ case (new zeros might appear by scaling)
 #TODO: update best_row after transform with gcd
+#TODO: check in which cases row_idx can have other changes in light weight than -1 after elimination
 function update_after_addition!(row_idx::Int64, SG::data_StructGauss)::data_StructGauss
  @assert !(0 in SG.A[row_idx].values)
  SG.light_weight[row_idx] = 0
