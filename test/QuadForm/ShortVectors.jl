@@ -168,7 +168,7 @@ end
 end
 
 
-@testset "short vector with condition"
+@testset "short vector with condition" begin
   L = [ZZ[-2 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 0 1; 0 -2 -1 1 -1 1 -1 -1 1 1 0 0 0 0 0 0 -1; 0 -1 -2 1 -1 1 -1 -1 1 0 0 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0 0 0 0 0 0 0 0; 0 -1 -1 0 -2 1 -1 -1 1 1 0 0 0 0 0 0 -1; 0 1 1 0 1 -2 1 1 -1 0 0 0 0 0 0 0 0; 0 -1 -1 0 -1 1 -2 -1 1 1 0 0 0 0 0 0 -1; 0 -1 -1 0 -1 1 -1 -2 1 1 0 0 0 0 0 0 -1; 0 1 1 0 1 -1 1 1 -2 0 0 0 0 0 0 0 0; -1 1 0 0 1 0 1 1 0 -4 0 0 0 0 0 0 3; 0 0 0 0 0 0 0 0 0 0 -2 -1 -1 -1 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 -2 -1 0 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 -1 -2 -1 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 0 -1 -2 1 0 0; 0 0 0 0 0 0 0 0 0 0 1 1 1 1 -2 -1 0; 0 0 0 0 0 0 0 0 0 0 1 1 1 0 -1 -2 0; 1 -1 0 0 -1 0 -1 -1 0 3 0 0 0 0 0 0 -6],
   ZZ[-2 1 -1 1 -1 1 0 0 0 1 -1 -1 -1 1 -1 1 1; 1 -2 1 -1 1 -1 0 0 0 0 0 0 1 0 0 0 0; -1 1 -2 1 -1 1 0 0 0 1 -1 -1 0 1 -1 1 1; 1 -1 1 -2 1 -1 0 0 0 -1 0 1 1 -1 1 0 -1; -1 1 -1 1 -2 1 0 0 0 1 -1 0 0 0 0 1 0; 1 -1 1 -1 1 -2 0 0 0 -1 1 0 1 0 0 -1 -1; 0 0 0 0 0 0 -2 0 0 -1 0 1 -1 -1 1 0 0; 0 0 0 0 0 0 0 -2 -1 -1 -1 0 0 0 0 -1 1; 0 0 0 0 0 0 0 -1 -2 -1 -1 0 0 0 0 -1 1; 1 0 1 -1 1 -1 -1 -1 -1 -4 0 2 -1 -2 2 -2 -1; -1 0 -1 0 -1 1 0 -1 -1 0 -4 0 0 0 0 1 1; -1 0 -1 1 0 0 1 0 0 2 0 -4 0 3 -3 1 2; -1 1 0 1 0 1 -1 0 0 -1 0 0 -4 -1 1 0 0; 1 0 1 -1 0 0 -1 0 0 -2 0 3 -1 -4 3 -1 -2; -1 0 -1 1 0 0 1 0 0 2 0 -3 1 3 -4 1 2; 1 0 1 0 1 -1 0 -1 -1 -2 1 1 0 -1 1 -4 0; 1 0 1 -1 0 -1 0 1 1 -1 1 2 0 -2 2 0 -4],
   ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
@@ -177,11 +177,11 @@ end
   @test length.(Hecke.short_vectors_with_condition.(L)) == [29, 39, 41, 100]
 
 
-  function test_short_vectors_with_condition(L::ZZLat)
+  function test_short_vectors_with_condition(L::ZZLat; use_int = false)
     sv = short_vectors(L,maximum(abs.(diagonal(gram_matrix(L)))))
 
     proj, target_proj_root_inv, target_norms = Hecke._short_vectors_with_condition_preprocessing(L)
-    sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms)
+    sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms; use_int)
     proj_root_inv = proj[1]
     result = Vector{QQFieldElem}[]
     for (v,q) in sv
@@ -205,4 +205,5 @@ end
     return nothing
   end
   test_short_vectors_with_condition(L[1])
+  test_short_vectors_with_condition(L[1]; use_int = true)
 end
