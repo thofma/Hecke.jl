@@ -166,3 +166,43 @@ end
   @test s == [1//2, 2//3, 3//4]
   @test all(inner_product(L, v[i], v[i]) == s[i] for i in 1:length(s))
 end
+
+
+@testset "short vector with condition"
+  L = [ZZ[-2 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 0 1; 0 -2 -1 1 -1 1 -1 -1 1 1 0 0 0 0 0 0 -1; 0 -1 -2 1 -1 1 -1 -1 1 0 0 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0 0 0 0 0 0 0 0; 0 -1 -1 0 -2 1 -1 -1 1 1 0 0 0 0 0 0 -1; 0 1 1 0 1 -2 1 1 -1 0 0 0 0 0 0 0 0; 0 -1 -1 0 -1 1 -2 -1 1 1 0 0 0 0 0 0 -1; 0 -1 -1 0 -1 1 -1 -2 1 1 0 0 0 0 0 0 -1; 0 1 1 0 1 -1 1 1 -2 0 0 0 0 0 0 0 0; -1 1 0 0 1 0 1 1 0 -4 0 0 0 0 0 0 3; 0 0 0 0 0 0 0 0 0 0 -2 -1 -1 -1 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 -2 -1 0 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 -1 -2 -1 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 0 -1 -2 1 0 0; 0 0 0 0 0 0 0 0 0 0 1 1 1 1 -2 -1 0; 0 0 0 0 0 0 0 0 0 0 1 1 1 0 -1 -2 0; 1 -1 0 0 -1 0 -1 -1 0 3 0 0 0 0 0 0 -6],
+  ZZ[-2 1 -1 1 -1 1 0 0 0 1 -1 -1 -1 1 -1 1 1; 1 -2 1 -1 1 -1 0 0 0 0 0 0 1 0 0 0 0; -1 1 -2 1 -1 1 0 0 0 1 -1 -1 0 1 -1 1 1; 1 -1 1 -2 1 -1 0 0 0 -1 0 1 1 -1 1 0 -1; -1 1 -1 1 -2 1 0 0 0 1 -1 0 0 0 0 1 0; 1 -1 1 -1 1 -2 0 0 0 -1 1 0 1 0 0 -1 -1; 0 0 0 0 0 0 -2 0 0 -1 0 1 -1 -1 1 0 0; 0 0 0 0 0 0 0 -2 -1 -1 -1 0 0 0 0 -1 1; 0 0 0 0 0 0 0 -1 -2 -1 -1 0 0 0 0 -1 1; 1 0 1 -1 1 -1 -1 -1 -1 -4 0 2 -1 -2 2 -2 -1; -1 0 -1 0 -1 1 0 -1 -1 0 -4 0 0 0 0 1 1; -1 0 -1 1 0 0 1 0 0 2 0 -4 0 3 -3 1 2; -1 1 0 1 0 1 -1 0 0 -1 0 0 -4 -1 1 0 0; 1 0 1 -1 0 0 -1 0 0 -2 0 3 -1 -4 3 -1 -2; -1 0 -1 1 0 0 1 0 0 2 0 -3 1 3 -4 1 2; 1 0 1 0 1 -1 0 -1 -1 -2 1 1 0 -1 1 -4 0; 1 0 1 -1 0 -1 0 1 1 -1 1 2 0 -2 2 0 -4],
+  ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
+  ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
+  L = [integer_lattice(gram=-g) for g in L]
+  @test length.(Hecke.short_vectors_with_condition.(L)) == [29, 39, 41, 100]
+
+
+  function test_short_vectors_with_condition(L::ZZLat)
+    sv = short_vectors(L,maximum(abs.(diagonal(gram_matrix(L)))))
+
+    proj, target_proj_root_inv, target_norms = Hecke._short_vectors_with_condition_preprocessing(L)
+    sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms)
+    proj_root_inv = proj[1]
+    result = Vector{QQFieldElem}[]
+    for (v,q) in sv
+      j = matrix(ZZ,1,rank(L),v)
+      vproj = [j*p for p in proj]
+      vnorms = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
+      vnorms in target_norms || continue
+      j*proj_root_inv in target_proj_root_inv && push!(result, QQ.(v))
+      -j*proj_root_inv in target_proj_root_inv && push!(result, -QQ.(v))
+    end
+    for (v,n) in sv2
+      j = matrix(ZZ,1,rank(L),v)
+      vproj = [j*p for p in proj]
+      vnorms = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
+      @assert n==vnorms
+      @assert vnorms in target_norms
+      @assert j*proj_root_inv in target_proj_root_inv || j==0
+    end
+    @test length(result) == length(sv2)
+    @test Set(result) == Set(first.(sv2))
+    return nothing
+  end
+  test_short_vectors_with_condition(L[1])
+end
