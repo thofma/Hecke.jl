@@ -751,27 +751,61 @@ function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_i
   flag_projection = proj[1]
   tmpZZ = ZZ()
   short_vectors1 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[(i[1,:],n[1:1]) for (i,n) in zip(target_invariant,target_norms)]
+  short_vectors1_new = Vector{Tuple{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}, Vector{QQFieldElem}}}(undef, length(target_invariant))
+  for j in 1:length(target_invariant)
+    i = target_invariant[j]
+    nn = target_norms[j]
+    tinvn, invd = integral_split(i[1,:], ZZ)
+    short_vectors1_new[j] = ((Int.(tinvn)', Int(invd)), nn[1:1])
+  end
+  #@info short_vectors1[1]
+  #@info short_vectors1_new
   unique!(short_vectors1) # different targets can have the same first projection
+  unique!(short_vectors1_new) # different targets can have the same first projection
+
   k = length(proj)
   zeroQQ = zero(QQ)
   good = 0
   miss = 0
   tmpv = [zero(QQ)]
+  basismatprojL = Vector{Tuple{Matrix{Int}, Int}}(undef, k)
+  for i in 1:k
+    M = basis_matrix(projL[i])
+    Mint = Matrix{Int}(numerator(M))
+    Md = denominator(M)
+    basismatprojL[i] = Mint, Md
+  end
+
   for i in 2:k
     short_vectors2 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[]
+    short_vectors2_new = Tuple{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}, Vector{QQFieldElem}}[]
     flag_projection = flag_projection + proj[i]
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
     flag_projectionZ = coordinates(flag_projection, Lflag)
+    #@info "" flag_projectionZ, typeof(flag_projectionZ)
+    flag_projectionZmat = Matrix{Int}(ZZ.(flag_projectionZ))
+    #@info "" basis_matrix(projL[i]), typeof(basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
+    tmpforproj = zeros(Int, ncols(flag_projectionZ))'
     tmp2 = zeros_array(QQ, n)
+    tmp2_new = zeros(Int, n)'
+    tmp2_new2 = zeros(Int, n)'
+    tmp2_new3 = zeros(Int, n)'
     target_norm_i = Set(n[i] for n in target_norms)
-    target_norm = Set(n[1:i] for n in target_norms)
+    target_norm = Set([n[1:i] for n in target_norms])
     #@info target_norm
     mi = minimum(target_norm_i)
     ma = maximum(target_norm_i)
     if zeroQQ in target_norm_i
       # make up for the fact that short_vectors returns only non-zero vectors.
-      for (b, normb) in short_vectors1
+      for i in 1:length(short_vectors1_new)
+        #b, normb = short_vectors1[i]
+        bb, normb = short_vectors1_new[i]
+        #@info i
+        #@info normb, normbb
+        #@assert vec(1//bb[2] .* bb[1]) == vec(b)
+        #@assert normb == normbb
+      #for (b, normb) in short_vectors1
         # we want to look at norm_a_b = vcat(normb,[zero(QQ)]), but this allocates too much
         # we want to check properties of [normb..., zeroQQ]
         # we push! zeroQQ to normb and call it norm_a_b
@@ -782,39 +816,85 @@ function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_i
           pop!(norm_a_b)
           continue
         end
-        if _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
-        # if _is_integral(mul!(tmp, b, flag_projectionZ), tmpZZ)
-          push!(short_vectors2, (b, copy(norm_a_b)))
+        #@info "" bb[1] * flag_projectionZmat, bb[2]
+        #@info "" b * flag_projectionZ
+        #@assert is_zero(mod.(bb[1] * flag_projectionZmat, bb[2])) == _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
+        #if _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
+        #if _is_integral(mul!(tmp, b, flag_projectionZ), tmpZZ)
+        LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
+        tmpforproj .= mod.(tmpforproj, bb[2])
+        if is_zero(tmpforproj)
+          #push!(short_vectors2, (b, copy(norm_a_b)))
+          push!(short_vectors2_new, ((copy(bb[1]), bb[2]), copy(norm_a_b)))
         end
         pop!(norm_a_b)
       end
     end
-    a = zeros_array(QQ, ncols(basis_matrix(projL[i])))
-    for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma)
+    bmat, bmatden = basismatprojL[i][1], basismatprojL[i][2]
+    tmp4 = zeros(Int, size(bmat, 2))'
+    #a = zeros_array(QQ, ncols(basis_matrix(projL[i])))
+    for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma, Int)
       q in target_norm_i || continue
-      a = mul!(a, s, basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
-      for (b, normb) in short_vectors1
+      #a = mul!(a, s, basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
+      aa = LinearAlgebra.mul!(tmp4, s', bmat), bmatden
+      #@assert vec(1//aa[2] .* aa[1])  == vec(a)
+      for i in 1:length(short_vectors1_new)
+      #for (b, normb) in short_vectors1
+        #b, normb = short_vectors1[i]
+        bb, normb = short_vectors1_new[i]
+        #@assert normb == normbb
         #norm_a_b = vcat(normb,[q])
         norm_a_b = push!(normb, q)
         if !(norm_a_b in target_norm)
           pop!(norm_a_b)
           continue
         end
-        c = add!(tmp2, b, a)
+        #c = add!(tmp2, b, a)
+        tmp2_new .= aa[2] .* bb[1]
+        tmp2_new2 .= bb[2] .* aa[1]
+        tmp2_new3 .= tmp2_new .+ tmp2_new2
+        d = aa[2] * bb[2]
+        #cc = aa[2] .* bb[1] + bb[2] .* aa[1], aa[2]*bb[2]
+        #@assert (tmp2_new3, aa[2] * bb[2]) == cc
         #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-        if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-          push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
+        #@assert is_zero(mod.(tmp2_new3 * flag_projectionZmat, cc[2])) == _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+        LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+        tmpforproj .= mod.(tmpforproj, d)
+        if is_zero(tmpforproj)
+        #if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+          push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
+          #@assert vec(1//cc[2] * copy(tmp2_new3)) == vec(c)
+          #push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
         end
-        c = sub!(tmp2, b, a)
+        tmp2_new3 .= tmp2_new .- tmp2_new2
+        #cc = aa[2] .* bb[1] - bb[2] .* aa[1], cc[2]
+        #c = sub!(tmp2, b, a)
+        #@assert cc[1] == tmp2_new3
+        #@info "" c
+        #@info "" cc
         #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-        if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-          push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
+        #@assert is_zero(mod.(tmp2_new3 * flag_projectionZmat, cc[2])) == _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+        LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+        tmpforproj .= mod.(tmpforproj, d)
+        if is_zero(tmpforproj)
+          #@assert vec(1//cc[2] * copy(tmp2_new3)) == vec(c)
+          push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
+          #push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
         end
         pop!(norm_a_b)
       end
     end
-    short_vectors1 = short_vectors2
+    #short_vectors1 = short_vectors2
+    resize!(short_vectors1_new, length(short_vectors2_new))
+    short_vectors1_new .= short_vectors2_new
+    empty!(short_vectors2_new)
   end
+  short_vectors1 = Vector{Tuple{Vector{QQFieldElem}, Vector{QQFieldElem}}}(undef, length(short_vectors1_new))
+  for i in 1:length(short_vectors1_new)
+    (z, d), q = short_vectors1_new[i]
+    short_vectors1[i] = QQFieldElem[div(z[i], d) for i in 1:n], q
+  end
+
   @hassert :Lattice 1 all(matrix(QQ, 1, length(i),i)*proj[1] in target_invariant for (i,_) in short_vectors1)
   @hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
   return short_vectors1
