@@ -4363,7 +4363,7 @@ function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=tru
     end
   end
   if Base.length(sv) == 0
-    B = zero_matrix(ZZ, 0, rank(L))
+    BZ = zero_matrix(ZZ, 0, rank(L))
   else
     BZ = _row_span!(first.(sv))
   end
