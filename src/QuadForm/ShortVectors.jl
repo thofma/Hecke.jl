@@ -683,7 +683,7 @@ end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat)
   proj = _invariant_projections(L)
-  proj_root_inv,proj_root_coinv = _weyl_group(L)[4]
+  proj_root_inv, proj_root_coinv = _weyl_group(L)[4]
   @assert proj[1] == proj_root_inv+proj_root_coinv
   proj[1]= proj_root_coinv
   pushfirst!(proj, proj_root_inv)

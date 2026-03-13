@@ -419,9 +419,9 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   known_short_vectors=(0, []),
-  use_weyl::Bool=false,
+  use_weyl::Bool=true,
   reduced::Bool=false,
-  use_projections::Bool=false,
+  use_projections::Bool=true,
   use_norm_one::Bool=false,
 )
   use_weyl
@@ -896,6 +896,10 @@ function root_lattice(R::Vector{Tuple{Symbol,Int}})
   return integer_lattice(; gram=block_diagonal_matrix(S))
 end
 
+# WARNING: If the ordering of the basis vectors is changed
+# several other function need to be changed as well
+# A non exhaustive list: _weyl_vector, _highest_root, find_permutaton_and_ADE_type
+# _weyl_group, ....
 function _root_lattice_A(n::Int)
   @req n > 0 "Parameter ($n) for root lattice of type :A must be positive"
   z = zero_matrix(QQ, n, n)
@@ -911,6 +915,8 @@ function _root_lattice_A(n::Int)
   return z
 end
 
+# WARNING: If the ordering of the basis vectors is changed
+# several other function need to be changed as well
 function _root_lattice_D(n::Int)
   @req n >= 2 "Parameter ($n) for root lattices of type :D must be greater or equal to 2"
   if n == 2
@@ -930,6 +936,8 @@ function _root_lattice_D(n::Int)
   return G
 end
 
+# WARNING: If the ordering of the basis vectors is changed
+# several other function need to be changed as well
 function _root_lattice_E(n::Int)
   @req n in [6,7,8] "Parameter ($n) for lattice of type :E must be 6, 7 or 8"
   if n == 6
@@ -2629,6 +2637,13 @@ of matrices representing each connected component of the graph
 """
 function _connected_components_graph!(B::Vector{T}, G::T) where T <: MatElem
   components = T[]
+  if isempty(B)
+    return components
+  end
+  c = B[1]
+  tmp = zero(transpose(c))
+  tmp2 = zero(transpose(c))
+  tmp3 = zero_matrix(base_ring(c), 1, 1)::T
   while length(B) > 0
     basis = T[]
     b = pop!(B)
@@ -2637,8 +2652,9 @@ function _connected_components_graph!(B::Vector{T}, G::T) where T <: MatElem
     while flag
       flag = false
       for c in B
-        _c = transpose(c)
-        if any(!iszero(a*G*_c) for a in basis)
+        _c = transpose!(tmp, c)
+        Gc = mul!(tmp2, G, _c)
+        if any(!iszero(mul!(tmp3, a, Gc)) for a in basis)
           push!(basis, c)
           deleteat!(B, findfirst(==(c), B))
           flag = true
@@ -2843,476 +2859,6 @@ function _shortest_vectors_decomposition(L::ZZLat; closed::Bool=false, check::Bo
   return blocks, sv
 end
 
-################################################################################
-#
-#  Root lattice recognition
-#
-################################################################################
-
-@doc raw"""
-    root_lattice_recognition(L::ZZLat)
-
-Return the ADE type of the root sublattice of `L`.
-
-The root sublattice is the lattice spanned by the vectors of squared length
-$1$ and $2$.  The odd lattice of rank 1 and determinant $1$ is denoted by
-`(:I, 1)`.
-
-Input:
-
-`L` -- a definite and integral $\mathbb{Z}$-lattice.
-
-Output:
-
-Two lists, the first one containing the ADE types
-and the second one the irreducible root sublattices.
-
-For more recognizable gram matrices use [`root_lattice_recognition_fundamental`](@ref).
-
-# Examples
-
-```jldoctest
-julia> L = integer_lattice(; gram=ZZ[4  0 0  0 3  0 3  0;
-                                     0 16 8 12 2 12 6 10;
-                                     0  8 8  6 2  8 4  5;
-                                     0 12 6 10 2  9 5  8;
-                                     3  2 2  2 4  2 4  2;
-                                     0 12 8  9 2 12 6  9;
-                                     3  6 4  5 4  6 6  5;
-                                     0 10 5  8 2  9 5  8])
-Integer lattice of rank 8 and degree 8
-with gram matrix
-[4    0   0    0   3    0   3    0]
-[0   16   8   12   2   12   6   10]
-[0    8   8    6   2    8   4    5]
-[0   12   6   10   2    9   5    8]
-[3    2   2    2   4    2   4    2]
-[0   12   8    9   2   12   6    9]
-[3    6   4    5   4    6   6    5]
-[0   10   5    8   2    9   5    8]
-
-julia> R = root_lattice_recognition(L)
-([(:A, 1), (:D, 6)], ZZLat[Integer lattice of rank 1 and degree 8, Integer lattice of rank 6 and degree 8])
-
-julia> L = integer_lattice(; gram = QQ[1 0 0  0;
-                                       0 9 3  3;
-                                       0 3 2  1;
-                                       0 3 1 11])
-Integer lattice of rank 4 and degree 4
-with gram matrix
-[1   0   0    0]
-[0   9   3    3]
-[0   3   2    1]
-[0   3   1   11]
-
-julia> root_lattice_recognition(L)
-([(:A, 1), (:I, 1)], ZZLat[Integer lattice of rank 1 and degree 4, Integer lattice of rank 1 and degree 4])
-```
-"""
-function root_lattice_recognition(L::ZZLat; check::Bool=true)
-  irr = irreducible_components(root_sublattice(L; check); check=false)
-  rlr = Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr]
-  sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
-  return rlr[sp], irr[sp]
-end
-
-@doc raw"""
-    root_lattice_recognition_fundamental(L::ZZLat)
-
-Return the ADE type of the root sublattice of `L`
-as well as the corresponding irreducible root sublattices
-with basis given by a fundamental root system.
-
-The type `(:I, 1)` corresponds to the odd unimodular
-root lattice of rank 1.
-
-Input:
-
-`L` -- a definite and integral $\mathbb Z$-lattice.
-
-Output:
-
-- the root sublattice, with basis given by a fundamental root system
-- the ADE types
-- a Vector consisting of the irreducible root sublattices.
-
-# Examples
-
-```jldoctest
-julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
-                            0 16 8 12 2 12 6 10;
-                            0  8 8  6 2  8 4  5;
-                            0 12 6 10 2  9 5  8;
-                            3  2 2  2 4  2 4  2;
-                            0 12 8  9 2 12 6  9;
-                            3  6 4  5 4  6 6  5;
-                            0 10 5  8 2  9 5  8])
-Integer lattice of rank 8 and degree 8
-with gram matrix
-[4    0   0    0   3    0   3    0]
-[0   16   8   12   2   12   6   10]
-[0    8   8    6   2    8   4    5]
-[0   12   6   10   2    9   5    8]
-[3    2   2    2   4    2   4    2]
-[0   12   8    9   2   12   6    9]
-[3    6   4    5   4    6   6    5]
-[0   10   5    8   2    9   5    8]
-
-julia> R = root_lattice_recognition_fundamental(L);
-
-julia> gram_matrix(R[1])
-[2    0    0    0    0    0    0]
-[0    2    0   -1    0    0    0]
-[0    0    2   -1    0    0    0]
-[0   -1   -1    2   -1    0    0]
-[0    0    0   -1    2   -1    0]
-[0    0    0    0   -1    2   -1]
-[0    0    0    0    0   -1    2]
-
-```
-"""
-function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
-  V = ambient_space(L)
-  ADE, components = root_lattice_recognition(L; check)
-  components_new = ZZLat[]
-  basis = zero_matrix(QQ, 0, degree(L))
-  for i in 1:length(ADE)
-    ade = ADE[i]
-    S = components[i]
-    _, trafo = _ADE_type_with_isometry_irreducible(S)
-    BS = trafo * basis_matrix(S)
-    Snew = lattice(V, BS)
-    push!(components_new, Snew)
-    basis = vcat(basis, BS)
-  end
-  C = lattice(ambient_space(L), basis; check = false)
-  return C, ADE, components_new
-end
-
-# For all i
-# replace x[i] by -x[i] if its first non-zero coefficient is negative.
-function _canonicalize!(x::Vector)
-  i = 1
-  while i<length(x) && iszero(x[i])
-    i = i+1
-  end
-  if is_negative(x[i])
-    neg!.(x)
-  end
-  return x
-end
-
-# For sv a set of roots compute the fundamental roots
-# where a root is positive iff its first nonzero coefficient is positive.
-function _fundamental_roots(sv::Vector{S}) where {S}
-  _canonicalize!.(sv)
-  sort!(sv)
-  n = length(first(sv))
-  B = zero_matrix(ZZ, 0, n)
-  tmp = zero_matrix(ZZ, 1, n)
-  fundamental = S[]
-  for v in sv
-    for i in 1:n
-      tmp[1, i] = v[i]
-    end
-    reduce_mod_hnf_ur!(tmp, B)
-    if iszero(tmp)
-      continue
-    else
-      B = vcat(B, tmp)
-      hnf!(B)
-      push!(fundamental, v)
-    end
-  end
-  return fundamental
-end
-
-# return the root types of the root sublattice of L
-function _root_lattice_recognition(L::ZZLat)
-  sv = first.(short_vectors(L,2))
-  fund = _fundamental_roots(sv)
-  Fund = ZZMatrix[matrix(ZZ,1,rank(L),i) for i in fund]
-  G = ZZ.(gram_matrix(L))
-  comp = _connected_components_graph!(Fund, G)
-  types = Tuple{Symbol,Int}[]
-  for c in comp
-    g = c*G*transpose(c)
-    tau = ADE_type(g)
-    push!(types, tau)
-  end
-  return types
-end
-
-@doc raw"""
-    ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}
-
-Return the type of the irreducible root lattice
-with gram matrix `G`.
-
-See also [`root_lattice_recognition`](@ref).
-
-# Examples
-```jldoctest
-julia> Hecke.ADE_type(gram_matrix(root_lattice(:A,3)))
-(:A, 3)
-```
-"""
-function ADE_type(G::MatrixElem)
-  r = rank(G)
-  d = abs(det(G))
-  if r == 1 && d == 1
-    return (:I, 1)
-  end
-  if r == 8 && d==1
-    return (:E, 8)
-  end
-  if r == 7 && d == 2
-    return (:E, 7)
-  end
-  if r == 6 && d ==3
-    return (:E, 6)
-  end
-  if d == r + 1
-    return (:A, r)
-  end
-  if d == 4
-    return (:D, r)
-  end
-  error("Not a definite root lattice")
-end
-
-function _ADE_type_with_isometry_irreducible(L)
-  ADE = ADE_type(gram_matrix(L))
-  R = root_lattice(ADE...)
-  e = sign(gram_matrix(L)[1, 1])
-  if e == -1
-    R = rescale(R, -1; cached=false)
-  end
-  t, T = __is_isometric_with_isometry_definite(R, L)
-  @hassert :Lattice 1 t
-  return ADE, T
-end
-
-@doc raw"""
-    root_sublattice(L::ZZLat; length = [1, 2]) -> ZZLat
-
-Return the sublattice spanned by the roots of length specified by `length`,
-which by default are all roots of length at most $2$, and which must be
-a subset of `[1, 2]` with unique entries.
-
-# Examples
-```jldoctest
-julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
-
-julia> basis_matrix(root_sublattice(L))
-[1   0   0]
-[0   1   0]
-
-julia> basis_matrix(root_sublattice(L; length = [2]))
-[0   1   0]
-
-julia> basis_matrix(root_sublattice(L; length = [1]))
-[1   0   0]
-```
-"""
-function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=true)
-  V = ambient_space(L)
-  @req !check || is_integral(L) "L must be integral"
-  @req !check || is_definite(L) "L must be definite"
-  @req issubset(length, [1, 2]) "Root lengths must be in [1, 2]"
-  if is_negative_entry(gram_matrix(L),1,1)#is_negative_definite(L)
-    L = rescale(L,-1; cached=false)
-  end
-  # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
-  # short_vectors(L, ub)
-  if Base.length(length) == 2
-    sv = short_vectors(L, 2; check=false)
-  else
-    if length[1] == 1
-      sv = short_vectors(L, 1; check=false)
-    else
-      sv = short_vectors(L, 2, 2; check=false)
-    end
-  end
-  if Base.length(sv) == 0
-    B = zero_matrix(ZZ, 0, rank(L))
-  else
-    BZ = _row_span!(first.(sv))
-  end
-  BQ = BZ*basis_matrix(L)
-  return lattice(V, BQ; check=false, isbasis=true)
-end
-
-
-function _reflection(gram::MatElem, v::MatElem)
-  n = ncols(gram)
-  gram_v = gram*transpose(v)
-  c = (v * gram_v)[1,1]
-  ref = zero_matrix(base_ring(gram), n, n)
-  # special cases for roots
-  if c == 2
-    for k in 1:n
-      ref[k:k,:] = neg!(gram_v[k,1]*v)
-      ref[k,k] += 1
-    end
-  elseif c == 1
-    for k in 1:n
-      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
-      ref[k,k] += 1
-    end
-  elseif c == -2
-    for k in 1:n
-      ref[k:k,:] = gram_v[k,1]*v
-      ref[k,k] += 1
-    end
-  elseif c == -1
-    for k in 1:n
-      ref[k:k,:] = 2*gram_v[k,1]*v
-      ref[k,k] += 1
-    end
-  else
-    for k in 1:n
-      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
-      ref[k,k] += 1
-    end
-  end
-
-  return ref
-end
-
-# Preprocessing for Plesken Souvignier
-# return generators for the weyl group
-# invariant gram matrices
-# invariant vectors
-function _weyl_group(L::ZZLat)
-  if !isone(basis_matrix(L))
-    L = lattice(rational_span(L))
-  end
-  root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
-  if length(root_types) == 0
-    return ZZMatrix[], ZZMatrix[], ZZ(1), false
-  end
-  BR = basis_matrix(root_lat)
-  invariant_grams = ZZMatrix[]
-  invariant_vectors = ZZMatrix[]
-  for t in Set(root_types)
-    inv_vec = _invariant_vectors(t...)
-    k = length(inv_vec)
-    V = [zero_matrix(QQ, 1, degree(L)) for i in 1:k]
-    for i in 1:length(root_types)
-      if root_types[i] == t
-        V = V + [v*basis_matrix(irreducible_root_lattices[i]) for v in inv_vec]
-      end
-    end
-    append!(invariant_vectors, ZZMatrix[ZZ.(i) for i in V])
-  end
-  gramZ = ZZ.(gram_matrix(L))
-  for v in invariant_vectors
-    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
-  end
-
-
-  fundamental_roots = basis_matrix(root_lat)
-  gram = gram_matrix(L)
-  # not needed because in the linear span of the invariant vectors.
-  #rho = coordinates(_weyl_vector(root_lat), L)
-  #gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
-  #push!(invariant_grams, gram_rho)
-  weyl_group_gens = [_reflection(gram, fundamental_roots[i:i,:]) for i in 1:nrows(fundamental_roots)]
-
-  ord = one(ZZ)
-  for s in root_types
-    mul!(ord, _weyl_group_order(s...))
-  end
-  fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
-  cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
-  V = ambient_space(L)
-  to_fix = 1 - matrix(orthogonal_projection(V, fixed_lattice))
-  to_cofix = 1 - matrix(orthogonal_projection(V, cofix_lattice))
-  @assert rank(to_fix+to_cofix)==rank(root_lat)
-
-  return weyl_group_gens, invariant_grams, ord, [to_fix,to_cofix]
-end
-
-function _weyl_group_order(s::Symbol, n::IntegerUnion)
-  n = ZZ(n)
-  if s == :A
-    ord = factorial(n+1)
-  elseif s == :B
-    @assert n>=2
-    ord = ZZ(2)^n * factorial(n)
-  elseif s == :C
-    @assert n>=3
-    ord = ZZ(2)^n * factorial(n)
-  elseif s == :D
-    @assert n>=4
-    ord = ZZ(2)^(n-1) * factorial(n)
-  elseif s == :E
-    @assert 8>=n>=6
-    if n == 6
-      ord = 51840
-    elseif n == 7
-      ord = 2903040
-    elseif n == 8
-      ord = 696729600
-    end
-  elseif s == :F
-    @assert n==4
-    ord = 1152
-  elseif s == :G
-    @assert n==2
-    ord = 12
-  elseif s == :I
-    @assert n==1
-    ord = 2
-  else
-    error("invalid root system")
-  end
-  return ord
-end
-
-function _invariant_vectors(s::Symbol, n::IntegerUnion)
-  E = identity_matrix(ZZ, n)
-  invs = ZZMatrix[]
-  e(n) = E[n:n,:]
-  if s == :A
-    for i in 1:div(n,2)
-      push!(invs, e(i)+e(n+1-i))
-    end
-    if !iszero(n%2)
-      push!(invs, e(div(n+1,2)))
-    end
-  elseif s == :D
-    @assert n>=4
-    if n == 4
-      push!(invs, e(1) + e(2) + e(4))
-      push!(invs, e(3))
-    else
-      for i in 3:n
-        push!(invs, e(i))
-      end
-      push!(invs, e(1)+e(2))
-    end
-  elseif s == :E
-    @assert 8>=n>=6
-    if n == 6
-      for i in [3,6]
-        push!(invs, e(i))
-      end
-      push!(invs, e(1) + e(5))
-      push!(invs, e(2) + e(4))
-    elseif n == 7 || n == 8
-      for i in 1:n
-        push!(invs, e(i))
-      end
-    end
-  elseif s == :I
-    push!(invs, e(1))
-  else
-    error("invalid root system")
-  end
-  return invs
-end
 
 
 ################################################################################
@@ -3967,70 +3513,6 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    coxeter_number(ADE::Symbol, n) -> Int
-
-Return the Coxeter number of the corresponding ADE root lattice.
-
-If ``L`` is a root lattice and ``R`` its set of roots, then the Coxeter number ``h``
-is ``|R|/n`` where `n` is the rank of ``L``.
-
-# Examples
-```jldoctest
-julia> coxeter_number(:D, 4)
-6
-
-```
-"""
-function coxeter_number(ADE::Symbol, n)
-  if ADE == :A
-    return n+1
-  elseif ADE == :D
-    return 2*(n-1)
-  elseif ADE == :E && n == 6
-    return 12
-  elseif ADE == :E && n == 7
-    return 18
-  elseif ADE == :E && n == 8
-    return 30
-  end
-end
-
-@doc raw"""
-    highest_root(ADE::Symbol, n) -> ZZMatrix
-
-Return coordinates of the highest root of `root_lattice(ADE, n)`.
-
-# Examples
-```jldoctest
-julia> highest_root(:E, 6)
-[1   2   3   2   1   2]
-```
-"""
-function highest_root(ADE::Symbol, n)
-  if ADE == :A
-    w = [1 for i in 1:n]
-  elseif ADE == :D
-    w = vcat([1,1],[2 for i in 3:n-1])
-    w = vcat(w,[1])
-  elseif ADE == :E && n == 6
-    w = [1,2,3,2,1,2]
-  elseif ADE == :E && n == 7
-    w = [2,3,4,3,2,1,2]
-  elseif ADE == :E && n == 8
-    w = [2,4,6,5,4,3,2,3]
-  end
-  w = matrix(ZZ, 1, n, w)
-  g = gram_matrix(root_lattice(ADE,n))
-  @hassert :Lattice 2 all(0<=i for i in collect(w*g))
-  @hassert :Lattice 2 (w*g*transpose(w))[1,1]==2
-  return w
-end
-
-function _weyl_vector(R::ZZLat)
-  weyl = matrix(ZZ,1,rank(R),ones(1,rank(R)))*inv(gram_matrix(R))
-  return weyl*basis_matrix(R)
-end
 
 @doc raw"""
     leech_lattice() -> ZZLat
@@ -4317,6 +3799,77 @@ function hyperkaehler_lattice(S::Symbol; n::Int = 2)
   end
 end
 
+
+
+########################################################################################################################### Root lattices and recognition of root lattices
+##########################################################################################################################
+
+@doc raw"""
+    coxeter_number(ADE::Symbol, n) -> Int
+
+Return the Coxeter number of the corresponding ADE root lattice.
+
+If ``L`` is a root lattice and ``R`` its set of roots, then the Coxeter number ``h``
+is ``|R|/n`` where `n` is the rank of ``L``.
+
+# Examples
+```jldoctest
+julia> coxeter_number(:D, 4)
+6
+
+```
+"""
+function coxeter_number(ADE::Symbol, n)
+  if ADE == :A
+    return n+1
+  elseif ADE == :D
+    return 2*(n-1)
+  elseif ADE == :E && n == 6
+    return 12
+  elseif ADE == :E && n == 7
+    return 18
+  elseif ADE == :E && n == 8
+    return 30
+  end
+end
+
+@doc raw"""
+    highest_root(ADE::Symbol, n) -> ZZMatrix
+
+Return coordinates of the highest root of `root_lattice(ADE, n)`.
+
+# Examples
+```jldoctest
+julia> highest_root(:E, 6)
+[1   2   3   2   1   2]
+```
+"""
+function highest_root(ADE::Symbol, n)
+  if ADE == :A
+    w = [1 for i in 1:n]
+  elseif ADE == :D
+    w = vcat([1,1],[2 for i in 3:n-1])
+    w = vcat(w,[1])
+  elseif ADE == :E && n == 6
+    w = [1,2,3,2,1,2]
+  elseif ADE == :E && n == 7
+    w = [2,3,4,3,2,1,2]
+  elseif ADE == :E && n == 8
+    w = [2,4,6,5,4,3,2,3]
+  end
+  w = matrix(ZZ, 1, n, w)
+  g = gram_matrix(root_lattice(ADE,n))
+  @hassert :Lattice 2 all(0<=i for i in collect(w*g))
+  @hassert :Lattice 2 (w*g*transpose(w))[1,1]==2
+  return w
+end
+
+function _weyl_vector(R::ZZLat)
+  weyl = matrix(ZZ,1,rank(R),ones(1,rank(R)))*inv(gram_matrix(R))
+  return weyl*basis_matrix(R)
+end
+
+
 @doc raw"""
     extended_ade(ADE::Symbol, n::Int)
 
@@ -4355,4 +3908,753 @@ function extended_ade(ADE::Symbol, n::Int)
   end
   @assert rank(G) == n
   return -G, kernel(G; side = :left)
+end
+
+
+# Preprocessing for Plesken Souvignier
+# return generators for the weyl group
+# invariant gram matrices
+# invariant vectors
+function _weyl_group(L::ZZLat)
+  if !isone(basis_matrix(L))
+    L = lattice(rational_span(L))
+  end
+  root_types, irreducible_root_lattices = _root_lattice_recognition_fundamental(L)
+  if length(root_types) == 0
+    return ZZMatrix[], ZZMatrix[], ZZ(1), false
+  end
+  invariant_grams = ZZMatrix[]
+  invariant_vectors = ZZMatrix[]
+  for t in Set(root_types)
+    inv_vec = _invariant_vectors(t...)
+    k = length(inv_vec)
+    V = [zero_matrix(ZZ, 1, rank(L)) for i in 1:k]
+    for i in 1:length(root_types)
+      if root_types[i] == t
+        V = V + [v*irreducible_root_lattices[i] for v in inv_vec]
+      end
+    end
+    append!(invariant_vectors, V)
+  end
+  gramZ = ZZ.(gram_matrix(L))
+  for v in invariant_vectors
+    x = v*gramZ
+    push!(invariant_grams, transpose(x)*x)
+  end
+
+
+  # not needed because in the linear span of the invariant vectors.
+  #rho = coordinates(_weyl_vector(root_lat), L)
+  #gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
+  #push!(invariant_grams, gram_rho)
+  weyl_group_gens = ZZMatrix[]
+  for fundamental_roots in irreducible_root_lattices
+    for i in 1:nrows(fundamental_roots)
+      push!(weyl_group_gens, _reflection(gramZ, view(fundamental_roots, i:i, :)))
+    end
+  end
+
+  ord = one(ZZ)
+  for s in root_types
+    mul!(ord, _weyl_group_order(s...))
+  end
+  # inefficient
+  if true
+    amb = ambient_space(L)
+    rank(QQ.(reduce(vcat,irreducible_root_lattices)))
+    root_lat = lattice(amb, QQ.(reduce(vcat,irreducible_root_lattices)))
+    fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
+    cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
+    to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
+    to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
+    @assert rank(to_fix+to_cofix)==rank(root_lat)
+  else
+    # slower than the above ... because we solve over ZZ?
+    root_lat = reduce(vcat, irreducible_root_lattices)
+    fixed_lattice = reduce(vcat, invariant_vectors)
+    cofix_lattice = kernel(root_lat * gramZ * transpose(fixed_lattice); side=:left) * root_lat
+    K = kernel(gramZ*transpose(root_lat); side=:left)
+    B = vcat(fixed_lattice, cofix_lattice, K)
+    Binv = inv!(QQ.(B))
+    f = nrows(fixed_lattice)
+    g = nrows(cofix_lattice)
+    to_fix = view(Binv, :, 1:f)*fixed_lattice
+    to_cofix = view(Binv,:, f+1:f+g)*cofix_lattice
+    @assert rank(to_fix+to_cofix)==rank(root_lat)
+  end
+
+  return weyl_group_gens, invariant_grams, ord, [to_fix,to_cofix]
+end
+
+function _weyl_group_order(s::Symbol, n::IntegerUnion)
+  n = ZZ(n)
+  if s == :A
+    ord = factorial(n+1)
+  elseif s == :B
+    @assert n>=2
+    ord = ZZ(2)^n * factorial(n)
+  elseif s == :C
+    @assert n>=3
+    ord = ZZ(2)^n * factorial(n)
+  elseif s == :D
+    @assert n>=4
+    ord = ZZ(2)^(n-1) * factorial(n)
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      ord = 51840
+    elseif n == 7
+      ord = 2903040
+    elseif n == 8
+      ord = 696729600
+    end
+  elseif s == :F
+    @assert n==4
+    ord = 1152
+  elseif s == :G
+    @assert n==2
+    ord = 12
+  elseif s == :I
+    @assert n==1
+    ord = 2
+  else
+    error("invalid root system")
+  end
+  return ord
+end
+
+function _invariant_vectors(s::Symbol, n::IntegerUnion)
+  E = identity_matrix(ZZ, n)
+  invs = ZZMatrix[]
+  e(n) = E[n:n,:]
+  if s == :A
+    for i in 1:div(n,2)
+      push!(invs, e(i)+e(n+1-i))
+    end
+    if !iszero(n%2)
+      push!(invs, e(div(n+1,2)))
+    end
+  elseif s == :D
+    @assert n>=4
+    if n == 4
+      push!(invs, e(1) + e(2) + e(4))
+      push!(invs, e(3))
+    else
+      for i in 3:n
+        push!(invs, e(i))
+      end
+      push!(invs, e(1)+e(2))
+    end
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      for i in [3,6]
+        push!(invs, e(i))
+      end
+      push!(invs, e(1) + e(5))
+      push!(invs, e(2) + e(4))
+    elseif n == 7 || n == 8
+      for i in 1:n
+        push!(invs, e(i))
+      end
+    end
+  elseif s == :I
+    push!(invs, e(1))
+  else
+    error("invalid root system")
+  end
+  return invs
+end
+
+
+################################################################################
+#
+#  Root lattice recognition
+#
+################################################################################
+
+@doc raw"""
+    root_lattice_recognition(L::ZZLat)
+
+Return the ADE type of the root sublattice of `L`.
+
+The root sublattice is the lattice spanned by the vectors of squared length
+$1$ and $2$.  The odd lattice of rank 1 and determinant $1$ is denoted by
+`(:I, 1)`.
+
+Input:
+
+`L` -- a definite and integral $\mathbb{Z}$-lattice.
+
+Output:
+
+Two lists, the first one containing the ADE types
+and the second one the irreducible root sublattices.
+
+For more recognizable gram matrices use [`root_lattice_recognition_fundamental`](@ref).
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(; gram=ZZ[4  0 0  0 3  0 3  0;
+                                     0 16 8 12 2 12 6 10;
+                                     0  8 8  6 2  8 4  5;
+                                     0 12 6 10 2  9 5  8;
+                                     3  2 2  2 4  2 4  2;
+                                     0 12 8  9 2 12 6  9;
+                                     3  6 4  5 4  6 6  5;
+                                     0 10 5  8 2  9 5  8])
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[4    0   0    0   3    0   3    0]
+[0   16   8   12   2   12   6   10]
+[0    8   8    6   2    8   4    5]
+[0   12   6   10   2    9   5    8]
+[3    2   2    2   4    2   4    2]
+[0   12   8    9   2   12   6    9]
+[3    6   4    5   4    6   6    5]
+[0   10   5    8   2    9   5    8]
+
+julia> R = root_lattice_recognition(L)
+([(:A, 1), (:D, 6)], ZZLat[Integer lattice of rank 1 and degree 8, Integer lattice of rank 6 and degree 8])
+
+julia> L = integer_lattice(; gram = QQ[1 0 0  0;
+                                       0 9 3  3;
+                                       0 3 2  1;
+                                       0 3 1 11])
+Integer lattice of rank 4 and degree 4
+with gram matrix
+[1   0   0    0]
+[0   9   3    3]
+[0   3   2    1]
+[0   3   1   11]
+
+julia> root_lattice_recognition(L)
+([(:A, 1), (:I, 1)], ZZLat[Integer lattice of rank 1 and degree 4, Integer lattice of rank 1 and degree 4])
+```
+"""
+function root_lattice_recognition(L::ZZLat; check::Bool=true)
+  R, ADEs, comp = root_lattice_recognition_fundamental(L)
+  return ADEs, comp
+end
+
+@doc raw"""
+    root_lattice_recognition_fundamental(L::ZZLat)
+
+Return the ADE type of the root sublattice of `L`
+as well as the corresponding irreducible root sublattices
+with basis given by a fundamental root system.
+
+The type `(:I, 1)` corresponds to the odd unimodular
+root lattice of rank 1.
+
+Input:
+
+`L` -- a definite and integral $\mathbb Z$-lattice.
+
+Output:
+
+- the root sublattice, with basis given by a fundamental root system
+- the ADE types
+- a Vector consisting of the irreducible root sublattices.
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
+                            0 16 8 12 2 12 6 10;
+                            0  8 8  6 2  8 4  5;
+                            0 12 6 10 2  9 5  8;
+                            3  2 2  2 4  2 4  2;
+                            0 12 8  9 2 12 6  9;
+                            3  6 4  5 4  6 6  5;
+                            0 10 5  8 2  9 5  8])
+Integer lattice of rank 8 and degree 8
+with gram matrix
+[4    0   0    0   3    0   3    0]
+[0   16   8   12   2   12   6   10]
+[0    8   8    6   2    8   4    5]
+[0   12   6   10   2    9   5    8]
+[3    2   2    2   4    2   4    2]
+[0   12   8    9   2   12   6    9]
+[3    6   4    5   4    6   6    5]
+[0   10   5    8   2    9   5    8]
+
+julia> R = root_lattice_recognition_fundamental(L);
+
+julia> gram_matrix(R[1])
+[2    0    0    0    0    0    0]
+[0    2    0   -1    0    0    0]
+[0    0    2   -1    0    0    0]
+[0   -1   -1    2   -1    0    0]
+[0    0    0   -1    2   -1    0]
+[0    0    0    0   -1    2   -1]
+[0    0    0    0    0   -1    2]
+
+```
+"""
+function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
+  ADE, basis_matrices_wrt_L = _root_lattice_recognition_fundamental(L)
+  B = basis_matrix(L)
+  ambient_bases = QQMatrix[b*B for b in basis_matrices_wrt_L]
+  V = ambient_space(L)
+  C = lattice(V, reduce(vcat,ambient_bases; init=zero_matrix(QQ,0,degree(L))))
+  components = ZZLat[lattice(V,b) for b in ambient_bases]
+  return C, ADE, components
+end
+
+# For all i
+# replace x[i] by -x[i] if its first non-zero coefficient is negative.
+function _canonicalize!(x::Vector)
+  i = 1
+  while i<length(x) && iszero(x[i])
+    i = i+1
+  end
+  if is_negative(x[i])
+    neg!.(x)
+  end
+  return x
+end
+
+# For sv a set of roots compute the fundamental roots
+# where a root is positive iff its first nonzero coefficient is positive.
+function _fundamental_roots(sv::Vector{S}) where {S}
+  _canonicalize!.(sv)
+  sort!(sv)
+  n = length(first(sv))
+  B = zero_matrix(ZZ, 0, n)
+  tmp = zero_matrix(ZZ, 1, n)
+  fundamental = S[]
+  for v in sv
+    for i in 1:n
+      tmp[1, i] = v[i]
+    end
+    reduce_mod_hnf_ur!(tmp, B)
+    if iszero(tmp)
+      continue
+    else
+      B = vcat(B, tmp)
+      hnf!(B)
+      push!(fundamental, v)
+    end
+  end
+  return fundamental
+end
+
+# return the root types of the root sublattice of L
+# and the basis matrices with respect to the basis of L
+function _root_lattice_recognition_fundamental(L::ZZLat)
+  sv = first.(short_vectors(L, 2))
+  fund = _fundamental_roots(sv)
+  Fund = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in fund]
+  G = ZZ.(gram_matrix(L))
+  comp = _connected_components_graph!(Fund, G)
+  types = Tuple{Symbol,Int}[]
+  basis_matrices = ZZMatrix[]
+  for c in comp
+    g = c*G*transpose(c)
+    ADE, perm = find_permutaton_and_ADE_type(g)
+    push!(types, (ADE, nrows(c)))
+    push!(basis_matrices, c[perm,:])
+  end
+  sp = sortperm(types; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
+  return types[sp], basis_matrices[sp]
+end
+
+@doc raw"""
+    ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}
+
+Return the type of the irreducible root lattice
+with gram matrix `G`.
+
+See also [`root_lattice_recognition`](@ref).
+
+# Examples
+```jldoctest
+julia> Hecke.ADE_type(gram_matrix(root_lattice(:A,3)))
+(:A, 3)
+```
+"""
+function ADE_type(G::MatrixElem)
+  r = rank(G)
+  d = abs(det(G))
+  if r == 1 && d == 1
+    return (:I, 1)
+  end
+  if r == 8 && d==1
+    return (:E, 8)
+  end
+  if r == 7 && d == 2
+    return (:E, 7)
+  end
+  if r == 6 && d ==3
+    return (:E, 6)
+  end
+  if d == r + 1
+    return (:A, r)
+  end
+  if d == 4
+    return (:D, r)
+  end
+  error("Not a definite root lattice")
+end
+
+@doc raw"""
+    root_sublattice(L::ZZLat; length = [1, 2]) -> ZZLat
+
+Return the sublattice spanned by the roots of length specified by `length`,
+which by default are all roots of length at most $2$, and which must be
+a subset of `[1, 2]` with unique entries.
+
+# Examples
+```jldoctest
+julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
+
+julia> basis_matrix(root_sublattice(L))
+[1   0   0]
+[0   1   0]
+
+julia> basis_matrix(root_sublattice(L; length = [2]))
+[0   1   0]
+
+julia> basis_matrix(root_sublattice(L; length = [1]))
+[1   0   0]
+```
+"""
+function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=true)
+  V = ambient_space(L)
+  @req !check || is_integral(L) "L must be integral"
+  @req !check || is_definite(L) "L must be definite"
+  @req issubset(length, [1, 2]) "Root lengths must be in [1, 2]"
+  if is_negative_entry(gram_matrix(L),1,1)#is_negative_definite(L)
+    L = rescale(L,-1; cached=false)
+  end
+  # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
+  # short_vectors(L, ub)
+  if Base.length(length) == 2
+    sv = short_vectors(L, 2; check=false)
+  else
+    if length[1] == 1
+      sv = short_vectors(L, 1; check=false)
+    else
+      sv = short_vectors(L, 2, 2; check=false)
+    end
+  end
+  if Base.length(sv) == 0
+    B = zero_matrix(ZZ, 0, rank(L))
+  else
+    BZ = _row_span!(first.(sv))
+  end
+  BQ = BZ*basis_matrix(L)
+  return lattice(V, BQ; check=false, isbasis=true)
+end
+
+
+function _reflection(gram::MatElem, v::MatElem)
+  n = ncols(gram)
+  gram_v = gram*transpose(v)
+  c = (v * gram_v)[1,1]
+  ref = zero_matrix(base_ring(gram), n, n)
+  # special cases for roots
+  if c == 2
+    for k in 1:n
+      ref[k:k,:] = neg!(gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == 1
+    for k in 1:n
+      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
+      ref[k,k] += 1
+    end
+  elseif c == -2
+    for k in 1:n
+      ref[k:k,:] = gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  elseif c == -1
+    for k in 1:n
+      ref[k:k,:] = 2*gram_v[k,1]*v
+      ref[k,k] += 1
+    end
+  else
+    for k in 1:n
+      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
+      ref[k,k] += 1
+    end
+  end
+
+  return ref
+end
+
+
+# Given the gram matrix of an ADE fundamental root system
+# Return A D or E and the permutation I with
+# g[I,I] being the "standard" numbering of an ADE graph as in root_lattice
+# if we ever change the standard ordering this code will stop working
+function find_permutaton_and_ADE_type(H::MatrixElem)
+  if nrows(H)==1
+   @assert !is_zero_entry(H,1,1)
+   return :A, [1]
+  end
+  r = nrows(H)
+  isoftypeAn = true
+  isoftypeEn = false
+  exceptional_number = 0
+  if 6 ≤ r ≤ 8
+    isoftypeEn = true
+  end
+  path = zeros(Int, 2*r-1)
+  path[r] = 1
+  position = r
+  neighbor = zeros(Int, 3)
+  i = 2
+  z = 1
+  while i ≤ r
+    if !is_zero_entry(H,i,1)
+      neighbor[z] = i
+      z += 1
+    end
+    i += 1
+  end
+  pivot1 = neighbor[1]
+  pivot2 = neighbor[2]
+  last_visited1 = 1
+  last_visited2 = 1
+  if neighbor[2] == 0
+    neighborneighborcount = 0
+    tmpnumber = neighbor[1]
+    i = 1
+    while i ≤ r
+      if !is_zero_entry(H,i,tmpnumber)
+        neighborneighborcount += 1
+      end
+      i += 1
+    end
+    if neighborneighborcount == 4
+      isoftypeAn = false
+      exceptional_number = 1
+      path[r] = tmpnumber
+      i = 1
+      z = 1
+      while i ≤ r
+        if !is_zero_entry(H,i,tmpnumber)
+          if i ≠ tmpnumber
+            neighbor[z] = i
+            z += 1
+          end
+        end
+        i += 1
+      end
+      if neighbor[3] == 1
+        pivot1 = neighbor[1]
+        pivot2 = neighbor[2]
+      elseif neighbor[2] == 1
+        pivot1 = neighbor[1]
+        pivot2 = neighbor[3]
+      else
+        pivot1 = neighbor[3]
+        pivot2 = neighbor[2]
+      end
+      neighbor[3] = 0
+      last_visited1 = tmpnumber
+      last_visited2 = tmpnumber
+    end
+  end
+  if neighbor[3] ≠ 0
+    isoftypeAn = false
+    exceptional_neighbor_index = 0
+    for j in 1:3
+      tmpnumber = neighbor[j]
+      neighborneighborcount = 0
+      i = 1
+      while i ≤ r
+        if !is_zero_entry(H,i,tmpnumber)
+          neighborneighborcount += 1
+        end
+        i += 1
+      end
+      if neighborneighborcount == 2
+        exceptional_neighbor_index = j
+        break
+      end
+    end
+    exceptional_number = neighbor[exceptional_neighbor_index]
+    if exceptional_neighbor_index == 1
+      pivot1 = neighbor[3]
+    elseif exceptional_neighbor_index == 2
+      pivot2 = neighbor[3]
+    end
+    neighbor[3] = 0
+  end
+  while true
+    position -= 1
+    path[position] = pivot1
+    neighbor[1] = 0
+    neighbor[2] = 0
+    i = 1
+    z = 1
+    while i ≤ r
+      if !is_zero_entry(H, i, pivot1)
+        if i ≠ pivot1
+          neighbor[z] = i
+          z += 1
+        end
+      end
+      i += 1
+    end
+    if neighbor[2] == 0
+      break
+    end
+    if neighbor[3] ≠ 0
+      isoftypeAn = false
+      neighborneighborcount = 0
+      tmpnumberisneighbor1 = (neighbor[1] == last_visited1)
+      tmpnumber = tmpnumberisneighbor1 ? neighbor[2] : neighbor[1]
+      i = 1
+      while i ≤ r
+        if !is_zero_entry(H,i,tmpnumber)
+          neighborneighborcount += 1
+        end
+        i += 1
+      end
+      if neighborneighborcount == 2
+        exceptional_number = tmpnumber
+      else
+        if tmpnumberisneighbor1
+          exceptional_number = neighbor[3]
+        else
+          exceptional_number = (neighbor[2] == last_visited1) ? neighbor[3] : neighbor[2]
+        end
+      end
+      if neighbor[1] == last_visited1
+        last_visited1 = pivot1
+        if neighbor[2] == exceptional_number
+          pivot1 = neighbor[3]
+        else
+          pivot1 = neighbor[2]
+        end
+      elseif neighbor[2] == last_visited1
+        last_visited1 = pivot1
+        if neighbor[1] == exceptional_number
+          pivot1 = neighbor[3]
+        else
+          pivot1 = neighbor[1]
+        end
+      else
+        last_visited1 = pivot1
+        if neighbor[1] == exceptional_number
+          pivot1 = neighbor[2]
+        else
+          pivot1 = neighbor[1]
+        end
+      end
+      neighbor[3] = 0
+    else
+      if neighbor[1] == last_visited1
+        last_visited1 = pivot1
+        pivot1 = neighbor[2]
+      else
+        last_visited1 = pivot1
+        pivot1 = neighbor[1]
+      end
+    end
+  end
+  if pivot2 ≠ 0
+    position = r
+    while true
+      position += 1
+      path[position] = pivot2
+      neighbor[1] = 0
+      neighbor[2] = 0
+      i = 1
+      z = 1
+      while i ≤ r
+        if !is_zero_entry(H, i, pivot2)
+          if i ≠ pivot2
+            neighbor[z] = i
+            z += 1
+          end
+        end
+        i += 1
+      end
+      if neighbor[2] == 0
+        break
+      end
+      if neighbor[3] ≠ 0
+        isoftypeAn = false
+        neighborneighborcount = 0
+        tmpnumberisneighbor1 = (neighbor[1] == last_visited2)
+        tmpnumber = tmpnumberisneighbor1 ? neighbor[2] : neighbor[1]
+        i = 1
+        while i ≤ r
+          if !is_zero_entry(H,i,tmpnumber)
+            neighborneighborcount += 1
+          end
+          i += 1
+        end
+        if neighborneighborcount == 2
+          exceptional_number = tmpnumber
+        else
+          if tmpnumberisneighbor1
+            exceptional_number = neighbor[3]
+          else
+            exceptional_number = (neighbor[2] == last_visited2) ? neighbor[3] : neighbor[2]
+          end
+        end
+        if neighbor[1] == last_visited2
+          last_visited2 = pivot2
+          if neighbor[2] == exceptional_number
+            pivot2 = neighbor[3]
+          else
+            pivot2 = neighbor[2]
+          end
+        elseif neighbor[2] == last_visited2
+          last_visited2 = pivot2
+          if neighbor[1] == exceptional_number
+            pivot2 = neighbor[3]
+          else
+            pivot2 = neighbor[1]
+          end
+        else
+          last_visited2 = pivot2
+          if neighbor[1] == exceptional_number
+            pivot2 = neighbor[2]
+          else
+            pivot2 = neighbor[1]
+          end
+        end
+        neighbor[3] = 0
+      else
+        if neighbor[1] == last_visited2
+          last_visited2 = pivot2
+          pivot2 = neighbor[2]
+        else
+          last_visited2 = pivot2
+          pivot2 = neighbor[1]
+        end
+      end
+    end
+  end
+  path = path[findfirst(!isequal(0),path):end]
+  path = path[1:findfirst(isequal(0),path)-1]
+  if isoftypeAn
+    return :A, path
+  elseif isoftypeEn
+    if !(is_zero_entry(H, path[3], exceptional_number) && is_zero_entry(H, path[end-2], exceptional_number))
+      if is_zero_entry(H, path[end-2], exceptional_number)
+        push!(path, exceptional_number)
+      else
+        pushfirst!(path, exceptional_number)
+        reverse!(path)
+      end
+      return :E, path
+    end
+  end
+  if is_zero_entry(H, path[2], exceptional_number)
+    push!(path, exceptional_number)
+    reverse!(path)
+  else
+    pushfirst!(path, exceptional_number)
+  end
+  return :D, path
 end
