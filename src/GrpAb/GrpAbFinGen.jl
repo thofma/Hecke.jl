@@ -876,19 +876,22 @@ the induced homomorphism.
 """
 function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}})
   r, c = size(A)
-  if c == 1
+  dG = get_attribute(G, :direct_product)
+  if isa(dG, Nothing)
+    @assert c ==1
     dG = [G]
-  else
-    dG = get_attribute(G, :direct_product)
   end
-  if r == 1
+
+  dH = get_attribute(H, :direct_product)
+  if isa(dH, Nothing)
+    @assert r ==1
     dH = [H]
-  else
-    dH = get_attribute(H, :direct_product)
   end
+
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
   end
+
   @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
   h = hom(G, H, reduce(vcat, [reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
   return h
