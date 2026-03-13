@@ -501,7 +501,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
     t1 = compute_len!(t1, c, T, Q, x, U)
     t2 = numerator!(t2, t1)
     _short_enough = false
-    if S === Int
+    if S === Int && fits(Int, t2)
       _len = Int(t2)
       _short_enough = _len <= c
       if !(l isa Nothing)
