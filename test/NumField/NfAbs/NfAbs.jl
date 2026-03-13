@@ -115,8 +115,25 @@ end
 end
 
 @testset "is_lin_disjoint" begin
-  R,x=polynomial_ring(QQ, "x")
-  K,a=number_field(x^2+1)
-  L,b=number_field(x^2+x+1//2)
-  @test !is_linearly_disjoint(L,K)
+  x = gen(Hecke.Globals.Qx)
+
+  # non-coprime polynomial discriminants (coprime order discriminants)
+  K = number_field(x^2 + 1, cached = false)[1]
+  L = number_field(x^2 - 5, cached = false)[1]
+  @assert !is_coprime(discriminant(K.pol), discriminant(L.pol))
+  @test is_linearly_disjoint(L, K)
+
+  # not-nice polynomial (with coprime discriminants)
+  K = number_field(x^2 + 1)[1]
+  L = number_field(x^2 + x + 1//2)[1]
+  @test !is_linearly_disjoint(L, K)
+
+  # check subfields in non-simple extensions
+  K = simple_extension(number_field([x^2 - 2, x^2 - 3], cached = false)[1])[1]
+  L = number_field(x^2 - 2, cached = false)[1]
+  M = number_field(x^2 - 3, cached = false)[1]
+
+  @test !is_linearly_disjoint(K, L)
+  @test !is_linearly_disjoint(K, M)
+  @test is_linearly_disjoint(L, M)
 end
