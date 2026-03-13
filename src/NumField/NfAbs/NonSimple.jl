@@ -78,15 +78,18 @@ end
 
 RandomExtensions.maketype(K::AbsNonSimpleNumField, r) = elem_type(K)
 
+# construct a dense random element:
+# linear combination of basis elements (monomials) with random coefficients
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem,AbsNonSimpleNumField,<:AbstractUnitRange}})
   K, r = sp[][1:end]
-  # TODO: This is super slow
-  b = basis(K, copy = false)
-  z::Random.gentype(sp) = K() # type-assert to help inference on Julia 1.0 and 1.1
-  for i in 1:degree(K)
-    z += rand(rng, r) * b[i]
-  end
-  return z
+
+  ci = QQFieldElem[rand(rng, r) for _ in 1:degree(K)]
+
+  d = degrees(K)
+  exp_it = cartesian_product_iterator([0:d[i]-1 for i in eachindex(d)], inplace = true)
+  ei = Vector{Int}[copy(exp) for exp in exp_it]
+
+  return K(QQMPolyRingElem(parent(K.pol[1]), ci, ei))
 end
 
 rand(K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
