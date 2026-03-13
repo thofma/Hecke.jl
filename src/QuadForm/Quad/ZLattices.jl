@@ -3929,7 +3929,9 @@ function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
   end
   root_types, irreducible_root_lattices = _root_lattice_recognition_fundamental(L, roots)
   if length(root_types) == 0
-    return ZZMatrix[], ZZMatrix[], ZZ(1), false
+    to_fix = zero_matrix(QQ, rank(L), rank(L))
+    to_cofix = zero_matrix(QQ, rank(L), rank(L))
+    return ZZMatrix[], ZZMatrix[], ZZ(1), [to_fix, to_cofix]
   end
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
