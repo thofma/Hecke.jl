@@ -643,7 +643,8 @@ function  __projections(LL::Vector{ZZLat})
       E[j,j] =1
     end
     k = knew
-    push!(projections, Bi*E*B)
+    mul!(E, Bi, mul!(E, B)) # E = Bi*E*B
+    push!(projections, E)
   end
   return projections
 end
@@ -2771,7 +2772,7 @@ end
 _short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
 
 function _short_vector_generators_with_sublattice_2(L::ZZLat; up_to_sign::Bool=false)
-  svL = shortest_vectors(L)
+  svL = shortest_vectors(L; check=false)
   B = _row_span!(svL)*basis_matrix(L)
   if !up_to_sign
     append!(svL, [-i for i in svL])
@@ -4000,7 +4001,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     @assert rank(to_fix+to_cofix)==rank(root_lat)
   end
 
-  return weyl_group_gens, invariant_grams, ord, [to_fix,to_cofix]
+  return weyl_group_gens, invariant_grams, ord, QQMatrix[to_fix,to_cofix]
 end
 
 function _weyl_group_order(s::Symbol, n::IntegerUnion)

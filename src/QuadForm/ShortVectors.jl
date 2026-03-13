@@ -694,16 +694,19 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat)
   proj[1]= proj_root_coinv
   pushfirst!(proj, proj_root_inv)
   n = rank(L)
-  z = zero_matrix(ZZ, 1, n)
-  targets = ZZMatrix[]
-  for i in 1:n
-    ei = deepcopy(z)
-    ei[i] = 1
-    push!(targets, ei)
+  target_norms = Vector{QQFieldElem}[zeros_array(QQ,length(proj)) for i in 1:n]
+  tmp = zero(gram_matrix(L))
+  for (k,p) in enumerate(proj)
+    # p*gram_matrix(L)*transpose(p)
+    tmp = transpose!(tmp, p)
+    mul!(tmp, gram_matrix(L), tmp)
+    gram_proj = mul!(tmp, p, tmp)
+    for i in 1:n
+      target_norms[i][k] = gram_proj[i,i]
+    end
   end
-  target_projections = [[t*p for p in proj] for t in targets]
-  target_norms = [QQFieldElem[(i*gram_matrix(L)*transpose(i))[1] for i in t] for t in target_projections]
-  target_proj_root_inv = [t[1] for t in target_projections]
+  target_proj_root_inv = [proj[1][i:i,:] for i in 1:n]
+
   return proj, target_proj_root_inv, target_norms
 end
 

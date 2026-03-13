@@ -680,8 +680,8 @@ function orthogonal_projection(V::AbstractSpace, M::MatElem)
   @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
   U = orthogonal_complement(V, M)
   B = vcat(U, M)
-  p = vcat(U, zero(M))
-  pr = inv(B)*p
+  p = vcat(U, zero!(M))
+  pr = mul!(inv!(B), p)
   return hom(V, V, pr)
 end
 
