@@ -2769,7 +2769,7 @@ function _short_vector_generators_with_sublattice_2(L::ZZLat; up_to_sign::Bool=f
   svL = shortest_vectors(L)
   B = _row_span!(svL)*basis_matrix(L)
   if !up_to_sign
-    append!(sv[1], [-i for i in svL])
+    append!(svL, [-i for i in svL])
   end
   sv = [svL]
   SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
