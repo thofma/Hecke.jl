@@ -4331,6 +4331,9 @@ end
 #   the bound for p either if we (a) add a vector; or (b) encounter a with larger entry size
 function _fundamental_roots(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(Int) - 2))) where {S, T}
   # choose a large prime < typemax(Int)
+  if isempty(sv)
+    return sv
+  end
   _canonicalize!.(sv)
   sort!(sv)
   n = length(first(sv))
