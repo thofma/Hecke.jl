@@ -4224,7 +4224,7 @@ end
 
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
-function _fundamental_roots(sv::Vector{S}) where {S}
+function _fundamental_roots_naive(sv::Vector{S}) where {S}
   fundamental = S[]
   if isempty(sv)
     return fundamental
@@ -4246,6 +4246,154 @@ function _fundamental_roots(sv::Vector{S}) where {S}
       hnf!(B)
       push!(fundamental, v)
     end
+  end
+  return fundamental
+end
+
+function _bound_entry(v::Vector{S}) where {S}
+  s = zero(Int)
+  for x in v
+    s = max(s, nbits(x))
+  end
+  # so largest entry <= 2^s
+  if s == 1
+    # this can only be possible if all entries are in {-1,0, 1}, so bounded by 2^0
+    return 0
+  end
+  return s
+end
+
+# Assumes that B = A[1:r, :]  is rref
+# reduces A[r + 1:r + 1] modulo B
+# pivs = pivot elements of each row
+# pure = pure[i] == true means that A[i, :] is the pivs[i]-th unit vector
+# dirty = true means that pivs and pure have to be recomputed
+function _reduce_modulo_rref(A::fpMatrix, r, pivs::Vector, pure::Vector, dirty::Bool = true)
+  c = ncols(A)
+  l = r + 1
+  have_pivs = !dirty
+  _zero = zero(base_ring(A))
+  for i in 1:r
+    if have_pivs
+      ind = @inbounds pivs[i]
+      purerow = @inbounds pure[i]
+    else
+      ind = 1
+      while ind <= c && is_zero(@inbounds A[i, ind])
+        ind += 1
+      end
+      pivs[i] = ind
+      # check if pure
+      purerow = true
+      for j in ind+1:c
+        if !is_zero(@inbounds A[i, j])
+          purerow = false
+          break
+        end
+      end
+      @inbounds pure[i] = purerow
+    end
+    w1ind = @inbounds A[l, ind]
+    if iszero(w1ind)
+      continue
+    end
+    if purerow
+      @inbounds A[l, ind] = _zero
+      continue
+    end
+    mult = divexact(w1ind, @inbounds A[i, ind])
+    @inbounds A[l, ind] = _zero
+    for k = ind+1:c
+      x = @inbounds A[i, k]
+      if !iszero(c)
+        @inbounds A[l, k] -= mult * x
+      end
+    end
+  end
+  return is_zero_row(A, l)
+end
+
+function _reduce_modulo_rref(A::FpMatrix, r, pivs, pure, dirty::Bool = true)
+  rref!(A)
+  return is_zero_row(A, r + 1)
+end
+
+# For sv a set of roots compute the fundamental roots
+# where a root is positive iff its first nonzero coefficient is positive.
+# Modular version:
+# - v1,...,vn are are linear independent if and only if
+#   [ v_1 | ... | v_n] has full rank, which is equivalent to the determinant d
+#   of maximal minor being non-zero but if 2 * d < p, then d = 0 is equivalent
+#   to d = 0 mod p
+# - thus we can test this mod p, if p is large enough
+# - we only need p to be large enough for the vectors that we are currently looking at,
+#   so we keep track of the entry size of the vectors we are considering and increase
+#   the bound for p either if we (a) add a vector; or (b) encounter a with larger entry size
+function _fundamental_roots(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(Int) - 2))) where {S, T}
+  # choose a large prime < typemax(Int)
+  _canonicalize!.(sv)
+  sort!(sv)
+  n = length(first(sv))
+  B = zero_matrix(ZZ, 0, n)
+  tmp = zero_matrix(ZZ, 1, n)
+  fundamental = S[]
+  n = length(sv[1])
+  F = Hecke.Native.GF(p)
+  M = zero_matrix(F, n + 1, n)
+  tmp = ZZ()
+  currank = 0
+  r = currank + 1
+  entryboundlog = 0
+  detbound = ZZ(0)
+  pivs = Int[]
+  pure = Bool[]
+  dirty = true
+  update_bound = true
+  for (i, v) in enumerate(sv)
+    _ventryboundlog = _bound_entry(v)
+    if _ventryboundlog > entryboundlog
+      entryboundlog = _ventryboundlog
+      update_bound = true
+    end
+
+    if update_bound
+      r = currank + 1
+      # Hadamard bound is r^(r/2) * B^r
+      set!(detbound, r)
+      detbound = pow!(detbound, detbound, div(r, 2) + 1)
+      # p must be larger than 2 * detbound, so we multiply by an additional 2
+      @ccall libflint.fmpz_mul_2exp(detbound::Ref{ZZRingElem}, detbound::Ref{ZZRingElem}, (entryboundlog + 1)::Int)::Cvoid
+      update_bound = false
+      if p <= detbound
+        # return _fundamental_roots_new(sv, next_prime(ZZ(p)^2))
+        # is too expensive, since we would have to write a fast version for
+        # _reduce_modulo_rref for FpMatrix, but this is a lot of work
+        #
+        # So just call the "old" version
+        return _fundamental_roots_naive(sv)
+      end
+    end
+
+    for i in 1:n
+      s = F(v[i])
+      @inbounds M[currank + 1, i] = s #v[i]
+    end
+    fl = _reduce_modulo_rref(M, currank, pivs, pure, dirty)
+    if fl
+      dirty = false
+      continue
+    end
+    rref!(M)
+    push!(fundamental, v)
+    currank += 1
+    if currank == n
+      # will probably never happen, but cheap to test
+      break
+    end
+    dirty = true
+    resize!(pivs, currank)
+    resize!(pure, currank)
+    update_bound = true
   end
   return fundamental
 end
