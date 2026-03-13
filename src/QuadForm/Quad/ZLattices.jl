@@ -620,12 +620,12 @@ function automorphism_group_order(
   return L.automorphism_group_order
 end
 
-function _invariant_projections(L::ZZLat)
+function _invariant_projections_and_sublattices(L::ZZLat)
   # the first condition is a safeguard from a flint convention for isone
   if rank(L) != degree(L) || !isone(basis_matrix(L))
     L = lattice(rational_span(L))
   end
-  LL, sv = _short_vector_generators_with_sublattice(L; up_to_sign=true)
+  LL, sv = _short_vector_generators_with_sublattice_2(L; up_to_sign=true)
   B = vcat(basis_matrix.(LL)...)
   Bi = inv(B)
   n = degree(L)
@@ -641,8 +641,10 @@ function _invariant_projections(L::ZZLat)
     k = knew
     push!(projections, Bi*E*B)
   end
-  return projections
+  return projections, LL, sv
 end
+
+_invariant_projections(L::ZZLat) = _invariant_projections_and_sublattices(L)[1]
 
 ################################################################################
 #
@@ -2763,20 +2765,26 @@ end
 
 _short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
 
-function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
-  sv = shortest_vectors(L)
-  B = _row_span!(sv)*basis_matrix(L)
+function _short_vector_generators_with_sublattice_2(L::ZZLat; up_to_sign::Bool=false)
+  svL = shortest_vectors(L)
+  B = _row_span!(svL)*basis_matrix(L)
   if !up_to_sign
-    append!(sv, [-i for i in sv])
+    append!(sv[1], [-i for i in svL])
   end
+  sv = [svL]
   SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
   nrows(B) == rank(L) && return SL, sv
   M = orthogonal_submodule(L, B)
-  SM, svM = _short_vector_generators_with_sublattice(M; up_to_sign)
+  SM, svM = _short_vector_generators_with_sublattice_2(M; up_to_sign)
   T = ZZ.(coordinates(basis_matrix(M), L))
-  append!(sv, [i*T for i in svM])
+  append!(sv, [[i*T for i in j] for j in svM])
   append!(SL, SM)
   return SL, sv
+end
+
+function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
+  SL, sv = _short_vector_generators_with_sublattice_2(L; up_to_sign)
+  return SL, reduce(append!, sv; init=Vector{ZZRingElem}[])
 end
 
 
@@ -3915,11 +3923,11 @@ end
 # return generators for the weyl group
 # invariant gram matrices
 # invariant vectors
-function _weyl_group(L::ZZLat)
+function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
   if !isone(basis_matrix(L))
     L = lattice(rational_span(L))
   end
-  root_types, irreducible_root_lattices = _root_lattice_recognition_fundamental(L)
+  root_types, irreducible_root_lattices = _root_lattice_recognition_fundamental(L, roots)
   if length(root_types) == 0
     return ZZMatrix[], ZZMatrix[], ZZ(1), false
   end
@@ -4246,9 +4254,8 @@ end
 
 # return the root types of the root sublattice of L
 # and the basis matrices with respect to the basis of L
-function _root_lattice_recognition_fundamental(L::ZZLat)
-  sv = first.(short_vectors(L, 2))
-  fund = _fundamental_roots(sv)
+function _root_lattice_recognition_fundamental(L::ZZLat, roots::Vector{Vector{ZZRingElem}})
+  fund = _fundamental_roots(roots)
   Fund = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in fund]
   G = ZZ.(gram_matrix(L))
   comp = _connected_components_graph!(Fund, G)
@@ -4263,6 +4270,8 @@ function _root_lattice_recognition_fundamental(L::ZZLat)
   sp = sortperm(types; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
   return types[sp], basis_matrices[sp]
 end
+
+_root_lattice_recognition_fundamental(L::ZZLat) =  _root_lattice_recognition_fundamental(L , first.(short_vectors(L, 2)))
 
 @doc raw"""
     ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}

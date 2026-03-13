@@ -682,8 +682,15 @@ function short_vectors_with_condition(L::ZZLat; use_int::Bool = false)
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat)
-  proj = _invariant_projections(L)
-  proj_root_inv, proj_root_coinv = _weyl_group(L)[4]
+  proj, LL, sv = _invariant_projections_and_sublattices(L)
+  if minimum(L) > 2
+    roots = Vector{ZZRingElem}[]
+  elseif minimum(L) == 2
+    roots = sv[1]
+  else
+    error("detected vectors of norm 1")
+  end
+  proj_root_inv, proj_root_coinv = _weyl_group(L, roots)[4]
   @assert proj[1] == proj_root_inv+proj_root_coinv
   proj[1]= proj_root_coinv
   pushfirst!(proj, proj_root_inv)
