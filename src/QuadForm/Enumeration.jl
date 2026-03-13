@@ -774,7 +774,7 @@ function _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X
 
   # We pass the following function through to the iterator
   # They are applied to the vector found and the length of the vector
-  cleanvec = v -> __clean_and_assemble(v, transform, !isnothing(transform) && !isone(transform), S)
+  cleanvec = v -> __clean_and_assemble(v, transform, !isnothing(transform) && !isone(transform), zeros_array(ZZ, n), S)
   cleanscalar = l -> l//d
 
   if ub isa ZZRingElem && fits(Int, ub)
@@ -818,10 +818,10 @@ end
 
 Base.IteratorSize(::Type{<:LatEnumCtx}) = Base.SizeUnknown()
 
-function __clean_and_assemble(v::V, transform::U, dotransform::Bool, elem_type::Type{S} = ZZRingElem) where {V, U, S}
+function __clean_and_assemble(v::V, transform::U, dotransform::Bool, tmp::Vector{ZZRingElem}, elem_type::Type{S} = ZZRingElem) where {V, U, S}
   # this may or may not produce a copy
   if dotransform
-    m = _transform(v, transform)
+    m = _transform(v, transform, tmp)
   else
     m = v
   end
@@ -851,8 +851,9 @@ end
 
 function __assemble_result!(W, V::T, transform, n) where {T}
   k = 0
+  tmp = zeros_array(ZZ, n)
   for (v, l) in V
-    m = _transform(v, transform)
+    m = _transform(v, transform, tmp)
 
     positive = false
     for k in 1:n
@@ -1009,15 +1010,18 @@ function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bo
   return min, [ v for v in V if v[2] == min]
 end
 
-_transform(m::ZZMatrix, T::ZZMatrix) = m * T
+_transform(m::ZZMatrix, T::ZZMatrix, tmp) = m * T
 
-_transform(m::Vector, ::Nothing) = m
+_transform(m::Vector, ::Nothing, tmp) = m
 
-function _transform(m::Vector{Int}, T::ZZMatrix)
-  return ZZRingElem.(m) * T
+function _transform(m::Vector{Int}, T::ZZMatrix, tmp)
+  @inbounds for i in 1:length(m)
+    tmp[i] = m[i]
+  end
+  return return tmp * T
 end
 
-function _transform(m::Vector{ZZRingElem}, T::ZZMatrix)
+function _transform(m::Vector{ZZRingElem}, T::ZZMatrix, tmp)
   return m * T
 end
 
