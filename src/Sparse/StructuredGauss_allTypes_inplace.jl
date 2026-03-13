@@ -1011,20 +1011,22 @@ end
 
 #TODO: avoid zero rows/cols in dense part!!!
 function extract_dense_matrix(SG::data_StructGauss{ZZRingElem}, DPart::data_DensePart{ZZRingElem})
- #ignores zero_rows
- D = ZZMatrix(nrows(SG.A) - SG.npivot - SG.nzero_rows, length(DPart.dense_idx))
- r = 0 
- for i in 1:length(SG.A)
-   SG.row_marker[i] != -2 && continue
-   r += 1
-   idx = 0
-   for j in SG.A[i].pos
-    idx += 1
-    c = DPart.dense_map[j] 
-    @assert !iszero(c)
-    setindex!(D, SG.A[i], r, c, idx) #D[r,c] = SG.A[i,j]
-	  end
-	 end
+  #ignores zero_rows
+  D = ZZMatrix(nrows(SG.A) - SG.npivot - SG.nzero_rows, length(DPart.dense_idx))
+  r = 0 
+  for i in 1:length(SG.A)
+  #TODO: include 0 if ended prematurely?
+    if -2 <=SG.row_marker[i] <=0
+      r += 1
+      idx = 0
+      for j in SG.A[i].pos
+        idx += 1
+        c = DPart.dense_map[j] 
+        @assert !iszero(c)
+        setindex!(D, SG.A[i], r, c, idx) #D[r,c] = SG.A[i,j]
+      end
+    end
+  end
  return D
 end
 
@@ -1033,21 +1035,22 @@ function Base.setindex!(A::ZZMatrix, B::SRow{ZZRingElem}, ar::Int64, ac::Int64, 
 end
 
 function extract_dense_matrix(SG::data_StructGauss{T}, DPart::data_DensePart{T}) where T <: RingElem
- #ignores zero_rows
- D = zero_matrix(SG.R, nrows(SG.A) - SG.npivot - SG.nzero_rows, length(DPart.dense_idx))
- r = 0 
- for i in 1:length(SG.A)
-   SG.row_marker[i] != -2 && continue
-   r += 1
-   idx = 0
-   for j in SG.A[i].pos
-    idx += 1
-    c = DPart.dense_map[j] 
-    @assert !iszero(c)
-    D[r,c] = SG.A[i].values[idx]
-	  end
-	 end
- return D
+  #ignores zero_rows
+  D = zero_matrix(SG.R, nrows(SG.A) - SG.npivot - SG.nzero_rows, length(DPart.dense_idx))
+  r = 0
+  for i in 1:length(SG.A)
+    if -2 <= SG.row_marker[i] <= 0
+      r += 1
+      idx = 0
+      for j in SG.A[i].pos
+        idx += 1
+        c = DPart.dense_map[j]
+        @assert !iszero(c)
+        @show D[r,c] = SG.A[i].values[idx]
+      end
+    end
+  end
+  return D
 end
 
 
