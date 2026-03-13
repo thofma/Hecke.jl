@@ -625,10 +625,14 @@ function _invariant_projections_and_sublattices(L::ZZLat)
   if rank(L) != degree(L) || !isone(basis_matrix(L))
     L = lattice(rational_span(L))
   end
-  LL, sv = _short_vector_generators_with_sublattice_2(L; up_to_sign=true)
+  LL, _ = _short_vector_generators_with_sublattice_2(L; up_to_sign=true)
+  return __projections(LL), LL
+end
+
+function  __projections(LL::Vector{ZZLat})
   B = vcat(basis_matrix.(LL)...)
   Bi = inv(B)
-  n = degree(L)
+  n = degree(LL[1])
   projections = QQMatrix[]
   k = 0
   for i in 1:length(LL)
@@ -641,8 +645,9 @@ function _invariant_projections_and_sublattices(L::ZZLat)
     k = knew
     push!(projections, Bi*E*B)
   end
-  return projections, LL, sv
+  return projections
 end
+
 
 _invariant_projections(L::ZZLat) = _invariant_projections_and_sublattices(L)[1]
 
@@ -3923,11 +3928,15 @@ end
 # return generators for the weyl group
 # invariant gram matrices
 # invariant vectors
-function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
-  if !isone(basis_matrix(L))
+function _weyl_group(L::ZZLat)
+  root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
+  return _weyl_group(L, root_types, fundamental_roots)
+end
+
+function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
+  if !isone(basis_matrix(L)) || rank(L) != degree(L)
     L = lattice(rational_span(L))
   end
-  root_types, irreducible_root_lattices = _root_lattice_recognition_fundamental(L, roots)
   if length(root_types) == 0
     to_fix = zero_matrix(QQ, rank(L), rank(L))
     to_cofix = zero_matrix(QQ, rank(L), rank(L))
@@ -3941,7 +3950,7 @@ function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
     V = [zero_matrix(ZZ, 1, rank(L)) for i in 1:k]
     for i in 1:length(root_types)
       if root_types[i] == t
-        V = V + [v*irreducible_root_lattices[i] for v in inv_vec]
+        V = V + [v*fundamental_roots[i] for v in inv_vec]
       end
     end
     append!(invariant_vectors, V)
@@ -3952,15 +3961,14 @@ function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
     push!(invariant_grams, transpose(x)*x)
   end
 
-
   # not needed because in the linear span of the invariant vectors.
   #rho = coordinates(_weyl_vector(root_lat), L)
   #gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
   #push!(invariant_grams, gram_rho)
   weyl_group_gens = ZZMatrix[]
-  for fundamental_roots in irreducible_root_lattices
-    for i in 1:nrows(fundamental_roots)
-      push!(weyl_group_gens, _reflection(gramZ, view(fundamental_roots, i:i, :)))
+  for roots in fundamental_roots
+    for i in 1:nrows(roots)
+      push!(weyl_group_gens, _reflection(gramZ, view(roots, i:i, :)))
     end
   end
 
@@ -3971,8 +3979,7 @@ function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
   # inefficient
   if true
     amb = ambient_space(L)
-    rank(QQ.(reduce(vcat,irreducible_root_lattices)))
-    root_lat = lattice(amb, QQ.(reduce(vcat,irreducible_root_lattices)))
+    root_lat = lattice(amb, QQ.(reduce(vcat,fundamental_roots)))
     fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
     cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
     to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
@@ -3980,7 +3987,7 @@ function _weyl_group(L::ZZLat, roots=first.(short_vectors(L, 2)))
     @assert rank(to_fix+to_cofix)==rank(root_lat)
   else
     # slower than the above ... because we solve over ZZ?
-    root_lat = reduce(vcat, irreducible_root_lattices)
+    root_lat = reduce(vcat, fundamental_roots)
     fixed_lattice = reduce(vcat, invariant_vectors)
     cofix_lattice = kernel(root_lat * gramZ * transpose(fixed_lattice); side=:left) * root_lat
     K = kernel(gramZ*transpose(root_lat); side=:left)

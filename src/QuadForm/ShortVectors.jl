@@ -682,16 +682,14 @@ function short_vectors_with_condition(L::ZZLat; use_int::Bool = false)
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat)
-  proj, LL, sv = _invariant_projections_and_sublattices(L)
-  if minimum(L) > 2
-    roots = Vector{ZZRingElem}[]
-    pushfirst!(proj, zero_matrix(QQ,rank(L), rank(L)))
-  elseif minimum(L) == 2
-    roots = sv[1]
-  else
-    error("detected vectors of norm 1")
-  end
-  proj_root_inv, proj_root_coinv = _weyl_group(L, roots)[4]
+  root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
+  proj_root_inv, proj_root_coinv = _weyl_group(L, root_types, fundamental_roots)[4]
+  R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ,0, rank(L)))
+  Rperp = orthogonal_submodule(L, R*basis_matrix(L))
+  LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
+  pushfirst!(LL, lattice(ambient_space(L), R))
+  proj = __projections(LL)
+
   @assert proj[1] == proj_root_inv + proj_root_coinv
   proj[1]= proj_root_coinv
   pushfirst!(proj, proj_root_inv)
