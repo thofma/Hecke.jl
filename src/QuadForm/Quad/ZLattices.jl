@@ -422,7 +422,7 @@ function __assert_has_automorphisms(
   use_weyl::Bool=true,
   reduced::Bool=false,
   use_projections::Bool=true,
-  use_norm_one::Bool=false,
+  use_norm_one::Bool=true,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -455,7 +455,7 @@ function __assert_has_automorphisms(
   if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
     # not sure if it makes sense to pass everything along
-    assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one)
+    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one)
     # we call directly .automorphism_group_generators, since we want the automorphisms in as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -3962,10 +3962,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     push!(invariant_grams, transpose(x)*x)
   end
 
-  # not needed because in the linear span of the invariant vectors.
-  #rho = coordinates(_weyl_vector(root_lat), L)
-  #gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
-  #push!(invariant_grams, gram_rho)
+
   weyl_group_gens = ZZMatrix[]
   for roots in fundamental_roots
     for i in 1:nrows(roots)
@@ -3978,28 +3975,19 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     mul!(ord, _weyl_group_order(s...))
   end
   # inefficient
-  if true
-    amb = ambient_space(L)
-    root_lat = lattice(amb, QQ.(reduce(vcat,fundamental_roots)))
-    fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
-    cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
-    to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
-    to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
-    @assert rank(to_fix+to_cofix)==rank(root_lat)
-  else
-    # slower than the above ... because we solve over ZZ?
-    root_lat = reduce(vcat, fundamental_roots)
-    fixed_lattice = reduce(vcat, invariant_vectors)
-    cofix_lattice = kernel(root_lat * gramZ * transpose(fixed_lattice); side=:left) * root_lat
-    K = kernel(gramZ*transpose(root_lat); side=:left)
-    B = vcat(fixed_lattice, cofix_lattice, K)
-    Binv = inv!(QQ.(B))
-    f = nrows(fixed_lattice)
-    g = nrows(cofix_lattice)
-    to_fix = view(Binv, :, 1:f)*fixed_lattice
-    to_cofix = view(Binv,:, f+1:f+g)*cofix_lattice
-    @assert rank(to_fix+to_cofix)==rank(root_lat)
-  end
+  amb = ambient_space(L)
+  root_lat = lattice(amb, QQ.(reduce(vcat,fundamental_roots)))
+  # in principle not needed because in the linear span of the invariant vectors.
+  # but it can still help because it governs some signs
+  rho = _weyl_vector(root_lat)
+  gram_rho = ZZ.(4*transpose(rho*gramZ)*(rho*gramZ))
+  push!(invariant_grams, gram_rho)
+
+  fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
+  cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
+  to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
+  to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
+  @assert rank(to_fix+to_cofix)==rank(root_lat)
 
   return weyl_group_gens, invariant_grams, ord, QQMatrix[to_fix,to_cofix]
 end
