@@ -4219,12 +4219,15 @@ end
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
 function _fundamental_roots(sv::Vector{S}) where {S}
+  fundamental = S[]
+  if isempty(sv)
+    return fundamental
+  end
   _canonicalize!.(sv)
   sort!(sv)
   n = length(first(sv))
   B = zero_matrix(ZZ, 0, n)
   tmp = zero_matrix(ZZ, 1, n)
-  fundamental = S[]
   for v in sv
     for i in 1:n
       tmp[1, i] = v[i]
