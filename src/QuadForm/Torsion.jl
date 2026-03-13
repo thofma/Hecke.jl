@@ -870,7 +870,7 @@ end
 
 Given two abelian group homomorphisms $f\colon T \to S$ and
 $g \colon S \to U$ between torsion quadratic modules, return the
-composition $f\circ g\colon T \to U$.
+composition $g\circ f\colon T \to U$.
 """
 function compose(f::TorQuadModuleMap, g::TorQuadModuleMap)
   @req codomain(f) == domain(g) "Codomain of the first map should agree with the domain of the second one"
