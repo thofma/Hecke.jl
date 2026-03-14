@@ -2772,6 +2772,9 @@ end
 _short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
 
 function _short_vector_generators_with_sublattice_2(L::ZZLat; up_to_sign::Bool=false)
+  if iszero(rank(L))
+    return ZZLat[], Vector{Vector{ZZRingElem}}[]
+  end
   svL = shortest_vectors(L; check=false)
   B = _row_span!(svL)*basis_matrix(L)
   if !up_to_sign

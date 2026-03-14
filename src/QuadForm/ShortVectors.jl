@@ -108,8 +108,10 @@ shortest_vectors(L::ZZLat, ::ZZRingElem)
 
 function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
   if check
-    @req rank(L) > 0 "Lattice must have positive rank"
     @req is_definite(L) "Lattice must be definite"
+  end
+  if iszero(rank(L))
+    return Vector{ZZRingElem}[]
   end
   _G = gram_matrix(L)
   if _G[1, 1] < 0
