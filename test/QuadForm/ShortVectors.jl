@@ -206,7 +206,9 @@ end
       Hecke._canonicalize!(result[i])
       Hecke._canonicalize!(sv2[i][1])
     end
-    @assert Set(result) == Set(first.(sv2))
+    S = Set(first.(sv2))
+    @assert Set(result) == S
+    @assert all(!(-i in S) for i in S) # only one up to sign!
     return length(sv2)
   end
 
