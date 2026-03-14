@@ -300,6 +300,7 @@ function try_init_small(
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
   known_short_vectors=(0, []),
+  vector_set = [],
   D::ZLatAutoCtx=C
  )
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
@@ -318,12 +319,11 @@ function try_init_small(
   # Compute the necessary short vectors
   @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
-  #alpha, _V = known_short_vectors
+  #_alpha, _V = known_short_vectors
   #@assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
-  V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
 
   r = length(C.G)
 
@@ -346,59 +346,70 @@ function try_init_small(
 
   abs_maxbits_vectors = Int == Int64 ? 30 : 15
 
-  tmp = Vector{Int}(undef, n)
+  if !isempty(vector_set)
+    vectors = first.(vector_set)
+    lengths = [x[2] for x in vector_set]
+  else
+    VV = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
+    tmp = Vector{Int}(undef, n)
 
-  vectors = Vector{Int}[]
-  lengths = Vector{Int}[]
-  target_lengths = Set{Vector{Int}}([i[j,j] for i in D.G] for j in 1:n)
-  # use for early abort in norm computation not sure if worth it
-  target_length2 = [Set(i[j,j] for j in 1:n) for i in D.G]
-  for cand in V
-    # First canonicalize them
-    v = cand[1]
-    vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
-    k = 1
+    vectors = Vector{Int}[]
+    lengths = Vector{Int}[]
+    target_lengths = Set{Vector{Int}}([i[j,j] for i in D.G] for j in 1:n)
+    # use for early abort in norm computation not sure if worth it
+    target_length2 = [Set(i[j,j] for j in 1:n) for i in D.G]
+    for cand in VV
+      # First canonicalize them
+      v = cand[1]
+      vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
+      k = 1
 
-    while iszero(v[k])
-      k += 1
-    end
-
-    if v[k] < 0
-      v .*= -1
-    end
-
-    if vectors_nbits > abs_maxbits_vectors
-      return false, Csmall
-    end
-
-    if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
-      return false, Csmall
-    end
-
-    _v = Vector{Int}(undef, n)
-
-    for i in 1:n
-      _v[i] = v[i]
-    end
-
-    w = Vector{Int}(undef, r)
-    w[1] = Int(numerator(cand[2]))
-    flag = false
-    for k in 2:r
-      w[k] = _norm(_v, Gsmall[k], tmp)
-      if !(w[k] in target_length2[k])
-        flag = true
-        break
+      while iszero(v[k])
+        k += 1
       end
+
+      if v[k] < 0
+        v .*= -1
+      end
+
+      if vectors_nbits > abs_maxbits_vectors
+        return false, Csmall
+      end
+
+      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+        return false, Csmall
+      end
+
+      _v = Vector{Int}(undef, n)
+
+      for i in 1:n
+        _v[i] = v[i]
+      end
+
+      w = Vector{Int}(undef, r)
+      w[1] = Int(numerator(cand[2]))
+      flag = false
+      for k in 2:r
+        w[k] = _norm(_v, Gsmall[k], tmp)
+        if !(w[k] in target_length2[k])
+          flag = true
+          break
+        end
+      end
+      flag && continue
+
+      w in target_lengths || continue
+
+      # TODO: remove once bug is fixed
+      if v in vectors
+        continue
+      end
+
+      push!(lengths, w)
+      push!(vectors, _v)
     end
-    flag && continue
-
-    w in target_lengths || continue
-
-    push!(lengths, w)
-    push!(vectors, _v)
+    @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   end
-  @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   V = VectorList(vectors, lengths, use_dict)
 
   Csmall.V = V
