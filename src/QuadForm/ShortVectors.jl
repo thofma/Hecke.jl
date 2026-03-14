@@ -707,8 +707,9 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat)
       target_norms[i][k] = gram_proj[i,i]
     end
   end
-  target_proj_root_inv = [proj[1][i:i,:] for i in 1:n]
-
+  # We take one representative up to sign.
+  # Do we want this in the preprocessing or in short_vectors_with_condition?
+  target_proj_root_inv = [_canonicalize!(proj[1][i:i, :]) for i in 1:n]
   return proj, target_proj_root_inv, target_norms
 end
 
@@ -770,7 +771,7 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   flag_projection = proj[1]
   tmpZZ = ZZ()
   short_vectors1 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[(i[1,:],n[1:1]) for (i,n) in zip(target_invariant,target_norms)]
-  unique!(short_vectors1) # different targets can have the same first projection
+  unique!(short_vectors1)  # different targets can have the same first projection
   k = length(proj)
   zeroQQ = zero(QQ)
   good = 0

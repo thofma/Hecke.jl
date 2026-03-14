@@ -4225,6 +4225,19 @@ function _canonicalize!(x::Vector)
   return x
 end
 
+function _canonicalize!(x::MatElem)
+  for i in eachindex(x)
+    if !is_zero_entry(x, i[1], i[2])
+      if is_negative(x[i])
+        neg!(x)
+      end
+      break
+    end
+  end
+  return x
+end
+
+
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
 function _fundamental_roots_naive(sv::Vector{S}) where {S}
