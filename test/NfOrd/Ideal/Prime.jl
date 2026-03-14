@@ -168,6 +168,22 @@ end
   end
 end
 
+@testset "Prime Decomposition (AbsNonSimple)" begin
+  x = QQ[:x][2]
+
+  # 3 is index divisor, degree is too large for random search, has two prime ideals above it
+  # hits the Belabas algorithm implementation in Hecke._decomposition
+  K, (a,b) = number_field([x^3 + 8*x^2 + 2*x + 1, x^3 - 5], cached = false, check = false);
+  OK = maximal_order(K);
+  PP = prime_decomposition(OK, 3)
+  @test length(PP) == 2
+  for (P, e) in PP
+    @test e in (3,6)
+    @test P.gen_one == 3
+    @test Hecke.defines_2_normal(P)
+  end
+end
+
 Qx, x = QQ["x"]
 f = x^2 - 2
 K, a = number_field([f], "a")
