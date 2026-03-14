@@ -318,12 +318,16 @@ function try_init_small(
   # Compute the necessary short vectors
   @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
-  #alpha, _V = known_short_vectors
+  _alpha, _V = known_short_vectors
   #@assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
-  V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
+  if bound <= _alpha
+    V = _V
+  else
+    V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
+  end
 
   r = length(C.G)
 
@@ -394,6 +398,11 @@ function try_init_small(
     flag && continue
 
     w in target_lengths || continue
+
+    # TODO: remove once bug is fixed
+    if v in vectors
+      continue
+    end
 
     push!(lengths, w)
     push!(vectors, _v)

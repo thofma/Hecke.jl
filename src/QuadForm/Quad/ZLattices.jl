@@ -423,6 +423,7 @@ function __assert_has_automorphisms(
   reduced::Bool=false,
   use_projections::Bool=true,
   use_norm_one::Bool=true,
+  use_everything::Bool=false,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -494,11 +495,29 @@ function __assert_has_automorphisms(
     end
   end
 
+  if use_everything
+    LL = res[1][1, 1] < 0 ? rescale(L, -1) : L
+    proj, target_proj_root_inv, target_norms = _short_vectors_with_condition_preprocessing(LL)
+    for p in proj
+      projZ = numerator(p)
+      GZ = res[1]
+      push!(res, projZ * GZ * transpose(projZ))
+    end
+    use_weyl = true
+    use_use_projections = false
+    V = short_vectors_with_condition(LL, proj, target_proj_root_inv, target_norms; use_int = true)
+    alpha = maximum(abs.(diagonal(res[1])))
+    sv = [ (Int.(v), inner_product(LL, v, v)) for (v, _) in V]
+  end
+
   # So the first one is either positive definite or negative definite
   # Make it positive definite. This does not change the automorphisms.
-  if use_weyl
+  if use_weyl || use_everything
     weyl_group_gens, weyl_gram_matrices, weyl_group_order = _weyl_group(L)
-    append!(res, weyl_gram_matrices)
+    if !use_everything
+      # otherwise we already added them
+      append!(res, weyl_gram_matrices)
+    end
   end
   if use_projections
     proj = _invariant_projections(L)
@@ -512,7 +531,8 @@ function __assert_has_automorphisms(
     res[1] = -res[1]
   end
   is_lll = get_attribute(L, :is_lll_reduced, false)
-  if !is_lll
+  use_lll = !is_lll && !use_everything
+  if use_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
     Ttr = transpose(T)
@@ -535,7 +555,7 @@ function __assert_has_automorphisms(
   end
 
   # Now translate back
-  if !is_lll
+  if use_lll
     Tinv = inv(T)
     for i in 1:length(gens)
       gens[i] = Tinv * gens[i] * T
