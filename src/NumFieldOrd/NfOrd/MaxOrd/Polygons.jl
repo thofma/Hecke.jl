@@ -1016,30 +1016,9 @@ function prime_decomposition_polygons(O::AbsSimpleNumFieldOrder, p::Union{ZZRing
     @vprintln :AbsNumFieldOrder 1 "Doing $((g, m))"
     phi = lift(Zx, g)
     if isone(m)
-      ei = m
-      t = change_base_ring(QQ, phi; parent = parent(f))
-      b = K(t)
-      J = AbsNumFieldOrderIdeal(O)
-      J.gen_one = ZZRingElem(p)
-      J.gen_two = O(b, false)
-      J.is_prime = 1
-      J.splitting_type = ei, degree(phi)
-      J.norm = ZZ(p)^degree(phi)
-      J.minimum = ZZ(p)
-
-      # We have to do something to get 2-normal presentation:
-      # if ramified or valuation val(b,P) == 1, (p,b)
-      # is a P(p)-normal presentation
-      # otherwise we need to take p+b
-      # I SHOULD CHECK THAT THIS WORKS
-
-      if !((ei > 1) || !is_norm_divisible_pp(b, (J.norm)*p))
-        J.gen_two = J.gen_two + O(p)
-      end
-
-      J.gens_normal = p
-      J.gens_weakly_normal = true
-      push!(res, (J, ei))
+      b = K(QQPolyRingElem(parent(f), phi))
+      I = _prime_from_poly(O, ZZ(p), degree(phi), m, b)
+      push!(res, (I, m))
       continue
     end
     #TODO: p-adic factorization of the polynomial.
