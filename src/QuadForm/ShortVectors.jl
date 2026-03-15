@@ -839,7 +839,7 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
     end
     short_vectors1 = short_vectors2
   end
-  @hassert :Lattice 1 all(matrix(QQ, 1, length(i),i)*proj[1] in target_invariant for (i,_) in short_vectors1)
+  @hassert :Lattice 1 all((i*proj[1],q[1:1]) in target_invariant for (i,q) in short_vectors1)
   @hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
   return short_vectors1
 end
@@ -958,7 +958,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     short_vectors1[i] = QQFieldElem[div(z[i], d) for i in 1:n], q
   end
 
-  @hassert :Lattice 1 all(matrix(QQ, 1, length(i),i)*proj[1] in target_invariant for (i,_) in short_vectors1)
+  @hassert :Lattice 1 all((i*proj[1],q[1:1]) in target_invariant for (i,q) in short_vectors1)
   @hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
   return short_vectors1
 end
