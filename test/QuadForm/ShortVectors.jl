@@ -223,5 +223,4 @@ end
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
   @test length(Hecke.short_vectors_with_condition(L))==4
   @test length(Hecke.short_vectors_with_condition(L; use_int=true))==4
-
 end
