@@ -173,8 +173,8 @@ end
   ZZ[-2 1 -1 1 -1 1 0 0 0 1 -1 -1 -1 1 -1 1 1; 1 -2 1 -1 1 -1 0 0 0 0 0 0 1 0 0 0 0; -1 1 -2 1 -1 1 0 0 0 1 -1 -1 0 1 -1 1 1; 1 -1 1 -2 1 -1 0 0 0 -1 0 1 1 -1 1 0 -1; -1 1 -1 1 -2 1 0 0 0 1 -1 0 0 0 0 1 0; 1 -1 1 -1 1 -2 0 0 0 -1 1 0 1 0 0 -1 -1; 0 0 0 0 0 0 -2 0 0 -1 0 1 -1 -1 1 0 0; 0 0 0 0 0 0 0 -2 -1 -1 -1 0 0 0 0 -1 1; 0 0 0 0 0 0 0 -1 -2 -1 -1 0 0 0 0 -1 1; 1 0 1 -1 1 -1 -1 -1 -1 -4 0 2 -1 -2 2 -2 -1; -1 0 -1 0 -1 1 0 -1 -1 0 -4 0 0 0 0 1 1; -1 0 -1 1 0 0 1 0 0 2 0 -4 0 3 -3 1 2; -1 1 0 1 0 1 -1 0 0 -1 0 0 -4 -1 1 0 0; 1 0 1 -1 0 0 -1 0 0 -2 0 3 -1 -4 3 -1 -2; -1 0 -1 1 0 0 1 0 0 2 0 -3 1 3 -4 1 2; 1 0 1 0 1 -1 0 -1 -1 -2 1 1 0 -1 1 -4 0; 1 0 1 -1 0 -1 0 1 1 -1 1 2 0 -2 2 0 -4],
   ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
   ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
-  L = [integer_lattice(gram=-g) for g in L]
-  @test length.(Hecke.short_vectors_with_condition.(L)) == [25, 44, 55, 73]
+  LL = [integer_lattice(gram=-g) for g in L]
+  @test length.(Hecke.short_vectors_with_condition.(LL)) == [25, 44, 55, 65]
 
 
   function test_short_vectors_with_condition(L::ZZLat; use_int = false)
@@ -184,36 +184,44 @@ end
     sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms; use_int)
     proj_root_inv = proj[1]
     result = Vector{QQFieldElem}[]
+    target_inv = first.(target_proj_root_inv)
     for (v,q) in sv
       j = matrix(ZZ,1,rank(L),v)
       vproj = [j*p for p in proj]
       vnorms = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
       vnorms in target_norms || continue
-      j*proj_root_inv in target_proj_root_inv && push!(result, QQ.(v))
-      -j*proj_root_inv in target_proj_root_inv && push!(result, -QQ.(v))
+      tmp = v*proj_root_inv
+      tmp in target_inv && push!(result, QQ.(v))
+      iszero(tmp) && continue
+      -tmp in target_inv && push!(result, -QQ.(v))
     end
     for (v,n) in sv2
       j = matrix(ZZ,1,rank(L),v)
       vproj = [j*p for p in proj]
       vnorms = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
-      @assert n==vnorms
-      @assert vnorms in target_norms
-      @assert j*proj_root_inv in target_proj_root_inv || j==0
+      @test n==vnorms
+      @test vnorms in target_norms
+      @test v*proj_root_inv in target_inv || j==0
     end
-    @assert length(result) == length(sv2)
+    @test length(result) == length(sv2)
     for i in 1:length(result)
       # to enable testing equality up to +-1 we _canonicalize!.
       Hecke._canonicalize!(result[i])
       Hecke._canonicalize!(sv2[i][1])
     end
     S = Set(first.(sv2))
-    @assert Set(result) == S
-    @assert all(!(-i in S) for i in S) # only one up to sign!
+    @test Set(result) == S
+    @test all(!(-i in S) for i in S) # only one up to sign!
     return length(sv2)
   end
 
-  for l in L
+  for l in LL
     test_short_vectors_with_condition(l)
     test_short_vectors_with_condition(l; use_int = true)
   end
+
+  L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
+  @test length(Hecke.short_vectors_with_condition(L))==4
+  @test length(Hecke.short_vectors_with_condition(L; use_int=true))==4
+
 end

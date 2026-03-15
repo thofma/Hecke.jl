@@ -709,7 +709,9 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat)
   end
   # We take one representative up to sign.
   # Do we want this in the preprocessing or in short_vectors_with_condition?
-  target_proj_root_inv = [_canonicalize!(proj[1][i:i, :]) for i in 1:n]
+  target_proj_root_inv = [(_canonicalize!(proj[1][i, :]),target_norms[i][1:1]) for i in 1:n]
+  unique!(target_proj_root_inv)
+  unique!(target_norms)
   return proj, target_proj_root_inv, target_norms
 end
 
@@ -770,7 +772,7 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   z = zeros(QQFieldElem, n)
   flag_projection = proj[1]
   tmpZZ = ZZ()
-  short_vectors1 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[(i[1,:],n[1:1]) for (i,n) in zip(target_invariant,target_norms)]
+  short_vectors1 = target_invariant
   unique!(short_vectors1)  # different targets can have the same first projection
   k = length(proj)
   zeroQQ = zero(QQ)
@@ -825,10 +827,12 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
         if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
           push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
         end
-        c = sub!(tmp2, b, a)
-        #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-        if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-          push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
+        if !iszero(b)
+          c = sub!(tmp2, b, a)
+          #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
+          if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+            push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
+          end
         end
         pop!(norm_a_b)
       end
@@ -859,13 +863,10 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   tmpZZ = ZZ()
   short_vectors1_new = Vector{Tuple{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}, Vector{QQFieldElem}}}(undef, length(target_invariant))
   for j in 1:length(target_invariant)
-    i = target_invariant[j]
-    nn = target_norms[j]
-    tinvn, invd = integral_split(i[1,:], ZZ)
+    i, nn = target_invariant[j]
+    tinvn, invd = integral_split(i, ZZ)
     short_vectors1_new[j] = ((Int.(tinvn)', Int(invd)), nn[1:1])
   end
-  unique!(short_vectors1_new) # different targets can have the same first projection
-
   k = length(proj)
   zeroQQ = zero(QQ)
   tmpv = [zero(QQ)]
@@ -920,8 +921,8 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma, Int)
       q in target_norm_i || continue
       aa = LinearAlgebra.mul!(tmp4, s', bmat), bmatden
-      for i in 1:length(short_vectors1_new)
-        bb, normb = short_vectors1_new[i]
+      for j in 1:length(short_vectors1_new)
+        bb, normb = short_vectors1_new[j]
         norm_a_b = push!(normb, q)
         if !(norm_a_b in target_norm)
           pop!(norm_a_b)
@@ -936,11 +937,13 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         if all(c -> is_zero(mod(c, d)), tmpforproj)
           push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
         end
-        tmp2_new3 .= tmp2_new .- tmp2_new2
-        LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
-        #tmpforproj .= mod.(tmpforproj, d)
-        if all(c -> is_zero(mod(c, d)), tmpforproj)
-          push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
+        if !iszero(bb[1])
+          tmp2_new3 .= tmp2_new .- tmp2_new2
+          LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+          #tmpforproj .= mod.(tmpforproj, d)
+          if all(c -> is_zero(mod(c, d)), tmpforproj)
+            push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
+          end
         end
         pop!(norm_a_b)
       end
