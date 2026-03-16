@@ -349,6 +349,19 @@ function try_init_small(
   if !isempty(vector_set)
     vectors = first.(vector_set)
     lengths = [x[2] for x in vector_set]
+    # we need to compute the bound on the size of the vector entries
+    for v in vectors
+
+      vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
+
+      if vectors_nbits > abs_maxbits_vectors
+        return false, Csmall
+      end
+
+      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+        return false, Csmall
+      end
+    end
   else
     VV = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
     tmp = Vector{Int}(undef, n)
