@@ -106,7 +106,7 @@ function to_magma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String 
 end
 
 function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
-  f = open(p, mode)
+  f = open(p, mode)  # FIXME: mode is not defined
   Hecke.to_magma(f, R, base_name = base_name, name = name)
   close(f)
 end
