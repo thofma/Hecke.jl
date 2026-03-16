@@ -408,8 +408,8 @@ function try_init_small(
       push!(lengths, w)
       push!(vectors, _v)
     end
-    @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   end
+  @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   V = VectorList(vectors, lengths, use_dict)
 
   Csmall.V = V

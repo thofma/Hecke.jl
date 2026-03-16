@@ -174,31 +174,37 @@ end
   ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
   ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
   LL = [integer_lattice(gram=-g) for g in L]
-  @test length.(Hecke.short_vectors_with_condition.(LL)) == [25, 44, 55, 65]
+  @test length.(Hecke.short_vectors_with_condition.(LL)) == [25, 42, 31, 53]
 
 
   function test_short_vectors_with_condition(L::ZZLat; use_int = false)
-    sv = short_vectors(L,maximum(abs.(diagonal(gram_matrix(L)))))
-
-    proj, target_proj_root_inv, target_norms = Hecke._short_vectors_with_condition_preprocessing(L)
-    sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms; use_int)
+    # preprocessing
+    proj, target_proj_root_inv, target_norms, denoms, grams = Hecke._short_vectors_with_condition_preprocessing(L)
     proj_root_inv = proj[1]
-    result = Vector{QQFieldElem}[]
     target_inv = first.(target_proj_root_inv)
-    for (v,q) in sv
+
+    # compute what we want by filtering
+    n = rank(L)
+    target_norms_1 = unique!([[p[i,i] for p in grams] for i in 1:n])
+    result = Tuple{Vector{QQFieldElem},Vector{ZZRingElem}}[]
+    for (v,q) in short_vectors(L,maximum(abs.(diagonal(gram_matrix(L)))))
       j = matrix(ZZ,1,rank(L),v)
       vproj = [j*p for p in proj]
-      vnorms = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
-      vnorms in target_norms || continue
+      vnorms = [(j*p*transpose(j))[1,1] for p in grams]
+      vnorms in target_norms_1 || continue
       tmp = v*proj_root_inv
-      tmp in target_inv && push!(result, QQ.(v))
+      tmp in target_inv && push!(result, (QQ.(v),vnorms))
       iszero(tmp) && continue
-      -tmp in target_inv && push!(result, -QQ.(v))
+      -tmp in target_inv && push!(result, (-QQ.(v), vnorms))
     end
+
+    # compute with the function we want to test
+    sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms; use_int)
     for (v,n) in sv2
       j = matrix(ZZ,1,rank(L),v)
       vproj = [j*p for p in proj]
-      vnorms = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
+      vnorms_end = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
+      vnorms = [(j*p*transpose(j))[1,1] for p in grams]
       @test n==vnorms
       @test vnorms in target_norms
       @test v*proj_root_inv in target_inv || j==0
@@ -206,12 +212,12 @@ end
     @test length(result) == length(sv2)
     for i in 1:length(result)
       # to enable testing equality up to +-1 we _canonicalize!.
-      Hecke._canonicalize!(result[i])
+      Hecke._canonicalize!(result[i][1])
       Hecke._canonicalize!(sv2[i][1])
     end
-    S = Set(first.(sv2))
+    S = Set(sv2)
     @test Set(result) == S
-    @test all(!(-i in S) for i in S) # only one up to sign!
+    @test all(!((-i[1],i[2]) in S) for i in S) # only one up to sign!
     return length(sv2)
   end
 

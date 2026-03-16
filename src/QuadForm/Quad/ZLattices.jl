@@ -495,6 +495,8 @@ function __assert_has_automorphisms(
   end
 
   # OK to do here?
+  # So the first one is either positive definite or negative definite
+  # Make it positive definite. This does not change the automorphisms.
   if res[1][1, 1] < 0
     res[1] = -res[1]
   end
@@ -503,37 +505,29 @@ function __assert_has_automorphisms(
 
   if use_everything
     LL = gram_matrix(L)[1, 1] < 0 ? rescale(L, -1) : L
-    proj, target_proj_root_inv, target_norms = _short_vectors_with_condition_preprocessing(LL)
-    dens = ZZRingElem[]
-    for p in proj
-      projZ = numerator(p)
-      push!(dens, denominator(p))
-      GZ = res[1]
-      push!(res, projZ * GZ * transpose(projZ))
+
+    @assert length(res)==1
+    root_types, fundamental_roots = _root_lattice_recognition_fundamental(LL)
+    weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(LL, root_types, fundamental_roots)
+    proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(LL, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
+    #TODO method to select use_int
+    V = short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms; use_int=true)
+    #also need the norm with respect to res[1]
+    sv = [ (Int.(_canonicalize!(v)),
+            append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
+    append!(res, grams)
+    if get_assertion_level(:Lattice) > 1
+      for (v, n) in sv
+        @assert all(dot(v * res[i], v) == n[i] for i in 1:length(n))
+      end
     end
     use_weyl = true
     use_projections = false
-    V = short_vectors_with_condition(LL, proj, target_proj_root_inv, target_norms; use_int = true)
-    # we need all norms with respect to res[i], 1 <= i <= r
-    sv = [ (Int.(_canonicalize!(v)),
-            append!([Int(inner_product(LL, v, v))],  (Int(nn * d^2) for (nn, d) in zip(n, dens)))) for (v, n) in V]
-    for (v, n) in sv
-      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(n))
-    end
-    vector_set = unique(sv)
-    #return sv
+  elseif use_weyl
+    weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(L)
+    append!(res, weyl_gram_matrices)
   end
-
-  # So the first one is either positive definite or negative definite
-  # Make it positive definite. This does not change the automorphisms.
-  if use_weyl || use_everything
-    weyl_group_gens, weyl_gram_matrices, weyl_group_order = _weyl_group(L)
-    if !use_everything
-      # otherwise we already added them
-      append!(res, weyl_gram_matrices)
-    end
-  end
-  if use_projections
+  if use_projections && !use_everything
     proj = _invariant_projections(L)
     projZ = numerator.(proj)
     GZ = res[1]
@@ -549,7 +543,6 @@ function __assert_has_automorphisms(
     Ttr = transpose(T)
     res = ZZMatrix[T*g*Ttr for g in res]
   end
-
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
   fl = false
