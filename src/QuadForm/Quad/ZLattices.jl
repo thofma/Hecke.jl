@@ -511,7 +511,7 @@ function __assert_has_automorphisms(
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(LL, root_types, fundamental_roots)
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(LL, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
     #TODO method to select use_int
-    V = short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms; use_int=true)
+    V = short_vectors_with_condition(LL, proj, target_proj_root_inv, target_norms, denoms; use_int=true)
     #also need the norm with respect to res[1]
     sv = [ (Int.(_canonicalize!(v)),
             append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
