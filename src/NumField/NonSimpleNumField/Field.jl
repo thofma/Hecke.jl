@@ -394,14 +394,14 @@ function _simple_extension(K::NonSimpleNumField{T}; check::Bool = false, cached:
   for i = 1:n
     elem_to_mat_row!(N, i, g[i])
   end
-  s = solve(transpose(M), transpose(N); side = :right)
+  s = solve(M, N; side = :left)
 
   emb = Vector{elem_type(Ka)}(undef, n)
   b = basis(Ka)
   for i = 1:n
     emb[i] = zero(Ka)
     for j = 1:degree(Ka)
-      emb[i] += b[j] * s[j, i]
+      emb[i] += b[j] * s[i, j]
     end
   end
 
