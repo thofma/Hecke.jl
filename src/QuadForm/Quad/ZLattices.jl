@@ -521,6 +521,7 @@ function __assert_has_automorphisms(
         @assert all(dot(v * res[i], v) == n[i] for i in 1:length(n))
       end
     end
+    vector_set = sv
     use_weyl = true
     use_projections = false
   elseif use_weyl
