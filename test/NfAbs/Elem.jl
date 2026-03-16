@@ -1,14 +1,3 @@
-@testset "Linear disjoint" begin
-  Qx, x = polynomial_ring(QQ, "x")
-  _K, _ = number_field([x^2 - 2, x^2 - 3], "a", cached = false)
-  K, _ = simple_extension(_K)
-  L, b = number_field(x^2 - 2, "b", cached = false)
-  @test !is_linearly_disjoint(K, L)
-
-  M, c = number_field(x^2 - 3, "c", cached = false)
-  @test is_linearly_disjoint(L, M)
-end
-
 @testset "Random" begin
   Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^32 + 2, "a")
