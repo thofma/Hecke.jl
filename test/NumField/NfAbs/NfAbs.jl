@@ -120,3 +120,21 @@ end
   L,b=number_field(x^2+x+1//2)
   @test !is_linearly_disjoint(L,K)
 end
+
+@testset "Compositum" begin
+  x = gen(Hecke.Globals.Qx)
+
+  K, a = number_field(x^2 + 1, cached = false)
+  L, b = number_field(x^2 - 3, cached = false)
+  C, mK, mL = compositum(K, L)
+
+  @test iszero(K.pol(mK(a)))
+  @test iszero(L.pol(mL(b)))
+
+  @test Hecke.has_embedding(K, C)
+  @test Hecke.has_embedding(L, C)
+
+  @test !Hecke.has_embedding(C, K)
+  @test !Hecke.has_embedding(K, L)
+end
+

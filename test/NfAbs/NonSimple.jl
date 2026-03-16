@@ -204,4 +204,37 @@
     K, = cyclotomic_field(NonSimpleNumField, 100)
     @test degree(K) == 40
   end
+
+  @testset "consistency check" begin
+    x = gen(Hecke.Globals.Qx)
+    # Q(i) lies inside Q(zeta_8)
+    @test_throws ErrorException number_field([x^2 + 1, x^4 + 1]; cached = false)
+    # reducible polynomial
+    @test_throws ErrorException number_field([x^2 + 1, x^2 - 1]; cached = false)
+    # intersect at sqrt(2): roots are +- sqrt(2) +- sqrt(3) and +- sqrt(2) +- sqrt(5)
+    @test_throws ErrorException number_field([x^4 - 10*x^2 + 1, x^4 - 14*x^2 + 9]; cached = false)
+    K = number_field([x^4 - 10*x^2 + 1, x^4 - 14*x^2 + 9]; cached = false, check = false)[1]
+    @test_throws ErrorException simple_extension(K; cached = false, check = true)
+    # should hit early-out on pairwise coprime degrees (so this should be super fast)
+    K = number_field([x^11 + 2, x^4 + 1, x^7 + 3]; cached = false, check = false)[1]
+    @test Hecke._check_consistency(K)
+  end
+
+  @testset "primitive element" begin
+    # these fields intersect at sqrt(2)
+    # the roots are a = \pm \sqrt{2} \pm \sqrt{3} and b = \pm \sqrt{2} \pm \sqrt{5}
+    # this test case was specifically constructed to trigger "non-trivial" primitive element
+    #   when using resultant algorithm: c = 1 gives non-squarefree resultant
+    K, (a, b) = number_field([x^4 - 10*x^2 + 1, x^4 - 14*x^2 + 9]; cached = false, check = false)
+    pe = @inferred Hecke.primitive_element(K)
+    @test pe != a+b
+    @test degree(minpoly(pe)) == degree(K)
+
+    # for small-degree linearly disjoint fields, c = 1 always works
+    # we still want to do some simple tests
+    for f in [x^2 - 2, x^3 - 4, x^4 - 2], g in [x^2 + 1, x^3 + 3, x^4 + 5]
+      K, (a, b) = number_field([f, g]; cached = false, check = false)
+      @test degree(minpoly(Hecke.primitive_element(K))) == degree(K)
+    end
+  end
 end
