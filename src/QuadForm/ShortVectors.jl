@@ -780,7 +780,8 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   @hassert :Lattice 1 all(i^2==i for i in proj)
   n = rank(L)
   V = ambient_space(L)
-  projL = [lattice(V, p; check=false, isbasis=false) for p in proj]
+  projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i])) for i in 1:length(proj)]
+  @assert all(is_integral(projL[i]) for i in 2:length(projL))
   # L1 < Sat(L1+L2) < .... < Sat(L1+...+Ln) = L
   z = zeros(QQFieldElem, n)
   flag_projection = proj[1]
@@ -803,8 +804,8 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
     target_norm_i = Set(n[w+i-1] for n in target_norms)
     target_norm = Set(n[1:w+i-1] for n in target_norms)
     #@info target_norm
-    mi = QQ(minimum(target_norm_i),denoms[i])
-    ma = QQ(maximum(target_norm_i),denoms[i])
+    mi = minimum(target_norm_i)
+    ma = maximum(target_norm_i)
     if any(iszero, target_norm_i)
       # make up for the fact that short_vectors returns only non-zero vectors.
       for (b, normb) in short_vectors1
@@ -826,12 +827,13 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
       end
     end
     a = zeros_array(QQ, ncols(basis_matrix(projL[i])))
-    for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma)
-      q_num = ZZ(q*denoms[i])
+    Gi = ZZ.(gram_matrix(projL[i])) # already lll reduced
+    #for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)  #why is this not working?
+    for (s, q) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int )
+      q_num = ZZ(q)
       q_num in target_norm_i || continue
       a = mul!(a, s, basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
       for (b, normb) in short_vectors1
-        #norm_a_b = vcat(normb,[q])
         norm_a_b = push!(normb, q_num)
         if !(norm_a_b in target_norm)
           pop!(norm_a_b)
@@ -871,7 +873,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   @hassert :Lattice 1 all(i^2==i for i in proj)
   n = rank(L)
   V = ambient_space(L)
-  projL = [lattice(V, p; check=false, isbasis=false) for p in proj]
+  projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i])) for i in 1:length(proj)]
   # L1 < Sat(L1+L2) < .... < Sat(L1+...+Ln) = L
   z = zeros(QQFieldElem, n)
   flag_projection = proj[1]
@@ -907,8 +909,8 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     tmp2_new3 = zeros(Int, n)'
     target_norm_i = Set(n[w+i-1] for n in target_norms)
     target_norm = Set([n[1:w+i-1] for n in target_norms])
-    mi = QQ(minimum(target_norm_i), denoms[i])
-    ma = QQ(maximum(target_norm_i), denoms[i])
+    mi = minimum(target_norm_i)
+    ma = maximum(target_norm_i)
     if any(iszero, target_norm_i)
       # make up for the fact that short_vectors returns only non-zero vectors.
       for j in 1:length(short_vectors1_new)
@@ -933,8 +935,11 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     end
     bmat, bmatden = basismatprojL[i][1], basismatprojL[i][2]
     tmp4 = zeros(Int, size(bmat, 2))'
-    for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma, Int)
-      q_num = Int(q*denoms[i])
+    Gi = ZZ.(gram_matrix(projL[i])) # already lll reduced
+    for (s, q) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int)
+        #for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)  #why is this not working?
+    #for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma, Int)
+      q_num = Int(q) # Int(q*denoms[i])
       q_num in target_norm_i || continue
       aa = LinearAlgebra.mul!(tmp4, s', bmat), bmatden
       for j in 1:length(short_vectors1_new)
