@@ -289,7 +289,7 @@ function _discriminant_via_trace_matrix(O::RelNumFieldOrder{T, S, U}) where {T, 
   d = det(trace_matrix(O, copy = false))
 
   pb = pseudo_basis(O, copy = false)
-  a = mapreduce(x -> x[2]^2, *, pb)
+  a = mapreduce(x -> x[2], *, pb)^2
 
   disc = d*a
   return numerator(simplify(disc))
