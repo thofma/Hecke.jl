@@ -4867,3 +4867,87 @@ function find_permutaton_and_ADE_type(H::MatrixElem)
   end
   return :D, path
 end
+
+
+@attr Bool function is_well_rounded(L::ZZLat)
+  S = shortest_vectors_sublattice(L)
+  return rank(S) == rank(L)
+end
+
+@attr Bool function is_strongly_well_rounded(L::ZZLat)
+  S = shortest_vectors_sublattice(L)
+  return S == L
+end
+
+# brute force
+function is_obviously_perfectly_well_rounded_with_data(L::ZZLat; max_tries = 100, lll_perturbed=true)
+  L = lll(L)
+  S = shortest_vectors_sublattice(L)
+  S == L || return false, zero_matrix(QQ, 0, degree(L))
+  m = minimum(L)
+  # see if we can replace a bad vector by a good one
+  flag = true
+  while flag
+    flag, L = improve_basis(L)
+  end
+  if m == maximum(abs.(diagonal(gram_matrix(L))))
+    return true, basis_matrix(L)
+  end
+  if minimum(L) == 2
+    # root lattices are always perfectly well rounded
+    # the fundamental root system is a basis
+    B = basis_matrix(root_lattice_recognition_fundamental(L)[1])
+    return true, B
+  end
+  n = rank(L)
+  U = hnf_with_transform(matrix(ZZ,n,n, rand(0:1,n^2)))[2]
+  Llll = lattice_in_same_ambient_space(L, U*basis_matrix(L))
+  if lll_perturbed
+    return is_obviously_perfectly_well_rounded_with_data(Llll; max_tries, lll_perturbed=false)
+  end
+  # brute force try for random combinations
+  sv = shortest_vectors(L)
+  n = rank(L)
+  SV = Set([matrix(ZZ,1, n, i) for i in sv])
+  for (i,B) in enumerate(subsets(SV, n))
+    i > max_tries && return false, zero_matrix(QQ, 0, degree(L))
+    Bmat = reduce(vcat, B)
+    rank(Bmat) == n || continue
+    all(isone, elementary_divisors(Bmat)) && return true, Bmat
+  end
+  return false, zero_matrix(ZZ, 0, degree(L))
+end
+
+is_obviously_perfectly_well_rounded(L::ZZLat; max_tries=100) = is_obviously_perfectly_well_rounded_with_data(L;max_tries)[1]
+
+
+@attr Bool function is_lopsided(L::ZZLat)
+  S = shortest_vectors_sublattice(L)
+  return rank(S) < rank(L)
+end
+
+
+function improve_basis(L::ZZLat)
+  @assert is_strongly_well_rounded(L::ZZLat)
+  G = gram_matrix(L)
+  d = abs.(diagonal(G))
+  m = minimum(d)
+  i = findfirst(>(m), d)
+  if i isa Nothing
+    return false, L
+  end
+  n = rank(L)
+  E = identity_matrix(ZZ,n)
+  found = false
+  for v in shortest_vectors(L)
+    if isone(abs(v[i]))
+      E[i,i]=0
+      for j in 1:n
+        E[i,j] = v[j]
+      end
+      found = true
+      break
+    end
+  end
+  return found, lattice_in_same_ambient_space(L, E*basis_matrix(L))
+end
