@@ -3968,7 +3968,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   end
   if length(root_types) == 0
     to_fix = zero_matrix(QQ, rank(L), rank(L))
-    to_cofix = zero_matrix(QQ, rank(L), rank(L))
+    to_cofix = [zero_matrix(QQ, rank(L), rank(L))]
     return ZZMatrix[], ZZMatrix[], ZZ(1), [to_fix, to_cofix]
   end
   invariant_grams = ZZMatrix[]

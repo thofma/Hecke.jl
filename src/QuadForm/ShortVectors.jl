@@ -691,7 +691,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat)
   return _short_vectors_with_condition_preprocessing(L::ZZLat, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv)
 end
 
-function _short_vectors_with_condition_preprocessing(L::ZZLat, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv)
+function _short_vectors_with_condition_preprocessing(L::ZZLat, root_types::Vector{Tuple{Symbol,Int}}, fundamental_roots::Vector{ZZMatrix}, grams, proj_root_inv::QQMatrix, proj_root_coinv::Vector{QQMatrix})
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ,0, rank(L)))
   Rperp = orthogonal_submodule(L, R*basis_matrix(L))
   LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
