@@ -697,8 +697,9 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat, root_types, funda
   LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
   pushfirst!(LL, lattice(ambient_space(L), R))
   proj = __projections(LL)
-  @assert proj[1] == proj_root_inv + proj_root_coinv
-  proj[1]= proj_root_coinv
+  @assert proj[1] == proj_root_inv + sum(proj_root_coinv)
+  popfirst!(proj)
+  proj = append!(proj_root_coinv, proj)
   pushfirst!(proj, proj_root_inv)
   n = rank(L)
   w = length(grams)

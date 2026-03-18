@@ -3973,15 +3973,22 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   end
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
+  isotypical_coinvariant_projections = QQMatrix[]
   for t in Set(root_types)
     inv_vec = _invariant_vectors(t...)
     k = length(inv_vec)
     V = [zero_matrix(ZZ, 1, rank(L)) for i in 1:k]
+    isotypic = zero_matrix(ZZ,0, rank(L))
     for i in 1:length(root_types)
       if root_types[i] == t
         V = V + [v*fundamental_roots[i] for v in inv_vec]
+        isotypic = vcat(isotypic, fundamental_roots[i])  # how to do that allocation free?
       end
     end
+    isotypic_lattice = lattice_in_same_ambient_space(L, isotypic)
+    isotypic_cofix_lattice = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat,V))))
+    to_isotypic_cofix = 1 - matrix(orthogonal_projection(ambient_space(L), isotypic_cofix_lattice))
+    push!(isotypical_coinvariant_projections, to_isotypic_cofix)
     append!(invariant_vectors, V)
   end
   gramZ = ZZ.(gram_matrix(L))
@@ -4014,10 +4021,10 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
   cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
   to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
-  to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
-  @assert rank(to_fix+to_cofix)==rank(root_lat)
+  #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
+  @assert rank(to_fix+sum(isotypical_coinvariant_projections))==rank(root_lat)
 
-  return weyl_group_gens, invariant_grams, ord, QQMatrix[to_fix,to_cofix]
+  return weyl_group_gens, invariant_grams, ord, [to_fix,isotypical_coinvariant_projections]
 end
 
 function _weyl_group_order(s::Symbol, n::IntegerUnion)
