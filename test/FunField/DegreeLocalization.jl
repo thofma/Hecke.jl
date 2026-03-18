@@ -90,6 +90,15 @@ L = localization(R, degree)
     end
 
     @testset "GCDX" begin
+      d, _, _ = gcdx(L(0), L(0))
+      @test d == L(0)
+
+      d, _, v = gcdx(L(0), L(1//(x^2-1)))
+      @test d == v*L(1//(x^2-1))
+
+      d, u, _ = gcdx(L(1//(x-1)), L(0))
+      @test d == u*L(1//(x-1))
+
       for i in 1:550
         a = rand(L, 0:10, -10:10)
         b = rand(L, 0:10, -10:10)
@@ -98,12 +107,24 @@ L = localization(R, degree)
       end
     end
 
-    @testset "GCD" begin
+    @testset "GCD/LCM" begin
+      @test gcd(L(0), L(0)) == L(0)
+      @test gcd(L(1//(x-1)), L(0)) == L(1//x)
+      @test gcd(L(0), L(1//(x^2+1))) == L(1//x^2)
+      @test gcd(L(1//(x-1)), L(1//(x^2+1))) == L(1//x)
+
+      @test lcm(L(0), L(0)) == L(0)
+      @test lcm(L(1//(x-1)), L(0)) == L(0)
+      @test lcm(L(0), L(1//(x^2+1))) == L(0)
+      @test lcm(L(1//(x-1)), L(1//(x^2+1))) == L(1//x^2)
+
       for i in 1:550
         a = rand(L, 0:10, -10:10)
         b = rand(L, 0:10, -10:10)
         g = gcd(a, b)
         @test divides(a, g)[1] && divides(b, g)[1]
+        l = lcm(a, b)
+        @test divides(l, a)[1] && divides(l, b)[1]
       end
     end
 

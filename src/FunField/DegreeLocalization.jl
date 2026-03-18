@@ -201,15 +201,11 @@ localization.
 """
 function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
   check_parent(a, b)
-  if iszero(a)
-    return true, a
-  end
-  if checked && degree(a) > degree(b)
-    return false, parent(a)()
-  else
-    elem = divexact(data(a), data(b))
-    return true, parent(a)(elem, false)
-  end
+
+  iszero(a) && return true, a
+  checked && valuation(a) < valuation(b) && return false, zero(parent(a))
+
+  return true, parent(a)(divexact(data(a), data(b)), false)
 end
 
 @doc raw"""
@@ -221,8 +217,11 @@ localization.
 """
 function divexact(a::KInftyElem{T}, b::KInftyElem{T}; check::Bool = true)  where T <: FieldElement
   iszero(b) && throw(DivideError())
-  d = divides(a, b, check)
-  d[1] ? d[2] : error("$a not divisible by $b in the given localization")
+
+  flag, quo = divides(a, b, check)
+  !flag && error("$a not divisible by $b in the given localization")
+
+  return quo
 end
 
 ###############################################################################
@@ -268,13 +267,7 @@ end
 
 function div(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <: FieldElement
   check_parent(a, b)
-  iszero(b) && throw(DivideError())
-  iszero(a) && return a
-  if degree(a) > degree(b)
-    return divexact(a-mod(a, b), b, check = check)
-  else
-    return divexact(a, b, check = check)
-  end
+  return divrem(a, b, check)[1]
 end
 
 function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <: FieldElement
@@ -282,11 +275,11 @@ function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <:
   iszero(b) && throw(DivideError())
   iszero(a) && return a, a
 
-  if degree(a) > degree(b)
+  if valuation(a) < valuation(b)
     r = mod(a, b)
     return divexact(a-r, b, check = check), r
   else
-    return divexact(a, b, check = check), parent(a)()
+    return divexact(a, b, check = check), zero(parent(a))
   end
 end
 
@@ -301,21 +294,27 @@ Base.rem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: Fiel
 function gcd(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
   check_parent(a, b)
   t = gen(parent(a))
-  iszero(a) && iszero(b) && return a
-  iszero(a) && return t^-degree(b)
-  iszero(b) && return t^-degree(a)
 
-  return t^-max(degree(a), degree(b))
+  if iszero(a)
+    return iszero(b) ? a : t^valuation(b)
+  elseif iszero(b)
+    return t^valuation(a)
+  else
+    return t^min(valuation(a), valuation(b))
+  end
 end
 
 function lcm(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
-  t = gen(parent(a))
-  iszero(a) && iszero(b) && return a
-  iszero(a) && return t^-degree(b)
-  iszero(b) && return t^-degree(a)
+  check_parent(a, b)
 
-  return t^-min(degree(a), degree(b))
+  if iszero(a) || iszero(b)
+    return zero(parent(a))
+  else
+    t = gen(parent(a))
+    return t^max(valuation(a), valuation(b))
+  end
 end
+
 ###############################################################################
 #
 #  GCDX
@@ -328,18 +327,18 @@ function gcdx(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <:
   t = gen(K)
 
   if iszero(a)
-    iszero(b) && a, a, one(K)
-    g = t^-degree(b)
-    return g, zero(K), inv(canonical_unit(b))
+    if iszero(b)
+      return zero(K), zero(K), one(K)
+    else
+      return t^valuation(b), zero(K), inv(canonical_unit(b))
+    end
   end
 
-  if iszero(b) || degree(a) >= degree(b)
-    g = t^-degree(a)
-    return g, inv(canonical_unit(a)), zero(K)
+  if iszero(b) || valuation(a) <= valuation(b)
+    return t^valuation(a), inv(canonical_unit(a)), zero(K)
   end
 
-  g = t^-degree(b)
-  return g, zero(K), inv(canonical_unit(b))
+  return t^valuation(b), zero(K), inv(canonical_unit(b))
 end
 
 function gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
