@@ -287,7 +287,8 @@ function successive_minima(L::ZZLat)
 end
 
 @doc raw"""
-    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem}, Vector{ZZRingElem}
+    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem},
+                                                Vector{Vector{ZZRingElem}}
 
 Given a positive definite lattice $L$, return the successive minima of $L$ and
 a list of vectors realizing the minima.
@@ -307,37 +308,76 @@ julia> successive_minima_with_vectors(L)
 """
 function successive_minima_with_vectors(L::ZZLat)
   @req is_positive_definite(L) "Lattice must be positive definite"
-  if rank(L) == 0
-    return Int[]
-  end
   n = rank(L)
-  m = maximum(diagonal(gram_matrix(lll(L))); init = zero(ZZ))
-  S = short_vectors(L, m)
-  sort!(S; by = x -> x[2])
-  mi = S[1][2]
-  cur_mi = mi
-  res = QQFieldElem[cur_mi]
-  resv = [S[1][1]]
-  cur_i = findlast(x -> x[2] == mi, S)
-  B = echelon_form(matrix(QQ, [x[1] for x in view(S, 1:cur_i)]); trim = true)
-  while length(res) < n
-    cur_mi = S[cur_i + 1][2]
-    next_i = findlast(x -> x[2] == cur_mi, S)
-    @assert next_i > cur_i
-    # the following constructs a potential large marix
-    # better would be a "streaming" version which takes as input only the vector
-    # but we don't have this for rational matrices
-    # (we only care about rank = dimension of rational span)
-    B = echelon_form(vcat(B, matrix(QQ, [x[1] for x in view(S, cur_i+1:next_i)])); trim = true)
-    if nrows(B) > length(res)
-      for _ in 1:(nrows(B) - length(res))
-        push!(res, cur_mi)
-        push!(resv, S[cur_i + 1][1])
-      end
-    end
-    cur_i = next_i
+  # the ouput consists of two lists of length n,
+  # so we can already initialize said lists
+  res = zeros(QQ, n)
+  resv = Array{Vector{ZZRingElem}}(undef, n)
+
+  # Trivial case
+  if iszero(n)
+    return res, resv
   end
-  return res, resv
+
+  # Sometimes L has a good Gram matrix so there is nothing to do
+  min_length = minimum(L)
+  if all(isequal(min_length), diagonal(gram_matrix(L)))
+    _v = zeros(ZZ, n)
+    for i in 1:n
+      add!(res[i], res[i], min_length)
+      add!(_v[i], _v[i], ZZ(1))
+      resv[i] = deepcopy(_v)
+      zero!(_v[i])
+    end
+    return res, resv
+  end
+
+  ind = Int(0)
+  m = min(maximum(diagonal(gram_matrix(lll(L)))), maximum(diagonal(gram_matrix(L))))
+  # We iterate on vectors up to norm m; we put in a buffer list the vectors
+  # of norm greater than min_length so that we treat shortest vectors first
+  S = short_vectors_iterator(L, m)
+  buffer = Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  H = zero_matrix(ZZ, n+1, n) # hnf of current Q-generating set
+  w = zero_matrix(ZZ, 1, n) # temporary variable to manage caching
+  for x in S
+    if x[2] > min_length
+      push!(buffer, x)
+      continue
+    end
+    zero!(w)
+    w[1:1, :] = first(x)
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    ind += 1
+    H[(n+1):(n+1), :] = w
+    hnf!(H)
+    add!(res[ind], res[ind], last(x))
+    resv[ind] = first(x)
+    # We have found the good number of vectors so are done
+    # We do not look for a basis of L, just of a finite index sublattice
+    if ind == n
+      return res, resv
+    end
+  end
+
+  sort!(buffer; by=last)
+  while !isempty(buffer)
+    x = popfirst!(buffer)
+    zero!(w)
+    w[1:1, :] = first(x)
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    ind += 1
+    H[(n+1):(n+1), :] = w
+    hnf!(H)
+    add!(res[ind], res[ind], last(x))
+    resv[ind] = first(x)
+    if ind == n
+      return res, resv
+    end
+  end
+  error("Something went wrong")
 end
 
 ################################################################################
