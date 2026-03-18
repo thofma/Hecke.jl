@@ -870,6 +870,8 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
 #   perm = sortperm(proj;by=rank)
 #   proj = proj[perm]
 #   target_norms =[i[perm] for i in target_norms]
+  bad = 0
+  good = 0
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   n = rank(L)
@@ -926,9 +928,15 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
           pop!(norm_a_b)
           continue
         end
-        LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
-        #tmpforproj .= mod.(tmpforproj, bb[2])
-        if all(c -> is_zero(mod(c, bb[2])), tmpforproj)
+        #LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
+        isgood = true
+        for i in 1:length(tmpforproj)
+          if !is_zero(mod(bb[1] * (@view flag_projectionZmat[:, i]), bb[2]))
+            isgood = false
+            break
+          end
+        end
+        if isgood #all(c -> is_zero(mod(c, bb[2])), tmpforproj)
           push!(short_vectors2_new, ((copy(bb[1]), bb[2]), copy(norm_a_b)))
         end
         pop!(norm_a_b)
@@ -954,16 +962,31 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         tmp2_new2 .= bb[2] .* aa[1]
         tmp2_new3 .= tmp2_new .+ tmp2_new2
         d = aa[2] * bb[2]
-        LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+        #LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
         #tmpforproj .= mod.(tmpforproj, d)
-        if all(c -> is_zero(mod(c, d)), tmpforproj)
+        isgood = true
+        for i in 1:length(tmpforproj)
+          if !is_zero(mod(tmp2_new3 * (@view flag_projectionZmat[:, i]), d))
+            isgood = false
+            break
+          end
+        end
+        #@assert isgood == all(c -> is_zero(mod(c, d)), tmpforproj)
+        if isgood #all(c -> is_zero(mod(c, d)), tmpforproj)
           push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
         end
         if !iszero(bb[1])
           tmp2_new3 .= tmp2_new .- tmp2_new2
-          LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+          #LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
           #tmpforproj .= mod.(tmpforproj, d)
-          if all(c -> is_zero(mod(c, d)), tmpforproj)
+          isgood = true
+          for i in 1:length(tmpforproj)
+            if !is_zero(mod(tmp2_new3 * (@view flag_projectionZmat[:, i]), d))
+              isgood = false
+              break
+            end
+          end
+          if isgood #all(c -> is_zero(mod(c, d)), tmpforproj)
             push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
           end
         end
