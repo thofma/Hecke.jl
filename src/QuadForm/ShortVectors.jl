@@ -311,7 +311,7 @@ function successive_minima_with_vectors(L::ZZLat)
   n = rank(L)
   # the ouput consists of two lists of length n,
   # so we can already initialize said lists
-  res = zeros(QQ, n)
+  res = Array{QQFieldElem}(undef, n)
   resv = Array{Vector{ZZRingElem}}(undef, n)
 
   # Trivial case
@@ -322,60 +322,54 @@ function successive_minima_with_vectors(L::ZZLat)
   # Sometimes L has a good Gram matrix so there is nothing to do
   min_length = minimum(L)
   if all(isequal(min_length), diagonal(gram_matrix(L)))
-    _v = zeros(ZZ, n)
+    _v = zeros(ZZRingElem, n)
     for i in 1:n
-      add!(res[i], res[i], min_length)
-      add!(_v[i], _v[i], ZZ(1))
-      resv[i] = deepcopy(_v)
-      zero!(_v[i])
+      res[i] = min_length
+      ei = deepcopy(_v)
+      add!(ei[i], 1)
+      resv[i] = ei
     end
     return res, resv
   end
 
-  ind = Int(0)
+  ind = Int(1) # Index of new successive minima
   m = min(maximum(diagonal(gram_matrix(lll(L)))), maximum(diagonal(gram_matrix(L))))
+
   # We iterate on vectors up to norm m; we put in a buffer list the vectors
   # of norm greater than min_length so that we treat shortest vectors first
   S = short_vectors_iterator(L, m)
   buffer = Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  H = zero_matrix(ZZ, n+1, n) # hnf of current Q-generating set
-  w = zero_matrix(ZZ, 1, n) # temporary variable to manage caching
+  H = zero_matrix(ZZ, n, n) # hnf of current Q-generating set
   for x in S
     if x[2] > min_length
-      push!(buffer, x)
+      push!(buffer, deepcopy(x))
       continue
     end
-    zero!(w)
-    w[1:1, :] = first(x)
-    reduce_mod_hnf_ur!(w, H)
-    iszero(w) && continue
-    ind += 1
-    H[(n+1):(n+1), :] = w
+    H[n:n, :] = first(x)
     hnf!(H)
-    add!(res[ind], res[ind], last(x))
+    iszero(H[ind, ind]) && continue # Checks whether the rank of the system increases
+    res[ind] = last(x)
     resv[ind] = first(x)
     # We have found the good number of vectors so are done
     # We do not look for a basis of L, just of a finite index sublattice
     if ind == n
       return res, resv
     end
+    ind += 1
   end
 
   sort!(buffer; by=last)
   while !isempty(buffer)
     x = popfirst!(buffer)
-    zero!(w)
-    w[1:1, :] = first(x)
-    reduce_mod_hnf_ur!(w, H)
-    iszero(w) && continue
-    ind += 1
-    H[(n+1):(n+1), :] = w
+    H[n:n, :] = first(x)
     hnf!(H)
-    add!(res[ind], res[ind], last(x))
+    iszero(H[ind, ind]) && continue
+    res[ind] = last(x)
     resv[ind] = first(x)
     if ind == n
       return res, resv
     end
+    ind += 1
   end
   error("Something went wrong")
 end
