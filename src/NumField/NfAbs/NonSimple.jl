@@ -78,15 +78,18 @@ end
 
 RandomExtensions.maketype(K::AbsNonSimpleNumField, r) = elem_type(K)
 
+# construct a dense random element:
+# linear combination of basis elements (monomials) with random coefficients
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem,AbsNonSimpleNumField,<:AbstractUnitRange}})
   K, r = sp[][1:end]
-  # TODO: This is super slow
-  b = basis(K, copy = false)
-  z::Random.gentype(sp) = K() # type-assert to help inference on Julia 1.0 and 1.1
-  for i in 1:degree(K)
-    z += rand(rng, r) * b[i]
-  end
-  return z
+
+  ci = QQFieldElem[rand(rng, r) for _ in 1:degree(K)]
+
+  d = degrees(K)
+  exp_it = cartesian_product_iterator([0:d[i]-1 for i in eachindex(d)], inplace = true)
+  ei = Vector{Int}[copy(exp) for exp in exp_it]
+
+  return K(QQMPolyRingElem(parent(K.pol[1]), ci, ei))
 end
 
 rand(K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
@@ -358,31 +361,21 @@ end
 
 function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNumFieldElem)
   K = parent(a)
-  # TODO: This is super bad
-  # Proper implementation needs access to the content of the underlying
-  # QQMPolyRingElem
 
   for j in 1:ncols(M)
     M[i, j] = zero(ZZ)
   end
 
-  one!(d)
+  a_poly = data(a)
+  set!(d, denominator(a_poly))
 
-  if length(data(a)) == 0
-    return nothing
+  for j in 1:length(a_poly)
+    k = monomial_to_index(K, exponent_vector(a_poly, j))
+    # TODO: we can tweak flint (and add nemo bindings) to extract primitive part coefficients directly
+    M[i, k] = numerator(coeff(a_poly, j) * d)
   end
 
-  z = zero_matrix(QQ, 1, ncols(M))
-  elem_to_mat_row!(z, 1, a)
-  z_q = FakeFmpqMat(z)
-
-  for j in 1:ncols(M)
-    M[i, j] = z_q.num[1, j]
-  end
-
-  set!(d, z_q.den)
-
-  return nothing
+  return M
 end
 
 function elem_to_mat_row!(M::QQMatrix, i::Int, a::AbsNonSimpleNumFieldElem)

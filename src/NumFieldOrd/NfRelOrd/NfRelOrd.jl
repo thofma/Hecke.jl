@@ -279,27 +279,34 @@ end
 #
 ################################################################################
 
+function _discriminant_via_equation_order_simple_base_field(F::AbsSimpleNumField, field_degree::Int, abs_poly::AbstractArray{Generic.Poly{T}}) where T
+  OF = maximal_order(F)
+  d = mapreduce(x -> OF(discriminant(x))^(div(field_degree, degree(x))), *, abs_poly)
+  return ideal(OF, d)
+end
+
+function _discriminant_via_trace_matrix(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
+  d = det(trace_matrix(O, copy = false))
+
+  pb = pseudo_basis(O, copy = false)
+  a = mapreduce(x -> x[2], *, pb)^2
+
+  disc = d*a
+  return numerator(simplify(disc))
+end
+
 function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal, RelSimpleNumFieldElem{AbsSimpleNumFieldElem}})
   if isdefined(O, :disc_abs)
     return nothing
   end
+
   if is_equation_order(O)
     K = nf(O)
-    F = base_field(K)
-    OF = maximal_order(F)
-    d = OF(discriminant(K.pol))
-    O.disc_abs = ideal(OF, d)
+    O.disc_abs = _discriminant_via_equation_order_simple_base_field(base_field(K), degree(K), [K.pol])
     return nothing
   end
-  d = det(trace_matrix(O, copy = false))
-  pb = pseudo_basis(O, copy = false)
-  a = pb[1][2]^2
-  for i = 2:degree(O)
-    a *= pb[i][2]^2
-  end
-  disc = d*a
-  simplify(disc)
-  O.disc_abs = numerator(disc)
+
+  O.disc_abs = _discriminant_via_trace_matrix(O)
   return nothing
 end
 
@@ -307,30 +314,14 @@ function assure_has_discriminant(O::RelNumFieldOrder{AbsSimpleNumFieldElem, AbsS
   if isdefined(O, :disc_abs)
     return nothing
   end
+
   if is_equation_order(O)
     K = nf(O)
-    F = base_field(K)
-    OF = maximal_order(F)
-    pols = K.pol
-    Fx, _ = polynomial_ring(F, "x", cached = false)
-    pol = to_univariate(Fx, pols[1])
-    d = OF(discriminant(pol))^(div(degree(K), degree(pol)))
-    for i = 2:length(pols)
-      pol = to_univariate(Fx, pols[i])
-      d *= OF(discriminant(pol))^(div(degree(K), degree(pol)))
-    end
-    O.disc_abs = ideal(OF, d)
+    O.disc_abs = _discriminant_via_equation_order_simple_base_field(base_field(K), degree(K), K.abs_pol)
     return nothing
   end
-  d = det(trace_matrix(O, copy = false))
-  pb = pseudo_basis(O, copy = false)
-  a = pb[1][2]^2
-  for i = 2:degree(O)
-    a *= pb[i][2]^2
-  end
-  disc = d*a
-  simplify(disc)
-  O.disc_abs = numerator(disc)
+
+  O.disc_abs = _discriminant_via_trace_matrix(O)
   return nothing
 end
 
@@ -338,15 +329,8 @@ function assure_has_discriminant(O::RelNumFieldOrder{T, S, U}) where {T, S, U}
   if isdefined(O, :disc_rel)
     return nothing
   end
-  d = det(trace_matrix(O, copy = false))
-  pb = pseudo_basis(O, copy = false)
-  a = pb[1][2]^2
-  for i = 2:degree(O)
-    a *= pb[i][2]^2
-  end
-  disc = d*a
-  simplify(disc)
-  O.disc_rel = numerator(disc)
+
+  O.disc_rel = _discriminant_via_trace_matrix(O)
   return nothing
 end
 
