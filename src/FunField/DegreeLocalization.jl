@@ -232,7 +232,7 @@ end
 
 # compute the canonical representative of a modulo <b> = <1/x^n> with n = v(b)
 #   this is the truncation of a power series in uniformizer 1/x to the first n terms
-function mod(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+function mod(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   check_parent(a, b)
   iszero(b) && throw(DivideError())
   iszero(a) && return a
@@ -265,25 +265,25 @@ function mod(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: 
   return parent(a)( Qx(reverse(r)) // Qx(x)^degree(r) )
 end
 
-function div(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <: FieldElement
+function div(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   check_parent(a, b)
-  return divrem(a, b, check)[1]
+  return divrem(a, b)[1]
 end
 
-function divrem(a::KInftyElem{T}, b::KInftyElem{T}, check::Bool=true) where T <: FieldElement
+function divrem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   check_parent(a, b)
   iszero(b) && throw(DivideError())
   iszero(a) && return a, a
 
   if valuation(a) < valuation(b)
     r = mod(a, b)
-    return divexact(a-r, b, check = check), r
+    return divexact(a-r, b; check = false), r
   else
-    return divexact(a, b, check = check), zero(parent(a))
+    return divexact(a, b; check = false), zero(parent(a))
   end
 end
 
-Base.rem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement = mod(a, b, checked)
+Base.rem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement = mod(a, b)
 
 ###############################################################################
 #
@@ -291,7 +291,7 @@ Base.rem(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: Fiel
 #
 ###############################################################################
 
-function gcd(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+function gcd(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   check_parent(a, b)
   t = gen(parent(a))
 
@@ -304,7 +304,7 @@ function gcd(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: 
   end
 end
 
-function lcm(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+function lcm(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   check_parent(a, b)
 
   if iszero(a) || iszero(b)
@@ -321,7 +321,7 @@ end
 #
 ###############################################################################
 
-function gcdx(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool=true) where T <: FieldElement
+function gcdx(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   check_parent(a, b)
   K = parent(a)
   t = gen(K)
