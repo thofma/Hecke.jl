@@ -762,17 +762,39 @@ end
 Return all vectors ``v`` of ``L`` such that
 proj[i](v)^2 = target_norms[i] for all i.
 """
-function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; use_int::Bool = false)
+function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}}, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; use_int::Bool = false)
   if use_int
     denoms_Int = Int.(denoms)
     target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
     target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
-    return _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int)
+    output = _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int)
+    return [(QQ.(i),n) for (i,n) in output]
   else
     return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms)
   end
 end
 
+
+raw"""
+    _short_vectors_with_condition(L::ZZLat,
+                                  proj::Vector{QQMatrix},
+                                  target_invariant,
+                                  target_norms::Vector{Vector{ZZRingElem}},
+                                  denoms::Vector{ZZRingElem})
+
+Denote by $V$ the ambient space of $L$.
+Let $p_i\colon V \to V$ be projections such that
+$\sum_i p_i = 1 and p_i * p_j = \delta_{ij} p_i$ for all i.
+Let $T \subseteq p_1(L)$, $N \leq \ZZ^k$ and $d = (1, d_2,\dots, d_k) \in \ZZ^k$ such that $dp_i(x).p_i(y) \in \ZZ for all x,y \in L$.
+Then the output is the set
+$$SV(L, T, N) = \{ (x,n) \in L \times N | p_1(x) \in T and (d_1 p_1(x)^2,...,d_k p_k(x)^2) \in N \}$$.
+
+Input:
+- `proj` -- a vector of square matrices, the projections. Note that the first projection is distinguished.
+- `target_invariant` -- the set ``T`` above, given as a list.
+- `target_norms` -- the set ``N``
+- `denoms` -- the vector ``d``.
+"""
 function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem})
 #   perm = sortperm(proj;by=rank)
 #   proj = proj[perm]
@@ -781,14 +803,24 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   @hassert :Lattice 1 all(i^2==i for i in proj)
   n = rank(L)
   V = ambient_space(L)
-  projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i])) for i in 1:length(proj)]
+  projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i]; cached=false)) for i in 1:length(proj)]
   @assert all(is_integral(projL[i]) for i in 2:length(projL))
   # L1 < Sat(L1+L2) < .... < Sat(L1+...+Ln) = L
   z = zeros(QQFieldElem, n)
   flag_projection = proj[1]
   tmpZZ = ZZ()
-  short_vectors1 = target_invariant
-  unique!(short_vectors1)  # different targets can have the same first projection
+  short_vectors1 = Dict{Vector{ZZRingElem},Vector{Vector{QQFieldElem}}}()
+  for (a,b) in target_invariant
+    if b in keys(short_vectors1)
+      # different targets can have the same first projection
+      if !(a in short_vectors1[b])
+        push!(short_vectors1[b], a)
+      end
+    else
+      short_vectors1[b]=[a]
+    end
+  end
+  #unique!(short_vectors1)  # different targets can have the same first projection
   k = length(proj)
   w = length(target_norms[1]) - (k-1)
   zeroZZ = zero(ZZ)
@@ -796,35 +828,40 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   miss = 0
   tmpv = [zero(QQ)]
   for i in 2:k
-    short_vectors2 = Tuple{Vector{QQFieldElem},Vector{ZZRingElem}}[]
+    short_vectors2 = Dict{Vector{ZZRingElem},Vector{Vector{QQFieldElem}}}()
+    for a in Set(n[1:w+i-1] for n in target_norms)
+      short_vectors2[a] = Vector{QQFieldElem}[]
+    end
     flag_projection = flag_projection + proj[i]
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
     flag_projectionZ = coordinates(flag_projection, Lflag)
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
     tmp2 = zeros_array(QQ, n)
     target_norm_i = Set(n[w+i-1] for n in target_norms)
-    target_norm = Set(n[1:w+i-1] for n in target_norms)
-    #@info target_norm
+
+    target_norm = Dict{ZZRingElem, Set{Vector{ZZRingElem}}}()
+    for n in target_norms
+      a = n[w+i-1]
+      b = n[1:w+i-2]
+      if a in keys(target_norm)
+        push!(target_norm[a], b)
+      else
+        target_norm[a] = Set([b])
+      end
+    end
     mi = minimum(target_norm_i)
     ma = maximum(target_norm_i)
-    if any(iszero, target_norm_i)
-      # make up for the fact that short_vectors returns only non-zero vectors.
-      for (b, normb) in short_vectors1
-        # we want to look at norm_a_b = vcat(normb,[zero(QQ)]), but this allocates too much
-        # we want to check properties of [normb..., zeroQQ]
-        # we push! zeroQQ to normb and call it norm_a_b
-        # if it is good, we take a copy of this
-        # if not, we pop zeroQQ from it
-        norm_a_b = push!(normb, zeroZZ)
-        if !(norm_a_b in target_norm)
-          pop!(norm_a_b)
-          continue
+    # make up for the fact that short_vectors returns only non-zero vectors.
+    if ZZ(0) in keys(target_norm)
+      for a in target_norm[ZZ(0)]
+        SV = short_vectors1[a]
+        push!(a, zeroZZ)
+        for b in SV
+          if _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
+            push!(short_vectors2[a], deepcopy(b))
+          end
         end
-        if _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
-        # if _is_integral(mul!(tmp, b, flag_projectionZ), tmpZZ)
-          push!(short_vectors2, (b, copy(norm_a_b)))
-        end
-        pop!(norm_a_b)
+        pop!(a)
       end
     end
     a = zeros_array(QQ, ncols(basis_matrix(projL[i])))
@@ -834,32 +871,37 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
       q_num = ZZ(q)
       q_num in target_norm_i || continue
       a = mul!(a, s, basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
-      for (b, normb) in short_vectors1
-        norm_a_b = push!(normb, q_num)
-        if !(norm_a_b in target_norm)
-          pop!(norm_a_b)
-          continue
-        end
-        c = add!(tmp2, b, a)
-        #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-        if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-          push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
-        end
-        if !iszero(b)
-          c = sub!(tmp2, b, a)
-          #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
+      for t in target_norm[q_num]
+        SV = short_vectors1[t]
+        push!(t, q_num)
+        for b in SV
+          c = add!(tmp2, b, a)
           if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-            push!(short_vectors2, (deepcopy(c), copy(norm_a_b)))
+            push!(short_vectors2[t], deepcopy(c))
+          end
+          if !iszero(b)
+            c = sub!(tmp2, b, a)
+            #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
+            if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
+              push!(short_vectors2[t], deepcopy(c))
+            end
           end
         end
-        pop!(norm_a_b)
+        pop!(t)
       end
     end
     short_vectors1 = short_vectors2
   end
-  @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in short_vectors1)
+  # assemble output
+  output = Tuple{Vector{QQFieldElem},Vector{ZZRingElem}}[]
+  for b in keys(short_vectors1)
+    for a in short_vectors1[b]
+      push!(output, (a, b)) # TODO: test if we really want to copy b
+    end
+  end
+  @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
-  return short_vectors1
+  return output
 end
 
 function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
@@ -881,13 +923,21 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   tmpZZ = ZZ()
   k = length(proj)
   w = length(target_norms[1]) - (k-1)
-  short_vectors1_new = Vector{Tuple{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}, Vector{Int}}}(undef, length(target_invariant))
+  short_vectors1_new = Dict{Vector{Int},Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}()
   for j in 1:length(target_invariant)
     i, nn = target_invariant[j]
     tinvn, invd = integral_split(i, ZZ)
-    short_vectors1_new[j] = ((Int.(tinvn)', Int(invd)), Int.(nn[1:w]))
+    v = (Int.(tinvn)', Int(invd))
+    nn = Int.(nn[1:w])
+    if nn in keys(short_vectors1_new)
+      if !(v in short_vectors1_new[nn]) # different targets can have the same first projection
+        push!(short_vectors1_new[nn], v)
+      end
+    else
+      short_vectors1_new[nn]=[v]
+    end
   end
-  tmpv = [zero(QQ)]
+
   basismatprojL = Vector{Tuple{Matrix{Int}, Int}}(undef, k)
   for i in 1:k
     M = basis_matrix(projL[i])
@@ -897,7 +947,11 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   end
 
   for i in 2:k
-    short_vectors2_new = Tuple{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}, Vector{Int}}[]
+    short_vectors2_new = Dict{Vector{Int},Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}()
+    for a in Set(n[1:w+i-1] for n in target_norms)
+      short_vectors2_new[a] = Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}[]
+    end
+
     flag_projection = flag_projection + proj[i]
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
     flag_projectionZ = coordinates(flag_projection, Lflag)
@@ -909,78 +963,87 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     tmp2_new2 = zeros(Int, n)'
     tmp2_new3 = zeros(Int, n)'
     target_norm_i = Set(n[w+i-1] for n in target_norms)
-    target_norm = Set([n[1:w+i-1] for n in target_norms])
+    #target_norm = Set([n[1:w+i-1] for n in target_norms])
+    target_norm = Dict{Int, Set{Vector{Int}}}()
+    for n in target_norms
+      a = n[w+i-1]
+      b = n[1:w+i-2]
+      if a in keys(target_norm)
+        push!(target_norm[a], b)
+      else
+        target_norm[a] = Set([b])
+      end
+    end
+
     mi = minimum(target_norm_i)
     ma = maximum(target_norm_i)
-    if any(iszero, target_norm_i)
-      # make up for the fact that short_vectors returns only non-zero vectors.
-      for j in 1:length(short_vectors1_new)
-        bb, normb = short_vectors1_new[j]
-        # we want to look at norm_a_b = vcat(normb,[0]), but this allocates too much
-        # we want to check properties of [normb..., 0]
-        # we push! 0 to normb and call it norm_a_b
-        # if it is good, we take a copy of this
-        # if not, we pop 0 from it
-        norm_a_b = push!(normb, 0)
-        if !(norm_a_b in target_norm)
-          pop!(norm_a_b)
-          continue
+    if 0 in keys(target_norm)
+      for a in target_norm[0]
+        SV = short_vectors1_new[a]
+        push!(a, 0)
+        for j in 1:length(SV)
+          bb = SV[j]
+          LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
+          #tmpforproj .= mod.(tmpforproj, bb[2])
+          if all(c -> is_zero(mod(c, bb[2])), tmpforproj)
+            push!(short_vectors2_new[a], deepcopy(bb))
+          end
         end
-        LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
-        #tmpforproj .= mod.(tmpforproj, bb[2])
-        if all(c -> is_zero(mod(c, bb[2])), tmpforproj)
-          push!(short_vectors2_new, ((copy(bb[1]), bb[2]), copy(norm_a_b)))
-        end
-        pop!(norm_a_b)
+        pop!(a)
       end
     end
     bmat, bmatden = basismatprojL[i][1], basismatprojL[i][2]
     tmp4 = zeros(Int, size(bmat, 2))'
     Gi = ZZ.(gram_matrix(projL[i])) # already lll reduced
-    for (s, q) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int)
+    for (s, qQQ) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int)
         #for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)  #why is this not working?
     #for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma, Int)
-      q_num = Int(q) # Int(q*denoms[i])
-      q_num in target_norm_i || continue
+      q = Int(qQQ)
+      q in target_norm_i || continue
       aa = LinearAlgebra.mul!(tmp4, s', bmat), bmatden
-      for j in 1:length(short_vectors1_new)
-        bb, normb = short_vectors1_new[j]
-        norm_a_b = push!(normb, q_num)
-        if !(norm_a_b in target_norm)
-          pop!(norm_a_b)
-          continue
-        end
-        tmp2_new .= aa[2] .* bb[1]
-        tmp2_new2 .= bb[2] .* aa[1]
-        tmp2_new3 .= tmp2_new .+ tmp2_new2
-        d = aa[2] * bb[2]
-        LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
-        #tmpforproj .= mod.(tmpforproj, d)
-        if all(c -> is_zero(mod(c, d)), tmpforproj)
-          push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
-        end
-        if !iszero(bb[1])
-          tmp2_new3 .= tmp2_new .- tmp2_new2
+      for t in target_norm[q]
+        SV = short_vectors1_new[t]
+        push!(t, q)
+        for j in 1:length(SV)
+          bb = SV[j]
+          tmp2_new .= aa[2] .* bb[1]
+          tmp2_new2 .= bb[2] .* aa[1]
+          tmp2_new3 .= tmp2_new .+ tmp2_new2
+          d = aa[2] * bb[2]
           LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
           #tmpforproj .= mod.(tmpforproj, d)
           if all(c -> is_zero(mod(c, d)), tmpforproj)
-            push!(short_vectors2_new, ((copy(tmp2_new3), d), copy(norm_a_b)))
+            push!(short_vectors2_new[t], (copy(tmp2_new3), d))
+          end
+          if !iszero(bb[1])
+            tmp2_new3 .= tmp2_new .- tmp2_new2
+            LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+            #tmpforproj .= mod.(tmpforproj, d)
+            if all(c -> is_zero(mod(c, d)), tmpforproj)
+              push!(short_vectors2_new[t], (copy(tmp2_new3), d))
+            end
           end
         end
-        pop!(norm_a_b)
+        pop!(t)
       end
     end
-    resize!(short_vectors1_new, length(short_vectors2_new))
-    short_vectors1_new .= short_vectors2_new
-    empty!(short_vectors2_new)
+    #resize!(short_vectors1_new, length(short_vectors2_new))  # won't work with dicts
+    short_vectors1_new = short_vectors2_new
+    #empty!(short_vectors2_new)
   end
-  short_vectors1 = Vector{Tuple{Vector{QQFieldElem}, Vector{Int}}}(undef, length(short_vectors1_new))
-  for i in 1:length(short_vectors1_new)
-    (z, d), q = short_vectors1_new[i]
-    short_vectors1[i] = QQFieldElem[div(z[i], d) for i in 1:n], q
+  output = Vector{Tuple{Vector{Int}, Vector{Int}}}(undef, sum(length.(values(short_vectors1_new))))
+  i = 0
+  for b in keys(short_vectors1_new)
+    for (z, d) in short_vectors1_new[b]
+      i = i+1
+      @inbounds for j in 1:n
+        z[j] = div(z[j], d)
+      end
+      output[i] = (z', b)
+    end
   end
 
-  @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in short_vectors1)
+  @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
-  return short_vectors1
+  return output
 end
