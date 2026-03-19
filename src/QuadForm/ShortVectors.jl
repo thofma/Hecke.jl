@@ -908,21 +908,37 @@ function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
   return all(isone(denominator!(tmp, i)) for i in x)
 end
 
-function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int})
+function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}; sort = :rank)
 #   perm = sortperm(proj;by=rank)
 #   proj = proj[perm]
 #   target_norms =[i[perm] for i in target_norms]
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
+  k = length(proj)
+  w = length(target_norms[1]) - (k-1)
   n = rank(L)
   V = ambient_space(L)
   projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i])) for i in 1:length(proj)]
+
+  permuted = false
+  if sort === :rank
+    permuted = true
+    # don't touch the first one
+    p = sortperm([rank(projL[i]) for i in 2:length(projL)]; rev = true)
+    per = pushfirst!(p .+ 1, 1)
+    per2 = append!(collect(1:w), p .+ (w))
+    per2inv = invperm(per2)
+    proj = proj[per]
+    projL = projL[per]
+    #@info [rank(projL[i]) for i in 2:length(projL)]
+    target_norms = [v[per2] for v in target_norms]
+    denoms = denoms[per]
+  end
+
   # L1 < Sat(L1+L2) < .... < Sat(L1+...+Ln) = L
   z = zeros(QQFieldElem, n)
   flag_projection = proj[1]
   tmpZZ = ZZ()
-  k = length(proj)
-  w = length(target_norms[1]) - (k-1)
   short_vectors1_new = Dict{Vector{Int},Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}()
   for j in 1:length(target_invariant)
     i, nn = target_invariant[j]
@@ -983,9 +999,17 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         push!(a, 0)
         for j in 1:length(SV)
           bb = SV[j]
-          LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
-          #tmpforproj .= mod.(tmpforproj, bb[2])
-          if all(c -> is_zero(mod(c, bb[2])), tmpforproj)
+          bb1, bb2 = bb
+          #LinearAlgebra.mul!(tmpforproj, bb[1], flag_projectionZmat)
+          isgood = true
+          for i in 1:size(flag_projectionZmat, 2)
+            if !is_zero(mod(bb1 * (@view flag_projectionZmat[:, i]), bb2))
+              isgood = false
+              break
+            end
+          end
+          if isgood # ==
+          #if all(c -> is_zero(mod(c, bb[2])), tmpforproj)
             push!(short_vectors2_new[a], deepcopy(bb))
           end
         end
@@ -1010,16 +1034,32 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
           tmp2_new2 .= bb[2] .* aa[1]
           tmp2_new3 .= tmp2_new .+ tmp2_new2
           d = aa[2] * bb[2]
-          LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+          isgood = true
+          for i in 1:length(tmpforproj)
+            if !is_zero(mod(tmp2_new3 * (@view flag_projectionZmat[:, i]), d))
+              isgood = false
+              break
+            end
+          end
+          #LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
           #tmpforproj .= mod.(tmpforproj, d)
-          if all(c -> is_zero(mod(c, d)), tmpforproj)
+          if isgood #all(c -> is_zero(mod(c, d)), tmpforproj)
+          #if all(c -> is_zero(mod(c, d)), tmpforproj)
             push!(short_vectors2_new[t], (copy(tmp2_new3), d))
           end
           if !iszero(bb[1])
             tmp2_new3 .= tmp2_new .- tmp2_new2
-            LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
+            isgood = true
+            for i in 1:length(tmpforproj)
+              if !is_zero(mod(tmp2_new3 * (@view flag_projectionZmat[:, i]), d))
+                isgood = false
+                break
+              end
+            end
+            #LinearAlgebra.mul!(tmpforproj, tmp2_new3, flag_projectionZmat)
             #tmpforproj .= mod.(tmpforproj, d)
-            if all(c -> is_zero(mod(c, d)), tmpforproj)
+            if isgood # all(c -> is_zero(mod(c, d)), tmpforproj)
+            #if all(c -> is_zero(mod(c, d)), tmpforproj)
               push!(short_vectors2_new[t], (copy(tmp2_new3), d))
             end
           end
@@ -1034,12 +1074,17 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   output = Vector{Tuple{Vector{Int}, Vector{Int}}}(undef, sum(length.(values(short_vectors1_new))))
   i = 0
   for b in keys(short_vectors1_new)
+    if permuted
+      bret = b[per2inv]
+    else
+      bret = b
+    end
     for (z, d) in short_vectors1_new[b]
       i = i+1
       @inbounds for j in 1:n
         z[j] = div(z[j], d)
       end
-      output[i] = (z', b)
+      output[i] = (z', bret)
     end
   end
 
