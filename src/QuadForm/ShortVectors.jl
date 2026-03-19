@@ -347,7 +347,8 @@ function successive_minima_with_vectors(L::ZZLat)
     end
     H[n:n, :] = first(x)
     hnf!(H)
-    iszero(H[ind, ind]) && continue # Checks whether the rank of the system increases
+    # Checks whether the rank of the system increases
+    all(iszero, view(H, ind:ind, 1:n)) && continue
     res[ind] = last(x)
     resv[ind] = first(x)
     # We have found the good number of vectors so are done
@@ -363,7 +364,7 @@ function successive_minima_with_vectors(L::ZZLat)
     x = popfirst!(buffer)
     H[n:n, :] = first(x)
     hnf!(H)
-    iszero(H[ind, ind]) && continue
+    all(iszero, view(H, ind:ind, 1:n)) && continue
     res[ind] = last(x)
     resv[ind] = first(x)
     if ind == n
