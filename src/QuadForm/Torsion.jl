@@ -2260,7 +2260,7 @@ function direct_sum(
   return T, inj
 end
 
-direct_sum(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_product::Bool=false) = direct_sum(collect(x); cached, as_bilinear_module)
+direct_sum(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = direct_sum(collect(x); cached, as_bilinear_module)
 
 @doc raw"""
     direct_product(
