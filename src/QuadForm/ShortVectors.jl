@@ -340,15 +340,21 @@ function successive_minima_with_vectors(L::ZZLat)
   S = short_vectors_iterator(L, m)
   buffer = Tuple{Vector{ZZRingElem}, QQFieldElem}[]
   H = zero_matrix(ZZ, n, n) # hnf of current Q-generating set
+  w = zero_matrix(ZZ, 1, n)
   for x in S
     if x[2] > min_length
       push!(buffer, deepcopy(x))
       continue
     end
-    H[n:n, :] = first(x)
+    w[1:1, :] = first(x)
+    # check whether the vector is already in the ZZ-span
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    # Checks whether the vector is in the QQ-span
+    H[ind:ind, :] = w
     hnf!(H)
-    # Checks whether the rank of the system increases
-    all(iszero, view(H, ind:ind, 1:n)) && continue
+    is_zero_row(H, ind) && continue
+    # Rank increases
     res[ind] = last(x)
     resv[ind] = first(x)
     # We have found the good number of vectors so are done
@@ -362,9 +368,12 @@ function successive_minima_with_vectors(L::ZZLat)
   sort!(buffer; by=last)
   while !isempty(buffer)
     x = popfirst!(buffer)
-    H[n:n, :] = first(x)
+    w[1:1, :] = first(x)
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    H[ind:ind, :] = w
     hnf!(H)
-    all(iszero, view(H, ind:ind, 1:n)) && continue
+    is_zero_row(H, ind) && continue
     res[ind] = last(x)
     resv[ind] = first(x)
     if ind == n
