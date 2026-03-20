@@ -637,13 +637,13 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
   if depth == -1
     # if only few vectors, use depth = 1
     # otherwise always 0
-    if prod(ZZ.(C.fp_diagonal)) < 10000
+    if prod(ZZ.(C.fp_diagonal)) < 100000 || nrows(C.G[1]) >= 26
       depth = 1
     else
       depth = 0
     end
-    @vprintln :Lattice 1 "Choosing depth = $depth"
   end
+  @vprintln :Lattice 1 "Choosing depth = $depth"
   @assert depth >= 0 "`depth` must be non-negative"
   C.depth = depth
 
