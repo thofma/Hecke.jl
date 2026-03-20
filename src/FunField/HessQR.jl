@@ -1,24 +1,27 @@
-"""
-  The ring ZZ<x> := {c f/g | c in ZZ, f, g in ZZ[x], primitive, pos leading coeff}
-  is a PID, even euclidean
-
-  The key interest is
-  IntCls(Z[x], F) = IntCls(Z<x>, F) cap IntCls(Q[x], F)
-  Since Z<x> and Q[x] are PID (even euclidean) the last 2 can be
-  computed using the Round2
-
-  The name is bad, but stems from Florian Hess' PhD thesis,
-  Chapter 2.10
-  (Actually he covers that for a Dedekind ring R we have that
-   R<x> is also Dedekind. The Round2, fundamentally would work
-   for Dedekind rings, using PMats)
-"""
 module HessQRModule
 using Hecke
 import Hecke.AbstractAlgebra, Hecke.Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export HessQR
 import AbstractAlgebra: expressify
+
+# ZZ<x> := {c * f/g | c in ZZ, f, g in ZZ[x] primitive and with positive leading coefficient}
+#
+# Motivation:
+# Every rational function in QQ(x) can be uniquely written as c' * f/g
+#   where f,g are primitive with positive leading coefficient and c' is rational
+# ZZ<x> consists of those with c' in ZZ
+# In Hess' PhD Thesis "Zur Divisorenklassengruppenberechnung in globalen Funktionenkoerpern", chapter 2.10
+#   IntCls(Z[x], F) = IntCls(Z<x>, F) intersect IntCls(Q[x], F)
+# ZZ[x] by itself is not a PID, so Round-2 does not work,
+#   but QQ[x] and Z<x> are PID (and even Euclidean),
+#   so we can compute their integral closures easily using Round-2
+#
+# NB: All non-constant irreducible polynomials in Z[x] are primitive,
+#     hence they are units in Z<x>; so the only primes in Z<x> are prime integers.
+#     The factorization of c * f/g is, up to units, the factorization of c
+#
+# NB: the name is bad, but it is taken from the notation of Hess' thesis
 
 struct HessQR <: AbstractAlgebra.Ring
   R::ZZPolyRing
@@ -46,59 +49,64 @@ mutable struct HessQRElem <: RingElem
   f::ZZPolyRingElem
   g::ZZPolyRingElem
 
+  # this is the main constructor (all others just transform data and call this one)
+  # it ensures that f//g is reduced, and both numerator and denominator are
+  #   primitive with positive leading coefficient
   function HessQRElem(P::HessQR, c::ZZRingElem, f::ZZPolyRingElem, g::ZZPolyRingElem)
+    # canonical zero representation
     if iszero(c) || iszero(f)
-      r = new(P, ZZRingElem(0), zero(P.R), one(P.R))
-      @assert parent(r.f) == P.R
-      @assert parent(r.g) == P.R
-      return r
+      return new(P, ZZRingElem(0), one(P.R), one(P.R))
     end
+
+    # coerce to the polynomial ring of P
     if parent(f) != P.R
-      f = map_coefficients(ZZ, f, parent = P.R)
+      f = map_coefficients(ZZ, f; parent = P.R)
     end
     if parent(g) != P.R
-      g = map_coefficients(ZZ, g, parent = P.R)
+      g = map_coefficients(ZZ, g; parent = P.R)
     end
-    gc = gcd(f, g)
-    f = divexact(f, gc)
-    g = divexact(g, gc)
+
+    # simplify fraction
+    d = gcd(f, g)
+    f = divexact(f, d; check = false)
+    g = divexact(g, d; check = false)
+
+    # extract constant
     cf = content(f)*sign(leading_coefficient(f))
     cg = content(g)*sign(leading_coefficient(g))
-    @assert (c*cf) % cg == 0
-    r = new(P, divexact(c*cf, cg), divexact(f, cf), divexact(g, cg))
-    @assert parent(r.f) == P.R
-    @assert parent(r.g) == P.R
-    return r
+    (c*cf) % cg == 0 || error("not an element of Z<x>")
+
+    c = divexact(c*cf, cg; check = false)
+    f = divexact(f, cf; check = false)
+    g = divexact(g, cg; check = false)
+
+    return new(P, c, f, g)
   end
+
   function HessQRElem(P::HessQR, q::Generic.RationalFunctionFieldElem{QQFieldElem})
-    f = numerator(q)
-    g = denominator(q)
-    return HessQRElem(P, f, g)
+    return HessQRElem(P, numerator(q), denominator(q))
   end
   function HessQRElem(P::HessQR, f::QQPolyRingElem)
     return HessQRElem(P, f, one(parent(f)))
   end
-  function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
-    df = reduce(lcm, map(denominator, coefficients(f)), init = ZZRingElem(1))
-    dg = reduce(lcm, map(denominator, coefficients(g)), init = ZZRingElem(1))
-    ff = map_coefficients(ZZ, df*f, parent = P.R)
-    gg = map_coefficients(ZZ, dg*g, parent = P.R)
-    #ff/df//gg/dg = dg/df * ff/gg
-    return HessQRElem(P, divexact(dg, df), ff, gg)
+  function HessQRElem(P::HessQR, f::ZZPolyRingElem)
+    d = content(f)*sign(leading_coefficient(f))
+    return HessQRElem(P, d, divexact(f, d; check = false), one(P.R))
   end
   function HessQRElem(P::HessQR, c::ZZRingElem)
-    r = new(P, c, one(P.R), one(P.R))
-    @assert parent(r.f) == P.R
-    @assert parent(r.g) == P.R
-    return r
+    return new(P, c, one(P.R), one(P.R))
   end
-  function HessQRElem(P::HessQR, c::ZZPolyRingElem)
-    d = content(c)*sign(leading_coefficient(c))
-    r = new(P, d, divexact(c, d), one(P.R))
-    @assert parent(r.f) == P.R
-    @assert parent(r.g) == P.R
-    return r
+
+  function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
+    # bring both to common denominator (and cancel it)
+    d = reduce(lcm, map(denominator, coefficients(f)); init = ZZRingElem(1))
+    d = reduce(lcm, map(denominator, coefficients(g)); init = d)
+
+    f, g = map_coefficients(ZZ, d*f; parent = P.R), map_coefficients(ZZ, d*g; parent = P.R)
+
+    return HessQRElem(P, ZZRingElem(1), f, g)
   end
+
 end
 
 function Base.show(io::IO, a::HessQRElem)
