@@ -3,5 +3,6 @@
   include("FunField/Divisor.jl")
   include("FunField/Differential.jl")
   include("FunField/Factor.jl")
+  include("FunField/HessQR.jl")
 end
 
