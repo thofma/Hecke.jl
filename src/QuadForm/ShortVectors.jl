@@ -1076,7 +1076,6 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       aa = LinearAlgebra.mul!(tmp4, s', bmat)
       for t in target_norm[q]
         SV = short_vectors1_new[t]
-        @assert 1==length( unique!([i[2] for i in SV]))
         push!(t, q)
         d = bmatden * first(SV)[2]
         for j in 1:length(SV)
