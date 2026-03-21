@@ -506,7 +506,7 @@ function __assert_has_automorphisms(
   vector_set = []
 
   if use_everything
-    LL = gram_matrix(L)[1, 1] < 0 ? reskcale(L, -1) : L
+    LL = gram_matrix(L)[1, 1] < 0 ? rescale(L, -1) : L
 
     @assert length(res)==1
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(LL)
