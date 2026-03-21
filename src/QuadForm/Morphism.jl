@@ -301,7 +301,8 @@ function try_init_small(
   is_lll_reduced_known::Bool=false,
   known_short_vectors=(0, []),
   vector_set = [],
-  D::ZLatAutoCtx=C
+  D::ZLatAutoCtx=C,
+  force::Bool = false
  )
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
   if bound == -1
@@ -327,7 +328,7 @@ function try_init_small(
 
   r = length(C.G)
 
-  Gsmall = Matrix{Int}[Matrix{Int}(g) for g in C.G]
+  Gsmall = Matrix{Int}[[BigInt(x) % Int for x in g] for g in C.G]
 
   Gsmall_nbits = 0
   for k in 1:r
@@ -354,11 +355,11 @@ function try_init_small(
 
       vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
 
-      if vectors_nbits > abs_maxbits_vectors
+      if !force && vectors_nbits > abs_maxbits_vectors
         return false, Csmall
       end
 
-      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+      if !force && Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
         return false, Csmall
       end
     end
@@ -385,11 +386,11 @@ function try_init_small(
         v .*= -1
       end
 
-      if vectors_nbits > abs_maxbits_vectors
+      if !force && vectors_nbits > abs_maxbits_vectors
         return false, Csmall
       end
 
-      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+      if !force && Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
         return false, Csmall
       end
 

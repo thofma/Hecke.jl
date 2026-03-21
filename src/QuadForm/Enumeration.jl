@@ -776,7 +776,6 @@ function _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X
   # They are applied to the vector found and the length of the vector
   cleanvec = v -> __clean_and_assemble(v, transform, !isnothing(transform) && !isone(transform), zeros_array(ZZ, n), S)
   cleanscalar = l -> l//d
-
   if ub isa ZZRingElem && fits(Int, ub)
     if _lb isa Nothing
       V = __enumerate_gram(T, G, nothing, Int(ub), QQFieldElem, cleanvec, cleanscalar, elem_type)

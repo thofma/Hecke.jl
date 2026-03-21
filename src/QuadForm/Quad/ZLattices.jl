@@ -423,7 +423,9 @@ function __assert_has_automorphisms(
   reduced::Bool=false,
   use_projections::Bool=true,
   use_norm_one::Bool=true,
-  use_everything::Bool=false,
+  use_everything::Bool=true,
+  compress::Bool=true,
+  search_new_invariant_vectors::Bool=true,
 )
   use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -511,10 +513,18 @@ function __assert_has_automorphisms(
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(LL, root_types, fundamental_roots)
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(LL, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
     #TODO method to select use_int
-    V = short_vectors_with_condition(LL, proj, target_proj_root_inv, target_norms, denoms; use_int=true)
+    V, new_invariant_vectors = short_vectors_with_condition(LL, proj, target_proj_root_inv, target_norms, denoms; use_int=true, search_new_invariant_vectors=true)
+    if length(new_invariant_vectors)>0
+      T = reduce(vcat, new_invariant_vectors)*res[1]
     #also need the norm with respect to res[1]
-    sv = [ (Int.(_canonicalize!(v)),
-            append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
+      sv = [ (Int.(_canonicalize!(v)),
+            append!(append!([Int(inner_product(LL, v, v))], n), (i->Int(i)^2).(T*v))) for (v, n) in V]
+      for i in 1:nrows(T)
+        push!(grams, ZZ.(transpose(T[i:i,:])*T[i:i,:]))
+      end
+    else
+      sv = [ (Int.(_canonicalize!(v)), append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
+    end
     append!(res, grams)
     if get_assertion_level(:Lattice) > 1
       for (v, n) in sv
@@ -544,11 +554,22 @@ function __assert_has_automorphisms(
     Ttr = transpose(T)
     res = ZZMatrix[T*g*Ttr for g in res]
   end
+
+  if compress
+    r = length(res)
+    a = rand(Int, r-1)
+    Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
+    Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
+    res = [res[1], Gcompressed]
+    vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in sv]
+  end
+
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true, vector_set)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true, vector_set, force=compress)
+    #@assert fl
     if fl
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
@@ -4927,15 +4948,16 @@ is_obviously_perfectly_well_rounded(L::ZZLat; max_tries=100) = is_obviously_perf
 end
 
 
-function improve_basis(L::ZZLat)
-  @assert is_strongly_well_rounded(L::ZZLat)
+function improve_basis(L::ZZLat, j=1)
+  #@assert is_strongly_well_rounded(L::ZZLat)
   G = gram_matrix(L)
   d = abs.(diagonal(G))
   m = minimum(d)
-  i = findfirst(>(m), d)
+  i = findfirst(>(m), d[j:end])
   if i isa Nothing
     return false, L
   end
+  i = i+j-1
   n = rank(L)
   E = identity_matrix(ZZ,n)
   found = false
@@ -4948,6 +4970,9 @@ function improve_basis(L::ZZLat)
       found = true
       break
     end
+  end
+  if !found && i<=rank(L)
+    return improve_basis(L, i+1)
   end
   return found, lattice_in_same_ambient_space(L, E*basis_matrix(L))
 end

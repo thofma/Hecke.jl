@@ -722,7 +722,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat, root_types::Vecto
   # Do we want this in the preprocessing or in short_vectors_with_condition?
   target_proj_root_inv = [(_canonicalize!(proj[1][i, :]),target_norms[i][1:w]) for i in 1:n]
   unique!(target_proj_root_inv)
-  unique!(target_norms)
+  #unique!(target_norms)
   return proj, target_proj_root_inv, target_norms, denoms, grams
 end
 
@@ -762,15 +762,15 @@ end
 Return all vectors ``v`` of ``L`` such that
 proj[i](v)^2 = target_norms[i] for all i.
 """
-function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}}, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; use_int::Bool = false)
+function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}}, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; use_int::Bool = false, search_new_invariant_vectors::Bool=true)
   if use_int
     denoms_Int = Int.(denoms)
     target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
     target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
-    output = _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int)
-    return [(QQ.(i),n) for (i,n) in output]
+    output, new_invariant_vectors = _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int; search_new_invariant_vectors)
+    return [(QQ.(i),n) for (i,n) in output], new_invariant_vectors
   else
-    return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms)
+    return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms; search_new_invariant_vectors)
   end
 end
 
@@ -795,18 +795,21 @@ Input:
 - `target_norms` -- the set ``N``
 - `denoms` -- the vector ``d``.
 """
-function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem})
-#   perm = sortperm(proj;by=rank)
-#   proj = proj[perm]
-#   target_norms =[i[perm] for i in target_norms]
+function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; search_new_invariant_vectors::Bool=true)
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   n = rank(L)
+
+  # built from invariant vectors discovered during the process
+  invariant_subspace_rank, invariant_subspace = rref(proj[1])
+  S = solve_init(invariant_subspace)
+  new_invariant_vectors = QQMatrix[]
+
+
   V = ambient_space(L)
   projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i]; cached=false)) for i in 1:length(proj)]
   @assert all(is_integral(projL[i]) for i in 2:length(projL))
   # L1 < Sat(L1+L2) < .... < Sat(L1+...+Ln) = L
-  z = zeros(QQFieldElem, n)
   flag_projection = proj[1]
   tmpZZ = ZZ()
   short_vectors1 = Dict{Vector{ZZRingElem},Vector{Vector{QQFieldElem}}}()
@@ -826,7 +829,10 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   zeroZZ = zero(ZZ)
   good = 0
   miss = 0
-  tmpv = [zero(QQ)]
+  vmat = zero_matrix(QQ, 1, n)
+  tmp2 = zeros_array(QQ, n)
+  tmp_invariant_vec = zeros_array(QQ, n)
+  tmpv = zeros_array(QQ, n)
   for i in 2:k
     short_vectors2 = Dict{Vector{ZZRingElem},Vector{Vector{QQFieldElem}}}()
     for a in Set(n[1:w+i-1] for n in target_norms)
@@ -836,7 +842,6 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
     flag_projectionZ = coordinates(flag_projection, Lflag)
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
-    tmp2 = zeros_array(QQ, n)
     target_norm_i = Set(n[w+i-1] for n in target_norms)
 
     target_norm = Dict{ZZRingElem, Set{Vector{ZZRingElem}}}()
@@ -890,6 +895,30 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
         pop!(t)
       end
     end
+    if search_new_invariant_vectors
+      for k in keys(short_vectors2)
+        all(iszero(k[i]) for i in 1:w) && continue  # the ones which do not have an invariant component are up to +-1 and sum to 0
+        v = reduce(add!,short_vectors2[k]; init=tmp_invariant_vec)
+        if !can_solve(invariant_subspace, v; side=:left)
+          invariant_subspace_rank+=1
+          v_mat = matrix(QQ, 1, n, v)
+          invariant_subspace = vcat(invariant_subspace, v_mat)
+          S = solve_init(invariant_subspace)
+          E = identity_matrix(QQ,n)
+
+
+          push!(new_invariant_vectors, v_mat)
+          # We discovered something new. Filter the results
+          T = invariant_subspace*gram_matrix(L)
+          invs = Set((target_norms[j][1:w+i-1],abs.(T[:,j])) for j in 1:ncols(T))
+          for k in keys(short_vectors2)
+            a = length(short_vectors2[k])
+            filter!(i->(k,abs.(T*i)) in invs, short_vectors2[k])
+          end
+        end
+      end
+    end
+
     short_vectors1 = short_vectors2
   end
   # assemble output
@@ -901,20 +930,27 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   end
   @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
-  return output
+  return output, new_invariant_vectors
 end
 
 function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
   return all(isone(denominator!(tmp, i)) for i in x)
 end
 
-function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}; sort = :rank)
+function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}; sort = :rank, search_new_invariant_vectors::Bool=true)
 #   perm = sortperm(proj;by=rank)
 #   proj = proj[perm]
 #   target_norms =[i[perm] for i in target_norms]
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   k = length(proj)
+
+  # built from invariant vectors discovered during the process
+  invariant_subspace_rank, invariant_subspace = rref(proj[1])
+  invariant_subspace = invariant_subspace[1:invariant_subspace_rank,:]
+  S = solve_init(invariant_subspace)
+  new_invariant_vectors = QQMatrix[]
+
   w = length(target_norms[1]) - (k-1)
   n = rank(L)
   V = ambient_space(L)
@@ -954,6 +990,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     end
   end
 
+
   basismatprojL = Vector{Tuple{Matrix{Int}, Int}}(undef, k)
   for i in 1:k
     M = basis_matrix(projL[i])
@@ -961,6 +998,13 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     Md = denominator(M)
     basismatprojL[i] = Mint, Md
   end
+
+  tmp2 = zeros_array(QQ, n)
+  tmp2_new = zeros(Int, n)'
+  tmp2_new2 = zeros(Int, n)'
+  tmp2_new3 = zeros(Int, n)'
+  tmp_invariant_vec = zeros_array(ZZ, n)
+  tmpQQmat = zero_matrix(QQ, 1, n)
 
   for i in 2:k
     short_vectors2_new = Dict{Vector{Int},Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}()
@@ -974,10 +1018,6 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     flag_projectionZmat = Matrix{Int}(ZZ.(flag_projectionZ))
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
     tmpforproj = zeros(Int, ncols(flag_projectionZ))'
-    tmp2 = zeros_array(QQ, n)
-    tmp2_new = zeros(Int, n)'
-    tmp2_new2 = zeros(Int, n)'
-    tmp2_new3 = zeros(Int, n)'
     target_norm_i = Set(n[w+i-1] for n in target_norms)
     #target_norm = Set([n[1:w+i-1] for n in target_norms])
     target_norm = Dict{Int, Set{Vector{Int}}}()
@@ -1067,7 +1107,32 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         pop!(t)
       end
     end
-    #resize!(short_vectors1_new, length(short_vectors2_new))  # won't work with dicts
+    if search_new_invariant_vectors
+      for k in keys(short_vectors2_new)
+        all(iszero(k[i]) for i in 1:w) && continue  # the ones which do not have an invariant component are up to +-1 and sum to 0
+        v = reduce(add!, i[1]' for i in short_vectors2_new[k]; init=tmp_invariant_vec)
+        for i in 1:n
+          tmpQQmat[i] = v[i]
+        end
+        if !can_solve(S, tmpQQmat; side=:left)
+          invariant_subspace_rank+=1
+          invariant_subspace =vcat(invariant_subspace, tmpQQmat)
+          push!(new_invariant_vectors,deepcopy(tmpQQmat))
+          rref!(invariant_subspace)
+          S = solve_init(invariant_subspace)
+          # We discovered something new. Filter the results
+          T = invariant_subspace*gram_matrix(L)
+          TInt = Matrix{Int}(numerator(T))
+          invs = Set((target_norms[j][1:w+i-1],abs.(TInt[:,j])) for j in 1:ncols(T))
+          for k in keys(short_vectors2_new)
+            a = deepcopy(short_vectors2_new[k])
+            filter!(i->(k,abs.(divexact.(TInt*i[1]',i[2]))) in invs, short_vectors2_new[k])
+            #@show a,length(short_vectors2_new[k])
+          end
+        end
+      end
+    end
+
     short_vectors1_new = short_vectors2_new
     #empty!(short_vectors2_new)
   end
@@ -1087,8 +1152,9 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       output[i] = (z', bret)
     end
   end
+  @show invariant_subspace_rank - rank(proj[1])
 
   @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
-  return output
+  return output, new_invariant_vectors
 end
