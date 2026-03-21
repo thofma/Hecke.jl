@@ -1041,8 +1041,8 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       end
     end
 
-    mi = minimum(i for i in target_norm_i if !iszero(i)) #does this hurt or help?
     ma = maximum(target_norm_i)
+    mi = minimum(i for i in target_norm_i if !iszero(i);init=ma) #does this hurt or help?
     if 0 in keys(target_norm)
       for a in target_norm[0]
         SV = short_vectors1_new[a]
