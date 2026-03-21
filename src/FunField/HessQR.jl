@@ -172,47 +172,9 @@ function (F::Generic.RationalFunctionField)(a::HessQRElem)
 end
 
 
-Nemo.iszero(a::HessQRElem) = iszero(a.c)
-Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
-
-Nemo.zero(R::HessQR) = R(0)
-Nemo.one(R::HessQR) = R(1)
-Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), ZZRingElem(sign(a.c)), a.f, a.g)
-
 Base.deepcopy_internal(a::HessQRElem, dict::IdDict) = HessQRElem(parent(a), Base.deepcopy_internal(a.c, dict), Base.deepcopy_internal(a.f, dict), Base.deepcopy_internal(a.g, dict))
 
 Base.hash(a::HessQRElem, h::UInt) = hash(a.g, hash(a.f, hash(a.c, h)))
-
-+(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem) = HessQRElem(parent(a), -a.c, a.f, a.g)
-*(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
-
-==(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && a.c*a.f == b.c *b.f && a.g == b.g
-
-Base.:^(a::HessQRElem, n::Int) = HessQRElem(parent(a), a.c^n, a.f^n, a.g^n)
-
-function Hecke.mul!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
-  d = b*c
-  @assert parent(a.f) == parent(d.f)
-  @assert parent(a.g) == parent(d.g)
-  a.c = d.c
-  a.f = d.f
-  a.g = d.g
-  return a
-end
-
-function Hecke.add!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
-  d = b+c
-  @assert parent(a.f) == parent(d.f)
-  @assert parent(a.g) == parent(d.g)
-  a.c = d.c
-  a.f = d.f
-  a.g = d.g
-  return a
-end
-
-Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
@@ -303,6 +265,65 @@ end
 function Hecke.is_constant(a::HessQRElem)
   return iszero(a) || (is_constant(a.f) && is_constant(a.g))
 end
+
+###############################################################################
+#
+#  Arithmetic
+#
+###############################################################################
+
+function +(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), ZZRingElem(1),
+    a.c * a.f * b.g + b.c * b.f * a.g, a.g * b.g)
+end
+function -(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), ZZRingElem(1),
+    a.c * a.f * b.g - b.c * b.f * a.g, a.g * b.g)
+end
+function *(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
+end
+function ==(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return a.c * a.f == b.c * b.f && a.g == b.g
+end
+
+function -(a::HessQRElem)
+  return HessQRElem(parent(a), -a.c, a.f, a.g)
+end
+
+function ^(a::HessQRElem, n::Int)
+  return HessQRElem(parent(a), a.c^n, a.f^n, a.g^n)
+end
+
+# note that HessQRElem constructor does the heavy lifting of ensuring the canonical representation
+# thus we implement mutating add!/mul! via the non-mutating versions
+
+function Hecke.add!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
+  d = b + c
+
+  a.c, a.f, a.g = d.c, d.f, d.g
+  return a
+end
+
+function Hecke.mul!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
+  d = b * c
+
+  a.c, a.f, a.g = d.c, d.f, d.g
+  return a
+end
+
+Nemo.zero(R::HessQR) = R(0)
+Nemo.one(R::HessQR) = R(1)
+
+Nemo.iszero(a::HessQRElem) = iszero(a.c)
+Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
+
+Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), sign(a.c), a.f, a.g)
+Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
 
 ###############################################################################
 #
