@@ -678,9 +678,11 @@ function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = no
 end
 
 
-function short_vectors_with_condition(L::ZZLat; use_int::Bool = false)
+function short_vectors_with_condition(T::Type,
+                                      L::ZZLat;
+                                      search_new_invariant_vectors::Bool=true)
   proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
-  return short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms; use_int)
+  return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
 end
 
 
@@ -762,16 +764,25 @@ end
 Return all vectors ``v`` of ``L`` such that
 proj[i](v)^2 = target_norms[i] for all i.
 """
-function short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}}, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; use_int::Bool = false, search_new_invariant_vectors::Bool=true)
-  if use_int
-    denoms_Int = Int.(denoms)
-    target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
-    target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
-    output, new_invariant_vectors = _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int; search_new_invariant_vectors)
-    return [(QQ.(i),n) for (i,n) in output], new_invariant_vectors
-  else
-    return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms; search_new_invariant_vectors)
-  end
+function _short_vectors_with_condition(T::Type{Int},
+                                      L::ZZLat,
+                                      proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
+                                      target_norms::Vector{Vector{ZZRingElem}},
+                                      denoms::Vector{ZZRingElem};
+                                      search_new_invariant_vectors::Bool=true)
+  denoms_Int = Int.(denoms)
+  target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
+  target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
+  return _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int; search_new_invariant_vectors)
+end
+
+function _short_vectors_with_condition(T::Type{QQFieldElem},
+                                      L::ZZLat,
+                                      proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
+                                      target_norms::Vector{Vector{ZZRingElem}},
+                                      denoms::Vector{ZZRingElem};
+                                      search_new_invariant_vectors::Bool=true)
+  return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms; search_new_invariant_vectors)
 end
 
 
@@ -944,7 +955,6 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   k = length(proj)
-
   # built from invariant vectors discovered during the process
   invariant_subspace_rank, invariant_subspace = rref(proj[1])
   invariant_subspace = invariant_subspace[1:invariant_subspace_rank,:]
@@ -1031,8 +1041,10 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       end
     end
 
-    mi = minimum(target_norm_i)
+    mi = minimum(i for i in target_norm_i if !iszero(i)) #does this hurt or help?
     ma = maximum(target_norm_i)
+    @show target_norm_i
+    @show mi, ma
     if 0 in keys(target_norm)
       for a in target_norm[0]
         SV = short_vectors1_new[a]
@@ -1059,21 +1071,21 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     bmat, bmatden = basismatprojL[i][1], basismatprojL[i][2]
     tmp4 = zeros(Int, size(bmat, 2))'
     Gi = ZZ.(gram_matrix(projL[i])) # already lll reduced
-    for (s, qQQ) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int)
-        #for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)  #why is this not working?
-    #for (s, q) in _short_vectors_gram(LatEnumCtx, gram_matrix(projL[i]), mi, ma, Int)
+    #for (s, qQQ) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int)
+    for (s, qQQ) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int) # less allocations, no postprocessing
       q = Int(qQQ)
       q in target_norm_i || continue
-      aa = LinearAlgebra.mul!(tmp4, s', bmat), bmatden
+      aa = LinearAlgebra.mul!(tmp4, s', bmat)
       for t in target_norm[q]
         SV = short_vectors1_new[t]
+        @assert 1==length( unique!([i[2] for i in SV]))
         push!(t, q)
+        d = bmatden * first(SV)[2]
         for j in 1:length(SV)
           bb = SV[j]
-          tmp2_new .= aa[2] .* bb[1]
-          tmp2_new2 .= bb[2] .* aa[1]
+          tmp2_new .= bmatden .* bb[1]
+          tmp2_new2 .= bb[2] .* aa
           tmp2_new3 .= tmp2_new .+ tmp2_new2
-          d = aa[2] * bb[2]
           isgood = true
           for i in 1:length(tmpforproj)
             if !is_zero(mod(tmp2_new3 * (@view flag_projectionZmat[:, i]), d))
@@ -1109,8 +1121,12 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     end
     if search_new_invariant_vectors
       for k in keys(short_vectors2_new)
-        all(iszero(k[i]) for i in 1:w) && continue  # the ones which do not have an invariant component are up to +-1 and sum to 0
-        v = reduce(add!, i[1]' for i in short_vectors2_new[k]; init=tmp_invariant_vec)
+        all(iszero(k[i]) for i in 1:w) && continue
+        # the ones which do not have an invariant component are up to +-1 and sum to 0
+        for i in short_vectors2_new[k]
+          add!.(tmp_invariant_vec,i[1]')
+        end
+        v = tmp_invariant_vec
         for i in 1:n
           tmpQQmat[i] = v[i]
         end

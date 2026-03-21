@@ -506,24 +506,24 @@ function __assert_has_automorphisms(
   vector_set = []
 
   if use_everything
-    LL = gram_matrix(L)[1, 1] < 0 ? rescale(L, -1) : L
+    LL = gram_matrix(L)[1, 1] < 0 ? reskcale(L, -1) : L
 
     @assert length(res)==1
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(LL)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(LL, root_types, fundamental_roots)
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(LL, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
     #TODO method to select use_int
-    V, new_invariant_vectors = short_vectors_with_condition(LL, proj, target_proj_root_inv, target_norms, denoms; use_int=true, search_new_invariant_vectors)
+    V, new_invariant_vectors = _short_vectors_with_condition(Int, LL, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
     if length(new_invariant_vectors)>0
       T = reduce(vcat, new_invariant_vectors)*res[1]
     #also need the norm with respect to res[1]
-      sv = [ (Int.(_canonicalize!(v)),
+      sv = [ (_canonicalize!(v),
             append!(append!([Int(inner_product(LL, v, v))], n), (i->Int(i)^2).(T*v))) for (v, n) in V]
       for i in 1:nrows(T)
         push!(grams, ZZ.(transpose(T[i:i,:])*T[i:i,:]))
       end
     else
-      sv = [ (Int.(_canonicalize!(v)), append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
+      sv = [ (_canonicalize!(v), append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
     end
     append!(res, grams)
     if get_assertion_level(:Lattice) > 1
@@ -4273,7 +4273,7 @@ function _canonicalize!(x::Vector)
     i = i+1
   end
   if is_negative(x[i])
-    neg!.(x)
+    x.= neg!.(x)
   end
   return x
 end
