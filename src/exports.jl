@@ -515,6 +515,7 @@ export is_free
 export is_free_with_basis
 export is_fundamental_discriminant
 export is_genus
+export is_genus_with_genus
 export is_gorenstein
 export is_hermitian
 export is_idempotent
