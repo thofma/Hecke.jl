@@ -1152,7 +1152,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       output[i] = (z', bret)
     end
   end
-  @show invariant_subspace_rank - rank(proj[1])
+  @vprintln :Lattice "discovered a new invariant subspace of rank $(invariant_subspace_rank - rank(proj[1]))"
 
   @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
