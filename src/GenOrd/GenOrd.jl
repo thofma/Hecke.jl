@@ -82,7 +82,7 @@ coefficient_ring(O::GenOrd) = O.R
 
 field(O::GenOrd) = O.F
 
-_is_standard(O::GenOrd) = O.is_standard
+@inline is_equation_order(O::GenOrd) = O.is_equation_order
 
 degree(O::GenOrd) = degree(field(O))
 
@@ -98,7 +98,7 @@ basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_
 
 function basis(O::GenOrd; copy::Bool = true)
   get_attribute!(O, :basis) do
-    if _is_standard(O)
+    if is_equation_order(O)
       return map(O, basis(field(O)))
     else
       return [O(O.F(vec(collect(O.trans[i,:])))) for i=1:degree(O)]
@@ -165,7 +165,7 @@ function (R::GenOrd{S, T})(a::RingElement; check::Bool = true) where {S, T}
 end
 
 function (O::GenOrd)(c::Vector)
-  if _is_standard(O)
+  if is_equation_order(O)
     return O(O.F(c))
   else
     return O(O.F(vec(collect(map(base_ring(O.trans), c)*O.trans))))
@@ -321,13 +321,11 @@ end
 ################################################################################
 
 function coordinates(a::FieldElem, O::GenOrd)
-  c = coordinates(a)
-  if _is_standard(O)
-    d = coordinates(a)
+  if is_equation_order(O)
+    return coordinates(a)
   else
-    d = coordinates(a) * basis_matrix_inverse(O)
+    return coordinates(a) * basis_matrix_inverse(O)
   end
-  return d
 end
 
 function coordinates(a::GenOrdElem)
@@ -446,7 +444,7 @@ function mod(a::GenOrdElem, p::RingElem)
   @assert base_ring(O) === R
   S = base_field(field(O))
 
-  if _is_standard(O)
+  if is_equation_order(O)
     mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
     return O(O.F(mu))
   else
@@ -676,18 +674,10 @@ end
 ################################################################################
 
 function trans_mat(O::GenOrd, OO::GenOrd)
-  if isdefined(O, :trans)
-    if isdefined(OO, :trans)
-      return OO.trans*O.itrans
-    else
-      return O.itrans
-    end
+  if is_equation_order(O)
+    return OO.trans
   else
-    if isdefined(OO, :trans)
-      return OO.trans
-    else
-      error("no matrices, giving up")
-    end
+    return is_equation_order(OO) ? O.itrans : OO.trans*O.itrans
   end
 end
 
@@ -710,9 +700,8 @@ function Hecke.maximal_order(O::GenOrd)
       continue
     end
     OO = pmaximal_overorder(O, p, true)
-    if !isdefined(OO, :trans)
-      continue
-    end
+    is_equation_order(OO) && continue
+
     T = integral_split(trans_mat(O, OO), S)
     isone(T[2]) && continue
     if first
@@ -744,7 +733,7 @@ function Hecke.discriminant(O::GenOrd)
     # leading coeff....
     # The bypass is to use det(trace_mat) which is correct for orders
     d = discriminant(O.F)
-    if isdefined(O, :trans)
+    if !is_equation_order(O)
       d *= det(O.trans)^2
     end
   else
