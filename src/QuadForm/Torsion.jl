@@ -1288,6 +1288,7 @@ function _is_isometric_with_isometry(
     if bool
       @hassert :Lattice 1 all(a -> a*a == -TtoU(a)*TtoU(a), gens(T))
     end
+    return bool, TtoU
   else
     if boolT
       return _isometry_semiregular(T, U; as_bilinear_module)
@@ -1464,7 +1465,7 @@ function is_anti_isometric_with_anti_isometry(
   U::TorQuadModule;
   as_bilinear_module::Bool=false,
 )
-  return _is_isometry_with_isometry(T, U; as_bilinear_module, anti_isometry=true)
+  return _is_isometric_with_isometry(T, U; as_bilinear_module, anti_isometry=true)
 end
 
 ################################################################################
