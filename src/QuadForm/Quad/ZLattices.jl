@@ -515,7 +515,7 @@ function __assert_has_automorphisms(
     #TODO method to select use_int
     V, new_invariant_vectors = _short_vectors_with_condition(Int, LL, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
     if length(new_invariant_vectors)>0
-      T = reduce(vcat, new_invariant_vectors)*res[1]
+      T = new_invariant_vectors*res[1]
     #also need the norm with respect to res[1]
       sv = [ (_canonicalize!(v),
             append!(append!([Int(inner_product(LL, v, v))], n), (i->Int(i)^2).(T*v))) for (v, n) in V]

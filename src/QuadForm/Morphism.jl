@@ -317,8 +317,6 @@ function try_init_small(
   end
   @assert bound > 0
 
-  # Compute the necessary short vectors
-  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
   #_alpha, _V = known_short_vectors
   #@assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
@@ -364,6 +362,8 @@ function try_init_small(
       end
     end
   else
+    # Compute the necessary short vectors
+    @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
     VV = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
     tmp = Vector{Int}(undef, n)
 
