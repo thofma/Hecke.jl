@@ -571,10 +571,13 @@ function matrix(f::InverseMap{FinGenAbGroup, FinGenAbGroup})
 end
 
 function matrix(f::Generic.CompositeMap{FinGenAbGroup, FinGenAbGroup})
-  m1 = matrix(f.map1)
-  m2 = matrix(f.map2)
-  if !isa(m1, Nothing) && !isa(m2, Nothing)
-    return m1*m2
+  if isa(codomain(f.map1), FinGenAbGroup) 
+    # in this case domain(f.map2) is also a FinGenAbGroup, so matrix might work
+    m1 = matrix(f.map1)
+    m2 = matrix(f.map2)
+    if !isa(m1, Nothing) && !isa(m2, Nothing)
+      return m1*m2
+    end
   end
   return reduce(vcat, [f(d).coeff for d=gens(domain(f))])
 end
