@@ -423,7 +423,7 @@ function __assert_has_automorphisms(
   reduced::Bool=false,
   use_projections::Bool=true,
   use_norm_one::Bool=true,
-  use_everything::Bool=true,
+  use_everything::Bool=false,
   compress::Bool=true,
   search_new_invariant_vectors::Bool=true,
 )
@@ -506,7 +506,7 @@ function __assert_has_automorphisms(
   vector_set = []
 
   if use_everything
-    LL = gram_matrix(L)[1, 1] < 0 ? rescale(L, -1) : L
+    LL = lattice(rational_span(gram_matrix(L)[1, 1] < 0 ? rescale(L, -1) : L))
 
     @assert length(res)==1
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(LL)
