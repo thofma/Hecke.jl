@@ -3,7 +3,7 @@
   R::T
   trans#::dense_matrix_type(elem_type(S))
   itrans#::dense_matrix_type(elem_type(S))
-  is_standard::Bool
+  is_equation_order::Bool
 
   function GenOrd(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
@@ -12,24 +12,34 @@
     r = new{typeof(F), typeof(R)}()
     r.F = F
     r.R = R
-    r.is_standard = true
-    empty && return r
+    r.is_equation_order = true
+
     Qt = base_field(F)
+    if empty
+      r.trans = identity_matrix(Qt, degree(F))
+      r.itrans = identity_matrix(Qt, degree(F))
+      return r
+    end
+
     d = reduce(lcm, map(x->denominator(x, R), coefficients(defining_polynomial(F))))
     f = map_coefficients(x->numerator(Qt(d)*x, R), defining_polynomial(F), cached = false)
-    if !is_monic(f) #need Lenstra Order
-      d = degree(F)
-      M = zero_matrix(Qt, d, d)
-      M[1, 1] = one(Qt)
-      for i in 2:d
-        for j in i:-1:1
-          M[i, j] = coeff(f, d - (i - j))
-        end
-      end
-      O = GenOrd(r, M, one(Qt), check = check)
-      return O
+    if is_monic(f)
+      r.trans = identity_matrix(Qt, degree(F))
+      r.itrans = identity_matrix(Qt, degree(F))
+      return r
     end
-    return r
+
+    # f is not monic: need Lenstra Order
+
+    d = degree(F)
+    M = zero_matrix(Qt, d, d)
+    M[1, 1] = one(Qt)
+    for i in 2:d
+      for j in i:-1:1
+        M[i, j] = coeff(f, d - (i - j))
+      end
+    end
+    return GenOrd(r, M, one(Qt), check = check)
   end
 
   function GenOrd(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true)
@@ -44,13 +54,14 @@
     end
     Ti = inv(T)
     r = GenOrd(O.R, O.F, true)
-    r.is_standard = false
-    if isdefined(O, :trans)
-      r.trans = T*O.trans
-      r.itrans = O.itrans*Ti
-    else
+
+    r.is_equation_order = false
+    if is_equation_order(O)
       r.trans = T
       r.itrans = Ti
+    else
+      r.trans = T*O.trans
+      r.itrans = O.itrans*Ti
     end
     check && map(representation_matrix, basis(r))
     return r

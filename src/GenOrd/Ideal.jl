@@ -591,11 +591,7 @@ end
 ################################################################################
 
 function Hecke.index(O::GenOrd)
-  index = O.R(1)
-  if isdefined(O, :itrans)
-    index = O.R(det(basis_matrix_inverse(O)))
-  end
-  return index
+  return is_equation_order(O) ? O.R(1) : O.R(det(basis_matrix_inverse(O)))
 end
 
 function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)

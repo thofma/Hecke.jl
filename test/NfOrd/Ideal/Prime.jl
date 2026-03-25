@@ -86,6 +86,104 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
+@testset "Prime Decomposition (AbsSimple)" begin
+  # Q(sqrt(-5))
+  K, a = quadratic_field(-5, cached = false)
+  OK = maximal_order(K)
+  # 3 splits: x^2 + 5 = (x+1) * (x+2)
+  # Norm(a+2) == 9: this hits the code path ensuring p-normal presentation
+  for (P, e) in prime_decomposition(OK, 3)
+    @test e == 1
+    @test P.splitting_type == (1,1)
+    @test P.gen_one == 3
+
+    b = P.gen_two
+    @test b in (1+a, 5+a)
+    b_norm = norm(b)
+    @test mod(b_norm, 3) == 0
+    @test mod(b_norm, 9) != 0
+
+    @test Hecke.defines_2_normal(P)
+  end
+
+  # 2 is ramified: x^2 + 5 = (x+1)^2
+  P, e = only(prime_decomposition(OK, 2))
+  @test e == 2
+  @test P.splitting_type == (2,1)
+  @test P.gen_one == 2
+  @test Hecke.defines_2_normal(P)
+
+  # 11 is inert (so we know it is principal)
+  P, e = only(prime_decomposition(OK, 11))
+  @test e == 1
+  @test P.splitting_type == (1,2)
+  @test P.is_principal == 1
+  @test P.gen_one == 11
+  @test P.princ_gen == 11
+
+  # Dedekind's Cubic Field: 2 is index divisor
+  x = QQ[:x][2]
+  K, a = number_field(x^3 - x^2 - 2*x - 8, cached = false)
+  OK = maximal_order(K)
+
+  PP = prime_decomposition(OK, 2)
+  @test length(PP) == 3
+  for (P, e) in PP
+    @test e == 1
+    @test P.splitting_type == (1,1)
+    @test P.gen_one == 2
+    @test Hecke.defines_2_normal(P)
+  end
+
+  # non-monic polynomial: 2 is ramified (same as in x^2+2)
+  K, a = number_field(2*x^2 + 1, cached = false)
+  OK = maximal_order(K)
+
+  P, e = only(prime_decomposition(OK, 2))
+  @test e == 2
+  @test P.splitting_type == (2,1)
+  @test P.gen_one == 2
+  @test Hecke.defines_2_normal(P)
+
+  # non-monic polynomial, too large for random search (condition in Hecke._decomposition)
+  K, a = number_field(2*x^10 + 1, cached = false)
+  OK = maximal_order(K)
+
+  # 2 is fully ramified (same as in x^10+2^9)
+  # this tests the case of having exactly one prime above p
+  P, e = only(prime_decomposition(OK, 2))
+  @test e == 10
+  @test P.splitting_type == (10,1)
+  @test P.gen_one == 2
+  @test Hecke.defines_2_normal(P)
+
+  # 3 has 4 unramified primes above it (same as in x^10+2^9) [inertia degrees: 1+1+4+4]
+  PP = prime_decomposition(OK, 3)
+  @test length(PP) == 4
+  for (P, e) in PP
+    @test e == 1
+    @test P.splitting_type[2] in (1,4)
+    @test P.gen_one == 3
+    @test Hecke.defines_2_normal(P)
+  end
+end
+
+@testset "Prime Decomposition (AbsNonSimple)" begin
+  x = QQ[:x][2]
+
+  # 3 is index divisor, degree is too large for random search, has two prime ideals above it
+  # hits the Belabas algorithm implementation in Hecke._decomposition
+  K, (a,b) = number_field([x^3 + 8*x^2 + 2*x + 1, x^3 - 5], cached = false, check = false);
+  OK = maximal_order(K);
+  PP = prime_decomposition(OK, 3)
+  @test length(PP) == 2
+  for (P, e) in PP
+    @test e in (3,6)
+    @test P.gen_one == 3
+    @test Hecke.defines_2_normal(P)
+  end
+end
+
 Qx, x = QQ["x"]
 f = x^2 - 2
 K, a = number_field([f], "a")

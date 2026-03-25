@@ -78,15 +78,18 @@ end
 
 RandomExtensions.maketype(K::AbsNonSimpleNumField, r) = elem_type(K)
 
+# construct a dense random element:
+# linear combination of basis elements (monomials) with random coefficients
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem,AbsNonSimpleNumField,<:AbstractUnitRange}})
   K, r = sp[][1:end]
-  # TODO: This is super slow
-  b = basis(K, copy = false)
-  z::Random.gentype(sp) = K() # type-assert to help inference on Julia 1.0 and 1.1
-  for i in 1:degree(K)
-    z += rand(rng, r) * b[i]
-  end
-  return z
+
+  ci = QQFieldElem[rand(rng, r) for _ in 1:degree(K)]
+
+  d = degrees(K)
+  exp_it = cartesian_product_iterator([0:d[i]-1 for i in eachindex(d)], inplace = true)
+  ei = Vector{Int}[copy(exp) for exp in exp_it]
+
+  return K(QQMPolyRingElem(parent(K.pol[1]), ci, ei))
 end
 
 rand(K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
@@ -358,31 +361,21 @@ end
 
 function elem_to_mat_row!(M::ZZMatrix, i::Int, d::ZZRingElem, a::AbsNonSimpleNumFieldElem)
   K = parent(a)
-  # TODO: This is super bad
-  # Proper implementation needs access to the content of the underlying
-  # QQMPolyRingElem
 
   for j in 1:ncols(M)
     M[i, j] = zero(ZZ)
   end
 
-  one!(d)
+  a_poly = data(a)
+  set!(d, denominator(a_poly))
 
-  if length(data(a)) == 0
-    return nothing
+  for j in 1:length(a_poly)
+    k = monomial_to_index(K, exponent_vector(a_poly, j))
+    # TODO: we can tweak flint (and add nemo bindings) to extract primitive part coefficients directly
+    M[i, k] = numerator(coeff(a_poly, j) * d)
   end
 
-  z = zero_matrix(QQ, 1, ncols(M))
-  elem_to_mat_row!(z, 1, a)
-  z_q = FakeFmpqMat(z)
-
-  for j in 1:ncols(M)
-    M[i, j] = z_q.num[1, j]
-  end
-
-  set!(d, z_q.den)
-
-  return nothing
+  return M
 end
 
 function elem_to_mat_row!(M::QQMatrix, i::Int, a::AbsNonSimpleNumFieldElem)
@@ -776,62 +769,13 @@ end
 #
 ################################################################################
 
-function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check = true, simplified::Bool = false)
+function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check::Bool = true, simplified::Bool = false)
   if simplified
     return simplified_simple_extension(K, cached = cached)
   end
-  n = ngens(K)
-  g = gens(K)
-  if n == 1
-    #The extension is already simple
-    f = to_univariate(Globals.Qx, K.pol[1])
-    Ka, a = number_field(f, "a", cached = cached, check = check)
-    mp = hom(Ka, K, g[1], inverse = [a])
-    return Ka, mp
-  end
-  pe = g[1]
-  i = 1
-  ind = Int[1]
-  f = minpoly(pe)
-  #TODO: use resultants rather than minpoly??
-  while i < n
-    i += 1
-    j = 1
-    f = minpoly(pe + j * g[i])
-    while degree(f) < prod(total_degree(K.pol[k]) for k in 1:i)
-      j += 1
-      f = minpoly(pe + j * g[i])
-    end
-    push!(ind, j)
-    pe += j * g[i]
-  end
-  Ka, a = number_field(f, check = check, cached = cached)
-  k = base_ring(K)
-  M = zero_matrix(k, degree(K), degree(K))
-  z = one(K)
-  elem_to_mat_row!(M, 1, z)
-  if degree(K) > 1
-    elem_to_mat_row!(M, 2, pe)
-    z = mul!(z, z, pe)
-    for i=3:degree(K)
-      z = mul!(z, z, pe)
-      elem_to_mat_row!(M, i, z)
-    end
-  end
-  N = zero_matrix(k, n, degree(K))
-  for i = 1:n
-    elem_to_mat_row!(N, i, g[i])
-  end
-  s = solve(transpose(M), transpose(N); side = :right)
-  b = basis(Ka)
-  emb = Vector{AbsSimpleNumFieldElem}(undef, n)
-  for i = 1:n
-    emb[i] = zero(Ka)
-    for j = 1:degree(Ka)
-      emb[i] += b[j] * s[j, i]
-    end
-  end
-  h = hom(Ka, K, pe, inverse = emb)
+
+  Ka, h = _simple_extension(K; cached = cached, check = check)
+
   embed(h)
   embed(MapFromFunc(K, Ka, x->preimage(h, x)))
   return Ka, h
@@ -1094,24 +1038,6 @@ end
 #TODO: find a better algo.
 function degree(a::AbsNonSimpleNumFieldElem)
   return degree(minpoly(a))
-end
-
-#TODO: Improve the algorithm
-function primitive_element(K::AbsNonSimpleNumField)
-  g = gens(K)
-  pe = g[1]
-  d = total_degree(K.pol[1])
-  i = 1
-  while i < length(g)
-    i += 1
-    d *= total_degree(K.pol[i])
-    while true
-      pe += g[i]
-      f = minpoly(pe)
-      degree(f) == d && break
-    end
-  end
-  return pe
 end
 
 function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
