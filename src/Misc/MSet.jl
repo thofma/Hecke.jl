@@ -806,18 +806,18 @@ function Base.iterate(M::SubSetSizeItr{T}, nothing) where T
 end
 
 function Base.iterate(M::SubSetSizeItr{T}, h::Tuple{Set{T}, Vector{Int}}) where T
-  uebertrag = 1
-  while h[2][uebertrag] == uebertrag
-    uebertrag += 1
-    if uebertrag > M.k
+  carry = 1
+  while h[2][carry] == carry
+    carry += 1
+    if carry > M.k
       return nothing
     end
   end
-  delete!(h[1], M.b[h[2][uebertrag]])
-  h[2][uebertrag] -= 1
-  push!(h[1], M.b[h[2][uebertrag]])
-  tmp = h[2][uebertrag] - uebertrag
-  ind = uebertrag - 1
+  delete!(h[1], M.b[h[2][carry]])
+  h[2][carry] -= 1
+  push!(h[1], M.b[h[2][carry]])
+  tmp = h[2][carry] - carry
+  ind = carry - 1
   while ind >= 1
     delete!(h[1], M.b[h[2][ind]])
     h[2][ind] = tmp + ind
