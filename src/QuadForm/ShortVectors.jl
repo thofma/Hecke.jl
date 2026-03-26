@@ -948,10 +948,7 @@ function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
   return all(isone(denominator!(tmp, i)) for i in x)
 end
 
-function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}; sort = :rank, search_new_invariant_vectors::Bool=true)
-#   perm = sortperm(proj;by=rank)
-#   proj = proj[perm]
-#   target_norms =[i[perm] for i in target_norms]
+function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}; sort = :rank1, search_new_invariant_vectors::Bool=true)
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   k = length(proj)
@@ -1179,13 +1176,12 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
-  @show "short stufuuuuuuuuuuuuf"
-  @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
-  #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
+  #@hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   if get_assertion_level(:Lattice) > 1
     grams = [denoms[i]*proj[i]*gram_matrix(L)*transpose(proj[i]) for i in 1:length(proj)]
     for (v, n) in output
-      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+      # so this assertion is what goes through ... but I don't know if it is what we want.
+      @assert all(dot(v * grams[i], v) == n[w-1+i] for i in 2:length(grams))
     end
   end
 

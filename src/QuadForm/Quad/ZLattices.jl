@@ -495,7 +495,6 @@ function __assert_has_automorphisms(
     return nothing
   end
 
-  @show "hallooo"
   if use_weyl && use_projections && use_target_enum
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
@@ -508,7 +507,6 @@ function __assert_has_automorphisms(
 
     if length(new_invariant_vectors) > 0
       # update the norms
-      @show "hi"
       T = new_invariant_vectors*res[1]
       #also need the norm with respect to res[1]
       vector_set = [ (v,
@@ -520,8 +518,8 @@ function __assert_has_automorphisms(
       @show typeof(V)
       vector_set = [ (v, append!([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
     end
-    @show "hllll"
     append!(res, grams)
+    @assert length(grams) == length(vector_set[1][2])
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(L)
