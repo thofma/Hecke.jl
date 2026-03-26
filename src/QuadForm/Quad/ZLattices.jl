@@ -526,11 +526,6 @@ function __assert_has_automorphisms(
       sv = [ (_canonicalize!(v), append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
     end
     append!(res, grams)
-    if get_assertion_level(:Lattice) > 1
-      for (v, n) in sv
-        @assert all(dot(v * res[i], v) == n[i] for i in 1:length(n))
-      end
-    end
     vector_set = sv
     use_weyl = true
     use_projections = false
@@ -564,6 +559,11 @@ function __assert_has_automorphisms(
     vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in sv]
   end
 
+  if get_assertion_level(:Lattice) > 1
+    for (v, n) in vector_set
+      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(n))
+    end
+  end
   known_short_vectors = (alpha, sv)
   C = ZLatAutoCtx(res)
   fl = false
