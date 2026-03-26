@@ -22,7 +22,51 @@
   # Genus representatives of some genus
   L = [integer_lattice(gram=matrix(QQ,6,6,i),cached=false) for i in A]
   # mass formula
-  @test sum(1//automorphism_group_order(i) for i in L)) == mass(genus(L[1]))
+  @test sum(1//automorphism_group_order(i) for i in L) == mass(genus(L[1]))
   # hardcoded orders
-  @test ZZRingElem[2880, 64, 384, 960, 192, 384, 7680] == automorphism_group_order.(L)
+  orders = ZZRingElem[2880, 64, 384, 960, 192, 384, 7680]
+  @test  orders == automorphism_group_order.(L)
+  # test different options
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, compress=false, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=false, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=false, redo=true, search_new_invariant_vectors=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=false, redo=true, search_new_invariant_vectors=false)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=true, redo=true, search_new_invariant_vectors=false)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, use_weyl=true, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, use_weyl=true, use_projections=true, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+
 end

@@ -299,8 +299,7 @@ function try_init_small(
   depth::Int=-1,
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
-  known_short_vectors=(0, []),
-  vector_set = [],
+  vector_set = [], #Tuple{Vector{Int},Vector{Int}}[] # do this?
   D::ZLatAutoCtx=C,
   force::Bool = false
  )

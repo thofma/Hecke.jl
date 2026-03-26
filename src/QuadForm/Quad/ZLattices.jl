@@ -418,7 +418,6 @@ function __assert_has_automorphisms(
   try_small::Bool=true,
   depth::Int=-1,
   bacher_depth::Int=0,
-  known_short_vectors=(0, []),
   use_weyl::Bool=true,
   reduced::Bool=false,
   use_projections::Bool=true,
@@ -426,12 +425,12 @@ function __assert_has_automorphisms(
   use_everything::Bool=false,
   compress::Bool=true,
   search_new_invariant_vectors::Bool=true,
+  use_target_enum::Bool=true
 )
-  use_weyl
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
-
+  # Corner cases
   if rank(L) == 0
     L.automorphism_group_generators = ZZMatrix[identity_matrix(ZZ, 0)]
     L.automorphism_group_order = one(ZZRingElem)
@@ -454,12 +453,33 @@ function __assert_has_automorphisms(
     L.automorphism_group_generators = gens
     return nothing
   end
+  if use_everything
+    use_weyl = true
+    use_projections = true
+    use_target_enum = true
+    use_norm_one = true
+    #compress = true # want this?
+  end
 
+  # scale integral and positive definite and with trivial basis matrix
+  d = sign(gram_matrix(L)[1,1])*denominator(gram_matrix(L))
+  if !isone(d)
+    _L = rescale(L, 1//d; cached=false)
+  else
+    _L = L
+  end
+  if !isone(basis_matrix(_L))
+    _L = lattice(rational_span(_L))
+  end
+  V = ambient_space(_L)
+  GL = numerator(gram_matrix(L))
+  res = ZZMatrix[GL]
+  vector_set = []
+  # Split off norm 1 vectors
   if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
-    # not sure if it makes sense to pass everything along
-    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one)
-    # we call directly .automorphism_group_generators, since we want the automorphisms in as ZZMatrix
+    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one=false, search_new_invariant_vectors, compress, use_target_enum)
+    # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
     orderOT = automorphism_group_order(T)
@@ -468,71 +488,46 @@ function __assert_has_automorphisms(
     oneT = identity_matrix(ZZ, rank(T))
     gens = ZZMatrix[numerator(inv(ST) * diagonal_matrix(g, oneT) * ST) for g in gensOS]
     append!(gens, (numerator(inv(ST) * diagonal_matrix(oneS, g) * ST) for g in gensOT))
-    @hassert :Lattice 1 all(let gens = gens, GL = gram_matrix(L); i -> gens[i] * GL *
+    @hassert :Lattice 1 all(let gens = gens, GL = GL; i -> gens[i] * GL *
                             transpose(gens[i]) == GL; end, 1:length(gens))
     L.automorphism_group_generators = gens
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
 
-  _alpha, sv = known_short_vectors
-  V = ambient_space(L)
-  GL = gram_matrix(L)
-  d = denominator(GL)
-  if !isone(d)
-    res = ZZMatrix[numerator(GL)]
-    if !iszero(_alpha)
-      alpha = abs(numerator(d*_alpha))
-      sv = eltype(sv)[(v[1], d*v[2]) for v in sv]
-    else
-      alpha = _alpha
+  @show "hallooo"
+  if use_weyl && use_projections && use_target_enum
+    root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
+    weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
+    proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
+
+    V, new_invariant_vectors = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
+    for (v,_) in V
+      _canonicalize!(v)
     end
-  else
-    res = ZZMatrix[change_base_ring(ZZ, GL)]
-    if !iszero(_alpha)
-      alpha = abs(numerator(_alpha))
-    else
-      alpha = _alpha
-    end
-  end
 
-  # OK to do here?
-  # So the first one is either positive definite or negative definite
-  # Make it positive definite. This does not change the automorphisms.
-  if res[1][1, 1] < 0
-    res[1] = -res[1]
-  end
-
-  vector_set = []
-
-  if use_everything
-    LL = lattice(rational_span(gram_matrix(L)[1, 1] < 0 ? rescale(L, -1) : L))
-
-    @assert length(res)==1
-    root_types, fundamental_roots = _root_lattice_recognition_fundamental(LL)
-    weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(LL, root_types, fundamental_roots)
-    proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(LL, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
-    #TODO method to select use_int
-    V, new_invariant_vectors = _short_vectors_with_condition(Int, LL, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
-    if length(new_invariant_vectors)>0
+    if length(new_invariant_vectors) > 0
+      # update the norms
+      @show "hi"
       T = new_invariant_vectors*res[1]
-    #also need the norm with respect to res[1]
-      sv = [ (_canonicalize!(v),
-            append!(append!([Int(inner_product(LL, v, v))], n), (i->Int(i)^2).(T*v))) for (v, n) in V]
+      #also need the norm with respect to res[1]
+      vector_set = [ (v,
+            append!(append!([Int(inner_product(_L, v, v))], n), (i->Int(i)^2).(T*v))) for (v, n) in V]
       for i in 1:nrows(T)
         push!(grams, ZZ.(transpose(T[i:i,:])*T[i:i,:]))
       end
     else
-      sv = [ (_canonicalize!(v), append!([Int(inner_product(LL, v, v))], n)) for (v, n) in V]
+      @show typeof(V)
+      vector_set = [ (v, append!([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
     end
+    @show "hllll"
     append!(res, grams)
-    vector_set = sv
-    use_weyl = true
-    use_projections = false
+    use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(L)
     append!(res, weyl_gram_matrices)
   end
+
   if use_projections && !use_everything
     proj = _invariant_projections(L)
     projZ = numerator.(proj)
@@ -559,16 +554,19 @@ function __assert_has_automorphisms(
     vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in sv]
   end
 
+  @show [[dot(v * res[i],  v) == n[i] for i in 1:length(res)] for (v,n) in vector_set]
+  @assert length(res) == length(vector_set[1][2])
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
-      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(n))
+      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
   end
-  known_short_vectors = (alpha, sv)
+
+  known_short_vectors = (0, []) #
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true, vector_set, force=compress)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, force=compress)
     #@assert fl
     if fl
       _gens, order = auto(Csmall)

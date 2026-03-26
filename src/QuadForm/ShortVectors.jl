@@ -1179,9 +1179,17 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
-
+  @show "short stufuuuuuuuuuuuuf"
   @hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   #@hassert :Lattice 1 all([[(j*gram_matrix(L)*transpose(j))[1] for j in [matrix(QQ, 1, length(i),i)*p for p in proj]] in target_norms for (i,_) in short_vectors1])
+  if get_assertion_level(:Lattice) > 1
+    grams = [denoms[i]*proj[i]*gram_matrix(L)*transpose(proj[i]) for i in 1:length(proj)]
+    for (v, n) in output
+      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+    end
+  end
+
+
   return output, new_invariant_subspace
 end
 
@@ -1203,7 +1211,6 @@ function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vect
   return Dnew
 end
 
-@show "hi"
 #modifies tmp_vec and tmp_mat
 function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, new_invariant_subspace, tmp_vec::Vector{ZZRingElem}, tmp_mat::QQMatrix, H::ZZMatrix)
   S = solve_init(invariant_subspace)
