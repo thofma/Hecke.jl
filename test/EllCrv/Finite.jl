@@ -169,14 +169,60 @@
   end
 
   @testset "Order of points" begin
-    K = GF(103)
+    function test_curve(E, count)
+      for i in 1:count
+        P = rand(E)
+        n = order(P)
+
+        @test n*P == infinity(E)
+        # check minimality: the numbers involved are very small, it is ok to factorize them
+        for (p, _) in factor(n)
+          @test !is_infinite(divexact(n, p) * P)
+        end
+        # check variant with fac
+        @test n == order(P, factor(n))
+        @test n == order(P, factor(30*n))
+      end
+    end
+
+    K = finite_field(103; cached = false)[1]
     E = elliptic_curve(K, [1, 18])
+    test_curve(E, 10)
+
     P = E([33, 91])
     @test order(P) == 19
     @test Hecke._order_elem_via_fac(P) == 19
+
     P = E([38, 82])
     @test order(P) == 114
     @test Hecke._order_elem_via_fac(P) == 114
+
+    K, a = finite_field(103, 2; cached = false)
+    E = elliptic_curve(K, [a, one(K)])
+    test_curve(E, 10)
+
+    K = finite_field(2, 9; cached = false)[1]
+    E = elliptic_curve(K, [0,0, 1,1,1])
+    test_curve(E, 10)
+
+    # y^2 = (x-1)*(x-2)*(x-3) = x^3 - 6 * x^2 + 11*x - 6 (mod 10007)
+    K = finite_field(10007; cached = false)[1]
+    E = elliptic_curve(K, [0, -6, 0, 11, -6])
+    test_curve(E, 10)
+
+    @test order(E([1, 0])) == 2
+    @test order(E([2, 0])) == 2
+    @test order(E([3, 0])) == 2
+    @test order(E([3, 0]), factor(ZZ(6))) == 2
+    @test order(E([3, 0]), factor(ZZ(36))) == 2
+
+    # y^2 = x^3 + x over F_p with p = 10^9+7
+    # (1, 940286407) is 4-torsion
+    F = finite_field(10^9+7; cached=false)[1]
+    E = elliptic_curve(F, [1,0])
+    @test order(E([1,940286407])) == 4
+    @test order(E([1,940286407]), factor(ZZ(16))) == 4
+    @test order(E([1,940286407]), factor(ZZ(60))) == 4
   end
 
   @testset "Abelian group structure and disc log" begin
