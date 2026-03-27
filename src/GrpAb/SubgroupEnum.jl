@@ -951,25 +951,24 @@ end
 # elementary divisors) of a subgroup of G of order p^v. The output is given
 # with respect to the reverse order of the snf of G (so starting by the largest
 # blocks).
+# The input `elG` consists of the elementary divisors of G.
 function _psubgroups_types(
-  G::FinGenAbGroup,
+  elG::Vector{ZZRingElem},
   p::ZZRingElem,
   v::Int,
 )
   testv = isequal(v)∘sum
   p_subtypes = Set{Vector{Int}}()
-  @assert is_finite(G)
-  if isone(order(G))
+  if isempty(elG)
     return p_subtypes
   end
-  S, _ = snf(G)
-  p_subtypes = Set{Vector{Int}}()
-  Gtype = Int[valuation(S.snf[i], p) for i in 1:length(S.snf)]
+  Gtype = Int[valuation(a, p) for a in elG]
   reverse!(Gtype)
   filter!(!=(0), Gtype)
   types = _subpartitions(Gtype)
   for t in types
     testv(t) || continue
+    filter!(!=(0), t)
     push!(p_subtypes, t)
   end
   return p_subtypes
@@ -984,25 +983,23 @@ function _maximal_common_subgroup_snf(
   @assert is_finite(G1) && is_finite(G2)
   s1 = elementary_divisors(G1)
   s2 = elementary_divisors(G2)
-  if length(s1) > length(s2)
-    s1, s2 = s2, s1
+  s = Array{ZZRingElem}(undef, min(length(s1), length(s2)))
+  for i in 0:length(s)-1
+    s[end-i] = gcd(s1[end-i], s2[end-i])
   end
-  s = deepcopy(s1)
-  for i in 0:length(s1)-1
-    gcd!(s[end-i], s[end-i], s2[end-i])
-  end
-  return abelian_group(s)
+  return s
 end
 
 # Return information about the primary parts of all possible finite
 # abelian groups H embedding into G.
+# The input `elG` consists of the elementary divisors of G.
 # It returns a dictionary whose keys are prime numbers dividings the order
 # of G and for each such prime p, the value gives the possible lists of
 # valuations for the elementary divisors (in reverse order) of H_p.
 # The keyword argument `ords` gives a set of possible orders for H (ignored
 # if empty)
 function _primary_parts_subgroups(
-  G::FinGenAbGroup;
+  elG::Vector{ZZRingElem};
   ords::Set{ZZRingElem}=Set{ZZRingElem}(),
 )
   pps = Dict{ZZRingElem, Set{Vector{Int}}}()
@@ -1014,18 +1011,19 @@ function _primary_parts_subgroups(
     end
     pds = prime_divisors(l)
     for p in pds
-      vals = unique!(Base.Fix2(valuation, p).(ords))
+      vals = unique!(Int[valuation(a, p) for a in ords])
       tmp = Set{Vector{Int}}()
       for _v in vals
-        union!(tmp, _psubgroups_types(G, p, _v))
+        union!(tmp, _psubgroups_types(elG, p, _v))
       end
       pps[p] = tmp
     end
   else
-    for (p, v) in factor(order(G))
+    for p in prime_divisors(last(elG))
+      v = sum(Int[valuation(a, p) for a in elG]; init=Int(0))
       tmp = Set{Vector{Int}}()
-      for _v in 1:v
-        union!(tmp, _psubgroups_types(G, p, _v))
+      for _v in 0:v
+        union!(tmp, _psubgroups_types(elG, p, _v))
       end
       pps[p] = tmp
     end
@@ -1036,16 +1034,16 @@ end
 # Return information about the primary parts of all possible finite
 # abelian groups H embedding into G, and whose elementary divisors are
 # given in the set `el_divs`.
+# The input `elG` consists of the elementary divisors of G.
 # It returns a dictionary whose keys are prime numbers dividings the order
 # of G and for each such prime p, the value gives the possible lists of
 # valuations for the elementary divisors (in reverse order) of H_p.
 # If a list in `el_divs` does not define a subgroup of G, it is ignored.
 function _infer_primary_parts_subgroups(
-  G::FinGenAbGroup,
+  elG::Vector{ZZRingElem},
   el_divs::Set{Vector{ZZRingElem}},
 )
   pps = Dict{ZZRingElem, Set{Vector{Int}}}()
-  elG = elementary_divisors(G)
   for el in el_divs
     length(el) <= length(elG) || continue
     iszero(mod.(elG[end-length(el)+1:end], el)) || continue
@@ -1086,11 +1084,11 @@ function _primary_parts_common_subgroups_with_conditions(
   V1, V1inG1 = kernel(annihilator1)
   V2, V2inG2 = kernel(annihilator2)
 
-  V = _maximal_common_subgroup_snf(V1, V2)
+  elG = _maximal_common_subgroup_snf(V1, V2)
   if !isempty(el_divs)
-    ppcs = _infer_primary_parts_subgroups(V, el_divs)
+    ppcs = _infer_primary_parts_subgroups(elG, el_divs)
   else
-    ppcs = _primary_parts_subgroups(V; ords)
+    ppcs = _primary_parts_subgroups(elG; ords)
   end
   return ppcs, V1inG1, V2inG2
 end
