@@ -1086,7 +1086,7 @@ function _primary_parts_common_subgroups_with_conditions(
   V1, V1inG1 = kernel(annihilator1)
   V2, V2inG2 = kernel(annihilator2)
 
-  V = _maximal_common_subgroup_snf(H1, H2)
+  V = _maximal_common_subgroup_snf(V1, V2)
   if !isempty(el_divs)
     ppcs = _infer_primary_parts_subgroups(V, el_divs)
   else
