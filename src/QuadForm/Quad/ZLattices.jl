@@ -506,6 +506,7 @@ function __assert_has_automorphisms(
   end
 
   if maximum(abs.(GL))>ZZ(2)^62
+    # temporary fix TODO to it in _short_vectors_with_condition
     use_target_enum = false
   end
 
