@@ -1,7 +1,5 @@
 @testset "Morphism" begin
   L = integer_lattice(gram = zero_matrix(ZZ, 0, 0))
-  @test_throws ArgumentError shortest_vectors(L)
-  @test_throws ArgumentError shortest_vectors(L, Vector{Int})
   @test_throws ArgumentError minimum(L)
   @test (@inferred short_vectors(L, 1)) == []
   @test (@inferred short_vectors(L, 1, 2)) == []

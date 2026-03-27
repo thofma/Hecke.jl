@@ -478,7 +478,7 @@ function __assert_has_automorphisms(
   else
     _L = L
   end
-  if !isone(basis_matrix(_L))
+  if !isone(basis_matrix(_L)) || rank(_L) != degree(_L)
     _L = lattice(rational_span(_L))
   end
   V = ambient_space(_L)
@@ -540,11 +540,11 @@ function __assert_has_automorphisms(
     @assert length(res) == length(vector_set[1][2])
     use_projections = false # already added projections
   elseif use_weyl
-    weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(L)
+    weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
     append!(res, weyl_gram_matrices)
   end
   if use_projections && !use_everything
-    proj = _invariant_projections(L)
+    proj = _invariant_projections(_L)
     projZ = numerator.(proj)
     GZ = res[1]
     projgramZ = [i*GZ*transpose(i) for i in projZ]
@@ -560,7 +560,7 @@ function __assert_has_automorphisms(
 
   if compress
     r = length(res)
-    a = rand(1:50, r-1)
+    a = rand(-50:50, r-1)
     Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
     Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
     res = [res[1], Gcompressed]
@@ -576,7 +576,7 @@ function __assert_has_automorphisms(
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, force=compress)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, force=false)
     #@assert fl
     if fl
       _gens, order = auto(Csmall)
