@@ -453,6 +453,16 @@ function __assert_has_automorphisms(
     L.automorphism_group_generators = gens
     return nothing
   end
+
+  is_lll = get_attribute(L, :is_lll_reduced, false)
+  use_lll = false #!is_lll && !use_everything
+#   if use_lll
+#     # Make the Gram matrix small
+#     Glll, T = lll_gram_with_transform(res[1])
+#     Ttr = transpose(T)
+#     res = ZZMatrix[T*g*Ttr for g in res]
+#   end
+
   if use_everything
     use_weyl = true
     use_projections = true
@@ -494,15 +504,16 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
-
   if use_weyl && use_projections && use_target_enum
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
-
-    V, new_invariant_vectors = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
+    V, new_invariant_vectors = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
     for (v,_) in V
       _canonicalize!(v)
+    end
+    for (v, n) in V
+      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
 
     if length(new_invariant_vectors) > 0
@@ -515,17 +526,23 @@ function __assert_has_automorphisms(
         push!(grams, ZZ.(transpose(T[i:i,:])*T[i:i,:]))
       end
     else
-      @show typeof(V)
       vector_set = [ (v, append!([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
     end
     append!(res, grams)
-    @assert length(grams) == length(vector_set[1][2])
+    for (v, n) in vector_set
+#       @show [dot(v * res[i], v) == n[i] for i in 1:length(res)]
+#       @show [dot(v * res[i], v) for i in 1:length(res)]
+#       @show n
+      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+    end
+
+
+    @assert length(res) == length(vector_set[1][2])
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(L)
     append!(res, weyl_gram_matrices)
   end
-
   if use_projections && !use_everything
     proj = _invariant_projections(L)
     projZ = numerator.(proj)
@@ -534,26 +551,21 @@ function __assert_has_automorphisms(
     append!(res, projgramZ)
   end
 
-  is_lll = get_attribute(L, :is_lll_reduced, false)
-  use_lll = !is_lll && !use_everything
-  if use_lll
-    # Make the Gram matrix small
-    Glll, T = lll_gram_with_transform(res[1])
-    Ttr = transpose(T)
-    res = ZZMatrix[T*g*Ttr for g in res]
+  if get_assertion_level(:Lattice) > 1
+    for (v, n) in vector_set
+      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+    end
   end
+
 
   if compress
     r = length(res)
-    a = rand(Int, r-1)
+    a = rand(1:50, r-1)
     Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
     Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
     res = [res[1], Gcompressed]
     vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in sv]
   end
-
-  @show [[dot(v * res[i],  v) == n[i] for i in 1:length(res)] for (v,n) in vector_set]
-  @assert length(res) == length(vector_set[1][2])
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))

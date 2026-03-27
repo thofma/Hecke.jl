@@ -682,7 +682,7 @@ function short_vectors_with_condition(T::Type,
                                       L::ZZLat;
                                       search_new_invariant_vectors::Bool=true)
   proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
-  return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms; search_new_invariant_vectors)
+  return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
 end
 
 
@@ -693,8 +693,13 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat)
   return _short_vectors_with_condition_preprocessing(L::ZZLat, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv)
 end
 
-function _short_vectors_with_condition_preprocessing(L::ZZLat, root_types::Vector{Tuple{Symbol,Int}}, fundamental_roots::Vector{ZZMatrix}, grams, proj_root_inv::QQMatrix, proj_root_coinv::Vector{QQMatrix})
-  R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ,0, rank(L)))
+function _short_vectors_with_condition_preprocessing(L::ZZLat,
+                                                     root_types::Vector{Tuple{Symbol,Int}},
+                                                     fundamental_roots::Vector{ZZMatrix},
+                                                     grams::Vector{ZZMatrix},
+                                                     proj_root_inv::QQMatrix,
+                                                     proj_root_coinv::Vector{QQMatrix})
+  R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   Rperp = orthogonal_submodule(L, R*basis_matrix(L))
   LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
   pushfirst!(LL, lattice(ambient_space(L), R))
@@ -768,12 +773,12 @@ function _short_vectors_with_condition(T::Type{Int},
                                       L::ZZLat,
                                       proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
                                       target_norms::Vector{Vector{ZZRingElem}},
-                                      denoms::Vector{ZZRingElem};
+                                      denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix};
                                       search_new_invariant_vectors::Bool=true)
   denoms_Int = Int.(denoms)
   target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
   target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
-  return _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int; search_new_invariant_vectors)
+  return _short_vectors_with_condition_int(L, proj, target_invariant_Int, target_norms_Int, denoms_Int, grams; search_new_invariant_vectors)
 end
 
 function _short_vectors_with_condition(T::Type{QQFieldElem},
@@ -948,7 +953,7 @@ function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
   return all(isone(denominator!(tmp, i)) for i in x)
 end
 
-function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}; sort = :rank1, search_new_invariant_vectors::Bool=true)
+function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}, grams::Vector{ZZMatrix}; sort = :rank1, search_new_invariant_vectors::Bool=true)
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   k = length(proj)
@@ -1159,12 +1164,12 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   output = Vector{Tuple{Vector{Int}, Vector{Int}}}(undef, sum(length.(values(short_vectors1_new))))
   i = 0
   for b in keys(short_vectors1_new)
+    r = nrows(new_invariant_subspace) + 1 # huh
     if permuted
-      r = nrows(new_invariant_subspace) # huh
       _per2inv = [r+i for i in per2inv]
       bret = b[_per2inv]
     else
-      bret = b
+      bret = b[r:end]
     end
     for (z, d) in short_vectors1_new[b]
       i = i+1
@@ -1176,16 +1181,11 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
-  #@hassert :Lattice 1 all((i*proj[1],q[1:w]) in target_invariant for (i,q) in output)
   if get_assertion_level(:Lattice) > 1
-    grams = [denoms[i]*proj[i]*gram_matrix(L)*transpose(proj[i]) for i in 1:length(proj)]
     for (v, n) in output
-      # so this assertion is what goes through ... but I don't know if it is what we want.
-      @assert all(dot(v * grams[i], v) == n[w-1+i] for i in 2:length(grams))
+      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-
-
   return output, new_invariant_subspace
 end
 

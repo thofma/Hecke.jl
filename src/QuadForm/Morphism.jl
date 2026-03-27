@@ -413,11 +413,6 @@ function try_init_small(
 
       w in target_lengths || continue
 
-      # TODO: remove once bug is fixed
-      if v in vectors
-        continue
-      end
-
       push!(lengths, w)
       push!(vectors, _v)
     end
