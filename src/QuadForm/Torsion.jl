@@ -1880,40 +1880,31 @@ function _as_finite_bilinear_module(T::TorQuadModule)
   return torsion_quadratic_module(cover(T), relations(T); modulus=n, modulus_qf=n)
 end
 
-@doc raw"""
-    genus(
-      T::TorQuadModule,
-      signature_pair::Tuple{Int, Int};
-      parity::RationalUnion=modulus_quadratic_form(T),
-    ) -> ZZGenus
-
-Return the genus of an integer lattice whose discriminant form is equivalent
-to `T`, whose signature is `signature_pair` and of parity `parity`.
-
-The argument `parity` is one of the following: either `parity == 1` for genera
-of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
-set to be as the parity of the quadratic form on `T`
-
-If no such genus exists, raise an error.
-
-# Reference
-[Nik79](@cite) Corollary 1.9.4 and 1.16.3.
-"""
-function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::RationalUnion=modulus_quadratic_form(T))
-  @req modulus_bilinear_form(T) == 1 "Modulus for the bilinear form must be 1"
-  @req modulus_quadratic_form(T) == 1 || modulus_quadratic_form(T) == 2 "Modulus for the quadratic form must be 1 or 2"
-  @req parity == 1 || parity == 2 "Parity must be 1 or 2"
+function _is_genus_with_genus(
+  T::TorQuadModule,
+  signature_pair::Tuple{Int, Int};
+  parity::RationalUnion=modulus_quadratic_form(T),
+)
+  if !is_one(modulus_bilinear_form(T))
+    return false, zero_integer_genus(), "Modulus for the bilinear form must be 1"
+  end
+  if !(modulus_quadratic_form(T) == 1 || modulus_quadratic_form(T) == 2)
+    return false, zero_integer_genus(), "Modulus for the quadratic form must be 1 or 2"
+  end
+  if !(parity == 1 || parity == 2)
+    return false, zero_integer_genus(), "Parity must be 1 or 2"
+  end
   s_plus = signature_pair[1]
   s_minus = signature_pair[2]
   rank = s_plus + s_minus
   if s_plus < 0 || s_minus < 0
-    error("signatures must be non-negative")
+    return false, zero_integer_genus(), "Signatures must be non-negative"
   end
   if length(elementary_divisors(T)) > rank
-    error("this discriminant form and signature do not define a genus")
+    return false, zero_integer_genus(), "This discriminant form and pair of signatures do not define a genus"
   end
   if rank == 0 && order(T) == 1
-    return genus(zero_matrix(ZZ,0,0))
+    return true, zero_integer_genus(), ""
   end
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
@@ -1992,30 +1983,26 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::Ration
         ]
     end
   else
-    if modulus_quadratic_form(T) == 2
-      # the form is even
-      block0 = [b for b in _blocks(sym2[1]) if b[4] == 0]
+    # the form is even
+    block0 = [b for b in _blocks(sym2[1]) if b[4] == 0]
 
-      # if the jordan block of scale 2 is even we know it
-      d = sym2[2][3]::Int
-      o = sym2[2][4]::Int
-      t = sym2[2][5]::Int
-      if o == 0
-        block1 = [sym2[2]]
-      else
-        # the block is odd and we know det and oddity mod 4
-        block1 = [b for b in _blocks(sym2[2])
-                if b[4] == o
-                && mod(b[3] - d, 4) == 0
-                && mod(b[5] - t, 4) == 0
-                && mod(b[3] - d, 8) == mod(b[5] - t, 8) # if the oddity is altered by 4 then so is the determinant
-                ]
-      end
-      # this is completely determined
-      block2 = [sym2[3]]
+    # if the jordan block of scale 2 is even we know it
+    d = sym2[2][3]::Int
+    o = sym2[2][4]::Int
+    t = sym2[2][5]::Int
+    if o == 0
+      block1 = [sym2[2]]
     else
-      error("this is not a discriminant form of a ZLattice")
+      # the block is odd and we know det and oddity mod 4
+      block1 = [b for b in _blocks(sym2[2])
+              if b[4] == o
+              && mod(b[3] - d, 4) == 0
+              && mod(b[5] - t, 4) == 0
+              && mod(b[3] - d, 8) == mod(b[5] - t, 8) # if the oddity is altered by 4 then so is the determinant
+              ]
     end
+    # this is completely determined
+    block2 = [sym2[3]]
   end
   # figure out which symbol defines a genus and return that
   for b0 in block0
@@ -2025,12 +2012,12 @@ function genus(T::TorQuadModule, signature_pair::Tuple{Int, Int}; parity::Ration
         local_symbols[1] = ZZLocalGenus(2, copy(sym2))
         genus = ZZGenus(signature_pair, local_symbols)
         if _isglobal_genus(genus)
-          return genus
+          return true, genus, ""
         end
       end
     end
   end
-  error("this discriminant form and signature do not define a genus")
+  return false, zero_integer_genus(), "This discriminant form and and pair of signatures do not define a genus"
 end
 
 @doc raw"""
@@ -2041,7 +2028,7 @@ end
     ) -> Bool, ZZGenus
 
 Return whether there is an integral lattice whose discriminant form is
-equivalent to ``T``, whose signatures match `signature_pair` and which is
+isomorphic to ``T``, whose signatures match `signature_pair` and which is
 of parity `parity`. If it is the case, the corresponding genus is given as
 second output.
 
@@ -2050,19 +2037,46 @@ lattice by default.
 
 The argument `parity` is one of the following: either `parity == 1` for genera
 of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
-set to be as the parity of the quadratic form on `T`
+set to be as the parity of the quadratic form on `T`.
+
+# Reference
+[Nik79](@cite) Corollary 1.9.4 and 1.16.3.
 """
 function is_genus_with_genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
   parity::RationalUnion=modulus_quadratic_form(T),
 )
-  try
-    GT = genus(T, signature_pair; parity)
-    return true, GT
-  catch
-    return false, genus(integer_lattice(;gram=QQ[;]))
-  end
+  return _is_genus_with_genus(T, signature_pair; parity)[1:2]
+end
+
+@doc raw"""
+    genus(
+      T::TorQuadModule,
+      signature_pair::Tuple{Int, Int};
+      parity::RationalUnion=modulus_quadratic_form(T),
+    ) -> ZZGenus
+
+Return the genus of an integer lattice whose discriminant form is isomorphic
+to `T`, whose signature is `signature_pair` and of parity `parity`.
+
+The argument `parity` is one of the following: either `parity == 1` for genera
+of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
+set to be as the parity of the quadratic form on `T`
+
+If no such genus exists, raise an `ArgumentError`.
+
+# Reference
+[Nik79](@cite) Corollary 1.9.4 and 1.16.3.
+"""
+function genus(
+  T::TorQuadModule,
+  signature_pair::Tuple{Int, Int};
+  parity::RationalUnion=modulus_quadratic_form(T),
+)
+  flag, GT, m = _is_genus_with_genus(T, signature_pair; parity)
+  @req(flag, m)
+  return GT
 end
 
 @doc raw"""
@@ -2073,24 +2087,22 @@ end
     ) -> Bool
 
 Return whether there is an integral lattice whose discriminant form is
-equivalent to `T`, whose signatures match `signature_pair` and which is
+isomorphic to `T`, whose signatures match `signature_pair` and which is
 of parity `parity`.
 
 The argument `parity` is one of the following: either `parity == 1` for genera
 of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
-set to be as the parity of the quadratic form on `T`
+set to be as the parity of the quadratic form on `T`.
+
+# Reference
+[Nik79](@cite) Corollary 1.9.4 and 1.16.3.
 """
 function is_genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
   parity::RationalUnion=modulus_quadratic_form(T),
 )
-  try
-    genus(T, signature_pair; parity)
-    return true
-  catch
-    return false
-  end
+  return first(_is_genus_with_genus(T, signature_pair; parity))
 end
 
 function _is_genus_brown(T::TorQuadModule, signature_pair::Tuple{Int, Int})
