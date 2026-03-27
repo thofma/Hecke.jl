@@ -678,6 +678,19 @@ function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = no
 end
 
 
+######################################################################################################################
+#
+#            Short vectors with condition
+#
+######################################################################################################################
+
+
+function short_vectors_with_condition(L::ZZLat;
+                                      search_new_invariant_vectors::Bool=false)
+  return short_vectors_with_condition(QQFieldElem, L; search_new_invariant_vectors)
+end
+
+
 function short_vectors_with_condition(T::Type,
                                       L::ZZLat;
                                       search_new_invariant_vectors::Bool=true)
@@ -733,35 +746,6 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   return proj, target_proj_root_inv, target_norms, denoms, grams
 end
 
-@inline function add!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{QQFieldElem})
-  @inbounds for i in 1:length(x)
-    z[i] = add!(z[i], x[i], y[i])
-  end
-  return z
-end
-
-@inline function sub!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{QQFieldElem})
-  @inbounds for i in 1:length(x)
-    z[i] = sub!(z[i], x[i], y[i])
-  end
-  return z
-end
-
-function _is_product_integral(b, flag_project2, tmp, tmpZZ)
-  z = tmp
-  for i in 1:ncols(flag_project2)
-    mul!(z, b, @view flag_project2[:, i:i])
-    if !is_integral(z[1])
-      return false
-    end
-  end
-  return true
-end
-
-function mul!(z::Vector{QQFieldElem}, a::Vector{ZZRingElem}, b::QQMatrix)
-  @ccall libflint.fmpq_mat_fmpz_vec_mul_ptr(z::Ptr{Ref{QQFieldElem}}, a::Ptr{Ref{ZZRingElem}}, length(a)::Int, b::Ref{QQMatrix})::Nothing
-  return z
-end
 
 """
     _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_norms::Vector{Vector{QQFieldElem}})
@@ -785,11 +769,11 @@ function _short_vectors_with_condition(T::Type{QQFieldElem},
                                       L::ZZLat,
                                       proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
                                       target_norms::Vector{Vector{ZZRingElem}},
-                                      denoms::Vector{ZZRingElem};
+                                      denoms::Vector{ZZRingElem},
+                                      grams::Vector{ZZMatrix};
                                       search_new_invariant_vectors::Bool=true)
-  return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms; search_new_invariant_vectors)
+  return _short_vectors_with_condition(L, proj, target_invariant, target_norms, denoms, grams; search_new_invariant_vectors)
 end
-
 
 raw"""
     _short_vectors_with_condition(L::ZZLat,
@@ -811,7 +795,7 @@ Input:
 - `target_norms` -- the set ``N``
 - `denoms` -- the vector ``d``.
 """
-function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}; search_new_invariant_vectors::Bool=true)
+function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true)
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
   n = rank(L)
@@ -949,10 +933,6 @@ function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_
   return output, new_invariant_vectors
 end
 
-function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
-  return all(isone(denominator!(tmp, i)) for i in x)
-end
-
 function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}, grams::Vector{ZZMatrix}; sort = :rank1, search_new_invariant_vectors::Bool=true)
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
@@ -1005,7 +985,6 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     end
   end
 
-
   basismatprojL = Vector{Tuple{Matrix{Int}, Int}}(undef, k)
   for i in 1:k
     M = basis_matrix(projL[i])
@@ -1013,6 +992,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     Md = denominator(M)
     basismatprojL[i] = Mint, Md
   end
+  T = zero_matrix(ZZ, 0, n)
   tmp2 = zeros_array(QQ, n)
   tmp2_new = zeros(Int, n)'
   tmp2_new2 = zeros(Int, n)'
@@ -1161,20 +1141,29 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     end
     short_vectors1_new = short_vectors2_new
   end
-  output = Vector{Tuple{Vector{Int}, Vector{Int}}}(undef, sum(length.(values(short_vectors1_new))))
+  r = nrows(new_invariant_subspace)
+  gZ = ZZ.(gram_matrix(L))
+  for i in 1:r
+    t = T[:,i:i]
+    tG = t*transpose(t)
+    pushfirst!(grams, tG)
+  end
   i = 0
+  output = Vector{Tuple{Vector{Int}, Vector{Int}}}(undef, sum(length.(values(short_vectors1_new))))
   for b in keys(short_vectors1_new)
-    r = nrows(new_invariant_subspace) + 1 # huh
     if permuted
-      _per2inv = [r+i for i in per2inv]
+      _per2inv = vcat([i for i in 1:r],[r+i for i in per2inv])
       bret = b[_per2inv]
     else
-      bret = b[r:end]
+      bret = copy(b)
+    end
+    for i in 1:r
+      bret[i] = bret[i]^2
     end
     for (z, d) in short_vectors1_new[b]
       i = i+1
       @inbounds for j in 1:n
-        z[j] = div(z[j], d)
+        z[j] = divexact(z[j], d)
       end
       output[i] = (z', bret)
     end
@@ -1186,7 +1175,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-  return output, new_invariant_subspace
+  return output
 end
 
 function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}}
@@ -1243,4 +1232,39 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
     end
   end
   return invariant_subspace, new_invariant_subspace
+end
+
+
+@inline function add!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{QQFieldElem})
+  @inbounds for i in 1:length(x)
+    z[i] = add!(z[i], x[i], y[i])
+  end
+  return z
+end
+
+@inline function sub!(z::Vector{QQFieldElem}, x::Vector{QQFieldElem}, y::Vector{QQFieldElem})
+  @inbounds for i in 1:length(x)
+    z[i] = sub!(z[i], x[i], y[i])
+  end
+  return z
+end
+
+function _is_product_integral(b, flag_project2, tmp, tmpZZ)
+  z = tmp
+  for i in 1:ncols(flag_project2)
+    mul!(z, b, @view flag_project2[:, i:i])
+    if !is_integral(z[1])
+      return false
+    end
+  end
+  return true
+end
+
+function mul!(z::Vector{QQFieldElem}, a::Vector{ZZRingElem}, b::QQMatrix)
+  @ccall libflint.fmpq_mat_fmpz_vec_mul_ptr(z::Ptr{Ref{QQFieldElem}}, a::Ptr{Ref{ZZRingElem}}, length(a)::Int, b::Ref{QQMatrix})::Nothing
+  return z
+end
+
+function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
+  return all(isone(denominator!(tmp, i)) for i in x)
 end

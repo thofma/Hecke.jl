@@ -504,52 +504,37 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
-
   if maximum(abs.(GL))>ZZ(2)^62
     # temporary fix TODO to it in _short_vectors_with_condition
     use_target_enum = false
   end
-
   if use_weyl && use_projections && use_target_enum
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
-    V, new_invariant_vectors = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
+    V = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
     for (v,_) in V
       _canonicalize!(v)
     end
-    for (v, n) in V
-      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
-    end
-
-    if length(new_invariant_vectors) > 0
-      # update the norms
-      T = new_invariant_vectors*res[1]
-      #also need the norm with respect to res[1]
-      vector_set = [ (v,
-            append!(append!([Int(inner_product(_L, v, v))], n), (i->Int(i)^2).(T*v))) for (v, n) in V]
-      for i in 1:nrows(T)
-        push!(grams, ZZ.(transpose(T[i:i,:])*T[i:i,:]))
+    if get_assertion_level(:Lattice) > 1
+      for (v, n) in V
+        @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
       end
-    else
-      vector_set = [ (v, append!([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
     end
     append!(res, grams)
-    for (v, n) in vector_set
-#       @show [dot(v * res[i], v) == n[i] for i in 1:length(res)]
-#       @show [dot(v * res[i], v) for i in 1:length(res)]
-#       @show n
-      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+    vector_set = [(v, vcat([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
+    if get_assertion_level(:Lattice) > 1
+      for (v, n) in vector_set
+        @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+      end
     end
-
-
     @assert length(res) == length(vector_set[1][2])
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
     append!(res, weyl_gram_matrices)
   end
-  if use_projections && !use_everything
+  if use_projections
     proj = _invariant_projections(_L)
     projZ = numerator.(proj)
     GZ = res[1]
