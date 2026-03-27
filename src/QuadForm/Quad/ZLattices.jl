@@ -564,7 +564,7 @@ function __assert_has_automorphisms(
     Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
     Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
     res = [res[1], Gcompressed]
-    vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in sv]
+    vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in V]
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
