@@ -1100,7 +1100,7 @@ end
 function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(phi)
   e = absolute_ramification_index(K)
-  s = characteristic_polynomial(f, mu)
+  s = characteristic_polynomial(f, phi)
   E = Int(denominator(QQFieldElem(Int(valuation(constant_coefficient(s))*absolute_ramification_index), degree(s))))
   k, mk = residue_field(K)
   sp = map_coefficients(mk, s, cached = false)
