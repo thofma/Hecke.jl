@@ -173,7 +173,7 @@ end
   ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
   ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
   LL = [integer_lattice(gram=-g) for g in L]
-  @test length.(Hecke.short_vectors_with_condition.(LL)) == [25, 42, 31, 53]
+  @test length.(first.(Hecke.short_vectors_with_condition.(LL))) == [25, 42, 31, 53]
 
 
   function test_short_vectors_with_condition(L::ZZLat; use_int = false)
@@ -198,7 +198,11 @@ end
     end
 
     # compute with the function we want to test
-    sv2 = Hecke.short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms; use_int)
+    if use_int
+      sv2,_ = Hecke._short_vectors_with_condition_int(L, proj, target_proj_root_inv, [Int.(v) for v in target_norms], Int.(denoms), grams; search_new_invariant_vectors=false)
+    else
+      sv2,_ = Hecke._short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms, grams)
+    end
     for (v,n) in sv2
       j = matrix(ZZ,1,rank(L),v)
       vproj = [j*p for p in proj]
@@ -221,13 +225,13 @@ end
   end
 
   for l in LL
-    test_short_vectors_with_condition(l)
+    test_short_vectors_with_condition(l; use_int = false)
     test_short_vectors_with_condition(l; use_int = true)
   end
 
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
-  @test length(Hecke.short_vectors_with_condition(L))==4
-  @test length(Hecke.short_vectors_with_condition(L; use_int=true))==4
+  @test length(Hecke.short_vectors_with_condition(QQFieldElem, L))[1]==4
+  @test length(Hecke.short_vectors_with_condition(Int, L))[1]==4
 
   let # some random failure with large entries
     B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])
