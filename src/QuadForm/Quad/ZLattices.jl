@@ -504,6 +504,11 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
+
+  if maximum(abs.(GL))>ZZ(2)^62
+    use_target_enum = false
+  end
+
   if use_weyl && use_projections && use_target_enum
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
@@ -558,13 +563,13 @@ function __assert_has_automorphisms(
   end
 
 
-  if compress
+  if compress && length(res)>1 # nothing to compress if there is only a single gram
     r = length(res)
-    a = rand(-50:50, r-1)
+    a = rand(1:50, r-1)
     Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
     Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
     res = [res[1], Gcompressed]
-    vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in V]
+    vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in vector_set]
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
