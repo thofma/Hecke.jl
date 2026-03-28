@@ -458,24 +458,33 @@ julia> order(E)
 100
 ```
 """
+
 @attr ZZRingElem function order(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
-  q = order(R)
-
   p == 0 && error("Characteristic must be nonzero")
 
+  q = order(R)
+
+  # for very small fields, use exhaustive search
+  # NOTE: we cannot use BSGS with q <= 49
+  q < 100 && return order_via_exhaustive_search(E)
+
+  # handle j = 0: this also covers supersingular curves in characteristic 2 and 3
   j_invariant(E) == 0 && return _order_j_0(E)
+
+  # for p = 2, 3 we have efficient AGM implementation
   p == 2 && return _order_ordinary_char2(E)
   p == 3 && return _order_ordinary_char3(E)
+
+  # j = 1728
   j_invariant(E) == R(1728) && return _order_j_1728(E)
 
-  # TODO: we did rewrite BSGS so now it always returns one number (but has extra constraints)
-  # TODO: we will add it back in next commit, introducing proper dispatch mechanism
-  # A = order_via_bsgs(E)
-  # if length(A) == 1
-  #   return ZZ(A[1])
-  # end
+  # BSGS for medium sized field
+  # TODO: 10^5 is very safe threshold, can be higher
+  # TODO: when/if we add p-adic methods this will need to be tweaked
+  q < 100000 && return order_via_bsgs(E)
+
   return order_via_schoof(E)
 end
 
