@@ -98,12 +98,12 @@ function __assert_has_automorphisms(
     _L = lattice(rational_span(_L))
   end
   V = ambient_space(_L)
-  GL = numerator(gram_matrix(L))
+  GL = numerator(gram_matrix(_L))
   res = ZZMatrix[GL]
   vector_set = []
   # Split off norm 1 vectors
-  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
-    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
+  if use_norm_one && (sv = short_vectors(_L, 0, Int(1)); length(sv) > 0)
+    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(_L, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one=false, search_new_invariant_vectors, compress, use_target_enum)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
