@@ -1133,16 +1133,16 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
     r = nrows(invariant_subspace)
     target_norm = Dict{ZZRingElem, Set{Vector{ZZRingElem}}}()
     for n in target_norms
-      a = n[r+i]
-      b = n[1:r+i-1]
+      a = n[w+i-1]
+      b = n[1:w+i-2]
       if a in keys(target_norm)
         push!(target_norm[a], b)
       else
         target_norm[a] = Set([b])
       end
     end
-    mi = minimum(target_norm_i)
     ma = maximum(target_norm_i)
+    mi = minimum(i for i in target_norm_i if !iszero(i);init=ma)
     # make up for the fact that short_vectors returns only non-zero vectors.
     if ZZ(0) in keys(target_norm)
       for a in target_norm[ZZ(0)]

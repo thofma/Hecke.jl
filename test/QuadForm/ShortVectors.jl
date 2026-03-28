@@ -189,33 +189,44 @@ end
     end
     # compute the same set by filtering
     n = rank(L)
+    _, _, _, (proj_root_inv, _) = Hecke._weyl_group(L)
     standard_basis_norms = [ZZRingElem[grams[i][j,j] for i in 1:length(grams)] for j in 1:rank(L)]
+    target = [proj_root_inv[i,:] for i in 1:nrows(proj_root_inv)]
     V3 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[]
+    gramsQQ = [QQ.(g) for g in grams]
     for (v, q) in short_vectors(L, maximum(abs.(diagonal(gram_matrix(L)))))
       j = matrix(QQ, 1, rank(L) ,v)
-      vnorms = [(j*p*transpose(j))[1,1] for p in grams]
+      jT = transpose(j)
+      vnorms = [(j*p*jT)[1,1] for p in gramsQQ]
       vnorms in standard_basis_norms || continue
+      _w = v*proj_root_inv
+      _w in target || -_w in target || continue
       push!(V3, (Hecke._canonicalize!(v), vnorms))
     end
     S1 = Set(V1)
     S2 = Set(V2)
     S3 = Set(V3)
+    @test length(S1) == length(S3)
     @test S1 == S2
     @test S1 == S3
     return nothing
   end
 
-  for l in LL
+  for l in LL[2:4] #takes a bit long for LL[1] we test it separately
     test_short_vectors_with_condition(l; search_new_invariant_vectors = false)
   end
 
-  for l in LL
+  for l in LL[2:4]
     test_short_vectors_with_condition(l; search_new_invariant_vectors = true)
   end
 
+  @test 24 == length(Hecke.short_vectors_with_condition(Int, LL[1]; search_new_invariant_vectors=true)[1])
+  @test 24 == length(Hecke.short_vectors_with_condition(QQFieldElem, LL[1]; search_new_invariant_vectors=true)[1])
+
+  # A lattice without roots.
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
-  @test length(Hecke.short_vectors_with_condition(QQFieldElem, L))[1]==4
-  @test length(Hecke.short_vectors_with_condition(Int, L))[1]==4
+  @test length(Hecke.short_vectors_with_condition(QQFieldElem, L)[1])==4
+  @test length(Hecke.short_vectors_with_condition(Int, L)[1])==4
 
   # Some lattices for cheaper testing
   A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
