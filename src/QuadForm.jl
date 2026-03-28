@@ -24,14 +24,18 @@ include("QuadForm/Torsion.jl")
 # Quadratic
 include("QuadForm/Quad/Spaces.jl")
 include("QuadForm/Quad/Lattices.jl")
-include("QuadForm/Quad/ZLattices.jl")
-include("QuadForm/Quad/NormalForm.jl")
+include("QuadForm/IntegerLattices/ZLattices.jl")
+include("QuadForm/IntegerLattices/RootLattices.jl")
+include("QuadForm/IntegerLattices/ZLatticeMorphism.jl")
+include("QuadForm/IntegerLattices/SpecialZLattices.jl")
+include("QuadForm/IntegerLattices/NormalForm.jl")
 include("QuadForm/Quad/Genus.jl")
 include("QuadForm/Quad/GenusRep.jl")
 include("QuadForm/Quad/Legacy.jl")
-include("QuadForm/Quad/ZGenus.jl")
-include("QuadForm/Quad/PadicLift.jl")
-include("QuadForm/Quad/ZGenusRep.jl")
+include("QuadForm/IntegerLattices/ZGenus.jl")
+include("QuadForm/IntegerLattices/PadicLift.jl")
+include("QuadForm/IntegerLattices/ZGenusRep.jl")
+include("QuadForm/Quad/MassQuad.jl")
 
 # Hermitian
 include("QuadForm/Herm/Spaces.jl")
@@ -43,17 +47,16 @@ include("QuadForm/Herm/Legacy.jl")
 include("QuadForm/Herm/LocallyIsometricSublattice.jl")
 
 include("QuadForm/Morphism.jl")
-include("QuadForm/ShortVectors.jl")
 include("QuadForm/Database.jl")
 include("QuadForm/Enumeration.jl")
 include("QuadForm/LineOrbits.jl")
-include("QuadForm/MassQuad.jl")
 
-# Close vectors
-include("QuadForm/CloseVectors.jl")
+# Close and short vectors
+include("QuadForm/IntegerLattices/ShortVectors.jl")
+include("QuadForm/IntegerLattices/CloseVectors.jl")
 
 # indefinite LLL
-include("QuadForm/indefiniteLLL.jl")
+include("QuadForm/IntegerLattices/indefiniteLLL.jl")
 
 # Functionality for IO with Hecke/Magma
 include("QuadForm/IO.jl")
