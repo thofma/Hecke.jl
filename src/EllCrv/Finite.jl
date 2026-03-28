@@ -83,40 +83,53 @@ function _point_order_from_multiple(P::EllipticCurvePoint{<:FinFieldElem}, M::ZZ
   return ord
 end
 
-@doc raw"""
-    elem_order_bsgs(P::EllipticCurvePoint) -> ZZRingElem
+# d is known divisor of the *group* order
+function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingElem)
+  is_infinite(P_in) && return ZZ(1)
 
-Calculate the order of a point $P$ on an elliptic curve given over a finite
-field using Baby-step Giant-step (BSGS).
-"""
-function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
-  is_infinite(P) && return ZZ(1)
-
-  R = base_field(parent(P))
+  R = base_field(parent(P_in))
   p = characteristic(R)
   p == 0 && error("Base field must be finite")
-
   q = order(R)
-  d = degree(R)
 
-  # Q is at the center of Hasse Interval
-  # |E| = q + 1 - t, so Q = [t]P
-  Q = (q + 1)*P
-
-  # m = ceil(q^{1/4})
-  # we will use stride of 2m for giant steps. Let H = [2m]P
-  # for a giant step k in [-m, m] we check Q + [k]H = +- [j]P for j = 0..m
-  #   that is: if t = +-j - 2mk
-  # each such window is of length 2m + 1: consecutive windows overlap at one value
-  # in total we check 4m^2 values: we need 4*m^2 >= 4*sqrt(q)
-  m_zz = isqrt(isqrt(q))
-  if mod(d, 4) != 0 # if q is not a 4-th power, we need to update m for ceiling
-    m_zz += 1
+  # Initially we have Hasse interval, which is centered at q+1
+  # We set m = ceil(q^{1/4}) (half of the square root of interval length)
+  #   and use stride 2m for giant steps
+  # |E| = q + 1 - t, so the center is Q = [q+1]P = [t]P
+  # Let H = [2m]P
+  # Baby steps: we compute [j]P for j = 0..m
+  # Giant steps: for k = -m..m check if Q + [k]H is +- [j]P
+  # Note that we check both plus and minus, effectively having 2m+1 baby steps
+  # So for a giant step k we check if t = +-j - 2m*k
+  # Each such window is of length 2m + 1: consecutive windows overlap at one value
+  # and in total we check 4m^2 values: we need 4*m^2 >= 4*sqrt(q)
+  #
+  # If a divisor d of group order is known, we can further optimize search:
+  #   we consider [d]P instead: its order divides |E|/d
+  # Thus we can shrink our search interval:
+  # [L, R] -> [floor(L/d), ceil(R/d)]
+  # We still want to have a centered search:
+  #   center = (q+1)/d, and Q = center * [d]P
+  # Half-width of original interval is bounded by 2*floor(sqrt(q)) + 2
+  # After scaling by d, it is bound by 1 + (2*floor(sqrt(q)) + 2) / d
+  # This gives us a bound for m^2
+  local P, center, m_zz
+  if d > 1
+    P = d*P_in
+    is_infinite(P) && return _point_order_from_multiple(P_in, d, factor(d))
+    center = div(q + 1, d)
+    m_zz = 1 + isqrt(1 + div(2*isqrt(q) + 2, d))
+  else
+    P = P_in
+    center = q + 1
+    m_zz = 1 + isqrt(isqrt(q))
   end
 
   # we need to allocate m baby steps, if m doesn't fit into Int we have no chance to do so
   !fits(Int, m_zz) && error("Elliptic curve group order is too large for BSGS")
   m = Int(m_zz)
+
+  Q = center*P
 
   # Baby steps: j*P for j = 0..m
   baby = Dict{typeof(P), Int}()
@@ -136,19 +149,34 @@ function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
 
     j = get(baby, Snew, -1)
     if j >= 0
-      M = q + 1 + stride*k - j
+      M = center + stride*k - j
       !is_zero(M) && break # non-trivial multiple of order
     end
 
     j = get(baby, -Snew, -1)
     if j >= 0
-      M = q + 1 + stride*k + j
+      M = center + stride*k + j
       !is_zero(M) && break # non-trivial multiple of order
     end
   end
 
   @assert !is_zero(M) "BSGS failed to find a multiple of the order"
-  return _point_order_from_multiple(P, M, factor(M))
+
+  # TODO: we should combine factorizations
+  if d > 1
+    M = M*d
+  end
+  return _point_order_from_multiple(P_in, M, factor(M))
+end
+
+@doc raw"""
+    elem_order_bsgs(P::EllipticCurvePoint) -> ZZRingElem
+
+Calculate the order of a point $P$ on an elliptic curve given over a finite
+field using Baby-step Giant-step (BSGS).
+"""
+function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
+  return _point_order_bsgs(P, ZZ(1))
 end
 
 @doc raw"""
