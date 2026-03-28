@@ -176,62 +176,52 @@ end
   @test length.(first.(Hecke.short_vectors_with_condition.(LL))) == [25, 42, 31, 53]
 
 
-  function test_short_vectors_with_condition(L::ZZLat; use_int = false)
-    # preprocessing
-    proj, target_proj_root_inv, target_norms, denoms, grams = Hecke._short_vectors_with_condition_preprocessing(L)
-    proj_root_inv = proj[1]
-    target_inv = first.(target_proj_root_inv)
-
-    # compute what we want by filtering
+  function test_short_vectors_with_condition(L::ZZLat; search_new_invariant_vectors=false)
+    _V1, _grams = Hecke.short_vectors_with_condition(Int, L; search_new_invariant_vectors)
+    V1 = [(QQ.(i[1]), QQ.(i[2])) for i in _V1]
+    V2, grams = Hecke.short_vectors_with_condition(QQFieldElem, L; search_new_invariant_vectors)
+    @test grams == _grams # check consistency between methods
+    # confirm consistency of the output
+    for V in [V1,V2]
+      for (v, n) in V1
+        @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+      end
+    end
+    # compute the same set by filtering
     n = rank(L)
-    target_norms_1 = unique!([[p[i,i] for p in grams] for i in 1:n])
-    result = Tuple{Vector{QQFieldElem},Vector{ZZRingElem}}[]
-    for (v,q) in short_vectors(L,maximum(abs.(diagonal(gram_matrix(L)))))
-      j = matrix(ZZ,1,rank(L),v)
-      vproj = [j*p for p in proj]
+    standard_basis_norms = [ZZRingElem[grams[i][j,j] for i in 1:length(grams)] for j in 1:rank(L)]
+    V3 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[]
+    for (v, q) in short_vectors(L, maximum(abs.(diagonal(gram_matrix(L)))))
+      j = matrix(QQ, 1, rank(L) ,v)
       vnorms = [(j*p*transpose(j))[1,1] for p in grams]
-      vnorms in target_norms_1 || continue
-      tmp = v*proj_root_inv
-      tmp in target_inv && push!(result, (QQ.(v),vnorms))
-      iszero(tmp) && continue
-      -tmp in target_inv && push!(result, (-QQ.(v), vnorms))
+      vnorms in standard_basis_norms || continue
+      push!(V3, (Hecke._canonicalize!(v), vnorms))
     end
-
-    # compute with the function we want to test
-    if use_int
-      sv2,_ = Hecke._short_vectors_with_condition_int(L, proj, target_proj_root_inv, [Int.(v) for v in target_norms], Int.(denoms), grams; search_new_invariant_vectors=false)
-    else
-      sv2,_ = Hecke._short_vectors_with_condition(L, proj, target_proj_root_inv, target_norms, denoms, grams)
-    end
-    for (v,n) in sv2
-      j = matrix(ZZ,1,rank(L),v)
-      vproj = [j*p for p in proj]
-      vnorms_end = [(i*gram_matrix(L)*transpose(i))[1,1] for i in vproj]
-      vnorms = [(j*p*transpose(j))[1,1] for p in grams]
-      @test n==vnorms
-      @test vnorms in target_norms
-      @test v*proj_root_inv in target_inv || j==0
-    end
-    @test length(result) == length(sv2)
-    for i in 1:length(result)
-      # to enable testing equality up to +-1 we _canonicalize!.
-      Hecke._canonicalize!(result[i][1])
-      Hecke._canonicalize!(sv2[i][1])
-    end
-    S = Set(sv2)
-    @test Set(result) == S
-    @test all(!((-i[1],i[2]) in S) for i in S) # only one up to sign!
-    return length(sv2)
+    S1 = Set(V1)
+    S2 = Set(V2)
+    S3 = Set(V3)
+    @test S1 == S2
+    @test S1 == S3
+    return nothing
   end
 
   for l in LL
-    test_short_vectors_with_condition(l; use_int = false)
-    test_short_vectors_with_condition(l; use_int = true)
+    test_short_vectors_with_condition(l; search_new_invariant_vectors = false)
+    test_short_vectors_with_condition(l; search_new_invariant_vectors = true)
   end
 
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
   @test length(Hecke.short_vectors_with_condition(QQFieldElem, L))[1]==4
   @test length(Hecke.short_vectors_with_condition(Int, L))[1]==4
+
+  # Some lattices for cheaper testing
+  A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
+  # Genus representatives of some genus
+  L = [integer_lattice(gram=matrix(QQ,6,6,i),cached=false) for i in A]
+  for l in L
+    test_short_vectors_with_condition(l; search_new_invariant_vectors = false)
+    test_short_vectors_with_condition(l; search_new_invariant_vectors = true)
+  end
 
   let # some random failure with large entries
     B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])

@@ -963,12 +963,27 @@ end
 #
 ########################################################################################
 
+raw"""
+    short_vectors_with_condition(L::ZZLat; search_new_invariant_vectors::Bool) -> Tuple{<:Vector, <:Vector}, Vector{ZZMatrix}
 
+Return a list of vectors, that contains the orbits of the standard basis vectors under the reduced automorphism group $\mathrm{Aut}(L, \rho)$.
+together with a list of $\mathrm{Aut}(L, \rho)$-invariant gram matrices where $\rho$ is a Weyl vector of the root sublattice of `L`.
+
+# Input
+- `search_new_invariant_vectors::Bool` -- take sums of vectors with the same invariants to obtain new invariant vectors. Use it to refine the invariant. Rinse and repeat.
+
+# Output:
+- a tuple `(V, G)` consiting of:
+- a list of tuples `V = [(v_1, n_1), (v_2, n_2), ....]`; where `v_i` is a point of `L` and `n_i` an $\mathrm{Aut}(L,\rho)$ invariant of `v_i`, called its "norm".
+- a list of symmetric integer matrices `G = [G_1, ..., G_k]`;
+such that:
+- `dot(v_i,G[j]*v_i) == (n_i)[j]` for all `i` in `1,...,rank(L)` and `j` in `1,...,k`.
+- the standard basis vectors and their norms with respect to `G` are contained in `V`
+"""
 function short_vectors_with_condition(L::ZZLat;
                                       search_new_invariant_vectors::Bool=false)
   return short_vectors_with_condition(QQFieldElem, L; search_new_invariant_vectors)
 end
-
 
 function short_vectors_with_condition(T::Type,
                                       L::ZZLat;
@@ -976,8 +991,6 @@ function short_vectors_with_condition(T::Type,
   proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
   return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
 end
-
-
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
@@ -1065,26 +1078,6 @@ function _short_vectors_with_condition(T::Type{QQFieldElem},
   return _short_vectors_with_condition_QQ(L, proj, target_invariant, target_norms, denoms, grams; search_new_invariant_vectors)
 end
 
-raw"""
-    _short_vectors_with_condition(L::ZZLat,
-                                  proj::Vector{QQMatrix},
-                                  target_invariant,
-                                  target_norms::Vector{Vector{ZZRingElem}},
-                                  denoms::Vector{ZZRingElem})
-
-Denote by $V$ the ambient space of $L$.
-Let $p_i\colon V \to V$ be projections such that
-$\sum_i p_i = 1 and p_i * p_j = \delta_{ij} p_i$ for all i.
-Let $T \subseteq p_1(L)$, $N \leq \ZZ^k$ and $d = (1, d_2,\dots, d_k) \in \ZZ^k$ such that $dp_i(x).p_i(y) \in \ZZ for all x,y \in L$.
-Then the output is the set
-$$SV(L, T, N) = \{ (x,n) \in L \times N | p_1(x) \in T and (d_1 p_1(x)^2,...,d_k p_k(x)^2) \in N \}$$.
-
-Input:
-- `proj` -- a vector of square matrices, the projections. Note that the first projection is distinguished.
-- `target_invariant` -- the set ``T`` above, given as a list.
-- `target_norms` -- the set ``N``
-- `denoms` -- the vector ``d``.
-"""
 function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{ZZRingElem}}, denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true)
   @hassert :Lattice 1 isone(sum(proj))
   @hassert :Lattice 1 all(i^2==i for i in proj)
@@ -1137,11 +1130,11 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
     flag_projectionZ = coordinates(flag_projection, Lflag)
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
     target_norm_i = Set(n[w+i-1] for n in target_norms)
-
+    r = nrows(invariant_subspace)
     target_norm = Dict{ZZRingElem, Set{Vector{ZZRingElem}}}()
     for n in target_norms
-      a = n[w+i-1]
-      b = n[1:w+i-2]
+      a = n[r+i]
+      b = n[1:r+i-1]
       if a in keys(target_norm)
         push!(target_norm[a], b)
       else
@@ -1193,7 +1186,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
       tmpQQmat = zero_matrix(QQ, 1, n)
       # compute invariant vectors by taking the sum of all vectors with the same invariant
       # if we find something refine the invariants and search anew
-      old_invariant_subspace_rank = invariant_subspace_rank
+      old_invariant_subspace_rank = nrows(invariant_subspace)
       t = rank(new_invariant_subspace)
       while true
         abc = __search_invariant_subspaces!(short_vectors2,
@@ -1226,7 +1219,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
     end
     short_vectors1 = short_vectors2
   end
-  # assemble output
+  # assemble the output
   output = Vector{Tuple{Vector{QQFieldElem}, Vector{QQFieldElem}}}(undef, sum(length.(values(short_vectors1))))
   r = nrows(new_invariant_subspace)
   gZ = ZZ.(gram_matrix(L))
@@ -1243,7 +1236,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
     end
     for z in short_vectors1[b]
       i = i+1
-      output[i] = (z, bret)
+      output[i] = (_canonicalize!(z), bret)
     end
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
@@ -1253,7 +1246,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-  return output
+  return output, grams, new_invariant_subspace
 end
 
 function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true)
@@ -1399,7 +1392,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
     if search_new_invariant_vectors
       # compute invariant vectors by taking the sum of all vectors with the same invariant
       # if we find something refine the invariants and search anew
-      old_invariant_subspace_rank = invariant_subspace_rank
+      old_invariant_subspace_rank = nrows(invariant_subspace)
       t = rank(new_invariant_subspace)
       @label search_invariants_int
       found, invariant_subspace, new_invariant_subspace = __search_invariant_subspaces!(short_vectors2, invariant_subspace, new_invariant_subspace, tmp_invariant_vec, tmpQQmat, H)
@@ -1456,17 +1449,17 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       @inbounds for j in 1:n
         z[j] = divexact(z[j], d)
       end
-      output[i] = (z', bret)
+      output[i] = (_canonicalize!(z'), bret)
     end
   end
-  @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
+  @vprintln :Lattice 1 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
   if get_assertion_level(:Lattice) > 1
     for (v, n) in output
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-  return output
+  return output, grams, new_invariant_subspace
 end
 
 function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}}
@@ -1530,10 +1523,10 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
     if !can_solve(S, tmp_mat; side=:left)
       invariant_subspace = vcat(invariant_subspace, tmp_mat)
       rref!(invariant_subspace)
-      new_invariant_subspace = vcat(new_invariant_subspace, ZZ.(tmp_mat))
+      new_invariant_subspace = vcat(new_invariant_subspace, numerator(tmp_mat))
       reduce_mod_hnf_ur!(new_invariant_subspace, H)
       # lll is better than hnf, to avoid overflows later
-      new_invariant_subspace = lll(new_invariant_subspace)
+      new_invariant_subspace = lll(saturate(new_invariant_subspace))
       S = solve_init(invariant_subspace)
     end
   end
