@@ -1219,7 +1219,6 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
     end
     short_vectors1 = short_vectors2
   end
-  short_vectors1 = update_short_vector_invariants(short_vectors1, T, 0)
   # assemble the output
   output = Vector{Tuple{Vector{QQFieldElem}, Vector{QQFieldElem}}}(undef, sum(length.(values(short_vectors1))))
   r = nrows(new_invariant_subspace)

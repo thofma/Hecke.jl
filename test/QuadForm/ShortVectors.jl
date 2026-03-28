@@ -207,6 +207,9 @@ end
 
   for l in LL
     test_short_vectors_with_condition(l; search_new_invariant_vectors = false)
+  end
+
+  for l in LL
     test_short_vectors_with_condition(l; search_new_invariant_vectors = true)
   end
 
