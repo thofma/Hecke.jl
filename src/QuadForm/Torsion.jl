@@ -2035,9 +2035,11 @@ second output.
 If no such genus exists, the second output is set to be the genus of the zero
 lattice by default.
 
-The argument `parity` is one of the following: either `parity == 1` for genera
-of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
-set to be as the parity of the quadratic form on `T`.
+# Input
+The argument `parity` is one of the following: 
+- either `parity == 1` for genera of odd lattices and `T` is regarded as a torsion bilinear form with modulus ``1``;
+- or `parity == 2` for even lattices and `T` is regarded as a torsion quadratic form with modulus ``2``. 
+By default, `parity` is set as the modulus of the quadratic form on `T`. 
 
 # Reference
 [Nik79](@cite) Corollary 1.9.4 and 1.16.3.

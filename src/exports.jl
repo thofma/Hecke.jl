@@ -991,6 +991,5 @@ export witt_invariant
 export zero
 export zero_algebra
 export zero_divisor
-export zero_integer_genus
 export zero_map
 export zeta_log_residue
