@@ -1202,8 +1202,8 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
         T = transpose(lll(T))
         short_vectors2 = update_short_vector_invariants(short_vectors2, T, found)
       end
-      found = rank(invariant_subspace) - old_invariant_subspace_rank
-      if found > 0
+      found_this_round = nrows(invariant_subspace) - old_invariant_subspace_rank
+      if found_this_round > 0
         # update target_norms
         t_old = t
         t = ncols(T)
@@ -1215,15 +1215,16 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
           delete!(short_vectors2, k)
         end
       end
-      w += found
+      w += found_this_round
     end
     short_vectors1 = short_vectors2
   end
+  short_vectors1 = update_short_vector_invariants(short_vectors1, T, 0)
   # assemble the output
   output = Vector{Tuple{Vector{QQFieldElem}, Vector{QQFieldElem}}}(undef, sum(length.(values(short_vectors1))))
   r = nrows(new_invariant_subspace)
   gZ = ZZ.(gram_matrix(L))
-  for i in 1:r
+  for i in r:-1:1 # reverse order because of pushfirst!
     t = T[:,i:i]
     tG = t*transpose(t)
     pushfirst!(grams, tG)
@@ -1246,7 +1247,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-  return output, grams, new_invariant_subspace
+  return output, grams
 end
 
 function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true)
@@ -1416,13 +1417,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         # filter what we do not need anymore
         invs = Set([target_norms[j][1:t+w0+i] for j in 1:nrows(T)])
         for k in keys(short_vectors2)
-          #denom = only(unique!([i[2] for i in short_vectors2[k]]))
-          #invs_scaled = Set([vcat(denom*i[1:t],i[t+1:end]) for i in invs])
-          #a = vcat(divexact.(k[1:t],denom),k[t+1:end]) in invs
-          #b = k in invs_scaled
-          #@assert a==b
           k in invs && continue
-          #k in invs_scaled && continue
           delete!(short_vectors2, k)
         end
       end
@@ -1432,7 +1427,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   end
   r = nrows(new_invariant_subspace)
   gZ = ZZ.(gram_matrix(L))
-  for i in 1:r
+  for i in r:-1:1  # reverse order because of pushfirst
     t = T[:,i:i]
     tG = t*transpose(t)
     pushfirst!(grams, tG)
@@ -1456,10 +1451,18 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
   if get_assertion_level(:Lattice) > 1
     for (v, n) in output
+      @assert length(n) == length(grams)
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
+    # check that we get the standard basis vectors
+    ei = zeros(Int, n)
+    for i in 1:n
+      ei[i]=1
+      @assert any(i[1]==ei for i in output)
+      ei[i]=0
+    end
   end
-  return output, grams, new_invariant_subspace
+  return output, grams
 end
 
 function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}}
@@ -1516,7 +1519,7 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
     # we cannot allow an overflow here
     v = ___sum(D[k]; init=tmp_vec)
     # copy to a matrix
-    for i in 1:length(v)
+    @inbounds for i in 1:length(v)
       tmp_mat[i] = v[i]
     end
     # Check if we discovered something new.
@@ -1536,7 +1539,9 @@ end
 
 function ___sum(V::Vector{<:Tuple}; init::Vector)
   zero!(init)
+  c = first(V)[2]
   for i in V
+    @assert c == i[2] # assert that everyone has the same denominator i[2]
     add!.(init, i[1]')
   end
   return init
