@@ -39,7 +39,7 @@ function __assert_has_automorphisms(
   use_projections::Bool=true,
   use_norm_one::Bool=true,
   use_everything::Bool=false,
-  compress::Bool=true,
+  compress::Bool=false,
   search_new_invariant_vectors::Bool=true,
   use_target_enum::Bool=true
 )
@@ -70,21 +70,12 @@ function __assert_has_automorphisms(
     return nothing
   end
 
-  is_lll = get_attribute(L, :is_lll_reduced, false)
-  use_lll = false #!is_lll && !use_everything
-#   if use_lll
-#     # Make the Gram matrix small
-#     Glll, T = lll_gram_with_transform(res[1])
-#     Ttr = transpose(T)
-#     res = ZZMatrix[T*g*Ttr for g in res]
-#   end
-
   if use_everything
     use_weyl = true
     use_projections = true
     use_target_enum = true
     use_norm_one = true
-    #compress = true # want this?
+    compress = true
   end
 
   # scale integral and positive definite and with trivial basis matrix
@@ -99,7 +90,6 @@ function __assert_has_automorphisms(
   end
   V = ambient_space(_L)
   GL = numerator(gram_matrix(_L))
-  res = ZZMatrix[GL]
   vector_set = []
   # Split off norm 1 vectors
   if use_norm_one && (sv = short_vectors(_L, 0, Int(1)); length(sv) > 0)
@@ -120,7 +110,20 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
-  if maximum(abs.(GL))>ZZ(2)^62
+
+  res = ZZMatrix[GL]
+  is_lll = get_attribute(L, :is_lll_reduced, false)
+  use_lll = false #!is_lll && !use_everything
+  if use_lll
+    # Make the Gram matrix small
+    Glll, T = lll_gram_with_transform(res[1])
+    _L = integer_lattice(gram=Glll; cached=false)
+    Ttr = transpose(T)
+    res = [Glll]
+    #res = ZZMatrix[T*g*Ttr for g in res]
+  end
+
+  if maximum(abs.(gram_matrix(_L)))>ZZ(2)^62
     # temporary fix TODO to it in _short_vectors_with_condition
     use_target_enum = false
   end
@@ -192,15 +195,16 @@ function __assert_has_automorphisms(
     gens, order = auto(C)
   end
 
+  if use_weyl && !reduced
+    append!(gens, [ZZ.(i) for i in weyl_group_gens])
+  end
+
   # Now translate back
   if use_lll
     Tinv = inv(T)
     for i in 1:length(gens)
       gens[i] = Tinv * gens[i] * T
     end
-  end
-  if use_weyl && !reduced
-    append!(gens, [ZZ.(i) for i in weyl_group_gens])
   end
   # Now gens are with respect to the basis of L
   @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
