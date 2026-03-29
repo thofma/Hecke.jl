@@ -182,6 +182,11 @@ end
   automorphism_group_generators::Vector{ZZMatrix} # With respect to the
                                                   # basis of the lattice
   automorphism_group_order::ZZRingElem
+
+  reduced_automorphism_group_generators::Vector{ZZMatrix}    # With respect to the
+                                                             # basis of the lattice
+  reduced_automorphism_group_order::ZZRingElem
+
   minimum::QQFieldElem
 
   scale::QQFieldElem

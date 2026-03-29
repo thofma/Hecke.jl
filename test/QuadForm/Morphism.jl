@@ -26,43 +26,43 @@
   @test  orders == automorphism_group_order.(L)
   # test different options
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, compress=false, redo=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=false, compress=false, redo=true)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=false, redo=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=false, redo=true, search_new_invariant_vectors=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_new_invariant_vectors=true)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=false, redo=true, search_new_invariant_vectors=false)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_new_invariant_vectors=false)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=true, compress=true, redo=true, search_new_invariant_vectors=false)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_new_invariant_vectors=false)
   end
   @test  orders == automorphism_group_order.(L)
 
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, compress=true, redo=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=false, compress=true, redo=true)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, use_weyl=true, compress=true, redo=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=false, use_weyl=true, compress=true, redo=true)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; reduced=false, use_everything=false, use_weyl=true, use_projections=true, compress=true, redo=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=false, use_weyl=true, use_projections=true, compress=true, redo=true)
   end
   @test  orders == automorphism_group_order.(L)
 

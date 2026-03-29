@@ -35,7 +35,6 @@ function __assert_has_automorphisms(
   depth::Int=-1,
   bacher_depth::Int=0,
   use_weyl::Bool=true,
-  reduced::Bool=false,
   use_projections::Bool=true,
   use_norm_one::Bool=true,
   use_everything::Bool=false,
@@ -92,9 +91,9 @@ function __assert_has_automorphisms(
   GL = numerator(gram_matrix(_L))
   vector_set = []
   # Split off norm 1 vectors
-  if use_norm_one && (sv = short_vectors(_L, 0, Int(1)); length(sv) > 0)
-    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(_L, sv)
-    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one=false, search_new_invariant_vectors, compress, use_target_enum)
+  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
+    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
+    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, use_projections, use_norm_one=false, search_new_invariant_vectors, compress, use_target_enum)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -195,7 +194,8 @@ function __assert_has_automorphisms(
     gens, order = auto(C)
   end
 
-  if use_weyl && !reduced
+  if use_weyl
+    reduced_gens = copy(gens)
     append!(gens, [ZZ.(i) for i in weyl_group_gens])
   end
 
@@ -205,13 +205,22 @@ function __assert_has_automorphisms(
     for i in 1:length(gens)
       gens[i] = Tinv * gens[i] * T
     end
+
+    if use_weyl # translate reduced generators back
+      for i in 1:length(gens)
+        reduced_gens[i] = Tinv * reduced_gens[i] * T
+      end
+    end
   end
+
   # Now gens are with respect to the basis of L
   @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
+  @hassert :Lattice 1 use_weyl || all(let gens = reduced_gens; i -> change_base_ring(QQ, gens[i]) * GL *
+                                      transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
-  if use_weyl && !reduced
+  if use_weyl
     # We have O(L) = W(L)x|Aut_red(L)
     # where Aut_red(L) = Aut(L,\rho) is the stabilizer of rho in O(L)
     # the Weyl vector \rho is preserved only up to sign
@@ -222,7 +231,9 @@ function __assert_has_automorphisms(
       # when rho is trivial
       order_reduced = order
     end
+    L.reduced_automorphism_group_order = order_reduced
     L.automorphism_group_order = order_reduced*weyl_group_order
+    L.reduced_automorphism_group_generators = reduced_gens
   else
     L.automorphism_group_order = order
   end
@@ -279,6 +290,20 @@ function automorphism_group_order(
   assert_has_automorphisms(L; kwargs...)
   return L.automorphism_group_order
 end
+
+function reduced_automorphism_group_order(
+  L::ZZLat;
+  kwargs...,
+)
+  if isdefined(L, :reduced_automorphism_group_order)
+    return L.reduced_automorphism_group_order
+  end
+  @req is_definite(L) "The lattice must be definite"
+   # overwrite use_weyl keyword, to compute the reduced information
+  assert_has_automorphisms(L; kwargs..., use_weyl = true)
+  return L.reduced_automorphism_group_order
+end
+
 
 # Helpers to find additional structure in the lattice
 
