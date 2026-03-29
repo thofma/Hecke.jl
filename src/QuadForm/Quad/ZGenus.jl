@@ -297,7 +297,7 @@ Return the genus of the zero lattice.
 
 # Examples
 ```jldoctest
-julia> zero_integer_genus()
+julia> Hecke.zero_integer_genus()
 Genus symbol for integer lattices
 Signatures: (0, 0, 0)
 Local symbol:
