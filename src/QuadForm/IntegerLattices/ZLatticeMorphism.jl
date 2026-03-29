@@ -129,6 +129,7 @@ function __assert_has_automorphisms(
   if use_weyl && use_projections && use_target_enum
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
+    gram_weyl_vector = grams[end]
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
     V, grams = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
     if get_assertion_level(:Lattice) > 1
@@ -147,6 +148,7 @@ function __assert_has_automorphisms(
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
+    gram_weyl_vector = weyl_gram_matrices[end]
     append!(res, weyl_gram_matrices)
   end
   if use_projections
@@ -165,8 +167,12 @@ function __assert_has_automorphisms(
 
 
   if compress && length(res)>1 # nothing to compress if there is only a single gram
+    if use_weyl
+      index_gram_weyl_in_res = findfirst(==(gram_weyl_vector), res)
+    end
     r = length(res)
     a = rand(1:50, r-1)
+    a[index_gram_weyl_in_res-1]+=1000 #need a bound here
     Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
     Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
     res = [res[1], Gcompressed]
