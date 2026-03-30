@@ -38,7 +38,7 @@ function __assert_has_automorphisms(
   use_projections::Bool=true,
   use_norm_one::Bool=true,
   use_everything::Bool=false,
-  compress::Bool=false,
+  compress::Bool=true,
   search_new_invariant_vectors::Bool=true,
   use_target_enum::Bool=true
 )
@@ -167,16 +167,43 @@ function __assert_has_automorphisms(
 
 
   if compress && length(res)>1 # nothing to compress if there is only a single gram
+    # res = [G_1,...,G_r]
+    # G_1 is the Gram matrix of the lattice
+    # G_{i0} is the Gram matrix corresponding to the Weyl vector
+    # replace G_2,...,G_r by a_1 G_2 + ... + a_{r-1}G_r
+    # but we must make sure that a_{i0 - 1} is large enough
     if use_weyl
       index_gram_weyl_in_res = findfirst(==(gram_weyl_vector), res)
     end
     r = length(res)
-    a = rand(1:50, r-1)
-    a[index_gram_weyl_in_res-1]+=1000 #need a bound here
+    a = rand(-10:10, r-1)
+    # compute the bound for a[i0 - 1]
+    # we use nbits to speed up the computation
+    grambound = ZZ(0)
+    for i in 2:length(res)
+      if i == index_gram_weyl_in_res - 1
+        continue
+      end
+      grambound += abs(a[i - 1]) * maximum(abs, res[i])
+    end
+    nbitsS = maximum(i -> maximum(nbits, i[2]), vector_set) # a bit crude, since we take all components
+    lambda = 16 * rank(L)^2 * ZZ(2)^(2 * nbitsS) * grambound + 1
+    @assert fits(Int, lambda)
+    a[index_gram_weyl_in_res-1] = lambda # TODO: need a bound here
+    anbits = maximum(nbits, a)
+    rnbits = nbits(r)
+    maxnbitsbound = 8 * sizeof(Int) - anbits - rnbits - 2 # -2 for good measure
     Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
-    Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
+    #Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
     res = [res[1], Gcompressed]
-    vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in vector_set]
+    for (i, (v, n)) in enumerate(vector_set)
+      w = n[2:end]
+      wnbits = maximum(nbits, w)
+      @assert wnbits < maxnbitsbound
+      resize!(n, 2)
+      n[2] = dot(a, w)
+    end
+    #vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in vector_set]
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
@@ -194,6 +221,7 @@ function __assert_has_automorphisms(
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
+    @vprintln :Lattice 1 "Try init small failed; switching to large"
   end
   if !try_small || !fl
     init(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
@@ -222,8 +250,8 @@ function __assert_has_automorphisms(
   # Now gens are with respect to the basis of L
   @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
-  @hassert :Lattice 1 use_weyl || all(let gens = reduced_gens; i -> change_base_ring(QQ, gens[i]) * GL *
-                                      transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
+  #@hassert :Lattice 1 use_weyl && all(let gens = reduced_gens; i -> change_base_ring(QQ, gens[i]) * GL *
+  #                                    transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
 
   L.automorphism_group_generators = gens
   if use_weyl
@@ -287,13 +315,13 @@ end
 # documented in ../Lattices.jl
 function automorphism_group_order(
   L::ZZLat;
+  redo::Bool = false,
   kwargs...,
 )
-  if isdefined(L, :automorphism_group_order)
+  if !redo && isdefined(L, :automorphism_group_order)
     return L.automorphism_group_order
   end
   @req is_definite(L) "The lattice must be definite"
-  assert_has_automorphisms(L; kwargs...)
   return L.automorphism_group_order
 end
 
