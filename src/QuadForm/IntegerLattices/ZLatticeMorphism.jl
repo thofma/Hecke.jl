@@ -129,7 +129,11 @@ function __assert_has_automorphisms(
   if use_weyl && use_projections && use_target_enum
     root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
     weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
-    gram_weyl_vector = grams[end]
+    if length(grams) > 0
+      gram_weyl_vector = grams[end]
+    else
+      gram_weyl_vector = nothing
+    end
     proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
     V, grams = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
     if get_assertion_level(:Lattice) > 1
@@ -148,7 +152,11 @@ function __assert_has_automorphisms(
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
-    gram_weyl_vector = weyl_gram_matrices[end]
+    if length(weyl_gram_matrices) > 0
+      gram_weyl_vector = weyl_gram_matrices[end]
+    else
+      gram_weyl_vector = nothing
+    end
     append!(res, weyl_gram_matrices)
   end
   if use_projections
@@ -165,45 +173,23 @@ function __assert_has_automorphisms(
     end
   end
 
+  # if any(is_zero, res)
+  #   @info "something is zero"
+  # end
 
-  if compress && length(res)>1 # nothing to compress if there is only a single gram
+  if compress && length(res) > 1 # nothing to compress if there is only a single gram
     # res = [G_1,...,G_r]
     # G_1 is the Gram matrix of the lattice
     # G_{i0} is the Gram matrix corresponding to the Weyl vector
     # replace G_2,...,G_r by a_1 G_2 + ... + a_{r-1}G_r
     # but we must make sure that a_{i0 - 1} is large enough
-    if use_weyl
-      index_gram_weyl_in_res = findfirst(==(gram_weyl_vector), res)
+
+    if use_weyl && gram_weyl_vector !== nothing
+      index_gram_weyl_in_res = findfirst(==(gram_weyl_vector::ZZMatrix), res)
+      res, vector_set = _compress_gram_matrices(res, vector_set, index_gram_weyl_in_res)
+    else
+      res, vector_set = _compress_gram_matrices(res, vector_set)
     end
-    r = length(res)
-    a = rand(-10:10, r-1)
-    # compute the bound for a[i0 - 1]
-    # we use nbits to speed up the computation
-    grambound = ZZ(0)
-    for i in 2:length(res)
-      if i == index_gram_weyl_in_res - 1
-        continue
-      end
-      grambound += abs(a[i - 1]) * maximum(abs, res[i])
-    end
-    nbitsS = maximum(i -> maximum(nbits, i[2]), vector_set) # a bit crude, since we take all components
-    lambda = 16 * rank(L)^2 * ZZ(2)^(2 * nbitsS) * grambound + 1
-    @assert fits(Int, lambda)
-    a[index_gram_weyl_in_res-1] = lambda # TODO: need a bound here
-    anbits = maximum(nbits, a)
-    rnbits = nbits(r)
-    maxnbitsbound = 8 * sizeof(Int) - anbits - rnbits - 2 # -2 for good measure
-    Gcompressed = sum(a[i]*res[i+1] for i in 1:r-1)
-    #Gcompressed = matrix(ZZ,[BigInt(x) % Int for x in Gcompressed])
-    res = [res[1], Gcompressed]
-    for (i, (v, n)) in enumerate(vector_set)
-      w = n[2:end]
-      wnbits = maximum(nbits, w)
-      @assert wnbits < maxnbitsbound
-      resize!(n, 2)
-      n[2] = dot(a, w)
-    end
-    #vector_set = [(i[1],[i[2][1], BigInt(dot(a,i[2][2:end])) % Int]) for i in vector_set]
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
@@ -221,7 +207,7 @@ function __assert_has_automorphisms(
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
-    @vprintln :Lattice 1 "Try init small failed; switching to large"
+    !fl && @vprintln :Lattice 1 "Try init small failed; switching to large"
   end
   if !try_small || !fl
     init(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
@@ -274,6 +260,108 @@ function __assert_has_automorphisms(
   return nothing
 end
 
+function _compress_gram_matrices(res::Vector{ZZMatrix}, vector_set::Vector, faithful = nothing)
+  if length(res) <= 2
+    return res, vector_set
+  end
+  r = nrows(res[1])
+  if faithful === nothing # we just compress res[2],...,r[end]
+    res_to_compress = @view res[2:end]
+    l = length(res_to_compress)
+    a = rand(-10:10, l)
+    anbits = maximum(nbits, a)
+    rnbits = nbits(r)
+    maxnbitsbound = 8 * sizeof(Int) - anbits - rnbits - 2 # -2 for good measure
+    for (i, (v, n)) in enumerate(vector_set)
+      w = n[2:end]
+      wnbits = maximum(nbits, w)
+      @assert wnbits < maxnbitsbound
+      resize!(n, 2)
+      n[2] = dot(a, w)
+    end
+    Gcompressed = sum(a[i]*res_to_compress[i] for i in 1:l)
+    res = [res[1], Gcompressed]
+    return res, vector_set
+  end
+
+  i0 = faithful::Int #
+  keep_faithful = false # we might find out that we cannot compress res[i0]
+
+  l = length(res)
+  grambound = ZZ(0)
+  a = rand(-10:10, l) # we will only use a[2],...,a[l], but for indexing reasoons we make it larger
+  for i in 2:l
+    if i == i0
+      continue
+    end
+    grambound += abs(a[i]) * sum(abs, res[i])
+  end
+  Sbound = maximum(i -> maximum(abs, i[2]), vector_set) # a bit crude, since we take all components
+  _lambda = 8 * ZZ(Sbound)^2 * grambound + 1
+  # TODO: once we hit this assertion, we need to
+  # (a) sharpen the bound (2-norms); or
+  # (b) pass to ZZ instead of Int (probably not a good idea); or
+  # (c) try to compress fewer matrices
+  if fits(Int, _lambda)
+    a[i0] = Int(_lambda)
+    # cannot compress all gram matrices, so keep weyl one separate
+  else
+    a[i0] = 0
+    keep_faithful = true
+  end
+
+  anbits = maximum(nbits, a)
+  rnbits = nbits(r)
+
+  if !keep_faithful
+    # have to check whether the new norms fit into Int
+    maxnbitsbound = 8 * sizeof(Int) - anbits - rnbits - 1 # -1 for good measure
+    for (i, (v, n)) in enumerate(vector_set)
+      w = n[2:end]
+      wnbits = maximum(nbits, w)
+      if wnbits > maxnbitsbound
+        # norm is getting too large, abort
+        keep_faithful = true
+        break
+      end
+    end
+  end
+
+  aI = a[2:end]
+  if !keep_faithful
+    # now compress
+    @assert a[i0] != 0
+    Gcompressed = sum(a[i]*res[i] for i in 2:l)
+    res = [res[1], Gcompressed]
+    for (i, (v, n)) in enumerate(vector_set)
+      w = n[2:end]
+      wnbits = maximum(nbits, w)
+      resize!(n, 2)
+      n[2] = dot(aI, w)
+    end
+    return res, vector_set
+  end
+
+  # can't compress in a way that preserves the additonal gram matrix
+
+  if length(res) == 3
+    return res, vector_set
+  end
+
+  Gcompressed = sum(a[i]*res[i] for i in 2:l if i != i0)
+  I = [i for i in 2:l if i != i0]
+  aI = a[I]
+  res = [res[1], res[i0], Gcompressed]
+  for (i, (v, n)) in enumerate(vector_set)
+    w = n[I]
+    wnbits = maximum(nbits, w)
+    resize!(n, 3)
+    n[2] = n[i0]
+    n[3] = dot(aI, w)
+  end
+  return res, vector_set
+end
+
 # documented in ../Lattices.jl
 function automorphism_group_generators(
   L::ZZLat;
@@ -315,13 +403,13 @@ end
 # documented in ../Lattices.jl
 function automorphism_group_order(
   L::ZZLat;
-  redo::Bool = false,
   kwargs...,
 )
-  if !redo && isdefined(L, :automorphism_group_order)
+  if isdefined(L, :automorphism_group_order)
     return L.automorphism_group_order
   end
   @req is_definite(L) "The lattice must be definite"
+  assert_has_automorphisms(L; kwargs...)
   return L.automorphism_group_order
 end
 
