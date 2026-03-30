@@ -355,8 +355,8 @@ function _compress_gram_matrices(res::Vector{ZZMatrix}, vector_set::Vector, fait
   for (i, (v, n)) in enumerate(vector_set)
     w = n[I]
     wnbits = maximum(nbits, w)
-    resize!(n, 3)
     n[2] = n[i0]
+    resize!(n, 3)
     n[3] = dot(aI, w)
   end
   return res, vector_set
