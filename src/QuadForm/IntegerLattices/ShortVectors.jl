@@ -1537,7 +1537,13 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
 end
 
 function ___sum(V::Vector{<:Tuple}; init::Vector)
-  zero!(init)
+  if eltype(init) === Int
+    for i in 1:length(init)
+      init[i] = 0
+    end
+  else
+    zero!.(init)
+  end
   c = first(V)[2]
   for i in V
     @assert c == i[2] # assert that everyone has the same denominator i[2]
@@ -1547,7 +1553,14 @@ function ___sum(V::Vector{<:Tuple}; init::Vector)
 end
 
 function ___sum(V::Vector; init::Vector)
-  zero!(init)
+  if eltype(init) === Int
+    for i in 1:length(init)
+      init[i] = 0
+    end
+  else
+    zero!.(init)
+  end
+
   for i in V
     add!.(init, i)
   end

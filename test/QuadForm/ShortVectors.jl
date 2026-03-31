@@ -223,6 +223,11 @@ end
   @test 24 == length(Hecke.short_vectors_with_condition(Int, LL[1]; search_new_invariant_vectors=true)[1])
   @test 24 == length(Hecke.short_vectors_with_condition(QQFieldElem, LL[1]; search_new_invariant_vectors=true)[1])
 
+  Lbad = integer_lattice(;gram = matrix(ZZ, 17, 17, [-2 1 0 0 -1 -1 0 -1 -1 -1 -1 -1 1 0 1 0 -1; 1 -2 0 0 0 0 0 1 1 1 1 0 -1 0 -1 0 0; 0 0 -2 -1 -1 1 1 0 0 0 0 -1 1 -1 1 0 -1; 0 0 -1 -2 -1 0 1 0 0 0 0 -1 0 -1 0 0 0; -1 0 -1 -1 -4 1 0 -1 -1 -1 -1 -2 0 0 0 0 0; -1 0 1 0 1 -4 1 1 1 1 -1 -1 -1 -1 -1 1 -1; 0 0 1 1 0 1 -4 -2 -2 -2 -1 1 0 0 0 0 2; -1 1 0 0 -1 1 -2 -4 -3 -3 0 1 0 1 0 -1 0; -1 1 0 0 -1 1 -2 -3 -4 -3 -1 1 0 0 1 -1 0; -1 1 0 0 -1 1 -2 -3 -3 -4 0 1 0 1 0 -1 0; -1 1 0 0 -1 -1 -1 0 -1 0 -4 -2 0 -2 1 1 1; -1 0 -1 -1 -2 -1 1 1 1 1 -2 -4 0 -1 0 1 0; 1 -1 1 0 0 -1 0 0 0 0 0 0 -4 1 -3 0 1; 0 0 -1 -1 0 -1 0 1 0 1 -2 -1 1 -4 1 1 0; 1 -1 1 0 0 -1 0 0 1 0 1 0 -3 1 -4 0 1; 0 0 0 0 0 1 0 -1 -1 -1 1 1 0 1 0 -2 0; -1 0 -1 0 0 -1 2 0 0 0 1 0 1 0 1 0 -4]))
+#  @test 46 == length(Hecke.short_vectors_with_condition(QQFieldElem, rescale(Lbad, -1); search_new_invariant_vectors=true)[1])
+#  @test 46 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_new_invariant_vectors=true)[1])
+
+
   # A lattice without roots.
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
   @test length(Hecke.short_vectors_with_condition(QQFieldElem, L)[1])==4
