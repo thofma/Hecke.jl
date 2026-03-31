@@ -1005,16 +1005,16 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
                                                      proj_root_inv::QQMatrix,
                                                      proj_root_coinv::Vector{QQMatrix},
                                                      sort=:rank)
+  n = rank(L)
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   Rperp = orthogonal_submodule(L, R*basis_matrix(L))
   LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
   pushfirst!(LL, lattice(ambient_space(L), R))
   proj = __projections(LL)
-  @assert proj[1] == proj_root_inv + sum(proj_root_coinv)
+  @hassert :Lattice 1 proj[1] == proj_root_inv + sum(proj_root_coinv; init=zero_matrix(QQ, n, n))
   popfirst!(proj)
   proj = append!(proj_root_coinv, proj)
   pushfirst!(proj, proj_root_inv)
-  n = rank(L)
   w = length(grams)
   m = w + length(proj) - 1
   target_norms = Vector{ZZRingElem}[zeros_array(ZZ, m) for i in 1:n]
@@ -1202,6 +1202,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
         T = transpose(lll(T))
         short_vectors2 = update_short_vector_invariants(short_vectors2, T, found)
       end
+
       found_this_round = nrows(invariant_subspace) - old_invariant_subspace_rank
       if found_this_round > 0
         # update target_norms
@@ -1554,13 +1555,13 @@ end
 
 function ___sum(V::Vector; init::Vector)
   if eltype(init) === Int
+    @assert false
     for i in 1:length(init)
       init[i] = 0
     end
   else
     zero!.(init)
   end
-
   for i in V
     add!.(init, i)
   end

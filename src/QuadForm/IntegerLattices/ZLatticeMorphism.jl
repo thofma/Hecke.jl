@@ -779,12 +779,13 @@ function _weyl_group(L::ZZLat)
 end
 
 function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
+  n = rank(L)
   if !isone(basis_matrix(L)) || rank(L) != degree(L)
     L = lattice(rational_span(L))
   end
   if length(root_types) == 0
     to_fix = zero_matrix(QQ, rank(L), rank(L))
-    to_cofix = [zero_matrix(QQ, rank(L), rank(L))]
+    to_cofix = QQMatrix[] #[zero_matrix(QQ, rank(L), rank(L))]
     return ZZMatrix[], ZZMatrix[], ZZ(1), [to_fix, to_cofix]
   end
   invariant_grams = ZZMatrix[]
@@ -804,7 +805,9 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     isotypic_lattice = lattice_in_same_ambient_space(L, isotypic)
     isotypic_cofix_lattice = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat,V))))
     to_isotypic_cofix = 1 - matrix(orthogonal_projection(ambient_space(L), isotypic_cofix_lattice))
-    push!(isotypical_coinvariant_projections, to_isotypic_cofix)
+    if !iszero(to_isotypic_cofix)
+      push!(isotypical_coinvariant_projections, to_isotypic_cofix)
+    end
     append!(invariant_vectors, V)
   end
   gramZ = ZZ.(gram_matrix(L))
@@ -838,7 +841,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
   to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
   #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
-  @assert rank(to_fix+sum(isotypical_coinvariant_projections))==rank(root_lat)
+  @hassert :Lattice 1 rank(to_fix+sum(isotypical_coinvariant_projections; init=zero_matrix(QQ,n,n)))==rank(root_lat)
 
   return weyl_group_gens, invariant_grams, ord, [to_fix,isotypical_coinvariant_projections]
 end
