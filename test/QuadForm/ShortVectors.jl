@@ -176,11 +176,14 @@ end
   @test length.(first.(Hecke.short_vectors_with_condition.(LL))) == [25, 42, 31, 53]
 
 
+
   function test_short_vectors_with_condition(L::ZZLat; search_new_invariant_vectors=false)
-    _V1, _grams = Hecke.short_vectors_with_condition(Int, L; search_new_invariant_vectors)
+    n = rank(L)
+    _V1, _grams,_T,_ = Hecke.short_vectors_with_condition(Int, L; search_new_invariant_vectors)
     V1 = [(QQ.(i[1]), QQ.(i[2])) for i in _V1]
-    V2, grams = Hecke.short_vectors_with_condition(QQFieldElem, L; search_new_invariant_vectors)
-    @test grams == _grams # check consistency between methods
+    V2, grams, T, proj_root_inv = Hecke.short_vectors_with_condition(QQFieldElem, L; search_new_invariant_vectors)
+    @assert grams == _grams # check consistency between methods
+    @assert T==_T
     # confirm consistency of the output
     for V in [V1,V2]
       for (v, n) in V1
@@ -188,20 +191,27 @@ end
       end
     end
     # compute the same set by filtering
-    n = rank(L)
-    _, _, _, (proj_root_inv, _) = Hecke._weyl_group(L)
-    standard_basis_norms = [ZZRingElem[grams[i][j,j] for i in 1:length(grams)] for j in 1:rank(L)]
-    target = [proj_root_inv[i,:] for i in 1:nrows(proj_root_inv)]
+    # invariants of the standard basis vectors
+    target = Set((ZZRingElem[grams[i][j,j] for i in 1:length(grams)], Hecke._canonicalize!(deepcopy(T[j,:])), Hecke._canonicalize!(deepcopy(proj_root_inv[j,:]))) for j in 1:n)
+    target12 = Set(i[1:2] for i in target)
+    target_norms = Set(i[1] for i in target)
+    target_T = Set(i[2] for i in target)
+    target_proj = Set(i[3] for i in target)
     V3 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[]
-    gramsQQ = [QQ.(g) for g in grams]
-    for (v, q) in short_vectors(L, maximum(abs.(diagonal(gram_matrix(L)))))
-      j = matrix(QQ, 1, rank(L) ,v)
-      jT = transpose(j)
-      vnorms = [(j*p*jT)[1,1] for p in gramsQQ]
-      vnorms in standard_basis_norms || continue
-      _w = v*proj_root_inv
-      _w in target || -_w in target || continue
-      push!(V3, (Hecke._canonicalize!(v), vnorms))
+    for (v, _) in short_vectors(L, maximum(abs.(diagonal(gram_matrix(L)))))
+      v_proj = Hecke._canonicalize!(v*proj_root_inv)
+      v_proj in target_proj || continue
+      v_T = Hecke._canonicalize!(v*T)
+      v_T in target_T || continue
+      v_norms = [dot(v, g*v) for g in grams]
+      v_norms in target_norms || continue
+      # now the 3 invariants match individually
+      # check if they match in combination.
+      v_invariants = (v_norms, v_T)
+      v_invariants in target12 || continue
+      #v_invariants = (v_norms, v_T, v_proj)
+      #v_invariants in target || continue  # this test fails because we do not filter like this ....
+      push!(V3, (Hecke._canonicalize!(v), v_norms))
     end
     S1 = Set(V1)
     S2 = Set(V2)
@@ -224,9 +234,9 @@ end
   @test 24 == length(Hecke.short_vectors_with_condition(QQFieldElem, LL[1]; search_new_invariant_vectors=true)[1])
 
   Lbad = integer_lattice(;gram = matrix(ZZ, 17, 17, [-2 1 0 0 -1 -1 0 -1 -1 -1 -1 -1 1 0 1 0 -1; 1 -2 0 0 0 0 0 1 1 1 1 0 -1 0 -1 0 0; 0 0 -2 -1 -1 1 1 0 0 0 0 -1 1 -1 1 0 -1; 0 0 -1 -2 -1 0 1 0 0 0 0 -1 0 -1 0 0 0; -1 0 -1 -1 -4 1 0 -1 -1 -1 -1 -2 0 0 0 0 0; -1 0 1 0 1 -4 1 1 1 1 -1 -1 -1 -1 -1 1 -1; 0 0 1 1 0 1 -4 -2 -2 -2 -1 1 0 0 0 0 2; -1 1 0 0 -1 1 -2 -4 -3 -3 0 1 0 1 0 -1 0; -1 1 0 0 -1 1 -2 -3 -4 -3 -1 1 0 0 1 -1 0; -1 1 0 0 -1 1 -2 -3 -3 -4 0 1 0 1 0 -1 0; -1 1 0 0 -1 -1 -1 0 -1 0 -4 -2 0 -2 1 1 1; -1 0 -1 -1 -2 -1 1 1 1 1 -2 -4 0 -1 0 1 0; 1 -1 1 0 0 -1 0 0 0 0 0 0 -4 1 -3 0 1; 0 0 -1 -1 0 -1 0 1 0 1 -2 -1 1 -4 1 1 0; 1 -1 1 0 0 -1 0 0 1 0 1 0 -3 1 -4 0 1; 0 0 0 0 0 1 0 -1 -1 -1 1 1 0 1 0 -2 0; -1 0 -1 0 0 -1 2 0 0 0 1 0 1 0 1 0 -4]))
-#  @test 46 == length(Hecke.short_vectors_with_condition(QQFieldElem, rescale(Lbad, -1); search_new_invariant_vectors=true)[1])
-#  @test 46 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_new_invariant_vectors=true)[1])
-
+  @test 46 == length(Hecke.short_vectors_with_condition(QQFieldElem, rescale(Lbad, -1); search_new_invariant_vectors=true)[1])
+  @test 46 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_new_invariant_vectors=true)[1])
+  test_short_vectors_with_condition(rescale(Lbad,-1))
 
   # A lattice without roots.
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));

@@ -1089,7 +1089,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
   invariant_subspace = invariant_subspace[1:invariant_subspace_rank, :]
   H = hnf!(numerator(invariant_subspace))
   new_invariant_subspace = zero_matrix(ZZ, 0, rank(L)) # keeps track of what is new
-  T = zero_matrix(ZZ, 0, n)
+  T = zero_matrix(ZZ, n, 0)
   w0 = invariant_subspace_rank
   S = solve_init(invariant_subspace)
 
@@ -1202,13 +1202,12 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
         T = transpose(lll(T))
         short_vectors2 = update_short_vector_invariants(short_vectors2, T, found)
       end
-
       found_this_round = nrows(invariant_subspace) - old_invariant_subspace_rank
       if found_this_round > 0
         # update target_norms
         t_old = t
         t = ncols(T)
-        target_norms = [vcat(abs.(T[j, :]), target_norms[j][t_old+1:end]) for j in 1:nrows(T)]
+        target_norms = [vcat(_canonicalize!(deepcopy(T[j, :])), target_norms[j][t_old+1:end]) for j in 1:nrows(T)]
         # filter what we do not need anymore
         invs = Set([target_norms[j][1:t+w0+i] for j in 1:nrows(T)])
         for k in keys(short_vectors2)
@@ -1247,7 +1246,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-  return output, grams
+  return output, grams, T, proj[1]
 end
 
 function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{Int}}, denoms::Vector{Int}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true)
@@ -1263,7 +1262,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   S = solve_init(invariant_subspace)
   new_invariant_subspace = zero_matrix(ZZ, 0, rank(L)) # keeps track of what is new
   n = rank(L)
-  T = zero_matrix(ZZ, 0, n)
+  T = zero_matrix(ZZ, n, 0)
   w0 = invariant_subspace_rank
   w = length(target_norms[1]) - (k-1)
   V = ambient_space(L)
@@ -1413,11 +1412,12 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         # update target_norms
         t_old = t
         t = ncols(T)
-        target_norms = [vcat(abs.(TInt[j, :]), target_norms[j][t_old+1:end]) for j in 1:nrows(T)]
+        target_norms = [vcat(_canonicalize!(TInt[j, :]), target_norms[j][t_old+1:end]) for j in 1:nrows(T)]
         # filter what we do not need anymore
         invs = Set([target_norms[j][1:t+w0+i] for j in 1:nrows(T)])
         for k in keys(short_vectors2)
           k in invs && continue
+          @vprintln :Lattice 2 "deleting vectors with key $k"
           delete!(short_vectors2, k)
         end
       end
@@ -1462,7 +1462,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
       ei[i]=0
     end
   end
-  return output, grams
+  return output, grams, T, proj[1]
 end
 
 function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}}
@@ -1471,8 +1471,8 @@ function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vect
   for k in keys(D)
     k_new = vcat(zeros(Int, found), k)
     for v in D[k]
-      ii = abs.(v[1]' * T)
-      k_new[1:n] = divexact.(ii, v[2]) #... if there is an overflow, division is not exact...
+      ii = _canonicalize!(v[1]' * T) # _canonicalize! allows us to consider this invariant up to sign
+      k_new[1:n] = divexact.(ii, v[2]) # if there is an overflow elsewhere, this will likely throw an error
       if k_new in keys(Dnew)
         push!(Dnew[k_new], v)
       else
@@ -1487,9 +1487,9 @@ function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vect
   Dnew = S()
   n = ncols(T)
   for k in keys(D)
-    k_new = vcat(zeros(Int, found), k)
+    k_new = vcat(zeros_array(ZZ, found), k)
     for v in D[k]
-      ii = abs.(ZZ.(v * T))
+      ii = _canonicalize!(ZZ.(v * T))
       k_new[1:n] = ii
       if k_new in keys(Dnew)
         push!(Dnew[k_new], v)
@@ -1603,3 +1603,4 @@ end
 function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
   return all(isone(denominator!(tmp, i)) for i in x)
 end
+

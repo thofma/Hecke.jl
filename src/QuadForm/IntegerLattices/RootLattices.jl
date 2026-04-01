@@ -1057,6 +1057,7 @@ end
 # For all i
 # replace x[i] by -x[i] if its first non-zero coefficient is negative.
 function _canonicalize!(x::Vector)
+  length(x)==0 && return x
   i = 1
   while i<length(x) && iszero(x[i])
     i = i+1
