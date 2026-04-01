@@ -641,13 +641,24 @@ end
 
 mutable struct ComplexOfMorphismsMap{T} <: Map{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}, HeckeMap, ComplexOfMorphismsMap}
   header::MapHeader{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}}
-  maps::Dict{Int, <:Map{<:T, <:T}}
-  function ComplexOfMorphismsMap(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::S; check::Bool = !true) where {S <: Dict{Int, <:Map{<:T, <:T}}} where {T}
+  maps::Dict{Int, <:Map}
+  fill::Function # (ComplexMap, i::Int)
+  function ComplexOfMorphismsMap(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::S; check::Bool = !true) where {S <: Dict{Int, <:Map}} where {T}
     r = new{T}()
     r.header = MapHeader(C, D)
     r.maps = A
     return r
   end
+end
+
+function Base.getindex(M::ComplexOfMorphismsMap, i::Int)
+  if haskey(M.maps, i)
+    return M.maps[i]
+  end
+  if isdefined(M, :fill)
+    return M.fill(M, i)
+  end
+  throw(KeyError(i))
 end
 
 #=
@@ -733,6 +744,7 @@ function hom(G::T, C::ComplexOfMorphisms{T}) where {T}
   end
   return ComplexOfMorphisms(R)
 end
+=#
 
 @doc raw"""
     homology(C::ComplexOfMorphisms{FinGenAbGroup}) -> Vector{FinGenAbGroup}
@@ -746,6 +758,14 @@ function homology(C::ComplexOfMorphisms)
   end
   return H
 end
+
+function homology(C::ComplexOfMorphisms, i::Int)
+  H = obj_type(C)[]
+  return quo(kernel(C.maps[i+1])[1], image(C.maps[i])[1])[1]
+end
+
+
+#=
 
 function snake_lemma(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::Vector{<:Map{T, T}}) where {T}
   @assert length(C.maps) == length(D.maps) == 3
