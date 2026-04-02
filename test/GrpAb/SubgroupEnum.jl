@@ -232,3 +232,14 @@
   G = abelian_group([2])
   @test length(collect(subgroups(G; quotype = [3]))) == 0
 end
+
+@testset "Common subgroups" begin
+  # Randomly generated example
+  A1 = abelian_group(ZZRingElem[2, 2, 2, 2, 4, 5244, 181218271440])
+  A2 = abelian_group(ZZRingElem[12, 12, 60, 1339024290240])
+
+  ppcs = first(Hecke._primary_parts_common_subgroups_with_conditions(A1, A2))
+  @test sort!(collect(keys(ppcs))) == ZZRingElem[2, 3, 5, 17]
+  @test length(ppcs[2]) == 31
+  @test maximum(first.(ppcs[2])) == 4
+end
