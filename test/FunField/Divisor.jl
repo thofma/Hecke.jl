@@ -1,16 +1,73 @@
-k = QQ
-kx, x = rational_function_field(k, "x")
-kt = parent(numerator(x))
-ky, y = polynomial_ring(kx, "y")
-
 import Hecke: divisor
-
 
 @testset "Divisors" begin
 
-    @testset "Algebraic function field over rationals (1)" begin
+  @testset "Basic Operations" begin
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    F, a = function_field(y^2 - x; cached = false)
+    Ofin = finite_maximal_order(F)
+    Oinf = infinite_maximal_order(F)
 
-      F, a = function_field(y^2 - x^3 - 1)
+    p1 = ideal(Ofin, x-2)
+    p2 = ideal(Ofin, x-3)
+    p3 = ideal(Ofin, x-4)
+    p4, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
+
+    d1, d2, d3, d4 = divisor.((p1, p2, p3, p4))
+
+    D1 = trivial_divisor(F)
+    D2 = d1 - d2
+    @test !(D1 < D2)
+    @test !(D2 < D1)
+
+    D1 = d1 + 5*d2
+    D2 = d1 + 2*d2 - 3*d3
+    @test gcd(D1, D2) == d1 + 2*d2 - 3*d3
+    @test gcd(D1, D2) == gcd(D2, D1)
+    @test lcm(D1, D2) == d1 + 5*d2
+    @test lcm(D1, D2) == lcm(D2, D1)
+
+    D1 = d1 + 3*d4
+    D2 = 2*d1 - 3*d3
+    @test gcd(D1, D2) == d1 - 3*d3
+    @test gcd(D1, D2) == gcd(D2, D1)
+    @test lcm(D1, D2) == 2*d1 + 3*d4
+    @test lcm(D1, D2) == lcm(D2, D1)
+
+    D1 = d1 - 3*d4
+    D2 = 2*d1
+    @test gcd(D1, D2) == D1
+    @test gcd(D2, D1) == D1
+    @test lcm(D1, D2) == 2*d1
+    @test lcm(D1, D2) == lcm(D2, D1)
+  end
+
+  @testset "Not Separable Extension" begin
+    k = finite_field(3; cached = false)[1]
+    kx, x = rational_function_field(k, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+
+    # current implementation of separating_element/canonical_divisor
+    #   assumes separable extension
+
+    # purely inseparable
+    F, a = function_field(y^3 - x; cached = false)
+    @test_throws ArgumentError Hecke.separating_element(F)
+    @test_throws ArgumentError Hecke.canonical_divisor(F)
+    @test_throws ArgumentError Hecke.genus(F)
+
+    # (not purely) inseparable
+    F, a = function_field(y^6 - x*y^3 + x; cached = false)
+    @test_throws ArgumentError Hecke.separating_element(F)
+    @test_throws ArgumentError Hecke.canonical_divisor(F)
+    @test_throws ArgumentError Hecke.genus(F)
+  end
+
+    @testset "Algebraic function field over rationals (1)" begin
+      kx, x = rational_function_field(QQ, :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      F, a = function_field(y^2 - x^3 - 1; cached = false)
       Ofin = finite_maximal_order(F)
       Oinf = infinite_maximal_order(F)
 
@@ -83,8 +140,9 @@ import Hecke: divisor
     end
 
     @testset "Algebraic function field over rationals (2)" begin
-
-      F, a = function_field(y^4 - 3*y + x^6 +x^2 - 1)
+      kx, x = rational_function_field(QQ, :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      F, a = function_field(y^4 - 3*y + x^6 +x^2 - 1; cached = false)
       Ofin = finite_maximal_order(F)
       Oinf = infinite_maximal_order(F)
 

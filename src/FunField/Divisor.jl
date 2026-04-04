@@ -38,32 +38,21 @@ function trivial_divisor(F::Generic.FunctionField)
   return divisor(one(F))
 end
 
-
 @doc raw"""
     divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) -> Divisor
 
 Return the divisor corresponding to the factorization of the ideal I (for the finite places) and ideal J (for the infinite places)
 """
-function divisor(I::GenOrdFracIdl, J::GenOrdFracIdl)
-  return Divisor(I, J)
-end
+divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) = Divisor(I, J)
+divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(GenOrdFracIdl(I), GenOrdFracIdl(J))
+divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, GenOrdFracIdl(J))
+divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(GenOrdFracIdl(I), J)
 
-function divisor(I::GenOrdIdl, J::GenOrdIdl)
-  return Divisor(GenOrdFracIdl(I), GenOrdFracIdl(J))
-end
+@doc raw"""
+    divisor(I::GenOrdFracIdl) -> Divisor
 
-function divisor(I::GenOrdFracIdl, J::GenOrdIdl)
-  return Divisor(I, GenOrdFracIdl(J))
-end
-
-function divisor(I::GenOrdIdl, J::GenOrdFracIdl)
-  return Divisor(GenOrdFracIdl(I), J)
-end
-
-function divisor(I::GenOrdIdl)
-  divisor(GenOrdFracIdl(I))
-end
-
+Return the divisor corresponding to the factorization of the ideal I
+"""
 function divisor(I::GenOrdFracIdl)
   O = order(I)
   F = function_field(O)
@@ -78,6 +67,7 @@ function divisor(I::GenOrdFracIdl)
   end
 end
 
+divisor(I::GenOrdIdl) = divisor(GenOrdFracIdl(I))
 
 @doc raw"""
     divisor(f::Generic.FunctionFieldElem) -> Divisor
@@ -161,7 +151,7 @@ end
 Return a pair of ideals I, J that represent the divisor D. Here I is the ideal for the finite maximal order
 and J is the ideal of the infinite maximal order.
 """
-function ideals(D)
+function ideals(D::Divisor)
   return D.finite_ideal, D.infinite_ideal
 end
 
@@ -218,7 +208,7 @@ end
 
 ################################################################################
 #
-#  Equality
+#  Equality / Comparison
 #
 ################################################################################
 
@@ -227,6 +217,21 @@ Base.:(==)(D1::Divisor, D2::Divisor) = ideals(D1) == ideals(D2)
 Base.isequal(D1::Divisor, D2::Divisor) = D1 == D2
 
 Base.hash(D::Divisor, h::UInt) = hash(ideals(D), h)
+
+# NOTE: divisor comparison defines a partial order, not total order
+# NOTE: thus it is not safe to use sorting algorithms with divisors
+function Base.isless(D1::Divisor, D2::Divisor)
+  @req D1.function_field == D2.function_field "Divisors do not belong to the same field"
+  D1 == D2 && return false
+
+  assure_has_support(D1)
+  assure_has_support(D2)
+
+  s_fin = union(keys(D1.finite_support),   keys(D2.finite_support))
+  s_inf = union(keys(D1.infinite_support), keys(D2.infinite_support))
+  return all(p -> valuation(D1, p) <= valuation(D2, p), union(s_fin, s_inf))
+end
+
 
 ################################################################################
 #
@@ -240,28 +245,8 @@ function Base.:+(D1::Divisor, D2::Divisor)
   Dnew = Divisor(D1_fin * D2_fin, D1_inf * D2_inf)
 
   if has_support(D1) && has_support(D2)
-    P = union(keys(D1.finite_support), keys(D2.finite_support))
-    fin_support = Dict{GenOrdIdl,Int}()
-    for p in P
-      p_val = valuation(D1, p) + valuation(D2, p)
-      if p_val != 0
-        fin_support[p] = p_val
-      end
-    end
-
-    inf_support = Dict{GenOrdIdl,Int}()
-    P_inf = union(keys(D1.infinite_support), keys(D2.infinite_support))
-    for p in P_inf
-      p_val = valuation(D1, p) + valuation(D2, p)
-      if p_val != 0
-        inf_support[p] = p_val
-      end
-    end
-
-    Dnew.finite_support = fin_support
-    Dnew.infinite_support = inf_support
+    _merge_support!(Dnew, +, D1, D2)
   end
-
   return Dnew
 end
 
@@ -280,37 +265,6 @@ function Base.:*(n::Int, D::Divisor)
   return Dnew
 end
 
-function gcd(D1::Divisor, D2::Divisor)
-  D1_fin, D1_inf = ideals(D1)
-  D2_fin, D2_inf = ideals(D2)
-  Dnew = Divisor(D1_fin + D2_fin, D1_inf + D2_inf)
-
-  if has_support(D1) && has_support(D2)
-    P = union(keys(D1.finite_support), keys(D2.finite_support))
-    fin_support = Dict{GenOrdIdl,Int}()
-    for p in P
-      p_val = min(valuation(D1, p), valuation(D2, p))
-      if p_val != 0
-        fin_support[p] = p_val
-      end
-    end
-
-    inf_support = Dict{GenOrdIdl,Int}()
-    P_inf = union(keys(D1.infinite_support), keys(D2.infinite_support))
-    for p in P_inf
-      p_val = min(valuation(D1, p), valuation(D2, p))
-      if p_val != 0
-        inf_support[p] = p_val
-      end
-    end
-
-    Dnew.finite_support = fin_support
-    Dnew.infinite_support = inf_support
-  end
-
-  return Dnew
-end
-
 Base.:*(D::Divisor, n::Int) = n * D
 
 function -(D::Divisor)
@@ -319,6 +273,28 @@ end
 
 function Base.:(-)(D1::Divisor, D2::Divisor)
   return D1 + (-D2)
+end
+
+function gcd(D1::Divisor, D2::Divisor)
+  D1_fin, D1_inf = ideals(D1)
+  D2_fin, D2_inf = ideals(D2)
+  Dnew = Divisor(D1_fin + D2_fin, D1_inf + D2_inf)
+
+  if has_support(D1) && has_support(D2)
+    _merge_support!(Dnew, min, D1, D2)
+  end
+  return Dnew
+end
+
+function lcm(D1::Divisor, D2::Divisor)
+  D1_fin, D1_inf = ideals(D1)
+  D2_fin, D2_inf = ideals(D2)
+  Dnew = Divisor(intersect(D1_fin, D2_fin), intersect(D1_inf, D2_inf))
+
+  if has_support(D1) && has_support(D2)
+    _merge_support!(Dnew, max, D1, D2)
+  end
+  return Dnew
 end
 
 ################################################################################
@@ -330,15 +306,10 @@ end
 has_support(D::Divisor) = isdefined(D, :finite_support) && isdefined(D, :infinite_support)
 
 function assure_has_support(D::Divisor)
-  if has_support(D)
-    return nothing
-  else
+  if !has_support(D)
     D1, D2 = ideals(D)
-    D1_fac = factor(D1)
-    D2_fac = factor(D2)
-    D.finite_support = D1_fac
-    D.infinite_support = D2_fac
-    return nothing
+    D.finite_support = factor(D1)
+    D.infinite_support = factor(D2)
   end
 end
 
@@ -358,26 +329,16 @@ end
 Return the multiplicity of D at the prime ideal p.
 """
 function valuation(D::Divisor, p::GenOrdIdl)
-@assert is_prime(p)
+  @req is_prime(p) "p must be prime ideal"
 
   #Might not always want to compute support for a simple valuation
   assure_has_support(D)
 
   O = order(p)
-  if !isa(base_ring(O), KInftyRing)
-    fin_supp = D.finite_support
-    if haskey(fin_supp, p)
-      return fin_supp[p]
-    else
-      return 0
-    end
+  if isa(base_ring(O), KInftyRing)
+    return get(D.infinite_support, p, 0)
   else
-    inf_supp = D.infinite_support
-    if haskey(inf_supp, p)
-      return inf_supp[p]
-    else
-      return 0
-    end
+    return get(D.finite_support, p, 0)
   end
 end
 
@@ -391,8 +352,40 @@ function infinite_support(D::Divisor)
   return collect(D.infinite_support)
 end
 
-function Base.isless(D1::Divisor, D2::Divisor)
-  all([valuation(D2, f) >= e  for (f, e) in support(D1)]) && D1 != D2
+# Trivial helper to merge supports with an operation, and ensure we have exact/compact support
+function _merge_support_dict(op, s1::Dict{Hecke.GenOrdIdl, Int64}, s2::Dict{Hecke.GenOrdIdl, Int64})
+  s = Dict{GenOrdIdl,Int}()
+
+  for p in union(keys(s1), keys(s2))
+    p_val = op(get(s1, p, 0), get(s2, p, 0))
+    if p_val != 0
+      s[p] = p_val
+    end
+  end
+
+  return s
+end
+
+function _merge_support!(D::Divisor, op, D1::Divisor, D2::Divisor)
+  D.finite_support   = _merge_support_dict(op, D1.finite_support,   D2.finite_support)
+  D.infinite_support = _merge_support_dict(op, D1.infinite_support, D2.infinite_support)
+end
+
+# trivial helper to filter support
+function _filter_support(D::Divisor, pred)
+  s_fin = filter(t -> pred(t), D.finite_support)
+  s_inf = filter(t -> pred(t), D.infinite_support)
+
+  F = function_field(D)
+  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
+
+  d_fin = prod(p^e for (p, e) in s_fin; init = Ofin(1)*Ofin)
+  d_inf = prod(p^e for (p, e) in s_inf; init = Oinf(1)*Oinf)
+
+  r = divisor(d_fin, d_inf)
+  r.finite_support   = s_fin
+  r.infinite_support = s_inf
+  return r
 end
 
 ################################################################################
@@ -435,21 +428,8 @@ end
 Return the divisor whose support consists exactly of all zeroes in the support of D.
 """
 function zero_divisor(D::Divisor)
-  supp_fin = finite_support(D)
-  supp_inf = infinite_support(D)
-
-  F = function_field(D)
-
-  Ofin = finite_maximal_order(F)
-  Oinf = infinite_maximal_order(F)
-
-  supp_fin = filter(t -> t[2]>0, supp_fin)
-  supp_inf = filter(t -> t[2]>0, supp_inf)
-
-  D1 = prod(map(t -> t[1]^t[2], supp_fin);init = Ofin(1)*Ofin)
-  D2 = prod(map(t -> t[1]^t[2], supp_inf);init = Oinf(1)*Oinf)
-
-  return divisor(D1, D2)
+  assure_has_support(D)
+  return _filter_support(D, x -> x.second > 0)
 end
 
 @doc raw"""
@@ -458,21 +438,8 @@ end
 Return the divisor whose support consists exactly of all poles in the support of D.
 """
 function pole_divisor(D::Divisor)
-  supp_fin = finite_support(D)
-  supp_inf = infinite_support(D)
-
-  F = function_field(D)
-
-  Ofin = finite_maximal_order(F)
-  Oinf = infinite_maximal_order(F)
-
-  supp_fin = filter(t -> t[2]<0, supp_fin)
-  supp_inf = filter(t -> t[2]<0, supp_inf)
-
-  D1 = prod(map(t -> t[1]^t[2], supp_fin);init = Ofin(1)*Ofin)
-  D2 = prod(map(t -> t[1]^t[2], supp_inf);init = Oinf(1)*Oinf)
-
-  return divisor(D1, D2)
+  assure_has_support(D)
+  return _filter_support(D, x -> x.second < 0)
 end
 
 ################################################################################
@@ -510,7 +477,7 @@ function is_principal(D::Divisor)
 end
 
 @doc raw"""
-    is_principal(D::Divisor) -> Bool
+    is_zero(D::Divisor) -> Bool
 
 Return true if D is the trivial divisor.
 """
@@ -554,11 +521,16 @@ end
 Return the canonical divisor of F.
 """
 function canonical_divisor(F::AbstractAlgebra.Generic.FunctionField)
+  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+
   dx = differential(separating_element(F))
   return divisor(dx)
 end
 
 function separating_element(F::AbstractAlgebra.Generic.FunctionField)
+  # TODO: we need to search for one, instead of using x
+  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+
   return F(gen(base_ring(F)))
 end
 
@@ -568,6 +540,8 @@ end
 Return the genus of F.
 """
 function genus(F::AbstractAlgebra.Generic.FunctionField)
+  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+
   return length(basis_of_differentials(F))
 end
 
@@ -640,6 +614,8 @@ L(K - D), where K is the canonical divisor of the function field of D.
 """
 function index_of_speciality(D::Divisor)
   F = function_field(D)
+  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+
   K = canonical_divisor(F)
   return length(riemann_roch_space(K - D))
 end

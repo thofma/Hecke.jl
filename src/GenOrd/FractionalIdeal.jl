@@ -154,10 +154,27 @@ Base.:*(A::T, B::T) where T <: GenOrdFracIdl = prod(A, B)
 
 
 function Base.:(+)(a::T, b::T) where T <: GenOrdFracIdl
-  d = lcm(denominator(a), denominator(b))
-  ma = divexact(d, denominator(a))
-  mb = divexact(d, denominator(b))
-  return GenOrdFracIdl(order(a)(ma)*numerator(a) + order(b)(mb) * numerator(b),d)
+  d = lcm(denominator(a; copy=false), denominator(b; copy=false))
+
+  ma = divexact(d, denominator(a; copy=false))
+  I  = order(a)(ma) * numerator(a; copy=false)
+
+  mb = divexact(d, denominator(b; copy=false))
+  J  = order(b)(mb) * numerator(b; copy=false)
+
+  return GenOrdFracIdl(I + J, d)
+end
+
+function Base.intersect(a::T, b::T) where T <: GenOrdFracIdl
+  d = lcm(denominator(a; copy=false), denominator(b; copy=false))
+
+  ma = divexact(d, denominator(a; copy=false))
+  I  = order(a)(ma) * numerator(a; copy=false)
+
+  mb = divexact(d, denominator(b; copy=false))
+  J  = order(b)(mb) * numerator(b; copy=false)
+
+  return GenOrdFracIdl(intersect(I, J), d)
 end
 
 ################################################################################
