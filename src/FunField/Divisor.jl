@@ -5,23 +5,18 @@
 ################################################################################
 
 
-mutable struct Divisor
-  function_field::AbstractAlgebra.Generic.FunctionField
-  finite_ideal::GenOrdFracIdl
-  infinite_ideal::GenOrdFracIdl
-  finite_support::Dict{Hecke.GenOrdIdl, Int64}
-  infinite_support::Dict{Hecke.GenOrdIdl, Int64}
+mutable struct Divisor{S <: Generic.FunctionField, T1 <: PolyRing, T2 <: KInftyRing}
+  function_field::S
+  finite_ideal::GenOrdFracIdl{S, T1}
+  infinite_ideal::GenOrdFracIdl{S, T2}
+  finite_support::Dict{Hecke.GenOrdIdl{S, T1}, Int64}
+  infinite_support::Dict{Hecke.GenOrdIdl{S, T2}, Int64}
 
-  function Divisor(I::GenOrdFracIdl, J::GenOrdFracIdl)
-    r = new()
+  function Divisor(I::GenOrdFracIdl{S, T1}, J::GenOrdFracIdl{S, T2}) where {S, T1, T2}
+    r = new{S, T1, T2}()
 
-    O = order(I)
-    Oinf = order(J)
-    K = function_field(O)
-
-    @req K == function_field(Oinf) "Ideals need to belong to orders of the same function field."
-    @req isa(base_ring(O), PolyRing) "First ideal needs to be an ideal over the finite order"
-    @req isa(base_ring(Oinf), KInftyRing) "Second ideal needs to be an ideal over the infinite order"
+    K = function_field(order(I))
+    @req K == function_field(order(J)) "Ideals need to belong to orders of the same function field."
 
     r.function_field = K
     r.finite_ideal = I
@@ -53,21 +48,20 @@ divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(GenOrdFracIdl(I), J)
 
 Return the divisor corresponding to the factorization of the ideal I
 """
-function divisor(I::GenOrdFracIdl)
-  O = order(I)
-  F = function_field(O)
-  Ofin = finite_maximal_order(F)
-  Oinf = infinite_maximal_order(F)
-  if O == Ofin
-    return divisor(I, ideal(Oinf, one(Oinf)))
-  elseif O == Oinf
-    return divisor(ideal(Ofin, one(Ofin)), I)
-  else
-    error("There is a bug in divisor")
-  end
+
+function divisor(I::GenOrdFracIdl{<: Generic.FunctionField, <: KInftyRing})
+  Ofin = finite_maximal_order(function_field(order(I)))
+  return divisor(ideal(Ofin, one(Ofin)), I)
 end
 
-divisor(I::GenOrdIdl) = divisor(GenOrdFracIdl(I))
+function divisor(I::GenOrdFracIdl{<: Generic.FunctionField, <: PolyRing})
+  Oinf = infinite_maximal_order(function_field(order(I)))
+  return divisor(I, ideal(Oinf, one(Oinf)))
+end
+
+function divisor(I::GenOrdIdl)
+  return divisor(GenOrdFracIdl(I))
+end
 
 @doc raw"""
     divisor(f::Generic.FunctionFieldElem) -> Divisor
@@ -78,9 +72,7 @@ function divisor(f::Generic.FunctionFieldElem)
   @req !is_zero(f) "Element must be non-zero"
   F = parent(f)
 
-  Ofin = finite_maximal_order(F)
-  Oinf = infinite_maximal_order(F)
-
+  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
   return divisor(Ofin * f, Oinf * f)
 end
 
@@ -92,9 +84,7 @@ Return the divisor consisting of the zeroes of f
 function zero_divisor(f::Generic.FunctionFieldElem)
   F = parent(f)
 
-  Ofin = finite_maximal_order(F)
-  Oinf = infinite_maximal_order(F)
-
+  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
   f_num, f_denom = integral_split(f, Ofin)
   g_num, g_denom = integral_split(f, Oinf)
 
@@ -109,9 +99,7 @@ Return the divisor consisting of the poles of f
 function pole_divisor(f::Generic.FunctionFieldElem)
   F = parent(f)
 
-  Ofin = finite_maximal_order(F)
-  Oinf = infinite_maximal_order(F)
-
+  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
   f_num, f_denom = integral_split(f, Ofin)
   g_num, g_denom = integral_split(f, Oinf)
 
@@ -124,10 +112,10 @@ end
 #
 ################################################################################
 
-function show(io::IO, id::Divisor)
+function show(io::IO, D::Divisor)
   print(io, "Divisor in ideal representation:")
-  print(io, "\nFinite ideal: ", id.finite_ideal)
-  print(io, "\nInfinite ideal: ", id.infinite_ideal)
+  print(io, "\nFinite ideal: ", D.finite_ideal)
+  print(io, "\nInfinite ideal: ", D.infinite_ideal)
 end
 
 ################################################################################
@@ -212,15 +200,20 @@ end
 #
 ################################################################################
 
+function Base.:(==)(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
+  return D1.finite_ideal == D2.finite_ideal && D1.infinite_ideal == D2.infinite_ideal
+end
+function Base.isequal(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
+  return D1 == D2
+end
 
-Base.:(==)(D1::Divisor, D2::Divisor) = ideals(D1) == ideals(D2)
-Base.isequal(D1::Divisor, D2::Divisor) = D1 == D2
-
-Base.hash(D::Divisor, h::UInt) = hash(ideals(D), h)
+function Base.hash(D::Divisor, h::UInt)
+  return hash(ideals(D), h)
+end
 
 # NOTE: divisor comparison defines a partial order, not total order
 # NOTE: thus it is not safe to use sorting algorithms with divisors
-function Base.isless(D1::Divisor, D2::Divisor)
+function Base.isless(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
   @req D1.function_field == D2.function_field "Divisors do not belong to the same field"
   D1 == D2 && return false
 
@@ -239,7 +232,7 @@ end
 #
 ################################################################################
 
-function Base.:+(D1::Divisor, D2::Divisor)
+function Base.:+(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
   D1_fin, D1_inf = ideals(D1)
   D2_fin, D2_inf = ideals(D2)
   Dnew = Divisor(D1_fin * D2_fin, D1_inf * D2_inf)
@@ -266,16 +259,13 @@ function Base.:*(n::Int, D::Divisor)
 end
 
 Base.:*(D::Divisor, n::Int) = n * D
+Base.:-(D::Divisor) = (-1)*D
 
-function -(D::Divisor)
-  return (-1)*D
-end
-
-function Base.:(-)(D1::Divisor, D2::Divisor)
+function Base.:(-)(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
   return D1 + (-D2)
 end
 
-function gcd(D1::Divisor, D2::Divisor)
+function gcd(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
   D1_fin, D1_inf = ideals(D1)
   D2_fin, D2_inf = ideals(D2)
   Dnew = Divisor(D1_fin + D2_fin, D1_inf + D2_inf)
@@ -286,7 +276,7 @@ function gcd(D1::Divisor, D2::Divisor)
   return Dnew
 end
 
-function lcm(D1::Divisor, D2::Divisor)
+function lcm(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
   D1_fin, D1_inf = ideals(D1)
   D2_fin, D2_inf = ideals(D2)
   Dnew = Divisor(intersect(D1_fin, D2_fin), intersect(D1_inf, D2_inf))
@@ -303,7 +293,9 @@ end
 #
 ################################################################################
 
-has_support(D::Divisor) = isdefined(D, :finite_support) && isdefined(D, :infinite_support)
+function has_support(D::Divisor)
+  return isdefined(D, :finite_support) && isdefined(D, :infinite_support)
+end
 
 function assure_has_support(D::Divisor)
   if !has_support(D)
@@ -328,18 +320,20 @@ end
 
 Return the multiplicity of D at the prime ideal p.
 """
-function valuation(D::Divisor, p::GenOrdIdl)
+function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1, T2}
   @req is_prime(p) "p must be prime ideal"
 
   #Might not always want to compute support for a simple valuation
   assure_has_support(D)
+  return get(D.finite_support, p, 0)
+end
 
-  O = order(p)
-  if isa(base_ring(O), KInftyRing)
-    return get(D.infinite_support, p, 0)
-  else
-    return get(D.finite_support, p, 0)
-  end
+function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T2}) where {S, T1, T2}
+  @req is_prime(p) "p must be prime ideal"
+
+  #Might not always want to compute support for a simple valuation
+  assure_has_support(D)
+  return get(D.infinite_support, p, 0)
 end
 
 function finite_support(D::Divisor)
@@ -353,8 +347,8 @@ function infinite_support(D::Divisor)
 end
 
 # Trivial helper to merge supports with an operation, and ensure we have exact/compact support
-function _merge_support_dict(op, s1::Dict{Hecke.GenOrdIdl, Int64}, s2::Dict{Hecke.GenOrdIdl, Int64})
-  s = Dict{GenOrdIdl,Int}()
+function _merge_support_dict(op, s1::Dict{Hecke.GenOrdIdl{S, T}, Int64}, s2::Dict{Hecke.GenOrdIdl{S, T}, Int64}) where {S, T}
+  s = Dict{GenOrdIdl{S, T},Int}()
 
   for p in union(keys(s1), keys(s2))
     p_val = op(get(s1, p, 0), get(s2, p, 0))
@@ -366,7 +360,7 @@ function _merge_support_dict(op, s1::Dict{Hecke.GenOrdIdl, Int64}, s2::Dict{Heck
   return s
 end
 
-function _merge_support!(D::Divisor, op, D1::Divisor, D2::Divisor)
+function _merge_support!(D::Divisor{S, T1, T2}, op, D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T2}
   D.finite_support   = _merge_support_dict(op, D1.finite_support,   D2.finite_support)
   D.infinite_support = _merge_support_dict(op, D1.infinite_support, D2.infinite_support)
 end

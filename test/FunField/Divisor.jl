@@ -2,6 +2,9 @@ import Hecke: divisor
 
 @testset "Divisors" begin
 
+  # NOTE: currently we cannot quite use @inferred of gcd/lcm
+  #   due to GenOrd losing type stability on ideal operations
+  #   this will be fixed later separately
   @testset "Basic Operations" begin
     kx, x = rational_function_field(QQ, :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
