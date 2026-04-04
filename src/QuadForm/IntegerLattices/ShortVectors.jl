@@ -1038,7 +1038,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
 
   if sort == :rank
     # don't touch the first one
-    p = sortperm([rank(proj[i]) for i in 2:length(proj)]; rev = true)
+    p = sortperm([rank(proj[i]) for i in 2:length(proj)]; rev = false)
     per = pushfirst!(p .+ 1, 1)
     per2 = append!(collect(1:w), p .+ (w))
     per2inv = invperm(per2)
@@ -1227,6 +1227,7 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
         # update the invariants
         T = ZZ.(new_invariant_subspace*gram_matrix(L))
         T = transpose(lll(T))
+        @vprintln :Lattice 2 "T = $T"
         short_vectors2 = update_short_vector_invariants(short_vectors2, T, found)
       end
       found_this_round = nrows(invariant_subspace) - old_invariant_subspace_rank
@@ -1466,7 +1467,7 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         invs = Set([target_norms[j][1:t+w0+i] for j in 1:nrows(T)])
         for k in keys(short_vectors2)
           k in invs && continue
-          @vprintln :Lattice 2 "deleting vectors with key $k"
+          @vprintln :Lattice 5 "deleting vectors with key $k"
           delete!(short_vectors2, k)
         end
       end
@@ -1576,9 +1577,8 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
       invariant_subspace = vcat(invariant_subspace, tmp_mat)
       rref!(invariant_subspace)
       new_invariant_subspace = vcat(new_invariant_subspace, numerator(tmp_mat))
+      new_invariant_subspace = saturate(new_invariant_subspace)
       reduce_mod_hnf_ur!(new_invariant_subspace, H)
-      # lll is better than hnf, to avoid overflows later
-      new_invariant_subspace = lll(saturate(new_invariant_subspace))
       S = solve_init(invariant_subspace)
     end
   end
@@ -1592,7 +1592,7 @@ function ___sum(V::Vector{<:Tuple}; init::Vector)
       init[i] = 0
     end
   else
-    zero!.(init)
+    init = zero!.(init)
   end
   c = first(V)[2]
   for i in V
@@ -1609,7 +1609,7 @@ function ___sum(V::Vector; init::Vector)
       init[i] = 0
     end
   else
-    zero!.(init)
+    init = zero!.(init)
   end
   for i in V
     add!.(init, i)
