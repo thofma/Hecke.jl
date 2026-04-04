@@ -1120,13 +1120,17 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
   tmp2 = zeros_array(QQ, n)
   tmp_invariant_vec = zeros_array(QQ, n)
   tmpv = zeros_array(QQ, n)
+  Lflag = projL[1]
   for i in 2:k
     short_vectors2 = Dict{Vector{ZZRingElem},Vector{Vector{QQFieldElem}}}()
     for a in Set(n[1:w+i-1] for n in target_norms)
       short_vectors2[a] = Vector{QQFieldElem}[]
     end
     flag_projection = flag_projection + proj[i]
+    #bigL = vcat(basis_matrix(Lflag), basis_matrix(projL[i]))
     Lflag = lattice(V, flag_projection; isbasis=false, check=false)
+    #Lflag_in_bigL = ZZ.(solve(bigL, basis_matrix(Lflag); side=:left))
+    #Sf, Tf, Uf = snf_with_transform(Lflag_in_bigL)
     flag_projectionZ = coordinates(flag_projection, Lflag)
     tmp = zeros_array(QQ, ncols(flag_projectionZ))
     target_norm_i = Set(n[w+i-1] for n in target_norms)
@@ -1143,43 +1147,66 @@ function _short_vectors_with_condition_QQ(L::ZZLat, proj::Vector{QQMatrix}, targ
     end
     ma = maximum(target_norm_i)
     mi = minimum(i for i in target_norm_i if !iszero(i);init=ma)
-    # make up for the fact that short_vectors returns only non-zero vectors.
-    if ZZ(0) in keys(target_norm)
-      for a in target_norm[ZZ(0)]
-        SV = short_vectors1[a]
-        push!(a, zeroZZ)
-        for b in SV
-          if _is_product_integral(b, flag_projectionZ, tmpv, tmpZZ)
-            push!(short_vectors2[a], deepcopy(b))
-          end
+    # prepare gluing data
+    short_vectors1_extra = Dict{Tuple{Vector{ZZRingElem},ZZRingElem},Dict{Vector{ZZRingElem}, Vector{Vector{QQFieldElem}}}}()
+    for k1 in keys(short_vectors1)
+      for a in short_vectors1[k1]
+        b = mul!(tmp, a, flag_projectionZ)
+        d = _denominator(b)
+        k2 = mod.(mul!.(b,d), d)
+        # take into account that short_vectors returns only non-zero vectors.
+        if zeroZZ in keys(target_norm) && k1 in target_norm[zeroZZ] && iszero(k2)
+          push!(k1, zeroZZ)
+          push!(short_vectors2[k1], deepcopy(a))
+          pop!(k1)
         end
-        pop!(a)
+        k = (k2, d)
+        if k in keys(short_vectors1_extra)
+          D = short_vectors1_extra[k]
+          if k1 in keys(D)
+            push!(D[k1], a)
+          else
+            D[k1] = [a]
+          end
+        else
+          short_vectors1_extra[k] = Dict(k1=>[a])
+        end
       end
     end
     a = zeros_array(QQ, ncols(basis_matrix(projL[i])))
     Gi = ZZ.(gram_matrix(projL[i])) # already lll reduced
-    #for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)  #why is this not working?
-    for (s, q) in _short_vectors_gram_nolll_integral(LatEnumCtx, Gi, mi, ma, nothing, 1, Int )
-      q_num = ZZ(q)
-      q_num in target_norm_i || continue
-      a = mul!(a, s, basis_matrix(projL[i])) # a = s*basis_matrix(projL[i])
-      for t in target_norm[q_num]
-        SV = short_vectors1[t]
-        push!(t, q_num)
-        for b in SV
-          c = add!(tmp2, b, a)
-          if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-            push!(short_vectors2[t], deepcopy(c))
+    for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, QQFieldElem)
+      q in target_norm_i || continue
+      a = mul!(a, s, basis_matrix(projL[i]))
+      b = mul!(tmp, a, flag_projectionZ)
+      d = _denominator(b)
+      b = mod!.(mul!(b, d), d)
+      k1plus = (b, d)
+      k1minus = (mod!.(-b,d), d)
+      if k1plus in keys(short_vectors1_extra)
+        D = short_vectors1_extra[k1plus]
+        for t in target_norm[q]
+          t in keys(D) || continue
+          Dt = D[t]
+          push!(t, q)
+          for b in Dt
+            push!(short_vectors2[t], b-a)
           end
-          if !iszero(b)
-            c = sub!(tmp2, b, a)
-            #if _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ)
-            if _is_product_integral(c, flag_projectionZ, tmpv, tmpZZ)
-              push!(short_vectors2[t], deepcopy(c))
-            end
-          end
+          pop!(t)
         end
-        pop!(t)
+      end
+      if k1minus in keys(short_vectors1_extra)
+        D = short_vectors1_extra[k1minus]
+        for t in target_norm[q]
+          t in keys(D) || continue
+          iszero(t) && continue # avoid overcounting
+          Dt = D[t]
+          push!(t, q)
+          for b in Dt
+            push!(short_vectors2[t], b+a)
+          end
+          pop!(t)
+        end
       end
     end
     if search_new_invariant_vectors
@@ -1301,9 +1328,9 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
   tmp_invariant_vec = zeros_array(ZZ, n)
   tmpQQmat = zero_matrix(QQ, 1, n)
   for i in 2:k
-    short_vectors2 = Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}}}()
+    short_vectors2 = Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int, Vector{Int}}, Int}}}()
     for a in Set(n[1:w+i-1] for n in target_norms)
-      short_vectors2[a] = Tuple{LinearAlgebra.Adjoint{Int64, Vector{Int64}}, Int}[]
+      short_vectors2[a] = Tuple{LinearAlgebra.Adjoint{Int, Vector{Int}}, Int}[]
     end
 
     flag_projection = flag_projection + proj[i]
@@ -1323,6 +1350,28 @@ function _short_vectors_with_condition_int(L::ZZLat, proj::Vector{QQMatrix}, tar
         target_norm[a] = Set([b])
       end
     end
+    #=
+    # prepare gluing data
+    short_vectors1_extra = Dict{Tuple{Matrix{Int},Int},Dict{Vector{Int}, Vector{Tuple{LinearAlgebra.Adjoint{Int, Vector{Int}}, Int}}}}()
+    for k1 in keys(short_vectors1)
+      for a in short_vectors1[k1]
+        b = a[1]*flag_projectionZmat
+        k2 = mod.(b, a[2])
+        k = (k2, a[2])
+        if k in keys(short_vectors1_extra)
+          D = short_vectors1_extra[k]
+          if k1 in keys(D)
+            push!(D[k1], a)
+          else
+            D[k1] = [a]
+          end
+        else
+          short_vectors1_extra[k] = Dict(k1=>[a])
+        end
+      end
+    end
+    =#
+
     ma = maximum(target_norm_i)
     mi = minimum(i for i in target_norm_i if !iszero(i);init=ma) #does this hurt or help?
     if 0 in keys(target_norm)
@@ -1604,3 +1653,12 @@ function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
   return all(isone(denominator!(tmp, i)) for i in x)
 end
 
+
+function _denominator(v::Vector{QQFieldElem})
+  z = one(ZZ)
+  tmp = ZZ()
+  for i in 1:length(v)
+    z = lcm!(z, z, denominator!(tmp, v[i]))
+  end
+  return z
+end
