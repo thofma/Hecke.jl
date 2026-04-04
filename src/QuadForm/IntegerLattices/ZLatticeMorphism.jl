@@ -173,10 +173,6 @@ function __assert_has_automorphisms(
     end
   end
 
-  # if any(is_zero, res)
-  #   @info "something is zero"
-  # end
-
   if compress && length(res) > 1 # nothing to compress if there is only a single gram
     # res = [G_1,...,G_r]
     # G_1 is the Gram matrix of the lattice
@@ -186,9 +182,9 @@ function __assert_has_automorphisms(
 
     if use_weyl && gram_weyl_vector !== nothing
       index_gram_weyl_in_res = findfirst(==(gram_weyl_vector::ZZMatrix), res)
-      res, vector_set = _compress_gram_matrices(res, vector_set, index_gram_weyl_in_res)
+      res, vector_set = _compress_gram_matrices!(res, vector_set, index_gram_weyl_in_res)
     else
-      res, vector_set = _compress_gram_matrices(res, vector_set)
+      res, vector_set = _compress_gram_matrices!(res, vector_set)
     end
   end
   if get_assertion_level(:Lattice) > 1
@@ -201,7 +197,7 @@ function __assert_has_automorphisms(
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, force=false)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set)
     #@assert fl
     if fl
       _gens, order = auto(Csmall)
@@ -260,104 +256,131 @@ function __assert_has_automorphisms(
   return nothing
 end
 
-function _compress_gram_matrices(res::Vector{ZZMatrix}, vector_set::Vector, faithful = nothing)
-  if length(res) <= 2
+# Given gram matrices G1,...,Gn, we construct
+# - G1, a_2G_2 + ... + a_nG_n with a_i small and random, if faithful === nothing
+# - G1 + lambda * Gi0, a_2G_2 + ... + a_nG_n with a_i small and random, if faithful = i0::Int
+#   such that lambda is "large enough"
+function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector, faithful = nothing)
+
+  # determine the bound for the size of the gram matrix
+  arangebit = 3
+  arange = -2^arangebit-1:2^arangebit-1
+  bitbound = Int == Int64 ? 64 : 32
+  r = nrows(res[1])
+  nrows_nbits = nbits(r)
+  vectors_nbits = 0
+  for (v, _) in vector_set
+    vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
+  end
+  # we want Gsmall_nbits + vectors_nbits + nrows_nbits + 1 <= bitbound
+  # (this is the bound checked in try_small_init)
+  # so Gsmall_nbits <= bitbound - vectors_nbits - nrows_nbits - 1
+  # assume we combine r matrices with coefficients with 3 bits, then each Gram G
+  # matrix must satisfy
+  # 3 + nbits(r) + Gnbits <= bitbound - vectors_nbits - nrows_nbits - 1
+  # Gnbits <= bitbound - vector_nbits - nrows_nbits - 1 - 3 - nbits(r)
+  gramnbitsbound = bitbound - vectors_nbits - nrows_nbits - 1 - arangebit - nbits(length(res) - (faithful isa Int ? 2 : 1))
+  if faithful === nothing
+    I = collect(2:length(res))
+  else
+    I = setdiff(1:length(res), [1, faithful::Int])
+  end
+  II = filter(i -> maximum(nbits, res[i]) <= gramnbitsbound, I)
+
+  if maximum(nbits, res[1]) <= gramnbitsbound && length(II) < length(I)
+    error("Some Gram matrices are too large. Interesting case?!")
+    @vprintln :Lattice 1  "Removed Gram matrices with entries too large"
+  end
+  I = II
+
+  if length(I) == 0
     return res, vector_set
   end
-  r = nrows(res[1])
+
   if faithful === nothing # we just compress res[2],...,r[end]
-    res_to_compress = @view res[2:end]
+    res_to_compress = @view res[I]
     l = length(res_to_compress)
-    a = rand(-10:10, l)
+    a = rand(arange, l)
+    while any(iszero, a)
+      a = rand(arange, l)
+    end
     anbits = maximum(nbits, a)
     rnbits = nbits(r)
-    maxnbitsbound = 8 * sizeof(Int) - anbits - rnbits - 2 # -2 for good measure
+    normbitbound = 8 * sizeof(Int) - 1 - arangebit
     for (i, (v, n)) in enumerate(vector_set)
-      w = n[2:end]
+      w = n[I]
       wnbits = maximum(nbits, w)
-      @assert wnbits < maxnbitsbound
+      @assert wnbits <= normbitbound
+      d = dot(a, w)
       resize!(n, 2)
-      n[2] = dot(a, w)
+      n[2] = d
     end
     Gcompressed = sum(a[i]*res_to_compress[i] for i in 1:l)
     res = [res[1], Gcompressed]
     return res, vector_set
   end
 
-  i0 = faithful::Int #
-  keep_faithful = false # we might find out that we cannot compress res[i0]
+  i0 = faithful::Int
+  keep_separated = false # we might find out that we cannot compress res[1] and res[i0]
 
-  l = length(res)
-  grambound = ZZ(0)
-  a = rand(-10:10, l) # we will only use a[2],...,a[l], but for indexing reasoons we make it larger
-  for i in 2:l
-    if i == i0
-      continue
-    end
-    grambound += abs(a[i]) * sum(abs, res[i])
-  end
-  Sbound = maximum(i -> maximum(abs, i[2]), vector_set) # a bit crude, since we take all components
+  # we try to compress res[1] and res[i0], such that we are "faithful"
+  grambound = sum(abs, res[1])
+  Sbound = maximum(i -> max(abs(i[2][1]), abs(i[2][i0])), vector_set)
   _lambda = 8 * ZZ(Sbound)^2 * grambound + 1
-  # TODO: once we hit this assertion, we need to
-  # (a) sharpen the bound (2-norms); or
-  # (b) pass to ZZ instead of Int (probably not a good idea); or
-  # (c) try to compress fewer matrices
-  if fits(Int, _lambda)
-    a[i0] = Int(_lambda)
-    # cannot compress all gram matrices, so keep weyl one separate
-  else
-    a[i0] = 0
-    keep_faithful = true
-  end
-
-  anbits = maximum(nbits, a)
-  rnbits = nbits(r)
-
-  if !keep_faithful
-    # have to check whether the new norms fit into Int
-    maxnbitsbound = 8 * sizeof(Int) - anbits - rnbits - 1 # -1 for good measure
+  # this test could be sped up
+  if fits(Int, _lambda) && all(x -> fits(Int, x), _lambda * res[1] + res[i0])
+    lambda = Int(_lambda)
+    # we also need to check whether the new norms fit into Int
+    lambdabits = nbits(lambda)
+    maxnbitsbound = 8 * sizeof(Int) - lambdabits - 3 #
     for (i, (v, n)) in enumerate(vector_set)
-      w = n[2:end]
-      wnbits = maximum(nbits, w)
+      wnbits = max(nbits(n[1]), nbits(n[i0]))
       if wnbits > maxnbitsbound
         # norm is getting too large, abort
-        keep_faithful = true
+        error("interesting example")
+        keep_separated = true
         break
       end
     end
+  else
+    keep_separated = true
   end
 
-  aI = a[2:end]
-  if !keep_faithful
-    # now compress
-    @assert a[i0] != 0
-    Gcompressed = sum(a[i]*res[i] for i in 2:l)
-    res = [res[1], Gcompressed]
+  if !keep_separated
+    a = rand(arange, length(I))
+    while any(is_zero, a)
+      a = rand(arange, length(I))
+    end
+    # avoid overflow
+    Gcompressed = sum(a[i]*res[I[i]] for i in 1:length(I))
+    res = [res[1] + lambda * res[i0], Gcompressed]
     for (i, (v, n)) in enumerate(vector_set)
-      w = n[2:end]
-      wnbits = maximum(nbits, w)
+      w = copy(n[I])
+      n[1] = n[1] + lambda * n[i0]
+      n[2] = dot(a, w)
       resize!(n, 2)
-      n[2] = dot(aI, w)
     end
     return res, vector_set
   end
 
-  # can't compress in a way that preserves the additonal gram matrix
+  # can't compress G1 and Gi0 without making everything too large
+  # so we keep them separated
 
   if length(res) == 3
     return res, vector_set
   end
 
-  Gcompressed = sum(a[i]*res[i] for i in 2:l if i != i0)
-  I = [i for i in 2:l if i != i0]
-  aI = a[I]
+  a = rand(arange, length(I))
+  while any(is_zero, a)
+    a = rand(arange, length(I))
+  end
+  Gcompressed = sum(a[i]*res[I[i]] for i in 1:length(I))
   res = [res[1], res[i0], Gcompressed]
   for (i, (v, n)) in enumerate(vector_set)
     w = n[I]
-    wnbits = maximum(nbits, w)
     n[2] = n[i0]
     resize!(n, 3)
-    n[3] = dot(aI, w)
+    n[3] = dot(a, w)
   end
   return res, vector_set
 end
