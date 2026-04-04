@@ -300,8 +300,7 @@ function try_init_small(
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
   vector_set = [], #Tuple{Vector{Int},Vector{Int}}[] # do this?
-  D::ZLatAutoCtx=C,
-  force::Bool = false
+  D::ZLatAutoCtx=C
  )
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
   if bound == -1
@@ -325,7 +324,7 @@ function try_init_small(
 
   r = length(C.G)
 
-  Gsmall = Matrix{Int}[[BigInt(x) % Int for x in g] for g in C.G]
+  Gsmall = Matrix{Int}[Matrix{Int}(g) for g in C.G]
 
   Gsmall_nbits = 0
   for k in 1:r
@@ -349,14 +348,13 @@ function try_init_small(
     lengths = [x[2] for x in vector_set]
     # we need to compute the bound on the size of the vector entries
     for v in vectors
-
       vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
 
-      if !force && vectors_nbits > abs_maxbits_vectors
+      if vectors_nbits > abs_maxbits_vectors
         return false, Csmall
       end
 
-      if !force && Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
         return false, Csmall
       end
     end
@@ -385,11 +383,11 @@ function try_init_small(
         v .*= -1
       end
 
-      if !force && vectors_nbits > abs_maxbits_vectors
+      if vectors_nbits > abs_maxbits_vectors
         return false, Csmall
       end
 
-      if !force && Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
         return false, Csmall
       end
 
