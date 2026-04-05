@@ -2,9 +2,6 @@ import Hecke: divisor
 
 @testset "Divisors" begin
 
-  # NOTE: currently we cannot quite use @inferred of gcd/lcm
-  #   due to GenOrd losing type stability on ideal operations
-  #   this will be fixed later separately
   @testset "Basic Operations" begin
     kx, x = rational_function_field(QQ, :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
@@ -26,24 +23,27 @@ import Hecke: divisor
 
     D1 = d1 + 5*d2
     D2 = d1 + 2*d2 - 3*d3
-    @test gcd(D1, D2) == d1 + 2*d2 - 3*d3
-    @test gcd(D1, D2) == gcd(D2, D1)
-    @test lcm(D1, D2) == d1 + 5*d2
-    @test lcm(D1, D2) == lcm(D2, D1)
+    @test @inferred(gcd(D1, D2)) == d1 + 2*d2 - 3*d3
+    @test @inferred(gcd(D1, D2)) == gcd(D2, D1)
+    @test @inferred(lcm(D1, D2)) == d1 + 5*d2
+    @test @inferred(lcm(D1, D2)) == lcm(D2, D1)
+    @test @inferred(lcm(D1, D2) + gcd(D1, D2)) == D1 + D2
 
     D1 = d1 + 3*d4
     D2 = 2*d1 - 3*d3
-    @test gcd(D1, D2) == d1 - 3*d3
-    @test gcd(D1, D2) == gcd(D2, D1)
-    @test lcm(D1, D2) == 2*d1 + 3*d4
-    @test lcm(D1, D2) == lcm(D2, D1)
+    @test @inferred(gcd(D1, D2)) == d1 - 3*d3
+    @test @inferred(gcd(D1, D2)) == gcd(D2, D1)
+    @test @inferred(lcm(D1, D2)) == 2*d1 + 3*d4
+    @test @inferred(lcm(D1, D2)) == lcm(D2, D1)
+    @test @inferred(lcm(D1, D2) + gcd(D1, D2)) == D1 + D2
 
     D1 = d1 - 3*d4
     D2 = 2*d1
-    @test gcd(D1, D2) == D1
-    @test gcd(D2, D1) == D1
-    @test lcm(D1, D2) == 2*d1
-    @test lcm(D1, D2) == lcm(D2, D1)
+    @test @inferred(gcd(D1, D2)) == D1
+    @test @inferred(gcd(D2, D1)) == D1
+    @test @inferred(lcm(D1, D2)) == 2*d1
+    @test @inferred(lcm(D1, D2)) == lcm(D2, D1)
+    @test @inferred(lcm(D1, D2) + gcd(D1, D2)) == D1 + D2
   end
 
   @testset "Not Separable Extension" begin

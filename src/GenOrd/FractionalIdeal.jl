@@ -108,7 +108,7 @@ end
 #
 ################################################################################
 
-function assure_has_numerator_and_denominator(a::GenOrdFracIdl)
+function assure_has_numerator_and_denominator(a::GenOrdFracIdl{S, T}) where {S, T}
   if isdefined(a, :num) && isdefined(a, :den)
     return nothing
   end
@@ -118,7 +118,7 @@ function assure_has_numerator_and_denominator(a::GenOrdFracIdl)
 
   B, d = integral_split(basis_matrix(a, copy = false), coefficient_ring(order(a)))
   a.num = GenOrdIdl(order(a), B)
-  a.den = d
+  a.den = d::elem_type(T)
   return nothing
 end
 
@@ -127,13 +127,9 @@ function Base.numerator(x::GenOrdFracIdl; copy::Bool = true)
   return x.num
 end
 
-function Base.denominator(x::GenOrdFracIdl; copy::Bool = true)
+function Base.denominator(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T}
   assure_has_numerator_and_denominator(x)
-  if copy
-    return deepcopy(x.den)
-  else
-    return x.den
-  end
+  return (copy ? deepcopy(x.den) : x.den)::elem_type(T)
 end
 
 
@@ -145,34 +141,31 @@ end
 ################################################################################
 
 
-function Base.prod(a::T, b::T) where T <: GenOrdFracIdl
+function Base.prod(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   A = numerator(a)*numerator(b)
   return GenOrdFracIdl(A, denominator(a)*denominator(b))
 end
 
-Base.:*(A::T, B::T) where T <: GenOrdFracIdl = prod(A, B)
+function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  return prod(a, b)
+end
 
+function Base.:(+)(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
+  d = lcm(den_a, den_b)
 
-function Base.:(+)(a::T, b::T) where T <: GenOrdFracIdl
-  d = lcm(denominator(a; copy=false), denominator(b; copy=false))
-
-  ma = divexact(d, denominator(a; copy=false))
-  I  = order(a)(ma) * numerator(a; copy=false)
-
-  mb = divexact(d, denominator(b; copy=false))
-  J  = order(b)(mb) * numerator(b; copy=false)
+  I  = order(a)(divexact(d, den_a)) * numerator(a; copy=false)
+  J  = order(b)(divexact(d, den_b)) * numerator(b; copy=false)
 
   return GenOrdFracIdl(I + J, d)
 end
 
-function Base.intersect(a::T, b::T) where T <: GenOrdFracIdl
-  d = lcm(denominator(a; copy=false), denominator(b; copy=false))
+function Base.intersect(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
+  d = lcm(den_a, den_b)
 
-  ma = divexact(d, denominator(a; copy=false))
-  I  = order(a)(ma) * numerator(a; copy=false)
-
-  mb = divexact(d, denominator(b; copy=false))
-  J  = order(b)(mb) * numerator(b; copy=false)
+  I  = order(a)(divexact(d, den_a)) * numerator(a; copy=false)
+  J  = order(b)(divexact(d, den_b)) * numerator(b; copy=false)
 
   return GenOrdFracIdl(intersect(I, J), d)
 end

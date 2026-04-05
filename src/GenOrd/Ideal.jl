@@ -149,14 +149,9 @@ end
 
 Return the basis matrix of $A$.
 """
-function Hecke.basis_matrix(A::GenOrdIdl; copy::Bool = true)
+function Hecke.basis_matrix(A::GenOrdIdl{S, T}; copy::Bool = true) where {S, T}
   assure_has_basis_matrix(A)
-  if copy
-    B = deepcopy(A.basis_matrix)
-    return B
-  else
-    return A.basis_matrix
-  end
+  return (copy ? deepcopy(A.basis_matrix) : A.basis_matrix)::dense_matrix_type(elem_type(T))
 end
 
 function assure_has_basis_matrix(A::GenOrdIdl)
@@ -250,7 +245,7 @@ end
 ################################################################################
 
 
-function Base.:(+)(a::GenOrdIdl, b::GenOrdIdl)
+function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
   if iszero(a)
@@ -265,10 +260,14 @@ function Base.:(+)(a::GenOrdIdl, b::GenOrdIdl)
   return GenOrdIdl(a.order, V[d+1:2*d,1:d])
 end
 
-Base.:(==)(a::GenOrdIdl, b::GenOrdIdl) = hnf(basis_matrix(a),:lowerleft) == hnf(basis_matrix(b),:lowerleft)
-Base.isequal(a::GenOrdIdl, b::GenOrdIdl) = a == b
+function Base.:(==)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  return hnf(basis_matrix(a),:lowerleft) == hnf(basis_matrix(b),:lowerleft)
+end
+function Base.isequal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  return a == b
+end
 
-function Base.:(*)(a::GenOrdIdl, b::GenOrdIdl)
+function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
@@ -282,7 +281,7 @@ end
 
 Returns $x \cap y$.
 """
-function Base.intersect(a::GenOrdIdl, b::GenOrdIdl)
+function Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 #TODO: Check for new hnf
   M1 = hcat(basis_matrix(a), basis_matrix(a))
   d = nrows(M1)
@@ -321,9 +320,11 @@ function Base.:*(x::GenOrdElem, O::GenOrd)
   return ideal(O, x)
 end
 
-function Base.:*(x::GenOrdElem, y::GenOrdIdl)
+function Base.:*(x::GenOrdElem, y::GenOrdIdl{S, T}) where {S, T}
   parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
-  return GenOrdIdl(parent(x), x) * y
+  # note that we use order(y) and not parent(x),
+  #   because it provides concrete GenOrd{S,T} for type inference
+  return GenOrdIdl(order(y), x) * y
 end
 
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
