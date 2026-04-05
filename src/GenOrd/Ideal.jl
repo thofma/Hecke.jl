@@ -626,7 +626,7 @@ function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generi
 end
 
 
-function Hecke.valuation(p::GenOrdIdl,A::GenOrdIdl)
+function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = order(A)
   e = 0
   if has_2_elem(p)
@@ -654,7 +654,7 @@ function Hecke.factor(A::GenOrdIdl)
   primes = Dict{GenOrdIdl,Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
-      p_val = valuation(p,A)
+      p_val = valuation(A, p)
       if p_val != 0
         primes[p] = p_val
       end
@@ -720,7 +720,7 @@ function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p:
   for j in 1:length(ideals)
     P = ideals[j][1]
     f = P.splitting_type[2]
-    e = valuation(P,GenOrdIdl(O,p))
+    e = valuation(GenOrdIdl(O,p), P)
     P.splitting_type = e, f
     ideals[j] = (P,e)
   end

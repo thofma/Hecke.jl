@@ -356,7 +356,7 @@ function Hecke.factor(A::GenOrdFracIdl)
   primes = Dict{GenOrdIdl,Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
-      p_val = valuation(p,A_num) - valuation(p, A_den)
+      p_val = valuation(A_num, p) - valuation(A_den, p)
       if p_val != 0
         primes[p] = p_val
       end
@@ -366,3 +366,9 @@ function Hecke.factor(A::GenOrdFracIdl)
   return primes
 end
 
+function Hecke.valuation(A::GenOrdFracIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
+  O = A.order
+  A_num = numerator(A)
+  A_den = ideal(O, denominator(A))
+  return valuation(A_num, p) - valuation(A_den, p)
+end

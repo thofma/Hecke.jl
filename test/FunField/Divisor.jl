@@ -3,47 +3,74 @@ import Hecke: divisor
 @testset "Divisors" begin
 
   @testset "Basic Operations" begin
-    kx, x = rational_function_field(QQ, :x; cached = false)
-    ky, y = polynomial_ring(kx, :y; cached = false)
-    F, a = function_field(y^2 - x; cached = false)
-    Ofin = finite_maximal_order(F)
-    Oinf = infinite_maximal_order(F)
+    for base_field in [QQ, finite_field(2, 4)[1], finite_field(101)[1]]
+      kx, x = rational_function_field(base_field, :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
 
-    p1 = ideal(Ofin, x-2)
-    p2 = ideal(Ofin, x-3)
-    p3 = ideal(Ofin, x-4)
-    p4, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
+      F, a = function_field(y^3 - x^3 - 1; cached = false)
+      Ofin = finite_maximal_order(F)
+      Oinf = infinite_maximal_order(F)
 
-    d1, d2, d3, d4 = divisor.((p1, p2, p3, p4))
+      p1, _ = first(factor(ideal(Ofin, x-1)))
+      p2    = ideal(Ofin, x^2+x+1)
+      p3    = ideal(Ofin, x-3, Ofin(a+3))
+      p4, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
 
-    D1 = trivial_divisor(F)
-    D2 = d1 - d2
-    @test !(D1 < D2)
-    @test !(D2 < D1)
+      d1, d2, d3, d4 = divisor.((p1, p2, p3, p4))
+      Hecke.assure_has_support.((d1, d2, d3, d4))
 
-    D1 = d1 + 5*d2
-    D2 = d1 + 2*d2 - 3*d3
-    @test @inferred(gcd(D1, D2)) == d1 + 2*d2 - 3*d3
-    @test @inferred(gcd(D1, D2)) == gcd(D2, D1)
-    @test @inferred(lcm(D1, D2)) == d1 + 5*d2
-    @test @inferred(lcm(D1, D2)) == lcm(D2, D1)
-    @test @inferred(lcm(D1, D2) + gcd(D1, D2)) == D1 + D2
+      D1 = trivial_divisor(F)
+      D2 = d1 - d2 # note that this is guaranteed to be non-trivial
+      @test !(D1 < D2)
+      @test !(D2 < D1)
 
-    D1 = d1 + 3*d4
-    D2 = 2*d1 - 3*d3
-    @test @inferred(gcd(D1, D2)) == d1 - 3*d3
-    @test @inferred(gcd(D1, D2)) == gcd(D2, D1)
-    @test @inferred(lcm(D1, D2)) == 2*d1 + 3*d4
-    @test @inferred(lcm(D1, D2)) == lcm(D2, D1)
-    @test @inferred(lcm(D1, D2) + gcd(D1, D2)) == D1 + D2
+      D1 = d1 + 5*d2
+      D2 = d1 + 2*d2 - 3*d3
+      Dgcd = @inferred(gcd(D1, D2))
+      Dlcm = @inferred(lcm(D1, D2))
 
-    D1 = d1 - 3*d4
-    D2 = 2*d1
-    @test @inferred(gcd(D1, D2)) == D1
-    @test @inferred(gcd(D2, D1)) == D1
-    @test @inferred(lcm(D1, D2)) == 2*d1
-    @test @inferred(lcm(D1, D2)) == lcm(D2, D1)
-    @test @inferred(lcm(D1, D2) + gcd(D1, D2)) == D1 + D2
+      @test Dgcd == d1 + 2*d2 - 3*d3
+      @test Dgcd == gcd(D2, D1)
+      @test Dlcm == d1 + 5*d2
+      @test Dlcm == lcm(D2, D1)
+      @test Dgcd + Dlcm == D1 + D2
+
+      @test valuation(Dgcd, p1) == valuation(Dgcd.finite_ideal, p1)
+      @test valuation(Dgcd, p4) == valuation(Dgcd.infinite_ideal, p4)
+      @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
+      @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
+
+      D1 = d1 + 3*d4
+      D2 = 2*d1 - 3*d3
+      Dgcd = @inferred(gcd(D1, D2))
+      Dlcm = @inferred(lcm(D1, D2))
+
+      @test Dgcd == d1 - 3*d3
+      @test Dgcd == gcd(D2, D1)
+      @test Dlcm == 2*d1 + 3*d4
+      @test Dlcm == lcm(D2, D1)
+      @test Dgcd + Dlcm == D1 + D2
+
+      @test valuation(Dgcd, p1) == valuation(Dgcd.finite_ideal, p1)
+      @test valuation(Dgcd, p4) == valuation(Dgcd.infinite_ideal, p4)
+      @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
+      @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
+
+      D1 = d1 - 3*d4
+      D2 = 2*d1
+      Dgcd = @inferred(gcd(D1, D2))
+      Dlcm = @inferred(lcm(D1, D2))
+      @test Dgcd == D1
+      @test Dgcd == gcd(D2, D1)
+      @test Dlcm == 2*d1
+      @test Dlcm == lcm(D2, D1)
+      @test Dgcd + Dlcm == D1 + D2
+
+      @test valuation(Dgcd, p1) == valuation(Dgcd.finite_ideal, p1)
+      @test valuation(Dgcd, p4) == valuation(Dgcd.infinite_ideal, p4)
+      @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
+      @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
+    end
   end
 
   @testset "Not Separable Extension" begin
@@ -68,7 +95,7 @@ import Hecke: divisor
   end
 
   @testset "Riemann-Roch" begin
-    for base_field in [QQ, finite_field(2,4)[1], finite_field(5, 2)[1], finite_field(101)[1]]
+    for base_field in [QQ, finite_field(2, 4)[1], finite_field(5, 2)[1], finite_field(101)[1]]
       kx, x = rational_function_field(base_field, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^17 - 1]
