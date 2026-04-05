@@ -67,6 +67,42 @@ import Hecke: divisor
     @test_throws ArgumentError Hecke.genus(F)
   end
 
+  @testset "Riemann-Roch" begin
+    for base_field in [QQ, finite_field(2,4)[1], finite_field(5, 2)[1], finite_field(101)[1]]
+      kx, x = rational_function_field(base_field, :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^17 - 1]
+        F, a = function_field(poly; cached = false)
+        Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
+
+        g = genus(F)
+        CD = canonical_divisor(F)
+
+        p1, _ = @inferred first(factor(ideal(Ofin, x - 13)))
+        p2, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
+        D1, D2 = divisor(p1), divisor(p2)
+
+        # Riemann-Roch: l(D) - l(K-D) = deg(D) - g + 1
+        for n in -3:3
+          D = n*D1 + D2
+          @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
+          D = D1 + n*D2
+          @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
+        end
+
+        # 2 * (l(K) - l(0)) = deg(K) - deg(0)
+        @test degree(CD) == 2*g - 2
+        @test degree(trivial_divisor(F)) == 0
+        @test dimension(CD) - dimension(trivial_divisor(F)) == g - 1
+
+        # l(D) = 0 for deg(D) < 0
+        @test dimension(-3*D1) == 0
+        @test dimension(-D2) == 0
+        @test dimension(-D1 - 3*D2) == 0
+      end
+    end
+  end
+
     @testset "Algebraic function field over rationals (1)" begin
       kx, x = rational_function_field(QQ, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
