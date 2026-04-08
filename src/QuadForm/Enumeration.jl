@@ -1054,3 +1054,4 @@ floor!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(floor(x))
 isqrt!(z::Int, x::Int) = isqrt(x)
 
 ceil!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(ceil(x))
+

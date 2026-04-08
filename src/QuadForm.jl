@@ -49,6 +49,7 @@ include("QuadForm/Herm/LocallyIsometricSublattice.jl")
 include("QuadForm/Morphism.jl")
 include("QuadForm/Database.jl")
 include("QuadForm/Enumeration.jl")
+include("QuadForm/IntegralFinckePohst.jl")
 include("QuadForm/LineOrbits.jl")
 
 # Close and short vectors

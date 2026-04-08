@@ -1850,7 +1850,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     tmp_u1 = __zeros_array(CoeffType, ncols(VfLi))
     tmp_u2 = __zeros_array(CoeffType, ncols(VfLi))
     tmp_s = __zeros_array(CoeffType, ncols(Gi))
-    for (s, q) in __enumerate_gram(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)
+    for (s, q) in __enumerate_gram_fp(LatEnumCtx, Gi, mi, ma, QQFieldElem, identity, identity, Int)
       # This is the innermost loop - do as little as possible here
       q in target_norm_i || continue
       if CoeffType===ZZRingElem
@@ -2019,3 +2019,84 @@ end
 
 @inline __not_adj(x::Vector{ZZRingElem}) = x
 @inline __not_adj(x) = x'
+
+## Directly via enumeration
+
+function short_vectors_with_condition_direct(T::Type,
+                                      L::ZZLat;
+                                      search_new_invariant_vectors::Bool=true)
+  proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
+  return _short_vectors_with_condition_direct(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
+end
+
+function _short_vectors_with_condition_direct(T::Type{Int},
+                                      L::ZZLat,
+                                      proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
+                                      target_norms::Vector{Vector{ZZRingElem}},
+                                      denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix};
+                                      search_new_invariant_vectors::Bool=true)
+  denoms_Int = Int.(denoms)
+  target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
+  target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
+  return _short_vectors_with_condition_direct_integral(L,
+                                           proj,
+                                           target_invariant_Int,
+                                           target_norms_Int,
+                                           denoms_Int,
+                                           grams;
+                                           search_new_invariant_vectors)
+
+end
+
+function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true) where {CoeffType <: Union{Int, ZZRingElem}}
+  G = ZZ.(gram_matrix(L))
+  M = Int(maximum(diagonal(G)))
+  gramsint = [Matrix{Int}(g) for g in grams]
+  sv = _short_vectors_gram_finckepohstint(G, 0, M; normtype = Int)
+  targetinvs3 = Set((v, n) for (v, n) in target_invariant)
+  targetinvs2 = Set{Tuple{Vector{Int}, Vector{Int}}}()
+  for (v, n) in target_invariant
+    vv, d = integral_split(v, ZZ)
+    push!(targetinvs2, (push!(Int.(vv), Int(d)), n))
+  end
+  #targetinvs = Set(target_invariant)
+  ww = zeros(Int, length(sv[1][1]))
+  l = length(target_invariant[1][2])
+  k = length(grams)
+  www = zeros_array(QQ, nrows(G))
+  projint, d = integral_split(proj[1], ZZ)
+  projintt = Matrix(Matrix{Int}(projint)')
+  projrat = Matrix{Rational{Int}}(proj[1])'
+  wwwww = zeros(Int, nrows(G) + 1)
+  nn = nrows(G)
+  tempnorm = zeros(Int, k)
+  tempnormshort = view(tempnorm, 1:l)
+  res = Tuple{Vector{CoeffType}, Vector{Int}}[]
+
+  for (v, _) in sv
+    LinearAlgebra.mul!(view(wwwww, 1:nn), projintt, v)
+    wwwww[nn + 1] = d
+    gg = gcd(wwwww)
+
+    if gg != 1
+      for i in 1:nn+1
+        wwwww[i] = divexact(wwwww[i], gg)
+      end
+    end
+    _canonicalize_finckepohstint!(wwwww, nn)
+    #@assert wwww == wwwww
+
+    for i in 1:l
+      tempnormshort[i] = dot(v, LinearAlgebra.mul!(ww, gramsint[i], v))
+    end
+
+    (wwwww, tempnormshort) in targetinvs2 || continue
+    for i in (l + 1):k
+      tempnorm[i] = Int(dot(v, LinearAlgebra.mul!(ww, gramsint[i], v)))
+    end
+
+    tempnorm in target_norms || continue
+    push!(res, (v, copy(tempnorm)))
+  end
+  return res, grams, nothing, proj[1]
+end

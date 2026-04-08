@@ -173,8 +173,8 @@ end
   ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
   ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
   LL = [integer_lattice(gram=-g) for g in L]
-  @test length.(first.(Hecke.short_vectors_with_condition.(LL))) == [25, 42, 31, 53]
-
+  @test length.(first.(Hecke.short_vectors_with_condition.(LL; search_new_invariant_vectors = false))) == [25, 42, 31, 53]
+  @test length.(first.(Hecke.short_vectors_with_condition_direct.(Int, LL))) == [25, 42, 31, 53]
 
 
   function test_short_vectors_with_condition(L::ZZLat; search_new_invariant_vectors=false)
@@ -184,6 +184,7 @@ end
     _V2, grams, T, proj_root_inv = Hecke.short_vectors_with_condition(QQFieldElem, L;
                                                                       search_new_invariant_vectors)
     V2 = [(QQ.(i[1]), QQ.(i[2])) for i in _V2]
+
     @assert grams == _grams # check consistency between methods
     @assert T==_T
     # confirm consistency of the output
