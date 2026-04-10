@@ -720,11 +720,10 @@ end
 
 # return the root types of the root sublattice of L
 # and the basis matrices with respect to the basis of L
-function _root_lattice_recognition_fundamental(L::ZZLat, roots::Vector{Vector{ZZRingElem}})
-  fund = _fundamental_roots(roots)
-  Fund = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in fund]
-  G = ZZ.(gram_matrix(L))
-  comp = _connected_components_graph!(Fund, G)
+function _root_lattice_recognition_fundamental(L::ZZLat, fundamental_roots::Vector{ZZMatrix})
+  G, d = _integral_split_gram(L)
+  @assert isone(d)
+  comp = _connected_components_graph!(fundamental_roots, G)
   types = Tuple{Symbol,Int}[]
   basis_matrices = ZZMatrix[]
   for c in comp
@@ -737,7 +736,21 @@ function _root_lattice_recognition_fundamental(L::ZZLat, roots::Vector{Vector{ZZ
   return types[sp], basis_matrices[sp]
 end
 
-_root_lattice_recognition_fundamental(L::ZZLat) =  _root_lattice_recognition_fundamental(L , first.(short_vectors(L, 2)))
+function _root_lattice_recognition_fundamental(L::ZZLat)
+  G, d = _integral_split_gram(L)
+  d > 1 && error("lattice not integral")
+  if G[1,1]<0
+    G = -G
+  end
+  _short_vec = nothing
+  try
+    _short_vec = first.(_finckepohstint(G, 2))
+  catch InexactError
+    _short_vec = first.(_short_vectors_gram(Vector, QQ.(G), 0, 2, ZZRingElem))
+  end
+  fundamental_roots = [matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots(_short_vec)]
+  return _root_lattice_recognition_fundamental(L , fundamental_roots)
+end
 
 @doc raw"""
     ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}

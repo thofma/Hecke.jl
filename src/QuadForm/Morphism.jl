@@ -314,7 +314,6 @@ function try_init_small(
     Csmall.max = -1
   end
   @assert bound > 0
-
   # If one already knows all the short vectors of length at most equal to alpha
   #_alpha, _V = known_short_vectors
   #@assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
@@ -1882,17 +1881,17 @@ function matgen(x, dim, per, v)
 end
 
 # Isomorphism computation
-function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0, vector_set1=[], vector_set2=[])
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
   # Ci is the source
   # Co is the target
   # We only need to initialize the vector sums and Bacher polynomials for the
   # source lattice
-  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth)
+  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth; vector_set=vector_set1)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci)
+    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci, vector_set=vector_set2)
     if fl2
       return true, Cismall, Cosmall
     end

@@ -127,28 +127,7 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
-    weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
-    if length(grams) > 0
-      gram_weyl_vector = grams[end]
-    else
-      gram_weyl_vector = nothing
-    end
-    proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
-    V, grams = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
-    if get_assertion_level(:Lattice) > 1
-      for (v, n) in V
-        @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
-      end
-    end
-    append!(res, grams)
-    vector_set = [(v, vcat([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
-    if get_assertion_level(:Lattice) > 1
-      for (v, n) in vector_set
-        @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
-      end
-    end
-    @assert length(res) == length(vector_set[1][2])
+    res, vector_set, gram_weyl_vector, weyl_group_gens, weyl_group_order = _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors)
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
@@ -254,6 +233,32 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = order
   end
   return nothing
+end
+
+function _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors=true)
+  root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
+  weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
+  if length(grams) > 0
+    gram_weyl_vector = grams[end]
+  else
+    gram_weyl_vector = nothing
+  end
+  proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
+  V, grams = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
+  if get_assertion_level(:Lattice) > 1
+    for (v, n) in V
+      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+    end
+  end
+  res = pushfirst!(grams, _integral_split_gram(_L)[1])
+  vector_set = [(v, vcat([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
+  if get_assertion_level(:Lattice) > 1
+    for (v, n) in vector_set
+      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+    end
+  end
+  @assert length(res) == length(vector_set[1][2])
+  return res, vector_set, gram_weyl_vector, weyl_group_gens, weyl_group_order
 end
 
 # Given gram matrices G1,...,Gn, we construct
@@ -565,13 +570,13 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
   dL = denominator(GL)
   GLint = change_base_ring(ZZ, s * dL * GL)
   cL = content(GLint)
-  GLint = divexact(GLint, cL)
+  GLint = divexact!.(GLint, cL)
 
   GM = gram_matrix(M)
   dM = denominator(GM)
   GMint = change_base_ring(ZZ, s * dM * GM)
   cM = content(GMint)
-  GMint = divexact(GMint, cM)
+  GMint = divexact!.(GMint, cM)
 
   # GLint, GMint are integral, primitive scalings of GL and GM
   # If they are isometric, then the scalars must be identical.
@@ -590,7 +595,14 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
   G1 = ZZMatrix[GLlll]
   G2 = ZZMatrix[GMlll]
 
-  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth)
+  _L1 = integer_lattice(gram=G1[1];cached=false)
+  _L2 = integer_lattice(gram=G2[1];cached=false)
+  b, vector_set2, vector_set1, grams2, grams1 = short_vectors_with_condition(_L2, _L1)
+  if !b
+    return false, zero_matrix(QQ,0,0)
+  end
+
+  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth; vector_set1, vector_set2)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
@@ -814,26 +826,40 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
   isotypical_coinvariant_projections = QQMatrix[]
-  for t in Set(root_types)
-    inv_vec = _invariant_vectors(t...)
-    k = length(inv_vec)
-    V = [zero_matrix(ZZ, 1, rank(L)) for i in 1:k]
-    isotypic = zero_matrix(ZZ,0, rank(L))
-    for i in 1:length(root_types)
-      if root_types[i] == t
-        V = V + [v*fundamental_roots[i] for v in inv_vec]
-        isotypic = vcat(isotypic, fundamental_roots[i])  # how to do that allocation free?
-      end
+  F = reduce(vcat, fundamental_roots)
+  P = saturate(F)
+  D = solve(QQ.(F),QQ.(P); side=:left)
+  glue_indices = ZZRingElem[]
+  j = 0
+  for f in fundamental_roots
+    k = j+nrows(f)
+    d = denominator(view(D,j+1:k,:))
+    push!(glue_indices, d)
+    j = k
+  end
+  D = Dict()
+  for (t,g,f) in zip(root_types, glue_indices, fundamental_roots)
+    k = (t,g)
+    if k in keys(D)
+      push!(D[k], f)
+    else
+      D[k] = [f]
     end
+  end
+  for k in keys(D)
+    (t, d) = k
+    isotypic = reduce(vcat, D[k])
+    inv_vec = _invariant_vectors(t...)
+    invariant_vectors_k = sum([[t*f for t in inv_vec] for f in D[k]])
     isotypic_lattice = lattice_in_same_ambient_space(L, isotypic)
-    isotypic_cofix_lattice = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat,V))))
+    isotypic_cofix_lattice = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat, invariant_vectors_k))))
     to_isotypic_cofix = 1 - matrix(orthogonal_projection(ambient_space(L), isotypic_cofix_lattice))
     if !iszero(to_isotypic_cofix)
       push!(isotypical_coinvariant_projections, to_isotypic_cofix)
     end
-    append!(invariant_vectors, V)
+    append!(invariant_vectors, invariant_vectors_k)
   end
-  gramZ = ZZ.(gram_matrix(L))
+  gramZ,_ = _integral_split_gram(L)
   for v in invariant_vectors
     x = v*gramZ
     push!(invariant_grams, transpose(x)*x)
@@ -862,11 +888,14 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
 
   fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
   cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
-  to_fix = 1 - matrix(orthogonal_projection(amb, fixed_lattice))
+  to_fix = -matrix(orthogonal_projection(amb, fixed_lattice))::QQMatrix
+  for i in 1:ncols(to_fix)
+    to_fix[i,i]+=1
+  end
   #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
   @hassert :Lattice 1 rank(to_fix+sum(isotypical_coinvariant_projections; init=zero_matrix(QQ,n,n)))==rank(root_lat)
 
-  return weyl_group_gens, invariant_grams, ord, [to_fix,isotypical_coinvariant_projections]
+  return (weyl_group_gens, invariant_grams, ord, (to_fix,isotypical_coinvariant_projections))::Tuple{Vector{ZZMatrix}, Vector{ZZMatrix}, ZZRingElem, Tuple{QQMatrix, Vector{QQMatrix}}}
 end
 
 function _invariant_vectors(s::Symbol, n::IntegerUnion)

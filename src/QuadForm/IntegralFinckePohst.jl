@@ -264,13 +264,13 @@ end
 #
 # Returns Vector{Tuple{Vector{Int}, Int}} of (vector, norm) pairs,
 # with vectors represented up to sign.
-function _finckepohstint(gram::ZZMatrix, M::Int)
+function _finckepohstint(gram::ZZMatrix, M::Int; dolll::Bool=true)
   n = nrows(gram)
   if n == 0
     return Tuple{Vector{Int}, Int}[]
   end
 
-  ctx, per = _prepare_finckepohstint(gram, M)
+  ctx, per = _prepare_finckepohstint(gram, M; dolll)
 
   result = Tuple{Vector{Int}, Int}[]
 
@@ -351,3 +351,4 @@ function __enumerate_gram_fp(T, Gi::ZZMatrix, mi, ma, a, b, c, ::Type{Int})
   @assert b === c === identity
   return _short_vectors_gram_finckepohstint(Gi, Int(mi), Int(ma); normtype = ZZRingElem)
 end
+

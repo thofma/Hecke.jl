@@ -1460,15 +1460,14 @@ function lll(
   same_ambient::Bool=true,
   redo::Bool=false,
   ctx::LLLContext=LLLContext(0.99, 0.51, :gram),
+  _is_definite::Bool=is_definite(L)
 )
   if !redo && get_attribute(L, :is_lll_reduced, false)
     return L
   end
   rank(L) == 0 && return L
-  def = is_definite(L)
-  G = gram_matrix(L)
-  d = denominator(G)
-  M = change_base_ring(ZZ, d*G)
+  def = _is_definite
+  M, d = _integral_split_gram(L)
   G2, U = _lll(M, def, ctx)
   if same_ambient
     B2 = U*basis_matrix(L)
@@ -1478,6 +1477,10 @@ function lll(
   end
   set_attribute!(Llll, :is_lll_reduced, true)
   return Llll
+end
+
+@attr Tuple{ZZMatrix, ZZRingElem} function _integral_split_gram(L::ZZLat)
+  return integral_split(gram_matrix(L), ZZ)
 end
 
 ###############################################################################
