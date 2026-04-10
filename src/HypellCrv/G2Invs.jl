@@ -58,8 +58,8 @@ function igusa_clebsch_invariants(f::PolyRingElem{T}) where T
     igusa_invs = igusa_invariants(f)
     return igusa_clebsch_from_igusa(igusa_invs)
   end
-  a, b, c, d = clebsch_invariants(f)
-  return igusa_clebsch_from_clebsch([a, b, c, d])
+  A, B, C, D = clebsch_invariants(f)
+  return igusa_clebsch_from_clebsch([A, B, C, D])
 end
 
 function igusa_clebsch_invariants(C::HypellCrv)
