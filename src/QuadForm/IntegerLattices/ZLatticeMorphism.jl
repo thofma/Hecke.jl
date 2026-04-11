@@ -828,12 +828,15 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   isotypical_coinvariant_projections = QQMatrix[]
   F = reduce(vcat, fundamental_roots)
   P = saturate(F)
+  # probably the following can be replaced by
+  # D = solve(P, F; side=:left)
+  # and looking at the diagonal of D
   D = solve(QQ.(F),QQ.(P); side=:left)
   glue_indices = ZZRingElem[]
   j = 0
   for f in fundamental_roots
     k = j+nrows(f)
-    d = denominator(view(D,j+1:k,:))
+    d = denominator(view(D,:,j+1:k))
     push!(glue_indices, d)
     j = k
   end
@@ -860,9 +863,11 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     append!(invariant_vectors, invariant_vectors_k)
   end
   gramZ,_ = _integral_split_gram(L)
+  x = zero_matrix(ZZ, 1, ncols(gramZ))
+  y = transpose(x)
   for v in invariant_vectors
-    x = v*gramZ
-    push!(invariant_grams, transpose(x)*x)
+    x = mul!(x, v, gramZ)
+    push!(invariant_grams, transpose!(y, x)*x)
   end
 
 
@@ -883,16 +888,18 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   # in principle not needed because in the linear span of the invariant vectors.
   # but it can still help because it governs some signs
   rho = _weyl_vector(root_lat)
-  gram_rho = ZZ.(4*transpose(rho*gramZ)*(rho*gramZ))
+  tmp = ZZ.(2*rho*gramZ)
+  gram_rho = transpose(tmp)*(tmp)
+  #gram_rho = ZZ.(4*transpose(tmp)*(tmp))
   push!(invariant_grams, gram_rho)
 
   fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
-  cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
+  #cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
+  #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
   to_fix = -matrix(orthogonal_projection(amb, fixed_lattice))::QQMatrix
   for i in 1:ncols(to_fix)
     to_fix[i,i]+=1
   end
-  #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
   @hassert :Lattice 1 rank(to_fix+sum(isotypical_coinvariant_projections; init=zero_matrix(QQ,n,n)))==rank(root_lat)
 
   return (weyl_group_gens, invariant_grams, ord, (to_fix,isotypical_coinvariant_projections))::Tuple{Vector{ZZMatrix}, Vector{ZZMatrix}, ZZRingElem, Tuple{QQMatrix, Vector{QQMatrix}}}

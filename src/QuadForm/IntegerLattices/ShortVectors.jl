@@ -1080,9 +1080,10 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   m = w + length(proj) - 1
   target_norms = Vector{ZZRingElem}[zeros_array(ZZ, m) for i in 1:n]
   denoms = ZZRingElem[ZZ(1)]
+  tmp_mat = one(proj[1])
   for i in 2:length(proj)
     p = proj[i]
-    gram_pQQ = p*gram_matrix(L)*transpose(p)
+    gram_pQQ = mul!(tmp_mat, p, mul!(tmp_mat, gram_matrix(L),transpose!(tmp_mat,p)))
     d = denominator(gram_pQQ)
     push!(grams, numerator(gram_pQQ))
     push!(denoms, d)
@@ -1145,8 +1146,7 @@ function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vect
   for k in keys(D)
     k_new = vcat(zeros(Int, found), k)
     for v in D[k]
-      ii = _canonicalize!(v' * T) # _canonicalize! allows us to consider this invariant up to sign
-      k_new[1:n] = ii
+      k_new[1:n] .= _canonicalize!((v * T)') # _canonicalize! allows us to consider this invariant up to sign
       if k_new in keys(Dnew)
         push!(Dnew[k_new], v)
       else
@@ -1175,13 +1175,19 @@ function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vect
   return Dnew
 end
 
-#modifies tmp_vec and tmp_mat
-function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, new_invariant_subspace::ZZMatrix, tmp_vec::Vector, tmp_mat::QQMatrix, H::ZZMatrix)
-  S = solve_init(invariant_subspace)
+#invariant_subspaceF[1:end-1,:] must be in rref!
+function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, new_invariant_subspace::ZZMatrix, tmp_vec::Vector, tmp_mat::QQMatrix, H::ZZMatrix, invariant_subspaceF::fpMatrix)
   i1 = nrows(new_invariant_subspace)
   i2 = nrows(invariant_subspace)
   r1 = nrows(invariant_subspace)
   w = i2 - i1
+  F = base_ring(invariant_subspaceF)
+  pivs = zeros(Int, ncols(invariant_subspaceF))
+  pure = Bool[]
+  dirty = true
+  # compute pivs and pure
+  Hecke._reduce_modulo_rref(invariant_subspaceF,nrows(invariant_subspaceF)-1, pivs, pure, dirty)
+  dirty = false
   for k in keys(D)
     if nrows(invariant_subspace)==ncols(invariant_subspace)
       # everything invariant nothing more to do
@@ -1196,19 +1202,24 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
     @assert length(v) == ncols(tmp_mat)
     @inbounds for i in 1:length(v)
       tmp_mat[i] = v[i]
+      invariant_subspaceF[end, i] = v[i]
     end
     # Check if we discovered something new.
-    if !can_solve(S, tmp_mat; side=:left)
+    if !Hecke._reduce_modulo_rref(invariant_subspaceF,nrows(invariant_subspaceF)-1, pivs, pure, dirty)
+      rref!(invariant_subspaceF)
+      dirty = true
+      invariant_subspaceF = vcat(invariant_subspaceF, zero_matrix(F, 1, ncols(invariant_subspaceF)))
       invariant_subspace = vcat(invariant_subspace, tmp_mat)
-      rref!(invariant_subspace)
+      #rref!(invariant_subspace) # serves no purpose anymore
       new_invariant_subspace = vcat(new_invariant_subspace, numerator(tmp_mat))
       new_invariant_subspace = saturate(new_invariant_subspace)
       reduce_mod_hnf_ur!(new_invariant_subspace, H)
-      S = solve_init(invariant_subspace)
+    else
+      dirty = false
     end
   end
   found = nrows(invariant_subspace) - r1
-  return found, invariant_subspace, new_invariant_subspace
+  return found, invariant_subspace, new_invariant_subspace, invariant_subspaceF
 end
 
 function ___sum(V::Vector{Vector{ZZRingElem}}; init::Vector)
@@ -1324,6 +1335,13 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   invariant_subspace_rank, invariant_subspace = rref(proj[1])
   invariant_subspace = invariant_subspace[1:invariant_subspace_rank, :]*Binv[:,1:invariant_subspace_rank]
   H = hnf!(saturate(numerator(invariant_subspace)))
+  prime = next_prime(1 << (8 * sizeof(Int) - 2))
+  F = Native.GF(prime)
+  invariant_subspaceF = F.(H)
+  rref!(invariant_subspaceF)
+  invariant_subspaceF = vcat(invariant_subspaceF, zero_matrix(F,1,ncols(invariant_subspaceF)))
+  # invariant_subspaceF[1:nrows(invariant_subspaceF)-1,:] must always be in rref!, we use it to solve efficiently
+  # overflow is no problem ... then we just do a few useless computations, i.e. new_invariant_subspace gets a zero row.
   new_invariant_subspace = zero_matrix(ZZ, 0, invariant_subspace_rank) # keeps track of what is new
   T = zero_matrix(ZZ, rank(projL[1]), 0)
   w0 = invariant_subspace_rank
@@ -1489,6 +1507,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
       # the invariant sum by zeros in the end
       n_i = nrows(N_i)
       invariant_subspace = hcat(invariant_subspace, zero_matrix(QQ, nrows(invariant_subspace), rank(projL[i])))
+      invariant_subspaceF = hcat(invariant_subspaceF, zero_matrix(F, nrows(invariant_subspaceF), rank(projL[i]))) # preserves rref!
       new_invariant_subspace = hcat(new_invariant_subspace, zero_matrix(ZZ, nrows(new_invariant_subspace), rank(projL[i])))
       H = hcat(H, zero_matrix(ZZ,nrows(H), rank(projL[i])))
       tmp_invariant_vec = zeros_array(ZZ, n_i)
@@ -1503,16 +1522,22 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
                                         new_invariant_subspace,
                                         tmp_invariant_vec,
                                         tmpQQmat,
-                                        H)
-        found, invariant_subspace, new_invariant_subspace = abc
+                                        H,
+                                        invariant_subspaceF)
+        found, invariant_subspace, new_invariant_subspace, invariant_subspaceF = abc
         iszero(found) && break
         # update the invariants
         T = numerator(new_invariant_subspace*view(gramB,1:n_i,1:n_i))
         T = transpose(lll(T))
+        if CoeffType===ZZRingElem
+          TCoeff = T
+        elseif CoeffType===Int
+          TCoeff = [CoeffType(i) for i in T]
+        end
         @vprintln :Lattice 5 "hnf(new_invariant_subspace) = $(hnf(numerator(new_invariant_subspace*B[1:n_i,:])))"
         @vprintln :Lattice 4 "rref(invariant_subspace) = $(rref(invariant_subspace*B[1:n_i,:]))"
         @vprintln :Lattice 3 "T = $T"
-        short_vectors2 = update_short_vector_invariants(short_vectors2, T, found)
+        short_vectors2 = update_short_vector_invariants(short_vectors2, TCoeff, found)
       end
       found_this_round = nrows(invariant_subspace) - old_invariant_subspace_rank
       if found_this_round > 0
