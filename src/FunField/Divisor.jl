@@ -68,7 +68,7 @@ end
 
 Return the principal divisor consisting of the sum of zeroes and poles of f
 """
-function divisor(f::Generic.FunctionFieldElem)
+function divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
   @req !is_zero(f) "Element must be non-zero"
   F = parent(f)
 
@@ -81,7 +81,7 @@ end
 
 Return the divisor consisting of the zeroes of f
 """
-function zero_divisor(f::Generic.FunctionFieldElem)
+function zero_divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
   F = parent(f)
 
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
@@ -96,7 +96,7 @@ end
 
 Return the divisor consisting of the poles of f
 """
-function pole_divisor(f::Generic.FunctionFieldElem)
+function pole_divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
   F = parent(f)
 
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
@@ -166,10 +166,10 @@ end
 
 Return the finite maximal order of K
 """
-function finite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
+function finite_maximal_order(K::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
   get_attribute!(K, :finite_maximal_order) do
     return _finite_maximal_order(K)
-  end
+  end::GenOrd{AbstractAlgebra.Generic.FunctionField{T}, parent_type(poly_type(T))}
 end
 
 function _finite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
@@ -182,10 +182,10 @@ end
 
 Return the infinite maximal order of K
 """
-function infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
+function infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
   get_attribute!(K, :infinite_maximal_order) do
     return _infinite_maximal_order(K)
-  end
+  end::GenOrd{AbstractAlgebra.Generic.FunctionField{T}, KInftyRing{T}}
 end
 
 function _infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
@@ -490,7 +490,7 @@ end
 
 Return the different divisor of F.
 """
-function different_divisor(F::AbstractAlgebra.Generic.FunctionField)
+function different_divisor(F::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
   return divisor(different(finite_maximal_order(F)), different(infinite_maximal_order(F)))
 end
 
@@ -581,7 +581,7 @@ function _riemann_roch_space(J_fin, J_inf, F)
 
   basis_gens = change_base_ring(F, U) * basis(J_fin)
 
-  RR_basis = []
+  RR_basis = elem_type(F)[]
   for i in (1:n)
     d_i = maximum(map(degree, T[i,1:n]))
     for j in (0: - d_i + d_deg)

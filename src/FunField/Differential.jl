@@ -171,7 +171,7 @@ end
 
 Return the divisor corresponding to the differential form.
 """
-function divisor(df::FunFldDiff)
+function divisor(df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
   F = function_field(df)
   x = separating_element(F)
   return divisor(df.f) - 2*pole_divisor(F(x)) + different_divisor(F)
@@ -197,14 +197,18 @@ end
 
 Return a basis of the first order differential forms of F.
 """
-function basis_of_differentials(F::AbstractAlgebra.Generic.FunctionField)
-  dx = differential(separating_element(F))
+function basis_of_differentials(F::Generic.FunctionField{T}) where {T <: FieldElement}
   x = separating_element(F)
+  dx = differential(x)
+
   codiff_divisor = divisor(codifferent(finite_maximal_order(F)), codifferent(infinite_maximal_order(F)))
   D = (-divisor(dx.f) + 2*pole_divisor(F(x)) + codiff_divisor)
+
   J_fin, J_inf = ideals(D)
-  F = function_field(D)
   RR = _riemann_roch_space(J_fin, J_inf, F)
-  map(t-> FunFldDiff(t), RR)
-  #return map(t-> FunFldDiff(t), riemann_roch_space(canonical_divisor(F)))
+
+  # We were using `map` before, but it cannot infer a concrete return type,
+  #   due to the empty-input handling (it was returning Union{Vector{Any}, Vector{...}}).
+  # So use a typed comprehension instead.
+  return FunFldDiff{Generic.FunctionFieldElem{T}}[FunFldDiff(r) for r in RR]
 end
