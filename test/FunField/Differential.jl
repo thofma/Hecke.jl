@@ -16,11 +16,12 @@ import Hecke: divisor
         @test !is_zero(divisor(dx))
         @test !is_zero(divisor(dy))
 
-        @test differential(F(x) + a) == dx + dy
-        @test differential(F(x) - a) == dx - dy
-        @test differential(F(x) * a) == a*dx + F(x)*dy
-        @test differential(F(x) // a) == (a*dx - F(x)*dy) // a^2
-        @test differential(F(x)^3) // 3 == (F(x)^2)*dx
+        @test differential(F(x) + a)    == @inferred(dx + dy)
+        @test differential(F(x) - a)    == @inferred(dx - dy)
+        @test differential(F(x) * a)    == @inferred(a*dx + F(x)*dy)
+        @test differential(F(x) // a)   == @inferred((a*dx - F(x)*dy) // a^2)
+        @test differential(F(x)^3) // 3 == @inferred((F(x)^2)*dx)
+        @test differential(F(x)^3)      == @inferred(3*(F(x)^2)*dx)
       end
     end
   end

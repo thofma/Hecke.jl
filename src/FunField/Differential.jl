@@ -4,15 +4,8 @@
 #
 ################################################################################
 
-mutable struct FunFldDiff
-  f::Generic.FunctionFieldElem
-
-  function FunFldDiff(f::Generic.FunctionFieldElem)
-    r = new()
-    r.f = f
-    return r
-  end
-
+struct FunFldDiff{T <: Generic.FunctionFieldElem}
+  f::T
 end
 
 @doc raw"""
@@ -20,28 +13,43 @@ end
 
 Return the differential df.
 """
-function differential(f::Generic.FunctionFieldElem)
+function differential(f::T) where {T <: Generic.FunctionFieldElem}
   F = parent(f)
   @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
 
-  x, y = F(gen(base_ring(F))), gen(F)
-
-  # TODO: there must be a better/cleaner way, but for now we represent
-  # both f and modulus as fractions of bivariate polynomials, and compute derivatives from this
-  # to_bivariate is defined in src/EllCrv/Isogeny.jl
-  fnum, fden = to_bivariate.((numerator(f), denominator(f)))
-  ff = fnum // fden
-
-  Pnum, Pden = to_bivariate.((F.num, F.den))
-  PP = Pnum // Pden
+  # note that gen(F) currently has inferred type Any, so we add an explicit type annotation
+  y = gen(F)::T
 
   # our polynomials are polynomial in y with coefficients polynomials in x
-  # then d(f) = [df/dx - (df/dy * dp/dx) / dp/dy] dx, where p is defining polynomial
-  df = derivative(ff, 1) - derivative(ff, 2) * derivative(PP, 1) // derivative(PP, 2)
-  num = evaluate(numerator(df), [x, y])
-  den = evaluate(denominator(df), [x, y])
+  # note that denominators are polynomials in x!
+  # d(f) = [df/dx - (df/dy * dp/dx) / dp/dy] dx, where p is defining polynomial
+  #
+  # further: write p = g/h
+  # dp/dx = (dg/dx * h - g * dh/dx)/h^2, and dp/dy = dg/dy / h
+  # since we are in F, g(x,y) = 0 and we obtain (dp/dx) / (dp/dy) = (dg/dx) / (dg/dy)
 
-  return FunFldDiff(num//den)
+  # we want to stay in F, this is simple helper to go from k[x][y] to F
+  function toF(p::Generic.Poly{<:PolyRingElem})
+    return evaluate(map_coefficients(F, p), y)
+  end
+
+  g_poly = numerator(F)
+  dg_dx     = toF(map_coefficients(derivative, g_poly))
+  dg_dy     = toF(derivative(g_poly))
+  df_dx_dy  = dg_dx // dg_dy
+
+  fnum_poly, fden_poly = numerator(f), denominator(f)
+  fnum      = toF(fnum_poly)
+  dfnum_dx  = toF(map_coefficients(derivative, fnum_poly))
+  dfnum_dy  = toF(derivative(fnum_poly))
+  # denominator is already in k[x]
+  fden      = F(fden_poly)
+  dfden_dx  = F(derivative(fden_poly))
+
+  df_dx = (dfnum_dx * fden - fnum * dfden_dx) // fden^2
+  df = df_dx - (dfnum_dy // fden) * df_dx_dy
+
+  return FunFldDiff(df)
 end
 
 ################################################################################
