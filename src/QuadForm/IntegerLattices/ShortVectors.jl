@@ -1668,7 +1668,7 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
   M = Int(maximum(diagonal(G)))
   gramsint = [Matrix{Int}(g) for g in grams]
   sv = _short_vectors_gram_finckepohstint(G, 0, M; normtype = Int)
-  targetinvs3 = Set((v, n) for (v, n) in target_invariant)
+  targetinvs3 = Set((Rational{Int}.(v), Int.(n)) for (v, n) in target_invariant)
   targetinvs2 = Set{Tuple{Vector{Int}, Vector{Int}}}()
   for (v, n) in target_invariant
     vv, d = integral_split(v, ZZ)
@@ -1686,7 +1686,11 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
   nn = nrows(G)
   tempnorm = zeros(Int, k)
   tempnormshort = view(tempnorm, 1:l)
+
   res = Tuple{Vector{CoeffType}, Vector{Int}}[]
+  resD = Dict{Vector{Rational{Int}}, Vector{ZZRingElem}}(w => zeros_array(ZZ, nn) for (w, _) in targetinvs3)
+  resdict = Dict{Vector{QQFieldElem}, Vector{Vector{ZZRingElem}}}(QQ.(w) => Vector{ZZRingElem}[] for (w, _) in targetinvs3)
+  resS = Dict{Vector{QQFieldElem}, Vector{ZZRingElem}}(QQ.(w) => zeros_array(ZZ, nn) for (w, _) in targetinvs3)
 
   for (v, _) in sv
     LinearAlgebra.mul!(view(wwwww, 1:nn), projintt, v)
@@ -1711,9 +1715,105 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
     end
 
     tempnorm in target_norms || continue
+    _w = wwwww[1:nn].//wwwww[nn+1]
+    _ww = _canonicalize!(QQ.(v) * proj[1])
+    #@info _w == _ww
+    #@info _w
+    #@info _ww
+    #@assert QQ.(_ww) == _w
+    # this is the "real" invariant
+    @assert (_w, tempnormshort) in targetinvs3
+    resD[_w] = resD[_w] .+ v
+    if _canonicalize!(QQ.(v) * proj[1]) == QQ.(v) * proj[1]
+      if !iszero(_w)
+        resS[_ww] = resS[_ww] .+ v
+      end
+      push!(resdict[_ww], v)
+    else
+      if !iszero(_w)
+        resS[_ww] = resS[_ww] .+ (-v)
+      end
+      push!(resdict[_ww], -v)
+    end
     push!(res, (v, copy(tempnorm)))
   end
-  return res, grams, zero_matrix(ZZ,nrows(G),0), proj[1]
+
+  #return resD
+
+  _, invbas = rref(proj[1])
+
+  if search_new_invariant_vectors
+    invrank, invbas = rref(proj[1])
+    oldinvrank = invrank
+    newinvvec = []
+    totalnew = 0
+    local T
+    local TT
+    while true
+      for (k, v) in resS
+        fl = can_solve(invbas, QQ.(v); side = :left)
+        if !fl
+          push!(newinvvec, v)
+          invrank, invbas = rref(vcat(invbas, matrix(QQ, 1, ncols(invbas), QQ.(v))))
+        end
+      end
+      found = invrank - oldinvrank
+      totalnew += found
+      if found == 0
+        break
+      end
+      #@info found
+      #@info totalnew
+      T = saturate(hnf(matrix(identity.(newinvvec))))
+      TT = transpose(lll(numerator(T * gram_matrix(L))))
+      #@info size(T)
+      resSS = typeof(resS)()
+      for (k, vS) in resdict
+        if iszero(k)
+          continue
+        end
+        for v in vS
+          knew = append!(zeros(eltype(k), totalnew), k)
+          ii = _canonicalize!(ZZ.(v * TT))
+          neg = true
+          if ZZ.(v * TT) == ii
+            neg = false
+          end
+          knew[1:totalnew] = ii
+          if haskey(resSS, knew)
+            resSS[knew] = resSS[knew] .+ (neg ? -v : v)
+          else
+            resSS[knew] = (neg ? -v : v)
+          end
+        end
+      end
+      resS = resSS
+      oldinvrank = invrank
+      # update gram matrices
+    end
+
+    if totalnew > 0
+      for i in totalnew:-1:1 # reverse order because of pushfirst!
+        t = TT[:,i:i]
+        tG = t*transpose(t)
+        pushfirst!(grams, tG)
+      end
+
+      res2 = copy(res)
+      for i in 1:length(res2)
+        v = res2[i][1]
+        res2[i] = (v, [Int(dot(v, g * v)) for g in grams])
+      end
+      return res2, grams, TT, proj[1]
+    end
+  end
+
+  #
+  res = [(v, CoeffType[dot(v, g * v) for g in grams]) for (v, _) in res ]
+
+  #return resD
+
+  return res, grams, zero_matrix(ZZ, nrows(G), 0), proj[1]
 end
 
 # TODO: get rid of this once finckepost can deal with ZZRingElem
