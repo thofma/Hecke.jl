@@ -90,7 +90,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(df::FunFldDiff, dg::FunFldDiff)
+function Base.:(==)(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
   return function_field(df) === function_field(dg) && df.f == dg.f
 end
 
@@ -106,13 +106,13 @@ end
 #
 ################################################################################
 
-function Base.:+(df::FunFldDiff, dg::FunFldDiff)
-  @assert function_field(df) == function_field(dg)
+function Base.:+(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  @req function_field(df) === function_field(dg) "differentials must have the same parent"
   return FunFldDiff(df.f + dg.f)
 end
 
-function Base.:-(df::FunFldDiff, dg::FunFldDiff)
-  @assert function_field(df) == function_field(dg)
+function Base.:-(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  @req function_field(df) === function_field(dg) "differentials must have the same parent"
   return FunFldDiff(df.f - dg.f)
 end
 
@@ -120,22 +120,20 @@ function Base.:-(df::FunFldDiff)
   return FunFldDiff(-df.f)
 end
 
-function Base.:*(r::Generic.FunctionFieldElem, df::FunFldDiff)
-  @assert parent(r) == function_field(df)
-  return FunFldDiff(r*df.f)
+function Base.:*(r::T, df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
+  @req parent(r) === function_field(df) "element and differential must have the same parent"
+  return FunFldDiff(r * df.f)
 end
 
 function Base.:*(r::GenOrdElem, df::FunFldDiff)
-  F = function_field(df)
-  return F(r) * df
+  return function_field(df)(r) * df
 end
 
 function Base.:*(r::IntegerUnion, df::FunFldDiff)
-  F = function_field(df)
-  return F(r) * df
+  return function_field(df)(r) * df
 end
 
-Base.:*(df::FunFldDiff, r::Generic.FunctionFieldElem) = r*df
+Base.:*(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem} = r*df
 Base.:*(df::FunFldDiff, r::GenOrdElem) = r*df
 Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
@@ -144,23 +142,22 @@ Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
 Return the function r such that r*dg = df.
 """
-function Base.://(df::FunFldDiff, dg::FunFldDiff)
+function Base.://(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  @req function_field(df) === function_field(dg) "differentials must have the same parent"
   return df.f//dg.f
 end
 
-function Base.://(df::FunFldDiff, r::Generic.FunctionFieldElem)
-  @assert parent(r) == function_field(df)
+function Base.://(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem}
+  @req parent(r) === function_field(df) "element and differential must have the same parent"
   return FunFldDiff(df.f//r)
 end
 
 function Base.://(df::FunFldDiff, r::GenOrdElem)
-  F = function_field(df)
-  return df//F(r)
+  return df // function_field(df)(r)
 end
 
 function Base.://(df::FunFldDiff, r::IntegerUnion)
-  F = function_field(df)
-  return df//(F(r))
+  return df // function_field(df)(r)
 end
 
 ################################################################################
