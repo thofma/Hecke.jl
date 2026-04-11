@@ -5,12 +5,10 @@
 ################################################################################
 
 mutable struct FunFldDiff
-  function_field::AbstractAlgebra.Generic.FunctionField
   f::Generic.FunctionFieldElem
 
   function FunFldDiff(f::Generic.FunctionFieldElem)
     r = new()
-    r.function_field = parent(f)
     r.f = f
     return r
   end
@@ -24,13 +22,22 @@ Return the differential df.
 """
 function differential(f::Generic.FunctionFieldElem)
   F = parent(f)
-  y = gen(F)
-  x = F(gen(base_ring(F)))
+  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
 
-  fnum = to_bivariate(numerator(f))
-  fdenom = to_bivariate(denominator(f))
+  x, y = F(gen(base_ring(F))), gen(F)
 
-  df = derivative(fnum//fdenom, 1)
+  # TODO: there must be a better/cleaner way, but for now we represent
+  # both f and modulus as fractions of bivariate polynomials, and compute derivatives from this
+  # to_bivariate is defined in src/EllCrv/Isogeny.jl
+  fnum, fden = to_bivariate.((numerator(f), denominator(f)))
+  ff = fnum // fden
+
+  Pnum, Pden = to_bivariate.((F.num, F.den))
+  PP = Pnum // Pden
+
+  # our polynomials are polynomial in y with coefficients polynomials in x
+  # then d(f) = [df/dx - (df/dy * dp/dx) / dp/dy] dx, where p is defining polynomial
+  df = derivative(ff, 1) - derivative(ff, 2) * derivative(PP, 1) // derivative(PP, 2)
   num = evaluate(numerator(df), [x, y])
   den = evaluate(denominator(df), [x, y])
 
@@ -66,7 +73,7 @@ function is_zero(df::FunFldDiff)
 end
 
 function function_field(df::FunFldDiff)
-  return df.function_field
+  return parent(df.f)
 end
 
 ################################################################################
@@ -76,7 +83,7 @@ end
 ################################################################################
 
 function Base.:(==)(df::FunFldDiff, dg::FunFldDiff)
-  return function_field(df) === function_field(df) && df.f == df.f
+  return function_field(df) === function_field(dg) && df.f == dg.f
 end
 
 function Base.hash(df::FunFldDiff, h::UInt)
@@ -92,17 +99,13 @@ end
 ################################################################################
 
 function Base.:+(df::FunFldDiff, dg::FunFldDiff)
-  f = df.f
-  g = dg.f
-  @assert parent(f) === parent(g)
-  return FunFldDiff(f + g)
+  @assert function_field(df) == function_field(dg)
+  return FunFldDiff(df.f + dg.f)
 end
 
 function Base.:-(df::FunFldDiff, dg::FunFldDiff)
-  f = df.f
-  g = dg.f
-  @assert parent(f) === parent(g)
-  return FunFldDiff(f - g)
+  @assert function_field(df) == function_field(dg)
+  return FunFldDiff(df.f - dg.f)
 end
 
 function Base.:-(df::FunFldDiff)
@@ -110,7 +113,7 @@ function Base.:-(df::FunFldDiff)
 end
 
 function Base.:*(r::Generic.FunctionFieldElem, df::FunFldDiff)
-  @assert parent(r) == parent(df.f)
+  @assert parent(r) == function_field(df)
   return FunFldDiff(r*df.f)
 end
 
@@ -131,15 +134,15 @@ Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 @doc raw"""
     //(df::FunFldDiff, dg::FunFldDiff) -> FunctionFieldElem
 
-Return the function r such that r*df = dg.
+Return the function r such that r*dg = df.
 """
 function Base.://(df::FunFldDiff, dg::FunFldDiff)
   return df.f//dg.f
 end
 
 function Base.://(df::FunFldDiff, r::Generic.FunctionFieldElem)
-  @assert parent(r) == parent(df.f)
-  return return FunFldDiff(df.f//r)
+  @assert parent(r) == function_field(df)
+  return FunFldDiff(df.f//r)
 end
 
 function Base.://(df::FunFldDiff, r::GenOrdElem)
