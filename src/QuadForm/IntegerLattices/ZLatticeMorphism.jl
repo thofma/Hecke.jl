@@ -243,15 +243,17 @@ function _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors=true)
   else
     gram_weyl_vector = nothing
   end
-  proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
+  proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
   V, grams = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
   if get_assertion_level(:Lattice) > 1
     for (v, n) in V
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
   end
-  res = pushfirst!(grams, _integral_split_gram(_L)[1])
-  vector_set = [(v, vcat([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
+  res = grams
+  vector_set = V
+  #res = pushfirst!(grams, _integral_split_gram(_L)[1])
+  #vector_set = [(v, vcat([Int(inner_product(_L, v, v))], n)) for (v, n) in V]
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
@@ -359,7 +361,7 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector, fai
     # avoid overflow
     Gcompressed = sum(a[i]*res[I[i]] for i in 1:length(I))
     res = [res[1] + lambda * res[i0], Gcompressed]
-    for (i, (v, n)) in enumerate(vector_set)
+    for (v, n) in vector_set
       w = copy(n[I])
       n[1] = n[1] + lambda * n[i0]
       n[2] = dot(a, w)
@@ -820,12 +822,12 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   end
   if length(root_types) == 0
     to_fix = zero_matrix(QQ, rank(L), rank(L))
-    to_cofix = QQMatrix[] #[zero_matrix(QQ, rank(L), rank(L))]
+    to_cofix = Tuple{QQMatrix,Int}[]
     return ZZMatrix[], ZZMatrix[], ZZ(1), [to_fix, to_cofix]
   end
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
-  isotypical_coinvariant_projections = QQMatrix[]
+  isotypical_coinvariant_projections = Tuple{QQMatrix,Int}[]
   F = reduce(vcat, fundamental_roots)
   P = saturate(F)
   # probably the following can be replaced by
@@ -840,7 +842,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     push!(glue_indices, d)
     j = k
   end
-  D = Dict()
+  D = Dict{Tuple{Tuple{Symbol, Int}, Int}, Vector{ZZMatrix}}()
   for (t,g,f) in zip(root_types, glue_indices, fundamental_roots)
     k = (t,g)
     if k in keys(D)
@@ -854,11 +856,17 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     isotypic = reduce(vcat, D[k])
     inv_vec = _invariant_vectors(t...)
     invariant_vectors_k = sum([[t*f for t in inv_vec] for f in D[k]])
+
+    M = isotypic*gram_matrix(L)*transpose(reduce(vcat, invariant_vectors_k))
+    isotypic_cofix_space = kernel(M, side= :left)*isotypic
     isotypic_lattice = lattice_in_same_ambient_space(L, isotypic)
-    isotypic_cofix_lattice = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat, invariant_vectors_k))))
-    to_isotypic_cofix = 1 - matrix(orthogonal_projection(ambient_space(L), isotypic_cofix_lattice))
+    if get_assertion_level(:Lattice) > 1
+      isotypic_cofix_lattice1 = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat, invariant_vectors_k))))
+      @assert rref(isotypic_cofix_lattice1)==rref(isotypic_cofix_space)
+    end
+    to_isotypic_cofix = 1 - matrix(orthogonal_projection(ambient_space(L), isotypic_cofix_space; check=false))
     if !iszero(to_isotypic_cofix)
-      push!(isotypical_coinvariant_projections, to_isotypic_cofix)
+      push!(isotypical_coinvariant_projections, (to_isotypic_cofix,nrows(isotypic_cofix_space)))
     end
     append!(invariant_vectors, invariant_vectors_k)
   end
@@ -896,13 +904,13 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
   #cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
   #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
-  to_fix = -matrix(orthogonal_projection(amb, fixed_lattice))::QQMatrix
+  to_fix = -matrix(orthogonal_projection(amb, fixed_lattice; check=false))::QQMatrix
   for i in 1:ncols(to_fix)
     to_fix[i,i]+=1
   end
-  @hassert :Lattice 1 rank(to_fix+sum(isotypical_coinvariant_projections; init=zero_matrix(QQ,n,n)))==rank(root_lat)
+  @hassert :Lattice 1 rank(to_fix+sum(i[1] for i in isotypical_coinvariant_projections; init=zero_matrix(QQ,n,n)))==rank(root_lat)
 
-  return (weyl_group_gens, invariant_grams, ord, (to_fix,isotypical_coinvariant_projections))::Tuple{Vector{ZZMatrix}, Vector{ZZMatrix}, ZZRingElem, Tuple{QQMatrix, Vector{QQMatrix}}}
+  return (weyl_group_gens, invariant_grams, ord, (to_fix,isotypical_coinvariant_projections))::Tuple{Vector{ZZMatrix}, Vector{ZZMatrix}, ZZRingElem, Tuple{QQMatrix, Vector{Tuple{QQMatrix,Int}}}}
 end
 
 function _invariant_vectors(s::Symbol, n::IntegerUnion)

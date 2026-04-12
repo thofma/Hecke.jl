@@ -1050,21 +1050,20 @@ end
 function _short_vectors_with_condition_preprocessing(L::ZZLat)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv) = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L::ZZLat, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv)
+  return _short_vectors_with_condition_preprocessing(L::ZZLat, fundamental_roots, grams, proj_root_inv, proj_root_coinv)
 end
 
 function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv) = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L::ZZLat, root_types, fundamental_roots, grams, proj_root_inv, proj_root_coinv), (root_types, fundamental_roots)
+  return _short_vectors_with_condition_preprocessing(L::ZZLat, fundamental_roots, grams, proj_root_inv, proj_root_coinv), (root_types, fundamental_roots)
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat,
-                                                     root_types::Vector{Tuple{Symbol,Int}},
                                                      fundamental_roots::Vector{ZZMatrix},
                                                      grams::Vector{ZZMatrix},
                                                      proj_root_inv::QQMatrix,
-                                                     proj_root_coinv::Vector{QQMatrix},
+                                                     proj_root_coinv::Vector{Tuple{QQMatrix,Int}},
                                                      sort::Symbol=:rank)
   n = rank(L)
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
@@ -1072,9 +1071,13 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
   pushfirst!(LL, lattice(ambient_space(L), R))
   proj = __projections(LL)
-  @hassert :Lattice 1 proj[1] == proj_root_inv + sum(proj_root_coinv; init=zero_matrix(QQ, n, n))
+  proj_rank = rank.(LL)
+  @hassert :Lattice 1 proj[1] == proj_root_inv + sum(i[1] for i in proj_root_coinv; init=zero_matrix(QQ, n, n))
   popfirst!(proj)
-  proj = append!(proj_root_coinv, proj)
+  popfirst!(proj_rank)
+  proj = append!(first.(proj_root_coinv), proj)
+  proj_rank = append!([i[2] for i in proj_root_coinv], proj_rank)
+  pushfirst!(proj_rank, -1) # not used
   pushfirst!(proj, proj_root_inv)
   w = length(grams)
   m = w + length(proj) - 1
@@ -1100,7 +1103,9 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
 
   if sort == :rank
     # don't touch the first one
-    p = sortperm([rank(proj[i]) for i in 2:length(proj)]; rev = false)
+    #@assert proj_rank[2:end] == rank.(proj[2:end])
+    p = sortperm([proj_rank[i] for i in 2:length(proj)]; rev = false)
+    #p = sortperm([rank(proj[i]) for i in 2:length(proj)]; rev = false)
     per = pushfirst!(p .+ 1, 1)
     per2 = append!(collect(1:w), p .+ (w))
     per2inv = invperm(per2)
@@ -1577,21 +1582,25 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     _B = [CoeffType(i) for i in numerator(B)]
     d = CoeffType(denominator(B))
   end
+  pushfirst!(grams, gZ)
   for b in keys(short_vectors1)
     bret = copy(b)
     @inbounds for i in 1:r
       bret[i] = bret[i]^2
     end
+    v = divexact.(__not_adj(first(short_vectors1[b])*_B),d)
+    s = dot(v, gZ, v)
+    pushfirst!(bret, s)
     for z in short_vectors1[b]
       i = i+1
-      output[i] = (_canonicalize!(divexact.(__not_adj(z*_B), d)), bret)
+      output[i] = (_canonicalize!(divexact.(__not_adj(z*_B), d)), copy(bret))
     end
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
   if get_assertion_level(:Lattice) > 1
     for (v, n) in output
-      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+      @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams))
     end
     # This test makes sense only in automorphism mode
     #E = CoeffType.(identity_matrix(ZZ, n))

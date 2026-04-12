@@ -675,9 +675,11 @@ Given a space `V` and a non-degenerate subspace `W` with basis matrix `M`,
 return the endomorphism of `V` corresponding to the projection onto the
 complement of `W` in `V`.
 """
-function orthogonal_projection(V::AbstractSpace, M::MatElem)
-  _Q = inner_product(V, M, M)
-  @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
+function orthogonal_projection(V::AbstractSpace, M::MatElem; check::Bool=true)
+  if check
+    _Q = inner_product(V, M, M)
+    @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
+  end
   U = orthogonal_complement(V, M)
   B = vcat(U, M)
   p = vcat(U, zero(M))
