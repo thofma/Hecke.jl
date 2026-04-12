@@ -455,161 +455,6 @@ function tates_algorithm_global(E::T) where T<: EllipticCurve{ <:AbstractAlgebra
   return E::T
 end
 
-
-struct KodairaSymbol
-  ksymbol::Int
-
-  function KodairaSymbol(n::Int)
-    @req n!= 0 "0 does not correspond to any Kodaira symbol."
-    K = new(n)
-    return K
-  end
-
-  function KodairaSymbol(K::String)
-    if K=="I0"
-      return KodairaSymbol(1)
-    elseif K=="I0*"
-      return KodairaSymbol(-1)
-    elseif K=="II"
-      return KodairaSymbol(2)
-    elseif K=="II*"
-      return KodairaSymbol(-2)
-    elseif K=="III"
-      return KodairaSymbol(3)
-    elseif K=="III*"
-      return KodairaSymbol(-3)
-    elseif K=="IV"
-      return KodairaSymbol(4)
-    elseif K=="IV*"
-      return KodairaSymbol(-4)
-    end
-
-    if K[1]!='I'
-      error("String does not represent a valid Kodaira symbol.")
-    end
-
-    n = lastindex(K)
-
-    if K[n]=='*'
-      m = parse(Int, K[2:n-1])
-      return KodairaSymbol(-4 - m)
-    else
-      m = parse(Int, K[2:n])
-      return KodairaSymbol(4 + m)
-    end
-
-    error("String does not represent a valid Kodaira symbol.")
-
-  end
-end
-
-################################################################################
-#
-#  Equality of Kodaira symbols
-#
-################################################################################
-
-@doc raw"""
-    ==(K1::KodairaSymbol, K2::KodairaSymbol) -> Bool
-
-Return true if $K1$ and $K2$ are the same Kodaira symbol.
-"""
-function ==(K1::KodairaSymbol, K2::KodairaSymbol)
-  return K1.ksymbol == K2.ksymbol
-end
-
-function Base.hash(K::KodairaSymbol, h::UInt)
-  return hash(K.ksymbol, h)
-end
-
-
-@doc raw"""
-    ==(K::KodairaSymbol, s::String) -> Bool
-
-Return true if K is corresponds to the Kodaira symbol given by the string.
-Valid inputs are : I0, II, III, IV and In where n is a positive integer,
-I0*, II*, III*, IV* and In* where n is a positive integer.
-
-Instead of substituting n for an integer one may also check against the generic types 'In'
-or 'In*' to test if the Kodaira symbol is of that type.
-"""
-function ==(K::KodairaSymbol, s::String)
-   if s == "I0"
-      return K.ksymbol == 1
-    elseif s == "I0*"
-      return K.ksymbol == -1
-    elseif s == "II"
-      return K.ksymbol == 2
-    elseif s == "II*"
-      return K.ksymbol == -2
-    elseif s == "III"
-      return K.ksymbol == 3
-    elseif s == "III*"
-      return K.ksymbol == -3
-    elseif s == "IV"
-      return K.ksymbol == 4
-    elseif s == "IV*"
-      return K.ksymbol == -4
-    elseif s == "In"
-      return K.ksymbol > 4
-    elseif s == "In*"
-      return K.ksymbol < -4
-    end
-
-    if s[1] != 'I'
-      error("String does not represent a valid Kodaira symbol.")
-    end
-
-    n = lastindex(s)
-
-    if s[n]=='*'
-      m = parse(Int, s[2:n-1])
-      return K.ksymbol == -4 - m
-    else
-      m = parse(Int, s[2:n])
-      return K.ksymbol == 4 + m
-    end
-
-    error("String does not represent a valid Kodaira symbol.")
-end
-
-
-function show(io::IO, K::KodairaSymbol)
-  m = K.ksymbol
-
-  if m == 1
-    print(io, "I0")
-  elseif m == -1
-    print(io, "I0*")
-  elseif m == 2
-    print(io, "II")
-  elseif m == -2
-    print(io, "II*")
-  elseif m == 3
-    print(io, "III")
-  elseif m == -3
-    print(io, "III*")
-  elseif m == 4
-    print(io, "IV")
-  elseif m == -4
-    print(io, "IV*")
-  end
-
-  if m > 4
-    m = m - 4
-    print(io, "I$(m)")
-  elseif m < -4
-    m = m + 4
-    m = -m
-    print(io, "I$(m)*")
-  end
-end
-
-
-function ==(s::String, K::KodairaSymbol)
-  return K == s
-end
-
 @doc raw"""
     tamagawa number(E::EllipticCurve{QQFieldElem}, p::Int) -> ZZRingElem
 
@@ -696,52 +541,31 @@ end
 @doc raw"""
     reduction_type(E::EllipticCurve{QQFieldElem}, p::ZZRingElem) -> String
 
-Return the reduction type of E at p. It can either be good, additive,
-split multiplicative or nonsplit mutiplicative.
+Return the reduction type of E at a prime p. It can either be good, additive,
+split multiplicative or nonsplit multiplicative.
 """
 function reduction_type(E::EllipticCurve{QQFieldElem}, p)
-  Ep, Kp, f, c, split = tates_algorithm_local(E, p)
-
-  if Kp=="I0"
-    return "Good"
-  end
-
-  if Kp.ksymbol > 4
-    if split
-      return "Split multiplicative"
-    else
-      return "Nonsplit multiplicative"
-    end
-  end
-
- return "Additive"
-
+  return _reduction_type_impl(E, p)
 end
 
 @doc raw"""
     reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> String
 
-Return the reduction type of E at the prime ideal p.
-It can either be good, additive, split multiplicative or
-nonsplit mutiplicative.
+Return the reduction type of E at a prime ideal p.
+It can either be good, additive, split multiplicative or nonsplit multiplicative.
 """
 function reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  Ep, Kp, f, c, split = tates_algorithm_local(E, p)
+  return _reduction_type_impl(E, p)
+end
 
-  if Kp=="I0"
-    return "Good"
-  end
+function _reduction_type_impl(E, p)
+  _, Ks, _, _, split = tates_algorithm_local(E, p)
 
-  if Kp.ksymbol > 4
-    if split
-      return "Split multiplicative"
-    else
-      return "Nonsplit multiplicative"
-    end
-  end
+  has_good_reduction(Ks) && return "Good"
+  has_multiplicative_reduction(Ks) && return (split ? "Split multiplicative" : "Nonsplit multiplicative")
 
- return "Additive"
-
+  @assert has_additive_reduction(Ks)
+  return "Additive"
 end
 
 ################################################################################
@@ -833,3 +657,128 @@ function modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldO
   return elliptic_curve(K, [a1, a2, a3, a4, a6])
 
 end
+
+################################################################################
+#
+#  Kodaira Symbol
+#
+################################################################################
+
+@doc raw"""
+    KodairaSymbol
+
+Represents the Kodaira symbol of a fiber of a Neron model of an elliptic
+curve. The symbol encodes the reduction type at a prime.
+
+The internal encoding uses a single integer (PARI/GP convention):
+- `I0` = 1, `II` = 2, `III` = 3, `IV` = 4, `In` (n >= 1) = 4 + n
+- `I0*` = -1, `II*` = -2, `III*` = -3, `IV*` = -4, `In*` (n >= 1) = -(4 + n)
+
+Kodaira symbols can be constructed from strings:
+
+```jldoctest
+julia> KodairaSymbol("I5")
+I5
+
+julia> KodairaSymbol("IV*")
+IV*
+```
+"""
+struct KodairaSymbol
+  ksymbol::Int
+
+  function KodairaSymbol(n::Int)
+    @req n != 0 "0 does not correspond to any Kodaira symbol."
+    return new(n)
+  end
+
+  function KodairaSymbol(s::String)
+    return new(_kodaira_symbol_from_string(s))
+  end
+end
+
+function _kodaira_symbol_from_string(s::String)
+  s == "I0"   && return  1
+  s == "I0*"  && return -1
+  s == "II"   && return  2
+  s == "II*"  && return -2
+  s == "III"  && return  3
+  s == "III*" && return -3
+  s == "IV"   && return  4
+  s == "IV*"  && return -4
+
+  (length(s) >= 2 && s[1] == 'I') || error("\"$s\" is not a valid Kodaira symbol.")
+
+  if s[end] == '*'
+    m = parse(Int, SubString(s, 2, lastindex(s) - 1))
+    return - (4 + m)
+  else
+    m = parse(Int, SubString(s, 2))
+    return 4 + m
+  end
+end
+
+function _kodaira_symbol_to_string(n::Int)
+  @req n != 0 "0 does not correspond to any Kodaira symbol."
+
+  n ==  1 && return "I0"
+  n == -1 && return "I0*"
+  n ==  2 && return "II"
+  n == -2 && return "II*"
+  n ==  3 && return "III"
+  n == -3 && return "III*"
+  n ==  4 && return "IV"
+  n == -4 && return "IV*"
+
+  if n > 4
+    return "I$(n - 4)"
+  else # n < -4
+    return "I$(-(n + 4))*"
+  end
+end
+
+function ==(K1::KodairaSymbol, K2::KodairaSymbol)
+  return K1.ksymbol == K2.ksymbol
+end
+
+function Base.hash(K::KodairaSymbol, h::UInt)
+  return hash(K.ksymbol, h)
+end
+
+@doc raw"""
+    ==(K::KodairaSymbol, s::String) -> Bool
+
+Return `true` if `K` corresponds to the Kodaira symbol given by the string.
+In addition to specific symbols like `"I5"` or `"IV*"`, the generic types
+`"In"` and `"In*"` can be used to test if `K` is of that family.
+"""
+function ==(K::KodairaSymbol, s::String)
+  if s == "In"
+    return K.ksymbol > 4
+  elseif s == "In*"
+    return K.ksymbol < -4
+  else
+    return K.ksymbol == _kodaira_symbol_from_string(s)
+  end
+end
+
+function ==(s::String, K::KodairaSymbol)
+  return K == s
+end
+
+function show(io::IO, K::KodairaSymbol)
+  print(io, _kodaira_symbol_to_string(K.ksymbol))
+end
+
+function has_good_reduction(K::KodairaSymbol)
+  return K.ksymbol == 1
+end
+
+function has_multiplicative_reduction(K::KodairaSymbol)
+  return K.ksymbol > 4
+end
+
+function has_additive_reduction(K::KodairaSymbol)
+  return !(has_good_reduction(K) || has_multiplicative_reduction(K))
+end
+
