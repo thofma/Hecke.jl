@@ -263,6 +263,8 @@ function StructureConstantAlgebra(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Int
   return A, OtoA
 end
 
+# This method is different, because the basis matrices of number field orders
+# are with respect to the basis of the order
 function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal, p::IntegerUnion)
   @assert order(I) === order(J)
 
@@ -270,7 +272,7 @@ function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderI
   Oalgebra = _algebra(O)
 
   n = degree(O)
-  BmatJinI = _hnf_integral(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
+  BmatJinI = _hnf_integral(basis_matrix(J, copy = false)*basis_mat_inv(FakeFmpqMat, I, copy = false), :lowerleft)
   @assert isone(BmatJinI.den) "J is not a subset of I"
   BmatJinI = BmatJinI.num
   basis_elts = Vector{Int}()
@@ -314,7 +316,7 @@ function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderI
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   for i = 1:r
-    M = FakeFmpqMat(representation_matrix(_elem_in_algebra(BI[basis_elts[i]], copy = false)))
+    M = FakeFmpqMat(representation_matrix(BI[basis_elts[i]]))
     M = mul!(M, BmatI, M)
     M = mul!(M, M, BmatIinv)
     @assert M.den == 1
@@ -334,16 +336,15 @@ function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderI
     A.is_commutative = 1
   end
 
-  t = FakeFmpqMat(zero_matrix(ZZ, 1, n))
+  t = zero_matrix(ZZ, 1, n)
+
 
   local _image
 
   let BmatJinI = BmatJinI, I = I, r = r, A = A, t = t, Fp = Fp
     function _image(a::Union{AbsNumFieldOrderElem, AlgAssAbsOrdElem})
-      elem_to_mat_row!(t.num, 1, t.den, _elem_in_algebra(a, copy = false))
-      t = mul!(t, t, basis_mat_inv(I, copy = false))
-      @assert isone(t.den) "Not an element of the domain"
-      c = reduce_vector_mod_hnf(t.num, BmatJinI)
+      t[1, :] = coordinates(a; copy = false)
+      c = reduce_vector_mod_hnf(t, BmatJinI)
       return A([ Fp(c[i]) for i in basis_elts ])
     end
   end
@@ -354,8 +355,8 @@ function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderI
 
   let BI = BI, basis_elts = basis_elts, r = r, Oalgebra = Oalgebra, temppp = temppp
     function _preimage(a::AssociativeAlgebraElem)
-      acoords = map(x -> QQ(lift(ZZ, x)), coefficients(a, copy = false))
-      z = zero(Oalgebra)
+      acoords = map(x -> lift(ZZ, x), coefficients(a, copy = false))
+      z = zero(O)
       for i in 1:r
         if is_zero(acoords[i])
           continue
@@ -363,118 +364,7 @@ function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderI
         temppp = mul!(temppp, acoords[i], BI[basis_elts[i]])
         z = add!(z, z, temppp)
       end
-      _zz = O(z)
-      return _zz
-    end
-  end
-
-  OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image, _preimage)
-
-  return A, OtoA
-end
-
-function StructureConstantAlgebra(I::Union{ AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl }, J::Union{AbsNumFieldOrderIdeal, AlgAssAbsOrdIdl}, p::IntegerUnion)
-  @assert order(I) === order(J)
-
-  O = order(I)
-  Oalgebra = _algebra(O)
-
-  n = degree(O)
-  BmatJinI = _hnf_integral(basis_matrix(J, copy = false)*basis_mat_inv(I, copy = false), :lowerleft)
-  @assert isone(BmatJinI.den) "J is not a subset of I"
-  BmatJinI = BmatJinI.num
-  basis_elts = Vector{Int}()
-  for i = 1:n
-    if valuation(BmatJinI[i, i], p) == 0
-      continue
-    end
-
-    push!(basis_elts, i)
-  end
-
-  r = length(basis_elts)
-  Fp = GF(p, cached = false)
-
-  if r == 0
-    A = zero_algebra(Fp)
-
-    local _image_zero
-
-    let A = A
-      function _image_zero(a::Union{ AbsNumFieldOrderElem, AlgAssAbsOrdElem })
-        return A()
-      end
-    end
-
-    local _preimage_zero
-
-    let O = O
-      function _preimage_zero(a::AssociativeAlgebraElem)
-        return O()
-      end
-    end
-
-    OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image_zero, _preimage_zero)
-    return A, OtoA
-  end
-
-  BI = basis(I, copy = false)
-  BmatI = basis_matrix(I, copy = false)
-  BmatIinv = inv(BmatI)
-
-  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
-  for i = 1:r
-    M = FakeFmpqMat(representation_matrix(_elem_in_algebra(BI[basis_elts[i]], copy = false)))
-    M = mul!(M, BmatI, M)
-    M = mul!(M, M, BmatIinv)
-    @assert M.den == 1
-    M = M.num # M is now the representation matrix in the basis of I
-    if r != degree(O)
-      M = reduce_rows_mod_hnf!(M, BmatJinI, basis_elts)
-    end
-    for j = 1:r
-      for k = 1:r
-        mult_table[i, j, k] = Fp(M[basis_elts[j], basis_elts[k]])
-      end
-    end
-  end
-
-  A = StructureConstantAlgebra(Fp, mult_table)
-  if is_commutative(O)
-    A.is_commutative = 1
-  end
-
-  t = FakeFmpqMat(zero_matrix(ZZ, 1, n))
-
-  local _image
-
-  let BmatJinI = BmatJinI, I = I, r = r, A = A, t = t, Fp = Fp
-    function _image(a::Union{AbsNumFieldOrderElem, AlgAssAbsOrdElem})
-      elem_to_mat_row!(t.num, 1, t.den, _elem_in_algebra(a, copy = false))
-      t = mul!(t, t, basis_mat_inv(I, copy = false))
-      @assert isone(t.den) "Not an element of the domain"
-      c = reduce_vector_mod_hnf(t.num, BmatJinI)
-      return A([ Fp(c[i]) for i in basis_elts ])
-    end
-  end
-
-  local _preimage
-
-  temppp = zero(Oalgebra)
-
-  let BI = BI, basis_elts = basis_elts, r = r, Oalgebra = Oalgebra, temppp = temppp
-    function _preimage(a::AssociativeAlgebraElem)
-      acoords = map(x -> QQ(lift(ZZ, x)), coefficients(a, copy = false))
-      z = zero(Oalgebra)
-      for i in 1:r
-        if is_zero(acoords[i])
-          continue
-        end
-        temppp = mul!(temppp, acoords[i], BI[basis_elts[i]])
-        z = add!(z, z, temppp)
-      end
-      _zz = O(z)
-      return _zz
+      return z
     end
   end
 
