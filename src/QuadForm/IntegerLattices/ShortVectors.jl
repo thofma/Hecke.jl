@@ -1847,9 +1847,7 @@ end
 
 function _finckepohstint_shortest(G::QQMatrix)
   _G, d  = integral_split(G,ZZ)
-  @show _G
   m, V = _finckepohstint_shortest(_G)
-  @show length(V)
   return QQ(m,d), V
 end
 
