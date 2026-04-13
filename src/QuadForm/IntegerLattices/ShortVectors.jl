@@ -117,9 +117,9 @@ function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool
   if _G[1, 1] < 0
     _G = -_G
   end
-  min, V = _shortest_vectors_gram(_G)
+  min, V = _shortest_vectors_gram_finckepostint(_G)
   L.minimum = min
-  return V
+  return [ZZ.(i) for i in V]
 end
 
 ################################################################################
@@ -1830,4 +1830,34 @@ __short_vectors(G::ZZMatrix, lb::Int, ub::Int) = _finckepohstint(G, ub)
 
 function __short_vectors(G::ZZMatrix, lb::ZZRingElem, ub::ZZRingElem)
   return __enumerate_gram(LatEnumCtx, G, lb, ub, QQFieldElem, identity, identity, QQFieldElem)
+end
+
+function _finckepohstint_shortest(G::ZZMatrix)
+  @assert is_positive_entry(G,1,1)
+  Glll, T = lll_gram_with_transform(G)
+  ubInt = Int(minimum(diagonal(Glll)))
+  V = _finckepohstint(Glll, ubInt; dolll=false)
+  m = minimum(i[2] for i in V)
+  if isone(T)
+    return m, [i[1] for i in V if i[2] == m]
+  else
+    return m, [i[1]*T for i in V if i[2] == m]
+  end
+end
+
+function _finckepohstint_shortest(G::QQMatrix)
+  _G, d  = integral_split(G,ZZ)
+  @show _G
+  m, V = _finckepohstint_shortest(_G)
+  @show length(V)
+  return QQ(m,d), V
+end
+
+
+function _shortest_vectors_gram_finckepostint(G::Union{QQMatrix,ZZMatrix})
+  try
+    return _finckepohstint_shortest(G)
+  catch InexactError
+    return _shortest_vectors_gram(G)
+  end
 end
