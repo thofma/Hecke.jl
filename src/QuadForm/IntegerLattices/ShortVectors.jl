@@ -1533,7 +1533,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
         iszero(found) && break
         # update the invariants
         T = numerator(new_invariant_subspace*view(gramB,1:n_i,1:n_i))
-        T = transpose(lll(T))
+        T = transpose(lll!(T))
         if CoeffType===ZZRingElem
           TCoeff = T
         elseif CoeffType===Int
@@ -1578,11 +1578,13 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   if CoeffType===ZZRingElem
     _B = numerator(B)
     d = denominator(B)
+    gramL_CoeffType = gZ
   else
     _B = [CoeffType(i) for i in numerator(B)]
     d = CoeffType(denominator(B))
+    gramL_CoeffType = [CoeffType(i) for i in gZ]
   end
-  gramL_CoeffType = [CoeffType(i) for i in gZ]
+  tmp_v = [CoeffType(0) for i in 1:ncols(gZ)]
   pushfirst!(grams, gZ)
   for b in keys(short_vectors1)
     bret = copy(b)
@@ -1590,7 +1592,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
       bret[i] = bret[i]^2
     end
     v = divexact.(__not_adj(first(short_vectors1[b])*_B),d)
-    s = dot(v, gramL_CoeffType, v)
+    s = __norm!(gramL_CoeffType, v, tmp_v)
     pushfirst!(bret, s)
     for z in short_vectors1[b]
       i = i+1
@@ -1611,6 +1613,10 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   end
   return output, grams, BinvT, proj[1]
 end
+
+__norm!(gram::Matrix{Int}, v::Vector{Int}, tmp_v::Vector{Int}) = dot(v, gram, v)
+__norm!(gram::ZZMatrix, v::Vector{ZZRingElem}, tmp_v::Vector{ZZRingElem}) = dot(mul!(tmp_v,v,gram),v) # this could be improved if necessary
+
 
 @inline function __mul_mod!(u::Vector{S}, v::Vector{S}, A, moduli::Vector{S}) where {S<:ZZRingElem}
   #@assert length(v) == nrows(A)
