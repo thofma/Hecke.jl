@@ -17,10 +17,10 @@
     @test f == 1
     @test c == 1
 
-    _, K, f, c = Hecke._tates_algorithm(E, 2)
-    @test K == "I1"
-    @test f == 1
-    @test c == 1
+    ld = Hecke._tates_algorithm(E, 2)
+    @test ld.kodaira_symbol == "I1"
+    @test ld.conductor_valuation == 1
+    @test ld.tamagawa_number == 1
 
     @test reduction_type(E, 2) == "Nonsplit multiplicative"
 
@@ -30,10 +30,10 @@
     @test f == 1
     @test c == 2
 
-    _, K, f, c = Hecke._tates_algorithm(E, 3)
-    @test K == "I2"
-    @test f == 1
-    @test c == 2
+    ld = Hecke._tates_algorithm(E, 3)
+    @test ld.kodaira_symbol == "I2"
+    @test ld.conductor_valuation == 1
+    @test ld.tamagawa_number == 2
 
     Ep, K, f, c = tates_algorithm_local(E, 5)
     @test a_invariants(tidy_model(Ep)) == a_invariants(E)
@@ -41,10 +41,10 @@
     @test f == 2
     @test c == 2
 
-    _, K, f, c = Hecke._tates_algorithm(E, 5)
-    @test K == "III*"
-    @test f == 2
-    @test c == 2
+    ld = Hecke._tates_algorithm(E, 5)
+    @test ld.kodaira_symbol == "III*"
+    @test ld.conductor_valuation == 2
+    @test ld.tamagawa_number == 2
 
     @test reduction_type(E, 5) == "Additive"
 
