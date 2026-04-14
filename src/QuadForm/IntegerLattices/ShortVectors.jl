@@ -1582,6 +1582,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     _B = [CoeffType(i) for i in numerator(B)]
     d = CoeffType(denominator(B))
   end
+  gramL_CoeffType = [CoeffType(i) for i in gZ]
   pushfirst!(grams, gZ)
   for b in keys(short_vectors1)
     bret = copy(b)
@@ -1589,7 +1590,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
       bret[i] = bret[i]^2
     end
     v = divexact.(__not_adj(first(short_vectors1[b])*_B),d)
-    s = dot(v, gZ, v)
+    s = dot(v, gramL_CoeffType, v)
     pushfirst!(bret, s)
     for z in short_vectors1[b]
       i = i+1
