@@ -131,7 +131,15 @@ end
     @assert base_ring(M) === coefficient_ring(O)
     # create ideal of O with basis_matrix M
     r = GenOrdIdl(O)
-    r.basis_matrix = M
+
+    # we want to have basis_matrix as a dense_matrix_type(elem_type(T))
+    # materialize the matrix if view was provided
+    if M isa AbstractAlgebra.Generic.MatSpaceView
+      r.basis_matrix = sub(M, 1:nrows(M), 1:ncols(M))
+    else
+      r.basis_matrix = M
+    end
+
     return r
   end
 
