@@ -4,17 +4,8 @@
 #
 ################################################################################
 
-mutable struct FunFldDiff
-  function_field::AbstractAlgebra.Generic.FunctionField
-  f::Generic.FunctionFieldElem
-
-  function FunFldDiff(f::Generic.FunctionFieldElem)
-    r = new()
-    r.function_field = parent(f)
-    r.f = f
-    return r
-  end
-
+struct FunFldDiff{T <: Generic.FunctionFieldElem}
+  f::T
 end
 
 @doc raw"""
@@ -22,19 +13,43 @@ end
 
 Return the differential df.
 """
-function differential(f::Generic.FunctionFieldElem)
+function differential(f::T) where {T <: Generic.FunctionFieldElem}
   F = parent(f)
-  y = gen(F)
-  x = F(gen(base_ring(F)))
+  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
 
-  fnum = to_bivariate(numerator(f))
-  fdenom = to_bivariate(denominator(f))
+  # note that gen(F) currently has inferred type Any, so we add an explicit type annotation
+  y = gen(F)::T
 
-  df = derivative(fnum//fdenom, 1)
-  num = evaluate(numerator(df), [x, y])
-  den = evaluate(denominator(df), [x, y])
+  # our polynomials are polynomial in y with coefficients polynomials in x
+  # note that denominators are polynomials in x!
+  # d(f) = [df/dx - (df/dy * dp/dx) / dp/dy] dx, where p is defining polynomial
+  #
+  # further: write p = g/h
+  # dp/dx = (dg/dx * h - g * dh/dx)/h^2, and dp/dy = dg/dy / h
+  # since we are in F, g(x,y) = 0 and we obtain (dp/dx) / (dp/dy) = (dg/dx) / (dg/dy)
 
-  return FunFldDiff(num//den)
+  # we want to stay in F, this is simple helper to go from k[x][y] to F
+  function toF(p::Generic.Poly{<:PolyRingElem})
+    return evaluate(map_coefficients(F, p), y)
+  end
+
+  g_poly = numerator(F)
+  dg_dx     = toF(map_coefficients(derivative, g_poly))
+  dg_dy     = toF(derivative(g_poly))
+  df_dx_dy  = dg_dx // dg_dy
+
+  fnum_poly, fden_poly = numerator(f), denominator(f)
+  fnum      = toF(fnum_poly)
+  dfnum_dx  = toF(map_coefficients(derivative, fnum_poly))
+  dfnum_dy  = toF(derivative(fnum_poly))
+  # denominator is already in k[x]
+  fden      = F(fden_poly)
+  dfden_dx  = F(derivative(fden_poly))
+
+  df_dx = (dfnum_dx * fden - fnum * dfden_dx) // fden^2
+  df = df_dx - (dfnum_dy // fden) * df_dx_dy
+
+  return FunFldDiff(df)
 end
 
 ################################################################################
@@ -66,7 +81,7 @@ function is_zero(df::FunFldDiff)
 end
 
 function function_field(df::FunFldDiff)
-  return df.function_field
+  return parent(df.f)
 end
 
 ################################################################################
@@ -75,8 +90,8 @@ end
 #
 ################################################################################
 
-function Base.:(==)(df::FunFldDiff, dg::FunFldDiff)
-  return function_field(df) === function_field(df) && df.f == df.f
+function Base.:(==)(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  return function_field(df) === function_field(dg) && df.f == dg.f
 end
 
 function Base.hash(df::FunFldDiff, h::UInt)
@@ -91,65 +106,58 @@ end
 #
 ################################################################################
 
-function Base.:+(df::FunFldDiff, dg::FunFldDiff)
-  f = df.f
-  g = dg.f
-  @assert parent(f) === parent(g)
-  return FunFldDiff(f + g)
+function Base.:+(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  @req function_field(df) === function_field(dg) "differentials must have the same parent"
+  return FunFldDiff(df.f + dg.f)
 end
 
-function Base.:-(df::FunFldDiff, dg::FunFldDiff)
-  f = df.f
-  g = dg.f
-  @assert parent(f) === parent(g)
-  return FunFldDiff(f - g)
+function Base.:-(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  @req function_field(df) === function_field(dg) "differentials must have the same parent"
+  return FunFldDiff(df.f - dg.f)
 end
 
 function Base.:-(df::FunFldDiff)
   return FunFldDiff(-df.f)
 end
 
-function Base.:*(r::Generic.FunctionFieldElem, df::FunFldDiff)
-  @assert parent(r) == parent(df.f)
-  return FunFldDiff(r*df.f)
+function Base.:*(r::T, df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
+  @req parent(r) === function_field(df) "element and differential must have the same parent"
+  return FunFldDiff(r * df.f)
 end
 
 function Base.:*(r::GenOrdElem, df::FunFldDiff)
-  F = function_field(df)
-  return F(r) * df
+  return function_field(df)(r) * df
 end
 
 function Base.:*(r::IntegerUnion, df::FunFldDiff)
-  F = function_field(df)
-  return F(r) * df
+  return function_field(df)(r) * df
 end
 
-Base.:*(df::FunFldDiff, r::Generic.FunctionFieldElem) = r*df
+Base.:*(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem} = r*df
 Base.:*(df::FunFldDiff, r::GenOrdElem) = r*df
 Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
 @doc raw"""
     //(df::FunFldDiff, dg::FunFldDiff) -> FunctionFieldElem
 
-Return the function r such that r*df = dg.
+Return the function r such that r*dg = df.
 """
-function Base.://(df::FunFldDiff, dg::FunFldDiff)
+function Base.://(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
+  @req function_field(df) === function_field(dg) "differentials must have the same parent"
   return df.f//dg.f
 end
 
-function Base.://(df::FunFldDiff, r::Generic.FunctionFieldElem)
-  @assert parent(r) == parent(df.f)
-  return return FunFldDiff(df.f//r)
+function Base.://(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem}
+  @req parent(r) === function_field(df) "element and differential must have the same parent"
+  return FunFldDiff(df.f//r)
 end
 
 function Base.://(df::FunFldDiff, r::GenOrdElem)
-  F = function_field(df)
-  return df//F(r)
+  return df // function_field(df)(r)
 end
 
 function Base.://(df::FunFldDiff, r::IntegerUnion)
-  F = function_field(df)
-  return df//(F(r))
+  return df // function_field(df)(r)
 end
 
 ################################################################################
@@ -163,7 +171,7 @@ end
 
 Return the divisor corresponding to the differential form.
 """
-function divisor(df::FunFldDiff)
+function divisor(df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
   F = function_field(df)
   x = separating_element(F)
   return divisor(df.f) - 2*pole_divisor(F(x)) + different_divisor(F)
@@ -189,14 +197,18 @@ end
 
 Return a basis of the first order differential forms of F.
 """
-function basis_of_differentials(F::AbstractAlgebra.Generic.FunctionField)
-  dx = differential(separating_element(F))
+function basis_of_differentials(F::Generic.FunctionField{T}) where {T <: FieldElement}
   x = separating_element(F)
+  dx = differential(x)
+
   codiff_divisor = divisor(codifferent(finite_maximal_order(F)), codifferent(infinite_maximal_order(F)))
   D = (-divisor(dx.f) + 2*pole_divisor(F(x)) + codiff_divisor)
+
   J_fin, J_inf = ideals(D)
-  F = function_field(D)
   RR = _riemann_roch_space(J_fin, J_inf, F)
-  map(t-> FunFldDiff(t), RR)
-  #return map(t-> FunFldDiff(t), riemann_roch_space(canonical_divisor(F)))
+
+  # We were using `map` before, but it cannot infer a concrete return type,
+  #   due to the empty-input handling (it was returning Union{Vector{Any}, Vector{...}}).
+  # So use a typed comprehension instead.
+  return FunFldDiff{Generic.FunctionFieldElem{T}}[FunFldDiff(r) for r in RR]
 end
