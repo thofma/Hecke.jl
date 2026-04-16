@@ -85,182 +85,126 @@ function tates_algorithm_local(E, P)
   return (ld.minimal_model, ld.kodaira_symbol, ld.conductor_valuation, ld.tamagawa_number, split)
 end
 
-# internal version
-# extend this for global fields
+
+function _tates_algorithm(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
+  return _tates_algorithm(E, QQValuation(p))
+end
 
 function _tates_algorithm(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  OK = order(P)
-  F, _mF = residue_field(OK, P)
-  mF = extend(_mF, nf(OK))
-  _val(x) = iszero(x) ? inf : valuation(x, P)
-  _lift(y) = mF\y
-  _red(x) = mF(x)
-  _redmod(x) = mF\(mF(x))
-  _invmod(x) = mF\(inv(mF(x)))
-  pi = uniformizer(P)
-  return __tates_algorithm_generic(E, OK, _val, _redmod, _red, _lift, _invmod, pi)
+  return _tates_algorithm(E, AbsSimpleNumFieldValuation(P))
 end
 
 function _tates_algorithm(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree))
-  K = base_field(E)
-  R = base_ring(K.fraction_field)
-  Kl = localization(K, degree)
-  F, _mF = residue_field(Kl, Kl(1//gen(K)))
-  mF = x -> _mF(Kl(x))
-  _val = x -> iszero(x) ? inf : degree(denominator(x)) - degree(numerator(x))
-  _res = mF
-  _mod = x -> K(preimage(_mF, (_res(x))))
-  _invmod = x -> K(preimage(_mF, inv(_res(x))))
-  _uni = 1//gen(K)
-  _lift = x -> K(preimage(_mF, x))
-  return __tates_algorithm_generic(E, R, _val, _mod, _res, _lift, _invmod, _uni)
+  return _tates_algorithm(E, RationalFunctionFieldDegreeValuation(base_field(E)))
 end
 
 function _tates_algorithm(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, f::PolyRingElem)
-  @req is_irreducible(f) "Polynomial must be irreducible"
-  R = parent(f)
-  K = base_field(E)
-  @assert R === base_ring(K.fraction_field)
-  F, _mF = residue_field(R, f)
-  mF = x -> _mF(numerator(x))/_mF(denominator(x))
-  _val = x -> iszero(x) ? inf : valuation(numerator(x), f) - valuation(denominator(x), f)
-  _res = mF
-  _mod = x -> K(preimage(_mF, (_res(x))))
-  _invmod = x -> K(preimage(_mF, inv(_res(x))))
-  _uni = K(f)
-  _lift = x -> K(preimage(_mF, x))
-  return __tates_algorithm_generic(E, R, _val, _mod, _res, _lift, _invmod, _uni)
+  return _tates_algorithm(E, RationalFunctionFieldValuation(base_field(E), f))
 end
 
-function _tates_algorithm(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, x)
+function _tates_algorithm(E::EllipticCurve{T}, x::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
   K = base_field(E)
   @assert parent(x) === K
-  t = gen(K)
+
   if is_one(denominator(x))
     return _tates_algorithm(E, numerator(x))
   else
-    @assert x == 1//t
+    @assert x == 1 // gen(K)
     return _tates_algorithm(E, degree)
   end
 end
 
-function _tates_algorithm(E::EllipticCurve{QQFieldElem}, _p::IntegerUnion)
-  p = ZZ(_p)
-  F = GF(p, cached = false)
-  _invmod = x -> QQ(lift(ZZ, inv(F(x))))
-  _uni = p
-  return __tates_algorithm_generic(E, ZZ, x -> is_zero(x) ? inf : valuation(x, p), x -> smod(x, p), x -> F(x), x -> QQ(lift(ZZ, x)), _invmod, p)
-end
-
-function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi)
-  #K = base_field(E)
-  #OK = maximal_order(K)
-  #F, _mF = residue_field(OK, P)
-  #mF = extend(_mF, K)
-
+function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
   K = base_field(E)
-  F = parent(_red(one(K)))
+  F = residue_field(v)
   p = characteristic(F)
-  pis2 = p == 2
-  pis3 = p == 3
-  ## divisibility check
-  _pdiv(x) = _val(x) > 0
-  # p/2
-  onehalfmodp = p == 0 ? QQ(1//2) : (pis2 ? ZZ(0) : invmod(ZZ(2), ZZ(p)))
-  # root mod P
-  _rootmod(x, e) = begin
-    fl, y = is_power(_red(x), e)
-    if fl
-      @assert y^e == _red(x)
-    end
-    return fl ? _lift(y) : zero(x)
+  pi = uniformizer(v)
+
+  # 1//2 modulo p
+  inv_2_modp = p == 0 ? QQ(1//2) : (p == 2 ? ZZ(0) : invmod(ZZ(2), ZZ(p)))
+  # n-th root modulo p (lifted back to K)
+  function nth_root_mod(x::T, e::Integer)
+    fl, y = is_power(reduce(v, x), e)
+    return fl ? lift(v, y) : zero(x)
   end
 
-  Fx, = polynomial_ring(F, cached = false)
-  # check if root exists of quadratic polynomial in F
-  _hasroot(a, b, c) = length(roots(Fx(_red.([c, b, a])))) > 0
-  # number of roots of monic cubic (a = 1)
-  _nrootscubic(b, c, d) = length(roots(Fx(_red.([d, c, b, one(b)]))))
+  Fx = polynomial_ring(F, cached = false)[1]
+  # check if ax^2 + bx + c has roots in residue field F
+  function quadratic_has_root(a::T, b::T, c::T)
+    f = Fx(reduce.(Ref(v), [c, b, a]))
+    return !isempty(roots(f))
+  end
 
   a1, a2, a3, a4, a6 = a_invariants(E)
 
-  if minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) < 0
-    # Non-integral at P, lets make integral
-    e = 0
-    if !iszero(a1)
-      e = max(e, -_val(a1))
+  # make elliptic curve integral at prime: enough to consider uniform scaling by u
+  int_e = 0
+  for (ai, w) in [(a1, 1), (a2, 2), (a3, 3), (a4, 4), (a6, 6)]
+    ai_val = valuation(v, ai)
+    if ai_val < 0
+      int_e = max(int_e, div(-ai_val + w - 1, w))
     end
-    if !iszero(a2)
-      e = max(e, ceil(Int, -_val(a2)//2))
-    end
-    if !iszero(a3)
-      e = max(e, ceil(Int, -_val(a3)//3))
-    end
-    if !iszero(a4)
-      e = max(e, ceil(Int, -_val(a4)//4))
-    end
-    if !iszero(a6)
-      e = max(e, ceil(Int, -_val(a6)//6))
-    end
+  end
 
-    pie = pi^e
-    a1 = a1 * pie
-    a2 = a2 * pie^2
-    a3 = a3 * pie^3
-    a4 = a4 * pie^4
-    a6 = a6 * pie^6
+  if int_e > 0
+    u = pi^int_e
+    a1, a2, a3, a4, a6 = a1*u, a2*u^2, a3*u^3, a4*u^4, a6*u^6
   end
 
   # Now the model is P-integral
-
   while true
     E = elliptic_curve(K, [a1, a2, a3, a4, a6])
     b2, b4, b6, b8 = b_invariants(E)
     c4, c6 = c_invariants(E)
-    delta = discriminant(E)
-    vD = _val(delta)
-    if vD == 0 # Good reduction
+
+    vD = valuation(v, discriminant(E))
+
+    # Step 1 in Silverman description
+    # Line 4 in Cremona description
+    if vD == 0  # Good Reduction
       return EllipticCurveLocalData(E, KodairaSymbol("I0"), 0, 1, true)
     end
 
-    # change coords so that p|a3,a4,a6
-    if pis2
-      if _pdiv(b2)
-        r = _rootmod(a4, 2)
-        t = _rootmod(((r + a2)*r + a4)*r + a6, 2)
+    # Step 2 in Silverman description
+    # Lines 5-17 in Cremona description
+
+    # move singular point to (0,0): change coords so that p | a3, a4, a6
+    if p == 2
+      if valuation(v, b2) > 0
+        r = nth_root_mod(a4, 2)
+        t = nth_root_mod(((r + a2)*r + a4)*r + a6, 2)
       else
-        a1inv = _invmod(a1)
+        a1inv = inv_mod(v, a1)
         r = a1inv * a3
-        t = a1inv*(a4 + r^2)
+        t = a1inv * (a4 + r^2)
       end
+    elseif p == 3
+      r = valuation(v, b2) > 0 ? nth_root_mod(-b6, 3) : -inv_mod(v, b2) * b4
+      t = a1 * r + a3
     else
-      if pis3
-        r = _pdiv(b2) ? _rootmod(-b6, 3) : (-_invmod(b2)*b4)
-        t = a1 * r + a3
-      else
-        r = _pdiv(c4) ? (-_invmod(K(12))*b2) : (-_invmod(12*c4)*(c6 + b2*c4))
-        t = -onehalfmodp*(a1*r + a3)
-      end
+      r = valuation(v, c4) > 0 ? -inv_mod(v, K(12)) * b2 : -inv_mod(v, 12*c4) * (c6 + b2*c4)
+      t = -inv_2_modp * (a1 * r + a3)
     end
-    r = _redmod(r)
-    t = _redmod(t)
+    r = reduce_mod(v, r)
+    t = reduce_mod(v, t)
 
     # transform and update invariants
     E, = transform_rstu(E, [r, 0, t, 1])
     a1, a2, a3, a4, a6 = a_invariants(E)
     b2, b4, b6, b8 = b_invariants(E)
+    # note that c-invariants are unchanged (the transform has u = 1)
 
-    @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
-    # Model is still p-Integral, good!
-
-    @assert _val(a3) != 0
-    @assert _val(a4) != 0
-    @assert _val(a6) != 0
+    # ensure the model stays P-integral
+    @assert minimum(valuation(v, x) for x in [a1, a2, a3, a4, a6]) >= 0
+    # ensure a3, a4, a6 are divisible by P
+    @assert minimum(valuation(v, x) for x in [a3, a4, a6]) > 0
 
     # Test for In, II, III, IV
 
-    if !_pdiv(c4) # Type In
-      split = _hasroot(one(K), a1, -a2)
+    # part of Step 2 in Silverman description
+    # Lines 19-21 in Cremona description
+    if valuation(v, c4) == 0  # Type In
+      split = quadratic_has_root(one(K), a1, -a2)
       if split
         cp = vD
       else
@@ -269,30 +213,38 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
       return EllipticCurveLocalData(E, KodairaSymbol("I$(vD)"), 1, cp, split)
     end
 
-    if _val(a6) < 2 # Type II
+    # Step 3 in Silverman description
+    # Line 23 in Cremona description
+    if valuation(v, a6) < 2   # Type II
       return EllipticCurveLocalData(E, KodairaSymbol("II"), vD, 1, true)
     end
 
-    if _val(b8) < 3 # Type III
+    # Step 4 in Silverman description
+    # Line 24 in Cremona description
+    if valuation(v, b8) < 3   # Type III
       return EllipticCurveLocalData(E, KodairaSymbol("III"), vD - 1, 2, true)
     end
 
-    if _val(b6) < 3 # Type IV
-      cp = _hasroot(one(K), a3//pi, -a6//pi^2) ? 3 : 1
+    # Step 5 in Silverman description
+    # Lines 25-28 in Cremona description
+    if valuation(v, b6) < 3   # Type IV
+      cp = quadratic_has_root(one(K), a3//pi, -a6//pi^2) ? 3 : 1
       return EllipticCurveLocalData(E, KodairaSymbol("IV"), vD - 2, cp, true)
     end
 
+    # Step 6 in Silverman description
+    # Lines 29-33 in Cremona description
     # Change coords so that p|a1,a2, p^2|a3,a4, p^3|a6
 
-    if pis2
-      s = _rootmod(a2, 2)
-      t = pi * _rootmod(a6//pi^2, 2)
-    elseif pis3
+    if p == 2
+      s = nth_root_mod(a2, 2)
+      t = pi * nth_root_mod(a6//pi^2, 2)
+    elseif p == 3
       s = a1
       t = a3
     else
-      s = -a1 * onehalfmodp
-      t = -a3 * onehalfmodp
+      s = -a1 * inv_2_modp
+      t = -a3 * inv_2_modp
     end
 
     # transform and update invariants
@@ -301,153 +253,167 @@ function __tates_algorithm_generic(E, R, _val, _redmod, _red, _lift, _invmod, pi
     b2, b4, b6, b8 = b_invariants(E)
     c4, c6 = c_invariants(E)
 
-    @assert _val(a1) > 0
-    @assert _val(a2) > 0
-    @assert _val(a3) >= 2
-    @assert _val(a4) >= 2
-    @assert _val(a6) >= 3
+    # ensure divisibility conditions
+    @assert valuation(v, a1) >= 1 && valuation(v, a2) >= 1
+    @assert valuation(v, a3) >= 2 && valuation(v, a4) >= 2
+    @assert valuation(v, a6) >= 3
 
-    # Test P-integrality
-    @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
-
+    # part of Step 6 in Silverman description
+    # Lines 34-36 in Cremona description
     # Analyse roots of the cubic T^3  + bT^2  + cT^2 + d = 0, where
-    # b = a2/p, c = a4/p^2, d = a6/p^3
-
-    b = a2//pi
-    c = a4//pi^2
-    d = a6//pi^3
+    #   b = a2/p, c = a4/p^2, d = a6/p^3
+    b = a2 // pi
+    c = a4 // pi^2
+    d = a6 // pi^3
     w = 27*d^2 - b^2*c^2 + 4*b^3*d - 18*b*c*d + 4*c^3
     x = 3*c - b^2
 
-    sw = _pdiv(w) ? (_pdiv(x) ? 3 : 2) : 1
-
-    if sw == 1 # w != 0 mod P
-      # Three distinct roots, so type I*0
-      return EllipticCurveLocalData(E, KodairaSymbol("I0*"), vD - 4, 1 + _nrootscubic(b, c, d), true)
-    elseif sw == 2
-      # One double root, so type I*m for some m
+    # part of Step 6 in Silverman description
+    # Line 37 in Cremona description
+    if valuation(v, w) == 0     # Three distinct roots: I0*
+      # we need the number of roots of x^3 + bx^2 + cx + d
+      f = Fx(reduce.(Ref(v), [d, c, b, one(K)]))
+      return EllipticCurveLocalData(E, KodairaSymbol("I0*"), vD - 4, 1 + length(roots(f)), true)
+    elseif valuation(v, x) == 0 # One double root: Im*
+      # part of Step 7 in Silverman description
+      # Lines 39-41 in Cremona description
       # Change coords so that the double root is T = 0 mod p
-
-      if pis2
-        r = _rootmod(c, 2)
+      if p == 2
+        r = nth_root_mod(c, 2)
+      elseif p == 3
+        r = c * inv_mod(v, b)
       else
-        if pis3
-          r = c * _invmod(b)
-        else
-          r = (b*c - 9 * d) * _invmod(2*x)
-        end
+        r = (b*c - 9 * d) * inv_mod(v, 2*x)
       end
-      r = pi * _redmod(r)
+      r = pi * reduce_mod(v, r)
 
       E, = transform_rstu(E, [r, 0, 0, 1])
       a1, a2, a3, a4, a6 = a_invariants(E)
       b2, b4, b6, b8 = b_invariants(E)
       c4, c6 = c_invariants(E)
 
-      ix = 3
-      iy = 3
+      # Lines 42-64 in Cremona description
+      # See step 7 in Silverman description for details
+      # We proceed in "pairs" of quadratic equations,
+      #   unless we find one with distinct roots (in the algebraic closure)
+      # The first equation increases the valuation of a3, a6
+      # The second increases the valuation of a4, a6
+      # Since the discriminant is unchanged by these transforms,
+      #   the process terminates (the valuations of the a_i are bounded)
+      m  = 1
       mx = pi^2
       my = pi^2
-      done = false
-      while !done
-        at2 = a2//pi
-        a3t = a3//my
-        a4t = a4//(pi * mx)
-        a6t = a6//(mx * my)
-        if _pdiv(a3t^2 + 4*a6t)
-          if pis2
-            t = my * _rootmod(a6t, 2)
+      cp = 0
+      while cp == 0
+        a2t = a2 // pi
+        a3t = a3 // my
+        a4t = a4 // (pi * mx)
+        a6t = a6 // (mx * my)
+
+        if valuation(v, a3t^2 + 4*a6t) == 0 # discriminant is non-zero: either 2 or 0 roots
+          cp = quadratic_has_root(one(K), a3t, -a6t) ? 4 : 2
+        else
+          if p == 2
+            t = my * nth_root_mod(a6t, 2)
           else
-            t = my * _redmod(-a3t * onehalfmodp)
+            t = my * reduce_mod(v, -a3t * inv_2_modp)
           end
           E, = transform_rstu(E, [0, 0, t, 1])
           a1, a2, a3, a4, a6 = a_invariants(E)
           b2, b4, b6, b8 = b_invariants(E)
+
           my = my * pi
-          iy = iy + 1
-          a2t = a2//pi
-          a3t = a3//my
-          a4t = a4//(pi * mx)
-          a6t = a6//(mx * my)
-          if _pdiv(a4t^2 - 4*a6t*a2t)
-            if pis2
-              r = mx * _rootmod(a6t * _invmod(a2t), 2)
+          m  = m + 1
+
+          a2t = a2 // pi
+          a3t = a3 // my
+          a4t = a4 // (pi * mx)
+          a6t = a6 // (mx * my)
+
+          if valuation(v, a4t^2 - 4*a6t*a2t) == 0 # discriminant is non-zero: either 2 or 0 roots
+            cp = quadratic_has_root(a2t, a4t, a6t) ? 4 : 2
+          else
+            if p == 2
+              r = mx * nth_root_mod(a6t * inv_mod(v, a2t), 2)
             else
-              r = mx * _redmod(-a4t * _invmod(2*a2t))
+              r = mx * reduce_mod(v, -a4t * inv_mod(v, 2*a2t))
             end
             E, = transform_rstu(E, [r, 0, 0, 1])
+
             a1, a2, a3, a4, a6 = a_invariants(E)
             b2, b4, b6, b8 = b_invariants(E)
+
             mx = mx * pi
-            ix = ix + 1
-            # Stay in the loop
-          else
-            cp = _hasroot(a2t, a4t, a6t) ? 4 : 2
-            done = true
+            m  = m + 1
           end
-        else
-          cp = _hasroot(one(K), a3t, -a6t) ? 4 : 2
-          done = true
         end
       end
-      m = ix + iy - 5
       return EllipticCurveLocalData(E, KodairaSymbol("I$(m)*"), vD - m - 4, cp, true)
-    elseif sw == 3
-      # Triple root
-      # Change coordinates so that T = 0 mod p
-      if pis2
+    else  # Triple root
+      # Step 8 in Silverman description
+      # Lines 66-73 in Cremona description
+
+      # Change coordinates so that the triple root is T = 0 mod p
+      if p == 2
         r = b
+      elseif p == 3
+        r = nth_root_mod(-d, 3)
       else
-        if pis3
-          r = _rootmod(-d, 3)
-        else
-          r = -b * _invmod(K(3))
-        end
+        r = -b * inv_mod(v, K(3))
       end
-      r = pi * _redmod(r)
+      r = pi * reduce_mod(v, r)
+
       E, = transform_rstu(E, [r, 0, 0, 1])
       a1, a2, a3, a4, a6 = a_invariants(E)
       b2, b4, b6, b8 = b_invariants(E)
-      @assert minimum(_val(ai) for ai in [a1, a2, a3, a4, a6] if !iszero(ai)) >= 0
-      # Cubic after transform must have triple root at 0"
-      @assert !(_val(a2) < 2 || _val(a4) < 3 || _val(a6) < 4)
 
-      a3t = a3//pi^2
-      a6t = a6//pi^4
+      # Cubic after transform must have triple root at 0
+      #
+      # note that we had transform involving only r (divisible by p)
+      # thus the valuation of a1 is unchanged and
+      # the valuation of a3 is guaranteed to be at least 2:
+      #   before transform v(a1) >= 1, v(a3) >= 2 and a3 = a3 + r*a1 (recall, t = 0)
+      @assert valuation(v, a2) >= 2 && valuation(v, a4) >= 3 && valuation(v, a6) >= 4
+
+      a3t = a3 // pi^2
+      a6t = a6 // pi^4
 
       # Test for Type IV*
-      if !_pdiv(a3t^2 + 4*a6t)
-        cp = _hasroot(one(K), a3t, -a6t) ? 3 : 1
+      # we want x^2 + a3/pi^2*x - a6/pi^4 to have distinct roots: check discriminant valuation
+      if valuation(v, a3t^2 + 4*a6t) == 0
+        cp = quadratic_has_root(one(K), a3t, -a6t) ? 3 : 1
         return EllipticCurveLocalData(E, KodairaSymbol("IV*"), vD - 6, cp, true)
       end
 
+      # Steps 9,10 in Silverman description
+      # Lines 74-79 in Cremona description
       # Change coordinates so that p^3|a3, p^5|a6
-      if pis2
-        t = -pi^2 * _rootmod(a6t, 2)
+      if p == 2
+        t = -pi^2 * nth_root_mod(a6t, 2)
       else
-        t = pi^2 * _redmod(-a3t * onehalfmodp)
+        t = pi^2 * reduce_mod(v, -a3t * inv_2_modp)
       end
       E, = transform_rstu(E, [0, 0, t, 1])
       a1, a2, a3, a4, a6 = a_invariants(E)
       b2, b4, b6, b8 = b_invariants(E)
 
-      # Test for types III*, II*
-
-      if _val(a4) < 4 # Type III*
+      if valuation(v, a4) < 4 # Type III*
         return EllipticCurveLocalData(E, KodairaSymbol("III*"), vD - 7, 2, true)
       end
 
-      if _val(a6) < 6 # Type II*
+      if valuation(v, a6) < 6 # Type II*
         return EllipticCurveLocalData(E, KodairaSymbol("II*"), vD - 8, 1, true)
       end
-
-      # Non-minimal equation, dividing out
-      a1 = a1//pi
-      a2 = a2//pi^2
-      a3 = a3//pi^3
-      a4 = a4//pi^4
-      a6 = a6//pi^6
     end
+
+    # Step 11 in Silverman description
+    # Line 80 in Cremona description
+    # at this point we have p^6|a6, and the original Weierstrass equation was not minimal
+    a1 = a1 // pi
+    a2 = a2 // pi^2
+    a3 = a3 // pi^3
+    a4 = a4 // pi^4
+    a6 = a6 // pi^6
   end
 end
 
