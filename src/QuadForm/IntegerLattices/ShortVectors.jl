@@ -1333,6 +1333,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   @assert all(is_integral(projL[i]) for i in 2:length(projL))
   B = reduce(vcat, basis_matrix.(projL))
   Binv = ZZ.(inv(B))
+  L_in_L1toLn = hnf(Binv)
   gramB = B*gram_matrix(L)*transpose(B)
 
   # keeps track of the invariant subspace
@@ -1375,7 +1376,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   k = length(proj)
   w = length(target_norms[1]) - (k-1)
   zeroCoeff = zero(CoeffType)
-  flag_projection = deepcopy(proj[1]) # changed inplace later
+  #flag_projection = deepcopy(proj[1]) # changed inplace later
   for i in 2:k
     short_vectors2 = Dict{Vector{CoeffType},Vector{VectorType}}()
     for a in Set(n[1:w+i-1] for n in target_norms)
@@ -1384,9 +1385,10 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
 
     # prepare for integrality test
     N_i = reduce(vcat, basis_matrix(projL[j]) for j in 1:i)
-    flag_projection = add!(flag_projection, proj[i])
-    M_i = lattice(V, flag_projection; isbasis=false, check=false)
-    M_i_in_N_i = ZZ.(solve(N_i,basis_matrix(M_i);side=:left))
+    #flag_projection = add!(flag_projection, proj[i])
+    #M_i = lattice(V, flag_projection; isbasis=false, check=false)
+    M_i_in_N_i = @view L_in_L1toLn[:,1:nrows(N_i)]
+    #M_i_in_N_i = ZZ.(solve(N_i,basis_matrix(M_i);side=:left))
     Sf, Uf, Vf = snf_with_transform(M_i_in_N_i)
     Vf = Vf
     _eldivNi_mod_Mi = diagonal(Sf)
