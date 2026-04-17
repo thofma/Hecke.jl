@@ -5,6 +5,7 @@
 [![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://docs.hecke.thofma.com/dev)
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://docs.hecke.thofma.com/stable)
 [![Build status](https://github.com/thofma/Hecke.jl/workflows/Run%20long%20tests/badge.svg?branch=master)](https://github.com/thofma/Hecke.jl/actions?query=workflow%3A%22Run-tests%22+branch%3Amaster)
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/hecke-jl)
 [![Codecov](https://codecov.io/github/thofma/Hecke.jl/coverage.svg?branch=master&token=)](https://codecov.io/gh/thofma/Hecke.jl)
 
 ## About
