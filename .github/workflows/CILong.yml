@@ -38,7 +38,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache artifacts"
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
       - name: "Inject GAP and Polymake as test dependencies"
@@ -55,7 +55,7 @@ jobs:
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
         continue-on-error: true
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   test_threaded:
@@ -79,7 +79,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache artifacts"
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
       - name: "Run threaded tests"
@@ -93,6 +93,6 @@ jobs:
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
         continue-on-error: true
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
