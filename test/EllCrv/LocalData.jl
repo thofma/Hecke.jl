@@ -1,6 +1,5 @@
 @testset "Local Data" begin
-
-  @testset "Tates algorithm" begin
+  @testset "Tate's algorithm over QQ" begin
     E = elliptic_curve([625, -15625, 19531250, -2929687500, -34332275390625])
     EE = @inferred tates_algorithm_global(E)
     @test a_invariants(EE) == (1, -1, 0, 4, 3)
@@ -122,7 +121,7 @@
     @test c == 1
   end
 
-  @testset "Tates algorithm over number fields" begin
+  @testset "Tate's algorithm over number fields" begin
     #100.1-b2
     Rx, x = polynomial_ring(QQ, "x")
     L, a = number_field(x^2-x-1)
@@ -279,12 +278,124 @@
     @test c == 2
     @test s == true
 
-
     @test valuation(discriminant(E),P) == valuation(discriminant(Ep),P)
+
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2- x + 1)
+    E = elliptic_curve(K, [16807*a - 84035, 41241385934*a + 5367031656, 20124912723078142//3*a + 13331154044930911//3, 928925752459624769703*a - 289907255041158152853, -221729762092842673528466044620617//9*a + 22979609049341545658321384288371//9])
+    lp = prime_decomposition(maximal_order(K), 7)
+    if a + 4 in lp[1][1]
+      P = lp[1][1]
+    else
+      P = lp[2][1]
+    end
+    @test "I0" == @inferred kodaira_symbol(E, P)
+  end
+
+  @testset "Tate's algorithm over rational function fields" begin
+    QQt, t = rational_function_field(QQ, "t")
+    E = elliptic_curve_from_j_invariant(t)
+     _, K, f, c, s = tates_algorithm_local(E, 1//t)
+    @test K == "I1"
+    @test f == 1
+    @test c == 1
+    @test s == true
+
+     _, K, f, c, s = tates_algorithm_local(E, t)
+    @test K == "II"
+    @test f == 2
+    @test c == 1
+    @test s == true
+
+     _, K, f, c, s = tates_algorithm_local(E, t - 1728)
+    @test K == "III*"
+    @test f == 2
+    @test c == 2
+    @test s == true
+
+    @test issetequal(conductor(E), [(t - 1728, 2), (t, 2), (1//t, 1)])
+
+    E = elliptic_curve_from_j_invariant(t^3 + t + 1)
+     _, K, f, c, s = tates_algorithm_local(E, 1//t)
+    @test K == "I3"
+    @test f == 1
+    @test c == 3
+    @test s == true
+
+     _, K, f, c, s = tates_algorithm_local(E, t^3 + t - 1727)
+    @test K == "III*"
+    @test f == 2
+    @test c == 2
+    @test s == true
+
+     _, K, f, c, s = tates_algorithm_local(E, t^3 + t + 1)
+    @test K == "II"
+    @test f == 2
+    @test c == 1
+    @test s == true
+
+    @test issetequal(conductor(E), [(t^3 + t - 1727, 2), (t^3 + t + 1, 2), (1//t, 1)])
+
+    k, a = quadratic_field(2)
+    kt, t = rational_function_field(k, "t")
+    E = elliptic_curve_from_j_invariant(1//(t^2 + t + a))
+
+     _, K, f, c, s = tates_algorithm_local(E, 1//t)
+    @test K == "IV"
+    @test f == 2
+    @test c == 1
+    @test s == true
+
+     _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1//1728*(1728*a - 1))
+    @test K == "III*"
+    @test f == 2
+    @test c == 2
+    @test s == true
+
+     _, K, f, c, s = tates_algorithm_local(E, t^2 + t + a)
+    @test K == "I1"
+    @test f == 1
+    @test c == 1
+    @test s == true
+
+    @test issetequal(conductor(E), [(t^2 + t + 1//1728*(1728*a - 1), 2), (t^2 + t + a, 1), (1//t, 2)])
+
+    E = elliptic_curve_from_j_invariant(t^2 - 2)
+    @test issetequal(conductor(E), [(t^2 - 1730, 2), (t - a, 2), (t + a, 2), (1//t, 1)])
+
+    kt, t = rational_function_field(GF(2), "t")
+    E = elliptic_curve_from_j_invariant(t^3//(t^2 + t + 1))
+     _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1)
+    @test K == "I1"
+    @test f == 1
+    @test c == 1
+    @test s == true
+     _, K, f, c, s = tates_algorithm_local(E, t)
+    @test K == "I0*"
+    @test f == 5
+    @test c == 2
+    @test s == true
+     _, K, f, c, s = tates_algorithm_local(E, 1//t)
+    @test K == "I1"
+    @test f == 1
+    @test c == 1
+    @test s == true
+
+    @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])
+
+    kt,t = rational_function_field(GF(113),:t)
+    ainvs = kt.([(66*t^7 + 86*t^3)//(t^8 + 31*t^4 + 99), (41*t^14 + 34*t^10 + 72*t^6 + 47*t^2)//(t^16 + 62*t^12 + 29*t^8 + 36*t^4 + 83), (65*t^17 + 48*t^13 + 71*t^9 + 48*t^5 + 6*t)//(t^24 + 93*t^20 + 16*t^16 + 67*t^12 + 2*t^8 + 35*t^4 + 81), (58*t^24 + 93*t^20 + 98*t^16 + 26*t^12 + 55*t^8 + 46*t^4 + 15)//(t^32 + 11*t^28 + 60*t^24 + 52*t^20 + 47*t^16 + 63*t^12 + 8*t^8 + 100*t^4 + 109), 0])
+    E = elliptic_curve(ainvs)
+
+    @test all(isone(denominator(i)) for i in a_invariants(integral_model(E)[1]))
+    Eglobal = tates_algorithm_global(E)
+    ainvs_minimal = kt.([0, 103*t^4 + 53*t^2 + 78, 0, 14*t^8 + 61*t^6 + 2*t^4 + 44*t^2 + 50, 86*t^12 + 59*t^10 + 93*t^8 + 27*t^6 + 109*t^4 + 17*t^2 + 48])
+    Eglobal2 = elliptic_curve(ainvs_minimal)
+    @test is_isomorphic(Eglobal2, Eglobal)
+    @test discriminant(Eglobal) == discriminant(Eglobal2)
   end
 
   @testset "Conductors, local getters" begin
-
     E = elliptic_curve([1, 1, 0, 40050, 7557750])
     @test conductor(E) == 25350
     @test (@inferred tamagawa_numbers(E)) == [1, 2 ,2, 1]
@@ -306,119 +417,5 @@
     @test @inferred issetequal(tamagawa_numbers(E), [3, 2])
     @test @inferred issetequal(kodaira_symbols(E), KodairaSymbol.(["IV*", "I0*"]))
   end
-
-  # Another test
-  Qx, x = QQ["x"]
-  K, a = number_field(x^2- x + 1)
-  E = elliptic_curve(K, [16807*a - 84035, 41241385934*a + 5367031656, 20124912723078142//3*a + 13331154044930911//3, 928925752459624769703*a - 289907255041158152853, -221729762092842673528466044620617//9*a + 22979609049341545658321384288371//9])
-  lp = prime_decomposition(maximal_order(K), 7)
-  if a + 4 in lp[1][1]
-    P = lp[1][1]
-  else
-    P = lp[2][1]
-  end
-  @test "I0" == @inferred kodaira_symbol(E, P)
-
-  # rational function field
-  QQt, t = rational_function_field(QQ, "t")
-  E = elliptic_curve_from_j_invariant(t)
-   _, K, f, c, s = tates_algorithm_local(E, 1//t)
-  @test K == "I1"
-  @test f == 1
-  @test c == 1
-  @test s == true
-
-   _, K, f, c, s = tates_algorithm_local(E, t)
-  @test K == "II"
-  @test f == 2
-  @test c == 1
-  @test s == true
-
-   _, K, f, c, s = tates_algorithm_local(E, t - 1728)
-  @test K == "III*"
-  @test f == 2
-  @test c == 2
-  @test s == true
-
-  @test issetequal(conductor(E), [(t - 1728, 2), (t, 2), (1//t, 1)])
-
-  E = elliptic_curve_from_j_invariant(t^3 + t + 1)
-   _, K, f, c, s = tates_algorithm_local(E, 1//t)
-  @test K == "I3"
-  @test f == 1
-  @test c == 3
-  @test s == true
-
-   _, K, f, c, s = tates_algorithm_local(E, t^3 + t - 1727)
-  @test K == "III*"
-  @test f == 2
-  @test c == 2
-  @test s == true
-
-   _, K, f, c, s = tates_algorithm_local(E, t^3 + t + 1)
-  @test K == "II"
-  @test f == 2
-  @test c == 1
-  @test s == true
-
-  @test issetequal(conductor(E), [(t^3 + t - 1727, 2), (t^3 + t + 1, 2), (1//t, 1)])
-
-  k, a = quadratic_field(2)
-  kt, t = rational_function_field(k, "t")
-  E = elliptic_curve_from_j_invariant(1//(t^2 + t + a))
-
-   _, K, f, c, s = tates_algorithm_local(E, 1//t)
-  @test K == "IV"
-  @test f == 2
-  @test c == 1
-  @test s == true
-
-   _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1//1728*(1728*a - 1))
-  @test K == "III*"
-  @test f == 2
-  @test c == 2
-  @test s == true
-
-   _, K, f, c, s = tates_algorithm_local(E, t^2 + t + a)
-  @test K == "I1"
-  @test f == 1
-  @test c == 1
-  @test s == true
-
-  @test issetequal(conductor(E), [(t^2 + t + 1//1728*(1728*a - 1), 2), (t^2 + t + a, 1), (1//t, 2)])
-
-  E = elliptic_curve_from_j_invariant(t^2 - 2)
-  @test issetequal(conductor(E), [(t^2 - 1730, 2), (t - a, 2), (t + a, 2), (1//t, 1)])
-
-  kt, t = rational_function_field(GF(2), "t")
-  E = elliptic_curve_from_j_invariant(t^3//(t^2 + t + 1))
-   _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1)
-  @test K == "I1"
-  @test f == 1
-  @test c == 1
-  @test s == true
-   _, K, f, c, s = tates_algorithm_local(E, t)
-  @test K == "I0*"
-  @test f == 5
-  @test c == 2
-  @test s == true
-   _, K, f, c, s = tates_algorithm_local(E, 1//t)
-  @test K == "I1"
-  @test f == 1
-  @test c == 1
-  @test s == true
-
-  @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])
-
-  kt,t = rational_function_field(GF(113),:t)
-  ainvs = kt.([(66*t^7 + 86*t^3)//(t^8 + 31*t^4 + 99), (41*t^14 + 34*t^10 + 72*t^6 + 47*t^2)//(t^16 + 62*t^12 + 29*t^8 + 36*t^4 + 83), (65*t^17 + 48*t^13 + 71*t^9 + 48*t^5 + 6*t)//(t^24 + 93*t^20 + 16*t^16 + 67*t^12 + 2*t^8 + 35*t^4 + 81), (58*t^24 + 93*t^20 + 98*t^16 + 26*t^12 + 55*t^8 + 46*t^4 + 15)//(t^32 + 11*t^28 + 60*t^24 + 52*t^20 + 47*t^16 + 63*t^12 + 8*t^8 + 100*t^4 + 109), 0])
-  E = elliptic_curve(ainvs)
-
-  @test all(isone(denominator(i)) for i in a_invariants(integral_model(E)[1]))
-  Eglobal = tates_algorithm_global(E)
-  ainvs_minimal = kt.([0, 103*t^4 + 53*t^2 + 78, 0, 14*t^8 + 61*t^6 + 2*t^4 + 44*t^2 + 50, 86*t^12 + 59*t^10 + 93*t^8 + 27*t^6 + 109*t^4 + 17*t^2 + 48])
-  Eglobal2 = elliptic_curve(ainvs_minimal)
-  @test is_isomorphic(Eglobal2, Eglobal)
-  @test discriminant(Eglobal) == discriminant(Eglobal2)
 end
 
