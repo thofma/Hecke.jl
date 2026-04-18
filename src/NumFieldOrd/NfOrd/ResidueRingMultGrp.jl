@@ -839,7 +839,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
 end
 
 
-function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
+function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer; method = nothing)
   O = Q.base_ring
   OtoQ = NfOrdQuoMap(O, Q)
 
@@ -879,7 +879,7 @@ function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
     end
 
     if haskey(y2, q)
-      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q])
+      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q]; method)
 
       nq = norm(q) - 1
 
@@ -888,7 +888,11 @@ function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
       obcs_inv = gcdx(nq, obcs)[2]
 
       disc_log2 = function(x::AbsSimpleNumFieldOrderElem)
-        y = Q(x)^Int(nq)
+        if fits(Int, nq)
+          y = Q(x)^Int(nq)
+        else
+          y = Q(x)^nq
+        end
         z = G2toO.discrete_logarithm(y.elem)
         for i = 1:length(z)
           z[i] *= obcs_inv
