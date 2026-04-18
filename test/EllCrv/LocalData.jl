@@ -340,6 +340,8 @@
   @test c == 2
   @test s == true
 
+  @test issetequal(conductor(E), [(t - 1728, 2), (t, 2), (1//t, 1)])
+
   E = elliptic_curve_from_j_invariant(t^3 + t + 1)
    _, K, f, c, s = tates_algorithm_local(E, 1//t)
   @test K == "I3"
@@ -358,6 +360,8 @@
   @test f == 2
   @test c == 1
   @test s == true
+
+  @test issetequal(conductor(E), [(t^3 + t - 1727, 2), (t^3 + t + 1, 2), (1//t, 1)])
 
   k, a = quadratic_field(2)
   kt, t = rational_function_field(k, "t")
@@ -381,8 +385,13 @@
   @test c == 1
   @test s == true
 
+  @test issetequal(conductor(E), [(t^2 + t + 1//1728*(1728*a - 1), 2), (t^2 + t + a, 1), (1//t, 2)])
+
+  E = elliptic_curve_from_j_invariant(t^2 - 2)
+  @test issetequal(conductor(E), [(t^2 - 1730, 2), (t - a, 2), (t + a, 2), (1//t, 1)])
+
   kt, t = rational_function_field(GF(2), "t")
-  E = elliptic_curve_from_j_invariant(t^3/(t^2 + t + 1))
+  E = elliptic_curve_from_j_invariant(t^3//(t^2 + t + 1))
    _, K, f, c, s = tates_algorithm_local(E, t^2 + t + 1)
   @test K == "I1"
   @test f == 1
@@ -398,6 +407,8 @@
   @test f == 1
   @test c == 1
   @test s == true
+
+  @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])
 
   kt,t = rational_function_field(GF(113),:t)
   ainvs = kt.([(66*t^7 + 86*t^3)//(t^8 + 31*t^4 + 99), (41*t^14 + 34*t^10 + 72*t^6 + 47*t^2)//(t^16 + 62*t^12 + 29*t^8 + 36*t^4 + 83), (65*t^17 + 48*t^13 + 71*t^9 + 48*t^5 + 6*t)//(t^24 + 93*t^20 + 16*t^16 + 67*t^12 + 2*t^8 + 35*t^4 + 81), (58*t^24 + 93*t^20 + 98*t^16 + 26*t^12 + 55*t^8 + 46*t^4 + 15)//(t^32 + 11*t^28 + 60*t^24 + 52*t^20 + 47*t^16 + 63*t^12 + 8*t^8 + 100*t^4 + 109), 0])

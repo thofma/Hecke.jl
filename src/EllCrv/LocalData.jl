@@ -37,8 +37,48 @@ struct KodairaSymbol
   end
 end
 
-# Reduction Type
-@enum ReductionType good_reduction split_multiplicative_reduction nonsplit_multiplicative_reduction additive_reduction
+@doc raw"""
+    EllipticCurveReduction
+
+Submodule holding the [`ReductionType`](@ref) enumeration used by
+[`EllipticCurveLocalData`](@ref). Short names are scoped here to avoid
+polluting the top-level namespace.
+"""
+module EllipticCurveReduction
+  export ReductionType, good, split_multiplicative, nonsplit_multiplicative, additive
+
+  @doc raw"""
+    EllipticCurveReduction.ReductionType
+
+Enumeration of the reduction types of an elliptic curve at a place of
+its base field, as produced by Tate's algorithm.
+
+The values are scoped in the `EllipticCurveReduction` submodule; reference
+them with the module prefix:
+
+- `EllipticCurveReduction.good`
+- `EllipticCurveReduction.split_multiplicative`
+- `EllipticCurveReduction.nonsplit_multiplicative`
+- `EllipticCurveReduction.additive`
+
+# Examples
+```jldoctest
+julia> E = elliptic_curve([1, 1, 0, 40050, 7557750]);
+
+julia> ld = tates_algorithm_local(E, 5, EllipticCurveLocalData);
+
+julia> ld.reduction_type == EllipticCurveReduction.additive
+true
+```
+See also [`EllipticCurveLocalData`](@ref).
+  """
+  @enum ReductionType begin
+    good
+    split_multiplicative
+    nonsplit_multiplicative
+    additive
+  end
+end
 
 ################################################################################
 #
@@ -50,13 +90,20 @@ end
     EllipticCurveLocalData
 
 Local data of an elliptic curve at a prime, as computed by Tate's algorithm.
+
+# Fields
+- `minimal_model::EllipticCurve{T}`: local minimal model
+- `kodaira_symbol::KodairaSymbol`: Kodaira symbol of the fiber
+- `conductor_valuation::ZZRingElem`: conductor valuation
+- `tamagawa_number::ZZRingElem`: local Tamagawa number
+- `reduction_type::EllipticCurveReduction.ReductionType`: the type of reduction
 """
 struct EllipticCurveLocalData{T}
   minimal_model::EllipticCurve{T}
   kodaira_symbol::KodairaSymbol
   conductor_valuation::ZZRingElem
   tamagawa_number::ZZRingElem
-  reduction_type::ReductionType
+  reduction_type::EllipticCurveReduction.ReductionType
 end
 
 function EllipticCurveLocalData(E::EllipticCurve{T}, ks::KodairaSymbol, cv::IntegerUnion, tn::IntegerUnion, split::Bool) where T
@@ -71,20 +118,49 @@ end
 
 # Tate's algorithm over number fields, see Cremona, p. 66, Silverman p. 366
 @doc raw"""
-    tates_algorithm_local(E::EllipticCurve{AbsSimpleNumFieldElem}, p:: AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-    -> EllipticCurve{AbsSimpleNumFieldElem}, KodairaSymbol, ZZRingElem, ZZRingElem, Bool
+    tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
+    tates_algorithm_local(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    tates_algorithm_local(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, f::PolyRingElem)
+    tates_algorithm_local(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree))
+    tates_algorithm_local(E::EllipticCurve{T}, x::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
 
-Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a minimal
-model for $E$ at the prime ideal $p$, $K$ is the Kodaira symbol, $f$ is the
-conductor valuation at $p$, $c$ is the local Tamagawa number at $p$ and `s` is
-false if and only if $E$ has non-split multiplicative reduction.
+Run Tate's algorithm for the elliptic curve $E$ at the prime/place given by the second argument.
+See Cremona p. 66 or Silverman AEC II, IV.9.
+
+The second argument denotes a prime/place of the base field of $E$:
+- a rational prime for $E$ over $\mathbf{Q}$,
+- a prime ideal of the ring of integers for $E$ over a number field,
+- an irreducible polynomial in $k[t]$, the symbol `degree` (for the place
+  at infinity), or a rational function equal to such a polynomial or to
+  $1/t$, for $E$ over a rational function field $k(t)$.
+
+Returns a tuple $(\tilde E, K, f, c, s)$, where $\tilde E$ is a local
+minimal model at the given prime, $K$ is the Kodaira symbol, $f$ is the
+conductor valuation, $c$ is the local Tamagawa number, and $s$ is `false`
+if and only if $E$ has non-split multiplicative reduction.
+
+See also [`tates_algorithm_local(E, p, ::Type{EllipticCurveLocalData})`](@ref)
+for a variant returning the full local data struct.
 """
 function tates_algorithm_local(E, P)
   ld = _tates_algorithm(E, P)
-  split = (ld.reduction_type != nonsplit_multiplicative_reduction)
+  split = (ld.reduction_type != EllipticCurveReduction.nonsplit_multiplicative)
   return (ld.minimal_model, ld.kodaira_symbol, ld.conductor_valuation, ld.tamagawa_number, split)
 end
 
+@doc raw"""
+    tates_algorithm_local(E::EllipticCurve{QQFieldElem}, p::IntegerUnion, ::Type{EllipticCurveLocalData})
+    tates_algorithm_local(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Type{EllipticCurveLocalData})
+    tates_algorithm_local(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, f::PolyRingElem, ::Type{EllipticCurveLocalData})
+    tates_algorithm_local(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree), ::Type{EllipticCurveLocalData})
+    tates_algorithm_local(E::EllipticCurve{T}, x::T, ::Type{EllipticCurveLocalData}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+
+Variant of [`tates_algorithm_local`](@ref) returning an
+[`EllipticCurveLocalData`](@ref) struct instead of a tuple.
+"""
+function tates_algorithm_local(E, P, ::Type{EllipticCurveLocalData})
+  return _tates_algorithm(E, P)
+end
 
 function _tates_algorithm(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
   return _tates_algorithm(E, QQValuation(p))
@@ -434,7 +510,12 @@ function tates_algorithm_global(E::EllipticCurve{QQFieldElem})
   return tidy_model(E)
 end
 
-function tates_algorithm_global(E::T) where T<: EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem,<:PolyRingElem}}
+@doc raw"""
+    tates_algorithm_global(E::EllipticCurve{T}) where T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem,<:PolyRingElem} -> EllipticCurve{T}
+
+Return a model for $E$ that is minimal at all finite places using Tate's algorithm.
+"""
+function tates_algorithm_global(E::EllipticCurve{T}) where T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem,<:PolyRingElem}
   R = base_ring(base_field(E).fraction_field)
 
   for (p, _) in factor(R, discriminant(E))
@@ -445,12 +526,31 @@ function tates_algorithm_global(E::T) where T<: EllipticCurve{<:AbstractAlgebra.
 end
 
 @doc raw"""
-    tamagawa_number(E::EllipticCurve{QQFieldElem}, p::Int) -> ZZRingElem
+    tamagawa_number(E::EllipticCurve{QQFieldElem}, p::IntegerUnion) -> ZZRingElem
+    tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
-function tamagawa_number(E::EllipticCurve{QQFieldElem},p)
+function tamagawa_number(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
   return _tates_algorithm(E, p).tamagawa_number
+end
+
+function tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  return _tates_algorithm(E, p).tamagawa_number
+end
+
+@doc raw"""
+    kodaira_symbol(E::EllipticCurve{QQFieldElem}, p::IntegerUnion) -> KodairaSymbol
+    kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> KodairaSymbol
+
+Return the reduction type of E at p using a Kodaira symbol.
+"""
+function kodaira_symbol(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
+  return _tates_algorithm(E, p).kodaira_symbol
+end
+
+function kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  return _tates_algorithm(E, p).kodaira_symbol
 end
 
 @doc raw"""
@@ -465,15 +565,6 @@ function tamagawa_numbers(E::EllipticCurve{QQFieldElem})
 end
 
 @doc raw"""
-    kodaira_symbol(E::EllipticCurve{QQFieldElem}, p::Int) -> KodairaSymbol
-
-Return the reduction type of E at p using a Kodaira symbol.
-"""
-function kodaira_symbol(E::EllipticCurve{QQFieldElem},p)
-  return _tates_algorithm(E, p).kodaira_symbol
-end
-
-@doc raw"""
     kodaira_symbols(E::EllipticCurve{QQFieldElem}) -> Vector{KodairaSymbol}
 
 Return the reduction types of E at all bad primes as a sequence of
@@ -485,15 +576,6 @@ function kodaira_symbols(E::EllipticCurve{QQFieldElem})
 end
 
 @doc raw"""
-    tamagawa_number(E::EllipticCurve{QQFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
-
-Return the local Tamagawa number for E at p.
-"""
-function tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return _tates_algorithm(E, p).tamagawa_number
-end
-
-@doc raw"""
     tamagawa_numbers(E::EllipticCurve{QQFieldElem}) -> Vector{(AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem)}
 
 Return the sequence of Tamagawa numbers for $E$ at all the bad
@@ -502,17 +584,6 @@ prime ideals $p$ of $E$.
 function tamagawa_numbers(E::EllipticCurve{AbsSimpleNumFieldElem})
   badp = bad_primes(E)
   return [tamagawa_number(E,p) for p in badp]
-end
-
-@doc raw"""
-    kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-      -> KodairaSymbol
-
-Return the reduction type of E at the prime ideal p using
-a Kodaira symbol.
-"""
-function kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return _tates_algorithm(E, p).kodaira_symbol
 end
 
 @doc raw"""
@@ -528,22 +599,17 @@ function kodaira_symbols(E::EllipticCurve{AbsSimpleNumFieldElem})
 end
 
 @doc raw"""
-    reduction_type(E::EllipticCurve{QQFieldElem}, p::ZZRingElem) -> String
+    reduction_type(E::EllipticCurve{QQFieldElem}, p::IntegerUnion) -> String
+    reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> String
 
-Return the reduction type of E at a prime p. It can either be good, additive,
+Return the reduction type of E at p. It can either be good, additive,
 split multiplicative or nonsplit multiplicative.
 """
-function reduction_type(E::EllipticCurve{QQFieldElem}, p)
+function reduction_type(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
   ld = _tates_algorithm(E, p)
   return "$(ld.reduction_type)"
 end
 
-@doc raw"""
-    reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> String
-
-Return the reduction type of E at a prime ideal p.
-It can either be good, additive, split multiplicative or nonsplit multiplicative.
-"""
 function reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
   ld = _tates_algorithm(E, p)
   return "$(ld.reduction_type)"
@@ -580,6 +646,29 @@ function conductor(E::EllipticCurve{AbsSimpleNumFieldElem})
   for p in badp
     result = result * p^_tates_algorithm(E, p).conductor_valuation
   end
+  return result
+end
+
+@doc raw"""
+    conductor(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}} -> Vector{Tuple{T, ZZRingElem}}
+
+Return the conductor of $E$ as a list of pairs $(p, e)$, where $p$
+is a generator of a place of bad reduction and $e$ is the conductor
+valuation at that place. Finite places are represented by irreducible
+polynomials (lifted to the base field of $E$) and the place at infinity by $1/t$.
+"""
+function conductor(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}}
+  K = base_field(E)
+  R = base_ring(K.fraction_field)
+
+  result = Tuple{T, ZZRingElem}[]
+  for (p, _) in factor(R, discriminant(E))
+    e = _tates_algorithm(E, p).conductor_valuation
+    e > 0 && push!(result, (K(p), e))
+  end
+  e_inf = _tates_algorithm(E, degree).conductor_valuation
+  e_inf > 0 && push!(result, (1//gen(K), e_inf))
+
   return result
 end
 
@@ -721,23 +810,23 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, rt::ReductionType)
-  if rt == good_reduction
+function Base.show(io::IO, rt::EllipticCurveReduction.ReductionType)
+  if rt == EllipticCurveReduction.good
     print(io, "Good")
-  elseif rt == split_multiplicative_reduction
+  elseif rt == EllipticCurveReduction.split_multiplicative
     print(io, "Split multiplicative")
-  elseif rt == nonsplit_multiplicative_reduction
+  elseif rt == EllipticCurveReduction.nonsplit_multiplicative
     print(io, "Nonsplit multiplicative")
   else
     print(io, "Additive")
   end
 end
 
-Base.print(io::IO, rt::ReductionType) = show(io, rt)
+Base.print(io::IO, rt::EllipticCurveReduction.ReductionType) = show(io, rt)
 
 function _reduction_type(ks::KodairaSymbol, split::Bool)
-  ks.ksymbol == 1 && return good_reduction
-  ks.ksymbol > 4 && return (split ? split_multiplicative_reduction : nonsplit_multiplicative_reduction)
-  return additive_reduction
+  ks.ksymbol == 1 && return EllipticCurveReduction.good
+  ks.ksymbol > 4 && return (split ? EllipticCurveReduction.split_multiplicative : EllipticCurveReduction.nonsplit_multiplicative)
+  return EllipticCurveReduction.additive
 end
 
