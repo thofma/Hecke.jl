@@ -107,108 +107,35 @@ Computes the local height of a point $P$ on an elliptic curve defined over
 $\mathbf{Q}$ at $p$. The number $p$ must be a prime or $0$. In the latter case,
 the height at the infinite place is returned.
 """
-function local_height(P::EllipticCurvePoint{QQFieldElem}, p, prec::Int = 100)
+function local_height(P::EllipticCurvePoint{QQFieldElem}, p::IntegerUnion, prec::Int = 100)
+  @req p == 0 || is_prime(p) "p must be 0 or a non-negative prime"
 
-  if !is_finite(P)
-    return zero(ArbField(prec, cached = false))
-  end
-
-  if p == 0
-    return _real_height(P, prec)
-  end
-
-  @req p > 0 && is_prime(p) "p must be 0 or a non-negative prime"
-
-  E = parent(P)
-  F, phi = minimal_model(E)
-
-  P = phi(P)
-
-  p = ZZ(p)
-
-  x = P[1]
-  y = P[2]
-
-  a1, a2, a3, a4, a6 = map(numerator, a_invariants(F))
-  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
-  c4, c6 = _ellcrv_c_invariants(b2, b4, b6, b8)
-
-  delta = discriminant(E)
-
-  A = 3*x^2 + 2*a2*x + a4 - a1*y
-  B = 2*y + a1*x + a3 # = psi2(P)
-  C = 3*x^4 + b2 * x^3 + 3*b4*x^2 + 3*b6*x + b8 # = psi3(P)
-
-  # L always QQ
-  # N always ZZ
-  # M always QQ
-
-  if (!iszero(A) && valuation(A, p) <= 0) || (!iszero(B) && valuation(B, p) <= 0)
-    if !iszero(x)
-      L = QQ(max(0, -valuation(x, p)))
-    else
-      L = zero(QQ)
-    end
-  elseif (!iszero(c4) && valuation(c4, p) == 0)
-    N = ZZ(valuation(delta, p)) # work with ZZRingElem to avoid overflow
-    if iszero(B)
-      M = N//2
-    else
-      M = min(QQ(valuation(B, p)), N//2)
-    end
-    L = M*(M - N)//N
-  elseif (iszero(C) || (!iszero(C) && !iszero(B) && valuation(C, p) >= 3*valuation(B, p)))
-    L = ZZ(-2*valuation(B, p))//3
-  else
-    L = ZZ(-valuation(C, p))//4
-  end
-
-  attempt = 2
-
-  while true
-    R = ArbField(attempt*prec, cached = false)
-    result = L*log(R(p))
-
-    !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
-
-    if radiuslttwopower(result, -prec)
-      expand!(result, -prec)
-      @assert radiuslttwopower(result, -prec)
-      return result
-    end
-    #attempt = 2*attempt
-  end
+  is_infinite(P) && return zero(ArbField(prec, cached = false))
+  p == 0 && return _real_height(P, prec)
+  return _local_height(P, QQValuation(p), prec)
 end
 
 function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int = 100)
+  @req is_prime(pIdeal) "p must be prime"
 
-  if !is_finite(P)
-    return zero(ArbField(prec, cached = false))
-  end
+  is_infinite(P) && return zero(ArbField(prec, cached = false))
+  return _local_height(P, AbsSimpleNumFieldValuation(pIdeal), prec)
+end
 
-  #if p == 0
-  #  return _real_height(P, prec)
-  #end
+function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, v::InfPlc, prec::Int = 100)
+  is_infinite(P) && return zero(ArbField(prec, cached = false))
+  return archimedean_height(P, v, prec)
+end
 
-  @req #=p > 0 &&=# is_prime(pIdeal) "p must be 0 or a non-negative prime"
+function _local_height(P::EllipticCurvePoint{T}, v::DiscreteValuation{T}, prec::Int) where T
+  ld = _tates_algorithm(parent(P), v)
+  E = ld.minimal_model
+  P = isomorphism(parent(P), E)(P)
 
-  E = parent(P)
-  K = base_field(E)
-  OK = ring_of_integers(K)
-  F, phi = minimal_model(E, pIdeal)
+  x, y = P[1], P[2]
 
-  res_degree = norm(pIdeal)
-  p = minimum(pIdeal)
-
-  P = phi(P)
-
-  x = P[1]
-  y = P[2]
-
-  a1, a2, a3, a4, a6 = map(numerator, a_invariants(F))
-
-  b2, b4, b6, b8 = map(OK, b_invariants(E))
-  c4, c6 = map(OK, c_invariants(E))
+  a1, a2, a3, a4, a6 = map(numerator, a_invariants(E))
+  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
 
   delta = discriminant(E)
 
@@ -216,36 +143,30 @@ function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsN
   B = 2*y + a1*x + a3 # = psi2(P)
   C = 3*x^4 + b2 * x^3 + 3*b4*x^2 + 3*b6*x + b8 # = psi3(P)
 
-  # L always QQ
-  # N always ZZ
-  # M always QQ
+  # This is Proposition 3.4.1 in Cremona; the algorithm is coming from
+  #   Silverman's "Computing Heights on Elliptic Curves"
+  # NOTE: we adopt Cremona's normalization convention,
+  #   so our values are twice those from Silverman.
+  # NOTE: the same convention is used by SageMath
+  #   and Magma (with `Renormalization := true`).
 
-  if (!iszero(A) && valuation(A, pIdeal) <= 0) || (!iszero(B) && valuation(B, pIdeal) <= 0)
-    if !iszero(x)
-      L = QQ(max(0, -valuation(x, pIdeal)))
-    else
-      L = zero(QQ)
-    end
-  elseif (!iszero(c4) && valuation(c4, pIdeal) == 0)
-    N = ZZ(valuation(delta, pIdeal)) # work with ZZRingElem to avoid overflow
-    if iszero(B)
-      M = N//2
-    else
-      M = min(QQ(valuation(B, pIdeal)), N//2)
-    end
+  if valuation(v, A) <= 0 || valuation(v, B) <= 0
+    L = QQ(max(0, -valuation(v, x)))
+  elseif is_multiplicative_reduction(ld.reduction_type)
+    N = ZZ(valuation(v, delta))
+    M = is_zero(B) ? N // 2 : min(QQ(valuation(v, B)), N//2)
     L = M*(M - N)//N
-  elseif (iszero(C) || (!iszero(C) && !iszero(B) && valuation(C, pIdeal) >= 3*valuation(B, pIdeal)))
-    L = ZZ(-2*valuation(B, pIdeal))//3
+  elseif ld.kodaira_symbol.ksymbol == 4 || ld.kodaira_symbol.ksymbol == -4 # IV or IV*
+    L = ZZ(-2*valuation(v, B)) // 3
   else
-    L = ZZ(-valuation(C, pIdeal))//4
+    L = ZZ(-valuation(v, C)) // 4
   end
 
   attempt = 2
 
   while true
     R = ArbField(attempt*prec, cached = false)
-    result = L*log(R(res_degree))
-    # Weighted as in Silverman? Then //(ramification_index(pIdeal)*degree(residue_field(OK, pIdeal)[1]))
+    result = L*log(R(norm(v)))
 
     !radiuslttwopower(result, -prec) && (attempt *= 2; continue)
 
@@ -254,12 +175,7 @@ function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsN
       @assert radiuslttwopower(result, -prec)
       return result
     end
-    #attempt = 2*attempt
   end
-end
-
-function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, v::InfPlc, prec = 100)
-  return archimedean_height(P, v, prec)
 end
 
 ################################################################################

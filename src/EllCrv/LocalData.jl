@@ -830,3 +830,6 @@ function _reduction_type(ks::KodairaSymbol, split::Bool)
   return EllipticCurveReduction.additive
 end
 
+function is_multiplicative_reduction(rt::EllipticCurveReduction.ReductionType)
+  return rt == EllipticCurveReduction.split_multiplicative || rt == EllipticCurveReduction.nonsplit_multiplicative
+end

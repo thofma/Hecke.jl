@@ -30,6 +30,9 @@
 # lift(DiscreteValuation{T}, x)
 # lifts an element of the valuation's residue field to the field
 #
+# norm(DiscreteValuation{T}) -> ZZRingElem
+# norm of the corresponding non-archimedean place
+#
 # we also implement (in a generic way) the following
 #
 # reduce_mod(DiscreteValuation{T}, T) -> T
@@ -46,6 +49,10 @@ end
 
 function inv_mod(v::DiscreteValuation, x)
   return lift(v, inv(reduce(v, x)))
+end
+
+function norm(v::DiscreteValuation)
+  return order(residue_field(v))
 end
 
 ################################################################################
