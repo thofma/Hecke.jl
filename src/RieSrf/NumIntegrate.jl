@@ -204,15 +204,18 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
 
   for p in points
     r_p = r_0
-    if p != c
+    if !contains(c - p, zero(Cc))
       prec = precision(Cc)
       zero_sens = floor(Int, prec*log(2)/log(10)) - 5
       #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
-      #t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/(r * exp(I*(b + a)/2)), zero_sens)))
-      t_p = or/(b - a) * (-2 * I * (log(trim_zero(p - c, zero_sens)) -log(r) - I*(b + a)/2))
+      t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/(r * exp(I*(b + a)/2)))))
+      #t_p2 = or/(b - a) * (-2 * I * (log(trim_zero((p - c)/(r * exp(I*(b + a)/2)), zero_sens)))+2*pi*I)
+      #r_p = minimum(x-> Rr((abs(x + 1) + abs(x - 1))/2), ts)
+      @req contains(path.gamma(t_p),p) "Error"
+      #t_p = or/(b - a) * (-2 * I * mod2pi_i((log(trim_zero(p - c, zero_sens)) -log(r) - I*(b + a)/2)))
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
 
@@ -248,7 +251,7 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
   or = orientation(path)
   for p in points
     r_p = r_0
-    if p != c
+    if !contains(c - p, zero(Cc))
       #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
@@ -256,8 +259,10 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
       prec = precision(Cc)
       zero_sens = floor(Int, prec*log(2)/log(10)) - 5
 
-      #t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a)), zero_sens));
-      t_p = -or/Rpi * I * (log(trim_zero(c - p, zero_sens)) - log(r) - I * a)
+      t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a))))
+      @req contains(path.gamma(t_p),p) "Error"
+
+      #t_p = -or/Rpi * I * mod2pi_i((log(trim_zero(c - p, zero_sens)) - log(r) - I * a))
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
 

@@ -130,6 +130,13 @@ function Base.mod2pi(x::ArbFieldElem)
   return x
 end
 
+function mod2pi_i(x::AcbFieldElem)
+  CC = parent(x)
+  Re = real(x)
+  Im = imag(x)
+  return Re + mod2pi(Im)*onei(CC)
+end
+
 @doc raw"""
     embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
 
@@ -189,6 +196,22 @@ function trim_zero(x::AcbFieldElem, n::Int)
   end
 
   if abs(imag(x)) < Rc(10)^(-n)
+    x = Cc(real(x))
+  end
+
+  return x
+end
+
+function trim_zero(x::AcbFieldElem)
+  Cc = parent(x)
+  prec = precision(Cc)
+  Rc = ArbField(prec)
+  i = onei(Cc)
+  if contains(abs(real(x)), zero(Rc))
+    x = Cc(imag(x))*i
+  end
+
+  if contains(abs(imag(x)), zero(Rc))
     x = Cc(real(x))
   end
 

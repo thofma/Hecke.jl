@@ -30,6 +30,7 @@ mutable struct RiemannSurface
   #A polynomial f(x,y) in K[x,y] for some number field K defining the Riemann
   #surface (or equivalently) a not necessarily smooth plane curve in P_2
   defining_polynomial::AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}
+  complex_defining_polynomial::AbstractAlgebra.Generic.MPoly{AcbFieldElem}
   genus::Int
   function_field::AbstractAlgebra.Generic.FunctionField
 
@@ -157,13 +158,17 @@ mutable struct RiemannSurface
 
   #The constructor for a Riemann surface object
 
-  function RiemannSurface(f::MPolyRingElem, v::T, prec = 100; integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
-    RS = RiemannSurface(f, prec, integration_method)
-    RS.embedding = v
+  function RiemannSurface(f::MPolyRingElem, prec::Int = 100; integration_method::String = "rigorous")
+    k = base_ring(f)
+    if k == QQ
+      k = rationals_as_number_field()[1]
+    end
+    v = infinite_places(k)[1]
+    RS = RiemannSurface(f, v, prec, integration_method = integration_method)
     return RS
   end
 
-  function RiemannSurface(f::MPolyRingElem, prec = 100; integration_method::String = "rigorous")
+  function RiemannSurface(f::MPolyRingElem, v::T, prec::Int = 100; integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
 
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
@@ -185,7 +190,8 @@ mutable struct RiemannSurface
       #diff_base = map(t -> t(s[1],s[2]), diff_base)
     end
 
-    v = infinite_places(k)[1]
+    @req v.field == k "The given place does not beling to the field."
+  
     RS.defining_polynomial = f
     RS.prec = prec
     RS.embedding = v
@@ -217,15 +223,23 @@ mutable struct RiemannSurface
 
       factor_matrix = zeros(Int, n, g)
 
+      baker_diffs = []
+
       for i in (1:g)
         factor_matrix[1, i] = inner_fac[i][1] - 1
         factor_matrix[2, i] = inner_fac[i][2] - 1
         factor_matrix[3, i] = -1
+
+        s = gen(base_ring(F))
+        t = gen(F)
+        omega = (factor_set[1](s,t)^(inner_fac[i][1] - 1) * factor_set[2](s,t)^(inner_fac[i][2] - 1) //factor_set[3](s,t))*differential(F(s))
+        push!(baker_diffs, omega)
       end
+      RS.basis_of_differentials = baker_diffs
 
     else
       RS.baker_basis = false
-
+      RS.basis_of_differentials = diff_base
       #Compute the differential forms data mentioned above.
       factor_set = Set{MPolyRingElem}()
       factored_nums = []
@@ -303,7 +317,7 @@ mutable struct RiemannSurface
 
     RS.weak_error = Rc(10)^(-(2//3) *b10_prec)
     RS.error = Rc(10)^(-b10_prec - 1)
-    RS.extra_error = Rc(10)^(-b10_extra_prec - 1)
+    RS.extra_error = Rc(10)^(-b10_extra_prec - 10)
     RS.bounds = []
     RS.degree = degrees(f)
 
