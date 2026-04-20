@@ -47,7 +47,7 @@ export GenOrdFracIdl
 export FinGenAbGroup
 export FinGenAbGroupElem
 export FinGenAbGroupHom
-export FinGenAbGroupToGroupHo
+export FinGenAbGroupToGroupHom
 export FiniteRing
 export FiniteRingElem
 export FiniteRingHom
@@ -204,7 +204,6 @@ export class_group
 export class_number
 export classical_modular_polynomial
 export clebsch_from_igusa_clebsch
-export clebsch_from_igusa
 export clebsch_invariants
 export close_vectors
 export close_vectors_iterator
