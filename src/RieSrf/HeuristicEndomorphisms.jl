@@ -1,3 +1,5 @@
+#Heuristic endomorphisms based on Rigorous computation of the endomorphism ring of a Jacobian
+# by Edgar Costa, Nicolas Mascot, Jeroen Sijsling and John Voight.
 
 function integral_left_kernel(M::ArbMatrix)
 
