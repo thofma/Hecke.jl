@@ -1,4 +1,5 @@
 @testset "HeuristicEndomorphisms" begin
+  using Hecke.RiemannSurfaces
   R, t = polynomial_ring(QQ)
 
   F, r = number_field(t^2 - 5)
@@ -51,3 +52,4 @@
 
   @test is_isomorphic(codomain(h), L)
   @test length(A) == 6
+end
