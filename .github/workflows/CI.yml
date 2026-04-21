@@ -10,6 +10,7 @@ on:
   schedule:
     # Every day at 3:05 AM UTC
     - cron: '5 3 * * *'
+  workflow_dispatch:
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
