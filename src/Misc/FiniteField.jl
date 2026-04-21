@@ -172,7 +172,7 @@ function unit_group(F::T; n_quo::Int = -1) where T <: FinField
     inv = invmod(nnpart, npart)
   end
 
-  G = abelian_group(Int[k])
+  G = abelian_group([k])
   ex = div(order(F) - 1, npart)
   function disc_log(x)
     @assert typeof(x) == elem_type(F)
