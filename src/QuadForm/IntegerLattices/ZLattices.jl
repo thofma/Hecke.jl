@@ -1825,15 +1825,22 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   return flag, m, B, H
 end
 
-function _row_span!(L::Vector{ZZMatrix})
+function _row_span!(L::Vector)
   l = length(L)
   d = length(L[1])
   m = min(d,l)
-  B = reduce(vcat, L[1:m])
+  B = zero_matrix(ZZ, m, d)
+  for i in 1:m
+    v = L[i]
+    for j in 1:d
+      B[i,j] = v[j]
+    end
+  end
+  #B = reduce(vcat, L[1:m])
   h = hnf!(B)
-  b = similar(L[1])
+  b = zero_matrix(ZZ, 1, d)
   for i in (m+1):l
-    copy!(b, L[i])
+    _copy_to_row_matrix!(b, L[i])
     reduce_mod_hnf_ur!(b, h)
     if iszero(b)
       continue
@@ -1845,19 +1852,25 @@ function _row_span!(L::Vector{ZZMatrix})
   return h[1:rank(h), :]
 end
 
-function _row_span!(L::Vector{Vector{ZZRingElem}})
-  l = length(L)
-  d = length(L[1])
-  return _row_span!([matrix(ZZ,1,d, i) for i in L])
+function _copy_to_row_matrix!(b::ZZMatrix, c::Vector)
+  @assert ncols(b) == length(c)
+  for i in 1:ncols(b)
+    @inbounds b[1,i] = c[i]
+  end
+  return b
 end
+
+_copy_to_row_matrix!(b::ZZMatrix, c::ZZMatrix) = copy!(b, c)
+
 
 _short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
 
-function _short_vector_generators_with_sublattice_2(L::ZZLat; up_to_sign::Bool=false)
+function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}=Int; up_to_sign::Bool=false) where {S}
   if iszero(rank(L))
-    return ZZLat[], Vector{Vector{ZZRingElem}}[]
+    return ZZLat[], Vector{Vector{S}}[]
   end
-  svL = shortest_vectors(L; check=false)
+  svL = Vector{S}[]
+  svL = shortest_vectors(L, S; check=false)
   B = _row_span!(svL)*basis_matrix(L)
   if !up_to_sign
     append!(svL, [-i for i in svL])
@@ -1866,9 +1879,15 @@ function _short_vector_generators_with_sublattice_2(L::ZZLat; up_to_sign::Bool=f
   SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
   nrows(B) == rank(L) && return SL, sv
   M = orthogonal_submodule(L, B)
-  SM, svM = _short_vector_generators_with_sublattice_2(M; up_to_sign)
+  SM, svM = _short_vector_generators_with_sublattice_2(M, S; up_to_sign)
   T = ZZ.(coordinates(basis_matrix(M), L))
-  append!(sv, [[i*T for i in j] for j in svM])
+  if S === Int
+    _T = [S(i) for i in transpose(T)]
+    append!(sv, [[_T*i for i in j] for j in svM])
+  else
+    @assert S===ZZRingElem
+    append!(sv, [[i*T for i in j] for j in svM])
+  end
   append!(SL, SM)
   return SL, sv
 end

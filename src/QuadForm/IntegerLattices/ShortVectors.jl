@@ -111,7 +111,7 @@ function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool
     @req is_definite(L) "Lattice must be definite"
   end
   if iszero(rank(L))
-    return Vector{ZZRingElem}[]
+    return Vector{S}[]
   end
   _G = gram_matrix(L)
   if _G[1, 1] < 0
@@ -119,7 +119,11 @@ function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool
   end
   min, V = _shortest_vectors_gram_finckepostint(_G)
   L.minimum = min
-  return [ZZ.(i) for i in V]
+  if S === Int
+    return V
+  else
+    return [S.(i) for i in V]
+  end
 end
 
 ################################################################################
@@ -1008,13 +1012,13 @@ end
 ########################################################################################
 
 raw"""
-    short_vectors_with_condition(L::ZZLat; search_new_invariant_vectors::Bool) -> Tuple{<:Vector, <:Vector}, Vector{ZZMatrix}
+    short_vectors_with_condition(L::ZZLat; search_fixed_vectors::Bool) -> Tuple{<:Vector, <:Vector}, Vector{ZZMatrix}
 
 Return a list of vectors, that contains the orbits of the standard basis vectors under the reduced automorphism group $\mathrm{Aut}(L, \rho)$.
 together with a list of $\mathrm{Aut}(L, \rho)$-invariant gram matrices where $\rho$ is a Weyl vector of the root sublattice of `L`.
 
 # Input
-- `search_new_invariant_vectors::Bool` -- take sums of vectors with the same invariants to obtain new invariant vectors. Use it to refine the invariant. Rinse and repeat.
+- `search_fixed_vectors::Bool` -- take sums of vectors with the same invariants to obtain new invariant vectors. Use it to refine the invariant. Rinse and repeat.
 
 # Output:
 - a tuple `(V, G)` consiting of:
@@ -1025,23 +1029,27 @@ such that:
 - the standard basis vectors and their norms with respect to `G` are contained in `V`
 """
 function short_vectors_with_condition(L::ZZLat;
-                                      search_new_invariant_vectors::Bool=false)
-  return short_vectors_with_condition(ZZRingElem, L; search_new_invariant_vectors)
+                                      search_fixed_vectors::Bool=false,
+                                      search_invariant_subspace::Bool=false)
+  return short_vectors_with_condition(ZZRingElem, L; search_fixed_vectors, search_invariant_subspace)
 end
 
 function short_vectors_with_condition(T::Type,
                                       L::ZZLat;
-                                      search_new_invariant_vectors::Bool=true)
-  proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
-  return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
+                                      search_fixed_vectors::Bool=true,
+                                      search_invariant_subspace::Bool=false)
+  proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L, T)
+  return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
 end
 
 
 function short_vectors_with_condition(L1::ZZLat,
                                       L2::ZZLat)
+  search_fixed_vectors = false
+  search_invariant_subspace = false
   if L1===L2
     @vtime :Lattice 1 proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
-    return true, _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
+    return true, _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
   end
   @vtime :Lattice 1 (proj1, target_proj_root_inv1, target_norms1, denoms1, grams1),(root_type1, fundamental_roots1) = _short_vectors_with_condition_preprocessing_with_root_data(L1)
   @vtime :Lattice 1 (proj2, target_proj_root_inv2, target_norms2, denoms2, grams2),(root_type2, fundamental_roots2) = _short_vectors_with_condition_preprocessing_with_root_data(L2)
@@ -1065,16 +1073,15 @@ function short_vectors_with_condition(L1::ZZLat,
   # This basis depends on the original basis of the lattice (via  LLL, hnf and rref).
   # To make this work, one has to take the vectors from summation without postprocessing them, then it is clear how to match them
   # (sums of vectors with the same invariant must be mapped to one another).
-  search_new_invariant_vectors = false
   try
     T = Int
-    _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_new_invariant_vectors)
-    _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_new_invariant_vectors)
+    _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace)
+    _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace)
   catch InexactError
     try
       T = ZZRingElem
-      _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_new_invariant_vectors)
-      _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_new_invariant_vectors)
+      _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace)
+      _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace)
     catch InexactError
       # return the empty lists
       # then it will be handled by the direct approach later which is better.
@@ -1091,16 +1098,18 @@ function short_vectors_with_condition(L1::ZZLat,
   return true, V1, V2, grams1, grams2
 end
 
-function _short_vectors_with_condition_preprocessing(L::ZZLat)
+function _short_vectors_with_condition_preprocessing(L::ZZLat,
+                                                     elem_type::Type{S}=Int) where {S}
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv) = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L::ZZLat, fundamental_roots, grams, proj_root_inv, proj_root_coinv)
+  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, :rank, S)
 end
 
-function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat)
+function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat,
+                                                     elem_type::Type{S}=Int) where {S}
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv) = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L::ZZLat, fundamental_roots, grams, proj_root_inv, proj_root_coinv), (root_types, fundamental_roots)
+  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv,:rank, S), (root_types, fundamental_roots)
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat,
@@ -1108,11 +1117,14 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
                                                      grams::Vector{ZZMatrix},
                                                      proj_root_inv::QQMatrix,
                                                      proj_root_coinv::Vector{Tuple{QQMatrix,Int}},
-                                                     sort::Symbol=:rank)
+                                                     sort::Symbol=:rank,
+                                                     elem_type::Type{S}=Int) where {S}
   n = rank(L)
+  @assert rank(L)==degree(L)
+  @hassert :Lattice 1 isone(basis_matrix(L))
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   Rperp = orthogonal_submodule(L, R*basis_matrix(L))
-  LL, _ = _short_vector_generators_with_sublattice_2(Rperp; up_to_sign=true)
+  LL, _ = _short_vector_generators_with_sublattice_2(Rperp, S; up_to_sign=true)
   pushfirst!(LL, lattice(ambient_space(L), R))
   proj = __projections(LL)
   proj_rank = rank.(LL)
@@ -1166,7 +1178,8 @@ function _short_vectors_with_condition(T::Type{Int},
                                       proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
                                       target_norms::Vector{Vector{ZZRingElem}},
                                       denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix};
-                                      search_new_invariant_vectors::Bool=true)
+                                      search_fixed_vectors::Bool=true,
+                                      search_invariant_subspace::Bool=false)
   denoms_Int = Int.(denoms)
   target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
   target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
@@ -1176,7 +1189,8 @@ function _short_vectors_with_condition(T::Type{Int},
                                            target_norms_Int,
                                            denoms_Int,
                                            grams;
-                                           search_new_invariant_vectors)
+                                           search_fixed_vectors,
+                                           search_invariant_subspace)
 end
 
 function _short_vectors_with_condition(T::Type{ZZRingElem},
@@ -1185,8 +1199,9 @@ function _short_vectors_with_condition(T::Type{ZZRingElem},
                                       target_norms::Vector{Vector{ZZRingElem}},
                                       denoms::Vector{ZZRingElem},
                                       grams::Vector{ZZMatrix};
-                                      search_new_invariant_vectors::Bool=true)
-  return _short_vectors_with_condition_integral(L, proj, target_invariant, target_norms, denoms, grams; search_new_invariant_vectors)
+                                      search_fixed_vectors::Bool=true,
+                                      search_invariant_subspace::Bool=false)
+  return _short_vectors_with_condition_integral(L, proj, target_invariant, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
 end
 
 function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vector{Int}, Vector{LinearAlgebra.Adjoint{Int64, Vector{Int64}}}}}
@@ -1225,7 +1240,7 @@ function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vect
 end
 
 #invariant_subspaceF[1:end-1,:] must be in rref!
-function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, new_invariant_subspace::ZZMatrix, tmp_vec::Vector, tmp_mat::QQMatrix, H::ZZMatrix, invariant_subspaceF::fpMatrix)
+function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, new_invariant_subspace::ZZMatrix, tmp_vec::Vector, tmp_mat::QQMatrix, H::ZZMatrix, invariant_subspaceF::fpMatrix, Hv::Set{ZZMatrix}, search_invariant_subspace::Bool=false, search_fixed_vectors::Bool=true)
   i1 = nrows(new_invariant_subspace)
   i2 = nrows(invariant_subspace)
   r1 = nrows(invariant_subspace)
@@ -1237,16 +1252,27 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
   # compute pivs and pure
   Hecke._reduce_modulo_rref(invariant_subspaceF,nrows(invariant_subspaceF)-1, pivs, pure, dirty)
   dirty = false
+  #Hv = Set{ZZMatrix}()
   for k in keys(D)
     if nrows(invariant_subspace)==ncols(invariant_subspace)
       # everything invariant nothing more to do
       break
     end
+    if search_invariant_subspace && 40>length(D[k])>1 && length(Hv)<8
+      #_hv = _fundamental_roots!([__not_adj(i) for i in D[k]])  # breaks stuff for ZZRingElem
+      _hv = _row_span!([__not_adj(i) for i in D[k]])
+      hv = matrix(ZZ, _hv)
+      reduce_mod_hnf_ur!(hv, H)
+      hv = hnf!(saturate(hv))
+      push!(Hv, hv)
+    end
+    search_fixed_vectors || continue
     # the ones which do not have an invariant component are up to +-1 and sum to 0, discard them
     all(iszero(k[i]) for i in i1+1:i2) && continue
     # compute v = sum(D[k])
     # we cannot allow an overflow here
     v = ___sum(D[k]; init=tmp_vec)
+
     # copy to a matrix
     @assert length(v) == ncols(tmp_mat)
     @inbounds for i in 1:length(v)
@@ -1267,8 +1293,9 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
       dirty = false
     end
   end
+  @vprintln :Lattice 1 "Found $(length(Hv)) invariant subspaces"
   found = nrows(invariant_subspace) - r1
-  return found, invariant_subspace, new_invariant_subspace, invariant_subspaceF
+  return found, invariant_subspace, new_invariant_subspace, invariant_subspaceF, Hv
 end
 
 function ___sum(V::Vector{Vector{ZZRingElem}}; init::Vector)
@@ -1353,7 +1380,7 @@ function __vcat(x::LinearAlgebra.Adjoint{Int64, Vector{Int64}}, y::LinearAlgebra
   return vcat(x',y')'
 end
 
-function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true) where {CoeffType <: Union{Int, ZZRingElem}}
+function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_fixed_vectors::Bool=true, search_invariant_subspace::Bool=false) where {CoeffType <: Union{Int, ZZRingElem}}
   # Let L_i := proj[i](L)
   # We lll reduce each L_i and work throughout with the basis
   # M = L_1 + L_2 + ... + L_n
@@ -1385,6 +1412,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   invariant_subspace_rank, invariant_subspace = rref(proj[1])
   invariant_subspace = invariant_subspace[1:invariant_subspace_rank, :]*Binv[:,1:invariant_subspace_rank]
   H = hnf!(saturate(numerator(invariant_subspace)))
+  Hv = Set{ZZMatrix}()
   prime = next_prime(1 << (8 * sizeof(Int) - 2))
   F = Native.GF(prime)
   invariant_subspaceF = F.(H)
@@ -1552,15 +1580,18 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
       end
     end
     T = vcat(T, zero_matrix(ZZ,rank(projL[i]),ncols(T)))
-    if search_new_invariant_vectors
+    if search_invariant_subspace || search_fixed_vectors
       # bring invariant_subspace to the correct size
       # TODO: It would probably be more efficient to just padd
       # the invariant sum by zeros in the end
       n_i = nrows(N_i)
-      invariant_subspace = hcat(invariant_subspace, zero_matrix(QQ, nrows(invariant_subspace), rank(projL[i])))
-      invariant_subspaceF = hcat(invariant_subspaceF, zero_matrix(F, nrows(invariant_subspaceF), rank(projL[i]))) # preserves rref!
-      new_invariant_subspace = hcat(new_invariant_subspace, zero_matrix(ZZ, nrows(new_invariant_subspace), rank(projL[i])))
-      H = hcat(H, zero_matrix(ZZ,nrows(H), rank(projL[i])))
+      r_i = rank(projL[i])
+      invariant_subspace = hcat(invariant_subspace, zero_matrix(QQ, nrows(invariant_subspace), r_i))
+      invariant_subspaceF = hcat(invariant_subspaceF, zero_matrix(F, nrows(invariant_subspaceF), r_i)) # preserves rref!
+      _Hv = ZZMatrix[hcat(i, zero_matrix(ZZ, nrows(i), r_i)) for i in Hv]
+      Hv = Set(_Hv)
+      new_invariant_subspace = hcat(new_invariant_subspace, zero_matrix(ZZ, nrows(new_invariant_subspace), r_i))
+      H = hcat(H, zero_matrix(ZZ,nrows(H), r_i))
       tmp_invariant_vec = zeros_array(ZZ, n_i)
       tmpQQmat = zero_matrix(QQ, 1, n_i)
       # compute invariant vectors by taking the sum of all vectors with the same invariant
@@ -1574,8 +1605,9 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
                                         tmp_invariant_vec,
                                         tmpQQmat,
                                         H,
-                                        invariant_subspaceF)
-        found, invariant_subspace, new_invariant_subspace, invariant_subspaceF = abc
+                                        invariant_subspaceF,
+                                        Hv, search_invariant_subspace, search_fixed_vectors)
+        found, invariant_subspace, new_invariant_subspace, invariant_subspaceF, Hv = abc
         iszero(found) && break
         # update the invariants
         T = numerator(new_invariant_subspace*view(gramB,1:n_i,1:n_i))
@@ -1611,7 +1643,9 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     @vprintln :Lattice 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
   end
   # assemble the output
-  output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, sum(length.(values(short_vectors1))))
+  n_out = sum(length.(values(short_vectors1)))
+  output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
+  invariants = Vector{Int}(undef, n_out)
   r = nrows(new_invariant_subspace)
   gZ = ZZ.(gram_matrix(L))
   BinvT = Binv*T
@@ -1620,6 +1654,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     tG = t*transpose(t)
     pushfirst!(grams, tG)
   end
+  pushfirst!(grams, gZ)
   i = 0
   if CoeffType===ZZRingElem
     _B = numerator(B)
@@ -1631,33 +1666,65 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     gramL_CoeffType = [CoeffType(i) for i in gZ]
   end
   tmp_v = [CoeffType(0) for i in 1:ncols(gZ)]
-  pushfirst!(grams, gZ)
+
+  r1 = rank(projL[1])
+  compressor = [1 for i in 1:r1]#[rand(1:1000) for i in 1:r1]
+  target_invariant = Int[dot(Binv[i, 1:r1], compressor) for i in 1:n]
   for b in keys(short_vectors1)
     bret = copy(b)
     @inbounds for i in 1:r
       bret[i] = bret[i]^2
     end
-    v = divexact.(__not_adj(first(short_vectors1[b])*_B),d)
+    tmp = first(short_vectors1[b])[1:r1]
+    invariant = dot(tmp, compressor)
+
+    v = divexact.(__not_adj(first(short_vectors1[b])*_B), d)
     s = __norm!(gramL_CoeffType, v, tmp_v)
     pushfirst!(bret, s)
     for z in short_vectors1[b]
       i = i+1
-      output[i] = (_canonicalize!(divexact.(__not_adj(z*_B), d)), copy(bret))
+      vv = divexact.(__not_adj(z*_B), d)
+      vv, flipped = _canonicalize_with_data!(vv)
+      if flipped
+        invariants[i] = -invariant
+      else
+        invariants[i] = invariant
+      end
+      output[i] = (vv, copy(bret))
     end
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
+  if false # stuff from search_invariant_subspaces
+    A = [i*B for i in Hv]
+    V = ambient_space(L)
+    A = [1-matrix(orthogonal_projection(V, a)) for a in A]
+    A = [numerator(a*gZ*transpose(a)) for a in A]
+    A = filter!(!in(grams), A)
+    if length(A)>0
+      _A = sum(rand(0:100)*a for a in A)
+      if CoeffType === Int
+        _ACoeff = [CoeffType(i) for i in _A]
+      else
+        _ACoeff = _A
+      end
+      push!(grams, _A)
+      @vtime :Lattice 1 output = [(v,push!(i, __norm!(_ACoeff,v,tmp_v))) for (v,i) in output]
+    end
+  end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in output
       @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams))
     end
+    abs_inv = abs.(target_invariant)
+    @assert all(abs(i) in abs_inv for i in invariants)
     # This test makes sense only in automorphism mode
     #E = CoeffType.(identity_matrix(ZZ, n))
     #for i in 1:n
     #  @assert any(E[i,:]==j[1] for j in output)
     #end
   end
-  return output, grams, BinvT, proj[1]
+  return output, grams, BinvT, proj[1], [numerator(i*B) for i in Hv], (invariants, target_invariant)
 end
 
 __norm!(gram::Matrix{Int}, v::Vector{Int}, tmp_v::Vector{Int}) = dot(v, gram, v)
@@ -1701,9 +1768,9 @@ end
 
 function short_vectors_with_condition_direct(T::Type,
                                       L::ZZLat;
-                                      search_new_invariant_vectors::Bool=true)
+                                      search_fixed_vectors::Bool=true)
   proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
-  return _short_vectors_with_condition_direct(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)
+  return _short_vectors_with_condition_direct(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors)
 end
 
 function _short_vectors_with_condition_direct(T::Type{Int},
@@ -1711,7 +1778,7 @@ function _short_vectors_with_condition_direct(T::Type{Int},
                                       proj::Vector{QQMatrix}, target_invariant::Vector{Tuple{Vector{QQFieldElem}, Vector{ZZRingElem}}},
                                       target_norms::Vector{Vector{ZZRingElem}},
                                       denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix};
-                                      search_new_invariant_vectors::Bool=true)
+                                      search_fixed_vectors::Bool=true)
   denoms_Int = Int.(denoms)
   target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
   target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
@@ -1721,11 +1788,11 @@ function _short_vectors_with_condition_direct(T::Type{Int},
                                            target_norms_Int,
                                            denoms_Int,
                                            grams;
-                                           search_new_invariant_vectors)
+                                           search_fixed_vectors)
 
 end
 
-function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_new_invariant_vectors::Bool=true) where {CoeffType <: Union{Int, ZZRingElem}}
+function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_fixed_vectors::Bool=true) where {CoeffType <: Union{Int, ZZRingElem}}
   G = ZZ.(gram_matrix(L))
   M = Int(maximum(diagonal(G)))
   gramsint = [Matrix{Int}(g) for g in grams]
@@ -1804,7 +1871,7 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
 
   _, invbas = rref(proj[1])
 
-  if search_new_invariant_vectors
+  if search_fixed_vectors
     invrank, invbas = rref(proj[1])
     oldinvrank = invrank
     newinvvec = []
@@ -1894,7 +1961,8 @@ function _finckepohstint_shortest(G::ZZMatrix)
   if isone(T)
     return m, [i[1] for i in V if i[2] == m]
   else
-    return m, [i[1]*T for i in V if i[2] == m]
+    _T = [Int(i) for i in T]
+    return m, [(i[1]'*_T)' for i in V if i[2] == m]
   end
 end
 

@@ -646,7 +646,7 @@ end
 # - we only need p to be large enough for the vectors that we are currently looking at,
 #   so we keep track of the entry size of the vectors we are considering and increase
 #   the bound for p either if we (a) add a vector; or (b) encounter a with larger entry size
-function _fundamental_roots(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(Int) - 2))) where {S, T}
+function _fundamental_roots!(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(Int) - 2))) where {S, T}
   # choose a large prime < typemax(Int)
   if isempty(sv)
     return sv
@@ -690,7 +690,7 @@ function _fundamental_roots(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(In
         # _reduce_modulo_rref for FpMatrix, but this is a lot of work
         #
         # So just call the "old" version
-        return _fundamental_roots_naive(sv)
+        return _fundamental_roots_naive!(sv)
       end
     end
 
@@ -748,7 +748,7 @@ function _root_lattice_recognition_fundamental(L::ZZLat)
   catch InexactError
     _short_vec = first.(_short_vectors_gram(Vector, QQ.(G), 0, 2, ZZRingElem))
   end
-  fundamental_roots = [matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots(_short_vec)]
+  fundamental_roots = [matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots!(_short_vec)]
   return _root_lattice_recognition_fundamental(L , fundamental_roots)
 end
 
@@ -1069,17 +1069,21 @@ end
 ################################################################################
 # For all i
 # replace x[i] by -x[i] if its first non-zero coefficient is negative.
-function _canonicalize!(x::Vector)
-  length(x)==0 && return x
+function _canonicalize_with_data!(x::Union{Vector, LinearAlgebra.Adjoint})
+  length(x)==0 && return x, false
   i = 1
+  flag = false
   while i<length(x) && iszero(x[i])
     i = i+1
   end
   if is_negative(x[i])
+    flag = true
     x.= neg!.(x)
   end
-  return x
+  return x, flag
 end
+
+_canonicalize!(x::Union{Vector, LinearAlgebra.Adjoint}) = _canonicalize_with_data!(x)[1]
 
 function _canonicalize!(x::MatElem)
   for i in eachindex(x)
@@ -1096,7 +1100,7 @@ end
 
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
-function _fundamental_roots_naive(sv::Vector{S}) where {S}
+function _fundamental_roots_naive!(sv::Vector{S}) where {S}
   fundamental = S[]
   if isempty(sv)
     return fundamental

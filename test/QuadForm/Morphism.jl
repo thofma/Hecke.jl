@@ -36,17 +36,17 @@
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_new_invariant_vectors=true)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_fixed_vectors=true)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_new_invariant_vectors=false)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_fixed_vectors=false)
   end
   @test  orders == automorphism_group_order.(L)
 
   for i in L
-    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_new_invariant_vectors=false)
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=false)
   end
   @test  orders == automorphism_group_order.(L)
 

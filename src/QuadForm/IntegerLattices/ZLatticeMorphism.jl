@@ -37,9 +37,10 @@ function __assert_has_automorphisms(
   use_weyl::Bool=true,
   use_projections::Bool=true,
   use_norm_one::Bool=true,
-  use_everything::Bool=false,
+  use_everything::Bool=true,
   compress::Bool=true,
-  search_new_invariant_vectors::Bool=true,
+  search_fixed_vectors::Bool=true,
+  search_invariant_subspace::Bool=false,
   use_target_enum::Bool=true
 )
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -69,13 +70,6 @@ function __assert_has_automorphisms(
     return nothing
   end
 
-  if use_everything
-    use_weyl = true
-    use_projections = true
-    use_target_enum = true
-    use_norm_one = true
-    compress = true
-  end
 
   # scale integral and positive definite and with trivial basis matrix
   d = sign(gram_matrix(L)[1,1])*denominator(gram_matrix(L))
@@ -89,11 +83,26 @@ function __assert_has_automorphisms(
   end
   V = ambient_space(_L)
   GL = numerator(gram_matrix(_L))
+  if use_everything
+    use_weyl = true
+    use_projections = true
+    use_target_enum = true
+    use_norm_one = true
+    compress = true
+  end
+  # disable everything for big lattices
+  if !(all(fits(Int,i) for i in GL))
+    use_weyl = false
+    use_projections = false
+    use_target_enum = false
+    use_norm_one = false
+    compress = false
+  end
   vector_set = []
   # Split off norm 1 vectors
   if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
-    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, use_projections, use_norm_one=false, search_new_invariant_vectors, compress, use_target_enum)
+    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace, compress, use_target_enum)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -109,7 +118,7 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
-
+  invariants = nothing
   res = ZZMatrix[GL]
   is_lll = get_attribute(L, :is_lll_reduced, false)
   use_lll = false #!is_lll && !use_everything
@@ -120,6 +129,8 @@ function __assert_has_automorphisms(
     Ttr = transpose(T)
     res = [Glll]
     #res = ZZMatrix[T*g*Ttr for g in res]
+  else
+    Glll = GL
   end
 
   if maximum(abs.(gram_matrix(_L)))>ZZ(2)^62
@@ -127,7 +138,7 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    res, vector_set, gram_weyl_vector, weyl_group_gens, weyl_group_order = _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors)
+    res, vector_set, invariants, gram_weyl_vector, weyl_group_gens, weyl_group_order = _get_weyl_proj_and_vector_set(_L; search_fixed_vectors, search_invariant_subspace )
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
@@ -151,7 +162,7 @@ function __assert_has_automorphisms(
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
   end
-
+  res_uncompressed = res
   if compress && length(res) > 1 # nothing to compress if there is only a single gram
     # res = [G_1,...,G_r]
     # G_1 is the Gram matrix of the lattice
@@ -172,11 +183,10 @@ function __assert_has_automorphisms(
     end
   end
 
-  known_short_vectors = (0, []) #
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, invariants)
     #@assert fl
     if fl
       _gens, order = auto(Csmall)
@@ -185,7 +195,8 @@ function __assert_has_automorphisms(
     !fl && @vprintln :Lattice 1 "Try init small failed; switching to large"
   end
   if !try_small || !fl
-    init(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
+    C = ZLatAutoCtx(res_uncompressed)
+    init(C; depth, bacher_depth, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
 
@@ -221,7 +232,11 @@ function __assert_has_automorphisms(
     # the Weyl vector \rho is preserved only up to sign
     # so we have computed Aut(L,{\pm \rho}) and its order
     if weyl_group_order > 1
-      order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
+      if use_target_enum && fl # fl because invariants are not used with ZZRingElem for now
+        order_reduced = order
+      else
+        order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
+      end
     else
       # when rho is trivial
       order_reduced = order
@@ -235,7 +250,7 @@ function __assert_has_automorphisms(
   return nothing
 end
 
-function _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors=true)
+function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_invariant_subspace=false)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
   weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv) = _weyl_group(_L, root_types, fundamental_roots)
   if length(grams) > 0
@@ -244,7 +259,7 @@ function _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors=true)
     gram_weyl_vector = nothing
   end
   proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(_L, fundamental_roots, grams, proj_root_inv, proj_root_coinv) #updates grams
-  V, grams = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_new_invariant_vectors)  # updates grams
+  V, grams,_,_,_,invariants = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)  # updates grams
   if get_assertion_level(:Lattice) > 1
     for (v, n) in V
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
@@ -260,7 +275,7 @@ function _get_weyl_proj_and_vector_set(_L; search_new_invariant_vectors=true)
     end
   end
   @assert length(res) == length(vector_set[1][2])
-  return res, vector_set, gram_weyl_vector, weyl_group_gens, weyl_group_order
+  return res, vector_set, invariants, gram_weyl_vector, weyl_group_gens, weyl_group_order
 end
 
 # Given gram matrices G1,...,Gn, we construct
@@ -459,12 +474,12 @@ end
 
 # Helpers to find additional structure in the lattice
 
-function _invariant_projections_and_sublattices(L::ZZLat)
+function _invariant_projections_and_sublattices(L::ZZLat, elem_type::Type{S}=Int) where {S}
   # the first condition is a safeguard from a flint convention for isone
   if rank(L) != degree(L) || !isone(basis_matrix(L))
     L = lattice(rational_span(L))
   end
-  LL, _ = _short_vector_generators_with_sublattice_2(L; up_to_sign=true)
+  LL, _ = _short_vector_generators_with_sublattice_2(L, S; up_to_sign=true)
   return __projections(LL), LL
 end
 
@@ -597,14 +612,16 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
   G1 = ZZMatrix[GLlll]
   G2 = ZZMatrix[GMlll]
 
-  _L1 = integer_lattice(gram=G1[1];cached=false)
-  _L2 = integer_lattice(gram=G2[1];cached=false)
-  b, vector_set2, vector_set1, grams2, grams1 = short_vectors_with_condition(_L2, _L1)
-  if !b
-    return false, zero_matrix(QQ,0,0)
+  fl = (all(fits(Int,i) for i in GLlll)) && (all(fits(Int,i) for i in GMlll))
+  if fl
+    _L1 = integer_lattice(gram=G1[1];cached=false)
+    _L2 = integer_lattice(gram=G2[1];cached=false)
+    b, vector_set2, vector_set1, grams2, grams1 = short_vectors_with_condition(_L2, _L1)
+    if !b
+      return false, zero_matrix(QQ,0,0)
+    end
+    fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth; vector_set1, vector_set2)
   end
-
-  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth; vector_set1, vector_set2)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
@@ -834,7 +851,9 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   # D = solve(P, F; side=:left)
   # and looking at the diagonal of D
   D = solve(QQ.(F),QQ.(P); side=:left)
-  glue_indices = ZZRingElem[]
+  glue_indices = []
+  #tmp = nrows.(fundamental_roots)
+  #indices = pushfirst!([sum(tmp[i] for i in 1:j) for j in 1:length(tmp)], 1)
   j = 0
   for f in fundamental_roots
     k = j+nrows(f)
@@ -842,7 +861,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     push!(glue_indices, d)
     j = k
   end
-  D = Dict{Tuple{Tuple{Symbol, Int}, Int}, Vector{ZZMatrix}}()
+  D = Dict{Any, Vector{ZZMatrix}}()
   for (t,g,f) in zip(root_types, glue_indices, fundamental_roots)
     k = (t,g)
     if k in keys(D)

@@ -461,6 +461,7 @@ end
 mutable struct VectorList{S, T}
   vectors::Vector{S} # list of (short) vectors
   lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
+  invariants::Vector{Int} # invariant[i] is an invariant of vectors[i]
   lookup::Dict{S, Int} # v => i iff vectors[i] == v
   issorted::Bool # whether the vectors are sorted
   use_dict::Bool # whether lookup is used
@@ -510,6 +511,7 @@ mutable struct ZLatAutoCtx{S, T, V}
   dim::Int
   max::S
   V::VectorList{V, S} # list of (short) vectors
+  target_invariants::Vector{Int}
   v::Vector{Vector{V}} # list of list of vectors (n x 1 matrices),
                        # v[i][j][k] is the dot product of V[j] with
                        # the k-th row of G[i]
@@ -541,6 +543,15 @@ mutable struct ZLatAutoCtx{S, T, V}
   is_symmetric::BitArray{1} # whether G[i] is symmetric
   operate_tmp::V # temp storage for orbit computation
   dot_product_tmp::V # temp storage for dot product computation
+  tmp_vec1::Vector{S} # tmp storage used in _cand
+  tmp_vec2::Vector{S} # tmp storage used in _cand
+
+  # temporary stuff used in _cand
+  rowsI:: Vector{Vector{S}}
+  minusRowsI::Vector{Vector{S}}
+  colsI::Vector{Vector{S}}
+  minusColsI::Vector{Vector{S}}
+  diagI::Vector{S}
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
     z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
@@ -550,11 +561,25 @@ mutable struct ZLatAutoCtx{S, T, V}
     z.is_symmetric = falses(length(G))
     z.operate_tmp = zero_matrix(ZZ, 1, ncols(G[1]))
     z.dot_product_tmp = zero_matrix(ZZ, 1, 1)
+    z.tmp_vec1 = zeros_array(ZZ, z.dim)
+    z.tmp_vec2 = zeros_array(ZZ, z.dim)
 
     for i in 1:length(z.G)
       z.is_symmetric[i] = is_symmetric(z.G[i])
     end
-
+    S = ZZRingElem
+    I = z.dim  #z.dim is always >=I in _cand
+    z.rowsI = Vector{Vector{S}}(undef, length(G))
+    z.minusRowsI = Vector{Vector{S}}(undef, length(G))
+    z.colsI = Vector{Vector{S}}(undef, length(G))
+    z.minusColsI = Vector{Vector{S}}(undef, length(G))
+    z.diagI = Vector{S}(undef, length(G))
+    for i in 1:length(G)
+      z.rowsI[i] = Vector{S}(undef, I - 1)
+      z.minusRowsI[i] = Vector{S}(undef, I - 1)
+      z.colsI[i] = Vector{S}(undef, I - 1)
+      z.minusColsI[i] = Vector{S}(undef, I - 1)
+    end
     return z
   end
 
