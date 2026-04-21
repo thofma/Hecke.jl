@@ -3,6 +3,7 @@
   include("QuadForm/Lattices.jl")
   include("QuadForm/Genus.jl")
   include("QuadForm/Morphism.jl")
+  include("QuadForm/PleskenSouvignierNaive.jl")
   include("QuadForm/Enumeration.jl")
   include("QuadForm/ShortVectors.jl")
   include("QuadForm/MassQuad.jl")
