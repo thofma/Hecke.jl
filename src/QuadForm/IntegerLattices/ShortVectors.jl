@@ -1247,7 +1247,7 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
   w = i2 - i1
   F = base_ring(invariant_subspaceF)
   pivs = zeros(Int, ncols(invariant_subspaceF))
-  pure = Bool[]
+  pure = zeros(Bool, ncols(invariant_subspaceF))
   dirty = true
   # compute pivs and pure
   Hecke._reduce_modulo_rref(invariant_subspaceF,nrows(invariant_subspaceF)-1, pivs, pure, dirty)
