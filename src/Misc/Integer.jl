@@ -13,6 +13,11 @@ is_commutative(::ZZRing) = true
   The multiplicative order of a modulo $m$ (not a good algorithm).
 """
 function modord(a::ZZRingElem, m::ZZRingElem)
+  if iszero(m)
+    a == 1 && return 1
+    a == -1 && return 2
+    error("1st argument not a unit")
+  end
   is_one(m) && return 1
   gcd(a, m) != 1 && error("1st argument not a unit")
   i = 1
@@ -25,6 +30,11 @@ function modord(a::ZZRingElem, m::ZZRingElem)
 end
 
 function modord(a::Integer, m::Integer)
+  if m == 0
+    a == 1 && return 1
+    a == -1 && return 2
+    error("1st argument not a unit")
+  end
   is_one(m) && return 1
   gcd(a, m) != 1 && error("1st argument not a unit")
   i = 1
