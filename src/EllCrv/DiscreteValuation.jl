@@ -119,34 +119,37 @@ lift(v::AbsSimpleNumFieldValuation, y) = v.red_map\y
 #
 ################################################################################
 
-struct RationalFunctionFieldValuation{T} <: DiscreteValuation{T}
-  K::AbstractAlgebra.Generic.RationalFunctionField
-  f::PolyRingElem
-  red_map
+struct RationalFunctionFieldValuation{T, U, S} <: DiscreteValuation{AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}}
+  K::AbstractAlgebra.Generic.RationalFunctionField{T, U}
+  f::U
+  red_map::S
 end
 
-function RationalFunctionFieldValuation(K::AbstractAlgebra.Generic.RationalFunctionField, f::PolyRingElem)
+function RationalFunctionFieldValuation(K::AbstractAlgebra.Generic.RationalFunctionField{T, U}, f::U) where {T, U <: PolyRingElem{T}}
   @req is_irreducible(f) "Polynomial must be irreducible"
   @assert parent(f) === base_ring(K.fraction_field)
   F, red_map = residue_field(parent(f), f)
-  return RationalFunctionFieldValuation{elem_type(K)}(K, f, red_map)
+  return RationalFunctionFieldValuation{T, U, typeof(red_map)}(K, f, red_map)
 end
 
 base_field(v::RationalFunctionFieldValuation) = v.K
 residue_field(v::RationalFunctionFieldValuation) = codomain(v.red_map)
 uniformizer(v::RationalFunctionFieldValuation) = v.K(v.f)
 
-# we allow to pass polynomials (implicit denominator = 1)
-function valuation(v::RationalFunctionFieldValuation{T}, x_) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+# for both valuation and reduce we want to allow passing polynomials (implicit denominator 1)
+#   we do immediate type coercion, so anything not coercible to K is rejected.
+# TODO: maybe it is worth it to explicitly provide two overloads
+#   one for RationalFunctionFieldElem{T, U} and another for U (which is polynomial type).
+function valuation(v::RationalFunctionFieldValuation, x_)
   x = v.K(x_)
   return iszero(x) ? inf : valuation(numerator(x), v.f) - valuation(denominator(x), v.f)
 end
 
-# we allow to pass polynomials (implicit denominator = 1)
-function reduce(v::RationalFunctionFieldValuation{T}, x_) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+function reduce(v::RationalFunctionFieldValuation, x_)
   x = v.K(x_)
   return v.red_map(numerator(x)) // v.red_map(denominator(x))
 end
+
 lift(v::RationalFunctionFieldValuation, y) = v.K(v.red_map\y)
 
 ################################################################################
@@ -155,31 +158,34 @@ lift(v::RationalFunctionFieldValuation, y) = v.K(v.red_map\y)
 #
 ################################################################################
 
-struct RationalFunctionFieldDegreeValuation{T} <: DiscreteValuation{T}
-  K::AbstractAlgebra.Generic.RationalFunctionField
-  red_map
+struct RationalFunctionFieldDegreeValuation{T, U, S} <: DiscreteValuation{AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}}
+  K::AbstractAlgebra.Generic.RationalFunctionField{T, U}
+  red_map::S
 end
 
-function RationalFunctionFieldDegreeValuation(K::AbstractAlgebra.Generic.RationalFunctionField)
+function RationalFunctionFieldDegreeValuation(K::AbstractAlgebra.Generic.RationalFunctionField{T, U}) where {T, U <: PolyRingElem{T}}
   Kinf = localization(K, degree)
   F, red_map = residue_field(Kinf, Kinf(1//gen(K)))
-  return RationalFunctionFieldDegreeValuation{elem_type(K)}(K, red_map)
+  return RationalFunctionFieldDegreeValuation{T, U, typeof(red_map)}(K, red_map)
 end
 
 base_field(v::RationalFunctionFieldDegreeValuation) = v.K
 residue_field(v::RationalFunctionFieldDegreeValuation) = codomain(v.red_map)
 uniformizer(v::RationalFunctionFieldDegreeValuation) = 1//gen(v.K)
 
-# we allow to pass polynomials (implicit denominator = 1)
-function valuation(v::RationalFunctionFieldDegreeValuation{T}, x_) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+# for both valuation and reduce we want to allow passing polynomials (implicit denominator 1)
+#   we do immediate type coercion, so anything not coercible to K is rejected.
+# TODO: maybe it is worth it to explicitly provide two overloads
+#   one for RationalFunctionFieldElem{T, U} and another for U (which is polynomial type).
+function valuation(v::RationalFunctionFieldDegreeValuation, x_)
   x = v.K(x_)
   return iszero(x) ? inf : degree(denominator(x)) - degree(numerator(x))
 end
 
-# we allow to pass polynomials (implicit denominator = 1)
-function reduce(v::RationalFunctionFieldDegreeValuation{T}, x_) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+function reduce(v::RationalFunctionFieldDegreeValuation, x_)
   x = v.K(x_)
   Kl = domain(v.red_map)
   return v.red_map(Kl(x))
 end
+
 lift(v::RationalFunctionFieldDegreeValuation, y) = v.K(v.red_map\y)
