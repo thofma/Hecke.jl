@@ -18,6 +18,7 @@ function modord(a::ZZRingElem, m::ZZRingElem)
     a == -1 && return 2
     error("1st argument not a unit")
   end
+  m = abs(m)
   is_one(m) && return 1
   gcd(a, m) != 1 && error("1st argument not a unit")
   i = 1
@@ -35,6 +36,7 @@ function modord(a::Integer, m::Integer)
     a == -1 && return 2
     error("1st argument not a unit")
   end
+  m = abs(m)
   is_one(m) && return 1
   gcd(a, m) != 1 && error("1st argument not a unit")
   i = 1

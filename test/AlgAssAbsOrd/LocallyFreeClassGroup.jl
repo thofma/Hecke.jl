@@ -116,6 +116,14 @@ end
     ZG = integral_group_ring(QG)
     @test is_isomorphic(kernel_group(ZG), abelian_group(o))[1]
   end
+
+  let
+    S = [i == j && j == k ? one(QQ) : zero(QQ) for i in 1:3, j in 1:3, k in 1:3]
+    A = structure_constant_algebra(QQ, S)
+    O = order(A, ZZ[2 0 0; 1 1 0; 0 0 1])
+    k = kernel_group(O)
+    @test isa(k, FinGenAbGroup)
+  end
 end
 
 let
