@@ -34,6 +34,8 @@ export Divisor
 export Divisors
 export EllipticCurve
 export EllipticCurvePoint
+export EllipticCurveLocalData
+export EllipticCurveReduction
 export EmbeddedAbsSimpleNumField
 export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
