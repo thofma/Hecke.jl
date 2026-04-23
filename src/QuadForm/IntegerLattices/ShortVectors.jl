@@ -1985,44 +1985,7 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
   return res, grams, zero_matrix(ZZ, nrows(G), 0), proj[1]
 end
 
-# TODO: get rid of this once finckepost can deal with ZZRingElem
 function __short_vectors(G::ZZMatrix, lb, ub)
   sv = __enumerate_gram(FinckePohstInt, G, lb, ub, Int, identity, identity, Int)
-  #return __enumerate_gram(LatEnumCtx, G, lb, ub, QQFieldElem, identity, identity, QQFieldElem)
   return sv
-end
-
-#function __short_vectors(G::ZZMatrix, lb::ZZRingElem, ub::ZZRingElem)
-#  return __enumerate_gram(LatEnumCtx, G, lb, ub, QQFieldElem, identity, identity, QQFieldElem)
-#end
-
-function _finckepohstint_shortest(G::ZZMatrix)
-  @assert is_positive_entry(G,1,1)
-  Glll, T = lll_gram_with_transform(G)
-  ubInt = Int(minimum(diagonal(Glll)))
-  fl, V = _finckepohstint(Glll, ubInt; dolll=false)
-  @assert fl
-  m = minimum(i[2] for i in V)
-  if isone(T)
-    return m, [i[1] for i in V if i[2] == m]
-  else
-    _T = [Int(i) for i in T]
-    return m, [(i[1]'*_T)' for i in V if i[2] == m]
-  end
-end
-
-function _finckepohstint_shortest(G::QQMatrix)
-  _G, d  = integral_split(G,ZZ)
-  m, V = _finckepohstint_shortest(_G)
-  return QQ(m,d), V
-end
-
-
-function _shortest_vectors_gram_finckepostint(G::Union{QQMatrix,ZZMatrix})
-  try
-    return _finckepohstint_shortest(G)
-  catch k
-    k isa InexactError || rethrow(k)
-    return _shortest_vectors_gram(G)
-  end
 end
