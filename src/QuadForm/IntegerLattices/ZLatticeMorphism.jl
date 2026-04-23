@@ -214,7 +214,7 @@ function __assert_has_automorphisms(
     end
 
     if use_weyl # translate reduced generators back
-      for i in 1:length(gens)
+      for i in 1:length(reduced_gens)
         reduced_gens[i] = Tinv * reduced_gens[i] * T
       end
     end
