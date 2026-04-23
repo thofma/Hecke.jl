@@ -20,26 +20,25 @@ siegel_transform, cholesky_decomposition
     theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, theta_characteristic)
      -> AcbFieldElem
 
-Computes theta(a,b)(z, tau) where theta(a,b) is the Riemann theta function
+Computes theta(a, b)(z, tau) where theta(a, b) is the Riemann theta function
 (of level 2) of characteristic 
-(a,b). If one wants to use multiple theta characteristics, it is more efficient
-to use thetas.
+(a,b). If one wants to compute multiple theta characteristics, it is more efficient
+to use `thetas`.
 
 Clarification of input:
 Let [a,b] be a tuple with a, b in {0,1}^g be a representative of the 
-characteristic. The variable theta_characteristic can be given as either:
+characteristic. The variable `theta_characteristic` can be given as either:
 
 - An integer whose bit representation (most significant bit first) is equal to [a,b]
 - A single array which is the concatenation of a and b
 - A pair of arrays a and b
-For example, for g = 2, letting theta_characteristic be either
-11, [1,0,1,1] or [[1,0],[1,1]] would all give the same output.
-
+For example, for `g = 2`, letting `theta_characteristic` be either
+`11`, `[1,0,1,1]` or `[[1,0],[1,1]]` would all give the same output.
 """
-function theta(z::Vector{AcbFieldElem},  tau::AcbMatrix, ab_int::Int = 0)
+function theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, ab_int::Int = 0)
   g = nrows(tau)
   zd = length(z)
-  if (g != zd)
+  if g != zd
     error("Dimension mismatch. tau is of dimension $g, but z is of dimension $zd")
   end
   
@@ -50,9 +49,11 @@ function theta(z::Vector{AcbFieldElem},  tau::AcbMatrix, ab_int::Int = 0)
   zzs = acb_vec(z)
 
   ccall((:acb_theta_one, Hecke.libflint), Nothing, (Ptr{acb_struct},
-  Ptr{acb_struct}, Ref{AcbMatrix},Cint, Int), th, zzs, tau, ab_int, prec)
+  Ptr{acb_struct}, Ref{AcbMatrix},UInt, Int), th, zzs, tau, ab_int, prec)
 
   res = array(CC, th, 1)
+  acb_vec_clear(th, 1)
+  acb_vec_clear(zzs, g)
   return res
 end
 
@@ -74,10 +75,10 @@ Computes theta(a,b)(z, tau) for all possible tuples [a,b] with a, b
 in {0,1}^g. Output is returned as a dictionary with key entries Vectors
 in {0,1}^(2g) and as values the corresponding theta values.
 
-For example, if D = thetas(z,tau) for z in C^2 and tau a 2 by 2 matrix 
-then D[0,1,1,1] will correspond to theta([0,1],[1,1])(z, tau).
+For example, if `D = thetas(z, tau)` for `z` in C^2 and `tau` a 2 by 2 matrix 
+then `D[0,1,1,1]` will correspond to `theta([0,1],[1,1])(z, tau)`.
 
-If the optional parameter squared is set to true, the algorithm will be
+If the optional parameter `squared` is set to `true`, the algorithm will be
 faster, but will return the squares of the theta values instead.
 """
 function thetas(z::Vector{AcbFieldElem},  tau::AcbMatrix; squared::Bool = false)
@@ -95,10 +96,8 @@ function thetas(z::Vector{AcbFieldElem},  tau::AcbMatrix; squared::Bool = false)
   th = acb_vec(num_of_thetas)
   zzs = acb_vec(z)
 
-  sqr = Int(squared)
-
   ccall((:acb_theta_all, libflint), Nothing, (Ptr{acb_struct},
-  Ptr{acb_struct}, Ref{AcbMatrix}, Int, Int), th, zzs, tau, sqr, prec)
+  Ptr{acb_struct}, Ref{AcbMatrix}, Cint, Int), th, zzs, tau, squared, prec)
 
   theta_values = array(CC, th,   num_of_thetas)
   theta_indices = theta_characteristics_indices(g)
@@ -112,33 +111,31 @@ end
 
 @doc raw"""
     theta_dz(z::Vector{AcbFieldElem}, tau::AcbMatrix, theta_characteristic,
-    dz::Vector{Int}); squared::Bool = false)) -> AcbFieldElem
+    dz::Vector{Int}) -> AcbFieldElem
 
-Computes the partial derivative with respect to the multi-index given by dz
-of theta(a,b)(z, tau) where theta(a,b) is the Riemann theta function 
+Computes the partial derivative with respect to the multi-index given by `dz`
+of theta(a,b)(`z`, `tau`) where theta(a,b) is the Riemann theta function 
 (of level 2) of characteristic (a,b). If one wants to compute multiple partial
- derivatives for different theta characteristics, it is more efficient to use
-theta_derivatives.
+derivatives for different theta characteristics, it is more efficient to use
+`theta_dzs`.
 
 Clarification of input:
 Let [a,b] be a tuple with a, b in {0,1}^g be a representative of the 
-characteristic. The variable theta_characteristic can be  given as either:
+characteristic. The variable `theta_characteristic` can be given as either:
 - An integer whose bit representation (most significant bit first)
   is equal to [a,b]
 - A single array which is the concatenation of a and b
 - A pair of arrays a and b
 
-For example, for g = 2, letting theta_characteristic be either
-11, [1,0,1,1] or [[1,0],[1,1]] would all give the same output.
+For example, for `g = 2`, letting `theta_characteristic` be either
+`11, `[1,0,1,1]` or `[[1,0],[1,1]]` would all give the same output.
 
-The variable dz can be used to indicate which partial derivative you are computing.
+The variable `dz` can be used to indicate which partial derivative you are computing.
 
-For example, for g=2, dz = [2,3] would mean computing 
-d^5(theta_(a,b))/(dz_1^2 *dz_2^3)
-
+For example, for `g = 2`, `dz = [2,3]` would mean computing 
+d^5(theta_(a,b))/(dz_1^2 *dz_2^3).
 """
-function theta_dz(z::Vector{AcbFieldElem},  tau::AcbMatrix, 
-  theta_characteristic::Vector{Int}, dz::Vector{Int})
+function theta_dz(z::Vector{AcbFieldElem},  tau::AcbMatrix, theta_characteristic::Vector{Int}, dz::Vector{Int})
   g = nrows(tau)
   if (g != length(dz))
     error("dz should have length $g")
@@ -162,18 +159,18 @@ function theta_dz(z::Vector{AcbFieldElem},  tau::AcbMatrix,
 end
 
 @doc raw"""
-    theta_dtaus(z::Vector{AcbFieldElem}, tau::AcbMatrix;squared::Bool = false) 
+    theta_dtaus(z::Vector{AcbFieldElem}, tau::AcbMatrix) 
     -> Dict{Vector{Int},AcbFieldElem}
 
-Computes the partial derivatives of theta(a,b)(z, tau) with respect to the
-entries of tau for all possible tuples [a,b] with a, b in {0,1}^g.
+Computes the partial derivatives of theta(a,b)(`z`, `tau`) with respect to the
+entries of `tau` for all possible tuples [a,b] with a, b in {0,1}^g.
 Output is returned as a dictionary with key entries Vectors in {0,1}^(2g)
-and as values matrices whose i,jth entry corresponds to the derivative 
-with respect to tau_(i,j).
+and as values matrices whose (i,j)-th entry corresponds to the derivative 
+with respect to `tau[i,j]`.
 
-For example, if D = theta_dtaus(z,tau) for z in C^2 and tau a 2 by 2 matrix 
-then D[0,1,1,1][1,2] will correspondd to the derivative of 
-theta([0,1],[1,1])(z, tau) with respect to dtau_(1,2).
+For example, if `D = theta_dtaus(z, tau)` for `z` in C^2 and `tau` a 2 by 2 matrix 
+then `D[0,1,1,1][1,2]` will correspond to the derivative of 
+theta([0,1],[1,1])(z, tau) with respect to `tau[1,2]`.
 """
 function theta_dtaus(z::Vector{AcbFieldElem},  tau::AcbMatrix)
   g = nrows(tau)
@@ -209,41 +206,39 @@ function theta_dtaus(z::Vector{AcbFieldElem},  tau::AcbMatrix)
 end
 
 @doc raw"""
-    theta_jets(z::Vector{AcbFieldElem}, tau::AcbMatrix, d::Int,
-     dz::Vector{Int});squared::Bool = false) -> 
+    theta_jets(z::Vector{AcbFieldElem}, tau::AcbMatrix, d::Int) -> 
      Dict{NTuple, Dict{Tuple, AcbFieldElem}}
 
-Computes the coefficients of the Taylor series expansion up to order d
+Computes the coefficients of the Taylor series expansion up to order `d`
 of theta(a,b)(z, tau) where theta(a,b) is the Riemann theta function 
 (of level 2) of characteristic (a,b). 
 
-
 The output will be given as a dictionary of dictionaries.
-The key set of the first dictionary will consists of the 
+The key set of the first dictionary will consist of the 
 theta_characteristics.
 
 Clarification of keys:
-Let [a,b] be a tuple with a, b in {0,1}^g be a representative of the characteristic. The variable theta_characteristic can be 
+Let [a,b] be a tuple with a, b in {0,1}^g be a representative of the characteristic. The variable `theta_characteristic` can be 
 given as either:
 - An integer whose bit representation (most significant bit first) is equal to [a,b]
 - A single array which is the concatenation of a and b
 - A pair of arrays a and b
-For example, for g = 2, letting theta_characteristic be either
-11, [1,0,1,1] or [[1,0],[1,1]] would all give the same output.
+For example, for `g = 2`, letting `theta_characteristic` be either
+`11`, `[1,0,1,1]` or `[[1,0],[1,1]]` would all give the same output.
 
-The key set of the second dictionary will consists of the 
-integer arrays determining term in the Taylor expansion.
+The key set of the second dictionary will consist of the 
+integer arrays determining a term in the Taylor expansion.
 
-For example, if D = thetas(z,tau, 3) for z in C^2 and tau a 2 by 2 matrix 
-then D will contain all coefficients for all theta characteristics
+For example, if `D = theta_jets(z, tau, 3)` for `z` in C^2 and `tau` a 2 by 2 matrix 
+then `D` will contain all coefficients for all theta characteristics
 up to order 3, and
 
-D[0,1,1,1][1,2] will correspond to the term of theta([0,1],[1,1])(z, tau)
-related to z_1^2 * dz_2^3.
+`D[0,1,1,1][1,2]` will correspond to the term of theta([0,1],[1,1])(`z`, `tau`)
+related to `z_1^1 * z_2^2`.
 
-Note that the output of theta_jets and theta_derivatives is very similar.
-The elements of theta_jets are normalized in the way you would normalize
-coefficients of a Taylor expansion, i.e. th coefficient of the monomial with
+Note that the output of `theta_jets` and `theta_derivatives` is very similar.
+The elements of `theta_jets` are normalized in the way one would normalize
+coefficients of a Taylor expansion, i.e. the coefficient of the monomial with
 multidegree (k0, k_{g-1}) will be 
 1/k0! * ... * 1/k_{g-1}! * d^k/(dz_1^k0 ... dz_{g-1}^k_{g-1}).
 """
@@ -258,9 +253,8 @@ function theta_jets(z::Vector{AcbFieldElem},  tau::AcbMatrix, order_of_derivativ
   n = ccall((:acb_theta_jet_nb, libflint), Int, (Int, Int), order_of_derivatives, g)
   tups = zeros(Int, n*g)
   tupss = pointer(tups)
-
   #Get the tuples representing the partial derivatives. 
-  ccall((:acb_theta_jet_tuples, libflint), Nothing, (Ptr{Int}, Int,Int),
+  GC.@preserve tups ccall((:acb_theta_jet_tuples, libflint), Nothing, (Ptr{Int}, Int,Int),
   tupss, order_of_derivatives, g)
   
   if g ==1 
@@ -285,7 +279,7 @@ function theta_jets(z::Vector{AcbFieldElem},  tau::AcbMatrix, order_of_derivativ
   all = 1
 
   ccall((:acb_theta_jet, libflint), Nothing, (Ptr{acb_struct},
-  Ptr{acb_struct}, Int, Ref{AcbMatrix},Int, UInt, Int, Int, Int), th, zzs, number_of_z, tau, 
+  Ptr{acb_struct}, Int, Ref{AcbMatrix}, Int, UInt, Cint, Cint, Int), th, zzs, number_of_z, tau, 
   order_of_derivatives, theta_characteristic, all, sqr, prec)
 
   res = array(CC, th, output_size)
@@ -303,8 +297,7 @@ function theta_jets(z::Vector{AcbFieldElem},  tau::AcbMatrix, order_of_derivativ
 end
 
 @doc raw"""
-    theta_dzs(z::Vector{AcbFieldElem}, tau::AcbMatrix, d::Int,
-     dz::Vector{Int});squared::Bool = false) -> 
+    theta_dzs(z::Vector{AcbFieldElem}, tau::AcbMatrix, d::Int) -> 
      Dict{NTuple, Dict{Tuple, AcbFieldElem}}
 
 Computes all of the partial derivatives of theta(a,b)(z, tau) up to order d
@@ -313,31 +306,31 @@ characteristic (a,b).
 
 The output will be given as a dictionary of dictionaries.
 
-The key set of the first dictionary will consists of the 
+The key set of the first dictionary will consist of the 
 theta_characteristics.
 
 Clarification of keys:
 Let [a,b] be a tuple with a, b in {0,1}^g be a representative of the 
-characteristic. The variable theta_characteristic can be given as either:
+characteristic. The variable `theta_characteristic` can be given as either:
 - An integer whose bit representation (most significant bit first)
   is equal to [a,b]
 - A single array which is the concatenation of a and b
 - A pair of arrays a and b
-For example, for g = 2, letting theta_characteristic be either
+For example, for `g = 2`, letting `theta_characteristic` be either
 11, [1,0,1,1] or [[1,0],[1,1]] would all give the same output.
 
-The key set of the second dictionary will consists of the 
+The key set of the second dictionary will consist of the 
 integer arrays determining the partial derivative.
 
-For example, if D = thetas(z,tau, 3) for z in C^2 and tau a 2 by 2 matrix 
-then D will contain all the partial derivatives for all theta characteristics
+For example, if `D = theta_dzs(z, tau, 3)` for `z` in C^2 and `tau` a 2 by 2 matrix 
+then `D` will contain all the partial derivatives for all theta characteristics
 up to order 3.
 
 D[0,1,1,1][1,2] will correspond to d^3/(dz_1*dz_2^2)theta([0,1],[1,1])(z, tau).
 
-Note that the output of theta_jets and theta_derivatives is very similar.
-The elements of theta_jets are normalized in the way you would normalize
-coefficients of a Taylor expansion, i.e. th coefficient of the monomial with
+Note that the output of `theta_jets` and `theta_dzs` is very similar.
+The elements of `theta_jets` are normalized in the way you would normalize
+coefficients of a Taylor expansion, i.e. the coefficient of the monomial with
 multidegree (k0, k_{g-1}) will be 
 1/k0! * ... * 1/k_{g-1}! * d^k/(dz_1^k0 ... dz_{g-1}^k_{g-1}).
 """
@@ -381,8 +374,8 @@ end
 @doc raw"""
     siegel_reduction(tau::AcbMatrix) -> AcbMatrix
 
-Compute the Siegel reduction of the period matrix tau, i.e.
-writing siegel_reduction(tau) = X +iY. We will have |X_mn| <= 1/2
+Compute the Siegel reduction of the period matrix `tau`, i.e.
+writing `siegel_reduction(tau) = X + i*Y`. We will have |X_mn| <= 1/2
 for all n, m and the lattice generated by Y will be LLL reduced.
 """
 function siegel_reduction(tau::AcbMatrix)
@@ -398,10 +391,10 @@ end
 @doc raw"""
     siegel_transform(T::ZZMatrix, tau::AcbMatrix) -> AcbMatrix
 
-Let T = [[A,B],[C,D]] be a 2g x 2g matrix subidivided into four g x g
-matrices A, B, C and D.
+Let `T = [[A,B],[C,D]]` be a 2g x 2g matrix subdivided into four g x g
+matrices `A`, `B`, `C` and `D`.
 
-Return (A*tau + B) * (C*tau + D)^-1.
+Return `(A*tau + B) * inv(C*tau + D)`.
 """
 function siegel_transform(T::ZZMatrix,tau::AcbMatrix)
   g = number_of_rows(tau)
