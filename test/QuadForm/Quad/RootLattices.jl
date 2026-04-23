@@ -211,6 +211,9 @@ end
   R = root_lattice_recognition_fundamental(L)
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
 
+  L = integer_lattice(gram=ZZ[1 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 2 -1; 0 0 0 -1 35])
+  @test root_lattice_recognition_fundamental(L)[2] == [(:I, 1), (:I, 1), (:I, 1), (:A, 1)]
+
 
   B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
   G = matrix(QQ, 6, 6 ,[3, 1, -1, 1, 0, 0, 1, 3, 1, 1, 1, 1, -1, 1, 3, 0, 0, 1, 1, 1, 0, 4, 2, 2, 0, 1, 0, 2, 4, 2, 0, 1, 1, 2, 2, 4]);

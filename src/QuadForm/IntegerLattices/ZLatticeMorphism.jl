@@ -840,7 +840,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   if length(root_types) == 0
     to_fix = zero_matrix(QQ, rank(L), rank(L))
     to_cofix = Tuple{QQMatrix,Int}[]
-    return ZZMatrix[], ZZMatrix[], ZZ(1), [to_fix, to_cofix]
+    return ZZMatrix[], ZZMatrix[], ZZ(1), [to_fix, to_cofix], zero_matrix(ZZ, 0, rank(L))
   end
   invariant_grams = ZZMatrix[]
   invariant_vectors = ZZMatrix[]
@@ -870,7 +870,11 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
       D[k] = [f]
     end
   end
-  for k in keys(D)
+  # We sort the keys to make the order of the output canonical:
+  # in the sense that it defines an isometry Fix(L1_root) -> Fix(L2_root)
+  # that extends to an isometry L1 -> L2
+  sorted_keysD = sort!(collect(keys(D)))
+  for k in sorted_keysD
     (t, d) = k
     isotypic = reduce(vcat, D[k])
     inv_vec = _invariant_vectors(t...)
@@ -920,7 +924,8 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   #gram_rho = ZZ.(4*transpose(tmp)*(tmp))
   push!(invariant_grams, gram_rho)
 
-  fixed_lattice = QQ.(reduce(vcat, invariant_vectors))
+  invariant_matrix = reduce(vcat, invariant_vectors)
+  fixed_lattice = QQ.(invariant_matrix)
   #cofix_lattice = basis_matrix(orthogonal_submodule(root_lat, fixed_lattice))
   #to_cofix = 1 - matrix(orthogonal_projection(amb, cofix_lattice))
   to_fix = -matrix(orthogonal_projection(amb, fixed_lattice; check=false))::QQMatrix
@@ -929,7 +934,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   end
   @hassert :Lattice 1 rank(to_fix+sum(i[1] for i in isotypical_coinvariant_projections; init=zero_matrix(QQ,n,n)))==rank(root_lat)
 
-  return (weyl_group_gens, invariant_grams, ord, (to_fix,isotypical_coinvariant_projections))::Tuple{Vector{ZZMatrix}, Vector{ZZMatrix}, ZZRingElem, Tuple{QQMatrix, Vector{Tuple{QQMatrix,Int}}}}
+  return (weyl_group_gens, invariant_grams, ord, (to_fix,isotypical_coinvariant_projections), invariant_matrix)::Tuple{Vector{ZZMatrix}, Vector{ZZMatrix}, ZZRingElem, Tuple{QQMatrix, Vector{Tuple{QQMatrix,Int}}}, ZZMatrix}
 end
 
 function _invariant_vectors(s::Symbol, n::IntegerUnion)

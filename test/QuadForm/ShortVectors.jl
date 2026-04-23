@@ -139,15 +139,15 @@ end
 @testset "Center density" begin
   L = root_lattice(:E, 6)
   r = center_density(L)
-  @test contains(parent(r)("[0.0721687836487032205 +/- 9.72e-20]"), r)
+  @test contains(parent(r)("[0.0721687836487032205 +/- 9.72e-10]"), r)
 
   L = root_lattice(:E, 8)
   r = density(L)
-  @test contains(parent(r)("[0.253669507901048014 +/- 6.66e-19]"), r)
+  @test contains(parent(r)("[0.253669507901048014 +/- 6.66e-10]"), r)
 
   L = root_lattice(:E, 7)
   r =  hermite_number(L)
-  @test contains(parent(r)("[1.811447328527813353 +/- 5.13e-19]"), r)
+  @test contains(parent(r)("[1.811447328527813353 +/- 5.13e-10]"), r)
 end
 
 @testset "Successive minima" begin

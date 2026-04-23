@@ -1045,15 +1045,15 @@ end
 
 function short_vectors_with_condition(L1::ZZLat,
                                       L2::ZZLat)
+  T = ZZRingElem
   search_fixed_vectors = false
   search_invariant_subspace = false
   if L1===L2
-    @vtime :Lattice 1 proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L)
-    return true, _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
+    @vtime :Lattice 1 proj, target_proj_root_inv, target_norms, denoms, grams = _short_vectors_with_condition_preprocessing(L1)
+    return true, _short_vectors_with_condition(T, L1, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
   end
-  @vtime :Lattice 1 (proj1, target_proj_root_inv1, target_norms1, denoms1, grams1),(root_type1, fundamental_roots1) = _short_vectors_with_condition_preprocessing_with_root_data(L1)
-  @vtime :Lattice 1 (proj2, target_proj_root_inv2, target_norms2, denoms2, grams2),(root_type2, fundamental_roots2) = _short_vectors_with_condition_preprocessing_with_root_data(L2)
-  T = ZZRingElem
+  @vtime :Lattice 1 (proj1, target_proj_root_inv1, target_norms1, denoms1, grams1),(root_type1, fundamental_roots1), invariant_matrix1 = _short_vectors_with_condition_preprocessing_with_root_data(L1)
+  @vtime :Lattice 1 (proj2, target_proj_root_inv2, target_norms2, denoms2, grams2),(root_type2, fundamental_roots2),invariant_matrix2 = _short_vectors_with_condition_preprocessing_with_root_data(L2)
   _V1 = Vector{Tuple{Vector{T},Vector{T}}}()
   _V2 = Vector{Tuple{Vector{T},Vector{T}}}()
   if root_type1 != root_type2 || rank(L1) != rank(L2) || det(L1) != det(L2)
@@ -1061,10 +1061,23 @@ function short_vectors_with_condition(L1::ZZLat,
   end
   n = rank(L1)
   target_proj_root_inv2_in_L1 = typeof(target_proj_root_inv1)()
-  F1 = QQ.(reduce(vcat, fundamental_roots1; init=zero_matrix(ZZ, 0, n)))
-  F2 = QQ.(reduce(vcat, fundamental_roots2; init=zero_matrix(ZZ, 0, n)))
+  invariant_matrix1QQ = QQ.(invariant_matrix1)
+  invariant_matrix2QQ = QQ.(invariant_matrix2)
+  G1fix = gram_matrix(ambient_space(L1),invariant_matrix1QQ)
+  G2fix = gram_matrix(ambient_space(L2),invariant_matrix2QQ)
+  if G1fix != G2fix
+    @assert G1fix==G2fix "interesting case"
+    return false, _V1, _V2, ZZMatrix[], ZZMatrix[]
+  end
+  Lproj1 = lattice(ambient_space(L1), proj1[1]; isbasis=false)
   for (v,n) in target_proj_root_inv2
-    w = solve(F2, v)*F1
+    w1 = solve(invariant_matrix2QQ, v; side=:left)
+    w = w1*invariant_matrix1QQ
+    if !all(isone(denominator(i)) for i in coordinates(w, Lproj1))
+      # the invariant (weyl) vectors embedd in some incompatible ways
+      return false, _V1, _V2, ZZMatrix[], ZZMatrix[]
+    end
+    # it is not because we identify the fundamental root systems ... but they are not so easy to identify!
     push!(target_proj_root_inv2_in_L1, (w,n))
   end
   # Todo:
@@ -1077,12 +1090,14 @@ function short_vectors_with_condition(L1::ZZLat,
     T = Int
     _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace)
     _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace)
-  catch InexactError
+  catch t
+    t isa InexactError || rethrow(t)
     try
       T = ZZRingElem
       _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace)
       _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace)
-    catch InexactError
+    catch s
+      s isa InexactError || rethrow(s)
       # return the empty lists
       # then it will be handled by the direct approach later which is better.
       return true, _V1, _V2, grams1, grams2
@@ -1108,8 +1123,8 @@ end
 function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat,
                                                      elem_type::Type{S}=Int) where {S}
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
-  weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv) = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv,:rank, S), (root_types, fundamental_roots)
+  weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv), invariant_matrix = _weyl_group(L, root_types, fundamental_roots)
+  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv,:rank, S), (root_types, fundamental_roots), invariant_matrix
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat,
@@ -1152,10 +1167,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
       target_norms[i][k] = grams[k][i,i]
     end
   end
-  # We take one representative up to sign.
-  # Do we want this in the preprocessing or in short_vectors_with_condition?
-  target_proj_root_inv = [(_canonicalize!(proj[1][i, :]),target_norms[i][1:w]) for i in 1:n]
-  unique!(target_proj_root_inv)
+  target_proj_root_inv = [(proj[1][i, :],target_norms[i][1:w]) for i in 1:n]
 
   if sort == :rank
     # don't touch the first one
@@ -1391,6 +1403,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   # M_{i+1} < M_i + L_{i+1}
   # and testing for integrality
   # In the postprocessing we transform from the basis of M to the basis of L.
+
   if CoeffType === ZZRingElem
     VectorType = Vector{ZZRingElem}
   else
@@ -1401,6 +1414,11 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   n = rank(L)
   V = ambient_space(L)
   projL = [lll(rescale(lattice(V, proj[i]; check=false, isbasis=false),denoms[i]; cached=false);_is_definite=true) for i in 1:length(proj)]
+  target_signed_invariant = Vector{CoeffType}[CoeffType.(ZZ.(coordinates(a, projL[1]))) for (a,_) in target_invariant]
+  # We take one representative up to sign.
+  target_invariant = [(_canonicalize!(i[1]),i[2]) for i in target_invariant]
+  unique!(target_invariant)
+
   @assert all(is_integral(projL[i]) for i in 2:length(projL))
   B = reduce(vcat, basis_matrix.(projL))
   Binv = ZZ.(inv(B))
@@ -1435,7 +1453,6 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     else
       a = (CoeffType.(ZZ.(coordinates(_a, projL[1]))))'
     end
-
     if b in keys(short_vectors1)
       # different targets can have the same first projection
       if !(a in short_vectors1[b])
@@ -1669,12 +1686,13 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
 
   r1 = rank(projL[1])
   compressor = [1 for i in 1:r1]#[rand(1:1000) for i in 1:r1]
-  target_invariant = Int[dot(Binv[i, 1:r1], compressor) for i in 1:n]
+  target_signed_invariant_compressed = [dot(i,compressor) for i in target_signed_invariant]
   for b in keys(short_vectors1)
     bret = copy(b)
     @inbounds for i in 1:r
       bret[i] = bret[i]^2
     end
+    isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
     tmp = first(short_vectors1[b])[1:r1]
     invariant = dot(tmp, compressor)
 
@@ -1714,17 +1732,19 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in output
-      @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams))
+      @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams)) "$(gram_matrix(L)), $((target_invariant,target_norms))"
     end
-    abs_inv = abs.(target_invariant)
-    @assert all(abs(i) in abs_inv for i in invariants)
+    abs_target_signed_invariant_compressed = Set(abs.(target_signed_invariant_compressed))
+    @assert all(abs(i) in abs_target_signed_invariant_compressed for i in invariants)
+    @assert length(invariants) == length(output)
+    @assert length(target_signed_invariant_compressed) == rank(L)
     # This test makes sense only in automorphism mode
     #E = CoeffType.(identity_matrix(ZZ, n))
     #for i in 1:n
     #  @assert any(E[i,:]==j[1] for j in output)
     #end
   end
-  return output, grams, BinvT, proj[1], [numerator(i*B) for i in Hv], (invariants, target_invariant)
+  return output, grams, BinvT, proj[1], [numerator(i*B) for i in Hv], (invariants, target_signed_invariant_compressed)
 end
 
 __norm!(gram::Matrix{Int}, v::Vector{Int}, tmp_v::Vector{Int}) = dot(v, gram, v)
@@ -1793,6 +1813,7 @@ function _short_vectors_with_condition_direct(T::Type{Int},
 end
 
 function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_fixed_vectors::Bool=true) where {CoeffType <: Union{Int, ZZRingElem}}
+  target_invariant = [(_canonicalize!(i[1]),i[2]) for i in deepcopy(target_invariant)]
   G = ZZ.(gram_matrix(L))
   M = Int(maximum(diagonal(G)))
   gramsint = [Matrix{Int}(g) for g in grams]
@@ -1976,7 +1997,8 @@ end
 function _shortest_vectors_gram_finckepostint(G::Union{QQMatrix,ZZMatrix})
   try
     return _finckepohstint_shortest(G)
-  catch InexactError
+  catch k
+    k isa InexactError || rethrow(k)
     return _shortest_vectors_gram(G)
   end
 end
