@@ -806,7 +806,7 @@ function _short_vectors_gram_nolll_integral(::Type{T}, G, _lb, _ub, transform::X
   end
 
   # V is type-unstable, so we use a function barrier
-  if V isa Vector
+  if V isa Vector && T <: Vector
     W = Vector{Tuple{Vector{S}, QQFieldElem}}()
     __assemble_result!(W, V, transform, n)
     return W

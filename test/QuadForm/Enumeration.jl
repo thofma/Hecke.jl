@@ -59,33 +59,44 @@ end
 @testset "Integer Fincke-Pohst" begin
   # 2x2
   G = ZZ[2 1; 1 2]
-  r = Hecke._finckepohstint(G, 4)
+  ok, r = Hecke._finckepohstint(G, 4)
+  @test ok
   @test length(r) == 3
   @test all(1 <= n <= 4 for (_, n) in r)
 
   # E8 roots
   E8 = root_lattice(:E, 8)
   G8 = ZZ.(gram_matrix(E8))
-  r8 = Hecke._finckepohstint(G8, 2)
+  ok, r8 = Hecke._finckepohstint(G8, 2)
+  @test ok
   @test length(r8) == 120
 
   # 1x1
   G1 = ZZ[3;]
-  @test length(Hecke._finckepohstint(G1, 6)) == 1
-  @test length(Hecke._finckepohstint(G1, 2)) == 0
+  ok, r1 = Hecke._finckepohstint(G1, 6)
+  @test ok
+  @test length(r1) == 1
+  ok, r2 = Hecke._finckepohstint(G1, 2)
+  @test ok
+  @test length(r2) == 0
 
   # 3x3 identity
   I3 = identity_matrix(ZZ, 3)
-  @test length(Hecke._finckepohstint(I3, 3)) == 13
+  ok, r3 = Hecke._finckepohstint(I3, 3)
+  @test ok
+  @test length(r3) == 13
 
   # D16: compare with existing implementation
   D16 = root_lattice(:D, 16)
   G16 = ZZ.(gram_matrix(D16))
-  r16 = Hecke._finckepohstint(G16, 4)
+  ok, r16 = Hecke._finckepohstint(G16, 4)
+  @test ok
   sv16 = short_vectors(D16, 4)
   @test length(r16) == length(sv16)
 
   # Overflow detection
   G_big = ZZ[2 1; 1 2]
-  @test_throws ErrorException Hecke._finckepohstint(G_big, typemax(Int))
+  ok, rbig = Hecke._finckepohstint(G_big, typemax(Int))
+  @test !ok
+  @test isempty(rbig)
 end

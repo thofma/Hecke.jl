@@ -117,7 +117,7 @@ function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool
   if _G[1, 1] < 0
     _G = -_G
   end
-  min, V = _shortest_vectors_gram_finckepostint(_G)
+  min, V = _shortest_vectors_gram(FinckePohstInt, _G)
   L.minimum = min
   if S === Int
     return V
@@ -1836,7 +1836,7 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
   G = ZZ.(gram_matrix(L))
   M = Int(maximum(diagonal(G)))
   gramsint = [Matrix{Int}(g) for g in grams]
-  sv = _short_vectors_gram_finckepohstint(G, 0, M; normtype = Int)
+  sv = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, M, nothing, one(ZZ), Int)
   targetinvs3 = Set((Rational{Int}.(v), Int.(n)) for (v, n) in target_invariant)
   targetinvs2 = Set{Tuple{Vector{Int}, Vector{Int}}}()
   for (v, n) in target_invariant
@@ -1986,17 +1986,22 @@ function _short_vectors_with_condition_direct_integral(L::ZZLat, proj::Vector{QQ
 end
 
 # TODO: get rid of this once finckepost can deal with ZZRingElem
-__short_vectors(G::ZZMatrix, lb::Int, ub::Int) = _finckepohstint(G, ub)
-
-function __short_vectors(G::ZZMatrix, lb::ZZRingElem, ub::ZZRingElem)
-  return __enumerate_gram(LatEnumCtx, G, lb, ub, QQFieldElem, identity, identity, QQFieldElem)
+function __short_vectors(G::ZZMatrix, lb, ub)
+  sv = __enumerate_gram(FinckePohstInt, G, lb, ub, Int, identity, identity, Int)
+  #return __enumerate_gram(LatEnumCtx, G, lb, ub, QQFieldElem, identity, identity, QQFieldElem)
+  return sv
 end
+
+#function __short_vectors(G::ZZMatrix, lb::ZZRingElem, ub::ZZRingElem)
+#  return __enumerate_gram(LatEnumCtx, G, lb, ub, QQFieldElem, identity, identity, QQFieldElem)
+#end
 
 function _finckepohstint_shortest(G::ZZMatrix)
   @assert is_positive_entry(G,1,1)
   Glll, T = lll_gram_with_transform(G)
   ubInt = Int(minimum(diagonal(Glll)))
-  V = _finckepohstint(Glll, ubInt; dolll=false)
+  fl, V = _finckepohstint(Glll, ubInt; dolll=false)
+  @assert fl
   m = minimum(i[2] for i in V)
   if isone(T)
     return m, [i[1] for i in V if i[2] == m]

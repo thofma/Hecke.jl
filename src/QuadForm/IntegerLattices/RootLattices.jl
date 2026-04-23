@@ -747,7 +747,8 @@ function _root_lattice_recognition_fundamental(L::ZZLat;__no_minus_1_vectors::Bo
   end
   if !__no_minus_1_vectors && !is_even(L)
     # split off minus 1 vectors
-    sv1 = _finckepohstint(G, 1)
+    fl, sv1 = _finckepohstint(G, 1)
+    @assert fl
     sv1_mat = [matrix(ZZ, 1, rank(L), i[1]) for i in sv1]
     sv1_space = reduce(vcat, sv1_mat; init=zero_matrix(ZZ,0,rank(L)))
     K = kernel(G*transpose(sv1_space); side=:left)
@@ -757,12 +758,14 @@ function _root_lattice_recognition_fundamental(L::ZZLat;__no_minus_1_vectors::Bo
     return vcat([(:I, 1) for i in 1:length(sv1)], a[1]), vcat(sv1_mat, [i*K for i in a[2]])
   end
   _short_vec = nothing
-  try
-    _short_vec = first.(_finckepohstint(G, 2))
-  catch t
-    t isa InexactError || rethrow(t)
-    _short_vec = first.(_short_vectors_gram(Vector, QQ.(G), 0, 2, ZZRingElem))
-  end
+  #try
+    fl, __short_vec = _finckepohstint(G, 2)
+    @assert fl
+    _short_vec = first.(__short_vec)
+  #catch t
+  #  t isa InexactError || rethrow(t)
+  #  _short_vec = first.(_short_vectors_gram(Vector, QQ.(G), 0, 2, ZZRingElem))
+  #end
   fundamental_roots = [matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots!(_short_vec)]
   return _root_lattice_recognition_fundamental(L , fundamental_roots)
 end
