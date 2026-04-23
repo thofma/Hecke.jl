@@ -9,8 +9,18 @@
 
     @test modord(2,3) == 2
 
+    @test modord(1,0) == 1
+
+    @test modord(-1,0) == 2
+
+    @test_throws ErrorException modord(2, 0)
+
     @test modord(ZZ(2),ZZ(3)) == ZZ(2)
     @test modord(ZZ(2),ZZ(-1)) == 1
+
+    @test modord(ZZ(1),ZZ(0)) == 1
+
+    @test modord(ZZ(-1),ZZ(0)) == 2
 
     @test sort(euler_phi_inv(ZZ(4))) == [ZZ(5), ZZ(8), ZZ(10), ZZ(12)]
 
