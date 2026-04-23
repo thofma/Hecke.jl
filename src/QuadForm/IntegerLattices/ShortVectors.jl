@@ -1693,14 +1693,16 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
       bret[i] = bret[i]^2
     end
     isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
-    tmp = first(short_vectors1[b])[1:r1]
-    invariant = dot(tmp, compressor)
 
     v = divexact.(__not_adj(first(short_vectors1[b])*_B), d)
     s = __norm!(gramL_CoeffType, v, tmp_v)
     pushfirst!(bret, s)
     for z in short_vectors1[b]
       i = i+1
+      # TODO: computation of the invariant could be
+      # faster if we do better bookkeeping
+      # ... which perhaps we should do anyways
+      invariant = dot(view(z, 1:r1), compressor)
       vv = divexact.(__not_adj(z*_B), d)
       vv, flipped = _canonicalize_with_data!(vv)
       if flipped
@@ -1739,10 +1741,16 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     @assert length(invariants) == length(output)
     @assert length(target_signed_invariant_compressed) == rank(L)
     # This test makes sense only in automorphism mode
-    #E = CoeffType.(identity_matrix(ZZ, n))
-    #for i in 1:n
-    #  @assert any(E[i,:]==j[1] for j in output)
-    #end
+    if [Binv[i,1:r1] for i in 1:n] == target_signed_invariant
+      E = CoeffType.(identity_matrix(ZZ, n))
+      for i in 1:n
+        ei = E[i,:]
+        @assert any(ei==j[1] for j in output)
+        j = findfirst(==(ei), first.(output))
+        @assert target_signed_invariant_compressed[i] == invariants[j]
+      end
+    end
+    # so does this one
   end
   return output, grams, BinvT, proj[1], [numerator(i*B) for i in Hv], (invariants, target_signed_invariant_compressed)
 end

@@ -1243,6 +1243,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     #nC = delete(candidates[step], nC, orb, C.orders[step])
     setdiff!(candidates[step], orb)
     nC = length(candidates[step])
+    @vprintln :Lattice 2 "Step $(step), candidates $(candidates)"
     while nC > 0 && ((im = candidates[step][1]) != 0)
       @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
       found = false
