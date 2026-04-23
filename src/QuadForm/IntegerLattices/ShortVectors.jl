@@ -1088,14 +1088,14 @@ function short_vectors_with_condition(L1::ZZLat,
   # (sums of vectors with the same invariant must be mapped to one another).
   try
     T = Int
-    _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace)
-    _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace)
+    _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace, mode=:iso)
+    _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace, mode=:auto)
   catch t
     t isa InexactError || rethrow(t)
     try
       T = ZZRingElem
-      _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace)
-      _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace)
+      _V1, grams1, _, _ = _short_vectors_with_condition(T, L1, proj1, target_proj_root_inv2_in_L1, target_norms2, denoms1, grams1; search_fixed_vectors, search_invariant_subspace, mode=:iso)
+      _V2, grams2, _, _ = _short_vectors_with_condition(T, L2, proj2, target_proj_root_inv2, target_norms2, denoms2, grams2; search_fixed_vectors, search_invariant_subspace, mode=:auto)
     catch s
       s isa InexactError || rethrow(s)
       # return the empty lists
@@ -1191,7 +1191,8 @@ function _short_vectors_with_condition(T::Type{Int},
                                       target_norms::Vector{Vector{ZZRingElem}},
                                       denoms::Vector{ZZRingElem}, grams::Vector{ZZMatrix};
                                       search_fixed_vectors::Bool=true,
-                                      search_invariant_subspace::Bool=false)
+                                      search_invariant_subspace::Bool=false,
+                                      mode::Symbol=:auto)
   denoms_Int = Int.(denoms)
   target_norms_Int = Vector{Int}[Int.(i) for i in target_norms]
   target_invariant_Int = [(i[1],Int.(i[2])) for i in target_invariant]
@@ -1202,7 +1203,8 @@ function _short_vectors_with_condition(T::Type{Int},
                                            denoms_Int,
                                            grams;
                                            search_fixed_vectors,
-                                           search_invariant_subspace)
+                                           search_invariant_subspace,
+                                           mode)
 end
 
 function _short_vectors_with_condition(T::Type{ZZRingElem},
@@ -1212,8 +1214,9 @@ function _short_vectors_with_condition(T::Type{ZZRingElem},
                                       denoms::Vector{ZZRingElem},
                                       grams::Vector{ZZMatrix};
                                       search_fixed_vectors::Bool=true,
-                                      search_invariant_subspace::Bool=false)
-  return _short_vectors_with_condition_integral(L, proj, target_invariant, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
+                                      search_invariant_subspace::Bool=false,
+                                      mode::Symbol=:auto)
+  return _short_vectors_with_condition_integral(L, proj, target_invariant, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace, mode)
 end
 
 function update_short_vector_invariants(D::S, T, found::Int) where {S<:Dict{Vector{Int}, Vector{LinearAlgebra.Adjoint{Int64, Vector{Int64}}}}}
@@ -1392,7 +1395,14 @@ function __vcat(x::LinearAlgebra.Adjoint{Int64, Vector{Int64}}, y::LinearAlgebra
   return vcat(x',y')'
 end
 
-function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}, target_invariant, target_norms::Vector{Vector{CoeffType}}, denoms::Vector{CoeffType}, grams::Vector{ZZMatrix}; search_fixed_vectors::Bool=true, search_invariant_subspace::Bool=false) where {CoeffType <: Union{Int, ZZRingElem}}
+function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix},
+                                                target_invariant,
+                                                target_norms::Vector{Vector{CoeffType}},
+                                                denoms::Vector{CoeffType},
+                                                grams::Vector{ZZMatrix};
+                                                search_fixed_vectors::Bool=true,
+                                                search_invariant_subspace::Bool=false,
+                                                mode::Symbol=:auto) where {CoeffType <: Union{Int, ZZRingElem}}
   # Let L_i := proj[i](L)
   # We lll reduce each L_i and work throughout with the basis
   # M = L_1 + L_2 + ... + L_n
@@ -1741,7 +1751,8 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     @assert length(invariants) == length(output)
     @assert length(target_signed_invariant_compressed) == rank(L)
     # This test makes sense only in automorphism mode
-    if [Binv[i,1:r1] for i in 1:n] == target_signed_invariant
+    if mode == :auto
+      @assert [Binv[i,1:r1] for i in 1:n] == target_signed_invariant
       E = CoeffType.(identity_matrix(ZZ, n))
       for i in 1:n
         ei = E[i,:]

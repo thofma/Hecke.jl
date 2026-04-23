@@ -41,7 +41,8 @@ function __assert_has_automorphisms(
   compress::Bool=true,
   search_fixed_vectors::Bool=true,
   search_invariant_subspace::Bool=false,
-  use_target_enum::Bool=true
+  use_target_enum::Bool=true,
+  do_lll::Bool=true
 )
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -121,8 +122,8 @@ function __assert_has_automorphisms(
   invariants = nothing
   res = ZZMatrix[GL]
   is_lll = get_attribute(L, :is_lll_reduced, false)
-  use_lll = false #!is_lll && !use_everything
-  if use_lll
+  do_lll = !is_lll && do_lll
+  if do_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
     _L = integer_lattice(gram=Glll; cached=false)
@@ -206,7 +207,7 @@ function __assert_has_automorphisms(
   end
 
   # Now translate back
-  if use_lll
+  if do_lll
     Tinv = inv(T)
     for i in 1:length(gens)
       gens[i] = Tinv * gens[i] * T
