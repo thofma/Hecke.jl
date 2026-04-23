@@ -257,4 +257,11 @@
       @test all(P -> P * O == P, lP)
     end
   end
+
+  let
+    A = matrix_algebra(QQ, 3)
+    O = order(A, basis(A))
+    P = Hecke.maximal_integral_ideal_containing(2*O, 2, :left)
+    @test normred(P, O) == 2
+  end
 end
