@@ -8,7 +8,9 @@ ideal(O::GenOrd, a::RingElement, b::RingElement) = GenOrdIdl(O, a, b)
 
 ideal(O::GenOrd, a::RingElement) = GenOrdIdl(O, a)
 
-ideal(O::GenOrd, a::MatElem) = GenOrdIdl(O, a)
+function ideal(O::GenOrd, M::MatElem)
+  return GenOrdIdl(O, hnf(M, :lowerleft))
+end
 
 function AbstractAlgebra.zero(a::GenOrdIdl)
   O = a.order
@@ -167,15 +169,15 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = representation_matrix(A.princ_gen)
+    A.basis_matrix = hnf(representation_matrix(A.princ_gen), :lowerleft)
     return nothing
   end
 
   @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
-  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]), :lowerleft)
   d = ncols(V)
-  A.basis_matrix = V[d+1:2*d,1:d]
+  A.basis_matrix = V[d+1:2*d, 1:d]
   return nothing
 end
 
@@ -428,20 +430,25 @@ function assure_has_minimum(A::GenOrdIdl)
   end
 
   O = order(A)
-  M = basis_matrix(A, copy = false)
-  d = prod([M[i, i] for i = 1:nrows(M)])
-  v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
-  fl, s = can_solve_with_solution(M, v, side = :left)
-  @assert fl
-  den = denominator(s[1]//d)
-  for i = 2:ncols(s)
-    den = lcm(den, denominator(s[i]//d))
-  end
 
-  if isa(den, KInftyElem)
-    A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-  elseif isa(den, PolyRingElem)
-    A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+  if isone(basis(O, copy = false)[1])
+    A.minimum = deepcopy(basis_matrix(A, copy = false)[1, 1])
+  else
+    M = basis_matrix(A, copy = false)
+    d = prod([M[i, i] for i = 1:nrows(M)])
+    v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
+    fl, s = can_solve_with_solution(M, v, side = :left)
+    @assert fl
+    den = denominator(s[1]//d)
+    for i = 2:ncols(s)
+      den = lcm(den, denominator(s[i]//d))
+    end
+
+    if isa(den, KInftyElem)
+      A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
+    elseif isa(den, PolyRingElem)
+      A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+    end
   end
 
   return nothing
