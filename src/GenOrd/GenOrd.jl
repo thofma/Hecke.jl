@@ -662,7 +662,7 @@ function integral_closure(S::KInftyRing{T}, F::Generic.FunctionField{T}) where {
   return _integral_closure(S, F)
 end
 
-function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Ring)
+function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Field)
   O = GenOrd(S, F)
   return Hecke.maximal_order(O)
 end

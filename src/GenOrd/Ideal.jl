@@ -448,6 +448,8 @@ function assure_has_minimum(A::GenOrdIdl)
       A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
     elseif isa(den, PolyRingElem)
       A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+    else
+      A.minimum = den
     end
   end
 
@@ -475,34 +477,15 @@ function assure_has_norm(A::GenOrdIdl)
   end
 
   O = order(A)
-
-  if isdefined(A, :basis_matrix)
-    b = det(basis_matrix(A))
-    if isa(b, KInftyElem)
-      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
-    return nothing
-  end
-
-  if has_princ_gen(A)
-    b = det(basis_matrix(A))
-    if isa(b, KInftyElem)
-      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
-    return nothing
-  end
-
-  assure_has_basis_matrix(A)
-  b = det(basis_matrix(A))
+  b = det(basis_matrix(A; copy = false))
   if isa(b, KInftyElem)
     A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
   elseif isa(b, PolyRingElem)
     A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+  else
+    A.norm = b
   end
+
   return nothing
 end
 
