@@ -407,6 +407,7 @@ function _short_vectors_gram_finckepohstint(G::ZZMatrix, lb::Int, ub::Int;
 
   success, raw = _finckepohstint(G, ub)
   if !success
+    error("Asds")
     return Tuple{Vector{Int}, normtype}[]
   end
 
@@ -439,6 +440,39 @@ function __enumerate_gram_fp(T, Gi::ZZMatrix, mi, ma, a, b, c, ::Type{Int})
   return _short_vectors_gram_finckepohstint(Gi, Int(mi), Int(ma); normtype = ZZRingElem)
 end
 
+struct _FPCallback{S, T, U, V, W, X}
+  result::S
+  per::T
+  l::U
+  pp_vector::V
+  pp_length::W
+  n::X
+end
+
+function (f::_FPCallback)(x, norm)
+  l = f.l
+  if !(l isa Nothing)
+    if norm < l
+      return
+    end
+  end
+
+  n = f.n
+  per = f.per
+  pp_vector = f.pp_vector
+  pp_length = f.pp_length
+  result = f.result
+
+  v = Vector{Int}(undef, n)
+  if per !== nothing
+    @inbounds for j in 1:n
+      v[per[j]] = x[j]
+    end
+  end
+  _canonicalize_finckepohstint!(v)
+  push!(result, (pp_vector(v), pp_length(norm)))
+end
+
 function __enumerate_gram(::Type{FinckePohstInt}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::X, pp_length::Y, ::Type{ElemType}) where {X, Y, ElemType, NormType}
   gram = G
   n = nrows(gram)
@@ -448,46 +482,15 @@ function __enumerate_gram(::Type{FinckePohstInt}, G::ZZMatrix, l::Union{Int, ZZR
 
   if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(gram, Int(c)); success end
     result = Tuple{Vector{ElemType}, NormType}[]
-
     n = ctx.n
-    _finckepohstint_rec!(ctx, n, ctx.M, true) do x, norm
-      if !(l isa Nothing)
-        if norm < l
-          return
-        end
-      end
-
-      v = Vector{Int}(undef, n)
-      if per !== nothing
-        @inbounds for j in 1:n
-          v[per[j]] = x[j]
-        end
-      end
-      _canonicalize_finckepohstint!(v)
-      push!(result, (pp_vector(v), pp_length(norm)))
-    end
+    callback = _FPCallback(result, per, l, pp_vector, pp_length, n)
+    _finckepohstint_rec!(callback, ctx, n, ctx.M, true)
     return result
   else
     ctx, per = _prepare_finckepohstint_large(gram, ZZ(c))
     result = Tuple{Vector{ElemType}, NormType}[]
-
-    n = ctx.n
-    _finckepohstint_rec!(ctx, n, ctx.M, true) do x, norm
-      if !(l isa Nothing)
-        if norm < l
-          return
-        end
-      end
-
-      v = Vector{ZZRingElem}(undef, n)
-      if per !== nothing
-        @inbounds for j in 1:n
-          v[per[j]] = x[j]
-        end
-      end
-      _canonicalize_finckepohstint!(v)
-      push!(result, (pp_vector(v), pp_length(norm)))
-    end
+    _callback = _FPCallback(result, per, l, pp_vector, pp_length, n)
+    _finckepohstint_rec!(_callback, ctx, n, ctx.M, true)
     return result
   end
 end
