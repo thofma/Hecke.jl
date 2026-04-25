@@ -836,17 +836,24 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    degree(P::GenOrdIdl) -> Int
+    inertia_degree(P::GenOrdIdl) -> Int
+
+The inertia degree of the prime-ideal $P$.
+"""
 function degree(P::GenOrdIdl)
   @assert is_prime(P)
-  @assert P.splitting_type != [-1,-1]
-  deg_min = degree(minimum(P))
-  O = order(P)
-  if O == infinite_maximal_order(function_field(O))
-    deg_min = -deg_min
-  end
-  return P.splitting_type[2]*deg_min
+  return P.splitting_type[2]
 end
 
+inertia_degree(P::GenOrdIdl) = degree(P)
+
+@doc raw"""
+    ramification_index(P::GenOrdIdl) -> Int
+
+The ramification index of the prime-ideal $P$.
+"""
 function ramification_index(P::GenOrdIdl)
   @assert is_prime(P)
   return P.splitting_type[1]

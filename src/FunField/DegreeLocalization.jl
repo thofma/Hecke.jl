@@ -57,7 +57,7 @@ characteristic(R::KInftyRing) = characteristic(R.K)
 Return the degree of the given element, i.e.
 `degree(numerator) - degree(denominator)`.
 """
-degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
+degree(a::KInftyElem)::Int = degree(numerator(a, false)) - degree(denominator(a, false))
 
 @doc raw"""
     valuation(a::KInftyElem)

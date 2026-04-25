@@ -1,7 +1,6 @@
 import Hecke: divisor
 
 @testset "Divisors" begin
-
   @testset "Basic Operations" begin
     for base_field in [QQ, finite_field(2, 4)[1], finite_field(101)[1]]
       kx, x = rational_function_field(base_field, :x; cached = false)
@@ -71,6 +70,28 @@ import Hecke: divisor
       @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
       @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
     end
+  end
+
+  @testset "Degree" begin
+    kx, x = rational_function_field(GF(2), :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+
+    F, a = function_field(y^3 - x - 1; cached = false)
+    Ofin = finite_maximal_order(F)
+    Oinf = infinite_maximal_order(F)
+
+    I = ideal(Oinf, 1//(x^2+x+1))
+    P, e = first(factor(I))   # e = 6, f = 1
+    @test e == 6
+    @test 6 == @inferred degree(divisor(I))
+    @test 1 == @inferred degree(divisor(P))
+
+    # currently factor hangs for this ideal
+    # I = ideal(Ofin, x^2+x+1)
+    # P, e = first(factor(I))   # e = 1, f = 3
+    # @test e == 1
+    # @test 6 == @inferred degree(divisor(I))
+    # @test 6 == @inferred degree(divisor(P))
   end
 
   @testset "Not Separable Extension" begin
@@ -202,7 +223,6 @@ import Hecke: divisor
       KF = canonical_divisor(F)
       @test 0 == @inferred degree(KF)
       @test 1 == @inferred genus(F)
-
     end
 
     @testset "Algebraic function field over rationals (2)" begin
@@ -246,6 +266,5 @@ import Hecke: divisor
       for df in L
         @test is_effective(divisor(df.f) + KF)
       end
-
     end
 end

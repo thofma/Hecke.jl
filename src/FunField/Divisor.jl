@@ -448,8 +448,27 @@ end
 Return the degree of D.
 """
 function degree(D::Divisor)
-  L = support(D)
-  return sum(degree(f)*e for (f, e) in L; init = zero(Int))::Int
+  # A divisor D = sum_P n_P * P has degree sum_P n_P * deg(P), where P ranges
+  #   over *places* of F/K (K the field of constants).
+  #
+  # For a place P lying over a (finite) prime p in the base ring,
+  #   deg(P) = [F_P : K] = f(P) * deg(p),
+  # where f(P) is the inertia degree and deg(p) is the degree of p as a
+  # polynomial in the base ring.
+  #
+  # For infinite places, p lies in KInftyRing.
+  # The formula above stays correct if we read deg(p) as the degree of p
+  # as a polynomial in the local parameter t = 1/x.
+  # However, `degree(::KInftyElem)` returns the degree in x, which is -(degree in t).
+  # We therefore compensate by subtracting the infinite contribution rather than adding it.
+  function deg_place(p::GenOrdIdl, e::Integer)
+    return degree(p)*degree(minimum(p))*e
+  end
+
+  fin_deg = sum(deg_place(f, e) for (f, e) in finite_support(D); init = zero(Int))
+  inf_deg = sum(deg_place(f, e) for (f, e) in infinite_support(D); init = zero(Int))
+
+  return fin_deg - inf_deg
 end
 
 @doc raw"""

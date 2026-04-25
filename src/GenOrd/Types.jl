@@ -123,7 +123,7 @@ end
     r.is_prime = 0
     r.is_zero = 0
     r.is_principal = 0
-    r.splitting_type = (-1, -1)
+    r.splitting_type = (0, 0)
     return r
   end
 
