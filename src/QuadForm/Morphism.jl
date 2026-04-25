@@ -1465,55 +1465,83 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       end
     end
   end
+  # Cache frequently accessed fields to reduce repeated struct field lookups
+  # in the hot loop below.
+  CoV = Co.V
+  CoVlen = CoV.lengths
+  CoVinv = CoV.invariants
+  Cov = Co.v
+  CiIsSymmetric = Ci.is_symmetric
+  target_inv_I = Ci.target_invariants[Ci.per[I]]
+  neg_target_inv_I = -target_inv_I
+  dot_product_tmp = Co.dot_product_tmp
+  nG = length(Co.G)
   nr = 0
-  @inbounds for j in 1:length(Co.V)
-    Vvj = Co.V[j]
+  @inbounds for j in 1:length(CoV)
+    Vvj = CoV[j]
     okp = true
     okm = true
-    for i in 1:length(Co.G)
-      _issym = Ci.is_symmetric[i]
+    Vlen_j = CoVlen[j]
+    Vinv_j = CoVinv[j]
+    for i in 1:nG
+      _issym = CiIsSymmetric[i]
+      Cov_i = Cov[i]
+      Vlen_j_i = Vlen_j[i]
 
-      if Co.V.lengths[j][i] != diagI[i] || Co.V.invariants[j] != Ci.target_invariants[Ci.per[I]]
+      if Vlen_j_i != diagI[i] || Vinv_j != target_inv_I
         okp = false
       end
-      if Co.V.lengths[j][i] != diagI[i] || Co.V.invariants[j] != -Ci.target_invariants[Ci.per[I]]
+      if Vlen_j_i != diagI[i] || Vinv_j != neg_target_inv_I
         okm = false
       end
       !use_vector_sums && !okp && !okm && break
 
       # vec is the vector of scalar products of V.v[j] with the first I base vectors
       #   x[1]...x[I]
+      # When not accumulating for vector sums, merge the compute and check loops so
+      # we can break as soon as the first k value eliminates both okp and okm,
+      # avoiding the remaining (I-2-k) dot products for rejected vectors.
       for k in 1:(I - 1)
         xk = x[k]
         if xk > 0
-          vec[k] = _dot_product_with_entry!(vec[k], Vvj, Co.v[i], xk, Co.dot_product_tmp)
+          vec[k] = _dot_product_with_entry!(vec[k], Vvj, Cov_i, xk, dot_product_tmp)
           if !_issym
-            vec2[k] = _dot_product_with_entry!(vec2[k], Co.V[xk], Co.v[i], j, Co.dot_product_tmp)
+            vec2[k] = _dot_product_with_entry!(vec2[k], CoV[xk], Cov_i, j, dot_product_tmp)
           end
         else
-          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, Co.v[i], -xk, Co.dot_product_tmp)
+          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, Cov_i, -xk, dot_product_tmp)
           if !_issym
-            vec2[k] = -_dot_product_with_entry!(vec2[k], Co.V[-xk], Co.v[i], j, Co.dot_product_tmp)
+            vec2[k] = -_dot_product_with_entry!(vec2[k], CoV[-xk], Cov_i, j, dot_product_tmp)
           end
+        end
+        if !use_vector_sums
+          if okp && (vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k]))
+            okp = false
+          end
+          if okm && (vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k]))
+            okm = false
+          end
+          !okp && !okm && break
         end
       end
       # if okp == true then Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
-      for k in 1:(I - 1)
-        if vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k])
-          okp = false
-          break
+      if use_vector_sums
+        for k in 1:(I - 1)
+          if vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k])
+            okp = false
+            break
+          end
+        end
+
+
+
+        for k in 1:(I - 1)
+          if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
+            okm = false
+            break
+          end
         end
       end
-
-
-
-      for k in 1:(I - 1)
-        if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
-          okm = false
-          break
-        end
-      end
-
       # if okm == true then -Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
 
 
@@ -2222,12 +2250,8 @@ end
 
 
 function _dot_product_with_entry!(t::Int, v::Vector{Int}, A::Vector{Vector{Int}}, k::Int, tmp::Vector{Int})
-  @inbounds A = A[k]
-  @inbounds t = v[1] * A[1]
-  @inbounds for i in 2:length(v)
-    t = t + v[i] * A[i]
-  end
-  return t
+  @inbounds Ak = A[k]
+  return dot(v, Ak)
 end
 
 #=
