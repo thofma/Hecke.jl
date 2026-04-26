@@ -81,17 +81,20 @@ import Hecke: divisor
     Oinf = infinite_maximal_order(F)
 
     I = ideal(Oinf, 1//(x^2+x+1))
-    P, e = first(factor(I))   # e = 6, f = 1
+    fac = factor(I)
+    @test length(fac) == 1
+    P, e = first(fac)   # e = 6, f = 1
     @test e == 6
     @test 6 == @inferred degree(divisor(I))
     @test 1 == @inferred degree(divisor(P))
 
-    # currently factor hangs for this ideal
-    # I = ideal(Ofin, x^2+x+1)
-    # P, e = first(factor(I))   # e = 1, f = 3
-    # @test e == 1
-    # @test 6 == @inferred degree(divisor(I))
-    # @test 6 == @inferred degree(divisor(P))
+    I = ideal(Ofin, x^2+x+1)
+    fac = factor(I)
+    @test length(fac) == 1
+    P, e = first(fac)   # e = 1, f = 3
+    @test e == 1
+    @test 6 == @inferred degree(divisor(I))
+    @test 6 == @inferred degree(divisor(P))
   end
 
   @testset "Not Separable Extension" begin

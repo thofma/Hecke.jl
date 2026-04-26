@@ -585,6 +585,7 @@ function Hecke.index(O::GenOrd)
   return is_equation_order(O) ? O.R(1) : O.R(det(basis_matrix_inverse(O)))
 end
 
+# TODO: currently works only for function fields
 function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)
   K, mK = residue_field(parent(p),p)
   fact = factor(poly_to_residue(K, O.F.pol))
@@ -592,10 +593,30 @@ function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, l
   F = function_field(O)
   a = gen(F)
   for (fac, e) in fact
-    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
-    I = GenOrdIdl(O, p, O(facnew(a)))
-    I.is_prime = 1
     f = degree(fac)
+    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
+    b = O(facnew(a))
+    # We want a P-normal two-element presentation, i.e. v_P(b) = 1.
+    # Since we are in the case of p not dividing the index, we have a good candidate b = g(a).
+    #
+    # v_P(<p,b>) = min[v_P(p), v_P(b)] = 1.
+    # Ramified case   (e > 1): v_P(p) = e > 1, so v_P(b) = 1 is forced.
+    # Unramified case (e = 1): v_P(b) can exceed 1, in which case
+    #   v_P(b + p) = min(v_P(b), 1) = 1
+    # For other primes Q over p, v_Q(b) > 0 would give v_Q(<p, b>) > 0,
+    #   giving <p,b> subset of Q, contradicting <p, b> = P.
+    #
+    # In the unramified case we need to check if v_P(b) == 1.
+    # One possibility is to check if p*N(P) = p^{f+1} divides N(b)
+    #   and if it doesn't, we must have v_P(b) == 1.
+    # Unlike the number field case, b can be zero (single inert prime over p),
+    #   which is also covered by adding p.
+    if e == 1 && (is_zero(b) || divides(norm(b), p^(f + 1))[1])
+      b = b + O(p)
+    end
+
+    I = GenOrdIdl(O, p, b)
+    I.is_prime = 1
     I.splitting_type = e, f
     I.norm = p^f
     I.minimum = p

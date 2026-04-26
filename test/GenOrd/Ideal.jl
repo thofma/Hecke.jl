@@ -171,6 +171,50 @@
       check_ideal(ideal(OK, ZZ(2)), 2)
     end
   end
+
+  @testset "prime decomposition" begin
+    function _test_prime_2elem(P, f, e)
+      @test inertia_degree(P) == f
+      @test ramification_index(P) == e
+      @test Hecke.has_2_elem(P)
+      @test 1 == @inferred valuation(ideal(order(P), P.gen_two), P)
+    end
+
+    @testset "over F_2(x)" begin
+      kx, x = rational_function_field(GF(2), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^3 - x - 1; cached = false)
+      Ofin = finite_maximal_order(L)
+      Oinf = infinite_maximal_order(L)
+
+      pd = prime_decomposition(Ofin, Ofin.R(x^2 + x + 1))
+      @test length(pd) == 1
+      P, e = first(pd)
+      @test e == 1
+      _test_prime_2elem(P, 3, 1)
+
+      pd = prime_decomposition(Ofin, Ofin.R(x + 1))
+      @test length(pd) == 1
+      P, e = first(pd)
+      @test e == 3
+      _test_prime_2elem(P, 1, 3)
+
+      # modulo x: y^3 - x - 1 = (y+1)(y^2+y+1)
+      pd = prime_decomposition(Ofin, Ofin.R(x))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        f_expected = degree(numerator(data(P.gen_two)))
+        _test_prime_2elem(P, f_expected, 1)
+      end
+
+      pd = prime_decomposition(Oinf, Oinf.R(1//x))
+      @test length(pd) == 1
+      P, e = first(pd)
+      @test e == 3
+      @test inertia_degree(P) == 1
+    end
+  end
 end
 
 @testset "Ideals for orders over function fields" begin
