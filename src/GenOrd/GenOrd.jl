@@ -51,6 +51,9 @@ end
 # prepare for algebras, which are not domains
 is_domain_type(::Type{GenOrdElem{S, T}}) where {S, T} = is_domain_type(S)
 
+ideal_type(::Type{GenOrd{S, T}}) where {S, T} = GenOrdIdl{S, T}
+fractional_ideal_type(::Type{GenOrd{S, T}}) where {S, T} = GenOrdFracIdl{S, T}
+
 ################################################################################
 #
 #  Show

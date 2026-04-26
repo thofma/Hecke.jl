@@ -187,20 +187,20 @@
       Ofin = finite_maximal_order(L)
       Oinf = infinite_maximal_order(L)
 
-      pd = prime_decomposition(Ofin, Ofin.R(x^2 + x + 1))
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x^2 + x + 1))
       @test length(pd) == 1
       P, e = first(pd)
       @test e == 1
       _test_prime_2elem(P, 3, 1)
 
-      pd = prime_decomposition(Ofin, Ofin.R(x + 1))
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x + 1))
       @test length(pd) == 1
       P, e = first(pd)
       @test e == 3
       _test_prime_2elem(P, 1, 3)
 
       # modulo x: y^3 - x - 1 = (y+1)(y^2+y+1)
-      pd = prime_decomposition(Ofin, Ofin.R(x))
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x))
       @test length(pd) == 2
       for (P, e) in pd
         @test e == 1
@@ -208,7 +208,7 @@
         _test_prime_2elem(P, f_expected, 1)
       end
 
-      pd = prime_decomposition(Oinf, Oinf.R(1//x))
+      pd = @inferred prime_decomposition(Oinf, Oinf.R(1//x))
       @test length(pd) == 1
       P, e = first(pd)
       @test e == 3

@@ -586,13 +586,13 @@ function Hecke.index(O::GenOrd)
 end
 
 # TODO: currently works only for function fields
-function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_nonindex(O::GenOrd{S, T}, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
   K, mK = residue_field(parent(p),p)
   fact = factor(poly_to_residue(K, O.F.pol))
-  result = []
+  result = Vector{Tuple{GenOrdIdl{S, T}, Int}}(undef, length(fact))
   F = function_field(O)
   a = gen(F)
-  for (fac, e) in fact
+  for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
     facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
     b = O(facnew(a))
@@ -620,19 +620,18 @@ function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, l
     I.splitting_type = e, f
     I.norm = p^f
     I.minimum = p
-    push!(result,(I,e))
+    result[i] = (I,e)
   end
   return result
 end
 
 
-function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
+function poly_to_residue(K::AbstractAlgebra.Field, poly::AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
+  P, _ = polynomial_ring(K, :y)
   if iszero(poly)
-    return zero(K)
+    return zero(P)
   else
-    P, y = polynomial_ring(K,"y")
-    coeffs = coefficients(poly)
-    return sum([K(numerator(coeffs[i]))//K(denominator(coeffs[i]))*y^i for i in (0:length(poly)-1)])
+    return P([K(numerator(c)) // K(denominator(c)) for c in coefficients(poly)])
   end
 end
 
@@ -658,11 +657,11 @@ function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
 end
 
 
-function Hecke.factor(A::GenOrdIdl)
+function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
   O = A.order
   N = norm(A)
   factors = factor(N)
-  primes = Dict{GenOrdIdl,Int}()
+  primes = Dict{GenOrdIdl{S, T},Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
       p_val = valuation(A, p)
@@ -674,7 +673,7 @@ function Hecke.factor(A::GenOrdIdl)
   return primes
 end
 
-function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
+function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
   #Index not well-defined for infinite maximal order
   if !isa(base_ring(O), KInftyRing) && !(divides(index(O), p)[1])
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
@@ -683,9 +682,9 @@ function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(
   end
 end
 
-function prime_dec_gen(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0)
+function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   Ip = pradical(O, p)
-  lp = _decomposition(O, GenOrdIdl(O, p), Ip, GenOrdIdl(O, one(O)), p)
+  lp = _decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), p)
   #=z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -720,14 +719,15 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   return GenOrdIdl(O,rad(O,p))
 end
 
-function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p::RingElem)
+# WARNING: TI is unused. I guess the idea is to keep signature same as AbsNumField case
+function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, TI::GenOrdIdl{S, T}, p::RingElem) where {S, T}
   #I is an ideal lying over p
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = StructureConstantAlgebra(O, Ip1, p)
   AtoO = pseudo_inv(OtoA)
-  ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+  ideals, _ = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   for j in 1:length(ideals)
     P = ideals[j][1]
     f = P.splitting_type[2]

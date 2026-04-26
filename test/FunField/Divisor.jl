@@ -10,10 +10,10 @@ import Hecke: divisor
       Ofin = finite_maximal_order(F)
       Oinf = infinite_maximal_order(F)
 
-      p1, _ = first(factor(ideal(Ofin, x-1)))
+      p1, _ = first(@inferred factor(ideal(Ofin, x-1)))
       p2    = ideal(Ofin, x^2+x+1)
       p3    = ideal(Ofin, x-3, Ofin(a+3))
-      p4, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
+      p4, _ = first(@inferred factor(ideal(Oinf, base_ring(Oinf)(1//x))))
 
       d1, d2, d3, d4 = divisor.((p1, p2, p3, p4))
       Hecke.assure_has_support.((d1, d2, d3, d4))
@@ -81,7 +81,7 @@ import Hecke: divisor
     Oinf = infinite_maximal_order(F)
 
     I = ideal(Oinf, 1//(x^2+x+1))
-    fac = factor(I)
+    fac = @inferred factor(I)
     @test length(fac) == 1
     P, e = first(fac)   # e = 6, f = 1
     @test e == 6
@@ -89,7 +89,7 @@ import Hecke: divisor
     @test 1 == @inferred degree(divisor(P))
 
     I = ideal(Ofin, x^2+x+1)
-    fac = factor(I)
+    fac = @inferred factor(I)
     @test length(fac) == 1
     P, e = first(fac)   # e = 1, f = 3
     @test e == 1
