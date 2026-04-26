@@ -21,7 +21,7 @@ function order_via_exhaustive_search(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   order = ZZ(1)
   a1, a2, a3, a4, a6 = a_invariants(E)
-  Ry, y = polynomial_ring(R,"y")
+  Ry, y = polynomial_ring(R, :y)
   for x = R
     f = y^2 +a1*x*y + a3*y - x^3 - a2*x^2 - a4*x - a6
     ys = roots(f)
@@ -302,7 +302,7 @@ function order_via_schoof(E::EllipticCurve{T}) where T<:FinFieldElem
   end
 
   # prepare data
-  Rx, x = polynomial_ring(R, :x, cached = false)
+  Rx, x = polynomial_ring(R, :x; cached = false)
   _, _, _, a4, a6 = a_invariants(E)
   div_poly = _generate_division_polynomials_for_schoof(x, a4, a6, l)
 
@@ -615,7 +615,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   end
 
   # see Menezes "Elliptic Curve Public Key Cryptosystems" sections 3.4 and 3.5
-  _, X = polynomial_ring(R, "X", cached=false)
+  _, X = polynomial_ring(R, :X; cached=false)
   if isodd(d)
     # bring to the form y^2 + y = x^3 + a_4*x + a_6
     if a3 != one(R)
@@ -1021,8 +1021,8 @@ function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
     isone(w^3)  && return q + 1 +   base_t  # non-cube - cubic twist
     return                q + 1 -   base_t  # not square nor cube - sextic twist
   else
-    X = polynomial_ring(ZZ, "X", cached=false)[2]
-    K, t = number_field(X^2 - X + 1, :t, cached=false)
+    X = polynomial_ring(ZZ, :X; cached=false)[2]
+    K, t = number_field(X^2 - X + 1, :t; cached=false)
     OK = maximal_order(K)
 
     # p is split in Q(sqrt(-3)), p = pi*pi'
@@ -1101,8 +1101,8 @@ function _order_j_1728(E::EllipticCurve{T}) where T <: FinFieldElem
     isone(-w)   && return q + 1 + base_t  # not 4th power - quadratic twist
     return                q + 1           # not square - quartic twist
   else
-    X = polynomial_ring(ZZ, "X", cached=false)[2]
-    K, t = number_field(X^2 + 1, :t, cached=false)
+    X = polynomial_ring(ZZ, :X; cached=false)[2]
+    K, t = number_field(X^2 + 1, :t; cached=false)
     OK = maximal_order(K)
 
     # p is split in Q(sqrt(-1)), p = pi*pi'
