@@ -706,40 +706,31 @@ function _trace_of_frobenius_char2_agm(a6::T) where T <: FinFieldElem
   end
 
   N = div(d+1,2) + 3
-
-  # WARNING: currently FLINT does not expose creating qadic context with custom modulus
-  # WARNING: so for a large exponent (where Conway polynomial is not available)
-  # WARNING:   the random polynomial will be used to create a context
-  # WARNING: clearly it is certain to be different from the modulus used
-  # WARNING:   to create the finite field over which curve is defined
-  # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
-  # WARNING: for now we err for the exponent bigger than 91 (flint limit)
-  d >= 92 && error("Currently exponents above 91 are not supported")
-  Qq,_ = qadic_field(2, d, precision=N, cached=false)
+  Q = qadic_field(modulus(R); precision=N, cached=false)[1]
 
   # TODO: we should implement a lift from F_q to Q_q (in Nemo) directly
   # TODO: instead of going through full padic coefficients
 
   # z = 1 + 8*a_6 [4 digits precision]
-  z = 1 + 8*_qadic_from_residue_element(Qq, a6, precision=4)
+  z = 1 + 8*_qadic_from_residue_element(Q, a6; precision=4)
 
   for k in 5:N  # get k correct digits
     # iteration: z <- [1 + z] / [2 * sqrt(z)] = [(1+z)/2] / sqrt(z)
     setprecision!(z, k+1) # we divide by 2 below so we need extra digit
-    z = divexact(shift_right(Qq(1, precision=k+1) + z, 1), sqrt(z))
+    z = divexact(shift_right(Q(1; precision=k+1) + z, 1), sqrt(z))
     setprecision!(z, k) # we have z modulo 2^k
   end
 
   # we need Norm(2z / [1+z]) = Norm(z / ([1+z]/2) )
   setprecision!(z, N+1) # we divide by 2 below so we need extra digit
-  zz = shift_right(Qq(1, precision=N+1) + z, 1)
+  zz = shift_right(Q(1; precision=N+1) + z, 1)
 
   norm_z = norm(divexact(z, zz))
   setprecision!(norm_z, N-1) # we have norm modulo 2^(N-1)
   t = lift(ZZ, norm_z)
 
   if t^2 > 4*q # bring inside Hasse interval
-    t = t - 2^(N-1)
+    t = t - ZZ(2)^(N-1)
   end
 
   return t
@@ -899,17 +890,8 @@ function _trace_of_frobenius_char3_agm(j::T) where T <: FinFieldElem
 
   # Hesse form x^3 + y^3 + 1 = dxy, d^3 = j
   D = pth_root(j)
-
-  # WARNING: currently FLINT does not expose creating qadic context with custom modulus
-  # WARNING: so for a large exponent (where Conway polynomial is not available)
-  # WARNING:   the random polynomial will be used to create a context
-  # WARNING: clearly it is certain to be different from the modulus used
-  # WARNING:   to create the finite field over which curve is defined
-  # WARNING: FLINT pr: https://github.com/flintlib/flint/pull/2550
-  # WARNING: for now we err for the exponent bigger than 57 (flint limit)
-  d >= 58 && error("Currently exponents above 57 are not supported")
-  Q = qadic_field(3, d, precision=N, cached=false)[1]
-  z = polynomial_ring(Q, "z", cached=false)[2]
+  Q = qadic_field(modulus(R); precision=N, cached=false)[1]
+  z = polynomial_ring(Q, :z; cached=false)[2]
 
   # we are solving (z + 6)^3 − (z^2 + 3*z + 9)*D_k^3 = 0
   # j(E_{D_k}) = j(\mathcal{E}^k) mod 3^{k+1}
@@ -929,7 +911,7 @@ function _trace_of_frobenius_char3_agm(j::T) where T <: FinFieldElem
 
   t = lift(ZZ, norm_d)
   if t^2 > 4*q
-    t = t - 3^N
+    t = t - ZZ(3)^N
   end
 
   return t

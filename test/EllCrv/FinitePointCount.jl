@@ -31,10 +31,10 @@
   @testset "AGM in characteristic 2 (Large Exponent)" begin
     function test_agm_subfield(d, N)
       RB,x = finite_field(2, d, "X")
-      q = 2^d
+      q = ZZ(2)^d
 
       t_1 = Hecke._trace_of_frobenius_char2_agm(x)
-      t_prev = 2; t_cur = t_1
+      t_prev = ZZ(2); t_cur = t_1
       for n in 2:N
         t_cur, t_prev = t_1*t_cur - q*t_prev, t_cur
 
@@ -51,11 +51,9 @@
       return true
     end
 
-    # check the comment in _trace_of_frobenius_char2_agm
-    # we cannot go past the exponent 92 currently
-    @test test_agm_subfield(3, 30)
-    @test test_agm_subfield(4, 20)
-    @test test_agm_subfield(5, 15)
+    @test test_agm_subfield(3, 60)
+    @test test_agm_subfield(4, 40)
+    @test test_agm_subfield(5, 30)
   end
 
   @testset "AGM in characteristic 2 (Exhaustive d=3..6)" begin
@@ -211,10 +209,10 @@
   @testset "AGM in characteristic 3 (Large Exponent)" begin
     function test_agm_subfield(d, N)
       RB,x = finite_field(3, d, "X")
-      q = 3^d
+      q = ZZ(3)^d
 
       t_1 = Hecke._trace_of_frobenius_char3_agm(x)
-      t_prev = 2; t_cur = t_1
+      t_prev = ZZ(2); t_cur = t_1
       for n in 2:N
         t_cur, t_prev = t_1*t_cur - q*t_prev, t_cur
 
@@ -231,11 +229,9 @@
       return true
     end
 
-    # check the comment in _trace_of_frobenius_char3_agm
-    # we cannot go past the exponent 58 currently
-    @test test_agm_subfield(3, 18)
-    @test test_agm_subfield(4, 12)
-    @test test_agm_subfield(5, 10)
+    @test test_agm_subfield(3, 30)
+    @test test_agm_subfield(4, 20)
+    @test test_agm_subfield(5, 15)
   end
 
   @testset "AGM in characteristic 3 (Exhaustive d=3..6)" begin
