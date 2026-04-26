@@ -183,9 +183,15 @@ end
 Return the infinite maximal order of K
 """
 function infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
+  return _infinite_maximal_order_function_field_typed(K, base_ring(K))
+end
+
+# Function-barrier helper. K's type (FunctionField) only carries T,
+#   so we recover U from base_ring(K) to get a fully concrete KInftyRing{T, U}
+function _infinite_maximal_order_function_field_typed(K::F, ::Generic.RationalFunctionField{T, U}) where {T, U, F <: AbstractAlgebra.Generic.FunctionField{T}}
   get_attribute!(K, :infinite_maximal_order) do
     return _infinite_maximal_order(K)
-  end::GenOrd{AbstractAlgebra.Generic.FunctionField{T}, KInftyRing{T}}
+  end::GenOrd{F, KInftyRing{T, U}}
 end
 
 function _infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)

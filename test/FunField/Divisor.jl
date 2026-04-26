@@ -7,8 +7,8 @@ import Hecke: divisor
       ky, y = polynomial_ring(kx, :y; cached = false)
 
       F, a = function_field(y^3 - x^3 - 1; cached = false)
-      Ofin = finite_maximal_order(F)
-      Oinf = infinite_maximal_order(F)
+      Ofin = @inferred finite_maximal_order(F)
+      Oinf = @inferred infinite_maximal_order(F)
 
       p1, _ = first(@inferred factor(ideal(Ofin, x-1)))
       p2    = ideal(Ofin, x^2+x+1)
@@ -77,8 +77,8 @@ import Hecke: divisor
     ky, y = polynomial_ring(kx, :y; cached = false)
 
     F, a = function_field(y^3 - x - 1; cached = false)
-    Ofin = finite_maximal_order(F)
-    Oinf = infinite_maximal_order(F)
+    Ofin = @inferred finite_maximal_order(F)
+    Oinf = @inferred infinite_maximal_order(F)
 
     I = ideal(Oinf, 1//(x^2+x+1))
     fac = @inferred factor(I)
@@ -124,7 +124,8 @@ import Hecke: divisor
       ky, y = polynomial_ring(kx, :y; cached = false)
       for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^17 - 1]
         F, a = function_field(poly; cached = false)
-        Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
+        Ofin = @inferred finite_maximal_order(F)
+        Oinf = @inferred infinite_maximal_order(F)
 
         g = genus(F)
         CD = canonical_divisor(F)
@@ -158,8 +159,8 @@ import Hecke: divisor
       kx, x = rational_function_field(QQ, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       F, a = function_field(y^2 - x^3 - 1; cached = false)
-      Ofin = finite_maximal_order(F)
-      Oinf = infinite_maximal_order(F)
+      Ofin = @inferred finite_maximal_order(F)
+      Oinf = @inferred infinite_maximal_order(F)
 
       p1 = @inferred ideal(Ofin, x-2, Ofin(a - 3))
       p2 = @inferred ideal(Ofin, x-2, Ofin(a + 3))
@@ -232,8 +233,8 @@ import Hecke: divisor
       kx, x = rational_function_field(QQ, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       F, a = function_field(y^4 - 3*y + x^6 +x^2 - 1; cached = false)
-      Ofin = finite_maximal_order(F)
-      Oinf = infinite_maximal_order(F)
+      Ofin = @inferred finite_maximal_order(F)
+      Oinf = @inferred infinite_maximal_order(F)
 
       p1 = @inferred ideal(Ofin, x-2)
 

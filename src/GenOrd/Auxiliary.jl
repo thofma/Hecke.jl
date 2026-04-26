@@ -181,13 +181,16 @@ Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
 # support for RationalFunctionFieldElem{T}
 #
 #######################################################################
-# RationalFunctionFieldElem{T}, KInftyRing{T}
 
-Base.denominator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
+function Base.denominator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}}
+  return Hecke.integral_split(x, R)[2]
+end
 
-Base.numerator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
+function Base.numerator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}}
+  return Hecke.integral_split(x, R)[1]
+end
 
-function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T}
+function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}}
   if iszero(x)
     return zero(R), one(R)
   end
@@ -200,7 +203,7 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldEl
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-(R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T <: FieldElem} = x.d
+(R::Generic.RationalFunctionField{T,U})(x::KInftyElem{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}} = x.d
 
 # RationalFunctionFieldElem{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}

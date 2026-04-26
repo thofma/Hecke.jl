@@ -13,18 +13,16 @@
 #
 ###############################################################################
 
-elem_type(::Type{KInftyRing{T}}) where T <: FieldElement = KInftyElem{T}
+elem_type(::Type{KInftyRing{T,U}}) where {T, U} = KInftyElem{T, U}
 
-parent_type(::Type{KInftyElem{T}}) where T <: FieldElement = KInftyRing{T}
+parent_type(::Type{KInftyElem{T, U}}) where {T, U} = KInftyRing{T, U}
 
-is_domain_type(::Type{KInftyElem{T}}) where {T} = true
+is_domain_type(::Type{KInftyElem{T, U}}) where {T, U} = true
 
 # return the rational function field which KInfty wraps, mostly internal use
-function function_field(R::KInftyRing{T}) where T <: FieldElement
-  return R.K::Generic.RationalFunctionField{T}
-end
+function_field(R::KInftyRing) = R.K
 
-parent(a::KInftyElem{T}) where T <: FieldElement = a.parent
+parent(a::KInftyElem) = a.parent
 
 function Base.hash(a::KInftyElem, h::UInt)
   b = 0x32ba43ad011affd1%UInt
@@ -37,13 +35,13 @@ end
 #
 ###############################################################################
 
-data(a::KInftyElem{T}) where T <: FieldElement = a.d::Generic.RationalFunctionFieldElem{T}
+data(a::KInftyElem) = a.d
 
-function numerator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
+function numerator(a::KInftyElem, canonicalise::Bool=true)
   return numerator(data(a), canonicalise)
 end
 
-function denominator(a::KInftyElem{T}, canonicalise::Bool=true) where T <: FieldElement
+function denominator(a::KInftyElem, canonicalise::Bool=true)
   return denominator(data(a), canonicalise)
 end
 
@@ -57,7 +55,7 @@ characteristic(R::KInftyRing) = characteristic(R.K)
 Return the degree of the given element, i.e.
 `degree(numerator) - degree(denominator)`.
 """
-degree(a::KInftyElem)::Int = degree(numerator(a, false)) - degree(denominator(a, false))
+degree(a::KInftyElem) = degree(numerator(a, false)) - degree(denominator(a, false))
 
 @doc raw"""
     valuation(a::KInftyElem)
@@ -66,33 +64,30 @@ Return the degree valuation of the given element, i.e. `-degree(a)`.
 """
 valuation(a::KInftyElem) = -degree(a)
 
-zero(K::KInftyRing{T}) where T <: FieldElement = K(0)
+zero(K::KInftyRing) = K(0)
+one(K::KInftyRing)  = K(1)
 
-one(K::KInftyRing{T}) where T <: FieldElement = K(1)
+is_zero(a::KInftyElem) = is_zero(data(a))
+is_one(a::KInftyElem)  = is_one(data(a))
 
-iszero(a::KInftyElem{T}) where T <: FieldElement = iszero(data(a))
-
-isone(a::KInftyElem{T}) where T <: FieldElement = isone(data(a))
-
-function is_unit(a::KInftyElem{T}) where T <: FieldElement
-  return degree(numerator(data(a), false)) ==
-                                            degree(denominator(data(a), false))
+function is_unit(a::KInftyElem)
+  return degree(numerator(data(a), false)) == degree(denominator(data(a), false))
 end
 
 @doc raw"""
-    in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
+    in(a::Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U})
 
 Return `true` if the given element of the rational function field is an
 element of $k_\infty(x)$, i.e. if `degree(numerator) <= degree(denominator)`.
 """
-function in(a::Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where T <: FieldElement
+function in(a::Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T, U}
   if parent(a) != function_field(R)
     return false
   end
   return degree(numerator(a, false)) <= degree(denominator(a, false))
 end
 
-function Base.deepcopy_internal(a::KInftyElem{T}, dict::IdDict) where T <: FieldElement
+function Base.deepcopy_internal(a::KInftyElem, dict::IdDict)
   c = Base.deepcopy_internal(data(a), dict)
   parent(a)(Base.deepcopy_internal(data(a), dict))
 end
@@ -121,7 +116,7 @@ end
 #
 ###############################################################################
 
-function -(a::KInftyElem{T}) where T <: FieldElement
+function -(a::KInftyElem)
   parent(a)(-data(a), false)
 end
 
@@ -131,17 +126,17 @@ end
 #
 ###############################################################################
 
-function +(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+function +(a::KInftyElem{T,U}, b::KInftyElem{T,U})  where {T,U}
   check_parent(a, b)
   return parent(a)(data(a) + data(b), false)
 end
 
-function -(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+function -(a::KInftyElem{T,U}, b::KInftyElem{T,U})  where {T,U}
   check_parent(a, b)
   return parent(a)(data(a) - data(b), false)
 end
 
-function *(a::KInftyElem{T}, b::KInftyElem{T})  where T <: FieldElement
+function *(a::KInftyElem{T,U}, b::KInftyElem{T,U})  where {T,U}
   check_parent(a, b)
   return parent(a)(data(a)*data(b), false)
 end
@@ -152,7 +147,7 @@ end
 #
 ###############################################################################
 
-function mul!(a::KInftyElem{T}, b::KInftyElem{T}, c::KInftyElem{T}) where {T}
+function mul!(a::KInftyElem{T,U}, b::KInftyElem{T,U}, c::KInftyElem{T,U}) where {T,U}
   return b*c
 end
 
@@ -162,7 +157,7 @@ end
 #
 ###############################################################################
 
-function ==(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function ==(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
   return data(a) == data(b)
 end
@@ -174,12 +169,12 @@ end
 ###############################################################################
 
 @doc raw"""
-     inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
+     inv(a::KInftyElem, checked::Bool = true)
 Returns the inverse element of $a$ if $a$ is a unit.
 If 'checked = false' the invertibility of $a$ is not checked and the
 corresponding inverse element of the rational function field is returned.
 """
-function inv(a::KInftyElem{T}, checked::Bool = true)  where T <: FieldElement
+function inv(a::KInftyElem, checked::Bool = true)
   b = inv(data(a))
   return parent(a)(b, checked)
 end
@@ -191,7 +186,7 @@ end
 ###############################################################################
 
 @doc raw"""
-     divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
+     divides(a::KInftyElem, b::KInftyElem, checked::Bool = true)
 
 Returns tuple `(flag, c)` where `flag = true` if $b$ divides $a$ and $a = bc$,
 otherwise `flag = false` and $c = 0$.
@@ -199,7 +194,7 @@ If `checked = false` the corresponding element of the rational function field
 is returned and it is not checked whether it is an element of the given
 localization.
 """
-function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where T <: FieldElement
+function divides(a::KInftyElem{T,U}, b::KInftyElem{T,U}, checked::Bool = true) where {T,U}
   check_parent(a, b)
 
   iszero(a) && return true, a
@@ -209,13 +204,13 @@ function divides(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true) where
 end
 
 @doc raw"""
-     divexact(a::KInftyElem{T}, b::KInftyElem{T}, checked::Bool = true)  where {T <: AbsSimpleNumFieldElem}
+     divexact(a::KInftyElem, b::KInftyElem, checked::Bool = true)
 Returns element 'c' of given localization such that $a = bc$ if such element
 exists. If `checked = false` the corresponding element of the rational function
 field is returned and it is not checked whether it is an element of the given
 localization.
 """
-function divexact(a::KInftyElem{T}, b::KInftyElem{T}; check::Bool = true)  where T <: FieldElement
+function divexact(a::KInftyElem{T,U}, b::KInftyElem{T,U}; check::Bool = true) where {T,U}
   iszero(b) && throw(DivideError())
 
   flag, quo = divides(a, b, check)
@@ -232,7 +227,7 @@ end
 
 # compute the canonical representative of a modulo <b> = <1/x^n> with n = v(b)
 #   this is the truncation of a power series in uniformizer 1/x to the first n terms
-function mod(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function mod(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
   iszero(b) && throw(DivideError())
   iszero(a) && return a
@@ -265,12 +260,12 @@ function mod(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   return parent(a)( Qx(reverse(r)) // Qx(x)^degree(r) )
 end
 
-function div(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function div(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
   return divrem(a, b)[1]
 end
 
-function divrem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function divrem(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
   iszero(b) && throw(DivideError())
   iszero(a) && return a, a
@@ -283,7 +278,7 @@ function divrem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   end
 end
 
-Base.rem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement = mod(a, b)
+Base.rem(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U} = mod(a, b)
 
 ###############################################################################
 #
@@ -291,7 +286,7 @@ Base.rem(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement = mod(a, b)
 #
 ###############################################################################
 
-function gcd(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function gcd(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
   t = gen(parent(a))
 
@@ -304,7 +299,7 @@ function gcd(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   end
 end
 
-function lcm(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function lcm(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
 
   if iszero(a) || iszero(b)
@@ -321,7 +316,7 @@ end
 #
 ###############################################################################
 
-function gcdx(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
+function gcdx(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   check_parent(a, b)
   K = parent(a)
   t = gen(K)
@@ -341,7 +336,7 @@ function gcdx(a::KInftyElem{T}, b::KInftyElem{T}) where T <: FieldElement
   return t^valuation(b), zero(K), inv(canonical_unit(b))
 end
 
-function gcdinv(a::KInftyElem{T}, b::KInftyElem{T}) where {T}
+function gcdinv(a::KInftyElem{T,U}, b::KInftyElem{T,U}) where {T,U}
   g, q, w = gcdx(a, b)
   @assert is_unit(g)
   return one(parent(a)), q*inv(g)
@@ -353,7 +348,7 @@ end
 #
 ###############################################################################
 
-function ^(a::KInftyElem{T}, b::Int) where T <: FieldElement
+function ^(a::KInftyElem, b::Int)
   return parent(a)(data(a)^b, false)
 end
 
@@ -400,14 +395,14 @@ rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
 #
 ###############################################################################
 
-AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{KInftyElem{T}}) where T <: FieldElement = KInftyElem{T}
+AbstractAlgebra.promote_rule(::Type{KInftyElem{T,U}}, ::Type{KInftyElem{T,U}}) where {T,U} = KInftyElem{T,U}
 
-function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: Generic.RationalFunctionFieldElem{T}}
-  return U
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T,U}}, ::Type{S}) where {T,U, S <: Generic.RationalFunctionFieldElem{T,U}}
+  return S
 end
 
-function AbstractAlgebra.promote_rule(::Type{KInftyElem{T}}, ::Type{U}) where {T <: FieldElement, U <: RingElem}
-  promote_rule(T, U) == T ? KInftyElem{T} : Union{}
+function AbstractAlgebra.promote_rule(::Type{KInftyElem{T,U}}, ::Type{S}) where {T,U, S <: RingElem}
+  promote_rule(T, U) == T ? KInftyElem{T,U} : Union{}
 end
 
 ###############################################################################
@@ -418,15 +413,15 @@ end
 
 (R::KInftyRing)() = R(function_field(R)())
 
-function (R::KInftyRing{T})(a::Generic.RationalFunctionFieldElem{T}, checked::Bool=true) where T <: FieldElement
+function (R::KInftyRing{T,U})(a::Generic.RationalFunctionFieldElem{T,U}, checked::Bool=true) where {T, U}
   checked && degree(numerator(a, false)) > degree(denominator(a, false)) &&
                                            error("Not an element of k_infty(x)")
-  return KInftyElem{T}(a, R)
+  return KInftyElem{T,U}(a, R)
 end
 
-(R::KInftyRing)(a::RingElement) = R(function_field(R)(a), false)
+(R::KInftyRing{T,U})(a::RingElement) where {T, U} = R(function_field(R)(a), false)
 
-function (R::KInftyRing{T})(a::KInftyElem{T}) where T <: FieldElement
+function (R::KInftyRing{T,U})(a::KInftyElem{T,U}) where {T, U}
   parent(a) != R && error("Cannot coerce element")
   return a
 end
@@ -464,7 +459,7 @@ end
 #
 ###############################################################################
 
-function residue_field(K::KInftyRing{T}, a::KInftyElem{T}) where {T <: FieldElement}
+function residue_field(K::KInftyRing{T,U}, a::KInftyElem{T,U}) where {T,U}
   F = base_ring(K.K)
   @assert degree(a) == -1
   #TODO: can be optimized, see blurb of euc. div. above
@@ -480,8 +475,6 @@ field $k(x)$, i.e. the localization of the function field at the point at
 infinity, i.e. the valuation ring for valuation $-$degree$(x)$. This is the ring
 $k_\infty(x) = \{ f/g | \deg(f) \leq \deg(g)\}$.
 """
-function localization(K::Generic.RationalFunctionField{T}, ::typeof(degree); cached::Bool=true) where T <: FieldElement
-  return KInftyRing{T}(K, cached)
+function localization(K::Generic.RationalFunctionField{T, U}, ::typeof(degree); cached::Bool = true) where {T, U}
+  return KInftyRing{T, U}(K; cached = cached)
 end
-
-
