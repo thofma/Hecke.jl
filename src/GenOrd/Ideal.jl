@@ -83,9 +83,9 @@ function show(io::IO, id::GenOrdIdl)
   if isdefined(id, :princ_gen)
     print(io, "\nPrincipal generator ", id.princ_gen)
   end
-   if isdefined(id, :basis_matrix)
-     print(io, "\nBasis_matrix \n", id.basis_matrix)
-   end
+  if isdefined(id, :basis_matrix)
+    print(io, "\nBasis_matrix \n", id.basis_matrix)
+  end
 end
 
 

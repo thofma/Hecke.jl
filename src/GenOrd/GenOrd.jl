@@ -141,7 +141,7 @@ function Base.show(io::IO, a::GenOrdElem)
 end
 
 function expressify(a::GenOrdElem; context = nothing)
-  return expressify(base_ring(R), context = context)
+  return expressify(data(a), context = context)
 end
 
 ################################################################################
@@ -435,7 +435,7 @@ function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd{<: Any, ZZRing
   return O(d*a, check = false), d #evil, but no legal way found
 end
 
-#############################3333333333333333333333############################3
+################################################################################
 #
 #  Modular arithmetic
 #
@@ -585,7 +585,7 @@ end
 ################################################################################
 
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
-  @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal orderorder"
+  @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal overorder"
 
   t = residue_field(parent(p), p)
 
@@ -885,7 +885,7 @@ function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
   M2 = transpose(B)
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf_modular(M2, p, true)
-  return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
 ################################################################################
