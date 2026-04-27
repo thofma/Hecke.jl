@@ -747,7 +747,7 @@ function _root_lattice_recognition_fundamental(L::ZZLat;__no_minus_1_vectors::Bo
   end
   if !__no_minus_1_vectors && !is_even(L)
     # split off minus 1 vectors
-    sv1 = first.(_short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 2, nothing, ZZ(1), Int))
+    sv1 = first.(_short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 1, nothing, ZZ(1), Int))
     sv1_mat = [matrix(ZZ, 1, rank(L), i) for i in sv1]
     sv1_space = reduce(vcat, sv1_mat; init=zero_matrix(ZZ,0,rank(L)))
     K = kernel(G*transpose(sv1_space); side=:left)
