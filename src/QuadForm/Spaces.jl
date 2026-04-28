@@ -680,6 +680,12 @@ function orthogonal_projection(V::AbstractSpace, M::MatElem; check::Bool=true)
     _Q = inner_product(V, M, M)
     @req rank(_Q) == nrows(_Q) "Subspace must be non-degenerate for the inner product on V"
   end
+  # slower than the version below because solve is slow and inv! seems to be fast
+  #G = gram_matrix(V)
+  #GMt = G*transpose(M)
+  #Y = solve(M*GMt, GMt; side=:left)
+  #return hom(V,V,one(G) - Y*M)
+
   U = orthogonal_complement(V, M)
   B = vcat(U, M)
   p = vcat(U, zero(M))

@@ -736,7 +736,7 @@ function _root_lattice_recognition_fundamental(L::ZZLat, fundamental_roots::Vect
   return types[sp], basis_matrices[sp]
 end
 
-function _root_lattice_recognition_fundamental(L::ZZLat;__no_minus_1_vectors::Bool=false)
+function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true)
   G, d = _integral_split_gram(L)
   if nrows(G)==0
     return Tuple{Symbol,Int}[],ZZLat[]
@@ -745,20 +745,31 @@ function _root_lattice_recognition_fundamental(L::ZZLat;__no_minus_1_vectors::Bo
   if G[1,1]<0
     G = -G
   end
-  if !__no_minus_1_vectors && !is_even(L)
-    # split off minus 1 vectors
-    sv1 = first.(_short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 1, nothing, ZZ(1), Int))
+  diag = diagonal(G)
+  mi = minimum(diag)
+  ma = maximum(diag)
+  lll_flag = !get_attribute(L, :is_lll_reduced, false) && do_lll && ma>6
+  if lll_flag
+    G, T = lll_gram_with_transform(G)
+  end
+  _sv1 = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 2, nothing, ZZ(1), Int)
+  if !any(isone(i[2]) for i in _sv1)
+    _short_vec = first.(_sv1)
+  else
+    sv1 = [i[1] for i in _sv1 if isone(i[2])]
     sv1_mat = [matrix(ZZ, 1, rank(L), i) for i in sv1]
     sv1_space = reduce(vcat, sv1_mat; init=zero_matrix(ZZ,0,rank(L)))
     K = kernel(G*transpose(sv1_space); side=:left)
     GK = K*G*transpose(K)
     L1perp = integer_lattice(gram=GK; cached=false)
-    a = _root_lattice_recognition_fundamental(L1perp; __no_minus_1_vectors=true)
+    a = _root_lattice_recognition_fundamental(L1perp)
     return vcat([(:I, 1) for i in 1:length(sv1)], a[1]), vcat(sv1_mat, [i*K for i in a[2]])
   end
-  _short_vec = first.(_short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 2, nothing, ZZ(1), Int))
-  fundamental_roots = [matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots!(_short_vec)]
-  return _root_lattice_recognition_fundamental(L , fundamental_roots)
+  fundamental_roots = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots!(_short_vec)]
+  if lll_flag
+    fundamental_roots = ZZMatrix[i*T for i in fundamental_roots]
+  end
+  return _root_lattice_recognition_fundamental(L, fundamental_roots)
 end
 
 @doc raw"""
@@ -1105,7 +1116,6 @@ function _canonicalize!(x::MatElem)
   end
   return x
 end
-
 
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
