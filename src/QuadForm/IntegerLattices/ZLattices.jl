@@ -1734,23 +1734,23 @@ function _connected_components_graph!(B::Vector{T}, G::T) where T <: MatElem
   tmp = zero(transpose(c))
   tmp2 = zero(transpose(c))
   tmp3 = zero_matrix(base_ring(c), 1, 1)::T
+  D = Int[]
   while length(B) > 0
     basis = T[]
     b = pop!(B)
     push!(basis, b)
     flag = true
-    while flag
-      flag = false
-      for c in B
-        _c = transpose!(tmp, c)
-        Gc = mul!(tmp2, G, _c)
-        if any(!iszero(mul!(tmp3, a, Gc)) for a in basis)
-          push!(basis, c)
-          deleteat!(B, findfirst(==(c), B))
-          flag = true
-          break
+    for c in basis
+      _c = transpose!(tmp, c)
+      Gc = mul!(tmp2, G, _c)
+      for (i,a) in enumerate(B)
+        if !iszero(mul!(tmp3, a, Gc))
+          push!(basis, a)
+          push!(D,i)
         end
       end
+      deleteat!(B, D)
+      empty!(D)
     end
     push!(components, reduce(vcat, basis))
   end
@@ -1758,6 +1758,9 @@ function _connected_components_graph!(B::Vector{T}, G::T) where T <: MatElem
   sort!(components; by=rank)
   return components
 end
+
+
+
 
 function _connected_components_graph(B::T, G::T) where T <: MatElem
   return _connected_components_graph!(T[B[i:i, :] for i in 1:nrows(B)], G)
