@@ -651,40 +651,64 @@ function _fundamental_roots!(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(I
   if isempty(sv)
     return sv
   end
+  entryboundlog = 0
+  detbound = ZZ(0)
+  currank = 0
   _canonicalize!.(sv)
   sort!(sv)
   n = length(first(sv))
-  B = zero_matrix(ZZ, 0, n)
-  #=
-  J = _find_minimal_indices(sv)
-  B = zero_matrix(ZZ, length(J), n)
-  reverse!(J)
-  for i in 1:length(J)
-    v = sv[J[i]]
-    for j in 1:n
-      B[i,j] = v[j]
-    end
-  end
-  reverse!(J)
-  # deleteat!(sv, J) #this is not good when we go to naive, then some roots are missing
-  =#
-  tmp = zero_matrix(ZZ, 1, n)
+  #B = zero_matrix(ZZ, 0, n)
   fundamental = S[]
-  n = length(sv[1])
-  F = Hecke.Native.GF(p)
+  J = _find_minimal_indices(sv)
+  F = Hecke.Native.GF(p; cached = false)
   M = zero_matrix(F, n + 1, n)
-  # M[1:length(J),:] = B
-  # rref!(M)
-  tmp = ZZ()
-  currank = nrows(B)
-  r = currank + 1
-  entryboundlog = 0
-  detbound = ZZ(0)
   pivs = Int[]
   pure = Bool[]
   dirty = true
-  update_bound = true
+  # We already know some pivot entries / fundamental roots
+  update_bound = false
+  if length(J) > 0
+    reverse!(J)
+    for j in J
+      v = sv[j]
+      _ventryboundlog = _bound_entry(v)
+      if _ventryboundlog > entryboundlog
+        entryboundlog = _ventryboundlog
+      end
+      push!(fundamental, v)
+      for i in 1:n
+        s = F(v[i])
+        @inbounds M[currank + 1, i] = s #v[i]
+      end
+      currank += 1
+    end
+    reverse!(J)
+    rref!(M)
+    dirty = true
+    resize!(pivs, currank)
+    resize!(pure, currank)
+
+    r = currank + 1
+    # Hadamard bound is r^(r/2) * B^r
+    set!(detbound, r)
+    detbound = pow!(detbound, detbound, div(r, 2) + 1)
+    # p must be larger than 2 * detbound, so we multiply by an additional 2
+    @ccall libflint.fmpz_mul_2exp(detbound::Ref{ZZRingElem}, detbound::Ref{ZZRingElem}, (entryboundlog + 1)::Int)::Cvoid
+    update_bound = false
+    if p <= detbound
+      # return _fundamental_roots_new(sv, next_prime(ZZ(p)^2))
+      # is too expensive, since we would have to write a fast version for
+      # _reduce_modulo_rref for FpMatrix, but this is a lot of work
+      #
+      # So just call the "old" version
+      return _fundamental_roots_naive!(sv)
+    end
+  end
+
   for (i, v) in enumerate(sv)
+    if i in J # already have this
+      continue
+    end
     _ventryboundlog = _bound_entry(v)
     if _ventryboundlog > entryboundlog
       entryboundlog = _ventryboundlog

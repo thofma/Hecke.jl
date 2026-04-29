@@ -36,9 +36,10 @@ function _cholesky_integral_denom(gram::Matrix{QQFieldElem})
   end
   # lcm of all denominators in the matrix
   d = one(ZZ)
+  temp = ZZ()
   for i in 1:n
     for j in 1:i
-      d = lcm!(d, d, denominator(gram[i, j]))
+      d = lcm!(d, d, denominator!(temp, gram[i, j]))
     end
   end
   # Extract submatrix and linear form
@@ -47,20 +48,25 @@ function _cholesky_integral_denom(gram::Matrix{QQFieldElem})
   subgram = Matrix{QQFieldElem}(undef, n - 1, n - 1)
   lin = Vector{QQFieldElem}(undef, n - 1)
   for (a, i) in enumerate(idx)
-    lin[a] = gram[mi, i]
+    lin[a] = set!(QQ(), gram[mi, i]) # we modify it later
     for (b, j) in enumerate(idx)
-      subgram[a, b] = gram[i, j]
+      subgram[a, b] = set!(QQ(), gram[i, j]) # we modify it later
     end
   end
   # Schur complement: subgram -= lin * lin^T / m
+  tmpqq  = QQ()
   for a in 1:n-1
     for b in 1:n-1
-      subgram[a, b] -= lin[a] * lin[b] // m
+      tmpqq = mul!(tmpqq, lin[a], lin[b])
+      tmpqq = divexact!(tmpqq, m)
+      sub!(subgram[a, b], tmpqq)
+      #subgram[a, b] -= lin[a] * lin[b] // m
     end
   end
   # lin /= m
   for a in 1:n-1
-    lin[a] = lin[a] // m
+    divexact!(lin[a], m)
+    #lin[a] = lin[a] // m
   end
   # recursion
   subper, subres, subc = _cholesky_integral_denom(subgram)
