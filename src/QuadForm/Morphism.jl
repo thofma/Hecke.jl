@@ -405,6 +405,7 @@ function try_init_small(
       push!(vectors, _v)
     end
   end
+  @vprintln :Lattice 1 "Number of gram matrices: $(length(C.G))"
   @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   if invariants isa Nothing
     _invariants = zeros(Int, length(vectors))
@@ -1243,7 +1244,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     #nC = delete(candidates[step], nC, orb, C.orders[step])
     setdiff!(candidates[step], orb)
     nC = length(candidates[step])
-    @vprintln :Lattice 2 "Step $(step), candidates $(candidates)"
+    @vprintln :Lattice 10 "Step $(step), candidates $(candidates)"
     while nC > 0 && ((im = candidates[step][1]) != 0)
       @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
       found = false

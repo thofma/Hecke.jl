@@ -1287,7 +1287,7 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
       # everything invariant nothing more to do
       break
     end
-    if search_invariant_subspace && 40>length(D[k])>1 && length(Hv)<8
+    if search_invariant_subspace && 100>length(D[k])>1 && length(Hv)<8
       #_hv = _fundamental_roots!([__not_adj(i) for i in D[k]])  # breaks stuff for ZZRingElem
       _hv = _row_span!([__not_adj(i) for i in D[k]])
       hv = matrix(ZZ, _hv)
@@ -1446,7 +1446,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   projL = ZZLat[]
   for i in 1:length(successive_sublattices)
     Si = view(_hnf_integral(view(Fi, :, r1:r2), :upper_right), 1:1+r2-r1,:)*view(F, r1:r2, :)
-    Li = lll(lattice(rescale(V,denoms[i]; cached=false), Si; isbasis=true);_is_definite=true)
+    Li = lll(lattice(rescale(V,denoms[i]; cached=false), Si; isbasis=true, check=false);_is_definite=true)
     push!(projL, Li)
     r1 += rkLL[i]
     if i<length(successive_sublattices)
@@ -1458,16 +1458,17 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     projL1 = [lattice(ambient_space(projL[i]), proj[i]; check=false, isbasis=false) for i in 1:length(proj)]
     @assert projL == projL1
   end
-  target_signed_invariant = Vector{CoeffType}[CoeffType.(ZZ.(coordinates(a, projL[1]))) for (a,_) in target_invariant]
-  # We take one representative up to sign.
-  target_invariant = [(_canonicalize!(i[1]),i[2]) for i in target_invariant]
-  unique!(target_invariant)
-
   @assert all(is_integral(projL[i]) for i in 2:length(projL))
   B = reduce(vcat, basis_matrix.(projL))
   Binv = ZZ.(inv(B))
   L_in_L1toLn = hnf(Binv)
   gramB = B*gram_matrix(L)*transpose(B)
+  toprojL1 = view(Binv,:,1:rank(projL[1]))
+  target_signed_invariant = Vector{CoeffType}[CoeffType.(a*toprojL1) for (a,_) in target_invariant]
+  # We take one representative up to sign.
+  target_invariant = [(_canonicalize!(i[1]),i[2]) for i in target_invariant]
+  unique!(target_invariant)
+
 
   # keeps track of the invariant subspace
   # built from invariant vectors discovered during the process and the input, i.e. the row span of proj[1]
@@ -1492,10 +1493,12 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   for (_a,b) in target_invariant
     # For now we need to transform from the basis of L to that of L_1
     # TODO: Remove this?
+    #__a = ZZ.(coordinates(_a, projL[1]))
+    __a = _a*toprojL1
     if CoeffType === ZZRingElem
-      a = ZZ.(coordinates(_a, projL[1]))
+      a = __a
     else
-      a = (CoeffType.(ZZ.(coordinates(_a, projL[1]))))'
+      a = (CoeffType.(__a))'
     end
     if b in keys(short_vectors1)
       # different targets can have the same first projection
@@ -1593,6 +1596,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     # lower and upper bound for short vector enumeration of L_i
     ma = CoeffType(maximum(target_norm_i))
     mi = CoeffType(minimum(i for i in target_norm_i if !iszero(i);init=ma)) #not accepted by _finckepostint
+    @vprintln :Lattice 2 "Short vector round no $i: rank $(rank(projL[i])) minimum $mi maximum $ma target $(sort(collect(target_norm_i)))"
     Gi = ZZ.(gram_matrix(projL[i])) # already lll reduced
     tmp_u1 = __zeros_array(CoeffType, ncols(VfLi))
     tmp_u2 = __zeros_array(CoeffType, ncols(VfLi))
@@ -1759,7 +1763,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   end
   @vprintln :Lattice 2 "discovered an additional fixed subspace of rank $(nrows(new_invariant_subspace))"
   @vprintln :Lattice 1 "visible fixed subspace has rank $(nrows(invariant_subspace))"
-  if false # stuff from search_invariant_subspaces
+  if search_invariant_subspace # stuff from search_invariant_subspaces
     A = [i*B for i in Hv]
     V = ambient_space(L)
     A = [1-matrix(orthogonal_projection(V, a)) for a in A]
@@ -1773,12 +1777,16 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
         _ACoeff = _A
       end
       push!(grams, _A)
+      target_norms = Set([[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n])
       @vtime :Lattice 1 output = [(v,push!(i, __norm!(_ACoeff,v,tmp_v))) for (v,i) in output]
+      filter!(i->i[2] in target_norms, output)
     end
   end
   if get_assertion_level(:Lattice) > 1
+    target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
     for (v, n) in output
       @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams)) "$(gram_matrix(L)), $((target_invariant,target_norms))"
+      @assert n in target_norms
     end
     abs_target_signed_invariant_compressed = Set(abs.(target_signed_invariant_compressed))
     @assert all(abs(i) in abs_target_signed_invariant_compressed for i in invariants)
