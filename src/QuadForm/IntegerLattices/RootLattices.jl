@@ -647,15 +647,16 @@ end
 #   so we keep track of the entry size of the vectors we are considering and increase
 #   the bound for p either if we (a) add a vector; or (b) encounter a with larger entry size
 function _fundamental_roots!(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(Int) - 2))) where {S, T}
-  @show "hi"
   # choose a large prime < typemax(Int)
   if isempty(sv)
     return sv
   end
   _canonicalize!.(sv)
   sort!(sv)
-  J = _find_minimal_indices(sv)
   n = length(first(sv))
+  B = zero_matrix(ZZ, 0, n)
+  #=
+  J = _find_minimal_indices(sv)
   B = zero_matrix(ZZ, length(J), n)
   reverse!(J)
   for i in 1:length(J)
@@ -665,14 +666,15 @@ function _fundamental_roots!(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(I
     end
   end
   reverse!(J)
-  deleteat!(sv, J)
+  # deleteat!(sv, J) #this is not good when we go to naive, then some roots are missing
+  =#
   tmp = zero_matrix(ZZ, 1, n)
   fundamental = S[]
   n = length(sv[1])
   F = Hecke.Native.GF(p)
   M = zero_matrix(F, n + 1, n)
-  M[1:length(J),:] = B
-  rref!(M)
+  # M[1:length(J),:] = B
+  # rref!(M)
   tmp = ZZ()
   currank = nrows(B)
   r = currank + 1
@@ -1155,8 +1157,19 @@ function _fundamental_roots_naive!(sv::Vector{S}) where {S}
   end
   _canonicalize!.(sv)
   sort!(sv)
+  J = _find_minimal_indices(sv)
   n = length(first(sv))
-  B = zero_matrix(ZZ, 0, n)
+  B = zero_matrix(ZZ, length(J), n)
+  reverse!(J)
+  for i in 1:length(J)
+    v = sv[J[i]]
+    push!(fundamental, v)
+    for j in 1:n
+      B[i,j] = v[j]
+    end
+  end
+  reverse!(J)
+  deleteat!(sv, J)
   tmp = zero_matrix(ZZ, 1, n)
   for v in sv
     for i in 1:n
