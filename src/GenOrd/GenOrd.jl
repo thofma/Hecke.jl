@@ -430,7 +430,7 @@ function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd)
   return O(d.data*a, check =false), d #evil, but no legal way found
 end
 
-function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd{<: Any, ZZRing})
+function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd{<:Field, ZZRing})
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(d*a, check = false), d #evil, but no legal way found
 end

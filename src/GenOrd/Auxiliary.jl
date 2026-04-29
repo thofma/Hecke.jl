@@ -231,6 +231,20 @@ function Hecke.factor(R::S, a::Generic.RationalFunctionFieldElem{T}) where {T, S
   return Fac(u, Nemo._pretty_sort!(arr))
 end
 
+#######################################################################
+#
+# support for AbsSimpleNumFieldElem{T}
+#
+#######################################################################
+
+function Hecke.numerator(a::AbsSimpleNumFieldElem, O::GenOrd)
+  return integral_split(a, O)[1]
+end
+
+function Hecke.denominator(a::AbsSimpleNumFieldElem, O::GenOrd)
+  return integral_split(a, O)[2]
+end
+
 ########################################################################
 #
 # Matrices

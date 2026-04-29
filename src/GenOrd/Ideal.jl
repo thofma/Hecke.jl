@@ -585,13 +585,19 @@ function Hecke.index(O::GenOrd)
   return is_equation_order(O) ? O.R(1) : O.R(det(basis_matrix_inverse(O)))
 end
 
-# TODO: currently works only for function fields
-function prime_dec_nonindex(O::GenOrd{S, T}, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
-  K, mK = residue_field(parent(p),p)
-  fact = factor(poly_to_residue(K, O.F.pol))
+function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+  @req parent(p) === base_ring(O) "p must come from the base ring of O"
+
+  K, mK = residue_field(base_ring(O), p)
+
+  fmodp = map_coefficients(defining_polynomial(O.F); cached = false) do c
+    num, den = integral_split(c, base_ring(O))
+    mK(num) // mK(den)
+  end
+  fact = factor(fmodp)
+
   result = Vector{Tuple{GenOrdIdl{S, T}, Int}}(undef, length(fact))
-  F = function_field(O)
-  a = gen(F)
+  a = gen(field(O))
   for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
     facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
@@ -624,17 +630,6 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::PolyRingElem, degree_limit::Int 
   end
   return result
 end
-
-
-function poly_to_residue(K::AbstractAlgebra.Field, poly::AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
-  P, _ = polynomial_ring(K, :y)
-  if iszero(poly)
-    return zero(P)
-  else
-    return P([K(numerator(c)) // K(denominator(c)) for c in coefficients(poly)])
-  end
-end
-
 
 function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = order(A)

@@ -194,6 +194,22 @@
         check_ideal_norm_min(ideal(OK, ZZ(2)), 4, 2)
       end
     end
+
+    @testset "prime decomposition" begin
+      check_prime_2elem_single_above(OK, ZZ(3), 2, 1)
+      check_prime_2elem_single_above(OK, ZZ(2), 1, 2)
+
+      pd = @inferred prime_decomposition(OK, ZZ(7))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+
+      # Currently GenOrd's prime decomposition does not work with
+      #   number fields defined by non-monic polynomials,
+      #   since the Lenstra order is a sub-order of the equation order.
+    end
   end
 end
 
