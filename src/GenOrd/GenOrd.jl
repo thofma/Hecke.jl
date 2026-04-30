@@ -160,8 +160,10 @@ function (R::GenOrd{S, T})(a::RingElement; check::Bool = true) where {S, T}
   if parent(a) === field(R)
     return GenOrdElem(R, a, check)
   elseif AbstractAlgebra.promote_rule(elem_type(T), typeof(a)) === elem_type(T)
-    # so a can be coerced into base_ring(R), remove the check
-    return GenOrdElem(R, field(R)(a), false)
+    # a can be coerced into base_ring(R)
+    # make sure to go through the base field (where base ring lives)
+    F = field(R)
+    return GenOrdElem(R, F(base_field(F)(a)), false)
   else
     return GenOrdElem(R, field(R)(a), true)
   end

@@ -588,6 +588,10 @@ end
 function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
   @req parent(p) === base_ring(O) "p must come from the base ring of O"
 
+  F = field(O)
+  B = base_field(F)
+  a = gen(F)
+
   K, mK = residue_field(base_ring(O), p)
 
   fmodp = map_coefficients(defining_polynomial(O.F); cached = false) do c
@@ -597,10 +601,9 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
   fact = factor(fmodp)
 
   result = Vector{Tuple{GenOrdIdl{S, T}, Int}}(undef, length(fact))
-  a = gen(field(O))
   for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
-    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
+    facnew = map_coefficients(y -> B(preimage(mK, y)), fac, cached = false)
     b = O(facnew(a))
     # We want a P-normal two-element presentation, i.e. v_P(b) = 1.
     # Since we are in the case of p not dividing the index, we have a good candidate b = g(a).

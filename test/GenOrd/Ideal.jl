@@ -211,6 +211,44 @@
       #   since the Lenstra order is a sub-order of the equation order.
     end
   end
+
+  @testset "over number field localized at prime" begin
+    x = gen(Hecke.Globals.Qx)
+    K, a = number_field(x^2 - 2, :a)
+
+    @testset "split (p = 7)" begin
+      R = Hecke.localization(ZZ, 7)
+      OK = integral_closure(R, K)
+
+      check_ideal_norm_min(ideal(OK, R(7)),             R(49), R(7))
+      check_ideal_norm_min(ideal(OK, R(7), OK(a - 3)),  R(7),  R(7))
+
+      pd = @inferred prime_decomposition(OK, R(7))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+    end
+
+    @testset "inert (p = 3)" begin
+      R = Hecke.localization(ZZ, 3)
+      OK = integral_closure(R, K)
+
+      check_ideal_norm_min(ideal(OK, R(3)), R(9), R(3))
+      check_prime_2elem_single_above(OK, R(3), 2, 1)
+    end
+
+    @testset "ramified (p = 2)" begin
+      R = Hecke.localization(ZZ, 2)
+      OK = integral_closure(R, K)
+
+      check_ideal_norm_min(ideal(OK, R(2)),          R(4), R(2))
+      check_ideal_norm_min(ideal(OK, R(2), OK(a)),   R(2), R(2))
+
+      check_prime_2elem_single_above(OK, R(2), 1, 2)
+    end
+  end
 end
 
 @testset "Ideals for orders over function fields" begin
