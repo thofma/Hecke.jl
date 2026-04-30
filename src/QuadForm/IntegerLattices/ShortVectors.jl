@@ -1779,14 +1779,19 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
       push!(grams, _A)
       target_norms = Set([[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n])
       @vtime :Lattice 1 output = [(v,push!(i, __norm!(_ACoeff,v,tmp_v))) for (v,i) in output]
-      filter!(i->i[2] in target_norms, output)
+      if mode==:auto
+        bad = [i for i in 1:length(output) if !(output[i][2] in target_norms)]
+        deleteat!(output,bad)
+        deleteat!(invariants, bad)
+        @assert length(output)==length(invariants)
+      end
     end
   end
   if get_assertion_level(:Lattice) > 1
     target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
     for (v, n) in output
       @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams)) "$(gram_matrix(L)), $((target_invariant,target_norms))"
-      @assert n in target_norms
+      @assert mode==:auto && n in target_norms
     end
     abs_target_signed_invariant_compressed = Set(abs.(target_signed_invariant_compressed))
     @assert all(abs(i) in abs_target_signed_invariant_compressed for i in invariants)
