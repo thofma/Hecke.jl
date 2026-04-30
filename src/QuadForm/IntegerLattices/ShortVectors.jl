@@ -1464,7 +1464,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   L_in_L1toLn = hnf(Binv)
   gramB = B*gram_matrix(L)*transpose(B)
   toprojL1 = view(Binv,:,1:rank(projL[1]))
-  target_signed_invariant = Vector{CoeffType}[CoeffType.(a*toprojL1) for (a,_) in target_invariant]
+  target_signed_invariant = Vector{CoeffType}[CoeffType.(numerator.(a*toprojL1)) for (a,_) in target_invariant]
   # We take one representative up to sign.
   target_invariant = [(_canonicalize!(i[1]),i[2]) for i in target_invariant]
   unique!(target_invariant)
@@ -1494,7 +1494,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     # For now we need to transform from the basis of L to that of L_1
     # TODO: Remove this?
     #__a = ZZ.(coordinates(_a, projL[1]))
-    __a = _a*toprojL1
+    __a = ZZ.(_a*toprojL1)
     if CoeffType === ZZRingElem
       a = __a
     else
