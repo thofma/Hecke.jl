@@ -4,7 +4,6 @@ include("Misc/MSet.jl")
 include("Misc/FactoredElem.jl")
 include("Misc/FactoredElemIntegers.jl")
 include("Misc/Integer.jl")
-include("Misc/Primes.jl")
 include("Misc/coprime.jl")
 include("Misc/Matrix.jl")
 include("Misc/CRT.jl")  # for crt_env and modular_env
