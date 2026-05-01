@@ -138,8 +138,10 @@
             0 1//4   0;
             0   0 5//4]
   @test Hecke.gram_matrix_quadratic(n1) == g1
+  @test gram_matrix_bilinear(first(normal_form(AL1; as_bilinear_module=true))) == gram_matrix_quadratic(first(normal_form(Hecke._as_finite_bilinear_module(AL1))))
   n2 = normal_form(AL2)[1]
   @test Hecke.gram_matrix_quadratic(n2) == g1
+  @test gram_matrix_bilinear(first(normal_form(AL2; as_bilinear_module=true))) == gram_matrix_quadratic(first(normal_form(Hecke._as_finite_bilinear_module(AL2))))
   L3 = integer_lattice(gram=matrix(ZZ, [[2,0,0,-1],[0,2,0,-1],[0,0,2,-1],[-1,-1,-1,2]]))
   T=torsion_quadratic_module((1//6)*dual(L3), L3)
   n3 = normal_form(T)[1]
@@ -501,4 +503,10 @@ end
   @test is_bijective(psi)
   phi = @inferred hom(q, q2, elem_type(q2)[])
   @test is_injective(phi)
+end
+
+@testset "Isometric as bilinear modules" begin
+  T1 = torsion_quadratic_module(QQ[4//5 0; 0 1//5])
+  T2 = torsion_quadratic_module(QQ[2//5 0; 0 2//5])
+  @test first(is_isometric_with_isometry(T1, T2; as_bilinear_module=true))
 end
