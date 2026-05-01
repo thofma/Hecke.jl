@@ -172,7 +172,8 @@ function Nemo._hnf(x::MatElem{ZZRingElem})
 end
 
 function Nemo._hnf_with_transform(x::MatElem{ZZRingElem})
-  if nrows(x) * ncols(x) > 100
+  # don't do fancy things for small matrices
+  if !(nrows(x) <= 50 && ncols(x) <= 50) && nrows(x) * ncols(x) > 100
     s = sparse_matrix(x)
     if sparsity(s) > 0.7
       s = hcat(s, identity_matrix(SMat, ZZ, nrows(x)))
