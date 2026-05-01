@@ -6,8 +6,8 @@ L = localization(R, degree)
 
     @testset "Constructor" begin
 
-      @test parent_type(KInftyElem{QQFieldElem}) == KInftyRing{QQFieldElem}
-      @test elem_type(L) == KInftyElem{QQFieldElem}
+      @test parent_type(KInftyElem{QQFieldElem, QQPolyRingElem}) === KInftyRing{QQFieldElem, QQPolyRingElem}
+      @test elem_type(L) === KInftyElem{QQFieldElem, QQPolyRingElem}
       @test function_field(L) == R
 
     end
@@ -26,10 +26,10 @@ L = localization(R, degree)
     end
 
     @testset "Valuation" begin
-      @test valuation(L(x//(x^2 + 1))) == 1
-      @test valuation(L(5//5)) == 0
-      @test valuation(L((x^2 + 1)//(3//5*x^3))) == 1
-      @test valuation(L((2//5)//(x^3 + 3x + 1))) == 3
+      @test 1 == @inferred valuation(L(x//(x^2 + 1)))
+      @test 0 == @inferred valuation(L(5//5))
+      @test 1 == @inferred valuation(L((x^2 + 1)//(3//5*x^3)))
+      @test 3 == @inferred valuation(L((2//5)//(x^3 + 3x + 1)))
 
       for i in 1:300
         a = rand(L, 0:10, -10:10)
@@ -42,11 +42,11 @@ L = localization(R, degree)
 
     @testset "Parent object call overloading" begin
 
-      @test parent(L(3)) == L
-      @test parent(L(1//x)) == L
-      @test parent(L(ZZRingElem(3))) == L
-      @test parent(L(QQFieldElem(3, 2))) == L
-      @test parent(L()) == L
+      @test L == @inferred parent(L(3))
+      @test L == @inferred parent(L(1//x))
+      @test L == @inferred parent(L(ZZRingElem(3)))
+      @test L == @inferred parent(L(QQFieldElem(3, 2)))
+      @test L == @inferred parent(L())
       @test L(6//3) == L(2)
       @test L(R(5)) == L(5)
       @test_throws ErrorException L(x)
@@ -90,13 +90,13 @@ L = localization(R, degree)
     end
 
     @testset "GCDX" begin
-      d, _, _ = gcdx(L(0), L(0))
+      d, _, _ = @inferred gcdx(L(0), L(0))
       @test d == L(0)
 
-      d, _, v = gcdx(L(0), L(1//(x^2-1)))
+      d, _, v = @inferred gcdx(L(0), L(1//(x^2-1)))
       @test d == v*L(1//(x^2-1))
 
-      d, u, _ = gcdx(L(1//(x-1)), L(0))
+      d, u, _ = @inferred gcdx(L(1//(x-1)), L(0))
       @test d == u*L(1//(x-1))
 
       for i in 1:550
@@ -108,15 +108,15 @@ L = localization(R, degree)
     end
 
     @testset "GCD/LCM" begin
-      @test gcd(L(0), L(0)) == L(0)
-      @test gcd(L(1//(x-1)), L(0)) == L(1//x)
-      @test gcd(L(0), L(1//(x^2+1))) == L(1//x^2)
-      @test gcd(L(1//(x-1)), L(1//(x^2+1))) == L(1//x)
+      @test L(0)      == @inferred gcd(L(0), L(0))
+      @test L(1//x)   == @inferred gcd(L(1//(x-1)), L(0))
+      @test L(1//x^2) == @inferred gcd(L(0), L(1//(x^2+1)))
+      @test L(1//x)   == @inferred gcd(L(1//(x-1)), L(1//(x^2+1)))
 
-      @test lcm(L(0), L(0)) == L(0)
-      @test lcm(L(1//(x-1)), L(0)) == L(0)
-      @test lcm(L(0), L(1//(x^2+1))) == L(0)
-      @test lcm(L(1//(x-1)), L(1//(x^2+1))) == L(1//x^2)
+      @test L(0)      == @inferred lcm(L(0), L(0))
+      @test L(0)      == @inferred lcm(L(1//(x-1)), L(0))
+      @test L(0)      == @inferred lcm(L(0), L(1//(x^2+1)))
+      @test L(1//x^2) == @inferred lcm(L(1//(x-1)), L(1//(x^2+1)))
 
       for i in 1:550
         a = rand(L, 0:10, -10:10)
@@ -151,15 +151,15 @@ L = localization(R, degree)
     end
 
     @testset "Binary operators" begin
+      A = L((-1//3)//(x^2 - 3*x))
+      B = L(-1//(x - 1//2))
+      @test @inferred(A + B) == L((-x^2 + 8//3*x + 1//6)//(x^3 - 7//2*x^2 + 3//2*x))
+      @test @inferred(A - B) == L((x^2 - 10//3*x + 1//6)//(x^3 - 7//2*x^2 + 3//2*x))
+      @test @inferred(L((-1//3)//(x - 3)) * L(-1//(x - 1//2))) == (1//3)//(x^2 - 7//2*x + 3//2)
 
-      @test L((-1//3)//(x^2 - 3*x)) + L(-1//(x - 1//2)) == L((-x^2 + 8//3*x + 1//6)//(x^3 - 7//2*x^2 + 3//2*x))
-      @test L((-1//3)//(x^2 - 3*x)) - L(-1//(x - 1//2)) == L((x^2 - 10//3*x + 1//6)//(x^3 - 7//2*x^2 + 3//2*x))
-      @test L((-1//3)//(x - 3))*L(-1//(x - 1//2)) == (1//3)//(x^2 - 7//2*x + 3//2)
-
-
-      @test L(18//2) + L(2//1) == L(11)
-      @test L(18//3) - L(1) == L(5)
-      @test L(32) * L(4) == L(128)
+      @test @inferred(L(18//2) + L(2//1)) == L(11)
+      @test @inferred(L(18//3) - L(1)) == L(5)
+      @test @inferred(L(32) * L(4)) == L(128)
     end
 
     @testset "Basic manipulation" begin

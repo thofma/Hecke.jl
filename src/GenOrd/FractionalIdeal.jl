@@ -238,7 +238,7 @@ Hecke.is_integral(I::GenOrdIdl) = true
 
 function Hecke.is_integral(I::GenOrdFracIdl)
   simplify(I)
-  return denominator(I) == 1
+  return is_one(denominator(I))
 end
 
 ################################################################################
