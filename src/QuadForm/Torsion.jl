@@ -97,6 +97,7 @@ function torsion_quadratic_module(M::ZZLat, N::ZZLat; gens::Union{Nothing, Vecto
   T.value_module = QmodnZ(_modulus)
   T.value_module_qf = QmodnZ(_modulus_qf)
   T.is_normal = false
+  T.is_normal_bilinear = false
   return T
 end
 
@@ -1104,8 +1105,8 @@ function _isometry_semiregular(
 )
   # the zero map for default output
   hz = hom(T, U, zero_matrix(ZZ, ngens(T), ngens(U)))
-  NT, TtoNT = normal_form(T)
-  NU, UtoNU = normal_form(U)
+  NT, TtoNT = normal_form(T; as_bilinear_module)
+  NU, UtoNU = normal_form(U; as_bilinear_module)
   if as_bilinear_module
     gqNT = gram_matrix_bilinear(NT)
     gqNU = gram_matrix_bilinear(NU)
@@ -1706,12 +1707,19 @@ Let `K` be the radical of the quadratic form of `T`. Then `N = T/K` is
 half-regular. Two half-regular torsion quadratic modules are isometric
 if and only if they have equal normal forms.
 """
-function normal_form(T::TorQuadModule; partial=false)
-  if T.is_normal
+function normal_form(
+  T::TorQuadModule;
+  partial::Bool=false,
+  as_bilinear_module::Bool=false,
+)
+  if !as_bilinear_module && T.is_normal
+    return T, id_hom(T)
+  elseif as_bilinear_module && T.is_normal_bilinear
     return T, id_hom(T)
   end
+
   if is_degenerate(T)
-    K, _ = radical_quadratic(T)
+    K, _ = as_bilinear_module ? radical_bilinear(T) : radical_quadratic(T)
     N = torsion_quadratic_module(cover(T), cover(K); modulus=modulus_bilinear_form(T), modulus_qf=modulus_quadratic_form(T))
     i = hom(T, N, TorQuadModuleElem[N(lift(g)) for g in gens(T)]; check=false)
   else
@@ -1722,8 +1730,12 @@ function normal_form(T::TorQuadModule; partial=false)
   prime_div = sort!(prime_divisors(exponent(N)))
   for p in prime_div
     D_p, I_p = primary_part(N, p)
-    q_p = gram_matrix_quadratic(D_p)
-    if p == 2
+    if as_bilinear_module
+      q_p = gram_matrix_bilinear(D_p)
+    else
+      q_p = gram_matrix_quadratic(D_p)
+    end
+    if !as_bilinear_module && p == 2
       q_p = q_p * modulus_quadratic_form(D_p)^-1
     else
       q_p = q_p * modulus_bilinear_form(D_p)^-1
@@ -1745,7 +1757,7 @@ function normal_form(T::TorQuadModule; partial=false)
     q_pR = map_entries(x->R(ZZ(x)), denom*q_p)
     D = UR * q_pR * transpose(UR)
     D = map_entries(x->R(mod(lift(x),denom)), D)
-    if p != 2
+    if p != 2 && !as_bilinear_module
       # follow the conventions of Miranda-Morrison
       m = ZZ(modulus_quadratic_form(D_p)//modulus_bilinear_form(D_p))
       D = R(m)^-1*D
@@ -1765,7 +1777,11 @@ function normal_form(T::TorQuadModule; partial=false)
   S, j =  sub(N, normal_gens)
   J = compose(i,inv(j))
   if !partial
-    S.is_normal = true
+    if as_bilinear_module
+      S.is_normal_bilinear = true
+    else
+      S.is_normal = true
+    end
   end
   return S, J
 end
