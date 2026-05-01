@@ -486,4 +486,52 @@
       @test @inferred Hecke.order_via_schoof(E) == expected
     end
   end
+
+  @testset "BSGS" begin
+    for d in 6:16
+      K, a = finite_field(2, d; cached=false)
+
+      E = elliptic_curve(K, [1,0,0,0,a])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke._order_ordinary_char2(E)
+
+      E = elliptic_curve(K, [0,0,1,1,1])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke._order_supersingular_char2(E)
+    end
+
+    for d in 4:16
+      K, a = finite_field(3, d, :a; cached=false)
+
+      E = elliptic_curve(K, [0,1,0,0,a])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke._order_ordinary_char3(E)
+
+      E = elliptic_curve(K, [0,0,0,a,1])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke._order_supersingular_char3(E)
+    end
+
+    for (p,d) in [(5,3), (5,4), (7,3), (7,4), (11,2), (11,3), (13,2)]
+      K, a = finite_field(p, d; cached=false)
+
+      E = elliptic_curve(K, [1,a])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
+
+      E = elliptic_curve(K, [0,1])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
+
+      E = elliptic_curve(K, [a,0])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
+    end
+
+    for p in [53, 113, 229, 367, 479]
+      K = finite_field(p; cached=false)[1]
+
+      E = elliptic_curve(K, [0,1])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
+
+      E = elliptic_curve(K, [1,0])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
+
+      E = elliptic_curve(K, [1,1])
+      @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
+    end
+  end
 end

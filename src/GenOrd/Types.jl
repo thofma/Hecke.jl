@@ -123,7 +123,7 @@ end
     r.is_prime = 0
     r.is_zero = 0
     r.is_principal = 0
-    r.splitting_type = (-1, -1)
+    r.splitting_type = (0, 0)
     return r
   end
 
@@ -131,7 +131,15 @@ end
     @assert base_ring(M) === coefficient_ring(O)
     # create ideal of O with basis_matrix M
     r = GenOrdIdl(O)
-    r.basis_matrix = M
+
+    # we want to have basis_matrix as a dense_matrix_type(elem_type(T))
+    # materialize the matrix if view was provided
+    if M isa AbstractAlgebra.Generic.MatSpaceView
+      r.basis_matrix = sub(M, 1:nrows(M), 1:ncols(M))
+    else
+      r.basis_matrix = M
+    end
+
     return r
   end
 
@@ -159,7 +167,7 @@ end
   function GenOrdIdl(O::GenOrd, T::Vector{<:GenOrdElem})
     @assert all(x -> parent(x) === O, T)
     # One should do this block by block instead of the big matrix
-    V = hnf(reduce(vcat, [representation_matrix(O) for x in T]), :lowerleft)
+    V = hnf(reduce(vcat, [representation_matrix(x) for x in T]), :lowerleft)
     d = ncols(V)
     n = length(T)
     return GenOrdIdl(O, V[((n - 1)*d + 1):(n*d), :])

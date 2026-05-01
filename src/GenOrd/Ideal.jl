@@ -8,7 +8,9 @@ ideal(O::GenOrd, a::RingElement, b::RingElement) = GenOrdIdl(O, a, b)
 
 ideal(O::GenOrd, a::RingElement) = GenOrdIdl(O, a)
 
-ideal(O::GenOrd, a::MatElem) = GenOrdIdl(O, a)
+function ideal(O::GenOrd, M::MatElem)
+  return GenOrdIdl(O, hnf(M, :lowerleft))
+end
 
 function AbstractAlgebra.zero(a::GenOrdIdl)
   O = a.order
@@ -81,9 +83,9 @@ function show(io::IO, id::GenOrdIdl)
   if isdefined(id, :princ_gen)
     print(io, "\nPrincipal generator ", id.princ_gen)
   end
-   if isdefined(id, :basis_matrix)
-     print(io, "\nBasis_matrix \n", id.basis_matrix)
-   end
+  if isdefined(id, :basis_matrix)
+    print(io, "\nBasis_matrix \n", id.basis_matrix)
+  end
 end
 
 
@@ -149,14 +151,9 @@ end
 
 Return the basis matrix of $A$.
 """
-function Hecke.basis_matrix(A::GenOrdIdl; copy::Bool = true)
+function Hecke.basis_matrix(A::GenOrdIdl{S, T}; copy::Bool = true) where {S, T}
   assure_has_basis_matrix(A)
-  if copy
-    B = deepcopy(A.basis_matrix)
-    return B
-  else
-    return A.basis_matrix
-  end
+  return (copy ? deepcopy(A.basis_matrix) : A.basis_matrix)::dense_matrix_type(elem_type(T))
 end
 
 function assure_has_basis_matrix(A::GenOrdIdl)
@@ -172,15 +169,15 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = representation_matrix(A.princ_gen)
+    A.basis_matrix = hnf(representation_matrix(A.princ_gen), :lowerleft)
     return nothing
   end
 
   @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
-  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]), :lowerleft)
   d = ncols(V)
-  A.basis_matrix = V[d+1:2*d,1:d]
+  A.basis_matrix = V[d+1:2*d, 1:d]
   return nothing
 end
 
@@ -250,7 +247,7 @@ end
 ################################################################################
 
 
-function Base.:(+)(a::GenOrdIdl, b::GenOrdIdl)
+function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
   if iszero(a)
@@ -265,10 +262,14 @@ function Base.:(+)(a::GenOrdIdl, b::GenOrdIdl)
   return GenOrdIdl(a.order, V[d+1:2*d,1:d])
 end
 
-Base.:(==)(a::GenOrdIdl, b::GenOrdIdl) = hnf(basis_matrix(a),:lowerleft) == hnf(basis_matrix(b),:lowerleft)
-Base.isequal(a::GenOrdIdl, b::GenOrdIdl) = a == b
+function Base.:(==)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  return hnf(basis_matrix(a),:lowerleft) == hnf(basis_matrix(b),:lowerleft)
+end
+function Base.isequal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  return a == b
+end
 
-function Base.:(*)(a::GenOrdIdl, b::GenOrdIdl)
+function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
@@ -282,7 +283,7 @@ end
 
 Returns $x \cap y$.
 """
-function Base.intersect(a::GenOrdIdl, b::GenOrdIdl)
+function Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 #TODO: Check for new hnf
   M1 = hcat(basis_matrix(a), basis_matrix(a))
   d = nrows(M1)
@@ -321,9 +322,11 @@ function Base.:*(x::GenOrdElem, O::GenOrd)
   return ideal(O, x)
 end
 
-function Base.:*(x::GenOrdElem, y::GenOrdIdl)
+function Base.:*(x::GenOrdElem, y::GenOrdIdl{S, T}) where {S, T}
   parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
-  return GenOrdIdl(parent(x), x) * y
+  # note that we use order(y) and not parent(x),
+  #   because it provides concrete GenOrd{S,T} for type inference
+  return GenOrdIdl(order(y), x) * y
 end
 
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
@@ -427,20 +430,27 @@ function assure_has_minimum(A::GenOrdIdl)
   end
 
   O = order(A)
-  M = basis_matrix(A, copy = false)
-  d = prod([M[i, i] for i = 1:nrows(M)])
-  v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
-  fl, s = can_solve_with_solution(M, v, side = :left)
-  @assert fl
-  den = denominator(s[1]//d)
-  for i = 2:ncols(s)
-    den = lcm(den, denominator(s[i]//d))
-  end
 
-  if isa(den, KInftyElem)
-    A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-  elseif isa(den, PolyRingElem)
-    A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+  if isone(basis(O, copy = false)[1])
+    A.minimum = deepcopy(basis_matrix(A, copy = false)[1, 1])
+  else
+    M = basis_matrix(A, copy = false)
+    d = prod([M[i, i] for i = 1:nrows(M)])
+    v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
+    fl, s = can_solve_with_solution(M, v, side = :left)
+    @assert fl
+    den = denominator(s[1]//d)
+    for i = 2:ncols(s)
+      den = lcm(den, denominator(s[i]//d))
+    end
+
+    if isa(den, KInftyElem)
+      A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
+    elseif isa(den, PolyRingElem)
+      A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+    else
+      A.minimum = den
+    end
   end
 
   return nothing
@@ -467,34 +477,15 @@ function assure_has_norm(A::GenOrdIdl)
   end
 
   O = order(A)
-
-  if isdefined(A, :basis_matrix)
-    b = det(basis_matrix(A))
-    if isa(b, KInftyElem)
-      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
-    return nothing
-  end
-
-  if has_princ_gen(A)
-    b = det(basis_matrix(A))
-    if isa(b, KInftyElem)
-      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
-    return nothing
-  end
-
-  assure_has_basis_matrix(A)
-  b = det(basis_matrix(A))
+  b = det(basis_matrix(A; copy = false))
   if isa(b, KInftyElem)
     A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
   elseif isa(b, PolyRingElem)
     A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
+  else
+    A.norm = b
   end
+
   return nothing
 end
 
@@ -594,38 +585,56 @@ function Hecke.index(O::GenOrd)
   return is_equation_order(O) ? O.R(1) : O.R(det(basis_matrix_inverse(O)))
 end
 
-function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)
-  K, mK = residue_field(parent(p),p)
-  fact = factor(poly_to_residue(K, O.F.pol))
-  result = []
-  F = function_field(O)
+function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+  @req parent(p) === base_ring(O) "p must come from the base ring of O"
+
+  F = field(O)
+  B = base_field(F)
   a = gen(F)
-  for (fac, e) in fact
-    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
-    I = GenOrdIdl(O, p, O(facnew(a)))
-    I.is_prime = 1
+
+  K, mK = residue_field(base_ring(O), p)
+
+  fmodp = map_coefficients(defining_polynomial(O.F); cached = false) do c
+    num, den = integral_split(c, base_ring(O))
+    mK(num) // mK(den)
+  end
+  fact = factor(fmodp)
+
+  result = Vector{Tuple{GenOrdIdl{S, T}, Int}}(undef, length(fact))
+  for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
+    facnew = map_coefficients(y -> B(preimage(mK, y)), fac, cached = false)
+    b = O(facnew(a))
+    # We want a P-normal two-element presentation, i.e. v_P(b) = 1.
+    # Since we are in the case of p not dividing the index, we have a good candidate b = g(a).
+    #
+    # v_P(<p,b>) = min[v_P(p), v_P(b)] = 1.
+    # Ramified case   (e > 1): v_P(p) = e > 1, so v_P(b) = 1 is forced.
+    # Unramified case (e = 1): v_P(b) can exceed 1, in which case
+    #   v_P(b + p) = min(v_P(b), 1) = 1
+    # For other primes Q over p, v_Q(b) > 0 would give v_Q(<p, b>) > 0,
+    #   giving <p,b> subset of Q, contradicting <p, b> = P.
+    #
+    # In the unramified case we need to check if v_P(b) == 1.
+    # One possibility is to check if p*N(P) = p^{f+1} divides N(b)
+    #   and if it doesn't, we must have v_P(b) == 1.
+    # Unlike the number field case, b can be zero (single inert prime over p),
+    #   which is also covered by adding p.
+    if e == 1 && (is_zero(b) || divides(norm(b), p^(f + 1))[1])
+      b = b + O(p)
+    end
+
+    I = GenOrdIdl(O, p, b)
+    I.is_prime = 1
     I.splitting_type = e, f
     I.norm = p^f
     I.minimum = p
-    push!(result,(I,e))
+    result[i] = (I,e)
   end
   return result
 end
 
-
-function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
-  if iszero(poly)
-    return zero(K)
-  else
-    P, y = polynomial_ring(K,"y")
-    coeffs = coefficients(poly)
-    return sum([K(numerator(coeffs[i]))//K(denominator(coeffs[i]))*y^i for i in (0:length(poly)-1)])
-  end
-end
-
-
-function Hecke.valuation(p::GenOrdIdl,A::GenOrdIdl)
+function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = order(A)
   e = 0
   if has_2_elem(p)
@@ -646,14 +655,14 @@ function Hecke.valuation(p::GenOrdIdl,A::GenOrdIdl)
 end
 
 
-function Hecke.factor(A::GenOrdIdl)
+function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
   O = A.order
   N = norm(A)
   factors = factor(N)
-  primes = Dict{GenOrdIdl,Int}()
+  primes = Dict{GenOrdIdl{S, T},Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
-      p_val = valuation(p,A)
+      p_val = valuation(A, p)
       if p_val != 0
         primes[p] = p_val
       end
@@ -662,7 +671,7 @@ function Hecke.factor(A::GenOrdIdl)
   return primes
 end
 
-function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
+function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
   #Index not well-defined for infinite maximal order
   if !isa(base_ring(O), KInftyRing) && !(divides(index(O), p)[1])
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
@@ -671,9 +680,9 @@ function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(
   end
 end
 
-function prime_dec_gen(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0)
+function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   Ip = pradical(O, p)
-  lp = _decomposition(O, GenOrdIdl(O, p), Ip, GenOrdIdl(O, one(O)), p)
+  lp = _decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), p)
   #=z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -708,18 +717,19 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   return GenOrdIdl(O,rad(O,p))
 end
 
-function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p::RingElem)
+# WARNING: TI is unused. I guess the idea is to keep signature same as AbsNumField case
+function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, TI::GenOrdIdl{S, T}, p::RingElem) where {S, T}
   #I is an ideal lying over p
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = StructureConstantAlgebra(O, Ip1, p)
   AtoO = pseudo_inv(OtoA)
-  ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+  ideals, _ = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   for j in 1:length(ideals)
     P = ideals[j][1]
     f = P.splitting_type[2]
-    e = valuation(P,GenOrdIdl(O,p))
+    e = valuation(GenOrdIdl(O,p), P)
     P.splitting_type = e, f
     ideals[j] = (P,e)
   end
@@ -845,17 +855,24 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    degree(P::GenOrdIdl) -> Int
+    inertia_degree(P::GenOrdIdl) -> Int
+
+The inertia degree of the prime-ideal $P$.
+"""
 function degree(P::GenOrdIdl)
   @assert is_prime(P)
-  @assert P.splitting_type != [-1,-1]
-  deg_min = degree(minimum(P))
-  O = order(P)
-  if O == infinite_maximal_order(function_field(O))
-    deg_min = -deg_min
-  end
-  return P.splitting_type[2]*deg_min
+  return P.splitting_type[2]
 end
 
+inertia_degree(P::GenOrdIdl) = degree(P)
+
+@doc raw"""
+    ramification_index(P::GenOrdIdl) -> Int
+
+The ramification index of the prime-ideal $P$.
+"""
 function ramification_index(P::GenOrdIdl)
   @assert is_prime(P)
   return P.splitting_type[1]

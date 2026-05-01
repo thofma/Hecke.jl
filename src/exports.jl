@@ -34,6 +34,8 @@ export Divisor
 export Divisors
 export EllipticCurve
 export EllipticCurvePoint
+export EllipticCurveLocalData
+export EllipticCurveReduction
 export EmbeddedAbsSimpleNumField
 export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
@@ -47,7 +49,7 @@ export GenOrdFracIdl
 export FinGenAbGroup
 export FinGenAbGroupElem
 export FinGenAbGroupHom
-export FinGenAbGroupToGroupHo
+export FinGenAbGroupToGroupHom
 export FiniteRing
 export FiniteRingElem
 export FiniteRingHom
@@ -204,7 +206,6 @@ export class_group
 export class_number
 export classical_modular_polynomial
 export clebsch_from_igusa_clebsch
-export clebsch_from_igusa
 export clebsch_invariants
 export close_vectors
 export close_vectors_iterator
@@ -515,6 +516,7 @@ export is_free
 export is_free_with_basis
 export is_fundamental_discriminant
 export is_genus
+export is_genus_with_genus
 export is_gorenstein
 export is_hermitian
 export is_idempotent

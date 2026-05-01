@@ -10,6 +10,7 @@ on:
   schedule:
     # Every day at 3:05 AM UTC
     - cron: '5 3 * * *'
+  workflow_dispatch:
 
 concurrency:
   # group by workflow and ref; the last slightly strange component ensures that for pull
@@ -47,7 +48,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache artifacts"
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
       - name: "Run tests"
@@ -80,7 +81,7 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1.10'
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:

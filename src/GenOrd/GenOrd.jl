@@ -51,6 +51,9 @@ end
 # prepare for algebras, which are not domains
 is_domain_type(::Type{GenOrdElem{S, T}}) where {S, T} = is_domain_type(S)
 
+ideal_type(::Type{GenOrd{S, T}}) where {S, T} = GenOrdIdl{S, T}
+fractional_ideal_type(::Type{GenOrd{S, T}}) where {S, T} = GenOrdFracIdl{S, T}
+
 ################################################################################
 #
 #  Show
@@ -138,7 +141,7 @@ function Base.show(io::IO, a::GenOrdElem)
 end
 
 function expressify(a::GenOrdElem; context = nothing)
-  return expressify(base_ring(R), context = context)
+  return expressify(data(a), context = context)
 end
 
 ################################################################################
@@ -157,8 +160,10 @@ function (R::GenOrd{S, T})(a::RingElement; check::Bool = true) where {S, T}
   if parent(a) === field(R)
     return GenOrdElem(R, a, check)
   elseif AbstractAlgebra.promote_rule(elem_type(T), typeof(a)) === elem_type(T)
-    # so a can be coerced into base_ring(R), remove the check
-    return GenOrdElem(R, field(R)(a), false)
+    # a can be coerced into base_ring(R)
+    # make sure to go through the base field (where base ring lives)
+    F = field(R)
+    return GenOrdElem(R, F(base_field(F)(a)), false)
   else
     return GenOrdElem(R, field(R)(a), true)
   end
@@ -427,12 +432,12 @@ function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd)
   return O(d.data*a, check =false), d #evil, but no legal way found
 end
 
-function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd{<: Any, ZZRing})
+function Hecke.integral_split(a::AbsSimpleNumFieldElem, O::GenOrd{<:Field, ZZRing})
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   return O(d*a, check = false), d #evil, but no legal way found
 end
 
-#############################3333333333333333333333############################3
+################################################################################
 #
 #  Modular arithmetic
 #
@@ -582,7 +587,7 @@ end
 ################################################################################
 
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
-  @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal orderorder"
+  @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal overorder"
 
   t = residue_field(parent(p), p)
 
@@ -658,11 +663,11 @@ function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T}) where {T}
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::KInftyRing{T}, F::Generic.FunctionField{T}) where {T}
+function integral_closure(S::KInftyRing{T,U}, F::Generic.FunctionField{T}) where {T,U}
   return _integral_closure(S, F)
 end
 
-function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Ring)
+function _integral_closure(S::AbstractAlgebra.Ring, F::AbstractAlgebra.Field)
   O = GenOrd(S, F)
   return Hecke.maximal_order(O)
 end
@@ -882,7 +887,7 @@ function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
   M2 = transpose(B)
   M2 = map_entries(x->preimage(mF, x), M2)
   M3 = Hecke.hnf_modular(M2, p, true)
-  return return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
 end
 
 ################################################################################
