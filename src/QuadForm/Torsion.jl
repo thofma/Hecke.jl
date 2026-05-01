@@ -1513,6 +1513,22 @@ function _sub(T::TorQuadModule, _gens_mat::QQMatrix)
 end
 
 @doc raw"""
+    torsion_subgroup(
+      T::TorQuadModule,
+      n::IntegerUnion,
+    ) -> TorQuadModule, TorQuadModuleMap
+
+Return the subgroup of ``T`` consisting of elements of order dividing ``n``.
+"""
+function torsion_subgroup(
+  T::TorQuadModule,
+  n::IntegerUnion,
+)
+  Sab, j = torsion_subgroup(abelian_group(T), n)
+  return sub(T, TorQuadModuleElem[T(j(s)) for s in gens(Sab)])
+end
+
+@doc raw"""
     torsion_quadratic_module(q::QQMatrix) -> TorQuadModule
 
 Return a torsion quadratic module with gram matrix given by `q` and

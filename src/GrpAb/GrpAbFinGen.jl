@@ -1101,9 +1101,16 @@ function torsion_subgroup(
   G::FinGenAbGroup,
   n::IntegerUnion,
   add_to_lattice::Bool = true,
+  L::GrpAbLattice = GroupLattice,
 )
   f = FinGenAbGroupHom(G, G, ZZ(n)*identity_matrix(ZZ, ngens(G)))
-  return kernel(f, add_to_lattice)
+  K, j = kernel(f, false)
+  S, jj = snf(K)
+  jj *= j
+  if add_to_lattice
+    append!(L, jj)
+  end
+  return S, jj
 end
 
 ################################################################################

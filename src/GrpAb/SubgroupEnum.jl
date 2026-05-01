@@ -946,34 +946,6 @@ end
 #
 ###############################################################################
 
-# Adapted from one of the __psubgroups_gens above
-# Return the possible type (given by the valuation of the associated
-# elementary divisors) of a subgroup of G of order p^v. The output is given
-# with respect to the reverse order of the snf of G (so starting by the largest
-# blocks).
-# The input `elG` consists of the elementary divisors of G.
-function _psubgroups_types(
-  elG::Vector{ZZRingElem},
-  p::ZZRingElem,
-  v::Int,
-)
-  testv = isequal(v)∘sum
-  p_subtypes = Set{Vector{Int}}()
-  if isempty(elG)
-    return p_subtypes
-  end
-  Gtype = Int[valuation(a, p) for a in elG]
-  reverse!(Gtype)
-  filter!(!=(0), Gtype)
-  types = _subpartitions(Gtype)
-  for t in types
-    testv(t) || continue
-    filter!(!=(0), t)
-    push!(p_subtypes, t)
-  end
-  return p_subtypes
-end
-
 # Return the elementary divisors of the largest finite abelian group
 # embedding in both G1 and G2
 function _maximal_common_subgroup_snf(
@@ -990,105 +962,30 @@ function _maximal_common_subgroup_snf(
   return s
 end
 
-# Return information about the primary parts of all possible finite
-# abelian groups H embedding into G.
-# The input `elG` consists of the elementary divisors of G.
-# It returns a dictionary whose keys are prime numbers dividings the order
-# of G and for each such prime p, the value gives the possible lists of
-# valuations for the elementary divisors (in reverse order) of H_p.
-# The keyword argument `ords` gives a set of possible orders for H (ignored
-# if empty)
-function _primary_parts_subgroups(
-  elG::Vector{ZZRingElem};
-  ords::Set{ZZRingElem}=Set{ZZRingElem}(),
-)
-  pps = Dict{ZZRingElem, Set{Vector{Int}}}()
-  if !isempty(ords)
-    if isone(length(ords))
-      l = only(ords)
-    else
-      l = lcm(ords...)
-    end
-    pds = prime_divisors(l)
-    for p in pds
-      vals = unique!(Int[valuation(a, p) for a in ords])
-      tmp = Set{Vector{Int}}()
-      for _v in vals
-        union!(tmp, _psubgroups_types(elG, p, _v))
-      end
-      pps[p] = tmp
-    end
-  else
-    for p in prime_divisors(last(elG))
-      v = sum(Int[valuation(a, p) for a in elG]; init=Int(0))
-      tmp = Set{Vector{Int}}()
-      for _v in 0:v
-        union!(tmp, _psubgroups_types(elG, p, _v))
-      end
-      pps[p] = tmp
-    end
-  end
-  return pps
-end
-
-# Return information about the primary parts of all possible finite
-# abelian groups H embedding into G, and whose elementary divisors are
-# given in the set `el_divs`.
-# The input `elG` consists of the elementary divisors of G.
-# It returns a dictionary whose keys are prime numbers dividings the order
-# of G and for each such prime p, the value gives the possible lists of
-# valuations for the elementary divisors (in reverse order) of H_p.
-# If a list in `el_divs` does not define a subgroup of G, it is ignored.
-function _infer_primary_parts_subgroups(
+# Adapted from one of the __psubgroups_gens above
+# Given the elementary divisors elG of a finite abelian group G, return the
+# set of all possible lists of valuations for the elementary divisors of a
+# subgroup of G whose p-Sylow subgroup has order p^v. The lists in output
+# contain only positive valuations and they are sorted in decreasing order.
+function _psubgroups_types(
   elG::Vector{ZZRingElem},
-  el_divs::Set{Vector{ZZRingElem}},
+  p::ZZRingElem,
+  v::Int,
 )
-  pps = Dict{ZZRingElem, Set{Vector{Int}}}()
-  for el in el_divs
-    length(el) <= length(elG) || continue
-    iszero(mod.(elG[end-length(el)+1:end], el)) || continue
-    pds = prime_divisors(last(el))
-    for p in pds
-      if !haskey(pps, p)
-        pps[p] = Set{Vector{Int}}()
-      end
-      t = Int[valuation(a, p) for a in el]
-      reverse!(t)
-      filter!(!=(0), t)
-      push!(pps[p], t)
-    end
+  @assert v > 0
+  testv = isequal(v)∘sum
+  p_subtypes = Set{Vector{Int}}()
+  if isempty(elG)
+    return p_subtypes
   end
-  return pps
-end
-
-# Return information about the primary parts of all possible finite
-# abelian groups H embedding in both G1 and G2.
-# It returns a dictionary whose keys are prime numbers dividing both the orders
-# of G1 and G2, and for each such prime p, the value gives the possible lists
-# of valuations for the elementary divisors (in reverse order) of H_p.
-# The keyword arguments give restrictions on the group H.
-# - `ords` gives a set of possible orders for H (ignored if empty),
-# - `annihilator_left` (resp. `annihilator_right`) tells that after embedding H
-#   into G1 (resp. G2), its image should be in the kernel of the given
-#   endomorphism,
-# - `el_divs` gives a set of possible lists of elementary divisors for H
-#   (ignored if empty).
-function _primary_parts_common_subgroups_with_conditions(
-  G1::FinGenAbGroup,
-  G2::FinGenAbGroup;
-  ords::Set{ZZRingElem}=Set{ZZRingElem}(),
-  annihilator1::FinGenAbGroupHom=zero_map(G1),
-  annihilator2::FinGenAbGroupHom=zero_map(G2),
-  el_divs::Set{Vector{ZZRingElem}}=Set{Vector{ZZRingElem}}(),
-)
-  V1, V1inG1 = kernel(annihilator1)
-  V2, V2inG2 = kernel(annihilator2)
-
-  elG = _maximal_common_subgroup_snf(V1, V2)
-  if !isempty(el_divs)
-    ppcs = _infer_primary_parts_subgroups(elG, el_divs)
-  else
-    ppcs = _primary_parts_subgroups(elG; ords)
+  Gtype = Int[valuation(a, p) for a in elG]
+  reverse!(Gtype)
+  filter!(!=(0), Gtype)
+  types = Hecke._subpartitions(Gtype)
+  for t in types
+    testv(t) || continue
+    filter!(!=(0), t)
+    push!(p_subtypes, t)
   end
-  return ppcs, V1inG1, V2inG2
+  return p_subtypes
 end
