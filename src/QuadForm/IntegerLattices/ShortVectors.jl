@@ -1791,7 +1791,9 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
     for (v, n) in output
       @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams)) "$(gram_matrix(L)), $((target_invariant,target_norms))"
-      @assert mode==:auto && n in target_norms
+        if mode==:auto
+          @assert n in target_norms
+        end
     end
     abs_target_signed_invariant_compressed = Set(abs.(target_signed_invariant_compressed))
     @assert all(abs(i) in abs_target_signed_invariant_compressed for i in invariants)
