@@ -52,14 +52,19 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   ZA, ZAtoA = _as_algebra_over_center(A)
 
   if !isdefined(A, :isomorphic_full_matrix_algebra) && dim(ZA) == 1
-    @assert base_ring(ZA) isa NumField{QQFieldElem}
-    B = matrix_algebra(base_ring(ZA), 1)
-    img = [preimage(ZAtoA, x) for x in basis(A)]
-    m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1])/(one(A).coeffs[1]) for x in img])
-    B1 = basis(B)[1]
-    minv = matrix([ZAtoA(B1[1, 1] * (x * one(ZA))).coeffs for x in absolute_basis(base_ring(ZA))])
-    AtoB = AbsAlgAssMorGen(A, B, m, minv)
-    A.isomorphic_full_matrix_algebra = B, AtoB
+    _rewrite_algebra_which_is_center(A, ZAtoA)
+    #@assert base_ring(ZA) isa NumField{QQFieldElem}
+    #B = matrix_algebra(base_ring(ZA), 1)
+    #img = [preimage(ZAtoA, x) for x in basis(A)]
+    #i = findfirst(!iszero, one(A).coeffs)
+    #@assert !isnothing(i)
+    #m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1])/(one(A).coeffs[i]) for x in img])
+    #B1 = basis(B)[1]
+    #minv = matrix([ZAtoA(B1[1, 1] * (x * one(ZA))).coeffs for x in absolute_basis(base_ring(ZA))])
+    #AtoB = AbsAlgAssMorGen(A, B, m, minv)
+    #@info AtoB(one(A))
+    #@assert is_one(AtoB(one(A))) && is_one(AtoB\(one(B)))
+    #A.isomorphic_full_matrix_algebra = B, AtoB
   end
 
   if isdefined(A, :isomorphic_full_matrix_algebra)
@@ -84,6 +89,22 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
   else
     error("Not implemented yet")
   end
+end
+
+function _rewrite_algebra_which_is_center(A, ZAtoA)
+  ZA = domain(ZAtoA)
+  @assert base_ring(ZA) isa NumField{QQFieldElem}
+  B = matrix_algebra(base_ring(ZA), 1)
+  img = [preimage(ZAtoA, x) for x in basis(A)]
+  i = findfirst(!iszero, one(A).coeffs)
+  @assert !isnothing(i)
+  m = matrix(base_ring(B), dim(A), dim(B), [(x.coeffs[1])/(one(ZA).coeffs[1]) for x in img])
+  B1 = basis(B)[1]
+  minv = matrix([ZAtoA(B1[1, 1] * (x * one(ZA))).coeffs for x in absolute_basis(base_ring(ZA))])
+  AtoB = AbsAlgAssMorGen(A, B, m, minv)
+  @assert is_one(AtoB(one(A))) && is_one(AtoB\(one(B)))
+  @assert is_zero(AtoB(zero(A))) && is_zero(AtoB\(zero(B)))
+  A.isomorphic_full_matrix_algebra = B, AtoB
 end
 
 function _is_principal_maximal_quaternion_generic(a, M, side = :right)
