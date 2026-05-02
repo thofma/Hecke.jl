@@ -33,4 +33,5 @@ include("RieSrf/RiemannSurface.jl")
 include("RieSrf/PeriodMatrix.jl")
 include("RieSrf/HeuristicEndomorphisms.jl")
 include("RieSrf/Algebraization.jl")
+include("RieSrf/EndomorphismStructure.jl")
 end
