@@ -485,25 +485,12 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
 
   m = reduce(hcat, [divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)])
   m = transpose(m)
+
   if is_prime
-    x = residue_field(parent(p), p)
-    if isa(x, Tuple)
-      R, mR = x
-    else
-      R = x
-      mR = MapFromFunc(parent(p), R, x->R(x), x->lift(x))
-    end
-    ref = x->rref(x)[2]
+    R, mR = residue_field(parent(p), p)
+    ref = M -> rref(M)[2]
   else
-    x = residue_ring(parent(p), p)
-    if isa(x, Tuple)
-      R, mR = x
-    else
-      R = x
-      mR = MapFromFunc(parent(p), R, x->R(x), x->lift(x))
-    end
-#    R = parent(p)
-#    mR = MapFromFunc(R, R, x->x, x->x)
+    R, mR = residue_ring(parent(p), p)
     ref = hnf
   end
   m = map_entries(mR, m)
@@ -589,14 +576,8 @@ end
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
   @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal overorder"
 
-  t = residue_field(parent(p), p)
+  R, mR = residue_field(parent(p), p)
 
-  if isa(t, Tuple)
-    R, mR = t
-  else
-    R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
-  end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
     @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
@@ -778,13 +759,7 @@ end
 # rows are an S-basis
 #in pos. char: O/p -> O/p : x-> x^(p^l) has the radical as kernel, perfect field
 function radical_basis_power(O::GenOrd, p::RingElem)
-  t = residue_field(parent(p), p)
-  if isa(t, Tuple)
-    F, mF = t
-  else
-    F = t
-    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
-  end
+  F, mF = residue_field(parent(p), p)
 
   q = order(F)
   d = q
@@ -813,14 +788,7 @@ end
 #in char 0 and small char: rad = {x : Tr(xO) in pR} perfect field
 function radical_basis_trace(O::GenOrd, p::RingElem)
   T = trace_matrix(O)
-
-  t = residue_field(parent(p), p)
-  if isa(t, Tuple)
-    R, mR = t
-  else
-    R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
-  end
+  R, mR = residue_field(parent(p), p)
 
   TT = map_entries(mR, T)
   B = kernel(TT; side = :right)
@@ -831,13 +799,7 @@ end
 
 #pos. char, non-perfect (residue) field
 function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
-  t = residue_field(parent(p), p)
-  if isa(t, Tuple)
-    F, mF = t
-  else
-    F = t
-    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
-  end
+  F, mF = residue_field(parent(p), p)
   @assert isa(F, Generic.RationalFunctionField) && characteristic(F) != 0
   q = characteristic(F)
   @assert q > 0

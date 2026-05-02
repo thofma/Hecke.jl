@@ -695,14 +695,8 @@ function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(
 end
 
 function Hecke.pradical(O::GenOrd, p::RingElem)
-  t = residue_field(parent(p), p)
+  R, mR = residue_field(parent(p), p)
 
-  if isa(t, Tuple)
-    R, mR = t
-  else
-    R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
-  end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
     @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
