@@ -5,4 +5,6 @@
   include("RieSrf/PeriodMatrix.jl")
   include("RieSrf/RiemannSurface.jl")
   include("RieSrf/Theta.jl")
+  include("RieSrf/HeuristicEndomorphisms.jl")
+  include("RieSrf/EndomorphismStructure.jl")
 end

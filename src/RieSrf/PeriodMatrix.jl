@@ -25,12 +25,15 @@ function big_period_matrix(RS::RiemannSurface)
   num_paths = length(paths)
   prec = precision(RS)
   disc_points = discriminant_points(RS)
-  small_C = AcbField(100)
-  disc_points_low_precision = [small_C(P) for P in disc_points]
+  #small_C = AcbField(100)
+  #disc_points_low_precision = [small_C(P) for P in disc_points]
 
   #path`N seems to be less than what it is in Neurohr's implementation.
+  #Neurohr takes disc_points of low precision here, but I don't see any 
+  #real reason for us to do so as well. I expect higher precision to improve
+  #stability.
   for path in paths
-    gauss_legendre_path_parameters(disc_points_low_precision, path, RS.extra_error)
+    gauss_legendre_path_parameters(disc_points, path, RS.extra_error)
   end
 
   #Compute the integration parameters r for all of the paths.
@@ -74,15 +77,15 @@ function big_period_matrix(RS::RiemannSurface)
 
   #We only consider int_groups that contain more than 2 elements. If they only have two
   #or less elements, we simply group them together with the previous group
-  filter!(x -> length(x) > 2, int_groups)
+  int_groups = filter(x -> length(x) > 2, int_groups[2:end])
 
-  append!(int_group_rs, [ minimum(int_group) - eps for int_group in int_groups[2:end]])
+  append!(int_group_rs, [ minimum(int_group) - eps for int_group in int_groups])
 
   differentials = RS.differential_form_data[1]
 
   v = embedding(RS)
   # Random precision. Probably needs to become a heuristic.
-  max_prec = 187
+  max_prec = prec+10
   embedded_differentials = [embed_mpoly(g, v, max_prec) for g in differentials]
   dif_basis = [omega.f for omega in diff_base]
 
@@ -147,6 +150,7 @@ function big_period_matrix(RS::RiemannSurface)
 
 			path_difference_matrix = zero_matrix(Cc, m, g)
       abscissae = integration_scheme.abscissae
+      weights = integration_scheme.weights
       N = length(abscissae)
 			An = analytic_continuation(RS, subpath, abscissae, ys)[2:end]
 
@@ -159,7 +163,7 @@ function big_period_matrix(RS::RiemannSurface)
           # intrgral.
 					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials, An[i][1],An[i][2])
 					integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
-          integral_matrix_contribution *= integration_scheme.weights[i]
+          integral_matrix_contribution *= weights[i]
 					path_difference_matrix += integral_matrix_contribution
 				end
         path_difference_matrix *= evaluate_d(subpath, abscissae[1])
@@ -170,7 +174,7 @@ function big_period_matrix(RS::RiemannSurface)
 					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials,An[i][1],An[i][2])
           integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
           # For arcs and circles we need to multiply with an additional dx.
-          integral_matrix_contribution *= integration_scheme.weights[i] * evaluate_d(path, abscissae[i])
+          integral_matrix_contribution *= weights[i] * evaluate_d(path, abscissae[i])
 					path_difference_matrix += integral_matrix_contribution
 				end
 				integral_matrix += path_difference_matrix
@@ -266,7 +270,9 @@ function big_period_matrix(RS::RiemannSurface)
 
   # Cut of the first 2g columns to get the actual period matrix.
 	big_period_matrix = transpose(PMAPMB[1:2*g,:])
+  dependent_columns = PMAPMB[2g+1:end, :]
   RS.big_period_matrix = big_period_matrix
+  @req all([contains(r, zero(Cc)) for r in dependent_columns]) "Sanity check failed. There may have been an error in the period matrix computation."
   return big_period_matrix
 end
 
@@ -383,7 +389,7 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
       if base_ring(base_ring(parent(gmin))) == QQ
         coeffs = [sum(CC(coeff(a,i)) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
       else 
-        coeffs = [sum(CC(embedding(v)(coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
+        coeffs = [sum(CC(embeddings(v)[1](coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
       end 
 
       A_0 = CC(abs((coeff(coeffs[end], degree(coeffs[end]))) ) * prod( [abs(z_0 - alpha) - delta for alpha in rs] , init = one(CC)))
