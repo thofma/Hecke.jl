@@ -1,5 +1,9 @@
 @testset "Counting points on elliptic curves over finite fields" begin
 
+  function from_integer(F::FinField, a::Hecke.IntegerUnion)
+    return F(digits(a; base = Int(characteristic(F)), pad = degree(F)))
+  end
+
   @testset "Ordinary curves in characteristic 2 (Subfield Curves)" begin
     _, X = polynomial_ring(GF(2), "X")
     R,t = finite_field(X^32 + X^15 + X^9 + X^7 + X^4 + X^3 + 1, "t") # Conway polynomial
@@ -54,6 +58,31 @@
     @test test_agm_subfield(3, 60)
     @test test_agm_subfield(4, 40)
     @test test_agm_subfield(5, 30)
+
+    # some standard "large" curves in characteristic 2
+    u = polynomial_ring(GF(2), :u; cached = false)[2]
+
+    # sect113r1
+    R = finite_field(u^113 + u^9 + 1, :t; cached = false)[1]
+    a = from_integer(R, 0x003088250ca6e7c7fe649ce85820f7)
+    b = from_integer(R, 0x00e8bee4d3e2260744188be0e9c723)
+
+    E = elliptic_curve(R, [1, a, 0, 0, b])
+    @test @inferred(Hecke._order_ordinary_char2(E)) == ZZ("10384593717069655379671765157661406")
+
+    # B-163 / sect163r2
+    R = finite_field(u^163 + u^7 + u^6 + u^3 + 1; cached = false)[1]
+    b = from_integer(R, 0x020a601907b8c953ca1481eb10512f78744a3205fd)
+
+    E = elliptic_curve(R, [1, 1, 0, 0, b])
+    @test @inferred(Hecke._order_ordinary_char2(E)) == ZZ("11692013098647223345629484885752781378513686403174")
+
+    # B-233 / sect233r1
+    R = finite_field(u^233 + u^74 + 1; cached = false)[1]
+    b = from_integer(R, 0x0066647ede6c332c7f8c0923bb58213b333b20e9ce4281fe115f7d8f90ad)
+
+    E = elliptic_curve(R, [1, 1, 0, 0, b])
+    @test @inferred(Hecke._order_ordinary_char2(E)) == ZZ("13803492693581127574869511724554051111679625474690027110758767268970926")
   end
 
   @testset "AGM in characteristic 2 (Exhaustive d=3..6)" begin
