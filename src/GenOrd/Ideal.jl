@@ -51,6 +51,23 @@ Hecke.order(a::GenOrdIdl) = a.order
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function Base.deepcopy_internal(I::GenOrdIdl{S, T}, dict::IdDict) where {S, T}
+  J = GenOrdIdl(order(I))
+  for f in fieldnames(typeof(I))
+    f === :order && continue
+    if isdefined(I, f)
+      setfield!(J, f, Base.deepcopy_internal(getfield(I, f), dict))
+    end
+  end
+  return J
+end
+
+################################################################################
+#
 #  Hash
 #
 ################################################################################
@@ -623,7 +640,7 @@ function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
     newA = GenOrdFracIdl(beta*A,p.gen_one)
     while is_integral(newA)
       e += 1
-      newA = GenOrdFracIdl(numerator(beta*newA),p.gen_one)
+      newA = GenOrdFracIdl(numerator(beta*newA; copy = false), p.gen_one)
     end
   else
     newA = Hecke.colon(A,p)
