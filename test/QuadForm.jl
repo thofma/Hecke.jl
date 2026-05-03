@@ -13,6 +13,7 @@
   include("QuadForm/Quad/PadicLift.jl")
   include("QuadForm/CloseVectors.jl")
   include("QuadForm/indefiniteLLL.jl")
+  include("QuadForm/Flatter.jl")
   include("QuadForm/IO.jl")
   include("QuadForm/Database.jl")
   include("QuadForm/LineOrbits.jl")
