@@ -117,6 +117,10 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
+function base_field_type(::Type{Generic.FunctionField{T}}) where T <: FieldElement
+  return Generic.RationalFunctionField{T, poly_type(T)}
+end
+
 #######################################################################
 #
 # support for ZZ

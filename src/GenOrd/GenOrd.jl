@@ -89,9 +89,8 @@ field(O::GenOrd) = O.F
 
 degree(O::GenOrd) = degree(field(O))
 
-basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field(field(O))))
-
-basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_type(base_field(field(O))))
+basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field_type(S)))
+basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_type(base_field_type(S)))
 
 ################################################################################
 #
@@ -104,7 +103,7 @@ function basis(O::GenOrd; copy::Bool = true)
     if is_equation_order(O)
       return map(O, basis(field(O)))
     else
-      return [O(O.F(vec(collect(O.trans[i,:])))) for i=1:degree(O)]
+      return [O(O.F(vec(collect(basis_matrix(O)[i,:])))) for i=1:degree(O)]
     end
   end::Vector{elem_type(O)}
 end
@@ -169,11 +168,12 @@ function (R::GenOrd{S, T})(a::RingElement; check::Bool = true) where {S, T}
   end
 end
 
-function (O::GenOrd)(c::Vector)
+function (O::GenOrd{S, T})(c::Vector) where {S, T}
   if is_equation_order(O)
     return O(O.F(c))
   else
-    return O(O.F(vec(collect(map(base_ring(O.trans), c)*O.trans))))
+    M = basis_matrix(O)
+    return O(O.F(vec(collect(map(base_ring(M), c)*M))))
   end
 end
 
@@ -454,7 +454,7 @@ function mod(a::GenOrdElem, p::RingElem)
     return O(O.F(mu))
   else
     a = map(x->S(R(x) % p), coordinates(a))
-    b = a*O.trans
+    b = a*basis_matrix(O)
     return O(O.F(b))
   end
 end
@@ -659,11 +659,11 @@ end
 #
 ################################################################################
 
-function trans_mat(O::GenOrd, OO::GenOrd)
+function trans_mat(O::GenOrd{S}, OO::GenOrd{S}) where S
   if is_equation_order(O)
-    return OO.trans
+    return basis_matrix(OO)
   else
-    return is_equation_order(OO) ? O.itrans : OO.trans*O.itrans
+    return is_equation_order(OO) ? basis_matrix_inverse(O) : basis_matrix(OO) * basis_matrix_inverse(O)
   end
 end
 
@@ -720,7 +720,7 @@ function Hecke.discriminant(O::GenOrd)
     # The bypass is to use det(trace_mat) which is correct for orders
     d = discriminant(O.F)
     if !is_equation_order(O)
-      d *= det(O.trans)^2
+      d *= det(basis_matrix(O))^2
     end
   else
     d = det(trace_matrix(O))

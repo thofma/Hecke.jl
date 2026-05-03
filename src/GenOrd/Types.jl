@@ -1,8 +1,8 @@
 @attributes mutable struct GenOrd{S, T} <: Ring
   F::S
   R::T
-  trans#::dense_matrix_type(elem_type(S))
-  itrans#::dense_matrix_type(elem_type(S))
+  trans  #::dense_matrix_type(elem_type(base_field_type(S)))
+  itrans #::dense_matrix_type(elem_type(base_field_type(S)))
   is_equation_order::Bool
 
   function GenOrd(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
@@ -60,8 +60,8 @@
       r.trans = T
       r.itrans = Ti
     else
-      r.trans = T*O.trans
-      r.itrans = O.itrans*Ti
+      r.trans = T*basis_matrix(O)
+      r.itrans = basis_matrix_inverse(O)*Ti
     end
     check && map(representation_matrix, basis(r))
     return r
