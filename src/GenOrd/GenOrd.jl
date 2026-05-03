@@ -92,6 +92,16 @@ degree(O::GenOrd) = degree(field(O))
 basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field_type(S)))
 basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_type(base_field_type(S)))
 
+_make_canonical_in(O::GenOrd{S, T}, x) where {S, T} = O.R(x)::elem_type(T)
+
+function _make_canonical_in(O::GenOrd{S, T}, x::KInftyElem) where {S, T}
+  O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(x))//denominator(x))::elem_type(T)
+end
+
+function _make_canonical_in(O::GenOrd{S, T}, x::PolyRingElem) where {S, T}
+  O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(x))::elem_type(T)
+end
+
 ################################################################################
 #
 #  Basis

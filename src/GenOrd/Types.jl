@@ -199,13 +199,8 @@ end
     z = new{S, T}()
     O = order(a)
     z.order = O
-    if isa(b, KInftyElem)
-      b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
     z.num = a
-    z.den = b
+    z.den = _make_canonical_in(O, b)
     return z
   end
 

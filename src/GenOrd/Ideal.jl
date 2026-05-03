@@ -392,11 +392,7 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
     return A
   end
   O = order(A)
-  if isa(b, KInftyElem)
-    b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyRingElem)
-    b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  end
+  b = _make_canonical_in(O, b)
   bm = divexact(basis_matrix(A), b)
   B = GenOrdIdl(O, bm)
   if false && has_basis_mat_inv(A)
@@ -444,13 +440,7 @@ function assure_has_minimum(A::GenOrdIdl)
       den = lcm(den, denominator(s[i]//d))
     end
 
-    if isa(den, KInftyElem)
-      A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-    elseif isa(den, PolyRingElem)
-      A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
-    else
-      A.minimum = den
-    end
+    A.minimum = _make_canonical_in(O, den)
   end
 
   return nothing
@@ -476,16 +466,7 @@ function assure_has_norm(A::GenOrdIdl)
     return nothing
   end
 
-  O = order(A)
-  b = det(basis_matrix(A; copy = false))
-  if isa(b, KInftyElem)
-    A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyRingElem)
-    A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  else
-    A.norm = b
-  end
-
+  A.norm = _make_canonical_in(order(A), det(basis_matrix(A; copy = false)))
   return nothing
 end
 
