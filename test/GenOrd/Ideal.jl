@@ -39,6 +39,48 @@
     check_prime_2elem(P, expected_f, expected_e)
   end
 
+  function test_containment_common(O, a, t)
+    L = Hecke.field(O)
+
+    a = O(a)
+    I = ideal(O, a)
+    Ifrac = fractional_ideal(I)
+
+    for v in (a, a * O(t), O(0))
+      @test v in I
+      @test v in Ifrac
+    end
+    for v in (O(1), O(t))
+      @test !(v in I)
+      @test !(v in Ifrac)
+    end
+
+    Iinv = inv(I)
+    for v in (zero(L), one(L), L(a), L(1)//L(a))
+      @test v in Iinv
+    end
+    @test a in Iinv
+
+    @test !(L(1)//L(a)^2 in Iinv)
+
+    # In a local ring O.R, units are everything coprime to the prime, so this test doesnt make sense
+    if !isa(O.R, LocalizedEuclideanRing)
+      @test !(L(1)//L(t) in Iinv)
+    end
+  end
+
+  function test_colon_common_ideal(O, I)
+    @assert is_prime(I)
+
+    L = Hecke.field(O)
+    U = ideal(O, O(1))
+    @test Hecke.colon(I, U) == fractional_ideal(I)
+    @test one(L) in Hecke.colon(I, I)
+    @test Hecke.colon(U, I) * I == U
+  end
+
+  test_colon_common(O, p) = test_colon_common_ideal(O, ideal(O, O(p)))
+
   @testset "over F_2(x)" begin
     kx, x = rational_function_field(GF(2), :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
@@ -107,10 +149,9 @@
         @test inertia_degree(P) == f_expected
       end
 
-      let (L, t) = function_field(y^3 - x - 1; cached = false)
-        Ofin = finite_maximal_order(L)
-        Oinf = infinite_maximal_order(L)
-
+      let (L, t) = function_field(y^3 - x - 1; cached = false),
+          Ofin = finite_maximal_order(L),
+          Oinf = infinite_maximal_order(L)
         check_prime_2elem_single_above(Ofin, x + 1, 1, 3)
         check_prime_2elem_single_above(Ofin, x^2 + x + 1, 3, 1)
 
@@ -136,6 +177,14 @@
         @test e == 3
         @test inertia_degree(P) == 1
       end
+    end
+
+    @testset "containment" begin
+      test_containment_common(Ofin, x^4 + x + 1, t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^4 + x + 1)
     end
   end
 
@@ -163,6 +212,14 @@
 
       I = ideal(Oinf, L(x^2)//t^3)
       check_ideal_norm_min(I, norm(Oinf(L(x^2)//t^3)), 1//x)
+    end
+
+    @testset "containment" begin
+      test_containment_common(Ofin, x^2 + 1, t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^2 + 1)
     end
   end
 
@@ -210,6 +267,14 @@
       #   number fields defined by non-monic polynomials,
       #   since the Lenstra order is a sub-order of the equation order.
     end
+
+    @testset "containment" begin
+      test_containment_common(OK, ZZ(3), ZZ(5))
+    end
+
+    @testset "colon" begin
+      test_colon_common(OK, ZZ(3))
+    end
   end
 
   @testset "over number field localized at prime" begin
@@ -229,6 +294,9 @@
         @test e == 1
         check_prime_2elem(P, 1, 1)
       end
+
+      test_containment_common(OK, R(7), R(5))
+      test_colon_common_ideal(OK, ideal(OK, R(7), OK(a - 3)))
     end
 
     @testset "inert (p = 3)" begin
@@ -237,6 +305,9 @@
 
       check_ideal_norm_min(ideal(OK, R(3)), R(9), R(3))
       check_prime_2elem_single_above(OK, R(3), 2, 1)
+
+      test_containment_common(OK, R(3), R(5))
+      test_colon_common(OK, R(3))
     end
 
     @testset "ramified (p = 2)" begin
@@ -247,6 +318,9 @@
       check_ideal_norm_min(ideal(OK, R(2), OK(a)),   R(2), R(2))
 
       check_prime_2elem_single_above(OK, R(2), 1, 2)
+
+      test_containment_common(OK, R(2), R(5))
+      test_colon_common_ideal(OK, ideal(OK, R(2), OK(a)))
     end
   end
 end

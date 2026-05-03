@@ -385,7 +385,7 @@ function Hecke.colon(a::GenOrdIdl, b::GenOrdIdl)
   m = hnf(m)
   # m is upper right HNF
   m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b = inv(divexact(change_base_ring(base_ring(field(O)), m), base_field(field(O))(d)))
+  b = inv(divexact(change_base_ring(base_field(field(O)), m), base_field(field(O))(d)))
   return GenOrdFracIdl(O, b)
 end
 
@@ -926,8 +926,7 @@ end
 Returns whether $x$ is contained in $y$.
 """
 function in(x::GenOrdElem, y::GenOrdIdl)
-  O = order(y)
-  parent(x) !== order(y) && error("Order of element and ideal must be equal")
+  @req parent(x) === order(y) "Both element and ideal must come from the same order"
   return containment_by_matrices(x, y)
 end
 
@@ -935,10 +934,12 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   A = basis_mat_inv(y)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
-  num = map_entries(kx,A*den)
-  R = residue_ring(kx, den, cached = false)[1]
+  num = map_entries(kx, A*den)
+  R = residue_ring(kx, den; cached = false)[1]
   M = map_entries(R, num)
-  v = matrix(R, 1, degree(parent(x)), coordinates(x))
+  # coordinates(x) are in base field: lift through O.R
+  coords = map(c -> numerator(c, kx), coordinates(x))
+  v = matrix(R, 1, degree(parent(x)), coords)
   #mul!(v, v, M) This didn't work
   v = v*M
   return iszero(v)

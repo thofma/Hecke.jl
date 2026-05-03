@@ -130,7 +130,25 @@ function Base.denominator(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T
   return (copy ? deepcopy(x.den) : x.den)::elem_type(T)
 end
 
+################################################################################
+#
+#  Containment
+#
+################################################################################
 
+function Base.in(x::FieldElem, A::GenOrdFracIdl)
+  O = order(A)
+  @req parent(x) === field(O) "Element must be in field(order(A))"
+  # x is in I/d iff d*x is in I (and integral)
+  # note that den lives in the order ring, which lies in the base field
+  K  = field(O)
+  den = K(base_field(K)(denominator(A; copy = false)))
+  y = x * den
+  dy = integral_split(y, O)[2]
+  return isone(dy) && O(y; check = false) in numerator(A; copy = false)
+end
+
+Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 
 ################################################################################
 #
@@ -312,11 +330,17 @@ end
 #
 ################################################################################
 
-function ==(A::GenOrdFracIdl, B::GenOrdFracIdl)
-  D = inv(B)
-  E = prod(A, D)
-  C = simplify(E)
+function ==(A::GenOrdFracIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
+  C = simplify(A * inv(B))
   return isone(denominator(C; copy = false)) && isone(norm(C))
+end
+
+function ==(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T}
+  return A == fractional_ideal(B)
+end
+
+function ==(A::GenOrdIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
+  return fractional_ideal(A) == B
 end
 
 function Base.hash(A::GenOrdFracIdl, h::UInt)
