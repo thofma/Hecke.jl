@@ -349,44 +349,26 @@ end
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
 
 
-function Hecke.colon(a::GenOrdIdl, b::GenOrdIdl)
-
+function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must lie in the same order"
   O = order(a)
-  n = degree(O)
-  if isdefined(b, :gens)
-    B = b.gens
-  else
-    B = basis(b)
-  end
-
+  Kt = base_field(field(O))
+  B = basis(b)
   bmatinv = basis_mat_inv(a, copy = false)
 
-  R = base_ring(bmatinv)
+  # For each generator b_i of b, compute (mult-by-b_i) * A^{-1} = M_i / d_i,
+  #   and concatenate the M_i side-by-side into one matrix m with common denominator d.
+  mult_matrix(x) = change_base_ring(Kt, representation_matrix(x)) * bmatinv
+  base_num_den = [integral_split(mult_matrix(b_i), coefficient_ring(O)) for b_i in B]
+  d = reduce(lcm, (den for (_, den) in base_num_den))
+  m = reduce(hcat, (num * div(d, den) for (num, den) in base_num_den))
 
-  n = change_base_ring(R, representation_matrix(B[1]))*bmatinv
-  m, d = integral_split(n, coefficient_ring(O))
-  for i in 2:length(B)
-    n = change_base_ring(R, representation_matrix(B[i]))*bmatinv
-    mm, dd = integral_split(n, coefficient_ring(O))
-    l = lcm(dd, d)
-    if l == d && l == dd
-      m = hcat(m, mm)
-    elseif l == d
-      m = hcat(m, div(d, dd)*mm)
-    elseif l == dd
-      m = hcat(div(dd, d)*m, mm)
-      d = dd
-    else
-      m = hcat(m*div(l, d), mm*div(l, dd))
-      d = l
-    end
-  end
-  m = transpose(m)
-  m = hnf(m)
-  # m is upper right HNF
-  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b = inv(divexact(change_base_ring(base_field(field(O)), m), base_field(field(O))(d)))
-  return GenOrdFracIdl(O, b)
+  # m is shape n x (n*|B|). HNF on its transpose gives a basis in the first n rows
+  #   so we transpose back to columns.
+  m = transpose(sub(hnf(transpose(m)), 1:degree(O), 1:degree(O)))
+  # Lift, divide by d, invert: that's (a:b) as a fractional ideal.
+  basis_mat = inv(divexact(change_base_ring(Kt, m), Kt(d)))
+  return GenOrdFracIdl(O, basis_mat)
 end
 
 # If I is not coprime to the conductor of O in the maximal order, then this might
