@@ -46,23 +46,11 @@ residue field modulo `d` is used.
 """
 function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   if is_prime
-    x = residue_field(parent(d), d)
-    if isa(x, Tuple)
-      R, mR = x
-    else
-      R = x
-      mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
-    end
+    R, mR = residue_field(parent(d), d)
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
-    x = residue_ring(parent(d), d)
-    if isa(x, Tuple)
-      R, mR = x
-    else
-      R = x
-      mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
-    end
+    R, mR = residue_ring(parent(d), d)
     H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
   end
   H = vcat(H, d*identity_matrix(parent(d), ncols(M)))
@@ -127,6 +115,10 @@ end
 
 function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
+end
+
+function base_field_type(::Type{Generic.FunctionField{T}}) where T <: FieldElement
+  return Generic.RationalFunctionField{T, poly_type(T)}
 end
 
 #######################################################################

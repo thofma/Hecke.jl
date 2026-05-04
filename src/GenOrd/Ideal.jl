@@ -51,6 +51,23 @@ Hecke.order(a::GenOrdIdl) = a.order
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function Base.deepcopy_internal(I::GenOrdIdl{S, T}, dict::IdDict) where {S, T}
+  J = GenOrdIdl(order(I))
+  for f in fieldnames(typeof(I))
+    f === :order && continue
+    if isdefined(I, f)
+      setfield!(J, f, Base.deepcopy_internal(getfield(I, f), dict))
+    end
+  end
+  return J
+end
+
+################################################################################
+#
 #  Hash
 #
 ################################################################################
@@ -332,44 +349,26 @@ end
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
 
 
-function Hecke.colon(a::GenOrdIdl, b::GenOrdIdl)
-
+function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must lie in the same order"
   O = order(a)
-  n = degree(O)
-  if isdefined(b, :gens)
-    B = b.gens
-  else
-    B = basis(b)
-  end
-
+  Kt = base_field(field(O))
+  B = basis(b)
   bmatinv = basis_mat_inv(a, copy = false)
 
-  R = base_ring(bmatinv)
+  # For each generator b_i of b, compute (mult-by-b_i) * A^{-1} = M_i / d_i,
+  #   and concatenate the M_i side-by-side into one matrix m with common denominator d.
+  mult_matrix(x) = change_base_ring(Kt, representation_matrix(x)) * bmatinv
+  base_num_den = [integral_split(mult_matrix(b_i), coefficient_ring(O)) for b_i in B]
+  d = reduce(lcm, (den for (_, den) in base_num_den))
+  m = reduce(hcat, (num * div(d, den) for (num, den) in base_num_den))
 
-  n = change_base_ring(R, representation_matrix(B[1]))*bmatinv
-  m, d = integral_split(n, coefficient_ring(O))
-  for i in 2:length(B)
-    n = change_base_ring(R, representation_matrix(B[i]))*bmatinv
-    mm, dd = integral_split(n, coefficient_ring(O))
-    l = lcm(dd, d)
-    if l == d && l == dd
-      m = hcat(m, mm)
-    elseif l == d
-      m = hcat(m, div(d, dd)*mm)
-    elseif l == dd
-      m = hcat(div(dd, d)*m, mm)
-      d = dd
-    else
-      m = hcat(m*div(l, d), mm*div(l, dd))
-      d = l
-    end
-  end
-  m = transpose(m)
-  m = hnf(m)
-  # m is upper right HNF
-  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b = inv(divexact(change_base_ring(base_ring(field(O)), m), base_field(field(O))(d)))
-  return GenOrdFracIdl(O, b)
+  # m is shape n x (n*|B|). HNF on its transpose gives a basis in the first n rows
+  #   so we transpose back to columns.
+  m = transpose(sub(hnf(transpose(m)), 1:degree(O), 1:degree(O)))
+  # Lift, divide by d, invert: that's (a:b) as a fractional ideal.
+  basis_mat = inv(divexact(change_base_ring(Kt, m), Kt(d)))
+  return GenOrdFracIdl(O, basis_mat)
 end
 
 # If I is not coprime to the conductor of O in the maximal order, then this might
@@ -392,11 +391,7 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
     return A
   end
   O = order(A)
-  if isa(b, KInftyElem)
-    b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyRingElem)
-    b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  end
+  b = _make_canonical_in(O, b)
   bm = divexact(basis_matrix(A), b)
   B = GenOrdIdl(O, bm)
   if false && has_basis_mat_inv(A)
@@ -444,13 +439,7 @@ function assure_has_minimum(A::GenOrdIdl)
       den = lcm(den, denominator(s[i]//d))
     end
 
-    if isa(den, KInftyElem)
-      A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-    elseif isa(den, PolyRingElem)
-      A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
-    else
-      A.minimum = den
-    end
+    A.minimum = _make_canonical_in(O, den)
   end
 
   return nothing
@@ -476,16 +465,7 @@ function assure_has_norm(A::GenOrdIdl)
     return nothing
   end
 
-  O = order(A)
-  b = det(basis_matrix(A; copy = false))
-  if isa(b, KInftyElem)
-    A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyRingElem)
-    A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  else
-    A.norm = b
-  end
-
+  A.norm = _make_canonical_in(order(A), det(basis_matrix(A; copy = false)))
   return nothing
 end
 
@@ -642,7 +622,7 @@ function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
     newA = GenOrdFracIdl(beta*A,p.gen_one)
     while is_integral(newA)
       e += 1
-      newA = GenOrdFracIdl(numerator(beta*newA),p.gen_one)
+      newA = GenOrdFracIdl(numerator(beta*newA; copy = false), p.gen_one)
     end
   else
     newA = Hecke.colon(A,p)
@@ -695,14 +675,8 @@ function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(
 end
 
 function Hecke.pradical(O::GenOrd, p::RingElem)
-  t = residue_field(parent(p), p)
+  R, mR = residue_field(parent(p), p)
 
-  if isa(t, Tuple)
-    R, mR = t
-  else
-    R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
-  end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
     @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
@@ -934,8 +908,7 @@ end
 Returns whether $x$ is contained in $y$.
 """
 function in(x::GenOrdElem, y::GenOrdIdl)
-  O = order(y)
-  parent(x) !== order(y) && error("Order of element and ideal must be equal")
+  @req parent(x) === order(y) "Both element and ideal must come from the same order"
   return containment_by_matrices(x, y)
 end
 
@@ -943,10 +916,12 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   A = basis_mat_inv(y)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
-  num = map_entries(kx,A*den)
-  R = residue_ring(kx, den, cached = false)[1]
+  num = map_entries(kx, A*den)
+  R = residue_ring(kx, den; cached = false)[1]
   M = map_entries(R, num)
-  v = matrix(R, 1, degree(parent(x)), coordinates(x))
+  # coordinates(x) are in base field: lift through O.R
+  coords = map(c -> numerator(c, kx), coordinates(x))
+  v = matrix(R, 1, degree(parent(x)), coords)
   #mul!(v, v, M) This didn't work
   v = v*M
   return iszero(v)
