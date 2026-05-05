@@ -456,4 +456,16 @@
     @test is_pure(V, G)
     @test has_complement(V, G)[1]
   end
+
+  let # cyclic
+    for G in [abelian_group([]), abelian_group([2]), abelian_group([2, 3])]
+      @test is_cyclic(G)
+      g = cyclic_generator(G)
+      @test order(g) == order(G)
+    end
+    for G in [abelian_group([2, 2]), abelian_group([2, 4, 6])]
+      @test !is_cyclic(G)
+      @test_throws ArgumentError cyclic_generator(G)
+    end
+  end
 end
