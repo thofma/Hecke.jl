@@ -568,6 +568,9 @@ end
 #
 #  Riemann-Roch computation
 #
+#  implements Riemann-Roch computation from Hess'
+#  "Computing Riemann-Roch Spaces in Algebraic Function Fields and Related Topics"
+#
 ################################################################################
 @doc raw"""
     riemann_roch_space(D::Divisor) -> Vector{FunFieldElem}
@@ -576,44 +579,73 @@ Return a basis of the Riemann-Roch space L(D).
 """
 function riemann_roch_space(D::Divisor)
   I_fin, I_inf = ideals(D)
-  J_fin = inv(I_fin)
-  J_inf = inv(I_inf)
-
-  F = function_field(D)
-  return _riemann_roch_space(J_fin, J_inf, F)
+  return _riemann_roch_space(inv(I_fin), inv(I_inf), function_field(D))
 end
 
+# we have two functions: _riemann_roch_space to compute Riemann-Roch space itself
+#   and _riemann_roch_dim to compute its dimension
+# Their inputs are:
+#   J_fin is the inverse of the finite ideal
+#   J_inf is the inverse of the infinite ideal
+#   F is the ambient function field
 
-#J_fin is inverse of finite ideal
-#J_inf is inverse of infinite ideal
-#F is functionfield
+# common setup for Riemann-Roch
+function _riemann_roch_common_setup(basis_fin, basis_inf)
+  # express basis_fin in terms of basis_inf
+  B_fin = matrix(map(coordinates, basis_fin))
+  B_inf = matrix(map(coordinates, basis_inf))
+  M = solve(B_inf, B_fin; side = :left)
+
+  # clear denominators
+  d = mapreduce(denominator, lcm, M)
+
+  return change_base_ring(parent(d), d*M), degree(d)
+end
+
+# computes the basis of the Riemann-Roch space
 function _riemann_roch_space(J_fin, J_inf, F)
-
   x = gen(base_ring(F))
   n = degree(F)
 
-  basis_gens = basis(J_fin)
+  basis_fin = basis(J_fin)
+  basis_inf = basis(J_inf)
+  dM, d_deg = _riemann_roch_common_setup(basis_fin, basis_inf)
 
-  B_fin = matrix(map(coordinates, basis_gens))
-  B_inf = matrix(map(coordinates, basis(J_inf)))
+  # weak Popov reduction of dM (no denominators)
+  T, U = weak_popov_with_transform(dM)
 
-  M = solve(B_inf, B_fin; side = :left)
-  d = lcm(vec(map(denominator,collect(M))))
-  d_deg = degree(d)
-  Mnew = change_base_ring(parent(d), d*M)
-
-  T, U = weak_popov_with_transform(Mnew)
-
-  basis_gens = change_base_ring(F, U) * basis(J_fin)
+  # v_i in Hess paper
+  basis_gens = change_base_ring(F, U) * basis_fin
 
   RR_basis = elem_type(F)[]
-  for i in (1:n)
-    d_i = maximum(map(degree, T[i,1:n]))
-    for j in (0: - d_i + d_deg)
-      push!(RR_basis, x^(j) * basis_gens[i])
+  for i in 1:n
+    d_i = maximum(degree(T[i, k]) for k in 1:n)
+    g = basis_gens[i]
+    for _ in 0:(d_deg - d_i)
+      push!(RR_basis, g)
+      g = x*g # this is x^j * basis_gens[i] for j = 0 .. d_deg - d_i
     end
   end
   return RR_basis
+end
+
+# computes the dimension of the Riemann-Roch space
+function _riemann_roch_dim(J_fin, J_inf, F)
+  n = degree(F)
+
+  dM, d_deg = _riemann_roch_common_setup(basis(J_fin), basis(J_inf))
+
+  # we need only weak Popov form itself, without transform
+  T = weak_popov(dM)
+
+  # same as above, but instead of constructing basis vectors we just count them
+  dim = 0
+  for i in 1:n
+    d_i = maximum(degree(T[i, k]) for k in 1:n)
+    dim += max(0, d_deg - d_i + 1)
+  end
+
+  return dim
 end
 
 @doc raw"""
@@ -622,7 +654,8 @@ end
 Return the dimension l(D) of the Riemann-Roch space L(D).
 """
 function dimension(D::Divisor)
-  return length(riemann_roch_space(D))
+  I_fin, I_inf = ideals(D)
+  return _riemann_roch_dim(inv(I_fin), inv(I_inf), function_field(D))
 end
 
 @doc raw"""
@@ -635,7 +668,6 @@ function index_of_speciality(D::Divisor)
   F = function_field(D)
   @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
 
-  K = canonical_divisor(F)
-  return length(riemann_roch_space(K - D))
+  return dimension(canonical_divisor(F) - D)
 end
 

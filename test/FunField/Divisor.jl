@@ -176,6 +176,8 @@ import Hecke: divisor
 
       @test trivial_divisor(F) == 0 * D1
       @test degree(trivial_divisor(F)) == 0
+      @test 1 == length(@inferred riemann_roch_space(trivial_divisor(F)))
+      @test 1 == @inferred dimension(trivial_divisor(F))
 
       D = 3*D3 - D1
       Do = @inferred divisor(inv(p1), p3^3)
@@ -186,12 +188,15 @@ import Hecke: divisor
 
       #Elliptic curve group law
       @test is_principal(D1 + D2 - 2*D3)
+      @test 1 == length(@inferred riemann_roch_space(D1 + D2 - 2*D3))
+      @test 1 == @inferred dimension(D1 + D2 - 2*D3)
+
       @test is_zero(D - D)
 
       @test D == Do
-      @test 3 == @inferred valuation(D, p3)
+      @test  3 == @inferred valuation(D, p3)
       @test -1 == @inferred valuation(D, p1)
-      @test 0 == @inferred valuation(D, p2)
+      @test  0 == @inferred valuation(D, p2)
 
       @test 2 == @inferred degree(D)
 
@@ -203,7 +208,8 @@ import Hecke: divisor
       @test (D + D2 > D)
 
       L = @inferred riemann_roch_space(DD)
-      @test length(L) == 6
+      @test 6 == length(L)
+      @test 6 == @inferred dimension(DD)
 
       for f in L
         @test is_effective(divisor(f) + DD)
@@ -222,6 +228,7 @@ import Hecke: divisor
       Df = different_divisor(F)
       @test degree(Df) == 4
       @test 0 == @inferred dimension(Df - 6*divisor(p3))
+      @test 0 == length(@inferred riemann_roch_space(Df - 6*divisor(p3)))
       @test 2 == @inferred index_of_speciality(Df-6*divisor(p3))
 
       KF = canonical_divisor(F)
