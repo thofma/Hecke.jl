@@ -510,3 +510,10 @@ end
   T2 = torsion_quadratic_module(QQ[2//5 0; 0 2//5])
   @test first(is_isometric_with_isometry(T1, T2; as_bilinear_module=true))
 end
+  
+@testset "Torsion subgroups" begin
+  L = rescale(root_lattice(:A, 4), 18)
+  q = discriminant_group(L)
+  @test first(torsion_subgroup(q, 2)) == first(primary_part(q, 2))
+  @test iszero(gram_matrix_quadratic(first(torsion_subgroup(q, 3))))
+end

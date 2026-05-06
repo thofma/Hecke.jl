@@ -46,23 +46,11 @@ residue field modulo `d` is used.
 """
 function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
   if is_prime
-    x = residue_field(parent(d), d)
-    if isa(x, Tuple)
-      R, mR = x
-    else
-      R = x
-      mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
-    end
+    R, mR = residue_field(parent(d), d)
     r, h = rref(map_entries(mR, M))
     H = map_entries(x->preimage(mR, x), h[1:r, :])
   else
-    x = residue_ring(parent(d), d)
-    if isa(x, Tuple)
-      R, mR = x
-    else
-      R = x
-      mR = MapFromFunc(parent(d), R, x->R(x), x->lift(x))
-    end
+    R, mR = residue_ring(parent(d), d)
     H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
   end
   H = vcat(H, d*identity_matrix(parent(d), ncols(M)))
@@ -129,6 +117,10 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
+function base_field_type(::Type{Generic.FunctionField{T}}) where T <: FieldElement
+  return Generic.RationalFunctionField{T, poly_type(T)}
+end
+
 #######################################################################
 #
 # support for ZZ
@@ -181,13 +173,16 @@ Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
 # support for RationalFunctionFieldElem{T}
 #
 #######################################################################
-# RationalFunctionFieldElem{T}, KInftyRing{T}
 
-Base.denominator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[2]
+function Base.denominator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}}
+  return Hecke.integral_split(x, R)[2]
+end
 
-Base.numerator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T} = Hecke.integral_split(x, R)[1]
+function Base.numerator(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}}
+  return Hecke.integral_split(x, R)[1]
+end
 
-function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T}, R::KInftyRing{T}) where {T}
+function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T,U}, R::KInftyRing{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}}
   if iszero(x)
     return zero(R), one(R)
   end
@@ -200,7 +195,7 @@ function Hecke.integral_split(x::AbstractAlgebra.Generic.RationalFunctionFieldEl
   return R(x*t^(b-a)), R(t^(b-a))
 end
 
-(R::Generic.RationalFunctionField{T})(x::KInftyElem{T}) where {T <: FieldElem} = x.d
+(R::Generic.RationalFunctionField{T,U})(x::KInftyElem{T,U}) where {T<:FieldElement, U<:PolyRingElem{T}} = x.d
 
 # RationalFunctionFieldElem{T}, PolyRing{T}
 function Hecke.numerator(a::Generic.RationalFunctionFieldElem{T}, S::PolyRing{T}) where {T}
@@ -226,6 +221,20 @@ function Hecke.factor(R::S, a::Generic.RationalFunctionFieldElem{T}) where {T, S
   end
   u = divexact(unit(f1), unit(f2))
   return Fac(u, Nemo._pretty_sort!(arr))
+end
+
+#######################################################################
+#
+# support for AbsSimpleNumFieldElem{T}
+#
+#######################################################################
+
+function Hecke.numerator(a::AbsSimpleNumFieldElem, O::GenOrd)
+  return integral_split(a, O)[1]
+end
+
+function Hecke.denominator(a::AbsSimpleNumFieldElem, O::GenOrd)
+  return integral_split(a, O)[2]
 end
 
 ########################################################################

@@ -1082,6 +1082,37 @@ function torsion_subgroup(G::FinGenAbGroup, add_to_lattice::Bool = true,
   return sub(G, subs, add_to_lattice, L)
 end
 
+@doc raw"""
+    torsion_subgroup(G::FinGenAbGroup, n::IntegerUnion) -> FinGenAbGroup, Map
+
+Return the ``n``-torsion subgroup of ``G``, i.e. the subgroup of ``G``
+consisting of elements of order dividing ``n``.
+
+# Examples
+```jldoctest
+julia> A = abelian_group([3, 9, 27])
+Z/3 x Z/9 x Z/27
+
+julia> torsion_subgroup(A, 3)
+((Z/3)^3, Map: (Z/3)^3 -> A)
+```
+"""
+function torsion_subgroup(
+  G::FinGenAbGroup,
+  n::IntegerUnion,
+  add_to_lattice::Bool = true,
+  L::GrpAbLattice = GroupLattice,
+)
+  f = FinGenAbGroupHom(G, G, ZZ(n)*identity_matrix(ZZ, ngens(G)))
+  K, j = kernel(f, false)
+  S, jj = snf(K)
+  jj *= j
+  if add_to_lattice
+    append!(L, jj)
+  end
+  return S, jj
+end
+
 ################################################################################
 #
 #  Is free
@@ -1606,6 +1637,29 @@ Return whether $G$ is cyclic.
 """
 function is_cyclic(G::FinGenAbGroup)
   return length(elementary_divisors(G)) <= 1
+end
+
+function _is_cyclic_with_generator(G::FinGenAbGroup)
+  if ngens(G) == 0
+    return true, zero(G)
+  end
+  if ngens(G) == 1
+    return true, gen(G, 1)
+  end
+  S, StoG = snf(G)
+  if ngens(S) == 0
+    return true, zero(G)
+  end
+  if ngens(S) == 1
+    return true, StoG(gen(S, 1))
+  end
+  return false, zero(G)
+end
+
+function cyclic_generator(G::FinGenAbGroup)
+  fl, g = _is_cyclic_with_generator(G)
+  @req fl "Group is not cyclic"
+  return g
 end
 
 ################################################################################

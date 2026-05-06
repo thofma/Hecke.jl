@@ -1,20 +1,19 @@
 import Hecke: divisor
 
 @testset "Divisors" begin
-
   @testset "Basic Operations" begin
     for base_field in [QQ, finite_field(2, 4)[1], finite_field(101)[1]]
       kx, x = rational_function_field(base_field, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
 
       F, a = function_field(y^3 - x^3 - 1; cached = false)
-      Ofin = finite_maximal_order(F)
-      Oinf = infinite_maximal_order(F)
+      Ofin = @inferred finite_maximal_order(F)
+      Oinf = @inferred infinite_maximal_order(F)
 
-      p1, _ = first(factor(ideal(Ofin, x-1)))
+      p1, _ = first(@inferred factor(ideal(Ofin, x-1)))
       p2    = ideal(Ofin, x^2+x+1)
       p3    = ideal(Ofin, x-3, Ofin(a+3))
-      p4, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
+      p4, _ = first(@inferred factor(ideal(Oinf, base_ring(Oinf)(1//x))))
 
       d1, d2, d3, d4 = divisor.((p1, p2, p3, p4))
       Hecke.assure_has_support.((d1, d2, d3, d4))
@@ -73,6 +72,31 @@ import Hecke: divisor
     end
   end
 
+  @testset "Degree" begin
+    kx, x = rational_function_field(GF(2), :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+
+    F, a = function_field(y^3 - x - 1; cached = false)
+    Ofin = @inferred finite_maximal_order(F)
+    Oinf = @inferred infinite_maximal_order(F)
+
+    I = ideal(Oinf, 1//(x^2+x+1))
+    fac = @inferred factor(I)
+    @test length(fac) == 1
+    P, e = first(fac)   # e = 6, f = 1
+    @test e == 6
+    @test 6 == @inferred degree(divisor(I))
+    @test 1 == @inferred degree(divisor(P))
+
+    I = ideal(Ofin, x^2+x+1)
+    fac = @inferred factor(I)
+    @test length(fac) == 1
+    P, e = first(fac)   # e = 1, f = 3
+    @test e == 1
+    @test 6 == @inferred degree(divisor(I))
+    @test 6 == @inferred degree(divisor(P))
+  end
+
   @testset "Not Separable Extension" begin
     k = finite_field(3; cached = false)[1]
     kx, x = rational_function_field(k, :x; cached = false)
@@ -100,7 +124,8 @@ import Hecke: divisor
       ky, y = polynomial_ring(kx, :y; cached = false)
       for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^17 - 1]
         F, a = function_field(poly; cached = false)
-        Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
+        Ofin = @inferred finite_maximal_order(F)
+        Oinf = @inferred infinite_maximal_order(F)
 
         g = genus(F)
         CD = canonical_divisor(F)
@@ -134,8 +159,8 @@ import Hecke: divisor
       kx, x = rational_function_field(QQ, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       F, a = function_field(y^2 - x^3 - 1; cached = false)
-      Ofin = finite_maximal_order(F)
-      Oinf = infinite_maximal_order(F)
+      Ofin = @inferred finite_maximal_order(F)
+      Oinf = @inferred infinite_maximal_order(F)
 
       p1 = @inferred ideal(Ofin, x-2, Ofin(a - 3))
       p2 = @inferred ideal(Ofin, x-2, Ofin(a + 3))
@@ -202,15 +227,14 @@ import Hecke: divisor
       KF = canonical_divisor(F)
       @test 0 == @inferred degree(KF)
       @test 1 == @inferred genus(F)
-
     end
 
     @testset "Algebraic function field over rationals (2)" begin
       kx, x = rational_function_field(QQ, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       F, a = function_field(y^4 - 3*y + x^6 +x^2 - 1; cached = false)
-      Ofin = finite_maximal_order(F)
-      Oinf = infinite_maximal_order(F)
+      Ofin = @inferred finite_maximal_order(F)
+      Oinf = @inferred infinite_maximal_order(F)
 
       p1 = @inferred ideal(Ofin, x-2)
 
@@ -246,6 +270,5 @@ import Hecke: divisor
       for df in L
         @test is_effective(divisor(df.f) + KF)
       end
-
     end
 end

@@ -1,17 +1,3 @@
-fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl(h)
-
-function fractional_ideal(O::GenOrd, M::MatElem)
-  @assert base_ring(M) == base_ring(function_field(O))
-  return GenOrdFracIdl(O, M)
-end
-
-function Base.isone(A::GenOrdFracIdl)
-  A = simplify(A)
-  return isone(denominator(A)) && isone(numerator(A))
-end
-
-
-
 ################################################################################
 #
 #  Fractional Ideals
@@ -22,8 +8,20 @@ Hecke.order(a::GenOrdFracIdl) = a.order
 
 function_field(a::GenOrdFracIdl) = a.order.F
 
-function AbstractAlgebra.iszero(x::GenOrdFracIdl)
-  return iszero(numerator(x))
+fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl(h)
+
+function fractional_ideal(O::GenOrd, M::MatElem)
+  @assert base_ring(M) == base_ring(function_field(O))
+  return GenOrdFracIdl(O, M)
+end
+
+function is_one(A::GenOrdFracIdl)
+  A = simplify(A)
+  return is_one(denominator(A; copy = false)) && is_one(numerator(A; copy = false))
+end
+
+function is_zero(x::GenOrdFracIdl)
+  return is_zero(numerator(x; copy = false))
 end
 
 ################################################################################
@@ -35,11 +33,11 @@ end
 
 function show(io::IO, id::GenOrdFracIdl)
   if isdefined(id, :num) && isdefined(id, :den)
-    print(io, "1//(", denominator(id, copy = false), ") * ")
-    print(io, numerator(id, copy = false))
+    print(io, "1//(", denominator(id; copy = false), ") * ")
+    print(io, numerator(id; copy = false))
   else
     print(io, "Fractional ideal of ",id.order ," with basis matrix\n")
-    print(io, basis_matrix(id, copy = false))
+    print(io, basis_matrix(id; copy = false))
   end
 end
 
@@ -59,7 +57,7 @@ function assure_has_basis_matrix(a::GenOrdFracIdl)
 
   k = base_field(function_field(order(a)))
 
-  a.basis_matrix = divexact(change_base_ring(k, basis_matrix(numerator(a, copy = false))), k(denominator(a)))
+  a.basis_matrix = divexact(change_base_ring(k, basis_matrix(numerator(a; copy = false))), k(denominator(a)))
   return nothing
 end
 
@@ -122,9 +120,9 @@ function assure_has_numerator_and_denominator(a::GenOrdFracIdl{S, T}) where {S, 
   return nothing
 end
 
-function Base.numerator(x::GenOrdFracIdl; copy::Bool = true)
+function Base.numerator(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T}
   assure_has_numerator_and_denominator(x)
-  return x.num
+  return (copy ? deepcopy(x.num) : x.num)::GenOrdIdl{S, T}
 end
 
 function Base.denominator(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T}
@@ -132,7 +130,25 @@ function Base.denominator(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T
   return (copy ? deepcopy(x.den) : x.den)::elem_type(T)
 end
 
+################################################################################
+#
+#  Containment
+#
+################################################################################
 
+function Base.in(x::FieldElem, A::GenOrdFracIdl)
+  O = order(A)
+  @req parent(x) === field(O) "Element must be in field(order(A))"
+  # x is in I/d iff d*x is in I (and integral)
+  # note that den lives in the order ring, which lies in the base field
+  K  = field(O)
+  den = K(base_field(K)(denominator(A; copy = false)))
+  y = x * den
+  dy = integral_split(y, O)[2]
+  return isone(dy) && O(y; check = false) in numerator(A; copy = false)
+end
+
+Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 
 ################################################################################
 #
@@ -142,8 +158,8 @@ end
 
 
 function Base.prod(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
-  A = numerator(a)*numerator(b)
-  return GenOrdFracIdl(A, denominator(a)*denominator(b))
+  A = numerator(a; copy = false)*numerator(b; copy = false)
+  return GenOrdFracIdl(A, denominator(a; copy = false)*denominator(b; copy = false))
 end
 
 function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
@@ -218,7 +234,7 @@ function Hecke.simplify(A::GenOrdFracIdl)
   end
 
   b = basis_matrix(A.num)
-  g = gcd(denominator(A), content(b))
+  g = gcd(denominator(A; copy = false), content(b))
 
   if g != 1
     A.num = divexact(A.num, g)
@@ -238,7 +254,7 @@ Hecke.is_integral(I::GenOrdIdl) = true
 
 function Hecke.is_integral(I::GenOrdFracIdl)
   simplify(I)
-  return denominator(I) == 1
+  return is_one(denominator(I; copy = false))
 end
 
 ################################################################################
@@ -248,12 +264,12 @@ end
 ################################################################################
 
 function Base.:*(A::GenOrdIdl, B::GenOrdFracIdl)
-  z = GenOrdFracIdl(A*numerator(B, copy = false), denominator(B))
-  return z
+  return GenOrdFracIdl(A*numerator(B; copy = false), denominator(B; copy = false))
 end
 
-Base.:*(A::GenOrdFracIdl, B::GenOrdIdl) = GenOrdFracIdl(numerator(A, copy = false)*B, denominator(A))
-
+function Base.:*(A::GenOrdFracIdl, B::GenOrdIdl)
+  return GenOrdFracIdl(numerator(A; copy = false)*B, denominator(A; copy = false))
+end
 
 function Base.:*(x::GenOrdElem, y::GenOrdFracIdl)
   #parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
@@ -286,9 +302,26 @@ function norm(A::GenOrdFracIdl)
   if isdefined(A, :norm)
     return deepcopy(A.norm)
   else
-    A.norm = norm(numerator(A, copy = false))//denominator(A, copy = false)^degree(order(A))
+    A.norm = norm(numerator(A; copy = false))//denominator(A; copy = false)^degree(order(A))
     return deepcopy(A.norm)
   end
+end
+
+################################################################################
+#
+#  Copy
+#
+################################################################################
+
+function Base.deepcopy_internal(I::GenOrdFracIdl{S, T}, dict::IdDict) where {S, T}
+  J = GenOrdFracIdl(order(I))
+  for f in fieldnames(typeof(I))
+    f === :order && continue
+    if isdefined(I, f)
+      setfield!(J, f, Base.deepcopy_internal(getfield(I, f), dict))
+    end
+  end
+  return J
 end
 
 ################################################################################
@@ -297,11 +330,17 @@ end
 #
 ################################################################################
 
-function ==(A::GenOrdFracIdl, B::GenOrdFracIdl)
-  D = inv(B)
-  E = prod(A, D)
-  C = simplify(E)
-  return isone(denominator(C, copy = false)) && isone(norm(C))
+function ==(A::GenOrdFracIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
+  C = simplify(A * inv(B))
+  return isone(denominator(C; copy = false)) && isone(norm(C))
+end
+
+function ==(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T}
+  return A == fractional_ideal(B)
+end
+
+function ==(A::GenOrdIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
+  return fractional_ideal(A) == B
 end
 
 function Base.hash(A::GenOrdFracIdl, h::UInt)
@@ -319,8 +358,8 @@ function Hecke.colon(I::GenOrdFracIdl, J::GenOrdFracIdl)
   # \{ x \in K | xJ \subseteq I \} = \{ x \in K | xcb \subseteq da \}
 
   O = order(I)
-  II = numerator(I, copy = false)*O(denominator(J, copy = false))
-  JJ = numerator(J, copy = false)*O(denominator(I, copy = false))
+  II = numerator(I; copy = false)*O(denominator(J; copy = false))
+  JJ = numerator(J; copy = false)*O(denominator(I; copy = false))
   return Hecke.colon(II, JJ)
 end
 
@@ -349,8 +388,8 @@ function Hecke.factor(A::GenOrdFracIdl)
   O = A.order
   N = numerator(norm(A)) * denominator(norm(A))
 
-  A_num = numerator(A)
-  A_den = ideal(O, denominator(A))
+  A_num = numerator(A; copy = false)
+  A_den = ideal(O, denominator(A; copy = false))
 
   factors = factor(N)
   primes = Dict{GenOrdIdl,Int}()
@@ -368,7 +407,7 @@ end
 
 function Hecke.valuation(A::GenOrdFracIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = A.order
-  A_num = numerator(A)
-  A_den = ideal(O, denominator(A))
+  A_num = numerator(A; copy = false)
+  A_den = ideal(O, denominator(A; copy = false))
   return valuation(A_num, p) - valuation(A_den, p)
 end
