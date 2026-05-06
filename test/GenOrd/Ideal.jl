@@ -282,7 +282,7 @@
     K, a = number_field(x^2 - 2, :a)
 
     @testset "split (p = 7)" begin
-      R = Hecke.localization(ZZ, 7)
+      R = Hecke.localization(ZZ, 7; cached = false)
       OK = integral_closure(R, K)
 
       check_ideal_norm_min(ideal(OK, R(7)),             R(49), R(7))
@@ -300,7 +300,7 @@
     end
 
     @testset "inert (p = 3)" begin
-      R = Hecke.localization(ZZ, 3)
+      R = Hecke.localization(ZZ, 3; cached = false)
       OK = integral_closure(R, K)
 
       check_ideal_norm_min(ideal(OK, R(3)), R(9), R(3))
@@ -311,7 +311,7 @@
     end
 
     @testset "ramified (p = 2)" begin
-      R = Hecke.localization(ZZ, 2)
+      R = Hecke.localization(ZZ, 2; cached = false)
       OK = integral_closure(R, K)
 
       check_ideal_norm_min(ideal(OK, R(2)),          R(4), R(2))

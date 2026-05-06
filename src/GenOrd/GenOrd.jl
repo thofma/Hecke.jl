@@ -550,21 +550,25 @@ end
 #
 ################################################################################
 
-function trace_matrix(O::GenOrd)
-  return trace_matrix(basis(O))
-end
+trace_matrix(O::GenOrd) = _trace_matrix(O, base_ring(O), identity)
+trace_matrix(b::Vector{<:GenOrdElem}) = _trace_matrix(b, base_ring(b[1]), identity)
 
-function trace_matrix(b::Vector{<:GenOrdElem})
-  O = parent(b[1])
-  m = zero_matrix(base_ring(O), length(b), length(b))
-  for i=1:length(b)
-    m[i, i] = trace(b[i]*b[i])
-    for j=i+1:length(b)
-      m[i, j] = m[j, i] = trace(b[i]*b[j])
+# Build the trace matrix directly over R, applying f to each entry.
+# Used to materialise the trace matrix in a residue field / coefficient field
+#   without an extra map_entries pass.
+function _trace_matrix(b::Vector{<:GenOrdElem}, R::Ring, f)
+  n = length(b)
+  m = zero_matrix(R, n, n)
+  for i = 1:n
+    m[i, i] = f(trace(b[i]*b[i]))
+    for j = i+1:n
+      m[i, j] = m[j, i] = f(trace(b[i]*b[j]))
     end
   end
   return m
 end
+
+_trace_matrix(O::GenOrd, R::Ring, f) = _trace_matrix(basis(O), R, f)
 
 function trace_matrix(b::Vector{<:GenOrdElem}, c::Vector{<:GenOrdElem}, exp::ZZRingElem = ZZRingElem(1))
   O = parent(b[1])
@@ -797,14 +801,11 @@ end
 
 #in char 0 and small char: rad = {x : Tr(xO) in pR} perfect field
 function radical_basis_trace(O::GenOrd, p::RingElem)
-  T = trace_matrix(O)
   R, mR = residue_field(parent(p), p)
-
-  TT = map_entries(mR, T)
-  B = kernel(TT; side = :right)
+  T = _trace_matrix(O, R, mR)
+  B = kernel(T; side = :right)
   M2 = transpose(map_entries(x->preimage(mR, x), B))
-  M3 = Hecke.hnf_modular(M2, p, true)
-  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  return Hecke.hnf_modular(M2, p, true)
 end
 
 #pos. char, non-perfect (residue) field
@@ -892,21 +893,13 @@ function different(O::GenOrd)
 end
 
 @doc raw"""
-    codifferent(R::AbsNumFieldOrder) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    codifferent(O::GenOrd) -> GenOrdFracIdl
 
-The codifferent ideal of $R$, i.e. the trace-dual of $R$.
+The codifferent ideal of $O$, i.e. the trace-dual of $O$.
 """
 function codifferent(O::GenOrd)
-   B = basis(O)
-   R = base_ring(O.F)
-   n = degree(O)
-   mat_entries = elem_type(R)[]
-   for u in B
-     for v in B
-       push!(mat_entries, R(trace(u*v)))
-     end
-   end
-  return fractional_ideal(O, inv(matrix(R, n, n, mat_entries)))
+  K = base_field(O.F)
+  return fractional_ideal(O, inv(_trace_matrix(O, K, K)))
 end
 
 ###############################################################################
