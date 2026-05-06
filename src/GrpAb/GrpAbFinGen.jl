@@ -1639,6 +1639,29 @@ function is_cyclic(G::FinGenAbGroup)
   return length(elementary_divisors(G)) <= 1
 end
 
+function _is_cyclic_with_generator(G::FinGenAbGroup)
+  if ngens(G) == 0
+    return true, zero(G)
+  end
+  if ngens(G) == 1
+    return true, gen(G, 1)
+  end
+  S, StoG = snf(G)
+  if ngens(S) == 0
+    return true, zero(G)
+  end
+  if ngens(S) == 1
+    return true, StoG(gen(S, 1))
+  end
+  return false, zero(G)
+end
+
+function cyclic_generator(G::FinGenAbGroup)
+  fl, g = _is_cyclic_with_generator(G)
+  @req fl "Group is not cyclic"
+  return g
+end
+
 ################################################################################
 #
 #  p-Sylow subgroup

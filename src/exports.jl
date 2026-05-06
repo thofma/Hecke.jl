@@ -263,6 +263,7 @@ export crt_inv
 export crt_signed
 export cycle
 export cyclic_algebra
+export cyclic_generator
 export cyclotomic_extension
 export cyclotomic_field
 export cyclotomic_field_as_cm_extension
