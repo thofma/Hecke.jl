@@ -1082,6 +1082,37 @@ function torsion_subgroup(G::FinGenAbGroup, add_to_lattice::Bool = true,
   return sub(G, subs, add_to_lattice, L)
 end
 
+@doc raw"""
+    torsion_subgroup(G::FinGenAbGroup, n::IntegerUnion) -> FinGenAbGroup, Map
+
+Return the ``n``-torsion subgroup of ``G``, i.e. the subgroup of ``G``
+consisting of elements of order dividing ``n``.
+
+# Examples
+```jldoctest
+julia> A = abelian_group([3, 9, 27])
+Z/3 x Z/9 x Z/27
+
+julia> torsion_subgroup(A, 3)
+((Z/3)^3, Map: (Z/3)^3 -> A)
+```
+"""
+function torsion_subgroup(
+  G::FinGenAbGroup,
+  n::IntegerUnion,
+  add_to_lattice::Bool = true,
+  L::GrpAbLattice = GroupLattice,
+)
+  f = FinGenAbGroupHom(G, G, ZZ(n)*identity_matrix(ZZ, ngens(G)))
+  K, j = kernel(f, false)
+  S, jj = snf(K)
+  jj *= j
+  if add_to_lattice
+    append!(L, jj)
+  end
+  return S, jj
+end
+
 ################################################################################
 #
 #  Is free

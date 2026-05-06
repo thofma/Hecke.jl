@@ -502,3 +502,10 @@ end
   phi = @inferred hom(q, q2, elem_type(q2)[])
   @test is_injective(phi)
 end
+
+@testset "Torsion subgroups" begin
+  L = rescale(root_lattice(:A, 4), 18)
+  q = discriminant_group(L)
+  @test first(torsion_subgroup(q, 2)) == first(primary_part(q, 2))
+  @test iszero(gram_matrix_quadratic(first(torsion_subgroup(q, 3))))
+end
