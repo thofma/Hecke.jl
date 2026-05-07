@@ -487,7 +487,7 @@ end
 #
 ################################################################################
 
-function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = false) where {T}
+function ring_of_multipliers(O::GenOrd{S, T}, I::MatElem{P}, p::P, is_prime::Bool = false) where {S, T, P}
   #TODO: modular big hnf, peu-a-peu, not all in one
   @vprintln :AbsNumFieldOrder 2 "ring of multipliers module $p (is_prime: $is_prime) of ideal with basis matrix $I"
   II, d = pseudo_inv(I)
@@ -496,30 +496,39 @@ function ring_of_multipliers(O::GenOrd, I::MatElem{T}, p::T, is_prime::Bool = fa
   m = reduce(hcat, [divexact(representation_matrix(O(vec(collect(I[i, :]))))*II, d) for i=1:nrows(I)])
   m = transpose(m)
 
-  if is_prime
-    R, mR = residue_field(parent(p), p)
-    ref = M -> rref(M)[2]
-  else
-    R, mR = residue_ring(parent(p), p)
-    ref = hnf
-  end
-  m = map_entries(mR, m)
+  mm = is_prime ? _ring_of_multipliers_reduce_prime(m, p, degree(O)) :
+                  _ring_of_multipliers_reduce_nonprime(m, p, degree(O))
+  H = hnf_modular(mm, p, is_prime)
 
-  n = degree(O)
-  mm = ref(m[1:n, 1:n])
-  for i=2:n
-    mm = vcat(mm, ref(m[(i-1)*n+1:i*n, 1:n]))
-    mm = ref(mm)
+  @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
+  return GenOrd(O, transpose(Hi), d, check = false)::GenOrd{S, T}
+end
+
+# ring_of_multipliers function-barrier helpers: it fixes the return type
+function _ring_of_multipliers_reduce_prime(m::M, p, n) where {M <: MatElem}
+  _, mR = residue_field(parent(p), p)
+
+  mp = map_entries(mR, m)
+  mm = rref(mp[1:n, 1:n])[2]
+  for i = 2:n
+    mm = rref(vcat(mm, rref(mp[(i-1)*n+1:i*n, 1:n])[2]))[2]
     @assert iszero(mm[n+1:end, :])
     mm = mm[1:n, 1:n]
   end
-#  H = hnf(map_entries(x->preimage(mR, x), mm))
-  H = hnf_modular(map_entries(x->preimage(mR, x), mm), p, is_prime)
+  return map_entries(x -> preimage(mR, x), mm)::typeof(m)
+end
 
-  @vtime :AbsNumFieldOrder 2 Hi, d = pseudo_inv(H)
+function _ring_of_multipliers_reduce_nonprime(m::M, p, n) where {M <: MatElem}
+  _, mR = residue_ring(parent(p), p)
 
-  O = GenOrd(O, transpose(Hi), d, check = false)
-  return O
+  mp = map_entries(mR, m)
+  mm = hnf(mp[1:n, 1:n])
+  for i = 2:n
+    mm = hnf(vcat(mm, hnf(mp[(i-1)*n+1:i*n, 1:n])))
+    @assert iszero(mm[n+1:end, :])
+    mm = mm[1:n, 1:n]
+  end
+  return map_entries(x -> preimage(mR, x), mm)::typeof(m)
 end
 
 function ring_of_multipliers(O::GenOrd, I::MatElem)
@@ -589,27 +598,29 @@ end
 
 function Hecke.pmaximal_overorder(O::GenOrd, p::RingElem, is_prime::Bool = false)
   @vprintln :AbsNumFieldOrder 1 "computing a $p-maximal overorder"
+  R, _ = residue_field(parent(p), p)
 
-  R, mR = residue_field(parent(p), p)
-
-#  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
     @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
-    rad = radical_basis_trace
+    return _pmaximal_overorder_radical(O, p, is_prime, radical_basis_trace)
   elseif isa(R, Generic.RationalFunctionField)
     @vprintln :AbsNumFieldOrder 1 "non-perfect case for radical for $p"
-    rad = radical_basis_power_non_perfect
+    return _pmaximal_overorder_radical(O, p, is_prime, radical_basis_power_non_perfect)
   else
     @vprintln :AbsNumFieldOrder 1 "using radical-by-power for $p"
-    rad = radical_basis_power
+    return _pmaximal_overorder_radical(O, p, is_prime, radical_basis_power)
   end
+end
+
+# Function-barrier helper: F will be a concrete type here
+function _pmaximal_overorder_radical(O::GenOrd, p::RingElem, is_prime::Bool, rad::F) where {F}
   while true #TODO: check the discriminant to maybe skip the last iteration
     I = rad(O, p)
-    S = ring_of_multipliers(O, I, p, is_prime)
-    if discriminant(O) == discriminant(S)
+    Onew = ring_of_multipliers(O, I, p, is_prime)
+    if discriminant(O) == discriminant(Onew)
       return O
     end
-    O = S
+    O = Onew
   end
 end
 
@@ -800,10 +811,10 @@ function radical_basis_power(O::GenOrd, p::RingElem)
 end
 
 #in char 0 and small char: rad = {x : Tr(xO) in pR} perfect field
-function radical_basis_trace(O::GenOrd, p::RingElem)
+function radical_basis_trace(O::GenOrd{S, T}, p::RingElem) where {S, T}
   R, mR = residue_field(parent(p), p)
-  T = _trace_matrix(O, R, mR)
-  B = kernel(T; side = :right)
+  M = _trace_matrix(O, R, mR)
+  B = kernel(M; side = :right)
   M2 = transpose(map_entries(x->preimage(mR, x), B))
   return Hecke.hnf_modular(M2, p, true)
 end

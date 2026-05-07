@@ -51,7 +51,7 @@ end
 
   # for every r in the radical Tr(r * basis(O)) is in pR
   function check_radical_basis_trace(O, p)
-    M = Hecke.radical_basis_trace(O, p)
+    M = @inferred Hecke.radical_basis_trace(O, p)
     n = degree(O)
 
     _, mR = residue_field(parent(p), p)
@@ -129,5 +129,113 @@ end
 
     fac = collect(factor(discriminant(O)))
     check_radical_basis_trace(O, fac[1][1])
+  end
+end
+
+@testset "pmaximal_overorder" begin
+  function check_p_maximal(O, Op, p)
+    # runtime type check (we will do @inferred in tests, so just to be safe)
+    @test Op isa typeof(O)
+
+    # Op contains O (overorder property)
+    for b in basis(O)
+      @test b in Op
+    end
+
+    # disc(Op) divides disc(O)
+    @test iszero(mod(discriminant(O), discriminant(Op)))
+
+    # Idempotent at p: applying pmaximal again is a no-op
+    @test discriminant(Hecke.pmaximal_overorder(Op, p, true)) == discriminant(Op)
+  end
+
+  @testset "number field (trace-radical)" begin
+    x = gen(Hecke.Globals.Qx)
+    K, _ = number_field(x^2 - 18, :a; cached = false)
+    # maximal order: Z[sqrt(2)]
+    # equation order: Z[3*sqrt(2)] has index 3 in maximal order
+    O = order(ZZ, K)
+    @assert discriminant(O) == 72   # = 9 · 8
+
+    Op = @inferred Hecke.pmaximal_overorder(O, ZZ(3), true)
+    check_p_maximal(O, Op, ZZ(3))
+    @test discriminant(Op) == 8     # 72 / 3^2 = 8 (= disc Q(sqrt(2)))
+
+    Op_np = @inferred Hecke.pmaximal_overorder(O, ZZ(3), false)
+    check_p_maximal(O, Op_np, ZZ(3))
+    @test discriminant(Op_np) == 8
+  end
+
+  @testset "number field 2 (radical-by-power)" begin
+    x = gen(Hecke.Globals.Qx)
+    K, _ = number_field(x^2 - 12, :a; cached = false)
+    # maximal order: Z[sqrt(3)]
+    # equation order: Z[2*sqrt(3)] has index 2 in maximal order
+    O = order(ZZ, K)
+    @assert discriminant(O) == 48     # = 4 · 12
+
+    Op = @inferred Hecke.pmaximal_overorder(O, ZZ(2), true)
+    check_p_maximal(O, Op, ZZ(2))
+    @test discriminant(Op) == 12      # 48 / 2^2 = 12 (= disc Q(sqrt(3)))
+
+    Op_np = @inferred Hecke.pmaximal_overorder(O, ZZ(2), false)
+    check_p_maximal(O, Op_np, ZZ(2))
+    @test discriminant(Op_np) == 12
+  end
+
+  @testset "function field over Q(t) (trace-radical)" begin
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    f = y^2 - x^2*(x + 1)           # disc = 4*x^2*(x+1)
+    L, _ = function_field(f; cached = false)
+
+    Zx = parent(numerator(x))
+    O = Hecke.GenOrd(Zx, L)
+    p = gen(Zx)                     # prime = x
+
+    Op = @inferred Hecke.pmaximal_overorder(O, p, true)
+    check_p_maximal(O, Op, p)
+    # the x^2 factor in the equation-order discriminant goes away
+    @test  iszero(mod(discriminant(O),  p^2))
+    @test !iszero(mod(discriminant(Op), p^2))
+
+    # TODO: results in
+    #   function divrem is not implemented for arguments
+    #   EuclideanRingResidueRingElem{QQPolyRingElem}: 1
+    #   EuclideanRingResidueRingElem{QQPolyRingElem}: 1
+
+    # Op_np = @inferred Hecke.pmaximal_overorder(O, p, false)
+    # check_p_maximal(O, Op_np, p)
+    # @test !iszero(mod(discriminant(Op_np), p^2))
+  end
+
+  @testset "function field over F_2(x) (radical-by-power)" begin
+    kx, x = rational_function_field(GF(2), :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    f = y^3 + x*y + x^2             # disc = x^4, non-maximal equation order
+    L, _ = function_field(f; cached = false)
+
+    Zx = parent(numerator(x))
+    O = Hecke.GenOrd(Zx, L)
+
+    fac = collect(factor(discriminant(O)))
+    p = fac[1][1]
+
+    # discriminant Op is x^2
+    Op = @inferred Hecke.pmaximal_overorder(O, p, true)
+    check_p_maximal(O, Op, p)
+    @test  iszero(mod(discriminant(O),  p^4))
+    @test !iszero(mod(discriminant(Op), p^4))
+    @test  iszero(mod(discriminant(Op), p^2))
+
+    # TODO: results in
+    #   function divrem is not implemented for arguments
+    #   EuclideanRingResidueRingElem{QQPolyRingElem}: 1
+    #   EuclideanRingResidueRingElem{QQPolyRingElem}: 1
+
+    # Op_np = @inferred Hecke.pmaximal_overorder(O, p, false)
+    # check_p_maximal(O, Op_np, p)
+    # @test !iszero(mod(discriminant(Op_np), p^4))
+    # @test  iszero(mod(discriminant(Op_np), p^2))
   end
 end
