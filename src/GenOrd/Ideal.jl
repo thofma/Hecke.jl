@@ -8,7 +8,9 @@ ideal(O::GenOrd, a::RingElement, b::RingElement) = GenOrdIdl(O, a, b)
 
 ideal(O::GenOrd, a::RingElement) = GenOrdIdl(O, a)
 
-ideal(O::GenOrd, a::MatElem) = GenOrdIdl(O, a)
+function ideal(O::GenOrd, M::MatElem)
+  return GenOrdIdl(O, hnf(M, :lowerleft))
+end
 
 function AbstractAlgebra.zero(a::GenOrdIdl)
   O = a.order
@@ -49,6 +51,23 @@ Hecke.order(a::GenOrdIdl) = a.order
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function Base.deepcopy_internal(I::GenOrdIdl{S, T}, dict::IdDict) where {S, T}
+  J = GenOrdIdl(order(I))
+  for f in fieldnames(typeof(I))
+    f === :order && continue
+    if isdefined(I, f)
+      setfield!(J, f, Base.deepcopy_internal(getfield(I, f), dict))
+    end
+  end
+  return J
+end
+
+################################################################################
+#
 #  Hash
 #
 ################################################################################
@@ -81,9 +100,9 @@ function show(io::IO, id::GenOrdIdl)
   if isdefined(id, :princ_gen)
     print(io, "\nPrincipal generator ", id.princ_gen)
   end
-   if isdefined(id, :basis_matrix)
-     print(io, "\nBasis_matrix \n", id.basis_matrix)
-   end
+  if isdefined(id, :basis_matrix)
+    print(io, "\nBasis_matrix \n", id.basis_matrix)
+  end
 end
 
 
@@ -167,15 +186,15 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = representation_matrix(A.princ_gen)
+    A.basis_matrix = hnf(representation_matrix(A.princ_gen), :lowerleft)
     return nothing
   end
 
   @hassert :AbsNumFieldOrder 1 has_2_elem(A)
 
-  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]),:lowerleft)
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]), :lowerleft)
   d = ncols(V)
-  A.basis_matrix = V[d+1:2*d,1:d]
+  A.basis_matrix = V[d+1:2*d, 1:d]
   return nothing
 end
 
@@ -330,44 +349,26 @@ end
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
 
 
-function Hecke.colon(a::GenOrdIdl, b::GenOrdIdl)
-
+function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must lie in the same order"
   O = order(a)
-  n = degree(O)
-  if isdefined(b, :gens)
-    B = b.gens
-  else
-    B = basis(b)
-  end
-
+  Kt = base_field(field(O))
+  B = basis(b)
   bmatinv = basis_mat_inv(a, copy = false)
 
-  R = base_ring(bmatinv)
+  # For each generator b_i of b, compute (mult-by-b_i) * A^{-1} = M_i / d_i,
+  #   and concatenate the M_i side-by-side into one matrix m with common denominator d.
+  mult_matrix(x) = change_base_ring(Kt, representation_matrix(x)) * bmatinv
+  base_num_den = [integral_split(mult_matrix(b_i), coefficient_ring(O)) for b_i in B]
+  d = reduce(lcm, (den for (_, den) in base_num_den))
+  m = reduce(hcat, (num * div(d, den) for (num, den) in base_num_den))
 
-  n = change_base_ring(R, representation_matrix(B[1]))*bmatinv
-  m, d = integral_split(n, coefficient_ring(O))
-  for i in 2:length(B)
-    n = change_base_ring(R, representation_matrix(B[i]))*bmatinv
-    mm, dd = integral_split(n, coefficient_ring(O))
-    l = lcm(dd, d)
-    if l == d && l == dd
-      m = hcat(m, mm)
-    elseif l == d
-      m = hcat(m, div(d, dd)*mm)
-    elseif l == dd
-      m = hcat(div(dd, d)*m, mm)
-      d = dd
-    else
-      m = hcat(m*div(l, d), mm*div(l, dd))
-      d = l
-    end
-  end
-  m = transpose(m)
-  m = hnf(m)
-  # m is upper right HNF
-  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b = inv(divexact(change_base_ring(base_ring(field(O)), m), base_field(field(O))(d)))
-  return GenOrdFracIdl(O, b)
+  # m is shape n x (n*|B|). HNF on its transpose gives a basis in the first n rows
+  #   so we transpose back to columns.
+  m = transpose(sub(hnf(transpose(m)), 1:degree(O), 1:degree(O)))
+  # Lift, divide by d, invert: that's (a:b) as a fractional ideal.
+  basis_mat = inv(divexact(change_base_ring(Kt, m), Kt(d)))
+  return GenOrdFracIdl(O, basis_mat)
 end
 
 # If I is not coprime to the conductor of O in the maximal order, then this might
@@ -390,11 +391,7 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
     return A
   end
   O = order(A)
-  if isa(b, KInftyElem)
-    b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyRingElem)
-    b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  end
+  b = _make_canonical_in(O, b)
   bm = divexact(basis_matrix(A), b)
   B = GenOrdIdl(O, bm)
   if false && has_basis_mat_inv(A)
@@ -428,20 +425,21 @@ function assure_has_minimum(A::GenOrdIdl)
   end
 
   O = order(A)
-  M = basis_matrix(A, copy = false)
-  d = prod([M[i, i] for i = 1:nrows(M)])
-  v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
-  fl, s = can_solve_with_solution(M, v, side = :left)
-  @assert fl
-  den = denominator(s[1]//d)
-  for i = 2:ncols(s)
-    den = lcm(den, denominator(s[i]//d))
-  end
 
-  if isa(den, KInftyElem)
-    A.minimum = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(den))//denominator(den))
-  elseif isa(den, PolyRingElem)
-    A.minimum = Hecke.AbstractAlgebra.MPolyFactor.make_monic(den)
+  if isone(basis(O, copy = false)[1])
+    A.minimum = deepcopy(basis_matrix(A, copy = false)[1, 1])
+  else
+    M = basis_matrix(A, copy = false)
+    d = prod([M[i, i] for i = 1:nrows(M)])
+    v = transpose(matrix(map(base_ring(O), coordinates(O(d)))))
+    fl, s = can_solve_with_solution(M, v, side = :left)
+    @assert fl
+    den = denominator(s[1]//d)
+    for i = 2:ncols(s)
+      den = lcm(den, denominator(s[i]//d))
+    end
+
+    A.minimum = _make_canonical_in(O, den)
   end
 
   return nothing
@@ -467,35 +465,7 @@ function assure_has_norm(A::GenOrdIdl)
     return nothing
   end
 
-  O = order(A)
-
-  if isdefined(A, :basis_matrix)
-    b = det(basis_matrix(A))
-    if isa(b, KInftyElem)
-      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
-    return nothing
-  end
-
-  if has_princ_gen(A)
-    b = det(basis_matrix(A))
-    if isa(b, KInftyElem)
-      A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
-    return nothing
-  end
-
-  assure_has_basis_matrix(A)
-  b = det(basis_matrix(A))
-  if isa(b, KInftyElem)
-    A.norm = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-  elseif isa(b, PolyRingElem)
-    A.norm = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-  end
+  A.norm = _make_canonical_in(order(A), det(basis_matrix(A; copy = false)))
   return nothing
 end
 
@@ -595,36 +565,54 @@ function Hecke.index(O::GenOrd)
   return is_equation_order(O) ? O.R(1) : O.R(det(basis_matrix_inverse(O)))
 end
 
-function prime_dec_nonindex(O::GenOrd, p::PolyRingElem, degree_limit::Int = 0, lower_limit::Int = 0)
-  K, mK = residue_field(parent(p),p)
-  fact = factor(poly_to_residue(K, O.F.pol))
-  result = []
-  F = function_field(O)
+function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+  @req parent(p) === base_ring(O) "p must come from the base ring of O"
+
+  F = field(O)
+  B = base_field(F)
   a = gen(F)
-  for (fac, e) in fact
-    facnew = map_coefficients(y -> preimage(mK, y), fac, cached = false)
-    I = GenOrdIdl(O, p, O(facnew(a)))
-    I.is_prime = 1
+
+  K, mK = residue_field(base_ring(O), p)
+
+  fmodp = map_coefficients(defining_polynomial(O.F); cached = false) do c
+    num, den = integral_split(c, base_ring(O))
+    mK(num) // mK(den)
+  end
+  fact = factor(fmodp)
+
+  result = Vector{Tuple{GenOrdIdl{S, T}, Int}}(undef, length(fact))
+  for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
+    facnew = map_coefficients(y -> B(preimage(mK, y)), fac, cached = false)
+    b = O(facnew(a))
+    # We want a P-normal two-element presentation, i.e. v_P(b) = 1.
+    # Since we are in the case of p not dividing the index, we have a good candidate b = g(a).
+    #
+    # v_P(<p,b>) = min[v_P(p), v_P(b)] = 1.
+    # Ramified case   (e > 1): v_P(p) = e > 1, so v_P(b) = 1 is forced.
+    # Unramified case (e = 1): v_P(b) can exceed 1, in which case
+    #   v_P(b + p) = min(v_P(b), 1) = 1
+    # For other primes Q over p, v_Q(b) > 0 would give v_Q(<p, b>) > 0,
+    #   giving <p,b> subset of Q, contradicting <p, b> = P.
+    #
+    # In the unramified case we need to check if v_P(b) == 1.
+    # One possibility is to check if p*N(P) = p^{f+1} divides N(b)
+    #   and if it doesn't, we must have v_P(b) == 1.
+    # Unlike the number field case, b can be zero (single inert prime over p),
+    #   which is also covered by adding p.
+    if e == 1 && (is_zero(b) || divides(norm(b), p^(f + 1))[1])
+      b = b + O(p)
+    end
+
+    I = GenOrdIdl(O, p, b)
+    I.is_prime = 1
     I.splitting_type = e, f
     I.norm = p^f
     I.minimum = p
-    push!(result,(I,e))
+    result[i] = (I,e)
   end
   return result
 end
-
-
-function poly_to_residue(K::AbstractAlgebra.Field, poly:: AbstractAlgebra.Generic.Poly{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where T
-  if iszero(poly)
-    return zero(K)
-  else
-    P, y = polynomial_ring(K,"y")
-    coeffs = coefficients(poly)
-    return sum([K(numerator(coeffs[i]))//K(denominator(coeffs[i]))*y^i for i in (0:length(poly)-1)])
-  end
-end
-
 
 function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = order(A)
@@ -634,7 +622,7 @@ function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
     newA = GenOrdFracIdl(beta*A,p.gen_one)
     while is_integral(newA)
       e += 1
-      newA = GenOrdFracIdl(numerator(beta*newA),p.gen_one)
+      newA = GenOrdFracIdl(numerator(beta*newA; copy = false), p.gen_one)
     end
   else
     newA = Hecke.colon(A,p)
@@ -647,11 +635,11 @@ function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
 end
 
 
-function Hecke.factor(A::GenOrdIdl)
+function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
   O = A.order
   N = norm(A)
   factors = factor(N)
-  primes = Dict{GenOrdIdl,Int}()
+  primes = Dict{GenOrdIdl{S, T},Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
       p_val = valuation(A, p)
@@ -663,7 +651,7 @@ function Hecke.factor(A::GenOrdIdl)
   return primes
 end
 
-function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true)
+function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
   #Index not well-defined for infinite maximal order
   if !isa(base_ring(O), KInftyRing) && !(divides(index(O), p)[1])
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
@@ -672,9 +660,9 @@ function prime_decomposition(O::GenOrd, p::RingElem, degree_limit::Int = degree(
   end
 end
 
-function prime_dec_gen(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0)
+function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   Ip = pradical(O, p)
-  lp = _decomposition(O, GenOrdIdl(O, p), Ip, GenOrdIdl(O, one(O)), p)
+  lp = _decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), p)
   #=z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -687,14 +675,8 @@ function prime_dec_gen(O::GenOrd, p::RingElem, degree_limit::Int = degree(O), lo
 end
 
 function Hecke.pradical(O::GenOrd, p::RingElem)
-  t = residue_field(parent(p), p)
+  R, mR = residue_field(parent(p), p)
 
-  if isa(t, Tuple)
-    R, mR = t
-  else
-    R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
-  end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
     @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
@@ -709,14 +691,15 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   return GenOrdIdl(O,rad(O,p))
 end
 
-function _decomposition(O::GenOrd, I::GenOrdIdl, Ip::GenOrdIdl, T::GenOrdIdl, p::RingElem)
+# WARNING: TI is unused. I guess the idea is to keep signature same as AbsNumField case
+function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, TI::GenOrdIdl{S, T}, p::RingElem) where {S, T}
   #I is an ideal lying over p
   #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = StructureConstantAlgebra(O, Ip1, p)
   AtoO = pseudo_inv(OtoA)
-  ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+  ideals, _ = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   for j in 1:length(ideals)
     P = ideals[j][1]
     f = P.splitting_type[2]
@@ -846,17 +829,24 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    degree(P::GenOrdIdl) -> Int
+    inertia_degree(P::GenOrdIdl) -> Int
+
+The inertia degree of the prime-ideal $P$.
+"""
 function degree(P::GenOrdIdl)
   @assert is_prime(P)
-  @assert P.splitting_type != [-1,-1]
-  deg_min = degree(minimum(P))
-  O = order(P)
-  if O == infinite_maximal_order(function_field(O))
-    deg_min = -deg_min
-  end
-  return P.splitting_type[2]*deg_min
+  return P.splitting_type[2]
 end
 
+inertia_degree(P::GenOrdIdl) = degree(P)
+
+@doc raw"""
+    ramification_index(P::GenOrdIdl) -> Int
+
+The ramification index of the prime-ideal $P$.
+"""
 function ramification_index(P::GenOrdIdl)
   @assert is_prime(P)
   return P.splitting_type[1]
@@ -918,8 +908,7 @@ end
 Returns whether $x$ is contained in $y$.
 """
 function in(x::GenOrdElem, y::GenOrdIdl)
-  O = order(y)
-  parent(x) !== order(y) && error("Order of element and ideal must be equal")
+  @req parent(x) === order(y) "Both element and ideal must come from the same order"
   return containment_by_matrices(x, y)
 end
 
@@ -927,10 +916,12 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   A = basis_mat_inv(y)
   den = lcm(collect(map(denominator, A)))
   kx = base_ring(order(y))
-  num = map_entries(kx,A*den)
-  R = residue_ring(kx, den, cached = false)[1]
+  num = map_entries(kx, A*den)
+  R = residue_ring(kx, den; cached = false)[1]
   M = map_entries(R, num)
-  v = matrix(R, 1, degree(parent(x)), coordinates(x))
+  # coordinates(x) are in base field: lift through O.R
+  coords = map(c -> numerator(c, kx), coordinates(x))
+  v = matrix(R, 1, degree(parent(x)), coords)
   #mul!(v, v, M) This didn't work
   v = v*M
   return iszero(v)

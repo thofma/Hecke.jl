@@ -1,8 +1,8 @@
 @attributes mutable struct GenOrd{S, T} <: Ring
   F::S
   R::T
-  trans#::dense_matrix_type(elem_type(S))
-  itrans#::dense_matrix_type(elem_type(S))
+  trans  #::dense_matrix_type(elem_type(base_field_type(S)))
+  itrans #::dense_matrix_type(elem_type(base_field_type(S)))
   is_equation_order::Bool
 
   function GenOrd(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
@@ -60,8 +60,8 @@
       r.trans = T
       r.itrans = Ti
     else
-      r.trans = T*O.trans
-      r.itrans = O.itrans*Ti
+      r.trans = T*basis_matrix(O)
+      r.itrans = basis_matrix_inverse(O)*Ti
     end
     check && map(representation_matrix, basis(r))
     return r
@@ -123,7 +123,7 @@ end
     r.is_prime = 0
     r.is_zero = 0
     r.is_principal = 0
-    r.splitting_type = (-1, -1)
+    r.splitting_type = (0, 0)
     return r
   end
 
@@ -167,7 +167,7 @@ end
   function GenOrdIdl(O::GenOrd, T::Vector{<:GenOrdElem})
     @assert all(x -> parent(x) === O, T)
     # One should do this block by block instead of the big matrix
-    V = hnf(reduce(vcat, [representation_matrix(O) for x in T]), :lowerleft)
+    V = hnf(reduce(vcat, [representation_matrix(x) for x in T]), :lowerleft)
     d = ncols(V)
     n = length(T)
     return GenOrdIdl(O, V[((n - 1)*d + 1):(n*d), :])
@@ -199,13 +199,8 @@ end
     z = new{S, T}()
     O = order(a)
     z.order = O
-    if isa(b, KInftyElem)
-      b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
     z.num = a
-    z.den = b
+    z.den = _make_canonical_in(O, b)
     return z
   end
 
