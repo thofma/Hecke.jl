@@ -901,6 +901,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   invariant_vectors = ZZMatrix[]
   isotypical_coinvariant_projections = Tuple{QQMatrix, QQMatrix,Int}[]
   F = reduce(vcat, fundamental_roots)
+  root_perp = kernel(gram_matrix(L)*transpose(F);side=:left)
   P = saturate(F)
   # probably the following can be replaced by
   # D = solve(P, F; side=:left)
@@ -931,16 +932,19 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   sorted_keysD = sort!(collect(keys(D)))
   # TODO: compute all projections in one go
   # by assembling a basis [[invariant_vectors_k,isotypic_cofix_k] for all k , part orthogonal to the root sublattice]
+  isotypic_cofix_spaces = QQMatrix[]
   for k in sorted_keysD
     (t, d) = k
     isotypic = reduce(vcat, D[k])
     inv_vec = _invariant_vectors(t...)
     invariant_vectors_k = sum([[t*f for t in inv_vec] for f in D[k]])
-
-    M = isotypic*gram_matrix(L)*transpose(reduce(vcat, invariant_vectors_k))
+    invariant_vectors_k_mat = reduce(vcat, invariant_vectors_k)
+    M = isotypic*gram_matrix(L)*transpose(invariant_vectors_k_mat)
     isotypic_cofix_space = kernel(M, side= :left)*isotypic
-    isotypic_lattice = lattice_in_same_ambient_space(L, isotypic)
+
+    #=
     if get_assertion_level(:Lattice) > 1
+      isotypic_lattice = lattice_in_same_ambient_space(L, isotypic)
       isotypic_cofix_lattice1 = basis_matrix(orthogonal_submodule(isotypic_lattice, QQ.(reduce(vcat, invariant_vectors_k))))
       @assert rref(isotypic_cofix_lattice1)==rref(isotypic_cofix_space)
     end
@@ -948,8 +952,28 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     if !iszero(to_isotypic_cofix)
       push!(isotypical_coinvariant_projections, (isotypic_cofix_space, to_isotypic_cofix,nrows(isotypic_cofix_space)))
     end
+    =#
     append!(invariant_vectors, invariant_vectors_k)
+    push!(isotypic_cofix_spaces, isotypic_cofix_space)
   end
+  B = reduce(vcat, vcat([QQ.(i) for i in invariant_vectors],isotypic_cofix_spaces, [root_perp]))
+  Binv = inv(B)
+  # assemble the projections
+  a = sum(nrows.(invariant_vectors); init=0) + 1
+  for i in 1:length(isotypic_cofix_spaces)
+    b = a + nrows(isotypic_cofix_spaces[i])-1
+    pr_i = view(Binv, :,a:b)*view(B, a:b,:)
+    a = b + 1
+    space_i = isotypic_cofix_spaces[i]
+    rk_i = nrows(space_i)
+    if rk_i > 0
+      push!(isotypical_coinvariant_projections, (space_i, pr_i, rk_i))
+    end
+  end
+
+
+
+
   gramZ,_ = _integral_split_gram(L)
   x = zero_matrix(ZZ, 1, ncols(gramZ))
   y = transpose(x)
