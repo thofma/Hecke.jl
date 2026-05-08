@@ -496,6 +496,22 @@ function is_principal(D::Divisor)
 end
 
 @doc raw"""
+    is_principal_with_data(D::Divisor) -> Bool, FunFieldElem
+
+Tests if $D$ is principal and returns $(\mathtt{true}, f)$ if $D = \langle f \rangle$ or $(\mathtt{false}, 1)$ otherwise.
+"""
+function is_principal_with_data(D::Divisor)
+  F = function_field(D)
+
+  degree(D) == 0 || return (false, one(F))
+
+  RR = riemann_roch_space(D)
+  length(RR) == 1 || return (false, one(F))
+
+  return (true, inv(RR[1]))
+end
+
+@doc raw"""
     is_zero(D::Divisor) -> Bool
 
 Return true if D is the trivial divisor.

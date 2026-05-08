@@ -155,6 +155,64 @@ import Hecke: divisor
     end
   end
 
+  @testset "principal with generator: ellcrv" begin
+    function check_principal(D, expected_gen)
+      @test is_principal(D)
+      ok, f = @inferred is_principal_with_data(D)
+      @test ok
+      @test divisor(f) == D                         # witness generates D
+      @test is_zero(divisor(f * inv(expected_gen))) # witness is equivalent to expected_gen
+    end
+
+    function check_not_principal(D)
+      @test !is_principal(D)
+      ok, f = @inferred is_principal_with_data(D)
+      @test !ok
+      @test isone(f) # we document the return value, so let's keep it checked
+    end
+
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    F, a = function_field(y^2 - x^3 - 1; cached = false)   # E: y^2 = x^3 + 1
+    Ofin = finite_maximal_order(F)
+    Oinf = infinite_maximal_order(F)
+
+    point_divisor(X, Y) = divisor(ideal(Ofin, x - X, Ofin(a - Y)))
+    D1, D2 = point_divisor(0, 1), point_divisor(0, -1)  # order 3
+    D3, D4 = point_divisor(2, 3), point_divisor(2, -3)  # order 6
+    D5 = point_divisor(-1, 0)                           # order 2
+
+    p_inf, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
+    D6 = divisor(p_inf)                                 # infinity
+
+    for D in (D1, D2, D3, D4, D5, D6) # single-point divisors are non-principal
+      check_not_principal(D)
+    end
+
+    # x - 2 = 0 hits E at (2, 3), (2, -3) and twice at infinity.
+    D = D3 + D4 - 2*D6
+    @test degree(D) == 0
+    check_principal(D, F(x - 2))
+
+    # x + 1 = 0 hits E at (-1, 0) with multiplicity 2 and twice at infinity.
+    D = 2*D5 - 2*D6
+    @test degree(D) == 0
+    check_principal(D, F(x + 1))
+
+    # y = x + 1 meets E at (0, 1), (2, 3), (-1, 0)
+    D = D1 + D3 + D5 - 3*D6
+    @test degree(D) == 0
+    check_principal(D, a - F(x) - 1)
+
+    D = D3 - D6
+    @test degree(D) == 0
+    check_not_principal(D)
+
+    D = D1 + D3 - 2*D6
+    @test degree(D) == 0
+    check_not_principal(D)
+  end
+
     @testset "Algebraic function field over rationals (1)" begin
       kx, x = rational_function_field(QQ, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
