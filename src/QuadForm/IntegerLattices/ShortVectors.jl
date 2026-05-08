@@ -1488,7 +1488,6 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   # overflow is no problem ... then we just do a few useless computations, i.e. new_invariant_subspace gets a zero row.
   new_invariant_subspace = zero_matrix(ZZ, 0, invariant_subspace_rank) # keeps track of what is new
   T = zero_matrix(ZZ, rank(projL[1]), 0)
-  w0 = invariant_subspace_rank
   flag_projection = proj[1]
   tmpZZ = ZZ()
   short_vectors1 = Dict{Vector{CoeffType},Vector{VectorType}}()
@@ -1513,6 +1512,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   end
   k = length(proj)
   w = length(target_norms[1]) - (k-1)
+  w0 = w-1
   zeroCoeff = zero(CoeffType)
   #flag_projection = deepcopy(proj[1]) # changed inplace later
   for i in 2:k
