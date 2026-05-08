@@ -215,12 +215,6 @@ import Hecke: divisor
         @test is_effective(divisor(f) + DD)
       end
 
-      D_z = zero_divisor(F(x-3))
-      D_p = pole_divisor(F(x-3))
-      @test is_effective(D_z)
-      @test !is_effective(D)
-      @test (D_z - D_p) == divisor(F(x-3))
-
       @test F == function_field(D)
       Dfin, Dinf = ideals(D)
       @test divisor(Dfin) + divisor(Dinf) == D
@@ -234,6 +228,20 @@ import Hecke: divisor
       KF = canonical_divisor(F)
       @test 0 == @inferred degree(KF)
       @test 1 == @inferred genus(F)
+
+      let D = divisor(F(x-3))
+        D_z = @inferred zero_divisor(F(x-3))
+        D_p = @inferred pole_divisor(F(x-3))
+        @test is_effective(D_z)
+        @test is_effective(D_p)
+        @test D == D_z - D_p
+
+        D_z = @inferred zero_divisor(D)
+        D_p = @inferred pole_divisor(D)
+        @test is_effective(D_z)
+        @test is_effective(D_p)
+        @test D == D_z - D_p
+      end
     end
 
     @testset "Algebraic function field over rationals (2)" begin

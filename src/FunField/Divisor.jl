@@ -85,8 +85,8 @@ function zero_divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
   F = parent(f)
 
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
-  f_num, f_denom = integral_split(f, Ofin)
-  g_num, g_denom = integral_split(f, Oinf)
+  f_num, _ = integral_split(f, Ofin)
+  g_num, _ = integral_split(f, Oinf)
 
   return divisor(ideal(Ofin, f_num), ideal(Oinf, g_num))
 end
@@ -100,8 +100,8 @@ function pole_divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
   F = parent(f)
 
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
-  f_num, f_denom = integral_split(f, Ofin)
-  g_num, g_denom = integral_split(f, Oinf)
+  _, f_denom = integral_split(f, Ofin)
+  _, g_denom = integral_split(f, Oinf)
 
   return divisor(ideal(Ofin, f_denom), ideal(Oinf, g_denom))
 end
@@ -439,7 +439,7 @@ Return the divisor whose support consists exactly of all poles in the support of
 """
 function pole_divisor(D::Divisor)
   assure_has_support(D)
-  return _filter_support(D, x -> x.second < 0)
+  return -_filter_support(D, x -> x.second < 0)
 end
 
 ################################################################################
