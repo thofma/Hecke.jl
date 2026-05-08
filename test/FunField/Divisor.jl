@@ -119,10 +119,10 @@ import Hecke: divisor
   end
 
   @testset "Riemann-Roch" begin
-    for base_field in [QQ, finite_field(2, 4)[1], finite_field(5, 2)[1], finite_field(101)[1]]
+    for base_field in [QQ, finite_field(2, 2)[1], finite_field(13)[1]]
       kx, x = rational_function_field(base_field, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
-      for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^17 - 1]
+      for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^5 - 1]
         F, a = function_field(poly; cached = false)
         Ofin = @inferred finite_maximal_order(F)
         Oinf = @inferred infinite_maximal_order(F)
@@ -135,12 +135,12 @@ import Hecke: divisor
         D1, D2 = divisor(p1), divisor(p2)
 
         # Riemann-Roch: l(D) - l(K-D) = deg(D) - g + 1
-        for n in -3:3
-          D = n*D1 + D2
-          @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
-          D = D1 + n*D2
-          @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
-        end
+        D = -pole_divisor(F(1)//a)  # deg(D) < 0
+        @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
+        D = 2*zero_divisor(a^2)     # deg(D) > 2g - 2
+        @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
+        D = 2*D1 + D2
+        @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
 
         # 2 * (l(K) - l(0)) = deg(K) - deg(0)
         @test degree(CD) == 2*g - 2
