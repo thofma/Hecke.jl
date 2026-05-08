@@ -181,7 +181,12 @@ function __assert_has_automorphisms(
     else
       res, vector_set = _compress_gram_matrices!(res, vector_set)
     end
+    # try to compress to gram matrices into one
+    if length(res) == 2
+      res, vector_set = _compress_two_matrices_faithful!(res, vector_set)
+    end
   end
+
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
@@ -283,6 +288,51 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_inv
   return res, vector_set, invariants, gram_weyl_vector, weyl_group_gens, weyl_group_order
 end
 
+function _compress_two_matrices_faithful!(res, vector_set)
+  @assert length(res) == 2
+  # we try to compress res[1] and res[2], such that we are "faithful"
+  i0 = 2
+  grambound = sum(abs, res[2])
+  Sbound = maximum(i -> max(abs(i[2][1]), abs(i[2][i0])), vector_set)
+  _lambda = 8 * ZZ(Sbound)^2 * grambound + 1
+  keep_separated = false
+  # this test could be sped up
+  Gnew = _lambda * res[1] + res[i0]
+  if fits(Int, _lambda) && all(x -> fits(Int, x), Gnew)
+    bitbound = Int == Int64 ? 64 : 32
+    r = nrows(res[1])
+    nrows_nbits = nbits(r)
+    gramnbitsbound = maximum(nbits, Gnew)
+    vecnbitsbound = bitbound - gramnbitsbound - nrows_nbits - 1
+    # we want Gsmall_nbits + vectors_nbits + nrows_nbits + 1 <= bitbound
+
+    lambda = Int(_lambda)
+    # we also need to check whether the new norms fit into Int
+    lambdabits = nbits(lambda)
+    maxnbitsbound = 8 * sizeof(Int) - lambdabits - 3 #
+    for (i, (v, n)) in enumerate(vector_set)
+      wnbits = max(nbits(n[1]), nbits(n[i0]))
+      if wnbits > maxnbitsbound || (maximum(nbits, v) + 1) > vecnbitsbound
+        # norm is getting too large, abort
+        keep_separated = true
+        break
+      end
+    end
+  else
+    keep_separated = true
+  end
+  if keep_separated
+    return res, vector_set
+  end
+
+  res = [lambda * res[1] + res[i0]]
+  for (v, n) in vector_set
+    n[1] = lambda * n[1] + n[i0]
+    resize!(n, 1)
+  end
+  return res, vector_set
+end
+
 # Given gram matrices G1,...,Gn, we construct
 # - G1, a_2G_2 + ... + a_nG_n with a_i small and random, if faithful === nothing
 # - G1 + lambda * Gi0, a_2G_2 + ... + a_nG_n with a_i small and random, if faithful = i0::Int
@@ -351,10 +401,11 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector, fai
 
   # we try to compress res[1] and res[i0], such that we are "faithful"
   grambound = sum(abs, res[1])
+
   Sbound = maximum(i -> max(abs(i[2][1]), abs(i[2][i0])), vector_set)
   _lambda = 8 * ZZ(Sbound)^2 * grambound + 1
   # this test could be sped up
-  if fits(Int, _lambda) && all(x -> fits(Int, x), _lambda * res[1] + res[i0])
+  if fits(Int, _lambda) && all(x -> fits(Int, x), res[1] + _lambda * res[i0])
     lambda = Int(_lambda)
     # we also need to check whether the new norms fit into Int
     lambdabits = nbits(lambda)
