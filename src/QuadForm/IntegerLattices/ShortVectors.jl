@@ -1158,6 +1158,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   pushfirst!(proj_rank, -1) # not used
   pushfirst!(proj, proj_root_inv)
   pushfirst!(LL, R_fix)
+  @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(proj_rank[2:end]))"
   @assert length(LL) == length(proj)
   @assert length(LL) == length(proj_rank)
   w = length(grams)
@@ -1287,7 +1288,7 @@ function __search_invariant_subspaces!(D::Dict, invariant_subspace::QQMatrix, ne
       # everything invariant nothing more to do
       break
     end
-    if search_invariant_subspace && 100>length(D[k])>1 && length(Hv)<8
+    if search_invariant_subspace && 100>length(D[k])>1 && length(Hv)<5
       #_hv = _fundamental_roots!([__not_adj(i) for i in D[k]])  # breaks stuff for ZZRingElem
       _hv = _row_span!([__not_adj(i) for i in D[k]])
       hv = matrix(ZZ, _hv)
@@ -1428,7 +1429,6 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   # M_{i+1} < M_i + L_{i+1}
   # and testing for integrality
   # In the postprocessing we transform from the basis of M to the basis of L.
-
   if CoeffType === ZZRingElem
     VectorType = Vector{ZZRingElem}
   else
@@ -1439,6 +1439,9 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   n = rank(L)
   V = ambient_space(L)
   rkLL = rank.(successive_sublattices)
+  if maximum(rkLL[2:end])<8
+    search_invariant_subspace = false
+  end
   F = reduce(vcat, [basis_matrix(i) for i in successive_sublattices])
   Fi = inv(F)
   r1 = 1
@@ -1525,7 +1528,8 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     #M_i = lattice(V, flag_projection; isbasis=false, check=false)
     M_i_in_N_i = @view L_in_L1toLn[:,1:nrows(N_i)]
     #M_i_in_N_i = ZZ.(solve(N_i,basis_matrix(M_i);side=:left))
-    Sf, Uf, Vf = snf_with_transform(M_i_in_N_i)
+    hnf!(M_i_in_N_i)
+    Sf, Uf, Vf = snf_with_transform(M_i_in_N_i,false,true)
     Vf = Vf
     _eldivNi_mod_Mi = diagonal(Sf)
     n_ones = count(isone, _eldivNi_mod_Mi)
@@ -1617,8 +1621,9 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
           t in keys(D) || continue
           Dt = D[t]
           push!(t, q)
+          sv2t = short_vectors2[t]
           for b in Dt
-            push!(short_vectors2[t], __vcat(b, -tmp_s))
+            push!(sv2t, __vcat(b, -tmp_s))
           end
           pop!(t)
         end
@@ -1637,8 +1642,9 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
           iszero(t) && continue # avoid overcounting
           Dt = D[t]
           push!(t, q)
+          sv2t = short_vectors2[t]
           for b in Dt
-            push!(short_vectors2[t], __vcat(b, deepcopy(tmp_s)))
+            push!(sv2t, __vcat(b, deepcopy(tmp_s)))
           end
           pop!(t)
         end
@@ -1766,6 +1772,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   if search_invariant_subspace # stuff from search_invariant_subspaces
     A = [i*B for i in Hv]
     V = ambient_space(L)
+    # the following two lines are expensive ... merge?
     A = [1-matrix(orthogonal_projection(V, a)) for a in A]
     A = [numerator(a*gZ*transpose(a)) for a in A]
     A = filter!(!in(grams), A)

@@ -115,10 +115,9 @@ function init(
   n = nrows(C.G[1])
 
   if bound == -1
-    bound = maximum(diagonal(D.G[1]))
+    bound = maximum(abs.(diagonal(D.G[1])))
     C.max = bound
   end
-
   @assert bound > 0
   if !isempty(vector_set)
     vectors = first.(vector_set)
@@ -295,7 +294,7 @@ function try_init_small(
  )
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
   if bound == -1
-    bound = maximum(diagonal(D.G[1]))
+    bound = maximum(abs.(diagonal(D.G[1])))
     if fits(Int, bound)
       Csmall.max = Int(bound)
     else
@@ -1206,7 +1205,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
-  @vprintln :Lattice 2 "Computing automorphisms of $(C.G[1])"
+  @vprintln :Lattice 2 "Computing automorphisms of $(length(C.G)) gram matrices:  $(C.G)"
 
   D = _make_small(C)
   dim = Hecke.dim(C)

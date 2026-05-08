@@ -174,6 +174,10 @@ function __assert_has_automorphisms(
     if use_weyl && gram_weyl_vector !== nothing
       index_gram_weyl_in_res = findfirst(==(gram_weyl_vector::ZZMatrix), res)
       res, vector_set = _compress_gram_matrices!(res, vector_set, index_gram_weyl_in_res)
+      #a = 1234
+      #@assert length(res)==2
+      #res = [a*res[2]+res[1]]
+      #vector_set = [(i[1],[a*i[2][2]+i[2][1]]) for i in vector_set]
     else
       res, vector_set = _compress_gram_matrices!(res, vector_set)
     end
@@ -284,7 +288,6 @@ end
 # - G1 + lambda * Gi0, a_2G_2 + ... + a_nG_n with a_i small and random, if faithful = i0::Int
 #   such that lambda is "large enough"
 function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector, faithful = nothing)
-
   # determine the bound for the size of the gram matrix
   arangebit = 3
   arange = -2^arangebit-1:2^arangebit-1
@@ -875,6 +878,8 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   # in the sense that it defines an isometry Fix(L1_root) -> Fix(L2_root)
   # that extends to an isometry L1 -> L2
   sorted_keysD = sort!(collect(keys(D)))
+  # TODO: compute all projections in one go
+  # by assembling a basis [[invariant_vectors_k,isotypic_cofix_k] for all k , part orthogonal to the root sublattice]
   for k in sorted_keysD
     (t, d) = k
     isotypic = reduce(vcat, D[k])
@@ -923,7 +928,10 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   tmp = ZZ.(2*rho*gramZ)
   gram_rho = transpose(tmp)*(tmp)
   #gram_rho = ZZ.(4*transpose(tmp)*(tmp))
-  push!(invariant_grams, gram_rho)
+  if length(invariant_grams)>1
+    # if the length is one, the weyl vector is already in there anyways
+    push!(invariant_grams, gram_rho)
+  end
 
   invariant_matrix = reduce(vcat, invariant_vectors)
   fixed_lattice = QQ.(invariant_matrix)
