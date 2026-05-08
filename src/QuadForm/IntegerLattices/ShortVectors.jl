@@ -1489,7 +1489,6 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   new_invariant_subspace = zero_matrix(ZZ, 0, invariant_subspace_rank) # keeps track of what is new
   T = zero_matrix(ZZ, rank(projL[1]), 0)
   w0 = invariant_subspace_rank
-
   flag_projection = proj[1]
   tmpZZ = ZZ()
   short_vectors1 = Dict{Vector{CoeffType},Vector{VectorType}}()
@@ -1526,10 +1525,10 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
     N_i = reduce(vcat, basis_matrix(projL[j]) for j in 1:i)
     #flag_projection = add!(flag_projection, proj[i])
     #M_i = lattice(V, flag_projection; isbasis=false, check=false)
-    M_i_in_N_i = @view L_in_L1toLn[:,1:nrows(N_i)]
     #M_i_in_N_i = ZZ.(solve(N_i,basis_matrix(M_i);side=:left))
-    hnf!(M_i_in_N_i)
-    Sf, Uf, Vf = snf_with_transform(M_i_in_N_i,false,true)
+    #M_i_in_N_i = @view L_in_L1toLn[:,1:nrows(N_i)]
+    ni = nrows(N_i)
+    Sf, Uf, Vf = snf_with_transform(view(L_in_L1toLn,1:ni,1:ni),false, true)
     Vf = Vf
     _eldivNi_mod_Mi = diagonal(Sf)
     n_ones = count(isone, _eldivNi_mod_Mi)
