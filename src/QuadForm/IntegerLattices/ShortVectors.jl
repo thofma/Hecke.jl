@@ -1439,7 +1439,7 @@ function _short_vectors_with_condition_integral(L::ZZLat, proj::Vector{QQMatrix}
   n = rank(L)
   V = ambient_space(L)
   rkLL = rank.(successive_sublattices)
-  if maximum(rkLL[2:end])<8
+  if maximum(rkLL[2:end]; init=0)<8
     search_invariant_subspace = false
   end
   F = reduce(vcat, [basis_matrix(i) for i in successive_sublattices])
