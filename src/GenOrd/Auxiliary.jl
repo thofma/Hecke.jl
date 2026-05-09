@@ -45,13 +45,15 @@ if `is_prime` is set, then instead of an `hnf` internally a `rref` over the
 residue field modulo `d` is used.
 """
 function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
-  if is_prime
-    R, mR = residue_field(parent(d), d)
+  # make sure to pin the type of H: the result of both branches has typeof(M)
+  #   but compiler cannot infer it
+  H::typeof(M) = if is_prime
+    _, mR = residue_field(parent(d), d)
     r, h = rref(map_entries(mR, M))
-    H = map_entries(x->preimage(mR, x), h[1:r, :])
+    map_entries(x->preimage(mR, x), h[1:r, :])
   else
-    R, mR = residue_ring(parent(d), d)
-    H = map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
+    _, mR = residue_ring(parent(d), d)
+    map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
   end
   H = vcat(H, d*identity_matrix(parent(d), ncols(M)))
   H = hnf(H)
