@@ -201,18 +201,31 @@ Return the element in the ideal class group that forms the obstruction for
 E not having a minimal model
 """
 function global_minimality_class(E::EllipticCurve{AbsSimpleNumFieldElem})
+  # TODO?: this returns an ideal, not an element in ideal class group
   K = base_field(E)
   OK = ring_of_integers(K)
-  Cl, phi = class_group(K)
+  Cl, _ = class_group(K)
   if order(Cl) == 1
     return 1*OK
   end
 
+  return _global_minimality_obstruction_ideal(E)
+end
+
+# this returns obstruction ideal
+# Note: only the *class* of this ideal in Cl(K) determines whether a global minimal
+#   model exists: a non-trivial principal obstruction ideal still admits a global model.
+# For has_global_minimal_model we use is_principal check;
+# for the actual reduction in _semi_global_minimal_model the explicit ideal is needed.
+function _global_minimality_obstruction_ideal(E::EllipticCurve{AbsSimpleNumFieldElem})
+  OK = ring_of_integers(base_field(E))
   D = discriminant(E)
-  P = bad_primes(E)
-  v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
-  I = prod([P[i]^(divexact((valuation(D, P[i]) - v[i]),12)) for i in (1:length(P))]; init = 1*OK)
-  return I
+
+  return prod(bad_primes(E); init = 1*OK) do p
+    v_E = valuation(D, p)
+    v_min = valuation(discriminant(_tates_algorithm(E, p).minimal_model), p)
+    p^divexact(v_E - v_min, 12)
+  end
 end
 
 # The semi-minimal model is inspired by the SageMath implementation
@@ -246,7 +259,7 @@ function semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
 end
 
 function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumFieldElem
-  I = global_minimality_class(E)
+  I = _global_minimality_obstruction_ideal(E)
   K = base_field(E)
   OK = ring_of_integers(K)
   c4, c6 = c_invariants(E)
