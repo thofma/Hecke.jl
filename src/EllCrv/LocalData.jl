@@ -95,6 +95,7 @@ Local data of an elliptic curve at a prime, as computed by Tate's algorithm.
 - `minimal_model::EllipticCurve{T}`: local minimal model
 - `kodaira_symbol::KodairaSymbol`: Kodaira symbol of the fiber
 - `conductor_valuation::ZZRingElem`: conductor valuation
+- `discriminant_valuation::ZZRingElem`: discriminant valuation
 - `tamagawa_number::ZZRingElem`: local Tamagawa number
 - `reduction_type::EllipticCurveReduction.ReductionType`: the type of reduction
 """
@@ -102,12 +103,13 @@ struct EllipticCurveLocalData{T}
   minimal_model::EllipticCurve{T}
   kodaira_symbol::KodairaSymbol
   conductor_valuation::ZZRingElem
+  discriminant_valuation::ZZRingElem
   tamagawa_number::ZZRingElem
   reduction_type::EllipticCurveReduction.ReductionType
 end
 
-function EllipticCurveLocalData(E::EllipticCurve{T}, ks::KodairaSymbol, cv::IntegerUnion, tn::IntegerUnion, split::Bool) where T
-  return EllipticCurveLocalData{T}(E, ks, ZZ(cv), ZZ(tn), _reduction_type(ks, split))
+function EllipticCurveLocalData(E::EllipticCurve{T}, ks::KodairaSymbol, cv::IntegerUnion, dv::IntegerUnion, tn::IntegerUnion, split::Bool) where T
+  return EllipticCurveLocalData{T}(E, ks, ZZ(cv), ZZ(dv), ZZ(tn), _reduction_type(ks, split))
 end
 
 ################################################################################
@@ -238,7 +240,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
     # Step 1 in Silverman description
     # Line 4 in Cremona description
     if vD == 0  # Good Reduction
-      return EllipticCurveLocalData(E, KodairaSymbol("I0"), 0, 1, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("I0"), 0, 0, 1, true)
     end
 
     # Step 2 in Silverman description
@@ -286,26 +288,26 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
       else
         cp = mod(vD, 2) == 0 ? 2 : 1
       end
-      return EllipticCurveLocalData(E, KodairaSymbol("I$(vD)"), 1, cp, split)
+      return EllipticCurveLocalData(E, KodairaSymbol("I$(vD)"), 1, vD, cp, split)
     end
 
     # Step 3 in Silverman description
     # Line 23 in Cremona description
     if valuation(v, a6) < 2   # Type II
-      return EllipticCurveLocalData(E, KodairaSymbol("II"), vD, 1, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("II"), vD, vD, 1, true)
     end
 
     # Step 4 in Silverman description
     # Line 24 in Cremona description
     if valuation(v, b8) < 3   # Type III
-      return EllipticCurveLocalData(E, KodairaSymbol("III"), vD - 1, 2, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("III"), vD - 1, vD, 2, true)
     end
 
     # Step 5 in Silverman description
     # Lines 25-28 in Cremona description
     if valuation(v, b6) < 3   # Type IV
       cp = quadratic_has_root(one(K), a3//pi, -a6//pi^2) ? 3 : 1
-      return EllipticCurveLocalData(E, KodairaSymbol("IV"), vD - 2, cp, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("IV"), vD - 2, vD, cp, true)
     end
 
     # Step 6 in Silverman description
@@ -349,7 +351,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
     if valuation(v, w) == 0     # Three distinct roots: I0*
       # we need the number of roots of x^3 + bx^2 + cx + d
       f = Fx(reduce.(Ref(v), [d, c, b, one(K)]))
-      return EllipticCurveLocalData(E, KodairaSymbol("I0*"), vD - 4, 1 + length(roots(f)), true)
+      return EllipticCurveLocalData(E, KodairaSymbol("I0*"), vD - 4, vD, 1 + length(roots(f)), true)
     elseif valuation(v, x) == 0 # One double root: Im*
       # part of Step 7 in Silverman description
       # Lines 39-41 in Cremona description
@@ -424,7 +426,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
           end
         end
       end
-      return EllipticCurveLocalData(E, KodairaSymbol("I$(m)*"), vD - m - 4, cp, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("I$(m)*"), vD - m - 4, vD, cp, true)
     else  # Triple root
       # Step 8 in Silverman description
       # Lines 66-73 in Cremona description
@@ -458,7 +460,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
       # we want x^2 + a3/pi^2*x - a6/pi^4 to have distinct roots: check discriminant valuation
       if valuation(v, a3t^2 + 4*a6t) == 0
         cp = quadratic_has_root(one(K), a3t, -a6t) ? 3 : 1
-        return EllipticCurveLocalData(E, KodairaSymbol("IV*"), vD - 6, cp, true)
+        return EllipticCurveLocalData(E, KodairaSymbol("IV*"), vD - 6, vD, cp, true)
       end
 
       # Steps 9,10 in Silverman description
@@ -474,11 +476,11 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
       b2, b4, b6, b8 = b_invariants(E)
 
       if valuation(v, a4) < 4 # Type III*
-        return EllipticCurveLocalData(E, KodairaSymbol("III*"), vD - 7, 2, true)
+        return EllipticCurveLocalData(E, KodairaSymbol("III*"), vD - 7, vD, 2, true)
       end
 
       if valuation(v, a6) < 6 # Type II*
-        return EllipticCurveLocalData(E, KodairaSymbol("II*"), vD - 8, 1, true)
+        return EllipticCurveLocalData(E, KodairaSymbol("II*"), vD - 8, vD, 1, true)
       end
     end
 

@@ -137,7 +137,7 @@ end
       _check_reduction_impl(ld, ks, cv, tn, rt)
 
       d_E  = valuation(discriminant(E), p)
-      d_Em = valuation(discriminant(ld.minimal_model), p)
+      d_Em = ld.discriminant_valuation
       @test d_E >= d_Em
       @test (d_E - d_Em) % 12 == 0
     end

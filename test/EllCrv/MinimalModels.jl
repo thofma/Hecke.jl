@@ -1,7 +1,9 @@
 @testset "Minimal models of elliptic curves" begin
   function test_minimal_model_at_bad_primes(E, minD)
     for p in bad_primes(E)
-      @test valuation(discriminant(minimal_model(E, p)[1]), p) == valuation(minD, p)
+      v = Hecke._tates_algorithm(E, p).discriminant_valuation
+      @test v == valuation(discriminant(minimal_model(E, p)[1]), p)
+      @test v == valuation(minD, p)
     end
   end
 
@@ -91,7 +93,9 @@
 
     # test minimal_model(E, p) agrees with minimal discriminant
     for (p, e) in minD
-      @test valuation(discriminant(minimal_model(E, p)[1]), p) == e
+      v = Hecke._tates_algorithm(E, p).discriminant_valuation
+      @test v == e
+      @test v == valuation(discriminant(minimal_model(E, p)[1]), p)
     end
 
     dDict = Dict(minD)
