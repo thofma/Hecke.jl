@@ -89,6 +89,11 @@
     # test minimal discriminant is returned as actual support
     @test all(e > 0 for (_, e) in minD)
 
+    # test minimal_model(E, p) agrees with minimal discriminant
+    for (p, e) in minD
+      @test valuation(discriminant(minimal_model(E, p)[1]), p) == e
+    end
+
     dDict = Dict(minD)
     cDict = Dict(conductor(E))
     # minimal discriminant support is same as conductor

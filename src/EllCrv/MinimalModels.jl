@@ -535,21 +535,11 @@ is a generator of a place of bad reduction and $e$ is the valuation of the minim
 Finite places are represented by irreducible polynomials (lifted to the base field of $E$) and the place at infinity by $1/t$.
 """
 function minimal_discriminant(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}}
-  K = base_field(E)
   result = Tuple{T, ZZRingElem}[]
 
-  # TODO: add valuation for RationalFunctionFieldElem
   # TODO: store discriminant valuation in EllipticCurveLocalData
   for p in bad_primes(E)
-    e = if is_one(denominator(p))
-      f = numerator(p)
-      D = discriminant(_tates_algorithm(E, f).minimal_model)
-      valuation(numerator(D), f) - valuation(denominator(D), f)
-    else
-      @assert p == 1 // gen(K)
-      D = discriminant(_tates_algorithm(E, degree).minimal_model)
-      degree(denominator(D)) - degree(numerator(D))
-    end
+    e = valuation(discriminant(_tates_algorithm(E, p).minimal_model), p)
     e > 0 && push!(result, (p, ZZ(e)))
   end
 
