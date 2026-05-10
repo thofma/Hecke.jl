@@ -184,7 +184,7 @@ end
 Returns the reduced global minimal model of $E$.
 """
 function minimal_model(E::EllipticCurve{QQFieldElem})
-  F = laska_kraus_connell(E)
+  F = laska_kraus_connell(integral_model(E)[1])
   phi = isomorphism(E, F)
   return F, phi, inv(phi)
 end
@@ -195,11 +195,10 @@ end
 Returns the reduced global minimal model if it exists.
 """
 function minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
-  if has_global_minimal_model(E)
-    F, phi,phi_inv, I = semi_global_minimal_model(E)
-    return F, phi, phi_inv
-  end
-  error("The curve E has no global minimal model.")
+  has_global_minimal_model(E) || error("The curve E has no global minimal model.")
+  F = semi_global_minimal_model(E)[1]
+  phi = isomorphism(E, F)
+  return F, phi, inv(phi)
 end
 
 @doc raw"""
@@ -241,7 +240,10 @@ function global_minimality_class(E::EllipticCurve{AbsSimpleNumFieldElem})
     return 1*OK
   end
 
-  return _global_minimality_obstruction_ideal(E)
+  # The actual obstruction ideal is fractional for non-integral models, but its class
+  # in Cl(K) is what matters. Integralizing scales the ideal by a principal ideal,
+  # so the class is preserved.
+  return _global_minimality_obstruction_ideal_integral(integral_model(E)[1])
 end
 
 # this returns obstruction ideal
@@ -249,7 +251,9 @@ end
 #   model exists: a non-trivial principal obstruction ideal still admits a global model.
 # For has_global_minimal_model we use is_principal check;
 # for the actual reduction in _semi_global_minimal_model the explicit ideal is needed.
-function _global_minimality_obstruction_ideal(E::EllipticCurve{AbsSimpleNumFieldElem})
+function _global_minimality_obstruction_ideal_integral(E::EllipticCurve{AbsSimpleNumFieldElem})
+  @assert is_integral_model(E)
+
   OK = ring_of_integers(base_field(E))
   D = discriminant(E)
 
@@ -268,6 +272,9 @@ end
 Return a semi global minimal model and the unique prime at which the model is non-minimal.
 """
 function semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
+  # our algorithm is written for integral model
+  E = integral_model(E)[1]
+
   OK = ring_of_integers(base_field(E))
   G, mG = class_group(OK)
   if false #order(G) == 1
@@ -291,7 +298,9 @@ function semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
 end
 
 function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumFieldElem
-  I = _global_minimality_obstruction_ideal(E)
+  # our algorithm is written for integral model
+  @assert is_integral_model(E)
+  I = _global_minimality_obstruction_ideal_integral(E)
   K = base_field(E)
   OK = ring_of_integers(K)
   c4, c6 = c_invariants(E)

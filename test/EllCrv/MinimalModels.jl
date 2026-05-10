@@ -1,9 +1,8 @@
 @testset "Minimal models of elliptic curves" begin
-  function test_minimal_model_at_bad_primes(E, minD)
-    for p in bad_primes(E)
-      v = Hecke._tates_algorithm(E, p).discriminant_valuation
-      @test v == valuation(discriminant(minimal_model(E, p)[1]), p)
-      @test v == valuation(minD, p)
+  function test_minimal_model_at_bad_primes(E, Emin)
+    for p in @inferred bad_primes(E)
+      Ep, = minimal_model(E, p)
+      @test valuation(discriminant(Ep), p) == valuation(discriminant(Emin), p)
     end
   end
 
@@ -15,7 +14,15 @@
     @test a_invariants(F) == (1, -1, 0, 4, 3)
     minD = @inferred minimal_discriminant(E)
     @test minD == abs(discriminant(F))
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F)
+
+    E = transform_rstu(E, [0, 0, 0, 2])[1]
+    @assert !is_integral_model(E)
+    F, _ = @inferred minimal_model(E)
+    @test a_invariants(F) == (1, -1, 0, 4, 3)
+    minD = @inferred minimal_discriminant(E)
+    @test minD == abs(discriminant(F))
+    test_minimal_model_at_bad_primes(E, F)
 
     E = elliptic_curve([625, -15625, 19531250, -2929687500, -34332275390625])
     F, _ = @inferred minimal_model(E)
@@ -24,45 +31,55 @@
     @test a_invariants(F) == (1, -1, 0, 4, 3)
     minD = @inferred minimal_discriminant(E)
     @test minD == abs(discriminant(F))
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F)
 
     E = elliptic_curve([6^2*3^3, 6^5*2^2])
     F, _ = @inferred minimal_model(E)
     @test a_invariants(F) == (0, 0, 0, 972, 31104)
     minD = @inferred minimal_discriminant(E)
     @test minD == abs(discriminant(F))
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F)
 
     E = elliptic_curve([2^2*15, 2^4*15])
     F, _ = minimal_model(E)
     @test a_invariants(F) == (0, 0, 0, 60, 240)
     minD = @inferred minimal_discriminant(E)
     @test minD == abs(discriminant(F))
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F)
+  end
+
+  function test_minimal_model_at_bad_primes(E, Emin, P)
+    for p in @inferred bad_primes(E)
+      extra = p == P ? 12 : 0
+      Ep, = minimal_model(E, p)
+      @test valuation(discriminant(Ep), p) + extra == valuation(discriminant(Emin), p)
+    end
   end
 
   @testset "Minimal model over number field" begin
     x = gen(Hecke.Globals.Qx)
     K, a = number_field(x^2 - x + 1; cached = false)
     OK = ring_of_integers(K)
+
     E = elliptic_curve(K, [1, -1, 0, 6 - 57*a, 108 - 162*a])
     minD = @inferred minimal_discriminant(E)
-
     F, phi, phi_inv, P = @inferred semi_global_minimal_model(E)
     @test has_global_minimal_model(E) == true
     D = discriminant(F)*OK
     @test minD == D
     @test is_one(P)
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F, P)
 
-    F, _ = transform_rstu(E,[a, 0, -3+a, 7])
-    F, _ = @inferred minimal_model(integral_model(F)[1])
+    E, _ = transform_rstu(E, [a, 0, -3+a, 7])
+    @assert !is_integral_model(E)
+    F, _ = @inferred minimal_model(E)
     D = discriminant(F)*OK
     @test minD == D
-    test_minimal_model_at_bad_primes(F, minD)
+    test_minimal_model_at_bad_primes(E, F, 1*OK)
 
     K, a = quadratic_field(10; cached = false)
     OK = ring_of_integers(K)
+
     E = elliptic_curve(K, [0,0,0,-186408*a - 589491, 78055704*a + 246833838])
     minD = @inferred minimal_discriminant(E)
     F, phi, phi_inv, P = @inferred semi_global_minimal_model(E)
@@ -70,10 +87,11 @@
     D = discriminant(F)*OK
     @test minD == D
     @test is_one(P)
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F, P)
 
     K, a = number_field(x^2 - x + 31821453; cached = false)
     OK = ring_of_integers(K)
+
     E = elliptic_curve(K, [0, 0, 0, -382586771000351226384*a - 2498023791133552294513515, 358777608829102441023422458989744*a + 1110881475104109582383304709231832166])
     minD = @inferred minimal_discriminant(E)
     F, phi, phi_inv, P = @inferred semi_global_minimal_model(E)
@@ -82,7 +100,18 @@
     @test minD*P^12 == D
     @test !is_one(P)
     @test bad_primes(F) == [P]
-    test_minimal_model_at_bad_primes(E, minD)
+    test_minimal_model_at_bad_primes(E, F, P)
+
+    E, _ = transform_rstu(E, [0, 0, 0, 7])
+    @assert !is_integral_model(E)
+    minD = @inferred minimal_discriminant(E)
+    F, phi, phi_inv, P = @inferred semi_global_minimal_model(E)
+    @test has_global_minimal_model(E) == false
+    D = discriminant(F)*OK
+    @test minD*P^12 == D
+    @test !is_one(P)
+    @test bad_primes(F) == [P]
+    test_minimal_model_at_bad_primes(E, F, P)
   end
 
   function test_minimal_model_rff(E, minD)
@@ -93,9 +122,14 @@
 
     # test minimal_model(E, p) agrees with minimal discriminant
     for (p, e) in minD
-      v = Hecke._tates_algorithm(E, p).discriminant_valuation
-      @test v == e
-      @test v == valuation(discriminant(minimal_model(E, p)[1]), p)
+      @test e == valuation(discriminant(minimal_model(E, p)[1]), p)
+    end
+
+    # test minimal_model agrees with minimal discriminant
+    EminD = discriminant(minimal_model(E)[1])
+    for (p, e) in minD
+      is_one(denominator(p)) || continue
+      @test e == valuation(EminD, p)
     end
 
     dDict = Dict(minD)
@@ -108,6 +142,7 @@
 
   @testset "Minimal model over rational function field" begin
     K, t = rational_function_field(QQ, :t; cached = false)
+
     E = elliptic_curve_from_j_invariant(t)
     @test issetequal(@inferred(bad_primes(E)), K.([t, t - 1728, 1//t]))
     minD = @inferred minimal_discriminant(E)

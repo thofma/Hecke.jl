@@ -677,8 +677,10 @@ end
 Return a list of the primes that divide the discriminant of $E$.
 """
 function bad_primes(E::EllipticCurve{QQFieldElem})
-  d = ZZ(discriminant(E))
-  return sort([p for (p,e) in factor(d)])
+  d = discriminant(E)
+  pnum = [p for (p, _) in factor(numerator(d))]
+  pden = [p for (p, _) in factor(denominator(d))]
+  return sort(union(pnum, pden))
 end
 
 @doc raw"""
@@ -688,8 +690,7 @@ Return a list of prime ideals that divide the discriminant of $E$.
 """
 function bad_primes(E::EllipticCurve{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
-  d = OK(discriminant(E))
-  return [p for (p,e) in factor(d*OK)]
+  return [p for (p, _) in factor(discriminant(E)*OK)]
 end
 
 @doc raw"""
