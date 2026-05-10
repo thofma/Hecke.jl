@@ -143,7 +143,7 @@ end
     end
 
     # Q(sqrt(-3))
-    L, a = number_field(x^2 - x + 1)
+    L, a = number_field(x^2 - x + 1; cached = false)
     OL = ring_of_integers(L)
 
     E = elliptic_curve(L, [0, 1+a, a, a, 0])    # 2.0.3.1-49.1-CMa1
@@ -181,7 +181,7 @@ end
     end
 
     # Q(sqrt(5))
-    L, a = number_field(x^2 - x - 1)
+    L, a = number_field(x^2 - x - 1; cached = false)
     OL = ring_of_integers(L)
 
     E = elliptic_curve(L, [1, 1, 1, -3, 1])     # 2.2.5.1-100.1-b2
@@ -193,7 +193,7 @@ end
     end
 
     # Q(sqrt(3))
-    L, a = quadratic_field(3)
+    L, a = quadratic_field(3; cached = false)
     OL = ring_of_integers(L)
 
     # not in LMFDB, local data was computed with sage
@@ -233,7 +233,7 @@ end
     end
 
     # 5.5.14641.1-121.1-c3
-    L, a = number_field(x^5 - x^4 - 4*x^3 + 3*x^2 + 3*x - 1)
+    L, a = number_field(x^5 - x^4 - 4*x^3 + 3*x^2 + 3*x - 1; cached = false)
     OL = ring_of_integers(L)
 
     E = elliptic_curve(L, [0, a-1, a^3+a^2-2*a-1, -2*a-1, -a^4-a^3+a^2-a-2])
@@ -242,7 +242,7 @@ end
       _check_reduction_nf(E, p, ks, cv, tn, rt)
     end
 
-    K, a = number_field(x^2- x + 1)
+    K, a = number_field(x^2 - x + 1; cached = false)
     E = elliptic_curve(K, [16807*a - 84035, 41241385934*a + 5367031656, 20124912723078142//3*a + 13331154044930911//3, 928925752459624769703*a - 289907255041158152853, -221729762092842673528466044620617//9*a + 22979609049341545658321384288371//9])
     lp = prime_decomposition(maximal_order(K), 7)
     if a + 4 in lp[1][1]
@@ -254,7 +254,7 @@ end
   end
 
   @testset "Tate's algorithm over rational function fields" begin
-    K, t = rational_function_field(QQ, :t)
+    K, t = rational_function_field(QQ, :t; cached = false)
 
     # local data was computed with Magma
 
@@ -291,8 +291,8 @@ end
       _check_reduction(E, p, ks, cv, tn, rt)
     end
 
-    k, a = quadratic_field(2)
-    K, t = rational_function_field(k, "t")
+    k, a = quadratic_field(2; cached = false)
+    K, t = rational_function_field(k, :t; cached = false)
 
     E = elliptic_curve_from_j_invariant(1//(t^2 + t + a))
     for (p, ks, cv, tn, rt) in [
@@ -311,7 +311,7 @@ end
       _check_reduction(E, p, ks, cv, tn, rt)
     end
 
-    K, t = rational_function_field(GF(2), "t")
+    K, t = rational_function_field(GF(2), :t; cached = false)
 
     E = elliptic_curve_from_j_invariant(t^3//(t^2 + t + 1))
     for (p, ks, cv, tn, rt) in [
@@ -322,7 +322,7 @@ end
       _check_reduction(E, p, ks, cv, tn, rt)
     end
 
-    kt,t = rational_function_field(GF(113),:t)
+    kt,t = rational_function_field(GF(113), :t; cached = false)
     ainvs = kt.([(66*t^7 + 86*t^3)//(t^8 + 31*t^4 + 99), (41*t^14 + 34*t^10 + 72*t^6 + 47*t^2)//(t^16 + 62*t^12 + 29*t^8 + 36*t^4 + 83), (65*t^17 + 48*t^13 + 71*t^9 + 48*t^5 + 6*t)//(t^24 + 93*t^20 + 16*t^16 + 67*t^12 + 2*t^8 + 35*t^4 + 81), (58*t^24 + 93*t^20 + 98*t^16 + 26*t^12 + 55*t^8 + 46*t^4 + 15)//(t^32 + 11*t^28 + 60*t^24 + 52*t^20 + 47*t^16 + 63*t^12 + 8*t^8 + 100*t^4 + 109), 0])
     E = elliptic_curve(ainvs)
 
@@ -355,7 +355,7 @@ end
       end
     end
 
-    L, a = number_field(x^2 - x - 1)
+    L, a = number_field(x^2 - x - 1; cached = false)
     OL = ring_of_integers(L)
 
     E = elliptic_curve(L, [1, 1, 1, -3, 1])     # 2.2.5.1-100.1-b2
@@ -366,7 +366,7 @@ end
       end
     end
 
-    K, t = rational_function_field(QQ, :t)
+    K, t = rational_function_field(QQ, :t; cached = false)
     E = elliptic_curve(K, [0, t, 0, t^4, 0])
     for p in [t, t - 1//2, 1//t]
       ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
@@ -382,15 +382,16 @@ end
     @test (@inferred tamagawa_numbers(E)) == [1, 2 ,2, 1]
     @test (@inferred kodaira_symbols(E)) == ["I1", "I2", "III*", "IV*"]
 
-    Rx, x = polynomial_ring(QQ, "x")
-    K, a = number_field(x^2-x+3)
+    x = gen(Hecke.Globals.Qx)
+
+    K, a = number_field(x^2 - x + 3; cached = false)
     E = elliptic_curve(K, [0, -1, 1, -7820, -263580])
     OK = ring_of_integers(K)
     I = (-2*a+1)*OK
     @test I == @inferred conductor(E)
 
-    L, a = number_field(x^2-x+1)
-    E = elliptic_curve(L, [0, 0, 0, -15, 22])
+    K, a = number_field(x^2 - x + 1; cached = false)
+    E = elliptic_curve(K, [0, 0, 0, -15, 22])
     Ps = bad_primes(E)
     sort!(Ps, by = x -> minimum(x))
     @test tamagawa_number.(Ref(E), Ps) == [3, 2]
@@ -398,8 +399,8 @@ end
     @test @inferred issetequal(tamagawa_numbers(E), [3, 2])
     @test @inferred issetequal(kodaira_symbols(E), KodairaSymbol.(["IV*", "I0*"]))
 
-    k, a = quadratic_field(2)
-    K, t = rational_function_field(k, "t")
+    k, a = quadratic_field(2; cached = false)
+    K, t = rational_function_field(k, :t; cached = false)
 
     E = elliptic_curve_from_j_invariant(1//(t^2 + t + a))
     @test issetequal(conductor(E), [(t^2 + t + 1//1728*(1728*a - 1), 2), (t^2 + t + a, 1), (1//t, 2)])
@@ -407,7 +408,7 @@ end
     E = elliptic_curve_from_j_invariant(t^2 - 2)
     @test issetequal(conductor(E), [(t^2 - 1730, 2), (t - a, 2), (t + a, 2), (1//t, 1)])
 
-    K, t = rational_function_field(GF(2), "t")
+    K, t = rational_function_field(GF(2), :t; cached = false)
 
     E = elliptic_curve_from_j_invariant(t^3//(t^2 + t + 1))
     @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])

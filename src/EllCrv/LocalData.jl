@@ -658,16 +658,12 @@ valuation at that place. Finite places are represented by irreducible
 polynomials (lifted to the base field of $E$) and the place at infinity by $1/t$.
 """
 function conductor(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}}
-  K = base_field(E)
-  R = base_ring(K.fraction_field)
-
   result = Tuple{T, ZZRingElem}[]
-  for (p, _) in factor(R, discriminant(E))
+
+  for p in bad_primes(E)
     e = _tates_algorithm(E, p).conductor_valuation
-    e > 0 && push!(result, (K(p), e))
+    e > 0 && push!(result, (p, e))
   end
-  e_inf = _tates_algorithm(E, degree).conductor_valuation
-  e_inf > 0 && push!(result, (1//gen(K), e_inf))
 
   return result
 end
@@ -680,8 +676,7 @@ Return a list of the primes that divide the discriminant of $E$.
 """
 function bad_primes(E::EllipticCurve{QQFieldElem})
   d = ZZ(discriminant(E))
-  L = factor(d)
-  return sort([p for (p,e) in L])
+  return sort([p for (p,e) in factor(d)])
 end
 
 @doc raw"""
@@ -692,8 +687,25 @@ Return a list of prime ideals that divide the discriminant of $E$.
 function bad_primes(E::EllipticCurve{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
   d = OK(discriminant(E))
-  L = factor(d*OK)
-  return [p for (p,e) in L]
+  return [p for (p,e) in factor(d*OK)]
+end
+
+@doc raw"""
+    bad_primes(E::EllipticCurve{T}) where {T <: RationalFunctionFieldElem} -> Vector{T}
+
+Return a list of candidate bad places of E. Includes finite places where the
+polynomial part of disc(E) has a positive valuation, and always the place at
+infinity.
+"""
+function bad_primes(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}}
+  K = base_field(E)
+  R = base_ring(K.fraction_field)
+  D = discriminant(E)
+
+  result = T[K(p) for (p, _) in factor(R, D)]
+  push!(result, 1//gen(K))
+
+  return result
 end
 
 ################################################################################
