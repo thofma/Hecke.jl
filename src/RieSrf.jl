@@ -40,4 +40,5 @@ include("RieSrf/Divisors.jl")
 include("RieSrf/AbelJacobiMap.jl")
 include("RieSrf/HeuristicEndomorphisms.jl")
 include("RieSrf/Algebraization.jl")
+include("RieSrf/EndomorphismStructure.jl")
 end
