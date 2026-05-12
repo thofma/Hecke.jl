@@ -28,6 +28,7 @@ mutable struct CPath
   #0 is a line
   #1 is an arc
   #2 is a circle
+  #3 is a point
 
   #The field in which the path lies
   C::AcbField
@@ -44,7 +45,7 @@ mutable struct CPath
   end_arc::ArbFieldElem
 
   #The orientation determines how we move from start point to end point
-  #If the orientation is 1 we move counterclockwise and if the orientatoin
+  #If the orientation is 1 we move counterclockwise and if the orientation
   # is -1 we move clockwise.
   orientation::Int
 
@@ -67,6 +68,8 @@ mutable struct CPath
   #sigma stores this permutation. In the case that gamma is a closed path,
   #sigma will tell us exactly how the sheets got permuted.
   permutation::Perm{Int}
+
+  sheets::Vector{AcbFieldElem}
 
   #For the purposes of integrating along a path to compute the period matrix
   #we store additional properties. Here is a description
@@ -113,7 +116,8 @@ mutable struct CPath
   function CPath(a::AcbFieldElem, b::AcbFieldElem, path_type::Int, c::AcbFieldElem = zero(parent(a)), radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
 
     P = new()
-    P.C = parent(a)
+    CC = parent(a)
+    P.C = CC
     P.start_point = a
     P.end_point = b
     P.path_type = path_type
@@ -121,6 +125,8 @@ mutable struct CPath
     P.radius = radius
     P.orientation = orientation
     P.bounds = []
+
+    RR = ArbField(precision(CC))
 
     #If the path is a line
     if path_type == 0
@@ -133,6 +139,32 @@ mutable struct CPath
       length = abs(b - a)
     end
 
+        #If the path is a line
+    if path_type == 3
+      gamma = function(t::FieldElem)
+        return a
+      end
+      dgamma = function(t::FieldElem)
+        return 0
+      end
+      length = 0
+    end
+
+    if path_type == 4
+      P.end_point = CC(1/0)
+      length = RR(1/0)
+      gamma = function(t::FieldElem)
+        c1 = 1/(1-t)
+        c2 = 2 * a * c1
+        return c2
+      end
+      dgamma = function(t::FieldElem)
+        c1 = 1/(1-t)
+        c2 = 2 * a * c1
+        return c2*c1
+      end
+    end
+  
     #If the path is not a line we need some additional constants to compute
     #length, parametrization, etc.
     Cc = P.C
@@ -229,6 +261,20 @@ function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFi
   end
 end
 
+function c_circle(start_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
+  return c_arc(start_point, start_point, center, orientation = orientation)
+end
+
+function c_point(point::AcbFieldElem)
+  return CPath(point, point, 3, point)
+end
+
+function c_infinite_line(start_point::AcbFieldElem)
+  CC =parent(start_point)
+  @req start_point != CC(0) "Line to infinity cannot start from zero."
+  return CPath(start_point, start_point, 4)
+end
+
 ################################################################################
 #
 #  IO
@@ -238,14 +284,16 @@ end
 
 function show(io::IO, gamma::CPath)
   p_type = path_type(gamma)
-  if p_type< 0 || p_type > 2
+  if p_type< 0 || p_type > 4
     error("Path type does not exist")
   end
 
   x0 = start_point(gamma)
   x1 = end_point(gamma)
-  if p_type == 0
+  if p_type == 0 || p_type == 4
     print(io, "Line from $(x0) to $(x1).")
+  elseif p_type ==3
+    print(io, "Point at  $(x0).")
   else
     r = radius(gamma)
     c = center(gamma)
@@ -278,7 +326,10 @@ function reverse(G::CPath)
   else #Circle or arc
     G_rev = c_arc(end_point(G), start_point(G), center(G), orientation = -orientation(G))
   end
-  assign_permutation(G_rev, inv(permutation(G)))
+  
+  if isdefined(G, :permutation)
+    assign_permutation(G_rev, inv(permutation(G)))
+  end
 
   if isdefined(G, :integral_matrix)
     G_rev.integral_matrix =  permutation(G) * -G.integral_matrix
@@ -404,3 +455,255 @@ function evaluate_d(G::CPath, t::FieldElem)
   return G.dgamma(t)
 end
 
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(G1::CPath, G2::CPath)
+  type = path_type(G1)
+  if type != path_type(G2)
+    return false
+  end
+  if type == 0
+    return (start_point(G1) == start_point(G2)) && (end_point(G1) == end_point(G2))
+  elseif type == 1
+    return (start_point(G1) == start_point(G2)) && (end_point(G1) == end_point(G2)) && (center(G1) == center(G2)) && (orientation(G1) == orientation(G2)) ||
+           ((start_point(G1) == end_point(G2)) && (end_point(G1) == start_point(G2)) && (center(G1) == center(G2)) && (orientation(G1) == -orientation(G2)))
+  elseif type == 2
+    return (center(G1) == center(G2)) && (radius(G1) == radius(G2)) && (orientation(G1) == orientation(G2))
+  else
+    return (start_point(G1) == start_point(G2))
+  end
+end
+
+################################################################################
+#
+#  Complex plane geometry
+#
+################################################################################
+
+function orthogonal_projection(line::CPath, c::AcbFieldElem)
+  @req path_type(line) == 0 "First argument needs to be a line."
+  a = start_point(line)
+  b = end_point(line)
+  return a + (( real(c - a) * real(b - a) + imag(c - a) * imag(b - a))/((b - a) * conjugate(b - a))) * (b - a)
+end
+
+
+function line_intersect_circle(line::CPath, circle::CPath)
+  c = center(circle)
+  orth_proj = orthogonal_projection(line, c)
+  CC = parent(orth_proj)
+  prec = precision(CC)
+  RR = ArbField(prec)
+  max_dist = length(line)
+  proj_dist = abs(start_point(line) - orth_proj)
+  if proj_dist <= max_dist
+    ratio = proj_dist/max_dist
+    value = evaluate(line, 2*ratio-1)
+    if contains(abs(value - orth_proj), RR(0))
+      distance_to_center = abs(c - orth_proj)
+      if distance_to_center <= radius(circle)
+        return true, orth_proj
+      end
+    end
+  end
+  return false, CC(0)
+end
+
+function intersection_points(line::CPath,circle::CPath)
+  @req path_type(line) == 0 && path_type(circle)==2 "First argument needs to be a line and second argument needs to be a circle."
+  
+  #Find orthogonal projection of the center on the line
+  intersect_test, orth_proj = line_intersect_circle(line, circle)
+  a = start_point(line)
+  b = end_point(line)
+  c = center(circle)
+  r = radius(circle)
+
+  RR = parent(r)
+
+  if intersect_test
+    intersection_points = []
+    center_dist = abs(c - orth_proj)
+    orth_proj_dist = abs(a - orth_proj)
+    D = sqrt(r^2 - center_dist^2)
+
+    if !is_real(D)
+      error("Error in function intersection_points.")
+    end
+
+    #Use Pythagoras to find the intersection points
+    first_point_dist = orth_proj_dist - D
+    max_dist = length(line)
+    if contains(abs(first_point_dist), RR(0))
+      intersection_points[1] = a
+    else
+      R1 = first_point_dist/max_dist
+      intersection_points[1] = evaluate(line, (2*R1-1))
+    end
+
+    second_point_dist = orth_proj_dist + D
+    R2 = second_point_dist/max_dist
+    intersection_points[2] = evaluate(line, (2*R2-1))
+
+    if abs(intersection_points[1] - a) <= abs(intersection_points[2]-a)
+      return true, intersection_points
+    else
+      return true, reverse(intersection_points)
+    end
+  else
+    return false, AcbFieldElem[]
+  end
+end
+
+
+
+mutable struct CChain
+  paths::Vector{CPath}
+  permutation::Perm{Int}
+  sheets::Vector{AcbFieldElem}
+  is_closed::Bool
+  start_point::AcbFieldElem
+  end_point::AcbFieldElem
+  integral_matrix::AcbMatrix
+  center::AcbFieldElem
+  points
+
+  #Constructor of CChain.
+  function CChain(paths::Vector{CPath})
+
+    is_connected, is_closed = test_chain(paths)
+
+    @req is_connected "A chain should consist of a connected sequence of paths."
+
+    C = new()
+    C.paths = paths
+    C.is_closed = is_closed
+    C.start_point = start_point(paths[1])
+    C.end_point = end_point(paths[end])
+
+    if all([isdefined(path, :permutation) for path in paths])
+      C.permutation = prod(map(permutation, paths))
+      s_m = parent(C.permutation)
+      m = s_m.n
+      if all([isdefined(path, :integral_matrix) for path in paths])
+        CC = base_ring(paths[1].integral_matrix)
+        g = ncols(paths[1].integral_matrix)
+        chain_integral = zero_matrix(CC, m, g)
+        sigma = one(s_m)
+        for path in paths
+          # Sheets are permuted after moving along path, so we need to add a
+          # permuted matrix.
+          chain_integral += inv(sigma) * change_base_ring(CC,path.integral_matrix)
+          sigma *= permutation(path)
+        end
+        C.integral_matrix = chain_integral
+      end
+    end
+    return C
+  end
+
+  function CChain(paths::Vector{CPath}, c::AcbFieldElem)
+    C = CChain(paths)
+    C.center = c
+    return C
+  end
+
+end
+
+function length(chain::CChain)
+  return length(chain.paths)
+end
+
+function permutation(chain::CChain)
+  return chain.permutation
+end
+
+function integrals(chain::CChain)
+  return chain.integrals
+end
+
+function start_point(chain::CChain)
+  return chain.start_point
+end
+
+function end_point(chain::CChain)
+  return chain.end_point
+end
+
+function center(chain::CChain)
+  return chain.center
+end
+
+points(chain::CChain) = chain.points::Vector{RiemannSurfacePoint}
+
+function test_chain(paths::Vector{CPath})
+  n = length(paths)
+  CC = paths[1].C
+  for i in (1:n-1)
+    if !contains(end_point(paths[i]) - start_point(paths[i+1]), zero(CC))
+      return false, false
+     end
+  end
+  if !contains(start_point(paths[1]) - end_point(paths[end]), zero(CC))
+    return true, false
+  else
+    return true, true
+  end
+end
+
+function is_closed(chain::CChain)
+  return chain.is_closed
+end
+
+function show(io::IO, chain::CChain)
+  n = length(chain)
+  if length(chain) == 0
+    print(io, "Empty chain.")
+  elseif is_closed(chain)
+    x0 = start_point(chain)
+    if isdefined(chain, :center)
+      c = center(chain)
+      print(io, "Closed chain consisting of $(n) paths starting at $(x0) around $(c).\n")
+    else
+      print(io, "Closed chain consisting of $(n) paths starting at $(x0).\n")
+    end
+  else
+    x0 = start_point(chain)
+    x1 = end_point(chain)
+    print(io, "Chain consisting of $(n) paths starting at $(x0) and ending at $(x1).\n")
+  end
+  if isdefined(chain, :permutation)
+    perm = permutation(chain)
+    print(io, "With Permutation $(perm).")
+  end
+  if isdefined(chain, :integrals)
+    ints = integrals(chain)
+    print(io, "With Integrals $(ints).")
+  end
+end
+
+
+function *(chain1::CChain, chain2::CChain) 
+  return concatenated_chain = CChain(vcat(chain1.paths, chain2.paths))
+end
+
+function ^(chain::CChain, k::Int)
+  @req (abs(k) == 1 || chain.is_closed) "Only closed chains can be taken to integers powers of absolute value > 1."
+  if k == 0
+    result = CChain([c_point(start_point(C))])
+  end
+  result = chain
+  for j in (1:k-1)
+    result *= chain
+  end
+  return result
+end
+
+function inv(chain::CChain)
+  inv_chain = CChain(reverse([reverse(p) for p in chain.paths ]))
+  return inv_chain
+end

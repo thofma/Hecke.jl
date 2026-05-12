@@ -30,7 +30,9 @@ mutable struct RiemannSurface
   #A polynomial f(x,y) in K[x,y] for some number field K defining the Riemann
   #surface (or equivalently) a not necessarily smooth plane curve in P_2
   defining_polynomial::AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}
-  complex_defining_polynomial::AbstractAlgebra.Generic.MPoly{AcbFieldElem}
+
+  homogeneous_defining_polynomial::AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}
+
   genus::Int
   function_field::AbstractAlgebra.Generic.FunctionField
 
@@ -47,6 +49,38 @@ mutable struct RiemannSurface
   #The points P for which disc(f(P,y)) = 0. This includes the ramification
   #points and the singular points of the curve
   discriminant_points::Vector{AcbFieldElem}
+  discriminant_points_high_prec::Vector{AcbFieldElem}
+  safe_radii::Vector{ArbFieldElem}
+
+  #Special points
+  infinite_points
+  y_infinite_points
+
+  #Coordinates of the points of the form (x:y:0) in homogeneous coordinates.
+  infinity_coords::Vector{Vector{AcbFieldElem}}
+  
+
+  #x-coordinates of critical points
+  critical_values::Vector{AcbFieldElem}
+
+  #Critical points
+  critical_points
+
+
+  #Singular points of the underlying model. (Not of the Riemann surface)
+  singular_points::Vector{Vector{AcbFieldElem}}
+  finite_singularities::Vector{Vector{AcbFieldElem}}
+  infinite_singularities::Vector{Vector{AcbFieldElem}}
+
+  #Abel-Jacobi Map
+  ajm_starting_points::Vector{AcbFieldElem}
+  ajm_discriminant_points::Vector{CChain}
+  ajm_infinite_points::CPath
+  sheet_to_sheet_integrals::AcbMatrix
+  base_point
+
+  swapped_surface::RiemannSurface
+
 
   #A set of generators of the fundamental group pi_1 of P^1/D where D is the set
   #of discriminant points.
@@ -59,6 +93,9 @@ mutable struct RiemannSurface
   # generator is given by composing the paths L[1], L[23], L[12] and
   # reverse(L[1]).
   fundamental_group_of_P1::Tuple{Vector{CPath}, Vector{Vector{Int}}}
+
+  closed_chains::Vector{CChain}
+  inf_chain::CChain
 
   #The permutations of the sheets that correspond to walking along the chains
   #of paths that are generators of the fundamental group of P1. Every
@@ -92,6 +129,9 @@ mutable struct RiemannSurface
   # the set of all x^iy^jdx/Df_y where (i,j) is an interior point of the
   # Newton polygon.
   basis_of_differentials::Vector{Any}
+
+  
+
   #A boolean that checks whether a Baker basis was used or not.
   baker_basis::Bool
 
@@ -154,9 +194,20 @@ mutable struct RiemannSurface
   complex_field::AcbField
   complex_field2::AcbField
   computational_precision_complex_field::AcbField
-  max_precision_complex_field::AcbField
+  extra_prec::Int
+  max_prec::Int
+
+  real_reduction_matrix::ArbMatrix
+  complex_reduction_matrices::Vector{AcbMatrix}
+
+  inner_faces::Vector{Vector{Int}}
 
   #The constructor for a Riemann surface object
+
+  function RiemannSurface()
+    RS = new()
+    return RS
+  end
 
   function RiemannSurface(f::MPolyRingElem, prec::Int = 100; integration_method::String = "rigorous")
     k = base_ring(f)
@@ -191,6 +242,11 @@ mutable struct RiemannSurface
     end
 
     @req v.field == k "The given place does not beling to the field."
+
+
+
+    RS.homogeneous_defining_polynomial = homogenization_RS(f)
+
   
     RS.defining_polynomial = f
     RS.prec = prec
@@ -199,6 +255,9 @@ mutable struct RiemannSurface
     RS.basis_of_differentials = diff_base
     g = length(diff_base)
     RS.genus = g
+
+   
+
     if integration_method != "heuristic" && integration_method != "rigorous"
       error("invalid integration method. Valid options are \"rigorous\" or \"heuristic\"")
     end
@@ -209,6 +268,7 @@ mutable struct RiemannSurface
 
     #Computed a Newton polygon and decide whether we can use a Baker basis or not.
     inner_fac = inner_faces(f)
+    RS.inner_faces = inner_fac
     if length(inner_fac) == g
       RS.baker_basis = true
       x, y = gens(parent(f))
@@ -301,29 +361,222 @@ mutable struct RiemannSurface
         end
       end
       return result
-      end
+    end
 
     RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
     RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
 
     b10_prec = floor(Int, prec*log(2)/log(10))
     b10_extra_prec = b10_prec + 3 + max(degree(f, 1), degree(f, 2))
-    extra_prec = floor(Int, (3 + max(degree(f, 1), degree(f, 2)) *log(2)/log(10)))
+    extra_prec = prec + floor(Int, (4 + max(degree(f, 1), degree(f, 2)) )*log(10)/log(2))
     RS.complex_field = AcbField(prec)
-    Rc = ArbField(prec + extra_prec)
-    RS.real_field = Rc
+    RR = ArbField(prec + extra_prec)
+    RS.real_field = RR
+
+    RS.extra_prec = extra_prec
 
 
-
-    RS.weak_error = Rc(10)^(-(2//3) *b10_prec)
-    RS.error = Rc(10)^(-b10_prec - 1)
-    RS.extra_error = Rc(10)^(-b10_extra_prec - 10)
+    RS.weak_error = RR(10)^(-(2//3) *b10_prec)
+    RS.error = RR(10)^(-b10_prec - 1)
+    RS.extra_error = RR(10)^(-b10_extra_prec - 10)
     RS.bounds = []
-    RS.degree = degrees(f)
+    RS.degree = reverse(degrees(f))
+
+    tau = small_period_matrix(RS)
+    analyze_special_points(RS)
 
     return RS
   end
 end
+
+function swapped_surface(RS::RiemannSurface)
+#Compute the Riemann surface obtained by projecting y to P1 instead of x.
+  if !isdefined(RS, :swapped_surface)
+    g = genus(RS)
+    RS_swap = RiemannSurface()
+    RS_swap.embedding = RS.embedding
+    RS_swap.genus = g
+    RS_swap.prec = RS.prec
+    RS_swap.extra_prec = RS.extra_prec
+    RS_swap.error = RS.error
+    RS_swap.weak_error = RS.weak_error
+    RS_swap.extra_error = RS.extra_error
+    RS_swap.integration_method = RS.integration_method
+    RS_swap.integration_schemes = []
+    RS_swap.bounds = []
+
+    f = defining_polynomial(RS)
+    Kxy = parent(f)
+    K = base_ring(Kxy)
+    x, y = gens(Kxy)
+    f = f(y,x)
+    RS_swap.defining_polynomial = f
+    RS_swap.homogeneous_defining_polynomial = homogenization_RS(f)
+    RS_swap.degree = reverse(RS.degree)
+    F = function_field(RS)
+    RS_swap.function_field = F
+
+    #Change differentials
+    RS_swap.baker_basis = RS.baker_basis
+    if RS_swap.baker_basis
+      RS_swap.inner_faces = [ [s[2],s[1]] for s in RS.inner_faces ]
+      inner_fac = RS_swap.inner_faces 
+      x, y = gens(parent(f))
+      factor_set = [x, y, derivative(f, 2)]
+      n = length(factor_set)
+      min_x = minimum([t[1] for t in inner_fac])
+      max_x = maximum([t[1] for t in inner_fac])
+      min_y = minimum([t[2] for t in inner_fac])
+      max_y = maximum([t[2] for t in inner_fac])
+      min_pows = [min_x - 1, min_y - 1, -1]
+	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
+
+      factor_matrix = zeros(Int, n, g)
+
+      baker_diffs = []
+
+      for i in (1:g)
+        factor_matrix[1, i] = inner_fac[i][1] - 1
+        factor_matrix[2, i] = inner_fac[i][2] - 1
+        factor_matrix[3, i] = -1
+
+        s = gen(base_ring(F))
+        t = gen(F)
+        omega = (factor_set[1](s,t)^(inner_fac[i][1] - 1) * factor_set[2](s,t)^(inner_fac[i][2] - 1) //factor_set[3](s,t))*differential(F(s))
+        push!(baker_diffs, omega)
+      end
+      RS_swap.basis_of_differentials = baker_diffs
+    else
+      RS_swap.basis_of_differentials = RS.basis_of_differentials
+
+      FF = function_field(RS)
+      y = gen(FF)
+      x = separating_element(FF)
+      dx = differential(x)
+
+      factor_set = Set{MPolyRingElem}()
+      factored_nums = []
+      factored_denoms = []
+
+      dfy = derivative(f,2)(x,y)
+      dfx = derivative(f,1)(x,y)
+      dfydfx = dfy/dfx
+
+      diff_base = RS_swap.basis_of_differentials * dfydfx
+
+      #Let's see what this does.
+      for i in 1:g
+        num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[1].f))))
+        denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[1].f)(mpoly_x)))
+
+        union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
+
+        push!(factored_nums, num_diff_i_fac)
+        push!(factored_denoms, denom_diff_i_fac)
+      end
+
+
+       #Turn set into sequence so we can enumerate
+      factor_set = collect(factor_set)
+      number_of_factors = length(factor_set)
+      n = length(factor_set)
+      factor_matrix = zero_matrix(Int, n, g)
+      for j in 1:g
+        for i in 1:n
+          if haskey(factored_nums[j], factor_set[i])
+            factor_matrix[i,j] = get(factored_nums[j], factor_set[i], 0)
+          end
+
+          if haskey(factored_denoms[j], factor_set[i])
+            factor_matrix[i,j] = -get(factored_denoms[j], factor_set[i], 0)
+          end
+        end
+      end
+
+		  min_pows= [minimum( factor_matrix[j, 1:g]) for j in 1:n]
+	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
+
+    end
+
+    function evaluate_differential_factors_matrix(factors, x0, ys)
+        Kxy = parent(factors[1])
+        Ky, y = polynomial_ring(base_ring(Kxy), "y")
+        CC = base_ring(factors[1])
+        m = length(ys)
+
+        result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
+        for l in 1:length(factors)
+          f = factors[l]
+          fx0 = f(x0, y)
+          for s in 1:m
+            fx0ys = CC(fx0(ys[s]))
+            factor_at_xys = [fx0ys^min_pows[l] ]
+            for k in (1:range_pows[l])
+              push!(factor_at_xys, factor_at_xys[k]*fx0ys)
+            end
+            for k in 1:g
+              #Let omega_i = g_i * dx where the omega form a basis of
+              #differentials. Then result[s][k] = g_k(x0, ys) where the
+              #ys are the m preimages in the fiber f^(-1)(x0).
+              result[s, k] *= factor_at_xys[factor_matrix[l, k] - min_pows[l]+1]
+            end
+          end
+        end
+        return result
+      end
+    RS_swap.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
+    RS_swap.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
+
+
+    big_period_matrix(RS_swap)
+
+    analyze_special_points(RS_swap)
+    RS_swap.swapped_surface = RS
+    RS.swapped_surface = RS_swap
+  end
+end
+
+function fiber(f::MPolyRingElem, x0::AcbFieldElem)
+  #Compute fiber
+  CC = base_ring(f)
+  CCz, z = polynomial_ring(CC)
+  roots, mults = find_roots_with_mult(f(x0, z))
+  B =  sortperm(roots, lt = sheet_ordering)
+  fiber_x = AcbFieldElem[]
+  for i in (1:length(mults))
+    for j in (1:mults[B[i]])
+      push!(fiber_x, roots[B[i]])
+    end
+  end
+  return fiber_x
+end
+
+mutable struct RiemannSurfacePoint
+  coordx::AcbFieldElem 
+  coordy::AcbFieldElem 
+  homog_coords::Vector{AcbFieldElem}
+  parent::RiemannSurface 
+  is_singular::Bool
+  is_finite::Bool
+  ramification_index::Int
+  index::Int
+  sheets::Vector{Int}
+
+  function RiemannSurfacePoint(RS::RiemannSurface) 
+    P = new()
+    P.parent = RS
+    return P
+  end
+end
+
+function ==(X::RiemannSurface, Y::RiemannSurface)
+  if precision(X)!=precision(Y)
+    return false
+  end
+  return (defining_polynomial(X) == defining_polynomial(Y)) && (embedding(X) == embedding(Y))
+end
+
+
 
 #Coerce univariate polynomial over univariate polynomial ring to R.
 function to_mpoly(R, h)
@@ -377,6 +630,10 @@ function defining_polynomial_univariate(RS::RiemannSurface)
   return f(x, y)
 end
 
+function complex_defining_polynomial(RS::RiemannSurface, prec::Int=RS.prec)
+  return embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
+end
+
 function genus(RS::RiemannSurface)
   return RS.genus
 end
@@ -397,35 +654,104 @@ function basis_of_differentials(RS::RiemannSurface)
   return RS.basis_of_differentials
 end
 
+infinite_points(RS::RiemannSurface) = RS.infinite_points::Vector{RiemannSurfacePoint}
+y_infinite_points(RS::RiemannSurface) = RS.Y_infinite_points::Vector{RiemannSurfacePoint}
+critical_points(RS::RiemannSurface) = RS.critical_points::Vector{RiemannSurfacePoint}
+  
+base_point(RS::RiemannSurface) = RS.base_point::RiemannSurfacePoint
+  
+
 function assure_has_discriminant_points(RS::RiemannSurface)
   if isdefined(RS, :discriminant_points)
     return nothing
   else
+
     f = defining_polynomial_univariate(RS)
     Kxy = parent(f)
     Kx = base_ring(f)
 
     v = embedding(RS)
-    prec = precision(RS)
 
-    disc_y_factors = AcbPolyRingElem[]
-    a0_factors = AcbPolyRingElem[]
-
-    for (f,e) in factor(discriminant(f))
-      push!(disc_y_factors, embed_poly(f, v, prec))
-    end
-
-    for (f,e) in factor(leading_coefficient(f))
-      push!(a0_factors, embed_poly(f, v, prec))
-    end
-
-    D1 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in disc_y_factors]...)
-    D2 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in a0_factors]...)
-    D_points = sort!(vcat(D1, D2), lt = sheet_ordering)
+    g = genus(RS)
+    a0 = leading_coefficient(f)
+    RR = ArbField(precision(RS))
+    D_points, D1, D2 = _discriminant_points_to_prec(RS, 660)
     RS.discriminant_points = D_points
+    v = embedding(RS)
 
-    #TODO:Compute max precision dynamically based on size of |x| and |f(x)| for x in discriminant points
-    RS.max_precision_complex_field = AcbField(700)
+    XB = maximum(abs(P) for P in D_points) + max_radius(RS)
+
+    if length(D2) == 0
+      L0_safe_radius = RR(1)
+    else
+      D2_distance = minimum([closest_point(P, collect(setdiff(D_points, Set([P]))) )[1] for P in D2])
+      L0_safe_radius = minimum([radius_factor(RS)*D2_distance, max_radius(RS)])
+    end
+
+    low_prec = 66
+    f_low_prec = embed_mpoly(defining_polynomial(RS), v, low_prec)
+    C_low_prec = AcbField(low_prec)
+    R_low_prec = ArbField(low_prec)
+    R, x = polynomial_ring(C_low_prec, "x")
+
+    #Bounds |y(x)| on f(x,y) = 0 for |x| < xb and |x-x_0| > dist for all zeros x_0 of LC */
+    function bound_y_values(xb, dist)
+      coeffs_y = reverse(coefficients(f_low_prec,2))
+      coeffs_y = [ c(x, 0) for c in coeffs_y ]
+      max_y_abs = R_low_prec(0)
+      max_x_abs = R_low_prec(0)
+      for k in (1:RS.degree[1]-1)
+        coeffs_x = coefficients(coeffs_y[k+1])
+        if length(coeffs_x) >= 0
+                Ak = sum([ abs(coeffs_x[j]) * xb^(j) for j in (0:length(coeffs_x)-1) ]; init = R_low_prec(0))
+                max_y_abs = maximum([max_y_abs, Ak/(abs(evaluate(leading_coefficient(a0), v.embedding, low_prec)*dist^degree(a0)))^(1/k)])
+                max_x_abs = maximum([max_x_abs, Ak])
+        end
+      end
+      return maximum([2*max_y_abs, max_x_abs])
+    end
+    YB = bound_y_values(XB, (100/101)*L0_safe_radius)
+    DF_data = RS.differential_form_data
+    DFF = DF_data[1]
+    DFF_emb = [embed_mpoly(g, v, low_prec) for g in DFF]
+    max_diff_abs = ArbFieldElem[]
+    for k in (1:length(DFF))
+      omega = DFF_emb[k]
+      coeffs = collect(coefficients(omega))
+      mons = collect(monomials(omega))
+      val = abs(sum([ abs(coeffs[j]) * mons[j](XB,YB) for j in (1:length(coeffs))];init = R_low_prec(0)))
+      push!(max_diff_abs, maximum([val,R_low_prec(1)]))
+    end
+    one_vec = [R_low_prec(1) for i in (1:g)]
+    for l in (1:length(DFF))
+      val = max_diff_abs[l]
+      fac_xys = [R_low_prec(1) for i in (1:DF_data[4][l]+1)]
+      for k in (0:DF_data[4][l])
+        if DF_data[3][l]+k <= 0 
+          fac_xys[k+1] = R_low_prec(1)
+        else
+          fac_xys[k+1] = max_diff_abs[l]^(DF_data[3][l]+k)
+        end
+      end
+      for k in (1:g)
+        one_vec[k] *= fac_xys[DF_data[2][l, k]-DF_data[3][l]+1]
+      end
+    end
+    bound = maximum(vcat(max_diff_abs, [YB], one_vec))
+
+    additional_prec = ceil(Int, log(bound)/log(2))
+    max_prec = RS.extra_prec + maximum([additional_prec, 67])
+    RS.max_prec = max_prec
+
+    precision_for_DP = RS.degree[1] * max_prec
+
+    if precision_for_DP > 660
+      D_points = _discriminant_points_to_prec(RS, precision_for_DP)[1]
+    end
+
+    RS.discriminant_points_high_prec = D_points
+
+    RS.ajm_discriminant_points = Vector{CChain}(undef, length(D_points))
 
     return nothing
   end
@@ -440,7 +766,44 @@ function discriminant_points(RS::RiemannSurface, copy::Bool = true)
   end
 end
 
+function internal_discriminant_points(RS::RiemannSurface, copy::Bool = true)
+  assure_has_discriminant_points(RS)
+  if copy
+    return deepcopy(RS.discriminant_points_high_prec)
+  else
+    return RS.discriminant_points_high_prec
+  end
+end
 
+
+function _discriminant_points_to_prec(RS::RiemannSurface, prec::Int)
+    f = defining_polynomial_univariate(RS)
+    Kxy = parent(f)
+    Kx = base_ring(f)
+
+    v = embedding(RS)
+
+    RR = ArbField(prec)
+    g = genus(RS)
+    a0 = leading_coefficient(f)
+    disc_y_factors = AcbPolyRingElem[]
+    a0_factors = AcbPolyRingElem[]
+
+
+    for (f,e) in factor(discriminant(f))
+      push!(disc_y_factors, embed_poly(f, v, prec))
+    end
+
+    for (f,e) in factor(a0)
+      push!(a0_factors, embed_poly(f, v, prec))
+    end
+
+    D1 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in disc_y_factors]...)
+    D2 = vcat(AcbFieldElem[],[roots(fac, initial_prec = prec) for fac in a0_factors]...)
+    D_points = sort!(union(D1, D2), lt = sheet_ordering)
+    return D_points, D1, D2
+  end
+  
 
 
 ################################################################################
@@ -482,10 +845,10 @@ function _monodromy_representation(RS::RiemannSurface)
     end
 
 
-    Rc = ArbField(precision(RS))
+    RR = ArbField(precision(RS))
 
     t = 1/N
-    abscissae = [Rc(n*t) for n in (-N + 1: N - 1)]
+    abscissae = [RR(n*t) for n in (-N + 1: N - 1)]
 
     # Perform analytic continuation along the closed loop path with
     # starting point x0. In the algorithm we start with the m ys lying
@@ -548,10 +911,10 @@ end
 function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true)
 
   #Compute the exceptional values x_i
-  D_points = discriminant_points(RS)
+  D_points = internal_discriminant_points(RS)
   d = length(D_points)
-  Cc = parent(D_points[1])
-  Rc = ArbField(precision(RS))
+  CC = parent(D_points[1])
+  RR = ArbField(precision(RS))
 
   #Step 1 compute a minimal spanning tree
   edges = minimal_spanning_tree(D_points)
@@ -566,7 +929,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   if abel_jacobi
 
     #Real part should already be minimal in D_points
-    #x0 = Cc(min(floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS)), -1))
+    #x0 = CC(min(floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS)), -1))
 
     #Catch the case where flooring an arb is not ambiguous. Floor to the smallest of the two options.
     x0 = try floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS))
@@ -578,17 +941,11 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     end
 
     #Connect base point to closest point in D_points
-    closest = 1
-    distance = abs(x0 - D_points[1])
-    for i in (2:length(D_points))
-      new_distance = abs(x0 - D_points[i])
-      if distance > new_distance
-        closest = i
-        distance = new_distance
-      end
-    end
-    push!(D_points, Cc(x0))
-    push!(edges, (d +1, closest))
+
+    distance, index = closest_point(CC(x0), D_points)
+
+    push!(D_points, CC(x0))
+    push!(edges, (d +1, index))
   else
   #Here we take the one that is most suitable if one doesn't need to compute Abel-Jacobi maps according to Neurohr, i.e. we split the longest edge in the middle.
   #(Last edge should be the longest in the way we compute minimal_spanning trees right now.)
@@ -612,7 +969,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
 
   leftright = vcat(left_edges, right_edges)
 
-  current_angle = zero(Rc)
+  current_angle = zero(RR)
 
   angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
     return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
@@ -659,7 +1016,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   ordered_disc_points = map(t -> D_points[t], ordered_disc_points)
 
   radii = [min(max_radius(RS), radius_factor(RS) * minimum(map(t -> abs(t - D_points[j]), vcat(D_points[1:j-1], D_points[j+1:end])))) for j in (1:d)]
-
+  RS.safe_radii = radii
   c_lines = CPath[]
 
 
@@ -747,10 +1104,20 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     end
     push!(paths_with_arcs, vcat(reverse(path_to_loop), reverse(loop), -path_to_loop))
   end
-
-  pi1 = vcat(c_lines, c_arcs), reverse(paths_with_arcs)
+  paths = vcat(c_lines, c_arcs)
+  pi1 = paths, reverse(paths_with_arcs)
+  ys = fiber(complex_defining_polynomial(RS), CC(x0))
+  base_point = RiemannSurfacePoint(RS)
+  base_point.coordx = CC(x0)
+  base_point.index = 1
+  base_point.sheets = [1]
+  base_point.is_finite = true
+  base_point.coordy = ys[1] 
+  base_point.homog_coords = [base_point.coordx, base_point.coordy, CC(1)]
+  RS.base_point = base_point
   RS.fundamental_group_of_P1 = pi1
-  return vcat(c_lines, c_arcs), reverse(paths_with_arcs)
+  RS.ajm_starting_points = [ start_point(p) for p in paths]
+  return paths, reverse(paths_with_arcs), ordered_disc_points
 end
 
 function find_paths_to_end(path, paths, edges, ordered_disc_points)
@@ -817,28 +1184,31 @@ end
 #
 ################################################################################
 
-function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{ArbFieldElem}, start_ys::Vector{AcbFieldElem}=AcbFieldElem[])
+function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{ArbFieldElem}, start_ys::Vector{AcbFieldElem}=AcbFieldElem[], prec = 0)
   v = embedding(RS)
-  prec = precision(RS)
-  Rc = ArbField(prec)
+  if prec < precision(RS)
+    prec = precision(RS)
+  end
+
+  RR = ArbField(prec)
 
   #Embed the polynomial in CC
   f = embed_mpoly(defining_polynomial(RS), v, prec)
-  Cc = base_ring(f)
+  CC = base_ring(f)
 
-  f = change_base_ring(Cc, f, parent = parent(f))
+  f = change_base_ring(CC, f, parent = parent(f))
 
   m = degree(f, 2)
 
   #Add start and end point to the abscissae
-  u = vcat([-one(Rc)], abscissae, [one(Rc)])
+  u = vcat([-one(RR)], abscissae, [one(RR)])
   N = length(u)
 
-  x_vals = zeros_array(Cc, N)
-  dx_vals = zeros_array(Cc, N)
-  y_vals = [zeros_array(Cc, m) for i in (1:N)]
+  x_vals = zeros_array(CC, N)
+  dx_vals = zeros_array(CC, N)
+  y_vals = [zeros_array(CC, m) for i in (1:N)]
 
-  z = zeros_array(Cc, m)
+  z = zeros_array(CC, m)
 
   #Compute x0
   x_vals[1] = evaluate(path, u[1])
@@ -860,6 +1230,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   for l in (2:N)
     x_vals[l] = evaluate(path, u[l])
     z .= y_vals[l-1]
+
     y_vals[l] .= recursive_continuation(f, x_vals[l-1], x_vals[l], z)
   end
   return collect(zip(x_vals, y_vals))
@@ -869,33 +1240,65 @@ end
 function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem})
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
-  Cc = base_ring(f)
-  prec = precision(Cc)
+  CC = base_ring(f)
+  prec = precision(CC)
   m = degree(f, 2)
   temp_vec = acb_vec(m)
   temp_vec_res = acb_vec(m)
 
-  #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
-  d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])])
-  W = [ f(x2, z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(Cc)) for i in (1:m)]
-  w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
+    #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
+    d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])])
+    ff = f(x2, y)
+    ff = ff/leading_coefficient(ff)
+    W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
+    w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
+    
+    if w < d // (2*m) 
+      fillacb!(temp_vec, z)
+      dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
+      @assert dd == m
+      z .= array(CC, temp_vec_res, m)
 
-  if w < d // (2*m)
-    fillacb!(temp_vec, z)
-    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
+      acb_vec_clear(temp_vec, m)
+      acb_vec_clear(temp_vec_res, m)
 
-    @assert dd == m
-    z .= array(Cc, temp_vec_res, m)
+      return z
+    else
+      midpoint = (x1 + x2)//2
+      return recursive_continuation(f, midpoint, x2, recursive_continuation(f, x1, midpoint, z))
+    end
+end
 
-    acb_vec_clear(temp_vec, m)
-    acb_vec_clear(temp_vec_res, m)
 
-    return z
-  else
-    midpoint = (x1 + x2)//2
-    return recursive_continuation(f, midpoint, x2, recursive_continuation(f, x1, midpoint, z))
+function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem}, err::ArbFieldElem)
+  Kxy = parent(f)
+  Ky, y = polynomial_ring(base_ring(Kxy), "y")
+  CC = base_ring(f)
+  prec = precision(CC)
+  m = degree(f, 2)
+  temp_vec = acb_vec(m)
+  temp_vec_res = acb_vec(m)
+
+  ff = f(x2, y)
+  ff = ff/leading_coefficient(ff)
+  W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
+  w0 = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
+  next_error = w0
+  last_error = w0+1
+
+  while next_error > err && next_error < last_error
+    z = [ z[i] - W[i] for i in (1:m) ]
+    W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
+    last_error = next_error
+    next_error = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
   end
-
+  fillacb!(temp_vec, z)
+  dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
+  @assert dd == m
+  z .= array(CC, temp_vec_res, m)
+  acb_vec_clear(temp_vec, m)
+  acb_vec_clear(temp_vec_res, m)
+  return z 
 end
 
 ################################################################################

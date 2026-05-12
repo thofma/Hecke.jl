@@ -157,7 +157,32 @@ end
 Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  return map_coefficients(x -> evaluate(x, v.embedding, prec), f)
+  #=n = length(terms(f))
+  R = coefficient_ring(f)
+  CC = parent(evaluate(R(1), v.embedding, prec))
+  d = length(gens(parent(f)))
+  CCx, x = polynomial_ring(CC, symbols(parent(f)))
+  result = CCx(0)
+  for i in (1:n)
+    I = exponent_vector(f,i)
+    result += CC(evaluate(coeff(f, i), v.embedding, prec)) * prod(x[j]^I[j] for j in (1:d))
+  end
+  return result=#
+  res = map_coefficients(x -> evaluate(x, v.embedding, prec), f)
+  res = map_coefficients(coefficient_ring(res), res; parent = parent(res))
+  return res
+end
+
+function homogenization_RS(f::MPolyRingElem)
+  m = total_degree(f)
+  k = coefficient_ring(f)
+  ktuv, (x1, x2, x3) = polynomial_ring(k, [:x,:y,:z])
+  f_hom = ktuv(0)
+  for term in terms(f)
+    i = m - total_degree(term)
+    f_hom += term(x1,x2) * x3^i
+  end
+  return f_hom
 end
 
 #TODO: Might need to be made more rigorous due to dealing with arb balls
@@ -218,6 +243,18 @@ function trim_zero(x::AcbFieldElem)
   return x
 end
 
+function closest_point(x0::AcbFieldElem, points::Vector{AcbFieldElem})
+  closest = 1
+  distance = abs(x0 - points[1])
+  for i in (2:length(points))
+    new_distance = abs(x0 - points[i])
+    if distance > new_distance
+      closest = i
+      distance = new_distance
+    end
+  end
+  return distance, closest
+end
 
 ################################################################################
 #

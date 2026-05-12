@@ -303,7 +303,7 @@ end
 
 # Compute the abscissae and the weights for the tanh_sinh quadrature
 # I don't think this is used anywhere right now.
-function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::ArbFieldElem = const_pi(parent(h))//2) where T <: IntegerUnion
+function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::ArbFieldElem = const_pi(parent(h))/2) where T <: IntegerUnion
   Rc = parent(h)
   N = Int(N)
 

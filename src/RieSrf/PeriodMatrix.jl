@@ -21,10 +21,10 @@ function big_period_matrix(RS::RiemannSurface)
 
   g = genus(RS)
   diff_base = basis_of_differentials(RS)
-  paths, pi1_gens = fundamental_group_of_punctured_P1(RS::RiemannSurface)
+  paths, pi1_gens, ordered_disc_points = fundamental_group_of_punctured_P1(RS::RiemannSurface)
   num_paths = length(paths)
   prec = precision(RS)
-  disc_points = discriminant_points(RS)
+  disc_points = internal_discriminant_points(RS)
   #small_C = AcbField(100)
   #disc_points_low_precision = [small_C(P) for P in disc_points]
 
@@ -195,50 +195,43 @@ function big_period_matrix(RS::RiemannSurface)
   # There is probably a more clever way to avoid doubling code.
 
   mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
+  closed_chains = CChain[]
 
-  for gamma in pi1_gens
+  for i in (1:length(pi1_gens))
+    gamma = pi1_gens[i]
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
     gamma_perm = prod(map(permutation, chain))
 
+    cchain = CChain(chain, ordered_disc_points[i])
+
     if gamma_perm != one(s_m)
       push!(mon_rep, (chain, gamma_perm))
+      push!(closed_chains, cchain)
      end
   end
 
   inf_chain = Vector{CPath}[]
   inf_perm = one(s_m)::Perm{Int}
 
+
   for g in mon_rep
     inf_chain = vcat(inf_chain, map(reverse, g[1]))
     inf_perm *= g[2]
   end
 
+  inf_cchain = prod(closed_chains)^(-1)
+  inf_cchain.center = Cc(1/0)
+  push!(closed_chains, inf_cchain)
+  RS.inf_chain = inf_cchain
+  RS.closed_chains = closed_chains[1:end-1]
+
+
   push!(mon_rep, (reverse(inf_chain), inv(inf_perm)))
   RS.monodromy_representation = mon_rep
 
+
   cycles, K, sym_transform = homology_basis(RS)
 
-
-
-  # Here we add the computed integrals together when moving along a chain
-  # of paths corresponding to an element of the monodromy representation.
-  chain_integrals = []
-  for mon in mon_rep
-    chain = mon[1]
-    chain_length = length(chain)
-    chain_permutation = mon[2]
-    chain_integral = zero_matrix(Cc, m, g)
-    sigma = one(s_m)
-
-    for k in (1:chain_length)
-      path = chain[k]
-      # Sheets are permuted after moving along path, so we need to add a
-      # permuted matrix.
-      chain_integral += inv(sigma) * path.integral_matrix
-      sigma *= permutation(path)
-    end
-    push!(chain_integrals, chain_integral)
-  end
 
   # The pre-period matrix is the matrix computed using the 2g + m - 1 cycles
   # computed by homology_basis. We will later normalize this using the matrix S
@@ -248,8 +241,17 @@ function big_period_matrix(RS::RiemannSurface)
 
   #For all 2g + m - 1 cycles we compute the integrals of the g differential
   #forms.
-  for cycle in cycles
 
+  sheet_to_sheet_integrals = zero_matrix(Cc, m, g)
+  sheets_left = Set((2:m))
+  sheets_meet = Set()
+
+  for cycle in cycles
+    if length(sheets_left) != 0 
+      sheets_in_cycle = Set([ cycle[2*l+1] for l in (1:round(Int,(length(cycle)-1)/2-1)) ])
+      sheets_meet = intersect(sheets_left, sheets_in_cycle)
+      sheets_left = setdiff(sheets_left, sheets_meet)
+    end
 		cycle_integral = [zero(Cc) for x in 1:g]
 		l = 1
 		while l < length(cycle)
@@ -257,13 +259,19 @@ function big_period_matrix(RS::RiemannSurface)
 			sheet = cycle[l]
 			while sheet != cycle[l+2]
         # Add the correct contribution based on the sheet we are in.
-				cycle_integral += chain_integrals[cycle[l+1]][sheet,:]
-				sheet = mon_rep[cycle[l+1]][2][sheet]
+				cycle_integral += closed_chains[cycle[l+1]].integral_matrix[sheet,:]
+				sheet = permutation(closed_chains[cycle[l+1]])[sheet]
+        if sheet in sheets_meet
+          sheet_to_sheet_integrals[sheet,:] = cycle_integral
+          setdiff!(sheets_meet, Set([sheet]))
+        end
 			end
 			l += 2
 		end
 		push!(pre_period_matrix, cycle_integral)
 	end
+
+  RS.sheet_to_sheet_integrals = sheet_to_sheet_integrals
 
   #Use symmetric transform S to normalize the polarization
 	PMAPMB = sym_transform * matrix(pre_period_matrix)
@@ -285,9 +293,37 @@ function small_period_matrix(RS::RiemannSurface)
   P = big_period_matrix(RS)
   P1 = P[1:g, 1:g]
   P2 = P[1:g, g+1:2*g]
-  small_period_matrix = P1^(-1)*P2
+  P1_inv = P1^(-1)
+  small_period_matrix = P1_inv*P2
   RS.small_period_matrix = small_period_matrix
+  RS.complex_reduction_matrices = [P1_inv]
   return small_period_matrix
+end
+
+function compute_reduction_matrix(RS::RiemannSurface, type::String)
+  g = genus(RS)
+  @req (type == "real" || type =="complex") "Type has to be either 'real' or 'complex'."
+  if type == "real" && !isdefined(RS, :real_reduction_matrix)
+    P = big_period_matrix(RS)
+    prec = precision(base_ring(P))
+    M = zero_matrix(ArbField(prec), 2*g, 2*g)
+    for j in (1:g)
+      for k in (1:g)
+        M[j,k] = real(P[j,k])
+        M[j+g,k] = imag(P[j,k])
+        M[j,k+g] = real(P[j,k+g])
+        M[j+g,k+g] = imag(P[j,k+g])
+      end
+    end
+    RS.real_reduction_matrix = M^(-1)
+  else
+    tau = small_period_matrix(RS)
+    CC = base_ring(tau)
+    if length(RS.complex_reduction_matrices) == 1
+      i_tau = imag(tau)
+      push!(RS.complex_reduction_matrices, change_base_ring(CC,i_tau^(-1)))
+    end
+  end
 end
 
 # Computes the bound M for every path. The bound M is the maximum value of
@@ -357,7 +393,7 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
   v_end = end_point(subpath)
 
   #these values are the 't values' of the discriminant points 
-  rs = [(2 * alpha - (v_start + v_end))/(v_end - v_start) for alpha in discriminant_points(RS)]
+  rs = [(2 * alpha - (v_start + v_end))/(v_end - v_start) for alpha in internal_discriminant_points(RS)]
 
   for g in dif_basis
     interval = [-1]
