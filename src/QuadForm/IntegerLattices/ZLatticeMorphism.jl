@@ -42,7 +42,8 @@ function __assert_has_automorphisms(
   search_fixed_vectors::Bool=true,
   search_invariant_subspace::Bool=false,
   use_target_enum::Bool=true,
-  do_lll::Bool=true
+  do_lll::Bool=true,
+  use_dual::Bool=false
 )
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -139,7 +140,7 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, gram_weyl_vector, weyl_group_gens, weyl_group_order = _get_weyl_proj_and_vector_set(_L; search_fixed_vectors, search_invariant_subspace )
+    res, vector_set, invariants, gram_weyl_vector, weyl_group_gens, weyl_group_order = _get_weyl_proj_and_vector_set(_L; search_fixed_vectors, search_invariant_subspace, use_dual)
     use_projections = false # already added projections
   elseif use_weyl
     weyl_group_gens, weyl_gram_matrices, weyl_group_order,_ = _weyl_group(_L)
@@ -151,7 +152,7 @@ function __assert_has_automorphisms(
     append!(res, weyl_gram_matrices)
   end
   if use_projections
-    proj = _invariant_projections(_L)
+    proj = _invariant_projections(_L; use_dual)
     projZ = numerator.(proj)
     GZ = res[1]
     projgramZ = [i*GZ*transpose(i) for i in projZ]
@@ -260,7 +261,7 @@ function __assert_has_automorphisms(
   return nothing
 end
 
-function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_invariant_subspace=false)
+function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_invariant_subspace=false, use_dual=false)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
   weyl_group_gens, grams, weyl_group_order, (proj_root_inv, proj_root_coinv), fixed_matrix = _weyl_group(_L, root_types, fundamental_roots)
   if length(grams) > 0
@@ -268,7 +269,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_inv
   else
     gram_weyl_vector = nothing
   end
-  proj, target_proj_root_inv, target_norms, denoms, grams, LL = _short_vectors_with_condition_preprocessing(_L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, fixed_matrix) #updates grams
+  proj, target_proj_root_inv, target_norms, denoms, grams, LL = _short_vectors_with_condition_preprocessing(_L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, fixed_matrix; use_dual) #updates grams
   V, grams,_,_,_,invariants = _short_vectors_with_condition(Int, _L, proj, target_proj_root_inv, target_norms, denoms, grams,LL; search_fixed_vectors, search_invariant_subspace)  # updates grams
   if get_assertion_level(:Lattice) > 1
     for (v, n) in V
@@ -529,12 +530,12 @@ end
 
 # Helpers to find additional structure in the lattice
 
-function _invariant_projections_and_sublattices(L::ZZLat, elem_type::Type{S}=Int) where {S}
+function _invariant_projections_and_sublattices(L::ZZLat, elem_type::Type{S}=Int; use_dual::Bool = false) where {S}
   # the first condition is a safeguard from a flint convention for isone
   if rank(L) != degree(L) || !isone(basis_matrix(L))
     L = lattice(rational_span(L))
   end
-  LL, _ = _short_vector_generators_with_sublattice_2(L, S; up_to_sign=true)
+  LL, _ = _short_vector_generators_with_sublattice_2(L, S; up_to_sign=true, use_dual)
   return __projections(LL), LL
 end
 

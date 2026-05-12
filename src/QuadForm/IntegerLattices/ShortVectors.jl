@@ -1037,8 +1037,9 @@ end
 function short_vectors_with_condition(T::Type,
                                       L::ZZLat;
                                       search_fixed_vectors::Bool=true,
-                                      search_invariant_subspace::Bool=false)
-  proj, target_proj_root_inv, target_norms, denoms, grams, successive_sublattices = _short_vectors_with_condition_preprocessing(L, T)
+                                      search_invariant_subspace::Bool=false,
+                                      use_dual::Bool=false)
+  proj, target_proj_root_inv, target_norms, denoms, grams, successive_sublattices = _short_vectors_with_condition_preprocessing(L, T; use_dual)
   return _short_vectors_with_condition(T, L, proj, target_proj_root_inv, target_norms, denoms, grams, successive_sublattices; search_fixed_vectors, search_invariant_subspace)
 end
 
@@ -1048,12 +1049,13 @@ function short_vectors_with_condition(L1::ZZLat,
   T = ZZRingElem
   search_fixed_vectors = false
   search_invariant_subspace = false
+  use_dual = false
   if L1===L2
     @vtime :Lattice 1 proj, target_proj_root_inv, target_norms, denoms, grams, successive_sublattices = _short_vectors_with_condition_preprocessing(L1)
-    return true, _short_vectors_with_condition(T, L1, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace)
+    return true, _short_vectors_with_condition(T, L1, proj, target_proj_root_inv, target_norms, denoms, grams; search_fixed_vectors, search_invariant_subspace, use_dual)
   end
-  @vtime :Lattice 1 (proj1, target_proj_root_inv1, target_norms1, denoms1, grams1, successive_sublattices1), (root_type1, fundamental_roots1), invariant_matrix1 = _short_vectors_with_condition_preprocessing_with_root_data(L1)
-  @vtime :Lattice 1 (proj2, target_proj_root_inv2, target_norms2, denoms2, grams2, successive_sublattices2), (root_type2, fundamental_roots2), invariant_matrix2 = _short_vectors_with_condition_preprocessing_with_root_data(L2)
+  @vtime :Lattice 1 (proj1, target_proj_root_inv1, target_norms1, denoms1, grams1, successive_sublattices1), (root_type1, fundamental_roots1), invariant_matrix1 = _short_vectors_with_condition_preprocessing_with_root_data(L1; use_dual = false)
+  @vtime :Lattice 1 (proj2, target_proj_root_inv2, target_norms2, denoms2, grams2, successive_sublattices2), (root_type2, fundamental_roots2), invariant_matrix2 = _short_vectors_with_condition_preprocessing_with_root_data(L2; use_dual = false)
   _V1 = Vector{Tuple{Vector{T},Vector{T}}}()
   _V2 = Vector{Tuple{Vector{T},Vector{T}}}()
   if root_type1 != root_type2 || rank(L1) != rank(L2) || det(L1) != det(L2)
@@ -1114,17 +1116,19 @@ function short_vectors_with_condition(L1::ZZLat,
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat,
-                                                     elem_type::Type{S}=Int) where {S}
+                                                     elem_type::Type{S}=Int; use_dual::Bool = false) where {S}
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv), invariant_matrix = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, invariant_matrix, :rank, S)
+  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, invariant_matrix, :rank, S; use_dual)
 end
 
 function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat,
-                                                     elem_type::Type{S}=Int) where {S}
+                                                     elem_type::Type{S}=Int;
+                                                     use_dual::Bool
+  ) where {S}
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   weyl_group_gens, grams, ord, (proj_root_inv, proj_root_coinv), invariant_matrix = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, invariant_matrix, :rank, S), (root_types, fundamental_roots), invariant_matrix
+  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, grams, proj_root_inv, proj_root_coinv, invariant_matrix, :rank, S; use_dual), (root_types, fundamental_roots), invariant_matrix
 end
 
 function _short_vectors_with_condition_preprocessing(L::ZZLat,
@@ -1134,14 +1138,15 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
                                                      proj_root_coinv::Vector{Tuple{QQMatrix, QQMatrix,Int}},
                                                      invariant_matrix::ZZMatrix,
                                                      sort::Symbol=:rank,
-                                                     elem_type::Type{S}=Int,
+                                                     elem_type::Type{S}=Int;
+                                                     use_dual::Bool=false
                                                      ) where {S}
   n = rank(L)
   @assert rank(L)==degree(L)
   @hassert :Lattice 1 isone(basis_matrix(L))
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   Rperp = orthogonal_submodule(L, R*basis_matrix(L))
-  LL, _ = _short_vector_generators_with_sublattice_2(Rperp, S; up_to_sign=true)
+  LL, _ = _short_vector_generators_with_sublattice_2(Rperp, S; up_to_sign=true, use_dual)
   V = ambient_space(L)
   Rlat = lattice(V, R)
   R_fix = lattice(V, QQ.(invariant_matrix))

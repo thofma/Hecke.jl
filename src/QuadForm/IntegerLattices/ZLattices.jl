@@ -1868,7 +1868,7 @@ _copy_to_row_matrix!(b::ZZMatrix, c::ZZMatrix) = copy!(b, c)
 
 _short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
 
-function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}=Int; up_to_sign::Bool=false) where {S}
+function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}=Int; up_to_sign::Bool=false, use_dual::Bool = false) where {S}
   if iszero(rank(L))
     return ZZLat[], Vector{Vector{S}}[]
   end
@@ -1880,9 +1880,35 @@ function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}
   end
   sv = [svL]
   SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
-  nrows(B) == rank(L) && return SL, sv
+  if use_dual && !is_unimodular(SL[1])
+    # try to find decomposition of SL[1] via the dual module
+    Ld = dual(SL[1])
+    svLd = shortest_vectors(Ld, S; check=false)
+    Bd = _row_span!(svLd)*basis_matrix(Ld)
+    if nrows(Bd) < rank(Ld)
+      # can split
+      M = orthogonal_submodule(L, Bd)
+      MM = orthogonal_submodule(L, M)
+      pop!(SL)
+      pop!(sv)
+      SM, svM = _short_vector_generators_with_sublattice_2(MM, S; up_to_sign, use_dual)
+      __translate_short_things_from_submodule!(sv, SL, S, SM, svM, MM, L)
+      SM, svM = _short_vector_generators_with_sublattice_2(M, S; up_to_sign, use_dual)
+      __translate_short_things_from_submodule!(sv, SL, S, SM, svM, M, L)
+      return SL, sv
+    end
+  end
+
+  if nrows(B) == rank(L)
+    return SL, sv
+  end
   M = orthogonal_submodule(L, B)
-  SM, svM = _short_vector_generators_with_sublattice_2(M, S; up_to_sign)
+  SM, svM = _short_vector_generators_with_sublattice_2(M, S; up_to_sign, use_dual)
+  __translate_short_things_from_submodule!(sv, SL, S, SM, svM, M, L)
+  return SL, sv
+end
+
+function __translate_short_things_from_submodule!(sv, SL, S, SM, svM, M, L)
   T = ZZ.(coordinates(basis_matrix(M), L))
   if S === Int
     _T = [S(i) for i in transpose(T)]
@@ -1892,7 +1918,7 @@ function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}
     append!(sv, [[i*T for i in j] for j in svM])
   end
   append!(SL, SM)
-  return SL, sv
+  nothing
 end
 
 function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
