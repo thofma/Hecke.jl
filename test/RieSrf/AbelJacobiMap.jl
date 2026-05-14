@@ -13,8 +13,11 @@
   P2 = RS([CC(3),CC(0)])
 
   #Check if Abel-Jacobi map of 2-torsion point is computed correctly. 
-  @test contains(abel_jacobi_map(P1, P2, "swap", "real"), matrix(RR, 4, 1,[RR(-1/2), RR(0),RR(1/2), RR(0)])) || contains(abel_jacobi_map(P1, P2, "swap", "real"), matrix(RR, 4, 1,[RR(1/2), RR(0),RR(-1/2), RR(0)]))
-  @test contains(abel_jacobi_map(P1, P2, "direct", "real"), matrix(RR, 4, 1,[RR(-1/2), RR(0),RR(1/2), RR(0)])) || contains(abel_jacobi_map(P1, P2, "swap", "real"), matrix(RR, 4, 1,[RR(1/2), RR(0),RR(-1/2), RR(0)]))
+  @test contains(map(abs, abel_jacobi_map(P1, P2, "swap", "real")), matrix(RR, 4, 1,[RR(1/2), RR(0),RR(1/2), RR(0)]))
+
+  P1 = RS([CC(2),CC(0)])
+  P2 = RS([CC(3),CC(0)])
+  @test contains(map(abs, abel_jacobi_map(P1, P2, "direct", "real")), matrix(RR, 4, 1,[RR(1/2), RR(0),RR(1/2), RR(0)]))
 
   f = x^5 + x^4 + x^3 - x + 4 - y^2
   RS = riemann_surface(f, 200, integration_method = "heuristic")
