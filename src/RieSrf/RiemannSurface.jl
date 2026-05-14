@@ -755,6 +755,15 @@ Let f be the defining polynomial of the Riemann surface RS.
 Return the points on RS for which df/dy(x,y) = 0.
 """
 critical_points(RS::RiemannSurface) = RS.critical_points::Vector{RiemannSurfacePoint}
+
+@doc raw"""
+function singular_points(RS::RiemannSurface) ->Vector{Vector{AcbFieldElem}}
+
+Return the coordinates of the singular points of the underlying model of the 
+Riemann surface
+"""
+singular_points(RS::RiemannSurface) = RS.singular_points
+  
   
 @doc raw"""
 function base_point(RS::RiemannSurface) -> RiemannSurfacePoint

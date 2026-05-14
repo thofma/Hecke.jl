@@ -16,7 +16,7 @@ divisor, find_path_on_sheet, integrate_on_sheet
 export integral_left_kernel, tangent_representation, homology_representation,
 geometric_homomorphism_representation, geometric_homomorphism_representation_nf, 
 approximate_minimal_polynomial, algebraize_element, complex_structure, 
-rational_homomorphism_equations, precision_adjuster, geometric_endomorphism_representation, 
+rational_homomorphism_equations, geometric_endomorphism_representation, 
 geometric_endomorphism_representation
 
 import Hecke.AbstractAlgebra, Hecke.Nemo
