@@ -1,12 +1,19 @@
 
-function (RS::RiemannSurface)(S::Vector{AcbFieldElem})
+@doc raw"""
+    (RS::RiemannSurface)(coords::Vector{AcbFieldElem})
+
+Return the point $P$ of $RS$ with coordinates specified by `coords`, which can
+be either affine coordinates (`length(coords) == 2`) or projective coordinates
+(`length(coords) == 3`).
+"""
+function (RS::RiemannSurface)(coords::Vector{AcbFieldElem})
   f = complex_defining_polynomial(RS)
   CC = base_ring(parent(f))
   RR = ArbField(precision(CC))
-  @req 2<=length(S)<=3 "Points need to be given in either affine coordinates (x, y) or projective coordinates (x : y : z)"
-  if length(S) == 2
-    x_coord = CC(S[1])
-    y_coord = CC(S[2])
+  @req 2<=length(coords)<=3 "Points need to be given in either affine coordinates (x, y) or projective coordinates (x : y : z)"
+  if length(coords) == 2
+    x_coord = CC(coords[1])
+    y_coord = CC(coords[2])
     v = abs(f(x_coord, y_coord))
     if contains(v, RR(0))
       for s in RS.finite_singularities
@@ -15,8 +22,8 @@ function (RS::RiemannSurface)(S::Vector{AcbFieldElem})
         end
       end
       point = RiemannSurfacePoint(RS)
-      point.coordx = S[1]
-      point.coordy = S[2]
+      point.coordx = coords[1]
+      point.coordy = coords[2]
       point.is_singular = false
       point.homog_coords = [point.coordx, point.coordy, CC(1)]
       point.is_finite = true
@@ -53,6 +60,13 @@ function (RS::RiemannSurface)(S::Vector{AcbFieldElem})
   end
 end
 
+
+
+@doc raw"""
+    is_finite(P::RiemannSurfacePoint)
+
+Return true if the point is a finite point of the Riemann surface.
+"""
 function is_finite(P::RiemannSurfacePoint)
   return P.is_finite
 end
@@ -79,6 +93,7 @@ function show(io::IO, P::RiemannSurfacePoint)
     end
   end
 end
+
 
 function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
   RS = parent(P)
@@ -135,6 +150,10 @@ function parent(P::RiemannSurfacePoint)
   return P.parent
 end
 
+
+#Returns the roots using flint even if flint is unable to isolate the roots
+#E.g. when the polynomial has multiple roots. In this case the roots that 
+#were not isolated will be returned with low precision.
 function find_roots_without_isolation(f::AcbPolyRingElem)
   m = degree(f)
   temp_vec_res = acb_vec(m)
@@ -179,6 +198,12 @@ function find_roots_with_mult(f::PolyRingElem, m::Int = degree(f))
   return roots_found, mult
 end
 
+#Analyzes all the special points on the Riemann surface.
+#This includes:
+# - infinite points: Points where the x-coordinate is infinity
+# - y-infinite points: Points that correspond to [0:1:0] in projective coordinates
+# - critical points: Points for which df/dy = 0
+# - singular points: Points for which df/dy = df/dx = 0
 function analyze_special_points(RS::RiemannSurface)
   if isdefined(RS, :infinite_points) && isdefined(RS, :y_infinite_points) && isdefined(RS, :singular_points)
     return nothing
@@ -304,13 +329,14 @@ function analyze_special_points(RS::RiemannSurface)
   for xk in SFY1 
     if contains(abs(xk), RR(0))
       point = [CC(0), CC(1), CC(0)]
+      push!(all_points, point)
     else
       dist, ind = closest_point(xk,[ P[1] for P in all_points]) 
       if !contains(dist, RR(0))
         point = [xk, CC(1), CC(0)]
+        push!(all_points, point)
       end
-     end
-    push!(all_points, point)
+    end
   end
 
   RS.infinity_coords = collect(all_points)
@@ -346,10 +372,11 @@ function analyze_special_points(RS::RiemannSurface)
 end
 
 
-
+#Compute the Abel-Jacobi map from the basepoint to infinity
+#on all sheets using double-exponential integration. 
+#This method is heuristic as we do not currently have proper error bounds.
+#(DE-integration is used because it is the best method to compute problematic integrals).
 function ajm_DE_infinite_points(RS::RiemannSurface, test_chain::CChain = RS.inf_chain)
-#Compute the Abel-Jacobi map from the basepoint to the endpoint of Gamma 
-#on all sheets using double-exponential integration */
         
   prec = RS.extra_prec
   new_prec = true
@@ -468,9 +495,14 @@ function ajm_DE_infinite_points(RS::RiemannSurface, test_chain::CChain = RS.inf_
   end
 end
 
+#Compute the Abel-Jacobi map from the basepoint to the endpoint of the path
+#on all sheets using double-exponential integration. 
+#This method is heuristic as we do not currently have proper error bounds for integrating
+#into points where the values could go to infinity. (DE-integration is used because it is 
+#the best method to compute problematic integrals).
+#Only used to analyze critical points (which is rigorous)
+#or when the direct method is chosen for integration.
 function ajm_DE_discriminant_point(gamma::CPath, k::Int, RS::RiemannSurface, test_chain::CChain)
-#Compute the Abel-Jacobi map from the basepoint to the endpoint of Gamma 
-#on all sheets using double-exponential integration */
         
   prec = RS.extra_prec
   new_prec = true
@@ -594,7 +626,8 @@ function ajm_DE_discriminant_point(gamma::CPath, k::Int, RS::RiemannSurface, tes
   end
 end
 
-
+#Used to check the sheets a ramified points lies on. Neurohr does not do this, but his 
+#output also seems to be incorrect to me. Might need to check and test more to be sure.
 function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem}, k::Int)
   error = RS.extra_error
   prec = precision(RS)
@@ -649,8 +682,8 @@ function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem},
   return yk_sorted, collect(cycles(loop_perm))
 end
 
+#Apply ajm_DE_discriminant_point to all critical points.
 function ajm_discriminant_points(RS::RiemannSurface, k::Int)
-#Compute Abel-Jacobi map to discriminant point by brute force double-exponential integration */
   chain = RS.closed_chains[k]
   CC = chain.paths[1].C
   l = 1
@@ -676,6 +709,11 @@ function ajm_discriminant_points(RS::RiemannSurface, k::Int)
   RS.ajm_discriminant_points[k] = chain_to_center
 end
 
+@doc raw"""
+    ramification_points(RS::RiemannSurface)
+
+Return the ramification points of the Riemann surface.
+"""
 function ramification_points(RS::RiemannSurface)
   result = RiemannSurfacePoint[]
   for chain in vcat(RS.closed_chains, [RS.inf_chain])
@@ -685,8 +723,6 @@ function ramification_points(RS::RiemannSurface)
       end
     end
   end
-
-
   return result
 end
 

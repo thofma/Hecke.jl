@@ -1,6 +1,11 @@
 #Heuristic endomorphisms based on Rigorous computation of the endomorphism ring of a Jacobian
 # by Edgar Costa, Nicolas Mascot, Jeroen Sijsling and John Voight.
 
+@doc raw"""
+integral_left_kernel(M::ArbMatrix) -> Vector{ZZRingElem}[]
+
+Compute an array of vectors v in ZZ^n such that v * M = 0.
+"""
 function integral_left_kernel(M::ArbMatrix)
 
   RR = base_ring(M)
@@ -20,7 +25,6 @@ function integral_left_kernel(M::ArbMatrix)
   MJ = hcat(MI, MJ)
   L, K = lll_with_transform(MJ)
   
-
   #height_bound might not be necessary, but it filters out some obvious wrong
   #matrices. Might also need fine-tuning.
   height_bound = RR(ZZ(3)^(30+(div(b10_prec,4))))
@@ -32,11 +36,11 @@ function integral_left_kernel(M::ArbMatrix)
     test1 = ht <  height_bound
 
     if test1 
-        prod = matrix(RR, [ row ])*M;
-        test2 = all([ contains(c, zero(RR)) for c in prod])
-        if test2
-            push!(rowsK0, row)
-        end
+      prod = matrix(RR, [ row ])*M;
+      test2 = all([ contains(c, zero(RR)) for c in prod])
+      if test2
+          push!(rowsK0, row)
+      end
     end
   end
 
@@ -46,6 +50,12 @@ function integral_left_kernel(M::ArbMatrix)
   return matrix(rowsK0), true
 end
 
+@doc raw"""
+integral_left_kernel(M::AcbMatrix) -> Vector{ZZRingElem}[]
+
+Numerically compute an array of vectors v in ZZ^n such that 
+v * (real(M), imag(M)) = 0.
+"""
 function integral_left_kernel(M::AcbMatrix)
   CC = base_ring(M)
   prec = precision(CC)
@@ -58,8 +68,14 @@ function integral_left_kernel(M::AcbMatrix)
   return  integral_left_kernel(hcat(real(M), imag(M)))
 end
 
+@doc raw"""
+complex_structure(P::AcbMatrix) -> ArbMatrix
 
-function complex_structure(P)
+Compute the complex structure JP of a given period matrix P.
+I.e. the matrix JP that acts like complex multiplication on the
+lattice spanned by the 2g vectors <real(P), imag(P)>.
+"""
+function complex_structure(P::AcbMatrix)
   CC = base_ring(P)
   iP = onei(CC)*P
   P_split = vcat(real(P), imag(P))
@@ -67,9 +83,13 @@ function complex_structure(P)
   return solve(P_split, iP_split, side = :right)
 end
 
-function rational_homomorphism_equations(JP, JQ)
-#Given two complex structures JP and JQ, returns the equations on homology
-#satisfied by a homomorphism between the two corresponding abelian varieties.
+@doc raw"""
+complex_structure(P::AcbMatrix) -> ArbMatrix
+
+Given two complex structures JP and JQ, returns the equations on homology
+satisfied by a homomorphism between the two corresponding abelian varieties.
+"""
+function rational_homomorphism_equations(JP::ArbMatrix, JQ::ArbMatrix)
 
   RR = base_ring(JP)
   gP = div(number_of_rows(JP),2)
@@ -84,7 +104,17 @@ function rational_homomorphism_equations(JP, JQ)
 return matrix(RR,[ [coeff(c, var) for c in commutator] for var in vars ])
 end
 
-function tangent_representation(R, P, Q)
+
+@doc raw"""
+tangent_representation(R::ZZMatrix, P::AcbMatrix, Q::AcbMatrix) -> AcbMatrix
+
+Given the homology representation R of a homomorphism between two Riemann 
+surfaces with period matrices P and Q.
+
+Return the tangent respresentation of said homomorphism, 
+so that A * P = Q * R.
+"""
+function tangent_representation(R::ZZMatrix, P::AcbMatrix, Q::AcbMatrix)
   CC = base_ring(P)
   prec = precision(CC)
   RR = ArbField(prec)
@@ -103,14 +133,29 @@ function tangent_representation(R, P, Q)
   return A, s0
 end
 
-function tangent_representation(R, P)
+@doc raw"""
+tangent_representation(R::ZZMatrix, P::AcbMatrix) -> AcbMatrix
+
+Given the homology representation R of an endomorphism of a Riemann 
+surface with period matrix P.
+
+Return the tangent respresentation A of said endomorphism, 
+so that A * P = P * R.
+"""
+function tangent_representation(R::ZZMatrix, P::AcbMatrix)
   return tangent_representation(R, P, P)
 end
 
-function homology_representation(A, P, Q)
-#Given a complex tangent representation A of a homomorphism and two period
-#matrices P and Q, returns a homology representation R of that same
-#homomorphism, so that A P = Q R.
+@doc raw"""
+homology_representation(A::AcbMatrix, P::AcbMatrix, Q::AcbMatrix) -> AcbMatrix
+
+Given a complex tangent representation A of a homomorphism a homomorphism 
+between two Riemann surfaces with period matrices P and Q.
+
+Return the homology representation R of said homomorphism, 
+so that A * P = Q * R.
+"""
+function homology_representation(A::AcbMatrix, P::AcbMatrix, Q::AcbMatrix)
   CC = base_ring(P)
   AP = A*P
   AP_split = vcat(real(AP), imag(AP))
@@ -127,11 +172,30 @@ function homology_representation(A, P, Q)
   return R
 end
 
-function homology_representation(A, P)
+@doc raw"""
+homology_representation(A::AcbMatrix, P::AcbMatrix) -> AcbMatrix
+
+Given a complex tangent representation A of an endomorphism of
+a Riemann surface with period matrix P.
+
+Return the homology representation R of said homomorphism, 
+so that A * P = Q * R.
+"""
+function homology_representation(A::AcbMatrix, P::AcbMatrix)
   return homology_representation(A, P, P)
 end
 
-function geometric_homomorphism_representation(P, Q)
+@doc raw"""
+geometric_homomorphism_representation(P::AcbMatrix, Q::AcbMatrix) 
+  -> Vector{(QQMatrix, AcbMatrix)}
+
+Given two period matrices P and Q.
+
+Return a list of generators of the homomorphism algebra. Each entry in the list
+will consist of a tuple (R, A) where R is the homology representation and A is
+the analytic representation given over the complex numbers.
+"""
+function geometric_homomorphism_representation(P::AcbMatrix, Q::AcbMatrix)
   gP = number_of_rows(P)
   gQ = number_of_rows(Q)
 
@@ -176,11 +240,43 @@ function geometric_homomorphism_representation(P, Q)
   return gens
 end
 
+@doc raw"""
+geometric_homomorphism_representation(P::AcbMatrix, Q::AcbMatrix) 
+  -> Vector{(QQMatrix, AcbMatrix)}
+
+Given a period matrix P.
+
+Return a list of generators of the endomorphism algebra. Each entry in the list
+will consist of a tuple (R, A) where R is the homology representation and A is
+the analytic representation given over the complex numbers.
+"""
 function geometric_endomorphism_representation(P)
   return geometric_homomorphism_representation(P,P)
 end 
 
-function geometric_homomorphism_representation_nf(P, Q, F, v, upper_bound = 16)
+@doc raw"""
+geometric_homomorphism_representation_nf(P::AcbMatrix, Q::AcbMatrix, F::NumField,
+v::Union{PosInf, InfPlc}, upper_bound::Int = 16)
+  -> Vector{(QQMatrix, Matrix{NumFieldElem})}, 
+   NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
+
+Given two period matrices P and Q, a base field F, and a place v
+encoding the embedding of F into CC.
+
+Return a list of generators of the homomorphism algebra. 
+Each entry in the list will consist of a tuple (R, A) where 
+R is the homology representation and 
+A is the analytic representation. 
+
+The function tries to recognize the smallest number field K containing the
+entries of the As and returns the matrices over this number field 
+if it succeeds. It will also return the inclusion of F into K.
+
+The optional argumentsupper_bound determines the maximal degree of the possible
+subextensions we should search for.
+"""
+function geometric_homomorphism_representation_nf(P::AcbMatrix, Q::AcbMatrix,
+   F::NumField, v::Union{PosInf, InfPlc}, upper_bound::Int = 16)
 
   CC = base_ring(P)
   gens_part = geometric_homomorphism_representation(P,Q)
@@ -196,6 +292,27 @@ function geometric_homomorphism_representation_nf(P, Q, F, v, upper_bound = 16)
 
 end
 
+@doc raw"""
+geometric_endomorphism_representation_nf(P::AcbMatrix, Q::AcbMatrix, F::NumField,
+v::Union{PosInf, InfPlc}, upper_bound::Int = 16)
+  -> Vector{(QQMatrix, Matrix{NumFieldElem})}, 
+   NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
+
+Given two period matrices P and Q, a base field F, and a place v
+encoding the embedding of F into CC.
+
+Return a list of generators of the endomorphism algebra. 
+Each entry in the list will consist of a tuple (R, A) where 
+R is the homology representation and 
+A is the analytic representation. 
+
+The function tries to recognize the smallest number field K containing the
+entries of the As and returns the matrices over this number field 
+if it succeeds. It will also return the inclusion of F into K.
+
+The optional argument upper_bound determines the maximal degree of the possible
+subextensions we should search for.
+"""
 function geometric_endomorphism_representation_nf(P, F, v, upper_bound = 16)
-  return geometric_homomorphism_representation(P,P, F, v, upper_bound = 16)
+  return geometric_homomorphism_representation(P, P, F, v, upper_bound = 16)
 end 

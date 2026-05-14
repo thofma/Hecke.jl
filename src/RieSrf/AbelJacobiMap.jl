@@ -1,3 +1,6 @@
+
+#Transform the output of the Abel-Jacobi map to an element of R^(2g)/Z^(2g)
+#under the canonical isomorphism.
 function period_lattice_reduction_real(V::AcbMatrix, RS::RiemannSurface)
   g = genus(RS)
   T = RS.real_reduction_matrix
@@ -7,6 +10,8 @@ function period_lattice_reduction_real(V::AcbMatrix, RS::RiemannSurface)
   return matrix(RR, 2*g, 1, [w - round(ZZRingElem, w) for w in W])
 end
 
+#Transform the output of the Abel-Jacobi map to an element of C^g/(1, tau)
+#under the canonical isomorphism.
 function period_lattice_reduction_complex(V::AcbMatrix, RS::RiemannSurface)
   g = genus(RS)
   CC = parent(V[1,1])
@@ -20,7 +25,10 @@ function period_lattice_reduction_complex(V::AcbMatrix, RS::RiemannSurface)
   return V - matrix(CC, g, 1,[round(ZZRingElem, real(v)) for v in V])
 end
 
+#Takes a given path as input and replaces it with a chain of paths
+#avoiding problematic points if needed.
 function find_path_on_sheet(gamma::CPath, RS::RiemannSurface)
+
   @req path_type(gamma) == 0 "Path needs to be a line."
   int_points = []
   discriminant_points = RS.discriminant_points_high_prec
@@ -41,32 +49,41 @@ function find_path_on_sheet(gamma::CPath, RS::RiemannSurface)
 
   for j in (1:length(int_points))
     if contains(start_point(new_path[end]), int_points[j][2])
-      arc_orientation = sign(angle((discriminant_points[int_points[j][1]] - base_point_x) 
-      * exp((-1)*angle(end_point(gamma) - base_point_x)*i)))
-      if arc_orient == 0
-        arc_orient = -1
-      end
-      next_arc = c_arc(int_points[j][2], int_points[j][3], discriminant_points[int_points[j][1]], arc_orient)
-      next_line = c_line(end_point(next_arc), end_point(gamma))
-      new_path = vcat(new_path[end-1], [next_arc, next_line])
-    else
-      new_line = c_line(start_point(new_path[end]), integration_points[j][2])
-      arc_orientation = sign(angle((discriminant_points[int_points[j][1]] - base_point_x) 
-      * exp((-1)*angle(end_point(gamma) - base_point_x)*i)))
-      if arc_orient == 0
-        arc_orient = -1
+      V = angle((discriminant_points[int_points[j][1]] - base_point_x) 
+      * exp((-1)*angle(end_point(gamma) - base_point_x)*i))
+      #In case V = 0, we put the orientation to -1
+      arc_orientation = -1
+      try
+        arc_orientation = sign(Int, V)
+      catch
       end
 
-      next_arc = c_arc(int_points[j][2], int_points[j][3], discriminant_points[int_points[j][1]], arc_orient)
+      next_arc = c_arc(int_points[j][2], int_points[j][3], discriminant_points[int_points[j][1]], orientation = arc_orientation)
       next_line = c_line(end_point(next_arc), end_point(gamma))
-      new_path = vcat(new_path[1:end-1], [new_line, next_arc, next_line])
+      pop!(new_path)
+      new_path = vcat(new_path, [next_arc, next_line])
+    else
+      new_line = c_line(start_point(new_path[end]), integration_points[j][2])
+      V = angle((discriminant_points[int_points[j][1]] - base_point_x) 
+      * exp((-1)*angle(end_point(gamma) - base_point_x)*i))
+      #In case V = 0, we put the orientation to -1
+      arc_orientation = -1
+      try
+        arc_orientation = sign(Int, V)
+      catch
+      end
+
+      next_arc = c_arc(int_points[j][2], int_points[j][3], discriminant_points[int_points[j][1]], orientation = arc_orientation)
+      next_line = c_line(end_point(next_arc), end_point(gamma))
+      pop!(new_path)
+      new_path = vcat(new_path, [new_line, next_arc, next_line])
     end
   end
   return new_path
 end
 
+#Integrate path to a given end point.
 function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
-#Integrate Paths on one sheet to EndPoint, used for the Abel-Jacobi map */
 
   extra_prec = RS.extra_prec
   CC = AcbField(extra_prec)
@@ -150,6 +167,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
 				end
 				integral_matrix += path_difference_matrix
 			end
+      ys = An[end][2]
       paths[1].sheets = [An[end][2][ind]]
 
         # Copied from monodromy_representation to compute the monodromy representation
@@ -169,18 +187,60 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
   end
 end
 
+
+@doc raw"""
+    abel_jacobi_map(P::RiemannSurfacePoint, method = "swap", 
+    reduction = "complex") -> AcbMatrix
+
+Computes the image of the Abel-Jacobi map of the divisor P - P0 of a Riemann surface where
+P0 is the internal base point of the Riemann surface.
+"""
 function abel_jacobi_map(P::RiemannSurfacePoint, method = "swap", reduction = "complex")
   return abel_jacobi_map(divisor([P],[1]), method, reduction)
 end
+@doc raw"""
+    abel_jacobi_map(P::RiemannSurfacePoint, Q::RiemannSurfacePoint, method = "swap", 
+    reduction = "complex") -> AcbMatrix
+
+Computes the image of the Abel-Jacobi map of the divisor P - Q of a Riemann surface.
+"""
 function abel_jacobi_map(P::RiemannSurfacePoint, Q::RiemannSurfacePoint, method = "swap", reduction = "complex")
-  return abel_jacobi_map(divisor([P,Q],[-1,1]), method, reduction)
+  return abel_jacobi_map(divisor([P,Q],[1,-1]), method, reduction)
 end
 
-function abel_jacobi_map( D::RiemannSurfaceDivisor, P0::RiemannSurfacePoint, method = "swap", reduction = "complex")
+@doc raw"""
+    abel_jacobi_map(D::RiemannSurfaceDivisor, P0::RiemannSurfacePoint, method = 
+    "swap", reduction = "complex") -> AcbMatrix
+
+Computes the image of the Abel-Jacobi map of the divisor D - d*P0 where d is deg(D).
+"""
+function abel_jacobi_map(D::RiemannSurfaceDivisor, P0::RiemannSurfacePoint, method = "swap", reduction = "complex")
   return abel_jacobi_map(D - degree(D)*P0, method, reduction)
 end
 
+@doc raw"""
+    abel_jacobi_map(D::RiemannSurfaceDivisor, method = 
+    "swap", reduction = "complex") -> AcbMatrix
 
+Computes the image of the Abel-Jacobi map of the divisor D of a Riemann surface with 
+respect to the internal base point P0. I.e. if ``D = \sum_{j=1}^r n_j*D_j`` and given the basis of 
+differential forms $\omega_i$ of the Riemann surface, the output matrix AJ(D) is gained by
+computing ``\sum_{j=1}^r(n_j* \int_{P0}^{D_j} \omega_i dz)``.
+
+The keyword method can be set to either 'swap' or 'direct'. 
+- In the case of "swap", the abel-jacobi map of critical points is computed by swapping to
+the Riemann surface f(y,x) = 0 if possible.
+- In the case of "direct" the abel-jacobi map of critical points is computed by simply integrating
+into the critical point. This method however is heuristic as error bounds at critical points
+are not well-defined.
+
+The keyword 'reduction' can be set to either "complex", "real" or "none". 
+- In the case of "complex", the output of the abel-jacobi map is given in its image of C^g/(1, tau) where 
+tau is the small period matrix of the Riemann surface.
+- In the case of "real", the output of the abel-jacobi map is given in R^2g/Z^2g under the natural isomorphism
+of the complex torus. 
+In the case of "none", the output is given as it is computed.
+"""
 function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction = "complex")
   @req reduction in ["none","real","complex"] "Reduction has to be either 'none', 'real' or 'complex'."
   @req method in ["swap","direct"] "Method has to be either 'swap' or 'direct'."
@@ -201,7 +261,6 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
     for k in (1:length(points))
       P = points[k] 
       mult = mults[k]
-
       #Case where the x-coordinate is infinity
       if P.coordx == infty
         s = P.sheets[1]
@@ -257,7 +316,7 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
           @req contains(dist2, RR(0)) "Error in Abel-Jacobi map."
           base_point_x = RS.base_point.coordx
           if contains(abs(P.coordx-base_point_x), zero(RR)) 
-            total_complex_integral += matrix(CC, 1,g, mult * s_to_s_integrals[sheet])
+            total_complex_integral += matrix(CC, 1,g, mult * s_to_s_integrals[sheet,:])
           else
             #Find starting point of path closest to P
             dist, ind = closest_point(P.coordx, RS.ajm_starting_points)
@@ -271,9 +330,9 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
                 if j == 1
                   path_to_x = [ c_line(base_point_x, P.coordx) ]
                   integrate_on_sheet(path_to_x, P.coordy, RS)
-                  dist, sheet2 = closest_point(path_to_x[1].sheets, fiber(base_point_x))
+                  dist, sheet2 = closest_point(path_to_x[1].sheets[1], fiber(f, base_point_x))
                   @req contains(dist, RR(0)) "Error in Abel-Jacobi map."
-                  total_complex_integral += matrix(CC, 1,g, mult * (s_to_s_integrals[sheet2] + (path_to_x[1].integral_matrix[1],C2)))
+                  total_complex_integral += matrix(CC, 1,g, mult * (s_to_s_integrals[sheet2,:] + (path_to_x[1].integral_matrix[1,:])))
                 else
                   new_chain = CChain(chain.paths[1:j-1])
                   if !contains(dist, RR(0))

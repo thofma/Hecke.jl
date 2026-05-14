@@ -13,6 +13,11 @@
 export big_period_matrix, small_period_matrix
 
 #Computes a big period matrix for the Riemann surface.
+@doc raw"""
+ big_period_matrix(RS::RiemannSurface)
+
+Compute the big period matrix for the Riemann surface.
+"""
 function big_period_matrix(RS::RiemannSurface)
 
   if isdefined(RS, :big_period_matrix)
@@ -285,6 +290,11 @@ function big_period_matrix(RS::RiemannSurface)
 end
 
 #Compute the small period matrix.
+@doc raw"""
+ small_period_matrix(RS::RiemannSurface)
+
+Compute the small period matrix for the Riemann surface.
+"""
 function small_period_matrix(RS::RiemannSurface)
   if isdefined(RS, :small_period_matrix)
     return RS.small_period_matrix

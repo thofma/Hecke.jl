@@ -1,8 +1,13 @@
-function algebraize_element(a_CC::AcbFieldElem, K)
+
+@doc raw"""
+  algebraize_element(a_CC::AcbFieldElem, K) -> NumFieldElem
+Recognize a complex number as an element of the number field K.
+"""
+function algebraize_element(a_CC::AcbFieldElem, K::NumField, v::Union{PosInf, InfPlc} = infinite_places(K)[1])
   CC = parent(a_CC)
   prec = precision(CC)
   genK = gen(K)
-  v = infinite_places(K)[1].embedding
+  v = v.embedding
 
   degK = degree(K)
   M = [ evaluate(genK^i, v, prec) for i in (0:(degK - 1)) ]
@@ -15,7 +20,6 @@ function algebraize_element(a_CC::AcbFieldElem, K)
 
   if den != 0
     a = sum([ row[i + 1]*genK^i for i in (0:(degK - 1)) ]) //den
-    #Might need to check if this is the correct test
     if contains(a_CC, evaluate(a, v, prec))
         return a
     end
@@ -23,8 +27,20 @@ function algebraize_element(a_CC::AcbFieldElem, K)
   error("No element found.")
 end
 
+@doc raw"""
+  approximate_minimal_polynomial(a_CC::AcbFieldElem, K::NumField, v::Union{PosInf, InfPlc}, 
+  lower_bound::Int= 1, upper_bound::Int= 16, degree_divides::Int= -1) -> MPolyRingElem{NumFieldElem}
 
-function approximate_minimal_polynomial(a_CC::AcbFieldElem, K, v, lower_bound = 1, upper_bound = 16, degree_divides = -1)
+Recognize the minimal polynomial of the element a_CC in K[x] under the embedding of a_CC
+into K using the specified place v.
+
+The optional arguments lower_bound and upper_bound determine the minimal and maximal degree
+we should search for. The optional argument degree_divides can be used if it is known the degree of
+the minimal polynomial is divisible by a certain integer. This will speed up the computation.
+
+"""
+function approximate_minimal_polynomial(a_CC::AcbFieldElem, K::NumField, v::Union{PosInf, InfPlc}, 
+  lower_bound::Int= 1, upper_bound::Int= 16, degree_divides::Int= -1)
   #nsavedrows = 2
   degK = degree(K)
   R, x = polynomial_ring(K)
@@ -32,8 +48,6 @@ function approximate_minimal_polynomial(a_CC::AcbFieldElem, K, v, lower_bound = 
   CC = parent(a_CC)
   prec = precision(CC)
   RR = ArbField(prec)
-  #b10_prec = floor(ZZRingElem, prec*log(2)/log(10))-2
-  #height_bound = RR(ZZ(3)^(30+(div(b10_prec,4))))
 
   powersgenCC = [ evaluate(genK^i, v.embedding, prec) for i in (0:(degK - 1)) ]
 
@@ -41,7 +55,6 @@ function approximate_minimal_polynomial(a_CC::AcbFieldElem, K, v, lower_bound = 
   degf = 0
   MLine = [ powergenCC * poweraCCsc for powergenCC in powersgenCC ]
 
-  #savedrows = []
   while degf < upper_bound
     degf += 1
     poweraCCsc *= a_CC
@@ -65,34 +78,6 @@ function approximate_minimal_polynomial(a_CC::AcbFieldElem, K, v, lower_bound = 
         if contains(f_CC(a_CC), zero(CC))
             return f
         end
-
-        # Test based on height bound. Not sure if this is necessary. 
-        #  if ht < height_bound
-        #    return f
-        #  elseif length(savedrows) == n
-        #    testrepeat = true
-            # Test that checks if the polynomial changed after iteration. Not sure if this is necessary.
-        #    for i in (1:nsavedrows)
-        #      row_old = hcat(savedrows[i],[ 0 for j in (1:(nsavedrows - i + 1)*degK) ])
-         #     if !(row == row_old)
-         #       testrepeat = false
-         #       break
-         #     end
-         #   end
-         #   if testrepeat
-         #     return f
-         #   end
-         # end
-
-         # if length(savedrows) != n
-         #   push!(savedrows, row)
-         # else 
-         #   for i in (2:nsavedrows)
-         #     savedrows[i - 1] = savedrows[i]
-         #   end
-         #   savedrows[nsavedrows] = row
-         # end
-        #end
       end
     end
   end
@@ -100,28 +85,42 @@ error("Failed to find minimal polynomial using LLL. Try increasing the precision
 end
 
 
+@doc raw"""
+  approximate_number_field(aCCs::Vector{AcbFieldElem}, K::NumField, v::Union{PosInf, InfPlc}, 
+  lower_bound::Int= 1, upper_bound::Int= 16, degree_divides::Int= -1) 
+   -> NumField, Vector{NumFieldElem}, Union{PosInf, InfPlc}, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
 
-function approximate_number_field(aCCs::Vector{AcbFieldElem}, K, v,  upper_bound = 16, degree_divides = -1)
-if length(aCCs) == 0 
-  return K, identity_map(K)
-end 
-L = K
-h = identity_map(K)
+Try to find the smallest field extension of K containing all the elements of a_CC in under the embedding
+of the a_CC into K using the specified place v.
 
-tupsa = []
-for aCC in aCCs
-Lnew, tupsa, v, hnew = extend_number_field_step(L, tupsa, v, aCC, upper_bound, degree_divides)
-  if Lnew != L 
-    h = h*hnew
+The optional arguments upper_bound determine the maximal degree of the possible subextensions we
+we should search for. The optional argument degree_divides can be used if it is known the degree of
+the minimal polynomial is divisible by a certain integer. This will speed up the computation.
+
+The output consists of the number field L, an array of elements a of L corresponding to the input aCCs,
+the corresponding new embedding such that v(a[i]) = aCCs[i] and an inclusion homomorphism h: K -> L.
+
+"""
+function approximate_number_field(aCCs::Vector{AcbFieldElem}, K::NumField, v::Union{PosInf, InfPlc},  
+  upper_bound::Int= 16, degree_divides::Int= -1)
+  if length(aCCs) == 0 
+    return K, identity_map(K)
+  end 
+  L = K
+  h = identity_map(K)
+
+  tupsa = []
+  for aCC in aCCs
+  Lnew, tupsa, v, hnew = extend_number_field_step(L, tupsa, v, aCC, upper_bound, degree_divides)
+    if Lnew != L 
+      h = h*hnew
+    end
+    L = Lnew
   end
-  L = Lnew
+  return L, [ tupa[1] for tupa in tupsa ], v,  h
 end
 
-return L, [ tupa[1] for tupa in tupsa ], v,  h
-
-end
-
-
+#Helper function for approximate_number_field
 function extend_number_field_step(K, tupsa, v, anewCC, upper_bound=16, degree_divides =-1)
   #Determine min_poly over K
   gK = approximate_minimal_polynomial(anewCC, K, v, 1, upper_bound, degree_divides)

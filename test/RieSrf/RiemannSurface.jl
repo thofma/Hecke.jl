@@ -5,7 +5,7 @@
   Kxy, (x,y) = polynomial_ring(K, ["x","y"])
 
   f = x^5 + x^4 + x^3 - x + 4 - y^2
-  RS = RiemannSurface(f, 1000, integration_method = "heuristic")
+  RS = riemann_surface(f, 1000, integration_method = "heuristic")
   tau = small_period_matrix(RS)
 
 
@@ -18,7 +18,7 @@
 
   # an Elliptic curve
   f = x^3 + 1 - y^2
-  RS = RiemannSurface(f)
+  RS = riemann_surface(f)
   tau = small_period_matrix(RS)
 
   R = base_ring(tau)
@@ -27,10 +27,10 @@
 
   # the same but different
   f = x^3-1 - y^2
-  RS = RiemannSurface(f)
+  RS = riemann_surface(f)
   small_period_matrix(RS)
 
   f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
-  RS = RiemannSurface(f, 500  ,integration_method = "heuristic")
+  RS = riemann_surface(f, 500  ,integration_method = "heuristic")
   small_period_matrix(RS)
 end

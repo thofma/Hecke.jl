@@ -19,7 +19,7 @@ get_t_of_closest_d_point, evaluate_d
 ################################################################################
 
 #The class Cpath represents a path in the complex plane. It can be either
-# a line, an arc or a circle.
+# a line, an arc, a circle, a point or a line to infinity.
 
 mutable struct CPath
 
@@ -235,7 +235,7 @@ end
 @doc raw"""
 c_line(start_point::AcbFieldElem, end_point::AcbFieldElem) -> CPath
 
-Constructs a line in C from start_point to end_point.
+Construct a line in C from start_point to end_point.
 """
 function c_line(start_point::AcbFieldElem, end_point::AcbFieldElem)
   return CPath(start_point, end_point, 0)
@@ -245,7 +245,7 @@ end
 c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
   -> CPath
 
-Constructs an arc around ''center'' in C from ''start_point'' to
+Construct an arc around ''center'' in C from ''start_point'' to
 ''end_point''. If orientation is 1 the path goes counterclockwise.
 If it is -1 it goes clockwise. If start_point and end_point are identical
 a circle is created instead.
@@ -261,14 +261,34 @@ function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFi
   end
 end
 
+@doc raw"""
+c_circle(start_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
+  -> CPath
+
+Construct a circle around ''center'' in C beginning and ending at ''start_point''
+If orientation is 1 the path goes counterclockwise. If it is -1 it goes clockwise. 
+"""
 function c_circle(start_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
   return c_arc(start_point, start_point, center, orientation = orientation)
 end
 
+@doc raw"""
+c_point(point::AcbFieldElem)
+  -> CPath
+
+Construct path that is just a point. This is only useful as an initial element when 
+concatenating paths.
+"""
 function c_point(point::AcbFieldElem)
   return CPath(point, point, 3, point)
 end
 
+@doc raw"""
+c_infinite_line(point::AcbFieldElem)
+  -> CPath
+
+Construct a path in C from ''start_point'' to infinity.
+"""
 function c_infinite_line(start_point::AcbFieldElem)
   CC =parent(start_point)
   @req start_point != CC(0) "Line to infinity cannot start from zero."
@@ -303,7 +323,7 @@ function show(io::IO, gamma::CPath)
       print(io, "Circle around $(c) with radius $(r) starting at $(x0).")
     end
   end
-  end
+end
 
 ################################################################################
 #
@@ -484,6 +504,8 @@ end
 #
 ################################################################################
 
+#Project the center of the circle onto the line that is an extension of ''line''.
+#Returns the projection.
 function orthogonal_projection(line::CPath, c::AcbFieldElem)
   @req path_type(line) == 0 "First argument needs to be a line."
   a = start_point(line)
@@ -491,7 +513,9 @@ function orthogonal_projection(line::CPath, c::AcbFieldElem)
   return a + (( real(c - a) * real(b - a) + imag(c - a) * imag(b - a))/((b - a) * conjugate(b - a))) * (b - a)
 end
 
-
+#Checks if line intersects the circle.
+#Returns either true or false. In case it returns true,
+#this also returns the orthogonal projection of the center onto the line.
 function line_intersect_circle(line::CPath, circle::CPath)
   c = center(circle)
   orth_proj = orthogonal_projection(line, c)
@@ -513,6 +537,9 @@ function line_intersect_circle(line::CPath, circle::CPath)
   return false, CC(0)
 end
 
+#Checks if line intersects the circle.
+#Returns either true or false. In case it returns true,
+#this also returns the intersection points of the line with the circle
 function intersection_points(line::CPath,circle::CPath)
   @req path_type(line) == 0 && path_type(circle)==2 "First argument needs to be a line and second argument needs to be a circle."
   
@@ -531,23 +558,20 @@ function intersection_points(line::CPath,circle::CPath)
     orth_proj_dist = abs(a - orth_proj)
     D = sqrt(r^2 - center_dist^2)
 
-    if !is_real(D)
-      error("Error in function intersection_points.")
-    end
 
     #Use Pythagoras to find the intersection points
     first_point_dist = orth_proj_dist - D
     max_dist = length(line)
     if contains(abs(first_point_dist), RR(0))
-      intersection_points[1] = a
+      push!(intersection_points, a)
     else
       R1 = first_point_dist/max_dist
-      intersection_points[1] = evaluate(line, (2*R1-1))
+      push!(intersection_points, evaluate(line, (2*R1-1)))
     end
 
     second_point_dist = orth_proj_dist + D
     R2 = second_point_dist/max_dist
-    intersection_points[2] = evaluate(line, (2*R2-1))
+    push!(intersection_points, evaluate(line, (2*R2-1)))
 
     if abs(intersection_points[1] - a) <= abs(intersection_points[2]-a)
       return true, intersection_points
@@ -559,7 +583,7 @@ function intersection_points(line::CPath,circle::CPath)
   end
 end
 
-
+#The class CChain represents a concatenation of CPaths.
 
 mutable struct CChain
   paths::Vector{CPath}

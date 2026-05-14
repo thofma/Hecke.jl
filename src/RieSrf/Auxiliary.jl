@@ -157,22 +157,12 @@ end
 Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  #=n = length(terms(f))
-  R = coefficient_ring(f)
-  CC = parent(evaluate(R(1), v.embedding, prec))
-  d = length(gens(parent(f)))
-  CCx, x = polynomial_ring(CC, symbols(parent(f)))
-  result = CCx(0)
-  for i in (1:n)
-    I = exponent_vector(f,i)
-    result += CC(evaluate(coeff(f, i), v.embedding, prec)) * prod(x[j]^I[j] for j in (1:d))
-  end
-  return result=#
   res = map_coefficients(x -> evaluate(x, v.embedding, prec), f)
   res = map_coefficients(coefficient_ring(res), res; parent = parent(res))
   return res
 end
 
+#Homogenize input polynomial of the Riemann surface
 function homogenization_RS(f::MPolyRingElem)
   m = total_degree(f)
   k = coefficient_ring(f)
@@ -207,25 +197,10 @@ end
 #This is mainly useful when plugging an acb ball centered around zero into a
 #function like arg where its output would suddenly have a radius of length pi.
 @doc raw"""
-    trim_zero(x::AcbFieldElem, n::Int) -> Bool
+    trim_zero(x::AcbFieldElem) -> Bool
 
-Sets the real or imaginary parts of a complex number to zero if it is smaller than 10^(-N).
+Sets the real or imaginary parts of a complex number to zero if the interval contains zero.
 """
-function trim_zero(x::AcbFieldElem, n::Int)
-  Cc = parent(x)
-  prec = precision(Cc)
-  Rc = ArbField(prec)
-  i = onei(Cc)
-  if abs(real(x)) < Rc(10)^(-n)
-    x = Cc(imag(x))*i
-  end
-
-  if abs(imag(x)) < Rc(10)^(-n)
-    x = Cc(real(x))
-  end
-
-  return x
-end
 
 function trim_zero(x::AcbFieldElem)
   Cc = parent(x)
@@ -243,6 +218,8 @@ function trim_zero(x::AcbFieldElem)
   return x
 end
 
+#Finds the point in points that is closest to x0. Returns the distance and the position
+#of the closest point in the array.
 function closest_point(x0::AcbFieldElem, points::Vector{AcbFieldElem})
   closest = 1
   distance = abs(x0 - points[1])

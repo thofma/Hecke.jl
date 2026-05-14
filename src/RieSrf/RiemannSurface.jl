@@ -128,7 +128,7 @@ mutable struct RiemannSurface
   # is equal to g, a basis of differential forms is given by
   # the set of all x^iy^jdx/Df_y where (i,j) is an interior point of the
   # Newton polygon.
-  basis_of_differentials::Vector{Any}
+  basis_of_differentials::Vector{FunFldDiff}
 
   
 
@@ -206,16 +206,6 @@ mutable struct RiemannSurface
 
   function RiemannSurface()
     RS = new()
-    return RS
-  end
-
-  function RiemannSurface(f::MPolyRingElem, prec::Int = 100; integration_method::String = "rigorous")
-    k = base_ring(f)
-    if k == QQ
-      k = rationals_as_number_field()[1]
-    end
-    v = infinite_places(k)[1]
-    RS = RiemannSurface(f, v, prec, integration_method = integration_method)
     return RS
   end
 
@@ -388,6 +378,50 @@ mutable struct RiemannSurface
     return RS
   end
 end
+
+@doc raw"""
+function riemann_surface(f::MPolyRingElem, prec::Int = 100) -> RiemannSurface
+
+Construct the Riemann surface S corresponding to the desingularization of the
+plane curve model defined by f(x,y) = 0 embedded into P^2 over CC with initial
+precision equal to prec bits.
+
+When a Riemann surface is created the following data is computed:
+- The monodromy group of the cover S -> P^1, (x:y:z) -> (x:z)
+- A basis of the homology of the Riemann surface
+- The period matrix associated to the Riemann surface
+
+"""
+function riemann_surface(f::MPolyRingElem, prec::Int = 100; integration_method::String = "heuristic")
+  k = base_ring(f)
+  if k == QQ
+    k = rationals_as_number_field()[1]
+  end
+  v = infinite_places(k)[1]
+  RS = riemann_surface(f, v, prec, integration_method = integration_method)
+  return RS
+end
+
+@doc raw"""
+function riemann_surface(f::MPolyRingElem, v::Union{PosInf, InfPlc},
+   prec::Int = 100) -> RiemannSurface
+
+Construct the Riemann surface S corresponding to the desingularization of the
+plane curve model defined by f(x,y) = 0 embedded into P^2 over CC by the 
+embedding corresponding to the place v, and with initial precision equal to 
+prec bits.
+
+When a Riemann surface is created the following data is computed:
+- The monodromy group of the cover S -> P^1, (x:y:z) -> (x:z)
+- A basis of the homology of the Riemann surface
+- The period matrix associated to the Riemann surface
+
+"""
+function riemann_surface(f::MPolyRingElem, v::T, prec::Int = 100; 
+  integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
+  return RiemannSurface(f, v, prec, integration_method = integration_method) 
+end
+
 
 function swapped_surface(RS::RiemannSurface)
 #Compute the Riemann surface obtained by projecting y to P1 instead of x.
@@ -616,11 +650,22 @@ end
 #
 ################################################################################
 
+@doc raw"""
+function defining_polynomial(RS::RiemannSurface) -> MPolyRingElem
 
+Return the defining polynomial of the Riemann surface.
+"""
 function defining_polynomial(RS::RiemannSurface)
   return RS.defining_polynomial
 end
 
+@doc raw"""
+function defining_polynomial(RS::RiemannSurface)
+  -> PolyRingElem{PolyRingElem}
+
+Return the defining polynomial of the Riemann surface as a univariate
+polynomial over k[x].
+"""
 function defining_polynomial_univariate(RS::RiemannSurface)
   f = defining_polynomial(RS)
   K = base_ring(f)
@@ -630,34 +675,92 @@ function defining_polynomial_univariate(RS::RiemannSurface)
   return f(x, y)
 end
 
+@doc raw"""
+function complex_defining_polynomial(RS::RiemannSurface, prec::Int=RS.prec)
+  -> MPolyRingElem{AcbFieldElem}
+Return the defining polynomial of the Riemann surface after embedding
+its coefficients into CC using the embedding chosen when creating
+the Riemann surface. 
+
+The variable prec determines the precision used for the embedding.
+
+"""
 function complex_defining_polynomial(RS::RiemannSurface, prec::Int=RS.prec)
   return embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
 end
 
+@doc raw"""
+function genus(RS::RiemannSurface) -> Int
+
+Return genus of the Riemann surface
+"""
 function genus(RS::RiemannSurface)
   return RS.genus
 end
 
+@doc raw"""
+function embedding(RS::RiemannSurface) -> Union{PosInf, InfPlc}
+
+Return the place used to embed the Riemann surface into CC.
+"""
 function embedding(RS::RiemannSurface)
   return RS.embedding
 end
 
+@doc raw"""
+function precision(RS::RiemannSurface) -> Int
+
+Return the initial precision ued to construct the Riemann surface.
+"""
 function precision(RS::RiemannSurface)
   return RS.prec
 end
 
+@doc raw"""
+function function_field(RS::RiemannSurface) -> FunctionField
+
+Return the function field of the underlying plane curve.
+"""
 function function_field(RS::RiemannSurface)
   return RS.function_field
 end
 
+@doc raw"""
+function basis_of_differentials(RS::RiemannSurface) -> Vector{FunFldDiff}
+
+Return the basis of differentials of the underlying curve.
+"""
 function basis_of_differentials(RS::RiemannSurface)
   return RS.basis_of_differentials
 end
 
+@doc raw"""
+function infinite_points(RS::RiemannSurface) -> Vector{RiemannSurfacePoint}
+
+Return the points above infinity of the Riemann surface.
+"""
 infinite_points(RS::RiemannSurface) = RS.infinite_points::Vector{RiemannSurfacePoint}
+
+@doc raw"""
+function infinite_points(RS::RiemannSurface) -> Vector{RiemannSurfacePoint}
+
+Return the points on the Riemann surface for which the y-coordinate is infinity.
+"""
 y_infinite_points(RS::RiemannSurface) = RS.Y_infinite_points::Vector{RiemannSurfacePoint}
+
+@doc raw"""
+function critical_points(RS::RiemannSurface) -> Vector{RiemannSurfacePoint}
+
+Let f be the defining polynomial of the Riemann surface RS. 
+Return the points on RS for which df/dy(x,y) = 0.
+"""
 critical_points(RS::RiemannSurface) = RS.critical_points::Vector{RiemannSurfacePoint}
   
+@doc raw"""
+function base_point(RS::RiemannSurface) -> RiemannSurfacePoint
+
+Return the internal base point of the Riemann surface. 
+"""
 base_point(RS::RiemannSurface) = RS.base_point::RiemannSurfacePoint
   
 
@@ -757,6 +860,13 @@ function assure_has_discriminant_points(RS::RiemannSurface)
   end
 end
 
+@doc raw"""
+function discriminant_points(RS::RiemannSurface, copy::Bool = true) -> Vector{AcbFieldElem}
+
+Let f be the defining polynomial of the Riemann surface RS. 
+Return the set of roots of the discriminant (and the leading coeﬃcients) of f as
+a polynomial in y.
+"""
 function discriminant_points(RS::RiemannSurface, copy::Bool = true)
   assure_has_discriminant_points(RS)
   if copy
@@ -812,6 +922,31 @@ function _discriminant_points_to_prec(RS::RiemannSurface, prec::Int)
 #
 ################################################################################
 
+@doc raw"""
+function monodromy_representation(RS::RiemannSurface) 
+  -> Vector{Tuple{Vector{CPath}, Perm{Int}}}
+
+A list of generators of the monodromy group. Every
+element is of the form (P, sigma) where P is a closed chain of paths and sigma
+is the permutation that encodes how the sheets get permuted when moving
+along the closed chain. The paths in the list correpond to the generators of 
+the fundamental group of P1. 
+"""
+function monodromy_representation(RS::RiemannSurface)
+  if !isdefined(RS, :monodromy_representation)
+    big_period_matrix(RS)
+  end
+  return RS.monodromy_representation
+end
+
+
+#Commenting this out. It is technically faster than computing the monodromy
+#representation during the period matrix computation, but I don't expect 
+#anyone would really care about that. As the period matrix computation is
+#now done automatically on creation of the Riemann surface, this method 
+#became obsolete.
+#=
+
 function monodromy_representation(RS::RiemannSurface)
   if isdefined(RS, :monodromy_representation)
     return RS.monodromy_representation
@@ -857,7 +992,7 @@ function _monodromy_representation(RS::RiemannSurface)
     # moving them along the path.
     An = analytic_continuation(RS, path, abscissae)
 
-    # As the order of the ys lying obev x0 changes after analytic continuation,
+    # As the order of the ys lying over x0 changes after analytic continuation,
     # we can reorder using sheet_ordering again to find out how they were
     # permuted to get the corresponding element of the monodromy group.
     path_perm = sortperm(An[end][2], lt = sheet_ordering)
@@ -868,7 +1003,7 @@ function _monodromy_representation(RS::RiemannSurface)
 
   mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
 
-  # Chain all permutations of a all the generators of pi1 together to find
+  # Chain all permutations of all the generators of pi1 together to find
   # the monodromy of the chosen generator.
   for gamma in pi1_gens
     chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
@@ -892,13 +1027,30 @@ function _monodromy_representation(RS::RiemannSurface)
   RS.monodromy_representation = mon_rep
   return mon_rep
 end
+=#
 
+@doc raw"""
+function monodromy_group(RS::RiemannSurface) -> Vector{Perm{Int64}}
+
+Returns all the elements in the monodromy group of the finite cover
+pi: RS -> P^1.
+"""
 function monodromy_group(RS::RiemannSurface)
   mon_rep = monodromy_representation(RS)
   gens = map(t -> t[2], mon_rep)
   return closure(gens, *)
 end
 
+@doc raw"""
+fundamental_group_of_punctured_P1(RS::RiemannSurface) -> Tuple{Vector{CPath}, Vector{Vector{Int}}}
+
+A set of generators of the fundamental group pi_1 of P^1/D where D is the set
+of discriminant points.
+The output consists of a tuple (L, G) where
+- L is a list of paths
+- G consists of generators for pi_1. Each generator is encoded by a
+sequence of indices. These indices refer to the paths in L.
+"""
 function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true)
   if isdefined(RS, :fundamental_group_of_P1)
     return RS.fundamental_group_of_P1
@@ -1184,7 +1336,18 @@ end
 #
 ################################################################################
 
-function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{ArbFieldElem}, start_ys::Vector{AcbFieldElem}=AcbFieldElem[], prec = 0)
+#Let gamma be the path [-1,1] -> P^1 and let pi: RS -> P^1 
+#be the projection given by (x,y) -> x
+#This function performs analytic continuation along the path gamma
+#by iteratively lifting the path along pi. It keeps track of all the
+#different lifts y. 
+#The output will be returned as a list of tuples 
+#[(x0, [y_i]_0), ... (xn, [y_i]_n)] where the y_i correspond to all the lifts 
+#over the respective x value. The xj correspond to the preimages of the input
+#abscissae
+
+function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{ArbFieldElem},
+   start_ys::Vector{AcbFieldElem}=AcbFieldElem[], prec = 0)
   v = embedding(RS)
   if prec < precision(RS)
     prec = precision(RS)
@@ -1236,7 +1399,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   return collect(zip(x_vals, y_vals))
 end
 
-#
+#Recursive continuation used for analytic continuation
 function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem})
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
@@ -1269,7 +1432,11 @@ function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, 
     end
 end
 
-
+#Recursive continuation without checking the proper bound that ensures
+#we are close enough to ensure we are able to isolate roots properly
+#and without using arb for the analytic continuation.
+#This is useful when values start converging to infinity and checking
+#bounds would get us into an infinite loop.
 function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem}, err::ArbFieldElem)
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
@@ -1307,6 +1474,27 @@ end
 #
 ################################################################################
 
+# 
+@doc raw"""
+function homology_basis(RS::RiemannSurface) 
+  -> Tuple{Vector{Vector{Int}}, ZZMatrix, ZZMatrix}
+
+Computes a hoology basis for the Riemann surface RS.
+Assuming the map C -> P1 is m to 1, the output consists of
+- a list of cycles L corresponding to r := 2g + m - 1 cycles circling 
+around at least 2 ramification points. There will be m - 1 related 
+cycles in here.
+- An r x r matrix K encoding the intersection pairing between the r cycles.
+Its entries are either 1, 0. or -1 depending on whether the cycles intersect
+and how their orientation is when they do intersect.
+- A symplectic matrix S that ensure that S^T K S is equal to a matrix
+where the upper left block consists of the normalized polarization and the
+rest consists of zeros. I.e.:
+[I  0 0 ... 0]
+[0 -I 0 ... 0]
+[|  | | ... 0]
+[0  0 0 ... 0]
+"""
 function homology_basis(RS::RiemannSurface)
   if isdefined(RS, :homology_basis)
     return RS.homology_basis

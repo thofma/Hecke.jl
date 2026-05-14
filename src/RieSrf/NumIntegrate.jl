@@ -12,7 +12,8 @@
 
 export IntegrationScheme
 
-export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points, gauss_legendre_path_parameters
+export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points,
+ gauss_legendre_path_parameters
 
   # An integration scheme
   # consists of a list of abscissae, weights and a bunch of parameters.
@@ -59,7 +60,14 @@ end
 ################################################################################
 
 #Use arb to compute the abscissae and the weights.(Cf. Neurohr's thesis 3.2.2)
-function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
+@doc raw"""
+gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: IntegerUnion
+
+Compute abscissae and weights according to the Gauss-Legendre integration
+scheme.
+"""
+function gauss_legendre_integration_points(N::T, 
+  prec::Int = 100) where T <: IntegerUnion
 
   Rc = ArbField(prec)
 
@@ -70,7 +78,8 @@ function gauss_legendre_integration_points(N::T, prec::Int = 100) where T <: Int
   w = zeros_array(Rc, m)
 
   for l in (0:m-1)
-    ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
+    ccall((:arb_hypgeom_legendre_p_ui_root, libflint), Nothing, 
+    (Ref{ArbFieldElem}, Ref{ArbFieldElem}, UInt, UInt, Int), ab[l+1], w[l+1], N, l, prec)
   end
 
   if isodd(N)
@@ -85,7 +94,8 @@ end
 
 function gauss_legendre_parameters(r, error, bound = 10^5)
 
-  N = ceil(Int, (log(64*(bound/15))-log(error)-log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
+  N = ceil(Int, (log(64*(bound/15))-log(error)-
+    log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
   return N
 end
 
@@ -301,8 +311,13 @@ function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: In
   return abscissae, fill(const_pi(Rc)//(N), N)
 end
 
-# Compute the abscissae and the weights for the tanh_sinh quadrature
-# I don't think this is used anywhere right now.
+@doc raw"""
+ tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, 
+ lambda::ArbFieldElem = const_pi(parent(h))/2) where T <: IntegerUnion
+
+Compute abscissae and weights according to the tanh-sinh_quadrature
+integration scheme. 
+"""
 function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::ArbFieldElem = const_pi(parent(h))/2) where T <: IntegerUnion
   Rc = parent(h)
   N = Int(N)

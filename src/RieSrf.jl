@@ -3,7 +3,7 @@ module RiemannSurfaces
 
 using Hecke
 
-export RiemannSurface, discriminant_points, embedding, genus, precision,
+export riemann_surface, discriminant_points, embedding, genus, precision,
 fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
 homology_basis, ramification_points, singular_points, infinite_points, y_infinite_points,
 abel_jacobi_map, fiber, complex_defining_polynomial

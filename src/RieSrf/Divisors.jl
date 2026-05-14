@@ -1,6 +1,18 @@
+################################################################################
+#
+#  Constructors
+#
+################################################################################
+
+#The class RiemannSurfaceDivisor represents a divisor on a Riemann surface
+
 mutable struct RiemannSurfaceDivisor
+
+  #The core data of the divisor is stored by two arrays:
+  #the points in the support and the corresponding multiplicities.
   points::Vector{RiemannSurfacePoint}
   mults::Vector{Int}
+
   degree::Int
   abel_jacobi_value::AcbMatrix
   riemann_surface::RiemannSurface
@@ -41,8 +53,14 @@ mutable struct RiemannSurfaceDivisor
   end
 end
 
-function divisor(S::Vector{RiemannSurfacePoint}, V::Vector{Int}) 
-  return RiemannSurfaceDivisor(S, V)
+@doc raw"""
+divisor(P::Vector{RiemannSurfacePoint}, n::Vector{Int}) -> RiemannSurfaceDivisor
+
+Construct the divisor on a Riemann surface corresponding to the sum n[i]*P[i]
+for i in (1:length(P)).
+"""
+function divisor(P::Vector{RiemannSurfacePoint}, n::Vector{Int}) 
+  return RiemannSurfaceDivisor(P, n)
 end
 
 function zero_divisor(RS::RiemannSurface)
@@ -122,7 +140,7 @@ end
 
 function *(k::Int, D::RiemannSurfaceDivisor)
   if k == 0 then
-    return zero_divisor(RiemannSurface(D))
+    return zero_divisor(riemann_surface(D))
   end
   points, mults = support(D)
   kD = RiemannSurfaceDivisor(points, k*mults)

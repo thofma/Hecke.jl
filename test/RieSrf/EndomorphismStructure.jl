@@ -1,7 +1,7 @@
 using Hecke.RiemannSurfaces
 
 function _endomorphism_structure_case(f, F, v)
-  RS = RiemannSurface(f, v, 500, integration_method = "heuristic")
+  RS = riemann_surface(f, v, 500, integration_method = "heuristic")
   P = big_period_matrix(RS)
   EndoRep = geometric_endomorphism_representation(P)
   return Hecke.RiemannSurfaces.endomorphism_structure(EndoRep; calc_pic = true)
