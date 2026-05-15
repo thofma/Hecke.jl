@@ -430,3 +430,16 @@ let
 
   @test a * O + a * O == a * O
 end
+
+let # 2266
+  K = algebraic_closure(QQ)
+  Kx, x = rational_function_field(K,"x")
+  KxY, Y = polynomial_ring(Kx, "Y")
+  P = Y^2 - x^3 - x^2
+  kC, y = function_field(P, "y")
+  OC = finite_maximal_order(kC)
+  I = ideal(OC(x),OC(y))
+  lp = factor(I)
+  @test all(is_prime(p) for (p,_) in lp)
+  @test prod(p^e for (p, e) in lp) == I
+end
