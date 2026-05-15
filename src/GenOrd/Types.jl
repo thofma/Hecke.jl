@@ -154,7 +154,7 @@ end
        r.is_zero = 1
     end
 
-    r.norm = norm(x)
+    r.norm = _make_canonical_in(O, norm(x))
     r.gen_one = r.norm
     r.gen_two = x
     return r
