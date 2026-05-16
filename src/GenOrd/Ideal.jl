@@ -674,6 +674,15 @@ function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(
   return lp
 end
 
+function residue_field(R::PolyRing{QQBarFieldElem}, p::PolyRingElem{QQBarFieldElem})
+  @assert degree(p) == 1
+  @assert is_monic(p)
+  c = -coeff(p, 0)
+  K = base_ring(R)
+  f = MapFromFunc(R, K, q -> q(c), x -> R(x))
+  return K, f
+end
+
 function Hecke.pradical(O::GenOrd, p::RingElem)
   R, mR = residue_field(parent(p), p)
 
