@@ -42,26 +42,26 @@
     return GenOrd(r, M, one(Qt), check = check)
   end
 
-  function GenOrd(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true)
+  function GenOrd(O::GenOrd{S, T}, M::MatElem, d::RingElem; check::Bool = true) where {S, T}
     F = base_field(O.F)
-    if base_ring(T) isa ZZPolyRing
+    if base_ring(M) isa ZZPolyRing
       R = base_ring(Hecke.AbstractAlgebra.Generic.underlying_fraction_field(F))
-      T = map_entries(x -> F(change_base_ring(QQ, x; parent = R)), T)
-      T = divexact(T, F(change_base_ring(QQ, d; parent = R)))
+      M = map_entries(x -> F(change_base_ring(QQ, x; parent = R)), M)
+      M = divexact(M, F(change_base_ring(QQ, d; parent = R)))
     else
-      T = map_entries(F, T)
-      T = divexact(T, base_ring(T)(d))
+      M = map_entries(F, M)
+      M = divexact(M, base_ring(M)(d))
     end
-    Ti = inv(T)
-    r = GenOrd(O.R, O.F, true)
+    Mi = inv(M)
+    r = GenOrd(O.R, O.F, true)::GenOrd{S, T}
 
     r.is_equation_order = false
     if is_equation_order(O)
-      r.trans = T
-      r.itrans = Ti
+      r.trans = M
+      r.itrans = Mi
     else
-      r.trans = T*basis_matrix(O)
-      r.itrans = basis_matrix_inverse(O)*Ti
+      r.trans = M*basis_matrix(O)
+      r.itrans = basis_matrix_inverse(O)*Mi
     end
     check && map(representation_matrix, basis(r))
     return r
@@ -154,7 +154,7 @@ end
        r.is_zero = 1
     end
 
-    r.norm = norm(x)
+    r.norm = _make_canonical_in(O, norm(x))
     r.gen_one = r.norm
     r.gen_two = x
     return r

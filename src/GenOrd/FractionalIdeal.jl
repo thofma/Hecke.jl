@@ -11,7 +11,7 @@ function_field(a::GenOrdFracIdl) = a.order.F
 fractional_ideal(h::GenOrdIdl) = GenOrdFracIdl(h)
 
 function fractional_ideal(O::GenOrd, M::MatElem)
-  @assert base_ring(M) == base_ring(function_field(O))
+  @assert base_ring(M) == base_field(function_field(O))
   return GenOrdFracIdl(O, M)
 end
 

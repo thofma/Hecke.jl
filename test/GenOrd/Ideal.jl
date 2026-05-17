@@ -20,8 +20,8 @@
   function check_ideal_norm_min(I, expected_norm, expected_min)
     @test istril(basis_matrix(I))
     @test divides(norm(I), minimum(I))[1]
-    @test expected_norm == @inferred norm(I)
-    @test expected_min == @inferred minimum(I)
+    @test @inferred(norm(I)) == Hecke._make_canonical_in(order(I), expected_norm)
+    @test @inferred(minimum(I)) == Hecke._make_canonical_in(order(I), expected_min)
   end
 
   function check_prime_2elem(P, expected_f, expected_e)
@@ -208,7 +208,7 @@
 
     @testset "norm/min: infinite maximal order" begin
       I = ideal(Oinf, 3//x^2)
-      check_ideal_norm_min(I, 27//x^6, 1//x^2)
+      check_ideal_norm_min(I, 1//x^6, 1//x^2)
 
       I = ideal(Oinf, L(x^2)//t^3)
       check_ideal_norm_min(I, norm(Oinf(L(x^2)//t^3)), 1//x)
@@ -220,6 +220,21 @@
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 1)
+    end
+  end
+
+  @testset "over Q(x)" begin
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    L, t = function_field(y^2 - x^3 - x^2; cached = false)
+
+    Ofin = finite_maximal_order(L)
+    Oinf = infinite_maximal_order(L)
+
+    @testset "norm/min: finite maximal order" begin
+      I = ideal(Ofin, L(y)//L(x))
+      check_ideal_norm_min(I, x + 1, x + 1)
+      @test is_prime(I)
     end
   end
 
@@ -282,7 +297,7 @@
     K, a = number_field(x^2 - 2, :a)
 
     @testset "split (p = 7)" begin
-      R = Hecke.localization(ZZ, 7)
+      R = Hecke.localization(ZZ, 7; cached = false)
       OK = integral_closure(R, K)
 
       check_ideal_norm_min(ideal(OK, R(7)),             R(49), R(7))
@@ -300,7 +315,7 @@
     end
 
     @testset "inert (p = 3)" begin
-      R = Hecke.localization(ZZ, 3)
+      R = Hecke.localization(ZZ, 3; cached = false)
       OK = integral_closure(R, K)
 
       check_ideal_norm_min(ideal(OK, R(3)), R(9), R(3))
@@ -311,7 +326,7 @@
     end
 
     @testset "ramified (p = 2)" begin
-      R = Hecke.localization(ZZ, 2)
+      R = Hecke.localization(ZZ, 2; cached = false)
       OK = integral_closure(R, K)
 
       check_ideal_norm_min(ideal(OK, R(2)),          R(4), R(2))
@@ -414,4 +429,17 @@ let
   @test hash(a*O) == hash(a*O)
 
   @test a * O + a * O == a * O
+end
+
+let # 2266
+  K = algebraic_closure(QQ)
+  Kx, x = rational_function_field(K,"x")
+  KxY, Y = polynomial_ring(Kx, "Y")
+  P = Y^2 - x^3 - x^2
+  kC, y = function_field(P, "y")
+  OC = finite_maximal_order(kC)
+  I = ideal(OC(x),OC(y))
+  lp = factor(I)
+  @test all(is_prime(p) for (p,_) in lp)
+  @test prod(p^e for (p, e) in lp) == I
 end
