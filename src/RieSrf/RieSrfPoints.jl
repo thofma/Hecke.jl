@@ -17,7 +17,7 @@ function (RS::RiemannSurface)(coords::Vector{AcbFieldElem})
     v = abs(f(x_coord, y_coord))
     if contains(v, RR(0))
       for s in RS.finite_singularities
-        if contains([x_coord, y_coord], s)
+        if contains(x_coord, s[1]) && contains(y_coord, s[2]) && contains(CC(1), s[3])
           error("Singular point of defining polynomial. Not a point on the Riemann surface.")
         end
       end
@@ -368,69 +368,103 @@ function analyze_special_points(RS::RiemannSurface)
   end
   RS.inf_chain.points = inf_chain_points
   RS.infinite_points = RS.inf_chain.points
+   RS.y_infinite_points = y_infinite_points
   return nothing
 end
 
 
-#Compute the Abel-Jacobi map from the basepoint to infinity
+#Compute the Abel-Jacobi map from the basepoint to a special point
 #on all sheets using double-exponential integration. 
-#This method is heuristic as we do not currently have proper error bounds.
-#(DE-integration is used because it is the best method to compute problematic integrals).
-function ajm_DE_infinite_points(RS::RiemannSurface, test_chain::CChain = RS.inf_chain)
+
+#Used for singular points, infinite points and y-infinite points.
+#Can also be used for other critical points if the method `direct` is used.
+
+#Note: This method is heuristic as we do not have proper error bounds.
+#(Double exponential-integration is used because it is probably the 
+#best method to compute problematic integrals).
+function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_chain::CChain, max_iterations = 5)
         
   prec = RS.extra_prec
   new_prec = true
   go_on = true
 
-  c = maximum([ length(cycle) for cycle in  collect(cycles(permutation(RS.inf_chain))) ])+1
+  iterations = 1
+
+  CC = complex_field(RS)
+
+  if k == 0   #Point at infinity
+    c = maximum([ length(cycle) for cycle in  collect(cycles(permutation(RS.inf_chain))) ])+1
+  else
+    c = maximum([ length(cycle) for cycle in  collect(cycles(permutation(RS.closed_chains[k]))) ])+1
+  end
+  
   error = RS.extra_error
   m = RS.degree[1]
   g = genus(RS)
   h = QQ(16//125)
   s_m = SymmetricGroup(m)
 
+  if permutation(test_chain) != one(s_m)
+    target_error = maximum(map(x-> abs(x)-trim(abs(x)), test_chain.integral_matrix))
+  else 
+    target_error = maximum(map(x-> abs(x)-trim(abs(x)), small_period_matrix(RS)))
+  end
+  
+
+
+  yj_new = CC(0)
+  V = zero_matrix(CC, m, g)
 
   gammas = CPath[]
-  while go_on
+  while go_on && iterations <= max_iterations
+    print(iterations)
     go_on = false
-    if new_prec
-      #Needs to be determined heuristically in a better way:
-      comp_prec = 2*c*prec
-      CC = AcbField(comp_prec)
-      RR = ArbField(comp_prec)
-      Cz, z = polynomial_ring(CC)
-      Cxy, (x,y) = polynomial_ring(CC,2)
-      v = RS.embedding
-      fC = embed_mpoly(defining_polynomial(RS), v, comp_prec)
-      differentials = RS.differential_form_data[1]
-      err2 = (RR(1/2)*RR(10)^(-c-1)*RS.extra_error)^2
-      embedded_differentials = [embed_mpoly(g, v, comp_prec) for g in differentials]
+    #Needs to be determined heuristically in a better way:
+    comp_prec = 2*c*prec
+    CC = AcbField(comp_prec)
+    RR = ArbField(comp_prec)
+    Cz, z = polynomial_ring(CC)
+    Cxy, (x,y) = polynomial_ring(CC,2)
+    v = RS.embedding
+    fC = embed_mpoly(defining_polynomial(RS), v, comp_prec)
+    differentials = RS.differential_form_data[1]
+    embedded_differentials = [embed_mpoly(g, v, comp_prec) for g in differentials]
+
+    if k == 0 #Point at infinity
+      N_gamma = gamma
+      err2 = (RR(1/2)*RS.error^(c+1))^2
+    else
+      N_gamma = c_line(CC(start_point(gamma)),CC(end_point((gamma))))
+      err2 = error^2/4
     end
 
-    N_gamma = c_infinite_line(RS.base_point.coordx)
 
     N = round(Int, 1//h * 72 //10)
     N2P1 = 2*N+1
     abscissae, weights = tanh_sinh_quadrature_integration_points(N, RR(h))
     push!(abscissae,RR(1))
-
     xj = start_point(N_gamma)
 		yj =  sort!(roots(fC(xj, z), initial_prec = comp_prec), lt = sheet_ordering)
     yj_new = yj
 
     path_difference_matrix = zero_matrix(CC, m, g)
     for i in (1:N2P1)
-
       xj_new = evaluate(N_gamma, abscissae[i+1])
       #Integrating into infnity gives problems when trying to do it with the more 
       #rigorous recursive_continuation. Therefore we forego the precision check and
       #use a sanity check later on to check if our result is heuristically correct.
       try
-        yj_new = recursive_continuation_manual(fC, xj, xj_new, yj, error^2/4)
+        yj_new, new_prec = recursive_continuation_manual(fC, xj, xj_new, yj, err2, target_error)
+        if new_prec
+          go_on = true
+          c +=1
+          h = h/2
+          iterations +=1
+          break
+        end
       catch
         break
       end
-
 
 			integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials, xj, yj)
 			integral_matrix_contribution = change_base_ring(CC, integral_matrix_contribution)
@@ -448,8 +482,6 @@ function ajm_DE_infinite_points(RS::RiemannSurface, test_chain::CChain = RS.inf_
 		end
 
 
-	
-
     N_gamma.integral_matrix = path_difference_matrix
     push!(gammas, N_gamma)
 
@@ -458,6 +490,17 @@ function ajm_DE_infinite_points(RS::RiemannSurface, test_chain::CChain = RS.inf_
         sigma = permutation(test_chain)
         V = N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix -  change_base_ring(CC,test_chain.integral_matrix)
         err_V = maximum([ abs(c) for c in V ])
+        N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix
+       
+        if contains(target_error*100, err_V)
+          go_on = false 
+          continue
+        else 
+          h = h/2
+          go_on = true
+          new_prec = false
+          iterations += 1
+        end
       else
         #If we can't determine correctness by comparing against the test_chain we need to recompute with h/2
         #and compare against the more precise computation done with the smaller step size
@@ -470,159 +513,43 @@ function ajm_DE_infinite_points(RS::RiemannSurface, test_chain::CChain = RS.inf_
         else
           V = gammas[s].integral_matrix-gammas[s-1].integral_matrix
           err_V = maximum([ abs(c) for c in V ])
+           if contains(target_error*100, err_V)
+              go_on = false 
+              continue
+          else 
+            h = h/2
+            go_on = true
+            new_prec = false
+            iterations += 1
+          end
         end
       end
     end
-
-    gamma = gammas[end]
-    #Error, permutation & sheets 
-    path_perm = sortperm(yj_new, lt = sheet_ordering)
-    assign_permutation(gamma, inv(s_m(path_perm)))
-
-    V = map(abs, V)
-    #Add the heuristic error. (Could optionally also take err_V instead?)
-    for i in (1:m)
-      for j in (1:g)
-        t = path_difference_matrix[i,j]
-        err_t = V[i,j]
-        ccall((:acb_add_error_arb, Hecke.libflint), Cvoid, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), t, err_t)
-        path_difference_matrix[i,j] = t
-      end
-    end
-    #Save integrals
-    gamma.integral_matrix = path_difference_matrix
-    RS.ajm_infinite_points = gamma
   end
-end
 
-#Compute the Abel-Jacobi map from the basepoint to the endpoint of the path
-#on all sheets using double-exponential integration. 
-#This method is heuristic as we do not currently have proper error bounds for integrating
-#into points where the values could go to infinity. (DE-integration is used because it is 
-#the best method to compute problematic integrals).
-#Only used to analyze critical points (which is rigorous)
-#or when the direct method is chosen for integration.
-function ajm_DE_discriminant_point(gamma::CPath, k::Int, RS::RiemannSurface, test_chain::CChain)
-        
-  prec = RS.extra_prec
-  new_prec = true
-  go_on = true
-
-  c = maximum([ length(cycle) for cycle in  collect(cycles(permutation(RS.closed_chains[k]))) ])+1
-  error = RS.extra_error
-  m = RS.degree[1]
-  g = genus(RS)
-  h = QQ(16//125)
-  s_m = SymmetricGroup(m)
+  final_gamma = gammas[end]
+  #Error, permutation & sheets 
+  path_perm = sortperm(yj_new, lt = sheet_ordering)
+  assign_permutation(final_gamma, inv(s_m(path_perm)))
 
 
-  gammas = []
-  while go_on
-    go_on = false
-    if new_prec
-      #Needs to be determined heuristically in a better way:
-      comp_prec = 2*c*prec
-      CC = AcbField(comp_prec)
-      RR = ArbField(comp_prec)
-      Cz, z = polynomial_ring(CC)
-      Cxy, (x,y) = polynomial_ring(CC,2)
-      v = RS.embedding
-      fC = embed_mpoly(defining_polynomial(RS), v, comp_prec)
-      differentials = RS.differential_form_data[1]
-      embedded_differentials = [embed_mpoly(g, v, comp_prec) for g in differentials]
+  V = map(abs, V)
+  #Add the heuristic error. (Could optionally also take err_V instead?)
+  for i in (1:m)
+    for j in (1:g)
+      t = final_gamma.integral_matrix[i,j]
+      err_t = V[i,j]
+      ccall((:acb_add_error_arb, Hecke.libflint), Cvoid, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), t, err_t)
+      final_gamma.integral_matrix[i,j] = t
     end
-
-    N_gamma = c_line(CC(start_point(gamma)),CC(end_point((gamma))))
-
-    N = round(Int, 1//h * 72 //10)
-    N2P1 = 2*N+1
-    abscissae, weights = tanh_sinh_quadrature_integration_points(N, RR(h))
-    push!(abscissae,RR(1))
-
-    xj = start_point(N_gamma)
-		yj =  sort!(roots(fC(xj, z), initial_prec = comp_prec), lt = sheet_ordering)
-    yj_new = yj
-
-    xjs = []
-    yjs = []
-
-    mats = []
-    pdms = []
-    path_difference_matrix = zero_matrix(CC, m, g)
-    for i in (1:N2P1)
-           # MAXABS := Max([Abs(c):c in Eltseq(ChangeRing(OneMat,CL))]);
-     # if (MAXABS lt Err and j gt N) or Abscissas[j+1] eq 1 then
-     #         break j;
-     # end if;
-      xj_new = evaluate(N_gamma, abscissae[i+1])
-      #Integrating into a pole gives problems when trying to do it with the more 
-      #rigorous recursive_continuation. Therefore we forego the precision check and
-      #use a sanity check later on to check if our result is heuristically correct.
-      try
-        yj_new = recursive_continuation_manual(fC, xj, xj_new, yj, error^2/4)
-      catch
-        break
-      end
-
-      push!(xjs, xj_new)
-      push!(yjs, yj_new)
-			integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials, xj, yj)
-			integral_matrix_contribution = change_base_ring(CC, integral_matrix_contribution)
-      integral_matrix_contribution *= weights[i] * evaluate_d(N_gamma, abscissae[1])
-      
-      max_abs = maximum([abs(c) for c in integral_matrix_contribution])
-      if (i > N && max_abs < error)
-        break
-      end
-
-      xj = xj_new
-      yj = yj_new
-      
-			path_difference_matrix += integral_matrix_contribution
-		end
-	
-
-    N_gamma.integral_matrix = path_difference_matrix
-    push!(gammas, N_gamma)
-
-    if go_on == false 
-      if permutation(test_chain) != one(s_m)
-        sigma = permutation(test_chain)
-        V = N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix -  change_base_ring(CC,test_chain.integral_matrix)
-        err_V = maximum([ abs(c) for c in V ])
-      else
-        #If we can't determine correctness by comparing against the test_chain we need to recompute with h/2
-        #and compare against the more precise computation done with the smaller step size
-        s = length(gammas)
-        if s == 1 then
-          go_on = true
-          h = h/2
-          new_prec = false
-          continue
-        else
-          V = gammas[s].integral_matrix-gammas[s-1].integral_matrix
-          err_V = maximum([ abs(c) for c in V ])
-        end
-      end
-    end
-
-    #Error, permutation & sheets 
-    path_perm = sortperm(yj_new, lt = sheet_ordering)
-    assign_permutation(gamma, inv(s_m(path_perm)))
+  end
+  #Save integrals
+  if k == 0 #Point at infinity
+    RS.ajm_infinite_points = final_gamma
+  else
+    gamma.integral_matrix = final_gamma.integral_matrix
     gamma.sheets = yj_new
-
-    V = map(abs, V)
-    #Add the heuristic error. (Could optionally also take err_V instead?)
-    for i in (1:m)
-      for j in (1:g)
-        t = path_difference_matrix[i,j]
-        err_t = V[i,j]
-        ccall((:acb_add_error_arb, Hecke.libflint), Cvoid, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), t, err_t)
-        path_difference_matrix[i,j] = t
-      end
-    end
-    #Save integrals
-    gamma.integral_matrix = path_difference_matrix
+    assign_permutation(gamma, permutation(final_gamma))
   end
 end
 
@@ -700,7 +627,7 @@ function ajm_discriminant_points(RS::RiemannSurface, k::Int)
   test_chain = CChain(test_chain_paths)
   path_to_center = vcat(chain.paths[1:l-1], c_line(end_point(chain.paths[l-1]), center(chain)))
 
-  ajm_DE_discriminant_point(path_to_center[l], k, RS, test_chain)
+  ajm_DE_special_point(path_to_center[l], k, RS, test_chain)
   chain_to_center = CChain(path_to_center)
 
   perm = prod([ permutation(path_to_center[k]) for k in (1:l-1) ])

@@ -30,7 +30,7 @@ end
 function find_path_on_sheet(gamma::CPath, RS::RiemannSurface)
 
   @req path_type(gamma) == 0 "Path needs to be a line."
-  int_points = []
+  int_points = Tuple{Int64, AcbFieldElem, AcbFieldElem}[]
   discriminant_points = RS.discriminant_points_high_prec
   for j in (1:length(discriminant_points))
     d_point = discriminant_points[j]
@@ -131,7 +131,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
         
         compute_ellipse_bound_heuristic(subpath, embedded_differentials, [r], RS)
         bound = maximum(subpath.bounds)
-        pushfirst!(RS.integration_schemes, IntegrationScheme(r, max_prec, RS.extra_error, bound))
+        pushfirst!(RS.integration_schemes, IntegrationScheme(r, extra_prec+10, RS.extra_error, bound))
        end
 
 			integration_scheme = RS.integration_schemes[subpath.integration_scheme_index]
@@ -266,10 +266,11 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
         s = P.sheets[1]
         @req s in (1:RS.degree[1]) "Error in Abel-Jacobi map."
         if !isdefined(RS, :ajm_infinite_points)
-          ajm_DE_infinite_points(RS)
+          ajm_DE_special_point(c_infinite_line(RS.base_point.coordx), 0, RS, RS.inf_chain)
         end
         sheet2 = inv(RS.ajm_infinite_points.permutation)[s]
         total_complex_integral += matrix(CC, 1,g, mult * (RS.ajm_infinite_points.integral_matrix[sheet2,:] + s_to_s_integrals[sheet2,:]))
+        println("Warning: Heuristic methods have been used in this computation as the divisor included critical points for which we have no nice error bounds. The output is most likely still correct, but it is not provably correct.")
       else
         #Case where we are dealing with finite singularities and y-infinite points.
         dist, ind = closest_point(P.coordx, RS.discriminant_points)
@@ -282,6 +283,7 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
           disc_chain = RS.ajm_discriminant_points[ind]
           sheet2 = P.sheets[1]
           total_complex_integral += matrix(CC, 1,g, mult * (disc_chain.integral_matrix[sheet2,:] + s_to_s_integrals[sheet2,:]))
+          println("Warning: Heuristic methods have been used in this computation as the divisor included critical points for which we have no nice error bounds. The output is most likely still correct, but it is not provably correct.")
         elseif P in RS.critical_points
           @req contains(dist, RR(0)) "Error in Abel-Jacobi map."
           if method == "direct"
@@ -296,6 +298,7 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
             @req contains(dist, RR(0)) "Error in Abel-Jacobi map."
             sheet2 = sheet
             total_complex_integral += matrix(CC, 1,g, mult * (disc_chain.integral_matrix[sheet2,:] + s_to_s_integrals[sheet2,:]))
+            println("Warning: Heuristic methods have been used in this computation as the divisor included critical points for which we have no nice error bounds. The output is most likely still correct, but it is not provably correct. It may be possible to use the method `swap` for provably correct results.")
           elseif method == "swap"
             swapped_surface(RS)
             Q = RS.swapped_surface([P.coordy, P.coordx])
@@ -340,12 +343,11 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
                     integrate_on_sheet(path_to_x, P.coordy, RS)
                     dist, sheet2 = closest_point(path_to_x[1].sheets[1], fiber(f, end_point(new_chain.paths[j-1])))
                     sigma = new_chain.permutation
-                    sheet2 = inv(sigma)[sheet]
+                    sheet2 = inv(sigma)[sheet2]
                     @req contains(dist, RR(0)) "Error in Abel-Jacobi map."
                     
 
                     total_complex_integral += matrix(CC, 1,g, mult * (s_to_s_integrals[sheet2,:] + new_chain.integral_matrix[sheet2,:] + sum([ path.integral_matrix[1,:] for path in path_to_x])))
-                    
                   else
                     sigma = new_chain.permutation
                     sheet2 = inv(sigma)[sheet]

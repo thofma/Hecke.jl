@@ -6,11 +6,12 @@ using Hecke
 export riemann_surface, discriminant_points, embedding, genus, precision,
 fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
 homology_basis, ramification_points, singular_points, infinite_points, y_infinite_points,
-abel_jacobi_map, fiber, complex_defining_polynomial
+abel_jacobi_map, fiber, complex_defining_polynomial, critical_points, critical_values
 
 export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_poly,
 embed_mpoly, analytic_continuation, minimal_spanning_tree, closest_point, recursive_continuation,
-divisor, find_path_on_sheet, integrate_on_sheet
+divisor, find_path_on_sheet, integrate_on_sheet, c_infinite_line, recursive_continuation_manual,
+ajm_DE_special_point
 
 
 export integral_left_kernel, tangent_representation, homology_representation,
@@ -24,7 +25,7 @@ import Hecke.AbstractAlgebra.is_terse
 import Hecke.IntegerUnion
 import Hecke:function_field, basis_of_differentials, genus, embedding, defining_polynomial,
 evaluate, fillacb!, length, reverse, precision, round_scale!, shortest_vectors, radius, zeros_array, center,
-degree, support
+degree, support, complex_field
 import Base:show, isequal, mod2pi, *, ^, inv, ==, +, -, parent
 using FLINT_jll: libflint
 

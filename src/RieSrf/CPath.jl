@@ -124,7 +124,7 @@ mutable struct CPath
     P.center = c
     P.radius = radius
     P.orientation = orientation
-    P.bounds = []
+    P.bounds = ArbFieldElem[]
 
     RR = ArbField(precision(CC))
 
@@ -303,6 +303,8 @@ end
 
 
 function show(io::IO, gamma::CPath)
+  CC = AcbField(30)
+  RR = ArbField(30)
   p_type = path_type(gamma)
   if p_type< 0 || p_type > 4
     error("Path type does not exist")
@@ -311,16 +313,16 @@ function show(io::IO, gamma::CPath)
   x0 = start_point(gamma)
   x1 = end_point(gamma)
   if p_type == 0 || p_type == 4
-    print(io, "Line from $(x0) to $(x1).")
+    print(io, "Line from $(CC(x0)) to $(CC(x1)).")
   elseif p_type ==3
-    print(io, "Point at  $(x0).")
+    print(io, "Point at  $(CC(x0)).")
   else
     r = radius(gamma)
     c = center(gamma)
     if p_type == 1
-      print(io, "Arc around $(c) with radius $(r) starting at $(x0) and ending at $(x1).")
+      print(io, "Arc around $(CC(c)) with radius $(RR(r)) starting at $(CC(x0)) and ending at $(CC(x1)).")
     elseif p_type == 2
-      print(io, "Circle around $(c) with radius $(r) starting at $(x0).")
+      print(io, "Circle around $(CC(c)) with radius $(RR(r)) starting at $(CC(x0)).")
     end
   end
 end
@@ -685,20 +687,21 @@ end
 
 function show(io::IO, chain::CChain)
   n = length(chain)
+  CC = AcbField(30)
   if length(chain) == 0
     print(io, "Empty chain.")
   elseif is_closed(chain)
     x0 = start_point(chain)
     if isdefined(chain, :center)
       c = center(chain)
-      print(io, "Closed chain consisting of $(n) paths starting at $(x0) around $(c).\n")
+      print(io, "Closed chain consisting of $(n) paths starting at $(CC(x0)) around $(CC(c)).\n")
     else
-      print(io, "Closed chain consisting of $(n) paths starting at $(x0).\n")
+      print(io, "Closed chain consisting of $(n) paths starting at $(CC(x0)).\n")
     end
   else
     x0 = start_point(chain)
     x1 = end_point(chain)
-    print(io, "Chain consisting of $(n) paths starting at $(x0) and ending at $(x1).\n")
+    print(io, "Chain consisting of $(n) paths starting at $(CC(x0)) and ending at $(CC(x1)).\n")
   end
   if isdefined(chain, :permutation)
     perm = permutation(chain)

@@ -165,8 +165,8 @@ end
 
 
 function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPath)
-  Cc = parent(points[1])
-  Rr = ArbField(precision(Cc))
+  CC = parent(points[1])
+  Rr = ArbField(precision(CC))
   r_0 = Rr(5.0)
 
   a = start_point(path)
@@ -199,12 +199,12 @@ end
 
 # Compute the parameter r0 for the given arc.
 function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath)
-  Cc = parent(points[1])
-  Rr = ArbField(precision(Cc))
+  CC = parent(points[1])
+  Rr = ArbField(precision(CC))
   r_0 = Rr(5.0)
 
   Rpi = Rr(pi)
-  I = onei(Cc)
+  I = onei(CC)
 
   a = start_arc(path)
   b = end_arc(path)
@@ -214,8 +214,8 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
 
   for p in points
     r_p = r_0
-    if !contains(c - p, zero(Cc))
-      prec = precision(Cc)
+    if !contains(c - p, zero(CC))
+      prec = precision(CC)
       zero_sens = floor(Int, prec*log(2)/log(10)) - 5
       #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
@@ -247,12 +247,12 @@ end
 
 # Compute the parameter r0 for the given circle.
 function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CPath)
-  Cc = parent(points[1])
-  Rr = ArbField(precision(Cc))
+  CC = parent(points[1])
+  Rr = ArbField(precision(CC))
   r_0 = Rr(5.0)
 
   Rpi = Rr(pi)
-  I = onei(Cc)
+  I = onei(CC)
 
   a = start_arc(path)
   b = end_arc(path)
@@ -261,16 +261,17 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
   or = orientation(path)
   for p in points
     r_p = r_0
-    if !contains(c - p, zero(Cc))
+    if !contains(c - p, zero(CC))
       #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
       # when taking absolute values during the computation of r_p)
-      prec = precision(Cc)
+      prec = precision(CC)
       zero_sens = floor(Int, prec*log(2)/log(10)) - 5
 
       t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a))))
-      @req contains(path.gamma(t_p),p) "Error"
+
+      @req contains(path.gamma(t_p) - p, CC(0)) "Error"
 
       #t_p = -or/Rpi * I * mod2pi_i((log(trim_zero(c - p, zero_sens)) - log(r) - I * a))
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)

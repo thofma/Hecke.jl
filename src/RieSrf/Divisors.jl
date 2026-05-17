@@ -22,8 +22,8 @@ mutable struct RiemannSurfaceDivisor
     D = new()
     D.RiemannSurface = RS
     D.degree = 0
-    D.points = []
-    D.mults = []
+    D.points = RiemannSurfacePoint[]
+    D.mults = Int[]
     return D
   end
 
@@ -36,8 +36,8 @@ mutable struct RiemannSurfaceDivisor
     D.riemann_surface = parent(S[1])
 
     D.degree = sum(V;init = 0)
-    D.points = []
-    D.mults = []
+    D.points = RiemannSurfacePoint[]
+    D.mults = Int[]
     for k in (1:number_of_points)
       if V[k] != 0
         i = findfirst(x -> x == S[k], D.points)

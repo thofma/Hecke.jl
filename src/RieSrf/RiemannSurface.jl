@@ -273,7 +273,7 @@ mutable struct RiemannSurface
 
       factor_matrix = zeros(Int, n, g)
 
-      baker_diffs = []
+      baker_diffs = FunFldDiff[]
 
       for i in (1:g)
         factor_matrix[1, i] = inner_fac[i][1] - 1
@@ -292,8 +292,8 @@ mutable struct RiemannSurface
       RS.basis_of_differentials = diff_base
       #Compute the differential forms data mentioned above.
       factor_set = Set{MPolyRingElem}()
-      factored_nums = []
-      factored_denoms = []
+      factored_nums = Dict{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}, Int64}[]
+      factored_denoms = Dict{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}, Int64}[]
       #Gather all the factors occurring in the basis of differential forms
       for i in 1:g
         num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[1].f))))
@@ -369,10 +369,10 @@ mutable struct RiemannSurface
     RS.weak_error = RR(10)^(-(2//3) *b10_prec)
     RS.error = RR(10)^(-b10_prec - 1)
     RS.extra_error = RR(10)^(-b10_extra_prec - 10)
-    RS.bounds = []
+    RS.bounds = ArbFieldElem[]
     RS.degree = reverse(degrees(f))
 
-    tau = small_period_matrix(RS)
+    big_period_matrix(RS)
     analyze_special_points(RS)
 
     return RS
@@ -436,8 +436,8 @@ function swapped_surface(RS::RiemannSurface)
     RS_swap.weak_error = RS.weak_error
     RS_swap.extra_error = RS.extra_error
     RS_swap.integration_method = RS.integration_method
-    RS_swap.integration_schemes = []
-    RS_swap.bounds = []
+    RS_swap.integration_schemes = IntegrationScheme[]
+    RS_swap.bounds = ArbFieldElem[]
 
     f = defining_polynomial(RS)
     Kxy = parent(f)
@@ -489,8 +489,8 @@ function swapped_surface(RS::RiemannSurface)
       dx = differential(x)
 
       factor_set = Set{MPolyRingElem}()
-      factored_nums = []
-      factored_denoms = []
+      factored_nums = MPolyRingElem[]
+      factored_denoms = MPolyRingElem[]
 
       dfy = derivative(f,2)(x,y)
       dfx = derivative(f,1)(x,y)
@@ -746,7 +746,7 @@ function infinite_points(RS::RiemannSurface) -> Vector{RiemannSurfacePoint}
 
 Return the points on the Riemann surface for which the y-coordinate is infinity.
 """
-y_infinite_points(RS::RiemannSurface) = RS.Y_infinite_points::Vector{RiemannSurfacePoint}
+y_infinite_points(RS::RiemannSurface) = RS.y_infinite_points::Vector{RiemannSurfacePoint}
 
 @doc raw"""
 function critical_points(RS::RiemannSurface) -> Vector{RiemannSurfacePoint}
@@ -772,6 +772,12 @@ Return the internal base point of the Riemann surface.
 """
 base_point(RS::RiemannSurface) = RS.base_point::RiemannSurfacePoint
   
+@doc raw"""
+function complex_field(RS::RiemannSurface) -> AcbField
+
+Return the field over which the Riemann surface is defined.
+"""
+complex_field(RS::RiemannSurface) = RS.complex_field
 
 function assure_has_discriminant_points(RS::RiemannSurface)
   if isdefined(RS, :discriminant_points)
@@ -1172,7 +1178,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   #Paths to all nodes
   paths = [[(d+1, d+1)]]
 
-  ordered_disc_points = []
+  ordered_disc_points = Int64[]
   find_paths_to_end([(d+1, d+1)], paths, path_edges, ordered_disc_points)
   ordered_disc_points = map(t -> D_points[t], ordered_disc_points)
 
@@ -1298,7 +1304,7 @@ end
 #Could be optimized probably. Kruskal's algorithm
 function minimal_spanning_tree(v::Vector{AcbFieldElem})
 
-  edge_weights = []
+  edge_weights = Tuple{ArbFieldElem, Tuple{Int64, Int64}}[]
 
   N = length(v)
 
@@ -1446,11 +1452,12 @@ end
 #and without using arb for the analytic continuation.
 #This is useful when values start converging to infinity and checking
 #bounds would get us into an infinite loop.
-function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem}, err::ArbFieldElem)
+function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem}, err::ArbFieldElem, target_error::ArbFieldElem)
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   CC = base_ring(f)
   prec = precision(CC)
+  RR = ArbField(prec)
   m = degree(f, 2)
   temp_vec = acb_vec(m)
   temp_vec_res = acb_vec(m)
@@ -1460,7 +1467,7 @@ function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbField
   W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
   w0 = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
   next_error = w0
-  last_error = w0+1
+  last_error = RR(1/0)
 
   while next_error > err && next_error < last_error
     z = [ z[i] - W[i] for i in (1:m) ]
@@ -1468,13 +1475,18 @@ function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbField
     last_error = next_error
     next_error = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
   end
+
   fillacb!(temp_vec, z)
+  if next_error > target_error && next_error >= last_error
+    return z, true
+  end
+
   dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
   @assert dd == m
   z .= array(CC, temp_vec_res, m)
   acb_vec_clear(temp_vec, m)
   acb_vec_clear(temp_vec_res, m)
-  return z 
+  return z, false
 end
 
 ################################################################################
@@ -1760,8 +1772,8 @@ function symplectic_reduction(K::ZZMatrix)
   A = deepcopy(K)
   B = one(parent(K))
 
-  ind1 = []
-  ind2 = []
+  ind1 = Vector{ZZRingElem}[]
+  ind2 = ZZRingElem[]
   pivot = 1
 
   while pivot <= n

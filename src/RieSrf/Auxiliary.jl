@@ -253,7 +253,7 @@ function inner_faces(f)
   edges = vcat([line_equation(ordered_vertices[i-1], ordered_vertices[i]) for i in (2:n)], line_equation(ordered_vertices[end], ordered_vertices[1]))
   center = sum(ordered_vertices)//n
 
-  result = []
+  result = Vector{Int}[]
   d = total_degree(f)-3
 	for i in (0:d)
 		for j in (0:d-i)
@@ -283,7 +283,7 @@ function convex_hull(points::Vector{Vector{Int}})
   if length(points) == 1
     error("Convex hull of 1 point is not defined")
   elseif length(points) == 2
-    P = Polygon([Line((points[1], points[2]))])
+    return([points[1], points[2]])
   else
     points_lower_convex_hull = Vector{Int}[points[1]]
     i = 2

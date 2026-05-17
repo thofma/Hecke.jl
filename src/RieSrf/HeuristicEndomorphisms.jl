@@ -91,13 +91,25 @@ satisfied by a homomorphism between the two corresponding abelian varieties.
 """
 function rational_homomorphism_equations(JP::ArbMatrix, JQ::ArbMatrix)
 
-  RR = base_ring(JP)
+  JP_prec = precision(base_ring(JP))
+  JQ_prec = precision(base_ring(JQ))
+
+  prec = minimum([JP_prec, JQ_prec])
+
+  RR = ArbField(prec)
+
+  JP = change_base_ring(RR, JP)
+  JQ = change_base_ring(RR, JQ)
+
   gP = div(number_of_rows(JP),2)
   gQ = div(number_of_rows(JQ),2)
   n = 4 * gP * gQ
 #Building a formal matrix corresponding to all possible integral transformations of the lattice */
   R, vars = polynomial_ring(RR, n)
   M = matrix(R, 2 * gQ, 2 * gP, vars)
+  JP = change_base_ring(R, JP)
+  JQ = change_base_ring(R, JQ)
+
 #Condition that integral transformation preserve the complex structure */
   commutator = reduce(vcat,transpose((M * JP - JQ* M)))
 # Splitting previous linear equations by formal variable */
