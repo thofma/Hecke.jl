@@ -246,6 +246,9 @@ mutable struct RiemannSurface
     g = length(diff_base)
     RS.genus = g
 
+    if g == 0
+      error("Cannot construct Riemann surface of genus 0.")
+    end
    
 
     if integration_method != "heuristic" && integration_method != "rigorous"

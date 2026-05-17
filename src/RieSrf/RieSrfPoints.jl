@@ -271,7 +271,7 @@ function analyze_special_points(RS::RiemannSurface)
           point.homog_coords = [point.coordx, point.coordy, CC(1)]
 
           if contains(dfyk(point.coordy),CC(0))
-            if contains(dfxk(point.coordy, CC(0)))
+            if contains(dfxk(point.coordy), CC(0))
               push!(finite_singularities, [point.coordx, point.coordy])
                 point.is_singular = true
             end
@@ -417,7 +417,6 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
 
   gammas = CPath[]
   while go_on && iterations <= max_iterations
-    print(iterations)
     go_on = false
     #Needs to be determined heuristically in a better way:
     comp_prec = 2*c*prec

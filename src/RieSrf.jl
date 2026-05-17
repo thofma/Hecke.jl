@@ -6,7 +6,7 @@ using Hecke
 export riemann_surface, discriminant_points, embedding, genus, precision,
 fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
 homology_basis, ramification_points, singular_points, infinite_points, y_infinite_points,
-abel_jacobi_map, fiber, complex_defining_polynomial, critical_points, critical_values
+abel_jacobi_map, fiber, complex_defining_polynomial, critical_points
 
 export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_poly,
 embed_mpoly, analytic_continuation, minimal_spanning_tree, closest_point, recursive_continuation,
