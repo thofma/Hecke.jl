@@ -393,7 +393,6 @@ end
     K, a = number_field(x^2 - x + 1; cached = false)
     E = elliptic_curve(K, [0, 0, 0, -15, 22])
     Ps = bad_primes(E)
-    sort!(Ps, by = x -> minimum(x))
     @test tamagawa_number.(Ref(E), Ps) == [3, 2]
     @test kodaira_symbol.(Ref(E), Ps) == ["IV*", "I0*"]
     @test @inferred issetequal(tamagawa_numbers(E), [3, 2])
@@ -412,6 +411,36 @@ end
 
     E = elliptic_curve_from_j_invariant(t^3//(t^2 + t + 1))
     @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])
+  end
+
+  @testset "LocalData caching" begin
+    # check that good primes are not cached and that primes are ZZ for curves over Q
+    let E = elliptic_curve([0, 0, 0, 1, 0])
+      @test isempty(Hecke._local_data_dict(E))
+      # good prime
+      tates_algorithm_local(E, 3, EllipticCurveLocalData)
+      @test isempty(Hecke._local_data_dict(E))
+      # bad prime but asked with Int instead of ZZ
+      ld1 = tates_algorithm_local(E, 2, EllipticCurveLocalData)
+      @test length(Hecke._local_data_dict(E)) == 1
+      @test haskey(Hecke._local_data_dict(E), ZZ(2))
+      ld2 = tates_algorithm_local(E, ZZ(2), EllipticCurveLocalData)
+      @test length(Hecke._local_data_dict(E)) == 1
+      @test ld1 === ld2
+    end
+
+    # check prime canonicalization in rational function fields
+    let (K, t) = rational_function_field(QQ, :t; cached = false)
+      E = elliptic_curve(K, [0, t, 0, t^4, 0])
+      ld1 = tates_algorithm_local(E, t - 1//2, EllipticCurveLocalData)
+      ld2 = tates_algorithm_local(E, 2*t - 1, EllipticCurveLocalData)
+      @test ld1 === ld2
+
+      E = elliptic_curve_from_j_invariant(t)
+      ld1 = tates_algorithm_local(E, degree, EllipticCurveLocalData)
+      ld2 = tates_algorithm_local(E, 1//t, EllipticCurveLocalData)
+      @test ld1 === ld2
+    end
   end
 end
 

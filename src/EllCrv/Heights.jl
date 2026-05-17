@@ -112,14 +112,14 @@ function local_height(P::EllipticCurvePoint{QQFieldElem}, p::IntegerUnion, prec:
 
   is_infinite(P) && return zero(ArbField(prec, cached = false))
   p == 0 && return _real_height(P, prec)
-  return _local_height(P, QQValuation(p), prec)
+  return _local_height(P, p, QQValuation(p), prec)
 end
 
 function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, pIdeal::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prec::Int = 100)
   @req is_prime(pIdeal) "p must be prime"
 
   is_infinite(P) && return zero(ArbField(prec, cached = false))
-  return _local_height(P, AbsSimpleNumFieldValuation(pIdeal), prec)
+  return _local_height(P, pIdeal, AbsSimpleNumFieldValuation(pIdeal), prec)
 end
 
 function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, v::InfPlc, prec::Int = 100)
@@ -127,8 +127,8 @@ function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, v::InfPlc, p
   return archimedean_height(P, v, prec)
 end
 
-function _local_height(P::EllipticCurvePoint{T}, v::DiscreteValuation{T}, prec::Int) where T
-  ld = _tates_algorithm(parent(P), v)
+function _local_height(P::EllipticCurvePoint{T}, p, v::DiscreteValuation{T}, prec::Int) where T
+  ld = tates_algorithm_local(parent(P), p, EllipticCurveLocalData)
   E = ld.minimal_model
   P = isomorphism(parent(P), E)(P)
 

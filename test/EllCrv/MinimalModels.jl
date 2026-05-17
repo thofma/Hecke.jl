@@ -92,6 +92,7 @@
     K, a = number_field(x^2 - x + 31821453; cached = false)
     OK = ring_of_integers(K)
 
+    # has good reduction everywhere (but no global minimal model)
     E = elliptic_curve(K, [0, 0, 0, -382586771000351226384*a - 2498023791133552294513515, 358777608829102441023422458989744*a + 1110881475104109582383304709231832166])
     minD = @inferred minimal_discriminant(E)
     F, phi, phi_inv, P = @inferred semi_global_minimal_model(E)
@@ -99,8 +100,10 @@
     D = discriminant(F)*OK
     @test minD*P^12 == D
     @test !is_one(P)
-    @test bad_primes(F) == [P]
+    @test bad_primes(F) == []                   # curve invariant: no primes of bad reduction
+    @test Hecke._bad_prime_candidates(F) == [P] # model obstruction
     test_minimal_model_at_bad_primes(E, F, P)
+    @test conductor(E) == 1*OK
 
     E, _ = transform_rstu(E, [0, 0, 0, 7])
     @assert !is_integral_model(E)
@@ -110,7 +113,8 @@
     D = discriminant(F)*OK
     @test minD*P^12 == D
     @test !is_one(P)
-    @test bad_primes(F) == [P]
+    @test bad_primes(F) == []                   # curve invariant: no primes of bad reduction
+    @test Hecke._bad_prime_candidates(F) == [P] # model obstruction
     test_minimal_model_at_bad_primes(E, F, P)
   end
 
@@ -154,14 +158,12 @@
     test_minimal_model_rff(E, minD)
 
     E = elliptic_curve_from_j_invariant((t+1)//t)
-    @test issetequal(@inferred(bad_primes(E)), K.([1727*t - 1, t, t+1, 1//t]))
+    @test issetequal(@inferred(bad_primes(E)), K.([t - 1//1727, t, t+1]))
     minD = @inferred minimal_discriminant(E)
     test_minimal_model_rff(E, minD)
 
     E = elliptic_curve(K, [0, t, 0, t^4, 0])
-    # NOTE: bad_primes prefers to have polynomials with integer coefficients
-    # in LocalData.jl we have same primes but written as t - 1//2, t + 1//2
-    @test issetequal(@inferred(bad_primes(E)), K.([2*t - 1, 2*t + 1, t, 1//t]))
+    @test issetequal(@inferred(bad_primes(E)), K.([t - 1//2, t + 1//2, t]))
     minD = @inferred minimal_discriminant(E)
     test_minimal_model_rff(E, minD)
 
