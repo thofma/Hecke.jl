@@ -595,15 +595,16 @@ function evaluate_differential_factors_matrix(RS::RiemannSurface, factors::Vecto
 
   _, factor_matrix, min_pows, range_pows = RS.differential_form_data
 
-  result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
+  result = matrix(CC, m, g, [one(CC) for t in (1:m*g)])
   for l in 1:length(factors)
     f = factors[l]
     fx0 = f(x0, y)
     for s in 1:m
-      fx0ys = CC(fx0(ys[s]))
-      factor_at_xys = [fx0ys^min_pows[l] ]
+      fx0ys = fx0(ys[s])
+      factor_at_xys = Vector{AcbFieldElem}(undef, range_pows[l]+1)
+      factor_at_xys[1] = fx0ys^min_pows[l] 
       for k in (1:range_pows[l])
-        push!(factor_at_xys, factor_at_xys[k]*fx0ys)
+        factor_at_xys[k+1] = factor_at_xys[k]*fx0ys
       end
       for k in 1:g
         #Let omega_i = g_i * dx where the omega form a basis of
@@ -1397,7 +1398,7 @@ end
 #abscissae
 
 function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vector{ArbFieldElem},
-   start_ys::Vector{AcbFieldElem}=AcbFieldElem[], prec = 0)
+  start_ys::Vector{AcbFieldElem}=AcbFieldElem[], prec = 0)
   v = embedding(RS)
   if prec < precision(RS)
     prec = precision(RS)
@@ -1417,11 +1418,10 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
   u = vcat([-one(RR)], abscissae, [one(RR)])
   N = length(u)
 
-  x_vals = zeros_array(CC, N)
-  dx_vals = zeros_array(CC, N)
-  y_vals = [zeros_array(CC, m) for i in (1:N)]
+  x_vals = Vector{AcbFieldElem}(undef, N)
+  y_vals = [Vector{AcbFieldElem}(undef, m) for i in (1:N)]
 
-  z = zeros_array(CC, m)
+  z = Vector{AcbFieldElem}(undef, m)
 
   #Compute x0
   x_vals[1] = evaluate(path, u[1])
@@ -1446,7 +1446,7 @@ function analytic_continuation(RS::RiemannSurface, path::CPath, abscissae::Vecto
 
     y_vals[l] .= recursive_continuation(f, x_vals[l-1], x_vals[l], z)
   end
-  return collect(zip(x_vals, y_vals))
+  return x_vals, y_vals
 end
 
 #Recursive continuation used for analytic continuation

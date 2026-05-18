@@ -157,7 +157,7 @@ function big_period_matrix(RS::RiemannSurface)
       abscissae = integration_scheme.abscissae
       weights = integration_scheme.weights
       N = length(abscissae)
-			An = analytic_continuation(RS, subpath, abscissae, ys, max_prec)[2:end]
+			An_x, An_y = analytic_continuation(RS, subpath, abscissae, ys, max_prec)
 
       # For every path, we compute the integrals for all g differential forms
       # at all m sheets at the same time.
@@ -166,7 +166,7 @@ function big_period_matrix(RS::RiemannSurface)
           # For every abscissa we compute the value of the function at that
           # point, multiply it with the correct weight and add it to the
           # intrgral.
-					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, An[i][1],An[i][2])
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, An_x[i+1], An_y[i+1])
           integral_matrix_contribution *= weights[i]
 					path_difference_matrix += integral_matrix_contribution
 				end
@@ -175,19 +175,19 @@ function big_period_matrix(RS::RiemannSurface)
         subpath.integral_matrix = path_difference_matrix
 			else
         for i in (1:N)
-					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials,An[i][1],An[i][2])
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials,An_x[i+1], An_y[i+1])
           # For arcs and circles we need to multiply with an additional dx.
           integral_matrix_contribution *= weights[i] * evaluate_d(path, abscissae[i])
 					path_difference_matrix += integral_matrix_contribution
 				end
 				integral_matrix += path_difference_matrix
 			end
-      ys = An[end][2]
+      ys = An_y[end]
 
         # Copied from monodromy_representation to compute the monodromy representation
         # we just computed while computing periods.
        # There is probably a more clever way to avoid doubling code.
-      path_perm = sortperm(An[end][2], lt = sheet_ordering)
+      path_perm = sortperm(An_y[end], lt = sheet_ordering)
       assign_permutation(path, inv(s_m(path_perm)))
 		end
     path.integral_matrix = integral_matrix

@@ -140,7 +140,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
       abscissae = integration_scheme.abscissae
       weights = integration_scheme.weights
       N = length(abscissae)
-			An = analytic_continuation(RS, subpath, abscissae, ys)[2:end]
+			An_x, An_y = analytic_continuation(RS, subpath, abscissae, ys)
 
       # For every path, we compute the integrals for all g differential forms
       # at all m sheets at the same time.
@@ -149,7 +149,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
           # For every abscissa we compute the value of the function at that
           # point, multiply it with the correct weight and add it to the
           # intrgral.
-					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, An[i][1], [An[i][2][ind]])
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, An_x[i+1], [An_y[i+1][ind]])
 					integral_matrix_contribution = change_base_ring(CC, integral_matrix_contribution)
           integral_matrix_contribution *= weights[i]
 					path_difference_matrix += integral_matrix_contribution
@@ -159,7 +159,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
         subpath.integral_matrix = path_difference_matrix
 			else
         for i in (1:N)
-					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials,An[i][1], [An[i][2][ind]])
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials,An_x[i+1][1], [An_y[i+1][ind]])
           integral_matrix_contribution = change_base_ring(CC, integral_matrix_contribution)
           # For arcs and circles we need to multiply with an additional dx.
           integral_matrix_contribution *= weights[i] * evaluate_d(path, abscissae[i])
@@ -167,8 +167,8 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
 				end
 				integral_matrix += path_difference_matrix
 			end
-      ys = An[end][2]
-      paths[1].sheets = [An[end][2][ind]]
+      ys = An_y[end]
+      paths[1].sheets = [An_y[end][ind]]
 
         # Copied from monodromy_representation to compute the monodromy representation
         # we just computed while computing periods.
