@@ -26,7 +26,7 @@ function big_period_matrix(RS::RiemannSurface)
 
   g = genus(RS)
   diff_base = basis_of_differentials(RS)
-  paths, pi1_gens, ordered_disc_points = fundamental_group_of_punctured_P1(RS::RiemannSurface)
+  paths, pi1_gens, ordered_disc_points = fundamental_group_of_punctured_P1(RS)
   num_paths = length(paths)
   prec = precision(RS)
   disc_points = internal_discriminant_points(RS)
@@ -123,9 +123,9 @@ function big_period_matrix(RS::RiemannSurface)
   RS.integration_schemes = [IntegrationScheme(r, max_prec, RS.extra_error, bound) for r in int_group_rs ]
 
   f = embed_mpoly(defining_polynomial(RS), v, max_prec)
-  Cc = base_ring(f)
-  I = onei(Cc)
-  f = change_base_ring(Cc, f, parent = parent(f))
+  CC = base_ring(f)
+  I = onei(CC)
+  f = change_base_ring(CC, f, parent = parent(f))
 
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
@@ -143,8 +143,8 @@ function big_period_matrix(RS::RiemannSurface)
 
   ys = Vector{AcbFieldElem}()
   for path in paths
-    Cc = AcbField(max_prec)
-		integral_matrix = zero_matrix(Cc, m, g)
+    CC = AcbField(max_prec)
+		integral_matrix = zero_matrix(CC, m, g)
     subpaths = path.sub_paths
     x0 = start_point(subpaths[1])
 		ys =  sort!(roots(f(x0, y), initial_prec = prec), lt = sheet_ordering)
@@ -153,11 +153,11 @@ function big_period_matrix(RS::RiemannSurface)
 
 			integration_scheme = RS.integration_schemes[subpath.integration_scheme_index]
 
-			path_difference_matrix = zero_matrix(Cc, m, g)
+			path_difference_matrix = zero_matrix(CC, m, g)
       abscissae = integration_scheme.abscissae
       weights = integration_scheme.weights
       N = length(abscissae)
-			An = analytic_continuation(RS, subpath, abscissae, ys)[2:end]
+			An = analytic_continuation(RS, subpath, abscissae, ys, max_prec)[2:end]
 
       # For every path, we compute the integrals for all g differential forms
       # at all m sheets at the same time.
@@ -166,8 +166,7 @@ function big_period_matrix(RS::RiemannSurface)
           # For every abscissa we compute the value of the function at that
           # point, multiply it with the correct weight and add it to the
           # intrgral.
-					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials, An[i][1],An[i][2])
-					integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, An[i][1],An[i][2])
           integral_matrix_contribution *= weights[i]
 					path_difference_matrix += integral_matrix_contribution
 				end
@@ -176,8 +175,7 @@ function big_period_matrix(RS::RiemannSurface)
         subpath.integral_matrix = path_difference_matrix
 			else
         for i in (1:N)
-					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials,An[i][1],An[i][2])
-          integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials,An[i][1],An[i][2])
           # For arcs and circles we need to multiply with an additional dx.
           integral_matrix_contribution *= weights[i] * evaluate_d(path, abscissae[i])
 					path_difference_matrix += integral_matrix_contribution
@@ -199,7 +197,7 @@ function big_period_matrix(RS::RiemannSurface)
   # we just computed while computing periods.
   # There is probably a more clever way to avoid doubling code.
 
-  mon_rep = Tuple{Vector{CPath}, Perm{Int}}[]
+  mon_rep = Perm{Int}[]
   closed_chains = CChain[]
 
   for i in (1:length(pi1_gens))
@@ -210,28 +208,19 @@ function big_period_matrix(RS::RiemannSurface)
     cchain = CChain(chain, ordered_disc_points[i])
 
     if gamma_perm != one(s_m)
-      push!(mon_rep, (chain, gamma_perm))
       push!(closed_chains, cchain)
      end
   end
 
-  inf_chain = Vector{CPath}[]
-  inf_perm = one(s_m)::Perm{Int}
 
-
-  for g in mon_rep
-    inf_chain = vcat(inf_chain, map(reverse, g[1]))
-    inf_perm *= g[2]
-  end
-
-  inf_cchain = prod(closed_chains)^(-1)
-  inf_cchain.center = Cc(1/0)
+  inf_cchain = Hecke.RiemannSurfaces.make_inf_chain(closed_chains)
   push!(closed_chains, inf_cchain)
+
   RS.inf_chain = inf_cchain
   RS.closed_chains = closed_chains[1:end-1]
 
 
-  push!(mon_rep, (reverse(inf_chain), inv(inf_perm)))
+  mon_rep = map(t -> permutation(t), closed_chains)
   RS.monodromy_representation = mon_rep
 
 
@@ -247,7 +236,7 @@ function big_period_matrix(RS::RiemannSurface)
   #For all 2g + m - 1 cycles we compute the integrals of the g differential
   #forms.
 
-  sheet_to_sheet_integrals = zero_matrix(Cc, m, g)
+  sheet_to_sheet_integrals = zero_matrix(CC, m, g)
   sheets_left = Set((2:m))
   sheets_meet = Set()
 
@@ -257,7 +246,7 @@ function big_period_matrix(RS::RiemannSurface)
       sheets_meet = intersect(sheets_left, sheets_in_cycle)
       sheets_left = setdiff(sheets_left, sheets_meet)
     end
-		cycle_integral = [zero(Cc) for x in 1:g]
+		cycle_integral = [zero(CC) for x in 1:g]
 		l = 1
 		while l < length(cycle)
       #Identify sheet we end up in after moving along the chain.
@@ -285,7 +274,7 @@ function big_period_matrix(RS::RiemannSurface)
 	big_period_matrix = transpose(PMAPMB[1:2*g,:])
   dependent_columns = PMAPMB[2g+1:end, :]
   RS.big_period_matrix = big_period_matrix
-  @req all([contains(r, zero(Cc)) for r in dependent_columns]) "Sanity check failed. There may have been an error in the period matrix computation."
+  @req all([contains(r, zero(CC)) for r in dependent_columns]) "Sanity check failed. There may have been an error in the period matrix computation."
   return big_period_matrix
 end
 
@@ -349,22 +338,22 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
 
     v = embedding(RS)
     prec = precision(RS)
-    Rc = ArbField(prec)
+    RR = ArbField(prec)
     f = embed_mpoly(defining_polynomial(RS), v, prec)
-    Cc = base_ring(f)
-    I = onei(Cc)
-    f = change_base_ring(Cc, f, parent = parent(f))
+    CC = base_ring(f)
+    I = onei(CC)
+    f = change_base_ring(CC, f, parent = parent(f))
 
     Kxy = parent(f)
     Ky, y = polynomial_ring(base_ring(Kxy), "y")
 
-    piC = const_pi(Cc)
-    piR = const_pi(Rc)
+    piC = const_pi(CC)
+    piR = const_pi(RR)
 
     #This should be done in a more clever way by sampling with less points with
     #bigger radius in the beginning and then zooming in
     n = 2000
-    test_points = [Cc(k*2*piC/n) for k in 0:n-1]
+    test_points = [CC(k*2*piC/n) for k in 0:n-1]
 
     b = sqrt(r^2-1)
 
@@ -378,11 +367,11 @@ function compute_ellipse_bound(subpath::CPath, differentials_test, int_group_rs,
 
         x_ball = evaluate(subpath, e_t)
         ys = roots(f(x_ball, y), initial_prec = prec)
-        g = RS.evaluate_differential_factors_matrix
-        bounds_matrix = g(differentials_test, x_ball, ys)
+        #g = RS.evaluate_differential_factors_matrix
+        #bounds_matrix = g(differentials_test, x_ball, ys)
         bounds_matrix *= evaluate_d(subpath, e_t)
-        max_bound_t = push!(max_bound_t, 10 * maximum([Rc(abs(v)) for
-        v in bounds_matrix]; init = Rc(0)))
+        max_bound_t = push!(max_bound_t, 10 * maximum([RR(abs(v)) for
+        v in bounds_matrix]; init = RR(0)))
       end
       max_bound = maximum(max_bound_t)
       push!(subpath.bounds, max_bound)
@@ -449,8 +438,7 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
   end
 end 
 
-function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurface)
-
+function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test::Vector{ AbstractAlgebra.Generic.MPoly{AcbFieldElem}}, int_group_rs::Vector{ArbFieldElem}, RS::RiemannSurface)
   num_of_int_groups = length(int_group_rs)
   if length(subpath.bounds) == 0
     i = maximum(filter(x -> (subpath.int_param_r > int_group_rs[x]), 1:num_of_int_groups);init = 1)
@@ -459,23 +447,23 @@ function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int
 
     v = embedding(RS)
     prec = precision(RS)
-    Rc = ArbField(prec)
+    RR = ArbField(prec)
     f = embed_mpoly(defining_polynomial(RS), v, prec)
-    Cc = base_ring(f)
-    I = onei(Cc)
-    f = change_base_ring(Cc, f, parent = parent(f))
+    CC = base_ring(f)
+    I = onei(CC)
+    f = change_base_ring(CC, f, parent = parent(f))
 
     Kxy = parent(f)
     Ky, y = polynomial_ring(base_ring(Kxy), "y")
 
-    piC = const_pi(Cc)
-    piR = const_pi(Rc)
+    piC = const_pi(CC)
+    piR = const_pi(RR)
 	  b = sqrt(r^2-1)
     x = subpath.t_of_closest_d_point
 
-	if abs(imag(x)) < Rc(10^-10)
+	if abs(imag(x)) < RR(10^-10)
 		xr = sign(Int, real(x))*r
-  elseif abs(real(x)) < Rc(10^-10)
+  elseif abs(real(x)) < RR(10^-10)
 		xr = sign(Int, imag(x))*b*I
 	else
 
@@ -501,10 +489,9 @@ function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int
 
    x_ball = evaluate(subpath, xr)
    ys = roots(f(x_ball, y), initial_prec = prec)
-   g = RS.evaluate_differential_factors_matrix
-   bounds_matrix = g(differentials_test, x_ball, ys)
+   bounds_matrix = evaluate_differential_factors_matrix(RS, differentials_test, x_ball, ys)
    bounds_matrix *= evaluate_d(subpath, xr)
-   max_bound = 10 * maximum([Rc(abs(v)) for v in bounds_matrix]; init = Rc(0))
+   max_bound = 10 * maximum([RR(abs(v)) for v in bounds_matrix]; init = RR(0))
    push!(subpath.bounds, max_bound)
 
   else

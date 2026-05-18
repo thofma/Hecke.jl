@@ -157,9 +157,22 @@ end
 Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  res = map_coefficients(x -> evaluate(x, v.embedding, prec), f)
-  res = map_coefficients(coefficient_ring(res), res; parent = parent(res))
-  return res
+  #=res = map_coefficients(x -> evaluate(x, v.embedding, prec), f)
+  CC = AcbField(prec)
+  CCx, x = polynomial_ring(CC, symbols(parent(f)))
+  res = map_coefficients(coefficient_ring(res), res; parent = CCx)
+  return res=#
+  n = length(terms(f))
+  R = coefficient_ring(f)
+  CC = AcbField(prec)
+  d = length(gens(parent(f)))
+  CCx, x = polynomial_ring(CC, symbols(parent(f)))
+  result = CCx(0)
+  for i in (1:n)
+    I = exponent_vector(f,i)
+    result += CC(evaluate(coeff(f, i), v.embedding, prec)) * prod(x[j]^I[j] for j in (1:d))
+  end
+  return result
 end
 
 #Homogenize input polynomial of the Riemann surface

@@ -6,12 +6,12 @@ using Hecke
 export riemann_surface, discriminant_points, embedding, genus, precision,
 fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
 homology_basis, ramification_points, singular_points, infinite_points, y_infinite_points,
-abel_jacobi_map, fiber, complex_defining_polynomial, critical_points
+abel_jacobi_map, fiber, complex_defining_polynomial, critical_points, CChain, RiemannSurface
 
 export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_poly,
 embed_mpoly, analytic_continuation, minimal_spanning_tree, closest_point, recursive_continuation,
 divisor, find_path_on_sheet, integrate_on_sheet, c_infinite_line, recursive_continuation_manual,
-ajm_DE_special_point
+ajm_DE_special_point, internal_discriminant_points, compute_ellipse_bound_heuristic
 
 
 export integral_left_kernel, tangent_representation, homology_representation,

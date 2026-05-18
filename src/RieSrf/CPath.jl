@@ -37,12 +37,21 @@ mutable struct CPath
   start_point::AcbFieldElem
   end_point::AcbFieldElem
 
+  #The start point and the end point of the path with higher precision
+  start_point_high::AcbFieldElem
+  end_point_high::AcbFieldElem
+
   #If the path is an arc or a circle, it will be described by the center,
   #the radius, and the start and end angles. (c + r*e^(ix))
   center::AcbFieldElem
   radius::ArbFieldElem
   start_arc::ArbFieldElem
   end_arc::ArbFieldElem
+
+  center_high::AcbFieldElem
+  radius_high::ArbFieldElem
+  start_arc_high::ArbFieldElem
+  end_arc_high::ArbFieldElem
 
   #The orientation determines how we move from start point to end point
   #If the orientation is 1 we move counterclockwise and if the orientation
@@ -51,11 +60,7 @@ mutable struct CPath
 
   #The length of the path
   length::ArbFieldElem
-
-  #A map gamma:[-1, 1] -> CC parametrizing the path
-  gamma::Any
-  #The derivative of gamma
-  dgamma::Any
+  length_high::ArbFieldElem
 
 
   #Let f be the equation defining a plane curve in RiemannSurface.jl
@@ -113,66 +118,54 @@ mutable struct CPath
 
 
   #Constructor of CPath.
-  function CPath(a::AcbFieldElem, b::AcbFieldElem, path_type::Int, c::AcbFieldElem = zero(parent(a)), radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
+  function CPath(a::AcbFieldElem, b::AcbFieldElem, path_type::Int, CC_low::AcbField = parent(a), c::AcbFieldElem = zero(parent(a)), radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
 
     P = new()
+    RR_low = ArbField(precision(CC_low))
     CC = parent(a)
     P.C = CC
-    P.start_point = a
-    P.end_point = b
+
+    P.start_point_high = a
+    P.end_point_high = b
+
+    A = CC_low(a)
+    B = CC_low(b)
+
+    P.start_point = A
+    P.end_point = B
+    
     P.path_type = path_type
-    P.center = c
-    P.radius = radius
+
+    P.center_high = c
+    P.radius_high = radius
+
+
+    P.center = CC_low(c)
+    P.radius = RR_low(radius)
     P.orientation = orientation
     P.bounds = ArbFieldElem[]
 
     RR = ArbField(precision(CC))
 
-    #If the path is a line
     if path_type == 0
-      gamma = function(t::FieldElem)
-        return (a + b)//2 + (b - a)//2 * t
-      end
-      dgamma = function(t::FieldElem)
-        return (b - a)//2
-      end
-      length = abs(b - a)
+      length = abs(B - A)
     end
 
-        #If the path is a line
     if path_type == 3
-      gamma = function(t::FieldElem)
-        return a
-      end
-      dgamma = function(t::FieldElem)
-        return 0
-      end
-      length = 0
+      length = RR_low(0)
     end
 
     if path_type == 4
       P.end_point = CC(1/0)
       length = RR(1/0)
-      gamma = function(t::FieldElem)
-        c1 = 1/(1-t)
-        c2 = 2 * a * c1
-        return c2
-      end
-      dgamma = function(t::FieldElem)
-        c1 = 1/(1-t)
-        c2 = 2 * a * c1
-        return c2*c1
-      end
     end
   
     #If the path is not a line we need some additional constants to compute
     #length, parametrization, etc.
-    Cc = P.C
-    i = onei(Cc)
-    piC = real(const_pi(Cc))
+    i = onei(CC)
+    piC = real(const_pi(CC))
 
     #Round real or imaginary part to zero to compute angle if necessary
-    prec = precision(Cc)
     #zero_sens = floor(Int, prec*log(2)/log(10)) - 5
 
     a_diff = trim_zero(a - c)
@@ -200,36 +193,17 @@ mutable struct CPath
 
     #If the path is an arc
     if path_type == 1
-      gamma = function(t::FieldElem)
-        return c + radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * orientation * t))
-      end
-      dgamma = function(t::FieldElem)
-        return i * (phi_b - phi_a)//2 * orientation * radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * orientation * t))
-      end
-
       length = abs((phi_b - phi_a)) * radius
-
     end
 
     #If the path is a circle
     if path_type == 2
-      gamma = function(t::FieldElem)
-        #Minus radius as gamma(-1) = a
-        return c - radius * exp(i * (phi_a + orientation * piC * t ))
-      end
-      dgamma = function(t::FieldElem)
-        return orientation * i * (piC ) * (-1) * radius * exp(i * (phi_a + orientation * piC * t ))
-      end
-
       length = 2 * piC * radius
     end
 
-    P.gamma = gamma
-    P.dgamma = dgamma
     P.length = length
     return P
   end
-
 end
 
 @doc raw"""
@@ -237,8 +211,8 @@ c_line(start_point::AcbFieldElem, end_point::AcbFieldElem) -> CPath
 
 Construct a line in C from start_point to end_point.
 """
-function c_line(start_point::AcbFieldElem, end_point::AcbFieldElem)
-  return CPath(start_point, end_point, 0)
+function c_line(start_point::AcbFieldElem, end_point::AcbFieldElem, CC::AcbField = parent(start_point))
+  return CPath(start_point, end_point, 0, CC)
 end
 
 @doc raw"""
@@ -250,14 +224,14 @@ Construct an arc around ''center'' in C from ''start_point'' to
 If it is -1 it goes clockwise. If start_point and end_point are identical
 a circle is created instead.
 """
-function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem;
+function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem, CC::AcbField = parent(start_point);
   orientation::Int = 1)
   #TODO: We might need a check that start point and end_point are equally
   #far away from center.
   if contains(end_point, start_point) && contains(start_point, end_point)
-    return CPath(start_point, start_point, 2, center, abs(start_point - center), orientation)
+    return CPath(start_point, start_point, 2, CC, center, abs(start_point - center), orientation)
   else
-    return CPath(start_point, end_point, 1, center, abs(start_point - center), orientation)
+    return CPath(start_point, end_point, 1, CC, center, abs(start_point - center), orientation)
   end
 end
 
@@ -268,8 +242,8 @@ c_circle(start_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
 Construct a circle around ''center'' in C beginning and ending at ''start_point''
 If orientation is 1 the path goes counterclockwise. If it is -1 it goes clockwise. 
 """
-function c_circle(start_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
-  return c_arc(start_point, start_point, center, orientation = orientation)
+function c_circle(start_point::AcbFieldElem, center::AcbFieldElem, CC::AcbField = parent(start_point); orientation::Int = 1)
+  return c_arc(start_point, start_point, CC, center, orientation = orientation)
 end
 
 @doc raw"""
@@ -279,8 +253,8 @@ c_point(point::AcbFieldElem)
 Construct path that is just a point. This is only useful as an initial element when 
 concatenating paths.
 """
-function c_point(point::AcbFieldElem)
-  return CPath(point, point, 3, point)
+function c_point(point::AcbFieldElem, CC::AcbField)
+  return CPath(point, point, 3,CC, point)
 end
 
 @doc raw"""
@@ -289,10 +263,10 @@ c_infinite_line(point::AcbFieldElem)
 
 Construct a path in C from ''start_point'' to infinity.
 """
-function c_infinite_line(start_point::AcbFieldElem)
-  CC =parent(start_point)
+function c_infinite_line(start_point::AcbFieldElem, CC::AcbField = parent(start_point))
+  CC = parent(start_point)
   @req start_point != CC(0) "Line to infinity cannot start from zero."
-  return CPath(start_point, start_point, 4)
+  return CPath(start_point, start_point, 4, CC)
 end
 
 ################################################################################
@@ -465,7 +439,42 @@ evaluate(G::CPath, t::FieldElem) -> FieldElem
 Given a path G:[-1,1] -> C and a t in C, returns the value G(t).
 """
 function evaluate(G::CPath, t::FieldElem)
-  return G.gamma(t)
+  A = start_point(G)
+  B = end_point(G)
+  path_type = G.path_type
+  #If the path is a line
+  if path_type == 0
+    return (A + B)//2 + (B - A)//2 * t
+  end
+
+  if path_type == 3
+    return A
+  end
+
+  if path_type == 4
+    c1 = 1/(1-t)
+    c2 = 2 * A * c1
+    return c2
+  end
+
+  phi_a = G.start_arc
+  phi_b = G.end_arc
+  orientation = G.orientation
+  radius = G.radius
+  c = G.center
+
+  CC = parent(A)
+  i = onei(CC)
+  
+
+  if path_type == 1
+    return c + radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * orientation * t))
+  end
+    #If the path is a circle
+  if path_type == 2
+    piC = real(const_pi(CC))
+    return c - radius * exp(i * (phi_a + orientation * piC * t ))
+  end
 end
 
 @doc raw"""
@@ -474,7 +483,42 @@ evaluate_d(G::CPath, t::FieldElem) -> FieldElem
 Given a path G:[-1,1] -> C and a t in C, returns the value dG/dt(t).
 """
 function evaluate_d(G::CPath, t::FieldElem)
-  return G.dgamma(t)
+  A = start_point(G)
+  B = end_point(G)
+  path_type = G.path_type
+
+  if path_type == 0
+    return (B - A)//2
+  end
+
+  if path_type == 3
+    return 0
+  end
+
+  if path_type == 4
+    c1 = 1/(1-t)
+    c2 = 2 * A * c1
+    return c2*c1
+  end
+
+  phi_a = G.start_arc
+  phi_b = G.end_arc
+  orientation = G.orientation
+  radius = G.radius
+  c = G.center
+
+  CC = parent(A)
+  i = onei(CC)
+  
+  if path_type == 1
+    return i * (phi_b - phi_a)//2 * orientation * radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * orientation * t))
+  end
+
+#If the path is a circle
+  if path_type == 2
+    piC = real(const_pi(CC))
+    return orientation * i * (piC ) * (-1) * radius * exp(i * (phi_a + orientation * piC * t ))
+  end
 end
 
 ################################################################################
@@ -713,6 +757,19 @@ function show(io::IO, chain::CChain)
   end
 end
 
+function make_inf_chain(chains::Vector{CChain})
+  paths = CPath[]
+  CC = parent(start_point(chains[1].paths[1]))
+  for chain in reverse(chains)
+    new_paths = reverse([reverse(p) for p in chain.paths ])
+    paths = vcat(paths, new_paths)
+  end
+
+  inf_chain = CChain(paths)
+  inf_chain.center = CC(1/0)
+  return inf_chain
+
+end
 
 function *(chain1::CChain, chain2::CChain) 
   return concatenated_chain = CChain(vcat(chain1.paths, chain2.paths))

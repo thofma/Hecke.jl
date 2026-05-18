@@ -98,14 +98,10 @@ mutable struct RiemannSurface
   inf_chain::CChain
 
   #The permutations of the sheets that correspond to walking along the chains
-  #of paths that are generators of the fundamental group of P1. Every
-  #element is of the form (P, sigma) where P is a list of paths and sigma is
-  #the permutation of sheets.
-  #
-  # Continuing the above example, the first element could look like
-  # ([L[1], L[23], L[12],reverse(L[1])], (1,3)))
+  #of paths that are generators of the fundamental group of P1. 
   # where (1,3) is the permutation.
-  monodromy_representation::Vector{Tuple{Vector{CPath}, Perm{Int}}}
+  
+  monodromy_representation::Vector{Perm{Int}}
 
   #Data encoding the homology basis.
   # We encode homology cycles in H_1(RS, Z) in the following way:
@@ -169,7 +165,7 @@ mutable struct RiemannSurface
   # The function is constructed by using differential forms data.
   # The factors are given as input to allow us to choose the precision of the
   # input factors.
-  evaluate_differential_factors_matrix::Any
+  #evaluate_differential_factors_matrix::Any
 
   # A list of integration schemes used for computations. An integration scheme
   # consists of a list of abscissae, weights and a bunch of parameters.
@@ -285,10 +281,10 @@ mutable struct RiemannSurface
 
         s = gen(base_ring(F))
         t = gen(F)
-        omega = (factor_set[1](s,t)^(inner_fac[i][1] - 1) * factor_set[2](s,t)^(inner_fac[i][2] - 1) //factor_set[3](s,t))*differential(F(s))
-        push!(baker_diffs, omega)
+        #omega = (factor_set[1](s,t)^(inner_fac[i][1] - 1) * factor_set[2](s,t)^(inner_fac[i][2] - 1) //factor_set[3](s,t))*differential(F(s))
+        #push!(baker_diffs, omega)
       end
-      RS.basis_of_differentials = baker_diffs
+      #RS.basis_of_differentials = baker_diffs
 
     else
       RS.baker_basis = false
@@ -328,7 +324,7 @@ mutable struct RiemannSurface
 		  min_pows= [minimum( factor_matrix[j, 1:g]) for j in 1:n]
 	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
     end
-
+#=
     function evaluate_differential_factors_matrix(factors, x0, ys)
       Kxy = parent(factors[1])
       Ky, y = polynomial_ring(base_ring(Kxy), "y")
@@ -355,9 +351,9 @@ mutable struct RiemannSurface
       end
       return result
     end
-
+=#
     RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
-    RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
+    #RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
 
     b10_prec = floor(Int, prec*log(2)/log(10))
     b10_extra_prec = b10_prec + 3 + max(degree(f, 1), degree(f, 2))
@@ -535,7 +531,7 @@ function swapped_surface(RS::RiemannSurface)
 
     end
 
-    function evaluate_differential_factors_matrix(factors, x0, ys)
+    #=function evaluate_differential_factors_matrix(factors, x0, ys)
         Kxy = parent(factors[1])
         Ky, y = polynomial_ring(base_ring(Kxy), "y")
         CC = base_ring(factors[1])
@@ -561,8 +557,9 @@ function swapped_surface(RS::RiemannSurface)
         end
         return result
       end
+      =#
     RS_swap.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
-    RS_swap.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
+    #RS_swap.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
 
 
     big_period_matrix(RS_swap)
@@ -586,6 +583,37 @@ function fiber(f::MPolyRingElem, x0::AcbFieldElem)
     end
   end
   return fiber_x
+end
+
+function evaluate_differential_factors_matrix(RS::RiemannSurface, factors::Vector{ AbstractAlgebra.Generic.MPoly{AcbFieldElem}}, x0::AcbFieldElem, ys::Vector{AcbFieldElem})
+  Kxy = parent(factors[1])
+  Ky, y = polynomial_ring(base_ring(Kxy), "y")
+  CC = base_ring(factors[1])
+  m = length(ys)
+
+  g = genus(RS)
+
+  _, factor_matrix, min_pows, range_pows = RS.differential_form_data
+
+  result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
+  for l in 1:length(factors)
+    f = factors[l]
+    fx0 = f(x0, y)
+    for s in 1:m
+      fx0ys = CC(fx0(ys[s]))
+      factor_at_xys = [fx0ys^min_pows[l] ]
+      for k in (1:range_pows[l])
+        push!(factor_at_xys, factor_at_xys[k]*fx0ys)
+      end
+      for k in 1:g
+        #Let omega_i = g_i * dx where the omega form a basis of
+        #differentials. Then result[s][k] = g_k(x0, ys) where the
+        #ys are the m preimages in the fiber f^(-1)(x0).
+        result[s, k] *= factor_at_xys[factor_matrix[l, k] - min_pows[l]+1]
+      end
+    end
+  end
+  return result
 end
 
 mutable struct RiemannSurfacePoint
@@ -639,11 +667,11 @@ end
 ################################################################################
 
 function max_radius(RS::RiemannSurface)
-  return ArbField(precision(RS))(1//4)
+  return (1/4)
 end
 
 function radius_factor(RS::RiemannSurface)
-  return ArbField(precision(RS))(2//5)
+  return (2/5)
 end
 
 
@@ -800,13 +828,13 @@ function assure_has_discriminant_points(RS::RiemannSurface)
     RS.discriminant_points = D_points
     v = embedding(RS)
 
-    XB = maximum(abs(P) for P in D_points) + max_radius(RS)
+    XB = maximum(abs(P) for P in D_points) + RR(max_radius(RS))
 
     if length(D2) == 0
       L0_safe_radius = RR(1)
     else
       D2_distance = minimum([closest_point(P, collect(setdiff(D_points, Set([P]))) )[1] for P in D2])
-      L0_safe_radius = minimum([radius_factor(RS)*D2_distance, max_radius(RS)])
+      L0_safe_radius = minimum([radius_factor(RS)*D2_distance, RR(max_radius(RS))])
     end
 
     low_prec = 66
@@ -1084,7 +1112,10 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   D_points = internal_discriminant_points(RS)
   d = length(D_points)
   CC = parent(D_points[1])
-  RR = ArbField(precision(RS))
+  RR = ArbField(precision(CC))
+  prec = precision(RS)
+
+  CC_low = AcbField(prec)
 
   #Step 1 compute a minimal spanning tree
   edges = minimal_spanning_tree(D_points)
@@ -1185,7 +1216,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   find_paths_to_end([(d+1, d+1)], paths, path_edges, ordered_disc_points)
   ordered_disc_points = map(t -> D_points[t], ordered_disc_points)
 
-  radii = [min(max_radius(RS), radius_factor(RS) * minimum(map(t -> abs(t - D_points[j]), vcat(D_points[1:j-1], D_points[j+1:end])))) for j in (1:d)]
+  radii = [min(RR(max_radius(RS)), RR(radius_factor(RS)) * minimum(map(t -> abs(t - D_points[j]), vcat(D_points[1:j-1], D_points[j+1:end])))) for j in (1:d)]
   RS.safe_radii = radii
   c_lines = CPath[]
 
@@ -1196,6 +1227,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     b = D_points[edge[2]]
     ab_length = b - a
 
+
     #Base point is not a discriminant point, so we don't need to circle around it
     if edge[1] == d + 1
       new_start_point = a
@@ -1205,7 +1237,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     end
     #Intersect the line between a and b with the circle of radius r_b around b
     new_end_point = b - (radii[edge[2]])*ab_length//(abs(ab_length))
-    push!(c_lines, c_line(new_start_point, new_end_point))
+    push!(c_lines, c_line(new_start_point, new_end_point, CC_low))
   end
 
   paths = map(t -> t[2:end], paths[2:end])
@@ -1220,7 +1252,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
     i = path[end]
     loop = Int[]
 
-    arc_start = arc_end = end_point(c_lines[i])
+    arc_start = arc_end = c_lines[i].end_point_high
     center = D_points[path_edges[i][end]]
 
     #We need to loop around the end of the path, but we may
@@ -1236,7 +1268,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
       end
     end
 
-    push!(c_arcs, c_arc(arc_start, arc_end, center))
+    push!(c_arcs, c_arc(arc_start, arc_end, center, CC_low))
     push!(loop, d + n + 1)
 
     path_to_loop = Int[]
@@ -1265,7 +1297,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
       end
 
       if arc_start != arc_end
-        push!(c_arcs, c_arc(arc_start, arc_end, center))
+        push!(c_arcs, c_arc(arc_start, arc_end, center, CC_low))
         push!(arc_buffer, - d - n - 1)
       end
 
@@ -1550,8 +1582,7 @@ end
 # REMARK: The choice of the polarization is a convention. We could also opt
 # to adopt a different convention if we want to.
 function _homology_basis(RS::RiemannSurface)
-  mon_rep = monodromy_representation(RS)
-  gens = map(t -> t[2], mon_rep)
+  gens = monodromy_representation(RS)
   s_n = parent(gens[1])
   n = s_n.n
   d = length(gens)

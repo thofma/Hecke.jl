@@ -125,6 +125,7 @@ function split_line_segment(points, path::CPath, err)
   paths = [path]
   prec = precision(parent(points[1]))
   Rc = ArbField(prec)
+  CC = AcbField(prec)
 
   if get_int_param_r(path) < 1.2
     t = get_t_of_closest_d_point(path)
@@ -133,8 +134,9 @@ function split_line_segment(points, path::CPath, err)
     else
       x = evaluate(path,Rc(sign(Int, real(t))*3/4))
     end
-    gam1 = c_line(start_point(path), x)
-    gam2 = c_line(x, end_point(path))
+  
+    gam1 = c_line(start_point(path), x, CC)
+    gam2 = c_line(x, end_point(path), CC)
 
     set_int_param_r(gam1, gauss_legendre_line_parameters(points, gam1))
     set_int_param_r(gam2, gauss_legendre_line_parameters(points, gam2))
@@ -224,7 +226,7 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
       t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/(r * exp(I*(b + a)/2)))))
       #t_p2 = or/(b - a) * (-2 * I * (log(trim_zero((p - c)/(r * exp(I*(b + a)/2)), zero_sens)))+2*pi*I)
       #r_p = minimum(x-> Rr((abs(x + 1) + abs(x - 1))/2), ts)
-      @req contains(path.gamma(t_p),p) "Error"
+      @req contains(evaluate(path, t_p),p) "Error"
       #t_p = or/(b - a) * (-2 * I * mod2pi_i((log(trim_zero(p - c, zero_sens)) -log(r) - I*(b + a)/2)))
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
     end
@@ -271,7 +273,7 @@ function gauss_legendre_circle_parameters(points::Vector{AcbFieldElem}, path::CP
 
       t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a))))
 
-      @req contains(path.gamma(t_p) - p, CC(0)) "Error"
+      @req contains(evaluate(path, t_p) - p, CC(0)) "Error"
 
       #t_p = -or/Rpi * I * mod2pi_i((log(trim_zero(c - p, zero_sens)) - log(r) - I * a))
       r_p = Rr((abs(t_p + 1) + abs(t_p - 1))/2)
