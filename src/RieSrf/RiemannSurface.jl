@@ -372,7 +372,7 @@ mutable struct RiemannSurface
     RS.degree = reverse(degrees(f))
 
     big_period_matrix(RS)
-    #analyze_special_points(RS)
+    analyze_special_points(RS)
 
     return RS
   end
