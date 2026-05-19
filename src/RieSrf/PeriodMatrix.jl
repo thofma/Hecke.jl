@@ -67,7 +67,7 @@ function big_period_matrix(RS::RiemannSurface)
 
   #Experimenting with dynamic number of integration groups. It seems a bit faster than Neurohr
   #Need to experiment more with optimal setting
-  nr_of_groups =   ceil(Int, length(paths)/5)
+  nr_of_groups =   max(5, ceil(Int, length(paths)/5))
 
   r_bounds = ArbFieldElem[]
 
@@ -125,14 +125,14 @@ function big_period_matrix(RS::RiemannSurface)
       r_counts[5]+=1
     end
 	end
-
-  print(r_counts)=#
+=#
+  #print(r_counts)
   #Make r_minimum slightly smaller than what it was. (But still larger than 1)
 
 
   #We only consider int_groups that contain more than 2 elements. If they only have two
   #or less elements, we simply group them together with the previous group
-  int_groups = filter(x -> length(x) > 2, int_groups[2:end])
+  int_groups = vcat([[r_minimum]],filter(x -> length(x) > 2, int_groups[2:end]))
   int_group_rs = ArbFieldElem[]
 
   prev_r = RR(1)
@@ -149,16 +149,16 @@ function big_period_matrix(RS::RiemannSurface)
 
 
 
-#=
-  if r_minimum <= RR(1) + 2 * eps
-    int_group_rs= [(1/2)*(r_minimum+1)]
-  else
-    int_group_rs = [r_minimum-eps]
-  end
-=#
+
+  #if r_minimum <= RR(1) + 2 * eps
+  #  int_group_rs= [(1/2)*(r_minimum+1)]
+  #else
+  #  int_group_rs = [r_minimum-eps]
+  #end
 
 
   #append!(int_group_rs, [ minimum(int_group) - eps for int_group in int_groups])
+
 
   differentials = RS.differential_form_data[1]
 
