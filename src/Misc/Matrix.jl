@@ -1126,3 +1126,154 @@ function remove_row(M, r)
   end
   return N
 end
+
+#
+
+# TODO: remove and use snf_with_transform once Nemo release contains https://github.com/Nemocas/Nemo.jl/pull/2297
+function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::Bool = false)
+  # always need R and L defined for the GC.@preserve block below
+  if r
+    R = identity_matrix(ZZ, ncols(A))
+  else
+    R = A
+  end
+
+  if l
+    L = identity_matrix(ZZ, nrows(A))
+  else
+    L = A
+  end
+
+  S = deepcopy(A)
+  Stra = is_square(S) ? S : zero_matrix(ZZ, ncols(S), nrows(S))
+  Stra = zero_matrix(ZZ, ncols(S), nrows(S))
+  first = true
+  while !is_diagonal(S)
+    # Most of the work seems to be done for the first HNF
+    # Since we can always choose the side we start with
+    # in case only one transformation is requested, we start with the side where no
+    # transformation is request.
+    # r && !l (this is the standard)
+    #   l -> r (with transform) -> l -> r (with transform) -> ...
+    # l && !r
+    #   r -> l (with transform) -> r -> l (with_transform)
+    if !(first && l && !r)
+      if l
+        S, T = hnf_with_transform(S)
+        L = T * L
+      else
+        S = hnf!(S)
+      end
+    end
+    first = false
+
+    if is_diagonal(S)
+      break
+    end
+
+    if r
+      #S, T = hnf_with_transform(transpose(S))
+      Stra, T = hnf_with_transform(transpose!(Stra, S))
+      Stra, S = S, Stra
+      R = T * R
+    else
+      #S = hnf!(transpose(S))
+      Stra = hnf!(transpose!(Stra, S))
+      Stra, S = S, Stra
+    end
+    #S = transpose(S)
+    Stra = transpose!(Stra, S)
+    Stra, S = S, Stra
+  end
+  #this is probably not really optimal...
+  a = ZZRingElem()
+  b = ZZRingElem()
+  x = ZZRingElem()
+  y = ZZRingElem()
+  z = ZZRingElem()
+  GC.@preserve S L R begin
+    for i = 1:min(nrows(S), ncols(S))
+      if is_one(mat_entry_ptr(S, i, i))
+        continue
+      end
+      for j = i+1:min(nrows(S), ncols(S))
+        #if S[j, j] == 0
+        if is_zero_entry(S, j, j)
+          continue
+        end
+        if !is_zero_entry(S, i, i) && is_divisible_by(mat_entry_ptr(S, j, j), mat_entry_ptr(S, i, i))
+        #if S[i, i] != 0 && S[j, j] % S[i, i] == 0 #is_divisible_by(mat_entry_ptr(S, j, j), mat_entry_ptr(S, i, i))
+          continue
+        end
+        g, e, f = gcdx(S[i, i], S[j, j])
+        #a = divexact(S[i, i], g)
+        a = divexact!(a, mat_entry_ptr(S, i, i), g)
+        S[i, i] = g
+        #b = divexact(S[j, j], g)
+        b = divexact!(b, mat_entry_ptr(S, j, j), g)
+        #S[j, j] *= a
+        mul!(mat_entry_ptr(S, j, j), a)
+        if l
+          # U = [1 0; -b*f 1] * [ 1 1; 0 1] = [1 1; -b*f -b*f+1]
+          # so row i and j of L will be transformed. We do it naively
+          # those 2x2 transformations of 2 rows should be a c-primitive
+          # or at least a Nemo/Hecke primitive
+          b = neg!(b)
+          for k = 1:ncols(L)
+            #x = -b * f
+            x = mul!(x, b, f)
+            #L[i, k], L[j, k] = L[i, k] + L[j, k], x * (L[i, k] + L[j, k]) + L[j, k]
+            add!(mat_entry_ptr(L, i, k), mat_entry_ptr(L, j, k))
+            addmul!(mat_entry_ptr(L, j, k), x, mat_entry_ptr(L, i, k))
+          end
+          #b = neg!(b)
+        end
+        if r
+          # V = [e -b ; f a];
+          # so col i and j of R will be transformed. We do it naively
+          # careful: at this point, R is still transposed
+          for k = 1:nrows(R)
+            #R[i, k], R[j, k] = e * R[i, k] + f * R[j, k], -b * R[i, k] + a * R[j, k]
+            set!(x, mat_entry_ptr(R, j, k))
+            set!(z, mat_entry_ptr(R, i, k))
+
+            mul!(y, f, x)
+            mul!(mat_entry_ptr(R, i, k), e, mat_entry_ptr(R, i, k))
+            add!(mat_entry_ptr(R, i, k), y)
+
+            mul!(mat_entry_ptr(R, j, k), a, mat_entry_ptr(R, j, k))
+            mul!(z, z, b)
+            add!(mat_entry_ptr(R, j, k), z)
+          end
+        end
+      end
+    end
+
+    # It might be the case that S was diagonal with negative diagonal entries.
+    mone = neg!(one(ZZ))
+    for i in 1:min(nrows(S), ncols(S))
+      if is_negative_entry(S, i, i)
+        if l
+          multiply_row!(L, mone, i)
+        end
+        neg!(mat_entry_ptr(S, i, i))
+        #S[i, i] = -S[i, i]
+      end
+    end
+  end
+  if l
+    if r
+      return S, L, transpose!(R)
+    else
+      # last is dummy
+      return S, L, L
+    end
+  elseif r
+    # second is dummy
+    return S, R, transpose!(R)
+  else
+    # last two are dummy
+    return S, S, S
+  end
+end
+
