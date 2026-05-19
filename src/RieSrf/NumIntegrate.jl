@@ -37,7 +37,7 @@ mutable struct IntegrationScheme
 
 
   #Compute a Gauss-Legendre integration scheme
-  function IntegrationScheme(r, prec, error, bound)
+  function IntegrationScheme(r::ArbFieldElem, prec::Int, error::ArbFieldElem, bound::ArbFieldElem)
 
     integration_scheme = new()
     N = gauss_legendre_parameters(r, error, bound)
@@ -92,7 +92,7 @@ function gauss_legendre_integration_points(N::T,
   return abscissae, weights
 end
 
-function gauss_legendre_parameters(r, error, bound = 10^5)
+function gauss_legendre_parameters(r::ArbFieldElem, error::ArbFieldElem, bound::ArbFieldElem = parent(r)(10^5))
 
   N = ceil(Int, (log(64*(bound/15))-log(error)-
     log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
@@ -101,7 +101,7 @@ end
 
 # Compute the parameters for the integration scheme for every path
 # based on the error bound we allow.
-function gauss_legendre_path_parameters(points, path::CPath, err)
+function gauss_legendre_path_parameters(points::Vector{AcbFieldElem}, path::CPath, err::ArbFieldElem)
 
   if path_type(path) == 0
     set_subpaths(path, split_line_segment(points, path, err))
@@ -117,7 +117,7 @@ end
 
 # Check if it is more efficient to split a line into two segments.
 # (Cf. Neurohr 4.7.5)
-function split_line_segment(points, path::CPath, err)
+function split_line_segment(points::Vector{AcbFieldElem}, path::CPath, err::ArbFieldElem)
   if !isdefined(path, :int_param_r)
     set_int_param_r(path, gauss_legendre_line_parameters(points, path))
   end

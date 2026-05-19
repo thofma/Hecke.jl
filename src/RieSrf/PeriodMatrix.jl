@@ -55,24 +55,77 @@ function big_period_matrix(RS::RiemannSurface)
   RR = parent(r_minimum)
   eps = RR(1/100)
 
+  Ns = map(r-> gauss_legendre_parameters(r, RS.extra_error), int_parameters)
+  diffs = [Ns[i] - Ns[i-1] for i in (2:length(Ns))]
+
+  b = cumsum(diffs)
+
+
+
+  max_cumsum = b[end]
+
+  #Experimenting with dynamic number of integration groups. It seems a bit faster than Neurohr
+  #Need to experiment more with optimal setting
+  nr_of_groups =   ceil(Int, length(paths)/5)
+
+  r_bounds = ArbFieldElem[]
+
+  for i in (1:nr_of_groups)
+    a = findfirst(x-> x < i*div(max_cumsum,nr_of_groups), b)
+    if a!= nothing
+      push!(r_bounds, int_parameters[a])
+    end
+  end
+
+
   #We group the paths together based on their r-value. As a consequence, we will
   #have to compute fewer integration schemes later making the algorithm faster.
-  #According to Neurohr p101 of his thesis it suffices to have 5 for the Gauss-Legendre method.
+
+
+ 
+  int_groups = [ ArbFieldElem[] for i in (1:length(r_bounds)+1)]
+  r_counts = [0 for i in (1:length(r_bounds)+1)]
+	for r in int_parameters
+    found = false
+		for i in (1:length(r_bounds))
+      if r < r_bounds[i]
+        push!(int_groups[i],r)
+        r_counts[i]+=1
+        found = true
+        break
+      end
+    end
+    if !found
+      push!(int_groups[end], r)
+      r_counts[end]+=1
+    end
+	end
+
+
+   #According to Neurohr p101 of his thesis it suffices to have 5 for the Gauss-Legendre method.
+  #=
+  r_counts =[0,0,0,0,0]
   int_groups = [ [],[],[],[],[] ]
 	for r in int_parameters
 		if r < r_minimum + RR(0.1)
       push!(int_groups[1],r)
+      r_counts[1]+=1
     elseif r < r_minimum + RR(0.4)
       push!(int_groups[2],r)
+      r_counts[2]+=1
 		elseif r < r_minimum + RR(0.9)
       push!(int_groups[3],r)
+      r_counts[3]+=1
     elseif r < r_minimum + RR(2.0)
       push!(int_groups[4],r)
+      r_counts[4]+=1
 		else
       push!(int_groups[5],r)
+      r_counts[5]+=1
     end
 	end
 
+  print(r_counts)=#
   #Make r_minimum slightly smaller than what it was. (But still larger than 1)
   if r_minimum <= RR(1) + 2 * eps
     int_group_rs= [(1/2)*(r_minimum+1)]

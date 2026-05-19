@@ -1459,27 +1459,43 @@ function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, 
   temp_vec = acb_vec(m)
   temp_vec_res = acb_vec(m)
 
-    #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
-    d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])])
-    ff = f(x2, y)
-    ff = ff/leading_coefficient(ff)
-    W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
-    w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
-    
-    if w < d // (2*m) 
-      fillacb!(temp_vec, z)
-      dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
-      @assert dd == m
-      z .= array(CC, temp_vec_res, m)
-
-      acb_vec_clear(temp_vec, m)
-      acb_vec_clear(temp_vec_res, m)
-
-      return z
-    else
-      midpoint = (x1 + x2)//2
-      return recursive_continuation(f, midpoint, x2, recursive_continuation(f, x1, midpoint, z))
+  #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
+  ff = f(x2, y)
+  ff = ff/leading_coefficient(ff)
+  W = [ ff(z[i]) for i in (1:m)]
+  d = ArbFieldElem[]
+  for i in (1:m)
+    for j in (1:i)
+      if i != j
+        zij = z[i] - z[j]
+        push!(d, abs(zij))
+        W[i]/= zij
+        W[j]/= -zij
+      end
     end
+  end
+
+  d = reduce(min, d)
+
+  #d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])])
+
+  #W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
+  w = reduce(max, map(t -> real(t)^2 +imag(t)^2, W))
+  
+  if w < d // (2*m) 
+    fillacb!(temp_vec, z)
+    dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)
+    @assert dd == m
+    z .= array(CC, temp_vec_res, m)
+
+    acb_vec_clear(temp_vec, m)
+    acb_vec_clear(temp_vec_res, m)
+
+    return z
+  else
+    midpoint = (x1 + x2)//2
+    return recursive_continuation(f, midpoint, x2, recursive_continuation(f, x1, midpoint, z))
+  end
 end
 
 #Recursive continuation without checking the proper bound that ensures

@@ -259,7 +259,7 @@ Compute the inner faces of the Newton polygon corresponding to the multivariate
 polynomial f(x,y). The Newton polygon is the convex hull of the points (i,j)
 for which x^i * y^j is a monomial of f.
 """
-function inner_faces(f)
+function inner_faces(f::MPolyRingElem)
   points = [degrees(mon) for mon in monomials(f)]
   ordered_vertices = convex_hull(points)
   n = length(ordered_vertices)

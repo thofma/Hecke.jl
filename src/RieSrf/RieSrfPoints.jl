@@ -410,9 +410,6 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
     target_error = maximum(map(x-> abs(x)-trim(abs(x)), small_period_matrix(RS)))
   end
   
-
-  XJ = []
-  YJ = []
   yj_new = CC(0)
   V = zero_matrix(CC, m, g)
 
@@ -466,8 +463,6 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
         break
       end
 
-      push!(XJ, xj)
-      push!(YJ,yj)
 			integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, xj, yj)
 			integral_matrix_contribution = change_base_ring(CC, integral_matrix_contribution)
       integral_matrix_contribution *= weights[i] * evaluate_d(N_gamma, abscissae[i])
@@ -492,7 +487,6 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
         sigma = permutation(test_chain)
         V = N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix -  change_base_ring(CC,test_chain.integral_matrix)
         err_V = maximum([ abs(c) for c in V ])
-        print(err_V)
         N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix
        
         if contains(target_error*100, err_V)
@@ -516,8 +510,6 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
         else
           V = gammas[s].integral_matrix-gammas[s-1].integral_matrix
           err_V = maximum([ abs(c) for c in V ])
-          print(err_V)
-          print(target_error)
            if contains(target_error*100, err_V)
               go_on = false 
               continue
