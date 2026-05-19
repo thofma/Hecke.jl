@@ -243,7 +243,7 @@ Construct a circle around ''center'' in C beginning and ending at ''start_point'
 If orientation is 1 the path goes counterclockwise. If it is -1 it goes clockwise. 
 """
 function c_circle(start_point::AcbFieldElem, center::AcbFieldElem, CC::AcbField = parent(start_point); orientation::Int = 1)
-  return c_arc(start_point, start_point, CC, center, orientation = orientation)
+  return c_arc(start_point, start_point, center,CC, orientation = orientation)
 end
 
 @doc raw"""

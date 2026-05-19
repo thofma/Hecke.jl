@@ -34,7 +34,7 @@ function find_path_on_sheet(gamma::CPath, RS::RiemannSurface)
   discriminant_points = RS.discriminant_points_high_prec
   for j in (1:length(discriminant_points))
     d_point = discriminant_points[j]
-    circle = c_circle(d_point-RS.safe_radii[j], d_point)
+    circle = c_circle(d_point - RS.safe_radii[j], d_point)
     intersect_test, points = intersection_points(gamma, circle)
     if intersect_test
       push!(int_points, (j, points[1], points[2]))
