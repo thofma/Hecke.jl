@@ -30,8 +30,6 @@ function big_period_matrix(RS::RiemannSurface)
   num_paths = length(paths)
   prec = precision(RS)
   disc_points = internal_discriminant_points(RS)
-  #small_C = AcbField(100)
-  #disc_points_low_precision = [small_C(P) for P in disc_points]
 
   #path`N seems to be less than what it is in Neurohr's implementation.
   #Neurohr takes disc_points of low precision here, but I don't see any 
@@ -45,12 +43,15 @@ function big_period_matrix(RS::RiemannSurface)
   int_parameters = ArbFieldElem[]
   for path in paths
     if path_type(path) == 0
+      L = [ get_int_param_r(sub_path) for sub_path in get_subpaths(path) ]
       append!(int_parameters, [ get_int_param_r(sub_path) for sub_path in get_subpaths(path) ])
     else
       append!(int_parameters, [get_int_param_r(path)])
+      if get_int_param_r(path)<1
+      end
     end
   end
-  sort!(int_parameters);
+  sort!(int_parameters)
   r_minimum = int_parameters[1]
   RR = parent(r_minimum)
   eps = RR(1/100)
@@ -127,17 +128,37 @@ function big_period_matrix(RS::RiemannSurface)
 
   print(r_counts)=#
   #Make r_minimum slightly smaller than what it was. (But still larger than 1)
+
+
+  #We only consider int_groups that contain more than 2 elements. If they only have two
+  #or less elements, we simply group them together with the previous group
+  int_groups = filter(x -> length(x) > 2, int_groups[2:end])
+  int_group_rs = ArbFieldElem[]
+
+  prev_r = RR(1)
+
+  for int_group in int_groups
+    minimum_r = minimum(int_group)
+    if minimum_r <= prev_r + 2 * eps
+      final_r = (1/2)*(minimum_r+prev_r)
+    else
+      final_r = minimum_r - eps
+    end
+    push!(int_group_rs, final_r)
+  end
+
+
+
+#=
   if r_minimum <= RR(1) + 2 * eps
     int_group_rs= [(1/2)*(r_minimum+1)]
   else
     int_group_rs = [r_minimum-eps]
   end
+=#
 
-  #We only consider int_groups that contain more than 2 elements. If they only have two
-  #or less elements, we simply group them together with the previous group
-  int_groups = filter(x -> length(x) > 2, int_groups[2:end])
 
-  append!(int_group_rs, [ minimum(int_group) - eps for int_group in int_groups])
+  #append!(int_group_rs, [ minimum(int_group) - eps for int_group in int_groups])
 
   differentials = RS.differential_form_data[1]
 

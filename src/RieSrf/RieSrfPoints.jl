@@ -249,16 +249,17 @@ function analyze_special_points(RS::RiemannSurface)
         push!(chain.points, point)
       end
     elseif length(yk) < m
-      if !isassigned(RS.ajm_discriminant_points, k)
-        ajm_discriminant_points(RS, k)
-      end
+      #if !isassigned(RS.ajm_discriminant_points, k)
+      #  ajm_discriminant_points(RS, k)
+      #end
+      yk_comp, cyc_decomp = ramification_point_sheets(RS, yk, k)
       for l in (1:length(cyc_decomp))
         point = RiemannSurfacePoint(RS) 
+        point.sheets = cyc_decomp[l]
+        point.ramification_index = length(point.sheets)
         point.coordx = xk
         point.index = l
-        point.sheets = cyc_decomp[l] 
-        point.ramification_index = length(point.sheets)
-        distance, index = closest_point(RS.ajm_discriminant_points[k].sheets[point.sheets[1]],yk)
+        distance, index = closest_point(yk_comp[l], yk)
         if !contains(distance, RR(0))
           point.is_finite = false
           point.coordy = CC(1/0)
@@ -561,6 +562,8 @@ function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem},
   v = RS.embedding
   fC = embed_mpoly(defining_polynomial(RS), v, prec)
   chain = RS.closed_chains[k]
+
+
   Sm = parent(permutation(chain))
   CC = chain.paths[1].C
   h = QQ(16//125)
@@ -579,7 +582,9 @@ function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem},
 
   loop_perm = permutation(CChain(loop))
 
-  path = c_line(start_point(chain.paths[l]), center(chain))
+  path = c_line(chain.paths[l].start_point_high, chain.paths[l].center_high)
+
+
   
   N = round(Int, 1//h * 72 //10)
   N2P1 = 2*N+1
@@ -593,7 +598,7 @@ function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem},
   for i in (1:N2P1)
     xj_new = evaluate(path, abscissae[i+1])
     try
-      yj_new = Hecke.RiemannSurfaces.recursive_continuation_manual(fC, xj, xj_new, yj, error^2/4)
+      yj_new, _ = Hecke.RiemannSurfaces.recursive_continuation_manual(fC, xj, xj_new, yj, error^2/4)
     catch
       break
     end
@@ -601,8 +606,19 @@ function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem},
 
 
   sigma = inv(Sm(sortperm(yj_new, lt = sheet_ordering)))
-  yk_sorted = [yk[sigma[k]] for k in (1:length(yk))]
 
+
+  if length(yk) < length(yj_new)
+    for i in (1:length(yj_new))
+      distance, index = closest_point(yj_new[i], yk)
+      if distance < error
+        yj_new[i] = yj_new[index]
+      end
+    end
+    yk_sorted = [yj_new[sigma[k]] for k in (1:length(yj_new))]
+  else
+    yk_sorted = [yk[sigma[k]] for k in (1:length(yk))]
+  end
   return yk_sorted, collect(cycles(loop_perm))
 end
 

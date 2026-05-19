@@ -94,7 +94,7 @@ end
 
 function gauss_legendre_parameters(r::ArbFieldElem, error::ArbFieldElem, bound::ArbFieldElem = parent(r)(10^5))
 
-  N = ceil(Int, (log(64*(bound/15))-log(error)-
+  N = ceil(ZZRingElem, (log(64*(bound/15))-log(error)-
     log(1-exp(acosh(r))^(-2)))/(2*acosh(r)));
   return N
 end
@@ -190,7 +190,6 @@ function gauss_legendre_line_parameters(points::Vector{AcbFieldElem}, path::CPat
     end
   end
 
-  #Not sure why yet
   if r_0 == Rr(5.0)
     push!(path.bounds, Rr(1))
   end

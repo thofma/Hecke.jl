@@ -372,7 +372,7 @@ mutable struct RiemannSurface
     RS.degree = reverse(degrees(f))
 
     big_period_matrix(RS)
-    analyze_special_points(RS)
+    #analyze_special_points(RS)
 
     return RS
   end
@@ -1265,7 +1265,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
       arc = c_arcs[j]
       if contains(arc_end, end_point(arc)) && contains(end_point(arc), arc_end)
         push!(loop, j + d)
-        arc_end = start_point(arc)
+        arc_end = arc.start_point_high
       end
     end
 
@@ -1283,8 +1283,8 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
       arc_buffer = Int[]
       old_line_piece = c_lines[path[k+1]]
       new_line_piece = c_lines[path[k]]
-      arc_start = start_point(old_line_piece)
-      arc_end = end_point(new_line_piece)
+      arc_start = old_line_piece.start_point_high
+      arc_end = new_line_piece.end_point_high
       center = D_points[path_edges[path[k]][end]]
 
      #Similar to before. Maybe make a function out of it
@@ -1293,7 +1293,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
         arc = c_arcs[j]
         if contains(arc_end, end_point(arc)) && contains(end_point(arc), arc_end)
           push!(arc_buffer, -j - d)
-          arc_end = start_point(arc)
+          arc_end = arc.start_point_high
         end
       end
 
@@ -1503,7 +1503,7 @@ end
 #and without using arb for the analytic continuation.
 #This is useful when values start converging to infinity and checking
 #bounds would get us into an infinite loop.
-function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem}, err::ArbFieldElem, target_error::ArbFieldElem)
+function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, x1::AcbFieldElem, x2::AcbFieldElem, z::Vector{AcbFieldElem}, err::ArbFieldElem, target_error::ArbFieldElem = parent(err)(-1))
   Kxy = parent(f)
   Ky, y = polynomial_ring(base_ring(Kxy), "y")
   CC = base_ring(f)
@@ -1528,8 +1528,10 @@ function recursive_continuation_manual(f::AbstractAlgebra.Generic.MPoly{AcbField
   end
 
   fillacb!(temp_vec, z)
-  if next_error > target_error && next_error >= last_error
-    return z, true
+  if target_error > RR(0)
+    if next_error > target_error && next_error >= last_error
+      return z, true
+    end
   end
 
   dd = ccall((:acb_poly_find_roots, libflint), Cint, (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int), temp_vec_res, evaluate(f,[Ky(x2), y]), temp_vec, 0, prec)

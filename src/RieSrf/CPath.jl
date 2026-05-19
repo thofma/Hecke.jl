@@ -95,7 +95,7 @@ mutable struct CPath
   t_of_closest_d_point::AcbFieldElem
 
   #The number of abscissae of the path
-  int_params_N::Int
+  int_params_N::ZZRingElem
 
   #The bounds M computed
   bounds::Vector{ArbFieldElem}
@@ -318,9 +318,9 @@ function reverse(G::CPath)
   p_type = path_type(G)
 
   if p_type == 0
-    G_rev = c_line(end_point(G), start_point(G))
+    G_rev = c_line(G.end_point_high, G.start_point_high)
   else #Circle or arc
-    G_rev = c_arc(end_point(G), start_point(G), center(G), orientation = -orientation(G))
+    G_rev = c_arc(G.end_point_high, G.start_point_high, G.center_high, orientation = -orientation(G))
   end
   
   if isdefined(G, :permutation)
@@ -410,7 +410,7 @@ function get_int_param_r(G::CPath)
   return G.int_param_r
 end
 
-function set_int_params_N(G::CPath, N::Int)
+function set_int_params_N(G::CPath, N::ZZRingElem)
   G.int_params_N = N
 end
 
