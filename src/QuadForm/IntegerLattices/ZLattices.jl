@@ -1988,7 +1988,8 @@ function _shortest_vectors_span(L::ZZLat; dolll=true)
   # doing the lll here saves us from transforming each vector
   # instead we can just transform the row span
   G, d = _integral_split_gram(L)
-  dolll = dolll && !get_attribute(L, :is_lll_reduced, false) && minimum(diagonal(G))>4
+  @assert G[1,1]>0
+  dolll = dolll && !get_attribute(L, :is_lll_reduced, false) && maximum(diagonal(G))>6
   if dolll
     Glll, T = lll_gram_with_transform(G)
   else

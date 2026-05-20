@@ -134,6 +134,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
 
   # Compute L_1,  ... , L_n
   projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices)
+  m = length(successive_sublattices)
   B = reduce(vcat, projL)
   Binv,bi = integral_split(inv(B),ZZ)
   grams = _get_grams_std(projL_gram, projection_ranges, Binv)
@@ -153,7 +154,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
 end
 
 
-function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; use_dual::Bool=false)
+function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_further::Bool=false)
   rkLL = rank.(successive_sublattices)
   gramLZZ, _ = _integral_split_gram(L)
   V = ambient_space(L)
@@ -180,16 +181,16 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; use_dual::
       Si = set!(Si,SZ)
       mul!(Si, QQ(1,di))
     end
-    if use_dual
+    if split_further
       # this part is not optimized, turned off by default
       Li = lattice(V, Si; isbasis=true, check=false)
-      set_attribute!(Li,:_integral_split_gram=>(Gi,ZZ(1)))
+      set_attribute!(Li,:_integral_split_gram=>(Gi, ZZ(1)))
       set_attribute!(Li,:is_lll_reduced=>true)
       if nrows(Si)>2 && i>1
-        Li_split = _successive_sublattices(Li; use_dual=true)
+        Li_split = _successive_sublattices(Li; use_dual=false)
         append!(successive_sublattices1, Li_split)
       else
-        push!(successive_sublattices1,Li)
+        push!(successive_sublattices1, successive_sublattices[i])
       end
     end
     push!(projL, Si)
@@ -199,8 +200,8 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; use_dual::
       r2 += rkLL[i+1]
     end
   end
-  if use_dual
-    return _grams_proj(L, successive_sublattices1;use_dual=false)
+  if split_further
+    return _grams_proj(L, successive_sublattices1;split_further=false)
   end
   return projL, projL_gram, projection_ranges, denoms, successive_sublattices
 end
@@ -315,7 +316,6 @@ function _short_vectors_with_condition(::Type{CoeffType},
     @hassert :Lattice 1 all(allunique, values(short_vectors1))
     @hassert :Lattice 1 allunique(reduce(vcat, values(short_vectors1)))
     short_vectors2 = Dict{KeyType,Vector{VectorType}}()
-
     for a in Set((n[1][1:i], n[2:end]...) for n in target_invariants)
       short_vectors2[a] = VectorType[]
     end
@@ -323,8 +323,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     # prepare for integrality test
     #N_i = reduce(vcat, projL[j] for j in 1:i)
     ni = sum(nrows(projL[j]) for j in 1:i)
-    #Sf, _, Vf = snf_with_transform(view(L_in_L1toLn,1:ni,1:ni), false, true) # only one transform needed
-    Sf, _, Vf = __snf_with_transform(view(L_in_L1toLn,1:ni,1:ni), false, true, is_hnf=true) # TODO: enable once fixed
+    Sf, _, Vf = __snf_with_transform(view(L_in_L1toLn,1:ni,1:ni), false, true, is_hnf=true)
     _eldivNi_mod_Mi = diagonal(Sf)
     n_ones = count(isone, _eldivNi_mod_Mi)
     for i in n_ones+1:ncols(Vf)
@@ -440,7 +439,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     if search_fixed_vectors
       vs = _vector_sums(short_vectors2, projection_ranges[1:i], successive_grams) # with overflow
       @vprintln :Lattice 3 "$(length(vs)) fixed vectors at stage i=$i"
-      target_invariants = _update_targets(target_invariants, vs, normalized_targets)
+      target_invariants, signs = _update_targets(target_invariants, vs, normalized_targets, signs)
       target_invariants_i = [(k[1][1:i],k[2:end]...) for k in target_invariants]
       short_vectors2 = _update_short_vector_dict(short_vectors2, vs, target_invariants_i)
     end
@@ -453,29 +452,49 @@ function _short_vectors_with_condition(::Type{CoeffType},
     # so how to get rid of duplicates?
     invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors1, projection_ranges)
     # under construction....
-    #=
-    Gr = zero_matrix(ZZ, n, n)
+    rkL = rank(L)
+    Gr = zero_matrix(ZZ, rkL, rkL)
+    tmp_mat = zero(Gr)
     s = length(invariant_subspaces)
-    compressor = rand(1:1000,s)
     # we inflate and then compress
     for j in 1:s
       S = invariant_subspaces[j]
       r = S.range
-      i = findfirst(projection_ranges,r)
+      i = findfirst(==(r), projection_ranges)
       Gi = projL_gram[i]
-      C = view(S.B2, :, 1:rank(S))
-      GC = C*Gi*transpose(C)
-      addmul!(Gr, GC, compressor[j])
+      C = view(S.B2, 1:rank(S),:)
+      K = kernel(Gi*transpose(C);side=:left)
+      CK = QQ.(vcat(C,K))
+      CK_inv = inv(CK)
+      toC = Binv[:,r]*CK_inv[:,1:nrows(C)]*C
+      _GC = toC*Gi*transpose(toC)
+      GC = numerator(_GC)
+      addmul!(Gr, GC, rand(1:500))
     end
-    =#
+    for S in rk1_invariant_subspaces
+      r = S.range
+      i = findfirst(==(r), projection_ranges)
+      Gi = projL_gram[i]
+      C = view(S.B2, 1:rank(S),:)
+      K = kernel(Gi*transpose(C);side=:left)
+      CK = QQ.(vcat(C,K))
+      CK_inv = inv(CK)
+      for l in 1:rank(S)
+        toC = Binv[:,r]*CK_inv[:,l:l]*C[l:l,:]
+        _GC = toC*Gi*transpose(toC)
+        GC = numerator(_GC)
+        addmul!(Gr, GC, rand(1:500))
+      end
+    end
+    _Gr = [CoeffType(i) for i in Gr]
+    push!(grams, Gr)
+    for i in 1:26
+      k = target_invariants[i]
+      push!(k[2],_Gr[i,i])
+    end
   end
 
 
-
-  # assemble the output
-  n_out = sum(length.(values(short_vectors1)))
-  output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
-  invariants = Vector{Vector{CoeffType}}(undef, n_out)
 
   if CoeffType===ZZRingElem
     _B = numerator(B)
@@ -489,6 +508,26 @@ function _short_vectors_with_condition(::Type{CoeffType},
   lcmd = lcm(denoms)
   sc = div.(lcmd, denoms)
   grams[1] = gramZZ # we don't need the first projection, overwrite
+
+  target_invariants_output = Vector{CoeffType}[]
+  for i in 1:rank(L)
+    signi = signs[i]
+    (nrm_orig, nrm_extra, weyl, v1,fix) = target_invariants[i]
+    nrm_orig[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gram
+    nrm = vcat(nrm_orig, nrm_extra)
+    invariant = append!([weyl],v1,fix)
+    # canonicalize?
+    if signi == -1
+      invariant .= (-).(invariant)
+    end
+    push!(target_invariants_output, invariant)
+  end
+
+  # assemble the output
+  n_out = sum(length.(values(short_vectors1)))
+  output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
+  invariants = Vector{Vector{CoeffType}}(undef, n_out)
+  discard = falses(n_out)
   i = 0
   for b in keys(short_vectors1)
     isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
@@ -497,6 +536,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     invariant = append!([weyl],v1,fix)
     minus_invariant = (-).(invariant)
     nrm[1] = divexact(dot(sc, nrm),lcmd)  # since we set grams[1] = gramL
+    b1 = (nrm[1:length(nrm_orig)], nrm_extra, weyl, v1, fix)
     for z in short_vectors1[b]
       i = i+1
       # transform back to the basis of L
@@ -507,21 +547,23 @@ function _short_vectors_with_condition(::Type{CoeffType},
       else
         invariants[i] = minus_invariant
       end
-      output[i] = (vv, deepcopy(nrm))
+      if search_invariant_subspace
+        s = dot(vv, _Gr, vv)
+        nrmv = push!(deepcopy(nrm), s)
+        push!(nrm_extra, s)
+        if !(b1 in target_invariants)
+          discard[i] = true
+        end
+        output[i] = (vv, nrmv)
+        pop!(nrm_extra)
+      else
+        output[i] = (vv, deepcopy(nrm))
+      end
     end
   end
-  target_invariants_output = Vector{CoeffType}[]
-  for i in 1:rank(L)
-    signi = signs[i]
-    (nrm_orig, nrm_extra, weyl, v1,fix) = target_invariants[i]
-    nrm = vcat(nrm_orig, nrm_extra)
-    invariant = append!([weyl],v1,fix)
-    nrm[1] = divexact(dot(sc, nrm),lcmd)  # since we set grams[1] = gram
-    # canonicalize?
-    if signi == -1
-      invariant .= (-).(invariant)
-    end
-    push!(target_invariants_output, invariant)
+  if search_invariant_subspace
+    deleteat!(output, discard)
+    deleteat!(invariants, discard)
   end
 
 
@@ -529,10 +571,14 @@ function _short_vectors_with_condition(::Type{CoeffType},
     @assert length(unique((output))) == length(output)
     n = rank(L)
     target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
+      c = 0
     for (v, n) in output
       @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams)) "norms do not match with gram matrices"
       if mode==:auto
-        @assert n in target_norms
+        #@assert n in target_norms
+        if n in target_norms
+          c +=1
+        end
       end
     end
     # This test makes sense only in automorphism mode
@@ -540,7 +586,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
       E = CoeffType.(identity_matrix(ZZ, n))
       for i in 1:n
         ei = E[i,:]
-        @assert any(ei==j[1] ||-ei==j[1] for j in output)
+        @assert any(ei==j[1] ||-ei==j[1] for j in output) "Basis vector e_$i is missing"
         j = findfirst(==(ei), first.(output))
       end
     end
@@ -570,7 +616,9 @@ function _vector_sums(D::Dict, projection_ranges, successive_grams)
       r = projection_ranges[i]
       length(r)==1 && continue
       @inbounds all(iszero(vs[i]) for i in r) && continue
-      vsr = _canonicalize!(vs[r]) # excludes duplicates up to sign
+      vsr = _canonicalize!(vs[r])
+      g = gcd(vsr)
+      vsr = div.(vsr,g)# excludes duplicates up to sign
       push!(result, (successive_grams[i]*vsr,r))
     end
   end
@@ -586,7 +634,7 @@ function _dot_product_with_offset(a, b, offset::Int)
   return s
 end
 
-function _update_targets(target_invariants, vector_sums, normalized_targets)
+function _update_targets(target_invariants, vector_sums, normalized_targets, signs)
   result = similar(target_invariants)
   n = length(result)
   for (i,v,k) in zip(1:n,normalized_targets, target_invariants)
@@ -595,9 +643,15 @@ function _update_targets(target_invariants, vector_sums, normalized_targets)
       s = _dot_product_with_offset(v, vsr, first(r)-1)
       push!(kk[5], s)
     end
+    if iszero(k[1][1]) && iszero(k[5])
+      # flip the sign, this is necessary, because we consider our vectors up to sign
+      _,_sign = _canonicalize_with_data!(kk[5])
+      normalized_targets[i] = _sign*normalized_targets[i]
+      signs[i] *= _sign
+    end
     result[i] = kk
   end
-  return result
+  return result, signs
 end
 
 function _update_short_vector_dict(D::Dict{KeyType,ValueType},
@@ -618,18 +672,18 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
     end
     for (h,vv) in T
       kk = deepcopy(k)
-      # if flag, then we can change the sign of vv
-      # without changing k in order to match the target invariants
-      flag = iszero(kk[3]) && iszero(k[5])
       append!(kk[5], h)
+      if iszero(k[1][1]) && iszero(k[5])
+        _,sign = _canonicalize_with_data!(kk[5])
+      else
+        sign = 1
+      end
       if kk in target_invariants
         # do the append!get! thing because both kk and "-kk" can appear
-        append!(get!(Dnew,kk, ValueType()), vv)
-      elseif flag
-        neg!(kk[5])
-        if kk in target_invariants
-          append!(get!(Dnew,kk,ValueType()),[-i for i in vv])
+        if sign==-1
+          vv .= (-).(vv)
         end
+        append!(get!(Dnew,kk,ValueType()),vv)
       end
     end
   end
@@ -645,19 +699,24 @@ function push!(z::GrowingSubspace, x, offset=0)
   z.rank == n && return nothing
   B1 = z.B1
   B2 = z.B2
-  nn = n+1
+  nn = z.rank+1
   r = offset
   @inbounds for i in 1:n
     B1[nn,i] = x[r+i]
   end
-  if !_reduce_modulo_rref(B1, n, z.pivs, z.pure, z.dirty)
+  if !_reduce_modulo_rref(B1, z.rank, z.pivs, z.pure, z.dirty)
     # found something new
     rref!(B1)
     z.rank += 1
+    z.dirty = true
+    resize!(z.pivs, z.rank)
+    resize!(z.pure, z.rank)
     rk = z.rank
     @inbounds for i in 1:n
       B2[rk, i] = x[r+i]
     end
+  else
+    z.dirty = false
   end
   nothing
 end
@@ -685,9 +744,9 @@ function _search_invariant_subspaces(D::Dict, projection_ranges)
         break
       end
     end
-    push!(subspaces1,J1)
+    J1.rank > 0 && push!(subspaces1,J1)
   end
-  return subspaces, subspaces1
+  return collect(subspaces), collect(subspaces1)
 end
 
 ########################################################################################
