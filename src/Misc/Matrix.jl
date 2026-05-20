@@ -1146,7 +1146,6 @@ function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::B
 
   S = deepcopy(A)
   Stra = is_square(S) ? S : zero_matrix(ZZ, ncols(S), nrows(S))
-  Stra = zero_matrix(ZZ, ncols(S), nrows(S))
   first = true
   while !is_diagonal(S)
     # Most of the work seems to be done for the first HNF
@@ -1188,6 +1187,9 @@ function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::B
   #this is probably not really optimal...
   a = ZZRingElem()
   b = ZZRingElem()
+  g = ZZRingElem()
+  e = ZZRingElem()
+  f = ZZRingElem()
   x = ZZRingElem()
   y = ZZRingElem()
   z = ZZRingElem()
@@ -1205,7 +1207,7 @@ function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::B
         #if S[i, i] != 0 && S[j, j] % S[i, i] == 0 #is_divisible_by(mat_entry_ptr(S, j, j), mat_entry_ptr(S, i, i))
           continue
         end
-        g, e, f = gcdx(S[i, i], S[j, j])
+        g, e, f = gcdx!(g, e, f, mat_entry_ptr(S, i, i), mat_entry_ptr(S, j, j))
         #a = divexact(S[i, i], g)
         a = divexact!(a, mat_entry_ptr(S, i, i), g)
         S[i, i] = g
@@ -1213,12 +1215,12 @@ function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::B
         b = divexact!(b, mat_entry_ptr(S, j, j), g)
         #S[j, j] *= a
         mul!(mat_entry_ptr(S, j, j), a)
+        b = neg!(b)
         if l
           # U = [1 0; -b*f 1] * [ 1 1; 0 1] = [1 1; -b*f -b*f+1]
           # so row i and j of L will be transformed. We do it naively
           # those 2x2 transformations of 2 rows should be a c-primitive
           # or at least a Nemo/Hecke primitive
-          b = neg!(b)
           for k = 1:ncols(L)
             #x = -b * f
             x = mul!(x, b, f)
@@ -1276,4 +1278,3 @@ function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::B
     return S, S, S
   end
 end
-
