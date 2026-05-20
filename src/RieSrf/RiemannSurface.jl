@@ -530,38 +530,7 @@ function swapped_surface(RS::RiemannSurface)
 	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
 
     end
-
-    #=function evaluate_differential_factors_matrix(factors, x0, ys)
-        Kxy = parent(factors[1])
-        Ky, y = polynomial_ring(base_ring(Kxy), "y")
-        CC = base_ring(factors[1])
-        m = length(ys)
-
-        result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
-        for l in 1:length(factors)
-          f = factors[l]
-          fx0 = f(x0, y)
-          for s in 1:m
-            fx0ys = CC(fx0(ys[s]))
-            factor_at_xys = [fx0ys^min_pows[l] ]
-            for k in (1:range_pows[l])
-              push!(factor_at_xys, factor_at_xys[k]*fx0ys)
-            end
-            for k in 1:g
-              #Let omega_i = g_i * dx where the omega form a basis of
-              #differentials. Then result[s][k] = g_k(x0, ys) where the
-              #ys are the m preimages in the fiber f^(-1)(x0).
-              result[s, k] *= factor_at_xys[factor_matrix[l, k] - min_pows[l]+1]
-            end
-          end
-        end
-        return result
-      end
-      =#
     RS_swap.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
-    #RS_swap.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
-
-
     big_period_matrix(RS_swap)
 
     analyze_special_points(RS_swap)
