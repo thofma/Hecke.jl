@@ -70,7 +70,7 @@ function _cholesky_integral_denom(gram::Matrix{QQFieldElem})
   end
   # recursion
   subper, subres, subc = _cholesky_integral_denom(subgram)
-  # assemble the permuation
+  # assemble the permutaion
   per = Vector{Int}(undef, n)
   per[1] = mi
   for i in 1:length(subper)

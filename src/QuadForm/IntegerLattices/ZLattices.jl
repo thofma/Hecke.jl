@@ -1471,10 +1471,11 @@ function lll(
   G2, U = _lll(M, def, ctx)
   if same_ambient
     B2 = U*basis_matrix(L)
-    Llll = lattice(ambient_space(L), B2; check=false)
+    Llll = lattice(ambient_space(L), B2; isbasis=true, check=false)
   else
-    Llll = integer_lattice(; gram=(1//d)*change_base_ring(QQ, G2))
+    Llll = integer_lattice(; gram=QQ(1//d)*G2, check=false)
   end
+  set_attribute!(Llll, :_integral_split_gram=>(G2, d))
   set_attribute!(Llll, :is_lll_reduced, true)
   return Llll
 end
@@ -1792,7 +1793,7 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   m = minimum(diagonal(G))
   # We create an iterator to avoid creating very large lists for
   # lattices with big kissing number
-  V = _short_vectors_gram_nolll_integral(Hecke.LatEnumCtx, G, 0, m, nothing, one(ZZ), ZZRingElem)
+  V = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, m, nothing, one(ZZ), ZZRingElem)
   B = ZZMatrix[]
   n = ncols(G)
   H = zero_matrix(ZZ, n+1, n) # One row more for hnf
@@ -1827,6 +1828,32 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   end
   return flag, m, B, H
 end
+
+function _successive_sublattices(L::ZZLat; use_dual=false)
+  LL = ZZLat[]
+  rank(L)==0 && return LL
+  S = shortest_vectors_sublattice(L; check=false)
+  @assert rank(S)>0
+  if use_dual && !is_modular(S)[1]
+    S1 = shortest_vectors_sublattice(dual(S);check=false)
+    if rank(S1) != rank(S)
+      # we can split
+      S2 = orthogonal_submodule(S, S1)
+      push!(LL, S1)
+      append!(LL, _successive_sublattices(S2; use_dual))
+    else
+      push!(LL, S)
+    end
+  else
+    push!(LL,S)
+  end
+  R = orthogonal_submodule(L, S)
+  @assert rank(R) < rank(L)
+  append!(LL, _successive_sublattices(R; use_dual))
+  @assert sum(rank.(LL);init=0) == rank(L)
+  return LL
+end
+
 
 function _row_span!(L::Vector)
   l = length(L)
@@ -1880,7 +1907,7 @@ function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}
   end
   sv = [svL]
   SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
-  if use_dual && !is_unimodular(SL[1])
+  if use_dual && !is_modular(SL[1])[1]
     # try to find decomposition of SL[1] via the dual module
     Ld = dual(SL[1])
     svLd = shortest_vectors(Ld, S; check=false)
@@ -1951,7 +1978,29 @@ with gram matrix
 ```
 """
 function shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
-  return first(_shortest_vectors_sublattice(L; check))
+  @req !check || is_definite(L) "latttice must be definite"
+  B = _shortest_vectors_span(L)
+  return lattice(ambient_space(L),B*basis_matrix(L);isbasis=true, check=false)
+end
+
+function _shortest_vectors_span(L::ZZLat; dolll=true)
+  V = ambient_space(L)
+  # doing the lll here saves us from transforming each vector
+  # instead we can just transform the row span
+  G, d = _integral_split_gram(L)
+  dolll = dolll && !get_attribute(L, :is_lll_reduced, false) && minimum(diagonal(G))>4
+  if dolll
+    Glll, T = lll_gram_with_transform(G)
+  else
+    Glll = G
+  end
+  m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
+  L.minimum = m/d
+  B = _row_span!(SV)
+  if dolll
+    B = mul!(B, B, T)
+  end
+  return B
 end
 
 @doc raw"""
@@ -1967,7 +2016,7 @@ function _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   V = ambient_space(L)
   sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L)]
   B = _row_span!(sv)*basis_matrix(L)
-  M = lattice(V, B; check=false)
+  M = lattice(V, B; isbasis=true, check=false)
   P = primitive_closure(L, M)
   return M, P, sv
 end

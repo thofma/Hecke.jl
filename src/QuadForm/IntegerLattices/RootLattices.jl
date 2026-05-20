@@ -303,33 +303,38 @@ function _reflection(gram::MatElem, v::MatElem)
   c = (v * gram_v)[1,1]
   ref = zero_matrix(base_ring(gram), n, n)
   # special cases for roots
+  tmp = zero(v)
   if c == 2
     for k in 1:n
-      ref[k:k,:] = neg!(gram_v[k,1]*v)
-      ref[k,k] += 1
+      is_zero_entry(gram_v,k,1) && continue
+      ref[k:k,:] = neg!(mul!(tmp, gram_v[k,1], v))
     end
   elseif c == 1
     for k in 1:n
-      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
-      ref[k,k] += 1
+      is_zero_entry(gram_v,k,1) && continue
+      ref[k:k,:] = neg!(mul!(tmp, 2*gram_v[k,1], v))
     end
   elseif c == -2
     for k in 1:n
-      ref[k:k,:] = gram_v[k,1]*v
-      ref[k,k] += 1
+      is_zero_entry(gram_v,k,1) && continue
+      ref[k:k,:] = mul!(gram_v[k,1], v)
     end
   elseif c == -1
     for k in 1:n
-      ref[k:k,:] = 2*gram_v[k,1]*v
-      ref[k,k] += 1
+      is_zero_entry(gram_v,k,1) && continue
+      ref[k:k,:] = mul!(2*gram_v[k,1], v)
     end
   else
     for k in 1:n
-      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
-      ref[k,k] += 1
+      #is_zero_entry(gram_v,k,1) && continue
+      ref[k:k,:] = divexact(-2*gram_v[k,1], c)*v
     end
   end
-
+  for k in 1:n
+    ref[k,k] += 1
+  end
+  @hassert :Lattice 1 v*ref == -v
+  @hassert :Lattice 1 ref*gram*transpose(ref) == gram
   return ref
 end
 
@@ -403,6 +408,44 @@ function _weyl_vector(R::ZZLat)
   return weyl*basis_matrix(R)
 end
 
+function _weyl_vector(s::Symbol, n::Int)
+  v = zeros_array(QQ, n)
+  if s == :A
+    k = div(n, 2)
+    if iseven(n)
+      j = k
+      for i in 1:k
+        v[i] = v[n+1-i] = j
+        j += (k  - i)
+      end
+    else
+      j = n
+      for i in 1:k+1
+        v[i] = v[n+1-i] = j
+        j += (n  - 2*i)
+      end
+      v = v//2
+    end
+  elseif s == :D
+    j = 2*n-2
+    for i in n:-1:3
+      v[i] = j
+      j += 2*i-4
+    end
+    v[1] = v[2] = div(j,2)
+    v = v//2
+  elseif s == :E
+    if n == 6
+      v = QQFieldElem[8, 15, 21, 15, 8, 11]
+    elseif n == 7
+      v = QQFieldElem[17, 33, 48, 75//2, 26, 27//2, 49//2]
+    elseif n == 8
+      v = QQFieldElem[46, 91, 135, 110, 84, 57, 29, 68]
+    end
+  end
+  return v
+end
+
 function _weyl_group_order(s::Symbol, n::IntegerUnion)
   n = ZZ(n)
   if s == :A
@@ -440,6 +483,23 @@ function _weyl_group_order(s::Symbol, n::IntegerUnion)
   return ord
 end
 
+function _weyl_group_order(root_types::Vector{Tuple{Symbol, Int}})
+  ord = one(ZZ)
+  for s in root_types
+    mul!(ord, _weyl_group_order(s...))
+  end
+  return ord
+end
+
+function _weyl_group_gens(G::ZZMatrix, fundamental_roots::Vector{ZZMatrix})
+  weyl_group_gens = ZZMatrix[]
+  for roots in fundamental_roots
+    for i in 1:nrows(roots)
+      push!(weyl_group_gens, _reflection(G, view(roots, i:i, :)))
+    end
+  end
+  return weyl_group_gens
+end
 
 ################################################################################
 #
@@ -629,8 +689,8 @@ function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
   B = basis_matrix(L)
   ambient_bases = QQMatrix[b*B for b in basis_matrices_wrt_L]
   V = ambient_space(L)
-  C = lattice(V, reduce(vcat,ambient_bases; init=zero_matrix(QQ,0,degree(L))))
-  components = ZZLat[lattice(V,b) for b in ambient_bases]
+  C = lattice(V, reduce(vcat,ambient_bases; init=zero_matrix(QQ,0,degree(L))); isbasis=true, check=false)
+  components = ZZLat[lattice(V,b;isbasis=true, check=false) for b in ambient_bases]
   return C, ADE, components
 end
 
@@ -1129,17 +1189,17 @@ end
 # For all i
 # replace x[i] by -x[i] if its first non-zero coefficient is negative.
 function _canonicalize_with_data!(x::Union{Vector, LinearAlgebra.Adjoint})
-  length(x)==0 && return x, false
+  length(x)==0 && return x, 1
   i = 1
-  flag = false
+  sign = 1
   while i<length(x) && iszero(x[i])
     i = i+1
   end
   if is_negative(x[i])
-    flag = true
+    sign = -1
     x.= neg!.(x)
   end
-  return x, flag
+  return x, sign
 end
 
 _canonicalize!(x::Union{Vector, LinearAlgebra.Adjoint}) = _canonicalize_with_data!(x)[1]

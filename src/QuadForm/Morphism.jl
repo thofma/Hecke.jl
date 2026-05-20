@@ -11,10 +11,10 @@
 # Pages 327-334, ISSN 0747-7171, 10.1006/jsco.1996.0130.
 # (https://www.sciencedirect.com/science/article/pii/S0747717196901303)
 
-function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}}, invariants::Vector{Int},
-                    use_dict::Bool = true) where {S, T}
+function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}}, invariants::Vector{U},
+                    use_dict::Bool = true) where {S, T, U}
 
-  V = VectorList{S, T}()
+  V = VectorList{S, T, U}()
   if use_dict
     V.lookup = Dict{S, Int}(vectors[i] => i for i in 1:length(vectors))
     V.lengths = lengths
@@ -289,10 +289,10 @@ function try_init_small(
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
   vector_set = [], #Tuple{Vector{Int},Vector{Int}}[] # do this?
-  invariants = nothing,
+  invariants::Tuple{Vector{U},Vector{U}} = (Int[],Int[]),
   D::ZLatAutoCtx=C
- )
-  Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
+ ) where {U}
+  Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}, U}()
   if bound == -1
     bound = maximum(abs.(diagonal(D.G[1])))
     if fits(Int, bound)
@@ -406,7 +406,7 @@ function try_init_small(
   end
   @vprintln :Lattice 1 "Number of gram matrices: $(length(C.G))"
   @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
-  if invariants isa Nothing
+  if isempty(invariants[1])
     _invariants = zeros(Int, length(vectors))
     _target_invariants = zeros(Int, n)
   else
@@ -545,7 +545,7 @@ end
 _zero_vector(::Type{ZZRingElem}, len::Int) = zero_matrix(ZZ, 1, len)
 _zero_vector(::Type{Int}, len::Int) = zeros(Int, len)
 
-function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
+function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V, U}
 
   scalar_products = Vector{Vector{V}}(undef, dim(C))
   look_up = Vector{Dict{V, Int}}(undef, dim(C))
@@ -618,7 +618,7 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
   end
 
   for I in 1:dim(C)
-    C.scpcomb[I].scpcombs = VectorList{V, S}()
+    C.scpcomb[I].scpcombs = VectorList{V, S, U}()
     C.scpcomb[I].scpcombs.vectors = scalar_products[I]
     C.scpcomb[I].scpcombs.lookup = look_up[I]
     C.scpcomb[I].scpcombs.use_dict = true
@@ -955,8 +955,6 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
 
     good_scalar_plus = Utarget[J] == Uj
     good_scalar_minus = Utarget[J] == -Uj
-    #good_scalar_plus = true
-    #good_scalar_minus = true
     !good_scalar_plus && !good_scalar_minus && continue
     @inbounds for k in 1:length(F)
       for i in 1:I
@@ -1936,17 +1934,17 @@ function matgen(x, dim, per, v)
 end
 
 # Isomorphism computation
-function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0, vector_set1=[], vector_set2=[])
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0, vector_set1=Tuple{Vector{Int},Vector{Int}}[], vector_set2=Tuple{Vector{Int},Vector{Int}}[], invariants1=(Int[],Int[]), invariants2=(Int[],Int[]))
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
   # Ci is the source
   # Co is the target
   # We only need to initialize the vector sums and Bacher polynomials for the
   # source lattice
-  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth; vector_set=vector_set1)
+  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth; vector_set=vector_set1, invariants=invariants1)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci, vector_set=vector_set2)
+    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci, vector_set=vector_set2, invariants=invariants2)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -2460,9 +2458,9 @@ function _int_matrix_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
   return b
 end
 
-function _make_small(V::VectorList{ZZMatrix, ZZRingElem})
+function _make_small(V::VectorList{ZZMatrix, ZZRingElem, U}) where {U}
   tmp = ZZ()
-  W = VectorList{Vector{Int}, Int}()
+  W = VectorList{Vector{Int}, Int, U}()
   W.vectors = [ _int_vector_with_overflow(v, tmp) for v in V.vectors ]
   if isdefined(V, :lengths)
     W.lengths = Vector{Vector{Int}}(undef, length(V.lengths))
@@ -2484,9 +2482,9 @@ end
 _make_small(C::ZLatAutoCtx{Int}) = C
 
 # Forces the entries of C in Ints. Only the fields relevant for `cand` are filled.
-function _make_small(C::ZLatAutoCtx{ZZRingElem})
+function _make_small(C::ZLatAutoCtx{ZZRingElem, T, V, U}) where {T,V,U}
   tmp = ZZ()
-  D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
+  D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}, U}()
   D.G = [ _int_matrix_with_overflow(M, tmp) for M in C.G ]
 
   if isdefined(C, :GZZ)

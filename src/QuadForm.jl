@@ -54,6 +54,7 @@ include("QuadForm/LineOrbits.jl")
 
 # Close and short vectors
 include("QuadForm/IntegerLattices/ShortVectors.jl")
+include("QuadForm/IntegerLattices/ShortVectorsTarget.jl")
 include("QuadForm/IntegerLattices/CloseVectors.jl")
 
 # indefinite LLL
