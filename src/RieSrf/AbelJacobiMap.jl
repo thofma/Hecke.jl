@@ -159,7 +159,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
         subpath.integral_matrix = path_difference_matrix
 			else
         for i in (1:N)
-					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials,An_x[i+1][1], [An_y[i+1][ind]])
+					integral_matrix_contribution = evaluate_differential_factors_matrix(RS, embedded_differentials, An_x[i+1], [An_y[i+1][ind]])
           integral_matrix_contribution = change_base_ring(CC, integral_matrix_contribution)
           # For arcs and circles we need to multiply with an additional dx.
           integral_matrix_contribution *= weights[i] * evaluate_d(path, abscissae[i])
