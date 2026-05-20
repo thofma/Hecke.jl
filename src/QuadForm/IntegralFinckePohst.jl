@@ -119,7 +119,17 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int)
   per, R, c = _cholesky_integral_denom(gramQQ)
 
   # Convert c to integers (they are lcm of denominators, hence integers)
-  c_int = Int[Int(numerator(c[i])) for i in 1:n+1]
+  c_int = Vector{Int}(undef, n + 1)
+  c_int_large = Vector{ZZRingElem}(undef, n + 1) # we need to compute lcms later of the c_int elements and check for overflow
+  for i in 1:n+1
+    nc = numerator(c[i])
+    if !fits(Int, nc)
+      return false, nothing, nothing
+    else
+      c_int_large[i] = nc
+      c_int[i] = Int(nc)
+    end
+  end
 
   # Compute derived integer arrays
   d = Vector{Int}(undef, n)
@@ -132,7 +142,12 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int)
   docp1 = Vector{Int}(undef, n)
 
   for i in 1:n
-    d[i] = lcm(c_int[i], c_int[i + 1])
+    l = lcm(c_int_large[i], c_int_large[i + 1])
+    if !fits(Int, l)
+      return false, nothing, nothing
+    else
+      d[i] = Int(l)
+    end
   end
 
   for i in 1:n
