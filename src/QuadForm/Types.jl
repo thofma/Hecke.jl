@@ -555,7 +555,7 @@ mutable struct ZLatAutoCtx{S, T, V, U}
   diagI::Vector{S}
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
-    z = new{ZZRingElem, ZZMatrix, ZZMatrix,Tuple{Int,UInt}}()
+    z = new{ZZRingElem, ZZMatrix, ZZMatrix,Int}()
     z.G = G
     z.Gtr = ZZMatrix[transpose(g) for g in G]
     z.dim = nrows(G[1])

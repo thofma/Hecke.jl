@@ -97,7 +97,7 @@ end
 dim(C::ZLatAutoCtx) = C.dim
 
 function init(
-  C::ZLatAutoCtx,
+  C::ZLatAutoCtx{R,S,T,U},
   automorphism_mode::Bool = true,
   bound::ZZRingElem = ZZRingElem(-1),
   use_dict::Bool = true;
@@ -105,9 +105,9 @@ function init(
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
   vector_set = [],
-  invariants = nothing,
+  invariants = (Int[],Int[]),
   D::ZLatAutoCtx=C
-)
+) where {R,S,T,U<:Union{Vector,Int}}
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -167,12 +167,16 @@ function init(
       push!(vectors, vfmpz)
     end
   end
-  if invariants isa Nothing
-    # invariants are always Int
-    # it is okay to take them mod 2^64
-    # we only require invariant(-v) = -invariant(v)
-    _invariants = zeros(Int, length(vectors))
-    _target_invariants = zeros(Int, n)
+  # it is okay to take the invariants mod 2^64
+  # we only require invariant(-v) = -invariant(v)
+  if isempty(invariants[1])
+    if U <: Vector
+      _invariants = [U() for i in 1:length(vectors)]
+      _target_invariants = [U() for i in 1: n]
+    elseif U===Int
+      _invariants = zeros(U, length(vectors))
+      _target_invariants = zeros(U, n)
+    end
   else
     _invariants = invariants[1]
     _target_invariants = invariants[2]
@@ -407,8 +411,13 @@ function try_init_small(
   @vprintln :Lattice 1 "Number of gram matrices: $(length(C.G))"
   @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
   if isempty(invariants[1])
-    _invariants = zeros(Int, length(vectors))
-    _target_invariants = zeros(Int, n)
+    if U <: Vector
+      _invariants = [U() for i in 1:length(vectors)]
+      _target_invariants = [U() for i in 1: n]
+    elseif U===Int
+      _invariants = zeros(U, length(vectors))
+      _target_invariants = zeros(U, n)
+    end
   else
     _invariants = invariants[1]
     _target_invariants = invariants[2]

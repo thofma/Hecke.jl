@@ -38,24 +38,20 @@ function short_vectors_with_condition(T::Type,
 end
 
 
-function short_vectors_with_condition(L1::ZZLat,
-                                      L2::ZZLat)
-  notisom = (Tuple{Vector{Int64},Vector{Int64}}[],ZZMatrix[],(Vector{Int64}[],Vector{Int64}[]))
-
-  T = ZZRingElem
+function short_vectors_with_condition(::Type{T}, L1::ZZLat,
+                                      L2::ZZLat) where T
+  _notisom = (Tuple{Vector{T},Vector{T}}[],ZZMatrix[],(Vector{T}[],Vector{T}[]))
+  notisom = (false, _notisom, _notisom)
   # We disable the search for fixed vectors and invariant subspaces
   # because it would be difficult to match them
   search_fixed_vectors = false
   search_invariant_subspace = false
-  if L1===L2
-    return true, _short_vectors_with_condition(L1)
-  end
   pre1, (root_type1, fundamental_roots1), invariant_matrix1 = _short_vectors_with_condition_preprocessing_with_root_data(L1)
   pre2, (root_type2, fundamental_roots2), invariant_matrix2 = _short_vectors_with_condition_preprocessing_with_root_data(L2)
   _V1 = Vector{Tuple{Vector{T},Vector{T}}}()
   _V2 = Vector{Tuple{Vector{T},Vector{T}}}()
   if root_type1 != root_type2 || rank(L1) != rank(L2) || det(L1) != det(L2)
-    return false, notisom
+    return notisom
   end
   n = rank(L1)
 
@@ -67,9 +63,8 @@ function short_vectors_with_condition(L1::ZZLat,
   proj1 = solve(R1, projL1[1];side=:left)
   proj2 = solve(R2, projL2[1];side=:left)
   if proj1 != proj2  # same root type and same embedding
-    return false, notisom
+    return notisom
   end
-  T = Int
   target_fixed_part1_wrt_R2 = Tuple{Vector{ZZRingElem},ZZRingElem}[]
   r = nrows(R2)
   for (v,d) in target_fixed_part1
@@ -83,7 +78,7 @@ function short_vectors_with_condition(L1::ZZLat,
   out2 = _short_vectors_with_condition(T,   L2,successive_sublattices2, B2, Binv2, projection_ranges2, projL2, projL_gram2, denoms2, target_fixed_part1_wrt_R2, target_norms1,grams2 ; search_fixed_vectors, search_invariant_subspace, mode=:iso)
   # can we do without?
   if length(_V1)!=length(_V2) || length(grams1)!=length(grams2)
-    return false, notisom
+    return notisom
   end
   return true, out1, out2
 end
@@ -331,9 +326,13 @@ function _short_vectors_with_condition(::Type{CoeffType},
     end
     eldivNi_mod_Mi = __not_adj(CoeffType.(_eldivNi_mod_Mi[n_ones+1:end]))
     r1 = sum(nrows(projL[j]) for j in 1:i-1)
-    VfN_iminus1 = CoeffType.(collect(@view Vf[1:r1, n_ones+1:end]))
-    VfLi = CoeffType.(collect(@view Vf[r1+1:end, n_ones+1:end]))
-
+    if CoeffType == Int
+      VfN_iminus1 = CoeffType.(collect(@view Vf[1:r1, n_ones+1:end]))
+      VfLi = CoeffType.(collect(@view Vf[r1+1:end, n_ones+1:end]))
+    else
+      VfN_iminus1 = @view Vf[1:r1, n_ones+1:end]
+      VfLi = @view Vf[r1+1:end, n_ones+1:end]
+    end
     @assert nrows(VfLi) == nrows(projL[i])
     @vprintln :Lattice 3 "elementary divisors $eldivNi_mod_Mi at stage i=$i"
 
@@ -488,7 +487,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     end
     _Gr = [CoeffType(i) for i in Gr]
     push!(grams, Gr)
-    for i in 1:26
+    for i in 1:rkL
       k = target_invariants[i]
       push!(k[2],_Gr[i,i])
     end
@@ -513,8 +512,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
   for i in 1:rank(L)
     signi = signs[i]
     (nrm_orig, nrm_extra, weyl, v1,fix) = target_invariants[i]
-    nrm_orig[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gram
-    nrm = vcat(nrm_orig, nrm_extra)
+    #nrm_orig[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gram
+    #nrm = vcat(nrm_orig, nrm_extra)
     invariant = append!([weyl],v1,fix)
     # canonicalize?
     if signi == -1
@@ -606,7 +605,7 @@ function _vector_sums(D::Dict, projection_ranges, successive_grams)
   #r = last(projection_ranges[1]) + 1
   for v in values(D)
     isempty(v) && continue
-    init = zero(__not_adj(v)[1])
+    init = zero(__not_adj(v[1]))
     vs = ___sum(v; init)
     # if v1 is zero, then the sum is zero anyways
     all(iszero, vs[i] for i in projection_ranges[1]) && continue

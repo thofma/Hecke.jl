@@ -4,18 +4,23 @@
 #
 ################################################################################
 
-function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector)
+function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector; doauto=true)
   M = matrix(ZZ, first.(sv))
   # TODO: avoid the rational_span?
   V = rational_span(L)
   S = lattice(V, M; isbasis = true, check = false)
   s = rank(S)
   T = orthogonal_submodule(lattice(V), S)
-  gensOS = [diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))] # diag(-1,1,...,1)
-  for g in gens(SymmetricGroup(s))
-    push!(gensOS, identity_matrix(ZZ, s) * g) # generators of S_n
+  gensOS = ZZMatrix[]
+  if doauto
+    push!(gensOS, diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))) # diag(-1,1,...,1)
+    for g in gens(SymmetricGroup(s))
+      push!(gensOS, identity_matrix(ZZ, s) * g) # generators of S_n
+    end
+    orderOS = ZZ(2)^s * factorial(ZZ(s))
+  else
+    orderOS = 0
   end
-  orderOS = ZZ(2)^s * factorial(ZZ(s))
   @hassert :Lattice 1 all(g -> g * gram_matrix(S) * transpose(g) == gram_matrix(S), gensOS)
   return S, T, gensOS, orderOS
 end
@@ -120,7 +125,7 @@ function __assert_has_automorphisms(
     L.automorphism_group_order = orderOS * orderOT
     return nothing
   end
-  invariants = nothing
+  invariants = (Int[],Int[])
   res = ZZMatrix[GL]
   is_lll = get_attribute(L, :is_lll_reduced, false)
   do_lll = !is_lll && do_lll
@@ -181,7 +186,6 @@ function __assert_has_automorphisms(
   fl = false
   if try_small
     fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, invariants)
-    @assert fl
     if fl
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
@@ -597,7 +601,7 @@ end
 # assumes rank >0, definite, no genus check
 _is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
 
-function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, use_norm_one=true)
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
   end
@@ -650,7 +654,25 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
   if fl
     _L1 = integer_lattice(gram=G1[1];cached=false)
     _L2 = integer_lattice(gram=G2[1];cached=false)
-    b, out1,out2 = short_vectors_with_condition(_L1, _L2)
+    if use_norm_one
+      sv1 = short_vectors(_L1, 0, Int(1))
+      sv2 = short_vectors(_L2, 0, Int(1))
+      length(sv1) == length(sv2) || return false, zero_matrix(QQ,0,0)
+      if length(sv1)>0
+        S1, T1, _, _ = _norm_one_sublattice_automorphism_group(_L1, sv1; doauto=false)
+        S2, T2, _, _ = _norm_one_sublattice_automorphism_group(_L2, sv2; doauto=false)
+        b,T = is_isometric_with_isometry(T1,T2)
+        !b && return false, zero_matrix(QQ,0,0)
+        B1 = vcat(basis_matrix(S1),basis_matrix(T1))
+        B2 = vcat(basis_matrix(S2),basis_matrix(T2))
+        T = inv!(B1)*diagonal_matrix(identity_matrix(QQ,rank(S1)),T)*B2
+        # undo lll
+        T = change_base_ring(QQ, inv(TL)*T*TM)
+        @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+        return true, T
+      end
+    end
+    b, out1,out2 = short_vectors_with_condition(Int, _L1, _L2)
     V1, grams1, invariants1 = out1
     V2, grams2, invariants2 = out2
     if !b
@@ -1027,6 +1049,7 @@ A vector containing one representative from each orbit.
 function _orbit_representatives(G::Vector{ZZMatrix}, v::Vector{S}) where {S<: Union{Vector{ZZRingElem},ZZMatrix}}
   visited = Set{S}()
   result = Vector{S}()
+  isempty(v) && return v
   tmp = first(v)
   for vec in v
     if vec ∉ visited
