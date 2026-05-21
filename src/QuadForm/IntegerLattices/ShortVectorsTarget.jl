@@ -62,7 +62,7 @@ function short_vectors_with_condition(::Type{T}, L1::ZZLat,
   R2 = basis_matrix(successive_sublattices2[1])
   proj1 = solve(R1, projL1[1];side=:left)
   proj2 = solve(R2, projL2[1];side=:left)
-  if proj1 != proj2  # same root type and same embedding
+  if proj1 != proj2 || denoms1!=denoms2 || length(projL1) != length(projL2)
     return notisom
   end
   target_fixed_part1_wrt_R2 = Tuple{Vector{ZZRingElem},ZZRingElem}[]
@@ -487,9 +487,11 @@ function _short_vectors_with_condition(::Type{CoeffType},
     end
     _Gr = [CoeffType(i) for i in Gr]
     push!(grams, Gr)
+
     for i in 1:rkL
-      k = target_invariants[i]
+      k = deepcopy(target_invariants[i])
       push!(k[2],_Gr[i,i])
+      target_invariants[i] = k
     end
   end
 
@@ -512,7 +514,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
   for i in 1:rank(L)
     signi = signs[i]
     (nrm_orig, nrm_extra, weyl, v1,fix) = target_invariants[i]
-    #nrm_orig[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gram
+    nrm_orig[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gram, modifies target_invariants
     #nrm = vcat(nrm_orig, nrm_extra)
     invariant = append!([weyl],v1,fix)
     # canonicalize?
@@ -529,7 +531,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
   discard = falses(n_out)
   i = 0
   for b in keys(short_vectors1)
-    isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
+     isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
     (nrm_orig, nrm_extra, weyl, v1, fix) = b
     nrm = vcat(nrm_orig, nrm_extra)
     invariant = append!([weyl],v1,fix)
