@@ -116,3 +116,28 @@ function pth_root_mod(a::AbsSimpleNumFieldElem, pIdeal::AbsNumFieldOrderIdeal{Ab
   return preimage(phi, pth_root(b))
 end
 
+################################################################################
+#
+#  Rational Function Field Valuation
+#
+################################################################################
+
+# might be not the best place but still
+# currently only used in elliptic curve code
+function valuation(x::T, p::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  @req parent(x) === parent(p) "x and p must come from the same field"
+  is_zero(x) && return inf
+
+  if is_one(denominator(p))
+    f = numerator(p)
+    @req is_irreducible(f) "p must represent a place"
+    return valuation(numerator(x), f) - valuation(denominator(x), f)
+  else
+    @req p == 1 // gen(parent(p)) "p must be a finite-place generator (poly) or 1//t"
+    return degree(denominator(x)) - degree(numerator(x))
+  end
+end
+function valuation(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}, p::U) where {T, U <: PolyRingElem{T}}
+  @req parent(p) === parent(numerator(x)) "p must come from the polynomial ring of x"
+  return valuation(x, parent(x)(p))
+end
