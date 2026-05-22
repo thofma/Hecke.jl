@@ -127,7 +127,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   GZZ,_  = _integral_split_gram(L)
   Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); isbasis=true, check=false)
-  successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual))
+  successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
   @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
 
   m = length(successive_sublattices)
@@ -137,7 +137,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   end
 
   # Compute L_1,  ... , L_n
-  projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices)
+  projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
   m = length(successive_sublattices)
   B = reduce(vcat, projL)
   Binv,bi = integral_split(inv(B),ZZ)
@@ -357,7 +357,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
       # keep only the invariants valid at stage i
       a = n[1][i]
       b = (n[1][1:i-1], n[2:end]...)
-      push!(get!(target_norm, a, Set{KeyType}()), b)
+      push!(get!(() -> Set{KeyType}(), target_norm, a), b)
     end
 
     # prepare gluing data
@@ -471,36 +471,34 @@ function _short_vectors_with_condition(::Type{CoeffType},
     # under construction....
     rkL = rank(L)
     Gr = zero_matrix(ZZ, rkL, rkL)
-    tmp_mat = zero(Gr)
     s = length(invariant_subspaces)
+    range_to_index = Dict{UnitRange{Int}, Int}(projection_ranges[i] => i for i in 1:m)
     # we inflate and then compress
     for j in 1:s
       S = invariant_subspaces[j]
       r = S.range
-      i = findfirst(==(r), projection_ranges)
+      i = range_to_index[r]
       Gi = projL_gram[i]
       C = view(S.B2, 1:rank(S),:)
       K = kernel(Gi*transpose(C);side=:left)
-      CK = QQ.(vcat(C,K))
-      CK_inv = inv(CK)
-      toC = Binv[:,r]*CK_inv[:,1:nrows(C)]*C
+      CK_inv = inv!(QQ.(vcat(C,K)))
+      toC = view(Binv,:,r)*view(CK_inv,:,1:nrows(C))*C
       _GC = toC*Gi*transpose(toC)
       GC = numerator(_GC)
-      addmul!(Gr, GC, rand(1:500))
+      addmul!(Gr, GC, rand(1:100))
     end
     for S in rk1_invariant_subspaces
       r = S.range
-      i = findfirst(==(r), projection_ranges)
+      i = range_to_index[r]
       Gi = projL_gram[i]
       C = view(S.B2, 1:rank(S),:)
       K = kernel(Gi*transpose(C);side=:left)
-      CK = QQ.(vcat(C,K))
-      CK_inv = inv(CK)
+      CK_inv = inv!(QQ.(vcat(C,K)))
       for l in 1:rank(S)
-        toC = Binv[:,r]*CK_inv[:,l:l]*C[l:l,:]
+        toC = view(Binv,:,r)*view(CK_inv,:,:)*view(C,l:l,:)
         _GC = toC*Gi*transpose(toC)
         GC = numerator(_GC)
-        addmul!(Gr, GC, rand(1:500))
+        addmul!(Gr, GC, rand(1:100))
       end
     end
     _Gr = [CoeffType(i) for i in Gr]
@@ -680,6 +678,7 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
   isempty(vector_sums) && return D
   @hassert :Lattice 1 allunique(reduce(vcat,values(D)))
   Dnew = Dict{KeyType,ValueType}()
+  target_invariants_lookup = Set{KeyType}(target_invariants)
   for k in keys(D)
     T = Dict{Vector{Int},ValueType}()
     for v in D[k]
@@ -688,7 +687,7 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
         s = _dot_product_with_offset(v, vsr, first(r)-1)
         push!(h, s)
       end
-      push!(get!(T, h, ValueType()), v)
+      push!(get!(() -> ValueType(), T, h), v)
     end
     for (h,vv) in T
       # Only k[5] is extended; k[1..4] can be shared safely since they are not mutated.
@@ -700,12 +699,12 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
       else
         sign = 1
       end
-      if kk in target_invariants
+      if kk in target_invariants_lookup
         # do the append!get! thing because both kk and "-kk" can appear
         if sign==-1
           vv .= (-).(vv)
         end
-        append!(get!(Dnew,kk,ValueType()),vv)
+        append!(get!(() -> ValueType(), Dnew, kk), vv)
       end
     end
   end
@@ -749,11 +748,13 @@ function _search_invariant_subspaces(D::Dict, projection_ranges)
   for i in 2:length(projection_ranges)
     r = projection_ranges[i]
     length(r)<2 && continue
+    offset = first(r) - 1
     J1 = GrowingSubspace(r)
     for vv in values(D)
       J = GrowingSubspace(r)
       for v in vv
-        push!(J, v, first(J.range)-1)
+        push!(J, v, offset)
+        J.rank == J.degree && break
       end
       if 1 < J.rank < J.degree
         push!(subspaces, J)
