@@ -5,21 +5,30 @@
 ########################################################################################
 
 raw"""
-    short_vectors_with_condition(L::ZZLat; search_fixed_vectors::Bool) -> Tuple{<:Vector, <:Vector}, Vector{ZZMatrix}
+    short_vectors_with_condition(L::ZZLat; search_fixed_vectors::Bool, search_invariant_subspace::Bool, use_dual::Bool)
 
-Return a list of vectors, that contains the orbits of the standard basis vectors under the reduced automorphism group $\mathrm{Aut}(L, \rho)$.
-together with a list of $\mathrm{Aut}(L, \rho)$-invariant gram matrices where $\rho$ is a Weyl vector of the root sublattice of `L`.
+Return a list of vectors, that contains the orbits of the standard basis vectors 
+under the reduced automorphism group $\mathrm{Aut}(L, \rho)$
+together with a list of $\mathrm{Aut}(L, \rho)$-invariant gram matrices 
+where $\rho$ is a Weyl vector of the root sublattice of `L`.
+Also return a list of invariants and the invariants of the standard basis vectors. 
 
 # Input
-- `search_fixed_vectors::Bool` -- take sums of vectors with the same invariants to obtain new invariant vectors. Use it to refine the invariant. Rinse and repeat.
+- `search_fixed_vectors::Bool` -- take sums of vectors with the same invariants 
+  to obtain new invariant vectors. Use it to refine the invariant. Rinse and repeat.
+- `search_invariant_subspace::Bool` -- compute the span of the vectors with the same invariants
 
 # Output:
-- a tuple `(V, G)` consiting of:
-- a list of tuples `V = [(v_1, n_1), (v_2, n_2), ....]`; where `v_i` is a point of `L` and `n_i` an $\mathrm{Aut}(L,\rho)$ invariant of `v_i`, called its "norm".
+- a tuple `(V, G, (invariants,target_invariants))` consiting of:
+- a list of tuples `V = [(v_1, n_1), (v_2, n_2), ....]`; 
+  where `v_i` is a point of `L` and `n_i=[n_i1,...,n_ik]` a list of integers
 - a list of symmetric integer matrices `G = [G_1, ..., G_k]`;
 such that:
-- `dot(v_i,G[j]*v_i) == (n_i)[j]` for all `i` in `1,...,rank(L)` and `j` in `1,...,k`.
+- `dot(v_i,G[j]*v_i) == n_ij` for all `i` and for all `j` in `1,...,k`.
 - the standard basis vectors and their norms with respect to `G` are contained in `V`
+- `invariants` is a list of vectors of the form `[weyl_vector_contribution, v1_contribution, fixed_vector_contribution]` 
+  where `weyl_vector_contribution` is the contribution to the invariant coming from the weyl vector, 
+  `v1_contribution` is the contribution coming from the fixed part and `fixed_vector_contribution` is the contribution coming from the fixed vectors.
 """
 function short_vectors_with_condition(L::ZZLat;
                                       search_fixed_vectors::Bool=false,
@@ -150,25 +159,29 @@ end
 
 
 function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_further::Bool=false)
+  m = length(successive_sublattices)
   rkLL = rank.(successive_sublattices)
   gramLZZ, _ = _integral_split_gram(L)
-  V = ambient_space(L)
+  if split_further
+    V = ambient_space(L)
+    successive_sublattices1 = ZZLat[]
+    sizehint!(successive_sublattices1, m)
+  end
   F = reduce(vcat, [basis_matrix(i) for i in successive_sublattices])
   Fi = inv(F)
   r1 = 1
   r2 = rkLL[1]
-  projL = QQMatrix[] # projL[i] = L_i := image(L->(L_1+...+L_i)\otimes QQ)
-  projL_gram = ZZMatrix[] # lll reduced
-  projection_ranges = UnitRange{Int64}[]
-  denoms = ZZRingElem[]
-  successive_sublattices1 = ZZLat[]
-  for i in 1:length(successive_sublattices)
-    push!(projection_ranges, r1:r2)
+  projL = Vector{QQMatrix}(undef, m) # projL[i] = L_i := image(L->(L_1+...+L_i)\otimes QQ)
+  projL_gram = Vector{ZZMatrix}(undef, m) # lll reduced
+  projection_ranges = Vector{UnitRange{Int64}}(undef, m)
+  denoms = Vector{ZZRingElem}(undef, m)
+  for i in 1:m
+    projection_ranges[i] = r1:r2
     Si = view(_hnf_integral(view(Fi, :, r1:r2), :upper_right), 1:1+r2-r1,:)*view(F, r1:r2, :)
     # do the following the hard way
     # Li = lll(lattice(rescale(V,denoms[i]; cached=false), Si; isbasis=true, check=false); _is_definite=true)
     SZ, di = integral_split(Si, ZZ)
-    push!(denoms, di)
+    denoms[i] = di
     Gi = divexact!(SZ*gramLZZ*transpose(SZ),di)
     if i > 1
       Gi, U = lll_gram_with_transform(Gi) # inplace variant caused segfault problems
@@ -178,20 +191,20 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_furt
     end
     if split_further
       # this part is not optimized, turned off by default
-      Li = lattice(V, Si; isbasis=true, check=false)
-      set_attribute!(Li,:_integral_split_gram=>(Gi, ZZ(1)))
-      set_attribute!(Li,:is_lll_reduced=>true)
-      if nrows(Si)>2 && i>1
+      if rkLL[i] > 2 && i > 1
+        Li = lattice(V, Si; isbasis=true, check=false)
+        set_attribute!(Li,:_integral_split_gram=>(Gi, ZZ(1)))
+        set_attribute!(Li,:is_lll_reduced=>true)
         Li_split = _successive_sublattices(Li; use_dual=false)
         append!(successive_sublattices1, Li_split)
       else
         push!(successive_sublattices1, successive_sublattices[i])
       end
     end
-    push!(projL, Si)
-    push!(projL_gram, Gi)
+    projL[i] = Si
+    projL_gram[i] = Gi
     r1 += rkLL[i]
-    if i<length(successive_sublattices)
+    if i < m
       r2 += rkLL[i+1]
     end
   end
@@ -294,10 +307,11 @@ function _short_vectors_with_condition(::Type{CoeffType},
     (n,i,t,v1,f) = _b
     b = (n[1:1],i,t,v1,f)
     v1t = __not_adj(v1)
-    if b in keys(short_vectors1)
+    existing = get(short_vectors1, b, nothing)
+    if !isnothing(existing)
       # different targets can have the same first projection
-      if !(v1t in short_vectors1[b])
-        push!(short_vectors1[b], v1t)
+      if !(v1t in existing)
+        push!(existing, v1t)
       end
     else
       short_vectors1[b]=[v1t]
@@ -345,30 +359,33 @@ function _short_vectors_with_condition(::Type{CoeffType},
       b = (n[1][1:i-1], n[2:end]...)
       push!(get!(target_norm, a, Set{KeyType}()), b)
     end
+
     # prepare gluing data
     rank_i = nrows(projL[i])
     tmp_u = __zeros_array(CoeffType, ncols(VfN_iminus1))
     short_vectors1_by_glue = Dict{Vector{CoeffType},Dict{KeyType, Vector{VectorType}}}()
+    zero_target_norm = get(target_norm, zeroCoeff, nothing)
     for k1 in keys(short_vectors1)
       for a in short_vectors1[k1]
         a_mod_Mi =__mul_mod!(tmp_u, a, VfN_iminus1, eldivNi_mod_Mi)
         k = a_mod_Mi
         # take into account that short_vectors returns only non-zero vectors.
-        if zeroCoeff in keys(target_norm) && k1 in target_norm[zeroCoeff] && iszero(k)
+        if !isnothing(zero_target_norm) && k1 in zero_target_norm && iszero(k)
           push!(k1[1], zeroCoeff)
           #@assert !(-__vcat(a,__zeros_array(CoeffType, rank_i)) in reduce(vcat,values(short_vectors2))) k1
           push!(short_vectors2[k1], __vcat(a,__zeros_array(CoeffType, rank_i)))
           pop!(k1[1])
         end
-        if k in keys(short_vectors1_by_glue)
-          D = short_vectors1_by_glue[k]
-          if k1 in keys(D)
-            push!(D[k1], a)
+        D = get(short_vectors1_by_glue, k, nothing)
+        if !isnothing(D)
+          vectors_for_key = get(D, k1, nothing)
+          if !isnothing(vectors_for_key)
+            push!(vectors_for_key, a)
           else
             D[k1] = [a]
           end
         else
-          short_vectors1_by_glue[deepcopy(k)] = Dict(k1=>[a])
+          short_vectors1_by_glue[__copy_vector_key(k)] = Dict(k1=>[a])
         end
       end
     end
@@ -389,7 +406,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
     @vprintln :Lattice 5 "gram=$Gi"
     for (s, q) in __short_vectors(Gi, mi, ma)
       # This is the innermost loop - do as little as possible here
-      q in target_norm_i || continue
+      target_norm_q = get(target_norm, q, nothing)
+      isnothing(target_norm_q) && continue
       if CoeffType===ZZRingElem
         tmp_s = set!.(tmp_s, s)
       else
@@ -397,11 +415,11 @@ function _short_vectors_with_condition(::Type{CoeffType},
       end
       s_mod_Mi = __mul_mod!(tmp_u1, tmp_s, VfLi, eldivNi_mod_Mi)
       k1plus = s_mod_Mi
-      if k1plus in keys(short_vectors1_by_glue)
-        D = short_vectors1_by_glue[k1plus]
-        for t in target_norm[q]
-          t in keys(D) || continue
-          Dt = D[t]
+      D = get(short_vectors1_by_glue, k1plus, nothing)
+      if !isnothing(D)
+        for t in target_norm_q
+          Dt = get(D, t, nothing)
+          isnothing(Dt) && continue
           push!(t[1], q)
           sv2t = short_vectors2[t]
           for b in Dt
@@ -418,17 +436,17 @@ function _short_vectors_with_condition(::Type{CoeffType},
       #elsenormalized_targets
       #  continue
       #end
-      if k1minus in keys(short_vectors1_by_glue)
-        D = short_vectors1_by_glue[k1minus]
-        for t in target_norm[q]
-          t in keys(D) || continue
+      D = get(short_vectors1_by_glue, k1minus, nothing)
+      if !isnothing(D)
+        for t in target_norm_q
+          Dt = get(D, t, nothing)
+          isnothing(Dt) && continue
           iszero(t[1]) && iszero(t[5]) && continue # avoid overcounting
-          Dt = D[t]
           push!(t[1], q)
           sv2t = short_vectors2[t]
           for b in Dt
             #@assert !(__vcat(b, tmp_s) in reduce(vcat,values(short_vectors2)))
-            push!(sv2t, __vcat(b, deepcopy(tmp_s)))
+            push!(sv2t, __vcat(b, __copy_before_vcat(tmp_s)))
           end
           pop!(t[1])
         end
@@ -489,9 +507,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
     push!(grams, Gr)
 
     for i in 1:rkL
-      k = deepcopy(target_invariants[i])
-      push!(k[2],_Gr[i,i])
-      target_invariants[i] = k
+      k0 = target_invariants[i]
+      target_invariants[i] = (k0[1], push!(copy(k0[2]), _Gr[i,i]), k0[3], k0[4], k0[5])
     end
   end
 
@@ -550,7 +567,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
       end
       if search_invariant_subspace
         s = dot(vv, _Gr, vv)
-        nrmv = push!(deepcopy(nrm), s)
+        nrmv = push!(copy(nrm), s)
         push!(nrm_extra, s)
         if !(b1 in target_invariants)
           discard[i] = true
@@ -558,7 +575,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
         output[i] = (vv, nrmv)
         pop!(nrm_extra)
       else
-        output[i] = (vv, deepcopy(nrm))
+        output[i] = (vv, copy(nrm))
       end
     end
   end
@@ -639,17 +656,19 @@ function _update_targets(target_invariants, vector_sums, normalized_targets, sig
   result = similar(target_invariants)
   n = length(result)
   for (i,v,k) in zip(1:n,normalized_targets, target_invariants)
-    kk = deepcopy(k)
+    # Only k[5] is extended; k[1..4] can be shared safely since they are not mutated.
+    new_fix = copy(k[5])
     for (vsr, r) in vector_sums
       s = _dot_product_with_offset(v, vsr, first(r)-1)
-      push!(kk[5], s)
+      push!(new_fix, s)
     end
     if iszero(k[1][1]) && iszero(k[5])
       # flip the sign, this is necessary, because we consider our vectors up to sign
-      _,_sign = _canonicalize_with_data!(kk[5])
+      _,_sign = _canonicalize_with_data!(new_fix)
       normalized_targets[i] = _sign*normalized_targets[i]
       signs[i] *= _sign
     end
+    kk = (k[1], k[2], k[3], k[4], new_fix)
     result[i] = kk
   end
   return result, signs
@@ -672,10 +691,12 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
       push!(get!(T, h, ValueType()), v)
     end
     for (h,vv) in T
-      kk = deepcopy(k)
-      append!(kk[5], h)
+      # Only k[5] is extended; k[1..4] can be shared safely since they are not mutated.
+      new_k5 = copy(k[5])
+      append!(new_k5, h)
+      kk = (k[1], k[2], k[3], k[4], new_k5)
       if iszero(k[1][1]) && iszero(k[5])
-        _,sign = _canonicalize_with_data!(kk[5])
+        _,sign = _canonicalize_with_data!(new_k5)
       else
         sign = 1
       end
@@ -827,8 +848,21 @@ __zeros_array(::Type{ZZRingElem}, x...) = zeros_array(ZZ, x...)
 __zeros_array(::Type{Int}, x...) = zeros(Int, x)'
 __vcat(x::Vector{ZZRingElem},y::Vector{ZZRingElem}) = vcat(x,y) # append! does not work
 function __vcat(x::LinearAlgebra.Adjoint{Int64, Vector{Int64}}, y::LinearAlgebra.Adjoint{Int64, Vector{Int64}})
-  return vcat(x',y')'
+  px = parent(x)
+  py = parent(y)
+  z = Vector{Int}(undef, length(px) + length(py))
+  copyto!(z, 1, px, 1, length(px))
+  copyto!(z, length(px) + 1, py, 1, length(py))
+  return adjoint(z)
 end
+# For ZZRingElem: vcat copies references to mutable objects, so must deepcopy before vcat.
+# For Int: vcat already copies immutable Int values, so no deepcopy needed.
+@inline __copy_before_vcat(x::Vector{ZZRingElem}) = deepcopy(x)
+@inline __copy_before_vcat(x::LinearAlgebra.Adjoint{Int64, Vector{Int64}}) = x
+# For ZZRingElem keys in Dict: elements are mutable, so deepcopy needed.
+# For Int keys: elements are immutable, copy suffices.
+@inline __copy_vector_key(k::Vector{Int}) = copy(k)
+@inline __copy_vector_key(k::Vector{ZZRingElem}) = deepcopy(k)
 
 
 
@@ -858,12 +892,13 @@ end
 end
 
 @inline function __neg_mod!(u::S, v, moduli::S) where {S<:LinearAlgebra.Adjoint{Int, Vector{Int}}}
-  #@assert length(u) == length(v)
-  #for i in eachindex(v)
-  #  @inbounds u[i] = mod(-v[i], moduli[i])
-  #end
-  u' .= mod!.(neg!.(u',v), moduli')
-  return u'
+  pu = parent(u)
+  pv = v isa LinearAlgebra.Adjoint ? parent(v) : v
+  pm = parent(moduli)
+  @inbounds for i in eachindex(pu)
+    pu[i] = mod(-pv[i], pm[i])
+  end
+  return pu
 end
 
 @inline __not_adj(x::Vector{ZZRingElem}) = x
