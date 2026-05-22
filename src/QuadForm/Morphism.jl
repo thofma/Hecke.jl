@@ -614,7 +614,7 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V
       is0 = is_zero(sign_s)
       # Only accumulate ww into the vector sum if its invariant matches the target.
       # When sign_s == -1, ww = -w, whose invariant is -invariant(w).
-      has_right_inv = is0 || (sign_s == -1 ? -(C.V.invariants[w_idx]) == vs_tgt_inv[I] : C.V.invariants[w_idx] == vs_tgt_inv[I])
+      has_right_inv = is0 || (sign_s == -1 ? _isequal_negated(C.V.invariants[w_idx], vs_tgt_inv[I]) : C.V.invariants[w_idx] == vs_tgt_inv[I])
       if k > 0
         if !is0 && has_right_inv
           if S <: ZZRingElem
@@ -971,7 +971,7 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
 
 
     good_scalar_plus = Utarget[J] == Uj
-    good_scalar_minus = Utarget[J] == -Uj
+    good_scalar_minus = _isequal_negated(Uj, Utarget[J])
     !good_scalar_plus && !good_scalar_minus && continue
     @inbounds for k in 1:length(F)
       for i in 1:I
@@ -1082,7 +1082,7 @@ function fingerprint(C::ZLatAutoCtx, D::ZLatAutoCtx=C)
         if vj == dj
           fp[1, i] += 1
         end
-        if -vj == dj
+        if _isequal_negated(vj, dj)
           fp[1, i] += 1
         end
       end
@@ -1363,6 +1363,16 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   end
 
   return gens, orde
+end
+
+@inline _isequal_negated(a::Number, b::Number) = -a == b
+
+@inline function _isequal_negated(a::AbstractVector, b::AbstractVector)
+  length(a) == length(b) || return false
+  @inbounds for i in eachindex(a, b)
+    -a[i] == b[i] || return false
+  end
+  return true
 end
 
 function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLatAutoCtx, D::ZLatAutoCtx)
