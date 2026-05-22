@@ -899,6 +899,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     L = lattice(rational_span(L))
   end
   weyl_vector = zeros_array(QQ, degree(L))
+  tmp_vector = zeros_array(QQ, degree(L))
   isotypic_cofix_spaces = QQMatrix[]
   if length(root_types) == 0
     return zero_matrix(QQ, 0, n), isotypic_cofix_spaces, weyl_vector
@@ -910,25 +911,32 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   # several calls to elementary_divisors instead
   #P = saturate(F)
   #D = solve(QQ.(F),QQ.(P); side=:left)
-  glue_indices = []
+  glue_indices = Vector{Vector{ZZRingElem}}()
   j = 0
   nf = nrows(F)
   for f in fundamental_roots
     k = j + nrows(f)
-    r = j+1:k
+    rows = Int[]
+    sizehint!(rows, nf - nrows(f))
+    for i in 1:j
+      push!(rows, i)
+    end
+    for i in k+1:nf
+      push!(rows, i)
+    end
     #d = denominator(view(D,:,r))
-    C = F[[i for i in 1:nf if !(i in r)],:]
+    C = F[rows,:]
     ed = filter!(!isone, elementary_divisors(C))
     push!(glue_indices, ed)
     j = k
   end
-  D = Dict{Any, Vector{ZZMatrix}}()
+  D = Dict{Tuple{Tuple{Symbol, Int}, Vector{ZZRingElem}}, Vector{ZZMatrix}}()
   for (t,g,f) in zip(root_types, glue_indices, fundamental_roots)
     k = (t,g)
-    if k in keys(D)
+    if haskey(D, k)
       push!(D[k], f)
     else
-      D[k] = [f]
+      D[k] = ZZMatrix[f]
     end
   end
   # We sort the keys to make the order of the output canonical:
@@ -937,11 +945,23 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   sorted_keysD = sort!(collect(keys(D)))
   for k in sorted_keysD
     (t, d) = k
-    isotypic = reduce(vcat, D[k])
+    blocks = D[k]
+    isotypic = reduce(vcat, blocks)
     inv_vec = _invariant_vectors(t...)
     weyl_vector_t = _weyl_vector(t...)
-    weyl_vector += sum(weyl_vector_t*f for f in D[k])
-    invariant_vectors_k = sum([[t*f for t in inv_vec] for f in D[k]])
+    for f in blocks
+      add!.(weyl_vector, mul!(tmp_vector, weyl_vector_t, f))
+    end
+    @hassert :Lattice 1 weyl_vector == sum(weyl_vector_t*blocks[i] for i in 1:length(blocks))
+    invariant_vectors_k = ZZMatrix[]
+    sizehint!(invariant_vectors_k, length(inv_vec))
+    for u in inv_vec
+      s = u*blocks[1]
+      for i in 2:length(blocks)
+        addmul!(s, u,blocks[i])
+      end
+      push!(invariant_vectors_k, s)
+    end
     invariant_vectors_k_mat = reduce(vcat, invariant_vectors_k)
     M = change_base_ring(QQ, isotypic*GZ*transpose(invariant_vectors_k_mat))
     isotypic_cofix_space = kernel(M, side= :left)*isotypic
