@@ -19,8 +19,8 @@ isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
 """
 function laska_kraus_connell(E::EllipticCurve{QQFieldElem})
   a1, a2, a3, a4, a6 = map(numerator,(a_invariants(E)))
-
-  b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
+  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
+  c4, c6 = _ellcrv_c_invariants(b2, b4, b6, b8)
 
   delta = divexact(c4^3 - c6^2, 1728)
 

@@ -1,8 +1,8 @@
 @attributes mutable struct GenOrd{S, T} <: Ring
   F::S
   R::T
-  trans#::dense_matrix_type(elem_type(S))
-  itrans#::dense_matrix_type(elem_type(S))
+  trans  #::dense_matrix_type(elem_type(base_field_type(S)))
+  itrans #::dense_matrix_type(elem_type(base_field_type(S)))
   is_equation_order::Bool
 
   function GenOrd(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
@@ -42,26 +42,26 @@
     return GenOrd(r, M, one(Qt), check = check)
   end
 
-  function GenOrd(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true)
+  function GenOrd(O::GenOrd{S, T}, M::MatElem, d::RingElem; check::Bool = true) where {S, T}
     F = base_field(O.F)
-    if base_ring(T) isa ZZPolyRing
+    if base_ring(M) isa ZZPolyRing
       R = base_ring(Hecke.AbstractAlgebra.Generic.underlying_fraction_field(F))
-      T = map_entries(x -> F(change_base_ring(QQ, x; parent = R)), T)
-      T = divexact(T, F(change_base_ring(QQ, d; parent = R)))
+      M = map_entries(x -> F(change_base_ring(QQ, x; parent = R)), M)
+      M = divexact(M, F(change_base_ring(QQ, d; parent = R)))
     else
-      T = map_entries(F, T)
-      T = divexact(T, base_ring(T)(d))
+      M = map_entries(F, M)
+      M = divexact(M, base_ring(M)(d))
     end
-    Ti = inv(T)
-    r = GenOrd(O.R, O.F, true)
+    Mi = inv(M)
+    r = GenOrd(O.R, O.F, true)::GenOrd{S, T}
 
     r.is_equation_order = false
     if is_equation_order(O)
-      r.trans = T
-      r.itrans = Ti
+      r.trans = M
+      r.itrans = Mi
     else
-      r.trans = T*O.trans
-      r.itrans = O.itrans*Ti
+      r.trans = M*basis_matrix(O)
+      r.itrans = basis_matrix_inverse(O)*Mi
     end
     check && map(representation_matrix, basis(r))
     return r
@@ -123,7 +123,7 @@ end
     r.is_prime = 0
     r.is_zero = 0
     r.is_principal = 0
-    r.splitting_type = (-1, -1)
+    r.splitting_type = (0, 0)
     return r
   end
 
@@ -167,7 +167,7 @@ end
   function GenOrdIdl(O::GenOrd, T::Vector{<:GenOrdElem})
     @assert all(x -> parent(x) === O, T)
     # One should do this block by block instead of the big matrix
-    V = hnf(reduce(vcat, [representation_matrix(O) for x in T]), :lowerleft)
+    V = hnf(reduce(vcat, [representation_matrix(x) for x in T]), :lowerleft)
     d = ncols(V)
     n = length(T)
     return GenOrdIdl(O, V[((n - 1)*d + 1):(n*d), :])
@@ -199,13 +199,8 @@ end
     z = new{S, T}()
     O = order(a)
     z.order = O
-    if isa(b, KInftyElem)
-      b = O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(b))//denominator(b))
-    elseif isa(b, PolyRingElem)
-      b = Hecke.AbstractAlgebra.MPolyFactor.make_monic(b)
-    end
     z.num = a
-    z.den = b
+    z.den = _make_canonical_in(O, b)
     return z
   end
 

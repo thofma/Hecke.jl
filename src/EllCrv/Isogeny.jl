@@ -349,7 +349,9 @@ function push_through_isogeny(f::Isogeny, v::RingElem)
   pol1 = phi(x) - psi_sq(x)*y
   pol2 = v(x)
   L = factor(resultant(pol1, pol2, 1))
-  return prod([f for (f,e) in L], init = one(Rxy))(0,gen(parent(phi)))
+  sf_pol = prod([f for (f,e) in L], init = one(Rxy))
+  S = parent(phi)
+  return evaluate(sf_pol, elem_type(S)[zero(S),gen(S)])
 end
 
 #TODO Need check that we don't need to compose with an automorphism to get the actual dual. Currently we will get the dual up

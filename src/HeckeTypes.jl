@@ -2267,21 +2267,21 @@ end
 #
 ###############################################################################
 
-mutable struct KInftyRing{T <: FieldElement} <: Hecke.Ring
-  K::Generic.RationalFunctionField{T}
+mutable struct KInftyRing{T <: FieldElement, U <: PolyRingElem{T}} <: Hecke.Ring
+  K::Generic.RationalFunctionField{T, U}
 
-  function KInftyRing{T}(K::Generic.RationalFunctionField{T}, cached::Bool) where T <: FieldElement
+  function KInftyRing{T,U}(K::Generic.RationalFunctionField{T,U}; cached::Bool = true) where {T,U}
     return AbstractAlgebra.get_cached!(KInftyID, K, cached) do
-      new{T}(K)
-    end::KInftyRing{T}
+      new{T,U}(K)
+    end::KInftyRing{T,U}
   end
 end
 
 const KInftyID = AbstractAlgebra.CacheDictType{Generic.RationalFunctionField, Hecke.Ring}()
 
-mutable struct KInftyElem{T <: FieldElement} <: Hecke.RingElem
-  d::Generic.RationalFunctionFieldElem{T}
-  parent::KInftyRing{T}
+mutable struct KInftyElem{T <: FieldElement, U <: PolyRingElem{T}} <: Hecke.RingElem
+  d::Generic.RationalFunctionFieldElem{T,U}
+  parent::KInftyRing{T,U}
 end
 
 ################################################################################
