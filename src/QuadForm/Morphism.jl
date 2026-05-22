@@ -572,7 +572,12 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V
   @inbounds for i in 1:length(scpvec)
     scpvec[i] = zero(S)
   end
-  for w in C.V.vectors
+  # For scpcomb[I] (used in _cand at depth I+1), filter vectors by
+  # invariant == target_invariants[per[I+1]].
+  # For I == dim(C), scpcomb[dim(C)] is never used in _cand, use per[dim(C)] as fallback.
+  n = dim(C)
+  vs_tgt_inv = [I < n ? C.target_invariants[C.per[I + 1]] : C.target_invariants[C.per[n]] for I in 1:n]
+  for (w_idx, w) in enumerate(C.V.vectors)
     @inbounds for i in 1:length(C.G)
       for j in 1:dim(C)
         t = (i - 1)*dim(C) + j
@@ -607,8 +612,11 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V
       end
       k = get(look_up[I], s, 0)
       is0 = is_zero(sign_s)
+      # Only accumulate ww into the vector sum if its invariant matches the target.
+      # When sign_s == -1, ww = -w, whose invariant is -invariant(w).
+      has_right_inv = is0 || (sign_s == -1 ? -(C.V.invariants[w_idx]) == vs_tgt_inv[I] : C.V.invariants[w_idx] == vs_tgt_inv[I])
       if k > 0
-        if !is0
+        if !is0 && has_right_inv
           if S <: ZZRingElem
             add!(vector_sums[I][k], ww)
           else
@@ -620,7 +628,7 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V
       else
         s_deep = deepcopy(s)
         push!(scalar_products[I], s_deep)
-        !is0 ? push!(vector_sums[I], deepcopy(ww)) : push!(vector_sums[I], _zero_vector(S, dim(C)))
+        !is0 && has_right_inv ? push!(vector_sums[I], deepcopy(ww)) : push!(vector_sums[I], _zero_vector(S, dim(C)))
         look_up[I][s_deep] = length(scalar_products[I])
       end
     end
@@ -1590,8 +1598,13 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       if k > 0
         if !is0
           # the scalar products scpvec are found and we add the vector to the
-          # corresponding vector sum
-          xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
+          # corresponding vector sum, but only if the invariant of the accumulated
+          # vector matches the target invariant for this position.
+          # sign=false: vector added is Vvj, invariant = CoVinv[j]
+          # sign=true:  vector added is -Vvj, invariant = -CoVinv[j]
+          if CoVinv[j] == (sign ? neg_target_inv_I : target_inv_I)
+            xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
+          end
         end
       else
         # scpvec is not found, hence x[1], ..., x[I - 1] is not a partial automorphism
