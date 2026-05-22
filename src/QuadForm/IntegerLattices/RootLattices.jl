@@ -844,14 +844,12 @@ function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true)
   if G[1,1]<0
     G = -G
   end
-  diag = diagonal(G)
-  mi = minimum(diag)
-  ma = maximum(diag)
+  ma = maximum(diagonal(G))
   lll_flag = !get_attribute(L, :is_lll_reduced, false) && do_lll && ma>6
   if lll_flag
     G, T = lll_gram_with_transform(G)
   end
-  _sv1 = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 2, nothing, ZZ(1), Int)
+  _sv1 = __enumerate_gram(FinckePohstInt, G, nothing, 2, Int, identity, identity, Int)
   if !any(isone(i[2]) for i in _sv1)
     _short_vec = first.(_sv1)
   else
