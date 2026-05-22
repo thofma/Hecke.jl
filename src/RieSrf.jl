@@ -11,7 +11,9 @@ abel_jacobi_map, fiber, complex_defining_polynomial, critical_points, CChain, Ri
 export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_poly,
 embed_mpoly, analytic_continuation, minimal_spanning_tree, closest_point, recursive_continuation,
 divisor, find_path_on_sheet, integrate_on_sheet, c_infinite_line, recursive_continuation_manual,
-ajm_DE_special_point, internal_discriminant_points, compute_ellipse_bound_heuristic
+ajm_DE_special_point, internal_discriminant_points, compute_ellipse_bound_heuristic,
+double_exponential_integration_parameters, IntegrationSchemeDE, double_exponential_path_parameters,
+compute_burger_bound_heuristic
 
 
 export integral_left_kernel, tangent_representation, homology_representation,
@@ -25,7 +27,7 @@ import Hecke.AbstractAlgebra.is_terse
 import Hecke.IntegerUnion
 import Hecke:function_field, basis_of_differentials, genus, embedding, defining_polynomial,
 evaluate, fillacb!, length, reverse, precision, round_scale!, shortest_vectors, radius, zeros_array, center,
-degree, support, complex_field
+degree, support, complex_field, acosh, asinh, atanh
 import Base:show, isequal, mod2pi, *, ^, inv, ==, +, -, parent
 using FLINT_jll: libflint
 
@@ -34,6 +36,7 @@ import Nemo: acb_struct, acb_vec, acb_vec_clear, array
 include("RieSrf/Auxiliary.jl")
 include("RieSrf/CPath.jl")
 include("RieSrf/NumIntegrate.jl")
+include("RieSrf/DEIntegration.jl")
 include("RieSrf/RiemannSurface.jl")
 include("RieSrf/PeriodMatrix.jl")
 include("RieSrf/RieSrfPoints.jl")

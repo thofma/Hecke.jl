@@ -10,7 +10,7 @@ export CPath
 
 export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation,
 start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point,
-get_t_of_closest_d_point, evaluate_d
+get_t_of_closest_d_point, evaluate_d, integration_scheme
 
 ################################################################################
 #
@@ -80,6 +80,9 @@ mutable struct CPath
   #we store additional properties. Here is a description
   #of their meanings. Most of these are discussed in  Chapter 3
   #of Neurohr's thesis.
+
+
+  integration_scheme::String
 
   #For integration we want the function f we integrate along gamma to be
   #bounded. For this we take an ellipsoid e_r with focal points -1,1

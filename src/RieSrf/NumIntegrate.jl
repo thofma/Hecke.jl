@@ -10,7 +10,7 @@
 #
 ################################################################################
 
-export IntegrationScheme
+export IntegrationSchemeGL
 
 export gauss_legendre_integration_points, gauss_chebyshev_integration_points, tanh_sinh_quadrature_integration_points,
  gauss_legendre_path_parameters
@@ -21,7 +21,7 @@ export gauss_legendre_integration_points, gauss_chebyshev_integration_points, ta
   # schemes. Currently all integration schemes are Gauss-Legendre integration
   # schemes. If we alow for different types of integration later on, we can
   # extend this struct to also include those.
-mutable struct IntegrationScheme
+mutable struct IntegrationSchemeGL
 
   abscissae::Vector{ArbFieldElem}
   weights::Vector{ArbFieldElem}
@@ -37,7 +37,7 @@ mutable struct IntegrationScheme
 
 
   #Compute a Gauss-Legendre integration scheme
-  function IntegrationScheme(r::ArbFieldElem, prec::Int, error::ArbFieldElem, bound::ArbFieldElem)
+  function IntegrationSchemeGL(r::ArbFieldElem, prec::Int, error::ArbFieldElem, bound::ArbFieldElem)
 
     integration_scheme = new()
     N = gauss_legendre_parameters(r, error, bound)
@@ -217,7 +217,6 @@ function gauss_legendre_arc_parameters(points::Vector{AcbFieldElem}, path::CPath
     r_p = r_0
     if !contains(c - p, zero(CC))
       prec = precision(CC)
-      zero_sens = floor(Int, prec*log(2)/log(10)) - 5
       #We find t_p such that path(t_p) = p
       #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
       #the real or the imaginary part is close to zero. The ambiguity disappears
@@ -313,6 +312,7 @@ function gauss_chebyshev_integration_points(N::T, prec::Int = 100) where T <: In
   return abscissae, fill(const_pi(Rc)//(N), N)
 end
 
+#=
 @doc raw"""
  tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, 
  lambda::ArbFieldElem = const_pi(parent(h))/2) where T <: IntegerUnion
@@ -342,4 +342,4 @@ function tanh_sinh_quadrature_integration_points(N::T, h::ArbFieldElem, lambda::
 
   return abscissae, weights
 end
-
+=#

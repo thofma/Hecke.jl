@@ -171,7 +171,8 @@ mutable struct RiemannSurface
   # consists of a list of abscissae, weights and a bunch of parameters.
   # For efficiency we want to reuse integrations schemes as much as possible.
   # Every path we integrate over gets assigned one of these integrations schemes.
-  integration_schemes::Vector{IntegrationScheme}
+  integration_schemes_GL::Vector{IntegrationSchemeGL}
+  integration_schemes_DE::Vector{IntegrationSchemeDE}
 
   # A list of bounds used duting computations
   bounds::Vector{ArbFieldElem}
@@ -435,8 +436,10 @@ function swapped_surface(RS::RiemannSurface)
     RS_swap.weak_error = RS.weak_error
     RS_swap.extra_error = RS.extra_error
     RS_swap.integration_method = RS.integration_method
-    RS_swap.integration_schemes = IntegrationScheme[]
+    RS_swap.integration_schemes_GL = IntegrationSchemeGL[]
+    RS_swap.integration_schemes_DE = IntegrationSchemeDE[]
     RS_swap.bounds = ArbFieldElem[]
+    RS_swap.complex_field = RS.complex_field
 
     f = defining_polynomial(RS)
     Kxy = parent(f)
@@ -779,6 +782,14 @@ function complex_field(RS::RiemannSurface) -> AcbField
 Return the field over which the Riemann surface is defined.
 """
 complex_field(RS::RiemannSurface) = RS.complex_field
+
+@doc raw"""
+function real_field(RS::RiemannSurface) -> ArbField
+
+Return the real field with the precision over which the 
+Riemann surface is defined.
+"""
+real_field(RS::RiemannSurface) = ArbField(precision(RS.complex_field))
 
 function assure_has_discriminant_points(RS::RiemannSurface)
   if isdefined(RS, :discriminant_points)

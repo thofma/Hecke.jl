@@ -114,7 +114,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
     path = reverse_paths[k]
     gauss_legendre_path_parameters(RS.discriminant_points, path, RS.extra_error)
     integral_matrix = zero_matrix(CC, 1, g)
-    int_schemes = RS.integration_schemes
+    int_schemes = RS.integration_schemes_GL
 
     
     for t in (1:length(path.sub_paths))
@@ -131,10 +131,10 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
         
         compute_ellipse_bound_heuristic(subpath, embedded_differentials, [r], RS)
         bound = maximum(subpath.bounds)
-        pushfirst!(RS.integration_schemes, IntegrationScheme(r, extra_prec+10, RS.extra_error, bound))
+        pushfirst!(RS.integration_schemes_GL, IntegrationSchemeGL(r, extra_prec+10, RS.extra_error, bound))
        end
 
-			integration_scheme = RS.integration_schemes[subpath.integration_scheme_index]
+			integration_scheme = RS.integration_schemes_GL[subpath.integration_scheme_index]
 
 			path_difference_matrix = zero_matrix(CC, 1, g)
       abscissae = integration_scheme.abscissae
