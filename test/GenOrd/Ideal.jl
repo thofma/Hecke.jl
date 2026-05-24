@@ -447,3 +447,41 @@ let # 2266
   @test all(is_prime(p) for (p,_) in lp)
   @test prod(p^e for (p, e) in lp) == I
 end
+
+@testset "Scaling ideals in function field by base-field elements" begin
+  kx, x = rational_function_field(GF(5), :x; cached = false)
+  ky, y = polynomial_ring(kx, :y; cached = false)
+  F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+
+  function check_scaling(I, c)
+    O = order(I)
+    cI = @inferred c*I
+    @test order(cI) === O
+    @test cI == I*c
+    @test inv(c)*cI == I
+    @test cI == @inferred (F(c)*O)*I
+    @test basis(cI) == [F(c)*b for b in basis(I)]
+  end
+
+  Ofin = finite_maximal_order(F)
+  Oinf = infinite_maximal_order(F)
+
+  for (O, c) in ((Ofin, x), (Ofin, x^2+1), (Ofin, x//(x + 1)),
+                 (Oinf, 1//x), (Oinf, 1//(x^2+1)), (Oinf, (x + 1)//x))
+    # a*O is GenOrdFracIdl
+    check_scaling(a*O, c)
+  end
+
+  # check multiplication of "integral" ideal by the scalar in the base field
+  I0 = ideal(Ofin, Ofin(x^2 + 1))
+  @test @inferred(x*I0) isa GenOrdFracIdl
+  @test @inferred((x//(x + 1))*I0) isa GenOrdFracIdl
+  @test @inferred(x*I0) == @inferred(x*fractional_ideal(I0))
+
+  # x has a pole at infinity so we cannot construct (x)_inf directly
+  #   yet scaling must work
+  I = @inferred a*Oinf
+  @test_throws ErrorException Oinf(x)
+  @test_throws ErrorException ideal(Oinf, x) * I
+  check_scaling(I, x)
+end

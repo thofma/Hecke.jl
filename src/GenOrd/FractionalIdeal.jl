@@ -263,29 +263,41 @@ end
 #
 ################################################################################
 
-function Base.:*(A::GenOrdIdl, B::GenOrdFracIdl)
+function Base.:*(A::GenOrdIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
+  @req order(A) === order(B) "Ideals must have same order"
   return GenOrdFracIdl(A*numerator(B; copy = false), denominator(B; copy = false))
 end
 
-function Base.:*(A::GenOrdFracIdl, B::GenOrdIdl)
+function Base.:*(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T}
+  @req order(A) === order(B) "Ideals must have same order"
   return GenOrdFracIdl(numerator(A; copy = false)*B, denominator(A; copy = false))
 end
 
-function Base.:*(x::GenOrdElem, y::GenOrdFracIdl)
-  #parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
-  return GenOrdIdl(parent(x), x) * y
+function Base.:*(x::GenOrdElem, I::GenOrdFracIdl)
+  @req parent(x) === order(I) "Element and ideal must belong to the same order"
+  return GenOrdIdl(parent(x), x) * I
 end
 
 function Base.:*(f::Generic.FunctionFieldElem, O::GenOrd)
-  @assert parent(f) == O.F
+  @req parent(f) === field(O) "Element must lie in the function field of the order"
   f_num, f_denom = integral_split(f, O)
   return GenOrdFracIdl(ideal(O, f_num), f_denom)
 end
 
+function Base.:*(c::Generic.RationalFunctionFieldElem, I::GenOrdFracIdl)
+  @req parent(c) === base_field(function_field(order(I))) "scalar must lie in the base field of the function field"
+  return GenOrdFracIdl(order(I), c * basis_matrix(I; copy = false))
+end
 
+# multiplying by field element always returns fractional ideal (for type stability)
+function Base.:*(c::Generic.RationalFunctionFieldElem, I::GenOrdIdl)
+  return c * fractional_ideal(I)
+end
 
-Base.:*(x::GenOrdFracIdl, y::GenOrdElem) = y * x
-Base.:*(x::GenOrd, y::Generic.FunctionFieldElem) = y * x
+Base.:*(I::GenOrdFracIdl, x::GenOrdElem) = x * I
+Base.:*(O::GenOrd, f::Generic.FunctionFieldElem) = f * O
+Base.:*(I::GenOrdFracIdl, c::Generic.RationalFunctionFieldElem) = c * I
+Base.:*(I::GenOrdIdl, c::Generic.RationalFunctionFieldElem) = c * I
 
 ################################################################################
 #

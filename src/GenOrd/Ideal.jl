@@ -287,6 +287,8 @@ function Base.isequal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 end
 
 function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
   O = order(a)
   Ma = basis_matrix(a)
   Mb = basis_matrix(b)
@@ -339,15 +341,13 @@ function Base.:*(x::GenOrdElem, O::GenOrd)
   return ideal(O, x)
 end
 
-function Base.:*(x::GenOrdElem, y::GenOrdIdl{S, T}) where {S, T}
-  parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
-  # note that we use order(y) and not parent(x),
-  #   because it provides concrete GenOrd{S,T} for type inference
-  return GenOrdIdl(order(y), x) * y
+function Base.:*(x::GenOrdElem, I::GenOrdIdl{S, T}) where {S, T}
+  @req parent(x) === order(I) "Element and ideal must belong to the same order"
+  # NOTE: we use order(I) because it provides concrete GenOrd{S,T} for type inference
+  return GenOrdIdl(order(I), x) * I
 end
 
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
-
 
 function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must lie in the same order"
