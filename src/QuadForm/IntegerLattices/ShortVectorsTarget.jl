@@ -525,7 +525,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
   sc = div.(lcmd, denoms)
   grams[1] = gramZZ # we don't need the first projection, overwrite
 
-  target_invariants_output = Vector{CoeffType}[]
+  # We replace the signed invariants by their signed hash
+  _target_invariants_tmp = Vector{CoeffType}[]
   for i in 1:rank(L)
     signi = signs[i]
     (nrm_orig, nrm_extra, weyl, v1,fix) = target_invariants[i]
@@ -536,21 +537,31 @@ function _short_vectors_with_condition(::Type{CoeffType},
     if signi == -1
       invariant .= (-).(invariant)
     end
-    push!(target_invariants_output, invariant)
+    push!(_target_invariants_tmp, invariant)
   end
+  n_target_inv = length(unique(_target_invariants_tmp))
+  signed_hash_seed = rand(UInt)
+  target_invariants_output = Int[]
+  while true 
+    target_invariants_output = _signed_hash.(_target_invariants_tmp,signed_hash_seed)
+    if length(unique(target_invariants_output))==n_target_inv
+      break
+    end
+    signed_hash_seed = rand(UInt)
+  end  
 
   # assemble the output
   n_out = sum(length.(values(short_vectors1)))
   output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
-  invariants = Vector{Vector{CoeffType}}(undef, n_out)
+  invariants = Vector{Int}(undef, n_out)
   discard = falses(n_out)
   i = 0
   for b in keys(short_vectors1)
      isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
     (nrm_orig, nrm_extra, weyl, v1, fix) = b
     nrm = vcat(nrm_orig, nrm_extra)
-    invariant = append!([weyl],v1,fix)
-    minus_invariant = (-).(invariant)
+    invariant = _signed_hash(append!([weyl],v1,fix),signed_hash_seed)
+    minus_invariant = -invariant
     nrm[1] = divexact(dot(sc, nrm),lcmd)  # since we set grams[1] = gramL
     b1 = (nrm[1:length(nrm_orig)], nrm_extra, weyl, v1, fix)
     for z in short_vectors1[b]
@@ -714,6 +725,26 @@ end
 
 rank(z::GrowingSubspace) = z.rank
 degree(z::GrowingSubspace) = ncols(z.B1)
+
+# satisfies _signed_hash(-x, seed) = -_signed_hash(x,seed)
+function _signed_hash(x::Vector, seed::UInt)
+  if iszero(x)
+    return 0
+  end 
+  x_can, sign = _canonicalize_with_data!(x)
+  ret = sign*reinterpret(Int,hash(x_can, seed))
+  # revert the sign change
+  if sign<0
+    neg!(x)
+  end
+  return ret
+end
+
+function neg!(x::Vector{ZZRingElem})
+  for i in eachindex(v)
+    @inbounds neg!(v[i])
+  end
+end 
 
 function push!(z::GrowingSubspace, x, offset=0)
   n = length(z.range)
