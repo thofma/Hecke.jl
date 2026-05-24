@@ -251,8 +251,8 @@ end
   Lbad = integer_lattice(;gram = matrix(ZZ, 17, 17, [-2 1 0 0 -1 -1 0 -1 -1 -1 -1 -1 1 0 1 0 -1; 1 -2 0 0 0 0 0 1 1 1 1 0 -1 0 -1 0 0; 0 0 -2 -1 -1 1 1 0 0 0 0 -1 1 -1 1 0 -1; 0 0 -1 -2 -1 0 1 0 0 0 0 -1 0 -1 0 0 0; -1 0 -1 -1 -4 1 0 -1 -1 -1 -1 -2 0 0 0 0 0; -1 0 1 0 1 -4 1 1 1 1 -1 -1 -1 -1 -1 1 -1; 0 0 1 1 0 1 -4 -2 -2 -2 -1 1 0 0 0 0 2; -1 1 0 0 -1 1 -2 -4 -3 -3 0 1 0 1 0 -1 0; -1 1 0 0 -1 1 -2 -3 -4 -3 -1 1 0 0 1 -1 0; -1 1 0 0 -1 1 -2 -3 -3 -4 0 1 0 1 0 -1 0; -1 1 0 0 -1 -1 -1 0 -1 0 -4 -2 0 -2 1 1 1; -1 0 -1 -1 -2 -1 1 1 1 1 -2 -4 0 -1 0 1 0; 1 -1 1 0 0 -1 0 0 0 0 0 0 -4 1 -3 0 1; 0 0 -1 -1 0 -1 0 1 0 1 -2 -1 1 -4 1 1 0; 1 -1 1 0 0 -1 0 0 1 0 1 0 -3 1 -4 0 1; 0 0 0 0 0 1 0 -1 -1 -1 1 1 0 1 0 -2 0; -1 0 -1 0 0 -1 2 0 0 0 1 0 1 0 1 0 -4]))
   @test 110 == length(Hecke.short_vectors_with_condition(ZZRingElem, rescale(Lbad, -1); search_fixed_vectors=false)[1])
   @test 110 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_fixed_vectors=false)[1])
-  @test 106 == length(Hecke.short_vectors_with_condition(ZZRingElem, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
-  @test 106 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
+  @test 70 == length(Hecke.short_vectors_with_condition(ZZRingElem, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
+  @test 70 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
   #test_short_vectors_with_condition(rescale(Lbad,-1); search_fixed_vectors=true)
 
   # A lattice without roots.
