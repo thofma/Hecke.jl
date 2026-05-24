@@ -1,28 +1,3 @@
-function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 100)
-  c = Hecke.minkowski_matrix(Hecke.nf(order(A)), prec)
-  l = lll(basis_matrix(A))
-  b = FakeFmpqMat(l)*basis_matrix(order(A))
-  if !isdefined(rt_c, :cache)
-    rt_c.cache = 0*c
-  end
-  d = rt_c.cache
-  Hecke.mult!(d, b.num, c)
-
-  old = get_bigfloat_precision()
-  set_bigfloat_precision(prec)
-
-  g = Hecke.round_scale(d, prec)
-  set_bigfloat_precision(old)
-  g = g*g'
-  Hecke.shift!(g, -prec)
-  g += nrows(g)*one(parent(g))
-
-  l = lll_gram(g)
-
-  lp = [ div(l[i,i], ZZRingElem(2)^prec) for i=1:nrows(l)]
-  return lp
-end
-
 #function short_elem(c::roots_ctx, A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},
 #                v::ZZMatrix = matrix_space(ZZ, 1,1)(); prec::Int = 100)
 #  l, t = lll(c, A, v, prec = prec)
@@ -105,7 +80,7 @@ function random_ideal_with_norm_up_to(a::Hecke.NfFactorBase, B::Integer)
   K = Hecke.nf(O)
   I = Hecke.ideal(O, K(1))
   while B >= norm(a.ideals[end])
-    J = a.ideals[rand(find(x -> (norm(x) <= B), a.ideals))]
+    J = a.ideals[rand(findall(x -> (norm(x) <= B), a.ideals))]
     B = div(B, norm(J))
     I = I*J
   end
