@@ -7,27 +7,27 @@
 raw"""
     short_vectors_with_condition(L::ZZLat; search_fixed_vectors::Bool, search_invariant_subspace::Bool, use_dual::Bool)
 
-Return a list of vectors, that contains the orbits of the standard basis vectors 
+Return a list of vectors, that contains the orbits of the standard basis vectors
 under the reduced automorphism group $\mathrm{Aut}(L, \rho)$
-together with a list of $\mathrm{Aut}(L, \rho)$-invariant gram matrices 
+together with a list of $\mathrm{Aut}(L, \rho)$-invariant gram matrices
 where $\rho$ is a Weyl vector of the root sublattice of `L`.
-Also return a list of invariants and the invariants of the standard basis vectors. 
+Also return a list of invariants and the invariants of the standard basis vectors.
 
 # Input
-- `search_fixed_vectors::Bool` -- take sums of vectors with the same invariants 
+- `search_fixed_vectors::Bool` -- take sums of vectors with the same invariants
   to obtain new invariant vectors. Use it to refine the invariant. Rinse and repeat.
 - `search_invariant_subspace::Bool` -- compute the span of the vectors with the same invariants
 
 # Output:
 - a tuple `(V, G, (invariants,target_invariants))` consiting of:
-- a list of tuples `V = [(v_1, n_1), (v_2, n_2), ....]`; 
+- a list of tuples `V = [(v_1, n_1), (v_2, n_2), ....]`;
   where `v_i` is a point of `L` and `n_i=[n_i1,...,n_ik]` a list of integers
 - a list of symmetric integer matrices `G = [G_1, ..., G_k]`;
 such that:
 - `dot(v_i,G[j]*v_i) == n_ij` for all `i` and for all `j` in `1,...,k`.
 - the standard basis vectors and their norms with respect to `G` are contained in `V`
-- `invariants` is a list of vectors of the form `[weyl_vector_contribution, v1_contribution, fixed_vector_contribution]` 
-  where `weyl_vector_contribution` is the contribution to the invariant coming from the weyl vector, 
+- `invariants` is a list of vectors of the form `[weyl_vector_contribution, v1_contribution, fixed_vector_contribution]`
+  where `weyl_vector_contribution` is the contribution to the invariant coming from the weyl vector,
   `v1_contribution` is the contribution coming from the fixed part and `fixed_vector_contribution` is the contribution coming from the fixed vectors.
 """
 function short_vectors_with_condition(L::ZZLat;
@@ -495,7 +495,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
       K = kernel(Gi*transpose(C);side=:left)
       CK_inv = inv!(QQ.(vcat(C,K)))
       for l in 1:rank(S)
-        toC = view(Binv,:,r)*view(CK_inv,:,:)*view(C,l:l,:)
+        toC = view(Binv,:,r)*view(CK_inv,:,l:l)*view(C,l:l,:)
         _GC = toC*Gi*transpose(toC)
         GC = numerator(_GC)
         addmul!(Gr, GC, rand(1:100))
