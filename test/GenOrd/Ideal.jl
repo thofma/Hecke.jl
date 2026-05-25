@@ -79,6 +79,15 @@
     @test Hecke.colon(U, I) * I == U
   end
 
+  function test_frac_ideal_inv(O, I_list)
+    U = ideal(O, O(1))
+    for I in I_list
+      @test inv(I) == colon(U, I)     # identical to the old colon-based inv
+      @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
+      @test inv(inv(I)) == I
+    end
+  end
+
   test_colon_common(O, p) = test_colon_common_ideal(O, ideal(O, O(p)))
 
   @testset "over F_2(x)" begin
@@ -186,6 +195,13 @@
     @testset "colon" begin
       test_colon_common(Ofin, x^4 + x + 1)
     end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
   end
 
   @testset "over Q(x) with non-monic defining polynomial" begin
@@ -217,6 +233,13 @@
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 2)
     end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
   end
 
   @testset "over Q(x)" begin
@@ -239,6 +262,13 @@
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 1)
+    end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
     end
   end
 
@@ -294,6 +324,10 @@
     @testset "colon" begin
       test_colon_common(OK, ZZ(3))
     end
+
+    @testset "fractional_ideal inv" begin
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
+    end
   end
 
   @testset "over number field localized at prime" begin
@@ -316,6 +350,7 @@
 
       test_containment_common(OK, R(7), R(5))
       test_colon_common_ideal(OK, ideal(OK, R(7), OK(a - 3)))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//49)*OK))
     end
 
     @testset "inert (p = 3)" begin
@@ -327,6 +362,7 @@
 
       test_containment_common(OK, R(3), R(5))
       test_colon_common(OK, R(3))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//3)*OK))
     end
 
     @testset "ramified (p = 2)" begin
@@ -340,6 +376,7 @@
 
       test_containment_common(OK, R(2), R(5))
       test_colon_common_ideal(OK, ideal(OK, R(2), OK(a)))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//16)*OK))
     end
   end
 end

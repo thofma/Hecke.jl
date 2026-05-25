@@ -278,10 +278,10 @@ function Base.:*(x::GenOrdElem, I::GenOrdFracIdl)
   return GenOrdIdl(parent(x), x) * I
 end
 
-function Base.:*(f::Generic.FunctionFieldElem, O::GenOrd)
-  @req parent(f) === field(O) "Element must lie in the function field of the order"
-  f_num, f_denom = integral_split(f, O)
-  return GenOrdFracIdl(ideal(O, f_num), f_denom)
+function Base.:*(x::FieldElem, O::GenOrd)
+  @req parent(x) === field(O) "Element must lie in the field of the order"
+  x_num, x_denom = integral_split(x, O)
+  return GenOrdFracIdl(ideal(O, x_num), x_denom)
 end
 
 function Base.:*(c::Generic.RationalFunctionFieldElem, I::GenOrdFracIdl)
@@ -295,7 +295,7 @@ function Base.:*(c::Generic.RationalFunctionFieldElem, I::GenOrdIdl)
 end
 
 Base.:*(I::GenOrdFracIdl, x::GenOrdElem) = x * I
-Base.:*(O::GenOrd, f::Generic.FunctionFieldElem) = f * O
+Base.:*(O::GenOrd, f::FieldElem) = f * O
 Base.:*(I::GenOrdFracIdl, c::Generic.RationalFunctionFieldElem) = c * I
 Base.:*(I::GenOrdIdl, c::Generic.RationalFunctionFieldElem) = c * I
 
@@ -384,8 +384,15 @@ function Hecke.colon(I::GenOrdFracIdl, J::GenOrdIdl)
 end
 
 function inv(A::GenOrdFracIdl)
+  # inv(N/d) = d * inv(N): factor the scalar denominator out
+  #   instead of routing the whole fractional ideal through colon
+  #   which involves O(denominator) and extra ideal arithmetic
   O = order(A)
-  return colon(O(1)*O, A)
+  k = base_field(field(O))
+
+  invN = inv(numerator(A; copy = false))
+  M = k(denominator(A; copy = false)) * basis_matrix(invN; copy = false)
+  return GenOrdFracIdl(O, M)
 end
 
 Base.://(I::GenOrdFracIdl, J::GenOrdFracIdl) = colon(I, J)
