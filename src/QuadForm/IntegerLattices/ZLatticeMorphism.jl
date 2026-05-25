@@ -171,9 +171,17 @@ function __assert_has_automorphisms(
     end
   end
   res_uncompressed = res
+  forced_compression = false
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
     res, vector_set = _compress_two_matrices_faithful!(res, vector_set)
+    if length(res) > 1
+      forced_compression = true
+      res2, vector_set2 = copy(res), deepcopy(vector_set)
+      @assert length(res2) == 2
+      res, vector_set = _compress_two_matrices_faithful!(res, vector_set; force=true)
+      @vprintln :Lattice 1 "Faithful compression failed, compressing anyways and veryfying expost"
+    end
   end
 
   if get_assertion_level(:Lattice) > 1
@@ -182,6 +190,7 @@ function __assert_has_automorphisms(
     end
   end
 
+  @label init_small
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
@@ -190,6 +199,19 @@ function __assert_has_automorphisms(
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
+    if forced_compression && !fl
+      Gint = _int_matrix_with_overflow(res2[1], ZZ())
+      tmp_mat = zero(Gint)
+      if any(mul!(tmp_mat, g,mul!(tmp_mat, Gint,transpose(g))) != Gint for g in _gens)
+        # compression returned wrong outputs redo  
+        @vprintln :Lattice 1 "Compression returned wrong outputs, retrying with uncompressed data"
+        forced_compression = false
+        vector_set = vector_set2 
+        res = res2
+        @assert length(res) == 2
+        @goto init_small
+      end 
+    end 
     !fl && @vprintln :Lattice 1 "Try init small failed; switching to large"
   end
   if !try_small || !fl
@@ -271,13 +293,18 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_inv
   return grams, vector_set, invariants, weyl_group_order, fundamental_roots
 end
 
-function _compress_two_matrices_faithful!(res, vector_set)
+function _compress_two_matrices_faithful!(res, vector_set; force::Bool=false)
   @assert length(res) == 2
   # we try to compress res[1] and res[2], such that we are "faithful"
   i0 = 2
   grambound = sum(abs, res[2])
   Sbound = maximum(i -> max(abs(i[2][1]), abs(i[2][i0])), vector_set)
-  _lambda = 8 * ZZ(Sbound)^2 * grambound + 1
+  if force 
+    Sbound2 = Sbound
+  else  
+    Sbound2 = ZZ(Sbound)^2
+  end 
+  _lambda = 8 * Sbound2 * grambound + 1
   keep_separated = false
   # this test could be sped up
   Gnew = _lambda * res[1] + res[i0]
@@ -347,7 +374,7 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector, fai
   II = filter(i -> maximum(nbits, res[i]) <= gramnbitsbound, I)
 
   if maximum(nbits, res[1]) <= gramnbitsbound && length(II) < length(I)
-    error("Some Gram matrices are too large. Interesting case?!")
+    #error("Some Gram matrices are too large. Interesting case?!")
     @vprintln :Lattice 1  "Removed Gram matrices with entries too large"
   end
   I = II
@@ -952,7 +979,6 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     for f in blocks
       add!.(weyl_vector, mul!(tmp_vector, weyl_vector_t, f))
     end
-    @hassert :Lattice 1 weyl_vector == sum(weyl_vector_t*blocks[i] for i in 1:length(blocks))
     invariant_vectors_k = ZZMatrix[]
     sizehint!(invariant_vectors_k, length(inv_vec))
     for u in inv_vec

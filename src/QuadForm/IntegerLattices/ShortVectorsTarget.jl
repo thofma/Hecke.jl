@@ -49,7 +49,7 @@ end
 
 function short_vectors_with_condition(::Type{T}, L1::ZZLat,
                                       L2::ZZLat) where T
-  _notisom = (Tuple{Vector{T},Vector{T}}[],ZZMatrix[],(Vector{T}[],Vector{T}[]))
+  _notisom = (Tuple{Vector{T},Vector{T}}[],ZZMatrix[],(Int[],Int[]))
   notisom = (false, _notisom, _notisom)
   # We disable the search for fixed vectors and invariant subspaces
   # because it would be difficult to match them
@@ -263,9 +263,10 @@ function _short_vectors_with_condition(::Type{CoeffType},
   if maximum(rkLL[2:end]; init=0)<8
     #search_invariant_subspace = false
   end
+  tmpZZ = ZZ()
 
   L_in_L1toLn = hnf(Binv)
-  successive_grams = [[CoeffType(i) for i in j] for j in projL_gram]
+  successive_grams = [_int_matrix_with_overflow(j, tmpZZ) for j in projL_gram]
   toprojL1 = view(Binv,:,1:nrows(projL[1])) # L --> projL1
 
   # Keys: ([v1^2, v2^2,...,vi^2],[invariant_subspace_norms], v*G*weyl_vector^T, v1, [fixed_vector_stuff])
@@ -341,8 +342,10 @@ function _short_vectors_with_condition(::Type{CoeffType},
     eldivNi_mod_Mi = __not_adj(CoeffType.(_eldivNi_mod_Mi[n_ones+1:end]))
     r1 = sum(nrows(projL[j]) for j in 1:i-1)
     if CoeffType == Int
-      VfN_iminus1 = CoeffType.(collect(@view Vf[1:r1, n_ones+1:end]))
-      VfLi = CoeffType.(collect(@view Vf[r1+1:end, n_ones+1:end]))
+      _nc = ncols(Vf)
+      _nr = nrows(Vf)
+      VfN_iminus1 = _int_matrix_with_overflow(view(Vf, 1:r1, n_ones+1:_nc), tmpZZ)
+      VfLi = _int_matrix_with_overflow(view(Vf, r1+1:_nr, n_ones+1:_nc), tmpZZ)
     else
       VfN_iminus1 = @view Vf[1:r1, n_ones+1:end]
       VfLi = @view Vf[r1+1:end, n_ones+1:end]
@@ -424,7 +427,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
           sv2t = short_vectors2[t]
           for b in Dt
             #@assert !(__vcat(b, -tmp_s) in reduce(vcat,values(short_vectors2)))
-            push!(sv2t, __vcat(b, -tmp_s))
+            #push!(sv2t, __vcat(b, -tmp_s))
+            push!(sv2t, __vcat_neg(b, tmp_s))
           end
           pop!(t[1])
         end
@@ -464,50 +468,11 @@ function _short_vectors_with_condition(::Type{CoeffType},
     @vprintln :Lattice 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
   end
   @hassert :Lattice 1 allunique(reduce(vcat, values(short_vectors1)))
+  #search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning 
   if search_invariant_subspace
-    m = length(projection_ranges)
-    # so how to get rid of duplicates?
-    invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors1, projection_ranges)
-    # under construction....
-    rkL = rank(L)
-    Gr = zero_matrix(ZZ, rkL, rkL)
-    s = length(invariant_subspaces)
-    range_to_index = Dict{UnitRange{Int}, Int}(projection_ranges[i] => i for i in 1:m)
-    # we inflate and then compress
-    for j in 1:s
-      S = invariant_subspaces[j]
-      r = S.range
-      i = range_to_index[r]
-      Gi = projL_gram[i]
-      C = view(S.B2, 1:rank(S),:)
-      K = kernel(Gi*transpose(C);side=:left)
-      CK_inv = inv!(QQ.(vcat(C,K)))
-      toC = view(Binv,:,r)*view(CK_inv,:,1:nrows(C))*C
-      _GC = toC*Gi*transpose(toC)
-      GC = numerator(_GC)
-      addmul!(Gr, GC, rand(1:100))
-    end
-    for S in rk1_invariant_subspaces
-      r = S.range
-      i = range_to_index[r]
-      Gi = projL_gram[i]
-      C = view(S.B2, 1:rank(S),:)
-      K = kernel(Gi*transpose(C);side=:left)
-      CK_inv = inv!(QQ.(vcat(C,K)))
-      for l in 1:rank(S)
-        toC = view(Binv,:,r)*view(CK_inv,:,l:l)*view(C,l:l,:)
-        _GC = toC*Gi*transpose(toC)
-        GC = numerator(_GC)
-        addmul!(Gr, GC, rand(1:100))
-      end
-    end
-    _Gr = [CoeffType(i) for i in Gr]
-    push!(grams, Gr)
-
-    for i in 1:rkL
-      k0 = target_invariants[i]
-      target_invariants[i] = (k0[1], push!(copy(k0[2]), _Gr[i,i]), k0[3], k0[4], k0[5])
-    end
+    _Gr = _add_invariant_subspace_data!(CoeffType, grams, target_invariants,
+                                        short_vectors1, projection_ranges,
+                                        projL_gram, Binv)
   end
 
 
@@ -516,8 +481,9 @@ function _short_vectors_with_condition(::Type{CoeffType},
     _B = numerator(B)
     d = denominator(B)
   else
-    _B = [CoeffType(i) for i in numerator(B)]
-    d = CoeffType(denominator(B))
+    _BZZ,dBZZ = integral_split(B,ZZ)
+    _B = _int_matrix_with_overflow(_BZZ, tmpZZ)
+    d = CoeffType(dBZZ)
   end
 
   r1 = nrows(projL[1])
@@ -540,18 +506,18 @@ function _short_vectors_with_condition(::Type{CoeffType},
     push!(_target_invariants_tmp, invariant)
   end
   n_target_inv = length(unique(_target_invariants_tmp))
-  signed_hash_seed = rand(UInt)
+  signed_hash_seed = 0xc70d363fbd513942
   target_invariants_output = Int[]
   while true 
     target_invariants_output = _signed_hash.(_target_invariants_tmp,signed_hash_seed)
     if length(unique(target_invariants_output))==n_target_inv
       break
     end
-    signed_hash_seed = rand(UInt)
+    signed_hash_seed += 1
   end  
 
   # assemble the output
-  n_out = sum(length.(values(short_vectors1)))
+  n_out = sum(length(v) for v in values(short_vectors1); init=0)
   output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
   invariants = Vector{Int}(undef, n_out)
   discard = falses(n_out)
@@ -628,15 +594,73 @@ end
 #            Subroutines for invariant subspace detection
 #
 ########################################################################################
+function _add_invariant_subspace_data!(::Type{CoeffType},
+                                       grams::Vector{ZZMatrix},
+                                       target_invariants,
+                                       short_vectors,
+                                       projection_ranges::Vector{UnitRange{Int}},
+                                       projL_gram::Vector{ZZMatrix},
+                                       Binv::ZZMatrix) where {CoeffType}
+  m = length(projection_ranges)
+  rkL = nrows(Binv)
+  G = zero_matrix(ZZ, rkL, rkL)
+  tmpZZ = ZZ()
+  range_to_index = Dict{UnitRange{Int}, Int}(projection_ranges[i] => i for i in 1:m)
+  for r in projection_ranges 
+    i = range_to_index[r]
+    Gi = projL_gram[i]
+    Gr = zero_matrix(ZZ, length(r), length(r))
+    tmpZZMatrix1 = zero_matrix(ZZ, length(r), length(r))
+    tmpZZMatrix2 = zero_matrix(ZZ, length(r), length(r))
+    invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r) 
+    for C in invariant_subspaces 
+      K = kernel(Gi*transpose(C);side=:left)
+      #store vcat(C,K) in tmpZZMatrix1
+      tmpZZMatrix1[1:nrows(C),:] = C
+      tmpZZMatrix1[nrows(C)+1:end,:] = K
+      CK_inv,_ = pseudo_inv(tmpZZMatrix1)
+      toC = mul!(tmpZZMatrix1, view(CK_inv,:,1:nrows(C)),C)
+      GC = mul!(tmpZZMatrix1, toC, mul!(tmpZZMatrix2, Gi,transpose!(tmpZZMatrix2,toC)))
+      addmul!(Gr, GC, rand([-1,1])*rand(1:50))
+    end
+    # we treat the rank one subspaces separately, because 
+    # one matrix inverse suffices to compute all the projections at once  
+    C = rk1_invariant_subspaces
+    if !iszero(nrows(C))
+     K = kernel(Gi*transpose(C);side=:left)
+     #store vcat(C,K) in tmpZZMatrix1
+     tmpZZMatrix1[1:nrows(C),:] = C
+     tmpZZMatrix1[nrows(C)+1:end,:] = K
+     CK_inv,_ = pseudo_inv(tmpZZMatrix1)
+     for l in 1:nrows(C)
+        toC = view(CK_inv,:,l:l)*view(C,l:l,:)
+        GC = mul!(tmpZZMatrix1,toC,mul!(tmpZZMatrix1, Gi*transpose!(tmpZZMatrix1,toC)))
+        addmul!(Gr, GC, rand([-1,1])*rand(1:50))
+      end
+    end
+    Binv_r = @view Binv[:,r]
+    G = add!(G, Binv_r*Gr*transpose(Binv_r))
+  end
+
+  _G = [CoeffType(i) for i in G]
+  push!(grams, G)
+  for i in 1:rkL
+    k0 = target_invariants[i]
+    target_invariants[i] = (k0[1], push!(copy(k0[2]), _G[i,i]), k0[3], k0[4], k0[5])
+  end
+  return _G
+end
+
 function _vector_sums(D::Dict, projection_ranges, successive_grams)
   result = Set{Tuple{Vector{Int},UnitRange{Int}}}()
   #r = last(projection_ranges[1]) + 1
   for v in values(D)
     isempty(v) && continue
+    # if the first projection w1 is zero, then the sum is zero anyways
+    w = v[1]
+    all(iszero, w[i] for i in projection_ranges[1]) && continue
     init = zero(__not_adj(v[1]))
     vs = ___sum(v; init)
-    # if v1 is zero, then the sum is zero anyways
-    all(iszero, vs[i] for i in projection_ranges[1]) && continue
     # project
     # the first one is already invariant anyways
     for i in 2:length(projection_ranges)
@@ -741,9 +765,19 @@ function _signed_hash(x::Vector, seed::UInt)
 end
 
 function neg!(x::Vector{ZZRingElem})
-  for i in eachindex(v)
-    @inbounds neg!(v[i])
+  for i in eachindex(x)
+    @inbounds neg!(x[i])
   end
+end 
+
+function _zero!(z::GrowingSubspace)
+  zero!(z.B1)
+  zero!(z.B2)
+  z.rank = 0
+  z.dirty=true
+  zero!(z.pivs)
+  resize!(z.pivs, z.rank)
+  resize!(z.pure, z.rank)
 end 
 
 function push!(z::GrowingSubspace, x, offset=0)
@@ -773,34 +807,30 @@ function push!(z::GrowingSubspace, x, offset=0)
   nothing
 end
 
-function _search_invariant_subspaces(D::Dict, projection_ranges)
-  subspaces = Set{GrowingSubspace{fpMatrix,ZZMatrix}}()
-  subspaces1 = Set{GrowingSubspace{fpMatrix,ZZMatrix}}()  # collects invariant subspaces of rank 1, the rows of B2 are the rk 1 invariant subspaces, this is okay, since B2 does not get row reduced
-  for i in 2:length(projection_ranges)
-    r = projection_ranges[i]
-    length(r)<2 && continue
-    offset = first(r) - 1
-    J1 = GrowingSubspace(r)
-    for vv in values(D)
-      J = GrowingSubspace(r)
-      for v in vv
-        push!(J, v, offset)
-        J.rank == J.degree && break
-      end
-      if 1 < J.rank < J.degree
-        push!(subspaces, J)
-      end
-      if J.rank == 1
-        w = J.B2[1,:]
-        push!(J1, w)
-      end
-      if J1.rank == degree(J1)
-        break
-      end
+function _search_invariant_subspaces(D::Dict, r::UnitRange{Int}) 
+   # collects invariant subspaces of rank 1, the rows of B2 are the rk 1 invariant subspaces, this is okay, since B2 does not get row reduced
+  subspaces = Set{ZZMatrix}()
+  offset = first(r) - 1 
+  J1 = GrowingSubspace(r)
+  J = GrowingSubspace(r)
+  for vv in values(D)
+    _zero!(J)
+    for v in vv
+      push!(J, v, offset)
+      J.rank == J.degree && break
     end
-    J1.rank > 0 && push!(subspaces1,J1)
+    if 1 < J.rank < J.degree
+      push!(subspaces, J.B2[1:J.rank,:])
+    end
+    if J.rank == 1
+      w = J.B2[1,:]
+      push!(J1, w)
+    end
+    if J1.rank == degree(J1)
+      break
+    end
   end
-  return collect(subspaces), collect(subspaces1)
+  return subspaces, J1.B2[1:J1.rank,:]
 end
 
 ########################################################################################
@@ -897,6 +927,21 @@ end
 @inline __copy_vector_key(k::Vector{ZZRingElem}) = deepcopy(k)
 
 
+
+@inline __vcat_neg(x::Vector{ZZRingElem}, y::Vector{ZZRingElem}) = __vcat(x, -y)
+
+function __vcat_neg(x::LinearAlgebra.Adjoint{Int64, Vector{Int64}}, y::LinearAlgebra.Adjoint{Int64, Vector{Int64}})
+  px = parent(x)
+  py = parent(y)
+  nx = length(px)
+  ny = length(py)
+  z = Vector{Int}(undef, nx + ny)
+  copyto!(z, 1, px, 1, nx)
+  @inbounds for i in 1:ny
+    z[nx + i] = -py[i]
+  end
+  return adjoint(z)
+end
 
 __norm!(gram::Matrix{Int}, v::Vector{Int}, tmp_v::Vector{Int}) = dot(v, gram, v)
 __norm!(gram::ZZMatrix, v::Vector{ZZRingElem}, tmp_v::Vector{ZZRingElem}) = dot(mul!(tmp_v,v,gram),v) # this could be improved if necessary
