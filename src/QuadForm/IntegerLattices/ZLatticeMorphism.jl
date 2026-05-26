@@ -177,7 +177,7 @@ function __assert_has_automorphisms(
     res, vector_set = _compress_two_matrices_faithful!(res, vector_set)
     if length(res) > 1
       forced_compression = true
-      res2, vector_set2 = copy(res), deepcopy(vector_set)
+      res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
       @assert length(res2) == 2
       res, vector_set = _compress_two_matrices_faithful!(res, vector_set; force=true)
       @vprintln :Lattice 1 "Faithful compression failed, compressing anyways and veryfying expost"
@@ -189,7 +189,6 @@ function __assert_has_automorphisms(
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
   end
-
   @label init_small
   C = ZLatAutoCtx(res)
   fl = false
@@ -199,19 +198,23 @@ function __assert_has_automorphisms(
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
     end
-    if forced_compression && !fl
+    if forced_compression
+      forced_compression = false
+      if !fl
+        # try again without forced compression 
+        @goto init_small
+      end
       Gint = _int_matrix_with_overflow(res2[1], ZZ())
       tmp_mat = zero(Gint)
       if any(mul!(tmp_mat, g,mul!(tmp_mat, Gint,transpose(g))) != Gint for g in _gens)
         # compression returned wrong outputs redo  
         @vprintln :Lattice 1 "Compression returned wrong outputs, retrying with uncompressed data"
-        forced_compression = false
         vector_set = vector_set2 
         res = res2
         @assert length(res) == 2
         @goto init_small
       end 
-    end 
+    end  
     !fl && @vprintln :Lattice 1 "Try init small failed; switching to large"
   end
   if !try_small || !fl
@@ -297,17 +300,19 @@ function _compress_two_matrices_faithful!(res, vector_set; force::Bool=false)
   @assert length(res) == 2
   # we try to compress res[1] and res[2], such that we are "faithful"
   i0 = 2
+  i1 = 1
   grambound = sum(abs, res[2])
   Sbound = maximum(i -> max(abs(i[2][1]), abs(i[2][i0])), vector_set)
   if force 
-    Sbound2 = Sbound
-  else  
-    Sbound2 = ZZ(Sbound)^2
+    # just some medium sized lambda 
+    _lambda = next_prime(8 * ZZ(1) * grambound + 1, false)
+  else
+    i1 = 1 
+    _lambda = 8 * ZZ(Sbound)^2 * grambound + 1
   end 
-  _lambda = 8 * Sbound2 * grambound + 1
   keep_separated = false
   # this test could be sped up
-  Gnew = _lambda * res[1] + res[i0]
+  Gnew = _lambda * res[i1] + res[i0]
   if fits(Int, _lambda) && all(x -> fits(Int, x), Gnew)
     bitbound = Int == Int64 ? 64 : 32
     r = nrows(res[1])
@@ -321,7 +326,7 @@ function _compress_two_matrices_faithful!(res, vector_set; force::Bool=false)
     lambdabits = nbits(lambda)
     maxnbitsbound = 8 * sizeof(Int) - lambdabits - 3 #
     for (i, (v, n)) in enumerate(vector_set)
-      wnbits = max(nbits(n[1]), nbits(n[i0]))
+      wnbits = max(nbits(n[i1]), nbits(n[i0]))
       if wnbits > maxnbitsbound || (maximum(nbits, v) + 1) > vecnbitsbound
         # norm is getting too large, abort
         keep_separated = true
@@ -335,9 +340,9 @@ function _compress_two_matrices_faithful!(res, vector_set; force::Bool=false)
     return res, vector_set
   end
 
-  res = [lambda * res[1] + res[i0]]
+  res = [lambda * res[i1] + res[i0]]
   for (v, n) in vector_set
-    n[1] = lambda * n[1] + n[i0]
+    n[1] = lambda * n[i1] + n[i0]
     resize!(n, 1)
   end
   return res, vector_set
