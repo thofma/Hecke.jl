@@ -856,7 +856,7 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
     if !iszero(d) && valuation(d, p)<= vp
       # we want fp in SO(Vp)
       # compose with a reflection preserving Lp
-      norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
+      norm_gen = _norm_generator(normalL1, p) * TL1 * basis_matrix(L1)
       @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
       fp = reflection(gramV, norm_gen) * fp
       d = det(fp)-1
