@@ -547,7 +547,7 @@ end
 Base.eltype(::Type{FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}}) where {T, F1, F2, ElemType, NormType} =
   Tuple{Vector{ElemType}, NormType}
 
-Base.IteratorSize(::Type{<:FinckePohstIntIterCtx}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{S}) where {S <: FinckePohstIntIterCtx}= Base.SizeUnknown()
 
 # First iterate: initialise state at the top level and run state machine.
 function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) where {T, F1, F2, ElemType, NormType}
@@ -674,26 +674,110 @@ end
 
 # Continuation iterate: resume from the saved per-level state.
 # `it` is always 1 (the level at which vectors are yielded).
+#
+# Performance note: the hot path caches the level-1 scalars (_N1, _dN1, _x1,
+# _ph1, _zsf1, _lam1) in local variables.  This mirrors how _finckepohstint_rec!
+# keeps Nim1/dNim1 as call-stack locals (register-resident) rather than heap
+# arrays, eliminating per-step array loads/stores in the innermost loop.
+# The general state machine below only handles levels i >= 2; when it descends
+# back to level 1 it reloads the locals and returns to the hot path.
 @inline function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}, it::Int) where {T, F1, F2, ElemType, NormType}
-  ctx = C.ctx
-  n   = ctx.n
-  x   = ctx.x
-  Nim1    = C.Nim1
-  dNim1   = C.dNim1
-  in_xi   = C.in_xi
+  ctx      = C.ctx
+  n        = ctx.n
+  x        = ctx.x
+  Nim1     = C.Nim1
+  dNim1    = C.dNim1
+  in_xi    = C.in_xi
   in_Nim1  = C.in_Nim1
   in_dNim1 = C.in_dNim1
-  phase   = C.phase
-  per     = C.per
-  l       = C.l
-  pp_vector   = C.pp_vector
-  pp_length   = C.pp_length
-  tmp_v       = C.tmp_v
+  phase    = C.phase
+  per      = C.per
+  l        = C.l
+  pp_vector  = C.pp_vector
+  pp_length  = C.pp_length
+  tmp_v      = C.tmp_v
   zero_so_far = C.zero_so_far
-  i = it
+  lambda   = ctx.lambda
+  i = 2   # general state machine loop variable; always re-assigned before use
 
-  # Resume by advancing past the previously yielded position.
-  @inbounds(phase[i]) == 0 ? (@goto update_neg) : (@goto update_pos)
+  # Load level-1 state into local variables (register-promotable).
+  _N1   = @inbounds Nim1[1]
+  _dN1  = @inbounds dNim1[1]
+  _x1   = @inbounds x[1]
+  _ph1  = @inbounds phase[1]
+  _zsf1 = @inbounds zero_so_far[1]
+  _lam1 = @inbounds lambda[1]
+
+  # Resume: advance x[1] past the previously yielded position.
+  if _ph1 == 0
+    _x1 -= 1; _dN1 -= 2 * _lam1; _N1 += _dN1
+    @goto try_neg
+  else
+    _x1 += 1; _dN1 -= 2 * _lam1; _N1 += _dN1
+    @goto try_pos
+  end
+
+  # ---- Negative-direction hot loop at level 1 ----------------------------
+  @label try_neg
+  _N1 < 0 && @goto switch_phase_1
+  (_zsf1 && _x1 < 0) && @goto switch_phase_1
+  if !(_zsf1 && iszero(_x1))
+    norm = ctx.M - _N1
+    if l isa Nothing || norm >= l
+      @inbounds x[1] = _x1
+      @inbounds Nim1[1] = _N1; @inbounds dNim1[1] = _dN1; @inbounds phase[1] = _ph1
+      if per !== nothing
+        @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
+      else
+        @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
+      end
+      _canonicalize_finckepohstint!(tmp_v)
+      return (pp_vector(tmp_v), pp_length(norm)), 1
+    end
+  end
+  _x1 -= 1; _dN1 -= 2 * _lam1; _N1 += _dN1
+  @goto try_neg
+
+  # ---- Switch negative → positive direction at level 1 -------------------
+  @label switch_phase_1
+  _x1  = @inbounds(in_xi[1]) + 1
+  _dN1 = -@inbounds(in_dNim1[1])
+  _N1  = @inbounds(in_Nim1[1]) + _dN1
+  _ph1 = one(Int8)
+
+  # ---- Positive-direction hot loop at level 1 ----------------------------
+  @label try_pos
+  if _N1 < 0
+    # Level 1 exhausted: write back and enter the general state machine.
+    @inbounds x[1] = _x1; @inbounds Nim1[1] = _N1
+    @inbounds dNim1[1] = _dN1; @inbounds phase[1] = _ph1
+    i = 2
+    i > n && return nothing
+    @inbounds(phase[i]) == 0 ? (@goto update_neg) : (@goto update_pos)
+  end
+  if !(_zsf1 && _x1 < 0)
+    if !(_zsf1 && iszero(_x1))
+      norm = ctx.M - _N1
+      if l isa Nothing || norm >= l
+        @inbounds x[1] = _x1
+        @inbounds Nim1[1] = _N1; @inbounds dNim1[1] = _dN1; @inbounds phase[1] = _ph1
+        if per !== nothing
+          @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
+        else
+          @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
+        end
+        _canonicalize_finckepohstint!(tmp_v)
+        return (pp_vector(tmp_v), pp_length(norm)), 1
+      end
+    end
+  end
+  _x1 += 1; _dN1 -= 2 * _lam1; _N1 += _dN1
+  @goto try_pos
+
+  # ---- General state machine for levels i >= 2 ---------------------------
+  # Reached only when level 1 is exhausted and we need to advance higher
+  # levels.  When descending back to level 1, reloads locals and returns
+  # control to the hot path above.
 
   @label enter_level
   S = zero(T)
@@ -704,65 +788,40 @@ end
   @inbounds r  = mod(S, ctx.b[i])
   Ni = i == n ? ctx.M : @inbounds(Nim1[i + 1])
   @inbounds Nim1[i]    = div(Ni * ctx.docp1[i] - ctx.mu[i] * r * r, ctx.doc[i])
-  @inbounds dNim1[i]   = -ctx.tlob[i] * r + ctx.lambda[i]
+  @inbounds dNim1[i]   = -ctx.tlob[i] * r + lambda[i]
   @inbounds in_xi[i]   = xi
   @inbounds in_Nim1[i]  = Nim1[i]
   @inbounds in_dNim1[i] = dNim1[i]
   @inbounds x[i]       = xi
   @inbounds phase[i]   = zero(Int8)
   @inbounds zero_so_far[i] = (i == n) || (zero_so_far[i + 1] && iszero(x[i + 1]))
+  if i == 1
+    # Returning to level 1: reload locals and re-enter the hot path.
+    _x1   = xi
+    _N1   = @inbounds Nim1[1]
+    _dN1  = @inbounds dNim1[1]
+    _ph1  = zero(Int8)
+    _zsf1 = @inbounds zero_so_far[1]
+    @goto try_neg
+  end
 
   @label try_descend
   zero_so_far_i = @inbounds zero_so_far[i]
   if @inbounds(phase[i]) == 0
     @inbounds(Nim1[i]) < 0 && @goto switch_phase
     (zero_so_far_i && @inbounds(x[i]) < 0) && @goto switch_phase
-    if i == 1
-      zero_next = zero_so_far_i && @inbounds(iszero(x[1]))
-      if !zero_next
-        norm = ctx.M - @inbounds(Nim1[1])
-        if l isa Nothing || norm >= l
-          if per !== nothing
-            @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
-          else
-            @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
-          end
-          _canonicalize_finckepohstint!(tmp_v)
-          return (pp_vector(tmp_v), pp_length(norm)), 1
-        end
-      end
-      @goto update_neg
-    else
-      i -= 1
-      @goto enter_level
-    end
+    i -= 1
+    @goto enter_level
   else
     @inbounds(Nim1[i]) < 0 && @goto ascend
     (zero_so_far_i && @inbounds(x[i]) < 0) && @goto update_pos
-    if i == 1
-      zero_next = zero_so_far_i && @inbounds(iszero(x[1]))
-      if !zero_next
-        norm = ctx.M - @inbounds(Nim1[1])
-        if l isa Nothing || norm >= l
-          if per !== nothing
-            @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
-          else
-            @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
-          end
-          _canonicalize_finckepohstint!(tmp_v)
-          return (pp_vector(tmp_v), pp_length(norm)), 1
-        end
-      end
-      @goto update_pos
-    else
-      i -= 1
-      @goto enter_level
-    end
+    i -= 1
+    @goto enter_level
   end
 
   @label update_neg
   @inbounds x[i]     -= 1
-  @inbounds dNim1[i] -= 2 * ctx.lambda[i]
+  @inbounds dNim1[i] -= 2 * lambda[i]
   @inbounds Nim1[i]  += dNim1[i]
   @goto try_descend
 
@@ -775,7 +834,7 @@ end
 
   @label update_pos
   @inbounds x[i]     += 1
-  @inbounds dNim1[i] -= 2 * ctx.lambda[i]
+  @inbounds dNim1[i] -= 2 * lambda[i]
   @inbounds Nim1[i]  += dNim1[i]
   @goto try_descend
 
