@@ -675,12 +675,13 @@ end
 # Continuation iterate: resume from the saved per-level state.
 # `it` is always 1 (the level at which vectors are yielded).
 #
-# Performance note: the hot path caches the level-1 and level-2 scalars in
-# local variables. This mirrors how _finckepohstint_rec! keeps Nim1/dNim1 as
-# call-stack locals (register-resident) rather than heap arrays, eliminating
-# per-step array loads/stores in the most frequently revisited levels.
-# The general state machine below only handles levels i >= 3; when it descends
-# back to level 2 or level 1 it reloads the locals and returns to the hot path.
+# Performance note: the hot path caches the level-1, level-2, and level-3
+# scalars in local variables. This mirrors how _finckepohstint_rec! keeps
+# Nim1/dNim1 as call-stack locals (register-resident) rather than heap arrays,
+# eliminating per-step array loads/stores in the most frequently revisited
+# levels. The general state machine below only handles levels i >= 4; when it
+# descends back to level 3, level 2, or level 1 it reloads the locals and
+# returns to the corresponding hot path.
 @inline function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}, it::Int) where {T, F1, F2, ElemType, NormType}
   ctx      = C.ctx
   n        = ctx.n
@@ -698,10 +699,12 @@ end
   tmp_v      = C.tmp_v
   zero_so_far = C.zero_so_far
   lambda   = ctx.lambda
-  i = 3   # general state machine loop variable; always re-assigned before use
+  i = 4   # general state machine loop variable; always re-assigned before use
 
-  # Load level-1 and level-2 state into local variables (register-promotable).
+  # Load level-1, level-2, and level-3 state into local variables
+  # (register-promotable).
   has_level2 = n >= 2
+  has_level3 = n >= 3
   _N1   = @inbounds Nim1[1]
   _dN1  = @inbounds dNim1[1]
   _x1   = @inbounds x[1]
@@ -714,6 +717,12 @@ end
   _ph2  = zero(Int8)
   _zsf2 = false
   _lam2 = zero(T)
+  _N3   = zero(T)
+  _dN3  = zero(T)
+  _x3   = zero(T)
+  _ph3  = zero(Int8)
+  _zsf3 = false
+  _lam3 = zero(T)
   if has_level2
     _N2   = @inbounds Nim1[2]
     _dN2  = @inbounds dNim1[2]
@@ -721,6 +730,14 @@ end
     _ph2  = @inbounds phase[2]
     _zsf2 = @inbounds zero_so_far[2]
     _lam2 = @inbounds lambda[2]
+  end
+  if has_level3
+    _N3   = @inbounds Nim1[3]
+    _dN3  = @inbounds dNim1[3]
+    _x3   = @inbounds x[3]
+    _ph3  = @inbounds phase[3]
+    _zsf3 = @inbounds zero_so_far[3]
+    _lam3 = @inbounds lambda[3]
   end
 
   # Resume: advance x[1] past the previously yielded position.
@@ -745,6 +762,11 @@ end
         @inbounds x[2] = _x2
         @inbounds Nim1[2] = _N2; @inbounds dNim1[2] = _dN2; @inbounds phase[2] = _ph2
         @inbounds zero_so_far[2] = _zsf2
+      end
+      if has_level3
+        @inbounds x[3] = _x3
+        @inbounds Nim1[3] = _N3; @inbounds dNim1[3] = _dN3; @inbounds phase[3] = _ph3
+        @inbounds zero_so_far[3] = _zsf3
       end
       if per !== nothing
         @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
@@ -785,6 +807,11 @@ end
           @inbounds Nim1[2] = _N2; @inbounds dNim1[2] = _dN2; @inbounds phase[2] = _ph2
           @inbounds zero_so_far[2] = _zsf2
         end
+        if has_level3
+          @inbounds x[3] = _x3
+          @inbounds Nim1[3] = _N3; @inbounds dNim1[3] = _dN3; @inbounds phase[3] = _ph3
+          @inbounds zero_so_far[3] = _zsf3
+        end
         if per !== nothing
           @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
         else
@@ -823,9 +850,8 @@ end
     @inbounds x[2] = _x2; @inbounds Nim1[2] = _N2
     @inbounds dNim1[2] = _dN2; @inbounds phase[2] = _ph2
     @inbounds zero_so_far[2] = _zsf2
-    i = 3
-    i > n && return nothing
-    @inbounds(phase[i]) == 0 ? (@goto update_neg) : (@goto update_pos)
+    n == 2 && return nothing
+    _ph3 == 0 ? (@goto update_neg_3) : (@goto update_pos_3)
   end
   if !(_zsf2 && _x2 < 0)
     @inbounds x[2] = _x2
@@ -839,10 +865,51 @@ end
   _x2 += 1; _dN2 -= 2 * _lam2; _N2 += _dN2
   @goto try_pos_2
 
-  # ---- General state machine for levels i >= 3 ---------------------------
-  # Reached only when level 2 is exhausted and we need to advance higher
-  # levels. When descending back to level 2 or level 1, reloads the locals
-  # and returns to the corresponding hot path above.
+  # ---- Level-3 hot loop --------------------------------------------------
+  @label try_neg_3
+  _N3 < 0 && @goto switch_phase_3
+  (_zsf3 && _x3 < 0) && @goto switch_phase_3
+  @inbounds x[3] = _x3
+  @inbounds Nim1[3] = _N3
+  @inbounds zero_so_far[3] = _zsf3
+  i = 2
+  @goto enter_level
+
+  @label update_neg_3
+  _x3 -= 1; _dN3 -= 2 * _lam3; _N3 += _dN3
+  @goto try_neg_3
+
+  @label switch_phase_3
+  _x3  = @inbounds(in_xi[3]) + 1
+  _dN3 = -@inbounds(in_dNim1[3])
+  _N3  = @inbounds(in_Nim1[3]) + _dN3
+  _ph3 = one(Int8)
+
+  @label try_pos_3
+  if _N3 < 0
+    @inbounds x[3] = _x3; @inbounds Nim1[3] = _N3
+    @inbounds dNim1[3] = _dN3; @inbounds phase[3] = _ph3
+    @inbounds zero_so_far[3] = _zsf3
+    i = 4
+    i > n && return nothing
+    @inbounds(phase[i]) == 0 ? (@goto update_neg) : (@goto update_pos)
+  end
+  if !(_zsf3 && _x3 < 0)
+    @inbounds x[3] = _x3
+    @inbounds Nim1[3] = _N3
+    @inbounds zero_so_far[3] = _zsf3
+    i = 2
+    @goto enter_level
+  end
+
+  @label update_pos_3
+  _x3 += 1; _dN3 -= 2 * _lam3; _N3 += _dN3
+  @goto try_pos_3
+
+  # ---- General state machine for levels i >= 4 ---------------------------
+  # Reached only when level 3 is exhausted and we need to advance higher
+  # levels. When descending back to level 3, level 2, or level 1, reloads
+  # the locals and returns to the corresponding hot path above.
 
   @label enter_level
   S = zero(T)
@@ -860,7 +927,15 @@ end
   @inbounds x[i]       = xi
   @inbounds phase[i]   = zero(Int8)
   @inbounds zero_so_far[i] = (i == n) || (zero_so_far[i + 1] && iszero(x[i + 1]))
-  if i == 2
+  if i == 3
+    # Returning to level 3: reload locals and re-enter the hot path.
+    _x3   = xi
+    _N3   = @inbounds Nim1[3]
+    _dN3  = @inbounds dNim1[3]
+    _ph3  = zero(Int8)
+    _zsf3 = @inbounds zero_so_far[3]
+    @goto try_neg_3
+  elseif i == 2
     # Returning to level 2: reload locals and re-enter the hot path.
     _x2   = xi
     _N2   = @inbounds Nim1[2]
