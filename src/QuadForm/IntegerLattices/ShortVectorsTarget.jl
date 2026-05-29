@@ -984,6 +984,10 @@ end
 _to_VectorType(::Type{ZZRingElem}, x::Vector{QQFieldElem}) = ZZ.(x)
 _to_VectorType(::Type{Int}, x::Vector{QQFieldElem}) = (Int.(ZZ.(x)))'
 
+function __short_vectors_it(G::ZZMatrix, lb, ub)
+  sv = __enumerate_gram(FinckePohstIntIterCtx, G, lb, ub, Int, identity, identity, Int)
+  return sv
+end
 
 function __short_vectors(G::ZZMatrix, lb, ub)
   #sv = __enumerate_gram(FinckePohstIntIterCtx, G, lb, ub, Int, identity, identity, Int)

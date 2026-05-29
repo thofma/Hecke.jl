@@ -540,6 +540,7 @@ mutable struct FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}
   in_Nim1::Vector{T}            # initial Nim1 at entry (for phase switch)
   in_dNim1::Vector{T}           # initial dNim1 at entry (for phase switch)
   phase::Vector{Int8}           # 0 = negative direction, 1 = positive direction
+  zero_so_far::Vector{Bool}     # whether all x[j] for j > i are zero at level i
   tmp_v::Vector{ElemType}       # scratch buffer for building output vector
 end
 
@@ -564,9 +565,10 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) w
   phase   = C.phase
   per     = C.per
   l       = C.l
-  pp_vector = C.pp_vector
-  pp_length = C.pp_length
-  tmp_v   = C.tmp_v
+  pp_vector   = C.pp_vector
+  pp_length   = C.pp_length
+  tmp_v       = C.tmp_v
+  zero_so_far = C.zero_so_far
   i = n
 
   # ---- enter_level -------------------------------------------------------
@@ -586,18 +588,13 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) w
   @inbounds in_dNim1[i] = dNim1[i]
   @inbounds x[i]       = xi
   @inbounds phase[i]   = zero(Int8)
+  @inbounds zero_so_far[i] = (i == n) || (zero_so_far[i + 1] && iszero(x[i + 1]))
 
   # ---- try_descend -------------------------------------------------------
   # Decide whether to descend, yield, skip, or terminate, based on current
   # state at level i.
   @label try_descend
-  zero_so_far_i = true
-  @inbounds for j in (i + 1):n
-    if !iszero(x[j])
-      zero_so_far_i = false
-      break
-    end
-  end
+  zero_so_far_i = @inbounds zero_so_far[i]
   if @inbounds(phase[i]) == 0
     # ---- negative direction ----
     @inbounds(Nim1[i]) < 0 && @goto switch_phase
@@ -689,9 +686,10 @@ end
   phase   = C.phase
   per     = C.per
   l       = C.l
-  pp_vector = C.pp_vector
-  pp_length = C.pp_length
-  tmp_v   = C.tmp_v
+  pp_vector   = C.pp_vector
+  pp_length   = C.pp_length
+  tmp_v       = C.tmp_v
+  zero_so_far = C.zero_so_far
   i = it
 
   # Resume by advancing past the previously yielded position.
@@ -712,15 +710,10 @@ end
   @inbounds in_dNim1[i] = dNim1[i]
   @inbounds x[i]       = xi
   @inbounds phase[i]   = zero(Int8)
+  @inbounds zero_so_far[i] = (i == n) || (zero_so_far[i + 1] && iszero(x[i + 1]))
 
   @label try_descend
-  zero_so_far_i = true
-  @inbounds for j in (i + 1):n
-    if !iszero(x[j])
-      zero_so_far_i = false
-      break
-    end
-  end
+  zero_so_far_i = @inbounds zero_so_far[i]
   if @inbounds(phase[i]) == 0
     @inbounds(Nim1[i]) < 0 && @goto switch_phase
     (zero_so_far_i && @inbounds(x[i]) < 0) && @goto switch_phase
@@ -800,20 +793,20 @@ function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix, l::Union{I
     dummy = FinckePohstIntCtx{Int}(0, 0, Vector{Vector{Int}}(), Int[], Int[], Int[], Int[], Int[], Int[], Int[])
     return FinckePohstIntIterCtx{ElemType, F1, F2, ElemType, NormType}(
       dummy, nothing, nothing, pp_vector, pp_length,
-      Int[], Int[], Int[], Int[], Int[], Int8[], Int[])
+      Int[], Int[], Int[], Int[], Int[], Int8[], Bool[], Int[])
   end
   if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(G, Int(c)); success end
     _l = l isa Nothing ? nothing : Int(l)
     return FinckePohstIntIterCtx{Int, F1, F2, ElemType, NormType}(
       ctx, per, _l, pp_vector, pp_length,
       zeros(Int, n), zeros(Int, n), zeros(Int, n),
-      zeros(Int, n), zeros(Int, n), zeros(Int8, n), zeros(Int, n))
+      zeros(Int, n), zeros(Int, n), zeros(Int8, n), falses(n), zeros(Int, n))
   else
     ctx, per = _prepare_finckepohstint_large(G, ZZ(c))
     _l = l isa Nothing ? nothing : ZZ(l)
     return FinckePohstIntIterCtx{ZZRingElem, F1, F2, ElemType, NormType}(
       ctx, per, _l, pp_vector, pp_length,
       zeros_array(ZZ, n), zeros_array(ZZ, n), zeros_array(ZZ, n),
-      zeros_array(ZZ, n), zeros_array(ZZ, n), zeros(Int8, n), zeros(Int, n))
+      zeros_array(ZZ, n), zeros_array(ZZ, n), zeros(Int8, n), falses(n), zeros(Int, n))
   end
 end
