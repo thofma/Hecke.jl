@@ -1,0 +1,1050 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.3">
+    
+    
+      
+        <title>Basics - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.3b61ea93.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.39b8e14a.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#546d78">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+    
+    
+      
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+      
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#orders" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header-nav__button md-logo" aria-label="Hecke">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      <div class="md-header-nav__ellipsis">
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
+            
+              Basics
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+
+  <li class="md-nav__item">
+    <a href="../.." class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  
+
+
+  
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        <span class="md-nav__icon md-icon"></span>
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1" >
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Number fields
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        <span class="md-nav__icon md-icon"></span>
+        Number fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/basics/" class="md-nav__link">
+      Creation and basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/elements/" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/internal/" class="md-nav__link">
+      Internals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  
+
+
+  
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Orders
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Orders" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        <span class="md-nav__icon md-icon"></span>
+        Orders
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../introduction/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Basics
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" class="md-nav__link md-nav__link--active">
+      Basics
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-and-basic-properties" class="md-nav__link">
+    Creation and basic properties
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation and basic properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../elements/" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../ideals/" class="md-nav__link">
+      Ideals
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../frac_ideals/" class="md-nav__link">
+      Fractional Ideals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3" >
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Quadratic and Hermitian forms
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Quadratic and Hermitian forms" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        <span class="md-nav__icon md-icon"></span>
+        Quadratic and Hermitian forms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/introduction/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/basics/" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/lattices/" class="md-nav__link">
+      Lattices
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4" >
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Abelian groups
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        <span class="md-nav__icon md-icon"></span>
+        Abelian groups
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../abelian/introduction/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5" >
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Class fields
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        <span class="md-nav__icon md-icon"></span>
+        Class fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../class_fields/intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6" >
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Misc
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Misc" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        <span class="md-nav__icon md-icon"></span>
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../FacElem/" class="md-nav__link">
+      Factored Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../../sparse/intro/" class="md-nav__link">
+      Sparse Linear Algebra
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    
+    <label class="md-nav__link" for="nav-3">
+      Source
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Source" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Source
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="https://www.github.com/thofma/Hecke.jl" class="md-nav__link">
+      None
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-and-basic-properties" class="md-nav__link">
+    Creation and basic properties
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation and basic properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p><a id='Orders'></a></p>
+<p><a id='Orders-1'></a></p>
+<h1 id="orders">Orders</h1>
+<p>Orders, ie. unitary subrings that are free <script type="math/tex">Z</script>-modules of rank equal to the degree of the number field, are at the core of the arithmetic of number fields. In Hecke, orders are always represented using the module structure, be it the <script type="math/tex">Z</script>-module structure for orders in absolute fields, of the structure as a module over the maximal order of the base field in the case of relative extensions. In this chapter we only deal with orders in absolute fields. There are more general definitions of orders in number fields available, but those are (currently) not implemented in Hecke.</p>
+<p>Among all orders in a fixed field, there is a unique maximal one, called the maximal order, or ring of integers of the field. It is well known that this is the only order that is a Dedekind domain, hence has a rich ideal structure as well. The maximal order is also the integral closure of <script type="math/tex">Z</script> in the number field and can also be interpreted as a normalisation of any other order.</p>
+<p><a id='Creation-and-basic-properties'></a></p>
+<p><a id='Creation-and-basic-properties-1'></a></p>
+<h2 id="creation-and-basic-properties">Creation and basic properties</h2>
+<hr />
+<pre class="highlight"><code class="language-julia">Order(B::Array{nf_elem, 1}; check::Bool = true, cached::Bool = true) -&gt; NfOrd</code></pre>
+<p>Returns the order generated by <script type="math/tex">B</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">B</script> defines an order. If <code>isbasis</code> is set, then elements are assumed to form a <script type="math/tex">\Z</script>-basis.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">Order(K::AnticNumberField, A::FakeFmpqMat; check::Bool = true) -&gt; NfOrd</code></pre>
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">  Order(K::NumField, M::PMat) -&gt; NfRelOrd</code></pre>
+<p>Returns the order which has basis pseudo-matrix <script type="math/tex">M</script> with respect to the power basis of <script type="math/tex">K</script>.</p>
+<pre class="highlight"><code>Order(K::AnticNumberField, A::fmpz_mat, check::Bool = true) -&gt; NfOrd</code></pre>
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+<pre class="highlight"><code>Order(A::AbsAlgAss{&lt;: NumFieldElem}, M::PMat{&lt;: NumFieldElem, T})
+  -&gt; AlgAssRelOrd</code></pre>
+<p>Returns the order of <script type="math/tex">A</script> with basis pseudo-matrix <script type="math/tex">M</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">  EquationOrder(L::NumField) -&gt; NfRelOrd
+  equation_order(L::NumField) -&gt; NfRelOrd</code></pre>
+<p>Returns the equation order of the number field <script type="math/tex">L</script>.</p>
+<pre class="highlight"><code>EquationOrder(K::NfAbs) -&gt; NfAbsOrd</code></pre>
+<p>Returns the equation order of the absolute number field <script type="math/tex">K</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">MaximalOrder(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -&gt; NfAbsOrd</code></pre>
+<p>Returns the maximal order of <script type="math/tex">K</script>. Additional information can be supplied if they are already known, as the ramified primes or the discriminant of the maximal order.</p>
+<p><strong>Example</strong></p>
+<pre class="highlight"><code class="language-julia-repl">julia&gt; Qx, x = FlintQQ["x"];
+julia&gt; K, a = NumberField(x^3 + 2, "a");
+julia&gt; O = MaximalOrder(K);</code></pre>
+<hr />
+<pre class="highlight"><code class="language-julia">MaximalOrder(O::NfAbsOrd; index_divisors::Vector{fmpz}, discriminant::fmpz, ramified_primes::Vector{fmpz}) -&gt; NfAbsOrd</code></pre>
+<p>Returns the maximal order of the number field that contains <script type="math/tex">O</script>. Additional information can be supplied if they are already known, as the ramified primes, the discriminant of the maximal order or a set of integers dividing the index of <script type="math/tex">O</script> in the maximal order.</p>
+<pre class="highlight"><code>MaximalOrder(O::AlgAssAbsOrd)</code></pre>
+<p>Given an order <script type="math/tex">O</script>, this function returns a maximal order containing <script type="math/tex">O</script>.</p>
+<pre class="highlight"><code>MaximalOrder(A::AbsAlgAss{fmpq}) -&gt; AlgAssAbsOrd</code></pre>
+<p>Returns a maximal order of <script type="math/tex">A</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">maximal_order(O::AlgAssRelOrd) -&gt; AlgAssRelOrd</code></pre>
+<p>Returns a maximal order of <code>algera(O)</code> containing <script type="math/tex">O</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">lll(M::NfAbsOrd) -&gt; NfAbsOrd</code></pre>
+<p>The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.</p>
+<p>By Chistov's fundamental theorem, the computation of the maximal order is basically as hard as the factorisation of the discriminant. In order to help the computer, Hecke also provides the following signatures:</p>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>maximal_order(::AnticNumberField, ::Array{fmpz, 1})</code>. Check Documenter's build log for details.</p>
+</div>
+<p>It is also possible the execute the steps individually:</p>
+<hr />
+<pre class="highlight"><code class="language-julia">pradical(O::NfOrd, p::{fmpz|Integer}) -&gt; NfAbsOrdIdl</code></pre>
+<p>Given a prime number <script type="math/tex">p</script>, this function returns the <script type="math/tex">p</script>-radical <script type="math/tex">\sqrt{p\mathcal O}</script> of <script type="math/tex">\mathcal O</script>, which is just <script type="math/tex">\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k \in p\mathcal O \}</script>. It is not checked that <script type="math/tex">p</script> is prime.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">ring_of_multipliers(a::NfRelOrdIdl) -&gt; NfRelOrd</code></pre>
+<p>Computes the order <script type="math/tex">(a : a)</script>, which is the set of all <script type="math/tex">x \in K</script> with <script type="math/tex">xa \subseteq a</script>, where <script type="math/tex">K</script> is the ambient number field of <script type="math/tex">a</script>.</p>
+<pre class="highlight"><code>ring_of_multipliers(I::NfAbsOrdIdl) -&gt; NfAbsOrd</code></pre>
+<p>Computes the order <script type="math/tex">(I : I)</script>, which is the set of all <script type="math/tex">x \in K</script> with <script type="math/tex">xI \subseteq I</script>.</p>
+<h3 id="example">Example</h3>
+<pre class="highlight"><code class="language-julia-repl">
+julia&gt; Qx, x = PolynomialRing(FlintQQ, "x");
+
+julia&gt; K, a = NumberField(x^2 - 2, "a");
+
+julia&gt; O = EquationOrder(K)
+Order of Number field over Rational Field with defining polynomial x^2 - 2
+with Z-basis NfAbsOrdElem{AnticNumberField,nf_elem}[1, a]</code></pre>
+<hr />
+<pre class="highlight"><code class="language-julia">parent(O::NfAbsOrd) -&gt; NfOrdSet</code></pre>
+<p>Returns the parent of <script type="math/tex">\mathcal O</script>, that is, the set of orders of the ambient number field.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">isequation_order(O::NfAbsOrd) -&gt; Bool</code></pre>
+<p>Returns whether <script type="math/tex">\mathcal O</script> is the equation order of the ambient number field <script type="math/tex">K</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">signature(O::NfOrd) -&gt; Tuple{Int, Int}</code></pre>
+<p>Returns the signature of the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">  nf(O::NfRelOrd) -&gt; NumField</code></pre>
+<p>Returns the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<pre class="highlight"><code>nf(O::NfAbsOrd) -&gt; AnticNumberField</code></pre>
+<p>Returns the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">degree(O::NfOrd) -&gt; Int</code></pre>
+<p>Returns the degree of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">basis(O::NfOrd) -&gt; Array{NfOrdElem, 1}</code></pre>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+<pre class="highlight"><code class="language-julia">basis(I::NfAbsOrdFracIdl) -&gt; Array{nf_elem, 1}</code></pre>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">I</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">basis(O::NfOrd, K::AnticNumberField) -&gt; Array{nf_elem, 1}</code></pre>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis elements of <script type="math/tex">\mathcal O</script> as elements of the ambient number field.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">basis_matrix(O::NfOrd) -&gt; FakeFmpqMat</code></pre>
+<p>Returns the basis matrix of <script type="math/tex">\mathcal O</script> with respect to the power basis of the ambient number field.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">basis_mat_inv(O::NfOrd) -&gt; FakeFmpqMat</code></pre>
+<p>Returns the inverse of the basis matrix of <script type="math/tex">\mathcal O</script>.</p>
+<pre class="highlight"><code>basis_mat_inv(A::NfAbsOrdIdl) -&gt; fmpz_mat</code></pre>
+<p>Returns the inverse basis matrix of <script type="math/tex">A</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">discriminant(O::NfOrd) -&gt; fmpz</code></pre>
+<p>Returns the discriminant of <script type="math/tex">\mathcal O</script>.</p>
+<pre class="highlight"><code class="language-julia">discriminant(B::Array{NfAbsOrdElem, 1}) -&gt; fmpz</code></pre>
+<p>Returns the discriminant of the family <script type="math/tex">B</script>.</p>
+<pre class="highlight"><code>discriminant(O::AlgssRelOrd)</code></pre>
+<p>Returns the discriminant of <script type="math/tex">O</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">gen_index(O::NfOrd) -&gt; fmpq</code></pre>
+<p>Returns the generalized index of <script type="math/tex">\mathcal O</script> with respect to the equation order of the ambient number field.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">index(O::NfOrd) -&gt; fmpz</code></pre>
+<p>Assuming that the order <script type="math/tex">\mathcal O</script> contains the equation order <script type="math/tex">\mathbf Z[\alpha]</script> of the ambient number field, this function returns the index <script type="math/tex">[ \mathcal O : \mathbf Z]</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">isindex_divisor(O::NfOrd, d::fmpz) -&gt; Bool
+isindex_divisor(O::NfOrd, d::Int) -&gt; Bool</code></pre>
+<p>Returns whether <script type="math/tex">d</script> is a divisor of the index of <script type="math/tex">\mathcal O</script>. It is assumed that <script type="math/tex">\mathcal O</script> contains the equation order of the ambient number field.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">minkowski_matrix(O::NfOrd, abs_tol::Int = 64) -&gt; arb_mat</code></pre>
+<p>Returns the Minkowski matrix of <script type="math/tex">\mathcal O</script>.  Thus if <script type="math/tex">\mathcal O</script> has degree <script type="math/tex">d</script>, then the result is a matrix in <script type="math/tex">\operatorname{Mat}_{d\times d}(\mathbf R)</script>. The entries of the matrix are real balls of type <code>arb</code> with radius less then <code>2^-abs_tol</code>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">in(a::nf_elem, O::NfOrd) -&gt; Bool</code></pre>
+<p>Checks whether <script type="math/tex">a</script> lies in <script type="math/tex">\mathcal O</script>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>denominator(::nf_elem, ::NfOrd)</code>. Check Documenter's build log for details.</p>
+</div>
+<hr />
+<pre class="highlight"><code class="language-julia">norm_change_const(O::NfOrd) -&gt; (Float64, Float64)</code></pre>
+<p>Returns <script type="math/tex">(c_1, c_2) \in \mathbf R_{>0}^2</script> such that for all <script type="math/tex">x = \sum_{i=1}^d x_i \omega_i \in \mathcal O</script> we have <script type="math/tex">T_2(x) \leq c_1 \cdot \sum_i^d x_i^2</script> and <script type="math/tex">\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)</script>, where <script type="math/tex">(\omega_i)_i</script> is the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">trace_matrix(O::NfOrd) -&gt; fmpz_mat</code></pre>
+<p>Returns the trace matrix of <code>\mathcal O</code>, that is, the matrix <script type="math/tex">(\operatorname{tr}_{K/\mathbf Q}(b_i \cdot b_j))_{1 \leq i, j \leq d}</script>.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">+(R::NfOrd, S::NfOrd) -&gt; NfOrd</code></pre>
+<p>Given two orders <script type="math/tex">R</script>, <script type="math/tex">S</script> of <script type="math/tex">K</script>, this function returns the smallest order containing both <script type="math/tex">R</script> and <script type="math/tex">S</script>. It is assumed that <script type="math/tex">R</script>, <script type="math/tex">S</script> contain the ambient equation order and have coprime index.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">poverorder(O::NfOrd, p::fmpz) -&gt; NfOrd
+poverorder(O::NfOrd, p::Integer) -&gt; NfOrd</code></pre>
+<p>This function tries to find an order that is locally larger than <script type="math/tex">\mathcal O</script> at the prime <script type="math/tex">p</script>: If <script type="math/tex">p</script> divides the index <script type="math/tex">[ \mathcal O_K : \mathcal O]</script>, this function will return an order <script type="math/tex">R</script> such that <script type="math/tex">v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])</script>. Otherwise <script type="math/tex">\mathcal O</script> is returned.</p>
+<hr />
+<pre class="highlight"><code class="language-julia">pmaximal_overorder(O::NfOrd, p::fmpz) -&gt; NfOrd
+pmaximal_overorder(O::NfOrd, p::Integer) -&gt; NfOrd</code></pre>
+<p>This function finds a <script type="math/tex">p</script>-maximal order <script type="math/tex">R</script> containing <script type="math/tex">\mathcal O</script>. That is, the index <script type="math/tex">[ \mathcal O_K : R]</script> is not divisible by <script type="math/tex">p</script>.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../introduction/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Introduction
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../elements/" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Elements
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/vendor.08c56446.min.js"></script>
+      <script src="../../assets/javascripts/bundle.6ced434e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../..",
+          features: [],
+          search: Object.assign({
+            worker: "../../assets/javascripts/worker/search.8c7e0a7e.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+      
+        <script src="../../javascripts/config.js"></script>
+      
+    
+  </body>
+</html>
