@@ -1021,16 +1021,7 @@ end
 #
 ################################################################################
 
-
-function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{T}, KInftyElem{T}}}) where T<:Union{QQFieldElem, fpFieldElem}
-  return characteristic(function_field(base_ring(R)))
-end
-
-function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{QQFieldElem}, QQPolyRingElem}})
-  return 0
-end
-
-function Hecke.characteristic(R::EuclideanRingResidueField{Hecke.GenOrdElem{Generic.FunctionFieldElem{fpFieldElem}, fpPolyRingElem}})
+function Hecke.characteristic(R::EuclideanRingResidueField{<:Hecke.GenOrdElem{<:Generic.FunctionFieldElem}})
   return characteristic(function_field(base_ring(R)))
 end
 

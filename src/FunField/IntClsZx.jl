@@ -3,7 +3,7 @@ using Hecke
 using ..HessQRModule
 import ..HessQRModule: HessQR
 
-function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
+function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T, U}) where {T, U}
   return Hecke._integral_closure(S, F)
 end
 
