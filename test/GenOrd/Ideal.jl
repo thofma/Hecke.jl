@@ -191,35 +191,31 @@
   @testset "over Q(x) with non-monic defining polynomial" begin
     kx, x = rational_function_field(QQ, :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
-    L, t = function_field(1//2*y^3 - 1//3*x^3 - 1; cached = false)
+    L, t = function_field(x^3 + x^2 + x*y^3 - x*y^2 + y^2 - y; cached = false)
 
     Ofin = finite_maximal_order(L)
     Oinf = infinite_maximal_order(L)
-    @assert !is_equation_order(Ofin)
 
-    @testset "norm/min: finite maximal order" begin
-      a = Ofin(x^3 + y^2)
-      I = ideal(Ofin, a)
-      check_ideal_norm_min(I, norm(a), norm(a)) # x^3 + y^2 is irreducible
+    @testset "norm/min" begin
+      I = ideal(Ofin, x*t)
+      check_ideal_norm_min(I, x^5 + x^4, x^4 + x^3)
 
-      I = ideal(Ofin, x*y, Ofin(x^2))
-      check_ideal_norm_min(I, x^3, x)
+      I = ideal(Oinf, 3//(x^2*t^2))
+      check_ideal_norm_min(I, 1//x^10, 1//x^4)
     end
 
-    @testset "norm/min: infinite maximal order" begin
-      I = ideal(Oinf, 3//x^2)
-      check_ideal_norm_min(I, 1//x^6, 1//x^2)
-
-      I = ideal(Oinf, L(x^2)//t^3)
-      check_ideal_norm_min(I, norm(Oinf(L(x^2)//t^3)), 1//x)
+    @testset "prime decomposition" begin
+      # <x + 1> = <x + 1, x*y> * <x + 1, x*y + 1>^2
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x + 1))
+      @test length(pd) == 2
     end
 
     @testset "containment" begin
-      test_containment_common(Ofin, x^2 + 1, t)
+      test_containment_common(Ofin, x^2 + x*t + 1, x*t)
     end
 
     @testset "colon" begin
-      test_colon_common(Ofin, x^2 + 1)
+      test_colon_common(Ofin, x^2 + 2)
     end
   end
 
@@ -235,6 +231,14 @@
       I = ideal(Ofin, L(y)//L(x))
       check_ideal_norm_min(I, x + 1, x + 1)
       @test is_prime(I)
+    end
+
+    @testset "containment" begin
+      test_containment_common(Ofin, x^2 + 1, t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^2 + 1)
     end
   end
 

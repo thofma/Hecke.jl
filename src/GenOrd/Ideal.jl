@@ -652,14 +652,26 @@ function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
 end
 
 function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
-  #Index not well-defined for infinite maximal order
-  if !isa(base_ring(O), KInftyRing) && !(divides(index(O), p)[1])
+  # Fast path needs:
+  # 1. well-defined equation order: we need defining polynomial to be "nice",
+  #    that is, monic and integral
+  # 2. finite maximal order setting, since index is ill-defined for KInftyRing
+  # 3. p coprime to index
+  # Note: for non-nice polynomials the index has a denominator.
+  #       We could check divisibility by p of both numerator and denominator,
+  #       but that is a bit hacky, so we mimic number fields and instead
+  #       check that the defining polynomial is nice.
+  if !isa(base_ring(O), KInftyRing) &&
+     is_defining_polynomial_nice(O.F) &&
+     !(divides(index(O), p)[1])
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
   end
 end
 
+# TODO: prime_dec_gen currently does NOT set gen_two
+# TODO: we should mimic number fields by adding a search for a uniformizer
 function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   Ip = pradical(O, p)
   lp = _decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), p)
@@ -895,7 +907,17 @@ function is_prime(A::GenOrdIdl)
     if norm(A) != norm(P)
       continue
     end
-    if P.gen_two in A
+
+    # from factorization we know already that A is in P
+    # TODO: for non-maximal orders we need to check both generators
+    # TODO: though most of our code around primes assumes maximal order
+    PinA = if has_2_elem(P)
+      P.gen_two in A
+    else
+      A == P
+    end
+
+    if PinA
       A.is_prime = 1
       A.splitting_type = P.splitting_type
       return true

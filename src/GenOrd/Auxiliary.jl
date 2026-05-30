@@ -123,6 +123,12 @@ function base_field_type(::Type{Generic.FunctionField{T, U}}) where {T, U}
   return Generic.RationalFunctionField{T, U}
 end
 
+function is_defining_polynomial_nice(F::Generic.FunctionField)
+  f = defining_polynomial(F)
+  is_one(leading_coefficient(f)) || return false
+  return all(is_one(denominator(c)) for c in coefficients(f))
+end
+
 #######################################################################
 #
 # support for ZZ

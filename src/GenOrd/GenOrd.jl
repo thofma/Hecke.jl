@@ -733,17 +733,13 @@ end
 
 function Hecke.discriminant(O::GenOrd)
   if is_monic(defining_polynomial(O.F))
-    #"the" example from Jeroen is
-    #   x*y^3 + (-x + 1)*y^2 - y + x^3 + x^2
-    # and the problem is the correct power of x.
-    # The disc. is "well definined" up to the correct power of the
-    # leading coeff....
-    # The bypass is to use det(trace_mat) which is correct for orders
+    # a polynomial discriminant is only well-defined up to a power of leading coefficient
     d = discriminant(O.F)
     if !is_equation_order(O)
       d *= det(basis_matrix(O))^2
     end
   else
+    # going through trace matrix is correct in every order
     d = det(trace_matrix(O))
   end
   return O.R(d)
