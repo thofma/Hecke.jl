@@ -47,27 +47,20 @@ end
 #
 ################################################################################
 
-function assure_has_basis_matrix(a::GenOrdFracIdl)
-  if isdefined(a, :basis_matrix)
-    return nothing
-  end
-  if !isdefined(a, :num)
-    error("Not a valid fractional ideal")
-  end
+function assure_has_basis_matrix(a::GenOrdFracIdl{S, T}) where {S, T}
+  isdefined(a, :basis_matrix) && return nothing
+  isdefined(a, :num) || error("Not a valid fractional ideal")
 
-  k = base_field(function_field(order(a)))
-
+  k = base_field(field(order(a)))::base_field_type(S)
   a.basis_matrix = divexact(change_base_ring(k, basis_matrix(numerator(a; copy = false))), k(denominator(a)))
   return nothing
 end
 
-function Hecke.basis_matrix(x::GenOrdFracIdl; copy::Bool = true)
+function Hecke.basis_matrix(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T}
   assure_has_basis_matrix(x)
-  if copy
-    return deepcopy(x.basis_matrix)
-  else
-    return x.basis_matrix
-  end
+
+  M = x.basis_matrix::dense_matrix_type(elem_type(base_field_type(S)))
+  return copy ? deepcopy(M) : M
 end
 
 
