@@ -97,6 +97,57 @@ import Hecke: divisor
     @test 6 == @inferred degree(divisor(P))
   end
 
+  @testset "Pole/Zero divisors" begin
+    kx, x = rational_function_field(GF(5), :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+
+    function test_pole_degree(f, d)
+      @test degree(pole_divisor(f)) == d
+
+      D = divisor(f)
+      @assert !Hecke.has_support(D)
+      @test degree(pole_divisor(D)) == d
+
+      Hecke.assure_has_support(D)
+      @test degree(pole_divisor(D)) == d
+    end
+
+    function test_pole_zero(D_or_f)
+      @test degree(pole_divisor(D_or_f)) == degree(zero_divisor(D_or_f))
+      @test is_effective(pole_divisor(D_or_f))
+      @test is_effective(zero_divisor(D_or_f))
+    end
+
+    function test_pole_zero_f(f)
+      test_pole_zero(f)
+
+      D = divisor(f)
+      @assert !Hecke.has_support(D)
+      test_pole_zero(D)
+
+      Hecke.assure_has_support(D)
+      test_pole_zero(D)
+    end
+
+    # ramification at infinity is 2
+    F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+    @test genus(F) == 1
+    test_pole_degree(F(x), 2)
+    test_pole_degree(F(y), 3)
+    for f in (F(x), F(y))
+      test_pole_zero_f(f)
+    end
+
+    # ramification at infinity is 3
+    F, a = function_field(y^3 - x^2 - 1; cached = false)
+    @test genus(F) == 1
+    test_pole_degree(F(x), 3)
+    test_pole_degree(F(y), 2)
+    for f in (F(x), F(y))
+      test_pole_zero_f(f)
+    end
+  end
+
   @testset "Not Separable Extension" begin
     k = finite_field(3; cached = false)[1]
     kx, x = rational_function_field(k, :x; cached = false)

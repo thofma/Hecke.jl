@@ -83,12 +83,7 @@ Return the divisor consisting of the zeroes of f
 """
 function zero_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
-
-  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
-  f_num, _ = integral_split(f, Ofin)
-  g_num, _ = integral_split(f, Oinf)
-
-  return divisor(ideal(Ofin, f_num), ideal(Oinf, g_num))
+  return lcm(divisor(f), trivial_divisor(F))
 end
 
 @doc raw"""
@@ -98,12 +93,7 @@ Return the divisor consisting of the poles of f
 """
 function pole_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
-
-  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
-  _, f_denom = integral_split(f, Ofin)
-  _, g_denom = integral_split(f, Oinf)
-
-  return divisor(ideal(Ofin, f_denom), ideal(Oinf, g_denom))
+  return lcm(divisor(inv(f)), trivial_divisor(F))
 end
 
 ################################################################################
@@ -411,8 +401,11 @@ end
 Return the divisor whose support consists exactly of all zeroes in the support of D.
 """
 function zero_divisor(D::Divisor)
-  assure_has_support(D)
-  return _filter_support(D, x -> x.second > 0)
+  if has_support(D)
+    return _filter_support(D, x -> x.second > 0)
+  else
+    return lcm(D, trivial_divisor(function_field(D)))
+  end
 end
 
 @doc raw"""
@@ -421,8 +414,11 @@ end
 Return the divisor whose support consists exactly of all poles in the support of D.
 """
 function pole_divisor(D::Divisor)
-  assure_has_support(D)
-  return -_filter_support(D, x -> x.second < 0)
+  if has_support(D)
+    return -_filter_support(D, x -> x.second < 0)
+  else
+    return lcm(-D, trivial_divisor(function_field(D)))
+  end
 end
 
 ################################################################################
