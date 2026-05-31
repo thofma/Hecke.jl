@@ -27,8 +27,6 @@ mutable struct Divisor{S <: Generic.FunctionField, T1 <: PolyRing, T2 <: KInftyR
 
 end
 
-@attributes AbstractAlgebra.Generic.FunctionField
-
 function trivial_divisor(F::Generic.FunctionField)
   return divisor(one(F))
 end
@@ -510,8 +508,9 @@ end
 
 Return the different divisor of F.
 """
-function different_divisor(F::Generic.FunctionField{T, U}) where {T, U}
-  return divisor(different(finite_maximal_order(F)), different(infinite_maximal_order(F)))
+@attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+different_divisor(K::Generic.FunctionField{T, U}) where {T, U}
+  return divisor(different(finite_maximal_order(K)), different(infinite_maximal_order(K)))
 end
 
 @doc raw"""
@@ -534,10 +533,11 @@ end
 
 Return the canonical divisor of F.
 """
-function canonical_divisor(F::AbstractAlgebra.Generic.FunctionField)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+@attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+canonical_divisor(K::Generic.FunctionField{T, U}) where {T, U}
+  @req is_separable(defining_polynomial(K)) "Currently assumes separable extension"
 
-  dx = differential(separating_element(F))
+  dx = differential(separating_element(K))
   return divisor(dx)
 end
 
