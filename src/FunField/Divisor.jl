@@ -437,21 +437,46 @@ function degree(D::Divisor)
   # For a place P lying over a (finite) prime p in the base ring,
   #   deg(P) = [F_P : K] = f(P) * deg(p),
   # where f(P) is the inertia degree and deg(p) is the degree of p as a
-  # polynomial in the base ring.
+  #   polynomial in the base ring.
   #
   # For infinite places, p lies in KInftyRing.
   # The formula above stays correct if we read deg(p) as the degree of p
-  # as a polynomial in the local parameter t = 1/x.
-  # However, `degree(::KInftyElem)` returns the degree in x, which is -(degree in t).
-  # We therefore compensate by subtracting the infinite contribution rather than adding it.
-  function deg_place(p::GenOrdIdl, e::Integer)
-    return degree(p)*degree(minimum(p))*e
+  #   as a polynomial in the local parameter t = 1/x.
+  #
+  # If we do NOT know the support, we proceed via the ideals directly.
+  # let D = D_fin + D_inf with fractional ideals
+  #   J_fin = I_fin / d_fin and J_inf = I_inf / d_inf. Then
+  # deg(D) = deg_x(det(basis_matrix(J_fin))) + v_inf(det(basis_matrix(J_inf)))
+  #        = deg_x( norm(I_fin) / d_fin^n ) + v_inf( norm(I_inf) / d_inf^n ),
+  #   where we write n = [F : k(x)] for a degree.
+  #
+  # As before, v_inf(f) = -deg_x(f) is the degree in the local parameter t = 1/x, so
+  #   we always compute degrees in x and SUBTRACT the infinite contribution.
+  # This matches the support branch, where `degree(::KInftyElem)` also returns
+  #   the degree in x.
+
+  if has_support(D)
+    function deg_place(p::GenOrdIdl, e::Integer)
+      return degree(p)*degree(minimum(p))*e
+    end
+
+    fin_deg = sum(deg_place(f, e) for (f, e) in D.finite_support; init = zero(Int))
+    inf_deg = sum(deg_place(f, e) for (f, e) in D.infinite_support; init = zero(Int))
+
+    return fin_deg - inf_deg
+  else
+    n = degree(function_field(D))
+
+    I_fin = numerator(D.finite_ideal; copy = false)
+    d_fin = denominator(D.finite_ideal; copy = false)
+    fin_deg = degree(norm(I_fin)) - n*degree(d_fin)
+
+    I_inf = numerator(D.infinite_ideal; copy = false)
+    d_inf = denominator(D.infinite_ideal; copy = false)
+    inf_deg = degree(norm(I_inf)) - n*degree(d_inf)
+
+    return fin_deg - inf_deg
   end
-
-  fin_deg = sum(deg_place(f, e) for (f, e) in finite_support(D); init = zero(Int))
-  inf_deg = sum(deg_place(f, e) for (f, e) in infinite_support(D); init = zero(Int))
-
-  return fin_deg - inf_deg
 end
 
 @doc raw"""

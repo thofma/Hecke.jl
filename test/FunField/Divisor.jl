@@ -73,6 +73,16 @@ import Hecke: divisor
   end
 
   @testset "Degree" begin
+    function test_degree(I, d)
+      D = divisor(I)
+
+      @assert !Hecke.has_support(D)
+      @test d == @inferred degree(D)
+
+      Hecke.assure_has_support(D)
+      @test d == @inferred degree(D)
+    end
+
     kx, x = rational_function_field(GF(2), :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
 
@@ -85,16 +95,16 @@ import Hecke: divisor
     @test length(fac) == 1
     P, e = first(fac)   # e = 6, f = 1
     @test e == 6
-    @test 6 == @inferred degree(divisor(I))
-    @test 1 == @inferred degree(divisor(P))
+    test_degree(I, 6)
+    test_degree(P, 1)
 
     I = ideal(Ofin, x^2+x+1)
     fac = @inferred factor(I)
     @test length(fac) == 1
     P, e = first(fac)   # e = 1, f = 3
     @test e == 1
-    @test 6 == @inferred degree(divisor(I))
-    @test 6 == @inferred degree(divisor(P))
+    test_degree(I, 6)
+    test_degree(P, 6)
   end
 
   @testset "Pole/Zero divisors" begin
