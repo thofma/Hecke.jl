@@ -553,10 +553,20 @@ end
 
 Return the genus of F.
 """
-function genus(F::AbstractAlgebra.Generic.FunctionField)
+@attr Int function genus(F::AbstractAlgebra.Generic.FunctionField)
   @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  # g = (degree(K) + 2) / 2, where K is the canonical divisor.
+  # Since K = (dx) = Diff_{F/k(x)} - 2(x)_inf, we have
+  # deg(K) = deg(Diff_{F/k(x)}) - 2*[F:k(x)], and
+  # g = 1 - n + deg(Diff_{F/k(x)}) / 2
 
-  return length(basis_of_differentials(F))
+  d1 = degree(discriminant(finite_maximal_order(F)))
+  d2 = degree(discriminant(infinite_maximal_order(F)))
+  # note that we need valuation at infinity: degree in t = 1/x (hence minus)
+  dDiff = d1 - d2
+  @assert iseven(dDiff)
+
+  return 1 - degree(F) + divexact(dDiff, 2)
 end
 
 ################################################################################
