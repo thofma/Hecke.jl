@@ -118,9 +118,77 @@ end
 #
 ################################################################################
 
-function _basis_of_hom(V::ModAlgAss{T}, W::ModAlgAss{T}) where {T <: Field}
+function _basis_of_hom_direct(V::ModAlgAss{T}, W::ModAlgAss{T}) where {T <: Field}
+  @info dim(V), dim(W)
   x, y = consistent_action(V, W)
   B = _basis_of_commutator_algebra(x, y)
+end
+
+function _basis(V::Hecke.ModAlgAss)
+  K = base_ring(algebra(V))
+  v = [K(0) for i in 1:dim(V)]
+  res = []
+  for i in 1:dim(V)
+    v[i] = 1
+    push!(res, V(copy(v)))
+    v[i] = 0
+  end
+  return identity.(res)
+end
+
+function _set_decomposition_from_central_primitive_idempotents!(V)
+  A = algebra(V)
+  if has_attribute(V, :decomposition)
+    return nothing
+  end
+  es = central_primitive_idempotents(A)
+  dec = []
+  for e in es
+    Veibmat = echelon_form(Hecke.action(V, e); trim = true)
+    basisVei = [V(Veibmat[i, :]) for i in 1:nrows(Veibmat)]
+    action = []
+    for T in Hecke.action_of_basis(V)
+      fl, TVei = can_solve_with_solution(Veibmat, Veibmat * T; side = :left)
+      push!(action, TVei)
+    end
+    action = identity.(action)
+    Ve1 = Amodule(A, action)
+    h = hom(Ve1, V, Veibmat)
+    imgs = []
+    for b in _basis(V)
+      fl, v = can_solve_with_solution(Veibmat, coordinates(b * e); side = :left)
+      @assert fl
+      push!(imgs, Ve1(solve(Veibmat, coordinates(b * e); side = :left)))
+    end
+    hh = hom(V, Ve1, matrix(coordinates.(imgs)); check = false)
+    @assert all([hh(h(x)) == x for x in _basis(Ve1)])
+    push!(dec, (Ve1, h, hh))
+  end
+  dec = identity.(dec)
+  set_attribute!(V, :decomposition => dec)
+  return nothing
+end
+
+# this is basis of Hom(W, V)! (yes, the order of the arguments is wrong)
+function _basis_of_hom(W::ModAlgAss{T}, V::ModAlgAss{T}) where {T <: Field}
+  A = algebra(V)
+  if has_attribute(V, :decomposition)
+    dec = get_attribute(V, :decomposition)
+  else
+    _set_decomposition_from_central_primitive_idempotents!(V)
+    dec = get_attribute(V, :decomposition)
+  end
+  bV = _basis(V)
+  res = []
+  for (VV, VVtoV, VtoVV) in dec
+    B = _basis_of_hom_direct(W, VV)
+    for b in B
+      h = hom(VV, W, b; check = true)
+      hh = hom(V, W, matrix([coordinates(h(VtoVV(bb))) for bb in bV]))
+      push!(res, hh.matrix)
+    end
+  end
+  return identity.(res)
 end
 
 ################################################################################

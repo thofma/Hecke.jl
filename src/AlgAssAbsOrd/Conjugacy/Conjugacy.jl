@@ -456,6 +456,7 @@ function _basis_of_integral_commutator_algebra(A::QQMatrix, B::QQMatrix)
   linind = transpose(LinearIndices((nrows(A), nrows(B))))
   n = nrows(A)
   m = nrows(B)
+  @info n * m
   z = zero_matrix(QQ, n*m, n*m)
   for i in 1:m
     for j in 1:n
@@ -467,6 +468,7 @@ function _basis_of_integral_commutator_algebra(A::QQMatrix, B::QQMatrix)
       end
     end
   end
+  @info size(z)
   K = kernel(z; side = :right)
   KK = change_base_ring(ZZ, denominator(K) * K)
   KK = transpose(saturate(transpose(KK)))
@@ -552,6 +554,34 @@ function _basis_of_commutator_algebra(As::Vector{T}, Bs::Vector{T}) where T <: M
       @assert M * As[i] == Bs[i] * M
     end
     push!(res, M)
+  end
+  return res
+end
+
+function _saturate_a_bunch_of_rational_matrices(mats::Vector{QQMatrix})
+  A = mats[1]
+  n = nrows(A)
+  m = ncols(A)
+  linind = LinearIndices((n,m))
+  zz = zero_matrix(QQ, length(mats), n*m)
+  for k in 1:length(mats)
+    for i in 1:n
+      for j in 1:m
+        zz[k, linind[i, j]] = mats[k][i, j]
+      end
+    end
+  end
+  zzz = numerator(zz)
+  zzzs = saturate(zzz)
+  res = ZZMatrix[]
+  for k in 1:nrows(zzzs)
+    B = zero_matrix(ZZ, nrows(A), ncols(A))
+    for i in 1:n
+      for j in 1:m
+        B[i, j] = zzzs[k, linind[i, j]]
+      end
+    end
+    push!(res, B)
   end
   return res
 end

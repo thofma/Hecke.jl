@@ -286,9 +286,14 @@ function action(V::ModAlgAss{<:Any, <: MatElem, <:Any}, x::AbstractAssociativeAl
   @req parent(x) == algebra(V) "Algebra of module must be parent of element"
   cx = coefficients(x)
   M = cx[1] * action_of_basis(V, 1)
+  t = deepcopy(M)
   for i in 2:length(cx)
-    N = cx[i] * action_of_basis(V, i)
-    M = add!(M, M, N)
+    if is_zero(cx[i])
+      continue
+    end
+    mul!(t, cx[i], action_of_basis(V, i))
+    #N = cx[i] * action_of_basis(V, i)
+    M = add!(M, M, t)
   end
   return M
 end

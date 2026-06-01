@@ -51,7 +51,7 @@ function lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::Vector{<:ModAlgAssEl
   BO = basis(O)
   for b in BO
     for bb in B
-      push!(BB, bb * elem_in_algebra(b))
+      push!(BB, bb * elem_in_algebra(b; copy = false))
     end
   end
   M = matrix(coordinates.(BB))
@@ -240,7 +240,7 @@ function action(L::ModAlgAssLat, x)
   return M
 end
 
-function action_of_basis(L::ModAlgAssLat)
+@attr function action_of_basis(L::ModAlgAssLat)
   A = action_of_order_basis(L.V, L.base_ring)
   T = basis_matrix(L)
   Tinv = basis_matrix_inverse(L)
