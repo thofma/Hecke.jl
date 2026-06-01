@@ -33,16 +33,16 @@ such that:
 function short_vectors_with_condition(L::ZZLat;
                                       search_fixed_vectors::Bool=false,
                                       search_invariant_subspace::Bool=false,
-                                      use_dual::Bool=false)
-  return short_vectors_with_condition(ZZRingElem, L; search_fixed_vectors, search_invariant_subspace, use_dual)
+                                      use_dual::Bool=false, sort::Symbol=:rank)
+  return short_vectors_with_condition(ZZRingElem, L; search_fixed_vectors, search_invariant_subspace, use_dual, sort)
 end
 
 function short_vectors_with_condition(T::Type,
                                       L::ZZLat;
                                       search_fixed_vectors::Bool=true,
                                       search_invariant_subspace::Bool=false,
-                                      use_dual::Bool=false,)
-  _data = _short_vectors_with_condition_preprocessing(L, use_dual)
+                                      use_dual::Bool=false, sort::Symbol=:rank)
+  _data = _short_vectors_with_condition_preprocessing(L, use_dual; sort)
   return _short_vectors_with_condition(T, _data...; search_fixed_vectors, search_invariant_subspace)
 end
 
@@ -98,10 +98,10 @@ end
 #
 ########################################################################################
 
-function _short_vectors_with_condition_preprocessing(L::ZZLat, use_dual::Bool=false)
+function _short_vectors_with_condition_preprocessing(L::ZZLat, use_dual::Bool=false; sort=:rank)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
-  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, weyl_vector, fixed_space, isotypic_coinvariant_space, :rank, use_dual)
+  return _short_vectors_with_condition_preprocessing(L, fundamental_roots, weyl_vector, fixed_space, isotypic_coinvariant_space, sort, use_dual)
 end
 
 function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat; use_dual::Bool=false)
@@ -129,13 +129,16 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); isbasis=true, check=false)
   successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
   @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
-
   m = length(successive_sublattices)
   if sort == :rank
-    # don't touch the first one
+    # don't touch the first one because it consists of the fixed part, i.e. the seeds
     sort!(view(successive_sublattices,2:m);by=rank);
+  elseif sort == :root
+    # don't touch the first one because it consists of the fixed part, i.e. the seeds
+    # do the root part first 
+    k = 1 + length(R_cofix)
+    sort!(view(successive_sublattices,k:m);by=rank);
   end
-
   # Compute L_1,  ... , L_n
   projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
   m = length(successive_sublattices)
@@ -318,7 +321,6 @@ function _short_vectors_with_condition(::Type{CoeffType},
       short_vectors1[b]=[v1t]
     end
   end
-
   @vprintln :Lattice 1 "Ranks of successive sublattices $(rank.(successive_sublattices))"
   zeroCoeff = zero(CoeffType)
   for i in 2:length(projL)
@@ -468,107 +470,14 @@ function _short_vectors_with_condition(::Type{CoeffType},
     @vprintln :Lattice 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
   end
   @hassert :Lattice 1 allunique(reduce(vcat, values(short_vectors1)))
-<<<<<<< HEAD
-  #search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning 
-  invariant_gram = nothing
-=======
-  #search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning
->>>>>>> 61ef5b76233ebdb3913dda7deca99b04bad358e9
+  search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning 
   if search_invariant_subspace
     invariant_gram = _add_invariant_subspace_data!(CoeffType, grams, target_invariants,
                                                    short_vectors1, projection_ranges,
                                                    projL_gram, Binv)
   end
 
-<<<<<<< HEAD
-  output, invariants, target_invariants_output = _postprocess_short_vectors_with_condition(
-    CoeffType, B, denoms, gramZZ, grams, signs, target_invariants,
-    short_vectors1, search_invariant_subspace, invariant_gram)
-=======
-
-
-  if CoeffType===ZZRingElem
-    _B = numerator(B)
-    d = denominator(B)
-  else
-    _BZZ,dBZZ = integral_split(B,ZZ)
-    _B = _int_matrix_with_overflow(_BZZ, tmpZZ)
-    d = CoeffType(dBZZ)
-  end
-
-  r1 = nrows(projL[1])
-  lcmd = lcm(denoms)
-  sc = div.(lcmd, denoms)
-  grams[1] = gramZZ # we don't need the first projection, overwrite
-
-  # We replace the signed invariants by their signed hash
-  _target_invariants_tmp = Vector{CoeffType}[]
-  for i in 1:rank(L)
-    signi = signs[i]
-    (nrm_orig, nrm_extra, weyl, v1,fix) = target_invariants[i]
-    nrm_orig[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gram, modifies target_invariants
-    #nrm = vcat(nrm_orig, nrm_extra)
-    invariant = append!([weyl],v1,fix)
-    # canonicalize?
-    if signi == -1
-      invariant .= (-).(invariant)
-    end
-    push!(_target_invariants_tmp, invariant)
-  end
-  n_target_inv = length(unique(_target_invariants_tmp))
-  signed_hash_seed = 0xc70d363fbd513942
-  target_invariants_output = Int[]
-  while true
-    target_invariants_output = _signed_hash.(_target_invariants_tmp,signed_hash_seed)
-    if length(unique(target_invariants_output))==n_target_inv
-      break
-    end
-    signed_hash_seed += 1
-  end
-
-  # assemble the output
-  n_out = sum(length(v) for v in values(short_vectors1); init=0)
-  output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
-  invariants = Vector{Int}(undef, n_out)
-  discard = falses(n_out)
-  i = 0
-  for b in keys(short_vectors1)
-     isempty(short_vectors1[b]) && continue  # can happen for targets coming from a non-isometric lattice
-    (nrm_orig, nrm_extra, weyl, v1, fix) = b
-    nrm = vcat(nrm_orig, nrm_extra)
-    invariant = _signed_hash(append!([weyl],v1,fix),signed_hash_seed)
-    minus_invariant = -invariant
-    nrm[1] = divexact(dot(sc, nrm),lcmd)  # since we set grams[1] = gramL
-    b1 = (nrm[1:length(nrm_orig)], nrm_extra, weyl, v1, fix)
-    for z in short_vectors1[b]
-      i = i+1
-      # transform back to the basis of L
-      vv = divexact.(__not_adj(z*_B), d)
-      vv, _sign = _canonicalize_with_data!(vv)  # why do we canonicalize here?
-      if isone(_sign)
-        invariants[i] = invariant
-      else
-        invariants[i] = minus_invariant
-      end
-      if search_invariant_subspace
-        s = dot(vv, _Gr, vv)
-        nrmv = push!(copy(nrm), s)
-        push!(nrm_extra, s)
-        if !(b1 in target_invariants)
-          discard[i] = true
-        end
-        output[i] = (vv, nrmv)
-        pop!(nrm_extra)
-      else
-        output[i] = (vv, copy(nrm))
-      end
-    end
-  end
-  if search_invariant_subspace
-    deleteat!(output, discard)
-    deleteat!(invariants, discard)
-  end
->>>>>>> 61ef5b76233ebdb3913dda7deca99b04bad358e9
+  output, invariants, target_invariants_output = _postprocess_short_vectors_with_condition(CoeffType, B, denoms, gramZZ, grams, signs, target_invariants, short_vectors1)
 
 
   if get_assertion_level(:Lattice) > 1
@@ -607,9 +516,7 @@ function _postprocess_short_vectors_with_condition(::Type{CoeffType},
                                                    grams::Vector{ZZMatrix},
                                                    signs::Vector{Int},
                                                    target_invariants,
-                                                   short_vectors,
-                                                   search_invariant_subspace::Bool,
-                                                   invariant_gram) where {CoeffType}
+                                                   short_vectors) where {CoeffType}
   if CoeffType===ZZRingElem
     _B = numerator(B)
     d = denominator(B)
@@ -650,7 +557,6 @@ function _postprocess_short_vectors_with_condition(::Type{CoeffType},
   n_out = sum(length(v) for v in values(short_vectors); init=0)
   output = Vector{Tuple{Vector{CoeffType}, Vector{CoeffType}}}(undef, n_out)
   invariants = Vector{Int}(undef, n_out)
-  discard = falses(n_out)
   i = 0
   for b in keys(short_vectors)
      isempty(short_vectors[b]) && continue  # can happen for targets coming from a non-isometric lattice
@@ -658,8 +564,7 @@ function _postprocess_short_vectors_with_condition(::Type{CoeffType},
     nrm = vcat(nrm_orig, nrm_extra)
     invariant = _signed_hash(append!([weyl],v1,fix),signed_hash_seed)
     minus_invariant = -invariant
-    nrm[1] = divexact(dot(sc, nrm),lcmd)  # since we set grams[1] = gramL
-    b1 = (nrm[1:length(nrm_orig)], nrm_extra, weyl, v1, fix)
+    nrm[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gramL
     for z in short_vectors[b]
       i = i+1
       # transform back to the basis of L
@@ -670,23 +575,8 @@ function _postprocess_short_vectors_with_condition(::Type{CoeffType},
       else
         invariants[i] = minus_invariant
       end
-      if search_invariant_subspace
-        s = dot(vv, invariant_gram, vv)
-        nrmv = push!(copy(nrm), s)
-        push!(nrm_extra, s)
-        if !(b1 in target_invariants)
-          discard[i] = true
-        end
-        output[i] = (vv, nrmv)
-        pop!(nrm_extra)
-      else
-        output[i] = (vv, copy(nrm))
-      end
+      output[i] = (vv, copy(nrm))
     end
-  end
-  if search_invariant_subspace
-    deleteat!(output, discard)
-    deleteat!(invariants, discard)
   end
 
   return output, invariants, target_invariants_output
@@ -707,6 +597,8 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
   m = length(projection_ranges)
   rkL = nrows(Binv)
   G = zero_matrix(ZZ, rkL, rkL)
+  G_work = zero_matrix(ZZ, rkL, rkL)
+  found_invariant_subspace = false
   tmpZZ = ZZ()
   range_to_index = Dict{UnitRange{Int}, Int}(projection_ranges[i] => i for i in 1:m)
   for r in projection_ranges
@@ -715,8 +607,9 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
     Gr = zero_matrix(ZZ, length(r), length(r))
     tmpZZMatrix1 = zero_matrix(ZZ, length(r), length(r))
     tmpZZMatrix2 = zero_matrix(ZZ, length(r), length(r))
-    invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r)
-    for C in invariant_subspaces
+    invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r) 
+    found_invariant_subspace = found_invariant_subspace || !isempty(invariant_subspaces) || !iszero(nrows(rk1_invariant_subspaces))
+    for C in invariant_subspaces 
       K = kernel(Gi*transpose(C);side=:left)
       #store vcat(C,K) in tmpZZMatrix1
       tmpZZMatrix1[1:nrows(C),:] = C
@@ -741,17 +634,41 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
         addmul!(Gr, GC, rand([-1,1])*rand(1:50))
       end
     end
+    for (a, ra) in enumerate(r), (b, rb) in enumerate(r)
+      G_work[ra, rb] = Gr[a, b]
+    end
     Binv_r = @view Binv[:,r]
     G = add!(G, Binv_r*Gr*transpose(Binv_r))
   end
 
-  _G = [CoeffType(i) for i in G]
   push!(grams, G)
   for i in 1:rkL
     k0 = target_invariants[i]
-    target_invariants[i] = (k0[1], push!(copy(k0[2]), _G[i,i]), k0[3], k0[4], k0[5])
+    target_invariants[i] = (k0[1], push!(copy(k0[2]), CoeffType(G[i,i])), k0[3], k0[4], k0[5])
   end
-  return _G
+  invariant_gram = CoeffType === ZZRingElem ? G_work : _int_matrix_with_overflow(G_work, tmpZZ)
+  _refine_short_vectors_by_gram!(CoeffType, short_vectors, invariant_gram)
+  return found_invariant_subspace
+end
+
+function _refine_short_vectors_by_gram!(::Type{CoeffType},
+                                        D::Dict{KeyType, ValueType},
+                                        invariant_gram) where {CoeffType, KeyType, ValueType <: Vector}
+  Dnew = Dict{KeyType, ValueType}()
+  for k in keys(D)
+    for v in D[k]
+      vv = __not_adj(v)
+      s = CoeffType(dot(vv, invariant_gram, vv))
+      new_k2 = copy(k[2])
+      push!(new_k2, s)
+      kk = (k[1], new_k2, k[3], k[4], k[5])
+      push!(get!(() -> ValueType(), Dnew, kk), v)
+    end
+  end
+  empty!(D)
+  merge!(D, Dnew)
+  @hassert :Lattice 1 allunique(reduce(vcat, values(D); init=eltype(ValueType)[]))
+  return D
 end
 
 function _vector_sums(D::Dict, projection_ranges, successive_grams)
@@ -813,10 +730,17 @@ end
 function _update_short_vector_dict(D::Dict{KeyType,ValueType},
                                    vector_sums::Vector{Tuple{Vector{Int},UnitRange{Int}}},
                                    target_invariants::Vector{KeyType}) where {KeyType,ValueType<:Vector}
-  isempty(vector_sums) && return D
   @hassert :Lattice 1 allunique(reduce(vcat,values(D)))
   Dnew = Dict{KeyType,ValueType}()
   target_invariants_lookup = Set{KeyType}(target_invariants)
+  if isempty(vector_sums)
+    for (k, vv) in D
+      k in target_invariants_lookup || continue
+      append!(get!(() -> ValueType(), Dnew, k), vv)
+    end
+    @hassert :Lattice 1 allunique(reduce(vcat,values(Dnew); init=eltype(ValueType)[]))
+    return Dnew
+  end
   for k in keys(D)
     T = Dict{Vector{Int},ValueType}()
     for v in D[k]
