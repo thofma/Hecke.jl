@@ -283,7 +283,7 @@ end
 function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_invariant_subspace=false, use_dual=false)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector = _weyl_group(_L, root_types, fundamental_roots)
-  T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces)
+  T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
   vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
