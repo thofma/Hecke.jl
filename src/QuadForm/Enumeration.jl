@@ -1028,7 +1028,7 @@ function _transform(m::Vector{Int}, T::ZZMatrix, tmp)
   @inbounds for i in 1:length(m)
     tmp[i] = m[i]
   end
-  return return tmp * T
+  return tmp * T
 end
 
 function _transform(m::Vector{ZZRingElem}, T::ZZMatrix, tmp)

@@ -273,7 +273,11 @@ function __assert_has_automorphisms(
   else
     L.automorphism_group_order = order
   end
-  return nothing
+  if @isdefined Csmall
+    return Csmall
+  else
+    return nothing
+  end
 end
 
 function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_invariant_subspace=false, use_dual=false)
