@@ -1005,8 +1005,9 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     invariant_vectors_k_mat = reduce(vcat, invariant_vectors_k)
     r = t[2]
     b = length(blocks)
-    if b > 2 || (b > 1 && r>6)
+    if (b > 2 && r > 3) || (b > 1 && r>6)
       for u in inv_vec 
+        b>1 || continue
         s = reduce(vcat, u*(blocks[i]-blocks[i+1]) for i in 1:length(blocks)-1; init=zero_matrix(ZZ,0, n))
         push!(representations_k, s)
       end
@@ -1015,7 +1016,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
         t = reduce(vcat, u*blocks[i] for i in 1:length(blocks); init=zero_matrix(ZZ,0, n))
         push!(representations_k, t)
       end
-    else 
+    elseif nrows(isotypic)!= nrows(invariant_vectors_k_mat)
       M = change_base_ring(QQ,isotypic*GZ*transpose(invariant_vectors_k_mat))
       isotypic_cofix_space = kernel(M, side= :left)*isotypic
       push!(representations_k, numerator(isotypic_cofix_space))
@@ -1033,9 +1034,7 @@ end
 
 # Return the vectors fixed by the reduced automorphism group.
 function _invariant_vectors(s::Symbol, n::IntegerUnion)
-  E = identity_matrix(ZZ, n)
   invs = ZZMatrix[]
-  e(n) = E[n:n,:]
   if s == :A
     # u_k = e_k + e_{k+1} + ... + e_{n+1-k}, for k = 1,...,ceil(n/2).
     # These are pairwise orthogonal w.r.t. the A_n Cartan matrix:
@@ -1043,7 +1042,11 @@ function _invariant_vectors(s::Symbol, n::IntegerUnion)
     # They span the same subspace as the old vectors e_i+e_{n+1-i} (and the
     # middle e_{(n+1)/2} for n odd) via a lower-triangular change of basis.
     for k in 1:div(n+1, 2)
-      push!(invs, sum(e(j) for j in k:(n+1-k)))
+      v = zero_matrix(ZZ, 1, n)
+      for j in k:(n+1-k)
+        v[1, j] = 1
+      end
+      push!(invs, v)
     end
   elseif s == :D
     @assert n>=4
@@ -1051,18 +1054,30 @@ function _invariant_vectors(s::Symbol, n::IntegerUnion)
       # The D_4 fixed subspace has restricted Gram matrix of type G_2
       # in the basis a = e_1 + e_2 + e_4, b = e_3. Hence a and a + 2b
       # are orthogonal and span the same invariant subspace.
-      v = e(1) + e(2) + e(4)
-      push!(invs, v)
-      push!(invs, v + e(3) + e(3))
+      v1 = zero_matrix(ZZ, 1, n)
+      v1[1, 1] = 1
+      v1[1, 2] = 1
+      v1[1, 4] = 1
+      push!(invs, v1)
+
+      v2 = zero_matrix(ZZ, 1, n)
+      v2[1, 1] = 1
+      v2[1, 2] = 1
+      v2[1, 3] = 2
+      v2[1, 4] = 1
+      push!(invs, v2)
     else
       # With f_1 = e_1 + e_2 and f_i = e_{i+1} for i >= 2, the restricted
       # form on the fixed subspace is the C_{n-1} Cartan form with the long
       # root first. Thus u_k = f_1 + 2f_2 + ... + 2f_k are pairwise
       # orthogonal and span the same invariant subspace.
-      v = e(1) + e(2)
-      push!(invs, v)
-      for i in 3:n
-        v = v + e(i) + e(i)
+      for i in 2:n
+        v = zero_matrix(ZZ, 1, n)
+        v[1, 1] = 1
+        v[1, 2] = 1
+        for j in 3:i
+          v[1, j] = 2
+        end
         push!(invs, v)
       end
     end
@@ -1072,42 +1087,129 @@ function _invariant_vectors(s::Symbol, n::IntegerUnion)
       # The E_6 fixed subspace is of type F_4. In Hecke's root ordering,
       # these cumulative invariant vectors are pairwise orthogonal and span
       # the same invariant subspace as e_3, e_6, e_1+e_5, e_2+e_4.
-      v = e(1) + e(5)
-      push!(invs, v)
-      v = v + 2 * e(2) + 2 * e(4)
-      push!(invs, v)
-      v = v + 3 * e(3)
-      push!(invs, v)
-      v = v + 2 * e(6)
-      push!(invs, v)
+      v1 = zero_matrix(ZZ, 1, n)
+      v1[1, 1] = 1
+      v1[1, 5] = 1
+      push!(invs, v1)
+
+      v2 = zero_matrix(ZZ, 1, n)
+      v2[1, 1] = 1
+      v2[1, 2] = 2
+      v2[1, 4] = 2
+      v2[1, 5] = 1
+      push!(invs, v2)
+
+      v3 = zero_matrix(ZZ, 1, n)
+      v3[1, 1] = 1
+      v3[1, 2] = 2
+      v3[1, 3] = 3
+      v3[1, 4] = 2
+      v3[1, 5] = 1
+      push!(invs, v3)
+
+      v4 = zero_matrix(ZZ, 1, n)
+      v4[1, 1] = 1
+      v4[1, 2] = 2
+      v4[1, 3] = 3
+      v4[1, 4] = 2
+      v4[1, 5] = 1
+      v4[1, 6] = 2
+      push!(invs, v4)
     elseif n == 7 || n == 8
       if n == 7
         # Root the E_7 diagram at the trivalent node 3. Along each arm we use
         # the usual A-type cumulative vectors from the leaves inward; the last
         # vector is the unique integral one orthogonal to those arm vectors.
-        push!(invs, e(1))
-        push!(invs, e(1) + 2 * e(2))
-        push!(invs, e(6))
-        push!(invs, e(6) + 2 * e(5))
-        push!(invs, e(6) + 2 * e(5) + 3 * e(4))
-        push!(invs, e(7))
-        push!(invs, 4 * e(1) + 8 * e(2) + 12 * e(3) + 9 * e(4) +
-                    6 * e(5) + 3 * e(6) + 6 * e(7))
+        v1 = zero_matrix(ZZ, 1, n)
+        v1[1, 1] = 1
+        push!(invs, v1)
+
+        v2 = zero_matrix(ZZ, 1, n)
+        v2[1, 1] = 1
+        v2[1, 2] = 2
+        push!(invs, v2)
+
+        v3 = zero_matrix(ZZ, 1, n)
+        v3[1, 6] = 1
+        push!(invs, v3)
+
+        v4 = zero_matrix(ZZ, 1, n)
+        v4[1, 5] = 2
+        v4[1, 6] = 1
+        push!(invs, v4)
+
+        v5 = zero_matrix(ZZ, 1, n)
+        v5[1, 4] = 3
+        v5[1, 5] = 2
+        v5[1, 6] = 1
+        push!(invs, v5)
+
+        v6 = zero_matrix(ZZ, 1, n)
+        v6[1, 7] = 1
+        push!(invs, v6)
+
+        v7 = zero_matrix(ZZ, 1, n)
+        v7[1, 1] = 4
+        v7[1, 2] = 8
+        v7[1, 3] = 12
+        v7[1, 4] = 9
+        v7[1, 5] = 6
+        v7[1, 6] = 3
+        v7[1, 7] = 6
+        push!(invs, v7)
       else
         # Same construction for E_8, now with arms of lengths 2, 4, and 1.
-        push!(invs, e(1))
-        push!(invs, e(1) + 2 * e(2))
-        push!(invs, e(7))
-        push!(invs, e(7) + 2 * e(6))
-        push!(invs, e(7) + 2 * e(6) + 3 * e(5))
-        push!(invs, e(7) + 2 * e(6) + 3 * e(5) + 4 * e(4))
-        push!(invs, e(8))
-        push!(invs, 10 * e(1) + 20 * e(2) + 30 * e(3) + 24 * e(4) +
-                    18 * e(5) + 12 * e(6) + 6 * e(7) + 15 * e(8))
+        v1 = zero_matrix(ZZ, 1, n)
+        v1[1, 1] = 1
+        push!(invs, v1)
+
+        v2 = zero_matrix(ZZ, 1, n)
+        v2[1, 1] = 1
+        v2[1, 2] = 2
+        push!(invs, v2)
+
+        v3 = zero_matrix(ZZ, 1, n)
+        v3[1, 7] = 1
+        push!(invs, v3)
+
+        v4 = zero_matrix(ZZ, 1, n)
+        v4[1, 6] = 2
+        v4[1, 7] = 1
+        push!(invs, v4)
+
+        v5 = zero_matrix(ZZ, 1, n)
+        v5[1, 5] = 3
+        v5[1, 6] = 2
+        v5[1, 7] = 1
+        push!(invs, v5)
+
+        v6 = zero_matrix(ZZ, 1, n)
+        v6[1, 4] = 4
+        v6[1, 5] = 3
+        v6[1, 6] = 2
+        v6[1, 7] = 1
+        push!(invs, v6)
+
+        v7 = zero_matrix(ZZ, 1, n)
+        v7[1, 8] = 1
+        push!(invs, v7)
+
+        v8 = zero_matrix(ZZ, 1, n)
+        v8[1, 1] = 10
+        v8[1, 2] = 20
+        v8[1, 3] = 30
+        v8[1, 4] = 24
+        v8[1, 5] = 18
+        v8[1, 6] = 12
+        v8[1, 7] = 6
+        v8[1, 8] = 15
+        push!(invs, v8)
       end
     end
   elseif s == :I
-    push!(invs, e(1))
+    v = zero_matrix(ZZ, 1, n)
+    v[1, 1] = 1
+    push!(invs, v)
   else
     error("invalid root system")
   end
@@ -1116,9 +1218,7 @@ end
 
 
 function _anti_invariant_vectors(s::Symbol, n::IntegerUnion)
-  E = identity_matrix(ZZ, n)
   invs = ZZMatrix[]
-  e(n) = E[n:n,:]
   if s == :A
     # Write w_j = e_j - e_{n+1-j}. The anti-invariant subspace is spanned by
     # these w_j, and the cumulative weighted sums below give an orthogonal
@@ -1128,7 +1228,9 @@ function _anti_invariant_vectors(s::Symbol, n::IntegerUnion)
       for k in 1:m
         v = zero_matrix(ZZ, 1, n)
         for j in k:m
-          v = v + (n + 1 - 2 * j) * (e(j) - e(n + 1 - j))
+          c = n + 1 - 2 * j
+          v[1, j] = c
+          v[1, n + 1 - j] = -c
         end
         push!(invs, v)
       end
@@ -1136,7 +1238,9 @@ function _anti_invariant_vectors(s::Symbol, n::IntegerUnion)
       for k in 1:m
         v = zero_matrix(ZZ, 1, n)
         for j in k:m
-          v = v + (div(n + 1, 2) - j) * (e(j) - e(n + 1 - j))
+          c = div(n + 1, 2) - j
+          v[1, j] = c
+          v[1, n + 1 - j] = -c
         end
         push!(invs, v)
       end
@@ -1147,21 +1251,35 @@ function _anti_invariant_vectors(s::Symbol, n::IntegerUnion)
       # For D_4 this is the non-trivial 2-dimensional irreducible summand.
       # In the basis a = e_1 - e_2, b = e_2 - e_4 the restricted form is the
       # A_2 Cartan form scaled by 2, so a and a + 2b are orthogonal.
-      a = e(1) - e(2)
-      b = e(2) - e(4)
-      push!(invs, vcat(a, a + 2 * b))
+      v = zero_matrix(ZZ, 2, n)
+      v[1, 1] = 1
+      v[1, 2] = -1
+      v[2, 1] = 1
+      v[2, 2] = 1
+      v[2, 4] = -2
+      push!(invs, v)
     else
-      push!(invs, e(1)-e(2))
+      v = zero_matrix(ZZ, 1, n)
+      v[1, 1] = 1
+      v[1, 2] = -1
+      push!(invs, v)
     end
   elseif s == :E
     @assert 8>=n>=6
     if n == 6
       # The E_6 anti-invariant subspace is 2-dimensional with the same
       # restricted form as in the D_4 case above.
-      a = e(1) - e(5)
-      b = e(2) - e(4)
-      push!(invs, a)
-      push!(invs, a + 2 * b)
+      v1 = zero_matrix(ZZ, 1, n)
+      v1[1, 1] = 1
+      v1[1, 5] = -1
+      push!(invs, v1)
+
+      v2 = zero_matrix(ZZ, 1, n)
+      v2[1, 1] = 1
+      v2[1, 2] = 2
+      v2[1, 4] = -2
+      v2[1, 5] = -1
+      push!(invs, v2)
     elseif n == 7 || n == 8
       # there are no anti-invariant vectors for E7 and E8
     end
