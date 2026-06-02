@@ -106,7 +106,7 @@ end
   function iter_sorted(G, M)
     iter = Hecke.__enumerate_gram(Hecke.FinckePohstIntIterCtx, G, nothing, M,
                                   ZZRingElem, identity, identity, ZZRingElem)
-    r = collect(iter)
+    r = [deepcopy(x) for x in iter]
     sort!(r, by = x -> (x[2], x[1]))
     return r
   end
@@ -156,7 +156,7 @@ end
                                    ZZRingElem, identity, identity, ZZRingElem)
   batch_lb = Hecke.__enumerate_gram(Hecke.FinckePohstInt, G, ZZ(4), ZZ(8),
                                     ZZRingElem, identity, identity, ZZRingElem)
-  @test sort(collect(iter_lb), by = x -> (x[2], x[1])) ==
+  @test sort([deepcopy(x) for x in iter_lb], by = x -> (x[2], x[1])) ==
         sort(batch_lb, by = x -> (x[2], x[1]))
 
   # Laziness: first element without collecting all

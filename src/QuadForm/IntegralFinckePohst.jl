@@ -922,7 +922,7 @@ end
 function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::F1, pp_length::F2, ::Type{ElemType}) where {F1, F2, ElemType, NormType}
   n = nrows(G)
   if n == 0
-    dummy = FinckePohstIntCtx{Int}(0, 0, Vector{Vector{Int}}(), Int[], Int[], Int[], Int[], Int[], Int[], Int[])
+    dummy = FinckePohstIntCtx{ElemType}(0, 0, Vector{Vector{Int}}(), Int[], Int[], Int[], Int[], Int[], Int[], Int[])
     return FinckePohstIntIterCtx{ElemType, F1, F2, ElemType, NormType}(
       dummy, nothing, nothing, pp_vector, pp_length,
       Int[], Int[], Int[], Int[], Int[], Int8[], Bool[], Int[])
