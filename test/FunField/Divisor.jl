@@ -331,7 +331,11 @@ import Hecke: divisor
       @test 6 == @inferred dimension(DD)
 
       for f in L
-        @test is_effective(divisor(f) + DD)
+        D = divisor(f) + DD
+        @test is_effective(D)
+
+        Hecke.assure_has_support(D)
+        @test is_effective(D)
       end
 
       @test F == function_field(D)
@@ -402,7 +406,11 @@ import Hecke: divisor
 
       L = @inferred basis_of_differentials(F)
       for df in L
-        @test is_effective(divisor(df.f) + KF)
+        D = divisor(df.f) + KF
+        @test is_effective(D)
+
+        Hecke.assure_has_support(D)
+        @test is_effective(D)
       end
     end
 end

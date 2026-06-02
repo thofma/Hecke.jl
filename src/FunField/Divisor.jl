@@ -485,7 +485,14 @@ end
 Return true if D is an effective divisor.
 """
 function is_effective(D::Divisor)
-  return isempty(support(pole_divisor(D)))
+  # effective = no poles
+  # if we know the support: check multiplicities (all non-negative)
+  # otherwise check that ideals are integral (that is, no denominators)
+  if has_support(D)
+    return all(>=(0), values(D.finite_support)) && all(>=(0), values(D.infinite_support))
+  else
+    return is_integral(D.finite_ideal) && is_integral(D.infinite_ideal)
+  end
 end
 
 @doc raw"""
