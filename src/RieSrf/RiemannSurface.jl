@@ -155,7 +155,7 @@ mutable struct RiemannSurface
 
   differential_form_data::Tuple{Vector{mpoly_type(AbsSimpleNumFieldElem)}, Matrix{Int}, Vector{Int}, Vector{Int}}
 
-  #Evaluate differential_differential_factors_matrix is a function that
+  #Evaluate_differential_factors_matrix is a function that
   # takes as its input
   # - a list of factors
   # - The point x0 we want to integrate at
@@ -181,18 +181,17 @@ mutable struct RiemannSurface
   #The options are "heuristic" and "rigorous". It is set to "heuristic" by default
   integration_method::String
 
+  int_style::String
+
   #A collection of fields and error bounds needed to ensure correctness
   #TODO: Check which ones are actually used and necessary. Optimize this.
-  prec::Int
-  weak_error::ArbFieldElem
-  error::ArbFieldElem
-  extra_error::ArbFieldElem
-  real_field::ArbField
-  complex_field::AcbField
-  complex_field2::AcbField
-  computational_precision_complex_field::AcbField
-  extra_prec::Int
-  max_prec::Int
+
+  initial_precision::Int
+  computational_precision::Int
+  internal_precision::Int
+
+  target_error::ArbFieldElem
+  computational_error::ArbFieldElem
 
   real_reduction_matrix::ArbMatrix
   complex_reduction_matrices::Vector{AcbMatrix}
@@ -206,7 +205,7 @@ mutable struct RiemannSurface
     return RS
   end
 
-  function RiemannSurface(f::MPolyRingElem, v::T, prec::Int = 100; integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
+  function RiemannSurface(f::MPolyRingElem, v::T, prec::Int = 100; int_style::String= "Mixed", integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
 
     k = base_ring(f)
     kx, x = rational_function_field(k, "x")
@@ -236,12 +235,13 @@ mutable struct RiemannSurface
 
   
     RS.defining_polynomial = f
-    RS.prec = prec
+    RS.initial_precision = prec
     RS.embedding = v
     RS.function_field = F
     RS.basis_of_differentials = diff_base
     g = length(diff_base)
     RS.genus = g
+    RS.int_style = int_style
 
     if g == 0
       error("Cannot construct Riemann surface of genus 0.")
@@ -325,54 +325,25 @@ mutable struct RiemannSurface
 		  min_pows= [minimum( factor_matrix[j, 1:g]) for j in 1:n]
 	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
     end
-#=
-    function evaluate_differential_factors_matrix(factors, x0, ys)
-      Kxy = parent(factors[1])
-      Ky, y = polynomial_ring(base_ring(Kxy), "y")
-      CC = base_ring(factors[1])
-      m = length(ys)
 
-      result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
-      for l in 1:length(factors)
-        f = factors[l]
-        fx0 = f(x0, y)
-        for s in 1:m
-          fx0ys = CC(fx0(ys[s]))
-          factor_at_xys = [fx0ys^min_pows[l] ]
-          for k in (1:range_pows[l])
-            push!(factor_at_xys, factor_at_xys[k]*fx0ys)
-          end
-          for k in 1:g
-            #Let omega_i = g_i * dx where the omega form a basis of
-            #differentials. Then result[s][k] = g_k(x0, ys) where the
-            #ys are the m preimages in the fiber f^(-1)(x0).
-            result[s, k] *= factor_at_xys[factor_matrix[l, k] - min_pows[l]+1]
-          end
-        end
-      end
-      return result
-    end
-=#
     RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
-    #RS.evaluate_differential_factors_matrix = evaluate_differential_factors_matrix
 
-    b10_prec = floor(Int, prec*log(2)/log(10))
-    b10_extra_prec = b10_prec + 3 + max(degree(f, 1), degree(f, 2))
-    extra_prec = prec + floor(Int, (4 + max(degree(f, 1), degree(f, 2)) )*log(10)/log(2))
-    RS.complex_field = AcbField(prec)
-    RR = ArbField(prec + extra_prec)
-    RS.real_field = RR
-
-    RS.extra_prec = extra_prec
+    computational_precision = prec + floor(Int, (4 + max(degree(f, 1), degree(f, 2)) )*log(10)/log(2))
+    RS.computational_precision = computational_precision
+    
+    initial_precision_digits = floor(Int, prec*log(2)/log(10))
+    computation_precision_digits = floor(Int, computational_precision*log(2)/log(10))
+    
+    RR = ArbField(computational_precision)
 
 
-    RS.weak_error = RR(10)^(-(2//3) *b10_prec)
-    RS.error = RR(10)^(-b10_prec - 1)
-    RS.extra_error = RR(10)^(-b10_extra_prec - 10)
+    RS.target_error = RR(10)^(-initial_precision_digits - 1)
+    RS.computational_error = RR(10)^(-computation_precision_digits - 10)
+
     RS.bounds = ArbFieldElem[]
     RS.degree = reverse(degrees(f))
 
-    big_period_matrix(RS)
+    big_period_matrix(RS, int_style = int_style)
     analyze_special_points(RS)
 
     return RS
@@ -392,13 +363,13 @@ When a Riemann surface is created the following data is computed:
 - The period matrix associated to the Riemann surface
 
 """
-function riemann_surface(f::MPolyRingElem, prec::Int = 100; integration_method::String = "heuristic")
+function riemann_surface(f::MPolyRingElem, prec::Int = 100; int_style::String = "Mixed", integration_method::String = "heuristic")
   k = base_ring(f)
   if k == QQ
     k = rationals_as_number_field()[1]
   end
   v = infinite_places(k)[1]
-  RS = riemann_surface(f, v, prec, integration_method = integration_method)
+  RS = riemann_surface(f, v,prec,  int_style = int_style, integration_method = integration_method)
   return RS
 end
 
@@ -417,9 +388,9 @@ When a Riemann surface is created the following data is computed:
 - The period matrix associated to the Riemann surface
 
 """
-function riemann_surface(f::MPolyRingElem, v::T, prec::Int = 100; 
+function riemann_surface(f::MPolyRingElem, v::T, prec::Int = 100; int_style::String = "Mixed", 
   integration_method::String = "rigorous") where T<:Union{PosInf, InfPlc}
-  return RiemannSurface(f, v, prec, integration_method = integration_method) 
+  return RiemannSurface(f, v, prec, int_style = int_style, integration_method = integration_method) 
 end
 
 
@@ -430,16 +401,15 @@ function swapped_surface(RS::RiemannSurface)
     RS_swap = RiemannSurface()
     RS_swap.embedding = RS.embedding
     RS_swap.genus = g
-    RS_swap.prec = RS.prec
-    RS_swap.extra_prec = RS.extra_prec
-    RS_swap.error = RS.error
-    RS_swap.weak_error = RS.weak_error
-    RS_swap.extra_error = RS.extra_error
+    RS_swap.initial_precision = RS.initial_precision
+    RS_swap.computational_precision = RS.computational_precision
+    RS_swap.target_error = RS.target_error
+    RS_swap.computational_error = RS.computational_error
     RS_swap.integration_method = RS.integration_method
     RS_swap.integration_schemes_GL = IntegrationSchemeGL[]
     RS_swap.integration_schemes_DE = IntegrationSchemeDE[]
     RS_swap.bounds = ArbFieldElem[]
-    RS_swap.complex_field = RS.complex_field
+    RS_swap.int_style = RS.int_style
 
     f = defining_polynomial(RS)
     Kxy = parent(f)
@@ -680,7 +650,7 @@ function defining_polynomial_univariate(RS::RiemannSurface)
 end
 
 @doc raw"""
-function complex_defining_polynomial(RS::RiemannSurface, prec::Int=RS.prec)
+function complex_defining_polynomial(RS::RiemannSurface, prec::Int=precision(RS))
   -> MPolyRingElem{AcbFieldElem}
 Return the defining polynomial of the Riemann surface after embedding
 its coefficients into CC using the embedding chosen when creating
@@ -689,7 +659,7 @@ the Riemann surface.
 The variable prec determines the precision used for the embedding.
 
 """
-function complex_defining_polynomial(RS::RiemannSurface, prec::Int=RS.prec)
+function complex_defining_polynomial(RS::RiemannSurface, prec::Int=precision(RS))
   return embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
 end
 
@@ -717,7 +687,7 @@ function precision(RS::RiemannSurface) -> Int
 Return the initial precision ued to construct the Riemann surface.
 """
 function precision(RS::RiemannSurface)
-  return RS.prec
+  return RS.initial_precision
 end
 
 @doc raw"""
@@ -781,7 +751,7 @@ function complex_field(RS::RiemannSurface) -> AcbField
 
 Return the field over which the Riemann surface is defined.
 """
-complex_field(RS::RiemannSurface) = RS.complex_field
+complex_field(RS::RiemannSurface) = AcbField(precision(RS))
 
 @doc raw"""
 function real_field(RS::RiemannSurface) -> ArbField
@@ -789,7 +759,7 @@ function real_field(RS::RiemannSurface) -> ArbField
 Return the real field with the precision over which the 
 Riemann surface is defined.
 """
-real_field(RS::RiemannSurface) = ArbField(precision(RS.complex_field))
+real_field(RS::RiemannSurface) = ArbField(precision(RS))
 
 function assure_has_discriminant_points(RS::RiemannSurface)
   if isdefined(RS, :discriminant_points)
@@ -870,10 +840,10 @@ function assure_has_discriminant_points(RS::RiemannSurface)
     bound = maximum(vcat(max_diff_abs, [YB], one_vec))
 
     additional_prec = ceil(Int, log(bound)/log(2))
-    max_prec = RS.extra_prec + maximum([additional_prec, 67])
-    RS.max_prec = max_prec
+    internal_prec = RS.computational_precision + maximum([additional_prec, 67])
+    RS.internal_precision = internal_prec
 
-    precision_for_DP = RS.degree[1] * max_prec
+    precision_for_DP = RS.degree[1] * internal_prec
 
     if precision_for_DP > 660
       D_points = _discriminant_points_to_prec(RS, precision_for_DP)[1]
@@ -1096,7 +1066,7 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   RR = ArbField(precision(CC))
   prec = precision(RS)
 
-  CC_low = AcbField(prec)
+  CC_low = AcbField(RS.computational_precision)
 
   #Step 1 compute a minimal spanning tree
   edges = minimal_spanning_tree(D_points)

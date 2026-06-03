@@ -93,16 +93,16 @@ function double_exponential_line_parameters(points::Vector{AcbFieldElem}, path::
     #Consider the burger shaped area: B = {tanh(lambda*sinh(z)) : |imag(z)| < r}
     #Now picking r_k to be the following, we ensure that t_p lies on the boundary
     #and not on the burger.
-    r_k = abs(imag(asinh(atanh(t_p)/lambda)))
-    if r_k < r_0
-      r_0 = r_k
+    r_p = abs(imag(asinh(atanh(t_p)/lambda)))
+    if r_p < r_0
+      r_0 = r_p
       set_t_of_closest_d_point(path, t_p)
     end
   end
   return r_0
 end
 
-function double_exponential_arc_parameters(points::Vector{AcbFieldElem}, path::CPath, lambda = const_pi(ArbField(precision(parent(path.start_point)))/2 ))
+function double_exponential_arc_parameters(points::Vector{AcbFieldElem}, path::CPath, lambda = const_pi(ArbField(precision(parent(path.start_point))))/2)
   CC = parent(points[1])
   RR = ArbField(precision(CC))
   r_0 = RR(5.0)
@@ -117,7 +117,6 @@ function double_exponential_arc_parameters(points::Vector{AcbFieldElem}, path::C
   or = orientation(path)
 
   for p in points
-    r_p = r_0
     if !contains(c - p, zero(CC))
       prec = precision(CC)
       #We find t_p such that path(t_p) = p
@@ -127,17 +126,21 @@ function double_exponential_arc_parameters(points::Vector{AcbFieldElem}, path::C
       t_p = or/(b - a) * (-2 * I * log(trim_zero((p - c)/(r * exp(I*(b + a)/2)))))
       @req contains(evaluate(path, t_p),p) "Error"
       
-      r_k = abs(imag(asinh(atanh(t_p)/lambda)))
+      r_p = abs(imag(asinh(atanh(t_p)/lambda)))
+      if r_p < r_0 
+        r_0 = r_p
+        set_t_of_closest_d_point(path, t_p)
+      end
     end
   end
 
-  while abs((b-a)*imag(tanh(lambda*sinh(-I*r_p)))) >= 2*Rpi
-    r_p -= RR(1/20)
+  while abs((b-a)*imag(tanh(lambda*sinh(-I*r_0)))) >= 2*Rpi
+    r_0 -= RR(1/20)
   end
-  return r_p
+  return r_0
 end
 
-function double_exponential_circle_parameters(points::Vector{AcbFieldElem}, path::CPath, lambda = const_pi(ArbField(precision(parent(path.start_point)))/2 ))
+function double_exponential_circle_parameters(points::Vector{AcbFieldElem}, path::CPath, lambda = const_pi(ArbField(precision(parent(path.start_point))))/2)
   CC = parent(points[1])
   RR = ArbField(precision(CC))
   r_0 = RR(5.0)
@@ -151,23 +154,27 @@ function double_exponential_circle_parameters(points::Vector{AcbFieldElem}, path
   r = radius(path)
   or = orientation(path)
 
-  if !contains(c - p, zero(CC))
-    #We find t_p such that path(t_p) = p
-    #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
-    #the real or the imaginary part is close to zero. The ambiguity disappears
-    # when taking absolute values during the computation of r_p)
-    prec = precision(CC)
-    zero_sens = floor(Int, prec*log(2)/log(10)) - 5
+  for p in points
+    if !contains(c - p, zero(CC))
+      #We find t_p such that path(t_p) = p
+      #trim_zero is used to avoid errors in taking log. (It's ambiguous if either
+      #the real or the imaginary part is close to zero. The ambiguity disappears
+      # when taking absolute values during the computation of r_p)
 
-    t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a))))
+      t_p = -or/Rpi * I * log(trim_zero((c - p) /(r* exp(I * a))))
 
-    @req contains(evaluate(path, t_p) - p, CC(0)) "Error"
-    r_k = abs(imag(asinh(atanh(t_p)/lambda)))
+      @req contains(evaluate(path, t_p) - p, CC(0)) "Error"
+      r_p = abs(imag(asinh(atanh(t_p)/lambda)))
+      if r_p < r_0 
+        r_0 = r_p
+        set_t_of_closest_d_point(path, t_p)
+      end
+    end
   end
-  while abs(imag(tanh(lambda*sinh(-I*r_p)))) >= RR(1) 
-    r_p -= RR(1/20)
+  while abs(imag(tanh(lambda*sinh(-I*r_0)))) >= RR(1) 
+    r_0 -= RR(1/20)
   end
-  return r_p
+  return r_0
 end
 
 # Compute the parameters for the integration scheme for every path

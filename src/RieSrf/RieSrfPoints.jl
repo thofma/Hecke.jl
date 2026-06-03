@@ -383,9 +383,18 @@ end
 #Note: This method is heuristic as we do not have proper error bounds.
 #(Double exponential-integration is used because it is probably the 
 #best method to compute problematic integrals).
+
+#I opted not implement the algorithm in an adaptive way as the analytic continuation
+#is not stable enough for this. (It works better when everything gets recomputed every iteration.)
+#A potential speed increase would be to cut the path into two parts: 
+# - A part that does not contain the integral to the problematic point and can be computed
+# rigorously.
+# - The second half of the integral computed as it is now.
+#The question would be to decide where the cutoff point should be. Maybe a first probe using 
+#analytic continuation could be helpful.
 function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_chain::CChain, max_iterations = 5)
         
-  prec = RS.extra_prec
+  prec = RS.computational_precision
   new_prec = true
   go_on = true
 
@@ -399,7 +408,7 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
     c = maximum([ length(cycle) for cycle in  collect(cycles(permutation(RS.closed_chains[k]))) ])+1
   end
   
-  error = RS.extra_error
+  comp_error = RS.computational_error
   m = RS.degree[1]
   g = genus(RS)
   h = QQ(16//125)
@@ -430,10 +439,10 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
 
     if k == 0 #Point at infinity
       N_gamma = gamma
-      err2 = (RR(1/2)*RS.error^(c+1))^2
+      err2 = (RR(1/2)*comp_error^(c+1))^2
     else
       N_gamma = c_line(CC(start_point(gamma)),CC(end_point((gamma))))
-      err2 = error^2/4
+      err2 = comp_error^2/4
     end
 
 
@@ -469,7 +478,7 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
       integral_matrix_contribution *= weights[i] * evaluate_d(N_gamma, abscissae[i])
       
       max_abs = maximum([abs(c) for c in integral_matrix_contribution])
-      if (i > N && max_abs < error)
+      if (i > N && max_abs < comp_error)
         break
       end
 
@@ -554,7 +563,7 @@ end
 #Used to check the sheets a ramified points lies on. Neurohr does not do this, but his 
 #output also seems to be incorrect to me. Might need to check and test more to be sure.
 function ramification_point_sheets(RS::RiemannSurface, yk::Vector{AcbFieldElem}, k::Int)
-  error = RS.extra_error
+  error = RS.computational_error
   prec = precision(RS)
   CC = AcbField(prec)
   RR = ArbField(prec)

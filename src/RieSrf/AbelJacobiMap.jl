@@ -85,16 +85,16 @@ end
 #Integrate path to a given end point.
 function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
 
-  extra_prec = RS.extra_prec
-  CC = AcbField(extra_prec)
-  RR = ArbField(extra_prec)
+  comp_prec = RS.computational_precision
+  CC = AcbField(comp_prec)
+  RR = ArbField(comp_prec)
   Cz, z = polynomial_ring(CC)
   Cxy, (x,y) = polynomial_ring(CC,2)
   v = RS.embedding
-  fC = embed_mpoly(defining_polynomial(RS), v, extra_prec)
+  fC = embed_mpoly(defining_polynomial(RS), v, comp_prec)
   differentials = RS.differential_form_data[1]
-  embedded_differentials = [embed_mpoly(g, v, extra_prec) for g in differentials]
-  err = RS.extra_error
+  embedded_differentials = [embed_mpoly(g, v, comp_prec) for g in differentials]
+  err = RS.computational_error
   m = RS.degree[1]
   g = genus(RS)
 
@@ -105,14 +105,14 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
   reverse_paths = reverse([ reverse(p) for p in paths ])
 
   x0 = start_point(reverse_paths[1])
-	ys =  sort!(roots(fC(x0, z), initial_prec = extra_prec), lt = sheet_ordering)
+	ys =  sort!(roots(fC(x0, z), initial_prec = comp_prec), lt = sheet_ordering)
   dist, ind = closest_point(end_point_y, ys)
 
 
 
   for k in (1:length(reverse_paths))
     path = reverse_paths[k]
-    gauss_legendre_path_parameters(RS.discriminant_points, path, RS.extra_error)
+    gauss_legendre_path_parameters(RS.discriminant_points, path, RS.computational_error)
     integral_matrix = zero_matrix(CC, 1, g)
     int_schemes = RS.integration_schemes_GL
 
@@ -131,7 +131,7 @@ function integrate_on_sheet(paths::Vector{CPath}, end_point_y::AcbFieldElem, RS)
         
         compute_ellipse_bound_heuristic(subpath, embedded_differentials, [r], RS)
         bound = maximum(subpath.bounds)
-        pushfirst!(RS.integration_schemes_GL, IntegrationSchemeGL(r, extra_prec+10, RS.extra_error, bound))
+        pushfirst!(RS.integration_schemes_GL, IntegrationSchemeGL(r, comp_prec+10, RS.computational_error, bound))
        end
 
 			integration_scheme = RS.integration_schemes_GL[subpath.integration_scheme_index]
@@ -252,8 +252,8 @@ function abel_jacobi_map( D::RiemannSurfaceDivisor, method = "swap", reduction =
   end
 
   if !isdefined(D, :abel_jacobi_value)
-    CC = AcbField(RS.extra_prec)
-    RR = ArbField(RS.extra_prec)
+    CC = AcbField(RS.computational_precision)
+    RR = ArbField(RS.computational_precision)
     infty = CC(1/0)
     total_complex_integral = zero_matrix(CC,1, g)
     s_to_s_integrals = RS.sheet_to_sheet_integrals

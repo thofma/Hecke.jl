@@ -18,7 +18,7 @@ export big_period_matrix, small_period_matrix
 
 Compute the big period matrix for the Riemann surface.
 """
-function big_period_matrix(RS::RiemannSurface)
+function big_period_matrix(RS::RiemannSurface;int_style::String = "Mixed")
 
   if isdefined(RS, :big_period_matrix)
     return RS.big_period_matrix
@@ -31,45 +31,75 @@ function big_period_matrix(RS::RiemannSurface)
   prec = precision(RS)
   disc_points = internal_discriminant_points(RS)
 
-  RR = real_field(RS)
-
+  
   differentials = RS.differential_form_data[1]
 
   v = embedding(RS)
-  # Random precision. Probably needs to become a heuristic.
-  max_prec = prec+10
+
+  max_prec = RS.computational_precision
+  RR = ArbField(max_prec)
+
   embedded_differentials = [embed_mpoly(g, v, max_prec) for g in differentials]
   dif_basis = [omega.f for omega in diff_base]
 
   k = RR(103/100)
+
+  double_exponential_int_pars = []
+  gauss_legendre_int_pars = []
+
   #path`N seems to be less than what it is in Neurohr's implementation.
   #Neurohr takes disc_points of low precision here, but I don't see any 
   #real reason for us to do so as well. I expect higher precision to improve
   #stability.
-  for path in paths
-    gauss_legendre_path_parameters(disc_points, path, RS.extra_error)
+
+  int_style = RS.int_style
+  
+
+  if int_style == "Mixed" || int_style == "GL"
+
+    for path in paths
+      gauss_legendre_path_parameters(disc_points, path, RS.computational_error)
+    end
   end
-  double_exponential_int_pars = []
 
-  gauss_legendre_int_pars = []
-
-  for path in paths
-    for subpath in path.sub_paths
-      if subpath.int_param_r < k 
-        double_exponential_path_parameters(disc_points, subpath)
-        subpath.integration_scheme = "DE"
-        @req subpath.int_param_r < k "Error in double exponential parameters"
-        push!(double_exponential_int_pars, subpath.int_param_r)
-      else
-        subpath.integration_scheme = "GL"
-        push!(gauss_legendre_int_pars, subpath.int_param_r)
+  if int_style == "Mixed"
+    for path in paths
+      for subpath in path.sub_paths
+        if subpath.int_param_r < k 
+          double_exponential_path_parameters(disc_points, subpath)
+          subpath.integration_scheme = "DE"
+          @req subpath.int_param_r < k "Error in double exponential parameters"
+          push!(double_exponential_int_pars, subpath.int_param_r)
+        else
+          subpath.integration_scheme = "GL"
+          push!(gauss_legendre_int_pars, subpath.int_param_r)
+        end
       end
     end
   end
 
+  if int_style == "GL"
+    for path in paths
+      for subpath in path.sub_paths
+        subpath.integration_scheme = "GL"
+        push!(gauss_legendre_int_pars, subpath.int_param_r)
+      end
+    end
+  end 
+
+  if int_style == "DE"
+    for path in paths
+      double_exponential_path_parameters(disc_points, path)
+      path.integration_scheme = "DE"
+      push!(double_exponential_int_pars, path.int_param_r)
+    end
+  end 
+
+
 
   #Set up GL integration schemes
-  if length(gauss_legendre_int_pars) > 0 
+  nr_of_GL_int_pars = length(gauss_legendre_int_pars)
+  if nr_of_GL_int_pars > 0 
     sort!(gauss_legendre_int_pars)
     r_minimum = gauss_legendre_int_pars[1]
     RR = parent(r_minimum)
@@ -110,12 +140,21 @@ function big_period_matrix(RS::RiemannSurface)
     sort!(double_exponential_int_pars)
     r_minimum = double_exponential_int_pars[1]
     r_maximum = double_exponential_int_pars[end]
-    number_of_schemes = max(min(floor(Int, nr_of_DE_int_pars/2), floor(Int, 20*(r_maximum-r_minimum))), 1)
+
+
+    min_max_diff = RR(0)
+    try 
+      min_max_diff = floor(Int, 20*(r_maximum-r_minimum))
+    catch
+      min_max_diff = floor(Int, 20*(r_maximum-r_minimum) + 0.5)
+    end
+
+    number_of_schemes = max(min(floor(Int, nr_of_DE_int_pars/2), ), 1)
 
     if number_of_schemes == 1 && abs(r_minimum-r_maximum) < RR(1/20)
       push!(double_exponential_int_group_rs, RR(19/20) * r_minimum)
     else
-      double_exponential_int_group_rs = [ RR(19/20) * ((RR(1)-RR(t))/RR(number_of_schemes)*r_minimum + RR(t)/RR(number_of_schemes)*r_maximum) for t in (0:number_of_schemes) ]
+      double_exponential_int_group_rs = [ RR(19/20) * ((RR(1)-RR(t)/RR(number_of_schemes))*r_minimum + RR(t)/RR(number_of_schemes)*r_maximum) for t in (0:number_of_schemes) ]
     end
   end
 
@@ -144,11 +183,13 @@ function big_period_matrix(RS::RiemannSurface)
       end
     end
   end
-  GL_bound_temp_max = maximum(GL_bound_temp)
+
+  if nr_of_GL_int_pars>0
+    GL_bound_temp_max = maximum(GL_bound_temp)
   
-  push!(RS.bounds, GL_bound_temp_max)
   
-  bound = maximum(RS.bounds)
+    push!(RS.bounds, GL_bound_temp_max)
+    bound = maximum(RS.bounds)
 
     #Maybe change error value.
     #Change max_prec
@@ -156,8 +197,9 @@ function big_period_matrix(RS::RiemannSurface)
     # Compute integration schemes. The number of abscissae N depends on r and M.
     # The goal is to minimize the size of N. r has strong influence on the size of N while the
     # contribution of M is logarithmic.
-  RS.integration_schemes_GL = [IntegrationSchemeGL(r, max_prec, RS.extra_error, bound) for r in gauss_legendre_int_group_rs ]
-  
+    RS.integration_schemes_GL = [IntegrationSchemeGL(r, max_prec, RS.computational_error, bound) for r in gauss_legendre_int_group_rs ]
+  end
+
   if nr_of_DE_int_pars>0
     DE_bound_temp_max = maximum(DE_bound_temp)
     push!(RS.bounds, DE_bound_temp_max)
@@ -187,44 +229,8 @@ function big_period_matrix(RS::RiemannSurface)
 =#
 
 
-  #=
- #OLD
-
-  #We group the paths together based on their r-value. As a consequence, we will
-  #have to compute fewer integration schemes later making the algorithm faster.
-  #According to Neurohr p101 of his thesis it suffices to have 5 for the Gauss-Legendre method.
-  int_groups = [ [],[],[],[],[] ]
-	for r in int_parameters
-		if r < r_minimum + RR(0.1)
-      push!(int_groups[1],r)
-    elseif r < r_minimum + RR(0.4)
-      push!(int_groups[2],r)
-		elseif r < r_minimum + RR(0.9)
-      push!(int_groups[3],r)
-    elseif r < r_minimum + RR(2.0)
-      push!(int_groups[4],r)
-		else
-      push!(int_groups[5],r)
-    end
-	end
-
-  #Make r_minimum slightly smaller than what it was. (But still larger than 1)
-  if r_minimum <= RR(1) + 2 * eps
-    int_group_rs= [(1/2)*(r_minimum+1)]
-  else
-    int_group_rs = [r_minimum-eps]
-  end
-
-  #We only consider int_groups that contain more than 2 elements. If they only have two
-  #or less elements, we simply group them together with the previous group
-  int_groups = filter(x -> length(x) > 2, int_groups[2:end])
-
-  append!(int_group_rs, [ minimum(int_group) - eps for int_group in int_groups])
-
-  #OLD
-=#
 #=
-  Ns = map(r-> gauss_legendre_parameters(r, RS.extra_error), int_parameters)
+  Ns = map(r-> gauss_legendre_parameters(r, RS.computational_error), int_parameters)
   diffs = [Ns[i] - Ns[i-1] for i in (2:length(Ns))]
 
   b = cumsum(diffs)
@@ -313,7 +319,7 @@ function big_period_matrix(RS::RiemannSurface)
 		integral_matrix = zero_matrix(CC, m, g)
     subpaths = path.sub_paths
     x0 = start_point(subpaths[1])
-		ys =  sort!(roots(f(x0, y), initial_prec = prec), lt = sheet_ordering)
+		ys =  sort!(roots(f(x0, y), initial_prec = max_prec), lt = sheet_ordering)
 
 		for subpath in subpaths
 
@@ -751,28 +757,12 @@ function atanh(x::AcbFieldElem)
   return z
 end
 
-function asinh(x::ArbFieldElem)
-  z = parent(x)()
-  prec = precision(parent(x))
-  @ccall libflint.arb_asinh(z::Ref{ArbFieldElem}, x::Ref{ArbFieldElem}, prec::Int)::Nothing
-  return z
-end
-
-
 function asinh(x::AcbFieldElem)
   z = parent(x)()
   prec = precision(parent(x))
   @ccall libflint.acb_asinh(z::Ref{AcbFieldElem}, x::Ref{AcbFieldElem}, prec::Int)::Nothing
   return z
 end
-
-function acosh(x::ArbFieldElem)
-  z = parent(x)()
-  prec = precision(parent(x))
-  @ccall libflint.arb_acosh(z::Ref{ArbFieldElem}, x::Ref{ArbFieldElem}, prec::Int)::Nothing
-  return z
-end
-
 
 function acosh(x::AcbFieldElem)
   z = parent(x)()
