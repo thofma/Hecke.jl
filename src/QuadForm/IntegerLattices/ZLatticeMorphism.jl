@@ -975,7 +975,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     invariant_vectors_k_mat = reduce(vcat, invariant_vectors_k)
     r = t[2]
     b = length(blocks)
-    if (b > 2 && r > 3) || (b > 1 && r>6)
+    if (b > 4 && r > 2) || (b > 2 && r > 3) || (b > 1 && r>6)
       for u in inv_vec 
         b>1 || continue
         s = reduce(vcat, u*(blocks[i]-blocks[i+1]) for i in 1:length(blocks)-1; init=zero_matrix(ZZ,0, n))
