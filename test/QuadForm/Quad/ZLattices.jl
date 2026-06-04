@@ -743,6 +743,10 @@ end
   L2 = integer_lattice(gram = G);
   @test is_isometric(L1,L2)
 
+  # Fix 2271
+  M = integer_lattice(;gram=QQ[-1 0 0; 0 2 0; 0 0 64])
+  L = integer_lattice(;gram=QQ[-2 0 0; 0 4 2; 0 2 17])
+  @test !is_isometric(L, M)
 end
 
 @testset "direct sums" begin
