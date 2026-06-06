@@ -189,15 +189,12 @@ end
 #
 ################################################################################
 
-function in(a::GenOrdElem, O::GenOrd)
-  @assert field(parent(a)) === field(O)
-  return isone(integral_split(data(a), O)[2])
+function in(a::FieldElem, O::GenOrd)
+  @req parent(a) === field(O) "Element and order must come from the same field"
+  return is_one(integral_split(a, O)[2])
 end
 
-function Base.in(a::FieldElem, O::GenOrd)
-  @assert parent(a) === field(O)
-  return isone(integral_split(data(a), O)[2])
-end
+in(a::GenOrdElem, O::GenOrd) = data(a) in O
 
 ################################################################################
 #
