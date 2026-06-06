@@ -272,7 +272,7 @@ function Base.iterate(C::LatEnumCtx{X, Y, elem_type}) where {X, Y, elem_type}
 
   @label compute_bounds
 
-  @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
+  @inbounds _new_upp, _new_low = _compute_bounds(Int, T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
   @inbounds x[i] = _new_low
   @inbounds L[i] = _new_upp
@@ -468,7 +468,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{QQFieldElem}, l::Union{
   #_new_upp = Int(ZZ(ceil(_t + 2 - U[i])))
   #_new_low = Int(ZZ(floor(-(_t + 2) - U[i]))) - 1
 
-  @inbounds _new_upp, _new_low = _compute_bounds(T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
+  @inbounds _new_upp, _new_low = _compute_bounds(S, T[i], Qd[i], U[i], t1, t2, t3, t4, t5)
 
   @inbounds x[i] = _new_low
   @inbounds L[i] = _new_upp
@@ -636,7 +636,7 @@ function ___enumerate_cholesky(::Type{Vector}, Q::Matrix{S}, l::Union{Int, Nothi
   end
 end
 
-@inline function _compute_bounds(Ti::QQFieldElem, Qi, Ui, t1 = QQFieldElem(),
+@inline function _compute_bounds(S::Type, Ti::QQFieldElem, Qi, Ui, t1 = QQFieldElem(),
                                              t2 = ZZRingElem(),
                                              t3 = ZZRingElem(),
                                              t4 = ZZRingElem(),
@@ -651,12 +651,12 @@ end
   t1 = sub!(t1, Ui, t2)
   t1 = neg!(t1)
   t5 = ceil!(t5, t1, t3, t4)
-  ub = Int(t5)  # will throw if t5 does not fit into an Int
+  ub = S === ZZRingElem ? deepcopy(t5) : S(t5)
 
   t1 = add!(t1, Ui, t2)
   t1 = neg!(t1)
   t5 = floor!(t5, t1, t3, t4)
-  lb = Int(t5) - 1   # will throw if t5 does not fit into an Int
+  lb = (S === ZZRingElem ? deepcopy(t5) : S(t5)) - 1
 
   return ub, lb
 end
