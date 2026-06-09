@@ -566,8 +566,12 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
     return false
   end
 
+  if gram_matrix(L) == gram_matrix(M)
+    return true
+  end
+
   if rank(L) == 1
-    return gram_matrix(L) == gram_matrix(M)
+    return false
   end
 
   if is_definite(L) && is_definite(M)
@@ -3498,7 +3502,7 @@ end
 
 
 function _is_isometric_indef(L::ZZLat, M::ZZLat)
-  @req rank(L)>=3 "Strong approximation needs rank at least 3"
+  @req rank(L) >= 3 "Strong approximation needs rank at least 3"
   @req degree(L)==rank(L) "Lattice needs to be full for now"
 
   # scale integral
@@ -3506,8 +3510,8 @@ function _is_isometric_indef(L::ZZLat, M::ZZLat)
   s = scale(M)
   M = rescale(M, s^-1; cached=false)
   L = rescale(L, s^-1; cached=false)
-  @assert scale(M)==1
-  @assert scale(L)==1
+  @hassert :Lattice 1 scale(M) == 1
+  @hassert :Lattice 1 scale(L) == 1
   g = genus(L)
   if g != genus(M)
     return false
@@ -3562,7 +3566,7 @@ function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
     if !iszero(d) && valuation(d, p)<= vp
       # we want fp in SO(Vp)
       # compose with a reflection preserving Lp
-      norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
+      norm_gen = _norm_generator(normalL1, p) * TL1 * basis_matrix(L1)
       @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
       fp = reflection(gramV, norm_gen) * fp
       d = det(fp)-1
