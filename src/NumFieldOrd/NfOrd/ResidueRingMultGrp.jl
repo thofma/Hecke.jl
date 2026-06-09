@@ -720,18 +720,37 @@ function baby_step_giant_step(g, n, h, cache::Dict)
   m = ZZRingElem(isqrt(n) + 1)
   if isempty(cache)
     it = g^0
-    for j in 0:m
-      cache[it] = j
-      it *= g
+    if fits(Int, m)
+      for j in 0:Int(m)
+        cache[it] = j
+        it *= g
+      end
+    else
+      for j in 0:m
+        cache[it] = j
+        it *= g
+      end
     end
   end
   b = g^(-m)
   y = h
-  for i in 0:m-1
-    if haskey(cache, y)
-      return ZZRingElem(mod(i*m + cache[y], n))
-    else
-      y *= b
+  # the largest value is m * m + m <= 2m*2
+  if 2*nbits(m) + 1 < 8 * sizeof(Int)
+    mm = Int(m)
+    for i in 0:mm-1
+      if haskey(cache, y)
+        return ZZRingElem(mod(i*mm + cache[y], n))
+      else
+        y *= b
+      end
+    end
+  else
+    for i in 0:m-1
+      if haskey(cache, y)
+        return ZZRingElem(mod(i*m + cache[y], n))
+      else
+        y *= b
+      end
     end
   end
   error("Couldn't find discrete logarithm")
