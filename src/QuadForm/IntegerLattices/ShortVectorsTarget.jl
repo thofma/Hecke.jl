@@ -1042,3 +1042,63 @@ end
 function integral_split(x::ZZMatrix, R::ZZRing)
   return x, one(ZZ)
 end
+
+function _short_vectors_with_condition_direct(L::ZZLat; use_dual=false)
+  tmpZZ = ZZ()
+  G, _ = _integral_split_gram(L)
+  m = Int(maximum(diagonal(G))) # catches overflows
+  sv = __short_vectors(G, nothing, m)
+  sv2 = @inbounds [i[1] for i in sv if i[2]==2]
+  fundamental_roots = _fundamental_roots!(sv2)
+
+  V = ambient_space(L)
+  n = rank(L)
+  
+  root_types, fundamental_roots = _root_lattice_recognition_fundamental(L, [matrix(ZZ, 1, n, i) for i in fundamental_roots])
+  fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
+  R_fix = lattice(V, fixed_space; isbasis=true, check=false)
+  R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
+  R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
+  Rperp = lattice(V, QQ.(kernel(G*transpose(R); side=:left)); isbasis=true, check=false)
+  successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
+  @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
+  projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
+  m = length(successive_sublattices)
+  B = reduce(vcat, projL)
+  Binv,bi = integral_split(inv(B),ZZ)
+  grams = [_int_matrix_with_overflow(g, tmpZZ) for g in _get_grams_std(projL_gram, projection_ranges, Binv)]
+  @assert isone(bi)
+  gram2 = sum(rand(1:100)*g for g in grams)
+  
+  GInt = _int_matrix_with_overflow(G, tmpZZ)
+  fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
+
+  seed = UInt(34529384232429)
+  target_fix = [_signed_hash(fixed_space_dual[:,i], seed) for i in 1:n]
+  target_norm = [gram2[i,i] for i in 1:n]
+  target = Set{Tuple{Int,Int,Int}}()
+  for i in 1:n 
+    i1 = _signed_hash(fixed_space_dual[:, i], seed)
+    i2 = GInt[i,i]
+    i3 = gram2[i,i]
+    k = (i1,i2,i3)
+    push!(target, k)
+  end
+  target_abs = Set(abs(i) for i in target_fix)
+  target_fix_set = Set(target_fix)
+  
+  D = Dict{Tuple{Int,Int,Int},Vector{Vector{Int}}}()
+  for (v, sq) in sv
+    i1 = _signed_hash(fixed_space_dual*v, seed)
+    abs(i1) in target_abs || continue
+    i2 = sq 
+    i3 = 0
+    i3 = dot(v, gram2, v)
+    k = (i1, i2, i3)
+    A = get!(D, k, Vector{Int}[])
+    push!(A, v)
+  end
+
+  return D
+end 
+
