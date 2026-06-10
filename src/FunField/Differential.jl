@@ -16,9 +16,7 @@ Return the differential df.
 function differential(f::T) where {T <: Generic.FunctionFieldElem}
   F = parent(f)
   @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
-
-  # note that gen(F) currently has inferred type Any, so we add an explicit type annotation
-  y = gen(F)::T
+  y = gen(F)
 
   # our polynomials are polynomial in y with coefficients polynomials in x
   # note that denominators are polynomials in x!
@@ -197,7 +195,7 @@ end
 
 Return a basis of the first order differential forms of F.
 """
-function basis_of_differentials(F::Generic.FunctionField{T}) where {T <: FieldElement}
+function basis_of_differentials(F::Generic.FunctionField{T, U}) where {T, U}
   x = separating_element(F)
   dx = differential(x)
 
@@ -210,5 +208,5 @@ function basis_of_differentials(F::Generic.FunctionField{T}) where {T <: FieldEl
   # We were using `map` before, but it cannot infer a concrete return type,
   #   due to the empty-input handling (it was returning Union{Vector{Any}, Vector{...}}).
   # So use a typed comprehension instead.
-  return FunFldDiff{Generic.FunctionFieldElem{T}}[FunFldDiff(r) for r in RR]
+  return FunFldDiff{Generic.FunctionFieldElem{T, U}}[FunFldDiff(r) for r in RR]
 end
