@@ -697,124 +697,9 @@ end
 
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
-# Modular version:
-# - v1,...,vn are are linear independent if and only if
-#   [ v_1 | ... | v_n] has full rank, which is equivalent to the determinant d
-#   of maximal minor being non-zero but if 2 * d < p, then d = 0 is equivalent
-#   to d = 0 mod p
-# - thus we can test this mod p, if p is large enough
-# - we only need p to be large enough for the vectors that we are currently looking at,
-#   so we keep track of the entry size of the vectors we are considering and increase
-#   the bound for p either if we (a) add a vector; or (b) encounter a with larger entry size
-function _fundamental_roots!(sv::Vector{S}, p::T = next_prime(1 << (8 * sizeof(Int) - 2))) where {S, T}
-  # choose a large prime < typemax(Int)
-  if isempty(sv)
-    return sv
-  end
-  entryboundlog = 0
-  detbound = ZZ(0)
-  currank = 0
-  _canonicalize!.(sv)
-  sort!(sv)
-  n = length(first(sv))
-  #B = zero_matrix(ZZ, 0, n)
-  fundamental = S[]
-  J = _find_minimal_indices(sv)
-  F = Hecke.Native.GF(p; cached = false)
-  M = zero_matrix(F, n + 1, n)
-  pivs = Int[]
-  pure = Bool[]
-  dirty = true
-  # We already know some pivot entries / fundamental roots
-  update_bound = false
-  if length(J) > 0
-    reverse!(J)
-    for j in J
-      v = sv[j]
-      _ventryboundlog = _bound_entry(v)
-      if _ventryboundlog > entryboundlog
-        entryboundlog = _ventryboundlog
-      end
-      push!(fundamental, v)
-      for i in 1:n
-        s = F(v[i])
-        @inbounds M[currank + 1, i] = s #v[i]
-      end
-      currank += 1
-    end
-    reverse!(J)
-    rref!(M)
-    dirty = true
-    resize!(pivs, currank)
-    resize!(pure, currank)
-
-    r = currank + 1
-    # Hadamard bound is r^(r/2) * B^r
-    set!(detbound, r)
-    detbound = pow!(detbound, detbound, div(r, 2) + 1)
-    # p must be larger than 2 * detbound, so we multiply by an additional 2
-    @ccall libflint.fmpz_mul_2exp(detbound::Ref{ZZRingElem}, detbound::Ref{ZZRingElem}, (entryboundlog + 1)::Int)::Cvoid
-    update_bound = false
-    if p <= detbound
-      # return _fundamental_roots_new(sv, next_prime(ZZ(p)^2))
-      # is too expensive, since we would have to write a fast version for
-      # _reduce_modulo_rref for FpMatrix, but this is a lot of work
-      #
-      # So just call the "old" version
-      return _fundamental_roots_naive!(sv)
-    end
-  end
-
-  for (i, v) in enumerate(sv)
-    if i in J # already have this
-      continue
-    end
-    _ventryboundlog = _bound_entry(v)
-    if _ventryboundlog > entryboundlog
-      entryboundlog = _ventryboundlog
-      update_bound = true
-    end
-
-    if update_bound
-      r = currank + 1
-      # Hadamard bound is r^(r/2) * B^r
-      set!(detbound, r)
-      detbound = pow!(detbound, detbound, div(r, 2) + 1)
-      # p must be larger than 2 * detbound, so we multiply by an additional 2
-      @ccall libflint.fmpz_mul_2exp(detbound::Ref{ZZRingElem}, detbound::Ref{ZZRingElem}, (entryboundlog + 1)::Int)::Cvoid
-      update_bound = false
-      if p <= detbound
-        # return _fundamental_roots_new(sv, next_prime(ZZ(p)^2))
-        # is too expensive, since we would have to write a fast version for
-        # _reduce_modulo_rref for FpMatrix, but this is a lot of work
-        #
-        # So just call the "old" version
-        return _fundamental_roots_naive!(sv)
-      end
-    end
-
-    for i in 1:n
-      s = F(v[i])
-      @inbounds M[currank + 1, i] = s #v[i]
-    end
-    fl = _reduce_modulo_rref(M, currank, pivs, pure, dirty)
-    if fl
-      dirty = false
-      continue
-    end
-    rref!(M)
-    push!(fundamental, v)
-    currank += 1
-    if currank == n
-      # will probably never happen, but cheap to test
-      break
-    end
-    dirty = true
-    resize!(pivs, currank)
-    resize!(pure, currank)
-    update_bound = true
-  end
-  return fundamental
+function _fundamental_roots(sv::Vector{Vector{S}}, gram::Matrix{S}) where {S<:Int}
+  weyl_dual = gram*sum(sv)
+  return [i for i in sv if dot(i, weyl_dual)==2]
 end
 
 # return the root types of the root sublattice of L
@@ -835,7 +720,7 @@ function _root_lattice_recognition_fundamental(L::ZZLat, fundamental_roots::Vect
   return types[sp], basis_matrices[sp]
 end
 
-function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true)
+function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true, via_sum::Bool=false)
   G, d = _integral_split_gram(L)
   if nrows(G)==0
     return Tuple{Symbol,Int}[],ZZLat[]
@@ -862,7 +747,8 @@ function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true)
     a = _root_lattice_recognition_fundamental(L1perp)
     return vcat([(:I, 1) for i in 1:length(sv1)], a[1]), vcat(sv1_mat, [i*K for i in a[2]])
   end
-  fundamental_roots = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots!(_short_vec)]
+  GInt = _int_matrix_with_overflow(G, ZZ())
+  fundamental_roots = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots(_short_vec, GInt)]
   if lll_flag
     fundamental_roots = ZZMatrix[i*T for i in fundamental_roots]
   end
