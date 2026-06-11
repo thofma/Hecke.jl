@@ -95,6 +95,7 @@ Local data of an elliptic curve at a prime, as computed by Tate's algorithm.
 - `minimal_model::EllipticCurve{T}`: local minimal model
 - `kodaira_symbol::KodairaSymbol`: Kodaira symbol of the fiber
 - `conductor_valuation::ZZRingElem`: conductor valuation
+- `discriminant_valuation::ZZRingElem`: discriminant valuation
 - `tamagawa_number::ZZRingElem`: local Tamagawa number
 - `reduction_type::EllipticCurveReduction.ReductionType`: the type of reduction
 """
@@ -102,12 +103,13 @@ struct EllipticCurveLocalData{T}
   minimal_model::EllipticCurve{T}
   kodaira_symbol::KodairaSymbol
   conductor_valuation::ZZRingElem
+  discriminant_valuation::ZZRingElem
   tamagawa_number::ZZRingElem
   reduction_type::EllipticCurveReduction.ReductionType
 end
 
-function EllipticCurveLocalData(E::EllipticCurve{T}, ks::KodairaSymbol, cv::IntegerUnion, tn::IntegerUnion, split::Bool) where T
-  return EllipticCurveLocalData{T}(E, ks, ZZ(cv), ZZ(tn), _reduction_type(ks, split))
+function EllipticCurveLocalData(E::EllipticCurve{T}, ks::KodairaSymbol, cv::IntegerUnion, dv::IntegerUnion, tn::IntegerUnion, split::Bool) where T
+  return EllipticCurveLocalData{T}(E, ks, ZZ(cv), ZZ(dv), ZZ(tn), _reduction_type(ks, split))
 end
 
 ################################################################################
@@ -143,7 +145,7 @@ See also [`tates_algorithm_local(E, p, ::Type{EllipticCurveLocalData})`](@ref)
 for a variant returning the full local data struct.
 """
 function tates_algorithm_local(E, P)
-  ld = _tates_algorithm(E, P)
+  ld = tates_algorithm_local(E, P, EllipticCurveLocalData)
   split = (ld.reduction_type != EllipticCurveReduction.nonsplit_multiplicative)
   return (ld.minimal_model, ld.kodaira_symbol, ld.conductor_valuation, ld.tamagawa_number, split)
 end
@@ -155,11 +157,19 @@ end
     tates_algorithm_local(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree), ::Type{EllipticCurveLocalData})
     tates_algorithm_local(E::EllipticCurve{T}, x::T, ::Type{EllipticCurveLocalData}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
 
-Variant of [`tates_algorithm_local`](@ref) returning an
-[`EllipticCurveLocalData`](@ref) struct instead of a tuple.
+Variant of [`tates_algorithm_local`](@ref) returning an [`EllipticCurveLocalData`](@ref) struct instead of a tuple.
 """
-function tates_algorithm_local(E, P, ::Type{EllipticCurveLocalData})
-  return _tates_algorithm(E, P)
+function tates_algorithm_local(E::EllipticCurve{T}, P, ::Type{EllipticCurveLocalData}) where T
+  d = _local_data_dict(E)
+  k = _local_data_key(E, P)
+  haskey(d, k) && return d[k]
+
+  ld = _tates_algorithm(E, P)
+  if ld.reduction_type != EllipticCurveReduction.good
+    d[k] = ld
+  end
+
+  return ld
 end
 
 function _tates_algorithm(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
@@ -238,7 +248,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
     # Step 1 in Silverman description
     # Line 4 in Cremona description
     if vD == 0  # Good Reduction
-      return EllipticCurveLocalData(E, KodairaSymbol("I0"), 0, 1, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("I0"), 0, 0, 1, true)
     end
 
     # Step 2 in Silverman description
@@ -286,26 +296,26 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
       else
         cp = mod(vD, 2) == 0 ? 2 : 1
       end
-      return EllipticCurveLocalData(E, KodairaSymbol("I$(vD)"), 1, cp, split)
+      return EllipticCurveLocalData(E, KodairaSymbol("I$(vD)"), 1, vD, cp, split)
     end
 
     # Step 3 in Silverman description
     # Line 23 in Cremona description
     if valuation(v, a6) < 2   # Type II
-      return EllipticCurveLocalData(E, KodairaSymbol("II"), vD, 1, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("II"), vD, vD, 1, true)
     end
 
     # Step 4 in Silverman description
     # Line 24 in Cremona description
     if valuation(v, b8) < 3   # Type III
-      return EllipticCurveLocalData(E, KodairaSymbol("III"), vD - 1, 2, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("III"), vD - 1, vD, 2, true)
     end
 
     # Step 5 in Silverman description
     # Lines 25-28 in Cremona description
     if valuation(v, b6) < 3   # Type IV
       cp = quadratic_has_root(one(K), a3//pi, -a6//pi^2) ? 3 : 1
-      return EllipticCurveLocalData(E, KodairaSymbol("IV"), vD - 2, cp, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("IV"), vD - 2, vD, cp, true)
     end
 
     # Step 6 in Silverman description
@@ -349,7 +359,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
     if valuation(v, w) == 0     # Three distinct roots: I0*
       # we need the number of roots of x^3 + bx^2 + cx + d
       f = Fx(reduce.(Ref(v), [d, c, b, one(K)]))
-      return EllipticCurveLocalData(E, KodairaSymbol("I0*"), vD - 4, 1 + length(roots(f)), true)
+      return EllipticCurveLocalData(E, KodairaSymbol("I0*"), vD - 4, vD, 1 + length(roots(f)), true)
     elseif valuation(v, x) == 0 # One double root: Im*
       # part of Step 7 in Silverman description
       # Lines 39-41 in Cremona description
@@ -424,7 +434,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
           end
         end
       end
-      return EllipticCurveLocalData(E, KodairaSymbol("I$(m)*"), vD - m - 4, cp, true)
+      return EllipticCurveLocalData(E, KodairaSymbol("I$(m)*"), vD - m - 4, vD, cp, true)
     else  # Triple root
       # Step 8 in Silverman description
       # Lines 66-73 in Cremona description
@@ -458,7 +468,7 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
       # we want x^2 + a3/pi^2*x - a6/pi^4 to have distinct roots: check discriminant valuation
       if valuation(v, a3t^2 + 4*a6t) == 0
         cp = quadratic_has_root(one(K), a3t, -a6t) ? 3 : 1
-        return EllipticCurveLocalData(E, KodairaSymbol("IV*"), vD - 6, cp, true)
+        return EllipticCurveLocalData(E, KodairaSymbol("IV*"), vD - 6, vD, cp, true)
       end
 
       # Steps 9,10 in Silverman description
@@ -474,11 +484,11 @@ function _tates_algorithm(E::EllipticCurve{T}, v::DiscreteValuation{T}) where T
       b2, b4, b6, b8 = b_invariants(E)
 
       if valuation(v, a4) < 4 # Type III*
-        return EllipticCurveLocalData(E, KodairaSymbol("III*"), vD - 7, 2, true)
+        return EllipticCurveLocalData(E, KodairaSymbol("III*"), vD - 7, vD, 2, true)
       end
 
       if valuation(v, a6) < 6 # Type II*
-        return EllipticCurveLocalData(E, KodairaSymbol("II*"), vD - 8, 1, true)
+        return EllipticCurveLocalData(E, KodairaSymbol("II*"), vD - 8, vD, 1, true)
       end
     end
 
@@ -507,6 +517,8 @@ function tates_algorithm_global(E::EllipticCurve{QQFieldElem})
   end
 
   # reduce coefficients (see tidy_model)
+  # TODO: we have factored the discriminant, so we have good candidates for bad primes
+  # TODO: maybe it might make sense to fill local data cache on returned curve immediately
   return tidy_model(E)
 end
 
@@ -522,6 +534,8 @@ function tates_algorithm_global(E::EllipticCurve{T}) where T <: AbstractAlgebra.
     E = _tates_algorithm(E, p).minimal_model
   end
 
+  # TODO: we have factored the discriminant, so we have good candidates for bad primes
+  # TODO: maybe it might make sense to fill local data cache on returned curve immediately
   return E
 end
 
@@ -532,11 +546,11 @@ end
 Return the local Tamagawa number for E at p.
 """
 function tamagawa_number(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
-  return _tates_algorithm(E, p).tamagawa_number
+  return tates_algorithm_local(E, p, EllipticCurveLocalData).tamagawa_number
 end
 
 function tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return _tates_algorithm(E, p).tamagawa_number
+  return tates_algorithm_local(E, p, EllipticCurveLocalData).tamagawa_number
 end
 
 @doc raw"""
@@ -546,11 +560,11 @@ end
 Return the reduction type of E at p using a Kodaira symbol.
 """
 function kodaira_symbol(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
-  return _tates_algorithm(E, p).kodaira_symbol
+  return tates_algorithm_local(E, p, EllipticCurveLocalData).kodaira_symbol
 end
 
 function kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  return _tates_algorithm(E, p).kodaira_symbol
+  return tates_algorithm_local(E, p, EllipticCurveLocalData).kodaira_symbol
 end
 
 @doc raw"""
@@ -561,7 +575,7 @@ bad primes $p$ of $E$.
 """
 function tamagawa_numbers(E::EllipticCurve{QQFieldElem})
   badp = bad_primes(E)
-  return [tamagawa_number(E,p) for p in badp]
+  return [tamagawa_number(E, p) for p in badp]
 end
 
 @doc raw"""
@@ -572,7 +586,7 @@ Kodaira symbols
 """
 function kodaira_symbols(E::EllipticCurve{QQFieldElem})
   badp = bad_primes(E)
-  return [kodaira_symbol(E,p) for p in badp]
+  return [kodaira_symbol(E, p) for p in badp]
 end
 
 @doc raw"""
@@ -583,7 +597,7 @@ prime ideals $p$ of $E$.
 """
 function tamagawa_numbers(E::EllipticCurve{AbsSimpleNumFieldElem})
   badp = bad_primes(E)
-  return [tamagawa_number(E,p) for p in badp]
+  return [tamagawa_number(E, p) for p in badp]
 end
 
 @doc raw"""
@@ -595,7 +609,7 @@ Kodaira symbols.
 """
 function kodaira_symbols(E::EllipticCurve{AbsSimpleNumFieldElem})
   badp = bad_primes(E)
-  return [kodaira_symbol(E,p) for p in badp]
+  return [kodaira_symbol(E, p) for p in badp]
 end
 
 @doc raw"""
@@ -606,12 +620,12 @@ Return the reduction type of E at p. It can either be good, additive,
 split multiplicative or nonsplit multiplicative.
 """
 function reduction_type(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
-  ld = _tates_algorithm(E, p)
+  ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
   return "$(ld.reduction_type)"
 end
 
 function reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  ld = _tates_algorithm(E, p)
+  ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
   return "$(ld.reduction_type)"
 end
 
@@ -629,7 +643,7 @@ Return the conductor of $E$ over QQ.
 function conductor(E::EllipticCurve{QQFieldElem})
   result = one(ZZ)
   for p in bad_primes(E)
-    result = result * p^_tates_algorithm(E, p).conductor_valuation
+    result = result * p^tates_algorithm_local(E, p, EllipticCurveLocalData).conductor_valuation
   end
   return result
 end
@@ -640,11 +654,9 @@ end
 Return conductor of $E$ over a number field as an ideal.
 """
 function conductor(E::EllipticCurve{AbsSimpleNumFieldElem})
-  badp = bad_primes(E)
-
-  result = 1 * order(badp[1])
-  for p in badp
-    result = result * p^_tates_algorithm(E, p).conductor_valuation
+  result = 1 * ring_of_integers(base_field(E))
+  for p in bad_primes(E)
+    result = result * p^tates_algorithm_local(E, p, EllipticCurveLocalData).conductor_valuation
   end
   return result
 end
@@ -658,42 +670,108 @@ valuation at that place. Finite places are represented by irreducible
 polynomials (lifted to the base field of $E$) and the place at infinity by $1/t$.
 """
 function conductor(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}}
-  K = base_field(E)
-  R = base_ring(K.fraction_field)
-
   result = Tuple{T, ZZRingElem}[]
-  for (p, _) in factor(R, discriminant(E))
-    e = _tates_algorithm(E, p).conductor_valuation
-    e > 0 && push!(result, (K(p), e))
+
+  for p in bad_primes(E)
+    e = tates_algorithm_local(E, p, EllipticCurveLocalData).conductor_valuation
+    e > 0 && push!(result, (p, e))
   end
-  e_inf = _tates_algorithm(E, degree).conductor_valuation
-  e_inf > 0 && push!(result, (1//gen(K), e_inf))
 
   return result
 end
 
-#Magma returns the primes that divide the minimal discriminant
 @doc raw"""
     bad_primes(E::EllipticCurve{QQFieldElem}) -> Vector{ZZRingElem}
 
-Return a list of the primes that divide the discriminant of $E$.
+Return the primes of bad reduction of $E$. This is the set of primes $p$ dividing the minimal discriminant of $E$.
+Note that primes at which the model is non-minimal but the curve has good reduction are **not** returned.
 """
-function bad_primes(E::EllipticCurve{QQFieldElem})
-  d = ZZ(discriminant(E))
-  L = factor(d)
-  return sort([p for (p,e) in L])
+@attr Vector{ZZRingElem} function bad_primes(E::EllipticCurve{QQFieldElem})
+  # ensure all the candidates have Tate's local data computed and cached
+  for p in _bad_prime_candidates(E)
+    tates_algorithm_local(E, p, EllipticCurveLocalData)
+  end
+
+  d = _local_data_dict(E)
+  return sort!(collect(keys(d)))
+end
+
+function _bad_prime_candidates(E::EllipticCurve{QQFieldElem})
+  d = discriminant(E)
+  pnum = [p for (p, _) in factor(numerator(d))]
+  pden = [p for (p, _) in factor(denominator(d))]
+  return union(pnum, pden)
 end
 
 @doc raw"""
-    bad_primes(E::EllipticCurve{QQFieldElem}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+    bad_primes(E::EllipticCurve{AbsSimpleNumFieldElem}) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
-Return a list of prime ideals that divide the discriminant of $E$.
+Return the prime ideals of bad reduction of $E$.
+This is the set of prime ideals $\mathfrak{p}$ dividing the minimal discriminant ideal of $E$.
+Note that prime ideals at which the model is non-minimal but the curve has good reduction are **not** returned.
 """
-function bad_primes(E::EllipticCurve{AbsSimpleNumFieldElem})
+@attr Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} function bad_primes(E::EllipticCurve{AbsSimpleNumFieldElem})
+  # ensure all the candidates have Tate's local data computed and cached
+  for p in _bad_prime_candidates(E)
+    tates_algorithm_local(E, p, EllipticCurveLocalData)
+  end
+
+  d = _local_data_dict(E)
+  return sort!(collect(keys(d)); by = _nf_prime_sort_key)
+end
+
+function _bad_prime_candidates(E::EllipticCurve{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
-  d = OK(discriminant(E))
-  L = factor(d*OK)
-  return [p for (p,e) in L]
+  return [p for (p, _) in factor(discriminant(E)*OK)]
+end
+
+# Canonical-ish sort for absolute number field prime ideals.
+# Sorts by rational prime below, then norm to disambiguate primes over the same p.
+# Not a strict total order (two primes above p with the same inertia degree compare equal),
+#   but sufficient for reproducible output.
+# The ordering is not that important (since now we cache the list of bad primes)
+#   but let's try making the list more pleasant for humans to consume
+_nf_prime_sort_key(P::AbsNumFieldOrderIdeal) = (minimum(P; copy = false), norm(P; copy = false))
+
+@doc raw"""
+    bad_primes(E::EllipticCurve{T}) where {T <: RationalFunctionFieldElem} -> Vector{T}
+
+Return the places of bad reduction of $E$ over $k(t)$.
+Places at which the model is non-minimal but the curve has good reduction are **not** returned.
+
+Places are represented as elements of $k(t)$:
+- a finite place is represented by its monic irreducible defining polynomial,
+    lifted to $k(t)$ (e.g. `t - 1//2`, not `2*t - 1`);
+- the place at infinity is represented by `1 // t`.
+"""
+function bad_primes(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  # ensure all the candidates have Tate's local data computed and cached
+  for p in _bad_prime_candidates(E)
+    tates_algorithm_local(E, p, EllipticCurveLocalData)
+  end
+
+  d = _local_data_dict(E)
+  return sort!(collect(keys(d)); by = _rff_place_sort_key)
+end
+
+function _bad_prime_candidates(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  K = base_field(E)
+  R = base_ring(K.fraction_field)
+
+  result = T[K(p) for (p, _) in factor(R, discriminant(E))]
+  push!(result, 1//gen(K))
+
+  return result
+end
+
+# Canonical-ish sort for rational function field prime ideals.
+# Sorts finite primes by the degree, and pushed infinite prime to be last.
+# Not a strict total order but sufficient for reproducible output.
+# The ordering is not that important (since now we cache the list of bad primes)
+#   but let's try making the list more pleasant for humans to consume
+function _rff_place_sort_key(x::T) where T <: AbstractAlgebra.Generic.RationalFunctionFieldElem
+  is_one(denominator(x)) && return (false, degree(numerator(x)))
+  return (true, 1) # the place at infinity
 end
 
 ################################################################################
@@ -713,7 +791,7 @@ function modp_reduction(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldO
     throw(DomainError(p,"p is not a prime ideal"))
   end
 
-  if p in bad_primes(E)
+  if p in _bad_prime_candidates(E)
     throw(DomainError(p,"E has bad reduction at p"))
   end
 
@@ -832,4 +910,48 @@ end
 
 function is_multiplicative_reduction(rt::EllipticCurveReduction.ReductionType)
   return rt == EllipticCurveReduction.split_multiplicative || rt == EllipticCurveReduction.nonsplit_multiplicative
+end
+
+################################################################################
+#
+#  Local data cache
+#
+################################################################################
+
+# canonical cache-key type per base field
+_local_data_key_type(::Type{QQFieldElem}) = ZZRingElem
+_local_data_key_type(::Type{AbsSimpleNumFieldElem}) = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+_local_data_key_type(::Type{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem} = T
+
+# normalize a user-supplied prime/place to the canonical key
+_local_data_key(::EllipticCurve{QQFieldElem}, p::IntegerUnion) = ZZ(p)
+_local_data_key(::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = p
+_local_data_key(::EllipticCurve{T}, x::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem} = _canonical_rff_place(x)
+_local_data_key(E::EllipticCurve{T}, f::PolyRingElem) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem} = _canonical_rff_place(base_field(E)(f))
+_local_data_key(E::EllipticCurve{T}, ::typeof(degree)) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem} = 1 // gen(base_field(E))
+
+# Canonicalize finite place generators up to units before using them as cache keys.
+# mimics _make_canonical_in(O::GenOrd{S, T}, x)
+# TODO: this should be part of Function Field implementation
+function _canonical_rff_place(x::T) where T <: AbstractAlgebra.Generic.RationalFunctionFieldElem
+  K = parent(x)
+  if is_one(denominator(x))
+    is_zero(x) && return x
+    y = numerator(x) # this is now polynomial, not just a rational field element
+    return K(divexact(y, canonical_unit(y)))
+  else
+    @assert x == 1 // gen(K)
+    return x
+  end
+end
+
+# cache for local data generated by Tate's algorithm
+# we store ONLY primes of bad reduction
+#   it is assumed that nobody cares about primes of good reduction
+#   and further Tate's algorithm on a prime of good reduction is essentially free (most of the times)
+function _local_data_dict(E::EllipticCurve{T}) where T
+  K = _local_data_key_type(T)
+  return get_attribute!(E, :local_data) do
+    Dict{K, EllipticCurveLocalData{T}}()
+  end::Dict{K, EllipticCurveLocalData{T}}
 end

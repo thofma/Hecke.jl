@@ -68,7 +68,7 @@ end
 
 Return the principal divisor consisting of the sum of zeroes and poles of f
 """
-function divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
+function divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   @req !is_zero(f) "Element must be non-zero"
   F = parent(f)
 
@@ -81,7 +81,7 @@ end
 
 Return the divisor consisting of the zeroes of f
 """
-function zero_divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
+function zero_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
 
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
@@ -96,7 +96,7 @@ end
 
 Return the divisor consisting of the poles of f
 """
-function pole_divisor(f::Generic.FunctionFieldElem{T}) where {T <: FieldElement}
+function pole_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
 
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
@@ -162,42 +162,25 @@ function constant_field(K::AbstractAlgebra.Generic.FunctionField)
 end
 
 @doc raw"""
-    finite_maximal_order(K::FunctionFIeld) -> GenOrd
+    finite_maximal_order(K::FunctionField) -> GenOrd
 
 Return the finite maximal order of K
 """
-function finite_maximal_order(K::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
-  get_attribute!(K, :finite_maximal_order) do
-    return _finite_maximal_order(K)
-  end::GenOrd{AbstractAlgebra.Generic.FunctionField{T}, parent_type(poly_type(T))}
-end
-
-function _finite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
+@attr GenOrd{Generic.FunctionField{T, U}, parent_type(U)} function
+finite_maximal_order(K::Generic.FunctionField{T, U}) where {T, U}
   kx = parent(numerator(gen(base_ring(K))))
   return integral_closure(kx, K)
 end
 
 @doc raw"""
-    infinite_maximal_order(K::FunctionFIeld) -> GenOrd
+    infinite_maximal_order(K::FunctionField) -> GenOrd
 
 Return the infinite maximal order of K
 """
-function infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
-  return _infinite_maximal_order_function_field_typed(K, base_ring(K))
-end
-
-# Function-barrier helper. K's type (FunctionField) only carries T,
-#   so we recover U from base_ring(K) to get a fully concrete KInftyRing{T, U}
-function _infinite_maximal_order_function_field_typed(K::F, ::Generic.RationalFunctionField{T, U}) where {T, U, F <: AbstractAlgebra.Generic.FunctionField{T}}
-  get_attribute!(K, :infinite_maximal_order) do
-    return _infinite_maximal_order(K)
-  end::GenOrd{F, KInftyRing{T, U}}
-end
-
-function _infinite_maximal_order(K::AbstractAlgebra.Generic.FunctionField)
-  R = localization(base_ring(K),degree)
-  Oinf = integral_closure(R, K)
-  return Oinf
+@attr GenOrd{Generic.FunctionField{T, U}, KInftyRing{T, U}} function
+infinite_maximal_order(K::Generic.FunctionField{T, U}) where {T, U}
+  R = localization(base_ring(K), degree)
+  return integral_closure(R, K)
 end
 
 ################################################################################
@@ -531,7 +514,7 @@ end
 
 Return the different divisor of F.
 """
-function different_divisor(F::AbstractAlgebra.Generic.FunctionField{T}) where {T <: FieldElement}
+function different_divisor(F::Generic.FunctionField{T, U}) where {T, U}
   return divisor(different(finite_maximal_order(F)), different(infinite_maximal_order(F)))
 end
 

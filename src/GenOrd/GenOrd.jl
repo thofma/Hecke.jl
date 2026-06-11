@@ -661,11 +661,11 @@ function integral_closure(S::LocalizedEuclideanRing{ZZRingElem}, F::AbsSimpleNum
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T}) where {T}
+function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T, U}) where {T, U}
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::KInftyRing{T,U}, F::Generic.FunctionField{T}) where {T,U}
+function integral_closure(S::KInftyRing{T, U}, F::Generic.FunctionField{T, U}) where {T, U}
   return _integral_closure(S, F)
 end
 
