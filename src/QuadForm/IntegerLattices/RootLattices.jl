@@ -698,8 +698,8 @@ end
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive.
 function _fundamental_roots(sv::Vector{Vector{S}}, gram::Matrix{S}) where {S<:Int}
-  weyl_dual = gram*sum(sv)
-  return [i for i in sv if dot(i, weyl_dual)==2]
+  weyl_dual = gram*sum(sv; init = zeros(S, size(gram, 2)))
+  return Vector{S}[i for i in sv if dot(i, weyl_dual)==2]
 end
 
 # return the root types of the root sublattice of L
