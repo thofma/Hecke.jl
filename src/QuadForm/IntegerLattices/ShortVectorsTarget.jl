@@ -1046,10 +1046,11 @@ end
 function _short_vectors_with_condition_direct(L::ZZLat; use_dual=false)
   tmpZZ = ZZ()
   G, _ = _integral_split_gram(L)
+  GInt = _int_matrix_with_overflow(G, tmpZZ)
   m = Int(maximum(diagonal(G))) # catches overflows
   sv = __short_vectors(G, nothing, m)
   sv2 = @inbounds [i[1] for i in sv if i[2]==2]
-  fundamental_roots = _fundamental_roots!(sv2)
+  fundamental_roots = _fundamental_roots(sv2,GInt)
 
   V = ambient_space(L)
   n = rank(L)
@@ -1068,15 +1069,23 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_dual=false)
   Binv,bi = integral_split(inv(B),ZZ)
   grams = [_int_matrix_with_overflow(g, tmpZZ) for g in _get_grams_std(projL_gram, projection_ranges, Binv)]
   @assert isone(bi)
-  gram2 = sum(rand(1:100)*g for g in grams)
+  gram2 = grams[1]
+  # try compression
+  for i in 2:length(grams)
+    m = maximum(gram2[i,i] for i in 1:n)
+    gram2 = gram2 + (m+1)*grams[i]
+  end
+  if maximum(gram2[i,i] for i in 1:n)>2^32
+    gram2 = sum(rand(1:100)*g for g in grams)
+  end
+
   
-  GInt = _int_matrix_with_overflow(G, tmpZZ)
   fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
 
   seed = UInt(34529384232429)
   target_fix = [_signed_hash(fixed_space_dual[:,i], seed) for i in 1:n]
   target_norm = [gram2[i,i] for i in 1:n]
-  target = Set{Tuple{Int,Int,Int}}()
+  target = Vector{Tuple{Int,Int,Int}}()
   for i in 1:n 
     i1 = _signed_hash(fixed_space_dual[:, i], seed)
     i2 = GInt[i,i]
@@ -1094,11 +1103,49 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_dual=false)
     i2 = sq 
     i3 = 0
     i3 = dot(v, gram2, v)
-    k = (i1, i2, i3)
+    # merge the buckets with the same absolute value of the hash, since we consider our vectors up to sign
+    k = (abs(i1), i2, i3)
     A = get!(D, k, Vector{Int}[])
-    push!(A, v)
+    if i1 >= 0 
+      push!(A, v)
+    else 
+      push!(A, neg!(v))
+    end
   end
 
-  return D
+  vector_sums = [GInt*sum(a) for (k,a) in D if !iszero(k[1])]
+  Dnew = Dict{Tuple{Int,Int,Int},Vector{Vector{Int}}}()
+  while true 
+    for k in keys(D)
+      (i1,i2,i3) = k
+      for v in D[k]
+        i1v = _signed_hash(pushfirst!([dot(v, w) for w in vector_sums],i1), seed)
+        kv = (i1v,i2,i3)
+        push!(get!(Dnew, kv, Vector{Int}[]), v)
+      end
+    end
+    if length(Dnew) == length(D)
+      # nothing new
+      break
+    end
+    D = Dnew
+  end 
+
+  l = sum(length.(values(D)))
+  output = Vector{Tuple{Vector{Int},Vector{Int}}}(undef, l)
+  invariants = Vector{Int}(undef, l)
+  a = m+1
+  i = 0
+  for (k,vs) in D
+    kv = [k[2]+a*k[3]]
+    for v in vs
+      i = i+1
+      output[i] = (v, kv)
+      invariants[i] = k[1]
+    end 
+  end
+  target_norm = [i[2]+a*i[3] for i in target]
+  target_invariant = [_signed_hash(pushfirst!([v[i] for v in vector_sums], target[i][1]), seed) for i in 1:n]
+  return output, invariants, target_norm, target_invariant, GInt+a*gram2
 end 
 
