@@ -242,6 +242,10 @@ end
     @test basis_matrix(root_sublattice(L; length = [1])) == ZZ[1 0 0]
   end
 
+  # empty root lattice
+  L = integer_lattice(;gram = ZZ[3;])
+  @test length(root_lattice_recognition(L)) == 0
+
   # isometry testing
   C1 = root_lattice(:A, 2)
   C1m = rescale(C1,-1)
