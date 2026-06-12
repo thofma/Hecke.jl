@@ -1026,18 +1026,7 @@ end
 hash(x::GrowingSubspace, y::UInt) = hash((x.B1,x.range),y)
 
 
-#
 # type piracy
-#
-function set!(z::Nemo.QQMatrixOrPtr, x::Nemo.ZZMatrixOrPtr)
-  @ccall libflint.fmpq_mat_set_fmpz_mat(z::Ref{Nemo.QQMatrixOrPtr}, x::Ref{Nemo.ZZMatrixOrPtr})::Nothing
-  return z
-end
-
-function change_base_ring(P::QQField, x::ZZMatrix)
-  z = zero_matrix(QQ,nrows(x), ncols(x))
-  return set!(z,x)
-end
 
 function integral_split(x::ZZMatrix, R::ZZRing)
   return x, one(ZZ)
