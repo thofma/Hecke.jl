@@ -8,6 +8,8 @@
     @test characteristic(K) == 0
     @test prime(K) == 2
 
+    ConformanceTests.test_Field_interface(K)
+
     Kt, t = polynomial_ring(K, "t")
     g = t^2+2
     L, b = local_field(g, "b", Hecke.EisensteinLocalField, check = false)
@@ -40,8 +42,14 @@
 
   @testset "Norm" begin
     K = qadic_field(3, 4, precision = 10)[1]
+    test_Field_interface(K)
+    #test_Field_interface_recursive(K)  # TODO/FIXME: does not work due to missing isapprox
+
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
+    test_Field_interface(L)
+    #test_Field_interface_recursive(L)  # TODO/FIXME: does not work due to missing isapprox
+
     b = @inferred basis(L)
     for i = 1:10
       r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5])
