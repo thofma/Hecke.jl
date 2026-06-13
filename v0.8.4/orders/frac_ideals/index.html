@@ -1,0 +1,1032 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.4.0">
+    
+    
+      
+        <title>Fractional Ideals - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.fe0cca5b.min.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a46bcfb3.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fractional-ideals" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header-nav__button md-logo" aria-label="Hecke">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            Hecke
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              Fractional Ideals
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Number fields
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Number fields" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Number fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/basics/" title="Creation and basics" class="md-nav__link">
+      Creation and basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/internal/" title="Internals" class="md-nav__link">
+      Internals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Orders
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Orders" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Orders
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../orders/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ideals/" title="Ideals" class="md-nav__link">
+      Ideals
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Fractional Ideals
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"/></svg>
+        </span>
+      </label>
+    
+    <a href="./" title="Fractional Ideals" class="md-nav__link md-nav__link--active">
+      Fractional Ideals
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscaellenous" class="md-nav__link">
+    Miscaellenous
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Quadratic and Hermitian forms
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Quadratic and Hermitian forms" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Quadratic and Hermitian forms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/basics/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/lattices/" title="Lattices" class="md-nav__link">
+      Lattices
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Abelian groups
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Abelian groups" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Abelian groups
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../abelian/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Class fields
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Class fields" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Class fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../class_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Misc
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Misc" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../FacElem/" title="Factored Elements" class="md-nav__link">
+      Factored Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sparse/intro/" title="Sparse Linear Algebra" class="md-nav__link">
+      Sparse Linear Algebra
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Source
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59 16.58L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.42z"/></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Source" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        </span>
+        Source
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://www.github.com/thofma/Hecke.jl" title="None" class="md-nav__link">
+      None
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscaellenous" class="md-nav__link">
+    Miscaellenous
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  
+                
+                
+                <p><a id='Fractional-ideals'></a></p>
+<p><a id='Fractional-ideals-1'></a></p>
+<h1 id="fractional-ideals">Fractional ideals</h1>
+<p>A fractional ideal in the number field <script type="math/tex">K</script> is a <script type="math/tex">Z_K</script>-module <script type="math/tex">A</script> such that there exists an integer <script type="math/tex">d>0</script> wich <script type="math/tex">dA</script> is an (integral) ideal in <script type="math/tex">Z_K</script>. Due to the Dedekind property of <script type="math/tex">Z_K</script>, the ideals for a multiplicative group.</p>
+<p>Fractional ideals are represented as an integral ideal and an additional denominator. They are of type <code>NfOrdFracIdl</code>.</p>
+<p><a id='Creation'></a></p>
+<p><a id='Creation-1'></a></p>
+<h2 id="creation">Creation</h2>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="n">fmpz_mat</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">A_in_hnf</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdFracIdl</span>
+</code></pre></div>
+
+<p>Creates the fractional ideal of <script type="math/tex">\mathcal O</script> with basis matrix <script type="math/tex">A/b</script>. If A<em>in</em>hnf is set, then it is assumed that <script type="math/tex">A</script> is already in lower left HNF.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="n">fmpz_mat</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">A_in_hnf</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdFracIdl</span>
+</code></pre></div>
+
+<p>Creates the fractional ideal of <script type="math/tex">\mathcal O</script> with basis matrix <script type="math/tex">A/b</script>. If A<em>in</em>hnf is set, then it is assumed that <script type="math/tex">A</script> is already in lower left HNF.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="n">FakeFmpqMat</span><span class="p">,</span> <span class="n">A_in_hnf</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdFracIdl</span>
+</code></pre></div>
+
+<p>Creates the fractional ideal of <script type="math/tex">\mathcal O</script> with basis matrix <script type="math/tex">A</script>. If A<em>in</em>hnf is set, then it is assumed that the numerator of <script type="math/tex">A</script> is already in lower left HNF.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdFracIdl</span>
+</code></pre></div>
+
+<p>The fractional ideal of <script type="math/tex">O</script> generated by a Z-basis of <script type="math/tex">I</script>.</p>
+<div class="codehilite"><pre><span></span><code>fractional_ideal(O::NfAbsOrd, I::NfAbsOrdIdl) -&gt; NfAbsOrdFracIdl
+</code></pre></div>
+
+<p>Turns the ideal <script type="math/tex">I</script> into a fractional ideal of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span> <span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdFracIdl</span>
+</code></pre></div>
+
+<p>Creates the fractional ideal <script type="math/tex">I/b</script> of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdFracIdl</span>
+</code></pre></div>
+
+<p>Creates the principal fractional ideal <script type="math/tex">(a)</script> of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">fractional_ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdFracIdl</span>
+</code></pre></div>
+
+<p>Creates the principal fractional ideal <script type="math/tex">(a)</script> of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code> <span class="n">inv</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">LocElem</span><span class="p">{</span><span class="n">T</span><span class="p">},</span> <span class="n">checked</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span>  <span class="n">where</span> <span class="p">{</span><span class="n">T</span> <span class="o">&lt;:</span> <span class="n">RingElem</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Returns the inverse element of <script type="math/tex">a</script> if <script type="math/tex">a</script> is a unit. If 'checked = false' the invertibility of <script type="math/tex">a</script> is not checked and the corresponding inverse element of the Fraction Field is returned.</p>
+<div class="codehilite"><pre><span></span><code>  inv(a::NfRelOrdIdl) -&gt; NfRelOrdFracIdl
+  inv(a::NfRelOrdFracIdl) -&gt; NfRelOrdFracIdl
+</code></pre></div>
+
+<p>Computes the inverse of <script type="math/tex">a</script>, that is, the fractional ideal <script type="math/tex">b</script> such that <script type="math/tex">ab = O</script>, where <script type="math/tex">O</script> is the ambient order of <script type="math/tex">a</script>. <script type="math/tex">O</script> must be maximal.</p>
+<div class="codehilite"><pre><span></span><code>inv(A::NfAbsOrdIdl) -&gt; NfOrdFracIdl
+</code></pre></div>
+
+<p>Computes the inverse of A, that is, the fractional ideal <script type="math/tex">B</script> such that <script type="math/tex">AB = \mathcal O_K</script>.</p>
+<p><a id='Arithmetic'></a></p>
+<p><a id='Arithmetic-1'></a></p>
+<h2 id="arithmetic">Arithmetic</h2>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="o">==</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</code></pre></div>
+
+<p>Returns whether <script type="math/tex">x</script> and <script type="math/tex">y</script> are equal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code> <span class="n">inv</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">LocElem</span><span class="p">{</span><span class="n">T</span><span class="p">},</span> <span class="n">checked</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span>  <span class="n">where</span> <span class="p">{</span><span class="n">T</span> <span class="o">&lt;:</span> <span class="n">RingElem</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Returns the inverse element of <script type="math/tex">a</script> if <script type="math/tex">a</script> is a unit. If 'checked = false' the invertibility of <script type="math/tex">a</script> is not checked and the corresponding inverse element of the Fraction Field is returned.</p>
+<div class="codehilite"><pre><span></span><code>  inv(a::NfRelOrdIdl) -&gt; NfRelOrdFracIdl
+  inv(a::NfRelOrdFracIdl) -&gt; NfRelOrdFracIdl
+</code></pre></div>
+
+<p>Computes the inverse of <script type="math/tex">a</script>, that is, the fractional ideal <script type="math/tex">b</script> such that <script type="math/tex">ab = O</script>, where <script type="math/tex">O</script> is the ambient order of <script type="math/tex">a</script>. <script type="math/tex">O</script> must be maximal.</p>
+<div class="codehilite"><pre><span></span><code>inv(A::NfAbsOrdFracIdl) -&gt; NfAbsOrdFracIdl
+</code></pre></div>
+
+<p>Returns the fractional ideal <script type="math/tex">B</script> such that <script type="math/tex">AB = \mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">integral_split</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span><span class="p">,</span> <span class="n">NfAbsOrdIdl</span>
+</code></pre></div>
+
+<p>Computes the unique coprime integral ideals <script type="math/tex">N</script> and <script type="math/tex">D</script> s.th. <script type="math/tex">A = ND^{-1}</script>
+</p>
+<p><a id='Miscaellenous'></a></p>
+<p><a id='Miscaellenous-1'></a></p>
+<h2 id="miscaellenous">Miscaellenous</h2>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">order</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</code></pre></div>
+
+<p>The order that was used to define the ideal <script type="math/tex">a</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">basis_matrix</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</code></pre></div>
+
+<p>Returns the basis matrix of <script type="math/tex">I</script> with respect to the basis of the order.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">basis_mat_inv</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</code></pre></div>
+
+<p>Returns the inverse of the basis matrix of <script type="math/tex">\mathcal O</script>.</p>
+<div class="codehilite"><pre><span></span><code>basis_mat_inv(A::NfAbsOrdIdl) -&gt; fmpz_mat
+</code></pre></div>
+
+<p>Returns the inverse basis matrix of <script type="math/tex">A</script>.</p>
+<div class="codehilite"><pre><span></span><code>basis_mat_inv(I::NfAbsOrdFracIdl) -&gt; FakeFmpqMat
+</code></pre></div>
+
+<p>Returns the inverse of the basis matrix of <script type="math/tex">I</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">basis</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</code></pre></div>
+
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">I</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><code><span class="n">norm</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfRelOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</code></pre></div>
+
+<p>Returns the norm of <script type="math/tex">a</script>.</p>
+<div class="codehilite"><pre><span></span><code>norm(a::NfRelOrdFracIdl{T, S}) -&gt; S
+</code></pre></div>
+
+<p>Returns the norm of <script type="math/tex">a</script>
+</p>
+<div class="codehilite"><pre><span></span><code>norm(I::NfAbsOrdFracIdl) -&gt; fmpq
+</code></pre></div>
+
+<p>Returns the norm of <script type="math/tex">I</script>
+</p>
+<div class="codehilite"><pre><span></span><code>norm(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true) -&gt; fmpq
+</code></pre></div>
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script> considered as an (possibly fractional) ideal of <script type="math/tex">O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><code>norm(a::AlgAssRelOrdIdl{S, T, U}, O::AlgAssRelOrd{S, T, U}; copy::Bool = true)
+  where { S, T, U } -&gt; T
+</code></pre></div>
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script> considered as an (possibly fractional) ideal of <script type="math/tex">O</script>.</p>
+</blockquote>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../ideals/" title="Ideals" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Ideals
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../../quad_forms/introduction/" title="Introduction" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Introduction
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/vendor.d710d30a.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b39636ac.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../..",
+          features: [],
+          search: Object.assign({
+            worker: "../../assets/javascripts/worker/search.a68abb33.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+    
+  </body>
+</html>
