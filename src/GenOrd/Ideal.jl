@@ -337,14 +337,44 @@ end
 #
 ################################################################################
 
+# Multiplying an integral ideal by a *base ring* scalar is equivalent to
+#   scaling the ideal basis matrix.
+# Internal helper for base-ring scalar case
+function _ideal_by_scaling_matrix(c, I::GenOrdIdl)
+  O = order(I)
+  # we must ensure canonical form, to keep HNF canonical
+  c = _make_canonical_in(O, c)
+
+  is_zero(c) && return ideal(O, c)
+  is_one(c) && return I
+  return GenOrdIdl(O, c * basis_matrix(I; copy = false))
+end
+
+# This is the check for "scalar is in the base ring"
+# Since x is GenOrdElem, it is integral, so we need to check if it is in the base field
+function _is_in_base_field(x::GenOrdElem)
+  a = data(x)
+  for i in 1:degree(parent(a)) - 1
+    is_zero(coeff(a, i)) || return false
+  end
+  return true
+end
+
 function Base.:*(x::GenOrdElem, O::GenOrd)
   return ideal(O, x)
 end
 
 function Base.:*(x::GenOrdElem, I::GenOrdIdl{S, T}) where {S, T}
-  @req parent(x) === order(I) "Element and ideal must belong to the same order"
-  # NOTE: we use order(I) because it provides concrete GenOrd{S,T} for type inference
-  return GenOrdIdl(order(I), x) * I
+  O = order(I) # note that this has concrete type for type inference
+  @req parent(x) === O "Element and ideal must belong to the same order"
+
+  if _is_in_base_field(x)
+    c, den = integral_split(coeff(data(x), 0), base_ring(O))
+    @assert is_one(den)
+    return _ideal_by_scaling_matrix(c, I)
+  end
+
+  return GenOrdIdl(O, x) * I
 end
 
 Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
