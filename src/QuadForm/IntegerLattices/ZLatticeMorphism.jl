@@ -47,8 +47,9 @@ function __assert_has_automorphisms(
   search_fixed_vectors::Bool=true,
   search_invariant_subspace::Bool=false,
   use_target_enum::Bool=true,
+  short_vectors_direct::Bool=false,
   do_lll::Bool=true,
-  use_dual::Bool=false
+  use_dual::Bool=false,
 )
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -145,7 +146,8 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L; search_fixed_vectors, search_invariant_subspace, use_dual)
+    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;short_vectors_direct, 
+                                                                    search_fixed_vectors, search_invariant_subspace, use_dual)
     use_projections = false # already added projections
   elseif use_weyl
     error("todo")
@@ -289,7 +291,13 @@ function __assert_has_automorphisms(
   end
 end
 
-function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors=true, search_invariant_subspace=false, use_dual=false)
+function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true, 
+                                       search_invariant_subspace::Bool=false, 
+                                       use_dual::Bool=false,
+                                       short_vectors_direct::Bool=false)
+  if short_vectors_direct 
+    return _short_vectors_with_condition_direct(_L;use_dual, search_invariant_subspace, search_fixed_vectors)                                     
+  end  
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector = _weyl_group(_L, root_types, fundamental_roots)
   T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)

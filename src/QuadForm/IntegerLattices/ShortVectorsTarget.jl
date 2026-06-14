@@ -835,7 +835,9 @@ function push!(z::GrowingSubspace, x, offset=0)
 end
 
 function _search_invariant_subspaces(D::Dict, r::UnitRange{Int})
-   # collects invariant subspaces of rank 1, the rows of B2 are the rk 1 invariant subspaces, this is okay, since B2 does not get row reduced
+   # collects invariant subspaces of rank 1, 
+   # the rows of B2 are the rk 1 invariant subspaces, 
+   # this is okay, since B2 does not get row reduced
   subspaces = Set{ZZMatrix}()
   offset = first(r) - 1
   J1 = GrowingSubspace(r)
@@ -1032,7 +1034,7 @@ function integral_split(x::ZZMatrix, R::ZZRing)
   return x, one(ZZ)
 end
 
-function _short_vectors_with_condition_direct(L::ZZLat; use_dual=false)
+function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, use_dual=false, search_invariant_subspace=false, search_fixed_vectors=true)
   tmpZZ = ZZ()
   G, _ = _integral_split_gram(L)
   GInt = _int_matrix_with_overflow(G, tmpZZ)
@@ -1046,95 +1048,213 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_dual=false)
   
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L, [matrix(ZZ, 1, n, i) for i in fundamental_roots])
   fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
-  R_fix = lattice(V, fixed_space; isbasis=true, check=false)
-  R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
-  R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
-  Rperp = lattice(V, QQ.(kernel(G*transpose(R); side=:left)); isbasis=true, check=false)
-  successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
-  @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
-  projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
-  m = length(successive_sublattices)
-  B = reduce(vcat, projL)
-  Binv,bi = integral_split(inv(B),ZZ)
-  grams = [_int_matrix_with_overflow(g, tmpZZ) for g in _get_grams_std(projL_gram, projection_ranges, Binv)]
-  @assert isone(bi)
-  gram2 = grams[1]
-  # try compression
-  for i in 2:length(grams)
-    m = maximum(gram2[i,i] for i in 1:n)
-    gram2 = gram2 + (m+1)*grams[i]
-  end
-  if maximum(gram2[i,i] for i in 1:n)>2^32
-    gram2 = sum(rand(1:100)*g for g in grams)
+  if use_projections 
+    R_fix = lattice(V, fixed_space; isbasis=true, check=false)
+    R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
+    R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
+    Rperp = lattice(V, QQ.(kernel(G*transpose(R); side=:left)); isbasis=true, check=false)
+    successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
+    @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
+    projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
+    B = reduce(vcat, projL)
+    Binv,bi = integral_split(inv(B),ZZ)
+    grams = [_int_matrix_with_overflow(g, tmpZZ) for g in _get_grams_std(projL_gram, projection_ranges, Binv)]
+    @assert isone(bi)
+    gram2 = grams[1]
+    # try compression
+    for i in 2:length(grams)
+      grams_i = grams[i]
+      m = maximum(grams_i[i,i] for i in 1:n)
+      gram2 = (m+1)*gram2 + grams_i
+    end
+    if maximum(gram2[i,i] for i in 1:n)>2^20
+      gram2 = sum(rand([-1,1])*rand(1:15)*g for g in grams)
+    end
+  else 
+    gram2 = zero(GInt)
   end
 
-  
   fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
 
-  seed = UInt(34529384232429)
-  target_fix = [_signed_hash(fixed_space_dual[:,i], seed) for i in 1:n]
-  target_norm = [gram2[i,i] for i in 1:n]
-  target = Vector{Tuple{Int,Int,Int}}()
+  target = Vector{Tuple{Vector{Int},Int,Int}}()
   for i in 1:n 
-    i1 = _signed_hash(fixed_space_dual[:, i], seed)
+    i1 = _canonicalize!(fixed_space_dual[:, i])
     i2 = GInt[i,i]
     i3 = gram2[i,i]
-    k = (i1,i2,i3)
+    k = (i1, i2, i3)
     push!(target, k)
   end
-  target_abs = Set(abs(i) for i in target_fix)
-  target_fix_set = Set(target_fix)
-  
-  D = Dict{Tuple{Int,Int,Int},Vector{Vector{Int}}}()
+  target_1 = Set(i[1] for i in target)
+  target_2 = Set(i[2] for i in target)
+  target_12 = Set(i[1:2] for i in target)
+  target_123 = Set(target)
+  D = Dict{Tuple{Vector{Int},Int,Int},Vector{Vector{Int}}}()
+  f = nrows(fixed_space_dual)
   for (v, sq) in sv
-    i1 = _signed_hash(fixed_space_dual*v, seed)
-    abs(i1) in target_abs || continue
+    # we have the list of vectors only up to sign
+    # take the representative with canonicalized vfix 
+    vfix = fixed_space_dual*v
+    vfix, si = _canonicalize_with_data!(vfix)
+    if !isone(si)
+      neg!(v)
+    end
+    i1 = vfix
+    i1 in target_1 || continue
     i2 = sq 
-    i3 = 0
-    i3 = dot(v, gram2, v)
-    # merge the buckets with the same absolute value of the hash, since we consider our vectors up to sign
-    k = (abs(i1), i2, i3)
-    A = get!(D, k, Vector{Int}[])
-    if i1 >= 0 
-      push!(A, v)
+    i2 in target_2 || continue
+    (i1,i2) in target_12 || continue
+    if use_projections
+      i3 = dot(v, gram2, v)
     else 
-      push!(A, neg!(v))
+      i3 = 0
+    end
+      k = (i1, i2, i3)
+    k in target_123 || continue
+
+    push!(get!(D, k, Vector{Int}[]), v)
+  end
+  
+  vector_sums = Vector{Int}[]
+  if search_fixed_vectors
+    Dnew = Dict{Tuple{Vector{Int},Int,Int},Vector{Vector{Int}}}()
+    while length(Dnew) != length(D) 
+      vector_sums = [GInt*sum(a) for (k,a) in D if !iszero(k[1])]
+      empty!(Dnew)
+      # update targets using the vector sums 
+      for i in 1:n
+        tfix = append!(fixed_space_dual[:, i], [v[i] for v in vector_sums])
+        tfix = _canonicalize!(tfix)
+        target[i] = (tfix, target[i][2], target[i][3])  
+      end
+      target_set = Set(target)
+      # update the keys using vector sums and filter vectors 
+      for k in keys(D)
+        (i1,i2,i3) = k
+        for v in D[k]
+          vfix  = append!(i1[1:f], [dot(v, w) for w in vector_sums])
+          vfix, si = _canonicalize_with_data!(vfix)
+          if !isone(si)
+            v = neg!(v)
+          end 
+          i1 = vfix
+          kv = (i1, i2, i3)
+          kv in target_set || continue
+          push!(get!(Dnew, kv, Vector{Int}[]), v)
+        end
+      end
+      D, Dnew = Dnew, D
     end
   end
-
-  vector_sums = [GInt*sum(a) for (k,a) in D if !iszero(k[1])]
-  Dnew = Dict{Tuple{Int,Int,Int},Vector{Vector{Int}}}()
-  while true 
+  if search_invariant_subspace
+    gram3 = _invariant_subspace_direct(G, D)
+    m3 = maximum(gram3[i,i] for i in 1:n)
+    gram2 = (m3+1)*gram2 + gram3
+    Dnew = Dict{Tuple{Vector{Int},Int,Int},Vector{Vector{Int}}}()
     for k in keys(D)
       (i1,i2,i3) = k
       for v in D[k]
-        i1v = _signed_hash(pushfirst!([dot(v, w) for w in vector_sums],i1), seed)
-        kv = (i1v,i2,i3)
+        i3 = dot(v, gram2, v)
+        kv = (i1,i2,i3)
         push!(get!(Dnew, kv, Vector{Int}[]), v)
       end
     end
-    if length(Dnew) == length(D)
-      # nothing new
-      break
-    end
     D = Dnew
-  end 
+    target_norm = [gram2[i,i] for i in 1:n]
+    for i in 1:n 
+      (i1,i2,i3) = target[i]
+      i3 = gram2[i,i]
+      k = (i1,i2,i3)
+      target[i]
+    end
+  end
 
+  # compress the two gram matrices into one 
+  seed = UInt(0xc70d363fbd513942)
   l = sum(length.(values(D)))
-  output = Vector{Tuple{Vector{Int},Vector{Int}}}(undef, l)
+  vector_set = Vector{Tuple{Vector{Int},Vector{Int}}}(undef, l)
   invariants = Vector{Int}(undef, l)
-  a = m+1
   i = 0
   for (k,vs) in D
-    kv = [k[2]+a*k[3]]
+    kk = [k[2],k[3]]
     for v in vs
       i = i+1
-      output[i] = (v, kv)
-      invariants[i] = k[1]
+      v, si = _canonicalize_with_data!(v)
+      vector_set[i] = (v, copy(kk))
+      invariants[i] = si*_signed_hash(k[1], seed)
     end 
   end
-  target_norm = [i[2]+a*i[3] for i in target]
-  target_invariant = [_signed_hash(pushfirst!([v[i] for v in vector_sums], target[i][1]), seed) for i in 1:n]
-  return output, invariants, target_norm, target_invariant, GInt+a*gram2
+  # redo the target invariants to include the sign
+  target_invariant = [_signed_hash(append!(fixed_space_dual[:, i], [v[i] for v in vector_sums]), seed) for i in 1:n]
+  weyl_group_order = _weyl_group_order(root_types)
+  grams = ZZMatrix[G, matrix(ZZ,gram2)]
+
+
+  if get_assertion_level(:Lattice) > 1
+    @assert length(unique((vector_set))) == length(vector_set)
+    n = rank(L)
+    CoeffType = Int; mode=:auto
+    target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
+    c = 0
+    for (v, n) in vector_set
+      @assert all(dot(v, grams[i], v) == n[i] for i in 1:length(grams)) "norms do not match with gram matrices"
+      if mode==:auto
+        #@assert n in target_norms
+        if n in target_norms
+          c +=1
+        end
+      end
+    end
+    # This test makes sense only in automorphism mode
+    if mode == :auto
+      E = CoeffType.(identity_matrix(ZZ, n))
+      for i in 1:n
+        ei = E[i,:]
+        @assert any(ei==j[1] ||-ei==j[1] for j in vector_set) "Basis vector e_$i is missing"
+        j = findfirst(==(ei), first.(vector_set))
+      end
+    end
+  end
+  @vprintln :Lattice 1 "computed $(length(vector_set)) target vectors"
+  @assert length(invariants) == length(vector_set)
+  return grams, vector_set, (invariants, target_invariant), weyl_group_order, fundamental_roots
 end 
 
+function _invariant_subspace_direct(Gi, short_vectors)
+  n = nrows(Gi)
+  r = 1:n
+  G = zero_matrix(ZZ,n , n)
+  G_work = zero_matrix(ZZ, n, n)
+  found_invariant_subspace = false
+  tmpZZ = ZZ()
+  Gr = zero_matrix(ZZ, n, n)
+  tmpZZMatrix1 = zero_matrix(ZZ, n, n)
+  tmpZZMatrix2 = zero_matrix(ZZ, n, n)
+  invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r) 
+  found_invariant_subspace = found_invariant_subspace || !isempty(invariant_subspaces) || !iszero(nrows(rk1_invariant_subspaces))
+  for C in invariant_subspaces 
+    K = kernel(Gi*transpose(C);side=:left)
+    #store vcat(C,K) in tmpZZMatrix1
+    tmpZZMatrix1[1:nrows(C),:] = C
+    tmpZZMatrix1[nrows(C)+1:end,:] = K
+    CK_inv,_ = pseudo_inv(tmpZZMatrix1)
+    toC = mul!(tmpZZMatrix1, view(CK_inv,:,1:nrows(C)),C)
+    GC = mul!(tmpZZMatrix1, toC, mul!(tmpZZMatrix2, Gi,transpose!(tmpZZMatrix2,toC)))
+    addmul!(Gr, GC, rand([-1,1])*rand(1:50))
+  end
+  # we treat the rank one subspaces separately, because
+  # one matrix inverse suffices to compute all the projections at once
+  C = rk1_invariant_subspaces
+  if !iszero(nrows(C))
+    K = kernel(Gi*transpose(C);side=:left)
+    #store vcat(C,K) in tmpZZMatrix1
+    tmpZZMatrix1[1:nrows(C),:] = C
+    tmpZZMatrix1[nrows(C)+1:end,:] = K
+    CK_inv,_ = pseudo_inv(tmpZZMatrix1)
+    for l in 1:nrows(C)
+      toC = view(CK_inv,:,l:l)*view(C,l:l,:)
+      GC = mul!(tmpZZMatrix1,toC,mul!(tmpZZMatrix1, Gi*transpose!(tmpZZMatrix1,toC)))
+      addmul!(Gr, GC, rand([-1,1])*rand(1:50))
+    end
+  end
+  return _int_matrix_with_overflow(Gr, tmpZZ)
+end

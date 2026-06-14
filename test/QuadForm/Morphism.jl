@@ -50,6 +50,14 @@
   end
   @test  orders == automorphism_group_order.(L)
 
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=false, short_vectors_direct=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=true, short_vectors_direct=true)
+  end
+  @test  orders == automorphism_group_order.(L)
 
   for i in L
     Hecke.__assert_has_automorphisms(i; use_everything=false, compress=true, redo=true)

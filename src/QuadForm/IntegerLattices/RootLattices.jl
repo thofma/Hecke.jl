@@ -723,7 +723,7 @@ end
 function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true, via_sum::Bool=false)
   G, d = _integral_split_gram(L)
   if nrows(G)==0
-    return Tuple{Symbol,Int}[],ZZLat[]
+    return Tuple{Symbol,Int}[],ZZMatrix[]
   end
   d > 1 && error("lattice not integral")
   if G[1,1]<0

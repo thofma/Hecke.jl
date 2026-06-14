@@ -255,6 +255,19 @@ end
   @test 70 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
   #test_short_vectors_with_condition(rescale(Lbad,-1); search_fixed_vectors=true)
 
+  let
+    Ldirect = integer_lattice(gram=ZZ[2 -1 -1 -1 1 0 0 0 0 1 0 0 1 1 1 1 1 1 1; -1 2 0 0 0 0 0 0 0 -1 0 0 0 0 0 -1 0 0 -1; -1 0 2 1 -1 0 0 0 0 -1 0 0 0 0 -1 0 0 -1 -1; -1 0 1 2 -1 0 0 0 0 -1 0 0 -1 -1 -1 0 -1 -1 -1; 1 0 -1 -1 2 0 0 0 0 1 0 0 0 0 1 0 1 1 1; 0 0 0 0 0 2 0 0 0 -1 0 0 0 0 -1 1 0 -1 0; 0 0 0 0 0 0 2 1 -1 -1 1 -1 1 1 -1 1 1 1 1; 0 0 0 0 0 0 1 2 0 -1 1 0 1 0 -1 0 1 1 1; 0 0 0 0 0 0 -1 0 2 1 0 1 -1 -1 1 -1 0 0 0; 1 -1 -1 -1 1 -1 -1 -1 1 4 -1 0 -1 -1 2 -1 0 1 1; 0 0 0 0 0 0 1 1 0 -1 2 0 0 0 0 0 1 1 1; 0 0 0 0 0 0 -1 0 1 0 0 2 -1 -1 1 -1 0 0 0; 1 0 0 -1 0 0 1 1 -1 -1 0 -1 4 2 -1 1 1 1 0; 1 0 0 -1 0 0 1 0 -1 -1 0 -1 2 4 0 2 1 0 0; 1 0 -1 -1 1 -1 -1 -1 1 2 0 1 -1 0 4 -1 0 1 0; 1 -1 0 0 0 1 1 0 -1 -1 0 -1 1 2 -1 4 1 -1 1; 1 0 0 -1 1 0 1 1 0 0 1 0 1 1 0 1 4 2 2; 1 0 -1 -1 1 -1 1 1 0 1 1 0 1 0 1 -1 2 4 2; 1 -1 -1 -1 1 0 1 1 0 1 1 0 0 0 0 1 2 2 4])
+    out = Hecke._short_vectors_with_condition_direct(Ldirect; search_invariant_subspace=false)
+    vectors = first.(out[2])
+    n = rank(Ldirect)
+    @test length(vectors) >= n
+    for i in 1:n
+      e = zeros(Int, n)
+      e[i] = 1
+      @test any(v -> v == e || v == -e, vectors)
+    end
+  end
+
   # A lattice without roots.
   L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
   @test length(Hecke.short_vectors_with_condition(ZZRingElem, L)[1])==4
