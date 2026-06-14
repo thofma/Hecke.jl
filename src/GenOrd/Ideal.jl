@@ -399,7 +399,10 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
     B.basis_mat_inv = b*A.basis_mat_inv
   end
   if has_princ_gen(A)
-    B.princ_gen = O(divexact(O.F(A.princ_gen), b))
+    # Coerce the base-ring scalar b through the base field before embedding it
+    #   into O.F before dividing.
+    bF = O.F(base_field(O.F)(b))
+    B.princ_gen = O(divexact(O.F(A.princ_gen), bF))
   end
 
   return B
