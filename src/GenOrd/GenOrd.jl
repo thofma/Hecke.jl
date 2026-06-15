@@ -879,8 +879,7 @@ function radical_basis_power(O::GenOrd, p::RingElem)
 
   M2 = transpose(B)
   M2 = map_entries(x->preimage(mF, x), M2)
-  M3 = Hecke.hnf_modular(M2, p, true)
-  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  return hnf_modular(M2, p, true, :lowerleft)
 end
 
 #in char 0 and small char: rad = {x : Tr(xO) in pR} perfect field
@@ -889,7 +888,7 @@ function radical_basis_trace(O::GenOrd{S, T}, p::RingElem) where {S, T}
   M = _trace_matrix(O, R, mR)
   B = kernel(M; side = :right)
   M2 = transpose(map_entries(x->preimage(mR, x), B))
-  return Hecke.hnf_modular(M2, p, true)
+  return hnf_modular(M2, p, true, :lowerleft)
 end
 
 #pos. char, non-perfect (residue) field
@@ -943,8 +942,7 @@ function radical_basis_power_non_perfect(O::GenOrd, p::RingElem)
 
   M2 = transpose(B)
   M2 = map_entries(x->preimage(mF, x), M2)
-  M3 = Hecke.hnf_modular(M2, p, true)
-  return M3 #[O(vec(collect((M3[i, :])))) for i=1:degree(O)]
+  return hnf_modular(M2, p, true, :lowerleft)
 end
 
 ################################################################################

@@ -108,7 +108,7 @@ function assure_has_numerator_and_denominator(a::GenOrdFracIdl{S, T}) where {S, 
   end
 
   B, d = integral_split(basis_matrix(a; copy = false), coefficient_ring(order(a)))
-  a.num = GenOrdIdl(order(a), B)
+  a.num = ideal(order(a), B)
   a.den = d::elem_type(T)
   return nothing
 end
@@ -282,7 +282,7 @@ function Base.:*(x::GenOrdElem, I::GenOrdFracIdl)
     return GenOrdFracIdl(num, denominator(I; copy = false))
   end
 
-  return GenOrdIdl(O, x) * I
+  return ideal(O, x) * I
 end
 
 function Base.:*(x::FieldElem, O::GenOrd)
