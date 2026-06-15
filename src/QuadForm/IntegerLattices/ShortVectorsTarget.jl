@@ -1039,6 +1039,9 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   G, _ = _integral_split_gram(L)
   GInt = _int_matrix_with_overflow(G, tmpZZ)
   m = Int(maximum(diagonal(G))) # catches overflows
+  if m > 15 
+    error("the maximum diagonal entry is too large, continuing could exhaust memory")
+  end 
   sv = __short_vectors(G, nothing, m)
   sv2 = @inbounds [i[1] for i in sv if i[2]==2]
   fundamental_roots = _fundamental_roots(sv2,GInt)
