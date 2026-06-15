@@ -9,7 +9,7 @@ function _newton_lift(f::PolyRingElem{QadicFieldElem}, df::PolyRingElem{QadicFie
   Q = parent(r)
 
   o = Q(r)
-  starting_prec = min(starting_prec, precision(o))
+  @show starting_prec = min(starting_prec, precision(o))
   @assert precision(o) >= starting_prec
 
   o = df(o)
