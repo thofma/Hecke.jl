@@ -209,6 +209,7 @@ function check_mat(A::FinGenAbGroup, B::FinGenAbGroup, M::ZZMatrix)
   # need to check if Y -> X --> U lands in V
   # if Y -> X -> B is zero.
   R = rels(A) * M
+#  @show [FinGenAbGroupElem(B, R[x:x, :]) for x = 1:nrows(R)]
   return all(x -> iszero(FinGenAbGroupElem(B, R[x:x, :])), 1:nrows(R))
 end
 

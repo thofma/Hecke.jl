@@ -910,8 +910,8 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinG
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
   end
-  @assert length(V) == length(dG) == length(dH)
 
+  @assert length(V) == length(dG) == length(dH)
   @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
   h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
   return h
@@ -2287,6 +2287,7 @@ function has_complement(m::FinGenAbGroupHom, to_lattice::Bool = true)
     push!(gens_complement, igSH - m1(el_sub))
   end
   res, mres = sub(G, gens_complement, false)
+  @assert is_trivial(intersect(m, mres, false)[1])  
   @assert order(res)*order(s) == order(G)
   return true, mres
 end
