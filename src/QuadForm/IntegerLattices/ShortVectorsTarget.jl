@@ -1025,9 +1025,9 @@ function __short_vectors_it(G::ZZMatrix, lb, ub; chol = CholeskyIntegralDenom(G)
   return sv
 end
 
-function __short_vectors(G::ZZMatrix, lb, ub)
+function __short_vectors(G::ZZMatrix, lb, ub; chol = CholeskyIntegralDenom(G))
   #sv = __enumerate_gram(FinckePohstIntIterCtx, G, lb, ub, Int, identity, identity, Int)
-  sv = __enumerate_gram(FinckePohstInt, G, lb, ub, Int, identity, identity, Int)
+  sv = __enumerate_gram(FinckePohstInt, G, lb, ub, Int, identity, identity, Int; chol)
   return sv
 end
 
@@ -1046,7 +1046,8 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   G, _ = _integral_split_gram(L)
   GInt = _int_matrix_with_overflow(G, tmpZZ)
   maxL = Int(maximum(diagonal(G))) # catches overflows
-  sv2 = first.(__short_vectors(G, nothing, 2))
+  chol = CholeskyIntegralDenom(G)
+  sv2 = first.(__short_vectors(G, nothing, 2; chol))
   #sv = __short_vectors(G, nothing, maxL)
   #sv2 = @inbounds [i[1] for i in sv if i[2]==2]
   fundamental_roots = _fundamental_roots(sv2, GInt)
@@ -1100,7 +1101,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   f = nrows(fixed_space_dual)
   vfix_buf = Vector{Int}(undef, f)
   tmp_gram2_v = Vector{Int}(undef, n)
-  for (v, sq) in __short_vectors_it(G, nothing, maxL)
+  for (v, sq) in __short_vectors_it(G, nothing, maxL; chol)
     sq in target_2 || continue
     # we have the list of vectors only up to sign
     # take the representative with canonicalized vfix

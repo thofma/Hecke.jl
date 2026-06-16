@@ -246,7 +246,7 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
   return true, ctx, per
 end
 
-function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem; chol = CholeskyIntegralDenom(gram))
+function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem, chol = CholeskyIntegralDenom(gram))
   n = nrows(gram)
   @assert n > 0
   @assert M > 0
@@ -503,21 +503,21 @@ function (f::_FPCallback{S, T, U, V, W, X})(x, norm) where {S, T, U, V, W, X}
   push!(result, (pp_vector(v), pp_length(norm)))
 end
 
-function __enumerate_gram(::Type{FinckePohstInt}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::X, pp_length::Y, ::Type{ElemType}) where {X, Y, ElemType, NormType}
+function __enumerate_gram(::Type{FinckePohstInt}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::X, pp_length::Y, ::Type{ElemType}; chol = CholeskyIntegralDenom(G)) where {X, Y, ElemType, NormType}
   gram = G
   n = nrows(gram)
   if n == 0
     return Tuple{Vector{ElemType}, NormType}[]
   end
 
-  if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(gram, Int(c)); success end
+  if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(gram, Int(c), chol); success end
     result = Tuple{Vector{ElemType}, NormType}[]
     n = ctx.n
     callback = _FPCallback(result, per, l, pp_vector, pp_length, n)
     _finckepohstint_rec!(callback, ctx, n, ctx.M, true)
     return result
   else
-    ctx, per = _prepare_finckepohstint_large(gram, ZZ(c))
+    ctx, per = _prepare_finckepohstint_large(gram, ZZ(c), chol)
     result = Tuple{Vector{ElemType}, NormType}[]
     _callback = _FPCallback(result, per, l, pp_vector, pp_length, n)
     _finckepohstint_rec!(_callback, ctx, n, ctx.M, true)
@@ -936,14 +936,14 @@ function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix, l::Union{I
       dummy, nothing, nothing, pp_vector, pp_length,
       Int[], Int[], Int[], Int[], Int[], Int8[], Bool[], Int[])
   end
-  if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(G, Int(c)); success end
+  if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(G, Int(c), chol); success end
     _l = l isa Nothing ? nothing : Int(l)
     return FinckePohstIntIterCtx{Int, F1, F2, ElemType, NormType}(
       ctx, per, _l, pp_vector, pp_length,
       zeros(Int, n), zeros(Int, n), zeros(Int, n),
       zeros(Int, n), zeros(Int, n), zeros(Int8, n), falses(n), zeros(Int, n))
   else
-    ctx, per = _prepare_finckepohstint_large(G, ZZ(c))
+    ctx, per = _prepare_finckepohstint_large(G, ZZ(c), chol)
     _l = l isa Nothing ? nothing : ZZ(l)
     return FinckePohstIntIterCtx{ZZRingElem, F1, F2, ElemType, NormType}(
       ctx, per, _l, pp_vector, pp_length,
