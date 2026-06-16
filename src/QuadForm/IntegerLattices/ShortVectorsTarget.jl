@@ -976,6 +976,11 @@ __norm!(gram::Matrix{Int}, v::Vector{Int}, tmp_v::Vector{Int}) = dot(v, gram, v)
 __norm!(gram::ZZMatrix, v::Vector{ZZRingElem}, tmp_v::Vector{ZZRingElem}) = dot(mul!(tmp_v,v,gram),v) # this could be improved if necessary
 
 
+function dot!(v::Vector{Int}, gram::Matrix{Int}, w::Vector{Int}, tmp::Vector{Int})
+  LinearAlgebra.mul!(tmp, gram, w)
+  return dot(tmp, v)
+end
+
 @inline function __mul_mod!(u::Vector{S}, v::Vector{S}, A, moduli::Vector{S}) where {S<:ZZRingElem}
   #@assert length(v) == nrows(A)
   #@assert ncols(A)==length(moduli)==length(u)
@@ -1038,13 +1043,11 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   tmpZZ = ZZ()
   G, _ = _integral_split_gram(L)
   GInt = _int_matrix_with_overflow(G, tmpZZ)
-  m = Int(maximum(diagonal(G))) # catches overflows
-  if m > 15 
-    error("the maximum diagonal entry is too large, continuing could exhaust memory")
-  end 
-  sv = __short_vectors(G, nothing, m)
-  sv2 = @inbounds [i[1] for i in sv if i[2]==2]
-  fundamental_roots = _fundamental_roots(sv2,GInt)
+  maxL = Int(maximum(diagonal(G))) # catches overflows
+  sv2 = first.(__short_vectors(G, nothing, 2))
+  #sv = __short_vectors(G, nothing, maxL)
+  #sv2 = @inbounds [i[1] for i in sv if i[2]==2]
+  fundamental_roots = _fundamental_roots(sv2, GInt)
 
   V = ambient_space(L)
   n = rank(L)
@@ -1093,28 +1096,28 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   target_123 = Set(target)
   D = Dict{Tuple{Vector{Int},Int,Int},Vector{Vector{Int}}}()
   f = nrows(fixed_space_dual)
-  for (v, sq) in sv
+  vfix_buf = Vector{Int}(undef, f)
+  tmp_gram2_v = Vector{Int}(undef, n)
+  for (v, sq) in __short_vectors_it(G, nothing, maxL)
+    sq in target_2 || continue
     # we have the list of vectors only up to sign
     # take the representative with canonicalized vfix 
-    vfix = fixed_space_dual*v
-    vfix, si = _canonicalize_with_data!(vfix)
+    LinearAlgebra.mul!(vfix_buf, fixed_space_dual, v)
+    _, si = _canonicalize_with_data!(vfix_buf)
     if !isone(si)
       neg!(v)
     end
-    i1 = vfix
-    i1 in target_1 || continue
-    i2 = sq 
-    i2 in target_2 || continue
-    (i1,i2) in target_12 || continue
+    vfix_buf in target_1 || continue
+    (vfix_buf, sq) in target_12 || continue
     if use_projections
-      i3 = dot(v, gram2, v)
+      i3 = dot!(v, gram2, v, tmp_gram2_v)
     else 
       i3 = 0
     end
-      k = (i1, i2, i3)
-    k in target_123 || continue
-
-    push!(get!(D, k, Vector{Int}[]), v)
+    (vfix_buf, sq, i3) in target_123 || continue
+    vfix = copy(vfix_buf)
+    k = (vfix, sq, i3)
+    push!(get!(D, k, Vector{Int}[]), copy(v))
   end
   
   vector_sums = Vector{Int}[]
@@ -1124,9 +1127,12 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
       vector_sums = [GInt*sum(a) for (k,a) in D if !iszero(k[1])]
       empty!(Dnew)
       # update targets using the vector sums 
+      ns = length(vector_sums)
+      vfix_ext_buf = Vector{Int}(undef, f + ns)
       for i in 1:n
-        tfix = append!(fixed_space_dual[:, i], [v[i] for v in vector_sums])
-        tfix = _canonicalize!(tfix)
+        @inbounds for l in 1:f; vfix_ext_buf[l] = fixed_space_dual[l, i]; end
+        @inbounds for (j, w) in enumerate(vector_sums); vfix_ext_buf[f+j] = w[i]; end
+        tfix = _canonicalize!(copy(vfix_ext_buf))
         target[i] = (tfix, target[i][2], target[i][3])  
       end
       target_set = Set(target)
@@ -1134,15 +1140,17 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
       for k in keys(D)
         (i1,i2,i3) = k
         for v in D[k]
-          vfix  = append!(i1[1:f], [dot(v, w) for w in vector_sums])
-          vfix, si = _canonicalize_with_data!(vfix)
+          @inbounds copyto!(vfix_ext_buf, 1, i1, 1, f)
+          @inbounds for (j, w) in enumerate(vector_sums); vfix_ext_buf[f+j] = dot(v, w); end
+          _, si = _canonicalize_with_data!(vfix_ext_buf)
           if !isone(si)
             v = neg!(v)
-          end 
-          i1 = vfix
-          kv = (i1, i2, i3)
+          end
+          vfix_ext = copy(vfix_ext_buf)
+          kv = (vfix_ext, i2, i3)
           kv in target_set || continue
           push!(get!(Dnew, kv, Vector{Int}[]), v)
+          @inbounds copyto!(vfix_ext_buf, 1, i1, 1, f)
         end
       end
       D, Dnew = Dnew, D
@@ -1156,7 +1164,8 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     for k in keys(D)
       (i1,i2,i3) = k
       for v in D[k]
-        i3 = dot(v, gram2, v)
+        mul!(tmp_gram2_v, gram2, v)
+        i3 = dot(v, tmp_gram2_v)
         kv = (i1,i2,i3)
         push!(get!(Dnew, kv, Vector{Int}[]), v)
       end
@@ -1187,6 +1196,18 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     end 
   end
   # redo the target invariants to include the sign
+  
+  target_invariant = Vector{Int}(undef, n)  
+  mf = length(vector_sums)+nrows(fixed_space_dual)
+  inv_tmp = Vector{Int}(undef, mf)
+  for i in 1:n
+    copyto!(inv_tmp, 1, fixed_space_dual[:, i])
+    k = nrows(fixed_space_dual)
+    for j in 1:length(vector_sums)
+      inv_tmp[k+j] = vector_sums[j][i]
+    end
+    target_invariant[i] = _signed_hash(inv_tmp, seed)
+  end
   target_invariant = [_signed_hash(append!(fixed_space_dual[:, i], [v[i] for v in vector_sums]), seed) for i in 1:n]
   weyl_group_order = _weyl_group_order(root_types)
   grams = ZZMatrix[G, matrix(ZZ,gram2)]
