@@ -135,7 +135,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
     sort!(view(successive_sublattices,2:m);by=rank);
   elseif sort == :root
     # don't touch the first one because it consists of the fixed part, i.e. the seeds
-    # do the root part first 
+    # do the root part first
     k = 1 + length(R_cofix)
     sort!(view(successive_sublattices,k:m);by=rank);
   end
@@ -470,7 +470,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     @vprintln :Lattice 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
   end
   @hassert :Lattice 1 allunique(reduce(vcat, values(short_vectors1)))
-  search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning 
+  search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning
   if search_invariant_subspace
     invariant_gram = _add_invariant_subspace_data!(CoeffType, grams, target_invariants,
                                                    short_vectors1, projection_ranges,
@@ -607,9 +607,9 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
     Gr = zero_matrix(ZZ, length(r), length(r))
     tmpZZMatrix1 = zero_matrix(ZZ, length(r), length(r))
     tmpZZMatrix2 = zero_matrix(ZZ, length(r), length(r))
-    invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r) 
+    invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r)
     found_invariant_subspace = found_invariant_subspace || !isempty(invariant_subspaces) || !iszero(nrows(rk1_invariant_subspaces))
-    for C in invariant_subspaces 
+    for C in invariant_subspaces
       K = kernel(Gi*transpose(C);side=:left)
       #store vcat(C,K) in tmpZZMatrix1
       tmpZZMatrix1[1:nrows(C),:] = C
@@ -835,8 +835,8 @@ function push!(z::GrowingSubspace, x, offset=0)
 end
 
 function _search_invariant_subspaces(D::Dict, r::UnitRange{Int})
-   # collects invariant subspaces of rank 1, 
-   # the rows of B2 are the rk 1 invariant subspaces, 
+   # collects invariant subspaces of rank 1,
+   # the rows of B2 are the rk 1 invariant subspaces,
    # this is okay, since B2 does not get row reduced
   subspaces = Set{ZZMatrix}()
   offset = first(r) - 1
@@ -1018,8 +1018,10 @@ end
 _to_VectorType(::Type{ZZRingElem}, x::Vector{QQFieldElem}) = ZZ.(x)
 _to_VectorType(::Type{Int}, x::Vector{QQFieldElem}) = (Int.(ZZ.(x)))'
 
-function __short_vectors_it(G::ZZMatrix, lb, ub)
-  sv = __enumerate_gram(FinckePohstIntIterCtx, G, lb, ub, Int, identity, identity, Int)
+# C = CholeskyIntegralDenom(G)
+# __short_vectors_it(G, lb, ub; chol = C)
+function __short_vectors_it(G::ZZMatrix, lb, ub; chol = CholeskyIntegralDenom(G))
+  sv = __enumerate_gram(FinckePohstIntIterCtx, G, lb, ub, Int, identity, identity, Int; chol)
   return sv
 end
 
@@ -1051,10 +1053,10 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
 
   V = ambient_space(L)
   n = rank(L)
-  
+
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L, [matrix(ZZ, 1, n, i) for i in fundamental_roots])
   fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
-  if use_projections 
+  if use_projections
     R_fix = lattice(V, fixed_space; isbasis=true, check=false)
     R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
     R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
@@ -1076,14 +1078,14 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     if maximum(gram2[i,i] for i in 1:n)>2^20
       gram2 = sum(rand([-1,1])*rand(1:15)*g for g in grams)
     end
-  else 
+  else
     gram2 = zero(GInt)
   end
 
   fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
 
   target = Vector{Tuple{Vector{Int},Int,Int}}()
-  for i in 1:n 
+  for i in 1:n
     i1 = _canonicalize!(fixed_space_dual[:, i])
     i2 = GInt[i,i]
     i3 = gram2[i,i]
@@ -1101,7 +1103,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   for (v, sq) in __short_vectors_it(G, nothing, maxL)
     sq in target_2 || continue
     # we have the list of vectors only up to sign
-    # take the representative with canonicalized vfix 
+    # take the representative with canonicalized vfix
     LinearAlgebra.mul!(vfix_buf, fixed_space_dual, v)
     _, si = _canonicalize_with_data!(vfix_buf)
     if !isone(si)
@@ -1111,7 +1113,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     (vfix_buf, sq) in target_12 || continue
     if use_projections
       i3 = dot!(v, gram2, v, tmp_gram2_v)
-    else 
+    else
       i3 = 0
     end
     (vfix_buf, sq, i3) in target_123 || continue
@@ -1119,24 +1121,24 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     k = (vfix, sq, i3)
     push!(get!(D, k, Vector{Int}[]), copy(v))
   end
-  
+
   vector_sums = Vector{Int}[]
   if search_fixed_vectors
     Dnew = Dict{Tuple{Vector{Int},Int,Int},Vector{Vector{Int}}}()
-    while length(Dnew) != length(D) 
+    while length(Dnew) != length(D)
       vector_sums = [GInt*sum(a) for (k,a) in D if !iszero(k[1])]
       empty!(Dnew)
-      # update targets using the vector sums 
+      # update targets using the vector sums
       ns = length(vector_sums)
       vfix_ext_buf = Vector{Int}(undef, f + ns)
       for i in 1:n
         @inbounds for l in 1:f; vfix_ext_buf[l] = fixed_space_dual[l, i]; end
         @inbounds for (j, w) in enumerate(vector_sums); vfix_ext_buf[f+j] = w[i]; end
         tfix = _canonicalize!(copy(vfix_ext_buf))
-        target[i] = (tfix, target[i][2], target[i][3])  
+        target[i] = (tfix, target[i][2], target[i][3])
       end
       target_set = Set(target)
-      # update the keys using vector sums and filter vectors 
+      # update the keys using vector sums and filter vectors
       for k in keys(D)
         (i1,i2,i3) = k
         for v in D[k]
@@ -1172,7 +1174,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     end
     D = Dnew
     target_norm = [gram2[i,i] for i in 1:n]
-    for i in 1:n 
+    for i in 1:n
       (i1,i2,i3) = target[i]
       i3 = gram2[i,i]
       k = (i1,i2,i3)
@@ -1180,7 +1182,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     end
   end
 
-  # compress the two gram matrices into one 
+  # compress the two gram matrices into one
   seed = UInt(0xc70d363fbd513942)
   l = sum(length.(values(D)))
   vector_set = Vector{Tuple{Vector{Int},Vector{Int}}}(undef, l)
@@ -1193,11 +1195,11 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
       v, si = _canonicalize_with_data!(v)
       vector_set[i] = (v, copy(kk))
       invariants[i] = si*_signed_hash(k[1], seed)
-    end 
+    end
   end
   # redo the target invariants to include the sign
-  
-  target_invariant = Vector{Int}(undef, n)  
+
+  target_invariant = Vector{Int}(undef, n)
   mf = length(vector_sums)+nrows(fixed_space_dual)
   inv_tmp = Vector{Int}(undef, mf)
   for i in 1:n
@@ -1241,7 +1243,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   @vprintln :Lattice 1 "computed $(length(vector_set)) target vectors"
   @assert length(invariants) == length(vector_set)
   return grams, vector_set, (invariants, target_invariant), weyl_group_order, fundamental_roots
-end 
+end
 
 function _invariant_subspace_direct(Gi, short_vectors)
   n = nrows(Gi)
@@ -1253,9 +1255,9 @@ function _invariant_subspace_direct(Gi, short_vectors)
   Gr = zero_matrix(ZZ, n, n)
   tmpZZMatrix1 = zero_matrix(ZZ, n, n)
   tmpZZMatrix2 = zero_matrix(ZZ, n, n)
-  invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r) 
+  invariant_subspaces, rk1_invariant_subspaces = _search_invariant_subspaces(short_vectors, r)
   found_invariant_subspace = found_invariant_subspace || !isempty(invariant_subspaces) || !iszero(nrows(rk1_invariant_subspaces))
-  for C in invariant_subspaces 
+  for C in invariant_subspaces
     K = kernel(Gi*transpose(C);side=:left)
     #store vcat(C,K) in tmpZZMatrix1
     tmpZZMatrix1[1:nrows(C),:] = C

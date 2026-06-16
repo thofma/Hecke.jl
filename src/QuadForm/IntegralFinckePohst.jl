@@ -20,6 +20,14 @@ struct FinckePohstInt end
 #   R: Vector of (diagonal_entry, off_diagonal_coefficients)
 #   c: Vector of lcm denominators, length n+1, with c[n+1] = 1
 
+function __cholesky_integral_denom(gram::Matrix{QQFieldElem})
+  if nrows(gram) == 0
+    return CholeskyIntegralDenom(gram, Int[], Tuple{QQFieldElem, Vector{QQFieldElem}}[], QQFieldElem[])
+  end
+  per, R, c = _cholesky_integral_denom(gram)
+  return CholeskyIntegralDenom(gram, per, R, c)
+end
+
 function _cholesky_integral_denom(gram::Matrix{QQFieldElem})
   n = size(gram, 1)
   if n == 1
@@ -84,6 +92,15 @@ function _cholesky_integral_denom(gram::Matrix{QQFieldElem})
   return per, R, c
 end
 
+mutable struct CholeskyIntegralDenom
+  gramQQ::Matrix{QQFieldElem}
+  per::Vector{Int}
+  R::Vector{Tuple{QQFieldElem, Vector{QQFieldElem}}}
+  c::Vector{QQFieldElem}
+end
+
+CholeskyIntegralDenom(G::ZZMatrix) = __cholesky_integral_denom(Matrix{QQFieldElem}(G))
+
 # Context for integer-only enumeration
 mutable struct FinckePohstIntCtx{T}
   M::T                  # upper bound
@@ -104,19 +121,15 @@ end
 # Returns (ok, ctx, per_or_U) where ok is true if preprocessing succeeded.
 # If overflow occurs during the _ub check, returns false and no ctx.
 # per_or_U is either a permutation (Vector{Int}) or a ZZMatrix transform.
-function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int)
+function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = CholeskyIntegralDenom(gram))
   n = nrows(gram)
   @assert n > 0
   @assert M > 0
 
-  gramQQ = Matrix{QQFieldElem}(undef, n, n)
-  for i in 1:n
-    for j in 1:n
-      gramQQ[i, j] = QQ(gram[i, j])
-    end
-  end
-
-  per, R, c = _cholesky_integral_denom(gramQQ)
+  gramQQ = chol.gramQQ
+  per = chol.per
+  R = chol.R
+  c = chol.c
 
   # Convert c to integers (they are lcm of denominators, hence integers)
   c_int = Vector{Int}(undef, n + 1)
@@ -233,19 +246,15 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int)
   return true, ctx, per
 end
 
-function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem)
+function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem; chol = CholeskyIntegralDenom(gram))
   n = nrows(gram)
   @assert n > 0
   @assert M > 0
 
-  gramQQ = Matrix{QQFieldElem}(undef, n, n)
-  for i in 1:n
-    for j in 1:n
-      gramQQ[i, j] = QQ(gram[i, j])
-    end
-  end
-
-  per, R, c = _cholesky_integral_denom(gramQQ)
+  gramQQ = chol.gramQQ
+  per = chol.per
+  R = chol.R
+  c = chol.c
 
   # Convert c to integers (they are lcm of denominators, hence integers)
   c_int = ZZRingElem[numerator(c[i]) for i in 1:n+1]
@@ -919,7 +928,7 @@ end
 
 # Dispatch hook: create a FinckePohstIntIterCtx for the given gram matrix.
 # Tries the small (Int) path first; falls back to the large (ZZRingElem) path.
-function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::F1, pp_length::F2, ::Type{ElemType}) where {F1, F2, ElemType, NormType}
+function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::F1, pp_length::F2, ::Type{ElemType}; chol = CholeskyIntegralDenom(G)) where {F1, F2, ElemType, NormType}
   n = nrows(G)
   if n == 0
     dummy = FinckePohstIntCtx{ElemType}(0, 0, Vector{Vector{Int}}(), Int[], Int[], Int[], Int[], Int[], Int[], Int[])

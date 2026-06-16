@@ -51,6 +51,7 @@ function __assert_has_automorphisms(
   do_lll::Bool=true,
   use_dual::Bool=false,
 )
+
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
@@ -146,7 +147,7 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;short_vectors_direct, 
+    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;short_vectors_direct,
                                                                     search_fixed_vectors, search_invariant_subspace, use_dual)
     use_projections = false # already added projections
   elseif use_weyl
@@ -291,13 +292,13 @@ function __assert_has_automorphisms(
   end
 end
 
-function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true, 
-                                       search_invariant_subspace::Bool=false, 
+function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
+                                       search_invariant_subspace::Bool=false,
                                        use_dual::Bool=false,
                                        short_vectors_direct::Bool=false)
-  if short_vectors_direct 
-    return _short_vectors_with_condition_direct(_L;use_dual, search_invariant_subspace, search_fixed_vectors)                                     
-  end  
+  if short_vectors_direct
+    return _short_vectors_with_condition_direct(_L;use_dual, search_invariant_subspace, search_fixed_vectors)
+  end
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector = _weyl_group(_L, root_types, fundamental_roots)
   T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
@@ -984,7 +985,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     r = t[2]
     b = length(blocks)
     if (b > 4 && r > 2) || (b > 2 && r > 3) || (b > 1 && r>6)
-      for u in inv_vec 
+      for u in inv_vec
         b>1 || continue
         s = reduce(vcat, u*(blocks[i]-blocks[i+1]) for i in 1:length(blocks)-1; init=zero_matrix(ZZ,0, n))
         push!(representations_k, s)
@@ -998,9 +999,9 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
       M = change_base_ring(QQ,isotypic*GZ*transpose(invariant_vectors_k_mat))
       isotypic_cofix_space = kernel(M, side= :left)*isotypic
       push!(representations_k, numerator(isotypic_cofix_space))
-    end 
+    end
 
-    
+
     append!(invariant_vectors, invariant_vectors_k)
     append!(isotypic_cofix_spaces, representations_k)
   end
