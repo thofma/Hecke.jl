@@ -119,6 +119,140 @@ end
 
 ###########################################################################################
 #
+#   HNF
+#
+###########################################################################################
+
+# Ideals are row modules
+# They are represented by n x n matrix (with n equal to the order degree)
+#   with basis vectors forming matrix rows.
+# The shape of this matrix is lower-left HNF.
+# Zero ideals are treated explicitly, they are the only exception to full-column rank rule
+# For all HNF functions we assume full column rank
+
+# HNF of M assuming g is a multiple of the largest elementary divisor of the
+#   row module L of M, that is g*R^m \subseteq L with m = ncols(M).
+# Produces the *lower-left* HNF in place: the canonical basis occupies the
+#   bottom m rows, lower triangular with reduced entries below each pivot.
+# NOTE: AbstractAlgebra convention is upper-right
+#   That's why we mark this with "_left" suffix
+# This mirrors FLINT's fmpz_mat_hnf_modular_eldiv (upper-right) by reflecting
+#   every index through the matrix center: row r <-> n+1-r, col c <-> m+1-c.
+#   Step i (i = 1..m) has its pivot at (pr, pc) = (n+1-i, m+1-i), clears
+#   column pc *above* the pivot and reduces entries *below* it.
+function hnf_modular_eldiv_left!(M::MatElem{T}, g::T) where {T <: RingElem}
+  @req !is_zero(g) "Modulus must be nonzero"
+  n = nrows(M)
+  m = ncols(M)
+  @req n >= m "Matrix must have at least as many rows as columns"
+  R = base_ring(M)
+
+  # if g is unit, R^m == L and HNF is identity, sitting at the bottom m rows
+  if is_unit(g)
+    for i in 1:n, j in 1:m
+      M[i, j] = (i == j + (n - m)) ? one(R) : zero(R)
+    end
+    return M
+  end
+
+  # canonicalize g
+  g = divexact(g, canonical_unit(g))
+
+  # reduce matrix modulo g
+  for i in 1:n, j in 1:m
+    M[i, j] = mod(M[i, j], g)
+  end
+
+  # temporary R elements for intermediate computation
+  t1 = R(); t2 = R(); t3 = R()
+
+  for i in 1:m
+    pr = n + 1 - i   # pivot row
+    pc = m + 1 - i   # pivot column
+
+    # clear column pc above row pr by unimodular transforms (mod g)
+    for kr in (pr - 1):-1:1
+      # is already zero
+      is_zero_entry(M, kr, pc) && continue
+
+      # if not zero, check if pivot element is zero (update pivot)
+      if is_zero_entry(M, pr, pc)
+        swap_rows!(M, pr, kr)
+        continue
+      end
+
+      # M[pr, pc] is non-zero pivot.
+      fl, q = divides(M[kr, pc], M[pr, pc])
+
+      # First check if M[pr, pc] divides M[kr, pc]
+      # We then do plain row kr reduction (pivot row pr is untouched)
+      if fl
+        q = neg!(q)
+        for jc in 1:(pc - 1)
+          t1 = mul!(t1, q, M[pr, jc])
+          t1 = add!(t1, t1, M[kr, jc])
+          M[kr, jc] = mod(t1, g)
+        end
+        M[kr, pc] = zero(R)
+        continue
+      end
+
+      # let d = gcd(M[pr, pc], M[kr, pc]) = u*M[pr, pc] + v*M[kr, pc]
+      # for jc < pc:
+      #   M[pr, jc] = u*M[pr, jc] + v*M[kr, jc]                     -> pivot becomes d
+      #   M[kr, jc] = M[pr, pc]/d*M[kr, jc] - M[kr, pc]/d*M[pr, jc] -> 0 in column pc
+      # the 2x2 transform (u, v; -M[kr,pc]/d, M[pr,pc]/d) has determinant 1
+      d, u, v = gcdx(M[pr, pc], M[kr, pc])
+      u2 = -divexact(M[kr, pc], d)
+      v2 =  divexact(M[pr, pc], d)
+      for jc in 1:(pc - 1)
+        t1 = mul!(t1, u, M[pr, jc])
+        t1 = addmul!(t1, v, M[kr, jc], t3)
+        t2 = mul!(t2, u2, M[pr, jc])
+        t2 = addmul!(t2, v2, M[kr, jc], t3)
+        M[pr, jc] = mod(t1, g)
+        M[kr, jc] = mod(t2, g)
+      end
+      M[pr, pc] = d
+      M[kr, pc] = zero(R)
+    end
+
+    # handle implicit row g*e_pc: the pivot becomes gcd(pivot, g),
+    #   which divides g and is non-zero
+    d, u, _ = gcdx(M[pr, pc], g)
+    if d != M[pr, pc]
+      for jc in 1:(pc - 1)
+        t1 = mul!(t1, u, M[pr, jc])
+        M[pr, jc] = mod(t1, g)
+      end
+      M[pr, pc] = d
+    end
+  end
+
+  # we have a lower triangular matrix in the bottom m rows;
+  #   reduce entries below each pivot
+  for i in 1:m
+    pr = n + 1 - i
+    pc = m + 1 - i
+    for kr in (pr + 1):n
+      q, r = divrem(M[kr, pc], M[pr, pc])
+      M[kr, pc] = r
+
+      is_zero(q) && continue
+      q = neg!(q)
+      for jc in 1:(pc - 1)
+        t1 = mul!(t1, q, M[pr, jc])
+        t1 = add!(t1, t1, M[kr, jc])
+        M[kr, jc] = mod(t1, g)
+      end
+    end
+  end
+
+  return M
+end
+
+###########################################################################################
+#
 #   Basis
 #
 ###########################################################################################
@@ -278,10 +412,10 @@ function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   iszero(b) && return a
 
   O = order(a)
-  n = degree(O)
 
+  g = gcd(minimum(a; copy = false), minimum(b; copy = false))
   V = vcat(basis_matrix(a; copy = false), basis_matrix(b; copy = false))
-  V = hnf(V, :lowerleft)
+  V = hnf_modular_eldiv_left!(V, g)
   return ideal(O, V; M_in_hnf = true)
 end
 
@@ -300,11 +434,13 @@ function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 
   O = order(a)
   n = degree(O)
+
+  g = minimum(a; copy = false) * minimum(b; copy = false)
   Ma = basis_matrix(a; copy = false)
   Mb = basis_matrix(b; copy = false)
 
   blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
-  V = hnf(reduce(vcat, blocks), :lowerleft)
+  V = hnf_modular_eldiv_left!(reduce(vcat, blocks), g)
   return ideal(O, V; M_in_hnf = true)
 end
 
@@ -322,11 +458,12 @@ function Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   # [A A ; 0 B] lower left HNF gives intersection in the top left block
   O = order(a)
   n = degree(O)
+
+  g = lcm(minimum(a; copy = false), minimum(b; copy = false))
   Ma = basis_matrix(a; copy = false)
   Mb = basis_matrix(b; copy = false)
   V = vcat(hcat(Ma, Ma), hcat(zero_matrix(base_ring(O), n, n), Mb))
-
-  H = sub(hnf(V, :lowerleft), 1:n, 1:n)
+  H = sub(hnf_modular_eldiv_left!(V, g), 1:n, 1:n)
   return ideal(O, H; M_in_hnf = true)
 end
 
