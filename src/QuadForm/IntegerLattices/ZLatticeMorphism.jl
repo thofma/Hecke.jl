@@ -37,7 +37,7 @@ function __assert_has_automorphisms(
   L::ZZLat;
   redo::Bool=false,
   try_small::Bool=true,
-  depth::Int=-1,
+  depth::Int=0,
   bacher_depth::Int=0,
   use_weyl::Bool=true,
   use_projections::Bool=true,
@@ -48,6 +48,7 @@ function __assert_has_automorphisms(
   search_invariant_subspace::Bool=false,
   use_target_enum::Bool=true,
   short_vectors_direct::Bool=false,
+  allow_short_vectors_direct_in_heuristc::Bool=true,
   do_lll::Bool=true,
   use_dual::Bool=false,
 )
@@ -111,7 +112,9 @@ function __assert_has_automorphisms(
   # Split off norm 1 vectors
   if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
-    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace, compress, use_target_enum)
+    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, 
+                               use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace, 
+                               compress, use_target_enum, allow_short_vectors_direct_in_heuristc)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -147,18 +150,11 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;short_vectors_direct,
-                                                                    search_fixed_vectors, search_invariant_subspace, use_dual)
+    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
+                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct_in_heuristc)
     use_projections = false # already added projections
   elseif use_weyl
-    error("todo")
-    weyl_group_gens, weyl_gram_matrices, weyl_group_order,_, rho = _weyl_group(_L)
-    if length(weyl_gram_matrices) > 0
-      gram_weyl_vector = weyl_gram_matrices[end]
-    else
-      gram_weyl_vector = nothing
-    end
-    append!(res, weyl_gram_matrices)
+    error("not implemented")
   end
   if use_projections
     proj = _invariant_projections(_L)
@@ -177,18 +173,10 @@ function __assert_has_automorphisms(
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
-    #res, vector_set = _compress_two_matrices_faithful!(res, vector_set)
     res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
     @assert length(res2) == 2
     res, vector_set, faithful = _compress_two_matrices_try_faithful_and_small!(res, vector_set)
     @vprintln :Lattice 1 "Compression to one matrix successful: $faithful"
-    #if length(res) > 1
-    #  forced_compression = true
-    #  res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
-    #  @assert length(res2) == 2
-    #  res, vector_set = _compress_two_matrices_faithful!(res, vector_set; force=true)
-    #  @vprintln :Lattice 1 "Faithful compression failed, compressing anyways and veryfying expost"
-    #end
   end
 
   if get_assertion_level(:Lattice) > 1
@@ -262,7 +250,6 @@ function __assert_has_automorphisms(
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
   #@hassert :Lattice 1 use_weyl && all(let gens = reduced_gens; i -> change_base_ring(QQ, gens[i]) * GL *
   #                                    transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
-
   L.automorphism_group_generators = gens
   if use_weyl
     # We have O(L) = W(L)x|Aut_red(L)
@@ -295,14 +282,32 @@ end
 function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
                                        search_invariant_subspace::Bool=false,
                                        use_dual::Bool=false,
-                                       short_vectors_direct::Bool=false)
-  if short_vectors_direct
-    return _short_vectors_with_condition_direct(_L;use_dual, search_invariant_subspace, search_fixed_vectors)
-  end
-  root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L)
+                                       allow_short_vectors_direct_in_heuristc::Bool=false,
+                                       force_direct::Bool=false)
+  tmp = ZZ()
+  gramZZ, _ = _integral_split_gram(_L)
+  gramInt = _int_matrix_with_overflow(gramZZ, tmp)
+  chol = CholeskyIntegralDenom(gramZZ)
+  sv2 = __short_vectors(gramZZ, nothing, 2; chol)
+  n = rank(_L)
+  fundamental_roots = [matrix(ZZ,1,n,i) for i in _fundamental_roots(sv2, gramInt)]
+
+  root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector = _weyl_group(_L, root_types, fundamental_roots)
   T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
-  vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)
+  (_L, successive_sublattices, B, Binv, projection_ranges, projL, 
+  projL_gram, denoms, target_fixed_part, target_norms, grams) = T
+  do_direct = allow_short_vectors_direct_in_heuristc
+  do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=6 for i in 1:n)
+  do_direct = do_direct && any(rank(successive_sublattices[i])>=15 for i in 2:length(successive_sublattices)) && rank(successive_sublattices[1])<=4
+  do_direct = do_direct || force_direct
+  if !do_direct
+    @vprintln :Lattice 2 "short vectors choosing target=true"
+    @vtime :Lattice 2 vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)
+  else
+    @vprintln :Lattice 2 "short vectors choosing direct=true"
+    @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams, fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
+  end 
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
@@ -518,8 +523,12 @@ function reduced_automorphism_group_order(
   if isdefined(L, :reduced_automorphism_group_order)
     return L.reduced_automorphism_group_order
   end
+  if isdefined(L, :automorphism_group_order)
+    wg_order = _weyl_group_order(root_lattice_recognition(L)[1])
+    L.reduced_automorphism_group_order = divexact(L.automorphism_group_order, wg_order)
+  end
   @req is_definite(L) "The lattice must be definite"
-   # overwrite use_weyl keyword, to compute the reduced information
+  # overwrite use_weyl keyword, to compute the reduced information
   assert_has_automorphisms(L; kwargs..., use_weyl = true)
   return L.reduced_automorphism_group_order
 end

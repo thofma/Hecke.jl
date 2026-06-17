@@ -191,6 +191,12 @@ function __init__()
   add_verbosity_scope(:Lattice)
   add_assertion_scope(:Lattice)
 
+  add_verbosity_scope(:LatticeMor)
+  add_assertion_scope(:LatticeMor)
+
+  add_verbosity_scope(:ShortVec)
+  add_assertion_scope(:ShortVec)
+
   add_verbosity_scope(:LLL)
   add_assertion_scope(:LLL)
 

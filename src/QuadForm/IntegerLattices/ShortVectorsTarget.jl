@@ -119,7 +119,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
                                                      use_dual::Bool=false
                                                      )
   @assert rank(L)==degree(L)
-  @hassert :Lattice 1 isone(basis_matrix(L))
+  @hassert :ShortVec 1 isone(basis_matrix(L))
   n = rank(L)
   V = ambient_space(L)
   R_fix = lattice(V, fixed_space; isbasis=true, check=false)
@@ -128,7 +128,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   GZZ,_  = _integral_split_gram(L)
   Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); isbasis=true, check=false)
   successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
-  @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
+  @vprintln :ShortVec 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
   m = length(successive_sublattices)
   if sort == :rank
     # don't touch the first one because it consists of the fixed part, i.e. the seeds
@@ -141,6 +141,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   end
   # Compute L_1,  ... , L_n
   projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
+
   m = length(successive_sublattices)
   B = reduce(vcat, projL)
   Binv,bi = integral_split(inv(B),ZZ)
@@ -321,12 +322,12 @@ function _short_vectors_with_condition(::Type{CoeffType},
       short_vectors1[b]=[v1t]
     end
   end
-  @vprintln :Lattice 1 "Ranks of successive sublattices $(rank.(successive_sublattices))"
+  @vprintln :ShortVec 1 "Ranks of successive sublattices $(rank.(successive_sublattices))"
   zeroCoeff = zero(CoeffType)
   for i in 2:length(projL)
-    @vprintln :Lattice 1 "Round i=$i"
-    @hassert :Lattice 1 all(allunique, values(short_vectors1))
-    @hassert :Lattice 1 allunique(reduce(vcat, values(short_vectors1)))
+    @vprintln :ShortVec 1 "Round i=$i"
+    @hassert :ShortVec 1 all(allunique, values(short_vectors1))
+    @hassert :ShortVec 1 allunique(reduce(vcat, values(short_vectors1)))
     short_vectors2 = Dict{KeyType,Vector{VectorType}}()
     for a in Set((n[1][1:i], n[2:end]...) for n in target_invariants)
       short_vectors2[a] = VectorType[]
@@ -353,7 +354,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
       VfLi = @view Vf[r1+1:end, n_ones+1:end]
     end
     @assert nrows(VfLi) == nrows(projL[i])
-    @vprintln :Lattice 3 "elementary divisors $eldivNi_mod_Mi at stage i=$i"
+    @vprintln :ShortVec 3 "elementary divisors $eldivNi_mod_Mi at stage i=$i"
 
     # prepare for filtering by norm
     target_norm_i = Set(n[1][i] for n in target_invariants)
@@ -403,12 +404,12 @@ function _short_vectors_with_condition(::Type{CoeffType},
     # lower and upper bound for short vector enumeration of L_i
     ma = CoeffType(maximum(target_norm_i))
     mi = CoeffType(minimum(i for i in target_norm_i if !iszero(i);init=ma))
-    @vprintln :Lattice 2 "Short vector round no $i: rank $(nrows(projL[i])) minimum $mi maximum $ma target $(sort(collect(target_norm_i)))"
+    @vprintln :ShortVec 2 "Short vector round no $i: rank $(nrows(projL[i])) minimum $mi maximum $ma target $(sort(collect(target_norm_i)))"
     tmp_u1 = __zeros_array(CoeffType, ncols(VfLi))
     tmp_u2 = __zeros_array(CoeffType, ncols(VfLi))
     Gi = projL_gram[i] # already lll reduced
     tmp_s = __zeros_array(CoeffType, ncols(Gi))
-    @vprintln :Lattice 5 "gram=$Gi"
+    @vprintln :ShortVec 5 "gram=$Gi"
     for (s, q) in __short_vectors(Gi, mi, ma)
       # This is the innermost loop - do as little as possible here
       target_norm_q = get(target_norm, q, nothing)
@@ -461,15 +462,15 @@ function _short_vectors_with_condition(::Type{CoeffType},
 
     if search_fixed_vectors
       vs = _vector_sums(short_vectors2, projection_ranges[1:i], successive_grams) # with overflow
-      @vprintln :Lattice 3 "$(length(vs)) fixed vectors at stage i=$i"
+      @vprintln :ShortVec 3 "$(length(vs)) fixed vectors at stage i=$i"
       target_invariants, signs = _update_targets(target_invariants, vs, normalized_targets, signs)
       target_invariants_i = [(k[1][1:i],k[2:end]...) for k in target_invariants]
       short_vectors2 = _update_short_vector_dict(short_vectors2, vs, target_invariants_i)
     end
     short_vectors1 = short_vectors2
-    @vprintln :Lattice 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
+    @vprintln :ShortVec 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
   end
-  @hassert :Lattice 1 allunique(reduce(vcat, values(short_vectors1)))
+  @hassert :ShortVec 1 allunique(reduce(vcat, values(short_vectors1)))
   search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning
   if search_invariant_subspace
     invariant_gram = _add_invariant_subspace_data!(CoeffType, grams, target_invariants,
@@ -480,7 +481,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
   output, invariants, target_invariants_output = _postprocess_short_vectors_with_condition(CoeffType, B, denoms, gramZZ, grams, signs, target_invariants, short_vectors1)
 
 
-  if get_assertion_level(:Lattice) > 1
+  if get_assertion_level(:ShortVec) > 1
     @assert length(unique((output))) == length(output)
     n = rank(L)
     target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
@@ -504,7 +505,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
       end
     end
   end
-  @vprintln :Lattice 1 "computed $(length(output)) target vectors"
+  @vprintln :ShortVec 1 "computed $(length(output)) target vectors"
   @assert length(invariants) == length(output)
   return output, grams, (invariants, target_invariants_output)
 end
@@ -667,7 +668,7 @@ function _refine_short_vectors_by_gram!(::Type{CoeffType},
   end
   empty!(D)
   merge!(D, Dnew)
-  @hassert :Lattice 1 allunique(reduce(vcat, values(D); init=eltype(ValueType)[]))
+  @hassert :ShortVec 1 allunique(reduce(vcat, values(D); init=eltype(ValueType)[]))
   return D
 end
 
@@ -730,7 +731,7 @@ end
 function _update_short_vector_dict(D::Dict{KeyType,ValueType},
                                    vector_sums::Vector{Tuple{Vector{Int},UnitRange{Int}}},
                                    target_invariants::Vector{KeyType}) where {KeyType,ValueType<:Vector}
-  @hassert :Lattice 1 allunique(reduce(vcat,values(D)))
+  @hassert :ShortVec 1 allunique(reduce(vcat,values(D)))
   Dnew = Dict{KeyType,ValueType}()
   target_invariants_lookup = Set{KeyType}(target_invariants)
   if isempty(vector_sums)
@@ -738,7 +739,7 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
       k in target_invariants_lookup || continue
       append!(get!(() -> ValueType(), Dnew, k), vv)
     end
-    @hassert :Lattice 1 allunique(reduce(vcat,values(Dnew); init=eltype(ValueType)[]))
+    @hassert :ShortVec 1 allunique(reduce(vcat,values(Dnew); init=eltype(ValueType)[]))
     return Dnew
   end
   for k in keys(D)
@@ -770,7 +771,7 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
       end
     end
   end
-  @hassert :Lattice 1 allunique(reduce(vcat,values(Dnew)))
+  @hassert :ShortVec 1 allunique(reduce(vcat,values(Dnew)))
   return Dnew
 end
 
@@ -972,10 +973,6 @@ function __vcat_neg(x::LinearAlgebra.Adjoint{Int64, Vector{Int64}}, y::LinearAlg
   return adjoint(z)
 end
 
-__norm!(gram::Matrix{Int}, v::Vector{Int}, tmp_v::Vector{Int}) = dot(v, gram, v)
-__norm!(gram::ZZMatrix, v::Vector{ZZRingElem}, tmp_v::Vector{ZZRingElem}) = dot(mul!(tmp_v,v,gram),v) # this could be improved if necessary
-
-
 function dot!(v::Vector{Int}, gram::Matrix{Int}, w::Vector{Int}, tmp::Vector{Int})
   LinearAlgebra.mul!(tmp, gram, w)
   return dot(tmp, v)
@@ -1041,13 +1038,15 @@ function integral_split(x::ZZMatrix, R::ZZRing)
   return x, one(ZZ)
 end
 
+
+
+
 function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, use_dual=false, search_invariant_subspace=false, search_fixed_vectors=true)
   tmpZZ = ZZ()
   G, _ = _integral_split_gram(L)
   GInt = _int_matrix_with_overflow(G, tmpZZ)
-  maxL = Int(maximum(diagonal(G))) # catches overflows
   chol = CholeskyIntegralDenom(G)
-  sv2 = first.(__short_vectors(G, nothing, 2; chol))
+  sv2 = __short_vectors(G, nothing, 2; chol)
   #sv = __short_vectors(G, nothing, maxL)
   #sv2 = @inbounds [i[1] for i in sv if i[2]==2]
   fundamental_roots = _fundamental_roots(sv2, GInt)
@@ -1063,27 +1062,48 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
     Rperp = lattice(V, QQ.(kernel(G*transpose(R); side=:left)); isbasis=true, check=false)
     successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
-    @vprintln :Lattice 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
+    @vprintln :ShortVec 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
     projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
     B = reduce(vcat, projL)
     Binv,bi = integral_split(inv(B),ZZ)
-    grams = [_int_matrix_with_overflow(g, tmpZZ) for g in _get_grams_std(projL_gram, projection_ranges, Binv)]
     @assert isone(bi)
-    gram2 = grams[1]
+    grams = _get_grams_std(projL_gram, projection_ranges, Binv)
+    @assert isone(bi)
+  else 
+    grams = ZZMatrix[]
+  end
+  
+  
+  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol; 
+                                               search_invariant_subspace, 
+                                               search_fixed_vectors)
+end
+
+
+function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol; search_invariant_subspace=false, search_fixed_vectors=true)
+  tmpZZ = ZZ()
+  n = nrows(GInt)
+  maxL = Int(maximum(diagonal(G))) # catches overflows
+  fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
+  gramsInt = [_int_matrix_with_overflow(g, tmpZZ) for g in grams]
+
+  
+  if length(grams)>0
+    gram2 = gramsInt[1]
     # try compression
     for i in 2:length(grams)
-      grams_i = grams[i]
+      grams_i = gramsInt[i]
       m = maximum(grams_i[i,i] for i in 1:n)
       gram2 = (m+1)*gram2 + grams_i
     end
     if maximum(gram2[i,i] for i in 1:n)>2^20
-      gram2 = sum(rand([-1,1])*rand(1:15)*g for g in grams)
+      gram2 = sum(rand([-1,1])*rand(1:15)*g for g in gramsInt)
     end
   else
     gram2 = zero(GInt)
   end
+  use_projections = length(grams)>0
 
-  fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
 
   target = Vector{Tuple{Vector{Int},Int,Int}}()
   for i in 1:n
@@ -1117,7 +1137,8 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     else
       i3 = 0
     end
-    (vfix_buf, sq, i3) in target_123 || continue
+    # if we take vector sums, we use the bad vectors for the sums and discard them after  
+    search_fixed_vectors || (vfix_buf, sq, i3) in target_123 || continue
     vfix = copy(vfix_buf)
     k = (vfix, sq, i3)
     push!(get!(D, k, Vector{Int}[]), copy(v))
@@ -1216,9 +1237,9 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   grams = ZZMatrix[G, matrix(ZZ,gram2)]
 
 
-  if get_assertion_level(:Lattice) > 1
+  if get_assertion_level(:ShortVec) > 1
     @assert length(unique((vector_set))) == length(vector_set)
-    n = rank(L)
+    n = nrows(G)
     CoeffType = Int; mode=:auto
     target_norms = [[CoeffType(grams[i][j,j]) for i in 1:length(grams)] for j in 1:n]
     c = 0
@@ -1241,9 +1262,9 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
       end
     end
   end
-  @vprintln :Lattice 1 "computed $(length(vector_set)) target vectors"
+  @vprintln :ShortVec 1 "computed $(length(vector_set)) target vectors"
   @assert length(invariants) == length(vector_set)
-  return grams, vector_set, (invariants, target_invariant), weyl_group_order, fundamental_roots
+  return vector_set, grams, (invariants, target_invariant), weyl_group_order, fundamental_roots
 end
 
 function _invariant_subspace_direct(Gi, short_vectors)

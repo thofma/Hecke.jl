@@ -696,11 +696,22 @@ end
 
 
 # For sv a set of roots compute the fundamental roots
-# where a root is positive iff its first nonzero coefficient is positive.
-function _fundamental_roots(sv::Vector{Vector{S}}, gram::Matrix{S}) where {S<:Int}
-  weyl_dual = gram*sum(sv; init = zeros(S, size(gram, 2)))
-  return Vector{S}[i for i in sv if dot(i, weyl_dual)==2]
+# where a root is positive iff its first nonzero coefficient is positive
+# if the lattice has minimum >1:  
+function _fundamental_roots(sv::Vector{Tuple{Vector{S},S}}, gram::Matrix{S}) where {S<:Int}
+  n = size(gram, 2)
+  weyl = zeros(S, n)  # 2*weyl vector
+  for (v,q) in sv
+    if isone(q)
+      weyl .= weyl .+ 2 .*v
+    else 
+      weyl .= weyl .+ v
+    end 
+  end 
+  weyl_dual = gram*weyl
+  return Vector{S}[i for (i,_) in sv if dot(i, weyl_dual)==2]
 end
+
 
 # return the root types of the root sublattice of L
 # and the basis matrices with respect to the basis of L
@@ -734,19 +745,7 @@ function _root_lattice_recognition_fundamental(L::ZZLat; do_lll::Bool=true, via_
   if lll_flag
     G, T = lll_gram_with_transform(G)
   end
-  _sv1 = __enumerate_gram(FinckePohstInt, G, nothing, 2, Int, identity, identity, Int)
-  if !any(isone(i[2]) for i in _sv1)
-    _short_vec = first.(_sv1)
-  else
-    sv1 = [i[1] for i in _sv1 if isone(i[2])]
-    sv1_mat = [matrix(ZZ, 1, rank(L), i) for i in sv1]
-    sv1_space = reduce(vcat, sv1_mat; init=zero_matrix(ZZ,0,rank(L)))
-    K = kernel(G*transpose(sv1_space); side=:left)
-    GK = K*G*transpose(K)
-    L1perp = integer_lattice(gram=GK; cached=false)
-    a = _root_lattice_recognition_fundamental(L1perp)
-    return vcat([(:I, 1) for i in 1:length(sv1)], a[1]), vcat(sv1_mat, [i*K for i in a[2]])
-  end
+  _short_vec = __short_vectors(G, nothing, 2)
   GInt = _int_matrix_with_overflow(G, ZZ())
   fundamental_roots = ZZMatrix[matrix(ZZ, 1, rank(L), i) for i in _fundamental_roots(_short_vec, GInt)]
   if lll_flag

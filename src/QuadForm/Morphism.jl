@@ -72,7 +72,7 @@ function has_point(w, V::VectorList)
     if k == 0
       return false, 0
     else
-      @hassert :Lattice 1 V[k] == w
+      @hassert :LatticeMor 1 V[k] == w
       return true, k
     end
   end
@@ -85,7 +85,7 @@ function has_point(w, V::VectorList)
   if k == 0
     return false, 0
   else
-    @hassert :Lattice 1 V[-k] == w
+    @hassert :LatticeMor 1 V[-k] == w
     return true, -k
   end
 end
@@ -123,7 +123,7 @@ function init(
     vectors = first.(vector_set)
     lengths = [i[2] for i in vector_set]
   else
-    @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
+    @vprintln :LatticeMor 1 "Computing short vectors of length <= $bound"
     V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound; is_lll_reduced_known)
 
 
@@ -193,10 +193,10 @@ function init(
   C.V = V
 
   # Compute the fingerprint
-  @vprint :Lattice 1 "Computing fingerprint: "
+  @vprint :LatticeMor 1 "Computing fingerprint: "
   if automorphism_mode
-    @vtime :Lattice 1 fingerprint(C)
-    @vprintln :Lattice 1 "$(C.fp_diagonal)"
+    @vtime :LatticeMor 1 fingerprint(C)
+    @vprintln :LatticeMor 1 "$(C.fp_diagonal)"
   end
 
   if automorphism_mode
@@ -353,7 +353,7 @@ function try_init_small(
     end
   else
     # Compute the necessary short vectors
-    @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
+    @vprintln :LatticeMor 1 "Computing short vectors of length <= $bound"
     VV = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
     tmp = Vector{Int}(undef, n)
 
@@ -408,8 +408,8 @@ function try_init_small(
       push!(vectors, _v)
     end
   end
-  @vprintln :Lattice 1 "Number of gram matrices: $(length(C.G))"
-  @vprintln :Lattice 1 "Number of candidate vectors: $(length(vectors))"
+  @vprintln :LatticeMor 1 "Number of gram matrices: $(length(C.G))"
+  @vprintln :LatticeMor 1 "Number of candidate vectors: $(length(vectors))"
   if isempty(invariants[1])
     if U <: Vector
       _invariants = [U() for i in 1:length(vectors)]
@@ -457,9 +457,9 @@ function try_init_small(
 
   # Compute the fingerprint
   if C === D && automorphism_mode
-    @vprint :Lattice 1 "Computing fingerprint: "
-    @vtime :Lattice 1 fingerprint(Csmall, Csmall)
-    @vprintln :Lattice 1 "$(Csmall.fp_diagonal)"
+    @vprint :LatticeMor 1 "Computing fingerprint: "
+    @vtime :LatticeMor 1 fingerprint(Csmall, Csmall)
+    @vprintln :LatticeMor 1 "$(Csmall.fp_diagonal)"
   end
 
   if C === D && automorphism_mode
@@ -657,7 +657,7 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
       depth = 0
     end
   end
-  @vprintln :Lattice 1 "Choosing depth = $depth"
+  @vprintln :LatticeMor 1 "Choosing depth = $depth"
   @assert depth >= 0 "`depth` must be non-negative"
   C.depth = depth
 
@@ -883,7 +883,7 @@ function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, ma
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
 
-  @vprintln :Lattice 1 "Computing short vectors of actual length $max"
+  @vprintln :LatticeMor 1 "Computing short vectors of actual length $max"
   V = _short_vectors_gram_integral(Vector, C.G[1], max)
   return V
 end
@@ -894,7 +894,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
   if max == -1
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
-  @vprintln :Lattice 1 "Computing short vectors of actual length $max"
+  @vprintln :LatticeMor 1 "Computing short vectors of actual length $max"
   V = _short_vectors_gram_integral(Vector, C.G[1], max)
   n = ncols(C.G[1])
   C.V = Vector{ZZMatrix}(undef, length(V))
@@ -1220,7 +1220,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
-  @vprintln :Lattice 2 "Computing automorphisms of $(length(C.G)) gram matrices:  $(C.G)"
+  @vprintln :LatticeMor 2 "Computing automorphisms of $(length(C.G)) gram matrices:  $(C.G)"
 
   D = _make_small(C)
   dim = Hecke.dim(C)
@@ -1238,7 +1238,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
           #     the point stabilizer of the first sta basis vectors is computed.
           #     Here the variable is not used?
   for step in sta:dim
-    @vprintln :Lattice 1 "Entering step $step"
+    @vprintln :LatticeMor 1 "Entering step $step"
     H = reduce(vcat, C.g[step:dim])
     @inbounds for i in 1:2*length(C.V)
       bad[i] = 0
@@ -1258,9 +1258,9 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     #nC = delete(candidates[step], nC, orb, C.orders[step])
     setdiff!(candidates[step], orb)
     nC = length(candidates[step])
-    @vprintln :Lattice 10 "Step $(step), candidates $(candidates)"
+    @vprintln :LatticeMor 10 "Step $(step), candidates $(candidates)"
     while nC > 0 && ((im = candidates[step][1]) != 0)
-      @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
+      @vprintln :LatticeMor 1 "Step $(step), number of candidates left $(nC)"
       found = false
       # try C.V[im] as the image of the step-th basis vector
       x[step] = im
@@ -1918,10 +1918,10 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
   XG = matgen(x, dim, per, V)
   X2 = matgen(x2, dim, per, V)
 
-  @hassert :Lattice 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2); true end
+  @hassert :LatticeMor 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2); true end
   SS = zeros(Int, dim, dim)
   _psolve(SS, X2, XG, dim, C.prime)
-  @hassert :Lattice 1 SS * X22 == XGG
+  @hassert :LatticeMor 1 SS * X22 == XGG
 
   return SS
 end
@@ -2000,10 +2000,10 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
-  @vprintln :Lattice 2 "Computing isometry between"
-  @vprintln :Lattice 2 Ci.G[1]
-  @vprintln :Lattice 2 "and"
-  @vprintln :Lattice 2 Co.G[1]
+  @vprintln :LatticeMor 2 "Computing isometry between"
+  @vprintln :LatticeMor 2 Ci.G[1]
+  @vprintln :LatticeMor 2 "and"
+  @vprintln :LatticeMor 2 Co.G[1]
 
   Di = _make_small(Ci)
   Do = _make_small(Co)
@@ -2032,7 +2032,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   if found
     ISO = matgen(x, d, Ci.per, Co.V)
     for k in 1:length(Ci.G)
-      @hassert :Lattice 1 ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
+      @hassert :LatticeMor 1 ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
     end
     return true, ISO
   else
@@ -2043,9 +2043,9 @@ end
 function iso(step::Int, x::Vector{Int}, C::Vector{Vector{Int}}, Ci::ZLatAutoCtx{S, T}, Co::ZLatAutoCtx{S, T}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int}, G::Vector{T}) where {S, T}
   d = dim(Ci)
   found = false
-  @vprintln :Lattice "Testing $(length(C[step])) many candidates"
+  @vprintln :LatticeMor "Testing $(length(C[step])) many candidates"
   while !isempty(C[step]) && C[step][1] != 0 && !found
-    @vprintln :Lattice "Doing step $step"
+    @vprintln :LatticeMor "Doing step $step"
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]
