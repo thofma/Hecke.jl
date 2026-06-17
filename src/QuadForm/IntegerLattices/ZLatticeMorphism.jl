@@ -917,7 +917,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   tmp_vector = zeros_array(QQ, degree(L))
   isotypic_cofix_spaces = ZZMatrix[]
   if length(root_types) == 0
-    return zero_matrix(QQ, 0, n), isotypic_cofix_spaces, weyl_vector
+    return zero_matrix(ZZ, 0, n), isotypic_cofix_spaces, weyl_vector
   end
   invariant_vectors = ZZMatrix[]
   F = reduce(vcat, fundamental_roots)
