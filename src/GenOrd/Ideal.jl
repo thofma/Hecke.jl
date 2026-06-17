@@ -8,7 +8,21 @@ ideal(O::GenOrd, a::RingElement, b::RingElement) = GenOrdIdl(O, a, b)
 ideal(O::GenOrd, a::RingElement) = GenOrdIdl(O, a)
 
 function ideal(O::GenOrd, M::MatElem; M_in_hnf::Bool = false)
-  return GenOrdIdl(O, M_in_hnf ? M : hnf(M, :lowerleft))
+  n = degree(O)
+  @req base_ring(M) === coefficient_ring(O) "matrix must be over the coefficient ring of O"
+  @req ncols(M) == n "matrix must have exactly degree(O) = $n columns"
+  @req nrows(M) >= n "matrix must have at least degree(O) = $n rows"
+
+  H = M_in_hnf ? M : hnf(M, :lowerleft)
+  @hassert :GenOrd 1 !M_in_hnf || H == hnf(H, :lowerleft)
+
+  # the canonical lower-left HNF basis lives in the bottom n rows
+  # also ensure that we materialize a view
+  if nrows(H) > n || H isa AbstractAlgebra.Generic.MatSpaceView
+    H = sub(H, nrows(H) - n + 1:nrows(H), 1:n)
+  end
+
+  return GenOrdIdl(O, H)
 end
 
 function AbstractAlgebra.zero(a::GenOrdIdl)
@@ -187,10 +201,10 @@ function assure_has_basis_matrix(A::GenOrdIdl)
     return nothing
   end
 
-  @hassert :AbsNumFieldOrder 1 has_2_elem(A)
+  @hassert :GenOrd 1 has_2_elem(A)
 
   V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]), :lowerleft)
-  A.basis_matrix = V[n+1:2*n, 1:n]
+  A.basis_matrix = sub(V, n+1:2*n, 1:n)
   return nothing
 end
 
@@ -236,7 +250,6 @@ end
 #
 ###########################################################################################
 
-
 (O::GenOrd)(p::PolyRingElem) = O(O.F(p))
 Hecke.is_commutative(O::GenOrd) = true
 
@@ -252,13 +265,11 @@ function Hecke.hnf(x::T, shape::Symbol =:upperright) where {T <: MatElem}
   return hnf(x)::T
 end
 
-
 ################################################################################
 #
 #  Binary Operations
 #
 ################################################################################
-
 
 function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
@@ -271,7 +282,7 @@ function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 
   V = vcat(basis_matrix(a; copy = false), basis_matrix(b; copy = false))
   V = hnf(V, :lowerleft)
-  return ideal(O, V[n+1:2*n, 1:n]; M_in_hnf = true)
+  return ideal(O, V; M_in_hnf = true)
 end
 
 function Base.:(==)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
@@ -294,7 +305,7 @@ function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 
   blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
   V = hnf(reduce(vcat, blocks), :lowerleft)
-  return ideal(O, V[n*(n-1)+1:n^2,1:n]; M_in_hnf = true)
+  return ideal(O, V; M_in_hnf = true)
 end
 
 @doc raw"""
@@ -741,13 +752,13 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
 
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
-    @vprintln :AbsNumFieldOrder 1 "using trace-radical for $p"
+    @vprintln :GenOrd 1 "using trace-radical for $p"
     rad = radical_basis_trace
   elseif isa(R, Generic.RationalFunctionField)
-    @vprintln :AbsNumFieldOrder 1 "non-perfect case for radical for $p"
+    @vprintln :GenOrd 1 "non-perfect case for radical for $p"
     rad = radical_basis_power_non_perfect
   else
-    @vprintln :AbsNumFieldOrder 1 "using radical-by-power for $p"
+    @vprintln :GenOrd 1 "using radical-by-power for $p"
     rad = radical_basis_power
   end
   return ideal(O, rad(O,p); M_in_hnf = true)
@@ -1010,9 +1021,9 @@ function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::M
   O = order(Ip1)
   n = degree(O)
   R = O.R
-  @vprintln :AbsNumFieldOrder 1 "Splitting the algebra"
+  @vprintln :GenOrd 1 "Splitting the algebra"
   AA = Hecke.decompose(A)
-  @vprintln :AbsNumFieldOrder 1 "Done"
+  @vprintln :GenOrd 1 "Done"
   ideals = Vector{Tuple{typeof(Ip1), Int}}(undef, length(AA))
   N = basis_matrix(Ip1; copy = false)
   list_bases = Vector{Vector{Vector{elem_type(R)}}}(undef, length(AA))
@@ -1045,10 +1056,7 @@ function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::M
       end
     end
 
-    @assert ncols(N1) == n
-    N1 = sub(hnf(N1, :lowerleft), nrows(N1) - n + 1:nrows(N1), 1:n)
-
-    P = ideal(O, N1; M_in_hnf = true)
+    P = ideal(O, hnf(N1, :lowerleft); M_in_hnf = true)
     P.minimum = p
     P.norm = p^f
     P.splitting_type = (0, f)
