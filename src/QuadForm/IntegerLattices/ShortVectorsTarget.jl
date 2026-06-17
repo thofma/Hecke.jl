@@ -1086,9 +1086,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
   maxL = Int(maximum(diagonal(G))) # catches overflows
   fixed_space_dual = _int_matrix_with_overflow(fixed_space, tmpZZ)*GInt
   gramsInt = [_int_matrix_with_overflow(g, tmpZZ) for g in grams]
-
-  
-  if length(grams)>0
+  if length(grams)>0 && !iszero(grams[1])
     gram2 = gramsInt[1]
     # try compression
     for i in 2:length(grams)
@@ -1188,7 +1186,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
     for k in keys(D)
       (i1,i2,i3) = k
       for v in D[k]
-        mul!(tmp_gram2_v, gram2, v)
+        tmp_gram2_v = LinearAlgebra.mul!(tmp_gram2_v, gram2, v)
         i3 = dot(v, tmp_gram2_v)
         kv = (i1,i2,i3)
         push!(get!(Dnew, kv, Vector{Int}[]), v)
@@ -1235,8 +1233,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
   target_invariant = [_signed_hash(append!(fixed_space_dual[:, i], [v[i] for v in vector_sums]), seed) for i in 1:n]
   weyl_group_order = _weyl_group_order(root_types)
   grams = ZZMatrix[G, matrix(ZZ,gram2)]
-
-
+  
   if get_assertion_level(:ShortVec) > 1
     @assert length(unique((vector_set))) == length(vector_set)
     n = nrows(G)
