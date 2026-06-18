@@ -1069,13 +1069,13 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
     @assert isone(bi)
     grams = _get_grams_std(projL_gram, projection_ranges, Binv)
     @assert isone(bi)
-  else 
+  else
     grams = ZZMatrix[]
   end
-  
-  
-  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol; 
-                                               search_invariant_subspace, 
+
+
+  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol;
+                                               search_invariant_subspace,
                                                search_fixed_vectors)
 end
 
@@ -1094,7 +1094,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
       m = maximum(grams_i[i,i] for i in 1:n)
       gram2 = (m+1)*gram2 + grams_i
     end
-    if maximum(gram2[i,i] for i in 1:n)>2^20
+    if maximum(gram2[i,i] for i in 1:n)>2^15
       gram2 = sum(rand([-1,1])*rand(1:15)*g for g in gramsInt)
     end
   else
@@ -1135,7 +1135,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
     else
       i3 = 0
     end
-    # if we take vector sums, we use the bad vectors for the sums and discard them after  
+    # if we take vector sums, we use the bad vectors for the sums and discard them after
     search_fixed_vectors || (vfix_buf, sq, i3) in target_123 || continue
     vfix = copy(vfix_buf)
     k = (vfix, sq, i3)
@@ -1233,7 +1233,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
   target_invariant = [_signed_hash(append!(fixed_space_dual[:, i], [v[i] for v in vector_sums]), seed) for i in 1:n]
   weyl_group_order = _weyl_group_order(root_types)
   grams = ZZMatrix[G, matrix(ZZ,gram2)]
-  
+
   if get_assertion_level(:ShortVec) > 1
     @assert length(unique((vector_set))) == length(vector_set)
     n = nrows(G)

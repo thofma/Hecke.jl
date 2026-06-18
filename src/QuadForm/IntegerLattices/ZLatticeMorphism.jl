@@ -112,8 +112,8 @@ function __assert_has_automorphisms(
   # Split off norm 1 vectors
   if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
-    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, 
-                               use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace, 
+    __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
+                               use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
                                compress, use_target_enum, allow_short_vectors_direct_in_heuristc)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
@@ -295,7 +295,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector = _weyl_group(_L, root_types, fundamental_roots)
   T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
-  (_L, successive_sublattices, B, Binv, projection_ranges, projL, 
+  (_L, successive_sublattices, B, Binv, projection_ranges, projL,
   projL_gram, denoms, target_fixed_part, target_norms, grams) = T
   do_direct = allow_short_vectors_direct_in_heuristc
   do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=6 for i in 1:n)
@@ -307,7 +307,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   else
     @vprintln :Lattice 2 "short vectors choosing direct=true"
     @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams, fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
-  end 
+  end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
