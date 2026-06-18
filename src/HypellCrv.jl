@@ -1,5 +1,9 @@
 include("HypellCrv/HypellCrv.jl")
+include("HypellCrv/Isomorphisms.jl")
 include("HypellCrv/Auxiliary.jl")
 include("HypellCrv/G2Invs.jl")
+include("HypellCrv/G2Twists.jl")
+include("HypellCrv/G2Rec.jl")
+
 
 

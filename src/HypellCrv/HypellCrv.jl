@@ -24,13 +24,15 @@ mutable struct HypellCrv{T}
   function HypellCrv{T}(f::PolyRingElem{T}, h::PolyRingElem{T}, check::Bool = true) where {T}
     n = degree(f)
     m = degree(h)
-    g = div(degree(f) - 1, 2)
+    if 2*m < n
+      g = div(n - 1, 2)
+    else
+      g = div(2*m - 1, 2)
+    end
     if g < 0
-      error("Curve has to be of positive genus")
+      error("y^2 + h*y = f does not define a hyperelliptic curve.")
     end
-    if m > g + 1
-      error("h has to be of degree smaller than g + 2.")
-    end
+   
     R = base_ring(f)
 
     if characteristic(R) == 2
@@ -146,26 +148,19 @@ end
 @doc raw"""
     hyperelliptic_curve(f::PolyRingElem, g::PolyRingElem; check::Bool = true) -> HypellCrv
 
-Return the hyperelliptic curve $y^2 + h(x)y = f(x)$. The polynomial $f$
-must be monic of degree 2g + 1 > 3 or of degree 2g + 2 > 4 and the
-polynomial h must be of degree < g + 2. Here g will be the genus of the curve.
+Return the hyperelliptic curve $y^2 + h(x)y = f(x)$.
 """
 function hyperelliptic_curve(f::PolyRingElem{T}, h::PolyRingElem{T}; check::Bool = true) where T <: FieldElem
-  @req is_monic(f) "Polynomial must be monic"
-  @req degree(f) >= 3 "Polynomial must be of degree bigger than 3"
-
   return HypellCrv{T}(f, h, check)
 end
 
 @doc raw"""
     hyperelliptic_curve(f::PolyRingElem; check::Bool = true) -> HypellCrv
 
-Return the hyperelliptic curve $y^2 = f(x)$. The polynomial $f$ must be monic of
+Return the hyperelliptic curve $y^2 = f(x)$. The polynomial $f$ must be of
 degree larger than 3.
 """
 function hyperelliptic_curve(f::PolyRingElem{T}; check::Bool = true) where T <: FieldElem
-  @req is_monic(f) "Polynomial must be monic"
-  @req degree(f) >= 3 "Polynomial must be of degree greater or equal to 3"
   R = parent(f)
   return HypellCrv{T}(f, zero(R), check)
 end
@@ -177,8 +172,6 @@ Return the hyperelliptic curve $y^2 = f(x)$ where f = a0*x^n + ... + an
 where L = [a0,...,an]
 """
 function hyperelliptic_curve(L::Vector{T}; check::Bool = true) where T <: FieldElem
-  @req L[1] == 1 "Polynomial must be monic"
-  @req length(L) >= 4 "Polynomial must be of degree greater or equal to 3"
   K = parent(L[1])
   Kx, x = polynomial_ring(K)
 
@@ -351,6 +344,13 @@ function is_integral_model(C::HypellCrv{T}) where T<:Union{QQFieldElem, AbsSimpl
   return false
 end
 
+function simplified_model(C::HypellCrv{T}) where T<:FieldElem
+  K = base_field(C)
+  @req characteristic(K) != 2 "Characteristic of base field cannot be 2."
+  f, h = hyperelliptic_polynomials(C)
+  return hyperelliptic_curve(f + h^2/4)
+end
+
 ################################################################################
 #
 #  Points on Hyperelliptic Curves
@@ -415,6 +415,12 @@ function points_at_infinity(C::HypellCrv{T}) where T
   return infi
 end
 
+@doc raw"""
+    points_with_x_coordinate(C::HypellCrv, x::FieldElem) -> HypellCrvPt
+
+Return all points on $C$ with the given $x$-coordinate that are defined over the
+base field of $C$. The result may contains 0, 1, or 2 points.
+"""
 function points_with_x_coordinate(C::HypellCrv{T}, x) where T<: FinFieldElem
   R = base_field(C)
   Ry, y = polynomial_ring(R,"y")
@@ -434,8 +440,8 @@ function points_with_x_coordinate(C::HypellCrv{T}, x) where T
   equ = homogeneous_equation(C)
   f = equ(numerator(x), y, denominator(x))
   ys = roots(f)
-  pts = []
-   for yi in ys
+  pts = HypellCrvPt{T}[]
+  for yi in ys
      push!(pts, C([numerator(x), yi, denominator(x)]))
    end
   return pts
@@ -568,7 +574,7 @@ function reduce_binary_form(f::PolyRingElem)
   g = div(degree(f) - 1, 2)
   f_hom = sum([coeff_f[i]*x^i*z^(2*g + 2 - i) for i in (0:n)];init = zero(Rxz))
   f, gamma = reduce_binary_form(f_hom)
-  return evaluate(f, [gen(Rx), one(Rx)])
+  return evaluate(f, [gen(Rx), one(Rx)]), gamma
 end
 
 @doc raw"""
@@ -578,7 +584,7 @@ Given a binary form over QQ that is stable (i.e. f is not divisible by a
 linear form of degree m with 2m >= deg(f)), compute the binary form with
 minimal Julia covariant.
 """
-function reduce_binary_form(f::MPolyRingElem{T}) where T
+function reduce_binary_form(f::MPolyRingElem{T}) where T <: QQFieldElem
   #Check stability
   n = total_degree(f)
   ms = values(factor(f).fac)
