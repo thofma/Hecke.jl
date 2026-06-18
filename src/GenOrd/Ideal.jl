@@ -251,6 +251,35 @@ function hnf_modular_eldiv_left!(M::MatElem{T}, g::T) where {T <: RingElem}
   return M
 end
 
+# Specialization for Q(x)
+# The main issue here is coefficient swell, not degree; so by itself hnf_modular_eldiv_left! cannot help
+# What is worse: due to extra gcd/mod we actually worsen coefficient swell,
+#   so unless we have find a way to fight it directly, we must use Kannan-Bachem.
+# From the experiments, both hnf_minors and hnf_via_popov are clear winners
+#   in "trivial" cases, while growing degree (and computing with larger powers of ideal)
+#   makes hnf_kb clear winner here.
+# TODO: should we do this for any polynomial over characteristic zero field?
+# TODO: e.g. function fields over number fields? or something along these lines
+
+# Specialization for Q(x)
+# Here the bottleneck is coefficient swell, not degree, so the modular HNF
+#   brings no benefit by itself: its reduction only bounds the degree in x.
+# Worse, the extra gcd/mod work actively amplifies the coefficient swell, so
+#   until we find a way to fight that directly we fall back to Kannan-Bachem.
+# Empirically hnf_minors and hnf_via_popov are the clear winners on "trivial"
+#   inputs, but as the degree grows (e.g. larger powers of an ideal) hnf_kb
+#   becomes the clear winner.
+# TODO: should we extend this to any polynomials over a characteristic-zero field?
+#   (e.g. function fields over number fields)
+function hnf_modular_eldiv_left!(M::MatElem{QQPolyRingElem}, ::QQPolyRingElem)
+  reverse_cols!(M)
+  AbstractAlgebra.hnf_kb!(M, similar(M, 0, 0))
+  reverse_cols!(M)
+  reverse_rows!(M)
+
+  return M
+end
+
 ###########################################################################################
 #
 #   Basis
