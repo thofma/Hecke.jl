@@ -350,18 +350,67 @@ end
 #
 ################################################################################
 
-function representation_matrix(a::GenOrdElem)
+# For an element x of an order O we might write
+#   x = sum x_i * b_i, where {b_i} is the basis of O
+# This gives us RM(x) = sum x_i RM(b_i) where RM is representation matrix
+
+@attr Vector{dense_matrix_type(elem_type(T))} function _basis_representation_matrices(O::GenOrd{S, T}) where {S, T}
+  return [_representation_matrix_direct(b) for b in basis(O)]
+end
+
+# this is direct "by the book" implementation
+function _representation_matrix_direct(a::GenOrdElem)
   O = parent(a)
   b = basis(O)
-  m = zero_matrix(base_ring(O), degree(O), degree(O))
-  for i in 1:degree(O)
+  n = degree(O)
+  R = base_ring(O)
+
+  m = zero_matrix(R, n, n)
+  for i in 1:n
     c = coordinates(b[i]*a)
-    for j in 1:degree(O)
-      m[i, j] = numerator(c[j], base_ring(O))
-      @assert isone(denominator(c[j], base_ring(O)))
+    for j in 1:n
+      num, den = integral_split(c[j], R)
+      @assert isone(den)
+      m[i, j] = num
+    end
+  end
+
+  return m
+end
+
+# this is implementation for coordinate vector over the base ring
+function _representation_matrix(O::GenOrd, v::AbstractVector)
+  n = degree(O)
+  R = base_ring(O)
+  RB = _basis_representation_matrices(O)
+
+  @assert length(v) == n
+
+  m = zero_matrix(R, n, n)
+  t = R()
+  for ci in 1:n
+    c = v[ci]
+    is_zero(c) && continue
+
+    Rci = RB[ci]
+    @inbounds for i in 1:n, j in 1:n
+      m[i, j] = addmul!(m[i, j], c, Rci[i, j], t)
     end
   end
   return m
+end
+
+function representation_matrix(a::GenOrdElem)
+  O = parent(a)
+  R = base_ring(O)
+
+  v = map(coordinates(a)) do x
+    num, den = integral_split(x, R)
+    @assert isone(den)
+    num
+  end
+
+  return _representation_matrix(O, v)
 end
 
 ################################################################################
@@ -570,7 +619,42 @@ function _trace_matrix(b::Vector{<:GenOrdElem}, R::Ring, f)
   return m
 end
 
-_trace_matrix(O::GenOrd, R::Ring, f) = _trace_matrix(basis(O), R, f)
+# Trace matrix of the order basis, built from the cached representation matrices.
+#   Row i of RM(b_j) is the coordinate vector of b_i*b_j, so
+#     tr(b_i b_j) = sum_k RM(b_k)[i, k] * tr(b_k),
+#   i.e. column j of the trace matrix is RM(b_j) * t with t = (tr(b_k))_k.
+# This reuses _basis_representation_matrices(O) and avoids the n^2 field products b_i*b_j
+function _trace_matrix(O::GenOrd, R::Ring, f)
+  n = degree(O)
+  S = base_ring(O)
+  RB = _basis_representation_matrices(O)
+  t = matrix(S, n, 1, elem_type(S)[trace(b) for b in basis(O)])
+
+  p = S()
+
+  m = zero_matrix(R, n, n)
+  for i in 1:n
+    m[i, i] = f(_trace_matrix_entry(RB, t, i, i, p))
+    for j in i+1:n
+      m[i, j] = m[j, i] = f(_trace_matrix_entry(RB, t, i, j, p))
+    end
+  end
+  return m
+end
+
+# (i, j) entry of the trace matrix [tr(b_i b_j)] from the cached representation matrices
+# row i of RM(b_j) is the coordinate vector of b_i*b_j, hence
+#   tr(b_i b_j) = sum_l RM(b_j)[i, l] * tr(b_l).
+# p is reused scratch for the products.
+function _trace_matrix_entry(RB, tvec, i::Int, j::Int, p)
+  Rj = RB[j]
+  s = parent(p)()
+  for l in 1:length(tvec)
+    s = addmul!(s, Rj[i, l], tvec[l], p)
+  end
+  return s
+end
+
 
 function trace_matrix(b::Vector{<:GenOrdElem}, c::Vector{<:GenOrdElem}, exp::ZZRingElem = ZZRingElem(1))
   O = parent(b[1])
