@@ -147,25 +147,20 @@ end
     hyperelliptic_curve(f::PolyRingElem, g::PolyRingElem; check::Bool = true) -> HypellCrv
 
 Return the hyperelliptic curve $y^2 + h(x)y = f(x)$. The polynomial $f$
-must be monic of degree 2g + 1 > 3 or of degree 2g + 2 > 4 and the
+must be of degree 2g + 1 > 3 or of degree 2g + 2 > 4 and the
 polynomial h must be of degree < g + 2. Here g will be the genus of the curve.
 """
 function hyperelliptic_curve(f::PolyRingElem{T}, h::PolyRingElem{T}; check::Bool = true) where T <: FieldElem
-  @req is_monic(f) "Polynomial must be monic"
-  @req degree(f) >= 3 "Polynomial must be of degree bigger than 3"
-
   return HypellCrv{T}(f, h, check)
 end
 
 @doc raw"""
     hyperelliptic_curve(f::PolyRingElem; check::Bool = true) -> HypellCrv
 
-Return the hyperelliptic curve $y^2 = f(x)$. The polynomial $f$ must be monic of
+Return the hyperelliptic curve $y^2 = f(x)$. The polynomial $f$ must be of
 degree larger than 3.
 """
 function hyperelliptic_curve(f::PolyRingElem{T}; check::Bool = true) where T <: FieldElem
-  @req is_monic(f) "Polynomial must be monic"
-  @req degree(f) >= 3 "Polynomial must be of degree greater or equal to 3"
   R = parent(f)
   return HypellCrv{T}(f, zero(R), check)
 end
@@ -363,7 +358,7 @@ function (C::HypellCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
   end
 
   if length(coords) == 2
-    push!(coords, 1)
+    push!(coords, one(base_field(C)))
   end
   if S === T
     parent(coords[1]) != base_field(C) &&
