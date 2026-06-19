@@ -290,11 +290,14 @@ function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
   O = order(a)
-  Ma = basis_matrix(a)
-  Mb = basis_matrix(b)
-  V = hnf(reduce(vcat, [Mb*representation_matrix(O([Ma[i,o] for o in 1:ncols(Ma)])) for i in 1:ncols(Ma)]),:lowerleft)
-  d = ncols(V)
-  return GenOrdIdl(O, V[d*(d-1)+1:d^2,1:d])
+  n = degree(O)
+
+  Ma = basis_matrix(a; copy = false)
+  Mb = basis_matrix(b; copy = false)
+
+  blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
+  V = hnf(reduce(vcat, blocks), :lowerleft)
+  return GenOrdIdl(O, V[n*(n-1)+1:n^2,1:n])
 end
 
 @doc raw"""
