@@ -224,7 +224,7 @@ M should be LLL reduced.
 Also returns the transformations applied to v, so on return
  v <- v + t*M
 """
-function size_reduce_with_transform(M::ZZMatrix, v::ZZMatrix)
+function size_reduce_with_transform(M::Union{ZZMatrix, QQMatrix}, v::Union{ZZMatrix, QQMatrix})
   s = gram_schmidt_orthogonalisation(QQ.(transpose(M)))
   d = diagonal(transpose(s)*s)
   t = zero_matrix(ZZ, nrows(v), nrows(M))
