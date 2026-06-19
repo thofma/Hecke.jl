@@ -621,7 +621,7 @@ end
 
 # Trace matrix of the order basis, built from the cached representation matrices.
 #   Row i of RM(b_j) is the coordinate vector of b_i*b_j, so
-#     tr(b_i b_j) = sum_k RM(b_k)[i, k] * tr(b_k),
+#     tr(b_i b_j) = sum_k RM(b_j)[i, k] * tr(b_k),
 #   i.e. column j of the trace matrix is RM(b_j) * t with t = (tr(b_k))_k.
 # This reuses _basis_representation_matrices(O) and avoids the n^2 field products b_i*b_j
 function _trace_matrix(O::GenOrd, R::Ring, f)
@@ -951,6 +951,41 @@ end
 #
 ################################################################################
 
+# Inverse of a square matrix, fraction-free:
+# clear a common denominator d to get N over base ring; pseudo_inv(N) gives
+# X, dd with N*X = dd*I (dd = +-det N) via fraction-free LU, so inv(T) = (d/dd)*X.
+# Keeps elimination in base ring! This is especially important for function fields.
+# NOTE: for finite order all the denominators are 1, so the function could be simplified
+#   but this is not true for infinite order, so we keep the trivial lcm gathering
+# NOTE: this is NOT a replacement for general matrix inv
+# Trace matrix is dense with polynomial entries of moderate degrees, so normal inv
+#   will spend a lot of time doing divexact bringing to reduced row-echelon
+# But, for example, basis_matrix or inv used in colon have a triangular matrix
+#   and in this case general matrix inv is immediate (back substitution essentially)
+#   while pseudo_inv needs to do some work.
+function _fraction_free_inv(T::MatElem)
+  @req nrows(T) == ncols(T) "matrix must be square"
+  n = nrows(T)
+  K = base_ring(T)
+
+  # clear denominators
+  d = mapreduce(denominator, lcm, T)
+  # construct the matrix N (T = 1/d * N)
+  N = matrix(parent(d), [numerator(T[i, j]*d) for i in 1:n, j in 1:n])
+
+  X, dd = pseudo_inv(N)
+  return K(d//dd)*change_base_ring(K, X)
+end
+
+@doc raw"""
+    codifferent(O::GenOrd) -> GenOrdFracIdl
+
+The codifferent ideal of $O$, i.e. the trace-dual of $O$.
+"""
+function codifferent(O::GenOrd)
+  K = base_field(field(O))
+  return fractional_ideal(O, _fraction_free_inv(_trace_matrix(O, K, K)))
+end
 
 function different(x::GenOrdElem)
   if iszero(x)
@@ -972,16 +1007,6 @@ For Gorenstein orders, this is also the inverse ideal of the co-different.
 """
 function different(O::GenOrd)
   return inv(codifferent(O))
-end
-
-@doc raw"""
-    codifferent(O::GenOrd) -> GenOrdFracIdl
-
-The codifferent ideal of $O$, i.e. the trace-dual of $O$.
-"""
-function codifferent(O::GenOrd)
-  K = base_field(O.F)
-  return fractional_ideal(O, inv(_trace_matrix(O, K, K)))
 end
 
 ###############################################################################
