@@ -567,17 +567,10 @@ Return the canonical divisor of F.
 """
 @attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
 canonical_divisor(K::Generic.FunctionField{T, U}) where {T, U}
-  @req is_separable(defining_polynomial(K)) "Currently assumes separable extension"
+  @req _is_separable(K) "Currently assumes separable extension"
 
   dx = differential(separating_element(K))
   return divisor(dx)
-end
-
-function separating_element(F::AbstractAlgebra.Generic.FunctionField)
-  # TODO: we need to search for one, instead of using x
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
-
-  return F(gen(base_ring(F)))
 end
 
 @doc raw"""
@@ -586,7 +579,7 @@ end
 Return the genus of F.
 """
 @attr Int function genus(F::AbstractAlgebra.Generic.FunctionField)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  @req _is_separable(F) "Currently assumes separable extension"
   # g = (degree(K) + 2) / 2, where K is the canonical divisor.
   # Since K = (dx) = Diff_{F/k(x)} - 2(x)_inf, we have
   # deg(K) = deg(Diff_{F/k(x)}) - 2*[F:k(x)], and
@@ -703,8 +696,31 @@ L(K - D), where K is the canonical divisor of the function field of D.
 """
 function index_of_speciality(D::Divisor)
   F = function_field(D)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  @req _is_separable(F) "Currently assumes separable extension"
 
   return dimension(canonical_divisor(F) - D)
 end
 
+################################################################################
+#
+#  Separability
+#
+#  Current implementation assumes that the defining polynomial is separable
+#  While this might change in the future, we are not yet sure how this will be handled
+#    so just isolate the related things in one place
+#
+################################################################################
+
+# NOTE: we use the "is separable" check in plenty of places
+#   and it turned out that this "looking trivial" check generates quite a lot
+#   of memory garbage.
+@attr Bool function _is_separable(F::Generic.FunctionField)
+  return is_separable(defining_polynomial(F))
+end
+
+function separating_element(F::Generic.FunctionField)
+  # TODO: currently we support ONLY extensions with separable defining polynomial
+  @req _is_separable(F) "Currently assumes separable extension"
+
+  return F(gen(base_ring(F)))
+end
