@@ -437,8 +437,10 @@ end
 function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
-  iszero(a) && return b
-  iszero(b) && return a
+  is_zero(a) && return b
+  is_zero(b) && return a
+  is_one(a)  && return a
+  is_one(b)  && return b
 
   O = order(a)
 
@@ -458,8 +460,10 @@ end
 function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
-  iszero(a) && return a
-  iszero(b) && return b
+  is_zero(a) && return a
+  is_zero(b) && return b
+  is_one(a)  && return b
+  is_one(b)  && return a
 
   O = order(a)
   n = degree(O)
@@ -481,8 +485,10 @@ Returns $x \cap y$.
 function Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
-  iszero(a) && return a
-  iszero(b) && return b
+  is_zero(a) && return a
+  is_zero(b) && return b
+  is_one(a)  && return b
+  is_one(b)  && return a
 
   # [A A ; 0 B] lower left HNF gives intersection in the top left block
   O = order(a)
@@ -601,11 +607,12 @@ end
 
 
 function Hecke.divexact(A::GenOrdIdl, b::RingElem)
-  if iszero(A)
-    return A
-  end
+  is_zero(A) && return A
+
   O = order(A)
   b = _make_canonical_in(O, b)
+  is_unit(b) && return A
+
   bm = divexact(basis_matrix(A; copy = false), b)
   B = ideal(O, bm; M_in_hnf = true)
 
