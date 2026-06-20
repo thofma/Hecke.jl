@@ -15,7 +15,7 @@ Return the differential df.
 """
 function differential(f::T) where {T <: Generic.FunctionFieldElem}
   F = parent(f)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  @req _is_separable(F) "Currently assumes separable extension"
   y = gen(F)
 
   # our polynomials are polynomial in y with coefficients polynomials in x
