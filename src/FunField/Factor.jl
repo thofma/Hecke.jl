@@ -100,7 +100,7 @@ function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFie
   return is_absolutely_irreducible(to_mpoly(f))
 end
 
-function Hecke.factor(F::Generic.FunctionField{T}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T}}) where {T}
+function Hecke.factor(F::Generic.FunctionField{T, U}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T, U}}) where {T, U}
   return factor(map_coefficients(F, f, cached = false))
 end
 

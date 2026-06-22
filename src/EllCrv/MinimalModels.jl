@@ -88,32 +88,53 @@ end
 ################################################################################
 
 @doc raw"""
-    minimal_model(E::EllipticCurve{QQFieldElem}, p::Int) -> EllipticCurve{QQFieldElem},
-      EllCrvIso{QQFieldElem}, EllCrvIso{QQFieldElem}
+    minimal_model(E::EllipticCurve{QQFieldElem}, p::IntegerUnion) ->
+      EllipticCurve{QQFieldElem}, EllCrvIso{QQFieldElem}, EllCrvIso{QQFieldElem}
+    minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) ->
+      EllipticCurve{AbsSimpleNumFieldElem}, EllCrvIso{AbsSimpleNumFieldElem}, EllCrvIso{AbsSimpleNumFieldElem}
+    minimal_model(E::EllipticCurve{RationalFunctionFieldElem}, p::PolyRingElem) ->
+      EllipticCurve{RationalFunctionFieldElem}, EllCrvIso{RationalFunctionFieldElem}, EllCrvIso{RationalFunctionFieldElem}
+    minimal_model(E::EllipticCurve{RationalFunctionFieldElem}, ::typeof(degree)) ->
+      EllipticCurve{RationalFunctionFieldElem}, EllCrvIso{RationalFunctionFieldElem}, EllCrvIso{RationalFunctionFieldElem}
+    minimal_model(E::EllipticCurve{RationalFunctionFieldElem}, p::RationalFunctionFieldElem) ->
+      EllipticCurve{RationalFunctionFieldElem}, EllCrvIso{RationalFunctionFieldElem}, EllCrvIso{RationalFunctionFieldElem}
 
-Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
-is prime.
+Returns a model of $E$, which is minimal at $p$. It is assumed that $p$ is prime.
+The returned tuple is ($E'$, $phi$, $phi^{-1}$), where $E'$ is minimal model and
+$phi$ is isomorphism $E \rightarrow E'$
 """
-function minimal_model(E::EllipticCurve{QQFieldElem}, p::Int)
-  Ep = tates_algorithm_local(E, p)[1]
-  phi = isomorphism(E, Ep)
-  return Ep, phi, inv(phi)
+function minimal_model(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
+  return _minimal_model_at(E, p)
+end
+function minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  @req nf(order(p)) === base_field(E) "p should come from the base field of E"
+  return _minimal_model_at(E, p)
+end
+function minimal_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree))
+  return _minimal_model_at(E, degree)
+end
+function minimal_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, p::PolyRingElem)
+  return _minimal_model_at(E, p)
+end
+function minimal_model(E::EllipticCurve{T}, p::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  K = base_field(E)
+  @req parent(p) === K "p should come from the base field of E"
+
+  if is_one(denominator(p))
+    return _minimal_model_at(E, numerator(p))
+  else
+    @assert p == 1 // gen(K)
+    return _minimal_model_at(E, degree)
+  end
 end
 
-@doc raw"""
-    minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> EllipticCurve{AbsSimpleNumFieldElem},
-      EllCrvIso{AbsSimpleNumFieldElem}, EllCrvIso{AbsSimpleNumFieldElem}
-
-Returns a model of $E$, which is minimal at $p$. It is assumed that $p$
-is a prime ideal.
-"""
-function minimal_model(E::EllipticCurve, p)
-  Ep = tates_algorithm_local(E, p)
-  Ep = Ep[1]
+function _minimal_model_at(E, P)
+  ld = tates_algorithm_local(E, P, EllipticCurveLocalData)
+  Ep = ld.minimal_model
   phi = isomorphism(E, Ep)
+
   return Ep, phi, inv(phi)
 end
-
 
 @doc raw"""
     tidy_model(E::EllipticCurve{QQFieldElem}) -> EllipticCurve{QQFieldElem}
@@ -163,7 +184,7 @@ end
 Returns the reduced global minimal model of $E$.
 """
 function minimal_model(E::EllipticCurve{QQFieldElem})
-  F = laska_kraus_connell(E)
+  F = laska_kraus_connell(integral_model(E)[1])
   phi = isomorphism(E, F)
   return F, phi, inv(phi)
 end
@@ -174,11 +195,21 @@ end
 Returns the reduced global minimal model if it exists.
 """
 function minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
-  if has_global_minimal_model(E)
-    F, phi,phi_inv, I = semi_global_minimal_model(E)
-    return F, phi, phi_inv
-  end
-  error("The curve E has no global minimal model.")
+  has_global_minimal_model(E) || error("The curve E has no global minimal model.")
+  F = semi_global_minimal_model(E)[1]
+  phi = isomorphism(E, F)
+  return F, phi, inv(phi)
+end
+
+@doc raw"""
+    minimal_model(E::EllipticCurve{RationalFunctionFieldElem}) -> EllipticCurve, EllCrvIso, EllCrvIso
+
+Returns the model that is minimal at all finite places.
+"""
+function minimal_model(E::EllipticCurve{<: AbstractAlgebra.Generic.RationalFunctionFieldElem})
+  Ep = tates_algorithm_global(E)
+  phi = isomorphism(E, Ep)
+  return Ep, phi, inv(phi)
 end
 
 @doc raw"""
@@ -195,24 +226,44 @@ function has_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
 end
 
 @doc raw"""
-    global_minimalirt_class(E::EllipticCurve{AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
+    global_minimality_class(E::EllipticCurve{AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the element in the ideal class group that forms the obstruction for
 E not having a minimal model
 """
 function global_minimality_class(E::EllipticCurve{AbsSimpleNumFieldElem})
+  # TODO?: this returns an ideal, not an element in ideal class group
   K = base_field(E)
   OK = ring_of_integers(K)
-  Cl, phi = class_group(K)
+  Cl, _ = class_group(K)
   if order(Cl) == 1
     return 1*OK
   end
 
+  # The actual obstruction ideal is fractional for non-integral models, but its class
+  # in Cl(K) is what matters. Integralizing scales the ideal by a principal ideal,
+  # so the class is preserved.
+  return _global_minimality_obstruction_ideal_integral(integral_model(E)[1])
+end
+
+# this returns obstruction ideal
+# Note: only the *class* of this ideal in Cl(K) determines whether a global minimal
+#   model exists: a non-trivial principal obstruction ideal still admits a global model.
+# For has_global_minimal_model we use is_principal check;
+# for the actual reduction in _semi_global_minimal_model the explicit ideal is needed.
+function _global_minimality_obstruction_ideal_integral(E::EllipticCurve{AbsSimpleNumFieldElem})
+  @assert is_integral_model(E)
+
+  OK = ring_of_integers(base_field(E))
   D = discriminant(E)
-  P = bad_primes(E)
-  v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
-  I = prod([P[i]^(divexact((valuation(D, P[i]) - v[i]),12)) for i in (1:length(P))]; init = 1*OK)
-  return I
+
+  # NOTE: we need obstruction for the current model, so use primes dividing the curve discriminant
+  #   without checking the reduction type (which would be equivalent to minimal discriminant essentially)
+  return prod(_bad_prime_candidates(E); init = 1*OK) do p
+    v_E = valuation(D, p)
+    v_min = tates_algorithm_local(E, p, EllipticCurveLocalData).discriminant_valuation
+    p^divexact(v_E - v_min, 12)
+  end
 end
 
 # The semi-minimal model is inspired by the SageMath implementation
@@ -223,6 +274,9 @@ end
 Return a semi global minimal model and the unique prime at which the model is non-minimal.
 """
 function semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
+  # our algorithm is written for integral model
+  E = integral_model(E)[1]
+
   OK = ring_of_integers(base_field(E))
   G, mG = class_group(OK)
   if false #order(G) == 1
@@ -246,7 +300,9 @@ function semi_global_minimal_model(E::EllipticCurve{AbsSimpleNumFieldElem})
 end
 
 function _semi_global_minimal_model(E::EllipticCurve{T}) where T <:AbsSimpleNumFieldElem
-  I = global_minimality_class(E)
+  # our algorithm is written for integral model
+  @assert is_integral_model(E)
+  I = _global_minimality_obstruction_ideal_integral(E)
   K = base_field(E)
   OK = ring_of_integers(K)
   c4, c6 = c_invariants(E)
@@ -461,29 +517,45 @@ function check_kraus_conditions_at_3(c4::AbsSimpleNumFieldOrderElem, c6::AbsSimp
 end
 
 @doc raw"""
-    minimal_discriminant(E::EllipticCurve{QQFieldElem}) -> QQFieldElem
+    minimal_discriminant(E::EllipticCurve{QQFieldElem}) -> ZZRingElem
 
-Return the minimal discriminant ideal D_min of E. If E has a global minimal model
-this is equal to the ideal generated by discriminant(E_min).
+Return the (positive) generator of D_min, the minimal discriminant ideal of E.
 """
 function minimal_discriminant(E::EllipticCurve{QQFieldElem})
-  P = bad_primes(E)
-  v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
-  I = prod([P[i]^(v[i]) for i in (1:length(P))]; init = one(QQFieldElem))
+  return prod(bad_primes(E); init = ZZ(1)) do p
+    p^tates_algorithm_local(E, p, EllipticCurveLocalData).discriminant_valuation
+  end
 end
 
 @doc raw"""
     minimal_discriminant(E::EllipticCurve{AbsSimpleNumFieldElem}) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
 Return the minimal discriminant ideal D_min of E. If E has a global minimal model
-this is equal to the ideal generated by discriminant(E_min).
+this is equal to the principal ideal generated by the discriminant of any such model.
 """
 function minimal_discriminant(E::EllipticCurve{AbsSimpleNumFieldElem})
-  K = base_field(E)
-  OK = ring_of_integers(K)
-  P = bad_primes(E)
-  v = Int[valuation(discriminant(tates_algorithm_local(E, p)[1]),p) for p in P]
-  I = prod([P[i]^(v[i]) for i in (1:length(P))]; init = 1*OK)
+  OK = ring_of_integers(base_field(E))
+  return prod(bad_primes(E); init = 1*OK) do p
+    p^tates_algorithm_local(E, p, EllipticCurveLocalData).discriminant_valuation
+  end
+end
+
+@doc raw"""
+    minimal_discriminant(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}} -> Vector{Tuple{T, ZZRingElem}}
+
+Return the minimal discriminant divisor D_min of E as a list of pairs $(p, e)$, where $p$
+is a generator of a place of bad reduction and $e$ is the valuation of the minimal discriminant at that place.
+Finite places are represented by irreducible polynomials (lifted to the base field of $E$) and the place at infinity by $1/t$.
+"""
+function minimal_discriminant(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem{<:FieldElem, <:PolyRingElem}}
+  result = Tuple{T, ZZRingElem}[]
+
+  for p in bad_primes(E)
+    e = _tates_algorithm(E, p).discriminant_valuation
+    e > 0 && push!(result, (p, ZZ(e)))
+  end
+
+  return result
 end
 
 ################################################################################

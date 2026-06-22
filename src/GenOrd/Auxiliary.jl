@@ -84,7 +84,7 @@ function Hecke.residue_field(R::PolyRing{T}, p::PolyRingElem{T}) where {T <: Num
   return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
-function (F::Generic.FunctionField{T})(p::PolyRingElem{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{T}}) where {T <: FieldElem}
+function (F::Generic.FunctionField{T, U})(p::PolyRingElem{<:Generic.RationalFunctionFieldElem{T, U}}) where {T <: FieldElem, U <: PolyRingElem{T}}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
@@ -119,8 +119,14 @@ function Hecke.discriminant(F::Generic.FunctionField)
   return discriminant(defining_polynomial(F))
 end
 
-function base_field_type(::Type{Generic.FunctionField{T}}) where T <: FieldElement
-  return Generic.RationalFunctionField{T, poly_type(T)}
+function base_field_type(::Type{Generic.FunctionField{T, U}}) where {T, U}
+  return Generic.RationalFunctionField{T, U}
+end
+
+function is_defining_polynomial_nice(F::Generic.FunctionField)
+  f = defining_polynomial(F)
+  is_one(leading_coefficient(f)) || return false
+  return all(is_one(denominator(c)) for c in coefficients(f))
 end
 
 #######################################################################

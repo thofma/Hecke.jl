@@ -18,7 +18,6 @@ function bench_schoof(E, label; nruns=3)
     GC.gc()
   end
   println("  $(rpad(label, 30)) |E| = $(rpad(n, 25))  $(lpad(fmt_time(tmin), 12))")
-  return tmin
 end
 
 println("\n  -- Prime fields (large characteristic, degree 1) --")

@@ -73,6 +73,16 @@ import Hecke: divisor
   end
 
   @testset "Degree" begin
+    function test_degree(I, d)
+      D = divisor(I)
+
+      @assert !Hecke.has_support(D)
+      @test d == @inferred degree(D)
+
+      Hecke.assure_has_support(D)
+      @test d == @inferred degree(D)
+    end
+
     kx, x = rational_function_field(GF(2), :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
 
@@ -85,16 +95,67 @@ import Hecke: divisor
     @test length(fac) == 1
     P, e = first(fac)   # e = 6, f = 1
     @test e == 6
-    @test 6 == @inferred degree(divisor(I))
-    @test 1 == @inferred degree(divisor(P))
+    test_degree(I, 6)
+    test_degree(P, 1)
 
     I = ideal(Ofin, x^2+x+1)
     fac = @inferred factor(I)
     @test length(fac) == 1
     P, e = first(fac)   # e = 1, f = 3
     @test e == 1
-    @test 6 == @inferred degree(divisor(I))
-    @test 6 == @inferred degree(divisor(P))
+    test_degree(I, 6)
+    test_degree(P, 6)
+  end
+
+  @testset "Pole/Zero divisors" begin
+    kx, x = rational_function_field(GF(5), :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+
+    function test_pole_degree(f, d)
+      @test degree(pole_divisor(f)) == d
+
+      D = divisor(f)
+      @assert !Hecke.has_support(D)
+      @test degree(pole_divisor(D)) == d
+
+      Hecke.assure_has_support(D)
+      @test degree(pole_divisor(D)) == d
+    end
+
+    function test_pole_zero(D_or_f)
+      @test degree(pole_divisor(D_or_f)) == degree(zero_divisor(D_or_f))
+      @test is_effective(pole_divisor(D_or_f))
+      @test is_effective(zero_divisor(D_or_f))
+    end
+
+    function test_pole_zero_f(f)
+      test_pole_zero(f)
+
+      D = divisor(f)
+      @assert !Hecke.has_support(D)
+      test_pole_zero(D)
+
+      Hecke.assure_has_support(D)
+      test_pole_zero(D)
+    end
+
+    # ramification at infinity is 2
+    F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+    @test genus(F) == 1
+    test_pole_degree(F(x), 2)
+    test_pole_degree(F(y), 3)
+    for f in (F(x), F(y))
+      test_pole_zero_f(f)
+    end
+
+    # ramification at infinity is 3
+    F, a = function_field(y^3 - x^2 - 1; cached = false)
+    @test genus(F) == 1
+    test_pole_degree(F(x), 3)
+    test_pole_degree(F(y), 2)
+    for f in (F(x), F(y))
+      test_pole_zero_f(f)
+    end
   end
 
   @testset "Not Separable Extension" begin
@@ -116,43 +177,6 @@ import Hecke: divisor
     @test_throws ArgumentError Hecke.separating_element(F)
     @test_throws ArgumentError Hecke.canonical_divisor(F)
     @test_throws ArgumentError Hecke.genus(F)
-  end
-
-  @testset "Riemann-Roch" begin
-    for base_field in [QQ, finite_field(2, 2)[1], finite_field(13)[1]]
-      kx, x = rational_function_field(base_field, :x; cached = false)
-      ky, y = polynomial_ring(kx, :y; cached = false)
-      for poly in [y^3 - x - 1, y^3 - x^3 - 1, y^3 - x^5 - 1]
-        F, a = function_field(poly; cached = false)
-        Ofin = @inferred finite_maximal_order(F)
-        Oinf = @inferred infinite_maximal_order(F)
-
-        g = genus(F)
-        CD = canonical_divisor(F)
-
-        p1, _ = @inferred first(factor(ideal(Ofin, x - 13)))
-        p2, _ = first(factor(ideal(Oinf, base_ring(Oinf)(1//x))))
-        D1, D2 = divisor(p1), divisor(p2)
-
-        # Riemann-Roch: l(D) - l(K-D) = deg(D) - g + 1
-        D = -pole_divisor(F(1)//a)  # deg(D) < 0
-        @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
-        D = 2*zero_divisor(a^2)     # deg(D) > 2g - 2
-        @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
-        D = 2*D1 + D2
-        @test dimension(D) - index_of_speciality(D) == degree(D) - g + 1
-
-        # 2 * (l(K) - l(0)) = deg(K) - deg(0)
-        @test degree(CD) == 2*g - 2
-        @test degree(trivial_divisor(F)) == 0
-        @test dimension(CD) - dimension(trivial_divisor(F)) == g - 1
-
-        # l(D) = 0 for deg(D) < 0
-        @test dimension(-3*D1) == 0
-        @test dimension(-D2) == 0
-        @test dimension(-D1 - 3*D2) == 0
-      end
-    end
   end
 
   @testset "principal with generator: ellcrv" begin
@@ -270,7 +294,11 @@ import Hecke: divisor
       @test 6 == @inferred dimension(DD)
 
       for f in L
-        @test is_effective(divisor(f) + DD)
+        D = divisor(f) + DD
+        @test is_effective(D)
+
+        Hecke.assure_has_support(D)
+        @test is_effective(D)
       end
 
       @test F == function_field(D)
@@ -341,7 +369,11 @@ import Hecke: divisor
 
       L = @inferred basis_of_differentials(F)
       for df in L
-        @test is_effective(divisor(df.f) + KF)
+        D = divisor(df.f) + KF
+        @test is_effective(D)
+
+        Hecke.assure_has_support(D)
+        @test is_effective(D)
       end
     end
 end

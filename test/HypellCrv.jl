@@ -4,4 +4,5 @@
   include("HypellCrv/G2Rec.jl")
   include("HypellCrv/G2Twists.jl")
   include("HypellCrv/Auxiliary.jl")
+  include("HypellCrv/Isomorphisms.jl")
 end

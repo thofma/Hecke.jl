@@ -369,7 +369,7 @@ function (C::HypellCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
   end
 
   if length(coords) == 2
-    push!(coords, 1)
+    push!(coords, one(base_field(C)))
   end
   if S === T
     parent(coords[1]) != base_field(C) &&

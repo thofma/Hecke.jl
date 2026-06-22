@@ -92,14 +92,10 @@ degree(O::GenOrd) = degree(field(O))
 basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field_type(S)))
 basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_type(base_field_type(S)))
 
-_make_canonical_in(O::GenOrd{S, T}, x) where {S, T} = O.R(x)::elem_type(T)
-
-function _make_canonical_in(O::GenOrd{S, T}, x::KInftyElem) where {S, T}
-  O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(numerator(x))//denominator(x))::elem_type(T)
-end
-
-function _make_canonical_in(O::GenOrd{S, T}, x::PolyRingElem) where {S, T}
-  O.R(Hecke.AbstractAlgebra.MPolyFactor.make_monic(x))::elem_type(T)
+function _make_canonical_in(O::GenOrd{S, T}, x) where {S, T}
+  y = O.R(x)
+  iszero(y) && return y::elem_type(T)
+  return divexact(y, canonical_unit(y))::elem_type(T)
 end
 
 ################################################################################
@@ -193,15 +189,12 @@ end
 #
 ################################################################################
 
-function in(a::GenOrdElem, O::GenOrd)
-  @assert field(parent(a)) === field(O)
-  return isone(integral_split(data(a), O)[2])
+function in(a::FieldElem, O::GenOrd)
+  @req parent(a) === field(O) "Element and order must come from the same field"
+  return is_one(integral_split(a, O)[2])
 end
 
-function Base.in(a::FieldElem, O::GenOrd)
-  @assert parent(a) === field(O)
-  return isone(integral_split(data(a), O)[2])
-end
+in(a::GenOrdElem, O::GenOrd) = data(a) in O
 
 ################################################################################
 #
@@ -665,11 +658,11 @@ function integral_closure(S::LocalizedEuclideanRing{ZZRingElem}, F::AbsSimpleNum
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T}) where {T}
+function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T, U}) where {T, U}
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::KInftyRing{T,U}, F::Generic.FunctionField{T}) where {T,U}
+function integral_closure(S::KInftyRing{T, U}, F::Generic.FunctionField{T, U}) where {T, U}
   return _integral_closure(S, F)
 end
 
@@ -737,17 +730,13 @@ end
 
 function Hecke.discriminant(O::GenOrd)
   if is_monic(defining_polynomial(O.F))
-    #"the" example from Jeroen is
-    #   x*y^3 + (-x + 1)*y^2 - y + x^3 + x^2
-    # and the problem is the correct power of x.
-    # The disc. is "well definined" up to the correct power of the
-    # leading coeff....
-    # The bypass is to use det(trace_mat) which is correct for orders
+    # a polynomial discriminant is only well-defined up to a power of leading coefficient
     d = discriminant(O.F)
     if !is_equation_order(O)
       d *= det(basis_matrix(O))^2
     end
   else
+    # going through trace matrix is correct in every order
     d = det(trace_matrix(O))
   end
   return O.R(d)

@@ -539,6 +539,7 @@ export is_isometric
 export is_isometric_with_isometry
 export is_isometry
 export is_isomorphic
+export is_isomorphic_with_isomorphism
 export is_isomorphic_with_map
 export is_isotropic
 export is_isotropic_with_vector
