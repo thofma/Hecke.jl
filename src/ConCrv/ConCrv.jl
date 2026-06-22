@@ -3,6 +3,16 @@
 #          ConCrv/ConCrv.jl : Conics over general fields
 #
 # (C) 2025 
+# References:
+#
+# [CR06] J. Cremona, D. Rusin,
+# "Solving conics over function fields."
+# Journal de Theorie des Nombres de Bordeaux, 18:595--606, 2006.
+#
+# [Sim05]
+# D. Simon
+# "Solving quadratic equations using reduced unimodular quadratic forms."
+# Math. Comp., 74(251):1531--1543 (electronic), 2005.
 #
 ################################################################################
 
@@ -386,7 +396,7 @@ function find_rational_point(C::ConCrv{FqFieldElem})
   end
 end
 
-
+#Part of the algorithm for finding rational points over function fields (See [CR06])
 function reduce_conic(v)
   a, b, c = v
   
@@ -446,6 +456,9 @@ function reduce_conic(v)
 
 end
 
+
+#Implements the algorithm in [CR06].
+#Can probably be tweaked to also work over rational function fields with more variables.
 function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}}) where {S,T}
   Kt_FF = base_field(conic)
   K = base_ring(Kt_FF)
@@ -619,6 +632,7 @@ end
 Compute a model C_min isomorphic to C with minimal discriminant.
 Returns C_min, a map from Cmin -> C, and the corresponding matrix.
 """
+# Follows [Sim05]. Possibly has overlap with code in the QuadForm package.
 function minimal_model(C::ConCrv{QQFieldElem})
   M = matrix(C)
 
@@ -655,6 +669,7 @@ function minimal_model(C::ConCrv{QQFieldElem})
 
 end
 
+#In [Sim05]. Possibly has overlap with code in the QuadForm package.
 function algorithm22(M::ZZMatrix, p::ZZRingElem)
   n = ncols(M)
   i = n
@@ -691,6 +706,7 @@ function algorithm22(M::ZZMatrix, p::ZZRingElem)
   return U, d
 end
 
+#In [Sim05]. Possibly has overlap with code in the QuadForm package.
 function algorithm26(Q::ZZMatrix, U::ZZMatrix, p::ZZRingElem)
   Qnew = transpose(U) * Q * U
   if mod(Qnew[2,2], p) == 0
@@ -709,12 +725,14 @@ function algorithm26(Q::ZZMatrix, U::ZZMatrix, p::ZZRingElem)
   return U*N
 end
 
+#In [Sim05]. Possibly has overlap with code in the QuadForm package.
 function algorithm211(Q::ZZMatrix, U::ZZMatrix, p::ZZRingElem)
   Qnew = transpose(U) * Q * U
   N = matrix(ZZ, [[1,0,0],[0,p,0],[0,0,p]])
   return U*N
 end
 
+#In [Sim05]. Possibly has overlap with code in the QuadForm package.
 function algorithm214(Q::ZZMatrix, U::ZZMatrix, p::ZZRingElem)
   Qnew = transpose(U) * Q * U
   N = matrix(ZZ, [[1,0,0],[0,1,0],[0,0,p]])
@@ -765,11 +783,13 @@ function parametrization(C::ConCrv)
   return parametrization(C, P)
 end
 
+#Finds a parametrization of a conic by moving to a quadratc field extension.
 function _parametrization_geometric(C::ConCrv)
   F = base_field(C)
   R, x = polynomial_ring(F, :x)
   f = equation(C)
   f = f(x, F(0), F(1))
+
   if typeof(F) <: Union{AbstractAlgebra.Generic.FunctionField, AbstractAlgebra.Generic.RationalFunctionField}
     K, a = extension_field(f)
   elseif typeof(F) <: NumField
