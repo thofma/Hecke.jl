@@ -65,7 +65,7 @@ function quadratic_twist(C::HypellCrv{T}) where T <: FinFieldElem
   end
 end
 
-function filter_g2_isomorphism_classes(curves::Vector{HypellCrv{T}}) where T
+function filter_g2_isomorphism_classes(curves::Vector{HypellCrv{T}}) where T <: FieldElem
   result = HypellCrv{T}[]
   for C in curves
     if !any([ is_isomorphic(C, D) for D in result ])
@@ -77,7 +77,7 @@ end
 
 #Twists for characteristic 2. Mostly follows [CaNaPu2005] and [LRS20].
 
-function g2_models_FF_char2_C2(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char2_C2(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
 
   F = parent(g2_invs[1])
   g1, g2, g3 = g2_invs
@@ -148,7 +148,7 @@ function g2_models_FF_char2_C2(g2_invs::Vector{FinFieldElem}, all_twists::Bool =
   return [H1, H2]
 end
 
-function g2_models_FF_char2_C2xC2(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char2_C2xC2(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
   F = parent(g2_invs[1])
   _, g2, g3 = g2_invs
   R, x = polynomial_ring(F, :x)
@@ -171,7 +171,7 @@ function g2_models_FF_char2_C2xC2(g2_invs::Vector{FinFieldElem}, all_twists::Boo
   end
 end
 
-function g2_models_FF_char2_C2xS3(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char2_C2xS3(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
 
   F = parent(g2_invs[1])
   _, _, g3 = g2_invs
@@ -210,7 +210,7 @@ function g2_models_FF_char2_C2xS3(g2_invs::Vector{FinFieldElem}, all_twists::Boo
   return vcat(quads, cubs)
 end
 
-function g2_models_FF_char2_C2_mixed(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char2_C2_mixed(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
   F = parent(g2_invs[1])
   _, g2, _ = g2_invs
   R, x = polynomial_ring(F, :x)
@@ -225,7 +225,7 @@ function g2_models_FF_char2_C2_mixed(g2_invs::Vector{FinFieldElem}, all_twists::
   return [H1, H2]
 end
 
-function g2_models_FF_char2_M32(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char2_M32(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
 
   F = parent(g2_invs[1])
   _, _, g3 = g2_invs
@@ -266,7 +266,7 @@ function g2_models_FF_char2_M32(g2_invs::Vector{FinFieldElem}, all_twists::Bool 
   return twists
 end
 
-function g2_models_FF_char2_M160(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char2_M160(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
 
   F = parent(g2_invs[1])
   R, x = polynomial_ring(F, :x)
@@ -330,7 +330,7 @@ end
 
 # y^2 = 1/t*x^6 + x^4 + x^2 + 1 in characteristic 3, and its twists.
 # Follows [LRS20].
-function g2_models_FF_char3_D12(igusa_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char3_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
 
   F = parent(igusa_invs[1])
   R, x = polynomial_ring(F, :x)
@@ -351,7 +351,7 @@ function g2_models_FF_char3_D12(igusa_invs::Vector{FinFieldElem}, all_twists::Bo
   GF_q2 = GF(q^2)
   a = d = primitive_element(GF_q2)
   b = c = a^q
-  Ctwist = transform(base_change(GF_q2, H1), [a,b,c,d])[1]
+  Ctwist = hyperelliptic_transform(base_change(GF_q2, H1), [a,b,c,d])[1]
   Ctwist = base_change(F, Ctwist)
   f, h = hyperelliptic_polynomials(Ctwist)
   H2 = hyperelliptic_curve(f(x), h(x))
@@ -373,7 +373,7 @@ function g2_models_FF_char3_D12(igusa_invs::Vector{FinFieldElem}, all_twists::Bo
   c = a^q
   d = -c^q - c
   
-  Ctwist = transform(base_change(GF_q3, H1),[a,b,c,d])[1]
+  Ctwist = hyperelliptic_transform(base_change(GF_q3, H1),[a,b,c,d])[1]
   f, h = hyperelliptic_polynomials(Ctwist)
   f = map_coefficients(coerce_to_base_field, f)
   h = map_coefficients(coerce_to_base_field, h)
@@ -387,7 +387,7 @@ end
 
 #   y^2 = x^5 - x in characteristic 5,
 #   Mostly follows [CaNa2007] and [LRS20].
-function g2_models_FF_char5_G240(g2_invs::Vector{FinFieldElem}, all_twists::Bool = true)
+function g2_models_FF_char5_G240(g2_invs::Vector{T}, all_twists::Bool = true) where T <: FieldElem
 
   F = parent(g2_invs[1])
   R, x = polynomial_ring(F, :x)
@@ -491,7 +491,7 @@ function g2_models_FF_2D12(g2_invs::Vector{T}, all_twists::Bool = true) where T 
   b = a^q
   c = -b
   d = a
-  Ctwist = transform(base_change(GF_q4, H1),[a,b,c,d])[1]
+  Ctwist = hyperelliptic_transform(base_change(GF_q4, H1),[a,b,c,d])[1]
   f4, _ = hyperelliptic_polynomials(Ctwist)
   f4 = f4/leading_coefficient(f4)
   f4 = change_base_ring(F, f4)(x)
@@ -611,7 +611,7 @@ function g2_models_FF_G48(g2_invs::Vector{T}, all_twists::Bool = true) where T <
     b = a^q
     c = -b 
     d = a
-    Ctwist = transform(base_change(GF_q4, H1), [a,b,c,d])[1]
+    Ctwist = hyperelliptic_transform(base_change(GF_q4, H1), [a,b,c,d])[1]
     f4, _ = hyperelliptic_polynomials(Ctwist)
     f4 = f4/leading_coefficient(f4)
     f4 = change_base_ring(F, f4)(x)
@@ -999,7 +999,7 @@ function g2_models_FF_V4(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     c = a^q
     d = a*sqrt(t)
     H_GF_q2 = base_change(H1, GF_q2)
-    H_GF_q2_twist = transform(H_GF_q2, [a, b, c, d])[1]
+    H_GF_q2_twist = hyperelliptic_transform(H_GF_q2, [a, b, c, d])[1]
     f2, _ = hyperelliptic_polynomials(H_GF_q2_twist)
     f2 = f2/leading_coefficient(f2)
     f2 = change_base_ring(F, f2)(x)
@@ -1018,7 +1018,7 @@ function g2_models_FF_V4(igusa_invs::Vector{T}, all_twists::Bool = true) where T
   b = sqrt(t)*c
   d = sqrt(t)*c^q
   H_GF_q4 = base_change(GF_q4, H1)
-  H_GF_q4_twist = transform(H_GF_q4,[a,b,c,d])[1]
+  H_GF_q4_twist = hyperelliptic_transform(H_GF_q4,[a,b,c,d])[1]
   f3, _ = hyperelliptic_polynomials(H_GF_q4_twist)
   f3 = f3/leading_coefficient(f3)
   f3 = change_base_ring(F, f3)(x)

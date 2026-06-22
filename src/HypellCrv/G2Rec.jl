@@ -121,7 +121,7 @@ function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: Union{ZZRin
       J15_squared *= -1
       igusa_invs *= -1
     end
-    if is_square(J15)
+    if is_square(J15_squared)
       J15 = sqrt(J15_squared)
       push!(igusa_invs, J15)
     end
@@ -129,14 +129,15 @@ function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: Union{ZZRin
     # different representative of [J2 : J4 : J6 : J8 : J10 : J15] in weighted projective space such that
     # it is a square. J15 allows us to find equations with smaller coefficients during reconstruction.
   end 
-  igusa_invs = weighted_reduction(igusa_invs, [2,4,6,8,10,15])
-  J2, J4, J6, _, J10, J15 = igusa_invs
-  Kuv, (u,v) = polynomial_ring(K, ["u","v"])
+  
 
   # One can construct the function R based on three covariants q1, q2, q3 of order 2 as in 2.1 of [LR12]
   # If we let q3 be a linear combination of covariants instead, we can try to minimize R
   # for chosen values of u and v. See also [Mes91] 1.3 for the covariants of sextic forms.
   if length(igusa_invs) == 6
+    igusa_invs = weighted_reduction(igusa_invs, [2,4,6,8,10,15])
+    J2, J4, J6, _, J10, J15 = igusa_invs
+    Kuv, (u,v) = polynomial_ring(K, ["u","v"])
     R = (188160*u - 75600*v)*J2^4*J10 + (-10035200*u + 4416000*v)*J2^2*J4*J10 +
       (-225792000*u - 36000000*v)*J2*J6*J10 - 61440000*v*J4^2*J10 + 
       (2352*u+135*v)*J2^6*J6 + (784*u + 45*v)*J2^5*J4^2 + 
@@ -217,7 +218,7 @@ function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: FieldElem
   return hyperelliptic_curve(g/a)
 end
 
-function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T <: FieldElem
+function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T <: Union{ZZRingElem, FieldElem}
 
   J2, J4, J6, J8, J10 = igusa_invs
 
@@ -286,7 +287,7 @@ function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T <: Field
   return R, conic, cubic
 end
 
-function compute_conic_and_cubic_1245(igusa_invs::Vector{T}, u, v) where T <: QQFieldElem
+function compute_conic_and_cubic_1245(igusa_invs::Vector{T}, u, v) where T <: Union{QQFieldElem, ZZRingElem}
   J2, J4, J6, _, J10, J15 = igusa_invs
 
   K = parent(igusa_invs[1])
@@ -324,7 +325,7 @@ function compute_conic_and_cubic_1245(igusa_invs::Vector{T}, u, v) where T <: QQ
   return conic, cubic
 end
 
-function compute_conic_and_cubic_1246(igusa_invs::Vector{T}, u, v) where T <: QQFieldElem
+function compute_conic_and_cubic_1246(igusa_invs::Vector{T}, u, v) where T <: Union{QQFieldElem, ZZRingElem}
 
   J2, J4, J6, _, J10, J15 = igusa_invs
 

@@ -1,4 +1,4 @@
-@testset "G2Twists" begin
+@testset "G2 Twists" begin
 
   @testset "Compute twists of genus 2 curves" begin
 
@@ -37,7 +37,7 @@
       @test length(H) == lengths[i]
       @test length(Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
       for C in H
-        println(g2_invariants(C) == T[i])
+        @test g2_invariants(C) == T[i]
       end
     end
 

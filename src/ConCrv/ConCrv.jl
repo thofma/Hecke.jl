@@ -770,7 +770,6 @@ function _parametrization_geometric(C::ConCrv)
   R, x = polynomial_ring(F, :x)
   f = equation(C)
   f = f(x, F(0), F(1))
-  println(typeof(F))
   if typeof(F) <: Union{AbstractAlgebra.Generic.FunctionField, AbstractAlgebra.Generic.RationalFunctionField}
     K, a = extension_field(f)
   elseif typeof(F) <: NumField

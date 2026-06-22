@@ -1,4 +1,4 @@
-@testset "G2Rec" begin
+@testset "G2 Reconstruction" begin
 
   @testset "Reconstruct genus 2 curve from Igusa invariants" begin
 
