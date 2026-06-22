@@ -424,7 +424,7 @@ function g2_models_FF_char5_G240(g2_invs::Vector{T}, all_twists::Bool = true) wh
 
     t = rand(F)
     f1 = x^3 - t*x^2 + (t - 3)*x + 1
-    while !is_irreducible(f)
+    while !is_irreducible(f1)
       t = rand(F)
       f1 = f = x^3 - t*x^2 + (t - 3)*x + 1
     end

@@ -93,7 +93,7 @@
     lengths = [12, 4, 3, 2]
     for i in (1:4)
       H = Hecke.models_from_igusa_invariants(igusa_from_g2(T[i]), true)
-      @test length(Hecke.Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
+      @test length(Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
       for C in H
         @test g2_invariants(C) == T[i]
       end
@@ -107,7 +107,7 @@
     for i in (1:4)
       H = Hecke.models_from_igusa_invariants(igusa_from_g2(T[i]), true)
       @test length(H) == lengths[i]
-      @test length(Hecke.Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
+      @test length(Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
       for C in H
         @test g2_invariants(C) == T[i]
       end
@@ -121,7 +121,7 @@
     for i in (1:4)
       H = Hecke.models_from_igusa_invariants(igusa_from_g2(T[i]), true)
       @test length(H) == lengths[i]
-      @test length(Hecke.Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
+      @test length(Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
       for C in H
         @test g2_invariants(C) == T[i]
       end
