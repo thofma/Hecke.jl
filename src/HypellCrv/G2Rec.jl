@@ -1,35 +1,205 @@
 
-function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T
-  K = parent(igusa_invs[1])
-  
-  if (K == QQ || K==ZZ)
-    if length(igusa_invs)!= 6
-      J2, J4, J6, J8, J10 = igusa_invs
-      J15_squared = 2^22*(J2^6*J6^3 - 2*J2^5*J4^2*J6^2 + J2^4*J4^4*J6 -
-      72*J10*J2^5*J4*J6 + 8*J10*J2^4*J4^3 - 72*J2^4*J4*J6^3 + 
-      136*J2^3*J4^3*J6^2 - 64*J2^2*J4^5*J6 - 432*J10^2*J2^5 -
-      48*J10*J2^4*J6^2 + 4816*J10*J2^3*J4^2*J6 - 512*J10*J2^2*J4^4 + 
-      216*J2^3*J6^4 + 1080*J2^2*J4^2*J6^3 - 2304*J2*J4^4*J6^2 + 1024*J4^6*J6 +
-      28800*J10^2*J2^3*J4 - 12960*J10*J2^2*J4*J6^2 - 84480*J10*J2*J4^3*J6 + 
-      8192*J10*J4^5 - 7776*J2*J4*J6^4 + 6912*J4^3*J6^3 - 96000*J10^2*J2^2*J6 - 
-      512000*J10^2*J2*J4^2 - 129600*J10*J2*J6^3 + 691200*J10*J4^2*J6^2 + 
-      11664*J6^5 + 11520000*J10^2*J4*J6 + 51200000*J10^3)
+################################################################################
+#
+#  HypellCrv/G2Rec.jl : Reconstruction of genus 2 curves from their invariants
+#
+# (C) 2026
+#
+# References:
+#
+# [Igu60] J.-I. Igusa,
+#         "Arithmetic variety of moduli for genus two",
+#         Ann. Math. 72 (1960), 612-649.
+#
+# [Mes91]  J.-F. Mestre, 
+#          "Construction de courbes de genre 2 \`a partir de leurs modules",
+#          in "Effective Methods in Algebraic Geometry",
+#          vol 94 of Progress in Mathematics, 313-334, Birkhauser, 1991.
+# 
+# [CaNaPu2005] G. Cardona, E. Nart and J. Pujolas, 
+#              "Curves of genus two over fields of even characteristic",
+#               Mathematische Zeitschrift, 250, 177-201, Springer, 2005
+#
+# [CaQu2005] G. Cardona, J. Quer,
+#            "Field of moduli and field of definition for curves of genus 2",
+#             Computational aspects of algebraic curves,  71-83,
+#             Lecture Notes Ser. Comput., 13, World Sci. Publ., Hackensack, NJ, 2005.
+#
+# [CaNa2007] G. Cardona, E. Nart,
+#            "Zeta Function and Cryptographic Exponent of Supersingular
+#             Curves of Genus 2",  ArXiv e-prints 0704.1951C, 2007.
+#
+# [LR12]     R. Lercier and C. Ritzenthaler 
+#            "Hyperelliptic curves and their invariants: geometric, arithmetic and algorithmic aspects." 
+#            J. Algebra 372, pp. 595–636, 2012.
+#
+# [LRS20] R. Lercier, C. Ritzenthaler, and J. Sijsling 
+#            "hyperelliptic, a Magma repository for reconstruction and isomorphisms of hyperelliptic curves.
+#            2020
+#            Note: https://github.com/JRSijsling/hyperelliptic
+#
+# [BLRS26] T.Bouchet, R. Lercier, C. Ritzenthaler, J. Sijsling, 
+#          "Functionality for isomorphism classes of curves and hypersurfaces"
+#
+################################################################################
 
-      if J15_squared < 0
-        J15_squared *= -1
-        igusa_invs *= -1
-      end
-      #Need to deal with the case where it is not a sqaure
-      J15 = sqrt(J15_squared)
-      push!(igusa_invs, J15)
-    end 
-    return _reconstruct_from_igusa_rational(igusa_invs)
+#Function that decides which method to call based on the characteristic of the field.
+function models_from_igusa_invariants(igusa_invs::Vector{T}, all_twists::Bool = false) where T <: FieldElem
+  K = parent(igusa_invs[1])
+  p = characteristic(K)
+
+  if p == 2
+    g2_invs = g2_from_igusa(igusa_invs)
+    return models_from_g2_invariants_char2(g2_invs, all_twists)
+  elseif p == 3
+    return models_from_igusa_invariants_char3(igusa_invs, all_twists)
+  elseif p == 5 
+    return models_from_igusa_invariants_char5(igusa_invs, all_twists)
+  else 
+    return models_from_igusa_invariants_general_char(igusa_invs, all_twists)
   end
-  return _reconstruct_from_igusa_generic(igusa_invs[(1:5)])
 end
 
-function _reconstruct_from_igusa_generic(igusa_invs::Vector{T}) where T
+#Reconstruct only returns one model. Twists returns all twists, but only works over finite fields.
+
+@doc raw"""
+    reconstruct_from_igusa(igusa_invs::Vector{T})
+
+Construct a genus 2 curve whose Igusa invariants are equal 
+(as elements of P(2, 4, 6, 8, 10)) to the input vector igusa_invs.
+"""
+function reconstruct_from_igusa(igusa_invs::Vector{T}) where T <: FieldElem
+  return models_from_igusa_invariants(igusa_invs, false)[1]
+end
+
+@doc raw"""
+    reconstruct_from_igusa(igusa_invs::Vector{T})
+
+Construct a genus 2 curve whose Cardona-Quer-Nart-Pujolas invariants are equal
+to the input vector igusa_invs.
+"""
+function reconstruct_from_g2(g2_invs::Vector{T}) where T <: FieldElem
+  return models_from_igusa_invariants(igusa_from_g2(g2_invs), false)[1]
+end
+
+@doc raw"""
+    twists(C::HypellCrv{FinFieldElem})
+
+Compute all the twists of the hyperelliptic curve C. 
+This function has only been implemented for curves of genus 2
+"""
+function twists(C::HypellCrv{FinFieldElem})
+  @req genus(C) == 2 "twists has only been implemented for hyperelliptic curves of genus 2."
+  return twists_from_igusa(igusa_invariants(C))
+end
+
+function twists_from_igusa(igusa_invs::Vector{T}) where T <: FinFieldElem
+  return models_from_igusa_invariants(igusa_invs, true)
+end
+
+function twists_from_g2(g2_invs::Vector{T}) where T <: FinFieldElem
+  return models_from_igusa_invariants(igusa_from_g2(g2_invs), true)
+end
+
+# Reconstruction over the rational numbers following [LR12] and [LRS20]. 
+function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: Union{ZZRingElem, QQFieldElem}
   K = parent(igusa_invs[1])
+
+  if length(igusa_invs)!= 6
+    J2, J4, J6, J8, J10 = igusa_invs
+    J15_squared = 2^22*(J2^6*J6^3 - 2*J2^5*J4^2*J6^2 + J2^4*J4^4*J6 -
+    72*J10*J2^5*J4*J6 + 8*J10*J2^4*J4^3 - 72*J2^4*J4*J6^3 + 
+    136*J2^3*J4^3*J6^2 - 64*J2^2*J4^5*J6 - 432*J10^2*J2^5 -
+    48*J10*J2^4*J6^2 + 4816*J10*J2^3*J4^2*J6 - 512*J10*J2^2*J4^4 + 
+    216*J2^3*J6^4 + 1080*J2^2*J4^2*J6^3 - 2304*J2*J4^4*J6^2 + 1024*J4^6*J6 +
+    28800*J10^2*J2^3*J4 - 12960*J10*J2^2*J4*J6^2 - 84480*J10*J2*J4^3*J6 + 
+    8192*J10*J4^5 - 7776*J2*J4*J6^4 + 6912*J4^3*J6^3 - 96000*J10^2*J2^2*J6 - 
+    512000*J10^2*J2*J4^2 - 129600*J10*J2*J6^3 + 691200*J10*J4^2*J6^2 + 
+    11664*J6^5 + 11520000*J10^2*J4*J6 + 51200000*J10^3)
+
+    if J15_squared < 0
+      J15_squared *= -1
+      igusa_invs *= -1
+    end
+    if is_square(J15)
+      J15 = sqrt(J15_squared)
+      push!(igusa_invs, J15)
+    end
+    #TODO: If J15_squared is not a square, one could optionally try to find how one can find a 
+    # different representative of [J2 : J4 : J6 : J8 : J10 : J15] in weighted projective space such that
+    # it is a square. J15 allows us to find equations with smaller coefficients during reconstruction.
+  end 
+  igusa_invs = weighted_reduction(igusa_invs, [2,4,6,8,10,15])
+  J2, J4, J6, _, J10, J15 = igusa_invs
+  Kuv, (u,v) = polynomial_ring(K, ["u","v"])
+
+  # One can construct the function R based on three covariants q1, q2, q3 of order 2 as in 2.1 of [LR12]
+  # If we let q3 be a linear combination of covariants instead, we can try to minimize R
+  # for chosen values of u and v. See also [Mes91] 1.3 for the covariants of sextic forms.
+  if length(igusa_invs) == 6
+    R = (188160*u - 75600*v)*J2^4*J10 + (-10035200*u + 4416000*v)*J2^2*J4*J10 +
+      (-225792000*u - 36000000*v)*J2*J6*J10 - 61440000*v*J4^2*J10 + 
+      (2352*u+135*v)*J2^6*J6 + (784*u + 45*v)*J2^5*J4^2 + 
+      (-134848*u - 17340*v)*J2^4*J4*J6 + (-50176*u - 2880*v)*J2^3*J4^3 + 
+      (592704*u+5220*v)*J2^3*J6^2 + (1806336*u + 650880*v)*J2^2*J4^2*J6 + 
+      (802816*u+46080*v)*J2*J4^4 + (-13547520*u - 1814400*v)*J2*J4*J6^2 -
+      6451200*v*J4^3*J6 + 15552000*v*J6^3
+    if R != 0
+      compute_conic_and_cubic = compute_conic_and_cubic_1245
+    else
+      #If the choses linear combination didn't work, we try a different one.
+      R = -1536000000*J10^2*v + 960*(13*v + u)*J2^5*J10 - 
+      54400*(2*u + 15*v)*J4*J2^3*J10 - 288000*(-9*v + 4*u)*J6*J2^2*J10 + 
+      1536000*(9*v + 2*u)*J4^2*J2*J10 + 69120000*(u - 3*v)*J4*J6*J10 +
+      3*(4*u + v)*J6*J2^7 + (4*u + v)*J4^2*J2^6 - 4*(352*u - 177*v)*J6*J4*J2^5 - 
+      16*(31*u + 14*v)*J4^3*J2^4 + 84*(36*u + 29*v)*J6^2*J2^4 + 
+      16*(3156*u - 3431*v)*J6*J4^2*J2^3 + 1024*(19*u + 11*v)*J4^4*J2^2 -
+      8640*(-11*v + 29*u)*J6^2*J4*J2^2 - 7680*(72*u - 121*v)*J6*J4^3*J2 + 
+      648000*J6^3*J2*v - 81920*(3*u + 2*v)*J4^5 + 1382400*(3*u - 4*v)*J6^2*J4^2
+      
+      if R != 0
+        compute_conic_and_cubic = compute_conic_and_cubic_1246
+      else
+      # Otherwise we fall back to the default one.
+        return _reconstruct_from_igusa_generic(igusa_invs)
+      end
+    end
+  else
+    return _reconstruct_from_igusa_generic(igusa_invs)
+  end
+
+  U, V = minimize_linear_equation(R)
+  
+  conic, cubic = compute_conic_and_cubic(igusa_invs, U,V)
+  conic = conic/content(conic)
+  cubic = cubic/content(cubic)
+
+  conic_model, phi, _ = minimal_model(conic_curve(QQ, conic))
+  cubic = evaluate(cubic, phi)
+
+  ct = gcd([denominator(c) for c in coefficients(cubic)]) //gcd([numerator(c) for c in coefficients(cubic)])
+  cubic *= ct
+  P = parametrization(conic_model)
+
+
+  f = evaluate(cubic, [P[1],P[2],P[3]])
+  K = base_ring(f)
+  Kx, x = polynomial_ring(K)
+  
+  g = evaluate(f, [x, Kx(1)])
+  g_rev = evaluate(f, [Kx(1), x])
+ 
+  if abs(leading_coefficient(g_rev)) <= abs(leading_coefficient(g))
+    g = g_rev
+  end
+  g = reduce_binary_form(g)[1]
+  a = leading_coefficient(g)
+  return hyperelliptic_curve(g/a)
+end
+
+function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: FieldElem
+  K = parent(igusa_invs[1])
+  igusa_invs = igusa_invs[(1:5)]
   R, conic, cubic = compute_conic_and_cubic_generic(igusa_invs)
   C = conic_curve(K, conic)
   bool, P = has_rational_point(C)
@@ -47,7 +217,7 @@ function _reconstruct_from_igusa_generic(igusa_invs::Vector{T}) where T
   return hyperelliptic_curve(g/a)
 end
 
-function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T
+function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T <: FieldElem
 
   J2, J4, J6, J8, J10 = igusa_invs
 
@@ -116,69 +286,7 @@ function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T
   return R, conic, cubic
 end
 
-function _reconstruct_from_igusa_rational(igusa_invs::Vector{T}) where T
-
-  K = parent(igusa_invs[1])
-  igusa_invs = weighted_reduction(igusa_invs, [2,4,6,8,10,15])
-  J2, J4, J6, _, J10, J15 = igusa_invs
-  Kuv, (u,v) = polynomial_ring(K, ["u","v"])
-
-  R = (188160*u - 75600*v)*J2^4*J10 + (-10035200*u + 4416000*v)*J2^2*J4*J10 +
-    (-225792000*u - 36000000*v)*J2*J6*J10 - 61440000*v*J4^2*J10 + 
-    (2352*u+135*v)*J2^6*J6 + (784*u + 45*v)*J2^5*J4^2 + 
-    (-134848*u - 17340*v)*J2^4*J4*J6 + (-50176*u - 2880*v)*J2^3*J4^3 + 
-    (592704*u+5220*v)*J2^3*J6^2 + (1806336*u + 650880*v)*J2^2*J4^2*J6 + 
-    (802816*u+46080*v)*J2*J4^4 + (-13547520*u - 1814400*v)*J2*J4*J6^2 -
-    6451200*v*J4^3*J6 + 15552000*v*J6^3
-  if R != 0
-    compute_conic_and_cubic = compute_conic_and_cubic_1245
-  else
-    R = -1536000000*J10^2*v + 960*(13*v + u)*J2^5*J10 - 
-    54400*(2*u + 15*v)*J4*J2^3*J10 - 288000*(-9*v + 4*u)*J6*J2^2*J10 + 
-    1536000*(9*v + 2*u)*J4^2*J2*J10 + 69120000*(u - 3*v)*J4*J6*J10 +
-    3*(4*u + v)*J6*J2^7 + (4*u + v)*J4^2*J2^6 - 4*(352*u - 177*v)*J6*J4*J2^5 - 
-    16*(31*u + 14*v)*J4^3*J2^4 + 84*(36*u + 29*v)*J6^2*J2^4 + 
-    16*(3156*u - 3431*v)*J6*J4^2*J2^3 + 1024*(19*u + 11*v)*J4^4*J2^2 -
-    8640*(-11*v + 29*u)*J6^2*J4*J2^2 - 7680*(72*u - 121*v)*J6*J4^3*J2 + 
-    648000*J6^3*J2*v - 81920*(3*u + 2*v)*J4^5 + 1382400*(3*u - 4*v)*J6^2*J4^2
-    
-    if R != 0
-      compute_conic_and_cubic = compute_conic_and_cubic_1246
-    else
-      return _reconstruct_from_igusa_generic(igusa_invs)
-    end
-  end
-
-  U, V = minimize_linear_equation(R)
-  
-  conic, cubic = compute_conic_and_cubic(igusa_invs, U,V)
-  conic = conic/content(conic)
-  cubic = cubic/content(cubic)
-
-  conic_model, phi, _ = minimal_model(conic_curve(QQ, conic))
-  cubic = evaluate(cubic, phi)
-
-  ct = gcd([denominator(c) for c in coefficients(cubic)]) //gcd([numerator(c) for c in coefficients(cubic)])
-  cubic *= ct
-  P = parametrization(conic_model)
-
-
-  f = evaluate(cubic, [P[1],P[2],P[3]])
-  K = base_ring(f)
-  Kx, x = polynomial_ring(K)
-  
-  g = evaluate(f, [x, Kx(1)])
-  g_rev = evaluate(f, [Kx(1), x])
- 
-  if abs(leading_coefficient(g_rev)) <= abs(leading_coefficient(g))
-    g = g_rev
-  end
-  g = reduce_binary_form(g)[1]
-  a = leading_coefficient(g)
-  return hyperelliptic_curve(g/a)
-end
-
-function compute_conic_and_cubic_1245(igusa_invs::Vector{T}, u, v) where T
+function compute_conic_and_cubic_1245(igusa_invs::Vector{T}, u, v) where T <: QQFieldElem
   J2, J4, J6, _, J10, J15 = igusa_invs
 
   K = parent(igusa_invs[1])
@@ -216,7 +324,7 @@ function compute_conic_and_cubic_1245(igusa_invs::Vector{T}, u, v) where T
   return conic, cubic
 end
 
-function compute_conic_and_cubic_1246(igusa_invs::Vector{T}, u, v) where T
+function compute_conic_and_cubic_1246(igusa_invs::Vector{T}, u, v) where T <: QQFieldElem
 
   J2, J4, J6, _, J10, J15 = igusa_invs
 
@@ -361,8 +469,31 @@ function compute_conic_and_cubic_1246(igusa_invs::Vector{T}, u, v) where T
 end
 
 
-function models_from_igusa_invariants(igusa_invs::Vector, all_twists::Bool = false) 
-  @req 5 <= length(igusa_invs) <= 6 "Input vector has to have length 5 or 6"
+function models_from_g2_invariants_char2(g2_invs::Vector{T}, all_twists::Bool = false) where T <: FieldElem
+  @req length(g2_invs) == 3 "Input vector has to have length 3."
+
+  K = parent(g2_invs[1])
+  p = characteristic(K)
+  g1, g2, g3 = g2_invs
+
+  #See Theorem 4 in [CaNaPu2005]
+  if g1 != g2*g3
+    return g2_models_FF_char2_C2(g2_invs, all_twists)
+  elseif g1 == g2*g3 && g1 != 0 && g2 != g3^2
+    return g2_models_FF_char2_C2xC2(g2_invs, all_twists)
+  elseif g1 == g3^3 && g2 == g3^2 && g3 != 0
+    return g2_models_FF_char2_C2xS3(g2_invs, all_twists)
+  elseif g1 == 0 && g2 != 0 && g3 == 0 
+    return g2_models_FF_char2_C2_mixed(g2_invs, all_twists)
+  elseif g1 == 0 && g2 == 0 && g3 != 0
+    return g2_models_FF_char2_M32(g2_invs, all_twists)
+  else
+    return g2_models_FF_char2_M160(g2_invs, all_twists)
+  end
+end
+
+function models_from_igusa_invariants_char3(igusa_invs::Vector{T}, all_twists::Bool = false) where T <: FieldElem
+  @req 5 <= length(igusa_invs) <= 6 "Input vector has to have length 5 or 6."
 
   K = parent(igusa_invs[1])
   p = characteristic(K)
@@ -372,79 +503,27 @@ function models_from_igusa_invariants(igusa_invs::Vector, all_twists::Bool = fal
   g2_invs = g2_from_igusa(igusa_invs)
   g1, g2, g3 = g2_invs
 
-  if p == 2
-    if g1 != g2*g3
-      return g2_models_FF_char2_C2(g2_invs, all_twists)
-    elseif g1 == 0 && g2 != 0 && g3 == 0
-      return g2_models_FF_char2_C2bis(g2_invs, all_twists)
-    elseif g1 == g2*g3 && g1 != 0 && g2 != g3^2
-      return g2_models_FF_char2_C2xC2(g2_invs, all_twists)
-    elseif g1 == g3^3 && g2 == g3^2 && g3 != 0
-      return g2_models_FF_char2_C2xS3(g2_invs, all_twists)
-    elseif g1 == 0 && g2 == 0 && g3 != 0
-      return g2_models_FF_char2_M32(g2_invs, all_twists)
-    else
-      return g2_models_FF_char2_M160(g2_invs, all_twists)
-    end
-  end
-
-  # y^2 = x^6-1 
-  if p != 3 && p != 5 && g2_invs == [ K(6400000)/3, K(440000)/9, K(-32000)/81 ]
-    return g2_models_FF_2D12(g2_invs, all_twists)
-  end
-  
+  # y^2 = x^6 - 1 
   if g2_invs == [K(50000), K(3750), K(-125) ]
-    if p == 5
-      return g2_models_FF_char5_G240(g2_invs, all_twists)
-    else
-      return g2_models_FF_G48(g2_invs, all_twists) 
-    end
+    return g2_models_FF_G48(g2_invs, all_twists) 
   end
 
-    # y^2 = x^5-1, p <> 5 
+  # y^2 = x^5 - 1
   if g2_invs == [ K(0), K(0), K(0) ]
     return g2_models_FF_C10(g2_invs, all_twists) 
   end
 
-  if p == 3 
-  #y^2 = 1/t*x^6+x^4+x^2+1
-    if J4 == 0 && J10 + 2*J6*J2^2 == 0
-      return g2_models_FF_char3_D12(igusa_invs, all_twists) 
-    end
-  elseif p == 5
-  #y^2 = x^6+x^3+t
-    if J10*J4*J2^2 + J6^3 + 3*J6*J4^3 + 2*J4^4*J2 == 0 &&
-       J10*J2^3 + 3*J6^2*J4 + 4*J4^4 + 2*J4^3*J2^2 == 0 &&
-       J6*J2 + 2*J4^2 == 0
-      return g2_models_FF_D12(igusa_invs, all_twists) 
-    end
-  else
-    #y^2 = x^6+x^3+t 
-    if 750*J10+90*J6*J4-3*J6*J2^2-J4^2*J2 == 0 &&
-       2700*J6^2+540*J6*J4*J2-27*J6*J2^3+160*J4^3-9*J4^2*J2^2 == 0
-      return g2_models_FF_D12(igusa_invs, all_twists)
-    end
+  #y^2 = x^6/t + x^4 + x^2 + 1
+  if J4 == 0 && J10 + 2*J6*J2^2 == 0
+    return g2_models_FF_char3_D12(igusa_invs, all_twists) 
   end
 
-  # y^2 = x^5+x^3+t*x 
-  if p != 5 
-    if 172800*J6^2-23040*J6*J4*J2+592*J6*J2^3-40960*J4^3+3584*J4^2*J2^2-104*J4*J2^4+J2^6 == 0 &&
+  # y^2 = x^5 + x^3 + t*x 
+  if 172800*J6^2-23040*J6*J4*J2+592*J6*J2^3-40960*J4^3+3584*J4^2*J2^2-104*J4*J2^4+J2^6 == 0 &&
        128000*J10+5760*J6*J4-192*J6*J2^2-1024*J4^2*J2+64*J4*J2^3-J2^5 == 0
-      return g2_models_FF_D8(igusa_invs, all_twists)
-    end
-  else
-    if [
-      J10*J4^5 + 4*J6^5 + 2*J6^3*J4^3 + 2*J4^6*J2^3 + 2*J4^4*J2^7 + 4*J4^3*J2^9 + 2*J2^15,
-      J10*J4^3*J2 + 2*J6^4 + 3*J6^2*J4^3 + 3*J4^6 + J4^5*J2^2 + 3*J4^4*J2^4 + 2*J4^3*J2^6 + J4^2*J2^8 + 2*J4*J2^10 + 3*J2^12,
-      J10*J4*J2^2 + J6^3 + 3*J4^4*J2 + 2*J4^2*J2^5 + 4*J4*J2^7 + 2*J2^9,
-      J10*J2^3 + 3*J6^2*J4 + 3*J4^4 + J4^2*J2^4 + 3*J2^8,
-      J6*J2 + 2*J4^2 + 3*J4*J2^2 + 3*J2^4
-      ] == [0,0,0,0,0]
-      return g2_models_FF_D8(igusa_invs, all_twists) 
-    end
+    return g2_models_FF_D8(igusa_invs, all_twists)
   end
 
-  # J15^2
   R = J2^6*J6^3 - 2*J2^5*J4^2*J6^2 - 72*J2^5*J4*J6*J10 - 432*J2^5*J10^2 + J2^4*J4^4*J6 +
       8*J2^4*J4^3*J10 - 72*J2^4*J4*J6^3 - 48*J2^4*J6^2*J10 + 136*J2^3*J4^3*J6^2 +
       4816*J2^3*J4^2*J6*J10 + 28800*J2^3*J4*J10^2 + 216*J2^3*J6^4 -
@@ -461,21 +540,109 @@ function models_from_igusa_invariants(igusa_invs::Vector, all_twists::Bool = fal
   return g2_models_FF_C2(igusa_invs, all_twists) 
 end
 
-function reconstruct_from_igusa(igusa_invs)
-  return models_from_igusa_invariants(igusa_invs, false)[1]
+function models_from_igusa_invariants_char5(igusa_invs::Vector{T}, all_twists::Bool = false) where T <: FieldElem
+  @req 5 <= length(igusa_invs) <= 6 "Input vector has to have length 5 or 6."
+
+  K = parent(igusa_invs[1])
+  p = characteristic(K)
+
+  J2, J4, J6, _, J10 = igusa_invs[1:5]
+
+  g2_invs = g2_from_igusa(igusa_invs)
+  g1, g2, g3 = g2_invs
+
+  # y^2 = x^6 - 1 
+  if g2_invs == [K(50000), K(3750), K(-125) ]
+    return g2_models_FF_char5_G240(g2_invs, all_twists)
+  end
+
+  #y^2 = x^6 + x^3 + t
+  if J10*J4*J2^2 + J6^3 + 3*J6*J4^3 + 2*J4^4*J2 == 0 &&
+    J10*J2^3 + 3*J6^2*J4 + 4*J4^4 + 2*J4^3*J2^2 == 0 &&
+    J6*J2 + 2*J4^2 == 0
+    return g2_models_FF_D12(igusa_invs, all_twists) 
+  end
+
+  # y^2 = x^5 + x^3 + t*x 
+  if [J10*J4^5 + 4*J6^5 + 2*J6^3*J4^3 + 2*J4^6*J2^3 + 2*J4^4*J2^7 + 4*J4^3*J2^9 + 2*J2^15,
+    J10*J4^3*J2 + 2*J6^4 + 3*J6^2*J4^3 + 3*J4^6 + J4^5*J2^2 + 3*J4^4*J2^4 + 2*J4^3*J2^6 + J4^2*J2^8 + 2*J4*J2^10 + 3*J2^12,
+    J10*J4*J2^2 + J6^3 + 3*J4^4*J2 + 2*J4^2*J2^5 + 4*J4*J2^7 + 2*J2^9,
+    J10*J2^3 + 3*J6^2*J4 + 3*J4^4 + J4^2*J2^4 + 3*J2^8,
+    J6*J2 + 2*J4^2 + 3*J4*J2^2 + 3*J2^4
+    ] == [K(0), K(0), K(0), K(0), K(0)]
+    return g2_models_FF_D8(igusa_invs, all_twists) 
+  end
+
+
+  R = J2^6*J6^3 - 2*J2^5*J4^2*J6^2 - 72*J2^5*J4*J6*J10 - 432*J2^5*J10^2 + J2^4*J4^4*J6 +
+    8*J2^4*J4^3*J10 - 72*J2^4*J4*J6^3 - 48*J2^4*J6^2*J10 + 136*J2^3*J4^3*J6^2 +
+    4816*J2^3*J4^2*J6*J10 + 28800*J2^3*J4*J10^2 + 216*J2^3*J6^4 -
+    64*J2^2*J4^5*J6 - 512*J2^2*J4^4*J10 + 1080*J2^2*J4^2*J6^3 -
+    12960*J2^2*J4*J6^2*J10 - 96000*J2^2*J6*J10^2 - 2304*J2*J4^4*J6^2 -
+    84480*J2*J4^3*J6*J10 - 512000*J2*J4^2*J10^2 - 7776*J2*J4*J6^4 -
+    129600*J2*J6^3*J10 + 1024*J4^6*J6 + 8192*J4^5*J10 + 6912*J4^3*J6^3 +
+    691200*J4^2*J6^2*J10 + 11520000*J4*J6*J10^2 + 11664*J6^5 + 51200000*J10^3
+
+  if R == 0
+    return g2_models_FF_V4(igusa_invs, all_twists) 
+  end
+
+  return g2_models_FF_C2(igusa_invs, all_twists) 
 end
 
-function twists_from_igusa(igusa_invs)
-  return models_from_igusa_invariants(igusa_invs, true)
+
+function models_from_igusa_invariants_general_char(igusa_invs::Vector{T}, all_twists::Bool = false) where T <: FieldElem
+  @req 5 <= length(igusa_invs) <= 6 "Input vector has to have length 5 or 6"
+  
+  K = parent(igusa_invs[1])
+  p = characteristic(K)
+
+  @req p > 5 || p == 0 "Characteristic has to be either 0 or p > 5."
+
+  J2, J4, J6, _, J10 = igusa_invs[1:5]
+
+  g2_invs = g2_from_igusa(igusa_invs)
+  g1, g2, g3 = g2_invs
+
+  # y^2 = x^6-1 
+  if g2_invs == [ K(6400000)/3, K(440000)/9, K(-32000)/81 ]
+    return g2_models_FF_2D12(g2_invs, all_twists)
+  end
+  
+  if g2_invs == [K(50000), K(3750), K(-125) ]
+    return g2_models_FF_G48(g2_invs, all_twists) 
+  end
+
+  # y^2 = x^5-1, p != 5 
+  if g2_invs == [ K(0), K(0), K(0) ]
+    return g2_models_FF_C10(g2_invs, all_twists) 
+  end
+
+  #y^2 = x^6 + x^3 + t 
+  if 750*J10+90*J6*J4-3*J6*J2^2-J4^2*J2 == 0 &&
+      2700*J6^2+540*J6*J4*J2-27*J6*J2^3+160*J4^3-9*J4^2*J2^2 == 0
+    return g2_models_FF_D12(igusa_invs, all_twists)
+  end
+
+  # y^2 = x^5 + x^3 + t*x 
+  if 172800*J6^2-23040*J6*J4*J2+592*J6*J2^3-40960*J4^3+3584*J4^2*J2^2-104*J4*J2^4+J2^6 == 0 &&
+      128000*J10+5760*J6*J4-192*J6*J2^2-1024*J4^2*J2+64*J4*J2^3-J2^5 == 0
+    return g2_models_FF_D8(igusa_invs, all_twists)
+  end
+
+  # J15^2
+  R = J2^6*J6^3 - 2*J2^5*J4^2*J6^2 - 72*J2^5*J4*J6*J10 - 432*J2^5*J10^2 + J2^4*J4^4*J6 +
+      8*J2^4*J4^3*J10 - 72*J2^4*J4*J6^3 - 48*J2^4*J6^2*J10 + 136*J2^3*J4^3*J6^2 +
+      4816*J2^3*J4^2*J6*J10 + 28800*J2^3*J4*J10^2 + 216*J2^3*J6^4 -
+      64*J2^2*J4^5*J6 - 512*J2^2*J4^4*J10 + 1080*J2^2*J4^2*J6^3 -
+      12960*J2^2*J4*J6^2*J10 - 96000*J2^2*J6*J10^2 - 2304*J2*J4^4*J6^2 -
+      84480*J2*J4^3*J6*J10 - 512000*J2*J4^2*J10^2 - 7776*J2*J4*J6^4 -
+      129600*J2*J6^3*J10 + 1024*J4^6*J6 + 8192*J4^5*J10 + 6912*J4^3*J6^3 +
+      691200*J4^2*J6^2*J10 + 11520000*J4*J6*J10^2 + 11664*J6^5 + 51200000*J10^3
+
+  if R == 0
+    return g2_models_FF_V4(igusa_invs, all_twists) 
+  end
+  return g2_models_FF_C2(igusa_invs, all_twists) 
 end
-
-
-function reconstruct_from_g2(g2_invs)
-  return models_from_igusa_invariants(igusa_from_g2(g2_invs), false)[1]
-end
-
-function twists_from_g2(g2_invs)
-  return models_from_igusa_invariants(igusa_from_g2(g2_invs), true)
-end
-
 

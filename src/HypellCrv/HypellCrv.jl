@@ -2,7 +2,7 @@
 #
 #          HypellCrv/HypellCrv.jl : Hyperelliptic curves over general fields
 #
-# (C) 2022 Jeroen Hanselman
+# (C) 2022
 #
 ################################################################################
 
@@ -344,6 +344,12 @@ function is_integral_model(C::HypellCrv{T}) where T<:Union{QQFieldElem, AbsSimpl
   return false
 end
 
+@doc raw"""
+    simplified_model(C::HypellCrv) -> HypellCrv
+
+Given a hyperelliptic curve $y^2 + h(x)y = f(x)$.
+Return the isomorphic model $y^2 = f(x) + h(x)^2/4.
+"""
 function simplified_model(C::HypellCrv{T}) where T<:FieldElem
   K = base_field(C)
   @req characteristic(K) != 2 "Characteristic of base field cannot be 2."

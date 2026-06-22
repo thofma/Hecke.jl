@@ -23,6 +23,17 @@ function _clebsch_invariants(f::MPolyRingElem{T}) where T  <: FieldElem
   return [K(evaluate(A, [0,0])), K(evaluate(B, [0,0])),K(evaluate(C, [0,0])), K(evaluate(D, [0,0]))]
 end
 
+
+@doc raw"""
+    clebsch_invariants(C::HypellCrv{T}) -> Vector{T}
+Returns the Clebsch invariants A, B, C, D for the genus 2 curve C.
+The Clebsch invariants live in the weighted projective space P(2, 4, 6, 10).
+"""
+function clebsch_invariants(C::HypellCrv)
+  f, h = hyperelliptic_polynomials(C)
+  return clebsch_invariants(f, h)
+end
+
 function clebsch_invariants(f::PolyRingElem{T}) where T
   K = base_ring(f)
   n = degree(f)
@@ -41,11 +52,16 @@ function clebsch_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: 
   return clebsch_invariants(f + h^2/4)
 end
 
-function clebsch_invariants(C::HypellCrv)
+@doc raw"""
+    igusa_clebsch_invariants(C::HypellCrv{T}) -> Vector{T}
+Returns the Igusa-Clebsch invariants a, b, c, d for the genus 2 curve C.
+The Igusa-Clebsch invariants live in the weighted projective space P(2, 4, 6, 10).
+"""
+function igusa_clebsch_invariants(C::HypellCrv)
   f, h = hyperelliptic_polynomials(C)
-  return clebsch_invariants(f, h)
+  f = f + h^2/4
+  return igusa_clebsch_invariants(f)
 end
-
 
 function igusa_clebsch_invariants(f::PolyRingElem{T}) where T  <: FieldElem
   K = base_ring(f)
@@ -62,10 +78,16 @@ function igusa_clebsch_invariants(f::PolyRingElem{T}) where T  <: FieldElem
   return igusa_clebsch_from_clebsch([A, B, C, D])
 end
 
-function igusa_clebsch_invariants(C::HypellCrv)
+@doc raw"""
+    igusa_invariants(C::HypellCrv{T}, include_J15::Bool = false) -> Vector{T}
+Returns the Igusa invariants J2, J4, J6, J8, J10 for the genus 2 curve C.
+The Igusa-Clebsch invariants live in the weighted projective space P(2, 4, 6, 8, 10).
+If the optional argument include_J15 is set to true, the additional Igusa invariant 
+of weight 15 J15 is also returned.
+"""
+function igusa_invariants(C::HypellCrv, include_J15::Bool = false)
   f, h = hyperelliptic_polynomials(C)
-  f = f + h^2/4
-  return igusa_clebsch_invariants(f)
+  return igusa_invariants(f, h, include_J15)
 end
 
 function igusa_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}, include_J15::Bool = false) where T  <: FieldElem
@@ -92,9 +114,12 @@ function igusa_invariants(f::PolyRingElem{T}, include_J15::Bool = false) where T
   return igusa_invariants(f, zero(R), include_J15)
 end
 
-function igusa_invariants(C::HypellCrv, include_J15::Bool = false)
-  f, h = hyperelliptic_polynomials(C)
-  return igusa_invariants(f, h, include_J15)
+@doc raw"""
+    g2_invariants(C::HypellCrv{T}) -> Vector{T}
+Returns the g2 invariants g1, g2, g3 for the genus 2 curve C.
+"""
+function g2_invariants(C::HypellCrv)
+  return g2_from_igusa(igusa_invariants(C))
 end
 
 function g2_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: FieldElem
@@ -105,9 +130,7 @@ function g2_invariants(f::PolyRingElem{T}) where T  <: FieldElem
   return g2_from_igusa(igusa_invariants(f))
 end
 
-function g2_invariants(C::HypellCrv)
-  return g2_from_igusa(igusa_invariants(C))
-end
+
 
 ################################################################################
 #
@@ -115,6 +138,10 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T})
+Computes the Igusa invariants from the Igusa-Clebsch invariants.
+"""
 function igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T  <: FieldElem
   a, b, c, d = igusa_clebsch_invs
   J2  = a/8
@@ -125,6 +152,10 @@ function igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T  <: Fie
   return [J2, J4, J6, J8, J10]
 end
 
+@doc raw"""
+    igusa_clebsch_from_igusa(igusa_invs::Vector{T})
+Computes the Igusa-Clebsch invariants from the Igusa invariants.
+"""
 function igusa_clebsch_from_igusa(igusa_invs::Vector{T}) where T  <: FieldElem
   J2, J4, J6, J8, J10 = igusa_invs
   a = 8*J2
@@ -134,7 +165,11 @@ function igusa_clebsch_from_igusa(igusa_invs::Vector{T}) where T  <: FieldElem
   return [a, b, c, d]
 end
 
-function  igusa_clebsch_from_clebsch(clebsch_invs::Vector{T}) where T <: FieldElem
+@doc raw"""
+    igusa_clebsch_from_clebsch(clebsch_invs::Vector{T})
+Computes the Igusa-Clebsch invariants from the Clebsch invariants.
+"""
+function igusa_clebsch_from_clebsch(clebsch_invs::Vector{T}) where T <: FieldElem
   A, B, C, D = clebsch_invs
   a = -120*A
   b = -720*A^2 + 6750*B
@@ -144,6 +179,10 @@ function  igusa_clebsch_from_clebsch(clebsch_invs::Vector{T}) where T <: FieldEl
    return [a, b, c, d]
 end
 
+@doc raw"""
+    igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T})
+Computes the Clebsch invariants from the Igusa-Clebsch invariants.
+"""
 function clebsch_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T  <: FieldElem
   a, b, c, d = igusa_clebsch_invs
   K = parent(a)
@@ -155,6 +194,10 @@ function clebsch_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T  <: F
   return [A, B, C, D]
 end
 
+@doc raw"""
+    g2_from_igusa(igusa_invs::Vector{T})
+Computes the Cardona-Quer-Nart-Pujolas invariants from the Igusa invariants.
+"""
 function g2_from_igusa(igusa_invs::Vector{T}) where T <: FieldElem
     J2, J4, J6, J8, J10 = igusa_invs
 
@@ -196,6 +239,10 @@ function g2_from_igusa(igusa_invs::Vector{T}) where T <: FieldElem
     return [g1, g2, g3]
 end
 
+@doc raw"""
+    igusa_from_g2(g2_invs::Vector{T})
+Computes the Igusa invariants from the Cardona-Quer-Nart-Pujolas invariants.
+"""
 function igusa_from_g2(g2_invs::Vector{T}) where T <: FieldElem
   g1, g2, g3 = g2_invs
   K = parent(g1)

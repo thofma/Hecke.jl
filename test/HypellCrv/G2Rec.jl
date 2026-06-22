@@ -9,6 +9,10 @@
     ig_invs = igusa_invariants(C)
 
     D = reconstruct_from_igusa(ig_invs)
+    f, h = hyperelliptic_polynomials(D)
+
+    #Testing to see if the defining polynomial is sufficiently reduced.
+    @test maximum(collect(coefficients(f)))<=1500
 
     @test weighted_equality(igusa_invariants(C), igusa_invariants(D), [2, 4, 6, 8, 10])
 
@@ -40,6 +44,12 @@
 
     @test weighted_equality(igusa_invariants(C), igusa_invariants(D), [2, 4, 6, 8, 10])
 
+    
+    T = [ [QQ(0), QQ(0), QQ(0)], [QQ(50000), QQ(3750), QQ(-125)], [6400000//3, 440000//9, -32000//81 ], 
+    [QQ(4455516), 160381//2, -18083//36],  [6436343//36, 2859245//288, -10051//64], [ 2907867136//529, 93386304//529, 4069120//529 ]]
+    for t in T
+      @test g2_invariants(reconstruct_from_g2(t)) == t
+    end
 
     F, t = rational_function_field(GF(3), :t)
     T = [ [F(0), F(0), F(0)], [F(50000), F(3750), F(-125)], [2*t^3, F(0), F(1)], [t, t-1, 2*t], [t, t-1, t^2]]

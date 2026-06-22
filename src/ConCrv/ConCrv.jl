@@ -335,28 +335,6 @@ function (C::ConCrv{T})(coords::Vector{S}; check::Bool = true) where {S, T}
 end
 
 
-#=function find_rational_point(C::ConCrv{QQFieldElem})
-  #TODO: Use Hasse principle/Hilbert symbols to detect whether a solution exists or not. 
-  #Currently it will either find something or throw an error.
-  M = matrix(C)
-  n = ncols(M)
-  if det(M) == 0
-    sol = kernel(M)[1,:]
-    return C(vec(Array(sol)))
-  end
-
-  Cmin ,_, W = minimal_model(C)
-  M = matrix(Cmin)
-
-  B, U, sol = lll_gram_indef_isotropic(M; base = true)
-  if length(sol) != 0
-    return C(vec(Array(sol*transpose(W))))
-  else
-    error("Either no point exists or there is a bug in the code.")
-  end
-end
-=#
-
 @doc raw"""
     has_rational_point(C::ConCrv) -> Bool, ConCrvPt
 
@@ -792,7 +770,8 @@ function _parametrization_geometric(C::ConCrv)
   R, x = polynomial_ring(F, :x)
   f = equation(C)
   f = f(x, F(0), F(1))
-  if typeof(F) <: AbstractAlgebra.Generic.FunctionField
+  println(typeof(F))
+  if typeof(F) <: Union{AbstractAlgebra.Generic.FunctionField, AbstractAlgebra.Generic.RationalFunctionField}
     K, a = extension_field(f)
   elseif typeof(F) <: NumField
     K, a = number_field(f)
