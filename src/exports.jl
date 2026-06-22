@@ -432,6 +432,7 @@ export howell_form
 export hyperbolic_plane_lattice
 export hyperelliptic_curve
 export hyperelliptic_polynomials
+export hyperelliptic_transform
 export hyperkaehler_lattice
 export id
 export id_hom
