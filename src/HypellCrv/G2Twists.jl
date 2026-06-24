@@ -1004,6 +1004,7 @@ function g2_models_FF_V4(igusa_invs::Vector{T}, all_twists::Bool = true) where T
 
   if is_square(t)
     GF_q2 = GF(q^2)
+    t = GF_q2(t)
     a = primitive_element(GF_q2)
     b = a^q*sqrt(t)
     c = a^q

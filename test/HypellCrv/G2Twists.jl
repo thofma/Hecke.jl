@@ -1,6 +1,6 @@
 @testset "G2 Twists" begin
 
-  @testset "Compute twists of genus 2 curves" begin
+  @testset "Compute twists of genus 2 curves characteristic 2" begin
 
 
     F = GF(2)
@@ -49,8 +49,8 @@
         @test g2_invariants(C) == T[i]
       end
     end
-
-
+  end
+  @testset "Compute twists of genus 2 curves characteristic 3" begin
     F = GF(3)
     o = F(1)
     T = [ [F(0), F(0), F(0)], [F(50000), F(3750), F(-125) ], [2*o^3, F(0), F(1)], [F(1), 2*o + 1, o], [2*o + 2, F(1), o], [F(1), o, o^2]]
@@ -109,7 +109,8 @@
         @test g2_invariants(C) == T[i]
       end
     end
-
+  end
+  @testset "Compute twists of genus 2 curves characteristic 5" begin
     F = GF(5^2)
     o = gen(F)
     T = [ [F(0), F(0), F(0)], [4*o + 3, o + 1, 3*o + 2], [4*o + 1, F(1), 2*o + 4], [F(4), o + 2, F(2)]
@@ -150,6 +151,9 @@
         @test g2_invariants(C) == T[i]
       end
     end
+  end
+
+  @testset "Compute twists of genus 2 curves characteristic 11" begin
 
     F = GF(11)
     o = F(1)
@@ -158,14 +162,13 @@
     lengths = [10, 7, 8, 4, 2, 2]
     for i in (1:6)
       H = Hecke.models_from_igusa_invariants(igusa_from_g2(T[i]), true)
-      #@test 
-      print(length(Hecke.filter_g2_isomorphism_classes(H)))
-      println(length(Hecke.filter_g2_isomorphism_classes(H)) == lengths[i])
+      @test length(Hecke.filter_g2_isomorphism_classes(H)) == lengths[i]
       for C in H
-        #@test 
-        println(g2_invariants(C) == T[i])
+        @test g2_invariants(C) == T[i]
       end
     end
+  end
+  @testset "Compute twists of genus 2 curves characteristic 37" begin
 
     F = GF(37^2)
     o = gen(F)
@@ -205,7 +208,8 @@
         @test g2_invariants(C) == T[i]
       end
     end
-
+  end
+  @testset "Compute twists of genus 2 curves rational function fields" begin
     F, t = rational_function_field(GF(5), :t)
     T = [ [F(0), F(0), F(0)], [3/(t^5 + 3*t^4 + 3*t^3 + t^2), 2/(t^4 + 2*t^3 + t^2), 4/(t^3 + t^2)], [2/(t^5 + 2*t^4 + t^3),
     (2*t + 3)/(t^5 + 2*t^4 + t^3), 1/t^3], [t, t-1, 2*t], [t, t-1, t^2]]
