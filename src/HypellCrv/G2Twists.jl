@@ -113,6 +113,7 @@ function g2_models_FF_char2_C2(g2_invs::Vector{T}, all_twists::Bool = true) wher
 	  return [H1, H2]
   end
 
+  u = v = F(1)
   if splitF == 2
     for f in fac
       if degree(f[1]) == 1
@@ -236,30 +237,37 @@ function g2_models_FF_char2_M32(g2_invs::Vector{T}, all_twists::Bool = true) whe
     return [hyperelliptic_curve(sqrt_g3*x^5 + sqrt_g3*x^3, R(1))]
   end
 
-  o = trace_one_element(F)
+  P, _ = polynomial_ring(GF(2))
+  u = gen(F)
 
   E = sqrt_g3^4*x^16 + sqrt_g3^4*x^8 + sqrt_g3^2*x^2 + sqrt_g3*x
   KE = roots(E)
   V = vector_space(GF(2), degree(F))
-  S = sub(V, [ V([E(v[i]) for i in (1:degree(F))]) for v in basis(V)])
+  wa = [ P([v[i] for i in (1:degree(F))])(u) for v in basis(V)]
+  wa = map(x-> V(absolute_coordinates(E(x))), wa)
+  S, phi = sub(V, wa)
   W, pi = quo(V, S)
-  K = [map(F, (pi(w))) for w in W]
+  
 
+ 
+
+  K = [P([preimage(pi, w)[i] for i in (1:degree(F)) ])(u) for w in W]
   twists = HypellCrv{T}[]
   for b in K
-	  H = hyperelliptic_curve([sqrt_g3*x^5 + b*x^4 + sqrt_g3*x^3, 1])
+	  H = hyperelliptic_curve(sqrt_g3*x^5 + b*x^4 + sqrt_g3*x^3, R(1))
 	  push!(twists, H)
 
 	  notwists = false
 	  for k in KE
-	    if trace(sqrt_g3*k[1]^5 + b*k[1]^4 + sqrt_g3*k[1]^3) == 1 
+	    if trace(sqrt_g3*k^5 + b*k^4 + sqrt_g3*k^3) == GF(2)(1)
         notwists = true
         break 
       end
 	  end
 
 	  if notwists == false
-	    twists = vcat(twists, hyperelliptic_curve([sqrt_g3*x^5 + b*x^4 + sqrt_g3*x^3 + o, 1]))
+      o = trace_one_element(F)
+	    twists = vcat(twists, hyperelliptic_curve(sqrt_g3*x^5 + b*x^4 + sqrt_g3*x^3 + o, R(1)))
 	  end
   end
 
@@ -518,8 +526,9 @@ function g2_models_FF_2D12(g2_invs::Vector{T}, all_twists::Bool = true) where T 
 
     R6, s = polynomial_ring(GF_q6, :s)
     f6 = (a*s + b)^6 - (c*s + d)^6
-    f6 = change_coefficient_ring(F, f)
-    H7 = hyperelliptic_curve((f6/leading_coefficient(f6))(x))
+    f6 = f6/leading_coefficient(f6)
+    f6 = change_coefficient_ring(F, f6)
+    H7 = hyperelliptic_curve(f6(x))
     push!(twists, H7)
     push!(twists, quadratic_twist(H7))
 
@@ -531,8 +540,9 @@ function g2_models_FF_2D12(g2_invs::Vector{T}, all_twists::Bool = true) where T 
     d = b^q*t^((div(q^12 - 1, 6)))
     R12, s = polynomial_ring(GF_q12, :s)
     f12 = (a*s + b)^6 - (c*s + d)^6
-    f12 = change_coefficient_ring(F, f)
-    H8 = hyperelliptic_curve(f12/leading_coefficient(f12)(x))
+    f12 = f12/leading_coefficient(f12)
+    f12 = change_coefficient_ring(F, f12)
+    H8 = hyperelliptic_curve(f12(x))
     push!(twists, H8)
     push!(twists, quadratic_twist(H8))
   end
@@ -998,7 +1008,7 @@ function g2_models_FF_V4(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     b = a^q*sqrt(t)
     c = a^q
     d = a*sqrt(t)
-    H_GF_q2 = base_change(H1, GF_q2)
+    H_GF_q2 = base_change(GF_q2, H1)
     H_GF_q2_twist = hyperelliptic_transform(H_GF_q2, [a, b, c, d])[1]
     f2, _ = hyperelliptic_polynomials(H_GF_q2_twist)
     f2 = f2/leading_coefficient(f2)
