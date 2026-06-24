@@ -236,6 +236,7 @@ export composition_factors_with_multiplicity
 export composition_series
 export compositum
 export conductor
+export conic_curve
 export conj
 export conjugacy_classes
 export conjugate
@@ -352,6 +353,7 @@ export factor_coprime
 export faltings_height
 export farey_lift
 export find_points
+export find_rational_point
 export finite_divisor
 export finite_maximal_order
 export finite_ring
@@ -402,6 +404,7 @@ export has_finite_multiplicative_order
 export has_global_minimal_model
 export has_image_with_image
 export has_preimage_with_preimage
+export has_rational_point
 export hasse_interval
 export hasse_invariant
 export hcat
@@ -429,6 +432,7 @@ export howell_form
 export hyperbolic_plane_lattice
 export hyperelliptic_curve
 export hyperelliptic_polynomials
+export hyperelliptic_transform
 export hyperkaehler_lattice
 export id
 export id_hom
@@ -752,6 +756,7 @@ export orthogonal_submodule
 export overlattice
 export overlattices
 export overorders
+export parametrization
 export parent
 export periods
 export permute_row
@@ -828,6 +833,8 @@ export ray_class_group
 export real_embeddings
 export real_period
 export real_places
+export reconstruct_from_igusa
+export reconstruct_from_g2
 export reduce_full
 export reduce_binary_form
 export reduced_charpoly
