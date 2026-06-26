@@ -50,6 +50,8 @@ import AbstractAlgebra:
 
 import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 
+import AbstractAlgebra: HeckeMap
+
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import SparseArrays: nnz
@@ -457,17 +459,19 @@ end
 #
 ################################################################################
 
-abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
+# abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
-import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
-       _get_attributes, _get_attributes!, _is_attribute_storing_type,
-       @show_special_elem, @attributes, extra_name, set_name!, get_name
+import AbstractAlgebra: @show_name, @show_special, @show_special_elem
 
-# Hecke maps store attributes in the header object
-_get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
-_get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
-_is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
+# import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special,
+#        _get_attributes, _get_attributes!, _is_attribute_storing_type,
+#        @show_special_elem, @attributes, extra_name, set_name!, get_name
+#
+# # Hecke maps store attributes in the header object
+# _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
+# _get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
+# _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
 using FLINT_jll: libflint
 
@@ -630,7 +634,7 @@ const _RealRings = _RealRing[_RealRing()]
 #  (M::T)(a) = image(M, a)
 #end
 
-(f::Map{D, C, <:Hecke.HeckeMap, T} where {D, C, T})(x) = image(f, x)
+# (f::Map{D, C, <:Hecke.HeckeMap, T} where {D, C, T})(x) = image(f, x)
 
 ################################################################################
 #
