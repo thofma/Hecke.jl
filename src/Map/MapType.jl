@@ -6,7 +6,7 @@
 ##
 ###########################################################
 
-import AbstractAlgebra: MapHeader, MapCache
+# import AbstractAlgebra: AbstractAlgebra.MapHeader, MapCache
 
 # function domain(M::Map(HeckeMap))
 #   return M.header.domain
@@ -55,26 +55,26 @@ import AbstractAlgebra: MapHeader, MapCache
 #   end
 # end
 #
-# @attributes mutable struct MapHeader{D, C}
+# @attributes mutable struct AbstractAlgebra.MapHeader{D, C}
 #   domain::D
 #   codomain::C
 #   image
 #   preimage
 #   cache::MapCache
 #
-#   function MapHeader{D, C}() where {D, C}
+#   function AbstractAlgebra.MapHeader{D, C}() where {D, C}
 #     z = new{D, C}()
 #     return z
 #   end
 #
-#   function MapHeader{D, C}(domain::D, codomain::C) where {D, C}
+#   function AbstractAlgebra.MapHeader{D, C}(domain::D, codomain::C) where {D, C}
 #     z = new{D, C}()
 #     z.domain = domain
 #     z.codomain = codomain
 #     return z
 #   end
 #
-#   function MapHeader{D, C}(domain::D, codomain::C, image) where {D, C}
+#   function AbstractAlgebra.MapHeader{D, C}(domain::D, codomain::C, image) where {D, C}
 #     z = new{D, C}()
 #     z.domain = domain
 #     z.codomain = codomain
@@ -82,7 +82,7 @@ import AbstractAlgebra: MapHeader, MapCache
 #     return z
 #   end
 #
-#   function MapHeader{D, C}(domain::D, codomain::C, image, preimage) where {D, C}
+#   function AbstractAlgebra.MapHeader{D, C}(domain::D, codomain::C, image, preimage) where {D, C}
 #     z = new{D, C}()
 #     z.domain = domain
 #     z.codomain = codomain
@@ -92,16 +92,16 @@ import AbstractAlgebra: MapHeader, MapCache
 #   end
 # end
 #
-# function MapHeader(domain::D, codomain::C) where {D, C}
-#   return MapHeader{D, C}(domain, codomain)
+# function AbstractAlgebra.MapHeader(domain::D, codomain::C) where {D, C}
+#   return AbstractAlgebra.MapHeader{D, C}(domain, codomain)
 # end
 #
-# function MapHeader(domain::D, codomain::C, image) where {D, C}
-#   return MapHeader{D, C}(domain, codomain, image)
+# function AbstractAlgebra.MapHeader(domain::D, codomain::C, image) where {D, C}
+#   return AbstractAlgebra.MapHeader{D, C}(domain, codomain, image)
 # end
 #
-# function MapHeader(domain::D, codomain::C, image, preimage) where {D, C}
-#   return MapHeader{D, C}(domain, codomain, image, preimage)
+# function AbstractAlgebra.MapHeader(domain::D, codomain::C, image, preimage) where {D, C}
+#   return AbstractAlgebra.MapHeader{D, C}(domain, codomain, image, preimage)
 # end
 
 preimage_function(f) = a -> preimage(f, a)
@@ -172,20 +172,20 @@ end
 # ```
 # """
 # mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
-#   header::Hecke.MapHeader{R, T}
+#   header::AbstractAlgebra.MapHeader{R, T}
 #   f
 #   g
 #
 #   function MapFromFunc{R, T}(D::R, C::T, f) where {R, T}
 #     n = new{R, T}()
-#     n.header = Hecke.MapHeader(D, C, f)
+#     n.header = AbstractAlgebra.MapHeader(D, C, f)
 #     n.f = f
 #     return n
 #   end
 #
 #   function MapFromFunc{R, T}(D::R, C::T, f, g) where {R, T}
 #     n = new{R, T}()
-#     n.header = Hecke.MapHeader(D, C, f, g)
+#     n.header = AbstractAlgebra.MapHeader(D, C, f, g)
 #     n.f = f
 #     n.g = g
 #     return n

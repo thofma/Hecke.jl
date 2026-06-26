@@ -1,5 +1,5 @@
 mutable struct NfRelOrdToFqMor{T, S, U} <: Map{RelNumFieldOrder{T, S, U}, FqField, HeckeMap, NfRelOrdToFqMor}
-  header::MapHeader{RelNumFieldOrder{T, S, U}, FqField}
+  header::AbstractAlgebra.MapHeader{RelNumFieldOrder{T, S, U}, FqField}
   poly_of_the_field::FqPolyRingElem
   P::RelNumFieldOrderIdeal{T, S, U}
   function NfRelOrdToFqMor{T, S, U}() where {T, S, U}
@@ -64,7 +64,7 @@ function NfRelOrdToFqMor(O::RelNumFieldOrder{T, S, U}, P::RelNumFieldOrderIdeal{
       res = AtoO(b)
       return res
     end
-    z.header = MapHeader(O, FF, _image_index_div, _preimage_index_div)
+    z.header = AbstractAlgebra.MapHeader(O, FF, _image_index_div, _preimage_index_div)
   else
     h = P.non_index_div_poly
     # F and base_ring(h) are the same as in "==" but not as in "==="
@@ -92,7 +92,7 @@ function NfRelOrdToFqMor(O::RelNumFieldOrder{T, S, U}, P::RelNumFieldOrderIdeal{
       res = O(y)
       return res
     end
-    z.header = MapHeader(O, FF, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, FF, _image, _preimage)
   end
   return z
 end
@@ -131,11 +131,11 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::RelSimpleNumField{T}) where {T, S}
 end
 
 mutable struct RelOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, RelOrdToAlgAssMor}
-  header::MapHeader{S, StructureConstantAlgebra{T}}
+  header::AbstractAlgebra.MapHeader{S, StructureConstantAlgebra{T}}
 
   function RelOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where { S <: Union{ RelNumFieldOrder, AlgAssRelOrd }, T }
     z = new{S, T}()
-    z.header = MapHeader(O, A, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, A, _image, _preimage)
     return z
   end
 end
@@ -145,7 +145,7 @@ function RelOrdToAlgAssMor(O::Union{ RelNumFieldOrder, AlgAssRelOrd }, A::Struct
 end
 
 mutable struct RelOrdQuoMap{T1, T2, T3, S} <: Map{T1, RelOrdQuoRing{T1, T2, T3}, HeckeMap, RelOrdQuoMap}
-  header::MapHeader{T1, RelOrdQuoRing{T1, T2, T3}}
+  header::AbstractAlgebra.MapHeader{T1, RelOrdQuoRing{T1, T2, T3}}
 
   function RelOrdQuoMap{T1, T2, T3, S}(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3, S }
     z = new{T1, T2, T3, S}()
@@ -158,7 +158,7 @@ mutable struct RelOrdQuoMap{T1, T2, T3, S} <: Map{T1, RelOrdQuoRing{T1, T2, T3},
       return x.elem
     end
 
-    z.header = MapHeader(O, Q, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, Q, _image, _preimage)
     return z
   end
 end
@@ -169,7 +169,7 @@ function RelOrdQuoMap(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
 end
 
 mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdToFqFieldRelMor}
-  header::MapHeader{S, FqField}
+  header::AbstractAlgebra.MapHeader{S, FqField}
   poly_of_the_field
   P
   map_subfield::Union{NfOrdToFqFieldMor, NfRelOrdToFqFieldRelMor}
@@ -236,7 +236,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
         res = AtoO(b)
         return res
       end
-      z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)
+      z.header = AbstractAlgebra.MapHeader(O, FE, _image_index_div, _preimage_index_div)
     else
       h = P.non_index_div_poly
       hh = FKx()
@@ -268,14 +268,14 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
         res = O(y)
         return res
       end
-      z.header = MapHeader(O, FE, _image, _preimage)
+      z.header = AbstractAlgebra.MapHeader(O, FE, _image, _preimage)
     end
     return z
   end
 end
 
 mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap, NfRelOrdToRelFinFieldMor}
-  header::MapHeader{S, RelFinField{T}}
+  header::AbstractAlgebra.MapHeader{S, RelFinField{T}}
   poly_of_the_field
   P
   map_subfield::Union{NfOrdToFqMor, NfRelOrdToRelFinFieldMor}
@@ -339,7 +339,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         b = A([c[i,1] for i=1:dim(A)])
         return AtoO(b)
       end
-      z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)
+      z.header = AbstractAlgebra.MapHeader(O, FE, _image_index_div, _preimage_index_div)
     else
       h = P.non_index_div_poly
       hh = FKx()
@@ -368,7 +368,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
         return O(y)
       end
-      z.header = MapHeader(O, FE, _image, _preimage)
+      z.header = AbstractAlgebra.MapHeader(O, FE, _image, _preimage)
     end
     return z
   end
@@ -438,7 +438,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         b = A([c[i,1] for i=1:dim(A)])
         return AtoO(b)
       end
-      z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)
+      z.header = AbstractAlgebra.MapHeader(O, FE, _image_index_div, _preimage_index_div)
     else
       h = P.non_index_div_poly
       hh = FKabsz()
@@ -470,7 +470,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
         return O(y)
       end
-      z.header = MapHeader(O, FE, _image, _preimage)
+      z.header = AbstractAlgebra.MapHeader(O, FE, _image, _preimage)
     end
     return z
   end
@@ -478,11 +478,11 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
 end
 
 mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelToFqFieldRelMor}
-  header::MapHeader{S, FqField}
+  header::AbstractAlgebra.MapHeader{S, FqField}
 
   function NfRelToFqFieldRelMor{S}() where {S <: RelSimpleNumField}
     z = new{S}()
-    z.header = MapHeader{S, FqField}()
+    z.header = AbstractAlgebra.MapHeader{S, FqField}()
     return z
   end
 end
@@ -519,4 +519,3 @@ function extend(f::NfRelOrdToFqFieldRelMor{S}, E::RelSimpleNumField) where {S}
 
   return g
 end
-

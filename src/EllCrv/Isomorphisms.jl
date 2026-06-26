@@ -15,7 +15,7 @@
 
 
 mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCrvIso} where T<:RingElem
-  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
+  header::AbstractAlgebra.MapHeader{EllipticCurve{T}, EllipticCurve{T}}
   domain::EllipticCurve{T}
   codomain::EllipticCurve{T}
   data::Tuple{T, T, T, T}
@@ -39,7 +39,7 @@ mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCr
 
     F = elliptic_curve([a1new, a2new, a3new, a4new, a6new])
     f.codomain = F
-    f.header = MapHeader(E, F)
+    f.header = AbstractAlgebra.MapHeader(E, F)
     return f
   end
 
@@ -642,10 +642,10 @@ parent(f::EllCrvIso{T}) where {T} = EllCrvIsoSet{EllipticCurve{T}}(domain(f))
 mutable struct EllCrvAutMap{S, T} <: Map{MultTableGroup, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
   G::MultTableGroup
   auts::Vector{T}
-  header::MapHeader{MultTableGroup, EllCrvIsoSet{S}}
+  header::AbstractAlgebra.MapHeader{MultTableGroup, EllCrvIsoSet{S}}
 
   function EllCrvAutMap(E::S, G::MultTableGroup, auts::Vector{T}) where {S, T}
-    return new{S, T}(G, auts, MapHeader(G, EllCrvIsoSet{S}(E)))
+    return new{S, T}(G, auts, AbstractAlgebra.MapHeader(G, EllCrvIsoSet{S}(E)))
   end
 end
 

@@ -1,5 +1,5 @@
 mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
-  header::MapHeader{R, S}
+  header::AbstractAlgebra.MapHeader{R, S}
 
   mat::T
   imat::T
@@ -10,7 +10,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
 
   function AbsAlgAssMor{R, S, T}(A::R, B::S) where {R, S, T}
     z = new{R, S, T}()
-    z.header = MapHeader(A, B)
+    z.header = AbstractAlgebra.MapHeader(A, B)
     return z
   end
 
@@ -40,7 +40,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       return B(s)
     end
 
-    z.header = MapHeader(A, B, image)
+    z.header = AbstractAlgebra.MapHeader(A, B, image)
     return z
   end
 
@@ -100,7 +100,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       return A(s, copy = false)
     end
 
-    z.header = MapHeader(A, B, image, preimage)
+    z.header = AbstractAlgebra.MapHeader(A, B, image, preimage)
     return z
   end
 end
@@ -123,7 +123,7 @@ end
 #inv(a::AbsAlgAssMor) = pseudo_inv(a)
 
 #mutable struct AlgAssMor{R, S, T} <: Map{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}, HeckeMap, AlgAssMor}
-#  header::MapHeader{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}}
+#  header::AbstractAlgebra.MapHeader{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}}
 #
 #  mat::T
 #  imat::T
@@ -150,7 +150,7 @@ end
 #      return AssociativeAlgebraElem{S}(B, s)
 #    end
 #
-#    z.header = MapHeader(A, B, image)
+#    z.header = AbstractAlgebra.MapHeader(A, B, image)
 #    return z
 #  end
 #
@@ -188,7 +188,7 @@ end
 #      return AssociativeAlgebraElem{R}(A, s)
 #    end
 #
-#    z.header = MapHeader(A, B, image, preimage)
+#    z.header = AbstractAlgebra.MapHeader(A, B, image, preimage)
 #    return z
 #  end
 #end
@@ -282,7 +282,7 @@ end
 
 # S is the type of the algebra, T the element type of the algebra
 mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, HeckeMap, AbsAlgAssToNfAbsMor}
-  header::MapHeader{S, U}
+  header::AbstractAlgebra.MapHeader{S, U}
   mat::V
   imat::V
   t::V # dummy vector used in image and preimage
@@ -312,7 +312,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, HeckeMap, AbsAlgAssT
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{S, U}(A, K, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{S, U}(A, K, _image, _preimage)
     return z
   end
 end
@@ -337,7 +337,7 @@ end
 # MatType is the type of matrices over base_ring(A), PolyRingType the type of a
 # polynomial ring over base_ring(A)
 mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeMap, AbsAlgAssToFqMor}
-  header::MapHeader{S, T}
+  header::AbstractAlgebra.MapHeader{S, T}
   mat::MatType
   imat::MatType
   t::MatType # dummy vector used in image and preimage
@@ -380,7 +380,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{S, T}(A, Fq, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{S, T}(A, Fq, _image, _preimage)
     return z
   end
 
@@ -421,7 +421,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{S, T}(A, Fq, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{S, T}(A, Fq, _image, _preimage)
     return z
   end
 
