@@ -8,7 +8,7 @@
 ###############################################################################
 
 mutable struct Isogeny{T <: RingElem} <: Map{EllipticCurve, EllipticCurve, HeckeMap, Isogeny}
-  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
+  header::AbstractAlgebra.MapHeader{EllipticCurve{T}, EllipticCurve{T}}
   domain::EllipticCurve{T}
   codomain::EllipticCurve{T}
   coordx::RingElem
@@ -40,7 +40,7 @@ function Isogeny(E::EllipticCurve{T}, psi::RingElem) where T<:RingElem
   r.coordy = Ry(omega)//Ry(psi^3)
 
   #Set header
-  r.header = MapHeader(E, r.codomain)
+  r.header = AbstractAlgebra.MapHeader(E, r.codomain)
   return r
 end
 
@@ -454,7 +454,7 @@ function dual_of_frobenius(E)
   f.coordy = (dual_omega0 + dual_omega1*y)//(Kxy(dual_psi))^3
 
   f.psi = dual_psi
-  f.header = MapHeader(E, f.codomain)
+  f.header = AbstractAlgebra.MapHeader(E, f.codomain)
   if supsing
     return f*frobenius_map(E)
   else
@@ -507,7 +507,7 @@ function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer,
   psi_temp = division_polynomial_univariate(E, m)[1]
   mul_m.psi = divexact(psi_temp, leading_coefficient(psi_temp))
   mul_m.codomain = E
-  mul_m.header = MapHeader(E, E)
+  mul_m.header = AbstractAlgebra.MapHeader(E, E)
 
   return mul_m
 end
@@ -568,7 +568,7 @@ function frobenius_map(E::EllipticCurve{T}, n) where T<:FinFieldElem
   f.coordx = x^pn//1
   f.coordy = y^pn//1
   f.psi = one(Rx)
-  f.header = MapHeader(E, f.codomain)
+  f.header = AbstractAlgebra.MapHeader(E, f.codomain)
   return f
 end
 
@@ -669,7 +669,7 @@ function compose(I1::Isogeny, I2::Isogeny)
 
   f.codomain = F
   f.degree = I1.degree*I2.degree
-  f.header = MapHeader(E, F)
+  f.header = AbstractAlgebra.MapHeader(E, F)
   return f
 end
 
@@ -894,4 +894,3 @@ function to_bivariate(f::PolyRingElem{T}) where T<:FieldElem
 
   return f(x)
 end
-

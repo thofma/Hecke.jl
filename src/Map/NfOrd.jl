@@ -6,14 +6,14 @@
 
 # AbsSimpleNumFieldOrder -> FqNmod
 mutable struct NfOrdToFqNmodMor <: Map{AbsSimpleNumFieldOrder, fqPolyRepField, HeckeMap, NfOrdToFqNmodMor}
-  header::MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}
   poly_of_the_field::fpPolyRingElem
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   powers::Vector{AbsSimpleNumFieldElem}
 
   function NfOrdToFqNmodMor()
     r = new()
-    r.header = MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}()
+    r.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}()
     return r
   end
 
@@ -61,7 +61,7 @@ mutable struct NfOrdToFqNmodMor <: Map{AbsSimpleNumFieldOrder, fqPolyRepField, H
       return zz
     end
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}(O, F, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}(O, F, _image, _preimage)
     return z
   end
 
@@ -119,7 +119,7 @@ mutable struct NfOrdToFqNmodMor <: Map{AbsSimpleNumFieldOrder, fqPolyRepField, H
       return zz
     end
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}(O, F, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fqPolyRepField}(O, F, _image, _preimage)
     return z
   end
 end
@@ -141,7 +141,7 @@ end
 
 # S is the type of the order, T the type of the ideal and U the elem_type of the order, which define the quotient ring
 mutable struct AbsOrdQuoMap{S, T, U} <: Map{S, AbsOrdQuoRing{S, T}, HeckeMap, AbsOrdQuoMap}
-  header::MapHeader{S, AbsOrdQuoRing{S, T}}
+  header::AbstractAlgebra.MapHeader{S, AbsOrdQuoRing{S, T}}
 
   function AbsOrdQuoMap{S, T, U}(O::S, Q::AbsOrdQuoRing{S, T}) where {S, T, U}
     z = new()
@@ -159,7 +159,7 @@ mutable struct AbsOrdQuoMap{S, T, U} <: Map{S, AbsOrdQuoRing{S, T}, HeckeMap, Ab
       return x.elem
     end
 
-    z.header = MapHeader(O, Q, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, Q, _image, _preimage)
     return z
   end
 end
@@ -230,7 +230,7 @@ function (f::NfOrdQuoMap)(p::PolyRingElem{AbsSimpleNumFieldOrderElem})
 end
 
 mutable struct NfOrdToFqMor <: Map{AbsSimpleNumFieldOrder, FqPolyRepField, HeckeMap, NfOrdToFqMor}
-  header::MapHeader{AbsSimpleNumFieldOrder, FqPolyRepField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, FqPolyRepField}
   poly_of_the_field::FpPolyRingElem
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   fastpath::Bool
@@ -258,7 +258,7 @@ mutable struct NfOrdToFqMor <: Map{AbsSimpleNumFieldOrder, FqPolyRepField, Hecke
     z.a = gen(nf(O))
     z.poly_of_the_field = g
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, FqPolyRepField}(O, F)# _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, FqPolyRepField}(O, F)# _image, _preimage)
 
     return z
   end
@@ -318,7 +318,7 @@ function NfOrdToFqMor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSim
     return zz
   end
 
-  z.header = MapHeader{AbsSimpleNumFieldOrder, FqPolyRepField}(O, F, _image, _preimage)
+  z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, FqPolyRepField}(O, F, _image, _preimage)
   return z
 end
 
@@ -371,13 +371,13 @@ end
 
 
 mutable struct NfOrdToGFMor <: Map{AbsSimpleNumFieldOrder, fpField, HeckeMap, NfOrdToFqNmodMor}
-  header::MapHeader{AbsSimpleNumFieldOrder, fpField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fpField}
   poly_of_the_field::fpPolyRingElem
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
   function NfOrdToGFMor()
     r = new()
-    r.header = MapHeader{AbsSimpleNumFieldOrder, fpField}()
+    r.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fpField}()
     return r
   end
 
@@ -399,7 +399,7 @@ mutable struct NfOrdToGFMor <: Map{AbsSimpleNumFieldOrder, fpField, HeckeMap, Nf
 			end
     end
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, fpField}(O, F, _image)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fpField}(O, F, _image)
     return z
   end
 
@@ -428,7 +428,7 @@ mutable struct NfOrdToGFMor <: Map{AbsSimpleNumFieldOrder, fpField, HeckeMap, Nf
 			end
     end
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, fpField}(O, F, _image)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, fpField}(O, F, _image)
     return z
   end
 end
@@ -442,7 +442,7 @@ Mor(O::AbsSimpleNumFieldOrder, F::fpField, g::fpPolyRingElem) = NfOrdToGFMor(O, 
 
 
 mutable struct NfOrdToGFFmpzMor <: Map{AbsSimpleNumFieldOrder, Nemo.FpField, HeckeMap, NfOrdToGFFmpzMor}
-  header::MapHeader{AbsSimpleNumFieldOrder, Nemo.FpField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, Nemo.FpField}
   poly_of_the_field::FpPolyRingElem
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
 
@@ -467,7 +467,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{AbsSimpleNumFieldOrder, Nemo.FpField, Hec
 			end
     end
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, Nemo.FpField}(O, F, _image)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, Nemo.FpField}(O, F, _image)
     return z
   end
 
@@ -497,7 +497,7 @@ mutable struct NfOrdToGFFmpzMor <: Map{AbsSimpleNumFieldOrder, Nemo.FpField, Hec
 			end
     end
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, Nemo.FpField}(O, F, _image)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, Nemo.FpField}(O, F, _image)
     return z
   end
 end
@@ -515,7 +515,7 @@ Mor(O::AbsSimpleNumFieldOrder, F::Nemo.FpField, h::FpPolyRingElem) = NfOrdToGFFm
 ################################################################################
 
 mutable struct NfOrdToFqFieldMor <: Map{AbsSimpleNumFieldOrder, FqField, HeckeMap, NfOrdToFqFieldMor}
-  header::MapHeader{AbsSimpleNumFieldOrder, FqField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, FqField}
   poly_of_the_field::FqPolyRingElem
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   fastpath::Bool
@@ -543,7 +543,7 @@ mutable struct NfOrdToFqFieldMor <: Map{AbsSimpleNumFieldOrder, FqField, HeckeMa
     z.a = gen(nf(O))
     z.poly_of_the_field = g
 
-    z.header = MapHeader{AbsSimpleNumFieldOrder, FqField}(O, F)# _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, FqField}(O, F)# _image, _preimage)
 
     return z
   end
@@ -613,7 +613,7 @@ function NfOrdToFqFieldMor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{A
     return zz
   end
 
-  z.header = MapHeader{AbsSimpleNumFieldOrder, FqField}(O, F, _image, _preimage)
+  z.header = AbstractAlgebra.MapHeader{AbsSimpleNumFieldOrder, FqField}(O, F, _image, _preimage)
   return z
 end
 
@@ -669,11 +669,11 @@ Mor(O::AbsSimpleNumFieldOrder, F::Nemo.FqField, h::FqPolyRingElem) = NfOrdToFqFi
 ################################################################################
 
 mutable struct NfToFinFldMor{T} <: Map{AbsSimpleNumField, T, HeckeMap, NfToFinFldMor{T}}
-  header::MapHeader{AbsSimpleNumField, T}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, T}
 
   function NfToFinFldMor{T}() where T
     r = new{T}()
-    r.header = MapHeader{AbsSimpleNumField, T}()
+    r.header = AbstractAlgebra.MapHeader{AbsSimpleNumField, T}()
     return r
   end
 end
@@ -753,14 +753,14 @@ function extend_easy(f::Hecke.NfOrdToFqFieldMor, K::AbsSimpleNumField)
 end
 
 mutable struct NfToFqFieldMor_easy <: Map{AbsSimpleNumField, FqField, HeckeMap, NfToFqFieldMor_easy}
-  header::MapHeader{AbsSimpleNumField, FqField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, FqField}
   Fq::FqField
   s::FqFieldElem
   t::FqPolyRingElem
   function NfToFqFieldMor_easy(a::Map, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
-    r.header = MapHeader(k, r.Fq)
+    r.header = AbstractAlgebra.MapHeader(k, r.Fq)
     r.s = r.Fq()
     r.t = polynomial_ring(prime_field(r.Fq), cached = false)[1]()
     return r
@@ -811,14 +811,14 @@ function image(mF::NfToFqFieldMor_easy, a::AbsSimpleNumFieldElem, n_quo::Int = 0
 end
 
 mutable struct NfToFqMor_easy <: Map{AbsSimpleNumField, FqPolyRepField, HeckeMap, NfToFqMor_easy}
-  header::MapHeader{AbsSimpleNumField, FqPolyRepField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, FqPolyRepField}
   Fq::FqPolyRepField
   s::FqPolyRepFieldElem
   t::FpPolyRingElem
   function NfToFqMor_easy(a::Map, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
-    r.header = MapHeader(k, r.Fq)
+    r.header = AbstractAlgebra.MapHeader(k, r.Fq)
     r.s = r.Fq()
     r.t = polynomial_ring(Native.GF(characteristic(r.Fq), cached = false), cached = false)[1]()
     return r
@@ -870,14 +870,14 @@ end
 
 
 mutable struct NfToFqNmodMor_easy <: Map{AbsSimpleNumField, fqPolyRepField, HeckeMap, NfToFqNmodMor_easy}
-  header::MapHeader{AbsSimpleNumField, fqPolyRepField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, fqPolyRepField}
   Fq::fqPolyRepField
   s::fqPolyRepFieldElem
   t::fpPolyRingElem
   function NfToFqNmodMor_easy(a::Map, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
-    r.header = MapHeader(k, r.Fq)
+    r.header = AbstractAlgebra.MapHeader(k, r.Fq)
     r.s = r.Fq()
     r.t = polynomial_ring(Native.GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
     return r
@@ -1066,7 +1066,7 @@ function _nf_to_gfp_elem(b::AbsSimpleNumFieldElem, a_tmp::FpPolyRingElem, def_po
 end
 
 mutable struct NfToGFMor_easy <: Map{AbsSimpleNumField, fpField, HeckeMap, NfToGFMor_easy}
-  header::MapHeader{AbsSimpleNumField, fpField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, fpField}
   Fq::fpField
   defining_pol::fpPolyRingElem
   s::fpFieldElem
@@ -1085,7 +1085,7 @@ mutable struct NfToGFMor_easy <: Map{AbsSimpleNumField, fpField, HeckeMap, NfToG
       @assert length(fa) == 1
       r.defining_pol = polynomial(r.Fq, [-rt[fa[1]], r.Fq(1)])
     end
-    r.header = MapHeader(k, r.Fq)
+    r.header = AbstractAlgebra.MapHeader(k, r.Fq)
     r.s = r.Fq()
     r.t = zero(parent(r.defining_pol))
     return r
@@ -1236,7 +1236,7 @@ end
 
 
 mutable struct NfToGFFmpzMor_easy <: Map{AbsSimpleNumField, Nemo.FpField, HeckeMap, NfToGFFmpzMor_easy}
-  header::MapHeader{AbsSimpleNumField, Nemo.FpField}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, Nemo.FpField}
   Fq::Nemo.FpField
   defining_pol::Nemo.FpPolyRingElem
   s::Nemo.FpFieldElem
@@ -1244,7 +1244,7 @@ mutable struct NfToGFFmpzMor_easy <: Map{AbsSimpleNumField, Nemo.FpField, HeckeM
   function NfToGFFmpzMor_easy(a::NfOrdToGFFmpzMor, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
-    r.header = MapHeader(k, r.Fq)
+    r.header = AbstractAlgebra.MapHeader(k, r.Fq)
     r.s = r.Fq()
     r.defining_pol = a.poly_of_the_field
     r.t = zero(parent(a.poly_of_the_field))
@@ -1302,11 +1302,11 @@ end
 ################################################################################
 
 mutable struct AbsOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, AbsOrdToAlgAssMor}
-  header::MapHeader
+  header::AbstractAlgebra.MapHeader
 
   function AbsOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: Union{ AbsNumFieldOrder, AlgAssAbsOrd }, T}
     z = new{S, T}()
-    z.header = MapHeader(O, A, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, A, _image, _preimage)
     return z
   end
 end
@@ -1336,5 +1336,3 @@ end
 function fmpz_mod_ui(x::ZZRingElem, y::UInt)
   return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), x, y)
 end
-
-

@@ -42,7 +42,7 @@ end
 function class_group_as_picard(OK::AbsSimpleNumFieldOrder)
   C, mC = class_group(OK)
   mp = MapPicardGrp{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}()
-  mp.header = MapHeader(C, IdealSet(OK), mC.header.image, mC.header.preimage)
+  mp.header = AbstractAlgebra.MapHeader(C, IdealSet(OK), mC.header.image, mC.header.preimage)
   return C, mp
 end
 
@@ -186,10 +186,10 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
 
   if T <: FacElemMon
     StoO = MapUnitGrp{typeof(codomain(GtoOK))}()
-    StoO.header = MapHeader(S, codomain(GtoOK), _image, _preimage)
+    StoO.header = AbstractAlgebra.MapHeader(S, codomain(GtoOK), _image, _preimage)
   else
     StoO = MapUnitGrp{typeof(O)}()
-    StoO.header = MapHeader(S, O, _image, _preimage)
+    StoO.header = AbstractAlgebra.MapHeader(S, O, _image, _preimage)
   end
   StoO.OO_mod_F_mod_O_mod_F = HtoQ
 
@@ -323,7 +323,7 @@ function _picard_group(O::AbsSimpleNumFieldOrder)
   end
   Idl = IdealSet(O)
   StoIdl = MapPicardGrp{typeof(S), typeof(Idl)}()
-  StoIdl.header = MapHeader(S, Idl, disc_exp_picard_group, disc_log_picard_group)
+  StoIdl.header = AbstractAlgebra.MapHeader(S, Idl, disc_exp_picard_group, disc_log_picard_group)
   StoIdl.OO_mod_F_mod_O_mod_F = GtoQ
 
   return S, StoIdl

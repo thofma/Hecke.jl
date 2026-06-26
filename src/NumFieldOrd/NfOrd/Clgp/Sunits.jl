@@ -157,7 +157,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
     end
   end
 
-  r.header = MapHeader(C, FacElemMon(nf(O)), exp, log)
+  r.header = AbstractAlgebra.MapHeader(C, FacElemMon(nf(O)), exp, log)
   r.valuations = valuations
 
   return C, r
@@ -220,7 +220,7 @@ function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
     end
   end
 
-  r.header = MapHeader(G, FacElemMon(nf(O)), exp, log)
+  r.header = AbstractAlgebra.MapHeader(G, FacElemMon(nf(O)), exp, log)
 
   return G, r
 end
@@ -260,7 +260,7 @@ function sunit_group(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpl
     end
   end
 
-  r.header = MapHeader(G, nf(O), exp, log)
+  r.header = AbstractAlgebra.MapHeader(G, nf(O), exp, log)
 
   return G, r
 end

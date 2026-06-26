@@ -86,7 +86,7 @@ function unit_group_fac_elem(u::UnitGrpCtx)
 
   r = MapUnitGrp{typeof(FacElemMon(nf(O)))}()
 
-  r.header = MapHeader(U, FacElemMon(nf(O)),
+  r.header = AbstractAlgebra.MapHeader(U, FacElemMon(nf(O)),
     x->unit_group_disc_exp(x, u),
     x->unit_group_disc_log(x, u, U))
 

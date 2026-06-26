@@ -225,7 +225,7 @@ end
 function change_base_ring(mC::MapClassGrp, O::AbsSimpleNumFieldOrder)
   L = order(codomain(mC))
   mD = MapClassGrp()
-  mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
+  mD.header = AbstractAlgebra.MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
   return mD
 end
 
@@ -270,7 +270,7 @@ function class_group(c::ClassGrpCtx, O::AbsSimpleNumFieldOrder = order(c); redo:
       return class_group_disc_exp(x, c)
     end
   end
-  r.header = MapHeader(C, parent(c.FB.ideals[1]), expo, disclog)
+  r.header = AbstractAlgebra.MapHeader(C, parent(c.FB.ideals[1]), expo, disclog)
 
   c.cl_map = r
   if O !== order(c)

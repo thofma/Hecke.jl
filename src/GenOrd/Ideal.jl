@@ -1024,11 +1024,11 @@ end
 ################################################################################
 
 mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, Hecke.HeckeMap, Any}#GenOrdToAlgAssMor}
-  header::Hecke.MapHeader
+  header::AbstractAlgebra.MapHeader
 
   function GenOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
-    z.header = Hecke.MapHeader(O, A, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, A, _image, _preimage)
     return z
   end
 end
@@ -1048,11 +1048,11 @@ function Hecke.characteristic(R::EuclideanRingResidueField{<:Hecke.GenOrdElem{<:
 end
 
 mutable struct GenOrdToFqField{S, T} <: Map{S, T, Hecke.HeckeMap, Any}#GenOrdToFqField}
-  header::Hecke.MapHeader
+  header::AbstractAlgebra.MapHeader
 
   function GenOrdToFqField{S, T}(O::S, A::T, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
-    z.header = Hecke.MapHeader(O, A, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader(O, A, _image, _preimage)
     return z
   end
 end

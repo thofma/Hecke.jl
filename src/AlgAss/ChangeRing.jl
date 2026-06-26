@@ -57,7 +57,7 @@ end
 #end
 
 mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, HeckeMap, AlgAssResMor}
-  header::MapHeader{S, T}
+  header::AbstractAlgebra.MapHeader{S, T}
   domain::S
   codomain::T
   f::U
@@ -69,7 +69,7 @@ mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, HeckeMap, AlgAssResMor}
     z.codomain = A
     z.B = Bas
     z.f = f
-    z.header = MapHeader(B, A)
+    z.header = AbstractAlgebra.MapHeader(B, A)
     return z
   end
 end
@@ -184,7 +184,7 @@ function _restrict_scalars(A::AbstractAssociativeAlgebra{T}, prime_field) where 
 end
 
 mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, HeckeMap, AlgAssExtMor}
-  header::MapHeader{S, T}
+  header::AbstractAlgebra.MapHeader{S, T}
   domain::S
   codomain::T
   f::U
@@ -202,7 +202,7 @@ mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, HeckeMap, AlgAssEx
     z.BB = BL
     z.BAoverC = BAoverC
     z.MMinv = MMinv
-    z.header = MapHeader(B, A)
+    z.header = AbstractAlgebra.MapHeader(B, A)
     return z
   end
 end
@@ -395,5 +395,3 @@ end
 domain(f::PrimeFieldEmbedStub) = f.domain
 
 codomain(f::PrimeFieldEmbedStub) = f.codomain
-
-

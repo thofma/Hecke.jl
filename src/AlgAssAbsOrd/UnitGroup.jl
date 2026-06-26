@@ -97,7 +97,7 @@ function _unit_group_maximal_fac_elem(O::AlgAssAbsOrd; GRH::Bool = true)
   end
 
   StoO = MapUnitGrp{FacElemMon{typeof(A)}}()
-  StoO.header = MapHeader(S, FacElemMon(A), disc_exp, disc_log)
+  StoO.header = AbstractAlgebra.MapHeader(S, FacElemMon(A), disc_exp, disc_log)
   return S, StoO
 end
 
@@ -146,7 +146,7 @@ function _unit_group_maximal(O::AlgAssAbsOrd; GRH::Bool = true)
   end
 
   StoO = MapUnitGrp{typeof(O)}()
-  StoO.header = MapHeader(S, O, disc_exp, disc_log)
+  StoO.header = AbstractAlgebra.MapHeader(S, O, disc_exp, disc_log)
   return S, StoO
 end
 
@@ -222,7 +222,7 @@ function unit_group_positive(O::AlgAssAbsOrd, rlpl)
   end
 
   StoO = MapUnitGrp{typeof(O)}()
-  StoO.header = MapHeader(S, O, exp, log)
+  StoO.header = AbstractAlgebra.MapHeader(S, O, exp, log)
   return S, StoO
 end
 

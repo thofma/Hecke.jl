@@ -187,11 +187,11 @@ lift(a::QmodnZElem) = a.elt
 
 mutable struct GrpAbFinGenToQmodnZ <: Map{FinGenAbGroup, QmodnZ,
                                             HeckeMap, GrpAbFinGenToQmodnZ}
-  header::MapHeader{FinGenAbGroup, QmodnZ}
+  header::AbstractAlgebra.MapHeader{FinGenAbGroup, QmodnZ}
 
   function GrpAbFinGenToQmodnZ(G::FinGenAbGroup, QZ::QmodnZ, image)
     z = new()
-    z.header = MapHeader(G, QZ, image)
+    z.header = AbstractAlgebra.MapHeader(G, QZ, image)
     return z
   end
 end
@@ -320,5 +320,3 @@ end
 matrix(::Hecke.GrpAbFinGenToQmodnZ) = nothing
 matrix(::Map{QmodnZ, FinGenAbGroup}) = nothing
 matrix(::Map{FinGenAbGroup, QmodnZ}) = nothing
-
-
