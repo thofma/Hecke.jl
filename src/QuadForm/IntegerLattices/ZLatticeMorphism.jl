@@ -48,7 +48,7 @@ function __assert_has_automorphisms(
   search_invariant_subspace::Bool=false,
   use_target_enum::Bool=true,
   short_vectors_direct::Bool=false,
-  allow_short_vectors_direct_in_heuristc::Bool=true,
+  allow_short_vectors_direct::Bool=true,
   do_lll::Bool=true,
   use_dual::Bool=false,
 )
@@ -114,7 +114,7 @@ function __assert_has_automorphisms(
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
-                               compress, use_target_enum, allow_short_vectors_direct_in_heuristc)
+                               compress, use_target_enum, allow_short_vectors_direct)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -151,7 +151,7 @@ function __assert_has_automorphisms(
   end
   if use_weyl && use_projections && use_target_enum
     res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
-                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct_in_heuristc)
+                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct)
     use_projections = false # already added projections
   elseif use_weyl
     error("not implemented")
@@ -282,7 +282,7 @@ end
 function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
                                        search_invariant_subspace::Bool=false,
                                        use_dual::Bool=false,
-                                       allow_short_vectors_direct_in_heuristc::Bool=false,
+                                       allow_short_vectors_direct::Bool=false,
                                        force_direct::Bool=false)
   tmp = ZZ()
   gramZZ, _ = _integral_split_gram(_L)
@@ -297,8 +297,8 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
   (_L, successive_sublattices, B, Binv, projection_ranges, projL,
   projL_gram, denoms, target_fixed_part, target_norms, grams) = T
-  do_direct = allow_short_vectors_direct_in_heuristc
-  do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=6 for i in 1:n)
+  do_direct = allow_short_vectors_direct
+  do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=4 for i in 1:n)
   do_direct = do_direct && any(rank(successive_sublattices[i])>=15 for i in 2:length(successive_sublattices)) && rank(successive_sublattices[1])<=4
   do_direct = do_direct || force_direct
   if !do_direct
