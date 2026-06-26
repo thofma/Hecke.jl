@@ -143,14 +143,14 @@ end
 
 function hom(K::PadicField, F::T; check::Bool = true) where  {T <: Union{LocalField, QadicField, PadicField}}
   z = LocalFieldMor{typeof(K), typeof(F), map_data_type(K, F), map_data_type(K, F)}()
-  z.header = MapHeader(K, F)
+  z.header = AbstractAlgebra.MapHeader(K, F)
   z.image_data = map_data(K, F, true)
   return z
 end
 
 function _automorphisms(K::PadicField, F::T, L::PadicField) where {T <: Union{LocalField, QadicField, PadicField}}
   z = LocalFieldMor{typeof(K), typeof(F), map_data_type(K, F), map_data_type(K, F)}()
-  z.header = MapHeader(K, F)
+  z.header = AbstractAlgebra.MapHeader(K, F)
   z.image_data = map_data(K, F, true)
   return [z]
 end

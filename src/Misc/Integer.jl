@@ -63,7 +63,7 @@ end
 ################################################################################
 
 mutable struct MapSUnitGrpZFacElem <: Map{FinGenAbGroup,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
-  header::MapHeader{FinGenAbGroup,FacElemMon{QQField}}
+  header::AbstractAlgebra.MapHeader{FinGenAbGroup,FacElemMon{QQField}}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZFacElem()
@@ -76,7 +76,7 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
 end
 
 mutable struct MapSUnitGrpZ <: Map{FinGenAbGroup,QQField,HeckeMap,MapSUnitGrpZ}
-  header::MapHeader{FinGenAbGroup,QQField}
+  header::AbstractAlgebra.MapHeader{FinGenAbGroup,QQField}
   idl::Vector{ZZRingElem}
 
   function MapSUnitGrpZ()
@@ -117,7 +117,7 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
     return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
   end
 
-  mp.header = MapHeader(G, FacElemMon(QQ), dexp)
+  mp.header = AbstractAlgebra.MapHeader(G, FacElemMon(QQ), dexp)
 
   return G, mp
 end
@@ -168,7 +168,7 @@ function sunit_group(S::Vector{ZZRingElem})
     return evaluate(image(mu, a))
   end
 
-  mp.header = MapHeader(u, QQ, dexp, y->preimage(mu, y))
+  mp.header = AbstractAlgebra.MapHeader(u, QQ, dexp, y->preimage(mu, y))
 
   return u, mp
 end

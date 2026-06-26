@@ -8,7 +8,7 @@ end
 field_extension(h::FqPolyRingElem) = Nemo._residue_field(h)
 
 mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap, FqPolyRingToFqMor}
-  header::MapHeader{S, T}
+  header::AbstractAlgebra.MapHeader{S, T}
   h::PolyType
   mat::MatType
   mat_inv::MatType
@@ -132,7 +132,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       end
       return f
     end
-    z.header = MapHeader{S, T}(parent(h), Fqm, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{S, T}(parent(h), Fqm, _image, _preimage)
     return z
   end
 
@@ -153,7 +153,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
     function _preimage(f::FqFieldElem)
       return F.backwardmap(f)
     end
-    z.header = MapHeader{S, T}(parent(h), F, _image, _preimage)
+    z.header = AbstractAlgebra.MapHeader{S, T}(parent(h), F, _image, _preimage)
     return z
   end
 end

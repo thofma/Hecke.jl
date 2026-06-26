@@ -5,11 +5,11 @@
 ################################################################################
 
 mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, HeckeMap, NfRelToFqMor}
-  header::MapHeader{RelSimpleNumField{T}, FqField}
+  header::AbstractAlgebra.MapHeader{RelSimpleNumField{T}, FqField}
 
   function NfRelToFqMor{T}() where {T}
     z = new{T}()
-    z.header = MapHeader{RelSimpleNumField{T}, FqField}()
+    z.header = AbstractAlgebra.MapHeader{RelSimpleNumField{T}, FqField}()
     return z
   end
 end
@@ -52,7 +52,7 @@ end
 # S is the type of the field, T the type of the algebra and Mat the dense matrix
 # type of the base ring of either
 mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsAlgAssMor}
-  header::MapHeader{S, T}
+  header::AbstractAlgebra.MapHeader{S, T}
   mat::Mat
   t::Mat
 
@@ -70,7 +70,7 @@ mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsA
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{S, T}(K, A, _image)
+    z.header = AbstractAlgebra.MapHeader{S, T}(K, A, _image)
     return z
   end
 end
@@ -89,4 +89,3 @@ function has_preimage_with_preimage(m::NfRelToAbsAlgAssMor, a::AbstractAssociati
     return false, zero(domain(m))
   end
 end
-

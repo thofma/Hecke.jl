@@ -414,7 +414,7 @@ function coprime_num_and_den(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal)
 end
 
 mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLogLocallyFreeClassGroup}
-  header::MapHeader{S, T}
+  header::AbstractAlgebra.MapHeader{S, T}
   RtoC::FinGenAbGroupHom # Map from the ray class group of the centre to the class group
   mR::MapRayClassGroupAlg
   FinZ::AlgAssAbsOrdIdl # Conductor of the order in the maximal order contracted to the centre
@@ -457,7 +457,7 @@ mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLog
 
     _image = x -> x
 
-    m.header = MapHeader{S, T}(IdlSet, C, _image)
+    m.header = AbstractAlgebra.MapHeader{S, T}(IdlSet, C, _image)
     return m
   end
 end

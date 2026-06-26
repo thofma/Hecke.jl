@@ -55,7 +55,7 @@ const NonArchLocalFieldElemTypes = Union{PadicFieldElem, QadicFieldElem, LocalFi
 ################################################################################
 
 mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, CompletionMap{S, T}}
-  header::MapHeader{AbsSimpleNumField, S}
+  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, S}
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   prim_img::T
   inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}
@@ -66,7 +66,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
                           img::LocalFieldElem{QadicFieldElem, EisensteinLocalField},
                           inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}, precision::Int)
     z = new{LocalField{QadicFieldElem, EisensteinLocalField}, LocalFieldElem{QadicFieldElem, EisensteinLocalField}}()
-    z.header = MapHeader(K, L)
+    z.header = AbstractAlgebra.MapHeader(K, L)
     z.prim_img = img
     z.inv_img = inv_img
     z.precision = precision
@@ -78,7 +78,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
                           img::LocalFieldElem{PadicFieldElem, EisensteinLocalField},
                           inv_img::AbsSimpleNumFieldElem, precision::Int)
     z = new{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}()
-    z.header = MapHeader(K, L)
+    z.header = AbstractAlgebra.MapHeader(K, L)
     z.prim_img = img
     z.inv_img = (zero(K), inv_img)
     z.precision = precision
@@ -90,7 +90,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
                           img::QadicFieldElem,
                           inv_img::AbsSimpleNumFieldElem, precision::Int)
     z = new{QadicField, QadicFieldElem}()
-    z.header = MapHeader(K, L)
+    z.header = AbstractAlgebra.MapHeader(K, L)
     z.prim_img = img
     z.inv_img = (inv_img, zero(K))
     z.precision = precision
