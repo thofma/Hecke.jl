@@ -1005,17 +1005,13 @@ end
 function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bool=false) where {S}
   if is_lll_reduced_known
     Glll = _G
-    T = one(_G)
+    T = nothing
   else
     Glll, T = lll_gram_with_transform(_G)
   end
   max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
   @assert max > 0
-  if isone(T)
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, nothing, one(ZZ), ZZRingElem)
-  else
-    V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T, one(ZZ), ZZRingElem)
-  end
+  V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T, one(ZZ), ZZRingElem)
   min = minimum(v[2] for v in V)
   return min, [ v for v in V if v[2] == min]
 end

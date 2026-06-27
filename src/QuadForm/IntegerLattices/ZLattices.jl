@@ -1979,11 +1979,14 @@ with gram matrix
 """
 function shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   @req !check || is_definite(L) "latttice must be definite"
-  B = _shortest_vectors_span(L)
+  is_shorter, B = _shortest_vectors_span_with_is_shorter(L)
+  if !is_shorter
+    return L
+  end
   return lattice(ambient_space(L),B*basis_matrix(L);isbasis=true, check=false)
 end
 
-function _shortest_vectors_span(L::ZZLat; dolll=true)
+function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
   V = ambient_space(L)
   # doing the lll here saves us from transforming each vector
   # instead we can just transform the row span
@@ -1995,13 +1998,34 @@ function _shortest_vectors_span(L::ZZLat; dolll=true)
   else
     Glll = G
   end
-  m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
+  # minimum(diagonal(G))
+  buffer = ZZ()
+  mi = Glll[1,1]
+  ma = Glll[1,1]
+  for i in 2:nrows(Glll)
+    t = getindex!(buffer, Glll, i, i)
+    mi = set!(mi, min(t,mi))
+    ma = set!(ma, min(t,ma))
+  end
+  if mi == ma
+    # enumerate only shorter vetors
+    SV2 = __short_vectors(Glll, nothing, mi-1)
+    if isempty(SV2)
+      L.minimum = mi/d
+      return false, Glll
+    end
+    m = @inbounds minimum(i[2] for i in SV2)
+    SV = [i[1] for i in SV2 if i[2]==m]
+    m = m/d
+  else
+    m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
+  end
   L.minimum = m/d
   B = _row_span!(SV)
   if dolll
     B = mul!(B, B, T)
   end
-  return B
+  return !(ncols(B)==nrows(B) && isone(B)), B
 end
 
 @doc raw"""
