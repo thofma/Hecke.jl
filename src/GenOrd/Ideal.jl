@@ -1273,7 +1273,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1, p::RingElem) where {T}
+function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1::GenOrdIdl, p::RingElem) where {T}
 
   O = order(Ip1)
   n = degree(O)

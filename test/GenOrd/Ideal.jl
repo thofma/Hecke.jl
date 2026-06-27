@@ -477,6 +477,14 @@
       check_prime_2elem_single_above(O, ZZ(3), 2, 1)
       check_prime_2elem_single_above(O, ZZ(5), 2, 1)
 
+      # 2 is index divisor: currently gen_two is not set for these
+      # we have this test because it caught wrong dispatch of _from_algs_to_ideals
+      pd = @inferred prime_decomposition(O, ZZ(2))
+      @test length(pd) == 1
+      P, e = first(pd)
+      @test e == 2
+      @test inertia_degree(P) == 1
+
       pd = @inferred prime_decomposition(O, ZZ(7))
       @test length(pd) == 2
       for (P, e) in pd
