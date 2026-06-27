@@ -1008,6 +1008,9 @@ function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bo
     T = nothing
   else
     Glll, T = lll_gram_with_transform(_G)
+    if isone(T)
+      T = nothing
+    end 
   end
   max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
   @assert max > 0

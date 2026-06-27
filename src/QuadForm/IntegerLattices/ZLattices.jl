@@ -2005,7 +2005,7 @@ function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
   for i in 2:nrows(Glll)
     t = getindex!(buffer, Glll, i, i)
     mi = set!(mi, min(t,mi))
-    ma = set!(ma, min(t,ma))
+    ma = set!(ma, max(t,ma))
   end
   if mi == ma
     # enumerate only shorter vetors
