@@ -379,6 +379,112 @@
       test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//16)*OK))
     end
   end
+
+  @testset "Kummer-Dedekind with only locally nice generator" begin
+    @testset "over F_7(x) with non-integral defining polynomial" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - (x + 1)//x; cached = false)
+      Ofin = finite_maximal_order(L)
+      Oinf = infinite_maximal_order(L)
+
+      @test !(t in Ofin) # t has a pole at x = 0, so it is not integral there
+
+      Rfin = base_ring(Ofin)
+      pd = @inferred prime_decomposition(Ofin, Rfin(x - 1))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+        @test P.gen_two in Ofin
+      end
+      @test prod(P^e for (P, e) in pd) == ideal(Ofin, Rfin(x - 1))
+
+      @testset "non-maximal sub-order: index divisor at det denominator" begin
+        # Sub-order with basis [1, w], w = x^2*(x-1)*t. It is closed under
+        #   multiplication since w^2 = x^3*(x-1)^2*(x+1) in Rfin, hence an order.
+        # It is non-maximal at x-1 (and x): det(basis_matrix_inverse(O))
+        #   = 1//(x^2*(x-1)), so x-1 divides the *denominator* of the index,
+        #   not the numerator.
+        w = x^2*(x - 1)*t
+        M = matrix(kx, 2, 2, vcat(coordinates(one(L), Ofin), coordinates(w, Ofin)))
+        O = Hecke.GenOrd(Ofin, M, one(kx))
+        @assert !is_equation_order(O)
+
+        # O is non-maximal at p, so p IS an index divisor.
+        p = Rfin(x - 1)
+        @test is_index_divisor(O, p)
+      end
+    end
+
+    @testset "over F_7(x) with 1/x not index divisor: split" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - (x + 1)//x; cached = false)
+
+      Oinf = infinite_maximal_order(L)
+      p = base_ring(Oinf)(1//x)
+
+      @test Hecke._is_defining_polynomial_nice_at(Oinf, p)
+      @test !is_index_divisor(Oinf, p)
+
+      pd = @inferred prime_decomposition(Oinf, p)
+      @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
+
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+    end
+
+    @testset "over F_7(x) with 1/x not index divisor: inert" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - (3*x + 1)//x; cached = false)
+
+      Oinf = infinite_maximal_order(L)
+      p = base_ring(Oinf)(1//x)
+
+      @test Hecke._is_defining_polynomial_nice_at(Oinf, p)
+      @test !is_index_divisor(Oinf, p)
+
+      pd = @inferred prime_decomposition(Oinf, p)
+      @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
+      check_prime_2elem_single_above(Oinf, p, 2, 1)
+    end
+
+    @testset "over F_7(x) with 1/x not index divisor: ramified" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - 1//x; cached = false)
+
+      Oinf = infinite_maximal_order(L)
+      p = base_ring(Oinf)(1//x)
+
+      @test Hecke._is_defining_polynomial_nice_at(Oinf, p)
+      @test !is_index_divisor(Oinf, p)
+
+      pd = @inferred prime_decomposition(Oinf, p)
+      @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
+      check_prime_2elem_single_above(Oinf, p, 1, 2)
+    end
+
+    @testset "over number with non-integral defining polynomial" begin
+      x = gen(Hecke.Globals.Qx)
+      K, a = number_field(x^2 - 1//2, :a)
+      O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
+      check_prime_2elem_single_above(O, ZZ(3), 2, 1)
+      check_prime_2elem_single_above(O, ZZ(5), 2, 1)
+
+      pd = @inferred prime_decomposition(O, ZZ(7))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+    end
+  end
 end
 
 @testset "Ideals for orders over function fields" begin

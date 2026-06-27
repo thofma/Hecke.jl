@@ -867,7 +867,13 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
   for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
     facnew = map_coefficients(y -> B(preimage(mK, y)), fac, cached = false)
-    b = O(facnew(a))
+
+    # facnew(a) is integral at p, but a itself need not be globally integral,
+    #   since we only require the defining polynomial to be locally integral at p.
+    # To bring it back into O, scale by the denominator (which is coprime to p);
+    #   this is equivalent to taking the numerator directly.
+    b = numerator(facnew(a), O)
+
     # We want a P-normal two-element presentation, i.e. v_P(b) = 1.
     # Since we are in the case of p not dividing the index, we have a good candidate b = g(a).
     #
@@ -934,19 +940,39 @@ function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
   return primes
 end
 
+# For the Dedekind-Kummer criterion we need to consider the local (at p) defining polynomial f.
+# In general, we do not need the defining polynomial to be monic;
+#   we can make it monic in the base field and then consider its localization.
+# Currently, we demand that f is monic "globally" (that is, leading coefficient is 1),
+#   so it is enough to check the valuations of the denominators.
+
+# The local version of is_defining_polynomial_nice:
+#   checks whether the polynomial is monic and the coefficient valuations are non-negative.
+function _is_defining_polynomial_nice_at(O::GenOrd, p::RingElem)
+  @req parent(p) === base_ring(O) "p must lie in the coefficient ring of O"
+  f = defining_polynomial(field(O))
+  is_one(leading_coefficient(f)) || return false
+
+  R = base_ring(O)
+  for c in coefficients(f)
+    divides(denominator(c, R), p)[1] && return false
+  end
+
+  return true
+end
+
+function is_index_divisor(O::GenOrd, p::RingElem)
+  @req parent(p) === base_ring(O) "p must lie in the coefficient ring of O"
+  is_equation_order(O) && return false
+
+  num, den = integral_split(det(basis_matrix_inverse(O)), base_ring(O))
+  # if p divides the numerator, it divides the index;
+  # if p divides the denominator, the order is not maximal at p (cannot use Dedekind-Kummer)
+  return divides(num, p)[1] || divides(den, p)[1]
+end
+
 function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
-  # Fast path needs:
-  # 1. well-defined equation order: we need defining polynomial to be "nice",
-  #    that is, monic and integral
-  # 2. finite maximal order setting, since index is ill-defined for KInftyRing
-  # 3. p coprime to index
-  # Note: for non-nice polynomials the index has a denominator.
-  #       We could check divisibility by p of both numerator and denominator,
-  #       but that is a bit hacky, so we mimic number fields and instead
-  #       check that the defining polynomial is nice.
-  if !isa(base_ring(O), KInftyRing) &&
-     is_defining_polynomial_nice(O.F) &&
-     !(divides(index(O), p)[1])
+  if _is_defining_polynomial_nice_at(O, p) && !is_index_divisor(O, p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
