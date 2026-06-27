@@ -2009,6 +2009,9 @@ function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
   end
   if mi == ma
     # enumerate only shorter vetors
+    if mi==1 ||nrows(G)==1# cannot get any smaller
+      return false, Glll
+    end
     SV2 = __short_vectors(Glll, nothing, mi-1)
     if isempty(SV2)
       L.minimum = mi/d
