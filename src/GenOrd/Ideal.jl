@@ -898,6 +898,13 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
     I.splitting_type = e, f
     I.norm = p^f
     I.minimum = p
+
+    # inert prime
+    if f == degree(O)
+      I.princ_gen = O(p)
+      I.is_principal = 1
+    end
+
     result[i] = (I,e)
   end
   return result
@@ -979,11 +986,9 @@ function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = d
   end
 end
 
-# TODO: prime_dec_gen currently does NOT set gen_two
-# TODO: we should mimic number fields by adding a search for a uniformizer
 function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   Ip = pradical(O, p)
-  lp = _decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), p)
+  lp = _decomposition(O, ideal(O, p), Ip, p)
   #=z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -1021,22 +1026,90 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   return ideal(O, rad(O,p); M_in_hnf = true)
 end
 
-# WARNING: TI is unused. I guess the idea is to keep signature same as AbsNumField case
-function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, TI::GenOrdIdl{S, T}, p::RingElem) where {S, T}
+function _basis_uniformizer(P::GenOrdIdl, p::RingElem, f::Int)
+  # We have one prime above p.
+  # If we are in maximal (at p) order, at least one element of the basis
+  #   must have valuation exactly 1 (otherwise all of them are in P^2).
+  q = p^(f + 1)
+  for b in basis(P)
+    divides(norm(b), q)[1] || return b
+  end
+
+  return nothing # non-maximal at p: no certified uniformizer
+end
+
+function _idempotent_uniformizer(P::GenOrdIdl, p::RingElem, f::Int, idempotent::GenOrdElem)
+  O = order(P)
+
+  # From structure algebra decomposition, we have idempotent e_j such that
+  #   e_j = 1 mod P_j and e_j = 0 mod P_i for i != j
+  # We have v_P(u) >= 1 and v_Q(u) = 0 for Q != P above p
+  u = one(O) - idempotent
+
+  q = p^(f + 1)
+  divides(norm(u), q)[1] || return u
+
+  # v_P(u) >= 2. Try shifting by idempotent without changing the valuation
+  #   at other primes Q != P above p
+  # If we have basis element b of valuation 1 we have v_P(u + b*idempotent) = 1
+  #   and the valuation at other primes stays 0 (due to idempotent)
+  # As above: such a basis element is guaranteed in p-maximal order
+  #   but if not found, then we just won't have gen_two set
+  for b in basis(P)
+    u2 = u + idempotent*b
+    divides(norm(u2), q)[1] || return u2
+  end
+
+  return nothing
+end
+
+function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, p::RingElem) where {S, T}
   #I is an ideal lying over p
-  #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = StructureConstantAlgebra(O, Ip1, p)
+
   AtoO = pseudo_inv(OtoA)
-  ideals, _ = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
-  for j in 1:length(ideals)
-    P = ideals[j][1]
+  ideals, AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+
+  pcount = length(ideals)
+
+  # check if we have inert prime: we then have principal ideal
+  if pcount == 1 && ideals[1][1].splitting_type[2] == degree(O)
+    P = ideals[1][1]
+    P.splitting_type = 1, degree(O)
+
+    P.gen_one = p
+    P.gen_two = P.princ_gen = O(p)
+    P.is_principal = 1
+
+    ideals[1] = (P, 1)
+    return ideals
+  end
+
+  for i in 1:pcount
+    P = ideals[i][1]
     f = P.splitting_type[2]
+
+    # find uniformizer (gen_two)
+    P_uni = if pcount == 1
+      _basis_uniformizer(P, p, f)
+    else
+      idem  = AtoO(AA[i][2](one(AA[i][1])))
+      _idempotent_uniformizer(P, p, f, idem)
+    end
+
+    # if we have found uniformizer: set normal representation
+    if P_uni !== nothing
+      P.gen_one = p
+      P.gen_two = P_uni
+    end
+
     e = valuation(ideal(O, p), P)
     P.splitting_type = e, f
-    ideals[j] = (P,e)
+    ideals[i] = (P, e)
   end
+
   return ideals
 end
 

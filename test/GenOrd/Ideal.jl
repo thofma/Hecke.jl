@@ -155,7 +155,7 @@
       for (P, e) in pd
         @test e == 1
         f_expected = (norm(P) == 1//x ? 1 : 2)
-        @test inertia_degree(P) == f_expected
+        check_prime_2elem(P, f_expected, 1)
       end
 
       let (L, t) = function_field(y^3 - x - 1; cached = false),
@@ -180,11 +180,7 @@
           check_prime_2elem(P, 1, 1)
         end
 
-        pd = @inferred prime_decomposition(Oinf, Oinf.R(1//x))
-        @test length(pd) == 1
-        P, e = first(pd)
-        @test e == 3
-        @test inertia_degree(P) == 1
+        check_prime_2elem_single_above(Oinf, Oinf.R(1//x), 1, 3)
       end
     end
 
@@ -224,6 +220,16 @@
       # <x + 1> = <x + 1, x*y> * <x + 1, x*y + 1>^2
       pd = @inferred prime_decomposition(Ofin, Ofin.R(x + 1))
       @test length(pd) == 2
+      for (P, e) in pd
+        if e == 1
+          check_prime_2elem(P, 1, 1)
+        else
+          check_prime_2elem(P, 1, 2)
+        end
+      end
+
+      # x^2 + 2 is inert
+      check_prime_2elem_single_above(Ofin, Ofin.R(x^2 + 2), 3, 1)
     end
 
     @testset "containment" begin
@@ -380,7 +386,11 @@
     end
   end
 
-  @testset "Kummer-Dedekind with only locally nice generator" begin
+  # We have plenty of tests for usual prime decomposition above
+  # In here we test "hard" cases:
+  # - Kummer-Dedekind with only locally nice generator
+  # - index divisor (or not-nice polynomial) finding normal two generators form
+  @testset "Prime Decomposition" begin
     @testset "over F_7(x) with non-integral defining polynomial" begin
       kx, x = rational_function_field(GF(7), :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
@@ -400,11 +410,13 @@
       end
       @test prod(P^e for (P, e) in pd) == ideal(Ofin, Rfin(x - 1))
 
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
+
       @testset "non-maximal sub-order: index divisor at det denominator" begin
         # Sub-order with basis [1, w], w = x^2*(x-1)*t. It is closed under
         #   multiplication since w^2 = x^3*(x-1)^2*(x+1) in Rfin, hence an order.
         # It is non-maximal at x-1 (and x): det(basis_matrix_inverse(O))
-        #   = 1//(x^2*(x-1)), so x-1 divides the *denominator* of the index,
+        #   = 1//(x^2*(x-1)), so both x and x-1 divide the *denominator* of the index,
         #   not the numerator.
         w = x^2*(x - 1)*t
         M = matrix(kx, 2, 2, vcat(coordinates(one(L), Ofin), coordinates(w, Ofin)))
@@ -412,8 +424,15 @@
         @assert !is_equation_order(O)
 
         # O is non-maximal at p, so p IS an index divisor.
-        p = Rfin(x - 1)
-        @test is_index_divisor(O, p)
+        for p in (Rfin(x - 1), Rfin(x))
+          @test is_index_divisor(O, p)
+          pd = @inferred prime_decomposition(O, p)
+          @test !isempty(pd)
+          for (P, _) in pd
+            @test is_prime(P)
+            @test O(p) in P
+          end
+        end
       end
     end
 
@@ -436,6 +455,12 @@
         @test e == 1
         check_prime_2elem(P, 1, 1)
       end
+
+      Ofin = finite_maximal_order(L)
+      p = base_ring(Ofin)(x)
+      @test !Hecke._is_defining_polynomial_nice_at(Ofin, p)
+      @test is_index_divisor(Ofin, p)
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
     end
 
     @testset "over F_7(x) with 1/x not index divisor: inert" begin
@@ -452,6 +477,12 @@
       pd = @inferred prime_decomposition(Oinf, p)
       @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
       check_prime_2elem_single_above(Oinf, p, 2, 1)
+
+      Ofin = finite_maximal_order(L)
+      p = base_ring(Ofin)(x)
+      @test !Hecke._is_defining_polynomial_nice_at(Ofin, p)
+      @test is_index_divisor(Ofin, p)
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
     end
 
     @testset "over F_7(x) with 1/x not index divisor: ramified" begin
@@ -468,6 +499,12 @@
       pd = @inferred prime_decomposition(Oinf, p)
       @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
       check_prime_2elem_single_above(Oinf, p, 1, 2)
+
+      Ofin = finite_maximal_order(L)
+      p = base_ring(Ofin)(x)
+      @test !Hecke._is_defining_polynomial_nice_at(Ofin, p)
+      @test is_index_divisor(Ofin, p)
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
     end
 
     @testset "over number with non-integral defining polynomial" begin
@@ -477,13 +514,8 @@
       check_prime_2elem_single_above(O, ZZ(3), 2, 1)
       check_prime_2elem_single_above(O, ZZ(5), 2, 1)
 
-      # 2 is index divisor: currently gen_two is not set for these
-      # we have this test because it caught wrong dispatch of _from_algs_to_ideals
       pd = @inferred prime_decomposition(O, ZZ(2))
-      @test length(pd) == 1
-      P, e = first(pd)
-      @test e == 2
-      @test inertia_degree(P) == 1
+      check_prime_2elem_single_above(O, ZZ(2), 1, 2)
 
       pd = @inferred prime_decomposition(O, ZZ(7))
       @test length(pd) == 2
@@ -491,6 +523,22 @@
         @test e == 1
         check_prime_2elem(P, 1, 1)
       end
+    end
+
+    @testset "common index divisor (Dedekind's cubic)" begin
+      # x^3 - x^2 - 2x - 8: the generator is nice, yet 2 divides the index of
+      #   every element (essential index divisor) and splits P1*P2*P3
+      x = gen(Hecke.Globals.Qx)
+      K, a = number_field(x^3 - x^2 - 2*x - 8, :a)
+      O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
+      @test is_index_divisor(O, ZZ(2))
+
+      pd = @inferred prime_decomposition(O, ZZ(2))
+      @test length(pd) == 3
+      for (P, e) in pd
+        check_prime_2elem(P, 1, 1)
+      end
+      @test prod(P^e for (P, e) in pd) == Hecke.GenOrdIdl(O, ZZ(2))
     end
   end
 end
