@@ -42,7 +42,7 @@ function short_vectors_with_condition(T::Type,
                                       search_fixed_vectors::Bool=true,
                                       search_invariant_subspace::Bool=false,
                                       use_dual::Bool=false, sort::Symbol=:rank)
-  _data = _short_vectors_with_condition_preprocessing(L, use_dual; sort)
+  _data = _short_vectors_with_condition_preprocessing(L; use_dual, sort)
   return _short_vectors_with_condition(T, _data...; search_fixed_vectors, search_invariant_subspace)
 end
 
@@ -98,7 +98,7 @@ end
 #
 ########################################################################################
 
-function _short_vectors_with_condition_preprocessing(L::ZZLat, use_dual::Bool=false; sort=:rank)
+function _short_vectors_with_condition_preprocessing(L::ZZLat; use_dual::Bool=false, sort=:rank)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
   return _short_vectors_with_condition_preprocessing(L, fundamental_roots, weyl_vector, fixed_space, isotypic_coinvariant_space, sort, use_dual)
@@ -132,15 +132,21 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   m = length(successive_sublattices)
   if sort == :rank
     # don't touch the first one because it consists of the fixed part, i.e. the seeds
-    sort!(view(successive_sublattices,2:m);by=rank);
+    view_successive = view(successive_sublattices,2:m)
+    p = sortperm(view_successive; by=rank)
+    p = append!([1], 1 .+ p)
+    pinv = invperm(p)
+    sort!(view_successive;by=rank)
+    no_split = pinv[1:1+length(R_cofix)]
   elseif sort == :root
     # don't touch the first one because it consists of the fixed part, i.e. the seeds
     # do the root part first
     k = 1 + length(R_cofix)
     sort!(view(successive_sublattices,k:m);by=rank);
+    no_split = collect(1:k)
   end
   # Compute L_1,  ... , L_n
-  projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)
+  projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual, no_split)
 
   m = length(successive_sublattices)
   B = reduce(vcat, projL)
@@ -162,7 +168,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
 end
 
 
-function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_further::Bool=false)
+function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_further::Bool=false, no_split=Int[])
   m = length(successive_sublattices)
   rkLL = rank.(successive_sublattices)
   gramLZZ, _ = _integral_split_gram(L)
@@ -179,6 +185,7 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_furt
   projL_gram = Vector{ZZMatrix}(undef, m) # lll reduced
   projection_ranges = Vector{UnitRange{Int64}}(undef, m)
   denoms = Vector{ZZRingElem}(undef, m)
+  splitted_further=false
   for i in 1:m
     projection_ranges[i] = r1:r2
     Si = view(_hnf_integral(view(Fi, :, r1:r2), :upper_right), 1:1+r2-r1,:)*view(F, r1:r2, :)
@@ -189,17 +196,18 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_furt
     Gi = divexact!(SZ*gramLZZ*transpose(SZ),di)
     if i > 1
       Gi, U = lll_gram_with_transform(Gi) # inplace variant caused segfault problems
-      mul!(SZ, U, SZ)
+      SZ = mul!(SZ, U, SZ)
       Si = set!(Si,SZ)
-      mul!(Si, QQ(1,di))
+      Si = mul!(Si, QQ(1,di))
     end
     if split_further
       # this part is not optimized, turned off by default
-      if rkLL[i] > 2 && i > 1
+      if rkLL[i] > 1 && !(i in no_split)
         Li = lattice(V, Si; isbasis=true, check=false)
         set_attribute!(Li,:_integral_split_gram=>(Gi, ZZ(1)))
         set_attribute!(Li,:is_lll_reduced=>true)
         Li_split = _successive_sublattices(Li; use_dual=false)
+        splitted_further = splitted_further || length(Li_split)>1
         append!(successive_sublattices1, Li_split)
       else
         push!(successive_sublattices1, successive_sublattices[i])
@@ -212,7 +220,8 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_furt
       r2 += rkLL[i+1]
     end
   end
-  if split_further
+  if splitted_further
+    sort!(view(successive_sublattices1, 2:length(successive_sublattices1)); by=rank)
     return _grams_proj(L, successive_sublattices1;split_further=false)
   end
   return projL, projL_gram, projection_ranges, denoms, successive_sublattices
@@ -469,6 +478,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
     end
     short_vectors1 = short_vectors2
     @vprintln :ShortVec 2 "$(sum(length(i) for i in values(short_vectors1);init=0)) vectors at stage i=$i"
+
+    @vprintln :ShortVec 2 "$(length(short_vectors1)) buckets"
   end
   @hassert :ShortVec 1 allunique(reduce(vcat, values(short_vectors1)))
   search_invariant_subspace = search_invariant_subspace && sum(length(v) for v in values(short_vectors1); init=0) > 100 # Todo: heuristic needs tuning
@@ -1132,11 +1143,11 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
     (vfix_buf, sq) in target_12 || continue
     if use_projections
       i3 = dot!(v, gram2, v, tmp_gram2_v)
+       # if we take vector sums, we use the bad vectors for the sums and discard them after
+       search_fixed_vectors || (vfix_buf, sq, i3) in target_123 || continue
     else
       i3 = 0
     end
-    # if we take vector sums, we use the bad vectors for the sums and discard them after
-    search_fixed_vectors || (vfix_buf, sq, i3) in target_123 || continue
     vfix = copy(vfix_buf)
     k = (vfix, sq, i3)
     push!(get!(D, k, Vector{Int}[]), copy(v))
