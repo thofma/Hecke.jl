@@ -963,6 +963,12 @@ end
 # But, for example, basis_matrix or inv used in colon have a triangular matrix
 #   and in this case general matrix inv is immediate (back substitution essentially)
 #   while pseudo_inv needs to do some work.
+#
+# Exception: over QQ, inv is FLINT's fmpq_mat_inv, which already clears
+# denominators and eliminates fraction-free in C. The explicit clearing below
+# would only add Julia-level lcm/coercion overhead, so delegate to inv there.
+_fraction_free_inv(T::QQMatrix) = inv(T)
+
 function _fraction_free_inv(T::MatElem)
   @req nrows(T) == ncols(T) "matrix must be square"
   n = nrows(T)
