@@ -107,8 +107,8 @@ function assure_has_numerator_and_denominator(a::GenOrdFracIdl{S, T}) where {S, 
     error("Not a valid fractional ideal")
   end
 
-  B, d = integral_split(basis_matrix(a, copy = false), coefficient_ring(order(a)))
-  a.num = GenOrdIdl(order(a), B)
+  B, d = integral_split(basis_matrix(a; copy = false), coefficient_ring(order(a)))
+  a.num = ideal(order(a), B)
   a.den = d::elem_type(T)
   return nothing
 end
@@ -151,6 +151,8 @@ Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 
 
 function Base.prod(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
   A = numerator(a; copy = false)*numerator(b; copy = false)
   return GenOrdFracIdl(A, denominator(a; copy = false)*denominator(b; copy = false))
 end
@@ -160,22 +162,24 @@ function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
 end
 
 function Base.:(+)(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
   den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
   d = lcm(den_a, den_b)
 
-  I  = order(a)(divexact(d, den_a)) * numerator(a; copy=false)
-  J  = order(b)(divexact(d, den_b)) * numerator(b; copy=false)
-
+  I = _ideal_by_scaling_matrix(divexact(d, den_a), numerator(a; copy=false))
+  J = _ideal_by_scaling_matrix(divexact(d, den_b), numerator(b; copy=false))
   return GenOrdFracIdl(I + J, d)
 end
 
 function Base.intersect(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
   den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
   d = lcm(den_a, den_b)
 
-  I  = order(a)(divexact(d, den_a)) * numerator(a; copy=false)
-  J  = order(b)(divexact(d, den_b)) * numerator(b; copy=false)
-
+  I = _ideal_by_scaling_matrix(divexact(d, den_a), numerator(a; copy=false))
+  J = _ideal_by_scaling_matrix(divexact(d, den_b), numerator(b; copy=false))
   return GenOrdFracIdl(intersect(I, J), d)
 end
 
@@ -267,8 +271,18 @@ function Base.:*(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T}
 end
 
 function Base.:*(x::GenOrdElem, I::GenOrdFracIdl)
-  @req parent(x) === order(I) "Element and ideal must belong to the same order"
-  return GenOrdIdl(parent(x), x) * I
+  O = order(I)
+  @req parent(x) === O "Element and ideal must belong to the same order"
+
+  if _is_in_base_field(x)
+    c, den = integral_split(coeff(data(x), 0), base_ring(O))
+    @assert is_one(den)
+
+    num = _ideal_by_scaling_matrix(c, numerator(I; copy = false))
+    return GenOrdFracIdl(num, denominator(I; copy = false))
+  end
+
+  return ideal(O, x) * I
 end
 
 function Base.:*(x::FieldElem, O::GenOrd)

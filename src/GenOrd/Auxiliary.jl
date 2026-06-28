@@ -38,13 +38,22 @@ function representation_matrix(a::Generic.FunctionFieldElem)
 end
 
 """
-    hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false)
+    hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false, shape::Symbol = :upperright)
 
 Return the `hnf` of `vcat(M, identity_matrix(parent(d), ncols(M)))`
 if `is_prime` is set, then instead of an `hnf` internally a `rref` over the
 residue field modulo `d` is used.
+For shape either :upperright or :lowerleft can be specified
 """
-function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
+function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false, shape::Symbol = :upperright) where {T}
+  @assert shape == :upperright || shape == :lowerleft
+  if shape == :lowerleft
+    h = hnf_modular(reverse_cols(M), d, is_prime, :upperright)
+    reverse_cols!(h)
+    reverse_rows!(h)
+    return h
+  end
+
   # make sure to pin the type of H: the result of both branches has typeof(M)
   #   but compiler cannot infer it
   H::typeof(M) = if is_prime

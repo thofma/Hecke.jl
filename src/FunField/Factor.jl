@@ -1,12 +1,8 @@
 module FactorFF
 using ..Hecke
 
-function _is_separable(F::Generic.FunctionField)
-  return is_separable(defining_polynomial(F))
-end
-
 function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem})
-  @assert !_is_separable(F)
+  @assert !Hecke._is_separable(F)
   f = defining_polynomial(F)
   K = base_ring(f)
   # K = k(t)
@@ -106,12 +102,6 @@ end
 
 # squarefree factorization a la Trager-Gianni
 
-function is_separable(f::PolyRingElem{<:FieldElem})
-  # Bourbaki, N. (2003). *Algebra II. Chapters 4--7*. Springer-Verlag, Berlin.
-  # Chapter 5, §7, No. 2.
-  return is_unit(gcd(f, derivative(f)))
-end
-
 function _induced_derivation(a::Generic.FunctionFieldElem)
   # Given F/k(T), extend the non-trivial deriviation from k(T) to F
   # see Gianni-Trager, Prop. 11.
@@ -131,7 +121,7 @@ function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return Hecke.Nemo._factor_squarefree_char_0(f)
   end
-  if is_separable(defining_polynomial(base_ring(f)))
+  if Hecke._is_separable(base_ring(f))
     return _factor_squarefree_sep_ext(f)
   end
   FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
@@ -142,7 +132,7 @@ function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
 end
 
 function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem})
-  @req is_separable(defining_polynomial(base_ring(f))) "Defining polynomial must be separable"
+  @req Hecke._is_separable(base_ring(f)) "Defining polynomial must be separable"
   D = Dict{typeof(f), Int}()
   un = leading_coefficient(f)
   f = divexact(f, leading_coefficient(f))
@@ -178,7 +168,7 @@ function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
 end
 
 function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
-  if !_is_separable(base_ring(f))
+  if !Hecke._is_separable(base_ring(f))
     FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
     return Hecke.AbstractAlgebra.Generic._transport_factor(factor, f, FtoFF, FFtoF)
   end

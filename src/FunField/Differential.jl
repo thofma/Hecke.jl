@@ -15,7 +15,7 @@ Return the differential df.
 """
 function differential(f::T) where {T <: Generic.FunctionFieldElem}
   F = parent(f)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  @req _is_separable(F) "Currently assumes separable extension"
   y = gen(F)
 
   # our polynomials are polynomial in y with coefficients polynomials in x
@@ -31,21 +31,29 @@ function differential(f::T) where {T <: Generic.FunctionFieldElem}
     return evaluate(map_coefficients(F, p), y)
   end
 
-  g_poly = numerator(F)
-  dg_dx     = toF(map_coefficients(derivative, g_poly))
-  dg_dy     = toF(derivative(g_poly))
-  df_dx_dy  = dg_dx // dg_dy
-
   fnum_poly, fden_poly = numerator(f), denominator(f)
-  fnum      = toF(fnum_poly)
-  dfnum_dx  = toF(map_coefficients(derivative, fnum_poly))
-  dfnum_dy  = toF(derivative(fnum_poly))
-  # denominator is already in k[x]
-  fden      = F(fden_poly)
-  dfden_dx  = F(derivative(fden_poly))
+  dfnum_dy_poly = derivative(fnum_poly)
+  fnum          = toF(fnum_poly)
+  dfnum_dx      = toF(map_coefficients(derivative, fnum_poly))
+
+  # denominator is already in k[x] (toF is not needed, do the direct coercion)
+  fden          = F(fden_poly)
+  dfden_dx      = F(derivative(fden_poly))
 
   df_dx = (dfnum_dx * fden - fnum * dfden_dx) // fden^2
-  df = df_dx - (dfnum_dy // fden) * df_dx_dy
+
+  df = df_dx
+  # if f has no y dependence, the whole second term vanishes: compute only if needed
+  if !is_zero(dfnum_dy_poly)
+    dfnum_dy  = toF(dfnum_dy_poly)
+
+    g_poly = numerator(F)
+    dg_dx     = toF(map_coefficients(derivative, g_poly))
+    dg_dy     = toF(derivative(g_poly))
+    df_dx_dy  = dg_dx // dg_dy
+
+    df -= (dfnum_dy // fden) * df_dx_dy
+  end
 
   return FunFldDiff(df)
 end
