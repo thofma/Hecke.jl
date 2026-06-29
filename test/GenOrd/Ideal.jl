@@ -20,8 +20,8 @@
   function check_ideal_norm_min(I, expected_norm, expected_min)
     @test istril(basis_matrix(I))
     @test divides(norm(I), minimum(I))[1]
-    @test expected_norm == @inferred norm(I)
-    @test expected_min == @inferred minimum(I)
+    @test @inferred(norm(I)) == Hecke._make_canonical_in(order(I), expected_norm)
+    @test @inferred(minimum(I)) == Hecke._make_canonical_in(order(I), expected_min)
   end
 
   function check_prime_2elem(P, expected_f, expected_e)
@@ -77,6 +77,15 @@
     @test Hecke.colon(I, U) == fractional_ideal(I)
     @test one(L) in Hecke.colon(I, I)
     @test Hecke.colon(U, I) * I == U
+  end
+
+  function test_frac_ideal_inv(O, I_list)
+    U = ideal(O, O(1))
+    for I in I_list
+      @test inv(I) == colon(U, I)     # identical to the old colon-based inv
+      @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
+      @test inv(inv(I)) == I
+    end
   end
 
   test_colon_common(O, p) = test_colon_common_ideal(O, ideal(O, O(p)))
@@ -186,32 +195,65 @@
     @testset "colon" begin
       test_colon_common(Ofin, x^4 + x + 1)
     end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
   end
 
   @testset "over Q(x) with non-monic defining polynomial" begin
     kx, x = rational_function_field(QQ, :x; cached = false)
     ky, y = polynomial_ring(kx, :y; cached = false)
-    L, t = function_field(1//2*y^3 - 1//3*x^3 - 1; cached = false)
+    L, t = function_field(x^3 + x^2 + x*y^3 - x*y^2 + y^2 - y; cached = false)
 
     Ofin = finite_maximal_order(L)
     Oinf = infinite_maximal_order(L)
-    @assert !is_equation_order(Ofin)
 
-    @testset "norm/min: finite maximal order" begin
-      a = Ofin(x^3 + y^2)
-      I = ideal(Ofin, a)
-      check_ideal_norm_min(I, norm(a), norm(a)) # x^3 + y^2 is irreducible
+    @testset "norm/min" begin
+      I = ideal(Ofin, x*t)
+      check_ideal_norm_min(I, x^5 + x^4, x^4 + x^3)
 
-      I = ideal(Ofin, x*y, Ofin(x^2))
-      check_ideal_norm_min(I, x^3, x)
+      I = ideal(Oinf, 3//(x^2*t^2))
+      check_ideal_norm_min(I, 1//x^10, 1//x^4)
     end
 
-    @testset "norm/min: infinite maximal order" begin
-      I = ideal(Oinf, 3//x^2)
-      check_ideal_norm_min(I, 27//x^6, 1//x^2)
+    @testset "prime decomposition" begin
+      # <x + 1> = <x + 1, x*y> * <x + 1, x*y + 1>^2
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x + 1))
+      @test length(pd) == 2
+    end
 
-      I = ideal(Oinf, L(x^2)//t^3)
-      check_ideal_norm_min(I, norm(Oinf(L(x^2)//t^3)), 1//x)
+    @testset "containment" begin
+      test_containment_common(Ofin, x^2 + x*t + 1, x*t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^2 + 2)
+    end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
+  end
+
+  @testset "over Q(x)" begin
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    L, t = function_field(y^2 - x^3 - x^2; cached = false)
+
+    Ofin = finite_maximal_order(L)
+    Oinf = infinite_maximal_order(L)
+
+    @testset "norm/min: finite maximal order" begin
+      I = ideal(Ofin, L(y)//L(x))
+      check_ideal_norm_min(I, x + 1, x + 1)
+      @test is_prime(I)
     end
 
     @testset "containment" begin
@@ -220,6 +262,13 @@
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 1)
+    end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
     end
   end
 
@@ -275,6 +324,10 @@
     @testset "colon" begin
       test_colon_common(OK, ZZ(3))
     end
+
+    @testset "fractional_ideal inv" begin
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
+    end
   end
 
   @testset "over number field localized at prime" begin
@@ -297,6 +350,7 @@
 
       test_containment_common(OK, R(7), R(5))
       test_colon_common_ideal(OK, ideal(OK, R(7), OK(a - 3)))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//49)*OK))
     end
 
     @testset "inert (p = 3)" begin
@@ -308,6 +362,7 @@
 
       test_containment_common(OK, R(3), R(5))
       test_colon_common(OK, R(3))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//3)*OK))
     end
 
     @testset "ramified (p = 2)" begin
@@ -321,6 +376,7 @@
 
       test_containment_common(OK, R(2), R(5))
       test_colon_common_ideal(OK, ideal(OK, R(2), OK(a)))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//16)*OK))
     end
   end
 end
@@ -414,4 +470,55 @@ let
   @test hash(a*O) == hash(a*O)
 
   @test a * O + a * O == a * O
+end
+
+let # 2266
+  K = algebraic_closure(QQ)
+  Kx, x = rational_function_field(K,"x")
+  KxY, Y = polynomial_ring(Kx, "Y")
+  P = Y^2 - x^3 - x^2
+  kC, y = function_field(P, "y")
+  OC = finite_maximal_order(kC)
+  I = ideal(OC(x),OC(y))
+  lp = factor(I)
+  @test all(is_prime(p) for (p,_) in lp)
+  @test prod(p^e for (p, e) in lp) == I
+end
+
+@testset "Scaling ideals in function field by base-field elements" begin
+  kx, x = rational_function_field(GF(5), :x; cached = false)
+  ky, y = polynomial_ring(kx, :y; cached = false)
+  F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+
+  function check_scaling(I, c)
+    O = order(I)
+    cI = @inferred c*I
+    @test order(cI) === O
+    @test cI == I*c
+    @test inv(c)*cI == I
+    @test cI == @inferred (F(c)*O)*I
+    @test basis(cI) == [F(c)*b for b in basis(I)]
+  end
+
+  Ofin = finite_maximal_order(F)
+  Oinf = infinite_maximal_order(F)
+
+  for (O, c) in ((Ofin, x), (Ofin, x^2+1), (Ofin, x//(x + 1)),
+                 (Oinf, 1//x), (Oinf, 1//(x^2+1)), (Oinf, (x + 1)//x))
+    # a*O is GenOrdFracIdl
+    check_scaling(a*O, c)
+  end
+
+  # check multiplication of "integral" ideal by the scalar in the base field
+  I0 = ideal(Ofin, Ofin(x^2 + 1))
+  @test @inferred(x*I0) isa GenOrdFracIdl
+  @test @inferred((x//(x + 1))*I0) isa GenOrdFracIdl
+  @test @inferred(x*I0) == @inferred(x*fractional_ideal(I0))
+
+  # x has a pole at infinity so we cannot construct (x)_inf directly
+  #   yet scaling must work
+  I = @inferred a*Oinf
+  @test_throws ErrorException Oinf(x)
+  @test_throws ErrorException ideal(Oinf, x) * I
+  check_scaling(I, x)
 end

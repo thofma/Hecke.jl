@@ -1,6 +1,7 @@
 include("FunField/DegreeLocalization.jl")
-include("FunField/Divisor.jl")
 include("FunField/Differential.jl")
+include("FunField/Divisor.jl")
 include("FunField/Factor.jl")
 include("FunField/HessQR.jl")
 include("FunField/IntClsZx.jl")
+include("FunField/RiemannRoch.jl")
