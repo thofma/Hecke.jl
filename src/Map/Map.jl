@@ -1,3 +1,11 @@
+# lowercase constructors, will replace old versions that were imported from AA
+# old version used different argument order:
+# AA: (fun, D, C) New: (D, C, f[, g])
+# Once this is changed in AA, we can import it and remove this
+
+map_from_func(D, C, f) = MapFromFunc(D, C, f)
+map_from_func(D, C, f, g) = MapFromFunc(D, C, f, g)
+
 
 #function image_func(M::Map)
 #  return M.header.image
