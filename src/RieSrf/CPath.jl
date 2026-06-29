@@ -10,7 +10,7 @@ export CPath
 
 export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation,
 start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point,
-get_t_of_closest_d_point, evaluate_d, integration_scheme
+get_t_of_closest_d_point, evaluate_d
 
 ################################################################################
 #
