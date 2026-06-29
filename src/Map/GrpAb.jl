@@ -11,8 +11,8 @@
 ################################################################################
 
 mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
-                                     AbstractAlgebra.HeckeMap, FinGenAbGroupHom}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, FinGenAbGroup}
+                                     HeckeMap, FinGenAbGroupHom}
+  header::MapHeader{FinGenAbGroup, FinGenAbGroup}
 
   map::ZZMatrix
   imap::ZZMatrix
@@ -21,7 +21,7 @@ mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
 
   function FinGenAbGroupHom(G::FinGenAbGroup)
     r = new()
-    r.header = AbstractAlgebra.MapHeader(G, G)
+    r.header = MapHeader(G, G)
     r.map = identity_matrix(ZZ, ngens(G))
     r.imap = identity_matrix(ZZ, ngens(G))
     return r
@@ -29,14 +29,14 @@ mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
 
   function FinGenAbGroupHom(From::FinGenAbGroup, To::FinGenAbGroup, M::ZZMatrix)
     r = new()
-    r.header = AbstractAlgebra.MapHeader(From, To)
+    r.header = MapHeader(From, To)
     r.map = M
     return r
   end
 
   function FinGenAbGroupHom(From::FinGenAbGroup, To::FinGenAbGroup, M::ZZMatrix, Mi::ZZMatrix)
     r = new()
-    r.header = AbstractAlgebra.MapHeader(From, To)
+    r.header = MapHeader(From, To)
     r.map = M
     r.imap = Mi
     return r
@@ -49,7 +49,7 @@ mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
   function FinGenAbGroupHom(M::T) where T <: Map{FinGenAbGroup, FinGenAbGroup}
     r = new()
     D = domain(M)
-    r.header = AbstractAlgebra.MapHeader(D, codomain(M))
+    r.header = MapHeader(D, codomain(M))
     if ngens(D) == 0
       r.map = matrix(ZZ, 0, ngens(codomain(M)), ZZRingElem[])
     else
@@ -96,15 +96,15 @@ end
 #
 ################################################################################
 
-@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{FinGenAbGroup, S, AbstractAlgebra.HeckeMap, FiniteFieldMultGrpMap{S, T}}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, S}
+@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
+  header::MapHeader{FinGenAbGroup, S}
   domain::FinGenAbGroup
   codomain::S
   generator::T
 
   function FiniteFieldMultGrpMap{S, T}(G::FinGenAbGroup, F::S, generator::T, disc_log::Function) where {S, T}
     z = new{S, T}()
-    z.header = AbstractAlgebra.MapHeader(G, F)
+    z.header = MapHeader(G, F)
     z.domain = G
     z.codomain = F
     z.header.preimage = disc_log
@@ -198,8 +198,8 @@ codomain(f::AbToNfMultGrp) = f.codomain
 ################################################################################
 
 # S is the type of the order (the codomain) and T is the elem_type of the order
-mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, AbstractAlgebra.HeckeMap, GrpAbFinGenToAbsOrdMap}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, S}
+mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, GrpAbFinGenToAbsOrdMap}
+  header::MapHeader{FinGenAbGroup, S}
   generators::Vector{T}
   discrete_logarithm::Function
   modulus # this can be anything, for which powermod(::T, ::ZZRingElem, modulus) is defined
@@ -235,7 +235,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, AbstractAlg
       return G(disc_log(a))
     end
 
-    z.header = AbstractAlgebra.MapHeader(G, O, _image, _preimage)
+    z.header = MapHeader(G, O, _image, _preimage)
     z.generators = generators
     z.discrete_logarithm = disc_log
     return z
@@ -279,8 +279,8 @@ const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, 
 #
 ################################################################################
 
-mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, AbsOrdQuoRing{S, T}, AbstractAlgebra.HeckeMap, GrpAbFinGenToAbsOrdQuoRingMultMap}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, AbsOrdQuoRing{S, T}}
+mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, AbsOrdQuoRing{S, T}, HeckeMap, GrpAbFinGenToAbsOrdQuoRingMultMap}
+  header::MapHeader{FinGenAbGroup, AbsOrdQuoRing{S, T}}
   generators::Vector{AbsOrdQuoRingElem{S, T, U}}
   discrete_logarithm::Function
 
@@ -312,7 +312,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, 
     end
 
     z = new{S, T, U}()
-    z.header = AbstractAlgebra.MapHeader(G, Q, _image, _preimage)
+    z.header = MapHeader(G, Q, _image, _preimage)
     z.generators = generators
     z.discrete_logarithm = disc_log
     return z
@@ -336,7 +336,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, 
 
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(G::FinGenAbGroup, Q::AbsOrdQuoRing{S, T}, exp::Function, disc_log::Function) where {S, T, U}
     z = new{S, T, U}()
-    z.header = AbstractAlgebra.MapHeader(G, Q, exp, disc_log)
+    z.header = MapHeader(G, Q, exp, disc_log)
     return z
   end
 end

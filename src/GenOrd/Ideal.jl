@@ -1023,12 +1023,12 @@ end
 #
 ################################################################################
 
-mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, AbstractAlgebra.HeckeMap, Any}#GenOrdToAlgAssMor}
-  header::AbstractAlgebra.MapHeader
+mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, Any}#GenOrdToAlgAssMor}
+  header::MapHeader
 
   function GenOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
-    z.header = AbstractAlgebra.MapHeader(O, A, _image, _preimage)
+    z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
 end
@@ -1047,12 +1047,12 @@ function Hecke.characteristic(R::EuclideanRingResidueField{<:Hecke.GenOrdElem{<:
   return characteristic(function_field(base_ring(R)))
 end
 
-mutable struct GenOrdToFqField{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, Any}#GenOrdToFqField}
-  header::AbstractAlgebra.MapHeader
+mutable struct GenOrdToFqField{S, T} <: Map{S, T, HeckeMap, Any}#GenOrdToFqField}
+  header::MapHeader
 
   function GenOrdToFqField{S, T}(O::S, A::T, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
-    z.header = AbstractAlgebra.MapHeader(O, A, _image, _preimage)
+    z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
 end

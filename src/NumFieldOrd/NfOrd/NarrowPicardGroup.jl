@@ -1,5 +1,5 @@
-#mutable struct MapNarrowPicardGrp{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, MapNarrowPicardGrp}
-#  header::AbstractAlgebra.MapHeader{S, T}
+#mutable struct MapNarrowPicardGrp{S, T} <: Map{S, T, HeckeMap, MapNarrowPicardGrp}
+#  header::MapHeader{S, T}
 #
 #  picard_group # picard group map of order
 #  right_transform::ZZMatrix

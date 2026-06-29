@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, AbstractAlgebra.HeckeMap, LocalFieldMor}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor}
+  header::MapHeader{S, T}
   image_data::U
   inverse_data::V
   absolute_basis::Vector{W}
@@ -19,11 +19,11 @@ mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, AbstractAlgebra.HeckeMa
 
   function LocalFieldMor(K::S, L::T) where {S <: Union{PadicField, QadicField, LocalField}, T <: Union{PadicField, QadicField, LocalField}}
     z = new{typeof(K), typeof(L), map_data_type(K, L), map_data_type(L, K), elem_type(K)}()
-    z.header = AbstractAlgebra.MapHeader(K, L)
+    z.header = MapHeader(K, L)
     return z
   end
 
-  function LocalFieldMor{S, T, U, V}(h::AbstractAlgebra.MapHeader{S, T}, i::U, p::V) where {S, T, U, V}
+  function LocalFieldMor{S, T, U, V}(h::MapHeader{S, T}, i::U, p::V) where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}(h, i, p)
     return z
   end
@@ -36,7 +36,7 @@ end
 ################################################################################
 
 function id_hom(K::T) where T <: Union{LocalField, QadicField}
-  z = LocalFieldMor{typeof(K), typeof(K), map_data_type(K, K), map_data_type(K, K)}(AbstractAlgebra.MapHeader(K, K), map_data(K, K, true), map_data(K, K, true))
+  z = LocalFieldMor{typeof(K), typeof(K), map_data_type(K, K), map_data_type(K, K)}(MapHeader(K, K), map_data(K, K, true), map_data(K, K, true))
 end
 
 ################################################################################
@@ -64,7 +64,7 @@ function hom(K::S, L::T, x...; inverse = nothing,
                                check::Bool = true,
                                compute_inverse = false) where {S <: Union{LocalField, QadicField},
                                                                T <: Union{LocalField, QadicField}}
-  header = AbstractAlgebra.MapHeader(K, L)
+  header = MapHeader(K, L)
 
   # Check if data defines a morphism
   image_data = map_data(K, L, x..., check = check)
@@ -413,7 +413,7 @@ end
 function inv(f::LocalFieldMor{S, T}) where {S, T}
   _assure_has_inverse_data(f)
   pr = f.inverse_data
-  hd = AbstractAlgebra.MapHeader(codomain(f), domain(f))
+  hd = MapHeader(codomain(f), domain(f))
   g = NumFieldHom{T, S, map_data_type(T, S), map_data_type(S, T)}(hd, pr, f.image_data)
   return g
 end

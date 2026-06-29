@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, MapRayClassGroupAlg}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroupAlg}
+  header::MapHeader{S, T}
   modulus#::AlgAssAbsOrdIdl{...}
   groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp}}
   into_product_of_groups::FinGenAbGroupHom # the isomorphism between the domain and the product of the groups in groups_in_number_fields
@@ -19,8 +19,8 @@ function modulus(f::MapRayClassGroupAlg{S, T}) where {S, T}
   return f.modulus::elem_type(base_ring_type(T))
 end
 
-mutable struct MapPicardGrp{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, MapPicardGrp}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
+  header::MapHeader{S, T}
 
   # Only used for picard groups of orders in number fields
   OO_mod_F_mod_O_mod_F::GrpAbFinGenToAbsOrdQuoRingMultMap
@@ -128,7 +128,7 @@ function _picard_group_maximal(O::AlgAssAbsOrd)
 
   Idl = IdealSet(O)
   StoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
-  StoIdl.header = AbstractAlgebra.MapHeader(S, Idl, disc_exp, disc_log)
+  StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   O.picard_group = StoIdl
   return S, StoIdl
 end
@@ -154,7 +154,7 @@ function _trivial_picard(O::AlgAssAbsOrd, R::FinGenAbGroup, mR)
   Idl = IdealSet(O)
   fac_elem_mon_A = FacElemMon(A)
   RtoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
-  RtoIdl.header = AbstractAlgebra.MapHeader(R, Idl, disc_exp_triv, disc_log_triv)
+  RtoIdl.header = MapHeader(R, Idl, disc_exp_triv, disc_log_triv)
   RtoIdl.right_transform = zero_matrix(ZZ, 0, 0)
   RtoIdl.betas = Vector{elem_type(fac_elem_mon_A)}()
   RtoIdl.gammas = Vector{elem_type(fac_elem_mon_A)}()
@@ -364,7 +364,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   end
 
   StoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
-  StoIdl.header = AbstractAlgebra.MapHeader(S, Idl, disc_exp, disc_log)
+  StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   StoIdl.ray_class_group_map = mR
 
   if prepare_ref_disc_log
@@ -630,7 +630,7 @@ function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{T}} = Vector
   end
 
   StoIdl = MapRayClassGroupAlg{typeof(S), typeof(fac_elem_mon)}()
-  StoIdl.header = AbstractAlgebra.MapHeader(S, fac_elem_mon, disc_exp, disc_log)
+  StoIdl.header = MapHeader(S, fac_elem_mon, disc_exp, disc_log)
   StoIdl.modulus = m
   StoIdl.groups_in_number_fields = groups
   StoIdl.into_product_of_groups = StoC
@@ -674,7 +674,7 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
   end
 
   mRR = MapRayClassGrp()
-  mRR.header = AbstractAlgebra.MapHeader(S, fac_elem_mon, disc_exp, disc_log)
+  mRR.header = MapHeader(S, fac_elem_mon, disc_exp, disc_log)
   for x in fieldnames(typeof(mR))
     if x != :header && isdefined(mR, x)
       setfield!(mRR, x, getfield(mR, x))
@@ -841,7 +841,7 @@ function kernel_group_with_disc_log(O::AlgAssAbsOrd)
     end
 
     DtoIdl = MapPicardGrp{typeof(D), typeof(Idl)}()
-    DtoIdl.header = AbstractAlgebra.MapHeader(D, Idl, disc_exp_triv, disc_log_triv)
+    DtoIdl.header = MapHeader(D, Idl, disc_exp_triv, disc_log_triv)
     return D, DtoIdl
   end
 
@@ -890,7 +890,7 @@ function kernel_group_with_disc_log(O::AlgAssAbsOrd)
   end
 
   StoIdl = MapPicardGrp{FinGenAbGroup, typeof(Idl)}()
-  StoIdl.header = AbstractAlgebra.MapHeader(S, Idl, disc_exp, disc_log)
+  StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   return S, StoIdl
 end
 

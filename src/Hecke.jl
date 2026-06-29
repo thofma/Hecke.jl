@@ -460,7 +460,7 @@ end
 #
 ################################################################################
 
-# abstract type AbstractAlgebra.HeckeMap <: SetMap end  #needed here for the hasspecial stuff
+# abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
 
@@ -469,9 +469,9 @@ import AbstractAlgebra: get_attribute, set_attribute!, @show_name, @show_special
        @show_special_elem, @attributes, extra_name, set_name!, get_name
 #
 # # Hecke maps store attributes in the header object
-# _get_attributes(G::Map{<:Any, <:Any, AbstractAlgebra.HeckeMap, <:Any}) = _get_attributes(G.header)
-# _get_attributes!(G::Map{<:Any, <:Any, AbstractAlgebra.HeckeMap, <:Any}) = _get_attributes!(G.header)
-# _is_attribute_storing_type(::Type{Map{<:Any, <:Any, AbstractAlgebra.HeckeMap, <:Any}}) = true
+# _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
+# _get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
+# _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
 
 using FLINT_jll: libflint
 
@@ -630,11 +630,11 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-#for T in subtypes(Map(AbstractAlgebra.HeckeMap))
+#for T in subtypes(Map(HeckeMap))
 #  (M::T)(a) = image(M, a)
 #end
 
-# (f::Map{D, C, <:AbstractAlgebra.HeckeMap, T} where {D, C, T})(x) = image(f, x)
+# (f::Map{D, C, <:HeckeMap, T} where {D, C, T})(x) = image(f, x)
 
 ################################################################################
 #
