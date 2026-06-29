@@ -56,8 +56,8 @@ end
 #  return A, AtoA, AtoA
 #end
 
-mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, AbstractAlgebra.HeckeMap, AlgAssResMor}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, HeckeMap, AlgAssResMor}
+  header::MapHeader{S, T}
   domain::S
   codomain::T
   f::U
@@ -69,7 +69,7 @@ mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, AbstractAlgebra.HeckeMap, A
     z.codomain = A
     z.B = Bas
     z.f = f
-    z.header = AbstractAlgebra.MapHeader(B, A)
+    z.header = MapHeader(B, A)
     return z
   end
 end
@@ -183,8 +183,8 @@ function _restrict_scalars(A::AbstractAssociativeAlgebra{T}, prime_field) where 
   return B, AlgAssResMor(B, A, f, absbasis)
 end
 
-mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, AbstractAlgebra.HeckeMap, AlgAssExtMor}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, HeckeMap, AlgAssExtMor}
+  header::MapHeader{S, T}
   domain::S
   codomain::T
   f::U
@@ -202,7 +202,7 @@ mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, AbstractAlgebra.He
     z.BB = BL
     z.BAoverC = BAoverC
     z.MMinv = MMinv
-    z.header = AbstractAlgebra.MapHeader(B, A)
+    z.header = MapHeader(B, A)
     return z
   end
 end

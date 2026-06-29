@@ -229,7 +229,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   X.exponent = n_quo
   if isone(order(X))
     mp = MapRayClassGrp()
-    mp.header = AbstractAlgebra.MapHeader(X, FacElemMon(parent(m)))
+    mp.header = MapHeader(X, FacElemMon(parent(m)))
     return X, mp
   end
 
@@ -408,7 +408,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   end
 
   mp = MapRayClassGrp()
-  mp.header = AbstractAlgebra.MapHeader(X, FacElemMon(parent(m)))
+  mp.header = MapHeader(X, FacElemMon(parent(m)))
   mp.header.preimage = disclog
   mp.fact_mod = lp
   mp.defining_modulus = (m, p)

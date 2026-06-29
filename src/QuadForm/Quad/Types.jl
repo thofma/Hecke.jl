@@ -321,7 +321,7 @@ end
 # Move this to a proper place
 #
 # TODO: Cache this in the dyadic case (on the lattice or the field)
-mutable struct LocMultGrpModSquMap <: Map{FinGenAbGroup, FinGenAbGroup, AbstractAlgebra.HeckeMap, LocMultGrpModSquMap}
+mutable struct LocMultGrpModSquMap <: Map{FinGenAbGroup, FinGenAbGroup, HeckeMap, LocMultGrpModSquMap}
   domain::FinGenAbGroup
   codomain::AbsSimpleNumField
   is_dyadic::Bool

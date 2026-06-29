@@ -81,13 +81,13 @@ end
 #
 ###############################################################################
 
-@attributes mutable struct AbstractSpaceMor{D, T} <: Map{D, D, AbstractAlgebra.HeckeMap, AbstractSpaceMor}
-  header::AbstractAlgebra.MapHeader{D, D}
+@attributes mutable struct AbstractSpaceMor{D, T} <: Map{D, D, HeckeMap, AbstractSpaceMor}
+  header::MapHeader{D, D}
   matrix::T
 
   function AbstractSpaceMor(V::D, W::D, B::T) where {D, T}
     z = new{D, T}()
-    z.header = AbstractAlgebra.MapHeader{D, D}(V, W)
+    z.header = MapHeader{D, D}(V, W)
     z.matrix = B
     return z
   end
@@ -148,8 +148,8 @@ $E$ over $K = \mathbb{Q}$ is fixed by [`absolute_basis`](@ref).
 By default, $B_V$ is the standard $K$-basis of $V$ and $B_W$ is the standard $E$-basis
 of $W$
 """
-mutable struct AbstractSpaceRes{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, AbstractSpaceRes}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct AbstractSpaceRes{S, T} <: Map{S, T, HeckeMap, AbstractSpaceRes}
+  header::MapHeader{S, T}
   btop::MatrixElem        # A given basis for the top space
   ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it every time
   bdown::MatrixElem       # A given basis the bottom space
@@ -157,7 +157,7 @@ mutable struct AbstractSpaceRes{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, Abs
 
   function AbstractSpaceRes(D::S, C::T, btop::MatrixElem, bdown::MatrixElem) where {S, T}
     z = new{S, T}()
-    z.header = AbstractAlgebra.MapHeader{S, T}(D, C)
+    z.header = MapHeader{S, T}(D, C)
     z.btop = btop
     z.ibtop = inv(btop)
     z.bdown = bdown
@@ -404,13 +404,13 @@ for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 [`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
 [`id_hom(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
 """
-mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, AbstractAlgebra.HeckeMap, TorQuadModuleMap}
-  header::AbstractAlgebra.MapHeader{TorQuadModule, TorQuadModule}
+mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMap}
+  header::MapHeader{TorQuadModule, TorQuadModule}
   map_ab::FinGenAbGroupHom
 
   function TorQuadModuleMap(T::TorQuadModule, S::TorQuadModule, m::FinGenAbGroupHom)
     z = new()
-    z.header = AbstractAlgebra.MapHeader(T, S)
+    z.header = MapHeader(T, S)
     z.map_ab = m
     return z
   end

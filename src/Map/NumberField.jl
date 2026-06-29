@@ -40,14 +40,14 @@ is_bijective(m::NumFieldHom) = is_surjective(m)
 #
 ################################################################################
 
-mutable struct GrpGenToNfMorSet{S, T} <: Map{MultTableGroup, NfMorSet{T}, AbstractAlgebra.HeckeMap, GrpGenToNfMorSet{S, T}}
+mutable struct GrpGenToNfMorSet{S, T} <: Map{MultTableGroup, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
   G::MultTableGroup
   aut::Vector{S}
-  header::AbstractAlgebra.MapHeader{MultTableGroup, NfMorSet{T}}
+  header::MapHeader{MultTableGroup, NfMorSet{T}}
 
   function GrpGenToNfMorSet(aut::Vector{S}, G::MultTableGroup, s::NfMorSet{T}) where {S, T}
     z = new{S, T}()
-    z.header = AbstractAlgebra.MapHeader(G, s)
+    z.header = MapHeader(G, s)
     z.aut = aut
     z.G = G
     return z
@@ -389,8 +389,8 @@ end
 ################################################################################
 
 # Embedding of a number field into an algebra over Q.
-mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, AbstractAlgebra.HeckeMap, NfAbsToAbsAlgAssMor}
-  header::AbstractAlgebra.MapHeader{AbsSimpleNumField, S}
+mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, HeckeMap, NfAbsToAbsAlgAssMor}
+  header::MapHeader{AbsSimpleNumField, S}
   mat::QQMatrix
   t::QQMatrix
 
@@ -407,7 +407,7 @@ mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, AbstractAlgeb
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = AbstractAlgebra.MapHeader{AbsSimpleNumField, S}(K, A, _image)
+    z.header = MapHeader{AbsSimpleNumField, S}(K, A, _image)
     return z
   end
 end

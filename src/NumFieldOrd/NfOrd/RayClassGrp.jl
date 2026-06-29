@@ -4,8 +4,8 @@
 #
 ###############################################################################
 
-mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, AbstractAlgebra.HeckeMap, MapRayClassGrp}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, HeckeMap, MapRayClassGrp}
+  header::MapHeader{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
   defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
   fact_mod::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} #The factorization of the finite part of the defining modulus
 
@@ -198,7 +198,7 @@ function class_as_ray_class(C::FinGenAbGroup, mC::MapClassGrp, exp_class::Functi
     end
 
     mp1 = Hecke.MapRayClassGrp()
-    mp1.header = AbstractAlgebra.MapHeader(Q, FacElemMon(parent(m)), expo_map, disclog1)
+    mp1.header = MapHeader(Q, FacElemMon(parent(m)), expo_map, disclog1)
     mp1.fact_mod = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
     mp1.defining_modulus = (m, InfPlc[])
     mp1.clgrpmap = mC
@@ -221,7 +221,7 @@ function class_as_ray_class(C::FinGenAbGroup, mC::MapClassGrp, exp_class::Functi
   end
 
   mp = Hecke.MapRayClassGrp()
-  mp.header = AbstractAlgebra.MapHeader(X, FacElemMon(parent(m)), exp_class, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)), exp_class, disclog)
   mp.fact_mod = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   mp.defining_modulus = (m, InfPlc[])
   mp.clgrpmap = mC
@@ -248,7 +248,7 @@ function empty_ray_class(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   end
 
   mp = Hecke.MapRayClassGrp()
-  mp.header = AbstractAlgebra.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.defining_modulus = (m, InfPlc[])
   return X,mp
 
@@ -491,7 +491,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
 
     mp=Hecke.MapClassGrp()
     mp.quo = n
-    mp.header=AbstractAlgebra.MapHeader(G, mC.header.codomain, exp1, disclog1)
+    mp.header=MapHeader(G, mC.header.codomain, exp1, disclog1)
     mp.princ_gens = Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}[]
     return G, mp
   end
@@ -532,7 +532,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   end
 
   mp = Hecke.MapClassGrp()
-  mp.header = AbstractAlgebra.MapHeader(G, mC.header.codomain, exp2, disclog2)
+  mp.header = MapHeader(G, mC.header.codomain, exp2, disclog2)
   mp.quo = Int(exponent(G))
   if isdefined(mC, :princ_gens)
     princ_gens = Vector{Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(mC.princ_gens))
@@ -952,7 +952,7 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   end
 
   mp = MapRayClassGrp()
-  mp.header = AbstractAlgebra.MapHeader(X, FacElemMon(parent(m)), expo, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)), expo, disclog)
   mp.fact_mod = lp
   mp.defining_modulus = (m, inf_plc)
   mp.powers = powers
@@ -992,7 +992,7 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
     end
 
     mp=Hecke.MapRayClassGrp()
-    mp.header = AbstractAlgebra.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
+    mp.header = MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
     mp.defining_modulus = (ideal(O, modulus), real_places(nf(O)))
     return U, mp
 
@@ -1012,7 +1012,7 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
     end
 
     mp = Hecke.MapRayClassGrp()
-    mp.header = AbstractAlgebra.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
+    mp.header = MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
     mp.defining_modulus = (ideal(O, modulus), InfPlc[])
     return U,mp
 
@@ -1032,7 +1032,7 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
     end
 
     mp=Hecke.MapRayClassGrp()
-    mp.header = AbstractAlgebra.MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
+    mp.header = MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
     mp.defining_modulus = (ideal(O, modulus), InfPlc[])
     return Q,mp
 

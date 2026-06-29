@@ -639,12 +639,12 @@ function free_resolution(G::FinGenAbGroup)
   return C, h_A_G
 end
 
-mutable struct ComplexOfMorphismsMap{T} <: Map{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}, AbstractAlgebra.HeckeMap, ComplexOfMorphismsMap}
-  header::AbstractAlgebra.MapHeader{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}}
+mutable struct ComplexOfMorphismsMap{T} <: Map{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}, HeckeMap, ComplexOfMorphismsMap}
+  header::MapHeader{ComplexOfMorphisms{T}, ComplexOfMorphisms{T}}
   maps::Dict{Int, <:Map{<:T, <:T}}
   function ComplexOfMorphismsMap(C::ComplexOfMorphisms{T}, D::ComplexOfMorphisms{T}, A::S; check::Bool = !true) where {S <: Dict{Int, <:Map{<:T, <:T}}} where {T}
     r = new{T}()
-    r.header = AbstractAlgebra.MapHeader(C, D)
+    r.header = MapHeader(C, D)
     r.maps = A
     return r
   end

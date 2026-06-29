@@ -1,5 +1,5 @@
-mutable struct MapClassGrp <: Map{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbstractAlgebra.HeckeMap, MapClassGrp}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
+mutable struct MapClassGrp <: Map{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, HeckeMap, MapClassGrp}
+  header::MapHeader{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   quo::Int
   princ_gens::Vector{Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}
@@ -155,8 +155,8 @@ mutable struct NormCtx_gen <: NormCtx
   end
 end
 
-mutable struct MapUnitGrp{T} <: Map{FinGenAbGroup, T, AbstractAlgebra.HeckeMap, MapUnitGrp}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, T}
+mutable struct MapUnitGrp{T} <: Map{FinGenAbGroup, T, HeckeMap, MapUnitGrp}
+  header::MapHeader{FinGenAbGroup, T}
 
   # Only for non-maximal orders:
   OO_mod_F_mod_O_mod_F::GrpAbFinGenToAbsOrdQuoRingMultMap # a map from (OO/F*OO)^\times/(O/F)^\times to OO where OO is a maximal order and F the conductor
@@ -167,8 +167,8 @@ mutable struct MapUnitGrp{T} <: Map{FinGenAbGroup, T, AbstractAlgebra.HeckeMap, 
 end
 
 
-mutable struct MapSUnitModUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, AbstractAlgebra.HeckeMap, MapSUnitModUnitGrpFacElem}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}
+mutable struct MapSUnitModUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitModUnitGrpFacElem}
+  header::MapHeader{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}
   idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   valuations::Vector{SRow{ZZRingElem}}
 
@@ -177,8 +177,8 @@ mutable struct MapSUnitModUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSim
   end
 end
 
-mutable struct MapSUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, AbstractAlgebra.HeckeMap, MapSUnitGrpFacElem}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}
+mutable struct MapSUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitGrpFacElem}
+  header::MapHeader{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}
   idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   valuations::Vector{SRow{ZZRingElem}}
   isquotientmap::Int
@@ -190,8 +190,8 @@ mutable struct MapSUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumF
   end
 end
 
-mutable struct MapSUnitGrp <: Map{FinGenAbGroup, AbsSimpleNumField, AbstractAlgebra.HeckeMap, MapSUnitGrp}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, AbsSimpleNumField}
+mutable struct MapSUnitGrp <: Map{FinGenAbGroup, AbsSimpleNumField, HeckeMap, MapSUnitGrp}
+  header::MapHeader{FinGenAbGroup, AbsSimpleNumField}
   idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   function MapSUnitGrp()

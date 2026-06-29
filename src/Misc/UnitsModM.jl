@@ -82,12 +82,12 @@ function gen_mod_pk(p::ZZRingElem, mod::ZZRingElem=ZZRingElem(0))
   end
 end
 
-mutable struct MapUnitGroupModM{T} <: Map{FinGenAbGroup, T, AbstractAlgebra.HeckeMap, MapUnitGroupModM}
- header::AbstractAlgebra.MapHeader{FinGenAbGroup, T}
+mutable struct MapUnitGroupModM{T} <: Map{FinGenAbGroup, T, HeckeMap, MapUnitGroupModM}
+ header::MapHeader{FinGenAbGroup, T}
 
   function MapUnitGroupModM{T}(G::FinGenAbGroup, R::T, dexp::Function, dlog::Function) where {T}
     r = new{T}()
-    r.header = AbstractAlgebra.MapHeader(G, R, dexp, dlog)
+    r.header = MapHeader(G, R, dexp, dlog)
     return r
   end
 end
