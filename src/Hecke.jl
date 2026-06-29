@@ -507,9 +507,9 @@ function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = f
        run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
      end
    else
-     Hecke.@eval long_test = $long
-     Hecke.@eval _with_gap = $with_gap
-     Hecke.@eval _with_polymake = $with_polymake
+     Main.eval(Meta.parse("long_test = $long"))
+     Main.eval(Meta.parse("_with_gap = $with_gap"))
+     Main.eval(Meta.parse("_with_polymake = $with_polymake"))
      assertions(true)
      @info("Running tests for $x in same session")
      Base.include(Main, setup_file)
