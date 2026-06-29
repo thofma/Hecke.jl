@@ -4,12 +4,12 @@
 #
 ################################################################################
 
-mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, AbstractAlgebra.HeckeMap, NfRelToFqMor}
-  header::AbstractAlgebra.MapHeader{RelSimpleNumField{T}, FqField}
+mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, HeckeMap, NfRelToFqMor}
+  header::MapHeader{RelSimpleNumField{T}, FqField}
 
   function NfRelToFqMor{T}() where {T}
     z = new{T}()
-    z.header = AbstractAlgebra.MapHeader{RelSimpleNumField{T}, FqField}()
+    z.header = MapHeader{RelSimpleNumField{T}, FqField}()
     return z
   end
 end
@@ -51,8 +51,8 @@ end
 # Embedding of a relative number field into an algebra over the base field.
 # S is the type of the field, T the type of the algebra and Mat the dense matrix
 # type of the base ring of either
-mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, AbstractAlgebra.HeckeMap, NfRelToAbsAlgAssMor}
-  header::AbstractAlgebra.MapHeader{S, T}
+mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsAlgAssMor}
+  header::MapHeader{S, T}
   mat::Mat
   t::Mat
 
@@ -70,7 +70,7 @@ mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, AbstractAlgebra.Hecke
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = AbstractAlgebra.MapHeader{S, T}(K, A, _image)
+    z.header = MapHeader{S, T}(K, A, _image)
     return z
   end
 end

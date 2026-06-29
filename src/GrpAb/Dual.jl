@@ -186,12 +186,12 @@ lift(a::QmodnZElem) = a.elt
 
 
 mutable struct GrpAbFinGenToQmodnZ <: Map{FinGenAbGroup, QmodnZ,
-                                            AbstractAlgebra.HeckeMap, GrpAbFinGenToQmodnZ}
-  header::AbstractAlgebra.MapHeader{FinGenAbGroup, QmodnZ}
+                                            HeckeMap, GrpAbFinGenToQmodnZ}
+  header::MapHeader{FinGenAbGroup, QmodnZ}
 
   function GrpAbFinGenToQmodnZ(G::FinGenAbGroup, QZ::QmodnZ, image)
     z = new()
-    z.header = AbstractAlgebra.MapHeader(G, QZ, image)
+    z.header = MapHeader(G, QZ, image)
     return z
   end
 end

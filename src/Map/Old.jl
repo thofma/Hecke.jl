@@ -1,5 +1,5 @@
-mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, AbstractAlgebra.HeckeMap, ResidueRingPolyMap}
-  header::AbstractAlgebra.MapHeader{D, C}
+mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPolyMap}
+  header::MapHeader{D, C}
   gen_image::EuclideanRingResidueRingElem{T}
   coeff_map::Map # can be missing if domain and codomain have the same
                  # base_ring(base_ring())
@@ -43,7 +43,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, AbstractAlgebra.HeckeMap
       return s::elem_type(domain)
     end
 
-    z.header = AbstractAlgebra.MapHeader(domain, codomain, image, _preimage)
+    z.header = MapHeader(domain, codomain, image, _preimage)
     return z
   end
 
@@ -85,7 +85,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, AbstractAlgebra.HeckeMap
       return s::elem_type(domain)
     end
 
-    z.header = AbstractAlgebra.MapHeader(domain, codomain, image, preimage)
+    z.header = MapHeader(domain, codomain, image, preimage)
     return z
   end
 end
@@ -98,12 +98,12 @@ function ResidueRingPolyMap(domain::D, codomain::C, i::EuclideanRingResidueRingE
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i, coeff_map)
 end
 
-mutable struct CoerceMap{D, C} <: Map{D, C, AbstractAlgebra.HeckeMap, CoerceMap}
-  header::AbstractAlgebra.MapHeader{D, C}
+mutable struct CoerceMap{D, C} <: Map{D, C, HeckeMap, CoerceMap}
+  header::MapHeader{D, C}
 
   function CoerceMap{D, C}(domain::D, codomain::C) where {D, C}
     z = new{D, C}()
-    z.header = AbstractAlgebra.MapHeader(domain, codomain)
+    z.header = MapHeader(domain, codomain)
     return z
   end
 
@@ -122,7 +122,7 @@ mutable struct CoerceMap{D, C} <: Map{D, C, AbstractAlgebra.HeckeMap, CoerceMap}
       return a::elem_type(domain)
     end
 
-    z.header = AbstractAlgebra.MapHeader(domain, codomain, image, preimage)
+    z.header = MapHeader(domain, codomain, image, preimage)
     return z
   end
 end
@@ -141,7 +141,7 @@ function CoerceMap(domain::EuclideanRingResidueRing{ZZRingElem}, codomain::fqPol
     return domain(coeff(a, 0))::EuclideanRingResidueRingElem{ZZRingElem}
   end
 
-  z.header = AbstractAlgebra.MapHeader(domain, codomain, image, preimage)
+  z.header = MapHeader(domain, codomain, image, preimage)
   return z
 end
 
@@ -158,7 +158,7 @@ function CoerceMap(domain::fqPolyRepField, codomain::EuclideanRingResidueRing{fq
     return domain(coeff(a.data, 0))::fqPolyRepFieldElem
   end
 
-  z.header = AbstractAlgebra.MapHeader(domain, codomain, image, preimage)
+  z.header = MapHeader(domain, codomain, image, preimage)
   return z
 end
 
