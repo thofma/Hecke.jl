@@ -17,6 +17,6 @@
 
   @test sprint(show, "text/plain", QZ) isa String
   @test sprint(show, "text/plain", Hecke.QmodnZ(ZZ(2))) isa String
-  s = sprint(show, "text/plain", map_from_func(x -> x, QZ, QZ))
+  s = sprint(show, "text/plain", map_from_func(QZ, QZ), x -> x)
   @test s isa String && !contains(s, "q/Z")
 end

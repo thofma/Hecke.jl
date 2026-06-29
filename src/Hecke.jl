@@ -72,7 +72,7 @@ import Pkg
 
 exclude = [:Nemo, :AbstractAlgebra, :zz, :qq, :call,
            :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols,
-           :set_entry!, :RDF]
+           :set_entry!, :RDF, :map_from_func]
 
 for i in names(Nemo)
   (i in exclude || !isdefined(Nemo, i)) && continue

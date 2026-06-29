@@ -22,7 +22,7 @@
   kFtp,_ = polynomial_ring(kF,"t")
   kFt = fraction_field(kFtp)
 
-  Ft_to_kFt = map_from_func(x->kFt(map_coefficients(FtokF,numerator(x);parent=kFtp), map_coefficients(FtokF, denominator(x), ;parent=kFtp)), Ft, kFt)
+  Ft_to_kFt = map_from_func(Ft, kFt, x->kFt(map_coefficients(FtokF,numerator(x);parent=kFtp), map_coefficients(FtokF, denominator(x), ;parent=kFtp)))
 
 
   ainvs = Ft.([0,
