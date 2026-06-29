@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-mutable struct ModAlgHom{S, T} <: Map{S, S, HeckeMap, ModAlgHom}
+mutable struct ModAlgHom{S, T} <: Map{S, S, AbstractAlgebra.HeckeMap, ModAlgHom}
   domain::S
   codomain::S
   matrix::T     # matrix underlying the morphism
@@ -75,7 +75,7 @@ end
 #
 ################################################################################
 
-mutable struct EndAlgMap{S, T, U} <: Map{S, T, HeckeMap, EndAlgMap}
+mutable struct EndAlgMap{S, T, U} <: Map{S, T, AbstractAlgebra.HeckeMap, EndAlgMap}
   domain::S    # the endomorphism algebra as a matrix algebra
   codomain::T  # formal set of endomorphisms
   V::U         # the underlying module

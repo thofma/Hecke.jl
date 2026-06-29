@@ -1,4 +1,4 @@
-mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPolyMap}
+mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, AbstractAlgebra.HeckeMap, ResidueRingPolyMap}
   header::AbstractAlgebra.MapHeader{D, C}
   gen_image::EuclideanRingResidueRingElem{T}
   coeff_map::Map # can be missing if domain and codomain have the same
@@ -98,7 +98,7 @@ function ResidueRingPolyMap(domain::D, codomain::C, i::EuclideanRingResidueRingE
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i, coeff_map)
 end
 
-mutable struct CoerceMap{D, C} <: Map{D, C, HeckeMap, CoerceMap}
+mutable struct CoerceMap{D, C} <: Map{D, C, AbstractAlgebra.HeckeMap, CoerceMap}
   header::AbstractAlgebra.MapHeader{D, C}
 
   function CoerceMap{D, C}(domain::D, codomain::C) where {D, C}

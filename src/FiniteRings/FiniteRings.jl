@@ -20,7 +20,7 @@ import ..Hecke:
   FpFieldElem,
   FqFieldElem,
   GF,
-  HeckeMap,
+  AbstractAlgebra.HeckeMap,
   IntegerUnion,
   ItemQuantity,
   Map,

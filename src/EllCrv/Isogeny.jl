@@ -7,7 +7,7 @@
 #
 ###############################################################################
 
-mutable struct Isogeny{T <: RingElem} <: Map{EllipticCurve, EllipticCurve, HeckeMap, Isogeny}
+mutable struct Isogeny{T <: RingElem} <: Map{EllipticCurve, EllipticCurve, AbstractAlgebra.HeckeMap, Isogeny}
   header::AbstractAlgebra.MapHeader{EllipticCurve{T}, EllipticCurve{T}}
   domain::EllipticCurve{T}
   codomain::EllipticCurve{T}

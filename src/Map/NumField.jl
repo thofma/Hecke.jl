@@ -103,7 +103,7 @@
 #
 ################################################################################
 
-mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, Any}#HeckeMap, NumFieldHom}
+mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, AbstractAlgebra.HeckeMap, Any}#AbstractAlgebra.HeckeMap, NumFieldHom}
   header::AbstractAlgebra.MapHeader{S, T}
   image_data::U
   inverse_data::V
@@ -1064,7 +1064,7 @@ end
 #
 ################################################################################
 
-struct QQHom{S} <: Map{QQField, S, HeckeMap, Any}
+struct QQHom{S} <: Map{QQField, S, AbstractAlgebra.HeckeMap, Any}
   C::S
 end
 

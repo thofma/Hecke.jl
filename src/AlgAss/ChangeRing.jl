@@ -56,7 +56,7 @@ end
 #  return A, AtoA, AtoA
 #end
 
-mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, HeckeMap, AlgAssResMor}
+mutable struct AlgAssResMor{S, T, U, V} <: Map{S, T, AbstractAlgebra.HeckeMap, AlgAssResMor}
   header::AbstractAlgebra.MapHeader{S, T}
   domain::S
   codomain::T
@@ -183,7 +183,7 @@ function _restrict_scalars(A::AbstractAssociativeAlgebra{T}, prime_field) where 
   return B, AlgAssResMor(B, A, f, absbasis)
 end
 
-mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, HeckeMap, AlgAssExtMor}
+mutable struct AlgAssExtMor{S, T, U, V, W, X, Y} <: Map{S, T, AbstractAlgebra.HeckeMap, AlgAssExtMor}
   header::AbstractAlgebra.MapHeader{S, T}
   domain::S
   codomain::T

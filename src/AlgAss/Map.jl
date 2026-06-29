@@ -1,4 +1,4 @@
-mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
+mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, AbstractAlgebra.HeckeMap, AbsAlgAssMor}
   header::AbstractAlgebra.MapHeader{R, S}
 
   mat::T
@@ -122,7 +122,7 @@ end
 
 #inv(a::AbsAlgAssMor) = pseudo_inv(a)
 
-#mutable struct AlgAssMor{R, S, T} <: Map{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}, HeckeMap, AlgAssMor}
+#mutable struct AlgAssMor{R, S, T} <: Map{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}, AbstractAlgebra.HeckeMap, AlgAssMor}
 #  header::AbstractAlgebra.MapHeader{StructureConstantAlgebra{R}, StructureConstantAlgebra{S}}
 #
 #  mat::T
@@ -281,7 +281,7 @@ end
 ################################################################################
 
 # S is the type of the algebra, T the element type of the algebra
-mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, HeckeMap, AbsAlgAssToNfAbsMor}
+mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, AbstractAlgebra.HeckeMap, AbsAlgAssToNfAbsMor}
   header::AbstractAlgebra.MapHeader{S, U}
   mat::V
   imat::V
@@ -336,7 +336,7 @@ end
 # Fq(Nmod)FiniteField.
 # MatType is the type of matrices over base_ring(A), PolyRingType the type of a
 # polynomial ring over base_ring(A)
-mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeMap, AbsAlgAssToFqMor}
+mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, AbstractAlgebra.HeckeMap, AbsAlgAssToFqMor}
   header::AbstractAlgebra.MapHeader{S, T}
   mat::MatType
   imat::MatType
@@ -476,7 +476,7 @@ end
 #
 ################################################################################
 
-@attributes mutable struct AbstractAssociativeAlgebraMap{D, C, S, T} <: Map{D, C, HeckeMap, AbstractAssociativeAlgebraMap}
+@attributes mutable struct AbstractAssociativeAlgebraMap{D, C, S, T} <: Map{D, C, AbstractAlgebra.HeckeMap, AbstractAssociativeAlgebraMap}
   R::D
   S::C
   base_ring_map::S

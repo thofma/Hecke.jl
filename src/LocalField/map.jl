@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, HeckeMap, LocalFieldMor}
+mutable struct LocalFieldMor{S, T, U, V, W} <: Map{S, T, AbstractAlgebra.HeckeMap, LocalFieldMor}
   header::AbstractAlgebra.MapHeader{S, T}
   image_data::U
   inverse_data::V

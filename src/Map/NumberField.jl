@@ -40,7 +40,7 @@ is_bijective(m::NumFieldHom) = is_surjective(m)
 #
 ################################################################################
 
-mutable struct GrpGenToNfMorSet{S, T} <: Map{MultTableGroup, NfMorSet{T}, HeckeMap, GrpGenToNfMorSet{S, T}}
+mutable struct GrpGenToNfMorSet{S, T} <: Map{MultTableGroup, NfMorSet{T}, AbstractAlgebra.HeckeMap, GrpGenToNfMorSet{S, T}}
   G::MultTableGroup
   aut::Vector{S}
   header::AbstractAlgebra.MapHeader{MultTableGroup, NfMorSet{T}}
@@ -389,7 +389,7 @@ end
 ################################################################################
 
 # Embedding of a number field into an algebra over Q.
-mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, HeckeMap, NfAbsToAbsAlgAssMor}
+mutable struct NfAbsToAbsAlgAssMor{S} <: Map{AbsSimpleNumField, S, AbstractAlgebra.HeckeMap, NfAbsToAbsAlgAssMor}
   header::AbstractAlgebra.MapHeader{AbsSimpleNumField, S}
   mat::QQMatrix
   t::QQMatrix

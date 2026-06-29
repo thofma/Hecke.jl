@@ -48,8 +48,8 @@ end
 
 # For convenience, there is a quotient constructor for an extension of orders.
 # The quotient will be represented as an abelian group.
-mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <: Map{FinGenAbGroup, T2, HeckeMap, HeckeMap}
-              #Map{FinGenAbGroup, T2, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
+mutable struct GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U} <: Map{FinGenAbGroup, T2, AbstractAlgebra.HeckeMap, AbstractAlgebra.HeckeMap}
+              #Map{FinGenAbGroup, T2, AbstractAlgebra.HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd{T1, T2, S, U}}
   domain::FinGenAbGroup
   codomain::T1
   bottom::T2

@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, HeckeMap, MapRayClassGrp}
+mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, AbstractAlgebra.HeckeMap, MapRayClassGrp}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
   defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
   fact_mod::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} #The factorization of the finite part of the defining modulus

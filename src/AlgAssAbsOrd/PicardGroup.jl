@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroupAlg}
+mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, MapRayClassGroupAlg}
   header::AbstractAlgebra.MapHeader{S, T}
   modulus#::AlgAssAbsOrdIdl{...}
   groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp}}
@@ -19,7 +19,7 @@ function modulus(f::MapRayClassGroupAlg{S, T}) where {S, T}
   return f.modulus::elem_type(base_ring_type(T))
 end
 
-mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
+mutable struct MapPicardGrp{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, MapPicardGrp}
   header::AbstractAlgebra.MapHeader{S, T}
 
   # Only used for picard groups of orders in number fields

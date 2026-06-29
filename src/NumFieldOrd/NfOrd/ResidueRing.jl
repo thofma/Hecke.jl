@@ -811,7 +811,7 @@ end
 
 ### AbsOrdQuoRign
 #
-@attributes mutable struct AbsOrdQuoRingMap{D, C, T} <: Map{D, C, HeckeMap, AbsOrdQuoRingMap}
+@attributes mutable struct AbsOrdQuoRingMap{D, C, T} <: Map{D, C, AbstractAlgebra.HeckeMap, AbsOrdQuoRingMap}
 
   R::D
   S::C

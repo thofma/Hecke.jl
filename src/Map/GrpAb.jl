@@ -11,7 +11,7 @@
 ################################################################################
 
 mutable struct FinGenAbGroupHom <: Map{FinGenAbGroup, FinGenAbGroup,
-                                     HeckeMap, FinGenAbGroupHom}
+                                     AbstractAlgebra.HeckeMap, FinGenAbGroupHom}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, FinGenAbGroup}
 
   map::ZZMatrix
@@ -96,7 +96,7 @@ end
 #
 ################################################################################
 
-@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, FiniteFieldMultGrpMap{S, T}}
+@attributes mutable struct FiniteFieldMultGrpMap{S, T} <: Map{FinGenAbGroup, S, AbstractAlgebra.HeckeMap, FiniteFieldMultGrpMap{S, T}}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, S}
   domain::FinGenAbGroup
   codomain::S
@@ -198,7 +198,7 @@ codomain(f::AbToNfMultGrp) = f.codomain
 ################################################################################
 
 # S is the type of the order (the codomain) and T is the elem_type of the order
-mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, GrpAbFinGenToAbsOrdMap}
+mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, AbstractAlgebra.HeckeMap, GrpAbFinGenToAbsOrdMap}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, S}
   generators::Vector{T}
   discrete_logarithm::Function
@@ -279,7 +279,7 @@ const GrpAbFinGenToNfAbsOrdMap = GrpAbFinGenToAbsOrdMap{AbsSimpleNumFieldOrder, 
 #
 ################################################################################
 
-mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, AbsOrdQuoRing{S, T}, HeckeMap, GrpAbFinGenToAbsOrdQuoRingMultMap}
+mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{FinGenAbGroup, AbsOrdQuoRing{S, T}, AbstractAlgebra.HeckeMap, GrpAbFinGenToAbsOrdQuoRingMultMap}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, AbsOrdQuoRing{S, T}}
   generators::Vector{AbsOrdQuoRingElem{S, T, U}}
   discrete_logarithm::Function

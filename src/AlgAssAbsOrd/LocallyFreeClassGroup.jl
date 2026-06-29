@@ -413,7 +413,7 @@ function coprime_num_and_den(a::AbsSimpleNumFieldElem, p::AbsNumFieldOrderIdeal)
   return n, d
 end
 
-mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, HeckeMap, DiscLogLocallyFreeClassGroup}
+mutable struct DiscLogLocallyFreeClassGroup{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, DiscLogLocallyFreeClassGroup}
   header::AbstractAlgebra.MapHeader{S, T}
   RtoC::FinGenAbGroupHom # Map from the ray class group of the centre to the class group
   mR::MapRayClassGroupAlg

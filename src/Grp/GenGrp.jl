@@ -72,7 +72,7 @@ end
 #
 ################################################################################
 
-mutable struct MultTableGroupHom <: Map{MultTableGroup, MultTableGroup, HeckeMap, MultTableGroup}
+mutable struct MultTableGroupHom <: Map{MultTableGroup, MultTableGroup, AbstractAlgebra.HeckeMap, MultTableGroup}
 
   domain::MultTableGroup
   codomain::MultTableGroup
