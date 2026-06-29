@@ -1,4 +1,4 @@
-mutable struct MapClassGrp <: Map{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, HeckeMap, MapClassGrp}
+mutable struct MapClassGrp <: Map{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbstractAlgebra.HeckeMap, MapClassGrp}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 
   quo::Int
@@ -155,7 +155,7 @@ mutable struct NormCtx_gen <: NormCtx
   end
 end
 
-mutable struct MapUnitGrp{T} <: Map{FinGenAbGroup, T, HeckeMap, MapUnitGrp}
+mutable struct MapUnitGrp{T} <: Map{FinGenAbGroup, T, AbstractAlgebra.HeckeMap, MapUnitGrp}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, T}
 
   # Only for non-maximal orders:
@@ -167,7 +167,7 @@ mutable struct MapUnitGrp{T} <: Map{FinGenAbGroup, T, HeckeMap, MapUnitGrp}
 end
 
 
-mutable struct MapSUnitModUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitModUnitGrpFacElem}
+mutable struct MapSUnitModUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, AbstractAlgebra.HeckeMap, MapSUnitModUnitGrpFacElem}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}
   idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   valuations::Vector{SRow{ZZRingElem}}
@@ -177,7 +177,7 @@ mutable struct MapSUnitModUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSim
   end
 end
 
-mutable struct MapSUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, HeckeMap, MapSUnitGrpFacElem}
+mutable struct MapSUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumField}, AbstractAlgebra.HeckeMap, MapSUnitGrpFacElem}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}
   idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
   valuations::Vector{SRow{ZZRingElem}}
@@ -190,7 +190,7 @@ mutable struct MapSUnitGrpFacElem <: Map{FinGenAbGroup, FacElemMon{AbsSimpleNumF
   end
 end
 
-mutable struct MapSUnitGrp <: Map{FinGenAbGroup, AbsSimpleNumField, HeckeMap, MapSUnitGrp}
+mutable struct MapSUnitGrp <: Map{FinGenAbGroup, AbsSimpleNumField, AbstractAlgebra.HeckeMap, MapSUnitGrp}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup, AbsSimpleNumField}
   idl::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}
 

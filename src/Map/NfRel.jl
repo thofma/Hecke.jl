@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, HeckeMap, NfRelToFqMor}
+mutable struct NfRelToFqMor{T} <: Map{RelSimpleNumField{T}, FqField, AbstractAlgebra.HeckeMap, NfRelToFqMor}
   header::AbstractAlgebra.MapHeader{RelSimpleNumField{T}, FqField}
 
   function NfRelToFqMor{T}() where {T}
@@ -51,7 +51,7 @@ end
 # Embedding of a relative number field into an algebra over the base field.
 # S is the type of the field, T the type of the algebra and Mat the dense matrix
 # type of the base ring of either
-mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, HeckeMap, NfRelToAbsAlgAssMor}
+mutable struct NfRelToAbsAlgAssMor{S, T, Mat} <: Map{S, T, AbstractAlgebra.HeckeMap, NfRelToAbsAlgAssMor}
   header::AbstractAlgebra.MapHeader{S, T}
   mat::Mat
   t::Mat

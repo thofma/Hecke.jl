@@ -1,4 +1,4 @@
-mutable struct NfRelOrdToFqMor{T, S, U} <: Map{RelNumFieldOrder{T, S, U}, FqField, HeckeMap, NfRelOrdToFqMor}
+mutable struct NfRelOrdToFqMor{T, S, U} <: Map{RelNumFieldOrder{T, S, U}, FqField, AbstractAlgebra.HeckeMap, NfRelOrdToFqMor}
   header::AbstractAlgebra.MapHeader{RelNumFieldOrder{T, S, U}, FqField}
   poly_of_the_field::FqPolyRingElem
   P::RelNumFieldOrderIdeal{T, S, U}
@@ -130,7 +130,7 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::RelSimpleNumField{T}) where {T, S}
   return g
 end
 
-mutable struct RelOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, RelOrdToAlgAssMor}
+mutable struct RelOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, AbstractAlgebra.HeckeMap, RelOrdToAlgAssMor}
   header::AbstractAlgebra.MapHeader{S, StructureConstantAlgebra{T}}
 
   function RelOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where { S <: Union{ RelNumFieldOrder, AlgAssRelOrd }, T }
@@ -144,7 +144,7 @@ function RelOrdToAlgAssMor(O::Union{ RelNumFieldOrder, AlgAssRelOrd }, A::Struct
   return RelOrdToAlgAssMor{typeof(O), T}(O, A, _image, _preimage)
 end
 
-mutable struct RelOrdQuoMap{T1, T2, T3, S} <: Map{T1, RelOrdQuoRing{T1, T2, T3}, HeckeMap, RelOrdQuoMap}
+mutable struct RelOrdQuoMap{T1, T2, T3, S} <: Map{T1, RelOrdQuoRing{T1, T2, T3}, AbstractAlgebra.HeckeMap, RelOrdQuoMap}
   header::AbstractAlgebra.MapHeader{T1, RelOrdQuoRing{T1, T2, T3}}
 
   function RelOrdQuoMap{T1, T2, T3, S}(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3, S }
@@ -168,7 +168,7 @@ function RelOrdQuoMap(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
   return RelOrdQuoMap{T1, T2, T3, S}(O, Q)
 end
 
-mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdToFqFieldRelMor}
+mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, AbstractAlgebra.HeckeMap, NfRelOrdToFqFieldRelMor}
   header::AbstractAlgebra.MapHeader{S, FqField}
   poly_of_the_field
   P
@@ -274,7 +274,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
   end
 end
 
-mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap, NfRelOrdToRelFinFieldMor}
+mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, AbstractAlgebra.HeckeMap, NfRelOrdToRelFinFieldMor}
   header::AbstractAlgebra.MapHeader{S, RelFinField{T}}
   poly_of_the_field
   P
@@ -477,7 +477,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
 
 end
 
-mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelToFqFieldRelMor}
+mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, AbstractAlgebra.HeckeMap, NfRelToFqFieldRelMor}
   header::AbstractAlgebra.MapHeader{S, FqField}
 
   function NfRelToFqFieldRelMor{S}() where {S <: RelSimpleNumField}

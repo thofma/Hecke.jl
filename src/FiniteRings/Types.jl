@@ -27,7 +27,7 @@ end
   FiniteRingIdeal(x, y, z) = new(x, y, z)
 end
 
-mutable struct FiniteRingHom <: Map{FiniteRing, FiniteRing, HeckeMap, FiniteRingHom}
+mutable struct FiniteRingHom <: Map{FiniteRing, FiniteRing, AbstractAlgebra.HeckeMap, FiniteRingHom}
   R::FiniteRing
   S::FiniteRing
   is_unitary::Bool # we internally use the type to represent non-unitary morphisms
@@ -41,7 +41,7 @@ mutable struct FiniteRingHom <: Map{FiniteRing, FiniteRing, HeckeMap, FiniteRing
   end
 end
 
-@attributes mutable struct FiniteRingMap{S, T} <: Map{FiniteRing, T, HeckeMap, FiniteRingMap}
+@attributes mutable struct FiniteRingMap{S, T} <: Map{FiniteRing, T, AbstractAlgebra.HeckeMap, FiniteRingMap}
   R::FiniteRing
   S::S
   imgzgens::T

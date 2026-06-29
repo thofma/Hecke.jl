@@ -81,7 +81,7 @@ end
 #
 ###############################################################################
 
-@attributes mutable struct AbstractSpaceMor{D, T} <: Map{D, D, HeckeMap, AbstractSpaceMor}
+@attributes mutable struct AbstractSpaceMor{D, T} <: Map{D, D, AbstractAlgebra.HeckeMap, AbstractSpaceMor}
   header::AbstractAlgebra.MapHeader{D, D}
   matrix::T
 
@@ -148,7 +148,7 @@ $E$ over $K = \mathbb{Q}$ is fixed by [`absolute_basis`](@ref).
 By default, $B_V$ is the standard $K$-basis of $V$ and $B_W$ is the standard $E$-basis
 of $W$
 """
-mutable struct AbstractSpaceRes{S, T} <: Map{S, T, HeckeMap, AbstractSpaceRes}
+mutable struct AbstractSpaceRes{S, T} <: Map{S, T, AbstractAlgebra.HeckeMap, AbstractSpaceRes}
   header::AbstractAlgebra.MapHeader{S, T}
   btop::MatrixElem        # A given basis for the top space
   ibtop::MatrixElem       # The inverse of the previous base matrix, to avoid computing it every time
@@ -404,7 +404,7 @@ for instance [`hom(::TorQuadModule, ::TorQuadModule, ::ZZMatrix)`](@ref),
 [`hom(::TorQuadModule, ::TorQuadModule, ::Vector{TorQuadModuleElem})`](@ref),
 [`id_hom(::TorQuadModule)`](@ref) or [`trivial_morphism(::TorQuadModule)`](@ref).
 """
-mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, HeckeMap, TorQuadModuleMap}
+mutable struct TorQuadModuleMap <: Map{TorQuadModule, TorQuadModule, AbstractAlgebra.HeckeMap, TorQuadModuleMap}
   header::AbstractAlgebra.MapHeader{TorQuadModule, TorQuadModule}
   map_ab::FinGenAbGroupHom
 

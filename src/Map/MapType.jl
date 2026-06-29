@@ -8,15 +8,15 @@
 
 # import AbstractAlgebra: AbstractAlgebra.MapHeader, MapCache
 
-# function domain(M::Map(HeckeMap))
+# function domain(M::Map(AbstractAlgebra.HeckeMap))
 #   return M.header.domain
 # end
 #
-# function codomain(M::Map(HeckeMap))
+# function codomain(M::Map(AbstractAlgebra.HeckeMap))
 #   return M.header.codomain
 # end
 #
-# function image_function(f::Map(HeckeMap))
+# function image_function(f::Map(AbstractAlgebra.HeckeMap))
 #   if isdefined(f.header, :image)
 #     return f.header.image
 #   else
@@ -24,7 +24,7 @@
 #   end
 # end
 #
-# function preimage_function(f::Map(HeckeMap))
+# function preimage_function(f::Map(AbstractAlgebra.HeckeMap))
 #   if isdefined(f.header, :preimage)
 #     return f.header.preimage
 #   else
@@ -111,7 +111,7 @@ image_function(f) = a -> image(f, a)
 #  return AbstractAlgebra.Generic.compose(g, f)
 #end
 
-#function compose(f::Map(HeckeMap){R, C}, g::Map(HeckeMap){D, R}) where {D, C, R}
+#function compose(f::Map(AbstractAlgebra.HeckeMap){R, C}, g::Map(AbstractAlgebra.HeckeMap){D, R}) where {D, C, R}
 #  return CompositeMap{D, C, R}(f, g)
 #end
 
@@ -171,7 +171,7 @@ end
 #
 # ```
 # """
-# mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
+# mutable struct MapFromFunc{R, T} <: Map{R, T, AbstractAlgebra.HeckeMap, MapFromFunc}
 #   header::AbstractAlgebra.MapHeader{R, T}
 #   f
 #   g

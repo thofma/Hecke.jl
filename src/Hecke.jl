@@ -50,8 +50,8 @@ import AbstractAlgebra:
 
 import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 
-import AbstractAlgebra: HeckeMap
-# import AbstractAlgebra: HeckeMap, AbstractAlgebra.MapHeader, MapCache
+# import AbstractAlgebra: HeckeMap
+import AbstractAlgebra: HeckeMap, MapHeader, MapCache
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
@@ -460,7 +460,7 @@ end
 #
 ################################################################################
 
-# abstract type HeckeMap <: SetMap end  #needed here for the hasspecial stuff
+# abstract type AbstractAlgebra.HeckeMap <: SetMap end  #needed here for the hasspecial stuff
              #maybe move to Maps?
 
 import AbstractAlgebra: @show_name, @show_special, @show_special_elem
@@ -470,9 +470,9 @@ import AbstractAlgebra: @show_name, @show_special, @show_special_elem
 #        @show_special_elem, @attributes, extra_name, set_name!, get_name
 #
 # # Hecke maps store attributes in the header object
-# _get_attributes(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes(G.header)
-# _get_attributes!(G::Map{<:Any, <:Any, HeckeMap, <:Any}) = _get_attributes!(G.header)
-# _is_attribute_storing_type(::Type{Map{<:Any, <:Any, HeckeMap, <:Any}}) = true
+# _get_attributes(G::Map{<:Any, <:Any, AbstractAlgebra.HeckeMap, <:Any}) = _get_attributes(G.header)
+# _get_attributes!(G::Map{<:Any, <:Any, AbstractAlgebra.HeckeMap, <:Any}) = _get_attributes!(G.header)
+# _is_attribute_storing_type(::Type{Map{<:Any, <:Any, AbstractAlgebra.HeckeMap, <:Any}}) = true
 
 using FLINT_jll: libflint
 
@@ -631,11 +631,11 @@ const _RealRings = _RealRing[_RealRing()]
 #
 ################################################################################
 
-#for T in subtypes(Map(HeckeMap))
+#for T in subtypes(Map(AbstractAlgebra.HeckeMap))
 #  (M::T)(a) = image(M, a)
 #end
 
-# (f::Map{D, C, <:Hecke.HeckeMap, T} where {D, C, T})(x) = image(f, x)
+# (f::Map{D, C, <:AbstractAlgebra.HeckeMap, T} where {D, C, T})(x) = image(f, x)
 
 ################################################################################
 #

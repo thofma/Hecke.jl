@@ -14,7 +14,7 @@
 ###############################################################################
 
 
-mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCrvIso} where T<:RingElem
+mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, AbstractAlgebra.HeckeMap, EllCrvIso} where T<:RingElem
   header::AbstractAlgebra.MapHeader{EllipticCurve{T}, EllipticCurve{T}}
   domain::EllipticCurve{T}
   codomain::EllipticCurve{T}
@@ -639,7 +639,7 @@ end
 
 parent(f::EllCrvIso{T}) where {T} = EllCrvIsoSet{EllipticCurve{T}}(domain(f))
 
-mutable struct EllCrvAutMap{S, T} <: Map{MultTableGroup, EllCrvIsoSet{T}, HeckeMap, EllCrvAutMap}
+mutable struct EllCrvAutMap{S, T} <: Map{MultTableGroup, EllCrvIsoSet{T}, AbstractAlgebra.HeckeMap, EllCrvAutMap}
   G::MultTableGroup
   auts::Vector{T}
   header::AbstractAlgebra.MapHeader{MultTableGroup, EllCrvIsoSet{S}}
