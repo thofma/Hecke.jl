@@ -517,7 +517,7 @@ function _find_isomorphism(K::Union{ AbsSimpleNumField, RelSimpleNumField{AbsSim
   return KtoA, AtoK
 end
 
-mutable struct NfToAlgGrpMor{S, T, U} <: Map{AbsSimpleNumField, GroupAlgebra{S, T, U}, HeckeMap, AbsAlgAssMor}
+mutable struct NfToAlgGrpMor{S, T, U} <: Map{AbsSimpleNumField, GroupAlgebra{S, T, U}, AbstractAlgebra.HeckeMap, AbsAlgAssMor}
   K::AbsSimpleNumField
   mG::GrpGenToNfMorSet{_AbsSimpleNumFieldAut, AbsSimpleNumField}
   A::GroupAlgebra{S, T, U}
@@ -678,7 +678,7 @@ const _reps = [(i=24,j=12,n=5,dims=(1,1,2,3,3),
 #
 ################################################################################
 
-mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAssMorGen}
+mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, AbstractAlgebra.HeckeMap, Any}#AbsAlgAssMorGen}
   domain::S
   codomain::T
   tempdomain::U

@@ -62,7 +62,7 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem <: Map{FinGenAbGroup,FacElemMon{QQField},HeckeMap,MapSUnitGrpZFacElem}
+mutable struct MapSUnitGrpZFacElem <: Map{FinGenAbGroup,FacElemMon{QQField},AbstractAlgebra.HeckeMap,MapSUnitGrpZFacElem}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup,FacElemMon{QQField}}
   idl::Vector{ZZRingElem}
 
@@ -75,7 +75,7 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ <: Map{FinGenAbGroup,QQField,HeckeMap,MapSUnitGrpZ}
+mutable struct MapSUnitGrpZ <: Map{FinGenAbGroup,QQField,AbstractAlgebra.HeckeMap,MapSUnitGrpZ}
   header::AbstractAlgebra.MapHeader{FinGenAbGroup,QQField}
   idl::Vector{ZZRingElem}
 

@@ -54,7 +54,7 @@ const NonArchLocalFieldElemTypes = Union{PadicFieldElem, QadicFieldElem, LocalFi
 #
 ################################################################################
 
-mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, CompletionMap{S, T}}
+mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, AbstractAlgebra.HeckeMap, CompletionMap{S, T}}
   header::AbstractAlgebra.MapHeader{AbsSimpleNumField, S}
   P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   prim_img::T
