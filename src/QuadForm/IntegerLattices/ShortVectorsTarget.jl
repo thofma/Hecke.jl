@@ -521,6 +521,31 @@ function _short_vectors_with_condition(::Type{CoeffType},
   return output, grams, (invariants, target_invariants_output)
 end
 
+function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matrix{Int}})
+  @assert length(sv) == length(invariants[1])
+  l = length(sv)
+  invs, target_invs = invariants
+  for i in 1:l
+    @inbounds v = sv[i][1]
+    m = 0
+    for R in dual_root_orbits 
+      m = _signed_hash(multiset(R*v), m) # common signed hash
+    end
+    invs[i] = _signed_hash(invs[i], m) # common signed hash
+  end
+  for i in 1:length(target_invs)
+    m = 0
+    for R in dual_root_orbits
+      m = _signed_hash(multiset(R[:,i]), m)
+    end
+    target_invs[i] = _signed_hash(target_invs[i], m)
+  end
+  S = Set(target_invs)
+  mask = [i in S for i in invs]
+  # todo: do this inplace
+  return sv[mask], (invs[mask], target_invs)
+end
+
 function _postprocess_short_vectors_with_condition(::Type{CoeffType},
                                                    B::QQMatrix,
                                                    denoms::Vector{ZZRingElem},
@@ -803,6 +828,36 @@ function _signed_hash(x::Vector, seed::UInt)
   return ret
 end
 
+# for M a multiset define -M = {-x : x in M} as a multiset
+# we want hash(-M) = -hash(M)  
+function _signed_hash(M::MSet, seed::UInt=UInt(0))
+    h = Int64(0)
+    for (x, multiplicity) in M.dict
+        h += reinterpret(Int, hash(multiplicity)) * reinterpret(Int, _signed_hash(x, seed))
+    end
+    return h
+end
+
+_signed_hash(M::MSet, h::Int) = _signed_hash(_signed_hash(M), h)
+
+function _signed_hash(x::Int, seed::UInt=0)
+  return sign(x)*reinterpret(Int, hash(abs(x), seed))
+end 
+
+# common signed hash
+# _signed_hash(-x,-y) = -_signed_hash(x,y)
+function _signed_hash(x::Int, y::Int)
+  # canonicalize and hash the pair (x,y) 
+  # than add the sign 
+  if x < 0 
+    return -reinterpret(Int, hash((-x,-y)))
+  elseif iszero(x) && y < 0
+    return -reinterpret(Int, hash((x,-y)))
+  else
+    return reinterpret(Int, hash((x,y)))
+  end
+end
+
 function neg!(x::Vector{ZZRingElem})
   for i in eachindex(x)
     @inbounds neg!(x[i])
@@ -1066,7 +1121,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   n = rank(L)
 
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L, [matrix(ZZ, 1, n, i) for i in fundamental_roots])
-  fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
+  fixed_space, isotypic_coinvariant_space, weyl_vector, root_orbits = _weyl_group(L, root_types, fundamental_roots)
   if use_projections
     R_fix = lattice(V, fixed_space; isbasis=true, check=false)
     R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
@@ -1085,13 +1140,14 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   end
 
 
-  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol;
+  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol, root_orbits;
                                                search_invariant_subspace,
                                                search_fixed_vectors)
 end
 
 
-function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol; search_invariant_subspace=false, search_fixed_vectors=true)
+function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol, root_orbits; search_invariant_subspace=false, search_fixed_vectors=true)
+
   tmpZZ = ZZ()
   n = nrows(GInt)
   maxL = Int(maximum(diagonal(G))) # catches overflows

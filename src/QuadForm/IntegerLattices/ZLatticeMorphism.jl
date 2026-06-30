@@ -49,6 +49,7 @@ function __assert_has_automorphisms(
   use_target_enum::Bool=true,
   short_vectors_direct::Bool=false,
   allow_short_vectors_direct::Bool=true,
+  use_multiset::Bool=true,
   do_lll::Bool=true,
   use_dual::Bool=false,
 )
@@ -151,7 +152,7 @@ function __assert_has_automorphisms(
   end
   if use_weyl && use_projections && use_target_enum
     res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
-                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct)
+                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct, use_multiset)
     use_projections = false # already added projections
   elseif use_weyl
     error("not implemented")
@@ -283,7 +284,8 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
                                        search_invariant_subspace::Bool=false,
                                        use_dual::Bool=false,
                                        allow_short_vectors_direct::Bool=false,
-                                       force_direct::Bool=false)
+                                       force_direct::Bool=false,
+                                       use_multiset::Bool=true)
   tmp = ZZ()
   gramZZ, _ = _integral_split_gram(_L)
   gramInt = _int_matrix_with_overflow(gramZZ, tmp)
@@ -293,7 +295,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   fundamental_roots = [matrix(ZZ,1,n,i) for i in _fundamental_roots(sv2, gramInt)]
 
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
-  fixed_matrix, isotypic_cofix_spaces, weyl_vector = _weyl_group(_L, root_types, fundamental_roots)
+  fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits = _weyl_group(_L, root_types, fundamental_roots)
   T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
   (_L, successive_sublattices, B, Binv, projection_ranges, projL,
   projL_gram, denoms, target_fixed_part, target_norms, grams) = T
@@ -307,6 +309,10 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   else
     @vprintln :Lattice 2 "short vectors choosing direct=true"
     @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams, fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
+  end
+  if use_multiset
+    dual_root_orbits = [M*gramInt for M in root_orbits]
+    vector_set, invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
@@ -954,7 +960,8 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     push!(glue_indices, ed)
     j = k
   end
-  D = Dict{Tuple{Tuple{Symbol, Int}, Vector{ZZRingElem}}, Vector{ZZMatrix}}()
+  KeyType = Tuple{Tuple{Symbol, Int}, Vector{ZZRingElem}}
+  D = Dict{KeyType, Vector{ZZMatrix}}()
   for (t,g,f) in zip(root_types, glue_indices, fundamental_roots)
     k = (t,g)
     if haskey(D, k)
@@ -963,6 +970,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
       D[k] = ZZMatrix[f]
     end
   end
+  root_orbits = Matrix{Int}[]
   # We sort the keys to make the order of the output canonical:
   # in the sense that it defines an isometry Fix(L1_root) -> Fix(L2_root)
   # that extends to an isometry L1 -> L2
@@ -979,6 +987,26 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     end
     invariant_vectors_k = ZZMatrix[]
     sizehint!(invariant_vectors_k, length(inv_vec))
+    tmpZZ = ZZ()
+    orbits_k = Matrix{Int}[]
+    for orb in _aut_red_orbits(t...)
+      orb_len = length(blocks)*length(orb)
+      orb_len==1 && continue #full orbit of length one -> fixed
+      orb_mat = Matrix{Int}(undef, orb_len, n)
+      i = 0
+      for ii in orb
+        for b in blocks
+          i = i+1
+          for j in 1:n
+            getindex!(tmpZZ, b, ii, j)
+            orb_mat[i,j] = Int(tmpZZ)
+          end
+        end
+      end
+      @assert i==orb_len
+      push!(orbits_k, orb_mat)
+    end
+    append!(root_orbits, orbits_k)
 
     representations_k = ZZMatrix[]
     for u in inv_vec
@@ -1017,18 +1045,41 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
 
   fixed_matrix = reduce(vcat, invariant_vectors)
   @hassert :Lattice 1 all(all(isone,i*GZ*weyl_vector) for i in fundamental_roots)
-  return fixed_matrix, isotypic_cofix_spaces, weyl_vector
+  return fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits
 end
 
-# Return the vectors fixed by the reduced automorphism group.
+function _aut_red_orbits(s::Symbol, n::IntegerUnion)
+  if s == :A
+    orb = [[i,n+1-i] for i in 1:div(n,2)]
+    if isodd(n)
+      push!(orb, [div(n+1,2)])
+    end
+    return orb
+  elseif s == :D
+    @assert n>=4
+    if n == 4
+      return [[1,2,3],[4]]
+    else
+      return [[1,2],([i] for i in 3:n)...]
+    end
+  elseif s == :E
+    @assert 8>=n>=6
+    if n == 6
+      return [[1,5], [2,4], [3], [6]]
+    elseif n == 7 || n == 8
+      return [[i] for i in 1:n]
+    end
+  end
+end
+
+# Return a basis of pairwise orthogonal vectors of the 
+# subspace fixed by the reduced automorphism group.
 function _invariant_vectors(s::Symbol, n::IntegerUnion)
   invs = ZZMatrix[]
   if s == :A
     # u_k = e_k + e_{k+1} + ... + e_{n+1-k}, for k = 1,...,ceil(n/2).
     # These are pairwise orthogonal w.r.t. the A_n Cartan matrix:
     #   <u_k, u_k> = 2, <u_k, u_l> = 0 for k != l.
-    # They span the same subspace as the old vectors e_i+e_{n+1-i} (and the
-    # middle e_{(n+1)/2} for n odd) via a lower-triangular change of basis.
     for k in 1:div(n+1, 2)
       v = zero_matrix(ZZ, 1, n)
       for j in k:(n+1-k)
