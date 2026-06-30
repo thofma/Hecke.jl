@@ -541,6 +541,7 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
     target_invs[i] = _signed_hash(target_invs[i], m)
   end
   S = Set(target_invs)
+  for i in target_invs push!(S, -i) end
   mask = [i in S for i in invs]
   # todo: do this inplace
   return sv[mask], (invs[mask], target_invs)
