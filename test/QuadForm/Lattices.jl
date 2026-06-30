@@ -18,7 +18,7 @@
 
   q = quadratic_space(K, diagonal_matrix(Hecke.diagonal_of_rational_span(L)))
   @test is_isometric(ambient_space(L),q)
-  gensL = generators(L, minimal=true)
+  gensL = gens(L, minimal=true)
   L1 = lattice(ambient_space(L), matrix(gensL))
   @test L1 == L
 
@@ -138,7 +138,7 @@
   OK = maximal_order(K)
   q = quadratic_space(K, K[1 0; 0 1])
   L = fractional_ideal(OK, K(1//2))*lattice(q)
-  S = lattice(q, matrix(generators(L)[1:1]))
+  S = lattice(q, matrix(gens(L)[1:1]))
   LS =  @inferred intersect(L, S)
   @test is_sublattice(L, LS) && is_sublattice(S, LS)
   T = @inferred orthogonal_submodule(L, S)
@@ -206,7 +206,7 @@ end
   @test codomain(VrestoV) === ambient_space(L)
   Lres = restrict_scalars(L, QQ)
   @test ambient_space(Lres) === Vres
-  @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
+  @test all(v -> VrestoV(VrestoV\v) == v, gens(L))
 
 
   Qx, x = polynomial_ring(QQ, "x")

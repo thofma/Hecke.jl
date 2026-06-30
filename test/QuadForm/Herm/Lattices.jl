@@ -25,10 +25,10 @@
   @test pseudo_matrix(L3) != pseudo_matrix(L)
   @test ambient_space(L3) != ambient_space(L)
 
-  L4 = @inferred hermitian_lattice(base_field(L), generators(L))
+  L4 = @inferred hermitian_lattice(base_field(L), gens(L))
   @test ambient_space(L4) != ambient_space(L)
 
-  L5 = @inferred hermitian_lattice(base_field(L), generators(L), gram = D)
+  L5 = @inferred hermitian_lattice(base_field(L), gens(L), gram = D)
   @test ambient_space(L5) === ambient_space(L)
 
   #
