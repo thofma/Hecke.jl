@@ -1130,7 +1130,7 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
       return G(ex)
     end
   end
-  return G, MapFromFunc(G, K, from_G, to_G)
+  return G, map_from_func(G, K, from_G, to_G)
 end
 
 function teichmuller(a::LocalFieldElem)
@@ -1183,7 +1183,7 @@ function unit_group(K::T) where T <: Union{QadicField, PadicField, LocalField}
     return inj[1](v*Z[1]) + inj[2](preimage(mu, r)) + inj[3](preimage(mU, x))
   end
 
-  return G, MapFromFunc(G, K, from_G, to_G)
+  return G, map_from_func(G, K, from_G, to_G)
 end
 
 #=
@@ -1207,7 +1207,7 @@ function unit_group(R::LocalFieldValuationRing)
     return inj[1](preimage(mu, r)) + inj[2](preimage(mU, x))
   end
 
-  return G, MapFromFunc(G, K, from_G, to_G)
+  return G, map_from_func(G, K, from_G, to_G)
 end
 
 =#
@@ -1376,7 +1376,7 @@ function Hecke.unit_group(K::PadicField; n_quo::Int = -1)
     end
     return A(ZZRingElem[v, f[1], lift(ZZ, log(y)/lg)])
   end
-  return A, MapFromFunc(A, K, x-> K(p)^x[1]*g^x[2]*gn^x[3], fl)
+  return A, map_from_func(A, K, x-> K(p)^x[1]*g^x[2]*gn^x[3], fl)
 end
 
 function unit_group2(K::PadicField; n_quo::Int = -1)
@@ -1396,7 +1396,7 @@ function unit_group2(K::PadicField; n_quo::Int = -1)
       return A(ZZRingElem[v, 0, lift(ZZ, log(y)/lg)])
     end
   end
-  return A, MapFromFunc(A, K, x-> K(p)^x[1]*(-1)^x[2]*gn^x[3], fl)
+  return A, map_from_func(A, K, x-> K(p)^x[1]*(-1)^x[2]*gn^x[3], fl)
 end
 
 @doc raw"""
@@ -1560,4 +1560,3 @@ function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSim
   end
   return norm
 end
-
