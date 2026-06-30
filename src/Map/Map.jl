@@ -1,3 +1,11 @@
+# lowercase constructors, will replace old versions that were imported from AA
+# old version used different argument order:
+# AA: (fun, D, C) New: (D, C, f[, g])
+# Once this is changed in AA, we can import it and remove this
+
+map_from_func(D, C, f) = MapFromFunc(D, C, f)
+map_from_func(D, C, f, g) = MapFromFunc(D, C, f, g)
+
 
 #function image_func(M::Map)
 #  return M.header.image
@@ -119,5 +127,5 @@ end
 
 function extend_domain_to_fraction_field(phi::Map{<:MPolyRing, <:Ring})
   ext_dom = fraction_field(domain(phi))
-  return MapFromFunc(ext_dom, codomain(phi), x->phi(numerator(x))*inv(phi(denominator(x))))
+  return map_from_func(ext_dom, codomain(phi), x->phi(numerator(x))*inv(phi(denominator(x))))
 end

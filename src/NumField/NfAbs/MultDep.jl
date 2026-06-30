@@ -412,21 +412,21 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
   #    But here we know more
   #    the p-adic logs are all 0 (mod p^v) , so this should mean
   #    that the element is torsion or LARGE (since p^? has to divide s.th.)
-  # 
+  #
   t = prod([a[i]^g[i] for i=1:length(a)])
   pr = 20
   n = degree(base_ring(t))
   while true
     b = sum(x*x for x = conjugates_arb_log(t, pr))
     D = 21/128*log(parent(b)(n))/n^2 #plain Dobrowski
-    if b > D 
+    if b > D
       return false
     elseif b < D
       return true
     end
     pr *= 2
   end
-  
+
   #= I claim N(1-a) > v^n for n the field degree:
    Let K be one of the p-adic fields involved, set b = a^g
    then log(K(b)) = 0 (v = p^l) by assumption
@@ -690,7 +690,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     return pr(FacElem(a))
   end
 
-  return G, MapFromFunc(G, parent(u[1]), im, pr)
+  return G, map_from_func(G, parent(u[1]), im, pr)
 end
 
 function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
@@ -744,5 +744,3 @@ export syzygies
 end
 
 using .MultDep
-
-

@@ -27,7 +27,7 @@ function residue_field(Q::QadicField)
     end
     return z
   end
-  mk = MapFromFunc(Q, k, pro, lif)
+  mk = map_from_func(Q, k, pro, lif)
   set_attribute!(Q, :ResidueFieldMap => mk)
   return k, mk
 end
@@ -49,7 +49,7 @@ function residue_field(Q::PadicField)
     z = Q(lift(ZZ, x))
     return z
   end
-  mp = MapFromFunc(Q, k, pro, lif)
+  mp = map_from_func(Q, k, pro, lif)
   set_attribute!(Q, :ResidueField => mp)
   return k, mp
 end

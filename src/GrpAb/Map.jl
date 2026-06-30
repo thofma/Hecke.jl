@@ -650,7 +650,7 @@ function hom(G::FinGenAbGroup, H::FinGenAbGroup; task::Symbol = :map)
     local mm = transpose(reduce(vcat, [preimage(mH, r(mG(sG[i]))).coeff for i = 1:ngens(sG)]))
     return R([divexact(mm[j,i], c[(i-1)*m+j]) for i=1:n for j=1:m])
   end
-  return R, MapFromFunc(R, MapParent(G, H, "homomorphisms"), phi, ihp)
+  return R, map_from_func(R, MapParent(G, H, "homomorphisms"), phi, ihp)
 end
 
 ################################################################################
