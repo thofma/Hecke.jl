@@ -453,7 +453,7 @@ end
 function absolute_discriminant(::Type{FacElem}, C::ClassField)
   OK = base_ring(C)
   d = factored_norm(discriminant(FacElem, C))
-  d *= parent(d)(discriminant_sign(C)) 
+  d *= parent(d)(discriminant_sign(C))
   d *= parent(d)(abs(QQ(discriminant(OK))))^degree(C)
   return d
 end
@@ -966,7 +966,7 @@ function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = fals
     return [hom(domain(fR), domain(x.quotientmap), FinGenAbGroupElem[]) for x = r]
   end
 
-  lp, sR = find_gens(MapFromFunc(IdealSet(base_ring(R)), domain(fR), x->preimage(fR, x)),
+  lp, sR = find_gens(map_from_func(IdealSet(base_ring(R)), domain(fR), x->preimage(fR, x)),
                              PrimesSet(100, -1), minimum(mR))
 
   if map == false

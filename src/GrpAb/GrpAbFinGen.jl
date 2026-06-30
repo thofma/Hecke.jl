@@ -1026,7 +1026,7 @@ function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
     return reverse(g[p[1]])
   end
 
-  return T, MapFromFunc(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
+  return T, map_from_func(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
 end
 
 ⊗(G::FinGenAbGroup...) = tensor_product(G..., task = :none)

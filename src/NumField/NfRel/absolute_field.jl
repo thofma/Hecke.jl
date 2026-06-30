@@ -171,7 +171,7 @@ function absolute_simple_field(K::RelSimpleNumField{AbsSimpleNumFieldElem}; cach
   Ka, a, b, c = _absolute_field(K, cached = cached)
   h1 = hom(Ka, K, c, inverse = (a, b))
   embed(h1)
-  embed(MapFromFunc(K, Ka, x->preimage(h1, x)))
+  embed(map_from_func(K, Ka, x->preimage(h1, x)))
   abs[simplify] = (Ka, h1)
   return Ka, h1
 end
@@ -254,7 +254,7 @@ function collapse_top_layer(K::RelSimpleNumField{T}; cached::Bool = false, do_em
   h1 = hom(Ka, K, c, inverse = (a, b), check = false)
   h2 = hom(base_field(K), Ka, a, check = false)
   embed(h1)
-  embed(MapFromFunc(K, Ka, x->preimage(h1, x)))
+  embed(map_from_func(K, Ka, x->preimage(h1, x)))
   embed(h2)
   return Ka, h1, h2
 end

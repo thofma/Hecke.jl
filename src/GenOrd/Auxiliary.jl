@@ -81,7 +81,7 @@ end
 function Hecke.residue_field(R::PolyRing{T}, p::PolyRingElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)
-  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
+  return K, map_from_func(R, K, x -> K(x), y -> R(y))
 end
 
 function (F::Generic.FunctionField{T, U})(p::PolyRingElem{<:Generic.RationalFunctionFieldElem{T, U}}) where {T <: FieldElem, U <: PolyRingElem{T}}
@@ -171,7 +171,7 @@ function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::Localized
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
-  return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(ZZ, y)))
+  return F, map_from_func(R, F, x->F(data(x)), y->R(lift(ZZ, y)))
 end
 
 Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
