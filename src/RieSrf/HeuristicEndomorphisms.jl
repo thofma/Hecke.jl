@@ -84,7 +84,7 @@ function complex_structure(P::AcbMatrix)
 end
 
 @doc raw"""
-complex_structure(P::AcbMatrix) -> ArbMatrix
+rational_homomorphism_equations(P::AcbMatrix) -> ArbMatrix
 
 Given two complex structures JP and JQ, returns the equations on homology
 satisfied by a homomorphism between the two corresponding abelian varieties.
