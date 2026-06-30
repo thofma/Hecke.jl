@@ -650,5 +650,5 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem; cached::Bool = tru
     end
     return r#*K(p)^valuation(x)
   end
-  return parent(ca), MapFromFunc(K, parent(ca), inj, lif)
+  return parent(ca), map_from_func(K, parent(ca), inj, lif)
 end

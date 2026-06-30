@@ -30,7 +30,7 @@ is_simple(::AbsSimpleNumField) = true
 function number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))
+  mp = map_from_func(K, S, y -> S(Qx(y)), x -> K(lift(x)))
   return K, mp
 end
 

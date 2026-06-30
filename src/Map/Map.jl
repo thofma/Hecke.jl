@@ -127,5 +127,5 @@ end
 
 function extend_domain_to_fraction_field(phi::Map{<:MPolyRing, <:Ring})
   ext_dom = fraction_field(domain(phi))
-  return MapFromFunc(ext_dom, codomain(phi), x->phi(numerator(x))*inv(phi(denominator(x))))
+  return map_from_func(ext_dom, codomain(phi), x->phi(numerator(x))*inv(phi(denominator(x))))
 end
