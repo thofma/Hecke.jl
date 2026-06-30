@@ -2014,16 +2014,16 @@ function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
     end
     SV2 = __short_vectors(Glll, nothing, mi-1)
     if isempty(SV2)
-      L.minimum = mi/d
+      L.minimum = mi//d
       return false, Glll
     end
     m = @inbounds minimum(i[2] for i in SV2)
     SV = [i[1] for i in SV2 if i[2]==m]
-    m = m/d
+    m = m//d
   else
     m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
   end
-  L.minimum = m/d
+  L.minimum = m//d
   B = _row_span!(SV)
   if dolll
     B = mul!(B, B, T)

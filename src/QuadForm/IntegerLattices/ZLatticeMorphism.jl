@@ -931,8 +931,9 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   weyl_vector = zeros_array(QQ, degree(L))
   tmp_vector = zeros_array(QQ, degree(L))
   isotypic_cofix_spaces = ZZMatrix[]
+  root_orbits = Matrix{Int}[]
   if length(root_types) == 0
-    return zero_matrix(ZZ, 0, n), isotypic_cofix_spaces, weyl_vector
+    return zero_matrix(ZZ, 0, n), isotypic_cofix_spaces, weyl_vector, root_orbits
   end
   invariant_vectors = ZZMatrix[]
   F = reduce(vcat, fundamental_roots)
@@ -970,7 +971,6 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
       D[k] = ZZMatrix[f]
     end
   end
-  root_orbits = Matrix{Int}[]
   # We sort the keys to make the order of the output canonical:
   # in the sense that it defines an isometry Fix(L1_root) -> Fix(L2_root)
   # that extends to an isometry L1 -> L2
@@ -1072,7 +1072,7 @@ function _aut_red_orbits(s::Symbol, n::IntegerUnion)
   end
 end
 
-# Return a basis of pairwise orthogonal vectors of the 
+# Return a basis of pairwise orthogonal vectors of the
 # subspace fixed by the reduced automorphism group.
 function _invariant_vectors(s::Symbol, n::IntegerUnion)
   invs = ZZMatrix[]
