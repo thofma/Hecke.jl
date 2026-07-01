@@ -525,28 +525,44 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
   @assert length(sv) == length(invariants[1])
   l = length(sv)
   invs, target_invs = invariants
+  uinvs = Vector{UInt}(undef, l)
+  target_uinvs = Vector{UInt}(undef, length(target_invs))
   for i in 1:l
     @inbounds v = sv[i][1]
-    m = 0
-    for R in dual_root_orbits 
-      m = _signed_hash(multiset(R*v), m) # common signed hash 
+    m = 0 #signed hash
+    u = UInt(0) # unsigned hash
+    for R in dual_root_orbits
+      w = R*v
+      ms = multiset(w)
+      ms_neg = multiset(-w)
+      u = hash(hash(ms) ⊻ hash(ms_neg),u)
+      m = _signed_hash(ms, m) # common signed hash 
     end
+    uinvs[i] = u
     invs[i] = _signed_hash(invs[i], m) # common signed hash
   end
-  println()
   for i in 1:length(target_invs)
     m = 0
+    u = UInt(0)
     for R in dual_root_orbits
-      m = _signed_hash(multiset(R[:,i]), m)
+      w = R[:,i]
+      ms = multiset(w)
+      ms_neg = multiset(neg!(w))
+      u = hash(hash(ms) ⊻ hash(ms_neg),u)
+      m = _signed_hash(ms, m)
     end
+    target_uinvs[i] = u
     target_invs[i] = _signed_hash(target_invs[i], m)
-  end
+  end 
   S = Set(target_invs)
+  Su = Set(target_uinvs)
   for i in target_invs push!(S, -i) end
   mask = [!(i in S) for i in invs]
+  masku = [!(i in Su) for i in uinvs]
+  mask = mask .| masku
   deleteat!(invs, mask)
   deleteat!(sv, mask)
-  return sv, invariants
+  return sv, invariants, (uinvs, target_uinvs)
 end
 
 function _postprocess_short_vectors_with_condition(::Type{CoeffType},
