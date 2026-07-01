@@ -1058,7 +1058,7 @@ function _aut_red_orbits(s::Symbol, n::IntegerUnion)
   elseif s == :D
     @assert n>=4
     if n == 4
-      return [[1,2,3],[4]]
+      return [[1,2,4],[3]]
     else
       return [[1,2],([i] for i in 3:n)...]
     end
