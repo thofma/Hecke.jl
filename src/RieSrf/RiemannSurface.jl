@@ -1408,7 +1408,6 @@ function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, 
   m = degree(f, 2)
   temp_vec = acb_vec(m)
   temp_vec_res = acb_vec(m)
-
   #Following Algorithm 4.5.1 in Neurohr's thesis page 75. W, w and d are as in (4.19)
   ff = f(x2, y)
   ff = ff/leading_coefficient(ff)
@@ -1426,7 +1425,6 @@ function recursive_continuation(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem}, 
   end
 
   d = reduce(min, d)
-
   #d = reduce(min, [abs(z[i] - z[j]) for (i, j) in filter(t-> t[1] != t[2], [a for a in Iterators.product((1:m), (1:m))])])
 
   #W = [ ff(z[i]) // prod([z[i] - z[j] for j in vcat((1:i - 1), i+1:m)];init = one(CC)) for i in (1:m)]
