@@ -738,66 +738,96 @@ end
 
 struct SubSetSizeItr{T}
   b::Vector{T}
-  k::Int #subsets of size k only
-  B::Vector{Vector{Int}}
+  len_b::Int
+  k::Int
   length::Int
+  inplace::Bool
 end
 
 @doc raw"""
-    subsets(s::Set, k::Int) -> SubSetSizeItr{T}
+    subsets(s::Set, k::Int; inplace::Bool=false) -> SubSetSizeItr{T}
 
 Return an iterator on all sub-sets of size `k` of `s`.
+
+If `inplace` is `true`, the elements of the iterator may share their memory. This
+means that an element returned by the iterator may be overwritten 'in place' in
+the next iteration step. This may result in significantly fewer memory allocations.
+However, using the in-place version is only meaningful
+if just one element of the iterator is needed at any time.
+For example, calling `collect` on this iterator will not give useful results.
+
+# Examples
+
+```jldoctest
+julia> for i in subsets(Set(["a","b","c"]), 1)
+         println(i)
+       end
+Set(["a"])
+Set(["b"])
+Set(["c"])
+
+julia> collect(subsets(Set([1:5;]), 2))
+10-element Vector{Set{Int64}}:
+ Set([3, 1])
+ Set([2, 1])
+ Set([4, 1])
+ Set([5, 1])
+ Set([2, 3])
+ Set([4, 3])
+ Set([5, 3])
+ Set([4, 2])
+ Set([5, 2])
+ Set([5, 4])
+```
 """
-function subsets(s::Set{T}, k::Int) where T
-  # subsets are represented by integers in the Combinatorial_number_system
-  # https://en.wikipedia.org/wiki/Combinatorial_number_system
-  # this iterator could indexed, the other one below not
-  # maybe use "The coolest way to generate combinations" instead
+function subsets(s::Set{T}, k::Int; inplace::Bool=false) where T
   b = unique(s)
-  m = Int(binomial(length(b), k))
-  C = Vector{Vector{Int}}()
-  while k >= 1
-    B = Int[]
-    i = k-1
-    while true
-      c = Int(binomial(i, k))
-      if c < m && length(B) < length(b)
-        push!(B, c)
-        i += 1
-      else
-        break
-      end
-    end
-    push!(C, B)
-    k -=1
-  end
-  return SubSetSizeItr{T}(b, length(C), C, m)
+  len_b = length(b)
+  l = Int(binomial(len_b, k))
+  return SubSetSizeItr{T}(b, len_b, k, l, inplace)
 end
 
-function int_to_elt(M::SubSetSizeItr{T}, i::Int) where T
-  s = Set{T}()
-  j = 1
-  while j <= length(M.B)
-    z = findlast(x -> x <= i, M.B[j])
-    push!(s, M.b[z + M.k - j])
-    i -= M.B[j][z]
-    j += 1
-  end
-  while length(s) < M.k
-    push!(s, M.b[length(s)])
-  end
-  return s
-end
-
-function Base.iterate(M::SubSetSizeItr)
+function Base.iterate(M::SubSetSizeItr{T}) where T
   0 >= M.length && return nothing
-  return int_to_elt(M, 0), 0
+  s = Set{T}()
+  0 == M.k && return s, nothing
+  for i in (M.len_b-M.k+1):M.len_b
+    push!(s, M.b[i])
+  end
+  if M.inplace
+    return s, (s,[(M.len_b-M.k+1):M.len_b;])
+  end
+  return copy(s), (s,[(M.len_b-M.k+1):M.len_b;])
 end
 
-function Base.iterate(M::SubSetSizeItr, st::Int)
-  st += 1
-  st >= M.length && return nothing
-  return int_to_elt(M, st), st
+## This is only used to avoid errors when asking for all 0-element subsets of a given set
+function Base.iterate(M::SubSetSizeItr{T}, nothing) where T
+  return nothing
+end
+
+function Base.iterate(M::SubSetSizeItr{T}, h::Tuple{Set{T}, Vector{Int}}) where T
+  carry = 1
+  while h[2][carry] == carry
+    carry += 1
+    if carry > M.k
+      return nothing
+    end
+  end
+  delete!(h[1], M.b[h[2][carry]])
+  h[2][carry] -= 1
+  push!(h[1], M.b[h[2][carry]])
+  tmp = h[2][carry] - carry
+  ind = carry - 1
+  while ind >= 1
+    delete!(h[1], M.b[h[2][ind]])
+    h[2][ind] = tmp + ind
+    push!(h[1], M.b[h[2][ind]])
+    ind -= 1
+  end
+  if M.inplace
+    return h[1], (h[1], h[2])
+  end
+  return copy(h[1]), (h[1], h[2])
 end
 
 function Base.length(M::SubSetSizeItr)

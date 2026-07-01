@@ -109,96 +109,63 @@ end
 ################################################################################
 
 @doc raw"""
-    order_via_bsgs(E::EllipticCurve) -> Vector{ZZRingElem}
+    order_via_bsgs(E::EllipticCurve) -> ZZRingElem
 
-Returns a vector of candidates for the number of points on an elliptic curve $E$ given
-over a finite field $\mathbf{F}_q$, using the Baby-step Giant-step method. If
-$q$ is prime, and if $q > 229$, then the order is determined uniquely by this algorithm.
-It is assumed that the characteristic is not 2.
+Returns the number of points on an elliptic curve $E$ given over a finite field
+$\mathbf{F}_q$, using the Baby-step Giant-step method.
+Implements Cremona-Sutherland modification of Mestre trick.
+It is assumed that q > 49.
 """
 function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
-  p == 0 && error("Base field must be finite")
+  @req p > 0 "Base field must be finite"
 
   q = order(R)
+  @req q > 49 "The size of the base field must be at least 50"
 
-  if (p == 2)
-    error("Characteristic must not be 2")
-  end
-  #char also not 3 right?
-  if E.short == false
-    E = short_weierstrass_model(E)[1]
-  end
+  E1, E2 = E, quadratic_twist(E)
+  q1 = q + 1
+  ML = 4*isqrt(q) + ZZ(isodd(degree(R)) ? 4 : 0)
 
-  Nposs = ZZ(1)
-  h = hasse_interval(E)
-  l = h[1]
-  b = h[2]
+  # E1 = E, E2 = quadratic twist of E: |E1| + |E2| = 2(q+1)
+  # |E1| = q + 1 - t, we maintain t = a mod M
+  # N1, N2 are known divisors of |E1| and |E2| respectively
+  a, M = ZZ(0), ZZ(1)
+  N1, N2 = ZZ(1), ZZ(1)
 
-  counter = 0
-  runwhile = true
+  # find order n of random point on E given divisor N of |E|
+  # for E1 this gives: t = q + 1 (mod n); for E2: t = -(q + 1) (mod n)
+  #   we pass this as Q1
+  # since we know that t = a (mod M), we use CRT with non-coprime moduli
+  # for g = u*M + v*n gcd of M and n, the solution is
+  #   (a*v*n + Q1*u*M) / g modulo Mn/g
+  function _add_point(P, Q1, N, a, M)
+    n = _point_order_bsgs(P, N)
+    N = lcm(N, n)
 
-  # if Nposs is greater than interval length, there is only one multiple of
-  # Nposs in the interval, so stop
-  # Also, if lcm does not change in 10(?) consecutive loops, leave while loop
-  while (Nposs <= (b-l)) && (runwhile == true)
-
-    P = rand(E)
-    ord = elem_order_bsgs(P)
-
-    if lcm(ord, Nposs) == Nposs
-      counter = counter + 1
-    else
-      Nposs = lcm(ord, Nposs)
-      counter = 0
+    g, u, v = gcdx(M, n) # g = u*M + v*n
+    if g < n # for g == n we don't gain extra information
+      a = divexact(a*v*n + Q1*u*M, g)
+      M = M * divexact(n,g)
+      a = mod(a, M)
     end
-
-    if counter > 10 # maybe take another criterion
-      runwhile = false
-    end
-
+    return a, M, N
   end
 
-  if runwhile == false # could not determine group order uniquely
-    candidates = ZZRingElem[]
-    Ncand = divrem(l, Nposs)[1]*Nposs
-    if Ncand != 0
-      push!(candidates, Ncand)
-    end
-
-    Ncand = Ncand + Nposs
-
-    while Ncand < b # compute all possible group orders using Hasse's theorem
-      push!(candidates, Ncand)
-      Ncand = Ncand + Nposs
-    end
-
-    output = candidates
-
-  else # group order is determined
-    N = (divrem(l, Nposs)[1] + 1) * Nposs
-    output = [N]
+  # when M >= 4*sqrt(q) we have unique remainder in Hasse interval
+  # if a > 2*sqrt(q), then a - M is the correct value
+  while M < ML
+    a, M, N1 = _add_point(rand(E1),  q1, N1, a, M)
+    M >= ML && break
+    a, M, N2 = _add_point(rand(E2), -q1, N2, a, M)
   end
 
-  if (p == q) && (p > 229) && (length(output) != 1)
-  # group order is uniquely determined, but by quadratic twist
-
-    d = R(0)
-    boolie = true
-    while boolie # get a quadratic non-residue mod p
-      d = rand(R)
-      if is_square(d)[1] == false
-        boolie = false
-      end
-    end
-    _, _, _, a4, a6 = a_invariants(E)
-    Eprime = elliptic_curve([a4*d^2, a6*d^3]) # quadratic twist
-    bb = order_via_bsgs(Eprime)[1]
-    output = [2*p + 2 - bb]
+  if a^2 > 4*q
+    return q1 - (a - M)
+  else
+    return q1 - a
   end
-
-  return output
 end
 
 ################################################################################
@@ -491,23 +458,34 @@ julia> order(E)
 100
 ```
 """
+
 @attr ZZRingElem function order(E::EllipticCurve{T}) where T<:FinFieldElem
   R = base_field(E)
   p = characteristic(R)
-  q = order(R)
-
   p == 0 && error("Characteristic must be nonzero")
 
+  q = order(R)
+
+  # for very small fields, use exhaustive search
+  # NOTE: we cannot use BSGS with q <= 49
+  q < 100 && return order_via_exhaustive_search(E)
+
+  # handle j = 0: this also covers supersingular curves in characteristic 2 and 3
   j_invariant(E) == 0 && return _order_j_0(E)
+
+  # for p = 2, 3 we have efficient AGM implementation
   p == 2 && return _order_ordinary_char2(E)
   p == 3 && return _order_ordinary_char3(E)
+
+  # j = 1728
   j_invariant(E) == R(1728) && return _order_j_1728(E)
 
-  A = order_via_bsgs(E)
-  if length(A) == 1
-    return ZZ(A[1])
-  end
-  return ZZ(order_via_schoof(E)) # bsgs may only return candidate list
+  # BSGS for medium sized field
+  # TODO: 10^5 is very safe threshold, can be higher
+  # TODO: when/if we add p-adic methods this will need to be tweaked
+  q < 100000 && return order_via_bsgs(E)
+
+  return order_via_schoof(E)
 end
 
 # don't use @attr, because I need that the attribute has this

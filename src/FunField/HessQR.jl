@@ -1,24 +1,27 @@
-"""
-  The ring ZZ<x> := {c f/g | c in ZZ, f, g in ZZ[x], primitive, pos leading coeff}
-  is a PID, even euclidean
-
-  The key interest is
-  IntCls(Z[x], F) = IntCls(Z<x>, F) cap IntCls(Q[x], F)
-  Since Z<x> and Q[x] are PID (even euclidean) the last 2 can be
-  computed using the Round2
-
-  The name is bad, but stems from Florian Hess' PhD thesis,
-  Chapter 2.10
-  (Actually he covers that for a Dedekind ring R we have that
-   R<x> is also Dedekind. The Round2, fundamentally would work
-   for Dedekind rings, using PMats)
-"""
 module HessQRModule
 using Hecke
 import Hecke.AbstractAlgebra, Hecke.Nemo
 import Base: +, -, *, gcd, lcm, divrem, div, rem, mod, ^, ==
 export HessQR
 import AbstractAlgebra: expressify
+
+# ZZ<x> := {c * f/g | c in ZZ, f, g in ZZ[x] primitive and with positive leading coefficient}
+#
+# Motivation:
+# Every rational function in QQ(x) can be uniquely written as c' * f/g
+#   where f,g are primitive with positive leading coefficient and c' is rational
+# ZZ<x> consists of those with c' in ZZ
+# In Hess' PhD Thesis "Zur Divisorenklassengruppenberechnung in globalen Funktionenkoerpern", chapter 2.10
+#   IntCls(Z[x], F) = IntCls(Z<x>, F) intersect IntCls(Q[x], F)
+# ZZ[x] by itself is not a PID, so Round-2 does not work,
+#   but QQ[x] and Z<x> are PID (and even Euclidean),
+#   so we can compute their integral closures easily using Round-2
+#
+# NB: All non-constant irreducible polynomials in Z[x] are primitive,
+#     hence they are units in Z<x>; so the only primes in Z<x> are prime integers.
+#     The factorization of c * f/g is, up to units, the factorization of c
+#
+# NB: the name is bad, but it is taken from the notation of Hess' thesis
 
 struct HessQR <: AbstractAlgebra.Ring
   R::ZZPolyRing
@@ -46,59 +49,64 @@ mutable struct HessQRElem <: RingElem
   f::ZZPolyRingElem
   g::ZZPolyRingElem
 
+  # this is the main constructor (all others just transform data and call this one)
+  # it ensures that f//g is reduced, and both numerator and denominator are
+  #   primitive with positive leading coefficient
   function HessQRElem(P::HessQR, c::ZZRingElem, f::ZZPolyRingElem, g::ZZPolyRingElem)
+    # canonical zero representation
     if iszero(c) || iszero(f)
-      r = new(P, ZZRingElem(0), zero(P.R), one(P.R))
-      @assert parent(r.f) == P.R
-      @assert parent(r.g) == P.R
-      return r
+      return new(P, ZZRingElem(0), one(P.R), one(P.R))
     end
+
+    # coerce to the polynomial ring of P
     if parent(f) != P.R
-      f = map_coefficients(ZZ, f, parent = P.R)
+      f = map_coefficients(ZZ, f; parent = P.R)
     end
     if parent(g) != P.R
-      g = map_coefficients(ZZ, g, parent = P.R)
+      g = map_coefficients(ZZ, g; parent = P.R)
     end
-    gc = gcd(f, g)
-    f = divexact(f, gc)
-    g = divexact(g, gc)
+
+    # simplify fraction
+    d = gcd(f, g)
+    f = divexact(f, d; check = false)
+    g = divexact(g, d; check = false)
+
+    # extract constant
     cf = content(f)*sign(leading_coefficient(f))
     cg = content(g)*sign(leading_coefficient(g))
-    @assert (c*cf) % cg == 0
-    r = new(P, divexact(c*cf, cg), divexact(f, cf), divexact(g, cg))
-    @assert parent(r.f) == P.R
-    @assert parent(r.g) == P.R
-    return r
+    (c*cf) % cg == 0 || error("not an element of Z<x>")
+
+    c = divexact(c*cf, cg; check = false)
+    f = divexact(f, cf; check = false)
+    g = divexact(g, cg; check = false)
+
+    return new(P, c, f, g)
   end
+
   function HessQRElem(P::HessQR, q::Generic.RationalFunctionFieldElem{QQFieldElem})
-    f = numerator(q)
-    g = denominator(q)
-    return HessQRElem(P, f, g)
+    return HessQRElem(P, numerator(q), denominator(q))
   end
   function HessQRElem(P::HessQR, f::QQPolyRingElem)
     return HessQRElem(P, f, one(parent(f)))
   end
-  function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
-    df = reduce(lcm, map(denominator, coefficients(f)), init = ZZRingElem(1))
-    dg = reduce(lcm, map(denominator, coefficients(g)), init = ZZRingElem(1))
-    ff = map_coefficients(ZZ, df*f, parent = P.R)
-    gg = map_coefficients(ZZ, dg*g, parent = P.R)
-    #ff/df//gg/dg = dg/df * ff/gg
-    return HessQRElem(P, divexact(dg, df), ff, gg)
+  function HessQRElem(P::HessQR, f::ZZPolyRingElem)
+    d = content(f)*sign(leading_coefficient(f))
+    return HessQRElem(P, d, divexact(f, d; check = false), one(P.R))
   end
   function HessQRElem(P::HessQR, c::ZZRingElem)
-    r = new(P, c, one(P.R), one(P.R))
-    @assert parent(r.f) == P.R
-    @assert parent(r.g) == P.R
-    return r
+    return new(P, c, one(P.R), one(P.R))
   end
-  function HessQRElem(P::HessQR, c::ZZPolyRingElem)
-    d = content(c)*sign(leading_coefficient(c))
-    r = new(P, d, divexact(c, d), one(P.R))
-    @assert parent(r.f) == P.R
-    @assert parent(r.g) == P.R
-    return r
+
+  function HessQRElem(P::HessQR, f::QQPolyRingElem, g::QQPolyRingElem)
+    # bring both to common denominator (and cancel it)
+    d = reduce(lcm, map(denominator, coefficients(f)); init = ZZRingElem(1))
+    d = reduce(lcm, map(denominator, coefficients(g)); init = d)
+
+    f, g = map_coefficients(ZZ, d*f; parent = P.R), map_coefficients(ZZ, d*g; parent = P.R)
+
+    return HessQRElem(P, ZZRingElem(1), f, g)
   end
+
 end
 
 function Base.show(io::IO, a::HessQRElem)
@@ -164,164 +172,9 @@ function (F::Generic.RationalFunctionField)(a::HessQRElem)
 end
 
 
-Nemo.iszero(a::HessQRElem) = iszero(a.c)
-Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
-
-Nemo.zero(R::HessQR) = R(0)
-Nemo.one(R::HessQR) = R(1)
-Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), ZZRingElem(sign(a.c)), a.f, a.g)
-
 Base.deepcopy_internal(a::HessQRElem, dict::IdDict) = HessQRElem(parent(a), Base.deepcopy_internal(a.c, dict), Base.deepcopy_internal(a.f, dict), Base.deepcopy_internal(a.g, dict))
 
-Base.hash(a::HessQRElem, u::UInt=UInt(12376599)) = hash(a.g, hash(a.f, hash(a.c, u)))
-
-+(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g+b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), ZZRingElem(1), a.c*a.f*b.g-b.c*b.f*a.g, a.g*b.g)
--(a::HessQRElem) = HessQRElem(parent(a), -a.c, a.f, a.g)
-*(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
-
-==(a::HessQRElem, b::HessQRElem) = check_parent(a, b) && a.c*a.f == b.c *b.f && a.g == b.g
-
-Base.:^(a::HessQRElem, n::Int) = HessQRElem(parent(a), a.c^n, a.f^n, a.g^n)
-
-function Hecke.mul!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
-  d = b*c
-  @assert parent(a.f) == parent(d.f)
-  @assert parent(a.g) == parent(d.g)
-  a.c = d.c
-  a.f = d.f
-  a.g = d.g
-  return a
-end
-
-function Hecke.add!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
-  d = b+c
-  @assert parent(a.f) == parent(d.f)
-  @assert parent(a.g) == parent(d.g)
-  a.c = d.c
-  a.f = d.f
-  a.g = d.g
-  return a
-end
-
-function divrem(a::HessQRElem, b::HessQRElem)
-  check_parent(a, b)
-  if iszero(b)
-    error("div by 0")
-  end
-  if iszero(a)
-    return a, a
-  end
-  #= af/g mod b:
-    it is enough to figure this out for b in Z>0, the rest is units
-    that will disappaear into the quotient q
-
-    - c = cont(g mod d), then since cont(g) is 1, c is a unit mod d
-    - cd = 1 mod d, then
-    - cont(g(cx^?+1) mod d) = 1 if ? = deg(g)+1 (or larger):
-      g(cx?+1) = cg x^? + g and cont(cg mod d = 1)...
-    - af/g -d/(cx^?+1) now has a denominator with cont( mod d) = 1
-    - af/g - (af - du)/(g - dv) =
-      (af(g-dv) -g(af-du))/(g(g-dv)) = d*..., so once cont(g %d) =1,
-      we can replace f and g mod d (and figure out the quotient afterwards)
-
-    - for d = p a prime, the rep is unique, thus F_p(t)
-
-    - other approach:
-      af/g = (af mod b)/(g mod b) mod b:
-
-      (af + bA)  af    (af + bA)g - af       bAg
-      -------- - -- =  --------------- =  ---------- = b * ....
-        g + bB    g     (g + bB) g        (g + bB) g
-
-      the tricky thing is that reducing af and g mod b they may no longer be
-      coprime... and gcd mod b is non-trivial to compute. gcd_sircana might work
-  =#
-  r = rem(a,b)
-  return divexact(a-r, b), r
-
-  return HessQRElem(parent(a), q, a.f*b.g, a.g*b.f), HessQRElem(parent(a), r, a.f, a.g)
-end
-
-function div(a::HessQRElem, b::HessQRElem)
-  check_parent(a, b)
-  if iszero(a)
-    return a
-  end
-  return divexact(a-rem(a, b), b)
-  q = div(a.c, b.c)
-  return HessQRElem(parent(a), q, a.f*b.g, a.g*b.f)
-end
-
-function rem(a::HessQRElem, b::HessQRElem)
-#  @show :rem, a, b
-  #NOT unique...., e.g. gcd(f,g mod b) might be <> 1....
-  check_parent(a, b)
-  if iszero(a)
-    return a
-  end
-  #see above for reasoning
-  d = abs(b.c)
-  if isone(d)
-    return zero(parent(a))
-  end
-  R = parent(a).R
-  F, mF = quo(ZZ, d)
-  aa = map_coefficients(mF, a.c*a.f, cached = false)
-  if iszero(aa)
-    z = mF(one(domain(mF)))
-  else
-    z, aa = Hecke.primsplit!(aa)
-  end
-  bb = map_coefficients(mF, a.g, parent = parent(aa))
-  _, f, g = Hecke.gcd_sircana(aa, bb)
-  f *= z
-  gg = lift(R, g)
-  cg = content(gg)
-  if !isone(cg)
-    c = inv(canonical_unit(mF(cg)))
-    gg = lift(R, c*g)
-    @assert isone(content(gg))
-    f *= c
-  end
-  ff = lift(R, f)
-  cf = content(ff)
-  if !iszero(cf)
-    ff = divexact(ff, cf)
-  end
-  r = HessQRElem(parent(a), cf, ff, gg)
-  @assert r.c < b.c
-#  divexact(a-r, b)
-  return r
-end
-
-function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = false)
-  check_parent(a, b)
-#  @show :divexact, a, b
-  q = HessQRElem(parent(a), divexact(a.c, b.c; check = true), a.f*b.g, a.g*b.f)
-  @assert q*b == a
-  return q
-end
-
-function gcd(a::HessQRElem, b::HessQRElem)
-  return HessQRElem(parent(a), gcd(a.c, b.c))
-end
-
-function Nemo.gcdx(a::HessQRElem, b::HessQRElem)
-  check_parent(a, b)
-  R = parent(a)
-  g, u, v = Nemo.gcdx(a.c, b.c)
-  q,w, e =  R(g), HessQRElem(R, u, a.g, a.f), HessQRElem(R, v, b.g, b.f)
-  @assert q == w*a+e*b
-  return q, w, e
-end
-
-function lcm(a::HessQRElem, b::HessQRElem)
-  check_parent(a, b)
-  return HessQRElem(parent(a), lcm(a.c, b.c))
-end
-
-Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
+Base.hash(a::HessQRElem, h::UInt) = hash(a.g, hash(a.f, hash(a.c, h)))
 
 function Nemo.residue_field(a::HessQR, b::HessQRElem)
   @assert parent(b) == a
@@ -411,6 +264,186 @@ end
 
 function Hecke.is_constant(a::HessQRElem)
   return iszero(a) || (is_constant(a.f) && is_constant(a.g))
+end
+
+###############################################################################
+#
+#  Arithmetic
+#
+###############################################################################
+
+function +(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), ZZRingElem(1),
+    a.c * a.f * b.g + b.c * b.f * a.g, a.g * b.g)
+end
+function -(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), ZZRingElem(1),
+    a.c * a.f * b.g - b.c * b.f * a.g, a.g * b.g)
+end
+function *(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), a.c*b.c, a.f*b.f, a.g*b.g)
+end
+function ==(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return a.c * a.f == b.c * b.f && a.g == b.g
+end
+
+function -(a::HessQRElem)
+  return HessQRElem(parent(a), -a.c, a.f, a.g)
+end
+
+function ^(a::HessQRElem, n::Int)
+  return HessQRElem(parent(a), a.c^n, a.f^n, a.g^n)
+end
+
+# note that HessQRElem constructor does the heavy lifting of ensuring the canonical representation
+# thus we implement mutating add!/mul! via the non-mutating versions
+
+function Hecke.add!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
+  d = b + c
+
+  a.c, a.f, a.g = d.c, d.f, d.g
+  return a
+end
+
+function Hecke.mul!(a::HessQRElem, b::HessQRElem, c::HessQRElem)
+  d = b * c
+
+  a.c, a.f, a.g = d.c, d.f, d.g
+  return a
+end
+
+Nemo.zero(R::HessQR) = R(0)
+Nemo.one(R::HessQR) = R(1)
+
+Nemo.iszero(a::HessQRElem) = iszero(a.c)
+Nemo.isone(a::HessQRElem) = isone(a.c) && isone(a.f) && isone(a.g)
+
+Nemo.canonical_unit(a::HessQRElem) = HessQRElem(parent(a), sign(a.c), a.f, a.g)
+Hecke.is_unit(a::HessQRElem) = is_unit(a.c)
+
+###############################################################################
+#
+#  Euclidean division
+#
+###############################################################################
+
+# As noted at the beginning, since primitive polynomials are units in Z<x>,
+#   the only primes are prime integers, thus `mod b` is essentially `mod |b.c|`
+# The main task is to obtain the *canonical* form of the remainder
+# Let d = |b.c|. For starter we might reduce everything modulo d
+# (cf + dA)     cf      d·(Ag - afB)
+# --------- -  ---- = --------------- = d · (...)
+#  g + dB        g       (g + dB)·g
+# That is: reducing numerator/denominator modulo d independently changes the
+#   value of a by a multiple of d, which is perfectly fine for `mod d` computation
+# The caveat: after reducing f, g modulo d (mapping into (Z/dZ)[x])
+#   they may stop being coprime. And since Z/dZ is not necessarily a domain (for composite d)
+#   we cannot use normal GCD, so we use gcd_sircana
+
+function rem(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+
+  iszero(a) && return a
+  iszero(b) && throw(DivideError())
+
+  d = abs(b.c)
+  isone(d) && return zero(parent(a))
+
+  # map to (Z/dZ)[x]
+  R = parent(a).R
+  F, mapF = residue_ring(ZZ, d; cached = false)
+
+  aa = map_coefficients(mapF, a.c*a.f; cached = false)
+  bb = map_coefficients(mapF, a.g; parent = parent(aa))
+
+  cont_aa = one(F)
+  if !iszero(aa)
+    cont_aa, aa = Hecke.primsplit!(aa)
+  end
+
+  # reduce fraction in (Z/dZ)[x]
+  _, f, g = Hecke.gcd_sircana(aa, bb)
+  f *= cont_aa
+
+  # lift to Z<x>
+
+  # ensure that lift of g is primitive
+  gg = lift(R, g)
+  cont_gg = content(gg)
+  if !isone(cont_gg)
+    # Sircana gcd algorithm guarantees cofactors with unit content
+    cont_g = mapF(cont_gg)
+    @assert is_unit(cont_g)
+
+    # multiply both numerator and denominator by inverse of content of g
+    cf = inv(cont_g)
+    f *= cf
+    gg = lift(R, cf*g)
+    @assert isone(content(gg))
+  end
+
+  # f might be not primitive, but its content will be pushed into c
+  r = HessQRElem(parent(a), ZZ(1), lift(R, f), gg)
+  @assert abs(r.c) < d
+
+  return r
+end
+
+function divrem(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  iszero(b) && throw(DivideError())
+  iszero(a) && return a, a
+
+  r = rem(a, b)
+  return divexact(a - r, b; check = false), r
+end
+
+function div(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return divrem(a, b)[1]
+end
+
+function Nemo.divexact(a::HessQRElem, b::HessQRElem; check::Bool = false)
+  check_parent(a, b)
+  iszero(b) && throw(DivideError())
+  iszero(a) && return a
+
+  check && a.c % b.c != 0 && error("$a not divisible by $b in Z<x>")
+  q = HessQRElem(parent(a), divexact(a.c, b.c; check = false), a.f*b.g, a.g*b.f)
+
+  @assert q*b == a
+  return q
+end
+
+###############################################################################
+#
+#  GCD
+#
+###############################################################################
+
+function gcd(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), gcd(a.c, b.c))
+end
+
+function Nemo.gcdx(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+
+  cd, cu, cv = Nemo.gcdx(a.c, b.c)
+
+  R = parent(a)
+  d, u, v = R(cd), HessQRElem(R, cu, a.g, a.f), HessQRElem(R, cv, b.g, b.f)
+  @assert d == u * a + v * b
+  return d, u, v
+end
+
+function lcm(a::HessQRElem, b::HessQRElem)
+  check_parent(a, b)
+  return HessQRElem(parent(a), lcm(a.c, b.c))
 end
 
 end

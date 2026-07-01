@@ -346,7 +346,21 @@ function polredabs(K::AbsSimpleNumField)
   ZK = lll(maximal_order(K))
   I = index(ZK)^2
   D = discriminant(ZK)
+  #arrange the LLL-basis to be sorted by length (OK, no-longer a lll basis)
+  all_l = map(length, basis(ZK, K))
+  #in AA/Nemo/Hecke we do not have permutation matrices - and neither
+  # permuting rows via (fake) permutations.
+  p = sortperm(all_l)
+  M = zero_matrix(ZZ, degree(K), degree(K))
+  for i=1:degree(K)
+    M[i, p[i]] = 1
+  end
+  ZK = AbsNumFieldOrder(K, M*basis_matrix(Hecke.FakeFmpqMat, ZK, copy = false))
   B = basis(ZK, copy = false)
+
+  #find the smallest index i s.th. the span of basis elements 1..i contains
+  # a primitive element. It is pointless to search for a PE in smaller blocks
+  #then start the enumeration at e_i - it should then try e_i+e_1 ... and so on
   Zx = ZZ["x"][1]
   f = change_base_ring(ZZ, defining_polynomial(K); parent = Zx)
   p, d = _find_prime(ZZPolyRingElem[f])
@@ -360,10 +374,15 @@ function polredabs(K::AbsSimpleNumField)
   n = degree(K)
 
   b = _block(B[1].elem_in_nf, rt, ap)
+  a = B[1].elem_in_nf
   i = 2
   while length(b) < degree(K)
     bb = _block(B[i].elem_in_nf, rt, ap)
-    b = _meet(b, bb)
+    _b = _meet(b, bb)
+    if length(_b) > length(b)
+      a += B[i].elem_in_nf
+      b = _b
+    end
     i += 1
   end
   i -= 1
@@ -390,16 +409,17 @@ function polredabs(K::AbsSimpleNumField)
     end
   end
 
-  scale = 1.0
-  enum_ctx_start(E, i, eps = 1.01) #start at the 1st vector having
+  scale = Float64(length(a)/length(B[i].elem_in_nf))
+  enum_ctx_start(E, i; eps = scale*1.01) #start at the 1st vector having
                        # a 1 at position i, it's pointless to start earlier
                        #as none of the elements can be primitive.
+                       #scale is large enough so that "a" should be findable
 
-  a = gen(K)
   all_a = AbsSimpleNumFieldElem[a]
-  la = length(a)*BigFloat(E.t_den^2)
+  la = length(a)
+
   Ec = BigFloat(E.c//E.d)
-  eps = BigFloat(E.d)^(1//2)
+  eps = BigFloat(1.01)
 
   found_pe = false
   first = true
@@ -418,7 +438,10 @@ function polredabs(K::AbsSimpleNumField)
       lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
 #      @show lq/E.t_den^2
 
-      if lq < la + eps
+      if length(all_a) == 0 #1st PE ever...
+        push!(all_a, q)
+        la = lq
+      elseif lq < la + eps
         if lq > la - eps
           push!(all_a, q)
 #          @show "new one", q, minpoly(q), bb
@@ -426,7 +449,6 @@ function polredabs(K::AbsSimpleNumField)
           a = q
           all_a = AbsSimpleNumFieldElem[a]
           if lq/la < 0.8
-#            @show "re-init"
             enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
             first = true
             Ec = BigFloat(E.c//E.d)
@@ -436,6 +458,7 @@ function polredabs(K::AbsSimpleNumField)
         end
       end
     end
+    found_pe && break
     scale *= 2
     enum_ctx_start(E, i, eps = scale)
     first = true

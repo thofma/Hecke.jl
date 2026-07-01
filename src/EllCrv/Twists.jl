@@ -8,49 +8,49 @@
 ###############################################################################
 
 @doc raw"""
-    quadratic_twist(E::EllipticCurve{T}}, d::T) -> EllipticCurve{T}
+    quadratic_twist(E::EllipticCurve{T}, d::T) -> EllipticCurve{T}
 
 Compute the quadratic twist of $E$ by $d$.
 """
-#Needs more testing over characteristic 2. (Magma's twists don't always work over char 2.
-#Adapted from Connell's Handbook of elliptic curves.
+
+# Note that d is untyped for the case of EllipticCurve over Q, where we want to
+#   allow d to be Integer, or ZZRingElem, etc
+# Specializing to EllipticCurve{QQFieldElem} causes method ambiguity, so d is left untyped
 function quadratic_twist(E::EllipticCurve{T}, d) where T<: FieldElem
-
-  a1, a2, a3, a4, a6 = a_invariants(E)
   K = base_field(E)
-  if characteristic(K) != 2
-    return elliptic_curve(K, [a1, a2*d + a1^2*(d-1)//4, a3, a4*d^2 + a1*a3*(d^2-1)//2, a6*d^3 + a3^2*(d^3 -1)//4])
+  a1, a2, a3, a4, a6 = a_invariants(E)
+
+  if characteristic(K) != 2 # multiplicative twist, have degree 2 when d is non-square
+    a2_ = a2*d   + a1^2 *  (d   - 1) // 4
+    a4_ = a4*d^2 + a1*a3 * (d^2 - 1) // 2
+    a6_ = a6*d^3 + a3^2 *  (d^3 - 1) // 4
+    return elliptic_curve(K, [a1, a2_, a3, a4_, a6_])
+  else                      # additive twist, have degree 2 when Tr(d) = 1
+    a2_ = a2 + a1^2*d
+    a6_ = a6 + a3^2*d
+    return elliptic_curve(K, [a1, a2_, a3, a4, a6_])
   end
-
-  return elliptic_curve(K, [a1, a2+a1^2*d, a3, a4, a6 + a3^2])
-
 end
 
-
 @doc raw"""
-    quadratic_twist(E::EllipticCurve{FinFieldElem}}) -> EllipticCurve{FinFieldElem}
+    quadratic_twist(E::EllipticCurve{FinFieldElem}) -> EllipticCurve{FinFieldElem}
 
 Compute the unique quadratic twist of $E$.
 """
-function quadratic_twist(E::EllipticCurve{T}) where T<: FieldElem
-
+function quadratic_twist(E::EllipticCurve{T}) where T<: FinFieldElem
   K = base_field(E)
-  char = characteristic(K)
 
-  if char == 2
-    f, h = hyperelliptic_polynomials(E)
-    if iseven(degree(K))
-      u = normal_basis(GF(Int(char), 1),K)
-    else
-      u = one(K)
-    end
-
-    return elliptic_curve(f + u*h^2, h)
+  if characteristic(K) != 2 # twist-by-d has degree 2 when d is non-square
+    return quadratic_twist(E, non_square(K))
   end
 
-  a = non_square(K)
-  return quadratic_twist(E, a)
-
+  # in characteristic 2 twist-by-d has degree 2 when Tr(d) = 1
+  if isodd(degree(K))     # Tr(1) = degree(K)*1
+    return quadratic_twist(E, one(K))
+  else                    # need to search for an element of trace 1
+    u = normal_basis(GF(2,1), K)
+    return quadratic_twist(E, u)
+  end
 end
 
 #Test if we can't sometimes get two isomorphic curves

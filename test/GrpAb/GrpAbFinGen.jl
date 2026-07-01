@@ -207,6 +207,12 @@
         @test is_zero(compose(inj[i], proj[j]))
       end
     end
+    K = direct_product(G)[1]
+    @test K !== G
+    @test is_isomorphic(G, K)
+    h = hom(G, G, gens(G))
+    hh = hom_direct_sum(K, K, [h;])
+    @test hh(K[1]) == K[1]
   end
 
   @testset "Torsion" begin

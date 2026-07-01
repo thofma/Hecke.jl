@@ -69,7 +69,106 @@ end
 #
 ################################################################################
 
-# section 4.3.4
+function _point_order_from_multiple(P::EllipticCurvePoint{<:FinFieldElem}, M::ZZRingElem, facM::Fac{ZZRingElem})
+  ord = ZZ(1)
+
+  for (p, e) in facM
+    Q = divexact(M, p^e)*P
+    while !is_infinite(Q)
+      ord *= p
+      Q = p * Q
+    end
+  end
+
+  return ord
+end
+
+# d is known divisor of the *group* order
+function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingElem)
+  is_infinite(P_in) && return ZZ(1)
+
+  R = base_field(parent(P_in))
+  p = characteristic(R)
+  p == 0 && error("Base field must be finite")
+  q = order(R)
+
+  # Initially we have Hasse interval, which is centered at q+1
+  # We set m = ceil(q^{1/4}) (half of the square root of interval length)
+  #   and use stride 2m for giant steps
+  # |E| = q + 1 - t, so the center is Q = [q+1]P = [t]P
+  # Let H = [2m]P
+  # Baby steps: we compute [j]P for j = 0..m
+  # Giant steps: for k = -m..m check if Q + [k]H is +- [j]P
+  # Note that we check both plus and minus, effectively having 2m+1 baby steps
+  # So for a giant step k we check if t = +-j - 2m*k
+  # Each such window is of length 2m + 1: consecutive windows overlap at one value
+  # and in total we check 4m^2 values: we need 4*m^2 >= 4*sqrt(q)
+  #
+  # If a divisor d of group order is known, we can further optimize search:
+  #   we consider [d]P instead: its order divides |E|/d
+  # Thus we can shrink our search interval:
+  # [L, R] -> [floor(L/d), ceil(R/d)]
+  # We still want to have a centered search:
+  #   center = (q+1)/d, and Q = center * [d]P
+  # Half-width of original interval is bounded by 2*floor(sqrt(q)) + 2
+  # After scaling by d, it is bound by 1 + (2*floor(sqrt(q)) + 2) / d
+  # This gives us a bound for m^2
+  local P, center, m_zz
+  if d > 1
+    P = d*P_in
+    is_infinite(P) && return _point_order_from_multiple(P_in, d, factor(d))
+    center = div(q + 1, d)
+    m_zz = 1 + isqrt(1 + div(2*isqrt(q) + 2, d))
+  else
+    P = P_in
+    center = q + 1
+    m_zz = 1 + isqrt(isqrt(q))
+  end
+
+  # we need to allocate m baby steps, if m doesn't fit into Int we have no chance to do so
+  !fits(Int, m_zz) && error("Elliptic curve group order is too large for BSGS")
+  m = Int(m_zz)
+
+  Q = center*P
+
+  # Baby steps: j*P for j = 0..m
+  baby = Dict{typeof(P), Int}()
+  S = infinity(parent(P))
+  for j in 0:m
+    baby[S] = j
+    S = S + P
+  end
+
+  # Giant steps: we use stride H = (2m)*P, and check if Q + [k]H is a baby step
+  stride = 2*m_zz
+  H = stride*P
+  M = ZZ(0)
+
+  for k in -m:m
+    Snew = Q + k*H
+
+    j = get(baby, Snew, -1)
+    if j >= 0
+      M = center + stride*k - j
+      !is_zero(M) && break # non-trivial multiple of order
+    end
+
+    j = get(baby, -Snew, -1)
+    if j >= 0
+      M = center + stride*k + j
+      !is_zero(M) && break # non-trivial multiple of order
+    end
+  end
+
+  @assert !is_zero(M) "BSGS failed to find a multiple of the order"
+
+  # TODO: we should combine factorizations
+  if d > 1
+    M = M*d
+  end
+  return _point_order_from_multiple(P_in, M, factor(M))
+end
+
 @doc raw"""
     elem_order_bsgs(P::EllipticCurvePoint) -> ZZRingElem
 
@@ -77,88 +176,7 @@ Calculate the order of a point $P$ on an elliptic curve given over a finite
 field using Baby-step Giant-step (BSGS).
 """
 function elem_order_bsgs(P::EllipticCurvePoint{T}) where T<:FinFieldElem
-  R = base_field(P.parent)
-  p = characteristic(R)
-  p == 0 && error("Base field must be finite")
-  q = order(R) # R = F_q
-
-  # step 1
-  Q = Int(q + 1) * P
-
-  # step 2
-  m = Int(ceil(Int(q)^(1//4)))
-
-  list_points = []
-  for j = 0:m
-    S = j*P
-    push!(list_points, S)
-  end
-
-  # step 3
-  k = -m
-  H = (2*m)*P
-  M = ZZ(0) # initialize M, so that it is known after the while loop
-
-  while k < m + 1
-    Snew = Q + (k*H)
-
-    i = 1
-    while i < m + 2 # is there a match?
-      if Snew == list_points[i]
-        M = q + 1 + (2*m*k) - (i-1)
-
-        if M != 0
-          i = m + 2 # leave both while loops
-          k = m + 1
-        else
-          i = i + 1 # search on if M == 0
-        end
-
-      elseif Snew == -(list_points[i])
-        M = q + 1 + (2*m*k) + (i-1) # step 4
-
-        if M != 0
-          i = m + 2 # leave both while loops
-          k = m + 1
-        else
-          i = i + 1 # search on if M == 0
-        end
-      else
-        i = i + 1
-      end
-    end
-
-    k = k + 1
-  end
-
-  # step 5
-  gotostep5 = true
-  while gotostep5
-    fac = factor(M)
-    primefactors = []
-    for i in fac
-      push!(primefactors, i[1])
-    end
-    r = length(primefactors)
-
-    # step 6
-    i = 1
-    while i < (r + 1)
-      U = Int(divexact(M, primefactors[i]))*P
-      if U.is_infinite == true
-        M = divexact(M, primefactors[i])
-        i = r + 2  # leave while-loop
-      else
-        i = i + 1
-      end
-    end
-
-    if i == r + 1  # then (M/p_i)P != oo for all i
-      gotostep5 = false
-    end
-  end
-
-  return abs(ZZ(M))
+  return _point_order_bsgs(P, ZZ(1))
 end
 
 @doc raw"""
@@ -188,31 +206,18 @@ julia> order(P, fac)
 ```
 """
 function order(P::EllipticCurvePoint{T}) where T<:FinFieldElem
+  # TODO: should we maybe check if order was factored already?
+  #   in this case _point_order_from_multiple should be faster
   return elem_order_bsgs(P)
 end
 
 function order(P::EllipticCurvePoint{T}, fac::Fac{ZZRingElem}) where T<:FinFieldElem
-  return _order_elem_via_fac(P, fac)
+  return _point_order_from_multiple(P, evaluate(fac), fac)
 end
 
-function _order_elem_via_fac(P::EllipticCurvePoint{<:FinFieldElem}, fn = _order_factored(parent(P)))
+function _order_elem_via_fac(P::EllipticCurvePoint{<:FinFieldElem})
   E = parent(P)
-  n = order(E)
-  o = one(ZZ)
-  for (p, e) in fn
-    q = p^e
-    m = divexact(n, q)
-    Q = m*P # order dividing q = p^e
-    for i in 0:e
-      if is_infinite(Q)
-        break
-      else
-        o = o * p
-        Q = p * Q
-      end
-    end
-  end
-  return o
+  return _point_order_from_multiple(P, order(E), _order_factored(E))
 end
 
 ################################################################################

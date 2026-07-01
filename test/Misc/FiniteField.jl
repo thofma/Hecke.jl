@@ -241,3 +241,13 @@ let
     @test a^m == b
   end
 end
+
+let # #2237
+  F = GF(37)
+  R,t = F[:t]
+  f = t^14 + 26*t^13 + 18*t^12 + 9*t^11 + 30*t^10 + 4*t^9 + 16*t^8 + 29*t^7 + 34*t^6 + 23*t^5 + 8*t^4 + 28*t^3 + 10*t^2 + 11*t + 32
+  L, mL = Hecke.field_extension(f)
+  U, mU = unit_group(L)
+  @test order(U) == ZZ(37)^14 - 1
+end
+

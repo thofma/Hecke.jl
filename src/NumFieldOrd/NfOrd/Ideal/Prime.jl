@@ -118,64 +118,56 @@ function lift(K::AbsSimpleNumField, f::FpPolyRingElem)
   return r
 end
 
-##TODO: make ZZRingElem-safe!!!!
+# Dedekind-Kummer theorem: prime ideal from a factor
+# f is a degree of a factor modulo p, e is the exponent in factorization
+# b equals factor evaluated at generator of the field (that is, second generator of ideal)
+function _prime_from_poly(O::AbsSimpleNumFieldOrder, p::ZZRingElem, f::Int, e::Int, b::AbsSimpleNumFieldElem)
+  @assert nf(O) == parent(b)
+
+  I = AbsNumFieldOrderIdeal(O)
+  I.is_prime = 1
+  I.splitting_type = e, f
+  I.norm = p^f
+  I.minimum = p
+
+  # we want to have P(p)-normal two element presentation
+  # that is we want the second generator to be p-uniformizer
+  # since we are in the case of p not dividing the index, we have a good candidate b = g(t)
+  #
+  # v_P(<p,b>) = min[v_P(p), v_P(b)] = 1
+  # If P over p is ramified: v_P(p) > 1, guaranteeing v_P(b) = 1
+  # Otherwise (v_P(p) = 1), if v_P(b) > 1, clearly we must have v_P(b \pm p) = 1
+  # Further: for Q over p, if v_Q(b) > 0, we will have v_Q(<p,b>) > 0,
+  #   giving <p,b> \subset Q, which is impossible
+  # in unramified case we need to check if v_P(b) == 1
+  # one possibility is to check if p*|P| = p^{f+1} divides N(b)
+  #   if it doesnt - we must have v_P(b) == 1
+  if e == 1 && is_norm_divisible_pp(b, p*I.norm)
+    b = b + p
+  end
+  I.gen_one = p
+  I.gen_two = O(b, false)
+  I.gens_normal = p
+  I.gens_weakly_normal = true
+
+  # check for inert prime
+  if f == degree(O)
+    I.princ_gen = O(p)
+    I.is_principal = 1
+  end
+
+  return I
+end
+
 #return <p, lift(O, fi> in 2-element normal presentation given the data
 function ideal_from_poly(O::AbsSimpleNumFieldOrder, p::Int, fi::Zmodn_poly, ei::Int)
   b = lift(nf(O), fi)
-  idl = ideal(O, ZZRingElem(p), O(b, false))
-  idl.is_prime = 1
-  idl.splitting_type = ei, degree(fi)
-  idl.norm = ZZ(p)^degree(fi)
-  idl.minimum = ZZ(p)
-
-  # We have to do something to get 2-normal presentation:
-  # if ramified or valuation val(b,P) == 1, (p,b)
-  # is a P(p)-normal presentation
-  # otherwise we need to take p+b
-  # I SHOULD CHECK THAT THIS WORKS
-
-  if !((mod(norm(b),(idl.norm)^2) != 0) || (ei > 1))
-    idl.gen_two = idl.gen_two + O(p)
-  end
-
-  idl.gens_normal = p
-  idl.gens_weakly_normal = true
-
-  if idl.splitting_type[2] == degree(O)
-    # Prime number is inert, in particular principal
-    idl.is_principal = 1
-    idl.princ_gen = O(p)
-  end
-  return idl
+  return _prime_from_poly(O, ZZ(p), degree(fi), ei, b)
 end
 
 function ideal_from_poly(O::AbsSimpleNumFieldOrder, p::ZZRingElem, fi::FpPolyRingElem, ei::Int)
   b = lift(nf(O), fi)
-  idl = ideal(O, p, O(b, false))
-  idl.is_prime = 1
-  idl.splitting_type = ei, degree(fi)
-  idl.norm = p^degree(fi)
-  idl.minimum = p
-
-  # We have to do something to get 2-normal presentation:
-  # if ramified or valuation val(b,P) == 1, (p,b)
-  # is a P(p)-normal presentation
-  # otherwise we need to take p+b
-  # I SHOULD CHECK THAT THIS WORKS
-
-  if !((mod(norm(b),(idl.norm)^2) != 0) || (ei > 1))
-    idl.gen_two = idl.gen_two + O(p)
-  end
-
-  idl.gens_normal = p
-  idl.gens_weakly_normal = true
-
-  if idl.splitting_type[2] == degree(O)
-    # Prime number is inert, in particular principal
-    idl.is_principal = 1
-    idl.princ_gen = O(p)
-  end
-  return idl
+  return _prime_from_poly(O, p, degree(fi), ei, b)
 end
 
 @doc raw"""
@@ -335,37 +327,9 @@ function prime_dec_nonindex(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_l
   result = Array{Tuple{ideal_type(O),Int}}(undef, length(fac))
 
   for k in 1:length(fac)
-    fi = fac[k][1]
-    ei = fac[k][2]
-    #ideal = ideal_from_poly(O, p, fi, ei)
-    t = QQPolyRingElem(parent(f), fi)
-    b = K(t)
-    I = AbsNumFieldOrderIdeal(O)
-    I.gen_one = p
-    I.gen_two = O(b, false)
-    I.is_prime = 1
-    I.splitting_type = ei, degree(fi)
-    I.norm = ZZ(p)^degree(fi)
-    I.minimum = ZZ(p)
-
-    # We have to do something to get 2-normal presentation:
-    # if ramified or valuation val(b,P) == 1, (p,b)
-    # is a P(p)-normal presentation
-    # otherwise we need to take p+b
-    # I SHOULD CHECK THAT THIS WORKS
-
-    if ei == 1 && is_norm_divisible_pp(b, p*I.norm)
-      I.gen_two = I.gen_two + O(p)
-    end
-
-    I.gens_normal = ZZRingElem(p)
-    I.gens_weakly_normal = true
-
-    if length(fac) == 1 && I.splitting_type[2] == degree(f)
-      # Prime number is inert, in particular principal
-      I.is_principal = 1
-      I.princ_gen = O(p)
-    end
+    fi, ei = fac[k]
+    b = K(QQPolyRingElem(parent(f), fi))
+    I = _prime_from_poly(O, ZZ(p), degree(fi), ei, b)
     result[k] = (I, ei)
   end
   return result

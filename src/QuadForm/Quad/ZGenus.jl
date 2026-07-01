@@ -291,6 +291,25 @@ end
 ###############################################################################
 
 @doc raw"""
+    zero_integer_genus() -> ZZGenus
+
+Return the genus of the zero lattice.
+
+# Examples
+```jldoctest
+julia> Hecke.zero_integer_genus()
+Genus symbol for integer lattices
+Signatures: (0, 0, 0)
+Local symbol:
+  Local genus symbol at 2:
+```
+"""
+function zero_integer_genus()
+  g = ZZLocalGenus(ZZ(2), Vector{Int}[])
+  return ZZGenus((0,0), ZZLocalGenus[g])
+end
+
+@doc raw"""
     genus(A::MatElem) -> ZZGenus
 
 Return the genus of a $\mathbb Z$-lattice with gram matrix `A`.

@@ -1578,6 +1578,8 @@ function iszero(I::AbsNumFieldOrderIdeal)
   else
     if has_princ_gen(I)
       fl = is_zero(I.princ_gen)
+    elseif has_2_elem(I)
+      fl = is_zero(I.gen_one) && is_zero(I.gen_two)
     else
       fl = nrows(basis_matrix(I, copy = false)) == 0
     end

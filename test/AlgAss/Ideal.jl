@@ -138,6 +138,28 @@
       @test mod(AtoQ\(e + f), J) == mod((AtoQ\e + AtoQ\f), J)
       @test mod(AtoQ\(e * f), J) == mod((AtoQ\e) * (AtoQ\f), J)
     end
+
+    # AbsNumFieldOrderIdeal inputs
+    let
+      k, a = cyclotomic_real_subfield(32)
+      ok = lll(maximal_order(k))
+      I = 1*ok
+      J = 2*ok
+      Q, OtoQ = quo(I, J, 2)
+      @test dim(Q) == degree(ok)
+
+      for i = 1:5
+        c = rand(I, 10)
+        d = rand(I, 10)
+        @test OtoQ(c + d) == OtoQ(c) + OtoQ(d)
+        @test OtoQ(c * d) == OtoQ(c) * OtoQ(d)
+
+        e = rand(Q, -10:10)
+        f = rand(Q, -10:10)
+        @test OtoQ(OtoQ\e) == e
+        @test OtoQ(OtoQ\f) == f
+      end
+    end
   end
 
   @testset "rand" begin
