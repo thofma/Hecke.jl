@@ -564,7 +564,14 @@ end
 ###  Disney-Hogg, and Wuqian Effie Gao, as presented in https://arxiv.org/pdf/2208.12377. The implementation 
 ###  here is Strategy 1 from this paper.
 function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
-  subpath.integration_scheme_index = length(int_group_rs)
+  if length(subpath.bounds) == 0
+    i = maximum(filter(x -> (subpath.int_param_r > int_group_rs[x]), 1:length(int_group_rs));init = 1)
+    subpath.integration_scheme_index = i
+  else 
+    i = length(int_group_rs)
+    subpath.integration_scheme_index = i
+    return false 
+  end
 
   v_start = start_point(subpath)
   v_end = end_point(subpath)
@@ -591,7 +598,7 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
       delta = minimum([abs(alpha - z_0) for alpha in rs]) + (abs(interval[j] - interval[j-1]))/2 
       lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
       gmin = lcm(lis) * gmin
-      CC = RS.complex_field
+      CC = complex_field(RS)
       v = embedding(RS)
       _, CCx = polynomial_ring(CC, "x")
       coeffs = [numerator(coeff(gmin,i)) for i in (0:degree(gmin))]
