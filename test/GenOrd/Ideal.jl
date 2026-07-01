@@ -1,5 +1,387 @@
-@testset "Ideals for orders over function fields" begin
+@testset "Ideals for orders over general PID" begin
+  # Here we test basic ideal operations.
+  # Function fields are the main use case for GenOrd.
+  # We also add tests for other settings where GenOrd is not normally used,
+  #   to make sure our implementation is robust enough to handle a general PID.
 
+  # Builds a non-equation order whose first basis vector isn't 1, to exercise corner cases.
+  # The lattice itself is unchanged (unimodular change of basis),
+  #   so norms and minima match those in Omax
+  function create_order_with_nontrivial_basis(Omax)
+    K = base_field(Omax.F)
+    T = identity_matrix(K, degree(Omax.F))
+    T[1, 2] = one(K)
+    O = Hecke.GenOrd(Omax, T, one(K))
+    @assert !is_equation_order(O)
+    @assert !isone(basis(O, copy = false)[1])
+    return O
+  end
+
+  function check_ideal_norm_min(I, expected_norm, expected_min)
+    @test istril(basis_matrix(I))
+    @test divides(norm(I), minimum(I))[1]
+    @test @inferred(norm(I)) == Hecke._make_canonical_in(order(I), expected_norm)
+    @test @inferred(minimum(I)) == Hecke._make_canonical_in(order(I), expected_min)
+  end
+
+  function check_prime_2elem(P, expected_f, expected_e)
+    @test inertia_degree(P) == expected_f
+    @test ramification_index(P) == expected_e
+    @test Hecke.has_2_elem(P)
+    @test 1 == @inferred valuation(ideal(order(P), P.gen_two), P)
+  end
+
+  function check_prime_2elem_single_above(O, a, expected_f, expected_e)
+    pd = @inferred prime_decomposition(O, base_ring(O)(a))
+    @test length(pd) == 1
+    P, e = first(pd)
+    @test e == expected_e
+    check_prime_2elem(P, expected_f, expected_e)
+  end
+
+  function test_containment_common(O, a, t)
+    L = Hecke.field(O)
+
+    a = O(a)
+    I = ideal(O, a)
+    Ifrac = fractional_ideal(I)
+
+    for v in (a, a * O(t), O(0))
+      @test v in I
+      @test v in Ifrac
+    end
+    for v in (O(1), O(t))
+      @test !(v in I)
+      @test !(v in Ifrac)
+    end
+
+    Iinv = inv(I)
+    for v in (zero(L), one(L), L(a), L(1)//L(a))
+      @test v in Iinv
+    end
+    @test a in Iinv
+
+    @test !(L(1)//L(a)^2 in Iinv)
+
+    # In a local ring O.R, units are everything coprime to the prime, so this test doesnt make sense
+    if !isa(O.R, LocalizedEuclideanRing)
+      @test !(L(1)//L(t) in Iinv)
+    end
+  end
+
+  function test_colon_common_ideal(O, I)
+    @assert is_prime(I)
+
+    L = Hecke.field(O)
+    U = ideal(O, O(1))
+    @test Hecke.colon(I, U) == fractional_ideal(I)
+    @test one(L) in Hecke.colon(I, I)
+    @test Hecke.colon(U, I) * I == U
+  end
+
+  function test_frac_ideal_inv(O, I_list)
+    U = ideal(O, O(1))
+    for I in I_list
+      @test inv(I) == colon(U, I)     # identical to the old colon-based inv
+      @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
+      @test inv(inv(I)) == I
+    end
+  end
+
+  test_colon_common(O, p) = test_colon_common_ideal(O, ideal(O, O(p)))
+
+  @testset "over F_2(x)" begin
+    kx, x = rational_function_field(GF(2), :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    L, t = function_field(y^3 - x^3 - 1; cached = false)
+    Ofin = finite_maximal_order(L)
+    Oinf = infinite_maximal_order(L)
+
+    @testset "norm/min: finite maximal order" begin
+      I = ideal(Ofin, representation_matrix(Ofin(x^2 + 1)))
+      @test I == ideal(Ofin, Ofin(x^2 + 1))
+
+      a = Ofin(x^3 + y^2)
+      I = ideal(Ofin, a)
+      check_ideal_norm_min(I, norm(a), norm(a)) # x^3 + y^2 is irreducible
+
+      I = ideal(Ofin, x*y, Ofin(x^2))
+      check_ideal_norm_min(I, x^3, x)
+    end
+
+    @testset "norm/min: finite non-equation order" begin
+      OL = create_order_with_nontrivial_basis(Ofin)
+      @assert !is_equation_order(OL)
+      a = OL(x^3 + y^2)
+      I = ideal(OL, a)
+      check_ideal_norm_min(I, norm(a), norm(a)) # x^3 + y^2 is irreducible
+
+      I = ideal(OL, x*y, OL(x^2))
+      check_ideal_norm_min(I, x^3, x)
+
+      I = ideal(OL, OL(x^2 + x + 1))
+      Imax = ideal(Ofin, Ofin(x^2 + x + 1))
+      check_ideal_norm_min(I, @inferred(norm(Imax)), @inferred(minimum(Imax)))
+
+      I = ideal(OL, x, OL(y + 1))
+      Imax = ideal(Ofin, x, Ofin(y + 1))
+      check_ideal_norm_min(I, @inferred(norm(Imax)), @inferred(minimum(Imax)))
+    end
+
+    @testset "norm/min: infinite maximal order" begin
+      I = ideal(Oinf, 3//x^2)
+      check_ideal_norm_min(I, 1//x^6, 1//x^2)
+
+      I = ideal(Oinf, L(x^2)//t^3)
+      check_ideal_norm_min(I, norm(Oinf(L(x^2)//t^3)), 1//x)
+    end
+
+    @testset "prime decomposition" begin
+      check_prime_2elem_single_above(Ofin, x + 1, 1, 3)
+      check_prime_2elem_single_above(Ofin, x^2 + x + 1, 1, 3)
+      check_prime_2elem_single_above(Ofin, x^4 + x + 1, 3, 1)
+
+      # modulo x: y^3 - x^3 - 1 = (y+1)(y^2+y+1)
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        f_expected = degree(numerator(data(P.gen_two)))
+        check_prime_2elem(P, f_expected, 1)
+      end
+
+      pd = @inferred prime_decomposition(Oinf, Oinf.R(1//x))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        f_expected = (norm(P) == 1//x ? 1 : 2)
+        @test inertia_degree(P) == f_expected
+      end
+
+      let (L, t) = function_field(y^3 - x - 1; cached = false),
+          Ofin = finite_maximal_order(L),
+          Oinf = infinite_maximal_order(L)
+        check_prime_2elem_single_above(Ofin, x + 1, 1, 3)
+        check_prime_2elem_single_above(Ofin, x^2 + x + 1, 3, 1)
+
+        # modulo x: y^3 - x - 1 = (y+1)(y^2+y+1)
+        pd = @inferred prime_decomposition(Ofin, Ofin.R(x))
+        @test length(pd) == 2
+        for (P, e) in pd
+          @test e == 1
+          f_expected = degree(numerator(data(P.gen_two)))
+          check_prime_2elem(P, f_expected, 1)
+        end
+
+        pd = @inferred prime_decomposition(Ofin, Ofin.R(x^4 + x^3 + 1))
+        @test length(pd) == 3
+        for (P, e) in pd
+          @test e == 1
+          check_prime_2elem(P, 1, 1)
+        end
+
+        pd = @inferred prime_decomposition(Oinf, Oinf.R(1//x))
+        @test length(pd) == 1
+        P, e = first(pd)
+        @test e == 3
+        @test inertia_degree(P) == 1
+      end
+    end
+
+    @testset "containment" begin
+      test_containment_common(Ofin, x^4 + x + 1, t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^4 + x + 1)
+    end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
+  end
+
+  @testset "over Q(x) with non-monic defining polynomial" begin
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    L, t = function_field(x^3 + x^2 + x*y^3 - x*y^2 + y^2 - y; cached = false)
+
+    Ofin = finite_maximal_order(L)
+    Oinf = infinite_maximal_order(L)
+
+    @testset "norm/min" begin
+      I = ideal(Ofin, x*t)
+      check_ideal_norm_min(I, x^5 + x^4, x^4 + x^3)
+
+      I = ideal(Oinf, 3//(x^2*t^2))
+      check_ideal_norm_min(I, 1//x^10, 1//x^4)
+    end
+
+    @testset "prime decomposition" begin
+      # <x + 1> = <x + 1, x*y> * <x + 1, x*y + 1>^2
+      pd = @inferred prime_decomposition(Ofin, Ofin.R(x + 1))
+      @test length(pd) == 2
+    end
+
+    @testset "containment" begin
+      test_containment_common(Ofin, x^2 + x*t + 1, x*t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^2 + 2)
+    end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
+  end
+
+  @testset "over Q(x)" begin
+    kx, x = rational_function_field(QQ, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    L, t = function_field(y^2 - x^3 - x^2; cached = false)
+
+    Ofin = finite_maximal_order(L)
+    Oinf = infinite_maximal_order(L)
+
+    @testset "norm/min: finite maximal order" begin
+      I = ideal(Ofin, L(y)//L(x))
+      check_ideal_norm_min(I, x + 1, x + 1)
+      @test is_prime(I)
+    end
+
+    @testset "containment" begin
+      test_containment_common(Ofin, x^2 + 1, t)
+    end
+
+    @testset "colon" begin
+      test_colon_common(Ofin, x^2 + 1)
+    end
+
+    @testset "fractional_ideal inv" begin
+      O = Ofin
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      O = Oinf
+      test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+    end
+  end
+
+  @testset "over number field" begin
+    x = gen(Hecke.Globals.Qx)
+    K, a = number_field(x^2 - 2, :a)
+    OK = Hecke.GenOrd(ZZ, K)
+
+    @testset "norm/min: maximal order" begin
+      check_ideal_norm_min(ideal(OK, ZZ(3)), 9, 3)
+      check_ideal_norm_min(ideal(OK, ZZ(2), OK(a)), 2, 2)
+      check_ideal_norm_min(ideal(OK, ZZ(2)), 4, 2)
+    end
+
+    @testset "norm/min: non-equation order" begin
+      let OK = create_order_with_nontrivial_basis(OK)
+        @assert !is_equation_order(OK)
+        check_ideal_norm_min(ideal(OK, ZZ(3)), 9, 3)
+        check_ideal_norm_min(ideal(OK, ZZ(2), OK(a)), 2, 2)
+        check_ideal_norm_min(ideal(OK, ZZ(2)), 4, 2)
+      end
+    end
+
+    @testset "norm/min: with non-monic defining polynomial" begin
+      let (K, a) = number_field(2*x^2 - 4, :a), OK = Hecke.GenOrd(ZZ, K)
+        @assert !is_equation_order(OK)
+        check_ideal_norm_min(ideal(OK, ZZ(3)), 9, 3)
+        check_ideal_norm_min(ideal(OK, ZZ(2), OK(2*a)), 2, 2)
+        check_ideal_norm_min(ideal(OK, ZZ(2)), 4, 2)
+      end
+    end
+
+    @testset "prime decomposition" begin
+      check_prime_2elem_single_above(OK, ZZ(3), 2, 1)
+      check_prime_2elem_single_above(OK, ZZ(2), 1, 2)
+
+      pd = @inferred prime_decomposition(OK, ZZ(7))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+
+      # Currently GenOrd's prime decomposition does not work with
+      #   number fields defined by non-monic polynomials,
+      #   since the Lenstra order is a sub-order of the equation order.
+    end
+
+    @testset "containment" begin
+      test_containment_common(OK, ZZ(3), ZZ(5))
+    end
+
+    @testset "colon" begin
+      test_colon_common(OK, ZZ(3))
+    end
+
+    @testset "fractional_ideal inv" begin
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
+    end
+  end
+
+  @testset "over number field localized at prime" begin
+    x = gen(Hecke.Globals.Qx)
+    K, a = number_field(x^2 - 2, :a)
+
+    @testset "split (p = 7)" begin
+      R = Hecke.localization(ZZ, 7; cached = false)
+      OK = integral_closure(R, K)
+
+      check_ideal_norm_min(ideal(OK, R(7)),             R(49), R(7))
+      check_ideal_norm_min(ideal(OK, R(7), OK(a - 3)),  R(7),  R(7))
+
+      pd = @inferred prime_decomposition(OK, R(7))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+
+      test_containment_common(OK, R(7), R(5))
+      test_colon_common_ideal(OK, ideal(OK, R(7), OK(a - 3)))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//49)*OK))
+    end
+
+    @testset "inert (p = 3)" begin
+      R = Hecke.localization(ZZ, 3; cached = false)
+      OK = integral_closure(R, K)
+
+      check_ideal_norm_min(ideal(OK, R(3)), R(9), R(3))
+      check_prime_2elem_single_above(OK, R(3), 2, 1)
+
+      test_containment_common(OK, R(3), R(5))
+      test_colon_common(OK, R(3))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//3)*OK))
+    end
+
+    @testset "ramified (p = 2)" begin
+      R = Hecke.localization(ZZ, 2; cached = false)
+      OK = integral_closure(R, K)
+
+      check_ideal_norm_min(ideal(OK, R(2)),          R(4), R(2))
+      check_ideal_norm_min(ideal(OK, R(2), OK(a)),   R(2), R(2))
+
+      check_prime_2elem_single_above(OK, R(2), 1, 2)
+
+      test_containment_common(OK, R(2), R(5))
+      test_colon_common_ideal(OK, ideal(OK, R(2), OK(a)))
+      test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//16)*OK))
+    end
+  end
+end
+
+@testset "Ideals for orders over function fields" begin
   k = GF(7)
   kx, x = rational_function_field(k, "x")
   kt = parent(numerator(x))
@@ -23,7 +405,6 @@
   @test (I,3) in G
   @test (J,1) in G
   @test length(G)==2
-
 
   k = QQ
   kx, x = rational_function_field(k, "x")
@@ -89,4 +470,55 @@ let
   @test hash(a*O) == hash(a*O)
 
   @test a * O + a * O == a * O
+end
+
+let # 2266
+  K = algebraic_closure(QQ)
+  Kx, x = rational_function_field(K,"x")
+  KxY, Y = polynomial_ring(Kx, "Y")
+  P = Y^2 - x^3 - x^2
+  kC, y = function_field(P, "y")
+  OC = finite_maximal_order(kC)
+  I = ideal(OC(x),OC(y))
+  lp = factor(I)
+  @test all(is_prime(p) for (p,_) in lp)
+  @test prod(p^e for (p, e) in lp) == I
+end
+
+@testset "Scaling ideals in function field by base-field elements" begin
+  kx, x = rational_function_field(GF(5), :x; cached = false)
+  ky, y = polynomial_ring(kx, :y; cached = false)
+  F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+
+  function check_scaling(I, c)
+    O = order(I)
+    cI = @inferred c*I
+    @test order(cI) === O
+    @test cI == I*c
+    @test inv(c)*cI == I
+    @test cI == @inferred (F(c)*O)*I
+    @test basis(cI) == [F(c)*b for b in basis(I)]
+  end
+
+  Ofin = finite_maximal_order(F)
+  Oinf = infinite_maximal_order(F)
+
+  for (O, c) in ((Ofin, x), (Ofin, x^2+1), (Ofin, x//(x + 1)),
+                 (Oinf, 1//x), (Oinf, 1//(x^2+1)), (Oinf, (x + 1)//x))
+    # a*O is GenOrdFracIdl
+    check_scaling(a*O, c)
+  end
+
+  # check multiplication of "integral" ideal by the scalar in the base field
+  I0 = ideal(Ofin, Ofin(x^2 + 1))
+  @test @inferred(x*I0) isa GenOrdFracIdl
+  @test @inferred((x//(x + 1))*I0) isa GenOrdFracIdl
+  @test @inferred(x*I0) == @inferred(x*fractional_ideal(I0))
+
+  # x has a pole at infinity so we cannot construct (x)_inf directly
+  #   yet scaling must work
+  I = @inferred a*Oinf
+  @test_throws ErrorException Oinf(x)
+  @test_throws ErrorException ideal(Oinf, x) * I
+  check_scaling(I, x)
 end

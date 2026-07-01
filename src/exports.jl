@@ -34,6 +34,8 @@ export Divisor
 export Divisors
 export EllipticCurve
 export EllipticCurvePoint
+export EllipticCurveLocalData
+export EllipticCurveReduction
 export EmbeddedAbsSimpleNumField
 export EmbeddedAbsSimpleNumFieldElem
 export EmbeddedNumFieldElem
@@ -47,7 +49,7 @@ export GenOrdFracIdl
 export FinGenAbGroup
 export FinGenAbGroupElem
 export FinGenAbGroupHom
-export FinGenAbGroupToGroupHo
+export FinGenAbGroupToGroupHom
 export FiniteRing
 export FiniteRingElem
 export FiniteRingHom
@@ -60,6 +62,7 @@ export HermGenus
 export HermLat
 export HermLocalGenus
 export HypellCrv
+export HypellCrvIsom
 export HypellCrvPt
 export IdealSet
 export InfPlc
@@ -204,7 +207,6 @@ export class_group
 export class_number
 export classical_modular_polynomial
 export clebsch_from_igusa_clebsch
-export clebsch_from_igusa
 export clebsch_invariants
 export close_vectors
 export close_vectors_iterator
@@ -262,6 +264,7 @@ export crt_inv
 export crt_signed
 export cycle
 export cyclic_algebra
+export cyclic_generator
 export cyclotomic_extension
 export cyclotomic_field
 export cyclotomic_field_as_cm_extension
@@ -533,6 +536,7 @@ export is_isometric
 export is_isometric_with_isometry
 export is_isometry
 export is_isomorphic
+export is_isomorphic_with_isomorphism
 export is_isomorphic_with_map
 export is_isotropic
 export is_isotropic_with_vector

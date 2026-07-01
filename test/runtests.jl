@@ -255,7 +255,7 @@ function print_res_recursively(testset, cur_level, max_level)
   end
 end
 
-#include("Aqua.jl")
+include("Aqua.jl")
 
 if short_test
   include("setup.jl")

@@ -280,6 +280,7 @@ then the coordinates with respec to the basis of `M` are given by
   gram_matrix_quadratic::QQMatrix
   gens
   is_normal::Bool
+  is_normal_bilinear::Bool
 
   TorQuadModule() = new()
 end

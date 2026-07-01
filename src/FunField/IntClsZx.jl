@@ -3,7 +3,7 @@ using Hecke
 using ..HessQRModule
 import ..HessQRModule: HessQR
 
-function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T}) where {T}
+function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T, U}) where {T, U}
   return Hecke._integral_closure(S, F)
 end
 
@@ -138,9 +138,9 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   R = parent(numerator(t))
   o1 = integral_closure(S, F)
   o2 = integral_closure(R, F)
-  T = o1.trans
+  T = basis_matrix(o1)
   if !is_equation_order(o2)
-    T = T * o2.itrans
+    T = T * basis_matrix_inverse(o2)
   end
   _, T1, T2 = florian(T, R, S)
 
@@ -148,7 +148,7 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   if is_equation_order(o2)
     oo2 = order(o3, integral_split(inv(T2), Zx)..., check = false)
   else
-    oo2 = order(o3, integral_split(inv(T2)*o2.trans, Zx)..., check = false)
+    oo2 = order(o3, integral_split(inv(T2)*basis_matrix(o2), Zx)..., check = false)
   end
   return oo2
 
@@ -156,7 +156,7 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
   H, TT1 = hnf_with_transform(map_entries(S, T1*T*T2))
   @assert isone(H)
   T1 = map_entries(Qt, TT1)*T1
-  oo1 = order(o3, integral_split(T1*o1.trans, Zx)..., check = false)
+  oo1 = order(o3, integral_split(T1*basis_matrix(o1), Zx)..., check = false)
   return oo1, oo2
 end
 

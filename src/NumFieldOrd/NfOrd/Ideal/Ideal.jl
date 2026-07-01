@@ -168,6 +168,10 @@ function ideal(O::AbsNumFieldOrder, v::Vector{<:AbsNumFieldOrderElem})
   for i = 1:length(v)
     @assert O === parent(v[i])
   end
+  v = filter(!is_zero, v)
+  if isempty(v)
+    return ideal(O, 0)
+  end
   M = zero_matrix(ZZ, 2*degree(O), degree(O))
   M1 = representation_matrix(v[1])
   _hnf!(M1, :lowerleft)

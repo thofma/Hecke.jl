@@ -124,4 +124,18 @@ end
   @test abs(norm(evaluate(u))) == 1
   @test evaluate(u) in O
   @test is_trivial(quo(U, [mU\(O(evaluate(mUU(u)))) for u in gens(UU)])[1])
+
+  # GRH keyword argument (issue #2242)
+  UU2, mUU2 = unit_group_fac_elem(O; GRH = false)
+  @test is_trivial(quo(U, [mU\(O(evaluate(mUU2(u)))) for u in gens(UU2)])[1])
+
+  # unit_group_fac_elem should work regardless of basis order (issue #2242)
+  bs = [
+    matrix(QQ, [0 599 0; 0 6 0; 0 -168 0]),
+    identity_matrix(QQ, 3),
+  ]
+  A2 = matrix_algebra(QQ, bs)
+  O2 = order(A2, bs)
+  UU3, mUU3 = unit_group_fac_elem(O2)
+  @test !is_trivial(UU3)
 end

@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 2
       - name: "Set up Julia"
         id: setup-julia
-        uses: julia-actions/setup-julia@v2
+        uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache artifacts"
@@ -75,7 +75,7 @@ jobs:
           # be able to properly deal with PRs / merges
           fetch-depth: 2
       - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v2
+        uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.julia-version }}
       - name: "Cache artifacts"

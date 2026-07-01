@@ -666,7 +666,7 @@ function kernel_group(O::AlgAssAbsOrd, cond::Symbol = :center)
     while !t
       k += 1
       r = rand(F, 1)
-      x += r
+      x += parent(x)(r)
       t = is_invertible(elem_in_algebra(x, copy = false))[1]
       if k > 100
         error("Something wrong")

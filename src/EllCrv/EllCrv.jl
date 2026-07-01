@@ -435,18 +435,20 @@ coefficients(E::EllipticCurve) = a_invariants(E)
 Return the b-invariants of $E$ as a tuple $(b_2, b_4, b_6, b_8)$.
 """
 function b_invariants(E::EllipticCurve)
-  if isdefined(E, :b_invariants)
-    return E.b_invariants
-  else
+  if !isdefined(E, :b_invariants)
     a1, a2, a3, a4, a6 = a_invariants(E)
-
-    b2 = a1^2 + 4*a2
-    b4 = a1*a3 + 2*a4
-    b6 = a3^2 + 4*a6
-    b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
-    E.b_invariants = b2, b4, b6, b8
-    return b2, b4, b6, b8
+    E.b_invariants = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
   end
+
+  return E.b_invariants
+end
+
+function _ellcrv_b_invariants(a1::T, a2::T, a3::T, a4::T, a6::T) where {T}
+  b2 = a1^2 + 4*a2
+  b4 = a1*a3 + 2*a4
+  b6 = a3^2 + 4*a6
+  b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
+  return b2, b4, b6, b8
 end
 
 @doc raw"""
@@ -455,15 +457,18 @@ end
 Return the c-invariants of $E$ as a tuple $(c_4, c_6)$.
 """
 function c_invariants(E::EllipticCurve)
-  if isdefined(E, :c_invariants)
-    return E.c_invariants
-  else
-    b2,b4,b6,b8 = b_invariants(E)
-    c4 = b2^2 - 24*b4
-    c6 = -b2^3 + 36*b2*b4 - 216*b6
-    E.c_invariants = c4, c6
-    return  c4, c6
+  if !isdefined(E, :c_invariants)
+    b2, b4, b6, b8 = b_invariants(E)
+    E.c_invariants = _ellcrv_c_invariants(b2, b4, b6, b8)
   end
+
+  return E.c_invariants
+end
+
+function _ellcrv_c_invariants(b2::T, b4::T, b6::T, b8::T) where {T}
+  c4 = b2^2 - 24*b4
+  c6 = -b2^3 + 36*b2*b4 - 216*b6
+  return c4, c6
 end
 
 

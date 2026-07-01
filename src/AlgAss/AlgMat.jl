@@ -166,12 +166,12 @@ function basis_matrix_rref(A::MatAlgebra{S, T}) where {S, T}
   return A.basis_matrix_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
 end
 
-function assure_has_basis_matrix_solve_context(A::MatAlgebra)
+@noinline function assure_has_basis_matrix_solve_context(A::MatAlgebra)
   if isdefined(A, :basis_matrix_solve_ctx)
-    return nothing
+    return A.basis_matrix_solve_ctx
   end
   A.basis_matrix_solve_ctx = solve_init(basis_matrix(A))
-  return nothing
+  return A.basis_matrix_solve_ctx = solve_init(basis_matrix(A))
 end
 
 function basis_matrix_solve_context(A::MatAlgebra{S, T}) where {S, T}
