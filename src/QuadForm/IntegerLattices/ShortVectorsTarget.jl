@@ -854,6 +854,8 @@ function _signed_hash(x::Int, y::Int)
     return -reinterpret(Int, hash((-x,-y)))
   elseif iszero(x) && y < 0
     return -reinterpret(Int, hash((x,-y)))
+  elseif iszero(x) && iszero(y)
+    return 0
   else
     return reinterpret(Int, hash((x,y)))
   end
