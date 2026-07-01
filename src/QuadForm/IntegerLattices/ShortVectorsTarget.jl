@@ -529,10 +529,11 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
     @inbounds v = sv[i][1]
     m = 0
     for R in dual_root_orbits 
-      m = _signed_hash(multiset(R*v), m) # common signed hash
+      m = _signed_hash(multiset(R*v), m) # common signed hash 
     end
     invs[i] = _signed_hash(invs[i], m) # common signed hash
   end
+  println()
   for i in 1:length(target_invs)
     m = 0
     for R in dual_root_orbits
@@ -542,9 +543,10 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
   end
   S = Set(target_invs)
   for i in target_invs push!(S, -i) end
-  mask = [i in S for i in invs]
-  # todo: do this inplace
-  return sv[mask], (invs[mask], target_invs)
+  mask = [!(i in S) for i in invs]
+  deleteat!(invs, mask)
+  deleteat!(sv, mask)
+  return sv, invariants
 end
 
 function _postprocess_short_vectors_with_condition(::Type{CoeffType},
