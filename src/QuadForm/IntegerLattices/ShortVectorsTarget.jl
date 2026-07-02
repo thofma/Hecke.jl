@@ -117,7 +117,6 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
                                                      isotypic_coinvariant_space,
                                                      sort::Symbol=:rank,
                                                      use_dual::Bool=false,
-                                                     do_projections::Bool=true,
                                                      )
   @assert rank(L)==degree(L)
   @hassert :ShortVec 1 isone(basis_matrix(L))
@@ -128,11 +127,7 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   GZZ,_  = _integral_split_gram(L)
   Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); isbasis=true, check=false)
-  if do_projections 
-    successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
-  else
-    successive_sublattices = [R_fix, Rperp]
-  end 
+  successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
   @vprintln :ShortVec 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
   m = length(successive_sublattices)
   if sort == :rank
@@ -1205,7 +1200,7 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
 end
 
 
-function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol; search_invariant_subspace=false, search_fixed_vectors=true)
+function __short_vectors_with_condition_direct(G::ZZMatrix, GInt::Matrix{Int}, grams::Vector{ZZMatrix}, fixed_space::ZZMatrix, root_types, fundamental_roots, chol; search_invariant_subspace=false, search_fixed_vectors=true)
 
   tmpZZ = ZZ()
   n = nrows(GInt)

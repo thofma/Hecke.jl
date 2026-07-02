@@ -296,20 +296,22 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
 
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits = _weyl_group(_L, root_types, fundamental_roots)
+  # deactivate heuristic for now
   do_direct = allow_short_vectors_direct
+  do_direct= false
   do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=4 for i in 1:n)
+  do_direct = do_direct && rank(_L) - rank(fixed_matrix) > 18
   do_direct = do_direct || force_direct
   do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=10 for i in 1:n)
-  
-  T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual, do_direct)
-  (_L, successive_sublattices, B, Binv, projection_ranges, projL,
-  projL_gram, denoms, target_fixed_part, target_norms, grams) = T
   if !do_direct
     @vprintln :Lattice 2 "short vectors choosing target=true"
+    T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
     @vtime :Lattice 2 vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)
   else
     @vprintln :Lattice 2 "short vectors choosing direct=true"
-    @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams, fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
+    grams = ZZMatrix[]
+    search_invariant_subspace=false
+    @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams,fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
   end
   unsigned_invariants = (UInt[], UInt[])
   if use_multiset
@@ -317,6 +319,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
     vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
   end
   if get_assertion_level(:Lattice) > 1
+    grams = T[end]
     for (v, n) in vector_set
       @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
     end
