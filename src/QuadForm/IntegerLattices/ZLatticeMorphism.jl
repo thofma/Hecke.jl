@@ -171,8 +171,6 @@ function __assert_has_automorphisms(
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
   end
-  res_uncompressed = res
-  vector_set_uncompressed = [(v, copy(n)) for (v, n) in vector_set]
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
@@ -222,11 +220,7 @@ function __assert_has_automorphisms(
   end
   if !try_small || !fl
     C = ZLatAutoCtx(res_uncompressed)
-    if res === res_uncompressed
-      init(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, invariants, unsigned_invariants)
-    else
-      init(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set=vector_set_uncompressed, invariants, unsigned_invariants)
-    end
+    init(C; depth, bacher_depth, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
 
@@ -302,13 +296,14 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
 
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits = _weyl_group(_L, root_types, fundamental_roots)
-  T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
-  (_L, successive_sublattices, B, Binv, projection_ranges, projL,
-  projL_gram, denoms, target_fixed_part, target_norms, grams) = T
   do_direct = allow_short_vectors_direct
   do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=4 for i in 1:n)
-  do_direct = do_direct && any(rank(successive_sublattices[i])>=15 for i in 2:length(successive_sublattices)) && rank(successive_sublattices[1])<=4
   do_direct = do_direct || force_direct
+  do_direct = do_direct && all(set!(tmp, mat_entry_ptr(gramZZ,i,i))<=10 for i in 1:n)
+  
+  T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual, do_direct)
+  (_L, successive_sublattices, B, Binv, projection_ranges, projL,
+  projL_gram, denoms, target_fixed_part, target_norms, grams) = T
   if !do_direct
     @vprintln :Lattice 2 "short vectors choosing target=true"
     @vtime :Lattice 2 vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)

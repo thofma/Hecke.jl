@@ -116,7 +116,8 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
                                                      fixed_space,
                                                      isotypic_coinvariant_space,
                                                      sort::Symbol=:rank,
-                                                     use_dual::Bool=false
+                                                     use_dual::Bool=false,
+                                                     do_projections::Bool=true,
                                                      )
   @assert rank(L)==degree(L)
   @hassert :ShortVec 1 isone(basis_matrix(L))
@@ -127,7 +128,11 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   GZZ,_  = _integral_split_gram(L)
   Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); isbasis=true, check=false)
-  successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
+  if do_projections 
+    successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
+  else
+    successive_sublattices = [R_fix, Rperp]
+  end 
   @vprintln :ShortVec 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
   m = length(successive_sublattices)
   if sort == :rank
@@ -1194,13 +1199,13 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   end
 
 
-  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol, root_orbits;
+  return __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol;
                                                search_invariant_subspace,
                                                search_fixed_vectors)
 end
 
 
-function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol, root_orbits; search_invariant_subspace=false, search_fixed_vectors=true)
+function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root_types, fundamental_roots, chol; search_invariant_subspace=false, search_fixed_vectors=true)
 
   tmpZZ = ZZ()
   n = nrows(GInt)
@@ -1241,7 +1246,7 @@ function __short_vectors_with_condition_direct(G, GInt, grams, fixed_space, root
   vfix_buf = Vector{Int}(undef, f)
   tmp_gram2_v = Vector{Int}(undef, n)
   for (v, sq) in __short_vectors_it(G, nothing, maxL; chol)
-    sq in target_2 || continue
+    #sq in target_2 || continue
     # we have the list of vectors only up to sign
     # take the representative with canonicalized vfix
     LinearAlgebra.mul!(vfix_buf, fixed_space_dual, v)
