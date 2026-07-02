@@ -527,16 +527,25 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
   invs, target_invs = invariants
   uinvs = Vector{UInt}(undef, l)
   target_uinvs = Vector{UInt}(undef, length(target_invs))
+  n_orbits = length(dual_root_orbits)
+  max_orbit_len = maximum((nrows(R) for R in dual_root_orbits); init=0)
+  wbuf = [Vector{Int}(undef, nrows(R)) for R in dual_root_orbits]
+  ms = MSet{Int}()
+  ms_neg = MSet{Int}()
+
   for i in 1:l
     @inbounds v = sv[i][1]
     m = 0 #signed hash
     u = UInt(0) # unsigned hash
-    for R in dual_root_orbits
-      w = R*v
-      ms = multiset(w)
-      ms_neg = multiset(-w)
-      u = hash(hash(ms) ⊻ hash(ms_neg),u)
-      m = _signed_hash(ms, m) # common signed hash 
+    @inbounds for j in 1:n_orbits
+      w = wbuf[j]
+      R = dual_root_orbits[j]
+      nr = nrows(R)
+      LinearAlgebra.mul!(w, R, v)
+      _fill_mset_counts!(ms, w)
+      _fill_negated_mset_counts!(ms_neg, ms)
+      u = hash(hash(ms) ⊻ hash(ms_neg), u)
+      m = _signed_hash(ms, m) # common signed hash
     end
     uinvs[i] = u
     invs[i] = _signed_hash(invs[i], m) # common signed hash
@@ -544,16 +553,21 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
   for i in 1:length(target_invs)
     m = 0
     u = UInt(0)
-    for R in dual_root_orbits
-      w = R[:,i]
-      ms = multiset(w)
-      ms_neg = multiset(neg!(w))
-      u = hash(hash(ms) ⊻ hash(ms_neg),u)
+    @inbounds for j in 1:n_orbits
+      R = dual_root_orbits[j]
+      w = wbuf[j]
+      nr = nrows(R)
+      for k in 1:nr
+        @inbounds w[k] = R[k, i]
+      end
+      _fill_mset_counts!(ms, w)
+      _fill_negated_mset_counts!(ms_neg, ms)
+      u = hash(hash(ms) ⊻ hash(ms_neg), u)
       m = _signed_hash(ms, m)
     end
     target_uinvs[i] = u
     target_invs[i] = _signed_hash(target_invs[i], m)
-  end 
+  end
   S = Set(target_invs)
   Su = Set(target_uinvs)
   for i in target_invs push!(S, -i) end
@@ -561,8 +575,27 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
   masku = [!(i in Su) for i in uinvs]
   mask = mask .| masku
   deleteat!(invs, mask)
+  deleteat!(uinvs, mask)
   deleteat!(sv, mask)
   return sv, invariants, (uinvs, target_uinvs)
+end
+
+function _fill_mset_counts!(ms::MSet{T}, w::AbstractVector{T}) where {T}
+  d = ms.dict
+  empty!(d)
+  @inbounds for x in w
+    add_to_key!(d, x, 1)
+  end
+  return ms
+end
+
+function _fill_negated_mset_counts!(ms_neg::MSet{T}, ms::MSet{T}) where {T <: Signed}
+  d_neg = ms_neg.dict
+  empty!(d_neg)
+  @inbounds for (x, multiplicity) in ms.dict
+    d_neg[-x] = multiplicity
+  end
+  return ms_neg
 end
 
 function _postprocess_short_vectors_with_condition(::Type{CoeffType},
