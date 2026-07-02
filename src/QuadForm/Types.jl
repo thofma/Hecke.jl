@@ -463,6 +463,7 @@ mutable struct VectorList{S, T, U}
   vectors::Vector{S} # list of (short) vectors
   lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
   invariants::Vector{U} # invariant[i] is an invariant of vectors[i]
+  unsigned_invariants::Vector{UInt} # unsigned_invariant[i] is sign-invariant data of vectors[i]
   lookup::Dict{S, Int} # v => i iff vectors[i] == v
   issorted::Bool # whether the vectors are sorted
   use_dict::Bool # whether lookup is used
@@ -513,6 +514,7 @@ mutable struct ZLatAutoCtx{S, T, V, U}
   max::S
   V::VectorList{V, S, U} # list of (short) vectors
   target_invariants::Vector{U}
+  target_unsigned_invariants::Vector{UInt}
   v::Vector{Vector{V}} # list of list of vectors (n x 1 matrices),
                        # v[i][j][k] is the dot product of V[j] with
                        # the k-th row of G[i]

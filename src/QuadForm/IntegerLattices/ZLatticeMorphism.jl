@@ -132,6 +132,7 @@ function __assert_has_automorphisms(
     return nothing
   end
   invariants = (Int[],Int[])
+  unsigned_invariants = (UInt[], UInt[])
   res = ZZMatrix[GL]
   is_lll = get_attribute(L, :is_lll_reduced, false)
   do_lll = !is_lll && do_lll
@@ -151,7 +152,7 @@ function __assert_has_automorphisms(
     use_target_enum = false
   end
   if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
+    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
                                                                     search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct, use_multiset)
     use_projections = false # already added projections
   elseif use_weyl
@@ -171,6 +172,7 @@ function __assert_has_automorphisms(
     end
   end
   res_uncompressed = res
+  vector_set_uncompressed = [(v, copy(n)) for (v, n) in vector_set]
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
@@ -189,7 +191,7 @@ function __assert_has_automorphisms(
   C = ZLatAutoCtx(res)
   fl = false
   if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, invariants)
+    fl, Csmall = try_init_small(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, invariants, unsigned_invariants)
     if fl
       _gens, order = auto(Csmall)
       gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
@@ -220,7 +222,11 @@ function __assert_has_automorphisms(
   end
   if !try_small || !fl
     C = ZLatAutoCtx(res_uncompressed)
-    init(C; depth, bacher_depth, is_lll_reduced_known=true)
+    if res === res_uncompressed
+      init(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set, invariants, unsigned_invariants)
+    else
+      init(C; depth, bacher_depth, is_lll_reduced_known=true, vector_set=vector_set_uncompressed, invariants, unsigned_invariants)
+    end
     gens, order = auto(C)
   end
 
@@ -310,9 +316,10 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
     @vprintln :Lattice 2 "short vectors choosing direct=true"
     @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams, fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
   end
+  unsigned_invariants = (UInt[], UInt[])
   if use_multiset
     dual_root_orbits = [M*gramInt for M in root_orbits]
-    vector_set, invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
+    vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
@@ -326,7 +333,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   end
   @assert length(grams) == length(vector_set[1][2])
   weyl_group_order = _weyl_group_order(root_types)
-  return grams, vector_set, invariants, weyl_group_order, fundamental_roots
+  return grams, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots
 end
 
 function _compress_two_matrices_try_faithful_and_small!(res, vector_set)

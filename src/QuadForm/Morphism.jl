@@ -12,24 +12,33 @@
 # (https://www.sciencedirect.com/science/article/pii/S0747717196901303)
 
 function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}}, invariants::Vector{U},
+                    unsigned_invariants::Vector{UInt} = UInt[],
                     use_dict::Bool = true) where {S, T, U}
 
   V = VectorList{S, T, U}()
+  if isempty(unsigned_invariants)
+    unsigned_invariants = zeros(UInt, length(vectors))
+  else
+    @assert length(unsigned_invariants) == length(vectors)
+  end
   if use_dict
     V.lookup = Dict{S, Int}(vectors[i] => i for i in 1:length(vectors))
     V.lengths = lengths
     V.vectors = vectors
     V.invariants = invariants
+    V.unsigned_invariants = unsigned_invariants
     V.use_dict = true
   else
     p = sortperm(vectors)
     permute!(vectors, p)       # apply the permutation to V
     permute!(lengths, p)       # apply the permutation to lengths
     permute!(invariants, p)
+    permute!(unsigned_invariants, p)
     V.use_dict = false
     V.vectors = vectors
     V.lengths = lengths
     V.invariants = invariants
+    V.unsigned_invariants = unsigned_invariants
   end
   return V
 end
@@ -106,6 +115,7 @@ function init(
   is_lll_reduced_known::Bool=false,
   vector_set = [],
   invariants = (Int[],Int[]),
+  unsigned_invariants = (UInt[], UInt[]),
   D::ZLatAutoCtx=C
 ) where {R,S,T,U<:Union{Vector,Int}}
   # Compute the necessary short vectors
@@ -120,8 +130,18 @@ function init(
   end
   @assert bound > 0
   if !isempty(vector_set)
-    vectors = first.(vector_set)
-    lengths = [i[2] for i in vector_set]
+    raw_vectors = first.(vector_set)
+    raw_lengths = [i[2] for i in vector_set]
+    if T <: ZZMatrix
+      vectors = ZZMatrix[matrix(ZZ, 1, n, v) for v in raw_vectors]
+    else
+      vectors = raw_vectors
+    end
+    if R <: ZZRingElem
+      lengths = [[ZZRingElem(x) for x in l] for l in raw_lengths]
+    else
+      lengths = raw_lengths
+    end
   else
     @vprintln :LatticeMor 1 "Computing short vectors of length <= $bound"
     V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound; is_lll_reduced_known)
@@ -181,8 +201,19 @@ function init(
     _invariants = invariants[1]
     _target_invariants = invariants[2]
   end
-  V = VectorList(vectors, lengths, _invariants, use_dict)
+  if isempty(unsigned_invariants[1])
+    _unsigned_invariants = zeros(UInt, length(vectors))
+    _target_unsigned_invariants = zeros(UInt, n)
+  else
+    _unsigned_invariants = unsigned_invariants[1]
+    _target_unsigned_invariants = unsigned_invariants[2]
+    @assert length(_unsigned_invariants) == length(vectors)
+    @assert length(_target_unsigned_invariants) == n
+  end
+
+  V = VectorList(vectors, lengths, _invariants, _unsigned_invariants, use_dict)
   C.target_invariants = _target_invariants
+  C.target_unsigned_invariants = _target_unsigned_invariants
 
   for i in 1:length(C.G)
     C.is_symmetric[i] = is_symmetric(C.G[i])
@@ -294,6 +325,7 @@ function try_init_small(
   is_lll_reduced_known::Bool=false,
   vector_set = [], #Tuple{Vector{Int},Vector{Int}}[] # do this?
   invariants::Tuple{Vector{U},Vector{U}} = (Int[],Int[]),
+  unsigned_invariants::Tuple{Vector{UInt},Vector{UInt}} = (UInt[], UInt[]),
   D::ZLatAutoCtx=C
  ) where {U}
   Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}, U}()
@@ -423,10 +455,21 @@ function try_init_small(
     _target_invariants = invariants[2]
   end
 
-  V = VectorList(vectors, lengths, _invariants, use_dict)
+  if isempty(unsigned_invariants[1])
+    _unsigned_invariants = zeros(UInt, length(vectors))
+    _target_unsigned_invariants = zeros(UInt, n)
+  else
+    _unsigned_invariants = unsigned_invariants[1]
+    _target_unsigned_invariants = unsigned_invariants[2]
+    @assert length(_unsigned_invariants) == length(vectors)
+    @assert length(_target_unsigned_invariants) == n
+  end
+
+  V = VectorList(vectors, lengths, _invariants, _unsigned_invariants, use_dict)
 
   Csmall.V = V
   Csmall.target_invariants = _target_invariants
+  Csmall.target_unsigned_invariants = _target_unsigned_invariants
 
   Csmall.prime = next_prime(2^(vectors_nbits + 1) + 1)
 
@@ -577,6 +620,7 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V
   # For I == dim(C), scpcomb[dim(C)] is never used in _cand, use per[dim(C)] as fallback.
   n = dim(C)
   vs_tgt_inv = [I < n ? C.target_invariants[C.per[I + 1]] : C.target_invariants[C.per[n]] for I in 1:n]
+  vs_tgt_uinv = [I < n ? C.target_unsigned_invariants[C.per[I + 1]] : C.target_unsigned_invariants[C.per[n]] for I in 1:n]
   for (w_idx, w) in enumerate(C.V.vectors)
     @inbounds for i in 1:length(C.G)
       for j in 1:dim(C)
@@ -614,7 +658,9 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V
       is0 = is_zero(sign_s)
       # Only accumulate ww into the vector sum if its invariant matches the target.
       # When sign_s == -1, ww = -w, whose invariant is -invariant(w).
-      has_right_inv = is0 || (sign_s == -1 ? _isequal_negated(C.V.invariants[w_idx], vs_tgt_inv[I]) : C.V.invariants[w_idx] == vs_tgt_inv[I])
+      signed_inv_ok = is0 || (sign_s == -1 ? _isequal_negated(C.V.invariants[w_idx], vs_tgt_inv[I]) : C.V.invariants[w_idx] == vs_tgt_inv[I])
+      unsigned_inv_ok = is0 || C.V.unsigned_invariants[w_idx] == vs_tgt_uinv[I]
+      has_right_inv = signed_inv_ok && unsigned_inv_ok
       if k > 0
         if !is0 && has_right_inv
           if S <: ZZRingElem
@@ -933,7 +979,9 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   V = C.V.vectors
   W = C.V.lengths
   U = C.V.invariants
+  Uu = C.V.unsigned_invariants
   Utarget = C.target_invariants
+  Utargetu = C.target_unsigned_invariants
   F = C.G
   _issymmetric = C.is_symmetric
 
@@ -951,6 +999,7 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
     Wj = W[j]
     Vj = V[j]
     Uj = U[j]
+    Uuj = Uu[j]
     good_length = true
     @inbounds for k in 1:length(F)
       # getindex for ZZMatrix is super slow, so we need to do this the long way round...
@@ -970,8 +1019,8 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
     # length is correct
 
 
-    good_scalar_plus = Utarget[J] == Uj
-    good_scalar_minus = _isequal_negated(Uj, Utarget[J])
+    good_scalar_plus = Utarget[J] == Uj && Utargetu[J] == Uuj
+    good_scalar_minus = _isequal_negated(Uj, Utarget[J]) && Utargetu[J] == Uuj
     !good_scalar_plus && !good_scalar_minus && continue
     @inbounds for k in 1:length(F)
       for i in 1:I
@@ -1078,12 +1127,18 @@ function fingerprint(C::ZLatAutoCtx, D::ZLatAutoCtx=C)
 
       if good
         vj = V.invariants[j]
+        vju = V.unsigned_invariants[j]
         dj = D.target_invariants[i]
+        dju = D.target_unsigned_invariants[i]
         if vj == dj
-          fp[1, i] += 1
+          if vju == dju
+            fp[1, i] += 1
+          end
         end
         if _isequal_negated(vj, dj)
-          fp[1, i] += 1
+          if vju == dju
+            fp[1, i] += 1
+          end
         end
       end
     end
@@ -1495,9 +1550,11 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
   CoV = Co.V
   CoVlen = CoV.lengths
   CoVinv = CoV.invariants
+  CoVuinv = CoV.unsigned_invariants
   Cov = Co.v
   CiIsSymmetric = Ci.is_symmetric
   target_inv_I = Ci.target_invariants[Ci.per[I]]
+  target_uinv_I = Ci.target_unsigned_invariants[Ci.per[I]]
   neg_target_inv_I = -target_inv_I
   dot_product_tmp = Co.dot_product_tmp
   nG = length(Co.G)
@@ -1508,15 +1565,16 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
     okm = true
     Vlen_j = CoVlen[j]
     Vinv_j = CoVinv[j]
+    Vuinv_j = CoVuinv[j]
     for i in 1:nG
       _issym = CiIsSymmetric[i]
       Cov_i = Cov[i]
       Vlen_j_i = Vlen_j[i]
 
-      if Vlen_j_i != diagI[i] || Vinv_j != target_inv_I
+      if Vlen_j_i != diagI[i] || Vinv_j != target_inv_I || Vuinv_j != target_uinv_I
         okp = false
       end
-      if Vlen_j_i != diagI[i] || Vinv_j != neg_target_inv_I
+      if Vlen_j_i != diagI[i] || Vinv_j != neg_target_inv_I || Vuinv_j != target_uinv_I
         okm = false
       end
       !use_vector_sums && !okp && !okm && break
@@ -1612,7 +1670,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
           # vector matches the target invariant for this position.
           # sign=false: vector added is Vvj, invariant = CoVinv[j]
           # sign=true:  vector added is -Vvj, invariant = -CoVinv[j]
-          if CoVinv[j] == (sign ? neg_target_inv_I : target_inv_I)
+          if CoVinv[j] == (sign ? neg_target_inv_I : target_inv_I) && CoVuinv[j] == target_uinv_I
             xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
           end
         end
@@ -1966,17 +2024,17 @@ function matgen(x, dim, per, v)
 end
 
 # Isomorphism computation
-function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0, vector_set1=Tuple{Vector{Int},Vector{Int}}[], vector_set2=Tuple{Vector{Int},Vector{Int}}[], invariants1=(Int[],Int[]), invariants2=(Int[],Int[]))
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0, vector_set1=Tuple{Vector{Int},Vector{Int}}[], vector_set2=Tuple{Vector{Int},Vector{Int}}[], invariants1=(Int[],Int[]), invariants2=(Int[],Int[]), unsigned_invariants1=(UInt[], UInt[]), unsigned_invariants2=(UInt[], UInt[]))
   Ci = ZLatAutoCtx(Gi)
   Co = ZLatAutoCtx(Go)
   # Ci is the source
   # Co is the target
   # We only need to initialize the vector sums and Bacher polynomials for the
   # source lattice
-  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth; vector_set=vector_set1, invariants=invariants1)
+  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth; vector_set=vector_set1, invariants=invariants1, unsigned_invariants=unsigned_invariants1)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci, vector_set=vector_set2, invariants=invariants2)
+    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci, vector_set=vector_set2, invariants=invariants2, unsigned_invariants=unsigned_invariants2)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -2494,6 +2552,16 @@ function _make_small(V::VectorList{ZZMatrix, ZZRingElem, U}) where {U}
   tmp = ZZ()
   W = VectorList{Vector{Int}, Int, U}()
   W.vectors = [ _int_vector_with_overflow(v, tmp) for v in V.vectors ]
+  if isdefined(V, :invariants)
+    W.invariants = V.invariants
+  else
+    W.invariants = Vector{U}()
+  end
+  if isdefined(V, :unsigned_invariants)
+    W.unsigned_invariants = V.unsigned_invariants
+  else
+    W.unsigned_invariants = zeros(UInt, length(W.vectors))
+  end
   if isdefined(V, :lengths)
     W.lengths = Vector{Vector{Int}}(undef, length(V.lengths))
     for i in 1:length(V.lengths)
@@ -2560,7 +2628,9 @@ function _make_small(C::ZLatAutoCtx{ZZRingElem, T, V, U}) where {T,V,U}
   D.bacher_depth = 0
   n = C.dim
   D.V.invariants = C.V.invariants
+  D.V.unsigned_invariants = C.V.unsigned_invariants
   D.target_invariants = C.target_invariants
+  D.target_unsigned_invariants = C.target_unsigned_invariants
   D.tmp_vec1 = zeros(Int, n)
   D.tmp_vec2 = zeros(Int, n)
   # fill temporary variables
