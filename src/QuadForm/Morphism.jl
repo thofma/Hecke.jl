@@ -130,18 +130,8 @@ function init(
   end
   @assert bound > 0
   if !isempty(vector_set)
-    raw_vectors = first.(vector_set)
-    raw_lengths = [i[2] for i in vector_set]
-    if T <: ZZMatrix
-      vectors = ZZMatrix[matrix(ZZ, 1, n, v) for v in raw_vectors]
-    else
-      vectors = raw_vectors
-    end
-    if R <: ZZRingElem
-      lengths = [[ZZRingElem(x) for x in l] for l in raw_lengths]
-    else
-      lengths = raw_lengths
-    end
+    vectors = first.(vector_set)
+    lengths = [i[2] for i in vector_set]
   else
     @vprintln :LatticeMor 1 "Computing short vectors of length <= $bound"
     V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound; is_lll_reduced_known)
