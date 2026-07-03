@@ -8,8 +8,8 @@
   f = x - 1;
   K, a = number_field(f, "a", cached = false)
   D = matrix(K, 3, 3, [4, 0, 0, 0, 10, 0, 0, 0, 20]);
-  gens = Vector{AbsSimpleNumFieldElem}[map(K, [0, 1, 0]), map(K, [0, 1, 0]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, -1//2, -1//4]), map(K, [-5//4, -1//2, -1//4])]
-  L = quadratic_lattice(K, gens, gram = D)
+  gs = Vector{AbsSimpleNumFieldElem}[map(K, [0, 1, 0]), map(K, [0, 1, 0]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, 3//2, 3//4]), map(K, [-5//4, -1//2, -1//4]), map(K, [-5//4, -1//2, -1//4])]
+  L = quadratic_lattice(K, gs, gram = D)
 
   L1 = @inferred quadratic_lattice(base_field(L), pseudo_matrix(L))
   @test pseudo_matrix(L1) == pseudo_matrix(L)
@@ -50,8 +50,8 @@
   @test rank(LL) == 0
 
   D = matrix(K, 0, 0, [])
-  gens = Vector{AbsSimpleNumFieldElem}[]
-  L = @inferred quadratic_lattice(K, gens, gram = D)
+  gs = Vector{AbsSimpleNumFieldElem}[]
+  L = @inferred quadratic_lattice(K, gs, gram = D)
   @test is_definite(L)
   @test rank(L) == 0
 
