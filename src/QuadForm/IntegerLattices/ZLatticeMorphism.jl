@@ -219,7 +219,7 @@ function __assert_has_automorphisms(
     !fl && @vprintln :Lattice 1 "Try init small failed; switching to large"
   end
   if !try_small || !fl
-    C = ZLatAutoCtx(res_uncompressed)
+    C = ZLatAutoCtx(res)
     init(C; depth, bacher_depth, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
