@@ -48,7 +48,6 @@ function isone(I::GenOrdIdl)
   return isone(minimum(I; copy = false))
 end
 
-
 ################################################################################
 #
 #  Basic field access
@@ -116,6 +115,40 @@ function show(io::IO, id::GenOrdIdl)
     print(io, "\nBasis_matrix \n", id.basis_matrix)
   end
 end
+
+################################################################################
+#
+#  2-element normal presentation
+#
+################################################################################
+
+function defines_2_normal(A::GenOrdIdl)
+  has_2_elem(A) || return false
+
+  O = order(A)
+  m = A.gen_one
+  (is_zero(m) || is_zero(A.gen_two)) && return false
+
+  # m in alpha*O <=> m/alpha in O. Smallest such m is denominator of alpha^-1
+  alpha = A.gen_two
+  m_alpha = denominator(inv(data(alpha)), O)
+
+  # this is Pohst-Zassenhaus, lemma 3.22
+  g = gcd(m, m_alpha)
+  return is_unit(gcd(m, divexact(m_alpha, g)))
+end
+
+function has_2_elem_normal(A::GenOrdIdl)
+  if isdefined(A, :gens_normal)
+    return is_unit(A.gen_one) || !is_unit(A.gens_normal)
+  end
+  if has_2_elem(A) && defines_2_normal(A)
+    A.gens_normal = A.gen_one
+    return true
+  end
+  return false
+end
+
 
 ###########################################################################################
 #
@@ -894,6 +927,7 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
     end
 
     I = ideal(O, p, b)
+    I.gens_normal = p
     I.is_prime = 1
     I.splitting_type = e, f
     I.norm = p^f
@@ -913,9 +947,9 @@ end
 function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = order(A)
   e = 0
-  if has_2_elem(p)
-    beta = Hecke.numerator(inv(O.F(p.gen_two)),O)
-    newA = GenOrdFracIdl(beta*A,p.gen_one)
+  if has_2_elem_normal(p)
+    beta = Hecke.numerator(inv(O.F(p.gen_two)), O)
+    newA = GenOrdFracIdl(beta*A, p.gen_one)
     while is_integral(newA)
       e += 1
       newA = GenOrdFracIdl(numerator(beta*newA; copy = false), p.gen_one)
@@ -1080,7 +1114,9 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
     P.splitting_type = 1, degree(O)
 
     P.gen_one = p
-    P.gen_two = P.princ_gen = O(p)
+    P.gen_two = O(p)
+    P.gens_normal = p
+    P.princ_gen = O(p)
     P.is_principal = 1
 
     ideals[1] = (P, 1)
@@ -1103,6 +1139,7 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
     if P_uni !== nothing
       P.gen_one = p
       P.gen_two = P_uni
+      P.gens_normal = p
     end
 
     e = valuation(ideal(O, p), P)

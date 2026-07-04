@@ -3,7 +3,11 @@
   R::T
   trans  #::dense_matrix_type(elem_type(base_field_type(S)))
   itrans #::dense_matrix_type(elem_type(base_field_type(S)))
+
   is_equation_order::Bool
+  is_maximal::Int                  # 0 Not known
+                                   # 1 Known to be maximal
+                                   # 2 Known to not be maximal
 
   function GenOrd(R::AbstractAlgebra.Ring, F::AbstractAlgebra.Field, empty::Bool = false; check::Bool = true)
     #empty allows to create an Order that is none:
@@ -13,6 +17,7 @@
     r.F = F
     r.R = R
     r.is_equation_order = true
+    r.is_maximal = 0
 
     Qt = base_field(F)
     if empty
@@ -106,6 +111,7 @@ end
 
   gen_one::RingElem
   gen_two::GenOrdElem
+  gens_normal::RingElem   # the p for which <gen_one, gen_two> is a P(p)-normal presentation
 
   princ_gen::GenOrdElem
   prim_elem::GenOrdElem
