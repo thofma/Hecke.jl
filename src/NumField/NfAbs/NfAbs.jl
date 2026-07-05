@@ -889,23 +889,23 @@ end
 ################################################################################
 
 function is_linearly_disjoint(K1::AbsSimpleNumField, K2::AbsSimpleNumField)
-  if gcd(degree(K1), degree(K2)) == 1
-    return true
-  end
+  # trivial degree check
+  is_coprime(degree(K1), degree(K2)) && return true
+
+  # both defining polynomials are monic in Z[x]:
+  # if polynomial discriminants are coprime, so are the discriminants of maximal orders
   if is_defining_polynomial_nice(K1) && is_defining_polynomial_nice(K2)
-    d1 = numerator(discriminant(K1.pol))
-    d2 = numerator(discriminant(K2.pol))
-    if gcd(d1, d2) == 1
-      return true
-    end
+    d1, d2 = numerator(discriminant(K1.pol)), numerator(discriminant(K2.pol))
+    is_coprime(d1, d2) && return true
   end
+
+  # if we have computed maximal orders, check their discriminants
   if is_maximal_order_known(K1) && is_maximal_order_known(K2)
-    OK1 = maximal_order(K1)
-    OK2 = maximal_order(K2)
-    if is_coprime(discriminant(K1), discriminant(K2))
-      return true
-    end
+    OK1, OK2 = maximal_order(K1), maximal_order(K2)
+    is_coprime(discriminant(OK1), discriminant(OK2)) && return true
   end
+
+  # check polynomial irreducibility over the field
   f = change_base_ring(K2, K1.pol)
   return is_irreducible(f)
 end
@@ -1057,16 +1057,8 @@ function embed(f::Map{<:NumField, <:NumField})
   @assert absolute_degree(d) <= absolute_degree(c)
   cn = find_one_chain(d, c)
   if cn !== nothing
-    if is_simple(d)
-      cgend = force_coerce(c, gen(d))
-      if cgend != f(gen(d))
-        error("different embedding already installed")
-        return
-      end
-    else
-      if any(x->c(x) != f(x), gens(d))
-        error("different embedding already installed")
-      end
+    if any(x->force_coerce(c, x) != f(x), gens(d))
+      error("different embedding already installed")
     end
   end
   s = get_attribute!(c, :subs, [])::Vector{Any}
@@ -1087,7 +1079,7 @@ function has_embedding(F::NumField, G::NumField)
   if absolute_degree(G) % absolute_degree(F) != 0
     return false
   end
-  cn = find_one_chain(d, c)
+  cn = find_one_chain(F, G)
   return cn !== nothing
 end
 

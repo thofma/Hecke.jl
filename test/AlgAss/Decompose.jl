@@ -25,4 +25,3 @@
   @test dim(A1) + dim(A2) == dim(A)
 
 end
-

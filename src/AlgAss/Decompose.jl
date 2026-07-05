@@ -194,7 +194,7 @@ function _dec_com_gen(A::AbstractAssociativeAlgebra{T}) where {T <: FieldElem}
       error("something is wrong, please report this")
       # either something is really wrong, or we need to adjust the randomization
     end
-    c = elem_type(F)[ rand(F, -10:10) for i = 1:k ]
+    c = elem_type(F)[ !(F isa NumField) ? F(rand(-10:10)) : rand(F, -10:10) for i = 1:k ]
     a = dot(c, V)
     f = minpoly(a)
 

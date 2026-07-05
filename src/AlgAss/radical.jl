@@ -52,7 +52,8 @@ end
 #
 ################################################################################
 
-function _radical_zero(A::AbstractAssociativeAlgebra{T}) where { T <: Union{ QQFieldElem, NumFieldElem } }
+function _radical_zero(A::AbstractAssociativeAlgebra)
+  @assert is_zero(characteristic(base_ring(A)))
   M = trace_matrix(A)
   N = kernel(M; side = :right)
   n = ncols(N)

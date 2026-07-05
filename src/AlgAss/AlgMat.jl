@@ -166,12 +166,12 @@ function basis_matrix_rref(A::MatAlgebra{S, T}) where {S, T}
   return A.basis_matrix_rref::Tuple{dense_matrix_type(S), dense_matrix_type(S), Vector{Int}}
 end
 
-function assure_has_basis_matrix_solve_context(A::MatAlgebra)
+@noinline function assure_has_basis_matrix_solve_context(A::MatAlgebra)
   if isdefined(A, :basis_matrix_solve_ctx)
-    return nothing
+    return A.basis_matrix_solve_ctx
   end
   A.basis_matrix_solve_ctx = solve_init(basis_matrix(A))
-  return nothing
+  return A.basis_matrix_solve_ctx = solve_init(basis_matrix(A))
 end
 
 function basis_matrix_solve_context(A::MatAlgebra{S, T}) where {S, T}
@@ -253,13 +253,8 @@ function denominator_of_multiplication_table(A::MatAlgebra)
   get_attribute!(A, :denominator_of_multiplication_table) do
     den = one(ZZ)
     mt = multiplication_table(A)
-    d = _matdeg(A)
-    for i in 1:d
-      for j in 1:d
-        for k in 1:d
-          den = lcm!(den, den, denominator(mt[i, j, k]))
-        end
-      end
+    for d in mt
+      den = lcm!(den, den, denominator(d))
     end
     return den
   end::ZZRingElem

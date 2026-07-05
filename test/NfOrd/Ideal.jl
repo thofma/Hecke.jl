@@ -39,6 +39,9 @@
 
     @test is_zero(ideal(O1, 0))
     @test is_zero(ideal(O1, ZZ(0)))
+
+    # ideal from vector of zeros should return the zero ideal
+    @test is_zero(ideal(O1, [O1(0), O1(0)]))
   end
 
   I = ideal(O1, -17)

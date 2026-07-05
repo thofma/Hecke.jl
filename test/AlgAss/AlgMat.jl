@@ -273,4 +273,10 @@
     c = @inferred collect(m)
     @test c == [zero(m)]
   end
+
+  let # 2208
+    b1 = matrix(QQ, [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]); b2 = matrix(QQ, [0 1 -1 -1; 0 2 0 0; 0 0 2 0; 0 0 0 2]);
+    QR = matrix_algebra(QQ, [b1,b2]);
+    @test is_one(Hecke.denominator_of_structure_constant_table(QR) )
+  end
 end

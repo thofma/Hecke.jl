@@ -51,10 +51,9 @@ function igusa_clebsch_invariants(f::PolyRingElem{T}) where T
   K = base_ring(f)
   n = degree(f)
   @req 5 <= n <= 6 "Igusa-Clebsch invariants are only defined for a curve of genus 2."
-  if  characteristic(K) == 2
+  if characteristic(K) == 2
     error("Characteristic of the field cannot be 2")
   end
-
   if characteristic(K) in [3,5]
     igusa_invs = igusa_invariants(f)
     return igusa_clebsch_from_igusa(igusa_invs)
@@ -75,20 +74,17 @@ function igusa_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}, include_J15::B
     return igusa_invs = igusa_char2(f, h)
   end
   f = f + h^2/4
-  if !(characteristic(K) in [3,5])
-    a, b, c, d = igusa_clebsch_invariants(f)
-    igusa_invs = igusa_from_igusa_clebsch([a,b,c,d])
-  else
+  if characteristic(K) in [3,5]
     return igusa_general_formulas(f)
   end
-
+  a, b, c, d = igusa_clebsch_invariants(f)
+  igusa_invs = igusa_from_igusa_clebsch([a,b,c,d])
   if include_J15
     J15 = igusa_invariant_J15(f)
     return push!(igusa_invs, J15)
   else
     return igusa_invs
   end
-
 end
 
 function igusa_invariants(f::PolyRingElem{T}, include_J15::Bool = false) where T

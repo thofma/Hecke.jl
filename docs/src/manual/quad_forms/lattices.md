@@ -298,7 +298,7 @@ pseudo_basis(::AbstractLat)
 coefficient_ideals(::AbstractLat)
 absolute_basis_matrix(::AbstractLat)
 absolute_basis(::AbstractLat)
-generators(L::AbstractLat; minimal::Bool = false)
+gens(L::AbstractLat; minimal::Bool = false)
 gram_matrix_of_generators(::AbstractLat; minimal::Bool = false)
 ```
 
@@ -403,7 +403,7 @@ julia> absolute_basis(Lherm)
  [0, 0, 0, 1]
  [0, 0, 0, 1//2*b + 1//2]
 
-julia> generators(Lherm)
+julia> gens(Lherm)
 4-element Vector{Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}}:
  [2, -1, 0, 0]
  [-3, 0, -1, 0]

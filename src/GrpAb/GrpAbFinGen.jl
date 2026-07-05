@@ -876,19 +876,22 @@ the induced homomorphism.
 """
 function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{FinGenAbGroup, FinGenAbGroup}})
   r, c = size(A)
-  if c == 1
+  dG = get_attribute(G, :direct_product)
+  if isa(dG, Nothing)
+    @assert c ==1
     dG = [G]
-  else
-    dG = get_attribute(G, :direct_product)
   end
-  if r == 1
+
+  dH = get_attribute(H, :direct_product)
+  if isa(dH, Nothing)
+    @assert r ==1
     dH = [H]
-  else
-    dH = get_attribute(H, :direct_product)
   end
+
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
   end
+
   @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
   h = hom(G, H, reduce(vcat, [reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
   return h
@@ -1077,6 +1080,37 @@ function torsion_subgroup(G::FinGenAbGroup, add_to_lattice::Bool = true,
     end
   end
   return sub(G, subs, add_to_lattice, L)
+end
+
+@doc raw"""
+    torsion_subgroup(G::FinGenAbGroup, n::IntegerUnion) -> FinGenAbGroup, Map
+
+Return the ``n``-torsion subgroup of ``G``, i.e. the subgroup of ``G``
+consisting of elements of order dividing ``n``.
+
+# Examples
+```jldoctest
+julia> A = abelian_group([3, 9, 27])
+Z/3 x Z/9 x Z/27
+
+julia> torsion_subgroup(A, 3)
+((Z/3)^3, Map: (Z/3)^3 -> A)
+```
+"""
+function torsion_subgroup(
+  G::FinGenAbGroup,
+  n::IntegerUnion,
+  add_to_lattice::Bool = true,
+  L::GrpAbLattice = GroupLattice,
+)
+  f = FinGenAbGroupHom(G, G, ZZ(n)*identity_matrix(ZZ, ngens(G)))
+  K, j = kernel(f, false)
+  S, jj = snf(K)
+  jj *= j
+  if add_to_lattice
+    append!(L, jj)
+  end
+  return S, jj
 end
 
 ################################################################################
@@ -1603,6 +1637,29 @@ Return whether $G$ is cyclic.
 """
 function is_cyclic(G::FinGenAbGroup)
   return length(elementary_divisors(G)) <= 1
+end
+
+function _is_cyclic_with_generator(G::FinGenAbGroup)
+  if ngens(G) == 0
+    return true, zero(G)
+  end
+  if ngens(G) == 1
+    return true, gen(G, 1)
+  end
+  S, StoG = snf(G)
+  if ngens(S) == 0
+    return true, zero(G)
+  end
+  if ngens(S) == 1
+    return true, StoG(gen(S, 1))
+  end
+  return false, zero(G)
+end
+
+function cyclic_generator(G::FinGenAbGroup)
+  fl, g = _is_cyclic_with_generator(G)
+  @req fl "Group is not cyclic"
+  return g
 end
 
 ################################################################################

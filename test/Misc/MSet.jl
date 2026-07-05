@@ -127,5 +127,5 @@ end
   @test length(String(take!(io))) == 39
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
-  @test length(S[1]) == 2
+  @test length(iterate(S, iterate(S)[2])[1]) == 2
 end

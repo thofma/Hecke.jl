@@ -649,83 +649,12 @@ end
 
 @inline number_of_generators(K::RelNonSimpleNumField) = length(K.pol)
 
-function primitive_element(K::RelNonSimpleNumField)
-  g = gens(K)
-  n = length(g)
-  if n == 1
-    return g[1]
-  elseif lcm([total_degree(K.pol[i]) for i = 1:n]) == degree(K)
-    return sum(g[i] for i = 1:n)
-  end
-  #TODO: Write a modular test for primitiveness
-  pe = g[1]
-  f = minpoly(pe)
-  for i = 2:n
-    pe += g[i]
-    f = minpoly(pe)
-    while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
-      pe += g[i]
-      f = minpoly(pe)
-    end
-  end
-  return pe
-end
-
-function simple_extension(K::RelNonSimpleNumField{T}; simplified::Bool = false, cached = true) where {T}
+function simple_extension(K::RelNonSimpleNumField{T}; simplified::Bool = false, cached::Bool = true) where {T}
   if simplified
     return simplified_simple_extension(K; cached = cached)
   end
-  n = ngens(K)
-  g = gens(K)
-  if n == 1
-    kx, _ = polynomial_ring(base_field(K), "x", cached = false)
-    p = to_univariate(kx, K.pol[1])
-    Ks, gKs = number_field(p, cached = cached, check = false)
-    return Ks, hom(Ks, K, g[1], inverse = [gKs])
-  end
-  if lcm([total_degree(K.pol[i]) for i = 1:length(K.pol)]) == degree(K)
-    #The sum of the primitive elements is the right element
-    pe = sum(g[i] for i = 1:length(g))
-    f = minpoly(pe)
-  else
-    pe = g[1]
-    i = 1
-    f = minpoly(pe)
-    #todo: use resultants rather than minpoly??
-    while i < n
-      i += 1
-      pe += g[i]
-      f = minpoly(pe)
-      while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
-        pe += g[i]
-        f = minpoly(pe)
-      end
-    end
-  end
-  Ka, a = number_field(f, cached = cached,  check = false)
-  k = base_field(K)
-  M = zero_matrix(k, degree(K), degree(K))
-  z = one(K)
-  elem_to_mat_row!(M, 1, z)
-  elem_to_mat_row!(M, 2, pe)
-  mul!(z, z, pe)
-  for i = 3:degree(K)
-    mul!(z, z, pe)
-    elem_to_mat_row!(M, i, z)
-  end
-  N = zero_matrix(k, 1, degree(K))
-  b1 = basis(Ka)
-  emb = Vector{RelSimpleNumFieldElem{T}}(undef, n)
-  for i = 1:n
-    elem_to_mat_row!(N, 1, g[i])
-    s = solve(transpose(M), transpose(N); side = :right)
-    emb[i] = zero(Ka)
-    for j = 1:degree(Ka)
-      emb[i] += b1[j]*s[j, 1]
-    end
-  end
 
-  return Ka, hom(Ka, K, pe, inverse = emb)
+  return _simple_extension(K; cached = cached, check = false)
 end
 
 

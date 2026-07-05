@@ -382,395 +382,9 @@ function show(io::IO, L::ZZLat)
   end
 end
 
-function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector)
-  M = matrix(ZZ, first.(sv))
-  # TODO: avoid the rational_span?
-  V = rational_span(L)
-  S = lattice(V, M; isbasis = true, check = false)
-  s = rank(S)
-  T = orthogonal_submodule(lattice(V), S)
-  gensOS = [diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))] # diag(-1,1,...,1)
-  for g in gens(SymmetricGroup(s))
-    push!(gensOS, identity_matrix(ZZ, s) * g) # generators of S_n
-  end
-  orderOS = ZZ(2)^s * factorial(ZZ(s))
-  @hassert :Lattice 1 all(g -> g * gram_matrix(S) * transpose(g) == gram_matrix(S), gensOS)
-  return S, T, gensOS, orderOS
-end
-
 ################################################################################
 #
-#  Automorphism groups
-#
-################################################################################
-
-# This is an internal function, which sets
-# L.automorphism_group_generators
-# L.automorphism_group_order
-assert_has_automorphisms(L::ZZLat; kwargs...) = _assert_has_automorphisms_ZZLat(L; kwargs...)
-
-# this gets overwritten in Oscar with a faster / more stable method
-_assert_has_automorphisms_ZZLat(L; kwargs...) = __assert_has_automorphisms(L; kwargs...)
-
-function __assert_has_automorphisms(
-  L::ZZLat;
-  redo::Bool=false,
-  try_small::Bool=true,
-  depth::Int=-1,
-  bacher_depth::Int=0,
-  known_short_vectors=(0, []),
-  use_weyl::Bool=true,
-  reduced::Bool=false,
-  use_projections::Bool=true,
-  use_norm_one::Bool=false,
-)
-  use_weyl
-  if !redo && isdefined(L, :automorphism_group_generators)
-    return nothing
-  end
-
-  if rank(L) == 0
-    L.automorphism_group_generators = ZZMatrix[identity_matrix(ZZ, 0)]
-    L.automorphism_group_order = one(ZZRingElem)
-    return nothing
-  end
-
-  if rank(L) == 1
-    L.automorphism_group_generators = ZZMatrix[-identity_matrix(ZZ, 1)]
-    L.automorphism_group_order = ZZ(2)
-    return nothing
-  end
-
-  if !is_definite(L)
-    @assert rank(L) == 2
-    G = gram_matrix(L)
-    d = denominator(G)
-    GG = change_base_ring(ZZ, d*G)
-    b = binary_quadratic_form(GG[1,1], 2*GG[1,2], GG[2,2])
-    gens = transpose.(automorphism_group_generators(b))
-    L.automorphism_group_generators = gens
-    return nothing
-  end
-
-  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
-    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
-    # not sure if it makes sense to pass everything along
-    assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl, reduced, use_projections, use_norm_one)
-    # we call directly .automorphism_group_generators, since we want the automorphisms in as ZZMatrix
-    # (with respect to the basis of T)
-    gensOT = T.automorphism_group_generators
-    orderOT = automorphism_group_order(T)
-    ST = (vcat(basis_matrix(S), basis_matrix(T)))
-    oneS = identity_matrix(ZZ, rank(S))
-    oneT = identity_matrix(ZZ, rank(T))
-    gens = ZZMatrix[numerator(inv(ST) * diagonal_matrix(g, oneT) * ST) for g in gensOS]
-    append!(gens, (numerator(inv(ST) * diagonal_matrix(oneS, g) * ST) for g in gensOT))
-    @hassert :Lattice 1 all(let gens = gens, GL = gram_matrix(L); i -> gens[i] * GL *
-                            transpose(gens[i]) == GL; end, 1:length(gens))
-    L.automorphism_group_generators = gens
-    L.automorphism_group_order = orderOS * orderOT
-    return nothing
-  end
-
-
-  _alpha, sv = known_short_vectors
-  V = ambient_space(L)
-  GL = gram_matrix(L)
-  d = denominator(GL)
-  if !isone(d)
-    res = ZZMatrix[numerator(GL)]
-    if !iszero(_alpha)
-      alpha = abs(numerator(d*_alpha))
-      sv = eltype(sv)[(v[1], d*v[2]) for v in sv]
-    else
-      alpha = _alpha
-    end
-  else
-    res = ZZMatrix[change_base_ring(ZZ, GL)]
-    if !iszero(_alpha)
-      alpha = abs(numerator(_alpha))
-    else
-      alpha = _alpha
-    end
-  end
-
-  # So the first one is either positive definite or negative definite
-  # Make it positive definite. This does not change the automorphisms.
-  if use_weyl
-    weyl_group_gens, weyl_gram_matrices, weyl_group_order = _weyl_group(L)
-    append!(res, weyl_gram_matrices)
-  end
-  if use_projections
-    proj = _invariant_projections(L)
-    projZ = numerator.(proj)
-    GZ = res[1]
-    projgramZ = [i*GZ*transpose(i) for i in projZ]
-    append!(res, projgramZ)
-  end
-
-  if res[1][1, 1] < 0
-    res[1] = -res[1]
-  end
-  is_lll = get_attribute(L, :is_lll_reduced, false)
-  if !is_lll
-    # Make the Gram matrix small
-    Glll, T = lll_gram_with_transform(res[1])
-    Ttr = transpose(T)
-    res = ZZMatrix[T*g*Ttr for g in res]
-  end
-
-  known_short_vectors = (alpha, sv)
-  C = ZLatAutoCtx(res)
-  fl = false
-  if try_small
-    fl, Csmall = try_init_small(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
-    if fl
-      _gens, order = auto(Csmall)
-      gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
-    end
-  end
-  if !try_small || !fl
-    init(C; depth, bacher_depth, known_short_vectors, is_lll_reduced_known=true)
-    gens, order = auto(C)
-  end
-
-  # Now translate back
-  if !is_lll
-    Tinv = inv(T)
-    for i in 1:length(gens)
-      gens[i] = Tinv * gens[i] * T
-    end
-  end
-  if use_weyl && !reduced
-    append!(gens, [ZZ.(i) for i in weyl_group_gens])
-  end
-  # Now gens are with respect to the basis of L
-  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
-                          transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
-
-  L.automorphism_group_generators = gens
-  if use_weyl && !reduced
-    # We have O(L) = W(L)x|Aut_red(L)
-    # where Aut_red(L) = Aut(L,\rho) is the stabilizer of rho in O(L)
-    # the Weyl vector \rho is preserved only up to sign
-    # so we have computed Aut(L,{\pm \rho}) and its order
-    if weyl_group_order > 1
-      order_reduced = divexact(order, 2)  # the order of Aut(L, \rho)
-    else
-      # when rho is trivial
-      order_reduced = order
-    end
-    L.automorphism_group_order = order_reduced*weyl_group_order
-  else
-    L.automorphism_group_order = order
-  end
-  return nothing
-end
-
-# documented in ../Lattices.jl
-
-function automorphism_group_generators(
-  L::ZZLat;
-  ambient_representation::Bool = true,
-  kwargs...,
-)
-
-  @req rank(L) in [0, 2] || is_definite(L) "The lattice must be definite or of rank at most 2"
-  assert_has_automorphisms(L; kwargs...)
-
-  gens = L.automorphism_group_generators
-  if !ambient_representation
-    return QQMatrix[ change_base_ring(QQ, g) for g in gens]
-  else
-    # Now translate to get the automorphisms with respect to basis_matrix(L)
-    bm = basis_matrix(L)
-    V = ambient_space(L)
-    if rank(L) == rank(V)
-      bminv = inv(bm)
-      res = QQMatrix[bminv * change_base_ring(QQ, g) * bm for g in gens]
-    else
-      # Extend trivially to the orthogonal complement of the rational span
-      !is_regular(V) &&
-        error(
-          """Can compute ambient representation only if ambient space is
-             regular""")
-      C = orthogonal_complement(V, basis_matrix(L))
-      C = vcat(basis_matrix(L), C)
-      Cinv = inv(C)
-      D = identity_matrix(QQ, rank(V) - rank(L))
-      res = QQMatrix[Cinv * diagonal_matrix(change_base_ring(QQ, g), D) * C for g in gens]
-    end
-    @hassert :Lattice 1 all(g * gram_matrix(V) * transpose(g) == gram_matrix(V)
-                            for g in res)
-    return res
-  end
-end
-
-# documented in ../Lattices.jl
-
-function automorphism_group_order(
-  L::ZZLat;
-  kwargs...,
-)
-  if isdefined(L, :automorphism_group_order)
-    return L.automorphism_group_order
-  end
-  @req is_definite(L) "The lattice must be definite"
-  assert_has_automorphisms(L; kwargs...)
-  return L.automorphism_group_order
-end
-
-function _invariant_projections(L::ZZLat)
-  # the first condition is a safeguard from a flint convention for isone
-  if rank(L) != degree(L) || !isone(basis_matrix(L))
-    L = lattice(rational_span(L))
-  end
-  LL, sv = _short_vector_generators_with_sublattice(L; up_to_sign=true)
-  B = vcat(basis_matrix.(LL)...)
-  Bi = inv(B)
-  n = degree(L)
-  projections = QQMatrix[]
-  k = 0
-  for i in 1:length(LL)
-    k_i = rank(LL[i])
-    E = zero_matrix(QQ, n, n)
-    knew = k + k_i
-    for j in k+1:knew
-      E[j,j] =1
-    end
-    k = knew
-    push!(projections, Bi*E*B)
-  end
-  return projections
-end
-
-################################################################################
-#
-#  Isometry
-#
-################################################################################
-
-# documented in ../Lattices.jl
-
-function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
-  if L == M
-    return true
-  end
-
-  if rank(L) != rank(M)
-    return false
-  end
-
-  if rank(L) == 1
-    return gram_matrix(L) == gram_matrix(M)
-  end
-
-  if is_definite(L) && is_definite(M)
-    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
-  end
-
-  if rank(L) == 2
-    _A = gram_matrix(L)
-    _B = gram_matrix(M)
-    d = denominator(_A)
-    A = change_base_ring(ZZ, d * _A)
-    B = change_base_ring(ZZ, d * _B)
-    q1 = binary_quadratic_form(ZZ, A[1,1], 2 * A[1,2], A[2,2])
-    q2 = binary_quadratic_form(ZZ, B[1,1], 2 * B[1,2], B[2,2])
-    return is_isometric(q1, q2)
-  end
-
-  return _is_isometric_indef(L, M)
-end
-
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
-
-  # cornercase
-  if rank(L) == 0
-    return true, zero_matrix(QQ, 0, 0)
-  end
-
-  if is_definite(L) && is_definite(M)
-    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth)
-  end
-
-  error("Not implemented for indefinite lattices")
-end
-
-# assumes rank >0, definite, no genus check
-_is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
-
-function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
-  if rank(L) != rank(M)
-    return false, zero_matrix(QQ, 0, 0)
-  end
-
-  # cornercase
-  if rank(L) == 0
-    return true, zero_matrix(QQ, 0, 0)
-  end
-
-  i = sign(gram_matrix(L)[1,1])
-  j = sign(gram_matrix(M)[1,1])
-  @req i==j "The lattices must have the same signatures"
-
-  if i < 0
-    s = -1
-  else
-    s = 1
-  end
-
-  GL = gram_matrix(L)
-  dL = denominator(GL)
-  GLint = change_base_ring(ZZ, s * dL * GL)
-  cL = content(GLint)
-  GLint = divexact(GLint, cL)
-
-  GM = gram_matrix(M)
-  dM = denominator(GM)
-  GMint = change_base_ring(ZZ, s * dM * GM)
-  cM = content(GMint)
-  GMint = divexact(GMint, cM)
-
-  # GLint, GMint are integral, primitive scalings of GL and GM
-  # If they are isometric, then the scalars must be identical.
-  if dL//cL != dM//cM
-    return false, zero_matrix(QQ, 0, 0)
-  end
-
-  # Now compute LLL reduced gram matrices
-  GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(ZZ, s*dL*GL) * transpose(TL) == GLlll *cL
-  GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(ZZ, s*dM*GM) * transpose(TM) == GMlll *cM
-
-  # Setup for Plesken--Souvignier
-
-  G1 = ZZMatrix[GLlll]
-  G2 = ZZMatrix[GMlll]
-
-  fl, CLsmall, CMsmall = _try_iso_setup_small(G1, G2, depth = depth, bacher_depth = bacher_depth)
-  if fl
-    b, _T = isometry(CLsmall, CMsmall)
-    T = matrix(ZZ, _T)
-  else
-    CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
-    b, T = isometry(CL, CM)
-  end
-
-  if b
-    # undo LLL
-    T = change_base_ring(QQ, inv(TL)*T*TM)
-    @hassert :Lattice 1 T * gram_matrix(M) * transpose(T) == gram_matrix(L)
-    return true, T
-  else
-    return false, zero_matrix(QQ, 0, 0)
-  end
-end
-
-################################################################################
-#
-#  Is sublattice?
+#  Is sublattice
 #
 ################################################################################
 
@@ -811,283 +425,24 @@ function is_sublattice_with_relations(M::ZZLat, N::ZZLat)
 
 ################################################################################
 #
-#  Root lattice
+#  Index
 #
 ################################################################################
 
 @doc raw"""
-    root_lattice(R::Symbol, n::Int, s::RationalUnion = 1) -> ZZLat
+    index(L::ZZLat, M::ZZLat) -> IntExt
 
-Return the root lattice ``L`` of type `R` given by `:A`, `:D` or `:E` with
-parameter `n`.
-
-The type `:I` with parameter `n = 1` is also allowed and denotes the odd
-unimodular lattice of rank 1.
-
-The nonzero rational number `s`, which is ``1`` by default, is a scaling factor: if
-`s` is different from ``1``, then return the rescaled lattice ``L(s)``.
-
-# Examples
-```jldoctest
-julia> root_lattice(:E, 8)
-Integer lattice of rank 8 and degree 8
-with gram matrix
-[ 2   -1    0    0    0    0    0    0]
-[-1    2   -1    0    0    0    0    0]
-[ 0   -1    2   -1    0    0    0   -1]
-[ 0    0   -1    2   -1    0    0    0]
-[ 0    0    0   -1    2   -1    0    0]
-[ 0    0    0    0   -1    2   -1    0]
-[ 0    0    0    0    0   -1    2    0]
-[ 0    0   -1    0    0    0    0    2]
-
-julia> root_lattice(:I, 1)
-Integer lattice of rank 1 and degree 1
-with gram matrix
-[1]
-
-julia> root_lattice(:D, 4, -1)
-Integer lattice of rank 4 and degree 4
-with gram matrix
-[-2    0    1    0]
-[ 0   -2    1    0]
-[ 1    1   -2    1]
-[ 0    0    1   -2]
-```
+Return the index $[L:M]=|L/M|$ of $M$ in $L$.
 """
-function root_lattice(R::Symbol, n::Int, s::RationalUnion = 1)
-  @req !iszero(s) "Scaling factor must be nonzero"
-  if R === :A
-    G = _root_lattice_A(n)
-  elseif R === :E
-    G = _root_lattice_E(n)
-  elseif R === :D
-    G = _root_lattice_D(n)
-  elseif R === :I
-    @req n == 1 "Parameter ($n) for odd root lattice (type $R) must be 1"
-    G = QQ[1;]
-  else
-    error("Type (:$R) must be :A, :D, :E or :I")
+function index(L::ZZLat, M::ZZLat)
+  b, M = is_sublattice_with_relations(L, M)
+  b || error("M must be a sublattice of L to have a well defined index [L:M]")
+  if rank(L)>rank(M)
+    return inf
   end
-  if !isone(s)
-    mul!(G, G, s)
-  end
-  return integer_lattice(; gram=G)
+  return ZZ(abs(det(M)))
 end
 
-@doc raw"""
-    root_lattice(R::Vector{Tuple{Symbol,Int}}) -> ZZLat
-
-Return the root lattice of type `R` (see [`root_lattice`](@ref)).
-
-#Example
-```jldoctest
-julia> root_lattice([(:A,2),(:A,1)])
-Integer lattice of rank 3 and degree 3
-with gram matrix
-[ 2   -1   0]
-[-1    2   0]
-[ 0    0   2]
-
-```
-"""
-function root_lattice(R::Vector{Tuple{Symbol,Int}})
-  S = QQMatrix[gram_matrix(root_lattice(i[1], i[2])) for i in R]
-  return integer_lattice(; gram=block_diagonal_matrix(S))
-end
-
-function _root_lattice_A(n::Int)
-  @req n > 0 "Parameter ($n) for root lattice of type :A must be positive"
-  z = zero_matrix(QQ, n, n)
-  for i in 1:n
-    z[i, i] = 2
-    if i > 1
-      z[i, i - 1] = -1
-    end
-    if i < n
-      z[i, i + 1] = -1
-    end
-  end
-  return z
-end
-
-function _root_lattice_D(n::Int)
-  @req n >= 2 "Parameter ($n) for root lattices of type :D must be greater or equal to 2"
-  if n == 2
-    G = matrix(QQ, [2 0 ;0 2])
-  elseif n == 3
-    return _root_lattice_A(n)
-  else
-    G = zero_matrix(QQ, n, n)
-    G[1,3] = G[3,1] = -1
-    for i in 1:n
-      G[i,i] = 2
-      if 2 <= i <= n-1
-        G[i,i+1] = G[i+1,i] = -1
-      end
-    end
-  end
-  return G
-end
-
-function _root_lattice_E(n::Int)
-  @req n in [6,7,8] "Parameter ($n) for lattice of type :E must be 6, 7 or 8"
-  if n == 6
-    G = [2 -1 0 0 0 0;
-        -1 2 -1 0 0 0;
-        0 -1 2 -1 0 -1;
-        0 0 -1 2 -1 0;
-        0 0 0 -1 2 0;
-        0 0 -1 0 0 2]
-  elseif n == 7
-    G = [2 -1 0 0 0 0 0;
-        -1 2 -1 0 0 0 0;
-        0 -1 2 -1 0 0 -1;
-        0 0 -1 2 -1 0 0;
-        0 0 0 -1 2 -1 0;
-        0 0 0 0 -1 2 0;
-        0 0 -1 0 0 0 2]
-  else
-    G = [2 -1 0 0 0 0 0 0;
-        -1 2 -1 0 0 0 0 0;
-        0 -1 2 -1 0 0 0 -1;
-        0 0 -1 2 -1 0 0 0;
-        0 0 0 -1 2 -1 0 0;
-        0 0 0 0 -1 2 -1 0;
-        0 0 0 0 0 -1 2 0;
-        0 0 -1 0 0 0 0 2]
-  end
-  return matrix(QQ, G)
-end
-
-@doc raw"""
-    root_symbols(n::Int) -> Vector{Vector{Tuple{Symbol, Int}}}
-
-Return the list of all ADE root symbols, up to permutation,
-whose combined rank is ``n``.
-
-# Examples
-```jldoctest
-julia> root_symbols(3)
-3-element Vector{Vector{Tuple{Symbol, Int64}}}:
- [(:A, 1), (:A, 1), (:A, 1)]
- [(:A, 2), (:A, 1)]
- [(:A, 3)]
-
-```
-"""
-function root_symbols(n::Int)
-  result = Vector{Tuple{Symbol, Int}}[]
-  for p in AllParts(n)
-    tmp = Vector{Tuple{Symbol, Int}}[]
-    for i in p
-      symb = Tuple{Symbol, Int}[]
-      push!(symb, (:A, i))
-      if i >= 4
-        push!(symb, (:D, i))
-      end
-      if i in 6:8
-        push!(symb, (:E, i))
-      end
-      push!(tmp, symb)
-    end
-    for i in cartesian_product_iterator(tmp; inplace=false)
-      push!(result, i)
-    end
-  end
-  return sort!(result)
-end
-
-"""
-    root_lattices(n::Int) -> Vector{ZZLat}
-
-Return the list of all even root lattices, up to isomorphism, of rank ``n``.
-
-# Examples
-```jldoctest
-julia> rls = root_lattices(5)
-9-element Vector{ZZLat}:
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
- Integer lattice of rank 5 and degree 5
-
-julia> all(L -> L == root_sublattice(L), rls)
-true
-```
-"""
-function root_lattices(n::Int)
-  result = ZZLat[]
-  for p in AllParts(n)
-    tmp = Vector{QQMatrix}[]
-    for i in p
-      lat = QQMatrix[]
-      push!(lat, Hecke._root_lattice_A(i))
-      if i >= 4
-        push!(lat, Hecke._root_lattice_D(i))
-      end
-      if i in 6:8
-        push!(lat, Hecke._root_lattice_E(i))
-      end
-      push!(tmp, lat)
-    end
-    for i in cartesian_product_iterator(tmp; inplace=true)
-      g = diagonal_matrix(i)
-      push!(result, integer_lattice(; gram=g))
-    end
-  end
-  return result
-end
-
-################################################################################
-#
-#  Hyperbolic plane
-#
-################################################################################
-
-@doc raw"""
-    integer_lattice(S::Symbol, n::RationalUnion = 1) -> ZZlat
-
-Given `S = :H` or `S = :U`, return a $\mathbb Z$-lattice admitting $n*J_2$ as
-Gram matrix in some basis, where $J_2$ is the 2-by-2 matrix with 0's on the
-main diagonal and 1's elsewhere.
-"""
-function integer_lattice(S::Symbol, n::RationalUnion = 1)
-  @req S === :H || S === :U "Only available for the hyperbolic plane"
-  gram = scalar_matrix(2, n)
-  reverse_cols!(gram)
-  return integer_lattice(; gram)
-end
-
-@doc raw"""
-    hyperbolic_plane_lattice(n::RationalUnion = 1) -> ZZLat
-
-Return the hyperbolic plane with intersection form of scale `n`, that is,
-the unique (up to isometry) even unimodular hyperbolic $\mathbb Z$-lattice
-of rank 2, rescaled by `n`.
-
-# Examples
-
-```jldoctest
-julia> L = hyperbolic_plane_lattice(6);
-
-julia> gram_matrix(L)
-[0   6]
-[6   0]
-
-julia> L = hyperbolic_plane_lattice(ZZ(-13));
-
-julia> gram_matrix(L)
-[  0   -13]
-[-13     0]
-```
-"""
-hyperbolic_plane_lattice(n::RationalUnion = 1) = integer_lattice(:H, n)
 
 ################################################################################
 #
@@ -2042,267 +1397,7 @@ function divisibility(L::ZZLat, v::QQMatrix)
   return gen(I)
 end
 
-@doc raw"""
-    vectors_of_square_and_divisibility(
-      L::ZZLat,
-      S::ZZLat,
-      n::RationalUnion,
-      d::RationalUnion = scale(L);
-      coordinates_representation::Symbol=:S,
-      check::Bool=true,
-    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
 
-Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
-$\mathbb{Z}$-lattice ``S`` in the ambient space of ``L``, return all the
-vectors in $S \cap (L\otimes \mathbb{Q})$ whose square has absolute value $|n|$
-and whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$.
-
-For a vector ``v`` in the ambient quadratic space $(V, \Phi)$ of ``L``,
-we call the divisibility of ``v`` in ``L`` the nonnegative generator of the
-fractional ideal $\Phi(v, L)$ of $\mathbb{Z}$.
-
-The entry `n` must be nonzero and `d` must be a positive rational number,
-set to `scale(L)` by default.
-
-!!! note
-    Alternatively, instead of single values `n` and `d` one can input:
-    * a list of pairs of rational numbers `(n, d)` where `n` is nonzero and
-      `d` is positive;
-    * a dictionary whose keys are positive rational numbers `d` and the
-      associated list of numbers consist of nonzero rational numbers `n`.
-
-The output consists of a list of triples `(v, n', d')` where `v` is a vector
-of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
-
-!!! note
-    In the case where one wants to choose ``S`` to be ``L`` itself, one can
-    call instead `vectors_of_square_and_divisibility(L, n, d)`.
-
-One can choose in which coordinates system each vector `v` in output is
-represented by changing the symbol `coordinates_representation`.
-There are three possibilities:
-  - `coordinates_representation = :L`: the vector `v` is given in terms of its
-    coordinates in the standard basis of the rational span of the lattice
-    ``L``;
-  - `coordinates_representation = :S` (default): the vector `v` is given in
-    terms of its coordinates in the fixed basis of the lattice ``S``;
-  - `coordinates_representation = :ambient`: the vector `v` is given in terms
-    of its coordinates in the standard basis of the ambient space of ``L``.
-
-If the keyword argument `check` is set to true, the function checks whether
-``S`` is definite.
-
-# Examples
-```jldoctest
-julia> E6 = root_lattice(:E, 6)
-Integer lattice of rank 6 and degree 6
-with gram matrix
-[ 2   -1    0    0    0    0]
-[-1    2   -1    0    0    0]
-[ 0   -1    2   -1    0   -1]
-[ 0    0   -1    2   -1    0]
-[ 0    0    0   -1    2    0]
-[ 0    0   -1    0    0    2]
-
-julia> A2 = lattice_in_same_ambient_space(E6, basis_matrix(E6)[1:2, :])
-Integer lattice of rank 2 and degree 6
-with gram matrix
-[ 2   -1]
-[-1    2]
-
-julia> C = orthogonal_submodule(E6, A2)
-Integer lattice of rank 4 and degree 6
-with gram matrix
-[12   -3    0   -3]
-[-3    2   -1    0]
-[ 0   -1    2    0]
-[-3    0    0    2]
-
-julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
-9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([-1 -2 -3 -4 -2 0], 12, 3)
- ([-1 -2 -3 -1 1 -3], 12, 3)
- ([-2 -4 -6 -2 -1 -3], 12, 3)
- ([-1 -2 -3 -1 -2 -3], 12, 3)
- ([-2 -4 -6 -5 -4 -3], 12, 3)
- ([-1 -2 -3 -1 -2 0], 12, 3)
- ([-1 -2 -3 -4 -2 -3], 12, 3)
- ([-2 -4 -6 -5 -1 -3], 12, 3)
- ([-1 -2 -3 -1 1 0], 12, 3)
-
-julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
-Integer lattice of rank 2 and degree 2
-with gram matrix
-[2   1]
-[1   4]
-
-julia> vectors_of_square_and_divisibility(L, 8, 2)
-1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([-2 0], 8, 2)
-
-julia> length(short_vectors(L, 8, 8))
-3
-```
-"""
-vectors_of_square_and_divisibility
-
-function vectors_of_square_and_divisibility(
-    L::ZZLat,
-    S::ZZLat,
-    n::RationalUnion,
-    d::RationalUnion = scale(L);
-    coordinates_representation::Symbol=:S,
-    check::Bool=true,
-  )
-  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
-  if check
-    @req is_definite(S) "Second input must be definite"
-  end
-  @req d > 0 "Divisibility ($d) must be positive"
-  @req !iszero(n) "Square ($n) must be nonzero"
-  nQQ = abs(QQ(n))
-  de = denominator(n)
-  if de > 1
-    L = rescale(L, de; cached=false)
-    S = lattice_in_same_ambient_space(L, basis_matrix(S))
-    n = n*de^2
-    d = d*de
-  end
-  Sd = intersect(d*dual(L), S)
-  BSd = basis_matrix(Sd)
-  l = short_vectors(Sd, n, n)
-  if coordinates_representation == :S
-    B = solve(basis_matrix(S), basis_matrix(Sd); side=:left)
-  elseif coordinates_representation == :L
-    B = solve(basis_matrix(L), basis_matrix(Sd); side=:left)
-  elseif coordinates_representation == :ambient
-    B = BSd
-  else
-    error("Wrong symbol for coordinates representation")
-  end
-  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
-  for a in l
-    v = matrix(QQ, 1, rank(Sd), a[1])
-    dv = divisibility(L, v*BSd)
-    v = v*B
-    push!(out, (v, nQQ, dv))
-  end
-  sort!(out; lt=(a,b) -> a[3] < b[3])
-  return out
-end
-
-function vectors_of_square_and_divisibility(
-    L::ZZLat,
-    n::RationalUnion,
-    d::RationalUnion = scale(L);
-    coordinates_representation::Symbol=:ambient,
-    check::Bool=true,
-  )
-  if check
-    @req is_definite(L) "Lattice must be definite"
-  end
-  return vectors_of_square_and_divisibility(L, L, n, d; coordinates_representation, check=false)
-end
-
-function vectors_of_square_and_divisibility(
-    L::ZZLat,
-    S::ZZLat,
-    vector_type::Vector;
-    coordinates_representation::Symbol=:S,
-    check::Bool=true,
-  )
-  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
-  if check
-    @req is_definite(S) "Second input must be definite"
-  end
-  ns = sort!(unique!(first.(vector_type)))
-  ds = [gcd([a[2] for a in vector_type if a[1] == n]) for n in ns]
-  vector_type_dict = Dict{eltype(ds), Vector{eltype(ns)}}()
-  for d in unique(ds)
-    vector_type_dict[d] = [ns[i] for i in 1:length(ns) if ds[i] == d]
-  end
-  return vectors_of_square_and_divisibility(L, S, vector_type_dict; coordinates_representation, check=false)
-end
-
-function vectors_of_square_and_divisibility(
-    L::ZZLat,
-    vector_type::Vector;
-    coordinates_representation::Symbol=:L,
-    check::Bool=true,
-  )
-  if check
-    @req is_definite(L) "Lattice must be definite"
-  end
-  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
-end
-
-function vectors_of_square_and_divisibility(
-    L::ZZLat,
-    S::ZZLat,
-    vector_type::Dict;
-    coordinates_representation::Symbol=:S,
-    check::Bool=true,
-  )
-  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
-  if check
-    @req is_definite(S) "Second input must be definite"
-  end
-  @req all(>(0), keys(vector_type)) "Divisibilities must be positive"
-  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
-  for d in keys(vector_type)
-    @req all(!iszero, vector_type[d]) "Squares for the divisibility $d must be nonzero"
-    de = lcm(denominator.(vector_type[d]))
-    if de > 1
-      _L = rescale(L, de; cached=false)
-      _S = lattice_in_same_ambient_space(_L, basis_matrix(S))
-      _d = d*de
-    else
-      _L = L
-      _S = S
-      _d = d
-    end
-    Sd = intersect(_d*dual(_L), _S)
-    BSd = basis_matrix(Sd)
-    for n in vector_type[d]
-      nQQ = abs(QQ(n))
-      if de > 1
-        _n = n*de^2
-      else
-        _n = n
-      end
-      l = short_vectors(Sd, _n, _n)
-      if coordinates_representation == :S
-        B = solve(basis_matrix(_S), basis_matrix(Sd); side=:left)
-      elseif coordinates_representation == :L
-        B = solve(basis_matrix(_L), basis_matrix(Sd); side=:left)
-      elseif coordinates_representation == :ambient
-        B = BSd
-      else
-        error("Wrong symbol for coordinates representation")
-      end
-      for a in l
-        v = matrix(QQ, 1, rank(Sd), a[1])
-        dv = divisibility(L, v*BSd)
-        v = v*B
-        push!(out, (v, nQQ, dv))
-      end
-    end
-  end
-  sort!(out, lt=(a,b) -> a[2] < b[2] || a[2] == b[2] && a[3] < b[3])
-  return out
-end
-
-function vectors_of_square_and_divisibility(
-    L::ZZLat,
-    vector_type::Dict;
-    coordinates_representation::Symbol=:L,
-    check::Bool=true,
-  )
-  if check
-    @req is_definite(L) "Lattice must be definite"
-  end
-  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
-end
 
 ################################################################################
 #
@@ -2365,24 +1460,28 @@ function lll(
   same_ambient::Bool=true,
   redo::Bool=false,
   ctx::LLLContext=LLLContext(0.99, 0.51, :gram),
+  _is_definite::Bool=is_definite(L)
 )
   if !redo && get_attribute(L, :is_lll_reduced, false)
     return L
   end
   rank(L) == 0 && return L
-  def = is_definite(L)
-  G = gram_matrix(L)
-  d = denominator(G)
-  M = change_base_ring(ZZ, d*G)
+  def = _is_definite
+  M, d = _integral_split_gram(L)
   G2, U = _lll(M, def, ctx)
   if same_ambient
     B2 = U*basis_matrix(L)
-    Llll = lattice(ambient_space(L), B2; check=false)
+    Llll = lattice(ambient_space(L), B2; isbasis=true, check=false)
   else
-    Llll = integer_lattice(; gram=(1//d)*change_base_ring(QQ, G2))
+    Llll = integer_lattice(; gram=QQ(1//d)*G2, check=false)
   end
+  set_attribute!(Llll, :_integral_split_gram=>(G2, d))
   set_attribute!(Llll, :is_lll_reduced, true)
   return Llll
+end
+
+@attr Tuple{ZZMatrix, ZZRingElem} function _integral_split_gram(L::ZZLat)
+  return integral_split(gram_matrix(L), ZZ)
 end
 
 ###############################################################################
@@ -2629,29 +1728,40 @@ of matrices representing each connected component of the graph
 """
 function _connected_components_graph!(B::Vector{T}, G::T) where T <: MatElem
   components = T[]
+  if isempty(B)
+    return components
+  end
+  c = B[1]
+  tmp = zero(transpose(c))
+  tmp2 = zero(transpose(c))
+  tmp3 = zero_matrix(base_ring(c), 1, 1)::T
+  D = Int[]
   while length(B) > 0
     basis = T[]
     b = pop!(B)
     push!(basis, b)
     flag = true
-    while flag
-      flag = false
-      for c in B
-        _c = transpose(c)
-        if any(!iszero(a*G*_c) for a in basis)
-          push!(basis, c)
-          deleteat!(B, findfirst(==(c), B))
-          flag = true
-          break
+    for c in basis
+      _c = transpose!(tmp, c)
+      Gc = mul!(tmp2, G, _c)
+      for (i,a) in enumerate(B)
+        if !iszero(mul!(tmp3, a, Gc))
+          push!(basis, a)
+          push!(D,i)
         end
       end
+      deleteat!(B, D)
+      empty!(D)
     end
     push!(components, reduce(vcat, basis))
   end
-  @hassert :Lattice 0 sum(rank(i) for i in components; init=0) == nrows(G)
+  #@hassert :Lattice 0 sum(rank(i) for i in components; init=0) == nrows(G)
   sort!(components; by=rank)
   return components
 end
+
+
+
 
 function _connected_components_graph(B::T, G::T) where T <: MatElem
   return _connected_components_graph!(T[B[i:i, :] for i in 1:nrows(B)], G)
@@ -2683,7 +1793,7 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   m = minimum(diagonal(G))
   # We create an iterator to avoid creating very large lists for
   # lattices with big kissing number
-  V = _short_vectors_gram_nolll_integral(Hecke.LatEnumCtx, G, 0, m, nothing, one(ZZ), ZZRingElem)
+  V = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, m, nothing, one(ZZ), ZZRingElem)
   B = ZZMatrix[]
   n = ncols(G)
   H = zero_matrix(ZZ, n+1, n) # One row more for hnf
@@ -2719,15 +1829,48 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   return flag, m, B, H
 end
 
-function _row_span!(L::Vector{ZZMatrix})
+function _successive_sublattices(L::ZZLat; use_dual=false)
+  LL = ZZLat[]
+  rank(L)==0 && return LL
+  S = shortest_vectors_sublattice(L; check=false)
+  @assert rank(S)>0
+  if use_dual && !is_modular(S)[1]
+    S1 = shortest_vectors_sublattice(dual(S);check=false)
+    if rank(S1) != rank(S)
+      # we can split
+      S2 = orthogonal_submodule(S, S1)
+      push!(LL, S1)
+      append!(LL, _successive_sublattices(S2; use_dual))
+    else
+      push!(LL, S)
+    end
+  else
+    push!(LL,S)
+  end
+  R = orthogonal_submodule(L, S)
+  @assert rank(R) < rank(L)
+  append!(LL, _successive_sublattices(R; use_dual))
+  @assert sum(rank.(LL);init=0) == rank(L)
+  return LL
+end
+
+
+function _row_span!(L::Vector)
   l = length(L)
   d = length(L[1])
   m = min(d,l)
-  B = reduce(vcat, L[1:m])
+  B = zero_matrix(ZZ, m, d)
+  for i in 1:m
+    v = L[i]
+    for j in 1:d
+      B[i,j] = v[j]
+    end
+  end
+  #B = reduce(vcat, L[1:m])
   h = hnf!(B)
-  b = similar(L[1])
+  b = zero_matrix(ZZ, 1, d)
   for i in (m+1):l
-    copy!(b, L[i])
+    _copy_to_row_matrix!(b, L[i])
     reduce_mod_hnf_ur!(b, h)
     if iszero(b)
       continue
@@ -2739,28 +1882,75 @@ function _row_span!(L::Vector{ZZMatrix})
   return h[1:rank(h), :]
 end
 
-function _row_span!(L::Vector{Vector{ZZRingElem}})
-  l = length(L)
-  d = length(L[1])
-  return _row_span!([matrix(ZZ,1,d, i) for i in L])
+function _copy_to_row_matrix!(b::ZZMatrix, c::Vector)
+  @assert ncols(b) == length(c)
+  for i in 1:ncols(b)
+    @inbounds b[1,i] = c[i]
+  end
+  return b
 end
+
+_copy_to_row_matrix!(b::ZZMatrix, c::ZZMatrix) = copy!(b, c)
+
 
 _short_vector_generators(L::ZZLat; up_to_sign::Bool=false) = _short_vector_generators_with_sublattice(L; up_to_sign)[2]
 
-function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
-  sv = shortest_vectors(L)
-  B = _row_span!(sv)*basis_matrix(L)
-  if !up_to_sign
-    append!(sv, [-i for i in sv])
+function _short_vector_generators_with_sublattice_2(L::ZZLat, elem_type::Type{S}=Int; up_to_sign::Bool=false, use_dual::Bool = false) where {S}
+  if iszero(rank(L))
+    return ZZLat[], Vector{Vector{S}}[]
   end
+  svL = Vector{S}[]
+  svL = shortest_vectors(L, S; check=false)
+  B = _row_span!(svL)*basis_matrix(L)
+  if !up_to_sign
+    append!(svL, [-i for i in svL])
+  end
+  sv = [svL]
   SL = ZZLat[lattice_in_same_ambient_space(L, B; check=false)]
-  nrows(B) == rank(L) && return SL, sv
+  if use_dual && !is_modular(SL[1])[1]
+    # try to find decomposition of SL[1] via the dual module
+    Ld = dual(SL[1])
+    svLd = shortest_vectors(Ld, S; check=false)
+    Bd = _row_span!(svLd)*basis_matrix(Ld)
+    if nrows(Bd) < rank(Ld)
+      # can split
+      M = orthogonal_submodule(L, Bd)
+      MM = orthogonal_submodule(L, M)
+      pop!(SL)
+      pop!(sv)
+      SM, svM = _short_vector_generators_with_sublattice_2(MM, S; up_to_sign, use_dual)
+      __translate_short_things_from_submodule!(sv, SL, S, SM, svM, MM, L)
+      SM, svM = _short_vector_generators_with_sublattice_2(M, S; up_to_sign, use_dual)
+      __translate_short_things_from_submodule!(sv, SL, S, SM, svM, M, L)
+      return SL, sv
+    end
+  end
+
+  if nrows(B) == rank(L)
+    return SL, sv
+  end
   M = orthogonal_submodule(L, B)
-  SM, svM = _short_vector_generators_with_sublattice(M; up_to_sign)
-  T = ZZ.(coordinates(basis_matrix(M), L))
-  append!(sv, [i*T for i in svM])
-  append!(SL, SM)
+  SM, svM = _short_vector_generators_with_sublattice_2(M, S; up_to_sign, use_dual)
+  __translate_short_things_from_submodule!(sv, SL, S, SM, svM, M, L)
   return SL, sv
+end
+
+function __translate_short_things_from_submodule!(sv, SL, S, SM, svM, M, L)
+  T = ZZ.(coordinates(basis_matrix(M), L))
+  if S === Int
+    _T = [S(i) for i in transpose(T)]
+    append!(sv, [[_T*i for i in j] for j in svM])
+  else
+    @assert S===ZZRingElem
+    append!(sv, [[i*T for i in j] for j in svM])
+  end
+  append!(SL, SM)
+  nothing
+end
+
+function _short_vector_generators_with_sublattice(L::ZZLat; up_to_sign::Bool=false)
+  SL, sv = _short_vector_generators_with_sublattice_2(L; up_to_sign)
+  return SL, reduce(append!, sv; init=Vector{ZZRingElem}[])
 end
 
 
@@ -2788,7 +1978,57 @@ with gram matrix
 ```
 """
 function shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
-  return first(_shortest_vectors_sublattice(L; check))
+  @req !check || is_definite(L) "latttice must be definite"
+  is_shorter, B = _shortest_vectors_span_with_is_shorter(L)
+  if !is_shorter
+    return L
+  end
+  return lattice(ambient_space(L),B*basis_matrix(L);isbasis=true, check=false)
+end
+
+function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
+  V = ambient_space(L)
+  # doing the lll here saves us from transforming each vector
+  # instead we can just transform the row span
+  G, d = _integral_split_gram(L)
+  @assert G[1,1]>0
+  dolll = dolll && !get_attribute(L, :is_lll_reduced, false) && maximum(diagonal(G))>6
+  if dolll
+    Glll, T = lll_gram_with_transform(G)
+  else
+    Glll = G
+  end
+  # minimum(diagonal(G))
+  buffer = ZZ()
+  mi = Glll[1,1]
+  ma = Glll[1,1]
+  for i in 2:nrows(Glll)
+    t = getindex!(buffer, Glll, i, i)
+    mi = set!(mi, min(t,mi))
+    ma = set!(ma, max(t,ma))
+  end
+  if mi == ma
+    # enumerate only shorter vetors
+    if mi==1 ||nrows(G)==1# cannot get any smaller
+      return false, Glll
+    end
+    SV2 = __short_vectors(Glll, nothing, mi-1)
+    if isempty(SV2)
+      L.minimum = mi//d
+      return false, Glll
+    end
+    m = @inbounds minimum(i[2] for i in SV2)
+    SV = [i[1] for i in SV2 if i[2]==m]
+    m = m//d
+  else
+    m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
+  end
+  L.minimum = m//d
+  B = _row_span!(SV)
+  if dolll
+    B = mul!(B, B, T)
+  end
+  return !(ncols(B)==nrows(B) && isone(B)), B
 end
 
 @doc raw"""
@@ -2804,7 +2044,7 @@ function _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   V = ambient_space(L)
   sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L)]
   B = _row_span!(sv)*basis_matrix(L)
-  M = lattice(V, B; check=false)
+  M = lattice(V, B; isbasis=true, check=false)
   P = primitive_closure(L, M)
   return M, P, sv
 end
@@ -2843,406 +2083,6 @@ function _shortest_vectors_decomposition(L::ZZLat; closed::Bool=false, check::Bo
   return blocks, sv
 end
 
-################################################################################
-#
-#  Root lattice recognition
-#
-################################################################################
-
-@doc raw"""
-    root_lattice_recognition(L::ZZLat)
-
-Return the ADE type of the root sublattice of `L`.
-
-The root sublattice is the lattice spanned by the vectors of squared length
-$1$ and $2$.  The odd lattice of rank 1 and determinant $1$ is denoted by
-`(:I, 1)`.
-
-Input:
-
-`L` -- a definite and integral $\mathbb{Z}$-lattice.
-
-Output:
-
-Two lists, the first one containing the ADE types
-and the second one the irreducible root sublattices.
-
-For more recognizable gram matrices use [`root_lattice_recognition_fundamental`](@ref).
-
-# Examples
-
-```jldoctest
-julia> L = integer_lattice(; gram=ZZ[4  0 0  0 3  0 3  0;
-                                     0 16 8 12 2 12 6 10;
-                                     0  8 8  6 2  8 4  5;
-                                     0 12 6 10 2  9 5  8;
-                                     3  2 2  2 4  2 4  2;
-                                     0 12 8  9 2 12 6  9;
-                                     3  6 4  5 4  6 6  5;
-                                     0 10 5  8 2  9 5  8])
-Integer lattice of rank 8 and degree 8
-with gram matrix
-[4    0   0    0   3    0   3    0]
-[0   16   8   12   2   12   6   10]
-[0    8   8    6   2    8   4    5]
-[0   12   6   10   2    9   5    8]
-[3    2   2    2   4    2   4    2]
-[0   12   8    9   2   12   6    9]
-[3    6   4    5   4    6   6    5]
-[0   10   5    8   2    9   5    8]
-
-julia> R = root_lattice_recognition(L)
-([(:A, 1), (:D, 6)], ZZLat[Integer lattice of rank 1 and degree 8, Integer lattice of rank 6 and degree 8])
-
-julia> L = integer_lattice(; gram = QQ[1 0 0  0;
-                                       0 9 3  3;
-                                       0 3 2  1;
-                                       0 3 1 11])
-Integer lattice of rank 4 and degree 4
-with gram matrix
-[1   0   0    0]
-[0   9   3    3]
-[0   3   2    1]
-[0   3   1   11]
-
-julia> root_lattice_recognition(L)
-([(:A, 1), (:I, 1)], ZZLat[Integer lattice of rank 1 and degree 4, Integer lattice of rank 1 and degree 4])
-```
-"""
-function root_lattice_recognition(L::ZZLat; check::Bool=true)
-  irr = irreducible_components(root_sublattice(L; check); check=false)
-  rlr = Tuple{Symbol, Int}[ADE_type(gram_matrix(i)) for i in irr]
-  sp = sortperm(rlr; lt=(a,b) -> a[1] < b[1] || a[1] == b[1] && a[2] < b[2])
-  return rlr[sp], irr[sp]
-end
-
-@doc raw"""
-    root_lattice_recognition_fundamental(L::ZZLat)
-
-Return the ADE type of the root sublattice of `L`
-as well as the corresponding irreducible root sublattices
-with basis given by a fundamental root system.
-
-The type `(:I, 1)` corresponds to the odd unimodular
-root lattice of rank 1.
-
-Input:
-
-`L` -- a definite and integral $\mathbb Z$-lattice.
-
-Output:
-
-- the root sublattice, with basis given by a fundamental root system
-- the ADE types
-- a Vector consisting of the irreducible root sublattices.
-
-# Examples
-
-```jldoctest
-julia> L = integer_lattice(gram=ZZ[4  0 0  0 3  0 3  0;
-                            0 16 8 12 2 12 6 10;
-                            0  8 8  6 2  8 4  5;
-                            0 12 6 10 2  9 5  8;
-                            3  2 2  2 4  2 4  2;
-                            0 12 8  9 2 12 6  9;
-                            3  6 4  5 4  6 6  5;
-                            0 10 5  8 2  9 5  8])
-Integer lattice of rank 8 and degree 8
-with gram matrix
-[4    0   0    0   3    0   3    0]
-[0   16   8   12   2   12   6   10]
-[0    8   8    6   2    8   4    5]
-[0   12   6   10   2    9   5    8]
-[3    2   2    2   4    2   4    2]
-[0   12   8    9   2   12   6    9]
-[3    6   4    5   4    6   6    5]
-[0   10   5    8   2    9   5    8]
-
-julia> R = root_lattice_recognition_fundamental(L);
-
-julia> gram_matrix(R[1])
-[2    0    0    0    0    0    0]
-[0    2    0   -1    0    0    0]
-[0    0    2   -1    0    0    0]
-[0   -1   -1    2   -1    0    0]
-[0    0    0   -1    2   -1    0]
-[0    0    0    0   -1    2   -1]
-[0    0    0    0    0   -1    2]
-
-```
-"""
-function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
-  V = ambient_space(L)
-  ADE, components = root_lattice_recognition(L; check)
-  components_new = ZZLat[]
-  basis = zero_matrix(QQ, 0, degree(L))
-  for i in 1:length(ADE)
-    ade = ADE[i]
-    S = components[i]
-    _, trafo = _ADE_type_with_isometry_irreducible(S)
-    BS = trafo * basis_matrix(S)
-    Snew = lattice(V, BS)
-    push!(components_new, Snew)
-    basis = vcat(basis, BS)
-  end
-  C = lattice(ambient_space(L), basis; check = false)
-  return C, ADE, components_new
-end
-
-@doc raw"""
-    ADE_type(G::MatrixElem) -> Tuple{Symbol,Int64}
-
-Return the type of the irreducible root lattice
-with gram matrix `G`.
-
-See also [`root_lattice_recognition`](@ref).
-
-# Examples
-```jldoctest
-julia> Hecke.ADE_type(gram_matrix(root_lattice(:A,3)))
-(:A, 3)
-```
-"""
-function ADE_type(G::MatrixElem)
-  r = rank(G)
-  d = abs(det(G))
-  if r == 1 && d == 1
-    return (:I, 1)
-  end
-  if r == 8 && d==1
-    return (:E, 8)
-  end
-  if r == 7 && d == 2
-    return (:E, 7)
-  end
-  if r == 6 && d ==3
-    return (:E, 6)
-  end
-  if d == r + 1
-    return (:A, r)
-  end
-  if d == 4
-    return (:D, r)
-  end
-  error("Not a definite root lattice")
-end
-
-function _ADE_type_with_isometry_irreducible(L)
-  ADE = ADE_type(gram_matrix(L))
-  R = root_lattice(ADE...)
-  e = sign(gram_matrix(L)[1, 1])
-  if e == -1
-    R = rescale(R, -1; cached=false)
-  end
-  t, T = __is_isometric_with_isometry_definite(R, L)
-  @hassert :Lattice 1 t
-  return ADE, T
-end
-
-@doc raw"""
-    root_sublattice(L::ZZLat; length = [1, 2]) -> ZZLat
-
-Return the sublattice spanned by the roots of length specified by `length`,
-which by default are all roots of length at most $2$, and which must be
-a subset of `[1, 2]` with unique entries.
-
-# Examples
-```jldoctest
-julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
-
-julia> basis_matrix(root_sublattice(L))
-[1   0   0]
-[0   1   0]
-
-julia> basis_matrix(root_sublattice(L; length = [2]))
-[0   1   0]
-
-julia> basis_matrix(root_sublattice(L; length = [1]))
-[1   0   0]
-```
-"""
-function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=true)
-  V = ambient_space(L)
-  @req !check || is_integral(L) "L must be integral"
-  @req !check || is_definite(L) "L must be definite"
-  @req issubset(length, [1, 2]) "Root lengths must be in [1, 2]"
-  if is_negative_entry(gram_matrix(L),1,1)#is_negative_definite(L)
-    L = rescale(L,-1; cached=false)
-  end
-  # it is a bit awkward, because short_vectors(L, lb, ub) is slower than
-  # short_vectors(L, ub)
-  if Base.length(length) == 2
-    sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
-  else
-    if length[1] == 1
-      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 1; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
-    else
-      sv = reduce(vcat, ZZMatrix[matrix(ZZ, 1, rank(L), a[1]) for a in short_vectors(L, 2, 2; check=false)]; init=zero_matrix(ZZ, 0, rank(L)))
-    end
-  end
-  hnf!(sv)
-  B = sv[1:rank(sv), :]*basis_matrix(L)
-  return lattice(V, B; check=false, isbasis=true)
-end
-
-
-function _reflection(gram::MatElem, v::MatElem)
-  n = ncols(gram)
-  gram_v = gram*transpose(v)
-  c = (v * gram_v)[1,1]
-  ref = zero_matrix(base_ring(gram), n, n)
-  # special cases for roots
-  if c == 2
-    for k in 1:n
-      ref[k:k,:] = neg!(gram_v[k,1]*v)
-      ref[k,k] += 1
-    end
-  elseif c == 1
-    for k in 1:n
-      ref[k:k,:] = neg!(2*gram_v[k,1]*v)
-      ref[k,k] += 1
-    end
-  elseif c == -2
-    for k in 1:n
-      ref[k:k,:] = gram_v[k,1]*v
-      ref[k,k] += 1
-    end
-  elseif c == -1
-    for k in 1:n
-      ref[k:k,:] = 2*gram_v[k,1]*v
-      ref[k,k] += 1
-    end
-  else
-    for k in 1:n
-      ref[k:k,:] = neg!(divexact(2*gram_v[k,1], c)*v)
-      ref[k,k] += 1
-    end
-  end
-
-  return ref
-end
-
-# Preprocessing for Plesken Souvignier
-function _weyl_group(L::ZZLat)
-  root_lat, root_types, irreducible_root_lattices = root_lattice_recognition_fundamental(L)
-  if length(root_types) == 0
-    return ZZMatrix[], ZZMatrix[], ZZ(1), false
-  end
-  BR = basis_matrix(root_lat)
-
-  invariant_grams = ZZMatrix[]
-  invariant_vectors = ZZMatrix[]
-  for t in Set(root_types)
-    inv_vec = _invariant_vectors(t...)
-    k = length(inv_vec)
-    V = [zero_matrix(QQ, 1, degree(L)) for i in 1:k]
-    for i in 1:length(root_types)
-      if root_types[i] == t
-        V = V + [v*basis_matrix(irreducible_root_lattices[i]) for v in inv_vec]
-      end
-    end
-    append!(invariant_vectors, ZZMatrix[ZZ.(coordinates(i, L)) for i in V])
-  end
-  gramZ = ZZ.(gram_matrix(L))
-  for v in invariant_vectors
-    push!(invariant_grams, transpose(v*gramZ)*v*gramZ)
-  end
-
-  rho = coordinates(_weyl_vector(root_lat), L)
-
-  fundamental_roots = coordinates(basis_matrix(root_lat), L)
-
-  gram = gram_matrix(L)
-  gram_rho = ZZ.(4*transpose(rho*gram)*(rho*gram))
-  push!(invariant_grams, gram_rho)
-  weyl_group_gens = [_reflection(gram, fundamental_roots[i:i,:]) for i in 1:nrows(fundamental_roots)]
-
-  ord = one(ZZ)
-  for s in root_types
-    mul!(ord, _weyl_group_order(s...))
-  end
-  return weyl_group_gens, invariant_grams, ord
-end
-
-function _weyl_group_order(s::Symbol, n::IntegerUnion)
-  n = ZZ(n)
-  if s == :A
-    ord = factorial(n+1)
-  elseif s == :B
-    @assert n>=2
-    ord = ZZ(2)^n * factorial(n)
-  elseif s == :C
-    @assert n>=3
-    ord = ZZ(2)^n * factorial(n)
-  elseif s == :D
-    @assert n>=4
-    ord = ZZ(2)^(n-1) * factorial(n)
-  elseif s == :E
-    @assert 8>=n>=6
-    if n == 6
-      ord = 51840
-    elseif n == 7
-      ord = 2903040
-    elseif n == 8
-      ord = 696729600
-    end
-  elseif s == :F
-    @assert n==4
-    ord = 1152
-  elseif s == :G
-    @assert n==2
-    ord = 12
-  elseif s == :I
-    @assert n==1
-    ord = 2
-  else
-    error("invalid root system")
-  end
-  return ord
-end
-
-function _invariant_vectors(s::Symbol, n::IntegerUnion)
-  E = identity_matrix(ZZ, n)
-  invs = ZZMatrix[]
-  e(n) = E[n:n,:]
-  if s == :A
-    for i in 1:div(n,2)
-      push!(invs, e(i)+e(n+1-i))
-    end
-    if !iszero(n%2)
-      push!(invs, e(div(n+1,2)))
-    end
-  elseif s == :D
-    @assert n>=4
-    if n == 4
-      push!(invs, e(1) + e(2) + e(4))
-      push!(invs, e(3))
-    else
-      for i in 3:n
-        push!(invs, e(i))
-      end
-      push!(invs, e(1)+e(2))
-    end
-  elseif s == :E
-    @assert 8>=n>=6
-    if n == 6
-      for i in [3,6]
-        push!(invs, e(i))
-      end
-      push!(invs, e(1) + e(5))
-      push!(invs, e(2) + e(4))
-    elseif n == 7 || n == 8
-      for i in 1:n
-        push!(invs, e(i))
-      end
-    end
-  elseif s == :I
-    push!(invs, e(1))
-  else
-    error("invalid root system")
-  end
-  return invs
-end
 
 
 ################################################################################
@@ -3594,6 +2434,7 @@ function overlattices(L::ZZLat; even::Bool=true, indices=nothing)
   end
   return result
 end
+
 ################################################################################
 #
 #  Primary/elementary lattices
@@ -3677,612 +2518,61 @@ function is_elementary(L::ZZLat, p::Union{Integer, ZZRingElem})
   return bool && q == p
 end
 
-################################################################################
-#
-#  Isometry test indefinite lattices
-#
-################################################################################
 
-@doc raw"""
-    reflection(gram::QQMatrix, v::QQMatrix) -> QQMatrix
-
-Return the matrix representation of the orthogonal reflection in the row vector `v`.
-"""
-function reflection(gram::MatElem, v::MatElem)
-  n = ncols(gram)
-  E = identity_matrix(base_ring(gram), n)
-  c = base_ring(gram)(2) * ((v * gram * transpose(v)))[1,1]^(-1)
-  ref = zero_matrix(base_ring(gram), n, n)
-  for k in 1:n
-    ref[k:k,:] = E[k:k,:] - c*(E[k:k,:] * gram * transpose(v))*v
-  end
-  return ref
+@attr Bool function is_well_rounded(L::ZZLat)
+  S = shortest_vectors_sublattice(L)
+  return rank(S) == rank(L)
 end
 
-@doc raw"""
-    _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p, nu) -> (err, Vector{QQMatrix})
-
-Decompose the approximate isometry `T` into a product of reflections
-and return the error.
-
-The algorithm follows Shimada [Shim2018](@cite)
-The error depends on the approximation error of `T`, i.e. $T G T^t - G$.
-
-# Arguments
-- `G::QQMatrix`: a diagonal matrix
-- `T::QQMatrix`: an isometry up to some padic precision
-- `p`: a prime number
-"""
-function _decompose_in_reflections(G::QQMatrix, T::QQMatrix, p)
-  @assert is_diagonal(G)
-  p = ZZ(p)
-  if p == 2
-    delta = 1
-  else
-    delta = 0
-  end
-  gammaL = [valuation(d, p) for d in diagonal(G)]
-  gamma = minimum(gammaL)
-  l = ncols(G)
-  E = parent(G)(1)
-  reflection_vectors = QQMatrix[]
-  Trem = deepcopy(T)
-  k = 1
-  while k <= l
-    g = Trem[k:k,:]
-    bm = g - E[k:k,:]
-    qm = bm * G * transpose(bm)
-    if valuation(qm, p) <= gammaL[k] + 2*delta
-      tau1 = reflection(G, bm)
-      push!(reflection_vectors, bm)
-      Trem = Trem * tau1
-    else
-      bp = g + E[k:k,:]
-      qp = bp * G * transpose(bp)
-      @assert valuation(qp, p) <= gammaL[k] + 2*delta
-      tau1 = reflection(G, bp)
-      tau2 = reflection(G, E[k:k,:])
-      push!(reflection_vectors,bp)
-      push!(reflection_vectors,E[k:k,:])
-      Trem = Trem * tau1 * tau2
-    end
-    k += 1
-  end
-  reverse!(reflection_vectors)
-  R = reduce(*, reflection(G, v) for v in reflection_vectors)
-  err = valuation(T - R, p)
-  return err, reflection_vectors
+@attr Bool function is_strongly_well_rounded(L::ZZLat)
+  S = shortest_vectors_sublattice(L)
+  return S == L
 end
 
-
-function _is_isometric_indef(L::ZZLat, M::ZZLat)
-  @req rank(L)>=3 "Strong approximation needs rank at least 3"
-  @req degree(L)==rank(L) "Lattice needs to be full for now"
-
-  # scale integral
+# brute force
+function is_obviously_perfectly_well_rounded_with_data(L::ZZLat; max_tries = 100, lll_perturbed=true)
+  L = lll(L)
+  S = shortest_vectors_sublattice(L)
+  S == L || return false, zero_matrix(QQ, 0, degree(L))
+  m = minimum(L)
+  # see if we can replace a bad vector by a good one
+  flag = true
+  while flag
+    flag, L = improve_basis(L)
+  end
+  if m == maximum(abs.(diagonal(gram_matrix(L))))
+    return true, basis_matrix(L)
+  end
+  if minimum(L) == 2
+    # root lattices are always perfectly well rounded
+    # the fundamental root system is a basis
+    B = basis_matrix(root_lattice_recognition_fundamental(L)[1])
+    return true, B
+  end
   n = rank(L)
-  s = scale(M)
-  M = rescale(M, s^-1; cached=false)
-  L = rescale(L, s^-1; cached=false)
-  @assert scale(M)==1
-  @assert scale(L)==1
-  g = genus(L)
-  if g != genus(M)
-    return false
+  U = hnf_with_transform(matrix(ZZ,n,n, rand(0:1,n^2)))[2]
+  Llll = lattice_in_same_ambient_space(L, U*basis_matrix(L))
+  if lll_perturbed
+    return is_obviously_perfectly_well_rounded_with_data(Llll; max_tries, lll_perturbed=false)
   end
-  S, isS = _improper_spinor_generators(g)
-  if length(S)==0
-    # unique spinor genus
-    return true
+  # brute force try for random combinations
+  sv = shortest_vectors(L)
+  n = rank(L)
+  SV = Set([matrix(ZZ,1, n, i) for i in sv])
+  for (i,B) in enumerate(subsets(SV, n))
+    i > max_tries && return false, zero_matrix(QQ, 0, degree(L))
+    Bmat = reduce(vcat, B)
+    rank(Bmat) == n || continue
+    all(isone, elementary_divisors(Bmat)) && return true, Bmat
   end
-  f, r = _is_isometric_indef_approx(L, M)
-  return is_zero(isS(QQ(r)))
+  return false, zero_matrix(ZZ, 0, degree(L))
 end
 
-function _is_isometric_indef_approx(L::ZZLat, M::ZZLat)
-  # move to same ambient space
-  qL = ambient_space(L)
-  diag, trafo = Hecke._gram_schmidt(gram_matrix(qL), identity)
-  qL1 = quadratic_space(QQ, diag; cached=false)
+is_obviously_perfectly_well_rounded(L::ZZLat; max_tries=100) = is_obviously_perfectly_well_rounded_with_data(L;max_tries)[1]
 
-  L1 = lattice(qL1, basis_matrix(L)*inv(trafo), check=false)
-  @hassert :Lattice 1 genus(L1) == genus(L)
-  qM = ambient_space(M)
-  b, T = is_isometric_with_isometry(qM, qL1)
-  @assert b  # same genus implies isomorphic space
-  M1 = lattice(qL1, basis_matrix(M)*T, check=false)
-  @hassert :Lattice 1 genus(M1) == genus(L)
-  r1 = index(M1,intersect(M1,L1))
 
-  V = ambient_space(L1)
-  gramV = gram_matrix(V)
-  sL = 8//scale(dual(L1))
-  bad = support(2*det(L1))
-  extra = 10
-  @label more_precision
-  targets = Tuple{QQMatrix,ZZRingElem,Int}[]
-  for p in bad
-    vp = valuation(sL, p) + 1
-    if valuation(r1, p)==0
-      fp = identity_matrix(QQ, dim(qL1))
-      push!(targets,(fp, p , vp))
-      continue
-    end
-    # precision seems to deteriorate along the number of reflections
-    precp = vp + 2*rank(L) + extra
-    # Approximate an isometry fp: Lp --> Mp
-    normalM1, TM1 = Hecke.padic_normal_form(gram_matrix(M1), p, prec=precp)
-    normalL1, TL1 = Hecke.padic_normal_form(gram_matrix(L1), p, prec=precp)
-    @assert normalM1 == normalL1
-    TT = inv(TL1) * TM1
-    fp = inv(basis_matrix(L1))* TT * basis_matrix(M1)
-    d = det(fp)-1
-    if !iszero(d) && valuation(d, p)<= vp
-      # we want fp in SO(Vp)
-      # compose with a reflection preserving Lp
-      norm_gen = _norm_generator(normalL1, p) * inv(TL1) * basis_matrix(L1)
-      @assert valuation((norm_gen * gramV * transpose(norm_gen))[1,1],p)==valuation(norm(L1), p)
-      fp = reflection(gramV, norm_gen) * fp
-      d = det(fp)-1
-      @assert  iszero(d) || valuation(d, p)>= vp
-    end
-    # double check that fp: Lp --> Mp
-    M1fp = lattice(V, basis_matrix(L1) * fp, check=false)
-    indexp = index(M1,intersect(M1fp, M1))
-    @assert valuation(indexp,p)==0
-    push!(targets,(fp, p, vp))
-  end
-  f = zero_matrix(QQ,0,0)
-  try
-    f = weak_approximation(V, targets)
-  catch e
-    if isa(e, ErrorException) && startswith(e.msg,"insufficient precision of fp")
-      extra = extra + 5
-      @goto more_precision
-    else
-      rethrow(e)
-    end
-  end
-
-  L1f = lattice(V, basis_matrix(L1) * f, check=false)
-  indexL1f_M1 = index(M1, intersect(L1f, M1))
-  # confirm computation
-  for p in bad
-    v = valuation(indexL1f_M1, p)
-    @assert v == 0 "$p: $v"
-  end
-  return f, indexL1f_M1
+@attr Bool function is_lopsided(L::ZZLat)
+  S = shortest_vectors_sublattice(L)
+  return rank(S) < rank(L)
 end
 
-@doc raw"""
-    index(L::ZZLat, M::ZZLat) -> IntExt
-
-Return the index $[L:M]=|L/M|$ of $M$ in $L$.
-"""
-function index(L::ZZLat, M::ZZLat)
-  b, M = is_sublattice_with_relations(L, M)
-  b || error("M must be a sublattice of L to have a well defined index [L:M]")
-  if rank(L)>rank(M)
-    return inf
-  end
-  return ZZ(abs(det(M)))
-end
-
-function _norm_generator(gram_normal, p)
-  # the norm generator is the last diagonal entry of the first jordan block.
-  # except if the last 2x2 block is a hyperbolic plane
-  R = residue_ring(ZZ, p)[1]
-  n = ncols(gram_normal)
-  gram_normal = change_base_ring(ZZ, gram_normal)
-  gram_modp = change_base_ring(R, gram_normal)
-  ind,vals = _block_indices_vals(gram_modp, p)
-  @assert vals[1]==0
-  if length(ind)==1
-    i = nrows(gram_normal)
-  else
-    i = ind[2]-1
-  end
-  E = identity_matrix(QQ, n)
-  q = gram_normal[i,i]
-  if q!=0 && valuation(q, p) <= 1
-    return E[i:i,:]
-  end
-  @assert p==2
-  return E[i:i,:] + E[i-1:i-1,:]
-end
-
-################################################################################
-#
-# The 23 holy constructions of the Leech lattice
-#
-################################################################################
-
-@doc raw"""
-    coxeter_number(ADE::Symbol, n) -> Int
-
-Return the Coxeter number of the corresponding ADE root lattice.
-
-If ``L`` is a root lattice and ``R`` its set of roots, then the Coxeter number ``h``
-is ``|R|/n`` where `n` is the rank of ``L``.
-
-# Examples
-```jldoctest
-julia> coxeter_number(:D, 4)
-6
-
-```
-"""
-function coxeter_number(ADE::Symbol, n)
-  if ADE == :A
-    return n+1
-  elseif ADE == :D
-    return 2*(n-1)
-  elseif ADE == :E && n == 6
-    return 12
-  elseif ADE == :E && n == 7
-    return 18
-  elseif ADE == :E && n == 8
-    return 30
-  end
-end
-
-@doc raw"""
-    highest_root(ADE::Symbol, n) -> ZZMatrix
-
-Return coordinates of the highest root of `root_lattice(ADE, n)`.
-
-# Examples
-```jldoctest
-julia> highest_root(:E, 6)
-[1   2   3   2   1   2]
-```
-"""
-function highest_root(ADE::Symbol, n)
-  if ADE == :A
-    w = [1 for i in 1:n]
-  elseif ADE == :D
-    w = vcat([1,1],[2 for i in 3:n-1])
-    w = vcat(w,[1])
-  elseif ADE == :E && n == 6
-    w = [1,2,3,2,1,2]
-  elseif ADE == :E && n == 7
-    w = [2,3,4,3,2,1,2]
-  elseif ADE == :E && n == 8
-    w = [2,4,6,5,4,3,2,3]
-  end
-  w = matrix(ZZ, 1, n, w)
-  g = gram_matrix(root_lattice(ADE,n))
-  @hassert :Lattice 2 all(0<=i for i in collect(w*g))
-  @hassert :Lattice 2 (w*g*transpose(w))[1,1]==2
-  return w
-end
-
-function _weyl_vector(R::ZZLat)
-  weyl = matrix(ZZ,1,rank(R),ones(1,rank(R)))*inv(gram_matrix(R))
-  return weyl*basis_matrix(R)
-end
-
-@doc raw"""
-    leech_lattice() -> ZZLat
-
-Return the Leech lattice.
-"""
-function leech_lattice()
-  R = integer_lattice(gram=2*identity_matrix(ZZ,24))
-  N = maximal_even_lattice(R) # niemeier lattice
-  return leech_lattice(N)[1]
-end
-
-@doc raw"""
-    leech_lattice(niemeier_lattice::ZZLat) -> ZZLat, QQMatrix, Int
-
-Return a triple `L, v, h` where `L` is the Leech lattice.
-
-L is an `h`-neighbor of the Niemeier lattice `N` with respect to `v`.
-This means that `L / L ∩ N  ≅ ℤ / h ℤ`.
-Here `h` is the Coxeter number of the Niemeier lattice.
-
-This implements the 23 holy constructions of the Leech lattice in [CS99](@cite).
-
-# Examples
-```jldoctest leech
-julia> R = integer_lattice(gram=2 * identity_matrix(ZZ, 24));
-
-julia> N = maximal_even_lattice(R); # Some Niemeier lattice
-
-julia> minimum(N)
-2
-
-julia> det(N)
-1
-
-julia> L, v, h = leech_lattice(N);
-
-julia> minimum(L)
-4
-
-julia> det(L)
-1
-
-julia> h == index(L, intersect(L, N))
-true
-
-```
-
-We illustrate how the Leech lattice is constructed from `N`, `h` and `v`.
-
-```jldoctest leech
-julia> Zmodh, _ = residue_ring(ZZ, h);
-
-julia> V = ambient_space(N);
-
-julia> vG = map_entries(x->Zmodh(ZZ(x)), inner_product(V, v, basis_matrix(N)));
-
-julia> LN = transpose(lift(Hecke.kernel(vG; side = :right)))*basis_matrix(N); # vectors whose inner product with `v` is divisible by `h`.
-
-julia> M = lattice(V, LN) + h*N;
-
-julia> M == intersect(L, N)
-true
-
-julia> M + lattice(V, 1//h * v) == L
-true
-
-```
-"""
-function leech_lattice(niemeier_lattice::ZZLat)
-  # construct the leech lattice from one of the 23 holy constructions in SPLAG
-  # we follow a mix of Ebeling and SPLAG
-  # there seem to be some signs wrong in Ebeling?
-  N = niemeier_lattice
-  @req rank(N)==24 && norm(N)==2 && scale(N)==1 && det(N)==1 && is_definite(N) "not a Niemeier lattice"
-  # figure out which Niemeier lattice it is
-  V = ambient_space(N)
-  ADE, ade, RR = root_lattice_recognition_fundamental(N)
-  rank(ADE)==24 || error("not a niemeier lattice")
-  F = basis_matrix(ADE)
-  for i in 1:length(ade)
-    F = vcat(F, -highest_root(ade[i]...) * basis_matrix(RR[i]))
-  end
-  rho = sum(_weyl_vector(r) for r in RR)
-  h = coxeter_number(ade[1]...)
-  # sanity checks
-  @hassert :Lattice 1 inner_product(V, rho, rho) == 2 * h * (h+1)
-  @hassert :Lattice 1 all(h == coxeter_number(i...) for i in ade)
-  rhoB = solve(basis_matrix(N), rho; side = :left)
-  v = QQ(1, h) * transpose(rhoB)
-  A = integer_lattice(gram=gram_matrix(N))
-  c = QQ(2 + 2//h)
-  vv = vec(collect(v))
-  sv = [matrix(QQ, 1, 24, vv - i)*basis_matrix(N) for (i, _) in Hecke.close_vectors(A, vv, c, c, check=false)]
-  @hassert :Lattice 1 all(inner_product(V, i, i)==(2 + 2//h) for i in sv)
-  @hassert :Lattice 1 length(sv)^2 == abs(det(ADE))
-  G = reduce(vcat, sv)
-  FG = vcat(F, G)
-  K = transpose(kernel(matrix(ZZ, ones(Int, 1, nrows(FG))), side = :right))
-  B = change_base_ring(QQ, K) * FG
-  B = _hnf!_integral(FakeFmpqMat(B))
-  B = QQ(1, B.den) * change_base_ring(QQ, B.num[end-23:end, :])
-  leech_lattice = lattice(V, B)
-  leech_lattice = lll(leech_lattice) # make it a bit prettier
-  # confirm computation
-  @hassert :Lattice 1 rank(B)==24
-  @hassert :Lattice 1 scale(leech_lattice)==1 && norm(leech_lattice)==2
-  @hassert :Lattice 1 det(leech_lattice)==1
-  @hassert :Lattice 1 minimum(leech_lattice)==4
-
-  # figure out the glue vector
-  T = torsion_quadratic_module(leech_lattice, intersect(leech_lattice, N))
-  @assert length(gens(T))==1 "something is wrong"
-  w = transpose(matrix(lift(gens(T)[1])))
-
-  return leech_lattice, h*w, h
-end
-
-###############################################################################
-#
-#  Hyperkaehler lattices
-#
-###############################################################################
-
-@doc raw"""
-    k3_lattice()
-
-Return the integer lattice corresponding to the Beauville-Bogomolov-Fujiki
-form associated to a K3 surface.
-
-# Examples
-```jldoctest
-julia> L = k3_lattice();
-
-julia> is_unimodular(L)
-true
-
-julia> signature_tuple(L)
-(3, 0, 19)
-```
-"""
-function k3_lattice()
-  U = QQ[0 1; 1 0]
-  E8 = -_root_lattice_E(8)
-  return integer_lattice(; gram = diagonal_matrix(U, U, U, E8, E8))
-end
-
-@doc raw"""
-    mukai_lattice(S::Symbol = :K3; extended::Bool = false)
-
-Return the (extended) Mukai lattice.
-
-If `S == :K3`, it returns the (extended) Mukai lattice associated to
-hyperkaehler manifolds which are deformation equivalent to a moduli space
-of stable sheaves on a K3 surface.
-
-If `S == :Ab`, it returns the (extended) Mukai lattice associated to
-hyperkaehler manifolds which are deformation equivalent to a moduli space
-of stable sheaves on an abelian surface.
-
-# Examples
-```jldoctest
-julia> L = mukai_lattice();
-
-julia> genus(L)
-Genus symbol for integer lattices
-Signatures: (4, 0, 20)
-Local symbol:
-  Local genus symbol at 2: 1^24
-
-julia> L = mukai_lattice(; extended = true);
-
-julia> genus(L)
-Genus symbol for integer lattices
-Signatures: (5, 0, 21)
-Local symbol:
-  Local genus symbol at 2: 1^26
-
-julia> L = mukai_lattice(:Ab);
-
-julia> genus(L)
-Genus symbol for integer lattices
-Signatures: (4, 0, 4)
-Local symbol:
-  Local genus symbol at 2: 1^8
-
-julia> L = mukai_lattice(:Ab; extended = true);
-
-julia> genus(L)
-Genus symbol for integer lattices
-Signatures: (5, 0, 5)
-Local symbol:
-  Local genus symbol at 2: 1^10
-```
-"""
-function mukai_lattice(S::Symbol = :K3; extended::Bool = false)
-  @req S in [:K3, :Ab] "Wrong symbol"
-  U = QQ[0 1; 1 0]
-  if S == :Ab
-    extended && return integer_lattice(; gram = diagonal_matrix(U, U, U, U, U))
-    return integer_lattice(; gram = diagonal_matrix(U, U, U, U))
-  end
-
-  E8 = -_root_lattice_E(8)
-  !extended && return integer_lattice(; gram = diagonal_matrix(U, U, U, U, E8, E8))
-  return integer_lattice(; gram = diagonal_matrix(U, U, U, U, U, E8, E8))
-end
-
-@doc raw"""
-    hyperkaehler_lattice(S::Symbol; n::Int = 2)
-
-Return the integer lattice corresponding to the Beauville-Bogomolov-Fujiki
-form on a hyperkaehler manifold whose deformation type is determined by `S`
-and `n`.
-
-- If `S == :K3` or `S == :Kum`, then `n` must be an integer bigger than 2;
-- If `S == :OG6` or `S == :OG10`, the value of `n` has no effect.
-
-# Examples
-```jldoctest
-julia> L = hyperkaehler_lattice(:Kum; n = 3)
-Integer lattice of rank 7 and degree 7
-with gram matrix
-[0   1   0   0   0   0    0]
-[1   0   0   0   0   0    0]
-[0   0   0   1   0   0    0]
-[0   0   1   0   0   0    0]
-[0   0   0   0   0   1    0]
-[0   0   0   0   1   0    0]
-[0   0   0   0   0   0   -8]
-
-julia> L = hyperkaehler_lattice(:OG6)
-Integer lattice of rank 8 and degree 8
-with gram matrix
-[0   1   0   0   0   0    0    0]
-[1   0   0   0   0   0    0    0]
-[0   0   0   1   0   0    0    0]
-[0   0   1   0   0   0    0    0]
-[0   0   0   0   0   1    0    0]
-[0   0   0   0   1   0    0    0]
-[0   0   0   0   0   0   -2    0]
-[0   0   0   0   0   0    0   -2]
-
-julia> L = hyperkaehler_lattice(:OG10);
-
-julia> genus(L)
-Genus symbol for integer lattices
-Signatures: (3, 0, 21)
-Local symbols:
-  Local genus symbol at 2: 1^-24
-  Local genus symbol at 3: 1^-23 3^1
-
-julia> L = hyperkaehler_lattice(:K3; n = 3);
-
-julia> genus(L)
-Genus symbol for integer lattices
-Signatures: (3, 0, 20)
-Local symbol:
-  Local genus symbol at 2: 1^22 4^1_7
-```
-"""
-function hyperkaehler_lattice(S::Symbol; n::Int = 2)
-  @req S in [:K3, :Kum, :OG10, :OG6] "Wrong symbol for deformation type"
-
-  U = QQ[0 1; 1 0]
-  if S == :OG6
-    k = QQ[-2 0; 0 -2]
-    return integer_lattice(; gram = diagonal_matrix(U, U, U, k))
-  elseif S == :Kum
-    @req n >= 2 "n must be a positive integer bigger than 1"
-    k = QQ[-2-2*n; ]
-    return integer_lattice(; gram = diagonal_matrix(U, U, U, k))
-  end
-
-  E8 = -_root_lattice_E(8)
-  if S == :OG10
-    k = -_root_lattice_A(2)
-    return integer_lattice(; gram = diagonal_matrix(U, U, U, E8, E8, k))
-  else
-    @assert S == :K3
-    @req n >= 2 "n must be a positive integer bigger than 1"
-    k = QQ[2-2*n; ]
-    return integer_lattice(; gram = diagonal_matrix(U, U, U, E8, E8, k))
-  end
-end
-
-@doc raw"""
-    extended_ade(ADE::Symbol, n::Int)
-
-Return the dual intersection matrix of an extended ade Dynkin diagram
-as well as the isotropic vector (with positive coefficients in the roots).
-"""
-function extended_ade(ADE::Symbol, n::Int)
-  R = change_base_ring(ZZ,gram_matrix(root_lattice(ADE,n)))
-  G = block_diagonal_matrix([ZZ[2;],R])
-  if ADE == :E && n == 8
-    G[1,n] = -1
-    G[n,1] = -1
-  end
-  if ADE == :E && n == 7
-    G[1,2] = -1
-    G[2,1] = -1
-  end
-  if ADE == :E && n == 6
-    G[1,n+1] = -1
-    G[n+1,1] = -1
-  end
-  if ADE == :A && n > 1
-    G[1,2] = -1
-    G[2,1] = -1
-    G[1,n+1] = -1
-    G[n+1,1] = -1
-  end
-  if ADE == :A && n == 1
-    G[1,2]= -2
-    G[2,1] = -2
-  end
-  if ADE == :D
-    @assert n >= 4
-    G[1,n] = -1
-    G[n,1] = -1
-  end
-  @assert rank(G) == n
-  return -G, kernel(G; side = :left)
-end

@@ -58,6 +58,11 @@ end
   @test simplify(number_field(f)[1], canonical = true)[1].pol == g
   @test simplify(number_field(g)[1], canonical = true)[1].pol == g
   @test simplify(number_field(h)[1], canonical = true)[1].pol == g
+
+  f = x^12 - 6*x^11 + 13497*x^10 - 67594*x^9 + 75743172*x^8 - 302569494*x^7 + 226205273445*x^6 - 672617463426*x^5 + 379173487108284*x^4 - 742468576929718*x^3 + 338259693364465881*x^2 - 325513482971363634*x + 125481800369042176811
+  g = x^12 - 2*x^11 - 4479*x^10 + 8958*x^9 + 5010884*x^8 + 4466*x^7 + 5634791717*x^6 - 28168855706*x^5 - 12630239809488*x^4 + 12790951644918*x^3 + 88435027134769*x^2 + 28336178468214410*x + 7937668837230908161
+
+  @test simplify(number_field(f)[1], canonical = true)[1].pol == g
 end
 
 @testset "simplify-Fabian" begin
@@ -115,8 +120,43 @@ end
 end
 
 @testset "is_lin_disjoint" begin
-  R,x=polynomial_ring(QQ, "x")
-  K,a=number_field(x^2+1)
-  L,b=number_field(x^2+x+1//2)
-  @test !is_linearly_disjoint(L,K)
+  x = gen(Hecke.Globals.Qx)
+
+  # non-coprime polynomial discriminants (coprime order discriminants)
+  K = number_field(x^2 + 1, cached = false)[1]
+  L = number_field(x^2 - 5, cached = false)[1]
+  @assert !is_coprime(discriminant(K.pol), discriminant(L.pol))
+  @test is_linearly_disjoint(L, K)
+
+  # not-nice polynomial (with coprime discriminants)
+  K = number_field(x^2 + 1)[1]
+  L = number_field(x^2 + x + 1//2)[1]
+  @test !is_linearly_disjoint(L, K)
+
+  # check subfields in non-simple extensions
+  K = simple_extension(number_field([x^2 - 2, x^2 - 3], cached = false)[1])[1]
+  L = number_field(x^2 - 2, cached = false)[1]
+  M = number_field(x^2 - 3, cached = false)[1]
+
+  @test !is_linearly_disjoint(K, L)
+  @test !is_linearly_disjoint(K, M)
+  @test is_linearly_disjoint(L, M)
 end
+
+@testset "Compositum" begin
+  x = gen(Hecke.Globals.Qx)
+
+  K, a = number_field(x^2 + 1, cached = false)
+  L, b = number_field(x^2 - 3, cached = false)
+  C, mK, mL = compositum(K, L)
+
+  @test iszero(K.pol(mK(a)))
+  @test iszero(L.pol(mL(b)))
+
+  @test Hecke.has_embedding(K, C)
+  @test Hecke.has_embedding(L, C)
+
+  @test !Hecke.has_embedding(C, K)
+  @test !Hecke.has_embedding(K, L)
+end
+

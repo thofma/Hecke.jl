@@ -1164,3 +1164,45 @@ function _factor(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicField
 
 
 end
+
+################################################################################
+#
+#  Factor via global field
+#
+################################################################################
+
+
+function _basis_matrix(a::Vector{AbsSimpleNumFieldOrderElem})
+  return matrix(ZZ, length(a), degree(nf(parent(a[1]))), vcat([coordinates(x) for x = a]...))
+end
+
+function _factor_via_number_field(f::PolyRingElem{PadicFieldElem})
+  v = minimum([valuation(x) for x = coefficients(f) if !iszero(x)], init = 1)
+  P = prime(base_ring(f))
+  f *= base_ring(f)(P)^-v
+
+  g = map_coefficients(x -> lift(ZZ, x), f)
+  lg = factor(g)
+
+  ff = []
+  for (p, kk) = lg
+    k, a = number_field(p, cached = false)
+    zk = pmaximal_overorder(any_order(k), P)
+    b = map(zk, basis(k))
+    push!(b, zk(a)*b[end])
+    lp = prime_decomposition(zk, P)
+    for (pp, e) = lp
+      m = _basis_matrix(b[1:e*degree(pp)])
+      m = vcat(m, basis_matrix(pp^(e*precision(base_ring(f)))))
+      fl, s = can_solve_with_solution(m, matrix(ZZ, 1, ncols(m), coordinates(-b[e*degree(pp)+1])), side = :left)
+      @assert fl
+      push!(ff, (parent(f)(push!(vec(collect(s[1, 1:degree(pp)*e])), ZZRingElem(1))), kk))
+    end
+  end
+  return ff
+end
+
+function _is_irreducible(f::PolyRingElem{PadicFieldElem})
+  lf = factor(f)
+  return length(lf) == 1 && lf[1][2] == 1
+end

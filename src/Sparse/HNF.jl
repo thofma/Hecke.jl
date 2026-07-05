@@ -47,7 +47,7 @@ function _reduce_field(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T}
   return g
 end
 
-function gcdx!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, e::ZZRingElem)
+function gcdx!(a::Nemo.ZZRingElemOrPtr, b::Nemo.ZZRingElemOrPtr, c::Nemo.ZZRingElemOrPtr, d::Nemo.ZZRingElemOrPtr, e::Nemo.ZZRingElemOrPtr)
   @ccall libflint.fmpz_xgcd_canonical_bezout(a::Ref{ZZRingElem}, b::Ref{ZZRingElem}, c::Ref{ZZRingElem}, d::Ref{ZZRingElem}, e::Ref{ZZRingElem})::Nothing
   return a, b, c
 end

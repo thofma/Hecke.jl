@@ -939,3 +939,53 @@ function minimal_subgroups(G::FinGenAbGroup, add_to_lattice::Bool = false)
   end
   return res
 end
+
+###############################################################################
+#
+#  Common subgroups
+#
+###############################################################################
+
+# Return the elementary divisors of the largest finite abelian group
+# embedding in both G1 and G2
+function _maximal_common_subgroup_snf(
+  G1::FinGenAbGroup,
+  G2::FinGenAbGroup,
+)
+  @assert is_finite(G1) && is_finite(G2)
+  s1 = elementary_divisors(G1)
+  s2 = elementary_divisors(G2)
+  s = Array{ZZRingElem}(undef, min(length(s1), length(s2)))
+  for i in 0:length(s)-1
+    s[end-i] = gcd(s1[end-i], s2[end-i])
+  end
+  return s
+end
+
+# Adapted from one of the __psubgroups_gens above
+# Given the elementary divisors elG of a finite abelian group G, return the
+# set of all possible lists of valuations for the elementary divisors of a
+# subgroup of G whose p-Sylow subgroup has order p^v. The lists in output
+# contain only positive valuations and they are sorted in decreasing order.
+function _psubgroups_types(
+  elG::Vector{ZZRingElem},
+  p::ZZRingElem,
+  v::Int,
+)
+  @assert v > 0
+  testv = isequal(v)∘sum
+  p_subtypes = Set{Vector{Int}}()
+  if isempty(elG)
+    return p_subtypes
+  end
+  Gtype = Int[valuation(a, p) for a in elG]
+  reverse!(Gtype)
+  filter!(!=(0), Gtype)
+  types = Hecke._subpartitions(Gtype)
+  for t in types
+    testv(t) || continue
+    filter!(!=(0), t)
+    push!(p_subtypes, t)
+  end
+  return p_subtypes
+end

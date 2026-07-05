@@ -1,14 +1,3 @@
-@testset "Linear disjoint" begin
-  Qx, x = polynomial_ring(QQ, "x")
-  _K, _ = number_field([x^2 - 2, x^2 - 3], "a", cached = false)
-  K, _ = simple_extension(_K)
-  L, b = number_field(x^2 - 2, "b", cached = false)
-  @test !is_linearly_disjoint(K, L)
-
-  M, c = number_field(x^2 - 3, "c", cached = false)
-  @test is_linearly_disjoint(L, M)
-end
-
 @testset "Random" begin
   Qx, x = polynomial_ring(QQ, "x")
   K, a = number_field(x^32 + 2, "a")
@@ -80,17 +69,6 @@ end
   @test Hecke.is_integer(b[1]^2) == false
   @test Hecke.is_rational(b[1]^2) == true
   @test Hecke.is_rational(b[1]) == false
-end
-
-@testset "Compositum" begin
-  Qx, x = QQ["x"]
-  f = x^2 + 1
-  K, a = number_field(f, "a")
-  L, b = number_field(x^2-3, "b")
-  C, mK, mL = compositum(K, L)
-
-  @test iszero(K.pol(mK(gen(K))))
-  @test iszero(L.pol(mL(gen(L))))
 end
 
 @testset "PolyFactor" begin

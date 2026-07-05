@@ -23,158 +23,9 @@ end
 
 ################################################################################
 #
-#  Roots of integer polynomials
+#  Misc
 #
 ################################################################################
-
-
-# @doc raw"""
-#     quadroots(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem, p::ZZRingElem) -> Bool
-#
-# Returns true if the quadratic congruence of the quadratic polynomial
-# $ax^2 + bx + c = 0$ has a root modulo $p$.
-# """
-function quadroots(a, b, c, p)
-  F_p = GF(p, cached = false)
-  R, x = polynomial_ring(F_p, "x", cached = false)
-  f = F_p(a)*x^2 + F_p(b)*x + F_p(c)
-
-  if degree(f) == -1
-    return true
-  elseif degree(f) == 0
-    return false
-  elseif degree(f) == 1
-    return true
-  end
-
-  fac = factor(f)
-  p, k = first(fac)
-
-  if k == 2 # f has a double zero
-    return true
-  elseif length(fac) == 2 # f splits into two different linear factors
-    return true
-  else # f does not have a root
-    return false
-  end
-end
-
-function quadroots(a, b, c, _res::Union{Function, MapFromFunc})
-  #F_p = GF(p, cached = false)
-  aa = _res(a)
-  F = parent(aa)
-  R, x = polynomial_ring(F, "x", cached = false)
-  f = aa*x^2 + _res(b)*x + _res(c)
-
-  if degree(f) == -1
-    return true
-  elseif degree(f) == 0
-    return false
-  elseif degree(f) == 1
-    return true
-  end
-
-  fac = factor(f)
-  p, k = first(fac)
-
-  if k == 2 # f has a double zero
-    return true
-  elseif length(fac) == 2 # f splits into two different linear factors
-    return true
-  else # f does not have a root
-    return false
-  end
-end
-
-function quadroots(a::AbsSimpleNumFieldElem, b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, pIdeal:: AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  R = order(pIdeal)
-  F, phi = residue_field(R, pIdeal)
-  P, x = polynomial_ring(F, "x", cached = false)
-
-  t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [a, b, c]]
-
-  f = t[1]*x^2 + t[2]*x + t[3]
-
-  if degree(f) == -1
-    return true
-  elseif degree(f) == 0
-    return false
-  elseif degree(f) == 1
-    return true
-  end
-
-  fac = factor(f)
-  p, k = first(fac)
-
-  if fac[p] == 2 # f has a double zero
-    return true
-  elseif length(fac) == 2 # f splits into two different linear factors
-    return true
-  else # f does not have a root
-    return false
-  end
-end
-
-@doc raw"""
-    nrootscubic(b::ZZRingElem, c::ZZRingElem, d::ZZRingElem, p::ZZRingElem) -> ZZRingElem
-
-Returns the number of roots of the polynomial $x^3 + bx^2 + cx + d = 0$
-modulo $p$.
-"""
-function nrootscubic(b, c, d, p)
-  F_p = GF(p, cached = false)
-  R, x = polynomial_ring(F_p, "x")
-  f = x^3 + F_p(b)*x^2 + F_p(c)*x + F_p(d)
-
-  fac = factor(f)
-
-  if length(fac) == 1
-    if fac[first(fac)[1]] == 3
-      return ZZ(3)
-    else
-      return ZZ(0)
-    end
-  elseif length(fac) == 2
-    _fac = collect(fac)
-    if _fac[1][2] == 1 && _fac[2][2] == 1
-      # one linear and one irreducible quadratic factor
-      return ZZ(1)
-    else
-      return ZZ(3) #one double and one single root
-    end
-  else
-    return ZZ(3)
-  end
-end
-
-function nrootscubic(b::AbsSimpleNumFieldElem, c::AbsSimpleNumFieldElem, d::AbsSimpleNumFieldElem, pIdeal:: AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  R = order(pIdeal)
-  F, phi = residue_field(R, pIdeal)
-  P, x = polynomial_ring(F, "x", cached = false)
-
-  t = [phi(R(numerator(s)))//phi(R(denominator(s))) for s in [b,c,d]]
-
-  f = x^3 + t[1]*x^2 + t[2]*x + t[3]
-
-  fac = factor(f)
-  if length(fac) == 1
-    if fac[first(fac)[1]] == 3
-      return ZZ(3)
-    else
-      return ZZ(0)
-    end
-  elseif length(fac) == 2
-    _fac = collect(fac)
-    if _fac[1][2] == 1 && _fac[2][2] == 1
-      # one linear and one irreducible quadratic factor
-      return ZZ(1)
-    else
-      return ZZ(3) #one double and one single root
-    end
-  else
-    return ZZ(3)
-  end
-end
 
 function smod(a::T, b::S) where {T, S}
   z = mod(a, b)
@@ -265,3 +116,28 @@ function pth_root_mod(a::AbsSimpleNumFieldElem, pIdeal::AbsNumFieldOrderIdeal{Ab
   return preimage(phi, pth_root(b))
 end
 
+################################################################################
+#
+#  Rational Function Field Valuation
+#
+################################################################################
+
+# might be not the best place but still
+# currently only used in elliptic curve code
+function valuation(x::T, p::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  @req parent(x) === parent(p) "x and p must come from the same field"
+  is_zero(x) && return inf
+
+  if is_one(denominator(p))
+    f = numerator(p)
+    @req is_irreducible(f) "p must represent a place"
+    return valuation(numerator(x), f) - valuation(denominator(x), f)
+  else
+    @req p == 1 // gen(parent(p)) "p must be a finite-place generator (poly) or 1//t"
+    return degree(denominator(x)) - degree(numerator(x))
+  end
+end
+function valuation(x::AbstractAlgebra.Generic.RationalFunctionFieldElem{T, U}, p::U) where {T, U <: PolyRingElem{T}}
+  @req parent(p) === parent(numerator(x)) "p must come from the polynomial ring of x"
+  return valuation(x, parent(x)(p))
+end

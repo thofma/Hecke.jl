@@ -108,16 +108,22 @@ shortest_vectors(L::ZZLat, ::ZZRingElem)
 
 function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
   if check
-    @req rank(L) > 0 "Lattice must have positive rank"
     @req is_definite(L) "Lattice must be definite"
+  end
+  if iszero(rank(L))
+    return Vector{S}[]
   end
   _G = gram_matrix(L)
   if _G[1, 1] < 0
     _G = -_G
   end
-  min, V = _shortest_vectors_gram(_G)
+  min, V = _shortest_vectors_gram(FinckePohstInt, _G)
   L.minimum = min
-  return V
+  if S === Int
+    return V
+  else
+    return [S.(i) for i in V]
+  end
 end
 
 ################################################################################
@@ -287,7 +293,8 @@ function successive_minima(L::ZZLat)
 end
 
 @doc raw"""
-    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem}, Vector{ZZRingElem}
+    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem},
+                                                Vector{Vector{ZZRingElem}}
 
 Given a positive definite lattice $L$, return the successive minima of $L$ and
 a list of vectors realizing the minima.
@@ -307,37 +314,80 @@ julia> successive_minima_with_vectors(L)
 """
 function successive_minima_with_vectors(L::ZZLat)
   @req is_positive_definite(L) "Lattice must be positive definite"
-  if rank(L) == 0
-    return Int[]
-  end
   n = rank(L)
-  m = maximum(diagonal(gram_matrix(lll(L))); init = zero(ZZ))
-  S = short_vectors(L, m)
-  sort!(S; by = x -> x[2])
-  mi = S[1][2]
-  cur_mi = mi
-  res = QQFieldElem[cur_mi]
-  resv = [S[1][1]]
-  cur_i = findlast(x -> x[2] == mi, S)
-  B = echelon_form(matrix(QQ, [x[1] for x in view(S, 1:cur_i)]); trim = true)
-  while length(res) < n
-    cur_mi = S[cur_i + 1][2]
-    next_i = findlast(x -> x[2] == cur_mi, S)
-    @assert next_i > cur_i
-    # the following constructs a potential large marix
-    # better would be a "streaming" version which takes as input only the vector
-    # but we don't have this for rational matrices
-    # (we only care about rank = dimension of rational span)
-    B = echelon_form(vcat(B, matrix(QQ, [x[1] for x in view(S, cur_i+1:next_i)])); trim = true)
-    if nrows(B) > length(res)
-      for _ in 1:(nrows(B) - length(res))
-        push!(res, cur_mi)
-        push!(resv, S[cur_i + 1][1])
-      end
-    end
-    cur_i = next_i
+  # the ouput consists of two lists of length n,
+  # so we can already initialize said lists
+  res = Array{QQFieldElem}(undef, n)
+  resv = Array{Vector{ZZRingElem}}(undef, n)
+
+  # Trivial case
+  if iszero(n)
+    return res, resv
   end
-  return res, resv
+
+  # Sometimes L has a good Gram matrix so there is nothing to do
+  min_length = minimum(L)
+  if all(isequal(min_length), diagonal(gram_matrix(L)))
+    _v = zeros(ZZRingElem, n)
+    for i in 1:n
+      res[i] = min_length
+      ei = deepcopy(_v)
+      add!(ei[i], 1)
+      resv[i] = ei
+    end
+    return res, resv
+  end
+
+  ind = Int(1) # Index of new successive minima
+  m = min(maximum(diagonal(gram_matrix(lll(L)))), maximum(diagonal(gram_matrix(L))))
+
+  # We iterate on vectors up to norm m; we put in a buffer list the vectors
+  # of norm greater than min_length so that we treat shortest vectors first
+  S = short_vectors_iterator(L, m)
+  buffer = Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  H = zero_matrix(ZZ, n, n) # hnf of current Q-generating set
+  w = zero_matrix(ZZ, 1, n)
+  for x in S
+    if x[2] > min_length
+      push!(buffer, deepcopy(x))
+      continue
+    end
+    w[1:1, :] = first(x)
+    # check whether the vector is already in the ZZ-span
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    # Checks whether the vector is in the QQ-span
+    H[ind:ind, :] = w
+    hnf!(H)
+    is_zero_row(H, ind) && continue
+    # Rank increases
+    res[ind] = last(x)
+    resv[ind] = first(x)
+    # We have found the good number of vectors so are done
+    # We do not look for a basis of L, just of a finite index sublattice
+    if ind == n
+      return res, resv
+    end
+    ind += 1
+  end
+
+  sort!(buffer; by=last)
+  while !isempty(buffer)
+    x = popfirst!(buffer)
+    w[1:1, :] = first(x)
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    H[ind:ind, :] = w
+    hnf!(H)
+    is_zero_row(H, ind) && continue
+    res[ind] = last(x)
+    resv[ind] = first(x)
+    if ind == n
+      return res, resv
+    end
+    ind += 1
+  end
+  error("Something went wrong")
 end
 
 ################################################################################
@@ -405,6 +455,14 @@ function enumerate_quadratic_triples_iterator(
   end
   return cv
 end
+
+
+########################################################################################
+#
+#        Short vectors affine
+#
+########################################################################################
+
 
 @doc raw"""
     short_vectors_affine(
@@ -676,73 +734,272 @@ function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = no
 end
 
 
-function _short_vectors_with_condition(L::ZZLat)
-  proj = _invariant_projections(L)
-  n = rank(L)
-  z = zero_matrix(ZZ, 1, n)
-  targets = ZZMatrix[]
-  for i in 1:n
-    ei = deepcopy(z)
-    ei[i] = 1
-    push!(targets, ei)
+
+########################################################################################
+#
+#        Short vectors with given divisibility
+#
+########################################################################################
+
+
+@doc raw"""
+    vectors_of_square_and_divisibility(
+      L::ZZLat,
+      S::ZZLat,
+      n::RationalUnion,
+      d::RationalUnion = scale(L);
+      coordinates_representation::Symbol=:S,
+      check::Bool=true,
+    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
+
+Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
+$\mathbb{Z}$-lattice ``S`` in the ambient space of ``L``, return all the
+vectors in $S \cap (L\otimes \mathbb{Q})$ whose square has absolute value $|n|$
+and whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$.
+
+For a vector ``v`` in the ambient quadratic space $(V, \Phi)$ of ``L``,
+we call the divisibility of ``v`` in ``L`` the nonnegative generator of the
+fractional ideal $\Phi(v, L)$ of $\mathbb{Z}$.
+
+The entry `n` must be nonzero and `d` must be a positive rational number,
+set to `scale(L)` by default.
+
+!!! note
+    Alternatively, instead of single values `n` and `d` one can input:
+    * a list of pairs of rational numbers `(n, d)` where `n` is nonzero and
+      `d` is positive;
+    * a dictionary whose keys are positive rational numbers `d` and the
+      associated list of numbers consist of nonzero rational numbers `n`.
+
+The output consists of a list of triples `(v, n', d')` where `v` is a vector
+of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
+
+!!! note
+    In the case where one wants to choose ``S`` to be ``L`` itself, one can
+    call instead `vectors_of_square_and_divisibility(L, n, d)`.
+
+One can choose in which coordinates system each vector `v` in output is
+represented by changing the symbol `coordinates_representation`.
+There are three possibilities:
+  - `coordinates_representation = :L`: the vector `v` is given in terms of its
+    coordinates in the standard basis of the rational span of the lattice
+    ``L``;
+  - `coordinates_representation = :S` (default): the vector `v` is given in
+    terms of its coordinates in the fixed basis of the lattice ``S``;
+  - `coordinates_representation = :ambient`: the vector `v` is given in terms
+    of its coordinates in the standard basis of the ambient space of ``L``.
+
+If the keyword argument `check` is set to true, the function checks whether
+``S`` is definite.
+
+# Examples
+```jldoctest
+julia> E6 = root_lattice(:E, 6)
+Integer lattice of rank 6 and degree 6
+with gram matrix
+[ 2   -1    0    0    0    0]
+[-1    2   -1    0    0    0]
+[ 0   -1    2   -1    0   -1]
+[ 0    0   -1    2   -1    0]
+[ 0    0    0   -1    2    0]
+[ 0    0   -1    0    0    2]
+
+julia> A2 = lattice_in_same_ambient_space(E6, basis_matrix(E6)[1:2, :])
+Integer lattice of rank 2 and degree 6
+with gram matrix
+[ 2   -1]
+[-1    2]
+
+julia> C = orthogonal_submodule(E6, A2)
+Integer lattice of rank 4 and degree 6
+with gram matrix
+[12   -3    0   -3]
+[-3    2   -1    0]
+[ 0   -1    2    0]
+[-3    0    0    2]
+
+julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
+9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([-1 -2 -3 -4 -2 0], 12, 3)
+ ([-1 -2 -3 -1 1 -3], 12, 3)
+ ([-2 -4 -6 -2 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 -3], 12, 3)
+ ([-2 -4 -6 -5 -4 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 0], 12, 3)
+ ([-1 -2 -3 -4 -2 -3], 12, 3)
+ ([-2 -4 -6 -5 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 1 0], 12, 3)
+
+julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[2   1]
+[1   4]
+
+julia> vectors_of_square_and_divisibility(L, 8, 2)
+1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([-2 0], 8, 2)
+
+julia> length(short_vectors(L, 8, 8))
+3
+```
+"""
+vectors_of_square_and_divisibility
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    n::RationalUnion,
+    d::RationalUnion = scale(L);
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
   end
-  target_projections = [[t*p for p in proj] for t in targets]
-  target_norms = [QQFieldElem[(i*gram_matrix(L)*transpose(i))[1] for i in t] for t in target_projections]
-  return _short_vectors_with_condition(L, proj, target_norms)
+  @req d > 0 "Divisibility ($d) must be positive"
+  @req !iszero(n) "Square ($n) must be nonzero"
+  nQQ = abs(QQ(n))
+  de = denominator(n)
+  if de > 1
+    L = rescale(L, de; cached=false)
+    S = lattice_in_same_ambient_space(L, basis_matrix(S))
+    n = n*de^2
+    d = d*de
+  end
+  Sd = intersect(d*dual(L), S)
+  BSd = basis_matrix(Sd)
+  l = short_vectors(Sd, n, n)
+  if coordinates_representation == :S
+    B = solve(basis_matrix(S), basis_matrix(Sd); side=:left)
+  elseif coordinates_representation == :L
+    B = solve(basis_matrix(L), basis_matrix(Sd); side=:left)
+  elseif coordinates_representation == :ambient
+    B = BSd
+  else
+    error("Wrong symbol for coordinates representation")
+  end
+  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
+  for a in l
+    v = matrix(QQ, 1, rank(Sd), a[1])
+    dv = divisibility(L, v*BSd)
+    v = v*B
+    push!(out, (v, nQQ, dv))
+  end
+  sort!(out; lt=(a,b) -> a[3] < b[3])
+  return out
 end
 
-"""
-    _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_norms::Vector{Vector{QQFieldElem}})
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    n::RationalUnion,
+    d::RationalUnion = scale(L);
+    coordinates_representation::Symbol=:ambient,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, n, d; coordinates_representation, check=false)
+end
 
-Return all vectors ``v`` of ``L`` such that
-proj[i](v)^2 = target_norms[i] for all i.
-"""
-function _short_vectors_with_condition(L::ZZLat, proj::Vector{QQMatrix}, target_norms::Vector{Vector{QQFieldElem}})
-#   perm = sortperm(proj;by=rank)
-#   proj = proj[perm]
-#   target_norms =[i[perm] for i in target_norms]
-  n = rank(L)
-  V = ambient_space(L)
-  projL = [lattice(V, p; check=false, isbasis=false) for p in proj]
-  # L1 < Sat(L1+L2) < .... < Sat(L1+...+Ln) = L
-  z = zeros(QQFieldElem,n)
-  short_vectors1 = Vector{QQFieldElem}[]
-  #norms = Vector{QQFieldElem}[]
-  flag_projection = zero_matrix(QQ,n,n)
-  tmpZZ = ZZ()
-  for i in 1:length(proj)
-    short_vectors2 = Vector{QQFieldElem}[]
-    flag_projection = flag_projection + proj[i]
-    Lflag = lattice(V, flag_projection; isbasis=false, check=false)
-    flag_projectionZ = coordinates(flag_projection, Lflag)
-    tmp = zeros(QQFieldElem, nrows(flag_projectionZ))
-    tmp2 = zeros(QQFieldElem, n)
-    target_norm = Set(n[i] for n in target_norms)
-    mi = minimum(target_norm)
-    ma = maximum(target_norm)
-    short_vectors3 = Vector{QQFieldElem}[]
-    for b in short_vectors1
-      _is_integral(mul!(tmp, b, flag_projectionZ),tmpZZ) && push!(short_vectors2, b)
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    vector_type::Vector;
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  ns = sort!(unique!(first.(vector_type)))
+  ds = [gcd([a[2] for a in vector_type if a[1] == n]) for n in ns]
+  vector_type_dict = Dict{eltype(ds), Vector{eltype(ns)}}()
+  for d in unique(ds)
+    vector_type_dict[d] = [ns[i] for i in 1:length(ns) if ds[i] == d]
+  end
+  return vectors_of_square_and_divisibility(L, S, vector_type_dict; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    vector_type::Vector;
+    coordinates_representation::Symbol=:L,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    vector_type::Dict;
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  @req all(>(0), keys(vector_type)) "Divisibilities must be positive"
+  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
+  for d in keys(vector_type)
+    @req all(!iszero, vector_type[d]) "Squares for the divisibility $d must be nonzero"
+    de = lcm(denominator.(vector_type[d]))
+    if de > 1
+      _L = rescale(L, de; cached=false)
+      _S = lattice_in_same_ambient_space(_L, basis_matrix(S))
+      _d = d*de
+    else
+      _L = L
+      _S = S
+      _d = d
     end
-    for (s, q) in short_vectors(projL[i], mi, ma)
-      q in target_norm || continue
-      a = s*basis_matrix(projL[i])
-      if i == 1
-        push!(short_vectors2, a)
+    Sd = intersect(_d*dual(_L), _S)
+    BSd = basis_matrix(Sd)
+    for n in vector_type[d]
+      nQQ = abs(QQ(n))
+      if de > 1
+        _n = n*de^2
       else
-        for b in short_vectors1
-          c = add!(tmp2, a, b)
-          _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ) && push!(short_vectors2, deepcopy(c))
-          c = sub!(tmp2, a , b)
-          _is_integral(mul!(tmp, c, flag_projectionZ), tmpZZ) && push!(short_vectors2, deepcopy(c))
-        end
+        _n = n
+      end
+      l = short_vectors(Sd, _n, _n)
+      if coordinates_representation == :S
+        B = solve(basis_matrix(_S), basis_matrix(Sd); side=:left)
+      elseif coordinates_representation == :L
+        B = solve(basis_matrix(_L), basis_matrix(Sd); side=:left)
+      elseif coordinates_representation == :ambient
+        B = BSd
+      else
+        error("Wrong symbol for coordinates representation")
+      end
+      for a in l
+        v = matrix(QQ, 1, rank(Sd), a[1])
+        dv = divisibility(L, v*BSd)
+        v = v*B
+        push!(out, (v, nQQ, dv))
       end
     end
-    short_vectors1 = short_vectors2
   end
-  return short_vectors1
+  sort!(out, lt=(a,b) -> a[2] < b[2] || a[2] == b[2] && a[3] < b[3])
+  return out
 end
 
-function _is_integral(x::Vector{QQFieldElem}, tmp::ZZRingElem)
-  return all(isone(denominator!(tmp, i)) for i in x)
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    vector_type::Dict;
+    coordinates_representation::Symbol=:L,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
 end

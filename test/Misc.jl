@@ -2,7 +2,6 @@
   include("Misc/Integer.jl")
   include("Misc/psibound.jl")
   include("Misc/FiniteField.jl")
-  include("Misc/Primes.jl")
   include("Misc/meataxe.jl")
   include("Misc/stable_subgroups.jl")
   include("Misc/NumberField.jl")

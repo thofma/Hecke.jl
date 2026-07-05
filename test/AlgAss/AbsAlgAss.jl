@@ -163,7 +163,7 @@
     I = radical(A)
     @test nrows(basis_matrix(I, copy = false)) == 0
 
-    for K in [ F2, F4, QQ ]
+    for K in [ F2, F4, QQ, algebraic_closure(QQ) ]
       A = matrix_algebra(K, [ matrix(K, 2, 2, [ 1, 0, 0, 0 ]), matrix(K, 2, 2, [ 0, 1, 0, 0 ]), matrix(K, 2, 2, [ 0, 0, 0, 1]) ]) # i. e. upper triangular matrices
       I = radical(A)
       @test nrows(basis_matrix(I, copy = false)) == 1

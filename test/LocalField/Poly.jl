@@ -145,4 +145,10 @@
     rab = @inferred resultant(a, b)
     @test rab == det(sylvester_matrix(a, b))
   end
+
+  let # factor via number field
+    Qpx, x = padic_field(19)[:x]
+    @test length(Hecke._factor_via_number_field(x^2 - 2)) == 1
+    @test length(Hecke._factor_via_number_field(x^2 - 5)) == 2
+  end
 end

@@ -708,7 +708,7 @@ function (A::GroupAlgebra{T, S, R})(d::Dict{R, <: Any}) where {T, S, R}
   end
 end
 
-function (A::GroupAlgebra{T, S, R})(x0::Pair{R, <: Any}, x::Vararg{U}) where {T, S, R, U <: Pair{R, <: Any}}
+function (A::GroupAlgebra{T, S, R})(x0::Pair{R}, x::Pair{R}...) where {T, S, R}
   return A(Dict(x0, x...))
 end
 

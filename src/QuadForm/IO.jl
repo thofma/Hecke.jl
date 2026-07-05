@@ -33,19 +33,19 @@ function to_hecke(io::IO, L::QuadLat; target = "L", skip_field = false)
   Fst = "[" * split(string([F[i, j] for i in 1:nrows(F) for j in 1:ncols(F)]), '[')[2]
   Fst = replace(Fst, string(var(K)) => "a")
   println(io, "D = matrix(K, ", nrows(F), ", ", ncols(F), ", ", Fst, ");")
-  gens = generators(L)
+  gs = gens(L)
   Gs = "Vector{$(elem_type(K))}["
-  for i in 1:length(gens)
-    g = gens[i]
+  for i in 1:length(gs)
+    g = gs[i]
     Gs = Gs * "map(K, [" * split(string(g), "[")[2] * ")"
     Gs = replace(Gs, string(var(K)) => "a")
-    if i < length(gens)
+    if i < length(gs)
       Gs = Gs * ", "
     end
   end
   Gs = Gs * "]"
-  println(io, "gens = ", Gs)
-  println(io, target, " = quadratic_lattice(K, gens, gram = D)")
+  println(io, "gs = ", Gs)
+  println(io, target, " = quadratic_lattice(K, gs, gram = D)")
 end
 
 function to_hecke(io::IO, L::HermLat; target = "L", skip_field = false)
@@ -69,22 +69,22 @@ function to_hecke(io::IO, L::HermLat; target = "L", skip_field = false)
   Fst = replace(Fst, string(var(E)) => "b")
   println(io, "D = matrix(E, ", nrows(F), ", ", ncols(F), ", ", Fst, ")")
 
-  gens = generators(L)
+  gs = gens(L)
   Gs = "Vector{$(elem_type(E))}["
-  for i in 1:length(gens)
-    g = gens[i]
+  for i in 1:length(gs)
+    g = gs[i]
     gst = replace(string(g), string(var(K)) => "a")
     gst = replace(gst, string(var(E)) => "b")
 
     Gs = Gs * "map(E, [" * split(gst, "[")[2] * ")"
-    if i < length(gens)
+    if i < length(gs)
       Gs = Gs * ", "
     end
   end
   Gs = Gs * "]"
-  println(io, "gens = ", Gs)
+  println(io, "gs = ", Gs)
 
-  println(io, target, " = hermitian_lattice(E, gens, gram = D)")
+  println(io, target, " = hermitian_lattice(E, gs, gram = D)")
 end
 
 function to_hecke(io::IO, G::HermGenus; target = "G")
