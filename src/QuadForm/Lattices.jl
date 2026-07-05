@@ -248,14 +248,14 @@ end
 # Steinitz form is not pretty
 
 @doc raw"""
-    generators(L::AbstractLat; minimal = false) -> Vector{Vector}
+    gens(L::AbstractLat; minimal = false) -> Vector{Vector}
 
 Return a set of generators of the lattice `L` over the base ring of `L`.
 
 If `minimal == true`, the number of generators is minimal. Note that computing
 minimal generators is expensive.
 """
-function generators(L::AbstractLat; minimal::Bool = false)
+function gens(L::AbstractLat; minimal::Bool = false)
   K = nf(base_ring(L))
   T = elem_type(K)
   if !minimal
@@ -411,7 +411,7 @@ If `minimal == true`, then a minimal generating set is used. Note that computing
 minimal generators is expensive.
 """
 function gram_matrix_of_generators(L::AbstractLat; minimal::Bool = false)
-  m = generators(L; minimal)
+  m = gens(L; minimal)
   M = matrix(nf(base_ring(L)), m)
   return gram_matrix(ambient_space(L), M)
 end
@@ -1965,7 +1965,7 @@ end
 function _orthogonal_complement(v::Vector, L::AbstractLat)
   V = ambient_space(L)
   M = matrix(base_ring(V), 1, length(v), v)
-  ge = generators(L)
+  ge = gens(L)
   ge_or = copy(ge)
     for i in 1:length(ge)
     # <v, v> = 1

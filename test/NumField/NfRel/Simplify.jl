@@ -49,4 +49,14 @@
   K, = number_field(t1^2 + 379160320//15532761*a1^10 - 3910638080//46598283*a1^8 + 4993275364//46598283*a1^6 - 4945308049//77663805*a1^4 + 712176451//46598283*a1^2 - 110709362//46598283)
   KK, = simplify(K)
   @test KK isa typeof(K)
+
+  # another problem with index divisors
+  let
+    Qx, x = QQ[:x];
+    K, a = number_field(x^4 - x^3 + 893*x^2 - 895*x + 198073);
+    Kt, t = K[:t];
+    L, = number_field(t^2 + t + 1);
+    La, = Hecke.simplified_absolute_field(L)
+    @test degree(La) == 8
+  end
 end

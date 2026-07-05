@@ -27,8 +27,6 @@ mutable struct Divisor{S <: Generic.FunctionField, T1 <: PolyRing, T2 <: KInftyR
 
 end
 
-@attributes AbstractAlgebra.Generic.FunctionField
-
 function trivial_divisor(F::Generic.FunctionField)
   return divisor(one(F))
 end
@@ -83,12 +81,7 @@ Return the divisor consisting of the zeroes of f
 """
 function zero_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
-
-  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
-  f_num, _ = integral_split(f, Ofin)
-  g_num, _ = integral_split(f, Oinf)
-
-  return divisor(ideal(Ofin, f_num), ideal(Oinf, g_num))
+  return lcm(divisor(f), trivial_divisor(F))
 end
 
 @doc raw"""
@@ -98,12 +91,7 @@ Return the divisor consisting of the poles of f
 """
 function pole_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
-
-  Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
-  _, f_denom = integral_split(f, Ofin)
-  _, g_denom = integral_split(f, Oinf)
-
-  return divisor(ideal(Ofin, f_denom), ideal(Oinf, g_denom))
+  return lcm(divisor(inv(f)), trivial_divisor(F))
 end
 
 ################################################################################
@@ -411,8 +399,11 @@ end
 Return the divisor whose support consists exactly of all zeroes in the support of D.
 """
 function zero_divisor(D::Divisor)
-  assure_has_support(D)
-  return _filter_support(D, x -> x.second > 0)
+  if has_support(D)
+    return _filter_support(D, x -> x.second > 0)
+  else
+    return lcm(D, trivial_divisor(function_field(D)))
+  end
 end
 
 @doc raw"""
@@ -421,8 +412,11 @@ end
 Return the divisor whose support consists exactly of all poles in the support of D.
 """
 function pole_divisor(D::Divisor)
-  assure_has_support(D)
-  return -_filter_support(D, x -> x.second < 0)
+  if has_support(D)
+    return -_filter_support(D, x -> x.second < 0)
+  else
+    return lcm(-D, trivial_divisor(function_field(D)))
+  end
 end
 
 ################################################################################
@@ -443,21 +437,46 @@ function degree(D::Divisor)
   # For a place P lying over a (finite) prime p in the base ring,
   #   deg(P) = [F_P : K] = f(P) * deg(p),
   # where f(P) is the inertia degree and deg(p) is the degree of p as a
-  # polynomial in the base ring.
+  #   polynomial in the base ring.
   #
   # For infinite places, p lies in KInftyRing.
   # The formula above stays correct if we read deg(p) as the degree of p
-  # as a polynomial in the local parameter t = 1/x.
-  # However, `degree(::KInftyElem)` returns the degree in x, which is -(degree in t).
-  # We therefore compensate by subtracting the infinite contribution rather than adding it.
-  function deg_place(p::GenOrdIdl, e::Integer)
-    return degree(p)*degree(minimum(p))*e
+  #   as a polynomial in the local parameter t = 1/x.
+  #
+  # If we do NOT know the support, we proceed via the ideals directly.
+  # let D = D_fin + D_inf with fractional ideals
+  #   J_fin = I_fin / d_fin and J_inf = I_inf / d_inf. Then
+  # deg(D) = deg_x(det(basis_matrix(J_fin))) + v_inf(det(basis_matrix(J_inf)))
+  #        = deg_x( norm(I_fin) / d_fin^n ) + v_inf( norm(I_inf) / d_inf^n ),
+  #   where we write n = [F : k(x)] for a degree.
+  #
+  # As before, v_inf(f) = -deg_x(f) is the degree in the local parameter t = 1/x, so
+  #   we always compute degrees in x and SUBTRACT the infinite contribution.
+  # This matches the support branch, where `degree(::KInftyElem)` also returns
+  #   the degree in x.
+
+  if has_support(D)
+    function deg_place(p::GenOrdIdl, e::Integer)
+      return degree(p)*degree(minimum(p))*e
+    end
+
+    fin_deg = sum(deg_place(f, e) for (f, e) in D.finite_support; init = zero(Int))
+    inf_deg = sum(deg_place(f, e) for (f, e) in D.infinite_support; init = zero(Int))
+
+    return fin_deg - inf_deg
+  else
+    n = degree(function_field(D))
+
+    I_fin = numerator(D.finite_ideal; copy = false)
+    d_fin = denominator(D.finite_ideal; copy = false)
+    fin_deg = degree(norm(I_fin)) - n*degree(d_fin)
+
+    I_inf = numerator(D.infinite_ideal; copy = false)
+    d_inf = denominator(D.infinite_ideal; copy = false)
+    inf_deg = degree(norm(I_inf)) - n*degree(d_inf)
+
+    return fin_deg - inf_deg
   end
-
-  fin_deg = sum(deg_place(f, e) for (f, e) in finite_support(D); init = zero(Int))
-  inf_deg = sum(deg_place(f, e) for (f, e) in infinite_support(D); init = zero(Int))
-
-  return fin_deg - inf_deg
 end
 
 @doc raw"""
@@ -466,7 +485,14 @@ end
 Return true if D is an effective divisor.
 """
 function is_effective(D::Divisor)
-  return isempty(support(pole_divisor(D)))
+  # effective = no poles
+  # if we know the support: check multiplicities (all non-negative)
+  # otherwise check that ideals are integral (that is, no denominators)
+  if has_support(D)
+    return all(>=(0), values(D.finite_support)) && all(>=(0), values(D.infinite_support))
+  else
+    return is_integral(D.finite_ideal) && is_integral(D.infinite_ideal)
+  end
 end
 
 @doc raw"""
@@ -514,8 +540,9 @@ end
 
 Return the different divisor of F.
 """
-function different_divisor(F::Generic.FunctionField{T, U}) where {T, U}
-  return divisor(different(finite_maximal_order(F)), different(infinite_maximal_order(F)))
+@attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+different_divisor(K::Generic.FunctionField{T, U}) where {T, U}
+  return divisor(different(finite_maximal_order(K)), different(infinite_maximal_order(K)))
 end
 
 @doc raw"""
@@ -538,10 +565,11 @@ end
 
 Return the canonical divisor of F.
 """
-function canonical_divisor(F::AbstractAlgebra.Generic.FunctionField)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+@attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+canonical_divisor(K::Generic.FunctionField{T, U}) where {T, U}
+  @req is_separable(defining_polynomial(K)) "Currently assumes separable extension"
 
-  dx = differential(separating_element(F))
+  dx = differential(separating_element(K))
   return divisor(dx)
 end
 
@@ -557,10 +585,20 @@ end
 
 Return the genus of F.
 """
-function genus(F::AbstractAlgebra.Generic.FunctionField)
+@attr Int function genus(F::AbstractAlgebra.Generic.FunctionField)
   @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  # g = (degree(K) + 2) / 2, where K is the canonical divisor.
+  # Since K = (dx) = Diff_{F/k(x)} - 2(x)_inf, we have
+  # deg(K) = deg(Diff_{F/k(x)}) - 2*[F:k(x)], and
+  # g = 1 - n + deg(Diff_{F/k(x)}) / 2
 
-  return length(basis_of_differentials(F))
+  d1 = degree(discriminant(finite_maximal_order(F)))
+  d2 = degree(discriminant(infinite_maximal_order(F)))
+  # note that we need valuation at infinity: degree in t = 1/x (hence minus)
+  dDiff = d1 - d2
+  @assert iseven(dDiff)
+
+  return 1 - degree(F) + divexact(dDiff, 2)
 end
 
 ################################################################################

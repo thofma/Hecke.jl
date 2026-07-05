@@ -120,9 +120,9 @@ import Hecke: divisor
     _test_basis_of_differentials(F, w)
   end
 
-  @testset "Hyperelliptic Curve Differentials" begin
+  @testset "Curve Differentials and genus" begin
     # Check for the basis of differentials:
-    # length should equal to genus (we compute genus ourselves)
+    # length should equal genus
     # elements of basis should be non-zero, give effective divisor of a specific degree
     function _test_basis_of_differentials(F, g)
       B = @inferred basis_of_differentials(F)
@@ -135,11 +135,37 @@ import Hecke: divisor
       end
     end
 
+    # genus 1, ramification at infinity = 3
+    let (kx, x) = rational_function_field(GF(5), :x; cached = false),
+        (ky, y) = polynomial_ring(kx, :y; cached = false)
+      F, a = function_field(y^3 - x^2 - 1; cached = false)
+      @test genus(F) == 1
+      _test_basis_of_differentials(F, 1)
+    end
+
+    # genus 1, ramification at infinity = 3 (wild)
+    let (kx, x) = rational_function_field(GF(3), :x; cached = false),
+        (ky, y) = polynomial_ring(kx, :y; cached = false)
+      F, a = function_field(y^3 + y - x^2 - 1; cached = false)
+      @test genus(F) == 1
+      _test_basis_of_differentials(F, 1)
+    end
+
     # genus 2
     for base_field in [QQ, finite_field(3, 3)[1], finite_field(7, 2)[1], finite_field(101)[1]]
       kx, x = rational_function_field(base_field, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       F, a = function_field(y^2 - x^5 - 1; cached=false)
+      @test genus(F) == 2
+      _test_basis_of_differentials(F, 2)
+    end
+
+    # genus 2, unramified at infinity
+    let (kx, x) = rational_function_field(QQ, :x; cached = false),
+        (ky, y) = polynomial_ring(kx, :y; cached = false)
+      F, a = function_field(y^2 - x^6 - 2; cached = false)
+      @test genus(F) == 2
+      @test degree(discriminant(infinite_maximal_order(F))) == 0
       _test_basis_of_differentials(F, 2)
     end
 
@@ -148,16 +174,27 @@ import Hecke: divisor
       kx, x = rational_function_field(base_field, :x; cached = false)
       ky, y = polynomial_ring(kx, :y; cached = false)
       F, a = function_field(y^2 - x^7 - 1; cached=false)
+      @test genus(F) == 3
       _test_basis_of_differentials(F, 3)
     end
 
     # characteristic 2
-    BF, t = finite_field(2, 4)
-    kx, x = rational_function_field(BF, :x; cached = false)
-    ky, y = polynomial_ring(kx, :y; cached = false)
-    for (p, g) in [(y^2 + y + x^5 + 1, 2), (y^2 + y + x^7 + 1, 3), (y^2 + (x + t)*y + x^5 + x^3, 2)]
-      F, a = function_field(p; cached=false)
-      _test_basis_of_differentials(F, g)
+    let (BF, t) = finite_field(2, 4),
+        (kx, x) = rational_function_field(BF, :x; cached = false),
+        (ky, y) = polynomial_ring(kx, :y; cached = false)
+      for (p, g) in [(y^2 + y + x^5 + 1, 2), (y^2 + y + x^7 + 1, 3), (y^2 + (x + t)*y + x^5 + x^3, 2)]
+        F, a = function_field(p; cached=false)
+        @test genus(F) == g
+        _test_basis_of_differentials(F, g)
+      end
+    end
+
+    # non-monic defining polynomial
+    let (kx, x) = rational_function_field(QQ, :x; cached = false),
+        (ky, y) = polynomial_ring(kx, :y; cached = false)
+      F, a = function_field(x^3 + x^2 + x*y^3 - x*y^2 + y^2 - y; cached = false)
+      @test genus(F) == 3
+      _test_basis_of_differentials(F, 3)
     end
   end
 end

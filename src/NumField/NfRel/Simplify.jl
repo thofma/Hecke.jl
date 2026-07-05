@@ -96,9 +96,11 @@ function _find_prime(L::RelSimpleNumField{AbsSimpleNumFieldElem})
   f = L.pol
   threshold = degree(f)^2
   den = lcm(ZZRingElem[denominator(coeff(f, i)) for i = 0:degree(f)])
+  __ind = gen_index(OK)
+  _ind = numerator(__ind) * denominator(__ind)
   while i < n_attempts+1
     p = next_prime(p)
-    if is_divisible_by(den, p) || is_divisible_by(absolute_discriminant(OL), p)
+    if is_divisible_by(_ind, p) || is_divisible_by(den, p) || is_divisible_by(absolute_discriminant(OL), p)
       continue
     end
     lp = prime_decomposition(OK, p)
