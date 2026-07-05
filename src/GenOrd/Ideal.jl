@@ -678,10 +678,6 @@ function Hecke.divexact(A::GenOrdIdl, b::RingElem)
   bm = divexact(basis_matrix(A; copy = false), b)
   B = ideal(O, bm; M_in_hnf = true)
 
-  if false && has_basis_mat_inv(A)
-    error("not defined at all")
-    B.basis_mat_inv = b*A.basis_mat_inv
-  end
   if has_princ_gen(A)
     # Coerce the base-ring scalar b through the base field before embedding it
     #   into O.F before dividing.
