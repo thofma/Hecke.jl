@@ -589,7 +589,7 @@ end
 #   v_P(alpha + delta) > v_P(alpha) = v_P(A), breaking normality
 # NOTE: it is enough for m to be a multiple of the minimum, so for example
 #   gen_one can be passed here (when we know we have a normal representation).
-function _reduce_gen_two_with_minimum(m::RingElem, alpha::GenOrdElem)
+function _reduce_gen_two_2elem_normal(alpha::GenOrdElem, m::RingElem)
   return mod(alpha, m^2)
 end
 
@@ -611,7 +611,7 @@ function _mul_2elem_normal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 
   # (a1, a2) and (b1, b2) are now m-normal over the shared base m
   g1 = _make_canonical_in(O, a1*b1)
-  g2 = _reduce_gen_two_with_minimum(g1, a2*b2)
+  g2 = _reduce_gen_two_2elem_normal(a2*b2, g1)
   c = ideal(O, g1, g2)
 
   c.gens_normal = m
@@ -779,13 +779,39 @@ function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return GenOrdFracIdl(O, basis_mat)
 end
 
-# If I is not coprime to the conductor of O in the maximal order, then this might
-# not be an inverse.
-function inv(A::GenOrdIdl)
-  O = order(A)
-  return colon(O(1)*O, A)
+# For A = <m, alpha> with m = minimum(A) in m-normal two-element representation
+#   A^{-1} = O + beta*O, with beta = d_c * alpha^{-1}, d_c = part of denom(alpha^{-1}) coprime to m.
+# We compute this ideal as <d_m, gamma>/d_m, with
+#   gamma = numerator(alpha^{-1}, O) = d*alpha^{-1}; d = denom(alpha^{-1})
+#   d_m = part of denom(alpha^{-1}) supported at m.
+# We then have <d_m, gamma> = d_m*A^{-1} normal
+function _inv_2elem_normal(O::GenOrd, A::GenOrdIdl)
+  @hassert :GenOrd 1 has_2_elem_normal(A)
+
+  m = minimum(A; copy = false)
+  is_unit(m) && return GenOrdFracIdl(A)
+
+  gamma, d = integral_split(inv(data(A.gen_two)), O)
+  d_m = _make_canonical_in(O, ppio(d, m)[1])
+
+  Ai = ideal(O, d_m, _reduce_gen_two_2elem_normal(gamma, d_m))
+  Ai.gens_normal = A.gens_normal
+  Ai.norm = _make_canonical_in(O, divexact(d_m^degree(O), norm(A; copy = false)))
+  @hassert :GenOrd 2 defines_2_normal(Ai)
+  return GenOrdFracIdl(Ai, d_m)
 end
 
+function inv(A::GenOrdIdl)
+  O = order(A)
+
+  if is_maximal_known_and_maximal(O) && has_2_elem_normal(A)
+    B = _inv_2elem_normal(O, A)
+    return B
+  end
+
+  # If I is not coprime to the conductor of O in the maximal order, then this might not be an inverse.
+  return colon(O(1)*O, A)
+end
 
 ################################################################################
 #

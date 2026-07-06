@@ -28,6 +28,7 @@
     @test inertia_degree(P) == expected_f
     @test ramification_index(P) == expected_e
     @test Hecke.has_2_elem(P)
+    @test Hecke.has_2_elem_normal(P)
     @test 1 == @inferred valuation(ideal(order(P), P.gen_two), P)
   end
 
@@ -73,18 +74,40 @@
     @assert is_prime(I)
 
     L = Hecke.field(O)
-    U = ideal(O, O(1))
+    U = ideal(O, one(O))
     @test Hecke.colon(I, U) == fractional_ideal(I)
     @test one(L) in Hecke.colon(I, I)
     @test Hecke.colon(U, I) * I == U
   end
 
+  function test_ideal_inv(O, I)
+    U = ideal(O, one(O))
+    @test inv(I) == colon(U, I)     # agrees with colon
+    @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
+    @test inv(inv(I)) == I
+  end
+
   function test_frac_ideal_inv(O, I_list)
-    U = ideal(O, O(1))
     for I in I_list
-      @test inv(I) == colon(U, I)     # identical to the old colon-based inv
-      @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
-      @test inv(inv(I)) == I
+      test_ideal_inv(O, I)
+    end
+  end
+
+  function test_ideal_inv_2elem_normal(O, p_list)
+    I = ideal(O, one(O))
+
+    for p in p_list
+      P = prime_decomposition(O, p)[1][1]
+      @test Hecke.has_2_elem_normal(P)
+      test_ideal_inv(O, P)
+
+      Pe = P^3
+      @test Hecke.has_2_elem_normal(Pe)
+      test_ideal_inv(O, Pe)
+
+      I = I*Pe
+      @test Hecke.has_2_elem_normal(I)
+      test_ideal_inv(O, I)
     end
   end
 
@@ -192,11 +215,13 @@
       test_colon_common(Ofin, x^4 + x + 1)
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       O = Ofin
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (numerator(x+1), numerator(x^2+x+1), numerator(x^3+x+1)))
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+1))))
     end
   end
 
@@ -240,11 +265,13 @@
       test_colon_common(Ofin, x^2 + 2)
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       O = Ofin
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (numerator(x+1), numerator(x^2+x+1), numerator(x^3+x+1)))
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
     end
   end
 
@@ -270,18 +297,22 @@
       test_colon_common(Ofin, x^2 + 1)
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       O = Ofin
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (numerator(x+1), numerator(x^2+x+1), numerator(x^3+x+1)))
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
     end
   end
 
   @testset "over number field" begin
     x = gen(Hecke.Globals.Qx)
     K, a = number_field(x^2 - 2, :a)
-    OK = Hecke.GenOrd(ZZ, K)
+    # NOTE: Hecke.integral_closure(ZZ,K) will go through number fields
+    # NOTE: Hecke.GenOrd(ZZ, K) will not set maximal order flag
+    OK = Hecke._integral_closure(ZZ, K)
 
     @testset "norm/min: maximal order" begin
       check_ideal_norm_min(ideal(OK, ZZ(3)), 9, 3)
@@ -331,8 +362,9 @@
       test_colon_common(OK, ZZ(3))
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
+      test_ideal_inv_2elem_normal(OK, (ZZ(2), ZZ(3), ZZ(5), ZZ(7)))
     end
   end
 
