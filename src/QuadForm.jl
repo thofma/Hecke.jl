@@ -42,11 +42,13 @@ include("QuadForm/Herm/Mass.jl")
 include("QuadForm/Herm/Legacy.jl")
 include("QuadForm/Herm/LocallyIsometricSublattice.jl")
 
+# Automorphism and Isomorphism related
 include("QuadForm/Morphism.jl")
 include("QuadForm/ShortVectors.jl")
 include("QuadForm/Database.jl")
 include("QuadForm/Enumeration.jl")
 include("QuadForm/LineOrbits.jl")
+include("QuadForm/OrbitsMod2.jl")
 include("QuadForm/MassQuad.jl")
 
 # Close vectors
