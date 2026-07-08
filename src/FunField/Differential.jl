@@ -4,16 +4,16 @@
 #
 ################################################################################
 
-struct FunFldDiff{T <: Generic.FunctionFieldElem}
+struct FunFldDiff{T <: Generic.AbsSimpleFunctionFieldElem}
   f::T
 end
 
 @doc raw"""
-    differential(f::Generic.FunctionFieldElem) -> Differential
+    differential(f::Generic.AbsSimpleFunctionFieldElem) -> Differential
 
 Return the differential df.
 """
-function differential(f::T) where {T <: Generic.FunctionFieldElem}
+function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   F = parent(f)
   @req _is_separable(F) "Currently assumes separable extension"
   y = gen(F)
@@ -126,7 +126,7 @@ function Base.:-(df::FunFldDiff)
   return FunFldDiff(-df.f)
 end
 
-function Base.:*(r::T, df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
+function Base.:*(r::T, df::FunFldDiff{T}) where {T <: Generic.AbsSimpleFunctionFieldElem}
   @req parent(r) === function_field(df) "element and differential must have the same parent"
   return FunFldDiff(r * df.f)
 end
@@ -139,12 +139,12 @@ function Base.:*(r::IntegerUnion, df::FunFldDiff)
   return function_field(df)(r) * df
 end
 
-Base.:*(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem} = r*df
+Base.:*(df::FunFldDiff{T}, r::T) where {T <: Generic.AbsSimpleFunctionFieldElem} = r*df
 Base.:*(df::FunFldDiff, r::GenOrdElem) = r*df
 Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
 @doc raw"""
-    //(df::FunFldDiff, dg::FunFldDiff) -> FunctionFieldElem
+    //(df::FunFldDiff, dg::FunFldDiff) -> AbsSimpleFunctionFieldElem
 
 Return the function r such that r*dg = df.
 """
@@ -153,7 +153,7 @@ function Base.://(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
   return df.f//dg.f
 end
 
-function Base.://(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem}
+function Base.://(df::FunFldDiff{T}, r::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   @req parent(r) === function_field(df) "element and differential must have the same parent"
   return FunFldDiff(df.f//r)
 end
@@ -177,7 +177,7 @@ end
 
 Return the divisor corresponding to the differential form.
 """
-function divisor(df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
+function divisor(df::FunFldDiff{T}) where {T <: Generic.AbsSimpleFunctionFieldElem}
   F = function_field(df)
   x = separating_element(F)
   return divisor(df.f) - 2*pole_divisor(F(x)) + different_divisor(F)
@@ -199,11 +199,11 @@ end
 ################################################################################
 
 @doc raw"""
-    basis_of_differentials(F::FunctionField) -> Vector{FunFldDiff}
+    basis_of_differentials(F::AbsSimpleFunctionField) -> Vector{FunFldDiff}
 
 Return a basis of the first order differential forms of F.
 """
-function basis_of_differentials(F::Generic.FunctionField{T, U}) where {T, U}
+function basis_of_differentials(F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   x = separating_element(F)
   dx = differential(x)
 
@@ -216,5 +216,5 @@ function basis_of_differentials(F::Generic.FunctionField{T, U}) where {T, U}
   # We were using `map` before, but it cannot infer a concrete return type,
   #   due to the empty-input handling (it was returning Union{Vector{Any}, Vector{...}}).
   # So use a typed comprehension instead.
-  return FunFldDiff{Generic.FunctionFieldElem{T, U}}[FunFldDiff(r) for r in RR]
+  return FunFldDiff{Generic.AbsSimpleFunctionFieldElem{T, U}}[FunFldDiff(r) for r in RR]
 end

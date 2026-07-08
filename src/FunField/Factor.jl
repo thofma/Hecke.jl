@@ -1,7 +1,7 @@
 module FactorFF
 using ..Hecke
 
-function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem})
+function _isomorphic_separable_extension(F::Generic.AbsSimpleFunctionField{<:FinFieldElem})
   @assert !Hecke._is_separable(F)
   f = defining_polynomial(F)
   K = base_ring(f)
@@ -42,7 +42,7 @@ function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem
   return FF, FtoFF, FFtoF
 end
 
-function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
+function Hecke.norm(f::PolyRingElem{<: Generic.AbsSimpleFunctionFieldElem})
     K = base_ring(f)
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = elem_type(base_field(K))[tr(x) for x in P]
@@ -96,13 +96,13 @@ function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFie
   return is_absolutely_irreducible(to_mpoly(f))
 end
 
-function Hecke.factor(F::Generic.FunctionField{T, U}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T, U}}) where {T, U}
+function Hecke.factor(F::Generic.AbsSimpleFunctionField{T, U}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T, U}}) where {T, U}
   return factor(map_coefficients(F, f, cached = false))
 end
 
 # squarefree factorization a la Trager-Gianni
 
-function _induced_derivation(a::Generic.FunctionFieldElem)
+function _induced_derivation(a::Generic.AbsSimpleFunctionFieldElem)
   # Given F/k(T), extend the non-trivial deriviation from k(T) to F
   # see Gianni-Trager, Prop. 11.
   #
@@ -112,12 +112,12 @@ function _induced_derivation(a::Generic.FunctionFieldElem)
   return b
 end
 
-function _induced_derivation(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function _induced_derivation(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   # Gianni-Trager, Ex. 4
   return  map_coefficients(_induced_derivation, f; parent = parent(f))
 end
 
-function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return Hecke.Nemo._factor_squarefree_char_0(f)
   end
@@ -131,7 +131,7 @@ function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
   return Fac(map_coefficients(FFtoF, unit(fa); parent = parent(f)), D)
 end
 
-function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   @req Hecke._is_separable(base_ring(f)) "Defining polynomial must be separable"
   D = Dict{typeof(f), Int}()
   un = leading_coefficient(f)
@@ -160,14 +160,14 @@ function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem}
   return R
 end
 
-function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function Hecke.is_squarefree(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return is_unit(gcd(f, derivative(f)))
   end
   return all(e == 1 for (_, e) in factor_squarefree(f))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
+function Hecke.factor(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
   if !Hecke._is_separable(base_ring(f))
     FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
     return Hecke.AbstractAlgebra.Generic._transport_factor(factor, f, FtoFF, FFtoF)
@@ -175,7 +175,7 @@ function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
   return _factor_assume_separable(f)
 end
 
-function _factor_assume_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
+function _factor_assume_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
   lc = leading_coefficient(f)
   f = divexact(f, lc)
   fsqf = factor_squarefree(f)
@@ -189,7 +189,7 @@ function _factor_assume_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
 end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
-function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
+function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
   i = 0
   local N
   g = f

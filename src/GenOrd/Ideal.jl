@@ -773,11 +773,11 @@ end
 #
 ################################################################################
 
-function Hecke.numerator(a::Generic.FunctionFieldElem, O::GenOrd)
+function Hecke.numerator(a::Generic.AbsSimpleFunctionFieldElem, O::GenOrd)
   return integral_split(a,O)[1]
 end
 
-function Hecke.denominator(a::Generic.FunctionFieldElem, O::GenOrd)
+function Hecke.denominator(a::Generic.AbsSimpleFunctionFieldElem, O::GenOrd)
   return integral_split(a,O)[2]
 end
 
@@ -1326,7 +1326,7 @@ end
 #
 ################################################################################
 
-function Hecke.characteristic(R::EuclideanRingResidueField{<:Hecke.GenOrdElem{<:Generic.FunctionFieldElem}})
+function Hecke.characteristic(R::EuclideanRingResidueField{<:Hecke.GenOrdElem{<:Generic.AbsSimpleFunctionFieldElem}})
   return characteristic(function_field(base_ring(R)))
 end
 

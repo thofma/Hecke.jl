@@ -5,7 +5,7 @@
 ################################################################################
 
 
-mutable struct Divisor{S <: Generic.FunctionField, T1 <: PolyRing, T2 <: KInftyRing}
+mutable struct Divisor{S <: Generic.AbsSimpleFunctionField, T1 <: PolyRing, T2 <: KInftyRing}
   function_field::S
   finite_ideal::GenOrdFracIdl{S, T1}
   infinite_ideal::GenOrdFracIdl{S, T2}
@@ -27,7 +27,7 @@ mutable struct Divisor{S <: Generic.FunctionField, T1 <: PolyRing, T2 <: KInftyR
 
 end
 
-function trivial_divisor(F::Generic.FunctionField)
+function trivial_divisor(F::Generic.AbsSimpleFunctionField)
   return divisor(one(F))
 end
 
@@ -47,12 +47,12 @@ divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(GenOrdFracIdl(I), J)
 Return the divisor corresponding to the factorization of the ideal I
 """
 
-function divisor(I::GenOrdFracIdl{<: Generic.FunctionField, <: KInftyRing})
+function divisor(I::GenOrdFracIdl{<: Generic.AbsSimpleFunctionField, <: KInftyRing})
   Ofin = finite_maximal_order(function_field(order(I)))
   return divisor(ideal(Ofin, one(Ofin)), I)
 end
 
-function divisor(I::GenOrdFracIdl{<: Generic.FunctionField, <: PolyRing})
+function divisor(I::GenOrdFracIdl{<: Generic.AbsSimpleFunctionField, <: PolyRing})
   Oinf = infinite_maximal_order(function_field(order(I)))
   return divisor(I, ideal(Oinf, one(Oinf)))
 end
@@ -62,11 +62,11 @@ function divisor(I::GenOrdIdl)
 end
 
 @doc raw"""
-    divisor(f::Generic.FunctionFieldElem) -> Divisor
+    divisor(f::Generic.AbsSimpleFunctionFieldElem) -> Divisor
 
 Return the principal divisor consisting of the sum of zeroes and poles of f
 """
-function divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
+function divisor(f::Generic.AbsSimpleFunctionFieldElem{T, U}) where {T, U}
   @req !is_zero(f) "Element must be non-zero"
   F = parent(f)
 
@@ -75,21 +75,21 @@ function divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
 end
 
 @doc raw"""
-    zero_divisor(f::Generic.FunctionFieldElem) -> Divisor
+    zero_divisor(f::Generic.AbsSimpleFunctionFieldElem) -> Divisor
 
 Return the divisor consisting of the zeroes of f
 """
-function zero_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
+function zero_divisor(f::Generic.AbsSimpleFunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
   return lcm(divisor(f), trivial_divisor(F))
 end
 
 @doc raw"""
-    pole_divisor(f::Generic.FunctionFieldElem) -> Divisor
+    pole_divisor(f::Generic.AbsSimpleFunctionFieldElem) -> Divisor
 
 Return the divisor consisting of the poles of f
 """
-function pole_divisor(f::Generic.FunctionFieldElem{T, U}) where {T, U}
+function pole_divisor(f::Generic.AbsSimpleFunctionFieldElem{T, U}) where {T, U}
   F = parent(f)
   return lcm(divisor(inv(f)), trivial_divisor(F))
 end
@@ -113,7 +113,7 @@ end
 ################################################################################
 
 @doc raw"""
-    function_field(D::Divisor) -> FunctionField
+    function_field(D::Divisor) -> AbsSimpleFunctionField
 
 Return the function field to which D belongs
 """
@@ -132,7 +132,7 @@ function ideals(D::Divisor)
 end
 
 @doc raw"""
-    function_field(O::GenOrd) -> FunctionField
+    function_field(O::GenOrd) -> AbsSimpleFunctionField
 
 Return the function field of O.
 """
@@ -141,32 +141,32 @@ function function_field(O::GenOrd)
 end
 
 @doc raw"""
-    constant_field(K::FunctionField) -> Field
+    constant_field(K::AbsSimpleFunctionField) -> Field
 
 Return the field of constants of K.
 """
-function constant_field(K::AbstractAlgebra.Generic.FunctionField)
+function constant_field(K::AbstractAlgebra.Generic.AbsSimpleFunctionField)
   return base_ring(base_ring(K))
 end
 
 @doc raw"""
-    finite_maximal_order(K::FunctionField) -> GenOrd
+    finite_maximal_order(K::AbsSimpleFunctionField) -> GenOrd
 
 Return the finite maximal order of K
 """
-@attr GenOrd{Generic.FunctionField{T, U}, parent_type(U)} function
-finite_maximal_order(K::Generic.FunctionField{T, U}) where {T, U}
+@attr GenOrd{Generic.AbsSimpleFunctionField{T, U}, parent_type(U)} function
+finite_maximal_order(K::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   kx = parent(numerator(gen(base_ring(K))))
   return integral_closure(kx, K)
 end
 
 @doc raw"""
-    infinite_maximal_order(K::FunctionField) -> GenOrd
+    infinite_maximal_order(K::AbsSimpleFunctionField) -> GenOrd
 
 Return the infinite maximal order of K
 """
-@attr GenOrd{Generic.FunctionField{T, U}, KInftyRing{T, U}} function
-infinite_maximal_order(K::Generic.FunctionField{T, U}) where {T, U}
+@attr GenOrd{Generic.AbsSimpleFunctionField{T, U}, KInftyRing{T, U}} function
+infinite_maximal_order(K::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   R = localization(base_ring(K), degree)
   return integral_closure(R, K)
 end
@@ -536,12 +536,12 @@ end
 #
 ################################################################################
 @doc raw"""
-    different_divisor(F::FunctionField) -> Divisor
+    different_divisor(F::AbsSimpleFunctionField) -> Divisor
 
 Return the different divisor of F.
 """
-@attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
-different_divisor(K::Generic.FunctionField{T, U}) where {T, U}
+@attr Divisor{Generic.AbsSimpleFunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+different_divisor(K::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   return divisor(different(finite_maximal_order(K)), different(infinite_maximal_order(K)))
 end
 
@@ -561,12 +561,12 @@ end
 #
 ################################################################################
 @doc raw"""
-    canonical_divisor(F::FunctionField) -> Divisor
+    canonical_divisor(F::AbsSimpleFunctionField) -> Divisor
 
 Return the canonical divisor of F.
 """
-@attr Divisor{Generic.FunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
-canonical_divisor(K::Generic.FunctionField{T, U}) where {T, U}
+@attr Divisor{Generic.AbsSimpleFunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+canonical_divisor(K::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   @req _is_separable(K) "Currently assumes separable extension"
 
   dx = differential(separating_element(K))
@@ -574,11 +574,11 @@ canonical_divisor(K::Generic.FunctionField{T, U}) where {T, U}
 end
 
 @doc raw"""
-    genus(F::FunctionField) -> Int
+    genus(F::AbsSimpleFunctionField) -> Int
 
 Return the genus of F.
 """
-@attr Int function genus(F::AbstractAlgebra.Generic.FunctionField)
+@attr Int function genus(F::AbstractAlgebra.Generic.AbsSimpleFunctionField)
   @req _is_separable(F) "Currently assumes separable extension"
   # g = (degree(K) + 2) / 2, where K is the canonical divisor.
   # Since K = (dx) = Diff_{F/k(x)} - 2(x)_inf, we have
@@ -714,11 +714,11 @@ end
 # NOTE: we use the "is separable" check in plenty of places
 #   and it turned out that this "looking trivial" check generates quite a lot
 #   of memory garbage.
-@attr Bool function _is_separable(F::Generic.FunctionField)
+@attr Bool function _is_separable(F::Generic.AbsSimpleFunctionField)
   return is_separable(defining_polynomial(F))
 end
 
-function separating_element(F::Generic.FunctionField)
+function separating_element(F::Generic.AbsSimpleFunctionField)
   # TODO: currently we support ONLY extensions with separable defining polynomial
   @req _is_separable(F) "Currently assumes separable extension"
 
