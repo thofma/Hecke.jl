@@ -10,7 +10,7 @@
 #         "Arithmetic variety of moduli for genus two",
 #         Ann. Math. 72 (1960), 612-649.
 #
-# [Mes91]  J.-F. Mestre, 
+# [Mes91]  J.-F. Mestre,
 #          "Construction de courbes de genre 2 \`a partir de leurs modules",
 #          in "Effective Methods in Algebraic Geometry",
 #          vol 94 of Progress in Mathematics, 313-334, Birkhauser, 1991.
@@ -19,8 +19,8 @@
 #            "Elliptic subfields and automorphisms of genus 2 function fields",
 #            Algebra, Arithmetic and Geometry with Applications (West Lafayette, IN, 2000),703-723,
 #            Springer, 2004
-# 
-# [CaNaPu2005] G. Cardona, E. Nart and J. Pujolas, 
+#
+# [CaNaPu2005] G. Cardona, E. Nart and J. Pujolas,
 #              "Curves of genus two over fields of even characteristic",
 #               Mathematische Zeitschrift, 250, 177-201, Springer, 2005
 #
@@ -33,18 +33,18 @@
 #            "Zeta Function and Cryptographic Exponent of Supersingular
 #             Curves of Genus 2",  ArXiv e-prints 0704.1951C, 2007.
 #
-# [LRS20] R. Lercier, C. Ritzenthaler, and J. Sijsling 
+# [LRS20] R. Lercier, C. Ritzenthaler, and J. Sijsling
 #            "hyperelliptic, a Magma repository for reconstruction and isomorphisms of hyperelliptic curves.
 #            2020
 #            Note: https://github.com/JRSijsling/hyperelliptic
 #
-# [BLRS26] T.Bouchet, R. Lercier, C. Ritzenthaler, J. Sijsling, 
+# [BLRS26] T.Bouchet, R. Lercier, C. Ritzenthaler, J. Sijsling,
 #          "Functionality for isomorphism classes of curves and hypersurfaces"
 #
 ################################################################################
 
 @doc raw"""
-    quadratic_twist(C::HypellCrv{FinFieldElem}) 
+    quadratic_twist(C::HypellCrv{FinFieldElem})
 
 Return a quadratic twist of the hyperelliptic curve C.
 """
@@ -55,9 +55,7 @@ function quadratic_twist(C::HypellCrv{T}) where T <: FinFieldElem
     f,h = hyperelliptic_polynomials(C)
     if is_odd(degree(F))
       u = one(F)
-    else 
-      println(g2_invs)
-      println("HIT")
+    else
       u = Hecke.normal_basis(base_field(F), F)
     end
     return hyperelliptic_curve([f + u*(h^2), h])
@@ -85,7 +83,7 @@ function g2_models_FF_char2_C2(g2_invs::Vector{T}, all_twists::Bool = true) wher
   g1, g2, g3 = g2_invs
   R, x = polynomial_ring(F, :x)
   if all_twists
-    o = trace_one_element(F) 
+    o = trace_one_element(F)
   end
 
   if g1 == 0
@@ -96,10 +94,10 @@ function g2_models_FF_char2_C2(g2_invs::Vector{T}, all_twists::Bool = true) wher
 	  H2 = hyperelliptic_curve(g2*x^5 + g3*x^3 + o*x^2 + x, x)
 	  return [H1, H2]
   end
-    
+
   fac = [(f,d) for (f,d) in  factor(x^3 + g3*x^2 + g2*x + g1)]
   splitF = maximum(map(f -> degree(f[1]), fac))
-  if splitF == 1 
+  if splitF == 1
     roots = []
     for f in fac
       for i in (1:f[2])
@@ -132,7 +130,7 @@ function g2_models_FF_char2_C2(g2_invs::Vector{T}, all_twists::Bool = true) wher
 	  H2 = hyperelliptic_curve((a*x + o)*(x^2 + x + v/u^2)^2 + (u*x + u)*(x^2 + x + v/u^2), x^2 + x + v/u^2)
 	  return [H1, H2]
   end
-  
+
   if g2 == g3^2
     s = b = g1 + g2*g3
     t = a = 0
@@ -144,7 +142,7 @@ function g2_models_FF_char2_C2(g2_invs::Vector{T}, all_twists::Bool = true) wher
     c = (g2 + g3^2)^3*(g1*(g2 + g3^2)^2 + g3*(g1 + g3^3)^2)/den2^2
   end
   H1 = hyperelliptic_curve(a*x^5 + b*x^4 + (c + a*t)*x^3 + (a*s + b*t)*x^2 + (c*t + b*s)*x + c*s, x^3 + t*x + s)
-  if !all_twists 
+  if !all_twists
     return [H1]
   end
   H2 = hyperelliptic_curve(o*x^6 + a*x^5 + (2*o*t + b)*x^4 + (2*o*s + a*t + c)*x^3 + (a*s + t*(o*t + b))*x^2 + (s*(o*t + b) + t*(o*s + c))*x + s*(o*s + c), x^3 + t*x + s)
@@ -158,13 +156,13 @@ function g2_models_FF_char2_C2xC2(g2_invs::Vector{T}, all_twists::Bool = true) w
   a = g3
   b = c = sqrt(g2)
   H1 = hyperelliptic_curve(a*x^5 + 2*a*x^4 + a*x^3 + c*x^2 + c*x, x^2 + x)
-  
+
   if !all_twists
     return [H1]
   end
   o = trace_one_element(F)
   H2 = hyperelliptic_curve(a*x^5 + 2*a*x^4 + (2*a*o + a)*x^3 + (c + 2*a*o)*x^2 + (c + a*o^2)*x + c*o, x^2 + x + o)
-  
+
   if trace(g3) == 0
     H3 = hyperelliptic_curve(a*x^5 + (o + 2*a)*x^4 + (2*o + a)*x^3 + (c + o)*x^2 + c*x,x^2 + x)
     H4 = hyperelliptic_curve(a*x^5 + (o + 2*a)*x^4 + (2*o + 2*a*o + a)*x^3 + (o^2 + c + o + a*o + (o + a)*o)*x^2 + (o^2 + c + (o + a*o)*o)*x + (o^2 + c)*o, x^2 + x + o)
@@ -183,7 +181,7 @@ function g2_models_FF_char2_C2xS3(g2_invs::Vector{T}, all_twists::Bool = true) w
   a = b = c = g3
 
   H1 = hyperelliptic_curve(a*x^5 + 2*a*x^4 + a*x^3 + c*x^2 + c*x, x^2 + x)
-  if !all_twists 
+  if !all_twists
     return [H1]
   end
 
@@ -200,15 +198,15 @@ function g2_models_FF_char2_C2xS3(g2_invs::Vector{T}, all_twists::Bool = true) w
 
   u = rand(F)
   while !is_irreducible(x^3 + u*x + u)
-    u = rand(F) 
+    u = rand(F)
   end
 
-  t = s = u 
+  t = s = u
   a = b = g3*u
   c = g3*u*(u + 1)
 	Hc1 = hyperelliptic_curve(a*x^5 + b*x^4 + (c + a*t)*x^3 + (a*s + b*t)*x^2 + (c*t + b*s)*x + c*s, x^3 + t*x + s)
 	Hc2 = hyperelliptic_curve(o*x^6 + a*x^5 + (2*o*t + b)*x^4 + (2*o*s + a*t + c)*x^3 + (a*s + t*(o*t + b))*x^2 + (s*(o*t + b) + t*(o*s + c))*x + s*(o*s + c), x^3 + t*x + s)
-	
+
   cubs = [Hc1, Hc2]
   return vcat(quads, cubs)
 end
@@ -217,9 +215,9 @@ function g2_models_FF_char2_C2_mixed(g2_invs::Vector{T}, all_twists::Bool = true
   F = parent(g2_invs[1])
   _, g2, _ = g2_invs
   R, x = polynomial_ring(F, :x)
- 
+
   H1 = hyperelliptic_curve(g2*x^5 + x, x)
-  if !all_twists 
+  if !all_twists
     return [H1]
   end
 
@@ -235,7 +233,7 @@ function g2_models_FF_char2_M32(g2_invs::Vector{T}, all_twists::Bool = true) whe
   R, x = polynomial_ring(F, :x)
 
   sqrt_g3 = sqrt(g3)
-  if !all_twists 
+  if !all_twists
     return [hyperelliptic_curve(sqrt_g3*x^5 + sqrt_g3*x^3, R(1))]
   end
 
@@ -249,9 +247,9 @@ function g2_models_FF_char2_M32(g2_invs::Vector{T}, all_twists::Bool = true) whe
   wa = map(x-> V(absolute_coordinates(E(x))), wa)
   S, phi = sub(V, wa)
   W, pi = quo(V, S)
-  
 
- 
+
+
 
   K = [P([preimage(pi, w)[i] for i in (1:degree(F)) ])(u) for w in W]
   twists = HypellCrv{T}[]
@@ -263,7 +261,7 @@ function g2_models_FF_char2_M32(g2_invs::Vector{T}, all_twists::Bool = true) whe
 	  for k in KE
 	    if trace(sqrt_g3*k^5 + b*k^4 + sqrt_g3*k^3) == GF(2)(1)
         notwists = true
-        break 
+        break
       end
 	  end
 
@@ -297,7 +295,7 @@ function g2_models_FF_char2_M160(g2_invs::Vector{T}, all_twists::Bool = true) wh
       return [H1, H2, H3]
     end
     F4 = GF(4)
-    phi = embed(F4, F) 
+    phi = embed(F4, F)
     u = phi(gen(F4))
     H3 = hyperelliptic_curve(x^5 + u*x^4, R(1))
     H4 = hyperelliptic_curve(x^5 + (u + 1)*x^4, R(1))
@@ -350,7 +348,7 @@ function g2_models_FF_char3_D12(igusa_invs::Vector{T}, all_twists::Bool = true) 
 
   H1 = hyperelliptic_curve(x^6 + t*x^4 + (t - 1)*x^3 + t*x^2 + 1)
   twists = [H1]
-  if !all_twists 
+  if !all_twists
     return twists
   end
 
@@ -382,7 +380,7 @@ function g2_models_FF_char3_D12(igusa_invs::Vector{T}, all_twists::Bool = true) 
   b = -a^q - a
   c = a^q
   d = -c^q - c
-  
+
   Ctwist = hyperelliptic_transform(base_change(GF_q3, H1),[a,b,c,d])[1]
   f, h = hyperelliptic_polynomials(Ctwist)
   f = map_coefficients(coerce_to_base_field, f)
@@ -404,8 +402,8 @@ function g2_models_FF_char5_G240(g2_invs::Vector{T}, all_twists::Bool = true) wh
 
   H1 = hyperelliptic_curve(x^5 - x)
   twists = [H1]
-  if !all_twists 
-    return twists 
+  if !all_twists
+    return twists
   end
 
   prim = primitive_element(F)
@@ -488,16 +486,16 @@ function g2_models_FF_2D12(g2_invs::Vector{T}, all_twists::Bool = true) where T 
   prim = primitive_element(F)
   t = prim
   H2 = hyperelliptic_curve(x^6 - t^3)
-  push!(twists, H2)  
+  push!(twists, H2)
   push!(twists, quadratic_twist(H2))
 
   H3 = hyperelliptic_curve(x*(t*x^2 + 3)*(3*t*x^2 + 1))
-  push!(twists, H3)  
+  push!(twists, H3)
   push!(twists, quadratic_twist(H3))
 
   GF_q4 = GF(q^4)
   t = primitive_element(GF_q4)
-  a = t^(div(q^2 + 1,2)) 
+  a = t^(div(q^2 + 1,2))
   b = a^q
   c = -b
   d = a
@@ -521,9 +519,9 @@ function g2_models_FF_2D12(g2_invs::Vector{T}, all_twists::Bool = true) where T 
   else
     GF_q6 = GF(q^6)
     t = primitive_element(GF_q6)
-    a = t^(div(q^4 + q^2 + 1, 3)) 
-    b = a^4 
-    c = a^q*t^(div(q^6 - 1, 3)) 
+    a = t^(div(q^4 + q^2 + 1, 3))
+    b = a^4
+    c = a^q*t^(div(q^6 - 1, 3))
     d = b^q*t^(div(q^6 - 1, 3))
 
     R6, s = polynomial_ring(GF_q6, :s)
@@ -564,12 +562,12 @@ function g2_models_FF_G48(g2_invs::Vector{T}, all_twists::Bool = true) where T <
 
   H1 = hyperelliptic_curve(x^5 - x)
   twists = [H1]
-  if !all_twists 
+  if !all_twists
     return twists
   end
 
   push!(twists, quadratic_twist(H1))
-  
+
   q = length(F)
   prim = primitive_element(F)
   test = is_square(F(-1))
@@ -621,7 +619,7 @@ function g2_models_FF_G48(g2_invs::Vector{T}, all_twists::Bool = true) where T <
     t = primitive_element(GF_q4)
     a = t^(div(q^2 + 1,2))
     b = a^q
-    c = -b 
+    c = -b
     d = a
     Ctwist = hyperelliptic_transform(base_change(GF_q4, H1), [a,b,c,d])[1]
     f4, _ = hyperelliptic_polynomials(Ctwist)
@@ -633,7 +631,7 @@ function g2_models_FF_G48(g2_invs::Vector{T}, all_twists::Bool = true) where T <
 
     GF_q8 = GF(q^8)
     t = primitive_element(GF_q8)
-    a = t^(div((q^2 + 1)*(q^4 + 1), 4)) 
+    a = t^(div((q^2 + 1)*(q^4 + 1), 4))
     i = -a^(q^2 - 1)
     b = a^5
     c = a^q/i
@@ -722,7 +720,7 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
 
   H1 = hyperelliptic_curve(f)
   twists = [H1]
-  if !all_twists 
+  if !all_twists
     return twists
   end
 
@@ -778,7 +776,7 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
     f = change_coefficient_ring(F, f)
     f = f(x)
     H3 = hyperelliptic_curve(f)
-    push!(twists, H3) 
+    push!(twists, H3)
     push!(twists, quadratic_twist(H3))
     return twists
   end
@@ -820,7 +818,7 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
     a = GF_q2(a)
 	  theta1 = (t + sqr)/2
     theta2 = (t - sqr)/2
-    
+
     f = (s - theta1)^6/theta1^3 - (s^2 - t*s + 1/A)^3 + a*theta1^3*(s - theta2)^6
     f = change_coefficient_ring(F, f)
     f = f(x)
@@ -867,7 +865,7 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
   J2, J4, J6, _, J10 = igusa_invs
   p = characteristic(F)
 
-  if p == 3 
+  if p == 3
 	  t =  - J2^2/J4
   elseif p == 5
 	  t = J4/J2^2 + F(1)
@@ -881,7 +879,7 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     f, gamma = reduce_binary_form(f)
   end
 
-  if !all_twists 
+  if !all_twists
     return [hyperelliptic_curve(f)]
   end
 
@@ -890,7 +888,7 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     z0 = 1/sqrt(t)
     s0 = 0
 
-    H1 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 + 
+    H1 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 +
         v^2*(3 - 10*t*z0)*x^2 + 8*s0*t*v^3*x + v^3*(1 + 2*t*z0))
 
     prim = primitive_element(F)
@@ -899,20 +897,20 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     while true
       v = rand(F)
       if v == 0 || !is_square(v)
-        continue 
+        continue
       end
       z0 = rand(F)
       if z0^2*t == 1 || !is_square(1 - z0^2*t)
         continue
       end
       if is_square((1 - z0*sqrt(t))/2)
-        continue 
+        continue
       end
       break
     end
     s0 = sqrt((1 - z0^2*t)/v/t)
 
-    H2 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 + 
+    H2 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 +
         v^2*(3 - 10*t*z0)*x^2 + 8*s0*t*v^3*x + v^3*(1 + 2*t*z0))
     push!(twists, H2)
 
@@ -920,9 +918,9 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     s0 = 0
     z0 = 1/sqrt(t)
 
-    H3 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 + 
+    H3 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 +
         v^2*(3 - 10*t*z0)*x^2 + 8*s0*t*v^3*x + v^3*(1 + 2*t*z0))
-    H4 = hyperelliptic_curve((1 - 2*t*z0)*x^6 + (8*s0*t*v)*x^5 + v*(3 + 10*t*z0)*x^4 + 
+    H4 = hyperelliptic_curve((1 - 2*t*z0)*x^6 + (8*s0*t*v)*x^5 + v*(3 + 10*t*z0)*x^4 +
         v^2*(3 + 10*t*z0)*x^2 - 8*s0*t*v^3*x + v^3*(1 - 2*t*z0))
     push!(twists, H3)
     push!(twists, H4)
@@ -933,11 +931,11 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
   R, (x1, x2, x3) = polynomial_ring(F, [:x1,:x2, :x3])
   v = 1
   C = conic_curve(x1^2*t*v + x2^2*t - x3^2)
-  P = find_rational_point(C)
+  P = rational_point(C)
   s0 = P[1]
   z0 = P[2]
 
-  H5 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 + 
+  H5 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 +
 	v^2*(3 - 10*t*z0)*x^2 + 8*s0*t*v^3*x + v^3*(1 + 2*t*z0))
 
   prim = primitive_element(F)
@@ -946,11 +944,11 @@ function g2_models_FF_D8(igusa_invs::Vector{T}, all_twists::Bool = true) where T
 
   v = prim
   C = conic_curve(x1^2*t*v + x2^2*t - x3^2)
-  P = find_rational_point(C)
+  P = rational_point(C)
   s0 = P[1]
   z0 = P[2]
 
-  H6 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 + 
+  H6 = hyperelliptic_curve((1 + 2*t*z0)*x^6 - (8*s0*t*v)*x^5 + v*(3 - 10*t*z0)*x^4 +
   v^2*(3 - 10*t*z0)*x^2 + 8*s0*t*v^3*x + v^3*(1 + 2*t*z0))
   push!(twists, H6)
 
@@ -1003,7 +1001,7 @@ function g2_models_FF_V4(igusa_invs::Vector{T}, all_twists::Bool = true) where T
   end
   H1 = hyperelliptic_curve(f)
   twists = [H1]
-  if !all_twists 
+  if !all_twists
     return twists
   end
 
@@ -1079,31 +1077,31 @@ function g2_models_FF_C2(igusa_invs::Vector{T}, all_twists::Bool = true) where T
 		      2*J4^5*x2^3+J6*J4^2*x1^3+4*x1*J6*J4^3*x2^2+4*x3*x1^2*R
 	  else
       L = J2*x1^2+((J4*J2^2+2*J4^2+J2^4+4*J2*J6)*x2+(2*J2*J4^2+J6*J4+4*J2^5)*x3)*x1 +
-      (J4^2*J2^3+4*J2^7+3*J6*J4^2+3*J4*J2^5+2*J4^3*J2)*x2^2+(3*J2^3*J10 + 
-      (3*J4+3*J2^2)*J6^2+(J2*J4^2+4*J2^5+J2^3*J4)*J6+2*J2^8+2*J2^6*J4+3*J2^2*J4^3+2*J2^4*J4^2)*x3*x2 + 
+      (J4^2*J2^3+4*J2^7+3*J6*J4^2+3*J4*J2^5+2*J4^3*J2)*x2^2+(3*J2^3*J10 +
+      (3*J4+3*J2^2)*J6^2+(J2*J4^2+4*J2^5+J2^3*J4)*J6+2*J2^8+2*J2^6*J4+3*J2^2*J4^3+2*J2^4*J4^2)*x3*x2 +
       ((4*J4*J2^2+3*J2^4)*J10+2*J6^3+3*J6^2*J2^3+(2*J4*J2^4+3*J2^6+3*J4^2*J2^2)*J6 +
       4*J2^9+J4^3*J2^3)*x3^2
 
-	    M = (3*J4*J2+3*J2^3)*x1^3+(((2*J2^3+2*J4*J2)*J6+3*J4*J2^4+J2^6+2*J4^3+2*J4^2*J2^2)*x2 + 
-      (4*J6^2*J2+(J4^2+3*J4*J2^2+J2^4)*J6+2*J4^3*J2+J4^2*J2^3+4*J4*J2^5+J2^7)*x3)*x1^2 + 
+	    M = (3*J4*J2+3*J2^3)*x1^3+(((2*J2^3+2*J4*J2)*J6+3*J4*J2^4+J2^6+2*J4^3+2*J4^2*J2^2)*x2 +
+      (4*J6^2*J2+(J4^2+3*J4*J2^2+J2^4)*J6+2*J4^3*J2+J4^2*J2^3+4*J4*J2^5+J2^7)*x3)*x1^2 +
       ((4*J10*J2^4+2*J6^2*J2^3+(4*J2^6+3*J4^3+J4^2*J2^2+2*J4*J2^4)*J6+2*J4^2*
-      J2^5+J4^4*J2+3*J4^3*J2^3+J4*J2^7)*x2^2+((4*J2^5+3*J2^3*J4)*J10+(J4*J2^2+2*J2^4 + 
-      3*J4^2)*J6^2+(3*J4*J2^5+3*J2^7+2*J4^2*J2^3+J4^3*J2)*J6+2*J2^10+2*J4^4*J2^2 + 
-      J4*J2^8+3*J4^2*J2^6)*x3*x2+((4*J4^2*J2^2+J4*J2^4+3*J6*J2^3)*J10 + 
-      (2*J4+4*J2^2)*J6^3+(4*J2*J4^2+2*J2^5)*J6^2+(J2^2*J4^3+2*J2^4*J4^2+J2^6*J4)*J6 + 
-      3*J2^11+2*J4^3*J2^5+J4^4*J2^3+2*J4^2*J2^7)*x3^2)*x1+((J4*J2^5+J2^7+J6*J2^4)*J10 + 
-      (3*J2^6+2*J4^2*J2^2+J4*J2^4)*J6^2+(3*J4^3*J2^3+J2^9+2*J4^2*J2^5)*J6+2*J4*J2^10+2*J2^12 + 
+      J2^5+J4^4*J2+3*J4^3*J2^3+J4*J2^7)*x2^2+((4*J2^5+3*J2^3*J4)*J10+(J4*J2^2+2*J2^4 +
+      3*J4^2)*J6^2+(3*J4*J2^5+3*J2^7+2*J4^2*J2^3+J4^3*J2)*J6+2*J2^10+2*J4^4*J2^2 +
+      J4*J2^8+3*J4^2*J2^6)*x3*x2+((4*J4^2*J2^2+J4*J2^4+3*J6*J2^3)*J10 +
+      (2*J4+4*J2^2)*J6^3+(4*J2*J4^2+2*J2^5)*J6^2+(J2^2*J4^3+2*J2^4*J4^2+J2^6*J4)*J6 +
+      3*J2^11+2*J4^3*J2^5+J4^4*J2^3+2*J4^2*J2^7)*x3^2)*x1+((J4*J2^5+J2^7+J6*J2^4)*J10 +
+      (3*J2^6+2*J4^2*J2^2+J4*J2^4)*J6^2+(3*J4^3*J2^3+J2^9+2*J4^2*J2^5)*J6+2*J4*J2^10+2*J2^12 +
       3*J4^3*J2^6+4*J4^5*J2^2+3*J4^2*J2^8)*x2^3+(((4*J2^5+2*J2^3*J4)*J6+J2^6*J4+4*J2^8 +
-      J2^2*J4^3+4*J2^4*J4^2)*J10+(2*J2^4+2*J4*J2^2)*J6^3+(J4*J2^5+4*J2^7+J4^2*J2^3 + 
-      4*J4^3*J2)*J6^2+(4*J2^4*J4^3+2*J2^10+2*J4^2*J2^6+4*J4^4*J2^2+3*J4*J2^8)*J6 + 
-      J4^5*J2^3+3*J4^2*J2^9+3*J4^3*J2^7+2*J2^13)*x3*x2^2+((J6^2*J2^3+(J4^2*J2^2+2*J2^6 + 
-      2*J4*J2^4)*J6+2*J4^3*J2^3+J2^9+4*J4*J2^7)*J10+3*J6^4*J2^2+(2*J2^3*J4+J2^5 + 
-      4*J2*J4^2)*J6^3+(3*J2^8+4*J2^4*J4^2+3*J2^2*J4^3)*J6^2+(J2^11 + 
-      J4*J2^9+3*J4^4*J2^3)*J6+2*J4^5*J2^4+3*J4^4*J2^6+2*J4^2*J2^10)*x3^2*x2 + 
-      (3*J10^2*J2^5+((4*J4*J2^2+2*J2^4)*J6^2+(3*J4*J2^5+3*J4^2*J2^3+J2^7)*J6 + 
-      J4^2*J2^6+3*J2^4*J4^3+2*J4*J2^8+3*J2^10)*J10+(J2^3+J4*J2)*J6^4+(J4^2*J2^2 + 
-      3*J2^6+3*J4*J2^4)*J6^3+(2*J4^2*J2^5+2*J4^3*J2^3+4*J4*J2^7+J2^9)*J6^2 + 
-      (3*J4^2*J2^8+4*J4^3*J2^6+4*J4^4*J2^4)*J6+J2^15+3*J4*J2^13+3*J4^2*J2^11 + 
+      J2^2*J4^3+4*J2^4*J4^2)*J10+(2*J2^4+2*J4*J2^2)*J6^3+(J4*J2^5+4*J2^7+J4^2*J2^3 +
+      4*J4^3*J2)*J6^2+(4*J2^4*J4^3+2*J2^10+2*J4^2*J2^6+4*J4^4*J2^2+3*J4*J2^8)*J6 +
+      J4^5*J2^3+3*J4^2*J2^9+3*J4^3*J2^7+2*J2^13)*x3*x2^2+((J6^2*J2^3+(J4^2*J2^2+2*J2^6 +
+      2*J4*J2^4)*J6+2*J4^3*J2^3+J2^9+4*J4*J2^7)*J10+3*J6^4*J2^2+(2*J2^3*J4+J2^5 +
+      4*J2*J4^2)*J6^3+(3*J2^8+4*J2^4*J4^2+3*J2^2*J4^3)*J6^2+(J2^11 +
+      J4*J2^9+3*J4^4*J2^3)*J6+2*J4^5*J2^4+3*J4^4*J2^6+2*J4^2*J2^10)*x3^2*x2 +
+      (3*J10^2*J2^5+((4*J4*J2^2+2*J2^4)*J6^2+(3*J4*J2^5+3*J4^2*J2^3+J2^7)*J6 +
+      J4^2*J2^6+3*J2^4*J4^3+2*J4*J2^8+3*J2^10)*J10+(J2^3+J4*J2)*J6^4+(J4^2*J2^2 +
+      3*J2^6+3*J4*J2^4)*J6^3+(2*J4^2*J2^5+2*J4^3*J2^3+4*J4*J2^7+J2^9)*J6^2 +
+      (3*J4^2*J2^8+4*J4^3*J2^6+4*J4^4*J2^4)*J6+J2^15+3*J4*J2^13+3*J4^2*J2^11 +
       J4^4*J2^7+2*J4^3*J2^9)*x3^3
     end
     P = parametrization(conic_curve(L))
@@ -1111,7 +1109,7 @@ function g2_models_FF_C2(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     f = evaluate(M, [P[1],P[2],P[3]])
     g = evaluate(f, [x, Kx(1)])
     H = hyperelliptic_curve(g)
-  else 
+  else
     H = reconstruct_from_igusa_C2(igusa_invs)
   end
   if !all_twists

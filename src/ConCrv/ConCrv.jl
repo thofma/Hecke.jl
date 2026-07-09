@@ -2,7 +2,7 @@
 #
 #          ConCrv/ConCrv.jl : Conics over general fields
 #
-# (C) 2025 
+# (C) 2025
 # References:
 #
 # [CR06] J. Cremona, D. Rusin,
@@ -29,7 +29,7 @@ mutable struct ConCrv{T}
 
   function ConCrv{T}(coeffs::Vector{T},check::Bool = true) where {T}
     K = parent(coeffs[1])
-    
+
     if length(coeffs) == 3
       append!(coeffs, [zero(K), zero(K), zero(K)])
     elseif length(coeffs) !=6
@@ -131,7 +131,7 @@ function conic_curve(x::Vector{T}; check::Bool = true) where T <: RingElem
   return ConCrv{T}(x, check)
 end
 
-function conic_curve(K::Field, x::Vector{T}; check::Bool = true) where T 
+function conic_curve(K::Field, x::Vector{T}; check::Bool = true) where T
   if T === elem_type(K)
     return conic_curve(x, check = check)
   else
@@ -154,7 +154,7 @@ function conic_curve(K::Field, f::MPolyRingElem{T}; check::Bool = true) where T 
 
 end
 
-function conic_curve(M::MatElem{T}; check::Bool = true) where T 
+function conic_curve(M::MatElem{T}; check::Bool = true) where T
   if !is_symmetric(M)
     error("Matrix is not symmetric.")
   end
@@ -162,7 +162,7 @@ function conic_curve(M::MatElem{T}; check::Bool = true) where T
   return ConCrv{T}(L, check)
 end
 
-function conic_curve(K::Field, M::MatElem{T}; check::Bool = true) where T 
+function conic_curve(K::Field, M::MatElem{T}; check::Bool = true) where T
   if T === elem_type(K)
     return conic_curve(x, check = check)
   else
@@ -339,11 +339,20 @@ end
 
 
 @doc raw"""
-    has_rational_point(C::ConCrv) -> Bool, ConCrvPt
+    has_rational_point_with_point(C::ConCrv) -> Bool, ConCrvPt
 
-Find a rational point on C. Returns
+Returns a pair `(fl, P)`, consisting of a flag `fl` indicating whether `C` has
+a rational point and a rational point `P`.
 """
-function has_rational_point(C::ConCrv{T}) where T<:Union{QQFieldElem, NumFieldElem}
+function has_rational_point_with_point(C::ConCrv)
+  return _has_rational_point(C)
+end
+
+function has_rational_point(C)
+  return _has_rational_point(C)[1]
+end
+
+function _has_rational_point(C::ConCrv)
   K = base_field(C)
   Q = quadratic_space(K, matrix(C))
   bool, sol = is_isotropic_with_vector(Q)
@@ -354,19 +363,17 @@ function has_rational_point(C::ConCrv{T}) where T<:Union{QQFieldElem, NumFieldEl
   end
 end
 
-function has_rational_point(C::ConCrv{FqFieldElem})
-  return true, find_rational_point(C)
+function _has_rational_point(C::ConCrv{T}) where {T <: FinFieldElem}
+  return true, rational_point(C)
 end
 
-
-
 @doc raw"""
-    find_rational_point(C::ConCrv) -> ConCrvPt
+    rational_point(C::ConCrv) -> ConCrvPt
 
 Find a rational point on C or return an error if no point exists.
 """
-function find_rational_point(C::ConCrv{T}) where T
-  bool, P = has_rational_point(C)
+function rational_point(C::ConCrv{T}) where T
+  bool, P = has_rational_point_with_point(C)
   if bool
     return P
   else
@@ -374,9 +381,9 @@ function find_rational_point(C::ConCrv{T}) where T
   end
 end
 
-function find_rational_point(C::ConCrv{FqFieldElem})
+function rational_point(C::ConCrv{T}) where {T <: FinFieldElem}
   K = base_field(C)
-  Kt,t = polynomial_ring(K, "t")
+  Kt,t = polynomial_ring(K, "t"; cached = false)
   a11, a22, a33, a12, a23, a13 = C.coeffs
   while true
     x = rand(K)
@@ -392,7 +399,7 @@ end
 #Part of the algorithm for finding rational points over function fields (See [CR06])
 function reduce_conic(v)
   a, b, c = v
-  
+
   ad, bd, cd = map(denominator, [a,b,c])
   w = lcm([ad, bd, cd])
   a, b, c = map(x -> w*x, [a, b, c])
@@ -413,7 +420,7 @@ function reduce_conic(v)
     a2 *= p^(div(e, 2))
   end
   mu = a2 * mu
-  nu = a2 * nu 
+  nu = a2 * nu
 
   #Compute b1, b2
   b1 = facs_b.unit
@@ -423,7 +430,7 @@ function reduce_conic(v)
     b2 *= p^(div(e, 2))
   end
   lambda = b2 * lambda
-  nu = b2 * nu 
+  nu = b2 * nu
 
   #Compute c1, c2
   c1 = facs_c.unit
@@ -452,25 +459,25 @@ end
 
 #Implements the algorithm in [CR06].
 #Can probably be tweaked to also work over rational function fields with more variables.
-function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}}) where {S,T}
+function _has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}}) where {S,T}
   Kt_FF = base_field(conic)
   K = base_ring(Kt_FF)
   t_FF = gen(Kt_FF)
   M1 = matrix(conic)
   M,  U = Hecke._gram_schmidt(M1, identity)
-  
+
   a, b, c = diagonal(M)
   Kt = parent(a)
   t = gen(Kt)
-  if iszero(a) 
+  if iszero(a)
     return true, conic([1,0,0])
   end
 
-  if iszero(b) 
+  if iszero(b)
     return true, conic([0,1,0])
   end
 
-  if iszero(c) 
+  if iszero(c)
     return true, conic([0,0,1])
   end
 
@@ -482,7 +489,7 @@ function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}
   supp_b = Set([p for (p,e) in factor(b)])
   supp_c = Set([p for (p,e) in factor(c)])
 
-  #Determine case 
+  #Determine case
   case = 1
   if mod(da, 2) == mod(db, 2) == mod(dc, 2) == 0
     Supp = union(supp_a, supp_b, supp_c)
@@ -496,11 +503,11 @@ function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}
         break
       end
     end
-  end 
+  end
 
   if case == 0
     la, lb, lc = map(leading_coefficient, [a,b,c])
-    P = find_rational_point(conic_curve(K, [la,lb,lc]))
+    P = rational_point(conic_curve(K, [la,lb,lc]))
     sol_cert_0 = [P[1], P[2], P[3]]
   end
   Kt = parent(a)
@@ -549,7 +556,7 @@ function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}
   B = ceil(Int, (dc + da)/2) - case + 1
   C = ceil(Int, (da + db)/2) - case + 1
 
-  K = base_ring(Kt) 
+  K = base_ring(Kt)
   if case == 0
     FXYZ, XYZ = polynomial_ring(K, A + B + C + 1)
   else
@@ -566,14 +573,14 @@ function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}
   Y_ = sum(Y[i]*tt^(i-1) for i in (1:B);init = zero(FXYZt))
   Z_ = sum(Z[i]*tt^(i-1) for i in (1:C);init = zero(FXYZt))
 
-  if case == 0 
+  if case == 0
     W = XYZ[end]
     E = [X[end] - sol_cert_0[1]*W, Y[end] - sol_cert_0[2]*W, Z[end] - sol_cert_0[3]*W]
   else
     E = []
   end
-  
-  
+
+
   for (p, alpha) in sol_cert[1]
     r = divrem(Y_ - evaluate(alpha,tt) * Z_, evaluate(p,tt))[2]
     for i in (0:degree(p)-1)
@@ -594,7 +601,7 @@ function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}
       push!(E, coeff(r, i))
     end
   end
-  
+
   M = zero_matrix(K, length(gens(FXYZ)), length(E))
   for i in (1:length(E))
     for j in (1:length(gens(FXYZ)))
@@ -606,11 +613,9 @@ function has_rational_point(conic::ConCrv{Generic.RationalFunctionFieldElem{S,T}
   X_ = sum(sol[i]*t^(i-1) for i in (1:A);init = zero(Kt))
   Y_ = sum(sol[A+i]*t^(i-1) for i in (1:B);init = zero(Kt))
   Z_ = sum(sol[A+B+i]*t^(i-1) for i in (1:C);init = zero(Kt))
-  
+
   return true, conic([lambda*X_, mu*Y_, nu*Z_]*U)
 end
-
-
 
 ################################################################################
 #
@@ -619,7 +624,7 @@ end
 ################################################################################
 
 @doc raw"""
-    minimal_model(C::ConCrv{QQFieldElem}) -> 
+    minimal_model(C::ConCrv{QQFieldElem}) ->
       ConCrv{QQFieldElem}, Vector{MPolyRingElem}, MatElem
 
 Compute a model C_min isomorphic to C with minimal discriminant.
@@ -632,7 +637,7 @@ function minimal_model(C::ConCrv{QQFieldElem})
   detC = abs(det(M))
   detM = det(M)
   W = identity_matrix(ZZ,3)
-  
+
   while abs(detM)!=1
     factors = factor(detM)
     for (p,e) in factors
@@ -647,18 +652,18 @@ function minimal_model(C::ConCrv{QQFieldElem})
 
       W = W*V
       M = divexact(transpose(V) * M * V, det(V))
-    end 
+    end
     detM = det(M)
   end
   K = base_field(C)
-  Kxyz,(x,y,z) = polynomial_ring(K, ["x","y","z"]) 
+  Kxyz,(x,y,z) = polynomial_ring(K, ["x","y","z"])
 
   B, U, sol = lll_gram_indef_isotropic(M; base = true)
 
   W = W * transpose(U)
   W = W/content(W)
   #Return minimized conic Cmin, map from Cmin -> C, and corresponding matrix.
-  return conic_curve(K, B), W * [x,y,z], W 
+  return conic_curve(K, B), W * [x,y,z], W
 
 end
 
@@ -669,8 +674,8 @@ function algorithm22(M::ZZMatrix, p::ZZRingElem)
   d = 0
   U = identity_matrix(ZZ, n)
   while i > 0
-    j = i + d 
-    
+    j = i + d
+
     while j > 0 && mod(M[i,j], p)==0
       j -= 1
     end
@@ -680,7 +685,7 @@ function algorithm22(M::ZZMatrix, p::ZZRingElem)
       i-=1
       continue
     end
-    
+
     if j < i + d
       M = swap_cols(M, j, i+d)
       U = swap_cols(U, j, i+d)
@@ -735,7 +740,7 @@ end
 @doc raw"""
    parametrization(C::ConCrv{QQFieldElem}) -> Vector{MPolyRingElem}
 
-Return a parametrization of C. (I.e. a map P^1 -> C 
+Return a parametrization of C. (I.e. a map P^1 -> C
 given by (x : y) -> (C_x(x,y), C_y(x,y), C_z(x,y))
 """
 function parametrization(C::ConCrv, P::ConCrvPt)
@@ -751,15 +756,15 @@ function parametrization(C::ConCrv, P::ConCrvPt)
     s = S3([1, 3, 2])
   elseif P[3] == 0 && P[1]!= 0
     s = S3([2, 3, 1])
-  else 
+  else
     s = one(S3)
   end
 
-  #Make line a * u + b * v = 0, such that u = 0, v = 1 intersects at the point P. 
+  #Make line a * u + b * v = 0, such that u = 0, v = 1 intersects at the point P.
   line = zeros_array(R, 3)
-  
+
   line[s[1]] = x2 * v * P[s[1]] + x2 * u
-  line[s[2]] = x2 * v * P[s[2]] + x1 * u 
+  line[s[2]] = x2 * v * P[s[2]] + x1 * u
   line[s[3]] = x2 * v * P[s[3]]
 
   int_point2 = f(line...)/u
@@ -772,7 +777,7 @@ function parametrization(C::ConCrv, P::ConCrvPt)
 end
 
 function parametrization(C::ConCrv)
-  P = find_rational_point(C)
+  P = rational_point(C)
   return parametrization(C, P)
 end
 
@@ -787,7 +792,7 @@ function _parametrization_geometric(C::ConCrv)
     K, a = extension_field(f)
   elseif typeof(F) <: NumField
     K, a = number_field(f)
-  else 
+  else
     error("_parametrization_geometric does not work over this type of field yet.")
   end
   C_new = base_change(K, C)
@@ -834,7 +839,7 @@ function is_on_curve(C::ConCrv{T}, coords::Vector{T}) where T
 
   equ = equation(C)
   equ(x, y, z)
-  if equ(x, y, z) == 0 
+  if equ(x, y, z) == 0
     return true
   else
     return false

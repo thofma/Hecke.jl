@@ -353,7 +353,6 @@ export factor_coprime
 export faltings_height
 export farey_lift
 export find_points
-export find_rational_point
 export finite_divisor
 export finite_maximal_order
 export finite_ring
@@ -405,6 +404,7 @@ export has_global_minimal_model
 export has_image_with_image
 export has_preimage_with_preimage
 export has_rational_point
+export has_rational_point_with_point
 export hasse_interval
 export hasse_invariant
 export hcat
@@ -825,6 +825,7 @@ export rank
 export ranks
 export rational_canonical_form
 export rational_maps
+export rational_point
 export rational_reconstruction
 export rational_span
 export rationals_as_number_field
