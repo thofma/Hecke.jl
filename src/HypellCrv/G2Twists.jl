@@ -56,6 +56,8 @@ function quadratic_twist(C::HypellCrv{T}) where T <: FinFieldElem
     if is_odd(degree(F))
       u = one(F)
     else 
+      println(g2_invs)
+      println("HIT")
       u = Hecke.normal_basis(base_field(F), F)
     end
     return hyperelliptic_curve([f + u*(h^2), h])
@@ -215,14 +217,14 @@ function g2_models_FF_char2_C2_mixed(g2_invs::Vector{T}, all_twists::Bool = true
   F = parent(g2_invs[1])
   _, g2, _ = g2_invs
   R, x = polynomial_ring(F, :x)
-
-  H1 = hyperelliptic_curve([g2*x^5 + x,x])
+ 
+  H1 = hyperelliptic_curve(g2*x^5 + x, x)
   if !all_twists 
     return [H1]
   end
 
   o = trace_one_element(F)
-  H2 = hyperelliptic_curve([g2*x^5 + o*x^2 + x,x])
+  H2 = hyperelliptic_curve(g2*x^5 + o*x^2 + x, x)
   return [H1, H2]
 end
 
@@ -727,13 +729,12 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
   n = degree(F)
   prim = primitive_element(F)
   q = length(F)
-
   if mod(q,3) == 2
     if is_square(a)
       push!(twists, quadratic_twist(H1))
     end
 
-    A = roots(x^3 - a)[1][1]
+    A = roots(x^3 - a)[1]
     while true
       t = rand(F)
       delta = t^2 - 4/A
@@ -743,12 +744,14 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
     end
 
     GF_q2 = GF(q^2)
+    t = GF_q2(t)
+    A = GF_q2(A)
     R2, s = polynomial_ring(GF_q2, :s)
 
     sqr = sqrt(GF_q2(delta))
     theta1 = (t + sqr)/2
     theta2 = (t - sqr)/2
-    f = ((s - theta1)^6/theta1^3 - (s^2 - t*s + 1/A)^3 + a*theta1^3*(s - theta2)^6)
+    f = ((s - theta1)^6/theta1^3 - (s^2 - t*s + 1/A)^3 + GF_q2(a)*theta1^3*(s - theta2)^6)
     f = change_coefficient_ring(F, f)
     f = f(x)
     H2 = hyperelliptic_curve(f)
@@ -757,20 +760,23 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
       push!(twists, quadratic_twist(H2))
     end
 
+    theta = GF_q2(1)
     while true
       t = rand(F)
       delta = t^2 - 4*a
       if !is_square(delta)
         sqr = sqrt(GF_q2(delta))
-        theta = (t + sq)/2
+        theta = (t + sqr)/2
         if is_irreducible(s^3 - theta)
           break
         end
       end
     end
 
-    eta =  roots(s^2 + s + 1)[1][1]
-    f = R((s - eta)^6*theta - (s^2 + s + 1)^3 + a*(s - eta^2)^6/theta)
+    eta =  roots(s^2 + s + 1)[1]
+    f = (s - eta)^6*theta - (s^2 + s + 1)^3 + GF_q2(a)*(s - eta^2)^6/theta
+    f = change_coefficient_ring(F, f)
+    f = f(x)
     H3 = hyperelliptic_curve(f)
     push!(twists, H3) 
     push!(twists, quadratic_twist(H3))
@@ -831,6 +837,7 @@ function g2_models_FF_D12(igusa_invs::Vector{T}, all_twists::Bool = true) where 
 
 	  GF_q2 = GF(q^2)
     R2, s = polynomial_ring(GF_q2, :s)
+    t = GF_q2(t)
 
     sqr = sqrt(GF_q2(delta))
 	  theta1 = (t + sqr)/2
@@ -983,7 +990,7 @@ function g2_models_FF_V4(igusa_invs::Vector{T}, all_twists::Bool = true) where T
     a2 =(15*v^2 - u^2*v - 30*u^3)*(v^2 - 4*u^3)
     a3 =4*(5*v - u^2)*(v^2 - 4*u^3)^2
   else
-    t = gen(F)
+    t = one(F)
     a0 = 1 + 2*v
     a1 = 2*(3 - 4*v)
     a2 = 15 + 14*v
@@ -1046,7 +1053,7 @@ function g2_models_FF_C2(igusa_invs::Vector{T}, all_twists::Bool = true) where T
   p = characteristic(K)
 
   if p == 5 && J2 == 0 && J4 == 0
-    _, _, g3 = g2_from_igus(igusa_invs)
+    _, _, g3 = g2_from_igusa(igusa_invs)
     while true
       c = rand(K)
       test, a = is_power(3*c^2/g3, 3)

@@ -70,8 +70,8 @@ mutable struct ConCrvPt{T}
       P.coordy = coords[2]
       P.coordz = coords[3]
     else
-      #Don't have numerators, denominators and gcd over finite fields
-      if T <: Union{FinFieldElem, RelSimpleNumFieldElem}
+      #Don't have numerators, denominators and gcd over fields
+      if T <: FieldElem
         scalar = inv(coords[3])
         P.coordx = coords[1]*scalar
         P.coordy = coords[2]*scalar
@@ -90,13 +90,6 @@ mutable struct ConCrvPt{T}
           x = divexact(x, c)
           y = divexact(y, c)
           z = divexact(z, c)
-        end
-
-        if T <: AbstractAlgebra.Generic.FunctionFieldElem
-          a = gen(K)
-          x = x(a)
-          y = y(a)
-          z = z(a)
         end
 
         P.coordx = K(x)
