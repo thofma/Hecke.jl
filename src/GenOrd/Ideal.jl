@@ -136,11 +136,8 @@ function defines_2_normal(A::GenOrdIdl)
   parent(m) === base_ring(O) || return false
   (is_zero(m) || is_zero(A.gen_two)) && return false
 
-  # m in alpha*O <=> m/alpha in O. Smallest such m is denominator of alpha^-1
-  alpha = A.gen_two
-  m_alpha = denominator(inv(data(alpha)), O)
-
   # this is Pohst-Zassenhaus, lemma 3.22
+  m_alpha = _minimum_principal(O, A.gen_two)
   g = gcd(m, m_alpha)
   return is_unit(gcd(m, divexact(m_alpha, g)))
 end
@@ -854,10 +851,15 @@ function Hecke.minimum(A::GenOrdIdl; copy::Bool = true)
   end
 end
 
+# for the principal ideal <alpha>: m in alpha*O <=> m/alpha in O.
+# smallest such m (the minimum) is denominator of alpha^-1
+function _minimum_principal(O::GenOrd, alpha::GenOrdElem)
+  return _make_canonical_in(O, denominator(inv(data(alpha)), O))
+end
+
 # for <p, alpha> normal, the minimum is gcd(p, min(<alpha>))
 function _minimum_2elem_normal(O::GenOrd, gen_one::RingElem, gen_two::GenOrdElem)
-  m_alpha = denominator(inv(data(gen_two)), O)
-  return _make_canonical_in(O, gcd(gen_one, m_alpha))
+  return _make_canonical_in(O, gcd(gen_one, _minimum_principal(O, gen_two)))
 end
 
 function assure_has_minimum(A::GenOrdIdl)
