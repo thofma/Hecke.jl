@@ -43,6 +43,17 @@ function derivative(f::MPolyRingElem{T}, x::MPolyRingElem{T}, n::Int) where T
 return f
 end
 
+function derivative(f::MPolyRingElem{T}, exponents::Vector{Int}) where T
+  for i in (1:length(exponents))
+    n = exponents[i]
+    for j in (1:n)
+      f = derivative(f, i)
+    end
+  end
+return f
+end
+
+
 function gcdx(f::ZZRingElem, g::ZZRingElem, hs::ZZRingElem...)
   fs = ZZRingElem[f,g,hs...]
   n = length(fs)

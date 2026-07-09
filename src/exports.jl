@@ -305,7 +305,9 @@ export disc_log
 export disc_log_mod
 export discriminant
 export discriminant_group
+export discriminant_of_ternary_quartic
 export div
+export dixmier_ohno_invariants
 export divexact
 export divexact!
 export divisibility
