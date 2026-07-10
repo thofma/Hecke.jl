@@ -1,7 +1,7 @@
 # The function orbmod2 and dependencies were ported from the Pari/GP code of Gaëtan Chenevier and Olivier Taïbi, 2026:
 # https://olitb.net/pro/uni29/
-# They were extended to compute orbits of subspaces by an AI assistant, 2026.
-# Simon Brandhorst takes responsibility for the correctness of this implementation and its extensions.
+# The port is due to AI. The functionality to compute orbits of subspaces was added in cooperation with an AI assistant, 2026.
+# Simon Brandhorst takes responsibility for correctness.
 #
 # Copyright (C) 2026 Simon Brandhorst, Gaëtan Chenevier and Olivier Taïbi, 2026
 # Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
@@ -149,8 +149,8 @@ function orbmod2(::Type{T}, gens::Vector) where {T <: Unsigned}
   packed, n = _pack_linear_generators_mod2(T, gens)
   ngens = length(gens)
   # if T = Uint32, then chunk_shift = 5, chunk_mask = 31 = in binary: 0...011111
-  chunk_shift = trailing_zeros(8 * sizeof(T))  #  
-  chunk_mask = T((8 * sizeof(T)) - 1)  # 
+  chunk_shift = trailing_zeros(8 * sizeof(T))  #
+  chunk_mask = T((8 * sizeof(T)) - 1)  #
   # Split the state space into word-sized chunks: `x >> chunk_shift` gives the
   # chunk index in `seen`, and `x & chunk_mask` gives the bit position inside
   # that chunk.
@@ -374,7 +374,7 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int) where {T <: Unsigned
   end
   ngens = length(gens)
   # basis_images = _precompute_basis_images_mod2(T, packed, n, ngens)  #disabled for now
-  offsets = [i * n + 1 for i in 0:(ngens - 1)] 
+  offsets = [i * n + 1 for i in 0:(ngens - 1)]
   kval = Val(k)
   keytype = NTuple{k + 1, T}
   seen = Set{keytype}()
