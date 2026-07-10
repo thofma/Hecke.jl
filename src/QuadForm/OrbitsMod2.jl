@@ -204,7 +204,7 @@ function line_orbits_mod_2(::Type{T}, G::Vector{FqMatrix}) where T<:Unsigned
   order(base_ring(G[1])) == 2 || throw(ArgumentError("matrices must be integers or in GF(2)"))
   orbits_sizes = [(Int(orblen),_unpack_mod2_vector(i, n)) for (orblen,i) in orbmod2(T, G)]
   a = popfirst!(orbits_sizes) # remove the zero vector orbit
-  @assert iszero(a[1]) "first orbit should be the zero vector"
+  @assert iszero(a[2]) "first orbit should be the zero vector"
   return orbits_sizes
 end
 
@@ -327,17 +327,6 @@ end
     row = @inbounds rep[i]
     row ⊻ _pivot_bit_mod2_row(row)
   end, Val(k))
-  return (pivmask, free_rows...)
-end
-
-# Inputs: Val(k) fixes tuple size and rep is an RREF basis as a fixed tuple.
-# Output key layout: (pivot_mask, free_row_1, ..., free_row_k).
-@inline function _subspace_key_mod2(::Val{k}, rep::NTuple{k, T}) where {k, T <: Unsigned}
-  pivmask = zero(T)
-  @inbounds for i in 1:k
-    pivmask |= _pivot_bit_mod2_row(rep[i])
-  end
-  free_rows = ntuple(i -> rep[i] ⊻ _pivot_bit_mod2_row(rep[i]), Val(k))
   return (pivmask, free_rows...)
 end
 
