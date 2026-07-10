@@ -127,6 +127,13 @@ function defines_2_normal(A::GenOrdIdl)
 
   O = order(A)
   m = A.gen_one
+  # This is due to a typing quirk: we declare gen_one and gens_normal as RingElem
+  #   while they should only ever be elements of the base ring.
+  # GenOrdElem is also a RingElem, so creating an ideal via ideal(O(x), O(y))
+  #   works and produces an ideal whose first generator is a GenOrdElem.
+  # I am not sure whether this is intended or should be fixed in general,
+  #   but for the normality check we need gen_one in the base ring.
+  parent(m) === base_ring(O) || return false
   (is_zero(m) || is_zero(A.gen_two)) && return false
 
   # m in alpha*O <=> m/alpha in O. Smallest such m is denominator of alpha^-1
@@ -461,7 +468,16 @@ function assure_has_basis_matrix(A::GenOrdIdl)
 
   @hassert :GenOrd 1 has_2_elem(A)
 
-  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]), :lowerleft)
+  if has_2_elem_normal(A)
+    # minimum is cheap here, so we can build the basis via a modular hnf.
+    m = minimum(A; copy = false)
+    # V is [ m*I ; M_{gen_two mod m} ],  where M_x is the representation matrix of x
+    V = vcat(scalar_matrix(base_ring(O), n, m), representation_matrix(mod(A.gen_two, m)))
+    A.basis_matrix = sub(hnf_modular_eldiv_left!(V, m), n+1:2*n, 1:n)
+    return nothing
+  end
+
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one), A.gen_two]]), :lowerleft)
   A.basis_matrix = sub(V, n+1:2*n, 1:n)
   return nothing
 end
@@ -525,6 +541,103 @@ end
 
 ################################################################################
 #
+#  Multiplication
+#
+################################################################################
+
+function _mul_gen(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  O = order(a)
+  n = degree(O)
+
+  g = minimum(a; copy = false) * minimum(b; copy = false)
+  Ma = basis_matrix(a; copy = false)
+  Mb = basis_matrix(b; copy = false)
+
+  blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
+  V = hnf_modular_eldiv_left!(reduce(vcat, blocks), g)
+  return ideal(O, V; M_in_hnf = true)
+end
+
+function _mul_maximal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  if has_2_elem_normal(a) && has_2_elem_normal(b)
+    return _mul_2elem_normal(a, b)
+  end
+
+  return _mul_gen(a, b)
+end
+
+# Renormalize to the joint modulus:
+# At primes of a1, the coprime part f is a unit.
+# At the new (added) primes q | m, we have q | f and a1 is a unit.
+# We compute a new second generator beta = f*alpha + a1^2 for the modulus m.
+# For prime p of a1: v_p(f*alpha + a1^2) = v_p(alpha) = v_p(A) [this is why a1^2, not a1]
+# For an added prime q: v_q(f*alpha + a1^2) = v_q(a1^2) = 0 = v_q(A)
+function _renormalize_gen_two(alpha::GenOrdElem, a1::RingElem, m::RingElem)
+  _, f = ppio(m, a1)
+  is_unit(f) && return alpha
+  return f*alpha + parent(alpha)(a1^2)
+end
+
+# Reduce gen_two using known minimum: for <m, alpha> we want to reduce alpha.
+# Simple-minded <m, alpha mod m> represent same ideal, but might be not normal.
+# Instead we compute <m, alpha mod m^2>.
+# By normality: v_P(alpha) = v_P(A) <= v_P(m) for P | m
+# For any delta in m^2*O: v_P(delta) >= 2*v_P(m) > v_P(m) >= v_P(alpha)
+#   giving v_P(alpha + delta) = v_P(alpha) for P | m
+# For delta in m*O, we have only v_P(delta) >= v_P(m) >= v_P(alpha);
+#   when v_P(delta) = v_P(alpha), alpha + delta might cancel, giving
+#   v_P(alpha + delta) > v_P(alpha) = v_P(A), breaking normality
+# NOTE: it is enough for m to be a multiple of the minimum, so for example
+#   gen_one can be passed here (when we know we have a normal representation).
+function _reduce_gen_two_with_minimum(m::RingElem, alpha::GenOrdElem)
+  return mod(alpha, m^2)
+end
+
+function _mul_2elem_normal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @hassert :GenOrd 1 has_2_elem_normal(a)
+  @hassert :GenOrd 1 has_2_elem_normal(b)
+
+  O = order(a)
+  a1 = has_minimum(a) ? minimum(a; copy = false) : a.gen_one
+  b1 = has_minimum(b) ? minimum(b; copy = false) : b.gen_one
+  m = lcm(a1, b1)
+
+  a2 = a.gen_two
+  b2 = b.gen_two
+  if a.gens_normal != b.gens_normal
+    a2 = _renormalize_gen_two(a2, a1, m)
+    b2 = _renormalize_gen_two(b2, b1, m)
+  end
+
+  # (a1, a2) and (b1, b2) are now m-normal over the shared base m
+  g1 = _make_canonical_in(O, a1*b1)
+  g2 = _reduce_gen_two_with_minimum(g1, a2*b2)
+  c = ideal(O, g1, g2)
+
+  c.gens_normal = m
+  c.norm = _make_canonical_in(O, norm(a; copy = false)*norm(b; copy = false))
+  if has_minimum(a) && has_minimum(b) && is_unit(gcd(a1, b1))
+    c.minimum = g1
+  end
+
+  @hassert :GenOrd 2 defines_2_normal(c)
+  return c
+end
+
+function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return a
+  is_zero(b) && return b
+  is_one(a)  && return b
+  is_one(b)  && return a
+
+  O = order(a)
+  return is_maximal_known_and_maximal(O) ? _mul_maximal(a, b) : _mul_gen(a, b)
+end
+
+################################################################################
+#
 #  Binary Operations
 #
 ################################################################################
@@ -550,26 +663,6 @@ function Base.:(==)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 end
 function Base.isequal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return a == b
-end
-
-function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  is_zero(a) && return a
-  is_zero(b) && return b
-  is_one(a)  && return b
-  is_one(b)  && return a
-
-  O = order(a)
-  n = degree(O)
-
-  g = minimum(a; copy = false) * minimum(b; copy = false)
-  Ma = basis_matrix(a; copy = false)
-  Mb = basis_matrix(b; copy = false)
-
-  blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
-  V = hnf_modular_eldiv_left!(reduce(vcat, blocks), g)
-  return ideal(O, V; M_in_hnf = true)
 end
 
 @doc raw"""
@@ -735,6 +828,12 @@ function Hecke.minimum(A::GenOrdIdl; copy::Bool = true)
   end
 end
 
+# for <p, alpha> normal, the minimum is gcd(p, min(<alpha>))
+function _minimum_2elem_normal(O::GenOrd, gen_one::RingElem, gen_two::GenOrdElem)
+  m_alpha = denominator(inv(data(gen_two)), O)
+  return _make_canonical_in(O, gcd(gen_one, m_alpha))
+end
+
 function assure_has_minimum(A::GenOrdIdl)
   if has_minimum(A)
     return nothing
@@ -742,7 +841,9 @@ function assure_has_minimum(A::GenOrdIdl)
 
   O = order(A)
 
-  if isone(basis(O; copy = false)[1])
+  if has_2_elem_normal(A)
+    A.minimum = _minimum_2elem_normal(O, A.gen_one, A.gen_two)
+  elseif isone(basis(O; copy = false)[1])
     A.minimum = deepcopy(basis_matrix(A; copy = false)[1, 1])
   else
     M = basis_matrix(A; copy = false)
@@ -776,12 +877,23 @@ function has_norm(A::GenOrdIdl)
   return isdefined(A, :norm)
 end
 
+# for <p, alpha> normal, the norm is gcd(p^n, Norm(alpha))
+function _norm_2elem_normal(O::GenOrd, gen_one::RingElem, gen_two::GenOrdElem)
+  return _make_canonical_in(O, gcd(gen_one^degree(O), norm(gen_two)))
+end
+
 function assure_has_norm(A::GenOrdIdl)
   if has_norm(A)
     return nothing
   end
 
-  A.norm = _make_canonical_in(order(A), det(basis_matrix(A; copy = false)))
+  O = order(A)
+
+  if has_2_elem_normal(A)
+    A.norm = _norm_2elem_normal(O, A.gen_one, A.gen_two)
+  else
+    A.norm = _make_canonical_in(O, det(basis_matrix(A; copy = false)))
+  end
   return nothing
 end
 
