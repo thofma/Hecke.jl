@@ -1,6 +1,6 @@
-# The function orbmod2 and dependencies were ported from the Pari/GP code of Gaëtan Chenevier and Olivier Taïbi, 2026:
+# The function orbmod2 and dependencies were ported by and AI from the Pari/GP code of Gaëtan Chenevier and Olivier Taïbi, 2026:
 # https://olitb.net/pro/uni29/
-# The port is due to AI. The functionality to compute orbits of subspaces was added in cooperation with an AI assistant, 2026.
+# The functionality to compute orbits and stabilizers of subspaces was added in cooperation with AI assistants (Glaude Opus 4.8, GPT 5.4), 2026.
 # Simon Brandhorst takes responsibility for correctness.
 #
 # Copyright (C) 2026 Simon Brandhorst, Gaëtan Chenevier and Olivier Taïbi, 2026
@@ -257,7 +257,9 @@ function _for_all_k_subspaces_rref(::Type{T}, n::Int, k::Int, code::Function) wh
   # For fixed pivots, enumerate all free-entry choices row by row.
   function rec_rows(i::Int)
     if i > k
-      return code(copy(rows))
+      # `rows` is a reusable buffer; the callback must copy it if it needs to
+      # keep the representative beyond the call.
+      return code(rows)
     end
     mask = rowfree[i]
     sub = mask
@@ -330,73 +332,824 @@ end
   return (pivmask, free_rows...)
 end
 
+################################################################################
+#
+#  Perfect ranking of k-dimensional subspaces in RREF
+#
+################################################################################
+#
+# Every k-subspace of F_2^n has a unique reduced row echelon form. It is
+# determined by its pivot columns p_1 < ... < p_k together with the free
+# entries, which sit in the non-pivot columns to the right of each pivot.
+#
+# We turn this into a bijection to 0, 1, ..., N-1, where N is the number of
+# k-subspaces (a Gaussian binomial coefficient):
+#
+#   index(U) = base[rank(pivots)] + free_index
+#
+# Here `rank(pivots)` is the combinadic (colex) rank of the pivot set and
+# `base` stores, for each pivot pattern, the cumulative number of subspaces
+# with a smaller pivot rank. Within a fixed pivot pattern the free entries form
+# a dense integer `free_index`, obtained by compressing the free bits of each
+# row (via `_pext_mod2`) and concatenating them.
+#
+# This lets us replace the hash `Set` of RREF keys by a single `BitVector`,
+# which is faster (no hashing/collisions) and uses far less memory.
+
+# Parallel bit extract: gather the bits of `x` selected by `mask` into the low
+# bits of the result (software emulation of `pext`).
+@inline function _pext_mod2(x::T, mask::T) where {T <: Unsigned}
+  res = zero(T)
+  bit = one(T)
+  m = mask
+  @inbounds while !iszero(m)
+    low = m & (~m + one(T))     # lowest set bit of m
+    if !iszero(x & low)
+      res |= bit
+    end
+    bit <<= 1
+    m ⊻= low
+  end
+  return res
+end
+
+# Precomputed data to rank k-subspaces of F_2^n in RREF form.
+# - `binom[a+1, b+1] = binomial(a, b)` for combinadic ranking of pivot sets.
+# - `base[r+1]` is the number of subspaces whose pivot pattern has rank < r.
+# - `rowfreemask[i, r+1]` selects the free columns of row `i` for pivot rank `r`.
+# - `rowshift[i, r+1]` is the bit offset of that row's free bits in `free_index`.
+# - `total` is the number of k-subspaces (the length of the visited bitset).
+struct _SubspaceRankerMod2{T <: Unsigned}
+  n::Int
+  k::Int
+  binom::Matrix{Int}
+  base::Vector{Int}
+  rowfreemask::Matrix{T}
+  rowshift::Matrix{Int}
+  total::Int
+end
+
+# Build the ranker for (n, k), or return `nothing` if the number of subspaces or
+# pivot patterns is too large to tabulate (the caller then falls back to a
+# hashed set).
+function _build_subspace_ranker_mod2(::Type{T}, n::Int, k::Int;
+    pattern_limit::Int = 1 << 20, bit_limit::Int = 1 << 31) where {T <: Unsigned}
+  (k <= 0 || k >= n) && return nothing
+  # Pascal triangle of binomial coefficients up to n choose (k+1).
+  binom = zeros(Int, n + 1, k + 2)
+  for a in 0:n
+    binom[a + 1, 1] = 1
+    if a >= 1
+      for b in 1:(k + 1)
+        binom[a + 1, b + 1] = binom[a, b] + binom[a, b + 1]
+      end
+    end
+  end
+  npat = binom[n + 1, k + 1]                 # number of pivot patterns = C(n, k)
+  npat > pattern_limit && return nothing
+
+  rowfreemask = zeros(T, k, npat)
+  rowshift = zeros(Int, k, npat)
+  fpat = zeros(Int, npat)                    # number of free bits per pattern
+  pivots = Vector{Int}(undef, k)
+
+  function process()
+    r = 0
+    @inbounds for i in 1:k
+      r += binom[pivots[i] + 1, i + 1]       # combinadic (colex) rank
+    end
+    pivotmask = zero(T)
+    @inbounds for i in 1:k
+      pivotmask |= one(T) << pivots[i]
+    end
+    sh = 0
+    @inbounds for i in 1:k
+      fm = zero(T)
+      for c in (pivots[i] + 1):(n - 1)
+        bit = one(T) << c
+        iszero(pivotmask & bit) && (fm |= bit)
+      end
+      rowfreemask[i, r + 1] = fm
+      rowshift[i, r + 1] = sh
+      sh += count_ones(fm)
+    end
+    fpat[r + 1] = sh
+    return nothing
+  end
+
+  # Enumerate all strictly increasing pivot column tuples (0-indexed).
+  function rec(pos::Int, start::Int)
+    if pos > k
+      process()
+      return
+    end
+    for c in start:((n - 1) - (k - pos))
+      pivots[pos] = c
+      rec(pos + 1, c + 1)
+    end
+    return nothing
+  end
+  rec(1, 0)
+
+  base = Vector{Int}(undef, npat + 1)
+  base[1] = 0
+  acc = Int128(0)
+  for r in 0:(npat - 1)
+    acc += Int128(1) << fpat[r + 1]
+    acc > bit_limit && return nothing
+    base[r + 2] = Int(acc)
+  end
+  return _SubspaceRankerMod2{T}(n, k, binom, base, rowfreemask, rowshift, Int(acc))
+end
+
+# Map an RREF subspace `rep` (length k) to its integer index in 0:total-1.
+@inline function _rank_subspace_mod2(ranker::_SubspaceRankerMod2{T}, rep) where {T <: Unsigned}
+  k = ranker.k
+  binom = ranker.binom
+  r = 0
+  @inbounds for i in 1:k
+    r += binom[trailing_zeros(rep[i]) + 1, i + 1]
+  end
+  idx = @inbounds ranker.base[r + 1]
+  @inbounds for i in 1:k
+    row = rep[i]
+    piv = trailing_zeros(row)
+    freebits = row ⊻ (one(T) << piv)
+    idx += Int(_pext_mod2(freebits, ranker.rowfreemask[i, r + 1])) << ranker.rowshift[i, r + 1]
+  end
+  return idx
+end
+
+################################################################################
+#
+#  Visited-set backends
+#
+################################################################################
+
+# Dense bitset backend, keyed by the perfect rank of a subspace.
+struct _BitSeenMod2{T <: Unsigned}
+  ranker::_SubspaceRankerMod2{T}
+  bits::BitVector
+end
+
+@inline _encode_seen(s::_BitSeenMod2, rep) = _rank_subspace_mod2(s.ranker, rep)
+@inline _contains_seen(s::_BitSeenMod2, key::Int) = @inbounds s.bits[key + 1]
+@inline _add_seen!(s::_BitSeenMod2, key::Int) = (@inbounds s.bits[key + 1] = true; nothing)
+
+# Fallback backend, keyed by the canonical RREF tuple and stored in a `Set`.
+struct _SetSeenMod2{K, KV}
+  set::Set{K}
+  kval::KV
+end
+
+@inline _encode_seen(s::_SetSeenMod2, rep) = _subspace_key_mod2(s.kval, rep)
+@inline _contains_seen(s::_SetSeenMod2, key) = key in s.set
+@inline _add_seen!(s::_SetSeenMod2, key) = (push!(s.set, key); nothing)
+
+################################################################################
+#
+#  Packed F_2 matrix arithmetic (for stabilizer generators)
+#
+################################################################################
+#
+# Group elements are stored like the generators: a length-n vector of words,
+# where word j holds column j (bit i-1 is the (i, j) entry).
+
+# Transpose a packed bit matrix (columns <-> rows).
+function _transpose_packed_mod2(v::Vector{T}, n::Int) where {T <: Unsigned}
+  w = zeros(T, n)
+  @inbounds for a in 1:n
+    x = v[a]
+    while !iszero(x)
+      b = trailing_zeros(x)
+      w[b + 1] |= one(T) << (a - 1)
+      x &= x - one(T)
+    end
+  end
+  return w
+end
+
+# Inverse of a packed (column-major) invertible F_2 matrix.
+function _invert_cols_mod2(a::Vector{T}, n::Int) where {T <: Unsigned}
+  rows = _transpose_packed_mod2(a, n)
+  inv = T[one(T) << (i - 1) for i in 1:n]     # identity rows
+  @inbounds for col in 0:(n - 1)
+    p = 0
+    for i in (col + 1):n
+      if !iszero((rows[i] >> col) & one(T))
+        p = i
+        break
+      end
+    end
+    p == 0 && throw(ArgumentError("generator is not invertible mod 2"))
+    rows[col + 1], rows[p] = rows[p], rows[col + 1]
+    inv[col + 1], inv[p] = inv[p], inv[col + 1]
+    for i in 1:n
+      if i != (col + 1) && !iszero((rows[i] >> col) & one(T))
+        rows[i] ⊻= rows[col + 1]
+        inv[i] ⊻= inv[col + 1]
+      end
+    end
+  end
+  return _transpose_packed_mod2(inv, n)
+end
+
+# Convert a packed (column-major) F_2 matrix to a 0/1 integer matrix.
+function _packed_cols_to_zzmatrix_mod2(s::Vector{T}, n::Int) where {T <: Unsigned}
+  M = zero_matrix(ZZ, n, n)
+  @inbounds for j in 1:n
+    col = s[j]
+    for i in 1:n
+      if !iszero((col >> (i - 1)) & one(T))
+        M[i, j] = one(ZZRingElem)
+      end
+    end
+  end
+  return M
+end
+
+# In-place F_2 matrix product: writes `A * B` (packed columns) into `dest`
+# starting at column offset `doff`, reading `A` from `a` at `aoff` and `B` from
+# `b` at `boff`. Offsets let us multiply matrices stored contiguously in a flat
+# arena without allocating any temporaries.
+@inline function _mm_into!(dest::Vector{T}, doff::Int, a::Vector{T}, aoff::Int,
+    b::Vector{T}, boff::Int, n::Int) where {T <: Unsigned}
+  @inbounds for i in 1:n
+    acc = zero(T)
+    y = b[boff + i]
+    while !iszero(y)
+      j = trailing_zeros(y)
+      acc ⊻= a[aoff + j + 1]
+      y &= y - one(T)
+    end
+    dest[doff + i] = acc
+  end
+  return nothing
+end
+
+# Product `a * b` of two packed (column-major) F_2 matrices (allocating).
+function _matmul_cols_mod2(a::Vector{T}, b::Vector{T}, n::Int) where {T <: Unsigned}
+  c = Vector{T}(undef, n)
+  _mm_into!(c, 0, a, 0, b, 0, n)
+  return c
+end
+
+# Image `v * a` of the packed row vector `v` under the packed matrix `a`.
+@inline _vecact_mod2(a::Vector{T}, v::T, n::Int) where {T <: Unsigned} =
+  _matact_mod2(a, 1, v, n)
+
+# Bookkeeping used when stabilizer generators are requested. During the orbit
+# traversal we assign each visited subspace a local id and store the group
+# element `u_X` mapping the representative to it, together with `u_X^{-1}`.
+# These are kept in flat arenas (`us`, `uinvs`, `n` words per element) to avoid
+# per-element allocations, with `id_of` mapping a subspace key to its id. On
+# every non-tree edge Schreier's lemma yields the generator `u_X g u_Y^{-1}`,
+# computed into the scratch buffer `sgen` and deduplicated in `gens`.
+mutable struct _StabCtxMod2{T <: Unsigned, K}
+  n::Int
+  gcols::Vector{Vector{T}}
+  ginvcols::Vector{Vector{T}}
+  id::Vector{T}
+  id_of::Dict{K, Int}
+  us::Vector{T}
+  uinvs::Vector{T}
+  gens::Set{Vector{T}}
+  uxg::Vector{T}
+  sgen::Vector{T}
+  count::Int
+end
+
+function _make_stab_ctx_mod2(::Type{T}, ::Type{K}, packed::Vector{T},
+    offsets::Vector{Int}, n::Int) where {T <: Unsigned, K}
+  gcols = Vector{T}[copy(packed[o:(o + n - 1)]) for o in offsets]
+  ginvcols = Vector{T}[_invert_cols_mod2(g, n) for g in gcols]
+  id = T[one(T) << (i - 1) for i in 1:n]
+  return _StabCtxMod2{T, K}(n, gcols, ginvcols, id, Dict{K, Int}(), T[], T[],
+                            Set{Vector{T}}(), Vector{T}(undef, n),
+                            Vector{T}(undef, n), 0)
+end
+
+# Reset the per-orbit state (arenas are kept and reused across orbits).
+@inline function _stab_reset!(stab::_StabCtxMod2)
+  empty!(stab.id_of)
+  empty!(stab.gens)
+  stab.count = 0
+  return nothing
+end
+
+# Allocate a fresh local id for `key`, growing the transversal arenas if needed.
+@inline function _stab_new_id!(stab::_StabCtxMod2, key)
+  id = stab.count
+  stab.count = id + 1
+  need = (id + 1) * stab.n
+  if length(stab.us) < need
+    newlen = max(need, 2 * length(stab.us))
+    resize!(stab.us, newlen)
+    resize!(stab.uinvs, newlen)
+  end
+  stab.id_of[key] = id
+  return id
+end
+
+# Record a stabilizer generator held in the scratch vector `s` (deduplicated,
+# skipping the identity). Returns `true` if `s` was a genuinely new generator
+# (copied and kept), `false` otherwise.
+@inline function _stab_add_gen!(stab::_StabCtxMod2{T}, s::Vector{T}) where {T <: Unsigned}
+  s == stab.id && return false
+  s in stab.gens && return false
+  push!(stab.gens, copy(s))
+  return true
+end
+
+################################################################################
+#
+#  Schreier-Sims: base and strong generating set for a subgroup of GL(n, 2)
+#
+################################################################################
+#
+# The group acts on row vectors by `v -> v * M`. We fix the base to the standard
+# basis vectors `e_1, ..., e_n`: only the identity fixes all of them, so this is
+# a base for *every* matrix subgroup and no dynamic base points are needed.
+#
+# Level `i` stores the basic orbit of `e_i` under the strong generators that fix
+# `e_1, ..., e_{i-1}`, together with a transversal `u` (`e_i * u[pt] = pt`) and
+# its inverse `w` (`w[pt] = u[pt]^{-1}`). The group order is the product of the
+# basic orbit sizes. Feeding the (many, redundant) Schreier generators of a
+# subspace orbit through this turns them into a small strong generating set.
+
+mutable struct _BSGSMod2{T <: Unsigned}
+  n::Int
+  gens::Vector{Vector{T}}               # all strong generators
+  geninv::Vector{Vector{T}}             # their inverses (cached, parallel to gens)
+  slevel::Vector{Vector{Vector{T}}}     # slevel[i]: strong gens fixing e_1..e_{i-1}
+  slevelinv::Vector{Vector{Vector{T}}}  # their inverses, per level
+  orbits::Vector{Vector{T}}             # orbits[i]: basic orbit points of e_i
+  u::Vector{Dict{T, Vector{T}}}         # u[i][pt]: element with e_i * u = pt
+  w::Vector{Dict{T, Vector{T}}}         # w[i][pt]: its inverse
+  id::Vector{T}                         # identity matrix (packed)
+  b1::Vector{T}                         # scratch buffers
+  b2::Vector{T}
+  b3::Vector{T}
+  b4::Vector{T}
+  pool::Vector{Vector{T}}               # reusable transversal vectors
+end
+
+# Allocate an empty chain (base = standard basis, no strong generators yet).
+function _new_bsgs_mod2(::Type{T}, n::Int) where {T <: Unsigned}
+  id = T[one(T) << (i - 1) for i in 1:n]
+  return _BSGSMod2{T}(n, Vector{T}[], Vector{T}[], [Vector{T}[] for _ in 1:n],
+                     [Vector{T}[] for _ in 1:n], [T[] for _ in 1:n],
+                     [Dict{T, Vector{T}}() for _ in 1:n],
+                     [Dict{T, Vector{T}}() for _ in 1:n], id,
+                     Vector{T}(undef, n), Vector{T}(undef, n),
+                     Vector{T}(undef, n), Vector{T}(undef, n), Vector{Vector{T}}())
+end
+
+# Does `s` fix the base prefix `e_1, ..., e_{i-1}`?
+@inline function _fixes_prefix_mod2(s::Vector{T}, i::Int, n::Int) where {T <: Unsigned}
+  @inbounds for j in 1:(i - 1)
+    ej = one(T) << (j - 1)
+    _vecact_mod2(s, ej, n) == ej || return false
+  end
+  return true
+end
+
+# Add a strong generator together with its (cached) inverse.
+@inline function _bsgs_push_gen!(bsgs::_BSGSMod2{T}, g::Vector{T}) where {T <: Unsigned}
+  push!(bsgs.gens, g)
+  push!(bsgs.geninv, _invert_cols_mod2(g, bsgs.n))
+  return nothing
+end
+
+# Borrow / return length-n vectors from the reuse pool.
+@inline _pool_get!(bsgs::_BSGSMod2{T}) where {T <: Unsigned} =
+  isempty(bsgs.pool) ? Vector{T}(undef, bsgs.n) : pop!(bsgs.pool)
+
+# Recompute all basic orbits and transversals from the current strong generators.
+# Transversal vectors are recycled through `bsgs.pool` to avoid reallocating on
+# every rebuild.
+function _bsgs_recompute!(bsgs::_BSGSMod2{T}) where {T <: Unsigned}
+  n = bsgs.n
+  # Reclaim all currently stored transversal vectors into the pool.
+  for i in 1:n
+    for v in values(bsgs.u[i])
+      push!(bsgs.pool, v)
+    end
+    for v in values(bsgs.w[i])
+      push!(bsgs.pool, v)
+    end
+    empty!(bsgs.u[i])
+    empty!(bsgs.w[i])
+  end
+  for i in 1:n
+    ei = one(T) << (i - 1)
+    Si = bsgs.slevel[i]
+    Sinv = bsgs.slevelinv[i]
+    empty!(Si)
+    empty!(Sinv)
+    for gi in eachindex(bsgs.gens)
+      if _fixes_prefix_mod2(bsgs.gens[gi], i, n)
+        push!(Si, bsgs.gens[gi])
+        push!(Sinv, bsgs.geninv[gi])
+      end
+    end
+    u = bsgs.u[i]
+    w = bsgs.w[i]
+    orbit = bsgs.orbits[i]
+    empty!(orbit)
+    uei = _pool_get!(bsgs); copyto!(uei, bsgs.id)
+    wei = _pool_get!(bsgs); copyto!(wei, bsgs.id)
+    u[ei] = uei
+    w[ei] = wei
+    push!(orbit, ei)
+    q = 1
+    while q <= length(orbit)
+      x = orbit[q]
+      q += 1
+      ux = u[x]
+      wx = w[x]
+      for t in eachindex(Si)
+        y = _vecact_mod2(Si[t], x, n)
+        if !haskey(u, y)
+          uy = _pool_get!(bsgs); _mm_into!(uy, 0, ux, 0, Si[t], 0, n)
+          wy = _pool_get!(bsgs); _mm_into!(wy, 0, Sinv[t], 0, wx, 0, n)
+          u[y] = uy
+          w[y] = wy
+          push!(orbit, y)
+        end
+      end
+    end
+  end
+  return nothing
+end
+
+# Sift `g` through the chain into the scratch buffers `ba`/`bb` (no allocation).
+# Returns `(residue_buffer, dropout_level)`; the residue is the identity exactly
+# when `g` lies in the group described by the current (complete) chain.
+function _bsgs_strip!(bsgs::_BSGSMod2{T}, g::Vector{T}, ba::Vector{T}, bb::Vector{T}) where {T <: Unsigned}
+  n = bsgs.n
+  copyto!(ba, g)
+  cur = ba
+  oth = bb
+  @inbounds for i in 1:n
+    ei = one(T) << (i - 1)
+    y = _vecact_mod2(cur, ei, n)
+    haskey(bsgs.u[i], y) || return (cur, i)
+    _mm_into!(oth, 0, cur, 0, bsgs.w[i][y], 0, n)
+    cur, oth = oth, cur
+  end
+  return (cur, n + 1)
+end
+
+# Complete the chain: keep adding non-trivial sifted Schreier generators until
+# every Schreier generator sifts to the identity (a genuine strong generating set).
+# If `target_order` is given and the chain reaches it, we stop early: the chain
+# order is always at most the order of the group, so equality proves completeness.
+function _bsgs_complete!(bsgs::_BSGSMod2{T};
+    target_order::Union{Nothing, ZZRingElem} = nothing) where {T <: Unsigned}
+  id = bsgs.id
+  n = bsgs.n
+  while true
+    _bsgs_recompute!(bsgs)
+    target_order !== nothing && _bsgs_order_mod2(bsgs) == target_order && return nothing
+    newgen = nothing
+    for i in 1:n
+      Si = bsgs.slevel[i]
+      isempty(Si) && continue
+      ui = bsgs.u[i]
+      wi = bsgs.w[i]
+      for x in bsgs.orbits[i]
+        ux = ui[x]
+        for s in Si
+          y = _vecact_mod2(s, x, n)
+          # Schreier generator u_x * s * w_{x*s}, computed into scratch buffers.
+          _mm_into!(bsgs.b3, 0, ux, 0, s, 0, n)
+          _mm_into!(bsgs.b4, 0, bsgs.b3, 0, wi[y], 0, n)
+          bsgs.b4 == id && continue
+          buf, _ = _bsgs_strip!(bsgs, bsgs.b4, bsgs.b1, bsgs.b2)
+          if buf != id
+            newgen = copy(buf)
+            break
+          end
+        end
+        newgen === nothing || break
+      end
+      newgen === nothing || break
+    end
+    newgen === nothing && break
+    _bsgs_push_gen!(bsgs, newgen)
+  end
+  return nothing
+end
+
+# Build a base and strong generating set for the group generated by `gens_in`
+# (packed n x n matrices over F_2). Input generators are sifted first to keep the
+# strong generating set small, then the chain is completed. If the group order
+# `target_order` is known, the build stops as soon as the chain reaches it
+# (skipping the more expensive completion pass); this must be the true order of
+# `<gens_in>` or the result may be a proper subgroup.
+function _bsgs_build_mod2(::Type{T}, gens_in::Vector{Vector{T}}, n::Int;
+    target_order::Union{Nothing, ZZRingElem} = nothing) where {T <: Unsigned}
+  bsgs = _new_bsgs_mod2(T, n)
+  _bsgs_recompute!(bsgs)
+  for g in gens_in
+    g == bsgs.id && continue
+    buf, _ = _bsgs_strip!(bsgs, g, bsgs.b1, bsgs.b2)
+    if buf != bsgs.id
+      _bsgs_push_gen!(bsgs, copy(buf))
+      _bsgs_recompute!(bsgs)
+      target_order !== nothing && _bsgs_order_mod2(bsgs) == target_order && return bsgs
+    end
+  end
+  _bsgs_complete!(bsgs; target_order = target_order)
+  return bsgs
+end
+
+# Reset a chain to the trivial group so it can be reused across orbits.
+function _bsgs_reset!(bsgs::_BSGSMod2)
+  empty!(bsgs.gens)
+  empty!(bsgs.geninv)
+  _bsgs_recompute!(bsgs)
+  return nothing
+end
+
+# Sift `g` into a *complete* chain; if it enlarges the group, add it and
+# re-complete. Returns `true` if the group (hence its order) grew. The chain must
+# be complete on entry and is complete on exit, so `_bsgs_order_mod2` is exact.
+function _bsgs_sift_add!(bsgs::_BSGSMod2{T}, g::Vector{T}) where {T <: Unsigned}
+  buf, _ = _bsgs_strip!(bsgs, g, bsgs.b1, bsgs.b2)
+  buf == bsgs.id && return false
+  _bsgs_push_gen!(bsgs, copy(buf))
+  _bsgs_complete!(bsgs)
+  return true
+end
+
+# Order of the group described by a completed chain.
+function _bsgs_order_mod2(bsgs::_BSGSMod2)
+  ord = one(ZZRingElem)
+  for o in bsgs.orbits
+    ord *= length(o)
+  end
+  return ord
+end
+
+################################################################################
+#
+#  Generic orbit traversal
+#
+################################################################################
+
+# Explore the orbit of `seed_rep` (already encoded as `seed_key`) and return its
+# length. This is the lean path used when no stabilizer is requested.
+function _orbit_bfs_mod2!(seen, todo::Vector{NTuple{W, T}}, packed::Vector{T},
+    offsets::Vector{Int}, n::Int, k::Int, kval::Val, scratch::Vector{T},
+    seed_rep, seed_key) where {T <: Unsigned, W}
+  orb_len = UInt64(1)
+  empty!(todo)
+  _add_seen!(seen, seed_key)
+  push!(todo, _vector_to_ntuple_mod2(kval, seed_rep))
+  while !isempty(todo)
+    x = pop!(todo)
+    @inbounds for gi in 1:length(offsets)
+      _act_subspace_mod2!(scratch, packed, offsets[gi], n, k, x)
+      ykey = _encode_seen(seen, scratch)
+      if !_contains_seen(seen, ykey)
+        _add_seen!(seen, ykey)
+        push!(todo, _vector_to_ntuple_mod2(kval, scratch))
+        orb_len += 1
+      end
+    end
+  end
+  return orb_len
+end
+
+# Same traversal, but additionally build a base and strong generating set of the
+# stabilizer of the representative (Schreier's lemma + interleaved Schreier-Sims).
+# `bsgs` is kept complete after every added generator, so its order is exact at
+# all times. When the group order `gtarget` is known (`!= 0`), we use the
+# invariant `m * s <= |G|` (m = orbit elements found, s = current stabilizer
+# order): equality forces `m = orbit length` and `s = |stabilizer|`, so we can
+# stop immediately and skip the rest of the traversal (switching to "done").
+function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T},
+    todo::Vector{Tuple{Int, NTuple{W, T}}}, packed::Vector{T},
+    offsets::Vector{Int}, n::Int, k::Int, kval::Val, scratch::Vector{T},
+    seed_rep, seed_key, gtarget::Int) where {T <: Unsigned, K, W}
+  _stab_reset!(stab)
+  _bsgs_reset!(bsgs)
+  empty!(todo)
+  _add_seen!(seen, seed_key)
+  seedid = _stab_new_id!(stab, seed_key)
+  soff = seedid * n
+  @inbounds for i in 1:n
+    stab.us[soff + i] = stab.id[i]
+    stab.uinvs[soff + i] = stab.id[i]
+  end
+  push!(todo, (seedid, _vector_to_ntuple_mod2(kval, seed_rep)))
+  orb_len = UInt64(1)
+  scur = 1                       # current stabilizer order (Int; used when gtarget != 0)
+  uxg = stab.uxg
+  sgen = stab.sgen
+  while !isempty(todo)
+    xid, x = pop!(todo)
+    xoff = xid * n
+    @inbounds for gi in 1:length(offsets)
+      _act_subspace_mod2!(scratch, packed, offsets[gi], n, k, x)
+      ykey = _encode_seen(seen, scratch)
+      # uxg = u_X * g_i (needed both to extend the tree and to close edges)
+      _mm_into!(uxg, 0, stab.us, xoff, stab.gcols[gi], 0, n)
+      if !_contains_seen(seen, ykey)
+        _add_seen!(seen, ykey)
+        yid = _stab_new_id!(stab, ykey)
+        yoff = yid * n
+        # u_Y = u_X g_i and u_Y^{-1} = g_i^{-1} u_X^{-1}
+        for i in 1:n
+          stab.us[yoff + i] = uxg[i]
+        end
+        _mm_into!(stab.uinvs, yoff, stab.ginvcols[gi], 0, stab.uinvs, xoff, n)
+        push!(todo, (yid, _vector_to_ntuple_mod2(kval, scratch)))
+        orb_len += 1
+        # Orbit fully found and stabilizer complete: stop and drop the queue.
+        if gtarget != 0 && Int(orb_len) * scur == gtarget
+          empty!(todo)
+          break
+        end
+      else
+        # Non-tree edge: Schreier generator u_X g_i u_Y^{-1}, folded into the BSGS.
+        yoff = stab.id_of[ykey] * n
+        _mm_into!(sgen, 0, uxg, 0, stab.uinvs, yoff, n)
+        if _stab_add_gen!(stab, sgen) && _bsgs_sift_add!(bsgs, sgen) && gtarget != 0
+          scur = Int(_bsgs_order_mod2(bsgs))
+          if Int(orb_len) * scur == gtarget
+            empty!(todo)
+            break
+          end
+        end
+      end
+    end
+  end
+  return orb_len
+end
+
+# Number of k-dimensional subspaces of F_2^n, i.e. the Gaussian binomial
+# coefficient [n, k]_2. Used only for cheap correctness assertions.
+function _num_subspaces_mod2(n::Int, k::Int)
+  num = one(ZZRingElem)
+  den = one(ZZRingElem)
+  for i in 0:(k - 1)
+    num *= (ZZRingElem(2)^(n - i) - 1)
+    den *= (ZZRingElem(2)^(i + 1) - 1)
+  end
+  return divexact(num, den)
+end
+
+# True if the packed (column-major) matrix `s` fixes the row space of the RREF
+# `rep` (length k). `scratch` (length k) is used as working storage. Used only
+# for correctness assertions.
+function _stabilizes_subspace_mod2(s::Vector{T}, rep, n::Int, k::Int,
+    scratch::Vector{T}) where {T <: Unsigned}
+  @inbounds for j in 1:k
+    scratch[j] = _matact_mod2(s, 1, rep[j], n)
+  end
+  _rref_rows_mod2_rank!(scratch, n, k) == k || return false
+  @inbounds for j in 1:k
+    scratch[j] == rep[j] || return false
+  end
+  return true
+end
+
 @doc raw"""
-    orbmod2_subspaces([T::Type{<:Unsigned},] gens::Vector, k::Int)
+    orbmod2_subspaces([T::Type{<:Unsigned},] gens::Vector, k::Int; stabilizer::Bool = false)
 
 Compute the orbits of the right linear action of `gens` on `k`-dimensional
 subspaces of `F_2^n` (row spaces, `U -> U * g`, entries reduced modulo `2`).
 
 Subspaces are represented in reduced row echelon form (RREF), encoded as vectors
-of machine words. Visited states are hashed by the canonical packed key
-`(pivot_mask, free_row_1, ..., free_row_k)`.
+of machine words. Whenever the number of `k`-subspaces is small enough to
+tabulate, visited states are tracked in a `BitVector` indexed by a perfect
+ranking of the RREF form; otherwise a hashed `Set` of canonical keys is used as
+a fallback.
 
 # Input
 - `T`: optional unsigned word type (`UInt16`, `UInt32`, `UInt64`, ...),
   default is `UInt64`.
 - `gens`: a nonempty vector of square `n×n` matrices with entries interpreted modulo `2`.
 - `k`: target subspace dimension, must satisfy `0 <= k <= n` and `n <= 8*sizeof(T)-1`.
+- `stabilizer`: if `true`, also compute, for each orbit representative, a base
+  and strong generating set (Schreier-Sims) of its stabilizer.
+- `group_order`: optional known order of the group generated by `gens`. When
+  given (and `stabilizer` is `true`), the Schreier-Sims for each orbit is built
+  interleaved with the orbit traversal, and both stop as soon as
+  `len * stabilizer_order == group_order` (which proves the orbit is fully
+  enumerated and the stabilizer is complete). This can skip a large part of the
+  traversal for big orbits. It must be the true group order, otherwise a
+  too-small stabilizer may be returned. When omitted, the order is determined
+  exactly from the first orbit and then reused as the target for the rest.
 
 # Output
-Return a vector of pairs `(len, rep)` where
+If `stabilizer` is `false`, return a vector of pairs `(len, rep)` where
 - `len::UInt64` is the orbit length,
 - `rep::Vector{T}` is an RREF representative of length `k` (one packed row per entry).
+
+If `stabilizer` is `true`, return a vector of tuples `(len, rep, gens, order)` where
+additionally
+- `gens::Vector{ZZMatrix}` is a strong generating set of the stabilizer of `rep`
+  in the group generated by `gens`, given as `n×n` integer matrices with `0/1`
+  entries (reduced from the redundant Schreier generators via Schreier-Sims),
+- `order::ZZRingElem` is the order of that stabilizer. Note `len * order` equals
+  the order of the group generated by `gens` and is therefore the same for every
+  orbit.
 """
-function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int) where {T <: Unsigned}
+function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
+    stabilizer::Bool = false,
+    group_order::Union{Nothing, IntegerUnion} = nothing) where {T <: Unsigned}
   packed, n = _pack_linear_generators_mod2(T, gens)
   0 <= k <= n || throw(ArgumentError("k must satisfy 0 <= k <= n"))
-  if k == 0
-    return [(UInt64(1), T[])]
-  end
-  if k == n
-    rep = [one(T) << (i - 1) for i in 1:n]
+  ngens = length(gens)
+  offsets = [i * n + 1 for i in 0:(ngens - 1)]
+  gorder = group_order === nothing ? nothing : ZZRingElem(group_order)
+
+  # Trivial subspaces (the zero subspace and the full space) are fixed by every
+  # generator, so the whole group is the stabilizer.
+  if k == 0 || k == n
+    rep = k == 0 ? T[] : T[one(T) << (i - 1) for i in 1:n]
+    if stabilizer
+      bsgs = _bsgs_build_mod2(T, Vector{T}[copy(packed[o:(o + n - 1)]) for o in offsets], n;
+                             target_order = gorder)
+      ord = _bsgs_order_mod2(bsgs)
+      # The whole group stabilizes the trivial subspaces, so its order is |G|.
+      @hassert :Lattice 0 gorder === nothing || ord == gorder
+      sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
+      return [(UInt64(1), rep, sg, ord)]
+    end
     return [(UInt64(1), rep)]
   end
-  ngens = length(gens)
-  # basis_images = _precompute_basis_images_mod2(T, packed, n, ngens)  #disabled for now
-  offsets = [i * n + 1 for i in 0:(ngens - 1)]
+
   kval = Val(k)
-  keytype = NTuple{k + 1, T}
-  seen = Set{keytype}()
-  todo = Vector{NTuple{k, T}}()
-  res = Tuple{UInt64, NTuple{k, T}}[]
   scratch = Vector{T}(undef, k)
-  _for_all_k_subspaces_rref(T, n, k, function(rep)
-    key = _subspace_key_mod2(kval, rep)
-    key in seen && return false
-    empty!(todo)
-    push!(todo, _vector_to_ntuple_mod2(kval, rep))
-    push!(seen, key)
-    orb_len = UInt64(1)
-    while !isempty(todo)
-      x = pop!(todo)
-      @inbounds for offset in offsets  # offset picks the generator
-        y = _act_subspace_mod2!(scratch, packed, offset, n, k, x)
-        #y = _act_subspace_mod2!(scratch, basis_images, offset, n, k, x)
-        ykey = _subspace_key_mod2(kval, scratch)
-        if !(ykey in seen)
-          push!(seen, ykey)
-          push!(todo, _vector_to_ntuple_mod2(kval, y))
-          orb_len += 1
-        end
+
+  # Pick the visited-set backend: dense bitset when feasible, hashed set else.
+  ranker = _build_subspace_ranker_mod2(T, n, k)
+  if ranker === nothing
+    seen = _SetSeenMod2(Set{NTuple{k + 1, T}}(), kval)
+    K = NTuple{k + 1, T}
+  else
+    # The tabulated number of subspaces must match the Gaussian binomial.
+    @hassert :Lattice 0 ZZRingElem(ranker.total) == _num_subspaces_mod2(n, k)
+    seen = _BitSeenMod2(ranker, falses(ranker.total))
+    K = Int
+  end
+
+  if stabilizer
+    stab = _make_stab_ctx_mod2(T, K, packed, offsets, n)
+    bsgs = _new_bsgs_mod2(T, n)
+    todo = Tuple{Int, NTuple{k, T}}[]
+    res = Tuple{UInt64, Vector{T}, Vector{ZZMatrix}, ZZRingElem}[]
+    # Known group order (given or learned from the first orbit) lets each orbit
+    # stop as soon as `orbit_len * stabilizer_order == |G|`.
+    gord = Ref{Union{Nothing, ZZRingElem}}(gorder)
+    _for_all_k_subspaces_rref(T, n, k, function(rep)
+      key = _encode_seen(seen, rep)
+      _contains_seen(seen, key) && return false
+      g = gord[]
+      gtarget = (g !== nothing && g <= typemax(Int)) ? Int(g) : 0
+      orb_len = _orbit_bfs_stab_mod2!(seen, stab, bsgs, todo, packed, offsets, n, k,
+                                      kval, scratch, rep, key, gtarget)
+      ord = _bsgs_order_mod2(bsgs)
+      # Orbit-stabilizer theorem: orbit_len * |stab| is the (constant) group
+      # order. Learn it from the first orbit; check every later orbit against it.
+      if g === nothing
+        gord[] = ZZRingElem(orb_len) * ord
+      else
+        @hassert :Lattice 0 ZZRingElem(orb_len) * ord == g
       end
-    end
-    push!(res, (orb_len, _vector_to_ntuple_mod2(kval, rep)))
+      # Deeper check: the strong generators really do fix the representative.
+      @hassert :Lattice 2 all(s -> _stabilizes_subspace_mod2(s, rep, n, k, scratch), bsgs.gens)
+      sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
+      push!(res, (orb_len, copy(rep), sg, ord))
+      return false
+    end)
+    @hassert :Lattice 0 sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
+    return res
+  end
+
+  todo = NTuple{k, T}[]
+  res = Tuple{UInt64, Vector{T}}[]
+  _for_all_k_subspaces_rref(T, n, k, function(rep)
+    key = _encode_seen(seen, rep)
+    _contains_seen(seen, key) && return false
+    orb_len = _orbit_bfs_mod2!(seen, todo, packed, offsets, n, k, kval,
+                               scratch, rep, key)
+    push!(res, (orb_len, copy(rep)))
     return false
   end)
-  return [(len, collect(rep)) for (len, rep) in res]
+  # The orbits partition all k-subspaces, so the lengths sum to [n, k]_2.
+  @hassert :Lattice 0 sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
+  return res
 end
 
-orbmod2_subspaces(gens::Vector, k::Int) = orbmod2_subspaces(UInt64, gens, k)
+orbmod2_subspaces(gens::Vector, k::Int; stabilizer::Bool = false,
+    group_order::Union{Nothing, IntegerUnion} = nothing) =
+  orbmod2_subspaces(UInt64, gens, k; stabilizer = stabilizer, group_order = group_order)
 
 
 # Inputs: T is the packed word type, G is a vector of GF(2) matrices, k is subspace dimension.
@@ -405,4 +1158,22 @@ function orbit_representatives_and_sizes_mod_2(::Type{T}, G::Vector{FqMatrix}, k
   n = nrows(G[1])
   order(base_ring(G[1])) == 2 || throw(ArgumentError("matrices must be integers or in GF(2)"))
   return [([_unpack_mod2_vector(i, n) for i in j], Int(orblen)) for (orblen,j) in orbmod2_subspaces(T, G, k)]
+end
+
+# Inputs: T is the packed word type, G is a vector of GF(2) matrices, k is subspace dimension.
+# Returns, for each orbit, a tuple `(rep, len, stab_gens, stab_order)` where
+# - `rep` is the RREF representative as a vector of `k` 0/1 vectors of length `n`,
+# - `len` is the orbit length,
+# - `stab_gens` is a strong generating set of the stabilizer (0/1 `ZZMatrix`es),
+# - `stab_order` is the order of the stabilizer.
+# If the group order `group_order` of `<G>` is known it can be passed to speed up
+# the (interleaved) Schreier-Sims via an exact early stop.
+function orbit_representatives_and_stabilizers_mod_2(::Type{T}, G::Vector{FqMatrix}, k::Int;
+    group_order::Union{Nothing, IntegerUnion} = nothing) where T<:Unsigned
+  isempty(G) && throw(ArgumentError("at least one generator is required"))
+  n = nrows(G[1])
+  order(base_ring(G[1])) == 2 || throw(ArgumentError("matrices must be integers or in GF(2)"))
+  return [([_unpack_mod2_vector(i, n) for i in rep], Int(orblen), sgens, ord)
+          for (orblen, rep, sgens, ord) in
+              orbmod2_subspaces(T, G, k; stabilizer = true, group_order = group_order)]
 end
