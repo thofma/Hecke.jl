@@ -128,18 +128,14 @@ end
   end
 
   function GenOrdIdl(O::GenOrd, M::MatElem)
-    @assert base_ring(M) === coefficient_ring(O)
-    # create ideal of O with basis_matrix M
+    # basis_matrix must be an owned (non-view) n x n lower-left HNF matrix
+    # ideal(O::GenOrd, M) ensures this
+    n = degree(O)
+    @assert nrows(M) == n
+    @assert ncols(M) == n
+
     r = GenOrdIdl(O)
-
-    # we want to have basis_matrix as a dense_matrix_type(elem_type(T))
-    # materialize the matrix if view was provided
-    if M isa AbstractAlgebra.Generic.MatSpaceView
-      r.basis_matrix = sub(M, 1:nrows(M), 1:ncols(M))
-    else
-      r.basis_matrix = M
-    end
-
+    r.basis_matrix = M
     return r
   end
 
@@ -166,11 +162,10 @@ end
 
   function GenOrdIdl(O::GenOrd, T::Vector{<:GenOrdElem})
     @assert all(x -> parent(x) === O, T)
-    # One should do this block by block instead of the big matrix
+
+    # TODO: One should do this block by block instead of the big matrix
     V = hnf(reduce(vcat, [representation_matrix(x) for x in T]), :lowerleft)
-    d = ncols(V)
-    n = length(T)
-    return GenOrdIdl(O, V[((n - 1)*d + 1):(n*d), :])
+    return ideal(O, V; M_in_hnf = true)
   end
 
   function GenOrdIdl(O::GenOrd, p::RingElem, a::GenOrdElem)

@@ -182,6 +182,9 @@ function __init__()
   add_verbosity_scope(:GenRep)
   add_assertion_scope(:GenRep)
 
+  add_verbosity_scope(:GenOrd)
+  add_assertion_scope(:GenOrd)
+
   add_verbosity_scope(:HNF)
   add_assertion_scope(:HNF)
 
