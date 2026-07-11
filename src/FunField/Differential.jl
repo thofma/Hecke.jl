@@ -204,13 +204,22 @@ end
 Return a basis of the first order differential forms of F.
 """
 function basis_of_differentials(F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
-  x = separating_element(F)
-  dx = differential(x)
+  @req _is_separable(F) "Currently assumes separable extension"
+  # We assume a separable extension.
+  # The anticanonical divisor is 2*(x)_inf + codifferent_divisor.
+  # As an ideal pair, 2*(x)_inf is (O_fin, (1/x^2)*O_inf).
+  # We can build the sum of these divisors as fractional ideals directly,
+  #   without materializing a GenOrdIdl (via num/den), by scaling the basis
+  #   matrices instead.
+  # NOTE: for Riemann-Roch we do NOT need the basis matrix in HNF.
 
-  codiff_divisor = divisor(codifferent(finite_maximal_order(F)), codifferent(infinite_maximal_order(F)))
-  D = (-divisor(dx.f) + 2*pole_divisor(F(x)) + codiff_divisor)
+  Ofin = finite_maximal_order(F)
+  J_fin = codifferent(Ofin)
 
-  J_fin, J_inf = ideals(D)
+  Oinf = infinite_maximal_order(F)
+  x = gen(base_ring(F))
+  J_inf = (1//x)^2 * codifferent(Oinf)
+
   RR = _riemann_roch_space(J_fin, J_inf, F)
 
   # We were using `map` before, but it cannot infer a concrete return type,
