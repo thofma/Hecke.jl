@@ -14,7 +14,13 @@ end
 Return the differential df.
 """
 function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
-  F = parent(f)
+
+  df = derivation(f)
+  return FunFldDiff(df)
+end
+
+function derivation(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
+    F = parent(f)
   @req _is_separable(F) "Currently assumes separable extension"
   y = gen(F)
 
@@ -54,8 +60,17 @@ function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
 
     df -= (dfnum_dy // fden) * df_dx_dy
   end
+  return df
+end
 
-  return FunFldDiff(df)
+function derivation(f::T, n::Int) where {T <: Generic.AbsSimpleFunctionFieldElem}
+  @req n >= 0 "n needs to be non-zero."
+  i = 0
+  while n > i
+    f = derivation(f)
+    i += 1
+  end
+return f
 end
 
 ################################################################################
