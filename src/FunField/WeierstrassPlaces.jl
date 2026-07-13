@@ -188,13 +188,13 @@ Here x is the separating element of the function field in which a lives.
 function power_representation(a0::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingElem})
   F = parent(a0)
   p = Int(characteristic(F))
-  a = zeros(F, p)
+  a = zero_matrix(F, p, 1)
   x = separating_element(F)
   a[1] = a0
   for j in (1:p-1)
     a[j+1] = derivation(a[j])//F(j)
   end
-  b = zeros(F, p)
+  b = zero_matrix(F, p, 1)
   b[p] = a[p]
   for j in (p - 1:-1:1)
     b[j] = a[j] - sum([b[i] * binomial(i-1, j-1) *x^(i - j) for i in (j:p)])
