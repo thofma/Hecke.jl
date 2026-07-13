@@ -14,20 +14,25 @@
 ################################################################################
 
 #Algorithm 30 in [Hess02]
+#Computes gap numbers and the ramification divisor. 
+#If only_gaps is set to true. It does not continue on to compute
+#the ramification divisor
 function _gaps_and_ramification_divisor(D::Divisor, only_gaps::Bool)
   F = function_field(D)
   K = constant_field(F)
   W = canonical_divisor(F)
   x = separating_element(F)
   dx = differential(F(x))
-  d = dimension(W)
   
-  if d == 0
-    return Divisors[]
-  end
 
   v = riemann_roch_space(W - D)
   n = length(v)
+
+  if n == 0
+    return Int[], trivial_divisor(F)
+  end
+
+
   E = [0]
   eps = 0
   M = matrix(v)
@@ -65,7 +70,7 @@ function _gaps_and_ramification_divisor(D::Divisor, only_gaps::Bool)
   gaps = [e+1 for e in E]
 
   if only_gaps
-    return gaps, W
+    return gaps, trivial_divisor(F)
   end
 
   R = divisor(det(M)) + sum(E)*divisor(dx) + n*(W - D)
@@ -131,6 +136,11 @@ function weierstrass_places(F::Generic.AbsSimpleFunctionField)
   return weierstrass_places(trivial_divisor(F))
 end
 
+#Note: Differentiation, derivation, power representation, etc.
+#currently take the separating element chosen on construction
+#of the number field. In principle we could allow the user to 
+#specify a separating element (this is what Magma does), but this
+#would need some rewriting.
 
 
 @doc raw"""
@@ -145,6 +155,8 @@ end
 
 
 #Algorithm 26 in [Hess02]
+#Can probably be sped up by implementing Algorithm 28 and considering the 
+#comments below the algorithm
 function differentiation(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingElem}, j::Int)
   F = parent(a)
   p = Int(characteristic(F))
@@ -199,13 +211,18 @@ function pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingE
   t = gen(Ft)
   n = degree(K)
 
+  #Write down the matrix that represents taking the pth power.
   Mp = transpose(matrix([[coeff(y^(i * p),j) for j in (0:n-1)] for i in (0:n-1)]))
   v = matrix([coeff(a,j) for j in (0:n-1)])
 
+  #Find a solutions such that (fnum_pth_root)^p = v
   fnum_pth_root = solve(Mp, v, side = :right)
   R = parent(numerator(a))
   S = parent(denominator(a))
 
+  #Now we still need to take pth roots of the coefficients.
+  #Note that we can only take pth roots of x^n if p divides n.
+  #We therefore ignore all other coefficients
   for v in (1:length(fnum_pth_root))
     v_num = numerator(fnum_pth_root[v])
     coeffs_v_num = [pth_root(coeff(v_num, i)) for i in (0:p:degree(v_num))]
@@ -214,6 +231,9 @@ function pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingE
     fnum_pth_root[v] = R(coeffs_v_num)(t)//S(coeffs_v_den)(t)
   end
   p_th_root = sum([fnum_pth_root[v+1]*y^v for v in (0:n-1)])
+
+  #Check if we have an actual pth root. 
+  #(I.e. all terms of the form x^n had p divide n.)
   if (p_th_root)^p == a 
     return p_th_root
   else
