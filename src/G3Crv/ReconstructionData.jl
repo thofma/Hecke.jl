@@ -74,14 +74,14 @@ for n in _G3_reconstruct_names
         if characteristic(parent(inv[1])) == 17
           return evaluate($mod17name(), inv)
         else
-          return evaluate($nmod17name(), inv)
+          return evaluate(change_base_ring(parent(inv[1]), $nmod17name(); cached = false), inv)
         end
       end
     end
   else
     @eval begin
       function ($fname)(inv)
-        return evaluate($fname(), inv)
+        return evaluate(change_base_ring(parent(inv[1]), $fname(); cached = false), inv)
       end
     end
   end
