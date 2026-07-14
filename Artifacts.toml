@@ -40,9 +40,9 @@ git-tree-sha1 = "1204487edb1715164c9e33141fb8779fc65a7ee1"
     sha256 = "1959ee64e4f8f38319b4e63ce06af458024f649f23d79d045959b8ee496d7873"
     url = "https://github.com/thofma/Hecke.jl/releases/download/v0.13.4/AtkinModularPolynomialsDB-0.0.1.tar.gz"
 
-[G3Invariants]
-git-tree-sha1 = "b5ed1b20723658a4439681c51f2a35cbc8fe5736"
+[Genus3ReconstructionData]
+git-tree-sha1 = "79480606d41f16ef1ad6376f64e919b259000c63"
 
-    [[G3Invariants.download]]
-    sha256 = "aa505ee3da6ac0ff5e4439c2c382104871677e82349e45a72b07f2e891ef30be"
-    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.13.4/G3Invariants.tar.gz"
+    [[Genus3ReconstructionData.download]]
+    sha256 = "bccfad379f8d6e3fc6a6e970b845847c8753b8da245752f1461a255723c77a86"
+    url = "https://github.com/thofma/Hecke.jl/releases/download/v0.13.4/Genus3ReconstructionData-0.0.1.tar.gz"

@@ -1,12 +1,12 @@
 # Pxxxxs fro reconstruction from https://github.com/Thittho/Reconstruction/blob/main/magma/reconstruction_genus3.m
 # With permission from Thomas
 #
-# useage: G3_inv_Pxxxx(inv) # inv must be a vector with length 13
-const default_g3_invs_path = joinpath(artifact"G3Invariants", "G3Invariants", "invariants.raw")
+# useage: _G3_reconstruct_data_Pxxxx(inv) # inv must be a vector with length 13
+const _default_g3_reconstruct_path = joinpath(artifact"Genus3ReconstructionData", "Genus3ReconstructionData", "data")
 
-const G3_invs = Ref(Dict{Symbol, Any}())
+const _G3_reconstruct_data = Ref(Dict{Symbol, Any}())
 
-const G3_invs_names = [:P11, :P12, :P13, :P21, :P22, :P23, :P31, :P32, :P33,
+const _G3_reconstruct_names = [:P11, :P12, :P13, :P21, :P22, :P23, :P31, :P32, :P33,
                        :P1111char17, :P1111nchar17,
                        :P1112char17, :P1112nchar17,
                        :P1113char17, :P1113nchar17,
@@ -23,16 +23,16 @@ const G3_invs_names = [:P11, :P12, :P13, :P21, :P22, :P23, :P31, :P32, :P33,
                        :P2333char17, :P2333nchar17,
                        :P3333char17, :P3333nchar17]
 
-function _load_G3_invs()
-  if !isempty(G3_invs[])
-    return G3_invs[]
+function _load_G3_reconstruct_data()
+  if !isempty(_G3_reconstruct_data[])
+    return _G3_reconstruct_data[]
   end
 
   Qx,  = polynomial_ring(QQ,  [:I3, :I6, :I9, :J9, :I12, :J12, :I15, :J15, :I18, :J18, :I21, :J21, :I27])
   Zx,  = polynomial_ring(ZZ,  [:I3, :I6, :I9, :J9, :I12, :J12, :I15, :J15, :I18, :J18, :I21, :J21, :I27])
 
-  open(default_g3_invs_path) do io
-    for n in G3_invs_names
+  open(_default_g3_reconstruct_path) do io
+    for n in _G3_reconstruct_names
       s = Base.readuntil(io, '\n'; keep = false)
       @assert s == "#$n"
       _, Pc = _parse(Vector{QQFieldElem}, io)
@@ -40,17 +40,17 @@ function _load_G3_invs()
       _, Plc = _parse(QQFieldElem, io)
       P = Plc * Qx(Pc, Pexp)
       if contains(String(n), "1c") || contains(String(n), "2c") || contains(String(n), "3c")
-        G3_invs[][n] = map_coefficients(ZZ, P; parent = Zx)
+        _G3_reconstruct_data[][n] = map_coefficients(ZZ, P; parent = Zx)
       else
-        G3_invs[][n] = P
+        _G3_reconstruct_data[][n] = P
       end
     end
   end
-  G3_invs[]
+  _G3_reconstruct_data[]
 end
 
-for n in G3_invs_names
-  fname = Symbol("G3_inv_$(n)")
+for n in _G3_reconstruct_names
+  fname = Symbol("_G3_reconstruct_data_$(n)")
   symb = QuoteNode(n)
   splitcase = false
   if contains(String(n), "1c") || contains(String(n), "2c") || contains(String(n), "3c")
@@ -61,12 +61,12 @@ for n in G3_invs_names
   end
   @eval begin
     function ($fname)()
-      return _load_G3_invs()[$symb]::$T
+      return _load_G3_reconstruct_data()[$symb]::$T
     end
   end
 
   if splitcase
-    basename = Symbol(:G3_inv_, String(split(String(n), "char17")[1]))
+    basename = Symbol(:_G3_reconstruct_data_, String(split(String(n), "char17")[1]))
     mod17name = Symbol(basename, :char17)
     nmod17name = Symbol(basename, :nchar17)
     @eval begin
