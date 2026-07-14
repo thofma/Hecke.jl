@@ -11,7 +11,7 @@ function DOBis(f::MPolyRingElem{T}) where T
   end
   return DO_invs
 end
-#Reconstruct a ternary quartic from a generic tu_Ple of Dixmier-Ohno DO_invariants. 
+#Reconstruct a ternary quartic from a generic tuple of Dixmier-Ohno DO_invariants. 
 #It is not implemented for characteristic 2, 3, 5, 7 or 17.
 function reconstruct_from_dixmier_ohno(DO_invs::Vector{T}) where T
   K = parent(DO_invs[1])
