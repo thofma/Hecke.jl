@@ -830,6 +830,7 @@ export ray_class_group
 export real_embeddings
 export real_period
 export real_places
+export reconstruct_from_dixmier_ohno
 export reduce_full
 export reduce_binary_form
 export reduced_charpoly

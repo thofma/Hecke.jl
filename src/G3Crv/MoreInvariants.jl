@@ -1,4 +1,4 @@
-# Invariants from https://github.com/Thittho/Reconstruction/blob/main/magma/reconstruction_genus3.m
+# Pxxxxs fro reconstruction from https://github.com/Thittho/Reconstruction/blob/main/magma/reconstruction_genus3.m
 # With permission from Thomas
 #
 # useage: G3_inv_Pxxxx(inv) # inv must be a vector with length 13
