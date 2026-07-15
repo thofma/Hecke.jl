@@ -970,6 +970,7 @@ function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T
         push!(todo, (yid, _vector_to_ntuple_mod2(kval, scratch)))
         orb_len += 1
         cur_grp_ord = add!(cur_grp_ord, scur)
+        @assert iszero(gtarget) || cur_grp_ord <= gtarget "input group order wrong"
         # Orbit fully found and stabilizer complete: stop and drop the queue.
         if !iszero(gtarget) && cur_grp_ord == gtarget
           empty!(todo)
@@ -982,6 +983,7 @@ function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T
         if _stab_add_gen!(stab, sgen) && _bsgs_sift_add!(bsgs, sgen) && gtarget != 0
           scur = _bsgs_order_mod2(bsgs)
           cur_grp_ord = mul!(cur_grp_ord, orb_len, scur)
+          @assert iszero(gtarget) || cur_grp_ord <= gtarget "input group order wrong"
           if cur_grp_ord == gtarget
             empty!(todo)
             break
@@ -1114,7 +1116,11 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
       key = _encode_seen(seen, rep)
       _contains_seen(seen, key) && return false
       g = gord[]
-      gtarget = (g !== nothing && g <= typemax(Int)) ? Int(g) : g
+      if g===nothing
+        gtarget = 0
+      else
+        gtarget = (g <= typemax(Int)) ? Int(g) : g
+      end
       orb_len = _orbit_bfs_stab_mod2!(seen, stab, bsgs, todo, packed, offsets, n, k,
                                       kval, scratch, rep, key, gtarget)
       ord = _bsgs_order_mod2(bsgs)

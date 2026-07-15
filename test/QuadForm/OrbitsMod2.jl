@@ -2,12 +2,12 @@
 
 @testset "line_orbits_mod_2" begin
   I3 = matrix(ZZ, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  orbs = line_orbits_mod_2(UInt64, [I3])
+  orbs = Hecke.line_orbits_mod_2(UInt64, [I3])
   @test length(orbs) == 8
   @test sort(first.(orbs)) == ones(Int, 8)
 
   P = matrix(ZZ, 3, 3, [0, 1, 0, 1, 0, 0, 0, 0, 1])
-  @test sort(first.(line_orbits_mod_2(UInt64, [P]))) == [1, 1, 1, 1, 2, 2]
+  @test sort(first.(Hecke.line_orbits_mod_2(UInt64, [P]))) == [1, 1, 1, 1, 2, 2]
 
 
   function test_mod2_line_orbits(L::ZZLat)
@@ -17,7 +17,7 @@
     GF2 = [F2.(i) for i in GZ]
     GF2_grp = matrix_group(GF2)
     ord = order(GF2_grp)
-    orb_len2 = sort!(first.(line_orbits_mod_2(UInt32, GZ)))[2:end]
+    orb_len2 = sort!(first.(Hecke.line_orbits_mod_2(UInt32, GZ)))[2:end]
     orb_len1 = [i[2] for i in Hecke._line_orbits(GF2)]
     sort!(orb_len1)
     return orb_len1 == orb_len2
@@ -45,11 +45,17 @@ end
 
   I4 = matrix(ZZ, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
   for k in 0:4
-    got = orbmod2_subspaces(UInt64, [I4], k)
+    got = Hecke.orbmod2_subspaces(UInt64, [I4], k)
     @test sum(first.(got)) == UInt64(gauss_binom_2(4, k))
     @test all(first.(got) .== 1)
   end
-  @test_throws ArgumentError line_orbits_mod_2(UInt64, ZZMatrix[])
+  @test_throws ArgumentError Hecke.line_orbits_mod_2(UInt64, ZZMatrix[])
+
+  F = GF(2)
+  grp = [F[0 1 0 0; 0 0 1 0; 0 0 0 1; 1 0 0 0], F[0 1 0 0; 1 0 0 0; 0 0 1 0; 0 0 0 1]]  #S_4
+  Hecke.orbit_representatives_and_stabilizers_mod_2(grp,2)
+  Hecke.orbit_representatives_and_stabilizers_mod_2(grp,2; group_order=factorial(4))
+
 
 
 

@@ -655,6 +655,7 @@ export leech_lattice
 export left_ideal
 export left_order
 export level
+export line_orbits
 export lll
 export lll_basis
 export lll_gram_indef_isotropic
