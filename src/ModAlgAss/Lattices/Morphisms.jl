@@ -166,7 +166,7 @@ function _is_locally_isomorphic_same_ambient_module(L::ModAlgAssLat, M::ModAlgAs
   return true
 end
 
-function is_locally_isomorphic_with_isomophism(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion)
+function is_locally_isomorphic_with_isomorphism(L::ModAlgAssLat, M::ModAlgAssLat, p::IntegerUnion)
   @req L.base_ring === M.base_ring "Orders of lattices must agree"
   @req base_ring(L.base_ring) isa ZZRing "Order must be a Z-order"
 
