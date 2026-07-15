@@ -888,7 +888,7 @@ end
 function _bsgs_order_mod2(bsgs::_BSGSMod2)
   ord = one(ZZRingElem)
   for o in bsgs.orbits
-    ord *= length(o)
+    ord = mul!(ord, length(o))
   end
   return ord
 end
@@ -933,7 +933,7 @@ end
 function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T},
     todo::Vector{Tuple{Int, NTuple{W, T}}}, packed::Vector{T},
     offsets::Vector{Int}, n::Int, k::Int, kval::Val, scratch::Vector{T},
-    seed_rep, seed_key, gtarget::Int) where {T <: Unsigned, K, W}
+    seed_rep, seed_key, gtarget::T2) where {T <: Unsigned, K, W, T2 <:IntegerUnion}
   _stab_reset!(stab)
   _bsgs_reset!(bsgs)
   empty!(todo)
@@ -946,7 +946,8 @@ function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T
   end
   push!(todo, (seedid, _vector_to_ntuple_mod2(kval, seed_rep)))
   orb_len = UInt64(1)
-  scur = 1                       # current stabilizer order (Int; used when gtarget != 0)
+  cur_grp_ord = one(T2)
+  scur = ZZ(1)                    # current stabilizer order (used when gtarget != 0)
   uxg = stab.uxg
   sgen = stab.sgen
   while !isempty(todo)
@@ -968,8 +969,10 @@ function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T
         _mm_into!(stab.uinvs, yoff, stab.ginvcols[gi], 0, stab.uinvs, xoff, n)
         push!(todo, (yid, _vector_to_ntuple_mod2(kval, scratch)))
         orb_len += 1
+        cur_grp_ord = add!(cur_grp_ord, scur)
+        @assert iszero(gtarget) || cur_grp_ord <= gtarget "input group order wrong"
         # Orbit fully found and stabilizer complete: stop and drop the queue.
-        if gtarget != 0 && Int(orb_len) * scur == gtarget
+        if !iszero(gtarget) && cur_grp_ord == gtarget
           empty!(todo)
           break
         end
@@ -978,8 +981,10 @@ function _orbit_bfs_stab_mod2!(seen, stab::_StabCtxMod2{T, K}, bsgs::_BSGSMod2{T
         yoff = stab.id_of[ykey] * n
         _mm_into!(sgen, 0, uxg, 0, stab.uinvs, yoff, n)
         if _stab_add_gen!(stab, sgen) && _bsgs_sift_add!(bsgs, sgen) && gtarget != 0
-          scur = Int(_bsgs_order_mod2(bsgs))
-          if Int(orb_len) * scur == gtarget
+          scur = _bsgs_order_mod2(bsgs)
+          cur_grp_ord = mul!(cur_grp_ord, orb_len, scur)
+          @assert iszero(gtarget) || cur_grp_ord <= gtarget "input group order wrong"
+          if cur_grp_ord == gtarget
             empty!(todo)
             break
           end
@@ -1077,7 +1082,7 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
                              target_order = gorder)
       ord = _bsgs_order_mod2(bsgs)
       # The whole group stabilizes the trivial subspaces, so its order is |G|.
-      @hassert :Lattice 0 gorder === nothing || ord == gorder
+      @assert gorder === nothing || ord == gorder
       sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
       return [(UInt64(1), rep, sg, ord)]
     end
@@ -1094,7 +1099,7 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
     K = NTuple{k + 1, T}
   else
     # The tabulated number of subspaces must match the Gaussian binomial.
-    @hassert :Lattice 0 ZZRingElem(ranker.total) == _num_subspaces_mod2(n, k)
+    @assert ZZRingElem(ranker.total) == _num_subspaces_mod2(n, k)
     seen = _BitSeenMod2(ranker, falses(ranker.total))
     K = Int
   end
@@ -1111,7 +1116,11 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
       key = _encode_seen(seen, rep)
       _contains_seen(seen, key) && return false
       g = gord[]
-      gtarget = (g !== nothing && g <= typemax(Int)) ? Int(g) : 0
+      if g===nothing
+        gtarget = 0
+      else
+        gtarget = (g <= typemax(Int)) ? Int(g) : g
+      end
       orb_len = _orbit_bfs_stab_mod2!(seen, stab, bsgs, todo, packed, offsets, n, k,
                                       kval, scratch, rep, key, gtarget)
       ord = _bsgs_order_mod2(bsgs)
@@ -1120,7 +1129,7 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
       if g === nothing
         gord[] = ZZRingElem(orb_len) * ord
       else
-        @hassert :Lattice 0 ZZRingElem(orb_len) * ord == g
+        @assert ZZRingElem(orb_len) * ord == g
       end
       # Deeper check: the strong generators really do fix the representative.
       @hassert :Lattice 2 all(s -> _stabilizes_subspace_mod2(s, rep, n, k, scratch), bsgs.gens)
@@ -1128,7 +1137,7 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
       push!(res, (orb_len, copy(rep), sg, ord))
       return false
     end)
-    @hassert :Lattice 0 sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
+    @assert sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
     return res
   end
 
@@ -1143,7 +1152,7 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
     return false
   end)
   # The orbits partition all k-subspaces, so the lengths sum to [n, k]_2.
-  @hassert :Lattice 0 sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
+  @assert sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
   return res
 end
 
