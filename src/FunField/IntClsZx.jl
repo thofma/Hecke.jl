@@ -3,7 +3,7 @@ using Hecke
 using ..HessQRModule
 import ..HessQRModule: HessQR
 
-function Hecke.integral_closure(S::HessQR, F::Generic.FunctionField{T, U}) where {T, U}
+function Hecke.integral_closure(S::HessQR, F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   return Hecke._integral_closure(S, F)
 end
 
@@ -131,7 +131,7 @@ function florian(M::MatElem{<:Generic.RationalFunctionFieldElem{QQFieldElem}}, R
   return M, T1, T2
 end
 
-function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.FunctionField)
+function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.AbsSimpleFunctionField)
   Qt = base_ring(F)
   t = gen(Qt)
   S = HessQR(Zx, Qt)

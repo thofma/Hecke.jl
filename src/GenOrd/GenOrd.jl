@@ -340,7 +340,7 @@ function coordinates(a::GenOrdElem)
   return coordinates(a.data, parent(a))
 end
 
-function coordinates(a::Generic.FunctionFieldElem)
+function coordinates(a::Generic.AbsSimpleFunctionFieldElem)
   return [coeff(a, i) for i=0:degree(parent(a))-1]
 end
 
@@ -468,7 +468,7 @@ julia> integral_split(1//a, zk)
 (5, [-1 2])
 ```
 """
-function Hecke.integral_split(a::Generic.FunctionFieldElem, O::GenOrd)
+function Hecke.integral_split(a::Generic.AbsSimpleFunctionFieldElem, O::GenOrd)
   d = integral_split(coordinates(a, O), base_ring(O))[2]
   k = base_ring(parent(a))
   if d isa ZZPolyRingElem
@@ -742,11 +742,11 @@ function integral_closure(S::LocalizedEuclideanRing{ZZRingElem}, F::AbsSimpleNum
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::PolyRing{T}, F::Generic.FunctionField{T, U}) where {T, U}
+function integral_closure(S::PolyRing{T}, F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   return _integral_closure(S, F)
 end
 
-function integral_closure(S::KInftyRing{T, U}, F::Generic.FunctionField{T, U}) where {T, U}
+function integral_closure(S::KInftyRing{T, U}, F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   return _integral_closure(S, F)
 end
 
@@ -832,7 +832,7 @@ end
 #
 ################################################################################
 
-function Hecke.basis(O::GenOrd, F::Generic.FunctionField)
+function Hecke.basis(O::GenOrd, F::Generic.AbsSimpleFunctionField)
   return map(F, basis(O))
 end
 
