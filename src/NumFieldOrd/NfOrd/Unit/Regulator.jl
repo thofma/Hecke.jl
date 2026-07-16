@@ -42,7 +42,7 @@ function regulator(x::Vector{T}, abs_tol::Int = 64) where T
       end
     end
 
-    z = abs(det(A))
+    z = abs(Nemo._det_lu(A))
 
     if isfinite(z) && radiuslttwopower(z, -abs_tol)
       return z
