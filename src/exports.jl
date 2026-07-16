@@ -375,6 +375,7 @@ export function_field
 export fundamental_discriminant
 export g2_from_igusa
 export g2_invariants
+export g4_invariants
 export galois_module
 export gcd
 export gcd_into!
@@ -831,6 +832,7 @@ export real_embeddings
 export real_period
 export real_places
 export reconstruct_from_dixmier_ohno
+export reconstruct_from_g4_invs
 export reduce_full
 export reduce_binary_form
 export reduced_charpoly
@@ -969,7 +971,9 @@ export trace_of_frobenius
 export trailing_coefficient
 export transform
 export transform_rstu
+export transformation_GLn
 export transvectant
+export transvectant_sequence
 export triangularize
 export trivial_divisor
 export trivial_morphism

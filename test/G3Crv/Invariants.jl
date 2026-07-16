@@ -1,5 +1,4 @@
-@testset "G3 Invariants" begin
-
+@testset "G3 Invariants and reconstruction" begin
 
     R, (x, y, z) = polynomial_ring(QQ, [:x,:y,:z])
     f = 24*x^4 + 13*x^3*y + x^3*z + 21*x^2*y^2 + 22*x^2*y*z + 28*x^2*z^2+7*x*y^3 + 23*x*y^2*z +27*x*y*z^2 + 10*x*z^3 +4*y^4 + 24*y^3*z + 2*y^2*z^2 + 20*y*z^3 +3*z^4

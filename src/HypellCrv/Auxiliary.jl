@@ -130,7 +130,7 @@ function weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) where T
 end
 
 @doc raw"""
-    weighted_reduction(w1::Vector{T}, ws::Vector{Int}) -> Bool
+    weighted_reduction(w1::Vector{QQFieldElem}, ws::Vector{Int}) -> Vector{QQFieldElem}
 
 Given a point w1 in weighted projective space P over the rationals with
 weights ws, return the smallest equivalent point with integral coefficients.
