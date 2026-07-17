@@ -521,5 +521,5 @@ end
 @testset "More using as_bilinear_module" begin
   q = discriminant_group(root_lattice(:A, 1))
   q2 = rescale(q, -1)
-  @test is_genus(q, (1, 0); as_bilinear_module)
+  @test is_genus(q2, (1, 0); as_bilinear_module=true)
 end
