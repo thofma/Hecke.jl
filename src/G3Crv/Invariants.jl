@@ -119,7 +119,7 @@ function dixmier_ohno_invariants(quartic::MPolyRingElem{T}) where T
 end
 
 @doc raw"""
-discriminant_of_ternary_quartic(quartic::MPolyRingElem{T}) -> T
+    discriminant_of_ternary_quartic(quartic::MPolyRingElem{T}) -> T
 
 Compute the discriminant of a ternary quartic.
 """
