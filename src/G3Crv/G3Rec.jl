@@ -14,7 +14,7 @@ end
 #Reconstruct a ternary quartic from a generic tuple of Dixmier-Ohno Dinvariants.
 #It is not implemented for characteristic 2, 3, 5, 7 or 17.
 @doc raw"""
-reconstruct_from_dixmier_ohno(quartic::MPolyRingElem{T}) -> Vector{T}, Vector{Int}
+    reconstruct_from_dixmier_ohno(quartic::MPolyRingElem{T}) -> Vector{T}, Vector{Int}
 
 Attempts to reconstruct a ternary quartic from its Dixmier-Ohno invariants.
 The reconstruction works for a generic element, but there are some loci
