@@ -892,6 +892,7 @@ export set_var!
 export set_vars!
 export set_verbosity_level
 export shift
+export shioda_invariants
 export short_vectors
 export short_vectors_affine
 export short_vectors_affine_iterator

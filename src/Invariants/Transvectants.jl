@@ -69,7 +69,8 @@ function transvectant_sequence(Fs::Vector{S}, k::Int) where S <: Union{ZZMPolyRi
   for j in (1:k)
     result = zero(RX)
     for term in terms(symbolic_transvectant)
-      c, E = collect(coefficients_and_exponents(term))[1]
+      c = coeff(term, 1)
+      E = exponent_vector(term,1)
       result_term = c*derivative(F_prod, E)
       result += result_term
     end
