@@ -71,62 +71,7 @@ function g4_invariants(Q::MPolyRingElem{T}, Gamma::MPolyRingElem{T} , normalize:
   end
 end
 
-function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, r::Int, s::Int, invariant::Bool = false) where T
-  R = parent(f)
-  x, y, z, w = gens(R)
-
-  if f*g == 0
-    return R(0) 
-  end
-
-  R0, (X,Y) = polynomial_ring(R, 2)
-  #Might need to check for homogeneous in weighted projective space
-  @req is_homogeneous(f(x, y, X, Y)) && is_homogeneous(f(X, Y, z, w)) && is_homogeneous(g(x, y, X, Y)) && is_homogeneous(g(X, Y, z, w)) "f and g must be bihomogeneous"
-
-  Sf = [[derivative(derivative(derivative(derivative(f, x, j), y, r-j), z, i), w, s-i) for j in (0:r)] for i in (0:s)]
-  Sg = [[derivative(derivative(derivative(derivative(g, x, j), y, r-j), z, i), w, s-i) for j in (0:r)] for i in (0:s)]
-  Tfg = R(0)
-
-  for i in (0:s)
-    for j in (0:r)
-      Tfg += (-1)^(i+j)*binomial(s, i)*binomial(r, j)*(Sf[i+1][j+1]*Sg[s+1-i][r+1-j])
-    end
-  end
-
-  if invariant
-    return Tfg(0,0,0,0)
-  else
-    return Tfg
-  end
-end
-
-function transvectant_sequence(Fs::Vector{S}, k::Int) where S <: Union{ZZMPolyRingElem, MPolyRingElem}
-  R = parent(Fs[1])
-  K = base_ring(R)
-  n = number_of_generators(R)
-  @req n == length(Fs) "Number of Fs needs to be equal to the number of variables."
-  RX, X = polynomial_ring(K, n^2)
-  M = matrix(RX, n, n, X)
-  symbolic_transvectant = det(M)
-  results = MPolyRingElem[]
-  F_prod = prod([Fs[i](X[n*i-n+1:n*i]...) for i in (1:n)])
-  F, Y = polynomial_ring(K, n)
-  nY = repeat(Y, n)
-  for j in (1:k)
-    result = zero(RX)
-    for term in terms(symbolic_transvectant)
-      c, E = collect(coefficients_and_exponents(term))[1]
-      result_term = c*derivative(F_prod, E)
-      result += result_term
-    end
-    F_prod = result
-    push!(results, F_prod(nY...))
-  end
-  return results
-end
-
 function quadratic_form_to_matrix(f::MPolyRingElem{T}) where T <: FieldElem
-
   R = parent(f)
   K = base_ring(R)
   d = number_of_variables(R)
@@ -159,11 +104,12 @@ function quad_4_normal_form(Q::MPolyRingElem{T}) where T
   M = quadratic_form_to_matrix(Q)
   t = rank(M)
   D, P = Hecke._gram_schmidt(M, identity, false)
+  diags = [D[i,i] for i in (1:4)]
   
   if t < 3
     error("Warning: The quadric is not of rank 3 or 4")
   elseif t == 4
-    L = [-D[4, 4]/D[1, 1], -D[3, 3]/D[2, 2]]
+    L = [-diags[4]/D[1, 1], -D[3, 3]/D[2, 2]]
     bool1, _ = is_power(L[1], 2)
     bool2, _ = is_power(L[2], 2)
 
@@ -179,10 +125,10 @@ function quad_4_normal_form(Q::MPolyRingElem{T}) where T
     end
 
     P = change_base_ring(S, P)
-    P_fin = matrix(S, 4, 4, [1/(2*D[1, 1]), 0, 0, 1//(2*D[1, 1]*Sq[1]),
-                             0, -1//(2*D[2, 2]), -1//(2*D[2, 2]*Sq[2]), 0, 
-                             0, 1//2, -1//(2*Sq[2]), 0, 
-                             1//2, 0, 0, -1//(2*Sq[1])])*P
+    P_fin = matrix(S, 4, 4, [1//(2*D[1, 1]), S(0), S(0), S(1)//(2*D[1, 1]*Sq[1]),
+                             S(0), S(-1)//(2*D[2, 2]), S(-1)//(2*D[2, 2]*Sq[2]), S(0), 
+                             S(0), S(1//2), S(-1)//(2*Sq[2]), S(0), 
+                             S(1//2), S(0), S(0), S(-1)//(2*Sq[1])])*P
     return transpose(P_fin), 4
   else 
     i = 1
@@ -200,9 +146,9 @@ function quad_4_normal_form(Q::MPolyRingElem{T}) where T
     S_4 = Hecke.SymmetricGroup(4)
     P_swap = S_4(L_swap)
 
-    D = P_swap*D*P_swap
+    D_new = P_swap*D*P_swap
     P = P_swap*P
-    L = [-D[3, 3]/D[1, 1], -D[2, 2]]
+    L = [-D_new[3, 3]/D_new[1, 1], -D_new[2, 2]]
     bool1, sq1 = is_power(L[1], 2)
     bool2, sq2 = is_power(L[2], 2)
 

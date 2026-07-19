@@ -147,7 +147,7 @@ function g4_reconstruction_rank3(I::Vector{T}) where T
   return Q, E
 end
 
-function reconstruct_from_g4_invs(I::Vector{T}, minimize::Bool = true) where T
+function reconstruct_from_g4_invariants(I::Vector{T}, minimize::Bool = true) where T
 	if length(I) == 60
 		Q, E = g4_reconstruction_rank3(I)
     #if minimize && parent(I[1]) == QQ

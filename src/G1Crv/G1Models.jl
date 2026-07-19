@@ -23,8 +23,6 @@ function g1_model_d2(Q::MPolyRingElem{T}, P::MPolyRingElem{T}) where T
   @req number_of_generators(R_P) == 2 "Q and P need to be defined over a polynomial ring with 2 variables."
   @req parent(Q) == R_P "P and Q need to have the same parent."
   @req is_homogeneous(P) && is_homogeneous(Q) "P and Q need to be homogeneous."
-  println(Q)
-  println(total_degree(P))
   @req (total_degree(P) == 2 || total_degree(P) == -1) && total_degree(Q) == 4 "P needs to be of degree 2 and Q needs to be of degree 4."
 
   (x1,x2) = gens(R_P)

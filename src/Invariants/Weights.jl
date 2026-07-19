@@ -59,6 +59,21 @@ function weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) where T
 end
 
 @doc raw"""
+    weighted_multiply(w1::Vector{T}, ws::Vector{Int}, lambda::T) -> Vector{T}
+
+Given a point w1 in weighted projective space P over the rationals with
+weights ws, scale the invariants by the scalar lambda.
+"""
+function weighted_multiply(w1::Vector{T}, ws::Vector{Int}, lambda::T) where T <: FieldElem
+
+    for i in (1:length(ws))
+      w1[i] *= lambda^ws
+    end
+
+    return w1
+end
+
+@doc raw"""
     weighted_reduction(w1::Vector{QQFieldElem}, ws::Vector{Int}) -> Vector{QQFieldElem}
 
 Given a point w1 in weighted projective space P over the rationals with
