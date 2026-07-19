@@ -69,7 +69,7 @@ function J03(P::MPolyRingElem{T}) where T
 end
 
 @doc raw"""
-dixmier_ohno_invariants(quartic::MPolyRingElem{T}) -> Vector{T}, Vector{Int}
+    dixmier_ohno_invariants(quartic::MPolyRingElem{T}) -> Vector{T}, Vector{Int}
 
 Compute the Dixmier-Ohno invariants of a ternary quartic.
 The second argument gives the weights of the invariants in weighted 
