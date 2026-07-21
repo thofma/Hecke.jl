@@ -2,7 +2,7 @@ function shioda_invariants(f::MPolyRingElem{T}) where T
 
   K = base_ring(f)
   n = total_degree(f)
-  @req n == 8 "Shioda invariants are only defined for a curve of genus 3."
+  @req n == 8 "Shioda invariants are only defined for a hyperelliptic curve of genus 3."
 
   if  0 < characteristic(K) <= 7
     error("Currently only implemented for characteristic greater than 7.")
@@ -15,7 +15,6 @@ function shioda_invariants(f::MPolyRingElem{T}) where T
   n = transvectant(f, h, 4)
   p = transvectant(g, k, 4)
   q = transvectant(g, h, 4)
-
 
   J2 = transvectant(f, f, 8)
   J3 = transvectant(f, g, 8)
@@ -32,10 +31,9 @@ end
 
 
 @doc raw"""
-    shioda_invariants(C::HypellCrv{T}) -> Vector{T}
-Returns the Shioda invariants J2, ..., J10 for the genus 3 curve C.
-The Shioda invariants live in the weighted projective space 
-P(2, 3, 4, 5, 6, 7, 8, 9, 10).
+    shioda_invariants(C::HypellCrv{T}) -> Vector{T}, Vector{Int}
+Returns the Shioda invariants J2, ..., J10 for the genus 3 curve C
+and the corresponding weights.
 """
 function shioda_invariants(C::HypellCrv)
   f, h = hyperelliptic_polynomials(C)
@@ -46,7 +44,7 @@ function shioda_invariants(f::PolyRingElem{T}) where T
   Rxz, (x, z) = polynomial_ring(K, ["x", "z"])
   coeff_f = coefficients(f)
   f_hom = sum([coeff_f[i]*x^i*z^(8 - i) for i in (0:8)];init = zero(Rxz))
-  return shioda_invariants(f_hom)
+  return shioda_invariants(f_hom), [2,3,4,5,6,7,8,9,10]
 end
 
 function shioda_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: FieldElem

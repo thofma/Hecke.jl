@@ -1,3 +1,20 @@
+
+@doc raw"""
+    transformation_GLn(Gamma::MPolyRingElem{T}, P::MatElem{S}) -> MPolyRingElem
+
+Given a n-ary form Gamma and an nxn matrix P in GL(n), apply the transformation P to Gamma. 
+"""
+function transformation_GLn(Gamma::MPolyRingElem{T}, P::MatElem{S}) where {T, S} 
+  # Given a n-ary form Gamma and an nxn matrix P, apply the transformation P to Gamma. 
+  K = base_ring(P)
+  Gamma = change_base_ring(K, Gamma)
+  RX = parent(Gamma)
+  X = gens(RX)
+  v = Vector(X)
+  vX = collect(P * v)
+  return Gamma(vX...)
+end
+
 @doc raw"""
     transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, k::Int) -> MPolyRingElem
 
@@ -23,7 +40,6 @@ function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, k::Int) where T
   end
   return result
 end
-
 
 function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, r::Int, s::Int, invariant::Bool = false) where T
   R = parent(f)

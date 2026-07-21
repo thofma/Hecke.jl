@@ -6,7 +6,7 @@
     f1 = x^6+3*x+5
     h1 = x+2
     C = hyperelliptic_curve(f1, h1)
-    ig_invs = igusa_invariants(C)
+    ig_invs = igusa_invariants(C)[1]
 
     D = reconstruct_from_igusa_invariants(ig_invs)
     f, h = hyperelliptic_polynomials(D)
@@ -14,22 +14,22 @@
     #Testing to see if the defining polynomial is sufficiently reduced.
     @test maximum(collect(coefficients(f)))<=1500
 
-    @test weighted_equality(igusa_invariants(C), igusa_invariants(D), [2, 4, 6, 8, 10])
+    @test weighted_equality(igusa_invariants(C)[1], igusa_invariants(D)[1], [2, 4, 6, 8, 10])
 
     K, a = number_field(x^2 + 1, :a)
     R, t = polynomial_ring(K, :t)
     C = hyperelliptic_curve(t^5 - a*t + a, R(0))
-    ig_invs = igusa_invariants(C)
+    ig_invs = igusa_invariants(C)[1]
     D = reconstruct_from_igusa_invariants(ig_invs)
-    ig_invs2 = igusa_invariants(D)
+    ig_invs2 = igusa_invariants(D)[1]
     @test weighted_equality(ig_invs, ig_invs2, [2, 4, 6, 8, 10])
 
     K, s = rational_function_field(QQ)
     R, t = polynomial_ring(K, :t)
     C = hyperelliptic_curve(t^5 - s*t + 1, R(0))
-    ig_invs = igusa_invariants(C)
+    ig_invs = igusa_invariants(C)[1]
     D = reconstruct_from_igusa_invariants(ig_invs)
-    ig_invs2 = igusa_invariants(D)
+    ig_invs2 = igusa_invariants(D)[1]
     @test weighted_equality(ig_invs, ig_invs2, [2, 4, 6, 8, 10])
 
 
@@ -38,11 +38,11 @@
 
     f1 = x^6+3*x^5-4*x^4+3*x^2+2*x-1
     C = hyperelliptic_curve(f1)
-    ig_invs = igusa_invariants(C)
+    ig_invs = igusa_invariants(C)[1]
 
     D = reconstruct_from_igusa_invariants(ig_invs)
 
-    @test weighted_equality(igusa_invariants(C), igusa_invariants(D), [2, 4, 6, 8, 10])
+    @test weighted_equality(igusa_invariants(C)[1], igusa_invariants(D)[1], [2, 4, 6, 8, 10])
 
     
     T = [ [QQ(0), QQ(0), QQ(0)], [QQ(50000), QQ(3750), QQ(-125)], [6400000//3, 440000//9, -32000//81 ], 

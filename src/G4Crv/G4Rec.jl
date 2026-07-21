@@ -161,6 +161,7 @@ function reconstruct_from_g4_invariants(I::Vector{T}, minimize::Bool = true) whe
     #end
   return Q, E
   end
+  error("Error in reconstruction. This case cannot happen.")
 end
 
 

@@ -11,7 +11,7 @@
     QQ(-10265140054846738766406670344006240929//160489808068608), QQ(-1560364612621209466127267306887733624939//1711891286065152), 
     QQ(19741947255984030059126097580178044126062103//1099511627776) ], ws)
 
-    @test weighted_equality(dixmier_ohno_invariants(reconstruct_from_dixmier_ohno_invariants(DO_invs))[1], DO_invs, ws)
+    @test weighted_equality(dixmier_ohno_invariants(@inferred reconstruct_from_dixmier_ohno_invariants(DO_invs))[1], DO_invs, ws)
 
     K = GF(43)
     R, (x, y, z) = polynomial_ring(K, [:x,:y,:z])
@@ -20,6 +20,6 @@
     DO_invs, ws = @inferred dixmier_ohno_invariants(f)
 
     @test weighted_equality(DO_invs, map(K, [38, 10, 38, 37, 16, 30, 8, 14, 42, 30, 12, 40, 21]), ws)
-    @test weighted_equality(dixmier_ohno_invariants(reconstruct_from_dixmier_ohno_invariants(DO_invs))[1], DO_invs, ws)
+    @test weighted_equality(dixmier_ohno_invariants(@inferred reconstruct_from_dixmier_ohno_invariants(DO_invs))[1], DO_invs, ws)
 
 end

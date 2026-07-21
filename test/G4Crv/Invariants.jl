@@ -5,7 +5,7 @@
   K, (x,y,z,w) = polynomial_ring(QQ, [:x,:y,:z,:w])
   conic = 8*x^2 + x*y + 6*x*z + 6*x*w + y^2 + 10*y*z + 10*y*w + 5*z^2 + 9*z*w + 4*w^2
   cubic = 7*x^3 + 3*x^2*y + 8*x^2*z + 5*x^2*w + 4*x*y^2 + 7*x*y*z + 6*x*y*w + 2*x*z^2 + 
-    9*x*z*w + 8*x*w^2 + 4*y^3 + 3*y^2*z + 2*y^2*w + 8*y*z^2 + 4*y*z*w + 9*y*w^2 + 4*z^2*w + 8*z*w^2 + w^3   
+    9*x*z*w + 8*x*w^2 + 4*y^3 + 3*y^2*z + 2*y^2*w + 8*y*z^2 + 4*y*z*w + 9*y*w^2 + 4*z^2*w + 8*z*w^2 + w^3  
   invs, ws = @inferred g4_invariants(conic, cubic)
   conic2, cubic2 = @inferred reconstruct_from_g4_invariants(invs)
   invs2, ws = g4_invariants(conic2, cubic2)
@@ -29,6 +29,5 @@
   conic2, cubic2 = reconstruct_from_g4_invariants(invs)
   invs2, ws = g4_invariants(conic2, cubic2)
   @test weighted_equality(invs, invs2, ws)
-
 
 end
