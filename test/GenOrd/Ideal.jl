@@ -28,6 +28,7 @@
     @test inertia_degree(P) == expected_f
     @test ramification_index(P) == expected_e
     @test Hecke.has_2_elem(P)
+    @test Hecke.has_2_elem_normal(P)
     @test 1 == @inferred valuation(ideal(order(P), P.gen_two), P)
   end
 
@@ -73,18 +74,40 @@
     @assert is_prime(I)
 
     L = Hecke.field(O)
-    U = ideal(O, O(1))
+    U = ideal(O, one(O))
     @test Hecke.colon(I, U) == fractional_ideal(I)
     @test one(L) in Hecke.colon(I, I)
     @test Hecke.colon(U, I) * I == U
   end
 
+  function test_ideal_inv(O, I)
+    U = ideal(O, one(O))
+    @test inv(I) == colon(U, I)     # agrees with colon
+    @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
+    @test inv(inv(I)) == I
+  end
+
   function test_frac_ideal_inv(O, I_list)
-    U = ideal(O, O(1))
     for I in I_list
-      @test inv(I) == colon(U, I)     # identical to the old colon-based inv
-      @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
-      @test inv(inv(I)) == I
+      test_ideal_inv(O, I)
+    end
+  end
+
+  function test_ideal_inv_2elem_normal(O, p_list)
+    I = ideal(O, one(O))
+
+    for p in p_list
+      P = prime_decomposition(O, p)[1][1]
+      @test Hecke.has_2_elem_normal(P)
+      test_ideal_inv(O, P)
+
+      Pe = P^3
+      @test Hecke.has_2_elem_normal(Pe)
+      test_ideal_inv(O, Pe)
+
+      I = I*Pe
+      @test Hecke.has_2_elem_normal(I)
+      test_ideal_inv(O, I)
     end
   end
 
@@ -155,7 +178,7 @@
       for (P, e) in pd
         @test e == 1
         f_expected = (norm(P) == 1//x ? 1 : 2)
-        @test inertia_degree(P) == f_expected
+        check_prime_2elem(P, f_expected, 1)
       end
 
       let (L, t) = function_field(y^3 - x - 1; cached = false),
@@ -180,11 +203,7 @@
           check_prime_2elem(P, 1, 1)
         end
 
-        pd = @inferred prime_decomposition(Oinf, Oinf.R(1//x))
-        @test length(pd) == 1
-        P, e = first(pd)
-        @test e == 3
-        @test inertia_degree(P) == 1
+        check_prime_2elem_single_above(Oinf, Oinf.R(1//x), 1, 3)
       end
     end
 
@@ -196,11 +215,13 @@
       test_colon_common(Ofin, x^4 + x + 1)
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       O = Ofin
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (numerator(x+1), numerator(x^2+x+1), numerator(x^3+x+1)))
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+1))))
     end
   end
 
@@ -224,6 +245,16 @@
       # <x + 1> = <x + 1, x*y> * <x + 1, x*y + 1>^2
       pd = @inferred prime_decomposition(Ofin, Ofin.R(x + 1))
       @test length(pd) == 2
+      for (P, e) in pd
+        if e == 1
+          check_prime_2elem(P, 1, 1)
+        else
+          check_prime_2elem(P, 1, 2)
+        end
+      end
+
+      # x^2 + 2 is inert
+      check_prime_2elem_single_above(Ofin, Ofin.R(x^2 + 2), 3, 1)
     end
 
     @testset "containment" begin
@@ -234,11 +265,13 @@
       test_colon_common(Ofin, x^2 + 2)
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       O = Ofin
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (numerator(x+1), numerator(x^2+x+1), numerator(x^3+x+1)))
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
     end
   end
 
@@ -264,18 +297,22 @@
       test_colon_common(Ofin, x^2 + 1)
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       O = Ofin
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (numerator(x+1), numerator(x^2+x+1), numerator(x^3+x+1)))
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
+      test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
     end
   end
 
   @testset "over number field" begin
     x = gen(Hecke.Globals.Qx)
     K, a = number_field(x^2 - 2, :a)
-    OK = Hecke.GenOrd(ZZ, K)
+    # NOTE: Hecke.integral_closure(ZZ,K) will go through number fields
+    # NOTE: Hecke.GenOrd(ZZ, K) will not set maximal order flag
+    OK = Hecke._integral_closure(ZZ, K)
 
     @testset "norm/min: maximal order" begin
       check_ideal_norm_min(ideal(OK, ZZ(3)), 9, 3)
@@ -325,8 +362,9 @@
       test_colon_common(OK, ZZ(3))
     end
 
-    @testset "fractional_ideal inv" begin
+    @testset "ideal inv" begin
       test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
+      test_ideal_inv_2elem_normal(OK, (ZZ(2), ZZ(3), ZZ(5), ZZ(7)))
     end
   end
 
@@ -377,6 +415,162 @@
       test_containment_common(OK, R(2), R(5))
       test_colon_common_ideal(OK, ideal(OK, R(2), OK(a)))
       test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, (a//16)*OK))
+    end
+  end
+
+  # We have plenty of tests for usual prime decomposition above
+  # In here we test "hard" cases:
+  # - Kummer-Dedekind with only locally nice generator
+  # - index divisor (or not-nice polynomial) finding normal two generators form
+  @testset "Prime Decomposition" begin
+    @testset "over F_7(x) with non-integral defining polynomial" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - (x + 1)//x; cached = false)
+      Ofin = finite_maximal_order(L)
+      Oinf = infinite_maximal_order(L)
+
+      @test !(t in Ofin) # t has a pole at x = 0, so it is not integral there
+
+      Rfin = base_ring(Ofin)
+      pd = @inferred prime_decomposition(Ofin, Rfin(x - 1))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+        @test P.gen_two in Ofin
+      end
+      @test prod(P^e for (P, e) in pd) == ideal(Ofin, Rfin(x - 1))
+
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
+
+      @testset "non-maximal sub-order: index divisor at det denominator" begin
+        # Sub-order with basis [1, w], w = x^2*(x-1)*t. It is closed under
+        #   multiplication since w^2 = x^3*(x-1)^2*(x+1) in Rfin, hence an order.
+        # It is non-maximal at x-1 (and x): det(basis_matrix_inverse(O))
+        #   = 1//(x^2*(x-1)), so both x and x-1 divide the *denominator* of the index,
+        #   not the numerator.
+        w = x^2*(x - 1)*t
+        M = matrix(kx, 2, 2, vcat(coordinates(one(L), Ofin), coordinates(w, Ofin)))
+        O = Hecke.GenOrd(Ofin, M, one(kx))
+        @assert !is_equation_order(O)
+
+        # O is non-maximal at p, so p IS an index divisor.
+        for p in (Rfin(x - 1), Rfin(x))
+          @test is_index_divisor(O, p)
+          pd = @inferred prime_decomposition(O, p)
+          @test !isempty(pd)
+          for (P, _) in pd
+            @test is_prime(P)
+            @test O(p) in P
+          end
+        end
+      end
+    end
+
+    @testset "over F_7(x) with 1/x not index divisor: split" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - (x + 1)//x; cached = false)
+
+      Oinf = infinite_maximal_order(L)
+      p = base_ring(Oinf)(1//x)
+
+      @test Hecke._is_defining_polynomial_nice_at(Oinf, p)
+      @test !is_index_divisor(Oinf, p)
+
+      pd = @inferred prime_decomposition(Oinf, p)
+      @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
+
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+
+      Ofin = finite_maximal_order(L)
+      p = base_ring(Ofin)(x)
+      @test !Hecke._is_defining_polynomial_nice_at(Ofin, p)
+      @test is_index_divisor(Ofin, p)
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
+    end
+
+    @testset "over F_7(x) with 1/x not index divisor: inert" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - (3*x + 1)//x; cached = false)
+
+      Oinf = infinite_maximal_order(L)
+      p = base_ring(Oinf)(1//x)
+
+      @test Hecke._is_defining_polynomial_nice_at(Oinf, p)
+      @test !is_index_divisor(Oinf, p)
+
+      pd = @inferred prime_decomposition(Oinf, p)
+      @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
+      check_prime_2elem_single_above(Oinf, p, 2, 1)
+
+      Ofin = finite_maximal_order(L)
+      p = base_ring(Ofin)(x)
+      @test !Hecke._is_defining_polynomial_nice_at(Ofin, p)
+      @test is_index_divisor(Ofin, p)
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
+    end
+
+    @testset "over F_7(x) with 1/x not index divisor: ramified" begin
+      kx, x = rational_function_field(GF(7), :x; cached = false)
+      ky, y = polynomial_ring(kx, :y; cached = false)
+      L, t = function_field(y^2 - 1//x; cached = false)
+
+      Oinf = infinite_maximal_order(L)
+      p = base_ring(Oinf)(1//x)
+
+      @test Hecke._is_defining_polynomial_nice_at(Oinf, p)
+      @test !is_index_divisor(Oinf, p)
+
+      pd = @inferred prime_decomposition(Oinf, p)
+      @test prod(P^e for (P, e) in pd) == ideal(Oinf, p)
+      check_prime_2elem_single_above(Oinf, p, 1, 2)
+
+      Ofin = finite_maximal_order(L)
+      p = base_ring(Ofin)(x)
+      @test !Hecke._is_defining_polynomial_nice_at(Ofin, p)
+      @test is_index_divisor(Ofin, p)
+      check_prime_2elem_single_above(Ofin, x, 1, 2)
+    end
+
+    @testset "over number with non-integral defining polynomial" begin
+      x = gen(Hecke.Globals.Qx)
+      K, a = number_field(x^2 - 1//2, :a)
+      O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
+      check_prime_2elem_single_above(O, ZZ(3), 2, 1)
+      check_prime_2elem_single_above(O, ZZ(5), 2, 1)
+
+      pd = @inferred prime_decomposition(O, ZZ(2))
+      check_prime_2elem_single_above(O, ZZ(2), 1, 2)
+
+      pd = @inferred prime_decomposition(O, ZZ(7))
+      @test length(pd) == 2
+      for (P, e) in pd
+        @test e == 1
+        check_prime_2elem(P, 1, 1)
+      end
+    end
+
+    @testset "common index divisor (Dedekind's cubic)" begin
+      # x^3 - x^2 - 2x - 8: the generator is nice, yet 2 divides the index of
+      #   every element (essential index divisor) and splits P1*P2*P3
+      x = gen(Hecke.Globals.Qx)
+      K, a = number_field(x^3 - x^2 - 2*x - 8, :a)
+      O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
+      @test is_index_divisor(O, ZZ(2))
+
+      pd = @inferred prime_decomposition(O, ZZ(2))
+      @test length(pd) == 3
+      for (P, e) in pd
+        check_prime_2elem(P, 1, 1)
+      end
+      @test prod(P^e for (P, e) in pd) == Hecke.GenOrdIdl(O, ZZ(2))
     end
   end
 end

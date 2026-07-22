@@ -78,15 +78,10 @@ end
 ################################################################################
 
 base_ring(O::GenOrd) = O.R
-
 base_ring_type(::Type{GenOrd{S, T}}) where {S, T} = T
-
 coefficient_ring(O::GenOrd) = O.R
 
 field(O::GenOrd) = O.F
-
-@inline is_equation_order(O::GenOrd) = O.is_equation_order
-
 degree(O::GenOrd) = degree(field(O))
 
 basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field_type(S)))
@@ -96,6 +91,27 @@ function _make_canonical_in(O::GenOrd{S, T}, x) where {S, T}
   y = O.R(x)
   iszero(y) && return y::elem_type(T)
   return divexact(y, canonical_unit(y))::elem_type(T)
+end
+
+################################################################################
+#
+#  Equation/Maximal order
+#
+################################################################################
+
+@inline is_equation_order(O::GenOrd) = O.is_equation_order
+@inline is_maximal_known_and_maximal(O::GenOrd) = isone(O.is_maximal)
+
+function is_maximal(O::GenOrd)
+  if O.is_maximal == 1
+    return true
+  end
+  if O.is_maximal == 2
+    return false
+  end
+  OO = Hecke.maximal_order(O)
+  O.is_maximal = discriminant(OO) == discriminant(O) ? 1 : 2
+  return isone(O.is_maximal)
 end
 
 ################################################################################
@@ -799,11 +815,13 @@ function Hecke.maximal_order(O::GenOrd)
       Op = (Hecke._hnf(vcat(Op[1]*T[2], T[1]*Op[2]), :lowerleft)[degree(O)+1:end, :], T[2]*Op[2])
     end
   end
-  if first
-    return O
-  else
-    return GenOrd(O, Op[1], Op[2])
+
+  if !first
+    O = GenOrd(O, Op[1], Op[2])
   end
+
+  O.is_maximal = 1
+  return O
 end
 
 ################################################################################

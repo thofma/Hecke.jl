@@ -48,7 +48,6 @@ function isone(I::GenOrdIdl)
   return isone(minimum(I; copy = false))
 end
 
-
 ################################################################################
 #
 #  Basic field access
@@ -116,6 +115,44 @@ function show(io::IO, id::GenOrdIdl)
     print(io, "\nBasis_matrix \n", id.basis_matrix)
   end
 end
+
+################################################################################
+#
+#  2-element normal presentation
+#
+################################################################################
+
+function defines_2_normal(A::GenOrdIdl)
+  has_2_elem(A) || return false
+
+  O = order(A)
+  m = A.gen_one
+  # This is due to a typing quirk: we declare gen_one and gens_normal as RingElem
+  #   while they should only ever be elements of the base ring.
+  # GenOrdElem is also a RingElem, so creating an ideal via ideal(O(x), O(y))
+  #   works and produces an ideal whose first generator is a GenOrdElem.
+  # I am not sure whether this is intended or should be fixed in general,
+  #   but for the normality check we need gen_one in the base ring.
+  parent(m) === base_ring(O) || return false
+  (is_zero(m) || is_zero(A.gen_two)) && return false
+
+  # this is Pohst-Zassenhaus, lemma 3.22
+  m_alpha = _minimum_principal(O, A.gen_two)
+  g = gcd(m, m_alpha)
+  return is_unit(gcd(m, divexact(m_alpha, g)))
+end
+
+function has_2_elem_normal(A::GenOrdIdl)
+  if isdefined(A, :gens_normal)
+    return is_unit(A.gen_one) || !is_unit(A.gens_normal)
+  end
+  if has_2_elem(A) && defines_2_normal(A)
+    A.gens_normal = A.gen_one
+    return true
+  end
+  return false
+end
+
 
 ###########################################################################################
 #
@@ -428,7 +465,16 @@ function assure_has_basis_matrix(A::GenOrdIdl)
 
   @hassert :GenOrd 1 has_2_elem(A)
 
-  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one),A.gen_two]]), :lowerleft)
+  if has_2_elem_normal(A)
+    # minimum is cheap here, so we can build the basis via a modular hnf.
+    m = minimum(A; copy = false)
+    # V is [ m*I ; M_{gen_two mod m} ],  where M_x is the representation matrix of x
+    V = vcat(scalar_matrix(base_ring(O), n, m), representation_matrix(mod(A.gen_two, m)))
+    A.basis_matrix = sub(hnf_modular_eldiv_left!(V, m), n+1:2*n, 1:n)
+    return nothing
+  end
+
+  V = hnf(reduce(vcat, [representation_matrix(x) for x in [O(A.gen_one), A.gen_two]]), :lowerleft)
   A.basis_matrix = sub(V, n+1:2*n, 1:n)
   return nothing
 end
@@ -492,6 +538,103 @@ end
 
 ################################################################################
 #
+#  Multiplication
+#
+################################################################################
+
+function _mul_gen(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  O = order(a)
+  n = degree(O)
+
+  g = minimum(a; copy = false) * minimum(b; copy = false)
+  Ma = basis_matrix(a; copy = false)
+  Mb = basis_matrix(b; copy = false)
+
+  blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
+  V = hnf_modular_eldiv_left!(reduce(vcat, blocks), g)
+  return ideal(O, V; M_in_hnf = true)
+end
+
+function _mul_maximal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  if has_2_elem_normal(a) && has_2_elem_normal(b)
+    return _mul_2elem_normal(a, b)
+  end
+
+  return _mul_gen(a, b)
+end
+
+# Renormalize to the joint modulus:
+# At primes of a1, the coprime part f is a unit.
+# At the new (added) primes q | m, we have q | f and a1 is a unit.
+# We compute a new second generator beta = f*alpha + a1^2 for the modulus m.
+# For prime p of a1: v_p(f*alpha + a1^2) = v_p(alpha) = v_p(A) [this is why a1^2, not a1]
+# For an added prime q: v_q(f*alpha + a1^2) = v_q(a1^2) = 0 = v_q(A)
+function _renormalize_gen_two(alpha::GenOrdElem, a1::RingElem, m::RingElem)
+  _, f = ppio(m, a1)
+  is_unit(f) && return alpha
+  return f*alpha + parent(alpha)(a1^2)
+end
+
+# Reduce gen_two using known minimum: for <m, alpha> we want to reduce alpha.
+# Simple-minded <m, alpha mod m> represent same ideal, but might be not normal.
+# Instead we compute <m, alpha mod m^2>.
+# By normality: v_P(alpha) = v_P(A) <= v_P(m) for P | m
+# For any delta in m^2*O: v_P(delta) >= 2*v_P(m) > v_P(m) >= v_P(alpha)
+#   giving v_P(alpha + delta) = v_P(alpha) for P | m
+# For delta in m*O, we have only v_P(delta) >= v_P(m) >= v_P(alpha);
+#   when v_P(delta) = v_P(alpha), alpha + delta might cancel, giving
+#   v_P(alpha + delta) > v_P(alpha) = v_P(A), breaking normality
+# NOTE: it is enough for m to be a multiple of the minimum, so for example
+#   gen_one can be passed here (when we know we have a normal representation).
+function _reduce_gen_two_2elem_normal(alpha::GenOrdElem, m::RingElem)
+  return mod(alpha, m^2)
+end
+
+function _mul_2elem_normal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @hassert :GenOrd 1 has_2_elem_normal(a)
+  @hassert :GenOrd 1 has_2_elem_normal(b)
+
+  O = order(a)
+  a1 = has_minimum(a) ? minimum(a; copy = false) : a.gen_one
+  b1 = has_minimum(b) ? minimum(b; copy = false) : b.gen_one
+  m = lcm(a1, b1)
+
+  a2 = a.gen_two
+  b2 = b.gen_two
+  if a.gens_normal != b.gens_normal
+    a2 = _renormalize_gen_two(a2, a1, m)
+    b2 = _renormalize_gen_two(b2, b1, m)
+  end
+
+  # (a1, a2) and (b1, b2) are now m-normal over the shared base m
+  g1 = _make_canonical_in(O, a1*b1)
+  g2 = _reduce_gen_two_2elem_normal(a2*b2, g1)
+  c = ideal(O, g1, g2)
+
+  c.gens_normal = m
+  c.norm = _make_canonical_in(O, norm(a; copy = false)*norm(b; copy = false))
+  if has_minimum(a) && has_minimum(b) && is_unit(gcd(a1, b1))
+    c.minimum = g1
+  end
+
+  @hassert :GenOrd 2 defines_2_normal(c)
+  return c
+end
+
+function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return a
+  is_zero(b) && return b
+  is_one(a)  && return b
+  is_one(b)  && return a
+
+  O = order(a)
+  return is_maximal_known_and_maximal(O) ? _mul_maximal(a, b) : _mul_gen(a, b)
+end
+
+################################################################################
+#
 #  Binary Operations
 #
 ################################################################################
@@ -517,26 +660,6 @@ function Base.:(==)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
 end
 function Base.isequal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return a == b
-end
-
-function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  is_zero(a) && return a
-  is_zero(b) && return b
-  is_one(a)  && return b
-  is_one(b)  && return a
-
-  O = order(a)
-  n = degree(O)
-
-  g = minimum(a; copy = false) * minimum(b; copy = false)
-  Ma = basis_matrix(a; copy = false)
-  Mb = basis_matrix(b; copy = false)
-
-  blocks = [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n]
-  V = hnf_modular_eldiv_left!(reduce(vcat, blocks), g)
-  return ideal(O, V; M_in_hnf = true)
 end
 
 @doc raw"""
@@ -653,13 +776,39 @@ function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return GenOrdFracIdl(O, basis_mat)
 end
 
-# If I is not coprime to the conductor of O in the maximal order, then this might
-# not be an inverse.
-function inv(A::GenOrdIdl)
-  O = order(A)
-  return colon(O(1)*O, A)
+# For A = <m, alpha> with m = minimum(A) in m-normal two-element representation
+#   A^{-1} = O + beta*O, with beta = d_c * alpha^{-1}, d_c = part of denom(alpha^{-1}) coprime to m.
+# We compute this ideal as <d_m, gamma>/d_m, with
+#   gamma = numerator(alpha^{-1}, O) = d*alpha^{-1}; d = denom(alpha^{-1})
+#   d_m = part of denom(alpha^{-1}) supported at m.
+# We then have <d_m, gamma> = d_m*A^{-1} normal
+function _inv_2elem_normal(O::GenOrd, A::GenOrdIdl)
+  @hassert :GenOrd 1 has_2_elem_normal(A)
+
+  m = minimum(A; copy = false)
+  is_unit(m) && return GenOrdFracIdl(A)
+
+  gamma, d = integral_split(inv(data(A.gen_two)), O)
+  d_m = _make_canonical_in(O, ppio(d, m)[1])
+
+  Ai = ideal(O, d_m, _reduce_gen_two_2elem_normal(gamma, d_m))
+  Ai.gens_normal = A.gens_normal
+  Ai.norm = _make_canonical_in(O, divexact(d_m^degree(O), norm(A; copy = false)))
+  @hassert :GenOrd 2 defines_2_normal(Ai)
+  return GenOrdFracIdl(Ai, d_m)
 end
 
+function inv(A::GenOrdIdl)
+  O = order(A)
+
+  if is_maximal_known_and_maximal(O) && has_2_elem_normal(A)
+    B = _inv_2elem_normal(O, A)
+    return B
+  end
+
+  # If I is not coprime to the conductor of O in the maximal order, then this might not be an inverse.
+  return colon(O(1)*O, A)
+end
 
 ################################################################################
 #
@@ -702,6 +851,17 @@ function Hecke.minimum(A::GenOrdIdl; copy::Bool = true)
   end
 end
 
+# for the principal ideal <alpha>: m in alpha*O <=> m/alpha in O.
+# smallest such m (the minimum) is denominator of alpha^-1
+function _minimum_principal(O::GenOrd, alpha::GenOrdElem)
+  return _make_canonical_in(O, denominator(inv(data(alpha)), O))
+end
+
+# for <p, alpha> normal, the minimum is gcd(p, min(<alpha>))
+function _minimum_2elem_normal(O::GenOrd, gen_one::RingElem, gen_two::GenOrdElem)
+  return _make_canonical_in(O, gcd(gen_one, _minimum_principal(O, gen_two)))
+end
+
 function assure_has_minimum(A::GenOrdIdl)
   if has_minimum(A)
     return nothing
@@ -709,7 +869,9 @@ function assure_has_minimum(A::GenOrdIdl)
 
   O = order(A)
 
-  if isone(basis(O; copy = false)[1])
+  if has_2_elem_normal(A)
+    A.minimum = _minimum_2elem_normal(O, A.gen_one, A.gen_two)
+  elseif isone(basis(O; copy = false)[1])
     A.minimum = deepcopy(basis_matrix(A; copy = false)[1, 1])
   else
     M = basis_matrix(A; copy = false)
@@ -743,12 +905,23 @@ function has_norm(A::GenOrdIdl)
   return isdefined(A, :norm)
 end
 
+# for <p, alpha> normal, the norm is gcd(p^n, Norm(alpha))
+function _norm_2elem_normal(O::GenOrd, gen_one::RingElem, gen_two::GenOrdElem)
+  return _make_canonical_in(O, gcd(gen_one^degree(O), norm(gen_two)))
+end
+
 function assure_has_norm(A::GenOrdIdl)
   if has_norm(A)
     return nothing
   end
 
-  A.norm = _make_canonical_in(order(A), det(basis_matrix(A; copy = false)))
+  O = order(A)
+
+  if has_2_elem_normal(A)
+    A.norm = _norm_2elem_normal(O, A.gen_one, A.gen_two)
+  else
+    A.norm = _make_canonical_in(O, det(basis_matrix(A; copy = false)))
+  end
   return nothing
 end
 
@@ -867,7 +1040,13 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
   for (i, (fac, e)) in enumerate(fact)
     f = degree(fac)
     facnew = map_coefficients(y -> B(preimage(mK, y)), fac, cached = false)
-    b = O(facnew(a))
+
+    # facnew(a) is integral at p, but a itself need not be globally integral,
+    #   since we only require the defining polynomial to be locally integral at p.
+    # To bring it back into O, scale by the denominator (which is coprime to p);
+    #   this is equivalent to taking the numerator directly.
+    b = numerator(facnew(a), O)
+
     # We want a P-normal two-element presentation, i.e. v_P(b) = 1.
     # Since we are in the case of p not dividing the index, we have a good candidate b = g(a).
     #
@@ -888,10 +1067,18 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
     end
 
     I = ideal(O, p, b)
+    I.gens_normal = p
     I.is_prime = 1
     I.splitting_type = e, f
     I.norm = p^f
     I.minimum = p
+
+    # inert prime
+    if f == degree(O)
+      I.princ_gen = O(p)
+      I.is_principal = 1
+    end
+
     result[i] = (I,e)
   end
   return result
@@ -900,9 +1087,9 @@ end
 function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = order(A)
   e = 0
-  if has_2_elem(p)
-    beta = Hecke.numerator(inv(O.F(p.gen_two)),O)
-    newA = GenOrdFracIdl(beta*A,p.gen_one)
+  if has_2_elem_normal(p)
+    beta = Hecke.numerator(inv(O.F(p.gen_two)), O)
+    newA = GenOrdFracIdl(beta*A, p.gen_one)
     while is_integral(newA)
       e += 1
       newA = GenOrdFracIdl(numerator(beta*newA; copy = false), p.gen_one)
@@ -934,30 +1121,48 @@ function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
   return primes
 end
 
+# For the Dedekind-Kummer criterion we need to consider the local (at p) defining polynomial f.
+# In general, we do not need the defining polynomial to be monic;
+#   we can make it monic in the base field and then consider its localization.
+# Currently, we demand that f is monic "globally" (that is, leading coefficient is 1),
+#   so it is enough to check the valuations of the denominators.
+
+# The local version of is_defining_polynomial_nice:
+#   checks whether the polynomial is monic and the coefficient valuations are non-negative.
+function _is_defining_polynomial_nice_at(O::GenOrd, p::RingElem)
+  @req parent(p) === base_ring(O) "p must lie in the coefficient ring of O"
+  f = defining_polynomial(field(O))
+  is_one(leading_coefficient(f)) || return false
+
+  R = base_ring(O)
+  for c in coefficients(f)
+    divides(denominator(c, R), p)[1] && return false
+  end
+
+  return true
+end
+
+function is_index_divisor(O::GenOrd, p::RingElem)
+  @req parent(p) === base_ring(O) "p must lie in the coefficient ring of O"
+  is_equation_order(O) && return false
+
+  num, den = integral_split(det(basis_matrix_inverse(O)), base_ring(O))
+  # if p divides the numerator, it divides the index;
+  # if p divides the denominator, the order is not maximal at p (cannot use Dedekind-Kummer)
+  return divides(num, p)[1] || divides(den, p)[1]
+end
+
 function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
-  # Fast path needs:
-  # 1. well-defined equation order: we need defining polynomial to be "nice",
-  #    that is, monic and integral
-  # 2. finite maximal order setting, since index is ill-defined for KInftyRing
-  # 3. p coprime to index
-  # Note: for non-nice polynomials the index has a denominator.
-  #       We could check divisibility by p of both numerator and denominator,
-  #       but that is a bit hacky, so we mimic number fields and instead
-  #       check that the defining polynomial is nice.
-  if !isa(base_ring(O), KInftyRing) &&
-     is_defining_polynomial_nice(O.F) &&
-     !(divides(index(O), p)[1])
+  if _is_defining_polynomial_nice_at(O, p) && !is_index_divisor(O, p)
     return prime_dec_nonindex(O, p, degree_limit, lower_limit)
   else
     return prime_dec_gen(O, p, degree_limit, lower_limit)
   end
 end
 
-# TODO: prime_dec_gen currently does NOT set gen_two
-# TODO: we should mimic number fields by adding a search for a uniformizer
 function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   Ip = pradical(O, p)
-  lp = _decomposition(O, ideal(O, p), Ip, ideal(O, one(O)), p)
+  lp = _decomposition(O, ideal(O, p), Ip, p)
   #=z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
     if degree(Q) <= degree_limit && degree(Q) >= lower_limit
@@ -995,22 +1200,93 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   return ideal(O, rad(O,p); M_in_hnf = true)
 end
 
-# WARNING: TI is unused. I guess the idea is to keep signature same as AbsNumField case
-function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, TI::GenOrdIdl{S, T}, p::RingElem) where {S, T}
+function _basis_uniformizer(P::GenOrdIdl, p::RingElem, f::Int)
+  # We have one prime above p.
+  # If we are in maximal (at p) order, at least one element of the basis
+  #   must have valuation exactly 1 (otherwise all of them are in P^2).
+  q = p^(f + 1)
+  for b in basis(P)
+    divides(norm(b), q)[1] || return b
+  end
+
+  return nothing # non-maximal at p: no certified uniformizer
+end
+
+function _idempotent_uniformizer(P::GenOrdIdl, p::RingElem, f::Int, idempotent::GenOrdElem)
+  O = order(P)
+
+  # From structure algebra decomposition, we have idempotent e_j such that
+  #   e_j = 1 mod P_j and e_j = 0 mod P_i for i != j
+  # We have v_P(u) >= 1 and v_Q(u) = 0 for Q != P above p
+  u = one(O) - idempotent
+
+  q = p^(f + 1)
+  divides(norm(u), q)[1] || return u
+
+  # v_P(u) >= 2. Try shifting by idempotent without changing the valuation
+  #   at other primes Q != P above p
+  # If we have basis element b of valuation 1 we have v_P(u + b*idempotent) = 1
+  #   and the valuation at other primes stays 0 (due to idempotent)
+  # As above: such a basis element is guaranteed in p-maximal order
+  #   but if not found, then we just won't have gen_two set
+  for b in basis(P)
+    u2 = u + idempotent*b
+    divides(norm(u2), q)[1] || return u2
+  end
+
+  return nothing
+end
+
+function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, p::RingElem) where {S, T}
   #I is an ideal lying over p
-  #T is contained in the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = StructureConstantAlgebra(O, Ip1, p)
+
   AtoO = pseudo_inv(OtoA)
-  ideals, _ = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
-  for j in 1:length(ideals)
-    P = ideals[j][1]
+  ideals, AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+
+  pcount = length(ideals)
+
+  # check if we have inert prime: we then have principal ideal
+  if pcount == 1 && ideals[1][1].splitting_type[2] == degree(O)
+    P = ideals[1][1]
+    P.splitting_type = 1, degree(O)
+
+    P.gen_one = p
+    P.gen_two = O(p)
+    P.gens_normal = p
+    P.princ_gen = O(p)
+    P.is_principal = 1
+
+    ideals[1] = (P, 1)
+    return ideals
+  end
+
+  for i in 1:pcount
+    P = ideals[i][1]
     f = P.splitting_type[2]
+
+    # find uniformizer (gen_two)
+    P_uni = if pcount == 1
+      _basis_uniformizer(P, p, f)
+    else
+      idem  = AtoO(AA[i][2](one(AA[i][1])))
+      _idempotent_uniformizer(P, p, f, idem)
+    end
+
+    # if we have found uniformizer: set normal representation
+    if P_uni !== nothing
+      P.gen_one = p
+      P.gen_two = P_uni
+      P.gens_normal = p
+    end
+
     e = valuation(ideal(O, p), P)
     P.splitting_type = e, f
-    ideals[j] = (P,e)
+    ideals[i] = (P, e)
   end
+
   return ideals
 end
 
@@ -1247,7 +1523,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1, p::RingElem) where {T}
+function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1::GenOrdIdl, p::RingElem) where {T}
 
   O = order(Ip1)
   n = degree(O)
