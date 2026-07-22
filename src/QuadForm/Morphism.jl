@@ -170,7 +170,7 @@ function init(
     w = Vector{ZZRingElem}(undef, r)
     w[1] = numerator(cand[2])
     for k in 2:r
-      w[2] = _norm(vfmpz, C.G[k], tmp)
+      w[k] = _norm(vfmpz, C.G[k], tmp)
     end
 
     lengths[i] = w
