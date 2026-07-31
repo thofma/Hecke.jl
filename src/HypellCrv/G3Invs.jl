@@ -41,6 +41,7 @@ function shioda_invariants(C::HypellCrv)
 end
 
 function shioda_invariants(f::PolyRingElem{T}) where T
+  K = base_ring(f)
   Rxz, (x, z) = polynomial_ring(K, ["x", "z"])
   coeff_f = coefficients(f)
   f_hom = sum([coeff_f[i]*x^i*z^(8 - i) for i in (0:8)];init = zero(Rxz))
