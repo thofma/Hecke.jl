@@ -241,3 +241,179 @@ end
 function _hnf_left!(M::ZZMatrix)
   return _hnf!(M, :lowerleft)
 end
+
+###########################################################################################
+#
+#   Weak Popov (local kernel, with optional content stripping)
+#
+###########################################################################################
+
+# Our own version of weak Popov form. We need it for two main reasons:
+# - AbstractAlgebra's weak_popov! mutates stored entries
+# - We need version with content stripping; by itself the content stripping is very cheap,
+#   but helps tremendously with height control when input matrix is coming
+#   from numerator/denominator split (HNF)
+#
+# Since we also do content stripping on input, one might say
+#   that we are doing weak Popov over Z[x]. Still, in FLINT, fmpq_poly is
+#   fmpz_poly + denominator, so specializing to Z[x] would gain nothing, while
+#   complicating the implementation (in Q[x] we can easily divide by pivot's
+#   leading coefficient).
+
+# The implementation below is copied from AbstractAlgebra.jl, with two changes:
+# - the addition of _strip_row! and _scale_row! (row normalization,
+#   hooked per reduction trait via _strip_row!)
+# - entries are never mutated in place (P[r, c] += t, not add!):
+#   AbstractAlgebra's weak_popov! mutates stored entries, which corrupts
+#   matrices with aliased entries. An upstream fix was proposed and not taken.
+
+# Weak Popov form is reached by *simple transformations* (Mulders-Storjohann):
+#   whenever two rows have their pivot (rightmost entry of maximal row degree)
+#   in the same column, subtract the appropriate q*row multiple of the
+#   lower-degree row from the other. Each step strictly decreases the measure
+#   combining the modified row's degree and pivot position, which proves
+#   termination.
+# Over Q the *rational coefficients* of intermediate rows still swell; the cure
+#   is to strip the rational content of every modified row right after each
+#   simple transformation. Rational constants are units of Q[x], so row scaling
+#   preserves the row module exactly, and no degree changes -- hence the pivot
+#   bookkeeping of AbstractAlgebra applies unchanged and is reused directly.
+# This mirrors weak_popov!/weak_popov_with_pivots! from
+#   AbstractAlgebra/src/Matrix.jl with the extended (W) and last_row/last_col
+#   features dropped; we keep an own copy of the loop because AbstractAlgebra
+#   exposes no row-normalization hook and its kernel is unsafe on aliased
+#   entries (see above).
+
+# gcd of the rational contents of the entries of row r of M
+function _row_content(M::MatElem{QQPolyRingElem}, r::Int)
+  c = zero(QQ)
+  for j in 1:ncols(M)
+    c = gcd(c, content(M[r, j]))
+  end
+  return c
+end
+
+# row-normalization hook: only the Q[x] flavour strips content;
+#   returns the scaling constant to mirror on U, or nothing
+_strip_row!(P::MatElem, r::Int) = nothing
+
+function _strip_row!(P::MatElem{QQPolyRingElem}, r::Int)
+  c = _row_content(P, r)
+  (is_zero(c) || is_one(c)) && return nothing
+
+  _scale_row!(P, r, c)
+  return c
+end
+
+# Divide row r of M by the nonzero constant c.
+function _scale_row!(M::MatElem{QQPolyRingElem}, r::Int, c::QQFieldElem)
+  for j in 1:ncols(M)
+    is_zero_entry(M, r, j) && continue
+    M[r, j] = divexact(M[r, j], c)
+  end
+  return M
+end
+
+# local copies of the (read-only) pivot helpers, so the kernel does not
+#   depend on AbstractAlgebra internals
+# pivot = rightmost entry of maximal degree in row r
+function _find_pivot_popov(P::MatElem, r::Int)
+  pivot = ncols(P)
+  for c in ncols(P)-1:-1:1
+    if degree(P[r, c]) > degree(P[r, pivot])
+      pivot = c
+    end
+  end
+  return pivot
+end
+
+function _init_pivots_popov(P::MatElem)
+  pivots = [Int[] for _ in 1:ncols(P)]
+  for r in 1:nrows(P)
+    p = _find_pivot_popov(P, r)
+    is_zero_entry(P, r, p) || push!(pivots[p], r)
+  end
+  return pivots
+end
+
+# The Mulders-Storjohann loop, following weak_popov_with_pivots! in
+#   AbstractAlgebra/src/Matrix.jl.
+# U is touched only when with_trafo is true: its rows are combined and scaled
+#   exactly like the rows of P, so P_out = U*P_in holds exactly and U is unimodular:
+#   simple transformations have determinant 1, while stripping content c scales a row
+#   by the unit 1/c.
+function _weak_popov!(P::MatElem{T}, U::MatElem{T}, with_trafo::Bool) where {T <: PolyRingElem}
+  n = ncols(P)
+
+  # normalize the input rows as well, mirroring the scaling on U
+  for r in 1:nrows(P)
+    cnt = _strip_row!(P, r)
+    if with_trafo && cnt !== nothing
+      _scale_row!(U, r, cnt)
+    end
+  end
+
+  pivots = _init_pivots_popov(P)
+
+  t = base_ring(P)()
+  change = true
+  while change
+    change = false
+    for i in 1:n
+      if length(pivots[i]) <= 1
+        continue
+      end
+      change = true
+      # reduce with the pivot of minimal degree
+      pivot_ind = argmin([degree(P[j, i]) for j in pivots[i]])
+      pivot = pivots[i][pivot_ind]
+      for j in 1:length(pivots[i])
+        if j == pivot_ind
+          continue
+        end
+        r = pivots[i][j]
+        q = -div(P[r, i], P[pivot, i])
+        for c in 1:n
+          t = mul!(t, q, P[pivot, c])
+          P[r, c] += t
+        end
+        if with_trafo
+          for c in 1:ncols(U)
+            t = mul!(t, q, U[pivot, c])
+            U[r, c] += t
+          end
+        end
+        # the simple transformation is done: normalize the modified row
+        cnt = _strip_row!(P, r)
+        if with_trafo && cnt !== nothing
+          _scale_row!(U, r, cnt)
+        end
+      end
+      old_pivots = pivots[i]
+      pivots[i] = [pivot]
+      for j in 1:length(old_pivots)
+        if j == pivot_ind
+          continue
+        end
+        p = _find_pivot_popov(P, old_pivots[j])
+        if !is_zero_entry(P, old_pivots[j], p)
+          push!(pivots[p], old_pivots[j])
+        end
+      end
+    end
+  end
+  return nothing
+end
+
+# Weak Popov form of P, computed in place. Returns P (in weak Popov form)
+function _weak_popov!(P::MatElem{<:PolyRingElem})
+  _weak_popov!(P, similar(P, 0, 0), false)
+  return P
+end
+
+# In-place weak Popov with transform: returns (P, U) with P_out = U*P_in exactly and U unimodular.
+function _weak_popov_with_transform!(P::MatElem{<:PolyRingElem})
+  U = identity_matrix(base_ring(P), nrows(P))
+  _weak_popov!(P, U, true)
+  return P, U
+end
