@@ -691,7 +691,7 @@ end
     @test cI == I*c
     @test inv(c)*cI == I
     @test cI == @inferred (F(c)*O)*I
-    @test basis(cI) == [F(c)*b for b in basis(I)]
+    @test cI == fractional_ideal(O, c*basis_matrix(I))
   end
 
   Ofin = finite_maximal_order(F)

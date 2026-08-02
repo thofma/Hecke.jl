@@ -37,9 +37,9 @@ end
 Return the divisor corresponding to the factorization of the ideal I (for the finite places) and ideal J (for the infinite places)
 """
 divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) = Divisor(I, J)
-divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(GenOrdFracIdl(I), GenOrdFracIdl(J))
-divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, GenOrdFracIdl(J))
-divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(GenOrdFracIdl(I), J)
+divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(fractional_ideal(I), fractional_ideal(J))
+divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, fractional_ideal(J))
+divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(fractional_ideal(I), J)
 
 @doc raw"""
     divisor(I::GenOrdFracIdl) -> Divisor
@@ -58,7 +58,7 @@ function divisor(I::GenOrdFracIdl{<: Generic.AbsSimpleFunctionField, <: PolyRing
 end
 
 function divisor(I::GenOrdIdl)
-  return divisor(GenOrdFracIdl(I))
+  return divisor(fractional_ideal(I))
 end
 
 @doc raw"""

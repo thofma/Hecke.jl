@@ -186,13 +186,22 @@ end
   end
 end
 
+# For fractional ideals we support two possible representations:
+# - integral ideal (canonical HNF) with denominator
+# - numerator of basis matrix (elements in the base ring) with denominator
+# The main reason is the possiblity of cheaper row module reduction; in function
+#   fields we can use Popov weak form (non-canonical basis reduction).
+# This is especially important over Q[x], where HNF is too expensive due to coefficient swell.
 @attributes mutable struct GenOrdFracIdl{S, T}
   order::GenOrd{S, T}
+
   num::GenOrdIdl{S, T}
-  den::RingElem
+  basis_matrix_num # ::dense_matrix_type(elem_type(T))
+  den::RingElem # ::elem_type(T)
+
   norm::RingElem
-  basis_matrix#::FakeFracFldMat
-  basis_mat_inv#::FakeFracFldMat
+  basis_matrix
+  basis_mat_inv
 
   function GenOrdFracIdl(O::GenOrd{S, T}) where {S, T}
     z = new{S, T}()
@@ -200,29 +209,18 @@ end
     return z
   end
 
-  function GenOrdFracIdl(a::GenOrdIdl{S, T}, b::RingElem) where {S, T}
-    z = new{S, T}()
-    O = order(a)
-    z.order = O
-    z.num = a
-    z.den = _make_canonical_in(O, b)
+  function GenOrdFracIdl(I::GenOrdIdl{S, T}, d::RingElem) where {S, T}
+    O = order(I)
+    z = GenOrdFracIdl(O)
+    z.num = I
+    z.den = _make_canonical_in(O, d)
     return z
   end
 
-   function GenOrdFracIdl(a::GenOrdIdl{S, T}) where {S, T}
-    z = new{S, T}()
-    O = order(a)
-    z.order = order(a)
-    z.num = a
-    z.den = O.R(1)
-    return z
-  end
-
-
-  function GenOrdFracIdl(O::GenOrd{S, T}, a::MatElem) where {S, T}
-    z = new{S, T}()
-    z.order = O
-    z.basis_matrix = a
+  function GenOrdFracIdl(O::GenOrd{S, T}, M::MatElem, d::RingElem) where {S, T}
+    z = GenOrdFracIdl(O)
+    z.basis_matrix_num = M::dense_matrix_type(elem_type(T))
+    z.den = _make_canonical_in(O, d)
     return z
   end
 end

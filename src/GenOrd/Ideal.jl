@@ -548,7 +548,7 @@ function Hecke.colon(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   m = transpose(sub(hnf(transpose(m)), 1:degree(O), 1:degree(O)))
   # Lift, divide by d, invert: that's (a:b) as a fractional ideal.
   basis_mat = inv(divexact(change_base_ring(Kt, m), Kt(d)))
-  return GenOrdFracIdl(O, basis_mat)
+  return fractional_ideal(O, basis_mat)
 end
 
 # For A = <m, alpha> with m = minimum(A) in m-normal two-element representation
@@ -561,7 +561,7 @@ function _inv_2elem_normal(O::GenOrd, A::GenOrdIdl)
   @hassert :GenOrd 1 has_2_elem_normal(A)
 
   m = minimum(A; copy = false)
-  is_unit(m) && return GenOrdFracIdl(A)
+  is_unit(m) && return fractional_ideal(A)
 
   gamma, d = integral_split(inv(data(A.gen_two)), O)
   d_m = _make_canonical_in(O, ppio(d, m)[1])
@@ -570,7 +570,7 @@ function _inv_2elem_normal(O::GenOrd, A::GenOrdIdl)
   Ai.gens_normal = A.gens_normal
   Ai.norm = _make_canonical_in(O, divexact(d_m^degree(O), norm(A; copy = false)))
   @hassert :GenOrd 2 defines_2_normal(Ai)
-  return GenOrdFracIdl(Ai, d_m)
+  return fractional_ideal(Ai, d_m)
 end
 
 function inv(A::GenOrdIdl)
@@ -708,11 +708,7 @@ $\mathcal O$ is the order of $A$.
 """
 function Hecke.norm(A::GenOrdIdl; copy::Bool = true)
   assure_has_norm(A)
-  if copy
-    return deepcopy(A.norm)::elem_type(base_ring(order(A)))
-  else
-    return A.norm::elem_type(base_ring(order(A)))
-  end
+  return (copy ? deepcopy(A.norm) : A.norm)::elem_type(base_ring(order(A)))
 end
 
 ################################################################################
@@ -877,16 +873,16 @@ function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   e = 0
   if has_2_elem_normal(p)
     beta = Hecke.numerator(inv(O.F(p.gen_two)), O)
-    newA = GenOrdFracIdl(beta*A, p.gen_one)
+    newA = fractional_ideal(beta*A, p.gen_one)
     while is_integral(newA)
       e += 1
-      newA = GenOrdFracIdl(numerator(beta*newA; copy = false), p.gen_one)
+      newA = fractional_ideal(numerator(beta*newA; copy = false), p.gen_one)
     end
   else
     newA = Hecke.colon(A,p)
     while is_integral(newA)
       e+=1
-      newA = Hecke.colon(newA,GenOrdFracIdl(p))
+      newA = Hecke.colon(newA,fractional_ideal(p))
     end
   end
   return e
