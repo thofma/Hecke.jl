@@ -215,7 +215,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   fl, alpha = is_locally_free(I, p, side = :right)
   imal = image(f, alpha)
   if !fl
-    if with_iso === Val{true}
+    if with_iso
       return fl, imal
     else
       return fl
