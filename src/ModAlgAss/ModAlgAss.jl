@@ -447,8 +447,6 @@ function trivial_module(A::AbstractAssociativeAlgebra)
 end
 
 function regular_module(A::AbstractAssociativeAlgebra)
-  K = base_ring(A)
-  n = dim(A)
   B = basis(A)
   action_of_basis = [representation_matrix(b, :right) for b in B]
   M = Amodule(A, action_of_basis)
@@ -458,7 +456,6 @@ function regular_module(A::AbstractAssociativeAlgebra)
 end
 
 function regular_module(A::AbstractAssociativeAlgebra, p)#::AbsAlgAssMor)
-  K = base_ring(A)
   action_of_basis = [representation_matrix(p(b), :right) for b in basis(A)]
   M = Amodule(A, action_of_basis)
   # We do some more, because we know the endomorphism algbera
@@ -487,7 +484,6 @@ end
 
 function free_module(A::AbstractAssociativeAlgebra, r::Int)
   K = base_ring(A)
-  n = dim(A)
   B = basis(A)
   action_of_basis = Vector{dense_matrix_type(K)}()
   for b in B
@@ -668,6 +664,9 @@ function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
 end
 
 function is_free(V::ModAlgAss)
+  if V.isfree == 1
+    return true
+  end
   dV = dim(V)
   A = algebra(V)
   dA = dim(A)
@@ -675,7 +674,7 @@ function is_free(V::ModAlgAss)
     return false
   end
   d = div(dV, dA)
-  fl = is_isomorphic_with_isomorphism(V, free_module(algebra(V), d))[1]
+  fl, _ = is_isomorphic_with_isomorphism(V, free_module(algebra(V), d))
   if !fl
     return false
   end
@@ -714,7 +713,7 @@ function _twist(V::ModAlgAss, a::Map)
     @assert A(g) == B[i]
     push!(rep2, action(V, A(a(g))))
   end
-  W = Amodule(A, rep2)
+  return Amodule(A, rep2)
 end
 
 function _change_group(V::ModAlgAss, a::Map; algebra = nothing)
@@ -731,6 +730,5 @@ function _change_group(V::ModAlgAss, a::Map; algebra = nothing)
     g = A.base_to_group[i]
     push!(rep2, action(V, A(a(g))))
   end
-  W = Amodule(QH, rep2)
-  return W
+  return Amodule(QH, rep2)
 end
