@@ -649,9 +649,13 @@ end
 #end
 
 function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
+  br = W.base_ring
+  if V == W
+    return true, hom(V, W, identity_matrix(br, dim(W)); check=false)
+  end
   B = _basis_of_hom(W, V)
   if length(B) == 0
-    return false, hom(V, W, basis(W))
+    return false, hom(V, W, zero_matrix(br, dim(W)); check=false)
   end
   l = length(B)
   for i in 1:50
@@ -660,7 +664,7 @@ function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
       return true, hom(V, W, c)
     end
   end
-  return false, hom(V, W, basis(W))
+  throw("Maximal number of tries exhausted while finding isomorphism")
 end
 
 function is_free(V::ModAlgAss)
