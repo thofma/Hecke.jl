@@ -37,7 +37,6 @@ function endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat)
   n = nrows(BELint[1])
   r = length(BELint)
   Z = zero_matrix(ZZ, r, n^2)
-  cartesiantolinear = LinearIndices((n, n))
   lineartocartesian = CartesianIndices((n, n))
   for i in 1:r
     for j in 1:n^2
@@ -112,7 +111,6 @@ function _hom_space_as_ideal(L::ModAlgAssLat, M::ModAlgAssLat)
   n = nrows(Bint[1])
   r = length(Bint)
   Z = zero_matrix(ZZ, r, n^2)
-  cartesiantolinear = LinearIndices((n, n))
   lineartocartesian = CartesianIndices((n, n))
   for i in 1:r
     for j in 1:n^2
@@ -215,7 +213,7 @@ function _is_loc_iso_gen(L::ModAlgAssLat,
   fl, alpha = is_locally_free(I, p, side = :right)
   imal = image(f, alpha)
   if !fl
-    if with_iso === Val{true}
+    if with_iso
       return fl, imal
     else
       return fl
@@ -273,7 +271,7 @@ end
 
 function _is_isomorphic_with_isomorphism_same_ambient_module(L::ModAlgAssLat, M::ModAlgAssLat, ::Val{with_iso} = Val(true)) where {with_iso}
   @vprintln :PIP 1 "is_isomorphic: computing hom space as ideal"
-  E, f, O, I = _hom_space_as_ideal(L, M)
+  _, f, O, I = _hom_space_as_ideal(L, M)
   # This is BHJ, 2022, Prop. 3.3
   # Need to check that L and M are locally isomorphic
   @vprintln :PIP 1 "is_isomorphic: checking local isomorphism"
@@ -388,7 +386,6 @@ function is_free_with_basis(L::ModAlgAssLat)
   @assert d != -1
   @assert d == 1
   O = L.base_ring
-  A = algebra(O)
   M = free_lattice(O, d)
   V = M.V
   fl, iso = is_isomorphic_with_isomorphism(L, M)
