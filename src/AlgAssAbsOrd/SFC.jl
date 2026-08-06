@@ -288,6 +288,13 @@ function _eichler_invariant(O, p)
   end
 end
 
+function is_eichler(O)
+  A = algebra(O)
+  @req algebra(O) isa QuaternionAlgebra "Order must be an order of a quaternion algebra"
+  ram = _norms_of_ramified_primes(A)
+  return all(f -> f[2] == 1 || (all(x -> !in(x, f[1]) for x in ram) && eichler_invariant(O, f[1]) == 1), factor(_reduced_disc(O)))
+end
+
 ################################################################################
 #
 #  Classification
