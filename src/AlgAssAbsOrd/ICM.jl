@@ -6,19 +6,17 @@
 
 # Stefano Marseglia "Computing the ideal class monoid of an order"
 @doc raw"""
-    ideal_class_monoid(R::AbsNumFieldOrder; check::Bool=true)
+    ideal_class_monoid(R::AbsNumFieldOrder)
       -> Vector{FacElem{AbsSimpleNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
-    ideal_class_monoid(R::AlgAssAbsOrd; check::Bool=true)
+    ideal_class_monoid(R::AlgAssAbsOrd)
       -> Vector{FacElem{AlgAssAbsOrdIdl, AlgAssAbsOrdIdlSet}}
 
 Given an order $R$ in a number field or a finite product of number fields, this
 function returns representatives of the isomorphism classes of fractional
 ideals in $R$.
 """
-function ideal_class_monoid(R::T; check::Bool=true) where {T <: Union{AbsNumFieldOrder, AlgAssAbsOrd}}
-  if check
-    @assert is_commutative(R)
-  end
+function ideal_class_monoid(R::T) where {T <: Union{AbsNumFieldOrder, AlgAssAbsOrd}}
+  @req is_commutative(R) "Order must be commutative"
   orders = overorders(R)
   result = Vector{FacElem{fractional_ideal_type(R)}}()
   for S in orders
@@ -29,18 +27,17 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Prop. 4.1
 @doc raw"""
-    is_locally_isomorphic(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal; check::Bool=true) -> Bool
-    is_locally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl; check::Bool=true) -> Bool
-    is_locally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl; check::Bool=true) -> Bool
+    is_locally_isomorphic(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool
+    is_locally_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool
+    is_locally_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
 all primes $p$ of $R$ and `false` otherwise.
 """
-function is_locally_isomorphic(I::T, J::T; check::Bool=true) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
-  if check
-    @assert is_commutative(order(I))
-  end
+function is_locally_isomorphic(I::T, J::T) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+  @req order(I) == order(J) "Fractional ideals must be defined over same order"
+  @req is_commutative(order(I)) "Ambient order of ideal must be commutative"
   IJ = colon(I, J)
   JI = colon(J, I)
   return one(_algebra(order(I))) in IJ*JI
@@ -48,18 +45,17 @@ end
 
 # Stefano Marseglia "Computing the ideal class monoid of an order", Cor. 4.5
 @doc raw"""
-    is_isomorphic_with_map(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal; check::Bool=true) -> Bool, AbsSimpleNumFieldElem
-    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl; check::Bool=true) -> Bool, AbsSimpleNumFieldElem
-    is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl; check::Bool=true) -> Bool, AbstractAssociativeAlgebraElem
+    is_isomorphic_with_map(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic_with_map(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic_with_map(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbstractAssociativeAlgebraElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function is_isomorphic_with_map(I::T, J::T; check::Bool=true) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
-  if check
-    @assert is_commutative(order(I))
-  end
+function is_isomorphic_with_map(I::T, J::T) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+  @req order(I) == order(J) "Fractional ideals must be defined over same order"
+  @req is_commutative(order(I)) "Ambient order of ideal must be commutative"
   A = _algebra(order(I))
   if !is_locally_isomorphic(I, J)
     return false, zero(A)
@@ -79,16 +75,16 @@ function is_isomorphic_with_map(I::T, J::T; check::Bool=true) where {T <: Union{
 end
 
 @doc raw"""
-    is_isomorphic(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal; check::Bool=true) -> Bool, AbsSimpleNumFieldElem
-    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl; check::Bool=true) -> Bool, AbsSimpleNumFieldElem
-    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl; check::Bool=true) -> Bool, AbstractAssociativeAlgebraElem
+    is_isomorphic(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderIdeal) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic(I::NfFracOrdIdl, J::NfFracOrdIdl) -> Bool, AbsSimpleNumFieldElem
+    is_isomorphic(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl) -> Bool, AbstractAssociativeAlgebraElem
 
 Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` if an element $a \in A$ exists such that
 $I = aJ$ and `false` otherwise.
 """
-function is_isomorphic(I::T, J::T; check::Bool=true) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
-  return is_isomorphic_with_map(I, J; check=check)[1]
+function is_isomorphic(I::T, J::T) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+  return is_isomorphic_with_map(I, J)[1]
 end
 
 function ring_of_multipliers(I::AbsSimpleNumFieldOrderFractionalIdeal)
