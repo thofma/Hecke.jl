@@ -603,7 +603,7 @@ function write(io::IO, A::Vector{AbsSimpleNumFieldElem})
     return
   else
     # print some useful(?) information
-    print(io, "# File created by Hecke $VERSION_NUMBER, $(Base.Dates.now()), by function 'write'\n")
+    print(io, "# File created by Hecke $VERSION_NUMBER, $(Base.Dates.now()), by function 'write'\n")  # FIXME: VERSION_NUMBER is not defined
     K = parent(A[1])
     polring = parent(K.pol)
 
@@ -683,7 +683,7 @@ function read(io::IO, K::AbsSimpleNumField, ::Type{Hecke.AbsSimpleNumFieldElem})
       i = i + 1
     else
       coe = map(Hecke.ZZRingElem, split(ln, " "))
-      t = ZZPolyRingElem(Array(slice(coe, 1:(length(coe) - 1))))
+      t = ZZPolyRingElem(Array(slice(coe, 1:(length(coe) - 1))))  # FIXME: slice is not defined
       t = Qx(t)
       t = divexact(t, coe[end])
       push!(A, K(t))
