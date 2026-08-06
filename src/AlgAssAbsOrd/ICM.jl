@@ -189,11 +189,8 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrd
     return [ a ]
   end
 
-  K = _algebra(S)
   d = degree(S)
-
   potential_basis = Vector{elem_type(_algebra(S))}(undef, d)
-  ideals = fractional_ideal_type(R)[]
 
   for i = 1:mQ.offset
     potential_basis[i] = mQ.bottom_snf_basis[i]
@@ -297,7 +294,7 @@ matrix exists and `false` and $0$ otherwise.
 The characteristic polynomial of $M$ is required to be square-free.
 """
 function is_conjugate(M::ZZMatrix, N::ZZMatrix)
-  Zx, x = ZZ["x"]
+  Zx, _ = ZZ["x"]
   f = charpoly(Zx, M)
   if f != charpoly(Zx, N)
     return false, zero_matrix(ZZ, nrows(M), ncols(M))
@@ -314,7 +311,7 @@ function is_conjugate(M::ZZMatrix, N::ZZMatrix)
     return _isconjugate(equation_order(fields[1]), M, N)
   end
 
-  A, AtoK = direct_product(fields)::Tuple{StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
+  A, _ = direct_product(fields)::Tuple{StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
   O = _equation_order(A)
   return _isconjugate(O, M, N)
 end
