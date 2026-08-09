@@ -713,6 +713,7 @@ export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
+export multiplicative_generator
 export multiplicative_group
 export multiplicative_group_generators
 export multiplicative_order

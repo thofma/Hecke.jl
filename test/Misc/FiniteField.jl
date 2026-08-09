@@ -1,3 +1,18 @@
+@testset "Multiplicative generator" begin
+  fields = FinField[
+    GF(31),
+    GF(ZZRingElem(31)),
+    GF(ZZRingElem(31), 2, :a),
+  ]
+
+  for F in fields
+    g = multiplicative_generator(F)
+    n = order(F) - 1
+    @test all(l -> !isone(g^div(n, l)), prime_divisors(n))
+    @test multiplicative_generator(F) === g
+  end
+end
+
 @testset "fpField" begin
 
   for p in [31, 11, 101]
@@ -250,4 +265,3 @@ let # #2237
   U, mU = unit_group(L)
   @test order(U) == ZZ(37)^14 - 1
 end
-
