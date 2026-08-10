@@ -125,7 +125,7 @@ end
 #
 ################################################################################
 
-function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepField, fqPolyRepField, fpField, Nemo.FpField, FqField}
+function _primitive_element(F::T, n_quo::Int) where T <: Union{FqPolyRepField, fqPolyRepField, fpField, Nemo.FpField, FqField}
   n = order(F)-1
   k = ZZRingElem(1)
   if n_quo != -1
@@ -157,6 +157,26 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepFiel
     end
   end
   return x
+end
+
+@doc raw"""
+    multiplicative_generator(F::FinField) -> FinFieldElem
+
+Return a generator of the multiplicative group of the finite field $F$.
+
+The result is cached on the finite field, so repeated calls return the same
+element.
+"""
+@attr elem_type(F) function multiplicative_generator(F::T) where T <: Union{FqPolyRepField, fqPolyRepField, fpField, Nemo.FpField, FqField}
+  return _primitive_element(F, -1)
+end
+
+function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepField, fqPolyRepField, fpField, Nemo.FpField, FqField}
+  if n_quo == -1
+    # to exploit caching
+    return multiplicative_generator(F)
+  end
+  return _primitive_element(F, n_quo)
 end
 
 
@@ -355,4 +375,3 @@ function disc_log(b::T, x::T) where {T <: FinFieldElem}
   @assert parent(b) === parent(x)
   return Hecke.disc_log_bs_gs(b, x, order(parent(b)))
 end
-
