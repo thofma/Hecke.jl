@@ -222,6 +222,8 @@ function __init__()
   add_verbosity_scope(:PolyFactor)
   add_assertion_scope(:PolyFactor)
 
+  add_verbosity_scope(:pRationality)
+
   add_verbosity_scope(:PseudoHnf)
   add_assertion_scope(:PseudoHnf)
   add_verbosity_scope(:PseudoHnfKB)
