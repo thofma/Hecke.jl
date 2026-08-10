@@ -55,6 +55,24 @@
         @test_throws ErrorException sylow_subgroup(G,10)
     end
 
+    @testset "exponent" begin
+        for (id, e) in [((1, 1), 1), ((4, 1), 4), ((4, 2), 2), ((8, 5), 2)]
+            G = small_group(id...)
+            @test e == @inferred exponent(G)
+            @test all(isone(g^e) for g in G)
+        end
+
+        # The exponent need not be the order of an element.
+        G = small_group(6, 1)
+        @test maximum(order(g) for g in G) == 3
+        @test 6 == @inferred exponent(G)
+        @test all(isone(g^6) for g in G)
+
+        G, = direct_product(small_group(4, 1), small_group(6, 1))
+        @test 12 == @inferred exponent(G)
+        @test all(isone(g^12) for g in G)
+    end
+
     @testset "GrpGenToGrpAb" begin
         G,AtoG,GtoA = Hecke.generic_group([1, -1, im, -im], *)
         GrpAb, GtoGrpAb, GrpAbtoG = Hecke.gen_2_ab(G)

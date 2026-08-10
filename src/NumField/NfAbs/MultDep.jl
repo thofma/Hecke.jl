@@ -779,6 +779,18 @@ function __is_saturated_definitely(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsS
   return false
 end
 
+function _psaturation(mU, p)
+  if iszero(ngens(domain(mU)))
+    return mU
+  end
+  fl, mC = Hecke.MultDep._is_saturated(mU, p; support = Vector{AbsSimpleNumFieldOrderIdeal}())
+  while !fl
+    #@info "Not saturated at $p; Saturating ..."
+    fl, mC = Hecke.MultDep._is_saturated(mC, p; support = Vector{AbsSimpleNumFieldOrderIdeal}())
+  end
+  return mC
+end
+
 export syzygies
 
 end

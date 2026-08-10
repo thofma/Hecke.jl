@@ -345,10 +345,199 @@ function _is_definitely_saturated(U::UnitGrpCtx, p)
   return __is_definitely_saturated(order(U), U.units, p)
 end
 
-function __is_definitely_saturated(O, units, p)
+function __is_definitely_saturated(O, units::Vector, p)
   return __is_definitely_saturated_default(units, p)
+end
+
+# this is the new function, but it needs tuning
+function __is_definitely_saturated_new(O, units::Vector, p)
+  if is_ramified(O, p)
+    return __is_definitely_saturated_default(units, p)
+  end
+  try
+    fl, = pRational._schirokauer_map_data_generic(base_ring(units[1]), units, p; OK = O)
+    return fl
+  catch e
+    if !(e isa ErrorException && (e.msg == "Problem in the FLINT-Subsystem" || e.msg == "Impossible inverse in invmod"))
+      rethrow(e)
+    end
+    return __is_definitely_saturated_default(units, p)
+  end
 end
 
 function __is_definitely_saturated_default(units, p)
   return 0 == nrows(RelSaturate.compute_candidates_for_saturate(units, Int(p), 3.5))
+end
+
+module VerifyUnitGroup
+
+using ..Hecke
+
+import Hecke:
+  _base_ring
+
+import ..Hecke.pRationalCyclotomic:
+  _pick_automorphisms
+
+import ..Hecke.pRational:
+  _schirokauer_map_data_minkowski_unit,
+  _schirokauer_map_data_generic
+
+struct VerifyContext
+  K::AbsSimpleNumField
+  OK::AbsSimpleNumFieldOrder
+  units::Vector{AbsSimpleNumFieldElem} #= fundamental units =#
+  units_fac::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}} #= as factored elements =#
+  u::AbsSimpleNumFieldElem #= Minkowski unit =#
+  is_normal::Bool
+  is_cyclic::Bool
+  auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldElem}}
+  auts_gen::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldElem}
+  t::Int # torsion units order #
+  tent_reg::ArbFieldElem
+  exp::ZZRingElem
+  contains_subfield_units::Bool
+end
+
+#function initialize_verify_context(OK::AbsSimpleNumFieldOrder, units::Vector{AbsSimpleNumFieldElem}; test_normality::Bool = true)
+#end
+
+
+function initialize_verify_context(OK::AbsSimpleNumFieldOrder; test_normality::Bool = true, evaluate_elements::Bool = true)
+  K = Hecke.nf(OK)
+  OK = lll(maximal_order(K))
+  U, mU = unit_group_fac_elem(maximal_order(K); GRH = true)
+  if evaluate_elements
+    units_fac = [FacElem(evaluate(mU(U[i]))) for i in 2:ngens(U)]
+  else
+    units_fac = [mU(U[i]) for i in 2:ngens(U)]
+  end
+  return initialize_verify_context(units_fac; test_normality, evaluate_elements = false)
+end
+
+function initialize_verify_context(units_fac::Vector{AbsSimpleNumFieldElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
+  return initialize_verify_context(FacElem.(units_fac); test_normality, evaluate_elements)
+end
+
+function initialize_verify_context(units_fac::Vector{AbsSimpleNumFieldOrderElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
+  return initialize_verify_context(elem_in_nf.(units_fac); test_normality, evaluate_elements)
+end
+
+function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
+  if evaluate_elements
+    units_fac = FacElem.(evaluate.(units_fac))
+  end
+  OK = lll(maximal_order(_base_ring(units_fac[1])))
+  K = Hecke.nf(OK)
+  t = torsion_units_order(K)
+  u = zero(K)
+  _is_normal = false
+  _is_cyclic = false
+  auts = Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldElem}}()
+  auts_gen = id_hom(K)
+  exp = ZZ(0)
+  contains_subfield_units = false
+  if test_normality && is_normal(K)
+    G, mG = automorphism_group(K)
+    exp = exponent(G)
+    auts =  _pick_automorphisms(K)
+    _is_normal = true
+    if is_cyclic(G)
+      _is_cyclic = true
+      g = G[rand(1:order(G))]
+      while order(g) != order(G)
+        g = G[rand(1:order(G))]
+      end
+      auts_gen = mG(g)
+    end
+    # now find a Minkowski unit
+    for i in 1:length(units_fac)
+      fl, = Hecke._isindependent([a(units_fac[i]) for a in auts])
+      if fl
+        u = evaluate(units_fac[i])
+        break
+      end
+    end
+    if is_zero(u)
+      # not found yet
+      k = 0
+      uu = K(mU(U(rand(0:1, ngens(U)))))
+      while !(Hecke._isindependent([a(uu) for a in auts]))
+        k += 1
+        uu = K(mU(rand(U, 2)))
+        if k > 100
+          error("something wrong")
+        end
+      end
+      u = evaluate(uu)
+    end
+  end
+  return VerifyContext(K, OK, elem_type(K)[], units_fac, u, _is_normal, _is_cyclic, auts, auts_gen, t, regulator(units_fac), exp, contains_subfield_units)
+end
+
+function _is_definitely_saturated(C::VerifyContext, p; strategy = :schirokauer)
+  if strategy == :gw
+    return Hecke.__is_definitely_saturated_default(C.units_fac, p)
+  end
+
+  if is_ramified(C.OK, p) || is_divisible_by(C.t, p)
+    return Hecke.__is_definitely_saturated_default(C.units_fac, p)
+  end
+  if C.is_normal
+    fl = try
+        fl, _ =  _schirokauer_map_data_minkowski_unit(C.K, C.u, p, C.auts; new = true)
+        fl
+      catch e
+        if !(e isa ErrorException && (e.msg == "Problem in the FLINT-Subsystem" || e.msg == "Impossible inverse in invmod"))
+          rethrow(e)
+        end
+        false
+    end
+    if fl
+      return true
+    end
+  end
+  # try the generic
+  fl = try
+    fl, _ = _schirokauer_map_data_generic(C.K, C.units_fac, p; OK = C.OK)
+    fl
+  catch e
+    if !(e isa ErrorException && (e.msg == "Problem in the FLINT-Subsystem" || e.msg == "Impossible inverse in invmod"))
+      rethrow(e)
+    end
+    false
+  end
+  if fl
+    return true
+  end
+  if !fl
+    return Hecke.__is_definitely_saturated_default(C.units_fac, p)
+  end
+end
+
+function Hecke.__is_definitely_saturated_default(units::Vector{<:FacElem}, p)
+  return 0 == nrows(Hecke.RelSaturate.compute_candidates_for_saturate(units, Int(p), 7.5))
+end
+
+function verify_maximlity_up_to(U::Vector, B::Int; strategy = :schirokauer)
+  C = initialize_verify_context(U; test_normality = true, evaluate_elements = true)
+  verify_maximlity_up_to(C, B; strategy)
+end
+
+function verify_maximlity_up_to(C::VerifyContext, B::Int; strategy = :schirokauer)
+  for p in PrimesSet(2, B)
+    if !_is_definitely_saturated(C, p; strategy)
+      @info p
+      error("Asds")
+    end
+  end
+  return true
+end
+
+function verify_lower_regulator_bound(C::VerifyContext, r::Float64; strategy = :schirokauer)
+  ub = Int(Hecke.upper_bound(ZZRingElem, C.tent_reg / r))
+  t = @elapsed verify_maximlity_up_to(C, ub; strategy)
+  return t
+end
+
 end
