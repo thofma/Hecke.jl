@@ -2050,9 +2050,30 @@ is_isotropic(q::QuadSpace) = is_isotropic(isometry_class(q))
 
 
 function _isisotropic_with_vector_finite(M)
-  n = ncols(M)
   k = base_ring(M)
+  n = ncols(M)
   _test(v) = iszero(matrix(k, 1, n, v) * M * matrix(k, n, 1, v))
+  if characteristic(k) == 2
+    # q(x) = sum_i M[i, i] * x[i]^2
+    # also, we are perfect
+    if n == 0 || (n == 1 && M[1, 1] != 0)
+      return false, elem_type(k)[]
+    else
+      # isotropic
+      i = findfirst(i -> is_zero(M[i, i]), 1:n)
+      v = zeros_array(k, n)
+      if i !== nothing
+        v[i] = one(k)
+      else
+        a = sqrt(M[1, 1])
+        b = sqrt(M[2, 2])
+        v[1] = b
+        v[2] = a
+      end
+      @assert _test(v)
+      return true, v
+    end
+  end
   @hassert :Lattice 1 (k isa Field || is_prime(modulus(k))) && characteristic(k) != 2
   if n == 0
     ;
