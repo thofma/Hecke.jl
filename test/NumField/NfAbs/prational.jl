@@ -1,4 +1,18 @@
 @testset "p-rationality" begin
+  @testset "input validation" begin
+    K, = quadratic_field(-1)
+    @test_throws ArgumentError is_quasi_p_rational(K, 4)
+    @test_throws ArgumentError is_p_rational(K, 4)
+    @test_throws ArgumentError is_real_cyclotomic_field_p_rational(5, 4)
+    @test_throws ArgumentError is_real_cyclotomic_field_p_rational(6, 3)
+    for T in [Int32, Int64, Int128, BigInt, ZZRingElem]
+      @test is_quasi_p_rational(K, T(3)) == is_quasi_p_rational(K, 3)
+      @test is_p_rational(K, T(3)) == is_p_rational(K, 3)
+      @test is_real_cyclotomic_field_p_rational(5, T(3)) ==
+            is_real_cyclotomic_field_p_rational(5, 3)
+    end
+  end
+
   # Lim 2022, Theorem 4.6
   ell = 11
   q = 2*ell + 1

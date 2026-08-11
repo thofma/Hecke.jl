@@ -2,6 +2,10 @@ module pRationalCyclotomic
 
 using ..Hecke
 
+import Nemo
+
+import ..Hecke: IntegerUnion
+
 import ..Hecke.pRational:
   _schirokauer_map_data_generic,
   _schirokauer_map_data_minkowski_unit,
@@ -166,7 +170,8 @@ end
     is_real_cyclotomic_field_p_rational(n::Int, p; GRH::Bool = false)
 
 Return whether the maximal real subfield of the cyclotomic field of conductor
-$n$ is $p$-rational at $p$.
+$n$ is $p$-rational at $p$. The conductor $n$ must not be congruent to $2$
+modulo $4$.
 
 See also [`is_quasi_p_rational`](@ref) and [`is_p_rational`](@ref) for versions
 that work for any number field.
@@ -176,9 +181,20 @@ that work for any number field.
 ```jldoctest
 julia> is_real_cyclotomic_field_p_rational(15, 13)
 false
+
+julia> p = ZZ(2)^127 - 1;
+
+julia> is_real_cyclotomic_field_p_rational(5, p)
+true
 ```
 """
-function is_real_cyclotomic_field_p_rational(n, p)
+function is_real_cyclotomic_field_p_rational(n, p::IntegerUnion)
+  @req mod(n, 4) != 2 "conductor n ($n) must not be congruent to 2 modulo 4"
+  @req is_prime(p) "p ($p) must be prime"
+  return _is_real_cyclotomic_field_p_rational(n, Nemo.flintify(p))
+end
+
+function _is_real_cyclotomic_field_p_rational(n, p)
   T = pRationalityTestCtx(n)
   return _p_rationality_of_real_cyclotomic_check_per_prime(T, p)
 end

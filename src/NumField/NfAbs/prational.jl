@@ -2,6 +2,8 @@ module pRational
 
 using ..Hecke
 
+import Nemo
+
 import Hecke:
   @sprintf,
   IntegerUnion,
@@ -612,14 +614,14 @@ julia> is_quasi_p_rational(K, 13)
 false
 ```
 """
-function is_quasi_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField}, p; GRH::Bool = false)
+function is_quasi_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField}, p::IntegerUnion; GRH::Bool = false)
   @req is_prime(p) "p ($p) must be prime"
-  fl, = _is_quasi_p_rational(K, p; GRH)
+  fl, = _is_quasi_p_rational(K, Nemo.flintify(p); GRH)
   return fl
 end
 
 # is_quasi_p_rational, but also return the p-maximal unit group for later use
-function _is_quasi_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField}, p::IntegerUnion; GRH::Bool = false)
+function _is_quasi_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField}, p; GRH::Bool = false)
   OK = lllmaximal_order(K)
   dK = discriminant(OK)
   us = _p_maximal_units(K, p; OK = OK)
@@ -673,7 +675,10 @@ false
 """
 function is_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField}, p::IntegerUnion; GRH::Bool = false)
   @req is_prime(p) "p ($p) must be prime"
+  return _is_p_rational(K, Nemo.flintify(p); GRH)
+end
 
+function _is_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField}, p; GRH::Bool = false)
   OK = lllmaximal_order(K)
 
   # (1)
