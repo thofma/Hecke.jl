@@ -19,7 +19,9 @@ function reproducible(args...)
   return x == rand(rng2, args...)
 end
 
-Hecke.assertions(true)
+enable_assertions = get(ENV, "HECKE_TEST_ASSERTIONS",
+                        get(ENV, "CI", "false") == "true" ? "false" : "true")
+Hecke.assertions(enable_assertions in ["1", "true"])
 
 if (isdefined(Hecke, :long_test) && Hecke.long_test) ||
    (isdefined(Main, :long_test) && Main.long_test)
