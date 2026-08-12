@@ -239,7 +239,7 @@ function _schirokauer_map_data_generic(K, u::Vector, ell; OK = lll(maximal_order
       return _schirokauer_map_data_generic(K, u, ell, ZZ(ell)^2, OK)
     end
   catch e
-    if !(e isa ErrorException && (e.msg == "Problem in the FLINT-Subsystem" || e.msg == "Impossible inverse in invmod"))
+    if !(e isa ErrorException && (e.msg == "Problem in the FLINT-Subsystem" || e.msg == "Impossible inverse in invmod" || e.msg == "not yet implemented"))
       rethrow(e)
     end
     return _schirokauer_map_data_really_really_generic(K, u, ZZ(ell), ZZ(ell)^2, OK)
@@ -247,6 +247,7 @@ function _schirokauer_map_data_generic(K, u::Vector, ell; OK = lll(maximal_order
 end
 
 function _schirokauer_map_data_generic(K, u::Vector, ell, ell2, OK)
+  # slightly unstable typewise, since we either use fpMatrix or FqMatrix
   d = degree(K)
   a = gen(K)
   #r = Hecke.unit_group_rank(K)
@@ -274,7 +275,11 @@ function _schirokauer_map_data_generic(K, u::Vector, ell, ell2, OK)
     u_mod_ell2 = [_mod(Zell2x, u[i], gmodell2, gmodell, Zellx) for i in 1:length(u)]
   end
 
-  M = zero_matrix(Hecke.Nemo.Native.GF(ell), r, d)
+  if fits(Int, ell)
+    M = zero_matrix(Hecke.Nemo.Native.GF(ell), r, d)
+  else
+    M = zero_matrix(Hecke.GF(ell), r, d)
+  end
   oldnorm = zero(ZZ)
   new_norm = false
   curj = 0
@@ -289,7 +294,11 @@ function _schirokauer_map_data_generic(K, u::Vector, ell, ell2, OK)
       new_norm = false
     end
     #@info "new_norm: $(new_norm)"
-    F, mF = Hecke.ResidueFieldSmall(OK, P)
+    if fits(Int, ell)
+      F, mF = Hecke.ResidueFieldSmall(OK, P)
+    else
+      F, mF = Hecke.residue_field(OK, P)
+    end
     mFF = Hecke.extend(mF, K)
     mFF_easy = Hecke.extend_easy(mF, K)
     for i in 1:length(u)
@@ -512,7 +521,7 @@ function _p_maximal_units(K::AbsSimpleNumField, p; OK = lll(maximal_order(K)), G
   U, mU = unit_group_fac_elem(OK; GRH)
   us = mU.(gens(U))
   C, mC = Hecke.multiplicative_group(identity.(us); task = :modulo_tor, support = ideal_type(OK)[]);
-  mCp = _psaturation(mC, p)
+  mCp = mC # this is pmaximal
   # we always enlarge by the torsion unit (to be on the safe side)
   return push!(mCp.(gens(domain(mCp))), FacElem(torsion_units_generator(Hecke.nf(OK))))
 end
