@@ -1509,8 +1509,7 @@ function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
   num = map_entries(kx, A*den)
   R = residue_ring(kx, den; cached = false)[1]
   M = map_entries(R, num)
-  # coordinates(x) are in base field: lift through O.R
-  coords = map(c -> numerator(c, kx), coordinates(x))
+  coords = coordinates(x)
   v = matrix(R, 1, degree(parent(x)), coords)
   #mul!(v, v, M) This didn't work
   v = v*M

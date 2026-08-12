@@ -353,7 +353,8 @@ function coordinates(a::FieldElem, O::GenOrd)
 end
 
 function coordinates(a::GenOrdElem)
-  return coordinates(a.data, parent(a))
+  O = parent(a)
+  return base_ring(O).(coordinates(data(a), O))
 end
 
 function coordinates(a::Generic.AbsSimpleFunctionFieldElem)
@@ -385,9 +386,7 @@ function _representation_matrix_direct(a::GenOrdElem)
   for i in 1:n
     c = coordinates(b[i]*a)
     for j in 1:n
-      num, den = integral_split(c[j], R)
-      @assert isone(den)
-      m[i, j] = num
+      m[i, j] = c[j]
     end
   end
 
@@ -418,15 +417,7 @@ end
 
 function representation_matrix(a::GenOrdElem)
   O = parent(a)
-  R = base_ring(O)
-
-  v = map(coordinates(a)) do x
-    num, den = integral_split(x, R)
-    @assert isone(den)
-    num
-  end
-
-  return _representation_matrix(O, v)
+  return _representation_matrix(O, coordinates(a))
 end
 
 ################################################################################
