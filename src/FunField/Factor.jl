@@ -190,6 +190,7 @@ end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
 function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
+  @assert is_monic(f)
   i = 0
   local N
   g = f
@@ -211,7 +212,7 @@ function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSi
   end
 
   fN = factor(N)
-  @assert isone(fN.unit)
+  # We are reconstructing the monic polynomial g and the gcds below are monic.
   D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
   return D
 end
