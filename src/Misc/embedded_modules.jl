@@ -5,7 +5,7 @@ abstract type _Field <: _RingType end
 
 _ring_type(::Type{ZZRing}) = _PID
 _ring_type(::Type{<:PolyRing{<:T}}) where {T <: FieldElement} = _PID
-_ring_type(::Type{KInftyRing{T}}) where {T <: FieldElement} = _PID
+_ring_type(::Type{<:KInftyRing{T}}) where {T <: FieldElement} = _PID
 _ring_type(::Type{<:AbsNumFieldOrder}) = _DD
 _ring_type(R::Ring) = _ring_type(typeof(R))
 
@@ -87,7 +87,7 @@ fraction_map(M::EmbeddedModule) = M.fractionmap
 
 is_known(::typeof(rank), M::EmbeddedModule) = M.rank != -1
 
-_tmp_vec_ring(M::EmbeddedModule) = (isdefined(M, :tmp_vec_ring) ? M.tmp_vec_ring : M.tmp_vec_ring = [zero(ring(M)) for i in ambient_rank(M)])::Vector{elem_type(ring(M))}
+_tmp_vec_ring(M::EmbeddedModule) = (isdefined(M, :tmp_vec_ring) ? M.tmp_vec_ring : M.tmp_vec_ring = [zero(ring(M)) for i in 1:ambient_rank(M)])::Vector{elem_type(ring(M))}
 
 _tmp_vec_overring(M::EmbeddedModule) = (isdefined(M, :tmp_vec_overring) ? M.tmp_vec_overring : M.tmp_vec_overring = [zero(overring(M)) for i in 1:ambient_rank(M)])::Vector{elem_type(overring(M))}
 
@@ -419,22 +419,27 @@ end
 
 function _in(a::MatrixElem, M::EmbeddedModule{_PID}, ::Val{with_coordinates} = Val(false)) where {with_coordinates}
   if isdefined(M, :basis_matrix_inverse)
-    mul!(_tmp_mat_overring(M, nrows(a)), a, basis_matrix_inverse(M))
-    return _has_preimage(fraction_map(M), a, Val(with_coordinates))
+    t = _tmp_mat_overring(M, nrows(a))
+    mul!(t, a, basis_matrix_inverse(M))
+    return _has_preimage(fraction_map(M), t, Val(with_coordinates))
   end
-  @assert false
-  x, y = decompose(fraction_map(M), a)
-  Mn, Md = basis_matrix_components(M)
-  fl = is_divisible_by(Md, y)
+  fl, u = can_solve_with_solution(basis_matrix(M), a; side = :left)
   if !fl
-    return false
+    if with_coordinates
+      return false, zero_matrix(ring(M), nrows(a), rank(M))
+    else
+      return false
+    end
   end
-  return can_solve(Mn, x; side = :left)
+  return _has_preimage(fraction_map(M), u, Val(with_coordinates))
 end
 
 # Dedekind domain with given pseudo-element
 function _in((a, id)::Tuple, M::EmbeddedModule{_DD})
   MB = basis_matrix(M)
+  if a isa Vector
+    a = matrix(overring(M), 1, length(a), a)
+  end
   return _contained_in_span_of_pseudohnf(a, id, MB; shape = :lowerleft)
 end
 
@@ -478,6 +483,7 @@ function index(N::EmbeddedModule{_PID}, M::EmbeddedModule; check = true)
     i = _preimage(fraction_map(M), divexact(det(basis_matrix(N)), det(basis_matrix(M))))
     return i
   end
-  fl, i = can_solve_with_solution(basis_matrix(N), basis_matrix(M))
-  return fl
+  fl, T = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side = :left)
+  @assert fl
+  return _preimage(fraction_map(M), det(T))
 end
