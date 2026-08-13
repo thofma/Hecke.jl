@@ -525,11 +525,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
   kblock = k * block_size
-  if VERSION >= v"1.11"
-    nt = Threads.maxthreadid()
-  else
-    nt = Threads.nthreads()
-  end
+  nt = _maxthreadid()
 
   @assert size(M) == (k, k)
   #@assert all(x -> ncols(x) == k, tmps)
@@ -599,5 +595,4 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   end
   return res
 end
-
 
