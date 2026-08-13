@@ -858,7 +858,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
 end
 
 
-function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer; method = nothing)
+function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::IntegerUnion; method = nothing)
   O = Q.base_ring
   OtoQ = NfOrdQuoMap(O, Q)
 
