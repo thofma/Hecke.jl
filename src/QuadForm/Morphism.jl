@@ -2248,6 +2248,532 @@ end
 
 ################################################################################
 #
+#  Automorphisms from a (possibly redundant) generating set
+#
+################################################################################
+
+# Suppose we are given Gram matrices `G2` (n x n) of a lattice `L` with respect
+# to a genuine basis, and a matrix `B` ((n + k) x n) whose *rows* generate ZZ^n
+# (but need not be a basis of it, e.g. when no basis can be found among the
+# short vectors of `L`). Put `G1 = B*G2*B^T` ((n + k) x (n + k), singular as
+# soon as k > 0).
+#
+# Fix `Cmat` (n x (n + k)) with `Cmat*B == identity_matrix(ZZ, n)` (exists
+# since the rows of B generate ZZ^n). Then for any F ((n + k) x n) with
+# `F*G2*F^T == G1`, the matrix `H := Cmat*F` satisfies `H*G2*H^T == G2` and is
+# automatically in GL_n(ZZ) (since det(H)^2 = 1 and H is integral). Moreover
+# every element of Aut(G2) arises this way (as F = B*H), so running the usual
+# Plesken-Souvignier backtrack search using `G1` as the "pattern" (the
+# reference vectors being the rows of B) and the (positive definite, honestly
+# enumerable) lattice `G2` as the space being acted upon, and projecting every
+# completed candidate through `Cmat`, computes the full automorphism group of
+# `G2`.
+#
+# We reuse `_cand`/`orbit`/`_orbitlen`/`_operate` unchanged (they are already
+# written generically enough), and provide two-context replacements for
+# `fingerprint`/`possible` (the candidate pool is `Co.V`, not `Ci.V`) and for
+# `matgen`/`stabil` (which must build rectangular (n+k) x n matrices and then
+# project them down via `Cmat`).
+
+# Compute C (n x (n+k)) with C*B == identity_matrix(ZZ, n), where B is
+# (n+k) x n and its rows generate ZZ^n.
+function _left_inverse_of_generators(B::ZZMatrix)
+  n = ncols(B)
+  fl, C = can_solve_with_solution(B, identity_matrix(ZZ, n), side = :left)
+  @req fl "The rows of B do not generate ZZ^n"
+  @hassert :LatticeMor 1 C * B == identity_matrix(ZZ, n)
+  return C
+end
+
+# Build the "action" context Co: the actual (positive definite) lattice with
+# Gram matrices G2, enumerated up to `bound`.
+function _target_context_from_gram(G2::Vector{ZZMatrix}, bound::ZZRingElem; is_lll_reduced_known::Bool = false)
+  Co = ZLatAutoCtx(G2)
+  n = nrows(G2[1])
+  r = length(G2)
+  VV = _short_vectors_gram_integral(LatEnumCtx, G2[1], 0, bound; is_lll_reduced_known)
+  vectors = ZZMatrix[]
+  lengths = Vector{ZZRingElem}[]
+  tmp = zero_matrix(ZZ, 1, n)
+  for (v, sq) in VV
+    k = 1
+    while iszero(v[k])
+      k += 1
+    end
+    if v[k] < 0
+      v = v .* -1
+    end
+    vfmpz = matrix(ZZ, 1, n, v)
+    w = Vector{ZZRingElem}(undef, r)
+    w[1] = numerator(sq)
+    for l in 2:r
+      w[l] = _norm(vfmpz, G2[l], tmp)
+    end
+    push!(vectors, vfmpz)
+    push!(lengths, w)
+  end
+  invariants = zeros(Int, length(vectors))
+  unsigned_invariants = zeros(UInt, length(vectors))
+  Co.V = VectorList(vectors, lengths, invariants, unsigned_invariants, true)
+  Co.target_invariants = zeros(Int, n)
+  Co.target_unsigned_invariants = zeros(UInt, n)
+  Co.GZZ = G2
+
+  Co.v = Vector{Vector{ZZMatrix}}(undef, r)
+  for i in 1:r
+    A = Vector{ZZMatrix}(undef, length(Co.V))
+    for j in 1:length(Co.V)
+      A[j] = zero_matrix(ZZ, n, 1)
+      for k in 1:n
+        A[j][k, 1] = _dot_product_with_row(Co.V[j], Co.G[i], k)
+      end
+    end
+    Co.v[i] = A
+  end
+  Co.max = bound
+  return Co
+end
+
+# Find the (possibly negated) index of each row of B inside Co.V.
+function _locate_generators(B::ZZMatrix, Co::ZLatAutoCtx)
+  m = nrows(B)
+  Bstd = Vector{Int}(undef, m)
+  for i in 1:m
+    Bstd[i] = find_point(B[i:i, :], Co.V)
+  end
+  return Bstd
+end
+
+# Two-context replacement for `possible`: counts candidates in `Co.V` for
+# position `J`, given that positions `per[1], ..., per[I]` are already fixed
+# to the generators `Bstd[per[1]], ..., Bstd[per[I]]`.
+function possible_redundant(Ci::ZLatAutoCtx, Co::ZLatAutoCtx, Bstd::Vector{Int}, per::Vector{Int}, I::Int, J::Int)
+  V = Co.V.vectors
+  W = Co.V.lengths
+  U = Co.V.invariants
+  Uu = Co.V.unsigned_invariants
+  Utarget = Ci.target_invariants
+  Utargetu = Ci.target_unsigned_invariants
+  F = Ci.G
+  Cov = Co.v
+  dot_product_tmp = Co.dot_product_tmp
+
+  count = 0
+  tmp1 = zero(ZZRingElem)
+
+  @inbounds for j in 1:length(W)
+    Wj = W[j]
+    Vj = V[j]
+    Uj = U[j]
+    Uuj = Uu[j]
+    good_length = true
+    for k in 1:length(F)
+      if Wj[k] != F[k][J, J]
+        good_length = false
+        break
+      end
+    end
+    !good_length && continue
+
+    good_scalar_plus = Utarget[J] == Uj && Utargetu[J] == Uuj
+    good_scalar_minus = _isequal_negated(Uj, Utarget[J]) && Utargetu[J] == Uuj
+    !good_scalar_plus && !good_scalar_minus && continue
+
+    for k in 1:length(F)
+      for i in 1:I
+        bi = Bstd[per[i]]
+        target = F[k][J, per[i]]
+        if bi > 0
+          tmp1 = _dot_product_with_entry!(tmp1, Vj, Cov[k], bi, dot_product_tmp)
+        else
+          tmp1 = -_dot_product_with_entry!(tmp1, Vj, Cov[k], -bi, dot_product_tmp)
+        end
+        if tmp1 != target
+          good_scalar_plus = false
+        end
+        if tmp1 != -target
+          good_scalar_minus = false
+        end
+        (!good_scalar_plus && !good_scalar_minus) && break
+      end
+      (!good_scalar_plus && !good_scalar_minus) && break
+    end
+
+    good_scalar_plus && (count += 1)
+    good_scalar_minus && (count += 1)
+  end
+  return count
+end
+
+# Two-context replacement for `fingerprint`: sets `Ci.per`, `Ci.fp`,
+# `Ci.fp_diagonal`, counting candidates in `Co.V`.
+function fingerprint_redundant(Ci::ZLatAutoCtx, Co::ZLatAutoCtx, Bstd::Vector{Int})
+  n = dim(Ci)
+  r = length(Ci.G)
+  per = Vector{Int}(undef, n)
+  for i in 1:n
+    per[i] = i
+  end
+  fp = zeros(Int, n, n)
+
+  V = Co.V
+  @inbounds for i in 1:n
+    for j in 1:length(V)
+      good = true
+      cvl = V.lengths[j]
+      for l in 1:r
+        if cvl[l] != Ci.G[l][i, i]
+          good = false
+          break
+        end
+      end
+      good || continue
+      vj = V.invariants[j]
+      vju = V.unsigned_invariants[j]
+      dj = Ci.target_invariants[i]
+      dju = Ci.target_unsigned_invariants[i]
+      if vj == dj && vju == dju
+        fp[1, i] += 1
+      end
+      if _isequal_negated(vj, dj) && vju == dju
+        fp[1, i] += 1
+      end
+    end
+  end
+
+  @inbounds for i in 1:(n - 1)
+    mini = i
+    for j in (i + 1):n
+      if fp[i, per[j]] < fp[i, per[mini]]
+        mini = j
+      end
+    end
+    per[mini], per[i] = per[i], per[mini]
+    for j in (i + 1):n
+      fp[j, per[i]] = 0
+    end
+    for j in (i + 1):n
+      fp[i + 1, per[j]] = possible_redundant(Ci, Co, Bstd, per, i, per[j])
+    end
+  end
+
+  res = Vector{Int}(undef, n)
+  @inbounds for i in 1:n
+    res[i] = fp[i, per[i]]
+  end
+
+  Ci.per = per
+  Ci.fp = fp
+  Ci.fp_diagonal = res
+  return per, fp, res
+end
+
+# Builds the rectangular (n+k) x nc matrix F with row per[i] equal to
+# (+/-) Co.V[x[i]], for i in 1:length(x).
+function matgen_redundant(x::Vector{Int}, per::Vector{Int}, v::VectorList, nc::Int)
+  nr = length(x)
+  X = zero_matrix(ZZ, nr, nc)
+  @inbounds for i in 1:nr
+    xi = x[i]
+    if xi > 0
+      for j in 1:nc
+        X[per[i], j] = v[xi][j]
+      end
+    else
+      for j in 1:nc
+        X[per[i], j] = -v[-xi][j]
+      end
+    end
+  end
+  return X
+end
+
+# Two-context replacement for `stabil`: x1, x2 are index arrays (length
+# dim(Ci)) into Co.V, G is an n x n automorphism of G2. Returns the stabilizer
+# element S = M1*G*M2^{-1} (n x n), where M1 = Cmat*matgen_redundant(x1, ...)
+# etc.
+function stabil_redundant(x1::Vector{Int}, x2::Vector{Int}, per::Vector{Int}, G::ZZMatrix, Co::ZLatAutoCtx, Cmat::ZZMatrix)
+  dim_ = length(x1)
+  n = nrows(Cmat)
+  x = Vector{Int}(undef, dim_)
+  for i in 1:dim_
+    x[i] = _operate(x1[i], G, Co.V, Co.operate_tmp)
+  end
+  XGrect = matgen_redundant(x, per, Co.V, n)
+  X2rect = matgen_redundant(x2, per, Co.V, n)
+  XG = Cmat * XGrect
+  X2 = Cmat * X2rect
+  fl, S = can_solve_with_solution(X2, XG, side = :left)
+  @assert fl
+  return S
+end
+
+# Two-context replacement for `stab`. Bookkeeping (fp_diagonal, orders, nsg,
+# g, std_basis) lives on `Ci` (indexed 1:dim(Ci) = n+k); the group acts on
+# `Co.V` via n x n matrices.
+function stab_redundant(I::Int, Ci::ZLatAutoCtx, Co::ZLatAutoCtx, Cmat::ZZMatrix)
+  dim_ = dim(Ci)
+  n = length(Co.V)
+  Rest = 0
+  for i in I:dim_
+    if Ci.fp_diagonal[i] > 1 && Ci.orders[i] < Ci.fp_diagonal[i]
+      Rest += 1
+    end
+  end
+
+  Maxfail = Rest
+  for i in 1:dim_
+    if Ci.fp_diagonal[i] > 1
+      Maxfail += 1
+    end
+  end
+
+  nH = 0
+  for i in I:dim_
+    nH += length(Ci.g[i])
+  end
+
+  Hj = Vector{ZZMatrix}(undef, nH + 1)
+  H = Vector{ZZMatrix}(undef, nH)
+
+  k = 0
+  for i in I:dim_
+    for j in 1:length(Ci.g[i])
+      k += 1
+      H[k] = Ci.g[i][j]
+    end
+  end
+
+  w = Vector{Vector{Int}}(undef, 2 * n + 1)
+  orb = zeros(Int, 2 * n)
+  flag = zeros(Bool, 2 * n + 1)
+
+  orb[1] = Ci.std_basis[I]
+  flag[orb[1] + n + 1] = true
+  w[orb[1] + n + 1] = Int[Ci.std_basis[i] for i in 1:dim_]
+  cnd = 1
+  len = 1
+  fail = 0
+
+  while cnd <= len && fail < Maxfail + Rest
+    for i in 1:nH
+      if fail > Maxfail + Rest
+        break
+      end
+      if fail >= Maxfail
+        cnd = rand(1:len)
+        i = rand(1:nH)
+      end
+      im = _operate(orb[cnd], H[i], Co.V, Co.operate_tmp)
+      if !flag[im + n + 1]
+        len += 1
+        orb[len] = im
+        flag[im + n + 1] = true
+        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], Co.V, Co.operate_tmp) for j in 1:dim_]
+      else
+        j = I
+        while j <= dim_
+          if _operate(w[orb[cnd] + n + 1][j], H[i], Co.V, Co.operate_tmp) == w[im + n + 1][j]
+            break
+          end
+          j += 1
+        end
+        if j <= dim_ && (Ci.orders[j] < Ci.fp_diagonal[j] || fail >= Maxfail)
+          S = stabil_redundant(w[orb[cnd] + n + 1], w[im + n + 1], Ci.per, H[i], Co, Cmat)
+          Hj[1] = S
+          nHj = 1
+          for k in j:dim_
+            for l in 1:length(Ci.g[k])
+              nHj += 1
+              Hj[nHj] = Ci.g[k][l]
+            end
+          end
+          tmplen = _orbitlen(Ci.std_basis[j], Ci.fp_diagonal[j], Hj, Co.V, Co)
+          if tmplen > Ci.orders[j] || fail >= Maxfail
+            Ci.orders[j] = tmplen
+            Ci.nsg[j] = Ci.nsg[j] + 1
+            insert!(Ci.g[j], Ci.nsg[j], S)
+            nH += 1
+            push!(H, S)
+            if fail < Maxfail
+              fail = 0
+            else
+              fail += 1
+            end
+            resize!(Hj, nH + 1)
+          else
+            fail += 1
+          end
+        else
+          if (j <= dim_ && fail < Maxfail) || (j == dim_ && fail >= Maxfail)
+            fail += 1
+          end
+        end
+      end
+    end
+    if fail < Maxfail
+      cnd += 1
+    end
+  end
+end
+
+# Two-context replacement for `aut` (the recursive descent once step > 1).
+function aut_redundant(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, Ci::ZLatAutoCtx, Co::ZLatAutoCtx, Bstd::Vector{Int})
+  dim_ = dim(Ci)
+  found = false
+  x[step + 1:length(x)] .= 0
+  while candidates[step][1] != 0 && !found
+    if step < dim_
+      x[step] = candidates[step][1]
+      if _cand(candidates[step + 1], step + 1, x, Ci, Co)
+        found = aut_redundant(step + 1, x, candidates, Ci, Co, Bstd)
+        found && break
+      end
+      k = findfirst(isequal(x[step]), candidates[step])
+      for i in (k + 1):length(candidates[step])
+        candidates[step][i - 1] = candidates[step][i]
+      end
+      candidates[step][end] = 0
+    else
+      x[dim_] = candidates[dim_][1]
+      found = true
+    end
+  end
+  return found
+end
+
+# Main driver. Computes generators and the order of
+# `Aut(G2) = { H in GL_n(ZZ) : H*G2[i]*H^T == G2[i] for all i }`
+# using the redundant generating set encoded by `B`/`Ci`/`Bstd`/`Cmat`.
+function auto_redundant(Ci::ZLatAutoCtx, Co::ZLatAutoCtx, Bstd::Vector{Int}, Cmat::ZZMatrix)
+  dim_ = dim(Ci)
+  n = dim(Co)
+
+  candidates = Vector{Vector{Int}}(undef, dim_)
+  for i in 1:dim_
+    candidates[i] = zeros(Int, Ci.fp_diagonal[i])
+  end
+
+  x = Vector{Int}(undef, dim_)
+  bad = Vector{Int}(undef, 2 * length(Co.V))
+
+  Ci.g = Vector{Vector{ZZMatrix}}(undef, dim_)
+  for i in 1:dim_
+    Ci.g[i] = ZZMatrix[]
+  end
+  Ci.g[1] = ZZMatrix[-identity_matrix(ZZ, n)]
+  Ci.nsg = zeros(Int, dim_)
+  Ci.orders = Vector{Int}(undef, dim_)
+
+  for step in 1:dim_
+    H = reduce(vcat, Ci.g[step:dim_])
+    for i in 1:(2 * length(Co.V))
+      bad[i] = 0
+    end
+    nbad = 0
+    for i in 1:(step - 1)
+      x[i] = Ci.std_basis[i]
+    end
+    if Ci.fp_diagonal[step] > 1
+      _cand(candidates[step], step, x, Ci, Co)
+    else
+      candidates[step] = Int[Ci.std_basis[step]]
+    end
+    orb = orbit(Ci.std_basis[step], 1, H, Co.V, Co)
+    Ci.orders[step] = length(orb)
+    setdiff!(candidates[step], orb)
+    nC = length(candidates[step])
+    while nC > 0 && (im = candidates[step][1]) != 0
+      found = false
+      x[step] = im
+      if step < dim_
+        if _cand(candidates[step + 1], step + 1, x, Ci, Co)
+          found = aut_redundant(step + 1, x, candidates, Ci, Co, Bstd)
+        end
+      else
+        found = true
+      end
+
+      if !found
+        oc = orbit(im, 1, H, Co.V, Co)
+        candidates[step] = setdiff!(candidates[step], oc)
+        nC = length(candidates[step])
+        nbad += 1
+        bad[nbad] = im
+      else
+        Fmat = matgen_redundant(x, Ci.per, Co.V, n)
+        Hmat = Cmat * Fmat
+        @hassert :LatticeMor 1 all(Hmat * Co.G[k] * transpose(Hmat) == Co.G[k] for k in 1:length(Co.G))
+        push!(Ci.g[step], Hmat)
+        insert!(H, length(Ci.g[step]), Ci.g[step][end])
+        orb = orbit(Ci.std_basis[step], 1, H, Co.V, Co)
+        Ci.orders[step] = length(orb)
+        setdiff!(candidates[step], orb)
+        oc = orbit(bad, nbad, H, Co.V, Co)
+        setdiff!(candidates[step], oc)
+        nC = length(candidates[step])
+      end
+    end
+    if step < dim_ && Ci.orders[step] > 1
+      stab_redundant(step, Ci, Co, Cmat)
+    end
+  end
+  return _get_generators(Ci)
+end
+
+@doc raw"""
+    automorphisms_from_generating_set(G2::Vector{ZZMatrix}, B::ZZMatrix; is_lll_reduced_known::Bool = false)
+        -> Vector{ZZMatrix}, ZZRingElem
+
+Given Gram matrices `G2` of a lattice `L` (`G2[1]` positive definite) with
+respect to a fixed basis, and a matrix `B` of size `(n + k) x n` whose *rows*
+generate `ZZ^n` (but need not form a basis), compute generators and the order
+of
+
+    Aut(G2) = { H in GL_n(ZZ) : H * G2[i] * H^T == G2[i] for all i }.
+
+This makes it possible to compute automorphism groups of lattices for which no
+basis can be found among short vectors, by supplying instead any generating
+set of vectors (e.g. containing more than `n` short vectors).
+
+Performance depends heavily on the *diversity* of the norms among the rows of
+`B`: rows sharing the same norm are indistinguishable to the fingerprint used
+to drive the backtrack search, which can make the search far slower than the
+size of `B` alone would suggest. Prefer generating sets containing vectors of
+several different (small) norms over one consisting of vectors of a single
+norm.
+"""
+function automorphisms_from_generating_set(G2::Vector{ZZMatrix}, B::ZZMatrix; is_lll_reduced_known::Bool = false)
+  @req nrows(B) >= ncols(B) "B must have at least as many rows as columns"
+  @req ncols(B) == nrows(G2[1]) "Dimension mismatch between B and G2"
+  Cmat = _left_inverse_of_generators(B)
+  G1 = ZZMatrix[B * G * transpose(B) for G in G2]
+  bound = maximum(abs.(diagonal(G1[1])))
+  @req bound > 0 "The generating set must not contain the zero vector on the diagonal"
+
+  Co = _target_context_from_gram(G2, bound; is_lll_reduced_known)
+  @hassert :LatticeMor 1 Co.is_symmetric[1]
+  Bstd = _locate_generators(B, Co)
+
+  Ci = ZLatAutoCtx(G1)
+  Ci.target_invariants = zeros(Int, dim(Ci))
+  Ci.target_unsigned_invariants = zeros(UInt, dim(Ci))
+  Ci.depth = 0
+  Ci.bacher_depth = 0
+
+  fingerprint_redundant(Ci, Co, Bstd)
+
+  Ci.std_basis = Vector{Int}(undef, dim(Ci))
+  for i in 1:dim(Ci)
+    Ci.std_basis[i] = Bstd[Ci.per[i]]
+  end
+
+  gens, order = auto_redundant(Ci, Co, Bstd, Cmat)
+  return gens, order
+end
+
+################################################################################
+#
 #  Rewrite
 #
 ################################################################################
