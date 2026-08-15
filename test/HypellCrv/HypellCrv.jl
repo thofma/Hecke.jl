@@ -80,7 +80,7 @@
     Qx, x = polynomial_ring(QQ, "x")
     f = 19*x^8 - 262*x^7 + 1507*x^6 - 4784*x^5 + 9202*x^4 -10962*x^3 + 7844*x^2 - 3040*x +475
     f_red = -x^8 - 2*x^7 + 7*x^6 + 16*x^5 + 2*x^4 - 2*x^3 + 4*x^2 - 5
-    g = @inferred reduce_binary_form(f)
+    g, gamma = @inferred reduce_binary_form(f)
     @test f_red == g
 
     Qst, (s,t) = polynomial_ring(QQ, ["s", "t"])

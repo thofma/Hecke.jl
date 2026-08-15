@@ -15,8 +15,8 @@ Given an order $R$ in a number field or a finite product of number fields, this
 function returns representatives of the isomorphism classes of fractional
 ideals in $R$.
 """
-function ideal_class_monoid(R::T) where { T <: Union{ AbsNumFieldOrder, AlgAssAbsOrd } }
-  @assert is_commutative(R)
+function ideal_class_monoid(R::T) where {T <: Union{AbsNumFieldOrder, AlgAssAbsOrd}}
+  @req is_commutative(R) "Order must be commutative"
   orders = overorders(R)
   result = Vector{FacElem{fractional_ideal_type(R)}}()
   for S in orders
@@ -35,7 +35,9 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra, this function returns `true` if $I_p$ and $J_p$ are isomorphic for
 all primes $p$ of $R$ and `false` otherwise.
 """
-function is_locally_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl } }
+function is_locally_isomorphic(I::T, J::T) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+  @req order(I) == order(J) "Fractional ideals must be defined over same order"
+  @req is_commutative(order(I)) "Ambient order of ideal must be commutative"
   IJ = colon(I, J)
   JI = colon(J, I)
   return one(_algebra(order(I))) in IJ*JI
@@ -51,7 +53,9 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` and an element $a \in A$ such that
 $I = aJ$ if such an element exists and `false` and $0$ otherwise.
 """
-function is_isomorphic_with_map(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+function is_isomorphic_with_map(I::T, J::T) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+  @req order(I) == order(J) "Fractional ideals must be defined over same order"
+  @req is_commutative(order(I)) "Ambient order of ideal must be commutative"
   A = _algebra(order(I))
   if !is_locally_isomorphic(I, J)
     return false, zero(A)
@@ -79,7 +83,7 @@ Given two (fractional) ideals $I$ and $J$ of an order $R$ of an $Q$-étale
 algebra $A$, this function returns `true` if an element $a \in A$ exists such that
 $I = aJ$ and `false` otherwise.
 """
-function is_isomorphic(I::T, J::T) where { T <: Union{ AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
+function is_isomorphic(I::T, J::T) where {T <: Union{AbsNumFieldOrderIdeal, AbsSimpleNumFieldOrderFractionalIdeal, AlgAssAbsOrdIdl}}
   return is_isomorphic_with_map(I, J)[1]
 end
 
@@ -185,11 +189,8 @@ function ideals_containing(S::T, a::T2, R::T) where { T <: Union{ AbsNumFieldOrd
     return [ a ]
   end
 
-  K = _algebra(S)
   d = degree(S)
-
   potential_basis = Vector{elem_type(_algebra(S))}(undef, d)
-  ideals = fractional_ideal_type(R)[]
 
   for i = 1:mQ.offset
     potential_basis[i] = mQ.bottom_snf_basis[i]
@@ -293,7 +294,7 @@ matrix exists and `false` and $0$ otherwise.
 The characteristic polynomial of $M$ is required to be square-free.
 """
 function is_conjugate(M::ZZMatrix, N::ZZMatrix)
-  Zx, x = ZZ["x"]
+  Zx, _ = ZZ["x"]
   f = charpoly(Zx, M)
   if f != charpoly(Zx, N)
     return false, zero_matrix(ZZ, nrows(M), ncols(M))
@@ -310,7 +311,7 @@ function is_conjugate(M::ZZMatrix, N::ZZMatrix)
     return _isconjugate(equation_order(fields[1]), M, N)
   end
 
-  A, AtoK = direct_product(fields)::Tuple{StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
+  A, _ = direct_product(fields)::Tuple{StructureConstantAlgebra{QQFieldElem}, Vector{AbsAlgAssToNfAbsMor{StructureConstantAlgebra{QQFieldElem}, elem_type(StructureConstantAlgebra{QQFieldElem}), AbsSimpleNumField, QQMatrix}}}
   O = _equation_order(A)
   return _isconjugate(O, M, N)
 end

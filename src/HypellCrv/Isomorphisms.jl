@@ -230,6 +230,45 @@ function _transform_polynomial(f::PolyRingElem, n::Int, mat::Vector)
   return result
 end
 
+
+@doc raw"""
+    hyperelliptic_transform(C1::HypellCrv{T}, t::Vector{T}, u::T = one(base_field(C1)), 
+  v::PolyRingElem = zero(polynomial_ring(base_field(C1))[1])) where T
+
+Consider the morphism phi of hyperelliptic curves C1 -> C2.
+(x: y: z) -> (ax + bz : uy + v_hom(x, z) : cx + dz)
+where t = [a, b, c, d] and v_hom is the homogenization of v.
+
+Return C2, phi and inv(phi).
+
+"""
+function hyperelliptic_transform(C1::HypellCrv{T}, t::Vector{T}, u::T = one(base_field(C1)), 
+  v::PolyRingElem = zero(polynomial_ring(base_field(C1))[1])) where T
+  K = base_field(C1)
+  @req is_unit(u) "u needs to be a unit"
+
+  a, b, c, d = t
+  t_shift = [d, -b, -c, a]
+  f, h = hyperelliptic_polynomials(C1)
+  g = genus(C1)
+  d1 = 2*g + 2
+  d2 = g + 1
+
+  det = (a*d - b*c)^(-g+1)
+
+  f_new = _transform_polynomial(f, d1, t_shift)
+  h_new = _transform_polynomial(h, d2, t_shift)
+  v_new = _transform_polynomial(v, d2, t_shift)
+
+  h2 = (u*h_new - 2*v_new) * det
+  f2 = (u^2*f_new + (u*h_new - v_new)*v_new) *det^2
+
+  C2 = hyperelliptic_curve(f2, h2)
+  phi =  HypellCrvIsom{T}(C1, C2, a, b, c, d, u, v)
+  return C2, phi, inv(phi)
+end
+
+
 ################################################################################
 #
 #  Helper: adjoin a root of an irreducible polynomial

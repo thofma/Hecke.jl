@@ -182,6 +182,9 @@ function __init__()
   add_verbosity_scope(:GenRep)
   add_assertion_scope(:GenRep)
 
+  add_verbosity_scope(:GenOrd)
+  add_assertion_scope(:GenOrd)
+
   add_verbosity_scope(:HNF)
   add_assertion_scope(:HNF)
 
@@ -224,6 +227,8 @@ function __init__()
 
   add_verbosity_scope(:PolyFactor)
   add_assertion_scope(:PolyFactor)
+
+  add_verbosity_scope(:pRationality)
 
   add_verbosity_scope(:PseudoHnf)
   add_assertion_scope(:PseudoHnf)
@@ -601,6 +606,7 @@ include("FunField.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("analytic.jl")
+include("ConCrv.jl")
 include("HypellCrv.jl")
 include("EllCrv.jl")
 include("LargeField.jl")

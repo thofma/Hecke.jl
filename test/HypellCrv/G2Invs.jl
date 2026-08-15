@@ -1,6 +1,5 @@
 @testset "G2 Invariants" begin
 
-
     Qx, x = polynomial_ring(QQ, "x")
     f1 = x^6+3*x+5
     h1 = x+2

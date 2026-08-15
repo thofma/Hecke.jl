@@ -7,7 +7,7 @@ struct FFElemCoeffs{T <: RingElement}
    f::T
 end
 
-function Nemo.coefficients(f::Generic.FunctionFieldElem)
+function Nemo.coefficients(f::Generic.AbsSimpleFunctionFieldElem)
    return FFElemCoeffs(f)
 end
 
@@ -21,7 +21,7 @@ function Base.iterate(PC::FFElemCoeffs, st::Int = -1)
 end
 Base.length(PC::FFElemCoeffs) = degree(parent(PC.f))
 
-function representation_matrix(a::Generic.FunctionFieldElem)
+function representation_matrix(a::Generic.AbsSimpleFunctionFieldElem)
   F = parent(a)
   g = gen(F)
   m = zero_matrix(base_field(F), degree(F), degree(F))
@@ -38,13 +38,22 @@ function representation_matrix(a::Generic.FunctionFieldElem)
 end
 
 """
-    hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false)
+    hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false, shape::Symbol = :upperright)
 
 Return the `hnf` of `vcat(M, identity_matrix(parent(d), ncols(M)))`
 if `is_prime` is set, then instead of an `hnf` internally a `rref` over the
 residue field modulo `d` is used.
+For shape either :upperright or :lowerleft can be specified
 """
-function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false) where {T}
+function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false, shape::Symbol = :upperright) where {T}
+  @assert shape == :upperright || shape == :lowerleft
+  if shape == :lowerleft
+    h = hnf_modular(reverse_cols(M), d, is_prime, :upperright)
+    reverse_cols!(h)
+    reverse_rows!(h)
+    return h
+  end
+
   # make sure to pin the type of H: the result of both branches has typeof(M)
   #   but compiler cannot infer it
   H::typeof(M) = if is_prime
@@ -69,7 +78,7 @@ function extension_field(f::PolyRingElem{<:Generic.RationalFunctionFieldElem}, s
   return function_field(f, s, cached = cached)
 end
 
-function Hecke.basis(F::Generic.FunctionField)
+function Hecke.basis(F::Generic.AbsSimpleFunctionField)
   a = gen(F)
   bas = [a^0, a]
   while length(bas) < degree(F)
@@ -84,7 +93,7 @@ function Hecke.residue_field(R::PolyRing{T}, p::PolyRingElem{T}) where {T <: Num
   return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
-function (F::Generic.FunctionField{T, U})(p::PolyRingElem{<:Generic.RationalFunctionFieldElem{T, U}}) where {T <: FieldElem, U <: PolyRingElem{T}}
+function (F::Generic.AbsSimpleFunctionField{T, U})(p::PolyRingElem{<:Generic.RationalFunctionFieldElem{T, U}}) where {T <: FieldElem, U <: PolyRingElem{T}}
   @assert parent(p) == parent(F.pol)
   @assert degree(p) < degree(F) # the reduction is not implemented
   R = parent(gen(F).num)
@@ -93,40 +102,34 @@ function (F::Generic.FunctionField{T, U})(p::PolyRingElem{<:Generic.RationalFunc
   return F(map_coefficients(S, d*p, parent = R), d)
 end
 
-function (F::Generic.FunctionField)(c::Vector{<:RingElem})
+function (F::Generic.AbsSimpleFunctionField)(c::Vector{<:RingElem})
   return F(parent(F.pol)(map(base_field(F), c)))
 end
 
-(F::Generic.FunctionField)(a::GenOrdElem) = a.data
+(F::Generic.AbsSimpleFunctionField)(a::GenOrdElem) = a.data
 
-function Hecke.charpoly(a::Generic.FunctionFieldElem)
+function Hecke.charpoly(a::Generic.AbsSimpleFunctionFieldElem)
   return charpoly(representation_matrix(a))
 end
 
-function Hecke.charpoly(R::PolyRing, a::Generic.FunctionFieldElem)
+function Hecke.charpoly(R::PolyRing, a::Generic.AbsSimpleFunctionFieldElem)
   return charpoly(R, representation_matrix(a))
 end
 
-function Hecke.minpoly(a::Generic.FunctionFieldElem)
+function Hecke.minpoly(a::Generic.AbsSimpleFunctionFieldElem)
   return minpoly(representation_matrix(a))
 end
 
-function Hecke.minpoly(R::PolyRing, a::Generic.FunctionFieldElem)
+function Hecke.minpoly(R::PolyRing, a::Generic.AbsSimpleFunctionFieldElem)
   return minpoly(R, representation_matrix(a))
 end
 
-function Hecke.discriminant(F::Generic.FunctionField)
+function Hecke.discriminant(F::Generic.AbsSimpleFunctionField)
   return discriminant(defining_polynomial(F))
 end
 
-function base_field_type(::Type{Generic.FunctionField{T, U}}) where {T, U}
+function base_field_type(::Type{Generic.AbsSimpleFunctionField{T, U}}) where {T, U}
   return Generic.RationalFunctionField{T, U}
-end
-
-function is_defining_polynomial_nice(F::Generic.FunctionField)
-  f = defining_polynomial(F)
-  is_one(leading_coefficient(f)) || return false
-  return all(is_one(denominator(c)) for c in coefficients(f))
 end
 
 #######################################################################

@@ -1899,7 +1899,7 @@ function _as_finite_bilinear_module_with_map(T::TorQuadModule)
   if n == modulus_quadratic_form(T)
     return T, id_hom(T)
   end
-  Tb = torsion_quadratic_module(cover(T), relations(T); modulus=n, modulus_qf=n)
+  Tb = torsion_quadratic_module(cover(T), relations(T); modulus=n, modulus_qf=n, gens=lift.(gens(T)))
   p = hom(T, Tb, identity_matrix(ZZ, ngens(T)))
   return Tb, p
 end
@@ -1909,13 +1909,14 @@ function _as_finite_bilinear_module(T::TorQuadModule)
   if n == modulus_quadratic_form(T)
     return T
   end
-  return torsion_quadratic_module(cover(T), relations(T); modulus=n, modulus_qf=n)
+  return torsion_quadratic_module(cover(T), relations(T); modulus=n, modulus_qf=n, gens=lift.(gens(T)))
 end
 
 function _is_genus_with_genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
   parity::RationalUnion=modulus_quadratic_form(T),
+  as_bilinear_module::Bool=false,
 )
   if !is_one(modulus_bilinear_form(T))
     return false, zero_integer_genus(), "Modulus for the bilinear form must be 1"
@@ -1938,6 +1939,9 @@ function _is_genus_with_genus(
   if rank == 0 && order(T) == 1
     return true, zero_integer_genus(), ""
   end
+  if parity == 1
+    as_bilinear_module = true
+  end
   disc = order(T)
   determinant = ZZ(-1)^s_minus * disc
   local_symbols = ZZLocalGenus[]
@@ -1946,7 +1950,11 @@ function _is_genus_with_genus(
   for p in P
     D, _ = primary_part(T, p)
     if length(elementary_divisors(D)) != 0
-      G_p = inv(gram_matrix_quadratic(D))
+      if as_bilinear_module
+        G_p = inv(gram_matrix_bilinear(D))
+      else
+        G_p = inv(gram_matrix_quadratic(D))
+      end
       dp = denominator(G_p)^2
       # get rid of denominators without changing the local equivalence class
       map_entries!(x -> x*dp, G_p, G_p)
@@ -1987,7 +1995,7 @@ function _is_genus_with_genus(
   if length(sym2) <= 2 || sym2[3][1] != 2
     sym2 = insert!(sym2, 3, Int[2, 0, 1, 0, 0])
   end
-  if modulus_quadratic_form(T) == 1 || parity == 1
+  if modulus_quadratic_form(T) == 1 || as_bilinear_module
     # in this case the blocks of scales 1, 2, 4 are under determined
 
     _o = mod(parity, 2)
@@ -2057,6 +2065,7 @@ end
       T::TorQuadModule,
       signature_pair::Tuple{Int, Int};
       parity::RationalUnion=modulus_quadratic_form(T),
+      as_bilinear_module::Bool=false,
     ) -> Bool, ZZGenus
 
 Return whether there is an integral lattice whose discriminant form is
@@ -2069,9 +2078,13 @@ lattice by default.
 
 # Input
 The argument `parity` is one of the following: 
-- either `parity == 1` for genera of odd lattices and `T` is regarded as a torsion bilinear form with modulus ``1``;
-- or `parity == 2` for even lattices and `T` is regarded as a torsion quadratic form with modulus ``2``. 
-By default, `parity` is set as the modulus of the quadratic form on `T`. 
+  - either `parity == 1` for genera of odd lattices;
+  - or `parity == 2` for even lattices.
+By default, `parity` is set as the modulus of the quadratic form on `T`.
+
+If the argument `as_bilinear_module` is set to true, the form `T` is seen as a
+finite bilinear form (i.e. we forget the quadratic form). It is set
+automatically to `true` if `parity == 1`.
 
 # Reference
 [Nik79](@cite) Corollary 1.9.4 and 1.16.3.
@@ -2080,8 +2093,9 @@ function is_genus_with_genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
   parity::RationalUnion=modulus_quadratic_form(T),
+  as_bilinear_module::Bool=false,
 )
-  return _is_genus_with_genus(T, signature_pair; parity)[1:2]
+  return _is_genus_with_genus(T, signature_pair; parity, as_bilinear_module)[1:2]
 end
 
 @doc raw"""
@@ -2089,14 +2103,20 @@ end
       T::TorQuadModule,
       signature_pair::Tuple{Int, Int};
       parity::RationalUnion=modulus_quadratic_form(T),
+      as_bilinear_module::Bool=false,
     ) -> ZZGenus
 
 Return the genus of an integer lattice whose discriminant form is isomorphic
 to `T`, whose signature is `signature_pair` and of parity `parity`.
 
-The argument `parity` is one of the following: either `parity == 1` for genera
-of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
-set to be as the parity of the quadratic form on `T`
+The argument `parity` is one of the following:
+  - either `parity == 1` for genera of odd lattices;
+  - or `parity == 2` for even lattices.
+By default, `parity` is set as the modulus of the quadratic form on `T`.
+
+If the argument `as_bilinear_module` is set to true, the form `T` is seen as a
+finite bilinear form (i.e. we forget the quadratic form). It is set
+automatically to `true` if `parity == 1`.
 
 If no such genus exists, raise an `ArgumentError`.
 
@@ -2107,8 +2127,9 @@ function genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
   parity::RationalUnion=modulus_quadratic_form(T),
+  as_bilinear_module::Bool=false,
 )
-  flag, GT, m = _is_genus_with_genus(T, signature_pair; parity)
+  flag, GT, m = _is_genus_with_genus(T, signature_pair; parity, as_bilinear_module)
   @req(flag, m)
   return GT
 end
@@ -2118,15 +2139,22 @@ end
       T::TorQuadModule,
       signature_pair::Tuple{Int, Int};
       parity::RationalUnion = modulus_quadratic_form(T),
+      as_bilinear_module::Bool=false,
     ) -> Bool
 
 Return whether there is an integral lattice whose discriminant form is
 isomorphic to `T`, whose signatures match `signature_pair` and which is
 of parity `parity`.
 
-The argument `parity` is one of the following: either `parity == 1` for genera
-of odd lattices, or `parity == 2` for even lattices. By default, `parity` is
-set to be as the parity of the quadratic form on `T`.
+
+The argument `parity` is one of the following:
+  - either `parity == 1` for genera of odd lattices;
+  - or `parity == 2` for even lattices.
+By default, `parity` is set as the modulus of the quadratic form on `T`.
+
+If the argument `as_bilinear_module` is set to true, the form `T` is seen as a
+finite bilinear form (i.e. we forget the quadratic form). It is set
+automatically to `true` if `parity == 1`.
 
 # Reference
 [Nik79](@cite) Corollary 1.9.4 and 1.16.3.
@@ -2135,8 +2163,9 @@ function is_genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
   parity::RationalUnion=modulus_quadratic_form(T),
+  as_bilinear_module::Bool=false,
 )
-  return first(_is_genus_with_genus(T, signature_pair; parity))
+  return first(_is_genus_with_genus(T, signature_pair; parity, as_bilinear_module))
 end
 
 function _is_genus_brown(T::TorQuadModule, signature_pair::Tuple{Int, Int})

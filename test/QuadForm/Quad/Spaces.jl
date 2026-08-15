@@ -331,6 +331,31 @@
   #  end
   end
 
+  @testset "isotropic vectors over finite fields of characteristic 2" begin
+    F2 = GF(2)
+
+    for M in (zero_matrix(F2, 0, 0), F2[1;;])
+      fl, _ = Hecke._isisotropic_with_vector_finite(M)
+      @test !fl
+    end
+
+    for M in (F2[0;;], F2[1 1; 1 0], F2[1 1; 1 1])
+      fl, v = Hecke._isisotropic_with_vector_finite(M)
+      @test fl
+      @test !all(iszero, v)
+      vm = matrix(F2, 1, ncols(M), v)
+      @test iszero(vm * M * transpose(vm))
+    end
+
+    F4, a = finite_field(2, 2, "a")
+    M = F4[a 1; 1 1]
+    fl, v = Hecke._isisotropic_with_vector_finite(M)
+    @test fl
+    @test !all(iszero, v)
+    vm = matrix(F4, 1, 2, v)
+    @test iszero(vm * M * transpose(vm))
+  end
+
   @testset "isometry classes of spaces" begin
     # isometry classes over the rationals
     q = quadratic_space(QQ,QQ[-1 0; 0 1])

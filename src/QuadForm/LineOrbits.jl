@@ -332,7 +332,24 @@ function line_orbits(G::Vector{FqPolyRepMatrix})
 end
 
 function line_orbits(G::Vector{FqMatrix})
-  return _line_orbits(G)
+  isempty(G) && throw(ArgumentError("Generators must be non-empty"))
+  F = base_ring(G[1])
+  if order(F) != 2 
+    return _line_orbits(G)
+  else 
+    n = ncols(G[1])
+    if n < 32
+      T = UInt32 
+    elseif n<64
+      T = UInt64
+    else
+      # UInt128 could work in principle, but memory requirements are too high for practical use and it is untested in the range where it would be needed
+      error("Cannot compute line orbits over F2 for n >= 64")
+    end
+    sizes_and_orbits = line_orbits_mod_2(T, G)
+    # convert to the output format 
+    return Tuple{Vector{FqFieldElem},Int}[(F.(i[2]),Int(i[1])) for i in sizes_and_orbits]
+  end 
 end
 
 function _line_orbits(G::Vector)

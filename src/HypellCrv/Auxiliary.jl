@@ -18,7 +18,7 @@ function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, k::Int) where T
   x, y = gens(Kxy)
   n = max(total_degree(f),k)
   m = max(total_degree(g),k)
-  c = K(factorial(m-k) * factorial(n-k) // (factorial(m) * factorial(n)))
+  c = K(factorial(m-k) * factorial(n-k)) // K((factorial(m) * factorial(n)))
 
   Omega, (dfx, dfy, dgx, dgy) = polynomial_ring(K, ["dfx", "dfy", "dgx", "dgy"])
   diff_op = c * (dfx * dgy - dfy * dgx)^k
@@ -155,11 +155,11 @@ function minimize_linear_equation(f::MPolyRingElem{QQFieldElem})
   R = parent(f)
   x, y = gens(R)
 
-  a_num = numerator(coeff(f, u))  # FIXME: there this no u (maybe u = x?)
-  a_den = denominator(coeff(f, u))
+  a_num = numerator(coeff(f, x)) 
+  a_den = denominator(coeff(f, x))
 
-  b_num = numerator(coeff(f, v))  # FIXME: there this no v (maybe v = y?)
-  b_den = denominator(coeff(f, v))
+  b_num = numerator(coeff(f, y)) 
+  b_den = denominator(coeff(f,y))
 
   gcd_ab = gcd([a_num * b_den, b_num * a_den, a_den * b_den])
 
@@ -170,4 +170,26 @@ function minimize_linear_equation(f::MPolyRingElem{QQFieldElem})
   _, x0, y0 = C3 * collect(gcdx(C1, C2))
 
   return x0, y0
+end
+
+function trace_one_element(F::FinField)
+  if is_odd(degree(F))
+    return F(1)
+  end
+  while true
+    x = rand(F)
+    t = trace(x)
+    if t != 0
+      return x/t
+    end
+  end
+end
+
+function coerce_to_base_field(a::FqFieldElem)
+  f_min = minpoly(a)
+  if degree(f_min) ==1
+    return roots(f_min)[1]
+  else
+    error("Can't coerce to base field.")
+  end
 end

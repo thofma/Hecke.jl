@@ -34,12 +34,20 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
+        assertions:
+          - false
         include:
+          # Run one dedicated assertion-enabled job on the latest stable Julia.
+          - julia-version: '1'
+            os: ubuntu-latest
+            assertions: true
           # Add a few windows and macOS jobs (not too many, the number we can run in parallel is limited)
           - julia-version: '1.10'
             os: macOS-latest
+            assertions: false
           - julia-version: '1.10'
             os: windows-latest
+            assertions: false
 
     steps:
       - uses: actions/checkout@v7
@@ -55,6 +63,7 @@ jobs:
         uses: julia-actions/julia-runtest@v1
         env:
           HECKE_TEST_PARALLEL: "2"
+          HECKE_TEST_ASSERTIONS: "${{ matrix.assertions }}"
         with:
           depwarn: error
         #      - name: "Process code coverage"
@@ -75,7 +84,7 @@ jobs:
           git config user.name github-actions # mike needs a user name, but we do not push the commit, so all is fine
           git config user.email github-actions@github.com
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer
       - uses: julia-actions/setup-julia@v3

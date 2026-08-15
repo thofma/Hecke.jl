@@ -29,7 +29,7 @@ function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::
     end
     x = rand(F)
   end
-  if nbits(pp) < 19 # seems to be a reasonable cutoff
+  if nbits(pp) < 4 # 19 does seem to be a reasonable cutoff. It computes 2^19 = 524288 elements
     y = one(F)
     for i = 0:pp-1
       dl[y] = i

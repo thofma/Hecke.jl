@@ -996,3 +996,11 @@ function center(G::MultTableGroup)
 
   return sub(G, c)
 end
+
+################################################################################
+#
+#  Exponent
+#
+################################################################################
+
+exponent(G::MultTableGroup) = lcm([order(g) for g in G])
