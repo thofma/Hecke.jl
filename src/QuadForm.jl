@@ -53,7 +53,6 @@ include("QuadForm/Enumeration.jl")
 include("QuadForm/IntegralFinckePohst.jl")
 include("QuadForm/LineOrbits.jl")
 include("QuadForm/OrbitsMod2.jl")
-include("QuadForm/MassQuad.jl")
 
 # Close and short vectors
 include("QuadForm/IntegerLattices/ShortVectors.jl")
