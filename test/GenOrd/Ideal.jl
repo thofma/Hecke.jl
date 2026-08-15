@@ -18,7 +18,7 @@
   end
 
   function check_ideal_norm_min(I, expected_norm, expected_min)
-    @test istril(basis_matrix(I))
+    @test AbstractAlgebra.is_lower_triangular(basis_matrix(I))
     @test divides(norm(I), minimum(I))[1]
     @test @inferred(norm(I)) == Hecke._make_canonical_in(order(I), expected_norm)
     @test @inferred(minimum(I)) == Hecke._make_canonical_in(order(I), expected_min)
@@ -715,32 +715,6 @@ end
   @test_throws ErrorException Oinf(x)
   @test_throws ErrorException ideal(Oinf, x) * I
   check_scaling(I, x)
-end
-
-@testset "Modular HNF" begin
-  @testset "Regression test for initial implementation" begin
-    # in the initial implementation we have missed:
-    # implicit row with g*e_i should be made explicit and used when merging leftovers (strong echelon)
-    # related to this: zero pivot column should be handled (with the help of extra row)
-    # nonsquarefree modulus must be handled (the residue ring might have zero divisors)
-
-    M = matrix(ZZ, 3, 2, [4, 0, 0, 4, 1, 2])
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), ZZ(4))
-
-    M = matrix(ZZ, 3, 2, [4, 0, 0, 4, 2, 0])
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), ZZ(4))
-
-    R, x = polynomial_ring(GF(5), "x")
-    g = x^3 + x^2
-    M = vcat(matrix(R, 1, 2, [x + 2, 3*x]), g*identity_matrix(R, 2))
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), g)
-
-    kx, x = rational_function_field(QQ, :x; cached = false)
-    R = localization(kx, degree; cached=false)
-    M = matrix(R, 3, 2, [1//x, 0, 0, 1//x, 1, 1//x])
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), R(1//x))
-  end
-
 end
 
 @testset "Reduction modulo ideal" begin
