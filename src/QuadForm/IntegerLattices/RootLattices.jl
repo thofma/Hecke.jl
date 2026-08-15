@@ -697,17 +697,17 @@ end
 
 # For sv a set of roots compute the fundamental roots
 # where a root is positive iff its first nonzero coefficient is positive
-# if the lattice has minimum >1:  
+# if the lattice has minimum >1:
 function _fundamental_roots(sv::Vector{Tuple{Vector{S},S}}, gram::Matrix{S}) where {S<:Int}
   n = size(gram, 2)
   weyl = zeros(S, n)  # 2*weyl vector
   for (v,q) in sv
     if isone(q)
       weyl .= weyl .+ 2 .*v
-    else 
+    else
       weyl .= weyl .+ v
-    end 
-  end 
+    end
+  end
   weyl_dual = gram*weyl
   return Vector{S}[i for (i,_) in sv if dot(i, weyl_dual)==2]
 end
@@ -798,8 +798,12 @@ end
 # if we ever change the standard ordering this code will stop working
 function find_permutaton_and_ADE_type(H::MatrixElem)
   if nrows(H)==1
-   @assert !is_zero_entry(H,1,1)
-   return :A, [1]
+    @assert !is_zero_entry(H,1,1)
+    if isone(H[1,1])
+      return :I, [1]
+    else
+      return :A, [1]
+    end
   end
   r = nrows(H)
   isoftypeAn = true
