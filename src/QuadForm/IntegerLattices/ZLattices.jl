@@ -142,8 +142,8 @@ with gram matrix
 
 julia> shortest_vectors(rescale(L, -1))
 2-element Vector{Vector{ZZRingElem}}:
- [0, 1]
  [1, 0]
+ [0, 1]
 ```
 """
 function rescale(L::ZZLat, r::RationalUnion; cached::Bool=false)
