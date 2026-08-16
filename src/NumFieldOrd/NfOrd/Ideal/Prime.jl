@@ -841,12 +841,15 @@ function factor_easy(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
     r = is_perfect_power_with_data(r)[2]
     if !isone(r)
       r = ppio(minimum(I), r)[1]
+      isone(r) && continue
       J = gcd(I, r)
+      @assert !isone(J)
       ideals[J] = 1
     end
   end
   @hassert :AbsNumFieldOrder 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
   @hassert :AbsNumFieldOrder 1 all(!iszero, values(ideals))
+  @hassert :AbsNumFieldOrder 1 all(!isone, keys(ideals))
   @hassert :AbsNumFieldOrder 1 is_pairwise_coprime(collect(keys(ideals)))
   return ideals
 end
