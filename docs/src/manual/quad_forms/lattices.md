@@ -315,9 +315,9 @@ julia> E, b = number_field(g, :b);
 
 julia> D = matrix(E, 4, 4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
-julia> gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
+julia> gensLherm = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [2, -1, 0, 0]), map(E, [-3, 0, -1, 0]), map(E, [0, 0, 0, -1]), map(E, [b, 0, 0, 0])];
 
-julia> Lherm = hermitian_lattice(E, gens, gram = D);
+julia> Lherm = hermitian_lattice(E, gensLherm, gram = D);
 
 julia> rank(Lherm), degree(Lherm)
 (4, 4)
