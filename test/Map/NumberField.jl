@@ -27,6 +27,30 @@ end
   I = ideal(E, E(a))
   @test_throws ErrorException Hecke.induce_image(f, I)
 
+  @testset "Non-integral defining generator" begin
+    K, a = number_field(
+      x^4 + 4//9*x^2 + 4//9, "a"; cached = false)
+    @test !is_defining_polynomial_nice(K)
+    OK = maximal_order(K)
+    primes = prime_decomposition(OK, 2)
+    @test length(primes) == 1
+    P = only(primes)[1]
+    automorphisms = automorphism_list(K)
+    @test length(automorphisms) == 4
+
+    images = [Hecke.induce_image(sigma, P) for sigma in automorphisms]
+    exact_images = [
+      ideal(OK, [OK(sigma(K(element))) for element in basis(P)])
+      for sigma in automorphisms
+    ]
+    @test all(
+      Hecke.elem_in_nf(image.gen_two) in OK for image in images)
+    @test [basis_matrix(image) for image in images] ==
+          [basis_matrix(image) for image in exact_images]
+    @test count(==(P), images) ==
+          ramification_index(P)*degree(P) == length(automorphisms)
+  end
+
 end
 
 
@@ -135,4 +159,3 @@ let
   f = hom(K, K, -a)
   @test Hecke.is_involution(f)
 end
-
