@@ -576,18 +576,38 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
   end
 end
 
-function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _automorphism_reduction(
+  G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
+  p::Int,
+)
   K = domain(G[1])
-	p = 2
-  R = Native.GF(p, cached = false)
-	Rx = polynomial_ring(R, "x", cached = false)[1]
-  while iszero(discriminant(change_base_ring(R, defining_polynomial(K); parent = Rx)))
-		p = next_prime(p)
-	  R = Native.GF(p, cached = false)
-		Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
-  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
-  return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, change_base_ring(R, defining_polynomial(K); parent = Rx)), gen(Rx)))
+  d = numerator(discriminant(defining_polynomial(K)))
+  while true
+    while mod(d, p) == 0
+      p = next_prime(p)
+    end
+    try
+      R = Native.GF(p, cached = false)
+      Rx, x = polynomial_ring(R, "x", cached = false)
+      fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
+      pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
+      return x, fmod, pols
+    catch e
+      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+        # A generator image can have a denominator divisible by p even when
+        # the defining polynomial has good reduction.
+        p = next_prime(p)
+        continue
+      end
+      rethrow(e)
+    end
+  end
+end
+
+function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+  x, fmod, given_gens = _automorphism_reduction(G, 2)
+  return length(closure(
+    given_gens, (x, y) -> Hecke.compose_mod(x, y, fmod), x))
 end
 
 ################################################################################
