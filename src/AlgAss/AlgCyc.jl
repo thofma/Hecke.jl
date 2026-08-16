@@ -65,7 +65,7 @@ end
 function structure_constant_algebra(
   c::CyclicAlgebra{T, S},
 ) where {T, S}
-  return StructureConstantAlgebra(c.sca)::StructureConstantAlgebra{T}
+  return c.sca::StructureConstantAlgebra{T}
 end
 
 """
