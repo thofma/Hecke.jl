@@ -751,38 +751,7 @@ function _enumerate_definite_genus!(
     add_spinor_generators::Bool=true,
     scaling_factor=nothing
   )
-return _enumerate_definite_genus(known, algorithm;
-    rand_neigh,
-    distinct,
-    invariant_function,
-    save_partial,
-    save_path,
-    use_mass,
-    _missing_mass,
-    vain,
-    stop_after,
-    max,
-    add_spinor_generators,
-    scaling_factor)[1:2]
-end
-
-function _enumerate_definite_genus(
-    known::Vector{ZZLat},
-    algorithm::Symbol = :default;
-    rand_neigh::Int=10,
-    distinct::Bool=false,
-    invariant_function::Function=default_invariant_function,
-    save_partial::Bool=false,
-    save_path::Union{String, Nothing}=nothing,
-    use_mass::Bool=true,
-    _missing_mass::Union{QQFieldElem, Nothing}=nothing,
-    vain::Base.RefValue{Int}=Ref{Int}(0),
-    stop_after::IntExt=inf,
-    max::IntExt=inf,
-    add_spinor_generators::Bool=true,
-    scaling_factor=nothing
-  )
-@req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
+  @req !save_partial || !isnothing(save_path) "No path mentioned for saving partial results"
   @req !is_empty(known) "Should know at least one lattice in the genus"
   @req all(LL -> genus(LL) == genus(known[1]), known) "Known lattices must be in the same genus"
   if algorithm != :default
