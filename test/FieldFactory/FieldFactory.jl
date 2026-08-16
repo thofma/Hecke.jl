@@ -1,5 +1,11 @@
 @testset "FieldFactory" begin
 
+  @testset "Transitive group fields" begin
+    GAPExt = Base.get_extension(Hecke, :GAPExt)
+    @test GAPExt._find_discriminant_bound(3, 1, ZZ(2)) == 5
+    @test GAPExt._find_discriminant_bound(4, 2, ZZ(2)) == 5
+  end
+
   println("Quadratic Fields")
   @time begin
     @testset "Quadratic Fields" begin

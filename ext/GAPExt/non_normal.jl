@@ -60,7 +60,7 @@ function _find_discriminant_bound(n, i, disc)
     mp = GAP.Globals.FactorCosetAction(G1, H)
     idT = GAP.Globals.TransitiveIdentification(GAP.Globals.Image(mp))
     if idT == i
-      ind = i
+      ind = k
       break
     end
   end
@@ -81,11 +81,11 @@ function _find_discriminant_bound(n, i, disc)
     end
   end
   if isfrobenius
-    @show "Frobenius!"
+    @vprintln :Fields 1 "Frobenius group: tighter closure bound"
     #In this case, we can find a better bound for the closure!
     m = divexact(id[1], n)
     bdisc = disc^(2*m*n-m)
-    return root(bdisc, n-1)
+    return iroot(bdisc, n-1)
   end
   j = 1
   for i = 2:length(conjs)
@@ -104,8 +104,9 @@ function fields_transitive_group(n::Int, i::Int, disc::ZZRingElem)
   @assert GAP.Globals.IsSolvable(Gt)
   id = GAP.Globals.IdGroup(Gt)
   G1 = GAP.Globals.SmallGroup(id)
-  @show disc_NC = _find_discriminant_bound(n, i, disc)
-  lf = fields(id[1], id[2], disc_NC)
+  disc_NC = _find_discriminant_bound(n, i, disc)
+  @vprintln :Fields 1 "Normal-closure discriminant bound: $disc_NC"
+  lf = Hecke.fields(id[1], id[2], disc_NC)
   ln = to_non_normal(lf, G1, n)
   indices = Int[]
   for i = 1:length(ln)
