@@ -212,7 +212,7 @@ end
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
 
   L = integer_lattice(gram=ZZ[1 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 2 -1; 0 0 0 -1 35])
-  @test root_lattice_recognition_fundamental(L)[2] == [(:I, 1), (:I, 1), (:I, 1), (:A, 1)]
+  @test root_lattice_recognition_fundamental(L)[2] == [(:A, 1), (:I, 1), (:I, 1), (:I, 1)]
 
 
   B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
@@ -244,7 +244,7 @@ end
 
   # empty root lattice
   L = integer_lattice(;gram = ZZ[3;])
-  @test length(root_lattice_recognition(L)) == 0
+  @test length(root_lattice_recognition(L)[1]) == 0
 
   # isometry testing
   C1 = root_lattice(:A, 2)
