@@ -1479,7 +1479,7 @@ function is_local_norm(k::Hecke.AbsSimpleNumField, a::Integer)
 end
 
 function is_local_norm(k::Hecke.AbsSimpleNumField, a::QQFieldElem)
-  return is_local_norm(k, numerator(a)*denominator(a)^degree(k))
+  return is_local_norm(k, numerator(a)*denominator(a)^(degree(k) - 1))
 end
 
 function is_local_norm(k::Hecke.AbsSimpleNumField, a::Rational)
