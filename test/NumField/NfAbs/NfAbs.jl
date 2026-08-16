@@ -172,4 +172,16 @@ end
   @test D === C
   @test mC1(gen(C)) == gen(C)
   @test mC2(gen(C)) == gen(C)
+
+  Ly, y = polynomial_ring(L, "y", cached = false)
+  R, _ = number_field(y^3 - 2, cached = false)
+  @test Hecke.has_embedding(L, R)
+  @test Hecke.force_coerce(R, b) == R(b)
+
+  A, _ = absolute_simple_field(R, cached = false)
+  @test Hecke.has_embedding(L, A)
+  @test Hecke.force_coerce(A, b) == Hecke.force_coerce(A, R(b))
+  chains = Hecke.collect_all_chains(A)
+  @test haskey(chains, objectid(L))
+  @test !haskey(chains, objectid(A))
 end
