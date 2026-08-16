@@ -267,10 +267,10 @@ function getindex(a::GroupAlgebraElem{S, GroupAlgebra{S, T, U}}, g::U) where {S,
     if !haskey(parent(a).group_to_base, g)
       return zero(base_ring(parent(a)))
     else
-      return a.coeffs_sparse[parent(a).group_to_base[g]]
+      return a.coeffs_sparse[parent(a).group_to_base[g]]::S
     end
   else
-    return a.coeffs[parent(a).group_to_base[g]]
+    return a.coeffs[parent(a).group_to_base[g]]::S
   end
 end
 
@@ -762,7 +762,7 @@ function show(io::IO, a::AbstractAssociativeAlgebraElem)
         for (i, ci) in a.coeffs_sparse
           push!(sum.args,
                 Expr(:call, :*, AbstractAlgebra.expressify(ci, context = io),
-                                AbstractAlgebra.expressify(parent(a).base_to_group[i], context = IOContext(io, :compact => true))))
+                                Expr(:call, :e, AbstractAlgebra.expressify(parent(a).base_to_group[i], context = IOContext(io, :compact => true)))))
         end
       end
       print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
