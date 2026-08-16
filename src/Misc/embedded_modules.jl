@@ -84,6 +84,16 @@ parent(x::EmbeddedModuleElem) = x.mod
 
 elem_type(M::EmbeddedModule{RingTypeType, RingType, OverringType}) where {RingTypeType, RingType, OverringType} = EmbeddedModuleElem{typeof(M), RingType, OverringType}
 
+function Base.deepcopy_internal(x::EmbeddedModuleElem, dict::IdDict)
+  haskey(dict, x) && return dict[x]
+  y = EmbeddedModuleElem(parent(x))
+  dict[x] = y
+  isdefined(x, :coords) && (y.coords = Base.deepcopy_internal(x.coords, dict))
+  isdefined(x, :ambientcoords) && (y.ambientcoords = Base.deepcopy_internal(x.ambientcoords, dict))
+  isdefined(x, :pseudocoords) && (y.pseudocoords = Base.deepcopy_internal(x.pseudocoords, dict))
+  return y
+end
+
 function _element_from_ambient_coordinates(M::EmbeddedModule{S, T, OverringType}, x::Vector; check::Bool = true) where {S, T, OverringType}
   z = EmbeddedModuleElem(M)
   @assert eltype(x) === elem_type(OverringType)

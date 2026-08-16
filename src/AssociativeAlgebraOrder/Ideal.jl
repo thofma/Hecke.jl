@@ -282,7 +282,9 @@ function quotient_algebra(O::AssociativeAlgebraOrder, I::AssociativeAlgebraOrder
     end
   end
   A = structure_constant_algebra(F, mtable)
-  OtoA = hom(O, A, RtoF, [A(Generic._matrix(OtoV(elem_in_module(x)))[1, :]) for x in basis(O)]; preimage = x -> O(preimage.(RtoF, coefficients(x))))
+  OtoA = hom(O, A, RtoF,
+             [A(Generic._matrix(OtoV(elem_in_module(x)))[1, :]) for x in basis(O)];
+             preimage = x -> O(preimage(OtoV, V(coefficients(x)))))
   return A, OtoA
 end
 
@@ -320,7 +322,6 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AssociativeAlgebraOrder, I:
   # m = vcat(m, basis_matrix(I, copy = false))
   # m = sub(_hnf_integral(m, :lowerleft), nrows(x) + 1:nrows(m), 1:degree(O))
   # J = ideal(algebra(O), O, m; side=:twosided, M_in_hnf=true)
-  @info g
   J = ideal(O, lattice(algebra(O), base_ring(O), vcat(elem_in_algebra.(g), elem_in_algebra.(basis(I; copy = false)))); side = :twosided)
   if isdefined(I, :gens)
     append!(g, I.gens)
@@ -332,3 +333,42 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AssociativeAlgebraOrder, I:
 end
 
 is_prime(f::PolyRingElem{<:FieldElem}) = is_irreducible(f)
+
+# This computes a basis matrix for \{ x \in A | bx \subseteq a \} if
+# side == :left or \{ x \in A | xb \subseteq a \} if side == :right.
+#
+# TODO: split into _PID and _DD case
+function _colon_raw(a::AssociativeAlgebraOrderIdeal, b::AssociativeAlgebraOrderIdeal, side::Symbol)
+  # TODO: more checks
+  @assert is_full_lattice(a) && is_full_lattice(b)
+  A = algebra(a)
+  @assert A === algebra(b)
+  K = base_ring(A)
+  d = dim(A)
+  # TODO: are the bases correct?
+  bb = elem_in_algebra.(basis(b, copy = false))
+  B = inv(basis_matrix(lattice(a), copy = false)) # wrt basis of A
+  M = zero_matrix(base_ring(A), d^2, d)
+  for i = 1:d
+    N = representation_matrix(bb[i], side)*B
+    for s = 1:d
+      for t = 1:d
+        M[t + (i - 1)*d, s] = N[s, t]
+      end
+    end
+  end
+  M = sub(_hnf_integral(M, base_ring(a), :upperright), 1:d, 1:d)
+  N = inv(transpose(M))
+  return N
+end
+
+@doc raw"""
+    ring_of_multipliers(a::AlgAssAbsOrdIdl) -> AlgAssAbsOrd
+
+Given an ideal $a$, it returns the ring $(a : a)$.
+"""
+function ring_of_multipliers(a::AssociativeAlgebraOrderIdeal, action::Symbol = :left)
+  M = _colon_raw(a, a, action)
+  R = base_ring(a)
+  return new_order(algebra(a), R, _hnf_integral(M, R))
+end

@@ -547,11 +547,11 @@ end
 # Be careful!
 # To be used only in the case of the construction of a maximal order!
 function +(a::AssociativeAlgebraOrder, b::AssociativeAlgebraOrder)
-  aB = basis_matrix(a, copy = false)
-  bB = basis_matrix(b, copy = false)
-  d = degree(a)
-  c = sub(_hnf(vcat(denominator(bB) * numerator(aB), denominator(aB)*numerator(bB)), :lowerleft), d + 1:2*d, 1:d)
-  return new_order(algebra(a), divexact(QQMatrix(c), denominator(aB) * denominator(bB)))
+  #aB = basis_matrix(a, copy = false)
+  #bB = basis_matrix(b, copy = false)
+  #d = degree(a)
+  #c = sub(_hnf(vcat(denominator(bB) * numerator(aB), denominator(aB)*numerator(bB)), :lowerleft), d + 1:2*d, 1:d)
+  return new_order(algebra(a), base_ring(a), basis(lattice(a) + lattice(b)))
 end
 
 ################################################################################
@@ -653,30 +653,31 @@ end
 #
 ################################################################################
 
-function pmaximal_overorder(O::AssociativeAlgebraOrder{S, T}, p::Union{ZZRingElem, Int}) where S where T
+function pmaximal_overorder(O::AssociativeAlgebraOrder{S, T}, p::RingElem) where S where T
   d = discriminant(O)
   if rem(d, p^2) != 0
     return O
   end
 
-  if p > degree(O)
+  if p isa ZZRingElem && p > degree(O)
     @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)::AssociativeAlgebraOrder{S, T}
     return O1
   else
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)::AssociativeAlgebraOrder{S, T}
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)::typeof(O)
     return O1
   end
 end
 
-function pmaximal_overorder_meataxe(O::AssociativeAlgebraOrder{S, T}, p::Union{ZZRingElem, Int}) where {S, T}
+function pmaximal_overorder_meataxe(O::AssociativeAlgebraOrder{S, T}, p) where {S, T}
 
   extend = false
   d = discriminant(O)
   while true
-    dd = ZZRingElem(1)
+    dd = one(p)
     @vtime :AlgAssOrd 1 max_id =_maximal_ideals(O, p*O, p, strict_containment = true)
     for m in max_id
-      @vtime :AlgAssOrd 1 OO = _ring_of_multipliers_integral_ideal(m, ZZRingElem(p))
+      #@vtime :AlgAssOrd 1 OO = _ring_of_multipliers_integral_ideal(m, p)
+      @vtime :AlgAssOrd 1 OO = ring_of_multipliers(m)
       dd = discriminant(OO)
       if d != dd
         extend = true
@@ -803,34 +804,6 @@ function maximal_order(O::AssociativeAlgebraOrder{S, T}; cached::Bool = true) wh
 
   # set_attribute!(O, :maximal_order, OO)
 
-  return OO
-end
-
-function new_maximal_order(O::AssociativeAlgebraOrder{S, T}, cache_in_substructures::Bool = true) where {S, T}
-  A = algebra(O)
-
-  if degree(O) >= 30 && !is_simple(A)
-    OO = _maximal_order_via_decomposition(O, cache_in_substructures)
-  else
-    d = discriminant(O)
-    @vtime :AbsNumFieldOrder fac = factor(d)
-
-    OO = O
-    for (p, j) in fac
-      if mod(d, p^2) != 0
-        continue
-      end
-      OO += pmaximal_overorder(O, p)
-    end
-    OO.is_maximal = 1
-  end
-
-  # TODO: fix this nonsense
-  # if !isdefined(A, :maximal_order)
-  #   A.maximal_order = [OO]
-  # else
-  #   push!(A.maximal_order, OO)
-  # end
   return OO
 end
 

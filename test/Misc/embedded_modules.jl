@@ -124,7 +124,7 @@
     alazy = Hecke._element_from_ambient_coordinates(M, QQFieldElem[4, 6];
                                                      check = false)
     @test coordinates(alazy) == ZZRingElem[2, 2]
-    @test coordinates(alazy) === coordinates(alazy)
+    @test coordinates(alazy; copy = false) === coordinates(alazy; copy = false)
 
     abad = Hecke._element_from_ambient_coordinates(M, QQFieldElem[1, 0];
                                                     check = false)

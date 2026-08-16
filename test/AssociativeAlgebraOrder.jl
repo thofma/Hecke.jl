@@ -1,3 +1,5 @@
 include("AssociativeAlgebraOrder/Basics.jl")
 include("AssociativeAlgebraOrder/Lattice.jl")
 include("AssociativeAlgebraOrder/Ideal.jl")
+include("AssociativeAlgebraOrder/MaximalOrder.jl")
+include("AssociativeAlgebraOrder/Map.jl")

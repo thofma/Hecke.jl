@@ -77,12 +77,13 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(a::AssociativeAlgebraOrderElem, dict::IdDict)
-  b = parent(a)()
-  b.elem_in_algebra = Base.deepcopy_internal(a.elem_in_algebra, dict)
-  if a.has_coord
-    b.has_coord = true
-    b.coordinates = Base.deepcopy_internal(a.coordinates, dict)
-  end
+  haskey(dict, a) && return dict[a]
+  b = AssociativeAlgebraOrderElem(parent(a))
+  dict[a] = b
+  isdefined(a, :elem_in_algebra) &&
+    (b.elem_in_algebra = Base.deepcopy_internal(a.elem_in_algebra, dict))
+  isdefined(a, :elem_in_module) &&
+    (b.elem_in_module = Base.deepcopy_internal(a.elem_in_module, dict))
   return b
 end
 
