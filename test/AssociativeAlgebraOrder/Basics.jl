@@ -20,6 +20,9 @@
       @test base_ring(O) === R
       @test_throws ArgumentError Hecke.new_order(A, R, zero_matrix(K, 2, 2); is_basis = true)
       @test_throws ArgumentError Hecke.new_order(A, R, vcat(identity_matrix(K, 2), zero_matrix(K, 2, 2)); is_basis = true)
+
+      M = Hecke._closure(A, R, basis(A))
+      @test basis_matrix(M) == identity_matrix(K, 2)
     end
   end
 
@@ -27,10 +30,20 @@
     K, = rationals_as_number_field()
     OK = maximal_order(K)
     A = matrix_algebra(K, 2)
-    R = Hecke._closure(A, OK, 2 .* basis(A)) # should not crash for now
+    M = Hecke._closure(A, OK, 2 .* basis(A))
+    @test nrows(matrix(basis_matrix(M))) == dim(A)
+  end
+
+  let # PID interface, non-commutative case
+    A = matrix_algebra(QQ, 2)
+    M = Hecke._closure(A, ZZ, basis(A))
+    @test basis_matrix(M) == identity_matrix(QQ, dim(A))
+    @test_throws ErrorException Hecke._closure(A, ZZ, [QQ(1//2)*basis(A)[1]])
   end
 
   let
+    K = QQ
+    R = ZZ
     A = group_algebra(K, small_group(2, 1))
     O = Hecke.new_order(A, R, basis(A); is_basis = true)
     OO = Hecke.new_order(A, R, 2*basis(A))

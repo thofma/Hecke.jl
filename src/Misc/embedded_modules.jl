@@ -69,6 +69,80 @@ mutable struct EmbeddedModule{RingTypeType, RingType, OverringType}
   end
 end
 
+mutable struct EmbeddedModuleElem{ModuleType, RingType, OverringType}
+  mod::ModuleType
+  coords#::Vector{elem_type(RingType)}
+  ambientcoords#::Vector{elem_type(OverringType)}
+  pseudocoords#::Vector{elem_type(OverringType)} # Dedekind module case
+
+  function EmbeddedModuleElem(M::EmbeddedModule{S, RingType, OverringType}) where {S, RingType, OverringType}
+    return new{typeof(M), RingType, OverringType}(M)
+  end
+end
+
+parent(x::EmbeddedModuleElem) = x.mod
+
+elem_type(M::EmbeddedModule{RingTypeType, RingType, OverringType}) where {RingTypeType, RingType, OverringType} = EmbeddedModuleElem{typeof(M), RingType, OverringType}
+
+function _element_from_ambient_coordinates(M::EmbeddedModule{S, T, OverringType}, x::Vector; check::Bool = true) where {S, T, OverringType}
+  z = EmbeddedModuleElem(M)
+  @assert eltype(x) === elem_type(OverringType)
+  z.ambientcoords = x
+  if check
+    fl, c = _in(x, M, Val(true))
+    @req fl "Element not contained in module"
+    z.coords = c
+  end
+  return z
+end
+
+function _element_from_coordinates(M::EmbeddedModule{S, RingType, OverringType}, x::MatElem; check::Bool = true) where {S, RingType, OverringType}
+  return _element_from_coordinates(M, x[1, :]; check)
+end
+
+function _element_from_coordinates(M::EmbeddedModule{S, RingType, OverringType}, x::Vector; check::Bool = true) where {S, RingType, OverringType}
+  z = EmbeddedModuleElem(M)
+  @assert eltype(x) === elem_type(RingType)
+  z.coords = x
+  return z
+end
+
+function _element_from_coordinates_and_ambient_coordinates(M::EmbeddedModule{S, RingType, OverringType}, x::Vector, y::Vector; check::Bool = true) where {S, RingType, OverringType}
+  z = EmbeddedModuleElem(M)
+  @assert eltype(x) === elem_type(RingType)
+  @assert eltype(y) === elem_type(OverringType)
+  z.coords = x
+  z.ambientcoords = y
+  if check
+    fl, c = _in(y, M, Val(true))
+    @req c == x "Element not contained in module"
+  end
+  return z
+end
+
+function coordinates(x::EmbeddedModuleElem{S, RingType}; copy::Bool = true) where {S, RingType}
+  if isdefined(x, :coords)
+    r = x.coords::Vector{elem_type(RingType)}
+    return copy ? deepcopy(r) : r
+  else
+    fl, c = _in(x.ambientcoords, x.mod, Val(true))
+    !fl && error("internal error: element not in module")
+    x.coords = c
+    r = x.coords::Vector{elem_type(RingType)}
+    return copy ? deepcopy(r) : r
+  end
+end
+
+function ambient_coordinates(x::EmbeddedModuleElem{<:Any, RingType, OverringType}) where {RingType, OverringType}
+  if isdefined(x, :ambientcoords)
+    return x.ambientcoords::Vector{elem_type(OverringType)}
+
+  else
+    x.ambientcoords = coordinates(x) * basis_matrix(parent(x))
+    return x.ambientcoords::Vector{elem_type(OverringType)}
+  end
+end
+
 _embedded_module_type(::Type{R}, ::Type{OR}) where {R, OR} = EmbeddedModule{_ring_type(R), R, OR}
 
 _ring_type(M::EmbeddedModule) = _ring_type(ring(M))
@@ -146,7 +220,11 @@ function basis_matrix(M::EmbeddedModule{_DD, RingType, OverringType}) where {Rin
   # trim myself :(
   NN = matrix(N)
   k = findfirst(i -> !is_zero_row(NN, i), 1:nrows(NN))
-  N = sub(N, k:nrows(N), 1:ncols(N))
+  if k === nothing
+    N = sub(N, 1:0, 1:ncols(N))
+  else
+    N = sub(N, k:nrows(N), 1:ncols(N))
+  end
   M.basis_matrix = N
   return N
 end
@@ -187,6 +265,12 @@ function set_basis_matrix(N, M)
   return N.basis_matrix::dense_matrix_type(overring(N))
 end
 
+function set_basis_matrix(N::EmbeddedModule{_DD, RingType, OverringType}, M::PMat) where {RingType, OverringType}
+  @assert !isdefined(N, :basis_matrix)
+  N.basis_matrix = M
+  return N.basis_matrix::pseudo_matrix_type(RingType, OverringType)
+end
+
 function set_basis_matrix_components(M::EmbeddedModule, B, d)
   M.basis_matrix_numerator = B
   if d !== nothing
@@ -215,9 +299,16 @@ function set_basis_matrix_components(M::EmbeddedModule, B, d)
   return M
 end
 
-function rank(M::EmbeddedModule)
+function rank(M::EmbeddedModule{_PID})
   if M.rank == -1
     M.rank = nrows(basis_matrix_numerator(M))
+  end
+  return M.rank
+end
+
+function rank(M::EmbeddedModule{_DD})
+  if M.rank == -1
+    M.rank = nrows(basis_matrix(M))
   end
   return M.rank
 end
@@ -247,30 +338,19 @@ function embedded_module(R::Ring, S::Ring, M#=::MatrixElem or PMat=#; overstruct
 
   return N
 end
-#
-#function is_compatible(M::EmbeddedModule, N::EmbeddedModule)
-#  ring(M) !== ring(N) && return false
-#  overring(M) !== overring(N) && return false
-#  if overstructure(M) === nothing === overstructure(N)
-#    return ambient_rank(M) == ambient_rank(N)
-#  end
-#  return overstructure(M) === overstructure(N)
-#end
-#
-#abstract type _EquiType end
-#abstract type _Equi <: _EquiType end
-#abstract type _NonEqui <: _EquiType end
-#
-#_equi_type(M::EmbeddedModule{RingType, RingType}) where {RingType} = _Equi
-#
-#_equi_type(M::EmbeddedModule{RingType, OverringType}) where {RingType, OverringType} = _NonEqui
-#
-##function is_equistructural(M::EmbeddedModule{RingType, RingType}) where {RingType}
-##  return ring(M) === overring(M)
-##end
-##
-##is_equistructural(M::EmbeddedModule{RingType, OverringType}) where {RingType, OverringType} = false
-#
+
+function is_compatible(M::EmbeddedModule, N::EmbeddedModule)
+  ring(M) === ring(N) || return false
+  overring(M) === overring(N) || return false
+  overstructure(M) === overstructure(N) || return false
+  return ambient_rank(M) == ambient_rank(N)
+end
+
+function _check_compatible(M::EmbeddedModule, N::EmbeddedModule)
+  @req is_compatible(M, N) "The embedded modules have different ambient structures"
+  return nothing
+end
+
 is_known(::typeof(basis_matrix), M::EmbeddedModule) = isdefined(M, :basis_matrix)
 
 is_known(::typeof(index_multiple), M::EmbeddedModule) = isdefined(M, :index_multiple)
@@ -286,90 +366,89 @@ function _short_generator_matrix(M::EmbeddedModule)
     return generator_matrix(M)
   end
 end
+################################################################################
 #
-#################################################################################
-##
-##  Show
-##
-#################################################################################
+#  Arithmetic
 #
-#function Base.show(io::IO, M::EmbeddedModule)
-#  println(io, "Embedded module over $(ring(M)) with generator matrix")
-#  show(io, "text/plain", _short_generator_matrix(M))
-#end
-#
-#################################################################################
-##
-##  Arithmetic
-##
-#################################################################################
-#
-#_multiply_with_denominator(a::RingElement, M::EmbeddedModule) = _multiply_with_denominator(a, M, _equi_type(M))
-#
-#_multiply_with_denominator(a::RingElement, M, ::Type{_Equi}) = a
-#_multiply_with_denominator(a::RingElement, M, ::Type{_NonEqui}) = a * denominator(M)
-#
-#function Base.:(+)(M::EmbeddedModule, N::EmbeddedModule)
-#  @assert is_compatible(M, N)
-#  return +(M, N, _ring_type(M), _equi_type(M))
-#end
-#
-## the implementation is cheating, since _hnf_integral takes care of the
-## HNF of rational matrices
-#function Base.:(+)(M::EmbeddedModule, N::EmbeddedModule, ::Type{_PID}, ::Any)
-#  #if M === M
-#  #  return M
-#  #end
-#  R = ring(M)
-#  Mg = _short_generator_matrix(M)
-#  Ng = _short_generator_matrix(N)
-#  g = zero(R)
-#  if is_known(index_multiple, M)
-#    g = index_multiple(M)
-#    g = _multiply_with_denominator(g, N)
-#  end
-#  if is_known(index_multiple, N)
-#    g = gcd(g, _multiply_with_denominator(index_multiple(N), M))
-#  end
-#  if !is_zero(g)
-#    B = _hnf_integral_modular_eldiv(vcat(Mg, Ng), R, g; shape = :lowerleft, cutoff = true)
-#  else
-#    B = _hnf_integral(vcat(Mg, Ng), R; shape = :lowerleft, cutoff = true)
-#  end
-#  return embedded_module(R, overring(M), B; overstructure = overstructure(M), is_basis_matrix = true)
-#end
-#
-#function Base.intersect(M::EmbeddedModule, N::EmbeddedModule)
-#  @assert is_compatible(M, N)
-#  return intersect(M, N, _ring_type(M), _equi_type(M))
-#end
-#
-#function intersect(M::EmbeddedModule, N::EmbeddedModule, ::Type{_PID}, ::Any)
-#  @assert is_compatible(M, N)
-#  # this is not quite right
-#  R = ring(M)
-#  Mg = _short_generator_matrix(M)
-#  Mgint, d = integral_split(Mg, ring(M))
-#  K = _kernel_integral(vcat(Mg, _short_generator_matrix(N)), R; side = :left)
-#  _N = vcat(Mg, _short_generator_matrix(N))
-#  KK = view(K, 1:nrows(K), 1:nrows(Mg)) * Mgint
-#  # TODO: is this a basis?
-#  return embedded_module(R, overring(M), KK; overstructure = overstructure(M))
-#end
-#
-#function Base.:(*)(a::RingElement, M::EmbeddedModule)
-#  if is_zero(a)
-#    return embedded_module(ring(M), overring(M), zero_matrix(overring(M), 0, ambient_rank(M)); is_basis_matrix = true)
-#  end
-#  if is_known(basis_matrix, M)
-#    aMmat = a * basis_matrix(M)
-#    aM = embedded_module(ring(M), overring(M), aMmat; is_basis_matrix = true)
-#  else
-#    aMmat = a * generator_matrix(M)
-#    aM = embedded_module(ring(M), overring(M), aMmat)
-#  end
-#  return aM
-#end
+################################################################################
+
+function _zero_module_like(M::EmbeddedModule{_PID})
+  B = zero_matrix(overring(M), 0, ambient_rank(M))
+  return embedded_module(ring(M), overring(M), B;
+                         overstructure = overstructure(M), is_basis_matrix = true)
+end
+
+function _zero_module_like(M::EmbeddedModule{_DD})
+  B = zero_matrix(overring(M), 0, ambient_rank(M))
+  C = typeof(fractional_ideal(ring(M), one(ring(M))))[]
+  P = pseudo_matrix(ring(M), B, C)
+  return embedded_module(ring(M), overring(M), P;
+                         overstructure = overstructure(M), is_basis_matrix = true)
+end
+
+function _sum(M::EmbeddedModule, N::EmbeddedModule, ::Type{_PID})
+  B = vcat(basis_matrix(M), basis_matrix(N))
+  return embedded_module(ring(M), overring(M), B; overstructure = overstructure(M))
+end
+
+function _sum(M::EmbeddedModule, N::EmbeddedModule, ::Type{_DD})
+  P = vcat(basis_matrix(M), basis_matrix(N))
+  return embedded_module(ring(M), overring(M), P; overstructure = overstructure(M))
+end
+
+function +(M::EmbeddedModule, N::EmbeddedModule)
+  _check_compatible(M, N)
+  return _sum(M, N, _ring_type(M))
+end
+
+function _intersect(M::EmbeddedModule, N::EmbeddedModule, ::Type{_PID})
+  if iszero(rank(M)) || iszero(rank(N))
+    return _zero_module_like(M)
+  end
+
+  BM = basis_matrix(M)
+  BN = basis_matrix(N)
+  # Integral relations (u, v) with u*BM = v*BN parametrize M intersect N.
+  C, _ = decompose(fraction_map(M), vcat(BM, -BN))
+  relations = kernel(C; side = :left)
+  if iszero(nrows(relations))
+    return _zero_module_like(M)
+  end
+
+  KM = sub(relations, 1:nrows(relations), 1:nrows(BM))
+  B = change_base_ring(overring(M), KM)*BM
+  return embedded_module(ring(M), overring(M), B; overstructure = overstructure(M))
+end
+
+function _intersect(M::EmbeddedModule, N::EmbeddedModule, ::Type{_DD})
+  if iszero(rank(M)) || iszero(rank(N))
+    return _zero_module_like(M)
+  end
+
+  PM = deepcopy(basis_matrix(M))
+  PN = deepcopy(basis_matrix(N))
+  if nrows(PN) > nrows(PM)
+    PM, PN = PN, PM
+  end
+
+  # In the module generated by (x, x), x in M, and (y, 0), y in N,
+  # the rows whose first component vanishes project onto M intersect N.
+  P1 = hcat(PM, deepcopy(PM))
+  Z = pseudo_matrix(ring(M),
+                    zero_matrix(overring(M), nrows(PN), ncols(PN)),
+                    deepcopy(coefficient_ideals(PN)))
+  P2 = hcat(PN, Z)
+  H = pseudo_hnf(vcat(P1, P2), :upperright)
+  r = nrows(PM)
+  n = ncols(PM)
+  P = sub(H, r + 1:r + nrows(PN), n + 1:2*n)
+  return embedded_module(ring(M), overring(M), P; overstructure = overstructure(M))
+end
+
+function intersect(M::EmbeddedModule, N::EmbeddedModule)
+  _check_compatible(M, N)
+  return _intersect(M, N, _ring_type(M))
+end
 
 ################################################################################
 #
@@ -443,6 +522,14 @@ function _in((a, id)::Tuple, M::EmbeddedModule{_DD})
   return _contained_in_span_of_pseudohnf(a, id, MB; shape = :lowerleft)
 end
 
+function _in(a::MatrixElem, M::EmbeddedModule{_DD})
+  return _contained_in_span_of_pseudohnf(a, basis_matrix(M); shape = :lowerleft)
+end
+
+function _in(N::PMat, M::EmbeddedModule{_DD})
+  return _spans_subset_of_pseudohnf(N, basis_matrix(M); shape = :lowerleft)
+end
+
 _map(x, M) = x
 
 function Base.in(x, M::EmbeddedModule)
@@ -465,7 +552,30 @@ end
 ################################################################################
 
 function issubset(N::EmbeddedModule, M::EmbeddedModule)
+  _check_compatible(N, M)
   return _in(_short_generator_matrix(N), M)
+end
+
+function ==(M::EmbeddedModule, N::EmbeddedModule)
+  M === N && return true
+  is_compatible(M, N) || return false
+  return issubset(M, N) && issubset(N, M)
+end
+
+function _embedded_module_hash(M::EmbeddedModule{_PID}, h::UInt)
+  return hash(basis_matrix(M), h)
+end
+
+function _embedded_module_hash(M::EmbeddedModule{_DD}, h::UInt)
+  P = basis_matrix(M)
+  return hash(coefficient_ideals(P), hash(matrix(P), h))
+end
+
+function Base.hash(M::EmbeddedModule, h::UInt)
+  h = hash(ring(M), h)
+  h = hash(overring(M), h)
+  h = hash(overstructure(M), h)
+  return _embedded_module_hash(M, h)
 end
 
 ################################################################################
@@ -476,7 +586,7 @@ end
 
 function index(N::EmbeddedModule{_PID}, M::EmbeddedModule; check = true)
   if check
-    @req rank(N) == rank(M) "Index not finite"
+    @req rank(N) == rank(M) "Index not defined"
     @req issubset(N, M) "Modules must be contained in each other"
   end
   if has_full_rank(N)
@@ -486,4 +596,33 @@ function index(N::EmbeddedModule{_PID}, M::EmbeddedModule; check = true)
   fl, T = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side = :left)
   @assert fl
   return _preimage(fraction_map(M), det(T))
+end
+
+################################################################################
+#
+#  Quotient
+#
+################################################################################
+
+function quo(M::EmbeddedModule, N::EmbeddedModule)
+  BM = basis_matrix(M)
+  fl, T = can_solve_with_solution(basis_matrix(M), basis_matrix(N); side = :left)
+  @req fl "Not a submodule"
+  F = free_module(ring(M), nrows(BM))
+  S, _ = sub(F, [F(T[i, :]) for i in 1:nrows(T)])
+  Q, FtoQ = quo(F, S)
+  Q, MapFromFunc(M, Q, x -> FtoQ(F(coordinates(x))), y -> _element_from_coordinates(M, Hecke.AbstractAlgebra.Generic._matrix(preimage(FtoQ, y))))
+end
+
+function quotient_vector_space(M::EmbeddedModule, N::EmbeddedModule, p::RingElem)
+  R = ring(M)
+  @assert parent(p) === R
+  @assert is_prime(p)
+  F, RtoF = residue_field(R, p)
+  Q, MtoQ = quo(M, N)
+  S, StoQ = snf(Q)
+  invfac = invariant_factors(S)
+  @assert all(x -> is_divisible_by(p, x) && is_divisible_by(x, p), invfac)
+  QQ = free_module(F, length(invfac))
+  QQ, MapFromFunc(M, QQ, x -> QQ(RtoF.(Generic._matrix(preimage(StoQ, MtoQ(x))))), y -> preimage(MtoQ, StoQ(S(preimage.(RtoF, Generic._matrix(y)))))), RtoF
 end

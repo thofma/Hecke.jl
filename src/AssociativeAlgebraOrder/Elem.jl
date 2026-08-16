@@ -18,42 +18,57 @@ function (O::AssociativeAlgebraOrder)(a::AbstractAssociativeAlgebraElem; check::
   if check
     (x, y) = _check_elem_in_order(a, O)
     !x && error("Algebra element not in the order")
-    return AssociativeAlgebraOrderElem(O, deepcopy(a), y)
+    z = AssociativeAlgebraOrderElem(O)
+    z.elem_in_algebra = deepcopy(a)
+    z.elem_in_module = _element_from_coordinates_and_ambient_coordinates(_underlying_module(O), y, coefficients(a; copy = false); check = false)
   else
-    return AssociativeAlgebraOrderElem(O, deepcopy(a))
+    z = AssociativeAlgebraOrderElem(O)
+    z.elem_in_algebra  = deepcopy(a)
   end
+  return z
 end
 
-(O::AssociativeAlgebraOrder)(a::AbstractAssociativeAlgebraElem, arr::Vector; check::Bool = false) = begin
-  if check
-    (x, y) = _check_elem_in_order(a, O)
-    (!x || arr != y) && error("Algebra element not in the order")
-    return AssociativeAlgebraOrderElem(O, deepcopy(a), y)
-  else
-    return AssociativeAlgebraOrderElem(O, deepcopy(a), deepcopy(arr))
-  end
+function (O::AssociativeAlgebraOrder)(arr::Vector)
+  return O(_element_from_coordinates(_underlying_module(O), arr))
 end
 
-(O::AssociativeAlgebraOrder{S, T})(arr::Vector{ZZRingElem}) where {S, T} = begin
-  M = basis_matrix(O, copy = false)
-  N = matrix(ZZ, 1, degree(O), arr)
-  NM = N*M
-  x = elem_from_mat_row(algebra(O), NM, 1)
-  return AssociativeAlgebraOrderElem(O, x, deepcopy(arr))
+function (O::AssociativeAlgebraOrder)(m::EmbeddedModuleElem; check::Bool = true)
+  @assert parent(m) === _underlying_module(O)
+  z = AssociativeAlgebraOrderElem(O)
+  z.elem_in_module = m
+  return z
 end
 
-(O::AssociativeAlgebraOrder{S, T})(a::AssociativeAlgebraOrderElem; check::Bool = true) where {S, T} = begin
-  b = elem_in_algebra(a) # already a copy
-  if check
-    (x, y) = _check_elem_in_order(b, O)
-    !x && error("Algebra element not in the order")
-    return AssociativeAlgebraOrderElem(O, b, y)
-  else
-    return AssociativeAlgebraOrderElem(O, b)
-  end
-end
+#(O::AssociativeAlgebraOrder)(a::AbstractAssociativeAlgebraElem, arr::Vector; check::Bool = false) = begin
+#  if check
+#    (x, y) = _check_elem_in_order(a, O)
+#    (!x || arr != y) && error("Algebra element not in the order")
+#    return AssociativeAlgebraOrderElem(O, deepcopy(a), y)
+#  else
+#    return AssociativeAlgebraOrderElem(O, deepcopy(a), deepcopy(arr))
+#  end
+#end
 
-(O::AssociativeAlgebraOrder)(a::T; check::Bool = true) where T = O(algebra(O)(a); check)
+#(O::AssociativeAlgebraOrder{S, T})(arr::Vector{ZZRingElem}) where {S, T} = begin
+#  M = basis_matrix(O, copy = false)
+#  N = matrix(ZZ, 1, degree(O), arr)
+#  NM = N*M
+#  x = elem_from_mat_row(algebra(O), NM, 1)
+#  return AssociativeAlgebraOrderElem(O, x, deepcopy(arr))
+#end
+#
+#(O::AssociativeAlgebraOrder{S, T})(a::AssociativeAlgebraOrderElem; check::Bool = true) where {S, T} = begin
+#  b = elem_in_algebra(a) # already a copy
+#  if check
+#    (x, y) = _check_elem_in_order(b, O)
+#    !x && error("Algebra element not in the order")
+#    return AssociativeAlgebraOrderElem(O, b, y)
+#  else
+#    return AssociativeAlgebraOrderElem(O, b)
+#  end
+#end
+#
+#(O::AssociativeAlgebraOrder)(a::T; check::Bool = true) where T = O(algebra(O)(a); check)
 
 ################################################################################
 #
@@ -106,6 +121,9 @@ is_unit(a::AssociativeAlgebraOrderElem) = !is_zero(a) && (inv(elem_in_algebra(a;
 #end
 
 function elem_in_algebra(x::AssociativeAlgebraOrderElem{S, T}; copy::Bool = true) where {S, T}
+  if !isdefined(x, :elem_in_algebra)
+    x.elem_in_algebra = algebra(parent(x))(ambient_coordinates(elem_in_module(x)))
+  end
   if copy
     return deepcopy(x.elem_in_algebra)
   else
@@ -114,6 +132,17 @@ function elem_in_algebra(x::AssociativeAlgebraOrderElem{S, T}; copy::Bool = true
 end
 
 _elem_in_algebra(x::AssociativeAlgebraOrderElem; copy::Bool = true) = elem_in_algebra(x, copy = copy)
+
+function elem_in_module(x::AssociativeAlgebraOrderElem)
+  O = parent(x)
+  if isdefined(x, :elem_in_module)
+    return x.elem_in_module::elem_type(_underlying_module(O))
+  end
+  @assert isdefined(x, :elem_in_algebra)
+  m = _element_from_ambient_coordinates(_underlying_module(O), coefficients(elem_in_algebra(x); copy = false))
+  x.elem_in_module = m
+  return m
+end
 
 ################################################################################
 #
@@ -146,12 +175,7 @@ end
 Returns the coordinates of $x$ in the basis of `parent(x)`.
 """
 function coordinates(x::AssociativeAlgebraOrderElem; copy::Bool = true)
-  assure_has_coord(x)
-  if copy
-    return deepcopy(x.coordinates)::Vector{elem_type(base_ring(parent(x)))}
-  else
-    return x.coordinates::Vector{elem_type(base_ring(parent(x)))}
-  end
+  return coordinates(elem_in_module(x); copy)
 end
 
 ################################################################################
@@ -327,7 +351,7 @@ end
 ################################################################################
 
 function show(io::IO, a::AssociativeAlgebraOrderElem)
-  print(io, a.elem_in_algebra)
+  print(io, elem_in_algebra(a)) # TODO: adjust to use coordinates if available
 end
 
 ################################################################################

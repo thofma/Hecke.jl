@@ -5,7 +5,7 @@ end
 
 fraction_field_map(R::Ring, K::Field) = FractionFieldMap{typeof(R), typeof(K)}(R, K)
 
-image(f::FractionFieldMap, x) = K(x)
+image(f::FractionFieldMap, x) = f.K(x)
 
 # numerator, denominator
 

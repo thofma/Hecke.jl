@@ -4,7 +4,9 @@
 
 #order_type(::Type{T}) where {S <: NumField, T <: AbstractAssociativeAlgebra{S}} = AssociativeAlgebraOrder{order_type(parent_type(T)), T}
 
-_module(O::AssociativeAlgebraOrder{S, T}) where {S, T} = O.M::_embedded_module_type(T, base_ring_type(S))
+_underlying_module(O::AssociativeAlgebraOrder{S, T}) where {S, T} = O.M::_underlying_module_type(typeof(O))
+
+_underlying_module_type(::Type{AssociativeAlgebraOrder{S, T}}) where {S, T} = _embedded_module_type(T, base_ring_type(S))
 
 function _map(x::AbstractAssociativeAlgebraElem, M::EmbeddedModule)
   @assert parent(x) === M.overstructure
@@ -159,59 +161,6 @@ function new_order(A::AbstractAssociativeAlgebra, R::Ring, B::Vector{<:AbstractA
   end
 end
 
-is_maximal_known(O::AssociativeAlgebraOrder) = O.is_maximal != 0
-
-is_known(::typeof(is_maximal), O::AssociativeAlgebraOrder) = is_maximal_known(O)
-
-@inline is_maximal_known_and_maximal(O::AssociativeAlgebraOrder) = isone(O.is_maximal)
-
-@doc raw"""
-    is_maximal(O::AssociativeAlgebraOrder) -> Bool
-
-Returns `true` if $O$ is a maximal order and `false` otherwise.
-"""
-function is_maximal(O::AssociativeAlgebraOrder)
-  if O.is_maximal == 1
-    return true
-  end
-  if O.is_maximal == 2
-    return false
-  end
-
-  A = algebra(O)
-  d = discriminant(O)
-  if isdefined(A, :maximal_order)
-    if d == discriminant(maximal_order(A))
-      O.is_maximal = 1
-      return true
-    else
-      O.is_maximal = 2
-      return false
-    end
-  end
-
-  if typeof(A) <: GroupAlgebra
-    fac = factor(degree(O))
-  else
-    fac = factor(abs(d))
-  end
-
-  for (p, j) in fac
-    # This can be improved a bit. Even in the GroupAlgebra case, we should
-    # only look at the primes dividing d with power > 1
-    if !(typeof(A) <: GroupAlgebra) && j == 1
-      continue
-    end
-    d2 = discriminant(pmaximal_overorder(O, p))
-    if d != d2
-      O.is_maximal = 2
-      return false
-    end
-  end
-  O.is_maximal = 1
-  return true
-end
-
 function new_order(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; check::Bool = true, cached::Bool = true, is_basis::Bool = true)
   if is_basis
     if check
@@ -224,6 +173,7 @@ function new_order(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; check::Bo
     return new_order(A, R, elts; check, cached)
   end
 end
+
 
 #function _equation_order(A::AbstractAssociativeAlgebra{QQFieldElem})
 #  @assert is_commutative(A)
@@ -253,7 +203,7 @@ end
 ################################################################################
 
 function index(O::AssociativeAlgebraOrder, R::AssociativeAlgebraOrder)
-  return index(_module(O), _module(R))
+  return index(_underlying_module(O), _underlying_module(R))
 end
 
 ################################################################################
@@ -264,7 +214,7 @@ end
 
 function _assure_has_basis(O::AssociativeAlgebraOrder)
   if !isdefined(O, :basis)
-    v = basis(_module(O), algebra(O))
+    v = basis(_underlying_module(O), algebra(O))
     O.basis = map(x -> O(x; check = false), v)
   end
   return nothing
@@ -389,7 +339,7 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::AbstractAssociativeAlgebraElem, O::AssociativeAlgebraOrder, ::Val{short} = Val(false)) where {short}
-  fl, tn = _in(_map(a, _module(O)), _module(O), Val(true))
+  fl, tn = _in(_map(a, _underlying_module(O)), _underlying_module(O), Val(true))
   if !fl
     if short
       return false
@@ -402,11 +352,11 @@ function _check_elem_in_order(a::AbstractAssociativeAlgebraElem, O::AssociativeA
     else
       v = Vector{elem_type(base_ring(O))}(undef, degree(O))
       for i = 1:degree(O)
-        if eltype(v) !== ZZRingElem
+        #if eltype(v) !== ZZRingElem
+          #v[i] = deepcopy(tn[1, i])
+        #else
           v[i] = deepcopy(tn[1, i])
-        else
-          v[i] = tn[1, i]
-        end
+        #end
       end
       return true, v
     end
@@ -619,7 +569,7 @@ function show(io::IO, O::AssociativeAlgebraOrder)
     print(io, "Order of ")
     print(io, algebra(O))
     println(io, " with basis matrix ")
-    print(io, basis_matrix(_module(O)))
+    print(io, basis_matrix(_underlying_module(O)))
   end
 end
 
@@ -638,7 +588,7 @@ function ==(S::AssociativeAlgebraOrder, T::AssociativeAlgebraOrder)
   if algebra(S) !== algebra(T)
     return false
   end
-  return _module(S) == _module(T)
+  return _underlying_module(S) == _underlying_module(T)
 end
 
 function Base.hash(S::AssociativeAlgebraOrder, h::UInt)
@@ -1250,7 +1200,7 @@ end
 ################################################################################
 
 function is_subset(R::AssociativeAlgebraOrder, S::AssociativeAlgebraOrder)
-  return is_subset(_module(R), _module(S))
+  return is_subset(_underlying_module(R), _underlying_module(S))
 end
 
 ################################################################################
@@ -1272,8 +1222,97 @@ function coordinates(A::Vector{<:PseudoElement}, R::Ring, ::Type{_DD})
   return pseudo_matrix(R, M, coeff)
 end
 
-#function Base.:(+)(M::EmbeddedModule, N::EmbeddedModule, ::Type{_PID}, ::Any)
 function _closure(A::AbstractAssociativeAlgebra, R::Ring, elt::Vector{T}; cached::Bool = true, check::Bool = true) where {T}
+  return _closure(A, R, elt, _ring_type(R); cached, check)
+end
+
+function _closure(A::AbstractAssociativeAlgebra, R::Ring, elt::Vector{T}, ::Type{_PID}; cached::Bool = true, check::Bool = true) where {T}
+  K = base_ring(A)
+  n = dim(A)
+  if iszero(n)
+    return embedded_module(R, K, zero_matrix(K, 0, 0); overstructure = A)
+  end
+
+  elt = unique(elt)
+  is_comm = is_commutative(A)
+
+  if isempty(elt)
+    elt = elem_type(A)[one(A)]
+  end
+  bas = elem_type(A)[one(A)]
+  B = embedded_module(R, K, coordinates(bas); overstructure = A)
+
+  for e in elt
+    # Check if e is already in the multiplicatively closed module generated by
+    # the previous elements of elt.
+    in(e, B) && continue
+
+    # Add products of elements of bas and e; in the commutative case this just
+    # means multiplying by powers of e, for the non-commutative case see below.
+    if check
+      f = minpoly(e)
+      all(c -> _has_preimage(fraction_map(B), c), coefficients(f)) ||
+        error("The elements do not define an order: $e is non-integral")
+      df = degree(f) - 1
+    else
+      df = n - 1
+    end
+
+    start = 1
+    old_length = length(bas)
+    # Commutative case:
+    # We only multiply the elements of index start:length(bas) by e.
+    # Example: bas = [a_1, ..., a_k] with a_1 = 1. Then
+    # new_bas := [e, e*a_2, ..., e*a_k] and we append this to bas and set
+    # start := k + 1. In the next iteration, we then have
+    # new_bas := [e^2, e^2*a_2, ..., e^2*a_k] (assuming that there was no
+    # reduction of the basis in between).
+
+    powers_of_e = 1 # count the iterations, so the power of e by which we multiply
+                    # (only relevant in the commutative case)
+    while true
+      # In the commutative case, this behaves like a "for _ in 1:df"-loop.
+      if is_comm && powers_of_e == df + 1
+        break
+      end
+      powers_of_e += 1
+      new_bas = elem_type(A)[]
+      for j in start:length(bas)
+        e_bj = e*bas[j]
+        if !in(e_bj, B)
+          if is_comm
+            push!(new_bas, e_bj)
+          else
+            # Non-commutative case:
+            # If bas = [a_1, ..., a_k], so that the R-module generated by the a_i
+            # contains 1_A, we need to build all possible words containing e.
+            for k in 1:old_length
+              t = bas[k]*e_bj
+              !in(t, B) && push!(new_bas, t)
+            end
+          end
+        end
+      end
+      isempty(new_bas) && break
+      start = length(bas) + 1
+      append!(bas, new_bas)
+
+      if length(bas) >= n
+        # HNF-reduce the basis collected so far.
+        B = embedded_module(R, K, coordinates(bas); overstructure = A)
+        bas = basis(B, A)
+        start = 1
+        old_length = length(bas)
+      end
+    end
+  end
+  if length(bas) < n
+    error("The elements do not define an order: rank too small")
+  end
+  return B
+end
+
+function _closure(A::AbstractAssociativeAlgebra, R::Ring, elt::Vector{T}, ::Type{_DD}; cached::Bool = true, check::Bool = true) where {T}
   #if dim(K) == 0
   #  return FakeFmpqMat(zero_matrix(ZZ, 0, 0), ZZ(1))
   #end
@@ -1284,7 +1323,7 @@ function _closure(A::AbstractAssociativeAlgebra, R::Ring, elt::Vector{T}; cached
   is_comm = is_commutative(A)
 
   if isempty(elt)
-    elt = [_pseudo_element(one(K), R)]
+    elt = [_pseudo_element(one(A), R)]
   else
     elt = [_pseudo_element(x, R) for x in elt]
   end
@@ -1303,9 +1342,9 @@ function _closure(A::AbstractAssociativeAlgebra, R::Ring, elt::Vector{T}; cached
     # Add products of elements of bas and e; in the commutative case this just
     # means multiplying by powers of e, for the non-commutative case see below
     if check
-      # TODO: this is wrong in the relative case
       f = minpoly(element(e))
-      isone(denominator(f)) || error("The elements do not define an order: $e is non-integral")
+      all(c -> isone(denominator(c, R)), coefficients(f)) ||
+        error("The elements do not define an order: $e is non-integral")
       df = degree(f) - 1
     else
       df = n - 1
@@ -1403,4 +1442,3 @@ function _closure(A::AbstractAssociativeAlgebra, R::Ring, elt::Vector{T}; cached
   end
   return B
 end
-

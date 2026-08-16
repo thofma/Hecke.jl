@@ -68,25 +68,29 @@ end
 #const AlgAssAbsOrdID = AbstractAlgebra.CacheDictType{Any, AlgAssAbsOrd}()
 #
 @attributes mutable struct AssociativeAlgebraOrderElem{S, T} <: NCRingElem
-  elem_in_algebra::T
   parent::S
+  elem_in_algebra::T
   has_coord::Bool # needed for mul!
-  coordinates::Vector# elem_type(base_ring(S))
+  elem_in_module# elem_type(_underlying_module_type(O))
 
-  function AssociativeAlgebraOrderElem(O::S, a::T) where {S, T}
-    z = new{S, T}(a,
-                  O,
-                  false)
-    return z
+  function AssociativeAlgebraOrderElem(O::S) where {S}
+    return new{S, elem_type(algebra(O))}(O)
   end
 
-  function AssociativeAlgebraOrderElem(O::S, a::T, v) where {S, T}
-    z = new{S, T}(a,
-                  O,
-                  false,
-                  v)
-    return z
-  end
+  #function AssociativeAlgebraOrderElem(O::S, a::T) where {S, T}
+  #  z = new{S, T}(a,
+  #                O,
+  #                false)
+  #  return z
+  #end
+
+  #function AssociativeAlgebraOrderElem(O::S, a::T, v) where {S, T}
+  #  z = new{S, T}(a,
+  #                O,
+  #                false,
+  #                v)
+  #  return z
+  #end
 end
 
 #  function AlgAssAbsOrdElem{S, T}(O::S) where {S, T}
@@ -180,30 +184,34 @@ end
   base_ring::BRingType
   M::EmbeddedModule
 
-  basis::Vector # basis of the lattice as array of elements of the algebra
-  # The basis matrix is in the BASIS of the ALGEBRA!
-
-  # Basis matrices with respect to orders
-  basis_matrix_wrt::Dict#{AssociativeAlgebraOrder{S, T}, QQMatrix}
-
-  # Left and right order:
-  # The largest orders of which the ideal is a left resp. right ideal.
-  left_order#::AssociativeAlgebraOrder{S, T}
-  right_order#::AssociativeAlgebraOrder{S, T}
-
-  # Any order contained in the left or right order, that is, an order of which
-  # the ideal is a (possibly fractional) ideal.
-  order#::AssociativeAlgebraOrder{S, T}
-  gens#::Vector{T}    # Generators of the ideal w. r. t. order
-
-  norm#::Dict{AssociativeAlgebraOrder{S, T}, QQFieldElem} # The ideal has different norms with respect
-                                       # to different orders
-  normred#::Dict{AssociativeAlgebraOrder{S, T}, QQFieldElem}
-
-  function AssociativeAlgebraLattice(A::AlgType, R::BRingType, M::MatElem) where {AlgType, BRingType}
-    r = new{AlgType, BRingType}(A, R, embedded_module(R, base_ring(A), M, overstructure = A))
-    return r
+  function AssociativeAlgebraLattice(A::AlgType, R::BRingType, M::EmbeddedModule) where {AlgType, BRingType}
+    return new{AlgType, BRingType}(A, R, M)
   end
 end
 
+@attributes mutable struct AssociativeAlgebraOrderIdeal{OrderType, LatticeType}
+  order::OrderType
+  lattice::LatticeType
+  isleft::Int
+  isright::Int
 
+  function AssociativeAlgebraOrderIdeal(O::OrderType, L::LatticeType) where {OrderType, LatticeType}
+    return new{OrderType, LatticeType}(O, L, 0, 0)
+  end
+end
+
+##
+
+@attributes mutable struct AssociativeAlgebraOrderMap{DomainType, CodomainType, BaseRingMapType} <: Map{DomainType, CodomainType, HeckeMap, AssociativeAlgebraOrderMap}
+
+  domain::DomainType
+  codomain::CodomainType
+  baseringmap::BaseRingMapType
+  imageofbasis#Vector{elem_type(CodomainType}}
+  preimage
+
+  function AssociativeAlgebraOrderMap(D::DomainType, C::CodomainType, baseringmap::BaseRingMapType, imageofbasis::Vector, preimage) where {DomainType, CodomainType, BaseRingMapType}
+    @assert eltype(imageofbasis) === elem_type(CodomainType)
+    return new{DomainType, CodomainType, BaseRingMapType}(D, C, baseringmap, imageofbasis, preimage)
+  end
+end
