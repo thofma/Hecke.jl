@@ -158,5 +158,18 @@ end
 
   @test !Hecke.has_embedding(C, K)
   @test !Hecke.has_embedding(K, L)
-end
 
+  D, mC, mL_again = compositum(C, L)
+  @test D === C
+  @test domain(mC) === C
+  @test codomain(mC) === C
+  @test mC(gen(C)) == gen(C)
+  @test domain(mL_again) === L
+  @test codomain(mL_again) === C
+  @test mL_again(b) == mL(b)
+
+  D, mC1, mC2 = compositum(C, C)
+  @test D === C
+  @test mC1(gen(C)) == gen(C)
+  @test mC2(gen(C)) == gen(C)
+end
