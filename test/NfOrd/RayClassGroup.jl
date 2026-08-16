@@ -10,6 +10,15 @@
     @test order(domain(mr)) == 2
   end
 
+  @testset "empty infinite modulus" begin
+    K, _ = quadratic_field(-5)
+    O = maximal_order(K)
+    R, mR = ray_class_group(ideal(O, 1), n_quo = 2)
+    @test order(R) == 2
+    @test isempty(defining_modulus(mR)[2])
+    @test isempty(mR.disc_log_inf_plc)
+  end
+
   @testset "quadratic fields" begin
 
     Qx,x=polynomial_ring(QQ,"x")
