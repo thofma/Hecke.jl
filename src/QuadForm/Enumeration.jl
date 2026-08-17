@@ -36,10 +36,11 @@ function _pseudo_cholesky(G::ZZMatrix, ::Type{Matrix{QQFieldElem}})
   return __pseudo_cholesky!(C, G)
 end
 
-function _pseudo_cholesky(G::ZZMatrix, ::Type{Matrix{S}}) where {T, S <: Union{Rational{T}, UnsafeRational{T}}}
+function _pseudo_cholesky(G::ZZMatrix, ::Type{Matrix{S}}) where {S <: Union{Rational, UnsafeRational}}
   n = ncols(G)
   z = Matrix{S}(undef, n, n)
   C = _pseudo_cholesky(G, Matrix{QQFieldElem})
+  T = fieldtype(S, 1)
   for i in 1:n
     for j in 1:n
       z[i, j] = S(T(numerator(C[i, j])), T(denominator(C[i, j])))
