@@ -462,7 +462,8 @@ function order(L::RelNonSimpleNumField{AbsSimpleNumFieldElem}, M::Generic.Mat{Ab
 end
 
 
-function order(L::NumField{S}, M::Generic.Mat{S}) where S <: NumFieldElem{T} where T
+function order(L::NumField{S}, M::Generic.Mat{S}) where {S <: NumFieldElem}
+  T = elem_type(base_field(L))
   return RelNumFieldOrder{S, RelNumFieldOrderFractionalIdeal{T}, elem_type(L)}(L, deepcopy(M))
 end
 

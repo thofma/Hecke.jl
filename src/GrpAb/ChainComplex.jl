@@ -107,7 +107,8 @@ at the end, the last object is the codomain of the last map...
   complete  ::Bool
   fill     #::Function: fill(C, i) creates the i-th map
 
-  function ComplexOfMorphisms(A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <:Vector{<:Map{<:T, <:T}}} where {T}
+  function ComplexOfMorphisms(A::S; check::Bool = true, typ:: Symbol = :chain, seed::Int = 0) where {S <: Vector{<:Map}}
+    T = mapreduce(m -> typejoin(typeof(domain(m)), typeof(codomain(m))), typejoin, A)
     return ComplexOfMorphisms(T, A, check = check, typ = typ, seed = seed)
   end
 
