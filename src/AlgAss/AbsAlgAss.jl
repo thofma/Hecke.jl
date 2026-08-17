@@ -107,7 +107,7 @@ center(A::AbstractAssociativeAlgebra)
 #
 ################################################################################
 
-morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbstractAssociativeAlgebra{R}, S <: AbstractAssociativeAlgebra{R}} = AbsAlgAssMor{T, S, Generic.MatSpaceElem{R}}
+morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra, S <: AbstractAssociativeAlgebra} = AbsAlgAssMor{T, S, Generic.MatSpaceElem{elem_type(base_ring_type(T))}}
 
 morphism_type(::Type{T}, ::Type{S}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}, S <: AbstractAssociativeAlgebra{QQFieldElem}} = AbsAlgAssMor{T, S, QQMatrix}
 

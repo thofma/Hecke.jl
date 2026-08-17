@@ -8,7 +8,8 @@ _is_sparse(a::AbstractAssociativeAlgebraElem) = _is_sparse(parent(a))
 
 _is_dense(a::AbstractAssociativeAlgebraElem) = _is_dense(parent(a))
 
-function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem{T}}, ::Type{S}) where {T, S}
+function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem}, ::Type{S}) where {S}
+  T = elem_type(base_ring_type(parent_type(U)))
   if AbstractAlgebra.promote_rule(T, S) === T
     return U
   else

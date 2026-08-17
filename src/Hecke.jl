@@ -63,6 +63,12 @@ import Nemo
 
 import Pkg
 
+@static if VERSION >= v"1.11"
+  _maxthreadid() = Threads.maxthreadid()
+else
+  _maxthreadid() = Threads.nthreads(:default) + Threads.nthreads(:interactive)
+end
+
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
@@ -143,9 +149,10 @@ function __init__()
 
   #global flint_rand_ctx = flint_rand_state()
 
-  resize!(_RealRings, Threads.nthreads())
-  for i in 1:Threads.nthreads()
-     _RealRings[i] = _RealRing()
+  nt = _maxthreadid()
+  resize!(_RealRings, nt)
+  for i in 1:nt
+    _RealRings[i] = _RealRing()
   end
 
   add_verbosity_scope(:AbExt)

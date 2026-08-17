@@ -4,18 +4,19 @@
 #
 ################################################################################
 @doc raw"""
-    resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+    resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion} -> T
 
 A generator for the ideal of the resultant of $f$ and $g$ using a quadratic-time algorithm.
 One of the two polynomials must be monic.
 """
-function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unit obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   m = ZZRingElem(modulus(R))
 
   #easy = is_prime_power(m)
@@ -132,13 +133,14 @@ function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResE
 end
 
 
-function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unit obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   #pn = ZZRingElem(modulus(R))
   pn = modulus(R)
 
@@ -379,11 +381,12 @@ end
 # rres(f, g) = rres(g, f)
 # rres(uf, g) = rres(f, g)
 # rres(pf, g) mod p^n = p*(rres(f, g) mod p^(n-1)) (under right hypotheses)
-function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   Nemo.check_parent(f1, g1)
   @assert typeof(f1) == typeof(g1)
   Rt = parent(f1)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   m = ZZRingElem(modulus(R))
   #easy = is_prime_power(m)
   #if easy
@@ -552,11 +555,12 @@ function rresx_sircana_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Res
 end
 
 
-function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   Nemo.check_parent(f, g)
 
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   m = ZZRingElem(modulus(R))
   #easy = is_prime_power(m)
@@ -872,15 +876,16 @@ end
 ################################################################################
 
 @doc raw"""
-    resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+    resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion} -> T
 
 The resultant of $f$ and $g$ using a quadratic-time algorithm.
 """
-function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   m = ZZRingElem(modulus(R))
   e, p = is_perfect_power_with_data(m)
   easy = is_prime(p)
