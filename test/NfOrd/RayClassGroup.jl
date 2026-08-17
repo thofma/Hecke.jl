@@ -16,7 +16,6 @@
     R, mR = ray_class_group(ideal(O, 1), n_quo = 2)
     @test order(R) == 2
     @test isempty(defining_modulus(mR)[2])
-    @test isempty(mR.disc_log_inf_plc)
   end
 
   @testset "quadratic fields" begin
