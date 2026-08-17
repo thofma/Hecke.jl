@@ -67,7 +67,7 @@ base_ring_type(::Type{CyclicAlgebra{T, S}}) where {T, S} = parent_type(T)
 function structure_constant_algebra(
   c::CyclicAlgebra{T, S},
 ) where {T, S}
-  return StructureConstantAlgebra(c.sca)::StructureConstantAlgebra{T}
+  return c.sca::StructureConstantAlgebra{T}
 end
 
 """
