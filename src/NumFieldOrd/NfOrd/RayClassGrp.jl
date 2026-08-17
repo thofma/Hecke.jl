@@ -24,6 +24,7 @@ mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumField
   function MapRayClassGrp()
     z = new()
     z.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
+    z.disc_log_inf_plc = Dict{InfPlc, FinGenAbGroupElem}()
     return z
   end
 end
