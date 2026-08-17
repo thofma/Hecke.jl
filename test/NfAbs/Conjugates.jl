@@ -80,6 +80,14 @@ end
 
   k, z = cyclotomic_field(1)
   @test isone(t2(z))
+
+  # Working precision is determined by the element height. This example
+  # requires the first precision doubling beyond 2^18 bits.
+  k, z = quadratic_field(-1)
+  height = 262_200
+  high = t2(k(ZZ(2)^height) * z)
+  @test contains(high, ZZ(2)^(2 * height + 1))
+  @test Hecke.radiuslttwopower(high, -32)
 end
 
 @testset "signs" begin
