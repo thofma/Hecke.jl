@@ -251,6 +251,12 @@ function __assert_has_automorphisms(
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
   #@hassert :Lattice 1 use_weyl && all(let gens = reduced_gens; i -> change_base_ring(QQ, gens[i]) * GL *
   #                                    transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
+
+  # to make it non-breaking for Oscar
+  # TODO: remove once Oscar 1.8.2 is out
+  if length(gens) >= 3
+    gens[2], gens[3] = gens[3], gens[2]
+  end
   L.automorphism_group_generators = gens
   if use_weyl
     # We have O(L) = W(L)x|Aut_red(L)
