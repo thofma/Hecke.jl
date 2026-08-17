@@ -715,7 +715,7 @@ function combination(RC::RootCtx)
     mn = transpose(matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R]))
 
     if false && iszero(mn)
-      @vprintln :AbsFact 2 "found zero column, disgarding"
+      @vprintln :AbsFact 2 "found zero column, discarding"
       bad += 1
       if bad > max(2, div(length(R), 2))
         pow += 1
@@ -939,7 +939,7 @@ function field(RC::RootCtx, m::MatElem)
   #currently, we're in F_q[[t]], not Q_q[[t]], however, the primitivity
   #can already be decided over F_q as lifting can not enlarge the field
 
-  #if no single coefficient is primtive, use block systems and sums of coeffs
+  #if no single coefficient is primitive, use block systems and sums of coeffs
   #to find a primitive one.
   all_bs = []
   pe_j = 0
@@ -969,7 +969,7 @@ function field(RC::RootCtx, m::MatElem)
         break
       end
     end
-    @vprintln :AbsFact 2 "using coeffs $used to form primtive element"
+    @vprintln :AbsFact 2 "using coeffs $used to form primitive element"
     pow = 1
     while true
       pe = x -> (sum(coeff(x, t) for t = used)^pow)
@@ -1599,5 +1599,3 @@ include("/home/fieker/Downloads/n60s3.m");
 
   -125685*x+151959*x^8+917230*x^6+8717398*y^5*x^5+5108544*x^8*y^4-1564434*x^5+7744756*x^5*y^6+306683*x^3*y^6+413268*x^4*y^6+9081976*x^6*y^6+1317780*x^6*y^5+76745*x^4*y^5-15797040*x^7*y^5+99348*x^3*y^5+4106178*x^6*y^4+2010995*x^4*y^4-11264228*x^7*y^4-12465712*x^5*y^4+40908*x^2*y^4+404227*x^3*y^4-9204694*x^7*y^3-49266*x^2*y^3-3500343*x^4*y^3+1512264*x^3*y^3+6405504*x^8*y^3+9879662*x^6*y^3-3821606*x^5*y^3-592704*x^9*y^3-8503779*x^5*y^2-783216*x^9*y^2+10608275*x^6*y^2+574917*x^2*y^2-10143*x*y^2+5943180*x^4*y^2-3295022*x^3*y^2+3452692*x^8*y^2-6432756*x^7*y^2-344988*x^9*y+67473*x*y+2548458*x^4*y-2646351*x^7*y+1059606*x^8*y-3698541*x^5*y-491400*x^2*y+430155*x^3*y+4011984*x^6*y+1530912*x^4+617526
 =#
-
-

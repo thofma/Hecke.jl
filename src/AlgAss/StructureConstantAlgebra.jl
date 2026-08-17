@@ -848,7 +848,7 @@ Returns the algebra $A = A_1 \times \cdots \times A_k$. `task` can be
 are computed as well: ":sum" for the injections, ":prod" for the projections.
 """
 function direct_product(algebras::Vector{<: StructureConstantAlgebra{T}}; task::Symbol = :sum) where T
-  @req !isempty(algebras) "Must be at least one algebra for direct product (or specifiy the field)"
+  @req !isempty(algebras) "Must be at least one algebra for direct product (or specify the field)"
   return direct_product(algebras..., task = task)
 end
 

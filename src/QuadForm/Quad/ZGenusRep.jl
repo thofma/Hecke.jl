@@ -209,7 +209,7 @@ Input:
    for the termination of the algorithm;
  - A rational number `missing_mass` telling what proportion of the mass has not
    been computed yet in the outer scope (if `use_masss == true`);
- - An integer `vain` refering the number of vain iteration, i.e. how many new
+ - An integer `vain` referring the number of vain iteration, i.e. how many new
    neighbours did not give rise to a non-explored isometry class in the
    neighbour graph;
  - A value `stop_after` the algorithm stops after the
@@ -508,7 +508,7 @@ Return a list of isometry invariants of the definite lattice ``L``. For now,
 the invariants by default are:
 - the (absolute) minimum of ``L``;
 - the combinatorial data of the root sublattice of ``L``;
-- the kissing numbe of ``L``;
+- the kissing number of ``L``;
 - the order of the isometry group of ``L``.
 """
 function _default_invariant_function(L::ZZLat)
@@ -1139,7 +1139,7 @@ about a representative for each isometry class in the corresponding genus.
 Such a file is composed of two lines:
 - One containing an integer ``n`` representing the rank of the lattice;
 - One containing a list of ``n(n+1)/2`` integers representing half of the
-  Gram matrix of the correponding lattice.
+  Gram matrix of the corresponding lattice.
 
 A third line is allowed and must contained an integer ``o`` representing the
 order of the isometry group of the corresponding lattice.
