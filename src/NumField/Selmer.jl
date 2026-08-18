@@ -1,17 +1,6 @@
 module SelmerModule
 using Hecke
 
-"""
-Adds an element to the group. For this to work, C needs to be a subgroup of the parent of a.
-Should move to GrpAb
-"""
-function Base.push!(C::FinGenAbGroup, a::FinGenAbGroupElem)
-  g = gens(C)
-  push!(g, a)
-  #TODO: find common overgroup? Assuming for now that parent(a) is it.
-  return sub(parent(a), g)
-end
-
 #TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended.
 #Should move to GrpAb
 function index(G::FinGenAbGroup, U::FinGenAbGroup; check::Bool = true)
@@ -73,11 +62,11 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     for (pi, ei) = lp
       (norm(pi) < 1000 || degree(pi) == 1) || continue
       c = preimage(mC, pi)
-      c in s && continue
-      s, ms = push!(s, c)
+      has_preimage_with_preimage(ms, c)[1] && continue
+      s, ms = sub(C, vcat([ms(g) for g in gens(s)], [c]))
       push!(D, pi)
     end
-    p, pos = iterate(P, pos)
+    pr, pos = iterate(P, pos)
   end
 
   if length(D) + length(S) == 0
@@ -171,7 +160,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
         mF = Hecke.extend_easy(mF, K)
         va = try [preimage(mu, mF(toK(g)))[1] for g = gens(Sel)]
              catch e
-               isa(e, BadPrime) || rethrow(e)
+               isa(e, Hecke.BadPrime) || rethrow(e)
                nothing
              end
         va === nothing && continue
@@ -189,7 +178,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     end
     fl, sol = can_solve_with_solution(dl, dx; side = :right)
     @assert fl
-    return Sel(map(lift, vec(collect(sol))))
+    return Sel(map(x -> lift(ZZ, x), vec(collect(sol))))
   end
 
   return Sel, MapFromFunc(Sel, codomain(mU), toK, toSel)
