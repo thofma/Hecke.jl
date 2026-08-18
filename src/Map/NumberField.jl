@@ -310,7 +310,10 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
   I = ideal(OK)
   if isdefined(x, :gen_two)
     new_gen_two = f(K(x.gen_two))
-    if has_minimum(x)
+    # Coefficientwise reduction is integral only when the power basis is
+    # integral and contained in the target order.
+    if has_minimum(x) && is_defining_polynomial_nice(K) &&
+        contains_equation_order(OK)
       new_gen_two = mod(new_gen_two, minimum(x, copy = false)^2)
     end
     if is_maximal_known(OK) && is_maximal(OK)
