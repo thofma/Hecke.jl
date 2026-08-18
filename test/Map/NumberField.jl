@@ -32,6 +32,21 @@ end
 
 @testset "Automorphisms" begin
   Qx, x = QQ["x"]
+
+  @testset "Presentation-bad reduction primes" begin
+    K2, a2 = number_field(
+      x^2 - 1//2*x - 2, "a"; cached = false)
+    sigma2 = hom(K2, K2, 1//2 - a2; check = true)
+    @test Hecke._order([sigma2]) == 2
+
+    K11, a11 = number_field(
+      x^2 - 1//11*x - 2, "a"; cached = false)
+    sigma11 = hom(K11, K11, 1//11 - a11; check = true)
+    automorphisms = [id_hom(K11), sigma11]
+    @test length(Hecke.closure([sigma11], 2)) == 2
+    @test order(first(Hecke.generic_group(automorphisms, *))) == 2
+  end
+
   f = x^32 - 217*x^28 + 42321*x^24 - 999502*x^20 + 18913054*x^16 - 80959662*x^12 + 277668081*x^8 - 115322697*x^4 + 43046721
   K, a = number_field(f, cached = false, check = false)
   auts = Hecke._automorphisms(K, is_abelian = true)
@@ -135,4 +150,3 @@ let
   f = hom(K, K, -a)
   @test Hecke.is_involution(f)
 end
-
