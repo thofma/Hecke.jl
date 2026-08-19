@@ -975,6 +975,12 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    mod(x::GenOrdElem, y::GenOrdIdl) -> GenOrdElem
+
+Return the unique element $z$ with $x \equiv z \bmod y$ obtained by reducing
+the coordinate vector of $x$ against the lower-left HNF basis matrix of $y$.
+"""
 function Hecke.mod(x::GenOrdElem, y::GenOrdIdl)
   parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
   # this function assumes that HNF is lower left
@@ -985,11 +991,18 @@ function Hecke.mod(x::GenOrdElem, y::GenOrdIdl)
   a = base_ring(O).(coordinates(x))
 
   c = basis_matrix(y)
-  t = O.R(0)
-  for i in 1:d
-    t = div(a[i], c[i,i])
-    for j in 1:i
-      a[j] = a[j] - t*c[i,j]
+  # reduce starting from the last coordinate: row i only affects columns 1:i,
+  #   so going from d down to 1 finalizes each coordinate exactly once
+  for i in d:-1:1
+    r = mod(a[i], c[i,i])
+    # for ZZRingElem, div/mod round differently (div truncates, mod floors),
+    #   so t must come from mod, not div, to get the canonical representative
+    if r != a[i]
+      t = divexact(a[i] - r, c[i,i])
+      for j in 1:(i - 1)
+        a[j] = a[j] - t*c[i,j]
+      end
+      a[i] = r
     end
   end
   z = O([a[i] for i in 1:length(a)])

@@ -226,3 +226,70 @@ end
     return z
   end
 end
+
+################################################################################
+#
+#  Quotient rings
+#
+################################################################################
+
+# S is the type of the order, T the type of the ideal
+@attributes mutable struct GenOrdQuoRing{S, T} <: Ring
+  base_ring::S
+  ideal::T
+  basis_matrix
+  one
+
+  function GenOrdQuoRing{S, T}(O::S, I::T) where {S, T}
+    z = new{S, T}()
+    z.base_ring = O
+    z.ideal = I
+    z.basis_matrix = basis_matrix(I; copy = false)
+    z.one = GenOrdQuoRingElem(z, one(O))
+    return z
+  end
+end
+
+function GenOrdQuoRing(O::S, I::T) where {S, T}
+  @req T === ideal_type(O) "Ideal has the wrong type"
+  return GenOrdQuoRing{S, T}(O, I)
+end
+
+# S and T as for GenOrdQuoRing, U is the elem_type of the order
+mutable struct GenOrdQuoRingElem{S, T, U} <: RingElem
+  elem::U
+  parent::GenOrdQuoRing{S, T}
+
+  function GenOrdQuoRingElem{S, T, U}(Q::GenOrdQuoRing{S, T}, x::U) where {S, T, U}
+    z = new{S, T, U}()
+    z.elem = mod(x, ideal(Q))
+    z.parent = Q
+    return z
+  end
+end
+
+function GenOrdQuoRingElem(Q::GenOrdQuoRing{S, T}, x::U) where {S, T, U}
+  return GenOrdQuoRingElem{S, T, U}(Q, x)
+end
+
+# S is the type of the order, T the type of the ideal and U the elem_type of
+# the order, which define the quotient ring
+mutable struct GenOrdQuoMap{S, T, U} <: Map{S, GenOrdQuoRing{S, T}, HeckeMap, GenOrdQuoMap}
+  header::MapHeader{S, GenOrdQuoRing{S, T}}
+
+  function GenOrdQuoMap{S, T, U}(O::S, Q::GenOrdQuoRing{S, T}) where {S, T, U}
+    z = new()
+
+    _image(x::U) = Q(x)
+
+    _preimage(x::GenOrdQuoRingElem{S, T, U}) = x.elem
+
+    z.header = MapHeader(O, Q, _image, _preimage)
+    return z
+  end
+end
+
+function GenOrdQuoMap(O::S, Q::GenOrdQuoRing{S, T}) where {S, T}
+  U = elem_type(O)
+  return GenOrdQuoMap{S, T, U}(O, Q)
+end
