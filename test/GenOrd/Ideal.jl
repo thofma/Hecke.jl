@@ -742,3 +742,62 @@ end
   end
 
 end
+
+@testset "Reduction modulo ideal" begin
+  # x and x shifted by a random combination of the ideal's basis vectors must
+  # reduce to the same representative: this is what distinguishes a
+  # canonical reduction from merely finding *some* congruent representative
+  function test_mod_common(O, I, rand_range; ntests::Int = 10)
+    @test iszero(mod(zero(O), I))
+
+    b = basis(I)
+    for _ in 1:ntests
+      x = O([rand(base_ring(O), rand_range) for _ in 1:degree(O)])
+      m = mod(x, I)
+      @test x - m in I
+      @test mod(m, I) == m # already reduced elements are fixed points
+
+      shift = sum(rand(base_ring(O), rand_range)*b[i] for i in 1:length(b))
+      @test mod(x + shift, I) == m
+    end
+  end
+
+  @testset "over F_3(t): unit ideal" begin
+    k, t = rational_function_field(GF(3), :t; cached = false)
+    K, a = function_field(polynomial(k, [t, 0, 1]); cached = false)
+    OK = finite_maximal_order(K)
+
+    I = OK(2)*OK
+    @test isone(I)
+    test_mod_common(OK, I, 0:3)
+
+    # everything is zero modulo the unit ideal
+    for _ in 1:5
+      x = OK([rand(base_ring(OK), 0:3) for _ in 1:degree(OK)])
+      @test iszero(mod(x, I))
+    end
+  end
+
+  @testset "over F_3(t): ideal with non-diagonal HNF" begin
+    k, t = rational_function_field(GF(3), :t; cached = false)
+    K, a = function_field(polynomial(k, [t, 0, 1]); cached = false)
+    OK = finite_maximal_order(K)
+    kt = base_ring(OK)
+    tt = gen(kt)
+
+    # a prime above t+1 (it splits since -t is a square mod t+1);
+    # its lower-left HNF basis matrix has a nonzero off-diagonal entry, so
+    # that the reduction order (ascending vs descending) actually matters
+    I = prime_decomposition(OK, tt + 1)[1][1]
+    @test !iszero(Hecke.basis_matrix(I)[2, 1])
+
+    test_mod_common(OK, I, 0:5)
+
+    # regression test: reducing in ascending coordinate order (instead of
+    # descending) does not give a canonical representative
+    b = basis(I)
+    x = OK([tt^3 + tt + 2, tt^2 + 1])
+    y = x + b[1] - tt*b[2]
+    @test mod(x, I) == mod(y, I)
+  end
+end
