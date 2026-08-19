@@ -7,6 +7,33 @@
   @test inner_product(q, w, w) == w * QQ[1 1; 1 1] * transpose(w)
   @test !is_indefinite(q)
 
+  @testset "_gram_schmidt pivoting" begin
+    # zero diagonal fixed by swapping in a later nonzero diagonal entry
+    M = matrix(QQ, [0 0 1; 0 2 0; 1 0 0])
+    F, S = @inferred Hecke._gram_schmidt(M, identity)
+    @test is_diagonal(F)
+    @test S * M * transpose(S) == F
+
+    # zero diagonal with no nonzero diagonal partner to swap in: fixed via
+    # an off-diagonal (hyperbolic pair) entry instead
+    M = matrix(QQ, [0 1; 1 0])
+    F, S = @inferred Hecke._gram_schmidt(M, identity)
+    @test is_diagonal(F)
+    @test S * M * transpose(S) == F
+
+    # random matrices, including ones triggering both pivoting branches
+    for n in 1:6
+      for _ in 1:20
+        A = matrix(QQ, rand(-3:3, n, n))
+        M = A + transpose(A)
+        rank(M) < n && continue
+        F, S = Hecke._gram_schmidt(M, identity)
+        @test is_diagonal(F)
+        @test S * M * transpose(S) == F
+      end
+    end
+  end
+
   q = quadratic_space(k, 2)
   @test sprint(show, q) isa String
   @test sprint(show, Hecke.isometry_class(q)) isa String
