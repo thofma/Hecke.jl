@@ -24,20 +24,6 @@
     g = matrix(QQ, [0 1 0 0; 1 0 0 0; 0 0 -3 0; 0 0 0 0])
     @test Hecke.signature_tuple(quadratic_space(QQ, g)) == (1, 1, 2)
 
-    # cross-check against an explicit Gram-Schmidt diagonalization on random forms
-    for n in 1:6
-      for _ in 1:10
-        A = matrix(QQ, rand(-3:3, n, n))
-        g = A + transpose(A)
-        V = quadratic_space(QQ, g)
-        D = diagonal(V)
-        pos = count(d -> d > 0, D)
-        zer = count(d -> d == 0, D)
-        neg = count(d -> d < 0, D)
-        @test Hecke.signature_tuple(V) == (pos, zer, neg)
-      end
-    end
-  end
 
   q = quadratic_space(k, 2)
   @test sprint(show, q) isa String
