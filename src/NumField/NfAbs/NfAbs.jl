@@ -568,6 +568,14 @@ Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 2 fields together with the embedding of $K \to C$ and $L \to C$.
 """
 function compositum(K::AbsSimpleNumField, L::AbsSimpleNumField)
+  if K === L
+    identity = id_hom(K)
+    return K, identity, identity
+  end
+  if has_embedding(L, K)
+    mL = hom(L, K, force_coerce(K, gen(L)); check = false)
+    return K, id_hom(K), mL
+  end
   lf = factor(L, K.pol)
   d = degree(first(lf.fac)[1])
   if any(x->degree(x) != d, keys(lf.fac))

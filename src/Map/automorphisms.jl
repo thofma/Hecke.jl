@@ -207,29 +207,7 @@ end
 function _automorphism_group_generic(K::AbsSimpleNumField)
   aut = automorphism_list(K)
   n = degree(K)
-  #First, find a good prime
-  p = 11
-  d = numerator(discriminant(K.pol))
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
-  local pols
-  local fmod
-  while true
-    try
-      R = Native.GF(p, cached = false)
-      Rx, x = polynomial_ring(R, "x", cached = false)
-      fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
-      pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in aut]
-      break
-    catch e
-      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
-        p = next_prime(p)
-        continue
-      end
-      rethrow(e)
-    end
-  end
+  _, fmod, pols = _automorphism_reduction(aut, 11)
 
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
@@ -305,20 +283,13 @@ automorphism_group(L::NumField, ::QQField) = absolute_automorphism_group(L)
 function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, final_order::Int = -1)
 
   K = domain(S[1])
-  d = numerator(discriminant(K.pol))
-  p = 11
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
-  R = Native.GF(p, cached = false)
-  Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
+  x, fmod, reduced_generators = _automorphism_reduction(S, 11)
 
   t = length(S)
   order = 1
   elements = automorphism_type(K)[id_hom(K)]
   pols = fpPolyRingElem[x]
-  gpol = Rx(image_primitive_element(S[1]))
+  gpol = reduced_generators[1]
   if gpol != x
     push!(pols, gpol)
     push!(elements, S[1])
@@ -340,11 +311,11 @@ function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
 
   for i in 2:t
     if !(S[i] in elements)
-      pi = Rx(image_primitive_element(S[i]))
+      pi = reduced_generators[i]
       previous_order = order
       order = order + 1
       push!(elements, S[i])
-      push!(pols, Rx(image_primitive_element(S[i])))
+      push!(pols, pi)
       for j in 2:previous_order
         order = order + 1
         push!(pols, compose_mod(pols[j], pi, fmod))
@@ -357,7 +328,7 @@ function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
       while rep_pos <= order
         for k in 1:i
           s = S[k]
-          po = Rx(image_primitive_element(s))
+          po = reduced_generators[k]
           att = compose_mod(pols[rep_pos], po, fmod)
           if !(att in pols)
             elt = elements[rep_pos]*s
@@ -382,18 +353,8 @@ function closure(S::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
 end
 
 function generic_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, ::typeof(*), full::Bool = true)
-  K = domain(G[1])
   n = length(G)
-  #First, find a good prime
-  p = 11
-  d = numerator(discriminant(K.pol))
-  while mod(d, p) == 0
-    p = next_prime(p)
-  end
-  R = Native.GF(p, cached = false)
-  Rx, x = polynomial_ring(R, "x", cached = false)
-  fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
-  pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
+  _, fmod, pols = _automorphism_reduction(G, 11)
   Dcreation = Vector{Tuple{fpPolyRingElem, Int}}(undef, length(pols))
   for i = 1:length(pols)
     Dcreation[i] = (pols[i], i)

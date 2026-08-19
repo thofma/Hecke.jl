@@ -1101,7 +1101,7 @@ end
     canonical_symbol(g::ZZLocalGenus; odd_ones::Bool=true) -> String
 
 Return the canonical symbol for the genus of ``p``-adic lattices defined
-by `g`. The ouput is given in the form of a string.
+by `g`. The output is given in the form of a string.
 
 If ``p`` is odd, the symbol is uniquely determined by the invariants of `g`.
 
@@ -3577,4 +3577,3 @@ function rescale(G::ZZGenus, a::RationalUnion)
   end
   return Grescaled
 end
-

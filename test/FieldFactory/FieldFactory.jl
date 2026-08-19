@@ -13,6 +13,21 @@
     @test length(ab) == 1
   end
 
+  @testset "Transitive group fields" begin
+    GAPExt = Base.get_extension(Hecke, :GAPExt)
+    @test GAPExt._find_discriminant_bound(3, 1, ZZ(2)) == 5
+    @test GAPExt._find_discriminant_bound(4, 2, ZZ(2)) == 5
+
+    G = GAP.Globals.SmallGroup(24, 12)
+    for tid in (7, 8)
+      class = GAPExt._transitive_subgroup_class(G, 6, tid)
+      H = GAP.Globals.Representative(class)
+      action = GAP.Globals.FactorCosetAction(G, H)
+      @test GAP.Globals.TransitiveIdentification(
+        GAP.Globals.Image(action)) == tid
+    end
+  end
+
   println("Quadratic Fields")
   @time begin
     @testset "Quadratic Fields" begin

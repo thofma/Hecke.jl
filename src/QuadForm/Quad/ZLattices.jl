@@ -2267,7 +2267,7 @@ lll-reduced basis. If one wants to perform the computations again, one should
 set `redo` to `true`.
 
 The function works with both definite and indefinite lattices. In the definite
-case, one can also speficy the reduction parameters by creating the
+case, one can also specify the reduction parameters by creating the
 appropriate `LLLContext` (see also `lll_gram`).
 """
 function lll(

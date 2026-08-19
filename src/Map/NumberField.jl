@@ -310,7 +310,10 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
   I = ideal(OK)
   if isdefined(x, :gen_two)
     new_gen_two = f(K(x.gen_two))
-    if has_minimum(x)
+    # Coefficientwise reduction is integral only when the power basis is
+    # integral and contained in the target order.
+    if has_minimum(x) && is_defining_polynomial_nice(K) &&
+        contains_equation_order(OK)
       new_gen_two = mod(new_gen_two, minimum(x, copy = false)^2)
     end
     if is_maximal_known(OK) && is_maximal(OK)
@@ -576,18 +579,38 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
   end
 end
 
-function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _automorphism_reduction(
+  G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
+  p::Int,
+)
   K = domain(G[1])
-	p = 2
-  R = Native.GF(p, cached = false)
-	Rx = polynomial_ring(R, "x", cached = false)[1]
-  while iszero(discriminant(change_base_ring(R, defining_polynomial(K); parent = Rx)))
-		p = next_prime(p)
-	  R = Native.GF(p, cached = false)
-		Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
-  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
-  return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, change_base_ring(R, defining_polynomial(K); parent = Rx)), gen(Rx)))
+  d = numerator(discriminant(defining_polynomial(K)))
+  while true
+    while mod(d, p) == 0
+      p = next_prime(p)
+    end
+    try
+      R = Native.GF(p, cached = false)
+      Rx, x = polynomial_ring(R, "x", cached = false)
+      fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
+      pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
+      return x, fmod, pols
+    catch e
+      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+        # A generator image can have a denominator divisible by p even when
+        # the defining polynomial has good reduction.
+        p = next_prime(p)
+        continue
+      end
+      rethrow(e)
+    end
+  end
+end
+
+function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+  x, fmod, given_gens = _automorphism_reduction(G, 2)
+  return length(closure(
+    given_gens, (x, y) -> Hecke.compose_mod(x, y, fmod), x))
 end
 
 ################################################################################
