@@ -2149,7 +2149,7 @@ Return the number of (positive, zero, negative) inertia of this rational quadrat
 
   # Jacobi's theorem does not apply directly when a leading principal minor
   # vanishes (e.g. a hyperbolic plane on the diagonal); fall back to an
-  # explicit diagonalization, which handles this case via pivoting.
+  # explicit diagonalization
   D = diagonal(q)
   pos = count(d > 0 for d in D)
   neg = count(d < 0 for d in D)
