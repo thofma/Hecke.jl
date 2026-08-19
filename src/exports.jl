@@ -809,6 +809,7 @@ export push!
 export push_through_isogeny
 export quadratic_defect
 export quadratic_field
+export quadratic_kummer_generator
 export quadratic_lattice
 export quadratic_product
 export quadratic_space

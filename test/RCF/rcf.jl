@@ -3,6 +3,30 @@
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
 
+  @testset "quadratic Kummer generator" begin
+    R, mR = ray_class_group(5 * Z, real_places(k), n_quo = 2)
+    quotients = collect(index_p_subgroups(
+      R, ZZRingElem(2), (A, H) -> quo(A, H)[2]))
+    C = ray_class_field(mR, only(quotients))
+
+    @test !isdefined(C, :A)
+    @test !isdefined(C, :cyc)
+    generator = quadratic_kummer_generator(C)
+    @test base_ring(generator) === k
+    @test !is_square(evaluate(generator))
+    @test !isdefined(C, :A)
+    @test !isdefined(C, :cyc)
+
+    extension = kummer_extension(2, [generator])
+    for q in (3, 7, 11, 13, 17, 19)
+      P = first(prime_decomposition(Z, q))[1]
+      artin_image = C.quotientmap(preimage(C.rayclassgroupmap, P))
+      expected = mod(Int(artin_image[1]), 2)
+      observed = mod(Int(Hecke.canonical_frobenius(P, extension)[1]), 2)
+      @test observed == expected
+    end
+  end
+
   function doit(u::AbstractUnitRange, p::Int = 3)
     cnt = 0
     for i in u
