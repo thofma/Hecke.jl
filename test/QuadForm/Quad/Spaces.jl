@@ -23,6 +23,7 @@
     # hyperbolic plane plus a definite direction, with a degenerate direction
     g = matrix(QQ, [0 1 0 0; 1 0 0 0; 0 0 -3 0; 0 0 0 0])
     @test Hecke.signature_tuple(quadratic_space(QQ, g)) == (1, 1, 2)
+  end
 
 
   q = quadratic_space(k, 2)
