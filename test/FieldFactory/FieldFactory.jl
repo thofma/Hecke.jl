@@ -1,5 +1,18 @@
 @testset "FieldFactory" begin
 
+  @testset "Absolute Galois group filtering" begin
+    Qx, x = QQ[:x]
+    K, = number_field(x^2 - x - 1, :a; cached = false)
+    ab = abelian_normal_extensions(
+      K,
+      [2],
+      ZZ(125);
+      only_complex = true,
+      absolute_galois_group = (4, 1),
+    )
+    @test length(ab) == 1
+  end
+
   @testset "Transitive group fields" begin
     GAPExt = Base.get_extension(Hecke, :GAPExt)
     @test GAPExt._find_discriminant_bound(3, 1, ZZ(2)) == 5
