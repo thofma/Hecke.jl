@@ -968,35 +968,44 @@ end
 #this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)
   s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
-  s === nothing && return s
-  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
+  has_base = isa(base_field(a), NumField)
+  s === nothing && !has_base && return nothing
+  direct = s === nothing ? Any[] : Any[f for f = s if filter(f)]
+  all_chain = Dict{UInt, Array{Any}}(
+    objectid(domain(f)) => [f] for f = direct)
+  seen = Set{UInt}(keys(all_chain))
+  push!(seen, objectid(a))
+  new_k = Any[domain(f) for f = direct]
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
+    b = base_field(a)
+    ob = objectid(b)
+    all_chain[ob] = [MapFromFunc(b, a, x->a(x))]
+    push!(seen, ob)
+    push!(new_k, b)
   end
-  new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
+    if isa(base_field(k), NumField)
+      b = base_field(k)
+      ob = objectid(b)
+      if !(ob in seen)
+        g = MapFromFunc(b, k, x->k(x))
+        all_chain[ob] = vcat([g], all_chain[objectid(k)])
+        push!(seen, ob)
+        push!(new_k, b)
+      end
+    end
     s = get_attribute(k, :subs)::Union{Nothing, Vector{Any}}
     s === nothing && continue
     for f in s
       if filter(domain(f))
         o = objectid(domain(f))
-        if haskey(all_chain, o)
+        if o in seen
           continue
         end
-        @assert !haskey(all_chain, o)
         all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
-        @assert !(o in new_k)
+        push!(seen, o)
         push!(new_k, domain(f))
-        if isa(base_field(domain(f)), NumField)
-          b = base_field(domain(f))
-          ob = objectid(b)
-          if !haskey(all_chain, ob)
-            g = MapFromFunc(b, domain(f), x->domain(f)(x))
-            all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
-            push!(new_k, b)
-          end
-        end
       end
     end
   end
@@ -1006,19 +1015,38 @@ end
 #tries to find one chain (array of embeddings) from a -> .. -> t
 function find_one_chain(t::NumField, a::NumField)
   s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
-  s === nothing && return s
+  has_base = isa(base_field(a), NumField)
+  s === nothing && !has_base && return nothing
+  direct = s === nothing ? Any[] : s
   ot = objectid(t)
-  all_chain = Dict{UInt, Vector{Any}}(objectid(domain(f)) => Any[f] for f = s)
+  all_chain = Dict{UInt, Vector{Any}}(
+    objectid(domain(f)) => Any[f] for f = direct)
+  seen = Set{UInt}(keys(all_chain))
+  push!(seen, objectid(a))
+  new_k = Any[domain(f) for f = direct]
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
+    b = base_field(a)
+    ob = objectid(b)
+    all_chain[ob] = [MapFromFunc(b, a, x->a(x))]
+    push!(seen, ob)
+    push!(new_k, b)
   end
-  new_k = Any[domain(f) for f = s]
   if haskey(all_chain, ot)
     return all_chain[ot]
   end
-  new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
+    if isa(base_field(k), NumField)
+      b = base_field(k)
+      ob = objectid(b)
+      if !(ob in seen)
+        g = MapFromFunc(b, k, x->k(x))
+        all_chain[ob] = vcat([g], all_chain[objectid(k)])
+        ob == ot && return all_chain[ob]
+        push!(seen, ob)
+        push!(new_k, b)
+      end
+    end
     s = get_attribute(k, :subs)::Union{Nothing, Vector{Any}}
     s === nothing && continue
     for f in s
@@ -1026,25 +1054,12 @@ function find_one_chain(t::NumField, a::NumField)
       if o == ot
         return vcat([f], all_chain[objectid(codomain(f))])
       end
-      if o in keys(all_chain)
+      if o in seen
         continue
       end
-      @assert !haskey(all_chain, o)
       all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
-      @assert !(o in new_k)
+      push!(seen, o)
       push!(new_k, domain(f))
-      if isa(base_field(domain(f)), NumField)
-        b = base_field(domain(f))
-        ob = objectid(b)
-        if !haskey(all_chain, ob)
-          g = MapFromFunc(b, domain(f), x->domain(f)(x))
-          all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
-          push!(new_k, b)
-        end
-        if ob == ot
-          return all_chain[ob]
-        end
-      end
     end
   end
   return nothing
