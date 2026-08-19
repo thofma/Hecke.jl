@@ -306,7 +306,9 @@ export disc_log
 export disc_log_mod
 export discriminant
 export discriminant_group
+export discriminant_of_ternary_quartic
 export div
+export dixmier_ohno_invariants
 export divexact
 export divexact!
 export divisibility
@@ -374,6 +376,7 @@ export function_field
 export fundamental_discriminant
 export g2_from_igusa
 export g2_invariants
+export g4_invariants
 export galois_module
 export gcd
 export gcd_into!
@@ -841,8 +844,10 @@ export ray_class_group
 export real_embeddings
 export real_period
 export real_places
-export reconstruct_from_igusa
-export reconstruct_from_g2
+export reconstruct_from_dixmier_ohno_invariants
+export reconstruct_from_igusa_invariants
+export reconstruct_from_g2_invariants
+export reconstruct_from_g4_invariants
 export reduce_full
 export reduce_binary_form
 export reduced_charpoly
@@ -894,6 +899,7 @@ export set_var!
 export set_vars!
 export set_verbosity_level
 export shift
+export shioda_invariants
 export short_vectors
 export short_vectors_affine
 export short_vectors_affine_iterator
@@ -981,7 +987,9 @@ export trace_of_frobenius
 export trailing_coefficient
 export transform
 export transform_rstu
+export transformation_GLn
 export transvectant
+export transvectant_sequence
 export triangularize
 export trivial_divisor
 export trivial_morphism
@@ -1003,6 +1011,7 @@ export vectors_of_square_and_divisibility
 export vector_space_dim
 export volume
 export weighted_equality
+export weighted_multiply
 export weighted_reduction
 export weil_pairing
 export wildanger_field

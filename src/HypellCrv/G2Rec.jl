@@ -63,22 +63,22 @@ end
 #Reconstruct only returns one model. Twists returns all twists, but only works over finite fields.
 
 @doc raw"""
-    reconstruct_from_igusa(igusa_invs::Vector{T})
+    reconstruct_from_igusa_invariants(igusa_invs::Vector{T})
 
 Construct a genus 2 curve whose Igusa invariants are equal
 (as elements of P(2, 4, 6, 8, 10)) to the input vector igusa_invs.
 """
-function reconstruct_from_igusa(igusa_invs::Vector{T}) where T <: FieldElem
+function reconstruct_from_igusa_invariants(igusa_invs::Vector{T}) where T <: FieldElem
   return models_from_igusa_invariants(igusa_invs, false)[1]
 end
 
 @doc raw"""
-    reconstruct_from_igusa(igusa_invs::Vector{T})
+    reconstruct_from_g2_invariants(igusa_invs::Vector{T})
 
 Construct a genus 2 curve whose Cardona-Quer-Nart-Pujolas invariants are equal
 to the input vector igusa_invs.
 """
-function reconstruct_from_g2(g2_invs::Vector{T}) where T <: FieldElem
+function reconstruct_from_g2_invariants(g2_invs::Vector{T}) where T <: FieldElem
   return models_from_igusa_invariants(igusa_from_g2(g2_invs), false)[1]
 end
 

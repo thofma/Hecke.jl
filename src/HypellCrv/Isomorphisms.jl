@@ -544,7 +544,7 @@ function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}) where T
   # Reference: [Igu60], implemented via Igusa-Clebsch invariants.
   if g == 2
     # test equality in P(2, 4, 6, 10)
-    if !weighted_equality(igusa_clebsch_invariants(C1), igusa_clebsch_invariants(C2), [2, 4, 6, 10])
+    if !weighted_equality(igusa_clebsch_invariants(C1)[1], igusa_clebsch_invariants(C2)[1], [2, 4, 6, 10])
       return false, dummy
     end
   end
