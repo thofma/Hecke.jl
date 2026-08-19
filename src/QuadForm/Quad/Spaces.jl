@@ -2117,10 +2117,6 @@ end
     signature_tuple(q::QuadraticSpace{QQField,QQMatrix) ->Tuple{Int,Int,Int}
 
 Return the number of (positive, zero, negative) inertia of this rational quadratic space.
-
-This is computed from the sequence of leading principal minors of a Gram
-matrix of the non-degenerate part of `q` via Jacobi's theorem, which is
-usually faster than computing an explicit diagonalization.
 """
 @attr Tuple{Int,Int,Int} function signature_tuple(q::QuadSpace{QQField,QQMatrix})
   g = gram_matrix(q)
