@@ -2117,13 +2117,47 @@ end
     signature_tuple(q::QuadraticSpace{QQField,QQMatrix) ->Tuple{Int,Int,Int}
 
 Return the number of (positive, zero, negative) inertia of this rational quadratic space.
+
+This is computed from the sequence of leading principal minors of a Gram
+matrix of the non-degenerate part of `q` via Jacobi's theorem, which is
+usually faster than computing an explicit diagonalization.
 """
 @attr Tuple{Int,Int,Int} function signature_tuple(q::QuadSpace{QQField,QQMatrix})
+  g = gram_matrix(q)
+  n = ncols(g)
+  n == 0 && return (0, 0, 0)
+
+  K = kernel(g, side = :left)
+  k = nrows(K)
+  k == n && return (0, n, 0)
+
+  B = complete_to_basis(K)
+  gg = B[k+1:end, :] * g * transpose(B[k+1:end, :])
+  m = ncols(gg)
+
+  # Leading principal minors D_0 = 1, D_1, ..., D_m of the non-degenerate part.
+  minors = Vector{QQFieldElem}(undef, m + 1)
+  minors[1] = one(QQ)
+  for r in 1:m
+    minors[r + 1] = det(@view gg[1:r, 1:r])
+  end
+
+  if all(!iszero, minors)
+    # Jacobi's theorem: if all leading principal minors of a symmetric matrix
+    # are nonzero, the number of negative eigenvalues equals the number of
+    # sign changes in the sequence D_0, D_1, ..., D_m.
+    neg = count(r -> (minors[r] > 0) != (minors[r + 1] > 0), 1:m)
+    pos = m - neg
+    return (pos, k, neg)
+  end
+
+  # Jacobi's theorem does not apply directly when a leading principal minor
+  # vanishes (e.g. a hyperbolic plane on the diagonal); fall back to an
+  # explicit diagonalization, which handles this case via pivoting.
   D = diagonal(q)
-  pos = count(d>0 for d in D)
-  zero = count(d==0 for d in D)
-  neg = count(d<0 for d in D)
-  return (pos, zero, neg)
+  pos = count(d > 0 for d in D)
+  neg = count(d < 0 for d in D)
+  return (pos, k, neg)
 end
 
 @doc raw"""
