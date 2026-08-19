@@ -335,37 +335,41 @@ diagonal_with_transform(V::AbstractSpace)
 ################################################################################
 
 # Clean this up
+#
+# Unlike a textbook Gram-Schmidt process, the elementary transformations here
+# are applied to F and S via targeted row/column operations (add_row!,
+# add_column!, swap_rows!, swap_cols!) instead of building a dense n x n
+# transformation matrix T and computing T * F * transpose(_map(T, a)) at
+# every step. The latter costs O(n^3) per pivot, i.e. O(n^4) overall, whereas
+# the elementary operations only ever touch the rows/columns that actually
+# change, giving the usual O(n^3) complexity of symmetric Gaussian
+# elimination. Zero-testing uses is_zero_entry(A, i, j), which for e.g.
+# QQMatrix/ZZMatrix avoids allocating a field/ring element just to inspect
+# a single entry (unlike A[i, j]).
 function _gram_schmidt(M::MatElem, a, nondeg = true)
   F = deepcopy(M)
   K = base_ring(F)
   n = nrows(F)
   S = identity_matrix(K, n)
-  T = identity_matrix(K, n)
-  okk = is_diagonal(F)
-  if !okk
+  if !is_diagonal(F)
     for i in 1:n
-      if iszero(F[i,i])
-        zero!(T)
-        for i in 1:nrows(T)
-          T[i, i] = 1
-        end
+      if is_zero_entry(F, i, i)
         ok = 0
         for j in (i + 1):n
-          if !iszero(F[j, j])
+          if !is_zero_entry(F, j, j)
             ok = j
             break
           end
         end
         if ok != 0 # ok !== nothing
           j = ok
-          T[i,i] = 0
-          T[j,j] = 0
-          T[i,j] = 1
-          T[j,i] = 1
+          swap_rows!(F, i, j)
+          swap_cols!(F, i, j)
+          swap_rows!(S, i, j)
         else
           ok = 0
           for j in (i + 1):n
-            if !iszero(F[i, j])
+            if !is_zero_entry(F, i, j)
               ok = j
               break
             end
@@ -374,35 +378,36 @@ function _gram_schmidt(M::MatElem, a, nondeg = true)
             if nondeg
               error("Matrix is not of full rank")
             end
-          else
-            j = ok
-            T[i, j] = inv(2 * F[j, i])
+            continue
           end
+          j = ok
+          c = inv(2 * F[j, i])
+          # T = I + c * E_{i,j}: row_i(F) += c * row_j(F), then
+          # col_i(F) += a(c) * col_j(F), and row_i(S) += c * row_j(S).
+          add_row!(F, c, j, i)
+          add_column!(F, a(c), j, i)
+          add_row!(S, c, j, i)
         end
-        if ok == 0
-          continue
-        end
-
-        #S = T * S
-        S = mul!(S, T, S)
-        #F = T * F * transpose(_map(T, a))
-        F = mul!(F, T, F)
-        F = mul!(F, F, transpose(_map(T, a)))
       end
 
-      zero!(T)
-      for i in 1:nrows(T)
-        T[i, i] = 1
-      end
-
+      # T = I + sum_{j>i} d_j * E_{j,i}: first row_j(F) += d_j * row_i(F)
+      # (and likewise for S) for every j, then, once row i is stable,
+      # col_j(F) += a(d_j) * col_i(F) for every j. The two phases must not
+      # be interleaved: a column update reads col_i(F) in *all* rows, so it
+      # needs every row update to have already zeroed out the entries below
+      # the pivot.
+      d = F[i, i]
+      ds = Vector{elem_type(K)}(undef, n)
       for j in (i + 1):n
-        T[j, i] = divexact(-F[j, i], F[i, i])
+        is_zero_entry(F, j, i) && continue
+        dj = divexact(-F[j, i], d)
+        ds[j] = dj
+        add_row!(F, dj, i, j)
+        add_row!(S, dj, i, j)
       end
-      #F = T * F * transpose(_map(T, a))
-      F = mul!(F, T, F)
-      F = mul!(F, F, transpose(_map(T, a)))
-      #S = T * S
-      S = mul!(S, T, S)
+      for j in (i + 1):n
+        isassigned(ds, j) && add_column!(F, a(ds[j]), i, j)
+      end
     end
     @assert is_diagonal(F)
   end
