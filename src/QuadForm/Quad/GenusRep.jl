@@ -1462,7 +1462,7 @@ function non_square(F::FinField)
 end
 
 function inv(f::Hecke.LocMultGrpModSquMap)
-  return MapFromFunc(codomain(f), domain(f), x -> preimage(f, x))
+  return map_from_func(codomain(f), domain(f), x -> preimage(f, x))
 end
 
 ################################################################################

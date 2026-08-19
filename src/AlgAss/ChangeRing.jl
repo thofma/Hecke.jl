@@ -395,5 +395,3 @@ end
 domain(f::PrimeFieldEmbedStub) = f.domain
 
 codomain(f::PrimeFieldEmbedStub) = f.codomain
-
-

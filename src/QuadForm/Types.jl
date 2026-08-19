@@ -578,4 +578,3 @@ mutable struct ZetaFunction
     return z
   end
 end
-
