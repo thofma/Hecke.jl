@@ -136,6 +136,37 @@ end
   @test all(w -> w*G*vT == -2, sva)
 end
 
+@testset "Short vectors affine leaves the lattice untouched" begin
+  # For a lattice with at most one negative square the form is negated
+  # internally. That must not touch the cached Gram matrix of the lattice.
+  A2 = root_lattice(:A, 2)
+  G = deepcopy(gram_matrix(A2))
+  v = matrix(QQ, 1, 2, [1, 0])
+  sva = short_vectors_affine(A2, v, QQ(1), QQ(2))
+  @test gram_matrix(A2) == G
+  @test is_positive_definite(A2)
+  @test length(sva) == 2
+  @test all(w -> (w*G*transpose(w))[1, 1] == 2, sva)
+  @test all(w -> (w*G*transpose(v))[1, 1] == 1, sva)
+
+  svi = collect(short_vectors_affine_iterator(A2, v, QQ(1), QQ(2)))
+  @test gram_matrix(A2) == G
+  @test Set(svi) == Set(sva)
+
+  @test eltype(short_vectors_affine_iterator(A2, v, QQ(1), QQ(2))) == QQMatrix
+  @test eltype(short_vectors_affine_iterator(G, v, QQ(1), QQ(2))) == QQMatrix
+
+  # hyperbolic plane: signature (1, 1), so the same branch is taken
+  U = integer_lattice(gram = QQ[0 1; 1 0])
+  GU = deepcopy(gram_matrix(U))
+  w = matrix(QQ, 1, 2, [1, 1])
+  svu = short_vectors_affine(U, w, QQ(1), QQ(0))
+  @test gram_matrix(U) == GU
+  @test length(svu) == 2
+  @test all(x -> (x*GU*transpose(x))[1, 1] == 0, svu)
+  @test all(x -> (x*GU*transpose(w))[1, 1] == 1, svu)
+end
+
 @testset "Center density" begin
   L = root_lattice(:E, 6)
   r = center_density(L)

@@ -502,8 +502,8 @@ function short_vectors_affine(
   if n > 1
     sol = _short_vectors_affine(gram, v_S, _alpha, _d)
   else
-    map_entries!(-, gram, gram)
-    sol = _short_vectors_affine(gram, v_S, -_alpha, -_d)
+    # `gram` is the cached Gram matrix of `S`, so it must not be negated in place
+    sol = _short_vectors_affine(-gram, v_S, -_alpha, -_d)
   end
   B = basis_matrix(S)
   return QQMatrix[s*B for s in sol]
@@ -622,8 +622,8 @@ function short_vectors_affine_iterator(
   if n > 1
     sol = _short_vectors_affine_iterator(gram, v_S, _alpha, _d)
   else
-    map_entries!(-, gram, gram)
-    sol = _short_vectors_affine_iterator(gram, v_S, -_alpha, -_d)
+    # `gram` is the cached Gram matrix of `S`, so it must not be negated in place
+    sol = _short_vectors_affine_iterator(-gram, v_S, -_alpha, -_d)
   end
   B = basis_matrix(S)
   elem_type = typeof(v)
@@ -688,7 +688,7 @@ struct ShortVectorsAffineIterator{S, elem_type}
 end
 
 Base.IteratorSize(::Type{<:ShortVectorsAffineIterator}) = Base.SizeUnknown()
-Base.eltype(::Type{ShortVectorsAffineIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
+Base.eltype(::Type{ShortVectorsAffineIterator{X, elem_type}}) where {X, elem_type} = elem_type
 
 function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothing) where {X, elem_type}
   if start === nothing
@@ -716,7 +716,7 @@ end
 
 
 Base.IteratorSize(::Type{<:ShortVectorsAffineLatIterator}) = Base.SizeUnknown()
-Base.eltype(::Type{ShortVectorsAffineLatIterator{X, elem_type}}) where {X, elem_type} = Tuple{Vector{elem_type}}
+Base.eltype(::Type{ShortVectorsAffineLatIterator{X, elem_type}}) where {X, elem_type} = elem_type
 
 function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = nothing) where {X, elem_type}
   if start === nothing
