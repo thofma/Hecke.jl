@@ -2132,27 +2132,28 @@ Return the number of (positive, zero, negative) inertia of this rational quadrat
   m = ncols(gg)
 
   # Leading principal minors D_0 = 1, D_1, ..., D_m of the non-degenerate part.
+  # Jacobi's theorem does not apply directly once a minor vanishes (e.g. a
+  # hyperbolic plane on the diagonal), so bail out as soon as that happens
+  # instead of computing the remaining (larger, more expensive) minors only
+  # to discard them.
   minors = Vector{QQFieldElem}(undef, m + 1)
   minors[1] = one(QQ)
   for r in 1:m
     minors[r + 1] = det(@view gg[1:r, 1:r])
+    if is_zero(minors[r + 1])
+      # Fall back to an explicit diagonalization
+      D = diagonal(q)
+      pos = count(d > 0 for d in D)
+      neg = count(d < 0 for d in D)
+      return (pos, k, neg)
+    end
   end
 
-  if all(!iszero, minors)
-    # Jacobi's theorem: if all leading principal minors of a symmetric matrix
-    # are nonzero, the number of negative eigenvalues equals the number of
-    # sign changes in the sequence D_0, D_1, ..., D_m.
-    neg = count(r -> (minors[r] > 0) != (minors[r + 1] > 0), 1:m)
-    pos = m - neg
-    return (pos, k, neg)
-  end
-
-  # Jacobi's theorem does not apply directly when a leading principal minor
-  # vanishes (e.g. a hyperbolic plane on the diagonal); fall back to an
-  # explicit diagonalization
-  D = diagonal(q)
-  pos = count(d > 0 for d in D)
-  neg = count(d < 0 for d in D)
+  # Jacobi's theorem: since all leading principal minors are nonzero, the
+  # number of negative eigenvalues equals the number of sign changes in the
+  # sequence D_0, D_1, ..., D_m.
+  neg = count(r -> (minors[r] > 0) != (minors[r + 1] > 0), 1:m)
+  pos = m - neg
   return (pos, k, neg)
 end
 
