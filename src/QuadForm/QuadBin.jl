@@ -158,24 +158,38 @@ end
 
 For a binary quadratic form `f` with negative discriminant and an integer `n`,
 return the tuple `(true, (x, y))` if $f(x, y) = n$ for integers `x`, `y`.
-If no such integers exist, return `(false, (0, 0))`
+If no such integers exist, return `(false, (0, 0))`.
+
+Note that $f(0, 0) = 0$, so `n == 0` is always solvable.
 """
 function can_solve_with_solution(f::QuadBin, n::IntegerUnion; sol::Bool = true)
-  @req discriminant(f) < 0 "f must have negative discriminant"
-  for y in 1:Int(floor(sqrt(Int(4*f[1]*n)//abs(Int(discriminant(f))))))
+  D = discriminant(f)
+  @req D < 0 "f must have negative discriminant"
+  a = f[1]
+  _n = ZZ(n)
+  # A definite form only represents values of the sign of its leading
+  # coefficient, so there is nothing to enumerate otherwise.
+  if sign(a) * sign(_n) < 0
+    return false, (ZZ(0), ZZ(0))
+  end
+  # From 4*a*f(x, y) = (2*a*x + f[2]*y)^2 - D*y^2 we get, for f(x, y) = n,
+  # that abs(D)*y^2 <= 4*a*n. Both signs of y give the same values of f, but
+  # y == 0 has to be looked at as well.
+  ybound = isqrt(fdiv(4 * a * _n, abs(D)))
+  for y in ZZ(0):ybound
     #now f(x,y) quadratic in one variable -> use quadratic formula
-    aq = f[1]
+    aq = a
     bq = f[2] * y
-    cq = f[3] * y^2 - n
+    cq = f[3] * y^2 - _n
     d = bq^2 - 4*aq*cq
     if is_square(d)
       if divides(-bq + sqrt(d), 2*aq)[1]
         !sol && return true, (ZZ(0), ZZ(0))
-        return true, (divexact(-bq + sqrt(d), 2*aq), ZZ(y))
+        return true, (divexact(-bq + sqrt(d), 2*aq), y)
       end
       if divides(-bq - sqrt(d), 2*aq)[1]
         !sol && return true, (ZZ(0), ZZ(0))
-        return true, (divexact(-bq - sqrt(d), 2*aq), ZZ(y))
+        return true, (divexact(-bq - sqrt(d), 2*aq), y)
       end
     end
   end
