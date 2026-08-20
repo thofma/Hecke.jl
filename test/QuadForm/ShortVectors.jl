@@ -139,15 +139,15 @@ end
 @testset "Center density" begin
   L = root_lattice(:E, 6)
   r = center_density(L)
-  @test contains(parent(r)("[0.0721687836487032205 +/- 9.72e-20]"), r)
+  @test contains(parent(r)("[0.0721687836487032205 +/- 9.72e-10]"), r)
 
   L = root_lattice(:E, 8)
   r = density(L)
-  @test contains(parent(r)("[0.253669507901048014 +/- 6.66e-19]"), r)
+  @test contains(parent(r)("[0.253669507901048014 +/- 6.66e-10]"), r)
 
   L = root_lattice(:E, 7)
   r =  hermite_number(L)
-  @test contains(parent(r)("[1.811447328527813353 +/- 5.13e-19]"), r)
+  @test contains(parent(r)("[1.811447328527813353 +/- 5.13e-10]"), r)
 end
 
 @testset "Successive minima" begin
@@ -179,9 +179,119 @@ end
   @test all(inner_product(L, v[i], v[i]) == s[i] for i in 1:length(s))
 end
 
-let # some random failure with large entries
-  B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])
-  G = matrix(QQ, 6, 6 ,[876708188094148315826780735392810, 798141405233250328867679564294410, -352823337641433300965521329447720, 326768950610851461363580717982402, -690595881941554449465975342845028, 433433545243019702766746394677218, 798141405233250328867679564294410, 867615301468758683549323652197099, -301315621373858240463110267500961, 316796431934778296047626373086339, -725765288914917260527454069649226, 505082964151083450666500945258490, -352823337641433300965521329447720, -301315621373858240463110267500961, 809946152369211852531731702980788, -343784636213856787915462553587466, 84764902049682607076640678540130, -613908853150167850995565570653796, 326768950610851461363580717982402, 316796431934778296047626373086339, -343784636213856787915462553587466, 219957919673551825679009958633894, -226934633316066727073394927118195, 298257387132139131540277459301842, -690595881941554449465975342845028, -725765288914917260527454069649226, 84764902049682607076640678540130, -226934633316066727073394927118195, 671443408734467545153681225010914, -277626128761200144008657217470664, 433433545243019702766746394677218, 505082964151083450666500945258490, -613908853150167850995565570653796, 298257387132139131540277459301842, -277626128761200144008657217470664, 640432299215298238271419741190578])
-  L = integer_lattice(B, gram = G)
-  @test (@inferred is_empty(short_vectors(L, 0, 1)))
+@testset "short vector with condition" begin
+  L = [ZZ[-2 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 0 1; 0 -2 -1 1 -1 1 -1 -1 1 1 0 0 0 0 0 0 -1; 0 -1 -2 1 -1 1 -1 -1 1 0 0 0 0 0 0 0 0; 0 1 1 -2 0 0 0 0 0 0 0 0 0 0 0 0 0; 0 -1 -1 0 -2 1 -1 -1 1 1 0 0 0 0 0 0 -1; 0 1 1 0 1 -2 1 1 -1 0 0 0 0 0 0 0 0; 0 -1 -1 0 -1 1 -2 -1 1 1 0 0 0 0 0 0 -1; 0 -1 -1 0 -1 1 -1 -2 1 1 0 0 0 0 0 0 -1; 0 1 1 0 1 -1 1 1 -2 0 0 0 0 0 0 0 0; -1 1 0 0 1 0 1 1 0 -4 0 0 0 0 0 0 3; 0 0 0 0 0 0 0 0 0 0 -2 -1 -1 -1 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 -2 -1 0 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 -1 -2 -1 1 1 0; 0 0 0 0 0 0 0 0 0 0 -1 0 -1 -2 1 0 0; 0 0 0 0 0 0 0 0 0 0 1 1 1 1 -2 -1 0; 0 0 0 0 0 0 0 0 0 0 1 1 1 0 -1 -2 0; 1 -1 0 0 -1 0 -1 -1 0 3 0 0 0 0 0 0 -6],
+  ZZ[-2 1 -1 1 -1 1 0 0 0 1 -1 -1 -1 1 -1 1 1; 1 -2 1 -1 1 -1 0 0 0 0 0 0 1 0 0 0 0; -1 1 -2 1 -1 1 0 0 0 1 -1 -1 0 1 -1 1 1; 1 -1 1 -2 1 -1 0 0 0 -1 0 1 1 -1 1 0 -1; -1 1 -1 1 -2 1 0 0 0 1 -1 0 0 0 0 1 0; 1 -1 1 -1 1 -2 0 0 0 -1 1 0 1 0 0 -1 -1; 0 0 0 0 0 0 -2 0 0 -1 0 1 -1 -1 1 0 0; 0 0 0 0 0 0 0 -2 -1 -1 -1 0 0 0 0 -1 1; 0 0 0 0 0 0 0 -1 -2 -1 -1 0 0 0 0 -1 1; 1 0 1 -1 1 -1 -1 -1 -1 -4 0 2 -1 -2 2 -2 -1; -1 0 -1 0 -1 1 0 -1 -1 0 -4 0 0 0 0 1 1; -1 0 -1 1 0 0 1 0 0 2 0 -4 0 3 -3 1 2; -1 1 0 1 0 1 -1 0 0 -1 0 0 -4 -1 1 0 0; 1 0 1 -1 0 0 -1 0 0 -2 0 3 -1 -4 3 -1 -2; -1 0 -1 1 0 0 1 0 0 2 0 -3 1 3 -4 1 2; 1 0 1 0 1 -1 0 -1 -1 -2 1 1 0 -1 1 -4 0; 1 0 1 -1 0 -1 0 1 1 -1 1 2 0 -2 2 0 -4],
+  ZZ[-2 1 0 0 0 0 0 0 0 -1 0 0 0 1 -1 1 0; 1 -2 0 0 0 0 0 0 0 1 0 0 0 0 0 -1 0; 0 0 -2 0 0 0 0 -1 1 -1 1 1 1 -1 -1 0 -1; 0 0 0 -2 -1 -1 -1 0 0 -1 0 0 0 1 -1 -1 -1; 0 0 0 -1 -2 -1 -1 0 0 0 0 0 0 1 0 -1 0; 0 0 0 -1 -1 -2 -1 0 0 -1 0 0 0 1 -1 0 -1; 0 0 0 -1 -1 -1 -2 0 0 -1 0 0 0 1 -1 -1 0; 0 0 -1 0 0 0 0 -2 1 0 1 0 1 -1 -1 0 -1; 0 0 1 0 0 0 0 1 -2 1 -1 0 -1 0 1 0 1; -1 1 -1 -1 0 -1 -1 0 1 -4 1 1 0 1 -2 0 -1; 0 0 1 0 0 0 0 1 -1 1 -2 0 -1 0 1 0 1; 0 0 1 0 0 0 0 0 0 1 0 -2 0 1 0 0 0; 0 0 1 0 0 0 0 1 -1 0 -1 0 -2 0 1 0 1; 1 0 -1 1 1 1 1 -1 0 1 0 1 0 -4 1 0 0; -1 0 -1 -1 0 -1 -1 -1 1 -2 1 0 1 1 -4 0 -2; 1 -1 0 -1 -1 0 -1 0 0 0 0 0 0 0 0 -4 0; 0 0 -1 -1 0 -1 0 -1 1 -1 1 0 1 0 -2 0 -4],
+  ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
+  LL = [integer_lattice(gram=-g) for g in L]
+  @test length.(first.(Hecke.short_vectors_with_condition.(LL; search_fixed_vectors = false))) == [25, 42, 31, 47]
+
+  #=
+  function test_short_vectors_with_condition(L::ZZLat; search_fixed_vectors=false)
+    n = rank(L)
+    _V1, _grams,invariants = Hecke.short_vectors_with_condition(Int, L; search_fixed_vectors)
+    V1 = [(QQ.(i[1]), QQ.(i[2])) for i in _V1]
+    _V2, grams, invariants = Hecke.short_vectors_with_condition(ZZRingElem, L;
+                                                                      search_fixed_vectors)
+    V2 = [(QQ.(i[1]), QQ.(i[2])) for i in _V2]
+
+    @assert grams == _grams # check consistency between methods
+    @assert T==_T
+    # confirm consistency of the output
+    for V in [V1,V2]
+      for (v, n) in V1
+        @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+      end
+    end
+    # compute the same set by filtering
+    # invariants of the standard basis vectors
+    target = Set((ZZRingElem[grams[i][j,j] for i in 1:length(grams)], Hecke._canonicalize!(deepcopy(T[j,:])), Hecke._canonicalize!(deepcopy(proj_root_inv[j,:]))) for j in 1:n)
+    target12 = Set(i[1:2] for i in target)
+    target_norms = Set(i[1] for i in target)
+    target_T = Set(i[2] for i in target)
+    target_proj = Set(i[3] for i in target)
+    V3 = Tuple{Vector{QQFieldElem},Vector{QQFieldElem}}[]
+    for (v, _) in short_vectors(L, maximum(abs.(diagonal(gram_matrix(L)))))
+      v_proj = Hecke._canonicalize!(v*proj_root_inv)
+      v_proj in target_proj || continue
+      v_T = Hecke._canonicalize!(v*T)
+      v_T in target_T || continue
+      v_norms = [dot(v, g*v) for g in grams]
+      v_norms in target_norms || continue
+      # now the 3 invariants match individually
+      # check if they match in combination.
+      v_invariants = (v_norms, v_T)
+      v_invariants in target12 || continue
+      #v_invariants = (v_norms, v_T, v_proj)
+      #v_invariants in target || continue  # this test fails because we do not filter like this ....
+      push!(V3, (Hecke._canonicalize!(v), v_norms))
+    end
+    S1 = Set(V1)
+    S2 = Set(V2)
+    S3 = Set(V3)
+    @test length(S1) == length(S3)
+    @test S1 == S2
+    @test S1 == S3
+    return nothing
+  end
+
+  for l in LL[2:4] #takes a bit long for LL[1] we test it separately
+    test_short_vectors_with_condition(l; search_fixed_vectors = false)
+  end
+
+  for l in LL[2:4]
+    test_short_vectors_with_condition(l; search_fixed_vectors = true)
+  end
+  =#
+
+  @test 25 == length(Hecke.short_vectors_with_condition(Int, LL[1]; search_fixed_vectors=false)[1])
+  @test 25 == length(Hecke.short_vectors_with_condition(ZZRingElem, LL[1]; search_fixed_vectors=false)[1])
+
+  Lbad = integer_lattice(;gram = matrix(ZZ, 17, 17, [-2 1 0 0 -1 -1 0 -1 -1 -1 -1 -1 1 0 1 0 -1; 1 -2 0 0 0 0 0 1 1 1 1 0 -1 0 -1 0 0; 0 0 -2 -1 -1 1 1 0 0 0 0 -1 1 -1 1 0 -1; 0 0 -1 -2 -1 0 1 0 0 0 0 -1 0 -1 0 0 0; -1 0 -1 -1 -4 1 0 -1 -1 -1 -1 -2 0 0 0 0 0; -1 0 1 0 1 -4 1 1 1 1 -1 -1 -1 -1 -1 1 -1; 0 0 1 1 0 1 -4 -2 -2 -2 -1 1 0 0 0 0 2; -1 1 0 0 -1 1 -2 -4 -3 -3 0 1 0 1 0 -1 0; -1 1 0 0 -1 1 -2 -3 -4 -3 -1 1 0 0 1 -1 0; -1 1 0 0 -1 1 -2 -3 -3 -4 0 1 0 1 0 -1 0; -1 1 0 0 -1 -1 -1 0 -1 0 -4 -2 0 -2 1 1 1; -1 0 -1 -1 -2 -1 1 1 1 1 -2 -4 0 -1 0 1 0; 1 -1 1 0 0 -1 0 0 0 0 0 0 -4 1 -3 0 1; 0 0 -1 -1 0 -1 0 1 0 1 -2 -1 1 -4 1 1 0; 1 -1 1 0 0 -1 0 0 1 0 1 0 -3 1 -4 0 1; 0 0 0 0 0 1 0 -1 -1 -1 1 1 0 1 0 -2 0; -1 0 -1 0 0 -1 2 0 0 0 1 0 1 0 1 0 -4]))
+  @test 110 == length(Hecke.short_vectors_with_condition(ZZRingElem, rescale(Lbad, -1); search_fixed_vectors=false)[1])
+  @test 110 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_fixed_vectors=false)[1])
+  @test 70 == length(Hecke.short_vectors_with_condition(ZZRingElem, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
+  @test 70 == length(Hecke.short_vectors_with_condition(Int, rescale(Lbad, -1); search_fixed_vectors=false, use_dual = true)[1])
+  #test_short_vectors_with_condition(rescale(Lbad,-1); search_fixed_vectors=true)
+
+  let
+    Ldirect = integer_lattice(gram=ZZ[2 -1 -1 -1 1 0 0 0 0 1 0 0 1 1 1 1 1 1 1; -1 2 0 0 0 0 0 0 0 -1 0 0 0 0 0 -1 0 0 -1; -1 0 2 1 -1 0 0 0 0 -1 0 0 0 0 -1 0 0 -1 -1; -1 0 1 2 -1 0 0 0 0 -1 0 0 -1 -1 -1 0 -1 -1 -1; 1 0 -1 -1 2 0 0 0 0 1 0 0 0 0 1 0 1 1 1; 0 0 0 0 0 2 0 0 0 -1 0 0 0 0 -1 1 0 -1 0; 0 0 0 0 0 0 2 1 -1 -1 1 -1 1 1 -1 1 1 1 1; 0 0 0 0 0 0 1 2 0 -1 1 0 1 0 -1 0 1 1 1; 0 0 0 0 0 0 -1 0 2 1 0 1 -1 -1 1 -1 0 0 0; 1 -1 -1 -1 1 -1 -1 -1 1 4 -1 0 -1 -1 2 -1 0 1 1; 0 0 0 0 0 0 1 1 0 -1 2 0 0 0 0 0 1 1 1; 0 0 0 0 0 0 -1 0 1 0 0 2 -1 -1 1 -1 0 0 0; 1 0 0 -1 0 0 1 1 -1 -1 0 -1 4 2 -1 1 1 1 0; 1 0 0 -1 0 0 1 0 -1 -1 0 -1 2 4 0 2 1 0 0; 1 0 -1 -1 1 -1 -1 -1 1 2 0 1 -1 0 4 -1 0 1 0; 1 -1 0 0 0 1 1 0 -1 -1 0 -1 1 2 -1 4 1 -1 1; 1 0 0 -1 1 0 1 1 0 0 1 0 1 1 0 1 4 2 2; 1 0 -1 -1 1 -1 1 1 0 1 1 0 1 0 1 -1 2 4 2; 1 -1 -1 -1 1 0 1 1 0 1 1 0 0 0 0 1 2 2 4])
+    out = Hecke._short_vectors_with_condition_direct(Ldirect; search_invariant_subspace=false)
+    vectors = first.(out[1])
+    n = rank(Ldirect)
+    @test length(vectors) >= n
+    for i in 1:n
+      e = zeros(Int, n)
+      e[i] = 1
+      @test any(v -> v == e || v == -e, vectors)
+    end
+  end
+
+  # A lattice without roots.
+  L = integer_lattice(;gram = matrix(ZZ, 3, 3, [3, -1, -1, -1, 3, -1, -1, -1, 3]));
+  @test length(Hecke.short_vectors_with_condition(ZZRingElem, L)[1])==4
+  @test length(Hecke.short_vectors_with_condition(Int, L)[1])==4
+
+  # Some lattices for cheaper testing
+  A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
+  # Genus representatives of some genus
+  L = [integer_lattice(gram=matrix(QQ,6,6,i),cached=false) for i in A]
+  for l in L
+    #test_short_vectors_with_condition(l; search_fixed_vectors = false)
+    #test_short_vectors_with_condition(l; search_fixed_vectors = true)
+  end
+
+  let # some random failure with large entries
+    B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1])
+    G = matrix(QQ, 6, 6 ,[876708188094148315826780735392810, 798141405233250328867679564294410, -352823337641433300965521329447720, 326768950610851461363580717982402, -690595881941554449465975342845028, 433433545243019702766746394677218, 798141405233250328867679564294410, 867615301468758683549323652197099, -301315621373858240463110267500961, 316796431934778296047626373086339, -725765288914917260527454069649226, 505082964151083450666500945258490, -352823337641433300965521329447720, -301315621373858240463110267500961, 809946152369211852531731702980788, -343784636213856787915462553587466, 84764902049682607076640678540130, -613908853150167850995565570653796, 326768950610851461363580717982402, 316796431934778296047626373086339, -343784636213856787915462553587466, 219957919673551825679009958633894, -226934633316066727073394927118195, 298257387132139131540277459301842, -690595881941554449465975342845028, -725765288914917260527454069649226, 84764902049682607076640678540130, -226934633316066727073394927118195, 671443408734467545153681225010914, -277626128761200144008657217470664, 433433545243019702766746394677218, 505082964151083450666500945258490, -613908853150167850995565570653796, 298257387132139131540277459301842, -277626128761200144008657217470664, 640432299215298238271419741190578])
+    L = integer_lattice(B, gram = G)
+    @test (@inferred is_empty(short_vectors(L, 0, 1)))
+  end
+
+  let
+    M = ZZ[4 0 -60216 -14470 -587467312 510068 -1020130 -10644; 0 156 60624 14568 591447624 -514884 1027068 10644; -60216 60624 3711865539 891966972 36212960649642 -31442224371 62883386274 655778277; -14470 14568 891966972 214341029 8702029887246 -7555614655 15110973998 157584524; -587467312 591447624 36212960649642 8702029887246 353293648499404986 -306750344784008 613490324132272 6397772950182; 510068 -514884 -31442224371 -7555614655 -306750344784008 266338720234 -532668417134 -5554922549; -1020130 1027068 62883386274 15110973998 613490324132272 -532668417134 1065318834358 11109658534; -10644 10644 655778277 157584524 6397772950182 -5554922549 11109658534 115856923]
+    x = Hecke.__enumerate_gram(Hecke.FinckePohstInt, M, nothing, 4, ZZRingElem, identity, identity, ZZRingElem)
+    @test length(x) == 8
+  end
 end

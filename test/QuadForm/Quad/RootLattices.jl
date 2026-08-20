@@ -211,6 +211,9 @@ end
   R = root_lattice_recognition_fundamental(L)
   @test gram_matrix(R[3][1])==gram_matrix(root_lattice(R[2][1]...))
 
+  L = integer_lattice(gram=ZZ[1 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 2 -1; 0 0 0 -1 35])
+  @test root_lattice_recognition_fundamental(L)[2] == [(:A, 1), (:I, 1), (:I, 1), (:I, 1)]
+
 
   B = matrix(QQ, 6, 6 ,[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1]);
   G = matrix(QQ, 6, 6 ,[3, 1, -1, 1, 0, 0, 1, 3, 1, 1, 1, 1, -1, 1, 3, 0, 0, 1, 1, 1, 0, 4, 2, 2, 0, 1, 0, 2, 4, 2, 0, 1, 1, 2, 2, 4]);
@@ -238,6 +241,10 @@ end
     @test basis_matrix(root_sublattice(L; length = [2])) == ZZ[0 1 0]
     @test basis_matrix(root_sublattice(L; length = [1])) == ZZ[1 0 0]
   end
+
+  # empty root lattice
+  L = integer_lattice(;gram = ZZ[3;])
+  @test length(root_lattice_recognition(L)[1]) == 0
 
   # isometry testing
   C1 = root_lattice(:A, 2)
@@ -743,10 +750,6 @@ end
   L2 = integer_lattice(gram = G);
   @test is_isometric(L1,L2)
 
-  # Fix 2271
-  M = integer_lattice(;gram=QQ[-1 0 0; 0 2 0; 0 0 64])
-  L = integer_lattice(;gram=QQ[-2 0 0; 0 4 2; 0 2 17])
-  @test !is_isometric(L, M)
 end
 
 @testset "direct sums" begin

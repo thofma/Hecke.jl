@@ -11,24 +11,35 @@
 # Pages 327-334, ISSN 0747-7171, 10.1006/jsco.1996.0130.
 # (https://www.sciencedirect.com/science/article/pii/S0747717196901303)
 
-function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}},
-                    use_dict::Bool = true) where {S, T}
+function VectorList(vectors::Vector{S}, lengths::Vector{Vector{T}}, invariants::Vector{U},
+                    unsigned_invariants::Vector{UInt} = UInt[],
+                    use_dict::Bool = true) where {S, T, U}
 
-  V = VectorList{S, T}()
+  V = VectorList{S, T, U}()
+  if isempty(unsigned_invariants)
+    unsigned_invariants = zeros(UInt, length(vectors))
+  else
+    @assert length(unsigned_invariants) == length(vectors)
+  end
   if use_dict
     V.lookup = Dict{S, Int}(vectors[i] => i for i in 1:length(vectors))
     V.lengths = lengths
     V.vectors = vectors
+    V.invariants = invariants
+    V.unsigned_invariants = unsigned_invariants
     V.use_dict = true
   else
     p = sortperm(vectors)
     permute!(vectors, p)       # apply the permutation to V
     permute!(lengths, p)       # apply the permutation to lengths
+    permute!(invariants, p)
+    permute!(unsigned_invariants, p)
     V.use_dict = false
     V.vectors = vectors
     V.lengths = lengths
+    V.invariants = invariants
+    V.unsigned_invariants = unsigned_invariants
   end
-
   return V
 end
 
@@ -61,25 +72,6 @@ function find_point(w, V::VectorList)
   @assert fl
   return k
 end
-#  positive = is_normalized(w)
-#
-#  if positive
-#    k = V.lookup[w]
-#    #k = findfirst(isequal(w), V.vectors)
-#    #@assert k !== nothing
-#    #@assert V[k] == w
-#    #return k
-#    return k
-#  end
-#
-#  neg!(w)
-#  #k = findfirst(isequal(w), V.vectors)
-#  #@assert k !== nothing
-#  k = V.lookup[w]
-#  neg!(w)
-#  @assert V[-k] == w
-#  return -k
-#end
 
 function has_point(w, V::VectorList)
   positive = is_normalized(w)
@@ -89,7 +81,7 @@ function has_point(w, V::VectorList)
     if k == 0
       return false, 0
     else
-      @assert V[k] == w
+      @hassert :LatticeMor 1 V[k] == w
       return true, k
     end
   end
@@ -102,7 +94,7 @@ function has_point(w, V::VectorList)
   if k == 0
     return false, 0
   else
-    @assert V[-k] == w
+    @hassert :LatticeMor 1 V[-k] == w
     return true, -k
   end
 end
@@ -114,15 +106,18 @@ end
 dim(C::ZLatAutoCtx) = C.dim
 
 function init(
-  C::ZLatAutoCtx,
-  auto::Bool = true,
+  C::ZLatAutoCtx{R,S,T,U},
+  automorphism_mode::Bool = true,
   bound::ZZRingElem = ZZRingElem(-1),
   use_dict::Bool = true;
   depth::Int=-1,
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
-  known_short_vectors=(0, []),
-)
+  vector_set = [],
+  invariants = (Int[],Int[]),
+  unsigned_invariants = (UInt[], UInt[]),
+  D::ZLatAutoCtx=C
+) where {R,S,T,U<:Union{Vector,Int}}
   # Compute the necessary short vectors
 
   r = length(C.G)
@@ -130,54 +125,85 @@ function init(
   n = nrows(C.G[1])
 
   if bound == -1
-    bound = maximum(diagonal(C.G[1]))
+    bound = maximum(abs.(diagonal(D.G[1])))
     C.max = bound
   end
-
   @assert bound > 0
+  if !isempty(vector_set)
+    vectors = first.(vector_set)
+    lengths = [i[2] for i in vector_set]
+  else
+    @vprintln :LatticeMor 1 "Computing short vectors of length <= $bound"
+    V = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound; is_lll_reduced_known)
 
-  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
-  # If one already knows all the short vectors of length at most equal to alpha
-  alpha, V = known_short_vectors
 
-  # If _V is not empty, then it should contain (up to sign) all the short vectors
-  # of length at most equal to alpha. So if alpha is lower than bound, we add the
-  # missing vectors
-  if alpha < bound
-    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound; is_lll_reduced_known))
+    vectors = ZZMatrix[]
+
+    lengths = Vector{ZZRingElem}[]
+
+    target_lengths = Set{Vector{ZZRingElem}}([i[j,j] for i in D.G] for j in 1:n)
+    # use for early abort in norm computation not sure if worth it
+    target_length2 = [Set([i[j,j] for j in 1:n]) for i in D.G]
+
+    tmp = zero_matrix(ZZ, 1, n)
+
+    for (v, sq) in V
+      # First canonicalize them
+      k = 1
+      while iszero(v[k])
+        k += 1
+      end
+      if v[k] < 0
+        v .*= -1
+      end
+
+      vfmpz = matrix(ZZ, 1, n, v)
+
+      w = Vector{ZZRingElem}(undef, r)
+      w[1] = numerator(sq)
+      flag = false
+      for k in 2:r
+        w[k] = _norm(vfmpz, C.G[k], tmp)
+        if !(w[k] in target_length2[k])
+          flag = true
+          break
+        end
+      end
+      flag && continue
+
+      w in target_lengths || continue
+
+      push!(lengths, w)
+      push!(vectors, vfmpz)
+    end
+  end
+  # it is okay to take the invariants mod 2^64
+  # we only require invariant(-v) = -invariant(v)
+  if isempty(invariants[1])
+    if U <: Vector
+      _invariants = [U() for i in 1:length(vectors)]
+      _target_invariants = [U() for i in 1: n]
+    elseif U===Int
+      _invariants = zeros(U, length(vectors))
+      _target_invariants = zeros(U, n)
+    end
+  else
+    _invariants = invariants[1]
+    _target_invariants = invariants[2]
+  end
+  if isempty(unsigned_invariants[1])
+    _unsigned_invariants = zeros(UInt, length(vectors))
+    _target_unsigned_invariants = zeros(UInt, n)
+  else
+    _unsigned_invariants = unsigned_invariants[1]
+    _target_unsigned_invariants = unsigned_invariants[2]
+    @assert length(_unsigned_invariants) == length(vectors)
+    @assert length(_target_unsigned_invariants) == n
   end
 
-  vectors = Vector{ZZMatrix}(undef, length(V))
-
-  lengths = Vector{Vector{ZZRingElem}}(undef, length(V))
-
-  tmp = zero_matrix(ZZ, 1, n)
-
-  for i in 1:length(V)
-    # First canonicalize them
-    cand = V[i]
-    v = cand[1]
-    k = 1
-    while iszero(v[k])
-      k += 1
-    end
-    if v[k] < 0
-      v .*= -1
-    end
-
-    vfmpz = matrix(ZZ, 1, n, v)
-
-    w = Vector{ZZRingElem}(undef, r)
-    w[1] = numerator(cand[2])
-    for k in 2:r
-      w[k] = _norm(vfmpz, C.G[k], tmp)
-    end
-
-    lengths[i] = w
-    vectors[i] = vfmpz
-  end
-
-  V = VectorList(vectors, lengths, use_dict)
+  V = VectorList(vectors, lengths, _invariants, _unsigned_invariants, use_dict)
+  C.target_invariants = _target_invariants
+  C.target_unsigned_invariants = _target_unsigned_invariants
 
   for i in 1:length(C.G)
     C.is_symmetric[i] = is_symmetric(C.G[i])
@@ -188,13 +214,13 @@ function init(
   C.V = V
 
   # Compute the fingerprint
-  @vprint :Lattice 1 "Computing fingerprint: "
-  if auto
-    @vtime :Lattice 1 fingerprint(C)
-    @vprintln :Lattice 1 "$(C.fp_diagonal)"
+  @vprint :LatticeMor 1 "Computing fingerprint: "
+  if automorphism_mode
+    @vtime :LatticeMor 1 fingerprint(C)
+    @vprintln :LatticeMor 1 "$(C.fp_diagonal)"
   end
 
-  if auto
+  if automorphism_mode
     # Find the standard basis vectors
     C.std_basis = Vector{Int}(undef, dim(C))
     z = zero_matrix(ZZ, 1, dim(C))
@@ -249,7 +275,7 @@ function init(
 
   H = Vector{ZZMatrix}(undef, nH)
 
-  if auto
+  if automorphism_mode
     for i in 1:dim(C)
       if !isempty(C.g[i])
         nH = 0
@@ -267,8 +293,12 @@ function init(
     end
   end
 
-  init_vector_sums(C, depth)
-  init_bacher_polynomials(C, bacher_depth)
+  if automorphism_mode && C===D
+    init_vector_sums(C, depth)  # sets C.GZZ
+    init_bacher_polynomials(C, bacher_depth)
+  else
+    C.GZZ = [ matrix(ZZ, M) for M in C.G ]
+  end
 
   return C
 end
@@ -277,20 +307,20 @@ end
 # The return value is flag, Csmall
 function try_init_small(
   C::ZLatAutoCtx,
-  auto::Bool = true,
+  automorphism_mode::Bool = true,
   bound::ZZRingElem = ZZRingElem(-1),
   use_dict::Bool = true;
   depth::Int=-1,
   bacher_depth::Int=0,
   is_lll_reduced_known::Bool=false,
-  known_short_vectors=(0, []),
- )
-  automorphism_mode = bound == ZZRingElem(-1)
-
-  Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
-
+  vector_set = [], #Tuple{Vector{Int},Vector{Int}}[] # do this?
+  invariants::Tuple{Vector{U},Vector{U}} = (Int[],Int[]),
+  unsigned_invariants::Tuple{Vector{UInt},Vector{UInt}} = (UInt[], UInt[]),
+  D::ZLatAutoCtx=C
+ ) where {U}
+  Csmall = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}, U}()
   if bound == -1
-    bound = maximum(diagonal(C.G[1]))
+    bound = maximum(abs.(diagonal(D.G[1])))
     if fits(Int, bound)
       Csmall.max = Int(bound)
     else
@@ -300,22 +330,12 @@ function try_init_small(
     Csmall.max = -1
   end
   @assert bound > 0
-
-  # Compute the necessary short vectors
-  @vprintln :Lattice 1 "Computing short vectors of length <= $bound"
   # If one already knows all the short vectors of length at most equal to alpha
-  alpha, V = known_short_vectors
-  @assert all(Base.Fix2(isa, Vector{Int})∘first, V)
-
+  #_alpha, _V = known_short_vectors
+  #@assert all(Base.Fix2(isa, Vector{Int})∘first, _V)
   # If _V is not empty, then it should contain (up to sign) all the short vectors
   # of length at most equal to alpha. So if alpha is lower than bound, we add the
   # missing vectors
-  if alpha <= bound
-    @vtime :Lattice 1 append!(V, _short_vectors_gram_integral(Vector, C.G[1], alpha+1, bound, Int; is_lll_reduced_known))
-  end
-  vectors = Vector{Vector{Int}}(undef, length(V))
-
-  lengths = Vector{Vector{Int}}(undef, length(V))
 
   r = length(C.G)
 
@@ -338,50 +358,108 @@ function try_init_small(
 
   abs_maxbits_vectors = Int == Int64 ? 30 : 15
 
-  tmp = Vector{Int}(undef, n)
+  if !isempty(vector_set)
+    vectors = first.(vector_set)
+    lengths = [x[2] for x in vector_set]
+    # we need to compute the bound on the size of the vector entries
+    for v in vectors
+      vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
 
-  for i in 1:length(V)
-    # First canonicalize them
-    cand = V[i]
-    v = cand[1]
-    vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
-    k = 1
+      if vectors_nbits > abs_maxbits_vectors
+        return false, Csmall
+      end
 
-    while iszero(v[k])
-      k += 1
+      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+        return false, Csmall
+      end
     end
+  else
+    # Compute the necessary short vectors
+    @vprintln :LatticeMor 1 "Computing short vectors of length <= $bound"
+    VV = _short_vectors_gram_integral(LatEnumCtx, C.G[1], 0, bound, Int; is_lll_reduced_known)
+    tmp = Vector{Int}(undef, n)
 
-    if v[k] < 0
-      v .*= -1
+    vectors = Vector{Int}[]
+    lengths = Vector{Int}[]
+    target_lengths = Set{Vector{Int}}([i[j,j] for i in D.G] for j in 1:n)
+    # use for early abort in norm computation not sure if worth it
+    target_length2 = [Set(i[j,j] for j in 1:n) for i in D.G]
+    for cand in VV
+      # First canonicalize them
+      v = cand[1]
+      vectors_nbits = max(vectors_nbits, maximum(nbits, v) + 1)
+      k = 1
+
+      while iszero(v[k])
+        k += 1
+      end
+
+      if v[k] < 0
+        v .*= -1
+      end
+
+      if vectors_nbits > abs_maxbits_vectors
+        return false, Csmall
+      end
+
+      if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
+        return false, Csmall
+      end
+
+      _v = Vector{Int}(undef, n)
+
+      for i in 1:n
+        _v[i] = v[i]
+      end
+
+      w = Vector{Int}(undef, r)
+      w[1] = Int(numerator(cand[2]))
+      flag = false
+      for k in 2:r
+        w[k] = _norm(_v, Gsmall[k], tmp)
+        if !(w[k] in target_length2[k])
+          flag = true
+          break
+        end
+      end
+      flag && continue
+
+      w in target_lengths || continue
+
+      push!(lengths, w)
+      push!(vectors, _v)
     end
-
-    if vectors_nbits > abs_maxbits_vectors
-      return false, Csmall
+  end
+  @vprintln :LatticeMor 1 "Number of gram matrices: $(length(C.G))"
+  @vprintln :LatticeMor 1 "Number of candidate vectors: $(length(vectors))"
+  if isempty(invariants[1])
+    if U <: Vector
+      _invariants = [U() for i in 1:length(vectors)]
+      _target_invariants = [U() for i in 1: n]
+    elseif U===Int
+      _invariants = zeros(U, length(vectors))
+      _target_invariants = zeros(U, n)
     end
-
-    if Gsmall_nbits + vectors_nbits + nrows_nbits + 1 > bitbound
-      return false, Csmall
-    end
-
-    _v = Vector{Int}(undef, n)
-
-    for i in 1:n
-      _v[i] = v[i]
-    end
-
-    w = Vector{Int}(undef, r)
-    w[1] = Int(numerator(cand[2]))
-    for k in 2:r
-      w[k] = _norm(_v, Gsmall[k], tmp)
-    end
-
-    lengths[i] = w
-    vectors[i] = _v
+  else
+    _invariants = invariants[1]
+    _target_invariants = invariants[2]
   end
 
-  V = VectorList(vectors, lengths, use_dict)
+  if isempty(unsigned_invariants[1])
+    _unsigned_invariants = zeros(UInt, length(vectors))
+    _target_unsigned_invariants = zeros(UInt, n)
+  else
+    _unsigned_invariants = unsigned_invariants[1]
+    _target_unsigned_invariants = unsigned_invariants[2]
+    @assert length(_unsigned_invariants) == length(vectors)
+    @assert length(_target_unsigned_invariants) == n
+  end
+
+  V = VectorList(vectors, lengths, _invariants, _unsigned_invariants, use_dict)
 
   Csmall.V = V
+  Csmall.target_invariants = _target_invariants
+  Csmall.target_unsigned_invariants = _target_unsigned_invariants
 
   Csmall.prime = next_prime(2^(vectors_nbits + 1) + 1)
 
@@ -391,18 +469,35 @@ function try_init_small(
   Csmall.is_symmetric = C.is_symmetric
   Csmall.operate_tmp = zeros(Int, n)
   Csmall.dot_product_tmp = Int[ 0 ]
+  Csmall.tmp_vec1 = zeros(Int, n)
+  Csmall.tmp_vec2 = zeros(Int, n)
+  # fill temporary variables
+  I = Csmall.dim  #Csmall.dim is always >=I in _cand
+  Csmall.rowsI = Vector{Vector{Int}}(undef, length(C.G))
+  Csmall.minusRowsI = Vector{Vector{Int}}(undef, length(C.G))
+  Csmall.colsI = Vector{Vector{Int}}(undef, length(C.G))
+  Csmall.minusColsI = Vector{Vector{Int}}(undef, length(C.G))
+  Csmall.diagI = Vector{Int}(undef, length(C.G))
+  for i in 1:length(C.G)
+    Csmall.rowsI[i] = Vector{Int}(undef, I - 1)
+    Csmall.minusRowsI[i] = Vector{Int}(undef, I - 1)
+    Csmall.colsI[i] = Vector{Int}(undef, I - 1)
+    Csmall.minusColsI[i] = Vector{Int}(undef, I - 1)
+  end
+
 
   @assert C.is_symmetric[1]
 
   # Compute the fingerprint
-  if automorphism_mode
-    @vprint :Lattice 1 "Computing fingerprint: "
-    @vtime :Lattice 1 fingerprint(Csmall)
-    @vprintln :Lattice 1 "$(Csmall.fp_diagonal)"
+  if C === D && automorphism_mode
+    @vprint :LatticeMor 1 "Computing fingerprint: "
+    @vtime :LatticeMor 1 fingerprint(Csmall, Csmall)
+    @vprintln :LatticeMor 1 "$(Csmall.fp_diagonal)"
   end
 
-  if automorphism_mode
+  if C === D && automorphism_mode
     # Find the standard basis vectors
+    # In general we can can only find them if C === D
     Csmall.std_basis = Vector{Int}(undef, dim(Csmall))
     z = zeros(Int, dim(Csmall))
     for i in 1:dim(Csmall)
@@ -412,8 +507,6 @@ function try_init_small(
       z[Csmall.per[i]] = 0
     end
   end
-
-  #
 
   Csmall.v = Vector{Vector{Vector{Int}}}(undef, length(Csmall.G))
 
@@ -430,16 +523,6 @@ function try_init_small(
     Csmall.v[i] = A
   end
 
-  if false # JS: Is this for debugging?
-    for i in 1:length(Csmall.G)
-      for j in 1:length(Csmall.V.vectors)
-        for k in 1:length(Csmall.V.vectors)
-          @assert  _dot_product_with_row(Csmall.V.vectors[j], Csmall.v[i], k) == dot(reshape(Csmall.V[j], (1, dim(C))) * Csmall.G[i], Csmall.V[k])
-        end
-      end
-    end
-  end
-
   Csmall.g = Vector{Vector{Matrix{Int}}}(undef, dim(C))
   for i in 1:dim(Csmall)
     Csmall.g[i] = Matrix{Int}[]
@@ -447,12 +530,14 @@ function try_init_small(
   Csmall.nsg = zeros(Int, dim(Csmall))
   Csmall.orders = Vector{Int}(undef, dim(Csmall))
 
+  #=
   # -Id is always an automorphism
   mid = zeros(Int, dim(Csmall), dim(Csmall))
   for i in 1:dim(Csmall)
     mid[i, i] = -1
   end
   Csmall.g[1] = Matrix{Int}[mid]
+  =#
 
   # Calculate orbit lengths
   # JS: If g is hard-coded to ([-I_n], [ ], ..., [ ]), we don't need all this?
@@ -466,7 +551,7 @@ function try_init_small(
 
   H = Vector{Matrix{Int}}(undef, nH)
 
-  if automorphism_mode
+  if automorphism_mode && C === D
     for i in 1:dim(Csmall)
       if !isempty(Csmall.g[i])
         nH = 0
@@ -484,9 +569,12 @@ function try_init_small(
     end
   end
 
-  init_vector_sums(Csmall, depth)
-  init_bacher_polynomials(Csmall, bacher_depth)
-
+  if C === D && automorphism_mode
+    init_vector_sums(Csmall, depth)
+    init_bacher_polynomials(Csmall, bacher_depth)
+  else
+    Csmall.GZZ = [ matrix(ZZ, M) for M in C.G ]
+  end
   return true, Csmall
 end
 
@@ -499,7 +587,7 @@ end
 _zero_vector(::Type{ZZRingElem}, len::Int) = zero_matrix(ZZ, 1, len)
 _zero_vector(::Type{Int}, len::Int) = zeros(Int, len)
 
-function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
+function vs_scalar_products(C::ZLatAutoCtx{S, T, V, U}, dep::Int) where {S, T, V, U}
 
   scalar_products = Vector{Vector{V}}(undef, dim(C))
   look_up = Vector{Dict{V, Int}}(undef, dim(C))
@@ -517,7 +605,13 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
   @inbounds for i in 1:length(scpvec)
     scpvec[i] = zero(S)
   end
-  for w in C.V.vectors
+  # For scpcomb[I] (used in _cand at depth I+1), filter vectors by
+  # invariant == target_invariants[per[I+1]].
+  # For I == dim(C), scpcomb[dim(C)] is never used in _cand, use per[dim(C)] as fallback.
+  n = dim(C)
+  vs_tgt_inv = [I < n ? C.target_invariants[C.per[I + 1]] : C.target_invariants[C.per[n]] for I in 1:n]
+  vs_tgt_uinv = [I < n ? C.target_unsigned_invariants[C.per[I + 1]] : C.target_unsigned_invariants[C.per[n]] for I in 1:n]
+  for (w_idx, w) in enumerate(C.V.vectors)
     @inbounds for i in 1:length(C.G)
       for j in 1:dim(C)
         t = (i - 1)*dim(C) + j
@@ -552,8 +646,13 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
       end
       k = get(look_up[I], s, 0)
       is0 = is_zero(sign_s)
+      # Only accumulate ww into the vector sum if its invariant matches the target.
+      # When sign_s == -1, ww = -w, whose invariant is -invariant(w).
+      signed_inv_ok = is0 || (sign_s == -1 ? _isequal_negated(C.V.invariants[w_idx], vs_tgt_inv[I]) : C.V.invariants[w_idx] == vs_tgt_inv[I])
+      unsigned_inv_ok = is0 || C.V.unsigned_invariants[w_idx] == vs_tgt_uinv[I]
+      has_right_inv = signed_inv_ok && unsigned_inv_ok
       if k > 0
-        if !is0
+        if !is0 && has_right_inv
           if S <: ZZRingElem
             add!(vector_sums[I][k], ww)
           else
@@ -565,14 +664,14 @@ function vs_scalar_products(C::ZLatAutoCtx{S, T, V}, dep::Int) where {S, T, V}
       else
         s_deep = deepcopy(s)
         push!(scalar_products[I], s_deep)
-        !is0 ? push!(vector_sums[I], deepcopy(ww)) : push!(vector_sums[I], _zero_vector(S, dim(C)))
+        !is0 && has_right_inv ? push!(vector_sums[I], deepcopy(ww)) : push!(vector_sums[I], _zero_vector(S, dim(C)))
         look_up[I][s_deep] = length(scalar_products[I])
       end
     end
   end
 
   for I in 1:dim(C)
-    C.scpcomb[I].scpcombs = VectorList{V, S}()
+    C.scpcomb[I].scpcombs = VectorList{V, S, U}()
     C.scpcomb[I].scpcombs.vectors = scalar_products[I]
     C.scpcomb[I].scpcombs.lookup = look_up[I]
     C.scpcomb[I].scpcombs.use_dict = true
@@ -586,8 +685,15 @@ end
 # Only relevant if S1 <: Int, that is, if things might overflow.
 function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2, S3}
   if depth == -1
-    depth = round(Int, C.dim/10)
+    # if only few vectors, use depth = 1
+    # otherwise always 0
+    if prod(ZZ.(C.fp_diagonal)) < 100000 || nrows(C.G[1]) >= 26
+      depth = 1
+    else
+      depth = 0
+    end
   end
+  @vprintln :LatticeMor 1 "Choosing depth = $depth"
   @assert depth >= 0 "`depth` must be non-negative"
   C.depth = depth
 
@@ -813,7 +919,7 @@ function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, ma
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
 
-  @vprintln :Lattice 1 "Computing short vectors of actual length $max"
+  @vprintln :LatticeMor 1 "Computing short vectors of actual length $max"
   V = _short_vectors_gram_integral(Vector, C.G[1], max)
   return V
 end
@@ -824,7 +930,7 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
   if max == -1
     max = maximum(C.G[1][i, i] for i in 1:dim(C))
   end
-  @vprintln :Lattice 1 "Computing short vectors of actual length $max"
+  @vprintln :LatticeMor 1 "Computing short vectors of actual length $max"
   V = _short_vectors_gram_integral(Vector, C.G[1], max)
   n = ncols(C.G[1])
   C.V = Vector{ZZMatrix}(undef, length(V))
@@ -840,7 +946,6 @@ function compute_short_vectors(C::ZLatAutoCtx, max::ZZRingElem = ZZRingElem(-1))
     C.V[i] = m
     C.V_length[i] = z
   end
-  #@show length(C.V)
   C.max = max
   return C
 end
@@ -863,6 +968,10 @@ end
 function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   V = C.V.vectors
   W = C.V.lengths
+  U = C.V.invariants
+  Uu = C.V.unsigned_invariants
+  Utarget = C.target_invariants
+  Utargetu = C.target_unsigned_invariants
   F = C.G
   _issymmetric = C.is_symmetric
 
@@ -879,6 +988,8 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
   for j in 1:length(W)
     Wj = W[j]
     Vj = V[j]
+    Uj = U[j]
+    Uuj = Uu[j]
     good_length = true
     @inbounds for k in 1:length(F)
       # getindex for ZZMatrix is super slow, so we need to do this the long way round...
@@ -897,8 +1008,10 @@ function possible(C::ZLatAutoCtx, per::Vector{Int}, I::Int, J::Int)
 
     # length is correct
 
-    good_scalar_plus = true
-    good_scalar_minus = true
+
+    good_scalar_plus = Utarget[J] == Uj && Utargetu[J] == Uuj
+    good_scalar_minus = _isequal_negated(Uj, Utarget[J]) && Utargetu[J] == Uuj
+    !good_scalar_plus && !good_scalar_minus && continue
     @inbounds for k in 1:length(F)
       for i in 1:I
         if is_small
@@ -979,7 +1092,7 @@ end
 #	this vector with respect to all
 #	invariant forms
 
-function fingerprint(C::ZLatAutoCtx)
+function fingerprint(C::ZLatAutoCtx, D::ZLatAutoCtx=C)
   V = C.V
   n = dim(C)
   k = length(C.G)
@@ -987,8 +1100,8 @@ function fingerprint(C::ZLatAutoCtx)
   for i in 1:n
     per[i] = i
   end
-
   fp = zeros(Int, n, n)
+
 
   # fp[1, i] = # vectors v such that v has same length as b_i for all forms
   @inbounds for i in 1:n
@@ -996,14 +1109,27 @@ function fingerprint(C::ZLatAutoCtx)
       good = true
       cvl = @inbounds V.lengths[j]
       for l in 1:k
-        if cvl[l] != C.G[l][i, i]
+        if cvl[l] != D.G[l][i, i]
           good = false
           break
         end
       end
 
       if good
-        fp[1, i] += 2 # the negative vector also has the correct length
+        vj = V.invariants[j]
+        vju = V.unsigned_invariants[j]
+        dj = D.target_invariants[i]
+        dju = D.target_unsigned_invariants[i]
+        if vj == dj
+          if vju == dju
+            fp[1, i] += 1
+          end
+        end
+        if _isequal_negated(vj, dj)
+          if vju == dju
+            fp[1, i] += 1
+          end
+        end
       end
     end
   end
@@ -1095,19 +1221,21 @@ function _operate(point, A, V, tmp)
 #				of dimension V.dim, the number of V.v[nr]*A in
 #				the list is returned, where a negative number
 #				indicates the negative of a vector
+  # V[point] creates a copy if point<0, avoid this
+  fl = point < 0
+  if fl
+    point = -point
+  end
   tmp = _vec_times_matrix!(tmp, V[point], A)
-  #w = V[abs(point)] * A
-  #if point < 0
-  #  if tmp isa ZZMatrix
-  #    for i in 1:ncols(tmp)
-  #      tmp[1, i] = -tmp[1, i]
-  #    end
-  #  else
-  #    tmp .*= -1 # tmp = -tmp
-  #  end
-  #end
   k = find_point(tmp, V)
-  #@assert V[k] == tmp
+  if fl
+    k = -k
+  end
+#   if fl
+#     @assert V[k] == -tmp
+#   else
+#     @assert V[k] == tmp
+#   end
   return k
 end
 
@@ -1137,7 +1265,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
-  @vprintln :Lattice 2 "Computing automorphisms of $(C.G[1])"
+  @vprintln :LatticeMor 2 "Computing automorphisms of $(length(C.G)) gram matrices:  $(C.G)"
 
   D = _make_small(C)
   dim = Hecke.dim(C)
@@ -1155,7 +1283,7 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
           #     the point stabilizer of the first sta basis vectors is computed.
           #     Here the variable is not used?
   for step in sta:dim
-    @vprintln :Lattice 1 "Entering step $step"
+    @vprintln :LatticeMor 1 "Entering step $step"
     H = reduce(vcat, C.g[step:dim])
     @inbounds for i in 1:2*length(C.V)
       bad[i] = 0
@@ -1175,8 +1303,9 @@ function auto(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
     #nC = delete(candidates[step], nC, orb, C.orders[step])
     setdiff!(candidates[step], orb)
     nC = length(candidates[step])
+    @vprintln :LatticeMor 10 "Step $(step), candidates $(candidates)"
     while nC > 0 && ((im = candidates[step][1]) != 0)
-      @vprintln :Lattice 1 "Step $(step), number of candidates left $(nC)"
+      @vprintln :LatticeMor 1 "Step $(step), number of candidates left $(nC)"
       found = false
       # try C.V[im] as the image of the step-th basis vector
       x[step] = im
@@ -1281,6 +1410,16 @@ function _get_generators(C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   return gens, orde
 end
 
+@inline _isequal_negated(a::Number, b::Number) = -a == b
+
+@inline function _isequal_negated(a::AbstractVector, b::AbstractVector)
+  length(a) == length(b) || return false
+  @inbounds for i in eachindex(a, b)
+    -a[i] == b[i] || return false
+  end
+  return true
+end
+
 function aut(step::Int, x::Vector{Int}, candidates::Vector{Vector{Int}}, C::ZLatAutoCtx, D::ZLatAutoCtx)
   dim = Hecke.dim(C)
   found = false
@@ -1337,11 +1476,11 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
   dep = Ci.depth
   use_vector_sums = (I > 1 && dep > 0)
   dim = Hecke.dim(Ci)
-  vec = Vector{S}(undef, dim)
-  vec2 = Vector{S}(undef, dim)
-  for i in 1:dim
-    vec[i] = zero(S)
-    vec2[i] = zero(S)
+  vec = Ci.tmp_vec1
+  vec2 = Ci.tmp_vec2
+  @inbounds for i in 1:dim
+    vec[i] = zero!(vec[i]) #zero(S)
+    vec2[i] = zero!(vec2[i]) #zero(S)
   end
   tmp1 = zero(S)
   tmp2 = zero(S)
@@ -1369,19 +1508,23 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       return false
     end
   end
-
   # If S == ZZRingElem then getting entries of the matrices Ci.G is slow, so we
   # store all the entries we need a lot in vectors.
-  rowsI = Vector{Vector{S}}(undef, length(Ci.G))
-  minusRowsI = Vector{Vector{S}}(undef, length(Ci.G))
-  colsI = Vector{Vector{S}}(undef, length(Ci.G))
-  minusColsI = Vector{Vector{S}}(undef, length(Ci.G))
-  diagI = Vector{S}(undef, length(Ci.G))
+  rowsI = Ci.rowsI
+  minusRowsI = Ci.minusRowsI
+  colsI = Ci.colsI
+  minusColsI = Ci.minusColsI
+  diagI = Ci.diagI
+  #rowsI = Vector{Vector{S}}(undef, length(Ci.G))
+  #minusRowsI = Vector{Vector{S}}(undef, length(Ci.G))
+  #colsI = Vector{Vector{S}}(undef, length(Ci.G))
+  #minusColsI = Vector{Vector{S}}(undef, length(Ci.G))
+  #diagI = Vector{S}(undef, length(Ci.G))
   for i in 1:length(Ci.G)
-    rowsI[i] = Vector{S}(undef, I - 1)
-    minusRowsI[i] = Vector{S}(undef, I - 1)
-    colsI[i] = Vector{S}(undef, I - 1)
-    minusColsI[i] = Vector{S}(undef, I - 1)
+    #rowsI[i] = Vector{S}(undef, I - 1)
+    #minusRowsI[i] = Vector{S}(undef, I - 1)
+    #colsI[i] = Vector{S}(undef, I - 1)
+    #minusColsI[i] = Vector{S}(undef, I - 1)
     diagI[i] = Ci.G[i][Ci.per[I], Ci.per[I]]
     for k in 1:I - 1
       rowsI[i][k] = Ci.G[i][Ci.per[I], Ci.per[k]]
@@ -1392,55 +1535,88 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       end
     end
   end
-
+  # Cache frequently accessed fields to reduce repeated struct field lookups
+  # in the hot loop below.
+  CoV = Co.V
+  CoVlen = CoV.lengths
+  CoVinv = CoV.invariants
+  CoVuinv = CoV.unsigned_invariants
+  Cov = Co.v
+  CiIsSymmetric = Ci.is_symmetric
+  target_inv_I = Ci.target_invariants[Ci.per[I]]
+  target_uinv_I = Ci.target_unsigned_invariants[Ci.per[I]]
+  neg_target_inv_I = -target_inv_I
+  dot_product_tmp = Co.dot_product_tmp
+  nG = length(Co.G)
   nr = 0
-  @inbounds for j in 1:length(Co.V)
-    Vvj = Co.V[j]
+  @inbounds for j in 1:length(CoV)
+    Vvj = CoV[j]
     okp = true
     okm = true
-    for i in 1:length(Co.G)
-      _issym = Ci.is_symmetric[i]
+    Vlen_j = CoVlen[j]
+    Vinv_j = CoVinv[j]
+    Vuinv_j = CoVuinv[j]
+    for i in 1:nG
+      _issym = CiIsSymmetric[i]
+      Cov_i = Cov[i]
+      Vlen_j_i = Vlen_j[i]
+
+      if Vlen_j_i != diagI[i] || Vinv_j != target_inv_I || Vuinv_j != target_uinv_I
+        okp = false
+      end
+      if Vlen_j_i != diagI[i] || Vinv_j != neg_target_inv_I || Vuinv_j != target_uinv_I
+        okm = false
+      end
+      !use_vector_sums && !okp && !okm && break
 
       # vec is the vector of scalar products of V.v[j] with the first I base vectors
       #   x[1]...x[I]
+      # When not accumulating for vector sums, merge the compute and check loops so
+      # we can break as soon as the first k value eliminates both okp and okm,
+      # avoiding the remaining (I-2-k) dot products for rejected vectors.
       for k in 1:(I - 1)
         xk = x[k]
         if xk > 0
-          vec[k] = _dot_product_with_entry!(vec[k], Vvj, Co.v[i], xk, Co.dot_product_tmp)
+          vec[k] = _dot_product_with_entry!(vec[k], Vvj, Cov_i, xk, dot_product_tmp)
           if !_issym
-            vec2[k] = _dot_product_with_entry!(vec2[k], Co.V[xk], Co.v[i], j, Co.dot_product_tmp)
+            vec2[k] = _dot_product_with_entry!(vec2[k], CoV[xk], Cov_i, j, dot_product_tmp)
           end
         else
-          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, Co.v[i], -xk, Co.dot_product_tmp)
+          vec[k] = -_dot_product_with_entry!(vec[k], Vvj, Cov_i, -xk, dot_product_tmp)
           if !_issym
-            vec2[k] = -_dot_product_with_entry!(vec2[k], Co.V[-xk], Co.v[i], j, Co.dot_product_tmp)
+            vec2[k] = -_dot_product_with_entry!(vec2[k], CoV[-xk], Cov_i, j, dot_product_tmp)
+          end
+        end
+        if !use_vector_sums
+          if okp && (vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k]))
+            okp = false
+          end
+          if okm && (vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k]))
+            okm = false
+          end
+          !okp && !okm && break
+        end
+      end
+      # if okp == true then Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
+      if use_vector_sums
+        for k in 1:(I - 1)
+          if vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k])
+            okp = false
+            break
+          end
+        end
+
+
+
+        for k in 1:(I - 1)
+          if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
+            okm = false
+            break
           end
         end
       end
-
-      for k in 1:(I - 1)
-        if vec[k] != rowsI[i][k] || (!_issym && vec2[k] != colsI[i][k])
-          okp = false
-          break
-        end
-      end
-
-      if okp && Co.V.lengths[j][i] != diagI[i]
-        okp = false
-      end
-      # if okp == true then Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
-
-      for k in 1:(I - 1)
-        if vec[k] != minusRowsI[i][k] || (!_issym && vec2[k] != minusColsI[i][k])
-          okm = false
-          break
-        end
-      end
-
-      if okm && Co.V.lengths[j][i] != diagI[i]
-        okm = false
-      end
       # if okm == true then -Co.V[j] is a candidate for x[I] with respect to the form Co.G[i]
+
 
       if use_vector_sums
         for k in I - 1:-1:max(1, I - dep) # basically I - 1 - dep + 1, ..., I - 1
@@ -1453,6 +1629,7 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       #     then looking it up will fail and hence return false although just the
       #     candidate Co.V[j] is bad (but not necessarily the whole branch in the
       #     search tree).
+
       #if okp < i && okm < i
       #  break
       #end
@@ -1479,15 +1656,19 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       if k > 0
         if !is0
           # the scalar products scpvec are found and we add the vector to the
-          # corresponding vector sum
-          xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
+          # corresponding vector sum, but only if the invariant of the accumulated
+          # vector matches the target invariant for this position.
+          # sign=false: vector added is Vvj, invariant = CoVinv[j]
+          # sign=true:  vector added is -Vvj, invariant = -CoVinv[j]
+          if CoVinv[j] == (sign ? neg_target_inv_I : target_inv_I) && CoVuinv[j] == target_uinv_I
+            xvec = add_to_row!(xvec, Vvj, k, sign, tmp1, tmp2, tmp3)
+          end
         end
       else
         # scpvec is not found, hence x[1], ..., x[I - 1] is not a partial automorphism
         return false
       end
     end
-
     if okp
       # V.v[j] is a candidate for x[I]
       if nr < Ci.fp_diagonal[I]
@@ -1510,7 +1691,6 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       end
     end
   end
-
   if nr < Ci.fp_diagonal[I]
     # there are not enough candidates
     return false
@@ -1544,7 +1724,6 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       return false
     end
   end
-
   return true
 end
 
@@ -1552,9 +1731,10 @@ function orbit(pt, npt, G, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   # Assumes that V is sorted
   orb = Vector{Int}(undef, npt)
   n = length(V)
-  flag = zeros(Bool, 2*n + 1)
+  #flag = zeros(Bool, 2*n + 1)
+  flag = falses(2*n+1)
   #/* if flag[i + length(V)] is true, then the point i is already in the orbit */
-  for i in 1:npt
+  @inbounds for i in 1:npt
     orb[i] = pt[i]
     flag[pt[i] + n + 1] = true
   end
@@ -1786,10 +1966,10 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
   XG = matgen(x, dim, per, V)
   X2 = matgen(x2, dim, per, V)
 
-  @hassert :Lattice 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2); true end
+  @hassert :LatticeMor 1 begin XGG = deepcopy(XG); X22 = deepcopy(X2); true end
   SS = zeros(Int, dim, dim)
   _psolve(SS, X2, XG, dim, C.prime)
-  @hassert :Lattice 1 SS * X22 == XGG
+  @hassert :LatticeMor 1 SS * X22 == XGG
 
   return SS
 end
@@ -1834,15 +2014,17 @@ function matgen(x, dim, per, v)
 end
 
 # Isomorphism computation
-
-function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0)
+function _try_iso_setup_small(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1, bacher_depth::Int = 0, vector_set1=Tuple{Vector{Int},Vector{Int}}[], vector_set2=Tuple{Vector{Int},Vector{Int}}[], invariants1=(Int[],Int[]), invariants2=(Int[],Int[]), unsigned_invariants1=(UInt[], UInt[]), unsigned_invariants2=(UInt[], UInt[]))
   Ci = ZLatAutoCtx(Gi)
+  Co = ZLatAutoCtx(Go)
+  # Ci is the source
+  # Co is the target
   # We only need to initialize the vector sums and Bacher polynomials for the
-  # first lattice
-  fl, Cismall = try_init_small(Ci, false, depth = depth, bacher_depth = bacher_depth)
+  # source lattice
+  fl, Cismall = try_init_small(Ci, true, depth = depth, bacher_depth = bacher_depth; vector_set=vector_set1, invariants=invariants1, unsigned_invariants=unsigned_invariants1)
   if fl
     Co = ZLatAutoCtx(Go)
-    fl2, Cosmall = try_init_small(Co, true, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0)
+    fl2, Cosmall = try_init_small(Co, false, ZZRingElem(Cismall.max), depth = 0, bacher_depth = 0, D=Ci, vector_set=vector_set2, invariants=invariants2, unsigned_invariants=unsigned_invariants2)
     if fl2
       return true, Cismall, Cosmall
     end
@@ -1857,7 +2039,7 @@ function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1,
   # We only need to initialize the vector sums and Bacher polynomials for the
   # first lattice
   init(Ci, true, depth = depth, bacher_depth = bacher_depth)
-  init(Co, false, Ci.max, depth = 0, bacher_depth = 0)
+  init(Co, false, Ci.max, depth = 0, bacher_depth = 0, D=Ci)
   return Ci, Co
 end
 
@@ -1866,10 +2048,10 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
   # verification.
-  @vprintln :Lattice 2 "Computing isometry between"
-  @vprintln :Lattice 2 Ci.G[1]
-  @vprintln :Lattice 2 "and"
-  @vprintln :Lattice 2 Co.G[1]
+  @vprintln :LatticeMor 2 "Computing isometry between"
+  @vprintln :LatticeMor 2 Ci.G[1]
+  @vprintln :LatticeMor 2 "and"
+  @vprintln :LatticeMor 2 Co.G[1]
 
   Di = _make_small(Ci)
   Do = _make_small(Co)
@@ -1898,7 +2080,7 @@ function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {S
   if found
     ISO = matgen(x, d, Ci.per, Co.V)
     for k in 1:length(Ci.G)
-      ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
+      @hassert :LatticeMor 1 ISO * Co.G[k] * transpose(ISO) == Ci.G[k]
     end
     return true, ISO
   else
@@ -1909,9 +2091,9 @@ end
 function iso(step::Int, x::Vector{Int}, C::Vector{Vector{Int}}, Ci::ZLatAutoCtx{S, T}, Co::ZLatAutoCtx{S, T}, Di::ZLatAutoCtx{Int}, Do::ZLatAutoCtx{Int}, G::Vector{T}) where {S, T}
   d = dim(Ci)
   found = false
-  @vprintln :Lattice "Testing $(length(C[step])) many candidates"
+  @vprintln :LatticeMor "Testing $(length(C[step])) many candidates"
   while !isempty(C[step]) && C[step][1] != 0 && !found
-    @vprintln :Lattice "Doing step $step"
+    @vprintln :LatticeMor "Doing step $step"
     if step < d
       # choose the image of the base vector nr. step
       x[step] = C[step][1]
@@ -2144,14 +2326,18 @@ function _dot_product_with_row!(t::Int, v::Vector{Int}, A::Matrix{Int}, k::Int, 
   return t
 end
 
+
 function _dot_product_with_entry!(t::Int, v::Vector{Int}, A::Vector{Vector{Int}}, k::Int, tmp::Vector{Int})
-  @inbounds A = A[k]
-  @inbounds t = v[1] * A[1]
-  @inbounds for i in 2:length(v)
-    t = t + v[i] * A[i]
-  end
-  return t
+  @inbounds Ak = A[k]
+  return dot(v, Ak)
 end
+
+#=
+function _dot_product_with_entry!(t::Int, v::Vector{Int}, A::Vector{Vector{Int}}, k::Int, tmp::Vector{Int})
+  @inbounds _A = A[k]
+  return dot(_A, v)
+end
+=#
 
 function _dot_product_with_row(v::Vector{Int}, A::Matrix{Int}, k::Int, tmp::Int = zero(Int))
   t = zero(Int)
@@ -2352,10 +2538,20 @@ function _int_matrix_with_overflow(a::ZZMatrix, tmp::ZZRingElem)
   return b
 end
 
-function _make_small(V::VectorList{ZZMatrix, ZZRingElem})
+function _make_small(V::VectorList{ZZMatrix, ZZRingElem, U}) where {U}
   tmp = ZZ()
-  W = VectorList{Vector{Int}, Int}()
+  W = VectorList{Vector{Int}, Int, U}()
   W.vectors = [ _int_vector_with_overflow(v, tmp) for v in V.vectors ]
+  if isdefined(V, :invariants)
+    W.invariants = V.invariants
+  else
+    W.invariants = Vector{U}()
+  end
+  if isdefined(V, :unsigned_invariants)
+    W.unsigned_invariants = V.unsigned_invariants
+  else
+    W.unsigned_invariants = zeros(UInt, length(W.vectors))
+  end
   if isdefined(V, :lengths)
     W.lengths = Vector{Vector{Int}}(undef, length(V.lengths))
     for i in 1:length(V.lengths)
@@ -2376,9 +2572,9 @@ end
 _make_small(C::ZLatAutoCtx{Int}) = C
 
 # Forces the entries of C in Ints. Only the fields relevant for `cand` are filled.
-function _make_small(C::ZLatAutoCtx{ZZRingElem})
+function _make_small(C::ZLatAutoCtx{ZZRingElem, T, V, U}) where {T,V,U}
   tmp = ZZ()
-  D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}()
+  D = ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}, U}()
   D.G = [ _int_matrix_with_overflow(M, tmp) for M in C.G ]
 
   if isdefined(C, :GZZ)
@@ -2420,6 +2616,27 @@ function _make_small(C::ZLatAutoCtx{ZZRingElem})
   D.dot_product_tmp = Int[ 0 ]
 
   D.bacher_depth = 0
+  n = C.dim
+  D.V.invariants = C.V.invariants
+  D.V.unsigned_invariants = C.V.unsigned_invariants
+  D.target_invariants = C.target_invariants
+  D.target_unsigned_invariants = C.target_unsigned_invariants
+  D.tmp_vec1 = zeros(Int, n)
+  D.tmp_vec2 = zeros(Int, n)
+  # fill temporary variables
+  I = D.dim  #D.dim is always >=I in _cand
+  r = length(C.G)
+  D.rowsI = Vector{Vector{Int}}(undef, r)
+  D.minusRowsI = Vector{Vector{Int}}(undef, r)
+  D.colsI = Vector{Vector{Int}}(undef, r)
+  D.minusColsI = Vector{Vector{Int}}(undef, r)
+  D.diagI = Vector{Int}(undef, r)
+  for i in 1:r
+    D.rowsI[i] = Vector{Int}(undef, I - 1)
+    D.minusRowsI[i] = Vector{Int}(undef, I - 1)
+    D.colsI[i] = Vector{Int}(undef, I - 1)
+    D.minusColsI[i] = Vector{Int}(undef, I - 1)
+  end
 
   return D
 end
