@@ -2127,8 +2127,15 @@ Return the number of (positive, zero, negative) inertia of this rational quadrat
   k = nrows(K)
   k == n && return (0, n, 0)
 
-  B = complete_to_basis(K)
-  gg = B[k+1:end, :] * g * transpose(B[k+1:end, :])
+  # g is already non-degenerate in the common case: avoid the basis
+  # completion and the two matrix multiplications it would otherwise take
+  # to restrict to the non-degenerate part.
+  if k == 0
+    gg = g
+  else
+    B = complete_to_basis(K)
+    gg = B[k+1:end, :] * g * transpose(B[k+1:end, :])
+  end
   m = ncols(gg)
 
   # Leading principal minors D_0 = 1, D_1, ..., D_m of the non-degenerate part.
