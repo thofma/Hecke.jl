@@ -34,6 +34,26 @@
     end
   end
 
+  @testset "signature_tuple via leading principal minors" begin
+    # empty matrix
+    @test Hecke.signature_tuple(quadratic_space(QQ, matrix(QQ, 0, 0, QQFieldElem[]))) == (0, 0, 0)
+    # totally isotropic
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[0;;])) == (0, 1, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[1;;])) == (1, 0, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[-1;;])) == (0, 0, 1)
+    # hyperbolic plane: the leading principal minor D_1 vanishes, forcing the
+    # fallback diagonalization
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[0 1; 1 0])) == (1, 0, 1)
+    # rank-1 degenerate form
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[1 1; 1 1])) == (1, 1, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[2 1; 1 2])) == (2, 0, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[-2 1; 1 -2])) == (0, 0, 2)
+    # hyperbolic plane plus a definite direction, with a degenerate direction
+    g = matrix(QQ, [0 1 0 0; 1 0 0 0; 0 0 -3 0; 0 0 0 0])
+    @test Hecke.signature_tuple(quadratic_space(QQ, g)) == (1, 1, 2)
+  end
+
+
   q = quadratic_space(k, 2)
   @test sprint(show, q) isa String
   @test sprint(show, Hecke.isometry_class(q)) isa String
