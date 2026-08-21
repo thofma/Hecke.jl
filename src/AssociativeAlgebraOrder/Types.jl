@@ -1,0 +1,217 @@
+# Orders in algebras over the rationals
+@attributes mutable struct AssociativeAlgebraOrder{AlgType, BRingType} <: NCRing
+  algebra::AlgType                       # Algebra containing the order
+  deg::Int
+  base_ring::BRingType #= parent_type(elem_type) =#
+  M::EmbeddedModule
+  basis#::Vector{elem_type(self)}
+  basis_alg#=::Vector{elem_type(algebra_type)}}=#             # Basis as array of elements of the algebra
+  disc#::ZZRingElem                       # Discriminant
+
+  is_maximal::Int                  # 0 Not known
+                                   # 1 Known to be maximal
+                                   # 2 Known to not be maximal
+
+  #trace_mat::ZZMatrix              # The reduced trace matrix (if known)
+  trred_matrix#::ZZMatrix
+
+  function AssociativeAlgebraOrder{AlgType, BRingType}(A::AlgType, R::BRingType) where {AlgType, BRingType}
+    # "Default" constructor with default values. Not user-facing.
+    O = new{AlgType, BRingType}(A, dim(A), R)
+    O.is_maximal = 0
+    return O
+  end
+
+  function AssociativeAlgebraOrder{AlgType, BRingType}(A::AlgType, R::BRingType, M::MatElem, B::Vector, cached::Bool = false; inverse = nothing) where {AlgType, BRingType}
+    #return get_cached!(AlgAssAbsOrdID, (A, R, M), cached) do
+      O = AssociativeAlgebraOrder{AlgType, BRingType}(A, R)
+      O.M = embedded_module(R, base_ring(A), M; is_basis_matrix = true, inverse)
+      O.basis_alg = B
+      return O
+    #end::AlgAssAbsOrd{AlgType, BRingType}
+  end
+
+  function AssociativeAlgebraOrder(A::AlgType, R::BRingType, M::EmbeddedModule, B::Vector, cached::Bool = false) where {AlgType, BRingType}
+    #return get_cached!(AlgAssAbsOrdID, (A, R, M), cached) do
+      O = AssociativeAlgebraOrder{AlgType, BRingType}(A, R)
+      O.M = M
+      O.basis_alg = B
+      return O
+    #end::AlgAssAbsOrd{AlgType, BRingType}
+  end
+end
+
+#  function AlgAssAbsOrd{AlgType, BRingType}(A::AlgType, R::BRingType, M::MatElem, cached::Bool = false) where {AlgType, BRingType}
+#    return get_cached!(AlgAssAbsOrdID, (A, M), cached) do
+#      O = AlgAssAbsOrd{AlgType, BRingType}(A, R)
+#      d = dim(A)
+#      O.basis_matrix = M
+#      O.basis_alg = Vector{elem_type(A)}(undef, d)
+#      for i in 1:d
+#        O.basis_alg[i] = elem_from_mat_row(A, M, i)
+#      end
+#      return O
+#    end::AlgAssAbsOrd{AlgType, BRingType}
+#  end
+#
+#  function AlgAssAbsOrd{AlgType, BRingType}(A::AlgType, R::BRingType, B::Vector, cached::Bool = false) where {AlgType, BRingType}
+#    M = basis_matrix(B)
+#    return get_cached!(AlgAssAbsOrdID, (A, R, M), cached) do
+#      O = AlgAssAbsOrd{AlgType, BRingType}(A, R)
+#      O.basis_alg = B
+#      O.basis_matrix = M
+#      return O
+#    end::AlgAssAbsOrd{AlgType, BRingType}
+#  end
+#end
+#
+#const AlgAssAbsOrdID = AbstractAlgebra.CacheDictType{Any, AlgAssAbsOrd}()
+#
+@attributes mutable struct AssociativeAlgebraOrderElem{S, T} <: NCRingElem
+  parent::S
+  elem_in_algebra::T
+  has_coord::Bool # needed for mul!
+  elem_in_module# elem_type(_underlying_module_type(O))
+
+  function AssociativeAlgebraOrderElem(O::S) where {S}
+    return new{S, elem_type(algebra(O))}(O)
+  end
+
+  #function AssociativeAlgebraOrderElem(O::S, a::T) where {S, T}
+  #  z = new{S, T}(a,
+  #                O,
+  #                false)
+  #  return z
+  #end
+
+  #function AssociativeAlgebraOrderElem(O::S, a::T, v) where {S, T}
+  #  z = new{S, T}(a,
+  #                O,
+  #                false,
+  #                v)
+  #  return z
+  #end
+end
+
+#  function AlgAssAbsOrdElem{S, T}(O::S) where {S, T}
+#    z = new{S, T}()
+#    z.parent = O
+#    z.elem_in_algebra = algebra(O)()
+#    z.coordinates = Vector{elem_type(base_ring(O))}(undef, degree(O))
+#    z.has_coord = false
+#    return z
+#  end
+#
+#  function AlgAssAbsOrdElem{S, T}(O::S, a::T) where {S, T}
+#    z = new{S, T}()
+#    z.elem_in_algebra = a
+#    z.parent = O
+#    z.coordinates = Vector{elem_type(base_ring(O))}(undef, degree(O))
+#    z.has_coord = false
+#    return z
+#  end
+#
+#  function AlgAssAbsOrdElem{S, T}(O::S, arr::Vector) where {S, T}
+#    z = new{S, T}()
+#    @assert eltype(arr) === elem_type(base_ring(O))
+#    z.elem_in_algebra = degree(O) == 0 ? zero(algebra(O)) : dot(O.basis_alg, arr)
+#    z.coordinates = arr
+#    z.parent = O
+#    z.has_coord = true
+#    return z
+#  end
+#
+#  function AlgAssAbsOrdElem{S, T}(O::S, a::T, arr::Vector) where {S, T}
+#    z = new{S, T}()
+#    @assert eltype(arr) === elem_type(base_ring(O))
+#    z.parent = O
+#    z.elem_in_algebra = a
+#    z.coordinates = arr
+#    z.has_coord = true
+#    return z
+#  end
+#end
+# end
+#
+# @attributes mutable struct AssociativeAlgebraOrderElem{S, T} <: NCRingElem
+#   elem_in_algebra::T
+#   coordinates::Vector# elem_type(base_ring(S))
+#   has_coord::Bool # needed for mul!
+#   parent::S
+#   # Maybe EmbeddedModuleElem?
+#
+#   function AssociativeAlgebraOrderElem{S, T}(O::S) where {S, T}
+#     z = new{S, T}()
+#     z.parent = O
+#     z.elem_in_algebra = algebra(O)()
+#     z.coordinates = Vector{elem_type(base_ring(O))}(undef, degree(O))
+#     z.has_coord = false
+#     return z
+#   end
+#
+#   function AssociativeAlgebraOrderElem{S, T}(O::S, a::T) where {S, T}
+#     z = new{S, T}()
+#     z.elem_in_algebra = a
+#     z.parent = O
+#     z.coordinates = Vector{elem_type(base_ring(O))}(undef, degree(O))
+#     z.has_coord = false
+#     return z
+#   end
+#
+#   function AssociativeAlgebraOrderElem{S, T}(O::S, arr::Vector) where {S, T}
+#     z = new{S, T}()
+#     @assert eltype(arr) === elem_type(base_ring(O))
+#     z.elem_in_algebra = degree(O) == 0 ? zero(algebra(O)) : dot(O.basis_alg, arr)
+#     z.coordinates = arr
+#     z.parent = O
+#     z.has_coord = true
+#     return z
+#   end
+#
+#   function AssociativeAlgebraOrderElem{S, T}(O::S, a::T, arr::Vector) where {S, T}
+#     z = new{S, T}()
+#     @assert eltype(arr) === elem_type(base_ring(O))
+#     z.parent = O
+#     z.elem_in_algebra = a
+#     z.coordinates = arr
+#     z.has_coord = true
+#     return z
+#   end
+# end
+
+@attributes mutable struct AssociativeAlgebraLattice{AlgType, BRingType}
+  algebra::AlgType
+  base_ring::BRingType
+  M::EmbeddedModule
+
+  function AssociativeAlgebraLattice(A::AlgType, R::BRingType, M::EmbeddedModule) where {AlgType, BRingType}
+    return new{AlgType, BRingType}(A, R, M)
+  end
+end
+
+@attributes mutable struct AssociativeAlgebraOrderIdeal{OrderType, LatticeType}
+  order::OrderType
+  lattice::LatticeType
+  isleft::Int
+  isright::Int
+
+  function AssociativeAlgebraOrderIdeal(O::OrderType, L::LatticeType) where {OrderType, LatticeType}
+    return new{OrderType, LatticeType}(O, L, 0, 0)
+  end
+end
+
+##
+
+@attributes mutable struct AssociativeAlgebraOrderMap{DomainType, CodomainType, BaseRingMapType} <: Map{DomainType, CodomainType, HeckeMap, AssociativeAlgebraOrderMap}
+
+  domain::DomainType
+  codomain::CodomainType
+  baseringmap::BaseRingMapType
+  imageofbasis#Vector{elem_type(CodomainType}}
+  preimage
+
+  function AssociativeAlgebraOrderMap(D::DomainType, C::CodomainType, baseringmap::BaseRingMapType, imageofbasis::Vector, preimage) where {DomainType, CodomainType, BaseRingMapType}
+    @assert eltype(imageofbasis) === elem_type(CodomainType)
+    return new{DomainType, CodomainType, BaseRingMapType}(D, C, baseringmap, imageofbasis, preimage)
+  end
+end
