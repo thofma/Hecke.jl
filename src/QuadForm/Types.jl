@@ -545,6 +545,13 @@ mutable struct ZLatAutoCtx{S, T, V, U}
 
   is_symmetric::BitArray{1} # whether G[i] is symmetric
   operate_tmp::V # temp storage for orbit computation
+  operate_cache::IdDict{T, Vector{Int}} # memoizes _operate(point, A, V) for
+                       # each generator matrix A encountered so far: since A
+                       # is only ever built once and never mutated in place,
+                       # caching on its identity turns the repeated orbit
+                       # computations in _orbitlen/orbit/stab (which query the
+                       # same (point, A) pairs over and over) into O(1) array
+                       # look-ups after the first query
   dot_product_tmp::V # temp storage for dot product computation
   tmp_vec1::Vector{S} # tmp storage used in _cand
   tmp_vec2::Vector{S} # tmp storage used in _cand
@@ -563,6 +570,7 @@ mutable struct ZLatAutoCtx{S, T, V, U}
     z.dim = nrows(G[1])
     z.is_symmetric = falses(length(G))
     z.operate_tmp = zero_matrix(ZZ, 1, ncols(G[1]))
+    z.operate_cache = IdDict{ZZMatrix, Vector{Int}}()
     z.dot_product_tmp = zero_matrix(ZZ, 1, 1)
     z.tmp_vec1 = zeros_array(ZZ, z.dim)
     z.tmp_vec2 = zeros_array(ZZ, z.dim)

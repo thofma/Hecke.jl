@@ -468,6 +468,7 @@ function try_init_small(
   Csmall.dim = n
   Csmall.is_symmetric = C.is_symmetric
   Csmall.operate_tmp = zeros(Int, n)
+  Csmall.operate_cache = IdDict{Matrix{Int}, Vector{Int}}()
   Csmall.dot_product_tmp = Int[ 0 ]
   Csmall.tmp_vec1 = zeros(Int, n)
   Csmall.tmp_vec2 = zeros(Int, n)
@@ -1192,7 +1193,7 @@ function _orbitlen(point::Int, orblen::Int, G::Vector{T}, V, C) where {T}
   while cnd <= len && len < orblen
     i = 1
     while i <= length(G) && len < orblen
-      imag = _operate(orb[cnd], G[i], V, C.operate_tmp)
+      imag = _operate(orb[cnd], G[i], V, C)
       if !flag[imag + n + 1]
         # the image is a new point in the orbit
         len += 1
@@ -1207,36 +1208,40 @@ function _orbitlen(point::Int, orblen::Int, G::Vector{T}, V, C) where {T}
 end
 
 
-function _operate(point, A::Matrix{Int}, V)
-  return _operate(point, A, V, zeros(Int, size(A, 2)), sorted)
-end
-
-function _operate(point, A::ZZMatrix, V)
-  return _operate(point, A, V, zero_matrix(ZZ, 1, ncols(A)))
-end
-
-
-function _operate(point, A, V, tmp)
+function _operate(point, A, V, C)
 # 	V.v is a sorted list of length V.n of vectors
 #				of dimension V.dim, the number of V.v[nr]*A in
 #				the list is returned, where a negative number
 #				indicates the negative of a vector
+  # The matrices A passed in here are drawn from a small, fixed pool (the
+  # generators accumulated in C.g/H and the stabilizer candidates built by
+  # stabil): once built they are never mutated, and the same (point, A) pairs
+  # get queried over and over by _orbitlen/orbit/stab. So we memoize the
+  # result per matrix (keyed by object identity, which is O(1) to hash and
+  # avoids any risk of stale entries from equal-but-distinct matrices) in a
+  # table indexed like the `flag` arrays elsewhere (index point + n + 1).
+  # This turns the vector-times-matrix + V-lookup below into a single array
+  # access after the first time a given (point, A) pair is seen.
+  n = length(V)
+  cache = C.operate_cache
+  tbl = get(cache, A, nothing)
+  if tbl === nothing
+    tbl = zeros(Int, 2 * n + 1)
+    cache[A] = tbl
+  end
   # V[point] creates a copy if point<0, avoid this
   fl = point < 0
-  if fl
-    point = -point
+  p = fl ? -point : point
+  idx = p + n + 1
+  @inbounds v = tbl[idx]
+  if v == 0
+    tmp = _vec_times_matrix!(C.operate_tmp, V[p], A)
+    v = find_point(tmp, V)
+    @inbounds tbl[idx] = v
+    # V[-p] == -V[p], so the image of -p is just -v; fill it in for free.
+    @inbounds tbl[n + 1 - p] = -v
   end
-  tmp = _vec_times_matrix!(tmp, V[point], A)
-  k = find_point(tmp, V)
-  if fl
-    k = -k
-  end
-#   if fl
-#     @assert V[k] == -tmp
-#   else
-#     @assert V[k] == tmp
-#   end
-  return k
+  return fl ? -v : v
 end
 
 function _orbitlen_naive(point::Int, orblen::Int, G::Vector{ZZMatrix}, V)
@@ -1742,7 +1747,7 @@ function orbit(pt, npt, G, V, C::ZLatAutoCtx{S, T, U}) where {S, T, U}
   cnd = 1
   while cnd <= norb
     for i in 1:length(G)
-      im = _operate(orb[cnd], G[i], V, C.operate_tmp)
+      im = _operate(orb[cnd], G[i], V, C)
       if !flag[im + n + 1]
         # this is a new point
         norb += 1
@@ -1858,7 +1863,7 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
       end
       #@show orb, flag
       #@show cnd
-      im = _operate(orb[cnd], H[i], V, C.operate_tmp)
+      im = _operate(orb[cnd], H[i], V, C)
       #@show im
       #@show w
       if !flag[im + n + 1]
@@ -1871,12 +1876,12 @@ function stab(I, C::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
         #@show w[orb[cnd] + n + 1]
         #@show H[i]
         #@show Int[_operate(w[orb[cnd] + n + 1][j], H[i], V) for j in 1:dim]
-        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], V, C.operate_tmp) for j in 1:dim]
+        w[im + n + 1] = Int[_operate(w[orb[cnd] + n + 1][j], H[i], V, C) for j in 1:dim]
       else
 #/* the image was already in the orbit */
         j = I
         while j <= dim
-          if _operate(w[orb[cnd] + n + 1][j], H[i], V, C.operate_tmp) == w[im + n + 1][j]
+          if _operate(w[orb[cnd] + n + 1][j], H[i], V, C) == w[im + n + 1][j]
             break
           end
           j += 1
@@ -1945,7 +1950,7 @@ function stabil(x1, x2, per, G, V, C)
   X2 = zero_matrix(ZZ, dim, dim)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
-    x[i] = _operate(x1[i], G, V, C.operate_tmp) # ZZRingElem case
+    x[i] = _operate(x1[i], G, V, C) # ZZRingElem case
   end
 
   XG = matgen(x, dim, per, V)
@@ -1960,7 +1965,7 @@ function stabil(x1, x2, per, G::Matrix{Int}, V, C)
   dim = length(x1)
   x = Vector{Int}(undef, dim)
   for i in 1:dim
-    x[i] = _operate(x1[i], G, V, C.operate_tmp)
+    x[i] = _operate(x1[i], G, V, C)
   end
 
   XG = matgen(x, dim, per, V)
@@ -2184,7 +2189,7 @@ function isostab(pt, G, C::ZLatAutoCtx{S, T, U}, Maxfail) where {S, T, U}
       end
       #@show G, i
       #@show orb[cnd]
-      im = _operate(orb[cnd], G[i], V, C.operate_tmp)
+      im = _operate(orb[cnd], G[i], V, C)
       #@show im
       if !flag[im + n  + 1]
 #/* a new element is found, appended to the orbit and an element mapping
