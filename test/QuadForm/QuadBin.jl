@@ -160,6 +160,44 @@
     @test can_solve_with_solution(binary_quadratic_form(1,1,6), 3) == (false, (0, 0))
     @test !can_solve(binary_quadratic_form(1,1,6), 5)
     @test can_solve_with_solution(binary_quadratic_form(1,1,6), 6) == (true, (0, 1))
+
+    # solutions with y == 0
+    f = binary_quadratic_form(1, 0, 5)
+    @test f(2, 0) == 4
+    @test can_solve(f, 4)
+    @test can_solve_with_solution(f, 4) == (true, (2, 0))
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 7), 9) == (true, (3, 0))
+
+    # a definite form represents nothing of the opposite sign
+    @test !can_solve(binary_quadratic_form(1, 0, 1), -1)
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 1), -1) == (false, (0, 0))
+    @test !can_solve(binary_quadratic_form(-1, 0, -1), 1)
+
+    # negative definite forms
+    @test can_solve(binary_quadratic_form(-1, 0, -1), -5)
+    let (fl, (x, y)) = can_solve_with_solution(binary_quadratic_form(-1, 0, -1), -5)
+      @test fl && binary_quadratic_form(-1, 0, -1)(x, y) == -5
+    end
+
+    # every form represents 0
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 1), 0) == (true, (0, 0))
+
+    # no overflow for large targets
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 1), ZZ(10)^30 + 1) ==
+          (true, (ZZ(10)^15, ZZ(1)))
+
+    # exhaustive check against a naive search
+    for a in -4:4, b in -4:4, c in -4:4
+      b^2 - 4*a*c < 0 || continue
+      f = binary_quadratic_form(a, b, c)
+      for n in -12:12
+        fl, (x, y) = can_solve_with_solution(f, n)
+        naive = any(f(ZZ(u), ZZ(v)) == n for u in -30:30, v in -30:30)
+        @test fl == naive
+        @test fl == can_solve(f, n)
+        fl && @test f(x, y) == n
+      end
+    end
   end
 
   @testset "PrimeForm" begin
