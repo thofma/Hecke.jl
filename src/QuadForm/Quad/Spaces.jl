@@ -1249,8 +1249,9 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     q1 = quadratic_space(QQ, G; cached=false)
     @hassert :Lattice 1 is_regular(q1)
     ok, v = _isotropic_subspace(q1)
-    @hassert :Lattice 0 ok
-    v = vcat(B, v*C)
+    # The radical is totally isotropic on its own, so `q` is isotropic even when
+    # its non-degenerate part `q1` is not.
+    v = ok ? vcat(B, v*C) : B
     return true, v
   end
   # create an even lattice in some rescaling of q
@@ -1286,11 +1287,18 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   D = rescale(discriminant_group(M),-1; cached=false)
   (p,_,n) = signature_tuple(q)
   a = p - n
-  if a == 0 && !is_trivial(D.ab_grp)
-    s = (1, 1)
-  else
-    s = (0, a)
+  # We need a lattice R with discriminant form D, glued to M along the whole of
+  # D, and such that M + R has a balanced signature; the latter forces the
+  # signature pair of R to be of the shape (r, r + a). Milgram's formula holds
+  # for every such r, but r must be big enough for D to be the discriminant form
+  # of a lattice of rank 2*r + a. The minimal choice r = 0 is in general too
+  # small: D may need more generators than that.
+  r = 0
+  while !is_genus(D, (r, r + a))
+    r += 1
+    @req r <= ngens(D) + 2 "no lattice with discriminant form D and signature ($r, $(r + a))"
   end
+  s = (r, r + a)
   R = representative(genus(D, s))
   LL, inj = direct_sum(M, R; cached=false)
   MM = maximal_even_lattice(LL)

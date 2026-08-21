@@ -368,6 +368,31 @@
     @test ok
     @test iszero(inner_product(q, v,v))
 
+    # the complementary lattice used to embed into a sum of hyperbolic planes
+    # must be big enough to carry the discriminant form
+    for d in Vector{QQFieldElem}[QQFieldElem[-3, -3, -1, 1, 1],
+                                 QQFieldElem[-6, -6, -1, 10, 2],
+                                 QQFieldElem[2, 2, 1, -5, -7],
+                                 QQFieldElem[3, -2, 5, -1, -1, 3],
+                                 QQFieldElem[-5, -3, -2, 7]]
+      q = quadratic_space(QQ, diagonal_matrix(d))
+      @test is_isotropic(q)
+      ok, v = is_isotropic_with_vector(q)
+      @test ok
+      @test any(!iszero, v)
+      @test iszero(inner_product(q, v, v))
+    end
+
+    # a degenerate space whose non-degenerate part is anisotropic: the isotropic
+    # vectors all live in the radical
+    for g in [QQ[-2//3 0; 0 0], QQ[2 0 0; 0 3 0; 0 0 0], QQ[-1 0 0; 0 -1 0; 0 0 0]]
+      q = quadratic_space(QQ, g)
+      ok, v = is_isotropic_with_vector(q)
+      @test ok
+      @test any(!iszero, v)
+      @test iszero(inner_product(q, v, v))
+    end
+
   #  too long even for a long test
   #   if long_test
   #     K,b = cyclotomic_field(16)
