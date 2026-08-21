@@ -2465,6 +2465,11 @@ end
 function _is_valid(q::QuadSpaceCls{K}) where {K}
   q.dim >= q.dim_rad >= 0 || return false
 
+  # Subtraction of classes produces virtual classes, whose signature tuples may
+  # have negative entries. No quadratic space has a negative number of positive
+  # (resp. negative) squares at a real place, so such a class is not valid.
+  all(all(>=(0), s) for s in values(q.signature_tuples)) || return false
+
   @hassert :Lattice 1 !iszero(q.det)
   dim = q.dim - q.dim_rad
   neg_hasse = [p for p in keys(q.LGS) if hasse_invariant(q.LGS[p])==-1]

@@ -536,6 +536,24 @@
     @test represents(q, 0)
     @test !is_isotropic(q)
 
+    # A definite space is anisotropic and represents only values of the sign of
+    # its own definiteness. Subtracting a hyperbolic plane (resp. a square class)
+    # from a definite class yields a virtual class with a negative entry in its
+    # signature tuple, which must not be mistaken for the class of a space.
+    for n in 1:8
+      qpos = quadratic_space(QQ, identity_matrix(QQ, n))
+      qneg = quadratic_space(QQ, -identity_matrix(QQ, n))
+      @test !is_isotropic(qpos)
+      @test !is_isotropic(qneg)
+      @test represents(qpos, 1)
+      @test !represents(qpos, -1)
+      @test represents(qneg, -1)
+      @test !represents(qneg, 1)
+    end
+    q = quadratic_space(QQ, diagonal_matrix(QQFieldElem[-5, -3, -2, -5]))
+    @test !is_isotropic(q)
+    @test !represents(q, 1)
+
     for i in 1:100
       for r in 1:4
         I = [i for i in -20:20 if i!=0]
