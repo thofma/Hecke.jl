@@ -172,7 +172,9 @@ function can_solve_with_solution(f::QuadBin, n::IntegerUnion; sol::Bool = true)
   if sign(a) * sign(_n) < 0
     return false, (ZZ(0), ZZ(0))
   end
-  # From 4*a*f(x, y) = (2*a*x + f[2]*y)^2 - D*y^2 we get, for f(x, y) = n,
+  # f = a x^2 + b xy + c y^2
+  # D = b^2 - 4ac
+  # From 4*a*f(x, y) = (2*a*x + b*y)^2 - D*y^2 we get, for f(x, y) = n,
   # that abs(D)*y^2 <= 4*a*n. Both signs of y give the same values of f, but
   # y == 0 has to be looked at as well.
   ybound = isqrt(fdiv(4 * a * _n, abs(D)))
