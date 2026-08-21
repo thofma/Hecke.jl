@@ -468,7 +468,7 @@ function try_init_small(
   Csmall.dim = n
   Csmall.is_symmetric = C.is_symmetric
   Csmall.operate_tmp = zeros(Int, n)
-  Csmall.operate_cache = IdDict{Matrix{Int}, Vector{Int}}()
+  Csmall.operate_cache = IdDict{Matrix{Int}, Dict{Int, Int}}()
   Csmall.dot_product_tmp = Int[ 0 ]
   Csmall.tmp_vec1 = zeros(Int, n)
   Csmall.tmp_vec2 = zeros(Int, n)
@@ -1218,28 +1218,30 @@ function _operate(point, A, V, C)
   # stabil): once built they are never mutated, and the same (point, A) pairs
   # get queried over and over by _orbitlen/orbit/stab. So we memoize the
   # result per matrix (keyed by object identity, which is O(1) to hash and
-  # avoids any risk of stale entries from equal-but-distinct matrices) in a
-  # table indexed like the `flag` arrays elsewhere (index point + n + 1).
-  # This turns the vector-times-matrix + V-lookup below into a single array
-  # access after the first time a given (point, A) pair is seen.
-  n = length(V)
+  # avoids any risk of stale entries from equal-but-distinct matrices). The
+  # per-matrix table is a Dict rather than a dense array of size 2*|V|+1: for
+  # lattices with many short vectors, only a small (and very unevenly
+  # distributed) fraction of points is ever queried for a given matrix, so a
+  # dense table would mostly hold unused zeros while still paying |V| for the
+  # allocation of every matrix seen, including ones used only a handful of
+  # times. The Dict keeps memory (and the cost of allocating/zeroing the
+  # table) proportional to how many points were actually queried.
   cache = C.operate_cache
   tbl = get(cache, A, nothing)
   if tbl === nothing
-    tbl = zeros(Int, 2 * n + 1)
+    tbl = Dict{Int, Int}()
     cache[A] = tbl
   end
   # V[point] creates a copy if point<0, avoid this
   fl = point < 0
   p = fl ? -point : point
-  idx = p + n + 1
-  @inbounds v = tbl[idx]
+  v = get(tbl, p, 0)
   if v == 0
     tmp = _vec_times_matrix!(C.operate_tmp, V[p], A)
     v = find_point(tmp, V)
-    @inbounds tbl[idx] = v
+    tbl[p] = v
     # V[-p] == -V[p], so the image of -p is just -v; fill it in for free.
-    @inbounds tbl[n + 1 - p] = -v
+    tbl[-p] = -v
   end
   return fl ? -v : v
 end
