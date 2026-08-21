@@ -751,6 +751,10 @@ end
 rand(L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(GLOBAL_RNG, L, B)
 rand(rng::AbstractRNG, L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(rng, make(L, B))
 
+function ConformanceTests.generate_element(K::RelSimpleNumField)
+  return rand(K, -10:10)
+end
+
 ################################################################################
 #
 #  Find Kummer generator
