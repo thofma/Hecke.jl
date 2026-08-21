@@ -98,6 +98,21 @@
     # indefinite
     @test is_reduced(binary_quadratic_form(1, 9, 4)) == false
     @test is_reduced(binary_quadratic_form(1, 5, -1)) == true
+    # square discriminant: the boundary abs(sqrt(D) - 2*abs(a)) == b is attained
+    @test is_reduced(binary_quadratic_form(0, 3, 2)) == false
+    @test is_reduced(binary_quadratic_form(0, 2, 3)) == false
+    @test is_reduced(binary_quadratic_form(3, 3, 0)) == false
+    @test is_reduced(binary_quadratic_form(0, 4, 5)) == false
+    @test is_reduced(binary_quadratic_form(2, 3, 0)) == true
+    @test is_reduced(binary_quadratic_form(1, 3, 0)) == true
+    @test is_reduced(binary_quadratic_form(0, 3, 0)) == true
+    # reduction of a primitive reducible form lands on a reduced form
+    for (a, b, c) in [(15, -7, 0), (15, 7, 0), (2, 5, 3), (1, 4, 3), (6, 5, 1),
+                      (4, 8, 3), (3, 7, 2), (5, 9, 4)]
+      f = binary_quadratic_form(a, b, c)
+      is_square(discriminant(f)) && is_primitive(f) || continue
+      @test is_reduced(Hecke.reduction(f))
+    end
     #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
     #@test reduce(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
     #@test reduce(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)

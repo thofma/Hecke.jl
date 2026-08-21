@@ -724,15 +724,12 @@ function is_reduced(f::QuadBin{ZZRingElem})
       return false
     end
 
-    R = ArbField(64, cached = false)
-    d = sqrt(R(D))
-    z = abs(d - 2 * abs(a))
-    @assert !contains(z, b)
-    if z < b
-      return true
-    else
-      return false
-    end
+    # The remaining condition is abs(sqrt(D) - 2*abs(a)) < b. Decide it with
+    # exact integer arithmetic: writing t = 2*abs(a), it says that b > 0, that
+    # sqrt(D) < t + b, and that sqrt(D) > t - b. 
+    b <= 0 && return false
+    t = 2 * abs(a)
+    return D < (t + b)^2 && (t - b < 0 || D > (t - b)^2)
   end
 end
 
