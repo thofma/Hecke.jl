@@ -731,7 +731,8 @@ function is_reduced(f::QuadBin{ZZRingElem})
     # decide the inequality at any precision.
     b <= 0 && return false
     t = 2 * abs(a)
-    return D < (t + b)^2 && (t - b < 0 || D > (t - b)^2)
+    return (t^2 < D <= (b+t)^2) || ((t-b)^2 < D < t^2)
+    # return D < (t + b)^2 && (t - b < 0 || D > (t - b)^2)
   end
 end
 
