@@ -1,0 +1,2673 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      
+        <link rel="prev" href="../Zgenera/">
+      
+      
+        <link rel="next" href="../../elliptic_curves/intro/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
+    
+    
+      
+        <title>Discriminant groups - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#discriminant-groups" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Discriminant groups
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    About
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Documentation
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Number fields
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Number fields
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Number field operations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Complex embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Internals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Function fields
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Function fields
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Creation and basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Internals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Degree localization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Orders
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Orders
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ideals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fractional Ideals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Quadratic and hermitian forms
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            Quadratic and hermitian forms
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lattices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integer_lattices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integer lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../genusherm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Genera for hermitian lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Zgenera/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Genera for integer lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Discriminant groups
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Discriminant groups
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#torsion-quadratic-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Torsion Quadratic Modules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Torsion Quadratic Modules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-underlying-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      The underlying Type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Elements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lift-to-the-cover" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lift to the cover
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orthogonal-submodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Orthogonal submodules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isometry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Isometry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#primary-and-elementary-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primary and elementary modules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#smith-normal-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      Smith normal form
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discriminant-groups_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Discriminant Groups
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discriminant Groups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-a-lattice" class="md-nav__link">
+    <span class="md-ellipsis">
+      From a lattice
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-a-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      From a matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rescaling-the-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rescaling the form
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Invariants
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genus" class="md-nav__link">
+    <span class="md-ellipsis">
+      Genus
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#categorical-constructions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Categorical constructions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Submodules
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elliptic curves
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            Elliptic curves
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/finite_fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Finite fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/number_fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Number fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Abelian groups
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            Abelian groups
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Structural Computations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Class fields
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            Class fields
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            Misc
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Factored Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sparse Linear Algebra
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pseudo-Matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Conjugacy of integral matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Extra features
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            Extra features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/macros/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Macros
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/mset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multi-sets
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    References
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_12" id="__nav_2_12_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_12">
+            <span class="md-nav__icon md-icon"></span>
+            Developer
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#torsion-quadratic-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Torsion Quadratic Modules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Torsion Quadratic Modules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-underlying-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      The underlying Type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Elements
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lift-to-the-cover" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lift to the cover
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orthogonal-submodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Orthogonal submodules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isometry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Isometry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#primary-and-elementary-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Primary and elementary modules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#smith-normal-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      Smith normal form
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discriminant-groups_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Discriminant Groups
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discriminant Groups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-a-lattice" class="md-nav__link">
+    <span class="md-ellipsis">
+      From a lattice
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-a-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      From a matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rescaling-the-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rescaling the form
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      Invariants
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genus" class="md-nav__link">
+    <span class="md-ellipsis">
+      Genus
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#categorical-constructions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Categorical constructions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#submodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Submodules
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<p><a id='Discriminant-Groups'></a></p>
+<p><a id='Discriminant-Groups-1'></a></p>
+<h1 id="discriminant-groups">Discriminant Groups</h1>
+<p><a id='Torsion-Quadratic-Modules'></a></p>
+<p><a id='Torsion-Quadratic-Modules-1'></a></p>
+<h2 id="torsion-quadratic-modules">Torsion Quadratic Modules</h2>
+<p>A torsion quadratic module is the quotient <script type="math/tex">M/N</script> of two quadratic integer lattices <script type="math/tex">N \subseteq M</script> in the quadratic space <script type="math/tex">(V,\Phi)</script>. It inherits a bilinear form</p>
+<p>
+<script type="math/tex; mode=display">
+b: M/N \times M/N \to \mathbb{Q} / n \mathbb{Z}
+</script>
+</p>
+<p>as well as a quadratic form</p>
+<p>
+<script type="math/tex; mode=display">
+q: M/N \to \mathbb{Q} / m \mathbb{Z}.
+</script>
+</p>
+<p>where <script type="math/tex">n \mathbb{Z} = \Phi(M,N)</script> and <script type="math/tex">m \mathbb{Z} = 2n\mathbb{Z} + \sum_{x \in N} \mathbb{Z} \Phi (x,x)</script>.</p>
+<p><a id='torsion_quadratic_module-Tuple{ZZLat, ZZLat}' href='#torsion_quadratic_module-Tuple{ZZLat, ZZLat}'>#</a>
+<strong><code>torsion_quadratic_module</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">ZZLat</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="o">::</span><span class="kt">ZZLat</span><span class="p">;</span><span class="w"> </span><span class="n">gens</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Nothing</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="o">&lt;:</span><span class="kt">Vector</span><span class="p">}}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">nothing</span><span class="p">,</span>
+<span class="w">                                             </span><span class="n">snf</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span>
+<span class="w">                                             </span><span class="n">modulus</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">QQFieldElem</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="w">                                             </span><span class="n">modulus_qf</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">QQFieldElem</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+<span class="w">                                             </span><span class="n">check</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span>
+</code></pre></div>
+<p>Given a Z-lattice <script type="math/tex">M</script> and a sublattice <script type="math/tex">N</script> of <script type="math/tex">M</script>, return the torsion quadratic module <script type="math/tex">M/N</script>.</p>
+<p>If <code>gens</code> is set, the images of <code>gens</code> will be used as the generators of the abelian group <script type="math/tex">M/N</script>.</p>
+<p>If <code>snf</code> is <code>true</code>, the underlying abelian group will be in Smith normal form. Otherwise, the images of the basis of <script type="math/tex">M</script> will be used as the generators.</p>
+<p>One can decide on the modulus for the associated finite bilinear and quadratic forms by setting <code>modulus</code> and <code>modulus_qf</code> respectively to the desired values.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L9-L27' class='documenter-source'>source</a><br></p>
+<p><a id='The-underlying-Type'></a></p>
+<p><a id='The-underlying-Type-1'></a></p>
+<h3 id="the-underlying-type">The underlying Type</h3>
+<p><a id='TorQuadModule' href='#TorQuadModule'>#</a>
+<strong><code>TorQuadModule</code></strong> &mdash; <em>Type</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">TorQuadModule</span>
+</code></pre></div>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">integer_lattice</span><span class="p">(</span><span class="n">gram</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Hecke</span><span class="o">.</span><span class="n">discriminant_group</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: (Z/2)^2</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[   1   1//2]</span>
+<span class="go">[1//2      1]</span>
+</code></pre></div>
+<p>We represent torsion quadratic modules as quotients of <script type="math/tex">\mathbb{Z}</script>-lattices by a full rank sublattice.</p>
+<p>We store them as a <script type="math/tex">\mathbb{Z}</script>-lattice <code>M</code> together with a projection <code>p : M -&gt; A</code> onto an abelian group <code>A</code>. The bilinear structure of <code>A</code> is induced via <code>p</code>, that is <code>&lt;a, b&gt; = &lt;p^-1(a), p^-1(a)&gt;</code> with values in <script type="math/tex">\mathbb{Q}/n\mathbb{Z}</script>, where <script type="math/tex">n</script> is the modulus and depends on the kernel of <code>p</code>.</p>
+<p>Elements of A are basically just elements of the underlying abelian group. To move between <code>M</code> and <code>A</code>, we use the <code>lift</code> function <code>lift : M -&gt; A</code> and coercion <code>A(m)</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rescale</span><span class="p">(</span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:D</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span><span class="mi">2</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">discriminant_group</span><span class="p">(</span><span class="n">R</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abelian_group</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+<span class="go">(Z/2)^2 x (Z/4)^2</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">Element</span>
+<span class="go">  of finite quadratic module: (Z/2)^2 x (Z/4)^2 -&gt; Q/2Z</span>
+<span class="go">with components [1 0 0 0]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="n">A</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">lift</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">4-element Vector{QQFieldElem}:</span>
+<span class="go"> 1</span>
+<span class="go"> 1</span>
+<span class="go"> 3//2</span>
+<span class="go"> 1</span>
+</code></pre></div>
+<p>N.B. Since there are no elements of <script type="math/tex">\mathbb{Z}</script>-lattices, we think of elements of <code>M</code> as elements of the ambient vector space. Thus if <code>v::Vector</code> is such an element then the coordinates with respec to the basis of <code>M</code> are given by <code>solve(basis_matrix(M), v; side = :left)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Types.jl#L206-L267' class='documenter-source'>source</a><br></p>
+<p>Most of the functionality mirrors that of <code>AbGrp</code> its elements and homomorphisms. Here we display the part that is specific to elements of torsion quadratic modules.</p>
+<p><a id='Attributes'></a></p>
+<p><a id='Attributes-1'></a></p>
+<h3 id="attributes">Attributes</h3>
+<p><a id='abelian_group-Tuple{TorQuadModule}' href='#abelian_group-Tuple{TorQuadModule}'>#</a>
+<strong><code>abelian_group</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">abelian_group</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span>
+</code></pre></div>
+<p>Return the underlying abelian group of <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L162-L166' class='documenter-source'>source</a><br></p>
+<p><a id='cover-Tuple{TorQuadModule}' href='#cover-Tuple{TorQuadModule}'>#</a>
+<strong><code>cover</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">cover</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZZLat</span>
+</code></pre></div>
+<p>For <script type="math/tex">T=M/N</script> this returns <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L169-L173' class='documenter-source'>source</a><br></p>
+<p><a id='relations-Tuple{TorQuadModule}' href='#relations-Tuple{TorQuadModule}'>#</a>
+<strong><code>relations</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">relations</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZZLat</span>
+</code></pre></div>
+<p>For <script type="math/tex">T=M/N</script> this returns <script type="math/tex">N</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L176-L180' class='documenter-source'>source</a><br></p>
+<p><a id='value_module-Tuple{TorQuadModule}' href='#value_module-Tuple{TorQuadModule}'>#</a>
+<strong><code>value_module</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">value_module</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QmodnZ</span>
+</code></pre></div>
+<p>Return the value module <code>Q/nZ</code> of the bilinear form of <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L183-L187' class='documenter-source'>source</a><br></p>
+<p><a id='value_module_quadratic_form-Tuple{TorQuadModule}' href='#value_module_quadratic_form-Tuple{TorQuadModule}'>#</a>
+<strong><code>value_module_quadratic_form</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">value_module_quadratic_form</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QmodnZ</span>
+</code></pre></div>
+<p>Return the value module <code>Q/mZ</code> of the quadratic form of <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L190-L194' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix_bilinear-Tuple{TorQuadModule}' href='#gram_matrix_bilinear-Tuple{TorQuadModule}'>#</a>
+<strong><code>gram_matrix_bilinear</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix_bilinear</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQMatrix</span>
+</code></pre></div>
+<p>Return the gram matrix of the bilinear form of <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L217-L221' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix_quadratic-Tuple{TorQuadModule}' href='#gram_matrix_quadratic-Tuple{TorQuadModule}'>#</a>
+<strong><code>gram_matrix_quadratic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix_quadratic</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQMatrix</span>
+</code></pre></div>
+<p>Return the 'gram matrix' of the quadratic form of <code>T</code>.</p>
+<p>The off diagonal entries are given by the bilinear form whereas the diagonal entries are given by the quadratic form.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L237-L244' class='documenter-source'>source</a><br></p>
+<p><a id='modulus_bilinear_form-Tuple{TorQuadModule}' href='#modulus_bilinear_form-Tuple{TorQuadModule}'>#</a>
+<strong><code>modulus_bilinear_form</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">modulus_bilinear_form</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the modulus of the value module of the bilinear form of<code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L197-L201' class='documenter-source'>source</a><br></p>
+<p><a id='modulus_quadratic_form-Tuple{TorQuadModule}' href='#modulus_quadratic_form-Tuple{TorQuadModule}'>#</a>
+<strong><code>modulus_quadratic_form</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">modulus_quadratic_form</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the modulus of the value module of the quadratic form of <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L204-L208' class='documenter-source'>source</a><br></p>
+<p><a id='Elements'></a></p>
+<p><a id='Elements-1'></a></p>
+<h3 id="elements">Elements</h3>
+<p><a id='quadratic_product-Tuple{TorQuadModuleElem}' href='#quadratic_product-Tuple{TorQuadModuleElem}'>#</a>
+<strong><code>quadratic_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quadratic_product</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">TorQuadModuleElem</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QmodnZElem</span>
+</code></pre></div>
+<p>Return the quadratic product of <code>a</code>.</p>
+<p>It is defined in terms of a representative: for <script type="math/tex">b + M \in M/N=T</script>, this returns <script type="math/tex">\Phi(b,b) + n \mathbb{Z}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L583-L591' class='documenter-source'>source</a><br></p>
+<p><a id='inner_product-Tuple{TorQuadModuleElem, TorQuadModuleElem}' href='#inner_product-Tuple{TorQuadModuleElem, TorQuadModuleElem}'>#</a>
+<strong><code>inner_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">inner_product</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">TorQuadModuleElem</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">::</span><span class="kt">TorQuadModuleElem</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QmodnZElem</span>
+</code></pre></div>
+<p>Return the inner product of <code>a</code> and <code>b</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L570-L574' class='documenter-source'>source</a><br></p>
+<p><a id='Lift-to-the-cover'></a></p>
+<p><a id='Lift-to-the-cover-1'></a></p>
+<h3 id="lift-to-the-cover">Lift to the cover</h3>
+<p><a id='lift-Tuple{TorQuadModuleElem}' href='#lift-Tuple{TorQuadModuleElem}'>#</a>
+<strong><code>lift</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lift</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">TorQuadModuleElem</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">QQFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Lift <code>a</code> to the ambient space of <code>cover(parent(a))</code>.</p>
+<p>For <script type="math/tex">a + N \in M/N</script> this returns the representative <script type="math/tex">a</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L613-L619' class='documenter-source'>source</a><br></p>
+<p><a id='representative-Tuple{TorQuadModuleElem}' href='#representative-Tuple{TorQuadModuleElem}'>#</a>
+<strong><code>representative</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">representative</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">TorQuadModuleElem</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">QQFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>For <script type="math/tex">a + N \in M/N</script> this returns the representative <script type="math/tex">a</script>. An alias for <code>lift(a)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L626-L631' class='documenter-source'>source</a><br></p>
+<p><a id='Orthogonal-submodules'></a></p>
+<p><a id='Orthogonal-submodules-1'></a></p>
+<h3 id="orthogonal-submodules">Orthogonal submodules</h3>
+<p><a id='orthogonal_submodule-Tuple{TorQuadModule, TorQuadModule}' href='#orthogonal_submodule-Tuple{TorQuadModule, TorQuadModule}'>#</a>
+<strong><code>orthogonal_submodule</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_submodule</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span>
+</code></pre></div>
+<p>Return the orthogonal submodule to the submodule <code>S</code> of <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1438-L1442' class='documenter-source'>source</a><br></p>
+<p><a id='Isometry'></a></p>
+<p><a id='Isometry-1'></a></p>
+<h3 id="isometry">Isometry</h3>
+<p><a id='is_isometric_with_isometry-Tuple{TorQuadModule, TorQuadModule}' href='#is_isometric_with_isometry-Tuple{TorQuadModule, TorQuadModule}'>#</a>
+<strong><code>is_isometric_with_isometry</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_isometric_with_isometry</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">U</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span>
+<span class="w">                                               </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">TorQuadModuleMap</span>
+</code></pre></div>
+<p>Return whether the torsion quadratic modules <code>T</code> and <code>U</code> are isometric. If yes, it also returns an isometry <script type="math/tex">T \to U</script>.</p>
+<p>If <code>T</code> and <code>U</code> are not semi-regular it requires that they both split into a direct sum of their respective quadratic radical (see <a href="./#radical_quadratic-Tuple{TorQuadModule}"><code>radical_quadratic</code></a>).</p>
+<p>It requires that both <code>T</code> and <code>U</code> have modulus 1: in case one of them do not, they should be rescaled (see <a href="../Zgenera/#rescale-Tuple{ZZGenus, Union{Integer, QQFieldElem, ZZRingElem, Rational}}"><code>rescale</code></a>).</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                       </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: (Z/3)^5</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[2//3   2//3      0      0      0]</span>
+<span class="go">[2//3   2//3   2//3      0   2//3]</span>
+<span class="go">[   0   2//3   2//3   2//3      0]</span>
+<span class="go">[   0      0   2//3   2//3      0]</span>
+<span class="go">[   0   2//3      0      0   2//3]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">U</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">4</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w"> </span><span class="mi">4</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">4</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">4</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                          </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">4</span><span class="o">//</span><span class="mi">3</span><span class="p">])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: (Z/3)^5</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[4//3      0      0      0      0]</span>
+<span class="go">[   0   4//3      0      0      0]</span>
+<span class="go">[   0      0   4//3      0      0]</span>
+<span class="go">[   0      0      0   4//3      0]</span>
+<span class="go">[   0      0      0      0   4//3]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">bool</span><span class="p">,</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">is_isometric_with_isometry</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="n">U</span><span class="p">)</span>
+<span class="go">(true, Map: finite quadratic module -&gt; finite quadratic module)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_bijective</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">T2</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="w"> </span><span class="n">T</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">T</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">T</span><span class="p">[</span><span class="mi">5</span><span class="p">]])</span>
+<span class="go">(Finite quadratic module: (Z/3)^2 -&gt; Q/2Z, Map: finite quadratic module -&gt; finite quadratic module)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">U2</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">T</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="w"> </span><span class="n">T</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">T</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">T</span><span class="p">[</span><span class="mi">5</span><span class="p">]])</span>
+<span class="go">(Finite quadratic module: (Z/3)^2 -&gt; Q/2Z, Map: finite quadratic module -&gt; finite quadratic module)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">bool</span><span class="p">,</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">is_isometric_with_isometry</span><span class="p">(</span><span class="n">U2</span><span class="p">,</span><span class="w"> </span><span class="n">T2</span><span class="p">)</span>
+<span class="go">(true, Map: finite quadratic module -&gt; finite quadratic module)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_bijective</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1093-L1161' class='documenter-source'>source</a><br></p>
+<p><a id='is_anti_isometric_with_anti_isometry-Tuple{TorQuadModule, TorQuadModule}' href='#is_anti_isometric_with_anti_isometry-Tuple{TorQuadModule, TorQuadModule}'>#</a>
+<strong><code>is_anti_isometric_with_anti_isometry</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_anti_isometric_with_anti_isometry</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">U</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span>
+<span class="w">                                                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">TorQuadModuleMap</span>
+</code></pre></div>
+<p>Return whether there exists an anti-isometry between the torsion quadratic modules <code>T</code> and <code>U</code>. If yes, it returns such an anti-isometry <script type="math/tex">T \to U</script>.</p>
+<p>If <code>T</code> and <code>U</code> are not semi-regular it requires that they both split into a direct sum of their respective quadratic radical (see <a href="./#radical_quadratic-Tuple{TorQuadModule}"><code>radical_quadratic</code></a>).</p>
+<p>It requires that both <code>T</code> and <code>U</code> have modulus 1: in case one of them do not, they should be rescaled (see <a href="../Zgenera/#rescale-Tuple{ZZGenus, Union{Integer, QQFieldElem, ZZRingElem, Rational}}"><code>rescale</code></a>).</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">4</span><span class="o">//</span><span class="mi">5</span><span class="p">;])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: Z/5</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[4//5]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">bool</span><span class="p">,</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">is_anti_isometric_with_anti_isometry</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">)</span>
+<span class="go">(true, Map: finite quadratic module -&gt; finite quadratic module)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gens</span><span class="p">(</span><span class="n">T</span><span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">a</span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="n">phi</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">phi</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">FlintQQ</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                   </span><span class="mi">3</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                   </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                   </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                   </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                   </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">10</span><span class="p">]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">V</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">quadratic_space</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">1</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">2</span><span class="o">//</span><span class="mi">3</span><span class="w"> </span><span class="mi">1</span><span class="o">//</span><span class="mi">3</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">1</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">1</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">1</span><span class="w">    </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w">    </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="o">//</span><span class="mi">5</span><span class="p">]);</span>
+
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lattice</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">B2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">FlintQQ</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                     </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                    </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                     </span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">2</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                     </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                                     </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="p">]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lattice</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">B2</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">)</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: Z/15</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[3//5]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">bool</span><span class="p">,</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">is_anti_isometric_with_anti_isometry</span><span class="p">(</span><span class="n">T</span><span class="p">,</span><span class="n">T</span><span class="p">)</span>
+<span class="go">(true, Map: finite quadratic module -&gt; finite quadratic module)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gens</span><span class="p">(</span><span class="n">T</span><span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">a</span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="n">phi</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">phi</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1204-L1282' class='documenter-source'>source</a><br></p>
+<p><a id='Primary-and-elementary-modules'></a></p>
+<p><a id='Primary-and-elementary-modules-1'></a></p>
+<h3 id="primary-and-elementary-modules">Primary and elementary modules</h3>
+<p><a id='is_primary_with_prime-Tuple{TorQuadModule}' href='#is_primary_with_prime-Tuple{TorQuadModule}'>#</a>
+<strong><code>is_primary_with_prime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_primary_with_prime</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">ZZRingElem</span>
+</code></pre></div>
+<p>Given a torsion quadratic module <code>T</code>, return whether the underlying (finite) abelian group of <code>T</code> (see <a href="../../abelian/introduction/#abelian_group-Tuple{ZZMatrix}"><code>abelian_group</code></a>) is a <code>p</code>-group for some prime number <code>p</code>. In case it is, <code>p</code> is also returned as second output.</p>
+<p>Note that in the case of trivial groups, this function returns <code>(true, 1)</code>. If <code>T</code> is not primary, the second return value is <code>-1</code> by default.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2072-L2081' class='documenter-source'>source</a><br></p>
+<p><a id='is_primary-Tuple{TorQuadModule, Union{Integer, ZZRingElem}}' href='#is_primary-Tuple{TorQuadModule, Union{Integer, ZZRingElem}}'>#</a>
+<strong><code>is_primary</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_primary</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Integer</span><span class="p">,</span><span class="w"> </span><span class="kt">ZZRingElem</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a torsion quadratic module <code>T</code> and a prime number <code>p</code>, return whether the underlying (finite) abelian group of <code>T</code> (see <a href="../../abelian/introduction/#abelian_group-Tuple{ZZMatrix}"><code>abelian_group</code></a>) is a <code>p</code>-group.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2092-L2098' class='documenter-source'>source</a><br></p>
+<p><a id='is_elementary_with_prime-Tuple{TorQuadModule}' href='#is_elementary_with_prime-Tuple{TorQuadModule}'>#</a>
+<strong><code>is_elementary_with_prime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_elementary_with_prime</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">ZZRingElem</span>
+</code></pre></div>
+<p>Given a torsion quadratic module <code>T</code>, return whether the underlying (finite) abelian group of <code>T</code> (see <a href="../../abelian/introduction/#abelian_group-Tuple{ZZMatrix}"><code>abelian_group</code></a>) is an elementary <code>p</code>-group, for some prime number <code>p</code>. In case it is, <code>p</code> is also returned as second output.</p>
+<p>Note that in the case of trivial groups, this function returns <code>(true, 1)</code>. If <code>T</code> is not elementary, the second return value is <code>-1</code> by default.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2104-L2113' class='documenter-source'>source</a><br></p>
+<p><a id='is_elementary-Tuple{TorQuadModule, Union{Integer, ZZRingElem}}' href='#is_elementary-Tuple{TorQuadModule, Union{Integer, ZZRingElem}}'>#</a>
+<strong><code>is_elementary</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_elementary</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Integer</span><span class="p">,</span><span class="w"> </span><span class="kt">ZZRingElem</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a torsion quadratic module <code>T</code> and a prime number <code>p</code>, return whether the underlying (finite) abelian group of <code>T</code> (see <a href="../../abelian/introduction/#abelian_group-Tuple{ZZMatrix}"><code>abelian_group</code></a>) is an elementary <code>p</code>-group.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2123-L2129' class='documenter-source'>source</a><br></p>
+<p><a id='Smith-normal-form'></a></p>
+<p><a id='Smith-normal-form-1'></a></p>
+<h3 id="smith-normal-form">Smith normal form</h3>
+<p><a id='snf-Tuple{TorQuadModule}' href='#snf-Tuple{TorQuadModule}'>#</a>
+<strong><code>snf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">snf</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">TorQuadModuleMap</span>
+</code></pre></div>
+<p>Given a torsion quadratic module <code>T</code>, return a torsion quadratic module <code>S</code>, isometric to <code>T</code>, such that the underlying abelian group of <code>S</code> is in canonical Smith normal form. It comes with an isometry <script type="math/tex">f : S \to T</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2141-L2147' class='documenter-source'>source</a><br></p>
+<p><a id='is_snf-Tuple{TorQuadModule}' href='#is_snf-Tuple{TorQuadModule}'>#</a>
+<strong><code>is_snf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_snf</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given a torsion quadratic module <code>T</code>, return whether its underlying abelian group is in Smith normal form.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2159-L2164' class='documenter-source'>source</a><br></p>
+<p><a id='Discriminant-Groups-2'></a></p>
+<h2 id="discriminant-groups_1">Discriminant Groups</h2>
+<p>See <a href="../../references/#Nik79">V. V. Nikulin (1979)</a> for the general theory of discriminant groups. They are particularly useful to work with primitive embeddings of integral integer quadratic lattices.</p>
+<p><a id='From-a-lattice'></a></p>
+<p><a id='From-a-lattice-1'></a></p>
+<h3 id="from-a-lattice">From a lattice</h3>
+<p><a id='discriminant_group-Tuple{ZZLat}' href='#discriminant_group-Tuple{ZZLat}'>#</a>
+<strong><code>discriminant_group</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">discriminant_group</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span>
+</code></pre></div>
+<p>Return the discriminant group of <code>L</code>.</p>
+<p>The discriminant group of an integral lattice <code>L</code> is the finite abelian group <code>D = dual(L)/L</code>.</p>
+<p>It comes equipped with the discriminant bilinear form</p>
+<p>
+<script type="math/tex; mode=display">
+D \times D \to \mathbb{Q} / \mathbb{Z} \qquad (x,y) \mapsto \Phi(x,y) + \mathbb{Z}.
+</script>
+</p>
+<p>If <code>L</code> is even, then the discriminant group is equipped with the discriminant quadratic form <script type="math/tex">D \to \mathbb{Q} / 2 \mathbb{Z}, x \mapsto \Phi(x,x) + 2\mathbb{Z}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L103-L117' class='documenter-source'>source</a><br></p>
+<p><a id='From-a-matrix'></a></p>
+<p><a id='From-a-matrix-1'></a></p>
+<h3 id="from-a-matrix">From a matrix</h3>
+<p><a id='torsion_quadratic_module-Tuple{QQMatrix}' href='#torsion_quadratic_module-Tuple{QQMatrix}'>#</a>
+<strong><code>torsion_quadratic_module</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">q</span><span class="o">::</span><span class="kt">QQMatrix</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span>
+</code></pre></div>
+<p>Return a torsion quadratic module with gram matrix given by <code>q</code> and value module <code>Q/Z</code>. If all the diagonal entries of <code>q</code> have: either even numerator or even denominator, then the value module of the quadratic form is <code>Q/2Z</code></p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">1</span><span class="o">//</span><span class="mi">6</span><span class="p">;])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: Z/6</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[1//6]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">1</span><span class="o">//</span><span class="mi">2</span><span class="p">;])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: Z/2</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[1//2]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">3</span><span class="o">//</span><span class="mi">2</span><span class="p">;])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: Z/2</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/2Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[3//2]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">torsion_quadratic_module</span><span class="p">(</span><span class="n">QQ</span><span class="p">[</span><span class="mi">1</span><span class="o">//</span><span class="mi">3</span><span class="p">;])</span>
+<span class="go">Finite quadratic module</span>
+<span class="go">  over integer ring</span>
+<span class="go">Abelian group: Z/3</span>
+<span class="go">Bilinear value module: Q/Z</span>
+<span class="go">Quadratic value module: Q/Z</span>
+<span class="go">Gram matrix quadratic form:</span>
+<span class="go">[1//3]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1361-L1407' class='documenter-source'>source</a><br></p>
+<p><a id='Rescaling-the-form'></a></p>
+<p><a id='Rescaling-the-form-1'></a></p>
+<h3 id="rescaling-the-form">Rescaling the form</h3>
+<p><a id='rescale-Tuple{TorQuadModule, RingElement}' href='#rescale-Tuple{TorQuadModule, RingElement}'>#</a>
+<strong><code>rescale</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rescale</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="o">::</span><span class="kt">RingElement</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span>
+</code></pre></div>
+<p>Return the torsion quadratic module with quadratic form scaled by <script type="math/tex">k</script>, where k is a non-zero rational number. If the old form was defined modulo <code>n</code>, then the new form is defined modulo <code>n k</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1512-L1519' class='documenter-source'>source</a><br></p>
+<p><a id='Invariants'></a></p>
+<p><a id='Invariants-1'></a></p>
+<h3 id="invariants">Invariants</h3>
+<p><a id='is_degenerate-Tuple{TorQuadModule}' href='#is_degenerate-Tuple{TorQuadModule}'>#</a>
+<strong><code>is_degenerate</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_degenerate</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return true if the underlying bilinear form is degenerate.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1463-L1467' class='documenter-source'>source</a><br></p>
+<p><a id='is_semi_regular-Tuple{TorQuadModule}' href='#is_semi_regular-Tuple{TorQuadModule}'>#</a>
+<strong><code>is_semi_regular</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_semi_regular</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether <code>T</code> is semi-regular, that is its quadratic radical is trivial (see <a href="./#radical_quadratic-Tuple{TorQuadModule}"><code>radical_quadratic</code></a>).</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1474-L1479' class='documenter-source'>source</a><br></p>
+<p><a id='radical_bilinear-Tuple{TorQuadModule}' href='#radical_bilinear-Tuple{TorQuadModule}'>#</a>
+<strong><code>radical_bilinear</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">radical_bilinear</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">TorQuadModuleMap</span>
+</code></pre></div>
+<p>Return the radical <code>\{x \in T | b(x,T) = 0\}</code> of the bilinear form <code>b</code> on <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1482-L1486' class='documenter-source'>source</a><br></p>
+<p><a id='radical_quadratic-Tuple{TorQuadModule}' href='#radical_quadratic-Tuple{TorQuadModule}'>#</a>
+<strong><code>radical_quadratic</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">radical_quadratic</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">TorQuadModuleMap</span>
+</code></pre></div>
+<p>Return the radical <code>\{x \in T | b(x,T) = 0 and q(x)=0\}</code> of the quadratic form <code>q</code> on <code>T</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1491-L1496' class='documenter-source'>source</a><br></p>
+<p><a id='normal_form-Tuple{TorQuadModule}' href='#normal_form-Tuple{TorQuadModule}'>#</a>
+<strong><code>normal_form</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">normal_form</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">;</span><span class="w"> </span><span class="n">partial</span><span class="o">=</span><span class="nb">false</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">TorQuadModuleMap</span>
+</code></pre></div>
+<p>Return the normal form <code>N</code> of the given torsion quadratic module <code>T</code> along with the projection <code>T -&gt; N</code>.</p>
+<p>Let <code>K</code> be the radical of the quadratic form of <code>T</code>. Then <code>N = T/K</code> is half-regular. Two half-regular torsion quadratic modules are isometric if and only if they have equal normal forms.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1532-L1541' class='documenter-source'>source</a><br></p>
+<p><a id='Genus'></a></p>
+<p><a id='Genus-1'></a></p>
+<h3 id="genus">Genus</h3>
+<p><a id='genus-Tuple{TorQuadModule, Tuple{Int64, Int64}}' href='#genus-Tuple{TorQuadModule, Tuple{Int64, Int64}}'>#</a>
+<strong><code>genus</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">genus</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">signature_pair</span><span class="o">::</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span><span class="w"> </span><span class="kt">Int</span><span class="p">};</span>
+<span class="w">                        </span><span class="n">parity</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">modulus_quadratic_form</span><span class="p">(</span><span class="n">T</span><span class="p">))</span>
+<span class="w">                                                                </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZZGenus</span>
+</code></pre></div>
+<p>Return the genus of an integer lattice whose discriminant group has the bilinear form of <code>T</code>, the given <code>signature_pair</code> and the given <code>parity</code>.</p>
+<p>The argument <code>parity</code> is one of the following: either <code>parity == 1</code> for genera of odd lattices, or <code>parity == 2</code> for even lattices. By default, <code>parity</code> is set to be as the parity of the quadratic form on <code>T</code></p>
+<p>If no such genus exists, raise an error.</p>
+<p><strong>Reference</strong></p>
+<p><a href="../../references/#Nik79">V. V. Nikulin (1979)</a> Corollary 1.9.4 and 1.16.3.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1703-L1719' class='documenter-source'>source</a><br></p>
+<p><a id='brown_invariant-Tuple{TorQuadModule}' href='#brown_invariant-Tuple{TorQuadModule}'>#</a>
+<strong><code>brown_invariant</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">brown_invariant</span><span class="p">(</span><span class="n">self</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Nemo</span><span class="o">.</span><span class="n">zzModRingElem</span>
+</code></pre></div>
+<p>Return the Brown invariant of this torsion quadratic form.</p>
+<p>Let <code>(D,q)</code> be a torsion quadratic module with values in <code>Q / 2Z</code>. The Brown invariant <code>Br(D,q) in Z/8Z</code> is defined by the equation</p>
+<p>
+<script type="math/tex; mode=display">
+\exp \left( \frac{2 \pi i }{8} Br(q)\right) =
+  \frac{1}{\sqrt{D}} \sum_{x \in D} \exp(i \pi q(x)).
+</script>
+</p>
+<p>The Brown invariant is additive with respect to direct sums of torsion quadratic modules.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">integer_lattice</span><span class="p">(</span><span class="n">gram</span><span class="o">=</span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="p">[[</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]]));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Hecke</span><span class="o">.</span><span class="n">discriminant_group</span><span class="p">(</span><span class="n">L</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">brown_invariant</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="go">4</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1657-L1679' class='documenter-source'>source</a><br></p>
+<p><a id='is_genus-Tuple{TorQuadModule, Tuple{Int64, Int64}}' href='#is_genus-Tuple{TorQuadModule, Tuple{Int64, Int64}}'>#</a>
+<strong><code>is_genus</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_genus</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">signature_pair</span><span class="o">::</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span><span class="w"> </span><span class="kt">Int</span><span class="p">};</span>
+<span class="w">                           </span><span class="n">parity</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">modulus_quadratic_form</span><span class="p">(</span><span class="n">T</span><span class="p">))</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return if there is an integral lattice whose discriminant form has the bilinear form of <code>T</code>, whose signatures match <code>signature_pair</code> and which is of parity <code>parity</code>.</p>
+<p>The argument <code>parity</code> is one of the following: either <code>parity == 1</code> for genera of odd lattices, or <code>parity == 2</code> for even lattices. By default, <code>parity</code> is set to be as the parity of the quadratic form on <code>T</code></p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L1854-L1865' class='documenter-source'>source</a><br></p>
+<p><a id='Categorical-constructions'></a></p>
+<p><a id='Categorical-constructions-1'></a></p>
+<h3 id="categorical-constructions">Categorical constructions</h3>
+<p><a id='direct_sum-Tuple{Vector{TorQuadModule}}' href='#direct_sum-Tuple{Vector{TorQuadModule}}'>#</a>
+<strong><code>direct_sum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">direct_sum</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vararg</span><span class="p">{</span><span class="kt">TorQuadModule</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">}</span>
+<span class="n">direct_sum</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModule</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a collection of torsion quadratic modules <script type="math/tex">T_1, \ldots, T_n</script>, return their direct sum <script type="math/tex">T := T_1\oplus \ldots \oplus T_n</script>, together with the injections <script type="math/tex">T_i \to T</script>.</p>
+<p>For objects of type <code>TorQuadModule</code>, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <code>T</code> as a direct product with the projections <script type="math/tex">T \to T_i</script>, one should call <code>direct_product(x)</code>. If one wants to obtain <code>T</code> as a biproduct with the injections <script type="math/tex">T_i \to T</script> and the projections <script type="math/tex">T \to T_i</script>, one should call <code>biproduct(x)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2001-L2015' class='documenter-source'>source</a><br></p>
+<p><a id='direct_product-Tuple{Vector{TorQuadModule}}' href='#direct_product-Tuple{Vector{TorQuadModule}}'>#</a>
+<strong><code>direct_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">direct_product</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vararg</span><span class="p">{</span><span class="kt">TorQuadModule</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">}</span>
+<span class="n">direct_product</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModule</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a collection of torsion quadratic modules <script type="math/tex">T_1, \ldots, T_n</script>, return their direct product <script type="math/tex">T := T_1\times \ldots \times T_n</script>, together with the projections <script type="math/tex">T \to T_i</script>.</p>
+<p>For objects of type <code>TorQuadModule</code>, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <code>T</code> as a direct sum with the inctions <script type="math/tex">T_i \to T</script>, one should call <code>direct_sum(x)</code>. If one wants to obtain <code>T</code> as a biproduct with the injections <script type="math/tex">T_i \to T</script> and the projections <script type="math/tex">T \to T_i</script>, one should call <code>biproduct(x)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2023-L2037' class='documenter-source'>source</a><br></p>
+<p><a id='biproduct-Tuple{Vector{TorQuadModule}}' href='#biproduct-Tuple{Vector{TorQuadModule}}'>#</a>
+<strong><code>biproduct</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">biproduct</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vararg</span><span class="p">{</span><span class="kt">TorQuadModule</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">},</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">}</span>
+<span class="n">biproduct</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModule</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">},</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a collection of torsion quadratic modules <script type="math/tex">T_1, \ldots, T_n</script>, return their biproduct <script type="math/tex">T := T_1\oplus \ldots \oplus T_n</script>, together with the injections <script type="math/tex">T_i \to T</script> and the projections <script type="math/tex">T \to T_i</script>.</p>
+<p>For objects of type <code>TorQuadModule</code>, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <code>T</code> as a direct sum with the inctions <script type="math/tex">T_i \to T</script>, one should call <code>direct_sum(x)</code>. If one wants to obtain <code>T</code> as a direct product with the projections <script type="math/tex">T \to T_i</script>, one should call <code>direct_product(x)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2045-L2059' class='documenter-source'>source</a><br></p>
+<p><a id='Submodules'></a></p>
+<p><a id='Submodules-1'></a></p>
+<h3 id="submodules">Submodules</h3>
+<p><a id='submodules-Tuple{TorQuadModule}' href='#submodules-Tuple{TorQuadModule}'>#</a>
+<strong><code>submodules</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">submodules</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">;</span><span class="w"> </span><span class="n">kw</span><span class="o">...</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the submodules of <code>T</code> as an iterator. Possible keyword arguments to restrict the submodules:</p>
+<ul>
+<li><code>order::Int</code>: only submodules of order <code>order</code>,</li>
+<li><code>index::Int</code>: only submodules of index <code>index</code>,</li>
+<li><code>subtype::Vector{Int}</code>: only submodules which are isomorphic as an abelian group to <code>abelian_group(subtype)</code>,</li>
+<li><code>quotype::Vector{Int}</code>: only submodules whose quotient are isomorphic as an abelian to <code>abelian_group(quotype)</code>.</li>
+</ul>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2235-L2246' class='documenter-source'>source</a><br></p>
+<p><a id='stable_submodules-Tuple{TorQuadModule, Vector{TorQuadModuleMap}}' href='#stable_submodules-Tuple{TorQuadModule, Vector{TorQuadModuleMap}}'>#</a>
+<strong><code>stable_submodules</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">stable_submodules</span><span class="p">(</span><span class="n">T</span><span class="o">::</span><span class="kt">TorQuadModule</span><span class="p">,</span><span class="w"> </span><span class="n">act</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">TorQuadModuleMap</span><span class="p">};</span><span class="w"> </span><span class="n">kw</span><span class="o">...</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the submodules of <code>T</code> stable under the endomorphisms in <code>act</code> as an iterator. Possible keyword arguments to restrict the submodules:</p>
+<ul>
+<li><code>quotype::Vector{Int}</code>: only submodules whose quotient are isomorphic as an abelian group to <code>abelian_group(quotype)</code>.</li>
+</ul>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/49d96a0f67fbfbb64172369f09b52dc265178f10/src/QuadForm/Torsion.jl#L2252-L2259' class='documenter-source'>source</a><br></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.bd41221c.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>
