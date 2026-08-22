@@ -43,7 +43,7 @@ function short_vectors(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; check::Boo
   if _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(Vector, _G, ub, S)
+  return _short_vectors_gram(FinckePohstInt, _G, ub, S)
 end
 
 function short_vectors_iterator(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
@@ -55,7 +55,7 @@ function short_vectors_iterator(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; c
   if rank(L) != 0 && _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(LatEnumCtx, _G, ub, S)
+  return _short_vectors_gram(FinckePohstIntIterCtx, _G, ub, S)
 end
 
 function short_vectors(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
@@ -71,7 +71,7 @@ function short_vectors(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=
   if _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(Vector, _G, lb, ub, S)
+  return _short_vectors_gram(FinckePohstInt, _G, lb, ub, S)
 end
 
 function short_vectors_iterator(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
@@ -84,7 +84,7 @@ function short_vectors_iterator(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingEle
   if rank(L) != 0 && _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(LatEnumCtx, _G, lb, ub, S)
+  return _short_vectors_gram(FinckePohstIntIterCtx, _G, lb, ub, S)
 end
 
 ################################################################################
