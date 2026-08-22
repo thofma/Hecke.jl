@@ -182,6 +182,7 @@ embed_in_unimodular(::ZZLat, ::IntegerUnion, ::IntegerUnion)
 ### LLL and indefinite LLL
 ```@docs
 lll(L::ZZLat; same_ambient::Bool = true)
+good_basis(::ZZLat)
 ```
 ### Short Vectors
 ```@docs

@@ -304,6 +304,41 @@ end
   @test length(Hecke.short_vectors_with_condition(ZZRingElem, L)[1])==4
   @test length(Hecke.short_vectors_with_condition(Int, L)[1])==4
 
+  @testset "Good basis" begin
+    @test isempty(Hecke._good_basis_defects(identity_matrix(ZZ, 3), 3))
+    @test Hecke._good_basis_defects(ZZ[1 0 0; 0 1 0], 3) == ZZRingElem[0]
+    @test Hecke._good_basis_defects(ZZ[2 0; 0 1], 2) == ZZRingElem[2]
+
+    L = root_lattice(:E, 8)
+    M = @inferred good_basis(L; rng=Hecke.MersenneTwister(1))
+    @test M == L
+    @test ambient_space(M) === ambient_space(L)
+    @test maximum(abs, diagonal(gram_matrix(M))) == 2
+
+    # The vectors of norm at most 4 span a primitive sublattice of corank one.
+    L = integer_lattice(; gram=ZZ[4 2 2; 2 4 1; 2 1 6])
+    M = @inferred good_basis(L; target=4, rng=Hecke.MersenneTwister(2))
+    @test M == L
+    @test maximum(abs, diagonal(gram_matrix(M))) == 6
+
+    N = rescale(L, -1)
+    P = good_basis(N; target=4, rng=Hecke.MersenneTwister(2))
+    @test P == N
+    @test maximum(abs, diagonal(gram_matrix(P))) == 6
+
+    # If the short vectors have codimension greater than one, use the random
+    # fallback and retain the LLL basis if it cannot be improved.
+    L = integer_lattice(; gram=10 * identity_matrix(ZZ, 2))
+    M = good_basis(L; target=4, rng=Hecke.MersenneTwister(3))
+    @test M == L
+    @test gram_matrix(M) == gram_matrix(L)
+
+    @test_throws ArgumentError good_basis(
+      integer_lattice(; gram=matrix(QQ, 1, 1, [1//2])),
+    )
+    @test_throws ArgumentError good_basis(integer_lattice(; gram=ZZ[1 0; 0 -1]))
+  end
+
   # Some lattices for cheaper testing
   A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
   # Genus representatives of some genus

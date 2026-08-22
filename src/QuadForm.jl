@@ -58,6 +58,7 @@ include("QuadForm/OrbitsMod2.jl")
 include("QuadForm/IntegerLattices/ShortVectors.jl")
 include("QuadForm/IntegerLattices/ShortVectorsTarget.jl")
 include("QuadForm/IntegerLattices/CloseVectors.jl")
+include("QuadForm/IntegerLattices/GoodBasis.jl")
 
 # indefinite LLL
 include("QuadForm/IntegerLattices/indefiniteLLL.jl")
