@@ -52,11 +52,24 @@ function __assert_has_automorphisms(
   use_multiset::Bool=true,
   do_lll::Bool=true,
   use_dual::Bool=false,
+  algorithm::Symbol=:default,
 )
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
+
+  # short vector backtracking; falls through to the code below if the input is
+  # out of range for that implementation
+  if algorithm == :backtrack && is_definite(L) && rank(L) > 1
+    res = _automorphism_group_backtrack(L)
+    if res !== nothing
+      L.automorphism_group_generators = res[1]
+      L.automorphism_group_order = res[2]
+      return nothing
+    end
+  end
+
   # Corner cases
   if rank(L) == 0
     L.automorphism_group_generators = ZZMatrix[identity_matrix(ZZ, 0)]
@@ -588,7 +601,7 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, algorithm::Symbol = :default)
   if L == M
     return true
   end
@@ -602,7 +615,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   end
 
   if is_definite(L) && is_definite(M)
-    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
+    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth, algorithm = algorithm)[1]
   end
 
   if rank(L) == 2
@@ -619,7 +632,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, algorithm::Symbol = :default)
 
   # cornercase
   if rank(L) == 0
@@ -627,6 +640,10 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_
   end
 
   if is_definite(L) && is_definite(M)
+    if algorithm == :backtrack
+      res = _is_isometric_with_isometry_backtrack(L, M)
+      res !== nothing && return res
+    end
     return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth)
   end
 
