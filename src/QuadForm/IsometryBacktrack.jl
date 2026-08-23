@@ -1673,11 +1673,6 @@ mutable struct BTSearch{T <: Signed}
   ycols::Vector{Vector{T}}                 # scratch: one n-vector per depth
   clsidx::Vector{Int32}                    # signed indices of the restricting class
   clsV::Matrix{T}                          # their coordinates, sign applied
-  clsVT::Matrix{T}                         # the same, transposed
-  batches::Vector{Matrix{Int32}}           # per level: class x candidates
-  batchlev::Int                            # level whose batch is usable (0: none)
-  batchcol::Int                            # column of it belonging to x_batchlev
-  cntbuf::Vector{Int}
   clsfor::Int                              # the image the class was built for
   clsval::Int
   usecombs::Bool                           # whether the test is switched on
@@ -1757,8 +1752,8 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   Union{Nothing, BTCombs}[nothing for _ in 1:n], Int[],
                   [Int32[] for _ in 1:n], zeros(Int, n), zeros(UInt64, n),
                   fill(-1, n), [zeros(T, n) for _ in 1:8], Int32[],
-                  zeros(T, n, 0), zeros(T, 0, n),
-                  [zeros(Int32, 0, 0) for _ in 1:(n + 1)], 0, 0, Int[], 0, 0,
+                  zeros(T, n, 0),
+                  0, 0,
                   false,                                   # usecombs
                   n,                                       # maxlevel
                   1,                                       # step
@@ -1858,8 +1853,7 @@ end
 # then in `S.solution`) and 1 if nothing was decided.
 # The class the restricted test runs over only has to be determined once for
 # each image of the restricting level; the test below then costs |class|
-# instead of |V|.  The class is also stored transposed, which makes the batched
-# scalar products of `_bt_batch!` a contiguous sweep.
+# instead of |V|.
 function _bt_ensure_class!(S::BTSearch, C::BTCombs)
   ctx = S.tgt
   n = ctx.n
@@ -1881,19 +1875,16 @@ function _bt_ensure_class!(S::BTSearch, C::BTCombs)
   m = length(S.clsidx)
   T = eltype(ctx.V)
   S.clsV = Matrix{T}(undef, n, m)
-  S.clsVT = Matrix{T}(undef, m, n)
   @inbounds for a in 1:m
     u = Int(S.clsidx[a])
     k = u > 0 ? u : -u
     if u > 0
       for i in 1:n
         S.clsV[i, a] = ctx.V[i, k]
-        S.clsVT[a, i] = ctx.V[i, k]
       end
     else
       for i in 1:n
         S.clsV[i, a] = -ctx.V[i, k]
-        S.clsVT[a, i] = -ctx.V[i, k]
       end
     end
   end
@@ -2065,30 +2056,14 @@ function _bt_combs_check!(S::BTSearch, d::Int)
     fill!(cnt, 0)
     if dep == 1
       y1 = yy[1]
-      if S.batchlev == d
-        # the scalar products were computed for all candidates of this level at
-        # once, so only the lookup is left
-        BM = S.batches[d]
-        col = S.batchcol
-        @inbounds for a in 1:m
-          v = Int(BM[a, col])
-          (v < -shift || v > shift) && return 0
-          c = Int(sigof[v + shift + 1])
-          c == 0 && return 0
-          cls[a] = Int32(c)
-          cnt[c] += 1
-          cnt[c] > csz[c] && return 0
-        end
-      else
-        @inbounds for a in 1:m
-          v = _bt_dot(CV, a, y1, n)
-          (v < -shift || v > shift) && return 0
-          c = Int(sigof[v + shift + 1])
-          c == 0 && return 0
-          cls[a] = Int32(c)
-          cnt[c] += 1
-          cnt[c] > csz[c] && return 0
-        end
+      @inbounds for a in 1:m
+        v = _bt_dot(CV, a, y1, n)
+        (v < -shift || v > shift) && return 0
+        c = Int(sigof[v + shift + 1])
+        c == 0 && return 0
+        cls[a] = Int32(c)
+        cnt[c] += 1
+        cnt[c] > csz[c] && return 0
       end
     else
       _bt_pfx!(S, d, C) || return 0
@@ -2462,70 +2437,6 @@ function _bt_descend!(S::BTSearch, I::Int)
   return true
 end
 
-# When the test at level `I` groups a fixed class by the scalar products with
-# x_I, the scalar products needed for *all* candidates of that level form one
-# matrix product.  Computing it in one go instead of once per candidate turns a
-# long sequence of gather-heavy dot products into a cache friendly sweep, and
-# the class size distribution read off from a column then rejects most
-# candidates for the price of a single pass over that column.
-function _bt_batch!(S::BTSearch, I::Int, cl::Vector{Int32})
-  C = _bt_combs_at!(S, I)
-  C === nothing && return false
-  # Only for a test whose signature is a single scalar product.  With a longer
-  # signature the per candidate loop rejects on the first digit that does not
-  # fit, and computing the whole class by candidate matrix up front throws that
-  # away -- measurably more work, not less.
-  (C.rlevel == 0 || C.dep != 1 || C.first != I || C.rlevel >= I) && return false
-  length(cl) < 32 && return false
-  _bt_ensure_class!(S, C)
-  m = size(S.clsVT, 1)
-  m == 0 && return false
-  ctx = S.tgt
-  n = ctx.n
-  nc = length(cl)
-  if size(S.batches[I], 1) < m || size(S.batches[I], 2) < nc
-    S.batches[I] = Matrix{Int32}(undef, m, nc)
-  end
-  B = S.batches[I]
-  VT = S.clsVT
-  W = ctx.W
-  # The column of a candidate is accumulated four coordinates at a time: the
-  # column of `B` is read and written once per group instead of once per
-  # coordinate, which is what the loop is limited by.
-  @inbounds for idx in 1:nc
-    q = Int(cl[idx])
-    k = q > 0 ? q : -q
-    sg = Int32(q > 0 ? 1 : -1)
-    for a in 1:m
-      B[a, idx] = 0
-    end
-    i = 1
-    while i + 3 <= n
-      y0 = sg * Int32(W[i, k])
-      y1 = sg * Int32(W[i + 1, k])
-      y2 = sg * Int32(W[i + 2, k])
-      y3 = sg * Int32(W[i + 3, k])
-      if (y0 | y1 | y2 | y3) != 0
-        @simd for a in 1:m
-          B[a, idx] += Int32(VT[a, i]) * y0 + Int32(VT[a, i + 1]) * y1 +
-                       Int32(VT[a, i + 2]) * y2 + Int32(VT[a, i + 3]) * y3
-        end
-      end
-      i += 4
-    end
-    while i <= n
-      y0 = sg * Int32(W[i, k])
-      if y0 != 0
-        @simd for a in 1:m
-          B[a, idx] += Int32(VT[a, i]) * y0
-        end
-      end
-      i += 1
-    end
-  end
-  return true
-end
-
 function _bt_extend!(S::BTSearch, d::Int)
   n = S.n
   d == n && return true
@@ -2533,64 +2444,13 @@ function _bt_extend!(S::BTSearch, d::Int)
   I > S.maxlevel &&
     throw(BTError("internal error: search went past the tracked levels"))
   cl = S.cand[I]
-  batched = false
-  if S.usecombs && I < n
-    batched = _bt_batch!(S, I, cl)
-  end
-  local C, cnt, shift, sigof, csize, m, BM
-  if batched
-    C = S.combs[I]::BTCombs
-    shift = C.shift
-    sigof = C.sigof
-    csize = C.csize
-    m = size(S.clsVT, 1)
-    BM = S.batches[I]
-    if length(S.cntbuf) < C.nsig
-      resize!(S.cntbuf, C.nsig)
-    end
-    cnt = S.cntbuf
-  end
   @inbounds for idx in 1:length(cl)
     S.aborted && return false
-    if batched
-      # class size distribution from the precomputed column
-      for c in 1:C.nsig
-        cnt[c] = 0
-      end
-      ok = true
-      for a in 1:m
-        v = Int(BM[a, idx])
-        if v < -shift || v > shift
-          ok = false
-          break
-        end
-        c = Int(sigof[v + shift + 1])
-        if c == 0
-          ok = false
-          break
-        end
-        cnt[c] += 1
-      end
-      if ok
-        for c in 1:C.nsig
-          if cnt[c] != csize[c]
-            ok = false
-            break
-          end
-        end
-      end
-      ok || continue
-    end
     S.x[I] = Int(cl[idx])
     if I == n
       return true
     end
-    if batched
-      S.batchlev = I
-      S.batchcol = idx
-    end
     r = _bt_combs_check!(S, I)
-    S.batchlev = 0
     r == 0 && continue
     r == 2 && return true
     if S.usepool ? _bt_descend!(S, I) : _bt_cands!(S, I + 1, I)
