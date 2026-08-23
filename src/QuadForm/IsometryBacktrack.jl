@@ -380,16 +380,22 @@ function _bt_enum_cost(q::Vector{Float64}, n::Int, bound::Float64,
   return best
 end
 
+# lv[k] = log of the volume of the unit ball in dimension k, from
+# Gamma(x + 1) = x * Gamma(x) in steps of one, which is a step of two in k
+function _bt_ball_volumes(n::Int)
+  lg = Vector{Float64}(undef, n + 1)         # lg[k + 1] = log Gamma(k/2 + 1)
+  lg[1] = 0.0
+  n >= 1 && (lg[2] = log(pi) / 2 - log(2.0))
+  for k in 2:n
+    lg[k + 1] = lg[k - 1] + log(k / 2)
+  end
+  return Float64[(k / 2) * log(pi) - lg[k + 1] for k in 1:n]
+end
+
 function _bt_enum_order(G::Matrix{Int}, bound::Int)
   n = size(G, 1)
   n <= 2 && return collect(1:n)
-  # lv[k] = log of the volume of the unit ball in dimension k
-  lv = Vector{Float64}(undef, n)
-  lg = 0.0                                   # log Gamma(k/2 + 1)
-  for k in 1:n
-    lg += log(k / 2)
-    lv[k] = (k / 2) * log(pi) - lg
-  end
+  lv = _bt_ball_volumes(n)
   A = Matrix{Float64}(undef, n, n)
   q = Vector{Float64}(undef, n)
   # the order the caller supplied (usually LLL reduced, which is already good)
@@ -440,7 +446,143 @@ function _bt_enum_order(G::Matrix{Int}, bound::Int)
   return best
 end
 
+# Gram matrix of the projections of b_k, ..., b_j orthogonally to
+# b_1, ..., b_{k-1}, scaled by the determinant of the first k - 1 of them so
+# that it stays integral (Sylvester).
+function _bt_proj_gram(G::ZZMatrix, k::Int, j::Int)
+  k == 1 && return G[1:j, 1:j]
+  A = G[1:(k - 1), 1:(k - 1)]
+  B = G[1:(k - 1), k:j]
+  Aq = inv(change_base_ring(QQ, A))
+  P = change_base_ring(QQ, G[k:j, k:j]) -
+      change_base_ring(QQ, transpose(B)) * Aq * change_base_ring(QQ, B)
+  return map_entries(ZZ, det(A) * P)
+end
+
+# A block Korkine-Zolotarev reduction of the Gram matrix: every basis vector is
+# made a shortest vector of the lattice its `beta` successors project to.  The
+# result is only another basis of the same lattice, so this is a pure speed
+# heuristic for the enumeration; the transform is checked to be unimodular and
+# to give the Gram matrix back, so a bug here cannot make the result wrong.
+# Returns the new Gram matrix and the transform, or `nothing`.
+function _bt_bkz_gram(G::ZZMatrix, beta::Int, tours::Int)
+  n = nrows(G)
+  Gc, U = lll_gram_with_transform(G)
+  for _ in 1:tours
+    changed = false
+    for k in 1:(n - 1)
+      j = min(k + beta - 1, n)
+      j <= k && continue
+      M = _bt_proj_gram(Gc, k, j)
+      m = nrows(M)
+      L = integer_lattice(; gram = M, cached = false)
+      y = ZZRingElem[]
+      bn = M[1, 1]
+      for v in shortest_vectors(L)
+        c = ZZRingElem[v[i] for i in 1:m]
+        r = (matrix(ZZ, 1, m, c) * M * transpose(matrix(ZZ, 1, m, c)))[1, 1]
+        if r < bn
+          bn = r
+          y = c
+        end
+      end
+      isempty(y) && continue
+      # complete y to a unimodular transform of the block whose first row it is
+      H, T = hnf_with_transform(matrix(ZZ, m, 1, y))
+      H[1, 1] == 1 || continue
+      W = transpose(inv(T))
+      Un = identity_matrix(ZZ, n)
+      for a in 1:m, b in 1:m
+        Un[k + a - 1, k + b - 1] = W[a, b]
+      end
+      U = Un * U
+      Gc = Un * Gc * transpose(Un)
+      Gc, T2 = lll_gram_with_transform(Gc)
+      U = T2 * U
+      changed = true
+    end
+    changed || break
+  end
+  return Gc, U
+end
+
+# The enumeration may be run in any basis of the lattice.  When the tree the
+# current one gives is predicted to be big, a block reduction is tried and kept
+# if it is predicted to be better; the cost of the reduction is only worth it
+# then.  `nothing` means "keep the basis as it is".
+function _bt_enum_basis(G::Matrix{Int}, bound::Int)
+  n = size(G, 1)
+  n < 12 && return nothing
+  lv = _bt_ball_volumes(n)
+  A = Matrix{Float64}(undef, n, n)
+  q = Vector{Float64}(undef, n)
+  idp = collect(1:n)
+  _bt_gs_norms!(q, A, G, idp, n) || return nothing
+  c0 = _bt_enum_cost(q, n, Float64(bound), lv)
+  # below this the whole enumeration is cheaper than the reduction would be
+  c0 > log(1.0e6) || return nothing
+  GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  local Gb, U
+  try
+    Gb, U = _bt_bkz_gram(GZ, min(20, n), 2)
+  catch
+    return nothing
+  end
+  # the reduction is a heuristic, but a wrong transform would give wrong
+  # vectors, so both of its defining properties are checked
+  abs(det(U)) == 1 || return nothing
+  Gb == U * GZ * transpose(U) || return nothing
+  Gn = Matrix{Int}(undef, n, n)
+  for i in 1:n, j in 1:n
+    fits(Int, Gb[i, j]) || return nothing
+    Gn[i, j] = Int(Gb[i, j])
+  end
+  _bt_gs_norms!(q, A, Gn, idp, n) || return nothing
+  _bt_enum_cost(q, n, Float64(bound), lv) < c0 || return nothing
+  Um = Matrix{Int}(undef, n, n)
+  for i in 1:n, j in 1:n
+    fits(Int, U[i, j]) || return nothing
+    Um[i, j] = Int(U[i, j])
+  end
+  return Gn, Um
+end
+
 function _bt_short_vectors(G::Matrix{Int}, bound::Int)
+  n = size(G, 1)
+  bas = _bt_enum_basis(G, bound)
+  if bas !== nothing
+    Gn, U = bas
+    Vn, nrm = _bt_short_vectors_perm(Gn, bound)
+    # a vector with coordinates y in the new basis has coordinates transpose(U)
+    # times y in the old one
+    V = Matrix{Int32}(undef, n, size(Vn, 2))
+    @inbounds for j in 1:size(Vn, 2)
+      for i in 1:n
+        t = 0
+        for k in 1:n
+          t += U[k, i] * Int(Vn[k, j])
+        end
+        V[i, j] = Int32(t)
+      end
+      for i in n:-1:1
+        if V[i, j] != 0
+          if V[i, j] < 0
+            for l in 1:i
+              V[l, j] = -V[l, j]
+            end
+          end
+          break
+        end
+      end
+    end
+    return V, nrm
+  end
+  return _bt_short_vectors_perm(G, bound)
+end
+
+# Enumerate in the order which the fingerprint of the tree predicts to be the
+# cheapest, and put the coordinates back afterwards.
+function _bt_short_vectors_perm(G::Matrix{Int}, bound::Int)
   n = size(G, 1)
   per = _bt_enum_order(G, bound)
   if per != 1:n
