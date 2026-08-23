@@ -1389,21 +1389,17 @@ end
 
 ################################################################################
 #
-#  Bacher type invariant
+#  Spheres around a short vector
 #
 ################################################################################
 
-# The combination test needs at least two fixed images before the class sums
-# span, so it cannot rule out a wrong image of the *first* base vector.  For
-# that we use an invariant of a single short vector `p`: inside the "sphere"
+# The value `t` for which the "sphere"
 #
 #     S(p) = { w short : <w, p> = t }
 #
-# (with `t` chosen once, as the value giving the smallest sphere) collect the
-# multiset of the scalar products <w, w'> for w, w' in S(p).  An isometry maps
-# S(p) onto S(g(p)), so the multiset is an invariant of `p`.  This is the
-# classical Bacher polynomial; it separates short vectors which have the same
-# distribution of scalar products but lie in different orbits.
+# around the short vector `p` is smallest, together with its size.  An isometry
+# maps S(p) onto S(g(p)), so restricting a test to that sphere costs |S(p)|
+# instead of |V| per sweep and keeps it a necessary condition.
 function _bt_sphere_value(ctx::BTCtx, p::Int)
   n = ctx.n
   nv = ctx.nv
@@ -1428,60 +1424,6 @@ function _bt_sphere_value(ctx::BTCtx, p::Int)
     end
   end
   return best, bestc
-end
-
-function _bt_bacher(ctx::BTCtx, p::Int, t::Int)
-  n = ctx.n
-  nv = ctx.nv
-  y = _bt_load_y!(ctx.ytmp, ctx, p)
-  sph = Int32[]
-  @inbounds for j in 1:nv
-    sp = _bt_dot(ctx.V, j, y, n)
-    if sp == t
-      push!(sph, Int32(j))
-    end
-    if -sp == t
-      push!(sph, Int32(-j))
-    end
-  end
-  m = length(sph)
-  # gather the coordinates and the scalar product rows contiguously
-  Tv = eltype(ctx.V)
-  Vs = Matrix{Tv}(undef, n, m)
-  Ws = Matrix{Tv}(undef, n, m)
-  @inbounds for a in 1:m
-    q = Int(sph[a])
-    k = abs(q)
-    if q > 0
-      for i in 1:n
-        Vs[i, a] = ctx.V[i, k]
-        Ws[i, a] = ctx.W[i, k]
-      end
-    else
-      for i in 1:n
-        Vs[i, a] = -ctx.V[i, k]
-        Ws[i, a] = -ctx.W[i, k]
-      end
-    end
-  end
-  b = ctx.bound
-  h = zeros(Int, 2 * b + 1)
-  @inbounds for a in 1:m
-    for c in (a + 1):m
-      sp = Int32(0)
-      for i in 1:n
-        sp += Int32(Vs[i, a]) * Int32(Ws[i, c])
-      end
-      u = Int(sp)
-      (u < -b || u > b) && continue
-      h[u + b + 1] += 1
-    end
-  end
-  r = _bt_mix(UInt64(m) * 0x9e3779b97f4a7c15 + UInt64(t % UInt32))
-  for c in 1:(2 * b + 1)
-    r = _bt_mix(r + UInt64(h[c] % UInt64) * 0xc2b2ae3d27d4eb4f + UInt64(c))
-  end
-  return r
 end
 
 ################################################################################
@@ -1825,8 +1767,6 @@ mutable struct BTSearch{T <: Signed}
   sigtmp::Vector{Int}
   spd::Vector{Vector{Int32}}               # spd[k]: <v_j, x_k> for all j
   spdx::Vector{Int}                        # which x_k the cache belongs to
-  bsrc::Vector{UInt64}                     # Bacher invariant of b_{per[d]}
-  bval::Vector{Int}                        # sphere value used for it (0: none)
   ycols::Vector{Vector{T}}                 # scratch: one n-vector per depth
   clsidx::Vector{Int32}                    # signed indices of the restricting class
   clsV::Matrix{T}                          # their coordinates, sign applied
@@ -1907,8 +1847,8 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   Vector{T}(undef, n), zeros(UInt64, nw), zeros(UInt64, nw),
                   zeros(UInt64, nw), zeros(Int, n + 1), 0, lookahead,
                   Union{Nothing, BTCombs}[nothing for _ in 1:n], Int[],
-                  [Int32[] for _ in 1:n], zeros(Int, n), zeros(UInt64, n),
-                  fill(-1, n), [zeros(T, n) for _ in 1:8], Int32[],
+                  [Int32[] for _ in 1:n], zeros(Int, n),
+                  [zeros(T, n) for _ in 1:8], Int32[],
                   zeros(T, n, 0),
                   0, 0,
                   false,                                   # usecombs
@@ -1938,7 +1878,8 @@ end
 # Prepare the scalar product combination test for every level.  `dep` is the
 # number of base vectors a signature uses; the smallest one for which the sums
 # span is used, since a smaller `dep` means the test bites earlier.
-function _bt_setup_combs!(S::BTSearch, ctx::BTCtx; maxdep::Int = 3)
+function _bt_setup_combs!(S::BTSearch, ctx::BTCtx; maxdep::Int = 3,
+                          budget::Float64 = Inf)
   n = S.n
   # the value defining the smallest class of the first base vector; restricting
   # the test to that class makes a sweep cost |class| instead of |V|
@@ -1960,13 +1901,21 @@ function _bt_setup_combs!(S::BTSearch, ctx::BTCtx; maxdep::Int = 3)
   for d in 1:n
     S.fpd[d] > 1 && (dlast = d)
   end
+  # Looking for the level where they span costs one full test per level, which
+  # for a lattice whose short vectors do not span at all is spent for nothing:
+  # no level spans and `maxlevel` ends up being `n` anyway.  Since the answer
+  # is only used through `max(dspan, dlast)`, a level beyond `dlast` is worth
+  # probing only while it is still cheap, so the search stops there.
   dspan = 0
-  for d in 1:n
+  t0 = time()
+  for d in 1:min(n, max(dlast, 2))
     c = _bt_combs_at!(S, d)
     if c !== nothing && c.spans
       dspan = d
       break
     end
+    # the answer is worth no more than the search which asked for it
+    d >= 2 && time() - t0 > budget && break
   end
   S.maxlevel = dspan == 0 ? n : max(dspan, dlast)
   @vprintln :Lattice 1 "backtrack: combinations decisive from level $(dspan), tracking $(S.maxlevel) of $(n) levels"
@@ -2050,45 +1999,6 @@ function _bt_ensure_class!(S::BTSearch, C::BTCombs)
   return nothing
 end
 
-# Compare the Bacher invariant of the image x_d with the one of b_{per[d]}.
-# Both are computed lazily, and only for the levels where the combination test
-# does not apply, so that nothing is paid on easy input.
-function _bt_bacher_check!(S::BTSearch, d::Int, src::BTCtx)
-  S.usecombs || return true
-  (d < 1 || d > S.n) && return true
-  # only needed where the combination test is not already decisive
-  c = _bt_combs_at!(S, d)
-  (c !== nothing && c.spans) && return true
-  if S.bval[d] < 0
-    p = Int(src.bidx[S.per[d]])
-    p == 0 && (S.bval[d] = 0; return true)
-    t, m = _bt_sphere_value(src, p)
-    # only worth it if the sphere is small enough
-    if t == 0 || m > 20000
-      S.bval[d] = 0
-      return true
-    end
-    h = _bt_bacher(src, p, t)
-    # calibrate: if a sample of short vectors all have the same invariant, it
-    # cannot separate anything and only costs time
-    useful = false
-    st = max(1, div(src.nv, 8))
-    for j in 1:st:src.nv
-      if _bt_bacher(src, j, t) != h
-        useful = true
-        break
-      end
-    end
-    if !useful
-      S.bval[d] = 0
-      return true
-    end
-    S.bval[d] = t
-    S.bsrc[d] = h
-  end
-  S.bval[d] == 0 && return true
-  return _bt_bacher(S.tgt, S.x[d], S.bval[d]) == S.bsrc[d]
-end
 
 # The signature of the test at level `d` is read off the images
 # x_first, ..., x_d.  All but the last of them are fixed while the candidates
@@ -3056,7 +2966,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
         else
           # the cheap invariants first: they need no pool, and a failure here
           # saves the sweep of the descent
-          r = _bt_bacher_check!(S, step, ctx) ? _bt_combs_check!(S, step) : 0
+          r = _bt_combs_check!(S, step)
           if r == 2
             found = true
           elseif r == 1
@@ -3068,7 +2978,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
           if !S.usecombs
             @vprintln :Lattice 1 "backtrack: switching on the scalar product combinations"
             tc = time()
-            _bt_setup_combs!(S, ctx)
+            _bt_setup_combs!(S, ctx; budget = time() - tt0)
             S.usecombs = true
             # the combinations bound the depth the search can reach, which is
             # what decides between the pool and the per level filtering
@@ -3213,9 +3123,10 @@ function _bt_isometry(G1::Matrix{Int}, G2::Matrix{Int})
     S.solved = false
     S.nodelimit = S.usecombs ? typemax(Int) : S.nodes + 400
     S.worklimit = S.usecombs ? typemax(Int) : S.work + 32 * c2.nv
+    t0iso = time()
     found = _bt_extend!(S, 0)
     if S.aborted && !S.usecombs
-      _bt_setup_combs!(S, c1)
+      _bt_setup_combs!(S, c1; budget = time() - t0iso)
       S.usecombs = true
       S.usepool = _bt_prefer_pool(F, S.per, 1, min(S.n, S.maxlevel), S.n, c2.nv)
       continue
