@@ -559,6 +559,7 @@ mutable struct BTCtx{T <: Signed}
   htab::Vector{Int32}       # hash table, entries are indices into V
   hmask::UInt64
   bidx::Vector{Int32}       # bidx[i] = signed index of the i-th basis vector
+  maxv::Int                 # largest absolute coordinate of a short vector
   colors::Vector{UInt64}    # an isometry invariant colour of each short vector
                             # (empty if all vectors have the same colour)
   comps_ok::Bool            # whether the orthogonal decomposition was computed
@@ -756,7 +757,13 @@ function _bt_ctx_finish(::Type{T}, n::Int, G::Matrix{Int}, bound::Int, nv::Int,
   @inbounds for i in 1:n, j in 1:nv
     Wt[j, i] = W[i, j]
   end
-  ctx = BTCtx{T}(n, G, bound, nv, V, W, Wt, nrm, Int32[], UInt64(0), Int32[],
+  mv = 0
+  @inbounds for j in 1:nv, i in 1:n
+    a = Int(V[i, j])
+    a < 0 && (a = -a)
+    a > mv && (mv = a)
+  end
+  ctx = BTCtx{T}(n, G, bound, nv, V, W, Wt, nrm, Int32[], UInt64(0), Int32[], mv,
                  UInt64[], false, UInt64(0), Vector{T}(undef, n),
                  Vector{T}(undef, n))
   _bt_build_hash!(ctx)
@@ -1472,23 +1479,33 @@ function _bt_combs(ctx::BTCtx, per::Vector{Int}, first::Int, dep::Int;
   nsig = 0
   # the signed vectors the test runs over: everything, or only those in the
   # class of the level `rlevel`, which makes a sweep cost |class| instead of |V|
-  sel = Int[]
+  sel = Vector{Int32}(undef, 2 * nv)
+  ns = 0
   if rlevel == 0
-    for j in 1:nv
-      push!(sel, j)
-      push!(sel, -j)
+    @inbounds for j in 1:nv
+      sel[ns + 1] = Int32(j)
+      sel[ns + 2] = Int32(-j)
+      ns += 2
     end
   else
     q = per[rlevel]
-    for j in 1:nv
+    @inbounds for j in 1:nv
       w = Int(ctx.Wt[j, q])
-      w == rvalue && push!(sel, j)
-      -w == rvalue && push!(sel, -j)
+      if w == rvalue
+        ns += 1
+        sel[ns] = Int32(j)
+      end
+      if -w == rvalue
+        ns += 1
+        sel[ns] = Int32(-j)
+      end
     end
   end
-  isempty(sel) && return nothing
-  @inbounds for u in sel
-    j = abs(u)
+  ns == 0 && return nothing
+  resize!(sel, ns)
+  @inbounds for uu in sel
+    u = Int(uu)
+    j = u > 0 ? u : -u
     sgn = u > 0 ? 1 : -1
     for t in 1:dep
       sig[t] = sgn * Int(ctx.Wt[j, per[first + t - 1]])
@@ -1503,10 +1520,7 @@ function _bt_combs(ctx::BTCtx, per::Vector{Int}, first::Int, dep::Int;
   # the Gram matrix of the sums costs nsig^2 scalar products per node
   (nsig < 2 || nsig > 1024) && return nothing
   # overflow bound for the Gram matrix of the sums
-  mv = 0
-  @inbounds for j in 1:nv, i in 1:n
-    mv = max(mv, abs(Int(ctx.V[i, j])))
-  end
+  mv = ctx.maxv
   mg = 0
   for i in 1:n, j in 1:n
     mg = max(mg, abs(ctx.G[i, j]))
@@ -1516,8 +1530,9 @@ function _bt_combs(ctx::BTCtx, per::Vector{Int}, first::Int, dep::Int;
   ZZRingElem(n)^2 * mg * ma^2 < div(typemax(Int), 4) || return nothing
   A = zeros(Int, n, nsig)
   csize = zeros(Int, nsig)
-  @inbounds for u in sel
-    j = abs(u)
+  @inbounds for uu in sel
+    u = Int(uu)
+    j = u > 0 ? u : -u
     sgn = u > 0 ? 1 : -1
     for t in 1:dep
       sig[t] = sgn * Int(ctx.Wt[j, per[first + t - 1]])
@@ -1824,14 +1839,16 @@ function _bt_combs_at!(S::BTSearch, d::Int)
   ctx = S.src
   maxdep = S.combsmaxdep
   best = nothing
+  # The signature of depth `dep` uses the levels d - dep + 1, ..., d, so the
+  # one of depth dep - 1 forgets its first digit: its classes are unions of
+  # these, and their sums span a subspace of what these span.  The longest
+  # signature which can be built is therefore the only one that has to be
+  # looked at -- if it does not span, no shorter one does either.
   for dep in min(maxdep, d):-1:1
     c = _bt_combs(ctx, S.per, d - dep + 1, dep)
     c === nothing && continue
-    best === nothing && (best = c)
-    if c.spans
-      best = c
-      break
-    end
+    best = c
+    break
   end
   # a restricted test is far cheaper; use it unless the unrestricted one is
   # decisive
