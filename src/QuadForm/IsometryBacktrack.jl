@@ -1386,6 +1386,7 @@ mutable struct BTCombs
   asum::Matrix{Int32}        # n x nsig scratch
   gsum::Matrix{Int}          # n x nsig scratch, G * asum
   Qt::Matrix{Int}            # nsig x nsig scratch
+  rpow::Int                  # radix^(dep - 1): the weight of the last digit
   corder::Vector{Int}        # classes by increasing size: the cheapest test first
   cls::Vector{Int32}         # scratch: class of every vector of the class
   ccnt::Vector{Int}          # scratch: class sizes of the image
@@ -1576,7 +1577,7 @@ function _bt_combs(ctx::BTCtx, per::Vector{Int}, first::Int, dep::Int;
   return BTCombs(dep, first, rlevel, rvalue, nsig, radix, shift, packmax, sigof,
                  negl, csize, A32, Q, spans, piv, prime, Binv,
                  zeros(Int32, n, nsig), zeros(Int, n, nsig),
-                 zeros(Int, nsig, nsig), sortperm(csize), Int32[],
+                 zeros(Int, nsig, nsig), radix^(dep - 1), sortperm(csize), Int32[],
                  zeros(Int, nsig), zeros(Int, nsig + 1), zeros(Int, nsig),
                  Int32[])
 end
@@ -1683,6 +1684,11 @@ mutable struct BTSearch{T <: Signed}
   maxlevel::Int                            # levels above this are never reached
   step::Int                                # first level of the current step
   usepool::Bool                            # pool sweep, or per level filtering
+  pfx::Vector{Vector{Int32}}               # per level: packed signature of the
+  pfxx::Vector{Vector{Int}}                #   images which are fixed there,
+  pfxgen::Vector{Int}                      #   and what it was built for
+  pfxok::Vector{Bool}
+  clsgen::Int                              # bumped whenever the class changes
   bkt::Vector{Vector{Int32}}               # short vectors by <., x_step>
   bktfor::Int                              # the image the buckets belong to
   yk::Vector{Vector{T}}                    # yk[k] = G * x_k, for the dot products
@@ -1753,10 +1759,28 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   fill(-1, n), [zeros(T, n) for _ in 1:8], Int32[],
                   zeros(T, n, 0), zeros(T, 0, n),
                   [zeros(Int32, 0, 0) for _ in 1:(n + 1)], 0, 0, Int[], 0, 0,
-                  false, n, true, 1, [Int32[] for _ in 1:(2 * tgt.bound + 1)], 0,
-                  [zeros(T, n) for _ in 1:n], zeros(Int, n), falses(n), 0, 3,
-                  0, typemax(Int), typemax(Int), false, false,
-                  zeros(Int, 0, 0))
+                  false,                                   # usecombs
+                  n,                                       # maxlevel
+                  1,                                       # step
+                  true,                                    # usepool
+                  [Int32[] for _ in 1:n],                  # pfx
+                  [zeros(Int, n) for _ in 1:n],            # pfxx
+                  fill(-1, n),                             # pfxgen
+                  falses(n),                               # pfxok
+                  0,                                       # clsgen
+                  [Int32[] for _ in 1:(2 * tgt.bound + 1)], # bkt
+                  0,                                       # bktfor
+                  [zeros(T, n) for _ in 1:n],              # yk
+                  zeros(Int, n),                           # ykfor
+                  falses(n),                               # combsdone
+                  0,                                       # combsrval
+                  3,                                       # combsmaxdep
+                  0,                                       # work
+                  typemax(Int),                            # worklimit
+                  typemax(Int),                            # nodelimit
+                  false,                                   # aborted
+                  false,                                   # solved
+                  zeros(Int, 0, 0))                        # solution
 end
 
 # Prepare the scalar product combination test for every level.  `dep` is the
@@ -1853,6 +1877,7 @@ function _bt_ensure_class!(S::BTSearch, C::BTCombs)
   end
   S.clsfor = S.x[C.rlevel]
   S.clsval = C.rvalue
+  S.clsgen += 1
   m = length(S.clsidx)
   T = eltype(ctx.V)
   S.clsV = Matrix{T}(undef, n, m)
@@ -1913,6 +1938,62 @@ function _bt_bacher_check!(S::BTSearch, d::Int, src::BTCtx)
   end
   S.bval[d] == 0 && return true
   return _bt_bacher(S.tgt, S.x[d], S.bval[d]) == S.bsrc[d]
+end
+
+# The signature of the test at level `d` is read off the images
+# x_first, ..., x_d.  All but the last of them are fixed while the candidates
+# of level `d` are being scanned, so their digits of the packed signature are
+# the same for every candidate; they are computed here once per node instead of
+# once per candidate.  `false` if one of them is out of range, which rules out
+# every candidate of the node at once.
+function _bt_pfx!(S::BTSearch, d::Int, C::BTCombs)
+  dep = C.dep
+  m = size(S.clsV, 2)
+  @inbounds pf = S.pfx[d]
+  if length(pf) < m
+    pf = Vector{Int32}(undef, m)
+    @inbounds S.pfx[d] = pf
+  end
+  @inbounds xs = S.pfxx[d]
+  ok = @inbounds S.pfxgen[d] == S.clsgen
+  if ok
+    @inbounds for t in 1:(dep - 1)
+      if xs[t] != S.x[C.first + t - 1]
+        ok = false
+        break
+      end
+    end
+  end
+  ok && return @inbounds S.pfxok[d]
+  ctx = S.tgt
+  n = ctx.n
+  CV = S.clsV
+  radix = C.radix
+  shift = C.shift
+  yy = S.ycols
+  good = true
+  @inbounds for a in 1:m
+    pf[a] = Int32(0)
+  end
+  @inbounds for t in (dep - 1):-1:1
+    y = yy[t]
+    wt = radix^(t - 1)
+    for a in 1:m
+      v = _bt_dot(CV, a, y, n)
+      if v < -shift || v > shift
+        good = false
+        break
+      end
+      pf[a] += Int32((v + shift) * wt)
+    end
+    good || break
+  end
+  @inbounds for t in 1:(dep - 1)
+    xs[t] = S.x[C.first + t - 1]
+  end
+  @inbounds S.pfxgen[d] = S.clsgen
+  @inbounds S.pfxok[d] = good
+  return good
 end
 
 function _bt_combs_check!(S::BTSearch, d::Int)
@@ -2010,13 +2091,14 @@ function _bt_combs_check!(S::BTSearch, d::Int)
         end
       end
     else
+      _bt_pfx!(S, d, C) || return 0
+      pf = S.pfx[d]
+      rpow = C.rpow
+      yd = yy[dep]
       @inbounds for a in 1:m
-        for t in 1:dep
-          v = _bt_dot(CV, a, yy[t], n)
-          (v < -shift || v > shift) && return 0
-          sig[t] = v
-        end
-        c = Int(sigof[_bt_pack(sig, radix, shift, dep) + 1])
+        v = _bt_dot(CV, a, yd, n)
+        (v < -shift || v > shift) && return 0
+        c = Int(sigof[Int(pf[a]) + (v + shift) * rpow + 1])
         c == 0 && return 0
         cls[a] = Int32(c)
         cnt[c] += 1
@@ -2389,6 +2471,10 @@ end
 function _bt_batch!(S::BTSearch, I::Int, cl::Vector{Int32})
   C = _bt_combs_at!(S, I)
   C === nothing && return false
+  # Only for a test whose signature is a single scalar product.  With a longer
+  # signature the per candidate loop rejects on the first digit that does not
+  # fit, and computing the whole class by candidate matrix up front throws that
+  # away -- measurably more work, not less.
   (C.rlevel == 0 || C.dep != 1 || C.first != I || C.rlevel >= I) && return false
   length(cl) < 32 && return false
   _bt_ensure_class!(S, C)

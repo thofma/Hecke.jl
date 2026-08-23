@@ -50,6 +50,18 @@ end
 - Helpers in `test/setup.jl`: `@long_test` (skipped unless `HECKE_TESTLONG=1`).
 - Environment variables: `HECKE_TESTSHORT=1`, `HECKE_TESTLONG=1`, `HECKE_TEST_PARALLEL=N`.
 
+## Local runtime note (AI agents)
+
+- Mandatory workflow: start one long-lived Julia session and reuse it.
+- Start Julia from any folder and load Hecke there:
+  `julia`
+  then `using Revise, Hecke`
+- Do not spawn repeated one-shot Julia commands for iterative checks.
+- If your tooling supports persistent terminals, keep one Julia terminal id alive and
+  send all Julia snippets to that same session.
+- Optional helper: `include("/path/to/Hecke/dev/revise_hecke.jl")`.
+- After source edits, run `Revise.revise()` rather than restarting Julia.
+
 ## Documentation
 
 - Built with **Documenter.jl** + **DocumenterVitepress** + **DocumenterCitations**.
