@@ -2804,6 +2804,10 @@ mutable struct BTSearch{T <: Signed}
                                            #   verbose reporting only
   divlevel::Int                            # level at which the images are
                                            #   tested for being a summand
+  lalevel::Int                             # level the look ahead is done at
+  latarget::Int                            # and the future level it counts
+  lacount::Int                             # the count the source gives there
+  layy::Matrix{Int}                        # scratch: G times the fixed images
   combsmaxdep::Int
   work::Int                                # vectors looked at, for the same purpose
   worklimit::Int
@@ -2908,6 +2912,10 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   Dict{Int32, Int}(),                      # refcnt
                   zeros(Int, n),                           # lvlnodes
                   0,                                       # divlevel
+                  0,                                       # lalevel
+                  0,                                       # latarget
+                  -1,                                      # lacount
+                  zeros(Int, n, n),                        # layy
                   3,                                       # combsmaxdep
                   0,                                       # work
                   typemax(Int),                            # worklimit
@@ -3902,6 +3910,124 @@ function _bt_set_divlevel!(S::BTSearch, fpd::Vector{Int})
   return S
 end
 
+# Looking ahead at a level the search has not reached yet.  NOT USED -- see
+# the measured outcome at the end of this comment.
+#
+# An isometry taking b_1..b_k to x_1..x_k carries the vectors which could be
+# the image of a later basis vector b_j onto the vectors which could be the
+# image of x_j's slot, bijectively: v has the right norm, the right colour and
+# the right scalar products with b_1..b_k exactly when f(v) has them with
+# x_1..x_k.  So the two counts must agree, and where they do not the branch is
+# dead.
+#
+# Unlike the tests on the partial Gram matrix, this one is not implied by the
+# filtering already done: it asks how many vectors of L there are with
+# prescribed scalar products, which is a fact about the ambient lattice and not
+# about the sublattice the images span.  That is the whole reason to expect it
+# to prune where the others did not.
+#
+# It is done once, at the last level at which the search still branches,
+# against whichever later level the source makes most restrictive.
+#
+# It prunes nothing on lattice 1899 of X26_no1, and costs about a quarter of
+# the search.  The reason is visible in the counts: given the twelve images
+# fixed at the branching levels, *every* later level admits exactly one
+# candidate, on the good branches and the bad ones alike, so there is nothing
+# for a count to separate.  The branches that die do so at level sixteen and
+# beyond, killed by the constraints accumulated at levels thirteen to fifteen,
+# and those constraints do not exist until the search has descended through
+# them.  A look ahead from level twelve cannot see them however far ahead it
+# looks.
+#
+# So this is not a case of the test being implied by the partial Gram matrix,
+# as the summand test was.  It is a case of the information genuinely not
+# being available yet.
+function _bt_lookahead_count(S::BTSearch, ctx::BTCtx, k::Int, j::Int,
+                             ys::Matrix{Int})
+  n = S.n
+  nv = ctx.nv
+  nrmj = S.TN[j]
+  colj = S.TC[j]
+  hascol = !isempty(ctx.colors) && colj != typemax(UInt64)
+  cnt = 0
+  @inbounds for v in 1:nv
+    ctx.nrm[v] == nrmj || continue
+    hascol && ctx.colors[v] != colj && continue
+    for sgn in 1:2
+      ok = true
+      for i in 1:k
+        sp = 0
+        for a in 1:n
+          sp += Int(ctx.V[a, v]) * ys[a, i]
+        end
+        sgn == 2 && (sp = -sp)
+        if sp != S.TS[j, i]
+          ok = false
+          break
+        end
+      end
+      ok && (cnt += 1)
+    end
+  end
+  return cnt
+end
+
+# G times each of the images fixed so far, so that a pairing is one dot product
+function _bt_lookahead_ys!(S::BTSearch, ctx::BTCtx, k::Int)
+  n = S.n
+  y = S.ytmp
+  @inbounds for i in 1:k
+    _bt_load_y!(y, ctx, S.x[i])
+    for a in 1:n
+      S.layy[a, i] = Int(y[a])
+    end
+  end
+  return S.layy
+end
+
+function _bt_lookahead_ok!(S::BTSearch, k::Int)
+  k == S.lalevel || return true
+  S.latarget == 0 && return true
+  ys = _bt_lookahead_ys!(S, S.tgt, k)
+  return _bt_lookahead_count(S, S.tgt, k, S.latarget, ys) == S.lacount
+end
+
+# Pick the level to look ahead at, and the later level to count there, by
+# running the same count on the source side with the identity images.
+function _bt_setup_lookahead!(S::BTSearch, fpd::Vector{Int})
+  n = S.n
+  lv = 0
+  for i in 1:min(length(fpd), S.ncheap)
+    fpd[i] > 1 && (lv = i)
+  end
+  (lv < 3 || lv + 2 > n || lv > S.ncheap) && return S
+  src = S.src
+  src.nv == 0 && return S
+  # the identity images of the first lv levels
+  ys = zeros(Int, n, lv)
+  for i in 1:lv
+    q = S.per[i]
+    for a in 1:n
+      ys[a, i] = S.Gsrc[a, q]
+    end
+  end
+  best = 0
+  bestc = typemax(Int)
+  for j in (lv + 1):min(n, S.ncheap)
+    c = _bt_lookahead_count(S, src, lv, j, ys)
+    c == 0 && continue                     # would reject the identity itself
+    if c < bestc
+      bestc = c
+      best = j
+    end
+  end
+  best == 0 && return S
+  S.lalevel = lv
+  S.latarget = best
+  S.lacount = bestc
+  return S
+end
+
 function _bt_extend!(S::BTSearch, d::Int)
   n = S.n
   d == n && return true
@@ -3919,7 +4045,7 @@ function _bt_extend!(S::BTSearch, d::Int)
     r = _bt_combs_check!(S, I)
     r == 0 && continue
     r == 2 && return true
-    I == S.divlevel && !_bt_summand_ok!(S, I) && continue
+    I == S.lalevel && !_bt_lookahead_ok!(S, I) && continue
     if I + 1 > S.ncheap
       # the next level is served from a coset, so there is nothing to prepare
       # here -- and preparing it would index the buckets by a scalar product
@@ -4385,6 +4511,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   verbose && println("|V| = ", nv, "  fpd = ", F.fpd, "\n per = ", F.per)
   S = BTSearch(ctx, F.per, G, F.fp, F.fpd, _bt_basis_colors(ctx))
   # `_bt_set_divlevel!` is deliberately not called: see the note there
+  # `_bt_setup_lookahead!` is deliberately not called: see the note there
   nw = S.nw
   std = [Int(ctx.bidx[F.per[i]]) for i in 1:n]
   tmpp = zeros(UInt64, nv * nw)
@@ -4476,7 +4603,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
           # this level's image is fixed by the loop rather than by the descent,
           # so its refinement has to happen here: without it every deeper
           # comparison is made against a partition built from the wrong image
-          if r == 1 && step == S.divlevel && !_bt_summand_ok!(S, step)
+          if r == 1 && step == S.lalevel && !_bt_lookahead_ok!(S, step)
             r = 0
           end
           if r == 2
