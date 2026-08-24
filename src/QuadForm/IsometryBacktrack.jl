@@ -4517,6 +4517,28 @@ function _bt_order_cost(G::Matrix{Int}, per::Vector{Int}, lv::Vector{Float64})
   return worst
 end
 
+# The orders to try, best first.  Kept for the racing strategy, which is not
+# used; see the note at the call site for what it was measured to cost.
+function _bt_order_ranking(ctx::BTCtx)
+  sc = Tuple{Float64, Int}[]
+  for om in (0, 2, 1)
+    local F
+    try
+      F = _bt_fingerprint(ctx; order_mode = om)
+    catch
+      continue
+    end
+    t = 0.0
+    for c in F.fpd
+      t += log(Float64(max(c, 1)))
+    end
+    push!(sc, (t, om))
+  end
+  isempty(sc) && return (0, 2, 1)
+  sort!(sc; by = first)
+  return Tuple(x[2] for x in sc)
+end
+
 # Score the level orders on their fingerprints and return the best.
 #
 # The product of the candidate counts is the size of the search tree if nothing
@@ -4618,12 +4640,33 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
     end
     @vprintln :Lattice 1 "backtrack: root system $(rd.types), |W| = $(worder)"
   end
-  F = _bt_fingerprint(ctx; order_mode = order_mode < 0 ?
-                          _bt_best_order(ctx) : order_mode)
+  # Pick the ordering of the basis vectors and search once.
+  #
+  # Racing the orderings under a budget was tried against this same shared
+  # enumeration and is worse, because a budget small enough to be cheap
+  # abandons an ordering which is winning but simply has work to do.  Over 1194
+  # lattices of X26_no1 and X25_no1, against an oracle which always picks the
+  # best ordering: scoring alone costs 1.37 times the oracle, the greedy rule
+  # alone 1.42, and the ranked race 1.70.  So the score is used on its own.
+  om = order_mode >= 0 ? order_mode : _bt_best_order(ctx)
+  return _bt_search_with_order(G, ctx, wgens, worder, om, typemax(Int), verbose)
+end
+
+# The search proper, with the enumeration handed to it.  Split out from the
+# setup so that several orderings of the basis vectors can be tried against
+# the same enumeration: the enumeration is the expensive part and does not
+# depend on the ordering at all.
+function _bt_search_with_order(G::Matrix{Int}, ctx::BTCtx, wgens::Vector{Matrix{Int}},
+                               worder::ZZRingElem, order_mode::Int,
+                               totallimit::Int, verbose::Bool)
+  n = ctx.n
+  nv = ctx.nv
+  F = _bt_fingerprint(ctx; order_mode)
   @vprintln :Lattice 1 "backtrack: fingerprint $(F.fpd)"
   @vprintln :Lattice 2 "backtrack: order of the base $(F.per)"
   verbose && println("|V| = ", nv, "  fpd = ", F.fpd, "\n per = ", F.per)
   S = BTSearch(ctx, F.per, G, F.fp, F.fpd, _bt_basis_colors(ctx))
+  S.totallimit = totallimit
   # `_bt_set_divlevel!` is deliberately not called: see the note there
   # `_bt_setup_lookahead!` is deliberately not called: see the note there
   S.totallimit = totallimit
@@ -4843,6 +4886,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
   ord *= worder
   return gens, ord, orders, S.nodes
 end
+
 
 @doc raw"""
     _bt_automorphism_group(G::Matrix{Int}) -> Vector{Matrix{Int}}, ZZRingElem
