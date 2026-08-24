@@ -14,7 +14,8 @@
   @test close_vectors(L, ZZRingElem[-1, 0, 0], big"3"//5, Int) isa Vector{Tuple{Vector{Int}, QQFieldElem}}
   @test close_vectors(L, [-1//1, 0, 0], QQ(3//5), Int) isa Vector{Tuple{Vector{Int}, QQFieldElem}}
 
-  cl = @inferred close_vectors_iterator(L, v, b)
+  cl = close_vectors_iterator(L, v, b)
+  @test length(@inferred collect(cl)) == 1
   @test first.(collect(cl)) == [[-1, 0, 0]]
   # Try some different input types
   @test collect(close_vectors_iterator(L, QQFieldElem[-1, 0, 0], b)) isa Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}

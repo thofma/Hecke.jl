@@ -72,28 +72,28 @@
   gram = QQ[1 0 0 1; 0 1 0 0; 0 0 1 0; 1 0 0 13//10]
   delta = 9//10
   L = integer_lattice(;gram = gram)
-  sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, Int)
+  @test (@inferred collect(sv)) == Tuple{Vector{Int}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, ZZRingElem)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = integer_lattice(;gram = -gram)
-  sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, Int)
+  @test (@inferred collect(sv)) == Tuple{Vector{Int}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, ZZRingElem)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 0))
-  sv = @inferred short_vectors(L, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  sv = @inferred short_vectors_iterator(L, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors(L, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors_iterator(L, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 0))
-  sv = @inferred short_vectors(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  sv = @inferred short_vectors_iterator(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors(L, 0, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors_iterator(L, 0, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 2))
   sv = @inferred shortest_vectors(L)
