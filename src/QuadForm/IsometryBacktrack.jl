@@ -1139,6 +1139,7 @@ function _bt_fingerprint(ctx::BTCtx)
   if hascol
     for i in 1:n
       k = abs(Int(ctx.bidx[i]))
+      k == 0 && continue                           # not among the vectors
       bcol[i] = ctx.colors[k]
     end
   end
@@ -1150,6 +1151,7 @@ function _bt_fingerprint(ctx::BTCtx)
   if hasrho
     for i in 1:n
       p = Int(ctx.bidx[i])
+      p == 0 && continue                           # not among the vectors
       k = p < 0 ? -p : p
       brho[i] = p < 0 ? -Int(ctx.rhov[k]) : Int(ctx.rhov[k])
     end
@@ -1276,6 +1278,7 @@ function _bt_fingerprint(ctx::BTCtx)
 
   per = zeros(Int, n)
   used = falses(n)
+  cheap = Bool[G[i, i] <= bound for i in 1:n]
   fp = zeros(Int, n, n)
   fpd = zeros(Int, n)
   orders = Vector{Vector{Int32}}(undef, n)
@@ -1303,10 +1306,22 @@ function _bt_fingerprint(ctx::BTCtx)
       be[k, i] = bstop[bb]
       fp[k, i] = (bstop[bb] - bstart[bb] + 1) - nbas[bb]
     end
+    # A basis vector whose norm is above the enumeration bound has no
+    # candidates among the vectors which were enumerated: its images have to
+    # come from a coset instead.  Those levels go last, so that by the time
+    # they are reached as many images as possible are fixed and the coset is
+    # small -- and so that the orbits, which are taken over the enumerated
+    # vectors, only ever involve the levels below them.
     mi = 0
     for i in 1:n
-      if !used[i] && (mi == 0 || fp[k, i] < fp[k, mi])
-        mi = i
+      used[i] && continue
+      cheap[i] || continue
+      (mi == 0 || fp[k, i] < fp[k, mi]) && (mi = i)
+    end
+    if mi == 0
+      for i in 1:n
+        used[i] && continue
+        (mi == 0 || G[i, i] < G[mi, mi]) && (mi = i)
       end
     end
     per[k] = mi
@@ -1447,8 +1462,12 @@ function _bt_basis_colors(ctx::BTCtx)
   res = zeros(UInt64, n)
   for i in 1:n
     k = abs(Int(ctx.bidx[i]))
-    k == 0 && return UInt64[]
-    res[i] = ctx.colors[k]
+    # A basis vector whose norm is above the enumeration bound is not among the
+    # vectors, so it has no colour there.  Its level is served from a coset and
+    # never consults this, but returning nothing at all would silently turn the
+    # colour of *every* level into zero and reject everything, the identity
+    # included.
+    res[i] = k == 0 ? typemax(UInt64) : ctx.colors[k]
   end
   return res
 end
@@ -1517,13 +1536,36 @@ function _bt_coset_candidates(G::Matrix{Int}, X::Vector{Vector{Int}},
   LM = integer_lattice(; gram = GM, cached = false)
   tv = QQFieldElem[-t[i, 1] for i in 1:k]
   local cvs
+  # thofma/Hecke.jl#2357 adds a `mode` keyword here with a direct enumeration
+  # of the shifted ellipsoid; the positional call stays valid and picks it up
   try
     cvs = close_vectors(LM, tv, rhs, rhs)
   catch
     return nothing
   end
-  res = Vector{Int}[]
+  # The solutions of <z - t, z - t> = rhs are symmetric about t, and a close
+  # vector search with a zero shift reports only one of each pair {z, -z}.  The
+  # mirror image 2t - z is a solution whenever it is a lattice point, so it is
+  # put back explicitly rather than relying on what the search returns.
+  zs = Vector{Vector{ZZRingElem}}()
+  seen = Set{Vector{ZZRingElem}}()
   for (z, _) in cvs
+    zz = ZZRingElem[ZZRingElem(z[j]) for j in 1:k]
+    zz in seen && continue
+    push!(seen, zz); push!(zs, zz)
+    mz = Vector{ZZRingElem}(undef, k)
+    good = true
+    for j in 1:k
+      t2 = 2 * t[j, 1] - QQ(zz[j])
+      isone(denominator(t2)) || (good = false; break)
+      mz[j] = numerator(t2)
+    end
+    if good && !(mz in seen)
+      push!(seen, mz); push!(zs, mz)
+    end
+  end
+  res = Vector{Int}[]
+  for z in zs
     x = Vector{Int}(undef, n)
     ok = true
     for i in 1:n
@@ -1534,7 +1576,17 @@ function _bt_coset_candidates(G::Matrix{Int}, X::Vector{Vector{Int}},
       fits(Int, v) || (ok = false; break)
       x[i] = Int(v)
     end
-    ok && push!(res, x)
+    ok || continue
+    # only what really meets the conditions goes back
+    nx = 0
+    for i in 1:n
+      t2 = 0
+      for l in 1:n
+        t2 += G[i, l] * x[l]
+      end
+      nx += t2 * x[i]
+    end
+    nx == m && push!(res, x)
   end
   return res
 end
@@ -2363,6 +2415,10 @@ mutable struct BTSearch{T <: Signed}
   fpd::Vector{Int}
   TC::Vector{UInt64}               # TC[I]: colour of b_{per[I]} in the source
   TR::Vector{Int}                  # TR[I] = <b_{per[I]}, rho> in the source
+  ncheap::Int                      # levels whose images are among the vectors
+                                   # that were enumerated; the ones above have
+                                   # to come from a coset, and they come last
+  xvec::Vector{Vector{Int}}        # explicit images of the levels above ncheap
   x::Vector{Int}                   # signed indices of the current images
   poolv::Vector{Vector{Int32}}
   poolp::Vector{Vector{UInt64}}
@@ -2424,9 +2480,15 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
   TN = zeros(Int, n)
   TC = zeros(UInt64, n)
   TR = zeros(Int, n)
+  ncheap = 0
+  for I in 1:n
+    Gsrc[per[I], per[I]] <= src.bound || break
+    ncheap = I
+  end
   if !isempty(src.rhov)
     for I in 1:n
       p = Int(src.bidx[per[I]])
+      p == 0 && continue                # a basis vector above the bound
       k = p < 0 ? -p : p
       TR[I] = p < 0 ? -Int(src.rhov[k]) : Int(src.rhov[k])
     end
@@ -2465,6 +2527,7 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
   poolm = [UInt64[] for _ in 1:(n + 1)]
   cand = [Int32[] for _ in 1:(n + 1)]
   return BTSearch{T}(n, nw, tgt, per, src, Gsrc, TS, TN, fp, fpd, TC, TR,
+                  ncheap, [Int[] for _ in 1:n],
                   zeros(Int, n), poolv,
                   poolp, poolm, zeros(Int, n + 1), cand, vals, vmask,
                   Vector{T}(undef, n), zeros(UInt64, nw), zeros(UInt64, nw),
@@ -3139,10 +3202,75 @@ function _bt_descend!(S::BTSearch, I::Int)
   return true
 end
 
+# The coordinates of the image of level `k`, wherever it came from.
+function _bt_image(S::BTSearch, k::Int)
+  n = S.n
+  k > S.ncheap && return S.xvec[k]
+  V = S.tgt.V
+  p = S.x[k]
+  if p > 0
+    return Int[Int(V[j, p]) for j in 1:n]
+  end
+  return Int[-Int(V[j, -p]) for j in 1:n]
+end
+
+# Levels above `ncheap` have no candidates among the vectors which were
+# enumerated -- their norm is above the bound of that enumeration -- so their
+# images are taken from the coset cut out by the scalar products with the
+# images already fixed.  Those levels come last, so by the time one is reached
+# the coset is as small as the fixed images can make it.
+function _bt_extend_coset!(S::BTSearch, d::Int)
+  n = S.n
+  I = d + 1
+  X = Vector{Int}[_bt_image(S, k) for k in 1:d]
+  c = Int[S.TS[I, k] for k in 1:d]
+  cands = _bt_coset_candidates(S.tgt.G, X, c, S.TN[I])
+  if cands === nothing
+    S.aborted = true
+    return false
+  end
+  @inbounds for w in cands
+    S.aborted && return false
+    S.xvec[I] = w
+    I == n && return true
+    _bt_extend!(S, I) && return true
+  end
+  return false
+end
+
+# Every completion of the images fixed so far, which for the identity on the
+# levels below is the pointwise stabiliser of the base: the factor the chain
+# over those levels does not see.
+function _bt_count_extensions!(S::BTSearch, d::Int, out::Vector{Matrix{Int}})
+  n = S.n
+  d == n && return 1
+  I = d + 1
+  X = Vector{Int}[_bt_image(S, k) for k in 1:d]
+  c = Int[S.TS[I, k] for k in 1:d]
+  cands = _bt_coset_candidates(S.tgt.G, X, c, S.TN[I])
+  cands === nothing && return -1
+  cnt = 0
+  for w in cands
+    S.xvec[I] = w
+    if I == n
+      M = _bt_matrix(S)
+      _bt_verify(M, S.tgt.G, S.Gsrc) || continue
+      cnt += 1
+      push!(out, M)
+    else
+      r = _bt_count_extensions!(S, I, out)
+      r < 0 && return -1
+      cnt += r
+    end
+  end
+  return cnt
+end
+
 function _bt_extend!(S::BTSearch, d::Int)
   n = S.n
   d == n && return true
   I = d + 1
+  I > S.ncheap && return _bt_extend_coset!(S, d)
   I > S.maxlevel &&
     throw(BTError("internal error: search went past the tracked levels"))
   cl = S.cand[I]
@@ -3155,7 +3283,12 @@ function _bt_extend!(S::BTSearch, d::Int)
     r = _bt_combs_check!(S, I)
     r == 0 && continue
     r == 2 && return true
-    if S.usepool ? _bt_descend!(S, I) : _bt_cands!(S, I + 1, I)
+    if I + 1 > S.ncheap
+      # the next level is served from a coset, so there is nothing to prepare
+      # here -- and preparing it would index the buckets by a scalar product
+      # which need not lie in their range at all
+      _bt_extend!(S, I) && return true
+    elseif S.usepool ? _bt_descend!(S, I) : _bt_cands!(S, I + 1, I)
       _bt_extend!(S, I) && return true
     end
   end
@@ -3168,8 +3301,17 @@ function _bt_matrix(S::BTSearch)
   V = S.tgt.V
   M = zeros(Int, n, n)
   @inbounds for i in 1:n
-    p = S.x[i]
     r = S.per[i]
+    if i > S.ncheap
+      # this level's image came from a coset, so it is not one of the vectors
+      # that were enumerated and is kept explicitly
+      w = S.xvec[i]
+      for j in 1:n
+        M[r, j] = w[j]
+      end
+      continue
+    end
+    p = S.x[i]
     if p > 0
       for j in 1:n
         M[r, j] = Int(V[j, p])
@@ -3522,11 +3664,33 @@ end
 #
 ################################################################################
 
+# The largest diagonal entry the enumeration can afford to go up to.  Levels
+# whose norm is above it have no candidates among the enumerated vectors and
+# are served from cosets instead, which costs a lattice of the rank the fixed
+# images leave over rather than a shell.  Zero when even the smallest norm is
+# out of reach, in which case the lattice is handed back.
+function _bt_affordable_bound(G::Matrix{Int})
+  n = size(G, 1)
+  vals = sort!(unique(Int[G[i, i] for i in 1:n]))
+  lv = _bt_ball_volumes(n)
+  A = Matrix{Float64}(undef, n, n)
+  q = Vector{Float64}(undef, n)
+  _bt_gs_norms!(q, A, G, collect(1:n), n) || return vals[end]
+  best = 0
+  for b in vals
+    _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e7) || break
+    best = b
+  end
+  return best
+end
+
 function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   # the component invariant is only used to refine the initial partition here,
   # which the fingerprint does anyway, so it must not cost more than a sweep
   t0 = time()
-  ctx = BTCtx(G; comp_budget = -2)
+  bnd = _bt_affordable_bound(G)
+  bnd == 0 && throw(BTOverflow())
+  ctx = BTCtx(G, bnd; comp_budget = -2)
   n = ctx.n
   nv = ctx.nv
   @vprintln :Lattice 1 "backtrack: rank $(n), $(nv) short vectors of norm <= $(ctx.bound), setup $(round(time() - t0, digits = 3))s"
@@ -3598,7 +3762,10 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   seed = 0x2545f4914f6cdd1d % UInt64
   tpool = 0.0; torb = 0.0; tsearch = 0.0; tcombs = 0.0
 
-  for step in 1:n
+  # Only the levels whose images are among the enumerated vectors take part in
+  # the chain: the orbits are taken over those vectors.  What the levels above
+  # contribute is the pointwise stabiliser of this base, counted afterwards.
+  for step in 1:S.ncheap
     # the image of b_{per[step]} is already determined by the previous ones
     F.fpd[step] == 1 && continue
     H = BTGen{Tv}[]
@@ -3669,8 +3836,12 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
           if r == 2
             found = true
           elseif r == 1
-            found = (S.usepool ? _bt_descend!(S, step) :
-                     _bt_cands!(S, step + 1, step)) && _bt_extend!(S, step)
+            found = if step + 1 > S.ncheap
+              _bt_extend!(S, step)
+            else
+              (S.usepool ? _bt_descend!(S, step) :
+               _bt_cands!(S, step + 1, step)) && _bt_extend!(S, step)
+            end
           end
         end
         if S.aborted
@@ -3751,6 +3922,24 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   ord = one(ZZRingElem)
   for i in 1:n
     ord *= orders[i]
+  end
+  # the levels above `ncheap` are not base points, so the chain stops at the
+  # subgroup fixing the ones below pointwise; its order is the number of ways
+  # the identity there extends, and those extensions are generators too
+  if S.ncheap < n
+    for k in 1:S.ncheap
+      S.x[k] = std[k]
+    end
+    ext = Matrix{Int}[]
+    cnt = _bt_count_extensions!(S, S.ncheap, ext)
+    # no extension at all cannot happen for the identity, and a coset which
+    # could not be computed is a reason to hand the lattice back
+    cnt < 1 && throw(BTOverflow())
+    ord *= cnt
+    for M in ext
+      push!(gens, M)
+    end
+    @vprintln :Lattice 1 "backtrack: $(n - S.ncheap) levels from cosets, pointwise stabiliser $(cnt)"
   end
   # what the search found is the stabiliser of the chamber; the reflections
   # make up the rest of the group
@@ -3998,16 +4187,7 @@ function _automorphism_group_backtrack(L::ZZLat)
   # and its vectors of norm at most 6 still only reach rank 16 of 17.  Since
   # everything here starts by enumerating up to the largest diagonal entry,
   # such a lattice has to be handed back to the caller rather than attempted.
-  bnd = G[1, 1]
-  for i in 1:n
-    G[i, i] > bnd && (bnd = G[i, i])
-  end
-  let lv = _bt_ball_volumes(n), A = Matrix{Float64}(undef, n, n),
-      q = Vector{Float64}(undef, n)
-    if _bt_gs_norms!(q, A, G, collect(1:n), n)
-      _bt_enum_cost(q, n, Float64(bnd), lv) > log(2.0e7) && return nothing
-    end
-  end
+
   local gens0, ord
   try
     gens0, ord = _bt_automorphism_group(G)
