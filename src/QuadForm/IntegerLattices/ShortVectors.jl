@@ -94,8 +94,8 @@ end
 ################################################################################
 
 @doc raw"""
-    reduce(L::ZZLat, b::Integer, [t::Integer = 10000];
-           rng=Random.default_rng(), check::Bool=true) -> Bool, ZZMatrix
+    _reduce_allombert_chenevier(L::ZZLat, b::Integer, [t::Integer = 10000];
+                                 rng = Random.default_rng(), check::Bool = true) -> Bool, ZZMatrix
 
 Try to find a basis of the integral positive definite lattice `L` consisting of
 vectors of squared length at most `b`. The integer `t` controls the number of
@@ -115,7 +115,7 @@ julia> maximum(diagonal(G))
 
 julia> L = integer_lattice(gram = G);
 
-julia> success, B = reduce(L, 2);
+julia> success, B = Hecke._reduce_allombert_chenevier(L, 2);
 
 julia> success
 true
@@ -129,10 +129,10 @@ julia> B * G * transpose(B)
 [0   1]
 ```
 
-This is the `reduce` algorithm from Section 4 of Allombert--Chenevier,
+This is the reduction algorithm from Section 4 of Allombert--Chenevier,
 *Unimodular hunting II*.
 """
-function reduce(
+function _reduce_allombert_chenevier(
     L::ZZLat,
     b::IntegerUnion,
     t::IntegerUnion = 10000;
@@ -189,7 +189,7 @@ function _reduce_gram_matrix(
   @req nrows(G) == ncols(G) "Gram matrix must be square"
   @req is_symmetric(G) "Gram matrix must be symmetric"
   L = integer_lattice(; gram = G, check = false)
-  return reduce(L, b, t; rng)
+  return _reduce_allombert_chenevier(L, b, t; rng)
 end
 
 ################################################################################
