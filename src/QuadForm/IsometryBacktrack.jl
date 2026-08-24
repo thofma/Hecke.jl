@@ -1952,6 +1952,91 @@ end
 
 # The simple roots grouped into connected components: two are joined when they
 # are not orthogonal.
+# Refine the colouring by the sums of its own classes.  NOT USED: on the
+# lattices where more invariants were wanted -- 1885 and 1899 of X26_no1, root
+# system A_1^10 -- this splits nothing at all, 47 classes before and 47 after,
+# and costs half a second.  Their classes are already as fine as any invariant
+# of this kind can make them; what is left is not a want of invariants but the
+# permutation search over ten indistinguishable components.  Kept because the
+# reasoning is sound and it may separate on other input, but it is not called.
+#
+# An isometry permutes the short vectors within a class -- that is what a class
+# is -- so the sum of a class is a vector the group fixes, and the pairing of a
+# short vector with it is another invariant.  Feeding those back in refines the
+# classes, and the refinement can be repeated until it stops splitting anything.
+#
+# The classes have to distinguish v from -v for their sums to mean anything, or
+# every sum would be zero; that is what the pairing with rho provides, so this
+# only runs once rho is known.  The pairings themselves are folded to be sign
+# symmetric again, because colours are compared without a sign.
+function _bt_refine_colors!(ctx::BTCtx; rounds::Int = 3, maxsums::Int = 12)
+  n = ctx.n
+  nv = ctx.nv
+  (nv == 0 || isempty(ctx.rhov)) && return ctx
+  isempty(ctx.colors) && (ctx.colors = zeros(UInt64, nv))
+  cols = ctx.colors
+  for _ in 1:rounds
+    # the signed classes and their sizes
+    ids = Dict{Tuple{UInt64, Int, Int}, Int}()
+    clsp = Vector{Int}(undef, nv)
+    clsm = Vector{Int}(undef, nv)
+    @inbounds for j in 1:nv
+      r = Int(ctx.rhov[j])
+      kp = (cols[j], ctx.nrm[j], r)
+      km = (cols[j], ctx.nrm[j], -r)
+      cp = get(ids, kp, 0)
+      cp == 0 && (cp = length(ids) + 1; ids[kp] = cp)
+      cm = get(ids, km, 0)
+      cm == 0 && (cm = length(ids) + 1; ids[km] = cm)
+      clsp[j] = cp
+      clsm[j] = cm
+    end
+    nc = length(ids)
+    nc <= 1 && break
+    sums = zeros(Int, n, nc)
+    cnt = zeros(Int, nc)
+    @inbounds for j in 1:nv
+      cp = clsp[j]; cm = clsm[j]
+      cnt[cp] += 1; cnt[cm] += 1
+      for i in 1:n
+        v = Int(ctx.V[i, j])
+        sums[i, cp] += v
+        sums[i, cm] -= v
+      end
+    end
+    # the smallest classes first: their sums are the most telling, and only a
+    # few are used so that this stays cheap next to the search it feeds
+    ord = sortperm(cnt)
+    use = Int[]
+    for c in ord
+      any(i -> sums[i, c] != 0, 1:n) || continue   # a zero sum says nothing
+      push!(use, c)
+      length(use) == maxsums && break
+    end
+    isempty(use) && break
+    gs = [Int[sum(ctx.G[i, k] * sums[k, c] for k in 1:n) for i in 1:n] for c in use]
+    changed = false
+    @inbounds for j in 1:nv
+      p1 = 0; p2 = 0; p3 = 0
+      for g in gs
+        t = 0
+        for i in 1:n
+          t += Int(ctx.V[i, j]) * g[i]
+        end
+        p1 += t; p2 += t * t; p3 += t * t * t
+      end
+      if p1 < 0 || (p1 == 0 && p3 < 0)
+        p1 = -p1; p3 = -p3
+      end
+      h = hash(p1, hash(p2, hash(p3, cols[j])))
+      h != cols[j] && (changed = true)
+      cols[j] = h
+    end
+    changed || break
+  end
+  return ctx
+end
+
 function _bt_root_components(G::Matrix{Int}, simple::Vector{Vector{Int}}, n::Int)
   ns = length(simple)
   sd = [Int[sum(G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
