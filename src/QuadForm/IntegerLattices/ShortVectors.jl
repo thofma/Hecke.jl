@@ -43,7 +43,7 @@ function short_vectors(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; check::Boo
   if _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(Vector, _G, ub, S)
+  return _short_vectors_gram(FinckePohstInt, _G, ub, S)
 end
 
 function short_vectors_iterator(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
@@ -55,7 +55,7 @@ function short_vectors_iterator(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; c
   if rank(L) != 0 && _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(LatEnumCtx, _G, ub, S)
+  return _short_vectors_gram(FinckePohstIntIterCtx, _G, ub, S)
 end
 
 function short_vectors(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
@@ -71,7 +71,7 @@ function short_vectors(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=
   if _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(Vector, _G, lb, ub, S)
+  return _short_vectors_gram(FinckePohstInt, _G, lb, ub, S)
 end
 
 function short_vectors_iterator(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
@@ -84,7 +84,112 @@ function short_vectors_iterator(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingEle
   if rank(L) != 0 && _G[1, 1] < 0
     _G = -_G
   end
-  return _short_vectors_gram(LatEnumCtx, _G, lb, ub, S)
+  return _short_vectors_gram(FinckePohstIntIterCtx, _G, lb, ub, S)
+end
+
+################################################################################
+#
+#  Bases of short vectors
+#
+################################################################################
+
+@doc raw"""
+    reduce(L::ZZLat, b::Integer, [t::Integer = 10000];
+           rng=Random.default_rng(), check::Bool=true) -> Bool, ZZMatrix
+
+Try to find a basis of the integral positive definite lattice `L` consisting of
+vectors of squared length at most `b`. The integer `t` controls the number of
+tries.
+
+The result is a unimodular matrix whose rows are the coordinates of the new
+basis with respect to the standard basis of `L`. The first return value
+indicates whether a basis was found. If it is `false`, the returned matrix is
+unspecified.
+
+# Examples
+```jldoctest; filter = r".*"
+julia> G = ZZ[19 6; 6 2];
+
+julia> maximum(diagonal(G))
+19
+
+julia> L = integer_lattice(gram = G);
+
+julia> success, B = reduce(L, 2);
+
+julia> success
+true
+
+julia> B
+[0    1]
+[1   -3]
+
+julia> B * G * transpose(B)
+[2   0]
+[0   1]
+```
+
+This is the `reduce` algorithm from Section 4 of Allombert--Chenevier,
+*Unimodular hunting II*.
+"""
+function reduce(
+    L::ZZLat,
+    b::IntegerUnion,
+    t::IntegerUnion = 10000;
+    rng::AbstractRNG = Random.default_rng(),
+    check::Bool = true
+  )
+  if check
+    @req b >= 0 "The bound must be non-negative"
+    @req t >= 0 "The number of attempts must be non-negative"
+    @req t <= typemax(Int) "The number of attempts is too large"
+    @req is_integral(L) "Lattice must be integral"
+    @req is_positive_definite(L) "Lattice must be positive definite"
+  end
+
+  d = rank(L)
+  candidate = zero_matrix(ZZ, d, d)
+  d == 0 && return false, candidate
+
+  short_with_norms = short_vectors(L, b; check = false)
+  isempty(short_with_norms) && return false, candidate
+  short = first.(short_with_norms)
+
+  # The rows generate L precisely when the Smith invariants are all one.
+  short_matrix = matrix(ZZ, short)
+  elementary_divs = elementary_divisors(short_matrix)
+  if length(elementary_divs) < d || !all(isone, elementary_divs)
+    return false, candidate
+  end
+
+  smaller = [v for (v, n) in short_with_norms if n < b]
+  smaller_rank = isempty(smaller) ? 0 : rank(matrix(ZZ, smaller))
+  k0 = max(1, d - smaller_rank)
+
+  for k in k0:d
+    for _ in 1:Int(t)
+      for j in 1:k
+        candidate[j, :] = rand(rng, short)
+      end
+      for j in (k + 1):d
+        candidate[j, :] = rand(rng, smaller)
+      end
+      isone(abs(det(candidate))) && return true, candidate
+    end
+  end
+  return false, candidate
+end
+
+function _reduce_gram_matrix(
+    G::Union{ZZMatrix, QQMatrix},
+    b::IntegerUnion,
+    t::IntegerUnion = 10000;
+    rng::AbstractRNG = Random.default_rng()
+  )
+  @req nrows(G) == ncols(G) "Gram matrix must be square"
+  @req is_symmetric(G) "Gram matrix must be symmetric"
+  L = integer_lattice(; gram = G, check = false)
+  return reduce(L, b, t; rng)
 end
 
 ################################################################################
@@ -820,15 +925,15 @@ with gram matrix
 
 julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
 9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
- ([-1 -2 -3 -4 -2 0], 12, 3)
- ([-1 -2 -3 -1 1 -3], 12, 3)
- ([-2 -4 -6 -2 -1 -3], 12, 3)
- ([-1 -2 -3 -1 -2 -3], 12, 3)
- ([-2 -4 -6 -5 -4 -3], 12, 3)
- ([-1 -2 -3 -1 -2 0], 12, 3)
- ([-1 -2 -3 -4 -2 -3], 12, 3)
- ([-2 -4 -6 -5 -1 -3], 12, 3)
  ([-1 -2 -3 -1 1 0], 12, 3)
+ ([-2 -4 -6 -5 -1 -3], 12, 3)
+ ([-1 -2 -3 -4 -2 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 0], 12, 3)
+ ([-2 -4 -6 -5 -4 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 -3], 12, 3)
+ ([-2 -4 -6 -2 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 1 -3], 12, 3)
+ ([-1 -2 -3 -4 -2 0], 12, 3)
 
 julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
 Integer lattice of rank 2 and degree 2

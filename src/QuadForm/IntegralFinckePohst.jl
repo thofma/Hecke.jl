@@ -748,7 +748,8 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormTyp
           if !CVP
             _canonicalize_finckepohstint!(tmp_v)
           end
-          return (pp_vector(tmp_v), pp_length(norm)), 1
+          _canonicalize_finckepohstint!(tmp_v)
+          return (pp_vector(tmp_v)::Vector{ElemType}, begin _r = pp_length(norm); _r isa NormType ? _r : NormType(_r) end::NormType), 1
         end
       end
       @goto update_neg
@@ -773,7 +774,8 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormTyp
           if !CVP
             _canonicalize_finckepohstint!(tmp_v)
           end
-          return (pp_vector(tmp_v), pp_length(norm)), 1
+          _canonicalize_finckepohstint!(tmp_v)
+          return (pp_vector(tmp_v)::Vector{ElemType}, begin _r = pp_length(norm); _r isa NormType ? _r : NormType(_r)end::NormType), 1
         end
       end
       @goto update_pos

@@ -302,7 +302,7 @@ function _close_vectors_iterator(::Val{:embedding}, L::ZZLat,
 
   delta = QQ(4//3)*upperbound + epsilon # this is upperbound + e
 
-  sv = _short_vectors_gram(LatEnumCtx, gram, lowerbound === nothing ? 0 : (lowerbound + e), delta, elem_type)
+  sv = _short_vectors_gram(FinckePohstIntIterCtx, gram, lowerbound === nothing ? 0 : (lowerbound + e), delta, elem_type)
 
   C = LatCloseEnumCtx{typeof(sv), elem_type}(sv, e, d)
 

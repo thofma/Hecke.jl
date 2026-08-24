@@ -72,28 +72,28 @@
   gram = QQ[1 0 0 1; 0 1 0 0; 0 0 1 0; 1 0 0 13//10]
   delta = 9//10
   L = integer_lattice(;gram = gram)
-  sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, Int)
+  @test (@inferred collect(sv)) == Tuple{Vector{Int}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, ZZRingElem)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = integer_lattice(;gram = -gram)
-  sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, Int)
+  @test (@inferred collect(sv)) == Tuple{Vector{Int}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, ZZRingElem)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 0))
-  sv = @inferred short_vectors(L, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  sv = @inferred short_vectors_iterator(L, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors(L, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors_iterator(L, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 0))
-  sv = @inferred short_vectors(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  sv = @inferred short_vectors_iterator(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors(L, 0, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors_iterator(L, 0, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 2))
   sv = @inferred shortest_vectors(L)
@@ -106,6 +106,39 @@
     v = matrix(QQ, 1, 4, _v)
     @test (v*gram_matrix(L)*transpose(v))[1] == -n
   end
+end
+
+@testset "Basis of short vectors" begin
+  rng = Hecke.Random.Xoshiro(1)
+  L = integer_lattice(gram = ZZ[1 0; 0 2])
+  success, B = reduce(L, 2, 20; rng)
+  @test success
+  @test abs(det(B)) == 1
+  @test maximum(diagonal(B * gram_matrix(L) * transpose(B))) <= 2
+
+  # The vectors of norm at most 2 span only the first coordinate.
+  L = integer_lattice(gram = ZZ[2 0; 0 3])
+  success, _ = reduce(L, 2; rng = Hecke.Random.Xoshiro(1))
+  @test !success
+
+  G = ZZ[1 0 0; 0 1 0; 0 0 1]
+  success, B = Hecke._reduce_gram_matrix(G, 1, 100;
+                                         rng = Hecke.Random.Xoshiro(1))
+  @test success
+  @test abs(det(B)) == 1
+  @test B * G * transpose(B) == G
+
+  success, B = reduce(integer_lattice(gram = identity_matrix(ZZ, 0)), 0)
+  @test !success
+  @test size(B) == (0, 0)
+  success, B = reduce(integer_lattice(gram = identity_matrix(ZZ, 2)), 1, 0)
+  @test !success
+  @test size(B) == (2, 2)
+  @test_throws ArgumentError reduce(L, -1)
+  @test_throws ArgumentError reduce(L, 2, -1)
+  @test_throws ArgumentError reduce(integer_lattice(gram = ZZ[0 1; 1 0]), 2)
+  G = matrix(QQ, 1, 1, [1//2])
+  @test_throws ArgumentError reduce(integer_lattice(gram = G), 2)
 end
 
 @testset "Short vectors affine" begin
