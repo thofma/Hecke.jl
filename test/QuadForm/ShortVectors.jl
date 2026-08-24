@@ -111,14 +111,15 @@ end
 @testset "Basis of short vectors" begin
   rng = Hecke.Random.Xoshiro(1)
   L = integer_lattice(gram = ZZ[1 0; 0 2])
-  success, B = reduce(L, 2, 20; rng)
+  success, B = Hecke._reduce_allombert_chenevier(L, 2, 20; rng)
   @test success
   @test abs(det(B)) == 1
   @test maximum(diagonal(B * gram_matrix(L) * transpose(B))) <= 2
 
   # The vectors of norm at most 2 span only the first coordinate.
   L = integer_lattice(gram = ZZ[2 0; 0 3])
-  success, _ = reduce(L, 2; rng = Hecke.Random.Xoshiro(1))
+  success, _ = Hecke._reduce_allombert_chenevier(L, 2;
+                                                  rng = Hecke.Random.Xoshiro(1))
   @test !success
 
   G = ZZ[1 0 0; 0 1 0; 0 0 1]
@@ -128,17 +129,21 @@ end
   @test abs(det(B)) == 1
   @test B * G * transpose(B) == G
 
-  success, B = reduce(integer_lattice(gram = identity_matrix(ZZ, 0)), 0)
+  L = integer_lattice(gram = identity_matrix(ZZ, 0))
+  success, B = Hecke._reduce_allombert_chenevier(L, 0)
   @test !success
   @test size(B) == (0, 0)
-  success, B = reduce(integer_lattice(gram = identity_matrix(ZZ, 2)), 1, 0)
+  L = integer_lattice(gram = identity_matrix(ZZ, 2))
+  success, B = Hecke._reduce_allombert_chenevier(L, 1, 0)
   @test !success
   @test size(B) == (2, 2)
-  @test_throws ArgumentError reduce(L, -1)
-  @test_throws ArgumentError reduce(L, 2, -1)
-  @test_throws ArgumentError reduce(integer_lattice(gram = ZZ[0 1; 1 0]), 2)
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, -1)
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, 2, -1)
+  L = integer_lattice(gram = ZZ[0 1; 1 0])
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, 2)
   G = matrix(QQ, 1, 1, [1//2])
-  @test_throws ArgumentError reduce(integer_lattice(gram = G), 2)
+  L = integer_lattice(gram = G)
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, 2)
 end
 
 @testset "Short vectors affine" begin
