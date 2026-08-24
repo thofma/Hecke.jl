@@ -4142,6 +4142,22 @@ function _bt_short_basis(G::Matrix{Int})
   return nothing
 end
 
+# Predicted size of the largest level of the enumeration tree for this basis,
+# at the bound this basis implies.  Infinite when the Gram-Schmidt breaks down.
+function _bt_enum_score(G::Matrix{Int})
+  n = size(G, 1)
+  b = G[1, 1]
+  for i in 1:n
+    G[i, i] > b && (b = G[i, i])
+  end
+  b <= 0 && return Inf
+  lv = _bt_ball_volumes(n)
+  A = Matrix{Float64}(undef, n, n)
+  q = Vector{Float64}(undef, n)
+  _bt_gs_norms!(q, A, G, collect(1:n), n) || return Inf
+  return _bt_enum_cost(q, n, Float64(b), lv)
+end
+
 function _bt_reduce_gram(L::ZZLat)
   G = gram_matrix(L)
   s = sign(G[1, 1])
@@ -4151,6 +4167,12 @@ function _bt_reduce_gram(L::ZZLat)
   Gint = divexact(Gint, c)
   Glll, T = lll_gram_with_transform(Gint)
   all(x -> fits(Int, x), Glll) || return nothing
+  # Keeping the given basis when the cost model prefers it was tried here --
+  # the lattices of Chenevier and Taibi come with bases which LLL degrades --
+  # and it made the search slower on the cases where it could be measured.
+  # The model predicts the enumeration tree, which is evidently not what
+  # decides the total on those lattices, so the choice needs a better criterion
+  # than this one before it is worth making.
   Gm = Matrix{Int}(Glll)
   sb = _bt_short_basis(Gm)
   if sb !== nothing
