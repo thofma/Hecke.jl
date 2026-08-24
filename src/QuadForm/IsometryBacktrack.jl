@@ -4563,7 +4563,123 @@ function _bt_reduce_gram(L::ZZLat)
       T = U * T
     end
   end
+  # and finally, look for a basis of short vectors at a lower bound still
+  mb = _bt_min_bound_basis(Gm)
+  if mb !== nothing
+    Gm, U = mb
+    T = U * T
+  end
   return Gm, T, d//c
+end
+
+# Look for a basis of short vectors which lowers the bound.
+#
+# The largest diagonal entry decides the whole cost, and neither LLL nor a
+# greedy pass over the short vectors is guaranteed to make it as small as it
+# can be: on lattices 1885 and 1899 of X26_no1 both stop at four while a basis
+# of vectors of norm three exists.  Finding it takes the enumeration from
+# seventy thousand vectors to six hundred.
+#
+# So the bounds below the one in hand are tried in turn, cheapest first, and
+# for each we look for n of its vectors forming a basis.  A set of vectors is
+# extended only while it stays a direct summand -- all elementary divisors one
+# -- since only then can it still be completed to a basis; generating the
+# lattice is not enough, as two and three generate the integers with neither a
+# basis.  Several random orders are tried before a bound is given up on.
+#
+# Everything returned is verified: the transformation is checked to be
+# unimodular and to carry the one Gram matrix to the other.
+function _bt_min_bound_basis(G::Matrix{Int})
+  n = size(G, 1)
+  n < 2 && return nothing
+  cur = _bt_max_diag(G)
+  lo = G[1, 1]
+  for i in 2:n
+    G[i, i] < lo && (lo = G[i, i])
+  end
+  lo >= cur && return nothing
+  lv = _bt_ball_volumes(n)
+  A = Matrix{Float64}(undef, n, n)
+  q = Vector{Float64}(undef, n)
+  _bt_gs_norms!(q, A, G, collect(1:n), n) || return nothing
+  # Only worth looking when the enumeration we would avoid is itself large.
+  # Below that the search costs more than it saves, which it did on lattice
+  # 1901 of X26_no1 before this test was added.
+  _bt_enum_cost(q, n, Float64(cur), lv) >= log(2.0e4) || return nothing
+  for b in lo:(cur - 1)
+    # never spend more on the search than the enumeration we are avoiding
+    _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e5) || continue
+    local ctx
+    try
+      ctx = BTCtx(G, b; comp_budget = -2)
+    catch
+      continue
+    end
+    ctx.nv < n && continue
+    V = Vector{Vector{Int}}(undef, ctx.nv)
+    for j in 1:ctx.nv
+      V[j] = Int[Int(ctx.V[i, j]) for i in 1:n]
+    end
+    bs = _bt_pick_basis(V, n)
+    bs === nothing && continue
+    U = zero_matrix(ZZ, n, n)
+    for a in 1:n, c in 1:n
+      U[a, c] = bs[a][c]
+    end
+    abs(det(U)) == 1 || continue
+    GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+    GG = U * GZ * transpose(U)
+    all(x -> fits(Int, x), GG) || continue
+    Gn = Matrix{Int}(GG)
+    _bt_max_diag(Gn) < cur || continue
+    return Gn, U
+  end
+  return nothing
+end
+
+# n of the given vectors forming a basis, or `nothing`.
+function _bt_pick_basis(V::Vector{Vector{Int}}, n::Int; tries::Int = 6,
+                        look::Int = 3000)
+  nv = length(V)
+  ord = Vector{Int}(undef, nv)
+  st = UInt64(0x9e3779b97f4a7c15)          # a fixed seed keeps this repeatable
+  for t in 1:tries
+    for j in 1:nv
+      ord[j] = j
+    end
+    if t > 1
+      # Fisher-Yates with a xorshift, so that a bound is given several
+      # chances before it is given up on
+      for j in nv:-1:2
+        st ⊻= st << 13
+        st ⊻= st >> 7
+        st ⊻= st << 17
+        k = Int(st % UInt64(j)) + 1
+        ord[j], ord[k] = ord[k], ord[j]
+      end
+    end
+    rows = Vector{Int}[]
+    M = zero_matrix(ZZ, n, n)
+    seen = 0
+    for j in ord
+      length(rows) == n && break
+      # the test below is a Smith form, so only a bounded number of candidates
+      # is examined per attempt; a basis is usually found among the first few
+      seen += 1
+      seen > look && break
+      k = length(rows) + 1
+      for c in 1:n
+        M[k, c] = V[j][c]
+      end
+      Msub = sub(M, 1:k, 1:n)
+      rank(Msub) == k || continue
+      ed = elementary_divisors(Msub)
+      all(isone, ed) || continue
+      push!(rows, V[j])
+    end
+    length(rows) == n && return rows
+  end
+  return nothing
 end
 
 # The bound everything is enumerated to: the largest diagonal entry.
