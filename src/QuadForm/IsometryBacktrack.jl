@@ -4470,6 +4470,53 @@ function _bt_affordable_bound(G::Matrix{Int})
   return best
 end
 
+# What an ordering of the basis vectors actually costs.
+#
+# The nodes of the search at level j are the j-tuples of images whose scalar
+# products all match, that is the isometric embeddings into L of the sublattice
+# spanned by the first j basis vectors.  Write N_j for how many there are.  The
+# total work is the sum of the N_j, and the last of them is essentially the
+# order of the group and so does not depend on the ordering at all; what the
+# ordering decides is how high the count climbs on the way there.  So the
+# quantity to make small is the largest N_j.
+#
+# N_j can be estimated without any searching.  Once x_1..x_{j-1} are fixed, x_j
+# lies in a coset of the orthogonal complement of their span, of rank n-j+1,
+# and the part of it in that complement has squared length the Gram-Schmidt
+# residual d_j/d_{j-1}, where d_j is the j-th leading principal minor of the
+# Gram matrix *in the chosen order*.  Counting lattice points in a ball of that
+# radius in that rank gives
+#
+#   N_j ~ prod_{i<=j} V_{n-i+1}(rho_i) sqrt(d_{i-1}/det)
+#
+# which needs only the minors, and those come from one Cholesky of the
+# reordered Gram matrix.  Returned as a logarithm, since the counts are large.
+function _bt_order_cost(G::Matrix{Int}, per::Vector{Int}, lv::Vector{Float64})
+  n = size(G, 1)
+  # Gram-Schmidt of the basis in the given order
+  A = Matrix{Float64}(undef, n, n)
+  q = Vector{Float64}(undef, n)
+  _bt_gs_norms!(q, A, G, per, n) || return Inf
+  logdet = 0.0
+  for i in 1:n
+    q[i] <= 0 && return Inf
+    logdet += log(q[i])
+  end
+  worst = -Inf
+  run = 0.0
+  dprev = 0.0                      # log of d_{j-1}
+  for j in 1:n
+    m = n - j + 1
+    rho = sqrt(q[j])
+    # log of the volume of the ball of radius rho in rank m
+    lvol = lv[m] + m * log(rho)
+    run += lvol + 0.5 * (dprev - logdet)
+    run > worst && (worst = run)
+    dprev += log(q[j])
+  end
+  return worst
+end
+
 # Score the level orders on their fingerprints and return the best.
 #
 # The product of the candidate counts is the size of the search tree if nothing
@@ -4489,9 +4536,15 @@ function _bt_best_order(ctx::BTCtx)
     catch
       continue
     end
+    # The product of the candidate counts.  Note this is *not* the peak of the
+    # partial counts, though it was written that way at first: every count is
+    # at least one, so the running product only ever grows and its maximum is
+    # the whole product.  The fingerprint cannot express the fall of N_j, which
+    # is the part of the shape that matters; `_bt_order_cost` can, and is
+    # measured against this below.
     sc = 0.0
     for c in F.fpd
-      c > 1 && (sc += log(Float64(c)))
+      sc += log(Float64(max(c, 1)))
     end
     if sc < bestscore
       bestscore = sc
