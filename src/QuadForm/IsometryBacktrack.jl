@@ -2802,6 +2802,8 @@ mutable struct BTSearch{T <: Signed}
   refcnt::Dict{Int32, Int}                 # scratch for counting cells
   lvlnodes::Vector{Int}                    # nodes spent at each level, for
                                            #   verbose reporting only
+  divlevel::Int                            # level at which the images are
+                                           #   tested for being a summand
   combsmaxdep::Int
   work::Int                                # vectors looked at, for the same purpose
   worklimit::Int
@@ -2905,6 +2907,7 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   Int32[],                                 # refbuf
                   Dict{Int32, Int}(),                      # refcnt
                   zeros(Int, n),                           # lvlnodes
+                  0,                                       # divlevel
                   3,                                       # combsmaxdep
                   0,                                       # work
                   typemax(Int),                            # worklimit
@@ -3826,6 +3829,79 @@ function _bt_refine_ok!(S::BTSearch, k::Int)
   return true
 end
 
+# Do the images chosen so far span a direct summand?  NOT USED -- see the
+# measured outcome at the end of this comment.
+#
+# The basis vectors of the source are distinct standard basis vectors, so the
+# matrix of any k of them has every elementary divisor one.  An isometry of L
+# carries that matrix to the matrix of their images by an invertible integral
+# matrix, which leaves the elementary divisors alone.  So if the images do not
+# span a direct summand, no isometry sends the one set to the other, and the
+# branch is dead however well the scalar products match.
+#
+# This is information no scalar product carries: the Gram matrix of the images
+# agrees with the Gram matrix of the sources by construction, so the sublattice
+# they span is abstractly right, and what is wrong is only the way it sits
+# inside L.
+#
+# It costs a Smith form, so it was used at one level only -- the last level at
+# which the search still branches, just before the forced tail that is walked
+# one level at a time for every branch.
+#
+# On lattice 1899 of X26_no1 that level is twelve, and the test rejects
+# nothing: all 3072 partial assignments which reach it do span direct
+# summands, so the node counts are unchanged and the search only pays the
+# Smith forms, going from 1.44 to 1.99 seconds.  The condition is necessary
+# but it is not what separates the branches that die from the ones that live;
+# those die at levels sixteen and beyond, for want of any vector with the
+# right scalar products, which no test on the first twelve images can see.
+function _bt_summand_ok!(S::BTSearch, I::Int)
+  n = S.n
+  V = S.tgt.V
+  M = zero_matrix(ZZ, I, n)
+  @inbounds for a in 1:I
+    if a > S.ncheap
+      w = S.xvec[a]
+      for j in 1:n
+        M[a, j] = w[j]
+      end
+    else
+      p = S.x[a]
+      if p > 0
+        for j in 1:n
+          M[a, j] = Int(V[j, p])
+        end
+      else
+        for j in 1:n
+          M[a, j] = -Int(V[j, -p])
+        end
+      end
+    end
+  end
+  local ed
+  try
+    ed = elementary_divisors(M)
+  catch
+    return true                       # never reject on a failure to decide
+  end
+  for x in ed
+    isone(x) || return false
+  end
+  return true
+end
+
+# The last level at which the search still branches: below it every image is
+# forced, and walking that tail is what the summand test is there to avoid.
+function _bt_set_divlevel!(S::BTSearch, fpd::Vector{Int})
+  lv = 0
+  for i in 1:min(length(fpd), S.ncheap)
+    fpd[i] > 1 && (lv = i)
+  end
+  # only worth a Smith form when there is a real tail below it
+  S.divlevel = (lv >= 4 && lv + 3 <= S.n) ? lv : 0
+  return S
+end
+
 function _bt_extend!(S::BTSearch, d::Int)
   n = S.n
   d == n && return true
@@ -3843,7 +3919,7 @@ function _bt_extend!(S::BTSearch, d::Int)
     r = _bt_combs_check!(S, I)
     r == 0 && continue
     r == 2 && return true
-    S.refdep > 0 && !_bt_refine_ok!(S, I) && continue
+    I == S.divlevel && !_bt_summand_ok!(S, I) && continue
     if I + 1 > S.ncheap
       # the next level is served from a coset, so there is nothing to prepare
       # here -- and preparing it would index the buckets by a scalar product
@@ -4308,6 +4384,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   @vprintln :Lattice 2 "backtrack: order of the base $(F.per)"
   verbose && println("|V| = ", nv, "  fpd = ", F.fpd, "\n per = ", F.per)
   S = BTSearch(ctx, F.per, G, F.fp, F.fpd, _bt_basis_colors(ctx))
+  # `_bt_set_divlevel!` is deliberately not called: see the note there
   nw = S.nw
   std = [Int(ctx.bidx[F.per[i]]) for i in 1:n]
   tmpp = zeros(UInt64, nv * nw)
@@ -4399,7 +4476,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
           # this level's image is fixed by the loop rather than by the descent,
           # so its refinement has to happen here: without it every deeper
           # comparison is made against a partition built from the wrong image
-          if r == 1 && S.refdep > 0 && !_bt_refine_ok!(S, step)
+          if r == 1 && step == S.divlevel && !_bt_summand_ok!(S, step)
             r = 0
           end
           if r == 2
@@ -4421,7 +4498,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
             S.usecombs = true
             # Refining the partition here was tried and is not switched on;
             # see `_bt_setup_refine!` for what it cost and why it gained
-            # nothing.
+            # nothing.  The summand test is switched on instead.
             # the combinations bound the depth the search can reach, which is
             # what decides between the pool and the per level filtering
             S.usepool = _bt_prefer_pool(F, S.per, step, min(n, S.maxlevel), n,
