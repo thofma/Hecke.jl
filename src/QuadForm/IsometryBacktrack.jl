@@ -1758,6 +1758,56 @@ end
 # `nothing` when the roots are out of range or a component is not recognised.
 # The reflection in the root `r` of norm `m`, as a matrix acting on coordinate
 # rows: b_i goes to b_i - (2<b_i,r>/m) r, integral because r is a root.
+# The stabiliser of the chamber permutes the simple roots, so the multiset of
+# the scalar products of a short vector with them does not depend on which
+# permutation, only on the vector: it is an invariant of everything the search
+# is still looking for, and it is far finer than the pairing with rho alone,
+# which only records the sum.
+#
+# Colours are compared without regard to sign, so the multiset of `v` and the
+# negated one of `-v` are folded together by taking the smaller of the two.
+function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
+  n = ctx.n
+  nv = ctx.nv
+  ns = length(simple)
+  (ns == 0 || nv == 0) && return ctx
+  # G * a for each simple root, so that a pairing is one dot product
+  ga = [Int[sum(ctx.G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
+  p = Vector{Int}(undef, ns)
+  q = Vector{Int}(undef, ns)
+  old = ctx.colors
+  cols = Vector{UInt64}(undef, nv)
+  @inbounds for j in 1:nv
+    for t in 1:ns
+      s = 0
+      gat = ga[t]
+      for i in 1:n
+        s += Int(ctx.V[i, j]) * gat[i]
+      end
+      p[t] = s
+      q[t] = -s
+    end
+    sort!(p)
+    sort!(q)
+    # the smaller of the two sequences, so that v and -v get the same colour
+    use_p = true
+    for t in 1:ns
+      if p[t] != q[t]
+        use_p = p[t] < q[t]
+        break
+      end
+    end
+    h = isempty(old) ? UInt64(0) : old[j]
+    src = use_p ? p : q
+    for t in 1:ns
+      h = hash(src[t], h)
+    end
+    cols[j] = h
+  end
+  ctx.colors = cols
+  return ctx
+end
+
 function _bt_reflection(G::Matrix{Int}, r::Vector{Int}, m::Int)
   n = size(G, 1)
   M = zeros(Int, n, n)
@@ -3433,6 +3483,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
     end
     if ok
       ctx.rhov = rv
+      _bt_root_colors!(ctx, rd.simple)
       for a in rd.simple
         m = _bt_is_root(G, a, n)
         m == 0 && (ok = false; break)
