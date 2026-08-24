@@ -1950,6 +1950,39 @@ function _bt_all_roots(G::Matrix{Int})
   return res
 end
 
+# The simple roots grouped into connected components: two are joined when they
+# are not orthogonal.
+function _bt_root_components(G::Matrix{Int}, simple::Vector{Vector{Int}}, n::Int)
+  ns = length(simple)
+  sd = [Int[sum(G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
+  comp = zeros(Int, ns)
+  res = Vector{Int}[]
+  stack = Int[]
+  for i in 1:ns
+    comp[i] != 0 && continue
+    c = length(res) + 1
+    comp[i] = c
+    push!(stack, i)
+    cur = Int[i]
+    while !isempty(stack)
+      a = pop!(stack)
+      for b in 1:ns
+        comp[b] == 0 || continue
+        t = 0
+        for k in 1:n
+          t += sd[a][k] * simple[b][k]
+        end
+        t == 0 && continue
+        comp[b] = c
+        push!(stack, b)
+        push!(cur, b)
+      end
+    end
+    push!(res, cur)
+  end
+  return res
+end
+
 # The type of an irreducible root system is fixed by its rank, its number of
 # roots and how many of them are short.  Whether there are two root lengths has
 # to be asked first: B_6 and C_6 have as many roots as E_6, and B_2 as many as
@@ -1999,6 +2032,33 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   (ns == 0 || nv == 0) && return ctx
   # G * a for each simple root, so that a pairing is one dot product
   ga = [Int[sum(ctx.G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
+  # The orthogonal projection onto the span of a root component is an invariant
+  # form, and its value on a vector needs nothing beyond the pairings computed
+  # here: if c is the vector of pairings with that component's simple roots and
+  # M their Gram matrix, the squared length of the projection is c^t M^-1 c.
+  # Distinct components are orthogonal, so M is block diagonal and this costs a
+  # few operations per component rather than a matrix product.  The value is
+  # kept as the integer c^t adj(M) c, the determinant being a constant.
+  comps = _bt_root_components(ctx.G, simple, n)
+  adjs = Vector{Matrix{Int}}(undef, length(comps))
+  ok = true
+  for (t, idx) in enumerate(comps)
+    k = length(idx)
+    M = zero_matrix(ZZ, k, k)
+    for a in 1:k, b in 1:k
+      M[a, b] = sum(simple[idx[a]][i] * ga[idx[b]][i] for i in 1:n)
+    end
+    dM = det(M)
+    if is_zero(dM)
+      ok = false
+      break
+    end
+    Aj = map_entries(ZZ, dM * inv(change_base_ring(QQ, M)))
+    all(x -> fits(Int, x), Aj) || (ok = false; break)
+    adjs[t] = Matrix{Int}(Aj)
+  end
+  ok || (comps = Vector{Int}[]; adjs = Matrix{Int}[])
+  cbuf = Vector{Int}(undef, ns)
   old = ctx.colors
   cols = Vector{UInt64}(undef, nv)
   @inbounds for j in 1:nv
@@ -2023,7 +2083,39 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
       p1 = -p1
       p3 = -p3
     end
-    cols[j] = hash(p1, hash(p2, hash(p3, isempty(old) ? UInt64(0) : old[j])))
+    h = hash(p1, hash(p2, hash(p3, isempty(old) ? UInt64(0) : old[j])))
+    # the projection norms, as a multiset over the components: they are
+    # permuted along with the components, so power sums again
+    if !isempty(comps)
+      for t in 1:ns
+        cbuf[t] = 0
+      end
+      for t in 1:ns
+        s2 = 0
+        gat = ga[t]
+        for i in 1:n
+          s2 += Int(ctx.V[i, j]) * gat[i]
+        end
+        cbuf[t] = s2
+      end
+      r1 = 0; r2 = 0
+      for (t, idx) in enumerate(comps)
+        k = length(idx)
+        Aj = adjs[t]
+        q = 0
+        for a in 1:k
+          ca = cbuf[idx[a]]
+          ca == 0 && continue
+          for b in 1:k
+            q += ca * Aj[a, b] * cbuf[idx[b]]
+          end
+        end
+        r1 += q
+        r2 += q * q
+      end
+      h = hash(r1, hash(r2, h))
+    end
+    cols[j] = h
   end
   ctx.colors = cols
   return ctx
