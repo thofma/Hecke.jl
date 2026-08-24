@@ -25,11 +25,14 @@ returned is verified to satisfy `M G M^t = G` before it is used.
 
 ## The gaps between here and the goal
 
-1. **Rank above 32 is untested and broken.**  Of everything swept, exactly one
-   lattice has rank above 32, and on it we fail: an older build raised a
-   `BoundsError`, and the current one runs for more than seven minutes without
-   producing an answer or handing back.  Preprocessing is the suspect -- the
-   minimal-bound basis search runs Smith forms on matrices of that size.
+1. **Rank above 32 is untested, and out-of-range input is handled badly.**  Of
+   everything swept, exactly one lattice has rank above 32.  It has rank 105,
+   which is far beyond what anyone expects to be computable -- rank 32 is the
+   realistic target and rank 64 would be an achievement -- so the problem is
+   not that we fail on it but *how*: an older build raised a `BoundsError` and
+   the current one runs for more than seven minutes without answering or
+   handing back.  Preprocessing is the suspect, since the minimal-bound basis
+   search runs Smith forms on matrices of that size.
 2. **Not shippable.**  The include in `src/QuadForm.jl` is commented out, the
    work sits on a branch of 34 commits, and nothing routes Hecke's public
    entry points through it.
@@ -49,16 +52,22 @@ returned is verified to satisfy `M G M^t = G` before it is used.
 
 ## Plan
 
-### Phase 1 -- robustness at rank (blocking, small)
+### Phase 1 -- decline gracefully, and find the real ceiling (blocking, small)
 
-Find and fix the rank 105 failure.  Put an explicit rank and cost guard on
-every preprocessing step that runs super-quadratic linear algebra, so that a
-lattice we cannot handle is handed back in bounded time rather than ground on.
-Then sweep the Nebe files of rank above 32 deliberately, since the current
-sweep reached them only by accident.
+Rank 105 is not a target.  What is wrong is the manner of failure, so put an
+explicit rank and cost guard on every preprocessing step that runs
+super-quadratic linear algebra: an input beyond the feasible range must be
+handed back in bounded time, never ground on and never by exception.
 
-Done when: no input produces an exception, and every input either answers or
-hands back inside a predictable time.
+Then find where the real ceiling is, which is not known.  Rank 32 is the
+realistic target and is where the benchmark lives; rank 64 would be an
+achievement.  Sweep the Nebe files between those two ranks deliberately --
+the current sweep reached anything above 32 only by accident -- and record
+where the enumeration, the fingerprint or the search stops being affordable.
+
+Done when: no input raises an exception, every input answers or hands back
+inside a predictable time, and we know which rank between 32 and 64 is the
+practical limit and which part of the algorithm sets it.
 
 ### Phase 2 -- ship it (blocking, small)
 
