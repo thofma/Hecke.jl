@@ -4535,19 +4535,44 @@ function _bt_reduce_gram(L::ZZLat)
   Gint = divexact(Gint, c)
   Glll, T = lll_gram_with_transform(Gint)
   all(x -> fits(Int, x), Glll) || return nothing
-  # Keeping the given basis when the cost model prefers it was tried here --
-  # the lattices of Chenevier and Taibi come with bases which LLL degrades --
-  # and it made the search slower on the cases where it could be measured.
-  # The model predicts the enumeration tree, which is evidently not what
-  # decides the total on those lattices, so the choice needs a better criterion
-  # than this one before it is worth making.
+  # LLL is not always an improvement, and the right way to tell is the largest
+  # diagonal entry rather than any measure of the enumeration tree.  That entry
+  # is the bound everything is enumerated to, and the number of short vectors
+  # is what prices every node of the search afterwards, so it decides the whole
+  # cost.  LLL optimises the orthogonality defect instead, and on a basis
+  # chosen by hand it can push the largest diagonal up: on lattice 1899 of
+  # X26_no1 it raises it from four to five, which is the difference between
+  # seventy thousand short vectors and six hundred thousand.
+  #
+  # An earlier attempt used the predicted size of the enumeration tree here and
+  # made things slower; the tree is not what is being paid for.
   Gm = Matrix{Int}(Glll)
+  if all(x -> fits(Int, x), Gint)
+    Gin = Matrix{Int}(Gint)
+    if _bt_max_diag(Gin) < _bt_max_diag(Gm)
+      Gm = Gin
+      T = identity_matrix(ZZ, nrows(Gint))
+    end
+  end
   sb = _bt_short_basis(Gm)
   if sb !== nothing
-    Gm, U = sb
-    T = U * T
+    Gs, U = sb
+    # the greedy basis is only taken when it does not raise the bound either
+    if _bt_max_diag(Gs) <= _bt_max_diag(Gm)
+      Gm = Gs
+      T = U * T
+    end
   end
   return Gm, T, d//c
+end
+
+# The bound everything is enumerated to: the largest diagonal entry.
+function _bt_max_diag(G::Matrix{Int})
+  m = G[1, 1]
+  for i in 2:size(G, 1)
+    G[i, i] > m && (m = G[i, i])
+  end
+  return m
 end
 
 @doc raw"""
