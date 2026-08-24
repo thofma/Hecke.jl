@@ -1455,6 +1455,92 @@ end
 
 ################################################################################
 #
+#  Candidates from a coset
+#
+################################################################################
+
+# All x in L with prescribed scalar products against vectors already fixed and
+# a prescribed norm, without enumerating the shell of that norm.
+#
+# The conditions <x, X_k> = c_k are linear, so their solutions form a coset
+# x_0 + M of the sublattice M = { z in L : <z, X_k> = 0 }, of rank n - r where
+# r is the rank of the X_k.  Writing x = x_0 + K z for a basis K of M, the norm
+# condition becomes an inhomogeneous quadratic in z, and completing the square
+# turns it into a question about vectors of M at a fixed distance from a
+# rational point -- which is what `close_vectors` answers, exactly.
+#
+# The cost is set by the rank of M, not by the size of the shell: where the
+# short vectors of L span everything but one direction this looks at a rank one
+# lattice, and where they leave a gap of k directions it looks at rank k.  That
+# is the whole point -- a shell of norm 30 in rank 17 is out of reach, while the
+# coset it meets is not.
+#
+# Returns the candidates, or `nothing` if the computation is out of range.
+function _bt_coset_candidates(G::Matrix{Int}, X::Vector{Vector{Int}},
+                              c::Vector{Int}, m::Int)
+  n = size(G, 1)
+  r = length(X)
+  GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  if r == 0
+    # no conditions yet: this is a plain shell, which is what we are avoiding
+    return nothing
+  end
+  # rows of XG pair a vector with the fixed images
+  XG = zero_matrix(ZZ, r, n)
+  for k in 1:r
+    for i in 1:n
+      t = 0
+      for l in 1:n
+        t += G[i, l] * X[k][l]
+      end
+      XG[k, i] = t
+    end
+  end
+  cv = matrix(ZZ, r, 1, [ZZRingElem(c[k]) for k in 1:r])
+  fl, x0 = can_solve_with_solution(XG, cv; side = :right)
+  fl || return Vector{Int}[]                       # no vector meets the conditions
+  K = kernel(XG; side = :right)                    # basis of M, as columns
+  k = ncols(K)
+  # <x0, x0>
+  n0 = (transpose(x0) * GZ * x0)[1, 1]
+  if k == 0
+    n0 == m || return Vector{Int}[]
+    return Vector{Int}[[Int(x0[i, 1]) for i in 1:n]]
+  end
+  GM = transpose(K) * GZ * K                       # Gram of M
+  d = transpose(K) * GZ * x0                       # <K_j, x0>
+  GMq = change_base_ring(QQ, GM)
+  t = inv(GMq) * change_base_ring(QQ, d)           # completes the square
+  # <x,x> = m becomes <z + t, z + t>_M = m - n0 + <t,t>_M
+  rhs = QQ(m) - QQ(n0) + (transpose(t) * GMq * t)[1, 1]
+  rhs < 0 && return Vector{Int}[]
+  LM = integer_lattice(; gram = GM, cached = false)
+  tv = QQFieldElem[-t[i, 1] for i in 1:k]
+  local cvs
+  try
+    cvs = close_vectors(LM, tv, rhs, rhs)
+  catch
+    return nothing
+  end
+  res = Vector{Int}[]
+  for (z, _) in cvs
+    x = Vector{Int}(undef, n)
+    ok = true
+    for i in 1:n
+      v = x0[i, 1]
+      for j in 1:k
+        v += K[i, j] * z[j]
+      end
+      fits(Int, v) || (ok = false; break)
+      x[i] = Int(v)
+    end
+    ok && push!(res, x)
+  end
+  return res
+end
+
+################################################################################
+#
 #  Root system
 #
 ################################################################################
