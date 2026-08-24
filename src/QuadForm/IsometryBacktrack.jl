@@ -1125,6 +1125,11 @@ end
 
 function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
   n = ctx.n
+  sym = ones(Int, n)          # symmetry already accumulated, for order_mode 3
+  la_vals = Int32[]           # scratch for the lookahead of order_mode 4
+  la_cnt = Int[]
+  la_bas = Int[]
+  la_ok = false
   nv = ctx.nv
   G = ctx.G
   Wt = ctx.Wt
@@ -1288,6 +1293,15 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
   vals = zeros(Int32, 2 * nv + n)
   tmp = Vector{Int32}(undef, N)
   ccnt = zeros(Int, 2 * bound + 1)
+  if order_mode == 4
+    # n candidates at each of n levels, each a pass over the partition
+    la_ok = Float64(n) * n * (2 * nv + n) <= 2.0e8
+    if la_ok
+      la_vals = zeros(Int32, 2 * nv + n)
+      la_cnt = zeros(Int, 2 * bound + 1)
+      la_bas = zeros(Int, 2 * bound + 1)
+    end
+  end
   nbas = Int[]
 
   for k in 1:n
@@ -1312,6 +1326,60 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
     # they are reached as many images as possible are fixed and the coset is
     # small -- and so that the orbits, which are taken over the enumerated
     # vectors, only ever involve the levels below them.
+    # One step of lookahead: choosing a level costs its own candidates and
+    # leaves the others with whatever candidates the choice leaves them.  The
+    # greedy rule counts only the first, which is why it will take ten
+    # equivalent roots one after another -- each is cheap on its own, and the
+    # bill for the symmetry of A_1^10 only arrives later.  Scoring the sum of
+    # the logarithms over all remaining levels charges it up front.  One pass
+    # over the partition per candidate, so only done while that is affordable.
+    if order_mode == 4 && la_ok
+      bestsc = Inf
+      mi = 0
+      for i in 1:n
+        (used[i] || !cheap[i]) && continue
+        fp[k, i] <= 0 && continue
+        sc = log(Float64(fp[k, i]))
+        # values of the scalar product with this candidate
+        @inbounds for t in 1:N
+          it = order[t]
+          la_vals[it] = it <= nv ? Wt[it, i] :
+                        (it <= 2 * nv ? -Wt[it - nv, i] : Int32(G[it - 2 * nv, i]))
+        end
+        # the size of each basis vector's class after that refinement
+        @inbounds for bb in 1:nb
+          s0 = Int(bstart[bb]); e0 = Int(bstop[bb])
+          s0 >= e0 && continue
+          any_here = false
+          for j in 1:n
+            (used[j] || j == i) && continue
+            blkof[2 * nv + j] == bb && (any_here = true; break)
+          end
+          any_here || continue
+          fill!(la_cnt, 0)
+          fill!(la_bas, 0)
+          for t in s0:e0
+            it = order[t]
+            c = la_vals[it] + bound + 1
+            la_cnt[c] += 1
+            it > 2 * nv && (la_bas[c] += 1)
+          end
+          for j in 1:n
+            (used[j] || j == i) && continue
+            blkof[2 * nv + j] == bb || continue
+            c = la_vals[2 * nv + j] + bound + 1
+            sc += log(Float64(max(la_cnt[c] - la_bas[c], 1)))
+          end
+        end
+        if sc < bestsc
+          bestsc = sc
+          mi = i
+        end
+      end
+      if mi != 0
+        @goto chosen
+      end
+    end
     mi = 0
     for i in 1:n
       used[i] && continue
@@ -1319,7 +1387,17 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
       if mi == 0
         mi = i
       else
-        better = if order_mode == 1
+        better = if order_mode == 3
+          # The nodes at level j are the embeddings of the sublattice N_j
+          # spanned by the levels chosen so far, and their number is the number
+          # of sublattices of L isometric to N_j times |O(N_j)|.  So the search
+          # pays directly for the symmetry of what it has built, and an
+          # ordering should avoid accumulating it.  Taking a vector which is
+          # interchangeable with m already chosen ones -- same norm, orthogonal
+          # to them, as the roots of an A_1^m are -- multiplies |O(N_j)| by
+          # about 2m, so the count of such vectors is charged against it.
+          sym[i] * fp[k, i] < sym[mi] * fp[k, mi]
+        elseif order_mode == 1
           # most candidates first: the level which constrains the others
           # hardest need not be the one with the fewest images of its own
           fp[k, i] > fp[k, mi]
@@ -1338,8 +1416,19 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
         (mi == 0 || G[i, i] < G[mi, mi]) && (mi = i)
       end
     end
+    @label chosen
     per[k] = mi
     used[mi] = true
+    # everything still unchosen which is interchangeable with the vector just
+    # taken becomes that much more expensive to take next
+    if order_mode == 3
+      for i in 1:n
+        used[i] && continue
+        if G[i, i] == G[mi, mi] && G[i, mi] == 0
+          sym[i] += 1
+        end
+      end
+    end
     fpd[k] = fp[k, mi]
     k == n && break
 
@@ -4551,6 +4640,7 @@ end
 function _bt_best_order(ctx::BTCtx)
   best = 0
   bestscore = Inf
+  score2 = Inf
   for om in (0, 2, 1)
     local F
     try
@@ -4568,11 +4658,29 @@ function _bt_best_order(ctx::BTCtx)
     for c in F.fpd
       sc += log(Float64(max(c, 1)))
     end
+    om == 2 && (score2 = sc)
     if sc < bestscore
       bestscore = sc
       best = om
     end
   end
+  # Taking the largest norm first is the order to beat, and the score is not a
+  # good enough instrument to overrule it lightly.  Measured over two samples
+  # of the benchmark, 1194 and 626 lattices, against an oracle which always
+  # picks the best order:
+  #
+  #                       total          worst case on one lattice
+  #   greedy alone      1.42x / 1.87x        306x / 342x
+  #   score alone       1.37x / 1.85x        306x / 342x
+  #   largest norm      1.90x / 1.71x         34x /  19x
+  #   this rule         1.16x / 1.21x         25x /  19x
+  #
+  # The greedy order is quicker on the lattices where it is right and
+  # catastrophic where it is wrong, and the largest-norm order is the reverse.
+  # Deferring to the latter unless the score disagrees by a clear margin takes
+  # the better half of each.  A margin of two in the logarithm was best on both
+  # samples independently.
+  score2 - bestscore <= 2.0 && (best = 2)
   return best
 end
 
