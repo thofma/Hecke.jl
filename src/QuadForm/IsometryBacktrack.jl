@@ -1123,7 +1123,7 @@ mutable struct BTFingerprint
   be::Matrix{Int32}              #   inside order[k]
 end
 
-function _bt_fingerprint(ctx::BTCtx)
+function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
   n = ctx.n
   nv = ctx.nv
   G = ctx.G
@@ -1316,7 +1316,21 @@ function _bt_fingerprint(ctx::BTCtx)
     for i in 1:n
       used[i] && continue
       cheap[i] || continue
-      (mi == 0 || fp[k, i] < fp[k, mi]) && (mi = i)
+      if mi == 0
+        mi = i
+      else
+        better = if order_mode == 1
+          # most candidates first: the level which constrains the others
+          # hardest need not be the one with the fewest images of its own
+          fp[k, i] > fp[k, mi]
+        elseif order_mode == 2
+          # largest norm first
+          G[i, i] > G[mi, mi] || (G[i, i] == G[mi, mi] && fp[k, i] < fp[k, mi])
+        else
+          fp[k, i] < fp[k, mi]
+        end
+        better && (mi = i)
+      end
     end
     if mi == 0
       for i in 1:n
@@ -2812,6 +2826,8 @@ mutable struct BTSearch{T <: Signed}
   work::Int                                # vectors looked at, for the same purpose
   worklimit::Int
   nodelimit::Int
+  totallimit::Int                          # budget for the whole search, used
+                                           #   when racing the level orders
   aborted::Bool
   solved::Bool
   solution::Matrix{Int}
@@ -2920,6 +2936,7 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   0,                                       # work
                   typemax(Int),                            # worklimit
                   typemax(Int),                            # nodelimit
+                  typemax(Int),                            # totallimit
                   false,                                   # aborted
                   false,                                   # solved
                   zeros(Int, 0, 0))                        # solution
@@ -3418,6 +3435,9 @@ end
 function _bt_cands!(S::BTSearch, I::Int, d::Int)
   S.nodes += 1
   I <= length(S.lvlnodes) && (S.lvlnodes[I] += 1)
+  if S.nodes > S.totallimit
+    throw(BTBudget())
+  end
   if S.nodes > S.nodelimit || S.work > S.worklimit
     S.aborted = true
     return false
@@ -3490,6 +3510,9 @@ function _bt_descend!(S::BTSearch, I::Int)
   nw = S.nw
   S.nodes += 1
   I <= length(S.lvlnodes) && (S.lvlnodes[I] += 1)
+  if S.nodes > S.totallimit
+    throw(BTBudget())
+  end
   if S.nodes > S.nodelimit || S.work > S.worklimit
     S.aborted = true
     return false
@@ -4447,7 +4470,44 @@ function _bt_affordable_bound(G::Matrix{Int})
   return best
 end
 
-function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
+# Score the level orders on their fingerprints and return the best.
+#
+# The product of the candidate counts is the size of the search tree if nothing
+# ever pruned.  It is a crude measure -- the real search prunes hard -- but it
+# is computed from the fingerprint alone, which comes off the enumeration that
+# has been done anyway, and on every lattice measured it picks the order that
+# wins: the largest-norm order on 1899 and 1885 of X26_no1, where it is worth a
+# factor of forty five on the first, and the fewest-candidates order on 1901,
+# where the other way round would cost a factor of nine.
+function _bt_best_order(ctx::BTCtx)
+  best = 0
+  bestscore = Inf
+  for om in (0, 2, 1)
+    local F
+    try
+      F = _bt_fingerprint(ctx; order_mode = om)
+    catch
+      continue
+    end
+    sc = 0.0
+    for c in F.fpd
+      c > 1 && (sc += log(Float64(c)))
+    end
+    if sc < bestscore
+      bestscore = sc
+      best = om
+    end
+  end
+  return best
+end
+
+# Thrown when a search runs past the budget it was given, so that a different
+# level order can be tried instead.
+struct BTBudget <: Exception end
+
+function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
+                                     order_mode::Int = 0,
+                                     totallimit::Int = typemax(Int))
   # the component invariant is only used to refine the initial partition here,
   # which the fingerprint does anyway, so it must not cost more than a sweep
   t0 = time()
@@ -4505,13 +4565,15 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
     end
     @vprintln :Lattice 1 "backtrack: root system $(rd.types), |W| = $(worder)"
   end
-  F = _bt_fingerprint(ctx)
+  F = _bt_fingerprint(ctx; order_mode = order_mode < 0 ?
+                          _bt_best_order(ctx) : order_mode)
   @vprintln :Lattice 1 "backtrack: fingerprint $(F.fpd)"
   @vprintln :Lattice 2 "backtrack: order of the base $(F.per)"
   verbose && println("|V| = ", nv, "  fpd = ", F.fpd, "\n per = ", F.per)
   S = BTSearch(ctx, F.per, G, F.fp, F.fpd, _bt_basis_colors(ctx))
   # `_bt_set_divlevel!` is deliberately not called: see the note there
   # `_bt_setup_lookahead!` is deliberately not called: see the note there
+  S.totallimit = totallimit
   nw = S.nw
   std = [Int(ctx.bidx[F.per[i]]) for i in 1:n]
   tmpp = zeros(UInt64, nv * nw)
@@ -4736,8 +4798,27 @@ Return generators of $\{g \in GL_n(\mathbf{Z}) : g G g^t = G\}$ together with
 the order of that group, for a positive definite integral `G`.  The rows of the
 generators are the images of the standard basis vectors.
 """
-function _bt_automorphism_group(G::Matrix{Int}; verbose::Bool = false)
-  res = _bt_automorphism_group_data(G; verbose)
+# Which basis vector the search takes first, and in what order it takes the
+# rest, decides the cost far more than any pruning test does.  Taking the level
+# with the fewest candidates first is the obvious greedy choice and is often
+# right, but not always: on a lattice whose roots are many and short, that
+# choice works through all the roots before it reaches anything else, and the
+# glue -- which is what actually rules the wrong branches out -- only enters at
+# the very end.  Taking the largest norm first reverses that, and on lattice
+# 1899 of X26_no1 it is worth a factor of forty five, from 1.43 seconds to
+# 0.032.  On lattice 1901 it is worth a factor of nine the wrong way, because
+# there the greedy order opens with levels that have a single candidate and the
+# other order opens with twenty two thousand.
+#
+# Racing them was tried and is much worse: a losing attempt throws away the
+# enumeration as well as the search, and the enumeration is the expensive part.
+# Instead the orders are scored on their fingerprints, which are computed from
+# the one enumeration and cost almost nothing, and the best is searched.  The
+# score is the product of the candidate counts -- the size of the tree if
+# nothing pruned -- which picks the good order on every lattice measured.
+function _bt_automorphism_group(G::Matrix{Int}; verbose::Bool = false,
+                                order_mode::Int = -1)
+  res = _bt_automorphism_group_data(G; verbose, order_mode)
   return res[1], res[2]
 end
 
