@@ -146,25 +146,13 @@ end
   end
 
   function GenOrdIdl(O::GenOrd, x::GenOrdElem)
-    @assert parent(x) === O
+    @req parent(x) === O "generator must belong to the given order"
+    return _make_principal_ideal(O, x)
+  end
 
-    r = GenOrdIdl(O)
-    r.princ_gen = x
-    r.is_principal = 1
-
-    r.norm = _make_canonical_in(O, norm(x))
-
-    if iszero(x)
-      r.is_zero = 1
-    else
-      r.is_zero = 2
-      r.minimum = _minimum_principal(O, x)
-      r.gen_one = r.minimum
-      r.gen_two = x
-      r.gens_normal = r.minimum
-    end
-
-    return r
+  function GenOrdIdl(O::GenOrd, x::RingElem)
+    @req parent(x) === base_ring(O) "generator must belong to the coefficient ring"
+    return _make_principal_ideal(O, O(x); ideal_minimum = x, ideal_norm = x^degree(O))
   end
 
   function GenOrdIdl(O::GenOrd, T::Vector{<:GenOrdElem})

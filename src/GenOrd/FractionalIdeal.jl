@@ -13,7 +13,6 @@ function is_one(A::GenOrdFracIdl)
 
   d = denominator(A; copy = false)
   # A = I/d = O iff I = d*O
-
   if isdefined(A, :num)
     # intersection of A and R is minimum(A)*R. minimum(A) = d gives d*O subset I
     minimum(A.num; copy = false) == d || return false

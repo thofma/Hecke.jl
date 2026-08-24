@@ -86,9 +86,21 @@
 
   function test_ideal_inv(O, I)
     U = ideal(O, one(O))
-    @test inv(I) == colon(U, I)     # agrees with colon
-    @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
-    @test inv(inv(I)) == I
+    J = inv(I)
+
+    @test J == colon(U, I)  # agrees with colon
+    @test is_one(I * J)     # defining property: A * A^{-1} = O
+    @test inv(J) == I
+
+    # this is implementation check (not mathematical or "visible" contract)
+    # ensure that we indeed apply optimized routines correctly
+    if I isa Hecke.GenOrdIdl
+      if Hecke.has_princ_gen(I)
+        @test isdefined(J, :num) && Hecke.has_princ_gen(numerator(J; copy = false))
+      elseif Hecke.is_maximal_known_and_maximal(O) && Hecke.has_2_elem_normal(I)
+        @test isdefined(J, :num) && Hecke.has_2_elem_normal(numerator(J; copy = false))
+      end
+    end
   end
 
   function test_frac_ideal_inv(O, I_list)
@@ -99,18 +111,21 @@
 
   function test_ideal_inv_2elem_normal(O, p_list)
     I = ideal(O, one(O))
+    @test Hecke.has_princ_gen(I)
 
     for p in p_list
       P = prime_decomposition(O, p)[1][1]
       @test Hecke.has_2_elem_normal(P)
+      P_is_principal = Hecke.has_princ_gen(P)
+
       test_ideal_inv(O, P)
 
       Pe = P^3
-      @test Hecke.has_2_elem_normal(Pe)
+      @test (P_is_principal ? Hecke.has_princ_gen(Pe) : Hecke.has_2_elem_normal(Pe))
       test_ideal_inv(O, Pe)
 
       I = I*Pe
-      @test Hecke.has_2_elem_normal(I)
+      @test Hecke.has_princ_gen(I) || Hecke.has_2_elem_normal(I)
       test_ideal_inv(O, I)
     end
   end
@@ -733,6 +748,15 @@ end
   @test_throws ErrorException Oinf(x)
   @test_throws ErrorException ideal(Oinf, x) * I
   check_scaling(I, x)
+
+  # check that principal ideals multiplication cancels terms (and stays principal)
+  A = fractional_ideal(ideal(Ofin, Ofin(a)), numerator(x))
+  B = fractional_ideal(ideal(Ofin, Ofin(x)), numerator(x + 1))
+  C = @inferred(A*B)
+
+  @test denominator(C; copy = false) == Ofin.R(x + 1)
+  @test isdefined(C, :num)
+  @test Hecke.has_princ_gen(numerator(C; copy = false))
 end
 
 @testset "Equality in non-maximal order" begin
@@ -749,6 +773,47 @@ end
   O2 = Hecke.GenOrd(ZZ, K)
   @test ideal(O, 2) != ideal(O2, 2)
   @test fractional_ideal(ideal(O, 2)) != fractional_ideal(ideal(O2, 2))
+end
+
+@testset "0/1 ideals" begin
+  kx, x = rational_function_field(QQ, :x; cached = false)
+  ky, y = polynomial_ring(kx, :y; cached = false)
+  F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+  Ofin = finite_maximal_order(F)
+  Oinf = infinite_maximal_order(F)
+
+  for O in (Ofin, Oinf)
+    Z = ideal(O, zero(O))
+    U = ideal(O, one(O))
+
+    @test is_zero(Z)
+    @test !is_one(Z)
+    @test is_zero(norm(Z)) && is_zero(minimum(Z))
+    @test Z == ideal(O, 0)
+
+    @test is_one(U)
+    @test !is_zero(U)
+    @test is_one(norm(U)) && is_one(minimum(U))
+    @test U == ideal(O, 1)
+
+    @test Z == Z + Z
+    @test is_zero(Z + Z)
+
+    @test Z == Z * Z
+    @test is_zero(Z * Z)
+
+    @test Z == Z * U
+    @test is_zero(Z * U)
+
+    @test U == U + U
+    @test is_one(U + U)
+
+    @test U == U * U
+    @test is_one(U * U)
+
+    @test U == U + Z
+    @test is_one(U + Z)
+  end
 end
 
 @testset "Reduction modulo ideal" begin

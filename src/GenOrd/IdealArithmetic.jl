@@ -61,10 +61,6 @@ _has_two_gens(I::GenOrdFracIdl)  = isdefined(I, :num) && has_2_elem(I.num)
 # princ_gen/gen_one/gen_two are declared with abstract types: type assertions restore inference
 # TODO: should we add public accessors for this? (similar to basis_matrix)
 
-_princ_gen(I::GenOrdIdl{S, T}) where {S, T} = I.princ_gen::elem_type(GenOrd{S, T})
-_gen_one(I::GenOrdIdl{S, T}) where {S, T}   = I.gen_one::elem_type(T)
-_gen_two(I::GenOrdIdl{S, T}) where {S, T}   = I.gen_two::elem_type(GenOrd{S, T})
-
 _princ_gen(I::GenOrdFracIdl) = _princ_gen(I.num)
 _gen_one(I::GenOrdFracIdl)   = _gen_one(I.num)
 _gen_two(I::GenOrdFracIdl)   = _gen_two(I.num)
@@ -102,6 +98,11 @@ function _fractional_ideal_from_basis_matrix(O::GenOrd, M::MatElem, d::RingElem;
   return _fractional_ideal_from_basis_matrix(_row_reduction_trait(O), O, M, d; reduced = reduced)
 end
 
+# for fractional ideal we return numerator matrix (over coefficient ring) and denominator
+# for integral ideal we return the basis matrix and denominator = 1
+
+_basis_matrix_pair(I::GenOrdIdl) = basis_matrix(I; copy = false), one(base_ring(order(I)))
+
 ###########################################################################################
 #
 #   Multiplication
@@ -131,6 +132,40 @@ function _mul_impl_matrix_stack(red::RowModuleReductionTrait, a, b)
   return _reduce_row_module!(red, V; modulus = modulus)
 end
 
+function _mul_impl_matrix(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  O = order(a)
+  c = ideal(O, _mul_impl_matrix_stack(HNFRedTrait(), a, b); M_in_hnf = true)
+
+  # In maximal order norm is multiplicative
+  # In non-maximal it is still multiplicative if one of the ideals is invertible,
+  #   but this is not trivial to check
+  # We can still optimize for principal ideals:
+  #   aI \subseteq aO \subseteq O, thus [O : aI] = [O : aO][aO : aI].
+  # Clearly [O : aO] = |N(a)| and
+  #   [aO : aI] = [O : I] (multiplication by a gives an isomorphism)
+  # giving N(aI) = N(a)*N(I)
+  if (is_maximal_known_and_maximal(O) || has_princ_gen(a) || has_princ_gen(b)) &&
+      (has_norm(a) && has_norm(b))
+    c.norm = _make_canonical_in(O, norm(a; copy = false) * norm(b; copy = false))
+  end
+
+  return c
+end
+
+function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return a
+  is_zero(b) && return b
+  is_one(a)  && return b
+  is_one(b)  && return a
+
+  c = _mul_impl_gens(a, b)
+  c === nothing || return c
+
+  return _mul_impl_matrix(a, b)
+end
+
 function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
@@ -143,12 +178,24 @@ function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   red = _row_reduction_trait(O)
   d = denominator(a; copy = false) * denominator(b; copy = false)
 
-  # For Popov reduction, bypass integral ideals to avoid HNF degree/height swell
-  # TODO: swell is the issue only on Q(x)
-  # TODO: we need to revisit this after we have extracted two-element representation
-  if red isa HNFRedTrait && isdefined(a, :num) && isdefined(b, :num)
-    c = numerator(a; copy = false)*numerator(b; copy = false)
-    return fractional_ideal(c, d)
+  # if we have integral ideals for both a and b:
+  # - for HNF reduction, just use them
+  # - otherwise we should use them only if it is more efficient
+  #   Alas, currently two-element-normal representation does not control
+  #   coefficient height (over Q(x)).
+  #   So we use integral ideals only when they are both principal.
+  # TODO: discern Q(x) from F_q(x) - the latter has good two-element-normal representation
+  if isdefined(a, :num) && isdefined(b, :num)
+    if red isa HNFRedTrait
+      c = numerator(a; copy = false)*numerator(b; copy = false)
+      return fractional_ideal(c, d)
+    elseif _has_princ_gen(a) && _has_princ_gen(b)
+      # make sure we simplify the resulting ideal
+      g = _princ_gen(a) * _princ_gen(b)
+
+      K = field(O)
+      return divexact(data(g), K(base_field(K)(d))) * O
+    end
   end
 
   M = _mul_impl_matrix_stack(red, a, b)
@@ -160,7 +207,7 @@ Base.:*(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T} = A*fractional_
 
 ###########################################################################################
 #
-#   Colon/inv
+#   Colon/Inverse
 #
 ###########################################################################################
 
@@ -179,7 +226,7 @@ _allow_hnf_for_colon(::Type{<:PolyRing{<:FinFieldElem}}) = true
 # The colon (A : B) = N/d
 # A is represented by the inverse of basis matrix in the form Ma/da
 # B is represented by the basis matrix in the form Mb/db
-function _colon_matrix_stack(O::GenOrd{S, T}, Ma::MatElem, da, Mb::MatElem, db; reduction = _row_reduction_trait(base_ring(O))) where {S, T}
+function _colon_impl_matrix_stack(O::GenOrd{S, T}, Ma::MatElem, da, Mb::MatElem, db; reduction = _row_reduction_trait(base_ring(O))) where {S, T}
   # With b_i the i-th basis element of B and v the coordinate vector of x,
   #   x*b_i in A  <=>  v*R_i*Ma in (da*db)*R^n,  R_i = _representation_matrix(O, Mb[i, :]),
   #   giving v*[R_1*Ma | ... | R_n*Ma] in g*R^(n^2),  g = da*db.
@@ -206,12 +253,10 @@ function _colon_matrix_stack(O::GenOrd{S, T}, Ma::MatElem, da, Mb::MatElem, db; 
   return _reduce_row_module!(reduction, M), d
 end
 
-_basis_matrix_pair(I::GenOrdIdl) = basis_matrix(I; copy = false), one(base_ring(order(I)))
-
 function _colon_impl(red::RowModuleReductionTrait, O::GenOrd, a, b)
   Ma, da = _basis_matrix_inv_pair(a)
   Mb, db = _basis_matrix_pair(b)
-  M, d = _colon_matrix_stack(O, Ma, da, Mb, db; reduction = red)
+  M, d = _colon_impl_matrix_stack(O, Ma, da, Mb, db; reduction = red)
   return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
 end
 
@@ -241,19 +286,50 @@ Hecke.colon(I::GenOrdFracIdl, J::GenOrdIdl) = colon(I, fractional_ideal(J))
 
 Base.://(I::GenOrdFracIdl, J::GenOrdFracIdl) = colon(I, J)
 
-function _inv_impl(red::RowModuleReductionTrait, O::GenOrd, I)
+function _inv_impl_matrix(red::RowModuleReductionTrait, O::GenOrd, I)
   R = base_ring(O)
   Ma, da = identity_matrix(R, degree(O)), one(R)
   Mb, db = _basis_matrix_pair(I)
-  M, d = _colon_matrix_stack(O, Ma, da, Mb, db; reduction = red)
+  M, d = _colon_impl_matrix_stack(O, Ma, da, Mb, db; reduction = red)
   return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
 end
 
-# NOTE: currently we do not use integral ideal (even if present)
+function inv(I::GenOrdIdl)
+  @req !is_zero(I) "Ideal must be nonzero"
+
+  O = order(I)
+  J = _inv_impl_princ_gen(O, I)
+  J === nothing || return J
+
+  if is_maximal_known_and_maximal(O) && has_2_elem_normal(I)
+    return _inv_impl_2_elem_normal(O, I)
+  end
+
+  # (O : A) is inverse iff A is coprime to the conductor (otherwise A is not invertible)
+  return _inv_impl_matrix(HNFRedTrait(), O, I)
+end
+
 function inv(I::GenOrdFracIdl)
   @req !is_zero(I) "Ideal must be nonzero"
 
   O = order(I)
+  d = denominator(I; copy = false)
+
+  # for principal ideal we can compute inv directly:
+  # (a*O / d)^-1 = d/a * O
+  if _has_princ_gen(I)
+    K = field(O)
+    return divexact(K(base_field(K)(d)), data(_princ_gen(I))) * O
+  end
+
   red = _row_reduction_trait(O)
-  return _inv_impl(red, O, I)
+  # (I/d)^-1 = d * I^-1, worth it only if the inverse of integral ideal is cheap
+  # As before, for HNF reduction, this makes sense to do directly.
+  # Otherwise, since currently two-element-normal representation does not control
+  #   coefficient height (over Q(x)), use popov reduction of the basis matrix
+  if isdefined(I, :num) && red isa HNFRedTrait
+    return ideal(O, d) * inv(numerator(I; copy = false))
+  end
+
+  return _inv_impl_matrix(red, O, I)
 end
