@@ -196,3 +196,48 @@ end
   @test length(collect(Hecke._short_vectors_gram_integral(Hecke.FinckePohstIntIterCtx, G, ub, ZZRingElem; hard = true))) == 6
   @test length(collect(Hecke._short_vectors_gram_integral(Hecke.FinckePohstIntIterCtx, G, ub; hard = true))) == 6
 end
+
+@testset "Integer Fincke-Pohst target shift" begin
+  function direct_batch(G, target, lb, ub)
+    D = Hecke._finckepohst_target_denominator(target)
+    return Hecke.__enumerate_gram(Hecke.FinckePohstInt, G, lb,
+      ub, QQFieldElem, identity, x -> x//D^2, ZZRingElem; target)
+  end
+
+  function direct_iterator(G, target, lb, ub)
+    D = Hecke._finckepohst_target_denominator(target)
+    iter = Hecke.__enumerate_gram(Hecke.FinckePohstIntIterCtx, G, lb,
+      ub, QQFieldElem, identity, x -> x//D^2, ZZRingElem; target)
+    return [deepcopy(x) for x in iter]
+  end
+
+  G = identity_matrix(ZZ, 2)
+  target = QQFieldElem[1//2, 0]
+  expected = Tuple{Vector{ZZRingElem}, QQFieldElem}[
+    ([0, 0], 1//4), ([1, 0], 1//4)]
+  @test issetequal(direct_batch(G, target, nothing, ZZ(1)), expected)
+  @test issetequal(direct_iterator(G, target, nothing, ZZ(1)), expected)
+
+  # A zero target in CVP mode still includes zero and both signs.
+  target = QQFieldElem[0, 0]
+  batch = direct_batch(G, target, nothing, ZZ(1))
+  @test issetequal(first.(batch), Vector{ZZRingElem}[
+    [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]])
+  @test issetequal(direct_iterator(G, target, nothing, ZZ(1)), batch)
+
+  # Force the ZZRingElem preprocessing path using a large target denominator.
+  D = ZZ(2)^32
+  target = QQFieldElem[QQ(1, D)]
+  G = identity_matrix(ZZ, 1)
+  batch = direct_batch(G, target, nothing, D^2)
+  @test length(batch) == 2
+  @test issetequal(first.(batch), Vector{ZZRingElem}[[0], [1]])
+  @test issetequal(direct_iterator(G, target, nothing, D^2), batch)
+
+  # The large path must also preserve coordinates which do not fit in Int.
+  a = ZZ(typemax(Int)) + 1
+  target = QQFieldElem[QQ(a)]
+  expected = Tuple{Vector{ZZRingElem}, QQFieldElem}[([a], 0)]
+  @test direct_batch(G, target, nothing, ZZ(0)) == expected
+  @test direct_iterator(G, target, nothing, ZZ(0)) == expected
+end

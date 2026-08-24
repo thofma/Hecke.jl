@@ -1,5 +1,6 @@
 @doc raw"""
-    close_vectors(L:ZZLat, v:Vector, [lb,], ub; check::Bool = false)
+    close_vectors(L:ZZLat, v:Vector, [lb,], ub;
+                  check::Bool = false, algorithm::Symbol = :default)
                                             -> Vector{Tuple{Vector{Int}}, QQFieldElem}
 
 Return all tuples `(x, d)` where `x` is an element of `L` such that `d = b(v -
@@ -12,6 +13,11 @@ By default, it will be checked whether `L` is positive definite. This can be
 disabled setting `check = false`.
 
 Both input and output are with respect to the basis matrix of `L`.
+
+The supported algorithms are `:embedding`, which reduces the problem to short
+vector enumeration in one additional dimension, and `:fincke_pohst`, which
+enumerates the target-shifted ellipsoid directly. The value `:default`
+currently selects `:embedding`.
 
 # Examples
 
@@ -31,6 +37,96 @@ julia> close_vectors(L, [1, 1], 1, 1)
 ```
 """
 close_vectors(L::ZZLat, v::Vector, arg...; kw...)
+
+function _close_vector_and_assemble(v::V, transform::U, dotransform::Bool,
+                                    tmp::Vector{ZZRingElem},
+                                    elem_type::Type{S}) where {V, U, S}
+  if dotransform
+    return S.(_transform(v, transform, tmp))
+  else
+    return S.(v)
+  end
+end
+
+function _close_vectors_gram(::Type{T}, _G, target::Vector{QQFieldElem},
+                             lowerbound, upperbound::QQFieldElem,
+                             elem_type::Type{S}; hard::Bool = false) where {T, S}
+  d = denominator(_G)
+  G = change_base_ring(ZZ, d * _G)
+  if hard
+    Glll, transform = lll_gram_with_transform(
+      G, LLLContext(0.99999999999999, 0.500000000001, :gram))
+  else
+    Glll, transform = lll_gram_with_transform(
+      G, LLLContext(0.9999, 0.5001, :gram))
+  end
+
+  if isone(transform)
+    target_lll = copy(target)
+    output_transform = nothing
+  else
+    # Glll = transform * G * transform^t and enumerated row vectors are
+    # mapped back by x * transform, hence target_lll * transform = target.
+    target_lll = Vector{QQFieldElem}(target * inv(transform))
+    output_transform = transform
+  end
+
+  D = _finckepohst_target_denominator(target_lll)
+  scale = d * D^2
+  ub = floor(ZZRingElem, scale * upperbound)
+  lb = lowerbound === nothing ? nothing : ceil(ZZRingElem, scale * lowerbound)
+
+  n = nrows(G)
+  tmp = zeros_array(ZZ, n)
+  dotransform = output_transform !== nothing
+  cleanvec = v -> _close_vector_and_assemble(v, output_transform, dotransform,
+                                             tmp, elem_type)
+  cleanscalar = l -> l//scale
+
+  return __enumerate_gram(T, Glll, lb, ub, QQFieldElem, cleanvec,
+                          cleanscalar, elem_type; target = target_lll)
+end
+
+function _close_vectors(L::ZZLat, v::Vector{QQFieldElem}, lowerbound,
+                        upperbound::QQFieldElem,
+                        elem_type::Type{S} = ZZRingElem;
+                        algorithm = Val(:embedding), kw...) where {S}
+  mode = algorithm isa Symbol ? Val(algorithm) : algorithm
+  return _close_vectors(mode, L, v, lowerbound, upperbound,
+                        elem_type; kw...)
+end
+
+function _close_vectors(::Val{:default}, L::ZZLat, v::Vector{QQFieldElem},
+                        lowerbound, upperbound::QQFieldElem,
+                        elem_type::Type{S} = ZZRingElem; kw...) where {S}
+  return _close_vectors(Val(:fincke_pohst), L, v, lowerbound, upperbound,
+                        elem_type; kw...)
+end
+
+function _close_vectors(::Val{:fincke_pohst}, L::ZZLat,
+                        v::Vector{QQFieldElem}, lowerbound,
+                        upperbound::QQFieldElem,
+                        elem_type::Type{S} = ZZRingElem;
+                        sorting::Bool = false, check=true) where {S}
+  V = rational_span(L)
+  G1 = gram_matrix(V)
+  if check
+    @req is_definite(L) == true && G1[1, 1] > 0 "lattice must be positive definite"
+    @req rank(L) == length(v) "lattice must have the same rank as the length of the vector in the second argument"
+  end
+  cv = _close_vectors_gram(FinckePohstInt, G1, v, lowerbound, upperbound,
+                           elem_type)
+  if sorting
+    sort!(cv, by = x -> x[1])
+  end
+  return cv
+end
+
+function _close_vectors(::Val{A}, L::ZZLat, v::Vector{QQFieldElem},
+                        lowerbound, upperbound::QQFieldElem,
+                        elem_type::Type{S} = ZZRingElem; kw...) where {A, S}
+  throw(ArgumentError("Unsupported close vector algorithm: :$(A)"))
+end
 
 function close_vectors(L::ZZLat, v::Vector, upperbound, elem_type::Type{S} = ZZRingElem; kw...) where {S}
   @req upperbound >= 0 "The upper bound must be non-negative"
@@ -54,16 +150,18 @@ function close_vectors_iterator(L::ZZLat, v::Vector, lowerbound, upperbound, ele
   return _close_vectors_iterator(L, QQ.(v), QQ(lowerbound), QQ(upperbound), elem_type; kw...)
 end
 
-function _close_vectors(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
-                                sorting::Bool=false,
-                                check=true)  where {S}
+function _close_vectors(::Val{:embedding}, L::ZZLat,
+                        v::Vector{QQFieldElem}, lowerbound,
+                        upperbound::QQFieldElem,
+                        elem_type::Type{S} = ZZRingElem;
+                        sorting::Bool = false, check=true) where {S}
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
   d = length(v)
   V = rational_span(L)
   G1 = gram_matrix(V)
   if check
-    @req is_definite(L) == true && G1[1, 1] > 0 "integer_lattice must be positive definite"
-    @req rank(L) == d "integer_lattice must have the same rank as the length of the vector in the second argument."
+    @req is_definite(L) == true && G1[1, 1] > 0 "lattice must be positive definite"
+    @req rank(L) == d "lattice must have the same rank as the length of the vector in the second argument"
   end
 
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
@@ -124,15 +222,58 @@ function _close_vectors(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, upperbound
   return cv
 end
 
-function _close_vectors_iterator(L::ZZLat, v::Vector{QQFieldElem}, lowerbound, upperbound::QQFieldElem, elem_type::Type{S} = ZZRingElem;
-                                sorting::Bool=false,
-                                check=true, filter = nothing) where S
+function _close_vectors_iterator(L::ZZLat, v::Vector{QQFieldElem}, lowerbound,
+                                 upperbound::QQFieldElem,
+                                 elem_type::Type{S} = ZZRingElem;
+                                 algorithm = Val(:embedding), kw...) where {S}
+  mode = algorithm isa Symbol ? Val(algorithm) : algorithm
+  return _close_vectors_iterator(mode, L, v, lowerbound, upperbound,
+                                 elem_type; kw...)
+end
+
+function _close_vectors_iterator(::Val{:default}, L::ZZLat,
+                                 v::Vector{QQFieldElem}, lowerbound,
+                                 upperbound::QQFieldElem,
+                                 elem_type::Type{S} = ZZRingElem; kw...) where {S}
+  return _close_vectors_iterator(Val(:embedding), L, v, lowerbound,
+                                 upperbound, elem_type; kw...)
+end
+
+function _close_vectors_iterator(::Val{:fincke_pohst}, L::ZZLat,
+                                 v::Vector{QQFieldElem}, lowerbound,
+                                 upperbound::QQFieldElem,
+                                 elem_type::Type{S} = ZZRingElem;
+                                 sorting::Bool = false, check=true,
+                                 filter=nothing) where {S}
+  V = rational_span(L)
+  G1 = gram_matrix(V)
+  if check
+    @req is_definite(L) == true && G1[1, 1] > 0 "lattice must be positive definite"
+    @req rank(L) == length(v) "lattice must have the same rank as the length of the vector in the second argument"
+  end
+  return _close_vectors_gram(FinckePohstIntIterCtx, G1, v, lowerbound,
+                             upperbound, elem_type)
+end
+
+function _close_vectors_iterator(::Val{A}, L::ZZLat,
+                                 v::Vector{QQFieldElem}, lowerbound,
+                                 upperbound::QQFieldElem,
+                                 elem_type::Type{S} = ZZRingElem; kw...) where {A, S}
+  throw(ArgumentError("Unsupported close vector algorithm: $(A)"))
+end
+
+function _close_vectors_iterator(::Val{:embedding}, L::ZZLat,
+                                 v::Vector{QQFieldElem}, lowerbound,
+                                 upperbound::QQFieldElem,
+                                 elem_type::Type{S} = ZZRingElem;
+                                 sorting::Bool = false, check=true,
+                                 filter=nothing) where {S}
   d = length(v)
   V = rational_span(L)
   G1 = gram_matrix(V)
   if check
-    @req is_definite(L) == true && G1[1, 1] > 0 "integer_lattice must be positive definite"
-    @req rank(L) == d "integer_lattice must have the same rank as the length of the vector in the second argument."
+    @req is_definite(L) == true && G1[1, 1] > 0 "lattice must be positive definite"
+    @req rank(L) == d "lattice must have the same rank as the length of the vector in the second argument"
   end
 
   epsilon = QQ(1//10)   # some number > 0, not sure how it influences performance
@@ -256,7 +397,7 @@ function _convert_type(G::MatrixElem{T}, K::MatrixElem{T}, d::T) where T <: Ring
   Q = G
   vector = -solve(Q, K; side = :right) #-inv(Q) * K
   upperbound = (transpose(vector) * Q * vector)[1,1] - d
-  Lattice = integer_lattice(gram = Q, check=false)
+  Lattice = integer_lattice(gram = Q, check = false)
   return Lattice, vector, upperbound
 end
 
@@ -278,7 +419,7 @@ end
 
 @doc raw"""
     closest_vectors(Q::MatrixElem{T}, L::MatrixElem{T},
-                    c::T; equal::Bool=false, sorting::Bool=false)
+                    c::T; equal::Bool = false, sorting::Bool = false)
                                                     -> Vector{Vector{ZZRingElem}}
 
 
@@ -290,7 +431,7 @@ If the argument ``sorting = true``, then we get a a list of sorted vectors.
 The Default value for ``sorting`` is set to ``false``.
 """
 function closest_vectors(G::MatrixElem{T}, L::MatrixElem{T}, c::T;
-                   equal::Bool=false, sorting::Bool=false) where T <: RingElem
+                   equal::Bool = false, sorting::Bool = false) where T <: RingElem
   Lattice, vector, upperbound = _convert_type(G, L, c)
   if equal
     cv = _close_vectors(Lattice, QQFieldElem[vector[i, 1] for i in 1:nrows(vector)],
