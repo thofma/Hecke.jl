@@ -742,7 +742,7 @@ function is_reduced(f::QuadBin{ZZRingElem})
 
     # The remaining condition is abs(sqrt(D) - 2*abs(a)) < b. Decide it with
     # exact integer arithmetic: writing t = 2*abs(a), it says that b > 0, that
-    # sqrt(D) < t + b, and that sqrt(D) > t - b. 
+    # sqrt(D) < t + b, and that sqrt(D) > t - b.
     b <= 0 && return false
     t = 2 * abs(a)
     return D < (t + b)^2 && (t - b < 0 || D > (t - b)^2)

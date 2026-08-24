@@ -503,37 +503,148 @@ function _adjust_path(x::String)
   end
 end
 
-function test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false, with_polymake::Bool = false, coverage = false)
-   julia_exe = Base.julia_cmd()
-   # On Windows, we also allow bla/blub"
-   x = _adjust_path(x)
-   if x == "all"
-     test_file = joinpath(pkgdir, "test", "runtests.jl")
-   else
-     test_file = joinpath(pkgdir, "test", "$x.jl")
-   end
+function _test_file(x::AbstractString)
+  # On Windows, we also allow bla/blub.
+  x = _adjust_path(String(x))
+  if x == "all"
+    return joinpath(pkgdir, "test", "runtests.jl")
+  elseif endswith(x, ".jl")
+    return joinpath(pkgdir, "test", x)
+  else
+    return joinpath(pkgdir, "test", "$x.jl")
+  end
+end
 
-   setup_file = joinpath(pkgdir, "test", "setup.jl")
+function _test_command(test_files::Vector{String}, setup_file::String;
+                       long::Bool, with_gap::Bool, with_polymake::Bool)
+  statements = String["using Test", "using Hecke"]
+  with_gap && push!(statements, "using GAP")
+  with_polymake && push!(statements, "import Polymake")
+  append!(statements, ["long_test = $long",
+                       "_with_gap = $with_gap",
+                       "_with_polymake = $with_polymake",
+                       "include($(repr(setup_file)))"])
+  append!(statements, ["include($(repr(test_file)))" for test_file in test_files])
+  return join(statements, "; ") * ";"
+end
 
-   if new
-     cmd = "using Test; using Hecke; $(with_gap ? "using GAP;" : "") $(with_polymake ? "import Polymake;" : "") Hecke.assertions(true); long_test = $long; _with_gap = $with_gap; _with_polymake = $with_polymake; include(\"$(setup_file)\"); include(\"$test_file\");"
-     @info("spawning ", `$julia_exe $(coverage ? "--code-coverage" : "") -e \"$cmd\"`)
-     proj = Base.active_project()
-     if coverage
-       run(`$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`)
-     else
-       run(`$(julia_exe) --project=$(proj) -e $(cmd)`)
-     end
-   else
-     Main.eval(Meta.parse("long_test = $long"))
-     Main.eval(Meta.parse("_with_gap = $with_gap"))
-     Main.eval(Meta.parse("_with_polymake = $with_polymake"))
-     assertions(true)
-     @info("Running tests for $x in same session")
-     Base.include(Main, setup_file)
-     Base.include(Main, test_file)
-     assertions(false)
-   end
+@doc raw"""
+    test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false,
+                with_polymake::Bool = false, coverage = false)
+    test_module(xs::AbstractVector{<:AbstractString}, new::Bool = true; kwargs...)
+
+Run one or more test files from Hecke's `test` directory. File names can be
+given with or without the `.jl` suffix. If `new` is `true`, all requested files
+are run in one newly spawned Julia session.
+"""
+function test_module(x::AbstractString, new::Bool = true; long::Bool = false,
+                     with_gap::Bool = false, with_polymake::Bool = false,
+                     coverage = false)
+  return test_module([x], new; long, with_gap, with_polymake, coverage)
+end
+
+function test_module(xs::AbstractVector{<:AbstractString}, new::Bool = true;
+                     long::Bool = false, with_gap::Bool = false,
+                     with_polymake::Bool = false, coverage = false)
+  isempty(xs) && return nothing
+
+  test_files = _test_file.(xs)
+  setup_file = joinpath(pkgdir, "test", "setup.jl")
+
+  if new
+    julia_exe = Base.julia_cmd()
+    cmd = _test_command(test_files, setup_file; long, with_gap, with_polymake)
+    proj = Base.active_project()
+    test_cmd = if coverage
+      `$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`
+    else
+      `$(julia_exe) --project=$(proj) -e $(cmd)`
+    end
+    @info "Spawning test session" files = String.(xs) command = test_cmd
+    return run(test_cmd)
+  else
+    Main.eval(Meta.parse("long_test = $long"))
+    Main.eval(Meta.parse("_with_gap = $with_gap"))
+    Main.eval(Meta.parse("_with_polymake = $with_polymake"))
+    @info "Running tests in same session" files = String.(xs)
+    Base.include(Main, setup_file)
+    for test_file in test_files
+      Base.include(Main, test_file)
+    end
+  end
+end
+
+function _git_changed_files(repo::AbstractString)
+  output = Base.read(`git -C $repo status --porcelain=v1 -z --untracked-files=all -- src`, String)
+  records = split(output, '\0'; keepempty = false)
+  files = String[]
+  i = 1
+  while i <= length(records)
+    record = records[i]
+    length(record) >= 4 || error("Unexpected output from git status: $(repr(record))")
+    status = record[1:2]
+    push!(files, String(record[4:end]))
+    if occursin('R', status) || occursin('C', status)
+      i += 1
+      i <= length(records) || error("Unexpected output from git status for a renamed file")
+      push!(files, records[i])
+    end
+    i += 1
+  end
+  return sort!(unique!(files))
+end
+
+function _test_files_for_changes(repo::AbstractString, source_files::Vector{String})
+  test_dir = joinpath(repo, "test")
+  test_files = String[]
+  for source_file in source_files
+    relative_source_file = relpath(source_file, "src")
+    direct_test_file = joinpath(test_dir, splitext(relative_source_file)[1] * ".jl")
+    if isfile(direct_test_file)
+      push!(test_files, relpath(direct_test_file, test_dir))
+      continue
+    end
+
+    source_directory = dirname(relative_source_file)
+    source_directory == "." && continue
+    directory_test_file = joinpath(test_dir, source_directory * ".jl")
+    if isfile(directory_test_file)
+      push!(test_files, relpath(directory_test_file, test_dir))
+    end
+  end
+  return unique!(test_files)
+end
+
+@doc raw"""
+    test_changes(new::Bool = true; kwargs...)
+
+Report the files changed in Hecke's Git working tree and run the test files
+corresponding to changed source files. If a source file has no matching test
+file, use the test file corresponding to its containing directory, when one
+exists. All selected tests are passed to [`test_module`](@ref) and therefore
+run in the same session.
+"""
+function test_changes(new::Bool = true; kwargs...)
+  repo = normpath(pkgdir)
+  if !ispath(joinpath(repo, ".git"))
+    @info "No changes: Hecke is not loaded from a Git working directory."
+    return nothing
+  end
+
+  changed_files = _git_changed_files(repo)
+  if isempty(changed_files)
+    @info "No changes."
+    return nothing
+  end
+  @info "Source files with changes:\n$(join(changed_files, '\n'))"
+
+  test_files = _test_files_for_changes(repo, changed_files)
+  if isempty(test_files)
+    @info "No corresponding test files found."
+    return nothing
+  end
+  @info "Corresponding test files:\n$(join(test_files, '\n'))"
+  return test_module(test_files, new; kwargs...)
 end
 
 ################################################################################

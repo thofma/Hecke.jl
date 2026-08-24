@@ -89,3 +89,20 @@ This also works on the directory level. If one wants to add run all tests for qu
 ```julia
 julia> Hecke.test_module("QuadForm")
 ```
+
+Several test files can be run in the same Julia session by passing a list:
+
+```julia
+julia> Hecke.test_module(["Misc/Integer", "Misc/MSet"])
+```
+
+When Hecke is loaded from a Git working tree, the tests corresponding to all
+changed source files can be selected and run with:
+
+```julia
+julia> Hecke.test_changes()
+```
+
+This reports all changed files in `src/` first. For each changed source file it
+runs the test file at the matching path, or the test file for the containing
+source directory when there is no matching file.
