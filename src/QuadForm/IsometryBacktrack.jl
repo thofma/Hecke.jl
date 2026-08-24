@@ -704,6 +704,9 @@ mutable struct BTCtx{T <: Signed}
   maxv::Int                 # largest absolute coordinate of a short vector
   colors::Vector{UInt64}    # an isometry invariant colour of each short vector
                             # (empty if all vectors have the same colour)
+  rhov::Vector{Int32}       # rhov[j] = <v_j, rho> for the Weyl vector rho, so
+                            # that the search finds Aut(L, rho) and not
+                            # Aut(L, {rho, -rho}); empty when there are no roots
   comps_ok::Bool            # whether the orthogonal decomposition was computed
   comp_sig::UInt64          # invariant of the whole decomposition
   ytmp::Vector{T}
@@ -906,7 +909,7 @@ function _bt_ctx_finish(::Type{T}, n::Int, G::Matrix{Int}, bound::Int, nv::Int,
     a > mv && (mv = a)
   end
   ctx = BTCtx{T}(n, G, bound, nv, V, W, Wt, nrm, Int32[], UInt64(0), Int32[], mv,
-                 UInt64[], false, UInt64(0), Vector{T}(undef, n),
+                 UInt64[], Int32[], false, UInt64(0), Vector{T}(undef, n),
                  Vector{T}(undef, n))
   _bt_build_hash!(ctx)
   # locate the basis vectors (they are short unless the bound was lowered by
@@ -1139,10 +1142,22 @@ function _bt_fingerprint(ctx::BTCtx)
       bcol[i] = ctx.colors[k]
     end
   end
-  ids = Dict{Tuple{Int, UInt64}, Int}()
+  # The pairing with the Weyl vector is part of the class, and it changes sign
+  # with the vector, so the two signs no longer share a class: an isometry
+  # which respects the classes fixes rho instead of only fixing {rho, -rho}.
+  hasrho = !isempty(ctx.rhov)
+  brho = zeros(Int, n)
+  if hasrho
+    for i in 1:n
+      p = Int(ctx.bidx[i])
+      k = p < 0 ? -p : p
+      brho[i] = p < 0 ? -Int(ctx.rhov[k]) : Int(ctx.rhov[k])
+    end
+  end
+  ids = Dict{Tuple{Int, UInt64, Int}, Int}()
   bcls = zeros(Int, n)
   for i in 1:n
-    key = (G[i, i], bcol[i])
+    key = (G[i, i], bcol[i], brho[i])
     c = get(ids, key, 0)
     if c == 0
       c = length(ids) + 1
@@ -1151,19 +1166,67 @@ function _bt_fingerprint(ctx::BTCtx)
     bcls[i] = c
   end
   nc = length(ids)
-  # for the (common) case of a single colour a plain table replaces the lookup
-  idbynorm = zeros(Int, bound + 1)
+  # without colours a plain table replaces the lookup; the pairing with rho is
+  # bounded, so it can be folded into the index
+  rmax = 0
+  if hasrho
+    for j in 1:nv
+      a = Int(ctx.rhov[j])
+      a < 0 && (a = -a)
+      a > rmax && (rmax = a)
+    end
+    for i in 1:n
+      a = brho[i] < 0 ? -brho[i] : brho[i]
+      a > rmax && (rmax = a)
+    end
+  end
+  rwid = 2 * rmax + 1
+  idbynorm = zeros(Int, (bound + 1) * rwid)
   if !hascol
     for i in 1:n
-      idbynorm[G[i, i] + 1] = bcls[i]
+      idbynorm[G[i, i] * rwid + brho[i] + rmax + 1] = bcls[i]
     end
   end
   cnt = zeros(Int, nc)
-  vcls = zeros(Int32, nv)
-  @inbounds for j in 1:nv
-    c = hascol ? get(ids, (nrm[j], ctx.colors[j]), 0) : idbynorm[nrm[j] + 1]
-    vcls[j] = Int32(c)
-    c > 0 && (cnt[c] += 2)
+  vclsp = zeros(Int32, nv)
+  vclsm = zeros(Int32, nv)
+  # The lookups are written out rather than put in a closure: a closure over
+  # `rmax`, which is assigned in a loop above, is boxed and costs more than the
+  # lookup itself on a lattice with a hundred thousand short vectors.
+  if hasrho
+    if hascol
+      @inbounds for j in 1:nv
+        rv = Int(ctx.rhov[j])
+        cp = get(ids, (nrm[j], ctx.colors[j], rv), 0)
+        cm = get(ids, (nrm[j], ctx.colors[j], -rv), 0)
+        vclsp[j] = Int32(cp); vclsm[j] = Int32(cm)
+        cp > 0 && (cnt[cp] += 1)
+        cm > 0 && (cnt[cm] += 1)
+      end
+    else
+      @inbounds for j in 1:nv
+        rv = Int(ctx.rhov[j])
+        base = nrm[j] * rwid + rmax + 1
+        cp = (rv < -rmax || rv > rmax) ? 0 : idbynorm[base + rv]
+        cm = (rv < -rmax || rv > rmax) ? 0 : idbynorm[base - rv]
+        vclsp[j] = Int32(cp); vclsm[j] = Int32(cm)
+        cp > 0 && (cnt[cp] += 1)
+        cm > 0 && (cnt[cm] += 1)
+      end
+    end
+  elseif hascol
+    @inbounds for j in 1:nv
+      c = get(ids, (nrm[j], ctx.colors[j], 0), 0)
+      vclsp[j] = Int32(c); vclsm[j] = Int32(c)
+      c > 0 && (cnt[c] += 2)
+    end
+  else
+    # the two signs share a class here, which is one lookup instead of two
+    @inbounds for j in 1:nv
+      c = idbynorm[nrm[j] * rwid + rmax + 1]
+      vclsp[j] = Int32(c); vclsm[j] = Int32(c)
+      c > 0 && (cnt[c] += 2)
+    end
   end
   for i in 1:n
     cnt[bcls[i]] += 1
@@ -1188,9 +1251,12 @@ function _bt_fingerprint(ctx::BTCtx)
   # fill
   pos = copy(off)
   @inbounds for j in 1:nv
-    c = Int(vcls[j])
+    c = Int(vclsp[j])
     if c > 0
       order[pos[c]] = Int32(j); pos[c] += 1
+    end
+    c = Int(vclsm[j])
+    if c > 0
       order[pos[c]] = Int32(nv + j); pos[c] += 1
     end
   end
@@ -1451,17 +1517,35 @@ end
 # `Aut(L)`, and the roots up to a norm bound are such a subsystem, because
 # reflections preserve norms.  Stopping early therefore never costs
 # correctness, only a smaller `W'` and more left for the search.
-function _bt_roots_among(G::Matrix{Int}, V::Matrix{Int32})
-  n = size(G, 1)
+function _bt_roots_among(ctx::BTCtx)
+  n = ctx.n
+  V = ctx.V
+  W = ctx.W                                        # W[:, j] = G * V[:, j]
+  nrm = ctx.nrm
   res = Tuple{Vector{Int}, Int}[]
-  x = Vector{Int}(undef, n)
-  @inbounds for j in 1:size(V, 2)
+  @inbounds for j in 1:ctx.nv
+    # the norm and the pairings with the basis are already there, so the test
+    # is a few operations per vector instead of two matrix products
+    m = nrm[j]
+    m > 0 || continue
+    g = 0
     for i in 1:n
-      x[i] = Int(V[i, j])
+      g = gcd(g, Int(V[i, j]))
+      g == 1 && break
     end
-    m = _bt_is_root(G, x, n)
-    m == 0 && continue
-    r = copy(x)
+    g == 1 || continue                             # only primitive roots
+    ok = true
+    for i in 1:n
+      if mod(2 * Int(W[i, j]), m) != 0
+        ok = false
+        break
+      end
+    end
+    ok || continue
+    r = Vector{Int}(undef, n)
+    for i in 1:n
+      r[i] = Int(V[i, j])
+    end
     for i in 1:n                                   # one of {r, -r}
       if r[i] != 0
         r[i] < 0 && (r .= .-r)
@@ -1483,10 +1567,11 @@ end
 # stable under `Aut(L)` -- isometries preserve both -- and closed under its own
 # reflections, so it is a subsystem for which `W' semidirect Stab(chamber)` is
 # still all of `Aut(L)`.  A smaller subsystem only leaves more for the search.
-function _bt_roots(G::Matrix{Int}, V::Matrix{Int32}, bound::Int;
-                   budget::Float64 = 0.001)
-  n = size(G, 1)
-  rts = _bt_roots_among(G, V)
+function _bt_roots(ctx::BTCtx; budget::Float64 = 0.001)
+  n = ctx.n
+  G = ctx.G
+  bound = ctx.bound
+  rts = _bt_roots_among(ctx)
   GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
   # Roots of norm above the bound need a sublattice each, which costs matrix
   # arithmetic over ZZ.  That is worth it when only a little is missing -- Z^n,
@@ -1671,6 +1756,24 @@ end
 # common multiple of the root norms to keep it integral.
 #
 # `nothing` when the roots are out of range or a component is not recognised.
+# The reflection in the root `r` of norm `m`, as a matrix acting on coordinate
+# rows: b_i goes to b_i - (2<b_i,r>/m) r, integral because r is a root.
+function _bt_reflection(G::Matrix{Int}, r::Vector{Int}, m::Int)
+  n = size(G, 1)
+  M = zeros(Int, n, n)
+  @inbounds for i in 1:n
+    t = 0
+    for k in 1:n
+      t += G[i, k] * r[k]
+    end
+    f = div(2 * t, m)
+    for j in 1:n
+      M[i, j] = (i == j ? 1 : 0) - f * r[j]
+    end
+  end
+  return M
+end
+
 function _bt_root_data(G::Matrix{Int})
   rts = _bt_all_roots(G)
   rts === nothing && return nothing
@@ -2128,6 +2231,7 @@ mutable struct BTSearch{T <: Signed}
   fp::Matrix{Int}                  # fingerprint of the source
   fpd::Vector{Int}
   TC::Vector{UInt64}               # TC[I]: colour of b_{per[I]} in the source
+  TR::Vector{Int}                  # TR[I] = <b_{per[I]}, rho> in the source
   x::Vector{Int}                   # signed indices of the current images
   poolv::Vector{Vector{Int32}}
   poolp::Vector{Vector{UInt64}}
@@ -2188,6 +2292,14 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
   TS = zeros(Int, n, n)
   TN = zeros(Int, n)
   TC = zeros(UInt64, n)
+  TR = zeros(Int, n)
+  if !isempty(src.rhov)
+    for I in 1:n
+      p = Int(src.bidx[per[I]])
+      k = p < 0 ? -p : p
+      TR[I] = p < 0 ? -Int(src.rhov[k]) : Int(src.rhov[k])
+    end
+  end
   if !isempty(bcolors)
     for I in 1:n
       TC[I] = bcolors[per[I]]
@@ -2221,7 +2333,7 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
   poolp = [UInt64[] for _ in 1:(n + 1)]
   poolm = [UInt64[] for _ in 1:(n + 1)]
   cand = [Int32[] for _ in 1:(n + 1)]
-  return BTSearch{T}(n, nw, tgt, per, src, Gsrc, TS, TN, fp, fpd, TC,
+  return BTSearch{T}(n, nw, tgt, per, src, Gsrc, TS, TN, fp, fpd, TC, TR,
                   zeros(Int, n), poolv,
                   poolp, poolm, zeros(Int, n + 1), cand, vals, vmask,
                   Vector{T}(undef, n), zeros(UInt64, nw), zeros(UInt64, nw),
@@ -2737,6 +2849,9 @@ function _bt_cands!(S::BTSearch, I::Int, d::Int)
   hascol = !isempty(colors)
   tn = S.TN[I]
   tc = S.TC[I]
+  rhov = ctx.rhov
+  hasrho = !isempty(rhov)
+  tr = S.TR[I]
   want = S.fpd[I]
   # the scalar product rows of the images which need a real product
   for k in (st + 1):d
@@ -2748,6 +2863,13 @@ function _bt_cands!(S::BTSearch, I::Int, d::Int)
     nrm[j] == tn || continue
     (!hascol || colors[j] == tc) || continue
     sg = u > 0
+    # the pairing with rho changes sign with the vector, so this is what makes
+    # the search find Aut(L, rho) rather than Aut(L, {rho, -rho})
+    if hasrho
+      rv = Int(rhov[j])
+      sg || (rv = -rv)
+      rv == tr || continue
+    end
     ok = true
     for k in 1:(st - 1)
       w = Int(Wt[j, per[k]])
@@ -3206,16 +3328,27 @@ function _bt_init_pool_free!(S::BTSearch, ctx::BTCtx)
   _bt_reserve!(S, 1, nv)
   pv = S.poolv[1]; pp = S.poolp[1]; pm = S.poolm[1]
   empty!(S.cand[1])
-  msk = zeros(UInt64, nw)
+  mskp = zeros(UInt64, nw)
+  mskm = zeros(UInt64, nw)
   hascol = !isempty(ctx.colors)
+  hasrho = !isempty(ctx.rhov)
   cnt = 0
   @inbounds for j in 1:nv
-    fill!(msk, UInt64(0))
+    fill!(mskp, UInt64(0))
+    fill!(mskm, UInt64(0))
     any = false
     cj = hascol ? ctx.colors[j] : UInt64(0)
+    rp = hasrho ? Int(ctx.rhov[j]) : 0
     for I in 1:n
-      if ctx.nrm[j] == S.TN[I] && cj == S.TC[I]
-        msk[_bt_word(I)] |= _bt_bit(I)
+      (ctx.nrm[j] == S.TN[I] && cj == S.TC[I]) || continue
+      # the pairing with rho separates the two signs, so they no longer share
+      # a mask
+      if !hasrho || rp == S.TR[I]
+        mskp[_bt_word(I)] |= _bt_bit(I)
+        any = true
+      end
+      if !hasrho || -rp == S.TR[I]
+        mskm[_bt_word(I)] |= _bt_bit(I)
         any = true
       end
     end
@@ -3224,11 +3357,13 @@ function _bt_init_pool_free!(S::BTSearch, ctx::BTCtx)
     pv[cnt] = Int32(j)
     ob = (cnt - 1) * nw
     for w in 1:nw
-      pp[ob + w] = msk[w]
-      pm[ob + w] = msk[w]
+      pp[ob + w] = mskp[w]
+      pm[ob + w] = mskm[w]
     end
-    if msk[_bt_word(1)] & _bt_bit(1) != 0
+    if mskp[_bt_word(1)] & _bt_bit(1) != 0
       push!(S.cand[1], Int32(j))
+    end
+    if mskm[_bt_word(1)] & _bt_bit(1) != 0
       push!(S.cand[1], Int32(-j))
     end
   end
@@ -3264,6 +3399,53 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   n = ctx.n
   nv = ctx.nv
   @vprintln :Lattice 1 "backtrack: rank $(n), $(nv) short vectors of norm <= $(ctx.bound), setup $(round(time() - t0, digits = 3))s"
+  # The reflections in the roots generate a group W which is already inside the
+  # isometry group, and the isometry group is W semidirect the stabiliser of a
+  # Weyl chamber.  Fixing the vector rho of that chamber costs nothing -- it is
+  # a pairing per short vector, folded into the initial partition -- and what
+  # is left to search for is only the stabiliser.
+  rd = _bt_root_data(G, _bt_roots(ctx))
+  worder = one(ZZRingElem)
+  wgens = Matrix{Int}[]
+  if rd !== nothing && !isempty(rd.types)
+    worder = rd.worder
+    rho = rd.rho
+    gr = zeros(Int, n)
+    for i in 1:n
+      t = 0
+      for k in 1:n
+        t += G[i, k] * rho[k]
+      end
+      gr[i] = t
+    end
+    rv = Vector{Int32}(undef, nv)
+    ok = true
+    @inbounds for j in 1:nv
+      t = 0
+      for i in 1:n
+        t += Int(ctx.V[i, j]) * gr[i]
+      end
+      if !(typemin(Int32) < t < typemax(Int32))
+        ok = false
+        break
+      end
+      rv[j] = Int32(t)
+    end
+    if ok
+      ctx.rhov = rv
+      for a in rd.simple
+        m = _bt_is_root(G, a, n)
+        m == 0 && (ok = false; break)
+        push!(wgens, _bt_reflection(G, a, m))
+      end
+    end
+    if !ok
+      ctx.rhov = Int32[]
+      empty!(wgens)
+      worder = one(ZZRingElem)
+    end
+    @vprintln :Lattice 1 "backtrack: root system $(rd.types), |W| = $(worder)"
+  end
   F = _bt_fingerprint(ctx)
   @vprintln :Lattice 1 "backtrack: fingerprint $(F.fpd)"
   @vprintln :Lattice 2 "backtrack: order of the base $(F.per)"
@@ -3274,6 +3456,10 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   tmpp = zeros(UInt64, nv * nw)
   tmpm = zeros(UInt64, nv * nw)
 
+  # -1 is an automorphism of every lattice, but it sends rho to -rho, so it is
+  # not in the group being searched for once rho is fixed; the orbit of the
+  # first base point may then not be closed under negation either
+  negok = isempty(ctx.rhov)
   Tv = eltype(ctx.V)
   g = [BTGen{Tv}[] for _ in 1:n]
   orders = ones(Int, n)
@@ -3300,9 +3486,10 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
     # base point to `p`, then none maps it to `h(p)` for a known automorphism
     # `h` either, so this set is closed under `H`; and because `H` grows during
     # the step, it has to be closed again every time it does.
-    bad = BTOrbit(ctx.nv, step == 1)
+    bad = BTOrbit(ctx.nv, negok && step == 1)
     local o
-    torb += @elapsed (o = _bt_orbit(ctx, H, std[step], ncand; neg = step == 1))
+    torb += @elapsed (o = _bt_orbit(ctx, H, std[step], ncand;
+                                    neg = negok && step == 1))
     orders[step] = _bt_orbit_size(o)
     _bt_remove!(remaining, o)
     tstep = time()
@@ -3403,7 +3590,8 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   # -1 is an automorphism of every lattice.  The orbit of the first base point
   # was taken to be closed under negation, so it has to be among the generators
   # for the product of the orbit lengths to be the group order.
-  let mid = zeros(Int, n, n)
+  if negok
+    mid = zeros(Int, n, n)
     for i in 1:n
       mid[i, i] = -1
     end
@@ -3432,6 +3620,14 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
   for i in 1:n
     ord *= orders[i]
   end
+  # what the search found is the stabiliser of the chamber; the reflections
+  # make up the rest of the group
+  for M in wgens
+    _bt_verify(M, G, G) ||
+      throw(BTError("internal error: a reflection is not an isometry"))
+    push!(gens, M)
+  end
+  ord *= worder
   return gens, ord, orders, S.nodes
 end
 
