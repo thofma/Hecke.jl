@@ -1389,6 +1389,207 @@ end
 
 ################################################################################
 #
+#  Root system
+#
+################################################################################
+
+# A vector `r` of `L` is a root when the reflection in it maps `L` to itself,
+# that is when 2<x,r>/<r,r> is an integer for every `x` in `L`.  Writing `d` for
+# the divisor of `r` -- the positive generator of the ideal of the <x,r> -- the
+# vector u = r/d lies in the dual and has norm 1/d or 2/d, because <r,r> is
+# either d or 2d.  Every root therefore comes from a vector of the dual of norm
+# at most two, which is a small enumeration; looking for the roots inside `L`
+# would need to go up to twice the exponent of the discriminant group.
+#
+# Roots of norm greater than two are what turns A_2 into G_2, D_4 into F_4 and
+# Z^n into B_n, and they are the whole root system of a rescaled lattice such as
+# E_8(2), where the roots of norm two do not exist at all.
+#
+# Returns one representative of each pair {r, -r} with its norm, or `nothing`
+# when the dual enumeration is out of range.
+function _bt_all_roots(G::Matrix{Int})
+  n = size(G, 1)
+  GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  dt = det(GZ)
+  dt == 0 && return nothing
+  Gi = inv(change_base_ring(QQ, GZ))
+  A = map_entries(ZZ, dt * Gi)                    # adjugate: integral
+  all(x -> fits(Int, x), A) || return nothing
+  bnd = 2 * dt
+  fits(Int, bnd) || return nothing
+  Am = Matrix{Int}(A)
+  local V, nrm
+  try
+    V, nrm = _bt_short_vectors(Am, Int(bnd))
+  catch
+    return nothing
+  end
+  res = Tuple{Vector{Int}, Int}[]
+  seen = Set{Vector{Int}}()
+  y = zero_matrix(QQ, 1, n)
+  for j in 1:size(V, 2)
+    for i in 1:n
+      y[1, i] = QQ(Int(V[i, j]))
+    end
+    u = y * Gi                                     # the dual vector in L-coordinates
+    d = one(ZZRingElem)
+    for i in 1:n
+      d = lcm(d, denominator(u[1, i]))
+    end
+    # <r,r> = d^2 * norm(u) and the root condition is d * norm(u) in {1, 2}
+    nu = QQFieldElem(nrm[j]) // dt
+    dn = d * nu
+    (dn == 1 || dn == 2) || continue
+    r = Vector{Int}(undef, n)
+    ok = true
+    for i in 1:n
+      t = d * u[1, i]
+      isone(denominator(t)) || (ok = false; break)
+      fits(Int, numerator(t)) || (ok = false; break)
+      r[i] = Int(numerator(t))
+    end
+    ok || continue
+    for i in 1:n                                   # one of {r, -r}
+      if r[i] != 0
+        r[i] < 0 && (r .= .-r)
+        break
+      end
+    end
+    r in seen && continue
+    push!(seen, r)
+    m = numerator(d * dn)                          # d * dn is 1 or 2 times d
+    fits(Int, m) || return nothing
+    push!(res, (r, Int(m)))
+  end
+  return res
+end
+
+# The type of an irreducible root system is fixed by its rank, its number of
+# roots and how many of them are short.  Whether there are two root lengths has
+# to be asked first: B_6 and C_6 have as many roots as E_6, and B_2 as many as
+# A_1 + A_1 would if it were irreducible, so testing the simply laced shapes
+# first misreads them.
+function _bt_irr_type(k::Int, nroots::Int, nshort::Int)
+  k == 1 && return (:A, 1)
+  if nshort == nroots                              # one root length
+    nroots == k * (k + 1) && return (:A, k)
+    k >= 4 && nroots == 2 * k * (k - 1) && return (:D, k)
+    k == 6 && nroots == 72 && return (:E, 6)
+    k == 7 && nroots == 126 && return (:E, 7)
+    k == 8 && nroots == 240 && return (:E, 8)
+    return (:unknown, k)
+  end
+  k == 2 && nroots == 12 && return (:G, 2)
+  k == 4 && nroots == 48 && return (:F, 4)
+  nroots == 2 * k * k && return nshort == 2 * k ? (:B, k) : (:C, k)
+  return (:unknown, k)
+end
+
+# Simple roots, the types of the components, the order of the Weyl group and a
+# vector fixed by everything which preserves the chamber.
+#
+# Taking the representative of each pair {r, -r} whose first non zero
+# coordinate is positive is a choice of positive system: that is the
+# lexicographic order, which is a linear order compatible with addition.  The
+# sum of the positive coroots is then 2*rho^, and a positive root is simple
+# exactly when its pairing with it is 2; everything is scaled by the least
+# common multiple of the root norms to keep it integral.
+#
+# `nothing` when the roots are out of range or a component is not recognised.
+function _bt_root_data(G::Matrix{Int})
+  n = size(G, 1)
+  rts = _bt_all_roots(G)
+  rts === nothing && return nothing
+  isempty(rts) && return (types = Tuple{Symbol, Int}[], worder = one(ZZRingElem),
+                          rho = zeros(Int, n), simple = Vector{Int}[])
+  K = 2
+  for (_, m) in rts
+    K = lcm(K, 2 * m)
+  end
+  w = zeros(Int, n)                                # K * rho^
+  for (r, m) in rts
+    f = div(K, m)
+    for i in 1:n
+      w[i] += f * r[i]
+    end
+  end
+  wd = zeros(Int, n)                               # G * w
+  for i in 1:n
+    t = 0
+    for k in 1:n
+      t += G[i, k] * w[k]
+    end
+    wd[i] = t
+  end
+  simple = Vector{Int}[]
+  snorm = Int[]
+  for (r, m) in rts
+    t = 0
+    for i in 1:n
+      t += wd[i] * r[i]
+    end
+    if t == K
+      push!(simple, r); push!(snorm, m)
+    elseif t == -K
+      push!(simple, .-r); push!(snorm, m)
+    end
+  end
+  isempty(simple) && return nothing
+  ns = length(simple)
+  # the components: simple roots are joined when they are not orthogonal
+  sd = [Int[sum(G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
+  comp = zeros(Int, ns)
+  nc = 0
+  stack = Int[]
+  for i in 1:ns
+    comp[i] != 0 && continue
+    nc += 1; comp[i] = nc; push!(stack, i)
+    while !isempty(stack)
+      a = pop!(stack)
+      for b in 1:ns
+        comp[b] == 0 || continue
+        t = 0
+        for k in 1:n
+          t += sd[a][k] * simple[b][k]
+        end
+        t == 0 && continue
+        comp[b] = nc; push!(stack, b)
+      end
+    end
+  end
+  types = Tuple{Symbol, Int}[]
+  for c in 1:nc
+    inc = Int[]                                    # the roots of this component
+    for (t, (r, m)) in enumerate(rts)
+      # the components are mutually orthogonal, so a root belongs to this one
+      # exactly when it is orthogonal to every simple root outside it
+      out = false
+      for b in 1:ns
+        comp[b] == c && continue
+        s = 0
+        for k in 1:n
+          s += sd[b][k] * r[k]
+        end
+        if s != 0
+          out = true
+          break
+        end
+      end
+      out || push!(inc, t)
+    end
+    isempty(inc) && return nothing
+    mn = minimum(rts[t][2] for t in inc)
+    nshort = 2 * count(t -> rts[t][2] == mn, inc)
+    ty = _bt_irr_type(count(==(c), comp), 2 * length(inc), nshort)
+    ty[1] === :unknown && return nothing
+    push!(types, ty)
+  end
+  sort!(types)
+  return (types = types, worder = _weyl_group_order(types), rho = w, simple = simple)
+end
+
+################################################################################
+#
 #  Spheres around a short vector
 #
 ################################################################################
