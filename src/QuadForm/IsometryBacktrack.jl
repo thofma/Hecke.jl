@@ -2794,6 +2794,12 @@ mutable struct BTSearch{T <: Signed}
   combsrval::Int                           # class value used for the restriction
   combsrcolor::UInt64                      # and the colour and norm it is cut
   combsrnorm::Int                          #   down to, or zero for neither
+  refdep::Int                              # levels the partition is refined at
+  refsig::Vector{Vector{Int}}              # cell sizes the source side gives
+  refcell::Matrix{Int32}                   # cell of each vector, per level
+  refsrc::Matrix{Int32}                    # the same for the source, kept
+  refbuf::Vector{Int32}                    # scratch for one refinement
+  refcnt::Dict{Int32, Int}                 # scratch for counting cells
   combsmaxdep::Int
   work::Int                                # vectors looked at, for the same purpose
   worklimit::Int
@@ -2890,6 +2896,12 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   0,                                       # combsrval
                   UInt64(0),                               # combsrcolor
                   0,                                       # combsrnorm
+                  0,                                       # refdep
+                  Vector{Int}[],                           # refsig
+                  zeros(Int32, 0, 0),                      # refcell
+                  zeros(Int32, 0, 0),                      # refsrc
+                  Int32[],                                 # refbuf
+                  Dict{Int32, Int}(),                      # refcnt
                   3,                                       # combsmaxdep
                   0,                                       # work
                   typemax(Int),                            # worklimit
@@ -3634,6 +3646,181 @@ function _bt_count_extensions!(S::BTSearch, d::Int, out::Vector{Matrix{Int}})
   return cnt
 end
 
+# Refining the partition as the search descends.  NOT USED -- see the measured
+# outcome at the end of this comment.
+#
+# The fingerprint partitions the vectors once, at the root.  Fixing the image
+# of a basis vector says much more than that: it refines the partition, because
+# the scalar product with the new image is an invariant of every vector.  An
+# isometry carrying b_1..b_k to x_1..x_k carries the cells of the one partition
+# bijectively onto the cells of the other, since
+#
+#   <f(v), x_k> = <f(v), f(b_k)> = <v, b_k>,
+#
+# so the two partitions must have the same multiset of cell sizes.  When they
+# do not, no isometry extends the partial map and the branch is cut -- and it
+# is cut where the mismatch first appears, instead of after descending to the
+# bottom.  This is the ordered partition refinement of Leon which the Magma
+# implementation uses.
+#
+# The source side is partitioned once during setup; the target side is refined
+# one level at a time as the search descends, and the cells of each level are
+# kept so that backtracking is free.
+#
+# Two things had to be right for this to give the correct group at all.  The
+# levels fixed by the outer loop rather than by the descent have to be refined
+# too, or every deeper comparison is made against a partition built from the
+# wrong image; and the cells of those levels have to be restored from the
+# source when the loop moves on, since the previous descent overwrote them.
+# More fundamentally, the vectors are stored one per sign pair, so an isometry
+# permutes them only up to sign and the pairing flips with the representative:
+# keying the partition by the signed pairing is simply wrong, and made the
+# search report a group of order 2048 in place of one of order 95126814720.
+# Where rho is known it pins the sign and the signed pairing is invariant after
+# all; without rho the absolute value has to be used.
+#
+# With all of that right it prunes nothing.  On lattice 1899 of X26_no1 the
+# node counts are unchanged to the last node -- 38031, 19065, 38037 at the
+# steps that dominate -- while the search goes from 1.44 to 5.26 seconds.  The
+# reason is that the candidates offered at each level have already been
+# filtered to have the right scalar product with every fixed image, so their
+# cells are correct by construction and the partition shape has nothing left to
+# catch.  Whatever the Magma implementation gains from ordered partitions, it
+# is not this.
+function _bt_setup_refine!(S::BTSearch, ctx::BTCtx)
+  nv = ctx.nv
+  n = S.n
+  # bounded so that the cells cannot cost more memory than the vectors do
+  (nv == 0 || nv > 200000) && return S
+  dep = min(S.ncheap, n - 1, 16)
+  dep < 1 && return S
+  src = S.src
+  src.nv == nv || return S
+  S.refdep = dep
+  S.refcell = zeros(Int32, nv, dep + 1)
+  S.refsrc = zeros(Int32, nv, dep + 1)
+  S.refbuf = zeros(Int32, nv)
+  S.refsig = Vector{Vector{Int}}(undef, dep)
+  # level zero: the colours, which every level below refines further
+  cur = Vector{Int32}(undef, nv)
+  ids = Dict{Tuple{UInt64, Int}, Int32}()
+  @inbounds for j in 1:nv
+    k = (isempty(ctx.colors) ? UInt64(0) : ctx.colors[j], ctx.nrm[j])
+    c = get(ids, k, Int32(0))
+    if c == 0
+      c = Int32(length(ids) + 1)
+      ids[k] = c
+    end
+    cur[j] = c
+  end
+  @inbounds for j in 1:nv
+    S.refcell[j, 1] = cur[j]
+  end
+  # and now one level per basis vector, on the source side
+  y = Vector{Int}(undef, n)
+  for k in 1:dep
+    q = S.per[k]
+    @inbounds for i in 1:n
+      y[i] = src.G[i, q]
+    end
+    _bt_refine_level!(S, src, cur, y, k)
+    S.refsig[k] = _bt_cell_sizes(S, cur, nv)
+    @inbounds for j in 1:nv
+      S.refcell[j, k + 1] = cur[j]
+      S.refsrc[j, k + 1] = cur[j]
+    end
+  end
+  @inbounds for j in 1:nv
+    S.refsrc[j, 1] = S.refcell[j, 1]
+  end
+  return S
+end
+
+# The levels below the one being worked on are fixed to the base points, that
+# is to the identity, so their cells are the source's.  They have to be put
+# back, because the descent of the previous step overwrote them with whatever
+# candidate it last tried.
+function _bt_refine_reset!(S::BTSearch, upto::Int)
+  S.refdep == 0 && return nothing
+  nv = size(S.refcell, 1)
+  k = min(upto, S.refdep + 1)
+  @inbounds for c in 1:k, j in 1:nv
+    S.refcell[j, c] = S.refsrc[j, c]
+  end
+  return nothing
+end
+
+# refine `cur` in place by the scalar product with `y`
+function _bt_refine_level!(S::BTSearch, ctx::BTCtx, cur::Vector{Int32},
+                           y::Vector{Int}, k::Int)
+  nv = ctx.nv
+  n = S.n
+  ids = Dict{Tuple{Int32, Int}, Int32}()
+  @inbounds for j in 1:nv
+    sp = 0
+    for i in 1:n
+      sp += Int(ctx.V[i, j]) * y[i]
+    end
+    # The vectors are stored one per pair, so an isometry permutes them only up
+    # to sign and the pairing flips with the representative.  Where rho is
+    # known it pins the sign -- an isometry fixing rho preserves <v, rho> -- so
+    # the pairing of the representative with positive rho pairing is itself
+    # invariant, and that is a finer partition than the absolute value gives.
+    sg = 0
+    if !isempty(ctx.rhov)
+      rv = Int(ctx.rhov[j])
+      sg = rv > 0 ? 1 : (rv < 0 ? -1 : 0)
+    end
+    sp = sg == 0 ? (sp < 0 ? -sp : sp) : sg * sp
+    key = (cur[j], sp)
+    c = get(ids, key, Int32(0))
+    if c == 0
+      c = Int32(length(ids) + 1)
+      ids[key] = c
+    end
+    S.refbuf[j] = c
+  end
+  @inbounds for j in 1:nv
+    cur[j] = S.refbuf[j]
+  end
+  return nothing
+end
+
+function _bt_cell_sizes(S::BTSearch, cur::Vector{Int32}, nv::Int)
+  empty!(S.refcnt)
+  @inbounds for j in 1:nv
+    S.refcnt[cur[j]] = get(S.refcnt, cur[j], 0) + 1
+  end
+  v = collect(values(S.refcnt))
+  sort!(v)
+  return v
+end
+
+# Does fixing the image at level `k` keep the partition shape?  `false` cuts
+# the branch.
+function _bt_refine_ok!(S::BTSearch, k::Int)
+  k > S.refdep && return true
+  ctx = S.tgt
+  n = S.n
+  nv = ctx.nv
+  y = S.ytmp
+  _bt_load_y!(y, ctx, S.x[k])
+  cur = Vector{Int32}(undef, nv)
+  @inbounds for j in 1:nv
+    cur[j] = S.refcell[j, k]
+  end
+  yy = Vector{Int}(undef, n)
+  @inbounds for i in 1:n
+    yy[i] = Int(y[i])
+  end
+  _bt_refine_level!(S, ctx, cur, yy, k)
+  _bt_cell_sizes(S, cur, nv) == S.refsig[k] || return false
+  @inbounds for j in 1:nv
+    S.refcell[j, k + 1] = cur[j]
+  end
+  return true
+end
+
 function _bt_extend!(S::BTSearch, d::Int)
   n = S.n
   d == n && return true
@@ -3651,6 +3838,7 @@ function _bt_extend!(S::BTSearch, d::Int)
     r = _bt_combs_check!(S, I)
     r == 0 && continue
     r == 2 && return true
+    S.refdep > 0 && !_bt_refine_ok!(S, I) && continue
     if I + 1 > S.ncheap
       # the next level is served from a coset, so there is nothing to prepare
       # here -- and preparing it would index the buckets by a scalar product
@@ -4144,6 +4332,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
       S.x[i] = std[i]
     end
     S.step = step
+    _bt_refine_reset!(S, step)
     S.bktfor = 0
     S.usepool = _bt_prefer_pool(F, S.per, step, min(n, S.maxlevel), n, ctx.nv)
     tpool += @elapsed _bt_init_pool_std!(S, F, step, ctx, tmpp, tmpm)
@@ -4201,6 +4390,12 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
           # the cheap invariants first: they need no pool, and a failure here
           # saves the sweep of the descent
           r = _bt_combs_check!(S, step)
+          # this level's image is fixed by the loop rather than by the descent,
+          # so its refinement has to happen here: without it every deeper
+          # comparison is made against a partition built from the wrong image
+          if r == 1 && S.refdep > 0 && !_bt_refine_ok!(S, step)
+            r = 0
+          end
           if r == 2
             found = true
           elseif r == 1
@@ -4218,6 +4413,9 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
             tc = time()
             _bt_setup_combs!(S, ctx; budget = time() - tt0)
             S.usecombs = true
+            # Refining the partition here was tried and is not switched on;
+            # see `_bt_setup_refine!` for what it cost and why it gained
+            # nothing.
             # the combinations bound the depth the search can reach, which is
             # what decides between the pool and the per level filtering
             S.usepool = _bt_prefer_pool(F, S.per, step, min(n, S.maxlevel), n,
