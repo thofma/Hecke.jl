@@ -1414,6 +1414,152 @@ end
 #
 # Returns one representative of each pair {r, -r} with its norm, or `nothing`
 # when the enumeration is out of range.
+# Whether a vector is a root, and its norm, or `nothing`.  Only primitive
+# vectors are considered: the reflection in r is the reflection in r/c for any
+# scalar multiple, so a non primitive root adds nothing to the group, and
+# dropping them is what keeps the system reduced -- a lattice can otherwise
+# have both r and 2r as roots, and no irreducible type allows three lengths.
+@inline function _bt_is_root(G::Matrix{Int}, x::Vector{Int}, n::Int)
+  g = 0
+  @inbounds for i in 1:n
+    g = gcd(g, x[i])
+  end
+  g == 1 || return 0
+  m = 0
+  @inbounds for i in 1:n
+    t = 0
+    for k in 1:n
+      t += G[i, k] * x[k]
+    end
+    m += t * x[i]
+  end
+  m > 0 || return 0
+  @inbounds for i in 1:n
+    t = 0
+    for k in 1:n
+      t += G[i, k] * x[k]
+    end
+    mod(2 * t, m) == 0 || return 0
+  end
+  return m
+end
+
+# The roots among vectors which have already been enumerated.  Every root of
+# norm at most the bound of that enumeration is found, and that is all the
+# decomposition needs: `Aut(L) = W' semidirect Stab(chamber)` holds for any
+# subsystem which is closed under its own reflections and stable under
+# `Aut(L)`, and the roots up to a norm bound are such a subsystem, because
+# reflections preserve norms.  Stopping early therefore never costs
+# correctness, only a smaller `W'` and more left for the search.
+function _bt_roots_among(G::Matrix{Int}, V::Matrix{Int32})
+  n = size(G, 1)
+  res = Tuple{Vector{Int}, Int}[]
+  x = Vector{Int}(undef, n)
+  @inbounds for j in 1:size(V, 2)
+    for i in 1:n
+      x[i] = Int(V[i, j])
+    end
+    m = _bt_is_root(G, x, n)
+    m == 0 && continue
+    r = copy(x)
+    for i in 1:n                                   # one of {r, -r}
+      if r[i] != 0
+        r[i] < 0 && (r .= .-r)
+        break
+      end
+    end
+    push!(res, (r, m))
+  end
+  return res
+end
+
+# Roots for the decomposition, given the short vectors the algorithm has
+# enumerated anyway and the bound they go up to.  Those give every root of norm
+# at most `bound` for one pass; the roots of larger norm, whose divisor `d`
+# satisfies 2d > bound, need a sublattice each and are looked for only while
+# the budget lasts.
+#
+# Stopping early is safe.  A set of roots picked out by norm and divisor is
+# stable under `Aut(L)` -- isometries preserve both -- and closed under its own
+# reflections, so it is a subsystem for which `W' semidirect Stab(chamber)` is
+# still all of `Aut(L)`.  A smaller subsystem only leaves more for the search.
+function _bt_roots(G::Matrix{Int}, V::Matrix{Int32}, bound::Int;
+                   budget::Float64 = 0.001)
+  n = size(G, 1)
+  rts = _bt_roots_among(G, V)
+  GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  # Roots of norm above the bound need a sublattice each, which costs matrix
+  # arithmetic over ZZ.  That is worth it when only a little is missing -- Z^n,
+  # D_4 and D_5 owe their B_n, F_4 and C_5 to exactly one such norm -- and not
+  # when the discriminant group is far bigger than the bound, where there are
+  # many divisors to try and, on the lattices seen so far, nothing to find.
+  # The determinant is a multiple of the exponent and much cheaper than either
+  # the elementary divisors or the Smith form, so it decides this first.
+  dt = abs(det(GZ))
+  (dt <= 0 || !fits(Int, dt) || Int(dt) > 2 * bound) && return rts
+  local S, U
+  try
+    S, _, U = snf_with_transform(GZ)
+  catch
+    return rts
+  end
+  e = S[n, n]
+  (e <= 0 || !fits(Int, e)) && return rts
+  2 * Int(e) <= bound && return rts               # nothing can be left
+  seen = Set{Vector{Int}}()
+  for (r, _) in rts
+    push!(seen, r)
+  end
+  t0 = time()
+  x = Vector{Int}(undef, n)
+  for d in 1:Int(e)
+    Int(e) % d == 0 || continue
+    2 * d > bound || continue                     # already covered by the sweep
+    time() - t0 > budget && break
+    B = zero_matrix(ZZ, n, n)
+    for j in 1:n
+      c = divexact(ZZRingElem(d), gcd(S[j, j], ZZRingElem(d)))
+      for i in 1:n
+        B[i, j] = U[i, j] * c
+      end
+    end
+    H = transpose(B) * GZ * B
+    H, Tr = lll_gram_with_transform(H)             # the Smith basis is very skew
+    B = B * transpose(Tr)
+    all(y -> fits(Int, y), H) || continue
+    local W, wn
+    try
+      W, wn = _bt_short_vectors(Matrix{Int}(H), 2 * d)
+    catch
+      continue
+    end
+    Bm = Matrix{Int}(B)
+    for t in 1:size(W, 2)
+      (wn[t] == d || wn[t] == 2 * d) || continue
+      @inbounds for i in 1:n
+        v = 0
+        for k in 1:n
+          v += Bm[i, k] * Int(W[k, t])
+        end
+        x[i] = v
+      end
+      m = _bt_is_root(G, x, n)
+      m == 0 && continue
+      r = copy(x)
+      for i in 1:n
+        if r[i] != 0
+          r[i] < 0 && (r .= .-r)
+          break
+        end
+      end
+      r in seen && continue
+      push!(seen, r)
+      push!(rts, (r, m))
+    end
+  end
+  return rts
+end
+
 function _bt_all_roots(G::Matrix{Int})
   n = size(G, 1)
   GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
@@ -1526,9 +1672,13 @@ end
 #
 # `nothing` when the roots are out of range or a component is not recognised.
 function _bt_root_data(G::Matrix{Int})
-  n = size(G, 1)
   rts = _bt_all_roots(G)
   rts === nothing && return nothing
+  return _bt_root_data(G, rts)
+end
+
+function _bt_root_data(G::Matrix{Int}, rts::Vector{Tuple{Vector{Int}, Int}})
+  n = size(G, 1)
   isempty(rts) && return (types = Tuple{Symbol, Int}[], worder = one(ZZRingElem),
                           rho = zeros(Int, n), simple = Vector{Int}[])
   K = 2
