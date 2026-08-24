@@ -1396,70 +1396,99 @@ end
 # A vector `r` of `L` is a root when the reflection in it maps `L` to itself,
 # that is when 2<x,r>/<r,r> is an integer for every `x` in `L`.  Writing `d` for
 # the divisor of `r` -- the positive generator of the ideal of the <x,r> -- the
-# vector u = r/d lies in the dual and has norm 1/d or 2/d, because <r,r> is
-# either d or 2d.  Every root therefore comes from a vector of the dual of norm
-# at most two, which is a small enumeration; looking for the roots inside `L`
-# would need to go up to twice the exponent of the discriminant group.
+# norm <r,r> is either `d` or `2d`, and r/d lies in the dual, so `d` divides the
+# exponent of the discriminant group.
+#
+# A root of divisor `d` therefore lies in
+#
+#     L  intersect  d L^*  =  { x : G x = 0 mod d },
+#
+# which is a *sublattice* of `L`: enumerating it up to norm 2d finds far fewer
+# vectors than enumerating the dual, which is coarser than `L` and full of short
+# vectors.  One Smith normal form gives a basis of all of them at once: with
+# S = T G U the condition becomes (U^-1 x)_i = 0 mod d/gcd(S_ii, d).
 #
 # Roots of norm greater than two are what turns A_2 into G_2, D_4 into F_4 and
 # Z^n into B_n, and they are the whole root system of a rescaled lattice such as
-# E_8(2), where the roots of norm two do not exist at all.
+# E_8(2), where roots of norm two do not exist at all.
 #
 # Returns one representative of each pair {r, -r} with its norm, or `nothing`
-# when the dual enumeration is out of range.
+# when the enumeration is out of range.
 function _bt_all_roots(G::Matrix{Int})
   n = size(G, 1)
   GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
-  dt = det(GZ)
-  dt == 0 && return nothing
-  Gi = inv(change_base_ring(QQ, GZ))
-  A = map_entries(ZZ, dt * Gi)                    # adjugate: integral
-  all(x -> fits(Int, x), A) || return nothing
-  bnd = 2 * dt
-  fits(Int, bnd) || return nothing
-  Am = Matrix{Int}(A)
-  local V, nrm
-  try
-    V, nrm = _bt_short_vectors(Am, Int(bnd))
-  catch
-    return nothing
-  end
+  S, _, U = snf_with_transform(GZ)
+  e = S[n, n]
+  (e <= 0 || !fits(Int, e)) && return nothing
   res = Tuple{Vector{Int}, Int}[]
   seen = Set{Vector{Int}}()
-  y = zero_matrix(QQ, 1, n)
-  for j in 1:size(V, 2)
-    for i in 1:n
-      y[1, i] = QQ(Int(V[i, j]))
-    end
-    u = y * Gi                                     # the dual vector in L-coordinates
-    d = one(ZZRingElem)
-    for i in 1:n
-      d = lcm(d, denominator(u[1, i]))
-    end
-    # <r,r> = d^2 * norm(u) and the root condition is d * norm(u) in {1, 2}
-    nu = QQFieldElem(nrm[j]) // dt
-    dn = d * nu
-    (dn == 1 || dn == 2) || continue
-    r = Vector{Int}(undef, n)
-    ok = true
-    for i in 1:n
-      t = d * u[1, i]
-      isone(denominator(t)) || (ok = false; break)
-      fits(Int, numerator(t)) || (ok = false; break)
-      r[i] = Int(numerator(t))
-    end
-    ok || continue
-    for i in 1:n                                   # one of {r, -r}
-      if r[i] != 0
-        r[i] < 0 && (r .= .-r)
-        break
+  x = Vector{Int}(undef, n)
+  for d in 1:Int(e)
+    Int(e) % d == 0 || continue
+    # basis of { x : G x = 0 mod d }, as columns
+    B = zero_matrix(ZZ, n, n)
+    for j in 1:n
+      c = divexact(ZZRingElem(d), gcd(S[j, j], ZZRingElem(d)))
+      for i in 1:n
+        B[i, j] = U[i, j] * c
       end
     end
-    r in seen && continue
-    push!(seen, r)
-    m = numerator(d * dn)                          # d * dn is 1 or 2 times d
-    fits(Int, m) || return nothing
-    push!(res, (r, Int(m)))
+    H = transpose(B) * GZ * B
+    # the basis coming out of the Smith form is very skew, which would make the
+    # enumeration tree enormous; reducing it first is what keeps this cheap
+    H, Tr = lll_gram_with_transform(H)
+    B = B * transpose(Tr)
+    all(y -> fits(Int, y), H) || return nothing
+    local V, nrm
+    try
+      V, nrm = _bt_short_vectors(Matrix{Int}(H), 2 * d)
+    catch
+      return nothing
+    end
+    Bm = Matrix{Int}(B)
+    for t in 1:size(V, 2)
+      m = nrm[t]
+      (m == d || m == 2 * d) || continue          # <r,r> is d or 2d
+      @inbounds for i in 1:n
+        v = 0
+        for k in 1:n
+          v += Bm[i, k] * Int(V[k, t])
+        end
+        x[i] = v
+      end
+      # the defining condition, checked exactly on the basis of L
+      ok = true
+      @inbounds for i in 1:n
+        g = 0
+        for k in 1:n
+          g += G[i, k] * x[k]
+        end
+        if mod(2 * g, m) != 0
+          ok = false
+          break
+        end
+      end
+      ok || continue
+      # The reflection in r is the reflection in r/c for any scalar multiple, so
+      # a non primitive root contributes nothing new -- and dropping those is
+      # what makes the system reduced: without it a lattice can have both r and
+      # 2r as roots (norms 2 and 8), which no irreducible type allows.
+      g = 0
+      @inbounds for i in 1:n
+        g = gcd(g, x[i])
+      end
+      g == 1 || continue
+      r = copy(x)
+      for i in 1:n                                 # one of {r, -r}
+        if r[i] != 0
+          r[i] < 0 && (r .= .-r)
+          break
+        end
+      end
+      r in seen && continue
+      push!(seen, r)
+      push!(res, (r, m))
+    end
   end
   return res
 end
