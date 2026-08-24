@@ -1472,6 +1472,94 @@ function _bt_basis_colors(ctx::BTCtx)
   return res
 end
 
+# When the roots span the whole space the simple roots are a basis of a finite
+# index sublattice, and everything the Weyl group leaves over permutes them.
+# So what is left of the isometry group is exactly those permutations of the
+# simple roots which respect the Cartan matrix and map the lattice to itself,
+# and the whole group is found without enumerating a single short vector: the
+# roots themselves come from an enumeration up to twice the exponent of the
+# discriminant group, which for a unimodular lattice is norm two.
+#
+# A permutation p of the simple roots gives the map B^-1 P B on coordinates,
+# where B has the simple roots as rows; that map is an isometry of L exactly
+# when it is integral and preserves the Gram matrix, both of which are checked.
+#
+# Returns the isometries found, or `nothing` when the roots do not span or the
+# search would be too large -- a partial answer would give a wrong order.
+function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
+                              cap::Int = 200000)
+  n = size(G, 1)
+  length(simple) == n || return nothing
+  B = zero_matrix(ZZ, n, n)
+  for i in 1:n, j in 1:n
+    B[i, j] = simple[i][j]
+  end
+  is_zero(det(B)) && return nothing
+  GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  # Cartan matrix of the simple roots
+  C = zeros(Int, n, n)
+  nrm = zeros(Int, n)
+  for i in 1:n
+    t = 0
+    for k in 1:n, l in 1:n
+      t += simple[i][k] * G[k, l] * simple[i][l]
+    end
+    nrm[i] = t
+  end
+  for i in 1:n, j in 1:n
+    t = 0
+    for k in 1:n, l in 1:n
+      t += simple[i][k] * G[k, l] * simple[j][l]
+    end
+    mod(2 * t, nrm[i]) == 0 || return nothing
+    C[i, j] = div(2 * t, nrm[i])
+  end
+  Binv = inv(change_base_ring(QQ, B))
+  res = Matrix{Int}[]
+  perm = zeros(Int, n)
+  used = falses(n)
+  visited = Ref(0)
+  function rec(i::Int)
+    visited[] > cap && return false
+    if i > n
+      visited[] += 1
+      P = zero_matrix(ZZ, n, n)
+      for a in 1:n, b in 1:n
+        P[a, b] = B[perm[a], b]
+      end
+      Mq = Binv * change_base_ring(QQ, P)
+      M = zeros(Int, n, n)
+      for a in 1:n, b in 1:n
+        isone(denominator(Mq[a, b])) || return true
+        fits(Int, numerator(Mq[a, b])) || return true
+        M[a, b] = Int(numerator(Mq[a, b]))
+      end
+      _bt_verify(M, G, G) && push!(res, M)
+      return true
+    end
+    for c in 1:n
+      used[c] && continue
+      nrm[c] == nrm[i] || continue
+      ok = true
+      for j in 1:(i - 1)
+        if C[i, j] != C[c, perm[j]] || C[j, i] != C[perm[j], c]
+          ok = false
+          break
+        end
+      end
+      ok || continue
+      perm[i] = c
+      used[c] = true
+      rec(i + 1) || (used[c] = false; return false)
+      used[c] = false
+    end
+    return true
+  end
+  rec(1) || return nothing
+  visited[] > cap && return nothing
+  return res
+end
+
 ################################################################################
 #
 #  Candidates from a coset
@@ -4191,6 +4279,58 @@ backtrack search.  Returns `nothing` if the lattice is out of range for the
 implementation, in which case the caller should fall back to the general
 Plesken--Souvignier implementation.
 """
+# The whole group from the root system, when the roots span.  `nothing` when
+# they do not, when finding them would cost too much, or when the search over
+# the diagram automorphisms would be too large -- in each case the caller falls
+# back to the general search, since a partial answer here would be a wrong
+# order rather than a slow one.
+function _bt_roots_shortcut(G::Matrix{Int})
+  n = size(G, 1)
+  n < 2 && return nothing
+  GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  local e
+  try
+    e = elementary_divisors(GZ)[n]
+  catch
+    return nothing
+  end
+  (e <= 0 || !fits(Int, e)) && return nothing
+  rb = 2 * Int(e)
+  bmax = G[1, 1]
+  for i in 1:n
+    G[i, i] > bmax && (bmax = G[i, i])
+  end
+  rb > bmax && (rb = bmax)                    # never more than we would do anyway
+  lv = _bt_ball_volumes(n)
+  A = Matrix{Float64}(undef, n, n)
+  q = Vector{Float64}(undef, n)
+  _bt_gs_norms!(q, A, G, collect(1:n), n) || return nothing
+  _bt_enum_cost(q, n, Float64(rb), lv) <= log(1.0e6) || return nothing
+  local ctxr, rd
+  try
+    ctxr = BTCtx(G, rb; comp_budget = -2)
+    rd = _bt_root_data(G, _bt_roots(ctxr))
+  catch
+    return nothing
+  end
+  (rd === nothing || length(rd.simple) != n) && return nothing
+  # every root has to have been found for the Weyl group to be the whole of it
+  2 * Int(e) <= rb || return nothing
+  redu = _bt_aut_red_spanning(G, rd.simple)
+  (redu === nothing || isempty(redu)) && return nothing
+  gens = Matrix{Int}[]
+  for a in rd.simple
+    m = _bt_is_root(G, a, n)
+    m == 0 && return nothing
+    push!(gens, _bt_reflection(G, a, m))
+  end
+  append!(gens, redu)
+  for M in gens
+    _bt_verify(M, G, G) || return nothing
+  end
+  return gens, rd.worder * length(redu)
+end
+
 function _automorphism_group_backtrack(L::ZZLat)
   @req is_definite(L) "Lattice must be definite"
   n = rank(L)
@@ -4203,6 +4343,19 @@ function _automorphism_group_backtrack(L::ZZLat)
   red = _bt_reduce_gram(L)
   red === nothing && return nothing
   G, T = red[1], red[2]
+  # The roots need only an enumeration up to twice the exponent of the
+  # discriminant group, which is usually far below the largest diagonal entry.
+  # When they span the whole space the group follows from them alone, with no
+  # short vectors at all -- and that is the difference between milliseconds and
+  # eight million vectors on the lattices of Chenevier and Taibi.
+  let sc = _bt_roots_shortcut(G)
+    if sc !== nothing
+      gens0, ord = sc
+      Tinv = inv(T)
+      gens = ZZMatrix[Tinv * matrix(ZZ, g) * T for g in gens0]
+      return gens, ord
+    end
+  end
   # A lattice whose short vectors do not span needs a long basis vector, and
   # the shell of that norm can be astronomically large: one lattice of
   # 81.lattices has a basis of norms 2 and 4 with a single vector of norm 30,
