@@ -11,7 +11,7 @@
 #  - There are batch and iterator versions
 #  - both use Int when all intermediate values provably fit and otherwise fall
 #    back to ZZRingElem.
-#  - Enumertare only up to sign
+#  - Enumerate only up to sign
 #  - The code also does CVP:
 #      - Given a (rational) target vector t, find all x with
 #                         (x - t) * G * (x - t)^t <= M
