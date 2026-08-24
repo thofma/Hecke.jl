@@ -3911,6 +3911,22 @@ function _automorphism_group_backtrack(L::ZZLat)
   red = _bt_reduce_gram(L)
   red === nothing && return nothing
   G, T = red[1], red[2]
+  # A lattice whose short vectors do not span needs a long basis vector, and
+  # the shell of that norm can be astronomically large: one lattice of
+  # 81.lattices has a basis of norms 2 and 4 with a single vector of norm 30,
+  # and its vectors of norm at most 6 still only reach rank 16 of 17.  Since
+  # everything here starts by enumerating up to the largest diagonal entry,
+  # such a lattice has to be handed back to the caller rather than attempted.
+  bnd = G[1, 1]
+  for i in 1:n
+    G[i, i] > bnd && (bnd = G[i, i])
+  end
+  let lv = _bt_ball_volumes(n), A = Matrix{Float64}(undef, n, n),
+      q = Vector{Float64}(undef, n)
+    if _bt_gs_norms!(q, A, G, collect(1:n), n)
+      _bt_enum_cost(q, n, Float64(bnd), lv) > log(2.0e7) && return nothing
+    end
+  end
   local gens0, ord
   try
     gens0, ord = _bt_automorphism_group(G)
