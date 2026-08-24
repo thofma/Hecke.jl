@@ -4679,7 +4679,20 @@ function _bt_best_order(ctx::BTCtx)
   # catastrophic where it is wrong, and the largest-norm order is the reverse.
   # Deferring to the latter unless the score disagrees by a clear margin takes
   # the better half of each.  A margin of two in the logarithm was best on both
-  # samples independently.
+  # samples independently, and on a third sample of 785 lattices this rule
+  # comes out at 1.12 times the oracle with no lattice worse than 6.5 times
+  # the best ordering for it.
+  #
+  # Deciding instead from the root system was tried, since its type is known by
+  # this point and the symmetry of the similar components -- the sum of
+  # log(k!) over the isotypic families -- is exactly the quantity that makes
+  # the embeddings of a root sublattice numerous.  It does separate: where that
+  # sum exceeds two the largest-norm order wins 54% of the time against 35%
+  # where it does not.  But it is a weak instrument, 1.89 times the oracle on
+  # its own and worse than this rule when combined with it, because the
+  # fingerprint already sees the same fact in the only currency the search
+  # cares about: the candidate counts of the roots, ten, nine, eight and so on,
+  # *are* the symmetry of A_1^10.
   score2 - bestscore <= 2.0 && (best = 2)
   return best
 end
