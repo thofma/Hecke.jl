@@ -2800,6 +2800,8 @@ mutable struct BTSearch{T <: Signed}
   refsrc::Matrix{Int32}                    # the same for the source, kept
   refbuf::Vector{Int32}                    # scratch for one refinement
   refcnt::Dict{Int32, Int}                 # scratch for counting cells
+  lvlnodes::Vector{Int}                    # nodes spent at each level, for
+                                           #   verbose reporting only
   combsmaxdep::Int
   work::Int                                # vectors looked at, for the same purpose
   worklimit::Int
@@ -2902,6 +2904,7 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
                   zeros(Int32, 0, 0),                      # refsrc
                   Int32[],                                 # refbuf
                   Dict{Int32, Int}(),                      # refcnt
+                  zeros(Int, n),                           # lvlnodes
                   3,                                       # combsmaxdep
                   0,                                       # work
                   typemax(Int),                            # worklimit
@@ -3403,6 +3406,7 @@ end
 # runs over one bucket rather than over all short vectors.
 function _bt_cands!(S::BTSearch, I::Int, d::Int)
   S.nodes += 1
+  I <= length(S.lvlnodes) && (S.lvlnodes[I] += 1)
   if S.nodes > S.nodelimit || S.work > S.worklimit
     S.aborted = true
     return false
@@ -3474,6 +3478,7 @@ function _bt_descend!(S::BTSearch, I::Int)
   n = S.n
   nw = S.nw
   S.nodes += 1
+  I <= length(S.lvlnodes) && (S.lvlnodes[I] += 1)
   if S.nodes > S.nodelimit || S.work > S.worklimit
     S.aborted = true
     return false
@@ -4332,6 +4337,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
       S.x[i] = std[i]
     end
     S.step = step
+    fill!(S.lvlnodes, 0)
     _bt_refine_reset!(S, step)
     S.bktfor = 0
     S.usepool = _bt_prefer_pool(F, S.per, step, min(n, S.maxlevel), n, ctx.nv)
@@ -4451,6 +4457,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false)
       end
     end
     @vprintln :Lattice 1 "backtrack: step $(step): orbit $(orders[step]), $(length(g[step])) new generators, $(ntry) tries ($(nfail) failed), $(S.nodes - node0) nodes, $(round(time() - tstep, digits = 3))s"
+    @vprintln :Lattice 2 "backtrack:   nodes by level: $(S.lvlnodes)"
     verbose && println("step ", step, ": order ", orders[step], " (fpd ",
                        F.fpd[step], "), gens ", length(g[step]),
                        ", nodes ", S.nodes)
