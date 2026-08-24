@@ -1,9 +1,28 @@
-
 ################################################################################
 #
 #  Integer-only Fincke-Pohst enumeration (finckepohstint)
 #
 #  Inspired by https://github.com/olitb/lattools from Chenevier and Taibi
+#
+#  - For a positive definite integral Gram matrix G, the preprocessing computes
+#    a permuted triangular decomposition and clears its denominators.
+#  - Fincke-Pohst then enumerates in a bounded ellipsoid using integer
+#    arithmetic only.
+#  - There are batch and iterator versions
+#  - both use Int when all intermediate values provably fit and otherwise fall
+#    back to ZZRingElem.
+#  - Enumerate only up to sign
+#  - The code also does CVP:
+#      - Given a (rational) target vector t, find all x with
+#                         (x - t) * G * (x - t)^t <= M
+#      - CVP "mode" is distinguished using a type parameter on the context
+#        object
+#     - in the preprocessing, each recursive center is shifted by the
+#       corresponding triangular coordinate of t. If D clears the denominators of
+#       t, the preprocessing scales squared distances and the level
+#       denominators by D^2, and the denominators by D.
+#     - CVP mode does not apply the short-vector sign symmetry
+#       and includes the zero vector if appropriate
 #
 ################################################################################
 
@@ -102,11 +121,12 @@ end
 CholeskyIntegralDenom(G::ZZMatrix) = __cholesky_integral_denom(Matrix{QQFieldElem}(G))
 
 # Context for integer-only enumeration
-mutable struct FinckePohstIntCtx{T}
+mutable struct FinckePohstIntCtx{T, CVP}
   M::T                  # upper bound
   n::Int                  # dimension
   e::Vector{Vector{T}}  # off-diagonal (integer)
   b::Vector{T}          # denominators
+  shift::Vector{T}      # scaled target coordinates (zero for SVP)
   doc::Vector{T}        # d[i]/c[i]
   docp1::Vector{T}      # d[i]/c[i+1]
   mu::Vector{T}         # scaled diagonal
@@ -115,27 +135,44 @@ mutable struct FinckePohstIntCtx{T}
   x::Vector{T}          # current vector
 end
 
+function _finckepohst_target_denominator(target::Vector{QQFieldElem})
+  D = one(ZZ)
+  for x in target
+    D = lcm!(D, D, denominator(x))
+  end
+  return D
+end
+
 # Preprocess gram matrix for integer-only enumeration.
 # gram must be a positive definite integral matrix, M the upper bound.
 # If dolll is true, applies LLL first.
 # Returns (ok, ctx, per_or_U) where ok is true if preprocessing succeeded.
 # If overflow occurs during the _ub check, returns false and no ctx.
 # per_or_U is either a permutation (Vector{Int}) or a ZZMatrix transform.
-function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = CholeskyIntegralDenom(gram))
+function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int,
+                                           chol = CholeskyIntegralDenom(gram);
+                                           target::Union{Nothing, Vector{QQFieldElem}} = nothing)
   n = nrows(gram)
   @assert n > 0
-  @assert M > 0
+  @assert M >= 0
+  @assert target === nothing || length(target) == n
 
   gramQQ = chol.gramQQ
   per = chol.per
   R = chol.R
   c = chol.c
+  is_cvp = target !== nothing
+  # Clearing the target denominator D scales squared distances by D^2.
+  # Scaling every c[i] by D^2 and every b[i] by D keeps the recurrence
+  # integer-only; in particular, mu is unchanged.
+  D_large = is_cvp ? _finckepohst_target_denominator(target) : one(ZZ)
+  D2_large = D_large^2
 
   # Convert c to integers (they are lcm of denominators, hence integers)
   c_int = Vector{Int}(undef, n + 1)
   c_int_large = Vector{ZZRingElem}(undef, n + 1) # we need to compute lcms later of the c_int elements and check for overflow
   for i in 1:n+1
-    nc = numerator(c[i])
+    nc = numerator(c[i]) * D2_large
     if !fits(Int, nc)
       return false, nothing, nothing
     else
@@ -149,6 +186,7 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
   b = Vector{Int}(undef, n)
   mu = Vector{Int}(undef, n)
   e_arr = Vector{Vector{Int}}(undef, n)
+  shift = zeros(Int, n)
   lambda = Vector{Int}(undef, n)
   tlob = Vector{Int}(undef, n)
   doc = Vector{Int}(undef, n)
@@ -166,9 +204,16 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
   for i in 1:n
     # b[i] = lcm of denominators of R[i][2]
     if isempty(R[i][2])
-      b[i] = 1
+      if !fits(Int, D_large)
+        return false, nothing, nothing
+      end
+      b[i] = Int(D_large)
     else
-      b[i] = Int(reduce(lcm, (denominator(q) for q in R[i][2])))
+      bi = D_large * reduce(lcm, (denominator(q) for q in R[i][2]))
+      if !fits(Int, bi)
+        return false, nothing, nothing
+      end
+      b[i] = Int(bi)
     end
   end
 
@@ -182,7 +227,27 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
     mu[i] = Int(numerator(mu_val))
 
     # e[i] = vector of b[i] * R[i][2][j] for j in 1:n-i
-    e_arr[i] = Int[Int(numerator(b[i] * R[i][2][j])) for j in 1:length(R[i][2])]
+    e_arr[i] = Vector{Int}(undef, length(R[i][2]))
+    for j in 1:length(R[i][2])
+      eij = numerator(b[i] * R[i][2][j])
+      if !fits(Int, eij)
+        return false, nothing, nothing
+      end
+      e_arr[i][j] = Int(eij)
+    end
+
+    if is_cvp
+      tau = target[per[i]]
+      for j in (i + 1):n
+        tau += R[i][2][j - i] * target[per[j]]
+      end
+      si = numerator(b[i] * tau)
+      @assert is_integer(b[i] * tau)
+      if !fits(Int, si)
+        return false, nothing, nothing
+      end
+      shift[i] = Int(si)
+    end
 
     # lambda[i] = c[i] * R[i][1]
     lambda_val = c_int[i] * R[i][1]
@@ -213,7 +278,15 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
   _ub = max(_ub, ZZ(maximum(mu)))
 
   _gram_inv = Matrix{QQFieldElem}(inv(matrix(QQ, gramQQ)))
-  _ubx = ZZRingElem[isqrt(floor(ZZRingElem, M * _gram_inv[i, i])) for i in 1:n]
+  if is_cvp
+    _ubx = ZZRingElem[
+      ceil(ZZRingElem, abs(target[per[i]])) +
+      isqrt(floor(ZZRingElem, M * _gram_inv[per[i], per[i]] // D2_large)) + 1
+      for i in 1:n
+    ]
+  else
+    _ubx = ZZRingElem[isqrt(floor(ZZRingElem, M * _gram_inv[i, i])) for i in 1:n]
+  end
   _ub = max(_ub, 1 + maximum(_ubx))
   if n > 1
     _emax = ZZ(0)
@@ -224,7 +297,7 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
     end
     _ub = max(_ub, _emax)
     for i in 1:n - 1
-      _s = ZZ(0)
+      _s = ZZ(abs(shift[i]))
       for j in (i + 1):n
         _s += ZZ(abs(e_arr[i][j - i])) * _ubx[j]
       end
@@ -242,28 +315,42 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int, chol = Choles
   end
 
   x = zeros(Int, n)
-  ctx = FinckePohstIntCtx(M, n, e_arr, b, doc, docp1, mu, lambda, tlob, x)
+  if is_cvp
+    ctx = FinckePohstIntCtx{Int, true}(M, n, e_arr, b, shift, doc, docp1,
+                                       mu, lambda, tlob, x)
+  else
+    ctx = FinckePohstIntCtx{Int, false}(M, n, e_arr, b, shift, doc, docp1,
+                                        mu, lambda, tlob, x)
+  end
   return true, ctx, per
 end
 
-function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem, chol = CholeskyIntegralDenom(gram))
+function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem,
+                                       chol = CholeskyIntegralDenom(gram);
+                                       target::Union{Nothing, Vector{QQFieldElem}} = nothing)
   n = nrows(gram)
   @assert n > 0
-  @assert M > 0
+  @assert M >= 0
+  @assert target === nothing || length(target) == n
 
   gramQQ = chol.gramQQ
   per = chol.per
   R = chol.R
   c = chol.c
+  is_cvp = target !== nothing
+  # See the small-integer preparation above for the D and D^2 scaling.
+  D = is_cvp ? _finckepohst_target_denominator(target) : one(ZZ)
+  D2 = D^2
 
   # Convert c to integers (they are lcm of denominators, hence integers)
-  c_int = ZZRingElem[numerator(c[i]) for i in 1:n+1]
+  c_int = ZZRingElem[numerator(c[i]) * D2 for i in 1:n+1]
 
   # Compute derived integer arrays
   d = Vector{ZZRingElem}(undef, n)
   b = Vector{ZZRingElem}(undef, n)
   mu = Vector{ZZRingElem}(undef, n)
   e_arr = Vector{Vector{ZZRingElem}}(undef, n)
+  shift = zeros_array(ZZ, n)
   lambda = Vector{ZZRingElem}(undef, n)
   tlob = Vector{ZZRingElem}(undef, n)
   doc = Vector{ZZRingElem}(undef, n)
@@ -276,9 +363,9 @@ function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem, chol = Cho
   for i in 1:n
     # b[i] = lcm of denominators of R[i][2]
     if isempty(R[i][2])
-      b[i] = one(ZZ)
+      b[i] = D
     else
-      b[i] = reduce(lcm, (denominator(q) for q in R[i][2]))
+      b[i] = D * reduce(lcm, (denominator(q) for q in R[i][2]))
     end
   end
 
@@ -290,6 +377,15 @@ function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem, chol = Cho
 
     # e[i] = vector of b[i] * R[i][2][j] for j in 1:n-i
     e_arr[i] = ZZRingElem[numerator(b[i] * R[i][2][j]) for j in 1:length(R[i][2])]
+
+    if is_cvp
+      tau = target[per[i]]
+      for j in (i + 1):n
+        tau += R[i][2][j - i] * target[per[j]]
+      end
+      @assert is_integer(b[i] * tau)
+      shift[i] = numerator(b[i] * tau)
+    end
 
     # lambda[i] = c[i] * R[i][1]
     lambda_val = c_int[i] * R[i][1]
@@ -309,23 +405,30 @@ function _prepare_finckepohstint_large(gram::ZZMatrix, M::ZZRingElem, chol = Cho
   end
 
   x = zeros_array(ZZ, n)
-  ctx = FinckePohstIntCtx{ZZRingElem}(M, n, e_arr, b, doc, docp1, mu, lambda, tlob, x)
+  if is_cvp
+    ctx = FinckePohstIntCtx{ZZRingElem, true}(M, n, e_arr, b, shift, doc,
+                                              docp1, mu, lambda, tlob, x)
+  else
+    ctx = FinckePohstIntCtx{ZZRingElem, false}(M, n, e_arr, b, shift, doc,
+                                               docp1, mu, lambda, tlob, x)
+  end
   return ctx, per
 end
 
 # Core recursive enumeration. Calls f(x, norm) for each vector found.
 # Ni is the remaining bound (integer), i is the current dimension (1-indexed),
 # zero_so_far tracks whether all x[j] for j > i are zero (for sign reduction).
-function _finckepohstint_rec!(f::F, ctx::FinckePohstIntCtx, i::Int, Ni,
-                        zero_so_far::Bool) where {F}
+function _finckepohstint_rec!(f::F, ctx::FinckePohstIntCtx{T, CVP}, i::Int, Ni,
+                        zero_so_far::Bool) where {F, T, CVP}
   Ni < 0 && return
   if i == 0
-    zero_so_far && return
+    !CVP && zero_so_far && return
     f(ctx.x, ctx.M - Ni)
     return
   end
-  # Compute S = -sum(e[i][j-i] * x[j] for j in i+1:n)
-  S = 0
+  # Compute the scaled center
+  # S = shift[i] - sum(e[i][j-i] * x[j] for j in i+1:n).
+  S = CVP ? @inbounds(ctx.shift[i]) : zero(T)
   @inbounds for j in (i + 1):ctx.n
     S -= ctx.e[i][j - i] * ctx.x[j]
   end
@@ -340,7 +443,7 @@ function _finckepohstint_rec!(f::F, ctx::FinckePohstIntCtx, i::Int, Ni,
   Nim1 = in_Nim1
   dNim1 = in_dNim1
   while Nim1 >= 0
-    if zero_so_far
+    if !CVP && zero_so_far
       @inbounds ctx.x[i] < 0 && break
       @inbounds _finckepohstint_rec!(f, ctx, i - 1, Nim1, ctx.x[i] == 0)
     else
@@ -355,7 +458,7 @@ function _finckepohstint_rec!(f::F, ctx::FinckePohstIntCtx, i::Int, Ni,
   dNim1 = -in_dNim1
   Nim1 = in_Nim1 + dNim1
   while Nim1 >= 0
-    if zero_so_far
+    if !CVP && zero_so_far
       @inbounds if ctx.x[i] >= 0
         @inbounds _finckepohstint_rec!(f, ctx, i - 1, Nim1, ctx.x[i] == 0)
       end
@@ -470,16 +573,18 @@ function __enumerate_gram_fp(T, Gi::ZZMatrix, mi, ma, a, b, c, ::Type{Int})
   return _short_vectors_gram_finckepohstint(Gi, Int(mi), Int(ma); normtype = ZZRingElem)
 end
 
-struct _FPCallback{S, T, U, V, W, X}
+struct _FPCallback{S, T, U, V, W, X, Z}
   result::S
   per::T
   l::U
   pp_vector::V
   pp_length::W
   n::X
+  canonicalize::Bool
+  elem_type::Type{Z}
 end
 
-function (f::_FPCallback{S, T, U, V, W, X})(x, norm) where {S, T, U, V, W, X}
+function (f::_FPCallback{S, T, U, V, W, X, Z})(x, norm) where {S, T, U, V, W, X, Z}
   l = f.l
   if !(l isa Nothing)
     if norm < l
@@ -493,33 +598,45 @@ function (f::_FPCallback{S, T, U, V, W, X})(x, norm) where {S, T, U, V, W, X}
   pp_length = f.pp_length
   result = f.result
 
-  v = Vector{Int}(undef, n)
+  v = Vector{Z}(undef, n)
   if per !== nothing
     @inbounds for j in 1:n
       v[per[j]] = x[j]
     end
   end
-  _canonicalize_finckepohstint!(v)
+  if f.canonicalize
+    _canonicalize_finckepohstint!(v)
+  end
   push!(result, (pp_vector(v), pp_length(norm)))
 end
 
-function __enumerate_gram(::Type{FinckePohstInt}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::X, pp_length::Y, ::Type{ElemType}; chol = CholeskyIntegralDenom(G)) where {X, Y, ElemType, NormType}
+function __enumerate_gram(::Type{FinckePohstInt}, G::ZZMatrix,
+                          l::Union{Int, ZZRingElem, Nothing},
+                          c::Union{Int, ZZRingElem}, ::Type{NormType},
+                          pp_vector::X, pp_length::Y, ::Type{ElemType};
+                          chol = CholeskyIntegralDenom(G),
+                          target::Union{Nothing, Vector{QQFieldElem}} = nothing) where {X, Y, ElemType, NormType}
   gram = G
   n = nrows(gram)
   if n == 0
     return Tuple{Vector{ElemType}, NormType}[]
   end
 
-  if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(gram, Int(c), chol); success end
+  if fits(Int, c) && begin
+       success, ctx, per = _try_prepare_finckepohstint_small(gram, Int(c), chol; target)
+       success
+     end
     result = Tuple{Vector{ElemType}, NormType}[]
     n = ctx.n
-    callback = _FPCallback(result, per, l, pp_vector, pp_length, n)
+    callback = _FPCallback(result, per, l, pp_vector, pp_length, n,
+                           target === nothing, ElemType)
     _finckepohstint_rec!(callback, ctx, n, ctx.M, true)
     return result
   else
-    ctx, per = _prepare_finckepohstint_large(gram, ZZ(c), chol)
+    ctx, per = _prepare_finckepohstint_large(gram, ZZ(c), chol; target)
     result = Tuple{Vector{ElemType}, NormType}[]
-    _callback = _FPCallback(result, per, l, pp_vector, pp_length, n)
+    _callback = _FPCallback(result, per, l, pp_vector, pp_length, n,
+                            target === nothing, ElemType)
     _finckepohstint_rec!(_callback, ctx, n, ctx.M, true)
     return result
   end
@@ -537,8 +654,8 @@ end
 
 # Per-level state arrays store exactly what is needed to resume the two-phase
 # enumeration (negative direction then positive direction) at each depth.
-mutable struct FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}
-  ctx::FinckePohstIntCtx{T}
+mutable struct FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormType}
+  ctx::FinckePohstIntCtx{T, CVP}
   per::Union{Nothing, Vector{Int}}
   l::Union{T, Nothing}          # lower bound, or nothing
   pp_vector::F1
@@ -553,13 +670,23 @@ mutable struct FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}
   tmp_v::Vector{ElemType}       # scratch buffer for building output vector
 end
 
-Base.eltype(::Type{FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}}) where {T, F1, F2, ElemType, NormType} =
+function _finckepohstint_iter_ctx(ctx::FinckePohstIntCtx{T, CVP}, per, l,
+                                   pp_vector::F1, pp_length::F2,
+                                   Nim1, dNim1, in_xi, in_Nim1, in_dNim1,
+                                   phase, zero_so_far, tmp_v::Vector{ElemType},
+                                   ::Type{NormType}) where {T, CVP, F1, F2, ElemType, NormType}
+  return FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormType}(
+    ctx, per, l, pp_vector, pp_length, Nim1, dNim1, in_xi, in_Nim1,
+    in_dNim1, phase, zero_so_far, tmp_v)
+end
+
+Base.eltype(::Type{FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormType}}) where {T, CVP, F1, F2, ElemType, NormType} =
   Tuple{Vector{ElemType}, NormType}
 
 Base.IteratorSize(::Type{S}) where {S <: FinckePohstIntIterCtx}= Base.SizeUnknown()
 
 # First iterate: initialise state at the top level and run state machine.
-function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) where {T, F1, F2, ElemType, NormType}
+function Base.iterate(C::FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormType}) where {T, CVP, F1, F2, ElemType, NormType}
   ctx = C.ctx
   n   = ctx.n
   x   = ctx.x
@@ -583,7 +710,7 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) w
   # ---- enter_level -------------------------------------------------------
   # Compute the state at level i given the bound Ni from the parent.
   @label enter_level
-  S = zero(T)
+  S = CVP ? @inbounds(ctx.shift[i]) : zero(T)
   @inbounds for j in (i + 1):n
     S -= ctx.e[i][j - i] * x[j]
   end
@@ -597,7 +724,7 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) w
   @inbounds in_dNim1[i] = dNim1[i]
   @inbounds x[i]       = xi
   @inbounds phase[i]   = zero(Int8)
-  @inbounds zero_so_far[i] = (i == n) || (zero_so_far[i + 1] && iszero(x[i + 1]))
+  @inbounds zero_so_far[i] = !CVP && ((i == n) || (zero_so_far[i + 1] && iszero(x[i + 1])))
 
   # ---- try_descend -------------------------------------------------------
   # Decide whether to descend, yield, skip, or terminate, based on current
@@ -607,18 +734,20 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) w
   if @inbounds(phase[i]) == 0
     # ---- negative direction ----
     @inbounds(Nim1[i]) < 0 && @goto switch_phase
-    (zero_so_far_i && @inbounds(x[i]) < 0) && @goto switch_phase
+    (!CVP && zero_so_far_i && @inbounds(x[i]) < 0) && @goto switch_phase
     if i == 1
       zero_next = zero_so_far_i && @inbounds(iszero(x[1]))
-      if !zero_next
+      if CVP || !zero_next
         norm = ctx.M - @inbounds(Nim1[1])
         if l isa Nothing || norm >= l
           if per !== nothing
-            @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
+            @inbounds for j in 1:n; tmp_v[per[j]] = x[j]; end
           else
-            @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
+            @inbounds for j in 1:n; tmp_v[j] = x[j]; end
           end
-          _canonicalize_finckepohstint!(tmp_v)
+          if !CVP
+            _canonicalize_finckepohstint!(tmp_v)
+          end
           return (pp_vector(tmp_v)::Vector{ElemType}, begin _r = pp_length(norm); _r isa NormType ? _r : NormType(_r) end::NormType), 1
         end
       end
@@ -630,18 +759,20 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}) w
   else
     # ---- positive direction ----
     @inbounds(Nim1[i]) < 0 && @goto ascend
-    (zero_so_far_i && @inbounds(x[i]) < 0) && @goto update_pos
+    (!CVP && zero_so_far_i && @inbounds(x[i]) < 0) && @goto update_pos
     if i == 1
       zero_next = zero_so_far_i && @inbounds(iszero(x[1]))
-      if !zero_next
+      if CVP || !zero_next
         norm = ctx.M - @inbounds(Nim1[1])
         if l isa Nothing || norm >= l
           if per !== nothing
-            @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
+            @inbounds for j in 1:n; tmp_v[per[j]] = x[j]; end
           else
-            @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
+            @inbounds for j in 1:n; tmp_v[j] = x[j]; end
           end
-          _canonicalize_finckepohstint!(tmp_v)
+          if !CVP
+            _canonicalize_finckepohstint!(tmp_v)
+          end
           return (pp_vector(tmp_v)::Vector{ElemType}, begin _r = pp_length(norm); _r isa NormType ? _r : NormType(_r)end::NormType), 1
         end
       end
@@ -690,7 +821,7 @@ end
 # per-step array loads/stores in the most frequently revisited levels.
 # The general state machine below only handles levels i >= 3; when it descends
 # back to level 2 or level 1 it reloads the locals and returns to the hot path.
-@inline function Base.iterate(C::FinckePohstIntIterCtx{T, F1, F2, ElemType, NormType}, it::Int) where {T, F1, F2, ElemType, NormType}
+@inline function Base.iterate(C::FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormType}, it::Int) where {T, CVP, F1, F2, ElemType, NormType}
   ctx      = C.ctx
   n        = ctx.n
   x        = ctx.x
@@ -756,11 +887,13 @@ end
         @inbounds zero_so_far[2] = _zsf2
       end
       if per !== nothing
-        @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
+        @inbounds for j in 1:n; tmp_v[per[j]] = x[j]; end
       else
-        @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
+        @inbounds for j in 1:n; tmp_v[j] = x[j]; end
       end
-      _canonicalize_finckepohstint!(tmp_v)
+      if !CVP
+        _canonicalize_finckepohstint!(tmp_v)
+      end
       return (pp_vector(tmp_v), pp_length(norm)), 1
     end
   end
@@ -795,11 +928,13 @@ end
           @inbounds zero_so_far[2] = _zsf2
         end
         if per !== nothing
-          @inbounds for j in 1:n; tmp_v[per[j]] = Int(x[j]); end
+          @inbounds for j in 1:n; tmp_v[per[j]] = x[j]; end
         else
-          @inbounds for j in 1:n; tmp_v[j] = Int(x[j]); end
+          @inbounds for j in 1:n; tmp_v[j] = x[j]; end
         end
-        _canonicalize_finckepohstint!(tmp_v)
+        if !CVP
+          _canonicalize_finckepohstint!(tmp_v)
+        end
         return (pp_vector(tmp_v), pp_length(norm)), 1
       end
     end
@@ -854,7 +989,7 @@ end
   # and returns to the corresponding hot path above.
 
   @label enter_level
-  S = zero(T)
+  S = CVP ? @inbounds(ctx.shift[i]) : zero(T)
   @inbounds for j in (i + 1):n
     S -= ctx.e[i][j - i] * x[j]
   end
@@ -868,7 +1003,7 @@ end
   @inbounds in_dNim1[i] = dNim1[i]
   @inbounds x[i]       = xi
   @inbounds phase[i]   = zero(Int8)
-  @inbounds zero_so_far[i] = (i == n) || (zero_so_far[i + 1] && iszero(x[i + 1]))
+  @inbounds zero_so_far[i] = !CVP && ((i == n) || (zero_so_far[i + 1] && iszero(x[i + 1])))
   if i == 2
     # Returning to level 2: reload locals and re-enter the hot path.
     _x2   = xi
@@ -928,26 +1063,41 @@ end
 
 # Dispatch hook: create a FinckePohstIntIterCtx for the given gram matrix.
 # Tries the small (Int) path first; falls back to the large (ZZRingElem) path.
-function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix, l::Union{Int, ZZRingElem, Nothing}, c::Union{Int, ZZRingElem}, ::Type{NormType}, pp_vector::F1, pp_length::F2, ::Type{ElemType}; chol = CholeskyIntegralDenom(G)) where {F1, F2, ElemType, NormType}
+function __enumerate_gram(::Type{FinckePohstIntIterCtx}, G::ZZMatrix,
+                          l::Union{Int, ZZRingElem, Nothing},
+                          c::Union{Int, ZZRingElem}, ::Type{NormType},
+                          pp_vector::F1, pp_length::F2, ::Type{ElemType};
+                          chol = CholeskyIntegralDenom(G),
+                          target::Union{Nothing, Vector{QQFieldElem}} = nothing) where {F1, F2, ElemType, NormType}
   n = nrows(G)
   if n == 0
-    dummy = FinckePohstIntCtx{ElemType}(0, 0, Vector{Vector{Int}}(), Int[], Int[], Int[], Int[], Int[], Int[], Int[])
-    return FinckePohstIntIterCtx{ElemType, F1, F2, ElemType, NormType}(
-      dummy, nothing, nothing, pp_vector, pp_length,
-      Int[], Int[], Int[], Int[], Int[], Int8[], Bool[], Int[])
+    if target === nothing
+      dummy = FinckePohstIntCtx{Int, false}(0, 0, Vector{Vector{Int}}(),
+        Int[], Int[], Int[], Int[], Int[], Int[], Int[], Int[])
+    else
+      dummy = FinckePohstIntCtx{Int, true}(0, 0, Vector{Vector{Int}}(),
+        Int[], Int[], Int[], Int[], Int[], Int[], Int[], Int[])
+    end
+    return _finckepohstint_iter_ctx(dummy, nothing, nothing, pp_vector, pp_length,
+      Int[], Int[], Int[], Int[], Int[], Int8[], Bool[], Vector{ElemType}(), NormType)
   end
-  if fits(Int, c) && begin success, ctx, per = _try_prepare_finckepohstint_small(G, Int(c), chol); success end
+  if fits(Int, c) && begin
+       success, ctx, per = _try_prepare_finckepohstint_small(G, Int(c), chol; target)
+       success
+     end
     _l = l isa Nothing ? nothing : Int(l)
-    return FinckePohstIntIterCtx{Int, F1, F2, ElemType, NormType}(
+    return _finckepohstint_iter_ctx(
       ctx, per, _l, pp_vector, pp_length,
       zeros(Int, n), zeros(Int, n), zeros(Int, n),
-      zeros(Int, n), zeros(Int, n), zeros(Int8, n), falses(n), zeros(Int, n))
+      zeros(Int, n), zeros(Int, n), zeros(Int8, n), falses(n),
+      Vector{ElemType}(undef, n), NormType)
   else
-    ctx, per = _prepare_finckepohstint_large(G, ZZ(c), chol)
+    ctx, per = _prepare_finckepohstint_large(G, ZZ(c), chol; target)
     _l = l isa Nothing ? nothing : ZZ(l)
-    return FinckePohstIntIterCtx{ZZRingElem, F1, F2, ElemType, NormType}(
+    return _finckepohstint_iter_ctx(
       ctx, per, _l, pp_vector, pp_length,
       zeros_array(ZZ, n), zeros_array(ZZ, n), zeros_array(ZZ, n),
-      zeros_array(ZZ, n), zeros_array(ZZ, n), zeros(Int8, n), falses(n), zeros(Int, n))
+      zeros_array(ZZ, n), zeros_array(ZZ, n), zeros(Int8, n), falses(n),
+      Vector{ElemType}(undef, n), NormType)
   end
 end

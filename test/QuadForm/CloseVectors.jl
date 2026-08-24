@@ -143,6 +143,53 @@
   Lm = rescale(L,-1)
   @test_throws ArgumentError close_vectors(Lm, v, 1)
 
+  @testset "Direct Fincke-Pohst" begin
+    function compare_close_vector_algorithms(L, v, args...; elem_type=ZZRingElem)
+      embedded = close_vectors(L, v, args..., elem_type; algorithm = :embedding)
+      direct = close_vectors(L, v, args..., elem_type; algorithm = :fincke_pohst)
+      direct_iterator = [deepcopy(x) for x in
+        close_vectors_iterator(L, v, args..., elem_type; algorithm = :fincke_pohst)]
+      @test issetequal(direct, embedded)
+      @test issetequal(direct_iterator, embedded)
+      @test length(direct) == length(unique(direct))
+      return direct
+    end
+
+    L = integer_lattice(gram = identity_matrix(QQ, 2))
+    direct = compare_close_vector_algorithms(L, QQFieldElem[1//2, 0], QQ(3//5))
+    @test issetequal(first.(direct), Vector{ZZRingElem}[[0, 0], [1, 0]])
+    @test all(last(x) == 1//4 for x in direct)
+
+    # CVP enumeration must not identify x and -x, and must include zero.
+    direct = compare_close_vector_algorithms(L, QQFieldElem[0, 0], QQ(1))
+    @test issetequal(first.(direct), Vector{ZZRingElem}[
+      [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]])
+
+    direct = compare_close_vector_algorithms(L, QQFieldElem[1, 0], QQ(0))
+    @test direct == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0], 0)]
+
+    # Exact lower bounds use ceil after denominator clearing.
+    compare_close_vector_algorithms(L, QQFieldElem[1//3, -1//3], QQ(1), QQ(2))
+
+    # Rational Gram matrix and a non-trivial LLL transformation.
+    G = matrix(QQ, 3, 3, [5, -4, -3//2, -4, 6, 4, -3//2, 4, 8])
+    L = integer_lattice(gram = G)
+    v = QQFieldElem[1//2, -1//3, 2//5]
+    direct = compare_close_vector_algorithms(L, v, QQ(15))
+    V = rational_span(L)
+    @test all(x -> x[2] == inner_product(V, QQFieldElem.(x[1]) - v,
+                                         QQFieldElem.(x[1]) - v), direct)
+
+    compare_close_vector_algorithms(L, v, QQ(5), QQ(10); elem_type=Int)
+
+    direct = close_vectors(L, v, QQ(15); algorithm = :fincke_pohst, sorting=true)
+    @test issorted(first.(direct))
+
+    @test_throws ArgumentError close_vectors(L, v, QQ(1); algorithm = :unknown)
+    @test_throws ArgumentError collect(
+      close_vectors_iterator(L, v, QQ(1); algorithm = :unknown))
+  end
+
   # Test the legacy interface
 
   Q = matrix(QQ, 4,4,[1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]);
