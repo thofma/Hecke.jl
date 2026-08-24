@@ -748,7 +748,6 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormTyp
           if !CVP
             _canonicalize_finckepohstint!(tmp_v)
           end
-          _canonicalize_finckepohstint!(tmp_v)
           return (pp_vector(tmp_v)::Vector{ElemType}, begin _r = pp_length(norm); _r isa NormType ? _r : NormType(_r) end::NormType), 1
         end
       end
@@ -774,7 +773,6 @@ function Base.iterate(C::FinckePohstIntIterCtx{T, CVP, F1, F2, ElemType, NormTyp
           if !CVP
             _canonicalize_finckepohstint!(tmp_v)
           end
-          _canonicalize_finckepohstint!(tmp_v)
           return (pp_vector(tmp_v)::Vector{ElemType}, begin _r = pp_length(norm); _r isa NormType ? _r : NormType(_r)end::NormType), 1
         end
       end
