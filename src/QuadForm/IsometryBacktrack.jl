@@ -1773,36 +1773,31 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   (ns == 0 || nv == 0) && return ctx
   # G * a for each simple root, so that a pairing is one dot product
   ga = [Int[sum(ctx.G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
-  p = Vector{Int}(undef, ns)
-  q = Vector{Int}(undef, ns)
   old = ctx.colors
   cols = Vector{UInt64}(undef, nv)
   @inbounds for j in 1:nv
+    # The first three power sums do not depend on the order of the terms, so
+    # they describe the multiset without sorting it, and they cost three
+    # multiplications where hashing every term cost a hash.  The pairings are
+    # bounded by the norms, so nothing here can grow.
+    p1 = 0; p2 = 0; p3 = 0
     for t in 1:ns
       s = 0
       gat = ga[t]
       for i in 1:n
         s += Int(ctx.V[i, j]) * gat[i]
       end
-      p[t] = s
-      q[t] = -s
+      p1 += s
+      p2 += s * s
+      p3 += s * s * s
     end
-    sort!(p)
-    sort!(q)
-    # the smaller of the two sequences, so that v and -v get the same colour
-    use_p = true
-    for t in 1:ns
-      if p[t] != q[t]
-        use_p = p[t] < q[t]
-        break
-      end
+    # negating the vector negates the odd power sums; fixing their sign makes
+    # the colour the same for v and -v, which is how colours are compared
+    if p1 < 0 || (p1 == 0 && p3 < 0)
+      p1 = -p1
+      p3 = -p3
     end
-    h = isempty(old) ? UInt64(0) : old[j]
-    src = use_p ? p : q
-    for t in 1:ns
-      h = hash(src[t], h)
-    end
-    cols[j] = h
+    cols[j] = hash(p1, hash(p2, hash(p3, isempty(old) ? UInt64(0) : old[j])))
   end
   ctx.colors = cols
   return ctx
