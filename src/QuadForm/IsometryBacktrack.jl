@@ -1191,6 +1191,12 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
   idbynorm = zeros(Int, (bound + 1) * rwid)
   if !hascol
     for i in 1:n
+      # A basis vector whose norm is above the enumeration bound has no image
+      # among the enumerated vectors -- its level is served from a coset
+      # instead -- and it has no slot in this table, which is indexed by norm
+      # up to the bound.  Indexing it anyway is how a lattice of rank 105 came
+      # to raise a BoundsError instead of being handed back.
+      G[i, i] > bound && continue
       idbynorm[G[i, i] * rwid + brho[i] + rmax + 1] = bcls[i]
     end
   end
@@ -4140,6 +4146,75 @@ function _bt_setup_lookahead!(S::BTSearch, fpd::Vector{Int})
   return S
 end
 
+################################################################################
+#
+#  Why the count is right
+#
+#  Everything returned is verified: each generator M is checked to satisfy
+#  M G M^t = G before it is used, so no isometry reported here is wrong.  The
+#  *order* is a different claim.  It rests on the search being exhaustive, and
+#  that rests on every condition used to discard a candidate being a necessary
+#  condition for an isometry.  They are listed here so the argument can be
+#  checked by reading.
+#
+#  A partial isometry of length k is a tuple (x_1..x_k) with
+#  <x_a, x_b> = <b_a, b_b> for all a, b <= k, where b_a is the a-th basis
+#  vector in the search order.  The search enumerates these, and a full one is
+#  an isometry because the b_a are a basis.
+#
+#  The conditions applied to a candidate x for level I, in `_bt_cands!` and
+#  `_bt_extend!`:
+#
+#  1. `nrm[j] == TN[I]`, the norm matches.  Necessary: an isometry preserves
+#     the form, so <f(b), f(b)> = <b, b>.
+#
+#  2. `<x, x_k> == TS[I, k]` for every level k already fixed.  Necessary: this
+#     is the definition of a partial isometry.  The bucket structure indexes
+#     the vectors by this scalar product and so applies the same condition.
+#
+#  3. `colors[j] == TC[I]`, the colour matches.  The colour is built in
+#     `_bt_root_colors!` from the pairings with the simple roots -- power sums,
+#     so independent of their order -- and from the projection norms onto the
+#     root components, grouped by component type and by the glue invariant.
+#     Necessary provided the group we are searching for permutes the simple
+#     roots within each such group, which it does: an isometry fixing rho
+#     preserves the fundamental root system, permutes components of equal type,
+#     and cannot exchange components whose glue groups differ.
+#
+#  4. `<x, rho> == TR[I]`, the pairing with the Weyl vector matches.  Necessary
+#     because the search is for Aut(L, rho), whose elements fix rho.  Used only
+#     when rho is known; `rhov` is empty otherwise and the test is skipped.
+#
+#  5. `_bt_combs_check!`, the scalar product combination test.  It compares the
+#     Gram matrix of sums over classes of vectors picked out by invariants.  An
+#     isometry maps each class onto the corresponding class, hence each sum to
+#     the corresponding sum, hence preserves that Gram matrix.  Necessary.
+#
+#  6. For levels above `ncheap`, whose images are not among the enumerated
+#     vectors, `_bt_extend_coset!` solves the linear conditions exactly and
+#     enumerates the resulting coset by norm.  This is a complete enumeration
+#     of the possibilities, not a filter.
+#
+#  The enumeration itself must be complete: `_bt_enum!` is exact, fraction
+#  free, with an a priori bound checked once during setup which raises
+#  `BTOverflow` rather than wrapping.  The bound is the largest diagonal entry,
+#  so every possible image of every basis vector has norm at most that.
+#
+#  Two shortcuts bypass the search and carry their own arguments.  The Weyl
+#  group factor uses Aut(L) = W ⋊ Aut(L, rho), which holds for the roots of any
+#  fixed norm and divisor, since isometries preserve both.  The spanning-roots
+#  shortcut in `_bt_roots_shortcut` enumerates the diagram automorphisms
+#  exhaustively and declines rather than answering whenever it cannot be sure
+#  it has every root or the search would be too large.
+#
+#  Four further criteria were built during this work, made correct, measured to
+#  prune nothing, and are NOT called: the class sum refinement, the ordered
+#  partition refinement, the direct summand test, and the ambient look ahead.
+#  They are not part of this argument.  If any is switched on again, it has to
+#  be added to the list above.
+#
+################################################################################
+
 function _bt_extend!(S::BTSearch, d::Int)
   n = S.n
   d == n && return true
@@ -5159,10 +5234,21 @@ function _bt_short_basis(G::Matrix{Int})
   # work wasted when none of them succeeds is bounded by a few times that; a
   # lattice with many distinct diagonal entries would otherwise try them all
   length(trials) > 3 && resize!(trials, 3)
+  # Each trial enumerates, and at high rank an enumeration at one of these
+  # bounds can be astronomically large: a rank 64 lattice with diagonal entries
+  # up to ten will not come back.  So the same cost model that decides the
+  # affordable bound is consulted first, and a trial too expensive to be worth
+  # its own saving is skipped.  A lattice out of range must be handed back in
+  # bounded time, not ground on.
+  lv = _bt_ball_volumes(n)
+  qq = Vector{Float64}(undef, n)
+  AA = Matrix{Float64}(undef, n, n)
+  gs_ok = _bt_gs_norms!(qq, AA, G, collect(1:n), n)
   A = Matrix{Float64}(undef, n, n)           # row echelon form of what we took
   piv = Vector{Int}(undef, n)
   row = Vector{Float64}(undef, n)
   for b in trials
+    gs_ok && _bt_enum_cost(qq, n, Float64(b), lv) > log(2.0e6) && continue
     V, nrm = _bt_short_vectors(G, b)
     nv = size(V, 2)
     nv >= n || continue
@@ -5234,7 +5320,7 @@ function _bt_enum_score(G::Matrix{Int})
   return _bt_enum_cost(q, n, Float64(b), lv)
 end
 
-function _bt_reduce_gram(L::ZZLat)
+function _bt_reduce_gram(L::ZZLat; cheap_only::Bool = false)
   G = gram_matrix(L)
   s = sign(G[1, 1])
   d = denominator(G)
@@ -5262,6 +5348,7 @@ function _bt_reduce_gram(L::ZZLat)
       T = identity_matrix(ZZ, nrows(Gint))
     end
   end
+  cheap_only && return Gm, T, d//c
   sb = _bt_short_basis(Gm)
   if sb !== nothing
     Gs, U = sb
@@ -5469,14 +5556,32 @@ function _automorphism_group_backtrack(L::ZZLat)
   if n == 1
     return ZZMatrix[-identity_matrix(ZZ, 1)], ZZRingElem(2)
   end
-  red = _bt_reduce_gram(L)
-  red === nothing && return nothing
-  G, T = red[1], red[2]
   # The roots need only an enumeration up to twice the exponent of the
   # discriminant group, which is usually far below the largest diagonal entry.
   # When they span the whole space the group follows from them alone, with no
   # short vectors at all -- and that is the difference between milliseconds and
   # eight million vectors on the lattices of Chenevier and Taibi.
+  #
+  # It is tried on the cheap reduction, before the search for a basis at a
+  # lower bound, because that search is expensive and pointless whenever the
+  # shortcut is going to answer: on a Niemeier lattice with root system D12^2
+  # the shortcut takes 0.013 seconds and the basis search it used to run first
+  # took four.
+  let redc = _bt_reduce_gram(L; cheap_only = true)
+    if redc !== nothing
+      sc = _bt_roots_shortcut(redc[1])
+      if sc !== nothing
+        gens0, ord = sc
+        Tinv = inv(redc[2])
+        gens = ZZMatrix[Tinv * matrix(ZZ, g) * T for (g, T) in
+                        ((g, redc[2]) for g in gens0)]
+        return gens, ord
+      end
+    end
+  end
+  red = _bt_reduce_gram(L)
+  red === nothing && return nothing
+  G, T = red[1], red[2]
   let sc = _bt_roots_shortcut(G)
     if sc !== nothing
       gens0, ord = sc
