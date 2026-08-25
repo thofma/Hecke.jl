@@ -276,9 +276,25 @@ benchmark, timing both and checking every order agrees:
     Hecke tuned        3.1 s     5.8 ms    2.9 ms    0.46 s
 
 The worst case improved by a factor of a hundred and sixty and the mean by
-nine.  **The worst case is now level with Hecke**, 0.47 seconds against 0.46,
+nine.  **The worst case is now level with Hecke**, 0.46 seconds against 0.42,
 which is one of the three parts of the objective.  The median is 1.6 times
-behind and the mean 3.2, so the objective is not yet met.
+behind and the mean 3.0, so the objective is not yet met.
+
+What stands between here and the other two is now identified and is not a
+matter of tuning.  On a rank 17 lattice of 34.lattices the whole call takes
+11.4 milliseconds, of which the enumeration and the context built around it is
+6.4.  That is not slow in itself -- the same vectors cost Hecke's own
+`short_vectors` 19.5 milliseconds against our 11.7, so our enumeration is the
+faster of the two.  Hecke wins because it does not enumerate them: its
+targeted enumeration produces only the vectors that could be an image, and on
+these lattices that is a small fraction of the shell.
+
+So the median gap is section 4 of the write-up and nothing else, and the mean
+gap is the same thing showing up on the lattices with the largest shells.  It
+is a substantial build -- the recursion over the flag of successive
+sublattices, with the fibre matching of Remark 4.1(iii), which is what makes it
+cheaper rather than more expensive than plain enumeration -- and it is the
+last structural piece this experiment is missing.
 
 What closed the gap was not the search but the machinery around it: a shortcut
 that answered from the root system was spending more time deciding whether it
