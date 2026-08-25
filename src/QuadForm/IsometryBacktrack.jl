@@ -1650,6 +1650,87 @@ function _bt_diagram_autos(t::Tuple{Symbol, Int})
   return 1
 end
 
+# The recursion of the diagram search, as a plain function rather than a
+# closure.  As a closure it captured a dozen variables and Julia boxed them,
+# which cost eighty three microseconds a node for what is a handful of integer
+# comparisons.
+struct BTDiag
+  n::Int
+  cap::Int
+  C::Matrix{Int}
+  nrm::Vector{Int}
+  divs::Vector{Int}
+  ordc::Vector{Int}
+  compof::Vector{Int}
+  csize::Vector{Int}
+  B::ZZMatrix
+  adjB::ZZMatrix
+  dB::ZZRingElem
+  G::Matrix{Int}
+end
+
+function _bt_diag_rec!(D::BTDiag, i::Int, perm::Vector{Int}, used::BitVector,
+                       cmap::Vector{Int}, ctaken::BitVector,
+                       visited::Base.RefValue{Int}, res::Vector{Matrix{Int}})
+  n = D.n
+  visited[] += 1
+  visited[] > D.cap && return false
+  if i > n
+    P = zero_matrix(ZZ, n, n)
+    @inbounds for a in 1:n, b in 1:n
+      P[a, b] = D.B[perm[a], b]
+    end
+    Mz = D.adjB * P
+    M = zeros(Int, n, n)
+    @inbounds for a in 1:n, b in 1:n
+      q, r = divrem(Mz[a, b], D.dB)
+      is_zero(r) || return true
+      fits(Int, q) || return true
+      M[a, b] = Int(q)
+    end
+    _bt_verify(M, D.G, D.G) && push!(res, M)
+    return true
+  end
+  p = D.ordc[i]
+  kp = D.compof[p]
+  @inbounds for c in 1:n
+    used[c] && continue
+    D.nrm[c] == D.nrm[p] || continue
+    D.divs[c] == D.divs[p] || continue
+    kc = D.compof[c]
+    D.csize[kc] == D.csize[kp] || continue
+    if cmap[kp] != 0
+      cmap[kp] == kc || continue
+    elseif ctaken[kc]
+      continue
+    end
+    ok = true
+    for j in 1:(i - 1)
+      q = D.ordc[j]
+      if D.C[p, q] != D.C[c, perm[q]] || D.C[q, p] != D.C[perm[q], c]
+        ok = false
+        break
+      end
+    end
+    ok || continue
+    perm[p] = c
+    used[c] = true
+    fresh = cmap[kp] == 0
+    if fresh
+      cmap[kp] = kc
+      ctaken[kc] = true
+    end
+    keep = _bt_diag_rec!(D, i + 1, perm, used, cmap, ctaken, visited, res)
+    used[c] = false
+    if fresh
+      cmap[kp] = 0
+      ctaken[kc] = false
+    end
+    keep || return false
+  end
+  return true
+end
+
 function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
                               cap::Int = 0,
                               types::Vector{Tuple{Symbol, Int}} = Tuple{Symbol, Int}[])
@@ -1665,7 +1746,7 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
   # the leaf buys roughly thirty times as many of them as the rational version
   # allowed, but the budget still has to be small: a generous one is paid in
   # full on every lattice where the shortcut is going to fail.
-  cap == 0 && (cap = max(500, div(3_000_000, max(n * n, 1))))
+  cap == 0 && (cap = max(5000, div(30_000_000, max(n * n, 1))))
   # Decline before enumerating rather than after.  Each leaf of the search
   # below builds a rational matrix product of size n, so reaching the cap is
   # not cheap: on a lattice with root system A_1^4 + D_4^4 + D_6, where the
@@ -1709,6 +1790,36 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
   # permutation is being built, alongside the Cartan matrix.  It costs one pass
   # over G*a per root and prunes the tree above the leaves, which is where the
   # work turned out to be.
+  # The order in which the roots are assigned decides the size of the tree.
+  # Two roots in different components are orthogonal, so the Cartan condition
+  # relating them is satisfied by almost anything and constrains nothing; only
+  # roots in the *same* component constrain each other.  Assigning them
+  # component by component therefore makes every choice after the first in a
+  # component immediately constrained, where an interleaved order lets the tree
+  # grow wide before any constraint bites.
+  cmps = _bt_root_components(G, simple, n)
+  ordc = Int[]
+  for idx in cmps
+    append!(ordc, idx)
+  end
+  length(ordc) == n || (ordc = collect(1:n))
+  # Which component each root belongs to, and how big it is.  An isometry maps
+  # a component onto a component of the same size, and maps all of one
+  # component into the same one.  Neither follows from the Cartan condition
+  # early enough to be useful: two roots in different components are
+  # orthogonal, so nothing stops a partial assignment scattering a component
+  # across several others until a much later level contradicts it.  On lattice
+  # 276 of X26_no1 that was five million nodes to reach 384 leaves.
+  compof = zeros(Int, n)
+  for (k, idx) in enumerate(cmps)
+    for a in idx
+      compof[a] = k
+    end
+  end
+  csize = Int[length(idx) for idx in cmps]
+  nc = length(cmps)
+  cmap = zeros(Int, max(nc, 1))          # component -> its image component
+  ctaken = falses(max(nc, 1))
   divs = zeros(Int, n)
   for i in 1:n
     g = 0
@@ -1728,51 +1839,8 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
   perm = zeros(Int, n)
   used = falses(n)
   visited = Ref(0)
-  function rec(i::Int)
-    # Every node counts, not only the leaves.  The number of leaves is the
-    # order of the diagram group and is known in advance, but the tree above
-    # them is not, and it can be very much larger: on lattice 276 of X26_no1
-    # the diagram group has 384 elements and the shortcut still took 1.3
-    # seconds, where the ordinary search takes 0.34.  Counting nodes makes the
-    # budget bound the work rather than the answer.
-    visited[] += 1
-    visited[] > cap && return false
-    if i > n
-      P = zero_matrix(ZZ, n, n)
-      for a in 1:n, b in 1:n
-        P[a, b] = B[perm[a], b]
-      end
-      Mz = adjB * P
-      M = zeros(Int, n, n)
-      for a in 1:n, b in 1:n
-        q, r = divrem(Mz[a, b], dB)
-        is_zero(r) || return true
-        fits(Int, q) || return true
-        M[a, b] = Int(q)
-      end
-      _bt_verify(M, G, G) && push!(res, M)
-      return true
-    end
-    for c in 1:n
-      used[c] && continue
-      nrm[c] == nrm[i] || continue
-      divs[c] == divs[i] || continue
-      ok = true
-      for j in 1:(i - 1)
-        if C[i, j] != C[c, perm[j]] || C[j, i] != C[perm[j], c]
-          ok = false
-          break
-        end
-      end
-      ok || continue
-      perm[i] = c
-      used[c] = true
-      rec(i + 1) || (used[c] = false; return false)
-      used[c] = false
-    end
-    return true
-  end
-  rec(1) || return nothing
+  DD = BTDiag(n, cap, C, nrm, divs, ordc, compof, csize, B, adjB, dB, G)
+  _bt_diag_rec!(DD, 1, perm, used, cmap, ctaken, visited, res) || return nothing
   visited[] > cap && return nothing
   return res
 end
