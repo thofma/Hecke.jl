@@ -2284,6 +2284,11 @@ end
 #
 # Colours are compared without regard to sign, so the multiset of `v` and the
 # negated one of `-v` are folded together by taking the smaller of the two.
+# Experiment switch for the projection part of the colour, which the profiler
+# says is the single largest cost on small lattices.  Its benefit was measured
+# on one lattice; whether it pays across the benchmark is what this is for.
+const _BT_USE_PROJ = Ref(true)
+
 function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   n = ctx.n
   nv = ctx.nv
@@ -2309,6 +2314,7 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   # nothing for it to separate and it need not be computed at all.  It costs a
   # Hermite form and a Smith form per component, which is a large part of what
   # a small lattice pays here.
+  _BT_USE_PROJ[] || (comps = Vector{Int}[])
   sizes = Int[length(c) for c in comps]
   needglue = length(unique(sizes)) < length(sizes)
   glue = needglue ? _bt_component_glue(ctx.G, simple, comps, n) :
