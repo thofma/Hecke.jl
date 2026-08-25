@@ -1651,10 +1651,16 @@ function _bt_diagram_autos(t::Tuple{Symbol, Int})
 end
 
 function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
-                              cap::Int = 200000,
+                              cap::Int = 0,
                               types::Vector{Tuple{Symbol, Int}} = Tuple{Symbol, Int}[])
   n = size(G, 1)
   length(simple) == n || return nothing
+  # A leaf costs a rational matrix product of size n, so the number of leaves
+  # worth trying falls with the rank.  A fixed cap of two hundred thousand was
+  # far too generous: lattice 1341 of X26_no1 has diagram group 186624, just
+  # under it, and took eighteen minutes to work through them.  This budget is
+  # about a second's worth.
+  cap == 0 && (cap = max(200, div(2_000_000, max(n * n, 1))))
   # Decline before enumerating rather than after.  Each leaf of the search
   # below builds a rational matrix product of size n, so reaching the cap is
   # not cheap: on a lattice with root system A_1^4 + D_4^4 + D_6, where the
