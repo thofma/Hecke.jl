@@ -264,6 +264,38 @@ work on is right, but the aggregate has to be measured too, or an
 implementation can be tuned into being excellent on the cases one looks at and
 mediocre everywhere else without ever noticing.
 
+## 6d. Where the objective stands
+
+The target agreed with Simon is to beat Hecke on the mean, the median and the
+worst case, not on every lattice.  Over 533 lattices sampled across the
+benchmark, timing both and checking every order agrees:
+
+                       total      mean     median    worst
+    start of the day  87.8 s   164.8 ms    4.5 ms   75.9 s
+    now               12.2 s    22.8 ms    4.4 ms    1.00 s
+    Hecke tuned        3.0 s     5.5 ms    2.7 ms    0.41 s
+
+The worst case improved by a factor of seventy six and the mean by seven, and
+the remaining gaps are 4.1 times on mean, 1.6 on median and 2.4 on worst.  The
+objective is not met.
+
+What closed the gap was not the search but the machinery around it: a shortcut
+that answered from the root system was spending more time deciding whether it
+applied than the ordinary search took, and its budget was counting the wrong
+thing.  Every one of the eight lattices that took more than a minute was that
+same fault, and they are now between 0.03 and 1.2 seconds.
+
+What is left is a distribution rather than an outlier: the twelve slowest
+lattices are 39 percent of the total, and each of them is one where Hecke's
+root machinery answers in about four milliseconds and this search does not.
+Fixing one only promotes the next.  The systematic difference is that when the
+roots span, Hecke reduces the problem to the root system and is done, while
+this implementation falls back to a full search whenever the permutation
+search over the simple roots is too large.  Making that case cheap -- by
+working with the glue code on a few points rather than by enumerating
+permutations of the simple roots -- is the remaining structural piece, and it
+is worth roughly the factor of four that stands between here and the target.
+
 ## 7. Methodology
 
 * **Warm every path before timing it, not just the new one.** Two conclusions
