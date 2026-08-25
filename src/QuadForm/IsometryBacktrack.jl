@@ -2304,10 +2304,22 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   # and not over all components at once.  Without this the ten A_1 components
   # of a lattice like 1885 of X26_no1 are indistinguishable and the search has
   # to try their permutations.
-  glue = _bt_component_glue(ctx.G, simple, comps, n)
+  # The glue invariant is only ever used to separate components which are
+  # otherwise alike, so when no two components have the same size there is
+  # nothing for it to separate and it need not be computed at all.  It costs a
+  # Hermite form and a Smith form per component, which is a large part of what
+  # a small lattice pays here.
+  sizes = Int[length(c) for c in comps]
+  needglue = length(unique(sizes)) < length(sizes)
+  glue = needglue ? _bt_component_glue(ctx.G, simple, comps, n) :
+                    [ZZRingElem[] for _ in comps]
   gkey = [(length(comps[t]), glue[t]) for t in 1:length(comps)]
   ugrp = sort(unique(gkey))
-  grpof = [findfirst(isequal(gkey[t]), ugrp) for t in 1:length(comps)]
+  # `findfirst` returns Union{Nothing, Int}, and this is indexed inside the
+  # innermost loop over every short vector, where that union costs far more
+  # than the arithmetic around it
+  grpof = Int[something(findfirst(isequal(gkey[t]), ugrp), 1)
+              for t in 1:length(comps)]
   ngrp = length(ugrp)
   adjs = Vector{Matrix{Int}}(undef, length(comps))
   ok = true
@@ -2344,7 +2356,8 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
       for i in 1:n
         s += Int(ctx.V[i, j]) * gat[i]
       end
-      p1 += s
+      cbuf[t] = s               # kept for the projections below, which used to
+      p1 += s                   #   recompute every one of these dot products
       p2 += s * s
       p3 += s * s * s
     end
@@ -2358,17 +2371,6 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
     # the projection norms, as a multiset over the components: they are
     # permuted along with the components, so power sums again
     if !isempty(comps)
-      for t in 1:ns
-        cbuf[t] = 0
-      end
-      for t in 1:ns
-        s2 = 0
-        gat = ga[t]
-        for i in 1:n
-          s2 += Int(ctx.V[i, j]) * gat[i]
-        end
-        cbuf[t] = s2
-      end
       for g in 1:ngrp
         gr1[g] = 0; gr2[g] = 0
       end
