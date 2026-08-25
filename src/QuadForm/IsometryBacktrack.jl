@@ -4641,13 +4641,24 @@ function _bt_affordable_bound(G::Matrix{Int})
   #
   # Choosing the smaller bound that way was implemented and reverted, because
   # it gives a WRONG ORDER on E_8 + [4]: 2786918400 against the true
-  # 1393459200, exactly twice.  Every other member of the family, from m = 2 to
-  # m = 1000, came out right.  So there is a real bug on the coset path which
-  # the present bound choice happens to hide, and it has to be found before the
-  # speedup can be taken.  A plausible direction: with the largest norm taken
-  # first, the coset level runs with nothing yet fixed, so its coset is every
-  # vector of that norm rather than only those in the orthogonal complement,
-  # and E_8 has 2160 vectors of norm 4 for the search to get lost among.
+  # 1393459200, exactly twice.  What is known about it, reproduced by passing
+  # `bound = 2` to `_bt_automorphism_group` on that lattice:
+  #
+  #   * every generator returned is a genuine isometry, `M G M^t = G` holds for
+  #     all eleven of them, so the group is right and the *order* is not;
+  #   * with the bound at 2 the vector of norm 4 spanning the second summand is
+  #     a root that is never seen, so the Weyl group is computed from an
+  #     incomplete root system.  That by itself is sound -- the decomposition
+  #     holds for the roots of any fixed norm and divisor -- and E_8 + [100]
+  #     does the same thing and comes out right;
+  #   * what is different at m = 4 is that E_8 itself has 2160 vectors of norm
+  #     4, so the coset level's candidates collide with enumerated vectors of
+  #     the same norm.  At m = 100 nothing in E_8 has that norm and there is no
+  #     collision.
+  #
+  # So the suspicion is the interaction between a coset level and enumerated
+  # vectors of equal norm, in the accounting rather than in the search.  Until
+  # that is found the larger bound is used, which cannot reach the situation.
   return best
 end
 
@@ -4795,11 +4806,12 @@ struct BTBudget <: Exception end
 
 function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
                                      order_mode::Int = 0,
-                                     totallimit::Int = typemax(Int))
+                                     totallimit::Int = typemax(Int),
+                                     bound::Int = 0)
   # the component invariant is only used to refine the initial partition here,
   # which the fingerprint does anyway, so it must not cost more than a sweep
   t0 = time()
-  bnd = _bt_affordable_bound(G)
+  bnd = bound > 0 ? bound : _bt_affordable_bound(G)
   bnd == 0 && throw(BTOverflow())
   ctx = BTCtx(G, bnd; comp_budget = -2)
   n = ctx.n
@@ -5127,8 +5139,8 @@ generators are the images of the standard basis vectors.
 # score is the product of the candidate counts -- the size of the tree if
 # nothing pruned -- which picks the good order on every lattice measured.
 function _bt_automorphism_group(G::Matrix{Int}; verbose::Bool = false,
-                                order_mode::Int = -1)
-  res = _bt_automorphism_group_data(G; verbose, order_mode)
+                                order_mode::Int = -1, bound::Int = 0)
+  res = _bt_automorphism_group_data(G; verbose, order_mode, bound)
   return res[1], res[2]
 end
 
