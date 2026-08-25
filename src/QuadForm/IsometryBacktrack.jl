@@ -1660,7 +1660,12 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
   # far too generous: lattice 1341 of X26_no1 has diagram group 186624, just
   # under it, and took eighteen minutes to work through them.  This budget is
   # about a second's worth.
-  cap == 0 && (cap = max(200, div(2_000_000, max(n * n, 1))))
+  # About a tenth of a second's worth of leaves, which is well inside what the
+  # ordinary search costs when the shortcut declines.  Integer arithmetic at
+  # the leaf buys roughly thirty times as many of them as the rational version
+  # allowed, but the budget still has to be small: a generous one is paid in
+  # full on every lattice where the shortcut is going to fail.
+  cap == 0 && (cap = max(500, div(3_000_000, max(n * n, 1))))
   # Decline before enumerating rather than after.  Each leaf of the search
   # below builds a rational matrix product of size n, so reaching the cap is
   # not cheap: on a lattice with root system A_1^4 + D_4^4 + D_6, where the
@@ -1694,25 +1699,39 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
     mod(2 * t, nrm[i]) == 0 || return nothing
     C[i, j] = div(2 * t, nrm[i])
   end
-  Binv = inv(change_base_ring(QQ, B))
+  # The map for a permutation is B^-1 P B.  Doing that over the rationals costs
+  # a rational matrix product at every leaf, which is what made this search
+  # expensive enough to need a small budget.  Over the integers it is
+  # adj(B) P B divided by det(B), and the division is a divisibility test on
+  # integers, so the whole leaf is integer arithmetic.
+  dB = det(B)
+  is_zero(dB) && return nothing
+  adjB = map_entries(ZZ, dB * inv(change_base_ring(QQ, B)))
   res = Matrix{Int}[]
   perm = zeros(Int, n)
   used = falses(n)
   visited = Ref(0)
   function rec(i::Int)
+    # Every node counts, not only the leaves.  The number of leaves is the
+    # order of the diagram group and is known in advance, but the tree above
+    # them is not, and it can be very much larger: on lattice 276 of X26_no1
+    # the diagram group has 384 elements and the shortcut still took 1.3
+    # seconds, where the ordinary search takes 0.34.  Counting nodes makes the
+    # budget bound the work rather than the answer.
+    visited[] += 1
     visited[] > cap && return false
     if i > n
-      visited[] += 1
       P = zero_matrix(ZZ, n, n)
       for a in 1:n, b in 1:n
         P[a, b] = B[perm[a], b]
       end
-      Mq = Binv * change_base_ring(QQ, P)
+      Mz = adjB * P
       M = zeros(Int, n, n)
       for a in 1:n, b in 1:n
-        isone(denominator(Mq[a, b])) || return true
-        fits(Int, numerator(Mq[a, b])) || return true
-        M[a, b] = Int(numerator(Mq[a, b]))
+        q, r = divrem(Mz[a, b], dB)
+        is_zero(r) || return true
+        fits(Int, q) || return true
+        M[a, b] = Int(q)
       end
       _bt_verify(M, G, G) && push!(res, M)
       return true
