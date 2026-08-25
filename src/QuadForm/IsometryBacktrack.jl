@@ -1704,6 +1704,23 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
   # expensive enough to need a small budget.  Over the integers it is
   # adj(B) P B divided by det(B), and the division is a divisibility test on
   # integers, so the whole leaf is integer arithmetic.
+  # An isometry maps a simple root to one with the same divisor -- the gcd of
+  # its pairings with the whole lattice -- so that is checked while the
+  # permutation is being built, alongside the Cartan matrix.  It costs one pass
+  # over G*a per root and prunes the tree above the leaves, which is where the
+  # work turned out to be.
+  divs = zeros(Int, n)
+  for i in 1:n
+    g = 0
+    for j in 1:n
+      t = 0
+      for k in 1:n
+        t += simple[i][k] * G[k, j]
+      end
+      g = gcd(g, t < 0 ? -t : t)
+    end
+    divs[i] = g
+  end
   dB = det(B)
   is_zero(dB) && return nothing
   adjB = map_entries(ZZ, dB * inv(change_base_ring(QQ, B)))
@@ -1739,6 +1756,7 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
     for c in 1:n
       used[c] && continue
       nrm[c] == nrm[i] || continue
+      divs[c] == divs[i] || continue
       ok = true
       for j in 1:(i - 1)
         if C[i, j] != C[c, perm[j]] || C[j, i] != C[perm[j], c]
