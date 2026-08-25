@@ -277,15 +277,53 @@ In rough order of value per line of diff:
    diagonal say which is the case before any work is done.  Section 6a has the
    measurements on both sides.
 
-## 9. Known open defect
+## 9. Two defects on the road less travelled
 
-On `E_8 + [4]`, forcing the enumeration bound to 2 makes the computed order
-twice the true one, while all eleven generators returned are genuine
-isometries.  The group is right and the accounting is wrong.  It happens when a
-level served from a coset has candidates of a norm that the enumerated vectors
-also realise -- `E_8` has 2160 vectors of norm 4 -- and not when it does not,
-which is why `E_8 + [100]` is correct.  The bound choice currently in place
-cannot reach the situation, so nothing computed today is affected, but the
-defect is real and finding it is worth a factor of eight thousand on that
-family.  It is reproducible with the `bound` keyword of
-`_bt_automorphism_group`.
+Both were reachable only when a basis vector is longer than the enumeration
+bound, so that its level is served from a coset rather than from the enumerated
+vectors.  That path existed for a long time and was almost never taken; the
+moment the bound was allowed to be small it was taken constantly, and both
+defects appeared at once.
+
+**The order was wrong.**  The search computes `Aut(L, rho)` and the answer is
+that times the order of the Weyl group, so an image that does not fix `rho`
+must not be counted.  That condition was applied at the levels served from
+enumerated vectors and was absent at the coset levels.  On `E_8 + [4]` with the
+bound at 2 it counted the reflection in the norm 4 root twice -- once inside
+the Weyl group where it belongs, once again as a coset extension -- and
+returned exactly twice the true order.  Every generator returned was a genuine
+isometry; only the arithmetic was wrong, which is why the certificate on the
+generators did not catch it.
+
+The reason the condition could not be applied is worth recording on its own:
+the table it needed was read out of an array indexed by the *enumerated
+vectors*, so it held zero for exactly the levels that had no enumerated vector
+-- the ones that needed it.  Reading the pairing from `G * rho` instead makes
+it defined for every level, and is simpler.
+
+**A segmentation fault.**  The array counting scalar products during the
+fingerprint refinement was sized by the enumeration bound, but it is indexed by
+`<v, b>` with `b` a basis vector, which Cauchy-Schwarz bounds by the square
+root of the product of the two norms, and also by pairings of two basis
+vectors, bounded by their own norms.  Both exceed the enumeration bound as soon
+as a basis vector does.  Inside an `@inbounds` block that is a write past the
+end of the array.
+
+The pattern behind both, and behind the `BoundsError` at rank 105 earlier: an
+array sized by the enumeration bound, indexed by a quantity that is *not*
+bounded by it.  Worth grepping for whenever a bound becomes smaller than it
+used to be.
+
+## 10. What the fixes were worth
+
+  E_8 + [m]      before     after     Hecke
+  m = 30        16.624 s    0.002 s   0.001 s
+  m = 1000       4.258 s    0.002 s   0.001 s
+
+  Niemeier D12^2  4.108 s    0.007 s   0.006 s
+  Niemeier D6^4   4.114 s    0.007 s   0.005 s
+
+The lopsided family came down by a factor of eight thousand and the Niemeier
+lattices by nearly six hundred, and in both cases the whole cost had been
+preprocessing that ran before something cheaper would have answered, or a bound
+chosen larger than it needed to be.
