@@ -2327,10 +2327,24 @@ end
 #
 # Colours are compared without regard to sign, so the multiset of `v` and the
 # negated one of `-v` are folded together by taking the smaller of the two.
-# Experiment switch for the projection part of the colour, which the profiler
-# says is the single largest cost on small lattices.  Its benefit was measured
-# on one lattice; whether it pays across the benchmark is what this is for.
-const _BT_USE_PROJ = Ref(true)
+# The projection part of the root colour: the norm of a vector's projection
+# onto each root component, which the profiler found to be the single largest
+# cost on small lattices.
+#
+# It is off, on the measurements.  Over 533 lattices of the benchmark, timing
+# both ways and checking the orders agree:
+#
+#                     total      mean     median    worst
+#     projections on  97.3 s   182.6 ms   23.0 ms   75.9 s
+#     projections off 87.8 s   164.8 ms    4.5 ms   75.9 s
+#
+# It is behind on all of total, mean and median, and the median by a factor of
+# five, which on a benchmark of mostly small lattices is what matters most.
+# An earlier measurement had it ahead; that was before the diagram search was
+# taught to decline by size, and the difference was that pathology rather than
+# the colour.  It is kept switchable because it did help the lattices it was
+# written for, and a gate that turns it on only for those is still wanted.
+const _BT_USE_PROJ = Ref(false)
 
 function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   n = ctx.n
