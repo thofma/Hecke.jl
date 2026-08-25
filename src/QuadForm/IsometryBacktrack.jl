@@ -704,6 +704,8 @@ mutable struct BTCtx{T <: Signed}
   maxv::Int                 # largest absolute coordinate of a short vector
   colors::Vector{UInt64}    # an isometry invariant colour of each short vector
                             # (empty if all vectors have the same colour)
+  grho::Vector{Int}         # G * rho, so that <w, rho> is one dot product for
+                            #   a vector w that was never enumerated
   rhov::Vector{Int32}       # rhov[j] = <v_j, rho> for the Weyl vector rho, so
                             # that the search finds Aut(L, rho) and not
                             # Aut(L, {rho, -rho}); empty when there are no roots
@@ -909,7 +911,7 @@ function _bt_ctx_finish(::Type{T}, n::Int, G::Matrix{Int}, bound::Int, nv::Int,
     a > mv && (mv = a)
   end
   ctx = BTCtx{T}(n, G, bound, nv, V, W, Wt, nrm, Int32[], UInt64(0), Int32[], mv,
-                 UInt64[], Int32[], false, UInt64(0), Vector{T}(undef, n),
+                 UInt64[], Int[], Int32[], false, UInt64(0), Vector{T}(undef, n),
                  Vector{T}(undef, n))
   _bt_build_hash!(ctx)
   # locate the basis vectors (they are short unless the bound was lowered by
@@ -1298,14 +1300,34 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
 
   vals = zeros(Int32, 2 * nv + n)
   tmp = Vector{Int32}(undef, N)
-  ccnt = zeros(Int, 2 * bound + 1)
+  # The counting array is indexed by a scalar product <v, b> with v a short
+  # vector and b a basis vector.  Cauchy-Schwarz bounds that by the square root
+  # of the product of the two norms, which exceeds the enumeration bound as
+  # soon as a basis vector is longer than it -- exactly the levels served from
+  # a coset.  Sizing this by the bound alone wrote outside the array and
+  # segfaulted once the bound was allowed to be small.
+  spmax = bound
+  for i in 1:n
+    d = G[i, i]
+    d > 0 || continue
+    r = _bt_isqrt(bound * d)
+    r > spmax && (spmax = r)
+    # the same array also holds the pairings of two basis vectors, which are
+    # bounded by their own norms and not by the enumeration bound
+    for j in 1:n
+      a = G[i, j]
+      a < 0 && (a = -a)
+      a > spmax && (spmax = a)
+    end
+  end
+  ccnt = zeros(Int, 2 * spmax + 1)
   if order_mode == 4
     # n candidates at each of n levels, each a pass over the partition
     la_ok = Float64(n) * n * (2 * nv + n) <= 2.0e8
     if la_ok
       la_vals = zeros(Int32, 2 * nv + n)
-      la_cnt = zeros(Int, 2 * bound + 1)
-      la_bas = zeros(Int, 2 * bound + 1)
+      la_cnt = zeros(Int, 2 * spmax + 1)
+      la_bas = zeros(Int, 2 * spmax + 1)
     end
   end
   nbas = Int[]
@@ -1366,14 +1388,14 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
           fill!(la_bas, 0)
           for t in s0:e0
             it = order[t]
-            c = la_vals[it] + bound + 1
+            c = la_vals[it] + spmax + 1
             la_cnt[c] += 1
             it > 2 * nv && (la_bas[c] += 1)
           end
           for j in 1:n
             (used[j] || j == i) && continue
             blkof[2 * nv + j] == bb || continue
-            c = la_vals[2 * nv + j] + bound + 1
+            c = la_vals[2 * nv + j] + spmax + 1
             sc += log(Float64(max(la_cnt[c] - la_bas[c], 1)))
           end
         end
@@ -1462,10 +1484,10 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
       end
       fill!(ccnt, 0)
       for t in s0:e0
-        ccnt[vals[order[t]] + bound + 1] += 1
+        ccnt[vals[order[t]] + spmax + 1] += 1
       end
       acc2 = s0
-      for c in 1:(2 * bound + 1)
+      for c in 1:(2 * spmax + 1)
         if ccnt[c] > 0
           m = ccnt[c]
           ccnt[c] = acc2
@@ -1474,7 +1496,7 @@ function _bt_fingerprint(ctx::BTCtx; order_mode::Int = 0)
       end
       for t in s0:e0
         it = order[t]
-        c = vals[it] + bound + 1
+        c = vals[it] + spmax + 1
         tmp[ccnt[c]] = it
         ccnt[c] += 1
       end
@@ -2946,10 +2968,19 @@ function BTSearch(tgt::BTCtx{T}, per::Vector{Int}, Gsrc::Matrix{Int},
     Gsrc[per[I], per[I]] <= src.bound || break
     ncheap = I
   end
-  if !isempty(src.rhov)
+  if !isempty(src.grho)
+    # The source basis vectors are the standard ones, so the pairing with rho
+    # is just an entry of G * rho.  Reading it from `rhov` instead left it at
+    # zero for exactly the levels whose basis vector is above the bound -- the
+    # ones served from a coset -- and those are the levels where the pairing is
+    # needed to keep the search inside Aut(L, rho).
+    for I in 1:n
+      TR[I] = src.grho[per[I]]
+    end
+  elseif !isempty(src.rhov)
     for I in 1:n
       p = Int(src.bidx[per[I]])
-      p == 0 && continue                # a basis vector above the bound
+      p == 0 && continue
       k = p < 0 ? -p : p
       TR[I] = p < 0 ? -Int(src.rhov[k]) : Int(src.rhov[k])
     end
@@ -3743,8 +3774,19 @@ function _bt_extend_coset!(S::BTSearch, d::Int)
     S.aborted = true
     return false
   end
+  gr = S.tgt.grho
+  tr = isempty(gr) ? 0 : S.TR[I]
   @inbounds for w in cands
     S.aborted && return false
+    # the same condition as at the levels served from enumerated vectors: the
+    # image has to pair with rho as its source does, or it is not in Aut(L, rho)
+    if !isempty(gr)
+      sp = 0
+      for i in 1:n
+        sp += w[i] * gr[i]
+      end
+      sp == tr || continue
+    end
     S.xvec[I] = w
     I == n && return true
     _bt_extend!(S, I) && return true
@@ -3764,7 +3806,23 @@ function _bt_count_extensions!(S::BTSearch, d::Int, out::Vector{Matrix{Int}})
   cands = _bt_coset_candidates(S.tgt.G, X, c, S.TN[I])
   cands === nothing && return -1
   cnt = 0
+  gr = S.tgt.grho
+  tr = isempty(gr) ? 0 : S.TR[I]
   for w in cands
+    # The search computes Aut(L, rho) and the order is that times |W|, so an
+    # image which does not fix rho must not be counted here.  The condition is
+    # applied at the levels served from enumerated vectors, through `rhov`, and
+    # was missing at the levels served from a coset.  On E_8 + [4] with the
+    # bound at 2 that counted the reflection in the norm 4 root a second time,
+    # once inside the Weyl group where it belongs and once here, and returned
+    # twice the true order.
+    if !isempty(gr)
+      sp = 0
+      for i in 1:n
+        sp += w[i] * gr[i]
+      end
+      sp == tr || continue
+    end
     S.xvec[I] = w
     if I == n
       M = _bt_matrix(S)
@@ -4631,34 +4689,28 @@ function _bt_affordable_bound(G::Matrix{Int})
     _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e7) || break
     best = b
   end
-  # NOT DONE, and worth returning to.  Levels whose basis vector is longer than
-  # the bound are served from a coset instead, which is cheap while there are
-  # only a few of them, so a much smaller bound leaving two or three such
-  # levels ought to beat a large one leaving none.  On E_8 + [30] the largest
-  # affordable bound is 30 and enumerates 1860841 vectors, taking 16.6 seconds,
-  # where the bound 2 enumerates 120, leaves the one long basis vector to a
-  # coset, and takes 0.002 -- a factor of eight thousand.
+  # Taking the largest affordable bound is not the same as taking the best one.
+  # Levels whose basis vector is longer than the bound are served from a coset
+  # instead, which is cheap while there are only a few of them, so a much
+  # smaller bound that leaves two or three such levels beats a large one that
+  # leaves none.  On E_8 + [30] the largest affordable bound is 30 and
+  # enumerates 1860841 vectors; the bound 2 enumerates 120 and leaves the one
+  # long basis vector to a coset.
   #
-  # Choosing the smaller bound that way was implemented and reverted, because
-  # it gives a WRONG ORDER on E_8 + [4]: 2786918400 against the true
-  # 1393459200, exactly twice.  What is known about it, reproduced by passing
-  # `bound = 2` to `_bt_automorphism_group` on that lattice:
-  #
-  #   * every generator returned is a genuine isometry, `M G M^t = G` holds for
-  #     all eleven of them, so the group is right and the *order* is not;
-  #   * with the bound at 2 the vector of norm 4 spanning the second summand is
-  #     a root that is never seen, so the Weyl group is computed from an
-  #     incomplete root system.  That by itself is sound -- the decomposition
-  #     holds for the roots of any fixed norm and divisor -- and E_8 + [100]
-  #     does the same thing and comes out right;
-  #   * what is different at m = 4 is that E_8 itself has 2160 vectors of norm
-  #     4, so the coset level's candidates collide with enumerated vectors of
-  #     the same norm.  At m = 100 nothing in E_8 has that norm and there is no
-  #     collision.
-  #
-  # So the suspicion is the interaction between a coset level and enumerated
-  # vectors of equal norm, in the accounting rather than in the search.  Until
-  # that is found the larger bound is used, which cannot reach the situation.
+  # This was reverted once, because it exposed a real defect: the levels served
+  # from a coset were not required to fix rho, so an isometry outside
+  # Aut(L, rho) was counted, and E_8 + [4] came out at twice its true order.
+  # That is fixed -- `TR` is now read from G * rho, which is defined for every
+  # level and not only for those whose basis vector was enumerated -- and the
+  # choice is safe to make.
+  covered(b) = count(i -> G[i, i] <= b, 1:n)
+  for b in vals
+    b >= best && break
+    _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e7) || break
+    if covered(b) >= n - 3
+      return b
+    end
+  end
   return best
 end
 
@@ -4851,6 +4903,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
     end
     if ok
       ctx.rhov = rv
+      ctx.grho = copy(gr)
       _bt_root_colors!(ctx, rd.simple)
       for a in rd.simple
         m = _bt_is_root(G, a, n)
@@ -4860,6 +4913,7 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
     end
     if !ok
       ctx.rhov = Int32[]
+      ctx.grho = Int[]
       empty!(wgens)
       worder = one(ZZRingElem)
     end
