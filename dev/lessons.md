@@ -233,6 +233,37 @@ The general lesson is dull but expensive: every preprocessing step needs a
 guard proportional to what it is trying to save, and the cheap decisive test
 goes first.
 
+## 6c. The easy majority, which every earlier comparison had skipped
+
+Every timing in this file above was taken on a lattice chosen for being hard.
+Running the whole benchmark instead, and comparing on every lattice where both
+were timed, gives a very different picture:
+
+    12372 lattices, all answered, none wrong
+    1753 of them timed against Hecke as well
+    this search 122.0 s        Hecke 8.4 s
+    we are faster on 0 percent of them
+    median 26.5 ms             Hecke about 5 ms
+
+So on the easy majority -- which is most of the benchmark -- this search is
+roughly five times slower per lattice, and the wins on the hard cases do not
+come close to paying for it.  A fixed cost of tens of milliseconds is nothing
+on a lattice that takes seconds and is everything on one that takes five
+milliseconds.
+
+Some of it was waste and has been removed: the shortcut that reads the group
+off a spanning root system was paying a Smith form and a second enumeration
+before it could decline, eleven of the forty milliseconds.  The rest is the
+search itself, which takes 26 of the remaining 33 milliseconds on a rank 17
+lattice whose group is small.  The enumeration bound is not the cause -- the
+chosen bound is 28.9 ms against 46.1 for the largest affordable one, and
+forcing the larger one on 81.lattices exhausts memory.
+
+The lesson is about method as much as about code.  Choosing hard instances to
+work on is right, but the aggregate has to be measured too, or an
+implementation can be tuned into being excellent on the cases one looks at and
+mediocre everywhere else without ever noticing.
+
 ## 7. Methodology
 
 * **Warm every path before timing it, not just the new one.** Two conclusions
