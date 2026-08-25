@@ -290,11 +290,30 @@ targeted enumeration produces only the vectors that could be an image, and on
 these lattices that is a small fraction of the shell.
 
 So the median gap is section 4 of the write-up and nothing else, and the mean
-gap is the same thing showing up on the lattices with the largest shells.  It
-is a substantial build -- the recursion over the flag of successive
-sublattices, with the fibre matching of Remark 4.1(iii), which is what makes it
-cheaper rather than more expensive than plain enumeration -- and it is the
-last structural piece this experiment is missing.
+gap is the same thing showing up on the lattices with the largest shells.
+
+Two attempts at it, both instructive:
+
+**Hecke's own targeted set cannot be borrowed.**  It is invariant under the
+stabiliser of the chamber Hecke chose, and this search has its own Weyl vector
+and so a different chamber.  Handed that set, the search finds an isometry
+carrying one of its vectors outside it, and says so.
+
+**Filtering after enumerating cannot pay.**  Every element of the group fixes
+rho and preserves norms, so a vector can be an image only if its norm is one a
+basis vector has and its pairing with rho matches, up to sign.  That is
+invariant under exactly the right group and cuts the set in half, 4083 vectors
+to 2148 on lattices of 34.lattices -- and buys nothing, because the vectors are
+still enumerated and the enumeration with its context is more than half the
+cost of a small lattice.
+
+The conclusion is that the condition has to bound the enumeration from inside
+rather than filter its output.  The pairing with rho is a linear form, so it
+can prune the tree the way the norm does, and then the vectors that fail it are
+never built.  That belongs in the innermost enumeration routine, where a
+mistake silently drops short vectors and makes the computed group too small
+with nothing raised -- which is why it wants a careful day of its own rather
+than the end of one.
 
 What closed the gap was not the search but the machinery around it: a shortcut
 that answered from the root system was spending more time deciding whether it
