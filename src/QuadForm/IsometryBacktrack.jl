@@ -819,8 +819,30 @@ function _bt_find(ctx::BTCtx{T}, w::Vector{T}) where {T}
   return s * res
 end
 
+# Package a caller-supplied vector set the way the enumeration would.
+function _bt_vectors_given(G::Matrix{Int}, vecs::Matrix{Int})
+  n = size(G, 1)
+  m = size(vecs, 2)
+  V = Matrix{Int32}(undef, n, m)
+  nrm = Vector{Int}(undef, m)
+  @inbounds for j in 1:m
+    t = 0
+    for i in 1:n
+      V[i, j] = Int32(vecs[i, j])
+      vi = vecs[i, j]
+      vi == 0 && continue
+      for k in 1:n
+        t += vi * G[i, k] * vecs[k, j]
+      end
+    end
+    nrm[j] = t
+  end
+  return V, nrm
+end
+
 function BTCtx(G::Matrix{Int}, bound::Int = -1; comp_budget::Int = -1,
-               force::Union{Nothing, DataType} = nothing)
+               force::Union{Nothing, DataType} = nothing,
+               vecs::Union{Nothing, Matrix{Int}} = nothing)
   n = size(G, 1)
   @assert size(G, 2) == n
   n <= length(_BT_HASHR) || throw(BTOverflow())
@@ -830,7 +852,16 @@ function BTCtx(G::Matrix{Int}, bound::Int = -1; comp_budget::Int = -1,
       bound = max(bound, G[i, i])
     end
   end
-  V, nrm = _bt_short_vectors(G, bound)
+  # `vecs` lets the caller supply the vectors instead of enumerating the whole
+  # shell.  What it supplies has to be closed under whatever the search is
+  # looking for -- every possible image of every basis vector has to be in it --
+  # which is exactly what a targeted enumeration produces.
+  # The branch is a ternary over two functions with the same return types, not
+  # an if/else assigning to variables declared `local`: the latter leaves them
+  # untyped and costs the whole context build its inference, which on the Leech
+  # lattice was an eleven fold slowdown.
+  V, nrm = vecs === nothing ? _bt_short_vectors(G, bound) :
+                              _bt_vectors_given(G, vecs)
   nv = size(V, 2)
   # Overflow guard, part one: the entries of `W` are computed by accumulating
   # products V[k,j]*G[i,k] in Int32, so bound those before computing them.
@@ -5130,6 +5161,175 @@ function _bt_best_order(ctx::BTCtx)
   return best
 end
 
+# Hecke's own targeted set, which is NOT usable here: it is invariant under
+# the stabiliser of the chamber Hecke chose, and this search works with its own
+# Weyl vector and so with a different chamber.  Feeding it in makes the search
+# find an isometry carrying a vector of the set outside it.  Kept for reference;
+# `_bt_targeted_subset` below is the version that is safe, using only
+# conditions invariant under the whole isometry group.
+#
+# Enumerating the whole shell and then searching in it costs everything
+# downstream -- the fingerprint, the colours, the buckets and the search all
+# scale with how many vectors there are -- and most of them can never be the
+# image of any basis vector.  A targeted enumeration produces only those that
+# can, which on the lattices of 34.lattices is about fifty five where the shell
+# has four thousand, at the same cost in time.
+#
+# This defers to Hecke's `short_vectors_with_condition`, which implements
+# section 4 of the write-up.  `nothing` when it is unavailable or fails, in
+# which case the caller enumerates the shell as before.
+function _bt_targeted_vectors(G::Matrix{Int})
+  n = size(G, 1)
+  isdefined(Hecke, :short_vectors_with_condition) || return nothing
+  local vs
+  try
+    GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+    L = integer_lattice(gram = GZ; cached = false)
+    vs = Hecke.short_vectors_with_condition(L)
+  catch
+    return nothing
+  end
+  (vs isa Tuple && length(vs) >= 1) || return nothing
+  V = vs[1]
+  (V isa AbstractVector && !isempty(V)) || return nothing
+  out = Matrix{Int}(undef, n, length(V))
+  @inbounds for (j, p) in enumerate(V)
+    c = p isa Tuple ? p[1] : p
+    length(c) == n || return nothing
+    for i in 1:n
+      fits(Int, c[i]) || return nothing
+      out[i, j] = Int(c[i])
+    end
+  end
+  return out
+end
+
+# Cut the short vectors down to those that could be the image of a basis
+# vector, using only conditions invariant under the whole isometry group.
+#
+# The successive sublattices give an orthogonal decomposition of the rational
+# span into subspaces that every isometry preserves, so the norm of a vector's
+# projection onto each of them is an invariant.  A vector can be the image of a
+# basis vector only if its profile of projection norms is that basis vector's,
+# so everything else can be dropped.  On lattices of 34.lattices that is about
+# fifty of four thousand.
+#
+# Unlike the pairing with the Weyl vector, this needs no choice of chamber, so
+# the set is invariant under the full group and the search cannot leave it.
+#
+# Returns the columns of `V` to keep, or `nothing` when there is no useful
+# decomposition or the work would not pay.
+function _bt_targeted_subset(G::Matrix{Int}, V::Matrix{T}, nv::Int) where {T}
+  n = size(G, 1)
+  nv <= 4 * n && return nothing                 # nothing to gain
+  local prs
+  try
+    GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+    L = integer_lattice(gram = GZ; cached = false)
+    prs, _ = Hecke._invariant_projections_and_sublattices(L)
+  catch
+    return nothing
+  end
+  length(prs) >= 2 || return nothing            # one block says nothing
+  # the quadratic form of each projection, scaled to be integral
+  GQ = matrix(QQ, n, n, [QQFieldElem(G[i, j]) for i in 1:n for j in 1:n])
+  Fs = Matrix{Int}[]
+  dens = Int[]
+  for p in prs
+    pq = change_base_ring(QQ, p)
+    Fq = pq * GQ * transpose(pq)     # |pi(x)|^2 = x p G p^t x^t
+    d = lcm([denominator(Fq[a, b]) for a in 1:n for b in 1:n])
+    fits(Int, d) || return nothing
+    Fz = map_entries(ZZ, d * Fq)
+    all(x -> fits(Int, x), Fz) || return nothing
+    push!(Fs, Matrix{Int}(Fz))
+    push!(dens, Int(d))
+  end
+  r = length(Fs)
+  # the profiles the basis vectors have; a vector may be an image only if its
+  # profile is one of them
+  prof = Vector{Int}(undef, r)
+  want = Set{Vector{Int}}()
+  for j in 1:n
+    for i in 1:r
+      prof[i] = Fs[i][j, j]                     # e_j^t F_i e_j, scaled
+    end
+    push!(want, copy(prof))
+  end
+  keep = Int[]
+  x = Vector{Int}(undef, n)
+  @inbounds for j in 1:nv
+    for i in 1:n
+      x[i] = Int(V[i, j])
+    end
+    for i in 1:r
+      F = Fs[i]
+      t = 0
+      for a in 1:n
+        xa = x[a]
+        xa == 0 && continue
+        for b in 1:n
+          t += xa * F[a, b] * x[b]
+        end
+      end
+      prof[i] = t
+    end
+    prof in want && push!(keep, j)
+  end
+  # only worth rebuilding if it really cuts the set down
+  length(keep) < div(nv, 2) || return nothing
+  isempty(keep) && return nothing
+  return keep
+end
+
+# Which of the short vectors could be the image of a basis vector at all.
+# NOT USED -- see the measurement at the end of this comment.
+#
+# Everything the search is looking for fixes rho and preserves norms, so a
+# vector can be an image only if its norm is one that a basis vector has and
+# its pairing with rho is that basis vector's.  Vectors are stored one per sign
+# pair and the search tries both, so the pairing is matched up to sign.
+#
+# This is invariant under exactly the group being searched for -- not under the
+# whole isometry group, since rho picks a chamber, but that is all it has to be
+# -- so the search cannot leave the set.
+#
+# It cuts the set roughly in half on lattices of 34.lattices, 4083 vectors to
+# 2148, and buys nothing: over 533 lattices of the benchmark the three
+# statistics are the same to within noise.  The reason is that the vectors are
+# still *enumerated* -- the saving is only on what happens to them afterwards,
+# and the enumeration together with the context built around it is more than
+# half of what a small lattice costs.
+#
+# The conclusion is not that the condition is weak but that it is applied too
+# late.  The pairing with rho is a linear form, so it can bound the enumeration
+# from inside, in the same way the norm does, and then the vectors that fail it
+# are never built at all.  That is the remaining step, and it belongs in
+# `_bt_enum!` rather than after it.
+function _bt_image_candidates(G::Matrix{Int}, V::Matrix{T}, nrm::Vector{Int},
+                              nv::Int, grho::Vector{Int}, n::Int) where {T}
+  isempty(grho) && return nothing
+  # the (norm, |pairing with rho|) a basis vector has
+  want = Set{Tuple{Int, Int}}()
+  for j in 1:n
+    r = grho[j]
+    push!(want, (G[j, j], r < 0 ? -r : r))
+  end
+  keep = Int[]
+  sizehint!(keep, min(nv, 1024))
+  @inbounds for j in 1:nv
+    r = 0
+    for i in 1:n
+      v = Int(V[i, j])
+      v == 0 || (r += v * grho[i])
+    end
+    (nrm[j], r < 0 ? -r : r) in want && push!(keep, j)
+  end
+  isempty(keep) && return nothing
+  length(keep) < div(nv, 2) || return nothing      # not worth rebuilding
+  return keep
+end
+
 # Thrown when a search runs past the budget it was given, so that a different
 # level order can be tried instead.
 struct BTBudget <: Exception end
@@ -5137,13 +5337,14 @@ struct BTBudget <: Exception end
 function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
                                      order_mode::Int = 0,
                                      totallimit::Int = typemax(Int),
-                                     bound::Int = 0)
+                                     bound::Int = 0,
+                                     vecs::Union{Nothing, Matrix{Int}} = nothing)
   # the component invariant is only used to refine the initial partition here,
   # which the fingerprint does anyway, so it must not cost more than a sweep
   t0 = time()
   bnd = bound > 0 ? bound : _bt_affordable_bound(G)
   bnd == 0 && throw(BTOverflow())
-  ctx = BTCtx(G, bnd; comp_budget = -2)
+  ctx = BTCtx(G, bnd; comp_budget = -2, vecs = vecs)
   n = ctx.n
   nv = ctx.nv
   @vprintln :Lattice 1 "backtrack: rank $(n), $(nv) short vectors of norm <= $(ctx.bound), setup $(round(time() - t0, digits = 3))s"
@@ -5196,6 +5397,47 @@ function _bt_automorphism_group_data(G::Matrix{Int}; verbose::Bool = false,
       worder = one(ZZRingElem)
     end
     @vprintln :Lattice 1 "backtrack: root system $(rd.types), |W| = $(worder)"
+  end
+  # Now that rho is known, throw away the vectors that could never be the image
+  # of a basis vector.  Everything after this point -- the fingerprint, the
+  # colours, the buckets, every node of the search -- costs in proportion to how
+  # many vectors there are, and on a lattice of 34.lattices most of them are
+  # dead weight.
+  # NOT DONE: filtering after the fact does not pay.  See the note on
+  # `_bt_image_candidates` for the measurement.
+  if false && vecs === nothing && !isempty(ctx.grho)
+    keep = _bt_image_candidates(G, ctx.V, ctx.nrm, ctx.nv, ctx.grho, n)
+    if keep !== nothing
+      vv = Matrix{Int}(undef, n, length(keep))
+      @inbounds for (jj, j) in enumerate(keep), i in 1:n
+        vv[i, jj] = Int(ctx.V[i, j])
+      end
+      local ctx2
+      ok2 = true
+      try
+        ctx2 = BTCtx(G, bnd; comp_budget = -2, vecs = vv)
+      catch
+        ok2 = false
+      end
+      if ok2
+        @vprintln :Lattice 1 "backtrack: $(ctx.nv) vectors cut to $(ctx2.nv) by norm and rho"
+        gr2 = ctx.grho
+        rv2 = Vector{Int32}(undef, ctx2.nv)
+        for j in 1:ctx2.nv
+          t = 0
+          for i in 1:n
+            t += Int(ctx2.V[i, j]) * gr2[i]
+          end
+          rv2[j] = Int32(t)
+        end
+        ctx2.rhov = rv2
+        ctx2.grho = gr2
+        if rd !== nothing && !isempty(rd.simple)
+          _bt_root_colors!(ctx2, rd.simple)
+        end
+        ctx = ctx2
+      end
+    end
   end
   # Pick the ordering of the basis vectors and search once.
   #
@@ -5471,8 +5713,9 @@ generators are the images of the standard basis vectors.
 # score is the product of the candidate counts -- the size of the tree if
 # nothing pruned -- which picks the good order on every lattice measured.
 function _bt_automorphism_group(G::Matrix{Int}; verbose::Bool = false,
-                                order_mode::Int = -1, bound::Int = 0)
-  res = _bt_automorphism_group_data(G; verbose, order_mode, bound)
+                                order_mode::Int = -1, bound::Int = 0,
+                                vecs::Union{Nothing, Matrix{Int}} = nothing)
+  res = _bt_automorphism_group_data(G; verbose, order_mode, bound, vecs)
   return res[1], res[2]
 end
 
