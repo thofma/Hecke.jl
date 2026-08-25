@@ -1617,10 +1617,53 @@ end
 #
 # Returns the isometries found, or `nothing` when the roots do not span or the
 # search would be too large -- a partial answer would give a wrong order.
+# How many permutations of the simple roots respect the Coxeter-Dynkin
+# diagram: the components of each type may be permuted among themselves, and
+# each component may be mapped to itself by one of its own diagram
+# automorphisms.  Returns -1 when that count would overflow.
+function _bt_diagram_group_order(types::Vector{Tuple{Symbol, Int}})
+  cnt = Dict{Tuple{Symbol, Int}, Int}()
+  for t in types
+    cnt[t] = get(cnt, t, 0) + 1
+  end
+  tot = 1
+  for (t, k) in cnt
+    d = _bt_diagram_autos(t)
+    for a in 2:k                      # k! ways to permute like components
+      tot > div(typemax(Int), a) && return -1
+      tot *= a
+    end
+    for _ in 1:k                      # and the diagram automorphisms of each
+      tot > div(typemax(Int), max(d, 1)) && return -1
+      tot *= d
+    end
+  end
+  return tot
+end
+
+# The order of the diagram automorphism group of one irreducible type.
+function _bt_diagram_autos(t::Tuple{Symbol, Int})
+  s, r = t
+  s === :A && return r >= 2 ? 2 : 1
+  s === :D && return r == 4 ? 6 : (r >= 5 ? 2 : 1)
+  s === :E && return r == 6 ? 2 : 1
+  return 1
+end
+
 function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
-                              cap::Int = 200000)
+                              cap::Int = 200000,
+                              types::Vector{Tuple{Symbol, Int}} = Tuple{Symbol, Int}[])
   n = size(G, 1)
   length(simple) == n || return nothing
+  # Decline before enumerating rather than after.  Each leaf of the search
+  # below builds a rational matrix product of size n, so reaching the cap is
+  # not cheap: on a lattice with root system A_1^4 + D_4^4 + D_6, where the
+  # diagram group has 1492992 elements, it took 56 seconds to give up, and the
+  # ordinary search then ran anyway.  The size is known from the types.
+  if !isempty(types)
+    dg = _bt_diagram_group_order(types)
+    (dg < 0 || dg > cap) && return nothing
+  end
   B = zero_matrix(ZZ, n, n)
   for i in 1:n, j in 1:n
     B[i, j] = simple[i][j]
@@ -5653,7 +5696,7 @@ function _bt_roots_shortcut(G::Matrix{Int})
   (rd === nothing || length(rd.simple) != n) && return nothing
   # every root has to have been found for the Weyl group to be the whole of it
   2 * Int(e) <= rb || return nothing
-  redu = _bt_aut_red_spanning(G, rd.simple)
+  redu = _bt_aut_red_spanning(G, rd.simple; types = rd.types)
   (redu === nothing || isempty(redu)) && return nothing
   gens = Matrix{Int}[]
   for a in rd.simple
