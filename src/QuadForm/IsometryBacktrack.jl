@@ -1732,7 +1732,7 @@ function _bt_diag_rec!(D::BTDiag, i::Int, perm::Vector{Int}, used::BitVector,
 end
 
 function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
-                              cap::Int = 0,
+                              cap::Int = 0, nvhint::Int = 3000,
                               types::Vector{Tuple{Symbol, Int}} = Tuple{Symbol, Int}[])
   n = size(G, 1)
   length(simple) == n || return nothing
@@ -1746,7 +1746,12 @@ function _bt_aut_red_spanning(G::Matrix{Int}, simple::Vector{Vector{Int}};
   # the leaf buys roughly thirty times as many of them as the rational version
   # allowed, but the budget still has to be small: a generous one is paid in
   # full on every lattice where the shortcut is going to fail.
-  cap == 0 && (cap = max(5000, div(30_000_000, max(n * n, 1))))
+  # The budget should be proportional to what the ordinary search would cost,
+  # since that is what the shortcut has to beat, and the number of short
+  # vectors is the best cheap proxy for it.  A fixed budget is either too small
+  # to answer on the lattices where answering is worth seconds, or too large to
+  # decline on the ones where the search takes milliseconds.
+  cap == 0 && (cap = clamp(nvhint, 3000, div(30_000_000, max(n * n, 1))))
   # Decline before enumerating rather than after.  Each leaf of the search
   # below builds a rational matrix product of size n, so reaching the cap is
   # not cheap: on a lattice with root system A_1^4 + D_4^4 + D_6, where the
@@ -5821,7 +5826,19 @@ function _bt_roots_shortcut(G::Matrix{Int})
   (rd === nothing || length(rd.simple) != n) && return nothing
   # every root has to have been found for the Weyl group to be the whole of it
   2 * Int(e) <= rb || return nothing
-  redu = _bt_aut_red_spanning(G, rd.simple; types = rd.types)
+  # how big the enumeration the ordinary search would work with is
+  nvh = 3000
+  try
+    lvv = _bt_ball_volumes(n)
+    qv = Vector{Float64}(undef, n)
+    Av = Matrix{Float64}(undef, n, n)
+    if _bt_gs_norms!(qv, Av, G, collect(1:n), n)
+      c = _bt_enum_cost(qv, n, Float64(bmax), lvv)
+      c < log(1.0e9) && (nvh = round(Int, exp(c)))
+    end
+  catch
+  end
+  redu = _bt_aut_red_spanning(G, rd.simple; types = rd.types, nvhint = nvh)
   (redu === nothing || isempty(redu)) && return nothing
   gens = Matrix{Int}[]
   for a in rd.simple
