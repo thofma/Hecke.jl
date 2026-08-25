@@ -272,12 +272,13 @@ benchmark, timing both and checking every order agrees:
 
                        total      mean     median    worst
     start of the day  87.8 s   164.8 ms    4.5 ms   75.9 s
-    now               12.2 s    22.8 ms    4.4 ms    1.00 s
-    Hecke tuned        3.0 s     5.5 ms    2.7 ms    0.41 s
+    now               10.0 s    18.8 ms    4.5 ms    0.47 s
+    Hecke tuned        3.1 s     5.8 ms    2.9 ms    0.46 s
 
-The worst case improved by a factor of seventy six and the mean by seven, and
-the remaining gaps are 4.1 times on mean, 1.6 on median and 2.4 on worst.  The
-objective is not met.
+The worst case improved by a factor of a hundred and sixty and the mean by
+nine.  **The worst case is now level with Hecke**, 0.47 seconds against 0.46,
+which is one of the three parts of the objective.  The median is 1.6 times
+behind and the mean 3.2, so the objective is not yet met.
 
 What closed the gap was not the search but the machinery around it: a shortcut
 that answered from the root system was spending more time deciding whether it
