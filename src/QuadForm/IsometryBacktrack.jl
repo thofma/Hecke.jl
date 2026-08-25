@@ -5598,7 +5598,29 @@ Plesken--Souvignier implementation.
 function _bt_roots_shortcut(G::Matrix{Int})
   n = size(G, 1)
   n < 2 && return nothing
+  bmax = G[1, 1]
+  for i in 1:n
+    G[i, i] > bmax && (bmax = G[i, i])
+  end
   GZ = matrix(ZZ, n, n, [ZZRingElem(G[i, j]) for i in 1:n for j in 1:n])
+  # The root norms divide twice the exponent of the discriminant group, and the
+  # exponent divides the determinant.  The determinant is much cheaper than the
+  # Smith form the exponent itself needs -- and it is enough, because all that
+  # is wanted is a bound.  This runs on every lattice, so the cost of declining
+  # matters: it was eleven milliseconds of the forty a small lattice takes.
+  local dd
+  try
+    dd = abs(det(GZ))
+  catch
+    return nothing
+  end
+  (dd <= 0 || !fits(Int, dd)) && return nothing
+  di = Int(dd)
+  di > div(typemax(Int), 2) && return nothing
+  rb = 2 * di
+  # No saving over the enumeration the caller is going to do anyway, so leave
+  # it to the ordinary path rather than enumerate twice.
+  rb >= bmax && return nothing
   local e
   try
     e = elementary_divisors(GZ)[n]
@@ -5607,10 +5629,6 @@ function _bt_roots_shortcut(G::Matrix{Int})
   end
   (e <= 0 || !fits(Int, e)) && return nothing
   rb = 2 * Int(e)
-  bmax = G[1, 1]
-  for i in 1:n
-    G[i, i] > bmax && (bmax = G[i, i])
-  end
   rb > bmax && (rb = bmax)                    # never more than we would do anyway
   lv = _bt_ball_volumes(n)
   A = Matrix{Float64}(undef, n, n)
