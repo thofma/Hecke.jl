@@ -4631,6 +4631,23 @@ function _bt_affordable_bound(G::Matrix{Int})
     _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e7) || break
     best = b
   end
+  # NOT DONE, and worth returning to.  Levels whose basis vector is longer than
+  # the bound are served from a coset instead, which is cheap while there are
+  # only a few of them, so a much smaller bound leaving two or three such
+  # levels ought to beat a large one leaving none.  On E_8 + [30] the largest
+  # affordable bound is 30 and enumerates 1860841 vectors, taking 16.6 seconds,
+  # where the bound 2 enumerates 120, leaves the one long basis vector to a
+  # coset, and takes 0.002 -- a factor of eight thousand.
+  #
+  # Choosing the smaller bound that way was implemented and reverted, because
+  # it gives a WRONG ORDER on E_8 + [4]: 2786918400 against the true
+  # 1393459200, exactly twice.  Every other member of the family, from m = 2 to
+  # m = 1000, came out right.  So there is a real bug on the coset path which
+  # the present bound choice happens to hide, and it has to be found before the
+  # speedup can be taken.  A plausible direction: with the largest norm taken
+  # first, the coset level runs with nothing yet fixed, so its coset is every
+  # vector of that norm rather than only those in the orthogonal complement,
+  # and E_8 has 2160 vectors of norm 4 for the search to get lost among.
   return best
 end
 
@@ -5401,9 +5418,21 @@ function _bt_min_bound_basis(G::Matrix{Int})
   # Below that the search costs more than it saves, which it did on lattice
   # 1901 of X26_no1 before this test was added.
   _bt_enum_cost(q, n, Float64(cur), lv) >= log(2.0e4) || return nothing
-  for b in lo:(cur - 1)
-    # never spend more on the search than the enumeration we are avoiding
-    _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e5) || continue
+  # Only the distinct diagonal entries are worth trying, not every integer
+  # between the smallest and the largest.  A lattice with a basis vector of
+  # norm 1000 would otherwise mean nine hundred and ninety eight trial bounds,
+  # each with its own enumeration, which is where four seconds went on
+  # E_8 + [1000] while the search itself took a millisecond.
+  cands = Int[]
+  for i in 1:n
+    lo <= G[i, i] < cur && !(G[i, i] in cands) && push!(cands, G[i, i])
+  end
+  lo < cur && !(lo in cands) && push!(cands, lo)
+  sort!(cands)
+  for b in cands
+    # never spend more on the search than the enumeration we are avoiding, and
+    # the cost only grows with the bound, so stop rather than skip
+    _bt_enum_cost(q, n, Float64(b), lv) <= log(2.0e5) || break
     local ctx
     try
       ctx = BTCtx(G, b; comp_budget = -2)
