@@ -2370,6 +2370,76 @@ function _bt_refine_colors!(ctx::BTCtx; rounds::Int = 3, maxsums::Int = 12)
   return ctx
 end
 
+# The orbits of the simple roots under the symmetries of their diagram.
+#
+# The stabiliser of the chamber permutes the simple roots, but not arbitrarily:
+# it respects the Coxeter-Dynkin diagram, and most diagrams have very little
+# symmetry.  A_n has exactly one non-trivial automorphism, so its n simple
+# roots fall into ceil(n/2) orbits; D_n for n > 4 has one, swapping the two
+# prongs of the fork, so n-1 orbits; E_7 and E_8 have none at all, so every
+# simple root is its own orbit.  Pairings taken over one multiset spanning the
+# whole root system throw all of that away -- E_7 would contribute one number
+# where it could contribute seven.
+#
+# The orbits are read off the diagram rather than tabulated per type: the
+# multiset of distances from a node to the others in its component is invariant
+# under every automorphism of the diagram, and on these graphs -- paths, forks
+# and the three E diagrams -- it separates the orbits.  Nodes of different
+# components with the same distance profile are put in the same orbit exactly
+# when their components can be exchanged, which is what `gkey` records.
+#
+# Returns, for each simple root, the index of its orbit, and the number of
+# orbits.
+function _bt_root_orbits(G::Matrix{Int}, simple::Vector{Vector{Int}},
+                         comps::Vector{Vector{Int}}, gkey::Vector, n::Int)
+  ns = length(simple)
+  sd = [Int[sum(G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
+  adj = falses(ns, ns)
+  for a in 1:ns, b in 1:ns
+    a == b && continue
+    t = 0
+    for k in 1:n
+      t += sd[a][k] * simple[b][k]
+    end
+    t != 0 && (adj[a, b] = true)
+  end
+  nrmr = Int[sum(sd[a][k] * simple[a][k] for k in 1:n) for a in 1:ns]
+  key = Vector{Any}(undef, ns)
+  dist = zeros(Int, ns)
+  for (ci, idx) in enumerate(comps)
+    for a in idx
+      # distances from a to the rest of its component
+      fill!(dist, -1)
+      dist[a] = 0
+      queue = Int[a]
+      qi = 1
+      while qi <= length(queue)
+        u = queue[qi]; qi += 1
+        for w in idx
+          dist[w] == -1 || continue
+          adj[u, w] || continue
+          dist[w] = dist[u] + 1
+          push!(queue, w)
+        end
+      end
+      # The norms have to be part of the profile.  A lattice of type D_n has
+      # reflections in vectors of norm four as well, so its root system is
+      # really B_n, whose diagram is a path with one end long and the other
+      # short and therefore has no symmetry at all.  On distances alone the
+      # path looks reversible and the two ends are wrongly identified.
+      prof = sort!(Tuple{Int, Int}[(dist[w], nrmr[w]) for w in idx])
+      key[a] = (gkey[ci], nrmr[a], prof)
+    end
+  end
+  labels = unique(key)
+  sort!(labels; by = x -> (x[1][1], x[2], length(x[3]), x[3]))
+  orb = zeros(Int, ns)
+  for a in 1:ns
+    orb[a] = findfirst(isequal(key[a]), labels)::Int
+  end
+  return orb, length(labels)
+end
+
 function _bt_root_components(G::Matrix{Int}, simple::Vector{Vector{Int}}, n::Int)
   ns = length(simple)
   sd = [Int[sum(G[i, k] * a[k] for k in 1:n) for i in 1:n] for a in simple]
@@ -2493,6 +2563,14 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   glue = needglue ? _bt_component_glue(ctx.G, simple, comps, n) :
                     [ZZRingElem[] for _ in comps]
   gkey = [(length(comps[t]), glue[t]) for t in 1:length(comps)]
+  # the orbits of the simple roots under the diagram symmetries: pairings are
+  # taken over each orbit separately, which is far finer than one multiset over
+  # the whole root system
+  orb, norb = try
+    _bt_root_orbits(ctx.G, simple, comps, gkey, n)
+  catch
+    (ones(Int, ns), 1)
+  end
   ugrp = sort(unique(gkey))
   # `findfirst` returns Union{Nothing, Int}, and this is indexed inside the
   # innermost loop over every short vector, where that union costs far more
@@ -2519,6 +2597,9 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
   end
   ok || (comps = Vector{Int}[]; adjs = Matrix{Int}[])
   cbuf = Vector{Int}(undef, ns)
+  o1 = zeros(Int, max(norb, 1))
+  o2 = zeros(Int, max(norb, 1))
+  o3 = zeros(Int, max(norb, 1))
   gr1 = zeros(Int, max(1, ngrp))
   gr2 = zeros(Int, max(1, ngrp))
   old = ctx.colors
@@ -2528,7 +2609,9 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
     # they describe the multiset without sorting it, and they cost three
     # multiplications where hashing every term cost a hash.  The pairings are
     # bounded by the norms, so nothing here can grow.
-    p1 = 0; p2 = 0; p3 = 0
+    for g in 1:norb
+      o1[g] = 0; o2[g] = 0; o3[g] = 0
+    end
     for t in 1:ns
       s = 0
       gat = ga[t]
@@ -2536,17 +2619,31 @@ function _bt_root_colors!(ctx::BTCtx, simple::Vector{Vector{Int}})
         s += Int(ctx.V[i, j]) * gat[i]
       end
       cbuf[t] = s               # kept for the projections below, which used to
-      p1 += s                   #   recompute every one of these dot products
-      p2 += s * s
-      p3 += s * s * s
+      g = orb[t]                #   recompute every one of these dot products
+      o1[g] += s
+      o2[g] += s * s
+      o3[g] += s * s * s
     end
-    # negating the vector negates the odd power sums; fixing their sign makes
-    # the colour the same for v and -v, which is how colours are compared
-    if p1 < 0 || (p1 == 0 && p3 < 0)
-      p1 = -p1
-      p3 = -p3
+    # Negating the vector negates the odd power sums, and the colour is
+    # compared without a sign, so they are flipped together on one decision for
+    # the whole vector rather than one per orbit -- per orbit would lose the
+    # relative sign between orbits, which is information worth keeping.
+    flip = false
+    for g in 1:norb
+      if o1[g] != 0
+        flip = o1[g] < 0
+        break
+      elseif o3[g] != 0
+        flip = o3[g] < 0
+        break
+      end
     end
-    h = hash(p1, hash(p2, hash(p3, isempty(old) ? UInt64(0) : old[j])))
+    h = isempty(old) ? UInt64(0) : old[j]
+    for g in 1:norb
+      a1 = flip ? -o1[g] : o1[g]
+      a3 = flip ? -o3[g] : o3[g]
+      h = hash(a1, hash(o2[g], hash(a3, h)))
+    end
     # the projection norms, as a multiset over the components: they are
     # permuted along with the components, so power sums again
     if !isempty(comps)
