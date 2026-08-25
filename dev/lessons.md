@@ -178,6 +178,61 @@ The Weyl vector rescues this, because an isometry fixing `rho` preserves
 invariant after all. Without roots, the absolute value must be used, which is
 weaker.
 
+## 6a. Lopsided lattices, and where each approach is defeated
+
+The family `E_8 + [m]` of Example 2.4 in the write-up is the sharpest test, and
+the two approaches fail on opposite inputs.
+
+Hecke's targeted enumeration works along the flag of successive sublattices:
+with `L_i` the projections of `L`, it builds vectors through
+`M_1 < M_2 < ... < M_n = L`, each step going via `M_i + L_{i+1}` and testing
+for integrality.  Because it works with *projections of L* rather than
+sublattices of it, the integrality test is exactly what enforces the glue, so a
+primitive extension of small index does not defeat it.  That matters: a
+decomposition-based shortcut would be defeated by exactly that.
+
+On `E_8 + [m]` the successive sublattices are `[8, 1]`, and the image of the
+long basis vector then costs a rank one enumeration at norm `m` -- two vectors
+-- instead of the shell of norm `m` in rank nine, which for `m = 30` holds
+1860841 vectors.  Hecke does every member of the family in a millisecond.  The
+backtrack, enumerating globally, took 16.6 seconds at `m = 30`.
+
+The reverse holds on well-rounded lattices.  On lattice 1899 of X26_no1 the
+successive sublattices are `[10, 16]`, so the decomposition is there, but the
+bound is already 3 and there are only 586 short vectors: nothing is left for a
+targeted enumeration to save, and the whole cost is the search.  There Hecke
+takes 8.6 seconds and the backtrack 0.081.
+
+So: **targeted enumeration wins when the bound is far above the minimum, and
+search ordering wins when it is not.**  Neither subsumes the other, and an
+implementation that wanted both would have to choose between them per lattice
+-- cheaply, since the successive sublattice ranks and the diagonal of the Gram
+matrix already say which regime a lattice is in.
+
+## 6b. Preprocessing has to be ordered by cost, not by pipeline
+
+Three separate factors of hundreds were lost to preprocessing that ran before
+something cheaper would have answered, or that ran at all when it could not
+help.
+
+* The shortcut that reads the group off a spanning root system needs only an
+  enumeration to twice the exponent of the discriminant group.  It was running
+  *after* the search for a basis at a lower bound, which is expensive and
+  pointless whenever the shortcut is going to answer.  On a Niemeier lattice
+  with root system `D_12^2` the basis search took four seconds and the shortcut
+  then took 0.013.  Reversed, the whole computation takes 0.007 seconds.
+* That basis search looped over every integer between the smallest and the
+  largest diagonal entry.  With a basis vector of norm 1000 that is nine
+  hundred and ninety eight enumerations; only the distinct diagonal entries can
+  be the bound of a basis of short vectors.  `E_8 + [1000]` went from 4.3
+  seconds to 0.002.
+* The greedy short basis had no cost guard at all, so at rank 64 it did not
+  return.  A lattice out of range has to be declined in bounded time.
+
+The general lesson is dull but expensive: every preprocessing step needs a
+guard proportional to what it is trying to save, and the cheap decisive test
+goes first.
+
 ## 7. Methodology
 
 * **Warm every path before timing it, not just the new one.** Two conclusions
@@ -216,3 +271,21 @@ In rough order of value per line of diff:
    section 5 handled.
 5. **Do not spend effort on Bacher polynomials for this family**: measured as
    no help at any depth on the lattices where help was wanted.
+6. **The regime test.** Hecke's targeted enumeration is the right machinery
+   when the largest diagonal entry is far above the minimum, and is wasted
+   effort when it is not; the ranks of the successive sublattices and the
+   diagonal say which is the case before any work is done.  Section 6a has the
+   measurements on both sides.
+
+## 9. Known open defect
+
+On `E_8 + [4]`, forcing the enumeration bound to 2 makes the computed order
+twice the true one, while all eleven generators returned are genuine
+isometries.  The group is right and the accounting is wrong.  It happens when a
+level served from a coset has candidates of a norm that the enumerated vectors
+also realise -- `E_8` has 2160 vectors of norm 4 -- and not when it does not,
+which is why `E_8 + [100]` is correct.  The bound choice currently in place
+cannot reach the situation, so nothing computed today is affected, but the
+defect is real and finding it is worth a factor of eight thousand on that
+family.  It is reproducible with the `bound` keyword of
+`_bt_automorphism_group`.
