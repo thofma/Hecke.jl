@@ -738,9 +738,21 @@ end
 
   # check multiplication of "integral" ideal by the scalar in the base field
   I0 = ideal(Ofin, Ofin(x^2 + 1))
-  @test @inferred(x*I0) isa GenOrdFracIdl
-  @test @inferred((x//(x + 1))*I0) isa GenOrdFracIdl
+  @test @inferred(x*I0) isa Hecke.GenOrdFracIdl
+  @test @inferred((x//(x + 1))*I0) isa Hecke.GenOrdFracIdl
   @test @inferred(x*I0) == @inferred(x*fractional_ideal(I0))
+
+  # check multiplication of "integral" ideal by the scalar in the coordinate ring
+  c = numerator(x)
+  @test @inferred(c*I0) isa Hecke.GenOrdIdl
+  @test @inferred(c*I0) == ideal(Ofin, c*basis_matrix(I0; copy = false))
+  @test @inferred(c*I0) == @inferred(Ofin(x^3 + x)*Ofin)
+
+  # check multiplication of "integral" ideal by the order element
+  c = Ofin(x)
+  @test @inferred(c*I0) isa Hecke.GenOrdIdl
+  @test @inferred(c*I0) == ideal(Ofin, numerator(x)*basis_matrix(I0; copy = false))
+  @test @inferred(c*I0) == @inferred(Ofin(x^3 + x)*Ofin)
 
   # x has a pole at infinity so we cannot construct (x)_inf directly
   #   yet scaling must work

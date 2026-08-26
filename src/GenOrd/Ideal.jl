@@ -418,22 +418,6 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  is_zero(a) && return b
-  is_zero(b) && return a
-  is_one(a)  && return a
-  is_one(b)  && return b
-
-  O = order(a)
-
-  g = gcd(minimum(a; copy = false), minimum(b; copy = false))
-  V = vcat(basis_matrix(a; copy = false), basis_matrix(b; copy = false))
-  V = hnf_modular_eldiv_left!(V, g)
-  return ideal(O, V; M_in_hnf = true)
-end
-
 function Base.:(==)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   order(a) === order(b) || return false
   return basis_matrix(a; copy = false) == basis_matrix(b; copy = false)
@@ -488,51 +472,69 @@ end
 
 ################################################################################
 #
-#  Ad hoc multiplication
+#  Multiplication by the scalar
 #
 ################################################################################
 
 # Multiplying an integral ideal by a *base ring* scalar is equivalent to
-#   scaling the ideal basis matrix.
-# Internal helper for base-ring scalar case
-function _ideal_by_scaling_matrix(c, I::GenOrdIdl)
+#   simply scaling generators or the ideal basis matrix
+function _ideal_scale_by_base_ring_scalar(I::GenOrdIdl, c::RingElem)
   O = order(I)
-  # we must ensure canonical form, to keep HNF canonical
   c = _make_canonical_in(O, c)
 
   is_zero(c) && return ideal(O, c)
-  is_one(c) && return I
-  return ideal(O, c * basis_matrix(I; copy = false); M_in_hnf = true)
+  (is_one(c) || is_zero(I)) && return I
+
+  J = _mul_impl_gens_by_scalar(I, c)
+  J === nothing || return J
+
+  return _ideal_scale_matrix_by_base_ring_scalar(I, c)
+end
+
+function _ideal_scale_matrix_by_base_ring_scalar(I::GenOrdIdl, c::RingElem)
+  return ideal(order(I), c * basis_matrix(I; copy = false); M_in_hnf = true)
 end
 
 # This is the check for "scalar is in the base ring"
 # Since x is GenOrdElem, it is integral, so we need to check if it is in the base field
-function _is_in_base_field(x::GenOrdElem)
-  a = data(x)
+function _is_in_base_field(c::GenOrdElem)
+  a = data(c)
   for i in 1:degree(parent(a)) - 1
     is_zero(coeff(a, i)) || return false
   end
   return true
 end
 
-function Base.:*(x::GenOrdElem, O::GenOrd)
-  return ideal(O, x)
+function Base.:*(c::RingElement, I::GenOrdIdl{S, T}) where {S, T}
+  O = order(I) # note that this has concrete type for type inference
+  g = _as_coefficient_ring_elem(O, c)
+
+  # not a scalar of the coefficient ring: the ideal product has its own generator paths
+  g === nothing && return ideal(O, c)*I
+
+  return _ideal_scale_by_base_ring_scalar(I, g)
 end
 
-function Base.:*(x::GenOrdElem, I::GenOrdIdl{S, T}) where {S, T}
+function Base.:*(c::GenOrdElem, I::GenOrdIdl{S, T}) where {S, T}
   O = order(I) # note that this has concrete type for type inference
-  @req parent(x) === O "Element and ideal must belong to the same order"
+  @req parent(c) === O "Element and ideal must belong to the same order"
 
-  if _is_in_base_field(x)
-    c, den = integral_split(coeff(data(x), 0), base_ring(O))
-    @assert is_one(den)
-    return _ideal_by_scaling_matrix(c, I)
+  if _is_in_base_field(c)
+    c_num, c_den = integral_split(coeff(data(c), 0), base_ring(O))
+    @assert is_one(c_den)
+    return _ideal_scale_by_base_ring_scalar(I, c_num)
   end
 
-  return ideal(O, x) * I
+  return ideal(O, c) * I
 end
 
-Base.:*(x::GenOrdIdl, y::GenOrdElem) = y * x
+function Base.:*(c::GenOrdElem, O::GenOrd)
+  return ideal(O, c)
+end
+
+Base.:*(I::GenOrdIdl, c::RingElement) = c*I
+Base.:*(I::GenOrdIdl, c::GenOrdElem) = c*I
+Base.:*(O::GenOrd, c::GenOrdElem) = c*O
 
 ################################################################################
 #

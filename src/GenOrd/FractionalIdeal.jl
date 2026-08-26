@@ -254,25 +254,14 @@ Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 ################################################################################
 
 
-function Base.:(+)(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
-  d = lcm(den_a, den_b)
-
-  I = _ideal_by_scaling_matrix(divexact(d, den_a), numerator(a; copy=false))
-  J = _ideal_by_scaling_matrix(divexact(d, den_b), numerator(b; copy=false))
-  return fractional_ideal(I + J, d)
-end
-
 function Base.intersect(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
   den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
   d = lcm(den_a, den_b)
 
-  I = _ideal_by_scaling_matrix(divexact(d, den_a), numerator(a; copy=false))
-  J = _ideal_by_scaling_matrix(divexact(d, den_b), numerator(b; copy=false))
+  I = divexact(d, den_a) * numerator(a; copy=false)
+  J = divexact(d, den_b) * numerator(b; copy=false)
   return fractional_ideal(intersect(I, J), d)
 end
 
@@ -352,56 +341,70 @@ end
 
 ################################################################################
 #
-#  Ad hoc binary operations
+#  Multiplication by the scalar
 #
 ################################################################################
 
-# scale ideal by the base field element: this is simple scalar multiplication,
-#   and it preserves HNF form
-function _scale_by_base_field_scalar(I::GenOrdFracIdl, c)
+# scale ideal by the base field element: this is simple scalar multiplication
+function _ideal_scale_by_base_field_scalar(I::GenOrdFracIdl, c::FieldElem)
   O = order(I)
   c_num, c_den = integral_split(c, coefficient_ring(O))
   I_den = c_den * denominator(I; copy = false)
 
   is_zero(c_num) && return fractional_ideal(ideal(O, c_num), I_den)
+
   if isdefined(I, :num)
-    return fractional_ideal(_ideal_by_scaling_matrix(c_num, I.num), I_den)
+    return fractional_ideal(_ideal_scale_by_base_ring_scalar(I.num, c_num), I_den)
   else
     return fractional_ideal(O, c_num*_numerator_matrix(I), I_den)
   end
 end
 
-function Base.:*(x::GenOrdElem, I::GenOrdFracIdl)
+function Base.:*(c::GenOrdElem, I::GenOrdFracIdl)
   O = order(I)
-  @req parent(x) === O "Element and ideal must belong to the same order"
+  @req parent(c) === O "Element and ideal must belong to the same order"
 
-  if _is_in_base_field(x)
-    return _scale_by_base_field_scalar(I, coeff(data(x), 0))
+  if _is_in_base_field(c)
+    return _ideal_scale_by_base_field_scalar(I, coeff(data(c), 0))
   end
 
-  return ideal(O, x) * I
+  return ideal(O, c) * I
 end
 
-function Base.:*(x::FieldElem, O::GenOrd)
-  @req parent(x) === field(O) "Element must lie in the field of the order"
-  x_num, x_denom = integral_split(x, O)
-  return fractional_ideal(ideal(O, x_num), x_denom)
+function Base.:*(c::RingElement, I::GenOrdFracIdl)
+  O = order(I)
+  g = _as_coefficient_ring_elem(O, c)
+
+  g === nothing && return ideal(O, c)*I
+
+  return _ideal_scale_by_base_field_scalar(I, base_field(field(O))(g))
 end
 
-function Base.:*(c::Generic.RationalFunctionFieldElem, I::GenOrdFracIdl)
-  @req parent(c) === base_field(field(order(I))) "scalar must lie in the base field of the function field"
-  return _scale_by_base_field_scalar(I, c)
+function Base.:*(c::FieldElem, O::GenOrd)
+  @req parent(c) === field(O) "Element must lie in the field of the order"
+  c_num, c_den = integral_split(c, O)
+  return fractional_ideal(ideal(O, c_num), c_den)
 end
 
 # multiplying by field element always returns fractional ideal (for type stability)
-function Base.:*(c::Generic.RationalFunctionFieldElem, I::GenOrdIdl)
-  return c * fractional_ideal(I)
+function Base.:*(c::FieldElem, I::GenOrdFracIdl)
+  O = order(I)
+  parent(c) === base_field(field(O)) && return _ideal_scale_by_base_field_scalar(I, c)
+  return (c*O) * I
+end
+
+# multiplying by field element always returns fractional ideal (for type stability)
+function Base.:*(c::FieldElem, I::GenOrdIdl)
+  O = order(I)
+  parent(c) === base_field(field(O)) && return c*fractional_ideal(I)
+  return (c*O) * I
 end
 
 Base.:*(I::GenOrdFracIdl, x::GenOrdElem) = x * I
+Base.:*(I::GenOrdFracIdl, c::RingElement) = c*I
 Base.:*(O::GenOrd, f::FieldElem) = f * O
-Base.:*(I::GenOrdFracIdl, c::Generic.RationalFunctionFieldElem) = c * I
-Base.:*(I::GenOrdIdl, c::Generic.RationalFunctionFieldElem) = c * I
+Base.:*(I::GenOrdFracIdl, c::FieldElem) = c * I
+Base.:*(I::GenOrdIdl, c::FieldElem) = c * I
 
 ################################################################################
 #

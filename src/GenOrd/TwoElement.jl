@@ -164,11 +164,61 @@ function _mul_impl_gens(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return nothing
 end
 
-###########################################################################################
+################################################################################
+#
+#  Scalar multiplication
+#
+################################################################################
+
+# scalars (base ring) scale generators and invariants
+# if we have two-element-normal ideal, we will also renormalize resulting ideal
+# NOTE: we assume that c is canonical
+function _mul_impl_gens_by_scalar(I::GenOrdIdl{S, T}, c::RingElem) where {S, T}
+  has_princ_gen(I) || has_2_elem(I) || return nothing
+
+  O = order(I)
+  n = has_norm(I) ? c^degree(O)*norm(I; copy = false) : nothing
+  m = has_minimum(I) ? c*minimum(I; copy = false) : nothing
+
+  if has_princ_gen(I)
+    return _make_principal_ideal(O, O(c)*_princ_gen(I); ideal_norm = n, ideal_minimum = m)
+  end
+
+  is_normal = is_maximal_known_and_maximal(O) && has_2_elem_normal(I)
+  # scalar scaling gives two-element representation, which might be non-normal
+  # since we have principal ideal for c, we need to enlarge modulus only for I
+
+  g1 = _make_canonical_in(O, c*_gen_one(I))
+  g2 = if is_normal
+    a1 = has_minimum(I) ? minimum(I; copy = false) : _gen_one(I)
+    b = _renormalize_gen_two(_gen_two(I), a1, g1)
+    _reduce_gen_two_2_elem_normal(O(c)*b, g1)
+  else
+    mod(O(c)*_gen_two(I), g1)
+  end
+
+  J = ideal(O, g1, g2)
+  if is_normal
+    J.gens_normal = g1
+    @hassert :GenOrd 2 defines_2_normal(J)
+  end
+
+  if n !== nothing
+    J.norm = _make_canonical_in(O, n)
+  end
+  if m !== nothing
+    J.minimum = _make_canonical_in(O, m)
+  end
+
+  return J
+end
+
+
+################################################################################
 #
 #   Inverse
 #
-###########################################################################################
+################################################################################
 
 # For I = a*O the inverse is (1/a)*O = gamma/d * O with
 #   gamma, d = integral_split(a^-1).

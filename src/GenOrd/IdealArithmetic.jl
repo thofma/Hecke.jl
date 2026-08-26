@@ -109,6 +109,11 @@ _basis_matrix_pair(I::GenOrdIdl) = basis_matrix(I; copy = false), one(base_ring(
 #
 ###########################################################################################
 
+function _mul_eldiv_modulus(red::RowModuleReductionTrait, a, b)
+  ha, hb = _eldiv_modulus(red, a), _eldiv_modulus(red, b)
+  return (ha === nothing || hb === nothing) ? nothing : ha * hb
+end
+
 function _mul_impl_matrix_stack(red::RowModuleReductionTrait, a, b)
   # make a the simpler of the two: fewer generators means fewer blocks in the stack
   if _has_princ_gen(b) || (_has_two_gens(b) && !_has_princ_gen(a))
@@ -127,9 +132,7 @@ function _mul_impl_matrix_stack(red::RowModuleReductionTrait, a, b)
     reduce(vcat, [Mb * _representation_matrix(O, view(Ma, i, 1:n)) for i in 1:n])
   end
 
-  ha, hb = _eldiv_modulus(red, a), _eldiv_modulus(red, b)
-  modulus = (ha === nothing || hb === nothing) ? nothing : ha*hb
-  return _reduce_row_module!(red, V; modulus = modulus)
+  return _reduce_row_module!(red, V; modulus = _mul_eldiv_modulus(red, a, b))
 end
 
 function _mul_impl_matrix(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
@@ -152,7 +155,7 @@ function _mul_impl_matrix(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return c
 end
 
-function Base.:(*)(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+function Base.:*(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
   is_zero(a) && return a
@@ -202,8 +205,90 @@ function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
 end
 
-Base.:*(A::GenOrdIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T} = fractional_ideal(A)*B
-Base.:*(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T} = A*fractional_ideal(B)
+Base.:*(a::GenOrdIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T} = fractional_ideal(a) * b
+Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T} = a * fractional_ideal(b)
+
+###########################################################################################
+#
+#   Addition
+#
+###########################################################################################
+
+function _add_eldiv_modulus(red::RowModuleReductionTrait, a, ta, b, tb)
+  ha, hb = _eldiv_modulus(red, a), _eldiv_modulus(red, b)
+  # both a and b are contained in a + b, so both ta * ha and tb * hb
+  #   are multiples of the sum's largest elementary divisor
+  if ha === nothing
+    return hb === nothing ? nothing : tb * hb
+  else
+    return hb === nothing ? ta * ha : gcd(ta * ha, tb * hb)
+  end
+end
+
+# returns (d, d/da, d/db) for d = lcm(da, db)
+# NOTE: denominators of fractional ideals are canonical in order's base ring
+#   making the returned tuple same
+function _add_common_denominator(da::RingElem, db::RingElem)
+  d = lcm(da, db)
+  return d, divexact(d, da), divexact(d, db)
+end
+
+# returns the tuple (M, d) with M reduced matrix and d denominator
+function _add_impl_matrix_stack(red::RowModuleReductionTrait, a, b)
+  # TODO: we can optimize this a bit for when we know generators,
+  #   since materializing matrix in this case will run reduction already
+  #   and we run reduction here immediately again
+  # For principal ideals we can write representation matrix directly
+  # For two-element <m, a> + <n, b> = <g, a, b> where g = gcd(m, n)
+  #   assuming m, n are both in the base ring. Then the matrix stack is
+  # [ g*I ; M_(a mod g) ; M_(b mod g) ]
+  Ma, da = _basis_matrix_pair(a)
+  Mb, db = _basis_matrix_pair(b)
+
+  d, ta, tb = _add_common_denominator(da, db)
+  V = vcat(is_unit(ta) ? Ma : ta*Ma, is_unit(tb) ? Mb : tb*Mb)
+  return _reduce_row_module!(red, V; modulus = _add_eldiv_modulus(red, a, ta, b, tb)), d
+end
+
+function Base.:+(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return b
+  is_zero(b) && return a
+  is_one(a)  && return a
+  is_one(b)  && return b
+
+  # TODO: we can optimize if we have generators:
+  # c1*O + c2*O = (c1, c2)*O when c1, c2 are in the base ring
+  # <m, a> + c*O = <gcd(m,c), a> when m, c are in the base ring
+
+  M, _  = _add_impl_matrix_stack(HNFRedTrait(), a, b)
+  return ideal(order(a), M; M_in_hnf = true)
+end
+
+function Base.:+(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return b
+  is_zero(b) && return a
+  # NOTE: no is_one check! for integral ideals it works because I \subseteq O,
+  #   so O + I = O. This fails for fractional ideals
+
+  O = order(a)
+  red = _row_reduction_trait(O)
+
+  # TODO: should we care for Popov reduction?
+  if red isa HNFRedTrait && isdefined(a, :num) && isdefined(b, :num)
+    d, ta, tb = _add_common_denominator(denominator(a; copy = false), denominator(b; copy = false))
+    return fractional_ideal(ta*numerator(a; copy = false) + tb*numerator(b; copy = false), d)
+  end
+
+  M, d = _add_impl_matrix_stack(red, a, b)
+  return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
+end
+
+Base.:+(a::GenOrdIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T} = fractional_ideal(a) + b
+Base.:+(a::GenOrdFracIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T} = a + fractional_ideal(b)
 
 ###########################################################################################
 #
@@ -328,7 +413,7 @@ function inv(I::GenOrdFracIdl)
   # Otherwise, since currently two-element-normal representation does not control
   #   coefficient height (over Q(x)), use popov reduction of the basis matrix
   if isdefined(I, :num) && red isa HNFRedTrait
-    return ideal(O, d) * inv(numerator(I; copy = false))
+    return d * inv(numerator(I; copy = false))
   end
 
   return _inv_impl_matrix(red, O, I)
