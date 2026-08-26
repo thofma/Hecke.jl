@@ -339,9 +339,11 @@ end
 # The Mulders-Storjohann loop, following weak_popov_with_pivots! in
 #   AbstractAlgebra/src/Matrix.jl.
 # U is touched only when with_trafo is true: its rows are combined and scaled
-#   exactly like the rows of P, so P_out = U*P_in holds exactly and U is unimodular:
-#   simple transformations have determinant 1, while stripping content c scales a row
-#   by the unit 1/c.
+#   exactly like the rows of P. If U starts as the identity, then
+#   P_out = U*P_in holds exactly and U is unimodular: simple transformations
+#   have determinant 1, while stripping content c scales a row by the unit 1/c.
+# U may instead start with selected columns of the identity when only those
+#   columns of the transform are needed.
 function _weak_popov!(P::MatElem{T}, U::MatElem{T}, with_trafo::Bool) where {T <: PolyRingElem}
   n = ncols(P)
 

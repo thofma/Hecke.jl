@@ -103,6 +103,14 @@ end
 
 _basis_matrix_pair(I::GenOrdIdl) = basis_matrix(I; copy = false), one(base_ring(order(I)))
 
+# returns (d, d/da, d/db) for d = lcm(da, db)
+# NOTE: denominators of fractional ideals are canonical in order's base ring
+#   making the returned tuple same
+function _common_denominator_with_factors(da::RingElem, db::RingElem)
+  d = lcm(da, db)
+  return d, divexact(d, da), divexact(d, db)
+end
+
 ###########################################################################################
 #
 #   Multiplication
@@ -190,7 +198,7 @@ function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   # TODO: discern Q(x) from F_q(x) - the latter has good two-element-normal representation
   if isdefined(a, :num) && isdefined(b, :num)
     if red isa HNFRedTrait
-      c = numerator(a; copy = false)*numerator(b; copy = false)
+      c = numerator(a; copy = false) * numerator(b; copy = false)
       return fractional_ideal(c, d)
     elseif _has_princ_gen(a) && _has_princ_gen(b)
       # make sure we simplify the resulting ideal
@@ -225,14 +233,6 @@ function _add_eldiv_modulus(red::RowModuleReductionTrait, a, ta, b, tb)
   end
 end
 
-# returns (d, d/da, d/db) for d = lcm(da, db)
-# NOTE: denominators of fractional ideals are canonical in order's base ring
-#   making the returned tuple same
-function _add_common_denominator(da::RingElem, db::RingElem)
-  d = lcm(da, db)
-  return d, divexact(d, da), divexact(d, db)
-end
-
 # returns the tuple (M, d) with M reduced matrix and d denominator
 function _add_impl_matrix_stack(red::RowModuleReductionTrait, a, b)
   # TODO: we can optimize this a bit for when we know generators,
@@ -245,7 +245,7 @@ function _add_impl_matrix_stack(red::RowModuleReductionTrait, a, b)
   Ma, da = _basis_matrix_pair(a)
   Mb, db = _basis_matrix_pair(b)
 
-  d, ta, tb = _add_common_denominator(da, db)
+  d, ta, tb = _common_denominator_with_factors(da, db)
   V = vcat(is_unit(ta) ? Ma : ta*Ma, is_unit(tb) ? Mb : tb*Mb)
   return _reduce_row_module!(red, V; modulus = _add_eldiv_modulus(red, a, ta, b, tb)), d
 end
@@ -279,8 +279,10 @@ function Base.:+(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
 
   # TODO: should we care for Popov reduction?
   if red isa HNFRedTrait && isdefined(a, :num) && isdefined(b, :num)
-    d, ta, tb = _add_common_denominator(denominator(a; copy = false), denominator(b; copy = false))
-    return fractional_ideal(ta*numerator(a; copy = false) + tb*numerator(b; copy = false), d)
+    a_num, a_den = numerator(a; copy = false), denominator(a; copy = false)
+    b_num, b_den = numerator(b; copy = false), denominator(b; copy = false)
+    d, ta, tb = _common_denominator_with_factors(a_den, b_den)
+    return fractional_ideal(ta*a_num + tb*b_num, d)
   end
 
   M, d = _add_impl_matrix_stack(red, a, b)
@@ -418,3 +420,116 @@ function inv(I::GenOrdFracIdl)
 
   return _inv_impl_matrix(red, O, I)
 end
+
+################################################################################
+#
+#   Intersection
+#
+################################################################################
+
+function _intersect_eldiv_modulus(red::RowModuleReductionTrait, a, ta, b, tb)
+  ha, hb = _eldiv_modulus(red, a), _eldiv_modulus(red, b)
+  return (ha === nothing || hb === nothing) ? nothing : lcm(ta*ha, tb*hb)
+end
+
+# The row module is (u, v) * [A A ; 0 B] = (u*A, u*A + v*B)
+# The intersection then corresponds to u*A + v*B = 0
+# After running lower-left HNF these are the top n rows
+#   having the basis in the left part (top left block)
+# NOTE: the bottom-right block will have A + B
+function _intersect_impl_matrix_stack(red::HNFRedTrait, a, b)
+  Ma, da = _basis_matrix_pair(a)
+  Mb, db = _basis_matrix_pair(b)
+
+  d, ta, tb = _common_denominator_with_factors(da, db)
+  Va = is_unit(ta) ? Ma : ta*Ma
+  Vb = is_unit(tb) ? Mb : tb*Mb
+
+  n = ncols(Va)
+  V = vcat(hcat(Va, Va), hcat(zero_matrix(base_ring(Va), n, n), Vb))
+  modulus = _intersect_eldiv_modulus(red, a, ta, b, tb)
+  H = modulus === nothing ? _hnf_left!(V) : hnf_modular_eldiv_left!(V, modulus)
+  return sub(H, 1:n, 1:n), d
+end
+
+# For the Popov form, we consider P = U*[A ; B]. We will have exactly n zero rows
+#   in P, and corresponding rows of U give exactly u*A + v*B = 0, that is they span
+#   the intersection
+# NOTE: here the symmetry with sum is even more evident: same stack but sum
+#   corresponds to non-zero rows of P
+function _intersect_impl_matrix_stack(red::PopovRedTrait, a, b)
+  Ma, da = _basis_matrix_pair(a)
+  Mb, db = _basis_matrix_pair(b)
+
+  d, ta, tb = _common_denominator_with_factors(da, db)
+  Va = is_unit(ta) ? Ma : ta*Ma
+  Vb = is_unit(tb) ? Mb : tb*Mb
+
+  n = ncols(Va)
+  MR = base_ring(Va)
+
+  # NOTE: _weak_popov! scales rows of the transform matrix. The intersection needs only
+  #   the first n columns of the full transform, initialized here as the first
+  #   n columns of the 2n x 2n identity matrix
+  # The code below is equivalent to
+  #   P, U = _weak_popov_with_transform!(vcat(Va, Vb))
+  #   keep = [i for i in 1:nrows(P) if is_zero_row(P, i)]
+  U = vcat(identity_matrix(MR, n), zero_matrix(MR, n, n))
+  V = vcat(Va, Vb)
+  _weak_popov!(V, U, true)
+  keep = [i for i in 1:nrows(V) if is_zero_row(V, i)]
+  @hassert :GenOrd 1 length(keep) == n
+
+  return _reduce_row_module!(red, sub(U, keep, 1:n)*Va), d
+end
+
+@doc raw"""
+    intersect(x::GenOrdIdl, y::GenOrdIdl) -> GenOrdIdl
+
+Returns $x \cap y$.
+"""
+function Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return a
+  is_zero(b) && return b
+  is_one(a)  && return b
+  is_one(b)  && return a
+
+  O = order(a)
+  M, _ = _intersect_impl_matrix_stack(HNFRedTrait(), a, b)
+  c = ideal(O, M; M_in_hnf = true)
+
+  # minimum is exact: (a \cap R) \cap (b \cap R) = (a \cap b) \cap R
+  # NOTE: we have computed the minima already for the HNF modulus
+  c.minimum = _make_canonical_in(O, lcm(minimum(a; copy = false), minimum(b; copy = false)))
+  return c
+end
+
+@doc raw"""
+    intersect(x::GenOrdFracIdl, y::GenOrdFracIdl) -> GenOrdFracIdl
+
+Returns $x \cap y$.
+"""
+function Base.intersect(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
+  @req order(a) === order(b) "Ideals must have same order"
+
+  is_zero(a) && return a
+  is_zero(b) && return b
+
+  O = order(a)
+  red = _row_reduction_trait(O)
+
+  if red isa HNFRedTrait && isdefined(a, :num) && isdefined(b, :num)
+    a_num, a_den = numerator(a; copy = false), denominator(a; copy = false)
+    b_num, b_den = numerator(b; copy = false), denominator(b; copy = false)
+    d, ta, tb = _common_denominator_with_factors(a_den, b_den)
+    return fractional_ideal(intersect(ta * a_num, tb * b_num), d)
+  end
+
+  M, d = _intersect_impl_matrix_stack(red, a, b)
+  return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
+end
+
+Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T} = intersect(fractional_ideal(a), b)
+Base.intersect(a::GenOrdFracIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T} = intersect(a, fractional_ideal(b))

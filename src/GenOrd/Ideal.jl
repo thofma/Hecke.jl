@@ -426,31 +426,6 @@ function Base.isequal(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
   return a == b
 end
 
-@doc raw"""
-    intersect(x::GenOrdIdl, y::GenOrdIdl) -> GenOrdIdl
-
-Returns $x \cap y$.
-"""
-function Base.intersect(a::GenOrdIdl{S, T}, b::GenOrdIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  is_zero(a) && return a
-  is_zero(b) && return b
-  is_one(a)  && return b
-  is_one(b)  && return a
-
-  # [A A ; 0 B] lower left HNF gives intersection in the top left block
-  O = order(a)
-  n = degree(O)
-
-  g = lcm(minimum(a; copy = false), minimum(b; copy = false))
-  Ma = basis_matrix(a; copy = false)
-  Mb = basis_matrix(b; copy = false)
-  V = vcat(hcat(Ma, Ma), hcat(zero_matrix(base_ring(O), n, n), Mb))
-  H = sub(hnf_modular_eldiv_left!(V, g), 1:n, 1:n)
-  return ideal(O, H; M_in_hnf = true)
-end
-
 ################################################################################
 #
 #  Powering

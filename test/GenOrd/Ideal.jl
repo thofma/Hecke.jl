@@ -130,6 +130,53 @@
     end
   end
 
+  function test_intersect_common(O, A, B)
+    U = ideal(O, one(O))
+    Z = ideal(O, zero(O))
+
+    C = @inferred intersect(A, B)
+    @test C == intersect(B, A)
+
+    # contained in both, and contains the product
+    @test C + A == A
+    @test C + B == B
+    @test A*B + C == C
+
+    # degenerate arguments
+    @test intersect(A, U) == A
+    @test intersect(U, A) == A
+    @test is_zero(intersect(A, Z))
+    @test is_zero(intersect(Z, A))
+    @test intersect(A, A) == A
+
+    if Hecke.is_maximal_known_and_maximal(O)
+      @test C*(A + B) == A*B
+    end
+  end
+
+  function test_intersect_common_frac(O, A, B)
+    n = degree(O)
+    R = base_ring(O)
+    Z = fractional_ideal(O, zero_matrix(R, n, n), one(R))
+
+    C = @inferred intersect(A, B)
+    @test C == intersect(B, A)
+
+    # contained in both (contains the product is guaranteed only for integral ideals)
+    @test C + A == A
+    @test C + B == B
+
+    # degenerate arguments
+    @test is_zero(intersect(A, Z))
+    @test is_zero(intersect(Z, A))
+    @test intersect(A, A) == A
+
+    if Hecke.is_maximal_known_and_maximal(O)
+      @test C*(A + B) == A*B
+      @test C == inv(inv(A) + inv(B))
+    end
+  end
+
   test_colon_common(O, p) = test_colon_common_ideal(O, ideal(O, O(p)))
 
   @testset "over F_2(x)" begin
@@ -246,6 +293,25 @@
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
       test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+1))))
     end
+
+    @testset "intersect" begin
+      O = Ofin
+      P = prime_decomposition(O, O.R(x^4 + x^3 + 1))[1][1]
+      Q = prime_decomposition(O, O.R(x^2 + x + 1))[1][1]
+      test_intersect_common(O, P^2*Q, P*Q^2)
+      I, J = fractional_ideal(P, O.R(x)), fractional_ideal(Q, O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+      I = fractional_ideal(O, basis_matrix(P; copy = false), O.R(x))
+      J = fractional_ideal(O, basis_matrix(Q; copy = false), O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+
+      O = Oinf
+      N1, N2 = 1//(x^2*t), 1//t^2
+      test_intersect_common(O, ideal(O, N1), ideal(O, N2))
+      I = fractional_ideal(O, basis_matrix(ideal(O, N1); copy = false), O.R(1//(x + 1)))
+      J = fractional_ideal(O, basis_matrix(ideal(O, N2); copy = false), O.R(1//x))
+      test_intersect_common_frac(O, I, J)
+    end
   end
 
   @testset "over Q(x) with non-monic defining polynomial" begin
@@ -300,6 +366,25 @@
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
       test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
     end
+
+    @testset "intersect" begin
+      O = Ofin
+      pd = @inferred prime_decomposition(O, O.R(x + 1))
+      P, Q = pd[1][1], pd[2][1]
+      test_intersect_common(O, P^2*Q, P*Q^2)
+      I, J = fractional_ideal(P, O.R(x)), fractional_ideal(Q, O.R(x+2))
+      test_intersect_common_frac(O, I, J)
+      I = fractional_ideal(O, basis_matrix(P; copy = false), O.R(x))
+      J = fractional_ideal(O, basis_matrix(Q; copy = false), O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+
+      O = Oinf
+      N1, N2 = 1//(t*x + x^2), 1//(t*x)
+      test_intersect_common(O, ideal(O, N1), ideal(O, N2))
+      I = fractional_ideal(O, basis_matrix(ideal(O, N1); copy = false), O.R(1//(2*x+25)))
+      J = fractional_ideal(O, basis_matrix(ideal(O, N2); copy = false), O.R(1//(x+3)))
+      test_intersect_common_frac(O, I, J)
+    end
   end
 
   @testset "over Q(x)" begin
@@ -335,6 +420,25 @@
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
       test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
+    end
+
+    @testset "intersect" begin
+      O = Ofin
+      pd = @inferred prime_decomposition(O, O.R(x^3 + x^2 - 1))
+      P, Q = pd[1][1], pd[2][1]
+      test_intersect_common(O, P^2*Q, P*Q^2)
+      I, J = fractional_ideal(P, O.R(x)), fractional_ideal(Q, O.R(x+2))
+      test_intersect_common_frac(O, I, J)
+      I = fractional_ideal(O, basis_matrix(P; copy = false), O.R(x))
+      J = fractional_ideal(O, basis_matrix(Q; copy = false), O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+
+      O = Oinf
+      N1, N2 = 1//(t*x + x^2), 1//(t*x)
+      test_intersect_common(O, ideal(O, N1), ideal(O, N2))
+      I = fractional_ideal(O, basis_matrix(ideal(O, N1); copy = false), O.R(1//(2*x+25)))
+      J = fractional_ideal(O, basis_matrix(ideal(O, N2); copy = false), O.R(1//(x+3)))
+      test_intersect_common_frac(O, I, J)
     end
   end
 
@@ -398,6 +502,13 @@
     @testset "ideal inv" begin
       test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
       test_ideal_inv_2elem_normal(OK, (ZZ(2), ZZ(3), ZZ(5), ZZ(7)))
+    end
+
+    @testset "intersect" begin
+      P = prime_decomposition(OK, ZZ(2))[1][1]
+      Q = prime_decomposition(OK, ZZ(7))[1][1]
+      test_intersect_common(OK, P^2*Q, P*Q^2)
+      test_intersect_common_frac(OK, fractional_ideal(P, ZZ(3)), fractional_ideal(Q, ZZ(5)))
     end
   end
 

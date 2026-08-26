@@ -249,24 +249,6 @@ Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 
 ################################################################################
 #
-#  Binary operations
-#
-################################################################################
-
-
-function Base.intersect(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  den_a, den_b = denominator(a; copy=false), denominator(b; copy=false)
-  d = lcm(den_a, den_b)
-
-  I = divexact(d, den_a) * numerator(a; copy=false)
-  J = divexact(d, den_b) * numerator(b; copy=false)
-  return fractional_ideal(intersect(I, J), d)
-end
-
-################################################################################
-#
 #  Powering
 #
 ################################################################################
