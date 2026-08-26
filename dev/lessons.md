@@ -295,9 +295,25 @@ seconds on one where this search takes 0.048, 418 on one where it takes 0.010,
 the mean and the worst case -- are met on the corpus as a whole and by wide
 margins, and the median is not.
 
+Split by family the two implementations turn out to be complementary rather
+than one being better:
+
+                        lattices   ours     Hecke    ours worst  Hecke worst
+    34, 71, 81, X25/26     1984    47.8 s    12.1 s      2.01 s       1.13 s
+    Nebe files              240     4.4 s  1650.1 s      0.89 s     656.50 s
+
+Hecke is about four times better on the first family and this search is about
+three hundred and seventy five times better on the second, where Hecke has
+lattices of rank 13 to 18 that take it minutes.  Corpus-wide the second
+dominates the totals, which is why the mean and the worst case come out won and
+by wide margins.  The final state of the code improves the first family further,
+to 32.1 seconds and a worst case of 0.75.
+
 The lesson about benchmarking is the one worth keeping: a sample drawn from the
 files one has been working on is not the corpus, and for two days it hid both
-that the mean was already won and where the opponent actually fails.  The median is 1.6 times
+that the mean was already won and where the opponent actually fails.  The habit
+that would have caught it is cheap -- always report the aggregate split by
+family, not only the total and not only the cases being worked on.  The median is 1.6 times
 behind and the mean 3.0, so the objective is not yet met.
 
 What stands between here and the other two is now identified and is not a
