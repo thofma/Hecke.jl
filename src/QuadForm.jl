@@ -27,7 +27,12 @@ include("QuadForm/Quad/Lattices.jl")
 include("QuadForm/IntegerLattices/ZLattices.jl")
 include("QuadForm/IntegerLattices/RootLattices.jl")
 include("QuadForm/IntegerLattices/ZLatticeMorphism.jl")
-include("QuadForm/IsometryBacktrack.jl")
+# The partition backtrack experiment is deliberately not loaded here.  It is
+# not part of Hecke and is not going to be: it is AI generated, around five
+# thousand lines, and Hecke ships only human-verified code.  It lives on this
+# branch as a record of the experiment, is used through the `BTLat` package,
+# and what it produced that is meant to last is written up in dev/lessons.md.
+# include("QuadForm/IsometryBacktrack.jl")
 include("QuadForm/IntegerLattices/SpecialZLattices.jl")
 include("QuadForm/IntegerLattices/NormalForm.jl")
 include("QuadForm/Quad/Genus.jl")
