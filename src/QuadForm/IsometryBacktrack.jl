@@ -6049,8 +6049,13 @@ function _bt_min_bound_basis(G::Matrix{Int})
 end
 
 # n of the given vectors forming a basis, or `nothing`.
-function _bt_pick_basis(V::Vector{Vector{Int}}, n::Int; tries::Int = 6,
-                        look::Int = 3000)
+# The acceptance test is a Smith form, so the number of candidates examined has
+# to be bounded by what finding a better basis can save.  Six attempts over
+# three thousand candidates each is eighteen thousand Smith forms, which on
+# lattice 3536 of 81.lattices was ninety nine milliseconds of preprocessing for
+# a search that takes eight.
+function _bt_pick_basis(V::Vector{Vector{Int}}, n::Int; tries::Int = 3,
+                        look::Int = 400)
   nv = length(V)
   ord = Vector{Int}(undef, nv)
   st = UInt64(0x9e3779b97f4a7c15)          # a fixed seed keeps this repeatable
