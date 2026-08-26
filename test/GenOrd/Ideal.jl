@@ -65,18 +65,22 @@
     @test !(L(1)//L(a)^2 in Iinv)
 
     # In a local ring O.R, units are everything coprime to the prime, so this test doesnt make sense
-    if !isa(O.R, LocalizedEuclideanRing)
+    # Similar in KInftyRing: this is localization
+    if !isa(O.R, LocalizedEuclideanRing) && !isa(O.R, KInftyRing)
       @test !(L(1)//L(t) in Iinv)
     end
   end
 
   function test_colon_common_ideal(O, I)
-    @assert is_prime(I)
-
     L = Hecke.field(O)
     U = ideal(O, one(O))
     @test Hecke.colon(I, U) == fractional_ideal(I)
     @test one(L) in Hecke.colon(I, I)
+    @test Hecke.colon(U, I) * I == U
+
+    I = fractional_ideal(I)
+    U = fractional_ideal(U)
+    @test Hecke.colon(I, U) == I
     @test Hecke.colon(U, I) * I == U
   end
 
@@ -203,16 +207,20 @@
           check_prime_2elem(P, 1, 1)
         end
 
-        check_prime_2elem_single_above(Oinf, Oinf.R(1//x), 1, 3)
+        check_prime_2elem_single_above(Oinf, 1//x, 1, 3)
       end
     end
 
     @testset "containment" begin
       test_containment_common(Ofin, x^4 + x + 1, t)
+      test_containment_common(Oinf, 1//(x^4 + x + 1), 1//t)
     end
 
     @testset "colon" begin
       test_colon_common(Ofin, x^4 + x + 1)
+      test_colon_common(Ofin, t + x^4)
+      test_colon_common_ideal(Ofin, ideal(Ofin, [Ofin(t), Ofin(x+1)]) * ideal(Ofin, Ofin(t + x^2)))
+      test_colon_common(Oinf, 1//(t + x^4))
     end
 
     @testset "ideal inv" begin
@@ -254,15 +262,19 @@
       end
 
       # x^2 + 2 is inert
-      check_prime_2elem_single_above(Ofin, Ofin.R(x^2 + 2), 3, 1)
+      check_prime_2elem_single_above(Ofin, x^2 + 2, 3, 1)
     end
 
     @testset "containment" begin
       test_containment_common(Ofin, x^2 + x*t + 1, x*t)
+      test_containment_common(Oinf, 1//(x^2 + x*t + 1), 1//(x*t))
     end
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 2)
+      test_colon_common(Ofin, t*x + x^2)
+      test_colon_common_ideal(Ofin, ideal(Ofin, [Ofin(t*x), Ofin(x+1)]) * ideal(Ofin, Ofin(x^2+2)))
+      test_colon_common(Oinf, 1//(t*x + x^2))
     end
 
     @testset "ideal inv" begin
@@ -291,10 +303,14 @@
 
     @testset "containment" begin
       test_containment_common(Ofin, x^2 + 1, t)
+      test_containment_common(Oinf, 1//(x^2 + 1), 1//t)
     end
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 1)
+      test_colon_common(Ofin, t*x + x^2)
+      test_colon_common_ideal(Ofin, ideal(Ofin, [Ofin(t), Ofin(x+1)]) * ideal(Ofin, Ofin(x^2+2)))
+      test_colon_common(Oinf, 1//(t*x + x^2))
     end
 
     @testset "ideal inv" begin
@@ -339,8 +355,8 @@
     end
 
     @testset "prime decomposition" begin
-      check_prime_2elem_single_above(OK, ZZ(3), 2, 1)
-      check_prime_2elem_single_above(OK, ZZ(2), 1, 2)
+      check_prime_2elem_single_above(OK, 3, 2, 1)
+      check_prime_2elem_single_above(OK, 2, 1, 2)
 
       pd = @inferred prime_decomposition(OK, ZZ(7))
       @test length(pd) == 2
@@ -359,7 +375,9 @@
     end
 
     @testset "colon" begin
-      test_colon_common(OK, ZZ(3))
+      test_colon_common(OK, 3)
+      test_colon_common(OK, 15)
+      test_colon_common_ideal(OK, ideal(OK, [OK(a*2), OK(4)]) * ideal(OK, 15))
     end
 
     @testset "ideal inv" begin
@@ -543,11 +561,11 @@
       x = gen(Hecke.Globals.Qx)
       K, a = number_field(x^2 - 1//2, :a)
       O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
-      check_prime_2elem_single_above(O, ZZ(3), 2, 1)
-      check_prime_2elem_single_above(O, ZZ(5), 2, 1)
+      check_prime_2elem_single_above(O, 3, 2, 1)
+      check_prime_2elem_single_above(O, 5, 2, 1)
 
       pd = @inferred prime_decomposition(O, ZZ(2))
-      check_prime_2elem_single_above(O, ZZ(2), 1, 2)
+      check_prime_2elem_single_above(O, 2, 1, 2)
 
       pd = @inferred prime_decomposition(O, ZZ(7))
       @test length(pd) == 2
@@ -570,7 +588,7 @@
       for (P, e) in pd
         check_prime_2elem(P, 1, 1)
       end
-      @test prod(P^e for (P, e) in pd) == Hecke.GenOrdIdl(O, ZZ(2))
+      @test prod(P^e for (P, e) in pd) == ideal(O, ZZ(2))
     end
   end
 end
@@ -610,7 +628,7 @@ end
   @test (@inferred index(O)) == x^2 - 1//3*x
   h = O.R(x)
   L = prime_decomposition(O, h)
-  @test prod([f[1]^f[2] for f in L]) == Hecke.GenOrdIdl(O, h)
+  @test prod([f[1]^f[2] for f in L]) == ideal(O, h)
 
   for (P, _) in L
     F, OtoF = residue_field(O, P)
@@ -715,6 +733,22 @@ end
   @test_throws ErrorException Oinf(x)
   @test_throws ErrorException ideal(Oinf, x) * I
   check_scaling(I, x)
+end
+
+@testset "Equality in non-maximal order" begin
+  x = gen(Hecke.Globals.Qx)
+  K, a = number_field(x^2 - 5, :a)
+  O = Hecke.GenOrd(ZZ, K) # non-maximal of conductor 2
+
+  I = ideal(O, 2, O(1 + a)) # prime above 2
+  A = fractional_ideal(I)
+  @test I*inv(I) == A # I is non-invertible!
+  @test A == A
+  @test A == deepcopy(A)
+
+  O2 = Hecke.GenOrd(ZZ, K)
+  @test ideal(O, 2) != ideal(O2, 2)
+  @test fractional_ideal(ideal(O, 2)) != fractional_ideal(ideal(O2, 2))
 end
 
 @testset "Reduction modulo ideal" begin

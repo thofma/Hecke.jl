@@ -100,7 +100,8 @@ end
   order::GenOrd{S, T}
   basis#::Vector{elem_type(GenOrd{S, T}}
   basis_matrix#dense_matrix_type(T)
-  basis_mat_inv#dense_matrix_type(S)
+  basis_matrix_inv_num            # ::dense_matrix_type(elem_type(T))
+  basis_matrix_inv_den::RingElem  # ::elem_type(T)
   norm
   minimum
   is_prime::Int            # 0: don't know
@@ -137,8 +138,7 @@ end
     # basis_matrix must be an owned (non-view) n x n lower-left HNF matrix
     # ideal(O::GenOrd, M) ensures this
     n = degree(O)
-    @assert nrows(M) == n
-    @assert ncols(M) == n
+    @assert nrows(M) == n && ncols(M) == n
 
     r = GenOrdIdl(O)
     r.basis_matrix = M
@@ -157,6 +157,7 @@ end
     if iszero(x)
       r.is_zero = 1
     else
+      r.is_zero = 2
       r.minimum = _minimum_principal(O, x)
       r.gen_one = r.minimum
       r.gen_two = x
@@ -166,11 +167,8 @@ end
     return r
   end
 
-  function GenOrdIdl(O::GenOrd, x::RingElem)
-    return GenOrdIdl(O, O(x))
-  end
-
   function GenOrdIdl(O::GenOrd, T::Vector{<:GenOrdElem})
+    @assert !isempty(T)
     @assert all(x -> parent(x) === O, T)
 
     # TODO: One should do this block by block instead of the big matrix
@@ -179,9 +177,13 @@ end
   end
 
   function GenOrdIdl(O::GenOrd, p::RingElem, a::GenOrdElem)
+    @assert parent(p) === base_ring(O)
+    @assert parent(a) === O
+
     r = GenOrdIdl(O)
     r.gen_one = p
     r.gen_two = a
+    r.is_zero = (is_zero(p) && is_zero(a)) ? 1 : 2
     return r
   end
 end
@@ -199,9 +201,15 @@ end
   basis_matrix_num # ::dense_matrix_type(elem_type(T))
   den::RingElem # ::elem_type(T)
 
-  norm::RingElem
+  # for basis matrix inverse, we keep it in the same form as basis:
+  #  matrix over the base ring and denominator
+  basis_matrix_inv_num # ::dense_matrix_type(elem_type(T))
+  basis_matrix_inv_den::RingElem # ::elem_type(T)
+
+  # basis_matrix is derived data over the base field
   basis_matrix
-  basis_mat_inv
+
+  norm::RingElem
 
   function GenOrdFracIdl(O::GenOrd{S, T}) where {S, T}
     z = new{S, T}()
@@ -224,6 +232,30 @@ end
     return z
   end
 end
+
+################################################################################
+#
+#   Row module reduction type
+#
+################################################################################
+
+# How do we reduce a generating set to a basis of its row module (fractional ideals)?
+abstract type RowModuleReductionTrait end
+
+# canonical lower-left HNF; the only reduction a general coefficient ring has
+struct HNFRedTrait <: RowModuleReductionTrait end
+
+# Mulders-Storjohann weak Popov: minimal row degrees, not a canonical form
+# over Q(x) includes content stripping
+struct PopovRedTrait <: RowModuleReductionTrait end
+
+_row_reduction_trait(::Type{<:Ring})                      = HNFRedTrait()
+_row_reduction_trait(::Type{<:PolyRing{<:FinFieldElem}})  = PopovRedTrait()
+_row_reduction_trait(::Type{<:PolyRing{QQFieldElem}})     = PopovRedTrait()
+
+_row_reduction_trait(R::Ring)     = _row_reduction_trait(typeof(R))
+_row_reduction_trait(O::GenOrd)   = _row_reduction_trait(base_ring(O))
+_row_reduction_trait(M::MatElem)  = _row_reduction_trait(base_ring(M))
 
 ################################################################################
 #

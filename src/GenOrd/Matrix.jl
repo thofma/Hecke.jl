@@ -417,3 +417,35 @@ function _weak_popov_with_transform!(P::MatElem{<:PolyRingElem})
   _weak_popov!(P, U, true)
   return P, U
 end
+
+###########################################################################################
+#
+#   Fraction-free matrix inverse
+#
+###########################################################################################
+
+# g = gcd(d, content(N)), accumulated over the matrix entries
+function _content_gcd(M::MatElem, d::RingElem)
+  g = d
+  for i in 1:nrows(M), j in 1:ncols(M)
+    is_unit(g) && return g
+    g = gcd(g, M[i, j])
+  end
+  return g
+end
+
+# Divide out the common content of N/d, making d minimal.
+function _strip_pair_content(M::MatElem, d::RingElem)
+  g = _content_gcd(M, d)
+  is_unit(g) && return M, d
+
+  return divexact(M, g), divexact(d, g)
+end
+
+# Inverse of a nonsingular square matrix M as a pair (X, d) with M^{-1} = X/d
+#   and X over the ring of M. K is a fraction field of the ring R of matrix entries
+function _inv_pair(M::MatElem, K::Field)
+  R = base_ring(M)
+  X, d = integral_split(inv(change_base_ring(K, M)), R)
+  return _strip_pair_content(X, d)
+end

@@ -69,7 +69,8 @@ function fractional_ideal(O::GenOrd, M::MatElem, d::RingElement)
 
   d = R(d)
   @req !is_zero(d) "denominator must be non-zero"
-  return GenOrdFracIdl(O, M, d)
+
+  return _fractional_ideal_from_basis_matrix(O, M, d; reduced = false)
 end
 
 @doc raw"""
@@ -80,12 +81,11 @@ $M$ lie in the base field of `field(O)`.
 """
 function fractional_ideal(O::GenOrd, M::MatElem)
   n = degree(O)
-
   @req base_ring(M) === base_field(field(O)) "basis matrix must be over the base field of the order"
   @req nrows(M) == n && ncols(M) == n "basis matrix must be square of size degree(O) = $n"
 
-  B, d = integral_split(M, coefficient_ring(O))
-  return GenOrdFracIdl(O, B, d)
+  M, d = integral_split(M, coefficient_ring(O))
+  return _fractional_ideal_from_basis_matrix(O, M, d; reduced = false)
 end
 
 fractional_ideal(I::GenOrdFracIdl) = I
@@ -113,23 +113,42 @@ end
 #
 ################################################################################
 
-function assure_has_basis_matrix(a::GenOrdFracIdl{S, T}) where {S, T}
-  isdefined(a, :basis_matrix) && return nothing
-  @assert isdefined(a, :den) "Not a valid fractional ideal"
+function _assure_has_basis_matrix(I::GenOrdFracIdl{S, T}) where {S, T}
+  isdefined(I, :basis_matrix) && return nothing
+  @assert isdefined(I, :den) "Not a valid fractional ideal"
 
-  bm = _numerator_matrix(a)
-  k = base_field(field(order(a)))::base_field_type(S)
-  a.basis_matrix = divexact(change_base_ring(k, bm), k(denominator(a; copy = false)))
+  bm = _numerator_matrix(I)
+  k = base_field(field(order(I)))::base_field_type(S)
+  I.basis_matrix = divexact(change_base_ring(k, bm), k(denominator(I; copy = false)))
   return nothing
 end
 
-function Hecke.basis_matrix(x::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T}
-  assure_has_basis_matrix(x)
+function Hecke.basis_matrix(I::GenOrdFracIdl{S, T}; copy::Bool = true) where {S, T}
+  _assure_has_basis_matrix(I)
 
-  M = x.basis_matrix::dense_matrix_type(elem_type(base_field_type(S)))
+  M = I.basis_matrix::dense_matrix_type(elem_type(base_field_type(S)))
   return copy ? deepcopy(M) : M
 end
 
+function _basis_matrix_pair(I::GenOrdFracIdl{S, T}) where {S, T}
+  return (_basis_matrix_numerator(I), I.den::elem_type(T))
+end
+
+function _assure_has_basis_matrix_inv(I::GenOrdFracIdl{S, T}) where {S, T}
+  isdefined(I, :basis_matrix_inv_num) && return nothing
+
+  # basis_matrix(a) = N/d, so its inverse is d*N^{-1}
+  K = base_field(field(order(I)))::base_field_type(S)
+  X, e = _inv_pair(_basis_matrix_numerator(I), K)
+  I.basis_matrix_inv_num, I.basis_matrix_inv_den = _strip_pair_content(denominator(I; copy = false)*X, e)
+
+  return nothing
+end
+
+function _basis_matrix_inv_pair(I::GenOrdFracIdl{S, T}) where {S, T}
+  _assure_has_basis_matrix_inv(I)
+  return (I.basis_matrix_inv_num::dense_matrix_type(elem_type(T)), I.basis_matrix_inv_den::elem_type(T))
+end
 
 ################################################################################
 #
@@ -236,17 +255,6 @@ Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 ################################################################################
 
 
-function Base.prod(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
-  @req order(a) === order(b) "Ideals must have same order"
-
-  A = numerator(a; copy = false)*numerator(b; copy = false)
-  return fractional_ideal(A, denominator(a; copy = false)*denominator(b; copy = false))
-end
-
-function Base.:*(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
-  return prod(a, b)
-end
-
 function Base.:(+)(a::GenOrdFracIdl{S, T}, b::GenOrdFracIdl{S, T}) where {S, T}
   @req order(a) === order(b) "Ideals must have same order"
 
@@ -348,16 +356,6 @@ end
 #  Ad hoc binary operations
 #
 ################################################################################
-
-function Base.:*(A::GenOrdIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
-  @req order(A) === order(B) "Ideals must have same order"
-  return fractional_ideal(A*numerator(B; copy = false), denominator(B; copy = false))
-end
-
-function Base.:*(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T}
-  @req order(A) === order(B) "Ideals must have same order"
-  return fractional_ideal(numerator(A; copy = false)*B, denominator(A; copy = false))
-end
 
 # scale ideal by the base field element: this is simple scalar multiplication,
 #   and it preserves HNF form
@@ -468,8 +466,23 @@ end
 ################################################################################
 
 function ==(A::GenOrdFracIdl{S, T}, B::GenOrdFracIdl{S, T}) where {S, T}
-  C = simplify(A * inv(B))
-  return isone(denominator(C; copy = false)) && isone(norm(C))
+  order(A) === order(B) || return false
+
+  is_zero(A) && return is_zero(B)
+  is_zero(B) && return false
+
+  O = order(A)
+  if is_maximal_known_and_maximal(O)
+    return is_one(A * inv(B))
+  else
+    da = denominator(A; copy = false)
+    db = denominator(B; copy = false)
+    d  = lcm(da, db)
+
+    I = O(divexact(d, da)) * numerator(A; copy = false)
+    J = O(divexact(d, db)) * numerator(B; copy = false)
+    return I == J
+  end
 end
 
 function ==(A::GenOrdFracIdl{S, T}, B::GenOrdIdl{S, T}) where {S, T}
@@ -485,44 +498,6 @@ function Base.hash(A::GenOrdFracIdl, h::UInt)
   n_num, n_den = numerator(n), denominator(n)
   return hash(n_num, hash(n_den, hash(order(A), h)))
 end
-
-################################################################################
-#
-#  Colon
-#
-################################################################################
-
-function Hecke.colon(I::GenOrdFracIdl, J::GenOrdFracIdl)
-  # Let I = a/c and J = b/d, a and b integral ideals, c, d \in Z, then
-  # \{ x \in K | xJ \subseteq I \} = \{ x \in K | xcb \subseteq da \}
-
-  O = order(I)
-  II = numerator(I; copy = false)*O(denominator(J; copy = false))
-  JJ = numerator(J; copy = false)*O(denominator(I; copy = false))
-  return Hecke.colon(II, JJ)
-end
-
-function Hecke.colon(I::GenOrdIdl, J::GenOrdFracIdl)
-  return colon(fractional_ideal(I), J)
-end
-
-function Hecke.colon(I::GenOrdFracIdl, J::GenOrdIdl)
-  return colon(I, fractional_ideal(J))
-end
-
-function inv(A::GenOrdFracIdl)
-  # inv(N/d) = d * inv(N): factor the scalar denominator out
-  #   instead of routing the whole fractional ideal through colon
-  #   which involves O(denominator) and extra ideal arithmetic
-  O = order(A)
-  k = base_field(field(O))
-
-  invN = inv(numerator(A; copy = false))
-  M = k(denominator(A; copy = false)) * basis_matrix(invN; copy = false)
-  return fractional_ideal(O, M)
-end
-
-Base.://(I::GenOrdFracIdl, J::GenOrdFracIdl) = colon(I, J)
 
 ################################################################################
 #
