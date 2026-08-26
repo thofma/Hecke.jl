@@ -271,13 +271,33 @@ worst case, not on every lattice.  Over 533 lattices sampled across the
 benchmark, timing both and checking every order agrees:
 
                        total      mean     median    worst
-    start of the day  87.8 s   164.8 ms    4.5 ms   75.9 s
-    now               10.0 s    18.8 ms    4.5 ms    0.47 s
-    Hecke tuned        3.1 s     5.8 ms    2.9 ms    0.46 s
+    two days ago      87.8 s   164.8 ms    4.5 ms   75.9 s
+    now                7.9 s    14.8 ms    4.5 ms    0.32 s
+    Hecke tuned        3.3 s     6.1 ms    2.8 ms    0.40 s
 
-The worst case improved by a factor of a hundred and sixty and the mean by
-nine.  **The worst case is now level with Hecke**, 0.46 seconds against 0.42,
-which is one of the three parts of the objective.  The median is 1.6 times
+**On that sample the worst case is now won**, 0.32 seconds against 0.40,
+having started at 75.9.
+
+But the sample was itself the mistake.  It was drawn from 34, 71, 81, X25 and
+X26 only, and those are the files where Hecke is strongest; it contains none
+of the Nebe files, where Hecke is not.  Over the whole corpus of 16097
+lattices, on the 2224 where both were timed:
+
+                      ours      Hecke
+    total            52.1 s   1662.2 s      32 times faster
+    mean             23.4 ms   747.4 ms     32 times faster
+    median            4.5 ms     2.5 ms      1.8 times slower
+    worst             2.0 s    656.5 s     327 times faster
+
+Hecke's worst cases are lattices of rank 13 to 18 in the Nebe files: 656
+seconds on one where this search takes 0.048, 418 on one where it takes 0.010,
+210 on one where it takes 0.002.  So two of the three parts of the objective --
+the mean and the worst case -- are met on the corpus as a whole and by wide
+margins, and the median is not.
+
+The lesson about benchmarking is the one worth keeping: a sample drawn from the
+files one has been working on is not the corpus, and for two days it hid both
+that the mean was already won and where the opponent actually fails.  The median is 1.6 times
 behind and the mean 3.0, so the objective is not yet met.
 
 What stands between here and the other two is now identified and is not a
