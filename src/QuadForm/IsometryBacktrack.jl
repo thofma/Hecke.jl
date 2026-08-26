@@ -5953,7 +5953,13 @@ function _bt_reduce_gram(L::ZZLat; cheap_only::Bool = false)
     end
   end
   cheap_only && return Gm, T, d//c
-  sb = _bt_short_basis(Gm)
+  # Both basis searches exist to lower the bound that will be enumerated to.
+  # When that bound is already below the largest diagonal entry the long basis
+  # vectors are being served from cosets, the enumeration is small, and there
+  # is nothing for a better basis to save -- while the searches themselves
+  # enumerate at every candidate bound and are not cheap.
+  worth = _bt_affordable_bound(Gm) >= _bt_max_diag(Gm)
+  sb = worth ? _bt_short_basis(Gm) : nothing
   if sb !== nothing
     Gs, U = sb
     # the greedy basis is only taken when it does not raise the bound either
@@ -5963,7 +5969,7 @@ function _bt_reduce_gram(L::ZZLat; cheap_only::Bool = false)
     end
   end
   # and finally, look for a basis of short vectors at a lower bound still
-  mb = _bt_min_bound_basis(Gm)
+  mb = worth ? _bt_min_bound_basis(Gm) : nothing
   if mb !== nothing
     Gm, U = mb
     T = U * T
@@ -5991,7 +5997,15 @@ end
 function _bt_min_bound_basis(G::Matrix{Int})
   n = size(G, 1)
   n < 2 && return nothing
-  cur = _bt_max_diag(G)
+  # The bound to beat is the one that will actually be enumerated to, which is
+  # the affordable bound and not the largest diagonal entry.  When the two
+  # differ the long basis vectors are served from cosets and the enumeration is
+  # already small, so there is nothing for a better basis to save: lattice 3653
+  # of 71.lattices has largest diagonal ten, enumerates to two with 183
+  # vectors, and was spending three hundred milliseconds looking for a basis to
+  # improve a bound it never uses, around a search that takes four.
+  cur = _bt_affordable_bound(G)
+  cur <= 0 && (cur = _bt_max_diag(G))
   lo = G[1, 1]
   for i in 2:n
     G[i, i] < lo && (lo = G[i, i])
