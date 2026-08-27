@@ -17,7 +17,7 @@ Both input and output are with respect to the basis matrix of `L`.
 The supported algorithms are `:embedding`, which reduces the problem to short
 vector enumeration in one additional dimension, and `:fincke_pohst`, which
 enumerates the target-shifted ellipsoid directly. The value `:default`
-currently selects `:embedding`.
+currently selects `:fincke_pohst`.
 
 # Examples
 
@@ -235,7 +235,7 @@ function _close_vectors_iterator(::Val{:default}, L::ZZLat,
                                  v::Vector{QQFieldElem}, lowerbound,
                                  upperbound::QQFieldElem,
                                  elem_type::Type{S} = ZZRingElem; kw...) where {S}
-  return _close_vectors_iterator(Val(:embedding), L, v, lowerbound,
+  return _close_vectors_iterator(Val(:fincke_pohst), L, v, lowerbound,
                                  upperbound, elem_type; kw...)
 end
 
