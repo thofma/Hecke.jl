@@ -13,6 +13,78 @@
     end
   end
 
+  @testset "real cyclotomic prime conductor orbit rank" begin
+    p128 = next_prime(10^10)
+    R128 = Hecke.pRationalCyclotomic._UInt128ModRing(p128)
+    a128 = R128(R128.p2 - 1234567)
+    b128 = R128(R128.p2 - 7654321)
+    m128 = ZZ(R128.p2)
+    @test (a128 + b128).data ==
+          UInt128(mod(ZZ(a128.data) + ZZ(b128.data), m128))
+    @test (a128 - b128).data ==
+          UInt128(mod(ZZ(a128.data) - ZZ(b128.data), m128))
+    @test (a128 * b128).data ==
+          UInt128(mod(ZZ(a128.data) * ZZ(b128.data), m128))
+    R128x, x128 = polynomial_ring(R128, :x; cached = false)
+    @test (x128 + 1)^3 ==
+          x128^3 + R128(3)*x128^2 + R128(3)*x128 + 1
+
+    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(13)
+    for p in [3, 151, next_prime(2^32)]
+      fast = Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor(T, p)
+      delta = Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(T, p)
+      reference = Hecke.pRational._schirokauer_map_data_minkowski_unit(
+        T.k, T.mink, p, T.aut; is_abelian = true, new = true
+      )
+      @test fast == reference
+      @test delta == fast
+      @test Hecke.pRationalCyclotomic._p_rationality_of_real_cyclotomic_check_per_prime(T, p) ==
+            delta[1]
+    end
+    p = next_prime(2^32)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_uint128(T, p)) ==
+          Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_two_limb(T, p)
+
+    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(197)
+    for p in [7, next_prime(10^9), next_prime(10^10)]
+      fast = Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor(T, p)
+      delta = Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(T, p)
+      reference = Hecke.pRational._schirokauer_map_data_minkowski_unit(
+        T.k, T.mink, p, T.aut; is_abelian = true, new = true
+      )
+      @test fast == reference
+      @test delta == fast
+      if p == next_prime(10^10)
+        @test Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_uint128(T, p) ==
+              fast
+      end
+      @test Hecke.pRationalCyclotomic._p_rationality_of_real_cyclotomic_check_per_prime(T, p) ==
+            delta[1]
+    end
+
+    p = next_prime(10^9)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor(T, p, p^2)) ==
+          (true, 0, 97)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(T, p)) ==
+          (true, 0, 97)
+
+    p = next_prime(10^10)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_two_limb(T, p)) ==
+          (true, 0, 97)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(T, p)) ==
+          (true, 0, 97)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor(T, p)) ==
+          (true, 0, 97)
+
+    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(5)
+    p = next_prime(ZZ(2)^70)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor(T, p, p^2)) ==
+          (true, 0, 1)
+    @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(T, p)) ==
+          (true, 0, 1)
+    @test Hecke.pRationalCyclotomic._p_rationality_of_real_cyclotomic_check_per_prime(T, p)
+  end
+
   # Lim 2022, Theorem 4.6
   ell = 11
   q = 2*ell + 1
