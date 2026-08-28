@@ -143,12 +143,34 @@
   Lm = rescale(L,-1)
   @test_throws ArgumentError close_vectors(Lm, v, 1)
 
+  @testset "Closest vectors" begin
+    L = integer_lattice(; gram=identity_matrix(QQ, 14))
+    v = zeros(QQFieldElem, 14)
+    v[1] = 1//2
+    m, vs = Hecke._closest_vectors(L, v; algorithm=:embedding)
+    @test m == 1//4
+    @test issetequal(vs, [zeros(ZZRingElem, 14), [ZZ(1); zeros(ZZRingElem, 13)]])
+
+    @test first(close_vectors_iterator(L, v, 14))[2] == 1//4
+    @test first(close_vectors_iterator(L, v, 14; algorithm=:default))[2] == 1//4
+
+    L = root_lattice(:A, 2)
+    v = QQFieldElem[1//2, 1//3]
+    m, vs = Hecke._closest_vectors(L, v)
+    m_embedded, vs_embedded = Hecke._closest_vectors(L, v; algorithm=:embedding)
+    @test m == m_embedded
+    @test issetequal(vs, vs_embedded)
+  end
+
   @testset "Direct Fincke-Pohst" begin
     function compare_close_vector_algorithms(L, v, args...; elem_type=ZZRingElem)
       embedded = close_vectors(L, v, args..., elem_type; algorithm = :embedding)
+      embedded_iterator = collect(
+        close_vectors_iterator(L, v, args..., elem_type; algorithm = :embedding))
       direct = close_vectors(L, v, args..., elem_type; algorithm = :fincke_pohst)
       direct_iterator = [deepcopy(x) for x in
         close_vectors_iterator(L, v, args..., elem_type; algorithm = :fincke_pohst)]
+      @test issetequal(embedded_iterator, embedded)
       @test issetequal(direct, embedded)
       @test issetequal(direct_iterator, embedded)
       @test length(direct) == length(unique(direct))
