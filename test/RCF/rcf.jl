@@ -1,3 +1,32 @@
+@testset "Totally real and totally complex class fields" begin
+  Qx, x = polynomial_ring(QQ)
+
+  for (f, sig) in [(x^2 - 10, (4, 0)), (x^2 + 5, (0, 2)), (x^3 - 2, (1, 1))]
+    K, a = number_field(f)
+    C = hilbert_class_field(K)
+    @test signature(C) == sig
+    @test @inferred(is_totally_real(C)) == iszero(sig[2])
+    @test @inferred(is_totally_complex(C)) == iszero(sig[1])
+  end
+
+  K, a = number_field(x - 1)
+  OK = maximal_order(K)
+  C = ray_class_field(5 * OK)
+  @test signature(C) == (2, 0)
+  @test @inferred is_totally_real(C)
+  @test @inferred !is_totally_complex(C)
+
+  C = ray_class_field(5 * OK, real_places(K))
+  @test signature(C) == (0, 2)
+  @test @inferred !is_totally_real(C)
+  @test @inferred is_totally_complex(C)
+
+  C = ray_class_field(5 * OK, real_places(K), n_quo = 2)
+  @test signature(C) == (2, 0)
+  @test @inferred is_totally_real(C)
+  @test @inferred !is_totally_complex(C)
+end
+
 @testset "RCF" begin
   Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
