@@ -17,7 +17,7 @@ Both input and output are with respect to the basis matrix of `L`.
 The supported algorithms are `:embedding`, which reduces the problem to short
 vector enumeration in one additional dimension, and `:fincke_pohst`, which
 enumerates the target-shifted ellipsoid directly. The value `:default`
-currently selects `:embedding`.
+currently selects `:fincke_pohst`.
 
 # Examples
 
