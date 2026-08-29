@@ -225,7 +225,7 @@ end
 function _close_vectors_iterator(L::ZZLat, v::Vector{QQFieldElem}, lowerbound,
                                  upperbound::QQFieldElem,
                                  elem_type::Type{S} = ZZRingElem;
-                                 algorithm = Val(:embedding), kw...) where {S}
+                                 algorithm = Val(:fincke_pohst), kw...) where {S}
   mode = algorithm isa Symbol ? Val(algorithm) : algorithm
   return _close_vectors_iterator(mode, L, v, lowerbound, upperbound,
                                  elem_type; kw...)
@@ -235,7 +235,7 @@ function _close_vectors_iterator(::Val{:default}, L::ZZLat,
                                  v::Vector{QQFieldElem}, lowerbound,
                                  upperbound::QQFieldElem,
                                  elem_type::Type{S} = ZZRingElem; kw...) where {S}
-  return _close_vectors_iterator(Val(:embedding), L, v, lowerbound,
+  return _close_vectors_iterator(Val(:fincke_pohst), L, v, lowerbound,
                                  upperbound, elem_type; kw...)
 end
 
@@ -302,7 +302,8 @@ function _close_vectors_iterator(::Val{:embedding}, L::ZZLat,
 
   delta = QQ(4//3)*upperbound + epsilon # this is upperbound + e
 
-  sv = _short_vectors_gram(FinckePohstIntIterCtx, gram, lowerbound === nothing ? 0 : (lowerbound + e), delta, elem_type)
+  # Only LatEnumCtx has the right traversal order for this to be efficient
+  sv = _short_vectors_gram(LatEnumCtx, gram, lowerbound === nothing ? 0 : (lowerbound + e), delta, elem_type)
 
   C = LatCloseEnumCtx{typeof(sv), elem_type}(sv, e, d)
 
