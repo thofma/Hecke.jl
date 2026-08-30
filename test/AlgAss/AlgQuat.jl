@@ -124,6 +124,16 @@
   end
 
   let
+    R, t = polynomial_ring(GF(2), "t")
+    K = fraction_field(R)
+    tt = K(t)
+    A = quaternion_algebra(K, tt, tt + 1)
+    z = A([1, tt, tt^2 + 1, tt^3 + tt + 1])
+    @test normred(z) == coefficients(z * conjugate(z), copy = false)[1]
+    @test trred(z) == coefficients(z + conjugate(z), copy = false)[1]
+  end
+
+  let
     # opposite algebra
     for K in [QQ, quadratic_field(2)[1], GF(3), rational_function_field(GF(3), :x)[1]]
       A = quaternion_algebra(K, K(-1), K(-2))

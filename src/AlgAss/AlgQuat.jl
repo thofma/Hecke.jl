@@ -245,12 +245,63 @@ function conj(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
   return standard_involution(parent(a))(a)
 end
 
-function trred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  return (a + conjugate(a)).coeffs[1]
+function trred(x::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
+  A = parent(x)
+  c = coefficients(x, copy = false)
+  if characteristic(base_ring(A)) == 2
+    # J. Voight, Quaternion Algebras, GTM 288 (2021), 6.2.6:
+    # https://doi.org/10.1007/978-3-030-56694-4_6
+    # trd(c_1 + c_2*i + c_3*j + c_4*ij) = c_2
+    return deepcopy(c[2])
+  end
+
+  # J. Voight, Quaternion Algebras, GTM 288 (2021), section 3.1:
+  # https://doi.org/10.1007/978-3-030-56694-4_3
+  # trd(c_1 + c_2*i + c_3*j + c_4*ij) = 2*c_1
+  return add!(base_ring(A)(), c[1], c[1])
 end
 
-function normred(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
-  return (a * conjugate(a)).coeffs[1]
+function normred(x::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
+  A = parent(x)
+  a, b = standard_form(A)
+  c = coefficients(x, copy = false)
+  n = base_ring(A)()
+  t = base_ring(A)()
+  u = base_ring(A)()
+
+  if characteristic(base_ring(A)) == 2
+    # J. Voight, Quaternion Algebras, GTM 288 (2021), (6.2.7):
+    # https://doi.org/10.1007/978-3-030-56694-4_6
+    # c_1(c_1 + c_2) + a*c_2^2 + b*(c_3(c_3 + c_4) + a*c_4^2)
+    t = add!(t, c[1], c[2])
+    n = mul!(n, c[1], t)
+    t = mul!(t, a, c[2])
+    t = mul!(t, t, c[2])
+    n = add!(n, n, t)
+
+    t = add!(t, c[3], c[4])
+    u = mul!(u, c[3], t)
+    t = mul!(t, a, c[4])
+    t = mul!(t, t, c[4])
+    u = add!(u, u, t)
+    t = mul!(t, b, u)
+    return add!(n, n, t)
+  end
+
+  # J. Voight, Quaternion Algebras, GTM 288 (2021), (4.1.1):
+  # https://doi.org/10.1007/978-3-030-56694-4_4
+  # c_1^2 - a*c_2^2 - b*(c_3^2 - a*c_4^2)
+  n = mul!(n, c[1], c[1])
+  t = mul!(t, c[2], c[2])
+  u = mul!(u, a, t)
+  n = sub!(n, n, u)
+
+  t = mul!(t, c[4], c[4])
+  u = mul!(u, a, t)
+  t = mul!(t, c[3], c[3])
+  t = sub!(t, t, u)
+  u = mul!(u, b, t)
+  return sub!(n, n, u)
 end
 
 function reduced_charpoly(a::AssociativeAlgebraElem{T, QuaternionAlgebra{T}}) where {T}
@@ -448,11 +499,20 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   @assert !iszero(det(G))
   V = _short_vectors_gram(Vector, G, ZZRingElem(b), hard = true)
   res = elem_type(O)[]
+  y = zero(A)
+  t = base_ring(A)()
   for i in 1:length(V)
-    y = sum(V[i][1][j] * B[j] for j in 1:d)
-    @assert absolute_tr(normred(y)) <= b
+    zero!(y)
+    for j in 1:d
+      c = V[i][1][j]
+      iszero(c) && continue
+      y = addmul!(y, B[j], c, t)
+    end
+    n = absolute_tr(normred(y))
+    @assert n <= b
+    # O(y, false) deep-copies y, so reusing y in the next iteration is safe.
     if equal
-      if absolute_tr(normred(y)) == b
+      if n == b
         push!(res, O(y, false))
       end
     else
