@@ -31,6 +31,15 @@ end
 
 defining_modulus(mR) = mR.defining_modulus
 
+function _simplify_for_ray_class_map(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  for (I, e) in J
+    if !iszero(e) && !is_coprime(I, m)
+      return simplify(J)
+    end
+  end
+  return J
+end
+
 ################################################################################
 #
 #  Function that stores the principal generators element of the powers
@@ -785,7 +794,8 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
     function disclog(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
       @vprintln :RayFacElem 1 "Disc log of element $J"
       a = id(X)
-      for (f, k) in J
+      for (f, k) in _simplify_for_ray_class_map(J, m)
+        iszero(k) && continue
         a += k*disclog(f)
       end
       return a
