@@ -809,45 +809,86 @@ function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{
   @assert isone(content(f))
   @assert isone(content(g))
   local qf, qg
+  quots = typeof(f)[]
   while !iszero(g)
     if !is_unit(leading_coefficient(g))
-      cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))
+      # NOTE: coprime base should be "fine" enough to allow BOTH f and g to admit
+      #   a Weierstrass split
+      cp = coprime_base(vcat( map(x->gcd(lift(x), modulus(R)), coefficients(f)),
+                              map(x->gcd(lift(x), modulus(R)), coefficients(g)),
+                              [modulus(R)]))
       cp = [x for x in cp if !is_unit(x)]
       gc = NTuple{3, ZZPolyRingElem}[]
+      crt_mod = ZZRingElem[]
       for p in cp
-        F, mF = quo(parent(p), p^valuation(modulus(R), p))
+        pe = p^valuation(modulus(R), p)
+        push!(crt_mod, pe)
+
+        F, mF = quo(parent(p), pe)
         gp = map_coefficients(x -> mF(lift(ZZ, x)), g; cached = false)
         @assert base_ring(gp) == F
         fp = map_coefficients(x -> mF(lift(ZZ, x)), f; parent = parent(gp))
+
+        fu = one(parent(fp))
+        gu = one(parent(gp))
+        # NOTE: we need primitive polynomial for recursion. Further, having primitive
+        #   polynomial will guarantee that some coefficient is a unit
+        #   for fun_factor below.
+        # We move common divisor into the "units" fu, gu; we will apply them later
+        #   to reconstruct cofactors
+        if !iszero(fp) && !is_unit(content(fp))
+          cf, fp = primsplit(fp)
+          fu = fu*cf
+        end
+        if !iszero(gp) && !is_unit(content(gp))
+          cg, gp = primsplit(gp)
+          gu = gu*cg
+        end
+
         if !is_unit(leading_coefficient(fp))
           if iszero(fp)
             fp = zero(parent(fp))
           else
-            _, fp = fun_factor(fp)
+            u, fp = fun_factor(fp)
+            fu = fu*u
           end
         end
         if !is_unit(leading_coefficient(gp))
           if iszero(gp)
             gp = zero(parent(gp))
           else
-            _, gp = fun_factor(gp)
+            u, gp = fun_factor(gp)
+            gu = gu*u
           end
         end
-        push!(gc, map(y->map_coefficients(x->lift(x), y, cached = false), gcd_sircana(fp, gp)))
+        # NOTE: we get gcd for monic parts, so we need to apply units (from fun_factor)
+        dp, qfp, qgp = gcd_sircana(fp, gp)
+        push!(gc, map(y->map_coefficients(x->lift(x), y, cached = false), (dp, fu*qfp, gu*qgp)))
       end
-      f = map_coefficients(R, induce_crt([x[1] for x = gc], cp), parent = parent(f))
-      qf = map_coefficients(R, induce_crt([x[2] for x = gc], cp), parent = parent(f))
-      qg = map_coefficients(R, induce_crt([x[3] for x = gc], cp), parent = parent(f))
+      f = map_coefficients(R, induce_crt([x[1] for x = gc], crt_mod), parent = parent(f))
+      qf = map_coefficients(R, induce_crt([x[2] for x = gc], crt_mod), parent = parent(f))
+      qg = map_coefficients(R, induce_crt([x[3] for x = gc], crt_mod), parent = parent(f))
       break
     else
-      f, g = g, rem(f, g)
+      # we run (possibly) several Euclid steps and then the branch above at most once (see the break)
+      # we still need to "undo" the Euclid steps we did
+      # we walk quotients back (unwinding the call stack) doing (f, g) <- (g, f - q*g)
+      q, r = divrem(f, g)
+      push!(quots, q)
+      f, g = g, r
       if iszero(g)
-        qf = divexact(_F, f)
-        qg = divexact(_G, f)
+        qf = one(Rt)
+        qg = zero(Rt)
         break
       end
     end
   end
+
+  # restore cofactors: go backwards through Euclid quotients doing (f, g) <- (g, f - q*g)
+  for q in Iterators.reverse(quots)
+    qf, qg = qg + q*qf, qf
+  end
+
   c = canonical_unit(leading_coefficient(f))
   f = divexact(f, c)
   qf *= c
