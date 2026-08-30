@@ -1,11 +1,13 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Aqua = "0.8.2"
+Distributed = "1.10"
 Documenter = "0.27"
-REPL = "1.10"
+PrettyTables = "3.1.0"
 Test = "1.10"
