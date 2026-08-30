@@ -18,6 +18,22 @@
     @test isempty(defining_modulus(mR)[2])
   end
 
+  @testset "factored ideals with non-coprime factors" begin
+    K, _ = rationals_as_number_field()
+    O = maximal_order(K)
+    m = 12 * O
+    I = FacElem([9 * O, 3 * O, 5 * O], ZZRingElem[1, -2, 1])
+
+    R, mR = ray_class_group(m)
+    expected = mR\(5 * O)
+    @test mR\I == expected
+    @test mR\I == mR\numerator(evaluate(I))
+
+    ctx = Hecke.rayclassgrp_ctx(O, 2)
+    Rquo, mRquo = Hecke.ray_class_group_quo(O, factor(m), InfPlc[], ctx)
+    @test mRquo\I == mRquo\(5 * O)
+  end
+
   @testset "quadratic fields" begin
 
     Qx,x=polynomial_ring(QQ,"x")
