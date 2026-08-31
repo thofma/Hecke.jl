@@ -300,7 +300,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #    @show s
       # to verify that this is a "legal" operation... the hom constructor
       # will verify that this is legal
-      if get_assert_level(:qAdic) > 0
+      if get_assertion_level(:qAdic) > 0
         hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
       end
 

@@ -534,7 +534,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       nk = tex
       @assert nk <= tex
       Kp.def_poly_cache[target_prec] = pol_gen
-      if get_assert_level(:qAdic) > 0
+      if get_assertion_level(:qAdic) > 0
         for _l = keys(Kp.def_poly_cache)
           if _l < nk && !iszero(pol_gen - Kp.def_poly_cache[_l])
             @assert iszero(pol_gen - Kp.def_poly_cache[_l])
