@@ -269,7 +269,6 @@ function solve_1_units(a::Vector{T}, b::T) where T
 
     while l <= k
       last_val = e*valuation(cur_b-one)
-  #    @show expo_mult
       if false && e*valuation(cur_b-one) >= l - 10 #TODO::: understand the prececision
                                           #        loss
       #= bad input from
@@ -290,7 +289,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
       @assert all(x->isone(x) || e*valuation(x-one) >= l, cur_a)
 
       A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
-      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
+      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a]; check = false)
       lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
       fl, s = has_preimage_with_preimage(h, lhs)
       _k, _mk = kernel(h)
@@ -301,7 +300,9 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #    @show s
       # to verify that this is a "legal" operation... the hom constructor
       # will verify that this is legal
-      # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
+      if get_assert_level(:qAdic) > 0
+        hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
+      end
 
       if !fl
         pow_b *= p
@@ -796,6 +797,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
+#  norm(v) == u || @show v, norm(v), u
   @assert norm(v) == u
   pi = v*setprecision(uniformizer(L), precision(L)+5)
   pi_inv = inv(pi)
@@ -1126,7 +1128,11 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
       end
       ex = vcat([-z+1], s)
       x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
-        @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
+#      if !(isone(x) || iszero(x-1) || e*valuation(x-1) >= precision(a))
+#        @show valuation(x-1), e, precision(a)
+#        global last_one_unit = (K, a, bas)
+#      end
+      @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
       return G(ex)
     end
   end
