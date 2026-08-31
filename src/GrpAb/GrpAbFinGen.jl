@@ -823,7 +823,7 @@ function canonical_injection(G::FinGenAbGroup, i::Int)
   D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   s = sum([ngens(D[j]) for j = 1:i-1], init = 0)
-  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
+  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])]; check = false)
   return h
 end
 
@@ -851,7 +851,7 @@ function canonical_projection(G::FinGenAbGroup, i::Int)
   H = D[i]
   h = hom(G, H, vcat( [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = 1:i-1]...,
                          gens(H),
-                      [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...))
+                      [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...); check = false)
   return h
 end
 
@@ -910,8 +910,8 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinG
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
   end
-  @assert length(V) == length(dG) == length(dH)
 
+  @assert length(V) == length(dG) == length(dH)
   @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
   h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
   return h
@@ -2287,6 +2287,7 @@ function has_complement(m::FinGenAbGroupHom, to_lattice::Bool = true)
     push!(gens_complement, igSH - m1(el_sub))
   end
   res, mres = sub(G, gens_complement, false)
+  @assert is_trivial(intersect(m, mres, false)[1])
   @assert order(res)*order(s) == order(G)
   return true, mres
 end
