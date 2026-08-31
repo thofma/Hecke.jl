@@ -140,6 +140,7 @@ export absolute_inertia_degree
 export absolute_minpoly
 export absolute_norm
 export absolute_primitive_element
+export absolute_prime_decomposition_type
 export absolute_ramification_index
 export absolute_representation_matrix
 export absolute_simple_field
