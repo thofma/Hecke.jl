@@ -221,6 +221,13 @@ end
   k, _ = number_field(x^3 - 69*x - 52)
   kk = number_field(ray_class_field(1*maximal_order(k), real_places(k)))
   @test degree(kk) == 2
+
+  k, a= wildanger_field(3, 13)
+  C = ray_class_field(7*maximal_order(k); n_quo = 3)
+  for p = [2, 3, 5, 7]
+    d = absolute_prime_decomposition_type(C, p)
+    @test sum(x[1]*x[2]*x[3] for x = d) == absolute_degree(C)
+  end
 end
 
 @testset "Jon Yard" begin

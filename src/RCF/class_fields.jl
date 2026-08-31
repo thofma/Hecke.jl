@@ -390,6 +390,14 @@ function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Uni
   return (e, f, Int(divexact(order(q), f)))
 end
 
+@doc raw"""
+    absolute_prime_decomposition_type(C::T, p::Union{Integer, ZZRingElem}) where T <: Union{ClassField, ClassField_pp} -> Tuple{Int, Int, Int}[]
+
+Returns a list of triples $e, f, g$ s.th. when decomposing $p$ in the field
+there are $g$ prime ideals of inertia degree $f$ and ramification index $e$.
+
+Specifically, $p$ is decomposed in the coefficient ring (base field) of $C$ and each prime ideal there gives rise to one of the list items.
+"""
 function absolute_prime_decomposition_type(C::T, p::Union{Integer, ZZRingElem}) where T <: Union{ClassField, ClassField_pp}
   lp = prime_decomposition(base_ring(C), p)
   res = Tuple{Int, Int, Int}[]
