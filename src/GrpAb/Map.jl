@@ -148,11 +148,15 @@ function hom(
 
   if check
     m = reduce(vcat, ZZMatrix[x.coeff for x in A])
-    m = reduce(vcat, ZZMatrix[m, rels(G)])
-    T = kernel(transpose(m); side=:right)
-    i = ncols(T)
-    T = transpose(T)
-    T = sub(T, 1:nrows(T), 1:length(A))
+#    m = reduce(vcat, ZZMatrix[m, rels(G)])
+    i = [i for i = 1:nrows(m) if !is_zero_row(m, i)]
+    mm = zero_matrix(ZZ, length(i), ncols(m))
+    for j = 1:length(i)
+      mm[j:j, :] .= view(m, i[j]:i[j], 1:ncols(m))
+    end
+    m = mm
+    T = kernel(m; side=:left)
+    T = view(T, 1:nrows(T), 1:length(A))
     n = reduce(vcat, ZZMatrix[x.coeff for x in B])
     n = T*n
     @req can_solve(rels(H), n; side=:left) "Data does not define a homomorphism"
@@ -331,7 +335,14 @@ function kernel(h::FinGenAbGroupHom, add_to_lattice::Bool = true)
   hn, t = hnf_with_transform(m)
   for i = 1:nrows(hn)
     if is_zero_row(hn, i)
-      return sub(G, sub(t, i:nrows(t), 1:ngens(G)), add_to_lattice)
+      vt = view(t, 1:nrows(t), 1:ngens(G))
+      j = [j for j=i:nrows(t) if !is_zero_row(vt, j)]
+      nt = zero_matrix(ZZ, length(j), ngens(G))
+      for l=1:length(j)
+        view(nt, l, :) .= view(vt, j[l], :)
+      end
+
+      return sub(G, nt, add_to_lattice)
     end
   end
   # if the Hermite form has no zero-row, there is no
