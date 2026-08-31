@@ -533,8 +533,8 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       pol_gen = Qqx([setprecision(x, tex) for x = coeffs_eisenstein])
       nk = tex
       @assert nk <= tex
-      Kp.def_poly_cache[target_prec] = pol_gen
-      if get_assert_level(:qAdic) > 0
+      Kp.def_poly_cache[tex] = pol_gen
+      if get_assertion_level(:qAdic) > 0
         for _l = keys(Kp.def_poly_cache)
           if _l < nk && !iszero(pol_gen - Kp.def_poly_cache[_l])
             @assert iszero(pol_gen - Kp.def_poly_cache[_l])
@@ -551,6 +551,7 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
       end
       setprecision!(Kp, target_prec)
       f.prim_img = Kp(Qqx(img_prim_elem))
+      @assert f.precision < target_prec
       f.precision = target_prec
       if asked < target_prec
         setprecision!(Kp, asked)
@@ -560,8 +561,8 @@ function setprecision!(f::CompletionMap{LocalField{QadicFieldElem, EisensteinLoc
     else
 #      f.precision = max(new_prec, f.precision)
       v = sort(collect(keys(Kp.def_poly_cache)))
-      i = searchsortedfirst(v, div(new_prec, e))
-      Kp.def_poly_cache[new_prec] = setprecision(Kp.def_poly_cache[v[i]], new_prec)
+      i = searchsortedfirst(v, div(new_prec+e-1, e))
+      Kp.def_poly_cache[div(new_prec+e-1, e)] = setprecision(Kp.def_poly_cache[v[i]], new_prec)
       setprecision!(Kp, new_prec)
       setprecision!(base_field(Kp), div(new_prec, e)+1)
     end

@@ -61,8 +61,19 @@ end
   @test valuation(bb) == 0
   @test precision(bb) >= 20
 
-  setprecision!(mC, 100)  #does not seem to work
+  setprecision!(mC, 100) 
   @test b == preimage(mC, mC(b); small_lift=true)
+
+  #increasing the precision multiple times caused the def_poly_cache to be
+  #"inconsitent", ie. polys at higher precision did not match the ones at
+  #low precision.
+  #This tests the consistency
+  setprecision!(mC, 150) 
+  f = C.def_poly_cache[maximum(keys(C.def_poly_cache))]
+  for v = values(C.def_poly_cache)
+    @test iszero(f-v)
+  end
+
   setprecision!(mC, 20)
 end
 
