@@ -823,7 +823,7 @@ function canonical_injection(G::FinGenAbGroup, i::Int)
   D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   s = sum([ngens(D[j]) for j = 1:i-1], init = 0)
-  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
+  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])]; check = false)
   return h
 end
 
@@ -851,7 +851,7 @@ function canonical_projection(G::FinGenAbGroup, i::Int)
   H = D[i]
   h = hom(G, H, vcat( [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = 1:i-1]...,
                          gens(H),
-                      [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...))
+                      [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...); check = false )
   return h
 end
 
