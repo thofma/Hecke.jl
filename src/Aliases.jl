@@ -7,6 +7,8 @@
 # docstrings for these aliases
 #= none =#
 
+# alternative names for some functions from LinearAlgebra
+const HeckeMap = AbstractAlgbra.MapWithHeader
 
 # predeclare some functions to allow defining aliases for some of our own functions
 function identity_map end
