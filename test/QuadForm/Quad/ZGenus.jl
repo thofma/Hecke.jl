@@ -624,6 +624,13 @@ end
 @testset "Fix issues" begin
   ## Issue 1103
   @test sprint(show, "text/plain", genus(root_lattice(:E, 8), 2)) isa String
+
+  ## `embed`/`embed_in_unimodular` used to raise a MethodError from
+  ## inside their own error paths (NotImplementedError takes a Symbol,
+  ## not a String), hiding the intended explanation.
+  G = integer_genera((14, 0), 243; even = true)[1]
+  @test_throws ErrorException embed(root_lattice(:A, 2), G, true)
+  @test_throws ErrorException embed_in_unimodular(root_lattice(:A, 2), 10, 0; even = false)
 end
 
 @testset "Canonical symbols" begin
