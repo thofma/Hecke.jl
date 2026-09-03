@@ -158,92 +158,84 @@ struct _MinusculeTable
   data::Dict{Vector{Int},Tuple{Vector{Int},Rational{Int}}}  # class -> minuscule vector and its norm
 end
 
-# The table of an irreducible root lattice depends only on its ADE type, since
-# the fundamental roots of a component come out of
-# `_root_lattice_recognition_fundamental` in the standard numbering, so that
-# the Cartan matrix of a component of type `(t, k)` is the one of
-# `root_lattice(t, k)`.
-const _minuscule_tables = Dict{Tuple{Symbol,Int},_MinusculeTable}()
-const _minuscule_tables_lock = ReentrantLock()
-
 _minuscule_class(g::AbstractVector{Int}, adj::Matrix{Int}, d::Int) = Int[mod(sum(g[k]*adj[k, j] for k in 1:length(g)), d) for j in 1:length(g)]
 
-# `d` times the norm of the vector with weight coordinates `y`
-_minuscule_norm(y::Vector{Int}, adj::Matrix{Int}) = sum(y[i]*adj[i, j]*y[j] for i in 1:length(y), j in 1:length(y); init=0)
-
-# Append to `res` the weight coordinates of all vectors in the closed
-# fundamental chamber of norm at most `bound//d`. As the entries of `adj` are
-# non-negative, the norm is non-decreasing in each of the (non-negative)
-# weight coordinates, which we use to cut the search tree.
-function _dominant_weights!(res::Vector{Vector{Int}}, y::Vector{Int}, adj::Matrix{Int}, bound::Int, i::Int)
-  if i > length(y)
-    push!(res, copy(y))
-    return nothing
-  end
-  k = 0
-  while true
-    y[i] = k
-    _minuscule_norm(y, adj) > bound && break
-    _dominant_weights!(res, y, adj, bound, i + 1)
-    k += 1
-  end
-  y[i] = 0
-  return nothing
-end
-
-# Return the minuscule vectors of the irreducible root lattice with Cartan
-# matrix `cartan`. Every
-# class of the discriminant group meets the closed fundamental chamber, so
-# enumerating the vectors of small norm in there yields the minimal norm of
-# each class together with its minuscule vectors. We insist that every class
-# has a single minuscule vector, which holds for root lattices of type ADE.
-function _minuscule_table(cartan::Matrix{Int})
-  n = size(cartan, 1)
-  @assert all(i -> cartan[i, i] == 2, 1:n)
-  dz = det(matrix(ZZ, cartan))
-  @assert dz > 0 && fits(Int, dz)
-  d = Int(dz)
-  adjq = d*inv(matrix(QQ, cartan))
-  adj = [Int(i) for i in adjq]
-  @assert all(i -> adj[i, i] > 0, 1:n)
-  # the classes of the fundamental weights together with the trivial class
-  # exhaust the discriminant group of a root lattice of type ADE, so every
-  # class contains a vector of norm at most `bound//d`
-  bound = maximum(adj[i, i] for i in 1:n)
-  weights = Vector{Int}[]
-  _dominant_weights!(weights, zeros(Int, n), adj, bound, 1)
-  # sorting by norm puts the minuscule vector of a class first
-  sort!(weights; by=(w -> _minuscule_norm(w, adj)))
-  data = Dict{Vector{Int},Tuple{Vector{Int},Rational{Int}}}()
-  for w in weights
-    c = _minuscule_class(w, adj, d)
-    nrm = _minuscule_norm(w, adj)//d
-    e = get(data, c, nothing)
-    if e === nothing
-      data[c] = (w, nrm)
-    else
-      # a class of a root lattice of type ADE has a single minuscule vector
-      @assert e[2] < nrm
+# The minuscule table of the irreducible root lattice of type `(t, k)`. In the
+# weight coordinates above the fundamental weight `omega_i` is the `i`-th
+# standard basis vector, and every non-trivial class of `R^vee/R` is
+# represented by exactly one `omega_i` with `i` a minuscule node, that is to
+# say a node whose coefficient in the highest root is one. So the minuscule
+# vectors are the standard basis vectors of the minuscule nodes together with
+# the zero vector for the trivial class, and all we have to record here is `d`
+# and `adj`. The numbering of the nodes is the one of `root_lattice`, in which
+# the diagram of `:D` is `1 - 3 - 4 - ... - k` with `2` attached to `3`, and
+# the one of `:E` is `1 - 2 - ... - (k-1)` with `k` attached to `3`.
+function _minuscule_table(t::Symbol, k::Int)
+  if t === :A
+    d = k + 1
+    adj = Int[min(i, j)*(k + 1 - max(i, j)) for i in 1:k, j in 1:k]
+  elseif t === :D && k >= 4
+    # `1` and `2` are the spin nodes, attached to the tail `3 - 4 - ... - k`
+    d = 4
+    adj = zeros(Int, k, k)
+    for i in 3:k, j in 3:k
+      adj[i, j] = 4*(k + 1 - max(i, j))
     end
+    for i in 1:2, j in 3:k
+      adj[i, j] = adj[j, i] = 2*(k + 1 - j)
+    end
+    adj[1, 1] = adj[2, 2] = k
+    adj[1, 2] = adj[2, 1] = k - 2
+  elseif t === :E && k == 6
+    d = 3
+    adj = Int[4  5  6  4  2  3;
+              5 10 12  8  4  6;
+              6 12 18 12  6  9;
+              4  8 12 10  5  6;
+              2  4  6  5  4  3;
+              3  6  9  6  3  6]
+  elseif t === :E && k == 7
+    d = 2
+    adj = Int[4  6  8  6  4  2  4;
+              6 12 16 12  8  4  8;
+              8 16 24 18 12  6 12;
+              6 12 18 15 10  5  9;
+              4  8 12 10  8  4  6;
+              2  4  6  5  4  3  3;
+              4  8 12  9  6  3  7]
+  elseif t === :E && k == 8
+    d = 1
+    adj = Int[ 4  7 10  8  6  4  2  5;
+               7 14 20 16 12  8  4 10;
+              10 20 30 24 18 12  6 15;
+               8 16 24 20 15 10  5 12;
+               6 12 18 15 12  8  4  9;
+               4  8 12 10  8  6  3  6;
+               2  4  6  5  4  3  2  3;
+               5 10 15 12  9  6  3  8]
+  else
+    error("($t, $k) is not an irreducible root lattice of type ADE")
+  end
+  marks = highest_root(t, k)
+  data = Dict{Vector{Int},Tuple{Vector{Int},Rational{Int}}}(zeros(Int, k) => (zeros(Int, k), 0//1))
+  for i in 1:k
+    isone(marks[1, i]) || continue
+    w = zeros(Int, k)
+    w[i] = 1
+    data[_minuscule_class(w, adj, d)] = (w, adj[i, i]//d)
   end
   @assert length(data) == d
   return _MinusculeTable(d, adj, data)
 end
 
-# The tables of the irreducible components of a root lattice with Cartan
-# matrix `cartan`, the components being given by their ADE `types` and `ranges`
-function _minuscule_tables_of(cartan::ZZMatrix, types::Vector{Tuple{Symbol,Int}}, ranges::Vector{UnitRange{Int}})
-  res = Tuple{UnitRange{Int},_MinusculeTable}[]
-  for (t, r) in zip(types, ranges)
-    tab = lock(_minuscule_tables_lock) do
-      get!(_minuscule_tables, t) do
-        @assert all(x -> -2 <= x <= 2, (cartan[i, j] for i in r for j in r))
-        _minuscule_table(Int[Int(cartan[i, j]) for i in r, j in r])
-      end
-    end
-    push!(res, (r, tab))
-  end
-  return res
+# The tables of the irreducible components of a root lattice, the components
+# being given by their ADE `types` and `ranges`. The table of a component
+# depends only on its ADE type, since its fundamental roots come out of
+# `_root_lattice_recognition_fundamental` in the standard numbering, so that
+# the Cartan matrix of a component of type `(t, k)` is the one of
+# `root_lattice(t, k)`.
+function _minuscule_tables_of(types::Vector{Tuple{Symbol,Int}}, ranges::Vector{UnitRange{Int}})
+  return Tuple{UnitRange{Int},_MinusculeTable}[(r, _minuscule_table(t...)) for (t, r) in zip(types, ranges)]
 end
 
 # The weight coordinates of the minuscule vector of the class of the vector
@@ -262,16 +254,23 @@ function _minuscule_vector(D::Vector{Tuple{UnitRange{Int},_MinusculeTable}}, g::
 end
 
 # The vector of minimal norm of the coset `v + R` lying in the closed
-# fundamental chamber, where `R` is the root lattice with fundamental roots
-# the rows of `roots`, `g` are the weight coordinates of the vector `v` and
-# `gd` those of the minuscule vector of its class. The difference lies in `R`
-# and has coordinates `(gd - g)*C^-1` with respect to the fundamental roots.
-function _minuscule_translate(v::ZZMatrix, g::ZZMatrix, gd::Vector{Int}, D::Vector{Tuple{UnitRange{Int},_MinusculeTable}}, roots::ZZMatrix)
-  z = zero_matrix(ZZ, 1, nrows(roots))
-  for (r, t) in D, (jj, j) in enumerate(r)
-    z[1, j] = divexact(sum((gd[k] - g[1, k])*t.adj[kk, jj] for (kk, k) in enumerate(r)), t.d)
-  end
-  return v + z*roots
+# fundamental chamber, where `g` are the weight coordinates of the vector `v`
+# and `gd` those of the minuscule vector of its class. The difference lies in
+# `R` and has coordinates `(gd - g)*C^-1` with respect to the fundamental
+# roots, so in the coordinates of `L` it is `(gd - g)*dweights//dd` for
+# `dweights` as in `_dual_weights`.
+function _minuscule_translate(v::ZZMatrix, g::ZZMatrix, gd::Vector{Int}, dweights::ZZMatrix, dd::Int)
+  return v + divexact((matrix(ZZ, 1, length(gd), gd) - g)*dweights, dd)
+end
+
+# `dd*C^-1*roots` for `dd` the least common multiple of the `d` of the
+# components, that is to say `dd` times the fundamental weights of `R` in the
+# coordinates of `L`. We assemble it from the `adj` of the components rather
+# than inverting the Cartan matrix.
+function _dual_weights(D::Vector{Tuple{UnitRange{Int},_MinusculeTable}}, roots::ZZMatrix)
+  dd = reduce(lcm, t.d for (_, t) in D)
+  A = block_diagonal_matrix(ZZMatrix[matrix(ZZ, div(dd, t.d)*t.adj) for (_, t) in D])
+  return A*roots, dd
 end
 
 ################################################################################
@@ -317,7 +316,8 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
     k += nrows(c)
   end
   cartan = roots*gram*transpose(roots)
-  D = _minuscule_tables_of(cartan, types, ranges)
+  D = _minuscule_tables_of(types, ranges)
+  dweights, dd = _dual_weights(D, roots)
   # `v*gram_roots` are the weight coordinates of the vector `v` of `L`
   gram_roots = gram*transpose(roots)
   res = ZZMatrix[roots[i:i, :] for i in 1:nr]
@@ -335,7 +335,7 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   end
   for v in cosets[2:end]
     g = v*gram_roots
-    push!(res, _minuscule_translate(v, g, _minuscule_vector(D, g)[1], D, roots))
+    push!(res, _minuscule_translate(v, g, _minuscule_vector(D, g)[1], dweights, dd))
   end
   nr == n && return _convert_cv_set_to_int(res, gram)
 
@@ -368,7 +368,7 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
     best = minimum(ns)
     for (i, c) in enumerate(cosets)
       ns[i] == best || continue
-      push!(res, _minuscule_translate(vL + c, gs[i], gds[i], D, roots))
+      push!(res, _minuscule_translate(vL + c, gs[i], gds[i], dweights, dd))
     end
   end
   return _convert_cv_set_to_int(res, gram)

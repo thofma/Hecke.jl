@@ -49,14 +49,23 @@
     @test Set(vec(v) for v in Hecke._reduced_characteristic_vectors(L)) == generic_reduction(L)
   end
 
-  # the minuscule vectors of an irreducible root lattice of type ADE represent
-  # the non-trivial classes of its discriminant group and have known norms
-  for (t, k, nrm) in [(:A, 5, 3//2), (:A, 11, 3//1), (:D, 8, 2//1), (:D, 17, 17//4),
-                      (:E, 6, 4//3), (:E, 7, 3//2), (:E, 8, 0//1)]
-    cartan = Int[Int(ZZ(x)) for x in gram_matrix(root_lattice(t, k))]
-    tab = Hecke._minuscule_table(cartan)
+  # the hardcoded minuscule tables agree with what the Cartan matrix says: `d`
+  # is its determinant and `adj` is `d` times its inverse. And the minuscule
+  # vector of a class really solves the closest vector problem it stands for:
+  # its norm is the distance of the class to the root lattice
+  for (t, k) in vcat([(:A, k) for k in 1:12], [(:D, k) for k in 4:12], [(:E, k) for k in 6:8])
+    R = root_lattice(t, k)
+    cartan = gram_matrix(R)
+    tab = Hecke._minuscule_table(t, k)
+    @test tab.d == det(cartan)
+    @test tab.adj == Int[Int(ZZ(x)) for x in tab.d*inv(cartan)]
     @test length(tab.data) == tab.d
-    @test maximum(x[2] for x in values(tab.data)) == nrm
+    for (w, nrm) in values(tab.data)
+      # `w` are weight coordinates, so the vector is `w*cartan^-1` in the
+      # coordinates of `R`
+      v = (matrix(QQ, 1, k, w)*inv(cartan))[1, :]
+      @test Hecke._closest_vectors(R, v)[1] == nrm
+    end
   end
 
   # the reduced characteristic vector set does not depend on the chosen basis
