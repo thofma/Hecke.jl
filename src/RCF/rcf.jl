@@ -532,7 +532,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
   ZK = maximal_order(K)
   @vprintln :ClassField 2 "Class group of cyclotomic extension: $K"
   c, mc = class_group(ZK)
-  allow_cache!(mc)
+  AbstractAlgebra.allow_cache!(mc)
   @vprintln :ClassField 2 "... $c"
   c, mq = quo(c, e, false)
   mc = compose(pseudo_inv(mq), mc)
