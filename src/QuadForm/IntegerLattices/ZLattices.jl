@@ -2042,7 +2042,7 @@ said vectors, given in terms of the coordinates of ``L``.
 function _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   @req !check || is_definite(L) "L must be definite"
   V = ambient_space(L)
-  sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L)]
+  sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L, Int; check=false)]
   B = _row_span!(sv)*basis_matrix(L)
   M = lattice(V, B; isbasis=true, check=false)
   P = primitive_closure(L, M)

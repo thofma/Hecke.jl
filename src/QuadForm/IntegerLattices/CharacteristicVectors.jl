@@ -1,3 +1,5 @@
+const _minuscule_tables = Dict{Matrix{Int},_MinusculeTable}()
+
 # return all characteristic vectors up to sign
 # unfortunately still to many for a fast graph hash
 # at least in higher rank
@@ -11,22 +13,20 @@ We follow ideas of Sikirić, Haensch, Voight and van Woerden [SHVW20](@cite).
 
 !!! note
     We do not give any guarantees that the characteristic vector set stays the same
-    between different versions of Oscar.
+    between different versions of Hecke.
 """
 function _characteristic_vectors(L::ZZLat)
   L = lattice(rational_span(L))
-  S1,P1, v1  = _shortest_vectors_sublattice(L; check=false)
+  S1, P1, v1 = _shortest_vectors_sublattice(L; check=false)
   cvL = v1
-  B = coordinates(basis_matrix(S1), P1)
-  A = abelian_group(ZZ.(B))
-  BS1 = ZZ.(basis_matrix(S1))
-  done = []
+  A = abelian_group(change_base_ring(ZZ, coordinates(basis_matrix(S1), P1)))
+  done = Set{FinGenAbGroupElem}()
   for a in A
     -a in done && continue
     iszero(a) && continue
-    push!(done,a)
+    push!(done, a)
     v = coordinates(a.coeff*basis_matrix(P1), S1)[1,:]
-    tmp = [matrix(ZZ, 1, degree(S1), (v -  j)*basis_matrix(S1)) for j in _closest_vectors(S1, v)[2]]
+    tmp = [matrix(ZZ, 1, degree(S1), (v - j)*basis_matrix(S1)) for j in _closest_vectors(S1, v, Int; check=false)[2]]
     # if `a` is 2-torsion, then its coset is preserved by negation and the
     # vectors of minimal norm in it come in pairs `w`, `-w`
     iszero(a + a) && unique!(map!(_canonicalize!, tmp, tmp))
@@ -36,34 +36,32 @@ function _characteristic_vectors(L::ZZLat)
     @hassert :Lattice 1 isone(hnf(reduce(vcat, cvL))[1:rank(L),:])
     return cvL
   end
-  proj2 = orthogonal_projection(ambient_space(L), basis_matrix(P1))
+  proj2 = orthogonal_projection(ambient_space(L), basis_matrix(P1); check=false)
   # a reduced basis speeds up the closest vector problems in the recursion
   L2 = lll(proj2(L))
-  proj1 = orthogonal_projection(ambient_space(L), basis_matrix(L2))
-  P_Z = ZZ.(solve(basis_matrix(L2), proj2.matrix;side=:left))
+  proj1 = orthogonal_projection(ambient_space(L), basis_matrix(L2); check=false)
+  P_Z = change_base_ring(ZZ, solve(basis_matrix(L2), proj2.matrix; side=:left))
   ctx = solve_init(P_Z)
   # the differences `w - j` only depend on `w` modulo `P1`, so we solve each
   # closest vector problem only once
   closest = Dict{Vector{QQFieldElem},Vector{Vector{QQFieldElem}}}()
   # recurse
-  for a in characteristic_vectors(L2)
+  for a in _characteristic_vectors(L2)
     aL = a*basis_matrix(L2)
-    if a*basis_matrix(L2) in L
-      @assert rank(L) == ncols(aL)
-      push!(cvL, ZZ.(aL))
+    # `L` has the identity as basis matrix, so `aL` lies in `L` precisely if
+    # its entries are integral
+    if isone(denominator(aL))
+      push!(cvL, change_base_ring(ZZ, aL))
       continue
     end
     # a vector in L projecting to a
     vL = solve(ctx, a; side=:left)
     w_amb = vL * proj1.matrix
-    w_amb == w_amb * proj1.matrix
+    # `w` is not integral: otherwise `w_amb` would lie in `P1` and hence `aL`
+    # in `L`, which was excluded above
     w = coordinates(w_amb[1,:], P1)
-    if all(isone, denominator.(w))
-      push!(cvL, w*basis_matrix(P1))
-      continue
-    end
-    cv = get!(() -> [w - j for j in _closest_vectors(P1, w)[2]], closest, [x - floor(x) for x in w])
-    tmp = [ZZ.(aL+matrix(QQ, 1, length(w), j) * basis_matrix(P1)) for j in cv]
+    cv = get!(() -> [w - j for j in _closest_vectors(P1, w, Int; check=false)[2]], closest, [x - floor(x) for x in w])
+    tmp = [change_base_ring(ZZ, aL + matrix(QQ, 1, length(w), j)*basis_matrix(P1)) for j in cv]
     append!(cvL, tmp)
   end
   @assert all(rank(L) == ncols(i) for i in cvL)
@@ -73,14 +71,14 @@ end
 
 
 # for testing purposes
-_reduce_characteristic_vectors(cv_set::Vector{ZZMatrix}, L::ZZLat) = _reduce_characteristic_vectors(_convert_cv_set_to_int(cv_set, matrix(ZZ, gram_matrix(L))), L)
+_reduce_characteristic_vectors(cv_set::Vector{ZZMatrix}, L::ZZLat) = _reduce_characteristic_vectors(_convert_cv_set_to_int(cv_set, _integral_split_gram(L)[1]), L)
 
 function _reduce_characteristic_vectors(cv_set::Vector{Matrix{Int}}, L::ZZLat)
-  R, _, _ = root_lattice_recognition_fundamental(L)
-  A = basis_matrix(R)
-  gram = matrix(ZZ, gram_matrix(L))
-  B_lat = basis_matrix(L)
-  A_lat = change_base_ring(ZZ, solve(B_lat, A))
+  gram, d = _integral_split_gram(L)
+  @assert isone(d)
+  # the fundamental roots of `L`, already in the coordinates of `L`
+  _, components = _root_lattice_recognition_fundamental(L)
+  A_lat = reduce(vcat, components; init=zero_matrix(ZZ, 0, rank(L)))
   v_i = Matrix{Int}(undef, 1, number_of_columns(gram))
   t_i = Matrix{Int}(undef, number_of_rows(gram), 1)
   w_i = Matrix{Int}(undef, 1, 1)
@@ -162,7 +160,6 @@ struct _MinusculeTable
   data::Dict{Vector{Int},Tuple{Vector{Int},Rational{Int}}}  # class -> minuscule vector and its norm
 end
 
-const _minuscule_tables = Dict{Matrix{Int},Union{_MinusculeTable,Nothing}}()
 
 _minuscule_class(g::AbstractVector{Int}, adj::Matrix{Int}, d::Int) = Int[mod(sum(g[k]*adj[k, j] for k in 1:length(g)), d) for j in 1:length(g)]
 
@@ -236,7 +233,6 @@ function _minuscule_tables_of(cartan::ZZMatrix, ranges::Vector{UnitRange{Int}})
     @assert all(x -> -2 <= x <= 2, (cartan[i, j] for i in r for j in r))
     block = Int[Int(cartan[i, j]) for i in r, j in r]
     t = get!(() -> _minuscule_table(block), _minuscule_tables, block)
-    @assert t !== nothing
     push!(res, (r, t))
   end
   return res
@@ -280,7 +276,7 @@ end
 # fundamental roots of `L` together with the characteristic vectors of norm
 # different from 1 and 2 lying in the closed fundamental Weyl chamber.
 # The roots of length 2 span the root sublattice `R` of `L`,
-# and all closest vector problems occurring in `characteristic_vectors` are
+# and all closest vector problems occurring in `_characteristic_vectors` are
 # closest vector problems in `R` for vectors of `R^vee`. Their solutions are
 # the minuscule vectors of `R` up to the action of the Weyl group of `R`, and
 # these are all we need here: the Weyl group is contained in the orthogonal
@@ -297,8 +293,12 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   # the irreducible components of the root sublattice
   _, components = _root_lattice_recognition_fundamental(L)
   if is_empty(components)
-    # No roots. Take the generic route
-    return characteristic_vectors(L)
+    # `L` has no vector of norm 1 or 2, so there is nothing to reduce: the
+    # closed fundamental chamber is all of the ambient space.
+    # `_characteristic_vectors` returns the characteristic vectors only up to
+    # sign; we need all of them for the result to be canonical
+    cv = _characteristic_vectors(L)
+    return _convert_cv_set_to_int(append!(cv, ZZMatrix[-v for v in cv]), gram)
   end
   roots = reduce(vcat, components; init=zero_matrix(ZZ, 0, n))
   nr = nrows(roots)
@@ -336,11 +336,11 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   # complement of `R`
   L0 = lattice(rational_span(L))
   P = lattice(ambient_space(L0), change_base_ring(QQ, BP); isbasis=true, check=false)  # for the sake of notation
-  proj = orthogonal_projection(ambient_space(L0), basis_matrix(P))
+  proj = orthogonal_projection(ambient_space(L0), basis_matrix(P); check=false)
   L2 = proj(L0)
   PZ = change_base_ring(ZZ, solve(basis_matrix(L2), proj.matrix; side=:left))
-  cv2 = characteristic_vectors(L2)
-  # `characteristic_vectors` returns the characteristic vectors only up to
+  cv2 = _characteristic_vectors(L2)
+  # `_characteristic_vectors` returns the characteristic vectors only up to
   # sign; we need all of them for the result to be canonical
   cv2 = append!(cv2, ZZMatrix[-a for a in cv2])
   ctx = solve_init(PZ)
@@ -370,7 +370,7 @@ end
 # of norm different from 1 and 2 lying in the closed fundamental Weyl chamber.
 function _reduced_characteristic_vectors(L::ZZLat)
   if !iseven(L)     # splitt off ones if there are any
-    ones = ZZMatrix[matrix(ZZ, 1, rank(L), v) for (v, _) in short_vectors(L, 1, 1)]
+    ones = ZZMatrix[matrix(ZZ, 1, rank(L), v) for (v, _) in short_vectors(L, 1, 1, Int; check=false)]
     if !is_empty(ones)
       # the vectors of norm one are pairwise orthogonal and split off `L`, so the
       # remaining characteristic vectors are those of the orthogonal complement
@@ -382,7 +382,7 @@ function _reduced_characteristic_vectors(L::ZZLat)
         B = change_base_ring(ZZ, solve(basis_matrix(L), basis_matrix(M); side=:left))
         append!(ones, ZZMatrix[matrix(ZZ, v)*B for v in _reduced_characteristic_vectors(M)])
       end
-      return _convert_cv_set_to_int(ones, change_base_ring(ZZ, gram_matrix(L)))
+      return _convert_cv_set_to_int(ones, _integral_split_gram(L)[1])
     end
   end
   return _reduced_characteristic_vectors_without_1(L)
