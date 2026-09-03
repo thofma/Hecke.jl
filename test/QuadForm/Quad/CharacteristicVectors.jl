@@ -30,6 +30,17 @@
     @test Set(vec(v) for v in Hecke._reduced_characteristic_vectors_without_1(L)) == generic_reduction(L)
   end
 
+  # the cache of minuscule tables is keyed on the ADE type of a component: its
+  # fundamental roots come out in the standard numbering, so that its Cartan
+  # matrix is the one of `root_lattice(t, k)`
+  for L in Ls
+    gram = Hecke._integral_split_gram(L)[1]
+    types, components = Hecke._root_lattice_recognition_fundamental(L)
+    for ((t, k), c) in zip(types, components)
+      @test c*gram*transpose(c) == change_base_ring(ZZ, gram_matrix(root_lattice(t, k)))
+    end
+  end
+
   # lattices whose shortest vectors are not roots, and lattices with vectors of
   # norm one, which are split off first
   for L in [integer_lattice(gram = matrix(QQ, 2, 2, [4,1,1,4])), integer_lattice(gram = identity_matrix(QQ, 4)),

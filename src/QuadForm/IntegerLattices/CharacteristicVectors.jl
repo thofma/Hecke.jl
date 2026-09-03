@@ -1,5 +1,3 @@
-const _minuscule_tables = Dict{Matrix{Int},_MinusculeTable}()
-
 # return all characteristic vectors up to sign
 # unfortunately still to many for a fast graph hash
 # at least in higher rank
@@ -160,6 +158,13 @@ struct _MinusculeTable
   data::Dict{Vector{Int},Tuple{Vector{Int},Rational{Int}}}  # class -> minuscule vector and its norm
 end
 
+# The table of an irreducible root lattice depends only on its ADE type, since
+# the fundamental roots of a component come out of
+# `_root_lattice_recognition_fundamental` in the standard numbering, so that
+# the Cartan matrix of a component of type `(t, k)` is the one of
+# `root_lattice(t, k)`.
+const _minuscule_tables = Dict{Tuple{Symbol,Int},_MinusculeTable}()
+const _minuscule_tables_lock = ReentrantLock()
 
 _minuscule_class(g::AbstractVector{Int}, adj::Matrix{Int}, d::Int) = Int[mod(sum(g[k]*adj[k, j] for k in 1:length(g)), d) for j in 1:length(g)]
 
@@ -226,14 +231,17 @@ function _minuscule_table(cartan::Matrix{Int})
 end
 
 # The tables of the irreducible components of a root lattice with Cartan
-# matrix `cartan`, the components being given by `ranges`
-function _minuscule_tables_of(cartan::ZZMatrix, ranges::Vector{UnitRange{Int}})
+# matrix `cartan`, the components being given by their ADE `types` and `ranges`
+function _minuscule_tables_of(cartan::ZZMatrix, types::Vector{Tuple{Symbol,Int}}, ranges::Vector{UnitRange{Int}})
   res = Tuple{UnitRange{Int},_MinusculeTable}[]
-  for r in ranges
-    @assert all(x -> -2 <= x <= 2, (cartan[i, j] for i in r for j in r))
-    block = Int[Int(cartan[i, j]) for i in r, j in r]
-    t = get!(() -> _minuscule_table(block), _minuscule_tables, block)
-    push!(res, (r, t))
+  for (t, r) in zip(types, ranges)
+    tab = lock(_minuscule_tables_lock) do
+      get!(_minuscule_tables, t) do
+        @assert all(x -> -2 <= x <= 2, (cartan[i, j] for i in r for j in r))
+        _minuscule_table(Int[Int(cartan[i, j]) for i in r, j in r])
+      end
+    end
+    push!(res, (r, tab))
   end
   return res
 end
@@ -291,7 +299,7 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   @assert isone(d)
   # the fundamental roots of `L`, in the coordinates of `L` and grouped into
   # the irreducible components of the root sublattice
-  _, components = _root_lattice_recognition_fundamental(L)
+  types, components = _root_lattice_recognition_fundamental(L)
   if is_empty(components)
     # `L` has no vector of norm 1 or 2, so there is nothing to reduce: the
     # closed fundamental chamber is all of the ambient space.
@@ -309,7 +317,7 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
     k += nrows(c)
   end
   cartan = roots*gram*transpose(roots)
-  D = _minuscule_tables_of(cartan, ranges)
+  D = _minuscule_tables_of(cartan, types, ranges)
   # `v*gram_roots` are the weight coordinates of the vector `v` of `L`
   gram_roots = gram*transpose(roots)
   res = ZZMatrix[roots[i:i, :] for i in 1:nr]
