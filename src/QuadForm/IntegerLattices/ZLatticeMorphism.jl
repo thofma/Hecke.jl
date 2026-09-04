@@ -59,8 +59,16 @@ function __assert_has_automorphisms(
     return nothing
   end
 
-  # short vector backtracking; falls through to the code below if the input is
-  # out of range for that implementation
+  # Plain short-vector backtracking.
+  if algorithm == :backtrack_vanilla && is_definite(L) && rank(L) > 1
+    generators, group_order = _automorphism_group_backtrack_vanilla(L)
+    L.automorphism_group_generators = generators
+    L.automorphism_group_order = group_order
+    return nothing
+  end
+
+  # Optimized short-vector backtracking; falls through to the code below if the
+  # input is out of range for that implementation.
   if algorithm == :backtrack && is_definite(L) && rank(L) > 1
     res = _automorphism_group_backtrack(L)
     if res !== nothing
@@ -640,6 +648,9 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_
   end
 
   if is_definite(L) && is_definite(M)
+    if algorithm == :backtrack_vanilla
+      return _is_isometric_with_isometry_backtrack_vanilla(L, M)
+    end
     if algorithm == :backtrack
       res = _is_isometric_with_isometry_backtrack(L, M)
       res !== nothing && return res
