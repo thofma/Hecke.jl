@@ -46,6 +46,28 @@
           Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_two_limb(T, p)
 
     T = Hecke.pRationalCyclotomic.pRationalityTestCtx(197)
+    data = T.prime_conductor_data
+    p = next_prime(10^9)
+    R2 = residue_ring(ZZ, p^2; cached = false)[1]
+    R2x, = polynomial_ring(R2, :x; cached = false)
+    gmod2 = R2x()
+    for i in 0:data.d
+      setcoeff!(gmod2, i, data.defining_polynomial[i + 1])
+    end
+    for e in UInt[1, 2, 3, 17, p]
+      @test (@inferred Hecke.pRationalCyclotomic._powermod_x_single_limb_binary(
+        e, gmod2
+      )) == Hecke.pRationalCyclotomic._powermod_x_single_limb(e, gmod2)
+    end
+    for p in [101, 743, next_prime(10^9), next_prime(next_prime(10^9))]
+      reference_delta =
+        Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(
+          data, p, p^2
+        )
+      @test (@inferred Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta_single_limb(
+        data, p
+      )) == reference_delta
+    end
     for p in [7, next_prime(10^9), next_prime(10^10)]
       fast = Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor(T, p)
       delta = Hecke.pRationalCyclotomic._schirokauer_map_data_prime_conductor_delta(T, p)

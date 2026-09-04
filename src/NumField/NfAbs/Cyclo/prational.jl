@@ -17,15 +17,59 @@ import ..Hecke.pRational:
 import ..Hecke.KimGoldBases:
   _sinnott_g
 
+# Cached data for K = Q(zeta_n)^+ when n is an odd prime. Fix
+#
+#   x = zeta_n + zeta_n^(-1),
+#   e_a = zeta_n^a + zeta_n^(-a) = e_(n-a).
+#
+# We use representatives 1 <= a <= d = (n - 1)/2. There are two relevant
+# ordered bases:
+#
+#   B_power  = (1, x, ..., x^(d - 1)),
+#   B_normal = (e_orbit[1], ..., e_orbit[d]).
+#
+# The first is the monomial basis of Z[x] = O_K. For the second, if gamma is
+# the primitive root modulo n chosen by _prime_conductor_orbit, then
+# orbit[i] is the representative modulo sign of gamma^(i-1). Thus B_normal is
+# the cyclic ordering of the conjugates of x used by the group determinant.
 struct _PrimeConductorData
+  # Odd prime conductor and degree [K : Q] = (n - 1)/2.
   n::Int
   d::Int
+
+  # Galois exponents defining B_normal as described above; this is an index
+  # vector, not a coordinate vector for an element of K.
   orbit::Vector{Int}
+
+  # binomials[m + 1, j + 1] = binomial(m, j) for
+  # 0 <= m < d and 0 <= j <= floor(m/2), and zero otherwise. These are the
+  # coefficients in the power-to-normal conversion
+  #
+  #   x^m = sum_{j=0}^{floor((m-1)/2)} binomial(m, j) e_(m-2j) + c_m,
+  #
+  # where c_m = binomial(m, m/2) for even m and c_m = 0 for odd m.
   binomials::Matrix{ZZRingElem}
+
+  # Ascending coefficient vector (g_0, ..., g_d) of the defining polynomial
+  # g(T) = sum_i g_i T^i for x. In particular K = Q[T]/(g), with T mapped
+  # to x.
   defining_polynomial::Vector{ZZRingElem}
+
+  # Coordinates (u_0, ..., u_(d-1)) of the cached Minkowski unit in B_power:
+  # u = sum_i u_i x^i.
   minkowski_unit::Vector{ZZRingElem}
+
+  # Row a contains the B_power coordinates of sigma_a(u), where
+  # sigma_a(x) = e_a. Precisely,
+  # conjugates[a, i + 1] is the coefficient of x^i in sigma_a(u), for
+  # 1 <= a <= d and 0 <= i < d.
   conjugates::Matrix{ZZRingElem}
+
+  # Same row and column conventions as conjugates, but row a contains the
+  # B_power coordinates of sigma_a(u)^(-1).
   inverse_conjugates::Matrix{ZZRingElem}
+
+  # Whether u is x itself, in which case specialized x-powering is available.
   minkowski_unit_is_generator::Bool
 end
 
@@ -366,98 +410,73 @@ function _setcoeff!(a::_MpnModPoly, i::Int, x::ZZRingElem)
   return a
 end
 
+function _preinverse_two_limb(modulus::_MpnModPoly)
+  ctx = modulus.ctx
+  reversed = _MpnModPoly(ctx)
+  inverse = _MpnModPoly(ctx)
+  status = @ccall _prational_libflint.gr_poly_reverse(
+    reversed::Ref{_MpnModPoly}, modulus::Ref{_MpnModPoly},
+    modulus.length::Int, ctx::Ref{_MpnModCtx}
+  )::Cint
+  if status != 0
+    _clear!(inverse)
+    _clear!(reversed)
+    error("FLINT gr_poly_reverse failed with status $status")
+  end
+
+  status = @ccall _prational_libflint.gr_poly_inv_series(
+    inverse::Ref{_MpnModPoly}, reversed::Ref{_MpnModPoly},
+    modulus.length::Int, ctx::Ref{_MpnModCtx}
+  )::Cint
+  _clear!(reversed)
+  if status != 0
+    _clear!(inverse)
+    error("FLINT gr_poly_inv_series failed with status $status")
+  end
+  return inverse
+end
+
 function _powermod_two_limb!(z::_MpnModPoly, a::_MpnModPoly,
                              e::ZZRingElem, modulus::_MpnModPoly)
   # A seven-bit sliding window is near-optimal for the several-thousand-bit
   # exponents occurring at the target conductor. Preinvert the fixed
   # polynomial modulus once for all reductions in this exponentiation.
-  reversed = _MpnModPoly(z.ctx)
-  inverse = _MpnModPoly(z.ctx)
-  try
-    status = @ccall _prational_libflint.gr_poly_reverse(
-      reversed::Ref{_MpnModPoly}, modulus::Ref{_MpnModPoly},
-      modulus.length::Int, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 || error("FLINT gr_poly_reverse failed with status $status")
-
-    status = @ccall _prational_libflint.gr_poly_inv_series(
-      inverse::Ref{_MpnModPoly}, reversed::Ref{_MpnModPoly},
-      modulus.length::Int, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 || error("FLINT gr_poly_inv_series failed with status $status")
-
-    status = @ccall _prational_libflint.gr_poly_powmod_fmpz_sliding_preinv(
-      z::Ref{_MpnModPoly}, a::Ref{_MpnModPoly}, e::Ref{ZZRingElem},
-      UInt(7)::UInt, modulus::Ref{_MpnModPoly},
-      inverse::Ref{_MpnModPoly}, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 ||
-      error("FLINT gr_poly_powmod_fmpz_sliding_preinv failed with status $status")
-  finally
-    _clear!(inverse)
-    _clear!(reversed)
-  end
+  inverse = _preinverse_two_limb(modulus)
+  status = @ccall _prational_libflint.gr_poly_powmod_fmpz_sliding_preinv(
+    z::Ref{_MpnModPoly}, a::Ref{_MpnModPoly}, e::Ref{ZZRingElem},
+    UInt(7)::UInt, modulus::Ref{_MpnModPoly},
+    inverse::Ref{_MpnModPoly}, z.ctx::Ref{_MpnModCtx}
+  )::Cint
+  _clear!(inverse)
+  status == 0 ||
+    error("FLINT gr_poly_powmod_fmpz_sliding_preinv failed with status $status")
   return z
 end
 
 function _powermod_two_limb_ui!(z::_MpnModPoly, a::_MpnModPoly,
                                 e::UInt, modulus::_MpnModPoly)
-  reversed = _MpnModPoly(z.ctx)
-  inverse = _MpnModPoly(z.ctx)
-  try
-    status = @ccall _prational_libflint.gr_poly_reverse(
-      reversed::Ref{_MpnModPoly}, modulus::Ref{_MpnModPoly},
-      modulus.length::Int, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 || error("FLINT gr_poly_reverse failed with status $status")
-
-    status = @ccall _prational_libflint.gr_poly_inv_series(
-      inverse::Ref{_MpnModPoly}, reversed::Ref{_MpnModPoly},
-      modulus.length::Int, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 || error("FLINT gr_poly_inv_series failed with status $status")
-
-    status = @ccall _prational_libflint.gr_poly_powmod_ui_binexp_preinv(
-      z::Ref{_MpnModPoly}, a::Ref{_MpnModPoly}, e::UInt,
-      modulus::Ref{_MpnModPoly}, inverse::Ref{_MpnModPoly},
-      z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 ||
-      error("FLINT gr_poly_powmod_ui_binexp_preinv failed with status $status")
-  finally
-    _clear!(inverse)
-    _clear!(reversed)
-  end
+  inverse = _preinverse_two_limb(modulus)
+  status = @ccall _prational_libflint.gr_poly_powmod_ui_binexp_preinv(
+    z::Ref{_MpnModPoly}, a::Ref{_MpnModPoly}, e::UInt,
+    modulus::Ref{_MpnModPoly}, inverse::Ref{_MpnModPoly},
+    z.ctx::Ref{_MpnModCtx}
+  )::Cint
+  _clear!(inverse)
+  status == 0 ||
+    error("FLINT gr_poly_powmod_ui_binexp_preinv failed with status $status")
   return z
 end
 
 function _powermod_x_two_limb!(z::_MpnModPoly, e::ZZRingElem,
                                modulus::_MpnModPoly)
-  reversed = _MpnModPoly(z.ctx)
-  inverse = _MpnModPoly(z.ctx)
-  try
-    status = @ccall _prational_libflint.gr_poly_reverse(
-      reversed::Ref{_MpnModPoly}, modulus::Ref{_MpnModPoly},
-      modulus.length::Int, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 || error("FLINT gr_poly_reverse failed with status $status")
-
-    status = @ccall _prational_libflint.gr_poly_inv_series(
-      inverse::Ref{_MpnModPoly}, reversed::Ref{_MpnModPoly},
-      modulus.length::Int, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 || error("FLINT gr_poly_inv_series failed with status $status")
-
-    status = @ccall _prational_libflint.gr_poly_powmod_x_fmpz_preinv(
-      z::Ref{_MpnModPoly}, e::Ref{ZZRingElem}, modulus::Ref{_MpnModPoly},
-      inverse::Ref{_MpnModPoly}, z.ctx::Ref{_MpnModCtx}
-    )::Cint
-    status == 0 ||
-      error("FLINT gr_poly_powmod_x_fmpz_preinv failed with status $status")
-  finally
-    _clear!(inverse)
-    _clear!(reversed)
-  end
+  inverse = _preinverse_two_limb(modulus)
+  status = @ccall _prational_libflint.gr_poly_powmod_x_fmpz_preinv(
+    z::Ref{_MpnModPoly}, e::Ref{ZZRingElem}, modulus::Ref{_MpnModPoly},
+    inverse::Ref{_MpnModPoly}, z.ctx::Ref{_MpnModCtx}
+  )::Cint
+  _clear!(inverse)
+  status == 0 ||
+    error("FLINT gr_poly_powmod_x_fmpz_preinv failed with status $status")
   return z
 end
 
@@ -483,6 +502,58 @@ function _powermod_x_single_limb(e::UInt, modulus::zzModPolyRingElem)
     z::Ref{zzModPolyRingElem}, e::UInt, modulus::Ref{zzModPolyRingElem},
     inverse::Ref{zzModPolyRingElem}
   )::Cvoid
+  return z
+end
+
+# Binary powering specialized to the sparse base x. FLINT's generic x-powering
+# uses windows, which is advantageous when all multiplications have comparable
+# cost. Here every addition step in the binary chain is multiplication by the
+# degree-one polynomial x, and is much cheaper than a dense multiplication.
+# Keeping these cheap steps saves dense work for the degrees occurring in the
+# prime-conductor p-rationality test. Moreover, x^r is already a monomial when
+# r is smaller than the modulus degree. We therefore consume the longest such
+# leading block of exponent bits without doing any polynomial multiplications.
+function _powermod_x_single_limb_binary(e::UInt, modulus::zzModPolyRingElem)
+  @assert !iszero(e)
+  reversed = reverse(modulus, length(modulus))
+  inverse = parent(modulus)()
+  @ccall _prational_libflint.nmod_poly_inv_series(
+    inverse::Ref{zzModPolyRingElem}, reversed::Ref{zzModPolyRingElem},
+    length(modulus)::Int
+  )::Cvoid
+  bitlength = 8 * sizeof(UInt) - leading_zeros(e)
+  prefix_width = 1
+  prefix = 1
+  while prefix_width < bitlength
+    candidate_width = prefix_width + 1
+    candidate = Int(e >> (bitlength - candidate_width))
+    candidate < degree(modulus) || break
+    prefix_width = candidate_width
+    prefix = candidate
+  end
+
+  x = gen(parent(modulus))
+  z = parent(modulus)()
+  setcoeff!(z, prefix, 1)
+  tmp = parent(modulus)()
+  i = bitlength - prefix_width - 1
+  while i >= 0
+    @ccall _prational_libflint.nmod_poly_mulmod_preinv(
+      tmp::Ref{zzModPolyRingElem}, z::Ref{zzModPolyRingElem},
+      z::Ref{zzModPolyRingElem}, modulus::Ref{zzModPolyRingElem},
+      inverse::Ref{zzModPolyRingElem}
+    )::Cvoid
+    z, tmp = tmp, z
+    if ((e >> i) & 1) != 0
+      @ccall _prational_libflint.nmod_poly_mulmod_preinv(
+        tmp::Ref{zzModPolyRingElem}, z::Ref{zzModPolyRingElem},
+        x::Ref{zzModPolyRingElem}, modulus::Ref{zzModPolyRingElem},
+        inverse::Ref{zzModPolyRingElem}
+      )::Cvoid
+      z, tmp = tmp, z
+    end
+    i -= 1
+  end
   return z
 end
 
@@ -542,6 +613,9 @@ function _schirokauer_map_data_prime_conductor_delta(
   @assert T.strongminkowski && T.mink isa AbsSimpleNumFieldElem
   if p isa Int && 32 < nbits(p) <= 63
     return _schirokauer_map_data_prime_conductor_delta_two_limb(data, p)
+  elseif p isa Int && p > data.d && 2 * nbits(p) < 63 &&
+      data.minkowski_unit_is_generator
+    return _schirokauer_map_data_prime_conductor_delta_single_limb(data, p)
   elseif 2 * nbits(p) < 63
     return _schirokauer_map_data_prime_conductor_delta(data, p, p^2)
   else
@@ -589,6 +663,54 @@ function _schirokauer_map_data_prime_conductor_delta(
   end
   q = mulmod(q0, inverse_sigma_umod, gmod)
   return _schirokauer_rank_prime_conductor(data, q)
+end
+
+# Separate word-arithmetic path for p^2 fitting in a signed machine word.
+# The general single-limb implementation above is retained as a reference and
+# as the fallback when the cached Minkowski unit is not the field generator.
+function _schirokauer_map_data_prime_conductor_delta_single_limb(
+    data::_PrimeConductorData, p::Int)
+  n = data.n
+  d = data.d
+  @assert p > d
+  @assert 2 * nbits(p) < 63
+  @assert data.minkowski_unit_is_generator
+  @assert !is_divisible_by(2 * n, p)
+
+  afwd = mod(p, n)
+  a = min(afwd, n - afwd)
+  p2 = p^2
+
+  R2 = residue_ring(ZZ, p2; cached = false)[1]
+  R2x, = polynomial_ring(R2, :x; cached = false)
+  gmod2 = R2x()
+  sigma_umod2 = R2x()
+  for i in 0:d
+    setcoeff!(gmod2, i, data.defining_polynomial[i + 1])
+  end
+  for i in 0:d - 1
+    setcoeff!(sigma_umod2, i, data.conjugates[a, i + 1])
+  end
+  upow = _powermod_x_single_limb_binary(UInt(p), gmod2)
+
+  num = upow - sigma_umod2
+  ZZy, = polynomial_ring(ZZ, :y; cached = false)
+  R = residue_ring(ZZ, p; cached = false)[1]
+  Rx, = polynomial_ring(R, :x; cached = false)
+  q0 = change_base_ring(
+    R, divexact!(lift(ZZy, num), p); parent = Rx
+  )
+
+  inverse_sigma_umod = Rx()
+  gmod = Rx()
+  for i in 0:d - 1
+    setcoeff!(inverse_sigma_umod, i, data.inverse_conjugates[a, i + 1])
+  end
+  for i in 0:d
+    setcoeff!(gmod, i, data.defining_polynomial[i + 1])
+  end
+  q = mulmod(q0, inverse_sigma_umod, gmod)
+  return _schirokauer_rank_prime_conductor_single_limb(data, q, p)
 end
 
 function _powermod_uint128(a, e::ZZRingElem, modulus; window::Int = 7)
@@ -702,39 +824,35 @@ function _schirokauer_map_data_prime_conductor_two_limb(
   umod = _MpnModPoly(ctx)
   result = _MpnModPoly(ctx)
 
-  q = try
-    for i in 0:degree(g)
-      _setcoeff!(gmod, i, ZZ(coeff(g, i)))
-    end
-    for i in 0:d - 1
-      _setcoeff!(umod, i, ZZ(coeff(u, i)))
-    end
-
-    _powermod_two_limb!(result, umod, pzz^f - 1, gmod)
-
-    R = residue_ring(ZZ, p; cached = false)[1]
-    Rx, = polynomial_ring(R, :x; cached = false)
-    q = Rx()
-    tmp = Vector{UInt}(undef, 2)
-    pu = UInt128(p)
-    for i in 0:d - 1
-      value = _coeff_two_limbs!(tmp, result, i)
-      if i == 0
-        @assert value % pu == 1
-        value -= 1
-      else
-        @assert value % pu == 0
-      end
-      setcoeff!(q, i, UInt(value ÷ pu))
-    end
-    q
-  finally
-    _clear!(result)
-    _clear!(umod)
-    _clear!(gmod)
-    _clear!(ctx)
+  for i in 0:degree(g)
+    _setcoeff!(gmod, i, ZZ(coeff(g, i)))
+  end
+  for i in 0:d - 1
+    _setcoeff!(umod, i, ZZ(coeff(u, i)))
   end
 
+  _powermod_two_limb!(result, umod, pzz^f - 1, gmod)
+
+  R = residue_ring(ZZ, p; cached = false)[1]
+  Rx, = polynomial_ring(R, :x; cached = false)
+  q = Rx()
+  tmp = Vector{UInt}(undef, 2)
+  pu = UInt128(p)
+  for i in 0:d - 1
+    value = _coeff_two_limbs!(tmp, result, i)
+    if i == 0
+      @assert value % pu == 1
+      value -= 1
+    else
+      @assert value % pu == 0
+    end
+    setcoeff!(q, i, UInt(value ÷ pu))
+  end
+
+  _clear!(result)
+  _clear!(umod)
+  _clear!(gmod)
+  _clear!(ctx)
   return _schirokauer_rank_prime_conductor(T, q)
 end
 
@@ -775,47 +893,44 @@ function _schirokauer_map_data_prime_conductor_delta_two_limb(
   umod2 = _MpnModPoly(ctx)
   result = _MpnModPoly(ctx)
 
-  q = try
-    for i in 0:d
-      _setcoeff!(gmod, i, data.defining_polynomial[i + 1])
-    end
-    if data.minkowski_unit_is_generator
-      _powermod_x_two_limb!(result, pzz, gmod)
-    else
-      for i in 0:d - 1
-        _setcoeff!(umod2, i, data.minkowski_unit[i + 1])
-      end
-      _powermod_two_limb_ui!(result, umod2, UInt(p), gmod)
-    end
-
-    R = residue_ring(ZZ, p; cached = false)[1]
-    Rx, = polynomial_ring(R, :x; cached = false)
-    q0 = Rx()
-    inverse_sigma_umod = Rx()
-    tmp = Vector{UInt}(undef, 2)
-    pu = UInt128(p)
-    p2u = pu^2
+  for i in 0:d
+    _setcoeff!(gmod, i, data.defining_polynomial[i + 1])
+  end
+  if data.minkowski_unit_is_generator
+    _powermod_x_two_limb!(result, pzz, gmod)
+  else
     for i in 0:d - 1
-      value = _coeff_two_limbs!(tmp, result, i)
-      sigma_coefficient = data.conjugates[a, i + 1]
-      sigma_ui = UInt128(mod(sigma_coefficient, p2))
-      delta = value >= sigma_ui ? value - sigma_ui : p2u - (sigma_ui - value)
-      @assert delta % pu == 0
-      setcoeff!(q0, i, UInt(delta ÷ pu))
-      setcoeff!(inverse_sigma_umod, i, data.inverse_conjugates[a, i + 1])
+      _setcoeff!(umod2, i, data.minkowski_unit[i + 1])
     end
-    gmodp = Rx()
-    for i in 0:d
-      setcoeff!(gmodp, i, data.defining_polynomial[i + 1])
-    end
-    mulmod(q0, inverse_sigma_umod, gmodp)
-  finally
-    _clear!(result)
-    _clear!(umod2)
-    _clear!(gmod)
-    _clear!(ctx)
+    _powermod_two_limb_ui!(result, umod2, UInt(p), gmod)
   end
 
+  R = residue_ring(ZZ, p; cached = false)[1]
+  Rx, = polynomial_ring(R, :x; cached = false)
+  q0 = Rx()
+  inverse_sigma_umod = Rx()
+  tmp = Vector{UInt}(undef, 2)
+  pu = UInt128(p)
+  p2u = pu^2
+  for i in 0:d - 1
+    value = _coeff_two_limbs!(tmp, result, i)
+    sigma_coefficient = data.conjugates[a, i + 1]
+    sigma_ui = UInt128(mod(sigma_coefficient, p2))
+    delta = value >= sigma_ui ? value - sigma_ui : p2u - (sigma_ui - value)
+    @assert delta % pu == 0
+    setcoeff!(q0, i, UInt(delta ÷ pu))
+    setcoeff!(inverse_sigma_umod, i, data.inverse_conjugates[a, i + 1])
+  end
+  gmodp = Rx()
+  for i in 0:d
+    setcoeff!(gmodp, i, data.defining_polynomial[i + 1])
+  end
+  q = mulmod(q0, inverse_sigma_umod, gmodp)
+
+  _clear!(result)
+  _clear!(umod2)
+  _clear!(gmod)
+  _clear!(ctx)
   return _schirokauer_rank_prime_conductor(data, q)
 end
 
@@ -862,6 +977,108 @@ function _schirokauer_rank_prime_conductor(data::_PrimeConductorData, q)
 
   gcd_degree = degree(gcd(c, X^d - 1))
   image_rank = d - gcd_degree
+  unit_rank = d - 1
+  return image_rank == unit_rank, unit_rank - image_rank, image_rank
+end
+
+@inline function _addmod_word(a::UInt, b::UInt, p::UInt)
+  c = a + b
+  return c >= p ? c - p : c
+end
+
+@inline function _submod_word(a::UInt, b::UInt, p::UInt)
+  return a >= b ? a - b : p - (b - a)
+end
+
+function _nmod_poly_gcd_degree(a::zzModPolyRingElem, b::zzModPolyRingElem)
+  z = parent(a)()
+  @ccall _prational_libflint.nmod_poly_gcd(
+    z::Ref{zzModPolyRingElem}, a::Ref{zzModPolyRingElem},
+    b::Ref{zzModPolyRingElem}
+  )::Cvoid
+  return degree(z)
+end
+
+# Word-arithmetic rank path for large single-limb primes. Besides avoiding
+# repeated reductions of cached ZZ binomial coefficients, use the known factor
+# X - 1 before the gcd:
+#
+#   gcd(c, X^d - 1) = (X - 1) gcd(c/(X - 1), 1 + X + ... + X^(d - 1)).
+#
+# The direct FLINT gcd is substantially faster here than AbstractAlgebra's
+# generic degree-98 polynomial Euclidean algorithm. The general rank method
+# above remains available for all coefficient rings and small primes.
+function _schirokauer_rank_prime_conductor_single_limb(
+    data::_PrimeConductorData, q::zzModPolyRingElem, p::Int)
+  d = data.d
+  @assert p > d
+  @assert 2 * nbits(p) < 63
+  pu = UInt(p)
+
+  # Since p > d, all denominators below are units. Compute the inverses
+  # 1, ..., floor((d - 1)/2) in linear time and generate each row of Pascal's
+  # triangle from C(m, j + 1) = C(m, j) * (m - j)/(j + 1).
+  maxj = div(d - 1, 2)
+  inverses = Vector{UInt}(undef, maxj)
+  if maxj > 0
+    inverses[1] = 1
+    for j in 2:maxj
+      ju = UInt(j)
+      inverses[j] = pu - ((pu ÷ ju) * inverses[Int(pu % ju)]) % pu
+    end
+  end
+
+  b = zeros(UInt, d - 1)
+  a0 = UInt(0)
+  for m in 0:d - 1
+    qm = Nemo.coeff_raw(q, m)
+    bmj = UInt(1)
+    halfm = div(m, 2)
+    for j in 0:halfm
+      k = m - 2 * j
+      term = (qm * bmj) % pu
+      if k == 0
+        a0 = _addmod_word(a0, term, pu)
+      else
+        b[k] = _addmod_word(b[k], term, pu)
+      end
+      if j < halfm
+        jp1 = j + 1
+        bmj = ((bmj * UInt(m - j)) % pu * inverses[jp1]) % pu
+      end
+    end
+  end
+
+  # Construct c/(X - 1) directly by synthetic division. If c_i denotes the
+  # coefficient of X^i, its quotient coefficient at X^(i - 1) is
+  # c_i + ... + c_(d - 1).
+  Rx = parent(q)
+  cquot = Rx()
+  cycloquot = Rx()
+  cumulative = UInt(0)
+  for i in d:-1:2
+    k = data.orbit[i]
+    ci = if k < d
+      _submod_word(b[k], a0, pu)
+    else
+      iszero(a0) ? a0 : pu - a0
+    end
+    cumulative = _addmod_word(cumulative, ci, pu)
+    setcoeff!(cquot, i - 2, cumulative)
+  end
+  k = data.orbit[1]
+  c0 = if k < d
+    _submod_word(b[k], a0, pu)
+  else
+    iszero(a0) ? a0 : pu - a0
+  end
+  @assert _addmod_word(cumulative, c0, pu) == 0
+  for i in 0:d - 1
+    setcoeff!(cycloquot, i, UInt(1))
+  end
+
+  deficiency = _nmod_poly_gcd_degree(cquot, cycloquot)
+  image_rank = d - 1 - deficiency
   unit_rank = d - 1
   return image_rank == unit_rank, unit_rank - image_rank, image_rank
 end
