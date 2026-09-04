@@ -7,16 +7,6 @@
 #end
 
 
-function show(io::IO, M::InverseMap)
-  @show_name(io, M)
-  println(io, "inverse of")
-  print(io, " ", M.origin)
-end
-
-function pseudo_inv(a::Map)
-  return InverseMap(a)
-end
-
 #function show(io::IO, M::CoerceMap)
 #  println(io, "Coerce: $(domain(M)) -> $(codomain(M))")
 #end

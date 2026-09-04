@@ -51,7 +51,7 @@ import AbstractAlgebra:
 import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 
 # import AbstractAlgebra: HeckeMap
-import AbstractAlgebra: HeckeMap, MapHeader, MapCache
+import AbstractAlgebra: MapWithHeader, MapHeader, MapCache, InverseMap, pseudo_inv
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
