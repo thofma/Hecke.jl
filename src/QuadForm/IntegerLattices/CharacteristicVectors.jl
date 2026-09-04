@@ -37,7 +37,9 @@ function _characteristic_vectors(L::ZZLat)
   proj2 = orthogonal_projection(ambient_space(L), basis_matrix(P1); check=false)
   # a reduced basis speeds up the closest vector problems in the recursion
   L2 = lll(proj2(L))
-  proj1 = orthogonal_projection(ambient_space(L), basis_matrix(L2); check=false)
+  # `L2` spans the orthogonal complement of `P1`, so the projection onto the
+  # orthogonal complement of `L2` is the projection complementary to `proj2`
+  pr1 = one(proj2.matrix) - proj2.matrix
   P_Z = change_base_ring(ZZ, solve(basis_matrix(L2), proj2.matrix; side=:left))
   ctx = solve_init(P_Z)
   # the differences `w - j` only depend on `w` modulo `P1`, so we solve each
@@ -54,7 +56,7 @@ function _characteristic_vectors(L::ZZLat)
     end
     # a vector in L projecting to a
     vL = solve(ctx, a; side=:left)
-    w_amb = vL * proj1.matrix
+    w_amb = vL * pr1
     # `w` is not integral: otherwise `w_amb` would lie in `P1` and hence `aL`
     # in `L`, which was excluded above
     w = coordinates(w_amb[1,:], P1)
@@ -342,11 +344,15 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   # the remaining characteristic vectors are the lifts of minimal norm of the
   # characteristic vectors of the projection `L2` of `L` to the orthogonal
   # complement of `R`
+  # The projection onto the orthogonal complement of `R`, which is the one of
+  # `P` since the two span the same space. It is `1 - G*roots^t*cartan^-1*roots`,
+  # and `cartan^-1` is `dweights` divided by `dd`, so there is nothing to
+  # invert. `L0` has the identity as basis matrix, so `pr` is at the same time
+  # the matrix of a generating system of `L2`.
   L0 = lattice(rational_span(L))
-  P = lattice(ambient_space(L0), change_base_ring(QQ, BP); isbasis=true, check=false)  # for the sake of notation
-  proj = orthogonal_projection(ambient_space(L0), basis_matrix(P); check=false)
-  L2 = proj(L0)
-  PZ = change_base_ring(ZZ, solve(basis_matrix(L2), proj.matrix; side=:left))
+  pr = identity_matrix(QQ, n) - change_base_ring(QQ, gram_roots*dweights)*QQ(1, dd)
+  L2 = lattice(ambient_space(L0), pr; isbasis=false, check=false)
+  PZ = change_base_ring(ZZ, solve(basis_matrix(L2), pr; side=:left))
   cv2 = _characteristic_vectors(L2)
   # `_characteristic_vectors` returns the characteristic vectors only up to
   # sign; we need all of them for the result to be canonical
