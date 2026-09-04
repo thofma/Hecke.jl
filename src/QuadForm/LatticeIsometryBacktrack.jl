@@ -21,31 +21,62 @@
 struct LatticeIsometryBacktrackCtx
   gram::ZZMatrix
   vectors::Vector{Vector{ZZRingElem}}
+  gram_products::Vector{Vector{ZZRingElem}}
   norms::Vector{ZZRingElem}
+  vectors_by_norm::Dict{ZZRingElem, Vector{Int}}
   lookup::Dict{Vector{ZZRingElem}, Int}
+  basis_positions::Vector{Int}
 end
 
 function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
   L = integer_lattice(gram = G, cached = false)
   vectors = Vector{ZZRingElem}[]
+  gram_products = Vector{ZZRingElem}[]
   norms = ZZRingElem[]
 
   # short_vectors returns one representative of each pair {v, -v}.  Both
   # signs are possible basis images, so store both explicitly.
   for (v, q) in short_vectors(L, bound, ZZRingElem)
     w = ZZRingElem[x for x in v]
+    wG = zeros(ZZRingElem, length(w))
+    for j in eachindex(w)
+      for i in eachindex(w)
+        wG[j] += w[i] * G[i, j]
+      end
+    end
     nw = numerator(q)
     push!(vectors, w)
+    push!(gram_products, wG)
     push!(norms, nw)
     push!(vectors, -w)
+    push!(gram_products, -wG)
     push!(norms, nw)
   end
 
+  vectors_by_norm = Dict{ZZRingElem, Vector{Int}}()
   lookup = Dict{Vector{ZZRingElem}, Int}()
   for (i, v) in enumerate(vectors)
+    push!(get!(Vector{Int}, vectors_by_norm, norms[i]), i)
     lookup[v] = i
   end
-  return LatticeIsometryBacktrackCtx(G, vectors, norms, lookup)
+
+  # Record which short vectors are signed standard basis vectors.  Pairing
+  # against one of these then amounts to reading one entry of v * G.
+  basis_positions = zeros(Int, length(vectors))
+  e = zeros(ZZRingElem, nrows(G))
+  for i in eachindex(e)
+    e[i] = 1
+    j = get(lookup, e, 0)
+    iszero(j) || (basis_positions[j] = i)
+    e[i] = -1
+    j = get(lookup, e, 0)
+    iszero(j) || (basis_positions[j] = -i)
+    e[i] = 0
+  end
+
+  return LatticeIsometryBacktrackCtx(
+    G, vectors, gram_products, norms, vectors_by_norm, lookup, basis_positions,
+  )
 end
 
 function _lattice_backtrack_pairing(
@@ -53,14 +84,18 @@ function _lattice_backtrack_pairing(
   i::Int,
   j::Int,
 )
-  v = C.vectors[i]
+  vG = C.gram_products[i]
+  basis_position = C.basis_positions[j]
+  if basis_position > 0
+    return vG[basis_position]
+  elseif basis_position < 0
+    return -vG[-basis_position]
+  end
+
   w = C.vectors[j]
-  n = length(v)
   result = zero(ZZRingElem)
-  for a in 1:n
-    for b in 1:n
-      result += v[a] * C.gram[a, b] * w[b]
-    end
+  for k in eachindex(vG)
+    result += vG[k] * w[k]
   end
   return result
 end
@@ -88,8 +123,10 @@ function _lattice_backtrack_candidates(
 )
   source_index = order[depth]
   candidates = Int[]
-  for i in eachindex(target.vectors)
-    target.norms[i] == source_gram[source_index, source_index] || continue
+  norm = source_gram[source_index, source_index]
+  vectors_of_right_norm = get(target.vectors_by_norm, norm, nothing)
+  vectors_of_right_norm === nothing && return candidates
+  for i in vectors_of_right_norm
     possible = true
     for previous_depth in 1:(depth - 1)
       previous_source_index = order[previous_depth]
