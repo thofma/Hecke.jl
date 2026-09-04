@@ -26,6 +26,7 @@ struct LatticeIsometryBacktrackCtx
   vectors_by_norm::Dict{ZZRingElem, Vector{Int}}
   lookup::Dict{Vector{ZZRingElem}, Int}
   basis_positions::Vector{Int}
+  image_cache::IdDict{ZZMatrix, Vector{Int}}
 end
 
 function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
@@ -38,10 +39,10 @@ function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
   # signs are possible basis images, so store both explicitly.
   for (v, q) in short_vectors(L, bound, ZZRingElem)
     w = ZZRingElem[x for x in v]
-    wG = zeros(ZZRingElem, length(w))
+    wG = [zero(ZZRingElem) for _ in eachindex(w)]
     for j in eachindex(w)
       for i in eachindex(w)
-        wG[j] += w[i] * G[i, j]
+        addmul!(wG[j], w[i], G[i, j])
       end
     end
     nw = numerator(q)
@@ -75,7 +76,14 @@ function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
   end
 
   return LatticeIsometryBacktrackCtx(
-    G, vectors, gram_products, norms, vectors_by_norm, lookup, basis_positions,
+    G,
+    vectors,
+    gram_products,
+    norms,
+    vectors_by_norm,
+    lookup,
+    basis_positions,
+    IdDict{ZZMatrix, Vector{Int}}(),
   )
 end
 
@@ -95,7 +103,7 @@ function _lattice_backtrack_pairing(
   w = C.vectors[j]
   result = zero(ZZRingElem)
   for k in eachindex(vG)
-    result += vG[k] * w[k]
+    addmul!(result, vG[k], w[k])
   end
   return result
 end
@@ -126,12 +134,14 @@ function _lattice_backtrack_candidates(
   norm = source_gram[source_index, source_index]
   vectors_of_right_norm = get(target.vectors_by_norm, norm, nothing)
   vectors_of_right_norm === nothing && return candidates
+  required_pairings = ZZRingElem[
+    source_gram[source_index, order[previous_depth]] for previous_depth in 1:(depth - 1)
+  ]
   for i in vectors_of_right_norm
     possible = true
     for previous_depth in 1:(depth - 1)
-      previous_source_index = order[previous_depth]
       if _lattice_backtrack_pairing(target, i, images[previous_depth]) !=
-         source_gram[source_index, previous_source_index]
+         required_pairings[previous_depth]
         possible = false
         break
       end
@@ -256,16 +266,21 @@ function _lattice_backtrack_image(
   point::Int,
   M::ZZMatrix,
 )
+  cache = get!(() -> zeros(Int, length(C.vectors)), C.image_cache, M)
+  cached_image = cache[point]
+  iszero(cached_image) || return cached_image
+
   v = C.vectors[point]
   n = length(v)
-  image = zeros(ZZRingElem, n)
+  image = [zero(ZZRingElem) for _ in 1:n]
   for j in 1:n
     for i in 1:n
-      image[j] += v[i] * M[i, j]
+      addmul!(image[j], v[i], M[i, j])
     end
   end
   result = get(C.lookup, image, 0)
   iszero(result) && error("an automorphism did not preserve the short vectors")
+  cache[point] = result
   return result
 end
 
@@ -275,7 +290,7 @@ function _lattice_backtrack_orbit(
   generators::Vector{ZZMatrix},
 )
   orbit = copy(points)
-  seen = Set(points)
+  seen = BitSet(points)
   next = 1
   while next <= length(orbit)
     point = orbit[next]
