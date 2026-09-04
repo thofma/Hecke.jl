@@ -13,42 +13,39 @@
 # with the chosen image.
 #
 # The implementation deliberately keeps the setup and the search elementary:
-# Hecke's short_vectors performs the enumeration, all vector coordinates and
-# matrix entries are ZZRingElem values, and partition cells are ordinary Julia
+# Hecke's short_vectors performs the enumeration directly into `Int` vectors,
+# all search arithmetic uses `Int`, and partition cells are ordinary Julia
 # vectors and dictionaries.  The only group-theoretic bookkeeping is the
 # stabilizer chain needed to turn found automorphisms into generators and an
 # order.
 
 struct LatticeIsometryBacktrackCtx
-  gram::ZZMatrix
-  vectors::Vector{Vector{ZZRingElem}}
-  gram_products::Vector{Vector{ZZRingElem}}
-  norms::Vector{ZZRingElem}
-  vectors_by_norm::Dict{ZZRingElem, Vector{Int}}
-  lookup::Dict{Vector{ZZRingElem}, Int}
+  gram::Matrix{Int}
+  vectors::Vector{Vector{Int}}
+  gram_products::Vector{Vector{Int}}
+  norms::Vector{Int}
+  vectors_by_norm::Dict{Int, Vector{Int}}
+  lookup::Dict{Vector{Int}, Int}
   basis_positions::Vector{Int}
-  image_cache::IdDict{ZZMatrix, Vector{Int}}
+  image_cache::IdDict{Matrix{Int}, Vector{Int}}
 end
 
-function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
-  L = integer_lattice(gram = G, cached = false)
-  vectors = Vector{ZZRingElem}[]
-  gram_products = Vector{ZZRingElem}[]
-  norms = ZZRingElem[]
-  gram_entry = zero(ZZRingElem)
+function LatticeIsometryBacktrackCtx(G::Matrix{Int}, bound::Int)
+  L = integer_lattice(gram = matrix(ZZ, G), cached = false)
+  vectors = Vector{Int}[]
+  gram_products = Vector{Int}[]
+  norms = Int[]
 
   # short_vectors returns one representative of each pair {v, -v}.  Both
   # signs are possible basis images, so store both explicitly.
-  for (v, q) in short_vectors(L, bound, ZZRingElem)
-    w = ZZRingElem[x for x in v]
-    wG = [zero(ZZRingElem) for _ in eachindex(w)]
+  for (w, _) in short_vectors(L, bound, Int)
+    wG = zeros(Int, length(w))
     for j in eachindex(w)
       for i in eachindex(w)
-        getindex!(gram_entry, G, i, j)
-        addmul!(wG[j], w[i], gram_entry)
+        wG[j] += w[i] * G[i, j]
       end
     end
-    nw = numerator(q)
+    nw = sum(w[i] * wG[i] for i in eachindex(w))
     push!(vectors, w)
     push!(gram_products, wG)
     push!(norms, nw)
@@ -57,8 +54,8 @@ function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
     push!(norms, nw)
   end
 
-  vectors_by_norm = Dict{ZZRingElem, Vector{Int}}()
-  lookup = Dict{Vector{ZZRingElem}, Int}()
+  vectors_by_norm = Dict{Int, Vector{Int}}()
+  lookup = Dict{Vector{Int}, Int}()
   for (i, v) in enumerate(vectors)
     push!(get!(Vector{Int}, vectors_by_norm, norms[i]), i)
     lookup[v] = i
@@ -67,7 +64,7 @@ function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
   # Record which short vectors are signed standard basis vectors.  Pairing
   # against one of these then amounts to reading one entry of v * G.
   basis_positions = zeros(Int, length(vectors))
-  e = zeros(ZZRingElem, nrows(G))
+  e = zeros(Int, size(G, 1))
   for i in eachindex(e)
     e[i] = 1
     j = get(lookup, e, 0)
@@ -86,7 +83,7 @@ function LatticeIsometryBacktrackCtx(G::ZZMatrix, bound::ZZRingElem)
     vectors_by_norm,
     lookup,
     basis_positions,
-    IdDict{ZZMatrix, Vector{Int}}(),
+    IdDict{Matrix{Int}, Vector{Int}}(),
   )
 end
 
@@ -104,17 +101,17 @@ function _lattice_backtrack_pairing(
   end
 
   w = C.vectors[j]
-  result = zero(ZZRingElem)
+  result = 0
   for k in eachindex(vG)
-    addmul!(result, vG[k], w[k])
+    result += vG[k] * w[k]
   end
   return result
 end
 
 function _lattice_backtrack_basis_indices(C::LatticeIsometryBacktrackCtx)
-  n = nrows(C.gram)
+  n = size(C.gram, 1)
   result = Vector{Int}(undef, n)
-  e = zeros(ZZRingElem, n)
+  e = zeros(Int, n)
   for i in 1:n
     e[i] = 1
     result[i] = C.lookup[e]
@@ -131,7 +128,7 @@ struct LatticeBacktrackPartition
 end
 
 struct LatticeBacktrackRefinement
-  value_indices::Vector{Dict{ZZRingElem, Int}}
+  value_indices::Vector{Dict{Int, Int}}
   sizes::Vector{Vector{Int}}
 end
 
@@ -139,7 +136,7 @@ struct LatticeBacktrackFingerprint
   order::Vector{Int}
   counts::Vector{Int}
   basis_indices::Vector{Int}
-  initial_norms::Vector{ZZRingElem}
+  initial_norms::Vector{Int}
   partitions::Vector{LatticeBacktrackPartition}
   candidate_cells::Vector{Int}
   refinements::Vector{LatticeBacktrackRefinement}
@@ -147,7 +144,7 @@ end
 
 function _lattice_backtrack_initial_partition(
   C::LatticeIsometryBacktrackCtx,
-  norms::Vector{ZZRingElem},
+  norms::Vector{Int},
 )
   points = Int[]
   starts = Int[]
@@ -189,25 +186,25 @@ function _lattice_backtrack_refine_source(
   starts = Int[]
   stops = Int[]
   cell_of = zeros(Int, length(C.vectors))
-  value_indices = Vector{Dict{ZZRingElem, Int}}(undef, length(partition.starts))
+  value_indices = Vector{Dict{Int, Int}}(undef, length(partition.starts))
   sizes = Vector{Vector{Int}}(undef, length(partition.starts))
 
   for cell in eachindex(partition.starts)
-    blocks = Dict{ZZRingElem, Vector{Int}}()
+    blocks = Dict{Int, Vector{Int}}()
     for position in partition.starts[cell]:partition.stops[cell]
       point = partition.points[position]
       value = _lattice_backtrack_pairing(C, point, pivot)
       push!(get!(Vector{Int}, blocks, value), point)
     end
 
-    kept_values = ZZRingElem[]
+    kept_values = Int[]
     for (value, block) in blocks
       any(point -> point in remaining_basis_points, block) || continue
       push!(kept_values, value)
     end
     sort!(kept_values)
 
-    indices = Dict{ZZRingElem, Int}()
+    indices = Dict{Int, Int}()
     kept_sizes = Int[]
     for value in kept_values
       block = blocks[value]
@@ -266,9 +263,9 @@ end
 # refining every cell by its scalar product with that vector.  Cells containing
 # no remaining basis vector can never supply a later basis image and are dropped.
 function _lattice_backtrack_fingerprint(C::LatticeIsometryBacktrackCtx)
-  n = nrows(C.gram)
+  n = size(C.gram, 1)
   basis_indices = _lattice_backtrack_basis_indices(C)
-  initial_norms = unique!(sort!(ZZRingElem[C.gram[i, i] for i in 1:n]))
+  initial_norms = unique!(sort!(Int[C.gram[i, i] for i in 1:n]))
   initial_partition = _lattice_backtrack_initial_partition(C, initial_norms)
   initial_partition === nothing && error("a basis norm has no short vectors")
 
@@ -324,7 +321,7 @@ function _lattice_backtrack_matrix(
   target::LatticeIsometryBacktrackCtx,
 )
   n = length(order)
-  M = zero_matrix(ZZ, n, n)
+  M = zeros(Int, n, n)
   for depth in 1:n
     image = target.vectors[images[depth]]
     for j in 1:n
@@ -337,14 +334,14 @@ end
 function _lattice_backtrack_extend!(
   images::Vector{Int},
   depth::Int,
-  source_gram::ZZMatrix,
+  source_gram::Matrix{Int},
   fingerprint::LatticeBacktrackFingerprint,
   target::LatticeIsometryBacktrackCtx,
   partition::LatticeBacktrackPartition,
 )
   if depth > length(fingerprint.order)
     M = _lattice_backtrack_matrix(images, fingerprint.order, target)
-    if abs(det(M)) == 1 && M * target.gram * transpose(M) == source_gram
+    if M * target.gram * transpose(M) == source_gram
       return M
     end
     return nothing
@@ -372,18 +369,17 @@ function _lattice_backtrack_extend!(
 end
 
 function _lattice_backtrack_histogram(C::LatticeIsometryBacktrackCtx)
-  result = Dict{ZZRingElem, Int}()
+  result = Dict{Int, Int}()
   for norm in C.norms
     result[norm] = get(result, norm, 0) + 1
   end
   return result
 end
 
-function _lattice_backtrack_isometry(G1::ZZMatrix, G2::ZZMatrix)
-  nrows(G1) == nrows(G2) || return nothing
-  det(G1) == det(G2) || return nothing
+function _lattice_backtrack_isometry(G1::Matrix{Int}, G2::Matrix{Int})
+  size(G1, 1) == size(G2, 1) || return nothing
 
-  n = nrows(G1)
+  n = size(G1, 1)
   bound = maximum(G1[i, i] for i in 1:n)
   source = LatticeIsometryBacktrackCtx(G1, bound)
   target = LatticeIsometryBacktrackCtx(G2, bound)
@@ -401,7 +397,7 @@ end
 function _lattice_backtrack_image(
   C::LatticeIsometryBacktrackCtx,
   point::Int,
-  M::ZZMatrix,
+  M::Matrix{Int},
 )
   cache = get!(() -> zeros(Int, length(C.vectors)), C.image_cache, M)
   cached_image = cache[point]
@@ -409,12 +405,10 @@ function _lattice_backtrack_image(
 
   v = C.vectors[point]
   n = length(v)
-  image = [zero(ZZRingElem) for _ in 1:n]
-  matrix_entry = zero(ZZRingElem)
+  image = zeros(Int, n)
   for j in 1:n
     for i in 1:n
-      getindex!(matrix_entry, M, i, j)
-      addmul!(image[j], v[i], matrix_entry)
+      image[j] += v[i] * M[i, j]
     end
   end
   result = get(C.lookup, image, 0)
@@ -426,7 +420,7 @@ end
 function _lattice_backtrack_orbit(
   C::LatticeIsometryBacktrackCtx,
   points::Vector{Int},
-  generators::Vector{ZZMatrix},
+  generators::Vector{Matrix{Int}},
 )
   orbit = copy(points)
   seen = BitSet(points)
@@ -445,19 +439,23 @@ function _lattice_backtrack_orbit(
   return seen
 end
 
-function _lattice_backtrack_automorphism_group(G::ZZMatrix)
-  n = nrows(G)
+function _lattice_backtrack_automorphism_group(G::Matrix{Int})
+  n = size(G, 1)
   bound = maximum(G[i, i] for i in 1:n)
   C = LatticeIsometryBacktrackCtx(G, bound)
   fingerprint = _lattice_backtrack_fingerprint(C)
   order = fingerprint.order
   base = Int[fingerprint.basis_indices[i] for i in order]
-  generators = [ZZMatrix[] for _ in 1:n]
+  generators = [Matrix{Int}[] for _ in 1:n]
   orbit_lengths = ones(Int, n)
 
   # Negation is always an automorphism.  Treat it like every other generator;
   # at later levels it drops out because it does not fix the first base point.
-  push!(generators[1], -identity_matrix(ZZ, n))
+  negation = zeros(Int, n, n)
+  for i in 1:n
+    negation[i, i] = -1
+  end
+  push!(generators[1], negation)
 
   images = Vector{Int}(undef, n)
   for step in 1:n
@@ -471,7 +469,7 @@ function _lattice_backtrack_automorphism_group(G::ZZMatrix)
     length(candidates) == fingerprint.counts[step] ||
       error("inconsistent automorphism partition")
 
-    stabilizer_generators = ZZMatrix[]
+    stabilizer_generators = Matrix{Int}[]
     for level in step:n
       append!(stabilizer_generators, generators[level])
     end
@@ -502,7 +500,7 @@ function _lattice_backtrack_automorphism_group(G::ZZMatrix)
     end
   end
 
-  result = ZZMatrix[]
+  result = Matrix{Int}[]
   for level in generators
     append!(result, level)
   end
@@ -534,10 +532,13 @@ function _automorphism_group_backtrack_vanilla(L::ZZLat)
     return ZZMatrix[-identity_matrix(ZZ, 1)], ZZRingElem(2)
   end
 
-  G, T, _ = _lattice_backtrack_reduce_gram(L)
+  reduced_gram, T, _ = _lattice_backtrack_reduce_gram(L)
+  G = Matrix{Int}(reduced_gram)
   reduced_generators, group_order = _lattice_backtrack_automorphism_group(G)
   inverse_transformation = inv(T)
-  generators = ZZMatrix[inverse_transformation * M * T for M in reduced_generators]
+  generators = ZZMatrix[
+    inverse_transformation * matrix(ZZ, M) * T for M in reduced_generators
+  ]
   @hassert :Lattice 1 all(
     M -> change_base_ring(QQ, M) * gram_matrix(L) *
          transpose(change_base_ring(QQ, M)) == gram_matrix(L),
@@ -561,13 +562,16 @@ function _is_isometric_with_isometry_backtrack_vanilla(L::ZZLat, M::ZZLat)
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  G1, T1, scale1 = _lattice_backtrack_reduce_gram(L)
-  G2, T2, scale2 = _lattice_backtrack_reduce_gram(M)
+  reduced_gram1, T1, scale1 = _lattice_backtrack_reduce_gram(L)
+  reduced_gram2, T2, scale2 = _lattice_backtrack_reduce_gram(M)
   scale1 == scale2 || return false, zero_matrix(QQ, 0, 0)
+  det(reduced_gram1) == det(reduced_gram2) || return false, zero_matrix(QQ, 0, 0)
+  G1 = Matrix{Int}(reduced_gram1)
+  G2 = Matrix{Int}(reduced_gram2)
 
   reduced_isometry = _lattice_backtrack_isometry(G1, G2)
   reduced_isometry === nothing && return false, zero_matrix(QQ, 0, 0)
-  isometry = change_base_ring(QQ, inv(T1) * reduced_isometry * T2)
+  isometry = change_base_ring(QQ, inv(T1) * matrix(ZZ, reduced_isometry) * T2)
   @hassert :Lattice 1 isometry * gram_matrix(M) * transpose(isometry) ==
                           gram_matrix(L)
   return true, isometry
