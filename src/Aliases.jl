@@ -8,7 +8,7 @@
 #= none =#
 
 # alternative names for some functions from AbstractAlgebra
-const HeckeMap = AbstractAlgbra.MapWithHeader
+const HeckeMap = AbstractAlgebra.MapWithHeader
 
 # predeclare some functions to allow defining aliases for some of our own functions
 function identity_map end
