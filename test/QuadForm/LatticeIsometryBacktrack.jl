@@ -1,4 +1,4 @@
-@testset "Plain lattice isometry backtracking" begin
+@testset "Vanilla partition lattice isometry backtracking" begin
   G = ZZ[2 1 0; 1 2 1; 0 1 3]
   L = integer_lattice(gram = G)
 
