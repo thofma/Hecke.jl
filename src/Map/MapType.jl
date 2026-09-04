@@ -7,8 +7,8 @@
 ###########################################################
 
 
-preimage_function(f) = a -> preimage(f, a)
-image_function(f) = a -> image(f, a)
+# preimage_function(f) = a -> preimage(f, a)
+# image_function(f) = a -> image(f, a)
 
 
 #function _compose(f, g)
