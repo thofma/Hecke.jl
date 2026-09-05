@@ -18,7 +18,7 @@
   end
 
   function check_ideal_norm_min(I, expected_norm, expected_min)
-    @test istril(basis_matrix(I))
+    @test AbstractAlgebra.is_lower_triangular(basis_matrix(I))
     @test divides(norm(I), minimum(I))[1]
     @test @inferred(norm(I)) == Hecke._make_canonical_in(order(I), expected_norm)
     @test @inferred(minimum(I)) == Hecke._make_canonical_in(order(I), expected_min)
@@ -65,26 +65,42 @@
     @test !(L(1)//L(a)^2 in Iinv)
 
     # In a local ring O.R, units are everything coprime to the prime, so this test doesnt make sense
-    if !isa(O.R, LocalizedEuclideanRing)
+    # Similar in KInftyRing: this is localization
+    if !isa(O.R, LocalizedEuclideanRing) && !isa(O.R, KInftyRing)
       @test !(L(1)//L(t) in Iinv)
     end
   end
 
   function test_colon_common_ideal(O, I)
-    @assert is_prime(I)
-
     L = Hecke.field(O)
     U = ideal(O, one(O))
     @test Hecke.colon(I, U) == fractional_ideal(I)
     @test one(L) in Hecke.colon(I, I)
     @test Hecke.colon(U, I) * I == U
+
+    I = fractional_ideal(I)
+    U = fractional_ideal(U)
+    @test Hecke.colon(I, U) == I
+    @test Hecke.colon(U, I) * I == U
   end
 
   function test_ideal_inv(O, I)
     U = ideal(O, one(O))
-    @test inv(I) == colon(U, I)     # agrees with colon
-    @test is_one(I * inv(I))        # defining property: A * A^{-1} = O
-    @test inv(inv(I)) == I
+    J = inv(I)
+
+    @test J == colon(U, I)  # agrees with colon
+    @test is_one(I * J)     # defining property: A * A^{-1} = O
+    @test inv(J) == I
+
+    # this is implementation check (not mathematical or "visible" contract)
+    # ensure that we indeed apply optimized routines correctly
+    if I isa Hecke.GenOrdIdl
+      if Hecke.has_princ_gen(I)
+        @test isdefined(J, :num) && Hecke.has_princ_gen(numerator(J; copy = false))
+      elseif Hecke.is_maximal_known_and_maximal(O) && Hecke.has_2_elem_normal(I)
+        @test isdefined(J, :num) && Hecke.has_2_elem_normal(numerator(J; copy = false))
+      end
+    end
   end
 
   function test_frac_ideal_inv(O, I_list)
@@ -95,19 +111,69 @@
 
   function test_ideal_inv_2elem_normal(O, p_list)
     I = ideal(O, one(O))
+    @test Hecke.has_princ_gen(I)
 
     for p in p_list
       P = prime_decomposition(O, p)[1][1]
       @test Hecke.has_2_elem_normal(P)
+      P_is_principal = Hecke.has_princ_gen(P)
+
       test_ideal_inv(O, P)
 
       Pe = P^3
-      @test Hecke.has_2_elem_normal(Pe)
+      @test (P_is_principal ? Hecke.has_princ_gen(Pe) : Hecke.has_2_elem_normal(Pe))
       test_ideal_inv(O, Pe)
 
       I = I*Pe
-      @test Hecke.has_2_elem_normal(I)
+      @test Hecke.has_princ_gen(I) || Hecke.has_2_elem_normal(I)
       test_ideal_inv(O, I)
+    end
+  end
+
+  function test_intersect_common(O, A, B)
+    U = ideal(O, one(O))
+    Z = ideal(O, zero(O))
+
+    C = @inferred intersect(A, B)
+    @test C == intersect(B, A)
+
+    # contained in both, and contains the product
+    @test C + A == A
+    @test C + B == B
+    @test A*B + C == C
+
+    # degenerate arguments
+    @test intersect(A, U) == A
+    @test intersect(U, A) == A
+    @test is_zero(intersect(A, Z))
+    @test is_zero(intersect(Z, A))
+    @test intersect(A, A) == A
+
+    if Hecke.is_maximal_known_and_maximal(O)
+      @test C*(A + B) == A*B
+    end
+  end
+
+  function test_intersect_common_frac(O, A, B)
+    n = degree(O)
+    R = base_ring(O)
+    Z = fractional_ideal(O, zero_matrix(R, n, n), one(R))
+
+    C = @inferred intersect(A, B)
+    @test C == intersect(B, A)
+
+    # contained in both (contains the product is guaranteed only for integral ideals)
+    @test C + A == A
+    @test C + B == B
+
+    # degenerate arguments
+    @test is_zero(intersect(A, Z))
+    @test is_zero(intersect(Z, A))
+    @test intersect(A, A) == A
+
+    if Hecke.is_maximal_known_and_maximal(O)
+      @test C*(A + B) == A*B
+      @test C == inv(inv(A) + inv(B))
     end
   end
 
@@ -203,16 +269,20 @@
           check_prime_2elem(P, 1, 1)
         end
 
-        check_prime_2elem_single_above(Oinf, Oinf.R(1//x), 1, 3)
+        check_prime_2elem_single_above(Oinf, 1//x, 1, 3)
       end
     end
 
     @testset "containment" begin
       test_containment_common(Ofin, x^4 + x + 1, t)
+      test_containment_common(Oinf, 1//(x^4 + x + 1), 1//t)
     end
 
     @testset "colon" begin
       test_colon_common(Ofin, x^4 + x + 1)
+      test_colon_common(Ofin, t + x^4)
+      test_colon_common_ideal(Ofin, ideal(Ofin, [Ofin(t), Ofin(x+1)]) * ideal(Ofin, Ofin(t + x^2)))
+      test_colon_common(Oinf, 1//(t + x^4))
     end
 
     @testset "ideal inv" begin
@@ -222,6 +292,25 @@
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
       test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+1))))
+    end
+
+    @testset "intersect" begin
+      O = Ofin
+      P = prime_decomposition(O, O.R(x^4 + x^3 + 1))[1][1]
+      Q = prime_decomposition(O, O.R(x^2 + x + 1))[1][1]
+      test_intersect_common(O, P^2*Q, P*Q^2)
+      I, J = fractional_ideal(P, O.R(x)), fractional_ideal(Q, O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+      I = fractional_ideal(O, basis_matrix(P; copy = false), O.R(x))
+      J = fractional_ideal(O, basis_matrix(Q; copy = false), O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+
+      O = Oinf
+      N1, N2 = 1//(x^2*t), 1//t^2
+      test_intersect_common(O, ideal(O, N1), ideal(O, N2))
+      I = fractional_ideal(O, basis_matrix(ideal(O, N1); copy = false), O.R(1//(x + 1)))
+      J = fractional_ideal(O, basis_matrix(ideal(O, N2); copy = false), O.R(1//x))
+      test_intersect_common_frac(O, I, J)
     end
   end
 
@@ -254,15 +343,19 @@
       end
 
       # x^2 + 2 is inert
-      check_prime_2elem_single_above(Ofin, Ofin.R(x^2 + 2), 3, 1)
+      check_prime_2elem_single_above(Ofin, x^2 + 2, 3, 1)
     end
 
     @testset "containment" begin
       test_containment_common(Ofin, x^2 + x*t + 1, x*t)
+      test_containment_common(Oinf, 1//(x^2 + x*t + 1), 1//(x*t))
     end
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 2)
+      test_colon_common(Ofin, t*x + x^2)
+      test_colon_common_ideal(Ofin, ideal(Ofin, [Ofin(t*x), Ofin(x+1)]) * ideal(Ofin, Ofin(x^2+2)))
+      test_colon_common(Oinf, 1//(t*x + x^2))
     end
 
     @testset "ideal inv" begin
@@ -272,6 +365,25 @@
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
       test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
+    end
+
+    @testset "intersect" begin
+      O = Ofin
+      pd = @inferred prime_decomposition(O, O.R(x + 1))
+      P, Q = pd[1][1], pd[2][1]
+      test_intersect_common(O, P^2*Q, P*Q^2)
+      I, J = fractional_ideal(P, O.R(x)), fractional_ideal(Q, O.R(x+2))
+      test_intersect_common_frac(O, I, J)
+      I = fractional_ideal(O, basis_matrix(P; copy = false), O.R(x))
+      J = fractional_ideal(O, basis_matrix(Q; copy = false), O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+
+      O = Oinf
+      N1, N2 = 1//(t*x + x^2), 1//(t*x)
+      test_intersect_common(O, ideal(O, N1), ideal(O, N2))
+      I = fractional_ideal(O, basis_matrix(ideal(O, N1); copy = false), O.R(1//(2*x+25)))
+      J = fractional_ideal(O, basis_matrix(ideal(O, N2); copy = false), O.R(1//(x+3)))
+      test_intersect_common_frac(O, I, J)
     end
   end
 
@@ -291,10 +403,14 @@
 
     @testset "containment" begin
       test_containment_common(Ofin, x^2 + 1, t)
+      test_containment_common(Oinf, 1//(x^2 + 1), 1//t)
     end
 
     @testset "colon" begin
       test_colon_common(Ofin, x^2 + 1)
+      test_colon_common(Ofin, t*x + x^2)
+      test_colon_common_ideal(Ofin, ideal(Ofin, [Ofin(t), Ofin(x+1)]) * ideal(Ofin, Ofin(x^2+2)))
+      test_colon_common(Oinf, 1//(t*x + x^2))
     end
 
     @testset "ideal inv" begin
@@ -304,6 +420,25 @@
       O = Oinf
       test_frac_ideal_inv(O, (t*O, (t + 1)*O, (1//x)*(t*O), (x//(x + 1))*(t*O)))
       test_ideal_inv_2elem_normal(O, (O.R(1//x), O.R(1//(x+3)), O.R(1//(2*x+25))))
+    end
+
+    @testset "intersect" begin
+      O = Ofin
+      pd = @inferred prime_decomposition(O, O.R(x^3 + x^2 - 1))
+      P, Q = pd[1][1], pd[2][1]
+      test_intersect_common(O, P^2*Q, P*Q^2)
+      I, J = fractional_ideal(P, O.R(x)), fractional_ideal(Q, O.R(x+2))
+      test_intersect_common_frac(O, I, J)
+      I = fractional_ideal(O, basis_matrix(P; copy = false), O.R(x))
+      J = fractional_ideal(O, basis_matrix(Q; copy = false), O.R(x^4+1))
+      test_intersect_common_frac(O, I, J)
+
+      O = Oinf
+      N1, N2 = 1//(t*x + x^2), 1//(t*x)
+      test_intersect_common(O, ideal(O, N1), ideal(O, N2))
+      I = fractional_ideal(O, basis_matrix(ideal(O, N1); copy = false), O.R(1//(2*x+25)))
+      J = fractional_ideal(O, basis_matrix(ideal(O, N2); copy = false), O.R(1//(x+3)))
+      test_intersect_common_frac(O, I, J)
     end
   end
 
@@ -339,8 +474,8 @@
     end
 
     @testset "prime decomposition" begin
-      check_prime_2elem_single_above(OK, ZZ(3), 2, 1)
-      check_prime_2elem_single_above(OK, ZZ(2), 1, 2)
+      check_prime_2elem_single_above(OK, 3, 2, 1)
+      check_prime_2elem_single_above(OK, 2, 1, 2)
 
       pd = @inferred prime_decomposition(OK, ZZ(7))
       @test length(pd) == 2
@@ -359,12 +494,21 @@
     end
 
     @testset "colon" begin
-      test_colon_common(OK, ZZ(3))
+      test_colon_common(OK, 3)
+      test_colon_common(OK, 15)
+      test_colon_common_ideal(OK, ideal(OK, [OK(a*2), OK(4)]) * ideal(OK, 15))
     end
 
     @testset "ideal inv" begin
       test_frac_ideal_inv(OK, (a*OK, (a + 1)*OK, ((a//ZZ(3))*OK)))
       test_ideal_inv_2elem_normal(OK, (ZZ(2), ZZ(3), ZZ(5), ZZ(7)))
+    end
+
+    @testset "intersect" begin
+      P = prime_decomposition(OK, ZZ(2))[1][1]
+      Q = prime_decomposition(OK, ZZ(7))[1][1]
+      test_intersect_common(OK, P^2*Q, P*Q^2)
+      test_intersect_common_frac(OK, fractional_ideal(P, ZZ(3)), fractional_ideal(Q, ZZ(5)))
     end
   end
 
@@ -543,11 +687,11 @@
       x = gen(Hecke.Globals.Qx)
       K, a = number_field(x^2 - 1//2, :a)
       O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
-      check_prime_2elem_single_above(O, ZZ(3), 2, 1)
-      check_prime_2elem_single_above(O, ZZ(5), 2, 1)
+      check_prime_2elem_single_above(O, 3, 2, 1)
+      check_prime_2elem_single_above(O, 5, 2, 1)
 
       pd = @inferred prime_decomposition(O, ZZ(2))
-      check_prime_2elem_single_above(O, ZZ(2), 1, 2)
+      check_prime_2elem_single_above(O, 2, 1, 2)
 
       pd = @inferred prime_decomposition(O, ZZ(7))
       @test length(pd) == 2
@@ -570,7 +714,7 @@
       for (P, e) in pd
         check_prime_2elem(P, 1, 1)
       end
-      @test prod(P^e for (P, e) in pd) == Hecke.GenOrdIdl(O, ZZ(2))
+      @test prod(P^e for (P, e) in pd) == ideal(O, ZZ(2))
     end
   end
 end
@@ -610,7 +754,7 @@ end
   @test (@inferred index(O)) == x^2 - 1//3*x
   h = O.R(x)
   L = prime_decomposition(O, h)
-  @test prod([f[1]^f[2] for f in L]) == Hecke.GenOrdIdl(O, h)
+  @test prod([f[1]^f[2] for f in L]) == ideal(O, h)
 
   for (P, _) in L
     F, OtoF = residue_field(O, P)
@@ -691,7 +835,7 @@ end
     @test cI == I*c
     @test inv(c)*cI == I
     @test cI == @inferred (F(c)*O)*I
-    @test basis(cI) == [F(c)*b for b in basis(I)]
+    @test cI == fractional_ideal(O, c*basis_matrix(I))
   end
 
   Ofin = finite_maximal_order(F)
@@ -705,9 +849,21 @@ end
 
   # check multiplication of "integral" ideal by the scalar in the base field
   I0 = ideal(Ofin, Ofin(x^2 + 1))
-  @test @inferred(x*I0) isa GenOrdFracIdl
-  @test @inferred((x//(x + 1))*I0) isa GenOrdFracIdl
+  @test @inferred(x*I0) isa Hecke.GenOrdFracIdl
+  @test @inferred((x//(x + 1))*I0) isa Hecke.GenOrdFracIdl
   @test @inferred(x*I0) == @inferred(x*fractional_ideal(I0))
+
+  # check multiplication of "integral" ideal by the scalar in the coordinate ring
+  c = numerator(x)
+  @test @inferred(c*I0) isa Hecke.GenOrdIdl
+  @test @inferred(c*I0) == ideal(Ofin, c*basis_matrix(I0; copy = false))
+  @test @inferred(c*I0) == @inferred(Ofin(x^3 + x)*Ofin)
+
+  # check multiplication of "integral" ideal by the order element
+  c = Ofin(x)
+  @test @inferred(c*I0) isa Hecke.GenOrdIdl
+  @test @inferred(c*I0) == ideal(Ofin, numerator(x)*basis_matrix(I0; copy = false))
+  @test @inferred(c*I0) == @inferred(Ofin(x^3 + x)*Ofin)
 
   # x has a pole at infinity so we cannot construct (x)_inf directly
   #   yet scaling must work
@@ -715,32 +871,72 @@ end
   @test_throws ErrorException Oinf(x)
   @test_throws ErrorException ideal(Oinf, x) * I
   check_scaling(I, x)
+
+  # check that principal ideals multiplication cancels terms (and stays principal)
+  A = fractional_ideal(ideal(Ofin, Ofin(a)), numerator(x))
+  B = fractional_ideal(ideal(Ofin, Ofin(x)), numerator(x + 1))
+  C = @inferred(A*B)
+
+  @test denominator(C; copy = false) == Ofin.R(x + 1)
+  @test isdefined(C, :num)
+  @test Hecke.has_princ_gen(numerator(C; copy = false))
 end
 
-@testset "Modular HNF" begin
-  @testset "Regression test for initial implementation" begin
-    # in the initial implementation we have missed:
-    # implicit row with g*e_i should be made explicit and used when merging leftovers (strong echelon)
-    # related to this: zero pivot column should be handled (with the help of extra row)
-    # nonsquarefree modulus must be handled (the residue ring might have zero divisors)
+@testset "Equality in non-maximal order" begin
+  x = gen(Hecke.Globals.Qx)
+  K, a = number_field(x^2 - 5, :a)
+  O = Hecke.GenOrd(ZZ, K) # non-maximal of conductor 2
 
-    M = matrix(ZZ, 3, 2, [4, 0, 0, 4, 1, 2])
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), ZZ(4))
+  I = ideal(O, 2, O(1 + a)) # prime above 2
+  A = fractional_ideal(I)
+  @test I*inv(I) == A # I is non-invertible!
+  @test A == A
+  @test A == deepcopy(A)
 
-    M = matrix(ZZ, 3, 2, [4, 0, 0, 4, 2, 0])
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), ZZ(4))
+  O2 = Hecke.GenOrd(ZZ, K)
+  @test ideal(O, 2) != ideal(O2, 2)
+  @test fractional_ideal(ideal(O, 2)) != fractional_ideal(ideal(O2, 2))
+end
 
-    R, x = polynomial_ring(GF(5), "x")
-    g = x^3 + x^2
-    M = vcat(matrix(R, 1, 2, [x + 2, 3*x]), g*identity_matrix(R, 2))
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), g)
+@testset "0/1 ideals" begin
+  kx, x = rational_function_field(QQ, :x; cached = false)
+  ky, y = polynomial_ring(kx, :y; cached = false)
+  F, a = function_field(y^2 - x^3 - x - 1; cached = false)
+  Ofin = finite_maximal_order(F)
+  Oinf = infinite_maximal_order(F)
 
-    kx, x = rational_function_field(QQ, :x; cached = false)
-    R = localization(kx, degree; cached=false)
-    M = matrix(R, 3, 2, [1//x, 0, 0, 1//x, 1, 1//x])
-    @test Hecke.hnf(M, :lowerleft) == Hecke.hnf_modular_eldiv_left!(deepcopy(M), R(1//x))
+  for O in (Ofin, Oinf)
+    Z = ideal(O, zero(O))
+    U = ideal(O, one(O))
+
+    @test is_zero(Z)
+    @test !is_one(Z)
+    @test is_zero(norm(Z)) && is_zero(minimum(Z))
+    @test Z == ideal(O, 0)
+
+    @test is_one(U)
+    @test !is_zero(U)
+    @test is_one(norm(U)) && is_one(minimum(U))
+    @test U == ideal(O, 1)
+
+    @test Z == Z + Z
+    @test is_zero(Z + Z)
+
+    @test Z == Z * Z
+    @test is_zero(Z * Z)
+
+    @test Z == Z * U
+    @test is_zero(Z * U)
+
+    @test U == U + U
+    @test is_one(U + U)
+
+    @test U == U * U
+    @test is_one(U * U)
+
+    @test U == U + Z
+    @test is_one(U + Z)
   end
-
 end
 
 @testset "Reduction modulo ideal" begin

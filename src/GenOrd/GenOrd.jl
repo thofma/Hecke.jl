@@ -510,11 +510,11 @@ function mod(a::GenOrdElem, p::RingElem)
 
   if is_equation_order(O)
     mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
-    return O(O.F(mu))
+    return O(O.F(mu); check = false)
   else
     a = map(x->S(R(x) % p), coordinates(a))
     b = a*basis_matrix(O)
-    return O(O.F(b))
+    return O(O.F(b); check = false)
   end
 end
 
