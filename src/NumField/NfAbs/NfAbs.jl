@@ -30,7 +30,7 @@ is_simple(::AbsSimpleNumField) = true
 function number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))
+  mp = map_from_func(K, S, y -> S(Qx(y)), x -> K(lift(x)))
   return K, mp
 end
 
@@ -979,7 +979,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   if isa(base_field(a), NumField)
     b = base_field(a)
     ob = objectid(b)
-    all_chain[ob] = [MapFromFunc(b, a, x->a(x))]
+    all_chain[ob] = [map_from_func(b, a, x->a(x))]
     push!(seen, ob)
     push!(new_k, b)
   end
@@ -989,7 +989,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
       b = base_field(k)
       ob = objectid(b)
       if !(ob in seen)
-        g = MapFromFunc(b, k, x->k(x))
+        g = map_from_funk(b, k, x->k(x))
         all_chain[ob] = vcat([g], all_chain[objectid(k)])
         push!(seen, ob)
         push!(new_k, b)
@@ -1027,7 +1027,7 @@ function find_one_chain(t::NumField, a::NumField)
   if isa(base_field(a), NumField)
     b = base_field(a)
     ob = objectid(b)
-    all_chain[ob] = [MapFromFunc(b, a, x->a(x))]
+    all_chain[ob] = [map_from_func(b, a, x->a(x))]
     push!(seen, ob)
     push!(new_k, b)
   end
@@ -1040,7 +1040,7 @@ function find_one_chain(t::NumField, a::NumField)
       b = base_field(k)
       ob = objectid(b)
       if !(ob in seen)
-        g = MapFromFunc(b, k, x->k(x))
+        g = map_from_func(b, k, x->k(x))
         all_chain[ob] = vcat([g], all_chain[objectid(k)])
         ob == ot && return all_chain[ob]
         push!(seen, ob)
