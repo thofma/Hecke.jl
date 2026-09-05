@@ -4,7 +4,7 @@
     f1 = x^8 + 3*x^6+2*x-10
     h1 = x^3 +x+2
     C = hyperelliptic_curve(f1, h1)
-    #TODO: Type stability for Julia v1.10. It is type stable for 1.12 and higher.
+    #TODO: Type stability for Julia v1.10-v1.11. It is type stable for 1.12 and higher.
     sh_invs, ws = shioda_invariants(C)
 
 
