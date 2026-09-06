@@ -345,11 +345,23 @@ end
 ################################################################################
 
 function coordinates(a::FieldElem, O::GenOrd)
-  if is_equation_order(O)
-    return coordinates(a)
-  else
-    return coordinates(a) * basis_matrix_inverse(O)
+  v = coordinates(a)
+  is_equation_order(O) && return v
+
+  M = basis_matrix(O)
+  if is_lower_triangular(M)
+    # Lenstra order (non-monic defining polynomial) has lower-triangular form.
+    # Instead of using basis matrix inverse (height/degree growth)
+    #   we will solve the linear system
+    # x*M = B <=> transpose(M)*transpose(x) = transpose(B),
+    #   with transpose(M) upper triangular (note: transpose only permutes entries)
+    R = base_ring(M)
+    n = length(v)
+    z = AbstractAlgebra._solve_triu(transpose(M), matrix(R, n, 1, v); side = :right)
+    return elem_type(R)[z[i, 1] for i in 1:n]
   end
+
+  return v * basis_matrix_inverse(O)
 end
 
 function coordinates(a::GenOrdElem)
