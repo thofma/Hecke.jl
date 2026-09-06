@@ -1340,6 +1340,7 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
   RT = []
   RE = []
   while true
+    cs = all_c
     re = elem_type(Fpx)[]
     RE = []
     #= TODO: this is suboptimal...
@@ -1379,8 +1380,8 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
         end
         push!(RT, [_lift_p2(Fq2, change_base_ring(ZZ, to_univariate(Globals.Qx, all_f[ti]); parent = Zx), i) for i = rt[end]])
       end
-      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
-      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
+      append!(re, [minpoly(Fpx, sum([rrt[i] * cs[i] for i=1:length(cs)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
+      append!(RE, [sum([rrt[i] * cs[i] for i=1:length(cs)]) for rrt in cartesian_product_iterator(RT), inplace = true])
     end
     if length(Set(re)) < length(re)
       all_c = [rand(1:p-1) for f = all_c]

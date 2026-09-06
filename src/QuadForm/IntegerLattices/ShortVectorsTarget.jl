@@ -1351,7 +1351,8 @@ function __short_vectors_with_condition_direct(G::ZZMatrix, GInt::Matrix{Int}, g
     end
     target_invariant[i] = _signed_hash(inv_tmp, seed)
   end
-  target_invariant = [_signed_hash(append!(fixed_space_dual[:, i], [v[i] for v in vector_sums]), seed) for i in 1:n]
+  vs = vector_sums
+  target_invariant = [_signed_hash(append!(fixed_space_dual[:, i], [v[i] for v in vs]), seed) for i in 1:n]
   weyl_group_order = _weyl_group_order(root_types)
   grams = ZZMatrix[G, matrix(ZZ,gram2)]
 

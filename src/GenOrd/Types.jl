@@ -36,12 +36,12 @@
 
     # f is not monic: need Lenstra Order
 
-    d = degree(F)
-    M = zero_matrix(Qt, d, d)
+    n = degree(F)
+    M = zero_matrix(Qt, n, n)
     M[1, 1] = one(Qt)
-    for i in 2:d
+    for i in 2:n
       for j in i:-1:1
-        M[i, j] = coeff(f, d - (i - j))
+        M[i, j] = coeff(f, n - (i - j))
       end
     end
     return GenOrd(r, M, one(Qt), check = check)

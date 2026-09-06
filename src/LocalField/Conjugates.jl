@@ -365,8 +365,8 @@ function special_gram(m::Vector{Vector{QadicFieldElem}})
 end
 
 function special_gram(m::Vector{Vector{PadicFieldElem}})
-  n = transpose(matrix(m))
-  n = transpose(n)*n
+  mt = transpose(matrix(m))
+  n = transpose(mt)*mt
   return [[n[i,j] for j=1:ncols(n)] for i = 1:nrows(n)]
 end
 
@@ -406,8 +406,8 @@ function regulator_iwasawa(u::Vector{T}, C::qAdicConj, n::Int = 10) where {T<: U
   k = base_ring(u[1])
   @assert is_totally_real(k)
   c = map(x -> conjugates_log(x, C, n, all = true, flat = false), u)
-  m = matrix(c)
-  m = vcat(m, matrix(base_ring(m), 1, ncols(m), [one(base_ring(m)) for i=1:ncols(m)]))
+  m0 = matrix(c)
+  m = vcat(m0, matrix(base_ring(m0), 1, ncols(m0), [one(base_ring(m0)) for i=1:ncols(m0)]))
   return det(m)//degree(k)
 end
 
@@ -574,14 +574,14 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem; cached::Bool = tru
   i = findfirst(x->parent(r[x]) == parent(ca) && r[x] == ca, 1:length(r))
   Zx = polynomial_ring(ZZ, cached = false)[1]
   function inj(a::AbsSimpleNumFieldElem)
-    d = denominator(a)
+    den = denominator(a)
     pr = precision(parent(ca))
     if pr > precision(ca)
       ri = roots(C.C, precision(parent(ca)))[i]
     else
       ri = ca
     end
-    return inv(parent(ca)(d))*(Zx(a*d)(ri))
+    return inv(parent(ca)(den))*(Zx(a*den)(ri))
   end
   # gen(K) -> conj(a, p)[i] -> a = sum a_i o^i
   # need o = sum o_i a^i
@@ -628,27 +628,27 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem; cached::Bool = tru
       #XXX this changes (c, pc) inplace as a cache
       #probably should be done with a new map type that can
       #store c, pc on the map.
-      d = lift_root(f, a, b, p, precision(x))
+      rt = lift_root(f, a, b, p, precision(x))
 #  Kjj = number_field(lf[jj][1], check = false, cached = false)[1]
 #  ajj = Kjj(parent(Kjj.pol)(a))
 #  bjj = Kjj(parent(Kjj.pol)(b))
 #  djj = lift_root(f, ajj, bjj, p, 10)
-#  d = K(parent(K.pol)(djj))
-      ccall((:nf_elem_set, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), c, d, K)
+#  rt = K(parent(K.pol)(djj))
+      ccall((:nf_elem_set, libflint), Nothing, (Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}), c, rt, K)
       set!(pc, precision(x))
     elseif precision(x) < pc
-      d = mod_sym(c, p^precision(x))
+      rt = mod_sym(c, p^precision(x))
     else
-      d = c
+      rt = c
     end
     n = x.length
-    r = K(lift(ZZ, coeff(x, n-1)))
+    res = K(lift(ZZ, coeff(x, n-1)))
     pk = p^precision(x)
     while n > 1
       n -= 1
-      r = mod_sym(r*d, pk) + lift(ZZ, coeff(x, n-1))
+      res = mod_sym(res*rt, pk) + lift(ZZ, coeff(x, n-1))
     end
-    return r#*K(p)^valuation(x)
+    return res#*K(p)^valuation(x)
   end
   return parent(ca), MapFromFunc(K, parent(ca), inj, lif)
 end

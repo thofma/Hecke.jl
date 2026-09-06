@@ -9,7 +9,8 @@ function _primitive_element(a::Vector{QQBarFieldElem})
     k, _ = number_field(f, check = false, cached = false)
     lf = collect(keys(factor(k, g).fac))
     for j = 1:length(lf)
-      h = map_coefficients(x->Qx(x)(pe), lf[j])
+      cur = pe
+      h = map_coefficients(x->Qx(x)(cur), lf[j])
       if is_zero(h(a[i]))
         d = degree(f) * degree(h)
         mu = 0

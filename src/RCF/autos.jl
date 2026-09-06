@@ -761,7 +761,8 @@ function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumFi
   frob_gens = find_gens(KK, act_on_gens, minimum(defining_modulus(A)[1]), ind_image)
   if ind_image > 1 #the hard case: the big Kummer ext will be
                    #smaller than it looks..(by ind_image)
-    c = [canonical_frobenius(x, KK) for x = frob_gens]
+    KKc = KK
+    c = [canonical_frobenius(x, KKc) for x = frob_gens]
     kummer = KK.AutG
     Zd = abelian_group([d])
     sc = [divexact(d, exps[i]) for i=1:length(exps)]
@@ -773,7 +774,8 @@ function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumFi
     fl, emb = is_subgroup(k, kummer)
     @assert fl
     s, ms = snf(k)
-    rels = [emb(ms(s[i])) for i=1:ngens(s)]
+    embk, sk = emb, s
+    rels = [embk(ms(sk[i])) for i=1:ngens(sk)]
     @assert length(rels) <= 2 #should be == 1 for d = p^k odd or d = 4, can be 1 or two
                     #otherwise (compositum with Z_n - which is almost cyclic)
     #I think I'd like then in echelon form (to have ones and zeros above)
@@ -812,16 +814,16 @@ function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumFi
     ng = []
     for rel = rels
       ex = [rel[i]//exps[i] for i=1:length(exps)]
-      d = mapreduce(denominator, lcm, ex)
-      a = prod(KK.gen[i]^numerator(d*ex[i]) for i=1:length(exps))
-      fl, rt = is_power(a, Int(d), with_roots_unity = true)
+      dd = mapreduce(denominator, lcm, ex)
+      a = prod(KKc.gen[i]^numerator(dd*ex[i]) for i=1:length(exps))
+      fl, rt = is_power(a, Int(dd), with_roots_unity = true)
       @assert fl
       ps = findfirst(x->numerator(ex[x]) == 1 && denominator(ex[x]) <= exps[x], 1:length(exps))
       #we'll be changing this gen
       @assert !(ps in new) #we don't won't to change twice
       push!(new, ps)
-      # the new gen will be rt^1/d
-      push!(ng, (ps, rt, Int(exps[ps]//d), ex))
+      # the new gen will be rt^1/dd
+      push!(ng, (ps, rt, Int(exps[ps]//dd), ex))
     end
     for i=1:length(exps)
       if i in new
@@ -839,6 +841,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumFi
     K, gK = number_field(KK)
     #I need the inclusions of the single extensions Cp[i].K in the new K
     incs = Vector{morphism_type(RelSimpleNumField{AbsSimpleNumFieldElem}, RelNonSimpleNumField{AbsSimpleNumFieldElem})}(undef, length(Cp))
+    gKn = gK
     for i = 1:length(Cp)
       @assert ng[i][1] == i
       ex = ng[i][4]
@@ -846,7 +849,7 @@ function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumFi
       ex .*= denominator(ex[i])//exps[i]
       #entry j deals with the new one...
       #rel[j][4] has the rational expo of the relation
-      incs[i] = hom(Cp[i].K, K, abs_emb[i], gK[i]^numerator(ng[i][4][i])*prod(gK[l]^(divexact(exps[l], denominator(ng[i][4][l]))*numerator(-ng[i][4][l])) for l=1:length(exps) if l != i), check = checkAuto)
+      incs[i] = hom(Cp[i].K, K, abs_emb[i], gKn[i]^numerator(ng[i][4][i])*prod(gKn[l]^(divexact(exps[l], denominator(ng[i][4][l]))*numerator(-ng[i][4][l])) for l=1:length(exps) if l != i), check = checkAuto)
     end
 
     act_on_gens = Vector{Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(KK.gen))

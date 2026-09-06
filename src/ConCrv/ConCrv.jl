@@ -404,8 +404,8 @@ function reduce_conic(v)
   w = lcm([ad, bd, cd])
   a, b, c = map(x -> w*x, [a, b, c])
   a,b,c = map(numerator, [a,b,c])
-  w = gcd(a,b,c)
-  a, b, c = map(x -> x/w, [a, b, c])
+  g = gcd(a,b,c)
+  a, b, c = map(x -> x/g, [a, b, c])
   lambda = mu = nu = 1
 
   facs_a = factor_squarefree(a)
