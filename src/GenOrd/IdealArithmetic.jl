@@ -313,7 +313,11 @@ _allow_hnf_for_colon(::Type{<:PolyRing{<:FinFieldElem}}) = true
 # The colon (A : B) = N/d
 # A is represented by the inverse of basis matrix in the form Ma/da
 # B is represented by the basis matrix in the form Mb/db
-function _colon_impl_matrix_stack(O::GenOrd{S, T}, Ma::MatElem, da, Mb::MatElem, db; reduction = _row_reduction_trait(base_ring(O))) where {S, T}
+# modulus_b, when given, must be a multiple of the largest elementary divisor of Mb
+# den_a, when given, must be a multiple of the denominator of A (1 when omitted)
+function _colon_impl_matrix_stack(O::GenOrd{S, T}, Ma::MatElem, da, Mb::MatElem, db;
+                                  reduction = _row_reduction_trait(base_ring(O)),
+                                  modulus_b = nothing, den_a = one(base_ring(O))) where {S, T}
   # With b_i the i-th basis element of B and v the coordinate vector of x,
   #   x*b_i in A  <=>  v*R_i*Ma in (da*db)*R^n,  R_i = _representation_matrix(O, Mb[i, :]),
   #   giving v*[R_1*Ma | ... | R_n*Ma] in g*R^(n^2),  g = da*db.
@@ -327,23 +331,30 @@ function _colon_impl_matrix_stack(O::GenOrd{S, T}, Ma::MatElem, da, Mb::MatElem,
     blocks = [Ri * Ma for Ri in blocks]
   end
 
-  W = _reduce_row_module!(reduction, transpose(reduce(hcat, blocks)))
-  if reduction isa PopovRedTrait && _allow_hnf_for_colon(typeof(base_ring(O)))
-    W = _reduce_row_module!(HNFRedTrait(), W)
-  else
+  # For scalar y in row module of Mb, columns of y*Ma lie in the block module.
+  # Since Ma/da is the inverse of integral A*denom(A), columns of Ma span at least da*denom(A)*R^n.
+  # Thus da*denom(A)*y*R^n is inside the block module,
+  #   so we can use da * den_a * modulus_b as modulus for this reduction
+  modulus = modulus_b === nothing ? nothing : den_a*da*modulus_b
 
+  W = _reduce_row_module!(reduction, transpose(reduce(hcat, blocks)); modulus = modulus)
+  if reduction isa PopovRedTrait && _allow_hnf_for_colon(typeof(base_ring(O)))
+    W = _reduce_row_module!(HNFRedTrait(), W; modulus = modulus)
   end
 
   K = base_field(field(O))::base_field_type(S)
   X, e = _inv_pair(transpose(W), K)
   M, d = _strip_pair_content(da*db * X, e)
-  return _reduce_row_module!(reduction, M), d
+  # M/d is da*db*transpose(W)^-1, so d*da*db*R^n lies in the row module of M
+  return _reduce_row_module!(reduction, M; modulus = d*da*db), d
 end
 
 function _colon_impl(red::RowModuleReductionTrait, O::GenOrd, a, b)
+  _, ta  = _basis_matrix_pair(a)
   Ma, da = _basis_matrix_inv_pair(a)
   Mb, db = _basis_matrix_pair(b)
-  M, d = _colon_impl_matrix_stack(O, Ma, da, Mb, db; reduction = red)
+  M, d = _colon_impl_matrix_stack(O, Ma, da, Mb, db;
+                                  reduction = red, modulus_b = _eldiv_modulus(red, b), den_a = ta)
   return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
 end
 
@@ -377,7 +388,8 @@ function _inv_impl_matrix(red::RowModuleReductionTrait, O::GenOrd, I)
   R = base_ring(O)
   Ma, da = identity_matrix(R, degree(O)), one(R)
   Mb, db = _basis_matrix_pair(I)
-  M, d = _colon_impl_matrix_stack(O, Ma, da, Mb, db; reduction = red)
+  M, d = _colon_impl_matrix_stack(O, Ma, da, Mb, db;
+                                  reduction = red, modulus_b = _eldiv_modulus(red, I))
   return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
 end
 
