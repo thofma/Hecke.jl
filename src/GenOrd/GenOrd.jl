@@ -1010,7 +1010,21 @@ The codifferent ideal of $O$, i.e. the trace-dual of $O$.
 """
 function codifferent(O::GenOrd)
   K = base_field(field(O))
-  return fractional_ideal(O, _fraction_free_inv(_trace_matrix(O, K, K)))
+  M = _fraction_free_inv(_trace_matrix(O, K, K))
+  M, d = integral_split(M, base_ring(O))
+
+  # When using the HNF reduction, we can optimize ideal construction since
+  #   we know a good modulus to use modular HNF.
+  # The Popov reduction does not use one, so we do as in the normal constructor
+  red = _row_reduction_trait(O)
+  if red isa HNFRedTrait
+    # For trace matrix T we have M/d = T^-1, thus row module of M is
+    #   d * R^n * T^-1. Since T is integral, d is a modulus for HNF
+    M = _reduce_row_module!(red, M; modulus = d)
+    return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
+  end
+
+  return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = false)
 end
 
 function different(x::GenOrdElem)
