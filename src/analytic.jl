@@ -41,8 +41,8 @@ function rho_coeff(x::T, prec::Int = 55; all::Bool = false) where T<: Number
   end
 
   while k>a.valid[2]
-    d = [ sum([a.coeff[j+1]/(i*(a.valid[2]+1)^(i-j)) for j=0:(i-1) ])  for i=1:prec]
-    d = vcat([1/(a.valid[2]) * sum([d[j]/(j+1) for j=1:prec ])] , d)
+    d0 = [ sum([a.coeff[j+1]/(i*(a.valid[2]+1)^(i-j)) for j=0:(i-1) ])  for i=1:prec]
+    d = vcat([1/(a.valid[2]) * sum([d0[j]/(j+1) for j=1:prec ])] , d0)
     a.coeff = d
     a.valid = (a.valid[1]+1, a.valid[2]+1)
     if all

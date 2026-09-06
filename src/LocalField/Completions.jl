@@ -24,9 +24,9 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
   end
 
   if iszero(z) || valuation(z) < 0
-    v = valuation(a, f.P)
-    av = abs(v)
-    b = a*uniformizer(f.P).elem_in_nf^-v
+    va = valuation(a, f.P)
+    av = abs(va)
+    b = a*uniformizer(f.P).elem_in_nf^-va
 
     e = absolute_ramification_index(C)
 
@@ -43,7 +43,7 @@ function image(f::CompletionMap, a::AbsSimpleNumFieldElem; pr::Int = precision(c
          evaluate(Qx(b), setprecision(f.prim_img, min(f.precision, pr + e*vv  + av + e)))
       end
     end
-    z *= uniformizer(parent(z), v; prec = pr)
+    z *= uniformizer(parent(z), va; prec = pr)
   end
 
   if precision(z) < pr
@@ -184,7 +184,8 @@ function _lift(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::Int, P::AbsNum
   end
   O = order(P)
   lp = prime_decomposition(O, minimum(P))
-  v = [valuation(bi, p[1]) for p = lp]
+  b = bi
+  v = [valuation(b, p[1]) for p = lp]
   c = one(O)
   Q = P^prec
   for i=1:length(v)
@@ -253,7 +254,8 @@ function _increase_precision(a::AbsSimpleNumFieldElem, f::ZZPolyRingElem, prec::
 
   O = order(P)
   lp = prime_decomposition(O, minimum(P))
-  v = [valuation(a, p[1]) for p = lp]
+  b = a
+  v = [valuation(b, p[1]) for p = lp]
   c = one(O)
   Q = P^new_prec
   for i=1:length(v)

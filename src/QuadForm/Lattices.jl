@@ -1510,10 +1510,10 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
                             for g in t_gens)
 
   pm = pseudo_matrix(L)
-  C = coefficient_ideals(pm)
+  CI = coefficient_ideals(pm)
 
   for g in t_gens
-    @hassert :Lattice 1 all(g[i, j] in C[j] * inv(C[i])
+    @hassert :Lattice 1 all(g[i, j] in CI[j] * inv(CI[i])
                               for i in 1:nrows(g), j in 1:nrows(g))
   end
 

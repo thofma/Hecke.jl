@@ -233,12 +233,12 @@ function map_data_given_base_field_data(K::LocalField, L, z, y; check = true)
   if check
     setprecision(base_field(K), precision(yy)) do
       f = map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false)
-      y = evaluate(f, yy)
-      if !iszero(y)
-        @show valuation(y), precision(y), y, precision(yy)
+      img = evaluate(f, yy)
+      if !iszero(img)
+        @show valuation(img), precision(img), img, precision(yy)
       end
 
-      !iszero(y) && error("Data does not define a morphism")
+      !iszero(img) && error("Data does not define a morphism")
     end
   end
 

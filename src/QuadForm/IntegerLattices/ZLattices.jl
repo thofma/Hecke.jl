@@ -979,12 +979,12 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion; check=true)
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
-      v = zero_matrix(ZZ, 1, nrows(HR))
+      w = zero_matrix(ZZ, 1, nrows(HR))
       if !(i isa Nothing)
-        v[1, i] = 1
-        return true, v
+        w[1, i] = 1
+        return true, w
       else
-        return false, v
+        return false, w
       end
     end
     n = min(4, nrows(H))

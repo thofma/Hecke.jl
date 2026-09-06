@@ -318,14 +318,15 @@ function g2_models_FF_char2_M160(g2_invs::Vector{T}, all_twists::Bool = true) wh
   E1 = x^16 + x
   V = vector_space(GF(2), degree(F))
   S, phi = sub(V, [ V([E1(v[i]) for i in (1:degree(F))]) for v in basis(V)])
-  W, pi = quo(V, S)
+  Wq, pi = quo(V, S)
 
-  W = [w for w in W if w != zero(W)]
+  W = [w for w in Wq if w != zero(Wq)]
   o = gen(F)
   P, _ = polynomial_ring(GF(2))
 
   for i in (1:3)
-    vec = [preimage(pi, W[1])[i] for i in (1:degree(F)) ]
+    w1 = preimage(pi, W[1])
+    vec = [w1[i] for i in (1:degree(F)) ]
     a = P(vec)(o)
     H = hyperelliptic_curve(x^5 + a*x^4, R(1))
     push!(twists, H)

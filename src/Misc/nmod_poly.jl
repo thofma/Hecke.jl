@@ -1260,8 +1260,9 @@ function unit_group_1_part(f::fqPolyRepPolyRingElem, k::Int)
     # 1+f^p1/1+f^p2 = f^p1/f^p2 = f^(p2-p1), latter additively
     ngens = [1+(x^i)*f1*c for i=0:(degree(f)*(p2-p1)-1) for c = b]
     nr = matrix(ZZ, 0, length(ngens), [])
-    for j=1:nrows(rels)
-      g = rem(prod(powermod(gens[k], rels[j, k], f2) for k=1:ncols(rels)), f2) - 1
+    rl = rels
+    for j=1:nrows(rl)
+      g = rem(prod(powermod(gens[k], rl[j, k], f2) for k=1:ncols(rl)), f2) - 1
       q,r = divrem(g, f1)
       @assert iszero(r)
       nr = vcat(nr, matrix(ZZ, 1, ncols(nr), [(coeff(coeff(q, k), l)) for k = 0:degree(f)*(p2-p1)-1 for l = 0:degree(K)-1]))

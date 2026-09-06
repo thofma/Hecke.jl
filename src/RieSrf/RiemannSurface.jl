@@ -264,14 +264,14 @@ mutable struct RiemannSurface
 
     function evaluate_differential_factors_matrix(factors, x0, ys)
       Kxy = parent(factors[1])
-      Ky, y = polynomial_ring(base_ring(Kxy), "y")
+      Ky, yy = polynomial_ring(base_ring(Kxy), "y")
       CC = base_ring(factors[1])
       m = length(ys)
 
       result = matrix(CC, m , g, [one(CC) for t in (1:m*g)])
       for l in 1:length(factors)
-        f = factors[l]
-        fx0 = f(x0, y)
+        fl = factors[l]
+        fx0 = fl(x0, yy)
         for s in 1:m
           fx0ys = CC(fx0(ys[s]))
           factor_at_xys = [fx0ys^min_pows[l] ]

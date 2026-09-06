@@ -1872,7 +1872,8 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
     for i in 1:length(S)
       el = compose_mod(el, pow(Rx(S[i].prim_img), (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), v[i], gen(Rx)), Rx(K.pol))
     end
-		ind = findfirst(x -> Rx(x.prim_img) == el, G)
+    img = el
+		ind = findfirst(x -> Rx(x.prim_img) == img, G)
 		@assert ind !== nothing
     AsnftoG[a] = G[ind]
   end
@@ -2213,8 +2214,8 @@ function saturate(U::FinGenAbGroup, G::FinGenAbGroup)
   for (p, k) = lf
     for i=k:-1:1
       h = hom(G, G, [p^i*g for g = gens(G)])
-      i, mi = image(h)
-      s = intersect(i, U)
+      im, mi = image(h)
+      s = intersect(im, U)
       fl, mp = is_subgroup(s, G)
       q, mq = quo(s, h(U)[1])
       if order(q) != 1
@@ -2242,9 +2243,9 @@ function has_complement(m::FinGenAbGroupHom, to_lattice::Bool = true)
   G = codomain(m)
   if !isfinite(G)
     U = domain(m)
-    q, mq = quo(G, U, false)
-    q, _mq = snf(q)
-    mq = mq*inv(_mq)
+    q0, mq0 = quo(G, U, false)
+    q, _mq = snf(q0)
+    mq = mq0*inv(_mq)
     Cgens = [preimage(mq, g) for g = gens(q)]
     C, mC = sub(G, Cgens, false)
     _, sumUC = sub(G, append!(m.(gens(U)), Cgens), false)

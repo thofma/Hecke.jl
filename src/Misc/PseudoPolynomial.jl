@@ -45,8 +45,8 @@ function can_reduce(f::PseudoPoly{S, T}, G::Vector{PseudoPoly{S, T}}) where {S, 
   simplify(b)
   if isone(denominator(b))
     c = sum(leading_coefficient(G[i]) for i in I)//coefficient_ideal(f)
-    l = _contains(leading_coefficient(polynomial(f)), [leading_coefficient(G[i])//coefficient_ideal(f) for i in I])
-    l = AbsSimpleNumFieldElem[ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
+    l0 = _contains(leading_coefficient(polynomial(f)), [leading_coefficient(G[i])//coefficient_ideal(f) for i in I])
+    l = AbsSimpleNumFieldElem[ l0[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
     g = deepcopy(polynomial(f))
     @assert leading_coefficient(polynomial(f)) == sum(l[i] * leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I))
     for i in 1:length(I)

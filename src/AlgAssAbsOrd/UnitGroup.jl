@@ -8,13 +8,13 @@ function unit_group(O::AlgAssAbsOrd; GRH::Bool = true)
   @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group) do
     if is_maximal(O)
-      U, mU = _unit_group_maximal(O; GRH = GRH)
+      U, m = _unit_group_maximal(O; GRH = GRH)
     else
       OK = maximal_order(O)
       UU, mUU = unit_group(OK; GRH = GRH)
-      U, mU = _unit_group_non_maximal(O, OK, mUU)
+      U, m = _unit_group_non_maximal(O, OK, mUU)
     end
-    return mU
+    return m
   end::Map
   return domain(mU), mU
 end
@@ -23,13 +23,13 @@ function unit_group_fac_elem(O::AlgAssAbsOrd; GRH::Bool = true)
   @assert is_commutative(O)
   mU = get_attribute!(O, :unit_group_fac_elem) do
     if is_maximal(O)
-      U, mU = _unit_group_maximal_fac_elem(O; GRH = GRH)
+      U, m = _unit_group_maximal_fac_elem(O; GRH = GRH)
     else
       OK = maximal_order(O)
       UU, mUU = unit_group_fac_elem(OK; GRH = GRH)
-      U, mU = _unit_group_non_maximal(O, OK, mUU)
+      U, m = _unit_group_non_maximal(O, OK, mUU)
     end
-    return mU
+    return m
   end::Map
   return domain(mU), mU
 end
