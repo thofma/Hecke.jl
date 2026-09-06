@@ -337,13 +337,14 @@ function zassenhaus(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderI
   C, mC = completion_easy(K, P)
 
   b = landau_mignotte_bound(f)*upper_bound(ZZRingElem, sqrt(t2(leading_coefficient(f))))
-  den = K(1)
+  den = if is_maximal_known_and_maximal(order(P))
+    K(1)
+  elseif is_defining_polynomial_nice(K)
+    derivative(K.pol)(gen(K))
+  else
+    K(discriminant(order(P))*det(basis_matrix(FakeFmpqMat, order(P), copy = false)))
+  end
   if !is_maximal_known_and_maximal(order(P))
-    if !is_defining_polynomial_nice(K)
-      den = K(discriminant(order(P))*det(basis_matrix(FakeFmpqMat, order(P), copy = false)))
-    else
-      den = derivative(K.pol)(gen(K))
-    end
     b *= upper_bound(ZZRingElem, sqrt(t2(den)))
   end
 
@@ -547,12 +548,12 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
   C, mC = completion_easy(K, P)
 
   zk = order(P)
-  if is_maximal_known_and_maximal(zk)
-    den = K(1)
+  den = if is_maximal_known_and_maximal(zk)
+    K(1)
   elseif is_defining_polynomial_nice(K)
-    den = derivative(K.pol)(gen(K))
+    derivative(K.pol)(gen(K))
   else
-    den = K(discriminant(order(P))) * det(basis_matrix(FakeFmpqMat, order(P), copy= false))
+    K(discriminant(order(P))) * det(basis_matrix(FakeFmpqMat, order(P), copy= false))
   end
 
   _, mK = residue_field(order(P), P)

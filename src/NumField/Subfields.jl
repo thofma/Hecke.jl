@@ -501,10 +501,12 @@ end
 ################################################################################
 
 function fixed_field(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, ::Type{RelSimpleNumField{AbsSimpleNumFieldElem}}; simplify_subfield::Bool = true)
-  F, mF = fixed_field(K, auts)
-  if simplify_subfield
-    F, mF1 = simplify(F, cached = false)
-    mF = mF1*mF
+  F0, mF0 = fixed_field(K, auts)
+  F, mF = if simplify_subfield
+    F1, mF1 = simplify(F0, cached = false)
+    (F1, mF1*mF0)
+  else
+    (F0, mF0)
   end
   all_auts = closure(auts, div(degree(K), degree(F)))
   Kx, x = polynomial_ring(K, "x", cached = false)

@@ -70,19 +70,14 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     pr, pos = iterate(P, pos)
   end
 
-  if length(D) + length(S) == 0
-    U, mU = Hecke.unit_group_fac_elem(ZK)
-  else
-    U, mU = Hecke.sunit_group_fac_elem(vcat(S, D))
-  end
+  U, mU = length(D) + length(S) == 0 ? Hecke.unit_group_fac_elem(ZK) : Hecke.sunit_group_fac_elem(vcat(S, D))
 
-  if length(D) == 0
-    k = U
-    mk = hom(U, U, gens(U))
+  k, mk = if length(D) == 0
+    (U, hom(U, U, gens(U)))
   else
     A = abelian_group([p for i = D])
     h = hom(U, A, [A([valuation(mU(g), pi) for pi = D]) for g = gens(U)])
-    k, mk = kernel(h)
+    kernel(h)
   end
   #so k should be the SelmerGroup...
   #sorry: k mod p*k is it.

@@ -639,16 +639,14 @@ end
 ################################################################################
 
 # TODO: Make this great again
-function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTableGroup, MultTableGroupHom}};
+function _has_norm_relation_abstract(G::MultTableGroup, _H::Vector{Tuple{MultTableGroup, MultTableGroupHom}};
                                      primitive::Bool = false,
                                      greedy::Bool = false,
                                      large_index::Bool = false,
                                      pure::Bool = false,
                                      index_bound::Int = -1,
                                      target_den::ZZRingElem = zero(ZZRingElem))
-  if index_bound != -1
-    H = [h for h in H if order(G) <= order(h[1]) * index_bound]
-  end
+  H = index_bound != -1 ? [h for h in _H if order(G) <= order(h[1]) * index_bound] : _H
 
   sort!(H, by = x -> order(x[1]))
 
@@ -749,13 +747,9 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
   l = length(idempotents)
 
-  subgroups_needed = Int[]
-
   if any(isempty, nonannihilating)
     return false, zero(ZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
   end
-
-  subgroups_needed = Int[]
 
   for i in 1:length(nonannihilating)
     if greedy || !large_index
@@ -765,20 +759,16 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
     end
   end
 
-  k = nonannihilating[1][1]
-  push!(subgroups_needed, k)
-  i = 2
+  needed = Int[nonannihilating[1][1]]
   for i in 2:l
-    if length(intersect(subgroups_needed, nonannihilating[i])) > 0
+    if length(intersect(needed, nonannihilating[i])) > 0
       continue
     else
-      push!(subgroups_needed, nonannihilating[i][1])
+      push!(needed, nonannihilating[i][1])
     end
   end
 
-  if !iszero(target_den)
-    subgroups_needed = collect(1:length(H))
-  end
+  subgroups_needed = iszero(target_den) ? needed : collect(1:length(H))
 
   if primitive
     # Check if we can replace a subgroup by bigger subgroups

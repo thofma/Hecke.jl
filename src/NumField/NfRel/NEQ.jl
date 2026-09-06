@@ -29,23 +29,11 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   PS = IdealSet(ZKa)
   Sc = reduce(vcat, Vector{ideal_type(ZKa)}[collect(keys(factor(PS(mkK, p)))) for p = s], init = Vector{ideal_type(ZKa)}())
 
-  local U::FinGenAbGroup
-
-  if length(Sc) == 0
-    U, mU = unit_group_fac_elem(ZKa)
-  else
-    U, mU = sunit_group_fac_elem(collect(Sc))
-  end
+  U, mU = length(Sc) == 0 ? unit_group_fac_elem(ZKa) : sunit_group_fac_elem(collect(Sc))
 
   class_group(parent(a))
 
-  local u::FinGenAbGroup
-
-  if length(s) == 0
-    u, mu = unit_group_fac_elem(maximal_order(parent(a)))
-  else
-    u, mu = sunit_group_fac_elem(collect(s))
-  end
+  u, mu = length(s) == 0 ? unit_group_fac_elem(maximal_order(parent(a))) : sunit_group_fac_elem(collect(s))
   No = hom(U, u, elem_type(u)[preimage(mu, norm(mkK, mU(g))) for g = gens(U)])
   aa = preimage(mu, FacElem(a))::FinGenAbGroupElem
   fl, so = has_preimage_with_preimage(No, aa)

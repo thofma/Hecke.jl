@@ -423,10 +423,8 @@ function initialize_verify_context(units_fac::Vector{AbsSimpleNumFieldOrderElem}
   return initialize_verify_context(elem_in_nf.(units_fac); test_normality, evaluate_elements)
 end
 
-function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
-  if evaluate_elements
-    units_fac = FacElem.(evaluate.(units_fac))
-  end
+function initialize_verify_context(_units_fac::Vector{<:FacElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
+  units_fac = evaluate_elements ? FacElem.(evaluate.(_units_fac)) : _units_fac
   OK = lll(maximal_order(_base_ring(units_fac[1])))
   K = Hecke.nf(OK)
   t = torsion_units_order(K)

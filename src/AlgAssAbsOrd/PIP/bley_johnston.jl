@@ -524,7 +524,6 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   #push!(_debug, (alpha, A, dec_sorted, units_sorted, M, block_size))
   res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
-  kblock = k * block_size
   nt = _maxthreadid()
 
   @assert size(M) == (k, k)
@@ -539,13 +538,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     #_local_coeffs = Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
     m = dec_sorted[i][2]#::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
     alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
-    kblock = div(length(ui), nt)
-    if mod(length(ui), nt) != 0
-      kblock += 1
-    end
-    if length(ui) < 100
-      kblock = length(ui)
-    end
+    kblock = length(ui) < 100 ? length(ui) : cld(length(ui), nt)
     par = collect(Iterators.partition(1:length(ui), kblock))
     @assert length(ui) < 100 || length(par) == nt
     #@info "Length/Blocksize: $(length(ui))/$(kblock)"

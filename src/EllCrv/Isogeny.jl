@@ -522,17 +522,14 @@ function defrobenify(f::RingElem, p, rmax::Int = -1)
 
   p = Int(p)
   nonzerocoeffs = [coefficients(f)[i]!=0 ? i : 0 for i in (0:p:degree(f))]
-  pr = gcd(nonzerocoeffs)
+  pr0 = gcd(nonzerocoeffs)
 
-  if is_zero(pr)
+  if is_zero(pr0)
     return f
   end
 
-  r = valuation(pr, p)
-  if rmax >= 0 && rmax < r
-    r = rmax
-    pr = p^r
-  end
+  r = valuation(pr0, p)
+  pr = rmax >= 0 && rmax < r ? p^rmax : pr0
 
   R = parent(f)
   x = gen(R)

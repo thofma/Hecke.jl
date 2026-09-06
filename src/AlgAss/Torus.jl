@@ -116,10 +116,8 @@ function _basis_of_centralizer(B::Vector{T}, A::Vector{T}) where T <: MatElem
       end
     end
   end
-  zK = kernel(z; side = :left)
-  if K isa QQField
-    zK = denominator(zK) * zK
-  end
+  zK0 = kernel(z; side = :left)
+  zK = K isa QQField ? denominator(zK0) * zK0 : zK0
 
   cartind = CartesianIndices((n, n))
 

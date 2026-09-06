@@ -1094,14 +1094,12 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
 
   # Pick the visited-set backend: dense bitset when feasible, hashed set else.
   ranker = _build_subspace_ranker_mod2(T, n, k)
-  if ranker === nothing
-    seen = _SetSeenMod2(Set{NTuple{k + 1, T}}(), kval)
-    K = NTuple{k + 1, T}
+  seen, K = if ranker === nothing
+    _SetSeenMod2(Set{NTuple{k + 1, T}}(), kval), NTuple{k + 1, T}
   else
     # The tabulated number of subspaces must match the Gaussian binomial.
     @assert ZZRingElem(ranker.total) == _num_subspaces_mod2(n, k)
-    seen = _BitSeenMod2(ranker, falses(ranker.total))
-    K = Int
+    _BitSeenMod2(ranker, falses(ranker.total)), Int
   end
 
   if stabilizer
