@@ -608,9 +608,9 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     return prod(g[i]^a[i] for i = 1:length(g))
   end
 
-  local log_mat::Union{Generic.MatSpaceElem{PadicFieldElem}, Nothing} = nothing
-  local prec::Int = 20
-  local gamma::Vector{ZZRingElem}
+  # the logarithms of g2 are cached and refined together with the precision
+  log_mat = Ref{Union{Generic.MatSpaceElem{PadicFieldElem}, Nothing}}(nothing)
+  prec = Ref{Int}(20)
 
   function pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
     @assert parent(a) == parent(A[1]) || base_ring(parent(a)) == parent(A[1])
@@ -621,13 +621,14 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
       a *= g1[i]^-c[end]
     end
 
-    if log_mat === nothing
-      log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
+    if log_mat[] === nothing
+      log_mat[] = _log_matrix(g2, C, prec[])
     end
+    local gamma::Vector{ZZRingElem}
     while true
-      log_a = matrix([conjugates_log(a, C, prec, all = false, flat = true)])
+      log_a = matrix([conjugates_log(a, C, prec[], all = false, flat = true)])
 
-      lv = vcat(log_mat, log_a)
+      lv = vcat(log_mat[], log_a)
       #check_precision and change
       @vtime :qAdic 1 k = kernel(lv, side = :left)
 
@@ -640,9 +641,9 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         for x in k[1, :]
           @vtime :qAdic 1 y = lift_reco(QQ, x, reco = true)
           if y === nothing
-            prec *= 2
-            @vprint :qAdic 1  "increase prec to ", prec
-            log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+            prec[] *= 2
+            @vprint :qAdic 1  "increase prec to ", prec[]
+            log_mat[] = transpose(_log_matrix(g2, C, prec[]))
             break
           else
 #            @show y
@@ -655,10 +656,10 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         d = reduce(lcm, map(denominator, s))
         gamma = ZZRingElem[ZZ(x*d)::ZZRingElem for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-        if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
-          prec *= 2
-          @vprint :qAdic 1 "increase prec to ", prec
-          log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+        if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat[]), prec[]))
+          prec[] *= 2
+          @vprint :qAdic 1 "increase prec to ", prec[]
+          log_mat[] = transpose(_log_matrix(g2, C, prec[]))
           continue
         end
         @assert length(gamma) == length(g2)+1
@@ -674,7 +675,8 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
       return G(c)
     end
 
-    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
+    gam = gamma
+    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gam[i] for i=1:length(gam)-1)])
 
 #    push!(c, divexact(_c[1,1], _c[1,2]))
 

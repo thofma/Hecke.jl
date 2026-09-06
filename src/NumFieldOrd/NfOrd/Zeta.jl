@@ -63,17 +63,13 @@ end
 # approximation.
 function _approx_error_bf(disc::ZZRingElem, degree::Int, Tc = BigFloat)
 
-  logd_up = Tc(0)::Tc
-  logd_down = Tc(0)::Tc
-  sqrt_logd_up = Tc(0)::Tc
-
-  setrounding(Tc,RoundDown) do
-    logd_down = log(Tc(abs(disc)))
+  logd_down = setrounding(Tc,RoundDown) do
+    log(Tc(abs(disc)))
   end
 
-  setrounding(Tc,RoundUp) do
-    logd_up = log(Tc(abs(disc)))
-    sqrt_logd_up = sqrt(logd_up)
+  logd_up, sqrt_logd_up = setrounding(Tc,RoundUp) do
+    l = log(Tc(abs(disc)))
+    (l, sqrt(l))
   end
 
   n = BigFloat(degree)
