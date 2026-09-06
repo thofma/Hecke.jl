@@ -11,6 +11,10 @@
 # The search individualizes basis images one after another.  After each choice,
 # an ordered partition of the short vectors is refined by their scalar products
 # with the chosen image.
+# For simultaneous isometries of an ordered list of symmetric Gram matrices,
+# only the first form must be positive definite.  It supplies the enumeration
+# bound; norm and scalar-product vectors for all forms supply the partition keys.
+# The number of forms is a runtime value.  Vectors used as keys are not mutated.
 #
 # The implementation deliberately keeps the setup and the search elementary:
 # Hecke's short_vectors performs the enumeration directly into `Int` vectors,
@@ -20,41 +24,61 @@
 # order.
 
 struct LatticeIsometryBacktrackCtx
-  gram::Matrix{Int}
+  grams::Vector{Matrix{Int}}
   vectors::Vector{Vector{Int}}
-  gram_products::Vector{Vector{Int}}
-  norms::Vector{Int}
-  vectors_by_norm::Dict{Int, Vector{Int}}
+  gram_products::Vector{Vector{Vector{Int}}}
+  norms::Vector{Vector{Int}}
+  vectors_by_norm::Dict{Vector{Int}, Vector{Int}}
   lookup::Dict{Vector{Int}, Int}
   basis_positions::Vector{Int}
   image_cache::IdDict{Matrix{Int}, Vector{Int}}
 end
 
 function LatticeIsometryBacktrackCtx(G::Matrix{Int}, bound::Int)
-  L = integer_lattice(gram = matrix(ZZ, G), cached = false)
+  return LatticeIsometryBacktrackCtx([G], bound)
+end
+
+function _lattice_backtrack_check_grams(grams)
+  @req !isempty(grams) "At least one Gram matrix is required"
+  n = size(first(grams), 1)
+  @req all(G -> size(G) == (n, n), grams) "Gram matrices must be square and have the same size"
+  @req all(G -> G == transpose(G), grams) "Gram matrices must be symmetric"
+  return n
+end
+
+function LatticeIsometryBacktrackCtx(grams::Vector{Matrix{Int}}, bound::Int)
+  n = _lattice_backtrack_check_grams(grams)
+  L = integer_lattice(gram = matrix(ZZ, grams[1]), cached = false)
+  @req is_positive_definite(L) "The first Gram matrix must be positive definite"
   vectors = Vector{Int}[]
-  gram_products = Vector{Int}[]
-  norms = Int[]
+  gram_products = Vector{Vector{Int}}[]
+  norms = Vector{Int}[]
 
   # short_vectors returns one representative of each pair {v, -v}.  Both
   # signs are possible basis images, so store both explicitly.
   for (w, _) in short_vectors(L, bound, Int)
-    wG = zeros(Int, length(w))
-    for j in eachindex(w)
-      for i in eachindex(w)
-        wG[j] += w[i] * G[i, j]
+    wGs = Vector{Vector{Int}}(undef, length(grams))
+    nw = Vector{Int}(undef, length(grams))
+    for form in eachindex(grams)
+      G = grams[form]
+      wG = zeros(Int, length(w))
+      for j in eachindex(w)
+        for i in eachindex(w)
+          wG[j] += w[i] * G[i, j]
+        end
       end
+      wGs[form] = wG
+      nw[form] = sum(w[i] * wG[i] for i in eachindex(w))
     end
-    nw = sum(w[i] * wG[i] for i in eachindex(w))
     push!(vectors, w)
-    push!(gram_products, wG)
+    push!(gram_products, wGs)
     push!(norms, nw)
     push!(vectors, -w)
-    push!(gram_products, -wG)
+    push!(gram_products, [-wG for wG in wGs])
     push!(norms, nw)
   end
 
-  vectors_by_norm = Dict{Int, Vector{Int}}()
+  vectors_by_norm = Dict{Vector{Int}, Vector{Int}}()
   lookup = Dict{Vector{Int}, Int}()
   for (i, v) in enumerate(vectors)
     push!(get!(Vector{Int}, vectors_by_norm, norms[i]), i)
@@ -64,7 +88,7 @@ function LatticeIsometryBacktrackCtx(G::Matrix{Int}, bound::Int)
   # Record which short vectors are signed standard basis vectors.  Pairing
   # against one of these then amounts to reading one entry of v * G.
   basis_positions = zeros(Int, length(vectors))
-  e = zeros(Int, size(G, 1))
+  e = zeros(Int, n)
   for i in eachindex(e)
     e[i] = 1
     j = get(lookup, e, 0)
@@ -76,7 +100,7 @@ function LatticeIsometryBacktrackCtx(G::Matrix{Int}, bound::Int)
   end
 
   return LatticeIsometryBacktrackCtx(
-    G,
+    grams,
     vectors,
     gram_products,
     norms,
@@ -92,24 +116,29 @@ function _lattice_backtrack_pairing(
   i::Int,
   j::Int,
 )
-  vG = C.gram_products[i]
+  vGs = C.gram_products[i]
   basis_position = C.basis_positions[j]
-  if basis_position > 0
-    return vG[basis_position]
-  elseif basis_position < 0
-    return -vG[-basis_position]
-  end
-
   w = C.vectors[j]
-  result = 0
-  for k in eachindex(vG)
-    result += vG[k] * w[k]
+  values = Vector{Int}(undef, length(C.grams))
+  for form in eachindex(C.grams)
+    vG = vGs[form]
+    if basis_position > 0
+      values[form] = vG[basis_position]
+    elseif basis_position < 0
+      values[form] = -vG[-basis_position]
+    else
+      result = 0
+      for k in eachindex(vG)
+        result += vG[k] * w[k]
+      end
+      values[form] = result
+    end
   end
-  return result
+  return values
 end
 
 function _lattice_backtrack_basis_indices(C::LatticeIsometryBacktrackCtx)
-  n = size(C.gram, 1)
+  n = size(C.grams[1], 1)
   result = Vector{Int}(undef, n)
   e = zeros(Int, n)
   for i in 1:n
@@ -128,7 +157,7 @@ struct LatticeBacktrackPartition
 end
 
 struct LatticeBacktrackRefinement
-  value_indices::Vector{Dict{Int, Int}}
+  value_indices::Vector{Dict{Vector{Int}, Int}}
   sizes::Vector{Vector{Int}}
 end
 
@@ -136,7 +165,7 @@ struct LatticeBacktrackFingerprint
   order::Vector{Int}
   counts::Vector{Int}
   basis_indices::Vector{Int}
-  initial_norms::Vector{Int}
+  initial_norms::Vector{Vector{Int}}
   partitions::Vector{LatticeBacktrackPartition}
   candidate_cells::Vector{Int}
   refinements::Vector{LatticeBacktrackRefinement}
@@ -144,7 +173,7 @@ end
 
 function _lattice_backtrack_initial_partition(
   C::LatticeIsometryBacktrackCtx,
-  norms::Vector{Int},
+  norms::Vector{Vector{Int}},
 )
   points = Int[]
   starts = Int[]
@@ -186,25 +215,25 @@ function _lattice_backtrack_refine_source(
   starts = Int[]
   stops = Int[]
   cell_of = zeros(Int, length(C.vectors))
-  value_indices = Vector{Dict{Int, Int}}(undef, length(partition.starts))
+  value_indices = Vector{Dict{Vector{Int}, Int}}(undef, length(partition.starts))
   sizes = Vector{Vector{Int}}(undef, length(partition.starts))
 
   for cell in eachindex(partition.starts)
-    blocks = Dict{Int, Vector{Int}}()
+    blocks = Dict{Vector{Int}, Vector{Int}}()
     for position in partition.starts[cell]:partition.stops[cell]
       point = partition.points[position]
       value = _lattice_backtrack_pairing(C, point, pivot)
       push!(get!(Vector{Int}, blocks, value), point)
     end
 
-    kept_values = Int[]
+    kept_values = Vector{Int}[]
     for (value, block) in blocks
       any(point -> point in remaining_basis_points, block) || continue
       push!(kept_values, value)
     end
     sort!(kept_values)
 
-    indices = Dict{Int, Int}()
+    indices = Dict{Vector{Int}, Int}()
     kept_sizes = Int[]
     for value in kept_values
       block = blocks[value]
@@ -260,12 +289,13 @@ function _lattice_backtrack_refine_target(
 end
 
 # Choose a basis order by individualizing a basis vector in a smallest cell and
-# refining every cell by its scalar product with that vector.  Cells containing
-# no remaining basis vector can never supply a later basis image and are dropped.
+# refining every cell by the list of scalar products with that vector.  A cell
+# containing no remaining basis vector cannot supply a later basis image and is
+# dropped.
 function _lattice_backtrack_fingerprint(C::LatticeIsometryBacktrackCtx)
-  n = size(C.gram, 1)
+  n = size(C.grams[1], 1)
   basis_indices = _lattice_backtrack_basis_indices(C)
-  initial_norms = unique!(sort!(Int[C.gram[i, i] for i in 1:n]))
+  initial_norms = unique!(sort!(C.norms[basis_indices]))
   initial_partition = _lattice_backtrack_initial_partition(C, initial_norms)
   initial_partition === nothing && error("a basis norm has no short vectors")
 
@@ -334,14 +364,14 @@ end
 function _lattice_backtrack_extend!(
   images::Vector{Int},
   depth::Int,
-  source_gram::Matrix{Int},
+  source_grams::Vector{Matrix{Int}},
   fingerprint::LatticeBacktrackFingerprint,
   target::LatticeIsometryBacktrackCtx,
   partition::LatticeBacktrackPartition,
 )
   if depth > length(fingerprint.order)
     M = _lattice_backtrack_matrix(images, fingerprint.order, target)
-    if M * target.gram * transpose(M) == source_gram
+    if all(k -> M * target.grams[k] * transpose(M) == source_grams[k], eachindex(source_grams))
       return M
     end
     return nothing
@@ -361,7 +391,7 @@ function _lattice_backtrack_extend!(
     )
     refined === nothing && continue
     M = _lattice_backtrack_extend!(
-      images, depth + 1, source_gram, fingerprint, target, refined,
+      images, depth + 1, source_grams, fingerprint, target, refined,
     )
     M === nothing || return M
   end
@@ -369,7 +399,7 @@ function _lattice_backtrack_extend!(
 end
 
 function _lattice_backtrack_histogram(C::LatticeIsometryBacktrackCtx)
-  result = Dict{Int, Int}()
+  result = Dict{Vector{Int}, Int}()
   for norm in C.norms
     result[norm] = get(result, norm, 0) + 1
   end
@@ -377,12 +407,25 @@ function _lattice_backtrack_histogram(C::LatticeIsometryBacktrackCtx)
 end
 
 function _lattice_backtrack_isometry(G1::Matrix{Int}, G2::Matrix{Int})
-  size(G1, 1) == size(G2, 1) || return nothing
+  return _lattice_backtrack_isometry([G1], [G2])
+end
 
-  n = size(G1, 1)
-  bound = maximum(G1[i, i] for i in 1:n)
-  source = LatticeIsometryBacktrackCtx(G1, bound)
-  target = LatticeIsometryBacktrackCtx(G2, bound)
+# Find M in GL(n, Z) such that M * grams2[k] * M' == grams1[k] for every k.
+function _lattice_backtrack_isometry(
+  grams1::Vector{Matrix{Int}},
+  grams2::Vector{Matrix{Int}},
+)
+  n = _lattice_backtrack_check_grams(grams1)
+  m = _lattice_backtrack_check_grams(grams2)
+  length(grams1) == length(grams2) && n == m || return nothing
+  n == 0 && return zeros(Int, 0, 0)
+
+  # Equal determinants of the positive definite forms ensure that an integral
+  # solution of the Gram equations is unimodular.  Check this exactly at setup.
+  det(matrix(ZZ, grams1[1])) == det(matrix(ZZ, grams2[1])) || return nothing
+  bound = maximum(grams1[1][i, i] for i in 1:n)
+  source = LatticeIsometryBacktrackCtx(grams1, bound)
+  target = LatticeIsometryBacktrackCtx(grams2, bound)
   _lattice_backtrack_histogram(source) == _lattice_backtrack_histogram(target) ||
     return nothing
 
@@ -391,7 +434,7 @@ function _lattice_backtrack_isometry(G1::Matrix{Int}, G2::Matrix{Int})
   partition === nothing && return nothing
   _lattice_backtrack_same_shape(fingerprint.partitions[1], partition) || return nothing
   images = Vector{Int}(undef, n)
-  return _lattice_backtrack_extend!(images, 1, G1, fingerprint, target, partition)
+  return _lattice_backtrack_extend!(images, 1, grams1, fingerprint, target, partition)
 end
 
 function _lattice_backtrack_image(
@@ -440,9 +483,15 @@ function _lattice_backtrack_orbit(
 end
 
 function _lattice_backtrack_automorphism_group(G::Matrix{Int})
-  n = size(G, 1)
-  bound = maximum(G[i, i] for i in 1:n)
-  C = LatticeIsometryBacktrackCtx(G, bound)
+  return _lattice_backtrack_automorphism_group([G])
+end
+
+# Compute the common stabilizer of all forms, without permuting the forms.
+function _lattice_backtrack_automorphism_group(grams::Vector{Matrix{Int}})
+  n = _lattice_backtrack_check_grams(grams)
+  n == 0 && return Matrix{Int}[zeros(Int, 0, 0)], one(ZZRingElem)
+  bound = maximum(grams[1][i, i] for i in 1:n)
+  C = LatticeIsometryBacktrackCtx(grams, bound)
   fingerprint = _lattice_backtrack_fingerprint(C)
   order = fingerprint.order
   base = Int[fingerprint.basis_indices[i] for i in order]
@@ -489,7 +538,7 @@ function _lattice_backtrack_automorphism_group(G::Matrix{Int})
         C, partition, images[step], fingerprint.refinements[step],
       )
       M = refined === nothing ? nothing : _lattice_backtrack_extend!(
-        images, step + 1, G, fingerprint, C, refined,
+        images, step + 1, grams, fingerprint, C, refined,
       )
       if M === nothing
         push!(failed_representatives, images[step])
@@ -504,7 +553,7 @@ function _lattice_backtrack_automorphism_group(G::Matrix{Int})
   for level in generators
     append!(result, level)
   end
-  @assert all(M -> M * G * transpose(M) == G, result)
+  @assert all(M -> all(G -> M * G * transpose(M) == G, grams), result)
   group_order = prod(ZZRingElem.(orbit_lengths); init = one(ZZRingElem))
   return result, group_order
 end

@@ -785,6 +785,19 @@ let
         ZZ[0 15 0 2; 15 0 2 0; 0 2 0 32; 2 0 32 0]];
   C = Hecke.ZLatAutoCtx(G)
   @test Hecke.init(C) isa Hecke.ZLatAutoCtx
+
+  # The second simultaneous form is indefinite; only the first bounds the search.
+  grams = Matrix{Int}.(G)
+  generators, group_order = Hecke._lattice_backtrack_automorphism_group(grams)
+  @test group_order == Hecke.auto(C)[2]
+  @test all(M -> all(g -> M * g * transpose(M) == g, grams), generators)
+  X = [1 1 0 0; 0 1 0 0; 0 0 1 1; 0 0 0 1]
+  target = [X * g * transpose(X) for g in grams]
+  M = Hecke._lattice_backtrack_isometry(grams, target)
+  @test M !== nothing
+  if M !== nothing
+    @test all(k -> M * target[k] * transpose(M) == grams[k], 1:2)
+  end
 end
 
 @testset "quadratic_lattice constructor" begin

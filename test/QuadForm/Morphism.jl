@@ -99,5 +99,17 @@
     G4 = 3 * identity_matrix(ZZ, 3)
     C = Hecke.ZLatAutoCtx([G1, G2, G3, G4])
     @test (Hecke.init(C, true); true)  # used to throw UndefRefError
+
+    grams = Matrix{Int}.([G1, G2, G3, G4])
+    generators, group_order = Hecke._lattice_backtrack_automorphism_group(grams)
+    @test group_order == 48
+    @test all(M -> all(G -> M * G * transpose(M) == G, grams), generators)
+    X = [1 1 0; 0 1 1; 0 0 1]
+    target = [X * G * transpose(X) for G in grams]
+    M = Hecke._lattice_backtrack_isometry(grams, target)
+    @test M !== nothing
+    if M !== nothing
+      @test all(k -> M * target[k] * transpose(M) == grams[k], 1:4)
+    end
   end
 end
