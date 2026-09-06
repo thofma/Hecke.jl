@@ -108,8 +108,7 @@ function h2_is_iso(K::Hecke.LocalField)
   p = prime(K)
   e = absolute_ramification_index(K)
   k, mk = residue_field(K)
-  pi = uniformizer(K)
-  pi = setprecision(pi, 2*e)
+  pi = setprecision(uniformizer(K), 2*e)
   eps = setprecision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
@@ -144,10 +143,9 @@ function _unit_group_gens_case2(K::Union{QadicField, Hecke.LocalField})
   e_0 = divexact(e, (p-1)*p^(mu_0-1))
 
   kt, t = polynomial_ring(k, "t", cached = false)
-  pi = uniformizer(K)
   #we need p/pi^e, the unit, with enough precision,
   #precision(eps) = k -> p, pi needs 2k
-  pi = setprecision(pi, precision(K)+2*e)
+  pi = setprecision(uniformizer(K), precision(K)+2*e)
   eps = setprecision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
@@ -158,8 +156,7 @@ function _unit_group_gens_case2(K::Union{QadicField, Hecke.LocalField})
   #the roots should form an additive (cyclic) group, we need a generator.
   #well 0 is missing, but the original poly was t^p-eps*t
   #thus any non-zero root should do
-  r = rts[1]
-  r = root(r, p^mu_0)
+  r = root(rts[1], p^mu_0)
   #now we need s.th. such that t^p-eps*t = x is irred:
   #degree is prime, char p and Artin-Schreier poly, thus
   #irred == no roots
@@ -291,9 +288,10 @@ function solve_1_units(a::Vector{T}, b::T) where T
       lvl = l # `l` is reassigned below and must not be captured
       @assert all(x->isone(x) || e*valuation(x-one) >= lvl, cur_a)
 
-      A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
-      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a]; check = false)
-      lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
+      pil = pi^l
+      A = abelian_group(p .^ max.(0, ceil.(Int, (l .- val_offset) .// e)))
+      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pil))]) for y = cur_a]; check = false)
+      lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pil))])
       fl, s = has_preimage_with_preimage(h, lhs)
       _k, _mk = kernel(h)
       #if kernel has HNF, the next step is cheaper...
@@ -325,7 +323,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #    @show [e*valuation(x-1) for x = cur_a]
 
 
-      pa = prod(a_prec[i]^expo[i] for i=1:length(a_prec))
+      pa = prod(a_prec .^ expo[1, :])
       cur_b = divexact(b_prec^pow_b, pa)
       if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
         break
@@ -340,7 +338,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
       l *= 2
       l = min(l, k)
     end
-    return [expo[1, i] for i=1:length(cur_a)], pow_b
+    return expo[1, 1:length(cur_a)], pow_b
   end
 end
 
@@ -788,9 +786,8 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
   d = divexact(absolute_inertia_degree(L), absolute_inertia_degree(K))
   E = unramified_extension(L, e)[1]
-  G = automorphism_list(L, absolute_base_field(L))
   gK = map(mKL, gens(K, absolute_base_field(K)))
-  G = [g for g = G if map(g, gK) == gK]
+  G = [g for g = automorphism_list(L, absolute_base_field(L)) if map(g, gK) == gK]
   @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 
   u = mKL(setprecision(uniformizer(K), precision(K)+10))//setprecision(uniformizer(L)^e, precision(L)+10)
@@ -1115,23 +1112,22 @@ function _one_unit_group_with_torsion(K, gens::Vector)
       push!(tor, setprecision(tor[end]*tor[2], pr))
     end
 
-    ord = map(_order_1_unit, bas[2:end])
-    ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
-    G = abelian_group(ord)
+    o = map(_order_1_unit, bas[2:end])
+    G = abelian_group(vcat(h[1,1], [minimum(o) for x = bas[2:end]]))
     from_G = function (g::FinGenAbGroupElem)
       return prod(bas[i]^g[i] for i=1:length(gens))
     end
     to_G = function (a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
-      s, p = solve_1_units(bas[2:end], a)
-      s = [divexact(x, p) for x = s]
-      y = prod(bas[i+1]^s[i] for i=1:length(s)) * inv(a)
+      s0, pw = solve_1_units(bas[2:end], a)
+      s = divexact.(s0, pw)
+      y = prod(bas[2:end] .^ s) * inv(a)
       y = setprecision(y, pr)
       z = findfirst(isequal(y), tor)
       @assert z !== nothing
-      if p != 1
+      if pw != 1
         b = a*bas[1]^(z-1)
-        s, p = solve_1_units(bas[2:end], b)
-        @assert p == 1
+        s, pw = solve_1_units(bas[2:end], b)
+        @assert pw == 1
       end
       ex = vcat([-z+1], s)
       x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
@@ -1177,8 +1173,7 @@ function unit_group(K::T) where T <: Union{QadicField, PadicField, LocalField}
   Z = abelian_group([0])
   G, pro, inj = direct_product(Z, u, U, task = :both)
 
-  gk = preimage(mk, mu(u[1]))
-  gk = teichmuller(gk)
+  gk = teichmuller(preimage(mk, mu(u[1])))
   @assert order(u[1]) == order(u)
 
   from_G = function(g::FinGenAbGroupElem)

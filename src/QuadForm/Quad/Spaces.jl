@@ -626,9 +626,11 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
   inf_plcs = real_places(K)
   @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present
-  @hassert :Lattice 1 all(n -> 0 <= n[2] <= dim, negative)
+  @hassert :Lattice 1 all(in(0:dim), values(negative))
   # Impossible negative entry at plc
-  @hassert :Lattice 1 all(p -> sign(det, p) == (-1)^(negative[p]), inf_plcs)
+  for p in inf_plcs
+    @hassert :Lattice 1 sign(det, p) == (-1)^(negative[p])
+  end
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
@@ -793,15 +795,10 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}
   append!(PP, keys(_f))
   unique!(PP)
-  local _finite::Vector{ideal_type(OK)}
-  let finite = finite
-    _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]::Vector{ideal_type(OK)}
-  end
-  finite = _finite
+  _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
 
-  det *= _d
   #    # TODO: reduce det modulo squares
-  return D2, dim, det, finite, negative
+  return D2, dim, det * _d, _finite, negative
 end
 
 ################################################################################
@@ -1586,15 +1583,14 @@ function _isisotropic_with_vector(F::MatrixElem)
     found = false
     for i in 1:length(D), j in (i + 1):length(D)
       if all(let D = D; p -> sign(D[i], p) != sign(D[j], p); end, rlp)
-        TT = identity_matrix(K, nrows(F))
         found = true
-        if i != 3
-          swap_cols!(TT, 3, i)
-        end
+        # move D[i] and D[j] to positions 3 and 4 by permuting the rows of T
         if j != 4
-          swap_cols!(TT, 4, j)
+          swap_rows!(T, 4, j)
         end
-        T = TT * T
+        if i != 3
+          swap_rows!(T, 3, i)
+        end
         _D = (T * F * transpose(T))
         @hassert :Lattice 1 is_diagonal(_D)
         D = diagonal(_D)

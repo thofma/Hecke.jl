@@ -285,16 +285,15 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
   nps = 2^n
   l = [ vcat([2*one(S)], polynomial_to_power_sums(x, nps)) for x = l0]
   while n > 1
-    i = 1
-    while 2*i <= n
+    half = div(n, 2)
+    for i in 1:half
       l[i] = [sum(binomial(ZZRingElem(h), ZZRingElem(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
-      i += 1
     end
     if isodd(n)
-      l[i] = l[n]
-      n = i
+      l[half+1] = l[n]
+      n = half+1
     else
-      n = i-1
+      n = half
     end
   end
   f = power_sums_to_polynomial(l[1][2:end], parent(x))

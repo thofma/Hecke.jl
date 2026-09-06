@@ -336,7 +336,8 @@ function is_isomorphic_with_map(
     sigma2 = hom(k1k2, k1k2, sigma2_g12)
     # Take an element x in the kernel of σ₁(x) - xx₁/σ₂(x₁).
     proj = (sigma1(a) - a * x1 / sigma2(x1) for a in basis(k1k2))
-    if is_empty(local ker = kernel(basis_matrix(collect(proj))))
+    ker = kernel(basis_matrix(collect(proj)))
+    if is_empty(ker)
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
     x = k1k2(ker[1, :])
@@ -344,7 +345,8 @@ function is_isomorphic_with_map(
 
     # Solve norm equation N₂(y) = N₂(x)/a₂ for y.
     n2_y = Iterators.reduce(1:d; init=k1k2(1)) do prev, _ x * sigma2(prev) end
-    if !first(local _, y = is_norm(k2, k(n2_y)/a2))
+    fl_y, y = is_norm(k2, k(n2_y)/a2)
+    if !fl_y
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
     x2 = k2_to_k1k2(y) / x

@@ -939,7 +939,7 @@ function _shortest_vectors_gram(::Type{S}, _G; dolll=true, elem_type=ZZRingElem)
   else
     Glll = G
   end
-  ub = minimum([Glll[i, i] for i in 1:nrows(G)])
+  ub = minimum(diagonal(Glll))
   if !fits(Int, ub)
     norm_type = QQFieldElem
   else
@@ -962,7 +962,7 @@ function _shortest_vectors_gram(_G, elem_type::Type{S} = ZZRingElem) where {S}
   d = denominator(_G)
   G = change_base_ring(ZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)
-  ub = minimum([Glll[i, i] for i in 1:nrows(G)])
+  ub = minimum(diagonal(Glll))
   V = _short_vectors_gram_nolll_integral(LatEnumCtx, Glll, 0, ub, T, ZZRingElem(1), S)
 
   cur_min = ub #
@@ -1014,7 +1014,7 @@ function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bo
       T = nothing
     end
   end
-  max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
+  max = maximum(diagonal(Glll))
   @assert max > 0
   V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T, one(ZZ), ZZRingElem)
   min = minimum(v[2] for v in V)

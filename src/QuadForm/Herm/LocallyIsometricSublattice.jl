@@ -170,14 +170,14 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   hext = extend(h, K)
   for j in length(C)-1:-1:1
     c = C[j]
-    if all(!(scale(c, i) in [0, 1]) for i in 1:length(c))
+    if !any(in([0, 1]), scales(c))
       @assert scale(C[1], 1) - valuation(scale(LL), P) >= 0
       s = div(scale(C[1], 1) - valuation(scale(LL), P), 2)
       LL = lattice(ambient_space(LL), P^s * pseudo_matrix(LL))
       break
     end
     B, G, S = jordan_decomposition(LL, p)
-    r = findfirst(i -> scale(c, i) == 1, 1:length(c))
+    r = findfirst(==(1), scales(c))
     if r !== nothing
       r = rank(c, r)
       i = findfirst(j -> j == 1, S)
@@ -186,7 +186,7 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
     else
       Y1 = mtype[]
     end
-    _r = findfirst(i -> scale(c, i) == 0, 1:length(c))
+    _r = findfirst(==(0), scales(c))
     _Y0 = mtype[]
     if _r !== nothing
       r = rank(c, _r)

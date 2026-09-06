@@ -335,9 +335,9 @@ end
 function gcdx_mod_res(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{AbsSimpleNumFieldElem})
   @assert parent(a) == parent(b)
   a = a*(1//leading_coefficient(a))
-  da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
+  da = Base.reduce(lcm, [denominator(c) for c in coefficients(a)])
   b = b*(1//leading_coefficient(b))
-  db = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
+  db = Base.reduce(lcm, [denominator(c) for c in coefficients(a)])
   d = gcd(da, db)
   a = a*da
   b = b*db

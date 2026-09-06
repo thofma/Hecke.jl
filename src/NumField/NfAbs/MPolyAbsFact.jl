@@ -644,7 +644,7 @@ function combination(RC::RootCtx)
   Ft = parent(R[1])
   t = gen(Ft)
   n = precision(R[1])
-  @assert all(x->precision(x) == n, R)
+  @assert allequal(precision(x) for x in R)
 
   #ps = [[div(x^i % tn, td^i) for i = 1:n] for x = R]
 
@@ -712,7 +712,8 @@ function combination(RC::RootCtx)
     R = R .* ld
     @assert precision(R[1]) >= n
 
-    mn = transpose(matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R]))
+    pd = coeff.(R .^ pow, pow*d+j)
+    mn = transpose(matrix([[Fp(coeff(c, lk)) for lk = 0:k-1] for c = pd]))
 
     if false && iszero(mn)
       @vprintln :AbsFact 2 "found zero column, discarding"
@@ -865,7 +866,6 @@ function field(RC::RootCtx, m::MatElem)
 
   Ft = parent(R[1])
   F = base_ring(Ft)
-  t = gen(Ft)
   d = precision(R[1])
 
   #TODO think, the bound might be too large...
@@ -876,9 +876,8 @@ function field(RC::RootCtx, m::MatElem)
   #     the other factor is then just a division away
   #     if complete orbits are combined, use the trace (pointwise) rather than powers
   @vprintln :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])"
-  k, mk = residue_field(parent(R[1]))
-  kt, t = polynomial_ring(k, cached = false)
-  RR = map(mk, R)
+  k0, mk0 = residue_field(parent(R[1]))
+  RR = map(mk0, R)
   RP = [copy(RR)]
   for j=2:d_f
     push!(RP, RR .* RP[end])
@@ -904,14 +903,14 @@ function field(RC::RootCtx, m::MatElem)
 
   kt, t = polynomial_ring(k, cached = false)
 
-  fl = [power_sums_to_polynomial(map(t->preimage(phi, t), x)) for x = el]
-  fl = [map_coefficients(x->x, y, parent = kt) for y = fl]
-  HH = HenselCtxFqRelSeries(RC.H.f, fl)
+  ps = [power_sums_to_polynomial(map(t->preimage(phi, t), x)) for x = el]
+  fl0 = [map_coefficients(x->x, y, parent = kt) for y = ps]
+  HH = HenselCtxFqRelSeries(RC.H.f, fl0)
   while precision(coeff(HH.lf[1], 0)) < tf+2
     lift(HH)
   end
 
-  kXY, (X, Y) = polynomial_ring(k, ["X", "Y"], cached = false)
+  kXY, _ = polynomial_ring(k, ["X", "Y"], cached = false)
 
   nl = []
   kS = power_series_ring(k, tf+2, "s")[1]
@@ -965,11 +964,9 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     fa = [[valuation(x, y) for y = ld] for x = lc]
-    lc = _lc
-    H = Hecke.HenselCtxQadic(map_coefficients(Qq, lc, parent = Qqt), ld)
+    H = Hecke.HenselCtxQadic(map_coefficients(Qq, _lc, parent = Qqt), ld)
   else
     @vprintln :AbsFact 2 "is monic, no leading coefficient..."
-    lc = _lc
     fa = []
   end
 
@@ -1026,7 +1023,7 @@ function field(RC::RootCtx, m::MatElem)
       @vprintln :AbsFact 2 "lifting leading coeff factorisation"
       @vtime :AbsFact 2 Hecke.lift(H, pr+1)
       fH = factor(H)
-      lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
+      lcf = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
     end
 
     @vprintln :AbsFact 1 "lifting factors"
@@ -1035,7 +1032,7 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     if length(fa) > 0
-      z = [lc[i](gen(SQq)) * HQ.lf[i] for i=1:HQ.n]
+      z = [l(gen(SQq)) for l in lcf] .* HQ.lf[1:HQ.n]
     else
       z = HQ.lf[1:HQ.n]
     end
@@ -1306,7 +1303,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   K = base_ring(R)
 
   alphas = [zero(ZZ) for _ in 1:nvars(R)]
-  bi_sub = [zero(Qxy) for _ in 1:nvars(R)]
+  bi_sub = Hecke.zeros_array(Qxy, nvars(R))
 
   @assert length(a) > 0
 

@@ -537,7 +537,7 @@ function genus_generators(L::HermLat)
       _T, _ = sub(V, S)
       W, w = quo(V, _T)
       if dim(W) == 0
-        PP = ideal_type(R)[]
+        empty!(PP)
       end
     end
   end
@@ -585,7 +585,7 @@ function genus_generators(L::HermLat)
         x = x0 * u
         @assert norm(x) == 1
         if evaluate(x) == 1
-          y = w(V([zero(F) for _ in 1:length(PP)]))
+          y = w(V(zeros_array(F, length(PP))))
         else
           y = w(V(_valuation_pattern(x, PP, VD, F, EabstoE)))
         end
@@ -615,7 +615,7 @@ function genus_generators(L::HermLat)
       x = x0 * u
       @assert norm(x) == 1
       if evaluate(x) == 1
-        y = [zero(F) for _ in 1:length(PP)]
+        y = zeros_array(F, length(PP))
       else
         y = _valuation_pattern(x, PP, VD, F, EabstoE)
       end

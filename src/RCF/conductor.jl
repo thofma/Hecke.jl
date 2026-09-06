@@ -1281,9 +1281,9 @@ function maximal_central_subfield(A::ClassField; stable::Int = 3, lower_bound::I
     end
     lp = prime_decomposition(ZK, p)
     n = matrix(ZZ, 1, length(lp), [degree(P[1]) for P = lp])
-    k = kernel(n; side = :right)
-    S = [prod((lp[j][1]//1)^k[j, i] for j = 1:length(lp)) for i=1:ncols(k)]
-    s = [mQ(preimage(mN, numerator(p))- preimage(mN, denominator(p)*ZK)) for p = S]
+    ker = kernel(n; side = :right)
+    S = [prod((lp[j][1]//1)^ker[j, i] for j = 1:length(lp)) for i=1:ncols(ker)]
+    s = map(mQ, [preimage(mN, numerator(p))- preimage(mN, denominator(p)*ZK) for p = S])
     if all(iszero, s)
       st -= 1
       if st <= 0
@@ -1390,12 +1390,8 @@ of integers describing the structure.
     sharing the same base field.
 """
 function subfields(C::ClassField; arg...)
-  degree = -1
-  if haskey(arg, :degree)
-    val = arg[:degree]
-    @req isa(val, Int) "degree must be an integer"
-    degree = Int(val)
-  end
+  degree = get(arg, :degree, -1)
+  @req isa(degree, Int) "degree must be an integer"
 
   mR = C.rayclassgroupmap
   mQ = C.quotientmap
@@ -1472,17 +1468,18 @@ function normal_closure(C::ClassField)
   aut1 = small_generating_set(aut)
   act = Hecke.induce_action(D, aut1)
 
-  k = kernel(h, true)[1]
-  ko = order(k)
+  U = kernel(h, true)[1]
+  ko = order(U)
   while true
-    k = intersect(k, intersect([x(k)[1] for x = act]))
-    if ko == order(k)
+    V = U
+    U = intersect(V, intersect([x(V)[1] for x = act]))
+    if ko == order(U)
       break
     end
-    ko = order(k)
+    ko = order(U)
   end
 
-  return fixed_field(D, k)
+  return fixed_field(D, U)
 end
 
 function rewrite_with_conductor(C::ClassField)

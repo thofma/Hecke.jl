@@ -892,7 +892,9 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{Fi
     error("both groups need to be direct products")
   end
 
-  @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
+  for i = 1:r, j = 1:c
+    @assert domain(A[i, j]) == dG[i] && codomain(A[i, j]) == dH[j]
+  end
   h = hom(G, H, reduce(vcat, [reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
   return h
 end

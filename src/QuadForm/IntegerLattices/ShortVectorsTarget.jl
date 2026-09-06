@@ -1215,7 +1215,7 @@ function __short_vectors_with_condition_direct(G::ZZMatrix, GInt::Matrix{Int}, g
       m = maximum(grams_i[i,i] for i in 1:n)
       gram2 = (m+1)*gram2 + grams_i
     end
-    if maximum(gram2[i,i] for i in 1:n)>2^15
+    if maximum(LinearAlgebra.diag(gram2))>2^15
       gram2 = sum(rand([-1,1])*rand(1:15)*g for g in gramsInt)
     end
   else
@@ -1314,7 +1314,7 @@ function __short_vectors_with_condition_direct(G::ZZMatrix, GInt::Matrix{Int}, g
       end
     end
     D = Dnew
-    target_norm = [gram2[i,i] for i in 1:n]
+    target_norm = LinearAlgebra.diag(gram2)
     for i in 1:n
       (i1,i2,i3) = target[i]
       i3 = gram2[i,i]

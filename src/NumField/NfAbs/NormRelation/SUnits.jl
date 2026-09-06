@@ -5,10 +5,8 @@ function _add_sunits_from_norm_relation!(c, UZK, N)
   K = N.K
   for i = 1:length(N)
     k, mk = subfield(N, i)
-    @vprintln :NormRelation 1 "Computing maximal order ..."
-    zk = maximal_order(k)
-    @vprintln :NormRelation 1 "Computing lll basis ... "
-    zk = lll(zk)
+    @vprintln :NormRelation 1 "Computing lll basis of maximal order ..."
+    zk = lll(maximal_order(k))
     @vprintln :NormRelation 1 "Computing class group of $k... "
     class_group(zk)
     @vprintln :NormRelation 1 "done"
@@ -250,9 +248,9 @@ function _add_sunits_from_brauer_relation!(c, UZK, N; invariant::Bool = false, c
           @vprintln :NormRelation 3 "  Compact presentation ..."
           @vtime :NormRelation 4 u = Hecke.compact_presentation(u, compact, decom = sup)
         end
-        @vtime :NormRelation 4 img_u = FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
-        @hassert :NormRelation 1 sparse_row(ZZ, [ (j, valuation(img_u, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_u, p) != 0]) == valofnewelement
-        @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_u, valofnewelement)
+        img_s = @vtime :NormRelation 4 FacElem(Dict{AbsSimpleNumFieldElem, ZZRingElem}((_embed(N, i, x), v) for (x, v) = u.fac if !iszero(v)))
+        @hassert :NormRelation 1 sparse_row(ZZ, [ (j, valuation(img_s, p)) for (j, p) in enumerate(c.FB.ideals) if valuation(img_s, p) != 0]) == valofnewelement
+        @vtime :NormRelation 4 Hecke.class_group_add_relation(c, img_s, valofnewelement)
         #=
         if rank(c.M) == length(c.FB.ideals)
           h, piv = Hecke.class_group_get_pivot_info(c)

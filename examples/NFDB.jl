@@ -1242,7 +1242,7 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
     end
 
     m = 0
-    mj = minimum(QQFieldElem[valuation(ims[i][j]) for i in 1:length(ims) for j in 1:length(dp)])
+    mj = minimum(QQFieldElem[valuation(x) for v in ims for x in v])
     if mj >= 0
       m = zero(QQ)
     else

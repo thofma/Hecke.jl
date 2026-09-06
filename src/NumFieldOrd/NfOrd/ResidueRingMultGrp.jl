@@ -300,7 +300,7 @@ function _iterative_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
 
   Q = AbsSimpleNumFieldOrderQuoRing(order(pl), pl)
   local discrete_logarithm
-  let Q = Q, dlogs = dlogs, pl = pl
+  let Q = Q, dlogs = dlogs, pl = pl, g = g
     function discrete_logarithm(b::AbsSimpleNumFieldOrderElem)
       b1 = Q(b)
       a = ZZRingElem[]

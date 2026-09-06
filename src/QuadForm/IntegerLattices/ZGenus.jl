@@ -3207,18 +3207,15 @@ function represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
   FH = isometry_class(quadratic_space(QQ, QQ[0 1; 1 0]; cached=false), p)
   for i in 1:(level+1)
     scale = i - 1
+    L = rational_isometry_class(gen2_round[i+2]) - rational_isometry_class(gen1_square[i])
+    d1 = delta(genus1, scale)
+    d2 = delta(genus2, scale)
     # I
-    d = delta(genus2, scale)
-    L = rational_isometry_class(gen2_round[i+2])
-    L -= rational_isometry_class(gen1_square[i])
-    if !any(represents(L, u*d) for u in [1,3,5,7])
+    if !any(represents(L, u*d2) for u in [1,3,5,7])
       return false
     end
     # II
-    d = delta(genus1, scale)
-    L = rational_isometry_class(gen2_round[i+2])
-    L -= rational_isometry_class(gen1_square[i])
-    if !any(represents(L, u*d) for u in [1,3,5,7])
+    if !any(represents(L, u*d1) for u in [1,3,5,7])
       return false
     end
 
@@ -3226,8 +3223,6 @@ function represents(G1::ZZLocalGenus, G2::ZZLocalGenus)
     S1 = rational_isometry_class(gen2_round[i+2])
     S2 = rational_isometry_class(gen1_square[i])
     if  S1 - S2 == FH
-      d1 = delta(genus1, scale)
-      d2 = delta(genus2, scale)
       if d1!=0 && d2!=0 && valuation(d1,2) > valuation(d2,2)
         return false
       end

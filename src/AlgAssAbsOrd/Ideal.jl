@@ -2190,10 +2190,7 @@ function lattice_with_local_conditions(O::AlgAssAbsOrd,
   _ps = unique(ps)
   @req length(_ps) == length(ps) "List of primes must not contain duplicates"
 
-  d = one(ZZ)
-  for I in Is
-    d = lcm(d, denominator(I, O))
-  end
+  d = mapreduce(I -> denominator(I, O), lcm, Is; init = one(ZZ))
   new_Is = [d * I for I in Is]
   new_ps = copy(ps)
   for p in support(d)

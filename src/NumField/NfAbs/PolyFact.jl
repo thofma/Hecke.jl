@@ -798,7 +798,7 @@ function van_hoeij(f::PolyRingElem{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderId
               continue
             end
           end
-          @vtime :PolyFactor 2 g = prod(factor(vH.H)[v])
+          g = @vtime :PolyFactor 2 prod(factor(vH.H)[v])
           if degree(P) == 1
             @vtime :PolyFactor 2 G = parent(f)([K(reco(lift(ZZ, coeff(mC(den*leading_coefficient(f)), 0)*coeff(g, l)), vH.Ml, vH.pMr, order(P))) for l=0:degree(g)])
           else

@@ -619,7 +619,7 @@ function rescale_curve(E::EllipticCurve{T}) where T <: AbsSimpleNumFieldElem
         rethrow(e)
       end
     end
-    u = evaluate(prod([us[i]^es[i] for i in 1:m]; init = one(K)))
+    u = evaluate(prod(us .^ es[:, 1]; init = one(K)))
     F = transform_rstu(E, [0, 0, 0, 1//u])[1]
     return F
   end
@@ -854,15 +854,17 @@ function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunct
   Zx = Hecke.Globals.Zx
   K = base_field(E)
   KK = AbstractAlgebra.Generic.underlying_fraction_field(K)
-  ai = collect(a_invariants(E))
-  aiorig = ai
+  aiorig = collect(a_invariants(E))
+  ai = copy(aiorig)
   wts = [1, 2, 3, 4, 6]
   for a in aiorig
     n, d = integral_split(a, Zx)
     if !is_one(d)
       for (p, _) in factor(d)
         e = floor(Int, minimum([_fake_valuation(ai[i], p)//wts[i] for i in 1:5 if !is_zero(ai[i])]))
-        ai = [ai[i]/K(change_base_ring(QQ, p; parent = base_ring(KK)))^(Int(e * wts[i])) for i in 1:5]
+        for i in 1:5
+          ai[i] = ai[i]/K(change_base_ring(QQ, p; parent = base_ring(KK)))^(Int(e * wts[i]))
+        end
       end
     end
   end
@@ -874,8 +876,8 @@ end
 
 function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem{AbsSimpleNumFieldElem}})
   K = base_field(E)
-  ai = collect(a_invariants(E))
-  aiorig = ai
+  aiorig = collect(a_invariants(E))
+  ai = copy(aiorig)
   wts = [1, 2, 3, 4, 6]
   facs = [is_zero(aiorig[i]) ? nothing : _factor_rational_function_field(ai[i]) for i in 1:5]
   for j in 1:5
@@ -887,8 +889,10 @@ function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunct
         if e > 0
           continue
         end
-        e = floor(Int, minimum([get(facs[i].fac, p, 0)//wts[i] for i in 1:5 if !is_zero(aiorig[i])]))
-        ai = [ai[i]/K(p)^(Int(e * wts[i])) for i in 1:5]
+        ee = floor(Int, minimum([get(facs[i].fac, p, 0)//wts[i] for i in 1:5 if !is_zero(aiorig[i])]))
+        for i in 1:5
+          ai[i] = ai[i]/K(p)^(Int(ee * wts[i]))
+        end
       end
     end
   end

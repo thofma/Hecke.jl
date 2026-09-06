@@ -437,11 +437,8 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
 
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
-  if haskey(N.induced, auto)
-    p = N.induced[auto]
-  else
-    p = induce(FB, auto)
-    N.induced[auto] = p
+  p = get!(N.induced, auto) do
+    induce(FB, auto)
   end
   #@show p
 
@@ -1031,7 +1028,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
 
   v = _reduce_modulo(v, K)
 
-  subgroups_needed = Int[ i for i in 1:k if !iszero(v[1, i])]
+  subgroups_needed = findall(!iszero, v[1, 1:k])
 
   den = denominator(v[1, 1])
   for i in 2:k

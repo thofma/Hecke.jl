@@ -163,10 +163,8 @@ mutable struct qAdicConj
     is_ramified(maximal_order(K), p) && error("cannot deal with ramification yet")
     =#
     if splitting_field
-      Zx = polynomial_ring(ZZ, cached = false)[1]
-      C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)
       r = new()
-      r.C = C
+      r.C = qAdicRootCtx(polynomial_ring(ZZ, cached = false)[1](K.pol), p, splitting_field = true)
       r.K = K
       r.cache = Dict{AbsSimpleNumFieldElem, Any}()
       return r

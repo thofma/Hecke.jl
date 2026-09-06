@@ -501,7 +501,7 @@ end
    while !is_irreducible(f)
      f = Rt(push!([rand(R) for i = 0:n-1], one(R)))
    end
-   f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
+   f_L = polynomial(L, [mR\(c) for c in coefficients(f)])
    return unramified_extension(f_L)
  end
 

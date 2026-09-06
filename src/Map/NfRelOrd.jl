@@ -47,8 +47,7 @@ function NfRelOrdToFqMor(O::RelNumFieldOrder{T, S, U}, P::RelNumFieldOrderIdeal{
         bb[i, 1] = b.coeffs[i]
       end
       @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-      bb = Minv*bb
-      g = Fx([ bb[i, 1] for i = 1:dim(A) ])
+      g = Fx((Minv*bb)[:, 1])
       return mFF(g)
     end
 
@@ -59,8 +58,7 @@ function NfRelOrdToFqMor(O::RelNumFieldOrder{T, S, U}, P::RelNumFieldOrderIdeal{
       for i = 1:dim(A)
         c[i, 1] = coeff(aa, i - 1)
       end
-      c = M*c
-      b = A([ c[i, 1] for i = 1:dim(A) ])
+      b = A((M*c)[:, 1])
       res = AtoO(b)
       return res
     end
@@ -220,8 +218,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
           bb[i, 1] = b.coeffs[i]
         end
         @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-        bb = Minv*bb
-        g= FKx([ bb[i, 1] for i = 1:dim(A) ])
+        g = FKx((Minv*bb)[:, 1])
         return mE(g)
       end
 
@@ -231,8 +228,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
         for i = 1:dim(A)
           c[i,1] = coeff(g, i-1)
         end
-        c = M*c
-        b = A([c[i,1] for i=1:dim(A)])
+        b = A((M*c)[:, 1])
         res = AtoO(b)
         return res
       end
@@ -324,8 +320,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
           bb[i, 1] = b.coeffs[i]
         end
         @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-        bb = Minv*bb
-        g= FKx([ bb[i, 1] for i = 1:dim(A) ])
+        g = FKx((Minv*bb)[:, 1])
         return mE(g)
       end
 
@@ -335,8 +330,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         for i = 1:dim(A)
           c[i,1] = coeff(g, i-1)
         end
-        c = M*c
-        b = A([c[i,1] for i=1:dim(A)])
+        b = A((M*c)[:, 1])
         return AtoO(b)
       end
       z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)
@@ -423,8 +417,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
           bb[i, 1] = b.coeffs[i]
         end
         @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-        bb = Minv*bb
-        g= FKx([ bb[i, 1] for i = 1:dim(A) ])
+        g = FKx((Minv*bb)[:, 1])
         return mE(g)
       end
 
@@ -434,8 +427,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         for i = 1:dim(A)
           c[i,1] = coeff(g, i-1)
         end
-        c = M*c
-        b = A([c[i,1] for i=1:dim(A)])
+        b = A((M*c)[:, 1])
         return AtoO(b)
       end
       z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)

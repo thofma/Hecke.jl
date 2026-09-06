@@ -1636,8 +1636,7 @@ function _orthogonal_submodule_raw(T::TorQuadModule, S::TorQuadModule;check=true
     Kz[:,j:j] = reduce_mod(Kz[:,j:j], A[j])
   end
   k = [i for i in 1:nrows(Kz) if !is_zero_row(Kz,i)]
-  Kz = Kz[k,:]
-  return Kz
+  return Kz[k,:]
 end
 
 @doc raw"""
@@ -1763,8 +1762,7 @@ function normal_form(
     prec = 2*valuation(exponent(T), p) + 5
     D, U = padic_normal_form(q_p1, p; prec, partial)
     R = residue_ring(ZZ, ZZ(p)^prec)[1]
-    UR = map_entries(x->R(ZZ(x)), U)
-    UR = transpose(inv(UR))
+    UR = transpose(inv(map_entries(x->R(ZZ(x)), U)))
 
     # the inverse is in normal form - so to get a normal form for
     # the original one

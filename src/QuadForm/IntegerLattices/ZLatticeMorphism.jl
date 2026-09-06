@@ -167,8 +167,8 @@ function __assert_has_automorphisms(
   end
 
   if get_assertion_level(:Lattice) > 1
-    for (v, n) in vector_set
-      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+    for (v, n) in vector_set, i in 1:length(res)
+      @assert dot(v * res[i], v) == n[i]
     end
   end
   faithful = true
@@ -181,8 +181,8 @@ function __assert_has_automorphisms(
   end
 
   if get_assertion_level(:Lattice) > 1
-    for (v, n) in vector_set
-      @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
+    for (v, n) in vector_set, i in 1:length(res)
+      @assert dot(v * res[i], v) == n[i]
     end
   end
   @label init_small
@@ -247,7 +247,7 @@ function __assert_has_automorphisms(
   end
 
   # Now gens are with respect to the basis of L
-  @hassert :Lattice 1 all(let gens = gens; i -> change_base_ring(QQ, gens[i]) * GL *
+  @hassert :Lattice 1 all(let gens = gens, GL = GL; i -> change_base_ring(QQ, gens[i]) * GL *
                           transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
   #@hassert :Lattice 1 use_weyl && all(let gens = reduced_gens; i -> change_base_ring(QQ, gens[i]) * GL *
   #                                    transpose(change_base_ring(QQ, gens[i])) == GL; end, 1:length(gens))
@@ -320,13 +320,13 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
     vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
   end
   if get_assertion_level(:Lattice) > 1
-    for (v, n) in vector_set
-      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+    for (v, n) in vector_set, i in 1:length(grams)
+      @assert dot(v * grams[i], v) == n[i]
     end
   end
   if get_assertion_level(:Lattice) > 1
-    for (v, n) in vector_set
-      @assert all(dot(v * grams[i], v) == n[i] for i in 1:length(grams))
+    for (v, n) in vector_set, i in 1:length(grams)
+      @assert dot(v * grams[i], v) == n[i]
     end
   end
   @assert length(grams) == length(vector_set[1][2])
