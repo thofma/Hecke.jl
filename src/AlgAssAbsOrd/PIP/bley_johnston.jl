@@ -256,8 +256,6 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
   H, U = hnf_with_transform(change_base_ring(ZZ, Amatrix))
   Hinv = inv(QQMatrix(H))
 
-  local_coeffs = Vector{Vector{QQFieldElem}}[]
-
   inv_special_basis_matrix_Hinv = inv_special_basis_matrix * Hinv
 
   #@info "preprocessing units"
@@ -353,16 +351,6 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
 #  @assert fl === ffl
 #  return ffl, inv(sca) * xx
 #
-
-  for u in Iterators.product(unit_reps...)
-    uu = sum(dec[i][2](dec[i][2]\(u[i])) for i in 1:length(dec))
-    aui = [ dec[i][2](dec[i][2]\(alpha)) * dec[i][2](dec[i][2]\(u[i])) for i in 1:length(dec)]
-    @assert sum(aui) == alpha * uu
-    if alpha * uu in I
-      return true, inv(sca) * alpha * uu
-    end
-  end
-  return false, zero(O)
 end
 
 function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)

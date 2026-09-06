@@ -1548,7 +1548,6 @@ function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldEl
   end
   bound = 5
   count = 1
-  F2 = GF(2)
   M = zero_matrix(F2, length(pos_places), length(pos_places))
   betas = Vector{elem_type(order(I))}()
   r = 0

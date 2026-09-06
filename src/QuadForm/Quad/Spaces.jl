@@ -514,13 +514,8 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   @hassert :Lattice 1 all(is_prime, finite)
 
   if dim == 2
-    ok = all(p -> !is_local_square(-det, p), finite)
-
-    if !ok
-      #q = ZZRingElem[p for p in finite if is_local_square(-det, p)][1]
-      if is_local_square(-det, q)
-        error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
-      end
+    for q in finite
+      is_local_square(-det, q) && error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
     end
   end
 
@@ -652,10 +647,8 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
   # Finite places check
 
   if dim == 2
-    ok = all(p -> !is_local_square(-det, p), finite)
-    if !ok
-      q = eltype(finite)[p for p in finite if is_local_square(-det, p)][1]
-      error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
+    for q in finite
+      is_local_square(-det, q) && error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
     end
   end
 

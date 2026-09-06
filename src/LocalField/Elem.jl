@@ -442,14 +442,15 @@ end
 ################################################################################
 
 function norm(a::LocalFieldElem)
-  K = parent(a)
   return AbstractAlgebra.det_df(representation_matrix(a))
-  #the resultant is not quite stable (yet), it is not using the
+  #= the resultant is not quite stable (yet), it is not using the
   #fun factor stuff...
+  K = parent(a)
   res = setprecision(base_ring(a.data), precision(a.data)) do
     resultant(defining_polynomial(K, precision(a.data)), a.data)
   end
   return res
+  =#
 end
 
 function absolute_norm(a::LocalFieldElem)

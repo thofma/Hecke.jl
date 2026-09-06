@@ -952,9 +952,6 @@ k = splitting_field(x^3-2)
 l2 = prime_decomposition(maximal_order(k), 2)
 k2 = Hecke.generic_completion(k, l2[1][1])  #S(3)(6)
   =#
-
-
-  return beta, action, G_mul, mul, sigma_hat
 end
 #############################################################################
 #   The following "norm_equation_unramified" solves the norm equations only

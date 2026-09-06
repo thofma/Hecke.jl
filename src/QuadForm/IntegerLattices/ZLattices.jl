@@ -2014,9 +2014,9 @@ function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
       L.minimum = mi//d
       return false, Glll
     end
-    m = @inbounds minimum(i[2] for i in SV2)
-    SV = [i[1] for i in SV2 if i[2]==m]
-    m = m//d
+    mSV = @inbounds minimum(i[2] for i in SV2)
+    SV = [i[1] for i in SV2 if i[2]==mSV]
+    m = mSV
   else
     m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
   end
@@ -2554,7 +2554,6 @@ function is_obviously_perfectly_well_rounded_with_data(L::ZZLat; max_tries = 100
   end
   # brute force try for random combinations
   sv = shortest_vectors(L)
-  n = rank(L)
   SV = Set([matrix(ZZ,1, n, i) for i in sv])
   for (i,B) in enumerate(subsets(SV, n))
     i > max_tries && return false, zero_matrix(QQ, 0, degree(L))

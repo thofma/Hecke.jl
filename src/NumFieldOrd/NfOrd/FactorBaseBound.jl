@@ -50,10 +50,6 @@ function _factorbase_bound_bdf_right_side(O::AbsSimpleNumFieldOrder, x0::Float64
     return logp//pm2 * secondterm
   end
 
-  function comp_summand(p::Int, m::Int)
-    return comp_summand(ZZRingElem(p), m)
-  end
-
   p = 2
 
   while p < curval

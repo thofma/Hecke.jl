@@ -289,16 +289,6 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         break
       end
       lv = vcat(lu, la)
-      #check_precision and change
-      if false && any(x->precision(x) < prec, lv)
-        println("loss of precision - not sure what to do")
-        for i=1:rows(lv)
-          for j = cols(lv) #seems to not do anything
-            lv[i, j] = setprecision(lv[i, j], min_p)
-            @assert precision(lv[i,j]) == min_p
-          end
-        end
-      end
       @vtime :qAdic 1 k = kernel(lv, side = :left)
       @assert nrows(k) < 2
       if nrows(k) == 0
