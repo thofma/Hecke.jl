@@ -468,6 +468,12 @@ Given a hermitian lattice ``L``, return `gens, def, P0` where:
   ``L`` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the
   primes satisfying these properties.
 """
+# For each prime PP[i]: F(0) if x - 1 has valuation at least VD[i] at PP[i],
+# F(1) otherwise
+function _valuation_pattern(x, PP, VD, F, EabstoE)
+  return [ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]
+end
+
 function genus_generators(L::HermLat)
   R = base_ring(L)
   RR = fixed_ring(L)
@@ -581,7 +587,7 @@ function genus_generators(L::HermLat)
         if evaluate(x) == 1
           y = w(V([zero(F) for _ in 1:length(PP)]))
         else
-          y = w(V([ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+          y = w(V(_valuation_pattern(x, PP, VD, F, EabstoE)))
         end
         cocycle[i, j] = y
         cocycle[j, i] = y
@@ -611,7 +617,7 @@ function genus_generators(L::HermLat)
       if evaluate(x) == 1
         y = [zero(F) for _ in 1:length(PP)]
       else
-        y = [ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]
+        y = _valuation_pattern(x, PP, VD, F, EabstoE)
       end
       idx = findfirst(isequal(P), PP)
       if idx !== nothing

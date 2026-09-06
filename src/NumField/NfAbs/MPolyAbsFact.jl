@@ -797,6 +797,46 @@ end
   then
   H(g) H(h) <= 2^(deg_x(f) + deg_y(g) - 2) ((deg_x(f)+1)(deg_y(f)+1))^(1/2) H(f)
 =#
+# Index of the first coefficient separating the elements of `el`, or 0 if none
+# does, together with the block systems of the coefficients that do not.
+function _primitive_coefficient(el::Vector)
+  all_bs = []
+  for i = 1:length(el[1])
+    bs = block_system([coeff(x, i) for x = el])
+    @vprintln :AbsFact 3 "block system of coeff $i is $bs"
+    @assert all(x->length(x) == length(bs[1]), bs)
+    length(bs[1]) == 1 && return i, all_bs
+    push!(all_bs, bs)
+  end
+  return 0, all_bs
+end
+
+# No single coefficient separates `el`: find coefficients `used` and a power
+# `pow` such that x -> sum(coeff(x, t) for t in used)^pow does. Returns this
+# function together with `pow` and `used`.
+function _primitive_element_from_sums(el::Vector, all_bs::Vector)
+  bs = [collect(1:length(el))]
+  used = Int[]
+  for i=1:length(el[1])
+    cs = Hecke._meet(bs, all_bs[i])
+    if length(cs) > length(bs)
+      bs = cs
+      push!(used, i)
+    end
+    if length(bs[1]) == 1
+      break
+    end
+  end
+  @vprintln :AbsFact 2 "using coeffs $used to form primitive element"
+  for pow in Iterators.countfrom(1)
+    pe = x -> (sum(coeff(x, t) for t = used)^pow)
+    if length(block_system([pe(x) for x = el])[1]) == 1
+      @vprintln :AbsFact 2 "using sum to the power $pow"
+      return pe, pow, used
+    end
+  end
+end
+
 """
 Internal use.
 """
@@ -941,50 +981,14 @@ function field(RC::RootCtx, m::MatElem)
 
   #if no single coefficient is primitive, use block systems and sums of coeffs
   #to find a primitive one.
-  all_bs = []
-  pe_j = 0
-  for i = 1:length(el[1])
-    bs = block_system([coeff(x, i) for x = el])
-    @vprintln :AbsFact 3 "block system of coeff $i is $bs"
-    @assert all(x->length(x) == length(bs[1]), bs)
-    if length(bs[1]) == 1
-      pe_j = i
-      break
-    end
-    push!(all_bs, bs)
-  end
+  pe_j, all_bs = _primitive_coefficient(el)
 
-  local pe, pow, used
-  if pe_j == 0
+  pe, pow, used = if pe_j == 0
     @vprintln :AbsFact 2 "no single coefficient is primitive, having to to combinations"
-    bs = [collect(1:length(el))]
-    used = Int[]
-    for i=1:length(el[1])
-      cs = Hecke._meet(bs, all_bs[i])
-      if length(cs) > length(bs)
-        bs = cs
-        push!(used, i)
-      end
-      if length(bs[1]) == 1
-        break
-      end
-    end
-    @vprintln :AbsFact 2 "using coeffs $used to form primitive element"
-    pow = 1
-    while true
-      pe = x -> (sum(coeff(x, t) for t = used)^pow)
-      bs = block_system([pe(x) for x = el])
-      if length(bs[1]) == 1
-        @vprintln :AbsFact 2 "using sum to the power $pow"
-        break
-      end
-      pow += 1
-    end
+    _primitive_element_from_sums(el, all_bs)
   else
     @vprintln :AbsFact 2 "$(pe_j)-th coeff is primitive"
-    pe = x -> coeff(x, pe_j)
-    pow = 1
-    used = [1]
+    (x -> coeff(x, pe_j), 1, [1])
   end
 
   @vprintln :AbsFact 1 "hopefully $(length(el)) degree field"

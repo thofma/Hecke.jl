@@ -235,13 +235,17 @@ end
 
 _is_contained_in_interval(x::ArbFieldElem, i::Tuple) = i[1] < x && x < i[2]
 
+# Which of the real embeddings r map the generator a into the interval x at
+# precision p
+_embeddings_into_interval(r, a, x, p::Int) = [_is_contained_in_interval(real(i(a, p)), x) for i in r]
+
 function _find_nearest_real_embedding(K::AbsSimpleNumField, x::Tuple)
   r = real_embeddings(K)
   p = 32
-  fls = [_is_contained_in_interval(real(i(gen(K), p)), x) for i in r]
+  fls = _embeddings_into_interval(r, gen(K), x, p)
   while count(fls) != 1
     p = 2 * p
-    fls = [_is_contained_in_interval(real(i(gen(K), p)), x) for i in r]
+    fls = _embeddings_into_interval(r, gen(K), x, p)
     if count(fls) > 1
       possible = [ Float64(real(e.r)) for e in r]
       s = IOBuffer()

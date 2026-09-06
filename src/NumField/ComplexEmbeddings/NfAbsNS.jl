@@ -150,14 +150,18 @@ function real_embedding(K::AbsNonSimpleNumField, x::Vector)
   return _find_nearest_real_embedding(K, x)
 end
 
+# Which of the real embeddings r map all generators gK into the corresponding
+# intervals x at precision p
+_embeddings_into_intervals(r, gK, x, p::Int) = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+
 function _find_nearest_real_embedding(K::AbsNonSimpleNumField, x::Vector{<:Tuple})
   r = real_embeddings(K)
   p = 32
   gK = gens(K)
-  fls = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+  fls = _embeddings_into_intervals(r, gK, x, p)
   while count(fls) != 1
     p = 2 * p
-    fls = [all(_is_contained_in_interval(real(i(gK[j], p)), x[j]) for j in 1:length(gK)) for i in r]
+    fls = _embeddings_into_intervals(r, gK, x, p)
     if count(fls) > 1
       possible = [[ Float64(real(x)) for x in e.roots] for e in r]
       s = IOBuffer()

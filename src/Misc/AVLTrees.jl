@@ -328,21 +328,23 @@ end
 # """
 #
 # disable this footgun
-function _getindex(tree::AVLTree{K}, ind::Integer) where K
-  @boundscheck (1 <= ind <= tree.count) || throw(BoundsError("$ind should be in between 1 and $(tree.count)"))
-  function traverse_tree(node::Union{AVLTreeNode, Nothing}, idx)
-    if (node != nothing)
-      L = get_subsize(node.left_child)
-      if idx <= L
-        return traverse_tree(node.left_child, idx)
-      elseif idx == L + 1
-        return node.data
-      else
-        return traverse_tree(node.right_child, idx - L - 1)
-      end
+# The data of the idx-th node (in order) of the subtree rooted at node
+function _traverse_tree(node::Union{AVLTreeNode, Nothing}, idx)
+  if (node != nothing)
+    L = get_subsize(node.left_child)
+    if idx <= L
+      return _traverse_tree(node.left_child, idx)
+    elseif idx == L + 1
+      return node.data
+    else
+      return _traverse_tree(node.right_child, idx - L - 1)
     end
   end
-  value = traverse_tree(tree.root, ind)
+end
+
+function _getindex(tree::AVLTree{K}, ind::Integer) where K
+  @boundscheck (1 <= ind <= tree.count) || throw(BoundsError("$ind should be in between 1 and $(tree.count)"))
+  value = _traverse_tree(tree.root, ind)
   return value
 end
 

@@ -1047,6 +1047,13 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
   gens = one_unit_group_gens(K)
 
   if length(gens) == absolute_degree(K)
+    return _one_unit_group_torsion_free(K, gens)
+  end
+  @assert length(gens) == absolute_degree(K)+1
+  return _one_unit_group_with_torsion(K, gens)
+end
+
+function _one_unit_group_torsion_free(K, gens::Vector)
     o = map(_order_1_unit, gens)
     G = abelian_group([minimum(o) for x = gens])
     from_G = function (g::FinGenAbGroupElem)
@@ -1058,8 +1065,10 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
       @assert e == 1
       return G(s)
     end
-  else
-    @assert length(gens) == absolute_degree(K)+1
+    return G, MapFromFunc(G, K, from_G, to_G)
+end
+
+function _one_unit_group_with_torsion(K, gens::Vector)
     rel, po = solve_1_units(gens[1:end-1], gens[end])
     push!(rel, -po)
     h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
@@ -1133,8 +1142,7 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
       @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
       return G(ex)
     end
-  end
-  return G, MapFromFunc(G, K, from_G, to_G)
+    return G, MapFromFunc(G, K, from_G, to_G)
 end
 
 function teichmuller(a::LocalFieldElem)

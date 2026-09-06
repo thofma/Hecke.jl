@@ -116,6 +116,10 @@ end
 
 # The odd (non-dyadic) ramified case
 
+# The (scale, rank, det) data of the Jordan blocks of the local genus symbol c
+# whose scale satisfies pred
+_blocks_with_scale(c, pred) = [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if pred(scale(c, i))]
+
 function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   E = nf(base_ring(M))
   K = base_field(E)
@@ -126,20 +130,20 @@ function _locally_isometric_sublattice_odd_ramified(M, L, p, P, absolute_map)
   c = genus(L, p)
   C = typeof(c)[ c ]
   while scale(c, length(c)) >= 2
-    c0 = genus(HermLat, E, p, [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [0, 2]])
+    c0 = genus(HermLat, E, p, _blocks_with_scale(c, in([0, 2])))
     if length(c0) == 2
       c0 = genus(HermLat, E, p, [(0, sum(ranks(c0)), prod(dets(c0)))])
     elseif length(c0) == 1
       c0 = genus(HermLat, E, p, [(0, rank(c0, 1), det(c0, 1))])
     end
-    c1 = genus(HermLat, E, p, [(scale(c, i), rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) in [1, 3]])
+    c1 = genus(HermLat, E, p, _blocks_with_scale(c, in([1, 3])))
     if length(c1) == 2
       c1 = genus(HermLat, E, p, [(1, sum(ranks(c1)), prod(dets(c1)))])
     elseif length(c1) == 1
       c1 = genus(HermLat, E, p, [(1, rank(c1, 1), det(c1, 1))])
     end
     c = genus(HermLat, E, p,
-              vcat(c0.data, c1.data, [(scale(c, i) - 2, rank(c, i), det(c, i)) for i in 1:length(c) if scale(c, i) >= 4]))
+              vcat(c0.data, c1.data, [(s - 2, r, d) for (s, r, d) in _blocks_with_scale(c, >=(4))]))
     push!(C, c)
   end
   # C contains the genus symbols of all Gernstein reduced lattices above L_p.

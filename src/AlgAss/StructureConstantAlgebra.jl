@@ -659,21 +659,25 @@ end
 
 # A should be semi-simple
 # See W. Eberly "Computations for Algebras and Group Representations" p. 89.
+# A random central element of A together with its (reducible) minimal polynomial
+function _central_element_with_reducible_minpoly(A::StructureConstantAlgebra, Z, ZtoA)
+  while true
+    a = ZtoA(rand(Z))
+    f = minpoly(a)
+    is_irreducible(f) || return a, f
+    if degree(f) == dim(A)
+      error("Cannot find idempotents (algebra is a field)")
+    end
+  end
+end
+
 function _extraction_of_idempotents(A::StructureConstantAlgebra, only_one::Bool = false)
   Z, ZtoA = center(A)
   if dim(Z) == 1
     error("Dimension of centre is 1")
   end
 
-  a = ZtoA(rand(Z))
-  f = minpoly(a)
-  while is_irreducible(f)
-    if degree(f) == dim(A)
-      error("Cannot find idempotents (algebra is a field)")
-    end
-    a = ZtoA(rand(Z))
-    f = minpoly(a)
-  end
+  a, f = _central_element_with_reducible_minpoly(A, Z, ZtoA)
 
   fac = factor(f)
   fi = [ k for (k, _) in fac ]

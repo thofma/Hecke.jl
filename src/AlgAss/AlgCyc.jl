@@ -257,6 +257,33 @@ true
 
 Algorithm as described in [Han07](@cite).
 """
+# Isomorphism of the cyclic algebras c1 and c2 whose maximal cyclic subfields
+# are isomorphic via iso, if it exists
+function _is_isomorphic_with_map_isomorphic_base(c1::CyclicAlgebra, c2::CyclicAlgebra, iso)
+  d = degree(c1.cyc_fld)
+  k1, k2 = c1.cyc_fld, c2.cyc_fld
+  g2 = gen(k2)
+  a1, a2 = c1.a, c2.a
+
+  i = 1
+  while (iso((c1.sigma^i)(inv(iso)(g2))) != c2.sigma(g2))
+    i += 1
+  end
+  fl, x2 = is_norm(k2, a1/a2^i)
+  if fl
+    return true, hom(
+      c1.sca,
+      c2.sca,
+      collect(
+        c2.cyc_fld_emb(iso(x)) * (c2.cyc_fld_emb(x2) * c2.pi)^i
+        for (x, i) in Iterators.product(basis(k1), 0:d-1)
+      )[:];
+      check = false
+    )
+  end
+  return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
+end
+
 function is_isomorphic_with_map(
   c1::CyclicAlgebra{T},
   c2::CyclicAlgebra{T};
@@ -272,23 +299,9 @@ function is_isomorphic_with_map(
   end
 
   # Case: Base fields are isomorphic
-  if !linearly_disjoint && first(local _, iso = is_isomorphic_with_map(k1, k2))
-    i = 1
-    while (iso((c1.sigma^i)(inv(iso)(g2))) != c2.sigma(g2))
-      i += 1
-    end
-    if first(local _, x2 = is_norm(k2, a1/a2^i))
-      return true, hom(
-        c1.sca,
-        c2.sca,
-        collect(
-          c2.cyc_fld_emb(iso(x)) * (c2.cyc_fld_emb(x2) * c2.pi)^i
-          for (x, i) in Iterators.product(basis(k1), 0:d-1)
-        )[:];
-        check = false
-      )
-    end
-    return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
+  if !linearly_disjoint
+    fl_iso, iso = is_isomorphic_with_map(k1, k2)
+    fl_iso && return _is_isomorphic_with_map_isomorphic_base(c1, c2, iso)
   end
 
   # Case: Maximally cyclic subfields are linearly disjoint.

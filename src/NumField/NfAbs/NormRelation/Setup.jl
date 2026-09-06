@@ -665,69 +665,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, _H::Vector{Tuple{MultTab
   n = Int(order(G))
 
   if pure
-    if iszero(target_den)
-      m = zero_matrix(QQ, length(H), n)
-      for i in 1:length(H)
-        for j in 1:n
-          m[i, j] = norms[i].coeffs[j]
-        end
-      end
-
-      onee = matrix(QQ, 1, n, coefficients(one(QG)))
-
-      b, v, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
-    else
-      m = zero_matrix(ZZ, length(H), n)
-      for i in 1:length(H)
-        for j in 1:n
-          m[i, j] = ZZ(norms[i].coeffs[j])
-        end
-      end
-
-      onee = matrix(ZZ, 1, n, coefficients(one(QG)))
-
-      b, w, K = can_solve_with_solution_and_kernel(m, target_den * onee, side = :left)
-      v = 1//target_den * change_base_ring(QQ, w)
-    end
-
-    if !b
-      return false, zero(ZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
-    end
-
-    @assert b
-
-    if iszero(target_den)
-      v = _reduce_modulo(v, K)
-    end
-
-    subgroups_needed = Int[ i for i in 1:length(H) if !iszero(v[1, i])]
-
-    den = denominator(v[1, 1])
-    for i in 2:length(H)
-      den = lcm!(den, den, denominator(v[1, i]))
-    end
-
-    vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
-    for i in 1:length(vvv)
-      vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
-    end
-
-    solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
-
-    for i in 1:length(subgroups_needed)
-      push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
-      sgroup = [H[subgroups_needed[i]][2](h) for h in H[subgroups_needed[i]][1]]
-      push!(solutions, (sgroup, vvv[i]))
-    end
-
-    z = zero(QG)
-    for cc in 1:length(subgroups_needed)
-      z = z + v[1, subgroups_needed[cc]] * norms[subgroups_needed[cc]]
-    end
-
-    @assert isone(z)
-
-    return true, den, solutions
+    return _has_norm_relation_abstract_pure(G, H, QG, norms, target_den)
   end
 
   wd = decompose(QG)
@@ -896,6 +834,71 @@ function _has_norm_relation_abstract(G::MultTableGroup, _H::Vector{Tuple{MultTab
   if !iszero(target_den)
     @assert iszero(mod(target_den, den))
   end
+
+  return true, den, solutions
+end
+
+# Norm relation 1 = sum_H x_H N_H with x_H in Q, i.e. without group elements
+function _has_norm_relation_abstract_pure(G::MultTableGroup, H::Vector{Tuple{MultTableGroup, MultTableGroupHom}}, QG, norms, target_den::ZZRingElem)
+  n = Int(order(G))
+
+  if iszero(target_den)
+    m = zero_matrix(QQ, length(H), n)
+    for i in 1:length(H)
+      for j in 1:n
+        m[i, j] = norms[i].coeffs[j]
+      end
+    end
+
+    onee = matrix(QQ, 1, n, coefficients(one(QG)))
+
+    b, v0, K = can_solve_with_solution_and_kernel(m, onee, side = :left)
+  else
+    m = zero_matrix(ZZ, length(H), n)
+    for i in 1:length(H)
+      for j in 1:n
+        m[i, j] = ZZ(norms[i].coeffs[j])
+      end
+    end
+
+    onee = matrix(ZZ, 1, n, coefficients(one(QG)))
+
+    b, w, K = can_solve_with_solution_and_kernel(m, target_den * onee, side = :left)
+    v0 = 1//target_den * change_base_ring(QQ, w)
+  end
+
+  if !b
+    return false, zero(ZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
+  end
+
+  v = iszero(target_den) ? _reduce_modulo(v0, K) : v0
+
+  subgroups_needed = findall(!iszero, v[1, :])
+
+  den = denominator(v[1, 1])
+  for i in 2:length(H)
+    den = lcm!(den, den, denominator(v[1, i]))
+  end
+
+  vvv = Vector{Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}(undef, length(subgroups_needed))
+  for i in 1:length(vvv)
+    vvv[i] = Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}()
+  end
+
+  solutions = Vector{Tuple{Vector{MultTableGroupElem}, Vector{Tuple{ZZRingElem, MultTableGroupElem, MultTableGroupElem}}}}()
+
+  for i in 1:length(subgroups_needed)
+    push!(vvv[i], (numerator(den * v[1, subgroups_needed[i]]), id(G), id(G)))
+    sgroup = [H[subgroups_needed[i]][2](h) for h in H[subgroups_needed[i]][1]]
+    push!(solutions, (sgroup, vvv[i]))
+  end
+
+  z = zero(QG)
+  for cc in 1:length(subgroups_needed)
+    z = z + v[1, subgroups_needed[cc]] * norms[subgroups_needed[cc]]
+  end
+
+  @assert isone(z)
 
   return true, den, solutions
 end

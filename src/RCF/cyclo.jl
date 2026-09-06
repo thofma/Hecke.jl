@@ -352,6 +352,9 @@ function _isprobably_primitive(x::AbsNumFieldOrderElem)
   return false
 end
 
+# The largest absolute value of the non-leading coefficients of f
+_max_abs_coeff(f::ZZPolyRingElem) = maximum([abs(coeff(f, i)) for i = 0:degree(f)-1])
+
 function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::Bool = true)
 
   L, zeta = cyclotomic_field(n, cached = false)
@@ -379,10 +382,10 @@ function _cyclotomic_extension_non_simple(k::AbsSimpleNumField, n::Int; cached::
     #Now, I need to compare the elements and understand which is better.
     a = prim_elems[1]
     poly = minpoly(Zx, prim_elems[1])
-    M = maximum([abs(coeff(poly, i)) for i = 0:degree(poly)-1])
+    M = _max_abs_coeff(poly)
     for i = 2:length(prim_elems)
       poly2 = minpoly(Zx, prim_elems[i])
-      M2 = maximum([abs(coeff(poly2, i)) for i = 0:degree(poly2)-1])
+      M2 = _max_abs_coeff(poly2)
       if M2 < M
         poly = poly2
         M = M2

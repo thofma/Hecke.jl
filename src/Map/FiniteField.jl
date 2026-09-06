@@ -1,3 +1,41 @@
+# The homomorphism F -> K mapping the generator of F to a, with preimages
+# computed by linear algebra over the common base field
+function _hom_fq_field(F::FqField, K::FqField, a::FqFieldElem)
+  @assert absolute_degree(F) == 1 || base_field(F) === base_field(K)
+  k = base_field(F)
+  kx = parent(defining_polynomial(F))
+
+  img = function(x::FqFieldElem)
+    @assert parent(x) === F
+    return lift(kx, x)(a)
+  end
+
+  M = zero_matrix(k, degree(F), degree(K))
+  M[1, 1] = one(k)
+  el = one(K)
+  for i = 2:nrows(M)
+    el = mul!(el, el, a)
+    for j = 1:ncols(M)
+      M[i, j] = coeff(el, j-1)
+    end
+  end
+  aux1 = zero_matrix(k, 1, degree(K))
+  function preimg(x::FqFieldElem)
+    @assert parent(x) == K
+    for i = 1:degree(K)
+      aux1[1, i] = coeff(x, i-1)
+    end
+    fl, y = can_solve_with_solution(M, aux1, side = :left)
+    if !fl
+      error("The element is not in the image!")
+    end
+    polF = kx([y[1, i] for i in 1:ncols(y)])
+    return F(polF)
+  end
+
+  return Nemo.FinFieldMorphism(F, K, img, preimg)
+end
+
 function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   @assert parent(a) == K
 
@@ -13,39 +51,7 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
 
   if F isa FqField
     @assert K isa FqField
-    @assert absolute_degree(F) == 1 || base_field(F) === base_field(K)
-    k = base_field(F)
-    kx = parent(defining_polynomial(F))
-
-    img = function(x::FqFieldElem)
-      @assert parent(x) === F
-      return lift(kx, x)(a)
-    end
-
-    M = zero_matrix(k, degree(F), degree(K))
-    M[1, 1] = one(k)
-    el = one(K)
-    for i = 2:nrows(M)
-      el = mul!(el, el, a)
-      for j = 1:ncols(M)
-        M[i, j] = coeff(el, j-1)
-      end
-    end
-    aux1 = zero_matrix(k, 1, degree(K))
-    function preimg(x::FqFieldElem)
-      @assert parent(x) == K
-      for i = 1:degree(K)
-        aux1[1, i] = coeff(x, i-1)
-      end
-      fl, y = can_solve_with_solution(M, aux1, side = :left)
-      if !fl
-        error("The element is not in the image!")
-      end
-      polF = kx([y[1, i] for i in 1:ncols(y)])
-      return F(polF)
-    end
-
-    return Nemo.FinFieldMorphism(F, K, img, preimg)
+    return _hom_fq_field(F, K, a)
   end
 
   #We need a preimage function

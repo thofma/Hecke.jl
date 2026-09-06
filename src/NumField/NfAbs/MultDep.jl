@@ -252,6 +252,9 @@ A^V is a generating system for the relations of A in Units/Tor
 
 The pAdic Ctx is returned as well
 """
+# The matrix of the p-adic logarithms of the conjugates of the units u
+_log_matrix(u, C, prec::Int) = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
+
 function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
@@ -312,7 +315,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
+            lu = _log_matrix(u, C, prec)
             break
           end
           push!(s, y)
@@ -326,7 +329,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
+          lu = _log_matrix(u, C, prec)
           continue
         end
         @assert length(gamma) == length(u)+1
@@ -612,7 +615,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
   log_mat = Ref{Union{Generic.MatSpaceElem{PadicFieldElem}, Nothing}}(nothing)
   prec = Ref{Int}(20)
 
-  function pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  function pr_fac(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
     @assert parent(a) == parent(A[1]) || base_ring(parent(a)) == parent(A[1])
     c = ZZRingElem[]
     for i=1:length(cp)
@@ -684,9 +687,8 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     push!(c, _c[1,1])
     return G(c)
   end
-  function pr(a::AbsSimpleNumFieldElem)
-    return pr(FacElem(a))
-  end
+  pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) = pr_fac(a)
+  pr(a::AbsSimpleNumFieldElem) = pr_fac(FacElem(a))
 
   return G, MapFromFunc(G, parent(u[1]), im, pr)
 end

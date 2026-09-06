@@ -471,56 +471,10 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, O, S::Vector{Abs
   # This makes c.R.gen a basis of the S-units (modulo torsion)
   c = Hecke.RelSaturate.simplify(c, UZK, use_LLL = true)
   perm_ideals = _find_perm(S, c.FB.ideals)
-  if invariant
-    sunitsmodunits = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[x for x in c.R_gen] # These are generators for the S-units (mod units, mod n)
-    valuations_sunitsmodunits = Vector{SRow{ZZRingElem}}(undef, length(S))
-    for i = 1:length(sunitsmodunits)
-      r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
-      sort!(r, lt = (a,b) -> a[1] < b[1])
-      valuations_sunitsmodunits[i] = sparse_row(ZZ, r)
-    end
+  sunitsmodunits, valuations_sunitsmodunits = if invariant
+    _sunits_mod_units_invariant(c, S, perm_ideals)
   else
-    # I need to extract the S-units from the Sclosed-units
-    # Now I need to find the correct indices in the c.FB.ideals
-    sunitsmodunits = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
-    valuations_sunitsmodunits = SRow{ZZRingElem}[]
-    ind = Int[]
-    for P in S
-      for i in 1:length(c.FB.ideals)
-        if P == c.FB.ideals[i]
-          push!(ind, i)
-          break
-        end
-      end
-    end
-    sort!(ind)
-    # ind = indices of S inside c.FB.ideals
-    @assert length(Sclosed) == length(c.FB.ideals)
-    @assert length(ind) == length(S)
-    z = zero_matrix(ZZ, length(c.R_gen), length(Sclosed) - length(S))
-    for i in 1:length(c.R_gen)
-      k = 1
-      for j in 1:length(Sclosed)
-        if !(j in ind)
-          z[i, k] = c.M.bas_gens[i, j]
-          if k == ncols(z)
-            break
-          end
-          k = k + 1
-        end
-      end
-    end
-    K = kernel(z, side = :left)
-    for i in 1:nrows(K)
-      if is_zero_row(K, i)
-        continue
-      end
-      push!(sunitsmodunits, FacElem(c.R_gen, ZZRingElem[K[i, j] for j in 1:ncols(K)]))
-      v_c = sum(SRow{ZZRingElem}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
-      r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in v_c]
-      sort!(r, lt = (a,b) -> a[1] < b[1])
-      push!(valuations_sunitsmodunits, sparse_row(ZZ, r))
-    end
+    _sunits_mod_units_from_closure(c, S, Sclosed, perm_ideals)
   end
 
   unitsmodtorsion = UZK.units # These are generators for the units (mod n)
@@ -593,6 +547,65 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, O, S::Vector{Abs
     fl
   end
   return (res_group, r)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
+end
+
+# Generators for the S-units (mod units, mod n) and their valuations at S,
+# when the factor base of c is S itself
+function _sunits_mod_units_invariant(c, S, perm_ideals)
+  sunitsmodunits = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[x for x in c.R_gen]
+  valuations_sunitsmodunits = Vector{SRow{ZZRingElem}}(undef, length(S))
+  for i = 1:length(sunitsmodunits)
+    r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in c.M.bas_gens[i]]
+    sort!(r, lt = (a,b) -> a[1] < b[1])
+    valuations_sunitsmodunits[i] = sparse_row(ZZ, r)
+  end
+  return sunitsmodunits, valuations_sunitsmodunits
+end
+
+# Extract the S-units (mod units, mod n) and their valuations at S from the
+# Sclosed-units in c
+function _sunits_mod_units_from_closure(c, S, Sclosed, perm_ideals)
+  # Now I need to find the correct indices in the c.FB.ideals
+  sunitsmodunits = FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}[]
+  valuations_sunitsmodunits = SRow{ZZRingElem}[]
+  ind = Int[]
+  for P in S
+    for i in 1:length(c.FB.ideals)
+      if P == c.FB.ideals[i]
+        push!(ind, i)
+        break
+      end
+    end
+  end
+  sort!(ind)
+  # ind = indices of S inside c.FB.ideals
+  @assert length(Sclosed) == length(c.FB.ideals)
+  @assert length(ind) == length(S)
+  z = zero_matrix(ZZ, length(c.R_gen), length(Sclosed) - length(S))
+  for i in 1:length(c.R_gen)
+    k = 1
+    for j in 1:length(Sclosed)
+      if !(j in ind)
+        z[i, k] = c.M.bas_gens[i, j]
+        if k == ncols(z)
+          break
+        end
+        k = k + 1
+      end
+    end
+  end
+  K = kernel(z, side = :left)
+  for i in 1:nrows(K)
+    if is_zero_row(K, i)
+      continue
+    end
+    push!(sunitsmodunits, FacElem(c.R_gen, ZZRingElem[K[i, j] for j in 1:ncols(K)]))
+    v_c = sum(SRow{ZZRingElem}[K[i, j]*c.M.bas_gens[j] for j = 1:ncols(K)])
+    r = Tuple{Int, ZZRingElem}[(perm_ideals[j], v) for (j, v) in v_c]
+    sort!(r, lt = (a,b) -> a[1] < b[1])
+    push!(valuations_sunitsmodunits, sparse_row(ZZ, r))
+  end
+  return sunitsmodunits, valuations_sunitsmodunits
 end
 
 function _fundamental_units_via_brauer(O::AbsSimpleNumFieldOrder, N::NormRelation; GRH::Bool = true)

@@ -189,27 +189,27 @@ function _factor_assume_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFie
 end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
-function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
-  @assert is_monic(f)
-  i = 0
-  local N
+# Shift g = f(t - i*a) until g has a squarefree norm, returning g, i and the norm
+function _shift_until_squarefree_norm(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
   g = f
   t = gen(parent(f))
   a = gen(base_ring(t))
 
-  while true
+  for i in 0:10
     if !iszero(constant_coefficient(g))
       N = norm(g)
-      if is_squarefree(N)
-        break
-      end
+      is_squarefree(N) && return g, i, N
     end
-    i += 1
     g = evaluate(g, t-a)
-    if i > 10
-      error("not plausible")
-    end
   end
+  error("not plausible")
+end
+
+function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
+  @assert is_monic(f)
+  t = gen(parent(f))
+  a = gen(base_ring(t))
+  g, i, N = _shift_until_squarefree_norm(f)
 
   fN = factor(N)
   # We are reconstructing the monic polynomial g and the gcds below are monic.

@@ -449,8 +449,9 @@ function initialize_verify_context(_units_fac::Vector{<:FacElem}; test_normality
       auts_gen = mG(g)
     end
     # now find a Minkowski unit
+    is_indep(x, auts) = Hecke._isindependent([a(x) for a in auts])
     for i in 1:length(units_fac)
-      fl, = Hecke._isindependent([a(units_fac[i]) for a in auts])
+      fl, = is_indep(units_fac[i], auts)
       if fl
         u = evaluate(units_fac[i])
         break
@@ -460,7 +461,7 @@ function initialize_verify_context(_units_fac::Vector{<:FacElem}; test_normality
       # not found yet
       k = 0
       uu = K(mU(U(rand(0:1, ngens(U)))))
-      while !(Hecke._isindependent([a(uu) for a in auts]))
+      while !is_indep(uu, auts)
         k += 1
         uu = K(mU(rand(U, 2)))
         if k > 100
