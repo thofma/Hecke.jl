@@ -582,11 +582,7 @@ end
 
 function _unit_group_generators_quaternion(O::Union{AlgAssRelOrd, AlgAssAbsOrd}; GRH::Bool = true)
   gens1 = unit_group_modulo_scalars(O)
-  if O isa AlgAssAbsOrd
-    u, mu = unit_group(base_ring(O))
-  else
-    u, mu = unit_group(base_ring(O); GRH = GRH)
-  end
+  u, mu = O isa AlgAssAbsOrd ? unit_group(base_ring(O)) : unit_group(base_ring(O); GRH = GRH)
   A = algebra(O)
   gens2 = [ O(A(elem_in_nf(mu(u[i])))) for i in 1:ngens(u) ]
   return append!(gens1, gens2)

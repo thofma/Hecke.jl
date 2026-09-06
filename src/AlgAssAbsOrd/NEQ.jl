@@ -233,12 +233,8 @@ function _norm_equation_absolute(NC::NormCache, order_num::Int; max_num_fields::
     good_primes = __neq_find_good_primes(NC, OK)
 
     if !isempty(good_primes)
-      if degree(K) != n
-        n2 = degree(K)//n
-        vals2 = [ Int(n2*vals[i]) for i = 1:length(vals) ]
-      else
-        vals2 = vals
-      end
+      n2 = degree(K)//n
+      vals2 = isone(n2) ? vals : [ Int(n2*vals[i]) for i = 1:length(vals) ]
 
       remaining_primes = Set{Int}()
       # First search for solutions for single primes
@@ -323,12 +319,8 @@ function _norm_equation_valuations_only(O::AlgAssAbsOrd, primes::Vector{ZZRingEl
 
     if !isempty(good_primes)
       cache = Vector{Any}(undef, 2) # Used in __neq_find_sol_in_order
-      if degree(K) != n
-        n2 = degree(K)//n
-        vals2 = [ Int(n2*valuations[i]) for i = 1:length(valuations) ]
-      else
-        vals2 = valuations
-      end
+      n2 = degree(K)//n
+      vals2 = isone(n2) ? valuations : [ Int(n2*valuations[i]) for i = 1:length(valuations) ]
 
       remaining_primes = Set{Int}()
       # First search for solutions for single primes

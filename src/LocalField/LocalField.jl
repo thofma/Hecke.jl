@@ -520,11 +520,7 @@ function image_of_logarithm_one_units(K::NonArchLocalField)
     return 1, [zero(K)]
   end
 
-  if mod(e, p - 1) == 0
-    n = Int(div(e, p - 1) + 1)
-  else
-    n = ceil(Int, e//(p - 1))
-  end
+  n = mod(e, p - 1) == 0 ? Int(div(e, p - 1) + 1) : ceil(Int, e//(p - 1))
 
   # Thus U^(n) -> P^n is an isomorphism by the usual result, see e.g. Neukirch.
   # Lets compute representatives for U^(1)/U^(n)

@@ -55,11 +55,7 @@ function _principal_subfields_basis(K::SimpleNumField)
     ker = kernel(M, side = :left)
 
     # This might be expensive for bigger fields?
-    if K isa NumField{QQFieldElem}
-      ker_rref = QQMatrix(lll(saturate(FakeFmpqMat(rref(ker)[2]).num)))
-    else
-      ker_rref = rref(ker)[2]
-    end
+    ker_rref = K isa NumField{QQFieldElem} ? QQMatrix(lll(saturate(FakeFmpqMat(rref(ker)[2]).num))) : rref(ker)[2]
 
     if ker_rref in [ b for b in principal_subfields_ar if nrows(b) == nrows(ker_rref)]
       continue

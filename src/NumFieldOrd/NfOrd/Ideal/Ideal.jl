@@ -216,11 +216,9 @@ that $M$ is already in lower left HNF.
 function ideal(O::AbsNumFieldOrder, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
   x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
   k = something(findfirst(i -> !is_zero_row(x, i), 1:nrows(x)), nrows(x) + 1)
-  if k != 1
-    x = sub(x, k:nrows(x), 1:ncols(x))
-  end
-  I = AbsNumFieldOrderIdeal(O, x)
-  I.iszero = isempty(x) ? 1 : 2
+  y = k == 1 ? x : sub(x, k:nrows(x), 1:ncols(x))
+  I = AbsNumFieldOrderIdeal(O, y)
+  I.iszero = isempty(y) ? 1 : 2
   # The compiler stopped liking this recursion??
   # if check
   #   J = ideal(O, basis(I))
@@ -232,12 +230,10 @@ end
 function _ideal(O::AbsNumFieldOrder, M::ZZMatrix, M_in_hnf::Bool = false)
   x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
   k = something(findfirst(i -> !is_zero_row(x, i), 1:nrows(x)), nrows(x) + 1)
-  if k != 1
-    x = sub(x, k:nrows(x), 1:ncols(x))
-  end
+  y = k == 1 ? x : sub(x, k:nrows(x), 1:ncols(x))
   #_trace_call(;print = true)
-  I = AbsNumFieldOrderIdeal(O, x)
-  I.iszero = isempty(x) ? 1 : 2
+  I = AbsNumFieldOrderIdeal(O, y)
+  I.iszero = isempty(y) ? 1 : 2
   return I
 end
 
@@ -1996,14 +1992,8 @@ function _datum_for_reduction_non_maximal(Q::AbsOrdQuoRing)
     I = Q.ideal
     O = base_ring(Q)
     M = maximal_order(O)
-    if _ideal_equal_helper(I * M, I)
-      J = I
-      QQ, mQQ = quo(M, J * M)
-    else
-      f = conductor(O, M)
-      J = f * I
-      QQ, mQQ = quo(M, J * M)
-    end
+    J = _ideal_equal_helper(I * M, I) ? I : conductor(O, M) * I
+    QQ, mQQ = quo(M, J * M)
     # Now O/I -> QQ is injective
     QJ, mQJ = quo(base_ring(Q), J)
     AQJ, AQJtoQJ, QJtoAQJ = abelian_group(QJ)

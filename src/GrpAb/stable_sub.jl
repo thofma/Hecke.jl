@@ -288,11 +288,7 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   R = M.R
   S, mS = snf(M)
   N = _exponent_p_sub(S)
-  if ord == -1
-    list_sub = minimal_submodules(N)
-  else
-    list_sub = minimal_submodules(N, ngens(S.V)-ord)
-  end
+  list_sub = ord == -1 ? minimal_submodules(N) : minimal_submodules(N, ngens(S.V)-ord)
   list = Vector{zzModMatrix}(undef, length(list_sub))
   v = Int[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   W = matrix_space(R, 1, ngens(M.V); cached=false)
