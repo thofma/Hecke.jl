@@ -210,6 +210,7 @@ testlist = String[]
 if short_test
   @info "Running short tests"
   push!(testlist, joinpath(test_directory, "Aqua.jl"))
+  push!(testlist, joinpath(test_directory, "ClosureBoxes.jl"))
   push!(testlist, joinpath(Hecke.pkgdir, "system", "precompile.jl"))
 else
   test_exclude = ["setup.jl", "runtests.jl", "Aqua.jl", "threads.jl"]
