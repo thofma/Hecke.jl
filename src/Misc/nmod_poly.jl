@@ -957,7 +957,7 @@ function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Re
   if easy
     cp = [m]
   else
-    cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+    cp = [gcd(lift(c), m) for c in coefficients(g)]
     push!(cp, m)
     cp = [x for x = cp if !iszero(x)]
     cp = coprime_base(cp)

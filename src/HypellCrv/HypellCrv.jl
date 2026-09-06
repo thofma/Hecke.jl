@@ -24,11 +24,7 @@ mutable struct HypellCrv{T}
   function HypellCrv{T}(f::PolyRingElem{T}, h::PolyRingElem{T}, check::Bool = true) where {T}
     n = degree(f)
     m = degree(h)
-    if 2*m < n
-      g = div(n - 1, 2)
-    else
-      g = div(2*m - 1, 2)
-    end
+    g = 2*m < n ? div(n - 1, 2) : div(2*m - 1, 2)
     if g < 0
       error("y^2 + h*y = f does not define a hyperelliptic curve.")
     end
@@ -690,10 +686,9 @@ function repos(S2::Vector{AcbFieldElem}, S_inf::Int)
   CC = parent(S2[1])
   RR = ArbField(precision(CC))
   #Precision equality 0?
-  n = length(S2) + S_inf
-  m = n - length(S2)
   S = S2 |> filter(x -> x != 0)
-  m = m - (length(S2) - length(S))
+  # the zeros in S2 count as points at infinity
+  m = S_inf - (length(S2) - length(S))
 
 
   S_abs = map(x-> RR(abs(x)), S)

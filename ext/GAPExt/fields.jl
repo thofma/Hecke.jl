@@ -71,6 +71,12 @@ end
 #
 ################################################################################
 
+# Automorphisms in `D2` whose GAP permutation generates the GAP group `H`
+function _autos_generating(D2, H)
+  gensGAP = GAP.Globals.GeneratorsOfGroup(H)
+  return Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+end
+
 function Hecke.field_context(K::AbsSimpleNumField)
   layers = Vector{Hecke.Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}[]
   autsK = automorphism_list(K, copy = false)
@@ -87,9 +93,7 @@ function Hecke.field_context(K::AbsSimpleNumField)
   embs = Vector{Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)}(undef, length(L)-1)
   F = K
   for i = length(L)-1:-1:2
-    H = L[i]
-    gensGAP = GAP.Globals.GeneratorsOfGroup(H)
-    ggs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+    ggs = _autos_generating(D2, L[i])
     push!(layers, closure(ggs))
     Fnew, mF = fixed_field(K, ggs)
     Fnew, mS = simplify(Fnew, cached = false, save_LLL_basis = false)
@@ -98,9 +102,7 @@ function Hecke.field_context(K::AbsSimpleNumField)
     F = Fnew
     embs[i] = mp
   end
-  H = L[1]
-  gensGAP = GAP.Globals.GeneratorsOfGroup(H)
-  ggs = Hecke.morphism_type(AbsSimpleNumField, AbsSimpleNumField)[ x[2] for x in D2 if GAP.Globals.IN(x[1], gensGAP)]
+  ggs = _autos_generating(D2, L[1])
   push!(layers, closure(ggs))
   auts = small_generating_set(layers[1])
   for i = 2:length(layers)

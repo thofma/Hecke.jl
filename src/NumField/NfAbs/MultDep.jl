@@ -252,6 +252,9 @@ A^V is a generating system for the relations of A in Units/Tor
 
 The pAdic Ctx is returned as well
 """
+# The matrix of the p-adic logarithms of the conjugates of the units u
+_log_matrix(u, C, prec::Int) = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
+
 function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}})
   p = next_prime(100)
   K = base_ring(parent(A[1]))
@@ -286,16 +289,6 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         break
       end
       lv = vcat(lu, la)
-      #check_precision and change
-      if false && any(x->precision(x) < prec, lv)
-        println("loss of precision - not sure what to do")
-        for i=1:rows(lv)
-          for j = cols(lv) #seems to not do anything
-            lv[i, j] = setprecision(lv[i, j], min_p)
-            @assert precision(lv[i,j]) == min_p
-          end
-        end
-      end
       @vtime :qAdic 1 k = kernel(lv, side = :left)
       @assert nrows(k) < 2
       if nrows(k) == 0
@@ -312,7 +305,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
+            lu = _log_matrix(u, C, prec)
             break
           end
           push!(s, y)
@@ -326,7 +319,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
         if !verify_gamma(push!(copy(u), a), gamma, ZZRingElem(p)^prec)
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          lu = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = u])
+          lu = _log_matrix(u, C, prec)
           continue
         end
         @assert length(gamma) == length(u)+1
@@ -570,45 +563,37 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
 
   @req (!isa(A[1], FacElem)) || !isnothing(support) "For elements in factored form, the support has to be passed in as well"
 
-  if isa(A[1], FacElem)
-    K = base_ring(parent(A[1]))
+  K, u0, g1, cp = if isa(A[1], FacElem)
+    Kf = base_ring(parent(A[1]))
     if length(support) == 0 #kown to be units
-      u = A
-      g1 = typeof(A[1])[]
+      (Kf, A, typeof(A[1])[], empty(support))
     else
-      S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
-      u = Hecke._transform(A, transpose(T))
-      g1 = Hecke._transform(A, transpose(S))
+      Sf, Tf, cpsf = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
+      (Kf, Hecke._transform(A, transpose(Tf)), Hecke._transform(A, transpose(Sf)), cpsf)
     end
   else
-    K = parent(A[1])
-    S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
-    u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
-    g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
+    S, T, cps = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
+    #gens for mult grp/ units
+    (parent(A[1]), [FacElem(A, T[i, :]) for i = 1:nrows(T)], [FacElem(A, S[i, :]) for i = 1:nrows(S)], cps)
   end
 
-  U, T, C = syzygies_units_mod_tor(u)
-  g2 = Hecke._transform(u, transpose(U))
-  if length(T) == 0
-    u = [FacElem(K(1))]
-  else
-    u = Hecke._transform(u, transpose(T))
-  end
+  U, Tu, C = syzygies_units_mod_tor(u0)
+  g2 = Hecke._transform(u0, transpose(U))
+  u = length(Tu) == 0 ? [FacElem(K(1))] : Hecke._transform(u0, transpose(Tu))
 
-  if task == :all
-    Ut, _, o = syzygies_tor(u)
+  G, g, o = if task == :all
+    Ut, _, ot = syzygies_tor(u)
 
-    if is_one(o)
-      G = abelian_group([0 for i=1:length(g1)+length(g2)])
-      g = vcat(g1, g2)
+    if is_one(ot)
+      (abelian_group([0 for i=1:length(g1)+length(g2)]), vcat(g1, g2), ot)
     else
-      G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
       t = evaluate(Hecke._transform(u, transpose(Ut))[1])
-      g = vcat(g1, g2, [FacElem(t)])
+      (abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [ot])), vcat(g1, g2, [FacElem(t)]), ot)
     end
   elseif task == :modulo_tor
-    G = free_abelian_group(length(g1)+length(g2))
-    g = vcat(g1, g2)
+    (free_abelian_group(length(g1)+length(g2)), vcat(g1, g2), one(ZZ))
+  else
+    error("task must be :all or :modulo_tor")
   end
 
   function im(a::FinGenAbGroupElem)
@@ -616,11 +601,11 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     return prod(g[i]^a[i] for i = 1:length(g))
   end
 
-  local log_mat::Union{Generic.MatSpaceElem{PadicFieldElem}, Nothing} = nothing
-  local prec::Int = 20
-  local gamma::Vector{ZZRingElem}
+  # the logarithms of g2 are cached and refined together with the precision
+  log_mat = Ref{Union{Generic.MatSpaceElem{PadicFieldElem}, Nothing}}(nothing)
+  prec = Ref{Int}(20)
 
-  function pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  function pr_fac(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
     @assert parent(a) == parent(A[1]) || base_ring(parent(a)) == parent(A[1])
     c = ZZRingElem[]
     for i=1:length(cp)
@@ -629,13 +614,14 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
       a *= g1[i]^-c[end]
     end
 
-    if log_mat === nothing
-      log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
+    if log_mat[] === nothing
+      log_mat[] = _log_matrix(g2, C, prec[])
     end
+    local gamma::Vector{ZZRingElem}
     while true
-      log_a = matrix([conjugates_log(a, C, prec, all = false, flat = true)])
+      log_a = matrix([conjugates_log(a, C, prec[], all = false, flat = true)])
 
-      lv = vcat(log_mat, log_a)
+      lv = vcat(log_mat[], log_a)
       #check_precision and change
       @vtime :qAdic 1 k = kernel(lv, side = :left)
 
@@ -648,9 +634,9 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         for x in k[1, :]
           @vtime :qAdic 1 y = lift_reco(QQ, x, reco = true)
           if y === nothing
-            prec *= 2
-            @vprint :qAdic 1  "increase prec to ", prec
-            log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+            prec[] *= 2
+            @vprint :qAdic 1  "increase prec to ", prec[]
+            log_mat[] = transpose(_log_matrix(g2, C, prec[]))
             break
           else
 #            @show y
@@ -663,10 +649,10 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         d = reduce(lcm, map(denominator, s))
         gamma = ZZRingElem[ZZ(x*d)::ZZRingElem for x = s]
         @assert reduce(gcd, gamma) == 1 # should be a primitive relation
-        if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
-          prec *= 2
-          @vprint :qAdic 1 "increase prec to ", prec
-          log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+        if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat[]), prec[]))
+          prec[] *= 2
+          @vprint :qAdic 1 "increase prec to ", prec[]
+          log_mat[] = transpose(_log_matrix(g2, C, prec[]))
           continue
         end
         @assert length(gamma) == length(g2)+1
@@ -682,7 +668,8 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
       return G(c)
     end
 
-    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gamma[i] for i=1:length(gamma)-1)])
+    gam = gamma
+    _, _c, _ = syzygies_tor(typeof(a)[g[end], a*prod(g2[i]^gam[i] for i=1:length(gam)-1)])
 
 #    push!(c, divexact(_c[1,1], _c[1,2]))
 
@@ -690,9 +677,8 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     push!(c, _c[1,1])
     return G(c)
   end
-  function pr(a::AbsSimpleNumFieldElem)
-    return pr(FacElem(a))
-  end
+  pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) = pr_fac(a)
+  pr(a::AbsSimpleNumFieldElem) = pr_fac(FacElem(a))
 
   return G, MapFromFunc(G, parent(u[1]), im, pr)
 end

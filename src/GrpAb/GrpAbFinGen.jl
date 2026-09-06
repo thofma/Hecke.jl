@@ -892,7 +892,9 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, A::Matrix{ <: Map{Fi
     error("both groups need to be direct products")
   end
 
-  @assert all(i -> domain(A[i[1], i[2]]) == dG[i[1]] && codomain(A[i[1], i[2]]) == dH[i[2]], Base.Iterators.ProductIterator((1:r, 1:c)))
+  for i = 1:r, j = 1:c
+    @assert domain(A[i, j]) == dG[i] && codomain(A[i, j]) == dH[j]
+  end
   h = hom(G, H, reduce(vcat, [reduce(hcat, [matrix(A[i,j]) for j=1:c]) for i=1:r]))
   return h
 end
@@ -991,15 +993,7 @@ $g_1 \otimes \cdots \otimes g_n$. The map admits a preimage as well.
 """
 function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
   @assert task in [:map, :none]
-  local T
-  if length(G) == 1
-    T = G[1]
-  else
-    T = tensor_product2(G[2], G[1])
-    for i = 3:length(G)
-      T = tensor_product2(G[i], T)
-    end
-  end
+  T = length(G) == 1 ? G[1] : _tensor_product_group(G)
   set_attribute!(T, :tensor_product => G, :show => show_tensor_product)
   if task == :none
     return T
@@ -1007,15 +1001,14 @@ function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
 
   g = vec(collect(Base.Iterators.ProductIterator(Tuple(gens(g) for g = reverse(G)))))
 
-  function pure(g::FinGenAbGroupElem...)
+  function pure_tensor(g::Tuple)
     @assert length(g) == length(G)
     @assert all(i-> parent(g[i]) == G[i], 1:length(G))
 
     return T(vec(collect(prod(x) for x = Base.Iterators.product([h.coeff for h = reverse(g)]...))))
   end
-  function pure(T::Tuple)
-    return pure(T...)
-  end
+  pure(g::FinGenAbGroupElem...) = pure_tensor(g)
+  pure(T::Tuple) = pure_tensor(T)
   function inv_pure(t::FinGenAbGroupElem)
     p = Base.findall(i -> !iszero(t[i]), 1:ngens(T))
     if length(p) == 0
@@ -1027,6 +1020,15 @@ function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
   end
 
   return T, MapFromFunc(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
+end
+
+# G_n ⊗ (... ⊗ (G_2 ⊗ G_1)) for at least two groups
+function _tensor_product_group(G)
+  T = tensor_product2(G[2], G[1])
+  for i = 3:length(G)
+    T = tensor_product2(G[i], T)
+  end
+  return T
 end
 
 ⊗(G::FinGenAbGroup...) = tensor_product(G..., task = :none)
@@ -1797,15 +1799,8 @@ end
 function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 	id = id_hom(domain(G[1]))
 	S = small_generating_set(G)
-  p = 2
-  R = GF(p, cached = false)
   K = domain(G[1])
-  Rx = polynomial_ring(R, "x", cached = false)[1]
-  while iszero(discriminant(Rx(K.pol)))
-    p = next_prime(p)
-		R = GF(p, cached = false)
-	  Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
+  Rx = _poly_ring_with_squarefree_reduction(K)
   list = fpPolyRingElem[Rx(x.prim_img) for x in S]
   push!(list, gen(Rx))
   n = length(G)
@@ -1888,6 +1883,18 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
   return Asnf, GtoAsnf, AsnftoG
 end
 
+
+# F_p[x] for the smallest prime p such that the defining polynomial of K is
+# squarefree modulo p
+function _poly_ring_with_squarefree_reduction(K::AbsSimpleNumField)
+  p = 2
+  Rx = polynomial_ring(GF(p, cached = false), "x", cached = false)[1]
+  while iszero(discriminant(Rx(K.pol)))
+    p = next_prime(p)
+    Rx = polynomial_ring(GF(p, cached = false), "x", cached = false)[1]
+  end
+  return Rx
+end
 
 function find_isomorphism_with_abelian_group(G, op)
   id = find_identity(G, op)

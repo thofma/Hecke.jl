@@ -39,20 +39,22 @@ function SmallGroupDB(path::String)
                                Vector{Int},Vector{Int}, Vector{Int},
                                Vector{Vector{QQFieldElem}},
                                Vector{Vector{Vector{Vector{QQFieldElem}}}}}}}[]
-  z = eltype(eltype(db))[]
-  open(path) do io
+  # groups of one order form a block; the block being read is returned
+  last_block = open(path) do io
+    z = eltype(eltype(db))[]
     while !eof(io)
-    e = _parse_row(io)
-    if isempty(z) || e.id[1] == z[1].id[1]
-      push!(z, e)
-    else
-      push!(db, z)
-      z = eltype(eltype(db))[]
-      push!(z, e)
+      e = _parse_row(io)
+      if isempty(z) || e.id[1] == z[1].id[1]
+        push!(z, e)
+      else
+        push!(db, z)
+        z = eltype(eltype(db))[]
+        push!(z, e)
+      end
     end
+    return z
   end
-  push!(db, z)
-  end
+  push!(db, last_block)
   max_order = length(db)
   return SmallGroupDB(path, max_order, db)
 end

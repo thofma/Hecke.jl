@@ -136,8 +136,7 @@ end
 Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  coeffs = coefficients(f)
-  coeffs = map(t -> evaluate(t, v.embedding, prec), coeffs)
+  coeffs = map(t -> evaluate(t, v.embedding, prec), coefficients(f))
 
   Cx, x = polynomial_ring(AcbField(prec), "x")
 

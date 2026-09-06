@@ -61,15 +61,9 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
 
     good_primes = __neq_find_good_primes(NC, OL)
 
-    local vals2::Vector{Int}
-
     if !isempty(good_primes)
-      if degree(L) != n
-        n2 = degree(L)//n
-        vals2 = [ Int(n2*vals[i]) for i = 1:length(vals) ]
-      else
-        vals2 = vals
-      end
+      n2 = degree(L)//n
+      vals2 = isone(n2) ? vals : [ Int(n2*vals[i]) for i = 1:length(vals) ]
 
       remaining_primes = Set{Int}()
       # First search for solutions for single primes
@@ -189,12 +183,8 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: AbsNu
 
     if !isempty(good_primes)
       cache = Vector{Any}(undef, 3) # Used in __neq_find_sol_in_order
-      if degree(L) != n
-        n2 = degree(L)//n
-        vals2 = Int[ Int(n2*valuations[i]) for i = 1:length(valuations) ]
-      else
-        vals2 = valuations
-      end
+      n2 = degree(L)//n
+      vals2 = isone(n2) ? valuations : Int[ Int(n2*valuations[i]) for i = 1:length(valuations) ]
 
       remaining_primes = Set{Int}()
       # First search for solutions for single primes
@@ -522,6 +512,26 @@ function small_elements(O::AlgAssAbsOrd)
 end
 
 # Adds a field for order number i (and possibly for other orders too)
+# Advance the indices FO.last_generated_field[1:k] to the next combination.
+# Returns false if all combinations are exhausted.
+function _increase_counter!(FO::FieldOracle, k::Int)
+  j = FO.last_generated_field[k]
+  if j != length(FO.small_elements) - FO.rounds + k
+    FO.last_generated_field[k] += 1
+    return true
+  end
+
+  if k == 1
+    return false
+  end
+
+  if !_increase_counter!(FO, k - 1)
+    return false
+  end
+  FO.last_generated_field[k] = FO.last_generated_field[k - 1] + 1
+  return true
+end
+
 function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
   A = FO.algebra
   function _add_field(x::AbstractAssociativeAlgebraElem)
@@ -549,28 +559,9 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
     return false
   end
 
-  function _increase_counter(k::Int)
-    j = FO.last_generated_field[k]
-    if j != length(FO.small_elements) - FO.rounds + k
-      FO.last_generated_field[k] += 1
-      return true
-    end
-
-    if k == 1
-      return false
-    end
-
-    b = _increase_counter(k - 1)
-    if !b
-      return false
-    end
-    FO.last_generated_field[k] = FO.last_generated_field[k - 1] + 1
-    return true
-  end
-
   while true
     if FO.phase == 1
-      if !_increase_counter(FO.rounds)
+      if !_increase_counter!(FO, FO.rounds)
         FO.phase = 2
         continue
       end

@@ -360,30 +360,31 @@ function weak_approximation(V::QuadSpace, target::Vector{Tuple{QQMatrix,ZZRingEl
     end
   end
 
-  # CRT on the reflection vectors
-  fudge = 2*dim(V)+10
-  @label crt
-  crt_prec = [i[3]+fudge for i in target]
-  refsQQ = []
-  for i in 1:maxlength
-    Ve = ZZMatrix[]
-    for (refs, p) in refsAA
-      vp = refs[i]
-      push!(Ve, vp)
+  # CRT on the reflection vectors, increasing the overall precision by 10 until
+  # the result agrees with all fp to the requested precision
+  for fudge in Iterators.countfrom(2*dim(V)+10, 10)
+    crt_prec = [i[3]+fudge for i in target]
+    refsQQ = []
+    for i in 1:maxlength
+      Ve = ZZMatrix[]
+      for (refs, p) in refsAA
+        vp = refs[i]
+        push!(Ve, vp)
+      end
+      v = _crt(Ve, primes, crt_prec)
+      push!(refsQQ, v)
     end
-    v = _crt(Ve, primes, crt_prec)
-    push!(refsQQ, v)
-  end
-  f = prod([reflection(gramV, v) for v in refsQQ])
-  # increase overall precision if we fail
-  for (fp, p, vp) in target
-    deltap = f - fp
-    if deltap != 0 && valuation(deltap, p) < vp
-      fudge = fudge + 10
-      @goto crt
+    f = prod([reflection(gramV, v) for v in refsQQ])
+    good = true
+    for (fp, p, vp) in target
+      deltap = f - fp
+      if deltap != 0 && valuation(deltap, p) < vp
+        good = false
+        break
+      end
     end
+    good && return f
   end
-  return f
 end
 
 

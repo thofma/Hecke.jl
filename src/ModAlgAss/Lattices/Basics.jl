@@ -72,16 +72,10 @@ function _lattice(V::ModAlgAss{QQField}, O::AlgAssAbsOrd, B::QQMatrix; check::Bo
 
   @hassert :ModLattice _defines_lattice(V, O, B)
 
-  if !is_hnf
-    BB = QQMatrix(_hnf!_integral(FakeFmpqMat(B), :upperright))
-  else
-    BB = B
-  end
+  BB0 = is_hnf ? B : QQMatrix(_hnf!_integral(FakeFmpqMat(B), :upperright))
   # strip zero rows if this is not a basis matrix
-  r = findfirst(i -> is_zero_row(BB, i), 1:nrows(BB))
-  if r !== nothing
-    BB = BB[1:(r - 1), :]
-  end
+  r = findfirst(i -> is_zero_row(BB0, i), 1:nrows(BB0))
+  BB = r === nothing ? BB0 : BB0[1:(r - 1), :]
   return ModAlgAssLat{typeof(O), typeof(V), typeof(BB)}(O, V, BB)
 end
 

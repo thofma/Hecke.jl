@@ -38,7 +38,7 @@ function val_func_no_index_small(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, Abs
     function vfunc(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       Nemo.nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
-      h = rem!(h, h, g)
+      rem!(h, h, g)
       c = Nemo.coeff_raw(h, 0)
       v = c==0 ? typemax(Int) : valuation(c, uP)
       for i=1:degree(h)
@@ -71,7 +71,7 @@ function val_func_no_index(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
     function vfunc(x::AbsSimpleNumFieldElem, no::QQFieldElem = QQFieldElem(0))
       d = denominator(x)
       Nemo.nf_elem_to_fmpz_mod_poly!(h, x, false) # ignores the denominator
-      h = rem!(h, h, g)
+      rem!(h, h, g)
       _coeff_as_fmpz!(c, h, 0)
       v = iszero(c) ? 100 : valuation(c, P)
       for i=1:degree(h)

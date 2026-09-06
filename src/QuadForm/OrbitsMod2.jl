@@ -253,55 +253,57 @@ function _for_all_k_subspaces_rref(::Type{T}, n::Int, k::Int, code::Function) wh
   rowfree = Vector{T}(undef, k)
   rows = Vector{T}(undef, k)
 
-  # Inputs: i is the current row index (1..k+1).
-  # For fixed pivots, enumerate all free-entry choices row by row.
-  function rec_rows(i::Int)
-    if i > k
-      # `rows` is a reusable buffer; the callback must copy it if it needs to
-      # keep the representative beyond the call.
-      return code(rows)
-    end
-    mask = rowfree[i]
-    sub = mask
-    while true
-      rows[i] = rowbase[i] | sub
-      rec_rows(i + 1) && return true
-      iszero(sub) && break
-      sub = (sub - one(T)) & mask
-    end
-    return false
-  end
+  return _rref_pivots!(pivots, rowbase, rowfree, rows, n, 1, 1, code)
+end
 
-  # Inputs: pos is the pivot number to choose next (1..k+1),
-  # start is the smallest admissible pivot column.
-  # Enumerate strictly increasing pivot columns, then initialize row masks.
-  function rec_piv(pos::Int, start::Int)
-    if pos > k
-      # For fixed pivot columns, enumerate all RREF rows via free entries.
-      pivotmask = zero(T)
-      for p in pivots
-        pivotmask |= one(T) << (p - 1)
-      end
-      for i in 1:k
-        pivot = pivots[i]
-        rowbase[i] = one(T) << (pivot - 1)
-        free = zero(T)
-        for c in (pivot + 1):n
-          bit = one(T) << (c - 1)
-          iszero(pivotmask & bit) && (free |= bit)
-        end
-        rowfree[i] = free
-      end
-      return rec_rows(1)
-    end
-    for c in start:(n - (k - pos))
-      pivots[pos] = c
-      rec_piv(pos + 1, c + 1) && return true
-    end
-    return false
+# Inputs: i is the current row index (1..k+1).
+# For fixed pivots (rowbase, rowfree), enumerate all free-entry choices row by
+# row; stop early if code returns true.
+function _rref_rows!(rows::Vector{T}, rowbase::Vector{T}, rowfree::Vector{T}, i::Int, code::F) where {T <: Unsigned, F}
+  if i > length(rows)
+    # `rows` is a reusable buffer; the callback must copy it if it needs to
+    # keep the representative beyond the call.
+    return code(rows)
   end
+  mask = rowfree[i]
+  sub = mask
+  while true
+    rows[i] = rowbase[i] | sub
+    _rref_rows!(rows, rowbase, rowfree, i + 1, code) && return true
+    iszero(sub) && break
+    sub = (sub - one(T)) & mask
+  end
+  return false
+end
 
-  return rec_piv(1, 1)
+# Inputs: pos is the pivot number to choose next (1..k+1),
+# start is the smallest admissible pivot column, n the ambient dimension.
+# Enumerate strictly increasing pivot columns, then initialize row masks.
+function _rref_pivots!(pivots::Vector{Int}, rowbase::Vector{T}, rowfree::Vector{T}, rows::Vector{T}, n::Int, pos::Int, start::Int, code::F) where {T <: Unsigned, F}
+  k = length(pivots)
+  if pos > k
+    # For fixed pivot columns, enumerate all RREF rows via free entries.
+    pivotmask = zero(T)
+    for p in pivots
+      pivotmask |= one(T) << (p - 1)
+    end
+    for i in 1:k
+      pivot = pivots[i]
+      rowbase[i] = one(T) << (pivot - 1)
+      free = zero(T)
+      for c in (pivot + 1):n
+        bit = one(T) << (c - 1)
+        iszero(pivotmask & bit) && (free |= bit)
+      end
+      rowfree[i] = free
+    end
+    return _rref_rows!(rows, rowbase, rowfree, 1, code)
+  end
+  for c in start:(n - (k - pos))
+    pivots[pos] = c
+    _rref_pivots!(pivots, rowbase, rowfree, rows, n, pos + 1, c + 1, code) && return true
+  end
+  return false
 end
 
 # Inputs: scratch is overwritten with the image of rep under one generator block, offset=gen_index*n+1
@@ -389,6 +391,21 @@ struct _SubspaceRankerMod2{T <: Unsigned}
   total::Int
 end
 
+# Enumerate all strictly increasing pivot column tuples (0-indexed) of length
+# length(pivots) in 0:(n - 1) into `pivots`, calling `process()` for each.
+function _for_all_pivot_patterns_mod2!(pivots::Vector{Int}, pos::Int, start::Int, n::Int, process::F) where F
+  k = length(pivots)
+  if pos > k
+    process()
+    return nothing
+  end
+  for c in start:((n - 1) - (k - pos))
+    pivots[pos] = c
+    _for_all_pivot_patterns_mod2!(pivots, pos + 1, c + 1, n, process)
+  end
+  return nothing
+end
+
 # Build the ranker for (n, k), or return `nothing` if the number of subspaces or
 # pivot patterns is too large to tabulate (the caller then falls back to a
 # hashed set).
@@ -437,19 +454,7 @@ function _build_subspace_ranker_mod2(::Type{T}, n::Int, k::Int;
     return nothing
   end
 
-  # Enumerate all strictly increasing pivot column tuples (0-indexed).
-  function rec(pos::Int, start::Int)
-    if pos > k
-      process()
-      return
-    end
-    for c in start:((n - 1) - (k - pos))
-      pivots[pos] = c
-      rec(pos + 1, c + 1)
-    end
-    return nothing
-  end
-  rec(1, 0)
+  _for_all_pivot_patterns_mod2!(pivots, 1, 0, n, process)
 
   base = Vector{Int}(undef, npat + 1)
   base[1] = 0
@@ -1077,16 +1082,8 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
   # generator, so the whole group is the stabilizer.
   if k == 0 || k == n
     rep = k == 0 ? T[] : T[one(T) << (i - 1) for i in 1:n]
-    if stabilizer
-      bsgs = _bsgs_build_mod2(T, Vector{T}[copy(packed[o:(o + n - 1)]) for o in offsets], n;
-                             target_order = gorder)
-      ord = _bsgs_order_mod2(bsgs)
-      # The whole group stabilizes the trivial subspaces, so its order is |G|.
-      @assert gorder === nothing || ord == gorder
-      sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
-      return [(UInt64(1), rep, sg, ord)]
-    end
-    return [(UInt64(1), rep)]
+    stabilizer || return [(UInt64(1), rep)]
+    return [_orbmod2_trivial_orbit_with_stabilizer(T, rep, packed, offsets, n, gorder)]
   end
 
   kval = Val(k)
@@ -1094,51 +1091,16 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
 
   # Pick the visited-set backend: dense bitset when feasible, hashed set else.
   ranker = _build_subspace_ranker_mod2(T, n, k)
-  if ranker === nothing
-    seen = _SetSeenMod2(Set{NTuple{k + 1, T}}(), kval)
-    K = NTuple{k + 1, T}
+  seen, K = if ranker === nothing
+    _SetSeenMod2(Set{NTuple{k + 1, T}}(), kval), NTuple{k + 1, T}
   else
     # The tabulated number of subspaces must match the Gaussian binomial.
     @assert ZZRingElem(ranker.total) == _num_subspaces_mod2(n, k)
-    seen = _BitSeenMod2(ranker, falses(ranker.total))
-    K = Int
+    _BitSeenMod2(ranker, falses(ranker.total)), Int
   end
 
   if stabilizer
-    stab = _make_stab_ctx_mod2(T, K, packed, offsets, n)
-    bsgs = _new_bsgs_mod2(T, n)
-    todo = Tuple{Int, NTuple{k, T}}[]
-    res = Tuple{UInt64, Vector{T}, Vector{ZZMatrix}, ZZRingElem}[]
-    # Known group order (given or learned from the first orbit) lets each orbit
-    # stop as soon as `orbit_len * stabilizer_order == |G|`.
-    gord = Ref{Union{Nothing, ZZRingElem}}(gorder)
-    _for_all_k_subspaces_rref(T, n, k, function(rep)
-      key = _encode_seen(seen, rep)
-      _contains_seen(seen, key) && return false
-      g = gord[]
-      if g===nothing
-        gtarget = 0
-      else
-        gtarget = (g <= typemax(Int)) ? Int(g) : g
-      end
-      orb_len = _orbit_bfs_stab_mod2!(seen, stab, bsgs, todo, packed, offsets, n, k,
-                                      kval, scratch, rep, key, gtarget)
-      ord = _bsgs_order_mod2(bsgs)
-      # Orbit-stabilizer theorem: orbit_len * |stab| is the (constant) group
-      # order. Learn it from the first orbit; check every later orbit against it.
-      if g === nothing
-        gord[] = ZZRingElem(orb_len) * ord
-      else
-        @assert ZZRingElem(orb_len) * ord == g
-      end
-      # Deeper check: the strong generators really do fix the representative.
-      @hassert :Lattice 2 all(s -> _stabilizes_subspace_mod2(s, rep, n, k, scratch), bsgs.gens)
-      sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
-      push!(res, (orb_len, copy(rep), sg, ord))
-      return false
-    end)
-    @assert sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
-    return res
+    return _orbmod2_subspaces_with_stabilizer(T, K, packed, offsets, n, k, kval, scratch, seen, gorder)
   end
 
   todo = NTuple{k, T}[]
@@ -1152,6 +1114,57 @@ function orbmod2_subspaces(::Type{T}, gens::Vector, k::Int;
     return false
   end)
   # The orbits partition all k-subspaces, so the lengths sum to [n, k]_2.
+  @assert sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
+  return res
+end
+
+# The trivial subspace `rep` (zero or full space) forms an orbit of length one
+# whose stabilizer is the whole group.
+function _orbmod2_trivial_orbit_with_stabilizer(::Type{T}, rep::Vector{T}, packed, offsets, n::Int, gorder) where {T <: Unsigned}
+  bsgs = _bsgs_build_mod2(T, Vector{T}[copy(packed[o:(o + n - 1)]) for o in offsets], n;
+                         target_order = gorder)
+  ord = _bsgs_order_mod2(bsgs)
+  # The whole group stabilizes the trivial subspaces, so its order is |G|.
+  @assert gorder === nothing || ord == gorder
+  sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
+  return (UInt64(1), rep, sg, ord)
+end
+
+# Orbits of the k-subspaces together with a strong generating set and the order
+# of each stabilizer; `seen` is the visited-set backend with key type K.
+function _orbmod2_subspaces_with_stabilizer(::Type{T}, ::Type{K}, packed, offsets, n::Int, k::Int, kval, scratch, seen, gorder) where {T <: Unsigned, K}
+  stab = _make_stab_ctx_mod2(T, K, packed, offsets, n)
+  bsgs = _new_bsgs_mod2(T, n)
+  todo = Tuple{Int, NTuple{k, T}}[]
+  res = Tuple{UInt64, Vector{T}, Vector{ZZMatrix}, ZZRingElem}[]
+  # Known group order (given or learned from the first orbit) lets each orbit
+  # stop as soon as `orbit_len * stabilizer_order == |G|`.
+  gord = Ref{Union{Nothing, ZZRingElem}}(gorder)
+  _for_all_k_subspaces_rref(T, n, k, function(rep)
+    key = _encode_seen(seen, rep)
+    _contains_seen(seen, key) && return false
+    g = gord[]
+    if g===nothing
+      gtarget = 0
+    else
+      gtarget = (g <= typemax(Int)) ? Int(g) : g
+    end
+    orb_len = _orbit_bfs_stab_mod2!(seen, stab, bsgs, todo, packed, offsets, n, k,
+                                    kval, scratch, rep, key, gtarget)
+    ord = _bsgs_order_mod2(bsgs)
+    # Orbit-stabilizer theorem: orbit_len * |stab| is the (constant) group
+    # order. Learn it from the first orbit; check every later orbit against it.
+    if g === nothing
+      gord[] = ZZRingElem(orb_len) * ord
+    else
+      @assert ZZRingElem(orb_len) * ord == g
+    end
+    # Deeper check: the strong generators really do fix the representative.
+    @hassert :Lattice 2 all(s -> _stabilizes_subspace_mod2(s, rep, n, k, scratch), bsgs.gens)
+    sg = ZZMatrix[_packed_cols_to_zzmatrix_mod2(s, n) for s in bsgs.gens]
+    push!(res, (orb_len, copy(rep), sg, ord))
+    return false
+  end)
   @assert sum(x -> ZZRingElem(x[1]), res; init = zero(ZZRingElem)) == _num_subspaces_mod2(n, k)
   return res
 end

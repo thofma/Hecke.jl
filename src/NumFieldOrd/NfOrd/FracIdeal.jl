@@ -52,12 +52,9 @@ function fractional_ideal(O::AbsNumFieldOrder, M::QQMatrix)
 end
 
 function fractional_ideal(O::AbsNumFieldOrder, M::FakeFmpqMat; M_in_hnf::Bool = false)
-  !M_in_hnf ? M = _hnf_integral(M) : nothing
-  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  if k != 1
-    M = sub(M, k:nrows(M), 1:ncols(M))
-  end
-  z = AbsNumFieldOrderFractionalIdeal(O, M)
+  H = M_in_hnf ? M : _hnf_integral(M)
+  k = something(findfirst(i -> !is_zero_row(H, i), 1:nrows(H)), nrows(H) + 1)
+  z = AbsNumFieldOrderFractionalIdeal(O, k == 1 ? H : sub(H, k:nrows(H), 1:ncols(H)))
   return z
 end
 
@@ -68,12 +65,9 @@ Creates the fractional ideal of $\mathcal O$ with basis matrix $M/b$. If
 `M_in_hnf` is set, then it is assumed that $A$ is already in lower left HNF.
 """
 function fractional_ideal(O::AbsNumFieldOrder, M::ZZMatrix, b::ZZRingElem=ZZRingElem(1); M_in_hnf::Bool = false)
-  !M_in_hnf ? M = _hnf(M, :lowerleft) : nothing
-  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  if k != 1
-    M = sub(M, k:nrows(M), 1:ncols(M))
-  end
-  y = FakeFmpqMat(M, b)
+  H = M_in_hnf ? M : _hnf(M, :lowerleft)
+  k = something(findfirst(i -> !is_zero_row(H, i), 1:nrows(H)), nrows(H) + 1)
+  y = FakeFmpqMat(k == 1 ? H : sub(H, k:nrows(H), 1:ncols(H)), b)
   z = AbsNumFieldOrderFractionalIdeal(O, y)
   return z
 end

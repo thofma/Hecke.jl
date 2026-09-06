@@ -391,17 +391,18 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::ZZRingElem)
 
   if degree(C.Kr) != 1
     RR = residue_ring(ZZ, degree(A))[1]
-    U, mU = unit_group(RR)
-    if degree(C.Kr) < order(U)  # there was a common subfield, we
+    U0, mU0 = unit_group(RR)
+    U, mU = if degree(C.Kr) < order(U0)  # there was a common subfield, we
                               # have to pass to a subgroup
 
-      f = C.Kr.pol
+      pol = C.Kr.pol
       # Can do better. If the group is cyclic (e.g. if p!=2), we already know the subgroup!
-      s, ms = sub(U, FinGenAbGroupElem[x for x in U if iszero(f(gen(C.Kr)^Int(lift(mU(x)))))], false)
+      s, ms = sub(U0, FinGenAbGroupElem[x for x in U0 if iszero(pol(gen(C.Kr)^Int(lift(mU0(x)))))], false)
       ss, mss = snf(s)
-      U = ss
       #mg = mg*ms*mss
-      mU = mss * ms * mU
+      (ss, mss * ms * mU0)
+    else
+      (U0, mU0)
     end
     for i = 1:ngens(U)
       l = Int(lift(mU(U[i])))
@@ -811,23 +812,24 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     2 for n=2^k, k>2
 =#
   e = degree(CF)
-  g, mg = unit_group(residue_ring(ZZ, e, cached=false)[1])
-  @assert is_snf(g)
-  @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
+  g0, mg0 = unit_group(residue_ring(ZZ, e, cached=false)[1])
+  @assert is_snf(g0)
+  @assert (e%8 == 0 && ngens(g0)==2) || ngens(g0) <= 1
 
   K = C.Ka
   Kr = C.Kr
 
-  if degree(Kr) < order(g)  # there was a common subfield, we
+  g, mg = if degree(Kr) < order(g0)  # there was a common subfield, we
                               # have to pass to a subgroup
-    @assert order(g) % degree(Kr) == 0
+    @assert order(g0) % degree(Kr) == 0
     f = Kr.pol
     # Can do better. If the group is cyclic (e.g. if p!=2), we already know the subgroup!
-    s, ms = sub(g, FinGenAbGroupElem[x for x in g if iszero(f(gen(Kr)^Int(lift(mg(x)))))], false)
+    s, ms = sub(g0, FinGenAbGroupElem[x for x in g0 if iszero(f(gen(Kr)^Int(lift(mg0(x)))))], false)
     ss, mss = snf(s)
-    g = ss
     #mg = mg*ms*mss
-    mg = mss * ms * mg
+    (ss, mss * ms * mg0)
+  else
+    (g0, mg0)
   end
 
   @vprintln :ClassField 2 "building automorphism group over ground field..."

@@ -684,15 +684,11 @@ function roots(::QQField, f::ZZPolyRingElem; max_roots::Int=degree(f))
   end
 
   g = gcd(f, derivative(f))
-  if isone(g)
-      h = f
-  else
-      h = divexact(f, g)
+  h0 = isone(g) ? f : divexact(f, g)
+  if degree(h0) == 1
+      return QQFieldElem[-constant_coefficient(h0)//leading_coefficient(h0)]
   end
-  if degree(h) == 1
-      return QQFieldElem[-constant_coefficient(h)//leading_coefficient(h)]
-  end
-  h = primpart(h)
+  h = primpart(h0)
 
   global p_start
   p = p_start

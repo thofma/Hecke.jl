@@ -300,7 +300,7 @@ function _iterative_method(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
 
   Q = AbsSimpleNumFieldOrderQuoRing(order(pl), pl)
   local discrete_logarithm
-  let Q = Q, dlogs = dlogs, pl = pl
+  let Q = Q, dlogs = dlogs, pl = pl, g = g
     function discrete_logarithm(b::AbsSimpleNumFieldOrderElem)
       b1 = Q(b)
       a = ZZRingElem[]
@@ -814,6 +814,16 @@ end
 #
 #################################################################################
 
+# An m-th power in Q of order powm * prime, i.e. a generator of the prime part
+function _generator_of_prime_part(Q, m, powm)
+  while true
+    g = rand(Q)
+    iszero(g) && continue
+    g = g^m
+    g^powm != Q(1) && return g
+  end
+end
+
 function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, prime::Int)
   @hassert :AbsOrdQuoRing 2 is_prime(p)
   O = order(p)
@@ -825,17 +835,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
   m=divexact(n,powerp)
 
   powm=divexact(powerp,prime)
-  found=false
-  g=Q(1)
-  while found==false
-    g = rand(Q)
-    if g != Q(0)
-      g=g^m
-      if g^powm != Q(1)
-        found=true
-      end
-    end
-  end
+  g = _generator_of_prime_part(Q, m, powm)
   inv=gcdx(m,ZZRingElem(powerp))[2]
 
   function disclog(x::AbsSimpleNumFieldOrderElem)

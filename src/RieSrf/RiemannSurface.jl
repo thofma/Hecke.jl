@@ -203,63 +203,11 @@ mutable struct RiemannSurface
 
     #Computed a Newton polygon and decide whether we can use a Baker basis or not.
     inner_fac = inner_faces(f)
-    if length(inner_fac) == g
-      RS.baker_basis = true
-      x, y = gens(parent(f))
-      factor_set = [x, y, derivative(f, 2)]
-      n = length(factor_set)
-      min_x = minimum([t[1] for t in inner_fac])
-      max_x = maximum([t[1] for t in inner_fac])
-      min_y = minimum([t[2] for t in inner_fac])
-      max_y = maximum([t[2] for t in inner_fac])
-      min_pows = [min_x - 1, min_y - 1, -1]
-	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
-
-      factor_matrix = zeros(Int, n, g)
-
-      for i in (1:g)
-        factor_matrix[1, i] = inner_fac[i][1] - 1
-        factor_matrix[2, i] = inner_fac[i][2] - 1
-        factor_matrix[3, i] = -1
-      end
-
+    RS.baker_basis = length(inner_fac) == g
+    factor_set, factor_matrix, min_pows, range_pows = if RS.baker_basis
+      _differential_factors_baker(f, inner_fac, g)
     else
-      RS.baker_basis = false
-
-      #Compute the differential forms data mentioned above.
-      factor_set = Set{MPolyRingElem}()
-      factored_nums = []
-      factored_denoms = []
-      #Gather all the factors occurring in the basis of differential forms
-      for i in 1:g
-        num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[1].f))))
-        denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[1].f)(mpoly_x)))
-
-        union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
-
-        push!(factored_nums, num_diff_i_fac)
-        push!(factored_denoms, denom_diff_i_fac)
-      end
-
-      #Turn set into sequence so we can enumerate
-      factor_set = collect(factor_set)
-      number_of_factors = length(factor_set)
-      n = length(factor_set)
-      factor_matrix = zero_matrix(Int, n, g)
-      for j in 1:g
-        for i in 1:n
-          if haskey(factored_nums[j], factor_set[i])
-            factor_matrix[i,j] = get(factored_nums[j], factor_set[i], 0)
-          end
-
-          if haskey(factored_denoms[j], factor_set[i])
-            factor_matrix[i,j] = -get(factored_denoms[j], factor_set[i], 0)
-          end
-        end
-      end
-
-		  min_pows= [minimum( factor_matrix[j, 1:g]) for j in 1:n]
-	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
+      _differential_factors_generic(mpoly_kxy, mpoly_x, diff_base, g)
     end
 
     function evaluate_differential_factors_matrix(factors, x0, ys)
@@ -309,6 +257,67 @@ mutable struct RiemannSurface
 
     return RS
   end
+end
+
+# Factors of the basis of differentials for a Baker basis (x, y and f_y) with
+# the exponents given by the inner faces of the Newton polygon
+function _differential_factors_baker(f::MPolyRingElem, inner_fac, g::Int)
+  x, y = gens(parent(f))
+  factor_set = [x, y, derivative(f, 2)]
+  n = length(factor_set)
+  min_x = minimum([t[1] for t in inner_fac])
+  max_x = maximum([t[1] for t in inner_fac])
+  min_y = minimum([t[2] for t in inner_fac])
+  max_y = maximum([t[2] for t in inner_fac])
+  min_pows = [min_x - 1, min_y - 1, -1]
+  range_pows = [max_x - 1, max_y - 1, -1] - min_pows
+
+  factor_matrix = zeros(Int, n, g)
+
+  for i in (1:g)
+    factor_matrix[1, i] = inner_fac[i][1] - 1
+    factor_matrix[2, i] = inner_fac[i][2] - 1
+    factor_matrix[3, i] = -1
+  end
+  return factor_set, factor_matrix, min_pows, range_pows
+end
+
+# Factors occurring in the numerators and denominators of the basis of
+# differentials together with the matrix of their exponents
+function _differential_factors_generic(mpoly_kxy, mpoly_x, diff_base, g::Int)
+  factor_set = Set{MPolyRingElem}()
+  factored_nums = []
+  factored_denoms = []
+  #Gather all the factors occurring in the basis of differential forms
+  for i in 1:g
+    num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[1].f))))
+    denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[1].f)(mpoly_x)))
+
+    union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
+
+    push!(factored_nums, num_diff_i_fac)
+    push!(factored_denoms, denom_diff_i_fac)
+  end
+
+  #Turn set into sequence so we can enumerate
+  factors = collect(factor_set)
+  n = length(factors)
+  factor_matrix = zero_matrix(Int, n, g)
+  for j in 1:g
+    for i in 1:n
+      if haskey(factored_nums[j], factors[i])
+        factor_matrix[i,j] = get(factored_nums[j], factors[i], 0)
+      end
+
+      if haskey(factored_denoms[j], factors[i])
+        factor_matrix[i,j] = -get(factored_denoms[j], factors[i], 0)
+      end
+    end
+  end
+
+  min_pows = [minimum( factor_matrix[j, 1:g]) for j in 1:n]
+  range_pows = [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
+  return factors, factor_matrix, min_pows, range_pows
 end
 
 #Coerce univariate polynomial over univariate polynomial ring to R.
@@ -530,6 +539,16 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool
   end
 end
 
+# The edges starting at `node` whose end point has not been visited yet
+_edges_from(node::Int, past_nodes, edges) = filter(t -> t[1] == node && !(t[2] in past_nodes), edges)
+
+# Compare edges by the angle of their direction, measured from `base_angle`
+function _edge_angle_lt(D_points, base_angle)
+  return function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
+    return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - base_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - base_angle)
+  end
+end
+
 #Follows algorithm 4.3.1 in Neurohr
 function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true)
 
@@ -589,24 +608,20 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
   end
   #Now we sort the points by angle and level
 
-  path_edges = Int[]
+  path_edges = Tuple{Int, Int}[]
   past_nodes = [d + 1]
   current_node = d + 1
 
-  left_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), edges)
-  right_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), map(reverse,edges))
+  left_edges = _edges_from(current_node, past_nodes, edges)
+  right_edges = _edges_from(current_node, past_nodes, map(reverse,edges))
 
   leftright = vcat(left_edges, right_edges)
 
   current_angle = zero(Rc)
 
-  angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
-    return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
-  end
+  sort!(leftright, lt = _edge_angle_lt(D_points, current_angle))
 
-  sort!(leftright, lt = angle_ordering)
-
-  path_edges = vcat(path_edges, leftright)
+  append!(path_edges, leftright)
   current_level = vcat(left_edges, right_edges)
 
   while length(path_edges) < length(edges)
@@ -617,17 +632,13 @@ function _fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Boo
       current_node = edge[2]
       current_angle = angle(D_points[previous_node] - D_points[current_node])
 
-      left_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), edges)
-      right_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), map(reverse, edges))
+      left_edges = _edges_from(current_node, past_nodes, edges)
+      right_edges = _edges_from(current_node, past_nodes, map(reverse, edges))
       leftright = vcat(left_edges, right_edges)
 
-      angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
-        return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
-      end
-
-      sort!(leftright, lt = angle_ordering)
+      sort!(leftright, lt = _edge_angle_lt(D_points, current_angle))
       next_level = vcat(next_level, leftright)
-      path_edges = vcat(path_edges, leftright)
+      append!(path_edges, leftright)
 
       push!(past_nodes, current_node)
     end
@@ -918,6 +929,23 @@ end
 # zero matrix. This matrix O_{m-1} can be used as a sanity check for the
 #numerical computations.
 
+# Order the edges of the Tretkoff tree: by position on a common level, otherwise
+# by the ancestor of the deeper edge on the level of the other one
+function _compare_branches(e1::TretkoffEdge, e2::TretkoffEdge, edges_on_level)
+  l1 = edge_level(e1)
+  l2 = edge_level(e2)
+  if l1 == l2
+    return get_position(e1) < get_position(e2)
+  elseif l1 < l2
+
+    e_temp = TretkoffEdge(branch(e2)[l1], branch(e2)[l1 + 1])
+    i = findfirst(is_equal(e_temp), edges_on_level[l1])
+    return _compare_branches(e1, edges_on_level[l1][i], edges_on_level)
+  else
+    return !_compare_branches(e2, e1, edges_on_level)
+  end
+end
+
 # REMARK: The choice of the polarization is a convention. We could also opt
 # to adopt a different convention if we want to.
 function _homology_basis(RS::RiemannSurface)
@@ -1034,22 +1062,7 @@ function _homology_basis(RS::RiemannSurface)
   PQ_size = divexact(terminated_edges_nr, 2)
   @req length(terminated_edges) == terminated_edges_nr "The number of terminated edges is wrong. There is a bug in the code."
 
-  function compare_branches(e1::TretkoffEdge, e2::TretkoffEdge)
-    l1 = edge_level(e1)
-    l2 = edge_level(e2)
-    if l1 == l2
-      return get_position(e1) < get_position(e2)
-    elseif l1 < l2
-
-      e_temp = TretkoffEdge(branch(e2)[l1], branch(e2)[l1 + 1])
-      i = findfirst(is_equal(e_temp), edges_on_level[l1])
-      return compare_branches(e1, edges_on_level[l1][i])
-    else
-      return !compare_branches(e2, e1)
-    end
-  end
-
-  sort!(terminated_edges, lt = compare_branches)
+  sort!(terminated_edges, lt = (e1, e2) -> _compare_branches(e1, e2, edges_on_level))
 
   reverse!(terminated_edges)
 

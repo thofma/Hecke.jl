@@ -189,27 +189,27 @@ function _factor_assume_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFie
 end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
-function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
-  @assert is_monic(f)
-  i = 0
-  local N
+# Shift g = f(t - i*a) until g has a squarefree norm, returning g, i and the norm
+function _shift_until_squarefree_norm(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
   g = f
   t = gen(parent(f))
   a = gen(base_ring(t))
 
-  while true
+  for i in 0:10
     if !iszero(constant_coefficient(g))
       N = norm(g)
-      if is_squarefree(N)
-        break
-      end
+      is_squarefree(N) && return g, i, N
     end
-    i += 1
     g = evaluate(g, t-a)
-    if i > 10
-      error("not plausible")
-    end
   end
+  error("not plausible")
+end
+
+function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
+  @assert is_monic(f)
+  t = gen(parent(f))
+  a = gen(base_ring(t))
+  g, i, N = _shift_until_squarefree_norm(f)
 
   fN = factor(N)
   # We are reconstructing the monic polynomial g and the gcds below are monic.
@@ -285,16 +285,15 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
   nps = 2^n
   l = [ vcat([2*one(S)], polynomial_to_power_sums(x, nps)) for x = l0]
   while n > 1
-    i = 1
-    while 2*i <= n
+    half = div(n, 2)
+    for i in 1:half
       l[i] = [sum(binomial(ZZRingElem(h), ZZRingElem(j))*l[2*i-1][j+1]*l[2*i][h-j+1] for j=0:h) for h=0:length(l[1])-1]
-      i += 1
     end
     if isodd(n)
-      l[i] = l[n]
-      n = i
+      l[half+1] = l[n]
+      n = half+1
     else
-      n = i-1
+      n = half
     end
   end
   f = power_sums_to_polynomial(l[1][2:end], parent(x))

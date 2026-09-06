@@ -514,13 +514,8 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   @hassert :Lattice 1 all(is_prime, finite)
 
   if dim == 2
-    ok = all(p -> !is_local_square(-det, p), finite)
-
-    if !ok
-      #q = ZZRingElem[p for p in finite if is_local_square(-det, p)][1]
-      if is_local_square(-det, q)
-        error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
-      end
+    for q in finite
+      is_local_square(-det, q) && error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
     end
   end
 
@@ -550,36 +545,18 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   if dim >= 4
     @hassert :Lattice 1 dim == negative
     k = dim - 3
-    d = (-1)^k
-    f = (k % 4 >= 2) ? Set(ZZRingElem[2]) : Set(ZZRingElem[])
-    PP = append!(ZZRingElem[p for (p, e) in factor(2 * det)], finite)
-    unique!(PP)
-    finite = ZZRingElem[ p for p in PP if hilbert_symbol(d, -det, p) * (p in f ? -1 : 1) * (p in finite ? -1 : 1) == -1]
-    unique!(finite)
+    det, finite = _quadratic_form_with_invariants_pad(k, det, finite)
     D = append!(D, Int[-1 for i in 1:k])
-    det = isodd(k) ? -det : det
     dim = 3
     negative = 3
   end
 
   # ternary case
   if dim == 3
-    #// The primes at which the form is anisotropic
-    PP = append!(ZZRingElem[p for (p, e) in factor(2 * det)], finite)
-    unique!(PP)
-    filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
-    #// Find some a such that for all p in PP: -a*Det is not a local square
-    #// TODO: Find some smaller a?! The approach below is very lame.
-    a = prod(p for p in PP if det % p != 0; init = one(ZZ))
+    a, det, finite = _quadratic_form_with_invariants_ternary(det, finite, negative)
     if negative == 3
-      a = -a
       negative = 2
     end
-
-    PP = append!(ZZRingElem[p for (p, e) in factor(2 * det * a)], finite)
-    unique!(PP)
-    finite = ZZRingElem[ p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
-    det = squarefree_part(det * a)
     dim = 2
     push!(D, a)
   end
@@ -600,6 +577,35 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
   return M
 end
 
+# Pad with k minus ones: determinant and Hasse invariants of the remaining form
+function _quadratic_form_with_invariants_pad(k::Int, det::ZZRingElem, finite::Vector{ZZRingElem})
+  d = (-1)^k
+  f = (k % 4 >= 2) ? Set(ZZRingElem[2]) : Set(ZZRingElem[])
+  PP = append!(ZZRingElem[p for (p, e) in factor(2 * det)], finite)
+  unique!(PP)
+  new_finite = ZZRingElem[ p for p in PP if hilbert_symbol(d, -det, p) * (p in f ? -1 : 1) * (p in finite ? -1 : 1) == -1]
+  unique!(new_finite)
+  return isodd(k) ? -det : det, new_finite
+end
+
+# Split off one entry a of a ternary form: a together with the determinant and
+# Hasse invariants of the remaining binary form
+function _quadratic_form_with_invariants_ternary(det::ZZRingElem, finite::Vector{ZZRingElem}, negative::Int)
+  #// The primes at which the form is anisotropic
+  PP = append!(ZZRingElem[p for (p, e) in factor(2 * det)], finite)
+  unique!(PP)
+  filter!(p -> hilbert_symbol(-1, -det, p) != (p in finite ? -1 : 1), PP)
+  #// Find some a such that for all p in PP: -a*Det is not a local square
+  #// TODO: Find some smaller a?! The approach below is very lame.
+  a0 = prod(p for p in PP if det % p != 0; init = one(ZZ))
+  a = negative == 3 ? -a0 : a0
+
+  PP2 = append!(ZZRingElem[p for (p, e) in factor(2 * det * a)], finite)
+  unique!(PP2)
+  new_finite = ZZRingElem[ p for p in PP2 if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
+  return a, squarefree_part(det * a), new_finite
+end
+
 function _quadratic_form_with_invariants(dim::Int, det::QQFieldElem,
                                          finite::Vector{ZZRingElem}, negative::Int)
   _det = numerator(det) * denominator(det)
@@ -615,9 +621,11 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
   inf_plcs = real_places(K)
   @hassert :Lattice 1 length(inf_plcs) == length(negative)
   # All real places must be present
-  @hassert :Lattice 1 all(n -> 0 <= n[2] <= dim, negative)
+  @hassert :Lattice 1 all(in(0:dim), values(negative))
   # Impossible negative entry at plc
-  @hassert :Lattice 1 all(p -> sign(det, p) == (-1)^(negative[p]), inf_plcs)
+  for p in inf_plcs
+    @hassert :Lattice 1 sign(det, p) == (-1)^(negative[p])
+  end
   # Information at the real place plc does not match the sign of the determinant
 
   if dim == 1
@@ -639,10 +647,8 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
   # Finite places check
 
   if dim == 2
-    ok = all(p -> !is_local_square(-det, p), finite)
-    if !ok
-      q = eltype(finite)[p for p in finite if is_local_square(-det, p)][1]
-      error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
+    for q in finite
+      is_local_square(-det, q) && error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
     end
   end
 
@@ -674,46 +680,7 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
   end
 #  // The ternary case
   if dim == 3
-    PP = append!(support(K(2), OK), finite)
-    append!(PP, support(det, OK))
-    unique!(PP)
-    filter!(p -> hilbert_symbol(K(-1), -det, p) != (p in finite ? -1 : 1), PP)
-#    // The primes at which the form is anisotropic
-
-#    // Find some a such that for all p in PP: -a*Det is not a local square
-#    // TODO: Find some smaller a?! The approach below is very lame.
-#    // We simply make sure that a*Det has valuation 1 at each prime in PP....
-
-    if length(PP) == 0
-      a = one(K)
-    else
-      a = approximate(Int[(1 + valuation(det, p)) % 2 for p in PP], PP)
-    end
-#    // Fix the signs of a if necessary.
-    s = signs(a)
-    idx = InfPlc[ p for (p, n) in negative if n in [0, 3]]
-    S = Int[ negative[p] == 0 ? s[_embedding(p)] : -s[_embedding(p)] for p in idx]
-    if length(PP) > 0
-      b = _weak_approximation_coprime(idx, S, prod(PP))
-      @hassert :Lattice 1 is_coprime(b * OK, prod(PP))
-    else
-      b = _weak_approximation_coprime(idx, S, 1 * OK)
-    end
-    a *= b
-
-#    // Adjust invariants for the last time:
-    s = signs(a)
-    for p in InfPlc[p for (p,c) in negative if s[_embedding(p)] < 0]
-      negative[p] = negative[p] - 1
-    end
-    PP = support(K(2))
-    append!(PP, support(det, OK))
-    append!(PP, support(a, OK))
-    append!(PP, finite)
-    unique!(PP)
-    finite = ideal_type(OK)[p for p in PP if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
-    det *= a
-    # TODO: reduce det
+    a, det, finite = _quadratic_space_dim_three(det, finite, negative, K, OK)
     push!(D, a)
   end
 
@@ -732,6 +699,48 @@ function _quadratic_form_with_invariants(dim::Int, det::AbsSimpleNumFieldElem, f
   @hassert :Lattice 1 issetequal(n, collect((p, n) for (p, n) in negative0))
 
   return M
+end
+
+# Split off one entry a of a ternary form: a together with the determinant and
+# Hasse invariants of the remaining binary form. The numbers of negative
+# entries at the real places are adjusted in place.
+function _quadratic_space_dim_three(det, finite, negative, K, OK)
+  PP = append!(support(K(2), OK), finite)
+  append!(PP, support(det, OK))
+  unique!(PP)
+  filter!(p -> hilbert_symbol(K(-1), -det, p) != (p in finite ? -1 : 1), PP)
+#    // The primes at which the form is anisotropic
+
+#    // Find some a such that for all p in PP: -a*Det is not a local square
+#    // TODO: Find some smaller a?! The approach below is very lame.
+#    // We simply make sure that a*Det has valuation 1 at each prime in PP....
+
+  a0 = length(PP) == 0 ? one(K) : approximate(Int[(1 + valuation(det, p)) % 2 for p in PP], PP)
+#    // Fix the signs of a if necessary.
+  s0 = signs(a0)
+  idx = InfPlc[ p for (p, n) in negative if n in [0, 3]]
+  S = Int[ negative[p] == 0 ? s0[_embedding(p)] : -s0[_embedding(p)] for p in idx]
+  if length(PP) > 0
+    b = _weak_approximation_coprime(idx, S, prod(PP))
+    @hassert :Lattice 1 is_coprime(b * OK, prod(PP))
+  else
+    b = _weak_approximation_coprime(idx, S, 1 * OK)
+  end
+  a = a0 * b
+
+#    // Adjust invariants for the last time:
+  s = signs(a)
+  for p in InfPlc[p for (p,c) in negative if s[_embedding(p)] < 0]
+    negative[p] = negative[p] - 1
+  end
+  PP2 = support(K(2))
+  append!(PP2, support(det, OK))
+  append!(PP2, support(a, OK))
+  append!(PP2, finite)
+  unique!(PP2)
+  new_finite = ideal_type(OK)[p for p in PP2 if hilbert_symbol(a, -det, p) * (p in finite ? -1 : 1) == -1]
+  # TODO: reduce det
+  return a, det * a, new_finite
 end
 
 
@@ -779,15 +788,10 @@ function _quadratic_space_dim_big(dim, det, negative, finite, K, OK)
   PP = append!(support(K(2)*det, OK), finite)::Vector{ideal_type(OK)}
   append!(PP, keys(_f))
   unique!(PP)
-  local _finite::Vector{ideal_type(OK)}
-  let finite = finite
-    _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]::Vector{ideal_type(OK)}
-  end
-  finite = _finite
+  _finite = ideal_type(OK)[ p for p in PP if hilbert_symbol(_d, -det, p) * (haskey(_f, p) ? -1 : 1) * (p in finite ? -1 : 1) == -1]
 
-  det *= _d
   #    # TODO: reduce det modulo squares
-  return D2, dim, det, finite, negative
+  return D2, dim, det * _d, _finite, negative
 end
 
 ################################################################################
@@ -1572,15 +1576,14 @@ function _isisotropic_with_vector(F::MatrixElem)
     found = false
     for i in 1:length(D), j in (i + 1):length(D)
       if all(let D = D; p -> sign(D[i], p) != sign(D[j], p); end, rlp)
-        TT = identity_matrix(K, nrows(F))
         found = true
-        if i != 3
-          swap_cols!(TT, 3, i)
-        end
+        # move D[i] and D[j] to positions 3 and 4 by permuting the rows of T
         if j != 4
-          swap_cols!(TT, 4, j)
+          swap_rows!(T, 4, j)
         end
-        T = TT * T
+        if i != 3
+          swap_rows!(T, 3, i)
+        end
         _D = (T * F * transpose(T))
         @hassert :Lattice 1 is_diagonal(_D)
         D = diagonal(_D)
@@ -2040,13 +2043,14 @@ function _real_weak_approximation(s, I)
   while true
     x = simplest_rational_inside(real(evaluate(a, s, 10)))
     a = 2 * (a - x)
-    if all(t -> t == s || abs(evaluate(a, t)) >= 2, I)
-      break
-    end
+    _is_large_away_from(a, s, I) && break
   end
   @hassert :Lattice 1 abs(evaluate(a, s)) < 1//2
   return a
 end
+
+# is |a| >= 2 at all places in I other than s?
+_is_large_away_from(a, s, I) = all(t -> t == s || abs(evaluate(a, t)) >= 2, I)
 
 ################################################################################
 #

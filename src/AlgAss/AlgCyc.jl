@@ -257,6 +257,33 @@ true
 
 Algorithm as described in [Han07](@cite).
 """
+# Isomorphism of the cyclic algebras c1 and c2 whose maximal cyclic subfields
+# are isomorphic via iso, if it exists
+function _is_isomorphic_with_map_isomorphic_base(c1::CyclicAlgebra, c2::CyclicAlgebra, iso)
+  d = degree(c1.cyc_fld)
+  k1, k2 = c1.cyc_fld, c2.cyc_fld
+  g2 = gen(k2)
+  a1, a2 = c1.a, c2.a
+
+  i = 1
+  while (iso((c1.sigma^i)(inv(iso)(g2))) != c2.sigma(g2))
+    i += 1
+  end
+  fl, x2 = is_norm(k2, a1/a2^i)
+  if fl
+    return true, hom(
+      c1.sca,
+      c2.sca,
+      collect(
+        c2.cyc_fld_emb(iso(x)) * (c2.cyc_fld_emb(x2) * c2.pi)^i
+        for (x, i) in Iterators.product(basis(k1), 0:d-1)
+      )[:];
+      check = false
+    )
+  end
+  return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
+end
+
 function is_isomorphic_with_map(
   c1::CyclicAlgebra{T},
   c2::CyclicAlgebra{T};
@@ -272,43 +299,30 @@ function is_isomorphic_with_map(
   end
 
   # Case: Base fields are isomorphic
-  if !linearly_disjoint && first(local _, iso = is_isomorphic_with_map(k1, k2))
-    i = 1
-    while (iso((c1.sigma^i)(inv(iso)(g2))) != c2.sigma(g2))
-      i += 1
-    end
-    if first(local _, x2 = is_norm(k2, a1/a2^i))
-      return true, hom(
-        c1.sca,
-        c2.sca,
-        collect(
-          c2.cyc_fld_emb(iso(x)) * (c2.cyc_fld_emb(x2) * c2.pi)^i
-          for (x, i) in Iterators.product(basis(k1), 0:d-1)
-        )[:];
-        check = false
-      )
-    end
-    return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
+  if !linearly_disjoint
+    fl_iso, iso = is_isomorphic_with_map(k1, k2)
+    fl_iso && return _is_isomorphic_with_map_isomorphic_base(c1, c2, iso)
   end
 
   # Case: Maximally cyclic subfields are linearly disjoint.
   if linearly_disjoint || is_linearly_disjoint(k1, k2)
     # Solve the norm equation N₁(x₁) = a₁ for x₁ where N₁:k₁k₂ → k₂.
-    k1k2, k1_to_k1k2, k2_to_k1k2 = _compositum(k1, k2)
+    k1k2_abs, k1_to_k1k2_abs, k2_to_k1k2_abs = _compositum(k1, k2)
     k2_abs, _ = absolute_simple_field(k2)
-    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2_abs)
-    if !first(local _, x1 = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1))))
+    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2_abs, k2_abs)
+    fl1, x1_rel = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1)))
+    if !fl1
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
-    x1 = k1k2_over_k2_to_k1k2(x1)
+    x1_abs = k1k2_over_k2_to_k1k2(x1_rel)
     # Reset the base field of the compositum in the relative field case.
     # One cannot compose the resulting maps since one has to ensure that
     # the inclusion maps k⟶ k₁⟶ k₁k₂ and k⟶ k₂⟶ k₁k₂ are the same.
-    if k1 isa RelSimpleNumField
-      k1k2, as_rel = relative_simple_extension(k1k2, k)
-      _, k1_to_k1k2 = is_subfield(k1, k1k2)
-      _, k2_to_k1k2 = is_subfield(k2, k1k2)
-      x1 = inv(as_rel)(x1)
+    k1k2, k1_to_k1k2, k2_to_k1k2, x1 = if k1 isa RelSimpleNumField
+      k1k2_rel, as_rel = relative_simple_extension(k1k2_abs, k)
+      (k1k2_rel, is_subfield(k1, k1k2_rel)[2], is_subfield(k2, k1k2_rel)[2], inv(as_rel)(x1_abs))
+    else
+      (k1k2_abs, k1_to_k1k2_abs, k2_to_k1k2_abs, x1_abs)
     end
     # Solve σ₁(x)σ₂(y) = xy for x in k₁k₂ ("bicyclic Hilbert 90").
     # First reinterprete σᵢ as maps of k₁k₂ using the "tensor basis".
@@ -322,7 +336,8 @@ function is_isomorphic_with_map(
     sigma2 = hom(k1k2, k1k2, sigma2_g12)
     # Take an element x in the kernel of σ₁(x) - xx₁/σ₂(x₁).
     proj = (sigma1(a) - a * x1 / sigma2(x1) for a in basis(k1k2))
-    if is_empty(local ker = kernel(basis_matrix(collect(proj))))
+    ker = kernel(basis_matrix(collect(proj)))
+    if is_empty(ker)
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
     x = k1k2(ker[1, :])
@@ -330,7 +345,8 @@ function is_isomorphic_with_map(
 
     # Solve norm equation N₂(y) = N₂(x)/a₂ for y.
     n2_y = Iterators.reduce(1:d; init=k1k2(1)) do prev, _ x * sigma2(prev) end
-    if !first(local _, y = is_norm(k2, k(n2_y)/a2))
+    fl_y, y = is_norm(k2, k(n2_y)/a2)
+    if !fl_y
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
     x2 = k2_to_k1k2(y) / x

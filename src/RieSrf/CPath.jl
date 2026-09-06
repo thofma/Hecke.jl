@@ -146,19 +146,12 @@ mutable struct CPath
     a_diff = trim_zero(a - c, zero_sens)
     b_diff = trim_zero(b - c, zero_sens)
 
-    phi_a = mod2pi(angle(a_diff))
-    phi_b = mod2pi(angle(b_diff))
+    phi_a0 = mod2pi(angle(a_diff))
+    phi_b0 = mod2pi(angle(b_diff))
 
-
-    if orientation == 1
-      if phi_b < phi_a
-        phi_b += 2*piC
-      end
-    elseif orientation == - 1
-       if phi_a < phi_b
-        phi_a += 2*piC
-      end
-    end
+    #The arc from phi_a to phi_b is traversed in the direction given by orientation
+    phi_a = orientation == -1 && phi_a0 < phi_b0 ? phi_a0 + 2*piC : phi_a0
+    phi_b = orientation == 1 && phi_b0 < phi_a0 ? phi_b0 + 2*piC : phi_b0
 
     P.start_arc = phi_a
     P.end_arc = phi_b

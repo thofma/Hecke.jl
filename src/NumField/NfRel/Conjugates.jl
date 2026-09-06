@@ -34,14 +34,12 @@ function _roots(f::PolyRingElem{<: NumFieldElem}, P; prec::Int = 64, sort::Bool 
   return _roots_squarefree(squarefree_part(f), P; prec = prec, sort = sort)
 end
 
-function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64, sort::Bool = true)
-  wprec = Int(floor(1.3 * prec))
-  # We definitely want to isolate the real roots as well as identify conjugated roots
-  local rts::Vector{AcbFieldElem}
-  P = _P isa InfPlc ? _embedding(_P) : _P
-
+# The complex roots of f under the embedding P to precision prec, doubling the
+# working precision wprec until the root isolation succeeds
+function _embedded_roots(f::PolyRingElem{<: NumFieldElem}, P, prec::Int, wprec::Int)
   while true
-    con = AcbFieldElem[evaluate(coeff(f, i), P, wprec) for i in 0:degree(f)]
+    w = wprec
+    con = AcbFieldElem[evaluate(coeff(f, i), P, w) for i in 0:degree(f)]
     isreal(P) && @assert all(isreal, con)
     # We need a strictly real polynomial to isolate the real roots
     _wprec = maximum([precision(parent(c)) for c in con])
@@ -49,17 +47,21 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
     CCy, y = polynomial_ring(CC, cached = false)
     _f = CCy(con)
     try
-      rts = roots(_f, target = prec)
-      break
+      return roots(_f, target = prec)::Vector{AcbFieldElem}
     catch e
       if !(isa(e, ErrorException))
         rethrow(e)
-      else
-        wprec = 2 * wprec
-        continue
       end
+      wprec = 2 * wprec
     end
   end
+end
+
+function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64, sort::Bool = true)
+  wprec = Int(floor(1.3 * prec))
+  # We definitely want to isolate the real roots as well as identify conjugated roots
+  P = _P isa InfPlc ? _embedding(_P) : _P
+  rts = _embedded_roots(f, P, prec, wprec)
 
   if isreal(P)
     r = 0

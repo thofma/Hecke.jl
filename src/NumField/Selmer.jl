@@ -70,19 +70,14 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     pr, pos = iterate(P, pos)
   end
 
-  if length(D) + length(S) == 0
-    U, mU = Hecke.unit_group_fac_elem(ZK)
-  else
-    U, mU = Hecke.sunit_group_fac_elem(vcat(S, D))
-  end
+  U, mU = length(D) + length(S) == 0 ? Hecke.unit_group_fac_elem(ZK) : Hecke.sunit_group_fac_elem(vcat(S, D))
 
-  if length(D) == 0
-    k = U
-    mk = hom(U, U, gens(U))
+  k, mk = if length(D) == 0
+    (U, hom(U, U, gens(U)))
   else
     A = abelian_group([p for i = D])
     h = hom(U, A, [A([valuation(mU(g), pi) for pi = D]) for g = gens(U)])
-    k, mk = kernel(h)
+    kernel(h)
   end
   #so k should be the SelmerGroup...
   #sorry: k mod p*k is it.
@@ -98,9 +93,9 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
   # the backward map is more tricky, but the indirect route via
   # class field theory (Frobenius) works for Magma - it should work here.
 
-  function toK(x::FinGenAbGroupElem; algo::Symbol = algo)
+  @assert algo in [:compRep, :raw]
+  function toK(x::FinGenAbGroupElem)
     @assert parent(x) == Sel
-    @assert algo in [:compRep, :raw]
     x = preimage(mSel, x)
     x = mk(x)
     y = mU(x)
@@ -114,10 +109,7 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
   end
 
   disc_log_data = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Tuple{Map, Vector{Int}}}()
-  function toSel(x::AbsSimpleNumFieldElem; check::Bool = check)
-    return toSel(FacElem([x], [1], check = check))
-  end
-  function toSel(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}; check::Bool = check)
+  function toSel_fac(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
     if check
       IA = ideal(ZK, x)
       for P = S
@@ -181,6 +173,8 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     @assert fl
     return Sel(map(x -> lift(ZZ, x), vec(collect(sol))))
   end
+  toSel(x::AbsSimpleNumFieldElem) = toSel_fac(FacElem([x], [1], check = check))
+  toSel(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) = toSel_fac(x)
 
   return Sel, MapFromFunc(Sel, codomain(mU), toK, toSel)
 end

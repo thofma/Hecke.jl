@@ -484,21 +484,20 @@ function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion,
   Gtype = [ t[1] for t in x ]
   indice = [ t[2] for t in x ]
   # x is the "type" of the p-group G as a partition
-  if order != -1
-    v = valuation(order, p)
-    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t)))
-                      for t in types if sum(t) == v)
-  elseif index != -1
-    v = sum(Gtype) - valuation(index, p)
-    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t)))
-                      for t in types if sum(t) == v)
-  else
-    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types)
-  end
+  v = order != -1 ? valuation(order, p) : index != -1 ? sum(Gtype) - valuation(index, p) : nothing
+  adjusted_types = _adjusted_types(types, length(x), v)
 
   return  (_matrix_to_elements(G, M, indice)
            for M in _subgroup_iterator(Gtype, p, adjusted_types))
-  return Gtype, indice
+end
+
+# Pad the partitions in `types` with zeros to length `len`, keeping only those
+# with sum `v` (all of them if `v` is nothing)
+function _adjusted_types(types, len::Int, v::Union{Int, Nothing})
+  if v === nothing
+    return (vcat(t, zeros(Int, len - length(t))) for t in types)
+  end
+  return (vcat(t, zeros(Int, len - length(t))) for t in types if sum(t) == v)
 end
 
 function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion, order, index)
@@ -513,17 +512,8 @@ function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion, order, index)
   indice = [ t[2] for t in x ]
   types = _subpartitions(Gtype)
   # x is the "type" of the p-group G as a partition
-  if order != -1
-    v = valuation(order, p)
-    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t)))
-                      for t in types if sum(t) == v)
-  elseif index != -1
-    v = sum(Gtype) - valuation(index, p)
-    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t)))
-                      for t in types if sum(t) == v)
-  else
-    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types)
-  end
+  v = order != -1 ? valuation(order, p) : index != -1 ? sum(Gtype) - valuation(index, p) : nothing
+  adjusted_types = _adjusted_types(types, length(x), v)
   return  (_matrix_to_elements(G, M, indice)
            for M in _subgroup_iterator(Gtype, p, adjusted_types))
 end

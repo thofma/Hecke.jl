@@ -266,13 +266,7 @@ function neighbours(
 
   for i in 1:maxlines
     vain[] > stop_after && break
-    if algorithm == :orbit
-      w = LO[i]
-    elseif algorithm == :random
-      w = rand(LO)
-    else
-      w = next(LO)
-    end
+    w = algorithm == :orbit ? LO[i] : algorithm == :random ? rand(LO) : next(LO)
 
     if P != C
       x = elem_type(K)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
@@ -474,6 +468,12 @@ Given a hermitian lattice ``L``, return `gens, def, P0` where:
   ``L`` is isotropic at $minimum(P0)$ and `P0` has smallest minimum among the
   primes satisfying these properties.
 """
+# For each prime PP[i]: F(0) if x - 1 has valuation at least VD[i] at PP[i],
+# F(1) otherwise
+function _valuation_pattern(x, PP, VD, F, EabstoE)
+  return [ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]
+end
+
 function genus_generators(L::HermLat)
   R = base_ring(L)
   RR = fixed_ring(L)
@@ -482,13 +482,7 @@ function genus_generators(L::HermLat)
   a = involution(L)
   def, P0, bad = smallest_neighbour_prime(L)
 
-  local bad_prod::ideal_type(base_ring(R))
-
-  if isempty(bad)
-    bad_prod = 1 * base_ring(R)
-  else
-    bad_prod = prod(bad)
-  end
+  bad_prod = isempty(bad) ? 1 * base_ring(R) : prod(bad)
 
   # First the ideals coming from the C/C0 quotient
   Eabs, EabstoE = absolute_simple_field(ambient_space(L))
@@ -543,7 +537,7 @@ function genus_generators(L::HermLat)
       _T, _ = sub(V, S)
       W, w = quo(V, _T)
       if dim(W) == 0
-        PP = ideal_type(R)[]
+        empty!(PP)
       end
     end
   end
@@ -591,9 +585,9 @@ function genus_generators(L::HermLat)
         x = x0 * u
         @assert norm(x) == 1
         if evaluate(x) == 1
-          y = w(V([zero(F) for _ in 1:length(PP)]))
+          y = w(V(zeros_array(F, length(PP))))
         else
-          y = w(V([ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
+          y = w(V(_valuation_pattern(x, PP, VD, F, EabstoE)))
         end
         cocycle[i, j] = y
         cocycle[j, i] = y
@@ -621,9 +615,9 @@ function genus_generators(L::HermLat)
       x = x0 * u
       @assert norm(x) == 1
       if evaluate(x) == 1
-        y = [zero(F) for _ in 1:length(PP)]
+        y = zeros_array(F, length(PP))
       else
-        y = [ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]
+        y = _valuation_pattern(x, PP, VD, F, EabstoE)
       end
       idx = findfirst(isequal(P), PP)
       if idx !== nothing

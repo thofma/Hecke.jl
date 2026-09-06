@@ -501,7 +501,7 @@ end
    while !is_irreducible(f)
      f = Rt(push!([rand(R) for i = 0:n-1], one(R)))
    end
-   f_L = polynomial(L, [mR\(coeff(f, i)) for i = 0:degree(f)])
+   f_L = polynomial(L, [mR\(c) for c in coefficients(f)])
    return unramified_extension(f_L)
  end
 
@@ -520,11 +520,7 @@ function image_of_logarithm_one_units(K::NonArchLocalField)
     return 1, [zero(K)]
   end
 
-  if mod(e, p - 1) == 0
-    n = Int(div(e, p - 1) + 1)
-  else
-    n = ceil(Int, e//(p - 1))
-  end
+  n = mod(e, p - 1) == 0 ? Int(div(e, p - 1) + 1) : ceil(Int, e//(p - 1))
 
   # Thus U^(n) -> P^n is an isomorphism by the usual result, see e.g. Neukirch.
   # Lets compute representatives for U^(1)/U^(n)

@@ -207,14 +207,13 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
 
   n = length(coefficients)
   odd_degree = iseven(n)
-  lead_coeff = coefficients[end]
 
   # Now first compute the primes we will use for sieving
   # We use those primes such that mod p there are few points
 
   # Take the Pfirst primes that are most optimal for sieving
   best_primes = Tuple{Int, QQFieldElem}[]
-  exclude_denom= Int[]
+  exclude_denom_old = Int[]
   exclude_denom_new = Int[]
 
   for p in primes
@@ -224,7 +223,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
 
     if !odd_degree
       if !is_square(F(old_lead))
-        push!(exclude_denom, p)
+        push!(exclude_denom_old, p)
       end
       if !is_square(F(new_lead))
         push!(exclude_denom_new, p)
@@ -232,6 +231,7 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
     end
   end
 
+  use_new_lead = false
   if !odd_degree
   #We are going to exclude the denominators b divided by p for which the
   #squarefree part of the leading coefficient is a non-square mod p.
@@ -240,18 +240,18 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
 
   #Maybe simply compute the size of B for both potential leading coefficients?
   #This test doesn't include the effect of prime divisors of leading coefficient
-    old_d = prod(exclude_denom;init = one(ZZRingElem))
+    old_d = prod(exclude_denom_old;init = one(ZZRingElem))
     new_d = prod(exclude_denom_new;init = one(ZZRingElem))
     old_score = euler_phi(old_d)//old_d
     new_score = euler_phi(new_d)//new_d
     #The smaller the score the better
-    if old_score > new_score
+    use_new_lead = old_score > new_score
+    if use_new_lead
       reverse_polynomial = true
       coefficients = potential_coefficients
-
-      exclude_denom = exclude_denom_new
     end
   end
+  exclude_denom = use_new_lead ? exclude_denom_new : exclude_denom_old
   sort!(best_primes, by = last)
 
   primes = Int[p for (p,q) in best_primes[1:Pfirst]]
@@ -581,9 +581,9 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
         chunk_odd = append!(copy(chunk_odd), chunk_odd)
         chunk_even = append!(copy(chunk_even), chunk_even)
       else
-        chunk = reduce(vcat, [chunk for tt in 1:p_chunks + 1])
-        chunk_odd = reduce(vcat, [chunk_odd for tt in 1:p_chunks + 1])
-        chunk_even = reduce(vcat, [chunk_even for tt in 1:p_chunks + 1])
+        chunk = repeat(chunk, p_chunks + 1)
+        chunk_odd = repeat(chunk_odd, p_chunks + 1)
+        chunk_even = repeat(chunk_even, p_chunks + 1)
       end
       #temp = chunk
       #l = length(temp)
@@ -734,11 +734,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
   part_16 = Array{Int}(undef, 16)
 
-  if isodd(n)
-      d = 1
-    else
-      d = 0
-    end
+  d = isodd(n) ? 1 : 0
 
   # t odd
   for t in (1:2:15)

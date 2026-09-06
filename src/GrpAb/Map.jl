@@ -56,14 +56,14 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::Vector{FinGenAbGroup
   #but mod 2 this collapses to x[0] = [0]
   #with solution 0
   #the map is no longer injective....
-  if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent) &&
+  fl, p = if isdefined(G, :exponent) && fits(Int, G.exponent) && is_prime(G.exponent) &&
     isdefined(H, :exponent) && G.exponent == H.exponent
     e = G.exponent
     RR = Native.GF(Int(e))
-    fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, reduce(vcat, [x.coeff for x = a])), side = :left)
-    p = map_entries(x -> lift(x), p)
+    fl0, p0 = can_solve_with_solution(map_entries(RR, m), map_entries(RR, reduce(vcat, [x.coeff for x = a])), side = :left)
+    fl0, map_entries(x -> lift(x), p0)
   else
-    fl, p = can_solve_with_solution(m, reduce(vcat, [x.coeff for x = a]), side = :left)
+    can_solve_with_solution(m, reduce(vcat, [x.coeff for x = a]), side = :left)
   end
 
   if fl

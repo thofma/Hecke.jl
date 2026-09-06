@@ -1636,8 +1636,7 @@ function _orthogonal_submodule_raw(T::TorQuadModule, S::TorQuadModule;check=true
     Kz[:,j:j] = reduce_mod(Kz[:,j:j], A[j])
   end
   k = [i for i in 1:nrows(Kz) if !is_zero_row(Kz,i)]
-  Kz = Kz[k,:]
-  return Kz
+  return Kz[k,:]
 end
 
 @doc raw"""
@@ -1763,8 +1762,7 @@ function normal_form(
     prec = 2*valuation(exponent(T), p) + 5
     D, U = padic_normal_form(q_p1, p; prec, partial)
     R = residue_ring(ZZ, ZZ(p)^prec)[1]
-    UR = map_entries(x->R(ZZ(x)), U)
-    UR = transpose(inv(UR))
+    UR = transpose(inv(map_entries(x->R(ZZ(x)), U)))
 
     # the inverse is in normal form - so to get a normal form for
     # the original one
@@ -1912,6 +1910,19 @@ function _as_finite_bilinear_module(T::TorQuadModule)
   return torsion_quadratic_module(cover(T), relations(T); modulus=n, modulus_qf=n, gens=lift.(gens(T)))
 end
 
+# The blocks of the 2-adic Jordan block `sym` with parity `o`
+_blocks_with_parity(sym, o) = [b for b in _blocks(sym) if b[4] == o]
+
+# The odd blocks of the 2-adic Jordan block `sym` whose determinant and oddity
+# agree with `d` and `t` modulo 4, with matching changes modulo 8
+function _odd_blocks_with_det_and_oddity(sym, d, o, t)
+  return [b for b in _blocks(sym) if b[4] == o
+          && mod(b[3] - d, 4) == 0
+          && mod(b[5] - t, 4) == 0
+          && mod(b[3] - d, 8) == mod(b[5] - t, 8)  # if the oddity is altered by 4 then so is the determinant
+          ]
+end
+
 function _is_genus_with_genus(
   T::TorQuadModule,
   signature_pair::Tuple{Int, Int};
@@ -2000,13 +2011,12 @@ function _is_genus_with_genus(
 
     _o = mod(parity, 2)
     # the form is of parity `parity`
-    block0 = [b for b in _blocks(sym2[1]) if b[4] == _o]
+    block0 = _blocks_with_parity(sym2[1], _o)
 
-    o = sym2[2][4]::Int
     # no restrictions on determinant and
     # oddity beyond existence
     # but we know if even or odd
-    block1 = [b for b in _blocks(sym2[2]) if b[4] == o]
+    block1 = _blocks_with_parity(sym2[2], sym2[2][4]::Int)
 
     d = sym2[3][3]::Int
     o = sym2[3][4]::Int
@@ -2016,15 +2026,11 @@ function _is_genus_with_genus(
       block2 = [sym2[3]]
       # if it is odd we know det and oddity mod 4 at least
     else
-      block2 = [b for b in _blocks(sym2[3]) if b[4] == o
-        && mod(b[3] - d, 4) == 0
-        && mod(b[5] - t, 4) == 0
-        && mod(b[3] - d, 8) == mod(b[5] - t, 8)  # if the oddity is altered by 4 then so is the determinant
-        ]
+      block2 = _odd_blocks_with_det_and_oddity(sym2[3], d, o, t)
     end
   else
     # the form is even
-    block0 = [b for b in _blocks(sym2[1]) if b[4] == 0]
+    block0 = _blocks_with_parity(sym2[1], 0)
 
     # if the jordan block of scale 2 is even we know it
     d = sym2[2][3]::Int
@@ -2034,12 +2040,7 @@ function _is_genus_with_genus(
       block1 = [sym2[2]]
     else
       # the block is odd and we know det and oddity mod 4
-      block1 = [b for b in _blocks(sym2[2])
-              if b[4] == o
-              && mod(b[3] - d, 4) == 0
-              && mod(b[5] - t, 4) == 0
-              && mod(b[3] - d, 8) == mod(b[5] - t, 8) # if the oddity is altered by 4 then so is the determinant
-              ]
+      block1 = _odd_blocks_with_det_and_oddity(sym2[2], d, o, t)
     end
     # this is completely determined
     block2 = [sym2[3]]
@@ -2265,11 +2266,9 @@ function _biproduct(
 )
   mbf = modulus_bilinear_form(x[1])
   @req all(q -> modulus_bilinear_form(q) == mbf, x) "All torsion quadratic modules must have the same bilinear modulus"
+  mqf = as_bilinear_module ? mbf : modulus_quadratic_form(x[1])
   if !as_bilinear_module
-    mqf = modulus_quadratic_form(x[1])
     @req all(q -> modulus_quadratic_form(q) == mqf, x) "All torsion quadratic modules must have the same quadratic modulus"
-  else
-    mqf = mbf
   end
   cs = cover.(x)
   rs = relations.(x)

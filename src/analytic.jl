@@ -90,6 +90,9 @@ end
 
 Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
+# The indices of the coefficient data in rc valid up to k
+_coeff_index(rc, k) = findall(x->x.valid[2] == k, rc)
+
 function dickman_rho(b::Number, e::AbstractUnitRange{Int}, prec::Int = 55)
   if b < 0
     error("argument must be positive")
@@ -107,7 +110,7 @@ function dickman_rho(b::Number, e::AbstractUnitRange{Int}, prec::Int = 55)
     val[1] = 1-log(x)
   else
     k = ceil(x)
-    f = findall(x->x.valid[2] == k, rc)
+    f = _coeff_index(rc, k)
     @assert length(f)==1
     val[1] = analytic_eval(rc[f[1]], k-x)
   end
@@ -120,7 +123,7 @@ function dickman_rho(b::Number, e::AbstractUnitRange{Int}, prec::Int = 55)
       val[vi] = 1-log(x)
     else
       k = ceil(x)
-      f = findall(x->x.valid[2] == k, rc)
+      f = _coeff_index(rc, k)
       @assert length(f)==1
       val[vi] = analytic_eval(rc[f[1]], k-x)
     end

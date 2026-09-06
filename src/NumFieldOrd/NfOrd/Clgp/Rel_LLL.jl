@@ -84,16 +84,16 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
   L, Tr = lll(A, prec = prec)
   I = SmallLLLRelationsCtx(zero_matrix(ZZ, 1, 1))
   S = Tr*basis_matrix(A, copy = false)
-  bd = abs(discriminant(O))*norm(A)^2
-  bd = root(bd, n, check = false)
-  bd *= L.den
-  f = Int[i for i = 1:n if compare_index(L.num, i, i, bd) < 0]
+  bd = root(abs(discriminant(O))*norm(A)^2, n, check = false) * L.den
   m = div(n, 4)
   if m < 2
     m = n
   end
-  while length(f) < m
-    f = Int[i for i = 1:n if compare_index(L.num, i, i, bd) < 0]
+  f = Int[]
+  while true
+    b = bd
+    f = Int[i for i = 1:n if compare_index(L.num, i, i, b) < 0]
+    length(f) >= m && break
     bd *= 2
   end
   I.b = Vector{ZZMatrix}(undef, length(f))

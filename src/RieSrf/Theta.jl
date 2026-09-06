@@ -259,11 +259,7 @@ function theta_jets(z::Vector{AcbFieldElem},  tau::AcbMatrix, order_of_derivativ
   GC.@preserve tups ccall((:acb_theta_jet_tuples, libflint), Nothing, (Ptr{Int}, Int,Int),
   tupss, order_of_derivatives, g)
 
-  if g ==1
-    index_tuples = tups
-  else
-    index_tuples = [tuple(tups[g*i+1:g*i+g]...) for i in (0:n-1)]
-  end
+  index_tuples = g == 1 ? tups : [tuple(tups[g*i+1:g*i+g]...) for i in (0:n-1)]
 
   num_of_thetas = 2^(2*g)
   output_size = num_of_thetas * n

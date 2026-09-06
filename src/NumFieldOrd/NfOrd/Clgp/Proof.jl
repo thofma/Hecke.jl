@@ -423,10 +423,8 @@ function initialize_verify_context(units_fac::Vector{AbsSimpleNumFieldOrderElem}
   return initialize_verify_context(elem_in_nf.(units_fac); test_normality, evaluate_elements)
 end
 
-function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
-  if evaluate_elements
-    units_fac = FacElem.(evaluate.(units_fac))
-  end
+function initialize_verify_context(_units_fac::Vector{<:FacElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
+  units_fac = evaluate_elements ? FacElem.(evaluate.(_units_fac)) : _units_fac
   OK = lll(maximal_order(_base_ring(units_fac[1])))
   K = Hecke.nf(OK)
   t = torsion_units_order(K)
@@ -451,8 +449,9 @@ function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality:
       auts_gen = mG(g)
     end
     # now find a Minkowski unit
+    is_indep(x, auts) = Hecke._isindependent([a(x) for a in auts])
     for i in 1:length(units_fac)
-      fl, = Hecke._isindependent([a(units_fac[i]) for a in auts])
+      fl, = is_indep(units_fac[i], auts)
       if fl
         u = evaluate(units_fac[i])
         break
@@ -462,7 +461,7 @@ function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality:
       # not found yet
       k = 0
       uu = K(mU(U(rand(0:1, ngens(U)))))
-      while !(Hecke._isindependent([a(uu) for a in auts]))
+      while !is_indep(uu, auts)
         k += 1
         uu = K(mU(rand(U, 2)))
         if k > 100

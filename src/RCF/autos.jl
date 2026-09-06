@@ -1037,16 +1037,7 @@ function extend_hom(C::ClassField_pp, D::Vector{<:ClassField_pp}, tau)
     #if it works, then Cp -> Dp should also work
     k2 = codomain(tau)
     k1 = domain(tau)
-    i = 1
-    om = 0
-    im = 0
-    while i <= length(D)
-      if degree(D[i]) > om
-        om = degree(D[i])
-        im = i
-      end
-      i += 1
-    end
+    om, im = findmax([degree(c) for c in D])
     @assert om > 0
     # now Dp[im] is of maximal exponent - hence, it should have the maximal
     # big Kummer extension. By construction (above), the set of s-units

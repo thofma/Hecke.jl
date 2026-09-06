@@ -285,11 +285,11 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
   end
 
   Q, OtoQ = quo(order(q), q)
+  gQ = map(OtoQ, g)
   # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.16
   function disc_log(b::AlgAssAbsOrdElem)
     b = OtoQ(b)
     a = ZZRingElem[]
-    gQ = map(OtoQ, g)
     k = 1
     for i in 1:length(dlogs)
       aa = dlogs[i](OtoQ\b)

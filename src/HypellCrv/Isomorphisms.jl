@@ -344,6 +344,12 @@ This implements the naive variant of the algorithm in [LRS13], Section 3:
 factor both forms, adjoin a root of an irreducible factor, enumerate image
 roots, and recover the Mobius matrix by solving a linear system.
 """
+# The d x 4 matrix with rows (ey[i], e1[i], exy[i], ex[i]) whose kernel gives the
+# candidate transformations
+function _gl2_equation_matrix(K, d::Int, ey, e1, exy, ex)
+  return matrix(K, d, 4, elem_type(K)[c for i in 1:d for c in (ey[i], e1[i], exy[i], ex[i])])
+end
+
 function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) where T
   K = base_ring(f1)
   @req base_ring(f2) === K "Polynomials must have the same base ring"
@@ -398,8 +404,7 @@ function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) whe
         ey   = _coords(root, L, K)       # coords of root
         exy  = _coords(-rf * root, L, K) # coords of -rf*root
 
-        data = T[c for i in 1:d for c in (ey[i], e1[i], exy[i], ex[i])]
-        M = matrix(K, d, 4, data)
+        M = _gl2_equation_matrix(K, d, ey, e1, exy, ex)
         ker = kernel(M; side = :right)
         if ncols(ker) == 1
           t = T[ker[i, 1] for i in 1:4]
@@ -430,8 +435,7 @@ function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) whe
             for root2 in _roots_in(g2, L2, embed2)
               ey  = vcat(_coords(root1, L1, K),        _coords(root2, L2, K))
               exy = vcat(_coords(-rf * root1, L1, K),  _coords(-rff * root2, L2, K))
-              data = T[c for i in 1:4 for c in (ey[i], e1[i], exy[i], ex[i])]
-              M = matrix(K, 4, 4, data)
+              M = _gl2_equation_matrix(K, 4, ey, e1, exy, ex)
               ker = kernel(M; side = :right)
               if ncols(ker) == 1
                 t = T[ker[i, 1] for i in 1:4]
@@ -457,8 +461,7 @@ function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) whe
             root2 = -coeff(g2, 0) * inv(leading_coefficient(g2))
             ey  = vcat(_coords(root1, L1, K),       [root2])
             exy = vcat(_coords(-rf * root1, L1, K), [-rff * root2])
-            data = T[c for i in 1:3 for c in (ey[i], e1[i], exy[i], ex[i])]
-            M = matrix(K, 3, 4, data)
+            M = _gl2_equation_matrix(K, 3, ey, e1, exy, ex)
             ker = kernel(M; side = :right)
             if ncols(ker) == 1
               t = T[ker[i, 1] for i in 1:4]
@@ -471,8 +474,7 @@ function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) whe
             exi = vcat(_coords(-rf, L1, K),       [zero(K)])
             ey  = vcat(_coords(root1, L1, K),     [one(K)])
             exy = vcat(_coords(-rf * root1, L1, K), [-rff])
-            data = T[c for i in 1:3 for c in (ey[i], e1i[i], exy[i], exi[i])]
-            M = matrix(K, 3, 4, data)
+            M = _gl2_equation_matrix(K, 3, ey, e1i, exy, exi)
             ker = kernel(M; side = :right)
             if ncols(ker) == 1
               t = T[ker[i, 1] for i in 1:4]

@@ -1234,8 +1234,7 @@ function prefactorization_discriminant(K::RelSimpleNumField, d::Union{RelNumFiel
   factors = typeof(d)[]
   moduli = prefactorization(d)
   while !isempty(moduli)
-    I = pop!(moduli)
-    I = is_power(I)[2]
+    I = is_power(pop!(moduli))[2]
     if is_prime(absolute_minimum(I))
       push!(factors, I)
       continue

@@ -644,7 +644,7 @@ function combination(RC::RootCtx)
   Ft = parent(R[1])
   t = gen(Ft)
   n = precision(R[1])
-  @assert all(x->precision(x) == n, R)
+  @assert allequal(precision(x) for x in R)
 
   #ps = [[div(x^i % tn, td^i) for i = 1:n] for x = R]
 
@@ -712,7 +712,8 @@ function combination(RC::RootCtx)
     R = R .* ld
     @assert precision(R[1]) >= n
 
-    mn = transpose(matrix([[Fp(coeff(coeff(x^pow, pow*d+j), lk)) for lk = 0:k-1] for x = R]))
+    pd = coeff.(R .^ pow, pow*d+j)
+    mn = transpose(matrix([[Fp(coeff(c, lk)) for lk = 0:k-1] for c = pd]))
 
     if false && iszero(mn)
       @vprintln :AbsFact 2 "found zero column, discarding"
@@ -797,6 +798,46 @@ end
   then
   H(g) H(h) <= 2^(deg_x(f) + deg_y(g) - 2) ((deg_x(f)+1)(deg_y(f)+1))^(1/2) H(f)
 =#
+# Index of the first coefficient separating the elements of `el`, or 0 if none
+# does, together with the block systems of the coefficients that do not.
+function _primitive_coefficient(el::Vector)
+  all_bs = []
+  for i = 1:length(el[1])
+    bs = block_system([coeff(x, i) for x = el])
+    @vprintln :AbsFact 3 "block system of coeff $i is $bs"
+    @assert all(x->length(x) == length(bs[1]), bs)
+    length(bs[1]) == 1 && return i, all_bs
+    push!(all_bs, bs)
+  end
+  return 0, all_bs
+end
+
+# No single coefficient separates `el`: find coefficients `used` and a power
+# `pow` such that x -> sum(coeff(x, t) for t in used)^pow does. Returns this
+# function together with `pow` and `used`.
+function _primitive_element_from_sums(el::Vector, all_bs::Vector)
+  bs = [collect(1:length(el))]
+  used = Int[]
+  for i=1:length(el[1])
+    cs = Hecke._meet(bs, all_bs[i])
+    if length(cs) > length(bs)
+      bs = cs
+      push!(used, i)
+    end
+    if length(bs[1]) == 1
+      break
+    end
+  end
+  @vprintln :AbsFact 2 "using coeffs $used to form primitive element"
+  for pow in Iterators.countfrom(1)
+    pe = x -> (sum(coeff(x, t) for t = used)^pow)
+    if length(block_system([pe(x) for x = el])[1]) == 1
+      @vprintln :AbsFact 2 "using sum to the power $pow"
+      return pe, pow, used
+    end
+  end
+end
+
 """
 Internal use.
 """
@@ -825,7 +866,6 @@ function field(RC::RootCtx, m::MatElem)
 
   Ft = parent(R[1])
   F = base_ring(Ft)
-  t = gen(Ft)
   d = precision(R[1])
 
   #TODO think, the bound might be too large...
@@ -836,9 +876,8 @@ function field(RC::RootCtx, m::MatElem)
   #     the other factor is then just a division away
   #     if complete orbits are combined, use the trace (pointwise) rather than powers
   @vprintln :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])"
-  k, mk = residue_field(parent(R[1]))
-  kt, t = polynomial_ring(k, cached = false)
-  RR = map(mk, R)
+  k0, mk0 = residue_field(parent(R[1]))
+  RR = map(mk0, R)
   RP = [copy(RR)]
   for j=2:d_f
     push!(RP, RR .* RP[end])
@@ -864,14 +903,14 @@ function field(RC::RootCtx, m::MatElem)
 
   kt, t = polynomial_ring(k, cached = false)
 
-  fl = [power_sums_to_polynomial(map(t->preimage(phi, t), x)) for x = el]
-  fl = [map_coefficients(x->x, y, parent = kt) for y = fl]
-  HH = HenselCtxFqRelSeries(RC.H.f, fl)
+  ps = [power_sums_to_polynomial(map(t->preimage(phi, t), x)) for x = el]
+  fl0 = [map_coefficients(x->x, y, parent = kt) for y = ps]
+  HH = HenselCtxFqRelSeries(RC.H.f, fl0)
   while precision(coeff(HH.lf[1], 0)) < tf+2
     lift(HH)
   end
 
-  kXY, (X, Y) = polynomial_ring(k, ["X", "Y"], cached = false)
+  kXY, _ = polynomial_ring(k, ["X", "Y"], cached = false)
 
   nl = []
   kS = power_series_ring(k, tf+2, "s")[1]
@@ -925,11 +964,9 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     fa = [[valuation(x, y) for y = ld] for x = lc]
-    lc = _lc
-    H = Hecke.HenselCtxQadic(map_coefficients(Qq, lc, parent = Qqt), ld)
+    H = Hecke.HenselCtxQadic(map_coefficients(Qq, _lc, parent = Qqt), ld)
   else
     @vprintln :AbsFact 2 "is monic, no leading coefficient..."
-    lc = _lc
     fa = []
   end
 
@@ -941,50 +978,14 @@ function field(RC::RootCtx, m::MatElem)
 
   #if no single coefficient is primitive, use block systems and sums of coeffs
   #to find a primitive one.
-  all_bs = []
-  pe_j = 0
-  for i = 1:length(el[1])
-    bs = block_system([coeff(x, i) for x = el])
-    @vprintln :AbsFact 3 "block system of coeff $i is $bs"
-    @assert all(x->length(x) == length(bs[1]), bs)
-    if length(bs[1]) == 1
-      pe_j = i
-      break
-    end
-    push!(all_bs, bs)
-  end
+  pe_j, all_bs = _primitive_coefficient(el)
 
-  local pe, pow, used
-  if pe_j == 0
+  pe, pow, used = if pe_j == 0
     @vprintln :AbsFact 2 "no single coefficient is primitive, having to to combinations"
-    bs = [collect(1:length(el))]
-    used = Int[]
-    for i=1:length(el[1])
-      cs = Hecke._meet(bs, all_bs[i])
-      if length(cs) > length(bs)
-        bs = cs
-        push!(used, i)
-      end
-      if length(bs[1]) == 1
-        break
-      end
-    end
-    @vprintln :AbsFact 2 "using coeffs $used to form primitive element"
-    pow = 1
-    while true
-      pe = x -> (sum(coeff(x, t) for t = used)^pow)
-      bs = block_system([pe(x) for x = el])
-      if length(bs[1]) == 1
-        @vprintln :AbsFact 2 "using sum to the power $pow"
-        break
-      end
-      pow += 1
-    end
+    _primitive_element_from_sums(el, all_bs)
   else
     @vprintln :AbsFact 2 "$(pe_j)-th coeff is primitive"
-    pe = x -> coeff(x, pe_j)
-    pow = 1
-    used = [1]
+    (x -> coeff(x, pe_j), 1, [1])
   end
 
   @vprintln :AbsFact 1 "hopefully $(length(el)) degree field"
@@ -1022,7 +1023,7 @@ function field(RC::RootCtx, m::MatElem)
       @vprintln :AbsFact 2 "lifting leading coeff factorisation"
       @vtime :AbsFact 2 Hecke.lift(H, pr+1)
       fH = factor(H)
-      lc = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
+      lcf = [prod(fH[i]^t[i] for i=1:length(t)) for t = fa]
     end
 
     @vprintln :AbsFact 1 "lifting factors"
@@ -1031,7 +1032,7 @@ function field(RC::RootCtx, m::MatElem)
     end
 
     if length(fa) > 0
-      z = [lc[i](gen(SQq)) * HQ.lf[i] for i=1:HQ.n]
+      z = [l(gen(SQq)) for l in lcf] .* HQ.lf[1:HQ.n]
     else
       z = HQ.lf[1:HQ.n]
     end
@@ -1302,7 +1303,7 @@ function absolute_multivariate_factorisation(a::QQMPolyRingElem)
   K = base_ring(R)
 
   alphas = [zero(ZZ) for _ in 1:nvars(R)]
-  bi_sub = [zero(Qxy) for _ in 1:nvars(R)]
+  bi_sub = Hecke.zeros_array(Qxy, nvars(R))
 
   @assert length(a) > 0
 

@@ -134,7 +134,7 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
   local log
   let I = I, S1 = S1, C = C
 
-    function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+    function log_fac(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
       b = sparse_row(ZZ)
       for i=1:length(I)
         v = valuation(a, I[i])
@@ -152,9 +152,8 @@ function sunit_mod_units_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpl
       return C(cc)
     end
 
-    function log(a::AbsSimpleNumFieldElem)
-      return log(FacElem(a))
-    end
+    log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) = log_fac(a)
+    log(a::AbsSimpleNumFieldElem) = log_fac(FacElem(a))
   end
 
   r.header = MapHeader(C, FacElemMon(nf(O)), exp, log)
@@ -207,7 +206,7 @@ function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
 
   local log
   let mS = mS, mU = mU, G = G
-    function log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+    function log_fac(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
       a1 = preimage(mS, a)
       a2 = a*inv(image(mS, a1))
       #     @assert is_unit(O(evaluate(a2)))
@@ -215,9 +214,8 @@ function sunit_group_fac_elem(I::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField,
       return FinGenAbGroupElem(G, hcat(a3.coeff, a1.coeff))
     end
 
-    function log(a::AbsSimpleNumFieldElem)
-      return log(FacElem(a))
-    end
+    log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) = log_fac(a)
+    log(a::AbsSimpleNumFieldElem) = log_fac(FacElem(a))
   end
 
   r.header = MapHeader(G, FacElemMon(nf(O)), exp, log)

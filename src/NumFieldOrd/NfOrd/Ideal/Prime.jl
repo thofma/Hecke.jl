@@ -1324,21 +1324,16 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
   all_f = K.pol
   R = parent(all_f[1]) #we're non-simple, probably QQMPolyRingElem
 
-  if degree_limit == 0
-    degree_limit = degree(K)
-  end
+  deg_lim = degree_limit == 0 ? degree(K) : degree_limit
 
   Fpx = polynomial_ring(Native.GF(p, cached = false), cached = false)[1]
   R = residue_ring(ZZ, p^2, cached = false)[1]
   Rx = polynomial_ring(R, cached = false)[1]
   Zx = polynomial_ring(ZZ, cached = false)[1]
 
-  fac = [_fac_and_lift(f, p, degree_limit, lower_limit) for f in all_f]
+  fac = [_fac_and_lift(f, p, deg_lim, lower_limit) for f in all_f]
   all_c = [1 for f = all_f]
-  re = elem_type(Fpx)[]
-  rt = Vector{Vector{fqPolyRepFieldElem}}()
-  RT = []
-  RE = []
+  local re, RE
   while true
     cs = all_c
     re = elem_type(Fpx)[]
@@ -1394,11 +1389,12 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
     end
     @show all_c = [rand(1:p-1) for f = all_c]
   end
-  mu = [lift(Zx, re[i])(RE[i]) for i=1:length(re)]
-  fac = [(lift(Zx, re[x]), 1, mu[x]) for x = 1:length(re) if lower_limit <= degree(re[x]) <= degree_limit]
+  ref, REf = re, RE
+  mu = [lift(Zx, ref[i])(REf[i]) for i=1:length(ref)]
+  fac = [(lift(Zx, ref[x]), 1, mu[x]) for x = 1:length(ref) if lower_limit <= degree(ref[x]) <= deg_lim]
 
 
-  pe = sum([gens(K)[i] * all_c[i] for i=1:length(all_c)])
+  pe = sum(gens(K) .* all_c)
 
   result = Array{Tuple{ideal_type(O),Int}}(undef, length(fac))
 
@@ -1552,7 +1548,6 @@ function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldEl
   end
   bound = 5
   count = 1
-  F2 = GF(2)
   M = zero_matrix(F2, length(pos_places), length(pos_places))
   betas = Vector{elem_type(order(I))}()
   r = 0

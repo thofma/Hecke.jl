@@ -110,8 +110,7 @@ function hlift_have_lcs_generic(
   liftdegs = [tdegs[minorvars[i]] for i in 1:n]
 
   for i in 2:n+1
-    tfac = [AbstractAlgebra.MPolyFactor.set_lc(fac[j],
-                                         mainvar, lc_evals[i, j]) for j in 1:r]
+    tfac = map((f, l) -> AbstractAlgebra.MPolyFactor.set_lc(f, mainvar, l), fac, lc_evals[i, :])
 
     ok, fac = AbstractAlgebra.MPolyFactor.hliftstep(tfac, mainvar,
                           minorvars[1:i-1], liftdegs, alphas, A_evals[i], true)

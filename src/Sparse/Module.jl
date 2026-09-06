@@ -51,6 +51,33 @@ function add_gen!(M::ModuleCtx_fmpz, g::SRow{ZZRingElem}, always::Bool = true)
   return false
 end
 
+# Extend M.max_indep by the basis generators to an upper triangular basis and
+# store its index in M.basis_idx
+function _max_indep_basis!(M::ModuleCtx_fmpz)
+  d = abs(det_mc(M.bas_gens))
+  @assert !iszero(d)
+  C = M.max_indep
+  C.c = M.bas_gens.c
+  for ii = M.bas_gens
+    h = reduce(C, ii, 2*d) #to avoid problems with diag being 1...1 d
+    @hassert :HNF 2  !iszero(h)
+    i = 1
+    while i<= nrows(C) && C.rows[i].pos[1] < h.pos[1]
+      i += 1
+    end
+    @hassert :HNF 2  i > nrows(C) || C[i].pos[1] > h.pos[1]
+    insert!(C.rows, i, h)
+    C.r += 1
+    C.nnz += length(h)
+    C.c = max(C.c, h.pos[end])
+  end
+  M.max_indep = copy(C)
+  @assert is_upper_triangular(C)
+  M.basis_idx = prod([C[i,i] for i=1:nrows(C)])
+  @assert M.basis_idx > 0
+  return C
+end
+
 function check_index(M::ModuleCtx_fmpz)
   if nrows(M.Mp.basis) < ncols(M.Mp.basis)
     return ZZRingElem(0)
@@ -68,32 +95,13 @@ function check_index(M::ModuleCtx_fmpz)
   M.new = false
 
 
-  if isdefined(M, :basis)
-    C = copy(M.basis)
-    @assert is_upper_triangular(C)
+  C = if isdefined(M, :basis)
+    B = copy(M.basis)
+    @assert is_upper_triangular(B)
     @assert M.basis_idx != 0
+    B
   else
-    d = abs(det_mc(M.bas_gens))
-    @assert !iszero(d)
-    C = M.max_indep
-    C.c = M.bas_gens.c
-    for ii = M.bas_gens
-      h = reduce(C, ii, 2*d) #to avoid problems with diag being 1...1 d
-      @hassert :HNF 2  !iszero(h)
-      i = 1
-      while i<= nrows(C) && C.rows[i].pos[1] < h.pos[1]
-        i += 1
-      end
-      @hassert :HNF 2  i > nrows(C) || C[i].pos[1] > h.pos[1]
-      insert!(C.rows, i, h)
-      C.r += 1
-      C.nnz += length(h)
-      C.c = max(C.c, h.pos[end])
-    end
-    M.max_indep = copy(C)
-    @assert is_upper_triangular(C)
-    M.basis_idx = prod([C[i,i] for i=1:nrows(C)])
-    @assert M.basis_idx > 0
+    _max_indep_basis!(M)
   end
 
   d = 2*M.basis_idx
