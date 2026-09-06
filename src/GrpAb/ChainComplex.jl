@@ -223,12 +223,8 @@ function grp_ab_fill(C::ComplexOfMorphisms, i)
       so = zero_obj(abelian_group([1]))
     end
     #now for obj[i+1], the codmain for the map:
-    if haskey(C.maps, i+1-start)
-      ta = domain(C[i+1-start])
-      new_ta = order(ta) != 1
-    else
-      ta = zero_obj(abelian_group([1]))
-    end
+    ta = haskey(C.maps, i+1-start) ? domain(C[i+1-start]) : zero_obj(abelian_group([1]))
+    new_ta = order(ta) != 1
     if new_ta && new_so
       error("cannot construct the hom, not unique")
     end
@@ -251,17 +247,12 @@ function grp_ab_fill(C::ComplexOfMorphisms, i)
       so = zero_obj(abelian_group([1]))
     end
     #now for obj[i-1], the codmain for the map:
-    new_ta = false
-    if haskey(C.maps, start-i+1)
-      ta = domain(C[start-i+1])
-      new_ta = order(ta) != 1
-    else
-      ta = zero_obj(abelian_group([1]))
-    end
+    ta_c = haskey(C.maps, start-i+1) ? domain(C[start-i+1]) : zero_obj(abelian_group([1]))
+    new_ta = order(ta_c) != 1
     if new_ta && new_so
       error("cannot construct the hom, not unique")
     end
-    C.maps[start-i] = hom(so, ta, [zero(ta) for i=1:ngens(so)])
+    C.maps[start-i] = hom(so, ta_c, [zero(ta_c) for i=1:ngens(so)])
     return C.maps[start-i]
   end
 end

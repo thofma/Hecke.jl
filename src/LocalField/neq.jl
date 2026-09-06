@@ -635,16 +635,12 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
   #   Galois-invariant, we can just scale by p and get a solution of
   #   val zero
 
-  local fr::MapEvalCtx
-
-  if frobenius == false
-    fr = MapEvalCtx(Hecke.frobenius(E, F))
+  fr::MapEvalCtx = if frobenius == false
+    MapEvalCtx(Hecke.frobenius(E, F))
+  elseif isa(frobenius, MapEvalCtx)
+    frobenius
   else
-    if isa(frobenius, MapEvalCtx)
-      fr = frobenius
-    else
-      fr = MapEvalCtx(frobenius)# ::Map{LocalField, LocalField}
-    end
+    MapEvalCtx(frobenius)# ::Map{LocalField, LocalField}
   end
 
   v_deg = valuation(absolute_degree(E), prime(E))
@@ -808,12 +804,12 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
 
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
 
-  if ramification_index(L) == degree(L) && e > 1#so we're ramified
+  GG = if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
     E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E), cached = false))
     G2 = automorphism_list(E2, absolute_base_field(E2))
-    GG = morphism_type(E)[]
+    exts = morphism_type(E)[]
     for e = G2
       ime = e(gen(E2))
       imeE = E(map_coefficients(L, ime.data, cached = false))
@@ -821,16 +817,16 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
       for g = G
         res_g = coeff(g(L(gen(bL))), 0)
         if res_e == res_g
-          push!(GG, hom(E, E, g, imeE, check = !false))
+          push!(exts, hom(E, E, g, imeE, check = !false))
         end
       end
     end
-    @assert length(GG) == divexact(absolute_degree(E), absolute_degree(K))
-#    @assert all(x->x in GG, automorphism_list(E, K))
+    @assert length(exts) == divexact(absolute_degree(E), absolute_degree(K))
+#    @assert all(x->x in exts, automorphism_list(E, K))
+    exts
   else
-    GG = automorphism_list(E, absolute_base_field(E))
-    gK = map(E, gK)
-    GG = [g for g = GG if map(g, gK) == gK]
+    gKE = map(E, gK)
+    [g for g = automorphism_list(E, absolute_base_field(E)) if map(g, gKE) == gKE]
   end
 
   rE, mE = residue_field(E)
@@ -1102,10 +1098,8 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
     #bas[1] is torsion
     #torsion kan only happen in small precision k*e < e/(p-1) I think
     e = absolute_ramification_index(K)
-    pr = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
-    if pr < 2 && prime(K) == 2
-      pr = 2 #to see different signs
-    end
+    #for p = 2 at least precision 2 to see different signs
+    pr = max(e*ceil(Int, ZZRingElem(e)//(p-1)), p == 2 ? 2 : 0)
 
     tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
     while length(tor) < h[1,1]

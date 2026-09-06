@@ -294,21 +294,22 @@ function is_isomorphic_with_map(
   # Case: Maximally cyclic subfields are linearly disjoint.
   if linearly_disjoint || is_linearly_disjoint(k1, k2)
     # Solve the norm equation N₁(x₁) = a₁ for x₁ where N₁:k₁k₂ → k₂.
-    k1k2, k1_to_k1k2, k2_to_k1k2 = _compositum(k1, k2)
+    k1k2_abs, k1_to_k1k2_abs, k2_to_k1k2_abs = _compositum(k1, k2)
     k2_abs, _ = absolute_simple_field(k2)
-    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2_abs)
-    if !first(local _, x1 = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1))))
+    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2_abs, k2_abs)
+    fl1, x1_rel = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1)))
+    if !fl1
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
-    x1 = k1k2_over_k2_to_k1k2(x1)
+    x1_abs = k1k2_over_k2_to_k1k2(x1_rel)
     # Reset the base field of the compositum in the relative field case.
     # One cannot compose the resulting maps since one has to ensure that
     # the inclusion maps k⟶ k₁⟶ k₁k₂ and k⟶ k₂⟶ k₁k₂ are the same.
-    if k1 isa RelSimpleNumField
-      k1k2, as_rel = relative_simple_extension(k1k2, k)
-      _, k1_to_k1k2 = is_subfield(k1, k1k2)
-      _, k2_to_k1k2 = is_subfield(k2, k1k2)
-      x1 = inv(as_rel)(x1)
+    k1k2, k1_to_k1k2, k2_to_k1k2, x1 = if k1 isa RelSimpleNumField
+      k1k2_rel, as_rel = relative_simple_extension(k1k2_abs, k)
+      (k1k2_rel, is_subfield(k1, k1k2_rel)[2], is_subfield(k2, k1k2_rel)[2], inv(as_rel)(x1_abs))
+    else
+      (k1k2_abs, k1_to_k1k2_abs, k2_to_k1k2_abs, x1_abs)
     end
     # Solve σ₁(x)σ₂(y) = xy for x in k₁k₂ ("bicyclic Hilbert 90").
     # First reinterprete σᵢ as maps of k₁k₂ using the "tensor basis".

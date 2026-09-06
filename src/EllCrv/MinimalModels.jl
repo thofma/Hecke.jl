@@ -375,12 +375,10 @@ function check_kraus_conditions_global(c4::AbsSimpleNumFieldOrderElem, c6::AbsSi
 
   P2list = [P^valuation(OK2, P) for P in Plist2]
   a1list = [d[2] for d in dat]
-  a1 = crt(a1list, P2list)
+  a1crt = crt(a1list, P2list)
 
   #Needed  for when we combine with the primes above 3 to get a global transformation
-  if !(a1 in OK3)
-    a1 = 3*a1
-  end
+  a1 = a1crt in OK3 ? a1crt : 3*a1crt
 
   dat = [check_kraus_conditions_at_2(c4, c6, P, a1) for P in Plist2]
   a3list = [d[3] for d in dat]

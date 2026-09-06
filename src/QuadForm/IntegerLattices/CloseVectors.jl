@@ -61,15 +61,9 @@ function _close_vectors_gram(::Type{T}, _G, target::Vector{QQFieldElem},
       G, LLLContext(0.9999, 0.5001, :gram))
   end
 
-  if isone(transform)
-    target_lll = copy(target)
-    output_transform = nothing
-  else
-    # Glll = transform * G * transform^t and enumerated row vectors are
-    # mapped back by x * transform, hence target_lll * transform = target.
-    target_lll = Vector{QQFieldElem}(target * inv(transform))
-    output_transform = transform
-  end
+  # Glll = transform * G * transform^t and enumerated row vectors are
+  # mapped back by x * transform, hence target_lll * transform = target.
+  target_lll, output_transform = isone(transform) ? (copy(target), nothing) : (Vector{QQFieldElem}(target * inv(transform)), transform)
 
   D = _finckepohst_target_denominator(target_lll)
   scale = d * D^2

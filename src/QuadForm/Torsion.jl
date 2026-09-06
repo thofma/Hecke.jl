@@ -2265,11 +2265,9 @@ function _biproduct(
 )
   mbf = modulus_bilinear_form(x[1])
   @req all(q -> modulus_bilinear_form(q) == mbf, x) "All torsion quadratic modules must have the same bilinear modulus"
+  mqf = as_bilinear_module ? mbf : modulus_quadratic_form(x[1])
   if !as_bilinear_module
-    mqf = modulus_quadratic_form(x[1])
     @req all(q -> modulus_quadratic_form(q) == mqf, x) "All torsion quadratic modules must have the same quadratic modulus"
-  else
-    mqf = mbf
   end
   cs = cover.(x)
   rs = relations.(x)
