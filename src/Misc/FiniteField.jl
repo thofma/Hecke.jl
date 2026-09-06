@@ -183,13 +183,12 @@ end
 function unit_group(F::T; n_quo::Int = -1) where T <: FinField
 
   g = primitive_element(F, n_quo = n_quo)
-  k = order(F) - 1
-  inv = ZZRingElem(1)
-  npart = ZZRingElem(k)
-  if n_quo != -1
-    k = ZZRingElem(n_quo)
-    npart, nnpart = ppio(order(F) - 1, k)
-    inv = invmod(nnpart, npart)
+  k, npart, inv = if n_quo == -1
+    (order(F) - 1, ZZRingElem(order(F) - 1), ZZRingElem(1))
+  else
+    kq = ZZRingElem(n_quo)
+    np, nnpart = ppio(order(F) - 1, kq)
+    (kq, np, invmod(nnpart, np))
   end
 
   G = abelian_group([k])

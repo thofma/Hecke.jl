@@ -1780,12 +1780,12 @@ function normal_form(
     end
 
     D1, U1 = _normalize(D, ZZ(p), false)
-    UR = U1 * UR
+    U1R = U1 * UR
     #apply U to the generators
-    n1 = ncols(UR)
+    n1 = ncols(U1R)
     Gp =  gens(D_p);
-    for i in 1:nrows(UR)
-      g = sum(lift(UR[i,j]) * Gp[j] for j in 1:ncols(UR))
+    for i in 1:nrows(U1R)
+      g = sum(lift(U1R[i,j]) * Gp[j] for j in 1:ncols(U1R))
       push!(normal_gens, I_p(g))
     end
   end
@@ -2265,11 +2265,9 @@ function _biproduct(
 )
   mbf = modulus_bilinear_form(x[1])
   @req all(q -> modulus_bilinear_form(q) == mbf, x) "All torsion quadratic modules must have the same bilinear modulus"
+  mqf = as_bilinear_module ? mbf : modulus_quadratic_form(x[1])
   if !as_bilinear_module
-    mqf = modulus_quadratic_form(x[1])
     @req all(q -> modulus_quadratic_form(q) == mqf, x) "All torsion quadratic modules must have the same quadratic modulus"
-  else
-    mqf = mbf
   end
   cs = cover.(x)
   rs = relations.(x)
@@ -2494,8 +2492,8 @@ function snf(T::TorQuadModule)
   if is_snf(A)
     return T, id_hom(T)
   end
-  G, f = snf(A)
-  S, f = sub(T, [T(f(g)) for g in gens(G)])
+  G, mG = snf(A)
+  S, f = sub(T, [T(mG(g)) for g in gens(G)])
   @assert is_bijective(f)
   return (S, f)::Tuple{TorQuadModule, TorQuadModuleMap}
 end

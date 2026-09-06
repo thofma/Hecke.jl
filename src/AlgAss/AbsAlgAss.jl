@@ -1162,9 +1162,10 @@ function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor; is
             BB = matrix([coefficients(CM(transpose(matrix(f(b))), check = false)) for b in basis(Bc)])
             BBinv = matrix([coefficients(preimage(CtoCM, CM(transpose(matrix(b)), check = false))) for b in _absolute_basis(CM)])
             #BBinv = inv(BB)
-            f = AbsAlgAssMorGen(Bc, CM, BB, BBinv)
+            Bc.isomorphic_full_matrix_algebra = CM, AbsAlgAssMorGen(Bc, CM, BB, BBinv)
+          else
+            Bc.isomorphic_full_matrix_algebra = CM, f
           end
-          Bc.isomorphic_full_matrix_algebra = CM, f
         end
       end
     end
@@ -1300,7 +1301,8 @@ function skolem_noether_conjugator(
   end
   sn = ker[1]
   while !first(is_invertible(sn))
-    cc = [rand(base_ring(alg), -length(ker):length(ker)) for _ in 1:length(ker)]
+    nk = length(ker)
+    cc = [rand(base_ring(alg), -nk:nk) for _ in 1:nk]
     sn = sum(cc .* ker)
   end
   for x in basis(domain(emb1))

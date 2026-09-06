@@ -96,7 +96,7 @@ function _mod(Zell2x, u::FacElem, dpoly, dpolymodl, Zellx; D = Dict{AbsSimpleNum
   res = one(Zell2x)
   w = Zellx()
   for (b, e) in u
-    v = get!(D, b) do
+    v0 = get!(D, b) do
       _mod(Zell2x, b, dpoly, dpolymodl, Zellx)
     end
     if e < 0
@@ -113,7 +113,7 @@ function _mod(Zell2x, u::FacElem, dpoly, dpolymodl, Zellx; D = Dict{AbsSimpleNum
         twowinv2 = 2*winv2
         Hecke.mul!(winv2, winv2, winv2)
         Hecke.mod!(winv2, winv2, dpoly)
-        Hecke.mul!(winv2, winv2, v)
+        Hecke.mul!(winv2, winv2, v0)
         Hecke.mod!(winv2, winv2, dpoly)
         _v = sub!(twowinv2, twowinv2, winv2)
         #_v = mod(2*winv2 - v * winv2^2, dpoly)
@@ -124,6 +124,8 @@ function _mod(Zell2x, u::FacElem, dpoly, dpolymodl, Zellx; D = Dict{AbsSimpleNum
         _v
       end
       e = -e
+    else
+      v = v0
     end
     res = Hecke.mul!(res, res, powermod(v, e, dpoly))
     res = Hecke.mod!(res, res, dpoly)

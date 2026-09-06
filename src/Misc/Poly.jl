@@ -554,7 +554,7 @@ end
 function charpoly_mod(M::Generic.Mat{AbsSimpleNumFieldElem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
   K = base_ring(M)
   p = p_start
-  Kt, t = polynomial_ring(K, cached = false)
+  Kt, _ = polynomial_ring(K, cached = false)
   f = Kt()
   f_last = f
   d = ZZRingElem(1)
@@ -684,15 +684,11 @@ function roots(::QQField, f::ZZPolyRingElem; max_roots::Int=degree(f))
   end
 
   g = gcd(f, derivative(f))
-  if isone(g)
-      h = f
-  else
-      h = divexact(f, g)
+  h0 = isone(g) ? f : divexact(f, g)
+  if degree(h0) == 1
+      return QQFieldElem[-constant_coefficient(h0)//leading_coefficient(h0)]
   end
-  if degree(h) == 1
-      return QQFieldElem[-constant_coefficient(h)//leading_coefficient(h)]
-  end
-  h = primpart(h)
+  h = primpart(h0)
 
   global p_start
   p = p_start

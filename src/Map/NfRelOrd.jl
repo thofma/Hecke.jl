@@ -243,7 +243,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, FK)
       z.poly_of_the_field = hh
 
-      FE, mE = Nemo._residue_field(hh)
+      FE, mFE = Nemo._residue_field(hh)
 
       #FE = RelFinField(hh, :v)
       #FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
@@ -258,11 +258,11 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
         else
           ff = FKx([ mmK(coeff(f, i)) for i =0:degree(f)])
         end
-        return image(mE, ff)
+        return image(mFE, ff)
       end
 
       function _preimage(x::FqFieldElem)
-        f = preimage(mE, x)
+        f = preimage(mFE, x)
         immK = pseudo_inv(mmK)
         y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
         res = O(y)
@@ -350,7 +350,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
       FE2, mE2 = field_extension(hh)
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
+      mFE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
 
       function _image(x::RelNumFieldOrderElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
@@ -359,11 +359,11 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         else
           ff = FKx([ mmK(coeff(f, i)) for i =0:degree(f)])
         end
-        return image(mE, ff)
+        return image(mFE, ff)
       end
 
       function _preimage(x::RelFinFieldElem)
-        f = preimage(mE, x)
+        f = preimage(mFE, x)
         immK = pseudo_inv(mmK)
         y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
         return O(y)
@@ -452,7 +452,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
       FKxtoFKabsz = MapFromFunc(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
       FE2, mE2 = field_extension(hh)
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      mE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
+      mFE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
 
       function _image(x::RelNumFieldOrderElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
@@ -461,11 +461,11 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         else
           ff = FKx([ mmK(coeff(f, i)) for i =0:degree(f)])
         end
-        return image(mE, ff)
+        return image(mFE, ff)
       end
 
       function _preimage(x::RelFinFieldElem)
-        f = preimage(mE, x)
+        f = preimage(mFE, x)
         immK = pseudo_inv(mmK)
         y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
         return O(y)

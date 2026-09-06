@@ -2514,15 +2514,15 @@ Further Delta is in bijection with the proper spinor genera of `G`.
 @attr Any function _automorphous_numbers(G::ZZGenus)
   @assert is_integral(G)
   P = [prime(g) for g in local_symbols(G)]
-  A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
+  A, _, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
   gens_automorph = elem_type(A)[]
   for g in local_symbols(G)
     p = prime(g)
     for r in automorphous_numbers(g)
       r = QQ(r)
       S = [i for i in P if i!=p]
-      pv,u = ppio(ZZ(r),p)
-      pv = QQ(pv); u = QQ(u)
+      pv0, u0 = ppio(ZZ(r),p)
+      pv = QQ(pv0); u = QQ(u0)
       push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S], init=A()))
     end
   end

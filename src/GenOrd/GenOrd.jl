@@ -549,8 +549,8 @@ function ring_of_multipliers(O::GenOrd{S, T}, I::MatElem{P}, p::P, is_prime::Boo
                   _ring_of_multipliers_reduce_nonprime(m, p, degree(O))
   H = hnf_modular(mm, p, is_prime)
 
-  @vtime :GenOrd 2 Hi, d = pseudo_inv(H)
-  return GenOrd(O, transpose(Hi), d, check = false)::GenOrd{S, T}
+  @vtime :GenOrd 2 Hi, dH = pseudo_inv(H)
+  return GenOrd(O, transpose(Hi), dH, check = false)::GenOrd{S, T}
 end
 
 # ring_of_multipliers function-barrier helpers: it fixes the return type
@@ -596,10 +596,9 @@ function ring_of_multipliers(O::GenOrd, I::MatElem)
   end
   H = mm
 
-  @vtime :GenOrd 2 Hi, d = pseudo_inv(H)
+  @vtime :GenOrd 2 Hi, dH = pseudo_inv(H)
 
-  O = GenOrd(O, transpose(Hi), d, check = false)
-  return O
+  return GenOrd(O, transpose(Hi), dH, check = false)
 end
 
 ################################################################################

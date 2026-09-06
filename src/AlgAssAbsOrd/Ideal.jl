@@ -76,27 +76,17 @@ Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::QQMatrix; M_in_hnf::Bool=false)
-  if !M_in_hnf
-    if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
-      M = _hnf_integral(M, :lowerleft, compute_det = true)
-    else
-      M = _hnf_integral(M, :lowerleft)
-    end
-  end
-  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  return AlgAssAbsOrdIdl{typeof(A), ZZRing}(A, ZZ, sub(M, k:nrows(M), 1:ncols(M)))
+  # maybe use compute_det = true if is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
+  H = M_in_hnf ? M : _hnf_integral(M, :lowerleft)
+  k = something(findfirst(i -> !is_zero_row(H, i), 1:nrows(H)), nrows(H) + 1)
+  return AlgAssAbsOrdIdl{typeof(A), ZZRing}(A, ZZ, sub(H, k:nrows(H), 1:ncols(H)))
 end
 
 function ideal(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; M_in_hnf::Bool=false)
-  if !M_in_hnf
-    if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
-      M = _hnf_integral(M, R, :lowerleft, compute_det = true)
-    else
-      M = _hnf_integral(M, R, :lowerleft)
-    end
-  end
-  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  return AlgAssAbsOrdIdl{typeof(A), typeof(R)}(A, R, sub(M, k:nrows(M), 1:ncols(M)))
+  # maybe use compute_det = true if is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
+  H = M_in_hnf ? M : _hnf_integral(M, R, :lowerleft)
+  k = something(findfirst(i -> !is_zero_row(H, i), 1:nrows(H)), nrows(H) + 1)
+  return AlgAssAbsOrdIdl{typeof(A), typeof(R)}(A, R, sub(H, k:nrows(H), 1:ncols(H)))
 end
 
 @doc raw"""
@@ -222,13 +212,12 @@ function ideal_from_lattice_gens(A::AbstractAssociativeAlgebra{QQFieldElem}, v::
   for i = 1:length(v)
     elem_to_mat_row!(M, i, v[i])
   end
-  M = _hnf_integral(M, :lowerleft)
-  i = something(findfirst(k -> !is_zero_row(M, k), 1:nrows(M)), nrows(M) + 1)
+  H = _hnf_integral(M, :lowerleft)
+  i = something(findfirst(k -> !is_zero_row(H, k), 1:nrows(H)), nrows(H) + 1)
   #if length(v) >= dim(A)
-  #  M = sub(M, (nrows(M) - dim(A) + 1):nrows(M), 1:dim(A))
+  #  H = sub(H, (nrows(H) - dim(A) + 1):nrows(H), 1:dim(A))
   #end
-  M = sub(M, i:nrows(M), 1:ncols(M))
-  return ideal(A, M; M_in_hnf=true)
+  return ideal(A, sub(H, i:nrows(H), 1:ncols(H)); M_in_hnf=true)
 end
 
 @doc raw"""
@@ -468,14 +457,9 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   d = dim(algebra(a))
   M = vcat(basis_matrix(a, copy = false), basis_matrix(b, copy = false))
-  if nrows(M) >= ncols(M) && is_lower_triangular(M)
-    M = _hnf_integral(M, :lowerleft, triangular_top = true)
-  else
-    M = _hnf_integral(M, :lowerleft)
-  end
-  k = findfirst(i -> !is_zero_row(M, i), 1:nrows(M))
-  M = sub(M, k:nrows(M), 1:ncols(M))
-  c = ideal(algebra(a), M; M_in_hnf=true)
+  H = nrows(M) >= ncols(M) && is_lower_triangular(M) ? _hnf_integral(M, :lowerleft, triangular_top = true) : _hnf_integral(M, :lowerleft)
+  k = findfirst(i -> !is_zero_row(H, i), 1:nrows(H))
+  c = ideal(algebra(a), sub(H, k:nrows(H), 1:ncols(H)); M_in_hnf=true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
   end
@@ -2079,13 +2063,7 @@ end
 # M is a left ideal of O if side = :left and a right ideal if side = :right.
 # Assumes (so far?) that the algebra is simple and O is maximal.
 function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ ZZRingElem, Int }, side::Symbol)
-  if side == :left
-    O = left_order(I)
-  elseif side == :right
-    O = right_order(I)
-  else
-    error("Option :$(side) for side not implemented")
-  end
+  O = side == :left ? left_order(I) : side == :right ? right_order(I) : error("Option :$(side) for side not implemented")
 
   @assert is_simple(algebra(O))
   @assert is_maximal(O)

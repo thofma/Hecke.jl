@@ -294,21 +294,22 @@ function is_isomorphic_with_map(
   # Case: Maximally cyclic subfields are linearly disjoint.
   if linearly_disjoint || is_linearly_disjoint(k1, k2)
     # Solve the norm equation N₁(x₁) = a₁ for x₁ where N₁:k₁k₂ → k₂.
-    k1k2, k1_to_k1k2, k2_to_k1k2 = _compositum(k1, k2)
+    k1k2_abs, k1_to_k1k2_abs, k2_to_k1k2_abs = _compositum(k1, k2)
     k2_abs, _ = absolute_simple_field(k2)
-    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2, k2_abs)
-    if !first(local _, x1 = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1))))
+    k1k2_over_k2, k1k2_over_k2_to_k1k2 = relative_simple_extension(k1k2_abs, k2_abs)
+    fl1, x1_rel = is_norm(k1k2_over_k2, base_field(k1k2_over_k2)(k2(a1)))
+    if !fl1
       return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
     end
-    x1 = k1k2_over_k2_to_k1k2(x1)
+    x1_abs = k1k2_over_k2_to_k1k2(x1_rel)
     # Reset the base field of the compositum in the relative field case.
     # One cannot compose the resulting maps since one has to ensure that
     # the inclusion maps k⟶ k₁⟶ k₁k₂ and k⟶ k₂⟶ k₁k₂ are the same.
-    if k1 isa RelSimpleNumField
-      k1k2, as_rel = relative_simple_extension(k1k2, k)
-      _, k1_to_k1k2 = is_subfield(k1, k1k2)
-      _, k2_to_k1k2 = is_subfield(k2, k1k2)
-      x1 = inv(as_rel)(x1)
+    k1k2, k1_to_k1k2, k2_to_k1k2, x1 = if k1 isa RelSimpleNumField
+      k1k2_rel, as_rel = relative_simple_extension(k1k2_abs, k)
+      (k1k2_rel, is_subfield(k1, k1k2_rel)[2], is_subfield(k2, k1k2_rel)[2], inv(as_rel)(x1_abs))
+    else
+      (k1k2_abs, k1_to_k1k2_abs, k2_to_k1k2_abs, x1_abs)
     end
     # Solve σ₁(x)σ₂(y) = xy for x in k₁k₂ ("bicyclic Hilbert 90").
     # First reinterprete σᵢ as maps of k₁k₂ using the "tensor basis".
@@ -349,9 +350,9 @@ function is_isomorphic_with_map(
     _, s2 = is_split_with_map(cyclic_algebra(k2, c2.sigma, k(1)))
 
     function add_kronecker_prod!(trg, a, b)
-      d = number_of_rows(a)
-      for i in 1:d:d^2-1, j in 1:d:d^2-1
-        trg[i:i+d-1, j:j+d-1] .+= (a * b[div(i, d)+1, div(j, d)+1])
+      da = number_of_rows(a)
+      for i in 1:da:da^2-1, j in 1:da:da^2-1
+        trg[i:i+da-1, j:j+da-1] .+= (a * b[div(i, da)+1, div(j, da)+1])
       end
     end
 
@@ -437,10 +438,10 @@ function is_isomorphic_with_map(
   k2_over_k0, k2_over_k0_to_k2 = relative_simple_extension(k2, k0)
   dz = degree(k1_over_k0)
   d0 = degree(k0)
-  sigma1 = hom(k1_over_k0, k1_over_k0, k1_over_k0_to_k1\ (c1.sigma^d0)(k1_over_k0_to_k1(gen(k1_over_k0))))
-  sigma2 = hom(k2_over_k0, k2_over_k0, k2_over_k0_to_k2\ (c2.sigma^d0)(k2_over_k0_to_k2(gen(k2_over_k0))))
-  z1 = cyclic_algebra(k1_over_k0, sigma1, k0(c1.a))
-  z2 = cyclic_algebra(k2_over_k0, sigma2, k0(c2.a))
+  tau1 = hom(k1_over_k0, k1_over_k0, k1_over_k0_to_k1\ (c1.sigma^d0)(k1_over_k0_to_k1(gen(k1_over_k0))))
+  tau2 = hom(k2_over_k0, k2_over_k0, k2_over_k0_to_k2\ (c2.sigma^d0)(k2_over_k0_to_k2(gen(k2_over_k0))))
+  z1 = cyclic_algebra(k1_over_k0, tau1, k0(c1.a))
+  z2 = cyclic_algebra(k2_over_k0, tau2, k0(c2.a))
   if !first(local _, iso = is_isomorphic_with_map(z1, z2; linearly_disjoint=true))
     return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
   end

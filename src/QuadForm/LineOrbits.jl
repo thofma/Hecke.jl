@@ -74,7 +74,8 @@ function Base.rand(P::LineEnumCtx)
     v = rand(K, n)
   end
   j = findfirst(!iszero, v)
-  map!(x -> x*inv(v[j]), v, v)
+  vj_inv = inv(v[j])
+  map!(x -> x*vj_inv, v, v)
   return v
 end
 

@@ -670,19 +670,15 @@ function grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldE
 end
 
 function _grunwald_wang(d::Dict{<:Any, Int})
-  lp = collect(keys(d))
-  li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
+  keys_d = collect(keys(d))
+  li = [x for x = keys_d if isa(x, NumFieldEmb)]
+  lp = [x for x = keys_d if isa(x, NumFieldOrderIdeal)]
   @assert length(lp) + length(li) == length(d)
 
-  if length(li) == 0
-    if length(lp) == 0
-      error("no data specified, giving up")
-    end
-    k = number_field(order(lp[1]))
-  else
-    k = number_field(li[1])
+  if length(li) == 0 && length(lp) == 0
+    error("no data specified, giving up")
   end
+  k = length(li) == 0 ? number_field(order(lp[1])) : number_field(li[1])
   @assert all(x->k === number_field(x), li)
   @assert all(x->k === number_field(order(x)), lp)
 
@@ -705,18 +701,14 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
   # - potential ramification at 2 (if 2 in d)
   # - unram elsewhere.
 
-  lp = collect(keys(d))
-  li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
+  keys_d = collect(keys(d))
+  li = [x for x = keys_d if isa(x, NumFieldEmb)]
+  lp_all = [x for x = keys_d if isa(x, NumFieldOrderIdeal)]
 
-  if length(li) == 0
-    if length(lp) == 0
-      error("no data specified, giving up")
-    end
-    k = number_field(order(lp[1]))
-  else
-    k = number_field(li[1])
+  if length(li) == 0 && length(lp_all) == 0
+    error("no data specified, giving up")
   end
+  k = length(li) == 0 ? number_field(order(lp_all[1])) : number_field(li[1])
 
   li = [x for x = li if isreal(x)]
   @assert all(x->d[x] in [1,2], li)
@@ -729,24 +721,18 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
 
   @assert is_prime_power(deg) #for now, to keep things simple
 
-  con = 1*zk
   #complication:
   # if deg = 2^l, l >= 3 then, since there are no unramifed
   # extensions of Q_2 of this degree, 2 has to divide the conductor
   # From Carlo's PhD, Thm 1.41: (for all primes, but here used for 2)
   # P a prime above 2 in k/ zk, then
   # v_P(con) <= p/(p-1) * (1+ l * e(P/p))
-  if iseven(deg) #2^l
-    l = valuation(deg, 2)
-    l2 = [p for p = lp if minimum(p) == 2]
-    if length(l2) > 0
-      con *= prod(p^(2*(1+l*ramification_index(p)-1)) for p = l2)
-    end
-    #the -1 at the end is since p is already once in con
-    lp = [p for p = lp if minimum(p) != 2]
-  else
-    l2 = []
-  end
+  is2 = iseven(deg) #2^l
+  l = is2 ? valuation(deg, 2) : 0
+  l2 = is2 ? [p for p = lp_all if minimum(p) == 2] : eltype(lp_all)[]
+  #the -1 at the end is since p is already once in con
+  con = is2 && length(l2) > 0 ? prod(p^(2*(1+l*ramification_index(p)-1)) for p = l2) : 1*zk
+  lp = is2 ? [p for p = lp_all if minimum(p) != 2] : lp_all
 
   #in general: if the classgroup has a p^s and deg = p^l,
   #then we need ideals with a p^(l-s) might yield a p^l at then end
@@ -782,7 +768,8 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
     else
       if iseven(deg) && length(l2) > 0
         S1 = ray_class_field(mR)
-        S2 = [ray_class_field(divexact(con, p^valuation(con, p)), n_quo = deg) for p = l2]
+        cur_con = con
+        S2 = [ray_class_field(divexact(cur_con, p^valuation(cur_con, p)), n_quo = deg) for p = l2]
         ngp = norm_group_map(S1, S2)
         s, _ = sub(R, [val[i] for i = 1:length(lp)])
         s += preimage(S1.quotientmap, sum(kernel(x)[1] for x = ngp))[1]
@@ -792,9 +779,9 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
       s = saturate(s, R)
       fl, s = has_complement(s, R)
       @assert fl
-      c, mc = quo(R, s)
-      c, _mc = quo(c, FinGenAbGroupElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
-      mc = mc * _mc
+      c0, mc0 = quo(R, s)
+      c, _mc = quo(c0, FinGenAbGroupElem[d[lp[i]] * mc0(val[i]) for i = 1:length(lp)])
+      mc = mc0 * _mc
       if all(i->order(mc(val[i])) == d[lp[i]], 1:length(lp))
 #        @show :cyc, snf(c)[1]
         for (u, mu) = subgroups(c, quotype = [deg])

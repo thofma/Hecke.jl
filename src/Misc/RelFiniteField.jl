@@ -710,13 +710,13 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
       aux[1, j] = coeff(x, j-1)
     end
     mul!(aux, aux, Minv)
-    el = F()
+    res = F()
     for i = 1:degree(K)
       if !iszero(aux[1, i])
-        el += F(aux[1, i])*abs_basis[i]
+        res += F(aux[1, i])*abs_basis[i]
       end
     end
-    return el
+    return res
   end
 
   Fpx = polynomial_ring(Fp)[1]

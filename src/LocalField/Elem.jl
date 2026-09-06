@@ -669,14 +669,13 @@ function uniformizer(L::LocalField, v::Int; prec::Int = 20)  #precision????
   e = absolute_ramification_index(L)
   pr = ceil(Int, (prec-v)/e)+2*ceil(Int, log2(abs(v)))+2
   f = defining_polynomial(L, pr)
-  local pi_inv
-  setprecision(L, pr*e) do
+  pi_inv = setprecision(L, pr*e) do
     setprecision(base_field(L), pr) do
       g = parent(f)([coeff(f, i) for i=1:degree(f)])
-      pi_inv = g(uniformizer(L))
-      pi_inv *= -inv(coeff(f, 0))
-      @assert valuation(pi_inv) == - valuation(uniformizer(L))
-      @assert precision(pi_inv) >= prec - v #+ 2*ceil(Int, log2(abs(v)))
+      pinv = g(uniformizer(L)) * (-inv(coeff(f, 0)))
+      @assert valuation(pinv) == - valuation(uniformizer(L))
+      @assert precision(pinv) >= prec - v #+ 2*ceil(Int, log2(abs(v)))
+      pinv
     end
   end
   return pi_inv^-v
@@ -712,15 +711,11 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   end
   v = valuation(n, prime(K))*absolute_ramification_index(K)
   prec = precision(data(a)) + v
-  if v > 0
-    b = setprecision(data(a), prec)
-  else
-    b = data(a)
-  end
-  b = setprecision(base_ring(b), prec) do
+  b = v > 0 ? setprecision(data(a), prec) : data(a)
+  c = setprecision(base_ring(b), prec) do
     powermod(b, n, defining_polynomial(K, prec))
   end
-  return K(b)
+  return K(c)
 end
 
 ################################################################################

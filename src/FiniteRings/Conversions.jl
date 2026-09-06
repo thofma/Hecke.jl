@@ -21,14 +21,14 @@ end
 function isomorphism(::Type{StructureConstantAlgebra{T}}, R::FiniteRing) where {T <: FinFieldElem}
   p = exponent(R.A)
   @req is_prime(p) "Characteristic must be prime"
-  if T === fpFieldElem
+  F = if T === fpFieldElem
     @req fits(Int, p) "Characteristic ($(p)) too large for fpFieldElem"
-    F = Nemo.Native.GF(Int(p))
+    Nemo.Native.GF(Int(p))
   elseif T === FpFieldElem
-    F = Nemo.Native.GF(p)
+    Nemo.Native.GF(p)
   else
     @assert T === FqFieldElem
-    F = GF(p)
+    GF(p)
   end
   G = gens(R.A)
   @assert length(G) == length(elementary_divisors(R.A))

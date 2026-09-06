@@ -210,9 +210,8 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{FinGenAbGroup, S, HeckeMap, G
     @assert ngens(G) == length(generators)
 
     z = new{S, T}()
-    modulo = false
-    if length(modulus) == 1
-      modulo = true
+    modulo = length(modulus) == 1
+    if modulo
       z.modulus = modulus[1]
     end
 

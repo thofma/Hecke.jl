@@ -83,7 +83,8 @@ function Nemo.basis(K::FinField, k::FinField)
   b = basis(K)
   K = base_field(K)
   while absolute_degree(K) > absolute_degree(k)
-    b = [x*y for x = basis(K) for y = b]
+    bb = b
+    b = [x*y for x = basis(K) for y = bb]
     K = base_field(K)
   end
   if K != k
@@ -203,7 +204,8 @@ end
 function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k)
   c = [coeff(a, i) for i=0:degree(parent(a))-1]
   while absolute_degree(parent(c[1])) > absolute_degree(k)
-    c = reduce(vcat, [[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c])
+    d = degree(parent(c[1]))
+    c = reduce(vcat, [[coeff(x, i) for i=0:d-1] for x = c])
   end
   if parent(c[1]) != k
     if isa(parent(c[1]), QadicField) && degree(parent(c[1])) ==1
@@ -261,10 +263,10 @@ function solve_1_units(a::Vector{T}, b::T) where T
     pk = ZZRingElem(p)
 
     val_offset = e .* map(valuation, absolute_basis(K))
-    cur_b = setprecision(b, k+e)
-    cur_a = [setprecision(x, k+e) for x = a]
-    b = setprecision(b, k+e)
-    a = [setprecision(x, k+e) for x = a]
+    b_prec = setprecision(b, k+e)
+    a_prec = [setprecision(x, k+e) for x = a]
+    cur_b = b_prec
+    cur_a = a_prec
     pow_b = ZZRingElem(1)
 
     while l <= k
@@ -286,7 +288,8 @@ function solve_1_units(a::Vector{T}, b::T) where T
       end
       @assert e*valuation(cur_b-one) >= l
       @assert precision(cur_b) > k
-      @assert all(x->isone(x) || e*valuation(x-one) >= l, cur_a)
+      lvl = l # `l` is reassigned below and must not be captured
+      @assert all(x->isone(x) || e*valuation(x-one) >= lvl, cur_a)
 
       A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
       h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a]; check = false)
@@ -317,12 +320,13 @@ function solve_1_units(a::Vector{T}, b::T) where T
 
       expo += s.coeff * expo_mult
       expo_mult = reduce(vcat, [_mk(x).coeff for x = gens(_k)])*expo_mult
-      cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
+      ca = cur_a
+      cur_a = [prod(ca[i]^_mk(x)[i] for i=1:length(ca)) for x = gens(_k)]
   #    @show [e*valuation(x-1) for x = cur_a]
 
 
-      pa = prod(a[i]^expo[i] for i=1:length(a))
-      cur_b = divexact(b^pow_b, pa)
+      pa = prod(a_prec[i]^expo[i] for i=1:length(a_prec))
+      cur_b = divexact(b_prec^pow_b, pa)
       if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
         break
       end
@@ -631,16 +635,12 @@ function frobenius_equation(c::Hecke.LocalFieldElem, F::Union{PadicField, QadicF
   #   Galois-invariant, we can just scale by p and get a solution of
   #   val zero
 
-  local fr::MapEvalCtx
-
-  if frobenius == false
-    fr = MapEvalCtx(Hecke.frobenius(E, F))
+  fr::MapEvalCtx = if frobenius == false
+    MapEvalCtx(Hecke.frobenius(E, F))
+  elseif isa(frobenius, MapEvalCtx)
+    frobenius
   else
-    if isa(frobenius, MapEvalCtx)
-      fr = frobenius
-    else
-      fr = MapEvalCtx(frobenius)# ::Map{LocalField, LocalField}
-    end
+    MapEvalCtx(frobenius)# ::Map{LocalField, LocalField}
   end
 
   v_deg = valuation(absolute_degree(E), prime(E))
@@ -804,12 +804,12 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
 
   #if (like here) L is Eisenstein over unram, then the automorphisms are easier
 
-  if ramification_index(L) == degree(L) && e > 1#so we're ramified
+  GG = if ramification_index(L) == degree(L) && e > 1#so we're ramified
     #thus Gal(E/base_field(L)) = Gal(L/base_field(L)) x unram of base_field
     bL = base_field(L)
     E2, _ = unramified_extension(map_coefficients(x->bL(coeff(x, 0)), defining_polynomial(E), cached = false))
     G2 = automorphism_list(E2, absolute_base_field(E2))
-    GG = morphism_type(E)[]
+    exts = morphism_type(E)[]
     for e = G2
       ime = e(gen(E2))
       imeE = E(map_coefficients(L, ime.data, cached = false))
@@ -817,16 +817,16 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
       for g = G
         res_g = coeff(g(L(gen(bL))), 0)
         if res_e == res_g
-          push!(GG, hom(E, E, g, imeE, check = !false))
+          push!(exts, hom(E, E, g, imeE, check = !false))
         end
       end
     end
-    @assert length(GG) == divexact(absolute_degree(E), absolute_degree(K))
-#    @assert all(x->x in GG, automorphism_list(E, K))
+    @assert length(exts) == divexact(absolute_degree(E), absolute_degree(K))
+#    @assert all(x->x in exts, automorphism_list(E, K))
+    exts
   else
-    GG = automorphism_list(E, absolute_base_field(E))
-    gK = map(E, gK)
-    GG = [g for g = GG if map(g, gK) == gK]
+    gKE = map(E, gK)
+    [g for g = automorphism_list(E, absolute_base_field(E)) if map(g, gKE) == gKE]
   end
 
   rE, mE = residue_field(E)
@@ -1098,10 +1098,8 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
     #bas[1] is torsion
     #torsion kan only happen in small precision k*e < e/(p-1) I think
     e = absolute_ramification_index(K)
-    pr = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
-    if pr < 2 && prime(K) == 2
-      pr = 2 #to see different signs
-    end
+    #for p = 2 at least precision 2 to see different signs
+    pr = max(e*ceil(Int, ZZRingElem(e)//(p-1)), p == 2 ? 2 : 0)
 
     tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
     while length(tor) < h[1,1]
@@ -1538,11 +1536,11 @@ function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSim
     push!(pow_pi, pow_pi[end]*pi_C)
   end
 
-  pow_rho = [one(base_field(C))]
-  while length(pow_rho) < fC/fc
-    push!(pow_rho, pow_rho[end]*rho_C)
+  pow_rho_base = [one(base_field(C))]
+  while length(pow_rho_base) < fC/fc
+    push!(pow_rho_base, pow_rho_base[end]*rho_C)
   end
-  pow_rho = map(C, pow_rho)
+  pow_rho = map(C, pow_rho_base)
 
   b_k = absolute_basis(c)
   b_kK = [mC(mkK(preimage(mc, x))) for x = b_k]
@@ -1557,11 +1555,11 @@ function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSim
     e = divexact(eC, ec)
     f = divexact(fC, fc)
     n = length(b_k)
-    img = S*matrix(hcat([absolute_coordinates(x*t) for t = pow_pi]...))
-    m = matrix(C, length(pow_pi), length(pow_pi), [sum(img[(i-1)*f*n+j, k]*b_K[j] for j=1:f*n) for i=1:e for k=1:e])
+    img_pi = S*matrix(hcat([absolute_coordinates(x*t) for t = pow_pi]...))
+    m = matrix(C, length(pow_pi), length(pow_pi), [sum(img_pi[(i-1)*f*n+j, k]*b_K[j] for j=1:f*n) for i=1:e for k=1:e])
     d = det(m)
-    img = S*matrix(hcat([absolute_coordinates(d*t) for t = pow_rho]...))
-    m = matrix(c, length(pow_rho), length(pow_rho), [sum(img[j+(i-1)*n, k]*b_k[j] for j=1:n) for i=1:f for k=1:f])
+    img_rho = S*matrix(hcat([absolute_coordinates(d*t) for t = pow_rho]...))
+    m = matrix(c, length(pow_rho), length(pow_rho), [sum(img_rho[j+(i-1)*n, k]*b_k[j] for j=1:n) for i=1:f for k=1:f])
     return det(m)
   end
   return norm

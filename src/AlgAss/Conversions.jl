@@ -231,9 +231,9 @@ function StructureConstantAlgebra(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Int
   let BmatJinI = BmatJinI, I = I, r = r, A = A, t = t, Fp = Fp
     function _image(a::AlgAssAbsOrdElem)
       elem_to_mat_row!(t, 1, _elem_in_algebra(a, copy = false))
-      t = mul!(t, t, basis_mat_inv(I, copy = false))
-      @assert isone(denominator(t)) "Not an element of the domain"
-      c = reduce_vector_mod_hnf(numerator(t), BmatJinI)
+      tt = mul!(t, t, basis_mat_inv(I, copy = false))
+      @assert isone(denominator(tt)) "Not an element of the domain"
+      c = reduce_vector_mod_hnf(numerator(tt), BmatJinI)
       return A([ Fp(c[i]) for i in basis_elts ])
     end
   end
@@ -250,8 +250,8 @@ function StructureConstantAlgebra(I::AlgAssAbsOrdIdl, J::AlgAssAbsOrdIdl, p::Int
         if is_zero(acoords[i])
           continue
         end
-        temppp = mul!(temppp, acoords[i], BI[basis_elts[i]])
-        z = add!(z, z, temppp)
+        prod_i = mul!(temppp, acoords[i], BI[basis_elts[i]])
+        z = add!(z, z, prod_i)
       end
       _zz = O(z)
       return _zz
@@ -361,8 +361,8 @@ function StructureConstantAlgebra(I::AbsNumFieldOrderIdeal, J::AbsNumFieldOrderI
         if is_zero(acoords[i])
           continue
         end
-        temppp = mul!(temppp, acoords[i], BI[basis_elts[i]])
-        z = add!(z, z, temppp)
+        prod_i = mul!(temppp, acoords[i], BI[basis_elts[i]])
+        z = add!(z, z, prod_i)
       end
       return z
     end

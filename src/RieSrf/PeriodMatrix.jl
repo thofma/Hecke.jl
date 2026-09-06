@@ -134,9 +134,9 @@ function big_period_matrix(RS::RiemannSurface)
   s_m = SymmetricGroup(m) # ::AbstractAlgebra.Generic.SymmetricGroup{Int}
 
   ys = Vector{AcbFieldElem}()
+  Cp = AcbField(max_prec)
   for path in paths
-    Cc = AcbField(max_prec)
-		integral_matrix = zero_matrix(Cc, m, g)
+		integral_matrix = zero_matrix(Cp, m, g)
     subpaths = path.sub_paths
     x0 = start_point(subpaths[1])
 		ys =  sort!(roots(f(x0, y), initial_prec = prec), lt = sheet_ordering)
@@ -145,7 +145,7 @@ function big_period_matrix(RS::RiemannSurface)
 
 			integration_scheme = RS.integration_schemes[subpath.integration_scheme_index]
 
-			path_difference_matrix = zero_matrix(Cc, m, g)
+			path_difference_matrix = zero_matrix(Cp, m, g)
       abscissae = integration_scheme.abscissae
       N = length(abscissae)
 			An = analytic_continuation(RS, subpath, abscissae, ys)[2:end]
@@ -158,7 +158,7 @@ function big_period_matrix(RS::RiemannSurface)
           # point, multiply it with the correct weight and add it to the
           # intrgral.
 					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials, An[i][1],An[i][2])
-					integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
+					integral_matrix_contribution = change_base_ring(Cp, integral_matrix_contribution)
           integral_matrix_contribution *= integration_scheme.weights[i]
 					path_difference_matrix += integral_matrix_contribution
 				end
@@ -168,7 +168,7 @@ function big_period_matrix(RS::RiemannSurface)
 			else
         for i in (1:N)
 					integral_matrix_contribution = RS.evaluate_differential_factors_matrix(embedded_differentials,An[i][1],An[i][2])
-          integral_matrix_contribution = change_base_ring(Cc, integral_matrix_contribution)
+          integral_matrix_contribution = change_base_ring(Cp, integral_matrix_contribution)
           # For arcs and circles we need to multiply with an additional dx.
           integral_matrix_contribution *= integration_scheme.weights[i] * evaluate_d(path, abscissae[i])
 					path_difference_matrix += integral_matrix_contribution
@@ -223,7 +223,7 @@ function big_period_matrix(RS::RiemannSurface)
     chain = mon[1]
     chain_length = length(chain)
     chain_permutation = mon[2]
-    chain_integral = zero_matrix(Cc, m, g)
+    chain_integral = zero_matrix(Cp, m, g)
     sigma = one(s_m)
 
     for k in (1:chain_length)
@@ -246,7 +246,7 @@ function big_period_matrix(RS::RiemannSurface)
   #forms.
   for cycle in cycles
 
-		cycle_integral = [zero(Cc) for x in 1:g]
+		cycle_integral = [zero(Cp) for x in 1:g]
 		l = 1
 		while l < length(cycle)
       #Identify sheet we end up in after moving along the chain.
@@ -358,7 +358,8 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
     current_endpoint = 1
     gmin = minpoly(g)
     while (interval[end] != 1)
-      if minimum([abs(alpha - (1//2) * (interval[end] + current_endpoint)) for alpha in rs]) > (1//2) * abs(current_endpoint - interval[end])
+      mid = (1//2) * (interval[end] + current_endpoint)
+      if minimum([abs(alpha - mid) for alpha in rs]) > (1//2) * abs(current_endpoint - interval[end])
         push!(interval, current_endpoint)
         current_endpoint = 1
       else 
@@ -371,16 +372,16 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
       z_0 = (interval[j] + interval[j-1])/2
       delta = minimum([abs(alpha - z_0) for alpha in rs]) + (abs(interval[j] - interval[j-1]))/2 
       lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
-      gmin = lcm(lis) * gmin
+      gmin_int = lcm(lis) * gmin
       CC = RS.complex_field
       v = embedding(RS)
       _, CCx = polynomial_ring(CC, "x")
-      coeffs = [numerator(coeff(gmin,i)) for i in (0:degree(gmin))]
+      coeffs = [numerator(coeff(gmin_int,i)) for i in (0:degree(gmin_int))]
       #precompose with the path
       #the coefficients in the minimal polynomial of g are rational functions from the path P to CC.
       #The paper [BDG24] requires this equation to hold on [-1,1]. The straight path P is encoded as a fucntion [-1,1] -> P 
       #so in order to get an equation on [-1,1] we precompose the coefficients with the formula for the straight path. 
-      if base_ring(base_ring(parent(gmin))) == QQ
+      if base_ring(base_ring(parent(gmin_int))) == QQ
         coeffs = [sum(CC(coeff(a,i)) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
       else 
         coeffs = [sum(CC(embedding(v)(coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
@@ -430,15 +431,15 @@ function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test, int
 	  ImSgn = sign(Int, imag(x))
 	  ReSgn = sign(Int, real(x))
 
-	  x = abs(real(x)) + I*abs(imag(x))
+	  xa = abs(real(x)) + I*abs(imag(x))
 	  s = function(t)
-		  return cos(t)*sin(t)-r*real(x)*sin(t)+b*imag(x)*cos(t)
+		  return cos(t)*sin(t)-r*real(xa)*sin(t)+b*imag(xa)*cos(t)
 	  end
 
 	  sp = function(t)
-		  return (cos(t)^2 - sin(t)^2) - r*real(x)*cos(t) - b*imag(x)*sin(t)
+		  return (cos(t)^2 - sin(t)^2) - r*real(xa)*cos(t) - b*imag(xa)*sin(t)
 	  end
-    nt = real(acos(x))
+    nt = real(acos(xa))
 	  t = nt - s(nt)/sp(nt)
 	  while abs(t-nt) > 10^-3
 		  nt = t

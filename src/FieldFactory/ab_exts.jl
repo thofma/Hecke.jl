@@ -625,8 +625,8 @@ end
 ###############################################################################
 
 function C22_extensions(bound::Int)
-  Qx, x=polynomial_ring(ZZ, "x")
-  K, _=number_field(x-1, cached = false)
+  Qx, t=polynomial_ring(ZZ, "x")
+  K, _=number_field(t-1, cached = false)
   Kx,x=polynomial_ring(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
