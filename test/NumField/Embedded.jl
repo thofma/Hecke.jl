@@ -21,7 +21,7 @@
   @test sprint(show, a) isa String
   @test sprint(show, "text/plain", a) isa String
   @test E([1, 2]) == 1 + 2*a
-  ConformanceTests.test_Ring_interface(E)
+  ConformanceTests.test_Field_interface_recursive(E)
   # trigger expressify
   Et, t = E["t"]
   @test sprint(show, a * t) isa String

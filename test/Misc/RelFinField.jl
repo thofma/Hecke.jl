@@ -1,5 +1,12 @@
 @testset "RelFinField" begin
 
+  @testset "conformance" begin
+    F = Native.finite_field(3, 3, cached = false)[1]
+    x = polynomial_ring(F, "x", cached = false)[2]
+    K, gK = @inferred Native.finite_field(x^2+1, :a)
+    ConformanceTests.test_Field_interface_recursive(K)
+  end
+
   @testset "Basic properties" begin
     F = Native.finite_field(3, 3, cached = false)[1]
     x = polynomial_ring(F, "x", cached = false)[2]
