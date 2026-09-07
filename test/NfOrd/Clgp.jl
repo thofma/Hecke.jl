@@ -1,5 +1,25 @@
 @testset "Clgp" begin
   Qx, x = polynomial_ring(QQ, "x")
+  @testset "Factored ideal preimages" begin
+    K, a = quadratic_field(-23; cached = false)
+    O = maximal_order(K)
+    C, mC = class_group(O; do_lll = false)
+    @test order(C) == 3
+
+    # Also exercise the map between different bases of the maximal order.
+    O2 = order(K, reverse(basis(O)); isbasis = true)
+    @test is_maximal(O2)
+    mC2 = Hecke.change_base_ring(mC, O2)
+    for m in (mC, mC2)
+      P = m(C[1])
+      Q = m(2*C[1])
+      @test preimage(m, P) == C[1]
+      @test preimage(m, FacElem([P, Q], ZZRingElem[2, 3])) == 2*C[1]
+      @test preimage(m, FacElem([P, Q], ZZRingElem[2, -1])) == zero(C)
+      @test preimage(m, FacElem([P, Q], ZZRingElem[1, -1])) == -C[1]
+    end
+  end
+
   @testset "class numbers" begin
     @testset "quadratic fields" begin
       classnumbersofquadraticfields = Tuple{Int, Int}[(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
