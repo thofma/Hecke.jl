@@ -222,10 +222,21 @@ function class_group_disc_log(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSim
   return class_group_disc_log(w, c)
 end
 
+#the class group code may internally use different orders than the inout
+#e.g. lll(maximal_order()) rather than just maximal_order
+#this is compensated by composing the class group map with this
+#function
+#so it needs to also allow FacElem ideals....
 function change_base_ring(mC::MapClassGrp, O::AbsSimpleNumFieldOrder)
   L = order(codomain(mC))
   mD = MapClassGrp()
-  mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), y -> mC.header.preimage(codomain(mC)(y)))
+  function dl(I::FacElem{AbsSimpleNumFieldOrderIdeal, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+    return sum(e*mC.header.preimage(codomain(mC)(v)) for (v, e) = I.fac)
+  end
+  function dl(I::AbsSimpleNumFieldOrderIdeal)
+    return mC.header.preimage(codomain(mC)(I))
+  end
+  mD.header = MapHeader(mC.header.domain, IdealSet(O), x -> IdealSet(O)(mC.header.image(x)), dl)
   return mD
 end
 
@@ -261,6 +272,10 @@ function class_group(c::ClassGrpCtx, O::AbsSimpleNumFieldOrder = order(c); redo:
         return id(C)
       end
       return class_group_disc_log(x, c)
+    end
+
+    function disclog(x::FacElem{AbsSimpleNumFieldOrderIdeal, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+      return sum(e*disclog(v) for (v, e) = x.fac)
     end
   end
 
