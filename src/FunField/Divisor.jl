@@ -37,9 +37,9 @@ end
 Return the divisor corresponding to the factorization of the ideal I (for the finite places) and ideal J (for the infinite places)
 """
 divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) = Divisor(I, J)
-divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(GenOrdFracIdl(I), GenOrdFracIdl(J))
-divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, GenOrdFracIdl(J))
-divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(GenOrdFracIdl(I), J)
+divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(fractional_ideal(I), fractional_ideal(J))
+divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, fractional_ideal(J))
+divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(fractional_ideal(I), J)
 
 @doc raw"""
     divisor(I::GenOrdFracIdl) -> Divisor
@@ -58,7 +58,7 @@ function divisor(I::GenOrdFracIdl{<: Generic.AbsSimpleFunctionField, <: PolyRing
 end
 
 function divisor(I::GenOrdIdl)
-  return divisor(GenOrdFracIdl(I))
+  return divisor(fractional_ideal(I))
 end
 
 @doc raw"""
@@ -642,7 +642,7 @@ function _riemann_roch_space(J_fin, J_inf, F)
   dM, d_deg = _riemann_roch_common_setup(basis_fin, basis_inf)
 
   # weak Popov reduction of dM (no denominators)
-  T, U = weak_popov_with_transform(dM)
+  T, U = _weak_popov_with_transform!(dM)
 
   # v_i in Hess paper
   basis_gens = change_base_ring(F, U) * basis_fin
@@ -666,7 +666,7 @@ function _riemann_roch_dim(J_fin, J_inf, F)
   dM, d_deg = _riemann_roch_common_setup(basis(J_fin), basis(J_inf))
 
   # we need only weak Popov form itself, without transform
-  T = weak_popov(dM)
+  T = _weak_popov!(dM)
 
   # same as above, but instead of constructing basis vectors we just count them
   dim = 0
