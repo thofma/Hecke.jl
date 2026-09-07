@@ -1373,32 +1373,35 @@ end
 Find all subfields of $C$ over the base field.
 
 If the optional keyword argument `degree` is positive, then only those with prescribed
-degree will be returned.
+relative degree will be returned. Nonpositive values impose no degree restriction.
 
 If the optional keyword `is_normal` is given, then only those that are normal
 over the field fixed by the automorphisms is returned. For normal base fields,
 this amounts to extensions that are normal over `Q`.
 
 If the optional keyword `is_normal` is set to a list of automorphisms, then
-only those wil be considered.
+only those will be considered.
 
 `type` can be set to the desired relative Galois group, given as a vector
-of integers describing the structure.
+of integers describing the structure; `type = Int[]` selects the base field.
+The keywords `degree` and `type` are mutually exclusive.
 
 !!! note
     This will not find all subfields over $\mathbf{Q}$, but only the ones
     sharing the same base field.
 """
 function subfields(C::ClassField; arg...)
+  for key in keys(arg)
+    @req key in (:degree, :is_normal, :type) "Unknown keyword: $key. Allowed keywords are :degree, :is_normal, and :type."
+  end
+  @req !(haskey(arg, :degree) && haskey(arg, :type)) "degree and type are exclusive"
+
   degree = -1
   if haskey(arg, :degree)
     val = arg[:degree]
     @req isa(val, Int) "degree must be an integer"
     degree = Int(val)
   end
-
-  mR = C.rayclassgroupmap
-  mQ = C.quotientmap
 
   k = base_field(C)
 
@@ -1427,26 +1430,32 @@ function subfields(C::ClassField; arg...)
       error("modulus not stable under automorphisms")
     end
     C = rewrite_with_conductor(C)
-    mR = C.rayclassgroupmap
-    mQ = C.quotientmap
     act = induce_action(C, aut)
-    if haskey(arg, :type)
-      @req !haskey(arg, :degree) "degree and type are exclusive"
-      s = stable_subgroups(codomain(mQ), act; quotype = qtype, op = (x,y) -> quo(x, y, false)[2])
-    else
-      s = stable_subgroups(codomain(mQ), act; op = (x,y) -> quo(x, y, false)[2])
-      if degree != -1
-        s = filter(x->order(codomain(x)) == degree, collect(s))
-      end
-    end
-    return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = s]
+  else
+    act = [id_hom(codomain(C.quotientmap))]
   end
 
-  if degree > 0
-    return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = subgroups(codomain(mQ), index = degree, fun = (x,y) -> quo(x, y, false)[2])]
-  else
-    return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = subgroups(codomain(mQ), fun = (x,y) -> quo(x, y, false)[2])]
+  mR = C.rayclassgroupmap
+  mQ = C.quotientmap
+  G = codomain(mQ)
+  if isempty(act)
+    act = [id_hom(G)]
   end
+  if haskey(arg, :type)
+    if qtype != [-1] && !has_quotient(G, qtype)
+      return ClassField[]
+    end
+    # Empty types and types consisting of ones specify the trivial quotient.
+    restriction = all(isone, qtype) ? (; order = order(G)) : (; quotype = qtype)
+  elseif degree > 0
+    n = order(G)
+    !(is_divisible_by(n, degree)) && return ClassField[]
+    restriction = (; order = divexact(n, degree))
+  else
+    restriction = (;)
+  end
+  s = stable_subgroups(G, act; restriction..., op = (x,y) -> quo(x, y, false)[2])
+  return ClassField[ray_class_field(mR, FinGenAbGroupHom(mQ*x)) for x = s]
 end
 
 @doc raw"""

@@ -170,6 +170,15 @@
     @test_throws ArgumentError stable_subgroups(A, act, subtype = [-2])
   end
 
+  @testset "Quotient with trivial primary part" begin
+    for invariants in ([4, 3], [4, 4, 3])
+      A = abelian_group(invariants)
+      quotients = collect(stable_subgroups(A, [id_hom(A)]; quotype = [3], op = quo))
+      @test length(quotients) == 1
+      @test order(only(quotients)[1]) == 3
+    end
+  end
+
   @testset "Given order" begin
     for invariants in ([2, 2, 2], [4, 4], [2, 4, 12], [3, 2, 4])
       A = abelian_group(invariants)

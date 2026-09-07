@@ -1279,7 +1279,7 @@ function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{<:Hec
     end
 
     if mp == id_hom(R)
-      G[k] = hom(parent(first(genstot)), parent(first(images)), genstot, images, check = true)
+      G[k] = hom(R, R, genstot, images, check = true)
     else
       G[k] = hom(codomain(mp), codomain(mp), FinGenAbGroupElem[mp(x) for x = genstot], FinGenAbGroupElem[mp(x) for x = images], check = true)
     end
