@@ -575,7 +575,7 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, O, S::Vector{Abs
   r.idl = S
   r.isquotientmap = n
 
-  r.header = Hecke.MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
+  r.header = MapHeader(res_group, FacElemMon(nf(O)), exp, disclog)
   @hassert :NormRelation 9001 begin
     _S, _mS = Hecke.sunit_group_fac_elem(S)
     @show _S

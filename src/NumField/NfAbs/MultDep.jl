@@ -694,7 +694,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     return pr(FacElem(a))
   end
 
-  return G, MapFromFunc(G, parent(u[1]), im, pr)
+  return G, map_from_func(G, parent(u[1]), im, pr)
 end
 
 function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
@@ -796,5 +796,3 @@ export syzygies
 end
 
 using .MultDep
-
-

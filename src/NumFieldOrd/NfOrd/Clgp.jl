@@ -369,7 +369,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   U, mU = unit_group_fac_elem(U)
 
   r = MapUnitGrp{typeof(O)}()
-  r.header = Hecke.MapHeader(U, O,
+  r.header = MapHeader(U, O,
     x->O(evaluate(image(mU, x))),
     x->preimage(mU, FacElem([K(x)], ZZRingElem[1])))
   return U, r

@@ -894,4 +894,3 @@ function to_bivariate(f::PolyRingElem{T}) where T<:FieldElem
 
   return f(x)
 end
-

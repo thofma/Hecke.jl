@@ -463,7 +463,7 @@ function residue_field(K::KInftyRing{T,U}, a::KInftyElem{T,U}) where {T,U}
   F = base_ring(K.K)
   @assert degree(a) == -1
   #TODO: can be optimized, see blurb of euc. div. above
-  return F, MapFromFunc(K, F, x -> leading_coefficient(numerator(mod(x, a))), y-> K(y))
+  return F, map_from_func(K, F, x -> leading_coefficient(numerator(mod(x, a))), y-> K(y))
 end
 #TODO: residue_ring is probably "just" poly of deg < n, think about it
 

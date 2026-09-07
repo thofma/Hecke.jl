@@ -42,7 +42,7 @@ function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumFie
 Hecke.FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
 #function induce_action(phi::Hecke.NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, mR::Hecke.MapRayClassGrpFacElem{Hecke.FinGenAbGroup})
   lp, x = Hecke.find_gens(
-        Hecke.MapFromFunc(base_ring(codomain(mR)),
+        map_from_func(base_ring(codomain(mR)),
                           domain(mR),
                           x->preimage(mR, FacElem(Dict(x=>1)))),
         PrimesSet(100, -1))
@@ -222,6 +222,3 @@ function Gunter_Qi(r::Range, pref="Qi.new")
   end
   close(f)
 end
-
-
-
