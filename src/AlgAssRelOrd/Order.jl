@@ -42,7 +42,7 @@ is_commutative(O::AlgAssRelOrd) = is_commutative(algebra(O))
 Returns the order of $A$ with basis matrix $M$.
 """
 function order(A::AbstractAssociativeAlgebra{S}, M::Generic.Mat{S}) where S <: NumFieldElem
-  return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
+  return order(A, pseudo_matrix(M))
 end
 
 @doc raw"""
@@ -52,7 +52,8 @@ end
 Returns the order of $A$ with basis pseudo-matrix $M$.
 """
 function order(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
-  return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
+  MM = pseudo_hnf(M, :lowerleft, true)
+  return AlgAssRelOrd{S, T, typeof(A)}(A, MM)
 end
 
 @doc raw"""

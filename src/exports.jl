@@ -1004,6 +1004,7 @@ export vectors_of_square_and_divisibility
 export vector_space_dim
 export volume
 export weighted_equality
+export weighted_multiply
 export weighted_reduction
 export weil_pairing
 export wildanger_field

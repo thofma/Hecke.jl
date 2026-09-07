@@ -130,6 +130,13 @@ function Base.mod2pi(x::ArbFieldElem)
   return x
 end
 
+function mod2pi_i(x::AcbFieldElem)
+  CC = parent(x)
+  Re = real(x)
+  Im = imag(x)
+  return Re + mod2pi(Im)*onei(CC)
+end
+
 @doc raw"""
     embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
 
@@ -150,7 +157,35 @@ end
 Embed a polynomial into the polynomial ring over the complex numbers using the given place.
 """
 function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  return map_coefficients(x -> evaluate(x, v.embedding, prec), f)
+  #=res = map_coefficients(x -> evaluate(x, v.embedding, prec), f)
+  CC = AcbField(prec)
+  CCx, x = polynomial_ring(CC, symbols(parent(f)))
+  res = map_coefficients(coefficient_ring(res), res; parent = CCx)
+  return res=#
+  n = length(terms(f))
+  R = coefficient_ring(f)
+  CC = AcbField(prec)
+  d = length(gens(parent(f)))
+  CCx, x = polynomial_ring(CC, symbols(parent(f)))
+  result = CCx(0)
+  for i in (1:n)
+    I = exponent_vector(f,i)
+    result += CC(evaluate(coeff(f, i), v.embedding, prec)) * prod(x[j]^I[j] for j in (1:d))
+  end
+  return result
+end
+
+#Homogenize input polynomial of the Riemann surface
+function homogenization_RS(f::MPolyRingElem)
+  m = total_degree(f)
+  k = coefficient_ring(f)
+  ktuv, (x1, x2, x3) = polynomial_ring(k, [:x,:y,:z])
+  f_hom = ktuv(0)
+  for term in terms(f)
+    i = m - total_degree(term)
+    f_hom += term(x1,x2) * x3^i
+  end
+  return f_hom
 end
 
 #TODO: Might need to be made more rigorous due to dealing with arb balls
@@ -175,26 +210,41 @@ end
 #This is mainly useful when plugging an acb ball centered around zero into a
 #function like arg where its output would suddenly have a radius of length pi.
 @doc raw"""
-    trim_zero(x::AcbFieldElem, n::Int) -> Bool
+    trim_zero(x::AcbFieldElem) -> Bool
 
-Sets the real or imaginary parts of a complex number to zero if it is smaller than 10^(-N).
+Sets the real or imaginary parts of a complex number to zero if the interval contains zero.
 """
-function trim_zero(x::AcbFieldElem, n::Int)
+
+function trim_zero(x::AcbFieldElem)
   Cc = parent(x)
   prec = precision(Cc)
   Rc = ArbField(prec)
   i = onei(Cc)
-  if abs(real(x)) < Rc(10)^(-n)
+  if contains(abs(real(x)), zero(Rc))
     x = Cc(imag(x))*i
   end
 
-  if abs(imag(x)) < Rc(10)^(-n)
+  if contains(abs(imag(x)), zero(Rc))
     x = Cc(real(x))
   end
 
   return x
 end
 
+#Finds the point in points that is closest to x0. Returns the distance and the position
+#of the closest point in the array.
+function closest_point(x0::AcbFieldElem, points::Vector{AcbFieldElem})
+  closest = 1
+  distance = abs(x0 - points[1])
+  for i in (2:length(points))
+    new_distance = abs(x0 - points[i])
+    if distance > new_distance
+      closest = i
+      distance = new_distance
+    end
+  end
+  return distance, closest
+end
 
 ################################################################################
 #
@@ -209,14 +259,14 @@ Compute the inner faces of the Newton polygon corresponding to the multivariate
 polynomial f(x,y). The Newton polygon is the convex hull of the points (i,j)
 for which x^i * y^j is a monomial of f.
 """
-function inner_faces(f)
+function inner_faces(f::MPolyRingElem)
   points = [degrees(mon) for mon in monomials(f)]
   ordered_vertices = convex_hull(points)
   n = length(ordered_vertices)
   edges = vcat([line_equation(ordered_vertices[i-1], ordered_vertices[i]) for i in (2:n)], line_equation(ordered_vertices[end], ordered_vertices[1]))
   center = sum(ordered_vertices)//n
 
-  result = []
+  result = Vector{Int}[]
   d = total_degree(f)-3
 	for i in (0:d)
 		for j in (0:d-i)
@@ -246,7 +296,7 @@ function convex_hull(points::Vector{Vector{Int}})
   if length(points) == 1
     error("Convex hull of 1 point is not defined")
   elseif length(points) == 2
-    P = Polygon([Line((points[1], points[2]))])
+    return([points[1], points[2]])
   else
     points_lower_convex_hull = Vector{Int}[points[1]]
     i = 2

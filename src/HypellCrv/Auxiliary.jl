@@ -149,6 +149,19 @@ function weighted_reduction(w1::Vector{QQFieldElem}, ws::Vector{Int})
     return w1_min
 end
 
+@doc raw"""
+    weighted_multiply(w1::Vector{T}, ws::Vector{Int}, lambda::T) -> Bool
+
+Given a point w1 in weighted projective space P over the rationals with
+weights ws, scale the invariants by the scalar lambda.
+"""
+function weighted_multiply(w1::Vector{T}, ws::Vector{Int}, lambda::T) where T <: FieldElem
+  for i in (1:length(ws))
+    w1[i] *= lambda^ws[i]
+  end
+  return w1
+end
+
 # Given a linear equation of the form f(x, y) = a * x + b * y = 0,
 # find the minimal x_0, y_0 such that f(x_0, y_0) = 0.
 function minimize_linear_equation(f::MPolyRingElem{QQFieldElem})
