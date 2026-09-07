@@ -145,7 +145,7 @@ function elementary_divisors(M::ModuleCtx_fmpz)
     end
   end
   C = M.basis
-  f = find(i -> C[i,i] != 1, 1:nrows(C))
+  f = find(i -> C[i,i] != 1, 1:nrows(C))  # FIXME: find is not defined
   if length(f) == 0
     M.essential_elementary_divisors = ZZRingElem[]
     return M.essential_elementary_divisors
