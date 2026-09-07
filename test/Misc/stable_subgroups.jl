@@ -139,4 +139,80 @@
     s = stable_subgroups(A,[endo])
     @test length(s) == 15
   end
+
+  @testset "Given subtype" begin
+    for invariants in ([2, 2, 2], [4, 4], [2, 4, 12], [3, 2, 4])
+      A = abelian_group(invariants)
+      acts = [id_hom(A), hom(A, A, [zero(A); gens(A)[2:end]])]
+      for t in (Int[], [1], [2], [2, 2], [4], [3, 2], invariants, [8], [5], [2, 2, 2, 2])
+        expected = [(S, m) for (S, m) in subgroups(A, subtype = t) if Hecke.is_stable(acts, m)]
+        actual = collect(stable_subgroups(A, acts, subtype = t))
+        @test length(actual) == length(expected)
+        @test all(is_isomorphic(S, abelian_group(t)) for (S, _) in actual)
+        @test all(Hecke.is_stable(acts, m) for (_, m) in actual)
+        @test Set(Set(m.(collect(S))) for (S, m) in actual) ==
+              Set(Set(m.(collect(S))) for (S, m) in expected)
+      end
+    end
+
+    A = abelian_group([4, 4])
+    act = [id_hom(A)]
+    t = [4, 2]
+    collect(stable_subgroups(A, act, subtype = t))
+    @test t == [4, 2]
+    @test length(collect(stable_subgroups(A, act, subtype = [4], op = quo))) == 6
+    B = abelian_group()
+    @test length(collect(stable_subgroups(B, [id_hom(B)], subtype = Int[]))) == 1
+    @test_throws ArgumentError stable_subgroups(A, act, subtype = [2], quotype = [2])
+    @test_throws ArgumentError stable_subgroups(A, act, subtype = [2], order = 2)
+    @test_throws ArgumentError stable_subgroups(A, act, subtype = [2], minimal = true)
+    @test_throws ArgumentError stable_subgroups(A, act, subtype = [0])
+    @test_throws ArgumentError stable_subgroups(A, act, subtype = [-2])
+  end
+
+  @testset "Given order" begin
+    for invariants in ([2, 2, 2], [4, 4], [2, 4, 12], [3, 2, 4])
+      A = abelian_group(invariants)
+      act = [hom(A, A, [zero(A); gens(A)[2:end]])]
+      for n in divisors(order(A))
+        expected = [(S, m) for (S, m) in subgroups(A, order = n) if Hecke.is_stable(act, m)]
+        actual = collect(stable_subgroups(A, act, order = n))
+        @test length(actual) == length(expected)
+        @test all(order(S) == n for (S, _) in actual)
+        @test Set(Set(m.(collect(S))) for (S, m) in actual) ==
+              Set(Set(m.(collect(S))) for (S, m) in expected)
+      end
+    end
+
+    B = abelian_group()
+    @test length(collect(stable_subgroups(B, [id_hom(B)], order = 1))) == 1
+    B = abelian_group(fill(2, 70))
+    s = collect(stable_subgroups(B, [id_hom(B)], order = 1))
+    @test length(s) == 1
+    @test order(first(s)[1]) == 1
+
+    A = abelian_group([4, 4])
+    g = id_hom(A)
+
+    s = collect(stable_subgroups(A, [g], order = 4))
+    @test length(s) == length(collect(subgroups(A, order = 4)))
+    @test all(order(S) == 4 for (S, _) in s)
+
+    s = collect(stable_subgroups(A, [g], order = 1))
+    @test length(s) == 1
+    @test order(first(s)[1]) == 1
+
+    s = collect(stable_subgroups(A, [g], order = ZZ(4)))
+    @test length(s) == length(collect(subgroups(A, order = 4)))
+
+    s = collect(stable_subgroups(A, [g], order = 16))
+    @test length(s) == 1
+    @test order(first(s)[1]) == 16
+
+    @test isempty(stable_subgroups(A, [g], order = 3))
+    @test length(collect(stable_subgroups(A, [g], order = 4, op = quo))) == 7
+    @test_throws ArgumentError stable_subgroups(A, [g], order = 0)
+    @test_throws ArgumentError stable_subgroups(A, [g], order = 4, minimal = true)
+    @test_throws ArgumentError stable_subgroups(A, [g], quotype = [4], order = 4)
+  end
 end

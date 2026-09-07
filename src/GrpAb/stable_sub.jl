@@ -870,13 +870,39 @@ end
 ##################################################################################
 
 @doc raw"""
-    stable_subgroups(R::FinGenAbGroup, quotype::Vector{Int}, act::Vector{T}; op=sub)
+    stable_subgroups(R::FinGenAbGroup, act::Vector{T};
+                     op = sub, quotype = Int[-1], subtype = Int[-1], order = -1,
+                     minimal = false)
 
-Given a group $R$, an array of endomorphisms of the group and the type of the quotient, it returns all the stable
-subgroups of $R$ such that the corresponding quotient has the required type.
+Given a group $R$ and an array of endomorphisms of the group, return all stable
+subgroups of $R$. If `quotype` is specified, only subgroups whose quotient has
+the given type are returned. If `order` is specified, only subgroups of the
+given order are returned. If `subtype` is specified, only subgroups isomorphic
+to `abelian_group(subtype)` are returned; `subtype = Int[]` selects the trivial
+subgroup. Only one of `quotype`, `subtype`,
+and `order` can be specified, and none can be combined with `minimal = true`.
 """
-function stable_subgroups(R::FinGenAbGroup, act::Vector{T}; op = sub, quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{FinGenAbGroup, FinGenAbGroup}
-  subs = _stable_subgroups(R, act; quotype = quotype, minimal = minimal)
+function stable_subgroups(R::FinGenAbGroup, act::Vector{T}; op = sub, quotype::Vector{Int} = Int[-1], subtype::Vector{Int} = Int[-1], order::Union{ZZRingElem, Int} = -1, minimal::Bool = false) where T <: Map{FinGenAbGroup, FinGenAbGroup}
+  if subtype != [-1]
+    @req quotype == [-1] && order == -1 "Only one of `quotype`, `subtype`, and `order` can be specified"
+    @req !minimal "Cannot compute minimal subgroups with prescribed subgroup type"
+    @req all(>(0), subtype) "The subgroup type must have positive entries"
+    # A finite abelian group has a subgroup of the given type if and only if
+    # it has a quotient of that type. Otherwise we return an empty iterator.
+    if !has_quotient(R, subtype)
+      return (op(R, x) for x in ())
+    end
+  end
+  if order != -1
+    @req quotype == [-1] "Only one of `quotype` and `order` can be specified"
+    @req !minimal "Cannot compute minimal subgroups with prescribed order"
+    @req order > 0 "The subgroup order must be positive"
+
+    if !is_divisible_by(Hecke.order(R), order)
+      return (op(R, x) for x in ())
+    end
+  end
+  subs = _stable_subgroups(R, act; quotype = quotype, subtype = subtype, order = order, minimal = minimal)
   #Finally, translate back to R.
   return (op(R, x) for x in subs)
 end
@@ -896,7 +922,7 @@ function stable_subgroups_for_abexts(R::FinGenAbGroup, act::Vector{FinGenAbGroup
   return (inv(mS)*quo(S, y, false)[2] for y in subs_snf)
 end
 
-function _stable_subgroups(R::FinGenAbGroup, act::Vector{T}; quotype::Vector{Int} = Int[-1], minimal::Bool = false) where T <: Map{FinGenAbGroup, FinGenAbGroup}
+function _stable_subgroups(R::FinGenAbGroup, act::Vector{T}; quotype::Vector{Int} = Int[-1], subtype::Vector{Int} = Int[-1], order::Union{ZZRingElem, Int} = -1, minimal::Bool = false) where T <: Map{FinGenAbGroup, FinGenAbGroup}
   if quotype[1] != -1 && minimal
     error("Cannot compute minimal submodules with prescribed quotient type")
   end
@@ -917,11 +943,11 @@ function _stable_subgroups(R::FinGenAbGroup, act::Vector{T}; quotype::Vector{Int
     end
     actS[i] = hom(S, S, imgs, check = false)
   end
-  subs_snf = _stable_subgroup_snf(S, actS; quotype = quotype, minimal = minimal)
+  subs_snf = _stable_subgroup_snf(S, actS; quotype = quotype, subtype = subtype, order = order, minimal = minimal)
   return (FinGenAbGroupElem[mQ\mS(x) for x in y] for y in subs_snf)
 end
 
-function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; quotype::Vector{Int} = Int[-1], minimal::Bool = false)
+function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; quotype::Vector{Int} = Int[-1], subtype::Vector{Int} = Int[-1], order::Union{ZZRingElem, Int} = -1, minimal::Bool = false)
   @assert is_snf(R)
   c = exponent(R)
   lf = factor(c)
@@ -950,7 +976,15 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
       end
       M = Amodule(act_mat)
       #  Searching for submodules
-      if quotype[1] != -1
+      if order != -1
+        # A subgroup of order p^v has dimension v over GF(p).
+        plist = submodules(M, ngens(S) - valuation(order, p))
+      elseif subtype != [-1]
+        # S is elementary abelian. Each entry of subtype divisible by p
+        # contributes one dimension. submodules expects the codimension.
+        dim = count(t -> !is_coprime(t, p), subtype)
+        plist = submodules(M, ngens(S) - dim)
+      elseif quotype[1] != -1
         ind = 0
         for i = 1:length(quotype)
           if !is_coprime(quotype[i], p)
@@ -984,7 +1018,25 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
 
       #  Searching for submodules
       M1 = ZpnGModule(S, act_mat1)
-      if quotype[1] != -1
+      if order != -1
+        v = valuation(order, p)
+        if v == 0
+          plist = [zero_matrix(RR, 0, ngens(S))]
+        else
+          # Enumerate the possible subgroup types of order p^v in S.
+          types = _psubgroups_types(elementary_divisors(S), p, v)
+          plist = Iterators.flatten(submodules(M1, typesub = sort(t)) for t in types)
+        end
+      elseif subtype != [-1]
+        # typesub expects the positive valuations at p of the subgroup type.
+        subtype_p = filter(>(0), Int[valuation(t, p) for t in subtype])
+        if isempty(subtype_p)
+          # The subgroup order is coprime to p, so we take the zero submodule.
+          plist = [zero_matrix(RR, 0, ngens(S))]
+        else
+          plist = submodules(M1, typesub = subtype_p)
+        end
+      elseif quotype[1] != -1
         quotype_p = Int[]
         for i=1:length(quotype)
           v = valuation(quotype[i],p)
