@@ -4,18 +4,18 @@
 #
 ################################################################################
 
-struct FunFldDiff{T <: Generic.FunctionFieldElem}
+struct FunFldDiff{T <: Generic.AbsSimpleFunctionFieldElem}
   f::T
 end
 
 @doc raw"""
-    differential(f::Generic.FunctionFieldElem) -> Differential
+    differential(f::Generic.AbsSimpleFunctionFieldElem) -> Differential
 
 Return the differential df.
 """
-function differential(f::T) where {T <: Generic.FunctionFieldElem}
+function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   F = parent(f)
-  @req is_separable(defining_polynomial(F)) "Currently assumes separable extension"
+  @req _is_separable(F) "Currently assumes separable extension"
   y = gen(F)
 
   # our polynomials are polynomial in y with coefficients polynomials in x
@@ -31,21 +31,29 @@ function differential(f::T) where {T <: Generic.FunctionFieldElem}
     return evaluate(map_coefficients(F, p), y)
   end
 
-  g_poly = numerator(F)
-  dg_dx     = toF(map_coefficients(derivative, g_poly))
-  dg_dy     = toF(derivative(g_poly))
-  df_dx_dy  = dg_dx // dg_dy
-
   fnum_poly, fden_poly = numerator(f), denominator(f)
-  fnum      = toF(fnum_poly)
-  dfnum_dx  = toF(map_coefficients(derivative, fnum_poly))
-  dfnum_dy  = toF(derivative(fnum_poly))
-  # denominator is already in k[x]
-  fden      = F(fden_poly)
-  dfden_dx  = F(derivative(fden_poly))
+  dfnum_dy_poly = derivative(fnum_poly)
+  fnum          = toF(fnum_poly)
+  dfnum_dx      = toF(map_coefficients(derivative, fnum_poly))
+
+  # denominator is already in k[x] (toF is not needed, do the direct coercion)
+  fden          = F(fden_poly)
+  dfden_dx      = F(derivative(fden_poly))
 
   df_dx = (dfnum_dx * fden - fnum * dfden_dx) // fden^2
-  df = df_dx - (dfnum_dy // fden) * df_dx_dy
+
+  df = df_dx
+  # if f has no y dependence, the whole second term vanishes: compute only if needed
+  if !is_zero(dfnum_dy_poly)
+    dfnum_dy  = toF(dfnum_dy_poly)
+
+    g_poly = numerator(F)
+    dg_dx     = toF(map_coefficients(derivative, g_poly))
+    dg_dy     = toF(derivative(g_poly))
+    df_dx_dy  = dg_dx // dg_dy
+
+    df -= (dfnum_dy // fden) * df_dx_dy
+  end
 
   return FunFldDiff(df)
 end
@@ -118,7 +126,7 @@ function Base.:-(df::FunFldDiff)
   return FunFldDiff(-df.f)
 end
 
-function Base.:*(r::T, df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
+function Base.:*(r::T, df::FunFldDiff{T}) where {T <: Generic.AbsSimpleFunctionFieldElem}
   @req parent(r) === function_field(df) "element and differential must have the same parent"
   return FunFldDiff(r * df.f)
 end
@@ -131,12 +139,12 @@ function Base.:*(r::IntegerUnion, df::FunFldDiff)
   return function_field(df)(r) * df
 end
 
-Base.:*(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem} = r*df
+Base.:*(df::FunFldDiff{T}, r::T) where {T <: Generic.AbsSimpleFunctionFieldElem} = r*df
 Base.:*(df::FunFldDiff, r::GenOrdElem) = r*df
 Base.:*(df::FunFldDiff, r::IntegerUnion) = r*df
 
 @doc raw"""
-    //(df::FunFldDiff, dg::FunFldDiff) -> FunctionFieldElem
+    //(df::FunFldDiff, dg::FunFldDiff) -> AbsSimpleFunctionFieldElem
 
 Return the function r such that r*dg = df.
 """
@@ -145,7 +153,7 @@ function Base.://(df::FunFldDiff{T}, dg::FunFldDiff{T}) where {T}
   return df.f//dg.f
 end
 
-function Base.://(df::FunFldDiff{T}, r::T) where {T <: Generic.FunctionFieldElem}
+function Base.://(df::FunFldDiff{T}, r::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   @req parent(r) === function_field(df) "element and differential must have the same parent"
   return FunFldDiff(df.f//r)
 end
@@ -169,7 +177,7 @@ end
 
 Return the divisor corresponding to the differential form.
 """
-function divisor(df::FunFldDiff{T}) where {T <: Generic.FunctionFieldElem}
+function divisor(df::FunFldDiff{T}) where {T <: Generic.AbsSimpleFunctionFieldElem}
   F = function_field(df)
   x = separating_element(F)
   return divisor(df.f) - 2*pole_divisor(F(x)) + different_divisor(F)
@@ -191,22 +199,31 @@ end
 ################################################################################
 
 @doc raw"""
-    basis_of_differentials(F::FunctionField) -> Vector{FunFldDiff}
+    basis_of_differentials(F::AbsSimpleFunctionField) -> Vector{FunFldDiff}
 
 Return a basis of the first order differential forms of F.
 """
-function basis_of_differentials(F::Generic.FunctionField{T, U}) where {T, U}
-  x = separating_element(F)
-  dx = differential(x)
+function basis_of_differentials(F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
+  @req _is_separable(F) "Currently assumes separable extension"
+  # We assume a separable extension.
+  # The anticanonical divisor is 2*(x)_inf + codifferent_divisor.
+  # As an ideal pair, 2*(x)_inf is (O_fin, (1/x^2)*O_inf).
+  # We can build the sum of these divisors as fractional ideals directly,
+  #   without materializing a GenOrdIdl (via num/den), by scaling the basis
+  #   matrices instead.
+  # NOTE: for Riemann-Roch we do NOT need the basis matrix in HNF.
 
-  codiff_divisor = divisor(codifferent(finite_maximal_order(F)), codifferent(infinite_maximal_order(F)))
-  D = (-divisor(dx.f) + 2*pole_divisor(F(x)) + codiff_divisor)
+  Ofin = finite_maximal_order(F)
+  J_fin = codifferent(Ofin)
 
-  J_fin, J_inf = ideals(D)
+  Oinf = infinite_maximal_order(F)
+  x = gen(base_ring(F))
+  J_inf = (1//x)^2 * codifferent(Oinf)
+
   RR = _riemann_roch_space(J_fin, J_inf, F)
 
   # We were using `map` before, but it cannot infer a concrete return type,
   #   due to the empty-input handling (it was returning Union{Vector{Any}, Vector{...}}).
   # So use a typed comprehension instead.
-  return FunFldDiff{Generic.FunctionFieldElem{T, U}}[FunFldDiff(r) for r in RR]
+  return FunFldDiff{Generic.AbsSimpleFunctionFieldElem{T, U}}[FunFldDiff(r) for r in RR]
 end

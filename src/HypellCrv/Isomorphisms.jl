@@ -230,6 +230,45 @@ function _transform_polynomial(f::PolyRingElem, n::Int, mat::Vector)
   return result
 end
 
+
+@doc raw"""
+    hyperelliptic_transform(C1::HypellCrv{T}, t::Vector{T}, u::T = one(base_field(C1)), 
+  v::PolyRingElem = zero(polynomial_ring(base_field(C1))[1])) where T
+
+Consider the morphism phi of hyperelliptic curves C1 -> C2.
+(x: y: z) -> (ax + bz : uy + v_hom(x, z) : cx + dz)
+where t = [a, b, c, d] and v_hom is the homogenization of v.
+
+Return C2, phi and inv(phi).
+
+"""
+function hyperelliptic_transform(C1::HypellCrv{T}, t::Vector{T}, u::T = one(base_field(C1)), 
+  v::PolyRingElem = zero(polynomial_ring(base_field(C1))[1])) where T
+  K = base_field(C1)
+  @req is_unit(u) "u needs to be a unit"
+
+  a, b, c, d = t
+  t_shift = [d, -b, -c, a]
+  f, h = hyperelliptic_polynomials(C1)
+  g = genus(C1)
+  d1 = 2*g + 2
+  d2 = g + 1
+
+  det = (a*d - b*c)^(-g+1)
+
+  f_new = _transform_polynomial(f, d1, t_shift)
+  h_new = _transform_polynomial(h, d2, t_shift)
+  v_new = _transform_polynomial(v, d2, t_shift)
+
+  h2 = (u*h_new - 2*v_new) * det
+  f2 = (u^2*f_new + (u*h_new - v_new)*v_new) *det^2
+
+  C2 = hyperelliptic_curve(f2, h2)
+  phi =  HypellCrvIsom{T}(C1, C2, a, b, c, d, u, v)
+  return C2, phi, inv(phi)
+end
+
+
 ################################################################################
 #
 #  Helper: adjoin a root of an irreducible polynomial
@@ -246,9 +285,9 @@ function _adjoin_root(K, f::PolyRingElem)
     return L, embed, r
   end
   if K isa FqField
-    L, h = Nemo._residue_field(f)
+    Lf, h = Nemo._residue_field(f)
     Kx = parent(f)
-    return L, a -> h(Kx(a)), h(gen(Kx))
+    return Lf, a -> h(Kx(a)), h(gen(Kx))
   end
   error("_adjoin_root not yet implemented for base field of type $(typeof(K)). Please implement this stub.")
 end
@@ -369,15 +408,15 @@ function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) whe
       end
     end
   elseif d == 2
-    f_irred = first(p for (p, _) in fact1 if degree(p) == d)
-    L1, embed1, rf = _adjoin_root(K, f_irred)
+    f_quad = first(p for (p, _) in fact1 if degree(p) == d)
+    L1, embed1, rf = _adjoin_root(K, f_quad)
 
     sorted_degs = sort(degs1; rev = true)
     d1 = sorted_degs[2]  # second-largest degree of a factor  # second largest (possibly equal to d=2)
 
     if d1 == 2
       # Need a second degree-2 factor of f1
-      ff_irred = first(p for (p, _) in fact1 if degree(p) == 2 && p != f_irred)
+      ff_irred = first(p for (p, _) in fact1 if degree(p) == 2 && p != f_quad)
       L2, embed2, rff = _adjoin_root(K, ff_irred)
 
       e1 = vcat(_coords(one(L1), L1, K), _coords(one(L2), L2, K))

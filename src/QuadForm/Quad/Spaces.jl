@@ -1249,8 +1249,9 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
     q1 = quadratic_space(QQ, G; cached=false)
     @hassert :Lattice 1 is_regular(q1)
     ok, v = _isotropic_subspace(q1)
-    @hassert :Lattice 0 ok
-    v = vcat(B, v*C)
+    # The radical is totally isotropic on its own, so `q` is isotropic even when
+    # its non-degenerate part `q1` is not.
+    v = ok ? vcat(B, v*C) : B
     return true, v
   end
   # create an even lattice in some rescaling of q
@@ -1286,11 +1287,18 @@ function _isotropic_subspace(q::QuadSpace{QQField, QQMatrix})
   D = rescale(discriminant_group(M),-1; cached=false)
   (p,_,n) = signature_tuple(q)
   a = p - n
-  if a == 0 && !is_trivial(D.ab_grp)
-    s = (1, 1)
-  else
-    s = (0, a)
+  # We need a lattice R with discriminant form D, glued to M along the whole of
+  # D, and such that M + R has a balanced signature; the latter forces the
+  # signature pair of R to be of the shape (r, r + a). Milgram's formula holds
+  # for every such r, but r must be big enough for D to be the discriminant form
+  # of a lattice of rank 2*r + a. The minimal choice r = 0 is in general too
+  # small: D may need more generators than that.
+  r = 0
+  while !is_genus(D, (r, r + a))
+    r += 1
+    @req r <= ngens(D) + 2 "no lattice with discriminant form D and signature ($r, $(r + a))"
   end
+  s = (r, r + a)
   R = representative(genus(D, s))
   LL, inj = direct_sum(M, R; cached=false)
   MM = maximal_even_lattice(LL)
@@ -2050,9 +2058,30 @@ is_isotropic(q::QuadSpace) = is_isotropic(isometry_class(q))
 
 
 function _isisotropic_with_vector_finite(M)
-  n = ncols(M)
   k = base_ring(M)
+  n = ncols(M)
   _test(v) = iszero(matrix(k, 1, n, v) * M * matrix(k, n, 1, v))
+  if characteristic(k) == 2
+    # q(x) = sum_i M[i, i] * x[i]^2
+    # also, we are perfect
+    if n == 0 || (n == 1 && M[1, 1] != 0)
+      return false, elem_type(k)[]
+    else
+      # isotropic
+      i = findfirst(i -> is_zero(M[i, i]), 1:n)
+      v = zeros_array(k, n)
+      if i !== nothing
+        v[i] = one(k)
+      else
+        a = sqrt(M[1, 1])
+        b = sqrt(M[2, 2])
+        v[1] = b
+        v[2] = a
+      end
+      @assert _test(v)
+      return true, v
+    end
+  end
   @hassert :Lattice 1 (k isa Field || is_prime(modulus(k))) && characteristic(k) != 2
   if n == 0
     ;
@@ -2119,11 +2148,49 @@ end
 Return the number of (positive, zero, negative) inertia of this rational quadratic space.
 """
 @attr Tuple{Int,Int,Int} function signature_tuple(q::QuadSpace{QQField,QQMatrix})
-  D = diagonal(q)
-  pos = count(d>0 for d in D)
-  zero = count(d==0 for d in D)
-  neg = count(d<0 for d in D)
-  return (pos, zero, neg)
+  g = gram_matrix(q)
+  n = ncols(g)
+  n == 0 && return (0, 0, 0)
+
+  K = kernel(g, side = :left)
+  k = nrows(K)
+  k == n && return (0, n, 0)
+
+  # g is already non-degenerate in the common case: avoid the basis
+  # completion and the two matrix multiplications it would otherwise take
+  # to restrict to the non-degenerate part.
+  if k == 0
+    gg = g
+  else
+    B = complete_to_basis(K)
+    gg = B[k+1:end, :] * g * transpose(B[k+1:end, :])
+  end
+  m = ncols(gg)
+
+  # Leading principal minors D_0 = 1, D_1, ..., D_m of the non-degenerate part.
+  # Jacobi's theorem does not apply directly once a minor vanishes (e.g. a
+  # hyperbolic plane on the diagonal), so bail out as soon as that happens
+  # instead of computing the remaining (larger, more expensive) minors only
+  # to discard them.
+  minors = Vector{QQFieldElem}(undef, m + 1)
+  minors[1] = one(QQ)
+  for r in 1:m
+    minors[r + 1] = det(@view gg[1:r, 1:r])
+    if is_zero(minors[r + 1])
+      # Fall back to an explicit diagonalization
+      D = diagonal(q)
+      pos = count(d > 0 for d in D)
+      neg = count(d < 0 for d in D)
+      return (pos, k, neg)
+    end
+  end
+
+  # Jacobi's theorem: since all leading principal minors are nonzero, the
+  # number of negative eigenvalues equals the number of sign changes in the
+  # sequence D_0, D_1, ..., D_m.
+  neg = count(r -> (minors[r] > 0) != (minors[r + 1] > 0), 1:m)
+  pos = m - neg
+  return (pos, k, neg)
 end
 
 @doc raw"""
@@ -2397,6 +2464,11 @@ end
 
 function _is_valid(q::QuadSpaceCls{K}) where {K}
   q.dim >= q.dim_rad >= 0 || return false
+
+  # Subtraction of classes produces virtual classes, whose signature tuples may
+  # have negative entries. No quadratic space has a negative number of positive
+  # (resp. negative) squares at a real place, so such a class is not valid.
+  all(all(>=(0), s) for s in values(q.signature_tuples)) || return false
 
   @hassert :Lattice 1 !iszero(q.det)
   dim = q.dim - q.dim_rad

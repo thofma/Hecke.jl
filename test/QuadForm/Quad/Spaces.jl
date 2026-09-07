@@ -7,6 +7,53 @@
   @test inner_product(q, w, w) == w * QQ[1 1; 1 1] * transpose(w)
   @test !is_indefinite(q)
 
+  @testset "_gram_schmidt pivoting" begin
+    # zero diagonal fixed by swapping in a later nonzero diagonal entry
+    M = matrix(QQ, [0 0 1; 0 2 0; 1 0 0])
+    F, S = @inferred Hecke._gram_schmidt(M, identity)
+    @test is_diagonal(F)
+    @test S * M * transpose(S) == F
+
+    # zero diagonal with no nonzero diagonal partner to swap in: fixed via
+    # an off-diagonal (hyperbolic pair) entry instead
+    M = matrix(QQ, [0 1; 1 0])
+    F, S = @inferred Hecke._gram_schmidt(M, identity)
+    @test is_diagonal(F)
+    @test S * M * transpose(S) == F
+
+    # random matrices, including ones triggering both pivoting branches
+    for n in 1:6
+      for _ in 1:20
+        A = matrix(QQ, rand(-3:3, n, n))
+        M = A + transpose(A)
+        rank(M) < n && continue
+        F, S = Hecke._gram_schmidt(M, identity)
+        @test is_diagonal(F)
+        @test S * M * transpose(S) == F
+      end
+    end
+  end
+
+  @testset "signature_tuple via leading principal minors" begin
+    # empty matrix
+    @test Hecke.signature_tuple(quadratic_space(QQ, matrix(QQ, 0, 0, QQFieldElem[]))) == (0, 0, 0)
+    # totally isotropic
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[0;;])) == (0, 1, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[1;;])) == (1, 0, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[-1;;])) == (0, 0, 1)
+    # hyperbolic plane: the leading principal minor D_1 vanishes, forcing the
+    # fallback diagonalization
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[0 1; 1 0])) == (1, 0, 1)
+    # rank-1 degenerate form
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[1 1; 1 1])) == (1, 1, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[2 1; 1 2])) == (2, 0, 0)
+    @test Hecke.signature_tuple(quadratic_space(QQ, QQ[-2 1; 1 -2])) == (0, 0, 2)
+    # hyperbolic plane plus a definite direction, with a degenerate direction
+    g = matrix(QQ, [0 1 0 0; 1 0 0 0; 0 0 -3 0; 0 0 0 0])
+    @test Hecke.signature_tuple(quadratic_space(QQ, g)) == (1, 1, 2)
+  end
+
+
   q = quadratic_space(k, 2)
   @test sprint(show, q) isa String
   @test sprint(show, Hecke.isometry_class(q)) isa String
@@ -321,6 +368,31 @@
     @test ok
     @test iszero(inner_product(q, v,v))
 
+    # the complementary lattice used to embed into a sum of hyperbolic planes
+    # must be big enough to carry the discriminant form
+    for d in Vector{QQFieldElem}[QQFieldElem[-3, -3, -1, 1, 1],
+                                 QQFieldElem[-6, -6, -1, 10, 2],
+                                 QQFieldElem[2, 2, 1, -5, -7],
+                                 QQFieldElem[3, -2, 5, -1, -1, 3],
+                                 QQFieldElem[-5, -3, -2, 7]]
+      q = quadratic_space(QQ, diagonal_matrix(d))
+      @test is_isotropic(q)
+      ok, v = is_isotropic_with_vector(q)
+      @test ok
+      @test any(!iszero, v)
+      @test iszero(inner_product(q, v, v))
+    end
+
+    # a degenerate space whose non-degenerate part is anisotropic: the isotropic
+    # vectors all live in the radical
+    for g in [QQ[-2//3 0; 0 0], QQ[2 0 0; 0 3 0; 0 0 0], QQ[-1 0 0; 0 -1 0; 0 0 0]]
+      q = quadratic_space(QQ, g)
+      ok, v = is_isotropic_with_vector(q)
+      @test ok
+      @test any(!iszero, v)
+      @test iszero(inner_product(q, v, v))
+    end
+
   #  too long even for a long test
   #   if long_test
   #     K,b = cyclotomic_field(16)
@@ -329,6 +401,31 @@
   #     q = diagonal_matrix(d)
   #     Hecke._isisotropic_with_vector(q)
   #  end
+  end
+
+  @testset "isotropic vectors over finite fields of characteristic 2" begin
+    F2 = GF(2)
+
+    for M in (zero_matrix(F2, 0, 0), F2[1;;])
+      fl, _ = Hecke._isisotropic_with_vector_finite(M)
+      @test !fl
+    end
+
+    for M in (F2[0;;], F2[1 1; 1 0], F2[1 1; 1 1])
+      fl, v = Hecke._isisotropic_with_vector_finite(M)
+      @test fl
+      @test !all(iszero, v)
+      vm = matrix(F2, 1, ncols(M), v)
+      @test iszero(vm * M * transpose(vm))
+    end
+
+    F4, a = finite_field(2, 2, "a")
+    M = F4[a 1; 1 1]
+    fl, v = Hecke._isisotropic_with_vector_finite(M)
+    @test fl
+    @test !all(iszero, v)
+    vm = matrix(F4, 1, 2, v)
+    @test iszero(vm * M * transpose(vm))
   end
 
   @testset "isometry classes of spaces" begin
@@ -438,6 +535,24 @@
     q = quadratic_space(QQ,diagonal_matrix(QQFieldElem[-1,2,3]))
     @test represents(q, 0)
     @test !is_isotropic(q)
+
+    # A definite space is anisotropic and represents only values of the sign of
+    # its own definiteness. Subtracting a hyperbolic plane (resp. a square class)
+    # from a definite class yields a virtual class with a negative entry in its
+    # signature tuple, which must not be mistaken for the class of a space.
+    for n in 1:8
+      qpos = quadratic_space(QQ, identity_matrix(QQ, n))
+      qneg = quadratic_space(QQ, -identity_matrix(QQ, n))
+      @test !is_isotropic(qpos)
+      @test !is_isotropic(qneg)
+      @test represents(qpos, 1)
+      @test !represents(qpos, -1)
+      @test represents(qneg, -1)
+      @test !represents(qneg, 1)
+    end
+    q = quadratic_space(QQ, diagonal_matrix(QQFieldElem[-5, -3, -2, -5]))
+    @test !is_isotropic(q)
+    @test !represents(q, 1)
 
     for i in 1:100
       for r in 1:4

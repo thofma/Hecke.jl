@@ -27,6 +27,9 @@
     for bi in b
       @test all(x -> isone(denominator(x, Zx)), coordinates(bi*fp, O_eq))
     end
+
+    # should be marked as maximal
+    @test Hecke.is_maximal_known_and_maximal(O)
   end
 
   kx, x = rational_function_field(QQ, :x; cached=false)

@@ -478,6 +478,25 @@ function image(m::DiscLogLocallyFreeClassGroup, I::ModAlgAssLat)
   return m(II)
 end
 
+# Return (J, x), where J = x * I and J is small and contained in the right
+# order of I
+function _reduce_ideal(I::AlgAssAbsOrdIdl)
+  # I must be a right ideal
+  O = order(I)
+  J = inv(I)
+  nJ = numerator(J, O)
+  dJ = denominator(J, O)
+  BM, d = integral_split(basis_matrix_wrt(nJ, O; copy = false), ZZ)
+  nJlll = QQ(1, d) * lll(BM)
+  x = elem_in_algebra(O(rand(-1:1, degree(O)) * nJlll))/dJ
+  while norm(x) == 0
+    x = elem_in_algebra(O(rand(-1:1, degree(O)) * nJlll))/dJ
+  end
+  II = x * I
+  II.order = O
+  return II, x
+end
+
 function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   O = order(I)
   A = algebra(O)
@@ -492,11 +511,12 @@ function image(m::DiscLogLocallyFreeClassGroup, I::AlgAssAbsOrdIdl)
   primes_in_fields = m.primes_in_fields::Vector{Vector{Tuple{nf_idl_type, ZZRingElem, nf_idl_type}}}
   FinKs = m.FinKs
 
+  I, = _reduce_ideal(I)
   @assert order(I) === order(domain(m))
 
   # Bley, Wilson: "Computations in relative algebraic K-groups"
 
-  # The ideal must be principal, so let's do this
+  # The ideal must be integral(?), so let's do this
   d = denominator(I, O)
   I = d * I
 

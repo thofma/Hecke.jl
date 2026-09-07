@@ -37,6 +37,7 @@ status = sprint(io -> Pkg.status("Nemo"; io=io))
 version = match(r"(v[0-9].[0-9]+.[0-9]+)", status)[1]
 gh_moi = Documenter.Remotes.GitHub("nemocas", "Nemo.jl")
 remotes = Dict(pkgdir(Nemo) => (gh_moi, version))
+gh_hecke = Documenter.Remotes.GitHub("thofma", "Hecke.jl")
 
 function make(Hecke::Module; strict=false,
   local_build::Bool=false,
@@ -57,7 +58,7 @@ function make(Hecke::Module; strict=false,
       makedocs(
         modules=[Hecke, Hecke.Nemo],
         authors="Claus Fieker and Tommy Hofmann",
-        repo="https://github.com/thofma/Hecke.jl",
+        repo=gh_hecke,
         sitename="Hecke.jl",
         checkdocs=:none,
         format=Documenter.HTML(
@@ -73,7 +74,7 @@ function make(Hecke::Module; strict=false,
       makedocs(
         modules=[Hecke, Hecke.Nemo],
         authors="Claus Fieker and Tommy Hofmann",
-        repo="https://github.com/thofma/Hecke.jl",
+        repo=gh_hecke,
         sitename="Hecke.jl",
         checkdocs=:none,
         remotes=remotes,

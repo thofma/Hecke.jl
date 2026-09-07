@@ -745,6 +745,7 @@ Computes the $p$-adic exponential of $a$.
 function exp(a::LocalFieldElem)
   K = parent(a)
   p = prime(K)
+  is_zero(a) && return one(parent(a); precision = precision(a))
   if valuation(a) <= QQFieldElem(1, p-1)
     error("Exponential not defined!")
   end

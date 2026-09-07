@@ -585,7 +585,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1, p::Union{ZZRingElem, Int}) where {T}
+function _from_algs_to_ideals(A::StructureConstantAlgebra{T}, OtoA::Map, AtoO::Map, Ip1::AbsNumFieldOrderIdeal, p::Union{ZZRingElem, Int}) where {T}
 
   O = order(Ip1)
   n = degree(O)

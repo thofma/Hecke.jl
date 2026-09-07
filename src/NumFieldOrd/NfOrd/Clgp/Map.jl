@@ -618,8 +618,8 @@ function reduce_mod_units(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumF
 
   if isdefined(U, :tentative_regulator)
     #TODO: improve here - it works, kind of...
-    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::ArbMatrix
-    bd = maximum(sqrt(sum((B[i,j]::ArbFieldElem)^2 for j=1:ncols(B)))::ArbFieldElem for i=1:nrows(B))
+    B0 = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)::ArbMatrix
+    bd = maximum(sqrt(sum((B0[i,j]::ArbFieldElem)^2 for j=1:ncols(B0)))::ArbFieldElem for i=1:nrows(B0))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
       s = ccall((:arb_bits, libflint), Int, (Ref{ArbFieldElem}, ), bd)

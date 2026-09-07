@@ -314,6 +314,7 @@ function big_period_matrix(RS::RiemannSurface;int_style::String = "Mixed")
   s_m = SymmetricGroup(m) # ::AbstractAlgebra.Generic.SymmetricGroup{Int}
 
   ys = Vector{AcbFieldElem}()
+  Cp = AcbField(max_prec)
   for path in paths
     CC = AcbField(max_prec)
 		integral_matrix = zero_matrix(CC, m, g)
@@ -584,7 +585,8 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
     current_endpoint = 1
     gmin = minpoly(g)
     while (interval[end] != 1)
-      if minimum([abs(alpha - (1//2) * (interval[end] + current_endpoint)) for alpha in rs]) > (1//2) * abs(current_endpoint - interval[end])
+      mid = (1//2) * (interval[end] + current_endpoint)
+      if minimum([abs(alpha - mid) for alpha in rs]) > (1//2) * abs(current_endpoint - interval[end])
         push!(interval, current_endpoint)
         current_endpoint = 1
       else 
@@ -601,12 +603,12 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
       CC = complex_field(RS)
       v = embedding(RS)
       _, CCx = polynomial_ring(CC, "x")
-      coeffs = [numerator(coeff(gmin,i)) for i in (0:degree(gmin))]
+      coeffs = [numerator(coeff(gmin_int,i)) for i in (0:degree(gmin_int))]
       #precompose with the path
       #the coefficients in the minimal polynomial of g are rational functions from the path P to CC.
       #The paper [BDG24] requires this equation to hold on [-1,1]. The straight path P is encoded as a fucntion [-1,1] -> P 
       #so in order to get an equation on [-1,1] we precompose the coefficients with the formula for the straight path. 
-      if base_ring(base_ring(parent(gmin))) == QQ
+      if base_ring(base_ring(parent(gmin_int))) == QQ
         coeffs = [sum(CC(coeff(a,i)) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
       else 
         coeffs = [sum(CC(embeddings(v)[1](coeff(a,i))) * ( (CCx+1)*v_end/2 + (1-CCx)*v_start/2 )^i for i in (0:length(coefficients(a)))) for a in coeffs]
@@ -655,15 +657,15 @@ function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test::Vec
 	  im_sign = sign(Int, imag(x))
 	  re_sign = sign(Int, real(x))
 
-	  x = abs(real(x)) + I*abs(imag(x))
+	  xa = abs(real(x)) + I*abs(imag(x))
 	  s = function(t)
-		  return cos(t)*sin(t)-r*real(x)*sin(t)+b*imag(x)*cos(t)
+		  return cos(t)*sin(t)-r*real(xa)*sin(t)+b*imag(xa)*cos(t)
 	  end
 
 	  sp = function(t)
-		  return (cos(t)^2 - sin(t)^2) - r*real(x)*cos(t) - b*imag(x)*sin(t)
+		  return (cos(t)^2 - sin(t)^2) - r*real(xa)*cos(t) - b*imag(xa)*sin(t)
 	  end
-    nt = real(acos(x))
+    nt = real(acos(xa))
 	  t = nt - s(nt)/sp(nt)
 	  while abs(t-nt) > 10^-3
 		  nt = t

@@ -841,12 +841,15 @@ function factor_easy(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
     r = is_perfect_power_with_data(r)[2]
     if !isone(r)
       r = ppio(minimum(I), r)[1]
+      isone(r) && continue
       J = gcd(I, r)
+      @assert !isone(J)
       ideals[J] = 1
     end
   end
   @hassert :AbsNumFieldOrder 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
   @hassert :AbsNumFieldOrder 1 all(!iszero, values(ideals))
+  @hassert :AbsNumFieldOrder 1 all(!isone, keys(ideals))
   @hassert :AbsNumFieldOrder 1 is_pairwise_coprime(collect(keys(ideals)))
   return ideals
 end
@@ -1337,6 +1340,7 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
   RT = []
   RE = []
   while true
+    cs = all_c
     re = elem_type(Fpx)[]
     RE = []
     #= TODO: this is suboptimal...
@@ -1376,8 +1380,8 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
         end
         push!(RT, [_lift_p2(Fq2, change_base_ring(ZZ, to_univariate(Globals.Qx, all_f[ti]); parent = Zx), i) for i = rt[end]])
       end
-      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
-      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
+      append!(re, [minpoly(Fpx, sum([rrt[i] * cs[i] for i=1:length(cs)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
+      append!(RE, [sum([rrt[i] * cs[i] for i=1:length(cs)]) for rrt in cartesian_product_iterator(RT), inplace = true])
     end
     if length(Set(re)) < length(re)
       all_c = [rand(1:p-1) for f = all_c]
@@ -1540,7 +1544,7 @@ end
 
 # Return b in K with a \equiv b mod I and b_v >= 0 for v in pos_places
 # Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
-function approximate(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc})
+function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc})
   F2 = GF(2)
   v = matrix(F2, length(pos_places), 1, [ is_positive(a, p) ? F2(0) : F2(1) for p in pos_places ])
   if all(iszero, v[:, 1])

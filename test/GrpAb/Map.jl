@@ -27,6 +27,16 @@
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
+
+    G = free_abelian_group(1)
+    H = free_abelian_group(1)
+    h = hom(G, H, [G[0], G[1]], [H[0], 2*H[1]])
+    @test h(G[1]) == 2*H[1]
+    @test_throws ArgumentError hom(G, H, [G[0], G[1]], [H[1], H[1]])
+
+    G = abelian_group([2])
+    H = abelian_group([3])
+    @test_throws ArgumentError hom(G, H, gens(G), gens(H))
   end
 
   @testset "Kernel" begin
@@ -46,6 +56,12 @@
     h = hom(G, H, eltype(H)[])
     K, mK = @inferred kernel(h)
     @test isone(order(K))
+
+    G = abelian_group([2])
+    H = free_abelian_group(1)
+    K, mK = kernel(zero_map(G, H))
+    @test ngens(K) == 1
+    @test matrix(mK) == matrix(ZZ, 1, 1, [1])
   end
 
   @testset "Image" begin
@@ -131,5 +147,12 @@
     hh = zero_map(G, G);
     @test h == hh
     @test hash(h) == hash(hh)
+  end
+
+  @testset "Composite map matrix" begin
+    G = free_abelian_group(1)
+    f = MapFromFunc(G, ZZ, x -> x[1])
+    g = MapFromFunc(ZZ, G, x -> x*G[1])
+    @test matrix(f*g) == matrix(ZZ, 1, 1, [1])
   end
 end

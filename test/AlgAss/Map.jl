@@ -30,4 +30,19 @@
     f = hom(A, B, x -> x^2, B.(matrix.(basis(A))))
     @test f(gen(k) * one(A)) == gen(k)^2 * one(B)
   end
+
+  @testset "Threaded morphisms" begin
+    A = matrix_algebra(QQ, 1)
+    f = Hecke.id_hom(A)
+
+    @test length(f.c_t_threaded) >= Hecke._maxthreadid()
+    @test length(f.d_t_threaded) >= Hecke._maxthreadid()
+
+    results = Vector{Tuple{Bool, Bool}}(undef, Threads.nthreads())
+    Threads.@threads :static for i in eachindex(results)
+      results[i] = (f(one(A)) == one(A), preimage(f, one(A)) == one(A))
+    end
+    @test all(first, results)
+    @test all(last, results)
+  end
 end

@@ -25,6 +25,17 @@
   @test parent(u) === Ofin
   @test is_unit(u)
 
+  @testset "Coordinates" begin
+    k, t = rational_function_field(GF(3), "t")
+    K, _ = function_field(polynomial(k, [t, 0, 1]))
+    O = finite_maximal_order(K)
+    c = @inferred coordinates(one(O))
+    @test c == [one(base_ring(O)), zero(base_ring(O))]
+    @test eltype(c) === elem_type(base_ring(O))
+    @test all(x -> parent(x) === base_ring(O), c)
+    @test O(c) == one(O)
+  end
+
   let # some weird rings
     Qt,t = rational_function_field(QQ, :t)
     Qtx, x= Qt[:x]

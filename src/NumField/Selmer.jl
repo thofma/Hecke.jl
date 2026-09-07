@@ -1,17 +1,6 @@
 module SelmerModule
 using Hecke
 
-"""
-Adds an element to the group. For this to work, C needs to be a subgroup of the parent of a.
-Should move to GrpAb
-"""
-function Base.push!(C::FinGenAbGroup, a::FinGenAbGroupElem)
-  g = gens(C)
-  push!(g, a)
-  #TODO: find common overgroup? Assuming for now that parent(a) is it.
-  return sub(parent(a), g)
-end
-
 #TODO: should be exported, but at this point, index is not yet a symbol, so it can't be extended.
 #Should move to GrpAb
 function index(G::FinGenAbGroup, U::FinGenAbGroup; check::Bool = true)
@@ -73,11 +62,12 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     for (pi, ei) = lp
       (norm(pi) < 1000 || degree(pi) == 1) || continue
       c = preimage(mC, pi)
-      c in s && continue
-      s, ms = push!(s, c)
+      has_preimage_with_preimage(ms, c)[1] && continue
+      ms_old = ms
+      s, ms = sub(C, vcat([ms_old(g) for g in gens(s)], [c]))
       push!(D, pi)
     end
-    p, pos = iterate(P, pos)
+    pr, pos = iterate(P, pos)
   end
 
   if length(D) + length(S) == 0
@@ -96,9 +86,9 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
   end
   #so k should be the SelmerGroup...
   #sorry: k mod p*k is it.
-  Sel, mSel = quo(k, p .* gens(k))
-  Sel, m = snf(Sel)
-  mSel = mSel * pseudo_inv(m)
+  Sel0, mSel0 = quo(k, p .* gens(k))
+  Sel, m = snf(Sel0)
+  mSel = mSel0 * pseudo_inv(m)
 
   #the forward map has a couple of possibilities:
   # - take any lift to k, map to U map to K
@@ -129,11 +119,11 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
   end
   function toSel(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}; check::Bool = check)
     if check
-      A = ideal(ZK, x)
+      IA = ideal(ZK, x)
       for P = S
-        A = A*FacElem([P//1], [-valuation(A, P)])
+        IA = IA*FacElem([P//1], [-valuation(IA, P)])
       end
-      I = evaluate(A)
+      I = evaluate(IA)
       n, d = integral_split(I)
       fl, _ = is_power(n, p)
       fl || error("not in the image")
@@ -161,17 +151,17 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     else
       sp = PrimesSet(Int(maximum(minimum(P) for P = keys(disc_log_data))), -1, p, 1)
     end
-    pr, pos = iterate(sp)
+    q, qpos = iterate(sp)
     while rank(dl) < ngens(Sel)
-      lp = prime_decomposition(ZK, pr)
+      lp = prime_decomposition(ZK, q)
       for (pi, ei) = lp
         ei > 1 && continue
-        F, mF = Hecke.ResidueFieldSmall(ZK, pi)
+        F, mF0 = Hecke.ResidueFieldSmall(ZK, pi)
         u, mu = unit_group(F, n_quo = p)
-        mF = Hecke.extend_easy(mF, K)
+        mF = Hecke.extend_easy(mF0, K)
         va = try [preimage(mu, mF(toK(g)))[1] for g = gens(Sel)]
              catch e
-               isa(e, BadPrime) || rethrow(e)
+               isa(e, Hecke.BadPrime) || rethrow(e)
                nothing
              end
         va === nothing && continue
@@ -185,11 +175,11 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
         dx = vcat(dx, matrix(Fp, 1, 1, [v]))
         dl = vcat(dl, matrix(Fp, 1, ngens(Sel), va))
       end
-      pr, pos = iterate(sp, pos)
+      q, qpos = iterate(sp, qpos)
     end
     fl, sol = can_solve_with_solution(dl, dx; side = :right)
     @assert fl
-    return Sel(map(lift, vec(collect(sol))))
+    return Sel(map(x -> lift(ZZ, x), vec(collect(sol))))
   end
 
   return Sel, MapFromFunc(Sel, codomain(mU), toK, toSel)

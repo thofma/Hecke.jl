@@ -4,7 +4,7 @@
     cyclotomic_units_totally_real(K::NumField)
 
 Given the maximal totally real subfield $K$ of a cyclotomic field of prime
-conductor, return a generating set for the cyclotomic units of $K$.
+conductor, return a minimal generating set for the cyclotomic units of $K$.
 
 # Examples
 
@@ -18,29 +18,35 @@ julia> cyclotomic_units_totally_real(K)
  -(z_7 + 1/z_7)^2 - (z_7 + 1/z_7) + 2
 ```
 """
-function cyclotomic_units_totally_real(K::NumField)
+function cyclotomic_units_totally_real(K::NumField; conductor::Int = -1)
   # K must be Q(zeta + zeta^-1)
-  d = degree(K)
-  dd = 2 * d
-  # this is Q(\zeta_n)
-  # lets find the n
-  possible_conductors = euler_phi_inv(dd)
   Zx = Globals.Zx
-  cond = 0
-  for f in possible_conductors
-    if is_zero(cos_minpoly(Int(f), gen(Zx))(gen(K)))
-      cond = f
-      break
+  if conductor == -1
+    d = degree(K)
+    dd = 2 * d
+    # this is Q(\zeta_n)
+    # lets find the n
+    possible_conductors = euler_phi_inv(dd)
+    cond = 0
+    for f in possible_conductors
+      if is_zero(cos_minpoly(Int(f), gen(Zx))(gen(K)))
+        cond = f
+        break
+      end
     end
+    p = Int(cond)
+    @req cond != 0 "Field must be defined by zeta_n + zeta_n^-1"
+  else
+    p = conductor
+    @assert is_zero(cos_minpoly(Int(p), gen(Zx))(gen(K)))
   end
-
-  p = Int(cond)
 
   if is_prime(p)
     return _cyclotomic_units_totally_real_prime_conductor(K, p)
-  else
-    @assert is_prime_power(p)
+  elseif is_prime_power(p)
     return _cyclotomic_units_totally_real_prime_power_conductor(K, p, false)
+  else
+    return _cyclotomic_units_totally_real_generic_with_conductor(K, p)[1]
   end
 end
 

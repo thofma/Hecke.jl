@@ -1,7 +1,60 @@
+@testset "Totally real and totally complex class fields" begin
+  Qx, x = polynomial_ring(QQ)
+
+  for (f, sig) in [(x^2 - 10, (4, 0)), (x^2 + 5, (0, 2)), (x^3 - 2, (1, 1))]
+    K, a = number_field(f)
+    C = hilbert_class_field(K)
+    @test signature(C) == sig
+    @test @inferred(is_totally_real(C)) == iszero(sig[2])
+    @test @inferred(is_totally_complex(C)) == iszero(sig[1])
+  end
+
+  K, a = number_field(x - 1)
+  OK = maximal_order(K)
+  C = ray_class_field(5 * OK)
+  @test signature(C) == (2, 0)
+  @test @inferred is_totally_real(C)
+  @test @inferred !is_totally_complex(C)
+
+  C = ray_class_field(5 * OK, real_places(K))
+  @test signature(C) == (0, 2)
+  @test @inferred !is_totally_real(C)
+  @test @inferred is_totally_complex(C)
+
+  C = ray_class_field(5 * OK, real_places(K), n_quo = 2)
+  @test signature(C) == (2, 0)
+  @test @inferred is_totally_real(C)
+  @test @inferred !is_totally_complex(C)
+end
+
 @testset "RCF" begin
   Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
+
+  @testset "quadratic Kummer generator" begin
+    R, mR = ray_class_group(5 * Z, real_places(k), n_quo = 2)
+    quotients = collect(index_p_subgroups(
+      R, ZZRingElem(2), (A, H) -> quo(A, H)[2]))
+    C = ray_class_field(mR, only(quotients))
+
+    @test !isdefined(C, :A)
+    @test !isdefined(C, :cyc)
+    generator = quadratic_kummer_generator(C)
+    @test base_ring(generator) === k
+    @test !is_square(evaluate(generator))
+    @test !isdefined(C, :A)
+    @test !isdefined(C, :cyc)
+
+    extension = kummer_extension(2, [generator])
+    for q in (3, 7, 11, 13, 17, 19)
+      P = first(prime_decomposition(Z, q))[1]
+      artin_image = C.quotientmap(preimage(C.rayclassgroupmap, P))
+      expected = mod(Int(artin_image[1]), 2)
+      observed = mod(Int(Hecke.canonical_frobenius(P, extension)[1]), 2)
+      @test observed == expected
+    end
+  end
 
   function doit(u::AbstractUnitRange, p::Int = 3)
     cnt = 0
@@ -168,6 +221,13 @@
   k, _ = number_field(x^3 - 69*x - 52)
   kk = number_field(ray_class_field(1*maximal_order(k), real_places(k)))
   @test degree(kk) == 2
+
+  k, a= wildanger_field(3, 13)
+  C = ray_class_field(7*maximal_order(k); n_quo = 3)
+  for p = [2, 3, 5, 7]
+    d = absolute_prime_decomposition_type(C, p)
+    @test sum(x[1]*x[2]*x[3] for x = d) == absolute_degree(C)
+  end
 end
 
 @testset "Jon Yard" begin

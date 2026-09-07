@@ -45,8 +45,9 @@ function conjugates_arb(a::RelNonSimpleNumFieldElem{T}, prec::Int = 32) where {T
     end
     CC = AcbField(prec1, cached = false)
     CCy, y = polynomial_ring(CC, ngens(L), cached = false)
+    w = wprec
     for i = 1:length(plcK)
-      pols[_absolute_index(plcK[i])] = map_coefficients(x -> evaluate(x, plcK[i], wprec), f, parent = CCy)
+      pols[_absolute_index(plcK[i])] = map_coefficients(x -> evaluate(x, plcK[i], w), f, parent = CCy)
     end
     ind = 1
     for (p, pt) in data

@@ -12,6 +12,16 @@
   @test unit(fac) * prod(p^e for (p, e) in fac) == f
   @test all(isone(degree(p)) for (p, _) in fac)
 
+  # The factors of the norm need not be monic over a rational function field.
+  Qt, = rational_function_field(QQ, :t)
+  Qtx, x = Qt[:x]
+  K, a = function_field(x^2 + 1//2*x + 1, :a)
+  Ky, y = K[:y]
+  f = y - a
+  fac = factor(f)
+  @test evaluate(fac) == f
+  @test all(isone(degree(p)) for (p, _) in fac)
+
   # inseparable extension
   let
     k, o = finite_field(9)

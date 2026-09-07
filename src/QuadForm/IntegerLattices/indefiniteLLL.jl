@@ -335,21 +335,24 @@ end
                                                            MatElem{ZZRingElem}
 
 Given a full-rank symmetric matrix `G` with integer entries which defines the
-Gram matrix of a non-degenerate ternary hyperbolic integral quadratic form `L`,
+Gram matrix of a unimodular ternary hyperbolic integral quadratic form `L`,
 compute an LLL-reduced basis `U` of `L` and return `(G', U)` where `G'` is the
-Gram matrix of `L` with respect to `U`.
+Gram matrix of `L` with respect to `U`, that is `G' == U*G*transpose(U)`.
 
 # Examples
 ```jldoctest
 julia> G = ZZ[1 0 0; 0 4 3; 0 3 2];
 
-julia> lll_gram_indef_ternary_hyperbolic(G)
-([0 0 -1; 0 1 0; -1 0 0], [-1 -1 0; 0 0 -1; -2 -1 0])
+julia> Gr, U = lll_gram_indef_ternary_hyperbolic(G)
+([0 0 -1; 0 1 0; -1 0 0], [0 1 -2; 1 0 0; 0 1 -1])
+
+julia> U*G*transpose(U) == Gr
+true
 ```
 """
 function lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool = false)
 
-  @req !check || (is_symmetric(G) && ncols(G) != 3 && _check_for_lll_gram_indefinite2(change_base_ring(QQ, G))) "Input should be the Gram matrix of a non-degenerate indefinite integral form of rank 3"
+  @req !check || (is_symmetric(G) && ncols(G) == 3 && abs(det(G)) == 1 && _check_for_lll_gram_indefinite2(change_base_ring(QQ, G))) "Input should be the Gram matrix of a unimodular indefinite integral form of rank 3"
 
   e = det(G) == -1 ? 1 : -1
 
@@ -368,7 +371,9 @@ function lll_gram_indef_ternary_hyperbolic(G::MatElem{ZZRingElem}; check::Bool =
   cc = mod(G3[1,1],2)
   U3 = ZZ[1 cc round(-(G3[1,1]+cc*(2*G3[1,2]+G3[2,2]*cc))//2//G3[1,3]); 0 1 round(-(G3[1,2]+cc*G3[2,2])//G3[1,3]); 0 0 1]
 
-  return e*U3*G3*transpose(U3), red[2]*U3*U2*U1
+  # `red[2]` is applied first, then `U1`, `U2` and `U3`, so the accumulated base
+  # change is their product in this order.
+  return e*U3*G3*transpose(U3), U3*U2*U1*red[2]
 end
 
 function _check_for_lll_gram_indefinite2(A::MatElem{QQFieldElem})

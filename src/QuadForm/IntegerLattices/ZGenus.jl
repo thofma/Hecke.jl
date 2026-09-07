@@ -1101,7 +1101,7 @@ end
     canonical_symbol(g::ZZLocalGenus; odd_ones::Bool=true) -> String
 
 Return the canonical symbol for the genus of ``p``-adic lattices defined
-by `g`. The ouput is given in the form of a string.
+by `g`. The output is given in the form of a string.
 
 If ``p`` is odd, the symbol is uniquely determined by the invariants of `g`.
 
@@ -2514,15 +2514,15 @@ Further Delta is in bijection with the proper spinor genera of `G`.
 @attr Any function _automorphous_numbers(G::ZZGenus)
   @assert is_integral(G)
   P = [prime(g) for g in local_symbols(G)]
-  A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
+  A, _, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
   gens_automorph = elem_type(A)[]
   for g in local_symbols(G)
     p = prime(g)
     for r in automorphous_numbers(g)
       r = QQ(r)
       S = [i for i in P if i!=p]
-      pv,u = ppio(ZZ(r),p)
-      pv = QQ(pv); u = QQ(u)
+      pv0, u0 = ppio(ZZ(r),p)
+      pv = QQ(pv0); u = QQ(u0)
       push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S], init=A()))
     end
   end
@@ -3306,7 +3306,7 @@ function embed(S::ZZLat, G::ZZGenus, primitive::Bool=true)
     pos, neg = signature_pair(G)
     return embed_in_unimodular(S, pos, neg; primitive, even = iseven(G))
   end
-  throw(NotImplementedError("for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases"))
+  error("NotImplemented: for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases")
 end
 
 @doc raw"""
@@ -3358,7 +3358,7 @@ function embed_in_unimodular(S::ZZLat, pos::IntegerUnion, neg::IntegerUnion; pri
   @vprintln :Lattice 1 "computing embedding in L_$(n)"
   pS, kS, nS = signature_tuple(S)
   @req kS == 0 "S must be non-degenerate"
-  even || throw(NotImplementedError("for now we need the unimodular lattice to be even."))
+  even || error("NotImplemented: for now we need the unimodular lattice to be even.")
   pR = pos - pS
   nR = neg - nS
   DS = discriminant_group(S)
@@ -3577,4 +3577,3 @@ function rescale(G::ZZGenus, a::RationalUnion)
   end
   return Grescaled
 end
-

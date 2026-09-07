@@ -517,3 +517,9 @@ end
   @test first(torsion_subgroup(q, 2)) == first(primary_part(q, 2))
   @test iszero(gram_matrix_quadratic(first(torsion_subgroup(q, 3))))
 end
+
+@testset "More using as_bilinear_module" begin
+  q = discriminant_group(root_lattice(:A, 1))
+  q2 = rescale(q, -1)
+  @test is_genus(q2, (1, 0); as_bilinear_module=true)
+end

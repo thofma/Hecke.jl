@@ -53,6 +53,10 @@ end
 
 function fractional_ideal(O::AbsNumFieldOrder, M::FakeFmpqMat; M_in_hnf::Bool = false)
   !M_in_hnf ? M = _hnf_integral(M) : nothing
+  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
+  if k != 1
+    M = sub(M, k:nrows(M), 1:ncols(M))
+  end
   z = AbsNumFieldOrderFractionalIdeal(O, M)
   return z
 end
@@ -65,6 +69,10 @@ Creates the fractional ideal of $\mathcal O$ with basis matrix $M/b$. If
 """
 function fractional_ideal(O::AbsNumFieldOrder, M::ZZMatrix, b::ZZRingElem=ZZRingElem(1); M_in_hnf::Bool = false)
   !M_in_hnf ? M = _hnf(M, :lowerleft) : nothing
+  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
+  if k != 1
+    M = sub(M, k:nrows(M), 1:ncols(M))
+  end
   y = FakeFmpqMat(M, b)
   z = AbsNumFieldOrderFractionalIdeal(O, y)
   return z

@@ -82,6 +82,36 @@
   A = matrix_algebra(QQ, 2)
   @test isone(mul!(zero(A), one(A), ZZRingElem(1)))
 
+  @testset "addmul! with scalars" begin
+    A = quaternion_algebra(QQ, -1, -1)
+    a = A([1, 2, 3, 4])
+    c0 = A([5, 6, 7, 8])
+
+    for s in (QQ(3), ZZ(3), 3)
+      expected = c0 + a*s
+
+      c = deepcopy(c0)
+      @test addmul!(c, a, s, QQ()) === c
+      @test c == expected
+
+      c = deepcopy(c0)
+      @test addmul!(c, s, a, QQ()) === c
+      @test c == expected
+
+      c = deepcopy(c0)
+      @test addmul!(c, a, s) === c
+      @test c == expected
+    end
+
+    c = deepcopy(a)
+    @test addmul!(c, c, ZZ(2), QQ()) === c
+    @test c == 3*a
+
+    B = quaternion_algebra(QQ, -1, -2)
+    @test_throws ArgumentError addmul!(zero(B), a, QQ(1), QQ())
+    @test_throws ArgumentError addmul!(zero(B), a, ZZ(1), QQ())
+  end
+
   # add! for matrix algebra elements
   # 1547
   let

@@ -391,6 +391,24 @@ function prime_decomposition_type(C::T, p::AbsNumFieldOrderIdeal) where T <: Uni
 end
 
 @doc raw"""
+    absolute_prime_decomposition_type(C::T, p::Union{Integer, ZZRingElem}) where T <: Union{ClassField, ClassField_pp} -> Tuple{Int, Int, Int}[]
+
+Returns a list of triples $e, f, g$ s.th. when decomposing $p$ in the field
+there are $g$ prime ideals of inertia degree $f$ and ramification index $e$.
+
+Specifically, $p$ is decomposed in the coefficient ring (base field) of $C$ and each prime ideal there gives rise to one of the list items.
+"""
+function absolute_prime_decomposition_type(C::T, p::Union{Integer, ZZRingElem}) where T <: Union{ClassField, ClassField_pp}
+  lp = prime_decomposition(base_ring(C), p)
+  res = Tuple{Int, Int, Int}[]
+  for P = lp
+    s = prime_decomposition_type(C, P[1])
+    push!(res, (s[1]*P[2], s[2]*degree(P[1]), s[3]))
+  end
+  return res
+end
+
+@doc raw"""
     decomposition_group(C::ClassField, p::[InfPlc | AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}]) -> FinGenAbGroup
 
 Compute the decomposition group of any infinite place or prime ideal of the
@@ -652,9 +670,9 @@ function grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldE
 end
 
 function _grunwald_wang(d::Dict{<:Any, Int})
-  lp = collect(keys(d))
-  li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
+  keys_d = collect(keys(d))
+  li = [x for x = keys_d if isa(x, NumFieldEmb)]
+  lp = [x for x = keys_d if isa(x, NumFieldOrderIdeal)]
   @assert length(lp) + length(li) == length(d)
 
   if length(li) == 0
@@ -764,7 +782,8 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
     else
       if iseven(deg) && length(l2) > 0
         S1 = ray_class_field(mR)
-        S2 = [ray_class_field(divexact(con, p^valuation(con, p)), n_quo = deg) for p = l2]
+        cur_con = con
+        S2 = [ray_class_field(divexact(cur_con, p^valuation(cur_con, p)), n_quo = deg) for p = l2]
         ngp = norm_group_map(S1, S2)
         s, _ = sub(R, [val[i] for i = 1:length(lp)])
         s += preimage(S1.quotientmap, sum(kernel(x)[1] for x = ngp))[1]
@@ -774,9 +793,9 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
       s = saturate(s, R)
       fl, s = has_complement(s, R)
       @assert fl
-      c, mc = quo(R, s)
-      c, _mc = quo(c, FinGenAbGroupElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
-      mc = mc * _mc
+      c0, mc0 = quo(R, s)
+      c, _mc = quo(c0, FinGenAbGroupElem[d[lp[i]] * mc0(val[i]) for i = 1:length(lp)])
+      mc = mc0 * _mc
       if all(i->order(mc(val[i])) == d[lp[i]], 1:length(lp))
 #        @show :cyc, snf(c)[1]
         for (u, mu) = subgroups(c, quotype = [deg])

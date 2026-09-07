@@ -126,20 +126,21 @@ function compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumFiel
 
   while k>=1
     @vprintln :CompactPresentation 1 "k now: $k"
-    D = Dict((p, div(ZZRingElem(v), n^k)) for (p, v) = de if v >= n^k)
+    nk = n^k
+    D = Dict((p, div(ZZRingElem(v), nk)) for (p, v) = de if v >= nk)
     if length(D) == 0
       A = FacElem(Dict(ideal(ZK, 1) => 1))
     else
       A = FacElem(D)
     end
-    vv = ArbFieldElem[x//n^k for x = v]
+    vv = ArbFieldElem[x//nk for x = v]
     vvv = ZZRingElem[]
     el_embs = a*be
     for i=1:r1
       while !radiuslttwopower(vv[i], -5)
         arb_prec *= 2
         v = conjugates_arb_log_normalise(el_embs, arb_prec)
-        vv = ArbFieldElem[x//n^k for x = v]
+        vv = ArbFieldElem[x//nk for x = v]
       end
       push!(vvv, round(ZZRingElem, vv[i]//log(2)))
     end
@@ -147,7 +148,7 @@ function compact_presentation(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumFiel
       while !radiuslttwopower(vv[i], -5)
         arb_prec *= 2
         v = conjugates_arb_log_normalise(el_embs, arb_prec)
-        vv = ArbFieldElem[x//n^k for x = v]
+        vv = ArbFieldElem[x//nk for x = v]
       end
       local r = round(ZZRingElem, vv[i]//log(2)//2)
       push!(vvv, r)

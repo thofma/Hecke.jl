@@ -180,7 +180,51 @@ function signature(C::ClassField{MapClassGrp, FinGenAbGroupHom})
   return r, s
 end
 
+@doc raw"""
+    is_totally_real(C::ClassField) -> Bool
 
+Return `true` if and only if the number field defined by $C$ is totally real,
+that is, if all its embeddings into $\mathbb{C}$ have image in $\mathbb{R}$.
+
+# Examples
+```jldoctest
+julia> K, a = quadratic_field(10);
+
+julia> C = hilbert_class_field(K);
+
+julia> is_totally_real(C)
+true
+
+julia> is_totally_real(cyclotomic_field(ClassField, 5))
+false
+```
+"""
+function is_totally_real(C::ClassField)
+  return iszero(signature(C)[2])
+end
+
+@doc raw"""
+    is_totally_complex(C::ClassField) -> Bool
+
+Return `true` if and only if the number field defined by $C$ is totally complex,
+that is, if it has no real embeddings.
+
+# Examples
+```jldoctest
+julia> C = cyclotomic_field(ClassField, 5);
+
+julia> is_totally_complex(C)
+true
+
+julia> K, a = quadratic_field(10);
+
+julia> is_totally_complex(hilbert_class_field(K))
+false
+```
+"""
+function is_totally_complex(C::ClassField)
+  return iszero(signature(C)[1])
+end
 
 #######################################################################################
 #

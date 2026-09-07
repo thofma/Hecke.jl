@@ -215,7 +215,12 @@ that $M$ is already in lower left HNF.
 """
 function ideal(O::AbsNumFieldOrder, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
   x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
+  k = something(findfirst(i -> !is_zero_row(x, i), 1:nrows(x)), nrows(x) + 1)
+  if k != 1
+    x = sub(x, k:nrows(x), 1:ncols(x))
+  end
   I = AbsNumFieldOrderIdeal(O, x)
+  I.iszero = isempty(x) ? 1 : 2
   # The compiler stopped liking this recursion??
   # if check
   #   J = ideal(O, basis(I))
@@ -226,8 +231,13 @@ end
 
 function _ideal(O::AbsNumFieldOrder, M::ZZMatrix, M_in_hnf::Bool = false)
   x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
+  k = something(findfirst(i -> !is_zero_row(x, i), 1:nrows(x)), nrows(x) + 1)
+  if k != 1
+    x = sub(x, k:nrows(x), 1:ncols(x))
+  end
   #_trace_call(;print = true)
   I = AbsNumFieldOrderIdeal(O, x)
+  I.iszero = isempty(x) ? 1 : 2
   return I
 end
 
@@ -270,7 +280,6 @@ function ideal_from_z_gens(O::AbsSimpleNumFieldOrder, b::Vector{AbsSimpleNumFiel
     @assert parent(b[i]) === O
   end
   d = degree(O)
-  @assert length(b) >= d
 
   M = zero_matrix(ZZ, length(b), d)
   for i = 1:length(b)
@@ -278,6 +287,9 @@ function ideal_from_z_gens(O::AbsSimpleNumFieldOrder, b::Vector{AbsSimpleNumFiel
     for j = 1:d
       M[i, j] = el[j]
     end
+  end
+  if isempty(b)
+    return ideal(O, M; check, M_in_hnf=true)
   end
   M = _hnf(M, :lowerleft)
   if d < length(b)
@@ -563,6 +575,11 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
     return nothing
   end
 
+  if A.iszero == 1
+    A.minimum = zero(ZZ)
+    return nothing
+  end
+
   if degree(order(A)) == 1
     if has_2_elem(A)
       # I want A.gen_two.elem_in_nf as an element of Q,
@@ -660,6 +677,11 @@ end
 
 function assure_has_norm(A::AbsNumFieldOrderIdeal)
   if has_norm(A)
+    return nothing
+  end
+
+  if A.iszero == 1
+    A.norm = zero(ZZ)
     return nothing
   end
 
@@ -777,6 +799,11 @@ function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   @assert order(x) === order(y)
   if x === y
     return true
+  end
+  if x.iszero == 1 && y.iszero == 1
+    return true
+  elseif x.iszero != 0 && y.iszero != 0 && x.iszero != y.iszero
+    return false
   end
   if has_2_elem(x) && has_2_elem(y)
     if x.gen_one == y.gen_one && x.gen_two == y.gen_two

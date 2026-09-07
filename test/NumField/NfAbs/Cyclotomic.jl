@@ -5,10 +5,13 @@
     @test length(v) == degree(K) # = unit rank + 1
   end
 
-  K, a = cyclotomic_real_subfield(7)
-  v = cyclotomic_units_totally_real(K)
-  # Class number of Q(zeta_7)^+ is one, so the cyclotomic units are the units
-  @test overlaps(regulator(maximal_order(K)), regulator(v[2:end]))
+  for n in [7, 9, 12, 15, 2^4]
+    K, a = cyclotomic_real_subfield(n)
+    v = cyclotomic_units_totally_real(K)
+    # Class number of Q(zeta_n)^+ is one, so the cyclotomic units are the units
+    U, mU = unit_group(maximal_order(K))
+    @test order(quo(U, mU .\ v)[1]) == 1
+  end
 
   R = ArbField(64)
   reg = @inferred cyclotomic_regulator(3^2, 64, maximal_totally_real = true)

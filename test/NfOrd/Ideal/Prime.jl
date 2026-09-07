@@ -219,6 +219,18 @@ lf = Hecke.factor_easy(A)
 @test prod(x^y for (x, y) in lf) == A
 @test Hecke.is_pairwise_coprime([x^y for (x, y) in lf])
 
+@testset "factor_easy omits unit residuals" begin
+  K, _ = quadratic_field(2, cached = false)
+  O = maximal_order(K)
+  p = next_prime(ZZ(10)^10)
+  q = next_prime(p)
+  I = ideal(O, p*q, O(1))
+  lf = Hecke.factor_easy(I)
+  @test isone(I)
+  @test isempty(lf)
+  @test prod(x^y for (x, y) in lf; init = 1*O) == I
+end
+
 # primary decomposition
 K, a = quadratic_field(5)
 O = equation_order(K)

@@ -164,6 +164,22 @@ function _trivial_picard(O::AlgAssAbsOrd, R::FinGenAbGroup, mR)
 
 end
 
+# Return a lift of x modulo m which is non-zero in every simple component.
+function _non_zero_divisor_lift(x::AlgAssAbsOrdElem, m::AlgAssAbsOrdIdl)
+  O = parent(x)
+  @assert O === order(m)
+  A = algebra(O)
+  y = elem_in_algebra(x)
+  for (K, AtoK) in as_number_fields(A)
+    if iszero(AtoK(y))
+      y += AtoK\one(K)
+    end
+  end
+  z = O(y)
+  @hassert :AlgAssOrd 1 z - x in m
+  return z
+end
+
 # See Bley, Endres "Picard Groups and Refined Discrete Logarithms".
 function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool = false)
   A = algebra(O)
@@ -198,6 +214,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     GinR = Vector{FinGenAbGroupElem}()
     for i = 1:ngens(G)
       g = OO(OtoQ\(GtoQ(G[i])))
+      g = _non_zero_divisor_lift(g, FOO)
       r = mR\(ideal(OO, g))
       push!(GinR, r)
     end
@@ -236,6 +253,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     end
     for i = (ngens(R) + 1):(ngens(R) + ngens(G))
       g = OO(OtoQ\(GtoQ(G[i - ngens(R)])))
+      g = _non_zero_divisor_lift(g, FOO)
       gOO = ideal(OO, g)
       a, r = disc_log_generalized_ray_class_grp(gOO, mR)
 

@@ -34,7 +34,7 @@ mutable struct RiemannSurface
   homogeneous_defining_polynomial::AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}
 
   genus::Int
-  function_field::AbstractAlgebra.Generic.FunctionField
+  function_field::AbstractAlgebra.Generic.AbsSimpleFunctionField
 
   #The degree of the field extension K(x,y)/f over K(x).
   degree::Vector{Int}

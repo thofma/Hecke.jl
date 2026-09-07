@@ -17,9 +17,9 @@ function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   Hecke.shift!(g, -prec)
   g += nrows(g)*one(parent(g))
 
-  l = lll_gram(g)
+  lg = lll_gram(g)
 
-  lp = [ div(l[i,i], ZZRingElem(2)^prec) for i=1:nrows(l)]
+  lp = [ div(lg[i,i], ZZRingElem(2)^prec) for i=1:nrows(lg)]
   return lp
 end
 

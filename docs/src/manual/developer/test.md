@@ -72,8 +72,8 @@ job including the long tests.
 ### Running all tests
 
 All tests can be run as usual with `Pkg.test("Hecke")`. The whole test suite can be run in parallel using the following options:
-- Set the environment variable `HECKE_TEST_VARIABLE=n`, where `n` is the number of processes.
-- On julia >= 1.3, run `Pkg.test("Hecke", test_args = ["-j$(n)"])`, where `n` is the number of processes.
+- Set the environment variable `NUMPROCS=n`, where `n` is the number of worker processes.
+- On julia >= 1.3, run `Pkg.test("Hecke", test_args = ["-j$(n)"])`, where `n` is the number of worker processes.
 The tests annotated with `@long_test` can be invoked by setting `HECKE_TESTLONG=1` or adding "long" to the `test_args` keyword argument on julia >= 1.3.
 
 ### Running a subset of tests
@@ -89,3 +89,20 @@ This also works on the directory level. If one wants to add run all tests for qu
 ```julia
 julia> Hecke.test_module("QuadForm")
 ```
+
+Several test files can be run in the same Julia session by passing a list:
+
+```julia
+julia> Hecke.test_module(["Misc/Integer", "Misc/MSet"])
+```
+
+When Hecke is loaded from a Git working tree, the tests corresponding to all
+changed source files can be selected and run with:
+
+```julia
+julia> Hecke.test_changes()
+```
+
+This reports all changed files in `src/` first. For each changed source file it
+runs the test file at the matching path, or the test file for the containing
+source directory when there is no matching file.
