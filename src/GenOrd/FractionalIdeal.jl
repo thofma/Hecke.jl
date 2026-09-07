@@ -12,12 +12,20 @@ function is_one(A::GenOrdFracIdl)
   is_zero(A) && return false
 
   d = denominator(A; copy = false)
-  # A = I/d = O iff I = d*O
   if isdefined(A, :num)
-    # intersection of A and R is minimum(A)*R. minimum(A) = d gives d*O subset I
-    minimum(A.num; copy = false) == d || return false
-    # this gives I subset d*O
-    return is_one(norm(A; copy = false))
+    I = A.num
+    # For A = I/d, A = 1 iff N(A) = 1 and d is in I
+    # Assuming N(A) == 1, d in I is equivalent to minimum(I) == d
+    # The important decision is ordering, and we follow the logic of integral ideal.
+    if has_norm(I) || isdefined(A, :norm)
+      return is_one(norm(A; copy = false)) && minimum(I; copy = false) == d
+    elseif has_minimum(I)
+      return minimum(I; copy = false) == d && is_one(norm(A; copy = false))
+    elseif has_princ_gen(I)
+      return is_one(norm(A; copy = false)) && minimum(I; copy = false) == d
+    else
+      return minimum(I; copy = false) == d && is_one(norm(A; copy = false))
+    end
   end
 
   A = simplify(A)
