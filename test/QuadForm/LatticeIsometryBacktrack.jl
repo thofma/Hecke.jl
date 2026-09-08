@@ -68,8 +68,8 @@ end
     # The last node is discrete on the base points and the partitions get finer.
     @test all(P -> length(P.cells) <= length(base.partitions[end].cells),
               base.partitions)
-    @test all(p -> length(base.partitions[end].cells[
-                Hecke._lattice_backtrack_cell(base.partitions[end], p)]) == 1,
+    @test all(p -> length(Hecke._lattice_backtrack_candidates(
+                base.partitions[end], base.partitions[end], p)) == 1,
               base.points)
     # Every node is an ordered partition of the whole point set.
     @test all(P -> sort!(reduce(vcat, P.cells)) == collect(eachindex(C.vectors)),

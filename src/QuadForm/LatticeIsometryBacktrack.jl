@@ -168,6 +168,15 @@ end
 
 # An ordered partition of the set of points, together with the invariant value
 # that created each cell.  The cells are disjoint and cover all points.
+#
+# The rest of the file reads a partition through two functions only,
+# `_lattice_backtrack_candidates` and `_lattice_backtrack_split`, so that the
+# representation can be replaced without touching the search.  This matters
+# because the natural optimization is to turn the partition around: what the
+# search actually asks of it is, for a point, the set of base points it can
+# still be an image of, and that relation is better stored on the point than on
+# the cell.  Keeping the two accessors narrow now makes that a local change
+# later.
 struct LatticeBacktrackPartition
   cells::Vector{Vector{Int}}
   labels::Vector{Vector{Int}}
@@ -175,6 +184,18 @@ end
 
 function _lattice_backtrack_cell(P::LatticeBacktrackPartition, point::Int)
   return findfirst(cell -> point in cell, P.cells)::Int
+end
+
+# The images still available for `point`, which is a base point of the source.
+# The cell is located in the source node and read off in the target node; the
+# two are paired by the shape test below, so the index is the same on both
+# sides.  For the automorphism group the two nodes coincide.
+function _lattice_backtrack_candidates(
+  source::LatticeBacktrackPartition,
+  target::LatticeBacktrackPartition,
+  point::Int,
+)
+  return target.cells[_lattice_backtrack_cell(source, point)]
 end
 
 # The shape of a node.  Two nodes, one on the source and one on the target side,
@@ -277,7 +298,8 @@ function _lattice_backtrack_base(C::LatticeIsometryBacktrackCtx)
     best = 1
     best_size = typemax(Int)
     for position in eachindex(remaining)
-      size = length(P.cells[_lattice_backtrack_cell(P, basis_points[remaining[position]])])
+      point = basis_points[remaining[position]]
+      size = length(_lattice_backtrack_candidates(P, P, point))
       if size < best_size
         best = position
         best_size = size
@@ -338,7 +360,7 @@ function _lattice_backtrack_extend!(
   # of the base point on the source side; every other point is excluded by the
   # invariants accumulated so far.
   source = S.base.partitions[depth]
-  candidates = partition.cells[_lattice_backtrack_cell(source, S.base.points[depth])]
+  candidates = _lattice_backtrack_candidates(source, partition, S.base.points[depth])
 
   for image in candidates
     images[depth] = image
@@ -460,7 +482,7 @@ function _lattice_backtrack_automorphism_group(grams::Vector{Matrix{Int}})
       images[i] = base.points[i]
     end
     partition = base.partitions[step]
-    candidates = partition.cells[_lattice_backtrack_cell(partition, base.points[step])]
+    candidates = _lattice_backtrack_candidates(partition, partition, base.points[step])
 
     # Everything found so far that fixes the earlier base points.
     stabilizer = Matrix{Int}[]
