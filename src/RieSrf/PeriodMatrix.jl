@@ -44,8 +44,8 @@ function big_period_matrix(RS::RiemannSurface;int_style::String = "Mixed")
 
   k = RR(103/100)
 
-  double_exponential_int_pars = []
-  gauss_legendre_int_pars = []
+  double_exponential_int_pars = ArbFieldElem[]
+  gauss_legendre_int_pars = ArbFieldElem[]
 
   #path`N seems to be less than what it is in Neurohr's implementation.
   #Neurohr takes disc_points of low precision here, but I don't see any 
@@ -134,13 +134,12 @@ function big_period_matrix(RS::RiemannSurface;int_style::String = "Mixed")
   end
 
   #Set up DE integration schemes
-  double_exponential_int_group_rs = []
+  double_exponential_int_group_rs = ArbFieldElem[]
   nr_of_DE_int_pars = length(double_exponential_int_pars)
   if nr_of_DE_int_pars > 0
     sort!(double_exponential_int_pars)
     r_minimum = double_exponential_int_pars[1]
     r_maximum = double_exponential_int_pars[end]
-
 
     min_max_diff = RR(0)
     try 
@@ -472,7 +471,7 @@ function small_period_matrix(RS::RiemannSurface)
   P1 = P[1:g, 1:g]
   P2 = P[1:g, g+1:2*g]
   P1_inv = P1^(-1)
-  small_period_matrix = P1_inv*P2
+  small_period_matrix = solve(P1, P2, side =:right)
   RS.small_period_matrix = small_period_matrix
   RS.complex_reduction_matrices = [P1_inv]
   return small_period_matrix

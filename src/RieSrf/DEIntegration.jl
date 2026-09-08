@@ -87,8 +87,9 @@ function double_exponential_line_parameters(points::Vector{AcbFieldElem}, path::
   a = start_point(path)
   b = end_point(path)
 
+
   for p in points
-    t_p = (2*p - a - b)//(b - a)
+    t_p = trim_zero((2*p - a - b)//(b - a))
 
     #Consider the burger shaped area: B = {tanh(lambda*sinh(z)) : |imag(z)| < r}
     #Now picking r_k to be the following, we ensure that t_p lies on the boundary

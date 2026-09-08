@@ -254,7 +254,7 @@ mutable struct RiemannSurface
     RS.integration_method = integration_method
 
     mpoly_kxy = parent(f)
-    mpoly_x, mpol_y = gens(mpoly_kxy)
+    mpoly_x, mpoly_y = gens(mpoly_kxy)
 
     #Computed a Newton polygon and decide whether we can use a Baker basis or not.
     inner_fac = inner_faces(f)
@@ -296,8 +296,8 @@ mutable struct RiemannSurface
       factored_denoms = Dict{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}, Int64}[]
       #Gather all the factors occurring in the basis of differential forms
       for i in 1:g
-        num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[1].f))))
-        denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[1].f)(mpoly_x)))
+        num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[i].f))))
+        denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[i].f)(mpoly_x)))
 
         union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
 
