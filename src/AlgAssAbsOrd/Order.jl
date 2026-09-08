@@ -862,6 +862,7 @@ function new_maximal_order(O::AlgAssAbsOrd{S, T}, cache_in_substructures::Bool =
   else
     d = discriminant(O)
     @vtime :AbsNumFieldOrder fac = factor(d)
+    @info "ADSD"
 
     OO = O
     for (p, j) in fac

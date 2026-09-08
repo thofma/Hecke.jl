@@ -240,10 +240,54 @@ end
 #
 ################################################################################
 
+function trim_lowerleft(x)
+  r = 0
+  for i in nrows(x):-1:1
+    if is_zero_row(x, i)
+      break
+    end
+    r += 1
+  end
+  if r < nrows(x)
+    return x[nrows(x)-r+1:nrows(x), :]
+  end
+  return x
+end
+
+function trim_upperright(x)
+  r = 0
+  for i in 1:nrows(x)
+    if is_zero_row(x, i)
+      break
+    end
+    r += 1
+  end
+  if r < nrows(x)
+    return x[1:r, :]
+  end
+  return x
+end
+
 for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
   @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
   @eval ($s)(x::QQMatrix, ::ZZRing, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
 end
+
+function _hnf_integral_modular_eldiv(x::ZZMatrix, ::ZZRing, m::ZZRingElem; cutoff::Bool = false, shape::Symbol = :upperright, kw...)
+  h = _hnf_modular_eldiv(x, m, shape)
+  if cutoff
+    n = nrows(x)
+    m = ncols(x)
+    if shape === :lowerleft
+      x = sub(h, (n - m + 1):n, 1:m)
+    else
+      x = sub(h, 1:m, 1:m)
+    end
+    return x
+  end
+  return h
+end
+
 
 function _hnf!_integral(x::QQMatrix, shape = :lowerleft)
   x .= QQMatrix(_hnf!_integral(FakeFmpqMat(x), shape))
@@ -270,13 +314,30 @@ function _hnf!_integral(x::MatElem, R::Ring, shape = :lowerleft)
   x .= divexact(base_ring(x).(_hnf(y, :lowerleft)), d)
 end
 
+function _kernel_integral(x::MatElem, R::Ring; side::Symbol = :left)
+  y, d = integral_split(x, R)
+  K = kernel(y; side = :left)
+  return divexact(change_base_ring(base_ring(x), K), d)
+end
+
 #function hnf_integral(x::QQMatrix, args...; kw...)
 #  return QQMatrix(hnf(FakeFmpqMat(x, args...; kw...)))
 #end
 
-function _hnf_integral(x::MatElem, R::Ring,  shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+function _hnf_integral(x::MatElem, R::Ring, shape; triangular_top::Bool = false, compute_det::Bool = false, cutoff::Bool = false)
+  return _hnf_integral(x, R; shape, triangular_top, compute_det, cutoff)
+end
+
+function _hnf_integral(x::MatElem, R::Ring; shape = :lowerleft, triangular_top::Bool = false, compute_det::Bool = false, cutoff::Bool = false)
   y, d = integral_split(x, R)
-  return divexact(base_ring(x).(_hnf(y, shape)), d)
+  z = divexact(base_ring(x).(_hnf(y, shape)), d)
+  if cutoff
+    if shape == :lowerleft
+      return trim_lowerleft(z)
+    end
+    error("not implemented yet")
+  end
+  return z
 end
 
 # used in Oscar
@@ -285,7 +346,11 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, c
   return _hnf_integral(x, shape; triangular_top, compute_det)
 end
 
-function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool = false, compute_det::Bool = false)
+function _hnf_integral(x::FakeFmpqMat, shape; triangular_top::Bool = false, compute_det::Bool = false)
+  return _hnf_integral(x; shape, triangular_top, compute_det)
+end
+
+function _hnf_integral(x::FakeFmpqMat; triangular_top::Bool = false, compute_det::Bool = false, shape = :lowerleft, cutoff = false)
   if triangular_top
     @assert ncols(x) <= nrows(x)
     z = one(ZZ)
@@ -303,6 +368,10 @@ function _hnf_integral(x::FakeFmpqMat, shape = :lowerleft; triangular_top::Bool 
     h = _hnf_modular_eldiv(x.num, d, shape)
   else
     h = _hnf(x.num, shape)
+  end
+  if cutoff
+    @assert shape === :lowerleft
+    h = trim_lowerleft(h)
   end
   return FakeFmpqMat(h, denominator(x))
 end
