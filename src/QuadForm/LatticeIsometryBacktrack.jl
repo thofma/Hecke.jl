@@ -1,41 +1,81 @@
 ################################################################################
 #
-#  Plain partition backtracking for definite integer lattices
+#  Partition backtracking for definite integer lattices
+#
+################################################################################
+#
+# This is the plain version of the search, written to be read rather than to be
+# fast; `IsometryBacktrack.jl` is the optimized variant.  It computes isometries
+# and automorphism groups of an ordered list of integral symmetric forms of
+# which the first one is positive definite.
+#
+#  The setting.  Let G_1, ..., G_r be the forms and let b = max_i (G_1)_{ii}.
+#  Any isometry maps each standard basis vector to a vector of the same norm
+#  under G_1, hence to one of the finitely many vectors of norm at most b.  The
+#  *points* of the search are therefore the vectors v with 0 < v G_1 v' <= b,
+#  each stored together with -v, and an isometry is determined by the images of
+#  the n basis vectors among them.  This is exactly the setup of
+#  Plesken--Souvignier.  What is different is only how the candidates for those
+#  images are maintained.
+#
+#  Partition backtracking, in one paragraph.  Instead of testing a candidate
+#  image against the already chosen ones one scalar product at a time, the
+#  search maintains an *ordered partition* of the whole point set: an ordered
+#  list of cells whose defining property is that a point can only be mapped to a
+#  point sitting in the cell of the same index on the other side.  The search
+#  tree has two nodes at each step, one for the source and one for the target,
+#  each carrying such a partition.  A step consists of *individualizing* a point
+#  -- putting it into a cell of its own -- and then *refining*: splitting every
+#  cell by an invariant that an isometry must preserve, here the scalar products
+#  with the individualized point under all the forms.  The refinement is one
+#  function applied on both sides, which is what makes the cells of the two
+#  nodes correspond.  Two nodes can only be matched if the resulting partitions
+#  have the same *shape*, and that test is the pruning.
+#
+#  The dictionary to Plesken--Souvignier.  The initial partition, grouping the
+#  points by their norms, is the classification of the short vectors by norm.
+#  The cell containing the k-th base point is the candidate list for the k-th
+#  basis image, and its size is the k-th entry of the fingerprint.  The
+#  refinement by scalar products with the pivot is the scalar product test,
+#  performed for all points at once and remembered, rather than recomputed for
+#  each candidate.  The choice of base, individualizing in a smallest cell, is
+#  the reordering of the basis by the fingerprint.  The automorphism group is
+#  computed exactly as in Plesken--Souvignier, from a base and the orbits of the
+#  stabilizer chain.
+#
+#  What is certified.  The images found are checked by M G'_k M' == G_k for
+#  every k, so a returned isometry is correct independently of the search.  The
+#  determinant test at the start makes an integral solution automatically
+#  unimodular.  Completeness rests on every pruning step being a necessary
+#  condition; there are exactly two, the shape test and the orbit test, and both
+#  are justified where they occur.  All search arithmetic is in `Int`.
+#
+#  What was left out on purpose.  Every node here rebuilds its partition as
+#  fresh vectors, and every cell is refined even when it can no longer contain
+#  the image of a basis vector.  Both are wasteful and both are easy to change
+#  once the structure above is agreed on: the partition can be kept in one array
+#  of points with the cells as index ranges, refined in place and undone on
+#  backtracking, and the refinement can be restricted to the cells that a later
+#  base point can still land in.  The scalar products with the already chosen
+#  images can be accumulated instead of recomputed.  The isometry search can use
+#  the automorphism group of the source to skip images that differ by an
+#  automorphism.  Of these, only the first two are pure bookkeeping; dropping
+#  cells makes the shape test weaker and can enlarge the tree, and skipping
+#  images by automorphisms is a third pruning criterion that has to be justified
+#  like the two above.
+
+################################################################################
+#
+#  The points
 #
 ################################################################################
 
-# This is a direct implementation of the basis-image search of
-# Plesken--Souvignier.  If G is the Gram matrix of a positive definite lattice,
-# every image of a basis vector belongs to the finite set of vectors of norm at
-# most maximum(diagonal(G)).  Isometries permute this signed short-vector set.
-# The search individualizes basis images one after another.  After each choice,
-# an ordered partition of the short vectors is refined by their scalar products
-# with the chosen image.
-# For simultaneous isometries of an ordered list of symmetric Gram matrices,
-# only the first form must be positive definite.  It supplies the enumeration
-# bound; norm and scalar-product vectors for all forms supply the partition keys.
-# The number of forms is a runtime value.  Vectors used as keys are not mutated.
-#
-# The implementation deliberately keeps the setup and the search elementary:
-# Hecke's short_vectors performs the enumeration directly into `Int` vectors,
-# all search arithmetic uses `Int`, and partition cells are ordinary Julia
-# vectors and dictionaries.  The only group-theoretic bookkeeping is the
-# stabilizer chain needed to turn found automorphisms into generators and an
-# order.
-
 struct LatticeIsometryBacktrackCtx
-  grams::Vector{Matrix{Int}}
-  vectors::Vector{Vector{Int}}
-  gram_products::Vector{Vector{Vector{Int}}}
-  norms::Vector{Vector{Int}}
-  vectors_by_norm::Dict{Vector{Int}, Vector{Int}}
-  lookup::Dict{Vector{Int}, Int}
-  basis_positions::Vector{Int}
-  image_cache::IdDict{Matrix{Int}, Vector{Int}}
-end
-
-function LatticeIsometryBacktrackCtx(G::Matrix{Int}, bound::Int)
-  return LatticeIsometryBacktrackCtx([G], bound)
+  grams::Vector{Matrix{Int}}                   # the forms; grams[1] is definite
+  vectors::Vector{Vector{Int}}                 # the points of the search
+  gram_products::Vector{Vector{Vector{Int}}}   # gram_products[i][k] = v_i * G_k
+  norms::Vector{Vector{Int}}                   # norms[i][k] = v_i * G_k * v_i'
+  lookup::Dict{Vector{Int}, Int}               # the inverse of `vectors`
 end
 
 function _lattice_backtrack_check_grams(grams)
@@ -46,6 +86,10 @@ function _lattice_backtrack_check_grams(grams)
   return n
 end
 
+function LatticeIsometryBacktrackCtx(G::Matrix{Int}, bound::Int)
+  return LatticeIsometryBacktrackCtx([G], bound)
+end
+
 function LatticeIsometryBacktrackCtx(grams::Vector{Matrix{Int}}, bound::Int)
   n = _lattice_backtrack_check_grams(grams)
   L = integer_lattice(gram = matrix(ZZ, grams[1]), cached = false)
@@ -54,21 +98,21 @@ function LatticeIsometryBacktrackCtx(grams::Vector{Matrix{Int}}, bound::Int)
   gram_products = Vector{Vector{Int}}[]
   norms = Vector{Int}[]
 
-  # short_vectors returns one representative of each pair {v, -v}.  Both
-  # signs are possible basis images, so store both explicitly.
+  # short_vectors returns one representative of each pair {v, -v}.  Both signs
+  # are possible basis images, so both are points of the search.
   for (w, _) in short_vectors(L, bound, Int)
     wGs = Vector{Vector{Int}}(undef, length(grams))
     nw = Vector{Int}(undef, length(grams))
-    for form in eachindex(grams)
-      G = grams[form]
-      wG = zeros(Int, length(w))
-      for j in eachindex(w)
-        for i in eachindex(w)
+    for k in eachindex(grams)
+      G = grams[k]
+      wG = zeros(Int, n)
+      for j in 1:n
+        for i in 1:n
           wG[j] += w[i] * G[i, j]
         end
       end
-      wGs[form] = wG
-      nw[form] = sum(w[i] * wG[i] for i in eachindex(w))
+      wGs[k] = wG
+      nw[k] = sum(w[i] * wG[i] for i in 1:n)
     end
     push!(vectors, w)
     push!(gram_products, wGs)
@@ -78,339 +122,239 @@ function LatticeIsometryBacktrackCtx(grams::Vector{Matrix{Int}}, bound::Int)
     push!(norms, nw)
   end
 
-  vectors_by_norm = Dict{Vector{Int}, Vector{Int}}()
   lookup = Dict{Vector{Int}, Int}()
   for (i, v) in enumerate(vectors)
-    push!(get!(Vector{Int}, vectors_by_norm, norms[i]), i)
     lookup[v] = i
   end
-
-  # Record which short vectors are signed standard basis vectors.  Pairing
-  # against one of these then amounts to reading one entry of v * G.
-  basis_positions = zeros(Int, length(vectors))
-  e = zeros(Int, n)
-  for i in eachindex(e)
-    e[i] = 1
-    j = get(lookup, e, 0)
-    iszero(j) || (basis_positions[j] = i)
-    e[i] = -1
-    j = get(lookup, e, 0)
-    iszero(j) || (basis_positions[j] = -i)
-    e[i] = 0
-  end
-
-  return LatticeIsometryBacktrackCtx(
-    grams,
-    vectors,
-    gram_products,
-    norms,
-    vectors_by_norm,
-    lookup,
-    basis_positions,
-    IdDict{Matrix{Int}, Vector{Int}}(),
-  )
+  return LatticeIsometryBacktrackCtx(grams, vectors, gram_products, norms, lookup)
 end
 
-function _lattice_backtrack_pairing(
-  C::LatticeIsometryBacktrackCtx,
-  i::Int,
-  j::Int,
-)
-  vGs = C.gram_products[i]
-  basis_position = C.basis_positions[j]
+# The one invariant the search uses:  pairing(i, j)[k] = v_i * G_k * v_j'.  An
+# isometry preserves it, and this is the only reason the refinement below is
+# isometry invariant.
+function _lattice_backtrack_pairing(C::LatticeIsometryBacktrackCtx, i::Int, j::Int)
   w = C.vectors[j]
   values = Vector{Int}(undef, length(C.grams))
-  for form in eachindex(C.grams)
-    vG = vGs[form]
-    if basis_position > 0
-      values[form] = vG[basis_position]
-    elseif basis_position < 0
-      values[form] = -vG[-basis_position]
-    else
-      result = 0
-      for k in eachindex(vG)
-        result += vG[k] * w[k]
-      end
-      values[form] = result
+  for k in eachindex(C.grams)
+    vG = C.gram_products[i][k]
+    value = 0
+    for t in eachindex(w)
+      value += vG[t] * w[t]
     end
+    values[k] = value
   end
   return values
 end
 
-function _lattice_backtrack_basis_indices(C::LatticeIsometryBacktrackCtx)
+# The points of the standard basis vectors.  Each has norm at most the
+# enumeration bound, so each of them really is a point.
+function _lattice_backtrack_basis_points(C::LatticeIsometryBacktrackCtx)
   n = size(C.grams[1], 1)
-  result = Vector{Int}(undef, n)
+  points = Vector{Int}(undef, n)
   e = zeros(Int, n)
   for i in 1:n
     e[i] = 1
-    result[i] = C.lookup[e]
+    points[i] = C.lookup[e]
     e[i] = 0
   end
-  return result
+  return points
 end
 
+################################################################################
+#
+#  Ordered partitions
+#
+################################################################################
+
+# An ordered partition of the set of points, together with the invariant value
+# that created each cell.  The cells are disjoint and cover all points.
 struct LatticeBacktrackPartition
-  points::Vector{Int}
-  starts::Vector{Int}
-  stops::Vector{Int}
-  cell_of::Vector{Int}
+  cells::Vector{Vector{Int}}
+  labels::Vector{Vector{Int}}
 end
 
-struct LatticeBacktrackRefinement
-  value_indices::Vector{Dict{Vector{Int}, Int}}
-  sizes::Vector{Vector{Int}}
+function _lattice_backtrack_cell(P::LatticeBacktrackPartition, point::Int)
+  return findfirst(cell -> point in cell, P.cells)::Int
 end
 
-struct LatticeBacktrackFingerprint
-  order::Vector{Int}
-  counts::Vector{Int}
-  basis_indices::Vector{Int}
-  initial_norms::Vector{Vector{Int}}
-  partitions::Vector{LatticeBacktrackPartition}
-  candidate_cells::Vector{Int}
-  refinements::Vector{LatticeBacktrackRefinement}
-end
-
-function _lattice_backtrack_initial_partition(
-  C::LatticeIsometryBacktrackCtx,
-  norms::Vector{Vector{Int}},
-)
-  points = Int[]
-  starts = Int[]
-  stops = Int[]
-  cell_of = zeros(Int, length(C.vectors))
-  for norm in norms
-    cell = get(C.vectors_by_norm, norm, nothing)
-    cell === nothing && return nothing
-    push!(starts, length(points) + 1)
-    append!(points, cell)
-    push!(stops, length(points))
-    cell_number = length(starts)
-    for point in cell
-      cell_of[point] = cell_number
-    end
-  end
-  return LatticeBacktrackPartition(points, starts, stops, cell_of)
-end
-
+# The shape of a node.  Two nodes, one on the source and one on the target side,
+# can only be matched by an isometry if their partitions agree here: an isometry
+# carries the cells of the source partition onto the cells of the target
+# partition in order, so corresponding cells carry the same label and have the
+# same size.  This is the pruning criterion of the search.
 function _lattice_backtrack_same_shape(
-  left::LatticeBacktrackPartition,
-  right::LatticeBacktrackPartition,
+  P::LatticeBacktrackPartition,
+  Q::LatticeBacktrackPartition,
 )
-  length(left.starts) == length(right.starts) || return false
-  for cell in eachindex(left.starts)
-    left.stops[cell] - left.starts[cell] ==
-      right.stops[cell] - right.starts[cell] || return false
-  end
-  return true
+  P.labels == Q.labels || return false
+  return all(k -> length(P.cells[k]) == length(Q.cells[k]), eachindex(P.cells))
 end
 
-function _lattice_backtrack_refine_source(
-  C::LatticeIsometryBacktrackCtx,
-  partition::LatticeBacktrackPartition,
-  pivot::Int,
-  remaining_basis_points::BitSet,
-)
-  points = Int[]
-  starts = Int[]
-  stops = Int[]
-  cell_of = zeros(Int, length(C.vectors))
-  value_indices = Vector{Dict{Vector{Int}, Int}}(undef, length(partition.starts))
-  sizes = Vector{Vector{Int}}(undef, length(partition.starts))
+# The root of the search tree:  the points grouped by their norms under all the
+# forms, the cells ordered by that norm vector.  It is the coarsest partition
+# that an isometry has to respect.
+function _lattice_backtrack_initial_partition(C::LatticeIsometryBacktrackCtx)
+  blocks = Dict{Vector{Int}, Vector{Int}}()
+  for i in eachindex(C.vectors)
+    push!(get!(Vector{Int}, blocks, C.norms[i]), i)
+  end
+  labels = sort!(collect(keys(blocks)))
+  return LatticeBacktrackPartition([blocks[label] for label in labels], labels)
+end
 
-  for cell in eachindex(partition.starts)
+# One step down the search tree: individualize `pivot` and refine.
+#
+#   individualize  the pivot is taken out of its cell and put into a cell of its
+#                  own.  On its own this is not an isometry invariant operation
+#                  -- it is the choice the search branches over -- but both
+#                  sides do it to their respective pivot, which is precisely the
+#                  assertion that the pivot is mapped to the pivot.
+#   refine         every cell is split by the pairing with the pivot, and the
+#                  new cells are ordered by that value.  Only points with equal
+#                  pairing can still correspond to each other.
+#
+# Both sides run this same function, so the k-th cell on one side corresponds to
+# the k-th cell on the other; the label records the parent cell and the pairing
+# value, so that a mismatch of the two trees cannot hide inside equal labels.
+function _lattice_backtrack_split(
+  C::LatticeIsometryBacktrackCtx,
+  P::LatticeBacktrackPartition,
+  pivot::Int,
+)
+  cells = Vector{Int}[]
+  labels = Vector{Int}[]
+  for k in eachindex(P.cells)
     blocks = Dict{Vector{Int}, Vector{Int}}()
-    for position in partition.starts[cell]:partition.stops[cell]
-      point = partition.points[position]
+    for point in P.cells[k]
       value = _lattice_backtrack_pairing(C, point, pivot)
       push!(get!(Vector{Int}, blocks, value), point)
     end
-
-    kept_values = Vector{Int}[]
-    for (value, block) in blocks
-      any(point -> point in remaining_basis_points, block) || continue
-      push!(kept_values, value)
-    end
-    sort!(kept_values)
-
-    indices = Dict{Vector{Int}, Int}()
-    kept_sizes = Int[]
-    for value in kept_values
+    for value in sort!(collect(keys(blocks)))
       block = blocks[value]
-      push!(starts, length(points) + 1)
-      append!(points, block)
-      push!(stops, length(points))
-      new_cell = length(starts)
-      for point in block
-        cell_of[point] = new_cell
+      label = pushfirst!(copy(value), k)
+      if pivot in block
+        push!(cells, [pivot])
+        push!(labels, label)
+        block = filter(!=(pivot), block)
+        isempty(block) && continue
       end
-      indices[value] = length(kept_sizes) + 1
-      push!(kept_sizes, length(block))
-    end
-    value_indices[cell] = indices
-    sizes[cell] = kept_sizes
-  end
-
-  refined = LatticeBacktrackPartition(points, starts, stops, cell_of)
-  refinement = LatticeBacktrackRefinement(value_indices, sizes)
-  return refined, refinement
-end
-
-function _lattice_backtrack_refine_target(
-  C::LatticeIsometryBacktrackCtx,
-  partition::LatticeBacktrackPartition,
-  pivot::Int,
-  refinement::LatticeBacktrackRefinement,
-)
-  points = Int[]
-  starts = Int[]
-  stops = Int[]
-
-  for cell in eachindex(partition.starts)
-    expected_sizes = refinement.sizes[cell]
-    isempty(expected_sizes) && continue
-    blocks = [Int[] for _ in expected_sizes]
-    indices = refinement.value_indices[cell]
-    for position in partition.starts[cell]:partition.stops[cell]
-      point = partition.points[position]
-      value = _lattice_backtrack_pairing(C, point, pivot)
-      child = get(indices, value, 0)
-      iszero(child) || push!(blocks[child], point)
-    end
-
-    for child in eachindex(blocks)
-      length(blocks[child]) == expected_sizes[child] || return nothing
-      push!(starts, length(points) + 1)
-      append!(points, blocks[child])
-      push!(stops, length(points))
+      push!(cells, block)
+      push!(labels, label)
     end
   end
-  return LatticeBacktrackPartition(points, starts, stops, Int[])
+  return LatticeBacktrackPartition(cells, labels)
 end
 
-# Choose a basis order by individualizing a basis vector in a smallest cell and
-# refining every cell by the list of scalar products with that vector.  A cell
-# containing no remaining basis vector cannot supply a later basis image and is
-# dropped.
-function _lattice_backtrack_fingerprint(C::LatticeIsometryBacktrackCtx)
+################################################################################
+#
+#  The base and the source side of the tree
+#
+################################################################################
+
+# The source side of the search tree is a single path, fixed before the search
+# starts.  Its nodes are obtained by individualizing basis vectors one after the
+# other, and the basis vectors are taken in the order that individualizes in a
+# smallest cell first.  The cell of the k-th base point is the list of its
+# possible images, so its size is the branching factor at level k; in the
+# language of Plesken--Souvignier this chooses the basis order by the
+# fingerprint.
+struct LatticeBacktrackBase
+  order::Vector{Int}                            # order[k] is the basis vector
+  points::Vector{Int}                           # its point in the source
+  partitions::Vector{LatticeBacktrackPartition} # the nodes, one per level plus the leaf
+end
+
+function _lattice_backtrack_base(C::LatticeIsometryBacktrackCtx)
   n = size(C.grams[1], 1)
-  basis_indices = _lattice_backtrack_basis_indices(C)
-  initial_norms = unique!(sort!(C.norms[basis_indices]))
-  initial_partition = _lattice_backtrack_initial_partition(C, initial_norms)
-  initial_partition === nothing && error("a basis norm has no short vectors")
-
+  basis_points = _lattice_backtrack_basis_points(C)
+  partitions = [_lattice_backtrack_initial_partition(C)]
   order = Int[]
-  counts = Int[]
-  candidate_cells = Int[]
-  partitions = LatticeBacktrackPartition[initial_partition]
-  refinements = LatticeBacktrackRefinement[]
+  points = Int[]
   remaining = collect(1:n)
 
   while !isempty(remaining)
-    partition = partitions[end]
-    best_position = 1
-    best_count = typemax(Int)
+    P = partitions[end]
+    best = 1
+    best_size = typemax(Int)
     for position in eachindex(remaining)
-      point = basis_indices[remaining[position]]
-      cell = partition.cell_of[point]
-      count = partition.stops[cell] - partition.starts[cell] + 1
-      if count < best_count
-        best_position = position
-        best_count = count
+      size = length(P.cells[_lattice_backtrack_cell(P, basis_points[remaining[position]])])
+      if size < best_size
+        best = position
+        best_size = size
       end
     end
-
-    source_index = remaining[best_position]
-    deleteat!(remaining, best_position)
-    push!(order, source_index)
-    push!(counts, best_count)
-    push!(candidate_cells, partition.cell_of[basis_indices[source_index]])
-
-    remaining_points = BitSet(basis_indices[i] for i in remaining)
-    refined, refinement = _lattice_backtrack_refine_source(
-      C, partition, basis_indices[source_index], remaining_points,
-    )
-    push!(partitions, refined)
-    push!(refinements, refinement)
+    push!(order, remaining[best])
+    push!(points, basis_points[remaining[best]])
+    deleteat!(remaining, best)
+    push!(partitions, _lattice_backtrack_split(C, P, points[end]))
   end
-
-  return LatticeBacktrackFingerprint(
-    order,
-    counts,
-    basis_indices,
-    initial_norms,
-    partitions,
-    candidate_cells,
-    refinements,
-  )
+  return LatticeBacktrackBase(order, points, partitions)
 end
 
-function _lattice_backtrack_matrix(
-  images::Vector{Int},
-  order::Vector{Int},
-  target::LatticeIsometryBacktrackCtx,
-)
-  n = length(order)
+################################################################################
+#
+#  The search
+#
+################################################################################
+
+# A search maps the source, of which only the base path is ever needed, into the
+# target.  For the automorphism group the two contexts coincide.
+struct LatticeBacktrackSearch
+  grams::Vector{Matrix{Int}}      # the forms on the source side
+  base::LatticeBacktrackBase
+  target::LatticeIsometryBacktrackCtx
+end
+
+function _lattice_backtrack_matrix(S::LatticeBacktrackSearch, images::Vector{Int})
+  n = length(S.base.order)
   M = zeros(Int, n, n)
   for depth in 1:n
-    image = target.vectors[images[depth]]
+    image = S.target.vectors[images[depth]]
     for j in 1:n
-      M[order[depth], j] = image[j]
+      M[S.base.order[depth], j] = image[j]
     end
   end
   return M
 end
 
+# Descend from a node of the tree.  `partition` is the target node paired with
+# the source node `S.base.partitions[depth]`; `images[1:depth - 1]` are the
+# images of the base points chosen so far.  Returns the first isometry found
+# below this node, or nothing.
 function _lattice_backtrack_extend!(
+  S::LatticeBacktrackSearch,
   images::Vector{Int},
   depth::Int,
-  source_grams::Vector{Matrix{Int}},
-  fingerprint::LatticeBacktrackFingerprint,
-  target::LatticeIsometryBacktrackCtx,
   partition::LatticeBacktrackPartition,
 )
-  if depth > length(fingerprint.order)
-    M = _lattice_backtrack_matrix(images, fingerprint.order, target)
-    if all(k -> M * target.grams[k] * transpose(M) == source_grams[k], eachindex(source_grams))
-      return M
-    end
-    return nothing
+  if depth > length(S.base.order)
+    # The base points determine a full basis image.  Certify it.
+    M = _lattice_backtrack_matrix(S, images)
+    all(k -> M * S.target.grams[k] * transpose(M) == S.grams[k], eachindex(S.grams)) || return nothing
+    return M
   end
 
-  cell = fingerprint.candidate_cells[depth]
-  cell <= length(partition.starts) || return nothing
-  first_candidate = partition.starts[cell]
-  last_candidate = partition.stops[cell]
-  last_candidate - first_candidate + 1 == fingerprint.counts[depth] || return nothing
+  # The candidates are the points of the target cell corresponding to the cell
+  # of the base point on the source side; every other point is excluded by the
+  # invariants accumulated so far.
+  source = S.base.partitions[depth]
+  candidates = partition.cells[_lattice_backtrack_cell(source, S.base.points[depth])]
 
-  for position in first_candidate:last_candidate
-    image = partition.points[position]
+  for image in candidates
     images[depth] = image
-    refined = _lattice_backtrack_refine_target(
-      target, partition, image, fingerprint.refinements[depth],
-    )
-    refined === nothing && continue
-    M = _lattice_backtrack_extend!(
-      images, depth + 1, source_grams, fingerprint, target, refined,
-    )
+    refined = _lattice_backtrack_split(S.target, partition, image)
+    _lattice_backtrack_same_shape(S.base.partitions[depth + 1], refined) || continue
+    M = _lattice_backtrack_extend!(S, images, depth + 1, refined)
     M === nothing || return M
   end
   return nothing
-end
-
-function _lattice_backtrack_histogram(C::LatticeIsometryBacktrackCtx)
-  result = Dict{Vector{Int}, Int}()
-  for norm in C.norms
-    result[norm] = get(result, norm, 0) + 1
-  end
-  return result
 end
 
 function _lattice_backtrack_isometry(G1::Matrix{Int}, G2::Matrix{Int})
   return _lattice_backtrack_isometry([G1], [G2])
 end
 
-# Find M in GL(n, Z) such that M * grams2[k] * M' == grams1[k] for every k.
+# Find M in GL(n, Z) with M * grams2[k] * M' == grams1[k] for every k.
 function _lattice_backtrack_isometry(
   grams1::Vector{Matrix{Int}},
   grams2::Vector{Matrix{Int}},
@@ -420,32 +364,34 @@ function _lattice_backtrack_isometry(
   length(grams1) == length(grams2) && n == m || return nothing
   n == 0 && return zeros(Int, 0, 0)
 
-  # Equal determinants of the positive definite forms ensure that an integral
-  # solution of the Gram equations is unimodular.  Check this exactly at setup.
+  # Equal determinants of the positive definite forms make an integral solution
+  # of the Gram equations automatically unimodular.  Check this exactly.
   det(matrix(ZZ, grams1[1])) == det(matrix(ZZ, grams2[1])) || return nothing
+
   bound = maximum(grams1[1][i, i] for i in 1:n)
   source = LatticeIsometryBacktrackCtx(grams1, bound)
   target = LatticeIsometryBacktrackCtx(grams2, bound)
-  _lattice_backtrack_histogram(source) == _lattice_backtrack_histogram(target) ||
-    return nothing
+  base = _lattice_backtrack_base(source)
+  partition = _lattice_backtrack_initial_partition(target)
+  # The root shape test compares the two norm distributions.
+  _lattice_backtrack_same_shape(base.partitions[1], partition) || return nothing
 
-  fingerprint = _lattice_backtrack_fingerprint(source)
-  partition = _lattice_backtrack_initial_partition(target, fingerprint.initial_norms)
-  partition === nothing && return nothing
-  _lattice_backtrack_same_shape(fingerprint.partitions[1], partition) || return nothing
-  images = Vector{Int}(undef, n)
-  return _lattice_backtrack_extend!(images, 1, grams1, fingerprint, target, partition)
+  S = LatticeBacktrackSearch(grams1, base, target)
+  return _lattice_backtrack_extend!(S, Vector{Int}(undef, n), 1, partition)
 end
 
+################################################################################
+#
+#  The automorphism group
+#
+################################################################################
+
+# The point that M maps `point` to.
 function _lattice_backtrack_image(
   C::LatticeIsometryBacktrackCtx,
   point::Int,
   M::Matrix{Int},
 )
-  cache = get!(() -> zeros(Int, length(C.vectors)), C.image_cache, M)
-  cached_image = cache[point]
-  iszero(cached_image) || return cached_image
-
   v = C.vectors[point]
   n = length(v)
   image = zeros(Int, n)
@@ -456,7 +402,6 @@ function _lattice_backtrack_image(
   end
   result = get(C.lookup, image, 0)
   iszero(result) && error("an automorphism did not preserve the short vectors")
-  cache[point] = result
   return result
 end
 
@@ -486,20 +431,21 @@ function _lattice_backtrack_automorphism_group(G::Matrix{Int})
   return _lattice_backtrack_automorphism_group([G])
 end
 
-# Compute the common stabilizer of all forms, without permuting the forms.
+# The common stabilizer of all the forms, as generators and an order.  The base
+# points are the images of a basis, so only the identity fixes all of them and
+# the order is the product of the orbit lengths along the stabilizer chain.
 function _lattice_backtrack_automorphism_group(grams::Vector{Matrix{Int}})
   n = _lattice_backtrack_check_grams(grams)
   n == 0 && return Matrix{Int}[zeros(Int, 0, 0)], one(ZZRingElem)
   bound = maximum(grams[1][i, i] for i in 1:n)
   C = LatticeIsometryBacktrackCtx(grams, bound)
-  fingerprint = _lattice_backtrack_fingerprint(C)
-  order = fingerprint.order
-  base = Int[fingerprint.basis_indices[i] for i in order]
+  base = _lattice_backtrack_base(C)
+  S = LatticeBacktrackSearch(grams, base, C)
   generators = [Matrix{Int}[] for _ in 1:n]
   orbit_lengths = ones(Int, n)
 
-  # Negation is always an automorphism.  Treat it like every other generator;
-  # at later levels it drops out because it does not fix the first base point.
+  # Negation is always an automorphism.  It is treated like any other generator;
+  # at later levels it drops out because it moves the first base point.
   negation = zeros(Int, n, n)
   for i in 1:n
     negation[i, i] = -1
@@ -508,25 +454,30 @@ function _lattice_backtrack_automorphism_group(grams::Vector{Matrix{Int}})
 
   images = Vector{Int}(undef, n)
   for step in 1:n
+    # Fix the first step - 1 base points.  The target node paired with the
+    # source node at this level is then the source node itself.
     for i in 1:(step - 1)
-      images[i] = base[i]
+      images[i] = base.points[i]
     end
+    partition = base.partitions[step]
+    candidates = partition.cells[_lattice_backtrack_cell(partition, base.points[step])]
 
-    partition = fingerprint.partitions[step]
-    cell = fingerprint.candidate_cells[step]
-    candidates = partition.points[partition.starts[cell]:partition.stops[cell]]
-    length(candidates) == fingerprint.counts[step] ||
-      error("inconsistent automorphism partition")
-
-    stabilizer_generators = Matrix{Int}[]
+    # Everything found so far that fixes the earlier base points.
+    stabilizer = Matrix{Int}[]
     for level in step:n
-      append!(stabilizer_generators, generators[level])
+      append!(stabilizer, generators[level])
     end
 
-    failed_representatives = Int[]
+    # The second pruning criterion.  Candidates in the orbit of the base point
+    # are already realized by known automorphisms.  Candidates in the orbit of a
+    # candidate that has been shown to be impossible are impossible as well: if
+    # g maps the failed point to c and some h mapped the base point to c, then
+    # g^-1 h would map the base point to the failed point.  So one candidate per
+    # orbit has to be searched, and the loop stops once all are classified.
+    failed = Int[]
     while true
-      good = _lattice_backtrack_orbit(C, Int[base[step]], stabilizer_generators)
-      bad = _lattice_backtrack_orbit(C, failed_representatives, stabilizer_generators)
+      good = _lattice_backtrack_orbit(C, Int[base.points[step]], stabilizer)
+      bad = _lattice_backtrack_orbit(C, failed, stabilizer)
       candidate = findfirst(i -> !(i in good) && !(i in bad), candidates)
       if candidate === nothing
         orbit_lengths[step] = length(good)
@@ -534,17 +485,17 @@ function _lattice_backtrack_automorphism_group(grams::Vector{Matrix{Int}})
       end
 
       images[step] = candidates[candidate]
-      refined = _lattice_backtrack_refine_target(
-        C, partition, images[step], fingerprint.refinements[step],
-      )
-      M = refined === nothing ? nothing : _lattice_backtrack_extend!(
-        images, step + 1, grams, fingerprint, C, refined,
-      )
+      refined = _lattice_backtrack_split(C, partition, images[step])
+      M = if _lattice_backtrack_same_shape(base.partitions[step + 1], refined)
+        _lattice_backtrack_extend!(S, images, step + 1, refined)
+      else
+        nothing
+      end
       if M === nothing
-        push!(failed_representatives, images[step])
+        push!(failed, images[step])
       else
         push!(generators[step], M)
-        push!(stabilizer_generators, M)
+        push!(stabilizer, M)
       end
     end
   end
@@ -554,9 +505,14 @@ function _lattice_backtrack_automorphism_group(grams::Vector{Matrix{Int}})
     append!(result, level)
   end
   @assert all(M -> all(G -> M * G * transpose(M) == G, grams), result)
-  group_order = prod(ZZRingElem.(orbit_lengths); init = one(ZZRingElem))
-  return result, group_order
+  return result, prod(ZZRingElem.(orbit_lengths); init = one(ZZRingElem))
 end
+
+################################################################################
+#
+#  Entry points for lattices
+#
+################################################################################
 
 # Make a definite rational Gram matrix positive, primitive, integral, and LLL
 # reduced.  If T is the returned transformation, then the reduced matrix is a

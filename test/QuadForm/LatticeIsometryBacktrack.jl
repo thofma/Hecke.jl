@@ -60,9 +60,20 @@ end
     @test typeof(C) === Hecke.LatticeIsometryBacktrackCtx
     @test eltype(C.norms) === Vector{Int}
     @test all(norm -> length(norm) == k, C.norms)
-    fingerprint = Hecke._lattice_backtrack_fingerprint(C)
-    @test typeof(fingerprint) === Hecke.LatticeBacktrackFingerprint
-    @test eltype(fingerprint.refinements) === Hecke.LatticeBacktrackRefinement
+    base = Hecke._lattice_backtrack_base(C)
+    @test typeof(base) === Hecke.LatticeBacktrackBase
+    @test eltype(base.partitions) === Hecke.LatticeBacktrackPartition
+    # One node per individualized basis vector, plus the root.
+    @test length(base.partitions) == length(base.order) + 1
+    # The last node is discrete on the base points and the partitions get finer.
+    @test all(P -> length(P.cells) <= length(base.partitions[end].cells),
+              base.partitions)
+    @test all(p -> length(base.partitions[end].cells[
+                Hecke._lattice_backtrack_cell(base.partitions[end], p)]) == 1,
+              base.points)
+    # Every node is an ordered partition of the whole point set.
+    @test all(P -> sort!(reduce(vcat, P.cells)) == collect(eachindex(C.vectors)),
+              base.partitions)
     generators, group_order = Hecke._lattice_backtrack_automorphism_group(G)
     @test group_order == expected_order
     @test all(M -> all(g -> M * g * transpose(M) == g, G), generators)
@@ -97,7 +108,12 @@ end
             [transpose(C.vectors[i]) * g * C.vectors[j] for g in G]
             for i in eachindex(C.vectors), j in eachindex(C.vectors))
   target = Hecke.LatticeIsometryBacktrackCtx(H, 2)
-  @test Hecke._lattice_backtrack_histogram(C) == Hecke._lattice_backtrack_histogram(target)
+  # The root shape test compares the two norm distributions and passes here;
+  # the incompatible sign is only found deeper in the tree.
+  @test Hecke._lattice_backtrack_same_shape(
+    Hecke._lattice_backtrack_initial_partition(C),
+    Hecke._lattice_backtrack_initial_partition(target),
+  )
 
   # Forms are preserved in order, not up to a permutation or individual signs.
   @test Hecke._lattice_backtrack_isometry([I3, D, -D], [I3, -D, D]) === nothing
@@ -117,7 +133,10 @@ end
   T[1, 1] = 5
   source = Hecke.LatticeIsometryBacktrackCtx([S, S], 4)
   target = Hecke.LatticeIsometryBacktrackCtx([T, T], 4)
-  @test Hecke._lattice_backtrack_histogram(source) == Hecke._lattice_backtrack_histogram(target)
+  @test Hecke._lattice_backtrack_same_shape(
+    Hecke._lattice_backtrack_initial_partition(source),
+    Hecke._lattice_backtrack_initial_partition(target),
+  )
   @test Hecke._lattice_backtrack_isometry([S, S], [T, T]) === nothing
 
   @test_throws ArgumentError Hecke._lattice_backtrack_automorphism_group(Matrix{Int}[])
