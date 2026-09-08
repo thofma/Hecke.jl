@@ -1685,6 +1685,9 @@ the domain of `m`.
 """
 function decomposition_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, mG::Map)
   iner = decomposition_group(P)
+  if domain(mG) isa MultTableGroup
+    return sub(domain(mG), [mG\a for a in iner]; complete = true)
+  end
   return sub(domain(mG), [mG\a for a in iner])
 end
 
@@ -1791,6 +1794,9 @@ the domain of `m`.
 """
 function inertia_subgroup(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, mG::Map)
   iner = inertia_subgroup(P)
+  if domain(mG) isa MultTableGroup
+    return sub(domain(mG), [mG\a for a in iner]; complete = true)
+  end
   return sub(domain(mG), [mG\a for a in iner])
 end
 
@@ -1826,5 +1832,8 @@ the domain of `m`.
 """
 function ramification_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, i::Int, mG::Map)
   iner = ramification_group(P, i)
+  if domain(mG) isa MultTableGroup
+    return sub(domain(mG), [mG\a for a in iner]; complete = true)
+  end
   return sub(domain(mG), [mG\a for a in iner])
 end

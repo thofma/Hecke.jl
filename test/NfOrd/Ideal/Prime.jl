@@ -86,6 +86,36 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
+@testset "Subgroups at finite places" begin
+  K, a = quadratic_field(-1)
+  O = maximal_order(K)
+  G, mG = automorphism_group(K)
+
+  # Also exercise a group type whose sub constructor has no complete keyword.
+  A = abelian_group([2])
+  identity = id_hom(K)
+  sigma = hom(K, K, -a)
+  mA = MapFromFunc(A, codomain(mG),
+                  g -> iszero(g) ? identity : sigma,
+                  f -> f(a) == a ? zero(A) : A[1])
+
+  for m in (mG, mA)
+    for (p, d, i, r) in [(2, 2, 2, 2), (3, 2, 1, 1), (5, 1, 1, 1)]
+      P = prime_decomposition(O, p)[1][1]
+      groups = [decomposition_group(K, P, m),
+                inertia_subgroup(K, P, m),
+                ramification_group(K, P, 0, m),
+                ramification_group(K, P, 1, m),
+                ramification_group(K, P, 2, m)]
+      for ((H, mH), n) in zip(groups, [d, i, i, r, 1])
+        @test order(H) == n
+        @test codomain(mH) === domain(m)
+        @test Set(m(mH(h))(a) for h in H) == Set(n == 2 ? [a, -a] : [a])
+      end
+    end
+  end
+end
+
 @testset "Prime Decomposition (AbsSimple)" begin
   # Q(sqrt(-5))
   K, a = quadratic_field(-5, cached = false)
