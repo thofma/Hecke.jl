@@ -351,7 +351,7 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   # the matrix of a generating system of `L2`.
   L0 = lattice(rational_span(L))
   pr = identity_matrix(QQ, n) - change_base_ring(QQ, gram_roots*dweights)*QQ(1, dd)
-  L2 = lattice(ambient_space(L0), pr; isbasis=false, check=false)
+  L2 = lll(lattice(ambient_space(L0), pr; isbasis=false, check=false)) # the hnf basis can be badly conditioned
   PZ = change_base_ring(ZZ, solve(basis_matrix(L2), pr; side=:left))
   cv2 = _characteristic_vectors(L2)
   # `_characteristic_vectors` returns the characteristic vectors only up to
@@ -382,6 +382,8 @@ end
 
 # Return the fundamental roots of `L` together with the characteristic vectors
 # of norm different from 1 and 2 lying in the closed fundamental Weyl chamber.
+# Note which closed fundamental Weyl chamber is chosen depends internally
+# on the choice of an lll reduced basis.
 function _reduced_characteristic_vectors(L::ZZLat)
   if !iseven(L)     # splitt off ones if there are any
     ones = ZZMatrix[matrix(ZZ, 1, rank(L), v) for (v, _) in short_vectors(L, 1, 1, Int; check=false)]
@@ -391,7 +393,7 @@ function _reduced_characteristic_vectors(L::ZZLat)
       # `M` of the lattice they span; of the vectors of norm one themselves we
       # keep one of each pair
       N = lattice_in_same_ambient_space(L, change_base_ring(QQ, reduce(vcat, ones))*basis_matrix(L))
-      M = orthogonal_submodule(L, N)
+      M = lll(orthogonal_submodule(L, N)) # lll to improve basis quality
       if !is_zero(rank(M))
         B = change_base_ring(ZZ, solve(basis_matrix(L), basis_matrix(M); side=:left))
         append!(ones, ZZMatrix[matrix(ZZ, v)*B for v in _reduced_characteristic_vectors(M)])

@@ -46,7 +46,7 @@
   for L in [integer_lattice(gram = matrix(QQ, 2, 2, [4,1,1,4])), integer_lattice(gram = identity_matrix(QQ, 4)),
             direct_sum(integer_lattice(gram = identity_matrix(QQ, 1)), root_lattice(:D, 6))[1],
             direct_sum(integer_lattice(gram = identity_matrix(QQ, 2)), integer_lattice(gram = matrix(QQ, 2, 2, [4,1,1,4])))[1]]
-    @test Set(vec(v) for v in Hecke._reduced_characteristic_vectors(L)) == generic_reduction(L)
+    @test length(Hecke._reduced_characteristic_vectors(L)) == length(generic_reduction(L)) # the sets are only equal up to the action of the Weyl group.
   end
 
   # the hardcoded minuscule tables agree with what the Cartan matrix says: `d`
@@ -73,4 +73,10 @@
   norms(L) = sort!([(matrix(ZZ, v)*Hecke._integral_split_gram(L)[1]*transpose(matrix(ZZ, v)))[1, 1]
                     for v in Hecke._reduced_characteristic_vectors(L)])
   @test norms(integer_lattice(gram = G)) == norms(integer_lattice(gram = U*G*transpose(U)))
+
+  # why lll is needed:
+  L = integer_lattice(gram=QQ[-2 0 0 0 0 0 0 0 0 1 1 1 1 -1 0 0; 0 -2 1 -1 1 0 0 0 0 1 1 1 1 -1 1 0; 0 1 -2 1 -1 0 0 0 0 0 -1 0 -1 1 -1 0; 0 -1 1 -2 1 0 0 0 0 0 0 1 0 0 0 0; 0 1 -1 1 -2 0 0 0 0 0 -1 -1 0 1 -1 0; 0 0 0 0 0 -2 0 0 0 1 0 0 0 0 -1 -1; 0 0 0 0 0 0 -2 1 1 -1 -1 1 1 -1 1 0; 0 0 0 0 0 0 1 -2 -1 0 0 -1 -1 0 -1 0; 0 0 0 0 0 0 1 -1 -2 1 0 -1 -1 0 -1 0; 1 1 0 0 0 1 -1 0 1 -4 -2 0 -1 0 1 1; 1 1 -1 0 -1 0 -1 0 0 -2 -4 0 -1 1 -1 0; 1 1 0 1 -1 0 1 -1 -1 0 0 -4 -1 1 -1 0; 1 1 -1 0 0 0 1 -1 -1 -1 -1 -1 -4 2 -2 0; -1 -1 1 0 1 0 -1 0 0 0 1 1 2 -4 2 0; 0 1 -1 0 -1 -1 1 -1 -1 1 -1 -1 -2 2 -4 -1; 0 0 0 0 0 -1 0 0 0 1 0 0 0 0 -1 -2]);
+  @test length(Hecke._reduced_characteristic_vectors(lll(L))) == 288
+
+
 end
