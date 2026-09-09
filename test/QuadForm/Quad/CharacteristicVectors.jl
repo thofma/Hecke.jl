@@ -73,4 +73,10 @@
   norms(L) = sort!([(matrix(ZZ, v)*Hecke._integral_split_gram(L)[1]*transpose(matrix(ZZ, v)))[1, 1]
                     for v in Hecke._reduced_characteristic_vectors(L)])
   @test norms(integer_lattice(gram = G)) == norms(integer_lattice(gram = U*G*transpose(U)))
+
+  # why lll is needed:
+  L = integer_lattice(gram=QQ[-2 0 0 0 0 0 0 0 0 1 1 1 1 -1 0 0; 0 -2 1 -1 1 0 0 0 0 1 1 1 1 -1 1 0; 0 1 -2 1 -1 0 0 0 0 0 -1 0 -1 1 -1 0; 0 -1 1 -2 1 0 0 0 0 0 0 1 0 0 0 0; 0 1 -1 1 -2 0 0 0 0 0 -1 -1 0 1 -1 0; 0 0 0 0 0 -2 0 0 0 1 0 0 0 0 -1 -1; 0 0 0 0 0 0 -2 1 1 -1 -1 1 1 -1 1 0; 0 0 0 0 0 0 1 -2 -1 0 0 -1 -1 0 -1 0; 0 0 0 0 0 0 1 -1 -2 1 0 -1 -1 0 -1 0; 1 1 0 0 0 1 -1 0 1 -4 -2 0 -1 0 1 1; 1 1 -1 0 -1 0 -1 0 0 -2 -4 0 -1 1 -1 0; 1 1 0 1 -1 0 1 -1 -1 0 0 -4 -1 1 -1 0; 1 1 -1 0 0 0 1 -1 -1 -1 -1 -1 -4 2 -2 0; -1 -1 1 0 1 0 -1 0 0 0 1 1 2 -4 2 0; 0 1 -1 0 -1 -1 1 -1 -1 1 -1 -1 -2 2 -4 -1; 0 0 0 0 0 -1 0 0 0 1 0 0 0 0 -1 -2]);
+  @test length(Hecke._reduced_characteristic_vectors(lll(L))) == 288
+
+
 end
