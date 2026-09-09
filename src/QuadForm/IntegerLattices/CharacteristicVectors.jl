@@ -382,6 +382,8 @@ end
 
 # Return the fundamental roots of `L` together with the characteristic vectors
 # of norm different from 1 and 2 lying in the closed fundamental Weyl chamber.
+# Note which closed fundamental Weyl chamber is chosen depends internally
+# on the choice of an lll reduced basis.
 function _reduced_characteristic_vectors(L::ZZLat)
   if !iseven(L)     # splitt off ones if there are any
     ones = ZZMatrix[matrix(ZZ, 1, rank(L), v) for (v, _) in short_vectors(L, 1, 1, Int; check=false)]
