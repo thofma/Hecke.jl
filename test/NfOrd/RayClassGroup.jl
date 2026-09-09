@@ -1,5 +1,20 @@
 @testset "RayClassGroup" begin
 
+  @testset "Action on trivial class groups" begin
+    for K in (rationals_as_number_field()[1], quadratic_field(3)[1])
+      O = maximal_order(K)
+      auts = automorphism_list(K)
+      for (R, mR) in (class_group(O), ray_class_group(1*O))
+        @test isone(order(R))
+        act = Hecke.induce_action(mR, auts)
+        @test length(act) == length(auts)
+        @test all(a -> domain(a) === R && codomain(a) === R, act)
+        @test all(a -> a == id_hom(R), act)
+        @test is_normal(ray_class_field(mR))
+      end
+    end
+  end
+
   #include(joinpath(Hecke.pkgdir, "examples", "RayClass.jl"))
 
   @testset "Big prime" begin

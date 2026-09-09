@@ -902,6 +902,19 @@ function stable_subgroups(R::FinGenAbGroup, act::Vector{T}; op = sub, quotype::V
       return (op(R, x) for x in ())
     end
   end
+  if !minimal && all(is_identity, act)
+    if quotype != [-1]
+      return subgroups(R; quotype = quotype, fun = op)
+    elseif subtype != [-1]
+      return subgroups(R; subtype = subtype, fun = op)
+    elseif order != -1
+      # Use the equivalent index restriction to preserve the ordering of the
+      # subgroup iterator used by callers before this keyword was available.
+      return subgroups(R; index = divexact(Hecke.order(R), order), fun = op)
+    else
+      return subgroups(R; fun = op)
+    end
+  end
   subs = _stable_subgroups(R, act; quotype = quotype, subtype = subtype, order = order, minimal = minimal)
   #Finally, translate back to R.
   return (op(R, x) for x in subs)
@@ -1044,7 +1057,11 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
             push!(quotype_p, v)
           end
         end
-        plist = submodules(M1, typequo = quotype_p)
+        if isempty(quotype_p)
+          plist = [identity_matrix(RR, ngens(S))]
+        else
+          plist = submodules(M1, typequo = quotype_p)
+        end
       else
         if minimal
           plist = minimal_submodules(M1)
