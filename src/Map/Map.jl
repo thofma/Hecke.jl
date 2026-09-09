@@ -66,40 +66,35 @@ function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Typ
     M.header.cache.old_im = M.header.image
   end
 
-  if length(methods(M.header.image)) > 1
-    println("Cannot do image cache, too many types")
-  else
-    function im(a::De)
-      if haskey(M.header.cache.im, a)
-        inc(M.header.cache.imStat, a)
-        return M.header.cache.im[a]::Ce
-      else
-        b = M.header.cache.old_im(a)::Ce
-        M.header.cache.im[a] = b
-        M.header.cache.imStat[a] = 0
-        return b
-      end
+  function im(a::De)
+    if haskey(M.header.cache.im, a)
+      inc(M.header.cache.imStat, a)
+      return M.header.cache.im[a]::Ce
+    else
+      b = M.header.cache.old_im(a)::Ce
+      M.header.cache.im[a] = b
+      M.header.cache.imStat[a] = 0
+      return b
     end
-    M.header.image = im
   end
+  im(a) = M.header.cache.old_im(a)::Ce
+  M.header.image = im
 
-  if length(methods(M.header.preimage)) > 1
-    println("Cannot do preimage cache, too many types")
-  else
-    function pr(a::Ce)
-      i = Base.ht_keyindex(M.header.cache.pr, a)
-      if i >= 0
-        inc(M.header.cache.prStat, a)
-        return M.header.cache.pr.vals[i]::De
-      else
-        b = M.header.cache.old_pr(a)::De
-        M.header.cache.pr[a] = b
-        M.header.cache.prStat[a] = 0
-        return b
-      end
+  function pr(a::Ce)
+    i = Base.ht_keyindex(M.header.cache.pr, a)
+    if i >= 0
+      inc(M.header.cache.prStat, a)
+      return M.header.cache.pr.vals[i]::De
+    else
+      b = M.header.cache.old_pr(a)::De
+      M.header.cache.pr[a] = b
+      M.header.cache.prStat[a] = 0
+      return b
     end
-    M.header.preimage = pr
   end
+  pr(a) = M.header.cache.old_pr(a)::De
+  M.header.preimage = pr
+
   nothing
 end
 
