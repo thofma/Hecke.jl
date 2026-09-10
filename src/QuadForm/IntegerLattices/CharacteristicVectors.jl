@@ -298,6 +298,8 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   n = rank(L)
   gram, d = _integral_split_gram(L)
   @assert isone(d)
+  # we use hardcoded cartan matrices etc. which assume L definite
+  @assert gram[1,1]>1 "not positive definite"
   # the fundamental roots of `L`, in the coordinates of `L` and grouped into
   # the irreducible components of the root sublattice
   types, components = _root_lattice_recognition_fundamental(L)
@@ -385,6 +387,9 @@ end
 # Note which closed fundamental Weyl chamber is chosen depends internally
 # on the choice of an lll reduced basis.
 function _reduced_characteristic_vectors(L::ZZLat)
+  if gram_matrix(L)[1,1] < 0
+    L = rescale(L,-1)
+  end
   if !iseven(L)     # splitt off ones if there are any
     ones = ZZMatrix[matrix(ZZ, 1, rank(L), v) for (v, _) in short_vectors(L, 1, 1, Int; check=false)]
     if !is_empty(ones)
