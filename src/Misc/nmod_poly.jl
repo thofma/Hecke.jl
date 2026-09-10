@@ -780,83 +780,58 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+# f = u * h with h primitive and invertible leading coefficient
+function _gcd_sircana_normal_form(f::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+  u = one(parent(f))
+  iszero(f) && return u, f
 
-The 'gcd' of $f$ and $g$ together with the 'cofactors' using a quadratic-time algorithm.
-"""
-function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
-  Nemo.check_parent(f, g)
-  _F = f
-  _G = g
-  @assert typeof(f) == typeof(g)
-  iszero(g) && return f, one(parent(f)), zero(parent(f))
-  iszero(f) && return g, zero(parent(f)), one(parent(f))
-  isone(f) && return f, f, g
-  isone(g) && return g, f, g
+  if !is_unit(content(f))
+    c, f = primsplit(f)
+    u *= c
+  end
 
+  if !is_unit(leading_coefficient(f))
+    v, f = fun_factor(f)
+    u *= v
+  end
+
+  return u, f
+end
+
+# GCD of f and g in (Z/pe)[x], lifted to ZZ[x] for the crt
+function _gcd_sircana_component(f::PolyRingElem{T}, g::PolyRingElem{T}, pe::ZZRingElem) where T <: ResElem{S} where S <: IntegerUnion
+  F, mF = residue_ring(ZZ, pe; cached = false)
+  Fx, = polynomial_ring(F, :x; cached = false)
+  fp = map_coefficients(c -> mF(lift(ZZ, c)), f; parent = Fx)
+  gp = map_coefficients(c -> mF(lift(ZZ, c)), g; parent = Fx)
+
+  uf, fp = _gcd_sircana_normal_form(fp)
+  ug, gp = _gcd_sircana_normal_form(gp)
+
+  d, qf, qg = gcd_sircana(fp, gp)
+  return lift(Globals.Zx, d), lift(Globals.Zx, uf*qf), lift(Globals.Zx, ug*qg)
+end
+
+# The leading coefficient of g is a zero divisor. We split the ring into components
+#   in which both f and g have a well defined unit * (primitive monic) splitting
+function _gcd_sircana_split(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Rt = parent(f)
   R = base_ring(Rt)
   m = ZZRingElem(modulus(R))
-  #from Sircana: if content is nilpotent, then removing the content
-  # results in s.th. that has a non-nilpotent content
-  # one should be able to use this to split the ring
-  # recall: if the leading coeff is nilpotent, but the polynomial is not
-  #   then the polynomial splits into unit * monic. The unit is not
-  #   used for gcd.
-  # start with primitive polynomials - in contrast to fields we
-  # cannot ignore the contents as it can contribute...
-  @assert isone(content(f))
-  @assert isone(content(g))
-  local qf, qg
-  while !iszero(g)
-    if !is_unit(leading_coefficient(g))
-      cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))
-      cp = [x for x in cp if !is_unit(x)]
-      gc = NTuple{3, ZZPolyRingElem}[]
-      for p in cp
-        F, mF = quo(parent(p), p^valuation(modulus(R), p))
-        gp = map_coefficients(x -> mF(lift(ZZ, x)), g; cached = false)
-        @assert base_ring(gp) == F
-        fp = map_coefficients(x -> mF(lift(ZZ, x)), f; parent = parent(gp))
-        if !is_unit(leading_coefficient(fp))
-          if iszero(fp)
-            fp = zero(parent(fp))
-          else
-            _, fp = fun_factor(fp)
-          end
-        end
-        if !is_unit(leading_coefficient(gp))
-          if iszero(gp)
-            gp = zero(parent(gp))
-          else
-            _, gp = fun_factor(gp)
-          end
-        end
-        push!(gc, map(y->map_coefficients(x->lift(x), y, cached = false), gcd_sircana(fp, gp)))
-      end
-      f = map_coefficients(R, induce_crt([x[1] for x = gc], cp), parent = parent(f))
-      qf = map_coefficients(R, induce_crt([x[2] for x = gc], cp), parent = parent(f))
-      qg = map_coefficients(R, induce_crt([x[3] for x = gc], cp), parent = parent(f))
-      break
-    else
-      f, g = g, rem(f, g)
-      if iszero(g)
-        qf = divexact(_F, f)
-        qg = divexact(_G, f)
-        break
-      end
-    end
-  end
-  c = canonical_unit(leading_coefficient(f))
-  f = divexact(f, c)
-  qf *= c
-  qg *= c
 
-  @assert f*qf == _F
-  @assert f*qg == _G
+  # NOTE: coprime base should be "fine" enough to allow BOTH f and g to admit
+  #   a Weierstrass split.
+  cp = coprime_base(vcat(map(x -> gcd(lift(x), m), coefficients(f)),
+                         map(x -> gcd(lift(x), m), coefficients(g)),
+                         [m]))
+  cp = ZZRingElem[p for p in cp if !is_unit(p)]
+  pe = ZZRingElem[p^valuation(m, p) for p in cp]
 
-  return f, qf, qg
+  gc = [_gcd_sircana_component(f, g, q) for q in pe]
+
+  return (map_coefficients(R, induce_crt([x[1] for x in gc], pe), parent = Rt),
+          map_coefficients(R, induce_crt([x[2] for x in gc], pe), parent = Rt),
+          map_coefficients(R, induce_crt([x[3] for x in gc], pe), parent = Rt))
 end
 
 function induce_crt(f::Vector{<:PolyRingElem{T}}, m::Vector{ZZRingElem}, parent::ZZPolyRing = Hecke.Globals.Zx) where {T}
@@ -867,6 +842,60 @@ function induce_crt(f::Vector{<:PolyRingElem{T}}, m::Vector{ZZRingElem}, parent:
     setcoeff!(g, i, crt([coeff(x, i) for x = f], ce))
   end
   return g
+end
+
+@doc raw"""
+    gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+
+The 'gcd' of $f$ and $g$ together with the 'cofactors' using a quadratic-time algorithm.
+"""
+function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+
+  iszero(g) && return f, one(parent(f)), zero(parent(f))
+  iszero(f) && return g, zero(parent(f)), one(parent(f))
+  isone(f) && return f, f, g
+  isone(g) && return g, f, g
+
+  _F = f
+  _G = g
+
+  Rt = parent(f)
+
+  # In contrast to fields we cannot ignore the contents as it can contribute
+  @assert isone(content(f))
+  @assert isone(content(g))
+
+  # Do Euclid steps as long as the leading coefficient is invertible
+  # Note that we cannot update cofactors as we go: we need to store quotients
+  #   and then unwind cofactors from the final result
+  quots = typeof(f)[]
+  while !iszero(g) && is_unit(leading_coefficient(g))
+    q, r = divrem(f, g)
+    push!(quots, q)
+    f, g = g, r
+  end
+
+  if iszero(g)
+    qf, qg = one(Rt), zero(Rt)
+  else
+    f, qf, qg = _gcd_sircana_split(f, g)
+  end
+
+  # Restore cofactors: go backwards through Euclid quotients doing (f, g) <- (g, f - q*g)
+  for q in Iterators.reverse(quots)
+    qf, qg = qg + q*qf, qf
+  end
+
+  c = canonical_unit(leading_coefficient(f))
+  f = divexact(f, c)
+  qf *= c
+  qg *= c
+
+  @hassert :AbsNumFieldOrder 1 f*qf == _F
+  @hassert :AbsNumFieldOrder 1 f*qg == _G
+  return f, qf, qg
 end
 
 ################################################################################
