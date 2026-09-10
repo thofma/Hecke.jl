@@ -570,45 +570,37 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
 
   @req (!isa(A[1], FacElem)) || !isnothing(support) "For elements in factored form, the support has to be passed in as well"
 
-  if isa(A[1], FacElem)
-    K = base_ring(parent(A[1]))
+  K, u0, g1, cp = if isa(A[1], FacElem)
+    Kf = base_ring(parent(A[1]))
     if length(support) == 0 #kown to be units
-      u = A
-      g1 = typeof(A[1])[]
+      (Kf, A, typeof(A[1])[], empty(support))
     else
-      S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
-      u = Hecke._transform(A, transpose(T))
-      g1 = Hecke._transform(A, transpose(S))
+      Sf, Tf, cpsf = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
+      (Kf, Hecke._transform(A, transpose(Tf)), Hecke._transform(A, transpose(Sf)), cpsf)
     end
   else
-    K = parent(A[1])
-    S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
-    u = [FacElem(A, T[i, :]) for i = 1:nrows(T)]
-    g1 = [FacElem(A, S[i, :]) for i = 1:nrows(S)] #gens for mult grp/ units
+    S, T, cps = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
+    #gens for mult grp/ units
+    (parent(A[1]), [FacElem(A, T[i, :]) for i = 1:nrows(T)], [FacElem(A, S[i, :]) for i = 1:nrows(S)], cps)
   end
 
-  U, T, C = syzygies_units_mod_tor(u)
-  g2 = Hecke._transform(u, transpose(U))
-  if length(T) == 0
-    u = [FacElem(K(1))]
-  else
-    u = Hecke._transform(u, transpose(T))
-  end
+  U, Tu, C = syzygies_units_mod_tor(u0)
+  g2 = Hecke._transform(u0, transpose(U))
+  u = length(Tu) == 0 ? [FacElem(K(1))] : Hecke._transform(u0, transpose(Tu))
 
-  if task == :all
-    Ut, _, o = syzygies_tor(u)
+  G, g, o = if task == :all
+    Ut, _, ot = syzygies_tor(u)
 
-    if is_one(o)
-      G = abelian_group([0 for i=1:length(g1)+length(g2)])
-      g = vcat(g1, g2)
+    if is_one(ot)
+      (abelian_group([0 for i=1:length(g1)+length(g2)]), vcat(g1, g2), ot)
     else
-      G = abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [o]))
       t = evaluate(Hecke._transform(u, transpose(Ut))[1])
-      g = vcat(g1, g2, [FacElem(t)])
+      (abelian_group(vcat([0 for i=1:length(g1)+length(g2)], [ot])), vcat(g1, g2, [FacElem(t)]), ot)
     end
   elseif task == :modulo_tor
-    G = free_abelian_group(length(g1)+length(g2))
-    g = vcat(g1, g2)
+    (free_abelian_group(length(g1)+length(g2)), vcat(g1, g2), one(ZZ))
+  else
+    error("task must be :all or :modulo_tor")
   end
 
   function im(a::FinGenAbGroupElem)

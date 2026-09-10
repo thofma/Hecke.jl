@@ -690,19 +690,10 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
     quo_rings = Tuple{AbsSimpleNumFieldOrderQuoRing, Hecke.AbsOrdQuoMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsSimpleNumFieldOrderElem}}[quo(O, q) for (p, q) in powers]
     groups_and_maps = Tuple{FinGenAbGroup, Hecke.GrpAbFinGenToAbsOrdQuoRingMultMap{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsNumFieldOrderIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},AbsSimpleNumFieldOrderElem}}[_multgrp(x[1], true) for x in quo_rings]
   end
-  if isempty(groups_and_maps)
-    nG = 0
-    expon = ZZRingElem(1)
-  else
-    nG = sum(ngens(x[1]) for x in groups_and_maps)
-    expon = lcm([exponent(x[1]) for x in groups_and_maps])
-  end
+  nG = isempty(groups_and_maps) ? 0 : sum(ngens(x[1]) for x in groups_and_maps)
+  expon = isempty(groups_and_maps) ? ZZRingElem(1) : lcm([exponent(x[1]) for x in groups_and_maps])
 
-  if n_quo == -1 || iseven(n_quo)
-    p = filter(is_real, inf_plc)
-  else
-    p = InfPlc[]
-  end
+  p = n_quo == -1 || iseven(n_quo) ? filter(is_real, inf_plc) : InfPlc[]
   H, eH, lH = sign_map(O, _embedding.(p), m)
   expon = lcm(expon, exponent(H))
 

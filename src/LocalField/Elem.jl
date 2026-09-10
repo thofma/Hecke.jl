@@ -712,15 +712,11 @@ function Base.:(^)(a::LocalFieldElem, n::Int)
   end
   v = valuation(n, prime(K))*absolute_ramification_index(K)
   prec = precision(data(a)) + v
-  if v > 0
-    b = setprecision(data(a), prec)
-  else
-    b = data(a)
-  end
-  b = setprecision(base_ring(b), prec) do
+  b = v > 0 ? setprecision(data(a), prec) : data(a)
+  c = setprecision(base_ring(b), prec) do
     powermod(b, n, defining_polynomial(K, prec))
   end
-  return K(b)
+  return K(c)
 end
 
 ################################################################################

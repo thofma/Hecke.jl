@@ -266,13 +266,7 @@ function neighbours(
 
   for i in 1:maxlines
     vain[] > stop_after && break
-    if algorithm == :orbit
-      w = LO[i]
-    elseif algorithm == :random
-      w = rand(LO)
-    else
-      w = next(LO)
-    end
+    w = algorithm == :orbit ? LO[i] : algorithm == :random ? rand(LO) : next(LO)
 
     if P != C
       x = elem_type(K)[ sum(T[i, j] * (hext\w[i]) for i in 1:n) for j in 1:ncols(T)]
@@ -482,13 +476,7 @@ function genus_generators(L::HermLat)
   a = involution(L)
   def, P0, bad = smallest_neighbour_prime(L)
 
-  local bad_prod::ideal_type(base_ring(R))
-
-  if isempty(bad)
-    bad_prod = 1 * base_ring(R)
-  else
-    bad_prod = prod(bad)
-  end
+  bad_prod = isempty(bad) ? 1 * base_ring(R) : prod(bad)
 
   # First the ideals coming from the C/C0 quotient
   Eabs, EabstoE = absolute_simple_field(ambient_space(L))

@@ -1196,13 +1196,9 @@ function _genus_symbol_kirschmer(L::QuadLat, p::AbsNumFieldOrderIdeal{AbsSimpleN
   # to the uniformizer flag
 
   J, G, E = jordan_decomposition(L, p)
-  if !iszero(uniformizer)
-    unif = uniformizer
-    if valuation(unif, p) != 1
-      error("Wrong uniformizer")
-    end
-  else
-    unif = elem_in_nf(Hecke.uniformizer(p))
+  unif = iszero(uniformizer) ? elem_in_nf(Hecke.uniformizer(p)) : uniformizer
+  if !iszero(uniformizer) && valuation(unif, p) != 1
+    error("Wrong uniformizer")
   end
 
   if minimum(p) != 2
