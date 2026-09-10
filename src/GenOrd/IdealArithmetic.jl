@@ -75,8 +75,13 @@ _basis_matrix(a::GenOrdFracIdl) = _basis_matrix_numerator(a)
 _eldiv_modulus(::RowModuleReductionTrait, ::GenOrdIdl)      = nothing
 _eldiv_modulus(::RowModuleReductionTrait, ::GenOrdFracIdl)  = nothing
 
-_eldiv_modulus(::HNFRedTrait, a::GenOrdIdl)         = minimum(a; copy = false)
-_eldiv_modulus(red::HNFRedTrait, a::GenOrdFracIdl)  = isdefined(a, :num) ? _eldiv_modulus(red, a.num) : nothing
+function _eldiv_modulus(::HNFRedTrait, a::GenOrdIdl)
+  _uses_eldiv_modulus(typeof(base_ring(order(a)))) || return nothing
+  return minimum(a; copy = false)
+end
+function _eldiv_modulus(red::HNFRedTrait, a::GenOrdFracIdl)
+  return isdefined(a, :num) ? _eldiv_modulus(red, a.num) : nothing
+end
 
 # Wraps a matrix plus denominator into a fractional ideal.
 # For HNF reduction, fractional ideal's basis matrix will just duplicate integral ideal,

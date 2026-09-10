@@ -333,7 +333,18 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = _reduce_row_module!(representation_matrix(_princ_gen(A)); reduction = HNFRedTrait())
+    # For a square M, det(M) is the safe modulus for HNF, this is element norm in our case
+    modulus = if !_uses_eldiv_modulus(typeof(base_ring(O)))
+      nothing
+    elseif has_minimum(A)
+      minimum(A; copy = false)
+    elseif has_norm(A)
+      norm(A; copy = false)
+    else
+      norm(_princ_gen(A))
+    end
+    A.basis_matrix = _reduce_row_module!(representation_matrix(_princ_gen(A));
+                                         reduction = HNFRedTrait(), modulus = modulus)
     return nothing
   end
 
@@ -349,7 +360,7 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   V = vcat(representation_matrix(O(_gen_one(A))), representation_matrix(_gen_two(A)))
-  A.basis_matrix = _reduce_row_module!(V; reduction = HNFRedTrait())
+  A.basis_matrix = _reduce_row_module!(V; reduction = HNFRedTrait(), modulus = _gen_one(A))
   return nothing
 end
 

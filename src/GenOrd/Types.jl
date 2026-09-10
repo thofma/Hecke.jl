@@ -168,10 +168,13 @@ end
     @assert parent(p) === base_ring(O)
     @assert parent(a) === O
 
+    is_zero(p) && return GenOrdIdl(O, a)
+    is_zero(a) && return GenOrdIdl(O, p)
+
     r = GenOrdIdl(O)
     r.gen_one = p
     r.gen_two = a
-    r.is_zero = (is_zero(p) && is_zero(a)) ? 1 : 2
+    r.is_zero = 2
     return r
   end
 end
