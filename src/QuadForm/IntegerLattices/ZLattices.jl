@@ -785,7 +785,7 @@ function genus_representatives(_L::ZZLat; kwargs...)
       push!(res, _to_ZLat(N; K=QQ))
     end
   elseif is_definite(L)
-    res = enumerate_definite_genus([L], :default; kwargs...)
+    res = first(enumerate_definite_genus([L], :default; kwargs...))
   else
     res = spinor_genera_in_genus(L)
   end
