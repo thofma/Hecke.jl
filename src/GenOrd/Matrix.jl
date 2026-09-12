@@ -206,17 +206,17 @@ function _hnf_modular_eldiv_left_generic!(M::MatElem{T}, g::T) where {T <: RingE
   return M
 end
 
-function hnf_modular_eldiv_left!(M::MatElem{T}, g::T) where {T <: RingElem}
-  return _hnf_modular_eldiv_left_generic!(M, g)
-end
-
-# Specialization for Q(x)
-# Here the bottleneck is coefficient swell, not degree, so the modular HNF
+# Does the modular kernel over R actually profit from a modulus?
+# Over Q(x) the bottleneck is coefficient swell, not degree, so the modular HNF
 #   brings no benefit by itself: its reduction only bounds the degree in x.
 # Worse, the extra gcd/mod work actively amplifies the coefficient swell, so
 #   until we find a way to fight that directly we fall back to Kannan-Bachem.
-function hnf_modular_eldiv_left!(M::MatElem{QQPolyRingElem}, ::QQPolyRingElem)
-  return _hnf_left!(M)
+_uses_eldiv_modulus(::Type{<:Ring})                  = true
+_uses_eldiv_modulus(::Type{<:PolyRing{QQFieldElem}}) = false
+
+function hnf_modular_eldiv_left!(M::MatElem{T}, g::T) where {T <: RingElem}
+  _uses_eldiv_modulus(typeof(base_ring(M))) || return _hnf_left!(M)
+  return _hnf_modular_eldiv_left_generic!(M, g)
 end
 
 # Specialization for Z: use FLINT-backed functions

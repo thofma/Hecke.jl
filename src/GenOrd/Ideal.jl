@@ -333,7 +333,18 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   if has_princ_gen(A)
-    A.basis_matrix = _reduce_row_module!(representation_matrix(_princ_gen(A)); reduction = HNFRedTrait())
+    # For a square M, det(M) is the safe modulus for HNF, this is element norm in our case
+    modulus = if !_uses_eldiv_modulus(typeof(base_ring(O)))
+      nothing
+    elseif has_minimum(A)
+      minimum(A; copy = false)
+    elseif has_norm(A)
+      norm(A; copy = false)
+    else
+      norm(_princ_gen(A))
+    end
+    A.basis_matrix = _reduce_row_module!(representation_matrix(_princ_gen(A));
+                                         reduction = HNFRedTrait(), modulus = modulus)
     return nothing
   end
 
@@ -349,7 +360,7 @@ function assure_has_basis_matrix(A::GenOrdIdl)
   end
 
   V = vcat(representation_matrix(O(_gen_one(A))), representation_matrix(_gen_two(A)))
-  A.basis_matrix = _reduce_row_module!(V; reduction = HNFRedTrait())
+  A.basis_matrix = _reduce_row_module!(V; reduction = HNFRedTrait(), modulus = _gen_one(A))
   return nothing
 end
 
@@ -716,8 +727,13 @@ end
 #
 ################################################################################
 
+function _inverse_basis_matrix_determinant(O::GenOrd)
+  M = basis_matrix(O)
+  return inv(is_lower_triangular(M) ? prod_diagonal(M) : det(M))
+end
+
 function Hecke.index(O::GenOrd)
-  return is_equation_order(O) ? O.R(1) : O.R(det(basis_matrix_inverse(O)))
+  return is_equation_order(O) ? O.R(1) : O.R(_inverse_basis_matrix_determinant(O))
 end
 
 function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
@@ -847,7 +863,7 @@ function is_index_divisor(O::GenOrd, p::RingElem)
   @req parent(p) === base_ring(O) "p must lie in the coefficient ring of O"
   is_equation_order(O) && return false
 
-  num, den = integral_split(det(basis_matrix_inverse(O)), base_ring(O))
+  num, den = integral_split(_inverse_basis_matrix_determinant(O), base_ring(O))
   # if p divides the numerator, it divides the index;
   # if p divides the denominator, the order is not maximal at p (cannot use Dedekind-Kummer)
   return divides(num, p)[1] || divides(den, p)[1]

@@ -345,11 +345,23 @@ end
 ################################################################################
 
 function coordinates(a::FieldElem, O::GenOrd)
-  if is_equation_order(O)
-    return coordinates(a)
-  else
-    return coordinates(a) * basis_matrix_inverse(O)
+  v = coordinates(a)
+  is_equation_order(O) && return v
+
+  M = basis_matrix(O)
+  if is_lower_triangular(M)
+    # Lenstra order (non-monic defining polynomial) has lower-triangular form.
+    # Instead of using basis matrix inverse (height/degree growth)
+    #   we will solve the linear system
+    # x*M = B <=> transpose(M)*transpose(x) = transpose(B),
+    #   with transpose(M) upper triangular (note: transpose only permutes entries)
+    R = base_ring(M)
+    n = length(v)
+    z = AbstractAlgebra._solve_triu(transpose(M), matrix(R, n, 1, v); side = :right)
+    return elem_type(R)[z[i, 1] for i in 1:n]
   end
+
+  return v * basis_matrix_inverse(O)
 end
 
 function coordinates(a::GenOrdElem)
@@ -998,7 +1010,21 @@ The codifferent ideal of $O$, i.e. the trace-dual of $O$.
 """
 function codifferent(O::GenOrd)
   K = base_field(field(O))
-  return fractional_ideal(O, _fraction_free_inv(_trace_matrix(O, K, K)))
+  M = _fraction_free_inv(_trace_matrix(O, K, K))
+  M, d = integral_split(M, base_ring(O))
+
+  # When using the HNF reduction, we can optimize ideal construction since
+  #   we know a good modulus to use modular HNF.
+  # The Popov reduction does not use one, so we do as in the normal constructor
+  red = _row_reduction_trait(O)
+  if red isa HNFRedTrait
+    # For trace matrix T we have M/d = T^-1, thus row module of M is
+    #   d * R^n * T^-1. Since T is integral, d is a modulus for HNF
+    M = _reduce_row_module!(red, M; modulus = d)
+    return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
+  end
+
+  return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = false)
 end
 
 function different(x::GenOrdElem)
