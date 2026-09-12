@@ -620,10 +620,9 @@ end
 #   F is the ambient function field
 
 # common setup for Riemann-Roch
-function _riemann_roch_common_setup(basis_fin, basis_inf)
-  # express basis_fin in terms of basis_inf
-  B_fin = matrix(map(coordinates, basis_fin))
-  B_inf = matrix(map(coordinates, basis_inf))
+# B_fin and B_inf are coordinate matrices (basis elements in the power basis)
+function _riemann_roch_common_setup(B_fin, B_inf)
+  # express B_fin in terms of B_inf
   M = solve(B_inf, B_fin; side = :left)
 
   # clear denominators
@@ -637,20 +636,20 @@ function _riemann_roch_space(J_fin, J_inf, F)
   x = gen(base_ring(F))
   n = degree(F)
 
-  basis_fin = basis(J_fin)
-  basis_inf = basis(J_inf)
-  dM, d_deg = _riemann_roch_common_setup(basis_fin, basis_inf)
+  B_fin = _coordinate_matrix(J_fin)
+  B_inf = _coordinate_matrix(J_inf)
+  dM, d_deg = _riemann_roch_common_setup(B_fin, B_inf)
 
   # weak Popov reduction of dM (no denominators)
   T, U = _weak_popov_with_transform!(dM)
 
-  # v_i in Hess paper
-  basis_gens = change_base_ring(F, U) * basis_fin
+  # v_i in Hess paper: rows have v_i coordinates in power basis
+  basis_gens = change_base_ring(base_ring(B_fin), U) * B_fin
 
   RR_basis = elem_type(F)[]
   for i in 1:n
     d_i = maximum(degree(T[i, k]) for k in 1:n)
-    g = basis_gens[i]
+    g = F(vec(collect(basis_gens[i, :])))
     for _ in 0:(d_deg - d_i)
       push!(RR_basis, g)
       g = x*g # this is x^j * basis_gens[i] for j = 0 .. d_deg - d_i
@@ -663,7 +662,7 @@ end
 function _riemann_roch_dim(J_fin, J_inf, F)
   n = degree(F)
 
-  dM, d_deg = _riemann_roch_common_setup(basis(J_fin), basis(J_inf))
+  dM, d_deg = _riemann_roch_common_setup(_coordinate_matrix(J_fin), _coordinate_matrix(J_inf))
 
   # we need only weak Popov form itself, without transform
   T = _weak_popov!(dM)

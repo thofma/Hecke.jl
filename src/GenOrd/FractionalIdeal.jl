@@ -157,6 +157,20 @@ function _basis_matrix_inv_pair(I::GenOrdFracIdl{S, T}) where {S, T}
   return (I.basis_matrix_inv_num::dense_matrix_type(elem_type(T)), I.basis_matrix_inv_den::elem_type(T))
 end
 
+# rows are coordinates of basis in power basis,
+#   unlike basis_matrix which is in respect to the order basis
+function _coordinate_matrix(I::GenOrdFracIdl)
+  O = order(I)
+  K = base_field(field(O))
+
+  M, d = _basis_matrix_pair(I)
+  N, e = _basis_matrix_pair(O)
+
+  # take product over ring, and pass to fractions after multiplication
+  c = K(d*e)
+  return map_entries(x -> K(x)//c, M*N)
+end
+
 ################################################################################
 #
 #  Basis
@@ -169,21 +183,12 @@ end
 Returns the basis over the maximal Order of $I$.
 """
 function basis(a::GenOrdFracIdl)
-  B = basis_matrix(a)
-  d = degree(order(a))
   O = order(a)
-  K = function_field(O)
-  Oba = basis(O)
-  res = Array{elem_type(K)}(undef, d)
-  for i in 1:d
-    z = K()
-    for j in 1:d
-      z = z + B[i, j]*K(Oba[j])
-    end
-    res[i] = z
-  end
+  F = field(O)
 
-  return res
+  # we are in the power basis: pass row as a coefficient vector to the field constructor
+  B = _coordinate_matrix(a)
+  return elem_type(F)[F(vec(collect(B[i, :]))) for i in 1:degree(O)]
 end
 
 ################################################################################

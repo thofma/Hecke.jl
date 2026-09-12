@@ -87,6 +87,10 @@ degree(O::GenOrd) = degree(field(O))
 basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field_type(S)))
 basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_type(base_field_type(S)))
 
+@attr Tuple{dense_matrix_type(elem_type(T)), elem_type(T)} function _basis_matrix_pair(O::GenOrd{S, T}) where {S, T}
+  return integral_split(basis_matrix(O), base_ring(O))
+end
+
 function _make_canonical_in(O::GenOrd{S, T}, x) where {S, T}
   y = O.R(x)
   iszero(y) && return y::elem_type(T)
