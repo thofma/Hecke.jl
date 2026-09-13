@@ -300,9 +300,39 @@ end
 #
 ################################################################################
 
+function _simplify_principal!(A::GenOrdFracIdl)
+  O = order(A)
+  I = A.num
+  gamma = _princ_gen(I)
+  den = denominator(A; copy = false)
+
+  # the content of the numerator is the content of the generator coords
+  g = den
+  for c in coordinates(gamma)
+    g = gcd(g, c)
+    is_unit(g) && return A
+  end
+  g = _make_canonical_in(O, g)
+
+  # dividing by the scalar g divides the norm by g^n and the minimum by g
+  n = has_norm(I) ? divexact(norm(I; copy = false), g^degree(O)) : nothing
+  m = has_minimum(I) ? divexact(minimum(I; copy = false), g) : nothing
+
+  K = field(O)
+  gK = K(base_field(K)(g))
+  delta = O(divexact(data(gamma), gK); check = false)
+
+  A.num = _make_principal_ideal(O, delta; ideal_norm = n, ideal_minimum = m)
+  A.den = divexact(den, g)
+  return A
+end
 
 function Hecke.simplify(A::GenOrdFracIdl)
   is_one(denominator(A; copy = false)) && return A
+
+  if isdefined(A, :num) && has_princ_gen(A.num) && !isdefined(A.num, :basis_matrix)
+    return _simplify_principal!(A)
+  end
 
   # The content is a module invariant, so any numerator representation can be used.
   # Simplify does NOT change basis_matrix or norm.
