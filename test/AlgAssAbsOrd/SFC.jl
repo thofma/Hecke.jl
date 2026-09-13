@@ -51,11 +51,13 @@
     @test Hecke.has_stably_free_cancellation(O)
     ls = Hecke.right_class_set(O)
     @test length(ls) == r
+    @test Hecke.right_class_set(O) === ls
     AA = quaternion_algebra(K, a, b)
     bOO = AA.(bas)
     OO = order(AA, bOO)
     ls = Hecke.right_class_set(OO)
     @test length(ls) == r
+    @test Hecke.right_class_set(OO) === ls
   end
 
   let # Eichler invariants
