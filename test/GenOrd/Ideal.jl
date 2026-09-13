@@ -758,6 +758,7 @@ end
 
   for (P, _) in L
     F, OtoF = residue_field(O, P)
+    @test (@inferred kernel(OtoF)) === P
     for i in 1:10
       a = dot([rand(base_ring(O), 1:5, 1:5) for i in 1:degree(O)], basis(O))
       b = dot([rand(base_ring(O), 1:5, 1:5) for i in 1:degree(O)], basis(O))
@@ -776,6 +777,7 @@ end
   lp = prime_decomposition(OF, numerator(t-1))
   for (P, _) in lp
     K, OFtoK = residue_field(OF, P)
+    @test (@inferred kernel(OFtoK)) === P
     for i in 1:10
       a = dot([rand(base_ring(OF), 1:5) for i in 1:degree(OF)], basis(OF))
       b = dot([rand(base_ring(OF), 1:5) for i in 1:degree(OF)], basis(OF))
@@ -787,6 +789,7 @@ end
   lp = prime_decomposition(OI, base_ring(OI)(1//t))
   for (P, _) in lp
     K, OItoK = residue_field(OI, P)
+    @test (@inferred kernel(OItoK)) === P
     for i in 1:10
       a = OI(numerator(rand(kt, 1:5))(1//t))
       b = OI(numerator(rand(kt, 1:5))(1//t))

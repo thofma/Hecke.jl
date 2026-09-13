@@ -98,6 +98,9 @@
     p = prime_decomposition(OK, 13)[1][1]
     P = prime_decomposition(OL, p)[1][1]
     F, mF = residue_field(OL, P)
+    @test (@inferred kernel(mF)) === P
+    Q, mQ = quo(OL, P)
+    @test (@inferred kernel(mQ)) === P
     @test degree(F) == p.splitting_type[2]*P.splitting_type[2]
 
     pb = pseudo_basis(P, copy = false)
@@ -128,6 +131,7 @@
       P = PP[2][1]
     end
     F, mF = residue_field(OL, P)
+    @test (@inferred kernel(mF)) === P
     @test degree(F) == p.splitting_type[2]*P.splitting_type[2]
 
     pb = pseudo_basis(P, copy = false)

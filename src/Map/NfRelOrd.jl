@@ -168,6 +168,8 @@ function RelOrdQuoMap(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
   return RelOrdQuoMap{T1, T2, T3, S}(O, Q)
 end
 
+kernel(f::RelOrdQuoMap{T1, T2}) where {T1, T2} = ideal(codomain(f))::T2
+
 mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdToFqFieldRelMor}
   header::MapHeader{S, FqField}
   poly_of_the_field
@@ -477,6 +479,10 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
 
 end
 
+kernel(f::NfRelOrdToFqMor) = f.P
+
+kernel(f::NfRelOrdToFqFieldRelMor{S}) where {S} = f.P::ideal_type(S)
+
 mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelToFqFieldRelMor}
   header::MapHeader{S, FqField}
 
@@ -519,4 +525,3 @@ function extend(f::NfRelOrdToFqFieldRelMor{S}, E::RelSimpleNumField) where {S}
 
   return g
 end
-

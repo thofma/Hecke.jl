@@ -1306,13 +1306,17 @@ end
 
 mutable struct GenOrdToFqField{S, T} <: Map{S, T, Hecke.HeckeMap, Any}#GenOrdToFqField}
   header::Hecke.MapHeader
+  P
 
-  function GenOrdToFqField{S, T}(O::S, A::T, _image::Function, _preimage::Function) where {S <: GenOrd, T}
+  function GenOrdToFqField{S, T}(O::S, A::T, P::GenOrdIdl, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
     z.header = Hecke.MapHeader(O, A, _image, _preimage)
+    z.P = P
     return z
   end
 end
+
+kernel(f::GenOrdToFqField{S}) where {S} = f.P::ideal_type(S)
 
 function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
   Kt = parent(f)
@@ -1344,5 +1348,5 @@ function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)
     return sum(preimage(phi, coeff(x, i - 1)) * powersofa[i] for i in 1:degree(g))
   end
 
-  return F, GenOrdToFqField{typeof(O), typeof(F)}(O, F, _image, _preimage)
+  return F, GenOrdToFqField{typeof(O), typeof(F)}(O, F, P, _image, _preimage)
 end
