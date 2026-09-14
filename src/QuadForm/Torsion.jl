@@ -721,6 +721,13 @@ end
 #
 ################################################################################
 
+function hash(x::TorQuadModuleMap, u::UInt)
+  u = hash(matrix(x), u)
+  u = hash(domain(x), u)
+  u = hash(codomain(x), u)
+  return u
+end
+
 @doc raw"""
     hom(
       T::TorQuadModule,

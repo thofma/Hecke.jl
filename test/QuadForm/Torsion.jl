@@ -494,6 +494,7 @@ end
   @test T == T2
   @test length(unique!([T, T2])) == 1
   @test length(unique!([T[1], -T[1]])) == 1
+  @test hash(id_hom(T)) == hash(id_hom(T))
 end
 
 @testset "Map with trivial torsion quadratic modules" begin
