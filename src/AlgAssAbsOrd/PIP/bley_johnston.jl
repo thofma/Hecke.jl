@@ -553,7 +553,6 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     tmps2 = [zero_matrix(QQ, kblock, k) for i in 1:nt]
     tmp_elem = [A() for i in 1:nt]
     if length(par) >= nt
-      GC.gc(true)
       Threads.@threads :static for i in 1:length(par)
         #thi = 1 #Threads.threadid()
         thi = Threads.threadid()
