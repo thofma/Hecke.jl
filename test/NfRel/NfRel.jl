@@ -30,6 +30,20 @@
     @test_throws ArgumentError L(0)^(-1)
   end
 
+  @testset "Hashing" begin
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 - 2, "a")
+    Ky, y = K["y"]
+    L, b = number_field(y^2 - a, "b")
+    Lz, z = L["z"]
+    M, c = number_field(z^2 - b, "c")
+
+    d = deepcopy(c)
+    @test isequal(c, d)
+    @test hash(c) == hash(d)
+    @test length(Set([c, d])) == 1
+  end
+
   @testset "is_subfield" begin
     Qx, x = QQ["x"]
     f = x^2 + 12x - 92
