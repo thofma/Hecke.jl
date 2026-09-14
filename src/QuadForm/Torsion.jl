@@ -722,7 +722,7 @@ end
 ################################################################################
 
 function hash(x::TorQuadModuleMap, u::UInt)
-  u = hash(matrix(f), u)
+  u = hash(matrix(x), u)
   u = hash(domain(x), u)
   u = hash(codomain(x), u)
   return u
