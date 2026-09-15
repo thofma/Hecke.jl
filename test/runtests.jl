@@ -1,7 +1,6 @@
 using Hecke
 using Test
 using Distributed
-using Documenter
 
 import PrettyTables
 
@@ -230,11 +229,16 @@ else
     end
   end
 
-  # Run the doctests on the main process.
+  # Reuse a test worker in parallel runs, including its compiled doctest code.
   if v"1.10-" <= VERSION < v"1.11-"
-    @info "Running doctests (Julia version is 1.10)"
-    DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
-    doctest(Hecke)
+    doctest_pid = numprocs >= 2 ? first(workers(worker_pool)) : myid()
+    @info "Running doctests on process $doctest_pid (Julia version is 1.10)"
+    Distributed.remotecall_eval(Main, doctest_pid, quote
+      using Documenter
+      DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
+      doctest(Hecke)
+      nothing
+    end)
   else
     @info "Not running doctests (Julia version must be 1.10)"
   end
