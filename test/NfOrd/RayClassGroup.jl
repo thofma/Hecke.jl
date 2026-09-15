@@ -33,6 +33,22 @@
     @test isempty(defining_modulus(mR)[2])
   end
 
+  @testset "complex infinite modulus" begin
+    K, _ = quadratic_field(-1)
+    O = maximal_order(K)
+    _, mR = ray_class_group(ideal(O, 1), complex_places(K))
+    @test_throws ErrorException Hecke.find_gens(mR)
+  end
+
+  @testset "generators of narrow ray class group" begin
+    K, _ = quadratic_field(142)
+    O = maximal_order(K)
+    R, mR = ray_class_group(ideal(O, 1), real_places(K))
+    _, gens = Hecke.find_gens(mR)
+    Q, _ = quo(R, gens, false)
+    @test isone(order(Q))
+  end
+
   @testset "factored ideals with non-coprime factors" begin
     K, _ = rationals_as_number_field()
     O = maximal_order(K)
