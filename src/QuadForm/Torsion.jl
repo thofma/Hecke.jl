@@ -721,11 +721,15 @@ end
 #
 ################################################################################
 
+function Base.:(==)(f::TorQuadModuleMap, g::TorQuadModuleMap)
+  return domain(f) === domain(g) && codomain(f) === codomain(g) &&
+         abelian_group_homomorphism(f) == abelian_group_homomorphism(g)
+end
+
 function hash(x::TorQuadModuleMap, u::UInt)
-  u = hash(matrix(x), u)
   u = hash(domain(x), u)
   u = hash(codomain(x), u)
-  return u
+  return hash(abelian_group_homomorphism(x), u)
 end
 
 @doc raw"""
