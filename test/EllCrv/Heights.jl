@@ -192,11 +192,25 @@
      @test contains(ch, ch2)
 
     # 37.a1
-    let E1 = elliptic_curve(QQ, [0, 0, 1, -1, 0]),
-        E2 = elliptic_curve(K, [0, 0, 1, -1, 0]),
-        P1 = 5*E1([0, 0]),
-        P2 = 5*E2([0, 0])
-      @test overlaps(canonical_height(P1, 100), canonical_height(P2, 100))
+    let E = elliptic_curve(QQ, [0, 0, 1, -1, 0]), h00 = "0.051111408239968840235886099757"
+      transform = [[0, 0, 0, 1],           # the minimal model itself
+                   [0, 0, 0, 1//2],        # non-minimal at 2 (good reduction)
+                   [0, 0, 0, 1//37],       # non-minimal at 37 (bad reduction)
+                   [0, 0, 0, 2],           # non-integral at 2
+                   [1//3, 1, 1//2, 3//7]]  # non-minimal and non-integral
+      for F in [QQ, K], rstu in transform
+        E = elliptic_curve(F, [0, 0, 1, -1, 0])
+        G, phi, _ = transform_rstu(E, map(F, rstu))
+        P = phi(E([0, 0]))
+
+        h = @inferred canonical_height(P, 50)
+        @test overlaps(h, parent(h)(h00))
+
+        h = @inferred canonical_height(5*P, 50)
+        @test overlaps(h, 25*parent(h)(h00))
+
+        @test contains(canonical_height(infinity(G), 50), 0)
+      end
     end
 
     # Order-two point with a denominator at the bad prime (2).
