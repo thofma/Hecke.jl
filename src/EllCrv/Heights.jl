@@ -451,30 +451,34 @@ function canonical_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, prec = 1
   attempt = 1
   K = base_field(parent(P))
   OK = ring_of_integers(K)
+
+  # x*OK + OK = J^-1 for the denominator ideal J of x,
+  # so the local heights at the primes of good reduction sum to log N(J)
+  Jinv = P[1]*OK + 1*OK
+
   while true
-    R = ArbField(attempt*prec, cached = false)
+    # add some guard bits, since the sum rounds to the given precision.
+    # This should depend on the magnitude of heights, but 16 seems enough
+    #   for most "normal" cases
+    wprec = attempt*prec + 16
+    R = ArbField(wprec, cached = false)
     E = P.parent
     disc = discriminant(E)
 
-    #d should be the norm of J where I/J = P[1]*OK is the unique decomposition
-    #of prime integer ideals
-    d = (denominator(P[1]*OK))
-    h = log(d)
+    h = -log(R(norm(Jinv)))
 
     for v in real_places(K)
-      h = h + local_height(P, v, attempt*prec)
+      h = h + local_height(P, v, wprec)
     end
 
     for v in complex_places(K)
-      h = h + 2*local_height(P, v, attempt*prec)
+      h = h + 2*local_height(P, v, wprec)
     end
 
-
-    plist = bad_primes(E)
-
-    #Removed the divides check
-    for p in plist
-      h = h + local_height(P,p, attempt*prec)
+    for p in bad_primes(E)
+      # replace the good reduction term max(0, -v_p(x)) log N(p) counted above
+      # NOTE: since we use J^-1, we invert the sign
+      h = h + local_height(P, p, wprec) + valuation(Jinv, p)*log(R(norm(p)))
     end
 
     h = h//degree(K)

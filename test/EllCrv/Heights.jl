@@ -191,8 +191,29 @@
      @test Hecke.radiuslttwopower(ch2, -1000)
      @test contains(ch, ch2)
 
+    # 37.a1
+    let E1 = elliptic_curve(QQ, [0, 0, 1, -1, 0]),
+        E2 = elliptic_curve(K, [0, 0, 1, -1, 0]),
+        P1 = 5*E1([0, 0]),
+        P2 = 5*E2([0, 0])
+      @test overlaps(canonical_height(P1, 100), canonical_height(P2, 100))
+    end
 
+    # Order-two point with a denominator at the bad prime (2).
+    let E = elliptic_curve(K, [1, 1, 0, -20700, 1134000]),
+        P = E([315//4, -315//8])
+      @test is_infinite(2*P)
+      h = @inferred canonical_height(P, 100)
+      @test contains(h, 0)
+      @test Hecke.radiuslttwopower(h, -100)
+    end
 
+    # x(P) = (3*a^2 - 2*a + 16)/25: denominator ideal of norm 25 (5 splits), integer denominator 25 of norm 25^3
+    let E = elliptic_curve(K, [0, a^2 - 1, 1, -a^2, 0]),
+        P = 2*E([-a + 1, -a^2 + a - 1])
+      h = @inferred canonical_height(P, 100)
+      @test overlaps(h, parent(h)("1.0879631588314750249053432385433044425046669"))
+    end
   end
 
   @testset "Neron-Tate height" begin
