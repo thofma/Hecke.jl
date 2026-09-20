@@ -720,7 +720,7 @@ function enumerate_definite_genus(
     add_spinor_generators::Bool=true,
     scaling_factor=nothing
   )
-return _enumerate_definite_genus!(copy(known), algorithm;
+return _enumerate_definite_genus_ZZLat!(copy(known), algorithm;
     rand_neigh,
     distinct,
     invariant_function,
@@ -735,8 +735,8 @@ return _enumerate_definite_genus!(copy(known), algorithm;
     scaling_factor)[1:2]
 end
 
-function _enumerate_definite_genus!(
-    known::Vector{ZZLat},
+function _enumerate_definite_genus_ZZLat!(
+    known,#::Vector{ZZLat},
     algorithm::Symbol = :default;
     rand_neigh::Int=10,
     distinct::Bool=false,
