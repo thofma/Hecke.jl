@@ -140,8 +140,8 @@ function _local_height(P::EllipticCurvePoint{T}, p, v::DiscreteValuation{T}, pre
 
   x, y = P[1], P[2]
 
-  a1, a2, a3, a4, a6 = map(numerator, a_invariants(E))
-  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6, b8 = b_invariants(E)
 
   delta = discriminant(E)
 
@@ -205,8 +205,8 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
-  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6, b8 = b_invariants(E)
   H = max(ZZ(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
   _b2 = b2-12
   _b4 = b4-b2+6
@@ -305,7 +305,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
+  a1, a2, a3, a4, a6 = a_invariants(E)
   R = ArbField(prec)
   b2, b4, b6, b8 = map(t -> evaluate(t, v,  prec), _ellcrv_b_invariants(a1, a2, a3, a4, a6))
   H = max(R(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))

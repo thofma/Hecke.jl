@@ -178,9 +178,25 @@
        @test contains(lh, lh2)
      end
 
+    # archimedean local height does not change under u = 1
+
+    let E = elliptic_curve(QQ, [0, 0, 1, -1, 0])
+      P = E([0, 0])
+      _, phi, _ = transform_rstu(E, QQ.([1//2, 1//2, 1//2, 1]))
+      @test overlaps(local_height(phi(P), 0, 50), local_height(P, 0, 50))
+    end
+
+    for L in (quadratic_field(17)[1], quadratic_field(-17)[1])
+      w = (1 + gen(L))//2
+      E = elliptic_curve(L, [0, 0, 1, -1, 0])
+      P = E([0, 0])
+      G, phi, _ = transform_rstu(E, [w, w, w, 1])
+      for v in vcat(real_places(L), complex_places(L))
+        @test overlaps(local_height(phi(P), v, 50), local_height(P, v, 50))
+      end
+    end
+
   end
-
-
 
   @testset "Canonical height" begin
      E1 = elliptic_curve([1, -1, 1, -2063758701246626370773726978, 32838647793306133075103747085833809114881])
@@ -192,19 +208,24 @@
      @test contains(ch, ch2)
 
     # 37.a1
-    let E = elliptic_curve(QQ, [0, 0, 1, -1, 0]), h00 = "0.051111408239968840235886099757"
+    let h00 = "0.051111408239968840235886099757"
       transform = [[0, 0, 0, 1],           # the minimal model itself
                    [0, 0, 0, 1//2],        # non-minimal at 2 (good reduction)
                    [0, 0, 0, 1//37],       # non-minimal at 37 (bad reduction)
                    [0, 0, 0, 2],           # non-integral at 2
                    [1//3, 1, 1//2, 3//7]]  # non-minimal and non-integral
-      for F in [QQ, K], rstu in transform
+      for F in [QQ, K, quadratic_field(17)[1]], rstu in transform
         E = elliptic_curve(F, [0, 0, 1, -1, 0])
         G, phi, _ = transform_rstu(E, map(F, rstu))
         P = phi(E([0, 0]))
 
         h = @inferred canonical_height(P, 50)
         @test overlaps(h, parent(h)(h00))
+
+        # in Q(sqrt(17)), 2 splits and [OK : Z[sqrt(17)]] = 2, thus minimal
+        #   model at primes above 2 carry denominators
+        h = @inferred canonical_height(2*P, 50)
+        @test overlaps(h, 4*parent(h)(h00))
 
         h = @inferred canonical_height(5*P, 50)
         @test overlaps(h, 25*parent(h)(h00))
