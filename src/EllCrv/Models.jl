@@ -255,14 +255,7 @@ Given an elliptic curve $E$ over QQ or a number field $K$, return
 true if $E$ is an integral model of $E$.
 """
 function is_integral_model(E::EllipticCurve{T}) where T<:Union{QQFieldElem, AbsSimpleNumFieldElem}
-
-  a1, a2, a3, a4, a6 = map(denominator, a_invariants(E))
-  mu = lcm(a1, a2, a3, a4, a6)
-  if mu == 1
-    return true
-  end
-
-  return false
+  return all(is_integral, a_invariants(E))
 end
 
 @doc raw"""
