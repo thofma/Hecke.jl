@@ -497,6 +497,11 @@
       test_colon_common(OK, 3)
       test_colon_common(OK, 15)
       test_colon_common_ideal(OK, ideal(OK, [OK(a*2), OK(4)]) * ideal(OK, 15))
+
+      A = K(QQ(2, 3))*OK
+      U = fractional_ideal(ideal(OK, one(OK)))
+      @test Hecke.colon(A, U) == A
+      @test Hecke.colon(U, A) * A == U
     end
 
     @testset "ideal inv" begin

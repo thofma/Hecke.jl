@@ -12,12 +12,20 @@ function is_one(A::GenOrdFracIdl)
   is_zero(A) && return false
 
   d = denominator(A; copy = false)
-  # A = I/d = O iff I = d*O
   if isdefined(A, :num)
-    # intersection of A and R is minimum(A)*R. minimum(A) = d gives d*O subset I
-    minimum(A.num; copy = false) == d || return false
-    # this gives I subset d*O
-    return is_one(norm(A; copy = false))
+    I = A.num
+    # For A = I/d, A = 1 iff N(A) = 1 and d is in I
+    # Assuming N(A) == 1, d in I is equivalent to minimum(I) == d
+    # The important decision is ordering, and we follow the logic of integral ideal.
+    if has_norm(I) || isdefined(A, :norm)
+      return is_one(norm(A; copy = false)) && minimum(I; copy = false) == d
+    elseif has_minimum(I)
+      return minimum(I; copy = false) == d && is_one(norm(A; copy = false))
+    elseif has_princ_gen(I)
+      return is_one(norm(A; copy = false)) && minimum(I; copy = false) == d
+    else
+      return minimum(I; copy = false) == d && is_one(norm(A; copy = false))
+    end
   end
 
   A = simplify(A)
@@ -149,6 +157,20 @@ function _basis_matrix_inv_pair(I::GenOrdFracIdl{S, T}) where {S, T}
   return (I.basis_matrix_inv_num::dense_matrix_type(elem_type(T)), I.basis_matrix_inv_den::elem_type(T))
 end
 
+# rows are coordinates of basis in power basis,
+#   unlike basis_matrix which is in respect to the order basis
+function _coordinate_matrix(I::GenOrdFracIdl)
+  O = order(I)
+  K = base_field(field(O))
+
+  M, d = _basis_matrix_pair(I)
+  N, e = _basis_matrix_pair(O)
+
+  # take product over ring, and pass to fractions after multiplication
+  c = K(d*e)
+  return map_entries(x -> K(x)//c, M*N)
+end
+
 ################################################################################
 #
 #  Basis
@@ -161,21 +183,12 @@ end
 Returns the basis over the maximal Order of $I$.
 """
 function basis(a::GenOrdFracIdl)
-  B = basis_matrix(a)
-  d = degree(order(a))
   O = order(a)
-  K = function_field(O)
-  Oba = basis(O)
-  res = Array{elem_type(K)}(undef, d)
-  for i in 1:d
-    z = K()
-    for j in 1:d
-      z = z + B[i, j]*K(Oba[j])
-    end
-    res[i] = z
-  end
+  F = field(O)
 
-  return res
+  # we are in the power basis: pass row as a coefficient vector to the field constructor
+  B = _coordinate_matrix(a)
+  return elem_type(F)[F(vec(collect(B[i, :]))) for i in 1:degree(O)]
 end
 
 ################################################################################
@@ -287,9 +300,39 @@ end
 #
 ################################################################################
 
+function _simplify_principal!(A::GenOrdFracIdl)
+  O = order(A)
+  I = A.num
+  gamma = _princ_gen(I)
+  den = denominator(A; copy = false)
+
+  # the content of the numerator is the content of the generator coords
+  g = den
+  for c in coordinates(gamma)
+    g = gcd(g, c)
+    is_unit(g) && return A
+  end
+  g = _make_canonical_in(O, g)
+
+  # dividing by the scalar g divides the norm by g^n and the minimum by g
+  n = has_norm(I) ? divexact(norm(I; copy = false), g^degree(O)) : nothing
+  m = has_minimum(I) ? divexact(minimum(I; copy = false), g) : nothing
+
+  K = field(O)
+  gK = K(base_field(K)(g))
+  delta = O(divexact(data(gamma), gK); check = false)
+
+  A.num = _make_principal_ideal(O, delta; ideal_norm = n, ideal_minimum = m)
+  A.den = divexact(den, g)
+  return A
+end
 
 function Hecke.simplify(A::GenOrdFracIdl)
   is_one(denominator(A; copy = false)) && return A
+
+  if isdefined(A, :num) && has_princ_gen(A.num) && !isdefined(A.num, :basis_matrix)
+    return _simplify_principal!(A)
+  end
 
   # The content is a module invariant, so any numerator representation can be used.
   # Simplify does NOT change basis_matrix or norm.

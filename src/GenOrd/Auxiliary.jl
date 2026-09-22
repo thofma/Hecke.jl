@@ -159,7 +159,10 @@ function Hecke.integral_split(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingEl
 end
 Hecke.denominator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[2]
 Hecke.numerator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[1]
-(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)
+
+# LocalizedEuclideanRingElem in AbstractAlgebra.jl has data typed as FieldElem
+#   and data(a) returns abstract type.
+(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)::QQFieldElem
 
 function Hecke.factor(a::LocalizedEuclideanRingElem{ZZRingElem})
   c = canonical_unit(a)
