@@ -1,5 +1,20 @@
 @testset "RayClassGroup" begin
 
+  @testset "Action on trivial class groups" begin
+    for K in (rationals_as_number_field()[1], quadratic_field(3)[1])
+      O = maximal_order(K)
+      auts = automorphism_list(K)
+      for (R, mR) in (class_group(O), ray_class_group(1*O))
+        @test isone(order(R))
+        act = Hecke.induce_action(mR, auts)
+        @test length(act) == length(auts)
+        @test all(a -> domain(a) === R && codomain(a) === R, act)
+        @test all(a -> a == id_hom(R), act)
+        @test is_normal(ray_class_field(mR))
+      end
+    end
+  end
+
   #include(joinpath(Hecke.pkgdir, "examples", "RayClass.jl"))
 
   @testset "Big prime" begin
@@ -8,6 +23,46 @@
     p = next_prime(ZZRingElem(2)^100)
     r, mr = ray_class_group(ideal(Zk, p), n_quo = 2)
     @test order(domain(mr)) == 2
+  end
+
+  @testset "empty infinite modulus" begin
+    K, _ = quadratic_field(-5)
+    O = maximal_order(K)
+    R, mR = ray_class_group(ideal(O, 1), n_quo = 2)
+    @test order(R) == 2
+    @test isempty(defining_modulus(mR)[2])
+  end
+
+  @testset "complex infinite modulus" begin
+    K, _ = quadratic_field(-1)
+    O = maximal_order(K)
+    _, mR = ray_class_group(ideal(O, 1), complex_places(K))
+    @test_throws ErrorException Hecke.find_gens(mR)
+  end
+
+  @testset "generators of narrow ray class group" begin
+    K, _ = quadratic_field(142)
+    O = maximal_order(K)
+    R, mR = ray_class_group(ideal(O, 1), real_places(K))
+    _, gens = Hecke.find_gens(mR)
+    Q, _ = quo(R, gens, false)
+    @test isone(order(Q))
+  end
+
+  @testset "factored ideals with non-coprime factors" begin
+    K, _ = rationals_as_number_field()
+    O = maximal_order(K)
+    m = 12 * O
+    I = FacElem([9 * O, 3 * O, 5 * O], ZZRingElem[1, -2, 1])
+
+    R, mR = ray_class_group(m)
+    expected = mR\(5 * O)
+    @test mR\I == expected
+    @test mR\I == mR\numerator(evaluate(I))
+
+    ctx = Hecke.rayclassgrp_ctx(O, 2)
+    Rquo, mRquo = Hecke.ray_class_group_quo(O, factor(m), InfPlc[], ctx)
+    @test mRquo\I == mRquo\(5 * O)
   end
 
   @testset "quadratic fields" begin

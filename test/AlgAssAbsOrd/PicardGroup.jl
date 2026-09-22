@@ -65,6 +65,25 @@ end
   @test ngens(P) == 0
   @test mP\ideal(O, one(O)) in P
 
+  # A lift from (O/F)^* may be zero in components on which F is the unit ideal.
+  b1 = zero_matrix(QQ, 6, 6)
+  b1[1, 1] = 1
+  b2 = identity_matrix(QQ, 6)
+  b2[1, 1] = 0
+  b3 = matrix(QQ, [0  0  0  0  0  0;
+                   0  0  1 -1 -1  1;
+                   0  0 -1  0  0  0;
+                   0 -1 -1  0  1 -1;
+                   0 -1 -1  1  0 -1;
+                   0  2  2 -2 -2  1])
+  A = matrix_algebra(QQ, [b1, b2, b3])
+  O = order(A, [b1, b2, b3])
+  @test !is_maximal(O)
+  P, mP = picard_group(O)
+  @test elementary_divisors(P) == ZZRingElem[2]
+  @test mP\ideal(O, one(O)) == zero(P)
+  @test mP\(mP(P[1])) == P[1]
+
   G = abelian_group([3, 3])
   A = GroupAlgebra(QQ, G)
   O = order(A, basis(A))

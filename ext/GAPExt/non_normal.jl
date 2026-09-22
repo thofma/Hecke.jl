@@ -1,21 +1,34 @@
-function to_non_normal(l::Vector{FieldsTower}, G::GAP.GapObj, deg::Int)
+function _transitive_subgroup_class(
+  G::GAP.GapObj,
+  deg::Int,
+  tid::Union{Nothing, Int} = nothing,
+)
+  for class in GAP.Globals.ConjugacyClassesSubgroups(G)
+    H = GAP.Globals.Representative(class)
+    GAP.Globals.Index(G, H) == deg || continue
+    GAP.Globals.Size(GAP.Globals.Core(G, H)) == 1 || continue
+    if tid !== nothing
+      action = GAP.Globals.FactorCosetAction(G, H)
+      GAP.Globals.TransitiveIdentification(GAP.Globals.Image(action)) == tid ||
+        continue
+    end
+    return class
+  end
+  error("Representation not possible")
+end
+
+function to_non_normal(
+  l::Vector{FieldsTower},
+  G::GAP.GapObj,
+  deg::Int;
+  tid::Union{Nothing, Int} = nothing,
+)
   for x in l
     assure_automorphisms(x)
     assure_isomorphism(x, G)
   end
-  lC = GAP.Globals.ConjugacyClassesSubgroups(G)
-  ind = 0
-  for i = 1:length(lC)
-    r = GAP.Globals.Representative(lC[i])
-    if GAP.Globals.Size(r) == divexact(degree(l[1].field), deg) && GAP.Globals.Size(GAP.Globals.Core(G, r)) == 1
-      ind = i
-      break
-    end
-  end
-  if iszero(ind)
-    error("Representation not possible")
-  end
-  rep = GAP.Globals.Representative(lC[ind])
+  class = _transitive_subgroup_class(G, deg, tid)
+  rep = GAP.Globals.Representative(class)
   ffields = Vector{AbsSimpleNumField}(undef, length(l))
   for i = 1:length(ffields)
     ffields[i] = fixed_field(l[i], rep)
@@ -60,7 +73,7 @@ function _find_discriminant_bound(n, i, disc)
     mp = GAP.Globals.FactorCosetAction(G1, H)
     idT = GAP.Globals.TransitiveIdentification(GAP.Globals.Image(mp))
     if idT == i
-      ind = i
+      ind = k
       break
     end
   end
@@ -81,11 +94,11 @@ function _find_discriminant_bound(n, i, disc)
     end
   end
   if isfrobenius
-    @show "Frobenius!"
+    @vprintln :Fields 1 "Frobenius group: tighter closure bound"
     #In this case, we can find a better bound for the closure!
     m = divexact(id[1], n)
     bdisc = disc^(2*m*n-m)
-    return root(bdisc, n-1)
+    return iroot(bdisc, n-1)
   end
   j = 1
   for i = 2:length(conjs)
@@ -104,9 +117,10 @@ function fields_transitive_group(n::Int, i::Int, disc::ZZRingElem)
   @assert GAP.Globals.IsSolvable(Gt)
   id = GAP.Globals.IdGroup(Gt)
   G1 = GAP.Globals.SmallGroup(id)
-  @show disc_NC = _find_discriminant_bound(n, i, disc)
-  lf = fields(id[1], id[2], disc_NC)
-  ln = to_non_normal(lf, G1, n)
+  disc_NC = _find_discriminant_bound(n, i, disc)
+  @vprintln :Fields 1 "Normal-closure discriminant bound: $disc_NC"
+  lf = Hecke.fields(id[1], id[2], disc_NC)
+  ln = to_non_normal(lf, G1, n; tid = i)
   indices = Int[]
   for i = 1:length(ln)
     if abs(discriminant(maximal_order(ln[i]))) <= disc

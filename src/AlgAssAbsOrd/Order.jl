@@ -10,7 +10,10 @@ algebra_type(::Type{AlgAssAbsOrd{T, S}}) where {S, T} = T
 
 order_type(::Type{T}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}} = AlgAssAbsOrd{T, ZZRing}
 
-order_type(::Type{T}) where {S <: NumFieldElem, T <: AbstractAssociativeAlgebra{S}} = AlgAssRelOrd{S, fractional_ideal_type(order_type(parent_type(S))), T}
+function order_type(::Type{T}) where {T <: AbstractAssociativeAlgebra}
+  S = elem_type(base_ring_type(T))
+  return AlgAssRelOrd{S, fractional_ideal_type(order_type(parent_type(S))), T}
+end
 
 order_type(::Type{T}, ::Type{ZZRing}) where {T <: AbstractAssociativeAlgebra{QQFieldElem}} = AlgAssAbsOrd{T, ZZRing}
 

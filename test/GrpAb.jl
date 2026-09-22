@@ -5,4 +5,5 @@
   include("GrpAb/Map.jl")
   include("GrpAb/Lattice.jl")
   include("GrpAb/Dual.jl")
+  include("GrpAb/ChainComplex.jl")
 end

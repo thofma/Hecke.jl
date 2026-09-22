@@ -169,6 +169,8 @@ function AbsOrdQuoMap(O::S, Q::AbsOrdQuoRing{S, T}) where {S, T}
   return AbsOrdQuoMap{S, T, U}(O, Q)
 end
 
+kernel(f::AbsOrdQuoMap{S, T}) where {S, T} = ideal(codomain(f))::T
+
 const NfOrdQuoMap = AbsOrdQuoMap{AbsSimpleNumFieldOrder, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderElem}
 
 function Mor(O::AbsSimpleNumFieldOrder, F::fqPolyRepField, y::fqPolyRepFieldElem)
@@ -661,6 +663,11 @@ function preimage(f::NfOrdToFqFieldMor, x::FqFieldElem)
 end
 
 Mor(O::AbsSimpleNumFieldOrder, F::Nemo.FqField, h::FqPolyRingElem) = NfOrdToFqFieldMor(O, F, h)
+
+function kernel(f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor, NfOrdToFqFieldMor})
+  isdefined(f, :P) || throw(ArgumentError("Map was not constructed from a prime ideal"))
+  return f.P
+end
 
 ################################################################################
 #
@@ -1336,5 +1343,3 @@ end
 function fmpz_mod_ui(x::ZZRingElem, y::UInt)
   return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), x, y)
 end
-
-

@@ -182,6 +182,11 @@ end
   automorphism_group_generators::Vector{ZZMatrix} # With respect to the
                                                   # basis of the lattice
   automorphism_group_order::ZZRingElem
+
+  reduced_automorphism_group_generators::Vector{ZZMatrix}    # With respect to the
+                                                             # basis of the lattice
+  reduced_automorphism_group_order::ZZRingElem
+
   minimum::QQFieldElem
 
   scale::QQFieldElem
@@ -454,15 +459,17 @@ end
 #
 ###############################################################################
 
-mutable struct VectorList{S, T}
+mutable struct VectorList{S, T, U}
   vectors::Vector{S} # list of (short) vectors
   lengths::Vector{Vector{T}} # lengths[i] contains the lengths of vectors[i] wrt to several forms
+  invariants::Vector{U} # invariant[i] is an invariant of vectors[i]
+  unsigned_invariants::Vector{UInt} # unsigned_invariant[i] is sign-invariant data of vectors[i]
   lookup::Dict{S, Int} # v => i iff vectors[i] == v
   issorted::Bool # whether the vectors are sorted
   use_dict::Bool # whether lookup is used
 
-  function VectorList{S, T}() where {S, T}
-    return new{S, T}()
+  function VectorList{S, T, U}() where {S, T, U}
+    return new{S, T, U}()
   end
 end
 
@@ -499,13 +506,15 @@ mutable struct BacherPoly{T}
   BacherPoly{T}() where {T} = new{T}()
 end
 
-mutable struct ZLatAutoCtx{S, T, V}
+mutable struct ZLatAutoCtx{S, T, V, U}
   G::Vector{T} # Gram matrices
   GZZ::Vector{ZZMatrix} # Gram matrices (of type ZZMatrix)
   Gtr::Vector{T} # transposed Gram matrices
   dim::Int
   max::S
-  V::VectorList{V, S} # list of (short) vectors
+  V::VectorList{V, S, U} # list of (short) vectors
+  target_invariants::Vector{U}
+  target_unsigned_invariants::Vector{UInt}
   v::Vector{Vector{V}} # list of list of vectors (n x 1 matrices),
                        # v[i][j][k] is the dot product of V[j] with
                        # the k-th row of G[i]
@@ -537,25 +546,48 @@ mutable struct ZLatAutoCtx{S, T, V}
   is_symmetric::BitArray{1} # whether G[i] is symmetric
   operate_tmp::V # temp storage for orbit computation
   dot_product_tmp::V # temp storage for dot product computation
+  tmp_vec1::Vector{S} # tmp storage used in _cand
+  tmp_vec2::Vector{S} # tmp storage used in _cand
+
+  # temporary stuff used in _cand
+  rowsI:: Vector{Vector{S}}
+  minusRowsI::Vector{Vector{S}}
+  colsI::Vector{Vector{S}}
+  minusColsI::Vector{Vector{S}}
+  diagI::Vector{S}
 
   function ZLatAutoCtx(G::Vector{ZZMatrix})
-    z = new{ZZRingElem, ZZMatrix, ZZMatrix}()
+    z = new{ZZRingElem, ZZMatrix, ZZMatrix,Int}()
     z.G = G
     z.Gtr = ZZMatrix[transpose(g) for g in G]
     z.dim = nrows(G[1])
     z.is_symmetric = falses(length(G))
     z.operate_tmp = zero_matrix(ZZ, 1, ncols(G[1]))
     z.dot_product_tmp = zero_matrix(ZZ, 1, 1)
+    z.tmp_vec1 = zeros_array(ZZ, z.dim)
+    z.tmp_vec2 = zeros_array(ZZ, z.dim)
 
     for i in 1:length(z.G)
       z.is_symmetric[i] = is_symmetric(z.G[i])
     end
-
+    S = ZZRingElem
+    I = z.dim  #z.dim is always >=I in _cand
+    z.rowsI = Vector{Vector{S}}(undef, length(G))
+    z.minusRowsI = Vector{Vector{S}}(undef, length(G))
+    z.colsI = Vector{Vector{S}}(undef, length(G))
+    z.minusColsI = Vector{Vector{S}}(undef, length(G))
+    z.diagI = Vector{S}(undef, length(G))
+    for i in 1:length(G)
+      z.rowsI[i] = Vector{S}(undef, I - 1)
+      z.minusRowsI[i] = Vector{S}(undef, I - 1)
+      z.colsI[i] = Vector{S}(undef, I - 1)
+      z.minusColsI[i] = Vector{S}(undef, I - 1)
+    end
     return z
   end
 
-  function ZLatAutoCtx{S, T, V}() where {S, T, V}
-    return new{S, T, V}()
+  function ZLatAutoCtx{S, T, V, U}() where {S, T, V, U}
+    return new{S, T, V, U}()
   end
 end
 
@@ -579,3 +611,35 @@ mutable struct ZetaFunction
   end
 end
 
+###############################################################################
+#
+#  Growing Subspaces for target short vectors
+#
+###############################################################################
+
+mutable struct GrowingSubspace{S,T}
+  B1::S  # in rref
+  B2::T  # keeps track of basis vectors found
+  range::UnitRange{Int}
+  pivs::Vector{Int}
+  pure::Vector{Bool}
+  dirty::Bool
+  rank::Int
+  degree::Int
+
+  function GrowingSubspace(r::UnitRange{Int})
+    z = new{fpMatrix, ZZMatrix}()
+    p = next_prime(UInt(2) << 62)
+    F = Hecke.Native.GF(p; cached=true, check=false) #cache=true, because otherwise they do not compare
+    z.range = r
+    n = last(r) - first(r) + 1
+    z.degree = n
+    z.B1 = zero_matrix(F, n+1, n)
+    z.B2 = zero_matrix(ZZ, n+1, n)
+    z.pivs = zeros(Int, n)
+    z.pure = zeros(Bool, n)
+    z.dirty = true
+    z.rank = 0
+    return z
+  end
+end

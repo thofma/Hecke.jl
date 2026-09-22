@@ -140,6 +140,7 @@ export absolute_inertia_degree
 export absolute_minpoly
 export absolute_norm
 export absolute_primitive_element
+export absolute_prime_decomposition_type
 export absolute_ramification_index
 export absolute_representation_matrix
 export absolute_simple_field
@@ -569,6 +570,7 @@ export is_norm
 export is_normal
 export is_on_curve
 export is_ordinary
+export is_p_rational
 export is_positive
 export is_positive_definite
 export is_power
@@ -582,9 +584,11 @@ export is_principal_with_data
 export is_probable_supersingular
 export is_pure
 export is_quadratic
+export is_quasi_p_rational
 export is_radical_extension
 export is_ramified
 export is_rationally_isometric
+export is_real_cyclotomic_field_p_rational
 export is_reduced
 export is_regular
 export is_represented_by
@@ -662,6 +666,7 @@ export leech_lattice
 export left_ideal
 export left_order
 export level
+export line_orbits
 export lll
 export lll_basis
 export lll_gram_indef_isotropic
@@ -715,6 +720,7 @@ export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
+export multiplicative_generator
 export multiplicative_group
 export multiplicative_group_generators
 export multiplicative_order
@@ -759,6 +765,7 @@ export orthogonal_submodule
 export overlattice
 export overlattices
 export overorders
+export p_rationality_context
 export parametrization
 export parent
 export periods
@@ -806,6 +813,7 @@ export push!
 export push_through_isogeny
 export quadratic_defect
 export quadratic_field
+export quadratic_kummer_generator
 export quadratic_lattice
 export quadratic_product
 export quadratic_space

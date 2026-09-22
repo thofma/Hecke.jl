@@ -74,6 +74,7 @@ end
   P = prime_decomposition(OE,p)[1][1]
   PP = prime_decomposition(OL, P)[1][1]
   FL, projL = relative_residue_field(OL, PP)
+  @test (@inferred kernel(projL)) === PP
   mL = extend(projL, L)
 
   e,f = PP.splitting_type
@@ -96,6 +97,7 @@ end
   P = prime_decomposition(OE, p)[1][1]
   @test is_index_divisor(OE, p)
   FE, projE = relative_residue_field(OE, P)
+  @test (@inferred kernel(projE)) === P
   _, f = P.splitting_type
   @test degree(defining_polynomial(FE)) == f
   mE = extend(projE, E)
@@ -209,5 +211,3 @@ end
   G = Hecke.ray_class_groupQQ(maximal_order(rationals_as_number_field()[1]), 100, true, 0)[1]
   @test order(G) == 40
 end
-
-

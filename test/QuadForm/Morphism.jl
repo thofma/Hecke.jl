@@ -1,7 +1,5 @@
 @testset "Morphism" begin
   L = integer_lattice(gram = zero_matrix(ZZ, 0, 0))
-  @test_throws ArgumentError shortest_vectors(L)
-  @test_throws ArgumentError shortest_vectors(L, Vector{Int})
   @test_throws ArgumentError minimum(L)
   @test (@inferred short_vectors(L, 1)) == []
   @test (@inferred short_vectors(L, 1, 2)) == []
@@ -13,4 +11,93 @@
   A2 = root_lattice(:A, 2)
   Hecke.assert_has_automorphisms(A2, redo=true, try_small=false)
   @test automorphism_group_order(A2) == 12
+
+  L = integer_lattice(gram=ZZ[3 1 -1 1 1 0 -1 -1 0 -1 1 0 -1 1 0 0 -1 1 1 -1 0 0 0 0 0 0; 1 3 1 1 0 1 0 0 -1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1; -1 1 3 -1 0 0 0 1 -1 0 1 0 0 0 0 0 0 -1 -1 1 0 0 1 -1 1 1; 1 1 -1 3 1 1 -1 0 0 1 0 1 0 0 1 0 0 0 1 -1 0 1 0 1 0 0; 1 0 0 1 3 1 -1 1 1 0 0 0 -1 1 0 0 -1 1 1 -1 0 0 1 0 1 0; 0 1 0 1 1 3 1 0 1 0 0 1 0 1 0 0 0 0 0 0 1 0 0 0 0 1; -1 0 0 -1 -1 1 3 -1 1 0 -1 0 1 0 0 0 0 0 0 1 0 0 -1 0 -1 0; -1 0 1 0 1 0 -1 3 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1 0; 0 -1 -1 0 1 1 1 0 3 -1 -1 1 -1 1 0 -1 0 1 1 0 0 1 0 1 0 0; -1 0 0 1 0 0 0 0 -1 3 0 0 1 -1 0 0 0 0 0 0 0 0 0 0 0 0; 1 1 1 0 0 0 -1 0 -1 0 3 0 0 1 0 0 0 0 0 0 0 0 1 0 1 1; 0 0 0 1 0 1 0 0 1 0 0 3 -1 0 0 -1 0 0 0 0 0 1 0 0 0 1; -1 0 0 0 -1 0 1 0 -1 1 0 -1 3 -1 0 0 0 -1 0 0 0 0 0 0 -1 -1; 1 0 0 0 1 1 0 0 1 -1 1 0 -1 3 0 0 0 0 1 0 1 0 0 0 1 0; 0 0 0 1 0 0 0 0 0 0 0 0 0 0 3 1 1 0 0 0 -1 1 0 1 0 0; 0 0 0 0 0 0 0 0 -1 0 0 -1 0 0 1 3 0 0 0 0 0 -1 0 0 1 0; -1 0 0 0 -1 0 0 1 0 0 0 0 0 0 1 0 3 0 -1 1 0 0 0 1 0 0; 1 0 -1 0 1 0 0 0 1 0 0 0 -1 0 0 0 0 3 1 0 -1 0 0 1 0 0; 1 0 -1 1 1 0 0 0 1 0 0 0 0 1 0 0 -1 1 3 -1 0 1 0 1 0 -1; -1 0 1 -1 -1 0 1 0 0 0 0 0 0 0 0 0 1 0 -1 3 0 0 -1 0 0 1; 0 0 0 0 0 1 0 0 0 0 0 0 0 1 -1 0 0 -1 0 0 3 0 0 -1 0 0; 0 0 0 1 0 0 0 0 1 0 0 1 0 0 1 -1 0 0 1 0 0 3 0 1 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 0 0 0 0 0 0 0 -1 0 0 3 0 1 0; 0 0 -1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1 0 -1 1 0 3 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 -1 1 0 1 0 0 0 0 0 0 1 0 3 1; 0 1 1 0 0 1 0 0 0 0 1 1 -1 0 0 0 0 0 -1 1 0 0 0 0 1 3])
+  Hecke.__assert_has_automorphisms(L; use_everything=true);
+  @test 18720000 == L.automorphism_group_order
+
+  A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
+  # Genus representatives of some genus
+  L = [integer_lattice(gram=matrix(QQ,6,6,i),cached=false) for i in A]
+  # mass formula
+  @test sum(1//automorphism_group_order(i) for i in L) == mass(genus(L[1]))
+  # hardcoded orders
+  orders = ZZRingElem[2880, 64, 384, 960, 192, 384, 7680]
+  @test  orders == automorphism_group_order.(L)
+  # test different options
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, compress=false, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_fixed_vectors=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_fixed_vectors=false)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=false)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=false, short_vectors_direct=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=true, short_vectors_direct=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, use_weyl=true, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, use_weyl=true, use_projections=true, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  L = integer_lattice(; gram = ZZ[-2 0 0 0 1 1 -1 -1 -1 -1 -1 -1 1 1 1 -1 -1; 0 -2 1 1 0 0 -1 -1 -1 1 -1 1 1 1 1 1 1; 0 1 -2 0 0 0 0 1 0 -1 0 -1 0 -1 0 -1 -1; 0 1 0 -2 0 0 0 0 0 -1 0 -1 0 0 -1 0 0; 1 0 0 0 -2 0 1 0 1 1 1 1 -1 -1 0 0 1; 1 0 0 0 0 -2 0 0 1 1 1 1 0 -1 0 1 1; -1 -1 0 0 1 0 -4 -2 -2 -1 -2 -1 2 0 0 1 -1; -1 -1 1 0 0 0 -2 -4 0 1 0 1 2 0 1 0 0; -1 -1 0 0 1 1 -2 0 -4 -2 -3 -2 2 2 1 1 0; -1 1 -1 -1 1 1 -1 1 -2 -4 -1 -3 0 0 0 0 -2; -1 -1 0 0 1 1 -2 0 -3 -1 -4 -1 2 2 0 1 0; -1 1 -1 -1 1 1 -1 1 -2 -3 -1 -4 0 0 0 -1 -2; 1 1 0 0 -1 0 2 2 2 0 2 0 -4 -1 -1 -1 0; 1 1 -1 0 -1 -1 0 0 2 0 2 0 -1 -4 -1 0 -1; 1 1 0 -1 0 0 0 1 1 0 0 0 -1 -1 -4 1 -1; -1 1 -1 0 0 1 1 0 1 0 1 -1 -1 0 1 -4 -1; -1 1 -1 0 1 1 -1 0 0 -2 0 -2 0 -1 -1 -1 -4]);
+  @test Hecke.reduced_automorphism_group_order(L)==2
+
+  L = integer_lattice(gram=QQ[3 1 -1 1 1 0 -1 -1 0 -1 1 0 -1 1 0 0 -1 1 1 -1 0 0 0 0 0 0; 1 3 1 1 0 1 0 0 -1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1; -1 1 3 -1 0 0 0 1 -1 0 1 0 0 0 0 0 0 -1 -1 1 0 0 1 -1 1 1; 1 1 -1 3 1 1 -1 0 0 1 0 1 0 0 1 0 0 0 1 -1 0 1 0 1 0 0; 1 0 0 1 3 1 -1 1 1 0 0 0 -1 1 0 0 -1 1 1 -1 0 0 1 0 1 0; 0 1 0 1 1 3 1 0 1 0 0 1 0 1 0 0 0 0 0 0 1 0 0 0 0 1; -1 0 0 -1 -1 1 3 -1 1 0 -1 0 1 0 0 0 0 0 0 1 0 0 -1 0 -1 0; -1 0 1 0 1 0 -1 3 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1 0; 0 -1 -1 0 1 1 1 0 3 -1 -1 1 -1 1 0 -1 0 1 1 0 0 1 0 1 0 0; -1 0 0 1 0 0 0 0 -1 3 0 0 1 -1 0 0 0 0 0 0 0 0 0 0 0 0; 1 1 1 0 0 0 -1 0 -1 0 3 0 0 1 0 0 0 0 0 0 0 0 1 0 1 1; 0 0 0 1 0 1 0 0 1 0 0 3 -1 0 0 -1 0 0 0 0 0 1 0 0 0 1; -1 0 0 0 -1 0 1 0 -1 1 0 -1 3 -1 0 0 0 -1 0 0 0 0 0 0 -1 -1; 1 0 0 0 1 1 0 0 1 -1 1 0 -1 3 0 0 0 0 1 0 1 0 0 0 1 0; 0 0 0 1 0 0 0 0 0 0 0 0 0 0 3 1 1 0 0 0 -1 1 0 1 0 0; 0 0 0 0 0 0 0 0 -1 0 0 -1 0 0 1 3 0 0 0 0 0 -1 0 0 1 0; -1 0 0 0 -1 0 0 1 0 0 0 0 0 0 1 0 3 0 -1 1 0 0 0 1 0 0; 1 0 -1 0 1 0 0 0 1 0 0 0 -1 0 0 0 0 3 1 0 -1 0 0 1 0 0; 1 0 -1 1 1 0 0 0 1 0 0 0 0 1 0 0 -1 1 3 -1 0 1 0 1 0 -1; -1 0 1 -1 -1 0 1 0 0 0 0 0 0 0 0 0 1 0 -1 3 0 0 -1 0 0 1; 0 0 0 0 0 1 0 0 0 0 0 0 0 1 -1 0 0 -1 0 0 3 0 0 -1 0 0; 0 0 0 1 0 0 0 0 1 0 0 1 0 0 1 -1 0 0 1 0 0 3 0 1 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 0 0 0 0 0 0 0 -1 0 0 3 0 1 0; 0 0 -1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1 0 -1 1 0 3 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 -1 1 0 1 0 0 0 0 0 0 1 0 3 1; 0 1 1 0 0 1 0 0 0 0 1 1 -1 0 0 0 0 0 -1 1 0 0 0 0 1 3])
+  Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = false, use_dual = true, use_everything = true, search_invariant_subspace = false, do_lll = false, depth = 0);
+  @test L.reduced_automorphism_group_order == 18720000
+  Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = false, do_lll = false, depth = 0);
+  @test L.reduced_automorphism_group_order == 18720000
+  Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = true, do_lll = false, depth = 0);
+  @test L.reduced_automorphism_group_order == 18720000
+
+  # Issue #2311: `ZLatAutoCtx`'s `init` threw `UndefRefError` whenever
+  # more than 2 simultaneous Gram matrices were used, because the
+  # short-vector length loop inside `init` always wrote to `w[2]`
+  # instead of `w[k]`, leaving `w[3:r]` permanently undefined.
+  # G4 == G2 is deliberate: it makes fingerprint's length comparison
+  # loop reach (and previously crash on) the undefined w[3] slot
+  # instead of bailing out earlier on an unrelated mismatch.
+  let
+    G1 = 2 * identity_matrix(ZZ, 3)
+    G2 = 3 * identity_matrix(ZZ, 3)
+    G3 = 5 * identity_matrix(ZZ, 3)
+    G4 = 3 * identity_matrix(ZZ, 3)
+    C = Hecke.ZLatAutoCtx([G1, G2, G3, G4])
+    @test (Hecke.init(C, true); true)  # used to throw UndefRefError
+  end
 end

@@ -48,7 +48,7 @@ end
 - Run all tests: `using Pkg; Pkg.test("Hecke")` or `Hecke.test_module("all")`.
 - Run one module: `Hecke.test_module("QuadForm")` (runs `test/QuadForm.jl` in a subprocess).
 - Helpers in `test/setup.jl`: `@long_test` (skipped unless `HECKE_TESTLONG=1`).
-- Environment variables: `HECKE_TESTSHORT=1`, `HECKE_TESTLONG=1`, `HECKE_TEST_PARALLEL=N`.
+- Environment variables: `HECKE_TESTSHORT=1`, `HECKE_TESTLONG=1`, `NUMPROCS=N`.
 
 ## Documentation
 

@@ -67,7 +67,7 @@ weights ws, scale the invariants by the scalar lambda.
 function weighted_multiply(w1::Vector{T}, ws::Vector{Int}, lambda::T) where T <: FieldElem
 
     for i in (1:length(ws))
-      w1[i] *= lambda^ws
+      w1[i] *= lambda^ws[i]
     end
 
     return w1

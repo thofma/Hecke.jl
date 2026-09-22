@@ -101,8 +101,8 @@ function __unit_reps_simple(M, F; GRH::Bool = true)
   else
     __units = collect(zip(UB, UB_reduced))
     @vprintln :PIP "Closing in the other case"
-    cl = closure(__units, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
-    return first.(cl)
+    cl2 = closure(__units, (x, y) -> (x[1] * y[1], x[2] * y[2]), eq = (x, y) -> x[2] == y[2])
+    return first.(cl2)
   end
 end
 
@@ -525,11 +525,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
   kblock = k * block_size
-  if VERSION >= v"1.11"
-    nt = Threads.maxthreadid()
-  else
-    nt = Threads.nthreads()
-  end
+  nt = _maxthreadid()
 
   @assert size(M) == (k, k)
   #@assert all(x -> ncols(x) == k, tmps)
@@ -557,7 +553,6 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     tmps2 = [zero_matrix(QQ, kblock, k) for i in 1:nt]
     tmp_elem = [A() for i in 1:nt]
     if length(par) >= nt
-      GC.gc(true)
       Threads.@threads :static for i in 1:length(par)
         #thi = 1 #Threads.threadid()
         thi = Threads.threadid()
@@ -599,5 +594,4 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   end
   return res
 end
-
 

@@ -18,12 +18,13 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
-    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:Threads.nthreads()]
-    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
+    nt = _maxthreadid()
+    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:nt]
+    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:nt]
     z.mat = M
 
     function image(a)
-      if Threads.nthreads() == 1
+      if nt == 1
         zt = z.c_t
       else
         zt = z.c_t_threaded[Threads.threadid()]
@@ -33,9 +34,9 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
-      z.d_t = zt*M
+      zdt = zt*M
       for i in 1:dim(B)
-        s[i] = z.d_t[1, i]
+        s[i] = zdt[1, i]
       end
       return B(s)
     end
@@ -48,18 +49,20 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
-    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:Threads.nthreads()]
-    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
+    nt = _maxthreadid()
+    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:nt]
+    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:nt]
     z.mat = M
     z.imat = N
 
     function image(a)
-      if Threads.nthreads() == 1
+      if nt == 1
         zct = z.c_t
         zdt = z.d_t
       else
-        zct = z.c_t_threaded[Threads.threadid()]
-        zdt = z.d_t_threaded[Threads.threadid()]
+        tid = Threads.threadid()
+        zct = z.c_t_threaded[tid]
+        zdt = z.d_t_threaded[tid]
       end
 
       ca = coefficients(a, copy = false)
@@ -81,12 +84,13 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     end
 
     function preimage(a)
-      if Threads.nthreads() == 1
+      if nt == 1
         zct = z.c_t
         zdt = z.d_t
       else
-        zct = z.c_t_threaded[Threads.threadid()]
-        zdt = z.d_t_threaded[Threads.threadid()]
+        tid = Threads.threadid()
+        zct = z.c_t_threaded[tid]
+        zdt = z.d_t_threaded[tid]
       end
 
       for i in 1:dim(B)

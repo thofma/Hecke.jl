@@ -24,7 +24,8 @@ function FactorBase(x::Union{Set{T}, AbstractVector{T}}; check::Bool = true) whe
   end
   ax = [ node{T}(p) for p in x]
   while length(ax) > 1
-    bx = [ _compose(ax[2*i-1], ax[2*i], check) for i=1:div(length(ax), 2)]
+    a = ax
+    bx = [ _compose(a[2*i-1], a[2*i], check) for i=1:div(length(a), 2)]
     if isodd(length(ax))
       push!(bx, ax[end])
     end

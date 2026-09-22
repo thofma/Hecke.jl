@@ -27,14 +27,14 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   s = Set(ideal_type(order_type(AbsSimpleNumField))[minimum(mkK, I) for I = S])
   #make S relative Galois closed:
   PS = IdealSet(ZKa)
-  S = reduce(vcat, Vector{ideal_type(ZKa)}[collect(keys(factor(PS(mkK, p)))) for p = s], init = Vector{ideal_type(ZKa)}())
+  Sc = reduce(vcat, Vector{ideal_type(ZKa)}[collect(keys(factor(PS(mkK, p)))) for p = s], init = Vector{ideal_type(ZKa)}())
 
   local U::FinGenAbGroup
 
-  if length(S) == 0
+  if length(Sc) == 0
     U, mU = unit_group_fac_elem(ZKa)
   else
-    U, mU = sunit_group_fac_elem(collect(S))
+    U, mU = sunit_group_fac_elem(collect(Sc))
   end
 
   class_group(parent(a))
@@ -57,13 +57,13 @@ function is_norm_fac_elem(K::RelSimpleNumField{AbsSimpleNumFieldElem}, a::AbsSim
   #the weights are somewhat random
   # - val*norm(P) so that size of P does matter a bit
   # - scale by 1000 so that small units do not vanish to zero
-  k, mk = kernel(No)
-  k, _mk = snf(k)
-  mk = _mk*mk
+  k0, mk0 = kernel(No)
+  k, _mk = snf(k0)
+  mk = _mk*mk0
   gk = [mU(mk(g)) for g = gens(k)]
   pushfirst!(gk, mU(so))
-  if length(S) > 0
-    v = matrix(ZZ, length(gk), length(S), [valuation(g, P)*norm(P) for g = gk for P = S])
+  if length(Sc) > 0
+    v = matrix(ZZ, length(gk), length(Sc), [valuation(g, P)*norm(P) for g = gk for P = Sc])
   else
     v = zero_matrix(ZZ, length(gk), 0)
   end

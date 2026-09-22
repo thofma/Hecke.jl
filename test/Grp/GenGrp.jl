@@ -1,5 +1,44 @@
 
 @testset "Generic Group" begin
+    @testset "Subgroups from generators" begin
+        G, = generic_group([1, -1, im, -im], *)
+        for (S, expected) in [([G[2]], [one(G), G[2]]),
+                              ([G[3]], collect(G)),
+                              ([G[3], G[3]], collect(G)),
+                              (elem_type(G)[], [one(G)]),
+                              ([one(G)], [one(G)]),
+                              (reverse(collect(G)), collect(G))]
+            H, mH = sub(G, S)
+            @test order(H) == length(expected)
+            @test domain(mH) === H
+            @test codomain(mH) === G
+            @test Set(mH(h) for h in H) == Set(expected)
+            @test mH(one(H)) == one(G)
+            @test all(mH(g*h) == mH(g)*mH(h) for g in H, h in H)
+            @test all(preimage(mH, mH(h)) == h for h in H)
+        end
+
+        G = small_group(6, 1)
+        H, mH = sub(G, gens(G))
+        @test order(H) == order(G)
+        @test Set(mH(h) for h in H) == Set(G)
+        @test all(mH(g*h) == mH(g)*mH(h) for g in H, h in H)
+
+        K, = generic_group([1, -1], *)
+        @test_throws ArgumentError sub(G, [one(K)])
+    end
+
+    @testset "Subgroups from all elements" begin
+        G, = generic_group([1, -1, im, -im], *)
+        for S in [[one(G)], [G[2], one(G)], reverse(collect(G))]
+            H, mH = @inferred sub(G, S; complete = true)
+            @test order(H) == length(S)
+            @test [mH(h) for h in H] == S
+            @test mH(one(H)) == one(G)
+            @test all(mH(g*h) == mH(g)*mH(h) for g in H, h in H)
+        end
+    end
+
     @testset "QuotientGroup" begin
         @test Hecke.quotient_indx(1,1) == [(1,1)]
         @test Hecke.quotient_indx(2,1) == [(1,1), (2,1)]
@@ -53,6 +92,24 @@
         @test order(sylow_subgroup(G,2)[1]) == 4
         @test order(sylow_subgroup(G,3)[1]) == 1
         @test_throws ErrorException sylow_subgroup(G,10)
+    end
+
+    @testset "exponent" begin
+        for (id, e) in [((1, 1), 1), ((4, 1), 4), ((4, 2), 2), ((8, 5), 2)]
+            G = small_group(id...)
+            @test e == @inferred exponent(G)
+            @test all(isone(g^e) for g in G)
+        end
+
+        # The exponent need not be the order of an element.
+        G = small_group(6, 1)
+        @test maximum(order(g) for g in G) == 3
+        @test 6 == @inferred exponent(G)
+        @test all(isone(g^6) for g in G)
+
+        G, = direct_product(small_group(4, 1), small_group(6, 1))
+        @test 12 == @inferred exponent(G)
+        @test all(isone(g^12) for g in G)
     end
 
     @testset "GrpGenToGrpAb" begin

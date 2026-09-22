@@ -5,4 +5,5 @@
   include("NfAbs/NfAbs.jl")
   include("NfAbs/Cyclotomic.jl")
   include("NfAbs/MultDep.jl")
+  include("NfAbs/prational.jl")
 end

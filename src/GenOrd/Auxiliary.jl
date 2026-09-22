@@ -57,9 +57,9 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false, shape::Symbol 
   # make sure to pin the type of H: the result of both branches has typeof(M)
   #   but compiler cannot infer it
   H::typeof(M) = if is_prime
-    _, mR = residue_field(parent(d), d)
-    r, h = rref(map_entries(mR, M))
-    map_entries(x->preimage(mR, x), h[1:r, :])
+    _, mF = residue_field(parent(d), d)
+    r, h = rref(map_entries(mF, M))
+    map_entries(x->preimage(mF, x), h[1:r, :])
   else
     _, mR = residue_ring(parent(d), d)
     map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
@@ -130,12 +130,6 @@ end
 
 function base_field_type(::Type{Generic.AbsSimpleFunctionField{T, U}}) where {T, U}
   return Generic.RationalFunctionField{T, U}
-end
-
-function is_defining_polynomial_nice(F::Generic.AbsSimpleFunctionField)
-  f = defining_polynomial(F)
-  is_one(leading_coefficient(f)) || return false
-  return all(is_one(denominator(c)) for c in coefficients(f))
 end
 
 #######################################################################

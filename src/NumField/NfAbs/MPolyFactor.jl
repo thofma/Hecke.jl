@@ -222,8 +222,8 @@ function hlift_have_lcs_crt(
       pA = modular_proj(fqPolyRepFieldElem, A, me)
 
       # make sure no leading coeff vanishes
-      plcs = [modular_proj(fqPolyRepFieldElem, lc, me) for lc in lcs]
-      plcs = [[plcs[j][i] for j in 1:r] for i in 1:s]
+      plcs0 = [modular_proj(fqPolyRepFieldElem, lc, me) for lc in lcs]
+      plcs = [[plcs0[j][i] for j in 1:r] for i in 1:s]
       ok = true
       for i in 1:s, j in 1:r
         ok = ok && !iszero(plcs[i][j])
@@ -233,8 +233,8 @@ function hlift_have_lcs_crt(
       end
 
       # make sure univariate factorizations remain pairwise prime
-      pAuf = [modular_proj(fqPolyRepFieldElem, f, me) for f in Auf]
-      pAuf = [[pAuf[j][i] for j in 1:r] for i in 1:s]
+      pAuf0 = [modular_proj(fqPolyRepFieldElem, f, me) for f in Auf]
+      pAuf = [[pAuf0[j][i] for j in 1:r] for i in 1:s]
       ok = true
       for i in 1:s
         ok = ok && is_pairwise_coprime(pAuf[i])
@@ -243,8 +243,8 @@ function hlift_have_lcs_crt(
         continue
       end
 
-      palphas = [deepcopy(Hecke.modular_proj(alphas[j], me)) for j in 1:n]
-      palphas = [[palphas[j][i] for j in 1:n] for i in 1:s]
+      palphas0 = [deepcopy(Hecke.modular_proj(alphas[j], me)) for j in 1:n]
+      palphas = [[palphas0[j][i] for j in 1:n] for i in 1:s]
 
     catch ee
       if ee <: Hecke.BadPrime
@@ -253,7 +253,8 @@ function hlift_have_lcs_crt(
       rethrow(ee)
     end
 
-    pAf = [eltype(pA)[] for j in 1:r]
+    T_pA = eltype(pA)
+    pAf = [T_pA[] for j in 1:r]
     for i in 1:s
       ok, t = AbstractAlgebra.MPolyFactor.hlift_have_lcs(
                        pA[i], pAuf[i], plcs[i], mainvar, minorvars, palphas[i])

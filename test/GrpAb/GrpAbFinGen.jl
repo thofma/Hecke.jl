@@ -213,6 +213,18 @@
     h = hom(G, G, gens(G))
     hh = hom_direct_sum(K, K, [h;])
     @test hh(K[1]) == K[1]
+
+    G = abelian_group(ZZ[2 0; 0 0])
+    H = abelian_group(ZZ[3 0; 0 0])
+    D = direct_product(G, H, task = :none)
+    inj = canonical_injections(D)
+    proj = canonical_projections(D)
+    factors = (G, H)
+    for i in 1:2, j in 1:2, g in gens(factors[i])
+      @test proj[j](inj[i](g)) == (i == j ? g : factors[j][0])
+    end
+    h = hom_direct_sum(D, D, [id_hom(G), id_hom(H)])
+    @test all(h(g) == g for g in gens(D))
   end
 
   @testset "Torsion" begin
@@ -394,6 +406,14 @@
   end
 
   @testset "Complement" begin
+    A = abelian_group([4])
+    B = abelian_group([6])
+    G, _, inj = biproduct(A, B)
+    fl, mC = Hecke.has_complement(inj[1])
+    @test fl
+    @test is_isomorphic(domain(mC), B)
+    @test is_trivial(intersect(inj[1], mC, false)[1])
+
     d = rand(2:1000)
     d1 = rand(2:1000)
     while !is_squarefree(d) || !is_squarefree(d1)
