@@ -22,6 +22,15 @@
   invs2, ws = g4_invariants(conic2, cubic2)
   @test weighted_equality(invs, invs2, ws)
 
+  conic = -10*x^2 - x*y + 8*x*z + 9*y*z - 6*z^2
+  cubic = 4*x^3-x^2*y - x^2*z - 5*x^2*w - 6*x*y^2 - 2*x*y*z - 9*x*y*w + 7*x*z^2 + 3*x*z*w - 8*x*w^2 -
+  10*y^3 + 3*y^2*z - y^2*w - 3*y*z^2 - 7*y*w^2 - z^3 + z^2*w - 10*z*w^2 + 3*w^3
+  
+  invs, ws = g4_invariants(conic, cubic)
+  conic2, cubic2 = reconstruct_from_g4_invariants(invs)
+  invs2, ws = g4_invariants(conic2, cubic2)
+  @test weighted_equality(invs, invs2, ws)
+
 
   K, (x,y,z,w) = polynomial_ring(GF(37), [:x,:y,:z,:w])
   conic = x^2 -5*x*y +7*z^2 - 3*w*z - 20*w^2

@@ -95,3 +95,13 @@ function transvectant_sequence(Fs::Vector{S}, k::Int) where S <: Union{ZZMPolyRi
   end
   return results
 end
+
+function monomials_of_degree(R::MPolyRing, n::Int)
+  X = gens(R)
+  W = Iterators.product(repeat([X], n)...)
+  result = Set{MPolyRingElem}()
+  for a in W
+    push!(result, prod(a))
+  end
+  return [r for r in result]
+end

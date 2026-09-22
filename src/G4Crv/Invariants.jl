@@ -30,7 +30,6 @@ function g4_invariants(Q::MPolyRingElem{T}, Gamma::MPolyRingElem{T}) where T
 		P, t = quad_4_normal_form(Q)
     f0 = transformation_GLn(Gamma, P)
 	end
-
 	# Rank 4 case
 	if t == 3 || t == 4
     invs, ws = _compute_invs_ws(f0, det(P), t)
@@ -84,7 +83,7 @@ function _compute_invs_ws(f0::MPolyRingElem{T}, detP::T, t::Int) where T <: Fiel
 		B /= alpha
 		B = B(s, t, w - coefficients(B, 3)[3]/3)
     S, x = polynomial_ring(L, 2)
-		invs, ws = invariants_genus4_curves_rank3(f_weighted(x[1], x[2], S(0)), (coefficients(f_weighted, 3)[2])(x[1], x[2], S(0)))
+		invs, ws = invariants_genus4_curves_rank3(B(x[1], x[2], S(0)), (coefficients(B, 3)[2])(x[1], x[2], S(0)))
 		invs = weighted_multiply(invs, ws,  alpha/detP^3)
     return invs, ws
   end
@@ -99,13 +98,12 @@ function quad_4_normal_form(Q::MPolyRingElem{T}) where T
   M = quadratic_form_to_matrix(Q)
   t = rank(M)
   D, P = Hecke._gram_schmidt(M, identity, false)
-  diags = [D[i,i] for i in (1:4)]
   
   if t < 3
     error("Warning: The quadric is not of rank 3 or 4")
   elseif t == 4
-    L = [-diags[4]/D[1, 1], -D[3, 3]/D[2, 2]]
-    return _quad_4_subroutine(P, K, D, L)
+    L = [-D[4,4]/D[1, 1], -D[3, 3]/D[2, 2]]
+    return _quad_4_subroutine(P, K, D, L, 4), 4
   else 
     i = 1
     if T <: Union{ArbFieldElem, AcbFieldElem}
@@ -125,14 +123,16 @@ function quad_4_normal_form(Q::MPolyRingElem{T}) where T
     D_new = P_swap*D*P_swap
     P = P_swap*P
     L = [-D_new[3, 3]/D_new[1, 1], -D_new[2, 2]]
-    return _quad_4_subroutine(P, K, D_new, L)
+    return _quad_4_subroutine(P, K, D_new, L, 3), 3
   end
 end
 
-function _quad_4_subroutine(P::MatElem{T}, K::Field, D::MatElem{T}, L::Vector{T}) where T <: FieldElem
+function _quad_4_subroutine(P::MatElem{T}, K::Field, D::MatElem{T}, L::Vector{T}, t::Int) where T <: FieldElem
 
   bool1, sq1 = is_power(L[1], 2)
   bool2, sq2 = is_power(L[2], 2)
+
+  _helper = t == 4 ? _helper_test_rank4 : _helper_test_rank3
 
   if bool1 && bool2
     S1 = K
@@ -140,15 +140,15 @@ function _quad_4_subroutine(P::MatElem{T}, K::Field, D::MatElem{T}, L::Vector{T}
     _, sq2 = is_power(L[2], 2)
     Sq = [sq1, sq2]
     P = change_base_ring(S1, P)
-    P_fin = _helper_test(change_base_ring(S1, D), Sq) * P
-    return transpose(P_fin), 4
+    P_fin = _helper(change_base_ring(S1, D), Sq) * P
+    return transpose(P_fin)
   else
     R, x = polynomial_ring(K)
     S2 = splitting_field((x^2-L[1])*(x^2-L[2]))::Field
     Sq = [sqrt(S2(L[1])), sqrt(S2(L[2]))]
     P = change_base_ring(S2, P)
-    P_fin = _helper_test(change_base_ring(S2, D), Sq) * P
-    return transpose(P_fin), 4
+    P_fin = _helper(change_base_ring(S2, D), Sq) * P
+    return transpose(P_fin)
   end
 end
 
@@ -160,6 +160,25 @@ function _helper_test(D::MatElem{T}, Sq::Vector{T}) where T <: FieldElem
           S(1//2), S(0), S(0), S(-1)//(2*Sq[1])])
 return P_fin
 end
+
+function _helper_test_rank4(D::MatElem{T}, Sq::Vector{T}) where T <: FieldElem
+  S = parent(Sq[1])
+  P_fin = matrix(S, 4, 4, [1//(2*D[1,1]), S(0), S(0), 1//(2*D[1,1]*Sq[1]),
+                    S(0), -1//(2*D[2,2]), -1//(2*D[2,2]*Sq[2]), S(0),
+                    S(0), S(1//2), -1//(2*Sq[2]), S(0),
+                    S(1//2), S(0), S(0), -1//(2*Sq[1])])
+  return P_fin
+end
+
+function _helper_test_rank3(D::MatElem{T}, Sq::Vector{T}) where T <: FieldElem
+  S = parent(Sq[1])
+  P_fin = matrix(S, 4, 4, [1//(2*D[1,1]), S(0), 1//(2*D[1,1]*Sq[1]), S(0),
+                    S(0), 1//Sq[2], S(0), S(0),
+                    S(1//2), S(0), -1//(2*Sq[1]), S(0),
+                    S(0), S(0), S(0), S(1)])
+  return P_fin
+end
+
 
 function invariants_genus4_curves_rank4(f::MPolyRingElem{T}, normalize = false) where T <:FieldElem
 	K = base_ring(parent(f))

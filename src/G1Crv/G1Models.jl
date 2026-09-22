@@ -35,16 +35,16 @@ function g1_model_d2(Q::MPolyRingElem{T}, P::MPolyRingElem{T}) where T
   return D
 end
 
-function g1_model_d3(F::MPolyRingElem{T}) where T
+function g1_model_d3(P::MPolyRingElem{T}) where T
   R_P = parent(P)
   K = base_ring(R_P)
-  @req number_of_generators(R_Q1) == 3 "F needs to be defined over a polynomial ring with 3 variables."
-  @req is_homogeneous(P) && is_homogeneous(Q) "F needs to be homogeneous."
-  @req total_degree(F) == 3 "F needs to be of degree 3."
+  @req number_of_generators(R_P) == 3 "P needs to be defined over a polynomial ring with 3 variables."
+  @req is_homogeneous(P)  "P needs to be homogeneous."
+  @req total_degree(P) == 3 "P needs to be of degree 3."
 
   D = G1Model{T}()
   D.degree = 3
-  D.equations = [F]
+  D.equations = [P]
   return D
 end
 
