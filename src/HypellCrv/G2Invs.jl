@@ -20,7 +20,7 @@ function _clebsch_invariants(f::MPolyRingElem{T}) where T  <: FieldElem
   C = transvectant(i, delta, 4)
   D = transvectant(y3, y1, 2)
 
-  return [K(evaluate(A, [0,0])), K(evaluate(B, [0,0])),K(evaluate(C, [0,0])), K(evaluate(D, [0,0]))]
+  return [K(evaluate(A, [0,0])), K(evaluate(B, [0,0])),K(evaluate(C, [0,0])), K(evaluate(D, [0,0]))], [2,4,6,10]
 end
 
 
@@ -70,12 +70,13 @@ function igusa_clebsch_invariants(f::PolyRingElem{T}) where T  <: FieldElem
   if characteristic(K) == 2
     error("Characteristic of the field cannot be 2")
   end
+  ws = [2,4,6,10]
   if characteristic(K) in [3,5]
-    igusa_invs = igusa_invariants(f)
-    return igusa_clebsch_from_igusa(igusa_invs)
+    igusa_invs = igusa_invariants(f)[1]
+    return igusa_clebsch_from_igusa(igusa_invs), ws
   end
-  A, B, C, D = clebsch_invariants(f)
-  return igusa_clebsch_from_clebsch([A, B, C, D])
+  A, B, C, D = clebsch_invariants(f)[1]
+  return igusa_clebsch_from_clebsch([A, B, C, D]), ws
 end
 
 @doc raw"""
@@ -92,20 +93,22 @@ end
 
 function igusa_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}, include_J15::Bool = false) where T  <: FieldElem
   K = base_ring(f)
+  ws = [2,4,6,8,10]
   if characteristic(K) == 2
-    return igusa_invs = igusa_char2(f, h)
+    return igusa_char2(f, h), ws
   end
   f = f + h^2/4
   if characteristic(K) in [3,5]
-    return igusa_general_formulas(f)
+    return igusa_general_formulas(f), ws
   end
-  a, b, c, d = igusa_clebsch_invariants(f)
+  a, b, c, d = igusa_clebsch_invariants(f)[1]
   igusa_invs = igusa_from_igusa_clebsch([a,b,c,d])
   if include_J15
     J15 = igusa_invariant_J15(f)
-    return push!(igusa_invs, J15)
+    push!(ws, 15)
+    return push!(igusa_invs, J15), ws
   else
-    return igusa_invs
+    return igusa_invs, ws
   end
 end
 
@@ -119,15 +122,15 @@ end
 Returns the g2 invariants g1, g2, g3 for the genus 2 curve C.
 """
 function g2_invariants(C::HypellCrv)
-  return g2_from_igusa(igusa_invariants(C))
+  return g2_from_igusa(igusa_invariants(C)[1])
 end
 
 function g2_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: FieldElem
-  return g2_from_igusa(igusa_invariants(f, h))
+  return g2_from_igusa(igusa_invariants(f, h)[1])
 end
 
 function g2_invariants(f::PolyRingElem{T}) where T  <: FieldElem
-  return g2_from_igusa(igusa_invariants(f))
+  return g2_from_igusa(igusa_invariants(f)[1])
 end
 
 

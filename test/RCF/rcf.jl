@@ -27,6 +27,57 @@
   @test @inferred !is_totally_complex(C)
 end
 
+@testset "Class field subfields" begin
+  K = quadratic_field(3)[1]
+  for C in (hilbert_class_field(quadratic_field(13*17*37)[1]),
+            cyclotomic_field(ClassField, 13),
+            ray_class_field(5*maximal_order(K), real_places(K)))
+    @test_throws ArgumentError subfields(C; degre = 2)
+    @test_throws ArgumentError subfields(C; degree = 2, type = [2])
+    @test_throws ArgumentError subfields(C; degree = 2, type = [2], is_normal)
+    @test_throws ArgumentError subfields(C; degree = 2.0)
+    @test_throws ArgumentError subfields(C; type = 2)
+
+    # Enumerate all subfields of C/base_field(C) using subgroups, independently
+    # of stable_subgroups and its degree/type restrictions.
+    mQ = C.quotientmap
+    expected = [ray_class_field(C.rayclassgroupmap, mQ*q)
+                for (_, q) in subgroups(codomain(mQ); fun = quo)]
+    # No normality flag, followed by two ways to request normality over QQ
+    # (the field fixed by all automorphisms of each base field used here).
+    for normality in ((;), (; is_normal),
+                      (; is_normal = automorphism_list(base_field(C))))
+      all_fields = subfields(C; normality...)
+      reference = isempty(normality) ? expected : filter(is_normal, expected)
+      @test Set(all_fields) == Set(reference)
+      for d in divisors(degree(C))
+        actual = subfields(C; degree = Int(d), normality...)
+        @test Set(actual) == Set(filter(F -> degree(F) == d, reference))
+      end
+      for d in (3, Int(degree(C)) + 1)
+        @test Set(subfields(C; degree = d, normality...)) ==
+              Set(filter(F -> degree(F) == d, reference))
+      end
+      for d in (-2, -1, 0)
+        @test Set(subfields(C; degree = d, normality...)) == Set(reference)
+      end
+      for t in (Int[], [1], [2], [2, 2], [4], [3], [5])
+        actual = subfields(C; type = t, normality...)
+        @test Set(actual) == Set(filter(F -> is_isomorphic(codomain(F.quotientmap), abelian_group(t)), reference))
+      end
+    end
+
+    trivial = only(subfields(C; degree = 1))
+    @test is_normal(trivial)
+    @test only(subfields(trivial; is_normal)) == trivial
+    @test only(subfields(trivial)) == trivial
+    @test only(subfields(trivial; type = Int[])) == trivial
+    @test isempty(subfields(trivial; degree = 2))
+    @test isempty(subfields(trivial; type = [4]))
+    @test isempty(subfields(trivial; type = [4], is_normal))
+  end
+end
+
 @testset "RCF" begin
   Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
@@ -485,4 +536,3 @@ end
   d = absolute_discriminant(FacElem, H)
   @test evaluate(d) == discriminant(maximal_order(k))^9
 end
-

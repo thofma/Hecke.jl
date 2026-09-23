@@ -726,21 +726,21 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
         end
       end
     end
-    B, T = lll_with_transform(M)
+    B0, T = lll_with_transform(M)
     # Compute the coefficients of the vector sums in the basis
     invT = inv(T)
 
     # Remove the zero rows from B and the corresponding rows / columns from T
     # and invT. The zero rows are on the top.
     k = 1
-    for r in 1:nrows(B)
-      !is_zero_row(B, r) && break
+    for r in 1:nrows(B0)
+      !is_zero_row(B0, r) && break
       k += 1
     end
 
     # We leave these matrices "big" (i.e. of type ZZMatrix) even if the short
     # vectors fit in Int
-    B = sub(B, k:nrows(B), 1:ncols(B))
+    B = sub(B0, k:nrows(B0), 1:ncols(B0))
     C.scpcomb[i].trans = sub(T, k:nrows(T), 1:ncols(T))
     C.scpcomb[i].coef = sub(invT, 1:nrows(invT), k:ncols(invT))
 

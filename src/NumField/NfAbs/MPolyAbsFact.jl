@@ -119,10 +119,10 @@ mutable struct HenselCtxFqRelSeries{T}
     k = base_ring(lf[1])
     if isa(k, Nemo.fpField)
       p = Int(characteristic(k))
-      k = quo(ZZ, p)[1]
-      kt, t = polynomial_ring(k, cached = false)
-      lf = [map_coefficients(k, x, parent = kt) for x = lf]
-      lg = [map_coefficients(k, x, parent = kt) for x = lg]
+      Zp = quo(ZZ, p)[1]
+      kt, t = polynomial_ring(Zp, cached = false)
+      lf = [map_coefficients(Zp, x, parent = kt) for x = lf]
+      lg = [map_coefficients(Zp, x, parent = kt) for x = lg]
     end
 
     return HenselCtxFqRelSeries(f, lf, lg, n, s)
@@ -877,18 +877,18 @@ function field(RC::RootCtx, m::MatElem)
   kS = power_series_ring(k, tf+2, "s")[1]
   for x = HH.lf[1:HH.n]
     f = MPolyBuildCtx(kXY)
-    lc = one(kt)
+    den = one(kt)
     cz = []
     z = x
     for i=0:degree(x)
       c = coeff(z, i)
       local fl, n, d = rational_reconstruction(c, parent = kt)
       @assert fl
-      b = lcm(lc, d)
+      b = lcm(den, d)
       n *= divexact(b, d)
-      if b != lc
-        cz = divexact(b, lc) .* cz
-        lc = b
+      if b != den
+        cz = divexact(b, den) .* cz
+        den = b
       end
       push!(cz, n)
     end
@@ -1074,19 +1074,19 @@ function field(RC::RootCtx, m::MatElem)
 
     @vprintln :AbsFact 1  "using as number field: $k"
 
-    m = transpose(matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1]))
+    mm = transpose(matrix([[pe(x)^l for x = fl] for l=0:degree(k)-1]))
     kx, x = polynomial_ring(k, "x", cached = false)
     kX, _ = polynomial_ring(k, ["X", "Y"], cached = false)
     B = MPolyBuildCtx(kX)
     for j=1:length(el[1])
       n = transpose(matrix([[coeff(x, j)] for x = fl]))
-      s = Hecke.solve(m, transpose(n); side = :right)
+      s = Hecke.solve(mm, transpose(n); side = :right)
       @assert all(x->iszero(coeff(s[x, 1], 1)), 1:degree(k))
-      s = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
-      if !all(x->x[1], s)
+      sr = [rational_reconstruction(coeff(s[i, 1], 0)) for i=1:degree(k)]
+      if !all(x->x[1], sr)
         break
       end
-      push_term!(B, k([x[2]//x[3] for x = s]), exponent_vector(el[1], j))
+      push_term!(B, k([x[2]//x[3] for x = sr]), exponent_vector(el[1], j))
     end
     q = finish(B)
     if length(q) < length(el[1])
@@ -1244,10 +1244,10 @@ function lift_prime_power(
     ok, I = Hecke.AbstractAlgebra.MPolyFactor.pfracinit(md, 1, minorvars, alphas)
     @assert ok  # evaluation of fac's should be pairwise coprime
 
-    a = map_coefficients(ZZ, a, parent = parent(fac[1]))
+    aa = map_coefficients(ZZ, a, parent = parent(fac[1]))
 
     for l in kstart:kstop
-        error = a - prod(fac)
+        error = aa - prod(fac)
 
         for c in coefficients(error)
           if valuation(c) < l

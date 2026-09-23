@@ -6,6 +6,7 @@
     @test codomain(f) === Q
     @test base_ring(Q) === O
     @test Hecke.ideal(Q) === I
+    @test (@inferred kernel(f)) === I
 
     @test isone(@inferred f(one(O)))
     @test iszero(@inferred f(zero(O)))

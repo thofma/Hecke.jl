@@ -230,7 +230,7 @@
     T = [ [F(0), F(0), F(0)], [3/(t^5 + 3*t^4 + 3*t^3 + t^2), 2/(t^4 + 2*t^3 + t^2), 4/(t^3 + t^2)], [2/(t^5 + 2*t^4 + t^3),
     (2*t + 3)/(t^5 + 2*t^4 + t^3), 1/t^3], [t, t-1, 2*t], [t, t-1, t^2]]
     for t in T
-      @test g2_invariants(reconstruct_from_g2(t)) == t
+      @test g2_invariants(reconstruct_from_g2_invariants(t)) == t
     end
 
     F, t = rational_function_field(GF(7), :t)
@@ -242,7 +242,7 @@
       [t, t-1, t^2]
       ]
     for t in T
-      @test g2_invariants(reconstruct_from_g2(t)) == t
+      @test g2_invariants(reconstruct_from_g2_invariants(t)) == t
     end
   end
 end

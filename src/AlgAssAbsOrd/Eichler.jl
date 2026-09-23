@@ -9,9 +9,9 @@ function principal_generator_eichler(I::AlgAssAbsOrdIdl)
   y = integral_coprime_representative(O, I, d)
   J = I*y
 
-  N = normred(J, O)
-  @assert denominator(N) == 1 # J should be integral
-  N = numerator(N)
+  Nq = normred(J, O)
+  @assert denominator(Nq) == 1 # J should be integral
+  N = numerator(Nq)
   @assert is_principal(N) "Ideal is not principal"
 
   primes = collect(keys(factor(N).fac))

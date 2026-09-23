@@ -15,7 +15,53 @@ _prime_ideals_up_to(R, B) = prime_ideals_up_to(R, B)
 
 _prime_ideals_up_to(R::ZZRing, B) = collect(PrimesSet(2, B))
 
-function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+struct _RightClassSetIsomorphismContext{A, M, O, I, J}
+  algebra::A
+  algebra_map::M
+  order::O
+  ideals::IdDict{I, J}
+end
+
+function _right_class_set_isomorphism_context(O::AlgAssRelOrd)
+  A = algebra(O)
+  AQ, AQtoA = restrict_scalars(A, QQ)
+  OQ = order(AQ, preimage.(Ref(AQtoA), elem_in_algebra.(absolute_basis(O))))
+  ideals = IdDict{ideal_type(typeof(O)), ideal_type(typeof(OQ))}()
+  return _RightClassSetIsomorphismContext(AQ, AQtoA, OQ, ideals)
+end
+
+_right_class_set_isomorphism_context(::AlgAssAbsOrd) = nothing
+
+function _absolute_ideal(C::_RightClassSetIsomorphismContext, I)
+  return get!(C.ideals, I) do
+    ideal_from_lattice_gens(C.algebra, C.order,
+                            preimage.(Ref(C.algebra_map), absolute_basis(I)))
+  end
+end
+
+function _prepare_for_class_set_isomorphism!(I)
+  O = left_order(I)
+  if !has_attribute(O, :maximal_order)
+    # Keep the maximal order stable across comparisons so that the PIP caches
+    # attached to it, in particular the unit representatives, can be reused.
+    set_attribute!(O, :maximal_order, maximal_order(O))
+  end
+  return nothing
+end
+
+function _isomorphic_for_right_class_set(::Nothing, I, J)
+  _prepare_for_class_set_isomorphism!(I)
+  return _isisomorphic_generic(I, J; side = :right)[1]
+end
+
+function _isomorphic_for_right_class_set(C::_RightClassSetIsomorphismContext, I, J)
+  IQ = _absolute_ideal(C, I)
+  JQ = _absolute_ideal(C, J)
+  _prepare_for_class_set_isomorphism!(IQ)
+  return _isisomorphic_generic(IQ, JQ; side = :right)[1]
+end
+
+@attr Vector{ideal_type(typeof(O))} function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
 #    { Compute the right class set of a quaternion order O in a naive way.
 #      This code is originally by Voight (also appears as commented out code in
 #      ideals-jv.m). Some small modifications have been made.
@@ -31,6 +77,7 @@ function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, 
   #    vprintf Quaternion:
   #        "Starting with the trivial ideal class. \nMass %o out of total mass %o\n", massformula, masstotal;
   ideals = [1*O]
+  isomorphism_context = _right_class_set_isomorphism_context(O)
   pe = 1
   # We first try prime ideals of small norm
   primes = sort!(_prime_ideals_up_to(R, 100), by = norm)
@@ -50,8 +97,7 @@ function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, 
       for II in maxids
         found = false
         for J in ideals
-          fl, _ = _isisomorphic_generic(II, J; side = :right)
-          if fl
+          if _isomorphic_for_right_class_set(isomorphism_context, II, J)
             found = true
             break
           end
@@ -286,6 +332,13 @@ function _eichler_invariant(O, p)
   else
     return 1
   end
+end
+
+function is_eichler(O)
+  A = algebra(O)
+  @req algebra(O) isa QuaternionAlgebra "Order must be an order of a quaternion algebra"
+  ram = _norms_of_ramified_primes(A)
+  return all(f -> f[2] == 1 || (all(x -> !in(x, f[1]) for x in ram) && eichler_invariant(O, f[1]) == 1), factor(_reduced_disc(O)))
 end
 
 ################################################################################

@@ -753,7 +753,8 @@ function repos(S2::Vector{AcbFieldElem}, S_inf::Int)
       end
     end
   end
-  delta = sum(map(x -> real(x)/(abs(x)^2 + exp(2*eta0)), S))
+  e2 = exp(2*eta0)
+  delta = sum(map(x -> real(x)/(abs(x)^2 + e2), S))
   if delta >= 0
     return true
   else

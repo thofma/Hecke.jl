@@ -398,7 +398,7 @@ end
 #
 ################################################################################
 
-function hash(a::Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}, b::UInt)
+function hash(a::Hecke.RelSimpleNumFieldElem, b::UInt)
   return hash(a.data, b)
 end
 

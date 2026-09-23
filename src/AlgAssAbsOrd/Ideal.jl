@@ -222,13 +222,12 @@ function ideal_from_lattice_gens(A::AbstractAssociativeAlgebra{QQFieldElem}, v::
   for i = 1:length(v)
     elem_to_mat_row!(M, i, v[i])
   end
-  M = _hnf_integral(M, :lowerleft)
-  i = something(findfirst(k -> !is_zero_row(M, k), 1:nrows(M)), nrows(M) + 1)
+  H = _hnf_integral(M, :lowerleft)
+  i = something(findfirst(k -> !is_zero_row(H, k), 1:nrows(H)), nrows(H) + 1)
   #if length(v) >= dim(A)
-  #  M = sub(M, (nrows(M) - dim(A) + 1):nrows(M), 1:dim(A))
+  #  H = sub(H, (nrows(H) - dim(A) + 1):nrows(H), 1:dim(A))
   #end
-  M = sub(M, i:nrows(M), 1:ncols(M))
-  return ideal(A, M; M_in_hnf=true)
+  return ideal(A, sub(H, i:nrows(H), 1:ncols(H)); M_in_hnf=true)
 end
 
 @doc raw"""

@@ -767,7 +767,7 @@ end
 
 Return representatives for the isometry classes in the genus of `L`.
 """
-function genus_representatives(_L::ZZLat)
+function genus_representatives(_L::ZZLat; kwargs...)
   if rank(_L) <= 1
     return ZZLat[_L]
   end
@@ -785,7 +785,7 @@ function genus_representatives(_L::ZZLat)
       push!(res, _to_ZLat(N; K=QQ))
     end
   elseif is_definite(L)
-    res = enumerate_definite_genus(L)
+    res = first(enumerate_definite_genus([L], :default; kwargs...))
   else
     res = spinor_genera_in_genus(L)
   end
@@ -979,12 +979,12 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion; check=true)
     findzero_mod4 = function(HR)
       z = R4(0)
       i = findfirst(==(z), R4.(diagonal(HR)))
-      v = zero_matrix(ZZ, 1, nrows(HR))
+      w = zero_matrix(ZZ, 1, nrows(HR))
       if !(i isa Nothing)
-        v[1, i] = 1
-        return true, v
+        w[1, i] = 1
+        return true, w
       else
-        return false, v
+        return false, w
       end
     end
     n = min(4, nrows(H))
@@ -2042,7 +2042,7 @@ said vectors, given in terms of the coordinates of ``L``.
 function _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   @req !check || is_definite(L) "L must be definite"
   V = ambient_space(L)
-  sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L)]
+  sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L, Int; check=false)]
   B = _row_span!(sv)*basis_matrix(L)
   M = lattice(V, B; isbasis=true, check=false)
   P = primitive_closure(L, M)

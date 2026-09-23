@@ -355,6 +355,7 @@ function conjugate_data_arb_roots(K::AbsSimpleNumField, p::Int)
       # Use that e^(i phi) = cos(phi) + i sin(phi)
       # Call sincospi to determine these values
       pstart = max(p, 2) # Sometimes this gets called with -1
+      prec = p
       local _rall::Vector{Tuple{ArbFieldElem, ArbFieldElem}}
       rreal = ArbFieldElem[]
       rcomplex = Vector{AcbFieldElem}(undef, div(degree(K), 2))
@@ -362,7 +363,7 @@ function conjugate_data_arb_roots(K::AbsSimpleNumField, p::Int)
         R = ArbField(pstart, cached = false)
         # We need to pair them
         _rall = Tuple{ArbFieldElem, ArbFieldElem}[ sincospi(QQFieldElem(2*k, f), R) for k in 1:f if gcd(f, k) == 1]
-        if all(x -> radiuslttwopower(x[1], -p) && radiuslttwopower(x[2], -p), _rall)
+        if all(x -> radiuslttwopower(x[1], -prec) && radiuslttwopower(x[2], -prec), _rall)
           CC = AcbField(pstart, cached = false)
           rall = AcbFieldElem[ CC(l[2], l[1]) for l in _rall]
           j = 1
@@ -386,24 +387,26 @@ function conjugate_data_arb_roots(K::AbsSimpleNumField, p::Int)
   elseif has_attribute(K, :maxreal) #Nemo.is_maxreal_type(K) is broken, wait for Nemo 0.54.2
     p = max(p, 2)
     d = degree(K)
-    fl, f = is_real_cyclotomic_type(K)
+    fl, fc = is_real_cyclotomic_type(K)
     @assert fl
-    L, = cyclotomic_field(f; cached = false)
+    L, = cyclotomic_field(fc; cached = false)
     # we need a bit more precsion, since we multiply the real part by two
     i = 1
     while true
       i += 1
       cp = conjugate_data_arb_roots(L, p + i)
-      rreal = ArbFieldElem[]
-      rall = AcbFieldElem[]
+      rr = ArbFieldElem[]
+      ra = AcbFieldElem[]
       @assert length(cp.complex_roots) == d
       for c in cp.complex_roots
         cc = real(c)
         mul2exp!(cc, cc, 1)
-        push!(rreal, cc)
-        push!(rall, parent(c)(cc))
+        push!(rr, cc)
+        push!(ra, parent(c)(cc))
       end
-      if all(!overlaps(rreal[i], rreal[j]) for i in 1:d for j in 1:i-1)
+      if all(!overlaps(rr[i], rr[j]) for i in 1:d for j in 1:i-1)
+        rreal = rr
+        rall = ra
         break
       end
     end
@@ -722,9 +725,13 @@ include("FunField.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("analytic.jl")
+include("Invariants.jl")
 include("ConCrv.jl")
 include("HypellCrv.jl")
+include("G1Crv.jl")
 include("EllCrv.jl")
+include("G3Crv.jl")
+include("G4Crv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("ModAlgAss.jl")

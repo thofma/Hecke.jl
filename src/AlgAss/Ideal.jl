@@ -520,17 +520,17 @@ function quo(a::AbsAlgAssIdl{S}, b::AbsAlgAssIdl{S}) where {S}
   # First compute the vector space quotient
   Ma = basis_matrix(a, copy = false)
   Mb = basis_matrix(b, copy = false)
-  M = hcat(transpose(Mb), transpose(Ma))
-  r = rref!(M)
+  Mab = hcat(transpose(Mb), transpose(Ma))
+  r = rref!(Mab)
   pivot_cols = Vector{Int}()
   j = 1
-  for i = 1:ncols(M)
-    if !iszero(M[j, i])
+  for i = 1:ncols(Mab)
+    if !iszero(Mab[j, i])
       if i > nrows(Mb)
         push!(pivot_cols, i - nrows(Mb))
       end
       j += 1
-      if j > nrows(M)
+      if j > nrows(Mab)
         break
       end
     end
@@ -575,8 +575,8 @@ function quo(a::AbsAlgAssIdl{S}, b::AbsAlgAssIdl{S}) where {S}
   AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(M)}(A, B)
 
   function _image(x::AbstractAssociativeAlgebraElem)
-    t, y = can_solve_with_solution(Nctx, coefficients(x, copy = false), side = :left)
-    if t
+    fl, y = can_solve_with_solution(Nctx, coefficients(x, copy = false), side = :left)
+    if fl
       return B(y[1:dim(B)]; copy = false)
     else
       error("Element is not in the domain")

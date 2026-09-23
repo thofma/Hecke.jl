@@ -99,6 +99,8 @@ function quo(O::GenOrd, I::GenOrdIdl)
   return Q, f
 end
 
+kernel(f::GenOrdQuoMap{S, T}) where {S, T} = ideal(codomain(f))::T
+
 residue_ring(O::GenOrd, I::GenOrdIdl) = GenOrdQuoRing(O, I)
 
 lift(a::GenOrdQuoRingElem) = a.elem

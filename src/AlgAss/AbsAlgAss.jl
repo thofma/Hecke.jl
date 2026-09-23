@@ -1300,7 +1300,8 @@ function skolem_noether_conjugator(
   end
   sn = ker[1]
   while !first(is_invertible(sn))
-    cc = [rand(base_ring(alg), -length(ker):length(ker)) for _ in 1:length(ker)]
+    nk = length(ker)
+    cc = [rand(base_ring(alg), -nk:nk) for _ in 1:nk]
     sn = sum(cc .* ker)
   end
   for x in basis(domain(emb1))

@@ -301,11 +301,11 @@ function _minimal_overorders_nonrecursive_meataxe(O, M)
     end
     #L = _Order(K, potential_basis)
     # A minimal overorder must be a minimal submodule
-    fl, bL = defines_order(K, potential_basis)
+    fl, bL0 = defines_order(K, potential_basis)
     if !fl
       continue
     end
-    bL = _hnf!_integral(bL)
+    bL = _hnf!_integral(bL0)
     #bL = basis_matrix(L, copy = false)
     if any(x -> basis_matrix(FakeFmpqMat, x, copy = false) == bL, orders)
       continue

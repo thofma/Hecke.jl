@@ -526,8 +526,8 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
     end
 	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
-    gmodp = change_base_ring(R, g; parent = Rx)
-    if degree(gmodp) == degree(g) && !is_zero(discriminant(gmodp))
+    gp = change_base_ring(R, g; parent = Rx)
+    if degree(gp) == degree(g) && !is_zero(discriminant(gp))
       break
     end
   end

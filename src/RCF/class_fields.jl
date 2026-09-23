@@ -670,9 +670,9 @@ function grunwald_wang(dp::Dict{<:NumFieldOrderIdeal, Int}, di::Dict{<:NumFieldE
 end
 
 function _grunwald_wang(d::Dict{<:Any, Int})
-  lp = collect(keys(d))
-  li = [x for x = lp if isa(x, NumFieldEmb)]
-  lp = [x for x = lp if isa(x, NumFieldOrderIdeal)]
+  keys_d = collect(keys(d))
+  li = [x for x = keys_d if isa(x, NumFieldEmb)]
+  lp = [x for x = keys_d if isa(x, NumFieldOrderIdeal)]
   @assert length(lp) + length(li) == length(d)
 
   if length(li) == 0
@@ -782,7 +782,8 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
     else
       if iseven(deg) && length(l2) > 0
         S1 = ray_class_field(mR)
-        S2 = [ray_class_field(divexact(con, p^valuation(con, p)), n_quo = deg) for p = l2]
+        cur_con = con
+        S2 = [ray_class_field(divexact(cur_con, p^valuation(cur_con, p)), n_quo = deg) for p = l2]
         ngp = norm_group_map(S1, S2)
         s, _ = sub(R, [val[i] for i = 1:length(lp)])
         s += preimage(S1.quotientmap, sum(kernel(x)[1] for x = ngp))[1]
@@ -792,9 +793,9 @@ function _grunwald_wang_pp(d::Dict{<:Any, Int})
       s = saturate(s, R)
       fl, s = has_complement(s, R)
       @assert fl
-      c, mc = quo(R, s)
-      c, _mc = quo(c, FinGenAbGroupElem[d[lp[i]] * mc(val[i]) for i = 1:length(lp)])
-      mc = mc * _mc
+      c0, mc0 = quo(R, s)
+      c, _mc = quo(c0, FinGenAbGroupElem[d[lp[i]] * mc0(val[i]) for i = 1:length(lp)])
+      mc = mc0 * _mc
       if all(i->order(mc(val[i])) == d[lp[i]], 1:length(lp))
 #        @show :cyc, snf(c)[1]
         for (u, mu) = subgroups(c, quotype = [deg])

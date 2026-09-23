@@ -105,8 +105,8 @@ function gcd_modular(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{Abs
     me = modular_init(K, p)
     t = Hecke.modular_proj(a, me)
     fp = deepcopy(t)::Vector{fqPolyRepPolyRingElem}  # bad!!!
-    gp = Hecke.modular_proj(b, me)
-    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Vector{fqPolyRepPolyRingElem}
+    gp0 = Hecke.modular_proj(b, me)
+    gp = [gcd(fp[i], gp0[i]) for i=1:length(gp0)]::Vector{fqPolyRepPolyRingElem}
     gc = Hecke.modular_lift(gp, me)::Generic.Poly{AbsSimpleNumFieldElem}
     if isone(gc)
       return parent(a)(1)

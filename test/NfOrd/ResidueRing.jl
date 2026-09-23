@@ -28,12 +28,14 @@ end
   O = equation_order(K)
   I = 2 * O
   Q, mQ = quo(O, I)
+  @test (@inferred kernel(mQ)) === I
   b = FacElem(Dict(K(2) => -1, K(6) => 1, K(3) => -1, K(5) => 2))
   @test @inferred isone(mQ(b))
   @test @inferred isone(mQ(O(5)))
 
   I = conductor(O, maximal_order(O))
   Q, mQ = quo(O, I)
+  @test (@inferred kernel(mQ)) === I
   @test isone(mQ(b))
   @test isone(mQ(O(5)))
 
@@ -41,12 +43,14 @@ end
   O = order(A, basis(A), cached = false)
   I = 2 * O
   Q, mQ = quo(O, I)
+  @test (@inferred kernel(mQ)) === I
   b = FacElem(Dict(A(2) => -1, A(6) => 1, A(3) => -1, A(5) => 2))
   @test isone(mQ(b))
   @test isone(mQ(O(5)))
 
   I = conductor(O, maximal_order(O))
   Q, mQ = quo(O, I)
+  @test (@inferred kernel(mQ)) === I
   @test mQ(b) == Q(25)
   @test mQ(O(25)) == Q(25)
 end

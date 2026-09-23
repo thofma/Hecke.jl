@@ -470,10 +470,10 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector)
     resize!(n, 2)
     n[2] = d
   end
-  Gcompressed = sum(a[i]*res_to_compress[i] for i in 1:l)
-  res = [res[1], Gcompressed]
-  @assert _fits_small_init(res, vector_set)
-  return res, vector_set
+  Gcompressed = sum(a .* res_to_compress)
+  res_new = [res[1], Gcompressed]
+  @assert _fits_small_init(res_new, vector_set)
+  return res_new, vector_set
 end
 
 # documented in ../Lattices.jl

@@ -349,9 +349,9 @@ function is_isomorphic_with_map(
     _, s2 = is_split_with_map(cyclic_algebra(k2, c2.sigma, k(1)))
 
     function add_kronecker_prod!(trg, a, b)
-      d = number_of_rows(a)
-      for i in 1:d:d^2-1, j in 1:d:d^2-1
-        trg[i:i+d-1, j:j+d-1] .+= (a * b[div(i, d)+1, div(j, d)+1])
+      da = number_of_rows(a)
+      for i in 1:da:da^2-1, j in 1:da:da^2-1
+        trg[i:i+da-1, j:j+da-1] .+= (a * b[div(i, da)+1, div(j, da)+1])
       end
     end
 
@@ -437,10 +437,10 @@ function is_isomorphic_with_map(
   k2_over_k0, k2_over_k0_to_k2 = relative_simple_extension(k2, k0)
   dz = degree(k1_over_k0)
   d0 = degree(k0)
-  sigma1 = hom(k1_over_k0, k1_over_k0, k1_over_k0_to_k1\ (c1.sigma^d0)(k1_over_k0_to_k1(gen(k1_over_k0))))
-  sigma2 = hom(k2_over_k0, k2_over_k0, k2_over_k0_to_k2\ (c2.sigma^d0)(k2_over_k0_to_k2(gen(k2_over_k0))))
-  z1 = cyclic_algebra(k1_over_k0, sigma1, k0(c1.a))
-  z2 = cyclic_algebra(k2_over_k0, sigma2, k0(c2.a))
+  tau1 = hom(k1_over_k0, k1_over_k0, k1_over_k0_to_k1\ (c1.sigma^d0)(k1_over_k0_to_k1(gen(k1_over_k0))))
+  tau2 = hom(k2_over_k0, k2_over_k0, k2_over_k0_to_k2\ (c2.sigma^d0)(k2_over_k0_to_k2(gen(k2_over_k0))))
+  z1 = cyclic_algebra(k1_over_k0, tau1, k0(c1.a))
+  z2 = cyclic_algebra(k2_over_k0, tau2, k0(c2.a))
   if !first(local _, iso = is_isomorphic_with_map(z1, z2; linearly_disjoint=true))
     return false, hom(c1.sca, c2.sca, [c2.sca(0) for _ in 1:d^2]; check=false)
   end

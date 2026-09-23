@@ -1,7 +1,6 @@
 using Hecke
 using Test
 using Distributed
-using Documenter
 
 import PrettyTables
 
@@ -70,6 +69,7 @@ else
   @info string(@__FILE__) * " -- SEED $seed"
 end
 
+@everywhere import Dates
 @everywhere using Test
 @everywhere using Hecke
 @everywhere Hecke.Random.seed!($seed)
@@ -150,6 +150,13 @@ function gather_test_files(path::AbstractString)
   return tests
 end
 
+@everywhere function current_rss()
+  rss = Ref{Csize_t}(0)
+  err = ccall(:uv_resident_set_memory, Cint, (Ref{Csize_t},), rss)
+  Base.uv_error("uv_resident_set_memory", err)
+  return rss[]
+end
+
 @everywhere function timed_test_include(path::String)
   has_compile_time_stat = VERSION > v"1.11.0"
   if !has_compile_time_stat
@@ -169,8 +176,10 @@ end
       recompile_time = last(compile_elapsed_times)
     end
 
+    # Sample the worker's current RSS without forcing a garbage collection.
+    rss = current_rss()
     relative_path = relpath(abspath(path), Hecke.pkgdir)
-    println("-> Testing $relative_path took: total time $(round(stats.time; digits=3)) seconds, compilation $(round(compile_time - recompile_time; digits=3)) seconds + recompilation $(round(recompile_time; digits=3)) seconds, GC $(round(stats.gctime; digits=3)) seconds, $(Base.format_bytes(stats.bytes))")
+    println("-> Testing $relative_path took: total time $(round(stats.time; digits=3)) seconds, compilation $(round(compile_time - recompile_time; digits=3)) seconds + recompilation $(round(recompile_time; digits=3)) seconds, GC $(round(stats.gctime; digits=3)) seconds, $(Base.format_bytes(stats.bytes)), RSS $(Base.format_bytes(rss))")
     return Dict(relative_path =>
                 (time=stats.time,
                  ctime=compile_time - recompile_time,
@@ -230,11 +239,16 @@ else
     end
   end
 
-  # Run the doctests on the main process.
+  # Reuse a test worker in parallel runs, including its compiled doctest code.
   if v"1.10-" <= VERSION < v"1.11-"
-    @info "Running doctests (Julia version is 1.10)"
-    DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
-    doctest(Hecke)
+    doctest_pid = numprocs >= 2 ? first(workers(worker_pool)) : myid()
+    @info "Running doctests on process $doctest_pid (Julia version is 1.10)"
+    Distributed.remotecall_eval(Main, doctest_pid, quote
+      using Documenter
+      DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
+      doctest(Hecke)
+      nothing
+    end)
   else
     @info "Not running doctests (Julia version must be 1.10)"
   end
@@ -263,7 +277,7 @@ end
 # With many workers this distributes test files across them; with one worker it
 # is effectively a serial loop.
 test_stats = pmap(worker_pool, testlist) do path
-  println("Starting tests for $path")
+  println("Starting tests for $path at $(Dates.now(Dates.UTC)) UTC")
   timed_test_include(path)
 end
 stats = reduce(merge, test_stats; init=Dict{String,NamedTuple}())

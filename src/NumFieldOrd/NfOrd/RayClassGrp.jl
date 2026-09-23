@@ -1166,6 +1166,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
     for i=1:length(mR.defining_modulus[2])
       pl = mR.defining_modulus[2][i]
       if is_complex(pl)
+        error("only real places legal")
         continue
       end
       f = mR.disc_log_inf_plc[pl]
@@ -1187,7 +1188,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s)==1
-	          if !isdefined(mR, :gens)
+	    if !isdefined(mR, :gens)
               mR.gens = (lp, sR)
             end
             return lp, sR
@@ -1213,6 +1214,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   end
   Q1, mQ1 = quo(C, disc_log_primes_class_grp, false)
   S1, mS1 = snf(Q1)
+  
   p1 = ZZRingElem(2)
   while order(S1) != 1
     p1 = next_prime(p1)
@@ -1245,6 +1247,29 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   for i = 1:length(primes_class_group)
     push!(lp, primes_class_group[i])
     push!(sR, mR\primes_class_group[i])
+  end
+ 
+  #catch all: if not complete yet, add...
+  #
+  q, mq = quo(R, sR, false)
+  s, ms = snf(q)
+  while !is_trivial(s)
+    p1 = next_prime(p1)
+    if !is_coprime(p1, mm)
+      continue
+    end
+    lP = prime_decomposition(O, p1, 1)
+    for (x, _) = lP
+      y = mR\x
+      if iszero(mq(y))
+        continue
+      end
+      push!(lp, x)
+      push!(sR, y)
+      q, mq = quo(R, sR, false)
+      s, ms = snf(q)
+      is_trivial(s) && break
+    end
   end
   if !isdefined(mR, :gens)
     mR.gens = (lp, sR)
@@ -1279,7 +1304,7 @@ function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{<:Hec
     end
 
     if mp == id_hom(R)
-      G[k] = hom(parent(first(genstot)), parent(first(images)), genstot, images, check = true)
+      G[k] = hom(R, R, genstot, images, check = true)
     else
       G[k] = hom(codomain(mp), codomain(mp), FinGenAbGroupElem[mp(x) for x = genstot], FinGenAbGroupElem[mp(x) for x = images], check = true)
     end
