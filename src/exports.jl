@@ -712,7 +712,6 @@ export modord
 export modular_init
 export modulus_bilinear_form
 export modulus_quadratic_form
-export monomials_of_degree
 export morphisms
 export mukai_lattice
 export mul!
