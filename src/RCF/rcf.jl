@@ -532,7 +532,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::ZZRingElem)
   ZK = maximal_order(K)
   @vprintln :ClassField 2 "Class group of cyclotomic extension: $K"
   c, mc = class_group(ZK)
-  allow_cache!(mc)
+  AbstractAlgebra.allow_cache!(mc)
   @vprintln :ClassField 2 "... $c"
   c, mq = quo(c, e, false)
   mc = compose(pseudo_inv(mq), mc)
@@ -1049,9 +1049,9 @@ function _rcf_descent(CF::ClassField_pp)
     @vprintln :ClassField 2 "finding Artin map..."
     #TODO can only use non-indx primes, easy primes...
     cp = lcm([minimum(defining_modulus(CF)[1]), index(Zk), index(ZK)])
-    #@vtime :ClassField 2 lp, f1 = find_gens(MapFromFunc(IdealSet(Zk), AutA, canFrob),
+    #@vtime :ClassField 2 lp, f1 = find_gens(map_from_func(IdealSet(Zk), AutA, canFrob),
     #                  PrimesSet(200, -1), cp)
-    lp, f1 = find_gens_descent(MapFromFunc(IdealSet(Zk), AutA, canFrob), CF, cp)
+    lp, f1 = find_gens_descent(map_from_func(IdealSet(Zk), AutA, canFrob), CF, cp)
     imgs = FinGenAbGroupElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
     h = hom(parent(first(f1)), parent(first(imgs)), f1, imgs)
     @hassert :ClassField 1 is_surjective(h)

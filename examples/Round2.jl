@@ -304,7 +304,7 @@ function radical_basis_power(O::Order, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
+    mF = map_from_func(parent(p), F, x->F(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   q = characteristic(F)
@@ -338,7 +338,7 @@ function radical_basis_trace(O::Order, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
+    mR = map_from_func(parent(p), R, x->R(x), y->lift(y))
   end
 
   TT = map_entries(mR, T)
@@ -355,7 +355,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = MapFromFunc(parent(p), F, x->F(x), y->lift(y))
+    mF = map_from_func(parent(p), F, x->F(x), y->lift(y))
   end
   @assert isa(F, Generic.RationalFunctionField) && characteristic(F) != 0
   q = characteristic(F)
@@ -481,7 +481,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = MapFromFunc(parent(p), R, x->R(x), y->lift(y))
+    mR = map_from_func(parent(p), R, x->R(x), y->lift(y))
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
@@ -647,7 +647,7 @@ function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::Localized
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
-  return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(y)))
+  return F, map_from_func(R, F, x->F(data(x)), y->R(lift(y)))
 end
 
 Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
@@ -1035,14 +1035,14 @@ function Nemo.residue_field(a::HessQR, b::HessQRElem)
   F = GF(b.c)
   Ft, t = rational_function_field(F, String(var(a.R)), cached = false)
   R = parent(numerator(t))
-  return Ft, MapFromFunc(a, Ft,
+  return Ft, map_from_func(a, Ft,
                          x->F(x.c)*Ft(map_coefficients(F, x.f, parent = R))//Ft(map_coefficients(F, x.g, parent = R)),
                          y->HessQRElem(a, ZZRingElem(1), map_coefficients(lift, numerator(y)), map_coefficients(lift, denominator(y))))
 end
 
 function Nemo.residue_ring(a::HessQR, b::HessQRElem)
   F, _ = residue_ring(ZZ, b.c)
-  return F, MapFromFunc(a, F, x->F(x.c), y->a(lift(y)))
+  return F, map_from_func(a, F, x->F(x.c), y->a(lift(y)))
 end
 
 function Hecke.factor(a::HessQRElem)

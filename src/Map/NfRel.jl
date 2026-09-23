@@ -89,4 +89,3 @@ function has_preimage_with_preimage(m::NfRelToAbsAlgAssMor, a::AbstractAssociati
     return false, zero(domain(m))
   end
 end
-

@@ -174,7 +174,7 @@ function abelian_normal_extensions(K::AbsSimpleNumField, gtype::Vector{Int}, abs
   expo = lcm(gtype)
   Cl, mCl = class_group(O)
   cgrp = !is_coprime(n, order(Cl))
-  allow_cache!(mCl)
+  AbstractAlgebra.allow_cache!(mCl)
 
   #Getting conductors
   l_conductors = conductors(O, gtype, bound, tame)
@@ -329,7 +329,7 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
   end
   Cl, mCl = class_group(OK)
   cgrp = !is_coprime(n, order(Cl))
-  allow_cache!(mCl)
+  AbstractAlgebra.allow_cache!(mCl)
 
 
   if absolutely_distinct
