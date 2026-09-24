@@ -52,6 +52,40 @@
     end
   end
 
+  @testset "Minimal polynomial" begin
+    K, a = qadic_field(3, 2, precision = 20)
+    Qp = base_field(K)
+    Qpx, x = polynomial_ring(Qp, "x")
+    U, u = unramified_extension(x^2 + 1)
+    L, b = eisenstein_extension(x^2 - 3)
+    Kt, t = polynomial_ring(K, "t")
+    M, c = eisenstein_extension(t^2 - 3)
+    Lt, t = polynomial_ring(L, "t")
+    N, d = eisenstein_extension(t^2 - b)
+
+    for (F, z) in ((K, a), (U, u), (L, b), (M, c), (N, d))
+      R, y = polynomial_ring(base_field(F), "y", cached = false)
+      f = minpoly(R, z)
+      @test parent(f) === R
+      @test f == R(collect(coefficients(defining_polynomial(F))))
+      @test iszero(f(z))
+
+      g = minpoly(z)
+      @test base_ring(g) === base_field(F)
+      @test collect(coefficients(g)) == collect(coefficients(f))
+      @test minpoly(R, zero(F)) == y
+      @test minpoly(R, one(F)) == y - 1
+      @test minpoly(R, F(2)) == y - 2
+
+      Fx, _ = polynomial_ring(F, "x", cached = false)
+      @test_throws ArgumentError minpoly(Fx, z)
+    end
+
+    f = absolute_minpoly(d)
+    @test base_ring(f) === Qp
+    @test f == gen(parent(f))^4 - 3
+  end
+
   @testset "Completions" begin
     K, gK = cyclotomic_field(15)
     OK = maximal_order(K)

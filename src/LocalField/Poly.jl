@@ -710,12 +710,17 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFie
 end
 
 function norm(f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
-  Kx = parent(f)
+  Rx, = polynomial_ring(base_field(base_ring(f)), "x", cached = false)
+  return norm(Rx, f)
+end
+
+function norm(Rx::PolyRing, f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
+  @req base_ring(Rx) === base_field(K) "Polynomial ring must be over the base field"
   f, i = deflate(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x) for x in P]
-  N = power_sums_to_polynomial(PQ)
+  N = power_sums_to_polynomial(PQ, Rx)
   return inflate(N, i)
 end
 
