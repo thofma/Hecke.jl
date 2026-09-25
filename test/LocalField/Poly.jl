@@ -4,6 +4,27 @@
   Kx, x = polynomial_ring(K, "x")
   L, gL = eisenstein_extension(x^2+2, "a")
 
+  @testset "Norm" begin
+    Qq, gQq = qadic_field(3, 2, precision = 20)
+    for (F, a) in ((L, gL), (Qq, gQq))
+      Fx, x = polynomial_ring(F, "x")
+      R, y = polynomial_ring(base_field(F), "y", cached = false)
+      f = x - a
+      g = norm(R, f)
+      expected = R(collect(coefficients(defining_polynomial(F))))
+      @test parent(g) === R
+      @test g == expected
+      @test norm(R, x^2 - a) == expected(y^2)
+      @test norm(R, f^2) == expected^2
+      @test norm(R, x - 2) == (y - 2)^degree(F)
+
+      h = norm(f)
+      @test base_ring(h) === base_field(F)
+      @test collect(coefficients(h)) == collect(coefficients(g))
+      @test_throws ArgumentError norm(Fx, f)
+    end
+  end
+
   @testset "Fun Factor" for F in [K, L]
     Fx, x = polynomial_ring(F, "x")
     f = x^5
