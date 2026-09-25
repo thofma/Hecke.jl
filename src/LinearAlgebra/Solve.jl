@@ -15,6 +15,13 @@ end
     rand(K::AbsSimpleNumField, U::AbstractArray) -> AbsSimpleNumFieldElem
 
 Find an element in $K$ where the coefficients are selected at random in $U$.
+
+!!! note
+    A `UnitRange{Int}` does not reach this method: Nemo's `rand(K, r)` is more
+    specific and reads `r` as the sampler specification for the base field, so
+    its coefficients are rationals with numerator and denominator drawn from
+    `r`. Pass a vector, e.g. `collect(-10:10)`, to draw the coefficients
+    themselves from a range.
 """
 function rand(K::AbsSimpleNumField, U::AbstractArray)
   a = K()

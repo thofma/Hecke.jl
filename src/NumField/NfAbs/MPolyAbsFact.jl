@@ -1275,7 +1275,7 @@ function example(k::AbsSimpleNumField, d::Int, nt::Int, c::AbstractRange=-10:10)
   kx, (x, y) = polynomial_ring(k, 2, cached = false)
   f = kx()
   for i=1:nt
-    f += rand(k, c)*x^rand(0:d)*y^rand(0:d)
+    f += rand(k, collect(c))*x^rand(0:d)*y^rand(0:d)
   end
   return norm(f)
 end
