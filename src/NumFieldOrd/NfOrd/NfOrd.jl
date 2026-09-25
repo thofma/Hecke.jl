@@ -1000,8 +1000,13 @@ equation_order(M::AbsNumFieldOrder) = equation_order(nf(M))
 # Via extends one may supply an order which will then be extended by the elements
 # in elt.
 function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, extends = nothing) where {S <: Union{NumField{QQFieldElem}, AbstractAssociativeAlgebra{QQFieldElem}}, T}
+  B = _closure(K, elt; check, extends)
+  return order(K, B, cached = cached, check = check)::order_type(K)
+end
+
+function _closure(K, elt::Vector{T}; cached::Bool = true, check::Bool = true, extends = nothing) where {T}
   if dim(K) == 0
-    return order(K, FakeFmpqMat(zero_matrix(ZZ, 0, 0), ZZ(1)), cached = cached, check = false)::order_type(K)
+    return FakeFmpqMat(zero_matrix(ZZ, 0, 0), ZZ(1))
   end
 
   elt = unique(elt)
@@ -1013,7 +1018,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
     @assert K === _algebra(extended_order)
 
     if is_maximal_known_and_maximal(extended_order) || length(elt) == 0
-      return extended_order
+      return basis_matrix(FakeFmpqMat, extends)
     end
     B = basis_matrix(FakeFmpqMat, extended_order)
     bas = basis(extended_order, K)
@@ -1145,7 +1150,7 @@ function _order(K::S, elt::Vector{T}; cached::Bool = true, check::Bool = true, e
   if length(bas) < n
     error("The elements do not define an order: rank too small")
   end
-  return order(K, B, cached = cached, check = check)::order_type(K)
+  return B
 end
 
 ################################################################################
