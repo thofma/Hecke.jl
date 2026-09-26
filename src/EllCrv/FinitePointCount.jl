@@ -557,8 +557,9 @@ end
 #   Thus we lift from the residue field to the qadic field manually.
 function _qadic_from_residue_element(R::QadicField, x::T; precision::Int=precision(R)) where T <: FinFieldElem
   z = R(precision=precision)
+  c = absolute_coordinates(x)
   for i in 0:degree(R)-1
-    setcoeff!(z, i, lift(ZZ, coeff(x, i)))
+    setcoeff!(z, i, lift(ZZ, c[i+1]))
   end
   return z
 end

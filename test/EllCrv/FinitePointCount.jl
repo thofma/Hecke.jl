@@ -108,6 +108,21 @@
     @test test_agm_exhaustive(6)
   end
 
+  @testset "AGM in characteristic 2: different base field types" begin
+    # y^2 + xy = x^3 + a over F_{2^7} has 128 points
+    for K in [finite_field(2, 7, :a; cached = false)[1],
+              finite_field(ZZ(2), 7, :a; cached = false)[1],
+              Native.finite_field(2, 7, :a; cached = false)[1],
+              Native.finite_field(ZZ(2), 7, :a; cached = false)[1],
+              GF(2, 7; cached = false),
+              GF(ZZ(2), 7; cached = false),
+              Native.GF(2, 7; cached = false),
+              Native.GF(ZZ(2), 7; cached = false)]
+      E = elliptic_curve(K, [1, 0, 0, 0, gen(K)])
+      @test order(E) == 128
+    end
+  end
+
   @testset "Ordinary curves in characteristic 2 (Exhaustive d=1..6)" begin
     # do a brute-force enumeration: for a fixed exponent d, enumerate all a_2 and non-zero a_6
     # compare _order_ordinary_char2 to order_via_exhaustive_search
@@ -284,6 +299,21 @@
     end
 
     @test test_agm_exhaustive(6)
+  end
+
+  @testset "AGM in characteristic 3: different base field types" begin
+    # y^2 = x^3 + x^2 + a*x + a over F_{3^5} has 252 points
+    for K in [finite_field(3, 5, :a; cached = false)[1],
+              finite_field(ZZ(3), 5, :a; cached = false)[1],
+              Native.finite_field(3, 5, :a; cached = false)[1],
+              Native.finite_field(ZZ(3), 5, :a; cached = false)[1],
+              GF(3, 5; cached = false),
+              GF(ZZ(3), 5; cached = false),
+              Native.GF(3, 5; cached = false),
+              Native.GF(ZZ(3), 5; cached = false)]
+      E = elliptic_curve(K, [0, 1, 0, gen(K), gen(K)])
+      @test order(E) == 252
+    end
   end
 
   @testset "Supersingular curves in characteristic 3" begin
