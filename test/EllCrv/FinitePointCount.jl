@@ -589,4 +589,74 @@
       @test @inferred Hecke.order_via_bsgs(E) == Hecke.order_via_schoof(E)
     end
   end
+
+  @testset "AGM in characteristic 2: alternate F_8 modulus" begin
+    _, x = polynomial_ring(GF(2), :x; cached = false)
+    _, a = finite_field(x^3 + x^2 + 1, :a; cached = false)
+    @test (@inferred Hecke._trace_of_frobenius_char2_agm(a)) == -3
+  end
+
+  @testset "Relative finite fields" begin
+    # The base field of L is not the prime field.
+    # Use q >= 100 so that order(E) does not fall back to exhaustive search
+    function test_order_exhaustive(L, ai_list)
+      for ai in ai_list
+        E = elliptic_curve(L, ai)
+        @test order(E) == Hecke.order_via_exhaustive_search(E)
+      end
+    end
+
+    # characteristic 2, [L : F_4] = 5, absolute degree 10
+    K, a = finite_field(2, 2, :a; cached = false)
+    _, x = polynomial_ring(K, :x; cached = false)
+    L, b = finite_field(x^5 + x^2 + 1, :b; cached = false)
+    test_order_exhaustive(L, [[1, 0, 0, 0, b],        # AGM
+                              [1, 1, 0, 0, b],        # AGM, relative trace of 1 is 1, absolute is 0
+                              [1, b, 0, 0, b^3 + 1],  # AGM
+                              [1, 0, 0, 0, a],        # j in F_4
+                              [1, a, 0, 0, a + 1],    # j in F_4
+                              [0, 0, 1, 0, b],        # supersingular
+                              [0, 0, b, 1, 0],        # supersingular
+                              [0, b, b^2, b, 1]])     # supersingular
+
+    # characteristic 2, [L : F_8] = 3, absolute degree 9
+    K, a = finite_field(2, 3, :a; cached = false)
+    _, x = polynomial_ring(K, :x; cached = false)
+    L, b = finite_field(x^3 + x + a, :b; cached = false)
+    test_order_exhaustive(L, [[1, 0, 0, 0, b],        # AGM
+                              [1, a, 0, 0, b],        # AGM, relative trace of a is a, absolute is 0
+                              [1, 1, 0, 0, 1],        # j = 1
+                              [0, 0, 1, 1, 0],        # supersingular
+                              [0, 0, 1, 1, 1],        # supersingular
+                              [0, 0, b, 0, 1]])       # supersingular
+
+    # characteristic 3, [L : F_9] = 3, absolute degree 6
+    K, a = finite_field(3, 2, :a; cached = false)
+    _, x = polynomial_ring(K, :x; cached = false)
+    L, b = finite_field(x^3 - x - 1, :b; cached = false)
+    test_order_exhaustive(L, [[0, 1, 0, 0, b],        # AGM
+                              [b, 1, b, 0, b^2 + 1],  # AGM
+                              [0, 1, 0, 0, -inv(a)],  # j = a in F_9 \ F_3
+                              [0, a, 0, 0, -a^2],     # j = a, a_2 not a square
+                              [0, 0, 0, b, 1],        # supersingular
+                              [0, 0, 0, -b^2, b]])    # supersingular
+
+    # characteristic 3, [L : F_27] = 2, absolute degree 6
+    K, a = finite_field(3, 3, :a; cached = false)
+    _, x = polynomial_ring(K, :x; cached = false)
+    L, b = finite_field(x^2 + 1, :b; cached = false)
+    test_order_exhaustive(L, [[0, 1, 0, 0, a*b],      # AGM
+                              [0, 1, 0, 0, b],        # j = -1/b = b in F_9 \ F_3
+                              [0, 0, 0, -a^2, b]])    # supersingular
+
+    # p >= 5: j = 0, j = 1728, BSGS
+    for p in [5, 7]
+      K, a = finite_field(p, 2, :a; cached = false)
+      _, x = polynomial_ring(K, :x; cached = false)
+      L, b = finite_field(x^2 - a, :b; cached = false)
+      test_order_exhaustive(L, [[0, 1], [0, b], [0, a*b + 1],
+                                [1, 0], [b, 0], [a*b + 1, 0],
+                                [b, b]])
+    end
+  end
 end
