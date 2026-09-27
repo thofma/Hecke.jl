@@ -627,8 +627,6 @@ function check_disjoint_cyclotomic(A::ClassField, p::ZZRingElem)
   return Int(divexact(order(codomain(mq)), order(i)))
 end
 
-Base.Int64(a::QQFieldElem) = Int(ZZ(a)) #move elsewhere?
-
 function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
   if !all(x -> isdefined(x, :a), Cp)
