@@ -249,8 +249,8 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   jp^p != j && return false
 
   L = finite_field(p, 2)[1]
-  Lx, X = polynomial_ring(L, :X)
-  Lxy, Y = polynomial_ring(Lx, :Y)
+  Lx, X = polynomial_ring(L, :X; cached = false)
+  Lxy, Y = polynomial_ring(Lx, :Y; cached = false)
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
 
   # j is a root of X^2 - (j + j^p)*X + j^(p + 1), whose coefficients lie in F_p.
