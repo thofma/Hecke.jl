@@ -416,3 +416,24 @@ function cholesky_decomposition(x::ArbMatrix)
   @assert fl != 0
   return z
 end
+
+################################################################################
+#
+#  ComplexField input and output: evaluated at precision(Balls) in AcbField,
+#  the result converted back (a copy of midpoint and radius per entry).
+#
+################################################################################
+
+for F in (:theta, :thetas, :theta_dz, :theta_dtaus, :theta_jets, :theta_dzs)
+  @eval function $F(z::Vector{ComplexFieldElem}, tau::ComplexMatrix, args...; kw...)
+    p = precision(Balls)
+    R = RiemannSurfaces
+    return _theta_to_complex($F(R._to_acb(z, p), R._to_acb(tau, p), args...; kw...))
+  end
+end
+
+_theta_to_complex(x::AcbFieldElem) = RiemannSurfaces._to_complex(x)
+_theta_to_complex(x::AcbMatrix) = RiemannSurfaces._to_complex(x)
+_theta_to_complex(x::AbstractArray) = map(_theta_to_complex, x)
+_theta_to_complex(x::Tuple) = map(_theta_to_complex, x)
+_theta_to_complex(x) = x

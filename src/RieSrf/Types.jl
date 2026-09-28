@@ -334,6 +334,11 @@ mutable struct RiemannSurfaceModel <: AbstractRiemannSurfaceModel
   #The points P for which disc(f(P,y)) = 0. This includes the ramification
   #points and the singular points of the curve
   discriminant_points::Vector{AcbFieldElem}
+  # the points for the paths (precision _path_point_precision), and the same
+  # points at the much higher precision needed by the Abel-Jacobi map
+  # (computed only when the Abel-Jacobi map asks for them, see
+  # discriminant_points_high_prec)
+  discriminant_points_internal::Vector{AcbFieldElem}
   discriminant_points_high_prec::Vector{AcbFieldElem}
   safe_radii::Vector{ArbFieldElem}
 
@@ -654,8 +659,7 @@ mutable struct SuperellipticEdge
   b::Int
   method::Symbol
   r::Float64
-  N::Int                       # number of nodes (Chebyshev, Jacobi: total) resp. 2N+1 (DE)
-  Nj::Vector{Int}              # Jacobi: nodes of the rule for (1-u^2)^(-j/m), j = 1..m-1 (0: unused)
+  N::Int                       # number of nodes (Chebyshev) resp. 2N+1 (DE)
   h::Float64                   # step size (DE)
   log2_bound::Float64          # log2 of the bound for the integrand
   function SuperellipticEdge(a::Int, b::Int)
@@ -687,6 +691,8 @@ mutable struct SuperellipticModel <: AbstractRiemannSurfaceModel
   initial_precision::Int
   target_precision::Int        # the quadrature is chosen for errors 2^-target_precision
   computational_precision::Int
+  min_target_precision::Int    # raised by a precision retry
+  precision_retries::Int
   parameters::IntegrationParameters
   resolved_parameters::IntegrationParameters
 
@@ -713,15 +719,15 @@ mutable struct SuperellipticModel <: AbstractRiemannSurfaceModel
   tree_paths::Vector{Vector{Int}}        # edges from the root to each branch point
   abel_jacobi_branch_points::Vector{Vector{AcbFieldElem}}  # AJ(P_k - P_root)
 
-  # Gauss-Jacobi rules (N, j, prec) => (nodes, weights) for (1-u^2)^(-j/m)
-  gj_rules::Dict{Tuple{Int, Int, Int}, Tuple{Vector{ArbFieldElem}, Vector{ArbFieldElem}}}
-
   # points of the curve as given, created by this model (see _se_point)
   infinite_points::Vector{RiemannSurfacePoint}
   ramification_points::Vector{RiemannSurfacePoint}
 
   function SuperellipticModel()
-    return new()
+    C = new()
+    C.min_target_precision = 0
+    C.precision_retries = 0
+    return C
   end
 end
 
@@ -744,6 +750,12 @@ mutable struct RiemannSurface
 
   # integration parameters for the computational model
   parameters::IntegrationParameters
+
+  # type of the numerical output of the public functions (period matrices,
+  # Abel-Jacobi map, discriminant points, ...): :acb (AcbField/ArbField of
+  # the precision) or :complex (ComplexField/RealField). Internally always
+  # AcbField. See riemann_surface(f, ::ComplexField).
+  output::Symbol
 
   # :auto, :original, :swapped, :superelliptic, or an invertible 3x3 matrix
   # (see riemann_surface)
@@ -768,6 +780,7 @@ mutable struct RiemannSurface
     RS.embedding = v
     RS.precision = prec
     RS.parameters = copy(_check_integration_parameters(parameters))
+    RS.output = _default_output()
     RS.model = model
     return RS
   end

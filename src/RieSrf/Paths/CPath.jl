@@ -1,0 +1,597 @@
+################################################################################
+#
+#          RieSrf/CPath.jl : Paths in C
+#
+# (C) 2022 Jeroen Hanselman
+#
+################################################################################
+
+export CPath
+
+export c_line, c_arc, start_point, end_point, path_type, reverse, assign_permutation, permutation,
+start_arc, end_arc, get_int_param_r, set_int_param_r, set_t_of_closest_d_point,
+get_t_of_closest_d_point, evaluate_d
+
+################################################################################
+#
+#  Constructors
+#
+################################################################################
+
+@doc raw"""
+c_line(start_point::AcbFieldElem, end_point::AcbFieldElem) -> CPath
+
+Construct a line in C from start_point to end_point.
+"""
+function c_line(start_point::AcbFieldElem, end_point::AcbFieldElem, CC::AcbField = parent(start_point))
+  return CPath(start_point, end_point, 0, CC)
+end
+
+@doc raw"""
+c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
+  -> CPath
+
+Construct an arc around ''center'' in C from ''start_point'' to
+''end_point''. If orientation is 1 the path goes counterclockwise.
+If it is -1 it goes clockwise. If start_point and end_point are identical
+a circle is created instead.
+"""
+function c_arc(start_point::AcbFieldElem, end_point::AcbFieldElem, center::AcbFieldElem, CC::AcbField = parent(start_point);
+  orientation::Int = 1)
+  #TODO: We might need a check that start point and end_point are equally
+  #far away from center.
+  if contains(end_point, start_point) && contains(start_point, end_point)
+    return CPath(start_point, start_point, 2, CC, center, abs(start_point - center), orientation)
+  else
+    return CPath(start_point, end_point, 1, CC, center, abs(start_point - center), orientation)
+  end
+end
+
+@doc raw"""
+c_circle(start_point::AcbFieldElem, center::AcbFieldElem; orientation::Int = 1)
+  -> CPath
+
+Construct a circle around ''center'' in C beginning and ending at ''start_point''
+If orientation is 1 the path goes counterclockwise. If it is -1 it goes clockwise. 
+"""
+function c_circle(start_point::AcbFieldElem, center::AcbFieldElem, CC::AcbField = parent(start_point); orientation::Int = 1)
+  return c_arc(start_point, start_point, center,CC, orientation = orientation)
+end
+
+@doc raw"""
+c_point(point::AcbFieldElem)
+  -> CPath
+
+Construct path that is just a point. This is only useful as an initial element when 
+concatenating paths.
+"""
+function c_point(point::AcbFieldElem, CC::AcbField)
+  return CPath(point, point, 3,CC, point)
+end
+
+@doc raw"""
+c_infinite_line(point::AcbFieldElem)
+  -> CPath
+
+Construct a path in C from ''start_point'' to infinity.
+"""
+function c_infinite_line(start_point::AcbFieldElem, CC::AcbField = parent(start_point))
+  CC = parent(start_point)
+  @req start_point != CC(0) "Line to infinity cannot start from zero."
+  return CPath(start_point, start_point, 4, CC)
+end
+
+################################################################################
+#
+#  IO
+#
+################################################################################
+
+function show(io::IO, gamma::CPath)
+  CC = AcbField(30)
+  RR = ArbField(30)
+  p_type = path_type(gamma)
+  if p_type< 0 || p_type > 4
+    error("Path type does not exist")
+  end
+
+  x0 = start_point(gamma)
+  x1 = end_point(gamma)
+  if p_type == 0 || p_type == 4
+    print(io, "Line from $(CC(x0)) to $(CC(x1)).")
+  elseif p_type ==3
+    print(io, "Point at  $(CC(x0)).")
+  else
+    r = radius(gamma)
+    c = center(gamma)
+    if p_type == 1
+      print(io, "Arc around $(CC(c)) with radius $(RR(r)) starting at $(CC(x0)) and ending at $(CC(x1)).")
+    elseif p_type == 2
+      print(io, "Circle around $(CC(c)) with radius $(RR(r)) starting at $(CC(x0)).")
+    end
+  end
+end
+
+################################################################################
+#
+#  Reverse path
+#
+################################################################################
+
+@doc raw"""
+reverse(G::CPath) -> CPath
+
+Given a path G:[-1,1] -> C returns the reverse of the path
+G_rev:[-1,1] -> C defined by G_rev(t) = G(-t).
+"""
+function reverse(G::CPath)
+  if isdefined(G, :reverse_path)
+    return G.reverse_path
+  end
+  if path_type(G) == 0
+    G_rev = c_line(G.end_point_high, G.start_point_high)
+  else #Circle or arc
+    G_rev = c_arc(G.end_point_high, G.start_point_high, G.center_high, orientation = -orientation(G))
+  end
+  G_rev.reverse_path = G
+  G.reverse_path = G_rev
+  isdefined(G, :permutation)     && (G_rev.permutation = inv(G.permutation))
+  isdefined(G, :integral_matrix) && _set_reverse_integral!(G)
+  return G_rev
+end
+
+################################################################################
+#
+#  Getters and setters
+#
+################################################################################
+
+function path_type(G::CPath)
+  return G.path_type
+end
+
+function start_point(G::CPath)
+  return G.start_point
+end
+
+function end_point(G::CPath)
+  return G.end_point
+end
+
+function start_arc(G::CPath)
+  return G.start_arc
+end
+
+function end_arc(G::CPath)
+  return G.end_arc
+end
+
+function center(G::CPath)
+  if 1 <= path_type(G) <= 2
+    return G.center
+  else
+    error("Path is not a circle or an arc")
+  end
+end
+
+function radius(G::CPath)
+  if 1 <= path_type(G) <= 2
+    return G.radius
+  else
+    error("Path is not a circle or an arc")
+  end
+end
+
+function length(G::CPath)
+  return G.length
+end
+
+function orientation(G::CPath)
+  return G.orientation
+end
+
+function assign_permutation(G::CPath, sigma::Perm{Int})
+  G.permutation = sigma
+  if isdefined(G, :reverse_path)
+    G.reverse_path.permutation = inv(sigma)
+  end
+end
+
+function assign_integral_matrix(G::CPath, M::AcbMatrix)
+  G.integral_matrix = M
+  isdefined(G, :reverse_path) && _set_reverse_integral!(G)
+end
+
+function _set_reverse_integral!(G::CPath)
+  M = G.integral_matrix
+  if isdefined(G, :permutation) && nrows(M) == parent(G.permutation).n
+    G.reverse_path.integral_matrix = G.permutation * -M
+  end
+end
+
+function permutation(G::CPath)
+  return G.permutation
+end
+
+function set_t_of_closest_d_point(G::CPath, t::AcbFieldElem)
+  G.t_of_closest_d_point = t
+end
+
+function get_t_of_closest_d_point(G::CPath)
+  return G.t_of_closest_d_point
+end
+
+function set_int_param_r(G::CPath, r::ArbFieldElem)
+  G.int_param_r = r
+end
+
+function get_int_param_r(G::CPath)
+  return G.int_param_r
+end
+
+function set_int_params_N(G::CPath, N::ZZRingElem)
+  G.int_params_N = N
+end
+
+function get_int_params_N(G::CPath)
+  return G.int_params_N
+end
+
+function set_subpaths(G::CPath, paths::Vector{CPath})
+  G.sub_paths = paths
+end
+
+function get_subpaths(G::CPath)
+  return G.sub_paths
+end
+
+################################################################################
+#
+#  Path evaluation
+#
+################################################################################
+
+@doc raw"""
+evaluate(G::CPath, t::FieldElem) -> FieldElem
+
+Given a path G:[-1,1] -> C and a t in C, returns the value G(t).
+"""
+function evaluate(G::CPath, t::FieldElem)
+  A = start_point(G)
+  B = end_point(G)
+  path_type = G.path_type
+  #If the path is a line
+  if path_type == 0
+    return (A + B)//2 + (B - A)//2 * t
+  end
+
+  if path_type == 3
+    return A
+  end
+
+  if path_type == 4
+    c1 = 1/(1-t)
+    c2 = 2 * A * c1
+    return c2
+  end
+
+  phi_a = G.start_arc
+  phi_b = G.end_arc
+  orientation = G.orientation
+  radius = G.radius
+  c = G.center
+
+  CC = parent(A)
+  i = onei(CC)
+
+  if path_type == 1
+    return c + radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * t))
+  end
+    #If the path is a circle
+  if path_type == 2
+    piC = real(const_pi(CC))
+    return c - radius * exp(i * (phi_a + orientation * piC * t ))
+  end
+end
+
+@doc raw"""
+evaluate_d(G::CPath, t::FieldElem) -> FieldElem
+
+Given a path G:[-1,1] -> C and a t in C, returns the value dG/dt(t).
+"""
+function evaluate_d(G::CPath, t::FieldElem)
+  A = start_point(G)
+  B = end_point(G)
+  path_type = G.path_type
+
+  if path_type == 0
+    return (B - A)//2
+  end
+
+  if path_type == 3
+    return 0
+  end
+
+  if path_type == 4
+    c1 = 1/(1-t)
+    c2 = 2 * A * c1
+    return c2*c1
+  end
+
+  phi_a = G.start_arc
+  phi_b = G.end_arc
+  orientation = G.orientation
+  radius = G.radius
+  c = G.center
+
+  CC = parent(A)
+  i = onei(CC)
+  
+  if path_type == 1
+    return i * (phi_b - phi_a)//2 * radius * exp(i * ((phi_a + phi_b)//2 + (phi_b - phi_a)//2 * t))
+  end
+
+#If the path is a circle
+  if path_type == 2
+    piC = real(const_pi(CC))
+    return orientation * i * (piC ) * (-1) * radius * exp(i * (phi_a + orientation * piC * t ))
+  end
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(G1::CPath, G2::CPath)
+  type = path_type(G1)
+  if type != path_type(G2)
+    return false
+  end
+  if type == 0
+    return (start_point(G1) == start_point(G2)) && (end_point(G1) == end_point(G2))
+  elseif type == 1
+    return (start_point(G1) == start_point(G2)) && (end_point(G1) == end_point(G2)) && (center(G1) == center(G2)) && (orientation(G1) == orientation(G2)) ||
+           ((start_point(G1) == end_point(G2)) && (end_point(G1) == start_point(G2)) && (center(G1) == center(G2)) && (orientation(G1) == -orientation(G2)))
+  elseif type == 2
+    return (center(G1) == center(G2)) && (radius(G1) == radius(G2)) && (orientation(G1) == orientation(G2))
+  else
+    return (start_point(G1) == start_point(G2))
+  end
+end
+
+################################################################################
+#
+#  Complex plane geometry
+#
+################################################################################
+
+#Project the center of the circle onto the line that is an extension of ''line''.
+#Returns the projection.
+function orthogonal_projection(line::CPath, c::AcbFieldElem)
+  @req path_type(line) == 0 "First argument needs to be a line."
+  a = start_point(line)
+  b = end_point(line)
+  return a + (( real(c - a) * real(b - a) + imag(c - a) * imag(b - a))/((b - a) * conjugate(b - a))) * (b - a)
+end
+
+#Checks if line intersects the circle.
+#Returns either true or false. In case it returns true,
+#this also returns the orthogonal projection of the center onto the line.
+function line_intersect_circle(line::CPath, circle::CPath)
+  c = center(circle)
+  orth_proj = orthogonal_projection(line, c)
+  CC = parent(orth_proj)
+  prec = precision(CC)
+  RR = ArbField(prec)
+  max_dist = length(line)
+  proj_dist = abs(start_point(line) - orth_proj)
+  if proj_dist <= max_dist
+    ratio = proj_dist/max_dist
+    value = evaluate(line, 2*ratio-1)
+    if contains(abs(value - orth_proj), RR(0))
+      distance_to_center = abs(c - orth_proj)
+      if distance_to_center <= radius(circle)
+        return true, orth_proj
+      end
+    end
+  end
+  return false, CC(0)
+end
+
+#Checks if line intersects the circle.
+#Returns either true or false. In case it returns true,
+#this also returns the intersection points of the line with the circle
+function intersection_points(line::CPath,circle::CPath)
+  @req path_type(line) == 0 && path_type(circle)==2 "First argument needs to be a line and second argument needs to be a circle."
+  
+  #Find orthogonal projection of the center on the line
+  intersect_test, orth_proj = line_intersect_circle(line, circle)
+  a = start_point(line)
+  b = end_point(line)
+  c = center(circle)
+  r = radius(circle)
+
+  RR = parent(r)
+
+  if intersect_test
+    intersection_points = []
+    center_dist = abs(c - orth_proj)
+    orth_proj_dist = abs(a - orth_proj)
+    D = sqrt(r^2 - center_dist^2)
+
+    #Use Pythagoras to find the intersection points
+    first_point_dist = orth_proj_dist - D
+    max_dist = length(line)
+    if contains(abs(first_point_dist), RR(0))
+      push!(intersection_points, a)
+    else
+      R1 = first_point_dist/max_dist
+      push!(intersection_points, evaluate(line, (2*R1-1)))
+    end
+
+    second_point_dist = orth_proj_dist + D
+    R2 = second_point_dist/max_dist
+    push!(intersection_points, evaluate(line, (2*R2-1)))
+
+    if abs(intersection_points[1] - a) <= abs(intersection_points[2]-a)
+      return true, intersection_points
+    else
+      return true, reverse(intersection_points)
+    end
+  else
+    return false, AcbFieldElem[]
+  end
+end
+
+# Integral matrix of a chain from those of its paths. Sheets are permuted
+# after moving along a path, so the matrix of each path is added permuted.
+function _set_chain_integral!(C::CChain)
+  paths = C.paths
+  s_m = parent(C.permutation)
+  m = s_m.n
+  CC = base_ring(paths[1].integral_matrix)
+  g = ncols(paths[1].integral_matrix)
+  chain_integral = zero_matrix(CC, m, g)
+  sigma = one(s_m)
+  rows = matrix(ZZ, m, 1, collect(1:m))
+  prec = precision(CC)
+  for path in paths
+    # inv(sigma) * M, the rows of M permuted, without the generic matrix
+    # product, without converting M and without copying entries (this took
+    # 13% of the time for f19): row r of inv(sigma) * M is row src[r] of M.
+    src = inv(sigma) * rows
+    M = path.integral_matrix
+    GC.@preserve chain_integral M for r in 1:m
+      k = Int(src[r, 1])
+      for j in 1:g
+        z = _acb_mat_entry_ptr(chain_integral, r, j)
+        ccall((:acb_add, libflint), Nothing, (Ptr{acb_struct}, Ptr{acb_struct}, Ptr{acb_struct}, Int),
+              z, z, _acb_mat_entry_ptr(M, k, j), prec)
+      end
+    end
+    sigma *= permutation(path)
+  end
+  C.integral_matrix = chain_integral
+  return C
+end
+
+function length(chain::CChain)
+  return length(chain.paths)
+end
+
+function permutation(chain::CChain)
+  return chain.permutation
+end
+
+function integrals(chain::CChain)
+  return chain.integrals
+end
+
+function start_point(chain::CChain)
+  return chain.start_point
+end
+
+function end_point(chain::CChain)
+  return chain.end_point
+end
+
+function center(chain::CChain)
+  return chain.center
+end
+
+points(chain::CChain) = chain.points::Vector{RiemannSurfacePoint}
+
+function test_chain(paths::Vector{CPath})
+  n = length(paths)
+  CC = paths[1].C
+  for i in (1:n-1)
+    if !contains(end_point(paths[i]) - start_point(paths[i+1]), zero(CC))
+      return false, false
+     end
+  end
+  if !contains(start_point(paths[1]) - end_point(paths[end]), zero(CC))
+    return true, false
+  else
+    return true, true
+  end
+end
+
+function is_closed(chain::CChain)
+  return chain.is_closed
+end
+
+function show(io::IO, chain::CChain)
+  n = length(chain)
+  CC = AcbField(30)
+  if length(chain) == 0
+    print(io, "Empty chain.")
+  elseif is_closed(chain)
+    x0 = start_point(chain)
+    if isdefined(chain, :center)
+      c = center(chain)
+      print(io, "Closed chain consisting of $(n) paths starting at $(CC(x0)) around $(CC(c)).\n")
+    else
+      print(io, "Closed chain consisting of $(n) paths starting at $(CC(x0)).\n")
+    end
+  else
+    x0 = start_point(chain)
+    x1 = end_point(chain)
+    print(io, "Chain consisting of $(n) paths starting at $(CC(x0)) and ending at $(CC(x1)).\n")
+  end
+  if isdefined(chain, :permutation)
+    perm = permutation(chain)
+    print(io, "With Permutation $(perm).")
+  end
+  if isdefined(chain, :integrals)
+    ints = integrals(chain)
+    print(io, "With Integrals $(ints).")
+  end
+end
+
+# The loop around infinity as the product of the inverses of the loops around
+# all discriminant points (in reverse order), freely reduced: a path followed
+# by its reverse cancels. The reduced word is the walk around the spanning tree
+# (every line piece twice, every arc once), instead of the sum of all chains,
+# where the pieces near the base point occur once per discriminant point
+# behind them; this matters for the radius of its integral. The loops with
+# trivial monodromy do not change the permutation, and their integrals vanish.
+function make_inf_chain(chains::Vector{CChain})
+  paths = CPath[]
+  CC = parent(start_point(chains[1].paths[1]))
+  for chain in reverse(chains), p in reverse(chain.paths)
+    q = reverse(p)
+    if !isempty(paths) && paths[end] === p
+      pop!(paths)                          # p followed by reverse(p)
+    else
+      push!(paths, q)
+    end
+  end
+
+  inf_chain = CChain(paths)
+  inf_chain.center = CC(1/0)
+  return inf_chain
+
+end
+
+function *(chain1::CChain, chain2::CChain) 
+  return concatenated_chain = CChain(vcat(chain1.paths, chain2.paths))
+end
+
+function ^(chain::CChain, k::Int)
+  @req (abs(k) == 1 || chain.is_closed) "Only closed chains can be taken to integers powers of absolute value > 1."
+  if k == 0
+    result = CChain([c_point(start_point(C))])
+  end
+  result = chain
+  for j in (1:k-1)
+    result *= chain
+  end
+  return result
+end
+
+function inv(chain::CChain)
+  inv_chain = CChain(reverse([reverse(p) for p in chain.paths ]))
+  return inv_chain
+end
