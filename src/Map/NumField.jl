@@ -109,7 +109,7 @@ mutable struct NumFieldHom{S, T, U, V, W} <: Map{S, T, HeckeMap, Any}#HeckeMap, 
   inverse_data::V
   absolute_basis::Vector{W}
   absolute_basis_matrix_image::QQMatrix
-  solve_context::Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.FFLUTrait, QQMatrix, ZZMatrix, ZZMatrix}
+  solve_context::Solve.SolveCtx # solve_context_type(QQ)
 
   function NumFieldHom{S, T, U, V}() where {S, T, U, V}
     z = new{S, T, U, V, elem_type(S)}()
@@ -757,7 +757,7 @@ function has_preimage_with_preimage(f::NumFieldHom, g::NumFieldElem)
   cc = absolute_coordinates(g)
   K = domain(f)
   _assert_has_preimage_data(f)
-  fl, s = can_solve_with_solution(f.solve_context, cc, side = :right)
+  fl, s = can_solve_with_solution(f.solve_context::Solve.solve_context_type(QQ), cc, side = :right)
   if !fl
     return false, zero(K)
   else

@@ -60,7 +60,7 @@ mutable struct CompletionMap{S, T} <: Map{AbsSimpleNumField, S, HeckeMap, Comple
   prim_img::T
   inv_img::Tuple{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}
   precision::Int
-  lift_data::Dict{Int, Tuple{ZZMatrix, AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.FFLUTrait, QQMatrix, ZZMatrix, ZZMatrix}}}
+  lift_data::Dict{Int, Tuple{ZZMatrix, AbstractAlgebra.Solve.SolveCtx}}
 
   function CompletionMap(K::AbsSimpleNumField, L::LocalField{QadicFieldElem, EisensteinLocalField},
                           img::LocalFieldElem{QadicFieldElem, EisensteinLocalField},
