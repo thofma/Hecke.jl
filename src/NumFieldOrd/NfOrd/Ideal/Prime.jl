@@ -357,7 +357,11 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
-  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P)) && is_defining_polynomial_nice(nf(order(P)))
+  # For non-simple fields, mod on field elements clears denominators coprime
+  # to p coefficientwise, rescaling the coefficients by p-adic units. This
+  # need not preserve the valuation at P: reducing the inverse ideal's
+  # generator can turn valuation -1 into -2. Use the construction below.
+  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P)) && is_simple(nf(order(P))) && is_defining_polynomial_nice(nf(order(P)))
     Pinv = inv(P)
     P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer

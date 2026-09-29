@@ -657,36 +657,49 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
 
 
   if !k
-    #The probability of finding a random generator is high
+    # Belabas, "Topics in computational algebraic number theory", Lemma 6.1
+    # (doi:10.5802/jtnb.433): a uniform random element of P is a
+    # p-uniformizer with probability at least (1 - 1/p)^degree(O). Use the
+    # randomized search when this worst-case bound is at least 0.1.
     for j in 1:length(ideals)
 
       P = ideals[j][1]
       f = P.splitting_type[2]
       #@vprintln :AbsNumFieldOrder 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))"
       P.gen_one = ZZRingElem(p)
-      @vtime :AbsNumFieldOrder 3 find_random_second_gen(P)
-      u = P.gen_two
+      # The random u lies in P, as do u +/- p. Thus for each candidate y,
+      # v_p(norm(y)) = sum_{Q | p} f_Q*v_Q(y) is at least f.
+      # Since norm(P)*p = p^(f+1), nondivisibility by this
+      # modulus forces v_P(y) = 1 and v_Q(y) = 0 for every other Q above p.
+      # This is the p-uniformizer test in Belabas, Algorithm 6.4(2).
       modulo = norm(P)*p
-      x = zero(parent(u))
-
-     if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
-        if !is_norm_divisible_pp(u.elem_in_nf, modulo)
-          x = u
-        elseif !is_norm_divisible_pp(u.elem_in_nf+p, modulo)
-          x = u + p
-        end
-      else
-        if iszero(mod(norm(u), modulo))
-          if !iszero(mod(norm(u+p), modulo))
-            add!(u, u, p)
+      x = O()
+      # We have <p, u> = P, which implies v_Q(u) = 0 for Q != P above p,
+      # but not v_P(u) = 1. We need to adjust u. When P is unramified, p
+      # already has valuation 1. If u has higher valuation, u + p has valuation
+      # 1 at P and 0 elsewhere.
+      # For ramified P, shifting by p may still fail (since v_P(p) > 1), so
+      # resample.
+      while iszero(x)
+        @vtime :AbsNumFieldOrder 3 find_random_second_gen(P)
+        u = P.gen_two
+        if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
+          if !is_norm_divisible_pp(u.elem_in_nf, modulo)
+            x = u
+          elseif !is_norm_divisible_pp(u.elem_in_nf+p, modulo)
+            x = u + p
+          end
+        else
+          if !iszero(mod(norm(u), modulo))
+            x = u
+          elseif !iszero(mod(norm(u+p), modulo))
+            x = u + p
           elseif !iszero(mod(norm(u-p), modulo))
-            sub!(u, u, p)
+            x = u - p
           end
         end
-        x = u
       end
 
-      @hassert :AbsNumFieldOrder 1 !iszero(x)
       @hassert :AbsNumFieldOrder 2 O*O(p) + O*x == P
       P.gen_two = x
       P.gens_normal = ZZRingElem(p)

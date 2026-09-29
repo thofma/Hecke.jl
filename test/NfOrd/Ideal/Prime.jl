@@ -212,6 +212,18 @@ end
     @test P.gen_one == 3
     @test Hecke.defines_2_normal(P)
   end
+
+  # A random weak second generator at 521 can have valuation greater than one.
+  # Repeat the decomposition to exercise the randomized search.
+  for _ in 1:20
+    PP = prime_decomposition(OK, 521)
+    @test sort([(e, degree(P)) for (P, e) in PP]) == [(1, 1), (1, 2), (2, 1), (2, 2)]
+    for (P, e) in PP
+      @test !iszero(mod(norm(P.gen_two), 521*norm(P)))
+      @test valuation(anti_uniformizer(P), P) == -1
+      @test valuation(K(521), P) == e
+    end
+  end
 end
 
 Qx, x = QQ["x"]
