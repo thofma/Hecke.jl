@@ -393,7 +393,7 @@ julia> Qx, x = QQ[:x]; L, a = number_field(x^4 + 6*x^2 + 4, :a);
 julia> K, KtoL = subfield(L, [a^2]);
 
 julia> K
-Number field with defining polynomial x^2 + 6*x + 4
+Number field with defining polynomial x^2 - 6*x + 4
   over rational field
 ```
 """
