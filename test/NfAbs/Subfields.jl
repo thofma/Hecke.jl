@@ -454,11 +454,36 @@ let
   @test_throws ArgumentError Hecke.subfield(L, [b])
 end
 
-let
+@testset "Primitive elements from blocks" begin
   Qx, x = QQ[:x]
-  K, _ = number_field(x^8 - x^4 + 1, :a)
-  b = Hecke._subfield_primitive_element_from_basis(K, [sqrt(K(2)), sqrt(K(3))], true)
-  @test degree(minpoly(b)) == 2
-  b = Hecke._subfield_primitive_element_from_basis(K, [sqrt(K(2)), sqrt(K(3))], false)
-  @test degree(minpoly(b)) == 2
+  K, a = number_field(x^8 - x^4 + 1, :a)
+  u, v = sqrt(K(2)), sqrt(K(3))
+  for lincomb in (true, false)
+    b = Hecke._subfield_primitive_element_from_basis(K, [u, v], lincomb)
+    @test degree(minpoly(b)) == 4
+    b = Hecke._subfield_primitive_element_from_basis(K, [u, u + v, a^6], lincomb)
+    @test degree(minpoly(b)) == 8
+    @test isone(Hecke._subfield_primitive_element_from_basis(K, [zero(K)], lincomb))
+  end
+
+  K, a = number_field(x^2 - 2, :a)
+  C = Hecke.qAdicConj(K, 1031; splitting_field = true)
+  Hecke.set_attribute!(K, :subfield_data => C)
+  for u in [1031*a, ZZ(1031)^128*a, a//1031]
+    @test length(Hecke.block_system(u, C)) == 2
+    L, mL = Hecke.subfield(K, [u])
+    @test degree(L) == 2
+    @test has_preimage_with_preimage(mL, u)[1]
+  end
+
+  for f in [x^2 - 1//2, x^4 - 1//2, 2*x^4 - 4*x^2 - 1]
+    K, a = number_field(f, :a)
+    L, mL = Hecke.subfield(K, [a])
+    @test degree(L) == degree(K)
+    @test has_preimage_with_preimage(mL, a)[1]
+    L, mL = Hecke.subfield(K, [a^2, one(K)])
+    @test degree(L) == degree(minpoly(a^2))
+    @test has_preimage_with_preimage(mL, a^2)[1]
+    @test isone(denominator(defining_polynomial(L)))
+  end
 end

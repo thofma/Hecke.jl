@@ -164,7 +164,8 @@ mutable struct qAdicConj
     =#
     if splitting_field
       Zx = polynomial_ring(ZZ, cached = false)[1]
-      C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)
+      d = denominator(K.pol)
+      C = qAdicRootCtx(numerator(K.pol*d, Zx), p, splitting_field = true)
       r = new()
       r.C = C
       r.K = K

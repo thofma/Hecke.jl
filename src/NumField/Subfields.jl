@@ -129,6 +129,9 @@ end
 
 function block_system(t::AbsSimpleNumFieldElem, C#=::qAdicConj=#)
   @assert C isa qAdicConj
+  t *= denominator(t)
+  # Distinct conjugates can coincide at low precision.
+  d = degree(minpoly(t))
   pr = 1
   while true
     c = conjugates(t, C, pr)::Vector{QadicFieldElem}
@@ -141,13 +144,13 @@ function block_system(t::AbsSimpleNumFieldElem, C#=::qAdicConj=#)
       end
     end
     bs = sort(collect(values(D)), lt = (a,b) -> isless(a[1], b[1]))
-    if length(bs) * length(bs[1]) == length(c) &&
+    if length(bs) == d && length(bs) * length(bs[1]) == length(c) &&
         all(x->length(x) == length(bs[1]), bs)
       return bs
     end
     pr *= 2
-    if pr > 100
-      error("probably bad")
+    if pr > 10_000
+      error("Could not distinguish conjugates")
     end
   end
 end
@@ -162,8 +165,7 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   end
 
   as = AbsSimpleNumFieldElem[x for x in as if !iszero(x)]
-
-  dsubfield = length(as)
+  isempty(as) && return one(K)
 
   @vprintln :Subfields 1 "Sieving for primitive elements"
   # First check basis elements
@@ -191,7 +193,8 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   sort!(b, lt = (a,b) -> isless(a[1], b[1]))
   # b is the block of the subfield (with respect to the embeddings in C)
 
-  if lincomb
+  # Reconstruction from blocks requires an integral defining polynomial.
+  if lincomb || !is_defining_polynomial_nice(K)
     return _subfield_primitive_element_from_basis_lincomb(K, b, all_b, C, as)
   else
     return _subfield_primitive_element_from_block(K, C, b)
@@ -222,7 +225,9 @@ function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b,
   pe = as[1]
   cur_b = all_b[1]
   for i=2:length(as)
-    if issubset(all_b[i][1], cur_b[1])
+    # Block inclusion reverses field inclusion.
+    # Skip generators already contained in the current field.
+    if issubset(cur_b[1], all_b[i][1])
       continue
     end
     cur_b = Vector{Int}[intersect(x, y) for x in cur_b for y in all_b[i]]
@@ -231,9 +236,6 @@ function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b,
     j = 1
     while block_system(pe + j*as[i], C) != cur_b
       j += 1
-      if j > 10
-        error("dnw")
-      end
     end
     pe += j*as[i]
     if cur_b == b
