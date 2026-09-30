@@ -1328,7 +1328,7 @@ function coordinates(v::Union{QQMatrix,Vector{QQFieldElem}}, L::ZZLat)
   return solve(S, v; side=:left)
 end
 
-@attr AbstractAlgebra.Solve.SolveCtx{QQFieldElem, AbstractAlgebra.Solve.RREFTrait, QQMatrix, QQMatrix, QQMatrix} function _solve_init(L::ZZLat)
+@attr AbstractAlgebra.Solve.solve_context_type(QQ) function _solve_init(L::ZZLat)
   return solve_init(basis_matrix(L))
 end
 

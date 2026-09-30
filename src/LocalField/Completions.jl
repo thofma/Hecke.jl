@@ -72,7 +72,7 @@ function _small_lift(f::Map, a::AbsSimpleNumFieldElem, integral::Bool, precision
     l = lll(basis_matrix(f.P^precision))
     f.lift_data[precision] = (l, solve_init(map_entries(QQ, l)))
   end
-  lift_data = f.lift_data[precision]
+  lift_data = f.lift_data[precision]::Tuple{ZZMatrix, Solve.solve_context_type(QQ)}
   n = degree(domain(f))
   zk = order(f.P)
   @assert denominator(a, zk) == 1
@@ -348,7 +348,7 @@ function completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumF
   #u is the PE of the ramified ext
 
   coeffs_eisenstein, xZp = _solve_internal(gq_in_K, P, precision, Zp, Qq)
-  
+
 
   pol_gen = Qqx([setprecision(x, tex) for x = coeffs_eisenstein])
   setprecision!(Qq, tex)
