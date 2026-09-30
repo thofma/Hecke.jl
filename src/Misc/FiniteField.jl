@@ -230,7 +230,7 @@ function find_morphism(k::fqPolyRepField, K::fqPolyRepField)
    if degree(k) > 1
     phi = Nemo.find_morphism(k, K) #avoids embed - which stores the info
   else
-    phi = MapFromFunc(k, K, x->K((coeff(x, 0))), y->k((coeff(y, 0))))
+    phi = map_from_func(k, K, x->K((coeff(x, 0))), y->k((coeff(y, 0))))
   end
   return phi
 end
@@ -239,7 +239,7 @@ function find_morphism(k::FqField, K::FqField)
   if degree(k) > 1
     phi = Nemo.find_morphism(k, K) #avoids embed - which stores the info
   else
-    phi = MapFromFunc(k, K, x -> K(lift(ZZ, x)), y -> k(lift(ZZ, y)))
+    phi = map_from_func(k, K, x -> K(lift(ZZ, x)), y -> k(lift(ZZ, y)))
   end
   return phi
 end
@@ -252,7 +252,7 @@ function find_morphism(k::FqField, K::fqPolyRepField)
       @assert all(is_zero(coeff(x, i)) for i in 1:(degree(K) - 1))
       return k(coeff(x, 0))
     end
-    return MapFromFunc(k, K, x -> K(lift(ZZ, x)), pre)
+    return map_from_func(k, K, x -> K(lift(ZZ, x)), pre)
   end
 
   # build K as FqField, then find isomorphism, then go back
@@ -270,7 +270,7 @@ function find_morphism(k::FqField, K::fqPolyRepField)
 
   phi_k_to_KK = Nemo.embed_any(k, KK)
 
-  phi = MapFromFunc(k, K, x -> KKtoK(phi_k_to_KK(x)), x -> phi_k_to_KK\(KtoKK(x)))
+  phi = map_from_func(k, K, x -> KKtoK(phi_k_to_KK(x)), x -> phi_k_to_KK\(KtoKK(x)))
 end
 
 

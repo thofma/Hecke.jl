@@ -337,7 +337,7 @@ function unit_group(::ZZRing)
   log = function (z::ZZRingElem)
     return z == -1 ? G[1] : G[0]
   end
-  return G, MapFromFunc(G, ZZ, exp, log)
+  return G, map_from_func(G, ZZ, exp, log)
 end
 
 @doc raw"""
@@ -353,7 +353,7 @@ function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   log = function (z::T)
     return z == -1 ? G[1] : G[0]
   end
-  return G, MapFromFunc(G, R, exp, log)
+  return G, map_from_func(G, R, exp, log)
 end
 
 #Nemo.fpField = zzModRingElem?
