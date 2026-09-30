@@ -26,7 +26,7 @@ function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, k::Int) where T
   x, y = gens(Kxy)
   n = max(total_degree(f),k)
   m = max(total_degree(g),k)
-  c = K(factorial(m-k) * factorial(n-k)) // K((factorial(m) * factorial(n)))
+  c = K(factorial(m-k) * factorial(n-k)) / K((factorial(m) * factorial(n)))
 
   Omega, (dfx, dfy, dgx, dgy) = polynomial_ring(K, ["dfx", "dfy", "dgx", "dgy"])
   diff_op = c * (dfx * dgy - dfy * dgx)^k
