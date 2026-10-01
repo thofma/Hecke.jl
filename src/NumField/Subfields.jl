@@ -196,9 +196,27 @@ function _subfield_primitive_element_from_basis(K::AbsSimpleNumField, as::Vector
   # Reconstruction from blocks requires an integral defining polynomial.
   if lincomb || !is_defining_polynomial_nice(K)
     return _subfield_primitive_element_from_basis_lincomb(K, b, all_b, C, as)
-  else
-    return _subfield_primitive_element_from_block(K, C, b)
   end
+
+  pe = _subfield_clear_denominator(_subfield_primitive_element_from_block(K, C, b))
+
+  # pe is a primitive element reconstructed from the block. This is already
+  # small, but there might have been smaller primitive elements among the
+  # supplied generators. Let's compare in a (cheap) way.
+  #
+  # Make candidates integral before comparing polynomial heights.
+  h = maximum(abs, coefficients(minpoly(pe)))
+  for i in eachindex(as)
+    # as[i] is a supplied element. Equal block counts mean it generates the subfield.
+    length(all_b[i]) == length(b) || continue
+    a = _subfield_clear_denominator(as[i])
+    ha = maximum(abs, coefficients(minpoly(a)))
+    if ha < h || (ha == h && t2(a) < t2(pe))
+      pe = a
+      h = ha
+    end
+  end
+  return pe
 end
 
 function _subfield_primitive_element_from_basis_lincomb(K::AbsSimpleNumField, b, all_b, C, as::Vector{AbsSimpleNumFieldElem})
@@ -267,7 +285,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   # T_2(gen(k)) <= [K:k] T_2(gen(K)) via Trace
   #             <= T_2(gen(K))^[K:k] via Norm
   #             <= (sqrt(T_2) + sqrt([K:k])i)^2)^[K:k] in the last case
-  #(using that sqrt(T_2) is a euclidean norm, so 
+  #(using that sqrt(T_2) is a euclidean norm, so
   #  sqrt(T_2(a+b)) <= sqrt(T_2(a)) + sqrt(T_2(b))
   #
   # if gen(K) is integral, then so is gen(k), however, gen(k)
@@ -278,13 +296,13 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   # so a_i = Tr(gen(k) * omega_i), using Cauchy-Schwarz
   # a_i^2 <= T_2(gen(k)) * T_2(omega_i)
   # omega_i can be obtained from coeff of def_poly(K)/(t-gen(K))
-  # [K:k] = length(b[i]) for all i, [k:Q] = length(b) 
+  # [K:k] = length(b[i]) for all i, [k:Q] = length(b)
 
   pr = 5
   @assert is_monic(defining_polynomial(K))
   c = conjugates(gen(K), C, pr) #the roots...
   pe = c -> [sum(c[x]) for x = b]
-  Bpe = length(b[1]) * length(gen(K)) 
+  Bpe = length(b[1]) * length(gen(K))
   if length(Set(pe(c))) != length(b)
     #trace is not primitive!
     pe = c -> [prod(c[x]) for x in b]
@@ -312,7 +330,7 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   #   so tr(gen(k)//den * dual[i]*den) = tr(gen(k)*dual[i])
   #   is integral (and bounded)...
   #
-  # minpoly: 
+  # minpoly:
   #  T_2 is upper bound on conjugates (squared)
   #  coeffs of min_poly are elementary symmetric,
   #   so bounded by max(binom([k:Q], i), T_2(gen(k))^i : i)
@@ -321,12 +339,12 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   # the coeffs of minpoly are in Z, so need prec <= log_p(2 B_f)
   Kt, t = polynomial_ring(K; cached = false)
   den = inv(derivative(defining_polynomial(K))(gen(K)))
-  dual = collect(coefficients(div(defining_polynomial(K)(t), t-gen(K)))) 
+  dual = collect(coefficients(div(defining_polynomial(K)(t), t-gen(K))))
   B_pe = maximum(ceil(ZZRingElem, length(x)) for x = dual) * ceil(ZZRingElem, Bpe)
   #so pr needs to cover 2*max(B_pe, B_f)
   Qp = parent(c[1])
   pr_max = ceil(Int, log(BigFloat(prime(Qp)), BigFloat(2*max(B_pe, B_f))))
-    
+
   pr *= 2
   Qpt, t = polynomial_ring(Qp, cached = false)
   p = ZZ(C.C.p)
