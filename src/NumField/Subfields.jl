@@ -403,7 +403,6 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
   if K isa AbsSimpleNumField
     # in this case the block code does not need a basis
     s = _subfield_primitive_element_from_basis(K, elt)
-    s *= denominator(s)
     return _subfield_from_primitive_element(K, s)
   end
 
@@ -422,8 +421,14 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
   return _subfield_from_primitive_element(K, s)
 end
 
+function _subfield_clear_denominator(s::AbsSimpleNumFieldElem)
+  # Integral elements may have denominators in the power basis.
+  is_integral(s) && return s
+  return s * denominator(s)
+end
+
 function _subfield_from_primitive_element(K::AbsSimpleNumField, s::AbsSimpleNumFieldElem)
-  s *= denominator(s)
+  s = _subfield_clear_denominator(s)
   @vtime :Subfields 1 f = minpoly(Globals.Qx, s)
   f = denominator(f) * f
   L, _ = number_field(f, cached = false)

@@ -435,6 +435,47 @@ end
   @test isone(denominator(defining_polynomial(L)))
   @test mL(gen(L))^2 == mL(gen(L)^2)
 end
+
+@testset "Integral subfield generators" begin
+  Qx, x = QQ[:x]
+  K, a = number_field(x^2 - 5; cached = false)
+  s = (1 + a)//2
+  L, mL = Hecke._subfield_from_primitive_element(K, s)
+  @test collect(coefficients(defining_polynomial(L))) == [-1, -1, 1]
+  @test mL(gen(L)) == s
+
+  L, mL = Hecke._subfield_from_primitive_element(K, a//2)
+  @test collect(coefficients(defining_polynomial(L))) == [-5, 0, 1]
+  @test mL(gen(L)) == a
+
+  K, a = number_field(x^16 - 7*x^12 + 48*x^8 - 7*x^4 + 1; cached = false)
+  L, mL = subfield(K, [a^3])
+  @test collect(coefficients(defining_polynomial(L))) == [1, 0, 0, 0, 7, 0, 0, 0, 1]
+  @test !isone(denominator(mL(gen(L))))
+  @test has_preimage_with_preimage(mL, a^3)[1]
+end
+
+@testset "Small subfield generators" begin
+  Qx, x = QQ[:x]
+  K, a = number_field(x^16 - 7*x^12 + 48*x^8 - 7*x^4 + 1; cached = false)
+  u = 5*a^14 - 36*a^10 + 246*a^6 - 71*a^2
+  L, mL = subfield(K, [one(K), u//5])
+  @test collect(coefficients(defining_polynomial(L))) == [-540, 0, 1]
+  @test mL(gen(L)) == u
+
+  u = 7*a^14 - 48*a^10 + 330*a^6 - a^2
+  L, mL = subfield(K, [one(K), u//7])
+  @test collect(coefficients(defining_polynomial(L))) == [324, 0, 1]
+  @test mL(gen(L)) == u
+
+  # Equal heights are resolved by T2, including integral inputs with denominators.
+  K, a = number_field(x^4 - 18*x^2 + 9; cached = false)
+  u = (a^2 - 9)//2
+  L, mL = subfield(K, [one(K), u + 10, u])
+  @test collect(coefficients(defining_polynomial(L))) == [-18, 0, 1]
+  @test mL(gen(L)) == u
+end
+
 @testset "Subfields" begin
   @testset "Relative_Subfields" begin
     Qx,x = polynomial_ring(QQ,"x")
