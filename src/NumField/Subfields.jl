@@ -411,12 +411,17 @@ julia> Qx, x = QQ[:x]; L, a = number_field(x^4 + 6*x^2 + 4, :a);
 julia> K, KtoL = subfield(L, [a^2]);
 
 julia> K
-Number field with defining polynomial x^2 - 6*x + 4
+Number field with defining polynomial x^2 + 6*x + 4
   over rational field
 ```
 """
 function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = false, isbasis::Bool = false)
   @req all(x -> parent(x) === K, elt) "Elements must be contained in the field"
+
+  # A single element is already primitive for the field it generates.
+  if length(elt) == 1
+    return _subfield_from_primitive_element(K, elt[1])
+  end
 
   if K isa AbsSimpleNumField
     # in this case the block code does not need a basis
@@ -424,9 +429,6 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
     return _subfield_from_primitive_element(K, s)
   end
 
-  if length(elt) == 1
-    return _subfield_from_primitive_element(K, elt[1])
-  end
   isbasis = is_basis || isbasis
 
   if isbasis
@@ -439,15 +441,21 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
   return _subfield_from_primitive_element(K, s)
 end
 
-function _subfield_clear_denominator(s::AbsSimpleNumFieldElem)
+function _subfield_clear_denominator(s::AbsSimpleNumFieldElem, integral::Bool = is_integral(s))
   # Integral elements may have denominators in the power basis.
-  is_integral(s) && return s
+  integral && return s
   return s * denominator(s)
 end
 
 function _subfield_from_primitive_element(K::AbsSimpleNumField, s::AbsSimpleNumFieldElem)
-  s = _subfield_clear_denominator(s)
   @vtime :Subfields 1 f = minpoly(Globals.Qx, s)
+  integral = isone(denominator(f))
+  d = integral ? ZZ(1) : denominator(s)
+  s = _subfield_clear_denominator(s, integral)
+  if !isone(d)
+    # Scaling by d replaces f(x) by d^degree(f)*f(x/d).
+    f = parent(f)([coeff(f, i)*d^(degree(f) - i) for i in 0:degree(f)])
+  end
   f = denominator(f) * f
   L, _ = number_field(f, cached = false)
   return L, hom(L, K, s, check = false)

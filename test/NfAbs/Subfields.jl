@@ -440,16 +440,32 @@ end
   Qx, x = QQ[:x]
   K, a = number_field(x^2 - 5; cached = false)
   s = (1 + a)//2
-  L, mL = Hecke._subfield_from_primitive_element(K, s)
+  L, mL = subfield(K, [s])
   @test collect(coefficients(defining_polynomial(L))) == [-1, -1, 1]
   @test mL(gen(L)) == s
 
-  L, mL = Hecke._subfield_from_primitive_element(K, a//2)
+  L, mL = subfield(K, [a//2])
   @test collect(coefficients(defining_polynomial(L))) == [-5, 0, 1]
   @test mL(gen(L)) == a
+  @test Hecke.get_attribute(K, :subfield_data) === nothing
+
+  L, mL = subfield(K, [zero(K)])
+  @test degree(L) == 1
+  @test iszero(mL(gen(L)))
+
+  K, a = number_field(x^3 - x - 1; cached = false)
+  L, mL = subfield(K, [(a + 1)//3])
+  @test collect(coefficients(defining_polynomial(L))) == [-1, 2, -3, 1]
+  @test mL(gen(L)) == a + 1
 
   K, a = number_field(x^16 - 7*x^12 + 48*x^8 - 7*x^4 + 1; cached = false)
   L, mL = subfield(K, [a^3])
+  @test collect(coefficients(defining_polynomial(L))) == [1, 0, 0, 0, 322, 0, 0, 0, 1]
+  @test mL(gen(L)) == a^3
+  @test Hecke.get_attribute(K, :subfield_data) === nothing
+
+  # Keep coverage for integral generators reconstructed from blocks.
+  L, mL = subfield(K, [a^3, one(K)])
   @test collect(coefficients(defining_polynomial(L))) == [1, 0, 0, 0, 7, 0, 0, 0, 1]
   @test !isone(denominator(mL(gen(L))))
   @test has_preimage_with_preimage(mL, a^3)[1]
@@ -512,7 +528,8 @@ end
   Hecke.set_attribute!(K, :subfield_data => C)
   for u in [1031*a, ZZ(1031)^128*a, a//1031]
     @test length(Hecke.block_system(u, C)) == 2
-    L, mL = Hecke.subfield(K, [u])
+    # Use two generators to exercise reconstruction from blocks.
+    L, mL = Hecke.subfield(K, [u, u + 1])
     @test degree(L) == 2
     @test has_preimage_with_preimage(mL, u)[1]
   end
