@@ -160,6 +160,27 @@
     @inferred is_probable_supersingular(E)
   end
 
+  @testset "is_supersingular: different base field types" begin
+    for K in [finite_field(37, 2, :a; cached = false)[1],
+              finite_field(ZZ(37), 2, :a; cached = false)[1],
+              Native.finite_field(37, 2, :a; cached = false)[1],
+              Native.finite_field(ZZ(37), 2, :a; cached = false)[1],
+              GF(37, 2; cached = false),
+              GF(ZZ(37), 2; cached = false),
+              Native.GF(37, 2; cached = false),
+              Native.GF(ZZ(37), 2; cached = false)]
+      # F_{37^2} = F_{37}(sqrt(15))
+      # 3 +- sqrt(15): supersingular, roots of x^2 + 31*x + 31
+      # 13 +- 5*sqrt(15): ordinary, roots of x^2 + 11*x + 16
+      #   Phi_2(j, Y) splits over F_{37^2}
+      Kx, x = polynomial_ring(K, :x; cached = false)
+      j1 = first(roots(x^2 + 31*x + 31))
+      @test is_supersingular(elliptic_curve_from_j_invariant(j1))
+      j2 = first(roots(x^2 + 11*x + 16))
+      @test !is_supersingular(elliptic_curve_from_j_invariant(j2))
+    end
+  end
+
   @testset "Order of points" begin
     function test_bsgs_with_curve(E, count)
       fN = factor(order(E))
