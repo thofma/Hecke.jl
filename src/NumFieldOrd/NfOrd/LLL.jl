@@ -180,6 +180,30 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   return FakeFmpqMat(deepcopy(l), ZZRingElem(2)^prec), t*t1
 end
 
+function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 100)
+  c = minkowski_matrix(nf(order(A)), prec)
+  l = lll(basis_matrix(A))
+  b = FakeFmpqMat(l)*basis_matrix(FakeFmpqMat, order(A))
+  rt_c = roots_ctx(Hecke.nf(order(A)))
+  if !isdefined(rt_c, :cache)  # FIXME: rt_c is not defined
+    rt_c.cache = 0*c
+  end
+  d = rt_c.cache
+  d = mul!(d, Matrix{BigInt}(b.num), c)
+
+  g = setprecision(BigFloat, prec) do
+    Hecke.round_scale(d, prec)
+  end
+
+  g = g*transpose(g)
+  Hecke.shift!(g, -prec)
+  g += nrows(g)*one(parent(g))
+
+  l = lll_gram(g)
+
+  lp = [ div(l[i,i], ZZRingElem(2)^prec) for i=1:nrows(l)]
+  return lp
+end
 
 ###############################################################################
 #
