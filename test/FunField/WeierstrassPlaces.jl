@@ -1,3 +1,5 @@
+import Hecke: divisor
+
 @testset "Gap numbers and Weierstrass places" begin
   kx, x = rational_function_field(GF(49), :x)
   kxy, y = kx[:y]
