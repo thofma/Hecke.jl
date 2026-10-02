@@ -12,21 +12,27 @@
 
     # defaults, keywords, parameters object (keywords override it)
     P = RSM.integration_parameters(RS)
-    @test P.integration_method == "heuristic"
-    @test P.int_style == "Mixed"
+    @test P.integration_method === :heuristic
+    @test P.int_style === :mixed
     @test P.midpoint_precision === :auto
     @test P.adaptive
     @test RSM.IntegrationParameters().superelliptic       # the default
-    Q = RSM.IntegrationParameters(int_style = "GL", midpoint_precision = 100)
+    Q = RSM.IntegrationParameters(int_style = :gl, midpoint_precision = 100)
     RSq = RSM.riemann_surface(f, 100; parameters = Q, adaptive = false)
     Pq = RSM.integration_parameters(RSq)
-    @test Pq.int_style == "GL" && Pq.midpoint_precision == 100 && !Pq.adaptive
-    Pq.int_style = "DE"                                   # a copy is returned
-    @test RSM.integration_parameters(RSq).int_style == "GL"
+    @test Pq.int_style === :gl && Pq.midpoint_precision == 100 && !Pq.adaptive
+    Pq.int_style = :de                                    # a copy is returned
+    @test RSM.integration_parameters(RSq).int_style === :gl
+    # strings are accepted and converted
+    @test RSM.IntegrationParameters(int_style = "DE").int_style === :de
+    Pq.int_style = "Mixed"
+    @test Pq.int_style === :mixed
+    @test RSM.integration_parameters(RSM.riemann_surface(f, 100; int_style = "Mixed")).int_style === :mixed
 
     # invalid values are refused
-    @test_throws ArgumentError RSM.IntegrationParameters(int_style = "Simpson")
+    @test_throws ArgumentError RSM.IntegrationParameters(int_style = :simpson)
     @test_throws ArgumentError RSM.IntegrationParameters(integration_method = "exact")
+    @test_throws ArgumentError RSM.IntegrationParameters(integration_method = :rigorous)
     @test_throws ArgumentError RSM.IntegrationParameters(midpoint_precision = -1)
     @test_throws ArgumentError _rs(f, 100; chunk_len = 0)
 

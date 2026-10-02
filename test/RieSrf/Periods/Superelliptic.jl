@@ -85,11 +85,11 @@
       D1 = RSM.divisor(vcat(Ps, Infs), vcat(fill(1, C.n), fill(-div(C.n, delta), delta)))
       D2 = RSM.divisor(vcat([Ps[2]], Infs), vcat([C.m], fill(-div(C.m, delta), delta)))
       for D in (D1, D2)
-        @test all(_is_small(v, tol) for v in RSM.abel_jacobi_map(D, "swap", "complex"))
+        @test all(_is_small(v, tol) for v in RSM.abel_jacobi_map(D, :swap, :complex))
       end
       # the base point is a branch point: m (P0 - P0) = 0 and AJ(P0) = 0
       P0 = RSM.base_point(RS)
-      @test all(_is_small(v, tol) for v in RSM.abel_jacobi_map(RSM.divisor([P0], [1]), "swap", "none"))
+      @test all(_is_small(v, tol) for v in RSM.abel_jacobi_map(RSM.divisor([P0], [1]), :swap, :none))
       # the points were created by the superelliptic model: no fundamental
       # group / monodromy of the general code was computed
       @test !isdefined(RSM.original_model(RS), :fundamental_group_of_P1)
@@ -117,7 +117,7 @@
         pattern = Bool[]
         for (a, b) in ((1, 2), (2, 1))
           D = RSM.divisor(vcat(Ps, [Infs[a], Infs[b]]), [1, 1, 1, -3])
-          push!(pattern, all(_is_small(v, tol) for v in RSM.abel_jacobi_map(D, "swap", "complex")))
+          push!(pattern, all(_is_small(v, tol) for v in RSM.abel_jacobi_map(D, :swap, :complex)))
         end
         @test count(pattern) == 1
         se && @test pattern == [true, false]
@@ -134,7 +134,7 @@
       @test RSM.computational_model(RSM.riemann_surface(f, 128)) isa RSM.SuperellipticModel  # the default
       @test RSM.computational_model(_rs(f, 128)) isa RSM.RiemannSurfaceModel  # superelliptic = false
       # Chebyshev and double exponential integration: same bases
-      RS3 = _rs(f, 128; model = :superelliptic, int_style = "DE")
+      RS3 = _rs(f, 128; model = :superelliptic, int_style = :de)
       @test _overlap(RSM.big_period_matrix(RS1), RSM.big_period_matrix(RS3))
       @test length(RSM.basis_of_differentials(RS1)) == 2
       @test_throws ArgumentError RSM.computational_model(_rs(x^3*y + y^3 + x, 100; model = :superelliptic))
@@ -142,13 +142,26 @@
       @test RSM.computational_model(_rs(y^2 - (x^2 - 1)^2*(x - 2), 100; superelliptic = true)) isa RSM.RiemannSurfaceModel
     end
 
+    @testset "Points at infinity for m = n" begin
+      # y^4 = 2x^4 + x + 1: four points (1 : w : 0) with w^4 = 2
+      C = RSM.computational_model(RSM.riemann_surface(2*t^4 + t + 1, 4, 64))
+      points = RSM._se_infinite_points(C)
+      @test length(points) == 4
+      CC = parent(points[1].homog_coords[1])
+      for P in points
+        X, Y, Z = P.homog_coords
+        @test iszero(Z) && isone(X) && contains(Y^4 - 2, zero(CC))
+      end
+      @test all(!overlaps(points[i].homog_coords[2], points[j].homog_coords[2]) for i in 1:4 for j in i+1:4)
+    end
+
     @testset "Over a number field" begin
       F, r = number_field(t^2 - 5, :r)
       S, (X, Y) = polynomial_ring(F, [:x, :y])
       f = X^5 + r*X^3 + X - Y^2
       v = infinite_places(F)[2]
-      RSs = RSM.riemann_surface(f, v, 200; model = :superelliptic, integration_method = "heuristic")
-      RSg = RSM.riemann_surface(f, v, 200; model = :original, integration_method = "heuristic")
+      RSs = RSM.riemann_surface(f, v, 200; model = :superelliptic, integration_method = :heuristic)
+      RSg = RSM.riemann_surface(f, v, 200; model = :original, integration_method = :heuristic)
       tau = RSM.small_period_matrix(RSs)
       @test _is_symmetric(tau)
       @test _jacobians_isomorphic(RSM.big_period_matrix(RSs), RSM.big_period_matrix(RSg))

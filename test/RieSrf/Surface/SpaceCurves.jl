@@ -20,7 +20,9 @@
       @test iszero(RS.input_polynomial(q[1, 1] // q[3, 1], q[2, 1] // q[3, 1]))
     end
     # a given projection is used as is (and checked)
-    A = matrix(QQ, [1 0 0 1; 0 1 0 0; 0 0 1 0])
+    # (center (1 : 2 : 0 : 1), on neither surface: the resultant suffices,
+    #  no elimination ideal is needed)
+    A = matrix(QQ, [2 -1 0 0; 0 0 1 0; 1 0 0 -1])
     fA, AA = RSM.plane_model([Q, C]; projection = A)
     @test total_degree(fA) == 6
 

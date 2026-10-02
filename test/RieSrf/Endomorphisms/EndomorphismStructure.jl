@@ -1,10 +1,8 @@
-using Hecke.RiemannSurfaces
-
 function _endomorphism_structure_case(f, F, v)
-  RS = riemann_surface(f, v, 500, integration_method = "heuristic")
-  P = big_period_matrix(RS)
-  EndoRep = geometric_endomorphism_representation(P)
-  return Hecke.RiemannSurfaces.endomorphism_structure(EndoRep; calc_pic = true)
+  RS = RSM.riemann_surface(f, v, 500)
+  P = RSM.big_period_matrix(RS)
+  EndoRep = RSM.geometric_endomorphism_representation(P)
+  return RSM.endomorphism_structure(EndoRep; calc_pic = true)
 end
 
 @testset "EndomorphismStructure" begin

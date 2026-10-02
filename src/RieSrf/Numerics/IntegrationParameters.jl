@@ -1,11 +1,15 @@
 ################################################################################
 #
-#  Integration parameters
+#  RieSrf/Numerics/IntegrationParameters.jl : integration parameters
+#
+#  The user settings of the numerical computation (IntegrationParameters) and
+#  the constants of the precision management (guard bits, see the comment
+#  before _quadrature_guard_bits).
 #
 ################################################################################
 
 @doc raw"""
-    IntegrationParameters(; integration_method = "heuristic", int_style = "Mixed",
+    IntegrationParameters(; integration_method = :heuristic, int_style = :mixed,
                             midpoint_precision = :auto, adaptive = true,
                             chunk_len = 16, group_cost = 1.0, superelliptic = true,
                             precision_retry = true, accuracy = :both,
@@ -13,8 +17,12 @@
 
 Settings for the numerical computations on a Riemann surface.
 
-- `integration_method`: `"heuristic"` or `"rigorous"`.
-- `int_style`: `"Mixed"`, `"GL"` (Gauss-Legendre) or `"DE"` (double exponential).
+- `integration_method`: `:heuristic` (heuristic bounds for the integrands; the
+  only method at the moment, `:rigorous` is not implemented yet).
+- `int_style`: `:mixed` (Gauss-Legendre, and double exponential for subpaths
+  close to a discriminant point), `:gl` (Gauss-Legendre only) or `:de`
+  (double exponential only).
+  (Strings such as `"Mixed"` or `"GL"` are accepted as well.)
 - `midpoint_precision`: precision used for the intermediate steps of the
   analytic continuation; `0` switches it off, `:auto` chooses heuristically.
 - `adaptive`: adaptive step size (predictor-corrector) in the analytic continuation.
@@ -52,8 +60,8 @@ has started. Values `:auto` are then replaced by concrete values, which can be
 inspected with `resolved_integration_parameters`.
 """
 mutable struct IntegrationParameters
-  integration_method::String
-  int_style::String
+  integration_method::Symbol
+  int_style::Symbol
   midpoint_precision::Union{Symbol, Int}
   adaptive::Bool
   chunk_len::Int
@@ -64,8 +72,8 @@ mutable struct IntegrationParameters
   direct_infinity::Bool
 end
 
-function IntegrationParameters(; integration_method::String = "heuristic",
-                                 int_style::String = "Mixed",
+function IntegrationParameters(; integration_method::Union{Symbol, String} = :heuristic,
+                                 int_style::Union{Symbol, String} = :mixed,
                                  midpoint_precision::Union{Symbol, Int} = :auto,
                                  adaptive::Bool = true,
                                  chunk_len::Int = 16,
@@ -74,7 +82,8 @@ function IntegrationParameters(; integration_method::String = "heuristic",
                                  precision_retry::Bool = true,
                                  accuracy::Symbol = :both,
                                  direct_infinity::Bool = false)
-  P = IntegrationParameters(integration_method, int_style, midpoint_precision,
+  P = IntegrationParameters(_option_symbol(integration_method), _option_symbol(int_style),
+                            midpoint_precision,
                             adaptive, chunk_len, Float64(group_cost), superelliptic,
                             precision_retry, accuracy, direct_infinity)
   _check_integration_parameters(P)
@@ -87,8 +96,8 @@ Base.copy(P::IntegrationParameters) =
                         P.precision_retry, P.accuracy, P.direct_infinity)
 
 function Base.show(io::IO, P::IntegrationParameters)
-  print(io, "IntegrationParameters(integration_method = \"$(P.integration_method)\", ",
-            "int_style = \"$(P.int_style)\", midpoint_precision = $(repr(P.midpoint_precision)), ",
+  print(io, "IntegrationParameters(integration_method = $(repr(P.integration_method)), ",
+            "int_style = $(repr(P.int_style)), midpoint_precision = $(repr(P.midpoint_precision)), ",
             "adaptive = $(P.adaptive), chunk_len = $(P.chunk_len), group_cost = $(P.group_cost), ",
             "superelliptic = $(P.superelliptic), precision_retry = $(P.precision_retry), ",
             "accuracy = $(repr(P.accuracy)), ",
@@ -96,8 +105,9 @@ function Base.show(io::IO, P::IntegrationParameters)
 end
 
 function _check_integration_parameters(P::IntegrationParameters)
-  @req P.integration_method in ("heuristic", "rigorous") "integration_method must be \"heuristic\" or \"rigorous\"."
-  @req P.int_style in ("Mixed", "GL", "DE") "int_style must be \"Mixed\", \"GL\" or \"DE\"."
+  @req P.integration_method !== :rigorous "Rigorous integration is not implemented yet; use integration_method = :heuristic."
+  @req P.integration_method === :heuristic "integration_method must be :heuristic."
+  @req P.int_style in (:mixed, :gl, :de) "int_style must be :mixed, :gl or :de."
   mp = P.midpoint_precision
   @req (mp === :auto) || (mp isa Int && mp >= 0) "midpoint_precision must be :auto or an integer >= 0."
   @req P.chunk_len >= 1 "chunk_len must be positive."
@@ -106,11 +116,23 @@ function _check_integration_parameters(P::IntegrationParameters)
   return P
 end
 
+# "Mixed" -> :mixed, "GL" -> :gl etc.
+_option_symbol(x::Union{Symbol, String}) = Symbol(lowercase(String(x)))
+
+# Direct assignments convert strings as well (P.int_style = "GL").
+function Base.setproperty!(P::IntegrationParameters, name::Symbol, value)
+  if name in (:integration_method, :int_style) && value isa String
+    value = _option_symbol(value)
+  end
+  return setfield!(P, name, convert(fieldtype(IntegrationParameters, name), value))
+end
+
 # Copy of P with some fields changed (keyword arguments = field names).
 function _with_changes(P::IntegrationParameters; kw...)
   Q = copy(P)
   for (k, v) in kw
     @req hasfield(IntegrationParameters, k) "Unknown integration parameter $k."
+    k in (:integration_method, :int_style) && (v = _option_symbol(v))
     setfield!(Q, k, convert(fieldtype(IntegrationParameters, k), v))
   end
   return _check_integration_parameters(Q)

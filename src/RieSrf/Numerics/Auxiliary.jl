@@ -1,20 +1,13 @@
 ################################################################################
 #
-#          RieSrf/Auxiliary.jl : Auxiliary Methods for Riemann Surfaces
+#  RieSrf/Numerics/Auxiliary.jl : auxiliary functions
 #
-# (C) 2025 Jeroen Hanselman
-# This is a port of the Riemann surfaces package written by
-# Christian Neurohr. It is based on his Phd thesis
-# https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
-# Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
+#  Embedding number field elements and polynomials into C (with relative
+#  precision, thread safe), small helpers for balls (ordering of the sheets,
+#  closest points), and the interior points of the Newton polygon (Baker's
+#  basis of differentials).
 #
 ################################################################################
-
-export TretkoffEdge
-
-export  is_terminated, branch, set_position, terminate, edge_level, isequal,
- get_position, set_label, get_label, PQ, get_subpaths, sheet_ordering, reverse, start_point,
-end_point
 
 ################################################################################
 #
@@ -22,8 +15,9 @@ end_point
 #
 ################################################################################
 
-#Ensures that the output is between 0 and 2pi.
-function Base.mod2pi(x::ArbFieldElem)
+# x reduced to [0, 2pi] (for balls that straddle 0 or 2pi: as far as the
+# comparisons decide).
+function _mod2pi(x::ArbFieldElem)
   pi2 = 2*const_pi(parent(x))
   while x < 0
     x += pi2
@@ -43,52 +37,49 @@ end
 # polynomial, and with it the roots y, lost ~160 bits.)
 function _embed_coefficient(c, emb, prec::Int)
   iszero(c) && return AcbField(prec)(0)
+  c isa QQFieldElem && return AcbField(prec)(c)
   q = 64
-  e = evaluate(c, emb, q)
+  e = _evaluate_locked(c, emb, q)
   while contains_zero(abs(e))
     q *= 2
-    e = evaluate(c, emb, q)
+    e = _evaluate_locked(c, emb, q)
   end
   RR = ArbField(64)
   l = Nemo.midpoint(log(RR(abs(e))) / log(RR(2)))
   extra = max(0, -Int(floor(ZZRingElem, l))) + 2
-  return AcbField(prec)(evaluate(c, emb, prec + extra))
+  return AcbField(prec)(_evaluate_locked(c, emb, prec + extra))
 end
 
-@doc raw"""
-    embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
+# Hecke caches the roots of the defining polynomial of a number field per
+# precision in a Dict on the field (conjugate_data_arb_roots), which is not
+# thread safe; the period computation embeds polynomials in threaded loops
+# (e.g. the integrand bounds). A new precision there corrupted the Dict
+# (UndefRefError in rehash!). So all evaluations of embeddings go through
+# this lock. (Not const, by the Hecke policy for package code; the global is
+# never reassigned.)
+_embedding_lock = ReentrantLock()
 
-Embed a polynomial into the polynomial ring over the complex numbers using the given place.
-"""
-function embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  coeffs = coefficients(f)
-  coeffs = map(t -> _embed_coefficient(t, v.embedding, prec), coeffs)
+_evaluate_locked(c, emb, prec::Int) = lock(() -> evaluate(c, emb, prec), _embedding_lock)
 
-  Cx, x = polynomial_ring(AcbField(prec), "x")
-
-  return sum(coeffs[i]*x^(i - 1) for i in (1:length(coeffs)))
+# The polynomial f over the number field, with its coefficients embedded by
+# the place v at (relative) precision prec, in C[x] (cached ring, variable x).
+function _embed_poly(f::PolyRingElem{AbsSimpleNumFieldElem}, v::Union{PosInf, InfPlc}, prec::Int = 100)
+  Cx, _ = polynomial_ring(AcbField(prec), "x")
+  return Cx([_embed_coefficient(c, v.embedding, prec) for c in coefficients(f)])
 end
 
-@doc raw"""
-    embed_mpoly(f::MPolyRingElem{AbsSimpleNumFieldElem}, v::Plc, prec::Int) -> PolyRingElem{AcbField}
-
-Embed a polynomial into the polynomial ring over the complex numbers using the given place.
-"""
-function embed_mpoly(f::MPolyRingElem, v::T, prec::Int = 100) where T<:Union{PosInf, InfPlc}
-  n = length(terms(f))
-  R = coefficient_ring(f)
-  CC = AcbField(prec)
-  d = length(gens(parent(f)))
-  CCx, x = polynomial_ring(CC, symbols(parent(f)))
-  result = CCx(0)
-  for i in (1:n)
-    I = exponent_vector(f,i)
-    result += CC(_embed_coefficient(coeff(f, i), v.embedding, prec)) * prod(x[j]^I[j] for j in (1:d))
+# The same for a multivariate polynomial, in C[x, y, ...] with the variable
+# names of f.
+function _embed_mpoly(f::MPolyRingElem, v::Union{PosInf, InfPlc}, prec::Int = 100)
+  CCx, _ = polynomial_ring(AcbField(prec), symbols(parent(f)))
+  context = MPolyBuildCtx(CCx)
+  for (c, e) in zip(coefficients(f), exponent_vectors(f))
+    push_term!(context, _embed_coefficient(c, v.embedding, prec), e)
   end
-  return result
+  return finish(context)
 end
 
-#Homogenize input polynomial of the Riemann surface
+# The homogenization F(x, y, z) of f(x, y).
 function homogenization_RS(f::MPolyRingElem)
   m = total_degree(f)
   k = coefficient_ring(f)
@@ -101,12 +92,13 @@ function homogenization_RS(f::MPolyRingElem)
   return f_hom
 end
 
-#TODO: Might need to be made more rigorous due to dealing with arb balls
 @doc raw"""
-    sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem) -> Bool
+    sheet_ordering(z1::AcbFieldElem, z2::AcbFieldElem) -> Bool
 
-An ordering on the complex numbers. The number z2 = x2 + y2 is greater
-than z1 = x1 + y1 if x2 > x1. In case of equality z2 is greater than z1 if y2 > y1.
+The lexicographic order on C used to number the sheets: z1 < z2 if
+Re(z1) < Re(z2), or if the real parts cannot be distinguished and
+Im(z1) < Im(z2). Throws an error if the two balls cannot be compared
+(neither the real nor the imaginary parts can be distinguished).
 """
 function sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem)
   if real(z1) < real(z2)
@@ -118,34 +110,26 @@ function sheet_ordering(z1::AcbFieldElem,z2::AcbFieldElem)
   elseif imag(z2) < imag(z1)
     return false
   end
+  error("sheet_ordering: the points $z1 and $z2 cannot be compared at this precision.")
 end
 
-#This is mainly useful when plugging an acb ball centered around zero into a
-#function like arg where its output would suddenly have a radius of length pi.
-@doc raw"""
-    trim_zero(x::AcbFieldElem) -> Bool
-
-Sets the real or imaginary parts of a complex number to zero if the interval contains zero.
-"""
-
+# x with its real or imaginary part set to zero if that part contains zero.
+# Useful before functions like arg or log, whose output would otherwise get
+# a radius of about pi for a ball around a point on an axis.
 function trim_zero(x::AcbFieldElem)
-  Cc = parent(x)
-  prec = precision(Cc)
-  Rc = ArbField(prec)
-  i = onei(Cc)
-  if contains(abs(real(x)), zero(Rc))
-    x = Cc(imag(x))*i
+  CC = parent(x)
+  RR = ArbField(precision(CC))
+  if contains(abs(real(x)), zero(RR))
+    x = CC(imag(x))*onei(CC)
   end
-
-  if contains(abs(imag(x)), zero(Rc))
-    x = Cc(real(x))
+  if contains(abs(imag(x)), zero(RR))
+    x = CC(real(x))
   end
-
   return x
 end
 
-#Finds the point in points that is closest to x0. Returns the distance and the position
-#of the closest point in the array.
+# The distance from x0 to the closest of the points, and its index (the
+# first one if the comparison is undecided).
 function closest_point(x0::AcbFieldElem, points::Vector{AcbFieldElem})
   closest = 1
   distance = abs(x0 - points[1])
@@ -161,48 +145,36 @@ end
 
 ################################################################################
 #
-#  Convex hull
+#  Newton polygon
 #
 ################################################################################
 
-@doc raw"""
-    inner_faces(f::MPolyRingElem) -> Array
-
-Compute the inner faces of the Newton polygon corresponding to the multivariate
-polynomial f(x,y). The Newton polygon is the convex hull of the points (i,j)
-for which x^i * y^j is a monomial of f.
-"""
-function inner_faces(f::MPolyRingElem)
+# The interior lattice points (i, j) of the Newton polygon of f(x, y) (the
+# convex hull of the exponent vectors of its terms); for Baker's basis
+# x^(i-1) y^(j-1) dx / f_y. Only points with i + j <= total degree - 1 can be
+# interior.
+function _newton_polygon_interior_points(f::MPolyRingElem)
   points = [degrees(mon) for mon in monomials(f)]
-  ordered_vertices = convex_hull(points)
-  n = length(ordered_vertices)
-  edges = vcat([line_equation(ordered_vertices[i-1], ordered_vertices[i]) for i in (2:n)], line_equation(ordered_vertices[end], ordered_vertices[1]))
-  center = sum(ordered_vertices)//n
-
+  vertices = _convex_hull(points)
+  n = length(vertices)
+  edges = vcat([_line_equation(vertices[i-1], vertices[i]) for i in 2:n],
+               _line_equation(vertices[end], vertices[1]))
+  center = sum(vertices)//n
   result = Vector{Int}[]
-  d = total_degree(f)-3
-	for i in (0:d)
-		for j in (0:d-i)
-      if  all([(sign(g(i + 1, j + 1)) == sign(g(center[1], center[2]))) for g in edges])
-			  push!(result, [i + 1, j + 1])
-			end
-		end
-	end
-
+  d = total_degree(f) - 3
+  for i in 0:d, j in 0:d-i
+    # strictly on the same side of every edge as the center
+    if all([sign(h(i + 1, j + 1)) == sign(h(center[1], center[2])) for h in edges])
+      push!(result, [i + 1, j + 1])
+    end
+  end
   return result
 end
 
-@doc raw"""
-    convex_hull(points::Vector{Vector{Int}}) -> Vector{Vector{Int}}
-
-Computes the convex hull of the points [i,j] in the plane.
-The convex hull is returned as a list of points that form the
-vertices of the polygon. The edges of the polygon correspond to the
-lines connecting the succesive vertices.
-"""
-function convex_hull(points::Vector{Vector{Int}})
-  orig_points = copy(points)
-
+# The vertices of the convex hull of the points in the plane, in order
+# (lower hull from left to right, then upper hull back; gift wrapping by the
+# smallest slope). Two points: both.
+function _convex_hull(points::Vector{Vector{Int}})
   points = sort(points)
 
   # Take care of trivial case with 1 or 2 elements
@@ -237,6 +209,7 @@ function convex_hull(points::Vector{Vector{Int}})
   end
 end
 
+# The slope from a to b (Hecke's inf for a vertical line).
 function _slope(a::Vector{Int}, b::Vector{Int})
   if b[1] == a[1]
     return inf
@@ -244,12 +217,8 @@ function _slope(a::Vector{Int}, b::Vector{Int})
   return QQFieldElem(b[2]-a[2], b[1]-a[1])
 end
 
-@doc raw"""
-    line_equation(a::Vector{Int}, b::Vector{Int}) -> MPolyRingElem
-
-Returns the equation of the line in the plane connecting the points a and b.
-"""
-function line_equation(a::Vector{Int}, b::Vector{Int})
+# An equation of the line through the points a and b in the plane.
+function _line_equation(a::Vector{Int}, b::Vector{Int})
   Qxy, (x,y) = polynomial_ring(QQ, ["x","y"])
   if b[1] == a[1]
     return x - a[1]

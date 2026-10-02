@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Fibers of the projection (x, y) -> x
+#  RieSrf/Surface/Fiber.jl : fibers of the projection (x, y) -> x
 #
 #   * fiber(f, x0)                      regular points: certified simple roots
 #   * fiber_with_multiplicities(RS, x0) any point: distinct roots + multiplicities
@@ -26,13 +26,20 @@
 #  Implemented for K of degree 1 (curves over Q). For other K a prime ideal of
 #  degree 1 of K would be needed; left for later.
 #
-#  Computed together with the discriminant points (assure_has_discriminant_points,
+#  Computed together with the discriminant points (_ensure_discriminant_points!,
 #  serial): _compute_disc_factor_data!(RS).
+#
+#  Entry points: fiber, fiber_with_multiplicities, fiber_repeated.
 #
 ################################################################################
 
-# Certified roots of f(x0, y) at a regular point x0. Throws if the roots cannot
-# be isolated, i.e. if x0 is (numerically) too close to a discriminant point.
+@doc raw"""
+    fiber(f::MPolyRingElem{AcbFieldElem}, x0::AcbFieldElem) -> Vector{AcbFieldElem}
+
+The roots of f(x0, y), certified and sorted by `sheet_ordering`, at the
+precision of the coefficients of f. Throws an error if the roots cannot be
+isolated, i.e. if x0 is (numerically) too close to a discriminant point.
+"""
 function fiber(f::MPolyRingElem, x0::AcbFieldElem)
   CC = base_ring(f)
   Cz, z = polynomial_ring(CC, "z")
@@ -43,7 +50,7 @@ end
 function _disc_factor_data(RS::RiemannSurfaceModel)
   # Computed together with the discriminant points (exact arithmetic, serial).
   # By the time threaded code calls this, big_period_matrix has done it.
-  isdefined(RS, :disc_factor_data) || assure_has_discriminant_points(RS)
+  isdefined(RS, :disc_factor_data) || _ensure_discriminant_points!(RS)
   return RS.disc_factor_data
 end
 
@@ -120,7 +127,7 @@ function _eval_embedded(c::PolyRingElem, v, x0::AcbFieldElem)
   prec = precision(CC)
   r = zero(CC)
   for i in degree(c):-1:0
-    r = r * x0 + CC(evaluate(coeff(c, i), v.embedding, prec))
+    r = r * x0 + CC(_embed_coefficient(coeff(c, i), v.embedding, prec))
   end
   return r
 end
@@ -171,7 +178,7 @@ function fiber_with_multiplicities(RS::RiemannSurfaceModel, x0::AcbFieldElem)
   data = _disc_factor_data(RS)
   if isempty(data) && degree(base_ring(base_ring(defining_polynomial_univariate(RS)))) != 1
     # curves over number fields: previous numerical method
-    ys, mults = find_roots_with_mult(complex_defining_polynomial(RS, prec)(x0, gen(polynomial_ring(CC, "y")[1])))
+    ys, mults = _roots_with_multiplicities(complex_defining_polynomial(RS, prec)(x0, gen(polynomial_ring(CC, "y")[1])))
     perm = sortperm(ys, lt = sheet_ordering)
     return ys[perm], mults[perm]
   end
@@ -193,7 +200,7 @@ function fiber_with_multiplicities(RS::RiemannSurfaceModel, x0::AcbFieldElem)
     return ys, fill(1, length(ys))
   end
 
-  z = find_roots_without_isolation(fx)
+  z = _roots_without_isolation(fx)
   clusters = _cluster_roots(z, d.pattern)
   ys = AcbFieldElem[]
   mults = Int[]
@@ -213,7 +220,7 @@ function fiber_with_multiplicities(RS::RiemannSurfaceModel, x0::AcbFieldElem)
       end
       # enclosure: the true root lies within the cluster of approximations
       diam = maximum(abs(z[a] - z[b]) + 2*radius_bound(z[a]) for a in c, b in c)
-      ccall((:acb_add_error_arb, libflint), Nothing, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), y, RR(diam))
+      _add_error!(y, RR(diam))
     else
       y = z[c[1]]
     end
@@ -224,6 +231,7 @@ function fiber_with_multiplicities(RS::RiemannSurfaceModel, x0::AcbFieldElem)
   return ys[perm], mults[perm]
 end
 
+# The finite roots of f(x0, y), every root repeated by its multiplicity.
 function fiber_repeated(RS::RiemannSurfaceModel, x0::AcbFieldElem)
   ys, mults = fiber_with_multiplicities(RS, x0)
   res = AcbFieldElem[]
@@ -233,10 +241,9 @@ function fiber_repeated(RS::RiemannSurfaceModel, x0::AcbFieldElem)
   return res
 end
 
-#Returns the roots using flint even if flint is unable to isolate the roots
-#E.g. when the polynomial has multiple roots. In this case the roots that 
-#were not isolated will be returned with low precision.
-function find_roots_without_isolation(f::AcbPolyRingElem)
+# Approximations of the roots by acb_poly_find_roots, also when they cannot
+# be isolated (multiple roots); those come with wide or meaningless radii.
+function _roots_without_isolation(f::AcbPolyRingElem)
   m = degree(f)
   temp_vec_res = acb_vec(m)
   CC = base_ring(f)
@@ -247,9 +254,12 @@ function find_roots_without_isolation(f::AcbPolyRingElem)
   return z
 end 
 
-#Returns roots with their ramification indices. If the maximal ramification index is
-#known it can be passed to m. In this case roots are only checked up to the mth derivative.
-function find_roots_with_mult(f::PolyRingElem, m::Int = degree(f))
+# The roots with their multiplicities, numerically: a root of multiplicity n
+# is a root of the first n - 1 derivatives. m: an upper bound for the
+# multiplicities (only that many derivatives are checked). Used for curves
+# over number fields of degree > 1 (see fiber_with_multiplicities) and for
+# the points at infinity.
+function _roots_with_multiplicities(f::PolyRingElem, m::Int = degree(f))
   CC = base_ring(f)
   RR = ArbField(precision(CC))
 
@@ -260,10 +270,10 @@ function find_roots_with_mult(f::PolyRingElem, m::Int = degree(f))
     push!(derivatives, derivative(derivatives[end]))
   end
   for n in (m:-1:1)
-    R = find_roots_without_isolation(derivatives[n])
+    R = _roots_without_isolation(derivatives[n])
     for r in R
-      if all(map(x -> contains(x(r), zero(CC)), derivatives[1:n]))
-        if length(roots_found)==0
+      if all(map(h -> contains(h(r), zero(CC)), derivatives[1:n]))
+        if isempty(roots_found)
           push!(roots_found, r)
           push!(mult, n)
         else 

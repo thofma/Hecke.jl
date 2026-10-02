@@ -54,6 +54,10 @@ _acb_set_round_ptr!(z::AcbFieldElem, p::Ptr{acb_struct}) =
   ccall((:acb_set_round, libflint), Nothing, (Ref{AcbFieldElem}, Ptr{acb_struct}, Int),
         z, p, precision(parent(z)))
 
+# Enlarge the radius of z (in place) by err.
+_add_error!(z::AcbFieldElem, err::ArbFieldElem) =
+  ccall((:acb_add_error_arb, libflint), Nothing, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), z, err)
+
 # _acb_mid: Midpoint of an acb as a new element. Nemo only has midpoint(::ArbFieldElem).
 _acb_mid(x::AcbFieldElem) = (r = parent(x)();
   ccall((:acb_get_mid, libflint), Nothing, (Ref{AcbFieldElem}, Ref{AcbFieldElem}), r, x); r)

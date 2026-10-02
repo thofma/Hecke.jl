@@ -4,298 +4,210 @@
 #
 ################################################################################
 
-#The class Cpath represents a path in the complex plane. It can be either
-# a line, an arc, a circle, a point or a line to infinity.
+################################################################################
+#
+#  Paths and chains in the complex plane (see Paths/CPath.jl)
+#
+################################################################################
 
+# A path in the x-plane, parametrized over t in [-1, 1]. path_type:
+#   :line              x(t) = (a + b)/2 + (b - a)/2 * t
+#   :arc               x(t) = c + r * exp(i*((phi_a + phi_b)/2 + (phi_b - phi_a)/2 * t))
+#   :circle            x(t) = c - r * exp(i*(phi_a + orientation*pi*t)), from a around c back to a
+#   :point             x(t) = a (only as the neutral element when concatenating)
+#   :line_to_infinity  x(t) = 2a/(1 - t), from a (t = -1) to infinity (t = 1)
+# a, b are the start and end point, c the center, r the radius and phi_a,
+# phi_b the angles of a and b seen from c.
 mutable struct CPath
+  path_type::Symbol
 
-  path_type::Int
-  #Path type index:
-  #0 is a line
-  #1 is an arc
-  #2 is a circle
-  #3 is a point
+  # the field of the data the path was created from (the "_high" fields)
+  field::AcbField
 
-  #The field in which the path lies
-  C::AcbField
-
-  #The start point and the end point of the path
+  # start and end point at the precision of the paths, and as given (used to
+  # create the reverse path and copies)
   start_point::AcbFieldElem
   end_point::AcbFieldElem
-
-  #The start point and the end point of the path with higher precision
   start_point_high::AcbFieldElem
   end_point_high::AcbFieldElem
 
-  #If the path is an arc or a circle, it will be described by the center,
-  #the radius, and the start and end angles. (c + r*e^(ix))
+  # arcs and circles: center, radius and the angles of the start and end
+  # point seen from the center; orientation 1 is counterclockwise, -1 clockwise
   center::AcbFieldElem
-  radius::ArbFieldElem
-  start_arc::ArbFieldElem
-  end_arc::ArbFieldElem
-
   center_high::AcbFieldElem
-  radius_high::ArbFieldElem
-  start_arc_high::ArbFieldElem
-  end_arc_high::ArbFieldElem
-
-  #The orientation determines how we move from start point to end point
-  #If the orientation is 1 we move counterclockwise and if the orientation
-  # is -1 we move clockwise.
+  radius::ArbFieldElem
+  start_angle::ArbFieldElem
+  end_angle::ArbFieldElem
   orientation::Int
 
-  #The length of the path
   length::ArbFieldElem
-  length_high::ArbFieldElem
 
-  #Let f be the equation defining a plane curve in RiemannSurfaceModel.jl
-  #Let x_0 = gamma(start_point) and let (y_1, ..., y_d) be the roots
-  #of the equation f(x_0, y) sorted by the sheet_ordering function
-  #from Auxiliary.jl. Using analytic continuation along the path gamma
-  #to x_end = gamma(end_point) gives us a new set of roots (z_1, ..., z_d)
-  #solving f(x_end, y). Sorting these once again using the sheet_ordering
-  #function gives us a permutation (z_sigma(1), ..., z_sigma(d)). The variable
-  #sigma stores this permutation. In the case that gamma is a closed path,
-  #sigma will tell us exactly how the sheets got permuted.
+  # Monodromy: the fiber over the start point, sorted by sheet_ordering,
+  # continued along the path and sorted again over the end point gives this
+  # permutation of the sheets.
   permutation::Perm{Int}
-
+  # Abel-Jacobi map: the y-values at the end of the path on the sheets used
+  # (see _integrate_on_sheet! and _abel_jacobi_special_point!)
   sheets::Vector{AcbFieldElem}
 
-  #For the purposes of integrating along a path to compute the period matrix
-  #we store additional properties. Here is a description
-  #of their meanings. Most of these are discussed in  Chapter 3
-  #of Neurohr's thesis.
+  # Quadrature (Neurohr, Chapters 3 and 4).
+  integration_scheme::Symbol            # :gl (Gauss-Legendre) or :de (double exponential)
+  # r: the integrand is holomorphic on the image under the path of the
+  # ellipse E_r with foci -1, 1 (GL), or of the strip |Im t| < r after the
+  # tanh-sinh substitution (DE); no discriminant point lies inside
+  quadrature_parameter::ArbFieldElem
+  # t (in the parameter domain) of the discriminant point closest to the
+  # path, where the integrand bound is sampled
+  closest_disc_point_parameter::AcbFieldElem
+  number_of_nodes::ZZRingElem
+  bounds::Vector{ArbFieldElem}          # bounds M of the integrands on E_r
+  integration_scheme_index::Int         # index of the scheme among the GL/DE schemes
+  # a line close to a discriminant point is split into several subpaths with
+  # their own quadrature (Neurohr 4.7.5); otherwise the path itself
+  subpaths::Vector{CPath}
 
-  integration_scheme::String
-
-  #For integration we want the function f we integrate along gamma to be
-  #bounded. For this we take an ellipsoid e_r with focal points -1,1
-  #paramatrized by r*cos(t) + i*sqrt(1-r^2) which contains the path gamma.
-  #And then we determine an M such that |gamma(e_r)|< M.
-  #During computations we determine an optimal r to find proper error bounds
-  #This r is stored with the path and called int_param_r.
-  int_param_r::ArbFieldElem
-
-  #Let D be the set of points where disc(f) = 0. Let P be the point in D
-  #for which the distance between gamma and P is minimal. Now
-  #t_of_closest_d_point is the variable t0 for which gamma(t0) = P.
-  t_of_closest_d_point::AcbFieldElem
-
-  #The number of abscissae of the path
-  int_params_N::ZZRingElem
-
-  #The bounds M computed
-  bounds::Vector{ArbFieldElem}
-
-  #The index of the integration scheme that should be used to compute the
-  #integral along this path
-  integration_scheme_index::Int
-
-  #If the path is long it, splitting it it into subpaths and computing
-  #integrals along those subpaths may be faster.
-  sub_paths::Vector{CPath}
-
-  #Let X be a Riemann surface X defined by an equation f(x,y) = 0.
-  #Let g be the genus of X, and let m be the degree of the map pi:X -> P^1
-  #given by (x,y)-> x. Then integral_matrix will is the m x g matrix one gets
-  #by integrating the g differential forms forming a basis of H^0(X, K_X)
-  #(computed in RiemannSurfaceModel.jl) along the m distinct paths that are lifts
-  #of gamma along pi.
+  # m x g: row s holds the integrals of the g differentials along the lift
+  # of the path that starts on sheet s
   integral_matrix::AcbMatrix
 
   reverse_path::CPath
 
-  #Constructor of CPath.
-  function CPath(a::AcbFieldElem, b::AcbFieldElem, path_type::Int, CC_low::AcbField = parent(a), c::AcbFieldElem = zero(parent(a)), radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
-
-    P = new()
-    RR_low = ArbField(precision(CC_low))
+  # a, b: start and end point; CC_path: the precision of the path points
+  function CPath(path_type::Symbol, a::AcbFieldElem, b::AcbFieldElem,
+                 CC_path::AcbField = parent(a); center::AcbFieldElem = zero(parent(a)),
+                 radius::ArbFieldElem = real(zero(parent(a))), orientation::Int = 1)
+    @req path_type in (:line, :arc, :circle, :point, :line_to_infinity) "Unknown path type $path_type."
+    path = new()
     CC = parent(a)
-    P.C = CC
-
-    P.start_point_high = a
-    P.end_point_high = b
-
-    A = CC_low(a)
-    B = CC_low(b)
-
-    P.start_point = A
-    P.end_point = B
-    
-    P.path_type = path_type
-
-    P.center_high = c
-    P.radius_high = radius
-
-    P.center = CC_low(c)
-    P.radius = RR_low(radius)
-    P.orientation = orientation
-    P.bounds = ArbFieldElem[]
-
     RR = ArbField(precision(CC))
+    path.path_type = path_type
+    path.field = CC
+    path.start_point_high = a
+    path.end_point_high = b
+    path.start_point = CC_path(a)
+    path.end_point = CC_path(b)
+    path.center_high = center
+    path.center = CC_path(center)
+    path.radius = ArbField(precision(CC_path))(radius)
+    path.orientation = orientation
+    path.bounds = ArbFieldElem[]
 
-    if path_type == 0
-      length = abs(B - A)
-    end
-
-    if path_type == 3
-      length = RR_low(0)
-    end
-
-    if path_type == 4
-      P.end_point = CC(1/0)
-      length = RR(1/0)
-    end
-  
-    #If the path is not a line we need some additional constants to compute
-    #length, parametrization, etc.
-    i = onei(CC)
-    piC = real(const_pi(CC))
-
-    #Round real or imaginary part to zero to compute angle if necessary
-
-    a_diff = trim_zero(a - c)
-    b_diff = trim_zero(b - c)
-
-    phi_a = mod2pi(angle(a_diff))
-    phi_b = mod2pi(angle(b_diff))
-
-    if orientation == 1
-      if phi_b < phi_a
-        phi_b += 2*piC
+    if path_type === :line
+      path.length = abs(path.end_point - path.start_point)
+    elseif path_type === :point
+      path.length = zero(RR)
+    elseif path_type === :line_to_infinity
+      path.end_point = CC(1/0)
+      path.length = RR(1/0)
+    else
+      # angles of the start and end point seen from the center, in
+      # [phi_a, phi_a + 2pi) in the direction of the orientation (a real or
+      # imaginary part that contains zero is set to zero first, so that the
+      # angle is well defined)
+      two_pi = 2*const_pi(RR)
+      phi_a = _mod2pi(angle(trim_zero(a - center)))
+      phi_b = _mod2pi(angle(trim_zero(b - center)))
+      if orientation == 1 && phi_b < phi_a
+        phi_b += two_pi
+      elseif orientation == -1 && phi_a < phi_b
+        phi_a += two_pi
       end
-    elseif orientation == - 1
-       if phi_a < phi_b
-        phi_a += 2*piC
-      end
+      path.start_angle = phi_a
+      path.end_angle = phi_b
+      path.length = path_type === :arc ? abs(phi_b - phi_a) * radius : two_pi * radius
     end
-
-    P.start_arc = phi_a
-    P.end_arc = phi_b
-
-    #If the path is an arc
-    if path_type == 1
-      length = abs((phi_b - phi_a)) * radius
-    end
-
-    #If the path is a circle
-    if path_type == 2
-      length = 2 * piC * radius
-    end
-
-    P.length = length
-    return P
+    return path
   end
 end
 
-#The class CChain represents a concatenation of CPaths.
-
+# A chain: a sequence of paths, each starting where the previous one ends.
 mutable struct CChain
   paths::Vector{CPath}
-  permutation::Perm{Int}
-  sheets::Vector{AcbFieldElem}
+  permutation::Perm{Int}                # product of the permutations of the paths
+  sheets::Vector{AcbFieldElem}          # Abel-Jacobi map: y-values at the end, as for paths
   is_closed::Bool
   start_point::AcbFieldElem
   end_point::AcbFieldElem
+  # m x g, as for a path: row s holds the integrals along the lift of the
+  # chain that starts on sheet s (see _set_chain_integral!)
   integral_matrix::AcbMatrix
+  # loops around a discriminant point (or infinity): that point
   center::AcbFieldElem
+  # chains around discriminant points: the points of the Riemann surface
+  # over the center (see SpecialPoints.jl)
   points
 
-  #Constructor of CChain.
   function CChain(paths::Vector{CPath})
-
     is_connected, is_closed = test_chain(paths)
-
     @req is_connected "A chain should consist of a connected sequence of paths."
-
-    C = new()
-    C.paths = paths
-    C.is_closed = is_closed
-    C.start_point = start_point(paths[1])
-    C.end_point = end_point(paths[end])
-
-    if all([isdefined(path, :permutation) for path in paths])
-      C.permutation = prod(map(permutation, paths))
-      if all([isdefined(path, :integral_matrix) for path in paths])
-        _set_chain_integral!(C)
+    chain = new()
+    chain.paths = paths
+    chain.is_closed = is_closed
+    chain.start_point = start_point(paths[1])
+    chain.end_point = end_point(paths[end])
+    if all(path -> isdefined(path, :permutation), paths)
+      chain.permutation = prod(map(permutation, paths))
+      if all(path -> isdefined(path, :integral_matrix), paths)
+        _set_chain_integral!(chain)
       end
     end
-    return C
+    return chain
   end
 
-  function CChain(paths::Vector{CPath}, c::AcbFieldElem)
-    C = CChain(paths)
-    C.center = c
-    return C
+  function CChain(paths::Vector{CPath}, center::AcbFieldElem)
+    chain = CChain(paths)
+    chain.center = center
+    return chain
   end
-
 end
 
-  # An integration scheme
-  # consists of a list of abscissae, weights and a bunch of parameters.
-  # Every path we integrate over gets assigned one of these integrations
-  # schemes. Currently all integration schemes are Gauss-Legendre integration
-  # schemes. If we alow for different types of integration later on, we can
-  # extend this struct to also include those.
+# A Gauss-Legendre integration scheme: nodes and weights for one group of
+# subpaths (see Grouping.jl). The number of nodes N is chosen for the ellipse
+# parameter r, the integrand bound and the error (Neurohr, Chapter 3): r has
+# a strong influence on N, the bound only a logarithmic one.
 mutable struct IntegrationSchemeGL
+  abscissae::Vector{ArbFieldElem}       # the nodes in [-1, 1]
+  weights::Vector{ArbFieldElem}         # the weights
+  quadrature_parameter::ArbFieldElem    # the ellipse parameter r
+  number_of_nodes::Int                  # N
+  bounds::Vector{ArbFieldElem}          # the integrand bound used
+  prec::Int                             # precision of the nodes and weights
 
-  abscissae::Vector{ArbFieldElem}
-  weights::Vector{ArbFieldElem}
-
- # r has strong influence on the size of N while the contribution of M is
- # merely logarithmic. So, in order to minimize N the priority is to
- # maximize r such that M is still decent.
-
-  int_param_r::ArbFieldElem
-  int_param_N::Int
-  bounds::Vector{ArbFieldElem}
-  prec::Int
-
-  #Compute a Gauss-Legendre integration scheme
   function IntegrationSchemeGL(r::ArbFieldElem, prec::Int, error::ArbFieldElem, bound::ArbFieldElem)
-
-    integration_scheme = new()
-    N = gauss_legendre_parameters(r, error, bound)
-    integration_scheme.int_param_N = N
-    abscissae, weights = gauss_legendre_integration_points(N, prec)
-    integration_scheme.abscissae = abscissae
-    integration_scheme.weights = weights
-    integration_scheme.int_param_r = r
-    integration_scheme.bounds = [bound]
-    integration_scheme.prec = prec
-    return integration_scheme
+    scheme = new()
+    N = _gauss_legendre_parameters(r, error, bound)
+    scheme.number_of_nodes = N
+    scheme.abscissae, scheme.weights = _gauss_legendre_nodes(N, prec)
+    scheme.quadrature_parameter = r
+    scheme.bounds = [bound]
+    scheme.prec = prec
+    return scheme
   end
-
 end
 
+# A double exponential (tanh-sinh) integration scheme for one group of
+# subpaths. prec: precision of the nodes; target: the parameters are chosen
+# for errors 2^-target.
 mutable struct IntegrationSchemeDE
+  abscissae::Vector{ArbFieldElem}       # the nodes in (-1, 1)
+  weights::Vector{ArbFieldElem}         # the weights
+  quadrature_parameter::ArbFieldElem    # the strip parameter r (0 < r < pi/2)
+  number_of_nodes::Int                  # 2N + 1
+  bounds::Vector{ArbFieldElem}          # the two integrand bounds used (M_1, M_2)
+  prec::Int                             # precision of the nodes and weights
 
-  abscissae::Vector{ArbFieldElem}
-  weights::Vector{ArbFieldElem}
-
-  int_param_r::ArbFieldElem
-  int_param_N::Int
-  bounds::Vector{ArbFieldElem}
-  prec::Int
-
-  #Compute a Gauss-Legendre integration scheme
-  # prec: precision of the nodes; target: the parameters are chosen for errors 2^-target
   function IntegrationSchemeDE(r::ArbFieldElem, prec::Int, bounds::Vector{ArbFieldElem},
                                target::Int = prec)
     RR = parent(r)
-    integration_scheme = new()
-    integration_scheme.prec = prec
-    @req r < const_pi(RR)/2 "Error in IntegrationSchemeDE"
-    @req r > RR(0) "Error in IntegrationSchemeDE"
-
-    N, h = double_exponential_integration_parameters(r, target, bounds)
-    abscissae, weights = tanh_sinh_quadrature_integration_points(N, h)
-    integration_scheme.abscissae = abscissae
-    integration_scheme.weights = weights
-    integration_scheme.int_param_r = r
-    integration_scheme.bounds = bounds
-    integration_scheme.int_param_N = 2*N + 1
-    return integration_scheme
+    @req RR(0) < r < const_pi(RR)/2 "The parameter of a double exponential scheme must lie in (0, pi/2) (got $r)."
+    scheme = new()
+    scheme.prec = prec
+    N, h = _double_exponential_parameters(r, target, bounds)
+    scheme.abscissae, scheme.weights = _tanh_sinh_nodes(N, h)
+    scheme.quadrature_parameter = r
+    scheme.bounds = bounds
+    scheme.number_of_nodes = 2*N + 1
+    return scheme
   end
 end
 
@@ -442,36 +354,23 @@ mutable struct RiemannSurfaceModel <: AbstractRiemannSurfaceModel
   # by evaluating all of the factors at every abscissa and taking products of
   # the computed values.
   #
-  # The variable differential_form_data consists of four parts:
-  # - factor_set: The set of n common factors used for integration
-  # - factor_matrix: A g by n matrix storing the exponents of the n factors
-  # for the g differential forms.
-  # - min_pows: A list of smallest exponents occurring in the factor set
-  # for every given factor
-  # - range_pows: The number of different powers we need to compute
+  # differential_form_data = (factor_set, factor_matrix, min_pows, range_pows):
+  # - factor_set: the n common factors of the differentials
+  # - factor_matrix: the n x g matrix of exponents: g_k = prod_l factor_l^factor_matrix[l, k]
+  # - min_pows: the smallest exponent of every factor (minimum of its row)
+  # - range_pows: largest minus smallest exponent of every factor
+  # (see Integrand.jl).
   #
-  # Example: Basis is x^3*(x^2-5), (x^2-5)^10*(x-7)^3, x*(x-7), x^5*(x^2-5)
+  # Example: basis x^3*(x^2-5), (x^2-5)^10*(x-7)^3, x*(x-7), x^5*(x^2-5)
   #  factor_set = [x, x-7, x^2-5]
-  #  factor_matrix is
+  #  factor_matrix =
   #  [3, 0, 1, 5]
   #  [0, 3, 1, 0]
   #  [1, 10, 0, 1]
-  #  min_pows = [1,1,1]
-  #  range_pows = [4, 2, 9]
+  #  min_pows = [0, 0, 0]
+  #  range_pows = [5, 3, 10]
 
   differential_form_data::Tuple{Vector{mpoly_type(AbsSimpleNumFieldElem)}, Matrix{Int}, Vector{Int}, Vector{Int}}
-
-  #Evaluate_differential_factors_matrix is a function that
-  # takes as its input
-  # - a list of factors
-  # - The point x0 we want to integrate at
-  # - a list of m ys such that f(y) = x0 for every y in ys.
-  # As output it gives an m by g matrix A such that A_ij = g_j(x0, y_i)
-  # where the omega_j = g_jdx are the basis of differential forms.
-  # The function is constructed by using differential forms data.
-  # The factors are given as input to allow us to choose the precision of the
-  # input factors.
-  #evaluate_differential_factors_matrix::Any
 
   # A list of integration schemes used for computations. An integration scheme
   # consists of a list of abscissae, weights and a bunch of parameters.

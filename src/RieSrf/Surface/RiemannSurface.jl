@@ -1,9 +1,7 @@
 ################################################################################
 #
-#          RieSrf/RiemannSurface.jl : Riemann surfaces and their plane models
+#  RieSrf/Surface/RiemannSurface.jl : Riemann surfaces and their plane models
 #
-################################################################################
-
 #  A RiemannSurface is the compact Riemann surface of the plane curve
 #  f(x, y) = 0 given by the user. The numerical work is done on plane models
 #  (RiemannSurfaceModel): the curve after a projective transformation of P^2,
@@ -32,6 +30,8 @@
 #     f = x^5 + x^4 + x^3 - x + 4 - y^2
 #     RS = riemann_surface(f, 200)        # cheap: nothing numerical is computed yet
 #     tau = small_period_matrix(RS)
+#
+################################################################################
 
 ################################################################################
 #
@@ -284,7 +284,7 @@ end
 
 A rough prediction of the cost of the period matrix computation on the plane
 model `C`: the number of quadrature nodes on the paths of the fundamental
-group, as the integration with `int_style = "Mixed"` would choose them
+group, as the integration with `int_style = :mixed` would choose them
 (Gauss-Legendre with the path's own parameter r, or double exponential for
 r < 1.03, without grouping and splitting and with a provisional bound 10^5),
 times m*(m + d_x), where m is the number of sheets and d_x the degree in x
@@ -306,19 +306,17 @@ function predicted_cost(C::RiemannSurfaceModel)
   nodes = 0
   for p in paths
     q = _fresh_path_copy(p)            # the parameter functions record data in the path
-    t = path_type(q)
-    r = t == 0 ? gauss_legendre_line_parameters(points, q) :
-        t == 1 ? gauss_legendre_arc_parameters(points, q) :
-                 gauss_legendre_circle_parameters(points, q)
+    r = is_line(q) ? _gauss_legendre_line_parameter!(points, q) :
+        is_arc(q)  ? _gauss_legendre_arc_parameter!(points, q) :
+                     _gauss_legendre_circle_parameter!(points, q)
     RR = parent(r)
     if r >= RR(103//100)
-      nodes += Int(gauss_legendre_parameters(_gl_group_r(r), err, RR(10)^5))
+      nodes += Int(_gauss_legendre_parameters(_gl_group_r(r), err, RR(10)^5))
     else
-      rde = t == 0 ? double_exponential_line_parameters(points, q) :
-            t == 1 ? double_exponential_arc_parameters(points, q) :
-                     double_exponential_circle_parameters(points, q)
+      rde = is_line(q) ? _double_exponential_line_parameter!(points, q) :
+                         _double_exponential_arc_circle_parameter!(points, q)
       RD = parent(rde)
-      N, _ = double_exponential_integration_parameters(RD(19//20)*rde, prec, [RD(10)^5, RD(10)^5])
+      N, _ = _double_exponential_parameters(RD(19//20)*rde, prec, [RD(10)^5, RD(10)^5])
       nodes += 2*Int(N) + 1
     end
   end
@@ -327,10 +325,10 @@ function predicted_cost(C::RiemannSurfaceModel)
   return Float64(nodes) * m * (m + degree(f, 1))
 end
 
-_fresh_path_copy(G::CPath) =
-  path_type(G) == 0 ? c_line(G.start_point_high, G.end_point_high, G.C) :
-                      c_arc(G.start_point_high, G.end_point_high, G.center_high, G.C;
-                            orientation = orientation(G))
+_fresh_path_copy(path::CPath) =
+  is_line(path) ? line_path(path.start_point_high, path.end_point_high, path.field) :
+                  arc_path(path.start_point_high, path.end_point_high, path.center_high, path.field;
+                           orientation = orientation(path))
 
 ################################################################################
 #
@@ -367,7 +365,7 @@ function _transfer_point(P::RiemannSurfacePoint, C::RiemannSurfaceModel)
   CC = parent(h[1])
   T = C.transform * inv(S.transform)
   e = S.embedding.embedding
-  Te = [CC(evaluate(T[i, j], e, precision(CC))) for i in 1:3, j in 1:3]
+  Te = [CC(_embed_coefficient(T[i, j], e, precision(CC))) for i in 1:3, j in 1:3]
   hq = [sum(Te[i, j]*h[j] for j in 1:3) for i in 1:3]
   @req !contains(hq[3], zero(CC)) "The point corresponds to a point at infinity of the computational model; this is not supported yet. Use riemann_surface(f, prec; model = :original) for Abel-Jacobi maps of such points."
   return C([hq[1]/hq[3], hq[2]/hq[3]])

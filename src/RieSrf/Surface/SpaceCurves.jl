@@ -1,9 +1,7 @@
 ################################################################################
 #
-#          RieSrf/SpaceCurves.jl : plane models of curves in P^n
+#  RieSrf/Surface/SpaceCurves.jl : plane models of curves in P^n
 #
-################################################################################
-
 #  riemann_surface(F::Vector, prec) for a curve in P^n, given by homogeneous
 #  polynomials F over QQ. The curve is projected birationally to P^2 and the
 #  resulting plane curve is used as the curve "as given" (the original model).
@@ -38,6 +36,14 @@
 #  and the best chart is oriented so that deg_y f <= deg_x f.
 #  No search for rational points on the curve (projecting from them would
 #  lower the degree); to be done later.
+#
+#  Elimination for general space curves needs Groebner bases, which are left
+#  to Oscar: _elimination_generators has no methods here, and such curves are
+#  refused with a hint (see _elimination_message).
+#
+#  Entry points: riemann_surface(F::Vector, prec), plane_model.
+#
+################################################################################
 
 @doc raw"""
     riemann_surface(F::Vector{<:MPolyRingElem}, prec::Int = 100;
@@ -181,7 +187,7 @@ function _projected_equation(F::Vector{<:MPolyRingElem}, A::QQMatrix; groebner::
     E = [resultant(Gs[1], Gs[2], 1)]
   else
     groebner || return nothing          # the caller only wants the cheap cases
-    @req _elimination_available() _elimination_message()
+    @req _elimination_available() _elimination_message(N == 4 && length(F) == 2)
     E = _elimination_generators(Gs, N - 3)
   end
   isempty(E) && throw(ArgumentError("The polynomials do not cut out a curve: the image of the projection is all of P^2 (dimension >= 2)."))
@@ -229,10 +235,12 @@ function _elimination_generators end
 # Whether a method for the elimination ideal exists (added by Oscar).
 _elimination_available() = !isempty(methods(_elimination_generators))
 
-_elimination_message() =
+_elimination_message(two_surfaces::Bool = false) =
   "This curve needs an elimination ideal (it is not given as a complete " *
   "intersection of two surfaces in P^3). Hecke cannot compute it " *
-  "efficiently; use Oscar, which provides it."
+  "efficiently; use Oscar, which provides it." *
+  (two_surfaces ? " (For two surfaces in P^3 this happens when the center " *
+                  "of the projection lies on one of them; another projection avoids it.)" : "")
 
 # The image must be an irreducible (over QQbar), hence reduced, curve.
 function _check_plane_curve(G::MPolyRingElem)
@@ -277,7 +285,7 @@ end
 
 function _chart_score(f::MPolyRingElem, g)
   sheets = min(degree(f, 1), degree(f, 2))
-  baker = (g !== nothing && length(inner_faces(f)) == g) ? 0 : 1
+  baker = (g !== nothing && length(_newton_polygon_interior_points(f)) == g) ? 0 : 1
   height = maximum(max(nbits(numerator(c)), nbits(denominator(c))) for c in coefficients(f))
   return (sheets, baker, total_degree(f), length(f), height)
 end

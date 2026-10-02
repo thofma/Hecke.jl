@@ -266,7 +266,7 @@ function _predictors(RS)
     isdefined(p, :integral_matrix) && (pm = max(pm, _log2(_max_abs(p.integral_matrix))))
   end
   clus = _clustering(C.discriminant_points)
-  nsub = sum(length(Hecke.RiemannSurfaces.get_subpaths(p))
+  nsub = sum(length(Hecke.RiemannSurfaces.subpaths(p))
              for p in Hecke.RiemannSurfaces.fundamental_group_of_punctured_P1(C)[1]; init = 0)
   return (sheets = C.degree[1], ndisc = ndisc, logM = logM, nodes = nodes,
           comp_prec = C.computational_precision, pathmax = pm,
@@ -362,8 +362,8 @@ end
                           csv = "precision_results.csv", only = nothing, kw...)
 
 Run `measure_precision` on all curves of the tier (or only those whose name
-is in `only`). Further keywords (e.g. `integration_method = "rigorous"`,
-`int_style = "GL"`) are passed on to `riemann_surface`.
+is in `only`). Further keywords (e.g. `int_style = :gl`,
+`adaptive = false`) are passed on to `riemann_surface`.
 """
 function run_precision_suite(; tier::Int = 1, precs::Vector{Int} = [100, 200, 500, 1000],
                              model = :auto, csv = "precision_results.csv",
@@ -572,7 +572,7 @@ function diagnose_precision(RS)
   p = C.computational_precision
   println("computational precision      ", p)
   println("big period matrix            ", _r(_bits_of(collect(P))))
-  f = Hecke.RiemannSurfaces.embed_mpoly(Hecke.RiemannSurfaces.defining_polynomial(C),
+  f = Hecke.RiemannSurfaces._embed_mpoly(Hecke.RiemannSurfaces.defining_polynomial(C),
                                         Hecke.RiemannSurfaces.embedding(C), p)
   println("embedded f (coefficients)    ", _r(_bits_of(collect(coefficients(f)))))
   println("discriminant points          ", _r(_bits_of(C.discriminant_points)))
@@ -624,14 +624,14 @@ function diagnose_chain(RS, k = :worst; n::Int = 8, subpaths::Bool = false)
             ", type ", Hecke.RiemannSurfaces.path_type(p),
             objectid(p) in forward ? "" : ", only in the infinity chain",
             ", ", C64(p.start_point_high), " -> ", C64(p.end_point_high))
-    if subpaths && !isdefined(p, :sub_paths)
+    if subpaths && !isdefined(p, :subpaths)
       println("      (no subpaths: reverse of a forward path, see diagnose_path)")
     elseif subpaths
-      for (j, sp) in enumerate(Hecke.RiemannSurfaces.get_subpaths(p))
+      for (j, sp) in enumerate(Hecke.RiemannSurfaces.subpaths(p))
         bd = isdefined(sp, :bounds) && !isempty(sp.bounds) ? _r(_log2(maximum(sp.bounds))) : "-"
         println("      sub $j: type ", Hecke.RiemannSurfaces.path_type(sp),
                 ", ", isdefined(sp, :integration_scheme) ? sp.integration_scheme : "-",
-                ", r ", isdefined(sp, :int_param_r) ? _r(Float64(sp.int_param_r)) : "-",
+                ", r ", isdefined(sp, :quadrature_parameter) ? _r(Float64(sp.quadrature_parameter)) : "-",
                 ", log2 bound ", bd,
                 ", ", C64(Hecke.RiemannSurfaces.start_point(sp)), " -> ",
                 C64(Hecke.RiemannSurfaces.end_point(sp)))
@@ -664,10 +664,10 @@ function diagnose_path(RS, i = :worst)
   println("path $i of $(length(paths)): bits ", _r(_bits_of(collect(p.integral_matrix))),
           ", log2 max|entry| ", _r(_log2(_max_abs(p.integral_matrix))), ", W = $W")
   v = R.embedding(C)
-  f = R.embed_mpoly(R.defining_polynomial(C), v, W)
+  f = R._embed_mpoly(R.defining_polynomial(C), v, W)
   Ky, _ = polynomial_ring(base_ring(f), "y")
   difs, fm, mp, rp = R.differential_form_data(C)
-  emb = [R.embed_mpoly(d, v, W) for d in difs]
+  emb = [R._embed_mpoly(d, v, W) for d in difs]
   Cp = AcbField(W)
   ws = R.ContinuationWorkspace(R._split_in_y(f), Ky)
   cache = R.DifferentialFactorCache(emb, fm, mp, rp)
@@ -678,22 +678,22 @@ function diagnose_path(RS, i = :worst)
   lo_prec = mp_prec > 0 ? max(100, min(mp_prec, W)) : W
   lo = nothing
   if lo_prec < W
-    f_lo = R.embed_mpoly(R.defining_polynomial(C), v, lo_prec)
+    f_lo = R._embed_mpoly(R.defining_polynomial(C), v, lo_prec)
     lo = R.ContinuationWorkspace(R._split_in_y(f_lo), polynomial_ring(base_ring(f_lo), "y")[1])
   end
-  for (j, sp) in enumerate(R.get_subpaths(p))
-    sc = sp.integration_scheme == "GL" ? C.integration_schemes_GL[sp.integration_scheme_index] :
+  for (j, sp) in enumerate(R.subpaths(p))
+    sc = sp.integration_scheme === :gl ? C.integration_schemes_GL[sp.integration_scheme_index] :
                                          C.integration_schemes_DE[sp.integration_scheme_index]
     N = length(sc.abscissae)
     println("  sub $j: type ", R.path_type(sp), ", ", sp.integration_scheme, " N = $N, ",
             C32(R.start_point(sp)), " -> ", C32(R.end_point(sp)))
-    if j == 1 && length(R.get_subpaths(p)) == 1
+    if j == 1 && length(R.subpaths(p)) == 1
       # stored vs recomputed, per differential (column): log2 of the ratio of
       # the largest entries (a constant ratio means the two use differently
       # scaled differentials)
       res = R._integrate_chunk(sp, sc, 1, N + 2, Cp, W, ws, cache, vals, nothing, true)
       Mst = p.integral_matrix
-      lr = [_log2(maximum(abs(Mst[a, k]) for a in 1:m)) - _log2(maximum(abs(res.M[a, k]) for a in 1:m))
+      lr = [_log2(maximum(abs(Mst[a, k]) for a in 1:m)) - _log2(maximum(abs(res.integrals[a, k]) for a in 1:m))
             for k in 1:g]
       println("    log2(stored/recomputed) per differential: ", join(_r.(lr), " "))
       println("    computational_model(RS) === RS: ", C === RS, ", stored matrix prec ",
@@ -703,18 +703,18 @@ function diagnose_path(RS, i = :worst)
     lo === nothing || push!(runs, ("adaptive, midpoint prec $lo_prec", true, lo))
     for (name, ad, l) in runs
       t = @elapsed res = R._integrate_chunk(sp, sc, 1, N + 2, Cp, W, ws, cache, vals, l, ad)
-      println("    continuation ($name): sum bits ", _r(_bits_of(vec(res.M))),
-              ", log2 max ", _r(_log2(maximum(abs(z) for z in res.M))),
-              ", end fiber bits ", _r(_bits_of(res.ys_end)), "  (", round(t, digits = 2), "s)")
+      println("    continuation ($name): sum bits ", _r(_bits_of(vec(res.integrals))),
+              ", log2 max ", _r(_log2(maximum(abs(z) for z in res.integrals))),
+              ", end fiber bits ", _r(_bits_of(res.fiber_end)), "  (", round(t, digits = 2), "s)")
     end
     # node by node, fresh fibers
     xb = Inf; yb = Inf; yrel = Inf; vb = Inf; vmax = -Inf; worst = 0
     acc = [Cp() for _ in 1:m, _ in 1:g]
     for l in 1:N
       x = R.evaluate(sp, sc.abscissae[l])
-      wi = R.path_type(sp) == 0 ? Cp(sc.weights[l]) : sc.weights[l] * R.evaluate_d(sp, sc.abscissae[l])
+      wi = R.is_line(sp) ? Cp(sc.weights[l]) : sc.weights[l] * R.evaluate_derivative(sp, sc.abscissae[l])
       z = R._fresh_fiber!(ws, x, W)
-      R.evaluate_differential_factors_matrix!(vals, cache, x, z, wi)
+      R._evaluate_differentials!(vals, cache, x, z, wi)
       for a in eachindex(acc); add!(acc[a], acc[a], vals[a]); end
       xb = min(xb, _bits_of([x]))
       yb = min(yb, _bits_of(z))

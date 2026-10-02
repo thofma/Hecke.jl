@@ -1,12 +1,18 @@
 ################################################################################
 #
-#  Evaluation of the differential factors (the integrand)
+#  RieSrf/Periods/Integrand.jl : evaluation of the differentials
 #
-#  Each embedded factor f_l(x, y) = sum_j c_{l,j}(x) y^j is stored once as a
-#  contiguous block of coefficients. Per abscissa the powers of x0 and of every
-#  y_s are computed once, and every c_{l,j}(x0) and every factor value is a
-#  single acb_dot. The quadrature weight is folded into the initial value of
-#  each entry.
+#  The basis of differentials is omega_k = g_k(x, y) dx with
+#  g_k = prod_l factor_l^e(l, k) (differential_form_data: the factors and the
+#  exponents). The quadrature evaluates all g_k on all sheets at every node,
+#  which is the innermost loop of the period computation. Each embedded factor
+#  factor_l(x, y) = sum_j c_{l,j}(x) y^j is stored once as a contiguous block
+#  of coefficients; per node the powers of x and of every y_s are computed
+#  once, and every c_{l,j}(x) and every factor value is a single acb_dot.
+#  The quadrature weight is the initial value of each entry.
+#
+#  Entry points: DifferentialFactorCache, _evaluate_differentials!,
+#  _evaluate_differentials, _split_in_y.
 #
 ################################################################################
 
@@ -23,161 +29,169 @@ function _split_in_y(f::AbstractAlgebra.Generic.MPoly{AcbFieldElem})
   return F
 end
 
+# The factors of the differentials at one precision, with preallocated
+# scratch space. One cache per thread.
 mutable struct DifferentialFactorCache
-  factor_matrix::Matrix{Int}
-  min_pows::Vector{Int}
-  range_pows::Vector{Int}
-  prec::Int
-  # coefficients: factor l has a (ny[l] x nx[l]) block at coef[l], row-major:
-  # entry (j, i) (0-based) = coefficient of x^i y^j; rowlen[l][j+1] = length
-  # of row j without trailing zeros
-  coef::Vector{Ptr{acb_struct}}
-  nx::Vector{Int}
-  ny::Vector{Int}
-  rowlen::Vector{Vector{Int}}
-  maxnx::Int
-  maxny::Int
-  # scratch (one cache per worker)
-  xpow::Ptr{acb_struct}          # 1, x0, ..., x0^(maxnx-1)
-  cxv::Vector{Ptr{acb_struct}}   # cxv[l]: c_{l,j}(x0), j = 0..ny[l]-1
-  ypow::Ptr{acb_struct}          # m_alloc rows of length maxny: 1, y_s, ..., y_s^(maxny-1)
-  m_alloc::Int
-  pows::Vector{AcbFieldElem}
-  val::AcbFieldElem
+  factor_matrix::Matrix{Int}            # e(l, k): exponent of factor l in g_k
+  min_powers::Vector{Int}               # min_k e(l, k)
+  power_ranges::Vector{Int}             # max_k e(l, k) - min_k e(l, k)
+  prec::Int                             # precision of the coefficients
+  # factor l: a (y_lengths[l] x x_lengths[l]) block, row-major: entry (j, i)
+  # (0-based) = coefficient of x^i y^j
+  coefficient_tables::Vector{Ptr{acb_struct}}
+  x_lengths::Vector{Int}                # number of x-coefficients of factor l
+  y_lengths::Vector{Int}                # degree in y of factor l, plus 1
+  row_lengths::Vector{Vector{Int}}      # lengths of the rows without trailing zeros
+  max_x_length::Int                     # maximum of x_lengths
+  max_y_length::Int                     # maximum of y_lengths
+  x_powers::Ptr{acb_struct}             # scratch: 1, x, ..., x^(max_x_length - 1)
+  y_coefficients::Vector{Ptr{acb_struct}}  # scratch: c_{l,j}(x), j = 0, ..., y_lengths[l] - 1
+  y_powers::Ptr{acb_struct}             # scratch: per sheet s a row 1, y_s, ..., y_s^(max_y_length - 1)
+  allocated_sheets::Int                 # number of rows allocated in y_powers
+  powers::Vector{AcbFieldElem}          # scratch: powers of one factor value
+  value::AcbFieldElem                   # scratch: one factor value
 
   function DifferentialFactorCache(factors::Vector{AbstractAlgebra.Generic.MPoly{AcbFieldElem}},
-                                   factor_matrix::Matrix{Int}, min_pows::Vector{Int},
-                                   range_pows::Vector{Int})
+                                   factor_matrix::Matrix{Int}, min_powers::Vector{Int},
+                                   power_ranges::Vector{Int})
     CC = base_ring(factors[1])
-    sz = sizeof(acb_struct)
+    entry_size = sizeof(acb_struct)
     L = length(factors)
-    coef = Vector{Ptr{acb_struct}}(undef, L)
-    nx = zeros(Int, L); ny = zeros(Int, L)
-    rowlen = Vector{Vector{Int}}(undef, L)
+    coefficient_tables = Vector{Ptr{acb_struct}}(undef, L)
+    x_lengths = zeros(Int, L)
+    y_lengths = zeros(Int, L)
+    row_lengths = Vector{Vector{Int}}(undef, L)
     for l in 1:L
-      F = _split_in_y(factors[l])             # F[j+1][i+1] = coeff of x^i y^j
-      ny[l] = length(F)
-      nx[l] = maximum(length, F)
-      coef[l] = acb_vec(ny[l]*nx[l])
-      rowlen[l] = zeros(Int, ny[l])
-      for j in 0:ny[l]-1
+      F = _split_in_y(factors[l])
+      y_lengths[l] = length(F)
+      x_lengths[l] = maximum(length, F)
+      coefficient_tables[l] = acb_vec(y_lengths[l]*x_lengths[l])
+      row_lengths[l] = zeros(Int, y_lengths[l])
+      for j in 0:y_lengths[l]-1
         row = F[j+1]
-        for i in 0:nx[l]-1
-          p = coef[l] + (j*nx[l] + i)*sz
+        for i in 0:x_lengths[l]-1
+          entry = coefficient_tables[l] + (j*x_lengths[l] + i)*entry_size
           if i < length(row)
-            ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), p, row[i+1])
-            iszero(row[i+1]) || (rowlen[l][j+1] = i + 1)
+            ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), entry, row[i+1])
+            iszero(row[i+1]) || (row_lengths[l][j+1] = i + 1)
           else
-            ccall((:acb_zero, libflint), Nothing, (Ptr{acb_struct},), p)
+            ccall((:acb_zero, libflint), Nothing, (Ptr{acb_struct},), entry)
           end
         end
       end
     end
-    maxnx = maximum(nx); maxny = maximum(ny)
-    cxv = [acb_vec(ny[l]) for l in 1:L]
-    m_alloc = 0
-    pows = [CC() for _ in 1:(maximum(range_pows) + 1)]
-    C = new(factor_matrix, min_pows, range_pows, precision(CC), coef, nx, ny, rowlen,
-            maxnx, maxny, acb_vec(maxnx), cxv, Ptr{acb_struct}(C_NULL), 0, pows, CC())
-    finalizer(C) do c
-      for l in eachindex(c.coef)
-        acb_vec_clear(c.coef[l], c.ny[l]*c.nx[l])
-        acb_vec_clear(c.cxv[l], c.ny[l])
+    max_x_length = maximum(x_lengths)
+    max_y_length = maximum(y_lengths)
+    y_coefficients = [acb_vec(y_lengths[l]) for l in 1:L]
+    powers = [CC() for _ in 1:(maximum(power_ranges) + 1)]
+    cache = new(factor_matrix, min_powers, power_ranges, precision(CC), coefficient_tables,
+                x_lengths, y_lengths, row_lengths, max_x_length, max_y_length,
+                acb_vec(max_x_length), y_coefficients, Ptr{acb_struct}(C_NULL), 0, powers, CC())
+    finalizer(cache) do c
+      for l in eachindex(c.coefficient_tables)
+        acb_vec_clear(c.coefficient_tables[l], c.y_lengths[l]*c.x_lengths[l])
+        acb_vec_clear(c.y_coefficients[l], c.y_lengths[l])
       end
-      acb_vec_clear(c.xpow, c.maxnx)
-      c.m_alloc > 0 && acb_vec_clear(c.ypow, c.m_alloc*c.maxny)
+      acb_vec_clear(c.x_powers, c.max_x_length)
+      c.allocated_sheets > 0 && acb_vec_clear(c.y_powers, c.allocated_sheets*c.max_y_length)
     end
-    return C
+    return cache
   end
 end
 
-function _ensure_ypow!(C::DifferentialFactorCache, m::Int)
-  if C.m_alloc < m
-    C.m_alloc > 0 && acb_vec_clear(C.ypow, C.m_alloc*C.maxny)
-    C.ypow = acb_vec(m*C.maxny)
-    C.m_alloc = m
+# Room for the powers of m values of y.
+function _ensure_y_powers!(cache::DifferentialFactorCache, m::Int)
+  if cache.allocated_sheets < m
+    cache.allocated_sheets > 0 && acb_vec_clear(cache.y_powers, cache.allocated_sheets*cache.max_y_length)
+    cache.y_powers = acb_vec(m*cache.max_y_length)
+    cache.allocated_sheets = m
   end
-  return C.ypow
+  return cache.y_powers
 end
 
-# res[s, k] <- w * g_k(x0, ys[s]),  res is an m x g Matrix{AcbFieldElem} (reused buffer)
-function evaluate_differential_factors_matrix!(res::Matrix{AcbFieldElem}, C::DifferentialFactorCache,
-                                               x0::AcbFieldElem, ys::Vector{AcbFieldElem},
-                                               w::AcbFieldElem)
-  m, g = size(res)                 # m = number of sheets passed (1 in the AJ map)
-  fm = C.factor_matrix
-  pows = C.pows
-  val = C.val
-  prec = C.prec
-  sz = sizeof(acb_struct)
+# values[s, k] <- weight * g_k(x, fiber[s]) for the m x g buffer values
+# (m = the number of y-values passed, e.g. 1 in the Abel-Jacobi map).
+function _evaluate_differentials!(values::Matrix{AcbFieldElem}, cache::DifferentialFactorCache,
+                                  x::AcbFieldElem, fiber::Vector{AcbFieldElem}, weight::AcbFieldElem)
+  m, g = size(values)
+  exponents = cache.factor_matrix
+  powers = cache.powers
+  value = cache.value
+  prec = cache.prec
+  entry_size = sizeof(acb_struct)
 
   @inbounds for k in 1:g, s in 1:m
-    Hecke.set!(res[s, k], w)
+    Hecke.set!(values[s, k], weight)
   end
 
-  # powers of x0 (once) and of every y_s (once, shared by all factors)
-  _acb_powers_ptr!(C.xpow, x0, C.maxnx - 1, prec)
-  if C.maxny > 1
-    ypow = _ensure_ypow!(C, m)
+  # powers of x (once) and of every y_s (once, shared by all factors)
+  _acb_powers_ptr!(cache.x_powers, x, cache.max_x_length - 1, prec)
+  if cache.max_y_length > 1
+    y_powers = _ensure_y_powers!(cache, m)
     for s in 1:m
-      _acb_powers_ptr!(ypow + (s - 1)*C.maxny*sz, ys[s], C.maxny - 1, prec)
+      _acb_powers_ptr!(y_powers + (s - 1)*cache.max_y_length*entry_size, fiber[s],
+                       cache.max_y_length - 1, prec)
     end
   end
 
-  GC.@preserve C val begin
-  @inbounds for l in eachindex(C.coef)
-    nxl = C.nx[l]; nyl = C.ny[l]
-    cx = C.cxv[l]
-    # c_{l,j}(x0) = sum_i coef[j, i] x0^i
-    for j in 0:nyl-1
-      _acb_dot_ptr!(cx + j*sz, C.coef[l] + j*nxl*sz, C.xpow, C.rowlen[l][j+1], prec)
+  GC.@preserve cache value begin
+  @inbounds for l in eachindex(cache.coefficient_tables)
+    x_length = cache.x_lengths[l]
+    y_length = cache.y_lengths[l]
+    y_coefficients = cache.y_coefficients[l]
+    # c_{l,j}(x) = sum_i coefficient(j, i) x^i
+    for j in 0:y_length-1
+      _acb_dot_ptr!(y_coefficients + j*entry_size, cache.coefficient_tables[l] + j*x_length*entry_size,
+                    cache.x_powers, cache.row_lengths[l][j+1], prec)
     end
-    mp = C.min_pows[l]
-    rp = C.range_pows[l]
+    min_power = cache.min_powers[l]
+    power_range = cache.power_ranges[l]
 
-    if nyl == 1
-      # factor does not depend on y: same value on all sheets
-      ccall((:acb_set, libflint), Nothing, (Ref{AcbFieldElem}, Ptr{acb_struct}), val, cx)
-      _acb_pow_si!(pows[1], val, mp)
-      for t in 1:rp
-        mul!(pows[t+1], pows[t], val)
+    if y_length == 1
+      # the factor does not depend on y: the same value on all sheets
+      ccall((:acb_set, libflint), Nothing, (Ref{AcbFieldElem}, Ptr{acb_struct}), value, y_coefficients)
+      _acb_pow_si!(powers[1], value, min_power)
+      for t in 1:power_range
+        mul!(powers[t+1], powers[t], value)
       end
       for k in 1:g
-        e = fm[l, k]
+        e = exponents[l, k]
         e == 0 && continue
-        p = pows[e - mp + 1]
+        power = powers[e - min_power + 1]
         for s in 1:m
-          mul!(res[s, k], res[s, k], p)
+          mul!(values[s, k], values[s, k], power)
         end
       end
     else
       for s in 1:m
-        # value at y_s = sum_j c_{l,j}(x0) y_s^j
-        _acb_dot_ptr!(val, cx, C.ypow + (s - 1)*C.maxny*sz, nyl, prec)
-        _acb_pow_si!(pows[1], val, mp)
-        for t in 1:rp
-          mul!(pows[t+1], pows[t], val)
+        # the value at y_s: sum_j c_{l,j}(x) y_s^j
+        _acb_dot_ptr!(value, y_coefficients, cache.y_powers + (s - 1)*cache.max_y_length*entry_size,
+                      y_length, prec)
+        _acb_pow_si!(powers[1], value, min_power)
+        for t in 1:power_range
+          mul!(powers[t+1], powers[t], value)
         end
         for k in 1:g
-          e = fm[l, k]
+          e = exponents[l, k]
           e == 0 && continue
-          mul!(res[s, k], res[s, k], pows[e - mp + 1])
+          mul!(values[s, k], values[s, k], powers[e - min_power + 1])
         end
       end
     end
   end
   end # GC.@preserve
-  return res
+  return values
 end
 
-# Backwards-compatible wrapper (used by the bound heuristics, called rarely).
-function evaluate_differential_factors_matrix(RS::RiemannSurfaceModel,
-                                              factors::Vector{AbstractAlgebra.Generic.MPoly{AcbFieldElem}},
-                                              x0::AcbFieldElem, ys::Vector{AcbFieldElem})
-  _, fm, mp, rp = differential_form_data(RS)
-  C = DifferentialFactorCache(factors, fm, mp, rp)
+# The m x g matrix of the g_k(x, fiber[s]), without a preallocated cache
+# (for the bounds, which are computed rarely).
+function _evaluate_differentials(RS::RiemannSurfaceModel,
+                                 factors::Vector{AbstractAlgebra.Generic.MPoly{AcbFieldElem}},
+                                 x::AcbFieldElem, fiber::Vector{AcbFieldElem})
+  _, factor_matrix, min_powers, power_ranges = differential_form_data(RS)
+  cache = DifferentialFactorCache(factors, factor_matrix, min_powers, power_ranges)
   CC = base_ring(factors[1])
-  res = [CC() for _ in 1:length(ys), _ in 1:size(fm, 2)]
-  evaluate_differential_factors_matrix!(res, C, x0, ys, one(CC))
-  return matrix(CC, res)
+  values = [CC() for _ in 1:length(fiber), _ in 1:size(factor_matrix, 2)]
+  _evaluate_differentials!(values, cache, x, fiber, one(CC))
+  return matrix(CC, values)
 end

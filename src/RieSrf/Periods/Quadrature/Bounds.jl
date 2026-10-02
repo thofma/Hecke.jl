@@ -1,16 +1,163 @@
 ################################################################################
 #
-#  RieSrf/Quadrature/Bounds.jl : bounds for the integrand on the ellipses
+#  RieSrf/Periods/Quadrature/Bounds.jl : bounds for the integrand
+#
+#  The number of nodes of a quadrature depends (logarithmically) on a bound M
+#  for the integrand on the region around the path where it is holomorphic:
+#  the image of the ellipse E_r (Gauss-Legendre) or of the burger
+#  (double exponential). The bounds here are heuristic: 10 times the largest
+#  value of the integrand at a few sample points on the boundary of that
+#  region, near the closest discriminant point.
+#
+#  Entry points: _ellipse_bound_heuristic!, _burger_bound_heuristic!.
 #
 ################################################################################
 
-###  The following function compute_ellipse_bound_rigorous, together with the function construct_M,
-###  are an implementation of the algorithm for rigorous integration along straight lines by Nils Bruin, Linden
-###  Disney-Hogg, and Wuqian Effie Gao, as presented in https://arxiv.org/pdf/2208.12377. The implementation 
-###  here is Strategy 1 from this paper.
-function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
+# Heuristic bound 10 * max |integrand| at the point subpath(t). f: the
+# defining polynomial embedded at precision prec (embedded here if nothing).
+# If the balls are not finite at this precision (cancellation, e.g. for
+# discriminant points of very different sizes), the fiber and the
+# differentials are evaluated again at a higher precision (only a few correct
+# bits are needed).
+function _integrand_bound(RS::RiemannSurfaceModel, subpath::CPath, differentials,
+                          t, prec::Int; f = nothing)
+  RR = ArbField(prec)
+  x_ball = evaluate(subpath, t)
+  dx = evaluate_derivative(subpath, t)
+  p = prec
+  while true
+    f_p = (p == prec && f !== nothing) ? f : _embed_mpoly(defining_polynomial(RS), embedding(RS), p)
+    Ky, y = polynomial_ring(base_ring(f_p), "y")
+    differentials_p = p == prec ? differentials :
+                      [_embed_mpoly(g, embedding(RS), p) for g in differential_form_data(RS)[1]]
+    x = AcbField(p)(x_ball)
+    fiber_values = roots(f_p(x, y), initial_prec = p, max_prec = 8*p)
+    M = _evaluate_differentials(RS, differentials_p, x, fiber_values) * dx
+    values = [M[i, j] for i in 1:nrows(M), j in 1:ncols(M)]
+    if all(isfinite, values)
+      return 10 * maximum([RR(abs(v)) for v in values]; init = RR(0))
+    end
+    p >= 8*prec && error("Could not bound the integrand along a path (not finite at $p bits).")
+    p *= 2
+  end
+end
+
+# Gauss-Legendre: choose the scheme of the subpath (see _scheme_index) and
+# bound the integrand on the boundary of the image of its ellipse E_r, at the
+# point of the ellipse closest to the nearest discriminant point (in the
+# parameter domain). A subpath that already has a bound (no discriminant
+# point nearby, see _gauss_legendre_line_parameter!) gets the scheme with the
+# largest r.
+function _ellipse_bound_heuristic!(subpath::CPath, differentials::Vector{AbstractAlgebra.Generic.MPoly{AcbFieldElem}},
+                                   group_rs::Vector{ArbFieldElem}, RS::RiemannSurfaceModel; f = nothing)
+  if !isempty(subpath.bounds)
+    subpath.integration_scheme_index = length(group_rs)
+    return
+  end
+  index = _scheme_index(subpath.quadrature_parameter, group_rs)
+  subpath.integration_scheme_index = index
+  r = group_rs[index]
+  # The working precision, not the (lower) requested one: for large degrees
+  # (e.g. a degree 92 polynomial with tiny coefficients) f(x, y) at the
+  # requested precision can have balls too wide to isolate its roots at all.
+  prec = RS.computational_precision
+  RR = ArbField(prec)
+  I = onei(AcbField(prec))
+  b = sqrt(r^2 - 1)                     # E_r has semi-axes r and b
+  x = subpath.closest_disc_point_parameter
+
+  if abs(imag(x)) < RR(10^-10)
+    x_on_ellipse = sign(Int, real(x))*r
+  elseif abs(real(x)) < RR(10^-10)
+    x_on_ellipse = sign(Int, imag(x))*b*I
+  else
+    # the closest point r cos(s) + i b sin(s) to x in the first quadrant
+    # (after reflecting x there): Newton's method for the zero of the
+    # derivative of the distance
+    im_sign = sign(Int, imag(x))
+    re_sign = sign(Int, real(x))
+    x_reflected = abs(real(x)) + I*abs(imag(x))
+    distance_derivative = s -> cos(s)*sin(s) - r*real(x_reflected)*sin(s) + b*imag(x_reflected)*cos(s)
+    second_derivative = s -> (cos(s)^2 - sin(s)^2) - r*real(x_reflected)*cos(s) - b*imag(x_reflected)*sin(s)
+    s_previous = real(acos(x_reflected))
+    s = s_previous - distance_derivative(s_previous)/second_derivative(s_previous)
+    while abs(s - s_previous) > 10^-3
+      s_previous = s
+      s -= distance_derivative(s)/second_derivative(s)
+    end
+    x_on_ellipse = re_sign*r*cos(s) + im_sign*I*b*sin(s)
+  end
+  push!(subpath.bounds, _integrand_bound(RS, subpath, differentials, x_on_ellipse, prec; f = f))
+  return
+end
+
+# Double exponential: choose the scheme and bound the integrand at the end
+# points and at the point of the boundary of the burger
+# {tanh(lambda sinh(z)) : |Im z| < r} closest to the nearest discriminant
+# point (among number_of_samples points on the boundary).
+function _burger_bound_heuristic!(subpath::CPath, differentials, group_rs::Vector{ArbFieldElem},
+                                  RS::RiemannSurfaceModel; f = nothing,
+                                  lambda::ArbFieldElem = const_pi(parent(group_rs[1]))/2,
+                                  number_of_samples::Int = 20)
+  if !isempty(subpath.bounds)
+    subpath.integration_scheme_index = length(group_rs)
+    return
+  end
+  index = _scheme_index(subpath.quadrature_parameter, group_rs)
+  subpath.integration_scheme_index = index
+  r = group_rs[index]
+  prec = RS.computational_precision        # see _ellipse_bound_heuristic!
+  RR = ArbField(prec)
+  x = subpath.closest_disc_point_parameter
+  CC = parent(x)
+  I = onei(CC)
+  phi(t::AcbFieldElem) = tanh(lambda*sinh(t + I*r))   # the upper boundary of the burger
+
+  if abs(real(x)) < RR(10)^-10
+    x_on_boundary = sign(Int, imag(x)) * phi(CC(0))
+  else
+    x_reflected = abs(real(x)) + I*abs(imag(x))
+    t_max = acosh(const_pi(CC)/(2*lambda*sin(r)))
+    x_on_boundary = phi(CC(0))
+    min_distance = abs(x_reflected - x_on_boundary)
+    for k in 1:number_of_samples
+      z = phi(k/number_of_samples*t_max)
+      distance = abs(x_reflected - z)
+      if distance < min_distance
+        min_distance = distance
+        x_on_boundary = z
+      end
+    end
+    if abs(imag(x)) < RR(10)^-10
+      x_on_boundary = sign(Int, real(x)) * real(x_on_boundary) + I * imag(x_on_boundary)
+    else
+      x_on_boundary = sign(Int, real(x)) * real(x_on_boundary) + I * sign(Int, imag(x))*imag(x_on_boundary)
+    end
+  end
+
+  for t in [CC(-1), CC(1), CC(x_on_boundary)]
+    push!(subpath.bounds, _integrand_bound(RS, subpath, differentials, t, prec; f = f))
+  end
+  return
+end
+
+# (Rigorous bounds by covering the boundaries of the ellipses / DE regions with
+# balls, as suggested by Neurohr, were tried: root isolation over a ball needs
+# balls much smaller than the distances between the roots, so even when only
+# an upper bound within a factor 16 of the maximum was asked for, a subpath
+# needed thousands of balls (f26_g45: ~3000 per subpath, 4 s per scheme).
+# Rigorous periods are left to the Voronoi approach.)
+
+# NOT FUNCTIONAL (integration_method = :rigorous is refused, see
+# _check_integration_parameters). An unfinished implementation of Strategy 1 of
+# Bruin, Disney-Hogg, Gao, "Rigorous integration along straight lines"
+# (https://arxiv.org/abs/2208.12377): a rigorous bound for the integrand on
+# the ellipses around line subpaths. Known problems: gmin_int is undefined
+# (gmin is meant), minpoly is applied to a multivariate polynomial, and arcs
+# and circles are not covered.
+function _ellipse_bound_rigorous!(subpath, dif_basis, int_group_rs, RS)
   if length(subpath.bounds) == 0
-    i = maximum(filter(x -> (subpath.int_param_r > int_group_rs[x]), 1:length(int_group_rs));init = 1)
+    i = maximum(filter(x -> (subpath.quadrature_parameter > int_group_rs[x]), 1:length(int_group_rs));init = 1)
     subpath.integration_scheme_index = i
   else 
     i = length(int_group_rs)
@@ -69,155 +216,3 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
   end
 end 
 
-# Heuristic bound 10 * max |integrand| at the point subpath(t). If the balls
-# are not finite at the working precision (cancellation, e.g. for discriminant
-# points of very different sizes), the fiber and the differentials are
-# evaluated again at a higher precision (only a few correct bits are needed).
-function _integrand_bound(RS::RiemannSurfaceModel, subpath::CPath, differentials,
-                          t, prec::Int)
-  RR = ArbField(prec)
-  x_ball = evaluate(subpath, t)
-  dx = evaluate_d(subpath, t)
-  p = prec
-  while true
-    f = embed_mpoly(defining_polynomial(RS), embedding(RS), p)
-    Ky, y = polynomial_ring(base_ring(f), "y")
-    difs = p == prec ? differentials : [embed_mpoly(g, embedding(RS), p) for g in differential_form_data(RS)[1]]
-    xp = AcbField(p)(x_ball)
-    ys = roots(f(xp, y), initial_prec = p, max_prec = 8*p)
-    M = evaluate_differential_factors_matrix(RS, difs, xp, ys) * dx
-    vals = [M[i, j] for i in 1:nrows(M), j in 1:ncols(M)]
-    if all(isfinite, vals)
-      return 10 * maximum([RR(abs(v)) for v in vals]; init = RR(0))
-    end
-    p >= 8*prec && error("Could not bound the integrand along a path (not finite at $p bits).")
-    p *= 2
-  end
-end
-
-function compute_ellipse_bound_heuristic(subpath::CPath, differentials_test::Vector{ AbstractAlgebra.Generic.MPoly{AcbFieldElem}}, int_group_rs::Vector{ArbFieldElem}, RS::RiemannSurfaceModel)
-  num_of_int_groups = length(int_group_rs)
-  if length(subpath.bounds) == 0
-    i = maximum(filter(x -> (subpath.int_param_r > int_group_rs[x]), 1:num_of_int_groups);init = 1)
-    subpath.integration_scheme_index = i
-    r = int_group_rs[i]
-
-    v = embedding(RS)
-    # The working precision, not the (lower) requested one: f is embedded at
-    # this precision, and for large degrees (e.g. a degree 92 polynomial with
-    # tiny coefficients) f(x, y) at the requested precision can have balls
-    # too wide to isolate its roots at all.
-    prec = RS.computational_precision
-    RR = ArbField(prec)
-    f = embed_mpoly(defining_polynomial(RS), v, prec)
-    CC = base_ring(f)
-    I = onei(CC)
-    f = change_base_ring(CC, f, parent = parent(f))
-
-    Kxy = parent(f)
-    Ky, y = polynomial_ring(base_ring(Kxy), "y")
-
-    piC = const_pi(CC)
-    piR = const_pi(RR)
-	  b = sqrt(r^2-1)
-    x = subpath.t_of_closest_d_point
-
-	if abs(imag(x)) < RR(10^-10)
-		xr = sign(Int, real(x))*r
-  elseif abs(real(x)) < RR(10^-10)
-		xr = sign(Int, imag(x))*b*I
-	else
-
-	  im_sign = sign(Int, imag(x))
-	  re_sign = sign(Int, real(x))
-
-	  xa = abs(real(x)) + I*abs(imag(x))
-	  s = function(t)
-		  return cos(t)*sin(t)-r*real(xa)*sin(t)+b*imag(xa)*cos(t)
-	  end
-
-	  sp = function(t)
-		  return (cos(t)^2 - sin(t)^2) - r*real(xa)*cos(t) - b*imag(xa)*sin(t)
-	  end
-    nt = real(acos(xa))
-	  t = nt - s(nt)/sp(nt)
-	  while abs(t-nt) > 10^-3
-		  nt = t
-		  t -= s(t)/sp(t)
-    end
-	  xr = re_sign * r*cos(t) + im_sign*I*b*sin(t)
-  end
-
-   push!(subpath.bounds, _integrand_bound(RS, subpath, differentials_test, xr, prec))
-
-  else
-    subpath.integration_scheme_index = num_of_int_groups
-  end
-end
-
-function compute_burger_bound_heuristic(subpath::CPath, differentials_test, int_group_rs, RS::RiemannSurfaceModel, lambda::ArbFieldElem = const_pi(parent(int_group_rs[1]))/2, ss::Int = 20)
-  
-  num_of_int_groups = length(int_group_rs)
-  if length(subpath.bounds) == 0
-    i = maximum(filter(x -> (subpath.int_param_r > int_group_rs[x]), 1:num_of_int_groups);init = 1)
-    subpath.integration_scheme_index = i
-    r = int_group_rs[i]
-
-    v = embedding(RS)
-    prec = RS.computational_precision        # see compute_ellipse_bound_heuristic
-    RR = ArbField(prec)
-    f = embed_mpoly(defining_polynomial(RS), v, prec)
-    CC = base_ring(f)
-    I = onei(CC)
-    f = change_base_ring(CC, f, parent = parent(f))
-
-    Kxy = parent(f)
-    Ky, y = polynomial_ring(base_ring(Kxy), "y")
-
-    piC = const_pi(CC)
-    piR = const_pi(RR)
-	  b = sqrt(r^2-1)
-    x = subpath.t_of_closest_d_point
-
-    CC = parent(x)
-    I = onei(CC)
-    phi = function(t::AcbFieldElem)
-      return tanh(lambda*sinh(t + I*r))
-    end
-    if abs(real(x)) < RR(10)^-10
-        xr = sign(Int, imag(x)) * phi(CC(0))
-    else 
-      xt = abs(real(x)) + I * abs(imag(x))
-      tmax = acosh(const_pi(CC)/(2*lambda*sin(r)))
-      xr = phi(CC(0))
-      min_dist = abs(xt-xr)
-      for k in (1:ss)
-        t = k/ss*tmax
-        z = phi(t)
-        dist = abs(xt-z)
-        if dist < min_dist
-          min_dist = dist
-          xr = z
-        end
-      end
-      if abs(imag(x)) < RR(10)^-10
-        xr = sign(Int, real(x)) * real(xr) + I * imag(xr)
-      else
-        xr = sign(Int, real(x)) * real(xr) + I * sign(Int, imag(x))*imag(xr)
-      end
-    end
-
-    for tj in [CC(-1), CC(1), CC(xr)]
-      push!(subpath.bounds, _integrand_bound(RS, subpath, differentials_test, tj, prec))
-    end
-  else
-    subpath.integration_scheme_index = num_of_int_groups
-  end
-end
-
-# (Rigorous bounds by covering the boundaries of the ellipses / DE regions with
-# balls, as suggested by Neurohr, were tried: root isolation over a ball needs
-# balls much smaller than the distances between the roots, so even when only
-# an upper bound within a factor 16 of the maximum was asked for, a subpath
-# needed thousands of balls (f26_g45: ~3000 per subpath, 4 s per scheme).
-# Rigorous periods are left to the Voronoi approach.)

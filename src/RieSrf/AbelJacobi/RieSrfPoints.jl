@@ -1,3 +1,15 @@
+################################################################################
+#
+#  RieSrf/AbelJacobi/RieSrfPoints.jl : points of a Riemann surface
+#
+#  Points (places) of a plane model: finite points from their coordinates,
+#  and the special points (over discriminant points and at infinity, see
+#  SpecialPoints.jl), which are identified by their sheets. Equality of
+#  points compares coordinates, or sheets where the coordinates do not
+#  determine the place.
+#
+################################################################################
+
 @doc raw"""
     (RS::RiemannSurfaceModel)(coords::Vector{AcbFieldElem})
 
@@ -55,15 +67,16 @@ function (RS::RiemannSurfaceModel)(coords::Vector{AcbFieldElem})
           return s
         end
       end
-      error("Not on a point the Riemann surface.")
+      error("Not a point on the Riemann surface.")
     end
   end
 end
 
 @doc raw"""
-    is_finite(P::RiemannSurfacePoint)
+    is_finite(P::RiemannSurfacePoint) -> Bool
 
-Return true if the point is a finite point of the Riemann surface.
+Return true if the point is a finite point of the Riemann surface (finite
+x- and y-coordinate).
 """
 function is_finite(P::RiemannSurfacePoint)
   return P.is_finite

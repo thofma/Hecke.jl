@@ -1,11 +1,20 @@
 ################################################################################
 #
+#  RieSrf/AbelJacobi/Divisors.jl : divisors on a Riemann surface
+#
+#  Formal sums of points; the Abel-Jacobi value is cached in the divisor and
+#  added along when divisors with known values are added or scaled.
+#
+################################################################################
+
+################################################################################
+#
 #  Constructors
 #
 ################################################################################
 
 @doc raw"""
-divisor(P::Vector{RiemannSurfacePoint}, n::Vector{Int}) -> RiemannSurfaceDivisor
+    divisor(P::Vector{RiemannSurfacePoint}, n::Vector{Int}) -> RiemannSurfaceDivisor
 
 Construct the divisor on a Riemann surface corresponding to the sum n[i]*P[i]
 for i in (1:length(P)).
@@ -43,7 +52,7 @@ function ==(D1::RiemannSurfaceDivisor, D2::RiemannSurfaceDivisor)
 
   for k in (1:n)
     i = findfirst(x -> x == points2[k], points1)
-    if i == nothing
+    if i === nothing
       return false
     else
       if mults1[i] != mults2[k]
@@ -95,9 +104,9 @@ function *(k::Int, D::RiemannSurfaceDivisor)
   end
   points, mults = support(D)
   kD = RiemannSurfaceDivisor(points, k*mults)
-    if isdefined(D, :abel_jacobi_value)
-      kD.abel_jacobi_value = k * D.abel_jacobi_value
-    end
+  if isdefined(D, :abel_jacobi_value)
+    kD.abel_jacobi_value = k * D.abel_jacobi_value
+  end
   return kD
 end
 
@@ -125,15 +134,11 @@ function Base.show(io::IO, D::RiemannSurfaceDivisor)
     if abs_mult != 1
       output *= "$(abs_mult)*"
     end
-    if point.is_finite
-      if !point.is_singular
-        output *="($(CC(point.coordx))), $(CC(point.coordy))))"
-      else
-       output *="($(CC(point.coordx))), sheet $(point.sheets))"
-      end
+    if point.is_finite && !point.is_singular
+      output *= "($(CC(point.coordx)), $(CC(point.coordy)))"
     else
-      output *="($(CC(point.coordx))), sheet $(point.sheets))"
+      output *= "($(CC(point.coordx)), sheets $(point.sheets))"
     end
   end
-print(io, output)
+  print(io, output)
 end

@@ -1,194 +1,148 @@
 ################################################################################
 #
-#  Analytic Continuation
+#  RieSrf/Paths/AnalyticContinuation.jl : continuing the fiber along a path
+#
+#  For a path x(t) in the x-plane and the fiber y_1, ..., y_m of f(x, y) = 0
+#  over its start point, the functions here follow every root y_i along the
+#  path (Neurohr, Section 4.4). This gives the permutations of the sheets
+#  along the paths (monodromy) and the fibers at the quadrature nodes.
+#
+#  A step x1 -> x2 is accepted when the Weierstrass corrections at x2 isolate
+#  the roots (_isolation_check!); the roots at x2 are then refined with
+#  acb_poly_find_roots. The steps are chosen
+#  - adaptively with a secant predictor (_continue_adaptive!; the default for
+#    the period matrix and the monodromy), or
+#  - by bisection (_continue_by_bisection!; integration parameter
+#    adaptive = false, and analytic_continuation, used by the Abel-Jacobi map).
+#  Both can work in mixed precision: the checks and the intermediate points in
+#  a low-precision workspace, the roots at the targets at full precision.
+#  _continue_unchecked! makes a step without the check, for paths to infinity.
+#
+#  Entry points: analytic_continuation, _continue_adaptive!,
+#  _continue_by_bisection!, _continue_unchecked!, _fresh_fiber!.
 #
 ################################################################################
 
+################################################################################
+#
+#  Workspace
+#
+################################################################################
+
+# Everything a continuation needs for one polynomial f(x, y) at one precision,
+# with preallocated scratch values: the continuation is the innermost loop of
+# the period computation and must not allocate. One workspace per thread.
 mutable struct ContinuationWorkspace
-  F::Vector{Vector{AcbFieldElem}}   # from _split_in_y(f)
-  Ky::AcbPolyRing
-  m::Int
-  fx::AcbPolyRingElem               # f(x, .) for the current x
-  lc::AcbFieldElem
-  W::Vector{AcbFieldElem}
-  P::AcbFieldElem
-  t::AcbFieldElem
-  a::ArbFieldElem
-  dmin::ArbFieldElem
-  wmax::ArbFieldElem
-  absW::Vector{ArbFieldElem}        # |W_i|
-  mv::Vector{ArbFieldElem}          # scratch: movement |zp_i - z_i| per root
-  b::ArbFieldElem                   # scratch
-  c::ArbFieldElem                   # scratch
-  r::ArbFieldElem                   # scratch
-  start_vec::Ptr{acb_struct}
-  res_vec::Ptr{acb_struct}
-  # contiguous copy of F for acb_dot: row j (0-based) = x-coefficients of y^j
-  coef::Ptr{acb_struct}             # (m+1) x nx, row-major
-  nx::Int
-  rowlen::Vector{Int}               # row lengths without trailing zeros
-  xpow::Ptr{acb_struct}             # 1, x, ..., x^(nx-1)
- 
-  function ContinuationWorkspace(F::Vector{Vector{AcbFieldElem}}, Ky::AcbPolyRing)
+  split_polynomial::Vector{Vector{AcbFieldElem}}  # _split_in_y(f): x-coefficients of y^0, ..., y^m
+  Ky::AcbPolyRing                       # C[y] at the precision of the workspace
+  m::Int                                # degree of f in y (number of sheets)
+  fiber_polynomial::AcbPolyRingElem     # f(x, y) for the current x (_specialize_x!)
+  leading_coefficient::AcbFieldElem     # the y^m coefficient of fiber_polynomial
+  corrections::Vector{AcbFieldElem}     # Weierstrass corrections W_i of the last checked fiber
+  abs_corrections::Vector{ArbFieldElem} # |W_i|
+  max_correction::ArbFieldElem          # max_i |W_i|
+  movement::Vector{ArbFieldElem}        # |zp_i - z_i| (adaptive check)
+  worst_lhs::ArbFieldElem               # left side of the worst pair in _pairwise_check!
+  worst_rhs::ArbFieldElem               # right side of the worst pair in _pairwise_check!
+  product::AcbFieldElem                 # scratch
+  diff::AcbFieldElem                    # scratch
+  abs_diff::ArbFieldElem                # scratch
+  lhs::ArbFieldElem                     # scratch
+  ratio::ArbFieldElem                   # scratch
+  start_values::Ptr{acb_struct}         # input of acb_poly_find_roots (m entries)
+  roots::Ptr{acb_struct}                # output of acb_poly_find_roots (m entries)
+  coefficient_table::Ptr{acb_struct}    # split_polynomial for acb_dot: (m + 1) x x_length, row-major
+  x_length::Int                         # number of columns of coefficient_table
+  row_lengths::Vector{Int}              # lengths of its rows without trailing zeros
+  x_powers::Ptr{acb_struct}             # 1, x, ..., x^(x_length - 1)
+
+  function ContinuationWorkspace(split_polynomial::Vector{Vector{AcbFieldElem}}, Ky::AcbPolyRing)
     CC = base_ring(Ky)
     RR = ArbField(precision(CC))
-    m = length(F) - 1
-    nx = maximum(length, F)
-    sz = sizeof(acb_struct)
-    coef = acb_vec((m + 1)*nx)
-    rowlen = zeros(Int, m + 1)
-    for j in 0:m, i in 0:nx-1
-      p = coef + (j*nx + i)*sz
-      if i < length(F[j+1])
-        c = F[j+1][i+1]
-        ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), p, c)
-        iszero(c) || (rowlen[j+1] = i + 1)
+    m = length(split_polynomial) - 1
+    x_length = maximum(length, split_polynomial)
+    entry_size = sizeof(acb_struct)
+    coefficient_table = acb_vec((m + 1)*x_length)
+    row_lengths = zeros(Int, m + 1)
+    for j in 0:m, i in 0:x_length-1
+      entry = coefficient_table + (j*x_length + i)*entry_size
+      if i < length(split_polynomial[j+1])
+        c = split_polynomial[j+1][i+1]
+        ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), entry, c)
+        iszero(c) || (row_lengths[j+1] = i + 1)
       else
-        ccall((:acb_zero, libflint), Nothing, (Ptr{acb_struct},), p)
+        ccall((:acb_zero, libflint), Nothing, (Ptr{acb_struct},), entry)
       end
     end
-    ws = new(F, Ky, m, Ky([CC() for _ in F]), CC(), [CC() for _ in 1:m], CC(), CC(),
-             RR(), RR(), RR(), [RR() for _ in 1:m], [RR() for _ in 1:m], RR(), RR(), RR(),
-             acb_vec(m), acb_vec(m), coef, nx, rowlen, acb_vec(nx))
-    finalizer(ws) do w
-      acb_vec_clear(w.start_vec, w.m)
-      acb_vec_clear(w.res_vec, w.m)
-      acb_vec_clear(w.coef, (w.m + 1)*w.nx)
-      acb_vec_clear(w.xpow, w.nx)
+    workspace = new(split_polynomial, Ky, m, Ky([CC() for _ in split_polynomial]), CC(),
+                    [CC() for _ in 1:m], [RR() for _ in 1:m], RR(), [RR() for _ in 1:m],
+                    RR(), RR(), CC(), CC(), RR(), RR(), RR(),
+                    acb_vec(m), acb_vec(m), coefficient_table, x_length, row_lengths,
+                    acb_vec(x_length))
+    finalizer(workspace) do w
+      acb_vec_clear(w.start_values, w.m)
+      acb_vec_clear(w.roots, w.m)
+      acb_vec_clear(w.coefficient_table, (w.m + 1)*w.x_length)
+      acb_vec_clear(w.x_powers, w.x_length)
     end
-    return ws
+    return workspace
   end
 end
 
-#Let gamma be the path [-1,1] -> P^1 and let pi: RS -> P^1 
-#be the projection given by (x,y) -> x
-#This function performs analytic continuation along the path gamma
-#by iteratively lifting the path along pi. It keeps track of all the
-#different lifts y. 
-#The output will be returned as a list of tuples 
-#[(x0, [y_i]_0), ... (xn, [y_i]_n)] where the y_i correspond to all the lifts 
-#over the respective x value. The xj correspond to the preimages of the input
-#abscissae
-
-function analytic_continuation(RS::RiemannSurfaceModel, path::CPath, abscissae::Vector{ArbFieldElem},
-  start_ys::Vector{AcbFieldElem}=AcbFieldElem[], prec = 0)
-  v = embedding(RS)
-  if prec < precision(RS)
-    prec = precision(RS)
-  end
-
-  RR = ArbField(prec)
-
-  #Embed the polynomial in CC
-  f = embed_mpoly(defining_polynomial(RS), v, prec)
-  CC = base_ring(f)
-
-  f = change_base_ring(CC, f, parent = parent(f))
-
-  m = degree(f, 2)
-
-  #Add start and end point to the abscissae
-  u = vcat([-one(RR)], abscissae, [one(RR)])
-  N = length(u)
-
-  x_vals = Vector{AcbFieldElem}(undef, N)
-  y_vals = [Vector{AcbFieldElem}(undef, m) for i in (1:N)]
-
-  z = Vector{AcbFieldElem}(undef, m)
-
-  #Compute x0
-  x_vals[1] = evaluate(path, u[1])
-
-  Kxy = parent(f)
-  Ky, y = polynomial_ring(base_ring(Kxy), "y")
-
-  # If we are given initial values we use those. If we don't we compute the
-  # roots of f(x0, y)  0 and sort them.
-  if length(start_ys) == 0
-    y_vals[1] = sort!(_accurate_roots(f(x_vals[1], y), prec), lt = sheet_ordering)
-  else
-    y_vals[1] = start_ys
-  end
-
-  # For every tiny path piece from x_vals[l-1] to x_vals[l] we compute how
-  # the ys that we lifted move along with them using recursive continuation.
-  # We do this until we reach the end of the path
-  ws = ContinuationWorkspace(_split_in_y(f), Ky)
-  for l in 2:N
-    x_vals[l] = evaluate(path, u[l])
-    z .= y_vals[l-1]
-    y_vals[l] .= recursive_continuation!(ws, x_vals[l-1], x_vals[l], z)
-  end
-  return x_vals, y_vals
-end
-
-function analytic_continuation(ws::ContinuationWorkspace, path::CPath,
-                               abscissae::Vector{ArbFieldElem}, start_ys::Vector{AcbFieldElem})
-  RR = parent(abscissae[1])
-  u = vcat([-one(RR)], abscissae, [one(RR)])
-  N = length(u)
-  m = ws.m
-  x_vals = Vector{AcbFieldElem}(undef, N)
-  y_vals = [Vector{AcbFieldElem}(undef, m) for _ in 1:N]
-  z = Vector{AcbFieldElem}(undef, m)
-  x_vals[1] = evaluate(path, u[1])
-  y_vals[1] = start_ys
-  for l in 2:N
-    x_vals[l] = evaluate(path, u[l])
-    z .= y_vals[l-1]
-    y_vals[l] .= recursive_continuation!(ws, x_vals[l-1], x_vals[l], z)
-  end
-  return x_vals, y_vals
-end
-
-# ws.fx <- f(x, y), ws.lc <- leading coefficient
-function _specialize_x!(ws::ContinuationWorkspace, x::AcbFieldElem)
-  prec = precision(parent(ws.lc))
-  sz = sizeof(acb_struct)
-  GC.@preserve ws begin
-    _acb_powers_ptr!(ws.xpow, x, ws.nx - 1, prec)
-    for j in 0:ws.m
-      _acb_dot_ptr!(ws.lc, ws.coef + j*ws.nx*sz, ws.xpow, ws.rowlen[j+1], prec)
-      setcoeff!(ws.fx, j, ws.lc)
+# workspace.fiber_polynomial <- f(x, y); returns it.
+function _specialize_x!(workspace::ContinuationWorkspace, x::AcbFieldElem)
+  prec = precision(parent(workspace.leading_coefficient))
+  entry_size = sizeof(acb_struct)
+  GC.@preserve workspace begin
+    _acb_powers_ptr!(workspace.x_powers, x, workspace.x_length - 1, prec)
+    for j in 0:workspace.m
+      # leading_coefficient is used as the buffer; after the last j it holds
+      # the y^m coefficient.
+      _acb_dot_ptr!(workspace.leading_coefficient,
+                    workspace.coefficient_table + j*workspace.x_length*entry_size,
+                    workspace.x_powers, workspace.row_lengths[j+1], prec)
+      setcoeff!(workspace.fiber_polynomial, j, workspace.leading_coefficient)
     end
   end
-  return ws.fx            # ws.lc now holds the y^m coefficient
+  return workspace.fiber_polynomial
 end
 
-# Fills ws.W with the Weierstrass corrections of z w.r.t. ws.fx and sets
-# ws.dmin = min_{i<j} |z_i - z_j|, ws.wmax = max_i |W_i|.
-function _weierstrass_corrections!(ws::ContinuationWorkspace, z::Vector{AcbFieldElem})
-  m = ws.m
-  first = true
+# The Weierstrass (Durand-Kerner) corrections
+#   W_i = f(x, z_i) / (lc * prod_{j != i} (z_i - z_j))
+# of the approximations z = fiber w.r.t. workspace.fiber_polynomial, and
+# their absolute values and maximum.
+function _weierstrass_corrections!(workspace::ContinuationWorkspace, fiber::Vector{AcbFieldElem})
+  m = workspace.m
+  product = workspace.product
+  diff = workspace.diff
   for i in 1:m
-    Nemo.one!(ws.P)
+    Nemo.one!(product)
     for j in 1:m
       j == i && continue
-      sub!(ws.t, z[i], z[j])
-      mul!(ws.P, ws.P, ws.t)
-      if j > i
-        Hecke.abs!(ws.a, ws.t)
-        if first || ws.a < ws.dmin
-          Hecke.set!(ws.dmin, ws.a)
-          first = false
-        end
-      end
+      sub!(diff, fiber[i], fiber[j])
+      mul!(product, product, diff)
     end
-    mul!(ws.P, ws.P, ws.lc)
-    _acb_poly_evaluate!(ws.W[i], ws.fx, z[i])
-    Nemo.div!(ws.W[i], ws.W[i], ws.P)
-    Hecke.abs!(ws.a, ws.W[i])
-    Hecke.set!(ws.absW[i], ws.a)
-    if i == 1 || ws.a > ws.wmax
-      Hecke.set!(ws.wmax, ws.a)
+    mul!(product, product, workspace.leading_coefficient)
+    _acb_poly_evaluate!(workspace.corrections[i], workspace.fiber_polynomial, fiber[i])
+    Nemo.div!(workspace.corrections[i], workspace.corrections[i], product)
+    Hecke.abs!(workspace.abs_corrections[i], workspace.corrections[i])
+    if i == 1 || workspace.abs_corrections[i] > workspace.max_correction
+      Hecke.set!(workspace.max_correction, workspace.abs_corrections[i])
     end
   end
-  return ws
+  return workspace
 end
- 
+
+# Upper bound for the number of bisections (or failed steps in a row).
 function _max_bisection_depth()
   return 200
 end
+
+################################################################################
+#
+#  The isolation check
+#
+################################################################################
 
 # The disks D(z_i, m|W_i|) contain the roots; they isolate them if they are
 # pairwise disjoint: m(|W_i| + |W_j|) < |z_i - z_j| for all i < j. (Checked
@@ -196,45 +150,50 @@ end
 # different sizes, e.g. |y| from 1e-20 to 1e11 far out on a path, the
 # large roots have large corrections but are also far apart, and the global
 # version forces absurdly small steps.)
-function _isolation_check!(ws::ContinuationWorkspace, x2::AcbFieldElem,
-                           z::Vector{AcbFieldElem})
-  _specialize_x!(ws, x2)
-  _weierstrass_corrections!(ws, z)
-  return _pairwise_check!(ws, z, false)[1]
+# Returns :pass, :bisect or :precision (see _fail_status).
+function _isolation_check!(workspace::ContinuationWorkspace, x2::AcbFieldElem,
+                           fiber::Vector{AcbFieldElem})
+  _specialize_x!(workspace, x2)
+  _weierstrass_corrections!(workspace, fiber)
+  return _pairwise_check!(workspace, fiber, false)[1]
 end
 
-# Checks  mv_i + mv_j + m(|W_i| + |W_j|) < |z_i - z_j|  for all pairs (the mv
-# terms only if with_move, from ws.mv). Returns (status, q) with q the largest
-# ratio lhs/rhs (Float64, NaN if not representable). ws.a and ws.dmin are set
-# to lhs and rhs of the worst pair (for the step control and error messages).
-function _pairwise_check!(ws::ContinuationWorkspace, z::Vector{AcbFieldElem}, with_move::Bool)
-  m = ws.m
+# Checks  mv_i + mv_j + m(|W_i| + |W_j|) < |z_i - z_j|  for all pairs (the
+# movement terms mv only if with_movement, from workspace.movement). Returns
+# (status, q) with q the largest ratio lhs/rhs (a Float64; ratios that are not
+# representable are skipped). worst_lhs and worst_rhs are set to the two sides
+# for the pair with the largest ratio (for the error message).
+function _pairwise_check!(workspace::ContinuationWorkspace, fiber::Vector{AcbFieldElem},
+                          with_movement::Bool)
+  m = workspace.m
+  lhs = workspace.lhs
+  abs_diff = workspace.abs_diff
   status = :pass
-  q = 0.0
+  worst_ratio = 0.0
   first = true
   for i in 1:m, j in i+1:m
-    add!(ws.b, ws.absW[i], ws.absW[j])
-    _arb_mul_si!(ws.b, ws.b, m)
-    if with_move
-      add!(ws.b, ws.b, ws.mv[i])
-      add!(ws.b, ws.b, ws.mv[j])
+    add!(lhs, workspace.abs_corrections[i], workspace.abs_corrections[j])
+    _arb_mul_si!(lhs, lhs, m)
+    if with_movement
+      add!(lhs, lhs, workspace.movement[i])
+      add!(lhs, lhs, workspace.movement[j])
     end
-    sub!(ws.t, z[i], z[j])
-    Hecke.abs!(ws.c, ws.t)
-    Nemo.div!(ws.r, ws.b, ws.c)
-    r = _arb_mid_f64(ws.r)
-    if first || r > q || isnan(r)
-      q = isnan(r) ? q : r
-      Hecke.set!(ws.a, ws.b)
-      Hecke.set!(ws.dmin, ws.c)
+    sub!(workspace.diff, fiber[i], fiber[j])
+    Hecke.abs!(abs_diff, workspace.diff)
+    Nemo.div!(workspace.ratio, lhs, abs_diff)
+    ratio = _arb_mid_f64(workspace.ratio)
+    if first || ratio > worst_ratio || isnan(ratio)
+      worst_ratio = isnan(ratio) ? worst_ratio : ratio
+      Hecke.set!(workspace.worst_lhs, lhs)
+      Hecke.set!(workspace.worst_rhs, abs_diff)
       first = false
     end
-    if !(ws.b < ws.c)
-      st = _fail_status(ws.b, ws.c)
-      (status === :pass || st === :precision) && (status = st)
+    if !(lhs < abs_diff)
+      pair_status = _fail_status(lhs, abs_diff)
+      (status === :pass || pair_status === :precision) && (status = pair_status)
     end
   end
-  return status, q
+  return status, worst_ratio
 end
 
 # Why a check `a < d` failed. :precision only if a is dominated by its own
@@ -246,414 +205,381 @@ function _fail_status(a::ArbFieldElem, d::ArbFieldElem)
   return 4*radius(a) < abs(Nemo.midpoint(a)) ? :bisect : :precision
 end
 
-function _continuation_error(ws::ContinuationWorkspace, x1, x2, depth::Int, st::Symbol)
-  C = AcbField(32); R = ArbField(32)
-  reason = st === :precision ? "working precision too low to certify the step" :
-                               "maximal bisection depth ($(_max_bisection_depth())) reached"
+function _continuation_error(workspace::ContinuationWorkspace, x1, x2, depth::Int, status::Symbol)
+  CC32 = AcbField(32)
+  RR32 = ArbField(32)
+  reason = status === :precision ? "working precision too low to certify the step" :
+                                   "maximal bisection depth ($(_max_bisection_depth())) reached"
   error("Analytic continuation failed: $reason.\n" *
-        "  x1 = $(C(x1)), x2 = $(C(x2)), depth = $depth, precision = $(precision(base_ring(ws.Ky)))\n" *
-        "  worst pair of roots: |z_i - z_j| = $(R(ws.dmin)), m(|W_i| + |W_j|) (+ movement) = $(R(ws.a))\n" *
+        "  x1 = $(CC32(x1)), x2 = $(CC32(x2)), depth = $depth, precision = $(precision(base_ring(workspace.Ky)))\n" *
+        "  worst pair of roots: |z_i - z_j| = $(RR32(workspace.worst_rhs)), " *
+        "m(|W_i| + |W_j|) (+ movement) = $(RR32(workspace.worst_lhs))\n" *
         "  Increase the precision (or check the radius of x1, x2).")
-end
-
-function recursive_continuation!(ws::ContinuationWorkspace, x1::AcbFieldElem,
-                                 x2::AcbFieldElem, z::Vector{AcbFieldElem}, depth::Int = 0)
-  m = ws.m
-  CC = base_ring(ws.Ky)
-  st = _isolation_check!(ws, x2, z)
-  if st === :pass
-    for i in 1:m
-      sub!(ws.W[i], z[i], ws.W[i])            # start from z_i - W_i
-    end
-    dd = _find_roots_from!(ws, ws.W)
-    @assert dd == m
-    z .= array(CC, ws.res_vec, m)             # fresh elements: y_vals keeps them
-    return z
-  elseif st === :bisect && depth < _max_bisection_depth()
-    midpoint = (x1 + x2)//2
-    recursive_continuation!(ws, x1, midpoint, z, depth + 1)
-    return recursive_continuation!(ws, midpoint, x2, z, depth + 1)
-  else
-    _continuation_error(ws, x1, x2, depth, st)
-  end
-end
-
-#Recursive continuation without checking the proper bound that ensures
-#we are close enough to ensure we are able to isolate roots properly
-#and without using arb for the analytic continuation.
-#This is useful when values start converging to infinity and checking
-#bounds would get us into an infinite loop.
-
-function recursive_continuation_manual!(ws::ContinuationWorkspace, x1::AcbFieldElem,
-                                        x2::AcbFieldElem, z::Vector{AcbFieldElem},
-                                        err::ArbFieldElem,
-                                        target_error::ArbFieldElem = parent(err)(-1))
-  m = ws.m
-  CC = base_ring(ws.Ky)
-  RR = parent(err)
- 
-  # private copy: the iteration below updates the entries in place
-  zc = [CC() for _ in 1:m]
-  for i in 1:m
-    Hecke.set!(zc[i], z[i])
-  end
- 
-  _specialize_x!(ws, x2)                 # f(x2, y) into ws.fx, no MPoly evaluation
-  _weierstrass_corrections!(ws, zc)      # ws.W, ws.wmax = max |W_i|
-  next_error = ws.wmax^2                 # same (squared) measure as the old code
-  last_error = RR(1/0)
- 
-  # Durand-Kerner steps z_i <- z_i - W_i, as long as the corrections shrink
-  while next_error > err && next_error < last_error
-    for i in 1:m
-      sub!(zc[i], zc[i], ws.W[i])
-    end
-    _weierstrass_corrections!(ws, zc)
-    last_error = next_error
-    next_error = ws.wmax^2
-  end
- 
-  if target_error > RR(0) && next_error > target_error && next_error >= last_error
-    return zc, true
-  end
- 
-  fillacb!(ws.start_vec, zc)
-  dd = ccall((:acb_poly_find_roots, libflint), Cint,
-             (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int),
-             ws.res_vec, ws.fx, ws.start_vec, 0, precision(CC))
-  @assert dd == m
-  return array(CC, ws.res_vec, m), false
 end
 
 ################################################################################
 #
-#  Adaptive predictor-corrector continuation (used by the period matrix).
+#  Root finding
 #
-#  1. Predictor. Check at the secant prediction
+################################################################################
+
+# Roots of workspace.fiber_polynomial from the given starting values, into
+# workspace.roots, at the precision of the workspace. Returns the number of
+# isolated roots (attempts = 0: as many iterations as needed).
+function _find_roots_from!(workspace::ContinuationWorkspace, starts::Vector{AcbFieldElem},
+                           attempts::Int = 0)
+  fillacb!(workspace.start_values, starts)
+  return ccall((:acb_poly_find_roots, libflint), Cint,
+               (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int),
+               workspace.roots, workspace.fiber_polynomial, workspace.start_values, attempts,
+               precision(base_ring(workspace.Ky)))
+end
+
+# (f_split, Ky) for a ContinuationWorkspace of the model at precision prec.
+function _continuation_data(RS::RiemannSurfaceModel, prec::Int)
+  f = _embed_mpoly(defining_polynomial(RS), embedding(RS), prec)
+  Ky, _ = polynomial_ring(base_ring(f), "y")
+  return _split_in_y(f), Ky
+end
+
+# A fiber from scratch at full precision (see _accurate_roots).
+function _fresh_fiber!(workspace::ContinuationWorkspace, x::AcbFieldElem, prec::Int)
+  return _accurate_roots(_specialize_x!(workspace, x), prec)
+end
+
+# After a passed check at x2 in `checked` (workspace or low_workspace), with
+# the starting values z_i - W_i in checked.corrections: compute the fiber at
+# x2. At an intermediate point (not final) of a mixed-precision continuation
+# the low precision roots suffice if they converge quickly; otherwise the
+# roots are computed at full precision into fiber, and rounded into
+# low_fiber. Without low_workspace, low_fiber is fiber.
+function _refine_roots!(workspace::ContinuationWorkspace,
+                        low_workspace::Union{Nothing, ContinuationWorkspace},
+                        checked::ContinuationWorkspace, x2::AcbFieldElem,
+                        fiber::Vector{AcbFieldElem}, low_fiber::Vector{AcbFieldElem}, final::Bool)
+  m = workspace.m
+  entry_size = sizeof(acb_struct)
+  if low_workspace !== nothing && !final && checked === low_workspace
+    if _find_roots_from!(low_workspace, low_workspace.corrections, 8) == m
+      for i in 1:m
+        Nemo._acb_set(low_fiber[i], low_workspace.roots + (i - 1)*entry_size)
+      end
+      return
+    end
+  end
+  checked === workspace || _specialize_x!(workspace, x2)
+  number_of_roots = _find_roots_from!(workspace, checked.corrections)
+  @assert number_of_roots == m
+  for i in 1:m
+    root = workspace.roots + (i - 1)*entry_size
+    Nemo._acb_set(fiber[i], root)
+    low_workspace === nothing || _acb_set_round_ptr!(low_fiber[i], root)
+  end
+  return
+end
+
+function _copy_fiber(CC::AcbField, fiber::Vector{AcbFieldElem})
+  result = [CC() for _ in fiber]
+  for i in eachindex(fiber)
+    Hecke.set!(result[i], fiber[i])
+  end
+  return result
+end
+
+################################################################################
+#
+#  Continuation by bisection
+#
+################################################################################
+
+@doc raw"""
+    analytic_continuation(RS::RiemannSurfaceModel, path::CPath, abscissae::Vector{ArbFieldElem},
+                          start_fiber::Vector{AcbFieldElem} = AcbFieldElem[], prec::Int = 0)
+                          -> Vector{AcbFieldElem}, Vector{Vector{AcbFieldElem}}
+
+Continue the fiber over the start of `path` (parametrized by [-1, 1]) along
+the path, and return the points x_l of the path at -1, the abscissae and 1,
+together with the fibers over them. Without `start_fiber` the start fiber
+is computed and sorted by `sheet_ordering`. The precision is the maximum of
+`prec` and the precision of `RS`.
+"""
+function analytic_continuation(RS::RiemannSurfaceModel, path::CPath, abscissae::Vector{ArbFieldElem},
+                               start_fiber::Vector{AcbFieldElem} = AcbFieldElem[], prec::Int = 0)
+  prec = max(prec, precision(RS))
+  RR = ArbField(prec)
+  f = _embed_mpoly(defining_polynomial(RS), embedding(RS), prec)
+  CC = base_ring(f)
+  Ky, y = polynomial_ring(CC, "y")
+  m = degree(f, 2)
+
+  parameters = vcat([-one(RR)], abscissae, [one(RR)])
+  N = length(parameters)
+  x_values = [evaluate(path, t) for t in parameters]
+  fibers = Vector{Vector{AcbFieldElem}}(undef, N)
+  if isempty(start_fiber)
+    fibers[1] = sort!(_accurate_roots(f(x_values[1], y), prec), lt = sheet_ordering)
+  else
+    fibers[1] = start_fiber
+  end
+
+  workspace = ContinuationWorkspace(_split_in_y(f), Ky)
+  fiber = _copy_fiber(CC, fibers[1])          # updated in place
+  for l in 2:N
+    _continue_by_bisection!(workspace, nothing, x_values[l-1], x_values[l], fiber, fiber)
+    fibers[l] = _copy_fiber(CC, fiber)
+  end
+  return x_values, fibers
+end
+
+# Continue the fiber from x1 to x2, bisecting the step until the isolation
+# check passes. The entries of fiber are overwritten (fiber must own its
+# elements). Mixed precision if low_workspace is given: checks and the roots at
+# the bisection points in low_workspace (low_fiber), full precision roots
+# at x2 (into fiber, rounded into low_fiber) if final. If the low-precision
+# check fails only because its balls are too wide (tight clusters of roots),
+# the check is redone at full precision instead of bisecting forever. Without
+# low_workspace, low_fiber must be fiber.
+function _continue_by_bisection!(workspace::ContinuationWorkspace,
+                                 low_workspace::Union{Nothing, ContinuationWorkspace},
+                                 x1::AcbFieldElem, x2::AcbFieldElem,
+                                 fiber::Vector{AcbFieldElem}, low_fiber::Vector{AcbFieldElem},
+                                 final::Bool = true, depth::Int = 0)
+  checked = low_workspace === nothing ? workspace : low_workspace
+  status = _isolation_check!(checked, x2, low_fiber)
+  if status === :precision && low_workspace !== nothing
+    checked = workspace
+    status = _isolation_check!(workspace, x2, low_fiber)
+  end
+
+  if status === :pass
+    for i in 1:workspace.m
+      sub!(checked.corrections[i], low_fiber[i], checked.corrections[i])  # starting values z_i - W_i
+    end
+    _refine_roots!(workspace, low_workspace, checked, x2, fiber, low_fiber, final)
+    return fiber
+  elseif status === :bisect && depth < _max_bisection_depth()
+    midpoint = (x1 + x2)//2
+    _continue_by_bisection!(workspace, low_workspace, x1, midpoint, fiber, low_fiber, false, depth + 1)
+    return _continue_by_bisection!(workspace, low_workspace, midpoint, x2, fiber, low_fiber, final, depth + 1)
+  else
+    _continuation_error(checked, x1, x2, depth, status)
+  end
+end
+
+# One step x1 -> x2 without the isolation check and without certification,
+# for paths to infinity (Abel-Jacobi map): there the roots grow without bound
+# and the check would bisect forever; the caller checks the result
+# heuristically. Durand-Kerner steps z_i <- z_i - W_i as long as the
+# corrections shrink and max|W_i|^2 > tolerance, then acb_poly_find_roots.
+# Returns (fiber at x2, stalled): if target_tolerance > 0 and the corrections
+# stopped shrinking above it, stalled = true (with the unrefined fiber) and the
+# caller takes smaller steps.
+function _continue_unchecked!(workspace::ContinuationWorkspace, x1::AcbFieldElem,
+                              x2::AcbFieldElem, fiber::Vector{AcbFieldElem},
+                              tolerance::ArbFieldElem,
+                              target_tolerance::ArbFieldElem = parent(tolerance)(-1))
+  m = workspace.m
+  CC = base_ring(workspace.Ky)
+  RR = parent(tolerance)
+  new_fiber = _copy_fiber(CC, fiber)          # updated in place below
+
+  _specialize_x!(workspace, x2)
+  _weierstrass_corrections!(workspace, new_fiber)
+  next_error = workspace.max_correction^2
+  last_error = RR(Inf)
+
+  while next_error > tolerance && next_error < last_error
+    for i in 1:m
+      sub!(new_fiber[i], new_fiber[i], workspace.corrections[i])
+    end
+    _weierstrass_corrections!(workspace, new_fiber)
+    last_error = next_error
+    next_error = workspace.max_correction^2
+  end
+
+  if target_tolerance > RR(0) && next_error > target_tolerance && next_error >= last_error
+    return new_fiber, true
+  end
+
+  number_of_roots = _find_roots_from!(workspace, new_fiber)
+  @assert number_of_roots == m
+  return array(CC, workspace.roots, m), false
+end
+
+################################################################################
+#
+#  Adaptive predictor-corrector continuation (period matrix, monodromy)
+#
+#  1. Predictor. The check is done at the secant prediction
 #         zp_i = z_i(x1) + (z_i(x1) - z_i(x0)) * (x2 - x1)/(x1 - x0)
 #     (x0 = previous accepted point). Its error is O(h * h_prev * z''), so
 #     |W_i(zp)| is much smaller, larger steps pass, and acb_poly_find_roots
 #     starts closer to the roots (fewer iterations).
 #
 #  2. Step control. The step size is kept across abscissae (and across the
-#     intervals of a chunk). After a pass it grows, after a fail it shrinks by
-#     a factor from q = (2m max|W_i|) / d, instead of always halving and
-#     restarting at the full interval.
+#     intervals of a chunk). After a pass it grows, after a fail it shrinks,
+#     by a factor computed from q = (2m max|W_i|) / d.
 #
 #  Certification. The Weierstrass check at zp shows: the disks D(zp_i, m|W_i|)
 #  are disjoint and each contains exactly one root at x2. In addition we
-#  require
+#  require (per pair, see _adaptive_check!)
 #         2 max|zp_i - z_i(x1)| + 2m max|W_i|  <  min_{i<j} |z_i(x1) - z_j(x1)|,
 #  i.e. every root moved less than half the separation at x1. Without a
-#  predictor (zp = z) this is exactly the old condition, and with a predictor
-#  it gives the same conclusion as before: a bijection between the fibers
-#  with |y_i(x2) - z_i(x1)| < d(x1)/2. So the result is not less certified
-#  than with the current method (it is still the heuristic check between two
-#  points, as in Neurohr's method).
+#  predictor (zp = z) this is the condition of the bisection method; with a
+#  predictor it gives the same conclusion: a bijection between the fibers with
+#  |y_i(x2) - z_i(x1)| < d(x1)/2. (Like Neurohr's method, this is a check
+#  between two points, not along the whole segment.)
 #
-#  Intermediate points are exact (ball midpoints) points on the segment
-#  x1 -> x_b; the bisection midpoints were also points on that segment.
+#  The trial points are exact (ball midpoints) points on the segment from x1
+#  to the target.
 #
 ################################################################################
 
 mutable struct AdaptiveContinuationState
-  x0::AcbFieldElem              # previous accepted point
-  x1::AcbFieldElem              # current point
-  x2::AcbFieldElem              # scratch: trial point
-  z0::Vector{AcbFieldElem}      # fiber at x0 (check precision)
-  zp::Vector{AcbFieldElem}      # predicted fiber at x2
-  r::AcbFieldElem               # scratch
-  t::AcbFieldElem               # scratch
-  move::ArbFieldElem            # max |zp_i - z_i(x1)|
-  dmin1::ArbFieldElem           # min |z_i(x1) - z_j(x1)|
-  a::ArbFieldElem               # scratch
-  h::Float64                    # step length |x2 - x1| to try next
-  has_prev::Bool
-  target::Float64               # aim for q = 2m max|W| / d around this value
-  nchecks::Int                  # statistics
-  nfail::Int
+  x0::AcbFieldElem                        # previous accepted point
+  x1::AcbFieldElem                        # current point
+  x2::AcbFieldElem                        # scratch: trial point
+  fiber0::Vector{AcbFieldElem}            # fiber at x0 (at the precision of the checks)
+  predicted_fiber::Vector{AcbFieldElem}   # predicted fiber zp at x2
+  diff::AcbFieldElem                      # scratch
+  ratio::AcbFieldElem                     # scratch
+  abs_value::ArbFieldElem                 # scratch
+  step::Float64                           # step length |x2 - x1| to try next
+  has_previous::Bool                      # x0 and fiber0 are set
+  target_ratio::Float64                   # aim for q = 2m max|W| / d around this value
 
-  function AdaptiveContinuationState(CL::AcbField, m::Int; target::Float64 = 0.25)
-    RL = ArbField(precision(CL))
-    return new(CL(), CL(), CL(), [CL() for _ in 1:m], [CL() for _ in 1:m], CL(), CL(),
-               RL(), RL(), RL(), Inf, false, target, 0, 0)
+  function AdaptiveContinuationState(CC::AcbField, m::Int; target_ratio::Float64 = 0.25)
+    RR = ArbField(precision(CC))
+    return new(CC(), CC(), CC(), [CC() for _ in 1:m], [CC() for _ in 1:m], CC(), CC(),
+               RR(), Inf, false, target_ratio)
   end
 end
 
-# Start (or restart) at the point x with fiber z: forget the history.
-function _adaptive_reset!(st::AdaptiveContinuationState, x::AcbFieldElem,
-                          z::Vector{AcbFieldElem})
-  Hecke.set!(st.x1, x)
-  st.has_prev = false
-  st.h = Inf
-  _min_dist!(st, z)
-  return st
+# Start (or restart) at the point x: forget the history.
+function _adaptive_reset!(state::AdaptiveContinuationState, x::AcbFieldElem)
+  Hecke.set!(state.x1, x)
+  state.has_previous = false
+  state.step = Inf
+  return state
 end
 
-function _min_dist!(st::AdaptiveContinuationState, z::Vector{AcbFieldElem})
-  m = length(z)
-  first = true
-  for i in 1:m, j in i+1:m
-    sub!(st.t, z[i], z[j])
-    Hecke.abs!(st.a, st.t)
-    if first || st.a < st.dmin1
-      Hecke.set!(st.dmin1, st.a)
-      first = false
-    end
-  end
-  return st.dmin1
-end
-
-# st.zp <- secant prediction at x2, st.move <- max |zp_i - z_i|
-function _predict!(st::AdaptiveContinuationState, z::Vector{AcbFieldElem}, x2::AcbFieldElem)
-  Nemo.zero!(st.move)
-  if !st.has_prev
-    for i in eachindex(z)
-      Hecke.set!(st.zp[i], z[i])
-    end
-    return st.zp
-  end
-  sub!(st.t, x2, st.x1)
-  sub!(st.r, st.x1, st.x0)
+# state.predicted_fiber <- secant prediction at x2 from the fiber at x1.
+function _predict!(state::AdaptiveContinuationState, fiber::Vector{AcbFieldElem}, x2::AcbFieldElem)
+  state.has_previous || return _no_prediction!(state, fiber)
+  sub!(state.diff, x2, state.x1)
+  sub!(state.ratio, state.x1, state.x0)
   # Previous step not resolvable at this precision (e.g. double exponential
-  # abscissae piling up at an endpoint): no prediction, check at z itself.
-  if contains_zero(st.r)
-    return _no_prediction!(st, z)
+  # abscissae piling up at an endpoint): no prediction, check at the fiber.
+  contains_zero(state.ratio) && return _no_prediction!(state, fiber)
+  Nemo.div!(state.ratio, state.diff, state.ratio)              # (x2 - x1)/(x1 - x0)
+  predicted = state.predicted_fiber
+  for i in eachindex(fiber)
+    sub!(state.diff, fiber[i], state.fiber0[i])
+    mul!(state.diff, state.diff, state.ratio)
+    add!(predicted[i], fiber[i], state.diff)
+    _acb_get_mid!(predicted[i], predicted[i])                  # exact approximation
+    isfinite(predicted[i]) || return _no_prediction!(state, fiber)
   end
-  Nemo.div!(st.r, st.t, st.r)                     # (x2 - x1)/(x1 - x0)
-  for i in eachindex(z)
-    sub!(st.t, z[i], st.z0[i])
-    mul!(st.t, st.t, st.r)
-    add!(st.zp[i], z[i], st.t)
-    _acb_get_mid!(st.zp[i], st.zp[i])             # exact approximation
-    isfinite(st.zp[i]) || return _no_prediction!(st, z)
-    sub!(st.t, st.zp[i], z[i])
-    Hecke.abs!(st.a, st.t)
-    st.a > st.move && Hecke.set!(st.move, st.a)
-  end
-  return st.zp
+  return predicted
 end
 
-function _no_prediction!(st::AdaptiveContinuationState, z::Vector{AcbFieldElem})
-  Nemo.zero!(st.move)
-  for i in eachindex(z)
-    Hecke.set!(st.zp[i], z[i])
+function _no_prediction!(state::AdaptiveContinuationState, fiber::Vector{AcbFieldElem})
+  for i in eachindex(fiber)
+    Hecke.set!(state.predicted_fiber[i], fiber[i])
   end
-  return st.zp
+  return state.predicted_fiber
 end
 
-# Isolation check at the predicted fiber, plus the movement condition.
-# Returns (status, q) with q ~ how much of the budget is used (pass needs q < 1).
-# Both per pair of roots (see _isolation_check!):
+# Isolation check at the predicted fiber, plus the movement condition, both
+# per pair of roots (see _isolation_check!):
 #   isolation at zp:  m(|W_i| + |W_j|) < |zp_i - zp_j|
 #   movement:         |zp_i - z_i| + |zp_j - z_j| + m(|W_i| + |W_j|) < |z_i - z_j|,
-#                     z = the fiber at x1
-function _adaptive_check!(ws::ContinuationWorkspace, st::AdaptiveContinuationState,
-                          x2::AcbFieldElem, z1::Vector{AcbFieldElem})
-  _specialize_x!(ws, x2)
-  _weierstrass_corrections!(ws, st.zp)
-  st_iso, q_iso = _pairwise_check!(ws, st.zp, false)
-  for i in 1:ws.m
-    sub!(ws.t, st.zp[i], z1[i])
-    Hecke.abs!(ws.mv[i], ws.t)
+#                     z = fiber1, the fiber at x1.
+# Returns (status, q) with q ~ how much of the budget is used (a pass needs q < 1).
+function _adaptive_check!(workspace::ContinuationWorkspace, state::AdaptiveContinuationState,
+                          x2::AcbFieldElem, fiber1::Vector{AcbFieldElem})
+  predicted = state.predicted_fiber
+  _specialize_x!(workspace, x2)
+  _weierstrass_corrections!(workspace, predicted)
+  status_isolation, ratio_isolation = _pairwise_check!(workspace, predicted, false)
+  for i in 1:workspace.m
+    sub!(workspace.diff, predicted[i], fiber1[i])
+    Hecke.abs!(workspace.movement[i], workspace.diff)
   end
-  st_move, q_move = _pairwise_check!(ws, z1, true)
-  q = max(q_iso, q_move)
-  st_iso === :pass || return st_iso, q
-  return st_move, q
+  status_movement, ratio_movement = _pairwise_check!(workspace, fiber1, true)
+  ratio = max(ratio_isolation, ratio_movement)
+  status_isolation === :pass || return status_isolation, ratio
+  return status_movement, ratio
 end
 
-_step_grow(st, q) = !(q > 0) ? 2.0 : clamp(0.9*sqrt(st.target/q), 1.0, 2.0)
-_step_shrink(st, q) = !(q > 0) ? 0.5 : clamp(0.9*sqrt(st.target/q), 0.25, 0.5)
+_step_grow(state, q) = !(q > 0) ? 2.0 : clamp(0.9*sqrt(state.target_ratio/q), 1.0, 2.0)
+_step_shrink(state, q) = !(q > 0) ? 0.5 : clamp(0.9*sqrt(state.target_ratio/q), 0.25, 0.5)
 
-# Continue the fiber from st.x1 to xb.
-#   lo === nothing: z is the fiber (updated in place), zl must be z.
-#   otherwise:      mixed precision as in recursive_continuation_mixed!: checks
-#                   and intermediate roots in `lo` (zl), full precision roots
-#                   at xb in `hi` (z).
-function continue_adaptive!(st::AdaptiveContinuationState, hi::ContinuationWorkspace,
-                            lo::Union{Nothing, ContinuationWorkspace}, xb::AcbFieldElem,
-                            z::Vector{AcbFieldElem}, zl::Vector{AcbFieldElem})
-  m = hi.m
-  wsc = lo === nothing ? hi : lo
-  fails = 0
+# Continue the fiber from state.x1 to x_target.
+#   low_workspace === nothing: fiber is updated in place, low_fiber must be fiber.
+#   otherwise: mixed precision as in _continue_by_bisection!: checks and
+#              intermediate roots in low_workspace (low_fiber), full precision
+#              roots at x_target in workspace (fiber).
+# The state must be at the precision of the checks.
+function _continue_adaptive!(state::AdaptiveContinuationState, workspace::ContinuationWorkspace,
+                             low_workspace::Union{Nothing, ContinuationWorkspace},
+                             x_target::AcbFieldElem,
+                             fiber::Vector{AcbFieldElem}, low_fiber::Vector{AcbFieldElem})
+  m = workspace.m
+  check_workspace = low_workspace === nothing ? workspace : low_workspace
+  failures = 0
   while true
-    sub!(st.t, xb, st.x1)
-    Hecke.abs!(st.a, st.t)
-    rem = _arb_mid_f64(st.a)
-    if !(rem > 0)
-      # Either xb = x1, or |xb - x1| underflows in Float64 (double exponential
-      # abscissae near the endpoints at high precision are far closer than
-      # 1e-308): then go to xb in one step, which is still checked.
-      _acb_get_mid!(st.r, st.t)
-      iszero(st.r) && return z                    # already at xb
-      rem = 0.0
+    sub!(state.diff, x_target, state.x1)
+    Hecke.abs!(state.abs_value, state.diff)
+    remaining = _arb_mid_f64(state.abs_value)
+    if !(remaining > 0)
+      # Either x_target = x1, or |x_target - x1| underflows in Float64 (double
+      # exponential abscissae near the endpoints at high precision are far
+      # closer than 1e-308): then go to x_target in one step, which is still
+      # checked.
+      _acb_get_mid!(state.ratio, state.diff)
+      iszero(state.ratio) && return fiber                        # already there
+      remaining = 0.0
     end
-    final = !(st.h < rem * (1 - 1e-9))            # this step reaches xb
+    final = !(state.step < remaining * (1 - 1e-9))              # this step reaches x_target
     if final
-      x2 = xb
+      x2 = x_target
     else
-      Nemo._arb_set(st.a, st.h / rem)
-      mul!(st.t, st.t, st.a)
-      add!(st.x2, st.x1, st.t)
-      _acb_get_mid!(st.x2, st.x2)
-      x2 = st.x2
+      Nemo._arb_set(state.abs_value, state.step / remaining)
+      mul!(state.diff, state.diff, state.abs_value)
+      add!(state.x2, state.x1, state.diff)
+      _acb_get_mid!(state.x2, state.x2)
+      x2 = state.x2
     end
 
-    _predict!(st, zl, x2)
-    ws = wsc
-    status, q = _adaptive_check!(ws, st, x2, zl)
-    if status === :precision && lo !== nothing
-      ws = hi                                     # tight cluster: check at full precision
-      status, q = _adaptive_check!(ws, st, x2, zl)
+    _predict!(state, low_fiber, x2)
+    checked = check_workspace
+    status, ratio = _adaptive_check!(checked, state, x2, low_fiber)
+    if status === :precision && low_workspace !== nothing
+      checked = workspace                       # tight cluster: check at full precision
+      status, ratio = _adaptive_check!(checked, state, x2, low_fiber)
     end
-    st.nchecks += 1
 
     if status === :pass
       for i in 1:m
-        sub!(ws.W[i], st.zp[i], ws.W[i])          # starting values zp_i - W_i
-        Hecke.set!(st.z0[i], zl[i])                # history
+        sub!(checked.corrections[i], state.predicted_fiber[i], checked.corrections[i])  # zp_i - W_i
+        Hecke.set!(state.fiber0[i], low_fiber[i])
       end
-      Hecke.set!(st.x0, st.x1)
-      Hecke.set!(st.x1, x2)
-      st.has_prev = true
-
-      done = false
-      if lo !== nothing && !final && ws === lo
-        if _find_roots_from!(lo, lo.W, 8) == m    # intermediate point: low precision
-          for i in 1:m
-            Nemo._acb_set(zl[i], lo.res_vec + (i - 1)*sizeof(acb_struct))
-          end
-          done = true
-        end
-      end
-      if !done
-        ws === hi || _specialize_x!(hi, x2)
-        dd = _find_roots_from!(hi, ws.W)
-        @assert dd == m
-        for i in 1:m
-          p = hi.res_vec + (i - 1)*sizeof(acb_struct)
-          Nemo._acb_set(z[i], p)
-          lo === nothing || _acb_set_round_ptr!(zl[i], p)
-        end
-      end
-      # separation at the new point without recomputing it: the roots lie in
-      # the disks D(zp_i, m|W_i|), so  d(x2) >= d(zp) - 2m max|W_i|
-      sub!(st.dmin1, ws.dmin, ws.a)
-
+      Hecke.set!(state.x0, state.x1)
+      Hecke.set!(state.x1, x2)
+      state.has_previous = true
+      _refine_roots!(workspace, low_workspace, checked, x2, fiber, low_fiber, final)
       if final
-        st.h = max(st.h, rem * _step_grow(st, q))
-        return z
+        state.step = max(state.step, remaining * _step_grow(state, ratio))
+        return fiber
       end
-      st.h *= _step_grow(st, q)
-      fails = 0
-    elseif status === :bisect && fails < _max_bisection_depth()
-      st.nfail += 1
-      fails += 1
-      st.h = (final ? rem : st.h) * _step_shrink(st, q)
+      state.step *= _step_grow(state, ratio)
+      failures = 0
+    elseif status === :bisect && failures < _max_bisection_depth()
+      failures += 1
+      state.step = (final ? remaining : state.step) * _step_shrink(state, ratio)
     else
-      _continuation_error(ws, st.x1, x2, fails, status)
+      _continuation_error(checked, state.x1, x2, failures, status)
     end
-  end
-end
-
-# In-place variant of recursive_continuation!: overwrites the entries of z
-# instead of allocating m new AcbFieldElems per step. z must own its elements
-# (not share them with anything that has to stay unchanged).
-function recursive_continuation_inplace!(ws::ContinuationWorkspace, x1::AcbFieldElem,
-                                         x2::AcbFieldElem, z::Vector{AcbFieldElem},
-                                         depth::Int = 0)
-  m = ws.m
-  st = _isolation_check!(ws, x2, z)
-  if st === :pass
-    for i in 1:m
-      sub!(ws.W[i], z[i], ws.W[i])
-    end
-    dd = _find_roots_from!(ws, ws.W)
-    @assert dd == m
-    for i in 1:m
-      Nemo._acb_set(z[i], ws.res_vec + (i - 1)*sizeof(acb_struct))
-    end
-    return z
-  elseif st === :bisect && depth < _max_bisection_depth()
-    midpoint = (x1 + x2)//2
-    recursive_continuation_inplace!(ws, x1, midpoint, z, depth + 1)
-    return recursive_continuation_inplace!(ws, midpoint, x2, z, depth + 1)
-  else
-    _continuation_error(ws, x1, x2, depth, st)
-  end
-end
-
-################################################################################
-#
-#  Optional mixed-precision continuation.
-#
-#  All isolation checks and the roots at bisection midpoints are computed in a
-#  low-precision workspace `lo`; full precision (`hi`) is only used for the
-#  roots at the target point of each top-level step (abscissae and chunk
-#  boundaries). The check itself is still done in ball arithmetic, so it is
-#  certified for the (low-precision) approximations it is applied to; whether
-#  the chain of midpoint steps is fully rigorous in the sense of (4.19) still
-#  has to be checked. Controlled by IntegrationParameters.midpoint_precision.
-#
-################################################################################
-
-# Roots of ws.fx from the given starting values, into ws.res_vec, at the
-# workspace's precision. Returns the number of isolated roots.
-function _find_roots_from!(ws::ContinuationWorkspace, starts::Vector{AcbFieldElem}, attempts::Int = 0)
-  fillacb!(ws.start_vec, starts)
-  return ccall((:acb_poly_find_roots, libflint), Cint,
-               (Ptr{acb_struct}, Ref{AcbPolyRingElem}, Ptr{acb_struct}, Int, Int),
-               ws.res_vec, ws.fx, ws.start_vec, attempts, precision(base_ring(ws.Ky)))
-end
-
-# A fiber from scratch at full precision (see _accurate_roots).
-function _fresh_fiber!(ws::ContinuationWorkspace, x::AcbFieldElem, prec::Int)
-  return _accurate_roots(_specialize_x!(ws, x), prec)
-end
-
-# Mixed precision, non-adaptive version (adaptive = false). If the
-# low-precision check fails only because its balls are too wide (tight
-# clusters of roots), the check is redone at full precision instead of
-# bisecting forever.
-function recursive_continuation_mixed!(lo::ContinuationWorkspace, hi::ContinuationWorkspace,
-                                       x1::AcbFieldElem, x2::AcbFieldElem,
-                                       z::Vector{AcbFieldElem}, zl::Vector{AcbFieldElem},
-                                       final::Bool, depth::Int = 0)
-  m = lo.m
-  ws = lo
-  st = _isolation_check!(lo, x2, zl)
-  if st === :precision
-    ws = hi
-    st = _isolation_check!(hi, x2, zl)
-  end
-
-  if st === :pass
-    for i in 1:m
-      sub!(ws.W[i], zl[i], ws.W[i])           # starting values z_i - W_i
-    end
-    if !final && ws === lo
-      if _find_roots_from!(lo, lo.W, 8) == m  # midpoint: low precision suffices
-        for i in 1:m
-          Nemo._acb_set(zl[i], lo.res_vec + (i - 1)*sizeof(acb_struct))
-        end
-        return zl
-      end
-    end
-    ws === hi || _specialize_x!(hi, x2)
-    dd = _find_roots_from!(hi, ws.W)
-    @assert dd == m
-    for i in 1:m
-      p = hi.res_vec + (i - 1)*sizeof(acb_struct)
-      Nemo._acb_set(z[i], p)
-      _acb_set_round_ptr!(zl[i], p)
-    end
-    return zl
-  elseif st === :bisect && depth < _max_bisection_depth()
-    midpoint = (x1 + x2)//2
-    recursive_continuation_mixed!(lo, hi, x1, midpoint, z, zl, false, depth + 1)
-    return recursive_continuation_mixed!(lo, hi, midpoint, x2, z, zl, final, depth + 1)
-  else
-    _continuation_error(ws, x1, x2, depth, st)
   end
 end

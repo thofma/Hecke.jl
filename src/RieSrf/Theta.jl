@@ -1,26 +1,23 @@
 ################################################################################
 #
-#          RieSrf/ThetaFlint.jl : Functions for computing theta functions
+#  RieSrf/Theta.jl : Riemann theta functions
 #
+#  An interface to the theta functions of FLINT (acb_theta, by Jean Kieffer
+#  and Noam Elkies): theta functions with characteristics, all of them at
+#  once, their derivatives in z and tau, Taylor coefficients (jets), and the
+#  Siegel reduction of a period matrix. Included in the module Hecke (not in
+#  Hecke.RiemannSurfaces); only `theta` is exported. All functions also accept
+#  ComplexField input (see the end of the file).
+#
+#  Characteristics: a, b in {0,1}^g, given as an integer whose bits (most
+#  significant first) are [a, b], as the vector [a; b], or as the pair [a, b].
 #
 ################################################################################
-
-################################################################################
-#
-#  Theta functions with characteristics and derivatives
-#
-################################################################################
-
-#This is an interface to the Theta code by Jean Kieffer and Noam Elkies
 
 export theta
-# don't export for now. maybe rename to theta_all, theta_derivative etc
-#, theta_dz, thetas, theta_jets, theta_dzs, theta_dtaus, siegel_reduction,
-#siegel_transform, cholesky_decomposition
 
 @doc raw"""
-    theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, theta_characteristic)
-     -> AcbFieldElem
+    theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, theta_characteristic = 0) -> AcbFieldElem
 
 Computes theta(a, b)(z, tau) where theta(a, b) is the Riemann theta function
 (of level 2) of characteristic
@@ -53,7 +50,7 @@ function theta(z::Vector{AcbFieldElem}, tau::AcbMatrix, ab_int::Int = 0)
   ccall((:acb_theta_one, Hecke.libflint), Nothing, (Ptr{acb_struct},
   Ptr{acb_struct}, Ref{AcbMatrix},UInt, Int), th, zzs, tau, ab_int, prec)
 
-  res = array(CC, th, 1)
+  res = array(CC, th, 1)[1]
   acb_vec_clear(th, 1)
   acb_vec_clear(zzs, g)
   return res
@@ -155,7 +152,7 @@ end
 function theta_dz(z::Vector{AcbFieldElem},  tau::AcbMatrix,
   theta_characteristic::Int, dz::Vector{Int})
   g = nrows(tau)
-  @req 0 <= theta_characteristic <= 2^(g-1) "theta_characteristic has to be either an integer between 0 or 2^(g-1),"
+  @req 0 <= theta_characteristic < 2^(2*g) "theta_characteristic has to be an integer between 0 and 2^(2g) - 1."
   char_index = reverse(digits(theta_characteristic, base=2, pad=2*g))
   return theta_dz(z, tau, char_index, dz)
 end
@@ -176,7 +173,6 @@ theta([0,1],[1,1])(z, tau) with respect to `tau[1,2]`.
 """
 function theta_dtaus(z::Vector{AcbFieldElem},  tau::AcbMatrix)
   g = nrows(tau)
-  dz = zeros(Int, g)
   D = theta_dzs(z, tau, 2)
 
   CC = base_ring(tau)
@@ -191,11 +187,8 @@ function theta_dtaus(z::Vector{AcbFieldElem},  tau::AcbMatrix)
       dz = zeros(Int, g)
       dz[i] = 1
       dz[j] = 1
-      if i == j
-        delta = 1
-      else
-        delta = 0
-      end
+      # heat equation: d theta / d tau_ij = 1/(2 pi i (1 + delta_ij)) d^2 theta / dz_i dz_j
+      delta = i == j ? 1 : 0
       factor = 1/(2*piCC*I*(1+delta))
 
       for theta_characteristic in theta_indices
@@ -208,8 +201,7 @@ function theta_dtaus(z::Vector{AcbFieldElem},  tau::AcbMatrix)
 end
 
 @doc raw"""
-    theta_jets(z::Vector{AcbFieldElem}, tau::AcbMatrix, d::Int) ->
-     Dict{NTuple, Dict{Tuple, AcbFieldElem}}
+    theta_jets(z::Vector{AcbFieldElem}, tau::AcbMatrix, d::Int) -> Dict{NTuple, Dict{Tuple, AcbFieldElem}}
 
 Computes the coefficients of the Taylor series expansion up to order `d`
 of theta(a,b)(z, tau) where theta(a,b) is the Riemann theta function
@@ -244,7 +236,7 @@ coefficients of a Taylor expansion, i.e. the coefficient of the monomial with
 multidegree (k0, k_{g-1}) will be
 1/k0! * ... * 1/k_{g-1}! * d^k/(dz_1^k0 ... dz_{g-1}^k_{g-1}).
 """
-function theta_jets(z::Vector{AcbFieldElem},  tau::AcbMatrix, order_of_derivatives::Int;)
+function theta_jets(z::Vector{AcbFieldElem},  tau::AcbMatrix, order_of_derivatives::Int)
   g = nrows(tau)
   zd = length(z)
   if (g != zd)
@@ -350,8 +342,7 @@ end
 function parse_theta_characteristic(theta_characteristic::Vector{Int})
   for i in theta_characteristic
     if (i!=0 && i!=1)
-      error("theta_characteristic has to be either an integer between 0 or 2^(g-1),
-       a vector in {0,1}^2g or a tuple (a,b) with a, b in {0,1}^g.")
+      error("theta_characteristic has to be an integer between 0 and 2^(2g) - 1, a vector in {0,1}^2g or a pair (a, b) with a, b in {0,1}^g.")
     end
   end
   return evalpoly(2, reverse(theta_characteristic))
@@ -359,26 +350,24 @@ end
 
 function parse_theta_characteristic(theta_characteristic::Vector{Vector{Int}})
   if length(theta_characteristic) != 2
-    error("theta_characteristic has to be either an integer between 0 or 2^(g-1),
-    a vector in {0,1}^2g or a tuple (a,b) with a, b in {0,1}^g.")
+    error("theta_characteristic has to be an integer between 0 and 2^(2g) - 1, a vector in {0,1}^2g or a pair (a, b) with a, b in {0,1}^g.")
   end
   return parse_theta_characteristic(reduce(vcat,theta_characteristic))
 end
 
+# The characteristics [a, b] as tuples of 2g bits, in the order of the
+# integers they represent (the order of the output of acb_theta_all).
 function theta_characteristics_indices(g::Int)
-   indices = []
-   for i in (0:2^(2*g)-1)
-     push!(indices,tuple(reverse(digits(i, base=2, pad=2*g))...))
-   end
-   return indices
+  return [tuple(reverse(digits(i, base = 2, pad = 2*g))...) for i in 0:2^(2*g)-1]
 end
 
 @doc raw"""
-    siegel_reduction(tau::AcbMatrix) -> AcbMatrix
+    siegel_reduction(tau::AcbMatrix) -> ZZMatrix, AcbMatrix
 
-Compute the Siegel reduction of the period matrix `tau`, i.e.
-writing `siegel_reduction(tau) = X + i*Y`. We will have |X_mn| <= 1/2
-for all n, m and the lattice generated by Y will be LLL reduced.
+The Siegel reduction of the small period matrix `tau`: a symplectic matrix T
+and tau' = T(tau) (see `siegel_transform`) = X + i*Y with |X_mn| <= 1/2 for
+all m, n and Y LLL reduced (as far as FLINT's acb_siegel_reduce achieves
+this at the given precision).
 """
 function siegel_reduction(tau::AcbMatrix)
   g = number_of_rows(tau)
@@ -409,6 +398,7 @@ function siegel_transform(T::ZZMatrix,tau::AcbMatrix)
   return (A*tau + B) * inv(C*tau+D)
 end
 
+# The Cholesky factor of the symmetric positive definite matrix x (arb_mat_cho).
 function cholesky_decomposition(x::ArbMatrix)
   z = similar(x, nrows(x), ncols(x))
   p = precision(base_ring(x))

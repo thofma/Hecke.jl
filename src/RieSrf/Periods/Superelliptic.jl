@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  RieSrf/Superelliptic.jl : period matrices of superelliptic curves y^m = p(x)
+#  RieSrf/Periods/Superelliptic.jl : superelliptic curves y^m = p(x)
 #
 #  The algorithm of Molin and Neurohr ("Computing period matrices and the
 #  Abel-Jacobi map of superelliptic curves", Math. Comp. 2019), following
@@ -21,11 +21,16 @@
 #     (1 - u^2)^(-j/m) is part of the scheme);
 #   * the cycles "edge on sheet l minus edge on sheet l+1", their intersection
 #     numbers (from the configuration of the lifts at the common end points
-#     of the edges), and a symplectic basis.
+#     of the edges), and a symplectic basis;
+#   * the Abel-Jacobi map: integrals from a branch point to the point (finite
+#     points) and on a model at infinity (points at infinity).
 #
-#  Gauss-Jacobi quadrature for m > 2 (Neurohr's default) and the Abel-Jacobi
-#  map are not implemented yet; for m > 2 all edges use double exponential
-#  integration.
+#  Gauss-Jacobi quadrature for m > 2 (Neurohr's default) is not used (see
+#  _edge_parameters!); for m > 2 all edges use double exponential integration.
+#
+#  Entry points: _superelliptic_model (the model, chosen by riemann_surface),
+#  big_period_matrix, small_period_matrix, homology_basis, _se_abel_jacobi,
+#  _se_point, _se_infinite_points, _se_ramification_points.
 #
 ################################################################################
 
@@ -193,10 +198,8 @@ end
 # on [-1, 1], but it has to be the same at every precision)
 _factor_sign(u::ComplexF64) = _near_zero(real(u), abs(u)) ? imag(u) > 0 : real(u) > 0
 
-function _embed_coefficient(c, v, CC::AcbField)
-  c isa QQFieldElem && return CC(c)
-  return CC(evaluate(c, v.embedding, precision(CC)))
-end
+# (relative precision, thread safe: see _embed_coefficient(c, emb, prec))
+_embed_coefficient(c, v, CC::AcbField) = CC(_embed_coefficient(c, v.embedding, precision(CC)))
 
 _embed_poly(p::PolyRingElem, v, CC::AcbField) =
   polynomial_ring(CC, "t"; cached = false)[1]([_embed_coefficient(coeff(p, d), v, CC) for d in 0:degree(p)])
@@ -228,15 +231,11 @@ function _edge_u(P::Vector{ComplexF64}, a::Int, b::Int)
   return [(P[q] - mid) / hd for q in eachindex(P) if q != a && q != b]
 end
 
-# ellipse parameter (|u+1| + |u-1|)/2 of u: u lies on the ellipse E_r with foci +-1
-_ellipse_parameter(u::ComplexF64) = (abs(u + 1) + abs(u - 1)) / 2
-
-# half width of the largest strip |Im t| < r whose image under
-# t -> tanh(pi/2 sinh t) avoids u
-_de_parameter(u::ComplexF64) = abs(imag(asinh(atanh(u) / (pi/2))))
-
+# The quadrature parameters of an edge, from the u-coordinates U of the other
+# branch points (_ellipse_parameter and _burger_parameter: see the
+# quadrature files; here in Float64).
 _gj_weight(U::Vector{ComplexF64}) = minimum(_ellipse_parameter, U; init = 5.0)
-_de_weight(U::Vector{ComplexF64}) = minimum(_de_parameter, U; init = pi/2)
+_de_weight(U::Vector{ComplexF64}) = minimum(u -> _burger_parameter(u, pi/2), U; init = pi/2)
 
 # A spanning tree between the branch points that is good for the quadrature:
 # greedy (Prim-like) by the weight w(a, b) (larger is better), but without
@@ -296,7 +295,7 @@ end
 # of y, and computing the rules (O(N^2) at the working precision, with guard
 # bits growing with N) made them 7-13 times slower at 500-1000 bits.)
 function _edge_parameters!(C::SuperellipticModel, E::SuperellipticEdge, P::Vector{ComplexF64},
-                           loglc::Float64, style::String)
+                           loglc::Float64, style::Symbol)
   m, n = C.m, C.n
   U = _edge_u(P, E.a, E.b)
   hd = (P[E.b] - P[E.a]) / 2
@@ -305,7 +304,7 @@ function _edge_parameters!(C::SuperellipticModel, E::SuperellipticEdge, P::Vecto
   logK = (loglc + n*loghd) / m
   D = C.target_precision * log(2.0)
   rgj = _gj_weight(U)
-  use_cheb = m == 2 && (style == "GL" || (style == "Mixed" && rgj >= 1.005))
+  use_cheb = m == 2 && (style === :gl || (style === :mixed && rgj >= 1.005))
   if use_cheb
     E.method = :chebyshev
     @req rgj > 1 + 1e-12 "A branch point lies on an edge of the spanning tree."
@@ -446,7 +445,7 @@ function _se_edge_integrals(C::SuperellipticModel, E::SuperellipticEdge, D::_SEE
   if E.method === :chebyshev
     @assert !one_sided
     # (1-u^2)^(-1/2) is the weight of the scheme (m = 2, j = 1)
-    abscissae, weights = gauss_chebyshev_integration_points(E.N, precision(CC))
+    abscissae, weights = _gauss_chebyshev_nodes(E.N, precision(CC))
     for k in eachindex(abscissae)
       add_node!(abscissae[k], weights[k], nothing)
     end
@@ -619,20 +618,20 @@ function _se_compute_big_period_matrix!(C::SuperellipticModel)
   prec0 = 64 + hbits
   pC0 = _embed_poly(C.p, C.embedding, AcbField(prec0))
   P0 = roots(pC0, initial_prec = prec0, target = 53)
-  Pf = sort!([_c64(z) for z in P0], by = z -> (real(z), imag(z)))
-  mind = minimum(abs(Pf[i] - Pf[j]) for i in 1:n for j in i+1:n)
-  @req mind > 1e-12 * max(1.0, maximum(abs, Pf)) "The branch points are too close together for the algorithm for superelliptic curves; use superelliptic = false."
+  branch_points_f64 = sort!([_c64(z) for z in P0], by = z -> (real(z), imag(z)))
+  min_distance = minimum(abs(branch_points_f64[i] - branch_points_f64[j]) for i in 1:n for j in i+1:n)
+  @req min_distance > 1e-12 * max(1.0, maximum(abs, branch_points_f64)) "The branch points are too close together for the algorithm for superelliptic curves; use superelliptic = false."
   loglc = log(abs(_c64(coeff(pC0, n))))
 
   style = params.int_style
-  weight = (m == 2 && style != "DE") ? ((P, a, b) -> _gj_weight(_edge_u(P, a, b))) :
+  weight = (m == 2 && style !== :de) ? ((P, a, b) -> _gj_weight(_edge_u(P, a, b))) :
                                        ((P, a, b) -> _de_weight(_edge_u(P, a, b)))
-  tree = _spanning_tree(Pf, weight)
+  tree = _spanning_tree(branch_points_f64, weight)
   for E in tree
-    _edge_parameters!(C, E, Pf, loglc, style)
+    _edge_parameters!(C, E, branch_points_f64, loglc, style)
   end
   C.tree = tree
-  C.low_branch_points = Pf
+  C.low_branch_points = branch_points_f64
   C.log_lc = loglc
 
   # working precision (Neurohr: + log(binomial(n, n/4) * max bound))
@@ -642,14 +641,14 @@ function _se_compute_big_period_matrix!(C::SuperellipticModel)
   C.computational_precision = work
   CC = AcbField(work)
 
-  # branch points at the working precision, in the order of Pf
+  # branch points at the working precision, in the order of branch_points_f64
   pC = _embed_poly(C.p, C.embedding, CC)
   Ph = _accurate_roots(pC, work; slack = 64)
   P = Vector{AcbFieldElem}(undef, n)
   taken = falses(n)
   for z in Ph
     zf = _c64(z)
-    i = argmin([abs(zf - w) for w in Pf])
+    i = argmin([abs(zf - w) for w in branch_points_f64])
     @req !taken[i] "Could not match the branch points."
     taken[i] = true
     P[i] = z
@@ -665,9 +664,9 @@ function _se_compute_big_period_matrix!(C::SuperellipticModel)
     ints[k] = _se_edge_integrals(C, tree[k], data[k])
   end
   # the quadrature error (heuristic bound 2^-target, see _edge_parameters!)
-  qerr = ArbField(work)(2)^(-C.target_precision)
+  quadrature_error = ArbField(work)(2)^(-C.target_precision)
   for v in ints, z in v
-    ccall((:acb_add_error_arb, libflint), Nothing, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), z, qerr)
+    _add_error!(z, quadrature_error)
   end
   C.elementary_integrals = ints
 
@@ -686,11 +685,11 @@ function _se_compute_big_period_matrix!(C::SuperellipticModel)
   I = onei(CC)
   zeta(e) = exp(2 * const_pi(CC) * I * CC(mod(e, m)) / m)      # zeta_m^e
   N = (n - 1)*(m - 1)
-  PM = zero_matrix(CC, N, g)
+  cycle_periods = zero_matrix(CC, N, g)
   for k in 1:n-1, (d, (i, j)) in enumerate(C.differentials)
     base = ints[k][d] * (1 - zeta(-j))
     for l in 1:m-1
-      PM[(k - 1)*(m - 1) + l, d] = zeta(-(l - 1)*j) * base
+      cycle_periods[(k - 1)*(m - 1) + l, d] = zeta(-(l - 1)*j) * base
     end
   end
 
@@ -699,27 +698,10 @@ function _se_compute_big_period_matrix!(C::SuperellipticModel)
   C.intersection_matrix = K
   S = symplectic_reduction(K)
   C.symplectic_transform = S
-  PMS = change_base_ring(CC, S) * PM
-  @req all(contains(PMS[r, c], zero(CC)) for r in 2*g+1:N for c in 1:g) "Sanity check failed: the dependent cycles do not integrate to zero. There may have been an error in the computation of the intersection numbers."
-  return transpose(PMS[1:2*g, :])
+  periods = change_base_ring(CC, S) * cycle_periods
+  @req all(contains(periods[r, c], zero(CC)) for r in 2*g+1:N for c in 1:g) "Sanity check failed: the dependent cycles do not integrate to zero. There may have been an error in the computation of the intersection numbers."
+  return transpose(periods[1:2*g, :])
 end
-
-function small_period_matrix(C::SuperellipticModel)
-  isdefined(C, :small_period_matrix) && return C.small_period_matrix
-  g = C.genus
-  P = big_period_matrix(C)
-  P1 = P[1:g, 1:g]
-  P2 = P[1:g, g+1:2*g]
-  C.small_period_matrix = _solve_precond(P1, P2)
-  C.complex_reduction_matrices = [_inv_precond(P1)]
-  return C.small_period_matrix
-end
-
-################################################################################
-#
-#  Abel-Jacobi map
-#
-################################################################################
 
 ################################################################################
 #
@@ -777,14 +759,23 @@ function _se_infinite_points(C::SuperellipticModel)
   m, n = C.m, C.n
   delta = gcd(m, n)
   inf = CC(1/0)
+  if m == n
+    # the same branch of lc^(1/m) as C.lc_root (the branch only depends on
+    # the Float64 argument of lc)
+    lc_root = _rotated_power(_embed_coefficient(coeff(C.p, n), C.embedding, CC), 1//m)
+    zeta = exp(2 * const_pi(CC) * onei(CC) / m)
+  end
   pts = RiemannSurfacePoint[]
   for k in 1:delta
     P = RiemannSurfacePoint(O)
     P.coordx = inf
     P.coordy = inf
-    # the point of the plane model at infinity (y^m = x^n or x^n = ... at z = 0)
-    h = m < n ? [zero(CC), one(CC), zero(CC)] : m > n ? [one(CC), zero(CC), zero(CC)] :
-                [one(CC), zero(CC), zero(CC)]
+    # the point of the plane model y^m = p(x) at infinity (z = 0): (0 : 1 : 0)
+    # for m < n, (1 : 0 : 0) for m > n, and (1 : w0 : 0) with
+    # w0 = zeta_m^(k-1) lc^(1/m) for m = n
+    h = m < n ? [zero(CC), one(CC), zero(CC)] :
+        m > n ? [one(CC), zero(CC), zero(CC)] :
+                [one(CC), lc_root * zeta^(k - 1), zero(CC)]
     P.homog_coords = isone(C.transform) ? h : [h[2], h[1], h[3]]
     P.is_finite = false
     P.is_singular = false          # as a place; the plane model may be singular there
@@ -824,6 +815,12 @@ function base_point(C::SuperellipticModel)
   a, b = _se_coords(C, CO(x0), zero(CO))
   return _se_point(C, [a, b])
 end
+
+################################################################################
+#
+#  Abel-Jacobi map
+#
+################################################################################
 
 _is_infinite_coordinate(z::AcbFieldElem) = !isfinite(z)
 
@@ -903,12 +900,12 @@ function _se_abel_jacobi_finite(C::SuperellipticModel, x::AcbFieldElem, y::AcbFi
   Pext = vcat(C.low_branch_points, [xf])
   best = argmax(k -> _de_weight(_edge_u(Pext, k, n + 1)), 1:n)
   E = SuperellipticEdge(best, n + 1)
-  _edge_parameters!(C, E, Pext, C.log_lc, "DE")
+  _edge_parameters!(C, E, Pext, C.log_lc, :de)
   D = _se_edge_data(C, E, vcat(P, [x]), C.lc_root; one_sided = true)
-  I = _se_edge_integrals(C, E, D; one_sided = true)
-  qerr = ArbField(precision(CC))(2)^(-C.target_precision)
-  for z in I
-    ccall((:acb_add_error_arb, libflint), Nothing, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), z, qerr)
+  integrals = _se_edge_integrals(C, E, D; one_sided = true)
+  quadrature_error = ArbField(precision(CC))(2)^(-C.target_precision)
+  for z in integrals
+    _add_error!(z, quadrature_error)
   end
   # the sheet: y = zeta^s y_ref(x), y_ref(x) = K 2^(1/m) Y(1)
   po = CC(one(ArbField(precision(CC))))
@@ -918,7 +915,7 @@ function _se_abel_jacobi_finite(C::SuperellipticModel, x::AcbFieldElem, y::AcbFi
   @req abs(_c64(y - zeta^s * yref)) <= 1e-8 * max(1.0, abs(_c64(y))) "The point is not on the curve (no sheet matches its y-coordinate)."
   res = copy(C.abel_jacobi_branch_points[best])
   for (d, (i, j)) in enumerate(C.differentials)
-    res[d] += zeta^(mod(-j*s, m)) * I[d]
+    res[d] += zeta^(mod(-j*s, m)) * integrals[d]
   end
   return res
 end
@@ -996,8 +993,8 @@ function _se_abel_jacobi_infinite(C::SuperellipticModel, P::RiemannSurfacePoint)
   logB = log(M) + maximum(e*log(2*t1f) + j*(n*log(3.0) - loglc)/m
                           for (e, (i, j)) in zip(expo, C.differentials))
   err = RR(2)^(-C.target_precision)
-  Ngl = max(2, Int(gauss_legendre_parameters(RR(3), err, exp(RR(logB)))))
-  abscissae, weights = gauss_legendre_integration_points(Ngl, precision(CC))
+  Ngl = max(2, Int(_gauss_legendre_parameters(RR(3), err, exp(RR(logB)))))
+  abscissae, weights = _gauss_legendre_nodes(Ngl, precision(CC))
   t1 = RR(t1f)
   acc = [zero(CC) for _ in 1:g]
   for k in eachindex(abscissae)
@@ -1010,7 +1007,7 @@ function _se_abel_jacobi_infinite(C::SuperellipticModel, P::RiemannSurfacePoint)
   end
   for d in 1:g
     acc[d] *= M * CC(t1) / 2
-    ccall((:acb_add_error_arb, libflint), Nothing, (Ref{AcbFieldElem}, Ref{ArbFieldElem}), acc[d], err)
+    _add_error!(acc[d], err)
   end
 
   # the point Q at t = t1

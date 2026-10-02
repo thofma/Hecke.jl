@@ -1,16 +1,22 @@
 ################################################################################
 #
-#  RieSrf/SpecialPoints.jl : critical, singular and infinite points
+#  RieSrf/AbelJacobi/SpecialPoints.jl : critical, singular and infinite points
+#
+#  The points of the Riemann surface over the discriminant points and over
+#  x = infinity, as places: for every chain around a discriminant point (and
+#  the chain around infinity) one point per cycle of its monodromy, with the
+#  sheets of the cycle. They are classified as
+#   - infinite points: the x-coordinate is infinity,
+#   - y-infinite points: (0 : 1 : 0) in projective coordinates,
+#   - critical points: df/dy = 0,
+#   - singular points: df/dy = df/dx = 0 (also at infinity).
+#  Only needs the monodromy, not the periods.
+#
+#  Entry points: _analyze_special_points!, ramification_points.
 #
 ################################################################################
 
-#Analyzes all the special points on the Riemann surface.
-#This includes:
-# - infinite points: Points where the x-coordinate is infinity
-# - y-infinite points: Points that correspond to [0:1:0] in projective coordinates
-# - critical points: Points for which df/dy = 0
-# - singular points: Points for which df/dy = df/dx = 0
-function analyze_special_points(RS::RiemannSurfaceModel)
+function _analyze_special_points!(RS::RiemannSurfaceModel)
   if isdefined(RS, :infinite_points) && isdefined(RS, :y_infinite_points) && isdefined(RS, :singular_points)
     return nothing
   end
@@ -23,7 +29,7 @@ function analyze_special_points(RS::RiemannSurfaceModel)
 
   m = RS.degree[1]
   prec = precision(RS)
-  f = embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
+  f = _embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
   CC = base_ring(f)
   RR = ArbField(precision(CC))
   R, z = polynomial_ring(CC)
@@ -40,7 +46,7 @@ function analyze_special_points(RS::RiemannSurfaceModel)
   Threads.@threads for k in 1:K
     yks[k] = fiber_repeated(RS, center(chains[k]))
     if length(yks[k]) > 0
-      ram[k] = ramification_point_sheets(RS, yks[k], chains[k])
+      ram[k] = _ramification_point_sheets(RS, yks[k], chains[k])
     end
   end
 
@@ -53,6 +59,22 @@ function analyze_special_points(RS::RiemannSurfaceModel)
 
     dfxk = dfx(xk,z)
     dfyk = dfy(xk, z)
+    # a finite point with y-coordinate y: critical if df/dy = 0, singular if
+    # also df/dx = 0
+    classify! = function(point, y)
+      point.is_finite = true
+      point.is_singular = false
+      point.coordy = y
+      point.homog_coords = [point.coordx, y, CC(1)]
+      if contains(dfyk(y), CC(0))
+        if contains(dfxk(y), CC(0))
+          push!(finite_singularities, [point.coordx, y])
+          point.is_singular = true
+        end
+        push!(critical_values, point.coordx)
+        push!(critical_points, point)
+      end
+    end
     cyc_decomp = collect(cycles(permutation(chain)))
     if length(yk) == 0 
       for k in (1:length(cyc_decomp))
@@ -82,19 +104,7 @@ function analyze_special_points(RS::RiemannSurfaceModel)
           point.homog_coords = [CC(0),CC(1),CC(0)]
           push!(y_infinite_points, point)
         else
-          point.is_finite = true
-          point.is_singular = false
-          point.coordy = yk[index]
-          point.homog_coords = [point.coordx, point.coordy, CC(1)]
-
-          if contains(dfyk(point.coordy),CC(0))
-            if contains(dfxk(point.coordy), CC(0))
-              push!(finite_singularities, [point.coordx, point.coordy])
-                point.is_singular = true
-            end
-            push!(critical_values, point.coordx)
-            push!(critical_points, point)
-          end
+          classify!(point, yk[index])
         end
         push!(chain.points, point)
       end
@@ -103,22 +113,11 @@ function analyze_special_points(RS::RiemannSurfaceModel)
       yk, cyc_decomp = ram[k]
       for l in (1:length(cyc_decomp))
         point = RiemannSurfacePoint(RS)
-        point.is_finite = true
-        point.is_singular = false
         point.index = l
         point.sheets = cyc_decomp[l]
         point.ramification_index = length(point.sheets)
         point.coordx = xk
-        point.coordy = yk[point.sheets[1]]
-        point.homog_coords = [point.coordx, point.coordy, CC(1)]
-        if contains(dfyk(point.coordy),CC(0))
-          if contains(dfxk(point.coordy), CC(0))
-            push!(finite_singularities, [point.coordx, point.coordy])
-              point.is_singular = true
-          end
-          push!(critical_values, point.coordx)
-          push!(critical_points, point)
-        end
+        classify!(point, yk[point.sheets[1]])
         push!(chain.points, point)
       end
       @req (length(chain.points) == length(cyc_decomp)) "Error in analyzing special points."
@@ -131,8 +130,8 @@ function analyze_special_points(RS::RiemannSurfaceModel)
   #Analyze points at infinity
   #We take the homogeneous defining polynomial of RS and set z=0.
   f_with_z_is_0 = sum(filter(x -> total_degree(x) == total_degree(f),[ term for term in terms(f)]))
-  SFX1 = find_roots_with_mult(f_with_z_is_0(1,z))[1]
-  SFY1 = find_roots_with_mult(f_with_z_is_0(z,1))[1]
+  SFX1 = _roots_with_multiplicities(f_with_z_is_0(1,z))[1]
+  SFY1 = _roots_with_multiplicities(f_with_z_is_0(z,1))[1]
   all_points = Set{Vector{AcbFieldElem}}()
   for y in SFX1
     if contains(abs(y), RR(0))
@@ -158,7 +157,7 @@ function analyze_special_points(RS::RiemannSurfaceModel)
 
   RS.infinity_coords = collect(all_points)
 
-  fC_homogeneous = embed_mpoly(RS.homogeneous_defining_polynomial, RS.embedding, prec)
+  fC_homogeneous = _embed_mpoly(RS.homogeneous_defining_polynomial, RS.embedding, prec)
   partial_derivs = [derivative(fC_homogeneous, k) for k in (1:3) ]
   RS.infinite_singularities = []
   Rxyz = parent(fC_homogeneous)
@@ -185,43 +184,33 @@ function analyze_special_points(RS::RiemannSurfaceModel)
   end
   RS.inf_chain.points = inf_chain_points
   RS.infinite_points = RS.inf_chain.points
-   RS.y_infinite_points = y_infinite_points
+  RS.y_infinite_points = y_infinite_points
   return nothing
 end
 
-#Used to check the sheets a ramified points lies on. Neurohr does not do this, but his 
-#output also seems to be incorrect to me. Might need to check and test more to be sure.
-function ramification_point_sheets(RS::RiemannSurfaceModel, yk::Vector{AcbFieldElem}, chain::CChain)
+# The y-values over the discriminant point of the chain, labelled by the
+# sheets (yk_sorted[s] is the y-value reached on sheet s), and the cycles of
+# the monodromy of the loop around the point. The labels come from continuing
+# the fiber from the loop into the discriminant point (double exponential
+# steps without the isolation check). (Neurohr's implementation does not
+# label the sheets this way.)
+function _ramification_point_sheets(RS::RiemannSurfaceModel, yk::Vector{AcbFieldElem}, chain::CChain)
   error = RS.computational_error
   prec = precision(RS)
   CC = AcbField(prec)
   RR = ArbField(prec)
   Cz, z = polynomial_ring(CC)
-  v = RS.embedding
-  fC = embed_mpoly(defining_polynomial(RS), v, prec)
+  fC = _embed_mpoly(defining_polynomial(RS), RS.embedding, prec)
   Sm = parent(permutation(chain))
-  CC = chain.paths[1].C
   h = QQ(16//125)
-  l = 1
-  paths = chain.paths
-#Find the beginning of the loop around the center.
-  while (path_type(chain.paths[l])!= 1 && path_type(chain.paths[l])!= 2) || !contains(center(chain.paths[l]) - center(chain), CC(0))
-    l+=1
-  end
-
-  loop = CPath[]
-  while path_type(chain.paths[l]) != 0
-    push!(loop, chain.paths[l])
-    l += 1
-  end
-
+  loop, l = _loop_around_center(chain)
   loop_perm = permutation(CChain(loop))
 
-  path = c_line(chain.paths[l].start_point_high, chain.paths[l].center_high)
+  path = line_path(chain.paths[l].start_point_high, chain.center)
 
   N = round(Int, 1//h * 72 //10)
   N2P1 = 2*N+1
-  abscissae, weights = tanh_sinh_quadrature_integration_points(N, RR(h))
+  abscissae, weights = _tanh_sinh_nodes(N, RR(h))
   push!(abscissae,RR(1))
 
   xj = start_point(path)
@@ -233,7 +222,7 @@ function ramification_point_sheets(RS::RiemannSurfaceModel, yk::Vector{AcbFieldE
   for i in (1:N2P1)
     xj_new = evaluate(path, abscissae[i+1])
     try
-      yj_new, _ = recursive_continuation_manual!(ws, xj, xj_new, yj, err2)
+      yj_new, _ = _continue_unchecked!(ws, xj, xj_new, yj, err2)
     catch
       break
     end

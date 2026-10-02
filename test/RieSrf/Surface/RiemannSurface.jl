@@ -1,5 +1,4 @@
 @testset "RiemannSurface" begin
-  using Hecke.RiemannSurfaces
   K = QQ
 
   Kxy, (x,y) = polynomial_ring(K, ["x","y"])
@@ -7,8 +6,8 @@
   # (the reference tau refers to the symplectic basis of the general
   # algorithm; the superelliptic algorithm is compared up to Sp_2g(ZZ))
   f = x^5 + x^4 + x^3 - x + 4 - y^2
-  RS = riemann_surface(f, 1000, integration_method = "heuristic", superelliptic = false)
-  tau = small_period_matrix(RS)
+  RS = RSM.riemann_surface(f, 1000, integration_method = :heuristic, superelliptic = false)
+  tau = RSM.small_period_matrix(RS)
 
 
   #Compare against a matrix computed with higher precision.
@@ -17,13 +16,13 @@
 
   @test contains(tau, test_tau)
   @test sprint(show, "text/plain", RS) isa String
-  tau_se = small_period_matrix(riemann_surface(f, 200, integration_method = "heuristic"))
+  tau_se = RSM.small_period_matrix(RSM.riemann_surface(f, 200, integration_method = :heuristic))
   @test _period_matrices_isomorphic(change_base_ring(base_ring(tau_se), tau), tau_se)
 
   # an Elliptic curve
   f = x^3 + 1 - y^2
-  RS = riemann_surface(f)
-  tau = small_period_matrix(RS)
+  RS = RSM.riemann_surface(f)
+  tau = RSM.small_period_matrix(RS)
 
   R = base_ring(tau)
   t = R("0.5 +/- 1e-10") + R("0.86602540378443864676372317 +/- 1.91e-10")*im
@@ -32,12 +31,12 @@
 
   # the same but different
   f = x^3-1 - y^2
-  RS = riemann_surface(f)
-  small_period_matrix(RS)
+  RS = RSM.riemann_surface(f)
+  RSM.small_period_matrix(RS)
 
   f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
-  RS = riemann_surface(f, 500  ,integration_method = "heuristic")
-  small_period_matrix(RS)
+  RS = RSM.riemann_surface(f, 500  ,integration_method = :heuristic)
+  RSM.small_period_matrix(RS)
 end
 
 @testset "RiemannSurface (models, output)" begin
@@ -101,7 +100,7 @@ end
   end
 
   # ComplexField / RealField at the public boundary (internally AcbField):
-  # riemann_surface(f, ComplexField()) returns every numerical output in
+  # RSM.riemann_surface(f, ComplexField()) returns every numerical output in
   # ComplexField and accepts ComplexFieldElem input; same numbers as the
   # AcbField surface of precision(Balls).
   @testset "ComplexField output" begin
@@ -132,7 +131,7 @@ end
       z = [ComplexField()(0) for _ in 1:3]
       th = theta(z, tau)
       tha = theta(RSM._to_acb(z, 128), RSM.small_period_matrix(RSa))
-      @test th[1] isa ComplexFieldElem && overlaps(th[1], RSM._to_complex(tha[1]))
+      @test th isa ComplexFieldElem && overlaps(th, RSM._to_complex(tha))
       # endomorphisms: the same number of generators as for AcbField input
       gens = RSM.geometric_endomorphism_representation(P)
       @test length(gens) == length(RSM.geometric_endomorphism_representation(Pa))

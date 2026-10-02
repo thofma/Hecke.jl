@@ -18,20 +18,18 @@
 #  computed exactly (j, Igusa-Clebsch, Shioda, Dixmier-Ohno; Hecke's HypellCrv
 #  and G3Crv code), those of the reconstructed curve over CC with the same
 #  code; the latter are scaled to the former in weighted projective space and
-#  recognized as rational numbers (Algebraization.jl). Hyperelliptic curves
-#  are also compared by their branch points (Moebius equivalence).
+#  recognized as rational numbers (Algebraization.jl).
 #
 #  Usage:
-#    include("ReconstructCurves.jl")
+#    include("ReconstructCurvesG123.jl")
 #    RS = riemann_surface(f, 200)
-#    r = reconstruct_curve(RS)           # the reconstructed model
-#    compare_with_original(RS)           # (ok = ..., kind = ..., details...)
+#    C = reconstruct_curve_from_tau(small_period_matrix(RS))
+#    compare_with_original(f, RS, hyperelliptic)   # (ok, all_recognized, log2_diff, recognized)
 #    random_reconstruction_tests(10; genus = 3, hyperelliptic = false)
 #
 ################################################################################
 
 using Hecke
-import LinearAlgebra
 const RSR = Hecke.RiemannSurfaces
 
 function _log2abs(z)
@@ -58,7 +56,8 @@ function reconstruct_curve_from_tau(tau::AcbMatrix)
   g == 1 && return _reconstruct_genus1(tau)
   g == 2 && return _reconstruct_genus2(tau)
   g == 3 && return _reconstruct_genus3(tau)
-  error("Reconstruction only for genus 1, 2 and 3.")
+  g == 4 && return reconstruct_curve_g4(tau)          # ReconstructG4.jl
+  error("Reconstruction only for genus 1, 2, 3 and 4.")
 end
 
 function _reconstruct_genus1(tau::AcbMatrix)
@@ -95,13 +94,6 @@ function _reconstruct_genus3(tau::AcbMatrix)
   end
   @req length(van) == 1 "$(length(van)) even theta constants vanish; expected 0 (plane quartic) or 1 (hyperelliptic). Is the Jacobian decomposable, or the precision too low?"
   delta = collect(van[1])
-  if iszero(delta)
-    # Takase's formula needs a nonzero vanishing characteristic: move it
-    # with an integral translation of tau (same curve).
-    t2 = deepcopy(tau)
-    t2[1, 1] += 1
-    return _reconstruct_genus3(t2)
-  end
   lambdas = _takase_rosenhain(th, delta)
   CCx, x = polynomial_ring(CC, :x)
   f = x*(x-1)*prod(x-lambda for lambda in lambdas)
@@ -111,104 +103,103 @@ end
 
 ################################################################################
 #  Genus 3 hyperelliptic: Takase's formula
+#
+#  As in Balakrishnan-Ionica-Lauter-Vincent and the Magma code
+#  (curve_reconstruction/rosenhain.m, precomp.m): the characteristic of the
+#  vanishing even theta constant determines a matrix gamma (precomputed by
+#  BILV), which transforms Mumford's eta map; the Rosenhain invariants are
+#  Takase's quotients of squares of theta constants (Thm. 4.5 there).
+#  Characteristics are bit vectors (a1, a2, a3, b1, b2, b3), i.e. 2 * the
+#  characteristic in {0, 1/2}^6.
 ################################################################################
 
-# Mumford's eta map for g = 3 (characteristics as bit vectors (a1,a2,a3,b1,b2,b3),
-# eta = bits/2); eta_infinity = 0; U = {2, 4, 6, infinity}.
-function _mumford_eta3()
-  e = Dict{Int, Vector{Int}}()
-  for i in 1:4
-    v = zeros(Int, 6)
-    i <= 3 && (v[i] = 1)
-    for t in 1:i-1
-      v[3 + t] = 1
-    end
-    e[2i - 1] = v
-  end
-  for i in 1:3
-    v = zeros(Int, 6)
-    v[i] = 1
-    for t in 1:i
-      v[3 + t] = 1
-    end
-    e[2i] = v
-  end
-  return e
+# Mumford's eta map: eta_1, ..., eta_7 for the finite branch points, eta_8 = 0
+# for the one at infinity.
+_mumford_eta() = [[1, 0, 0, 0, 0, 0], [1, 0, 0, 1, 0, 0], [0, 1, 0, 1, 0, 0],
+                  [0, 1, 0, 1, 1, 0], [0, 0, 1, 1, 1, 0], [0, 0, 1, 1, 1, 1],
+                  [0, 0, 0, 1, 1, 1], [0, 0, 0, 0, 0, 0]]
+
+# the BILV matrix gamma for the vanishing characteristic v (not symplectic;
+# it acts linearly on the characteristics mod 1)
+function _precomputed_gamma(v::Vector{Int})
+  gammas = Dict{NTuple{6, Int}, Vector{Int}}(
+    (0, 1, 0, 0, 0, 0) => [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1],
+    (0, 1, 1, 0, 1, 1) => [0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0],
+    (0, 0, 0, 0, 1, 0) => [0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+    (1, 1, 1, 1, 1, 0) => [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    (1, 1, 1, 0, 0, 0) => [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
+    (0, 0, 1, 1, 0, 0) => [1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1],
+    (0, 1, 1, 1, 0, 0) => [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    (1, 0, 1, 0, 1, 0) => [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+    (0, 0, 1, 1, 1, 0) => [1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    (0, 0, 1, 0, 0, 0) => [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1],
+    (0, 1, 1, 0, 0, 0) => [0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1],
+    (0, 0, 1, 0, 1, 0) => [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+    (1, 0, 0, 0, 0, 0) => [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1],
+    (1, 1, 0, 0, 0, 0) => [1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+    (1, 0, 1, 0, 0, 0) => [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+    (0, 1, 0, 0, 0, 1) => [1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1],
+    (1, 1, 0, 1, 1, 1) => [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+    (1, 1, 0, 0, 0, 1) => [1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+    (0, 0, 0, 1, 0, 1) => [1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1],
+    (0, 1, 0, 1, 0, 1) => [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0],
+    (1, 0, 0, 0, 1, 1) => [0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0],
+    (0, 0, 0, 1, 1, 1) => [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+    (0, 0, 0, 0, 0, 1) => [0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+    (1, 0, 1, 1, 0, 1) => [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+    (1, 1, 1, 1, 0, 1) => [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+    (0, 0, 0, 0, 1, 1) => [0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0],
+    (1, 0, 1, 1, 1, 1) => [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+    (1, 1, 0, 1, 1, 0) => [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+    (1, 0, 0, 0, 0, 1) => [1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1],
+    (0, 0, 0, 1, 0, 0) => [1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0],
+    (0, 1, 0, 1, 0, 0) => [1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1],
+    (1, 1, 1, 0, 1, 1) => [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1],
+    (0, 1, 1, 1, 1, 1) => [1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1],
+    (1, 0, 0, 0, 1, 0) => [1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
+    (0, 0, 0, 1, 1, 0) => [1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1],
+  )
+  # v = 0: gamma from Example 4.3
+  gamma0 = [1, 1, 1, -1, 1, 1,  0, 1, 0, 0, -1, 0,  0, 1, 0, -1, 1, 1,
+            -1, -1, -1, 2, -1, -1,  0, 0, -1, 1, -1, -1,  0, -1, -1, -1, 1, 0]
+  entries = get(gammas, Tuple(v), gamma0)
+  return [entries[6*(i - 1) + j] for i in 1:6, j in 1:6]        # row-major
 end
 
-_q(v) = mod(v[1]*v[4] + v[2]*v[5] + v[3]*v[6], 2)
-
-# Generators (mod 2) of the image of Gamma_{1,2} acting on characteristics:
-# [[I, 0], [S, I]], [[I, S], [0, I]] with S symmetric with zero diagonal and
-# [[A, 0], [0, A^-T]] with A elementary. They preserve the quadratic form q.
-function _gamma12_generators()
-  gens = Matrix{Int}[]
-  I3 = Matrix{Int}(LinearAlgebra.I, 3, 3)
-  Z3 = zeros(Int, 3, 3)
-  for i in 1:3, j in i+1:3
-    S = zeros(Int, 3, 3); S[i, j] = S[j, i] = 1
-    push!(gens, [I3 Z3; S I3])
-    push!(gens, [I3 S; Z3 I3])
-  end
-  for i in 1:3, j in 1:3
-    i == j && continue
-    A = copy(I3); A[i, j] = 1                      # elementary, A^-1 = A mod 2
-    push!(gens, [A Z3; Z3 permutedims(A)])         # A^-T = A^T mod 2
-  end
-  for p in ([2, 1, 3], [1, 3, 2])
-    A = I3[p, :]
-    push!(gens, [A Z3; Z3 A])
-  end
-  return gens
+# a characteristic (a_1, ..., a_g, b_1, ..., b_g) in bits is odd iff a.b is odd
+function _is_odd_characteristic(v)
+  g = div(length(v), 2)
+  return isodd(sum(v[i]*v[g + i] for i in 1:g))
 end
 
-# a matrix M in the group generated by _gamma12_generators with M v = w (mod 2)
-function _find_gamma(v::Vector{Int}, w::Vector{Int})
-  gens = _gamma12_generators()
-  I6 = Matrix{Int}(LinearAlgebra.I, 6, 6)
-  seen = Dict(v => I6)
-  queue = [v]
-  while !isempty(queue)
-    u = popfirst!(queue)
-    u == w && return seen[u]
-    for G in gens
-      u2 = mod.(G * u, 2)
-      if !haskey(seen, u2)
-        seen[u2] = mod.(G * seen[u], 2)
-        push!(queue, u2)
-      end
-    end
-  end
-  error("No transformation found for the vanishing characteristic $w.")
+# Takase's quotient (Thm. 4.5) for the branch points k, l, m of a hyperelliptic
+# curve of genus g (eta: the 2g + 2 values of the eta map, U as in BILV)
+function _takase_quotient(thetas_sq, eta, U, k::Int, l::Int, m::Int)
+  g = div(length(eta[1]), 2)
+  rest = sort(setdiff(1:2*g + 1, [k, l, m]))
+  V = rest[1:g - 1]
+  W = rest[g:2*g - 2]
+  eta_value(S) = Tuple(mod.(sum((eta[i] for i in S); init = zeros(Int, 2*g)), 2))
+  theta_sq(S) = thetas_sq[eta_value(symdiff(U, S))]
+  # sign: (-1)^(<eta_k, eta_k + eta_l + eta_m> + [k not in U] - 1)
+  e1 = eta[k]
+  e2 = mod.(eta[k] + eta[l] + eta[m], 2)
+  exponent = sum(e1[i]*e2[g + i] for i in 1:g) + (k in U ? 0 : 1) - 1
+  sign = iseven(exponent) ? 1 : -1
+  return sign * theta_sq(vcat(V, [k, l])) * theta_sq(vcat(W, [k, l])) /
+         (theta_sq(vcat(V, [k, m])) * theta_sq(vcat(W, [k, m])))
 end
 
+# The Rosenhain invariants lambda_3, ..., lambda_7: the curve is
+# y^2 = x (x - 1) prod (x - lambda_l). delta: the vanishing even
+# characteristic (bits).
 function _takase_rosenhain(th, delta::Vector{Int})
-  et = _mumford_eta3()
-  U = [2, 4, 6]                                    # and infinity (eta = 0)
-  v0 = mod.(sum(et[i] for i in U), 2)              # (1,1,1,1,0,1)
-  @req _q(delta) == 0 "The vanishing characteristic is odd."
-  M = _find_gamma(v0, delta)
-  eta = Dict(i => mod.(M * et[i], 2) for i in 1:7)
-  etaS(S) = Tuple(mod.(sum((eta[i] for i in S); init = zeros(Int, 6)), 2))
-  symdiff(A, B) = setdiff(union(A, B), intersect(A, B))
-  T(S) = th[etaS(symdiff(U, S))...]              # U o S (infinity cancels or not: eta_inf = 0)
-  lambdas = AcbFieldElem[]
-  for k in 3:7
-    others = setdiff(3:7, [k])
-    vals = AcbFieldElem[]
-    for (V, W) in (([others[1], others[2]], [others[3], others[4]]),
-                   ([others[1], others[3]], [others[2], others[4]]),
-                   ([others[1], others[4]], [others[2], others[3]]))
-      R = T(vcat(V, [k, 1])) * T(vcat(W, [k, 1])) / (T(vcat(V, [k, 2])) * T(vcat(W, [k, 2])))
-      r = R^2                                      # (k, 1, 2) = +1 since 1, 2 < k
-      push!(vals, r / (r - 1))                     # (l_k - 0)/(l_k - 1) = r
-    end
-    CC = parent(vals[1])
-    tol = ArbField(precision(CC))(2)^(-div(precision(CC), 3))
-    @req all(abs(v - vals[1]) < tol * (1 + abs(vals[1])) for v in vals) "Takase's formula gives different values for different decompositions (conventions?)."
-    push!(lambdas, vals[1])
-  end
-  return lambdas
+  @req !_is_odd_characteristic(delta) "The vanishing characteristic is odd."
+  gamma = _precomputed_gamma(delta)
+  eta = [mod.(gamma * e, 2) for e in _mumford_eta()]
+  U = union([i for i in 1:8 if _is_odd_characteristic(eta[i])], [8])
+  thetas_sq = Dict(ch => v^2 for (ch, v) in th)
+  return [_takase_quotient(thetas_sq, eta, U, 1, l, 2) for l in 3:7]
 end
 
 ################################################################################
@@ -265,24 +256,41 @@ end
 reconstructed curve over CC, weights `ws`. Scale `Icc` in weighted projective
 space so that its entry r (the nonzero original invariant of smallest weight)
 equals Iex[r] (trying all ws[r]-th roots), then recognize the entries as
-rational numbers. `ok`: all recognized and equal to `Iex`. Also returns
-log2 of the largest relative difference (for diagnosis).
+rational numbers. Returns a named tuple with
+  * `ok`: the scaled invariants agree with `Iex` to more than half of the
+    precision (`log2_diff < -prec/2`),
+  * `all_recognized`: all scaled invariants are recognized as rational
+    numbers and equal to `Iex` (needs more precision than `ok`: roughly twice
+    the height of the invariants in bits),
+  * `log2_diff`: log2 of the largest relative difference,
+  * `recognized`: the recognized rational numbers (`nothing` where not).
 """
 function compare_invariants(Iex::Vector{QQFieldElem}, Icc::Vector{AcbFieldElem}, ws::Vector{Int})
   CC = parent(Icc[1])
   prec = precision(CC)
   nz = findall(!iszero, Iex)
-  isempty(nz) && return (ok = false, reason = "all original invariants vanish")
+  if isempty(nz)
+    # only possible for absolute invariants (j = 0); weighted invariants of a
+    # smooth curve do not all vanish
+    diff = maximum(_log2abs(z) for z in Icc)
+    rec = [diff < -prec/3 ? QQ(0) : nothing for _ in Icc]
+    return (ok = diff < -prec/2, all_recognized = all(r -> r == QQ(0), rec), log2_diff = diff, recognized = rec)
+  end
   r = nz[argmin(ws[nz])]
   if ws[r] == 0                                    # absolute invariants (j)
     lams = [one(CC)]
   else
     q = CC(Iex[r]) / Icc[r]
-    base = exp(log(q) / ws[r])
+    # a w-th root of q; q is rotated by its Float64 argument first, since for a
+    # real curve q is often a negative real number whose ball straddles the
+    # branch cut of log (then log(q) has an imaginary part covering [-pi, pi])
+    theta = angle(ComplexF64(Float64(real(q)), Float64(imag(q))))
+    rot = exp(onei(CC) * CC(theta))
+    base = exp(log(q / rot) / ws[r]) * exp(onei(CC) * CC(theta) / ws[r])
     zeta = exp(2 * const_pi(CC) * onei(CC) / ws[r])
     lams = [base * zeta^s for s in 0:ws[r]-1]
   end
-  best = (ok = false, log2_diff = Inf, recognized = nothing)
+  best = (ok = false, all_recognized = false, log2_diff = Inf, recognized = nothing)
   for lam in lams
     scaled = [Icc[i] * lam^ws[i] for i in eachindex(ws)]
     # scale of the invariants: |Iex[r]|^(w_i/w_r)
@@ -292,28 +300,33 @@ function compare_invariants(Iex::Vector{QQFieldElem}, Icc::Vector{AcbFieldElem},
     diff < best.log2_diff || continue
     rec = [iszero(Iex[i]) ? (_log2abs(scaled[i]) < log2(scalar(i)) - prec/3 ? QQ(0) : nothing) :
            _recognize_rational(scaled[i]) for i in eachindex(ws)]
-    best = (ok = all(rec[i] == Iex[i] for i in eachindex(ws)), log2_diff = diff, recognized = rec)
+    best = (ok = diff < -prec/2, all_recognized = all(rec[i] == Iex[i] for i in eachindex(ws)),
+            log2_diff = diff, recognized = rec)
   end
   return best
 end
 
 """
-    compare_with_original(RS) -> NamedTuple
+    compare_with_original(f, RS, hyperelliptic::Bool) -> NamedTuple
 
 Reconstruct the curve from the period matrix of `RS` and compare its
 invariants with the exact invariants of the original curve over QQ:
 j (genus 1), Igusa-Clebsch (genus 2), Shioda (genus 3 hyperelliptic),
 Dixmier-Ohno (plane quartics). The reconstructed invariants are scaled to the
 original ones (weighted projective space) and recognized as rational numbers
-(Algebraization.jl); `ok` means that all of them are recognized and equal to
-the original ones. `ok = nothing` if the original model is not of a supported
-form (y^2 = h(x) resp. a plane quartic over QQ). For hyperelliptic curves
-`moebius` also tells whether the branch points are equivalent under PGL_2.
+(Algebraization.jl). `f` is the curve over QQ (y^2 = h(x) for genus 1, 2
+and hyperelliptic genus 3, a plane quartic otherwise). Genus 4: Bouchet's
+invariants of the canonical model, or the branch points for hyperelliptic
+curves (see _compare_with_original_g4 in ReconstructG4.jl); the result also
+has the field `case`. See
+`compare_invariants` for the fields of the result (`ok`, `all_recognized`,
+`log2_diff`, `recognized`).
 """
 function compare_with_original(f, RS, hyperelliptic)
+  g = genus(RS)
+  g == 4 && return _compare_with_original_g4(f, RS, hyperelliptic)    # ReconstructG4.jl
   CC = base_ring(small_period_matrix(RS))
   prec = precision(CC)
-  g = genus(RS)
   tau = small_period_matrix(RS)
   if g == 1
     R, x = polynomial_ring(QQ)
@@ -321,8 +334,7 @@ function compare_with_original(f, RS, hyperelliptic)
     E = elliptic_curve(fx)
     j = j_invariant(E)
     j_CC = j_invariant(tau[1])
-    j_QQ = _recognize_rational(j_CC)
-    return compare_invariants([j_QQ], [j_CC], [0])
+    return compare_invariants([j], [j_CC], [0])
   elseif g == 2 
     R, x = polynomial_ring(QQ)
     fx = f(x, R(0))
@@ -371,12 +383,16 @@ end
 Compute the period matrices of `n` random curves (y^2 = h(x) for genus 1, 2
 and hyperelliptic genus 3, plane quartics otherwise), reconstruct them and
 compare. Keywords are passed to `riemann_surface` (e.g. `superelliptic = false`).
-Curves of the wrong genus (singular) are skipped. Default precision: 200
-bits, 500 for plane quartics (the Dixmier-Ohno invariants of the original
-curve are rationals with ~50-100 digits, which have to be recognized).
+Curves of the wrong genus (singular) are skipped. Default precision: 1000
+bits. `ok` (agreement to half the precision) needs much less precision than
+recognizing all invariants as rationals (`all_recognized`): for hyperelliptic
+genus 3 about 400 bits, for plane quartics more (the Dixmier-Ohno invariants
+are rationals with ~50-100 digits).
 """
 function random_reconstruction_tests(n::Int; genus::Int, hyperelliptic::Bool = false,
                                      prec = 1000, kw...)
+  genus == 4 && return random_g4_reconstruction_tests(n; kind = hyperelliptic ? :hyperelliptic : :generic,
+                                                     prec = prec, kw...)
   results = []
   done = 0
   while done < n
@@ -387,14 +403,92 @@ function random_reconstruction_tests(n::Int; genus::Int, hyperelliptic::Bool = f
     t = @elapsed r = try
       compare_with_original(f, RS, hyperelliptic)
     catch e
-      (ok = false, kind = :error, reason = sprint(showerror, e))
+      (ok = false, all_recognized = false, log2_diff = NaN, recognized = nothing,
+       error = sprint(showerror, e))
     end
-    println(rpad(string(done), 4), rpad(string(r.ok), 8),
-            lpad(string(round(t, digits = 2), "s"), 8), "  ", f)
+    println(rpad(string(done), 4), rpad(string(r.ok), 7), rpad(string(r.all_recognized), 7),
+            lpad(string(round(r.log2_diff, digits = 1)), 8),
+            lpad(string(round(t, digits = 2), "s"), 9), "  ", f)
     r.ok == true || println("    ", r)
     push!(results, (f = f, result = r, time = t))
   end
   nok = count(r -> r.result.ok == true, results)
-  println("$nok of $n reconstructions agree with the original curve.")
+  nrec = count(r -> r.result.all_recognized == true, results)
+  println("$nok of $n reconstructions agree with the original curve (log2_diff < -prec/2); ",
+          "for $nrec all invariants were recognized.")
   return results
+end
+
+################################################################################
+#  Diagnostics for the hyperelliptic genus 3 reconstruction
+################################################################################
+
+# The Shioda invariants of a reconstruction, made independent of the scaling:
+# J_k^2 / J_2^k for k = 3, ..., 10 (J_2 must not vanish).
+function _scale_free_shioda(tau::AcbMatrix)
+  I, ws = shioda_invariants(_reconstruct_genus3(tau))
+  return [I[i]^2 / I[1]^ws[i] for i in 2:length(I)]
+end
+
+# A random integral symplectic 2g x 2g matrix (a product of `steps` generators).
+function _random_symplectic(g::Int; steps::Int = 12)
+  T = identity_matrix(ZZ, 2*g)
+  for _ in 1:steps
+    G = identity_matrix(ZZ, 2*g)
+    kind = rand(1:3)
+    if kind == 1                       # [I S; 0 I], S symmetric
+      i, j = rand(1:g), rand(1:g)
+      G[i, g + j] += 1
+      i != j && (G[j, g + i] += 1)
+    elseif kind == 2                   # [A 0; 0 A^-T], A = I + E_ij
+      i, j = rand(1:g), rand(1:g)
+      i == j && continue
+      G[i, j] = 1
+      G[g + j, g + i] = -1
+    else                               # [0 I; -I 0]
+      G = zero_matrix(ZZ, 2*g, 2*g)
+      for k in 1:g
+        G[k, g + k] = 1
+        G[g + k, k] = -1
+      end
+    end
+    T = G * T
+  end
+  return T
+end
+
+"""
+    check_takase_table(tau; tries = 300)
+
+For the small period matrix `tau` of a hyperelliptic genus 3 curve: transform
+it by random symplectic matrices (the same curve, other vanishing
+characteristics) and compare the scale-free Shioda invariants of the
+reconstructions with those for `tau`. Prints, per vanishing characteristic
+reached, log2 of the largest relative difference; a characteristic with a
+large difference points to a wrong entry of the gamma table (or a wrong sign
+in Takase's quotient).
+"""
+function check_takase_table(tau::AcbMatrix; tries::Int = 300)
+  prec = precision(base_ring(tau))
+  reference = _scale_free_shioda(tau)
+  worst = Dict{NTuple{6, Int}, Float64}()
+  for _ in 1:tries
+    t2 = Hecke.siegel_transform(_random_symplectic(3), tau)
+    van = _vanishing_even_theta_constants(theta_constants(t2), prec)
+    length(van) == 1 || continue
+    v0 = van[1]
+    other = try
+      _scale_free_shioda(t2)
+    catch
+      nothing
+    end
+    d = other === nothing ? Inf :
+        maximum(_log2abs(other[i] - reference[i]) - _log2abs(reference[i]) for i in eachindex(reference))
+    worst[v0] = max(get(worst, v0, -Inf), d)
+  end
+  for v0 in sort(collect(keys(worst)))
+    println(v0, "  ", round(worst[v0], digits = 1))
+  end
+  println(length(worst), " of 36 even characteristics reached.")
+  return worst
 end

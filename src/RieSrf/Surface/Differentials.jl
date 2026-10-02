@@ -1,19 +1,23 @@
 ################################################################################
 #
-#  RieSrf/Differentials.jl : basis of holomorphic differentials, genus
+#  RieSrf/Surface/Differentials.jl : basis of holomorphic differentials, genus
 #
-################################################################################
-
-################################################################################
+#  The basis of holomorphic differentials of a plane model and its genus.
+#  If Baker's theorem applies (certified modulo a prime, see below), the basis
+#  x^(i-1) y^(j-1) dx / f_y for the interior points (i, j) of the Newton
+#  polygon is used; otherwise the basis of the function field (Riemann-Roch,
+#  maximal orders). For the integration the differentials are stored as
+#  products of powers of common factors (differential_form_data, see
+#  Types.jl and Integrand.jl).
 #
-#  Lazily computed data
+#  Entry points: _ensure_differentials!, differential_form_data,
+#  basis_of_differentials (RiemannSurfaceModel.jl).
 #
 ################################################################################
 
 # Basis of differentials, genus and the factor data used for integration.
 function _ensure_differentials!(RS::RiemannSurfaceModel)
   isdefined(RS, :differential_form_data) && return RS
-
   f = RS.defining_polynomial
 
   # Baker's theorem: g <= #interior points of the Newton polygon, with
@@ -21,88 +25,60 @@ function _ensure_differentials!(RS::RiemannSurfaceModel)
   # modulo a prime certifies equality (see _baker_certified), the exact basis
   # of differentials over the function field (maximal orders over Q, the
   # expensive part) is not needed at all.
-  n_interior = length(inner_faces(f))
+  interior_points = _newton_polygon_interior_points(f)
+  RS.inner_faces = interior_points
+  n_interior = length(interior_points)
   if n_interior > 0 && _baker_certified(f, n_interior)
     g = n_interior
   else
-    diff_base = _function_field_basis_of_differentials(RS)
-    g = length(diff_base)
+    differential_basis = _function_field_basis_of_differentials(RS)
+    g = length(differential_basis)
   end
   @req g > 0 "Cannot construct Riemann surface of genus 0."
   RS.genus = g
 
-  mpoly_kxy = parent(f)
-  mpoly_x, mpol_y = gens(mpoly_kxy)
-
-  #Computed a Newton polygon and decide whether we can use a Baker basis or not.
-  inner_fac = inner_faces(f)
-  RS.inner_faces = inner_fac
-  if length(inner_fac) == g
+  R = parent(f)
+  x, y = gens(R)
+  if n_interior == g
+    # Baker basis: x^(i-1) y^(j-1) / f_y, factors x, y, f_y
     RS.baker_basis = true
-    x, y = gens(parent(f))
     factor_set = [x, y, derivative(f, 2)]
-    n = length(factor_set)
-    min_x = minimum([t[1] for t in inner_fac])
-    max_x = maximum([t[1] for t in inner_fac])
-    min_y = minimum([t[2] for t in inner_fac])
-    max_y = maximum([t[2] for t in inner_fac])
-    min_pows = [min_x - 1, min_y - 1, -1]
-	    range_pows = [max_x - 1, max_y - 1, -1] - min_pows
-
-    factor_matrix = zeros(Int, n, g)
-
-    for i in (1:g)
-      factor_matrix[1, i] = inner_fac[i][1] - 1
-      factor_matrix[2, i] = inner_fac[i][2] - 1
-      factor_matrix[3, i] = -1
+    factor_matrix = zeros(Int, 3, g)
+    for k in 1:g
+      factor_matrix[1, k] = interior_points[k][1] - 1
+      factor_matrix[2, k] = interior_points[k][2] - 1
+      factor_matrix[3, k] = -1
     end
-
   else
+    # the basis of the function field: factor numerators and denominators
     RS.baker_basis = false
-    RS.basis_of_differentials = diff_base
-    #Compute the differential forms data mentioned above.
-    factor_set = Set{MPolyRingElem}()
-    factored_nums = Dict{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}, Int64}[]
-    factored_denoms = Dict{AbstractAlgebra.Generic.MPoly{AbsSimpleNumFieldElem}, Int64}[]
-    #Gather all the factors occurring in the basis of differential forms
-    for i in 1:g
-      num_diff_i_fac = Dict(p => e for (p,e) in factor(to_mpoly(mpoly_kxy, numerator(diff_base[i].f))))
-      denom_diff_i_fac = Dict(p => e for (p,e) in factor(denominator(diff_base[i].f)(mpoly_x)))
-
-      union!(factor_set, Set(keys(num_diff_i_fac)), Set(keys(denom_diff_i_fac)))
-
-      push!(factored_nums, num_diff_i_fac)
-      push!(factored_denoms, denom_diff_i_fac)
+    RS.basis_of_differentials = differential_basis
+    factored_numerators = [Dict(p => e for (p, e) in factor(_to_mpoly(R, numerator(omega.f))))
+                           for omega in differential_basis]
+    factored_denominators = [Dict(p => e for (p, e) in factor(denominator(omega.f)(x)))
+                             for omega in differential_basis]
+    factor_set = collect(union(Set{MPolyRingElem}(), keys.(factored_numerators)...,
+                               keys.(factored_denominators)...))
+    factor_matrix = zeros(Int, length(factor_set), g)
+    for k in 1:g, (l, p) in enumerate(factor_set)
+      haskey(factored_numerators[k], p) && (factor_matrix[l, k] = factored_numerators[k][p])
+      haskey(factored_denominators[k], p) && (factor_matrix[l, k] = -factored_denominators[k][p])
     end
-
-    #Turn set into sequence so we can enumerate
-    factor_set = collect(factor_set)
-    number_of_factors = length(factor_set)
-    n = length(factor_set)
-    factor_matrix = zero_matrix(Int, n, g)
-    for j in 1:g
-      for i in 1:n
-        if haskey(factored_nums[j], factor_set[i])
-          factor_matrix[i,j] = get(factored_nums[j], factor_set[i], 0)
-        end
-
-        if haskey(factored_denoms[j], factor_set[i])
-          factor_matrix[i,j] = -get(factored_denoms[j], factor_set[i], 0)
-        end
-      end
-    end
-
-		  min_pows= [minimum( factor_matrix[j, 1:g]) for j in 1:n]
-	    range_pows= [maximum( factor_matrix[j, 1:g]) for j in 1:n] - min_pows
   end
-
+  min_pows = [minimum(factor_matrix[l, :]) for l in 1:length(factor_set)]
+  range_pows = [maximum(factor_matrix[l, :]) for l in 1:length(factor_set)] - min_pows
   RS.differential_form_data = (factor_set, factor_matrix, min_pows, range_pows)
-
   return RS
 end
 
+# The polynomial h in k[x][y] as an element of R = k[x, y].
+function _to_mpoly(R, h)
+  x, y = gens(R)
+  return sum([coeff(h, i)(x)*y^i for i in 0:degree(h)])
+end
+
 # Basis of holomorphic differentials of the function field (Riemann-Roch;
-# needs both maximal orders). Computed from the equation as given, as before.
+# needs both maximal orders). Computed from the equation as given.
 function _function_field_basis_of_differentials(RS::RiemannSurfaceModel)
   isdefined(RS, :basis_of_differentials) && return RS.basis_of_differentials
   f0 = RS.input_polynomial

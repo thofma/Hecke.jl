@@ -1,25 +1,26 @@
 ################################################################################
 #
-#          RieSrf/RiemannSurfaceModel.jl : plane models of Riemann surfaces
+#  RieSrf/Surface/RiemannSurfaceModel.jl : plane models of Riemann surfaces
 #
-# (C) 2025 Jeroen Hanselman
-# This is a port of the Riemann surfaces package written by
-# Christian Neurohr. It is based on his Phd thesis
-# https://www.researchgate.net/publication/329100697_Efficient_integration_on_Riemann_surfaces_applications
-# Neurohr's package can be found on https://github.com/christianneurohr/RiemannSurfaces
+#  A RiemannSurfaceModel is one plane model of a Riemann surface: the curve
+#  after a projective transformation, as a cover of P^1 by the projection to
+#  x. All numerical work happens here. The user-facing RiemannSurface (see
+#  RiemannSurface.jl) holds the original model and the computational model.
+#
+#  This file: integration parameters, the swapped model (for the Abel-Jacobi
+#  map at critical points), constants and getters.
+#
+#  The package is a port of Christian Neurohr's Magma package RiemannSurfaces
+#  (https://github.com/christianneurohr/RiemannSurfaces), based on his PhD
+#  thesis "Efficient integration on Riemann surfaces & applications" (2018).
 #
 ################################################################################
-
-# A RiemannSurfaceModel is one plane model of a Riemann surface: the curve
-# after a projective transformation, as a cover of P^1 by the projection to
-# x. All numerical work happens here. The user-facing RiemannSurface (see
-# RiemannSurface.jl) holds the original model and the computational model.
 
 # Special points (critical points, points at infinity, singular points).
 # They only need the monodromy, not the periods. Both calls are cached.
 function _ensure_special_points!(RS::RiemannSurfaceModel)
   _ensure_monodromy!(RS)
-  analyze_special_points(RS)
+  _analyze_special_points!(RS)
   return RS
 end
 
@@ -80,7 +81,7 @@ end
 
 # The model of the curve f(y, x) = 0 (projection to y instead of x), with the
 # differentials of RS transported to it. Used by abel_jacobi_map (method
-# "swap") for critical points: a point with f_y = 0 but f_x != 0 is not
+# :swap) for critical points: a point with f_y = 0 but f_x != 0 is not
 # critical on the swapped model. Its Abel-Jacobi values are in the basis of RS,
 # so they can be combined with those of RS.
 #
@@ -146,7 +147,7 @@ function swapped_surface(RS::RiemannSurfaceModel)
     RS_swap.differential_form_data = (facs, fmS, mpS, rpS)
 
     big_period_matrix(RS_swap)
-    analyze_special_points(RS_swap)
+    _analyze_special_points!(RS_swap)
     RS_swap.swapped_surface = RS
     RS.swapped_surface = RS_swap
   end
@@ -160,14 +161,6 @@ function ==(X::RiemannSurfaceModel, Y::RiemannSurfaceModel)
   return (defining_polynomial(X) == defining_polynomial(Y)) && (embedding(X) == embedding(Y))
 end
 
-#Coerce univariate polynomial over univariate polynomial ring to R.
-function to_mpoly(R, h)
-  kxy = R
-  x, y = gens(R)
-  return sum([coeff(h, i)(x)*y^i for i in (0:degree(h))])
-end
-
-#Nicer printing
 function Base.show(io::IO, rs::RiemannSurfaceModel)
   if is_terse(io)
     print(io, "Riemann surface")
@@ -186,13 +179,11 @@ end
 #
 ################################################################################
 
-function max_radius(RS::RiemannSurfaceModel)
-  return (1/4)
-end
-
-function radius_factor(RS::RiemannSurfaceModel)
-  return (2/5)
-end
+# The circles around the discriminant points (Topology.jl): radius at most
+# _max_radius, and at most _radius_factor times the distance to the nearest
+# other discriminant point.
+_max_radius(RS::RiemannSurfaceModel) = 1/4
+_radius_factor(RS::RiemannSurfaceModel) = 2/5
 
 ################################################################################
 #
@@ -201,7 +192,7 @@ end
 ################################################################################
 
 @doc raw"""
-function defining_polynomial(RS::RiemannSurfaceModel) -> MPolyRingElem
+    defining_polynomial(RS::RiemannSurfaceModel) -> MPolyRingElem
 
 Return the defining polynomial of the Riemann surface.
 """
@@ -210,11 +201,10 @@ function defining_polynomial(RS::RiemannSurfaceModel)
 end
 
 @doc raw"""
-function defining_polynomial(RS::RiemannSurfaceModel)
-  -> PolyRingElem{PolyRingElem}
+    defining_polynomial_univariate(RS::RiemannSurfaceModel) -> PolyRingElem{PolyRingElem}
 
 Return the defining polynomial of the Riemann surface as a univariate
-polynomial over k[x].
+polynomial in y over k[x].
 """
 function defining_polynomial_univariate(RS::RiemannSurfaceModel)
   f = defining_polynomial(RS)
@@ -226,8 +216,8 @@ function defining_polynomial_univariate(RS::RiemannSurfaceModel)
 end
 
 @doc raw"""
-function complex_defining_polynomial(RS::RiemannSurfaceModel, prec::Int=precision(RS))
-  -> MPolyRingElem{AcbFieldElem}
+    complex_defining_polynomial(RS::RiemannSurfaceModel, prec::Int = precision(RS)) -> MPolyRingElem{AcbFieldElem}
+
 Return the defining polynomial of the Riemann surface after embedding
 its coefficients into CC using the embedding chosen when creating
 the Riemann surface. 
@@ -236,11 +226,11 @@ The variable prec determines the precision used for the embedding.
 
 """
 function complex_defining_polynomial(RS::RiemannSurfaceModel, prec::Int=precision(RS))
-  return embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
+  return _embed_mpoly(RS.defining_polynomial, RS.embedding, prec)
 end
 
 @doc raw"""
-function genus(RS::RiemannSurfaceModel) -> Int
+    genus(RS::RiemannSurfaceModel) -> Int
 
 Return genus of the Riemann surface
 """
@@ -250,7 +240,7 @@ function genus(RS::RiemannSurfaceModel)
 end
 
 @doc raw"""
-function embedding(RS::RiemannSurfaceModel) -> Union{PosInf, InfPlc}
+    embedding(RS::RiemannSurfaceModel) -> Union{PosInf, InfPlc}
 
 Return the place used to embed the Riemann surface into CC.
 """
@@ -259,16 +249,16 @@ function embedding(RS::RiemannSurfaceModel)
 end
 
 @doc raw"""
-function precision(RS::RiemannSurfaceModel) -> Int
+    precision(RS::RiemannSurfaceModel) -> Int
 
-Return the initial precision ued to construct the Riemann surface.
+Return the initial precision used to construct the Riemann surface.
 """
 function precision(RS::RiemannSurfaceModel)
   return RS.initial_precision
 end
 
 @doc raw"""
-function function_field(RS::RiemannSurfaceModel) -> FunctionField
+    function_field(RS::RiemannSurfaceModel) -> FunctionField
 
 Return the function field of the underlying plane curve.
 """
@@ -277,7 +267,7 @@ function function_field(RS::RiemannSurfaceModel)
 end
 
 @doc raw"""
-function basis_of_differentials(RS::RiemannSurfaceModel) -> Vector{FunFldDiff}
+    basis_of_differentials(RS::RiemannSurfaceModel) -> Vector{FunFldDiff}
 
 Return the basis of differentials of the underlying curve.
 """
@@ -287,21 +277,21 @@ function basis_of_differentials(RS::RiemannSurfaceModel)
 end
 
 @doc raw"""
-function infinite_points(RS::RiemannSurfaceModel) -> Vector{RiemannSurfacePoint}
+    infinite_points(RS::RiemannSurfaceModel) -> Vector{RiemannSurfacePoint}
 
 Return the points above infinity of the Riemann surface.
 """
 infinite_points(RS::RiemannSurfaceModel) = _ensure_special_points!(RS).infinite_points::Vector{RiemannSurfacePoint}
 
 @doc raw"""
-function infinite_points(RS::RiemannSurfaceModel) -> Vector{RiemannSurfacePoint}
+    y_infinite_points(RS::RiemannSurfaceModel) -> Vector{RiemannSurfacePoint}
 
 Return the points on the Riemann surface for which the y-coordinate is infinity.
 """
 y_infinite_points(RS::RiemannSurfaceModel) = _ensure_special_points!(RS).y_infinite_points::Vector{RiemannSurfacePoint}
 
 @doc raw"""
-function critical_points(RS::RiemannSurfaceModel) -> Vector{RiemannSurfacePoint}
+    critical_points(RS::RiemannSurfaceModel) -> Vector{RiemannSurfacePoint}
 
 Let f be the defining polynomial of the Riemann surface RS. 
 Return the points on RS for which df/dy(x,y) = 0.
@@ -309,7 +299,7 @@ Return the points on RS for which df/dy(x,y) = 0.
 critical_points(RS::RiemannSurfaceModel) = _ensure_special_points!(RS).critical_points::Vector{RiemannSurfacePoint}
 
 @doc raw"""
-function singular_points(RS::RiemannSurfaceModel) ->Vector{Vector{AcbFieldElem}}
+    singular_points(RS::RiemannSurfaceModel) -> Vector{Vector{AcbFieldElem}}
 
 Return the coordinates of the singular points of the underlying model of the 
 Riemann surface
@@ -317,21 +307,21 @@ Riemann surface
 singular_points(RS::RiemannSurfaceModel) = _ensure_special_points!(RS).singular_points
 
 @doc raw"""
-function base_point(RS::RiemannSurfaceModel) -> RiemannSurfacePoint
+    base_point(RS::RiemannSurfaceModel) -> RiemannSurfacePoint
 
 Return the internal base point of the Riemann surface. 
 """
 base_point(RS::RiemannSurfaceModel) = (fundamental_group_of_punctured_P1(RS); RS.base_point::RiemannSurfacePoint)
   
 @doc raw"""
-function complex_field(RS::RiemannSurfaceModel) -> AcbField
+    complex_field(RS::RiemannSurfaceModel) -> AcbField
 
 Return the field over which the Riemann surface is defined.
 """
 complex_field(RS::RiemannSurfaceModel) = AcbField(precision(RS))
 
 @doc raw"""
-function real_field(RS::RiemannSurfaceModel) -> ArbField
+    real_field(RS::RiemannSurfaceModel) -> ArbField
 
 Return the real field with the precision over which the 
 Riemann surface is defined.

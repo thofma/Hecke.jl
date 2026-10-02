@@ -3,24 +3,18 @@ module RiemannSurfaces
 
 using Hecke
 
-export riemann_surface, discriminant_points, embedding, genus, precision,
-fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
-homology_basis, ramification_points, singular_points, infinite_points, y_infinite_points,
-abel_jacobi_map, fiber, complex_defining_polynomial, critical_points, CChain, RiemannSurface
-
-export max_radius, radius_factor, find_paths_to_end, sheet_ordering, embed_poly,
-embed_mpoly, analytic_continuation, minimal_spanning_tree, closest_point, recursive_continuation,
-divisor, find_path_on_sheet, integrate_on_sheet, c_infinite_line, recursive_continuation_manual,
-ajm_DE_special_point, internal_discriminant_points, compute_ellipse_bound_heuristic,
-double_exponential_integration_parameters, IntegrationSchemeDE, double_exponential_path_parameters,
-compute_burger_bound_heuristic
-
-
-export integral_left_kernel, tangent_representation, homology_representation,
-geometric_homomorphism_representation, geometric_homomorphism_representation_nf, 
-approximate_minimal_polynomial, algebraize_element, complex_structure, 
-rational_homomorphism_equations, geometric_endomorphism_representation, 
-geometric_endomorphism_representation
+# The user-facing functions. (Everything else is internal; the tests and
+# diagnostics access it as Hecke.RiemannSurfaces.name.)
+export riemann_surface, RiemannSurface, genus, precision, embedding,
+       big_period_matrix, small_period_matrix, homology_basis,
+       discriminant_points, ramification_points, singular_points, infinite_points,
+       y_infinite_points, critical_points, fiber, complex_defining_polynomial,
+       fundamental_group_of_punctured_P1, monodromy_representation, monodromy_group,
+       abel_jacobi_map, divisor,
+       tangent_representation, homology_representation,
+       geometric_homomorphism_representation, geometric_homomorphism_representation_nf,
+       geometric_endomorphism_representation, geometric_endomorphism_representation_nf,
+       approximate_minimal_polynomial, algebraize_element, endomorphism_structure
 
 
 import Hecke.AbstractAlgebra, Hecke.Nemo
@@ -29,7 +23,7 @@ import Hecke.IntegerUnion
 import Hecke:function_field, basis_of_differentials, genus, embedding, defining_polynomial,
 evaluate, fillacb!, length, reverse, precision, round_scale!, shortest_vectors, radius, zeros_array, center,
 degree, support, complex_field, acosh, asinh, atanh
-import Base:show, isequal, mod2pi, *, ^, inv, ==, +, -, parent
+import Base:show, isequal, *, ^, inv, ==, +, -, parent, position
 using FLINT_jll: libflint
 
 import Nemo: acb_struct, acb_vec, acb_vec_clear, array
@@ -62,4 +56,7 @@ include("RieSrf/Periods/Superelliptic.jl")
 include("RieSrf/Endomorphisms/HeuristicEndomorphisms.jl")
 include("RieSrf/Endomorphisms/Algebraization.jl")
 include("RieSrf/Endomorphisms/EndomorphismStructure.jl")
+include("RieSrf/Reconstruction/ReconstructCurvesG123.jl")
+include("RieSrf/Reconstruction/ReconstructG4.jl")
+include("RieSrf/Reconstruction/ThetaCharacteristics.jl")
 end

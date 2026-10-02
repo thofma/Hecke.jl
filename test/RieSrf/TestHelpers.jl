@@ -25,7 +25,7 @@ riesrf_long_tests() = isdefined(Main, :long_test) && Main.long_test
 # tests check the general code (monodromy, Tretkoff homology, ...), and many
 # of their curves are superelliptic, which would switch algorithm by default.
 function _rs(f, prec::Int = 100; kw...)
-  return RSM.riemann_surface(f, prec; integration_method = "heuristic",
+  return RSM.riemann_surface(f, prec; integration_method = :heuristic,
                              (; superelliptic = false, kw...)...)
 end
 
@@ -146,7 +146,7 @@ function test_abel_jacobi_principal(RS; ntests::Int = 2)
     P1 = _points_over_x(RS, _rand_cc(CC))
     P2 = _points_over_x(RS, _rand_cc(CC))
     D = RSM.divisor(vcat(P1, P2), vcat(fill(1, length(P1)), fill(-1, length(P2))))
-    V = RSM.abel_jacobi_map(D, "swap", "complex")
+    V = RSM.abel_jacobi_map(D, :swap, :complex)
     @test all(_is_small(v, tol) for v in V)
 
     # div((y - y1)/(y - y2))
@@ -154,7 +154,7 @@ function test_abel_jacobi_principal(RS; ntests::Int = 2)
     Q2 = _points_over_y(RS, _rand_cc(CC))
     @test length(Q1) == length(Q2)
     E = RSM.divisor(vcat(Q1, Q2), vcat(fill(1, length(Q1)), fill(-1, length(Q2))))
-    W = RSM.abel_jacobi_map(E, "swap", "complex")
+    W = RSM.abel_jacobi_map(E, :swap, :complex)
     @test all(_is_small(w, tol) for w in W)
   end
 end

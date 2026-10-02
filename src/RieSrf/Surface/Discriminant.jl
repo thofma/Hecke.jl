@@ -1,118 +1,114 @@
 ################################################################################
 #
-#  RieSrf/Discriminant.jl : discriminant points
+#  RieSrf/Surface/Discriminant.jl : discriminant points
+#
+#  The discriminant points of the projection (x, y) -> x: the roots of the
+#  discriminant of f with respect to y and of the leading coefficient of f in
+#  y. They are computed from the exact factors, with a precision that adapts
+#  to the curve (see _ensure_discriminant_points!), together with the
+#  internal precision of the model.
+#
+#  Entry points: discriminant_points, internal_discriminant_points,
+#  discriminant_points_high_prec.
 #
 ################################################################################
 
-function assure_has_discriminant_points(RS::RiemannSurfaceModel)
-  if isdefined(RS, :discriminant_points)
-    return nothing
+# The discriminant points (at 660 bits for the user, at _path_point_precision
+# for the paths) and the internal precision: the working precision plus the
+# bits of a bound for |y| and the differentials near the discriminant points
+# (Neurohr's bound).
+function _ensure_discriminant_points!(RS::RiemannSurfaceModel)
+  isdefined(RS, :discriminant_points) && return nothing
+  f = defining_polynomial_univariate(RS)
+  v = embedding(RS)
+  g = genus(RS)
+  a0 = leading_coefficient(f)
+  RR = ArbField(precision(RS))
+  disc_points, _, lc_points = _discriminant_points_to_prec(RS, 660)
+  RS.discriminant_points = disc_points
+
+  x_bound = maximum(abs(P) for P in disc_points) + RR(_max_radius(RS))
+  # the distance of the circles around the roots of the leading coefficient
+  if isempty(lc_points)
+    lc_safe_radius = RR(1)
   else
-
-    f = defining_polynomial_univariate(RS)
-    Kxy = parent(f)
-    Kx = base_ring(f)
-
-    v = embedding(RS)
-
-    g = genus(RS)
-    a0 = leading_coefficient(f)
-    RR = ArbField(precision(RS))
-    D_points, D1, D2 = _discriminant_points_to_prec(RS, 660)
-    RS.discriminant_points = D_points
-    v = embedding(RS)
-
-    XB = maximum(abs(P) for P in D_points) + RR(max_radius(RS))
-
-    if length(D2) == 0
-      L0_safe_radius = RR(1)
-    else
-      D2_distance = minimum([closest_point(P, collect(setdiff(D_points, Set([P]))) )[1] for P in D2])
-      L0_safe_radius = minimum([radius_factor(RS)*D2_distance, RR(max_radius(RS))])
-    end
-
-    low_prec = 66
-    f_low_prec = embed_mpoly(defining_polynomial(RS), v, low_prec)
-    C_low_prec = AcbField(low_prec)
-    R_low_prec = ArbField(low_prec)
-    R, x = polynomial_ring(C_low_prec, "x")
-
-    #Bounds |y(x)| on f(x,y) = 0 for |x| < xb and |x-x_0| > dist for all zeros x_0 of LC */
-    function bound_y_values(xb, dist)
-      coeffs_y = reverse(coefficients(f_low_prec,2))
-      coeffs_y = [ c(x, 0) for c in coeffs_y ]
-      max_y_abs = R_low_prec(0)
-      max_x_abs = R_low_prec(0)
-      for k in (1:RS.degree[1]-1)
-        coeffs_x = coefficients(coeffs_y[k+1])
-        if length(coeffs_x) >= 0
-                Ak = sum([ abs(coeffs_x[j]) * xb^(j) for j in (0:length(coeffs_x)-1) ]; init = R_low_prec(0))
-                max_y_abs = maximum([max_y_abs, Ak/(abs(evaluate(leading_coefficient(a0), v.embedding, low_prec)*dist^degree(a0)))^(1/k)])
-                max_x_abs = maximum([max_x_abs, Ak])
-        end
-      end
-      return maximum([2*max_y_abs, max_x_abs])
-    end
-    YB = bound_y_values(XB, (100/101)*L0_safe_radius)
-    DF_data = differential_form_data(RS)
-    DFF = DF_data[1]
-    DFF_emb = [embed_mpoly(g, v, low_prec) for g in DFF]
-    max_diff_abs = ArbFieldElem[]
-    for k in (1:length(DFF))
-      omega = DFF_emb[k]
-      coeffs = collect(coefficients(omega))
-      mons = collect(monomials(omega))
-      val = abs(sum([ abs(coeffs[j]) * mons[j](XB,YB) for j in (1:length(coeffs))];init = R_low_prec(0)))
-      push!(max_diff_abs, maximum([val,R_low_prec(1)]))
-    end
-    one_vec = [R_low_prec(1) for i in (1:g)]
-    for l in (1:length(DFF))
-      val = max_diff_abs[l]
-      fac_xys = [R_low_prec(1) for i in (1:DF_data[4][l]+1)]
-      for k in (0:DF_data[4][l])
-        if DF_data[3][l]+k <= 0 
-          fac_xys[k+1] = R_low_prec(1)
-        else
-          fac_xys[k+1] = max_diff_abs[l]^(DF_data[3][l]+k)
-        end
-      end
-      for k in (1:g)
-        one_vec[k] *= fac_xys[DF_data[2][l, k]-DF_data[3][l]+1]
-      end
-    end
-    bound = maximum(vcat(max_diff_abs, [YB], one_vec))
-
-    additional_prec = ceil(Int, log(bound)/log(2))
-    internal_prec = RS.computational_precision + maximum([additional_prec, 67])
-    RS.internal_precision = internal_prec
-
-    # The paths only need the points at a moderate precision; the Abel-Jacobi
-    # map at points above discriminant points needs degree_y * internal_prec
-    # (Neurohr), which is computed only on demand (discriminant_points_high_prec).
-    # (Isolating the roots at that precision was ~15% of the time for f19.)
-    path_prec = _path_point_precision(internal_prec)
-    if path_prec > 660
-      D_points = _discriminant_points_to_prec(RS, path_prec)[1]
-    end
-
-    RS.discriminant_points_internal = D_points
-
-    RS.ajm_discriminant_points = Vector{CChain}(undef, length(D_points))
-    _compute_disc_factor_data!(RS)
-
-    return nothing
+    lc_distance = minimum([closest_point(P, collect(setdiff(disc_points, Set([P]))))[1] for P in lc_points])
+    lc_safe_radius = minimum([_radius_factor(RS)*lc_distance, RR(_max_radius(RS))])
   end
+
+  low_prec = 66
+  f_low_prec = _embed_mpoly(defining_polynomial(RS), v, low_prec)
+  R_low_prec = ArbField(low_prec)
+  _, x = polynomial_ring(AcbField(low_prec), "x")
+
+  # A bound for |y| on f(x, y) = 0 for |x| < xb and |x - x_0| > dist for all
+  # roots x_0 of the leading coefficient.
+  function bound_y_values(xb, dist)
+    coeffs_y = [c(x, 0) for c in reverse(coefficients(f_low_prec, 2))]
+    a0_leading = abs(_embed_coefficient(leading_coefficient(a0), v.embedding, low_prec))
+    max_y_abs = R_low_prec(0)
+    max_x_abs = R_low_prec(0)
+    for k in 1:RS.degree[1]-1
+      coeffs_x = coefficients(coeffs_y[k+1])
+      Ak = sum([abs(coeffs_x[j]) * xb^j for j in 0:length(coeffs_x)-1]; init = R_low_prec(0))
+      max_y_abs = maximum([max_y_abs, Ak/(a0_leading*dist^degree(a0))^(1/k)])
+      max_x_abs = maximum([max_x_abs, Ak])
+    end
+    return maximum([2*max_y_abs, max_x_abs])
+  end
+  y_bound = bound_y_values(x_bound, (100/101)*lc_safe_radius)
+
+  # bounds for the factors of the differentials and for the differentials
+  factors, factor_matrix, min_pows, range_pows = differential_form_data(RS)
+  embedded_factors = [_embed_mpoly(h, v, low_prec) for h in factors]
+  factor_bounds = ArbFieldElem[]
+  for h in embedded_factors
+    coeffs = collect(coefficients(h))
+    mons = collect(monomials(h))
+    value = abs(sum([abs(coeffs[j]) * mons[j](x_bound, y_bound) for j in 1:length(coeffs)]; init = R_low_prec(0)))
+    push!(factor_bounds, maximum([value, R_low_prec(1)]))
+  end
+  differential_bounds = [R_low_prec(1) for _ in 1:g]
+  for l in 1:length(factors)
+    power_bounds = [R_low_prec(1) for _ in 1:range_pows[l]+1]
+    for k in 0:range_pows[l]
+      if min_pows[l] + k > 0
+        power_bounds[k+1] = factor_bounds[l]^(min_pows[l] + k)
+      end
+    end
+    for k in 1:g
+      differential_bounds[k] *= power_bounds[factor_matrix[l, k] - min_pows[l] + 1]
+    end
+  end
+  bound = maximum(vcat(factor_bounds, [y_bound], differential_bounds))
+
+  additional_prec = ceil(Int, log(bound)/log(2))
+  internal_prec = RS.computational_precision + maximum([additional_prec, 67])
+  RS.internal_precision = internal_prec
+
+  # The paths only need the points at a moderate precision; the Abel-Jacobi
+  # map at points above discriminant points needs degree_y * internal_prec
+  # (Neurohr), which is computed only on demand (discriminant_points_high_prec).
+  # (Isolating the roots at that precision was ~15% of the time for f19.)
+  path_prec = _path_point_precision(internal_prec)
+  if path_prec > 660
+    disc_points = _discriminant_points_to_prec(RS, path_prec)[1]
+  end
+  RS.discriminant_points_internal = disc_points
+
+  RS.ajm_discriminant_points = Vector{CChain}(undef, length(disc_points))
+  _compute_disc_factor_data!(RS)
+  return nothing
 end
 
 @doc raw"""
-function discriminant_points(RS::RiemannSurfaceModel, copy::Bool = true) -> Vector{AcbFieldElem}
+    discriminant_points(RS::RiemannSurfaceModel, copy::Bool = true) -> Vector{AcbFieldElem}
 
-Let f be the defining polynomial of the Riemann surface RS. 
-Return the set of roots of the discriminant (and the leading coeﬃcients) of f as
-a polynomial in y.
+The roots of the discriminant and of the leading coefficient of the defining
+polynomial f as a polynomial in y, sorted by `sheet_ordering`.
 """
 function discriminant_points(RS::RiemannSurfaceModel, copy::Bool = true)
-  assure_has_discriminant_points(RS)
+  _ensure_discriminant_points!(RS)
   if copy
     return deepcopy(RS.discriminant_points)
   else
@@ -120,8 +116,10 @@ function discriminant_points(RS::RiemannSurfaceModel, copy::Bool = true)
   end
 end
 
+# The discriminant points at the precision of the paths (_path_point_precision);
+# their order is the one used by the paths and chains.
 function internal_discriminant_points(RS::RiemannSurfaceModel, copy::Bool = true)
-  assure_has_discriminant_points(RS)
+  _ensure_discriminant_points!(RS)
   if copy
     return deepcopy(RS.discriminant_points_internal)
   else
@@ -150,7 +148,7 @@ function _isolated_roots(p, v, prec::Int)
   q = prec
   while true
     try
-      rts = roots(embed_poly(p, v, q), initial_prec = q, max_prec = 8*q)
+      rts = roots(_embed_poly(p, v, q), initial_prec = q, max_prec = 8*q)
       q == prec && return rts
       CC = AcbField(prec)
       return AcbFieldElem[CC(r) for r in rts]
@@ -173,7 +171,7 @@ _path_point_precision(internal_prec::Int) = 2 * internal_prec
 # the safe radii). Computed on first use (Abel-Jacobi map).
 function discriminant_points_high_prec(RS::RiemannSurfaceModel)
   isdefined(RS, :discriminant_points_high_prec) && return RS.discriminant_points_high_prec
-  assure_has_discriminant_points(RS)
+  _ensure_discriminant_points!(RS)
   D = RS.discriminant_points_internal
   p = RS.degree[1] * RS.internal_precision
   if p <= precision(parent(D[1]))
@@ -200,11 +198,12 @@ function discriminant_points_high_prec(RS::RiemannSurfaceModel)
   return Dhi
 end
 
+# All discriminant points (sorted), the roots of the discriminant and the
+# roots of the leading coefficient, at precision prec.
 function _discriminant_points_to_prec(RS::RiemannSurfaceModel, prec::Int)
-    v = embedding(RS)
-    disc_facs, a0_facs = _discriminant_factors(RS)
-    D1 = vcat(AcbFieldElem[], [_isolated_roots(p, v, prec) for p in disc_facs]...)
-    D2 = vcat(AcbFieldElem[], [_isolated_roots(p, v, prec) for p in a0_facs]...)
-    D_points = sort!(union(D1, D2), lt = sheet_ordering)
-    return D_points, D1, D2
-  end
+  v = embedding(RS)
+  disc_factors, lc_factors = _discriminant_factors(RS)
+  disc_roots = vcat(AcbFieldElem[], [_isolated_roots(p, v, prec) for p in disc_factors]...)
+  lc_roots = vcat(AcbFieldElem[], [_isolated_roots(p, v, prec) for p in lc_factors]...)
+  return sort!(union(disc_roots, lc_roots), lt = sheet_ordering), disc_roots, lc_roots
+end

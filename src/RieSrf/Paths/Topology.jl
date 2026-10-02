@@ -1,105 +1,90 @@
 ################################################################################
 #
-#  RieSrf/Topology.jl : fundamental group, monodromy, homology basis
+#  RieSrf/Paths/Topology.jl : fundamental group, monodromy, homology basis
+#
+#  The topological part of the period computation (Neurohr, Chapter 4):
+#  1. fundamental_group_of_punctured_P1: paths in the x-plane (line pieces
+#     and arcs, see CPath.jl) and generators of the fundamental group of P^1
+#     minus the discriminant points as words in these paths (Algorithm 4.3.1).
+#  2. _ensure_monodromy!: the permutations of the sheets along the paths, by
+#     analytic continuation; from them the chains around the discriminant
+#     points and around infinity and the local monodromies.
+#  3. homology_basis: cycles on the surface from the local monodromies with
+#     the Tretkoff algorithm (Section 4.6.1), their intersection matrix and
+#     a symplectic reduction of it.
+#
+#  Entry points: fundamental_group_of_punctured_P1, monodromy_representation,
+#  monodromy_group, homology_basis, symplectic_reduction.
 #
 ################################################################################
 
-###############################################################################
+################################################################################
 #
-#  Edges for Tretkoff Algorithm
+#  Edges for the Tretkoff algorithm
 #
-###############################################################################
+################################################################################
 
-#The edges of the tree graph in the Tretkoff algorithm.
-# - Each edge has a start point and an end point.
-# - Each edge has a level. The first vertex has level 1. The odd levels
-#   correspond to ramification points and the even levels correspond to sheets.
-# - An edge is labeled terminated if the algorithm is done with this edge
-# - A branch of the graph is a sequence of edges that ends traces back to the
-#   starting vertex.
-# - In the algorithm the Tretkoff edges get sorted by the function
-#   compare_branches. The position variable gives the position of the
-#  terminated edges in this ordering
-# - For "even" edges the label gives the position in the list of ordered even
-#   edges. The "odd" edges have the same label as their even counterpart
-# (with start point and end point reversed).
-
+# An edge of the tree built by the Tretkoff algorithm. The vertices are the
+# ramification points (the cycles of the local monodromies, numbered 1, ..., r)
+# and the sheets (numbered r + 1, ..., r + m). The tree starts at sheet 1; the
+# edges on odd levels go from a sheet to a ramification point, those on even
+# levels from a ramification point to a sheet. An edge whose end point is
+# already in the tree is terminated: its branch ends there. The terminated
+# edges come in pairs (a, b), (b, a): the P edges (a < b) and the Q edges.
 mutable struct TretkoffEdge
-  start_point::Int
-  end_point::Int
-  level::Int
-  terminated::Bool
-  branch::Vector{Int}
-  position::Int
-  label::Int
+  start_point::Int        # vertex the edge starts at
+  end_point::Int          # vertex the edge ends at
+  level::Int              # level in the tree (1 for the edges at sheet 1)
+  terminated::Bool        # the end point was already in the tree
+  branch::Vector{Int}     # the vertices from the root to end_point
+  position::Int           # while building: position among the new edges of its level;
+                          # then the position in the ordering of the terminated edges
+  label::Int              # number of the P edge; a Q edge gets the label of its reverse
 
-  function TretkoffEdge(a::Int, b::Int, L::Int = 0,  B::Vector{Int} = [a, b], term::Bool = false)
-    TE = new()
-    TE.start_point = a
-    TE.end_point = b
-    TE.level = L
-    TE.terminated = term
-    TE.branch = B
-
-    return TE
+  function TretkoffEdge(start_point::Int, end_point::Int, level::Int = 0,
+                        branch::Vector{Int} = [start_point, end_point], terminated::Bool = false)
+    edge = new()
+    edge.start_point = start_point
+    edge.end_point = end_point
+    edge.level = level
+    edge.terminated = terminated
+    edge.branch = branch
+    return edge
   end
 end
 
-function start_point(e::TretkoffEdge)
-  return e.start_point
+start_point(edge::TretkoffEdge) = edge.start_point
+
+end_point(edge::TretkoffEdge) = edge.end_point
+
+function isequal(edge1::TretkoffEdge, edge2::TretkoffEdge)
+  return start_point(edge1) == start_point(edge2) && end_point(edge1) == end_point(edge2)
 end
 
-function end_point(e::TretkoffEdge)
-  return e.end_point
-end
+edge_level(edge::TretkoffEdge) = edge.level
 
-function isequal(e1::TretkoffEdge, e2::TretkoffEdge)
-  return start_point(e1) == start_point(e2) && end_point(e1) == end_point(e2)
-end
+terminate!(edge::TretkoffEdge) = (edge.terminated = true)
 
-function edge_level(e::TretkoffEdge)
-  return e.level
-end
+is_terminated(edge::TretkoffEdge) = edge.terminated
 
-function terminate(e::TretkoffEdge)
-  e.terminated = true
-end
+branch(edge::TretkoffEdge) = edge.branch
 
-function is_terminated(e::TretkoffEdge)
-  return e.terminated
-end
+set_position!(edge::TretkoffEdge, position::Int) = (edge.position = position)
 
-function branch(e::TretkoffEdge)
-  return e.branch
-end
+position(edge::TretkoffEdge) = edge.position
 
-function set_position(e::TretkoffEdge, s::Int)
-  e.position = s
-end
+# True for the P edges, false for the Q edges.
+PQ(edge::TretkoffEdge) = start_point(edge) < end_point(edge)
 
-function get_position(e::TretkoffEdge)
-  return e.position
-end
+reverse(edge::TretkoffEdge) = TretkoffEdge(end_point(edge), start_point(edge))
 
-function PQ(e::TretkoffEdge)
-  return start_point(e) < end_point(e)
-end
+set_label!(edge::TretkoffEdge, label::Int) = (edge.label = label)
 
-function reverse(e::TretkoffEdge)
-  return TretkoffEdge(end_point(e), start_point(e))
-end
-
-function set_label(e::TretkoffEdge,l::Int)
-  e.label = l
-end
-
-function get_label(e::TretkoffEdge)
-  return e.label
-end
+label(edge::TretkoffEdge) = edge.label
 
 ################################################################################
 #
-#  Monodromy computation
+#  Monodromy
 #
 ################################################################################
 
@@ -129,8 +114,8 @@ function monodromy_group(RS::RiemannSurfaceModel)
   return closure(monodromy_representation(RS), *)
 end
 
-# Permutations of the paths of the fundamental group, and from them the chains
-# around the discriminant points and around infinity, WITHOUT computing
+# The permutations of the paths of the fundamental group, and from them the
+# chains around the discriminant points and around infinity, WITHOUT computing
 # periods: the fibers are continued along the paths with the adaptive
 # continuation (no quadrature nodes). Used for the special points and the
 # monodromy of a model whose periods are not needed (yet), e.g. the original
@@ -141,37 +126,31 @@ end
 function _ensure_monodromy!(RS::RiemannSurfaceModel)
   isdefined(RS, :monodromy_representation) && return RS
   paths, pi1_gens = fundamental_group_of_punctured_P1(RS)
-  max_prec = RS.computational_precision
-  f = embed_mpoly(defining_polynomial(RS), embedding(RS), max_prec)
-  CC = base_ring(f)
-  Ky, _ = polynomial_ring(CC, "y")
-  f_split = _split_in_y(f)
-  m = degree(f, 2)
-  s_m = SymmetricGroup(m)
+  work_prec = RS.computational_precision
+  f_split, Ky = _continuation_data(RS, work_prec)
+  s_m = SymmetricGroup(length(f_split) - 1)
 
   # The steps between the targets are checked and solved at a low precision
-  # (only the targets need the full precision, see continue_adaptive!), as
+  # (only the targets need the full precision, see _continue_adaptive!), as
   # long as that precision still resolves the discriminant points.
-  lo_data = nothing
-  lo_prec = _monodromy_precision()
-  disc = internal_discriminant_points(RS)
-  while lo_prec < max_prec && !_resolvable_at(disc, lo_prec - 30)
-    lo_prec *= 2
+  low_data = nothing
+  low_prec = _monodromy_precision()
+  disc_points = internal_discriminant_points(RS)
+  while low_prec < work_prec && !_resolvable_at(disc_points, low_prec - 30)
+    low_prec *= 2
   end
-  if lo_prec < max_prec
-    f_lo = embed_mpoly(defining_polynomial(RS), embedding(RS), lo_prec)
-    Ky_lo, _ = polynomial_ring(base_ring(f_lo), "y")
-    lo_data = (_split_in_y(f_lo), Ky_lo)
+  if low_prec < work_prec
+    low_data = _continuation_data(RS, low_prec)
   end
 
-  ends = Vector{Vector{AcbFieldElem}}(undef, length(paths))
+  end_fibers = Vector{Vector{AcbFieldElem}}(undef, length(paths))
   Threads.@threads :dynamic for i in eachindex(paths)
-    ws = ContinuationWorkspace(f_split, Ky)
-    lo = lo_data === nothing ? nothing : ContinuationWorkspace(lo_data[1], lo_data[2])
-    ends[i] = _continue_along_path(ws, lo, paths[i], max_prec)
+    local workspace = ContinuationWorkspace(f_split, Ky)
+    local low_workspace = low_data === nothing ? nothing : ContinuationWorkspace(low_data[1], low_data[2])
+    end_fibers[i] = _continue_along_path(workspace, low_workspace, paths[i], work_prec)
   end
   for i in eachindex(paths)
-    assign_permutation(paths[i], inv(s_m(sortperm(ends[i], lt = sheet_ordering))))
+    set_permutation!(paths[i], inv(s_m(sortperm(end_fibers[i], lt = sheet_ordering))))
   end
   _build_chains!(RS, paths, pi1_gens, s_m)
   return RS
@@ -184,32 +163,34 @@ _monodromy_precision() = 128
 # Continue the (sorted) fiber over the start of the path to its end. Lines in
 # one go (the adaptive continuation chooses the steps), arcs through 16 points
 # on the arc: every chord then lies between the arc and its center, which is
-# the only discriminant point closer than the arc. Intermediate steps in the
-# low-precision workspace lo (if given), the targets at full precision.
-function _continue_along_path(ws::ContinuationWorkspace, lo::Union{Nothing, ContinuationWorkspace},
+# the only discriminant point closer than the arc. Intermediate steps in
+# low_workspace (if given), the targets at full precision.
+function _continue_along_path(workspace::ContinuationWorkspace,
+                              low_workspace::Union{Nothing, ContinuationWorkspace},
                               path::CPath, prec::Int)
-  CC = base_ring(ws.Ky)
-  n = path_type(path) == 0 ? 1 : 16
+  CC = base_ring(workspace.Ky)
+  m = workspace.m
+  number_of_steps = is_line(path) ? 1 : 16
   x = start_point(path)                      # as in _stitch_path!
-  z = sort!(_fresh_fiber!(ws, x, prec), lt = sheet_ordering)
-  @req length(z) == ws.m "Wrong number of roots at the start of a path."
-  if lo === nothing
-    CL = CC
-    zl = z
+  fiber = sort!(_fresh_fiber!(workspace, x, prec), lt = sheet_ordering)
+  @req length(fiber) == m "Wrong number of roots at the start of a path."
+  if low_workspace === nothing
+    CC_low = CC
+    low_fiber = fiber
   else
-    CL = base_ring(lo.Ky)
-    zl = [CL() for _ in 1:ws.m]
-    for i in 1:ws.m
-      Nemo._acb_set(zl[i], z[i], precision(CL))
+    CC_low = base_ring(low_workspace.Ky)
+    low_fiber = [CC_low() for _ in 1:m]
+    for i in 1:m
+      Nemo._acb_set(low_fiber[i], fiber[i], precision(CC_low))
     end
   end
-  st = AdaptiveContinuationState(CL, ws.m)
-  _adaptive_reset!(st, x, zl)
-  for k in 1:n
-    xn = evaluate(path, CC(-1 + 2*QQ(k, n)))
-    continue_adaptive!(st, ws, lo, xn, z, zl)
+  state = AdaptiveContinuationState(CC_low, m)
+  _adaptive_reset!(state, x)
+  for k in 1:number_of_steps
+    x_next = evaluate(path, CC(-1 + 2*QQ(k, number_of_steps)))
+    _continue_adaptive!(state, workspace, low_workspace, x_next, fiber, low_fiber)
   end
-  return z
+  return fiber
 end
 
 # The chains of the generators of the fundamental group (the permutations of
@@ -220,22 +201,21 @@ function _build_chains!(RS::RiemannSurfaceModel, paths::Vector{CPath},
   ordered_disc_points = RS.pi1_ordered_disc_points
   closed_chains = CChain[]
   all_chains = CChain[]
-  for i in (1:length(pi1_gens))
-    gamma = pi1_gens[i]
-    chain = map(t -> ((t > 0) ? paths[t] : reverse(paths[-t])), gamma)
-    gamma_perm = prod(map(permutation, chain))
-    cchain = CChain(chain, ordered_disc_points[i])
-    push!(all_chains, cchain)
-    if gamma_perm != one(s_m)
-      push!(closed_chains, cchain)
+  for (i, generator) in enumerate(pi1_gens)
+    # a negative index stands for the reversed path
+    chain_paths = [k > 0 ? paths[k] : reverse(paths[-k]) for k in generator]
+    chain = CChain(chain_paths, ordered_disc_points[i])
+    push!(all_chains, chain)
+    if prod(map(permutation, chain_paths)) != one(s_m)
+      push!(closed_chains, chain)
     end
   end
   RS.pi1_chains = all_chains
 
-  inf_cchain = make_inf_chain(all_chains)
-  RS.inf_chain = inf_cchain
+  inf_chain = make_inf_chain(all_chains)
+  RS.inf_chain = inf_chain
   RS.closed_chains = closed_chains
-  RS.monodromy_representation = map(permutation, vcat(closed_chains, [inf_cchain]))
+  RS.monodromy_representation = map(permutation, vcat(closed_chains, [inf_chain]))
   return RS
 end
 
@@ -244,23 +224,32 @@ end
 # permutations as before and set the integral matrices of the chains. The
 # chain objects are kept, since the special points are attached to them.
 function _refresh_chains!(RS::RiemannSurfaceModel)
-  for C in vcat(RS.pi1_chains, [RS.inf_chain])
-    prod(map(permutation, C.paths)) == C.permutation ||
+  for chain in vcat(RS.pi1_chains, [RS.inf_chain])
+    prod(map(permutation, chain.paths)) == chain.permutation ||
       error("The monodromy found while computing the periods differs from the one computed before. Please report this example.")
-    _set_chain_integral!(C)
+    _set_chain_integral!(chain)
   end
   return RS
 end
 
-@doc raw"""
-fundamental_group_of_punctured_P1(RS::RiemannSurfaceModel) -> Tuple{Vector{CPath}, Vector{Vector{Int}}}
+################################################################################
+#
+#  Fundamental group of P^1 minus the discriminant points
+#
+################################################################################
 
-A set of generators of the fundamental group pi_1 of P^1/D where D is the set
-of discriminant points.
-The output consists of a tuple (L, G) where
-- L is a list of paths
-- G consists of generators for pi_1. Each generator is encoded by a
-sequence of indices. These indices refer to the paths in L.
+@doc raw"""
+    fundamental_group_of_punctured_P1(RS::RiemannSurfaceModel, abel_jacobi::Bool = true)
+      -> Tuple{Vector{CPath}, Vector{Vector{Int}}}
+
+Generators of the fundamental group of P^1 minus the discriminant points of
+`RS`. Returns `(paths, generators)`: `paths` are line pieces and arcs in the
+x-plane, and every generator is a word in them, a vector of indices into
+`paths` (a negative index -k stands for `paths[k]` reversed). The generators
+are loops around the discriminant points, based at an integer point left of
+all discriminant points (if `abel_jacobi`, suitable for Abel-Jacobi maps), or
+otherwise at the middle of the longest edge of the spanning tree.
+The result is cached; `abel_jacobi` only matters for the first call.
 """
 function fundamental_group_of_punctured_P1(RS::RiemannSurfaceModel, abel_jacobi::Bool = true)
   if isdefined(RS, :fundamental_group_of_P1)
@@ -270,283 +259,225 @@ function fundamental_group_of_punctured_P1(RS::RiemannSurfaceModel, abel_jacobi:
   end
 end
 
-#Follows algorithm 4.3.1 in Neurohr
+# Neurohr, Algorithm 4.3.1. The paths are the line pieces along the edges of
+# a minimal spanning tree of the discriminant points and the base point
+# (outside the circles of radius RS.safe_radii around the discriminant
+# points), and arcs on these circles. The generator for a discriminant point
+# goes from the base point along the tree to its circle, once around it and
+# back; at the discriminant points on the way it follows arcs of their
+# circles. Arcs that were constructed for an earlier generator are reused.
 function _fundamental_group_of_punctured_P1(RS::RiemannSurfaceModel, abel_jacobi::Bool = true)
-
-  #Compute the exceptional values x_i
-  D_points = internal_discriminant_points(RS)
-  d = length(D_points)
-  CC = parent(D_points[1])
+  disc_points = internal_discriminant_points(RS)   # a copy: the base point is appended
+  d = length(disc_points)
+  CC = parent(disc_points[1])
   RR = ArbField(precision(CC))
-  prec = precision(RS)
 
   # The paths (end points, centers, radii, angles) get the precision of the
-  # discriminant points, not the working precision: their radii enter the
+  # discriminant points (CC), not the working precision: their radii enter the
   # abscissae and hence the integrals, and near clustered discriminant points
-  # the integrand amplifies them a lot (for g4 paths at the working precision
-  # capped the periods at ~prec + 1 bits, whatever the quadrature target).
-  # The discriminant points are computed at deg * (W + bound margin) bits, so
-  # this adapts to the difficulty of the curve. (Paths from splitting already
-  # had this precision.)
-  CC_low = CC
+  # the integrand amplifies them a lot (for g4, paths at the working precision
+  # capped the periods at ~prec + 1 bits, whatever the quadrature target). The
+  # discriminant points are computed at a higher precision than the working
+  # precision (see Discriminant.jl), so this adapts to the difficulty of the
+  # curve.
 
-  #Step 1 compute a minimal spanning tree
-  edges = minimal_spanning_tree(D_points)
-
-  #Choose a suitable base point and connect it to the spanning tree
-
-  #Multiple ways to choose the base point.
-  #This one is most suitable when computing abel-jacobi maps.
-  #Take some integer point to the left of the point with the smallest real part
-
+  # Step 1: a minimal spanning tree, and the base point (vertex d + 1)
+  # connected to it.
+  edges = minimal_spanning_tree(disc_points)
+  base = d + 1
   if abel_jacobi
-
-    #Real part should already be minimal in D_points
-
-    #Catch the case where flooring an arb is not ambiguous. Floor to the smallest of the two options.
-    x0 = try floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS))
-       catch err
-       try  floor(ZZRingElem, real(D_points[1]) - 2*max_radius(RS) -0.5)
-         catch err
-         error("Precision too low")
-       end
-    end
-
-    #Connect base point to closest point in D_points
-
-    distance, index = closest_point(CC(x0), D_points)
-
-    push!(D_points, CC(x0))
-    push!(edges, (d +1, index))
-  else
-  #Here we take the one that is most suitable if one doesn't need to compute Abel-Jacobi maps according to Neurohr, i.e. we split the longest edge in the middle.
-  #(Last edge should be the longest in the way we compute minimal_spanning trees right now.)
-
-    left = edges[end][1]
-    right = edges[end][2]
-    pop!(edges)
-    x0 = (D_points[left] + D_points[right])//2
-    push!(D_points, x0)
-    push!(edges, (d + 1, left))
-    push!(edges, (d + 1, right))
-  end
-  #Now we sort the points by angle and level
-
-  path_edges = Int[]
-  past_nodes = [d + 1]
-  current_node = d + 1
-
-  left_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), edges)
-  right_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), map(reverse,edges))
-
-  leftright = vcat(left_edges, right_edges)
-
-  current_angle = zero(RR)
-
-  angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
-    return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
-  end
-
-  sort!(leftright, lt = angle_ordering)
-
-  path_edges = vcat(path_edges, leftright)
-  current_level = vcat(left_edges, right_edges)
-
-  while length(path_edges) < length(edges)
-    next_level = Int[]
-    for edge in current_level
-
-      previous_node = edge[1]
-      current_node = edge[2]
-      current_angle = angle(D_points[previous_node] - D_points[current_node])
-
-      left_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), edges)
-      right_edges = filter(t -> t[1] == current_node && !(t[2] in past_nodes), map(reverse, edges))
-      leftright = vcat(left_edges, right_edges)
-
-      angle_ordering = function(t1::Tuple{Int, Int}, t2::Tuple{Int, Int})
-        return mod2pi(angle(D_points[t1[2]] - D_points[t1[1]]) - current_angle) < mod2pi(angle(D_points[t2[2]] - D_points[t2[1]]) - current_angle)
+    # An integer point left of the discriminant points (disc_points[1] has the
+    # smallest real part). If the floor is ambiguous at this precision, the
+    # floor of a point 1/2 further left.
+    shifted = real(disc_points[1]) - 2*_max_radius(RS)
+    x0 = try
+      floor(ZZRingElem, shifted)
+    catch
+      try
+        floor(ZZRingElem, shifted - 0.5)
+      catch
+        error("Precision too low")
       end
-
-      sort!(leftright, lt = angle_ordering)
-      next_level = vcat(next_level, leftright)
-      path_edges = vcat(path_edges, leftright)
-
-      push!(past_nodes, current_node)
     end
+    _, index = closest_point(CC(x0), disc_points)
+    push!(disc_points, CC(x0))
+    push!(edges, (base, index))
+  else
+    # Neurohr's choice when no Abel-Jacobi maps are needed: the middle of the
+    # longest edge (minimal_spanning_tree returns it last).
+    left, right = pop!(edges)
+    x0 = (disc_points[left] + disc_points[right])//2
+    push!(disc_points, x0)
+    push!(edges, (base, left))
+    push!(edges, (base, right))
+  end
 
+  # Step 2: orient the edges away from the base point and order them breadth
+  # first; the edges leaving a vertex are sorted counterclockwise, starting
+  # from the direction back to the previous vertex (from angle 0 at the base
+  # point).
+  visited = [base]
+  path_edges = _edges_by_angle(disc_points, edges, base, visited, zero(RR))
+  current_level = copy(path_edges)
+  while length(path_edges) < length(edges)
+    next_level = Tuple{Int, Int}[]
+    for (previous_vertex, vertex) in current_level
+      reference_angle = angle(disc_points[previous_vertex] - disc_points[vertex])
+      children = _edges_by_angle(disc_points, edges, vertex, visited, reference_angle)
+      append!(next_level, children)
+      append!(path_edges, children)
+      push!(visited, vertex)
+    end
     current_level = next_level
   end
 
-  #Construct paths to every end point starting at x0 using a Depth-First Search
+  # Step 3: for every discriminant point the edges from the base point to it
+  # (depth first search; this also fixes the order of the generators).
+  edge_sequences = Vector{Tuple{Int, Int}}[]
+  visit_order = Int[]
+  _paths_to_disc_points([(base, base)], edge_sequences, path_edges, visit_order)
+  edge_sequences = [sequence[2:end] for sequence in edge_sequences]
+  ordered_disc_points = disc_points[visit_order]
 
-  #Paths to all nodes
-  paths = [[(d+1, d+1)]]
+  # Step 4: the circles around the discriminant points: radius a fraction of
+  # the distance to the nearest other point (base point included), at most
+  # _max_radius.
+  safe_radii = [min(RR(_max_radius(RS)),
+                    RR(_radius_factor(RS)) * minimum(abs(disc_points[k] - disc_points[j])
+                                                     for k in eachindex(disc_points) if k != j))
+                for j in 1:d]
+  RS.safe_radii = safe_radii
 
-  ordered_disc_points = Int64[]
-  find_paths_to_end([(d+1, d+1)], paths, path_edges, ordered_disc_points)
-  ordered_disc_points = map(t -> D_points[t], ordered_disc_points)
-
-  radii = [min(RR(max_radius(RS)), RR(radius_factor(RS)) * minimum(map(t -> abs(t - D_points[j]), vcat(D_points[1:j-1], D_points[j+1:end])))) for j in (1:d)]
-  RS.safe_radii = radii
-  c_lines = CPath[]
-
-  #Find the line pieces of the paths.
-  for edge in path_edges
-    a = D_points[edge[1]]
-    b = D_points[edge[2]]
-    ab_length = b - a
-
-    #Base point is not a discriminant point, so we don't need to circle around it
-    if edge[1] == d + 1
-      new_start_point = a
-    else
-      #Intersect the line between a and b with the circle of radius r_a around a
-      new_start_point = a + (radii[edge[1]])*ab_length//(abs(ab_length))
-    end
-    #Intersect the line between a and b with the circle of radius r_b around b
-    new_end_point = b - (radii[edge[2]])*ab_length//(abs(ab_length))
-    push!(c_lines, c_line(new_start_point, new_end_point, CC_low))
+  # Step 5: the line pieces: the edges without the parts inside the circles.
+  line_pieces = CPath[]
+  for (a_index, b_index) in path_edges
+    a = disc_points[a_index]
+    b = disc_points[b_index]
+    difference = b - a
+    piece_start = a_index == base ? a : a + safe_radii[a_index]*difference//abs(difference)
+    piece_end = b - safe_radii[b_index]*difference//abs(difference)
+    push!(line_pieces, line_path(piece_start, piece_end, CC))
   end
+  number_of_lines = length(line_pieces)       # paths[number_of_lines + j] = arcs[j]
 
-  paths = map(t -> t[2:end], paths[2:end])
-  path_indices = map(path -> map(t -> findfirst(x -> x == t, path_edges), path), paths)
+  # Step 6: the generators, with the arcs.
+  arcs = CPath[]
+  generators = Vector{Int}[]
+  for indices in reverse([[findfirst(==(edge), path_edges) for edge in sequence]
+                          for sequence in edge_sequences])
+    # The loop around the discriminant point at the end. Parts of the circle
+    # may already exist as arcs of earlier generators.
+    last_line = indices[end]
+    arc_start = line_pieces[last_line].end_point_high
+    center = disc_points[path_edges[last_line][end]]
+    reused, arc_end = _reuse_arcs(arcs, arc_start)
+    loop = number_of_lines .+ reused
+    push!(arcs, arc_path(arc_start, arc_end, center, CC))
+    push!(loop, number_of_lines + length(arcs))
 
-  c_arcs = CPath[]
-  paths_with_arcs = Vector{Int}[]
-
-  #We reconstruct the paths
-  for path in reverse(path_indices)
-
-    i = path[end]
-    loop = Int[]
-
-    arc_start = arc_end = c_lines[i].end_point_high
-    center = D_points[path_edges[i][end]]
-
-    #We need to loop around the end of the path, but we may
-    #have already constructed parts of the loop when constructing previous paths
-    #We therefore find these first and add them.
-
-    n = length(c_arcs)
-    for j in (1:n)
-      arc = c_arcs[j]
-      if contains(arc_end, end_point(arc)) && contains(end_point(arc), arc_end)
-        push!(loop, j + d)
-        arc_end = arc.start_point_high
-      end
-    end
-
-    push!(c_arcs, c_arc(arc_start, arc_end, center, CC_low))
-    push!(loop, d + n + 1)
-
-    path_to_loop = Int[]
-
-    #Now we attach the line piece
-    push!(path_to_loop, i)
-
-    #We add the inverse arcs as moving towards the points we want to encircle we move clockwise
-    for k in (length(path)-1:-1:1)
-
-      arc_buffer = Int[]
-      old_line_piece = c_lines[path[k+1]]
-      new_line_piece = c_lines[path[k]]
-      arc_start = old_line_piece.start_point_high
-      arc_end = new_line_piece.end_point_high
-      center = D_points[path_edges[path[k]][end]]
-
-     #Similar to before. Maybe make a function out of it
-      n = length(c_arcs)
-      for j in (1:n)
-        arc = c_arcs[j]
-        if contains(arc_end, end_point(arc)) && contains(end_point(arc), arc_end)
-          push!(arc_buffer, -j - d)
-          arc_end = arc.start_point_high
-        end
-      end
-
+    # The way there, built backwards from the loop: at every discriminant
+    # point on the way, the arc from the start of the next line piece to the
+    # end of the previous one (reversed: towards the point to be encircled we
+    # move clockwise).
+    path_to_loop = [last_line]
+    for k in length(indices)-1:-1:1
+      arc_start = line_pieces[indices[k+1]].start_point_high
+      reused, arc_end = _reuse_arcs(arcs, line_pieces[indices[k]].end_point_high)
+      detour = -(number_of_lines .+ reused)
       if arc_start != arc_end
-        push!(c_arcs, c_arc(arc_start, arc_end, center, CC_low))
-        push!(arc_buffer, - d - n - 1)
+        center = disc_points[path_edges[indices[k]][end]]
+        push!(arcs, arc_path(arc_start, arc_end, center, CC))
+        push!(detour, -(number_of_lines + length(arcs)))
       end
-
-      path_to_loop = vcat(path_to_loop, reverse(arc_buffer))
-      push!(path_to_loop, path[k])
+      append!(path_to_loop, reverse(detour))
+      push!(path_to_loop, indices[k])
     end
-    push!(paths_with_arcs, vcat(reverse(path_to_loop), reverse(loop), -path_to_loop))
+    push!(generators, vcat(reverse(path_to_loop), reverse(loop), -path_to_loop))
   end
-  paths = vcat(c_lines, c_arcs)
-  pi1 = paths, reverse(paths_with_arcs)
-  f = complex_defining_polynomial(RS)
-  CCz, z = polynomial_ring(CC)
-  ys = fiber(complex_defining_polynomial(RS), CC(x0))
+  paths = vcat(line_pieces, arcs)
+  generators = reverse(generators)
+
   base_point = RiemannSurfacePoint(RS)
   base_point.coordx = CC(x0)
   base_point.index = 1
   base_point.sheets = [1]
   base_point.is_finite = true
-  base_point.coordy = ys[1] 
+  base_point.coordy = fiber(complex_defining_polynomial(RS), CC(x0))[1]
   base_point.homog_coords = [base_point.coordx, base_point.coordy, CC(1)]
   RS.base_point = base_point
-  RS.fundamental_group_of_P1 = pi1
+  RS.fundamental_group_of_P1 = (paths, generators)
   RS.pi1_ordered_disc_points = ordered_disc_points
-  RS.ajm_starting_points = [ start_point(p) for p in paths]
-  return paths, reverse(paths_with_arcs), ordered_disc_points
+  RS.ajm_starting_points = [start_point(path) for path in paths]
+  return RS.fundamental_group_of_P1
 end
 
-function find_paths_to_end(path, paths, edges, ordered_disc_points)
-  end_path = path[end][2]
-  temp_paths = paths
-  for (start_edge, end_edge) in edges
-    if start_edge == end_path
-      push!(ordered_disc_points, end_edge)
-      newpath = vcat(path, [(start_edge, end_edge)])
-      push!(paths, newpath)
-      find_paths_to_end(newpath, paths, edges, ordered_disc_points)
-    end
-  end
+# The edges of the tree between `vertex` and the vertices not in `visited`,
+# oriented away from vertex and sorted counterclockwise by their angle,
+# starting at reference_angle.
+function _edges_by_angle(points::Vector{AcbFieldElem}, edges::Vector{Tuple{Int, Int}},
+                         vertex::Int, visited::Vector{Int}, reference_angle::ArbFieldElem)
+  outgoing = [(a, b) for (a, b) in edges if a == vertex && !(b in visited)]
+  append!(outgoing, [(b, a) for (a, b) in edges if b == vertex && !(a in visited)])
+  relative_angle(edge) = _mod2pi(angle(points[edge[2]] - points[edge[1]]) - reference_angle)
+  return sort!(outgoing, lt = (edge1, edge2) -> relative_angle(edge1) < relative_angle(edge2))
 end
 
-#Could be optimized probably. Kruskal's algorithm
-function minimal_spanning_tree(v::Vector{AcbFieldElem})
-
-  edge_weights = Tuple{ArbFieldElem, Tuple{Int64, Int64}}[]
-
-  N = length(v)
-
-  #Compute the weights for all the edges
-  for i in (1:N)
-    for j in (i+1: N)
-      push!(edge_weights, (abs(v[i] - v[j]), (i, j)))
+# Depth first search in the ordered tree from the last vertex of `path`
+# (a sequence of edges): appends the sequence of edges to every vertex below
+# it to `paths`, and the vertices in the order they are reached to
+# `visit_order`.
+function _paths_to_disc_points(path::Vector{Tuple{Int, Int}}, paths::Vector{Vector{Tuple{Int, Int}}},
+                               edges::Vector{Tuple{Int, Int}}, visit_order::Vector{Int})
+  last_vertex = path[end][2]
+  for edge in edges
+    if edge[1] == last_vertex
+      push!(visit_order, edge[2])
+      new_path = vcat(path, [edge])
+      push!(paths, new_path)
+      _paths_to_disc_points(new_path, paths, edges, visit_order)
     end
   end
+  return paths
+end
 
-  sort!(edge_weights)
+# The arcs (constructed for earlier generators) that continue the circle
+# backwards from arc_end, chained in the order of construction. Returns their
+# indices in arcs and the start of the last one (arc_end if there are none).
+function _reuse_arcs(arcs::Vector{CPath}, arc_end::AcbFieldElem)
+  reused = Int[]
+  for (j, arc) in enumerate(arcs)
+    if contains(arc_end, end_point(arc)) && contains(end_point(arc), arc_end)
+      push!(reused, j)
+      arc_end = arc.start_point_high
+    end
+  end
+  return reused, arc_end
+end
+
+# Minimal spanning tree of the complete graph on the points, with the
+# distances as weights (Kruskal's algorithm). The edges are returned in
+# increasing length.
+function minimal_spanning_tree(points::Vector{AcbFieldElem})
+  N = length(points)
+  weighted_edges = Tuple{ArbFieldElem, Tuple{Int, Int}}[]
+  for i in 1:N, j in i+1:N
+    push!(weighted_edges, (abs(points[i] - points[j]), (i, j)))
+  end
+  sort!(weighted_edges)
 
   tree = Tuple{Int, Int}[]
-
-  disjoint_trees = [Set([i]) for i in (1:N)]
-
-  i = 1
-
+  components = [Set([i]) for i in 1:N]
+  k = 1
   while length(tree) < N - 1
-
-    (s1, s2) = edge_weights[i][2]
-
-    s1_index = findfirst(t -> s1 in t, disjoint_trees)
-
-    s1_tree = disjoint_trees[s1_index]
-
-    if s2 in s1_tree
-      #continue
-    else
-      s2_tree = popat!(disjoint_trees, findfirst(t -> s2 in t, disjoint_trees))
-      push!(tree, (s1, s2))
-      union!(s1_tree, s2_tree)
+    i, j = weighted_edges[k][2]
+    component_i = components[findfirst(component -> i in component, components)]
+    if !(j in component_i)
+      component_j = popat!(components, findfirst(component -> j in component, components))
+      push!(tree, (i, j))
+      union!(component_i, component_j)
     end
-    i+= 1
+    k += 1
   end
-
   return tree
 end
 
@@ -556,26 +487,29 @@ end
 #
 ################################################################################
 
-# 
 @doc raw"""
-function homology_basis(RS::RiemannSurfaceModel) 
-  -> Tuple{Vector{Vector{Int}}, ZZMatrix, ZZMatrix}
+    homology_basis(RS::RiemannSurfaceModel) -> Tuple{Vector{Vector{Int}}, ZZMatrix, ZZMatrix}
 
-Computes a hoology basis for the Riemann surface RS.
-Assuming the map C -> P1 is m to 1, the output consists of
-- a list of cycles L corresponding to r := 2g + m - 1 cycles circling 
-around at least 2 ramification points. There will be m - 1 related 
-cycles in here.
-- An r x r matrix K encoding the intersection pairing between the r cycles.
-Its entries are either 1, 0. or -1 depending on whether the cycles intersect
-and how their orientation is when they do intersect.
-- A symplectic matrix S that ensure that S^T K S is equal to a matrix
-where the upper left block consists of the normalized polarization and the
-rest consists of zeros. I.e.:
-[I  0 0 ... 0]
-[0 -I 0 ... 0]
-[|  | | ... 0]
-[0  0 0 ... 0]
+Cycles on the Riemann surface that generate its homology, computed with the
+Tretkoff algorithm (Neurohr, Section 4.6.1 and Appendix). For the m-sheeted
+cover RS -> P^1 the output `(cycles, K, S)` consists of
+- r = 2g + m - 1 cycles, each encoded as a sequence
+  `[s_1, c_1, s_2, c_2, ..., s_k]`: start on sheet s_1, follow the closed chain
+  c_1 (an index into the local monodromies, see `monodromy_representation`)
+  until sheet s_2, and so on. The cycles generate the homology, with m - 1
+  relations.
+- the r x r intersection matrix K of the cycles,
+- a unimodular matrix S with
+  ```
+  S K S^T = [ 0  I  0 ]
+            [-I  0  0 ]
+            [ 0  0  0 ]
+  ```
+  (identity blocks of size g). The first 2g rows of S express a symplectic
+  basis in terms of the cycles, the other rows combinations that are zero in
+  homology: for the matrix P of the integrals over the cycles, S P consists
+  of the periods over the symplectic basis followed by m - 1 zero rows (a
+  sanity check of the numerics).
 """
 function homology_basis(RS::RiemannSurfaceModel)
   if isdefined(RS, :homology_basis)
@@ -584,279 +518,235 @@ function homology_basis(RS::RiemannSurfaceModel)
   return _homology_basis(RS)
 end
 
-# The homology basis is computed using the Tretkoff algorithm described
-# in Neurohr's thesis 4.6.1 on page 82 and in the Appendix of the thesis.
-# Assuming the map C -> P1 is m to 1, the output consists of
-# - a list of cycles L corresponding to r := 2g + m - 1 cycles circling around at least
-# 2 ramification points. There will be m - 1 related cycles in here
-# - An r x r matrix K encoding the intersection pairing between the r cycles.
-# Its entries are either 1, 0. or -1 depending on whether the cycles intersect
-# and how their orientation is when they do intersect.
-# - A symplectic matrix S that ensure that S^T K S is equal to a matrix
-# where the upper left block consists of the normalized polarization and the
-# rest consists of zeros.
-# [I  0 0 ... 0]
-# [0 -I 0 ... 0]
-# [|  | | ... 0]
-# [0  0 0 ... 0]
-# This ensures that any period matrix P computed using L will have the
-# property that P * S = [P1, P2, O_{m-1}]
-# where [P1, P2] forms the big period matrix and O_{m-1} is supposed to be the
-# zero matrix. This matrix O_{m-1} can be used as a sanity check for the
-#numerical computations.
-
-# REMARK: The choice of the polarization is a convention. We could also opt
-# to adopt a different convention if we want to.
 function _homology_basis(RS::RiemannSurfaceModel)
-  gens = monodromy_representation(RS)
-  s_n = parent(gens[1])
-  n = s_n.n
-  d = length(gens)
+  local_monodromies = monodromy_representation(RS)
+  s_m = parent(local_monodromies[1])
+  m = s_m.n
 
-  ramification_points = Tuple{Int, SubArray{Int, 1, Vector{Int}, Tuple{UnitRange{Int}}, true}, Perm{Int}}[]
+  # The ramification points: the cycles of the local monodromies, as
+  # (index of the local monodromy, the sheets in the cycle, the cycle as a
+  # permutation).
+  ramification = Tuple{Int, Vector{Int}, Perm{Int}}[]
   ramification_indices = Int[]
-
-  for i in (1:d)
-    for cyc in cycles(gens[i])
-      push!(ramification_points, (i, cyc, s_n("("*string(cyc)[2:end-1]*")")))
-      push!(ramification_indices, length(cyc) - 1)
+  for (i, monodromy) in enumerate(local_monodromies)
+    for cycle in cycles(monodromy)
+      sheets = collect(cycle)
+      push!(ramification, (i, sheets, s_m([s in sheets ? monodromy[s] : s for s in 1:m])))
+      push!(ramification_indices, length(sheets) - 1)
     end
   end
+  g = -m + 1 + divexact(sum(ramification_indices; init = 0), 2)   # Riemann-Hurwitz
 
-  genus = -n + 1 + divexact(sum(ramification_indices;init = zero(Int)), 2)
-
-  all_branches_terminated = false
-  ram_pts_nr = length(ramification_points)
-  vertices = Set([ram_pts_nr+1])
+  # The Tretkoff tree. Vertices: ramification points 1, ..., r, sheets
+  # r + 1, ..., r + m.
+  r = length(ramification)
+  vertices = Set([r + 1])
   edges_on_level = Vector{TretkoffEdge}[]
   terminated_edges = TretkoffEdge[]
 
+  # Level 1: from sheet 1 to the ramification points containing it.
   level = 1
-  push!(edges_on_level, [])
-
-  for i in (1:ram_pts_nr)
-    if 1 in ramification_points[i][2]
-      edge = TretkoffEdge(ram_pts_nr + 1, i, level, [ram_pts_nr + 1, i])
+  push!(edges_on_level, TretkoffEdge[])
+  for i in 1:r
+    if 1 in ramification[i][2]
       push!(vertices, i)
+      edge = TretkoffEdge(r + 1, i, level, [r + 1, i])
       push!(edges_on_level[level], edge)
+      set_position!(edge, length(edges_on_level[level]))
     end
   end
+
+  all_branches_terminated = false
   while !all_branches_terminated
+    # Even level: from a ramification point to the other sheets of its cycle,
+    # in the order of the cycle.
     level += 1
-    push!(edges_on_level, [])
-
-    s = 0
-
+    push!(edges_on_level, TretkoffEdge[])
+    sibling_position = 0
     for edge in edges_on_level[level - 1]
-      if !is_terminated(edge)
-        start_perm = ramification_points[end_point(edge)][3]
-        perm = start_perm
-        start_sheet = start_point(edge) - ram_pts_nr
-        while !is_one(perm)
-          new_sheet = perm[start_sheet] + ram_pts_nr
-          if !(new_sheet in branch(edge))
-            new_edge = TretkoffEdge(end_point(edge), new_sheet, level, vcat(branch(edge), new_sheet))
-            s+=1
-            set_position(new_edge, s)
-            push!(edges_on_level[level], new_edge)
-          end
-          perm *= start_perm
+      is_terminated(edge) && continue
+      cycle_permutation = ramification[end_point(edge)][3]
+      permutation_power = cycle_permutation
+      start_sheet = start_point(edge) - r
+      while !is_one(permutation_power)
+        new_sheet = permutation_power[start_sheet] + r
+        if !(new_sheet in branch(edge))
+          new_edge = TretkoffEdge(end_point(edge), new_sheet, level, vcat(branch(edge), new_sheet))
+          sibling_position += 1
+          set_position!(new_edge, sibling_position)
+          push!(edges_on_level[level], new_edge)
         end
+        permutation_power *= cycle_permutation
       end
     end
+    _terminate_or_add!(sort(edges_on_level[level], lt = (a, b) -> start_point(a) < start_point(b)),
+                       vertices, terminated_edges)
 
-    sorted_edges = sort(edges_on_level[level], lt = (a,b) -> start_point(a) < start_point(b))
-    for edge in sorted_edges
-      if end_point(edge) in vertices
-        terminate(edge)
-        push!(terminated_edges, edge)
-      else
-        push!(vertices, end_point(edge))
-      end
-    end
-
+    # Odd level: from a sheet to the other ramification points containing it,
+    # in cyclic order starting after the ramification point it came from.
     level += 1
-    push!(edges_on_level, [])
-
-    s = 0
-
+    push!(edges_on_level, TretkoffEdge[])
+    sibling_position = 0
     for edge in edges_on_level[level - 1]
-      if !is_terminated(edge)
-        l = end_point(edge) - ram_pts_nr
-        k = mod(start_point(edge), ram_pts_nr) + 1
-
-        for i in (1:ram_pts_nr)
-          if (l in ramification_points[k][2]) && !(k in branch(edge))
-            new_edge = TretkoffEdge(end_point(edge), k, level, vcat(branch(edge), k))
-            s+=1
-            set_position(new_edge, s)
-            push!(edges_on_level[level], new_edge)
-          end
-          k = mod(k, ram_pts_nr) + 1
+      is_terminated(edge) && continue
+      sheet = end_point(edge) - r
+      k = mod(start_point(edge), r) + 1
+      for _ in 1:r
+        if (sheet in ramification[k][2]) && !(k in branch(edge))
+          new_edge = TretkoffEdge(end_point(edge), k, level, vcat(branch(edge), k))
+          sibling_position += 1
+          set_position!(new_edge, sibling_position)
+          push!(edges_on_level[level], new_edge)
         end
+        k = mod(k, r) + 1
       end
     end
+    _terminate_or_add!(sort(edges_on_level[level], lt = (a, b) -> end_point(a) < end_point(b)),
+                       vertices, terminated_edges)
 
-    sorted_edges = sort(edges_on_level[level], lt = (a,b) -> end_point(a) < end_point(b))
-    for edge in sorted_edges
-      if end_point(edge) in vertices
-        terminate(edge)
-        push!(terminated_edges, edge)
-      else
-        push!(vertices, end_point(edge))
-      end
-    end
-
-    all_branches_terminated = true
-    for edge in edges_on_level[level]
-      if !is_terminated(edge)
-        all_branches_terminated = false
-      end
-    end
-
+    all_branches_terminated = all(is_terminated, edges_on_level[level])
   end
 
-  terminated_edges_nr = (4*genus + 2*n - 2)
-  PQ_size = divexact(terminated_edges_nr, 2)
-  @req length(terminated_edges) == terminated_edges_nr "The number of terminated edges is wrong. There is a bug in the code."
+  number_of_terminated = 4*g + 2*m - 2
+  number_of_cycles = divexact(number_of_terminated, 2)
+  @req length(terminated_edges) == number_of_terminated "The number of terminated edges is wrong. There is a bug in the code."
 
-  function compare_branches(e1::TretkoffEdge, e2::TretkoffEdge)
-    l1 = edge_level(e1)
-    l2 = edge_level(e2)
-    if l1 == l2
-      return get_position(e1) < get_position(e2)
-    elseif l1 < l2
-
-      e_temp = TretkoffEdge(branch(e2)[l1], branch(e2)[l1 + 1])
-      i = findfirst(is_equal(e_temp), edges_on_level[l1])
-      return compare_branches(e1, edges_on_level[l1][i])
+  # Order the terminated edges by their branches (depth first order of the
+  # tree, siblings by position), and number them in reverse order.
+  function compare_branches(edge1::TretkoffEdge, edge2::TretkoffEdge)
+    level1 = edge_level(edge1)
+    level2 = edge_level(edge2)
+    if level1 == level2
+      return position(edge1) < position(edge2)
+    elseif level1 < level2
+      # compare with the ancestor of edge2 on the level of edge1
+      ancestor = TretkoffEdge(branch(edge2)[level1], branch(edge2)[level1 + 1])
+      i = findfirst(edge -> isequal(edge, ancestor), edges_on_level[level1])
+      return compare_branches(edge1, edges_on_level[level1][i])
     else
-      return !compare_branches(e2, e1)
+      return !compare_branches(edge2, edge1)
     end
   end
-
   sort!(terminated_edges, lt = compare_branches)
-
   reverse!(terminated_edges)
 
+  # Label the P edges in this order; a Q edge gets the label of its reverse.
   P = TretkoffEdge[]
-  QQ = TretkoffEdge[]
-  Q = Vector{TretkoffEdge}(undef, PQ_size)
-  l = 1
-
-  for k in (1:terminated_edges_nr)
-    edge = terminated_edges[k]
-    set_position(edge, k)
+  Q_unsorted = TretkoffEdge[]
+  Q = Vector{TretkoffEdge}(undef, number_of_cycles)
+  for (k, edge) in enumerate(terminated_edges)
+    set_position!(edge, k)
     if PQ(edge)
       push!(P, edge)
-      set_label(edge, l)
-      l +=1
+      set_label!(edge, length(P))
     else
-      push!(QQ,edge)
+      push!(Q_unsorted, edge)
     end
   end
-
-  for edge in QQ
-    l = findfirst(is_equal(reverse(edge)), P)
-    set_label(edge, l)
+  for edge in Q_unsorted
+    l = findfirst(p -> isequal(p, reverse(edge)), P)
+    set_label!(edge, l)
     Q[l] = edge
   end
 
+  # Cycle l: along the branch of P_l and back along the branch of Q_l (whose
+  # last two vertices are those of P_l, reversed). Sheet vertices become sheet
+  # numbers, ramification points the index of their local monodromy.
   cycles_list = Vector{Int}[]
-
-  for i in (1:PQ_size)
-    cycle = vcat(branch(P[i]), reverse(branch(Q[i])[1:end-2]))
+  for l in 1:number_of_cycles
+    cycle = vcat(branch(P[l]), reverse(branch(Q[l])[1:end-2]))
     k = 1
     while k <= length(cycle) - 1
-      cycle[k] -= ram_pts_nr
-      cycle[k+1] = ramification_points[cycle[k+1]][1]
-      k +=2
+      cycle[k] -= r
+      cycle[k+1] = ramification[cycle[k+1]][1]
+      k += 2
     end
-
-    cycle[k] -= ram_pts_nr
+    cycle[k] -= r
     push!(cycles_list, cycle)
   end
 
-  A = zeros(Int, PQ_size, PQ_size)
-  for i in (1:PQ_size)
-    j = mod(get_position(P[i]), terminated_edges_nr) + 1
+  # Intersection numbers: going around the boundary of the tree from P_l to
+  # Q_l, every P edge passed crosses cycle l in one direction, every Q edge
+  # in the other.
+  intersections = zeros(Int, number_of_cycles, number_of_cycles)
+  for l in 1:number_of_cycles
+    k = mod(position(P[l]), number_of_terminated) + 1
     while true
-      next_edge = terminated_edges[j]
+      next_edge = terminated_edges[k]
       if PQ(next_edge)
-        A[get_label(next_edge), i] +=1
+        intersections[label(next_edge), l] += 1
       else
-        if get_label(next_edge) == i
-          break
-        else
-          A[get_label(next_edge), i] -=1
-        end
+        label(next_edge) == l && break
+        intersections[label(next_edge), l] -= 1
       end
-      j = mod(j, terminated_edges_nr) + 1
+      k = mod(k, number_of_terminated) + 1
     end
   end
 
-  @req rank(A) == 2*genus "Computed matrix has the wrong rank. There is a bug in the code."
-  K = matrix(ZZ, A)
+  @req rank(intersections) == 2*g "Computed matrix has the wrong rank. There is a bug in the code."
+  K = matrix(ZZ, intersections)
 
   RS.homology_basis = cycles_list, K, symplectic_reduction(K)
   return RS.homology_basis
 end
 
-# Given an input K this computes S as mentioned in the homology_basis function
-# i,e. the output is a symplectic matrix S that ensure that S K S^T is equal to
-# a matrix where the upper left block consists of the normalized polarization
-# and the rest consists of zeros.
-# [0  I 0 ... 0]
-# [-I 0 0 ... 0]
-# [|  | | ... 0]
-# [0  0 0 ... 0]
-function symplectic_reduction(K::ZZMatrix)
+# Terminate the edges whose end point is already in the tree, add the end
+# points of the others.
+function _terminate_or_add!(edges::Vector{TretkoffEdge}, vertices::Set{Int},
+                            terminated_edges::Vector{TretkoffEdge})
+  for edge in edges
+    if end_point(edge) in vertices
+      terminate!(edge)
+      push!(terminated_edges, edge)
+    else
+      push!(vertices, end_point(edge))
+    end
+  end
+end
 
+@doc raw"""
+    symplectic_reduction(K::ZZMatrix) -> ZZMatrix
+
+For a skew-symmetric matrix K (with entries such that the reduction only
+needs pivots 1, as for intersection matrices), a unimodular matrix S with
+```
+S K S^T = [ 0  I  0 ]
+          [-I  0  0 ]
+          [ 0  0  0 ]
+```
+"""
+function symplectic_reduction(K::ZZMatrix)
   @req is_zero(K + transpose(K)) "Matrix needs to be skew-symmetric"
   @req nrows(K) == ncols(K) "Matrix needs to be square"
-
   n = nrows(K)
 
-  function find_one_above_pivot(K::ZZMatrix, pivot::Int)
-    for i in (pivot:n)
-      for j in (pivot:n)
-        if K[i, j] == 1
-          return [i, j]
-        end
-      end
-    end
-    return [0, 0]
-  end
-
+  # Simultaneous row and column operations on A (A = B K B^T throughout).
   A = deepcopy(K)
   B = one(parent(K))
-
-  ind1 = Vector{ZZRingElem}[]
-  ind2 = ZZRingElem[]
+  pair_pivots = Int[]      # pivots p of the blocks A[p:p+1, p:p+1] = [0 1; -1 0]
+  zero_pivots = Int[]      # rows that became zero
   pivot = 1
-
   while pivot <= n
-    next = find_one_above_pivot(A, pivot)
-    if next == [0,0]
-      push!(ind2, pivot)
-      pivot +=1
+    entry = _find_entry_one(A, pivot)
+    if entry === nothing
+      push!(zero_pivots, pivot)
+      pivot += 1
       continue
     end
-    move_to_positive_pivot(next[2], next[1], pivot, A, B)
+    row, col = entry                          # A[row, col] = 1, so A[col, row] = -1
+    _move_to_pivot!(A, B, col, row, pivot)    # now A[pivot + 1, pivot] = -1
+    # Clear the rest of rows and columns pivot and pivot + 1. If something had
+    # to be cleared, the same pivot is looked at again.
     zeros_only = true
-    pivot_plus = pivot + 1
-    for j in (pivot + 2:n)
+    for j in pivot+2:n
       v = -A[pivot, j]
       if v != 0
-        #The version with ! gave different results for some reason.
-
-        add_row!(A, v, pivot_plus, j)
-        add_column!(A,v, pivot_plus, j)
-        add_row!(B, v, pivot_plus, j)
-
+        add_row!(A, v, pivot + 1, j)
+        add_column!(A, v, pivot + 1, j)
+        add_row!(B, v, pivot + 1, j)
         zeros_only = false
       end
-      v = A[pivot_plus, j]
+      v = A[pivot + 1, j]
       if v != 0
         add_row!(A, v, pivot, j)
         add_column!(A, v, pivot, j)
@@ -865,56 +755,39 @@ function symplectic_reduction(K::ZZMatrix)
       end
     end
     if zeros_only
-      push!(ind1, [A[pivot_plus, pivot], pivot])
+      push!(pair_pivots, pivot)
       pivot += 2
     end
   end
-  sort!(ind1)
-  reverse!(ind1)
-  new_rows_ind = vcat([i[2] for i in ind1], [i[2] + 1 for i in ind1], ind2)
-  return matrix(ZZ, vcat([B[Int(i), 1:n] for i in new_rows_ind]))
+  reverse!(pair_pivots)
+  new_rows = vcat(pair_pivots, pair_pivots .+ 1, zero_pivots)
+  return B[new_rows, 1:n]
 end
 
-function move_to_positive_pivot(i::Int, j::Int, pivot::Int, A::ZZMatrix, B::ZZMatrix)
-  pivot_plus = pivot + 1
-  v = A[i, j]
-  is_pivot = false
-  if [i,j] == [pivot_plus, pivot] && A[pivot_plus, pivot] != v
-    is_pivot = true
-    swap_rows!(B, pivot, pivot_plus)
-    swap_rows!(A, pivot, pivot_plus)
-    swap_cols!(A, pivot, pivot_plus)
-  elseif [i,j] == [pivot, pivot_plus]
-    swap_rows!(B, pivot, pivot_plus)
-    swap_rows!(A, pivot, pivot_plus)
-    swap_cols!(A, pivot, pivot_plus)
-  elseif j != pivot && j != (pivot_plus) && i != pivot && i != (pivot_plus)
-    swap_rows!(B, pivot, j)
-    swap_rows!(B, pivot_plus, i)
-    swap_rows!(A, pivot, j)
-    swap_rows!(A, pivot_plus, i)
-    swap_cols!(A, pivot, j)
-    swap_cols!(A, pivot_plus, i)
-  elseif j == pivot
-    swap_rows!(B, pivot_plus, i)
-    swap_rows!(A, pivot_plus, i)
-    swap_cols!(A, pivot_plus, i)
-  elseif j == pivot_plus
-    swap_rows!(B, pivot, i)
-    swap_rows!(A, pivot, i)
-    swap_cols!(A, pivot, i)
-  elseif i == pivot
-    swap_rows!(B, pivot_plus, j)
-    swap_rows!(A, pivot_plus, j)
-    swap_cols!(A, pivot_plus, j)
-  elseif i == pivot_plus
-    swap_rows!(B, pivot, j)
-    swap_rows!(A, pivot, j)
-    swap_cols!(A, pivot, j)
+# An entry 1 of A in rows and columns pivot, ..., n (row by row), or nothing.
+function _find_entry_one(A::ZZMatrix, pivot::Int)
+  n = nrows(A)
+  for i in pivot:n, j in pivot:n
+    A[i, j] == 1 && return (i, j)
   end
-  if A[pivot_plus, pivot] != v && !is_pivot
-    swap_rows!(B, pivot, pivot_plus)
-    swap_rows!(A, pivot, pivot_plus)
-    swap_cols!(A, pivot, pivot_plus)
+  return nothing
+end
+
+# Move the entry A[i, j] (i != j) of the skew-symmetric matrix A to the
+# position (pivot + 1, pivot) by simultaneous swaps of rows and columns; the
+# row swaps are also applied to B.
+function _move_to_pivot!(A::ZZMatrix, B::ZZMatrix, i::Int, j::Int, pivot::Int)
+  if j != pivot
+    _swap_rows_and_columns!(A, B, pivot, j)
+    i == pivot && (i = j)
   end
+  i != pivot + 1 && _swap_rows_and_columns!(A, B, pivot + 1, i)
+  return
+end
+
+function _swap_rows_and_columns!(A::ZZMatrix, B::ZZMatrix, k::Int, l::Int)
+  swap_rows!(B, k, l)
+  swap_rows!(A, k, l)
+  swap_cols!(A, k, l)
+  return
 end

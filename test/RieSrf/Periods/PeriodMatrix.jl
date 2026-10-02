@@ -7,7 +7,7 @@
   @testset "Same bases, different integration" begin
     for (name, f, g) in FAST_CURVES[[5, 11, 14]]        # f2, q1, f30
       @testset "$name: GL vs Mixed" begin
-        test_same_result(_rs(f, 100; int_style = "Mixed"), _rs(f, 100; int_style = "GL"))
+        test_same_result(_rs(f, 100; int_style = :mixed), _rs(f, 100; int_style = :gl))
       end
       @testset "$name: midpoint precision on/off" begin
         test_same_result(_rs(f, 200; midpoint_precision = 0), _rs(f, 200; midpoint_precision = 100))
@@ -46,7 +46,7 @@
     @testset "Long: DE vs Mixed" begin
       for (name, f, g) in FAST_CURVES[[5, 11]]
         @testset "$name" begin
-          test_same_result(_rs(f, 100; int_style = "Mixed"), _rs(f, 100; int_style = "DE"))
+          test_same_result(_rs(f, 100; int_style = :mixed), _rs(f, 100; int_style = :de))
         end
       end
     end
