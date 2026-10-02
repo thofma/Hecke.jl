@@ -19,13 +19,29 @@ function _principal_subfields_basis(K::SimpleNumField)
   f = K.pol
   Kx, x = polynomial_ring(K, "x", cached = false)
   n = degree(K)
+  #f in Kx
+  #fk = Kx([coeff(f,i) for i in 0:n])
+  #determine roots
+  rts = roots(K, f)
+  ar_lin_fac = elem_type(Kx)[x - root for root in rts]
   fK = change_base_ring(K, f, parent = Kx)
+  ##divide by roots
+  for lin_fac in ar_lin_fac
+    fK = div(fK, lin_fac)#divaxa
+  end
+
   fac = factor(fK)
+
+  for (g, e) in fac
+    push!(ar_lin_fac, g)
+  end
+
+  factor_ar = ar_lin_fac
   k = base_field(K)
   principal_subfields_ar = dense_matrix_type(elem_type(k))[]
 
   #compute kernel of (phi - id)
-  for (fi, _) in fac
+  for fi in factor_ar
     M = zero_matrix(k, n, n * degree(fi))
     im_ar = elem_type(Kx)[(mod(x^l,fi)-gen(K)^l) for l in 0:n-1]
     for j in 1:n
