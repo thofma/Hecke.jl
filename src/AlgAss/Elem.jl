@@ -8,7 +8,8 @@ _is_sparse(a::AbstractAssociativeAlgebraElem) = _is_sparse(parent(a))
 
 _is_dense(a::AbstractAssociativeAlgebraElem) = _is_dense(parent(a))
 
-function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem{T}}, ::Type{S}) where {T, S}
+function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem}, ::Type{S}) where {S}
+  T = elem_type(base_ring_type(parent_type(U)))
   if AbstractAlgebra.promote_rule(T, S) === T
     return U
   else
@@ -353,6 +354,40 @@ function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
 end
 
 mul!(c::AbstractAssociativeAlgebraElem{T}, a::Union{ Int, ZZRingElem }, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
+
+function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::T, t::T) where {T}
+  @req parent(a) === parent(c) "Parents don't match"
+
+  ccoeffs = coefficients(c, copy = false)
+  acoeffs = coefficients(a, copy = false)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = addmul!(ccoeffs[i], acoeffs[i], b, t)
+  end
+  return c
+end
+
+function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{Int, ZZRingElem}, t::T) where {T}
+  @req parent(a) === parent(c) "Parents don't match"
+
+  ccoeffs = coefficients(c, copy = false)
+  acoeffs = coefficients(a, copy = false)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = addmul!(ccoeffs[i], acoeffs[i], b, t)
+  end
+  return c
+end
+
+addmul!(c::AssociativeAlgebraElem{T}, a::T, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
+
+addmul!(c::AssociativeAlgebraElem{T}, a::Union{Int, ZZRingElem}, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
+
+addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::T) where {T} = addmul!(c, a, b, base_ring(parent(c))())
+
+addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{Int, ZZRingElem}) where {T} = addmul!(c, a, b, base_ring(parent(c))())
+
+addmul!(c::AssociativeAlgebraElem{T}, a::T, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
+
+addmul!(c::AssociativeAlgebraElem{T}, a::Union{Int, ZZRingElem}, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
 
 function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -1286,4 +1321,3 @@ function jordan_chevalley_decomposition(x::AbstractAssociativeAlgebraElem)
   u = x - v
   return u, v
 end
-

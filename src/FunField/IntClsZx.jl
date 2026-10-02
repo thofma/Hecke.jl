@@ -150,6 +150,8 @@ function Hecke.integral_closure(Zx::ZZPolyRing, F::Generic.AbsSimpleFunctionFiel
   else
     oo2 = order(o3, integral_split(inv(T2)*basis_matrix(o2), Zx)..., check = false)
   end
+
+  oo2.is_maximal = 1
   return oo2
 
   #for testing....

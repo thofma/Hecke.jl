@@ -86,7 +86,7 @@ More in-depth resources are provided by our [Tutorials](@ref hecke_tutorials), w
 
 # Features
 
-Hecke currently provides functionliaty to enable a number of computations in number theory and commutative algebra. Some of the features implemented by Hecke include:
+Hecke currently provides functionality to enable a number of computations in number theory and commutative algebra. Some of the features implemented by Hecke include:
 
 - Number fields (absolute, relative, simple and non-simple),
 - Orders and ideals in number fields,

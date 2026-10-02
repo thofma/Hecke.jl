@@ -74,6 +74,7 @@ non-degenerate integer_lattice.
   _signature_pair::Tuple{Int, Int}
   _symbols::Vector{ZZLocalGenus} # assumed to be sorted by their primes
   _representative::ZZLat
+  _representatives::Vector{ZZLat}
 
   function ZZGenus(signature_pair, symbols::Vector{ZZLocalGenus})
     G = new()

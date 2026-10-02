@@ -374,10 +374,6 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
     end
   end
 
-  if work_tol > 2^18 || abs_tol > 2^18
-    error("asdsd")
-  end
-
   #R = ArbField(precision(parent(c[1])), false)
   R = ArbField(2 * work_tol, cached = false)
   sqrt2 = sqrt(R(2))

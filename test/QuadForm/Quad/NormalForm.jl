@@ -436,3 +436,16 @@ end
    @test !Hecke._ispadic_normal_form(matrix(QQ, 1, 1, [9]), 2)
 
  end
+
+@testset "NormalForm at a prime above 2^63" begin
+  p = next_prime(ZZ(2)^63)
+  G = QQ[4 0; 0 p]
+  D, B = Hecke.padic_normal_form(G, p)
+  @test D == QQ[1 0; 0 p]
+  @test Hecke._ispadic_normal_form(D, p)
+  X = B * G * transpose(B) - D
+  @test all(iszero(x) || valuation(x, p) >= 1 for x in X)
+  # a small modulus still goes through the machine-word routine
+  D, B = Hecke.padic_normal_form(QQ[4 0; 0 7], 7)
+  @test D == QQ[1 0; 0 7]
+end

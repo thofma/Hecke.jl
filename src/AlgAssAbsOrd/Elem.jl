@@ -495,15 +495,15 @@ function is_divisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::Alg
     V[1 + i, d + 1 + i] = 1
   end
 
-  V = hnf(V)
+  H = hnf(V)
 
   for i = 2:(d + 1)
-    if !iszero(V[1, i])
+    if !iszero(H[1, i])
       return false, O()
     end
   end
 
-  z = -O([ V[1, i] for i = (d + 2):(2*d + 1) ])
+  z = -O([ H[1, i] for i = (d + 2):(2*d + 1) ])
   return true, z
 end
 

@@ -244,16 +244,20 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   iszero(j) && return mod(p,3) == 2    # supersingular <=> p != 1 mod 3
   j == K(1728) && return mod(p,4) == 3 # supersingular <=> p != 1 mod 4
 
-  if j^(p^2) != j
-    return false
-  end
+  jp = j^p
+  # supersingular j-invariants are in F_{p^2}
+  jp^p != j && return false
 
   L = finite_field(p, 2)[1]
-  Lx, X = polynomial_ring(L, "X")
-  Lxy, Y = polynomial_ring(Lx, "Y")
+  Lx, X = polynomial_ring(L, :X; cached = false)
+  Lxy, Y = polynomial_ring(Lx, :Y; cached = false)
   Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
 
-  jL = _embed_into_p2(j, L)
+  # j is a root of X^2 - (j + j^p)*X + j^(p + 1), whose coefficients lie in F_p.
+  # Conjugate j-invariants are both supersingular or both ordinary, so we need any conjugate
+  jt = L(lift(ZZ, absolute_coordinates(j + jp)[1]))
+  jn = L(lift(ZZ, absolute_coordinates(j * jp)[1]))
+  jL = first(roots(X^2 - jt*X + jn))
 
   # In Sutherland's algorithm we must consider roots with multiplicity!
   # According to pari/gp source code comments, we can get multiple roots
@@ -295,26 +299,6 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
     end
   end
   return true
-end
-
-_to_z(a::Union{fpFieldElem, FpFieldElem}) = lift(a)
-_to_z(a::Union{fqPolyRepFieldElem, FqPolyRepFieldElem}) = coeff(a, 0)
-_to_z(a::FqFieldElem) = lift(ZZ, a)
-
-function _embed_into_p2(j, L)
-  K = parent(j)
-  # The easy case
-  if degree(K) == 1
-    return L(_to_z(j))
-  else
-    p = minpoly(j)
-    # Easy case
-    if degree(p) <= 1
-      return L(_to_z(j))
-    end
-    e = embed(L, K)
-    return preimage(e, j)
-  end
 end
 
 @doc raw"""

@@ -308,10 +308,10 @@ end
 function berlekamp_massey_naive(L::Vector{T}; parent = polynomial_ring(parent(L[1]), "x", cached = false)[1]) where T
      R_s = Nemo.parent(L[1])
      lg = length(L)
-     L = [R_s(L[lg-i]) for i in 0:lg-1]
+     Lrev = [R_s(L[lg-i]) for i in 0:lg-1]
      Ry = parent
      Y = gen(Ry)
-     g = Ry(L)
+     g = Ry(Lrev)
      if iszero(g)
        return true, g
      end
@@ -415,7 +415,8 @@ function listprimes(f::Vector{QQPolyRingElem}, p::ZZRingElem, M::Int)
    i=0; L = ZZRingElem[]
    while true
     i += 1
-    if all(x-> testPrime_jl(x,p), f)
+    q = p
+    if all(x-> testPrime_jl(x,q), f)
        push!(L, p)
     end
     if i == M

@@ -21,11 +21,11 @@ function residue_field(Q::QadicField)
     return k(_z)
   end
   lif = function(x::FqFieldElem)
-    z = Q()
+    res = Q()
     for i=0:degree(Q)-1
-      setcoeff!(z, i, lift(ZZ, coeff(x, i)))
+      setcoeff!(res, i, lift(ZZ, coeff(x, i)))
     end
-    return z
+    return res
   end
   mk = MapFromFunc(Q, k, pro, lif)
   set_attribute!(Q, :ResidueFieldMap => mk)

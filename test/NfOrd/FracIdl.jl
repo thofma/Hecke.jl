@@ -102,6 +102,17 @@ K3, (a3,) = number_field([x^3 - 2], "a2")
     @test !is_zero(K)
   end
 
+  # zero ideals constructed from basis matrices, #2377
+  let
+    K, = quadratic_field(-1, cached = false)
+    O = equation_order(K)
+    for I in (fractional_ideal(O, zero_matrix(QQ, 2, 2)),
+              fractional_ideal(O, zero_matrix(ZZ, 2, 2)))
+      @test basis_matrix(I) == zero_matrix(QQ, 0, 2)
+      @test is_zero(I)
+    end
+  end
+
   # hashing
   let
     K, = quadratic_field(-1, cached = false)

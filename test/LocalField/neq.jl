@@ -152,5 +152,13 @@ end
 
   K, b = radical_extension(2, a+1)
   @test is_local_norm(K, norm(b+a)) == true
+
+  gaussian, _ = quadratic_field(-1)
+  @test !is_local_norm(gaussian, QQ(1//3))
+  @test is_local_norm(gaussian, QQ(1//9))
+
+  cyclotomic_quartic, _ = cyclotomic_field(5)
+  @test !is_local_norm(cyclotomic_quartic, QQ(1//3))
+  @test is_local_norm(cyclotomic_quartic, QQ(1//81))
 end
 

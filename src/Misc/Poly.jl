@@ -554,7 +554,7 @@ end
 function charpoly_mod(M::Generic.Mat{AbsSimpleNumFieldElem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
   K = base_ring(M)
   p = p_start
-  Kt, t = polynomial_ring(K, cached = false)
+  Kt, _ = polynomial_ring(K, cached = false)
   f = Kt()
   f_last = f
   d = ZZRingElem(1)

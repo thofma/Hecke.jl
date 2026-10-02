@@ -86,6 +86,36 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
+@testset "Subgroups at finite places" begin
+  K, a = quadratic_field(-1)
+  O = maximal_order(K)
+  G, mG = automorphism_group(K)
+
+  # Also exercise a group type whose sub constructor has no complete keyword.
+  A = abelian_group([2])
+  identity = id_hom(K)
+  sigma = hom(K, K, -a)
+  mA = MapFromFunc(A, codomain(mG),
+                  g -> iszero(g) ? identity : sigma,
+                  f -> f(a) == a ? zero(A) : A[1])
+
+  for m in (mG, mA)
+    for (p, d, i, r) in [(2, 2, 2, 2), (3, 2, 1, 1), (5, 1, 1, 1)]
+      P = prime_decomposition(O, p)[1][1]
+      groups = [decomposition_group(K, P, m),
+                inertia_subgroup(K, P, m),
+                ramification_group(K, P, 0, m),
+                ramification_group(K, P, 1, m),
+                ramification_group(K, P, 2, m)]
+      for ((H, mH), n) in zip(groups, [d, i, i, r, 1])
+        @test order(H) == n
+        @test codomain(mH) === domain(m)
+        @test Set(m(mH(h))(a) for h in H) == Set(n == 2 ? [a, -a] : [a])
+      end
+    end
+  end
+end
+
 @testset "Prime Decomposition (AbsSimple)" begin
   # Q(sqrt(-5))
   K, a = quadratic_field(-5, cached = false)
@@ -182,6 +212,18 @@ end
     @test P.gen_one == 3
     @test Hecke.defines_2_normal(P)
   end
+
+  # A random weak second generator at 521 can have valuation greater than one.
+  # Repeat the decomposition to exercise the randomized search.
+  for _ in 1:20
+    PP = prime_decomposition(OK, 521)
+    @test sort([(e, degree(P)) for (P, e) in PP]) == [(1, 1), (1, 2), (2, 1), (2, 2)]
+    for (P, e) in PP
+      @test !iszero(mod(norm(P.gen_two), 521*norm(P)))
+      @test valuation(anti_uniformizer(P), P) == -1
+      @test valuation(K(521), P) == e
+    end
+  end
 end
 
 Qx, x = QQ["x"]
@@ -218,6 +260,18 @@ A = P1^2 * P2
 lf = Hecke.factor_easy(A)
 @test prod(x^y for (x, y) in lf) == A
 @test Hecke.is_pairwise_coprime([x^y for (x, y) in lf])
+
+@testset "factor_easy omits unit residuals" begin
+  K, _ = quadratic_field(2, cached = false)
+  O = maximal_order(K)
+  p = next_prime(ZZ(10)^10)
+  q = next_prime(p)
+  I = ideal(O, p*q, O(1))
+  lf = Hecke.factor_easy(I)
+  @test isone(I)
+  @test isempty(lf)
+  @test prod(x^y for (x, y) in lf; init = 1*O) == I
+end
 
 # primary decomposition
 K, a = quadratic_field(5)

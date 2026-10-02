@@ -54,10 +54,7 @@ import Hecke.HessQRModule: HessQRElem
     end
 
     # divrem
-    # rem(s1, s2) currently results in assert in gcd_sircana
-    # rem(s1, S(84)) currently results in crash in gcd_sircana
-    # for a in [s1, s2, u1, S(0), S(-5), S(7)], b in [s1, s2, u1, S(-35), S(84)]
-    for a in [s1, s2, s3, u1, S(0), S(-5), S(175)], b in [s1, u1, S(-35)]
+    for a in [s1, s2, s3, u1, S(0), S(-5), S(7), S(175)], b in [s1, s2, u1, S(-35), S(84)]
       q, r = divrem(a, b)
       @test q*b + r == a
       @test iszero(r) || abs(r.c) < abs(b.c)

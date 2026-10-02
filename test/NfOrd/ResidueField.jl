@@ -6,12 +6,18 @@
   OK = maximal_order(K);
   lp = prime_decomposition(OK, 5)
   B = basis(OK)
+  mF_fq = Hecke.NfOrdToFqMor(OK, lp[1][1])
+  @test (@inferred kernel(mF_fq)) === lp[1][1]
   for i = 1:length(lp)
     P = lp[i][1]
     F, mF = residue_field(OK, P)
     F1, mF1 = Hecke.ResidueFieldSmall(OK, P)
     F2, mF2 = Hecke.ResidueFieldSmallDegree1(OK, P)
     F3, mF3 = Hecke.ResidueFieldDegree1(OK, P)
+    @test (@inferred kernel(mF)) === P
+    @test (@inferred kernel(mF1)) === P
+    @test (@inferred kernel(mF2)) === P
+    @test (@inferred kernel(mF3)) === P
     @test order(F1) == order(F2)
     @test order(F1) == order(F3)
     @test order(F1) == order(F)
@@ -35,6 +41,10 @@
     F1, mF1 = Hecke.ResidueFieldSmall(OK, P)
     F2, mF2 = Hecke.ResidueFieldSmallDegree1(OK, P)
     F3, mF3 = Hecke.ResidueFieldDegree1(OK, P)
+    @test (@inferred kernel(mF)) === P
+    @test (@inferred kernel(mF1)) === P
+    @test (@inferred kernel(mF2)) === P
+    @test (@inferred kernel(mF3)) === P
     @test order(F1) == order(F2)
     @test order(F1) == order(F3)
     @test order(F1) == order(F)
@@ -67,4 +77,3 @@
     end
   end
 end
-

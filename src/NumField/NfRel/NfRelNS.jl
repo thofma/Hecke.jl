@@ -323,7 +323,7 @@ function Nemo.add!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T
   return c
 end
 
-function Base.hash(a::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, b::UInt)
+function Base.hash(a::RelNonSimpleNumFieldElem, b::UInt)
   return hash(a.data, b)
 end
 

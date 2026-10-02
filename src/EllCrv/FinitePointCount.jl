@@ -126,7 +126,7 @@ function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
 
   E1, E2 = E, quadratic_twist(E)
   q1 = q + 1
-  ML = 4*isqrt(q) + ZZ(isodd(degree(R)) ? 4 : 0)
+  ML = 4*isqrt(q) + ZZ(isodd(absolute_degree(R)) ? 4 : 0)
 
   # E1 = E, E2 = quadratic twist of E: |E1| + |E2| = 2(q+1)
   # |E1| = q + 1 - t, we maintain t = a mod M
@@ -557,8 +557,9 @@ end
 #   Thus we lift from the residue field to the qadic field manually.
 function _qadic_from_residue_element(R::QadicField, x::T; precision::Int=precision(R)) where T <: FinFieldElem
   z = R(precision=precision)
+  c = absolute_coordinates(x)
   for i in 0:degree(R)-1
-    setcoeff!(z, i, lift(ZZ, coeff(x, i)))
+    setcoeff!(z, i, lift(ZZ, c[i+1]))
   end
   return z
 end
@@ -598,7 +599,7 @@ end
 function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   @req characteristic(R) == 2 "Characteristic must be 2"
   @req iszero(j_invariant(E)) "Curve must be supersingular"
@@ -643,7 +644,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
     @assert !isempty(ss)
 
     sqrt_2q = ZZ(2)^divexact(d + 1, 2)
-    t = iszero(tr(ss[1]^6 + ss[1]^2 + a6)) ? sqrt_2q : -sqrt_2q
+    t = iszero(absolute_tr(ss[1]^6 + ss[1]^2 + a6)) ? sqrt_2q : -sqrt_2q
     return mod(d, 8) in (1, 7) ? q + 1 + t : q + 1 - t
   else
     # check if a3 is a cube (type II and III)
@@ -667,7 +668,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
         @assert length(ss) == 4
 
         sqrt_q_times2 = ZZ(2)^(divexact(d,2)+1)
-        t = iszero(tr(ss[1]^6 + a6)) ? sqrt_q_times2 : -sqrt_q_times2
+        t = iszero(absolute_tr(ss[1]^6 + a6)) ? sqrt_q_times2 : -sqrt_q_times2
         return mod(d, 4) == 2 ? q + 1 + t : q + 1 - t
       else
         # type II
@@ -679,7 +680,7 @@ function _order_supersingular_char2(E::EllipticCurve{T}) where T <: FinFieldElem
       s = only(roots(X^4 + a3*X + a4))
 
       sqrt_q = ZZ(2)^divexact(d,2)
-      t = iszero(tr(divexact(s^6+a6, a3^2))) ? sqrt_q : -sqrt_q
+      t = iszero(absolute_tr(divexact(s^6+a6, a3^2))) ? sqrt_q : -sqrt_q
       return mod(d, 4) == 0 ? q + 1 + t : q + 1 - t
     end
   end
@@ -692,17 +693,17 @@ end
 function _trace_of_frobenius_char2_agm(a6::T) where T <: FinFieldElem
   R = parent(a6)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   @req characteristic(R) == 2 "Characteristic must be 2"
   @req a6^4 != a6 "j-invariant must not lie in F_4"
 
   # for d = 3 the Hecke bound greatly overshoots the possible values of trace
   # it is easy to precompute trace for all a_6 in F_8 \ F_2
-  # 1  for t, t^2, t^2 + t
-  # -3 for t+1, t^2 + 1, t^2 + t + 1
+  # 1  for t, t^2, t^2 + t: roots of X^3 + X + 1, absolute trace is 0
+  # -3 for t+1, t^2 + 1, t^2 + t + 1: roots of X^3 + X^2 + 1, absolute trace is 1
   if d == 3
-    return iszero(coeff(a6, 0)) ? ZZ(1) : ZZ(-3)
+    return iszero(absolute_tr(a6)) ? ZZ(1) : ZZ(-3)
   end
 
   N = div(d+1,2) + 3
@@ -770,7 +771,7 @@ function _order_ordinary_char2(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   j = j_invariant(E)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   @req characteristic(R) == 2 "Characteristic must be 2"
   @req !iszero(j) "Curve must be ordinary"
@@ -787,7 +788,7 @@ function _order_ordinary_char2(E::EllipticCurve{T}) where T <: FinFieldElem
     trace_frob = _trace_of_frobenius_char2_agm(a6)
   end
 
-  return iszero(tr(a2)) ? q + 1 - trace_frob : q + 1 + trace_frob
+  return iszero(absolute_tr(a2)) ? q + 1 - trace_frob : q + 1 + trace_frob
 end
 
 ################################################################################
@@ -814,7 +815,7 @@ end
 function _order_supersingular_char3(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   @req characteristic(R) == 3 "Characteristic must be 3"
   @req iszero(j_invariant(E)) "Curve must be supersingular"
@@ -848,7 +849,7 @@ function _order_supersingular_char3(E::EllipticCurve{T}) where T <: FinFieldElem
 
   # trace of b in representative y^2 = x^3 - x + b (if gamma is a square)
   # or trace of b in twist y^2 = x^3 - x + b (if gamma is not a square)
-  trace_b = tr(a6*inv(gamma^3))
+  trace_b = absolute_tr(a6*inv(gamma^3))
 
   if isodd(d)
     # of course there is a catch to the above:
@@ -882,7 +883,7 @@ end
 function _trace_of_frobenius_char3_agm(j::T) where T <: FinFieldElem
   R = parent(j)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
   N = div(d, 2) + 2
 
   @req characteristic(R) == 3 "Characteristic must be 3"
@@ -931,7 +932,7 @@ function _trace_of_frobenius_j_nonzero_in_f9(a6::T, d) where T <: FinFieldElem
   # j = 1: y^2 = x^3 + x^2 - 1
   # - for even d, we can "define" it over F_9: trace = -5
   # - for odd d, we define over F_3: trace = 1
-  # j in F_9 \ F_3: the only option is to do an embedding and compute the trace (via exhaustive search)
+  # j in F_9 \ F_3: count the points over the subfield F_9 of R (via exhaustive search)
   j_in_F3 = isone(a6) || isone(-a6)
   @assert j_in_F3 || iseven(d)
   q = j_in_F3 && isodd(d) ? ZZ(3) : ZZ(9)
@@ -943,10 +944,15 @@ function _trace_of_frobenius_j_nonzero_in_f9(a6::T, d) where T <: FinFieldElem
   elseif isone(-a6)
     t_1 = iseven(d) ? ZZ(-5) : ZZ(1)
   else
-    R_base,_ = finite_field(3, 2)
-    a6_base = preimage(embed(R_base, R), a6)
-    E = elliptic_curve(R_base, [0,1,0,0,a6])
-    t_1 = q + 1 - Hecke.order_via_exhaustive_search(E)
+    # E(F_9) = 10 + sum_{x in F_9} chi(x^3 + x^2 + a_6),
+    #   where chi(c) = c^4 is the quadratic character of F_9.
+    # x in F_9 are the roots of X^9 - X
+    _, X = polynomial_ring(R, :X; cached=false)
+    s = sum(roots(X^9 - X)) do x
+      c = x^3 + x^2 + a6
+      iszero(c) ? 0 : (isone(c^4) ? 1 : -1)
+    end
+    t_1 = ZZ(-s)
   end
 
   return _trace_of_frobenius_subfield_curve(q, t_1, n)
@@ -959,7 +965,7 @@ function _order_ordinary_char3(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   j = j_invariant(E)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   @req characteristic(R) == 3 "Characteristic must be 3"
   @req !iszero(j) "Curve must be ordinary"
@@ -994,7 +1000,7 @@ function _order_j_0(E::EllipticCurve{T}) where T <: FinFieldElem
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   # p = 2, 3: we have a supersingular curve, dispatch to specialized procedures
   p == 2 && return _order_supersingular_char2(E)
@@ -1075,7 +1081,7 @@ function _order_j_1728(E::EllipticCurve{T}) where T <: FinFieldElem
 
   p = characteristic(R)
   q = order(R)
-  d = degree(R)
+  d = absolute_degree(R)
 
   # p = 2, 3: we have a supersingular curve, dispatch to specialized procedures
   p == 2 && return _order_supersingular_char2(E)

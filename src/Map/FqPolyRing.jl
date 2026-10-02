@@ -118,11 +118,11 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       for k = 0:n*m - 1
         x_mat[k + 1, 1] = Fp(coeff(x, k))
       end
-      x_mat = invM*x_mat
+      y_mat = invM*x_mat
       f = parent(h)()
       t = Fqm()
       for j = 0:m - 1
-        tt = parent(g)([ x_mat[i + n*j + 1, 1] for i = 0:n - 1 ])
+        tt = parent(g)([ y_mat[i + n*j + 1, 1] for i = 0:n - 1 ])
         if isnmod
           ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), t, tt, Fq)
         else

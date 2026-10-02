@@ -140,6 +140,7 @@ export absolute_inertia_degree
 export absolute_minpoly
 export absolute_norm
 export absolute_primitive_element
+export absolute_prime_decomposition_type
 export absolute_ramification_index
 export absolute_representation_matrix
 export absolute_simple_field
@@ -307,8 +308,10 @@ export disc_log
 export disc_log_mod
 export discriminant
 export discriminant_group
+export discriminant_of_ternary_quartic
 export div
 export divisor
+export dixmier_ohno_invariants
 export divexact
 export divexact!
 export divisibility
@@ -376,6 +379,7 @@ export function_field
 export fundamental_discriminant
 export g2_from_igusa
 export g2_invariants
+export g4_invariants
 export galois_module
 export gap_numbers
 export gcd
@@ -569,6 +573,7 @@ export is_norm
 export is_normal
 export is_on_curve
 export is_ordinary
+export is_p_rational
 export is_positive
 export is_positive_definite
 export is_power
@@ -582,9 +587,11 @@ export is_principal_with_data
 export is_probable_supersingular
 export is_pure
 export is_quadratic
+export is_quasi_p_rational
 export is_radical_extension
 export is_ramified
 export is_rationally_isometric
+export is_real_cyclotomic_field_p_rational
 export is_reduced
 export is_regular
 export is_represented_by
@@ -662,6 +669,7 @@ export leech_lattice
 export left_ideal
 export left_order
 export level
+export line_orbits
 export lll
 export lll_basis
 export lll_gram_indef_isotropic
@@ -715,6 +723,7 @@ export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
+export multiplicative_generator
 export multiplicative_group
 export multiplicative_group_generators
 export multiplicative_order
@@ -759,6 +768,7 @@ export orthogonal_submodule
 export overlattice
 export overlattices
 export overorders
+export p_rationality_context
 export parametrization
 export parent
 export periods
@@ -807,6 +817,7 @@ export push!
 export push_through_isogeny
 export quadratic_defect
 export quadratic_field
+export quadratic_kummer_generator
 export quadratic_lattice
 export quadratic_product
 export quadratic_space
@@ -839,8 +850,10 @@ export ray_class_group
 export real_embeddings
 export real_period
 export real_places
-export reconstruct_from_igusa
-export reconstruct_from_g2
+export reconstruct_from_dixmier_ohno_invariants
+export reconstruct_from_igusa_invariants
+export reconstruct_from_g2_invariants
+export reconstruct_from_g4_invariants
 export reduce_full
 export reduce_binary_form
 export reduced_charpoly
@@ -892,6 +905,7 @@ export set_var!
 export set_vars!
 export set_verbosity_level
 export shift
+export shioda_invariants
 export short_vectors
 export short_vectors_affine
 export short_vectors_affine_iterator
@@ -979,7 +993,9 @@ export trace_of_frobenius
 export trailing_coefficient
 export transform
 export transform_rstu
+export transformation_GLn
 export transvectant
+export transvectant_sequence
 export triangularize
 export trivial_divisor
 export trivial_morphism
@@ -1002,6 +1018,7 @@ export vector_space_dim
 export volume
 export weierstrass_places
 export weighted_equality
+export weighted_multiply
 export weighted_reduction
 export weil_pairing
 export wildanger_field

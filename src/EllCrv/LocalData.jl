@@ -696,7 +696,7 @@ Note that primes at which the model is non-minimal but the curve has good reduct
   return sort!(collect(keys(d)))
 end
 
-function _bad_prime_candidates(E::EllipticCurve{QQFieldElem})
+@attr Vector{ZZRingElem} function _bad_prime_candidates(E::EllipticCurve{QQFieldElem})
   d = discriminant(E)
   pnum = [p for (p, _) in factor(numerator(d))]
   pden = [p for (p, _) in factor(denominator(d))]
@@ -720,7 +720,7 @@ Note that prime ideals at which the model is non-minimal but the curve has good 
   return sort!(collect(keys(d)); by = _nf_prime_sort_key)
 end
 
-function _bad_prime_candidates(E::EllipticCurve{AbsSimpleNumFieldElem})
+@attr Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} function _bad_prime_candidates(E::EllipticCurve{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
   return [p for (p, _) in factor(discriminant(E)*OK)]
 end

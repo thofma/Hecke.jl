@@ -416,7 +416,8 @@ function _radical_funfield(A::MatAlgebra)
       B = push!(copy(B), one(A))
     end
     d = length(B)
-    G = _trace_matrix(B, x -> _tr(Int(s), matrix(x, copy = false)))
+    si = Int(s)
+    G = _trace_matrix(B, x -> _tr(si, matrix(x, copy = false)))
     K = kernel(G; side = :left)
     # if 1 < s < |K| always satisfied
     sp = 1

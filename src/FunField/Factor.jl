@@ -190,6 +190,7 @@ end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
 function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
+  @assert is_monic(f)
   i = 0
   local N
   g = f
@@ -211,7 +212,7 @@ function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSi
   end
 
   fN = factor(N)
-  @assert isone(fN.unit)
+  # We are reconstructing the monic polynomial g and the gcds below are monic.
   D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
   return D
 end
@@ -280,8 +281,9 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
   S = base_ring(x)
   T = gen(S)
   X = gen(parent(x))
-  l = [(X^2 + T + i) for i = V]
-  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, 2^n)) for x = l]
+  l0 = [(X^2 + T + i) for i = V]
+  nps = 2^n
+  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, nps)) for x = l0]
   while n > 1
     i = 1
     while 2*i <= n

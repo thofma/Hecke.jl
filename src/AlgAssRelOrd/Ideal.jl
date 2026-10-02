@@ -1782,6 +1782,9 @@ function _coprime_bases(M::Union{ RelNumFieldOrder{S, T, U}, AlgAssRelOrd{S, T, 
   end
   mat_N = mat_N*inv(mat_M)
 
+  @assert is_lower_triangular(mat_M)
+  @assert is_lower_triangular(mat_N)
+
   return basis_M, basis_N, mat_M, mat_N
 end
 

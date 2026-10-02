@@ -540,4 +540,10 @@
     @test fl
     @test M * a == 1*Lambda
   end
+
+  let # give up instead of returning garbage
+    A, = StructureConstantAlgebra(matrix_algebra(QQ, 2))
+    M = maximal_order(A)
+    @test_throws ErrorException is_principal_with_data(2*M, M)
+  end
 end

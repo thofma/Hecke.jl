@@ -203,9 +203,9 @@ function abelian_normal_extensions(K::AbsSimpleNumField, gtype::Vector{Int}, abs
           end
         end
         if absolute_galois_group != (0, 0)
-          autabs = absolute_automorphism_group(C, gs)
+          autabs = closure(absolute_automorphism_group(C, gs), *)
           G = generic_group(autabs, *)[1]
-          id_G = find_small_group(G)
+          id_G = find_small_group(G)[1]
           if id_G == absolute_galois_group
             @vprintln :AbExt 1 "New Field"
             push!(fields, C)
@@ -625,8 +625,8 @@ end
 ###############################################################################
 
 function C22_extensions(bound::Int)
-  Qx, x=polynomial_ring(ZZ, "x")
-  K, _=number_field(x-1, cached = false)
+  Qx, t=polynomial_ring(ZZ, "x")
+  K, _=number_field(t-1, cached = false)
   Kx,x=polynomial_ring(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1

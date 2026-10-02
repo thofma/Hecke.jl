@@ -241,7 +241,8 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
     function disclog(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
       @vprintln :RayFacElem 1 "Disc log of element $J"
       a1 = id(X)
-      for (f, k) in J
+      for (f, k) in _simplify_for_ray_class_map(J, m)
+        iszero(k) && continue
         a1 += k*disclog(f)
       end
       return a1

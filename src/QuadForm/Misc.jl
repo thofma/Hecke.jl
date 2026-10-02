@@ -348,10 +348,10 @@ function _strong_approximation_easy(S, ep, xp)
   if length(S) == 1
     p = S[1]
     ap = uniformizer(p)
-    z = xp[1] - ap^(ep[1])
-    @assert valuation(xp[1] - z, S[1]) == ep[1]
-    @assert z == 0 || all(p -> (valuation(z, p) >= 0 || p in S), support(z * order(S[1])))
-    return z
+    z1 = xp[1] - ap^(ep[1])
+    @assert valuation(xp[1] - z1, S[1]) == ep[1]
+    @assert z1 == 0 || all(p -> (valuation(z1, p) >= 0 || p in S), support(z1 * order(S[1])))
+    return z1
   end
   OK = order(S[1])
   # assume ep non-negative and xp in R

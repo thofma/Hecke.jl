@@ -494,6 +494,29 @@ end
   @test T == T2
   @test length(unique!([T, T2])) == 1
   @test length(unique!([T[1], -T[1]])) == 1
+  f = id_hom(T)
+  g = hom(T, T, gens(T))
+  h = hom(T, T, 3 * matrix(f))
+  @test @inferred(f == f)
+  @test @inferred(f == g)
+  @test f == h
+  @test f != zero(f)
+  @test f != id_hom(T2)
+  U = rescale(T, -1)
+  @test f != hom(U, T, gens(T))
+  @test f != hom(T, U, gens(U))
+  @test hash(f) == hash(g) == hash(h)
+  @test hash(f, UInt(123)) == hash(h, UInt(123))
+  @test length(unique!([f, g, h])) == 1
+  @test Dict(f => 1)[h] == 1
+  @test matrix(h) == 3 * matrix(f)
+
+  S = torsion_quadratic_module(Hecke.cover(T), Hecke.relations(T); snf=false)
+  f = id_hom(S)
+  g = hom(S, S, 3 * matrix(f))
+  @test f == g
+  @test hash(f) == hash(g)
+  @test Dict(f => 1)[g] == 1
 end
 
 @testset "Map with trivial torsion quadratic modules" begin
@@ -501,6 +524,8 @@ end
   q2 = discriminant_group(root_lattice(:E, 6))
   psi = @inferred hom(q, q, gens(q), gens(q))
   @test is_bijective(psi)
+  @test psi == id_hom(q)
+  @test hash(psi) == hash(id_hom(q))
   phi = @inferred hom(q, q2, elem_type(q2)[])
   @test is_injective(phi)
 end
@@ -516,4 +541,10 @@ end
   q = discriminant_group(L)
   @test first(torsion_subgroup(q, 2)) == first(primary_part(q, 2))
   @test iszero(gram_matrix_quadratic(first(torsion_subgroup(q, 3))))
+end
+
+@testset "More using as_bilinear_module" begin
+  q = discriminant_group(root_lattice(:A, 1))
+  q2 = rescale(q, -1)
+  @test is_genus(q2, (1, 0); as_bilinear_module=true)
 end

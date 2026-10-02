@@ -304,6 +304,36 @@
     @test !is_zero(I)
   end
 
+  # zero ideals constructed from basis matrices or Z-generators, #2377
+  let
+    K, = quadratic_field(-1, cached = false)
+    O = equation_order(K)
+    Z = ideal(O, zero(O))
+    ideals = [
+      ideal(O, zero_matrix(ZZ, 2, 2)),
+      Hecke.ideal_from_z_gens(O, [zero(O), zero(O)]),
+      Hecke.ideal_from_z_gens(O, [zero(O)]),
+      Hecke.ideal_from_z_gens(O, elem_type(O)[]),
+      0 * ideal(O, one(O)),
+    ]
+    for I in ideals
+      @test basis_matrix(I) == zero_matrix(ZZ, 0, 2)
+      @test is_zero(I)
+      @test I == Z
+    end
+
+    I = ideal(O, ZZ[0 0; 1 0; 0 1])
+    @test basis_matrix(I) == identity_matrix(ZZ, 2)
+
+    Qx, x = polynomial_ring(QQ, "x")
+    K, = number_field(x, "a")
+    O = equation_order(K)
+    I = ideal(O, zero_matrix(ZZ, 1, 1))
+    @test basis_matrix(I) == zero_matrix(ZZ, 0, 1)
+    @test minimum(I) == 0
+    @test norm(I) == 0
+  end
+
   let
     P, x = polynomial_ring(ZZ)
     K, a = number_field(x^3 + x + 1)

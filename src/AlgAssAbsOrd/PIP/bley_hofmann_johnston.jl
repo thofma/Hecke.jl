@@ -435,7 +435,7 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   nn = ZZ(n)
 
-  R, c = nice_order(M)
+  _, c = nice_order(M)
 
   xwrtR = c * elem_in_algebra(x) * inv(c)
 

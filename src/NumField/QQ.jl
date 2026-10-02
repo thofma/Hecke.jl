@@ -41,17 +41,7 @@ order(::ZZIdl) = ZZ
 order(::ZZFracIdl) = ZZ
 
 # constructors
-*(::ZZRing, x::IntegerUnion) = ideal(ZZ, x)
-
-*(x::IntegerUnion, ::ZZRing) = ideal(ZZ, x)
-
-ideal(::ZZRing, x::ZZRingElem) = ZZIdl(x)
-
-ideal(::ZZRing, x::Integer) = ZZIdl(ZZRingElem(x))
-
-ideal(::ZZRing, x::AbstractVector{ZZRingElem}) = ZZIdl(gcd(x))
-
-ideal(::ZZRing, x::AbstractVector{<:Integer}) = ZZIdl(ZZRingElem(gcd(x)))
+ideal(::ZZRing, x::Vector{ZZRingElem}) = ZZIdl(gcd(x))
 
 fractional_ideal(::ZZRing, x::QQFieldElem) = ZZFracIdl(x)
 

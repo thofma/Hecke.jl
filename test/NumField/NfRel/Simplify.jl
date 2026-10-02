@@ -59,4 +59,18 @@
     La, = Hecke.simplified_absolute_field(L)
     @test degree(La) == 8
   end
+
+  # Degree-one relative fields must be accepted by the prime search.
+  let
+    Qx, x = QQ[:x]
+    K, = number_field(x - 1)
+    Kt, t = K[:t]
+    L, = number_field(t - 1)
+
+    Ls, = simplify(L)
+    @test degree(Ls) == 1
+
+    La, = Hecke.simplified_absolute_field(L)
+    @test degree(La) == 1
+  end
 end

@@ -214,3 +214,18 @@ end
   G = genus(L)
   @test length(unique([G, G, G])) == 1
 end
+
+
+@testset "representative at a prime above 2^63" begin
+  p = next_prime(ZZ(2)^63)
+  while p % 4 != 3
+    p = next_prime(p)
+  end
+  # II_(0,4) p^2: two copies of the even binary form of determinant p
+  B = ZZ[2 1; 1 divexact(p + 1, 2)]
+  L = integer_lattice(gram = -block_diagonal_matrix([B, B]))
+  G = genus(L)
+  # the symbol alone, with no representative attached to it
+  G2 = genus(discriminant_group(L), (0, 4))
+  @test genus(representative(G2)) == G
+end

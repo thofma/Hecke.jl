@@ -241,11 +241,11 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
 
   function disc_log(x::AlgAssAbsOrdElem)
     xx = OAtoOAP(OA(x))
-    g = GtoOAP\xx
-    b, h = has_preimage_with_preimage(HtoG, g)
-    @assert b
-    b, s = has_preimage_with_preimage(StoH, h)
-    @assert b
+    gx = GtoOAP\xx
+    fl, h = has_preimage_with_preimage(HtoG, gx)
+    @assert fl
+    fl2, s = has_preimage_with_preimage(StoH, h)
+    @assert fl2
     return [ s.coeff[1, i] for i = 1:ngens(S) ]
   end
 

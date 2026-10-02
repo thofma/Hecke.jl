@@ -23,12 +23,12 @@ function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormT
   R = base_ring(A)
   @assert is_maximal(R)
   AP = pseudo_matrix(A)
-  H, T = pseudo_hnf_with_transform(AP)
+  H0, T = pseudo_hnf_with_transform(AP)
   # compute the rank
-  r = something(findlast(i -> !is_zero_row(matrix(H), i), 1:nrows(H)), nrows(H))
+  r = something(findlast(i -> !is_zero_row(matrix(H0), i), 1:nrows(H0)), nrows(H0))
   # We have to only take the full rank part of H, otherwise is _contained_in_span_...
   # confused.
-  H = sub(H, 1:r, 1:ncols(H))
+  H = sub(H0, 1:r, 1:ncols(H0))
   if task === :only_check
     Kb = nf(R).(b)
     for i in 1:nrows(b)

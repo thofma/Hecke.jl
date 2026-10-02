@@ -78,24 +78,44 @@ end
 ################################################################################
 
 base_ring(O::GenOrd) = O.R
-
 base_ring_type(::Type{GenOrd{S, T}}) where {S, T} = T
-
 coefficient_ring(O::GenOrd) = O.R
 
 field(O::GenOrd) = O.F
-
-@inline is_equation_order(O::GenOrd) = O.is_equation_order
-
 degree(O::GenOrd) = degree(field(O))
 
 basis_matrix(O::GenOrd{S}) where {S} = O.trans::dense_matrix_type(elem_type(base_field_type(S)))
 basis_matrix_inverse(O::GenOrd{S}) where {S} = O.itrans::dense_matrix_type(elem_type(base_field_type(S)))
 
+@attr Tuple{dense_matrix_type(elem_type(T)), elem_type(T)} function _basis_matrix_pair(O::GenOrd{S, T}) where {S, T}
+  return integral_split(basis_matrix(O), base_ring(O))
+end
+
 function _make_canonical_in(O::GenOrd{S, T}, x) where {S, T}
   y = O.R(x)
   iszero(y) && return y::elem_type(T)
   return divexact(y, canonical_unit(y))::elem_type(T)
+end
+
+################################################################################
+#
+#  Equation/Maximal order
+#
+################################################################################
+
+@inline is_equation_order(O::GenOrd) = O.is_equation_order
+@inline is_maximal_known_and_maximal(O::GenOrd) = isone(O.is_maximal)
+
+function is_maximal(O::GenOrd)
+  if O.is_maximal == 1
+    return true
+  end
+  if O.is_maximal == 2
+    return false
+  end
+  OO = Hecke.maximal_order(O)
+  O.is_maximal = discriminant(OO) == discriminant(O) ? 1 : 2
+  return isone(O.is_maximal)
 end
 
 ################################################################################
@@ -329,15 +349,28 @@ end
 ################################################################################
 
 function coordinates(a::FieldElem, O::GenOrd)
-  if is_equation_order(O)
-    return coordinates(a)
-  else
-    return coordinates(a) * basis_matrix_inverse(O)
+  v = coordinates(a)
+  is_equation_order(O) && return v
+
+  M = basis_matrix(O)
+  if is_lower_triangular(M)
+    # Lenstra order (non-monic defining polynomial) has lower-triangular form.
+    # Instead of using basis matrix inverse (height/degree growth)
+    #   we will solve the linear system
+    # x*M = B <=> transpose(M)*transpose(x) = transpose(B),
+    #   with transpose(M) upper triangular (note: transpose only permutes entries)
+    R = base_ring(M)
+    n = length(v)
+    z = AbstractAlgebra._solve_triu(transpose(M), matrix(R, n, 1, v); side = :right)
+    return elem_type(R)[z[i, 1] for i in 1:n]
   end
+
+  return v * basis_matrix_inverse(O)
 end
 
 function coordinates(a::GenOrdElem)
-  return coordinates(a.data, parent(a))
+  O = parent(a)
+  return base_ring(O).(coordinates(data(a), O))
 end
 
 function coordinates(a::Generic.AbsSimpleFunctionFieldElem)
@@ -369,9 +402,7 @@ function _representation_matrix_direct(a::GenOrdElem)
   for i in 1:n
     c = coordinates(b[i]*a)
     for j in 1:n
-      num, den = integral_split(c[j], R)
-      @assert isone(den)
-      m[i, j] = num
+      m[i, j] = c[j]
     end
   end
 
@@ -402,15 +433,7 @@ end
 
 function representation_matrix(a::GenOrdElem)
   O = parent(a)
-  R = base_ring(O)
-
-  v = map(coordinates(a)) do x
-    num, den = integral_split(x, R)
-    @assert isone(den)
-    num
-  end
-
-  return _representation_matrix(O, v)
+  return _representation_matrix(O, coordinates(a))
 end
 
 ################################################################################
@@ -503,11 +526,11 @@ function mod(a::GenOrdElem, p::RingElem)
 
   if is_equation_order(O)
     mu = elem_type(O.R)[O.R(x) % p for x = coefficients(a.data)]
-    return O(O.F(mu))
+    return O(O.F(mu); check = false)
   else
     a = map(x->S(R(x) % p), coordinates(a))
     b = a*basis_matrix(O)
-    return O(O.F(b))
+    return O(O.F(b); check = false)
   end
 end
 
@@ -542,8 +565,8 @@ function ring_of_multipliers(O::GenOrd{S, T}, I::MatElem{P}, p::P, is_prime::Boo
                   _ring_of_multipliers_reduce_nonprime(m, p, degree(O))
   H = hnf_modular(mm, p, is_prime)
 
-  @vtime :GenOrd 2 Hi, d = pseudo_inv(H)
-  return GenOrd(O, transpose(Hi), d, check = false)::GenOrd{S, T}
+  @vtime :GenOrd 2 Hi, dH = pseudo_inv(H)
+  return GenOrd(O, transpose(Hi), dH, check = false)::GenOrd{S, T}
 end
 
 # ring_of_multipliers function-barrier helpers: it fixes the return type
@@ -589,10 +612,9 @@ function ring_of_multipliers(O::GenOrd, I::MatElem)
   end
   H = mm
 
-  @vtime :GenOrd 2 Hi, d = pseudo_inv(H)
+  @vtime :GenOrd 2 Hi, dH = pseudo_inv(H)
 
-  O = GenOrd(O, transpose(Hi), d, check = false)
-  return O
+  return GenOrd(O, transpose(Hi), dH, check = false)
 end
 
 ################################################################################
@@ -799,11 +821,13 @@ function Hecke.maximal_order(O::GenOrd)
       Op = (Hecke._hnf(vcat(Op[1]*T[2], T[1]*Op[2]), :lowerleft)[degree(O)+1:end, :], T[2]*Op[2])
     end
   end
-  if first
-    return O
-  else
-    return GenOrd(O, Op[1], Op[2])
+
+  if !first
+    O = GenOrd(O, Op[1], Op[2])
   end
+
+  O.is_maximal = 1
+  return O
 end
 
 ################################################################################
@@ -990,7 +1014,21 @@ The codifferent ideal of $O$, i.e. the trace-dual of $O$.
 """
 function codifferent(O::GenOrd)
   K = base_field(field(O))
-  return fractional_ideal(O, _fraction_free_inv(_trace_matrix(O, K, K)))
+  M = _fraction_free_inv(_trace_matrix(O, K, K))
+  M, d = integral_split(M, base_ring(O))
+
+  # When using the HNF reduction, we can optimize ideal construction since
+  #   we know a good modulus to use modular HNF.
+  # The Popov reduction does not use one, so we do as in the normal constructor
+  red = _row_reduction_trait(O)
+  if red isa HNFRedTrait
+    # For trace matrix T we have M/d = T^-1, thus row module of M is
+    #   d * R^n * T^-1. Since T is integral, d is a modulus for HNF
+    M = _reduce_row_module!(red, M; modulus = d)
+    return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = true)
+  end
+
+  return _fractional_ideal_from_basis_matrix(red, O, M, d; reduced = false)
 end
 
 function different(x::GenOrdElem)

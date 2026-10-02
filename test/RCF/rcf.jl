@@ -1,7 +1,111 @@
+@testset "Totally real and totally complex class fields" begin
+  Qx, x = polynomial_ring(QQ)
+
+  for (f, sig) in [(x^2 - 10, (4, 0)), (x^2 + 5, (0, 2)), (x^3 - 2, (1, 1))]
+    K, a = number_field(f)
+    C = hilbert_class_field(K)
+    @test signature(C) == sig
+    @test @inferred(is_totally_real(C)) == iszero(sig[2])
+    @test @inferred(is_totally_complex(C)) == iszero(sig[1])
+  end
+
+  K, a = number_field(x - 1)
+  OK = maximal_order(K)
+  C = ray_class_field(5 * OK)
+  @test signature(C) == (2, 0)
+  @test @inferred is_totally_real(C)
+  @test @inferred !is_totally_complex(C)
+
+  C = ray_class_field(5 * OK, real_places(K))
+  @test signature(C) == (0, 2)
+  @test @inferred !is_totally_real(C)
+  @test @inferred is_totally_complex(C)
+
+  C = ray_class_field(5 * OK, real_places(K), n_quo = 2)
+  @test signature(C) == (2, 0)
+  @test @inferred is_totally_real(C)
+  @test @inferred !is_totally_complex(C)
+end
+
+@testset "Class field subfields" begin
+  K = quadratic_field(3)[1]
+  for C in (hilbert_class_field(quadratic_field(13*17*37)[1]),
+            cyclotomic_field(ClassField, 13),
+            ray_class_field(5*maximal_order(K), real_places(K)))
+    @test_throws ArgumentError subfields(C; degre = 2)
+    @test_throws ArgumentError subfields(C; degree = 2, type = [2])
+    @test_throws ArgumentError subfields(C; degree = 2, type = [2], is_normal)
+    @test_throws ArgumentError subfields(C; degree = 2.0)
+    @test_throws ArgumentError subfields(C; type = 2)
+
+    # Enumerate all subfields of C/base_field(C) using subgroups, independently
+    # of stable_subgroups and its degree/type restrictions.
+    mQ = C.quotientmap
+    expected = [ray_class_field(C.rayclassgroupmap, mQ*q)
+                for (_, q) in subgroups(codomain(mQ); fun = quo)]
+    # No normality flag, followed by two ways to request normality over QQ
+    # (the field fixed by all automorphisms of each base field used here).
+    for normality in ((;), (; is_normal),
+                      (; is_normal = automorphism_list(base_field(C))))
+      all_fields = subfields(C; normality...)
+      reference = isempty(normality) ? expected : filter(is_normal, expected)
+      @test Set(all_fields) == Set(reference)
+      for d in divisors(degree(C))
+        actual = subfields(C; degree = Int(d), normality...)
+        @test Set(actual) == Set(filter(F -> degree(F) == d, reference))
+      end
+      for d in (3, Int(degree(C)) + 1)
+        @test Set(subfields(C; degree = d, normality...)) ==
+              Set(filter(F -> degree(F) == d, reference))
+      end
+      for d in (-2, -1, 0)
+        @test Set(subfields(C; degree = d, normality...)) == Set(reference)
+      end
+      for t in (Int[], [1], [2], [2, 2], [4], [3], [5])
+        actual = subfields(C; type = t, normality...)
+        @test Set(actual) == Set(filter(F -> is_isomorphic(codomain(F.quotientmap), abelian_group(t)), reference))
+      end
+    end
+
+    trivial = only(subfields(C; degree = 1))
+    @test is_normal(trivial)
+    @test only(subfields(trivial; is_normal)) == trivial
+    @test only(subfields(trivial)) == trivial
+    @test only(subfields(trivial; type = Int[])) == trivial
+    @test isempty(subfields(trivial; degree = 2))
+    @test isempty(subfields(trivial; type = [4]))
+    @test isempty(subfields(trivial; type = [4], is_normal))
+  end
+end
+
 @testset "RCF" begin
   Qx, x = polynomial_ring(QQ)
   k, a = number_field(x - 1, "a")
   Z = maximal_order(k)
+
+  @testset "quadratic Kummer generator" begin
+    R, mR = ray_class_group(5 * Z, real_places(k), n_quo = 2)
+    quotients = collect(index_p_subgroups(
+      R, ZZRingElem(2), (A, H) -> quo(A, H)[2]))
+    C = ray_class_field(mR, only(quotients))
+
+    @test !isdefined(C, :A)
+    @test !isdefined(C, :cyc)
+    generator = quadratic_kummer_generator(C)
+    @test base_ring(generator) === k
+    @test !is_square(evaluate(generator))
+    @test !isdefined(C, :A)
+    @test !isdefined(C, :cyc)
+
+    extension = kummer_extension(2, [generator])
+    for q in (3, 7, 11, 13, 17, 19)
+      P = first(prime_decomposition(Z, q))[1]
+      artin_image = C.quotientmap(preimage(C.rayclassgroupmap, P))
+      expected = mod(Int(artin_image[1]), 2)
+      observed = mod(Int(Hecke.canonical_frobenius(P, extension)[1]), 2)
+      @test observed == expected
+    end
+  end
 
   function doit(u::AbstractUnitRange, p::Int = 3)
     cnt = 0
@@ -168,6 +272,13 @@
   k, _ = number_field(x^3 - 69*x - 52)
   kk = number_field(ray_class_field(1*maximal_order(k), real_places(k)))
   @test degree(kk) == 2
+
+  k, a= wildanger_field(3, 13)
+  C = ray_class_field(7*maximal_order(k); n_quo = 3)
+  for p = [2, 3, 5, 7]
+    d = absolute_prime_decomposition_type(C, p)
+    @test sum(x[1]*x[2]*x[3] for x = d) == absolute_degree(C)
+  end
 end
 
 @testset "Jon Yard" begin
@@ -425,4 +536,3 @@ end
   d = absolute_discriminant(FacElem, H)
   @test evaluate(d) == discriminant(maximal_order(k))^9
 end
-

@@ -538,12 +538,18 @@ end
 #
 ################################################################################
 
-function minpoly(Kx::PolyRing, a::Union{LocalFieldElem, QadicFieldElem})
-  return squarefree_part(norm(gen(Kx)-a))
+function minpoly(Rx::PolyRing, a::Union{LocalFieldElem, QadicFieldElem})
+  @req base_ring(Rx) === base_field(parent(a)) "Polynomial ring must be over the base field"
+  if iszero(a)
+    return gen(Rx)
+  end
+  Kx, = polynomial_ring(parent(a), "t", cached = false)
+  return squarefree_part(norm(Rx, gen(Kx) - a))
 end
 
 function minpoly(a::Union{LocalFieldElem, QadicFieldElem})
-  return minpoly(polynomial_ring(parent(a), "t", cached = false)[1], a)
+  Kx, = polynomial_ring(base_field(parent(a)), "t", cached = false)
+  return minpoly(Kx, a)
 end
 
 function absolute_minpoly(a::LocalFieldElem)
@@ -745,6 +751,7 @@ Computes the $p$-adic exponential of $a$.
 function exp(a::LocalFieldElem)
   K = parent(a)
   p = prime(K)
+  is_zero(a) && return one(parent(a); precision = precision(a))
   if valuation(a) <= QQFieldElem(1, p-1)
     error("Exponential not defined!")
   end

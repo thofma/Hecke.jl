@@ -24,6 +24,20 @@
     @test !is_rational(gen(K) * a^0)
   end
 
+  @testset "hash" begin
+    Kns, _ = number_field([x^2 - 2])
+    for k in (K, Kns)
+      kt, t = k["t"]
+      M, (c, d) = number_field([t^2 - 3, t^3 - 5])
+      for e in (zero(M), M(2), c + d + M(gens(k)[1]))
+        e_copy = deepcopy(e)
+        @test hash(e) == hash(e_copy)
+        @test hash(e, UInt(123)) == hash(e_copy, UInt(123))
+        @test Dict(e => 1)[e_copy] == 1
+      end
+    end
+  end
+
   @testset "consistency check" begin
     # Q(sqrt(3)) lies inside Q(sqrt[4](3))
     @test_throws ErrorException number_field([y^2 - 3, y^4 - 3]; cached = false)
