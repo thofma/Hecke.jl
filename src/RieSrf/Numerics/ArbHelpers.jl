@@ -251,3 +251,24 @@ function _input_precision(M::ComplexMatrix)
   r == 0 && return p
   return clamp(floor(Int, -log2(r)), 64, p)
 end
+
+# _arb_max!: z <- max(x, y) as balls, precision from parent(z). Nemo has no
+# max on ArbFieldElem.
+_arb_max!(z::ArbFieldElem, x::ArbFieldElem, y::ArbFieldElem) =
+  ccall((:arb_max, libflint), Nothing,
+        (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int),
+        z, x, y, precision(parent(z)))
+
+# _acb_mul_2exp!: z <- x * 2^e, exact (no precision loss). Nemo has no
+# mul_2exp on acb.
+_acb_mul_2exp!(z::AcbFieldElem, x::AcbFieldElem, e::Int) =
+  ccall((:acb_mul_2exp_si, libflint), Nothing,
+        (Ref{AcbFieldElem}, Ref{AcbFieldElem}, Int), z, x, e)
+
+# _arb_mid_2exp: integer e with |midpoint(x)| < 2^e, computed from the arf
+# midpoint without overflow (safe for exponents far beyond Float64 range).
+# Very negative (< -2^60) for a zero midpoint. As in _arb_mid_f64, the arb_t
+# starts with its midpoint arf_t, so the arb can be passed where an arf_t is
+# expected.
+_arb_mid_2exp(x::ArbFieldElem) =
+  ccall((:arf_abs_bound_lt_2exp_si, libflint), Int, (Ref{ArbFieldElem},), x)

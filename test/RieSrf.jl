@@ -6,6 +6,7 @@
   include("RieSrf/TestHelpers.jl")
   include("RieSrf/Numerics/Auxiliary.jl")
   include("RieSrf/Numerics/IntegrationParameters.jl")
+  include("RieSrf/Numerics/NumericalKernel.jl")
   include("RieSrf/Paths/CPath.jl")
   include("RieSrf/Paths/Topology.jl")
   include("RieSrf/Paths/AnalyticContinuation.jl")
@@ -24,4 +25,6 @@
   include("RieSrf/Endomorphisms/HeuristicEndomorphisms.jl")
   include("RieSrf/Endomorphisms/Algebraization.jl")
   include("RieSrf/Endomorphisms/EndomorphismStructure.jl")
+  include("RieSrf/Reconstruction/ReconstructCurvesG123.jl")
+  include("RieSrf/Reconstruction/ReconstructG4.jl")
 end
