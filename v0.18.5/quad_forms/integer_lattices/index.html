@@ -1,0 +1,2319 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      
+        <link rel="prev" href="../lattices/">
+      
+      
+        <link rel="next" href="../genusherm/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.4">
+    
+    
+      
+        <title>Integer lattices - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.240905d7.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#integer-lattices" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Integer lattices
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Documentation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+          Number fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Number fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        Number field operations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        Complex embeddings
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+          Function fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Function fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        Creation and basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        Internals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        Degree localization
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+          Orders
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_3">
+          <span class="md-nav__icon md-icon"></span>
+          Orders
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        Ideals
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        Fractional Ideals
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+          Quadratic and hermitian forms
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Quadratic and hermitian forms
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../basics/" class="md-nav__link">
+        Spaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lattices/" class="md-nav__link">
+        Lattices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Integer lattices
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Integer lattices
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-integer-lattices" class="md-nav__link">
+    Creation of integer lattices
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of integer lattices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-a-gram-matrix" class="md-nav__link">
+    From a gram matrix
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-quadratic-space" class="md-nav__link">
+    In a quadratic space
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#special-lattices" class="md-nav__link">
+    Special lattices
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-a-genus" class="md-nav__link">
+    From a genus
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rescaling-the-quadratic-form" class="md-nav__link">
+    Rescaling the Quadratic Form
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+    <nav class="md-nav" aria-label="Invariants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-genus" class="md-nav__link">
+    The Genus
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#real-invariants" class="md-nav__link">
+    Real invariants
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isometries" class="md-nav__link">
+    Isometries
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../genusherm/" class="md-nav__link">
+        Genera for hermitian lattices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Zgenera/" class="md-nav__link">
+        Genera for integer lattices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discriminant_group/" class="md-nav__link">
+        Discriminant groups
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+          Abelian groups
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Abelian groups
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/elements/" class="md-nav__link">
+        Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/maps/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../abelian/structural/" class="md-nav__link">
+        Structural Computations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+          Class fields
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_6">
+          <span class="md-nav__icon md-icon"></span>
+          Class fields
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+          Misc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Misc
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        Maps
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        Factored Elements
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        Sparse Linear Algebra
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        Pseudo-Matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        Conjugacy of integral matrices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        Misc
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+          Extra features
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_8">
+          <span class="md-nav__icon md-icon"></span>
+          Extra features
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/macros/" class="md-nav__link">
+        Macros
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        References
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+          Developer
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_11">
+          <span class="md-nav__icon md-icon"></span>
+          Developer
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        Testing
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation-of-integer-lattices" class="md-nav__link">
+    Creation of integer lattices
+  </a>
+  
+    <nav class="md-nav" aria-label="Creation of integer lattices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-a-gram-matrix" class="md-nav__link">
+    From a gram matrix
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-quadratic-space" class="md-nav__link">
+    In a quadratic space
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#special-lattices" class="md-nav__link">
+    Special lattices
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-a-genus" class="md-nav__link">
+    From a genus
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rescaling-the-quadratic-form" class="md-nav__link">
+    Rescaling the Quadratic Form
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attributes" class="md-nav__link">
+    Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    Invariants
+  </a>
+  
+    <nav class="md-nav" aria-label="Invariants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-genus" class="md-nav__link">
+    The Genus
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#real-invariants" class="md-nav__link">
+    Real invariants
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isometries" class="md-nav__link">
+    Isometries
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<p><a id='Integer-Lattices'></a></p>
+<p><a id='Integer-Lattices-1'></a></p>
+<h1 id="integer-lattices">Integer Lattices</h1>
+<p>An integer lattice <script type="math/tex">L</script> is a finitely generated <script type="math/tex">\mathbb{Z}</script>-submodule of a quadratic vector space <script type="math/tex">V = \mathbb{Q}^n</script> over the rational numbers. Integer lattices are also known as quadratic forms over the integers. We will refer to them as <script type="math/tex">\mathbb{Z}</script>-lattices.</p>
+<p>A <script type="math/tex">\mathbb{Z}</script>-lattice <script type="math/tex">L</script> has the type <code>ZLat</code>. It is given in terms of its ambient quadratic space <script type="math/tex">V</script> together with a basis matrix <script type="math/tex">B</script> whose rows span <script type="math/tex">L</script>, i.e. <script type="math/tex">L = \mathbb{Z}^r B</script> where <script type="math/tex">r</script> is the (<script type="math/tex">\mathbb{Z}</script>-module) rank of <script type="math/tex">L</script>.</p>
+<p>To access <script type="math/tex">V</script> and <script type="math/tex">B</script> see <a href="./#ambient_space-Tuple{ZLat}"><code>ambient_space(L::ZLat)</code></a> and <a href="./#basis_matrix-Tuple{ZLat}"><code>basis_matrix(L::ZLat)</code></a>.</p>
+<p><a id='Creation-of-integer-lattices'></a></p>
+<p><a id='Creation-of-integer-lattices-1'></a></p>
+<h2 id="creation-of-integer-lattices">Creation of integer lattices</h2>
+<p><a id='From-a-gram-matrix'></a></p>
+<p><a id='From-a-gram-matrix-1'></a></p>
+<h3 id="from-a-gram-matrix">From a gram matrix</h3>
+<p><a id='Zlattice-Tuple{QQMatrix}' href='#Zlattice-Tuple{QQMatrix}'>#</a>
+<strong><code>Zlattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Zlattice</span><span class="p">([</span><span class="n">B</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">];</span><span class="w"> </span><span class="n">gram</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Return the Z-lattice with basis matrix <script type="math/tex">B</script> inside the quadratic space with Gram matrix <code>gram</code>.</p>
+<p>If the keyword <code>gram</code> is not specified, the Gram matrix is the identity matrix. If <script type="math/tex">B</script> is not specified, the basis matrix is the identity matrix.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="o">//</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">])</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">gram</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="mi">2</span><span class="p">]));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L32' class='documenter-source'>source</a><br></p>
+<p><a id='In-a-quadratic-space'></a></p>
+<p><a id='In-a-quadratic-space-1'></a></p>
+<h3 id="in-a-quadratic-space">In a quadratic space</h3>
+<p><a id='lattice-Tuple{Hecke.QuadSpace{QQField, QQMatrix}, MatElem}' href='#lattice-Tuple{Hecke.QuadSpace{QQField, QQMatrix}, MatElem}'>#</a>
+<strong><code>lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lattice</span><span class="p">(</span><span class="n">V</span><span class="o">::</span><span class="kt">AbstractSpace</span><span class="p">,</span><span class="w"> </span><span class="n">basis</span><span class="o">::</span><span class="kt">MatElem</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="n">check</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">AbstractLat</span>
+</code></pre></div>
+<p>Given an ambient space <code>V</code> and a matrix <code>basis</code>, return the lattice spanned by the rows of <code>basis</code> inside <code>V</code>. If <code>V</code> is hermitian (resp. quadratic) then the output is a hermitian (resp. quadratic) lattice.</p>
+<p>By default, <code>basis</code> is checked to be of full rank. This test can be disabled by setting <code>check</code> to false.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L371' class='documenter-source'>source</a><br></p>
+<p><a id='Special-lattices'></a></p>
+<p><a id='Special-lattices-1'></a></p>
+<h3 id="special-lattices">Special lattices</h3>
+<p><a id='root_lattice-Tuple{Symbol, Int64}' href='#root_lattice-Tuple{Symbol, Int64}'>#</a>
+<strong><code>root_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">root_lattice</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="kt">Symbol</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the root lattice of type <code>R</code> given by <code>:A</code>, <code>:D</code> or <code>:E</code> with parameter <code>n</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L626' class='documenter-source'>source</a><br></p>
+<p><a id='hyperbolic_plane_lattice-Tuple{Union{Int64, ZZRingElem}}' href='#hyperbolic_plane_lattice-Tuple{Union{Int64, ZZRingElem}}'>#</a>
+<strong><code>hyperbolic_plane_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hyperbolic_plane_lattice</span><span class="p">(</span><span class="n">n</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the hyperbolic plane with intersection form of scale <code>n</code>, that is, the unique (up to isometry) even unimodular hyperbolic <script type="math/tex">\mathbb Z</script>-lattice of rank 2, rescaled by <code>n</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hyperbolic_plane_lattice</span><span class="p">(</span><span class="mi">6</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">[0   6]</span>
+<span class="go">[6   0]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hyperbolic_plane_lattice</span><span class="p">(</span><span class="n">ZZ</span><span class="p">(</span><span class="o">-</span><span class="mi">13</span><span class="p">));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">[  0   -13]</span>
+<span class="go">[-13     0]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L727' class='documenter-source'>source</a><br></p>
+<p><a id='Zlattice-Tuple{Symbol, Union{Int64, ZZRingElem}}' href='#Zlattice-Tuple{Symbol, Union{Int64, ZZRingElem}}'>#</a>
+<strong><code>Zlattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Zlattice</span><span class="p">(</span><span class="n">S</span><span class="o">::</span><span class="kt">Symbol</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Zlat</span>
+</code></pre></div>
+<p>Given <code>S = :H</code> or <code>S = :U</code>, return a <script type="math/tex">\mathbb Z</script>-lattice admitting <script type="math/tex">n*J_2</script> as Gram matrix in some basis, where <script type="math/tex">J_2</script> is the 2-by-2 matrix with 0's on the main diagonal and 1's elsewhere.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L713' class='documenter-source'>source</a><br></p>
+<p><a id='leech_lattice' href='#leech_lattice'>#</a>
+<strong><code>leech_lattice</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">leech_lattice</span><span class="p">()</span>
+</code></pre></div>
+<p>Return the Leech lattice.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2476' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>leech_lattice(niemeier_lattice::ZLat) -&gt; ZLat, QQMatrix, Int
+</code></pre></div>
+<p>Return a triple <code>L, v, h</code> where <code>L</code> is the Leech lattice.</p>
+<p>L is an <code>h</code>-neighbor of the Niemeier lattice <code>N</code> with respect to <code>v</code>. This means that <code>L / L ∩ N  ≅ ℤ / h ℤ</code>. Here <code>h</code> is the Coxeter number of the Niemeier lattice.</p>
+<p>This implements the 23 holy constructions of the Leech lattice in <a href="../../references/#CS99">J. H. Conway, N. J. A. Sloane (1999)</a>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">gram</span><span class="o">=</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">identity_matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="mi">24</span><span class="p">));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maximal_even_lattice</span><span class="p">(</span><span class="n">R</span><span class="p">)</span><span class="w"> </span><span class="c"># Some Niemeier lattice</span>
+<span class="go">Quadratic lattice of rank 24 and degree 24 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">minimum</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="go">2</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">det</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="go">1</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">leech_lattice</span><span class="p">(</span><span class="n">N</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">minimum</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">4</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">det</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">1</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">index</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">intersect</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">))</span>
+<span class="go">true</span>
+</code></pre></div>
+<p>We illustrate how the Leech lattice is constructed from <code>N</code>, <code>h</code> and <code>v</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">Zmodh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">residue_ring</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">V</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ambient_space</span><span class="p">(</span><span class="n">N</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">vG</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">map_entries</span><span class="p">(</span><span class="n">x</span><span class="o">-&gt;</span><span class="n">Zmodh</span><span class="p">(</span><span class="n">ZZ</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span><span class="w"> </span><span class="n">inner_product</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">N</span><span class="p">)));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">LN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transpose</span><span class="p">(</span><span class="n">lift</span><span class="p">(</span><span class="n">kernel</span><span class="p">(</span><span class="n">vG</span><span class="p">)[</span><span class="mi">2</span><span class="p">]))</span><span class="o">*</span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">N</span><span class="p">);</span><span class="w"> </span><span class="c"># vectors whose inner product with `v` is divisible by `h`.</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">lattice</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">LN</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">intersect</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gensL</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vcat</span><span class="p">(</span><span class="n">LN</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">//</span><span class="n">h</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">v</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">lattice</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="w"> </span><span class="n">gensL</span><span class="p">,</span><span class="w"> </span><span class="n">isbasis</span><span class="o">=</span><span class="nb">false</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">L</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2487' class='documenter-source'>source</a><br></p>
+<p><a id='From-a-genus'></a></p>
+<p><a id='From-a-genus-1'></a></p>
+<h3 id="from-a-genus">From a genus</h3>
+<p>Integer lattices can be created as representatives of a genus. See (<a href="../Zgenera/#representative-Tuple{ZGenus}"><code>representative(L::ZGenus)</code></a>)</p>
+<p><a id='Rescaling-the-Quadratic-Form'></a></p>
+<p><a id='Rescaling-the-Quadratic-Form-1'></a></p>
+<h3 id="rescaling-the-quadratic-form">Rescaling the Quadratic Form</h3>
+<p><a id='rescale-Tuple{ZLat, Union{Integer, QQFieldElem, ZZRingElem, Rational}}' href='#rescale-Tuple{ZLat, Union{Integer, QQFieldElem, ZZRingElem, Rational}}'>#</a>
+<strong><code>rescale</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rescale</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Return the lattice <code>L</code> in the quadratic space with form <code>r \Phi</code>.</p>
+<p><strong>Examples</strong></p>
+<p>This can be useful to apply methods intended for positive definite lattices.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">gram</span><span class="o">=</span><span class="n">ZZ</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">Quadratic lattice of rank 2 and degree 2 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">shortest_vectors</span><span class="p">(</span><span class="n">rescale</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="go">2-element Vector{Vector{ZZRingElem}}:</span>
+<span class="go"> [0, 1]</span>
+<span class="go"> [1, 0]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L99' class='documenter-source'>source</a><br></p>
+<p><a id='Attributes'></a></p>
+<p><a id='Attributes-1'></a></p>
+<h2 id="attributes">Attributes</h2>
+<p><a id='ambient_space-Tuple{ZLat}' href='#ambient_space-Tuple{ZLat}'>#</a>
+<strong><code>ambient_space</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ambient_space</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">AbstractSpace</span>
+</code></pre></div>
+<p>Return the ambient space of the lattice <code>L</code>. If the ambient space is not known, an error is raised.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L54' class='documenter-source'>source</a><br></p>
+<p><a id='basis_matrix-Tuple{ZLat}' href='#basis_matrix-Tuple{ZLat}'>#</a>
+<strong><code>basis_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">basis_matrix</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the basis matrix <script type="math/tex">B</script> of the integer lattice <script type="math/tex">L</script>.</p>
+<p>The lattice is given by the row span of <script type="math/tex">B</script> seen inside of the ambient quadratic space of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L10' class='documenter-source'>source</a><br></p>
+<p><a id='gram_matrix-Tuple{ZLat}' href='#gram_matrix-Tuple{ZLat}'>#</a>
+<strong><code>gram_matrix</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">gram_matrix</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQMatrix</span>
+</code></pre></div>
+<p>Return the gram matrix of <script type="math/tex">L</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="mi">2</span><span class="p">]));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">[ 4   -2]</span>
+<span class="go">[-2    5]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L130' class='documenter-source'>source</a><br></p>
+<p><a id='rational_span-Tuple{ZLat}' href='#rational_span-Tuple{ZLat}'>#</a>
+<strong><code>rational_span</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rational_span</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QuadSpace</span>
+</code></pre></div>
+<p>Return the rational span of <script type="math/tex">L</script>, which is the quadratic space with Gram matrix equal to <code>gram_matrix(L)</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">ZZ</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="mi">2</span><span class="p">]));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">rational_span</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">Quadratic space over</span>
+<span class="go">Rational Field</span>
+<span class="go">with Gram matrix</span>
+<span class="go">[4 -2; -2 5]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L169' class='documenter-source'>source</a><br></p>
+<p><a id='base_ring-Tuple{ZLat}' href='#base_ring-Tuple{ZLat}'>#</a>
+<strong><code>base_ring</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">base_ring</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">PMat</span><span class="p">)</span>
+</code></pre></div>
+<p>The <code>PMat</code> <script type="math/tex">M</script> defines an <script type="math/tex">R</script>-module for some maximal order <script type="math/tex">R</script>. This function returns the <script type="math/tex">R</script> that was used to defined <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/NumFieldOrd/NfOrd/LinearAlgebra.jl#L263' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">base_ring</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Ring</span>
+</code></pre></div>
+<p>Return the order over which the lattice <code>L</code> is defined.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L149' class='documenter-source'>source</a><br></p>
+<p><a id='base_field-Tuple{ZLat}' href='#base_field-Tuple{ZLat}'>#</a>
+<strong><code>base_field</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">base_field</span><span class="p">(</span><span class="n">E</span><span class="o">::</span><span class="kt">EllCrv</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Field</span>
+</code></pre></div>
+<p>Return the base field over which <code>E</code> is defined.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/EllCrv/EllCrv.jl#L290' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>base_field(C::HypellCrv) -&gt; Field
+</code></pre></div>
+<p>Return the base field over which <code>C</code> is defined.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/HypellCrv/HypellCrv.jl#L182' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">base_field</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Field</span>
+</code></pre></div>
+<p>Return the algebra over which the rational span of the lattice <code>L</code> is defined.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L142' class='documenter-source'>source</a><br></p>
+<p><a id='Invariants'></a></p>
+<p><a id='Invariants-1'></a></p>
+<h2 id="invariants">Invariants</h2>
+<p><a id='rank-Tuple{ZLat}' href='#rank-Tuple{ZLat}'>#</a>
+<strong><code>rank</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">rank</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Int</span>
+</code></pre></div>
+<p>Return the rank of the underlying module of the lattice <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L177' class='documenter-source'>source</a><br></p>
+<p><a id='det-Tuple{ZLat}' href='#det-Tuple{ZLat}'>#</a>
+<strong><code>det</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">det</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the determinant of the gram matrix of <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L857' class='documenter-source'>source</a><br></p>
+<p><a id='scale-Tuple{ZLat}' href='#scale-Tuple{ZLat}'>#</a>
+<strong><code>scale</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">scale</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the scale of <code>L</code>.</p>
+<p>The scale of <code>L</code> is defined as the positive generator of the <script type="math/tex">\mathbb Z</script>-ideal generated by <script type="math/tex">\{\Phi(x, y) : x, y \in L\}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L772' class='documenter-source'>source</a><br></p>
+<p><a id='norm-Tuple{ZLat}' href='#norm-Tuple{ZLat}'>#</a>
+<strong><code>norm</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">norm</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the norm of <code>L</code>.</p>
+<p>The norm of <code>L</code> is defined as the positive generator of the <script type="math/tex">\mathbb Z</script>- ideal generated by <script type="math/tex">\{\Phi(x,x) : x \in L\}</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L801' class='documenter-source'>source</a><br></p>
+<p><a id='iseven-Tuple{ZLat}' href='#iseven-Tuple{ZLat}'>#</a>
+<strong><code>iseven</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">iseven</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether <code>L</code> is even.</p>
+<p>An integer lattice <code>L</code> in the rational quadratic space <script type="math/tex">(V,\Phi)</script> is called even if <script type="math/tex">\Phi(x,x) \in 2\mathbb{Z}</script> for all <script type="math/tex">x in L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L828' class='documenter-source'>source</a><br></p>
+<p><a id='is_integral-Tuple{ZLat}' href='#is_integral-Tuple{ZLat}'>#</a>
+<strong><code>is_integral</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_integral</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the lattice <code>L</code> is integral.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L777' class='documenter-source'>source</a><br></p>
+<p><a id='is_primary_with_prime-Tuple{ZLat}' href='#is_primary_with_prime-Tuple{ZLat}'>#</a>
+<strong><code>is_primary_with_prime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_primary_with_prime</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">ZZRingElem</span>
+</code></pre></div>
+<p>Given a <script type="math/tex">\mathbb Z</script>-lattice <code>L</code>, return whether <code>L</code> is primary, that is whether <code>L</code> is integral and its discriminant group (see <a href="../discriminant_group/#discriminant_group-Tuple{ZLat}"><code>discriminant_group</code></a>) is a <code>p</code>-group for some prime number <code>p</code>. In case it is, <code>p</code> is also returned as second output.</p>
+<p>Note that for unimodular lattices, this function returns <code>(true, 1)</code>. If the lattice is not primary, the second return value is <code>-1</code> by default.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2116' class='documenter-source'>source</a><br></p>
+<p><a id='is_primary-Tuple{ZLat, Union{Integer, ZZRingElem}}' href='#is_primary-Tuple{ZLat, Union{Integer, ZZRingElem}}'>#</a>
+<strong><code>is_primary</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_primary</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Integer</span><span class="p">,</span><span class="w"> </span><span class="kt">ZZRingElem</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given an integral <script type="math/tex">\mathbb Z</script>-lattice <code>L</code> and a prime number <code>p</code>, return whether <code>L</code> is <code>p</code>-primary, that is whether its discriminant group (see <a href="../discriminant_group/#discriminant_group-Tuple{ZLat}"><code>discriminant_group</code></a>) is a <code>p</code>-group.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2140' class='documenter-source'>source</a><br></p>
+<p><a id='is_elementary_with_prime-Tuple{ZLat}' href='#is_elementary_with_prime-Tuple{ZLat}'>#</a>
+<strong><code>is_elementary_with_prime</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_elementary_with_prime</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">ZZRingElem</span>
+</code></pre></div>
+<p>Given a <script type="math/tex">\mathbb Z</script>-lattice <code>L</code>, return whether <code>L</code> is elementary, that is whether <code>L</code> is integral and its discriminant group (see <a href="../discriminant_group/#discriminant_group-Tuple{ZLat}"><code>discriminant_group</code></a>) is an elemenentary <code>p</code>-group for some prime number <code>p</code>. In case it is, <code>p</code> is also returned as second output.</p>
+<p>Note that for unimodular lattices, this function returns <code>(true, 1)</code>. If the lattice is not elementary, the second return value is <code>-1</code> by default.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2161' class='documenter-source'>source</a><br></p>
+<p><a id='is_elementary-Tuple{ZLat, Union{Integer, ZZRingElem}}' href='#is_elementary-Tuple{ZLat, Union{Integer, ZZRingElem}}'>#</a>
+<strong><code>is_elementary</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_elementary</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Integer</span><span class="p">,</span><span class="w"> </span><span class="kt">ZZRingElem</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given an integral <script type="math/tex">\mathbb Z</script>-lattice <code>L</code> and a prime number <code>p</code>, return whether <code>L</code> is <code>p</code>-elementary, that is whether its discriminant group (see <a href="../discriminant_group/#discriminant_group-Tuple{ZLat}"><code>discriminant_group</code></a>) is an elementary <code>p</code>-group.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2181' class='documenter-source'>source</a><br></p>
+<p><a id='The-Genus'></a></p>
+<p><a id='The-Genus-1'></a></p>
+<h3 id="the-genus">The Genus</h3>
+<p>For an integral lattice The genus of an integer lattice collects its local invariants. <a href="../Zgenera/#genus-Tuple{ZLat}"><code>genus(::ZLat)</code></a></p>
+<p><a id='mass-Tuple{ZLat}' href='#mass-Tuple{ZLat}'>#</a>
+<strong><code>mass</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">mass</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the mass of the genus of <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1003' class='documenter-source'>source</a><br></p>
+<p><a id='genus_representatives-Tuple{ZLat}' href='#genus_representatives-Tuple{ZLat}'>#</a>
+<strong><code>genus_representatives</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">genus_representatives</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">}</span>
+</code></pre></div>
+<p>Return representatives for the isometry classes in the genus of <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1019' class='documenter-source'>source</a><br></p>
+<p><a id='Real-invariants'></a></p>
+<p><a id='Real-invariants-1'></a></p>
+<h3 id="real-invariants">Real invariants</h3>
+<p><a id='signature_tuple-Tuple{ZLat}' href='#signature_tuple-Tuple{ZLat}'>#</a>
+<strong><code>signature_tuple</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">signature_tuple</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span><span class="kt">Int</span><span class="p">,</span><span class="kt">Int</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the number of (positive, zero, negative) inertia of <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L882' class='documenter-source'>source</a><br></p>
+<p><a id='is_positive_definite-Tuple{ZLat}' href='#is_positive_definite-Tuple{ZLat}'>#</a>
+<strong><code>is_positive_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_positive_definite</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the rational span of the lattice <code>L</code> is positive definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L528' class='documenter-source'>source</a><br></p>
+<p><a id='is_negative_definite-Tuple{ZLat}' href='#is_negative_definite-Tuple{ZLat}'>#</a>
+<strong><code>is_negative_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_negative_definite</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the rational span of the lattice <code>L</code> is negative definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L535' class='documenter-source'>source</a><br></p>
+<p><a id='is_definite-Tuple{ZLat}' href='#is_definite-Tuple{ZLat}'>#</a>
+<strong><code>is_definite</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_definite</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the rational span of the lattice <code>L</code> is definite.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L542' class='documenter-source'>source</a><br></p>
+<p><a id='Isometries'></a></p>
+<p><a id='Isometries-1'></a></p>
+<h2 id="isometries">Isometries</h2>
+<p><a id='automorphism_group_generators-Tuple{ZLat}' href='#automorphism_group_generators-Tuple{ZLat}'>#</a>
+<strong><code>automorphism_group_generators</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">automorphism_group_generators</span><span class="p">(</span><span class="n">E</span><span class="o">::</span><span class="kt">EllCrv</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">EllCrvIso</span><span class="p">}</span>
+</code></pre></div>
+<p>Return generators of the automorphism group of <script type="math/tex">E</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/EllCrv/Isomorphisms.jl#L444' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">automorphism_group_generators</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">;</span><span class="w"> </span><span class="n">ambient_representation</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span>
+<span class="w">                                                      </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">MatElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a definite lattice <code>L</code>, return generators for the automorphism group of <code>L</code>. If <code>ambient_representation == true</code> (the default), the transformations are represented with respect to the ambient space of <code>L</code>. Otherwise, the transformations are represented with respect to the (pseudo-)basis of <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L1571' class='documenter-source'>source</a><br></p>
+<p><a id='automorphism_group_order-Tuple{ZLat}' href='#automorphism_group_order-Tuple{ZLat}'>#</a>
+<strong><code>automorphism_group_order</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">automorphism_group_order</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Int</span>
+</code></pre></div>
+<p>Given a definite lattice <code>L</code>, return the order of the automorphism group of <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L1620' class='documenter-source'>source</a><br></p>
+<p><a id='is_isometric-Tuple{ZLat, ZLat}' href='#is_isometric-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>is_isometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_isometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the lattices <code>L</code> and <code>M</code> are isometric.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L1638' class='documenter-source'>source</a><br></p>
+<p><a id='is_locally_isometric-Tuple{ZLat, ZLat, Int64}' href='#is_locally_isometric-Tuple{ZLat, ZLat, Int64}'>#</a>
+<strong><code>is_locally_isometric</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_locally_isometric</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether <code>L</code> and <code>M</code> are isometric over the <code>p</code>-adic integers.</p>
+<p>i.e. whether <script type="math/tex">L \otimes \Z_p \cong M\otimes \Z_p</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L944' class='documenter-source'>source</a><br></p>
+<p><a id='Root-lattices'></a></p>
+<p><a id='Root-lattices-1'></a></p>
+<h1 id="root-lattices">Root lattices</h1>
+<p><a id='root_lattice_recognition-Tuple{ZLat}' href='#root_lattice_recognition-Tuple{ZLat}'>#</a>
+<strong><code>root_lattice_recognition</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">root_lattice_recognition</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the ADE type of the root sublattice of <code>L</code>.</p>
+<p>Input:</p>
+<p><code>L</code> – a definite and integral <script type="math/tex">\mathbb{Z}</script>-lattice.</p>
+<p>Output:</p>
+<p>Two lists, the first one containing the ADE types and the second one the irreducible root sublattices.</p>
+<p>For more recognizable gram matrices use <a href="./#root_lattice_recognition_fundamental-Tuple{ZLat}"><code>root_lattice_recognition_fundamental</code></a>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">gram</span><span class="o">=</span><span class="n">ZZ</span><span class="p">[</span><span class="mi">4</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="mi">8</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">5</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="mi">5</span><span class="w">  </span><span class="mi">8</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">3</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">8</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">6</span><span class="w">  </span><span class="mi">9</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">3</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="mi">6</span><span class="w">  </span><span class="mi">5</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="mi">5</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="mi">5</span><span class="w">  </span><span class="mi">8</span><span class="p">])</span>
+<span class="go">Quadratic lattice of rank 8 and degree 8 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root_lattice_recognition</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
+<span class="go">([(:A, 1), (:D, 6)], ZLat[Quadratic lattice of rank 1 and degree 8 over the rationals, Quadratic lattice of rank 6 and degree 8 over the rationals])</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1568' class='documenter-source'>source</a><br></p>
+<p><a id='root_lattice_recognition_fundamental-Tuple{ZLat}' href='#root_lattice_recognition_fundamental-Tuple{ZLat}'>#</a>
+<strong><code>root_lattice_recognition_fundamental</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">root_lattice_recognition_fundamental</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the ADE type of the root sublattice of <code>L</code> as well as the corresponding irreducible root sublattices with basis given by a fundamental root system.</p>
+<p>Input:</p>
+<p><code>L</code> – a definite and integral <script type="math/tex">\mathbb Z</script>-lattice.</p>
+<p>Output:</p>
+<ul>
+<li>the root sublattice, with basis given by a fundamental root system</li>
+<li>the ADE types</li>
+<li>a Vector consisting of the irreducible root sublattices.</li>
+</ul>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">gram</span><span class="o">=</span><span class="n">ZZ</span><span class="p">[</span><span class="mi">4</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="mi">8</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">5</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">6</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="mi">5</span><span class="w">  </span><span class="mi">8</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">3</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">8</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="mi">12</span><span class="w"> </span><span class="mi">6</span><span class="w">  </span><span class="mi">9</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">3</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">5</span><span class="w"> </span><span class="mi">4</span><span class="w">  </span><span class="mi">6</span><span class="w"> </span><span class="mi">6</span><span class="w">  </span><span class="mi">5</span><span class="p">;</span>
+<span class="w">                            </span><span class="mi">0</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="mi">5</span><span class="w">  </span><span class="mi">8</span><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">9</span><span class="w"> </span><span class="mi">5</span><span class="w">  </span><span class="mi">8</span><span class="p">])</span>
+<span class="go">Quadratic lattice of rank 8 and degree 8 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root_lattice_recognition_fundamental</span><span class="p">(</span><span class="n">L</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">R</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="go">[2    0    0    0    0    0    0]</span>
+<span class="go">[0    2    0   -1    0    0    0]</span>
+<span class="go">[0    0    2   -1    0    0    0]</span>
+<span class="go">[0   -1   -1    2   -1    0    0]</span>
+<span class="go">[0    0    0   -1    2   -1    0]</span>
+<span class="go">[0    0    0    0   -1    2   -1]</span>
+<span class="go">[0    0    0    0    0   -1    2]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1738' class='documenter-source'>source</a><br></p>
+<p><a id='ADE_type-Tuple{MatrixElem}' href='#ADE_type-Tuple{MatrixElem}'>#</a>
+<strong><code>ADE_type</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">ADE_type</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">MatrixElem</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Symbol</span><span class="p">,</span><span class="kt">Int64</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the type of the irreducible root lattice with gram matrix <code>G</code>.</p>
+<p>See also <a href="./#root_lattice_recognition-Tuple{ZLat}"><code>root_lattice_recognition</code></a>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">Hecke</span><span class="o">.</span><span class="n">ADE_type</span><span class="p">(</span><span class="n">gram_matrix</span><span class="p">(</span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:A</span><span class="p">,</span><span class="mi">3</span><span class="p">)))</span>
+<span class="go">(:A, 3)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1799' class='documenter-source'>source</a><br></p>
+<p><a id='coxeter_number-Tuple{Symbol, Any}' href='#coxeter_number-Tuple{Symbol, Any}'>#</a>
+<strong><code>coxeter_number</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">coxeter_number</span><span class="p">(</span><span class="n">ADE</span><span class="o">::</span><span class="kt">Symbol</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Int</span>
+</code></pre></div>
+<p>Return the Coxeter number of the corresponding ADE root lattice.</p>
+<p>If <script type="math/tex">L</script> is a root lattice and <script type="math/tex">R</script> its set of roots, then the Coxeter number <script type="math/tex">h</script> is <script type="math/tex">|R|/n</script> where <code>n</code> is the rank of <script type="math/tex">L</script>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">coxeter_number</span><span class="p">(</span><span class="ss">:D</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
+<span class="go">6</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2411' class='documenter-source'>source</a><br></p>
+<p><a id='highest_root-Tuple{Symbol, Any}' href='#highest_root-Tuple{Symbol, Any}'>#</a>
+<strong><code>highest_root</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">highest_root</span><span class="p">(</span><span class="n">ADE</span><span class="o">::</span><span class="kt">Symbol</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZZMatrix</span>
+</code></pre></div>
+<p>Return coordinates of the highest root of <code>root_lattice(ADE, n)</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">highest_root</span><span class="p">(</span><span class="ss">:E</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span>
+<span class="go">[1   2   3   2   1   2]</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2440' class='documenter-source'>source</a><br></p>
+<p><a id='Module-operations'></a></p>
+<p><a id='Module-operations-1'></a></p>
+<h2 id="module-operations">Module operations</h2>
+<p>Most module operations assume that the lattices live in the same ambient space. For instance only lattices in the same ambient space compare.</p>
+<p><a id='==-Tuple{ZLat, ZLat}' href='#==-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>==</code></strong> &mdash; <em>Method</em>.</p>
+<p>Return <code>true</code> if both lattices have the same ambient quadratic space and the same underlying module.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1279' class='documenter-source'>source</a><br></p>
+<p><a id='is_sublattice-Tuple{ZLat, ZLat}' href='#is_sublattice-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>is_sublattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_sublattice</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether <code>M</code> is a sublattice of the lattice <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L197' class='documenter-source'>source</a><br></p>
+<p><a id='is_sublattice_with_relations-Tuple{ZLat, ZLat}' href='#is_sublattice_with_relations-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>is_sublattice_with_relations</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_sublattice_with_relations</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">QQMatrix</span>
+</code></pre></div>
+<p>Returns whether <script type="math/tex">N</script> is a sublattice of <script type="math/tex">M</script>. In this case, the second return value is a matrix <script type="math/tex">B</script> such that <script type="math/tex">B B_M = B_N</script>, where <script type="math/tex">B_M</script> and <script type="math/tex">B_N</script> are the basis matrices of <script type="math/tex">M</script> and <script type="math/tex">N</script> respectively.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L599' class='documenter-source'>source</a><br></p>
+<p><a id='+-Tuple{ZLat, ZLat}' href='#+-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>+</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="o">+</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">AbstractLat</span>
+</code></pre></div>
+<p>Return the sum of the lattices <code>L</code> and <code>M</code>.</p>
+<p>The lattices <code>L</code> and <code>M</code> must have the same ambient space.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L572' class='documenter-source'>source</a><br></p>
+<p><a id='*-Tuple{Union{Integer, QQFieldElem, ZZRingElem, Rational}, ZLat}' href='#*-Tuple{Union{Integer, QQFieldElem, ZZRingElem, Rational}, ZLat}'>#</a>
+<strong><code>*</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">RationalUnion</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Return the lattice <script type="math/tex">aM</script> inside the ambient space of <script type="math/tex">M</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1257' class='documenter-source'>source</a><br></p>
+<p><a id='intersect-Tuple{ZLat, ZLat}' href='#intersect-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>intersect</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">intersect</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">AbstractLat</span>
+</code></pre></div>
+<p>Return the intersection of the lattices <code>L</code> and <code>M</code>.</p>
+<p>The lattices <code>L</code> and <code>M</code> must have the same ambient space.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L596' class='documenter-source'>source</a><br></p>
+<p><a id='in-Tuple{Vector, ZLat}' href='#in-Tuple{Vector, ZLat}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Base</span><span class="o">.</span><span class="k">in</span><span class="p">(</span><span class="n">v</span><span class="o">::</span><span class="kt">Vector</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the vector <code>v</code> lies in the lattice <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1437' class='documenter-source'>source</a><br></p>
+<p><a id='in-Tuple{QQMatrix, ZLat}' href='#in-Tuple{QQMatrix, ZLat}'>#</a>
+<strong><code>in</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">Base</span><span class="o">.</span><span class="k">in</span><span class="p">(</span><span class="n">v</span><span class="o">::</span><span class="kt">QQMatrix</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the row span of <code>v</code> lies in the lattice <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1448' class='documenter-source'>source</a><br></p>
+<p><a id='primitive_closure-Tuple{ZLat, ZLat}' href='#primitive_closure-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>primitive_closure</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">primitive_closure</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Given two <script type="math/tex">\mathbb Z</script>-lattices <code>M</code> and <code>N</code> with <script type="math/tex">N \subseteq \mathbb{Q} M</script>, return the primitive closure <script type="math/tex">M \cap \mathbb{Q} N</script> of <code>N</code> in <code>M</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:D</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lattice_in_same_ambient_space</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="o">*</span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">M</span><span class="p">)[</span><span class="mi">1</span><span class="p">,</span><span class="o">:</span><span class="p">]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+<span class="go">[3   0   0   0   0   0]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">N2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">primitive_closure</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 1 and degree 6 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">N2</span><span class="p">)</span>
+<span class="go">[1   0   0   0   0   0]</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">M2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">primitive_closure</span><span class="p">(</span><span class="n">dual</span><span class="p">(</span><span class="n">M</span><span class="p">),</span><span class="w"> </span><span class="n">M</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_integral</span><span class="p">(</span><span class="n">M2</span><span class="p">)</span>
+<span class="go">false</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1892' class='documenter-source'>source</a><br></p>
+<p><a id='is_primitive-Tuple{ZLat, ZLat}' href='#is_primitive-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>is_primitive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_primitive</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given two <script type="math/tex">\mathbb Z</script>-lattices <script type="math/tex">N \subseteq M</script>, return whether <code>N</code> is a primitive sublattice of <code>M</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">U</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hyperbolic_plane_lattice</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">bU</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">U</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">e1</span><span class="p">,</span><span class="w"> </span><span class="n">e2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bU</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="o">:</span><span class="p">],</span><span class="w"> </span><span class="n">bU</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="o">:</span><span class="p">]</span>
+<span class="go">([1 0], [0 1])</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lattice_in_same_ambient_space</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">e1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">e2</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 1 and degree 2 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_primitive</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">)</span>
+<span class="go">true</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:A</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernel_lattice</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 1 and degree 3 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_primitive</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">)</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1933' class='documenter-source'>source</a><br></p>
+<p><a id='is_primitive-Tuple{ZLat, Union{QQMatrix, Vector}}' href='#is_primitive-Tuple{ZLat, Union{QQMatrix, Vector}}'>#</a>
+<strong><code>is_primitive</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_primitive</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Vector</span><span class="p">,</span><span class="w"> </span><span class="kt">QQMatrix</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Return whether the vector <code>v</code> is primitive in <code>L</code>.</p>
+<p>A vector <code>v</code> in a <script type="math/tex">\mathbb Z</script>-lattice <code>L</code> is called primitive if for all <code>w</code> in <code>L</code> such that <script type="math/tex">v = dw</script> for some integer <code>d</code>, then <script type="math/tex">d = \pm 1</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1461' class='documenter-source'>source</a><br></p>
+<p><a id='divisibility-Tuple{ZLat, Union{QQMatrix, Vector}}' href='#divisibility-Tuple{ZLat, Union{QQMatrix, Vector}}'>#</a>
+<strong><code>divisibility</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">divisibility</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Vector</span><span class="p">,</span><span class="w"> </span><span class="kt">QQMatrix</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span>
+</code></pre></div>
+<p>Return the divisibility of <code>v</code> with respect to <code>L</code>.</p>
+<p>For a vector <code>v</code> in the ambient quadratic space <script type="math/tex">(V, \Phi)</script> of <code>L</code>, we call the divisibility of <code>v</code> with the respect to <code>L</code> the non-negative generator of the fractional <script type="math/tex">\mathbb Z</script>-ideal <script type="math/tex">\Phi(v, L)</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1484' class='documenter-source'>source</a><br></p>
+<p><a id='Embeddings'></a></p>
+<p><a id='Embeddings-1'></a></p>
+<h2 id="embeddings">Embeddings</h2>
+<p><a id='Categorical-constructions'></a></p>
+<p><a id='Categorical-constructions-1'></a></p>
+<h3 id="categorical-constructions">Categorical constructions</h3>
+<p><a id='direct_sum-Tuple{Vector{ZLat}}' href='#direct_sum-Tuple{Vector{ZLat}}'>#</a>
+<strong><code>direct_sum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">direct_sum</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vararg</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">}</span>
+<span class="n">direct_sum</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a collection of <script type="math/tex">\mathbb Z</script>-lattices <script type="math/tex">L_1, \ldots, L_n</script>, return their direct sum <script type="math/tex">L := L_1 \oplus \ldots \oplus L_n</script>, together with the injections <script type="math/tex">L_i \to L</script>. (seen as maps between the corresponding ambient spaces).</p>
+<p>For objects of type <code>ZLat</code>, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <code>L</code> as a direct product with the projections <script type="math/tex">L \to L_i</script>, one should call <code>direct_product(x)</code>. If one wants to obtain <code>L</code> as a biproduct with the injections <script type="math/tex">L_i \to L</script> and the projections <script type="math/tex">L \to L_i</script>, one should call <code>biproduct(x)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L209' class='documenter-source'>source</a><br></p>
+<p><a id='direct_product-Tuple{Vector{ZLat}}' href='#direct_product-Tuple{Vector{ZLat}}'>#</a>
+<strong><code>direct_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">direct_product</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vararg</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">}</span>
+<span class="n">direct_product</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a collection of <script type="math/tex">\mathbb Z</script>-lattices <script type="math/tex">L_1, \ldots, L_n</script>, return their direct product <script type="math/tex">L := L_1 \times \ldots \times L_n</script>, together with the projections <script type="math/tex">L \to L_i</script>. (seen as maps between the corresponding ambient spaces).</p>
+<p>For objects of type <code>ZLat</code>, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <code>L</code> as a direct sum with the injections <script type="math/tex">L_i \to L</script>, one should call <code>direct_sum(x)</code>. If one wants to obtain <code>L</code> as a biproduct with the injections <script type="math/tex">L_i \to L</script> and the projections <script type="math/tex">L \to L_i</script>, one should call <code>biproduct(x)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L234' class='documenter-source'>source</a><br></p>
+<p><a id='biproduct-Tuple{Vector{ZLat}}' href='#biproduct-Tuple{Vector{ZLat}}'>#</a>
+<strong><code>biproduct</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">biproduct</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vararg</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">},</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">}</span>
+<span class="n">biproduct</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">ZLat</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">},</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">AbstractSpaceMor</span><span class="p">}</span>
+</code></pre></div>
+<p>Given a collection of <script type="math/tex">\mathbb Z</script>-lattices <script type="math/tex">L_1, \ldots, L_n</script>, return their biproduct <script type="math/tex">L := L_1 \oplus \ldots \oplus L_n</script>, together with the injections <script type="math/tex">L_i \to L</script> and the projections <script type="math/tex">L \to L_i</script>. (seen as maps between the corresponding ambient spaces).</p>
+<p>For objects of type <code>ZLat</code>, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <code>L</code> as a direct sum with the injections <script type="math/tex">L_i \to L</script>, one should call <code>direct_sum(x)</code>. If one wants to obtain <code>L</code> as a direct product with the projections <script type="math/tex">L \to L_i</script>, one should call <code>direct_product(x)</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L259' class='documenter-source'>source</a><br></p>
+<p><a id='Orthogonal-sublattices'></a></p>
+<p><a id='Orthogonal-sublattices-1'></a></p>
+<h3 id="orthogonal-sublattices">Orthogonal sublattices</h3>
+<p><a id='orthogonal_submodule-Tuple{ZLat, ZLat}' href='#orthogonal_submodule-Tuple{ZLat, ZLat}'>#</a>
+<strong><code>orthogonal_submodule</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">orthogonal_submodule</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Return the largest submodule of <code>L</code> orthogonal to <code>S</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L284' class='documenter-source'>source</a><br></p>
+<p><a id='irreducible_components-Tuple{ZLat}' href='#irreducible_components-Tuple{ZLat}'>#</a>
+<strong><code>irreducible_components</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">irreducible_components</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the irreducible components <script type="math/tex">L_i</script> of the positive definite lattice <script type="math/tex">L</script>.</p>
+<p>This yields a maximal orthogonal splitting of <code>L</code> as</p>
+<p>
+<script type="math/tex; mode=display">
+L = \bigoplus_i L_i.
+</script>
+</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1606' class='documenter-source'>source</a><br></p>
+<p><a id='Dual-lattice'></a></p>
+<p><a id='Dual-lattice-1'></a></p>
+<h3 id="dual-lattice">Dual lattice</h3>
+<p><a id='dual-Tuple{ZLat}' href='#dual-Tuple{ZLat}'>#</a>
+<strong><code>dual</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">dual</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">AbstractLat</span>
+</code></pre></div>
+<p>Return the dual lattice of the lattice <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L792' class='documenter-source'>source</a><br></p>
+<p><a id='Discriminant-group'></a></p>
+<p><a id='Discriminant-group-1'></a></p>
+<h3 id="discriminant-group">Discriminant group</h3>
+<p>See <a href="../discriminant_group/#discriminant_group-Tuple{ZLat}"><code>discriminant_group(L::ZLat)</code></a>.</p>
+<p><a id='Overlattices'></a></p>
+<p><a id='Overlattices-1'></a></p>
+<h3 id="overlattices">Overlattices</h3>
+<p><a id='glue_map-Tuple{ZLat, ZLat, ZLat}' href='#glue_map-Tuple{ZLat, ZLat, ZLat}'>#</a>
+<strong><code>glue_map</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">glue_map</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">R</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">;</span><span class="w"> </span><span class="n">check</span><span class="o">=</span><span class="nb">true</span><span class="p">)</span>
+<span class="w">                       </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">TorQuadModuleMor</span><span class="p">,</span><span class="w"> </span><span class="kt">TorQuadModuleMor</span><span class="p">,</span><span class="w"> </span><span class="kt">TorQuadModuleMor</span><span class="p">}</span>
+</code></pre></div>
+<p>Given three integral <script type="math/tex">\mathbb Z</script>-lattices <code>L</code>, <code>S</code> and <code>R</code>, with <code>S</code> and <code>R</code> primitive sublattices of <code>L</code> and such that the sum of the ranks of <code>S</code> and <code>R</code> is equal to the rank of <code>L</code>, return the glue map <script type="math/tex">\gamma</script> of the primitive extension <script type="math/tex">S+R \subseteq L</script>, as well as the inclusion maps of the domain and codomain of <script type="math/tex">\gamma</script> into the respective discriminant groups of <code>S</code> and <code>R</code>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:E</span><span class="p">,</span><span class="mi">8</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                             </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">4</span><span class="w"> </span><span class="o">-</span><span class="mi">6</span><span class="w"> </span><span class="o">-</span><span class="mi">5</span><span class="w"> </span><span class="o">-</span><span class="mi">4</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="p">]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">S</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernel_lattice</span><span class="p">(</span><span class="n">M</span><span class="w"> </span><span class="p">,</span><span class="n">f</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 4 and degree 8 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernel_lattice</span><span class="p">(</span><span class="n">M</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">f</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 4 and degree 8 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">glue</span><span class="p">,</span><span class="w"> </span><span class="n">iS</span><span class="p">,</span><span class="w"> </span><span class="n">iR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">glue_map</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">R</span><span class="p">)</span>
+<span class="go">(Map with following data</span>
+<span class="go">Domain:</span>
+<span class="go">=======</span>
+<span class="go">TorQuadModule [4//3 0; 0 4//3]</span>
+<span class="go">Codomain:</span>
+<span class="go">=========</span>
+<span class="go">TorQuadModule [2//3 0; 0 2//3], Map with following data</span>
+<span class="go">Domain:</span>
+<span class="go">=======</span>
+<span class="go">TorQuadModule [4//3 0; 0 4//3]</span>
+<span class="go">Codomain:</span>
+<span class="go">=========</span>
+<span class="go">TorQuadModule [4//3 2//3; 2//3 2//3], Map with following data</span>
+<span class="go">Domain:</span>
+<span class="go">=======</span>
+<span class="go">TorQuadModule [2//3 0; 0 2//3]</span>
+<span class="go">Codomain:</span>
+<span class="go">=========</span>
+<span class="go">TorQuadModule [2//3 1//3; 1//3 4//3])</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_bijective</span><span class="p">(</span><span class="n">glue</span><span class="p">)</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1972' class='documenter-source'>source</a><br></p>
+<p><a id='overlattice-Tuple{TorQuadModuleMor}' href='#overlattice-Tuple{TorQuadModuleMor}'>#</a>
+<strong><code>overlattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">overlattice</span><span class="p">(</span><span class="n">glue_map</span><span class="o">::</span><span class="kt">TorQuadModuleMor</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Given the glue map of a primitive extension of <script type="math/tex">\mathbb Z</script>-lattices <script type="math/tex">S+R \subseteq L</script>, return <code>L</code>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:E</span><span class="p">,</span><span class="mi">8</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">1</span><span class="w">  </span><span class="mi">2</span><span class="w">  </span><span class="mi">4</span><span class="w">  </span><span class="mi">4</span><span class="w">  </span><span class="mi">3</span><span class="w">  </span><span class="mi">2</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">2</span><span class="p">;</span>
+<span class="w">                             </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">4</span><span class="w"> </span><span class="o">-</span><span class="mi">6</span><span class="w"> </span><span class="o">-</span><span class="mi">5</span><span class="w"> </span><span class="o">-</span><span class="mi">4</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">2</span><span class="w">  </span><span class="mi">4</span><span class="w">  </span><span class="mi">6</span><span class="w">  </span><span class="mi">4</span><span class="w">  </span><span class="mi">3</span><span class="w">  </span><span class="mi">2</span><span class="w">  </span><span class="mi">1</span><span class="w">  </span><span class="mi">3</span><span class="p">;</span>
+<span class="w">                             </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="p">;</span>
+<span class="w">                              </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w">  </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">                             </span><span class="o">-</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">]);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">S</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernel_lattice</span><span class="p">(</span><span class="n">M</span><span class="w"> </span><span class="p">,</span><span class="n">f</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 4 and degree 8 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kernel_lattice</span><span class="p">(</span><span class="n">M</span><span class="w"> </span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">^</span><span class="mi">4</span><span class="o">+</span><span class="n">f</span><span class="o">^</span><span class="mi">3</span><span class="o">+</span><span class="n">f</span><span class="o">^</span><span class="mi">2</span><span class="o">+</span><span class="n">f</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Quadratic lattice of rank 4 and degree 8 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">glue</span><span class="p">,</span><span class="w"> </span><span class="n">iS</span><span class="p">,</span><span class="w"> </span><span class="n">iR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">glue_map</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">R</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">overlattice</span><span class="p">(</span><span class="n">glue</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">M</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L2065' class='documenter-source'>source</a><br></p>
+<p><a id='local_modification-Tuple{ZLat, ZLat, Any}' href='#local_modification-Tuple{ZLat, ZLat, Any}'>#</a>
+<strong><code>local_modification</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">local_modification</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">)</span>
+</code></pre></div>
+<p>Return a local modification of <code>M</code> that matches <code>L</code> at <code>p</code>.</p>
+<p>INPUT:</p>
+<ul>
+<li>
+<script type="math/tex">M</script> – a <code>\mathbb{Z}_p</code>-maximal lattice</li>
+<li>
+<script type="math/tex">L</script> – the a lattice           isomorphic to <code>M</code> over <code>\QQ_p</code></li>
+<li>
+<script type="math/tex">p</script> – a prime number</li>
+</ul>
+<p>OUTPUT:</p>
+<p>an integral lattice <code>M'</code> in the ambient space of <code>M</code> such that <code>M</code> and <code>M'</code> are locally equal at all completions except at <code>p</code> where <code>M'</code> is locally isometric to the lattice <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1294' class='documenter-source'>source</a><br></p>
+<p><a id='maximal_integral_lattice-Tuple{ZLat}' href='#maximal_integral_lattice-Tuple{ZLat}'>#</a>
+<strong><code>maximal_integral_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">maximal_integral_lattice</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">AbstractLat</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">AbstractLat</span>
+</code></pre></div>
+<p>Given a lattice <code>L</code>, return a lattice <code>M</code> in the ambient space of <code>L</code> which is maximal integral and which contains <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Lattices.jl#L2032' class='documenter-source'>source</a><br></p>
+<p><a id='Sublattices-defined-by-endomorphisms'></a></p>
+<p><a id='Sublattices-defined-by-endomorphisms-1'></a></p>
+<h3 id="sublattices-defined-by-endomorphisms">Sublattices defined by endomorphisms</h3>
+<p><a id='kernel_lattice-Tuple{ZLat, MatElem}' href='#kernel_lattice-Tuple{ZLat, MatElem}'>#</a>
+<strong><code>kernel_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">kernel_lattice</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span>
+<span class="w">               </span><span class="n">ambient_representation</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Given a <script type="math/tex">\mathbf{Z}</script>-lattice <script type="math/tex">L</script> and a matrix <script type="math/tex">f</script> inducing an endomorphism of <script type="math/tex">L</script>, return <script type="math/tex">\ker(f)</script> is a sublattice of <script type="math/tex">L</script>.</p>
+<p>If <code>ambient_representation</code> is <code>true</code> (the default), the endomorphism is represented with respect to the ambient space of <script type="math/tex">L</script>. Otherwise, the endomorphism is represented with respect to the basis of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1345' class='documenter-source'>source</a><br></p>
+<p>&lt;a id='invariant_lattice-Tuple{ZLat, Vector{&lt;:MatElem}}' href='#invariant_lattice-Tuple{ZLat, Vector{&lt;:MatElem}}'&gt;#</a>
+<strong><code>invariant_lattice</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">invariant_lattice</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">MatElem</span><span class="p">};</span>
+<span class="w">                  </span><span class="n">ambient_representation</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+<span class="n">invariant_lattice</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">MatElem</span><span class="p">;</span>
+<span class="w">                  </span><span class="n">ambient_representation</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Given a <script type="math/tex">\mathbf{Z}</script>-lattice <script type="math/tex">L</script> and a list of matrices <script type="math/tex">G</script> inducing endomorphisms of <script type="math/tex">L</script> (or just one matrix <script type="math/tex">G</script>), return the lattice <script type="math/tex">L^G</script>, consisting on elements fixed by <script type="math/tex">G</script>.</p>
+<p>If <code>ambient_representation</code> is <code>true</code> (the default), the endomorphism is represented with respect to the ambient space of <script type="math/tex">L</script>. Otherwise, the endomorphism is represented with respect to the basis of <script type="math/tex">L</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1378' class='documenter-source'>source</a><br></p>
+<p><a id='Computing-embeddings'></a></p>
+<p><a id='Computing-embeddings-1'></a></p>
+<h3 id="computing-embeddings">Computing embeddings</h3>
+<p><a id='embed' href='#embed'>#</a>
+<strong><code>embed</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">embed</span><span class="p">(</span><span class="n">S</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">Genus</span><span class="p">,</span><span class="w"> </span><span class="n">primitive</span><span class="o">=</span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">embedding</span>
+</code></pre></div>
+<p>Return a (primitive) embedding of the integral lattice <code>S</code> into some lattice in the genus of <code>G</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zgenera</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">even</span><span class="o">=</span><span class="nb">true</span><span class="p">)[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">embed</span><span class="p">(</span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:A</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span><span class="w"> </span><span class="n">G</span><span class="p">);</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZGenus.jl#L2635' class='documenter-source'>source</a><br></p>
+<p><a id='embed_in_unimodular-Tuple{ZLat, Any, Any}' href='#embed_in_unimodular-Tuple{ZLat, Any, Any}'>#</a>
+<strong><code>embed_in_unimodular</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">embed_in_unimodular</span><span class="p">(</span><span class="n">S</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">neg</span><span class="p">,</span><span class="w"> </span><span class="n">primitive</span><span class="o">=</span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">even</span><span class="o">=</span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="o">&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">iS</span><span class="p">,</span><span class="w"> </span><span class="n">iR</span>
+</code></pre></div>
+<p>Return a (primitive) embedding of the integral lattice <code>S</code> into some (even) unimodular lattice of signature <code>(pos, neg)</code>.</p>
+<p>For now this works only for even lattices.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">NS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">direct_sum</span><span class="p">(</span><span class="n">Zlattice</span><span class="p">(</span><span class="ss">:U</span><span class="p">),</span><span class="w"> </span><span class="n">rescale</span><span class="p">(</span><span class="n">root_lattice</span><span class="p">(</span><span class="ss">:A</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">),</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">))[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">LK3</span><span class="p">,</span><span class="w"> </span><span class="n">iNS</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">embed_in_unimodular</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">19</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">genus</span><span class="p">(</span><span class="n">LK3</span><span class="p">)</span>
+<span class="go">ZGenus</span>
+<span class="go">Signature: (3, 19)</span>
+<span class="go">Genus symbol at 2:   1^22</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">iNS</span>
+<span class="go">Quadratic lattice of rank 18 and degree 22 over the rationals</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">is_primitive</span><span class="p">(</span><span class="n">LK3</span><span class="p">,</span><span class="w"> </span><span class="n">iNS</span><span class="p">)</span>
+<span class="go">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZGenus.jl#L2657' class='documenter-source'>source</a><br></p>
+<p><a id='LLL,-Short-and-Close-Vectors'></a></p>
+<p><a id='LLL,-Short-and-Close-Vectors-1'></a></p>
+<h2 id="lll-short-and-close-vectors">LLL, Short and Close Vectors</h2>
+<p><a id='LLL-and-indefinite-LLL'></a></p>
+<p><a id='LLL-and-indefinite-LLL-1'></a></p>
+<h3 id="lll-and-indefinite-lll">LLL and indefinite LLL</h3>
+<p><a id='lll-Tuple{ZLat}' href='#lll-Tuple{ZLat}'>#</a>
+<strong><code>lll</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">lll</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">same_ambient</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ZLat</span>
+</code></pre></div>
+<p>Given an integral <script type="math/tex">\mathbb Z</script>-lattice <code>L</code> with basis matrix <code>B</code>, compute a basis <code>C</code> of <code>L</code> such that the gram matrix <script type="math/tex">G_C</script> of <code>L</code> with respect to <code>C</code> is LLL-reduced.</p>
+<p>By default, it creates the lattice in the same ambient space as <code>L</code>. This can be disabled by setting <code>same_ambient = false</code>. Works with both definite and indefinite lattices.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/Quad/ZLattices.jl#L1517' class='documenter-source'>source</a><br></p>
+<p><a id='Short-Vectors'></a></p>
+<p><a id='Short-Vectors-1'></a></p>
+<h3 id="short-vectors">Short Vectors</h3>
+<p><a id='short_vectors' href='#short_vectors'>#</a>
+<strong><code>short_vectors</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">short_vectors</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">lb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">ub</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">elem_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ZZRingElem</span><span class="p">];</span><span class="w"> </span><span class="n">check</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span>
+<span class="w">                                   </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">elem_type</span><span class="p">},</span><span class="w"> </span><span class="kt">QQFieldElem</span><span class="p">}}</span>
+</code></pre></div>
+<p>Returns all tuples <code>(v, n)</code> such that <code>n = v G v^t</code> satisfies <code>lb &lt;= n &lt;= ub</code>, where <code>G</code> is the Gram matrix of <code>L</code> and <code>v</code> is non-zero.</p>
+<p>Note that the vectors are computed up to sign (so only one of <code>v</code> and <code>-v</code> appears).</p>
+<p>It is assumed and checked that <code>L</code> is positive definite.</p>
+<p>See also <a href="./#short_vectors_iterator"><code>short_vectors_iterator</code></a> for an iterator version.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/ShortVectors.jl#L3' class='documenter-source'>source</a><br></p>
+<p><a id='shortest_vectors' href='#shortest_vectors'>#</a>
+<strong><code>shortest_vectors</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">shortest_vectors</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">elem_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ZZRingElem</span><span class="p">];</span><span class="w"> </span><span class="n">check</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span>
+<span class="w">                                           </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">QQFieldElem</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">elem_type</span><span class="p">},</span><span class="w"> </span><span class="n">QQFieldElem</span><span class="err">}</span>
+</code></pre></div>
+<p>Returns the list of shortest non-zero vectors. Note that the vectors are computed up to sign (so only one of <code>v</code> and <code>-v</code> appears).</p>
+<p>It is assumed and checked that <code>L</code> is positive definite.</p>
+<p>See also <a href="../../orders/ideals/#minimum-Tuple{NfOrdIdl}"><code>minimum</code></a>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/ShortVectors.jl#L86' class='documenter-source'>source</a><br></p>
+<p><a id='short_vectors_iterator' href='#short_vectors_iterator'>#</a>
+<strong><code>short_vectors_iterator</code></strong> &mdash; <em>Function</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">short_vectors_iterator</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">lb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">ub</span><span class="p">,</span>
+<span class="w">                       </span><span class="p">[</span><span class="n">elem_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ZZRingElem</span><span class="p">];</span><span class="w"> </span><span class="n">check</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">)</span>
+<span class="w">                                </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">elem_type</span><span class="p">},</span><span class="w"> </span><span class="kt">QQFieldElem</span><span class="p">}</span><span class="w"> </span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+</code></pre></div>
+<p>Returns an iterator for all tuples <code>(v, n)</code> such that <code>n = v G v^t</code> satisfies <code>lb &lt;= n &lt;= ub</code>, where <code>G</code> is the Gram matrix of <code>L</code> and <code>v</code> is non-zero.</p>
+<p>Note that the vectors are computed up to sign (so only one of <code>v</code> and <code>-v</code> appears).</p>
+<p>It is assumed and checked that <code>L</code> is positive definite.</p>
+<p>See also <a href="./#short_vectors"><code>short_vectors</code></a>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/ShortVectors.jl#L19' class='documenter-source'>source</a><br></p>
+<p><a id='minimum-Tuple{ZLat}' href='#minimum-Tuple{ZLat}'>#</a>
+<strong><code>minimum</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">minimum</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the minimum squared length among the non-zero vectors in <code>L</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/ShortVectors.jl#L116' class='documenter-source'>source</a><br></p>
+<p><a id='kissing_number-Tuple{ZLat}' href='#kissing_number-Tuple{ZLat}'>#</a>
+<strong><code>kissing_number</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">kissing_number</span><span class="p">(</span><span class="n">L</span><span class="o">::</span><span class="kt">ZLat</span><span class="p">)</span>
+</code></pre></div>
+<p>Return the Kissing number of the sphere packing defined by <code>L</code>.</p>
+<p>This is the number of non-overlapping spheres touching any other given sphere.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/ShortVectors.jl#L136' class='documenter-source'>source</a><br></p>
+<p><a id='Close-Vectors'></a></p>
+<p><a id='Close-Vectors-1'></a></p>
+<h3 id="close-vectors">Close Vectors</h3>
+<p><a id='close_vectors-Tuple{ZLat, Vector, Vararg{Any}}' href='#close_vectors-Tuple{ZLat, Vector, Vararg{Any}}'>#</a>
+<strong><code>close_vectors</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">close_vectors</span><span class="p">(</span><span class="n">L</span><span class="o">:</span><span class="n">ZLat</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="o">:</span><span class="n">Vector</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">lb</span><span class="p">,],</span><span class="w"> </span><span class="n">ub</span><span class="p">;</span><span class="w"> </span><span class="n">check</span><span class="o">::</span><span class="kt">Bool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">)</span>
+<span class="w">                                        </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">}},</span><span class="w"> </span><span class="kt">QQFieldElem</span><span class="p">}</span>
+</code></pre></div>
+<p>Return all tuples <code>(x, d)</code> where <code>x</code> is an element of <code>L</code> such that <code>d = b(v - x, v - x) &lt;= ub</code>. If <code>lb</code> is provided, then also <code>lb &lt;= d</code>.</p>
+<p>If <code>filter</code> is not <code>nothing</code>, then only those <code>x</code> with <code>filter(x)</code> evaluating to <code>true</code> are returned.</p>
+<p>By default, it will be checked whether <code>L</code> is positive definite. This can be disabled setting <code>check = false</code>.</p>
+<p>Both input and output are with respect to the basis matrix of <code>L</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Zlattice</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">]));</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">close_vectors</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="go">3-element Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}:</span>
+<span class="go"> ([2, 1], 1)</span>
+<span class="go"> ([0, 1], 1)</span>
+<span class="go"> ([1, 1], 0)</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">close_vectors</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2-element Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}:</span>
+<span class="go"> ([2, 1], 1)</span>
+<span class="go"> ([0, 1], 1)</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/c23c200940475560981220ac59813d86fb3e0ab2/src/QuadForm/CloseVectors.jl#L3' class='documenter-source'>source</a><br></p>
+<hr />
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.19047be9.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>

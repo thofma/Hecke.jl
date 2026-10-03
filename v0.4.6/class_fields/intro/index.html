@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hecke"> 
+    <meta name="author" content="Tommy Hofmann"> 
+    <link rel="shortcut icon" href="../../img/favicon.ico">
+
+    <title>Introduction - Hecke</title>
+
+    <link href="../../css/bootstrap-custom.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/font-hack/2.018/css/hack.min.css">
+    <link href='//fonts.googleapis.com/css?family=PT+Sans:400,400italic,700,700italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,600,700&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href="../../css/base.css" rel="stylesheet">
+    <link href="../../css/cinder.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/highlight.css">
+
+
+    <link href="../../assets/Documenter.css" rel="stylesheet">
+
+
+    <link href="../../application-e2807e330f.css" rel="stylesheet">
+
+
+    <link href="../../application-f78e5cb881.palette.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js"></script>
+    <script>
+    WebFont.load({
+        google: {
+            families: ['Open Sans', 'PT Sans']
+        }
+    });
+    </script>
+
+    
+<script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+
+<body>
+
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+
+            <a class="navbar-brand" href="../..">Hecke</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="../..">Home</a>
+                    </li>
+                
+                
+                
+                    <li class="dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                        
+                            
+<li >
+    <a href="../../toc/">Table of contents</a>
+</li>
+
+                        
+                            
+  <li class="dropdown-submenu">
+    <a tabindex="-1" href="">Orders and number fields</a>
+    <ul class="dropdown-menu">
+        
+            
+<li >
+    <a href="../../orders/introduction/">Introduction</a>
+</li>
+
+        
+            
+<li >
+    <a href="../../orders/basics/">Basics</a>
+</li>
+
+        
+            
+<li >
+    <a href="../../orders/ideals/">Ideals</a>
+</li>
+
+        
+    </ul>
+  </li>
+
+                        
+                            
+  <li class="dropdown-submenu">
+    <a tabindex="-1" href="">Abelian groups</a>
+    <ul class="dropdown-menu">
+        
+            
+<li >
+    <a href="../../abelian/introduction/">Introduction</a>
+</li>
+
+        
+    </ul>
+  </li>
+
+                        
+                            
+  <li class="dropdown-submenu">
+    <a tabindex="-1" href="">Class fields</a>
+    <ul class="dropdown-menu">
+        
+            
+<li class="active">
+    <a href="./">Introduction</a>
+</li>
+
+        
+    </ul>
+  </li>
+
+                        
+                        </ul>
+                    </li>
+                
+                
+                </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                    <li >
+                        <a rel="next" href="../../abelian/introduction/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li class="disabled">
+                        <a rel="prev" >
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/thofma/Hecke.jl/">Edit on thofma/Hecke</a>
+                    </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+    <div class="container">
+        
+        <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+        <li class="first-level active"><a href="#class-field-theory">Class Field Theory</a></li>
+            <li class="second-level"><a href="#introduction">Introduction</a></li>
+                
+            <li class="second-level"><a href="#ray-class-groups">Ray Class Groups</a></li>
+                
+            <li class="second-level"><a href="#ray-class-fields">Ray Class Fields</a></li>
+                
+                <li class="third-level"><a href="#example">Example</a></li>
+            <li class="second-level"><a href="#conversions">Conversions</a></li>
+                
+            <li class="second-level"><a href="#invariants">Invariants</a></li>
+                
+            <li class="second-level"><a href="#operations">Operations</a></li>
+                
+    </ul>
+</div></div>
+        <div class="col-md-9" role="main">
+
+<p><a id='Class-Field-Theory-1'></a></p>
+<h1 id="class-field-theory">Class Field Theory</h1>
+<p><a id='Introduction-1'></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>This chapter deals with abelian extensions of number fields and the rational numbers.</p>
+<p>Class Field Theory, here specifically, class field theory of global number fields, deals with abelian extension, ie. fields where the group of automorphisms is abelian. For extensions of {{{Q}}}, the famous Kronnecker-Weber theorem classifies all such fields: a field is abelian if and only if it is contained in some cyclotomic field. For general number fields this is more involved and even for extensions of {{{Q}}} is is not practical.</p>
+<p>In Hecke, abelian extensions are parametrized by quotients of so called ray class groups. The language of ray class groups while dated is more applicable to algorithms than the modern language of idel class groups and quotients.</p>
+<p><a id='Ray-Class-Groups-1'></a></p>
+<h2 id="ray-class-groups">Ray Class Groups</h2>
+<p>Given an integral ideal <script type="math/tex">m_0 \le Z_K</script> and a list of real places <script type="math/tex">m_\infty</script>, the ray class group modulo <script type="math/tex">(m_0, m_\infty)</script>, <script type="math/tex">C(m)</script> is defined as the group of ideals coprime to <script type="math/tex">m_0</script> modulo the elements <script type="math/tex">a\in K^*</script> s.th. <script type="math/tex">v_p(a-1) \ge v_p(m_0)</script> and for all <script type="math/tex">v\in m_\infty</script>, <script type="math/tex">a^{(v)} >0</script>. This is a finite abelian group. For <script type="math/tex">m_0 = Z_K</script> and <script type="math/tex">m_\infty = \{\}</script> we get <script type="math/tex">C()</script> is the class group, if <script type="math/tex">m_\infty</script> contains all real places, we obtain the narrow class group, or strict class group.</p>
+<div class="codehilite"><pre><span></span><span class="nt">ray_class_group</span><span class="o">(</span><span class="nt">m</span><span class="p">::</span><span class="nd">Hecke</span><span class="p">.</span><span class="nc">NfAbsOrdIdl</span><span class="p">{</span><span class="err">Nemo.AnticNumberField,Nemo.nf_elem</span><span class="p">}</span><span class="o">,</span> <span class="nt">inf_plc</span><span class="p">::</span><span class="nd">Array</span><span class="p">{</span><span class="err">Hecke.InfPlc,1</span><span class="p">}</span><span class="o">;</span> <span class="nt">p_part</span><span class="o">,</span> <span class="nt">n_quo</span><span class="o">)</span>
+<span class="nt">ray_class_group</span><span class="o">(</span><span class="nt">m</span><span class="p">::</span><span class="nd">Hecke</span><span class="p">.</span><span class="nc">NfAbsOrdIdl</span><span class="p">{</span><span class="err">Nemo.AnticNumberField,Nemo.nf_elem</span><span class="p">}</span><span class="o">)</span>
+<span class="nt">class_group</span><span class="o">(</span><span class="nt">O</span><span class="p">::</span><span class="nd">Hecke</span><span class="p">.</span><span class="nc">NfAbsOrd</span><span class="p">{</span><span class="err">Nemo.AnticNumberField,Nemo.nf_elem</span><span class="p">}</span><span class="o">;</span> <span class="nt">bound</span><span class="o">,</span> <span class="nt">method</span><span class="o">,</span> <span class="nt">redo</span><span class="o">,</span> <span class="nt">unit_method</span><span class="o">,</span> <span class="nt">large</span><span class="o">)</span>
+<span class="nt">class_group</span><span class="o">(</span><span class="nt">K</span><span class="p">::</span><span class="nd">Nemo</span><span class="p">.</span><span class="nc">AnticNumberField</span><span class="o">)</span>
+<span class="nt">class_group</span><span class="o">(</span><span class="nt">c</span><span class="p">::</span><span class="nd">Hecke</span><span class="p">.</span><span class="nc">ClassGrpCtx</span><span class="o">;</span> <span class="nt">redo</span><span class="o">)</span>
+</pre></div>
+
+
+<p><a id='Ray-Class-Fields-1'></a></p>
+<h2 id="ray-class-fields">Ray Class Fields</h2>
+<p>In general, the construction of a class field starts with a (ray) class group. Each quotient of a ray class group then defines a ray class field, the defining property is that the (relative) automorphism group is canonically isomorphic to the quotient of the ray class group where the isomorphism is given by the Artin (or Frobenius) map. Since, in Hecke, the (ray) class groups have no link to the field, actually this has to be specified using the maps.</p>
+<p>It should be noted that this is a {\em lazy} construction: nothing is computed at this point.</p>
+<div class="codehilite"><pre><span></span><span class="nt">ray_class_field</span><span class="o">(</span><span class="nt">m</span><span class="p">::</span><span class="nd">Union</span><span class="p">{</span><span class="err">Hecke.MapClassGrp,</span> <span class="err">Hecke.MapRayClassGrp</span><span class="p">}</span><span class="o">)</span>
+<span class="nt">ray_class_field</span><span class="o">(</span><span class="nt">m</span><span class="p">::</span><span class="nd">Union</span><span class="p">{</span><span class="err">Hecke.MapClassGrp,</span> <span class="err">Hecke.MapRayClassGrp</span><span class="p">}</span><span class="o">,</span> <span class="nt">quomap</span><span class="p">::</span><span class="nd">Hecke</span><span class="p">.</span><span class="nc">GrpAbFinGenMap</span><span class="o">)</span>
+<span class="nt">ray_class_field</span><span class="o">(</span><span class="nt">I</span><span class="p">::</span><span class="nd">Hecke</span><span class="p">.</span><span class="nc">NfAbsOrdIdl</span><span class="o">;</span> <span class="nt">n_quo</span><span class="o">,</span> <span class="nt">p_part</span><span class="o">)</span>
+<span class="nt">hilbert_class_field</span><span class="o">(</span><span class="nt">k</span><span class="p">::</span><span class="nd">AnticNumberField</span><span class="o">)</span>
+</pre></div>
+
+
+<p><a id='Example-1'></a></p>
+<h3 id="example">Example</h3>
+<div class="codehilite"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span> <span class="c">#Qx, x = PolynomialRing(FlintQQ, &quot;x&quot;);</span>
+       <span class="c">#K, a = NumberField(x^2 - 10, &quot;a&quot;);</span>
+       <span class="c">#c, mc = class_group(K);</span>
+       <span class="c">#A = ray_class_field(mc)</span>
+</pre></div>
+
+
+<p><a id='Conversions-1'></a></p>
+<h2 id="conversions">Conversions</h2>
+<p>Given a ray class field, it is possible to actually compute defining equation(s) for this field. In general, the number field constructed this way will be non-simple by type and is defined by a polynomial for each maximal cyclic quotient of prime power order in the defining group.</p>
+<p>The algorithm employed is based on Kummer-theory and requires the addition of a suitable root of unity. Progress can be monitored by setting {{{set_verbose_level(:ClassField, n)}}} where <script type="math/tex">0\le n\le 3</script>
+</p>
+<div class="codehilite"><pre><span></span>number_field(CF::ClassField) -&gt; Hecke.NfRel_ns{Nemo.nf_elem}
+</pre></div>
+
+
+<blockquote>
+<p>Given a (formal) abelian extension, compute the class field by finding defining polynomials for all prime power cyclic subfields. Note, by type this is always a non-simple extension.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span> <span class="c">#Qx, x = PolynomialRing(FlintQQ, &quot;x&quot;);</span>
+       <span class="c">#k, a = NumberField(x^2 - 10, &quot;a&quot;);</span>
+       <span class="c">#c, mc = class_group(k);</span>
+       <span class="c">#A = ray_class_field(mc)</span>
+       <span class="c">#K = number_field(A)</span>
+       <span class="c">#ZK = maximal_order(K)</span>
+       <span class="c">#isone(discriminant(ZK))</span>
+</pre></div>
+
+
+<p>Missing:</p>
+<div class="codehilite"><pre><span></span>ray_class_field(K::NfRel)
+</pre></div>
+
+
+<p><a id='Invariants-1'></a></p>
+<h2 id="invariants">Invariants</h2>
+<div class="codehilite"><pre><span></span>degree(C::ClassField)
+base_ring(A::Hecke.ClassField) 
+base_field(A::Hecke.ClassField) 
+discriminant(C::Hecke.ClassField)
+conductor(C::Hecke.ClassField) 
+Hecke.defining_modulus(C::ClassField)
+</pre></div>
+
+
+<p><a id='Operations-1'></a></p>
+<h2 id="operations">Operations</h2>
+<div class="codehilite"><pre><span></span>*(a::Hecke.ClassField, b::Hecke.ClassField)
+compositum(a::Hecke.ClassField, b::Hecke.ClassField)
+==(a::Hecke.ClassField, b::Hecke.ClassField)
+intersect(a::Hecke.ClassField, b::Hecke.ClassField)
+prime_decomposition_type(C::Hecke.ClassField, p::Hecke.NfAbsOrdIdl)
+isconductor(C::Hecke.ClassField, m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Array{Hecke.InfPlc,1}) 
+isconductor(C::Hecke.ClassField, m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem})
+Hecke.issubfield(a::ClassField, b::ClassField)
+Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
+Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
+</pre></div></div>
+        
+    </div>
+
+    <footer class="col-md-12 text-center">
+        <hr>
+        <p>
+        <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
+    </footer>
+
+    <script src="../../js/jquery-1.10.2.min.js"></script>
+    <script src="../../js/bootstrap-3.0.3.min.js"></script>
+    <script src="../../js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+    var base_url = '../..';
+    </script>
+    <script data-main="../../mkdocs/js/search.js" src="../../mkdocs/js/require.js"></script>
+    <script src="../../js/base.js"></script>
+    <script src="../../mathjaxhelper.js"></script>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+
+    <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        From here you can search these documents. Enter your search terms below.
+                    </p>
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                        </div>
+                    </form>
+                    <div id="mkdocs-search-results"></div>
+                </div>
+                <div class="modal-footer">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </body>
+
+</html>
