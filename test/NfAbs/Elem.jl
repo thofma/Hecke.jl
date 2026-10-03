@@ -19,6 +19,12 @@
 
   @inferred rand!(b, basis(K), 1:100)
   @test_throws ErrorException rand!(b, AbsSimpleNumFieldElem[], 1:100)
+
+  # a collection selects the coefficients themselves, unlike a range, which
+  # Nemo reads as the sampler specification for the base field
+  b = rand(K, collect(-10:10))
+  @test all(c -> isone(denominator(c)) && -10 <= c <= 10,
+            (coeff(b, i) for i in 0:31))
 end
 
 @testset "Polynomial" begin
