@@ -748,7 +748,7 @@ function Hecke.index(O::GenOrd)
   return is_equation_order(O) ? O.R(1) : O.R(_inverse_basis_matrix_determinant(O))
 end
 
-function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem; degree_limit::Int, lower_limit::Int) where {S, T}
   @req parent(p) === base_ring(O) "p must come from the base ring of O"
 
   F = field(O)
@@ -761,7 +761,10 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
     num, den = integral_split(c, base_ring(O))
     mK(num) // mK(den)
   end
-  fact = factor(fmodp)
+
+  # Degree of the factor is the inertia degree: filter factors right away
+  fact = Tuple{typeof(fmodp), Int}[(g, e) for (g, e) in factor(fmodp)
+                                   if lower_limit <= degree(g) <= degree_limit]
 
   result = Vector{Tuple{GenOrdIdl{S, T}, Int}}(undef, length(fact))
   for (i, (fac, e)) in enumerate(fact)
@@ -882,25 +885,21 @@ function is_index_divisor(O::GenOrd, p::RingElem)
 end
 
 function prime_decomposition(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0; cached::Bool = true) where {S, T}
+  # keep the same convention as number fields
+  if degree_limit == 0
+    degree_limit = degree(O)
+  end
+
   if _is_defining_polynomial_nice_at(O, p) && !is_index_divisor(O, p)
-    return prime_dec_nonindex(O, p, degree_limit, lower_limit)
+    return prime_dec_nonindex(O, p; degree_limit = degree_limit, lower_limit = lower_limit)
   else
-    return prime_dec_gen(O, p, degree_limit, lower_limit)
+    return prime_dec_gen(O, p; degree_limit = degree_limit, lower_limit = lower_limit)
   end
 end
 
-function prime_dec_gen(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
+function prime_dec_gen(O::GenOrd{S, T}, p::RingElem; degree_limit::Int, lower_limit::Int) where {S, T}
   Ip = pradical(O, p)
-  lp = _decomposition(O, ideal(O, p), Ip, p)
-  #=z = Tuple{ideal_type(O), Int}[]
-  for (Q, e) in lp
-    if degree(Q) <= degree_limit && degree(Q) >= lower_limit
-      push!(z, (Q, e))
-    end
-  end
-  return z
-  =#
-  return lp
+  return _decomposition(O, ideal(O, p), Ip, p; degree_limit = degree_limit, lower_limit = lower_limit)
 end
 
 function residue_field(R::PolyRing{QQBarFieldElem}, p::PolyRingElem{QQBarFieldElem})
@@ -966,7 +965,8 @@ function _idempotent_uniformizer(P::GenOrdIdl, p::RingElem, f::Int, idempotent::
   return nothing
 end
 
-function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, p::RingElem) where {S, T}
+function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}, p::RingElem;
+                        degree_limit::Int = degree(O), lower_limit::Int = 0) where {S, T}
   #I is an ideal lying over p
   #Ip is the p-radical
   Ip1 = Ip + I
@@ -976,9 +976,12 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
   ideals, AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
 
   pcount = length(ideals)
+  result = Tuple{GenOrdIdl{S, T}, Int}[]
 
   # check if we have inert prime: we then have principal ideal
   if pcount == 1 && ideals[1][1].splitting_type[2] == degree(O)
+    lower_limit <= degree(O) <= degree_limit || return result
+
     P = ideals[1][1]
     P.splitting_type = 1, degree(O)
 
@@ -988,13 +991,14 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
     P.princ_gen = O(p)
     P.is_principal = 1
 
-    ideals[1] = (P, 1)
-    return ideals
+    push!(result, (P, 1))
+    return result
   end
 
   for i in 1:pcount
     P = ideals[i][1]
     f = P.splitting_type[2]
+    lower_limit <= f <= degree_limit || continue
 
     # find uniformizer (gen_two)
     P_uni = if pcount == 1
@@ -1013,10 +1017,10 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
 
     e = valuation(ideal(O, p), P)
     P.splitting_type = e, f
-    ideals[i] = (P, e)
+    push!(result, (P, e))
   end
 
-  return ideals
+  return result
 end
 
 function StructureConstantAlgebra(O::GenOrd, I::GenOrdIdl, p::RingElem)
