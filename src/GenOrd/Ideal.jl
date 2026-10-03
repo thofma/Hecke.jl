@@ -724,13 +724,25 @@ end
 #
 ################################################################################
 
+# NOTE: both Native.finite_field and FqField *ignore* check kwarg and do not check
+#   p to be irreducible. Currently ALL the usages i have found are guaranteed to
+#   be irreducible, but it would make sense to have cached kwarg in residue_field
+
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
-  K, _ = finite_field(p,"o")
-  return K, map_from_func(R, K, x->K(x), y->R(y))
+  @req parent(p) === R "p must belong to R"
+  K, _ = Native.finite_field(p, :o; cached = false, check = false)
+  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
+end
+
+function Hecke.residue_field(R::FpPolyRing, p::FpPolyRingElem)
+  @req parent(p) === R "p must belong to R"
+  K = FqField(p, :o, false; check = false)
+  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
 function Hecke.residue_field(R::FqPolyRing, p::FqPolyRingElem)
-  return Nemo._residue_field(p, absolute = false)
+  @req parent(p) === R "p must belong to R"
+  return Nemo._residue_field(p; absolute = false)
 end
 
 ################################################################################
