@@ -24,14 +24,14 @@ function _gaps_and_ramification_divisor(D::Divisor, only_gaps::Bool)
   x = separating_element(F)
   dx = differential(F(x))
   
+  W_D = W - D
 
-  v = riemann_roch_space(W - D)
+  v = riemann_roch_space(W_D)
   n = length(v)
 
   if n == 0
     return Int[], trivial_divisor(F)
   end
-
 
   E = [0]
   eps = 0
@@ -73,7 +73,7 @@ function _gaps_and_ramification_divisor(D::Divisor, only_gaps::Bool)
     return gaps, trivial_divisor(F)
   end
 
-  R = divisor(det(M)) + sum(E)*divisor(dx) + n*(W - D)
+  R = divisor(det(M)) + sum(E)*divisor(dx) + n*(W_D)
   
   return gaps, R
 end
@@ -96,8 +96,6 @@ Return the global gap numbers of the function field F.
 function gap_numbers(F::Generic.AbsSimpleFunctionField)
   return gap_numbers(trivial_divisor(F))
 end
-
-
 
 @doc raw"""
     ramification_divisor(D::Divisor) -> Divisor
@@ -138,7 +136,7 @@ end
 
 #Note: Differentiation, derivation, power representation, etc.
 #currently take the separating element chosen on construction
-#of the number field. In principle we could allow the user to 
+#of the function field. In principle we could allow the user to 
 #specify a separating element (this is what Magma does), but this
 #would need some rewriting.
 
@@ -150,7 +148,8 @@ Return the jth differentiation of a with respect to the separating element x
 of the function field in which a lives.
 """
 function differentiation(a::Generic.AbsSimpleFunctionFieldElem, j::Int)
-  return derivation(a, j)
+  F = parent(a)
+  return derivation(a, j)//F(factorial(j))
 end
 
 
@@ -217,8 +216,9 @@ function pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingE
 
   #Find a solutions such that (fnum_pth_root)^p = v
   fnum_pth_root = solve(Mp, v, side = :right)
-  R = parent(numerator(a))
-  S = parent(denominator(a))
+
+  R = parent(numerator(K)) # Fq[t][y], ring of the defining polynomial
+  S = base_ring(R) # Fq[t]
 
   #Now we still need to take pth roots of the coefficients.
   #Note that we can only take pth roots of x^n if p divides n.
