@@ -534,6 +534,17 @@ end
     @test has_preimage_with_preimage(mL, u)[1]
   end
 
+  K, a = number_field(x^4 + 1, :a; cached = false)
+  u = a^3 + a
+  subfield(K, [u, u + 1])
+
+  # Another field can lower the precision of the shared q-adic parent.
+  F, b = number_field(x^2 + 1, :b; cached = false)
+  subfield(F, [one(F), 2*one(F)])
+  L, mL = subfield(K, [u, u + 1])
+  @test collect(coefficients(defining_polynomial(L))) == [2, 0, 1]
+  @test mL(gen(L)) == u
+
   for f in [x^2 - 1//2, x^4 - 1//2, 2*x^4 - 4*x^2 - 1]
     K, a = number_field(f, :a)
     L, mL = Hecke.subfield(K, [a])

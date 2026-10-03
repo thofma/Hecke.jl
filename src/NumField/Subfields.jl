@@ -350,6 +350,8 @@ function _subfield_primitive_element_from_block(K::AbsSimpleNumField, C#=::qAdic
   p = ZZ(C.C.p)
   local ff::ZZPolyRingElem
   while true
+    # Cached roots may outlive changes to their parent precision.
+    setprecision!(Qp, pr)
     p_pow = p^pr
     c = conjugates(gen(K), C, pr) #the roots...
     v = pe(c)
