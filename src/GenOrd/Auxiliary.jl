@@ -282,6 +282,8 @@ function Hecke.integral_split(M::QQMatrix, S::ZZRing)
   return z, d
 end
 
+Hecke.integral_split(x::Int, S::ZZRing) = ZZ(x), one(ZZ)
+
 function Hecke.integral_split(M::MatElem{<:AbstractAlgebra.FieldElem}, S::Generic.Ring)
   m = zero_matrix(S, nrows(M), ncols(M))
   den = one(S)
