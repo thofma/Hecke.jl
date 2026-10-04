@@ -650,7 +650,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+            log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
             break
           else
 #            @show y
@@ -666,7 +666,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+          log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
           continue
         end
         @assert length(gamma) == length(g2)+1
