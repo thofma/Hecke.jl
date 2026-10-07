@@ -84,6 +84,15 @@
   @test isempty(intersect(m1, m2, m3))
   intersect!(m3, m1, m4)
   @test length(m3) == 1
+
+  # last argument is not a multi-set
+  m = multiset(Int[1, 1, 2])
+  @test m + [1] == multiset(Int[1, 1, 1, 2])
+  @test union(m, [1, 3]) == multiset(Int[1, 1, 2, 3])
+  @test union(m, m, Set([3])) == multiset(Int[1, 1, 2, 3])
+  @test intersect(m, [1, 3]) == multiset(Int[1])
+  @test intersect(m, Set([1, 3])) == multiset(Int[1])
+  @test intersect(m, m, [2]) == multiset(Int[2])
 end
 
 @testset "Sub-multi-set iterator" begin
