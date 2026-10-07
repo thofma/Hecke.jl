@@ -589,6 +589,7 @@ function resultant(f::UniversalPolyRingElem, g::UniversalPolyRingElem, x::Univer
 end
 
 function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
+  check_parent(f, g)
   Kt = parent(f)
   gKt = gens(Kt)
   n = nvars(Kt)
