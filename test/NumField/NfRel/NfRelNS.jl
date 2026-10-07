@@ -1,4 +1,4 @@
-@testset "NumField/NfRel/NfResNS.jl" begin
+@testset "NumField/NfRel/NfRelNS.jl" begin
     R, x = universal_polynomial_ring(ZZ, 5; cached = false)
 
     # Simple shared root in first variable
