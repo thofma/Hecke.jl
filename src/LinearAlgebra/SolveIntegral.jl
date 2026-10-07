@@ -14,7 +14,7 @@ struct PseudoHermiteFormTrait <: AbstractAlgebra.Solve.MatrixNormalFormTrait end
 
 AbstractAlgebra.Solve.matrix_normal_form_type(::NumFieldOrder) = PseudoHermiteFormTrait()
 
-function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormTrait, A, b, task::Symbol; side::Symbol)
+function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormTrait, A::MatElem, b::MatElem, task::Symbol; side::Symbol)
   if side === :right
     fl, _X, _K = AbstractAlgebra.Solve._can_solve_internal_no_check(PseudoHermiteFormTrait(), transpose(A), transpose(b), task; side = :left)
     return fl, transpose(_X), transpose(_K)
@@ -62,7 +62,7 @@ function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormT
   return true, R.(sol), K
 end
 
-function kernel(::PseudoHermiteFormTrait, A; side::Symbol = :left)
+function kernel(::PseudoHermiteFormTrait, A::MatElem; side::Symbol = :left)
   if side === :right
     return transpose(kernel(transpose(A); side = :left))
   end

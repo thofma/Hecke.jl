@@ -224,7 +224,7 @@ function hilbert_symbol(a,b, p::ZZIdl)
   return hilbert_symbol(a,b, gen(p))
 end
 
-is_local_norm(K, x, p::ZZIdl) = is_local_norm(K, x, gen(p))
+is_local_norm(K::AbsSimpleNumField, x, p::ZZIdl) = is_local_norm(K, x, gen(p))
 
 function quadratic_defect(q::QQFieldElem, p::ZZIdl)
   return quadratic_defect(q, gen(p))

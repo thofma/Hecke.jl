@@ -269,7 +269,7 @@ function trim_upperright(x)
 end
 
 for s in [:__hnf_integral, :_hnf_integral, :_hnf_integral_modular_eldiv,:_hnf!_integral!]
-  @eval ($s)(x::QQMatrix, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
+  @eval ($s)(x::QQMatrix, args::Union{Symbol, ZZRingElem}...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
   @eval ($s)(x::QQMatrix, ::ZZRing, args...; kw...) = QQMatrix(($s)(FakeFmpqMat(x), args...; kw...))
 end
 
@@ -289,7 +289,7 @@ function _hnf_integral_modular_eldiv(x::ZZMatrix, ::ZZRing, m::ZZRingElem; cutof
 end
 
 
-function _hnf!_integral(x::QQMatrix, shape = :lowerleft)
+function _hnf!_integral(x::QQMatrix, shape::Symbol = :lowerleft)
   x .= QQMatrix(_hnf!_integral(FakeFmpqMat(x), shape))
   return x
 end

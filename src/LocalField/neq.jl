@@ -201,7 +201,7 @@ function _unit_group_gens_case1(K::Union{QadicField, Hecke.LocalField})
   return [ one+x*pi^l for x = b for l = F_K]
 end
 
-function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k)
+function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k::Field)
   c = [coeff(a, i) for i=0:degree(parent(a))-1]
   while absolute_degree(parent(c[1])) > absolute_degree(k)
     d = degree(parent(c[1]))

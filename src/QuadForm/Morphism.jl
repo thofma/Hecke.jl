@@ -912,7 +912,7 @@ end
 #
 ################################################################################
 
-function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max = ZZRingElem(-1))
+function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max::ZZRingElem = ZZRingElem(-1))
   #V = enumerate_using_gram(G, R(max))
 
   if max == -1
