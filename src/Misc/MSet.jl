@@ -449,8 +449,10 @@ function Base.:(+)(s1::MSet, s2::MSet)
 end
 
 function Base.:(+)(s::MSet, itrs...)
-  s2 = s + multiset(itrs[1])
-  return (+)(s2, itrs[2:end]...)
+  for itr in itrs
+    s = s + multiset(itr)
+  end
+  return s
 end
 
 Base.union(s::MSet) = copy(s)
@@ -481,8 +483,10 @@ function Base.union!(s1::MSet{T}, s2::MSet{U}) where {T, U}
 end
 
 function Base.union!(s::MSet, itrs...)
-  union!(s, multiset(itrs[1]))
-  return union!(s, itrs[2:end]...)
+  for itr in itrs
+    union!(s, multiset(itr))
+  end
+  return s
 end
 
 function Base.intersect(s::MSet, itrs...)
@@ -506,9 +510,14 @@ function Base.intersect!(s1::MSet{T}, s2::MSet) where {T}
 end
 
 function Base.intersect!(s::MSet, itrs...)
-  s2 = intersect!(s, multiset(itrs[1]))
-  return intersect!(s2, itrs[2:end]...)
+  for itr in itrs
+    intersect!(s, multiset(itr))
+  end
+  return s
 end
+
+# resolve ambiguity with intersect!(::AbstractSet, ::AbstractSet)
+Base.intersect!(s::MSet, s2::AbstractSet) = intersect!(s, multiset(s2))
 
 function Base.filter(pred, s::MSet)
   t = similar(s)
