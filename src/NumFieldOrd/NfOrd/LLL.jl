@@ -185,7 +185,7 @@ function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimple
   l = lll(basis_matrix(A))
   b = FakeFmpqMat(l)*basis_matrix(FakeFmpqMat, order(A))
   rt_c = roots_ctx(Hecke.nf(order(A)))
-  if !isdefined(rt_c, :cache)  # FIXME: rt_c is not defined
+  if !isdefined(rt_c, :cache)
     rt_c.cache = 0*c
   end
   d = rt_c.cache
