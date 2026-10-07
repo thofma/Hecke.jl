@@ -13,6 +13,75 @@
     end
   end
 
+  @testset "real cyclotomic Frobenius powering for arbitrary conductor" begin
+    primes = Union{Int, ZZRingElem}[3, 7, 11, 31, next_prime(2^32), next_prime(ZZ(2)^70)]
+    for n in [3, 4, 8, 9, 12, 15, 21, 25, 27, 35, 45, 65, 105]
+      T = Hecke.pRationalCyclotomic.pRationalityTestCtx(n)
+      @test T.prime_conductor_data === nothing
+      @test T.frobenius_data === nothing
+      for p in primes
+        is_divisible_by(2 * n, p) && continue
+        fast = Hecke.pRationalCyclotomic._schirokauer_map_data_cyclotomic_delta(T, p)
+        reference = Hecke.pRational._schirokauer_map_data_minkowski_unit(
+          T.k, T.mink, p, T.aut; is_abelian = true, new = true
+        )
+        @test fast == reference
+        all_units = Hecke.pRationalCyclotomic._schirokauer_map_data_cyclotomic_delta(
+          T, p; all_units = true
+        )
+        reference_all_units = Hecke.pRational._schirokauer_map_data_generic(
+          T.k, T.cyc, p
+        )
+        @test all_units == reference_all_units
+        expected = reference[1] || (!T.strongminkowski && reference_all_units[1])
+        @test Hecke.pRationalCyclotomic._p_rationality_of_real_cyclotomic_check_per_prime(
+          T, p
+        ) == expected
+        # The conductor cache must be reused across different test primes.
+        if degree(T.k) == 1
+          @test T.frobenius_data === nothing
+        else
+          data = T.frobenius_data
+          @test Hecke.pRationalCyclotomic._cyclotomic_frobenius_data(T) === data
+        end
+      end
+      @test_throws AssertionError Hecke.pRationalCyclotomic._schirokauer_map_data_cyclotomic_delta(T, 2)
+      @test_throws AssertionError Hecke.pRationalCyclotomic._schirokauer_map_data_cyclotomic_delta(T, first(prime_divisors(n)))
+    end
+
+    # Compare the actual images, not just their ranks, in a noncyclic field.
+    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(65)
+    for p in Union{Int, ZZRingElem}[3, next_prime(2^32), next_prime(ZZ(2)^70)]
+      setup = Hecke.pRationalCyclotomic._cyclotomic_frobenius_setup(T, p)
+      f = prime_decomposition_type(T.ok, p)[1][1]
+      ZZy, = polynomial_ring(ZZ, :y; cached = false)
+      for u in [T.cyc[2], T.mink]
+        umod = Hecke.pRational._mod(
+          setup.R2x, u, setup.gmod2, setup.gmod, setup.Rx
+        )
+        num = powermod(umod, ZZ(p)^f - 1, setup.gmod2) - 1
+        image = change_base_ring(
+          base_ring(setup.Rx), divexact!(lift(ZZy, num), p); parent = setup.Rx
+        )
+        sigma_x = change_base_ring(
+          base_ring(setup.Rx), lift(ZZy, setup.sigma_x); parent = setup.Rx
+        )
+        @test Hecke.pRationalCyclotomic._cyclotomic_frobenius_image(u, setup) ==
+              Hecke.compose_mod(image, sigma_x, setup.gmod)
+      end
+    end
+
+    # A deficient weak Minkowski unit must still trigger the full-unit test.
+    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(15)
+    T.mink = FacElem(Dict(T.cyc[2] => 0))
+    @test !T.strongminkowski
+    @test Hecke.pRationalCyclotomic._schirokauer_map_data_cyclotomic_delta(T, 7) ==
+          (false, degree(T.k) - 1, 0)
+    @test Hecke.pRationalCyclotomic._p_rationality_of_real_cyclotomic_check_per_prime(T, 7) ==
+          Hecke.pRational._schirokauer_map_data_generic(T.k, T.cyc, 7)[1]
+    @test !is_real_cyclotomic_field_p_rational(15, 13)
+  end
+
   @testset "real cyclotomic prime conductor orbit rank" begin
     p128 = next_prime(10^10)
     R128 = Hecke.pRationalCyclotomic._UInt128ModRing(p128)

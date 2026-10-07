@@ -73,6 +73,16 @@ struct _PrimeConductorData
   minkowski_unit_is_generator::Bool
 end
 
+# Conductor-dependent data for Frobenius powering, without a normal-basis or
+# cyclic-Galois-group assumption. Row i gives the power-basis coordinates of
+# sigma_a(x), where a = representatives[i] and x = zeta_n + zeta_n^(-1).
+struct _CyclotomicFrobeniusData
+  defining_polynomial::Vector{ZZRingElem}
+  representatives::Vector{Int}
+  representative_indices::Dict{Int, Int}
+  automorphism_images::Matrix{ZZRingElem}
+end
+
 mutable struct pRationalityTestCtx
   k::AbsSimpleNumField
   ok::AbsSimpleNumFieldOrder
@@ -86,6 +96,7 @@ mutable struct pRationalityTestCtx
   subfield_class_number::IdDict{AbsSimpleNumField, ZZRingElem}
   prime_conductor_orbit::Vector{Int}
   prime_conductor_data::Union{Nothing, _PrimeConductorData}
+  frobenius_data::Union{Nothing, _CyclotomicFrobeniusData}
 
   pRationalityTestCtx() = new()
 end
@@ -123,6 +134,7 @@ function pRationalityTestCtx(n::Int)
 
   T.prime_conductor_orbit = Int[]
   T.prime_conductor_data = nothing
+  T.frobenius_data = nothing
   if is_prime(n) && is_odd(n) && degree(k) > 1
     T.prime_conductor_orbit = _prime_conductor_orbit(n, degree(k))
     T.prime_conductor_data = _prime_conductor_data(T)
@@ -192,6 +204,145 @@ function _prime_conductor_orbit(n::Int, d::Int)
   end
   @assert allunique(orbit)
   return orbit
+end
+
+function _cyclotomic_frobenius_data(T::pRationalityTestCtx)
+  data = T.frobenius_data
+  data !== nothing && return data
+
+  K = T.k
+  n = T.n
+  d = degree(K)
+  representatives = [a for a in 1:div(n, 2) if gcd(a, n) == 1]
+  @assert length(representatives) == d
+  indices = Dict(a => i for (i, a) in enumerate(representatives))
+  images = zeros(ZZRingElem, d, d)
+  x = gen(K)
+  e0 = K(2)
+  ea = x
+  for a in 1:last(representatives)
+    if haskey(indices, a)
+      i = indices[a]
+      for j in 0:d - 1
+        images[i, j + 1] = ZZ(coeff(ea, j))
+      end
+    end
+    e0, ea = ea, x * ea - e0
+  end
+  g = defining_polynomial(K)
+  data = _CyclotomicFrobeniusData(
+    [ZZ(coeff(g, i)) for i in 0:d], representatives, indices, images
+  )
+  T.frobenius_data = data
+  return data
+end
+
+# This setup is shared by the Minkowski-unit test and the test on all
+# cyclotomic units. The cache stays independent of p and of the chosen unit.
+function _cyclotomic_frobenius_setup(T::pRationalityTestCtx, p)
+  @assert !is_divisible_by(2 * T.n, p)
+  data = _cyclotomic_frobenius_data(T)
+  p2 = 2 * nbits(p) < 63 ? p^2 : ZZ(p)^2
+  R = residue_ring(ZZ, p; cached = false)[1]
+  R2 = residue_ring(ZZ, p2; cached = false)[1]
+  Rx, = polynomial_ring(R, :x; cached = false)
+  R2x, = polynomial_ring(R2, :x; cached = false)
+  gmod = Rx(data.defining_polynomial)
+  gmod2 = R2x(data.defining_polynomial)
+  a = Int(mod(p, T.n))
+  a = min(a, T.n - a)
+  row = data.representative_indices[a]
+  sigma_x = R2x(data.automorphism_images[row, :])
+  return (; p, p2, Rx, R2x, gmod, gmod2, sigma_x, data)
+end
+
+# Reuse the fixed two-limb FLINT ring for the short p-th power. Other sizes
+# use Nemo's polynomial arithmetic, as in the existing reference methods.
+function _cyclotomic_frobenius_power(u, g, p)
+  if !(p isa Int && 32 < nbits(p) <= 63)
+    return powermod(u, ZZ(p), g)
+  end
+
+  ctx = _MpnModCtx(ZZ(p)^2)
+  gmod = _MpnModPoly(ctx)
+  umod = _MpnModPoly(ctx)
+  result = _MpnModPoly(ctx)
+  try
+    for i in 0:degree(g)
+      _setcoeff!(gmod, i, ZZ(lift(coeff(g, i))))
+    end
+    for i in 0:degree(u)
+      _setcoeff!(umod, i, ZZ(lift(coeff(u, i))))
+    end
+    _powermod_two_limb_ui!(result, umod, UInt(p), gmod)
+    z = parent(u)()
+    tmp = Vector{UInt}(undef, 2)
+    for i in 0:degree(g) - 1
+      setcoeff!(z, i, ZZ(_coeff_two_limbs!(tmp, result, i)))
+    end
+    return z
+  finally
+    _clear!(result)
+    _clear!(umod)
+    _clear!(gmod)
+    _clear!(ctx)
+  end
+end
+
+# For any cyclotomic conductor and odd p not dividing n, sigma_p reduces to
+# p-th powering on O_K/pO_K. If f is its order and y = sigma_p^(-1)(u), then
+# y == u^(p^(f - 1)) modulo p. Congruent elements have congruent p-th powers
+# modulo p^2, so
+#
+#   sigma_p((u^(p^f - 1) - 1)/p)
+#       == (u^p - sigma_p(u))/(p * sigma_p(u)) modulo p.
+#
+# Composition modulo p^2 also handles factored units without expanding them
+# over the integers. Applying sigma_p preserves both orbit rank and the rank
+# of the images of a complete set of cyclotomic-unit generators.
+function _cyclotomic_frobenius_image(u, setup)
+  (; p, Rx, R2x, gmod, gmod2, sigma_x) = setup
+  umod = Hecke.pRational._mod(R2x, u, gmod2, gmod, Rx)
+  sigma_umod = Hecke.compose_mod(umod, sigma_x, gmod2)
+  num = _cyclotomic_frobenius_power(umod, gmod2, p) - sigma_umod
+  ZZy, = polynomial_ring(ZZ, :y; cached = false)
+  q = change_base_ring(
+    base_ring(Rx), divexact!(lift(ZZy, num), p); parent = Rx
+  )
+  sigma_umodp = change_base_ring(
+    base_ring(Rx), lift(ZZy, sigma_umod); parent = Rx
+  )
+  return mulmod(q, invmod(sigma_umodp, gmod), gmod)
+end
+
+function _schirokauer_map_data_cyclotomic_delta(
+    T::pRationalityTestCtx, p; all_units::Bool = false)
+  @assert !is_divisible_by(2 * T.n, p)
+  d = degree(T.k)
+  d == 1 && return true, 0, 0
+  setup = _cyclotomic_frobenius_setup(T, p)
+  if all_units
+    M = zero_matrix(base_ring(setup.Rx), length(T.cyc), d)
+    for i in eachindex(T.cyc)
+      q = _cyclotomic_frobenius_image(T.cyc[i], setup)
+      for j in 1:d
+        M[i, j] = coeff(q, j - 1)
+      end
+    end
+  else
+    q = _cyclotomic_frobenius_image(T.mink, setup)
+    M = zero_matrix(base_ring(setup.Rx), d, d)
+    for i in 1:d
+      sigma_x = setup.Rx(setup.data.automorphism_images[i, :])
+      sigma_q = Hecke.compose_mod(q, sigma_x, setup.gmod)
+      for j in 1:d
+        M[i, j] = coeff(sigma_q, j - 1)
+      end
+    end
+  end
+  image_rank = rank(M)
+  unit_rank = d - 1
+  return image_rank == unit_rank, unit_rank - image_rank, image_rank
 end
 
 ################################################################################
@@ -1127,7 +1278,7 @@ function _p_rationality_of_real_cyclotomic_check_per_prime(T, p)
       # prime-conductor methods remain available as separate references.
       fl, = _schirokauer_map_data_prime_conductor_delta(T, p)
     else
-      fl, = _schirokauer_map_data_minkowski_unit(T.k, T.mink, p, T.aut; is_abelian = true, new = true)
+      fl, = _schirokauer_map_data_cyclotomic_delta(T, p)
     end
     if fl
       @vprint :pRationality 1 "conductor: $n: prime $p: Schirokauer map injective; p-rationality established\n"
@@ -1137,7 +1288,7 @@ function _p_rationality_of_real_cyclotomic_check_per_prime(T, p)
     if T.strongminkowski
       return false
     end
-    fl, = _schirokauer_map_data_generic(T.k, T.cyc, p)
+    fl, = _schirokauer_map_data_cyclotomic_delta(T, p; all_units = true)
     return fl
   end
 
