@@ -105,8 +105,8 @@ function to_magma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String 
   print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
 end
 
-function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
-  f = open(p, mode)  # FIXME: mode is not defined
+function to_magma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", mode::String = "w")
+  f = open(p, mode)
   Hecke.to_magma(f, R, base_name = base_name, name = name)
   close(f)
 end

@@ -245,7 +245,8 @@ end
 function arb_trim(x::ArbFieldElem)
   z = ArbFieldElem()
   ccall((:arb_trim, libflint), Nothing, (Ref{Nemo.ArbFieldElem}, Ref{Nemo.ArbFieldElem}), z, x)
-  z.parent = ArbField(arb_bits(z), cached = false)  # FIXME: arb_bits is not defined (should be a ccall??)
+  # ArbField rejects precisions below 2, which exact values like 1 would give
+  z.parent = ArbField(max(2, bits(z)), cached = false)
   return z
 end
 
