@@ -763,13 +763,13 @@ mutable struct NfToFqFieldMor_easy <: Map{AbsSimpleNumField, FqField, HeckeMap, 
   header::MapHeader{AbsSimpleNumField, FqField}
   Fq::FqField
   s::FqFieldElem
-  t::FqPolyRingElem
+  t::FpPolyRingElem
   function NfToFqFieldMor_easy(a::Map, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
-    r.t = polynomial_ring(prime_field(r.Fq), cached = false)[1]()
+    r.t = polynomial_ring(Native.GF(characteristic(r.Fq), cached = false), cached = false)[1]()
     return r
   end
 end
@@ -792,7 +792,7 @@ function image(mF::NfToFqFieldMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSim
       if denominator(k) % characteristic(Fq) == 0
         throw(BadPrime(characteristic(Fq)))
       end
-      _nf_to_fq!(s, k, Fq)#, t)
+      _nf_to_fq!(s, k, Fq, t)
       if iszero(s)
         throw(BadPrime(1))
       end
@@ -813,7 +813,7 @@ function image(mF::NfToFqFieldMor_easy, a::AbsSimpleNumFieldElem, n_quo::Int = 0
   if denominator(a) % characteristic(Fq) == 0
     throw(BadPrime(characteristic(Fq)))
   end
-  _nf_to_fq!(q, a, Fq)#, mF.t)
+  _nf_to_fq!(q, a, Fq, mF.t)
   return q
 end
 
@@ -998,9 +998,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
     if (quo != 0 && vv != 0) || !iszero(v)
       if cached
         s = zero(Fq)
-        ccall((:fq_nmod_set, libflint), Nothing,
-          (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), s, D[i], Fq)
-        _reduce(s)
+        set!(s, D[i])
       else
         Nemo.nf_elem_to_gfp_poly!(t, k)
         #tt = deepcopy(t)
@@ -1021,9 +1019,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
           set!(D[i], t)
         end
         s = zero(Fq)
-        ccall((:fq_nmod_set, libflint), Nothing,
-          (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), s, D[i], Fq)
-        _reduce(s)
+        set!(s, D[i])
       end
       if iszero(s)
         throw(BadPrime(1))
