@@ -82,6 +82,80 @@
     @test !is_real_cyclotomic_field_p_rational(15, 13)
   end
 
+  @testset "real cyclotomic cyclic normal-basis rank" begin
+    PC = Hecke.pRationalCyclotomic
+    primes = Union{Int, ZZRingElem}[
+      3, 5, 7, 11, 31, 53, 10_000_000_019, next_prime(ZZ(2)^70)
+    ]
+    # Squarefree conductors, prime powers, and conductors divisible by 4.
+    # These include split, partially split, and inert primes, and p | [K:Q].
+    for n in [8, 9, 15, 21, 25, 27, 35, 45, 49, 81, 125, 201, 428, 500, 556]
+      T = PC.pRationalityTestCtx(n)
+      data = PC._cyclic_conductor_data(T)
+      @test data !== nothing
+      @test length(data.orbit) == degree(T.k)
+      @test allunique(data.orbit)
+      @test PC._cyclic_conductor_data(T) === data
+      normal_basis = change_base_ring(
+        ZZ, data.denominator * inv(change_base_ring(QQ, data.power_to_normal))
+      )
+      for p in primes
+        is_divisible_by(2 * n, p) && continue
+        setup = PC._cyclotomic_frobenius_setup(T, p)
+        cyclic = PC._cyclotomic_cyclic_setup(T, setup)
+        for all_units in (false, true)
+          reference = PC._schirokauer_map_data_cyclotomic_delta_general(
+            T, setup; all_units
+          )
+          @test PC._schirokauer_map_data_cyclotomic_delta(T, p; all_units) == reference
+        end
+        if cyclic !== nothing
+          q = PC._cyclotomic_frobenius_image(T.mink, setup)
+          c = PC._cyclotomic_normal_coordinates(q, setup, cyclic)
+          v = matrix(base_ring(setup.Rx), 1, degree(T.k),
+                     [coeff(c, j - 1) for j in 1:degree(T.k)])
+          power_coordinates = v * change_base_ring(base_ring(setup.Rx), normal_basis)
+          @test setup.Rx([power_coordinates[1, j] for j in 1:degree(T.k)]) == q
+          row = setup.data.representative_indices[data.orbit[2]]
+          sigma_x = setup.Rx(setup.data.automorphism_images[row, :])
+          sigma_q = Hecke.compose_mod(q, sigma_x, setup.gmod)
+          # Check actual coordinates: the Galois generator acts by a shift.
+          @test PC._cyclotomic_normal_coordinates(sigma_q, setup, cyclic) ==
+                mulmod(c, gen(setup.Rx), cyclic.orbit_modulus)
+          h = PC._cyclotomic_image_gcd(T.mink, setup, cyclic, cyclic.orbit_modulus)
+          h = PC._cyclotomic_all_units_gcd(T, setup, cyclic, h)
+          @test PC._cyclotomic_rank_from_gcd(degree(T.k), h) ==
+                PC._schirokauer_map_data_cyclotomic_delta_general(T, setup; all_units = true)
+        else
+          @test is_divisible_by(data.denominator, p)
+        end
+        weak = PC._schirokauer_map_data_cyclotomic_delta_general(T, setup)
+        all_units = PC._schirokauer_map_data_cyclotomic_delta_general(T, setup; all_units = true)
+        @test PC._p_rationality_of_real_cyclotomic_check_per_prime(T, p) ==
+              (weak[1] || (!T.strongminkowski && all_units[1]))
+      end
+    end
+
+    # This basis is singular modulo 5 although 5 does not divide 428.
+    # Neither the weak-unit rank nor the full-unit fallback may use it.
+    T = PC.pRationalityTestCtx(428)
+    setup = PC._cyclotomic_frobenius_setup(T, 5)
+    @test is_divisible_by(PC._cyclic_conductor_data(T).denominator, 5)
+    @test PC._cyclotomic_cyclic_setup(T, setup) === nothing
+    @test PC._schirokauer_map_data_cyclotomic_delta(T, 5) ==
+          PC._schirokauer_map_data_cyclotomic_delta_general(T, setup)
+
+    for n in [24, 65, 105]
+      T = PC.pRationalityTestCtx(n)
+      @test PC._cyclic_conductor_data(T) === nothing
+      @test T.cyclic_conductor_data_computed
+      setup = PC._cyclotomic_frobenius_setup(T, 11)
+      @test PC._cyclotomic_cyclic_setup(T, setup) === nothing
+      @test PC._schirokauer_map_data_cyclotomic_delta(T, 11) ==
+            PC._schirokauer_map_data_cyclotomic_delta_general(T, setup)
+    end
+  end
+
   @testset "real cyclotomic prime conductor orbit rank" begin
     p128 = next_prime(10^10)
     R128 = Hecke.pRationalCyclotomic._UInt128ModRing(p128)
