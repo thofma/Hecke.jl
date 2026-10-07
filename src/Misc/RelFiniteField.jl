@@ -757,8 +757,9 @@ function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
 end
 
 function is_irreducible(f::PolyRingElem{T}) where T <: RelFinFieldElem
+  is_zero(f) && return false
   l = factor(f)
-  return length(l.fac) == 1
+  return sum(values(l.fac)) == 1
 end
 
 

@@ -134,6 +134,8 @@
     L, gL = Native.finite_field(t^5+t^4+t^2+1, "b")
     Ly, y = L["y"]
     @test is_irreducible(y^13+2*y+1)
+    @test !is_irreducible(y^2)
+    @test !is_irreducible(zero(Ly))
   end
 
   @testset "Random" begin
