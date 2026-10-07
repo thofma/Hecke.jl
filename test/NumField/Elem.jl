@@ -74,6 +74,16 @@
       @test reproducible(m)
       @test reproducible(args...)
     end
+
+    # a range gives the coefficients themselves, for every field type
+    Kns, _ = number_field([x^2 - 2, x^2 - 3])
+    Kt, t = polynomial_ring(K, "t")
+    L, _ = number_field(t^2 - a)
+    Lns, _ = number_field([t^2 - a, t^2 - 3])
+    for F in (K, Kns, L, Lns), _ in 1:10
+      @test all(c -> isone(denominator(c)) && -10 <= c <= 10,
+                absolute_coordinates(rand(F, -10:10)))
+    end
   end
 
   @testset "NumField/Coordinates" begin
