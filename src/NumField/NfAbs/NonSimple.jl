@@ -777,7 +777,7 @@ function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check::B
   Ka, h = _simple_extension(K; cached = cached, check = check)
 
   embed(h)
-  embed(MapFromFunc(K, Ka, x->preimage(h, x)))
+  embed(map_from_func(K, Ka, x->preimage(h, x)))
   return Ka, h
 end
 
@@ -1138,4 +1138,3 @@ function (K::QQField)(a::AbsNonSimpleNumFieldElem)
   @req is_constant(data(a)) "Element must be rational"
   return constant_coefficient(data(a))
 end
-
