@@ -297,7 +297,7 @@ end
 
 Return the multiplicity of D at the prime ideal p.
 """
-function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1, T2}
+function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1 <: PolyRing, T2 <: KInftyRing}
   @req is_prime(p) "p must be prime ideal"
 
   #Might not always want to compute support for a simple valuation
@@ -305,7 +305,7 @@ function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1, T2}
   return get(D.finite_support, p, 0)
 end
 
-function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T2}) where {S, T1, T2}
+function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T2}) where {S, T1 <: PolyRing, T2 <: KInftyRing}
   @req is_prime(p) "p must be prime ideal"
 
   #Might not always want to compute support for a simple valuation
