@@ -72,7 +72,7 @@
     end
 
     # A deficient weak Minkowski unit must still trigger the full-unit test.
-    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(15)
+    T = Hecke.pRationalCyclotomic.pRationalityTestCtx(15; evaluate_minkowski_unit = false)
     T.mink = FacElem(Dict(T.cyc[2] => 0))
     @test !T.strongminkowski
     @test Hecke.pRationalCyclotomic._schirokauer_map_data_cyclotomic_delta(T, 7) ==
@@ -96,9 +96,9 @@
       @test length(data.orbit) == degree(T.k)
       @test allunique(data.orbit)
       @test PC._cyclic_conductor_data(T) === data
-      normal_basis = change_base_ring(
-        ZZ, data.denominator * inv(change_base_ring(QQ, data.power_to_normal))
-      )
+      normal_basis = data.normal_to_power
+      @test data.power_to_normal * normal_basis ==
+            data.denominator * identity_matrix(ZZ, degree(T.k))
       for p in primes
         is_divisible_by(2 * n, p) && continue
         setup = PC._cyclotomic_frobenius_setup(T, p)
@@ -154,6 +154,76 @@
       @test PC._schirokauer_map_data_cyclotomic_delta(T, 11) ==
             PC._schirokauer_map_data_cyclotomic_delta_general(T, setup)
     end
+  end
+
+  @testset "real cyclotomic integral Minkowski-unit cache" begin
+    PC = Hecke.pRationalCyclotomic
+    # Compare full cached images with factored delta evaluation and,
+    # independently, the classical exponent p^f - 1. These larger composite
+    # cases include a singular normal basis and p dividing degree.
+    for n in [428, 500, 556]
+      T = PC.pRationalityTestCtx(n)
+      @test T.mink isa AbsSimpleNumFieldElem
+      factored = PC.pRationalityTestCtx(n; evaluate_minkowski_unit = false)
+      @test factored.mink isa FacElem
+      # Match the chosen units before either context has built unit tables.
+      T.mink = evaluate(factored.mink)
+      @test T.minkowski_data === nothing
+      @test !T.minkowski_data_computed
+      data = PC._cyclotomic_minkowski_data(T)
+      @test data !== nothing
+      @test PC._cyclotomic_minkowski_data(T) === data
+      @test T.k(data.unit) == T.mink
+      @test PC._cyclotomic_minkowski_data(factored) === nothing
+      @test factored.mink isa FacElem
+      for p in Union{Int, ZZRingElem}[
+          3, 5, 11, 53, 10_000_000_019, ZZ(10_000_000_019), next_prime(ZZ(2)^70)]
+        is_divisible_by(2 * n, p) && continue
+        setup = PC._cyclotomic_frobenius_setup(T, p)
+        cached_image = PC._cyclotomic_minkowski_image(T, setup)
+        @test cached_image == PC._cyclotomic_frobenius_image(factored.mink, setup)
+        @test cached_image == PC._cyclotomic_minkowski_image(factored, setup)
+        @test factored.mink isa FacElem
+        f = prime_decomposition_type(T.ok, p)[1][1]
+        umod = Hecke.pRational._mod(
+          setup.R2x, factored.mink, setup.gmod2, setup.gmod, setup.Rx
+        )
+        num = powermod(umod, ZZ(p)^f - 1, setup.gmod2) - 1
+        image = change_base_ring(
+          base_ring(setup.Rx),
+          divexact!(lift(Hecke.Globals.Zx, num), p); parent = setup.Rx
+        )
+        sigma_x = change_base_ring(
+          base_ring(setup.Rx), lift(Hecke.Globals.Zx, setup.sigma_x); parent = setup.Rx
+        )
+        @test cached_image == Hecke.compose_mod(image, sigma_x, setup.gmod)
+        # The default general method deliberately uses the uncached image.
+        reference = PC._schirokauer_map_data_cyclotomic_delta_general(factored, setup)
+        @test PC._schirokauer_map_data_cyclotomic_delta(T, p) == reference
+        @test PC._schirokauer_map_data_cyclotomic_delta(factored, p) == reference
+        all_units = PC._schirokauer_map_data_cyclotomic_delta_general(
+          T, setup; all_units = true
+        )
+        expected = reference[1] || (!T.strongminkowski && all_units[1])
+        @test PC._p_rationality_of_real_cyclotomic_check_per_prime(T, p) == expected
+        @test PC._p_rationality_of_real_cyclotomic_check_per_prime(factored, p) == expected
+      end
+    end
+
+    # Already expanded units remain expanded with either keyword value, and
+    # the existing prime-conductor cache remains the selected fast path.
+    for evaluate_unit in (false, true)
+      T = PC.pRationalityTestCtx(13; evaluate_minkowski_unit = evaluate_unit)
+      @test T.mink isa AbsSimpleNumFieldElem
+      @test PC._cyclotomic_minkowski_data(T) === nothing
+      @test T.prime_conductor_data !== nothing
+    end
+
+    T = PC.pRationalityTestCtx(65)
+    @test PC._cyclotomic_minkowski_data(T) === nothing
+    setup = PC._cyclotomic_frobenius_setup(T, 3)
+    @test PC._cyclotomic_minkowski_image(T, setup) ==
+          PC._cyclotomic_frobenius_image(T.mink, setup)
   end
 
   @testset "real cyclotomic prime conductor orbit rank" begin

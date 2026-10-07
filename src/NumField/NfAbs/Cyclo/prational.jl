@@ -91,6 +91,16 @@ struct _CyclicConductorData
   orbit::Vector{Int}
   power_to_normal::ZZMatrix
   denominator::ZZRingElem
+  normal_to_power::ZZMatrix
+  orbit_indices::Dict{Int, Int}
+end
+
+# Unit-dependent integral tables, with the same row order as the cyclic
+# normal basis. These remain valid even at primes dividing its denominator.
+struct _CyclotomicMinkowskiData
+  unit::Vector{ZZRingElem}
+  conjugates::ZZMatrix
+  inverse_conjugates::ZZMatrix
 end
 
 mutable struct pRationalityTestCtx
@@ -109,6 +119,8 @@ mutable struct pRationalityTestCtx
   frobenius_data::Union{Nothing, _CyclotomicFrobeniusData}
   cyclic_conductor_data::Union{Nothing, _CyclicConductorData}
   cyclic_conductor_data_computed::Bool
+  minkowski_data::Union{Nothing, _CyclotomicMinkowskiData}
+  minkowski_data_computed::Bool
 
   pRationalityTestCtx() = new()
 end
@@ -119,7 +131,15 @@ function degree(T::pRationalityTestCtx)
   return Hecke.degree(T.k)
 end
 
-function pRationalityTestCtx(n::Int)
+@doc raw"""
+    pRationalityTestCtx(n::Int; evaluate_minkowski_unit::Bool = true)
+
+Construct a context for testing the real cyclotomic field of conductor `n`.
+By default, expand the chosen factored Minkowski unit once so its integral
+conjugates can be cached. Set `evaluate_minkowski_unit = false` to keep its
+factored representation. The chosen unit is fixed for the lifetime of the context.
+"""
+function pRationalityTestCtx(n::Int; evaluate_minkowski_unit::Bool = true)
   T = pRationalityTestCtx()
   T.n = n
   k, = cyclotomic_real_subfield(n)
@@ -144,11 +164,19 @@ function pRationalityTestCtx(n::Int)
     T.mink = u
   end
 
+  if evaluate_minkowski_unit && T.mink isa FacElem
+    @vprint :pRationality 1 "conductor: $n: evaluating Minkowski unit\n"
+    T.mink = evaluate(T.mink)
+    @vprint :pRationality 1 "conductor: $n: finished evaluating Minkowski unit\n"
+  end
+
   T.prime_conductor_orbit = Int[]
   T.prime_conductor_data = nothing
   T.frobenius_data = nothing
   T.cyclic_conductor_data = nothing
   T.cyclic_conductor_data_computed = false
+  T.minkowski_data = nothing
+  T.minkowski_data_computed = false
   if is_prime(n) && is_odd(n) && degree(k) > 1
     T.prime_conductor_orbit = _prime_conductor_orbit(n, degree(k))
     T.prime_conductor_data = _prime_conductor_data(T)
@@ -304,7 +332,9 @@ function _cyclic_conductor_data(T::pRationalityTestCtx)
     B = _cyclotomic_normal_basis_matrix(T, data, orbit, theta)
     if !iszero(det(B))
       numerator, denominator = pseudo_inv(B)
-      T.cyclic_conductor_data = _CyclicConductorData(orbit, numerator, denominator)
+      T.cyclic_conductor_data = _CyclicConductorData(
+        orbit, numerator, denominator, B, Dict(a => i for (i, a) in enumerate(orbit))
+      )
       return T.cyclic_conductor_data
     end
   end
@@ -327,8 +357,44 @@ function _cyclic_conductor_data(T::pRationalityTestCtx)
   B = _cyclotomic_normal_basis_matrix(T, data, orbit, theta)
   iszero(det(B)) && return nothing
   numerator, denominator = pseudo_inv(B)
-  T.cyclic_conductor_data = _CyclicConductorData(orbit, numerator, denominator)
+  T.cyclic_conductor_data = _CyclicConductorData(
+    orbit, numerator, denominator, B, Dict(a => i for (i, a) in enumerate(orbit))
+  )
   return T.cyclic_conductor_data
+end
+
+function _cyclotomic_conjugate_table(u, data::_CyclicConductorData)
+  d = length(data.orbit)
+  v = matrix(ZZ, 1, d, [ZZ(coeff(u, j - 1)) for j in 1:d])
+  c = v * data.power_to_normal
+  # Row i represents sigma^(i-1)(u). Normal coordinates therefore shift
+  # to the right by i-1; divide only after multiplying back by the integral
+  # forward basis. No reduction of the rational normal basis is involved.
+  C = zero_matrix(ZZ, d, d)
+  for i in 1:d, j in 1:d
+    C[i, j] = c[1, mod(j - i, d) + 1]
+  end
+  return divexact(C * data.normal_to_power, data.denominator)
+end
+
+function _cyclotomic_minkowski_data(T::pRationalityTestCtx)
+  T.minkowski_data_computed && return T.minkowski_data
+  T.minkowski_data_computed = true
+  # Prime-conductor contexts already have their own integral unit tables.
+  T.prime_conductor_data !== nothing && return nothing
+  u = T.mink
+  u isa AbsSimpleNumFieldElem || return nothing
+  isone(denominator(u)) && !iszero(u) || return nothing
+  data = _cyclic_conductor_data(T)
+  data === nothing && return nothing
+  inverse_u = inv(u)
+  isone(denominator(inverse_u)) || return nothing
+  T.minkowski_data = _CyclotomicMinkowskiData(
+    [ZZ(coeff(u, j - 1)) for j in 1:degree(T.k)],
+    _cyclotomic_conjugate_table(u, data),
+    _cyclotomic_conjugate_table(inverse_u, data)
+  )
+  return T.minkowski_data
 end
 
 function _cyclotomic_cyclic_setup(T, setup)
@@ -371,6 +437,12 @@ end
 
 function _cyclotomic_image_gcd(u, setup, cyclic, h)
   q = _cyclotomic_frobenius_image(u, setup)
+  c = _cyclotomic_normal_coordinates(q, setup, cyclic)
+  return _cyclotomic_orbit_gcd(c, h)
+end
+
+function _cyclotomic_image_gcd(T::pRationalityTestCtx, setup, cyclic, h)
+  q = _cyclotomic_minkowski_image(T, setup)
   c = _cyclotomic_normal_coordinates(q, setup, cyclic)
   return _cyclotomic_orbit_gcd(c, h)
 end
@@ -471,6 +543,22 @@ function _cyclotomic_frobenius_image(u, setup)
   return mulmod(q, invmod(sigma_umodp, gmod), gmod)
 end
 
+function _cyclotomic_minkowski_image(T::pRationalityTestCtx, setup)
+  data = _cyclotomic_minkowski_data(T)
+  data === nothing && return _cyclotomic_frobenius_image(T.mink, setup)
+  (; p, Rx, R2x, gmod, gmod2) = setup
+  a = Int(mod(p, T.n))
+  row = T.cyclic_conductor_data.orbit_indices[min(a, T.n - a)]
+  umod = R2x(data.unit)
+  sigma_umod = R2x([data.conjugates[row, j] for j in 1:degree(T.k)])
+  num = _cyclotomic_frobenius_power(umod, gmod2, p) - sigma_umod
+  q = change_base_ring(
+    base_ring(Rx), divexact!(lift(Hecke.Globals.Zx, num), p); parent = Rx
+  )
+  inverse_sigma_umod = Rx([data.inverse_conjugates[row, j] for j in 1:degree(T.k)])
+  return mulmod(q, inverse_sigma_umod, gmod)
+end
+
 function _schirokauer_map_data_cyclotomic_delta(
     T::pRationalityTestCtx, p; all_units::Bool = false)
   @assert !is_divisible_by(2 * T.n, p)
@@ -481,14 +569,17 @@ function _schirokauer_map_data_cyclotomic_delta(
   if cyclic !== nothing
     h = cyclic.orbit_modulus
     h = all_units ? _cyclotomic_all_units_gcd(T, setup, cyclic, h) :
-                    _cyclotomic_image_gcd(T.mink, setup, cyclic, h)
+                    _cyclotomic_image_gcd(T, setup, cyclic, h)
     return _cyclotomic_rank_from_gcd(d, h)
   end
-  return _schirokauer_map_data_cyclotomic_delta_general(T, setup; all_units)
+  image = all_units ? nothing : _cyclotomic_minkowski_image(T, setup)
+  return _schirokauer_map_data_cyclotomic_delta_general(
+    T, setup; all_units, minkowski_image = image
+  )
 end
 
 function _schirokauer_map_data_cyclotomic_delta_general(
-    T, setup; all_units::Bool = false)
+    T, setup; all_units::Bool = false, minkowski_image = nothing)
   d = degree(T.k)
   if all_units
     M = zero_matrix(base_ring(setup.Rx), length(T.cyc), d)
@@ -499,7 +590,8 @@ function _schirokauer_map_data_cyclotomic_delta_general(
       end
     end
   else
-    q = _cyclotomic_frobenius_image(T.mink, setup)
+    q = minkowski_image === nothing ?
+      _cyclotomic_frobenius_image(T.mink, setup) : minkowski_image
     M = zero_matrix(base_ring(setup.Rx), d, d)
     for i in 1:d
       sigma_x = setup.Rx(setup.data.automorphism_images[i, :])
@@ -520,14 +612,16 @@ function _p_rationality_cyclotomic_delta(T, p)
   setup = _cyclotomic_frobenius_setup(T, p)
   cyclic = _cyclotomic_cyclic_setup(T, setup)
   if cyclic !== nothing
-    h = _cyclotomic_image_gcd(T.mink, setup, cyclic, cyclic.orbit_modulus)
+    h = _cyclotomic_image_gcd(T, setup, cyclic, cyclic.orbit_modulus)
     fl, = _cyclotomic_rank_from_gcd(d, h)
     (fl || T.strongminkowski) && return fl
     h = _cyclotomic_all_units_gcd(T, setup, cyclic, h)
     fl, = _cyclotomic_rank_from_gcd(d, h)
     return fl
   end
-  fl, = _schirokauer_map_data_cyclotomic_delta_general(T, setup)
+  fl, = _schirokauer_map_data_cyclotomic_delta_general(
+    T, setup; minkowski_image = _cyclotomic_minkowski_image(T, setup)
+  )
   (fl || T.strongminkowski) && return fl
   fl, = _schirokauer_map_data_cyclotomic_delta_general(T, setup; all_units = true)
   return fl
