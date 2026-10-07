@@ -4,6 +4,8 @@ import Dates
 # This is a modified showprogress from Pkg.GitTools
 
 PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.001)
+# minimal number of seconds between two updates if not interactive
+const NONINTERACTIVE_TIME_GRANULARITY = Ref(2.0)
 
 Base.@kwdef mutable struct MiniProgressBar
     max::Float64 = 1.0
@@ -26,7 +28,7 @@ function showprogress(io::IO, p::MiniProgressBar, info)
   end
   if !isinteractive()
     t = time()
-    if p.has_shown && (t - p.time_shown) < NONINTERACTIVE_TIME_GRANULARITY[]  # FIXME: NONINTERACTIVE_TIME_GRANULARITY is not defined
+    if p.has_shown && (t - p.time_shown) < NONINTERACTIVE_TIME_GRANULARITY[]
       return
     end
     p.time_shown = t
