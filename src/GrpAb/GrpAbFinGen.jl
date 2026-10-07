@@ -685,9 +685,9 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_sum(G::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
+function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
   @assert task in [:sum, :prod, :both, :none]
-  return _direct_product(:sum, G...; task = task, kwargs...)
+  return _direct_product(:sum, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
@@ -706,9 +706,9 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_product(G::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
+function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G...; task = task, kwargs...)
+  return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
@@ -727,9 +727,9 @@ one should call `direct_product(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function biproduct(G::FinGenAbGroup...; task::Symbol = :both, kwargs...)
+function biproduct(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :both, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G...; task = task, kwargs...)
+  return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""

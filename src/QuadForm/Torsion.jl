@@ -2347,7 +2347,7 @@ function direct_sum(
   return T, inj
 end
 
-direct_sum(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = direct_sum(collect(x); cached, as_bilinear_module)
+direct_sum(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinear_module::Bool=false) = direct_sum(collect((x, y...)); cached, as_bilinear_module)
 
 @doc raw"""
     direct_product(
@@ -2382,7 +2382,7 @@ function direct_product(
   return T, proj
 end
 
-direct_product(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = direct_product(collect(x); cached, as_bilinear_module)
+direct_product(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinear_module::Bool=false) = direct_product(collect((x, y...)); cached, as_bilinear_module)
 
 @doc raw"""
     biproduct(
@@ -2416,7 +2416,7 @@ function biproduct(
   return _biproduct(x; cached, as_bilinear_module)
 end
 
-biproduct(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = biproduct(collect(x); cached, as_bilinear_module)
+biproduct(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinear_module::Bool=false) = biproduct(collect((x, y...)); cached, as_bilinear_module)
 
 ###############################################################################
 #
