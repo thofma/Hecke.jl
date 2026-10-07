@@ -1052,41 +1052,50 @@ function _order(elt::Vector{S}; check::Bool = false) where {S <: Union{RelSimple
     else
       df = n-1
     end
-    f = one(K)
     for i=1:df
-      f *= e
       b = S[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
-        BK = basis_matrix(bas)
-        B = pseudo_hnf(pseudo_matrix(BK), :lowerleft)
-        rk = nrows(BK) - n + 1
-        while is_zero_row(BK, rk)
-          rk += 1
-        end
-        B = sub(B, rk:nrows(B), 1:n)
-        bas = _get_gens(B)
+        bas = _get_gens(K, _span_pmatrix(bas))
       end
     end
   end
-  if nrows(B) != degree(K)  # FIXME: B not defined (only inside the loop, *maybe*)
+
+  B = _span_pmatrix(bas)
+  if nrows(B) != degree(K)
     error("Data does not define an order")
   end
 
+  O = order(K, B)
+
   # Make an explicit check
-  @hassert :RelNumFieldOrder 1 defines_order(K, B)[1]
-  return order(K, B)
+  @hassert :RelNumFieldOrder 1 all(x*y in O for x in bas for y in bas)
+  return O
 end
 
-function _get_gens(M::PMat)
+# Pseudo-basis, in pseudo-HNF, of the module spanned by bas over the maximal
+# order of the base field
+function _span_pmatrix(bas::Vector{<:NumFieldElem})
+  B = pseudo_hnf(pseudo_matrix(basis_matrix(bas)), :lowerleft)
+
+  # the zero rows of a lower left HNF come first
+  rk = 1
+  while rk <= nrows(B) && is_zero_row(B.matrix, rk)
+    rk += 1
+  end
+  return sub(B, rk:nrows(B), 1:ncols(B))
+end
+
+function _get_gens(K::NumField, M::PMat)
   mat = M.matrix
   ids = M.coeffs
-  gens = Vector{RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}()
+  gens = elem_type(K)[]
   for i = 1:nrows(M)
-    el = elem_from_mat_row(K, B.matrix, i)  # FIXME: K not defined
+    el = elem_from_mat_row(K, mat, i)
     if isone(ids[i].num)
       push!(gens, divexact(el, ids[i].den))
     else
+      _assure_weakly_normal_presentation(ids[i].num)
       push!(gens, divexact(el* ids[i].num.gen_one, ids[i].den))
       push!(gens, divexact(el*ids[i].num.gen_two.elem_in_nf, ids[i].den))
     end
