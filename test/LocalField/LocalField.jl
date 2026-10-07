@@ -42,13 +42,11 @@
 
   @testset "Norm" begin
     K = qadic_field(3, 4, precision = 10)[1]
-    test_Field_interface(K)
-    #test_Field_interface_recursive(K)  # TODO/FIXME: does not work due to missing isapprox
+    ConformanceTests.test_Field_interface(K)
 
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
-    test_Field_interface(L)
-    #test_Field_interface_recursive(L)  # TODO/FIXME: does not work due to missing isapprox
+    ConformanceTests.test_Field_interface(L)
 
     b = @inferred basis(L)
     for i = 1:10
