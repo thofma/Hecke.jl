@@ -264,19 +264,8 @@ end
 Compute the discriminant of $C$.
 """
 function discriminant(C::HypellCrv{T}) where T
-  if isdefined(C, :disc)
-    return C.disc
-  end
-  K = base_field(C)
-  if characteristic(K) != 2
-    f, h = hyperelliptic_polynomials(C)
-    d = 2^(4*g)*discriminant(f(x) + 1//4*h(x)^2)  # FIXME: g not defined
-    C.disc = d
-    return d::T
-  else
-    #Need to use Witt vectors for this
-    error("Cannot compute discriminant of hyperelliptic curve in characteristic 2.")
-  end
+  # the constructor always sets C.disc
+  return C.disc
 end
 
 
