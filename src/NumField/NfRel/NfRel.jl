@@ -730,29 +730,6 @@ end
 
 ################################################################################
 #
-#  Random elements
-#
-################################################################################
-
-RandomExtensions.maketype(L::RelSimpleNumField, B) = elem_type(L)
-
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:RelSimpleNumFieldElem,<:RelSimpleNumField,<:AbstractUnitRange}})
-  L, B = sp[][1:end]
-  k = base_field(L)
-  pb = basis(L)
-  z = zero(L)
-  for i = 1:length(pb)
-    t = rand(rng, k, B)
-    z += t*pb[i]
-  end
-  return z
-end
-
-rand(L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(GLOBAL_RNG, L, B)
-rand(rng::AbstractRNG, L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(rng, make(L, B))
-
-################################################################################
-#
 #  Find Kummer generator
 #
 ################################################################################
