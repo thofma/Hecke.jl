@@ -310,6 +310,23 @@ end
     @test I.restart > 0
   end
 
+  @testset "Minkowski unit from units of subfields" begin
+    Qx, x = QQ["x"]
+    K, a = number_field(x^4 - 10*x^2 + 1, "a"; cached = false) # QQ(sqrt(2), sqrt(3))
+    s2 = (a^3 - 9*a)//2
+    s6 = (a^2 - 5)//2
+    # the conjugates of each of these span a group of rank 1
+    units = [1 + s2, (s2 + s6)//2, a]
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(units)
+    @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+    @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 3)
+    # the product of these is a, so that random products are tried
+    C = Hecke.VerifyUnitGroup.initialize_verify_context([units[1], units[2], a * inv(units[1] * units[2])])
+    @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+    C = Hecke.VerifyUnitGroup.initialize_verify_context([units[1]^3, units[2], units[3]])
+    @test !Hecke.VerifyUnitGroup._is_definitely_saturated(C, 3)
+  end
+
   @testset "Auto but no autos" begin
     K, a = number_field(x^3 - 3*x - 4)
     OK = (maximal_order(K))
