@@ -670,7 +670,7 @@ end
 #TODO: check the universal properties here!!!
 
 @doc raw"""
-    direct_sum(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
+    direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct sum $D$ of the (finitely many) abelian groups $G_i$, together
 with the injections $G_i \to D$.
@@ -691,7 +691,7 @@ function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :sum, 
 end
 
 @doc raw"""
-    direct_product(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
+    direct_product(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$.
@@ -712,7 +712,7 @@ function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :p
 end
 
 @doc raw"""
-    biproduct(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
+    biproduct(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$ and the injections $G_i \to D$.

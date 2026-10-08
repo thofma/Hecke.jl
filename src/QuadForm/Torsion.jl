@@ -2316,7 +2316,11 @@ end
 
 @doc raw"""
     direct_sum(
-      x::Union{Vector{TorQuadModule}, Vararg{TorQuadModule}};
+      x::Vector{TorQuadModule};
+      as_bilinear_module::Bool=false
+    ) -> TorQuadModule, Vector{TorQuadModuleMap}
+    direct_sum(
+      x::TorQuadModule, y::TorQuadModule...;
       as_bilinear_module::Bool=false
     ) -> TorQuadModule, Vector{TorQuadModuleMap}
 
@@ -2351,7 +2355,11 @@ direct_sum(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinea
 
 @doc raw"""
     direct_product(
-      x::Union{Vector{TorQuadModule}, Vararg{TorQuadModule}};
+      x::Vector{TorQuadModule};
+      as_bilinear_module::Bool=false,
+    ) -> TorQuadModule, Vector{TorQuadModuleMap}
+    direct_product(
+      x::TorQuadModule, y::TorQuadModule...;
       as_bilinear_module::Bool=false,
     ) -> TorQuadModule, Vector{TorQuadModuleMap}
 
@@ -2386,7 +2394,11 @@ direct_product(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bil
 
 @doc raw"""
     biproduct(
-      x::Union{Vector{TorQuadModule}, Vararg{TorQuadModule}};
+      x::Vector{TorQuadModule};
+      as_bilinear_module::Bool=false,
+    ) -> TorQuadModule, Vector{TorQuadModuleMap}, Vector{TorQuadModuleMap}
+    biproduct(
+      x::TorQuadModule, y::TorQuadModule...;
       as_bilinear_module::Bool=false,
     ) -> TorQuadModule, Vector{TorQuadModuleMap}, Vector{TorQuadModuleMap}
 
