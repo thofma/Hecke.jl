@@ -10,6 +10,9 @@
   fl, a = Hecke._is_principal_with_data_bj(I, ZG, side = :right)
   @test fl
   @test a * ZG == I
+  fl, b = is_free_with_basis(I)
+  @test fl
+  @test only(b) * ZG == I
 
   G = small_group(8, 4) # Q_8
   QG = QQ[G]
