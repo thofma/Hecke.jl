@@ -522,7 +522,7 @@ function prime_ideals_over(O::AbsSimpleNumFieldOrder,
   p = 1
   r = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}[]
   for p in lp
-    @vprint :ClassGroup 2 "decomposing $p ... (deg_lim $deg_lim)"
+    @vprint :ClassGroup 2 "decomposing $p ... (deg_lim $degree_limit)"
     li = prime_decomposition(O, p, degree_limit)
     for P in li
       push!(r, P[1])
