@@ -1451,9 +1451,9 @@ function has_principal_generator_1_mod_m(I::Union{AbsNumFieldOrderIdeal{AbsSimpl
     ii += ngens(groups_and_maps[i][1])
   end
   if !isempty(inf_plc)
-    H, eH, lH = infinite_primes_map(O, inf_plc, m)
-    for t = 1:length(tobeeval)
-      el = lH(tobeeval[i])
+    H, eH, lH = sign_map(O, _embedding.(inf_plc), m)
+    for t = 1:length(tobeeval1)
+      el = lH(tobeeval1[t])
       for s = 1:ngens(H)
         coeffs[t][1, ii-1+s] = el[s]
       end

@@ -251,6 +251,7 @@ function __init__()
   add_assertion_scope(:RayFacElem)
 
   add_verbosity_scope(:RelNumFieldOrder)
+  add_assertion_scope(:RelNumFieldOrder)
 
   add_assertion_scope(:RelSimpleNumField)
 

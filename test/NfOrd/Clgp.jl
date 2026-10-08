@@ -389,4 +389,25 @@ end
     B = Hecke.NfFactorBase(lll(maximal_order(k)), 50; complete = false, degree_limit = 0)
     @test length(B.fb) == 10
   end
+
+  @testset "Progress bar" begin
+    # the second call takes a different path if not interactive, as in CI
+    PB = Hecke.MiniProgressBar(header = "test")
+    io = IOBuffer()
+    Hecke.showprogress(io, PB, "")
+    PB.current = 0.5
+    Hecke.showprogress(io, PB, "")
+    @test occursin("test", String(take!(io)))
+  end
+
+  @testset "to_hecke" begin
+    Qx, x = QQ["x"]
+    K, a = number_field(x^3 + 2, "a")
+    c = Hecke.class_group_ctx(maximal_order(K))
+    mktemp() do path, io
+      close(io)
+      Hecke.to_hecke(path, c)
+      @test startswith(read(path, String), "K, a = number_field(x^3 + 2, \"a\");\n")
+    end
+  end
 end

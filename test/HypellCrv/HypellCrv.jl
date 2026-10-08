@@ -36,6 +36,11 @@
     C = base_change(F, C)
     @test (@inferred base_field(C)) == F
 
+    F = GF(2, 4)
+    Fx, x = polynomial_ring(F, "x")
+    C = hyperelliptic_curve(x^6 + x + 1, Fx(1))
+    @test_throws ErrorException discriminant(C)
+
   end
 
   @testset "Points" begin

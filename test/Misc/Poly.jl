@@ -291,3 +291,12 @@ let
     end
   end
 end
+
+@testset "arb_trim" begin
+  RR = ArbField(200)
+  x = RR(1)//3 + RR("0 +/- 1e-10")
+  y = Hecke.arb_trim(x)
+  @test contains(y, x)
+  @test precision(parent(y)) < 200
+  @test isone(Hecke.arb_trim(RR(1)))
+end

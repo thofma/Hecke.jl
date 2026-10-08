@@ -657,6 +657,7 @@ function igusa_invariant_J15(f::PolyRingElem{T}) where T  <: FieldElem
         8*a2^7*a3^3*a4^3*a5^2 + 27*a2^6*a3^7*a6^2 - 18*a2^6*a3^6*a4*a5*a6 + 4*a2^6*a3^6*a5^3 + 4*a2^6*a3^5*a4^3*a6 - a2^6*a3^5*a4^2*a5^2
 
 
+    vals = elem_type(K)[_a0, _a1, _a2, _a3, _a4, _a5, _a6]
     return evaluate(J15, vals)
 
 end
