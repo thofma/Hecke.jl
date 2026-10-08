@@ -158,3 +158,41 @@ end
   UU3, mUU3 = unit_group_fac_elem(O2)
   @test !is_trivial(UU3)
 end
+
+@testset "Unit generators of non maximal algebra orders" begin
+  Qx, x = QQ["x"]
+  A = StructureConstantAlgebra((x^2 - 5)*(x^2 - 13))
+  O = order(A, basis(A))
+  @test !is_maximal(O)
+
+  U, mU = unit_group(O)
+  @test is_snf(U)
+  @test elementary_divisors(U) == ZZRingElem[2, 0, 0]
+  @test mU(U[1]) == -one(O)
+  for u in [zero(U), gens(U)..., U([1, -2, 3]), U([0, 2, -3])]
+    @test mU\mU(u) == u
+    @test mU\mU(-u) == -u
+    @test mU(u)*mU(-u) == one(O)
+  end
+
+  # The maximal-order group has two torsion generators as well as two free ones.
+  OK = maximal_order(O)
+  G, mG = unit_group(OK)
+  c = [mG\OK(elem_in_algebra(mU(u))) for u in gens(U)]
+  @test order(quo(G, c)[1]) == 144
+
+  UU, mUU = unit_group_fac_elem(O)
+  @test is_snf(UU)
+  @test is_isomorphic(UU, U)
+  c = FinGenAbGroupElem[]
+  for u in gens(UU)
+    b = evaluate(mUU(u))
+    @test b in O
+    @test inv(b) in O
+    v = mU\O(b)
+    @test mU(v) == O(b)
+    @test mU\O(inv(b)) == -v
+    push!(c, v)
+  end
+  @test is_trivial(quo(U, c)[1])
+end
