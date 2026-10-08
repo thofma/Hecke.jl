@@ -58,11 +58,11 @@ function _random_cyclic_subgroup(K, aut, cyc)
   end
 end
 
-function _schirokauer_map_data_minkowski_unit(K, u::Union{AbsSimpleNumFieldElem, FacElem}, ell, aut = nothing; is_abelian = false, new::Bool = true)
-  __schirokauer_map_data_minkowski_unit(K, u, ell, aut === nothing ? _pick_automorphisms(K; is_abelian) : aut, is_abelian, new)
+function _schirokauer_map_data_minkowski_unit(K, u::Union{AbsSimpleNumFieldElem, FacElem}, ell, aut = nothing; is_abelian = false)
+  __schirokauer_map_data_minkowski_unit(K, u, ell, aut === nothing ? _pick_automorphisms(K; is_abelian) : aut, is_abelian)
 end
 
-function __schirokauer_map_data_minkowski_unit(K, u::Union{AbsSimpleNumFieldElem, FacElem}, ell, aut::Vector, is_abelian::Bool, new::Bool = true)
+function __schirokauer_map_data_minkowski_unit(K, u::Union{AbsSimpleNumFieldElem, FacElem}, ell, aut::Vector, is_abelian::Bool)
   if is_index_divisor(maximal_order(K), ell) || is_ramified(maximal_order(K), ell)
     if u isa FacElem
       error("no can do")
@@ -70,17 +70,9 @@ function __schirokauer_map_data_minkowski_unit(K, u::Union{AbsSimpleNumFieldElem
     return _schirokauer_map_data_really_generic(K, u, ell, ZZ(ell)^2, aut)
   end
   if 2*nbits(ell) < 63
-    if new
-      return ___schirokauer_map_data_minkowski_unit_new(K, u, ell, ell^2, aut)
-    else
-      return ___schirokauer_map_data_minkowski_unit(K, u, ell, ell^2, aut)
-    end
+    return ___schirokauer_map_data_minkowski_unit_new(K, u, ell, ell^2, aut)
   else
-    if new
-      return ___schirokauer_map_data_minkowski_unit_new(K, u, ell, ZZ(ell)^2, aut)
-    else
-      return ___schirokauer_map_data_minkowski_unit(K, u, ell, ZZ(ell)^2, aut)
-    end
+    return ___schirokauer_map_data_minkowski_unit_new(K, u, ell, ZZ(ell)^2, aut)
   end
 end
 
@@ -579,7 +571,7 @@ function _dim_image_of_schirokauer_map(_K::pRationalityTestGenericCtx, us, p)
   K = _nf(_K)
   rK = Hecke.unit_group_rank(K)
   try
-    fl, _, dimimage  = _schirokauer_map_data_minkowski_unit(K, _K.minkowski, p, _K.aut; new = true)
+    fl, _, dimimage  = _schirokauer_map_data_minkowski_unit(K, _K.minkowski, p, _K.aut)
   catch e
     if !(e isa ErrorException && (e.msg == "Impossible inverse in invmod" || e.msg == "no can do")) && !(e isa FlintException)
       rethrow(e)
