@@ -379,23 +379,6 @@ function _compress_two_matrices_try_faithful_and_small!(res, vector_set)
   return res, vector_set, faithful
 end
 
-function _fits_small_init(G::Vector{ZZMatrix}, vector_nbits::Int)
-  bitbound = Int == Int64 ? 64 : 32
-  abs_maxbits_vectors = Int == Int64 ? 30 : 15
-  Gsnbits = maximum(maximum.(nbits, G)) + 1 # + 1 for the sign
-  n = nrows(G[1])
-  nrows_nbits = nbits(n)
-  vectors = first.(vector_set)
-  vectors_nbits = 0
-  if vectors_nbits > abs_maxbits_vectors
-    return false
-  end
-  if Gsnbits + vectors_nbits + nrows_nbits + 1 > bitbound
-    return false
-  end
-  return true
-end
-
 function _fits_small_init(G::Vector{ZZMatrix}, vector_set::Vector)
   bitbound = Int == Int64 ? 64 : 32
   abs_maxbits_vectors = Int == Int64 ? 30 : 15
