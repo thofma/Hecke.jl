@@ -262,6 +262,7 @@
     @test length(automorphism_list(L)) == 2
     Qq, a = qadic_field(2, 2, precision = 100)
     @test length(automorphism_list(Qq)) == 2
+    @test length(absolute_automorphism_list(Qq)) == 2
     Qqx, x = polynomial_ring(Qq)
     L, b = eisenstein_extension(x^3+2, "a")
     @test length(automorphism_list(L)) == 3
