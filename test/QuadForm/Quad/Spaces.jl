@@ -273,6 +273,8 @@
     @test is_square(detb)
     @test finb[ZZ(2)] == -1 && finb[pbig] == -1
     @test negb[1][2] == 4
+    # binary form with -det a square at 3, but Hasse invariant -1 there
+    @test_throws ErrorException Hecke._quadratic_form_with_invariants(2, ZZ(-1), [ZZ(3)], 1)
     # small ranks should be covered by the tests of GenusRep
     K, a = rationals_as_number_field()
     OK = maximal_order(K)
