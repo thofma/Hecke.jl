@@ -461,15 +461,18 @@ function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality:
       end
     end
     if is_zero(u)
-      # not found yet
+      # not found yet, try random products of the given units
       k = 0
-      uu = K(mU(U(rand(0:1, ngens(U)))))
-      while !(Hecke._isindependent([a(uu) for a in auts]))
+      uu = prod(units_fac)
+      while !Hecke._isindependent([a(uu) for a in auts])[1]
         k += 1
-        uu = K(mU(rand(U, 2)))
         if k > 100
           error("something wrong")
         end
+        e = rand(-2:2, length(units_fac))
+        # the trivial product has no factors to apply the automorphisms to
+        iszero(e) && continue
+        uu = prod(units_fac[i]^e[i] for i in 1:length(units_fac))
       end
       u = evaluate(uu)
     end
