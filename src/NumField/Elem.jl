@@ -490,6 +490,7 @@ function absolute_norm(f::PolyRingElem{<: NumFieldElem})
 end
 
 function is_irreducible(f::PolyRingElem{<: NumFieldElem})
+  is_zero(f) && return false
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
   return sum(values(lf.fac)) == 1
