@@ -101,7 +101,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
   CC = AcbField(prec)
   RR = ArbField(prec)
   if RS != parent(Q)
-    return
+    return false
   end
 
   if is_finite(P) && is_finite(Q)
