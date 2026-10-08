@@ -270,6 +270,16 @@ end
     @test order(C) == 8
   end
 
+  @testset "unit_group_ctx without relations" begin
+    Qx, x = QQ["x"]
+    K, = number_field(x^5 - 5*x^3 + 4*x - 1; cached = false)
+    O = maximal_order(K)
+    c = Hecke.class_group_init(O, Hecke.factor_base_bound_grh(O), complete = false)
+    U = Hecke.unit_group_ctx(c)
+    @test U.full_rank
+    @test Hecke.unit_group_ctx(c) === U
+  end
+
   @testset "Auto but no autos" begin
     K, a = number_field(x^3 - 3*x - 4)
     OK = (maximal_order(K))
