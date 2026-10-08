@@ -319,7 +319,7 @@ function (K::LocalField{S, T})(p::Generic.Poly{S}) where {S <: FieldElem, T <: L
   return LocalFieldElem{S, T}(K, p, compute_precision(K, p))
 end
 
-function (Rx::Generic.PolyRing{S})(a::LocalFieldElem{S, T}) where {S, T}
+function (Rx::Generic.PolyRing{S})(a::LocalFieldElem{S, T}) where {S <: FieldElem, T}
   @assert base_ring(Rx) == base_field(parent(a))
   return a.data
 end

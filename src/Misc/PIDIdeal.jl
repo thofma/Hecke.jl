@@ -108,7 +108,9 @@ lcm(x::PIDIdeal, y::PIDIdeal) = intersect(x, y)
 
 *(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(x.gen * y.gen)
 
-^(x::PIDIdeal, n::IntegerUnion) = PIDIdeal(x.gen ^ n)
+^(x::PIDIdeal, n::Integer) = PIDIdeal(x.gen ^ n)
+
+^(x::PIDIdeal, n::ZZRingElem) = PIDIdeal(x.gen ^ n)
 
 intersect(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(lcm(x.gen, y.gen))
 
