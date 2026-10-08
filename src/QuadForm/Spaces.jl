@@ -732,7 +732,7 @@ function _biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
 end
 
 @doc raw"""
-    direct_sum(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::T, y::T...) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
@@ -755,10 +755,10 @@ function direct_sum(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
   return V, inj
 end
 
-direct_sum(x::Vararg{AbstractSpace}; cached::Bool=true) = direct_sum(collect(x); cached)
+direct_sum(x::AbstractSpace, y::AbstractSpace...; cached::Bool=true) = direct_sum(collect((x, y...)); cached)
 
 @doc raw"""
-    direct_product(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_product(x::T, y::T...) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
     direct_product(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
@@ -781,10 +781,10 @@ function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractSpace
   return V, proj
 end
 
-direct_product(x::Vararg{AbstractSpace}; cached::Bool=true) = direct_product(collect(x); cached)
+direct_product(x::AbstractSpace, y::AbstractSpace...; cached::Bool=true) = direct_product(collect((x, y...)); cached)
 
 @doc raw"""
-    biproduct(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::T, y::T...) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
@@ -806,7 +806,7 @@ function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
   return _biproduct(x; cached)
 end
 
-biproduct(x::Vararg{AbstractSpace}; cached::Bool=true) = biproduct(collect(x); cached)
+biproduct(x::AbstractSpace, y::AbstractSpace...; cached::Bool=true) = biproduct(collect((x, y...)); cached)
 
 ################################################################################
 #

@@ -253,7 +253,7 @@ function _biproduct(x::Vector{ZZLat})
 end
 
 @doc raw"""
-    direct_sum(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
+    direct_sum(x::ZZLat, y::ZZLat...) -> ZZLat, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
@@ -278,10 +278,10 @@ function direct_sum(x::Vector{ZZLat}; cached::Bool=true)
   return lattice(W, B; check = false), inj
 end
 
-direct_sum(x::Vararg{ZZLat}; cached=true) = direct_sum(collect(x); cached)
+direct_sum(x::ZZLat, y::ZZLat...; cached=true) = direct_sum(collect((x, y...)); cached)
 
 @doc raw"""
-    direct_product(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
+    direct_product(x::ZZLat, y::ZZLat...) -> ZZLat, Vector{AbstractSpaceMor}
     direct_product(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
@@ -306,10 +306,10 @@ function direct_product(x::Vector{ZZLat}; cached::Bool=true)
   return lattice(W, B; check = false), proj
 end
 
-direct_product(x::Vararg{ZZLat}; cached::Bool=true) = direct_product(collect(x);cached)
+direct_product(x::ZZLat, y::ZZLat...; cached::Bool=true) = direct_product(collect((x, y...)); cached)
 
 @doc raw"""
-    biproduct(x::Vararg{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::ZZLat, y::ZZLat...) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{ZZLat}) -> ZZLat, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of $\mathbb Z$-lattices $L_1, \ldots, L_n$,
@@ -334,7 +334,7 @@ function biproduct(x::Vector{ZZLat}; cached::Bool=true)
   return lattice(W, B; check = false), inj, proj
 end
 
-biproduct(x::Vararg{ZZLat};cached::Bool=true) = biproduct(collect(x); cached)
+biproduct(x::ZZLat, y::ZZLat...; cached::Bool=true) = biproduct(collect((x, y...)); cached)
 
 @doc raw"""
     orthogonal_submodule(L::ZZLat, S::ZZLat) -> ZZLat
