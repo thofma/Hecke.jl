@@ -783,6 +783,9 @@ function ^(chain::CChain, k::Int)
   if k == 0
     result = CChain([c_point(start_point(C))])
   end
+  if k < 0
+    return inv(chain)^(-k)
+  end
   result = chain
   for j in (1:k-1)
     result *= chain
