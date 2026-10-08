@@ -110,7 +110,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
     else
       if !P.is_singular && !Q.is_singular
         return  contains(abs(P.coordy - Q.coordy), RR(0))
-      elseif isdefined(P.sheets) && isdefined(Q.sheets)
+      elseif isdefined(P, :sheets) && isdefined(Q, :sheets)
         return Set(P.sheets) == Set(Q.sheets)
       else
         return false
@@ -119,7 +119,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
   end
 
   if !is_finite(P) && !is_finite(Q)
-    if isdefined(P.coordx) && isdefined(Q.coordx)
+    if isdefined(P, :coordx) && isdefined(Q, :coordx)
       if P.coordx == CC(1/0) && Q.coordx == CC(1/0)
         return Set(P.sheets) == Set(Q.sheets)
       else
@@ -128,7 +128,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
         end
       end
     else
-      if isdefined(P.homog_coords) && isdefined(Q.homog_coords)
+      if isdefined(P, :homog_coords) && isdefined(Q, :homog_coords)
         @req P.homog_coords[3] == CC(0) "This should not happen. There is a bug in the code."
         @req Q.homog_coords[3] == CC(0) "This should not happen. There is a bug in the code."
         if P.homog_coords[1] != 0
