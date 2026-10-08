@@ -58,7 +58,7 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
       return I
     catch e
       if isa(e, LowPrecisionCholesky)
-        print_with_color(:red, "prec too low in cholesky,")
+        printstyled("prec too low in cholesky,", color = :red)
         prec = Int(ceil(1.2*prec))
         println(" increasing to ", prec)
         if prec > 1000
@@ -66,7 +66,7 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
           error("1:too much prec")
         end
       elseif isa(e, LowPrecisionLLL)
-        print_with_color(:red, "prec too low in LLL,")
+        printstyled("prec too low in LLL,", color = :red)
         prec = Int(ceil(1.2*prec))
         println(" increasing to ", prec)
         if prec > 1000
@@ -99,7 +99,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q
     end
-    @v_do :ClassGroup 2 print_with_color(:red, "restart after ")
+    @v_do :ClassGroup 2 printstyled("restart after ", color = :red)
     @v_do :ClassGroup 2 print(I.E.cnt)
     @v_do :ClassGroup 3 println(" for ", I.A, I.E.c)
     @v_do :ClassGroup 2 println(" length now ", I.E.c*2)
