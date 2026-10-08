@@ -428,7 +428,6 @@ function Hecke.is_power(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, n:
       res = FacElem(rt)*res
     end
     return true, res
-    return r
   end
   return _ispower(a, n, with_roots_unity = with_roots_unity, decom = decom, trager = trager)
 end
