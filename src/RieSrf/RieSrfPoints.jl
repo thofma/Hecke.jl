@@ -37,8 +37,8 @@ function (RS::RiemannSurface)(coords::Vector{AcbFieldElem})
     else
       error("Not a point on the Riemann surface.")
     end
-  elseif length(S) == 3
-    homog_coords = [CC(S[1], CC(S[2]), CC(S[3]))]
+  elseif length(coords) == 3
+    homog_coords = [CC(coords[1]), CC(coords[2]), CC(coords[3])]
     if homog_coords[3] != CC(0)
       return RS([homog_coords[1]/homog_coords[3], homog_coords[2]/homog_coords[3]])
     else

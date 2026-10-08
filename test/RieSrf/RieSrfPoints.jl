@@ -32,4 +32,14 @@
     @test S1 == S1
     @test S1 != S2
   end
+
+  @testset "Projective coordinates" begin
+    RS = riemann_surface(x^6 + x^2 + 1 - y^2, 100, integration_method = "heuristic")
+    CC = complex_field(RS)
+    P = RS([CC(0), CC(1)])
+    @test RS([CC(0), CC(1), CC(1)]) == P
+    @test RS([CC(0), CC(-2), CC(-2)]) == P
+    @test RS([CC(0), CC(2), CC(-2)]) != P
+    @test_throws ErrorException RS([CC(1), CC(1), CC(1)])
+  end
 end
