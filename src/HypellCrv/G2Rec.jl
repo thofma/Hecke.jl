@@ -199,6 +199,10 @@ function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: Union{ZZRin
 end
 
 function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: FieldElem
+  return _reconstruct_from_igusa_generic(igusa_invs)
+end
+
+function _reconstruct_from_igusa_generic(igusa_invs::Vector{T}) where T <: FieldElem
   K = parent(igusa_invs[1])
   igusa_invs = igusa_invs[(1:5)]
   R, conic, cubic = compute_conic_and_cubic_generic(igusa_invs)
@@ -234,7 +238,7 @@ function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T <: Union
   7776*J2*J4*J6^4 + 6912*J4^3*J6^3 - 96000*J10^2*J2^2*J6 -
   512000*J10^2*J2*J4^2 - 129600*J10*J2*J6^3 + 691200*J10*J4^2*J6^2 +
   11664*J6^5 + 11520000*J10^2*J4*J6 + 51200000*J10^3
-  if R == zero(K) then
+  if is_zero(R)
       error("Could not reconstruct conic.")
   end
 
