@@ -21,6 +21,13 @@ function random_elem(L::Union{QadicField, Hecke.LocalField})
    return sum( [r[i]*b[i] for i in 1:n])
 end
 
+function ConformanceTests.generate_element(L::Union{QadicField, LocalField})
+   return random_elem(L)
+end
+
+function ConformanceTests.equality(a::T, b::T) where {T <: Union{QadicFieldElem, LocalFieldElem}}
+  return a == b
+end
 
 ########### any_root computes a single root in the finite field extensions####
 
