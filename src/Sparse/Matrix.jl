@@ -796,7 +796,7 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SMat{T}) where {T}
+function *(b::T, A::SMat{T}) where {T <: NCRingElement}
   if iszero(b)
     return sparse_matrix(base_ring(A), nrows(A), ncols(A))
   end
@@ -807,11 +807,11 @@ function *(b::T, A::SMat{T}) where {T}
   return B
 end
 
-function *(b, A::SMat)
+function *(b::NCRingElement, A::SMat)
   return base_ring(A)(b) * A
 end
 
-function *(A::SMat{T}, b::T) where {T}
+function *(A::SMat{T}, b::T) where {T <: NCRingElement}
   if iszero(b)
     return sparse_matrix(base_ring(A), nrows(A), ncols(A))
   end
@@ -822,7 +822,7 @@ function *(A::SMat{T}, b::T) where {T}
   return B
 end
 
-function *(A::SMat, b)
+function *(A::SMat, b::NCRingElement)
   return A * base_ring(A)(b)
 end
 
