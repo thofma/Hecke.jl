@@ -29,6 +29,19 @@
   CC("0.256565672125607694035812638002370809812311219462476029106274","-0.390109903439428059302987558739677857206947775603455209179383")])
   @test contains(abel_jacobi_map(P+Q), test)
 
+  # The divisor of x on y^2 = x^6 + x^2 + 1 is P1 + P2 - Q1 - Q2 with Q1, Q2
+  # the points at infinity, around which there is no monodromy
+  f = x^6 + x^2 + 1 - y^2
+  RS = riemann_surface(f, 100, integration_method = "heuristic")
+  CC = complex_field(RS)
+  pts = [RS([CC(0), CC(1)]), RS([CC(0), CC(-1)]), infinite_points(RS)...]
+  # the map warns about heuristic methods at infinity
+  v = redirect_stdout(devnull) do
+    [abel_jacobi_map(P, "direct", "real") for P in pts]
+  end
+  w = v[1] + v[2] - v[3] - v[4]
+  @test all(z -> unique_integer(z)[1] && Hecke.radiuslttwopower(z, -50), w)
+
   f = y^3 - x^7 + 2*x^3*y
   RS = riemann_surface(f, 150, integration_method = "heuristic")
 
