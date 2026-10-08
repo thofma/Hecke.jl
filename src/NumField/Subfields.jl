@@ -715,12 +715,12 @@ function fixed_field(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimpleN
   p = prod(x-image_primitive_element(y) for y in all_auts)
   def_eq = map_coefficients(x -> has_preimage_with_preimage(mF, x)[2], p, cached = false)
   L, gL = number_field(def_eq, cached = false, check = false)
-  iso = hom(K, L, gL, image_primitive_element(mF), gen(K))
+  iso = hom(K, L, gL, inverse = (image_primitive_element(mF), gen(K)))
   #I also set the automorphisms...
-  autsL = Vector{NfRelToNfRelMor{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, length(all_auts))
+  autsL = Vector{morphism_type(L, L)}(undef, length(all_auts))
   for i = 1:length(autsL)
     autsL[i] = hom(L, L, iso(image_primitive_element(all_auts[i])))
   end
-  set_automorphisms!(L, autsL)
+  set_attribute!(L, :automorphisms => autsL)
   return L, iso
 end
