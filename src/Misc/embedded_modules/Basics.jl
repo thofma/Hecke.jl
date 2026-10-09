@@ -8,6 +8,13 @@ overring(M::EmbeddedModule) = M.overring
 
 overstructure(M::EmbeddedModule) = M.overstructure
 
+function Base.show(io::IO, M::EmbeddedModule)
+  Hecke.@show_name(io, M)
+  io = Hecke.pretty(io)
+  print(io, "Embedded module of rank ", rank(M), " over ",
+        Hecke.Lowercase(), ring(M), " in ", overring(M), "^", ambient_rank(M))
+end
+
 ambient_rank(M::EmbeddedModule) = ncols(generator_matrix(M))
 
 index_multiple(M::EmbeddedModule) = M.index_multiple
@@ -101,6 +108,30 @@ function basis_matrix(M::EmbeddedModule{_PID, RingType, OverringType}) where {Ri
   return M.basis_matrix::dense_matrix_type(OverringType)
 end
 
+function basis(M::EmbeddedModule{_PID}; copy::Bool = true)
+  if !isdefined(M, :basis)
+    B = basis_matrix(M)
+    n = nrows(B)
+    b = Vector{elem_type(M)}(undef, n)
+    R = ring(M)
+    for i in 1:n
+      c = [zero(R) for j in 1:n]
+      c[i] = one(R)
+      b[i] = _element_from_coordinates_and_ambient_coordinates(M, c, B[i, :];
+                                                              check = false)
+    end
+    M.basis = b
+  end
+  b = M.basis::Vector{elem_type(M)}
+  return copy ? deepcopy(b) : b
+end
+
+function _basis_coordinates_in_generators(A::MatElem)
+  # TODO: Improve this by using a normal form with a transformation matrix.
+  R = base_ring(A)
+  return can_solve_with_solution(A, Hecke.identity_matrix(R, ncols(A)); side = :left)
+end
+
 function basis_matrix_inverse(N)
   if !isdefined(N, :basis_matrix_inverse)
     N.basis_matrix_inverse = inv(basis_matrix(N))
@@ -145,10 +176,11 @@ function set_basis_matrix_components(M::EmbeddedModule, B, d)
 
   M.fullrank = M.rank == ambient_rank(M) ? 1 : 2
 
-  if M.fullrank == 1 && !is_known(index_multiple, M) && Hecke.is_triangular(B)
+  if M.fullrank == 1 && !is_known(index_multiple, M) &&
+     (iszero(M.rank) || Hecke.is_triangular(B))
     #@assert is_triangular(B)
     # wrong if not integral?
-    M.index_multiple = prod(diagonal(B))
+    M.index_multiple = iszero(M.rank) ? one(ring(M)) : prod(diagonal(B))
   end
 
   return M

@@ -5,4 +5,5 @@
   include("embedded_modules/Arithmetic.jl")
   include("embedded_modules/Containment.jl")
   include("embedded_modules/Quotients.jl")
+  include("embedded_modules/Map.jl")
 end

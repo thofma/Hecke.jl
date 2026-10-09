@@ -28,6 +28,74 @@
                                                                QQFieldElem[1, 0])
 end
 
+@testset "element validation and arithmetic" begin
+  M = Hecke.embedded_module(ZZ, QQ, QQ[2 0; 0 3])
+  from_coords(c) = Hecke._element_from_coordinates(M, ZZRingElem[c...])
+  from_ambient(v) = Hecke._element_from_ambient_coordinates(M,
+                                       QQFieldElem[v...]; check = false)
+  both(c, v) = Hecke._element_from_coordinates_and_ambient_coordinates(M,
+                            ZZRingElem[c...], QQFieldElem[v...]; check = false)
+
+  @test_throws ArgumentError from_coords([1])
+  @test_throws ArgumentError from_ambient([2])
+  @test_throws ArgumentError both([1], [2, 3])
+  @test_throws ArgumentError both([1, 1], [2])
+  @test_throws ArgumentError Hecke._element_from_coordinates(M, ZZ[1 0; 0 1])
+  @test_throws ArgumentError Hecke._element_from_coordinates_and_ambient_coordinates(
+                                            M, ZZRingElem[1, 0], QQFieldElem[1, 0])
+
+  for make_x in (from_coords, c -> from_ambient([2*c[1], 3*c[2]]),
+                 c -> both(c, [2*c[1], 3*c[2]]))
+    for make_y in (from_coords, c -> from_ambient([2*c[1], 3*c[2]]),
+                   c -> both(c, [2*c[1], 3*c[2]]))
+      x = make_x([2, -1])
+      y = make_y([3, 4])
+      z = x + y
+      @test coordinates(z) == ZZRingElem[5, 3]
+      @test Hecke.ambient_coordinates(z) == QQFieldElem[10, 9]
+      @test coordinates(x) == ZZRingElem[2, -1]
+      @test coordinates(y) == ZZRingElem[3, 4]
+      @test x - y == from_coords([-1, -5])
+      @test -x == from_coords([-2, 1])
+      @test 3*x == x*ZZ(3) == from_coords([6, -3])
+    end
+  end
+
+  x = from_coords([2, -1])
+  y = from_ambient([4, -3])
+  @test x == y
+  @test hash(x) == hash(y)
+  @test sprint(show, x) == sprint(show, y)
+  @test iszero(zero(M))
+  @test iszero(0*x)
+  @test !iszero(x)
+  N = Hecke.embedded_module(ZZ, QQ, QQ[2 0; 0 3])
+  @test x != Hecke._element_from_coordinates(N, ZZRingElem[2, -1])
+  @test_throws ArgumentError x + zero(N)
+end
+
+@testset "scalar embedding in function fields" begin
+  K, x = rational_function_field(QQ, "x")
+  R = parent(numerator(x))
+  Rinf = localization(K, degree)
+  for (S, t) in ((R, numerator(x)), (Rinf, Rinf(inv(x))))
+    M = Hecke.embedded_module(S, K, K[1//x 0; 0 x])
+    c = elem_type(S)[t, one(S)]
+    v = typeof(x)[image(Hecke.fraction_map(M), t)//x, x]
+    a = Hecke._element_from_coordinates(M, c)
+    b = Hecke._element_from_ambient_coordinates(M, v; check = false)
+    d = Hecke._element_from_coordinates_and_ambient_coordinates(M, c, v)
+    for y in (a, b, d)
+      z = t*y
+      @test parent(z) === M
+      @test eltype(coordinates(z)) == elem_type(S)
+      @test coordinates(z) == t .* c
+      @test Hecke.ambient_coordinates(z) == image(Hecke.fraction_map(M), t) .* v
+      @test z == y*t
+    end
+  end
+end
+
 @testset "pseudo elements and Dedekind domains" begin
   p = Hecke._pseudo_element(QQ(2), ZZ)
   q = Hecke._pseudo_element(QQ(3), ZZ)
