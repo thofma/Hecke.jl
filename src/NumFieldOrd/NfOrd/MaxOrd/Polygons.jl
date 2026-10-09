@@ -235,12 +235,19 @@ where $a_i$ are the coefficients of the $\phi$-development of $f$.
 """
 function newton_polygon(f::T, phi::T) where T <: Generic.Poly{S} where S <: Union{QadicFieldElem, PadicFieldElem, LocalFieldElem}
   dev = phi_development(f, phi)
+  if degree(phi) == 1 && iszero(dev[1])
+    # Division can erase a known nonzero constant term in the development.
+    r = -constant_coefficient(phi)//leading_coefficient(phi)
+    value = iszero(constant_coefficient(phi)) ? constant_coefficient(f) : f(r)
+    @req iszero(value) "Insufficient precision to determine Newton polygon"
+  end
   a = Tuple{Int, Int}[]
   for i = 0:length(dev) -1
     if !iszero(dev[i+1])
       push!(a, (i, _valuation(dev[i+1])))
     end
   end
+  @req length(a) > 1 "Insufficient precision to determine Newton polygon"
   P = lower_convex_hull(a)
   p = prime(base_ring(f))
   return NewtonPolygon(P, f, phi, p, dev)
