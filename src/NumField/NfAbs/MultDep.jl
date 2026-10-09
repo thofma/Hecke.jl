@@ -575,6 +575,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     if length(support) == 0 #kown to be units
       u = A
       g1 = typeof(A[1])[]
+      cp = support
     else
       S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
       u = Hecke._transform(A, transpose(T))

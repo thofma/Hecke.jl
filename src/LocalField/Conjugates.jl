@@ -323,7 +323,7 @@ function conjugates_log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, C:
         lp = prime_decomposition(maximal_order(parent(k)), C.C.p)
         @assert Base.all(x -> has_2_elem_normal(x[1]), lp)
         val = map(x -> valuation(k, x[1]), lp)
-        pe = prod(lp[i][1].gen_two^val[i] for i = 1:length(lp) if val[i] != 0)
+        pe = prod(elem_in_nf(lp[i][1].gen_two)^val[i] for i = 1:length(lp) if val[i] != 0)
         aa = k//pe
         y = conjugates_log(aa, C, n, all = false, flat = false)
         if first
