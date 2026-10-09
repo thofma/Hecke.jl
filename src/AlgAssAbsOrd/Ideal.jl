@@ -2121,6 +2121,7 @@ function maximal_integral_ideal_containing(I::AlgAssAbsOrdIdl, p::Union{ ZZRingE
   while r < k - 1
     if !iszero(m[row, col])
       row += 1
+      col += 1
       continue
     end
 

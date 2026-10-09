@@ -1418,6 +1418,7 @@ function maximal_integral_ideal_containing(I::AlgAssRelOrdIdl, p::Union{ AbsNumF
   while r < k - 1
     if !iszero(m[row, col])
       row += 1
+      col += 1
       continue
     end
 

@@ -264,4 +264,15 @@
     P = Hecke.maximal_integral_ideal_containing(2*O, 2, :left)
     @test normred(P, O) == 2
   end
+
+  @testset "Maximal ideal containing a nonzero residue ideal" begin
+    Hecke.Random.seed!(2)
+    A = matrix_algebra(QQ, 3)
+    O = order(A, basis(A))
+    I = ideal(O, A(diagonal_matrix(QQ, [2, 1, 2])), :left)
+    P = Hecke.maximal_integral_ideal_containing(I, 2, :left)
+    @test normred(P, O) == 2
+    @test all(b in P for b in absolute_basis(I))
+    @test O * P == P
+  end
 end
