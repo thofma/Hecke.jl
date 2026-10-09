@@ -22,6 +22,14 @@
   @test evaluate(fac) == f
   @test all(isone(degree(p)) for (p, _) in fac)
 
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qtx, x = Qt[:x]
+    @test is_absolutely_irreducible(x^2 - t)
+    @test !is_absolutely_irreducible(x^2 - 2*t^2)
+    @test !is_absolutely_irreducible(x^2 - t^2)
+  end
+
   # inseparable extension
   let
     k, o = finite_field(9)

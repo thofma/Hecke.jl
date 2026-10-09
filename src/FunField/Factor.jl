@@ -92,7 +92,7 @@ function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   return la
 end
 
-function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+function Hecke.is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
   return is_absolutely_irreducible(to_mpoly(f))
 end
 
