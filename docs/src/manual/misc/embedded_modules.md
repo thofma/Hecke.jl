@@ -120,6 +120,7 @@ normal-form algorithm appropriate for `R`.
 | Function | Meaning |
 |:--|:--|
 | `generator_matrix(M)` | the original generating matrix or pseudo-matrix |
+| `basis(M)` | a basis of module elements for PID coefficients |
 | `basis_matrix(M)` | a cached basis matrix or pseudo-basis matrix |
 | `rank(M)` | the rank of the module over `ring(M)` |
 | `ambient_rank(M)` | the dimension $n$ of the ambient space $S^n$ |
@@ -173,16 +174,38 @@ N = Hecke.embedded_module(ZZ, QQ, QQ[4 0; 0 6])
 nothing
 ```
 
+## Maps
+
+For PID coefficients, `hom(M, X, images)` assigns images to `basis(M)` in
+order. Alternatively, `hom(M, X, [x1 => y1, ...])` accepts generating elements
+of `M` and checks that they generate `M` and that every relation maps to zero.
+Both return an `EmbeddedModuleMap`, evaluated with `f(x)` or `image(f, x)`.
+
+For maps between embedded PID modules, `preimage(f, y)` lifts an element in
+the image; `image(f)` and `kernel(f)` return modules. Use `is_injective(f)`,
+`is_surjective(f)`, and `is_bijective(f)` to test the corresponding properties.
+
+```@example embedded_modules_integer
+b, c = basis(M), basis(N)
+f = hom(M, N, c)
+g = hom(M, N, [b[1] => c[1], b[2] => c[2],
+               b[1] + b[2] => c[1] + c[2]])
+@assert f(b[1]) == g(b[1]) == c[1]
+@assert preimage(f, c[2]) == b[2]
+@assert image(f) == N && is_bijective(f)
+nothing
+```
+
 ## Quotients
 
-If `N` is contained in `M`, then `quo(M, N)` returns a finitely generated
-module representing $M/N$ together with a map from `M` to the quotient. The map
-accepts `EmbeddedModuleElem` objects and supports taking preimages.
+For PID coefficients and `N` contained in `M`, `quo(M, N)` returns a finitely
+generated module `Q` representing $M/N$ and a surjective `EmbeddedModuleMap`
+`f`. Its kernel is `N` and its image is `Q`; `preimage(f, y)` chooses a
+representative in `M`.
 
-When $M/N$ is a vector space over the residue field $R/(p)$,
-`quotient_vector_space(M, N, p)` returns that vector space, the quotient map,
-and the residue-field map. In particular, all invariant factors of $M/N$ must
-be associated to the prime element `p`.
+```@docs
+quotient_vector_space
+```
 
 ```@example embedded_modules_integer
 Q, MtoQ = quo(M, N)
@@ -191,10 +214,15 @@ y = Hecke._element_from_coordinates(M, ZZRingElem[2, 0])
 @assert !iszero(MtoQ(x))
 @assert iszero(MtoQ(y))
 
+W, MtoW, _ = Hecke.quotient_vector_space(M, ZZ(2))
+@assert dim(W) == rank(M)
+@assert kernel(MtoW) == N
+
 V, MtoV, ZZtoF = Hecke.quotient_vector_space(M, N, ZZ(2))
 @assert dim(V) == 2
 @assert !iszero(MtoV(x))
 @assert iszero(MtoV(y))
+@assert MtoV(preimage(MtoV, MtoV(x))) == MtoV(x)
 nothing
 ```
 

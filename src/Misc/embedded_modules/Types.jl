@@ -101,3 +101,128 @@ mutable struct EmbeddedModuleElem{ModuleType, RingType, OverringType}
     return new{typeof(M), RingType, OverringType}(M)
   end
 end
+
+################################################################################
+#
+#  Map types
+#
+################################################################################
+
+# User-facing methods for a map M -> X (M an R-module)
+#
+#   hom(M, X, image_of_basis)
+#   hom(M, X, [m_i => n_i)), where m_i is is an R-generating set
+#
+#   and
+#
+#   hom(M, X, f, image_of_basis)
+#   hom(M, X, f, [m_i => n_i)), where m_i is is an R-generating set
+#
+# Here f is a ring morphism R -> S in case X is an S-module
+# (Not sure we will need this)
+
+# When working with maps on modules, we have to distinguish between PIDs and
+# Dedekind domains.
+#
+# 1) PID
+#   - In the generic-codomain case, we store images of *the* basis
+#   - If we know that the image is an EmbeddedModule itself, we store
+#     the matrix representing the map
+#
+# 2) Dedekind domain
+#   - Have to think about this what to store
+
+# Note that the EmbeddedModuleMapXXData types are the actual maps
+# but we package everything up in EmbeddedModuleMap to only have one
+# surface level type.
+struct EmbeddedModuleMap{DomainT, CodomainT} <: Map{DomainT,
+                                                   CodomainT,
+                                                   HeckeMap,
+                                                   EmbeddedModuleMap}
+
+  domain::DomainT
+  codomain::CodomainT
+  data                       # realizes the actual map
+                             # depends on many things
+                             # this is not typed on purpose
+
+  function EmbeddedModuleMap(domain::DomainT, codomain::CodomainT, data) where {DomainT, CodomainT}
+    return new{DomainT, CodomainT}(domain, codomain, data)
+  end
+end
+
+struct EmbeddedModuleDataEmbedding{DomainT, CodomainT} <:
+         Map{DomainT, CodomainT, HeckeMap, EmbeddedModuleDataEmbedding}
+  domain::DomainT
+  codomain::CodomainT
+
+  function EmbeddedModuleDataEmbedding(N::EmbeddedModule, M::EmbeddedModule)
+    @req issubset(N, M) "The domain must be contained in the codomain"
+    return new{typeof(N), typeof(M)}(N, M)
+  end
+end
+
+# PID
+
+struct EmbeddedModuleDataPIDQuotient{DomainT, CodomainT, QuotientMapT} <:
+         Map{DomainT, CodomainT, HeckeMap, EmbeddedModuleDataPIDQuotient}
+  domain::DomainT
+  codomain::CodomainT
+  kernel::DomainT
+  quotient_map::QuotientMapT
+end
+
+struct EmbeddedModuleDataPIDReduction{DomainT, CodomainT, RingMapT, MatrixT} <:
+         Map{DomainT, CodomainT, HeckeMap, EmbeddedModuleDataPIDReduction}
+  domain::DomainT
+  codomain::CodomainT
+  kernel::DomainT
+  ring_map::RingMapT
+  projection_matrix::MatrixT  # nothing for the coordinatewise reduction M -> M/pM
+  section_matrix::MatrixT
+end
+
+struct EmbeddedModuleMapPIDData{DomainT, CodomainT, RingMapT, ImageElemT} <:
+         Map{DomainT, CodomainT, HeckeMap, EmbeddedModuleMapPIDData}
+  # Core
+  domain::DomainT
+  codomain::CodomainT
+  ring_map::RingMapT         #
+  image_basis::ImageElemT    #
+
+  # Additional
+  data
+
+  function EmbeddedModuleMapPIDData(domain::DomainT,
+                                    codomain::CodomainT,
+                                    ring_map::RingMapT,
+                                    image_basis::ImageElemT) where {DomainT, CodomainT, RingMapT, ImageElemT}
+
+    return new{DomainT, CodomainT, RingMapT, ImageElemT}(
+                 domain,
+                 codomain,
+                 ring_map,
+                 image_basis,
+                 EmbeddedModuleMapPIDDataMoreData(CodomainT)
+           )
+  end
+end
+
+mutable struct EmbeddedModuleMapPIDDataMoreData{CodomainT}
+  matrix                       # matrix representing the map
+  solve_context                # left solve context
+
+  function EmbeddedModuleMapPIDDataMoreData(::Type{T}) where {T}
+    return new{T}()
+  end
+end
+
+# Dedekind domains
+
+struct EmbeddedModuleMapDDData{DomainT, CodomainT, RingMapT}
+  # Core
+  domain::DomainT
+  codomain::CodomainT
+  ring_map::RingMapT
+  # ???
+end
