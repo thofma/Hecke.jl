@@ -49,6 +49,11 @@ mutable struct RiemannSurfaceDivisor
         end
       end
     end
+
+    # multiplicities of a repeated point may have cancelled
+    keep = findall(!iszero, D.mults)
+    D.points = D.points[keep]
+    D.mults = D.mults[keep]
     return D
   end
 end

@@ -5,6 +5,8 @@
   include("RieSrf/NumIntegrate.jl")
   include("RieSrf/PeriodMatrix.jl")
   include("RieSrf/RiemannSurface.jl")
+  include("RieSrf/RieSrfPoints.jl")
+  include("RieSrf/Divisors.jl")
   include("RieSrf/Theta.jl")
   include("RieSrf/HeuristicEndomorphisms.jl")
   include("RieSrf/EndomorphismStructure.jl")

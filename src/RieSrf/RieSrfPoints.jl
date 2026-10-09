@@ -37,8 +37,8 @@ function (RS::RiemannSurface)(coords::Vector{AcbFieldElem})
     else
       error("Not a point on the Riemann surface.")
     end
-  elseif length(S) == 3
-    homog_coords = [CC(S[1], CC(S[2]), CC(S[3]))]
+  elseif length(coords) == 3
+    homog_coords = [CC(coords[1]), CC(coords[2]), CC(coords[3])]
     if homog_coords[3] != CC(0)
       return RS([homog_coords[1]/homog_coords[3], homog_coords[2]/homog_coords[3]])
     else
@@ -101,7 +101,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
   CC = AcbField(prec)
   RR = ArbField(prec)
   if RS != parent(Q)
-    return
+    return false
   end
 
   if is_finite(P) && is_finite(Q)
@@ -110,7 +110,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
     else
       if !P.is_singular && !Q.is_singular
         return  contains(abs(P.coordy - Q.coordy), RR(0))
-      elseif isdefined(P.sheets) && isdefined(Q.sheets)
+      elseif isdefined(P, :sheets) && isdefined(Q, :sheets)
         return Set(P.sheets) == Set(Q.sheets)
       else
         return false
@@ -119,7 +119,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
   end
 
   if !is_finite(P) && !is_finite(Q)
-    if isdefined(P.coordx) && isdefined(Q.coordx)
+    if isdefined(P, :coordx) && isdefined(Q, :coordx)
       if P.coordx == CC(1/0) && Q.coordx == CC(1/0)
         return Set(P.sheets) == Set(Q.sheets)
       else
@@ -128,7 +128,7 @@ function ==(P::RiemannSurfacePoint, Q::RiemannSurfacePoint)
         end
       end
     else
-      if isdefined(P.homog_coords) && isdefined(Q.homog_coords)
+      if isdefined(P, :homog_coords) && isdefined(Q, :homog_coords)
         @req P.homog_coords[3] == CC(0) "This should not happen. There is a bug in the code."
         @req Q.homog_coords[3] == CC(0) "This should not happen. There is a bug in the code."
         if P.homog_coords[1] != 0
