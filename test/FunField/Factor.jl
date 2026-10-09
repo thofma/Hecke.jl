@@ -25,9 +25,16 @@
   let
     Qt, t = rational_function_field(QQ, :t)
     Qtx, x = Qt[:x]
-    @test is_absolutely_irreducible(x^2 - t)
-    @test !is_absolutely_irreducible(x^2 - 2*t^2)
-    @test !is_absolutely_irreducible(x^2 - t^2)
+    # Multiplication by a unit in QQ(t) preserves absolute irreducibility.
+    for c in (Qt(1), t, t + 1, t/(t + 1))
+      @test is_absolutely_irreducible(c*(x^2 - t))
+      @test !is_absolutely_irreducible(c*(x^2 - 2*t^2))
+      @test !is_absolutely_irreducible(c*(x^2 - t^2))
+    end
+    @test is_absolutely_irreducible((t + 1)*x + t)
+    for f in (zero(Qtx), one(Qtx), Qtx(t), Qtx(inv(t)))
+      @test !is_absolutely_irreducible(f)
+    end
   end
 
   # inseparable extension
