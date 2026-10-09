@@ -76,11 +76,11 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(K::AbsNonSimpleNumField, r) = elem_type(K)
-
 # construct a dense random element:
 # linear combination of basis elements (monomials) with random coefficients
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem,AbsNonSimpleNumField,<:AbstractUnitRange}})
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem, AbsNonSimpleNumField,
+                                         <:AbstractUnitRange{<:IntegerUnion}}})
   K, r = sp[][1:end]
 
   ci = QQFieldElem[rand(rng, r) for _ in 1:degree(K)]
@@ -91,9 +91,6 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldE
 
   return K(QQMPolyRingElem(parent(K.pol[1]), ci, ei))
 end
-
-rand(K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
-rand(rng::AbstractRNG, K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(rng, make(K, r))
 
 ################################################################################
 #

@@ -620,12 +620,6 @@ function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
   return evaluate(res, new_vals)
 end
 
-function rand(L::RelNonSimpleNumField, rg::AbstractUnitRange)
-  B = absolute_basis(L)
-  return rand(B, rg)
-end
-
-
 function mod(a::RelNonSimpleNumFieldElem{T}, p::ZZRingElem) where T
   K = parent(a)
   b = data(a)
