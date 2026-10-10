@@ -9,6 +9,8 @@ function _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
   @test ld.conductor_valuation == cv
   @test ld.tamagawa_number == tn
   @test ld.reduction_type == rt
+  @test domain(ld.isomorphism) === E
+  @test codomain(ld.isomorphism) === ld.minimal_model
 
   @test kodaira_symbol(E, p) == ks
   @test tamagawa_number(E, p) == tn

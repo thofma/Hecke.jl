@@ -148,6 +148,35 @@ function Base.getindex(P::EllipticCurvePoint, i::Int)
   end
 end
 
+mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCrvIso} where T<:RingElem
+  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
+  domain::EllipticCurve{T}
+  codomain::EllipticCurve{T}
+  data::Tuple{T, T, T, T}
+
+  function EllCrvIso(E::EllipticCurve{T}, data::Vector{T}) where T <:RingElem
+    f = new{T}()
+    f.domain = E
+
+    @req length(data) == 4 "Array needs to have length 4"
+    r, s, t, u = data[1], data[2], data[3], data[4]
+
+    f.data = (r, s, t, u)
+    a1, a2, a3, a4, a6 = a_invariants(E)
+
+    a1new = divexact(a1 + 2*s, u)
+    a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
+    a3new = divexact(a3 + r*a1 + 2*t, u^3)
+    a4new = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
+    a6new = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
+
+    F = elliptic_curve([a1new, a2new, a3new, a4new, a6new])
+    f.codomain = F
+    f.header = MapHeader(E, F)
+    return f
+  end
+end
+
 ################################################################################
 #
 #  Constructors for Elliptic Curve

@@ -174,6 +174,25 @@
     test_minimal_model_rff(E, minD)
   end
 
+  @testset "Local minimal model isomorphism for j = 0, 1728" begin
+    # These models are already minimal at the place and Tate's algorithm changes no coordinates.
+    # We expect the isomorphism to be the identity, and not a a nontrivial automorphism
+    K, t = rational_function_field(QQ, :t; cached = false)
+    for E in [elliptic_curve(K, [0, 0, 0, 0, t^6 + 1]), elliptic_curve(K, [0, 0, 0, t, 0])]
+      Em, phi, = minimal_model(E, t)
+      @test domain(phi) === E && codomain(phi) === Em
+      @test isomorphism_data(phi) == (0, 0, 0, 1)
+    end
+
+    k, s = rational_function_field(GF(7), :s; cached = false)
+    E = elliptic_curve(k, [0, 0, 0, 0, s^6 + 2])
+    # At infinity, integralisation sends x -> x/s^2, y -> y/s^3.
+    for (p, u) in [(s - 2, 1), (1//s, s)]
+      _, phi, = minimal_model(E, p)
+      @test isomorphism_data(phi) == (0, 0, 0, u)
+    end
+  end
+
   # _minimize and integral model
   Kt, t = rational_function_field(QQ, :t; cached = false)
   E = elliptic_curve(Kt.([0, t^21, 1//216, -7//1296, 1//t]))

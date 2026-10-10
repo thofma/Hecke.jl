@@ -129,11 +129,8 @@ function minimal_model(E::EllipticCurve{T}, p::T) where {T <: AbstractAlgebra.Ge
 end
 
 function _minimal_model_at(E, P)
-  ld = tates_algorithm_local(E, P, EllipticCurveLocalData)
-  Ep = ld.minimal_model
-  phi = isomorphism(E, Ep)
-
-  return Ep, phi, inv(phi)
+  phi = tates_algorithm_local(E, P, EllipticCurveLocalData).isomorphism
+  return codomain(phi), phi, inv(phi)
 end
 
 @doc raw"""
