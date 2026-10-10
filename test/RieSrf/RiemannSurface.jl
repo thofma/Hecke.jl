@@ -33,4 +33,10 @@
   f = x^8 + 2 * x^7 + 2 * x^6 + x^5 - 10 * x + 1 + x^3 * y^2 - y^3 + 2 * y^8
   RS = riemann_surface(f, 500  ,integration_method = "heuristic")
   small_period_matrix(RS)
+
+  # Smoke test that rigorous mode runs; it does not validate the error bound.
+  f = x^6 + x^2 + 1 - y^2
+  P_rigorous = big_period_matrix(riemann_surface(f, 100, integration_method = "rigorous"))
+  P_heuristic = big_period_matrix(riemann_surface(f, 100, integration_method = "heuristic"))
+  @test all(abs(a - b) < 1e-25 for (a, b) in zip(P_rigorous, P_heuristic))
 end
