@@ -9,10 +9,6 @@ image(f::FractionFieldMap, x) = f.K(x)
 
 # numerator, denominator
 
-decompose(f::FractionFieldMap{T, T}, x) where {T} = x
-
-_has_preimage(f::FractionFieldMap{T, T}, x) where {T} = true
-
 ring(f::FractionFieldMap) = f.R
 
 function decompose(f::FractionFieldMap, x::RingElement)
