@@ -1,0 +1,1494 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-\.]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.5.0">
+    
+    
+      
+        <title>Ideals - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#ideals" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Hecke" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Hecke
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Ideals
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../.." class="md-tabs__link">
+        About
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    
+    
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../number_fields/intro/" class="md-tabs__link">
+          Documentation
+        </a>
+      
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="https://www.github.com/thofma/Hecke.jl" class="md-tabs__link">
+          Source
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Hecke
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Number fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        Number fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/basics/" title="Creation and basics" class="md-nav__link">
+      Creation and basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/internal/" title="Internals" class="md-nav__link">
+      Internals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Orders
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        Orders
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../orders/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Ideals
+      </label>
+    
+    <a href="./" title="Ideals" class="md-nav__link md-nav__link--active">
+      Ideals
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#class-group" class="md-nav__link">
+    Class Group
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscaellenous" class="md-nav__link">
+    Miscaellenous
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quotient-rings" class="md-nav__link">
+    Quotient Rings
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../frac_ideals/" title="Fractional Ideals" class="md-nav__link">
+      Fractional Ideals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Quadratic and Hermitian forms
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Quadratic and Hermitian forms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/basics/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/lattices/" title="Lattices" class="md-nav__link">
+      Lattices
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Abelian groups
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Abelian groups
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../abelian/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Class fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Class fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../class_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Misc
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../FacElem/" title="Factored Elements" class="md-nav__link">
+      Factored Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sparse/intro/" title="Sparse Linear Algebra" class="md-nav__link">
+      Sparse Linear Algebra
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Source
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Source
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://www.github.com/thofma/Hecke.jl" title="None" class="md-nav__link">
+      None
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#class-group" class="md-nav__link">
+    Class Group
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscaellenous" class="md-nav__link">
+    Miscaellenous
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quotient-rings" class="md-nav__link">
+    Quotient Rings
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p><a id='Ideals-1'></a></p>
+<h1 id="ideals">Ideals</h1>
+<p>(Integral) ideals in orders are always free <script type="math/tex">Z</script>-module of the same rank as the order, hence have a representation via a <script type="math/tex">Z</script>-basis. This can be made unique by normalising the corresponding matrix to be in reduced row echelon form  (HNF).</p>
+<p>For ideals in maximal orders <script type="math/tex">Z_K</script>, we also have a second presentation coming from the <script type="math/tex">Z_K</script> module structure and the fact that <script type="math/tex">Z_K</script> is a Dedekind ring: ideals can be generated by 2 elements, one of which can be any non-zero element in the ideal.</p>
+<p>For efficiency, we will choose the 1st generator to be an integer.</p>
+<p>Ideals here are of type <code>NfAbsOrdIdl</code>, which is, similar to the elements above, also indexed by the type of the field and their elements: <code>NfAbsOrdIdl{AnticNumberField,nf_elem}</code> for ideals in simple absolute fields.</p>
+<p>Different to elements, the <code>parent</code>of an ideal is teh set of all ideals in the ring, of type <code>NfAbsOrdIdlSet</code>.</p>
+<p><a id='Creation-1'></a></p>
+<h2 id="creation">Creation</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+<span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">a</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</pre></div>
+
+<p>Returns the ideal of <script type="math/tex">\mathcal O</script> which is generated by <script type="math/tex">a</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">x</span><span class="o">::</span><span class="n">fmpz_mat</span><span class="p">,</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">,</span> <span class="n">x_in_hnf</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">false</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</pre></div>
+
+<p>Creates the ideal of <script type="math/tex">\mathcal O</script> with basis matrix <script type="math/tex">x</script>. If check is set, then it is checked whether <script type="math/tex">x</script> defines an ideal (expensive). If x<em>in</em>hnf is set, then it is assumed that <script type="math/tex">x</script> is already in lower left HNF.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">x</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</pre></div>
+
+<p>Creates the principal ideal <script type="math/tex">(x)</script> of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">x</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+<span class="n">ideal</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">x</span><span class="o">::</span><span class="kt">Integer</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</pre></div>
+
+<p>Creates the ideal <script type="math/tex">(x, y)</script> of <script type="math/tex">\mathcal O</script>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>ideal(::NfOrd, ::NfAbsOrdIdl)</code>. Check Documenter's build log for details.</p>
+</div>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">*</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">x</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+<span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</pre></div>
+
+<p>Returns the principal ideal <script type="math/tex">(x)</script> of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">prime_decomposition</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span>
+                    <span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">,</span>
+                    <span class="n">degree_limit</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">lower_limit</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">},</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns an array of tuples <script type="math/tex">(\mathfrak p_i,e_i)</script> such that <script type="math/tex">p \mathcal O</script> is the product of the <script type="math/tex">\mathfrak p_i^{e_i}</script> and <script type="math/tex">\mathfrak p_i \neq \mathfrak p_j</script> for <script type="math/tex">i \neq j</script>.</p>
+<blockquote></blockquote>
+<p>If <code>degree_limit</code> is a nonzero integer <script type="math/tex">k > 0</script>, then only those prime ideals <script type="math/tex">\mathfrak p</script> with <script type="math/tex">\deg(\mathfrak p) \leq k</script> will be returned. Similarly if <code>\lower_limit</code> is a nonzero integer <script type="math/tex">l > 0</script>, then only those prime ideals <script type="math/tex">\mathfrak p</script> with <script type="math/tex">l \leq \deg(\mathfrak p)</script> will be returned. Note that in this case it may happen that <script type="math/tex">p\mathcal O</script> is not the product of the <script type="math/tex">\mathfrak p_i^{e_i}</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">prime_decomposition</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">,</span>
+                    <span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">,</span>
+                    <span class="n">degree_limit</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="n">lower_limit</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="kt">Tuple</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">},</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns an array of tuples <script type="math/tex">(\mathfrak p_i,e_i)</script> such that <script type="math/tex">p \mathcal O</script> is the product of the <script type="math/tex">\mathfrak p_i^{e_i}</script> and <script type="math/tex">\mathfrak p_i \neq \mathfrak p_j</script> for <script type="math/tex">i \neq j</script>.</p>
+<blockquote></blockquote>
+<p>If <code>degree_limit</code> is a nonzero integer <script type="math/tex">k > 0</script>, then only those prime ideals <script type="math/tex">\mathfrak p</script> with <script type="math/tex">\deg(\mathfrak p) \leq k</script> will be returned. Similarly if <code>\lower_limit</code> is a nonzero integer <script type="math/tex">l > 0</script>, then only those prime ideals <script type="math/tex">\mathfrak p</script> with <script type="math/tex">l \leq \deg(\mathfrak p)</script> will be returned. Note that in this case it may happen that <script type="math/tex">p\mathcal O</script> is not the product of the <script type="math/tex">\mathfrak p_i^{e_i}</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">factor</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Dict</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</pre></div>
+
+<p>Computes the prime ideal factorization <script type="math/tex">A</script> as a dictionary, the keys being the prime ideal divisors: If <code>lp = factor_dict(A)</code>, then <code>keys(lp)</code> are the prime ideal divisors of A and <code>lp[P]</code> is the <code>P</code>-adic valuation of <code>A</code> for all <code>P</code> in <code>keys(lp)</code>.</p>
+<hr />
+<p>factor(a::nf_elem, I::NfOrdIdlSet) -&gt; Dict{NfOrdIdl, fmpz} Factors the principal ideal generated by <script type="math/tex">a</script>.</p>
+<p><a id='Arithmetic-1'></a></p>
+<h2 id="arithmetic">Arithmetic</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">==</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">x</script> and <script type="math/tex">y</script> are equal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">+</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x + y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x \cdot y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">divexact</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">AB^{-1}</script> assuming that <script type="math/tex">AB^{-1}</script> is again an integral ideal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">divides</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">B</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>Checks if B divides A.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">intersect</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+<span class="n">lcm</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x \cap y</script>.</p>
+<hr />
+<p>gcd(A::NfOrdIdl, B::NfOrdIdl) -&gt; NfOrdIdl The gcd or sum (A+B).</p>
+<hr />
+<p>gcd(A::NfOrdIdl, p::fmpz) -&gt; NfOrdIdl The gcd or sum (A + pO).</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">intersect</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+<span class="n">lcm</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x \cap y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">colon</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">,</span> <span class="n">b</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdFracIdl</span>
+</pre></div>
+
+<p>The ideal <script type="math/tex">(a:b) = \{x \in K | xb \subseteq a\} = \hom(b, a)</script> where <script type="math/tex">K</script> is the number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="kp">in</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span>
+<span class="kp">in</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span>
+<span class="kp">in</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">x</script> is contained in <script type="math/tex">y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ispower</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfAbsOrdIdl</span>
+<span class="n">ispower</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdFracIdl</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfOrdFracIdl</span>
+</pre></div>
+
+<p>Computes, if possible, an ideal <script type="math/tex">B</script> s.th. <script type="math/tex">B^n==A</script> holds. In this case, {{{true}}} and <script type="math/tex">B</script> are returned.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ispower</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span><span class="p">,</span> <span class="n">NfAbsOrdIdl</span>
+<span class="n">ispower</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span><span class="p">,</span> <span class="n">NfOrdFracIdl</span>
+</pre></div>
+
+<p>Writes <script type="math/tex">a = r^e</script> with <script type="math/tex">e</script> maximal. Note: <script type="math/tex">1 = 1^0</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isinvertible</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfOrdFracIdl</span>
+</pre></div>
+
+<p>Returns true and an inverse of <script type="math/tex">A</script> or false and an ideal <script type="math/tex">B</script> such that <script type="math/tex">A*B \subsetneq order(A)</script>, if <script type="math/tex">A</script> is not invertible.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isone</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">isunit</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Tests if <script type="math/tex">A</script> is the trivial ideal generated by <script type="math/tex">1</script>.</p>
+<p><a id='Class-Group-1'></a></p>
+<h2 id="class-group">Class Group</h2>
+<p>The group of invertable ideals in any order forms a group and the principal ideals a subgroup.  The finite quotient is called class group for maximal orders and Picard group or ring class group in general.</p>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>class_group(::NfOrd)</code>. Check Documenter's build log for details.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>class_group(::AnticNumberField)</code>. Check Documenter's build log for details.</p>
+</div>
+<hr />
+<div class="codehilite"><pre><span></span>  <span class="n">picard_group</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GrpAbFinGen</span><span class="p">,</span> <span class="n">MapClassGrp</span>
+</pre></div>
+
+<p>Returns the Picard group of O and a map from the group in the set of (invertible) ideals of O.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ring_class_group</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">)</span>
+</pre></div>
+
+<p>The ring class group (Picard group) of <script type="math/tex">O</script>.    </p>
+<div class="codehilite"><pre><span></span>julia&gt; k, a = wildanger_field(3, 13);
+
+julia&gt; zk = maximal_order(k);
+
+julia&gt; c, mc = class_group(zk)
+(GrpAb: Z/9, ClassGroup map of
+Set of ideals of Maximal order of Number field over Rational Field with defining polynomial x^3-13*x^2+13*x-13
+with basis nf_elem[1, _$, 1//2*_$^2 + 1//2]
+)
+
+julia&gt; lp = prime_ideals_up_to(zk, 20);
+
+julia&gt; [ mc \ I for I = lp]
+10-element Array{GrpAbFinGenElem,1}:
+ Element of
+GrpAb: Z/9
+with components
+[1]
+ Element of
+GrpAb: Z/9
+with components
+[4]
+ Element of
+GrpAb: Z/9
+with components
+[4]
+ Element of
+GrpAb: Z/9
+with components
+[5]
+ Element of
+GrpAb: Z/9
+with components
+[3]
+ Element of
+GrpAb: Z/9
+with components
+[2]
+ Element of
+GrpAb: Z/9
+with components
+[7]
+ Element of
+GrpAb: Z/9
+with components
+[1]
+ Element of
+GrpAb: Z/9
+with components
+[0]
+ Element of
+GrpAb: Z/9
+with components
+[2]
+
+julia&gt; mc(c[1])
+&lt;2, 7//2*_$^2 + 5//2&gt;
+Norm: 2
+Minimum: 2
+two normal wrt: 2
+
+julia&gt; order(c[1])
+9
+
+julia&gt; mc(c[1])^Int(order(c[1]))
+&lt;512, 33276102501946894923613//2*_$^2 - 16513115410455328507206*_$ + 36026567290516438552607//2&gt;
+Norm: 512
+two normal wrt: 2
+
+julia&gt; mc \ ans
+Element of
+GrpAb: Z/9
+with components
+[0]
+</pre></div>
+
+<p>The class group, or more precisely the information used to compute it also allows for principal ideal testing and related tasks.  In general, due to the size of the objetcs, the <code>fac_elem</code> versions are more effcient.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isprincipal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfOrdElem</span>
+<span class="n">isprincipal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">NfOrdElem</span>
+</pre></div>
+
+<p>Tests if <script type="math/tex">A</script> is principal and returns <script type="math/tex">(\mathtt{true}, \alpha)</script> if <script type="math/tex">A = \langle \alpha\rangle</script> of <script type="math/tex">(\mathtt{false}, 1)</script> otherwise.  </p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isprincipal_fac_elem</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">,</span> <span class="n">FacElem</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">NumberField</span><span class="p">}</span>
+</pre></div>
+
+<p>Tests if <script type="math/tex">A</script> is principal and returns <script type="math/tex">(\mathtt{true}, \alpha)</script> if <script type="math/tex">A = \langle \alpha\rangle</script> of <script type="math/tex">(\mathtt{false}, 1)</script> otherwise.   The generator will be in factored form.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">power_class</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="nb">e</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</pre></div>
+
+<p>Computes a (small) ideal in the same class as <script type="math/tex">A^e</script>
+</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">power_product_class</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="nb">e</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">fmpz</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span>
+</pre></div>
+
+<p>Computes a (small) ideal in the same class as <script type="math/tex">\prod A_i^{e_i}</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">power_reduce2</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="nb">e</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">FacElem</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">}</span>
+</pre></div>
+
+<p>Computes <script type="math/tex">B</script> and <script type="math/tex">\alpha</script> in factored form, such that <script type="math/tex">\alpha B = A^e</script>
+<script type="math/tex">B</script> has small norm.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">class_group_ideal_relation</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">c</span><span class="o">::</span><span class="n">ClassGrpCtx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nf_elem</span><span class="p">,</span> <span class="n">SRow</span><span class="p">{</span><span class="n">fmpz</span><span class="p">}</span>
+</pre></div>
+
+<p>Finds a number field element <script type="math/tex">\alpha</script> such that <script type="math/tex">\alpha I</script> factors over the factor base in <script type="math/tex">c</script>.</p>
+<div class="codehilite"><pre><span></span>julia&gt; I = mc(c[1])
+&lt;2, 7//2*_$^2 + 5//2&gt;
+Norm: 2
+Minimum: 2
+two normal wrt: 2
+
+julia&gt; Hecke.isprincipal(I)
+(false, 1)
+
+julia&gt; I = I^Int(order(c[1]))
+&lt;512, 33276102501946894923613//2*_$^2 - 16513115410455328507206*_$ + 36026567290516438552607//2&gt;
+Norm: 512
+two normal wrt: 2
+
+julia&gt; Hecke.isprincipal(I)
+(true, 1//2*_$^2 - 3*_$ + 9//2)
+
+julia&gt; Hecke.isprincipal_fac_elem(I)
+(true, Factored element with data
+Dict(1//2*_$^2 - 3*_$ + 9//2=&gt;1))
+</pre></div>
+
+<p>The computation of <script type="math/tex">S</script>-units is also tied to the class group:</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">unit_group</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GrpAbFinGen</span><span class="p">,</span> <span class="n">Map</span>
+</pre></div>
+
+<p>Returns a group <script type="math/tex">U</script> and an isomorphism map <script type="math/tex">f \colon U \to \mathcal O^\times</script>. A set of fundamental units of <script type="math/tex">\mathcal O</script> can be obtained via <code>[ f(U[1+i]) for i in 1:unit_rank(O) ]</code>. <code>f(U[1])</code> will give a generator for the torsion subgroup.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">unit_group_fac_elem</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GrpAbFinGen</span><span class="p">,</span> <span class="n">Map</span>
+</pre></div>
+
+<p>Returns a group <script type="math/tex">U</script> and an isomorphism map <script type="math/tex">f \colon U \to \mathcal O^\times</script>. A set of fundamental units of <script type="math/tex">\mathcal O</script> can be obtained via <code>[ f(U[1+i]) for i in 1:unit_rank(O) ]</code>. <code>f(U[1])</code> will give a generator for the torsion subgroup. All elements will be returned in factored form.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">sunit_group</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">GrpAb</span><span class="p">,</span> <span class="n">Map</span>
+</pre></div>
+
+<p>For an array <script type="math/tex">I</script> of (coprime prime) ideals, find the <script type="math/tex">S</script>-unit group defined by <script type="math/tex">I</script>, ie. the group of non-zero field elements which are only divisible by ideals in <script type="math/tex">I</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">sunit_group_fac_elem</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">GrpAb</span><span class="p">,</span> <span class="n">Map</span>
+</pre></div>
+
+<p>For an array <script type="math/tex">I</script> of (coprime prime) ideals, find the <script type="math/tex">S</script>-unit group defined by <script type="math/tex">I</script>, ie. the group of non-zero field elements which are only divisible by ideals in <script type="math/tex">I</script>. The map will return elements in factored form.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">sunit_mod_units_group_fac_elem</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">GrpAb</span><span class="p">,</span> <span class="n">Map</span>
+</pre></div>
+
+<p>For an array <script type="math/tex">I</script> of (coprime prime) ideals, find the <script type="math/tex">S</script>-unit group defined by <script type="math/tex">I</script>, ie. the group of non-zero field elements which are only divisible by ideals in <script type="math/tex">I</script> modulo the units of the field. The map will return elements in factored form.</p>
+<div class="codehilite"><pre><span></span>julia&gt; u, mu = unit_group(zk)
+(GrpAb: Z/2 x Z, UnitGroup map of Maximal order of Number field over Rational Field with defining polynomial x^3-13*x^2+13*x-13
+with basis nf_elem[1, _$, 1//2*_$^2 + 1//2]
+)
+
+julia&gt; mu(u[2])
+_$^2 - 1*_$ + 1
+
+julia&gt; u, mu = unit_group_fac_elem(zk)
+(GrpAb: Z/2 x Z, UnitGroup map of Factored elements over Number field over Rational Field with defining polynomial x^3-13*x^2+13*x-13
+)
+
+julia&gt; mu(u[2])
+Factored element with data
+Dict(_$+5=&gt;2,7=&gt;1,_$+38=&gt;-1,_$+2=&gt;2,107=&gt;1,_$-16=&gt;-1,3=&gt;-2,_$-35=&gt;-1,_$-1=&gt;1,1//2*_$^2 - 8*_$ + 85//2=&gt;-2,_$^2 - 2*_$ - 2=&gt;-1,2*_$^2 - 27*_$ + 14=&gt;2)
+
+julia&gt; evaluate(ans)
+_$^2 - 1*_$ + 1
+
+julia&gt; lp = factor(6*zk)
+Dict{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64} with 4 entries:
+  &lt;3, _$^2 + 1&gt;                =&gt; 1
+  &lt;2, 1//2*_$^2 + 1*_$ + 5//2&gt; =&gt; 1
+  &lt;2, 5//2*_$^2 + 2*_$ + 1//2&gt; =&gt; 2
+  &lt;3, _$-1&gt;                    =&gt; 1
+
+julia&gt; s, ms = Hecke.sunit_group(collect(keys(lp)))
+(GrpAb: Z/2 x Z^5, SUnits  map of Number field over Rational Field with defining polynomial x^3-13*x^2+13*x-13 for NfAbsOrdIdl{AnticNumberField,nf_elem}[&lt;3, _$^2 + 1&gt;, &lt;2, 1//2*_$^2 + 1*_$ + 5//2&gt;, &lt;2, 5//2*_$^2 + 2*_$ + 1//2&gt;, &lt;3, _$-1&gt;]
+)
+
+julia&gt; ms(s[4])
+-1//2*_$^2 + 6*_$ + 1//2
+
+julia&gt; norm(ans)
+18
+
+julia&gt; factor(numerator(ans))
+1 * 2 * 3^2
+</pre></div>
+
+<p><a id='Miscaellenous-1'></a></p>
+<h2 id="miscaellenous">Miscaellenous</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">order</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>Returns the order of <script type="math/tex">I</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">nf</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span>
+</pre></div>
+
+<p>Returns the number field, of which <script type="math/tex">x</script> is an integral ideal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the basis of A.</p>
+<div class="codehilite"><pre><span></span><span class="n">basis</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">I</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis_matrix</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_mat</span>
+</pre></div>
+
+<p>Returns the basis matrix of <script type="math/tex">A</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis_mat_inv</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</pre></div>
+
+<p>Returns the inverse of the basis matrix of <script type="math/tex">\mathcal O</script>.</p>
+<div class="codehilite"><pre><span></span>basis_mat_inv(A::NfAbsOrdIdl) -&gt; fmpz_mat
+</pre></div>
+
+<p>Returns the inverse basis matrix of <script type="math/tex">A</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis_mat_inv</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</pre></div>
+
+<p>Returns the inverse of the basis matrix of <script type="math/tex">A</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_basis</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether A has a basis already computed.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_basis_matrix</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> knows its basis matrix.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_2_elem</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> is generated by two elements.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_2_elem_normal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> has normal two element generators.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_weakly_normal</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> has weakly normal two element generators.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_basis_princ_gen_special</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> knows if it is generated by a rational integer.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">principal_gen</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdElem</span>
+</pre></div>
+
+<p>For a principal ideal <script type="math/tex">A</script>, find a generator.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">principal_gen_fac_elem</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FacElem</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">NumberField</span><span class="p">}</span>
+</pre></div>
+
+<p>For a principal ideal <script type="math/tex">A</script>, find a generator in factored form.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Returns the smallest nonnegative element in <script type="math/tex">A \cap \mathbf Z</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_minimum</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> knows its mininum.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">norm</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfRelOrdFracIdl</span><span class="p">{</span><span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">S</span>
+</pre></div>
+
+<p>Returns the norm of <script type="math/tex">a</script>
+</p>
+<div class="codehilite"><pre><span></span>norm(A::NfAbsOrdIdl) -&gt; fmpz
+</pre></div>
+
+<p>Returns the norm of <script type="math/tex">A</script>, that is, the cardinality of <script type="math/tex">\mathcal O/A</script>, where <script type="math/tex">\mathcal O</script> is the order of <script type="math/tex">A</script>.</p>
+<div class="codehilite"><pre><span></span>norm(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true) -&gt; fmpq
+</pre></div>
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script> considered as an (possibly fractional) ideal of <script type="math/tex">O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>norm(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true)
+  where { S, T } -&gt; T
+</pre></div>
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script> considered as an (possibly fractional) ideal of <script type="math/tex">O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">has_norm</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> knows its norm.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">idempotents</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">NfOrdElem</span>
+</pre></div>
+
+<p>Returns a tuple <code>(e, f)</code> consisting of elements <code>e in x</code>, <code>f in y</code> such that <code>1 = e + f</code>.</p>
+<blockquote></blockquote>
+<p>If the ideals are not coprime, an error is raised.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isprime</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> is a prime ideal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isprime_known</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">A</script> knows if it is prime.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isramified</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether the integer <script type="math/tex">p</script> is ramified in <script type="math/tex">\mathcal O</script>. It is assumed that <script type="math/tex">p</script> is prime.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ramification_index</span><span class="p">(</span><span class="n">P</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</pre></div>
+
+<p>The ramification index of the prime-ideal <script type="math/tex">P</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">degree</span><span class="p">(</span><span class="n">P</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</pre></div>
+
+<p>The inertia degree of the prime-ideal <script type="math/tex">P</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Computes the <script type="math/tex">\mathfrak p</script>-adic valuation of <script type="math/tex">a</script>, that is, the largest <script type="math/tex">i</script> such that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathfrak p^i</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Computes the <script type="math/tex">\mathfrak p</script>-adic valuation of <script type="math/tex">a</script>, that is, the largest <script type="math/tex">i</script> such that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathfrak p^i</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">valuation</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Computes the <script type="math/tex">\mathfrak p</script>-adic valuation of <script type="math/tex">A</script>, that is, the largest <script type="math/tex">i</script> such that <script type="math/tex">A</script> is contained in <script type="math/tex">\mathfrak p^i</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="kt">Integer</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Computes the <script type="math/tex">\mathfrak p</script>-adic valuation of <script type="math/tex">a</script>, that is, the largest <script type="math/tex">i</script> such that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathfrak p^i</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+<span class="n">valuation</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Computes the <script type="math/tex">\mathfrak p</script>-adic valuation of <script type="math/tex">a</script>, that is, the largest <script type="math/tex">i</script> such that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathfrak p^i</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">valuation</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="n">NfAbsOrdFracIdl</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>The valuation of <script type="math/tex">A</script> at <script type="math/tex">p</script>.</p>
+<p><a id='Quotient-Rings-1'></a></p>
+<h2 id="quotient-rings">Quotient Rings</h2>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>quo(::NfOrd, ::NfOrdIdl)</code>. Check Documenter's build log for details.</p>
+</div>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ResidueRing</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="nb">I</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdQuoRing</span>
+<span class="n">ResidueRing</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">AlgAssAbsOrd</span><span class="p">,</span> <span class="nb">I</span><span class="o">::</span><span class="n">AlgAssAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbsOrdQuoRing</span>
+</pre></div>
+
+<p>The quotient ring <script type="math/tex">O</script> modulo <script type="math/tex">I</script> as a new ring.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ResidueField</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">P</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Map</span>
+</pre></div>
+
+<p>Returns the residue field of the prime ideal <script type="math/tex">P</script> together with th projection map. If <code>check</code> is true, the ideal is checked for  being prime.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">mod</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns the unique element <script type="math/tex">y</script> of the ambient order of <script type="math/tex">x</script> with <script type="math/tex">x \equiv y \bmod I</script> and the following property: If <script type="math/tex">a_1,\dotsc,a_d \in \Z_{\geq 1}</script> are the diagonal entries of the unique HNF basis matrix of <script type="math/tex">I</script> and <script type="math/tex">(b_1,\dotsc,b_d)</script> is the coefficient vector of <script type="math/tex">y</script>, then <script type="math/tex">0 \leq b_i < a_i</script> for <script type="math/tex">1 \leq i \leq d</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">crt</span><span class="p">(</span><span class="n">r1</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">i1</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">,</span> <span class="n">r2</span><span class="o">::</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="n">i2</span><span class="o">::</span><span class="n">NfOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdElem</span>
+</pre></div>
+
+<p>Find <script type="math/tex">x</script> s.th <script type="math/tex">x \equiv r1 \bmod i1</script> and <script type="math/tex">x \equiv r2 \bmod i2</script> using (((idempotents)))</p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../elements/" title="Elements" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Elements
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../frac_ideals/" title="Fractional Ideals" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Fractional Ideals
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/thofma" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.a8b5e56f.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+    
+  </body>
+</html>

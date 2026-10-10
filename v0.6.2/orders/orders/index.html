@@ -1,0 +1,256 @@
+<!doctype html><html lang="en" class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="description" content="Hecke"><meta name="author" content="Tommy Hofmann"><meta name="lang:clipboard.copy" content="Copy to clipboard"><meta name="lang:clipboard.copied" content="Copied to clipboard"><meta name="lang:search.language" content="en"><meta name="lang:search.pipeline.stopwords" content="True"><meta name="lang:search.pipeline.trimmer" content="True"><meta name="lang:search.result.none" content="No matching documents"><meta name="lang:search.result.one" content="1 matching document"><meta name="lang:search.result.other" content="# matching documents"><meta name="lang:search.tokenizer" content="[\s\-\.]+"><link rel="shortcut icon" href="../../assets/images/favicon.png"><meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.3.1"><title>Basics - Hecke</title><link rel="stylesheet" href="../../assets/stylesheets/application.4031d38b.css"><link rel="stylesheet" href="../../assets/stylesheets/application-palette.224b79ff.css"><meta name="theme-color" content="#546e7a"><script src="../../assets/javascripts/modernizr.74668098.js"></script><link href="https://fonts.gstatic.com" rel="preconnect" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=swap"><style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style><link rel="stylesheet" href="../../assets/fonts/material-icons.css"><link rel="stylesheet" href="../../assets/Documenter.css"><link rel="stylesheet" href="../../css/extra.css"><script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head><body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey"><svg class="md-svg"><defs></defs></svg> <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off"> <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off"> <label class="md-overlay" data-md-component="overlay" for="__drawer"></label><a href="#orders" tabindex="1" class="md-skip">Skip to content </a><header class="md-header" data-md-component="header"><nav class="md-header-nav md-grid"><div class="md-flex"><div class="md-flex__cell md-flex__cell--shrink"><a href="../.." title="Hecke" class="md-header-nav__button md-logo"><i class="md-icon"></i></a></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label></div><div class="md-flex__cell md-flex__cell--stretch"><div class="md-flex__ellipsis md-header-nav__title" data-md-component="title"><span class="md-header-nav__topic">Hecke</span><span class="md-header-nav__topic">Basics</span></div></div><div class="md-flex__cell md-flex__cell--shrink"><label class="md-icon md-icon--search md-header-nav__button" for="__search"></label><div class="md-search" data-md-component="search" role="dialog"><label class="md-search__overlay" for="__search"></label><div class="md-search__inner" role="search"><form class="md-search__form" name="search"><input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active"> <label class="md-icon md-search__icon" for="__search"></label> <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">&#xE5CD;</button></form><div class="md-search__output"><div class="md-search__scrollwrap" data-md-scrollfix><div class="md-search-result" data-md-component="result"><div class="md-search-result__meta">Type to start searching</div><ol class="md-search-result__list"></ol></div></div></div></div></div></div></div></nav></header><div class="md-container"><nav class="md-tabs md-tabs--active" data-md-component="tabs"><div class="md-tabs__inner md-grid"><ul class="md-tabs__list"><li class="md-tabs__item"><a href="../.." title="About" class="md-tabs__link">About</a></li><li class="md-tabs__item"><a href="../../number_fields/intro/" title="Documentation" class="md-tabs__link md-tabs__link--active">Documentation</a></li><li class="md-tabs__item"><a href="https://www.github.com/thofma/Hecke.jl" title="Source" class="md-tabs__link">Source</a></li></ul></div></nav><main class="md-main"><div class="md-main__inner md-grid" data-md-component="container"><div class="md-sidebar md-sidebar--primary" data-md-component="navigation"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--primary" data-md-level="0"><label class="md-nav__title md-nav__title--site" for="__drawer"><a href="../.." title="Hecke" class="md-nav__button md-logo"><i class="md-icon"></i></a>Hecke</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="../.." title="About" class="md-nav__link">About</a></li><li class="md-nav__item md-nav__item--active md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked><label class="md-nav__link" for="nav-2">Documentation</label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-2">Documentation</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="../../number_fields/intro/" title="Number fields" class="md-nav__link">Number fields</a></li><li class="md-nav__item md-nav__item--active md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked><label class="md-nav__link" for="nav-2-2">Orders</label><nav class="md-nav" data-md-component="collapsible" data-md-level="2"><label class="md-nav__title" for="nav-2-2">Orders</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="../introduction/" title="Introduction" class="md-nav__link">Introduction</a></li><li class="md-nav__item md-nav__item--active"><input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc"><label class="md-nav__link md-nav__link--active" for="__toc">Basics</label><a href="./" title="Basics" class="md-nav__link md-nav__link--active">Basics</a><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="__toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="#creation-and-basic-properties" title="Creation and basic properties" class="md-nav__link">Creation and basic properties</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#example" title="Example" class="md-nav__link">Example</a></li></ul></nav></li></ul></nav></li><li class="md-nav__item"><a href="../elements/" title="Elements" class="md-nav__link">Elements</a></li><li class="md-nav__item"><a href="../ideals/" title="Ideals" class="md-nav__link">Ideals</a></li><li class="md-nav__item"><a href="../frac_ideals/" title="Fractional Ideals" class="md-nav__link">Fractional Ideals</a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3"><label class="md-nav__link" for="nav-2-3">Abelian groups</label><nav class="md-nav" data-md-component="collapsible" data-md-level="2"><label class="md-nav__title" for="nav-2-3">Abelian groups</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="../../abelian/introduction/" title="Introduction" class="md-nav__link">Introduction</a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4"><label class="md-nav__link" for="nav-2-4">Class fields</label><nav class="md-nav" data-md-component="collapsible" data-md-level="2"><label class="md-nav__title" for="nav-2-4">Class fields</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="../../class_fields/intro/" title="Introduction" class="md-nav__link">Introduction</a></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5"><label class="md-nav__link" for="nav-2-5">Misc</label><nav class="md-nav" data-md-component="collapsible" data-md-level="2"><label class="md-nav__title" for="nav-2-5">Misc</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="../../FacElem/" title="Factored Elements" class="md-nav__link">Factored Elements</a></li><li class="md-nav__item"><a href="../../sparse/intro/" title="Sparse Linear Algebra" class="md-nav__link">Sparse Linear Algebra</a></li></ul></nav></li></ul></nav></li><li class="md-nav__item md-nav__item--nested"><input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3"><label class="md-nav__link" for="nav-3">Source</label><nav class="md-nav" data-md-component="collapsible" data-md-level="1"><label class="md-nav__title" for="nav-3">Source</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="https://www.github.com/thofma/Hecke.jl" title="None" class="md-nav__link">None</a></li></ul></nav></li></ul></nav></div></div></div><div class="md-sidebar md-sidebar--secondary" data-md-component="toc"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="__toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="#creation-and-basic-properties" title="Creation and basic properties" class="md-nav__link">Creation and basic properties</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#example" title="Example" class="md-nav__link">Example</a></li></ul></nav></li></ul></nav></div></div></div><div class="md-content"><article class="md-content__inner md-typeset"><p><a id='Orders-1'></a></p>
+<h1 id="orders">Orders</h1>
+<p>Orders, ie. unitary subrings that are free <script type="math/tex">Z</script>-modules of rank equal to the degree of the number field, are at the core of the arithmetic of number fields. In Hecke, orders are always represented using the module structure, be it the <script type="math/tex">Z</script>-module structure for orders in absolute fields, of the structure as a module over the maximal order of the base field in the case of relative extensions. In this chapter we only deal with orders in absolute fields. There are more general definitions of orders in number fields available, but those are (currently) not implemented in Hecke.</p>
+<p>Among all orders in a fixed field, there is a unique maximal one, called the maximal order, or ring of integers of the field. It is well known that this is the only order that is a Dedekind domain, hence has a rich ideal structure as well. The maximal order is also the integral closure of <script type="math/tex">Z</script> in the number field and can also be interpreted as a normalisation of any other order.</p>
+<p><a id='Creation-and-basic-properties-1'></a></p>
+<h2 id="creation-and-basic-properties">Creation and basic properties</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">Order</span><span class="p">(</span><span class="n">B</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">,</span> <span class="n">cached</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>Returns the order generated <script type="math/tex">B</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">B</script> defines an order. If <code>isbasis</code> is set, then elements are assumed to form a <script type="math/tex">\Z</script>-basis.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">Order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="n">FakeFmpqMat</span><span class="p">;</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">Order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">A</span><span class="o">::</span><span class="n">fmpz_mat</span><span class="p">,</span> <span class="n">check</span><span class="o">::</span><span class="kt">Bool</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+<div class="codehilite"><pre><span></span>  Order(K::RelativeExtension, M::PMat) -&gt; NfRelOrd
+</pre></div>
+
+<p>Returns the order which has basis pseudo-matrix <script type="math/tex">M</script> with respect to the power basis of <script type="math/tex">K</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">EquationOrder</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="n">NfAbs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</pre></div>
+
+<p>Returns the equation order of the absolute number field <script type="math/tex">K</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">NfAbsNS</span><span class="p">};</span> <span class="n">discriminant</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">ramified_primes</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="n">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</pre></div>
+
+<p>Returns the maximal order of <script type="math/tex">K</script>. Additional information can be supplied if they are already known, as the ramified primes or the discriminant of the maximal order.  </p>
+<p><strong>Example</strong></p>
+<div class="codehilite"><pre><span></span>julia&gt; Qx, xx = FlintQQ[&quot;x&quot;];
+julia&gt; K, a = NumberField(x^3 + 2, &quot;a&quot;);
+julia&gt; O = MaximalOrder(K);
+</pre></div>
+
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">maximal_order</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">;</span> <span class="n">index_divisors</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="n">fmpz</span><span class="p">},</span> <span class="n">discriminant</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">ramified_primes</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="n">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</pre></div>
+
+<p>Returns the maximal order of the number field that contains <script type="math/tex">O</script>. Additional information can be supplied if they are already known, as the ramified primes, the discriminant of the maximal order or a set of integers dividing the index of <script type="math/tex">O</script> in the maximal order.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">maximal_order</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">;</span> <span class="n">index_divisors</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="n">fmpz</span><span class="p">},</span> <span class="n">discriminant</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">ramified_primes</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="n">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</pre></div>
+
+<p>Returns the maximal order of the number field that contains <script type="math/tex">O</script>. Additional information can be supplied if they are already known, as the ramified primes, the discriminant of the maximal order or a set of integers dividing the index of <script type="math/tex">O</script> in the maximal order.</p>
+<div class="codehilite"><pre><span></span><span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="n">AnticNumberField</span><span class="p">,</span> <span class="n">NfAbsNS</span><span class="p">};</span> <span class="n">discriminant</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">ramified_primes</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="n">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</pre></div>
+
+<p>Returns the maximal order of <script type="math/tex">K</script>. Additional information can be supplied if they are already known, as the ramified primes or the discriminant of the maximal order.  </p>
+<p><strong>Example</strong></p>
+<div class="codehilite"><pre><span></span>julia&gt; Qx, xx = FlintQQ[&quot;x&quot;];
+julia&gt; K, a = NumberField(x^3 + 2, &quot;a&quot;);
+julia&gt; O = MaximalOrder(K);
+</pre></div>
+
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">lll</span><span class="p">(</span><span class="n">M</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.</p>
+<p>By Chistov's fundamental theorem, the computation of the maximal order is basically as hard as the factorisation of the discriminant. In order to help the computer, Hecke also provides the following signatures:</p>
+<div class="admonition warning">
+<p class="admonition-title">Missing docstring.</p>
+<p>Missing docstring for <code>maximal_order(::AnticNumberField, ::Array{fmpz, 1})</code>. Check Documenter's build log for details.</p>
+</div>
+<p>It is also possible the execute the steps individually:</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">pradical</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="p">{</span><span class="n">fmpz</span><span class="o">|</span><span class="kt">Integer</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdIdl</span>
+</pre></div>
+
+<p>Given a prime number <script type="math/tex">p</script>, this function returns the <script type="math/tex">p</script>-radical <script type="math/tex">\sqrt{p\mathcal O}</script> of <script type="math/tex">\mathcal O</script>, which is just <script type="math/tex">\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k \in p\mathcal O \}</script>. It is not checked that <script type="math/tex">p</script> is prime.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">ring_of_multipliers</span><span class="p">(</span><span class="nb">I</span><span class="o">::</span><span class="n">NfAbsOrdIdl</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrd</span>
+</pre></div>
+
+<p>Computes the order <script type="math/tex">(I : I)</script>, which is the set of all <script type="math/tex">x \in K</script> with <script type="math/tex">xI \subseteq I</script>.</p>
+<div class="codehilite"><pre><span></span>ring_of_multipliers(a::NfRelOrdIdl) -&gt; NfRelOrd
+</pre></div>
+
+<p>Computes the order <script type="math/tex">(a : a)</script>, which is the set of all <script type="math/tex">x \in K</script> with <script type="math/tex">xa \subseteq a</script>, where <script type="math/tex">K</script> is the ambient number field of <script type="math/tex">a</script>.</p>
+<p><a id='Example-1'></a></p>
+<h3 id="example">Example</h3>
+<div class="codehilite"><pre><span></span>julia&gt; Qx, x = PolynomialRing(FlintQQ, &quot;x&quot;);
+
+julia&gt; K, a = NumberField(x^2 - 2, &quot;a&quot;);
+
+julia&gt; O = EquationOrder(K)
+Order of Number field over Rational Field with defining polynomial x^2-2
+with Z-basis NfAbsOrdElem{AnticNumberField,nf_elem}[1, a]
+</pre></div>
+
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">parent</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrdSet</span>
+</pre></div>
+
+<p>Returns the parent of <script type="math/tex">\mathcal O</script>, that is, the set of orders of the ambient number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isequation_order</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">\mathcal O</script> is the equation order of the ambient number field <script type="math/tex">K</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">signature</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Tuple</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span> <span class="kt">Int</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the signature of the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">nf</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfAbsOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnticNumberField</span>
+</pre></div>
+
+<p>Returns the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">degree</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Int</span>
+</pre></div>
+
+<p>Returns the degree of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">NfOrdElem</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">K</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">nf_elem</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis elements of <script type="math/tex">\mathcal O</script> as elements of the ambient number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis_mat</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</pre></div>
+
+<p>Returns the basis matrix of <script type="math/tex">\mathcal O</script> with respect to the power basis of the ambient number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">basis_mat_inv</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</pre></div>
+
+<p>Returns the inverse of the basis matrix of <script type="math/tex">\mathcal O</script>.</p>
+<div class="codehilite"><pre><span></span>basis_mat_inv(A::NfAbsOrdIdl) -&gt; fmpz_mat
+</pre></div>
+
+<p>Returns the inverse basis matrix of <script type="math/tex">A</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">discriminant</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Returns the discriminant of <script type="math/tex">\mathcal O</script>.</p>
+<div class="codehilite"><pre><span></span><span class="n">discriminant</span><span class="p">(</span><span class="n">B</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Returns the discriminant of the family <script type="math/tex">B</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">gen_index</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpq</span>
+</pre></div>
+
+<p>Returns the generalized index of <script type="math/tex">\mathcal O</script> with respect to the equation order of the ambient number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">index</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Assuming that the order <script type="math/tex">\mathcal O</script> contains the equation order <script type="math/tex">\mathbf Z[\alpha]</script> of the ambient number field, this function returns the index <script type="math/tex">[ \mathcal O : \mathbf Z]</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isindex_divisor</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">isindex_divisor</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">d</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">d</script> is a divisor of the index of <script type="math/tex">\mathcal O</script>. It is assumed that <script type="math/tex">\mathcal O</script> contains the equation order of the ambient number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">minkowski_mat</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">arb_mat</span>
+</pre></div>
+
+<p>Returns the Minkowski matrix of <script type="math/tex">\mathcal O</script>.  Thus if <script type="math/tex">\mathcal O</script> has degree <script type="math/tex">d</script>, then the result is a matrix in <script type="math/tex">\operatorname{Mat}_{d\times d}(\mathbf R)</script>. The entries of the matrix are real balls of type <code>arb</code> with radius less then <code>2^-abs_tol</code>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="kp">in</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Checks whether <script type="math/tex">a</script> lies in <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">denominator</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">nf_elem</span><span class="p">,</span> <span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Returns the smallest positive integer <script type="math/tex">k</script> such that <script type="math/tex">k \cdot a</script> is contained in <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">norm_change_const</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="kt">Float64</span><span class="p">,</span> <span class="kt">Float64</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">(c_1, c_2) \in \mathbf R_{>0}^2</script> such that for all <script type="math/tex">x = \sum_{i=1}^d x_i \omega_i \in \mathcal O</script> we have <script type="math/tex">T_2(x) \leq c_1 \cdot \sum_i^d x_i^2</script> and <script type="math/tex">\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)</script>, where <script type="math/tex">(\omega_i)_i</script> is the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">trace_matrix</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_mat</span>
+</pre></div>
+
+<p>Returns the trace matrix of <code>\mathcal O</code>, that is, the matrix <script type="math/tex">(\operatorname{tr}_{K/\mathbf Q}(b_i \cdot b_j))_{1 \leq i, j \leq d}</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">+</span><span class="p">(</span><span class="n">R</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">S</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>Given two orders <script type="math/tex">R</script>, <script type="math/tex">S</script> of <script type="math/tex">K</script>, this function returns the smallest order containing both <script type="math/tex">R</script> and <script type="math/tex">S</script>. It is assumed that <script type="math/tex">R</script>, <script type="math/tex">S</script> contain the ambient equation order and have coprime index.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">poverorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+<span class="n">poverorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>This function tries to find an order that is locally larger than <script type="math/tex">\mathcal O</script> at the prime <script type="math/tex">p</script>: If <script type="math/tex">p</script> divides the index <script type="math/tex">[ \mathcal O_K : \mathcal O]</script>, this function will return an order <script type="math/tex">R</script> such that <script type="math/tex">v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])</script>. Otherwise <script type="math/tex">\mathcal O</script> is returned.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">pmaximal_overorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="n">fmpz</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+<span class="n">pmaximal_overorder</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>This function finds a <script type="math/tex">p</script>-maximal order <script type="math/tex">R</script> containing <script type="math/tex">\mathcal O</script>. That is, the index <script type="math/tex">[ \mathcal O_K : R]</script> is not divisible by <script type="math/tex">p</script>.</p></article></div></div></main><footer class="md-footer"><div class="md-footer-nav"><nav class="md-footer-nav__inner md-grid"><a href="../introduction/" title="Introduction" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev"><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-back md-footer-nav__button"></i></div><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">Previous</span>Introduction</span></div></a><a href="../elements/" title="Elements" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next"><div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title"><span class="md-flex__ellipsis"><span class="md-footer-nav__direction">Next</span>Elements</span></div><div class="md-flex__cell md-flex__cell--shrink"><i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i></div></a></nav></div><div class="md-footer-meta md-typeset"><div class="md-footer-meta__inner md-grid"><div class="md-footer-copyright">powered by <a href="https://www.mkdocs.org">MkDocs</a> and <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a></div><div class="md-footer-social"><link rel="stylesheet" href="../../assets/fonts/font-awesome.css"> <a href="https://github.com/thofma" class="md-footer-social__link fa fa-github"></a> </div></div></div></footer></div><script src="../../assets/javascripts/application.b260a35d.js"></script><script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script><script src="../../assets/mathjaxhelper.js"></script></body></html>
