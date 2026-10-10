@@ -17,4 +17,11 @@
   @test isempty(support(D)[1])
   @test degree(D) == 0
   @test D + I2 == 1 * I2
+
+  # multiples
+  D = P1 + I1
+  @test isempty(support(0 * D)[1])
+  @test degree(0 * D) == 0
+  @test D + 0 * D == D
+  @test 2 * D == D + D
 end

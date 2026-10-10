@@ -781,7 +781,8 @@ end
 function ^(chain::CChain, k::Int)
   @req (abs(k) == 1 || chain.is_closed) "Only closed chains can be taken to integers powers of absolute value > 1."
   if k == 0
-    result = CChain([c_point(start_point(C))])
+    x = start_point(chain)
+    return CChain([c_point(x, parent(x))])
   end
   if k < 0
     return inv(chain)^(-k)
