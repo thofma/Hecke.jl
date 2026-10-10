@@ -154,7 +154,7 @@ function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = tr
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_Type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -362,7 +362,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     if haskey(N.induced, auto)
       p = N.induced[auto]
     else
-      p = induce(FB, auto)
+      p = Hecke.induce(FB, auto)
       N.induced[auto] = p
     end
   end
@@ -440,7 +440,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
   if haskey(N.induced, auto)
     p = N.induced[auto]
   else
-    p = induce(FB, auto)
+    p = Hecke.induce(FB, auto)
     N.induced[auto] = p
   end
   #@show p
@@ -583,30 +583,6 @@ function units(c::Hecke.ClassGrpCtx)
   U.tentative_regulator = Hecke.regulator(U.units, 64)
 
   return U
-end
-
-################################################################################
-#
-#  Residue computation via Brauer relations
-#
-################################################################################
-
-function zeta_log_residue(O::AbsSimpleNumFieldOrder, N::NormRelation, abs_error::Float64)
-  degree(O) == 1 && error("Number field must be of degree > 1")
-  !ispure(N) && error("Norm relation must be a Brauer relation")
-  @show index(N)
-  target_prec = Int(floor(log(abs_error)))
-  @show target_prec
-  residues = ArbFieldElem[]
-  for i in 1:length(N)
-    v = N.coefficients_gen[i]
-    @assert length(v) == 1
-    c = (v[1][1] * divexact(degree(N.K), degree(N.subfields[i][1]))) // index(N)
-    push!(residues, c * zeta_log_residue(maximal_order(N.subfields[i][1]), abs_error/(2*length(N))))
-  end
-  z = sum(residues)
-  @assert radiuslttwopower(z, target_prec)
-  return z
 end
 
 function _lift_to_normalized_brauer_relation(N)

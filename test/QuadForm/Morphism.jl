@@ -100,4 +100,14 @@
     C = Hecke.ZLatAutoCtx([G1, G2, G3, G4])
     @test (Hecke.init(C, true); true)  # used to throw UndefRefError
   end
+
+  # action on the short vectors without a preallocated vector
+  let
+    C = Hecke.ZLatAutoCtx([ZZ[2 -1 0; -1 2 -1; 0 -1 2]])
+    Hecke.init(C)
+    for (V, I) in [(C.V, identity_matrix(ZZ, 3)), (Hecke._make_small(C).V, [1 0 0; 0 1 0; 0 0 1])]
+      @test all(Hecke._operate(i, I, V) == i for i in 1:length(V))
+      @test all(Hecke._operate(i, -I, V) == -i for i in 1:length(V))
+    end
+  end
 end

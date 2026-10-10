@@ -10,6 +10,16 @@
     @test degree(fixed_field(K,t)[1])     == 4
     @test degree(fixed_field(K,s)[1])     == 4
     @test degree(fixed_field(K,[s,t])[1]) == 2
+
+    # as relative extension of the fixed field
+    L, KtoL = fixed_field(K, [s], Hecke.RelSimpleNumField{AbsSimpleNumFieldElem})
+    @test degree(L) == 2
+    @test degree(base_field(L)) == 4
+    @test domain(KtoL) === K && codomain(KtoL) === L
+    @test KtoL\KtoL(a) == a
+    auts = automorphism_list(L)
+    @test length(auts) == 2
+    @test KtoL(s(a)) in [f(gen(L)) for f in auts]
   end
 
   @testset "FixedField: relative" begin

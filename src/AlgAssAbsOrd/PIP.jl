@@ -274,6 +274,6 @@ end
 function is_free_with_basis(a::AlgAssAbsOrdIdl)
   _assert_has_refined_wedderburn_decomposition(algebra(a))
   R = order(a)
-  fl, beta = _isprincipal(a, R, :right)
+  fl, beta = _is_principal_with_data(a, R; side = :right)
   return fl, [beta]
 end

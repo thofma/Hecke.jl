@@ -409,19 +409,6 @@ fb_int = FactorBase(ZZRingElem[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])])
 
 =#
 
-function improve(c::Hecke.ClassGrpCtx)
-  H = sub(c.M, 1:nrows(c.M), 1:ncols(c.M))
-  Hecke.upper_triangular(H, mod = 17)
-  p = setdiff(Set(1:ncols(H)), Set([x.pos[1] for x=H.rows]))
-  p = maximum(p)
-  b = Hecke.bkz_basis(c.FB.ideals[p]);
-#  b = rels_stat(b, ...)
-  for x=b
-    class_group_add_relation(c, b, n, one)
-  end
-end
-
-
 function rels_stat(b::Vector{Hecke.AbsSimpleNumFieldElem}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
   a = b[1].parent()
   t = b[1].parent()
