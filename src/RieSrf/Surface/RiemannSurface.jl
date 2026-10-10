@@ -2,10 +2,21 @@
 #
 #  RieSrf/Surface/RiemannSurface.jl : Riemann surfaces and their plane models
 #
-#  A RiemannSurface is the compact Riemann surface of the plane curve
-#  f(x, y) = 0 given by the user. The numerical work is done on plane models
-#  (RiemannSurfaceModel): the curve after a projective transformation of P^2,
-#  seen as a cover of P^1 by the projection to the first coordinate.
+#  The package started out as a port of Christian Neurohr's Magma package 
+#  RiemannSurfaces (https://github.com/christianneurohr/RiemannSurfaces), 
+#  based on his PhD thesis "Efficient integration on Riemann surfaces & 
+#  applications" (2018). 
+#
+#  Afterwards many improvements and optimizations were added to it. 
+#  Claude Code (Opus 5.5) was used to optimize and speed up the analytic
+#  continuation and the evaluation of differential forms. 
+#
+#
+#  A RiemannSurface is the compact Riemann surface associated to a curve.
+#  Even though the input is allowed to be any kind of curve, all computations 
+#  are done on a (usually singular) model of the curve after projecting to P^2.
+#  The plane model is seen as a cover of P^1 by the projection to the first 
+#  coordinate.
 #
 #   * The original model is the curve as given (identity transformation).
 #     Everything that depends on the projection x lives here: discriminant
@@ -21,14 +32,12 @@
 #  period matrices themselves are those of the bases of the computational
 #  model.
 #
-#  Both models are created lazily; they are the same object when the original
-#  model is used for the computations.
 #
 #  Example:
 #     using Hecke, Hecke.RiemannSurfaces
 #     Qxy, (x, y) = polynomial_ring(QQ, [:x, :y])
 #     f = x^5 + x^4 + x^3 - x + 4 - y^2
-#     RS = riemann_surface(f, 200)        # cheap: nothing numerical is computed yet
+#     RS = riemann_surface(f, 200)      
 #     tau = small_period_matrix(RS)
 #
 ################################################################################
@@ -47,21 +56,10 @@ Construct the Riemann surface corresponding to the desingularization of the
 plane curve f(x,y) = 0 over a number field (or QQ), embedded into CC by the
 first infinite place, with initial precision equal to `prec` bits.
 
-Only cheap data is computed when the Riemann surface is created. The basis of
-differentials, the monodromy, the homology basis and the period matrix are
-computed (and cached) when they are first asked for, e.g. by
-`big_period_matrix(RS)`.
-
 The keyword `model` determines the plane model the period matrices are
 computed on:
-- `:auto` (default): a curve of the form c*y^m + q(x) = 0 (or with x and y
-  swapped, q separable of degree at least 3) uses the algorithm for
-  superelliptic curves (unless the integration parameter `superelliptic` is
-  `false`); otherwise the original curve or the curve with x and y swapped,
-  whichever has fewer sheets over the x-line (the original on a tie).
-- `:superelliptic`: the algorithm for superelliptic curves y^m = p(x) (see
-  `SuperellipticModel`); the curve must be of the form c*y^m + q(x) = 0 or
-  c*x^m + q(y) = 0 with q separable of degree at least 3.
+- `:auto` (default): The algorithm heuristically picks the best possible model
+- `:superelliptic`: the algorithm for superelliptic curves y^m = p(x)
 - `:original`: the curve as given.
 - `:swapped`: the curve f(y, x) = 0.
 - an invertible 3x3 matrix M over the base field: the curve whose point
@@ -86,37 +84,6 @@ function riemann_surface(f::MPolyRingElem, prec::Int = 100;
   return riemann_surface(f, v, prec; parameters = parameters, model = model, kw...)
 end
 
-@doc raw"""
-    riemann_surface(f::MPolyRingElem, v::Union{PosInf, InfPlc}, prec::Int = 100;
-                    model = :auto, parameters = nothing, kw...) -> RiemannSurface
-
-As `riemann_surface(f, prec)`, with the embedding into CC given by the
-infinite place v of the base field.
-"""
-function riemann_surface(f::MPolyRingElem, v::T, prec::Int = 100;
-                         parameters::Union{Nothing, IntegrationParameters} = nothing,
-                         model = :auto, kw...) where T<:Union{PosInf, InfPlc}
-  # Keyword arguments are integration parameters (integration_method,
-  # int_style, midpoint_precision, adaptive, chunk_len, group_cost); they
-  # override the ones in `parameters`.
-  P = parameters === nothing ? IntegrationParameters(; kw...) : _with_changes(parameters; kw...)
-  RS = RiemannSurface(f, v, prec, P, model)
-  O = original_model(RS)      # cheap; checks the input
-  RS.model = _check_model_choice(model, base_ring(O.defining_polynomial))
-  return RS
-end
-
-@doc raw"""
-    riemann_surface(f, CC::ComplexField; kw...) -> RiemannSurface
-    riemann_surface(f, v, CC::ComplexField; kw...) -> RiemannSurface
-
-As `riemann_surface(f, prec)` with `prec = precision(Balls)` at the time of
-the call, but the numerical output (period matrices, Abel-Jacobi map,
-discriminant points, ...) is given in `ComplexField` / `RealField` instead of
-`AcbField` / `ArbField`. Points can be given with `ComplexFieldElem`
-coordinates. The precision stays fixed for the surface (its results are
-cached); later changes of `precision(Balls)` do not affect it.
-"""
 riemann_surface(f::MPolyRingElem, CC::ComplexField; kw...) =
   _complex_output!(riemann_surface(f, precision(Balls); kw...))
 
@@ -125,7 +92,7 @@ riemann_surface(f::MPolyRingElem, v::Union{PosInf, InfPlc}, CC::ComplexField; kw
 
 _complex_output!(RS::RiemannSurface) = (RS.output = :complex; RS)
 
-# Conversion of the output to the type chosen for RS (see RiemannSurface.output)
+# Conversion of the output to the type chosen for the Riemann surface
 _out(RS::RiemannSurface, x) = RS.output === :complex ? _to_output(x) : x
 _to_output(x::Union{AcbFieldElem, AcbMatrix, Vector{AcbFieldElem}}) = _to_complex(x)
 _to_output(x::Union{ArbFieldElem, ArbMatrix}) = _to_real(x)
@@ -158,7 +125,7 @@ end
 @doc raw"""
     original_model(RS::RiemannSurface) -> RiemannSurfaceModel
 
-The plane model given by the defining polynomial of `RS`.
+The plane model given by the defining polynomial of the Riemann surface.
 """
 function original_model(RS::RiemannSurface)
   if !isdefined(RS, :original)
@@ -174,9 +141,7 @@ end
 @doc raw"""
     computational_model(RS::RiemannSurface) -> AbstractRiemannSurfaceModel
 
-The plane model the period matrices of `RS` are computed on (see the keyword
-`model` of `riemann_surface`): a `RiemannSurfaceModel`, or a
-`SuperellipticModel` for the algorithm for superelliptic curves.
+The plane model the period matrices of the Riemann surface are computed on.
 """
 function computational_model(RS::RiemannSurface)
   isdefined(RS, :computational) && return RS.computational
@@ -194,7 +159,7 @@ function computational_model(RS::RiemannSurface)
     C = RS.parameters.superelliptic ? _superelliptic_model(RS) : nothing
     C === nothing && (C = _choose_model(RS))
   else
-    C = _transformed_model(RS, choice)       # converted by _check_model_choice
+    C = _transformed_model(RS, choice) 
   end
   RS.computational = C
   return C
@@ -211,7 +176,7 @@ model_transform(RS::RiemannSurface) = computational_model(RS).transform
 
 _swap_matrix(k) = matrix(k, 3, 3, [0, 1, 0, 1, 0, 0, 0, 0, 1])
 
-# The model of RS with transformation M (identity: the original model).
+# The model of RS with transformation M
 function _transformed_model(RS::RiemannSurface, M::MatElem)
   O = original_model(RS)
   @req !iszero(det(M)) "The model transformation must be an invertible 3x3 matrix."
@@ -221,7 +186,7 @@ function _transformed_model(RS::RiemannSurface, M::MatElem)
   # For a curve given over QQ, hand the model a polynomial over QQ as well
   # (like the original model): the exact basis of differentials is computed
   # from the input polynomial, and over QQ(x) that is much faster than over
-  # K(x) for K = rationals_as_number_field() (f2: 3.5 s instead of 9 s).
+  # K(x).
   f0 = RS.input_polynomial
   if base_ring(f0) == QQ && all(c -> degree(parent(c)) == 1, coefficients(g))
     R0 = parent(f0)
@@ -257,16 +222,12 @@ end
 
 ################################################################################
 #
-#  Choosing the computational model (model = :auto)
+#  Choosing the computational model
 #
 ################################################################################
 
-# model = :auto: for now the model with fewer sheets (the degree of f in y
-# for the original, in x for the swapped model); the original on a tie. The
-# degrees are kept in RS.model_costs. (predicted_cost below is a finer
-# criterion, but it needs the discriminant points and paths of every
-# candidate, which can cost more than it saves; to be revisited together with
-# the precision management.)
+# model = :auto: We pick the model with fewer sheets.
+# There may however be better models. Could be revisited in the future.
 function _choose_model(RS::RiemannSurface)
   O = original_model(RS)
   f = O.defining_polynomial
@@ -278,57 +239,6 @@ function _choose_model(RS::RiemannSurface)
   end
   return O
 end
-
-@doc raw"""
-    predicted_cost(C::RiemannSurfaceModel) -> Float64
-
-A rough prediction of the cost of the period matrix computation on the plane
-model `C`: the number of quadrature nodes on the paths of the fundamental
-group, as the integration with `int_style = :mixed` would choose them
-(Gauss-Legendre with the path's own parameter r, or double exponential for
-r < 1.03, without grouping and splitting and with a provisional bound 10^5),
-times m*(m + d_x), where m is the number of sheets and d_x the degree in x
-(root finding and evaluating f(x, y) at a node).
-
-Only needs the discriminant points and the paths, no analytic continuation.
-Not used by `model = :auto` at the moment (see `_choose_model`).
-"""
-function predicted_cost(C::RiemannSurfaceModel)
-  paths, _ = fundamental_group_of_punctured_P1(C)
-  # The internal discriminant points have twice the internal precision; the
-  # parameters r only need to be certified > 1, for which the internal
-  # precision is plenty.
-  CL = AcbField(C.internal_precision)
-  points = [(z = CL(); Nemo._acb_set(z, p, C.internal_precision); z)
-            for p in internal_discriminant_points(C, false)]
-  err = C.computational_error
-  prec = C.computational_precision
-  nodes = 0
-  for p in paths
-    q = _fresh_path_copy(p)            # the parameter functions record data in the path
-    r = is_line(q) ? _gauss_legendre_line_parameter!(points, q) :
-        is_arc(q)  ? _gauss_legendre_arc_parameter!(points, q) :
-                     _gauss_legendre_circle_parameter!(points, q)
-    RR = parent(r)
-    if r >= RR(103//100)
-      nodes += Int(_gauss_legendre_parameters(_gl_group_r(r), err, RR(10)^5))
-    else
-      rde = is_line(q) ? _double_exponential_line_parameter!(points, q) :
-                         _double_exponential_arc_circle_parameter!(points, q)
-      RD = parent(rde)
-      N, _ = _double_exponential_parameters(RD(19//20)*rde, prec, [RD(10)^5, RD(10)^5])
-      nodes += 2*Int(N) + 1
-    end
-  end
-  f = C.defining_polynomial
-  m = degree(f, 2)
-  return Float64(nodes) * m * (m + degree(f, 1))
-end
-
-_fresh_path_copy(path::CPath) =
-  is_line(path) ? line_path(path.start_point_high, path.end_point_high, path.field) :
-                  arc_path(path.start_point_high, path.end_point_high, path.center_high, path.field;
-                           orientation = orientation(path))
 
 ################################################################################
 #
@@ -489,15 +399,19 @@ function critical_points(RS::RiemannSurface)
   C === nothing && return critical_points(original_model(RS))
   return filter(is_finite, _se_ramification_points(C))
 end
+
 function ramification_points(RS::RiemannSurface)
   C = _se_or_nothing(RS)
   return C === nothing ? ramification_points(original_model(RS)) : _se_ramification_points(C)
 end
+
 singular_points(RS::RiemannSurface) = singular_points(original_model(RS))
+
 function infinite_points(RS::RiemannSurface)
   C = _se_or_nothing(RS)
   return C === nothing ? infinite_points(original_model(RS)) : _se_infinite_points(C)
 end
+
 function y_infinite_points(RS::RiemannSurface)
   C = _se_or_nothing(RS)
   # y^m = p(x): y is only infinite over x = infinity
@@ -506,7 +420,9 @@ end
 
 fundamental_group_of_punctured_P1(RS::RiemannSurface, abel_jacobi::Bool = true) =
   fundamental_group_of_punctured_P1(original_model(RS), abel_jacobi)
+
 monodromy_representation(RS::RiemannSurface) = monodromy_representation(original_model(RS))
+
 monodromy_group(RS::RiemannSurface) = monodromy_group(original_model(RS))
 
 fiber_with_multiplicities(RS::RiemannSurface, x0::Union{AcbFieldElem, ComplexFieldElem}) =
@@ -515,7 +431,7 @@ fiber_with_multiplicities(RS::RiemannSurface, x0::Union{AcbFieldElem, ComplexFie
 @doc raw"""
     (RS::RiemannSurface)(coords::Vector{AcbFieldElem})
 
-Return the point of `RS` with the given affine (x, y) or projective
+Return the point of the Riemann surface with the given affine (x, y) or projective
 (x : y : z) coordinates on the curve as given.
 """
 function (RS::RiemannSurface)(coords::Vector{ComplexFieldElem})

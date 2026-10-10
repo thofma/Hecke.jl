@@ -10,14 +10,10 @@
 #  This file: integration parameters, the swapped model (for the Abel-Jacobi
 #  map at critical points), constants and getters.
 #
-#  The package is a port of Christian Neurohr's Magma package RiemannSurfaces
-#  (https://github.com/christianneurohr/RiemannSurfaces), based on his PhD
-#  thesis "Efficient integration on Riemann surfaces & applications" (2018).
 #
 ################################################################################
 
 # Special points (critical points, points at infinity, singular points).
-# They only need the monodromy, not the periods. Both calls are cached.
 function _ensure_special_points!(RS::RiemannSurfaceModel)
   _ensure_monodromy!(RS)
   _analyze_special_points!(RS)
@@ -179,7 +175,7 @@ end
 #
 ################################################################################
 
-# The circles around the discriminant points (Topology.jl): radius at most
+# The circles around the discriminant points: radius at most
 # _max_radius, and at most _radius_factor times the distance to the nearest
 # other discriminant point.
 _max_radius(RS::RiemannSurfaceModel) = 1/4

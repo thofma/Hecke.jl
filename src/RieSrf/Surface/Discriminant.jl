@@ -148,7 +148,10 @@ function _isolated_roots(p, v, prec::Int)
   q = prec
   while true
     try
-      rts = roots(_embed_poly(p, v, q), initial_prec = q, max_prec = 8*q)
+      # target: the roots refined to radius <= 2^-prec, not only isolated
+      # (without it a clustered root kept the ~1e-16 radius of its isolation,
+      # and the periods only ~35 bits, at any precision)
+      rts = roots(_embed_poly(p, v, q), target = prec, initial_prec = q, max_prec = 8*q)
       q == prec && return rts
       CC = AcbField(prec)
       return AcbFieldElem[CC(r) for r in rts]
