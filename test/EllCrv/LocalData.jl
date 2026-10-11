@@ -4,18 +4,22 @@ const additive = EllipticCurveReduction.additive
 const split_mult = EllipticCurveReduction.split_multiplicative
 const nonsplit_mult = EllipticCurveReduction.nonsplit_multiplicative
 
-function _check_reduction_impl(ld, ks, cv, tn, rt)
+function _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
   @test ld.kodaira_symbol == ks
   @test ld.conductor_valuation == cv
   @test ld.tamagawa_number == tn
   @test ld.reduction_type == rt
+
+  @test kodaira_symbol(E, p) == ks
+  @test tamagawa_number(E, p) == tn
+  @test reduction_type(E, p) == "$rt"
 end
 
 _good_reduction(p) = (p, "I0", 0, 1, good)
 
 function _check_reduction(E, p, ks, cv, tn, rt)
   ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
-  _check_reduction_impl(ld, ks, cv, tn, rt)
+  _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
 end
 
 @testset "Local Data" begin
@@ -30,7 +34,7 @@ end
 
     function _check_reduction_minimal(E, p, ks, cv, tn, rt)
       ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
-      _check_reduction_impl(ld, ks, cv, tn, rt)
+      _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
       @test a_invariants(tidy_model(ld.minimal_model)) == a_invariants(E)
     end
 
@@ -134,7 +138,7 @@ end
 
     function _check_reduction_nf(E, p, ks, cv, tn, rt)
       ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
-      _check_reduction_impl(ld, ks, cv, tn, rt)
+      _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
 
       d_E  = valuation(discriminant(E), p)
       d_Em = ld.discriminant_valuation

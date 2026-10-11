@@ -542,6 +542,7 @@ end
 @doc raw"""
     tamagawa_number(E::EllipticCurve{QQFieldElem}, p::IntegerUnion) -> ZZRingElem
     tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> ZZRingElem
+    tamagawa_number(E::EllipticCurve{T}, p::T) where {T <: RationalFunctionFieldElem} -> ZZRingElem
 
 Return the local Tamagawa number for E at p.
 """
@@ -553,9 +554,14 @@ function tamagawa_number(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumField
   return tates_algorithm_local(E, p, EllipticCurveLocalData).tamagawa_number
 end
 
+function tamagawa_number(E::EllipticCurve{T}, p::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  return tates_algorithm_local(E, p, EllipticCurveLocalData).tamagawa_number
+end
+
 @doc raw"""
     kodaira_symbol(E::EllipticCurve{QQFieldElem}, p::IntegerUnion) -> KodairaSymbol
     kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) -> KodairaSymbol
+    kodaira_symbol(E::EllipticCurve{T}, p::T) where {T <: RationalFunctionFieldElem} -> KodairaSymbol
 
 Return the reduction type of E at p using a Kodaira symbol.
 """
@@ -567,49 +573,26 @@ function kodaira_symbol(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldO
   return tates_algorithm_local(E, p, EllipticCurveLocalData).kodaira_symbol
 end
 
-@doc raw"""
-    tamagawa_numbers(E::EllipticCurve{QQFieldElem}) -> Vector{ZZRingElem}
-
-Return the sequence of Tamagawa numbers for $E$ at all the
-bad primes $p$ of $E$.
-"""
-function tamagawa_numbers(E::EllipticCurve{QQFieldElem})
-  badp = bad_primes(E)
-  return [tamagawa_number(E, p) for p in badp]
+function kodaira_symbol(E::EllipticCurve{T}, p::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  return tates_algorithm_local(E, p, EllipticCurveLocalData).kodaira_symbol
 end
 
 @doc raw"""
-    kodaira_symbols(E::EllipticCurve{QQFieldElem}) -> Vector{KodairaSymbol}
+    tamagawa_numbers(E::EllipticCurve{T}) where {T <: Union{QQFieldElem, AbsSimpleNumFieldElem, RationalFunctionFieldElem}} -> Vector{ZZRingElem}
 
-Return the reduction types of E at all bad primes as a sequence of
-Kodaira symbols
+Return the sequence of Tamagawa numbers for $E$ at all the bad primes $p$ of $E$.
 """
-function kodaira_symbols(E::EllipticCurve{QQFieldElem})
-  badp = bad_primes(E)
-  return [kodaira_symbol(E, p) for p in badp]
+function tamagawa_numbers(E::EllipticCurve{<:Union{QQFieldElem, AbsSimpleNumFieldElem, AbstractAlgebra.Generic.RationalFunctionFieldElem}})
+  return [tamagawa_number(E, p) for p in bad_primes(E)]
 end
 
 @doc raw"""
-    tamagawa_numbers(E::EllipticCurve{QQFieldElem}) -> Vector{(AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem)}
+    kodaira_symbols(E::EllipticCurve{T}) where {T <: Union{QQFieldElem, AbsSimpleNumFieldElem, RationalFunctionFieldElem}} -> Vector{KodairaSymbol}
 
-Return the sequence of Tamagawa numbers for $E$ at all the bad
-prime ideals $p$ of $E$.
+Return the reduction types of E at all bad primes as a sequence of Kodaira symbols
 """
-function tamagawa_numbers(E::EllipticCurve{AbsSimpleNumFieldElem})
-  badp = bad_primes(E)
-  return [tamagawa_number(E, p) for p in badp]
-end
-
-@doc raw"""
-    kodaira_symbols(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-      -> Vector{(AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, String)}
-
-Return the reduction types of E at all bad primes as a sequence of
-Kodaira symbols.
-"""
-function kodaira_symbols(E::EllipticCurve{AbsSimpleNumFieldElem})
-  badp = bad_primes(E)
-  return [kodaira_symbol(E, p) for p in badp]
+function kodaira_symbols(E::EllipticCurve{<:Union{QQFieldElem, AbsSimpleNumFieldElem, AbstractAlgebra.Generic.RationalFunctionFieldElem}})
+  return [kodaira_symbol(E, p) for p in bad_primes(E)]
 end
 
 @doc raw"""
@@ -625,6 +608,11 @@ function reduction_type(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
 end
 
 function reduction_type(E::EllipticCurve{AbsSimpleNumFieldElem}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
+  return "$(ld.reduction_type)"
+end
+
+function reduction_type(E::EllipticCurve{T}, p::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
   ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
   return "$(ld.reduction_type)"
 end
@@ -744,7 +732,7 @@ Places are represented as elements of $k(t)$:
     lifted to $k(t)$ (e.g. `t - 1//2`, not `2*t - 1`);
 - the place at infinity is represented by `1 // t`.
 """
-function bad_primes(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+@attr Vector{T} function bad_primes(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
   # ensure all the candidates have Tate's local data computed and cached
   for p in _bad_prime_candidates(E)
     tates_algorithm_local(E, p, EllipticCurveLocalData)
@@ -754,7 +742,7 @@ function bad_primes(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.Rat
   return sort!(collect(keys(d)); by = _rff_place_sort_key)
 end
 
-function _bad_prime_candidates(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+@attr Vector{T} function _bad_prime_candidates(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
   K = base_field(E)
   R = base_ring(K.fraction_field)
 
