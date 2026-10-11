@@ -517,45 +517,105 @@ function _test_file(x::AbstractString)
   end
 end
 
+function _has_long_tests(path::AbstractString)
+  return occursin(r"@long_test\b", Base.read(path, String))
+end
+
+function _test_files_in_directory(path::AbstractString; long_only::Bool = false)
+  tests = String[]
+  for (root, dirs, files) in walkdir(normpath(path))
+    for file in files
+      (startswith(file, '.') || !endswith(file, ".jl")) && continue
+      file in ("setup.jl", "runtests.jl", "Aqua.jl", "threads.jl") && continue
+      # Include-only wrappers are replaced by their individual test files.
+      splitext(file)[1] in dirs && continue
+      test_file = joinpath(root, file)
+      long_only && !_has_long_tests(test_file) && continue
+      push!(tests, test_file)
+    end
+  end
+  return sort!(tests)
+end
+
+function _test_files(paths::Vector{String}; long_only::Bool = false)
+  tests = String[]
+  for path in normpath.(paths)
+    directory = splitext(path)[1]
+    if isdir(directory) && (long_only || !isfile(path))
+      append!(tests, _test_files_in_directory(directory; long_only))
+    elseif isfile(path)
+      # Preserve ordinary wrappers and let "all" configure the package runner.
+      if basename(path) == "runtests.jl" || !long_only || _has_long_tests(path)
+        push!(tests, path)
+      end
+    else
+      throw(ArgumentError("No test file or directory found for $path"))
+    end
+  end
+  return unique!(tests)
+end
+
 function _test_command(test_files::Vector{String}, setup_file::String;
-                       long::Bool, with_gap::Bool, with_polymake::Bool)
+                       long::Bool, long_only::Bool = false,
+                       with_gap::Bool, with_polymake::Bool)
   statements = String["using Test", "using Hecke"]
-  with_gap && push!(statements, "using GAP")
   with_polymake && push!(statements, "import Polymake")
-  append!(statements, ["long_test = $long",
+  with_gap && push!(statements, "using GAP")
+  append!(statements, ["long_test = $(long || long_only)",
                        "_with_gap = $with_gap",
                        "_with_polymake = $with_polymake",
                        "include($(repr(setup_file)))"])
+  push!(statements, "withenv(\"HECKE_TESTLONG\" => $(repr(string(long))), " *
+                    "\"HECKE_TESTLONGONLY\" => $(repr(string(long_only)))) do")
   append!(statements, ["include($(repr(test_file)))" for test_file in test_files])
+  push!(statements, "end")
   return join(statements, "; ") * ";"
 end
 
 @doc raw"""
-    test_module(x, new::Bool = true; long::Bool = false, with_gap::Bool = false,
-                with_polymake::Bool = false, coverage = false)
+    test_module(x, new::Bool = true; long::Bool = false, long_only::Bool = false,
+                with_gap::Bool = false, with_polymake::Bool = false,
+                coverage = false)
     test_module(xs::AbstractVector{<:AbstractString}, new::Bool = true; kwargs...)
 
 Run one or more test files from Hecke's `test` directory. File names can be
 given with or without the `.jl` suffix. If `new` is `true`, all requested files
 are run in one newly spawned Julia session.
+
+By default, run the selected files with `@long_test` blocks disabled. Set
+`long = true` to enable those blocks, or `long_only = true` to enable them
+and filter the selection to files containing `@long_test`. Selected files
+run in full, including ordinary tests and setup. Directory selections are
+searched recursively in long-only mode. Use `"all"` to run the package test
+runner.
+
+The `with_gap` and `with_polymake` options load the respective optional
+packages and enable their tests, independently of long-test selection.
 """
-function test_module(x::AbstractString, new::Bool = true; long::Bool = false,
+function test_module(x::AbstractString, new::Bool = true;
+                     long::Bool = false, long_only::Bool = false,
                      with_gap::Bool = false, with_polymake::Bool = false,
                      coverage = false)
-  return test_module([x], new; long, with_gap, with_polymake, coverage)
+  return test_module([x], new; long, long_only, with_gap, with_polymake, coverage)
 end
 
 function test_module(xs::AbstractVector{<:AbstractString}, new::Bool = true;
-                     long::Bool = false, with_gap::Bool = false,
-                     with_polymake::Bool = false, coverage = false)
+                     long::Bool = false, long_only::Bool = false,
+                     with_gap::Bool = false, with_polymake::Bool = false,
+                     coverage = false)
   isempty(xs) && return nothing
 
-  test_files = _test_file.(xs)
+  test_files = _test_files(_test_file.(xs); long_only)
+  if isempty(test_files)
+    @info "No tests selected" files = String.(xs) long long_only
+    return nothing
+  end
   setup_file = joinpath(pkgdir, "test", "setup.jl")
 
   if new
     julia_exe = Base.julia_cmd()
-    cmd = _test_command(test_files, setup_file; long, with_gap, with_polymake)
+    cmd = _test_command(test_files, setup_file;
+                        long, long_only, with_gap, with_polymake)
     proj = Base.active_project()
     test_cmd = if coverage
       `$(julia_exe) --code-coverage --project=$(proj) -e $(cmd)`
@@ -565,13 +625,18 @@ function test_module(xs::AbstractVector{<:AbstractString}, new::Bool = true;
     @info "Spawning test session" files = String.(xs) command = test_cmd
     return run(test_cmd)
   else
-    Main.eval(Meta.parse("long_test = $long"))
+    with_polymake && Main.eval(:(import Polymake))
+    with_gap && Main.eval(:(using GAP))
+    Main.eval(Meta.parse("long_test = $(long || long_only)"))
     Main.eval(Meta.parse("_with_gap = $with_gap"))
     Main.eval(Meta.parse("_with_polymake = $with_polymake"))
     @info "Running tests in same session" files = String.(xs)
     Base.include(Main, setup_file)
-    for test_file in test_files
-      Base.include(Main, test_file)
+    withenv("HECKE_TESTLONG" => string(long),
+            "HECKE_TESTLONGONLY" => string(long_only)) do
+      for test_file in test_files
+        Base.include(Main, test_file)
+      end
     end
   end
 end
@@ -602,15 +667,15 @@ function _test_files_for_changes(repo::AbstractString, source_files::Vector{Stri
   for source_file in source_files
     relative_source_file = relpath(source_file, "src")
     direct_test_file = joinpath(test_dir, splitext(relative_source_file)[1] * ".jl")
-    if isfile(direct_test_file)
+    if isfile(direct_test_file) || isdir(splitext(direct_test_file)[1])
       push!(test_files, relpath(direct_test_file, test_dir))
       continue
     end
 
     source_directory = dirname(relative_source_file)
-    source_directory == "." && continue
+    (isempty(source_directory) || source_directory == ".") && continue
     directory_test_file = joinpath(test_dir, source_directory * ".jl")
-    if isfile(directory_test_file)
+    if isfile(directory_test_file) || isdir(joinpath(test_dir, source_directory))
       push!(test_files, relpath(directory_test_file, test_dir))
     end
   end

@@ -165,14 +165,16 @@
     representative(g1) in G  # computes jordan decompositions
   end
 
+  determinants = 1:3
+  @long_test determinants = 1:10
   sig = Dict([(pl[1],0),(pl[2],0)])
-  for d in 1:(long_test ? 10 : 3)
+  for d in determinants
     for G in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
   end
   sig = Dict([(pl[1],3),(pl[2],2)])
-  for d in 1:(long_test ? 10 : 3)
+  for d in determinants
     for G in Hecke.quadratic_genera(F,rank=4,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
@@ -183,13 +185,13 @@
   OF = maximal_order(F)
   pl = real_places(F)
   sig = Dict([(pl[1],0)])
-  for d in 1:(long_test ? 10 : 3)
+  for d in determinants
     for G in Hecke.quadratic_genera(F,rank=2,det=d*OF,signatures=sig)
       @test representative(G) in G
     end
   end
   sig = Dict([(pl[1],3)])
-  for d in 1:(long_test ? 10 : 3)
+  for d in determinants
     for G in Hecke.quadratic_genera(F,rank=3,det=d*OF,signatures=sig)
       @test representative(G) in G
     end

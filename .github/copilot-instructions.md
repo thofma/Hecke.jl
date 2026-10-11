@@ -45,10 +45,11 @@ end
 ## Testing
 
 - Framework: Julia stdlib `Test` (`@testset`, `@test`).
-- Run all tests: `using Pkg; Pkg.test("Hecke")` or `Hecke.test_module("all")`.
+- Run ordinary tests: `using Pkg; Pkg.test("Hecke")` or `Hecke.test_module("all")`.
 - Run one module: `Hecke.test_module("QuadForm")` (runs `test/QuadForm.jl` in a subprocess).
-- Helpers in `test/setup.jl`: `@long_test` (skipped unless `HECKE_TESTLONG=1`).
-- Environment variables: `HECKE_TESTSHORT=1`, `HECKE_TESTLONG=1`, `NUMPROCS=N`.
+- Keep long cases in their ordinary test files, guarded by `@long_test` around the expensive block or enabling an extended range.
+- Use `test_args = ["long"]` to enable long blocks in all files, or `["long-only"]` to run only files containing `@long_test`. Selected files run completely, including ordinary tests. `Hecke.test_module` accepts `long=true` and `long_only=true`.
+- Environment variables: `HECKE_TESTSHORT=1`, `HECKE_TESTLONG=1`, `HECKE_TESTLONGONLY=1`, `NUMPROCS=N`.
 
 ## Documentation
 

@@ -1,4 +1,4 @@
-@testset "FieldFactory" begin
+@long_test @with_gap @testset "FieldFactory" begin
 
   @testset "Absolute Galois group filtering" begin
     Qx, x = QQ[:x]

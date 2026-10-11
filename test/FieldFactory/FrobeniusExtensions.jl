@@ -1,4 +1,4 @@
-@testset "Frobenius extensions" begin
+@long_test @with_gap @testset "Frobenius extensions" begin
   # S3 on 3 points
   # Data taken from Cohen & Diaz y Diaz & Olivier, Counting discriminants of number fields
   flds = Hecke.primitive_frobenius_extensions(QQ, (6, 1), ZZRingElem(10)^2)

@@ -28,7 +28,6 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-          - '1.11'
           - '1.12'
           - '1.13-nightly'
           - 'nightly'
@@ -51,6 +50,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v3
         with:
@@ -59,17 +60,28 @@ jobs:
         uses: julia-actions/cache@v3
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
+      - name: "Add GAP and Polymake as test dependencies"
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.10'
+        run: julia --project=. etc/add_ci_test_dependencies.jl
       - name: "Run tests"
         uses: julia-actions/julia-runtest@v1
         env:
-          NUMPROCS: "2"
+          # Collect baseline coverage serially; other jobs test the worker pool.
+          NUMPROCS: "${{ matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.10' && '1' || '2' }}"
           HECKE_TEST_ASSERTIONS: "${{ matrix.assertions }}"
+          HECKE_REQUIRE_TEST_EXTENSIONS: "${{ matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.10' }}"
         with:
           depwarn: error
-        #      - name: "Process code coverage"
-        #        uses: julia-actions/julia-processcoverage@v1
-        #      - name: "Upload coverage data to Codecov"
-        #        uses: codecov/codecov-action@v3
+          coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.10' }}
+      - name: "Process code coverage"
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.10'
+        uses: julia-actions/julia-processcoverage@v1
+      - name: "Upload coverage data to Codecov"
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1.10' && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        continue-on-error: true
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
     name: Documentation

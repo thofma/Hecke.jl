@@ -1,7 +1,8 @@
 codecov:
   notify:
-    # Keep this in sync with the number of CI jobs uploading coverage.
-    after_n_builds: 2
+    # Ordinary, long-only, and threading jobs upload on PRs, pushes, and tags.
+    # Scheduled and manual CI runs do not upload an incomplete set.
+    after_n_builds: 3
 coverage:
   status:
     project:

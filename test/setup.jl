@@ -26,7 +26,7 @@ Hecke.assertions(enable_assertions in ["1", "true"])
 if (isdefined(Hecke, :long_test) && Hecke.long_test) ||
    (isdefined(Main, :long_test) && Main.long_test)
   macro long_test(ex)
-    ex
+    return esc(ex)
   end
 else
   macro long_test(ex)

@@ -16,6 +16,61 @@
   @test first_test_range !== nothing
   @test second_test_range !== nothing
   @test first(setup_range) < first(first_test_range) < first(second_test_range)
+  @test Meta.parse(command) isa Expr
+
+  @testset "Ordinary and long test selection" begin
+    mktempdir() do directory
+      mkpath(joinpath(directory, "Foo", "Nested"))
+      wrapper = joinpath(directory, "Foo.jl")
+      ordinary = joinpath(directory, "Foo", "Bar.jl")
+      marked = joinpath(directory, "Foo", "Slow.jl")
+      nested = joinpath(directory, "Foo", "Nested", "Deep.jl")
+      unmarked = joinpath(directory, "Foo", "Legacy-long.jl")
+      # Construct the fixture marker without marking this test file itself.
+      marker = "@" * "long_test"
+      write(wrapper, "include(\"Foo/Bar.jl\")")
+      write(ordinary, "@long_test_extra nothing")
+      write(unmarked, "nothing")
+      for path in (marked, nested, joinpath(directory, "setup.jl"),
+                   joinpath(directory, "Aqua.jl"),
+                   joinpath(directory, "Foo", ".hidden.jl"))
+        write(path, "$marker begin; nothing; end")
+      end
+      all_files = sort([ordinary, marked, nested, unmarked])
+      long_files = sort([marked, nested])
+      @test Hecke._has_long_tests(marked)
+      @test !Hecke._has_long_tests(ordinary)
+      @test !Hecke._has_long_tests(unmarked)
+      @test Hecke._test_files_in_directory(directory) == all_files
+      @test Hecke._test_files_in_directory(directory; long_only = true) == long_files
+      @test Hecke._test_files([ordinary]) == [ordinary]
+      @test isempty(Hecke._test_files([ordinary]; long_only = true))
+      @test Hecke._test_files([marked]; long_only = true) == [marked]
+      @test Hecke._test_files([unmarked]) == [unmarked]
+      @test Hecke._test_files([wrapper]) == [wrapper]
+      @test Hecke._test_files([wrapper]; long_only = true) == long_files
+      @test Hecke._test_files([joinpath(directory, "Foo", "Nested.jl")]) == [nested]
+      @test Hecke._test_files([ordinary, marked, marked]; long_only = true) == [marked]
+      @test_throws ArgumentError Hecke._test_files([joinpath(directory, "Missing.jl")])
+    end
+
+    test_directory = normpath(joinpath(Hecke.pkgdir, "test"))
+    ordinary = Hecke._test_files_in_directory(test_directory)
+    extended = Hecke._test_files_in_directory(test_directory; long_only = true)
+    expected_long = Set([
+      joinpath(test_directory, "FieldFactory", "FieldFactory.jl"),
+      joinpath(test_directory, "FieldFactory", "FrobeniusExtensions.jl"),
+      joinpath(test_directory, "QuadForm", "Quad", "Genus.jl"),
+      joinpath(test_directory, "QuadForm", "Quad", "ZGenus.jl"),
+    ])
+    @test issubset(expected_long, Set(extended))
+    @test issubset(Set(extended), Set(ordinary))
+    @test all(Hecke._has_long_tests, extended)
+    @test joinpath(test_directory, "AlgAssRelOrd", "Eichler.jl") in ordinary
+    @test joinpath(test_directory, "ModAlgAss", "Lattices", "Absolute.jl") in ordinary
+    @test Hecke._test_files([Hecke._test_file("all")]; long_only = true) ==
+          [joinpath(test_directory, "runtests.jl")]
+  end
 
   mktempdir() do repo
     mkpath(joinpath(repo, "test", "Foo"))
@@ -25,6 +80,9 @@
                     "src/Foo/Another.jl", "src/TopLevel.jl"]
     @test Hecke._test_files_for_changes(repo, source_files) ==
           [joinpath("Foo", "Bar.jl"), "Foo.jl"]
+    mkpath(joinpath(repo, "test", "Directory"))
+    @test Hecke._test_files_for_changes(repo, ["src/Directory.jl"]) ==
+          ["Directory.jl"]
   end
 
   mktempdir() do repo

@@ -41,16 +41,16 @@ jobs:
         uses: julia-actions/cache@v3
       - name: "Build package"
         uses: julia-actions/julia-buildpkg@v1
-      - name: "Inject GAP and Polymake as test dependencies"
-        continue-on-error: true
-        run: |
-          sed -i -e "s/\[deps\]/[deps]\nGAP = \"c863536a-3901-11e9-33e7-d5cd0df7b904\"/" test/Project.toml
-          sed -i -e "s/\[deps\]/[deps]\nPolymake = \"d720cf60-89b5-51f5-aff5-213f193123e7\"/" test/Project.toml
+      - name: "Add GAP and Polymake as test dependencies"
+        run: julia --project=. etc/add_ci_test_dependencies.jl
       - name: "Run long tests"
         uses: julia-actions/julia-runtest@v1
         env:
-          HECKE_TESTLONG: "1"
+          HECKE_TESTLONGONLY: "1"
+          HECKE_REQUIRE_TEST_EXTENSIONS: "1"
           NUMPROCS: "1"
+        with:
+          coverage: true
       - name: "Process code coverage"
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
@@ -89,6 +89,7 @@ jobs:
           JULIA_NUM_THREADS: "2"
         with:
           depwarn: error
+          coverage: true
       - name: "Process code coverage"
         uses: julia-actions/julia-processcoverage@v1
       - name: "Upload coverage data to Codecov"
