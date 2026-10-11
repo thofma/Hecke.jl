@@ -599,7 +599,7 @@ function compute_ellipse_bound_rigorous(subpath, dif_basis, int_group_rs, RS)
       z_0 = (interval[j] + interval[j-1])/2
       delta = minimum([abs(alpha - z_0) for alpha in rs]) + (abs(interval[j] - interval[j-1]))/2 
       lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
-      gmin = lcm(lis) * gmin
+      gmin_int = lcm(lis) * gmin
       CC = complex_field(RS)
       v = embedding(RS)
       _, CCx = polynomial_ring(CC, "x")
