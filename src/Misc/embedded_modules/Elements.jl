@@ -21,7 +21,15 @@ end
 
 parent(x::EmbeddedModuleElem) = x.mod
 
-elem_type(M::EmbeddedModule{RingTypeType, RingType, OverringType}) where {RingTypeType, RingType, OverringType} = EmbeddedModuleElem{typeof(M), RingType, OverringType}
+elem_type(::Type{EmbeddedModule{S, R, K}}) where {S, R, K} = EmbeddedModuleElem{EmbeddedModule{S, R, K}, R, K}
+
+elem_type(M::EmbeddedModule) = elem_type(typeof(M))
+
+parent_type(::Type{EmbeddedModuleElem{S, R, K}}) where {S, R, K} = S
+
+_coordinate_ring(M::EmbeddedModule{_PID}) = ring(M)
+
+_coordinate_ring(M::EmbeddedModule{_DD}) = overring(M)
 
 function Base.deepcopy_internal(x::EmbeddedModuleElem, dict::IdDict)
   haskey(dict, x) && return dict[x]
@@ -36,7 +44,7 @@ end
 function _element_from_ambient_coordinates(M::EmbeddedModule{S, T, OverringType}, x::Vector; check::Bool = true) where {S, T, OverringType}
   z = EmbeddedModuleElem(M)
   @assert eltype(x) === elem_type(OverringType)
-  @req length(x) == ambient_rank(M) "Wrong number of ambient coordinates"
+  @req length(x) == ambient_rank(M) "The ambient coordinates have the wrong length"
   z.ambientcoords = x
   if check
     fl, c = _in(x, M, Val(true))
@@ -53,8 +61,16 @@ end
 
 function _element_from_coordinates(M::EmbeddedModule{S, RingType, OverringType}, x::Vector; check::Bool = true) where {S, RingType, OverringType}
   z = EmbeddedModuleElem(M)
-  @assert eltype(x) === elem_type(RingType)
-  @req length(x) == rank(M) "Wrong number of coordinates"
+  C = _coordinate_ring(M)
+  @assert eltype(x) === elem_type(C)
+  @req length(x) == rank(M) "The coordinates have the wrong length"
+  if check
+    @req all(c -> parent(c) === C, x) "The coordinates have the wrong base ring"
+    if S === _DD
+      I = Hecke.coefficient_ideals(basis_matrix(M))
+      @req all(i -> x[i] in I[i], eachindex(x)) "The coordinates do not belong to the coefficient ideals"
+    end
+  end
   z.coords = x
   return z
 end
@@ -71,16 +87,13 @@ function _element(M::EmbeddedModule, x, y; check::Bool = false)
 end
 
 function _element_from_coordinates_and_ambient_coordinates(M::EmbeddedModule{S, RingType, OverringType}, x::Vector, y::Vector; check::Bool = true) where {S, RingType, OverringType}
-  z = EmbeddedModuleElem(M)
-  @assert eltype(x) === elem_type(RingType)
+  z = _element_from_coordinates(M, x; check)
   @assert eltype(y) === elem_type(OverringType)
-  @req length(x) == rank(M) "Wrong number of coordinates"
-  @req length(y) == ambient_rank(M) "Wrong number of ambient coordinates"
-  z.coords = x
+  @req length(y) == ambient_rank(M) "The ambient coordinates have the wrong length"
   z.ambientcoords = y
   if check
     fl, c = _in(y, M, Val(true))
-    @req fl && c == x "Coordinates do not define the same module element"
+    @req fl && c == x "The coordinates do not agree with the ambient coordinates"
   end
   return z
 end
@@ -89,30 +102,28 @@ function zero(M::EmbeddedModule{S, RingType, OverringType}) where {S, RingType, 
   return _element_from_ambient_coordinates(M, zeros_array(overring(M), ambient_rank(M)); check = false)
 end
 
-function coordinates(x::EmbeddedModuleElem{S, RingType}; copy::Bool = true) where {S, RingType}
-  if isdefined(x, :coords)
-    r = x.coords::Vector{elem_type(RingType)}
-    return copy ? deepcopy(r) : r
-  else
+function coordinates(x::EmbeddedModuleElem; copy::Bool = true)
+  if !isdefined(x, :coords)
     fl, c = _in(x.ambientcoords, x.mod, Val(true))
     !fl && error("internal error: element not in module")
     x.coords = c
-    r = x.coords::Vector{elem_type(RingType)}
-    return copy ? deepcopy(r) : r
   end
+  r = x.coords::Vector{elem_type(_coordinate_ring(parent(x)))}
+  return copy ? deepcopy(r) : r
 end
 
-function ambient_coordinates(x::EmbeddedModuleElem{<:Any, RingType, OverringType}) where {RingType, OverringType}
-  if isdefined(x, :ambientcoords)
-    return x.ambientcoords::Vector{elem_type(OverringType)}
-
-  else
+function ambient_coordinates(x::EmbeddedModuleElem{<:Any, RingType, OverringType}; copy::Bool = true) where {RingType, OverringType}
+  if !isdefined(x, :ambientcoords)
     M = parent(x)
-    c = elem_type(overring(M))[image(fraction_map(M), a)
-                              for a in coordinates(x; copy = false)]
-    x.ambientcoords = c * basis_matrix(M)
-    return x.ambientcoords::Vector{elem_type(OverringType)}
+    B = basis_matrix(M)
+    if _ring_type(M) === _DD
+      B = matrix(B)
+    end
+    c = elem_type(OverringType)[image(fraction_map(M), a) for a in coordinates(x; copy = false)]
+    x.ambientcoords = c * B
   end
+  r = x.ambientcoords::Vector{elem_type(OverringType)}
+  return copy ? deepcopy(r) : r
 end
 
 function Base.show(io::IO, x::EmbeddedModuleElem)

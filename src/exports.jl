@@ -713,6 +713,7 @@ export mod!
 export mod_sym!
 export modord
 export modular_init
+export module_index
 export modulus_bilinear_form
 export modulus_quadratic_form
 export morphisms

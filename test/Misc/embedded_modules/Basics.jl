@@ -16,7 +16,7 @@
 
   P = Hecke.embedded_module(ZZ, QQ, QQ[4 0 0; 0 6 0])
   @test issubset(P, N)
-  @test Hecke.index(P, N) == 4
+  @test module_index(P, N) == ideal(ZZ, 4)
   @test N + P == N
   @test intersect(N, P) == P
 end
@@ -130,4 +130,38 @@ end
   M1 = Hecke.embedded_module(ZZ, QQ, QQ[1 0]; overstructure = ambient)
   M2 = Hecke.embedded_module(ZZ, QQ, QQ[0 1]; overstructure = ambient)
   @test intersect(M1, M2) == Z
+end
+
+@testset "Dedekind domain matrix input" begin
+  K, = quadratic_field(5)
+  R = maximal_order(K)
+  ambient = nothing
+  M = Hecke.embedded_module(R, K, K[1//2 0; 0 3; 3//2 0];
+                            overstructure = ambient)
+
+  @test rank(M) == 2
+  @test Hecke.overstructure(M) === ambient
+  @test Hecke._in(K[5//2 -6], M)
+  @test !Hecke._in(K[1//4 0], M)
+
+  B = K[2 0; 0 3]
+  Binv = inv(B)
+  N = Hecke.embedded_module(R, K, B; overstructure = ambient,
+                            is_basis_matrix = true, inverse = Binv)
+  @test matrix(basis_matrix(N)) === B
+  @test basis_matrix_inverse(N) === Binv
+  @test Hecke.overstructure(N) === ambient
+  @test Hecke._in(K[2 3], N)
+  @test !Hecke._in(K[1 0], N)
+
+  P = Hecke.embedded_module(R, K, identity_matrix(R, 2);
+                            is_basis_matrix = true)
+  @test matrix(basis_matrix(P)) == identity_matrix(K, 2)
+  @test Hecke._in(K[1 0], P)
+
+  Z = Hecke.zero_embedded_module(R, K, 3)
+  @test rank(Z) == 0
+  @test Hecke.ambient_rank(Z) == 3
+  @test base_ring(Hecke.generator_matrix(Z)) === R
+  @test matrix(basis_matrix(Z)) == zero_matrix(K, 0, 3)
 end
