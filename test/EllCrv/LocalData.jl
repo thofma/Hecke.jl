@@ -448,5 +448,46 @@ end
       @test ld1 === ld2
     end
   end
+
+  @testset "Input validation" begin
+    # we check that non-primes (or primes/places from wrong order)
+    #   cause an error and do not pollute the cache
+    E = elliptic_curve([0, 0, 1, 0, 0])
+    for p in [4, 9, 27, ZZ(9), 6, 1, 0, -3]
+      @test_throws ArgumentError tates_algorithm_local(E, p)
+    end
+    @test bad_primes(E) == [3]
+
+    x = gen(Hecke.Globals.Qx)
+    K, c = number_field(x^2 - 5; cached = false)
+    L, = number_field(x^2 - 2; cached = false)
+    E = elliptic_curve(K, [0, 0, 0, 1, 0])
+    OK = ring_of_integers(K)
+    Oeq = equation_order(K)
+    @test_throws ArgumentError kodaira_symbol(E, 4*OK)
+    @test_throws ArgumentError kodaira_symbol(E, 1*OK)
+    @test_throws ArgumentError kodaira_symbol(E, prime_decomposition(ring_of_integers(L), 3)[1][1])
+    @test_throws ArgumentError kodaira_symbol(E, ideal(Oeq, 2, Oeq(c - 1)))
+    @test length(bad_primes(E)) == 1
+
+    K, t = rational_function_field(GF(5), :t; cached = false)
+    L, s = rational_function_field(GF(5), :s; cached = false)
+    E = elliptic_curve(K, [0, 0, 0, t, t^2 + 1])
+    @test_throws ArgumentError kodaira_symbol(E, 1//(t + 1))
+    @test_throws ArgumentError tates_algorithm_local(E, 1//(t + 1))
+    @test_throws ArgumentError kodaira_symbol(E, t^2)
+    @test length(bad_primes(E)) == 2
+    # note that hash(s) == hash(t)
+    @test_throws ArgumentError kodaira_symbol(E, s)
+    @test_throws ArgumentError tates_algorithm_local(E, numerator(s))
+
+    # check Kodaira symbol parsing
+    for str in ["I-3", "I-4", "I-3*", "I+3", "I 3", "I03", "In", "I", "Ix*", "V"]
+      @test_throws ArgumentError KodairaSymbol(str)
+    end
+
+    @test KodairaSymbol("I3") == KodairaSymbol(7)
+    @test KodairaSymbol("I5*") == KodairaSymbol(-9)
+  end
 end
 

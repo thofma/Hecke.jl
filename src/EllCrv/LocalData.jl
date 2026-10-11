@@ -165,6 +165,8 @@ end
 Variant of [`tates_algorithm_local`](@ref) returning an [`EllipticCurveLocalData`](@ref) struct instead of a tuple.
 """
 function tates_algorithm_local(E::EllipticCurve{T}, P, ::Type{EllipticCurveLocalData}) where T
+  _check_place(E, P)
+
   d = _local_data_dict(E)
   k = _local_data_key(E, P)
   haskey(d, k) && return d[k]
@@ -177,6 +179,30 @@ function tates_algorithm_local(E::EllipticCurve{T}, P, ::Type{EllipticCurveLocal
   return ld
 end
 
+# Check that P is a prime/place of the base field of E.
+# Note that we check P to be prime when creating valuation
+_check_place(::EllipticCurve{QQFieldElem}, ::IntegerUnion) = nothing
+_check_place(::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, ::typeof(degree)) = nothing
+
+function _check_place(E::EllipticCurve{AbsSimpleNumFieldElem}, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  @req order(P) === ring_of_integers(base_field(E)) "Ideal must be an ideal of the ring of integers of the base field"
+  return nothing
+end
+
+function _check_place(E::EllipticCurve{T}, x::T) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
+  K = base_field(E)
+  @req parent(x) === K "Place must be an element of the base field"
+  @req is_one(denominator(x)) || x == 1 // gen(K) "Place must be a polynomial or 1/t"
+  return nothing
+end
+
+function _check_place(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunctionFieldElem}, f::PolyRingElem)
+  R = base_ring(AbstractAlgebra.Generic.underlying_fraction_field(base_field(E)))
+  @req parent(f) === R "Polynomial must be in the polynomial ring of the base field"
+  return nothing
+end
+
+# Tate's algorithm dispatch: create DiscreteValuation and call the the generic _tates_algorithm
 function _tates_algorithm(E::EllipticCurve{QQFieldElem}, p::IntegerUnion)
   return _tates_algorithm(E, QQValuation(p))
 end
@@ -823,15 +849,11 @@ function _kodaira_symbol_from_string(s::String)
   s == "IV"   && return  4
   s == "IV*"  && return -4
 
-  (length(s) >= 2 && s[1] == 'I') || error("\"$s\" is not a valid Kodaira symbol.")
-
-  if s[end] == '*'
-    m = parse(Int, SubString(s, 2, lastindex(s) - 1))
-    return - (4 + m)
-  else
-    m = parse(Int, SubString(s, 2))
-    return 4 + m
-  end
+  # In or In* with n >= 1
+  m = match(r"^I([1-9][0-9]*)(\*?)$", s)
+  @req m !== nothing "\"$s\" is not a valid Kodaira symbol"
+  n = parse(Int, m[1])
+  return isempty(m[2]) ? 4 + n : -(4 + n)
 end
 
 function _kodaira_symbol_to_string(n::Int)
