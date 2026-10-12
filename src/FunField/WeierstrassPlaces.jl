@@ -202,40 +202,39 @@ function power_representation(a0::Generic.AbsSimpleFunctionFieldElem{FqFieldElem
 end
 
 #Compute the pth root of an element of a function field in characteristic p.
-function pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingElem})
-  K = parent(a)
-  y = gen(K)
-  p = Int(characteristic(K))
-  Ft = base_field(K)
-  t = gen(Ft)
-  n = degree(K)
+#Use that b -> a:=b^p is Fp-linear.
+function Hecke.pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPolyRingElem})
+  F = parent(a)
+  p = characteristic(F)
+  n = degree(F)
+  kx = base_ring(F)
 
-  #Write down the matrix that represents taking the pth power.
-  Mp = transpose(matrix([[coeff(y^(i * p),j) for j in (0:n-1)] for i in (0:n-1)]))
-  v = matrix([coeff(a,j) for j in (0:n-1)])
+  #M maps pth powers of coordinates of b to coordinates of b^p s.th.
+  #a = b^p = coordinates(b).^p * M * basis(F).
+  M = matrix(base_ring(F), [coordinates(b^p) for b in basis(F)])
+  Minv = inv(M)
 
-  #Find a solutions such that (fnum_pth_root)^p = v
-  fnum_pth_root = solve(Mp, v, side = :right)
+  coord = coordinates(a)*Minv #pth powers of coordinates of b
+  for i in 1:n
+    c = coord[i]
 
-  R = parent(numerator(K)) # Fq[t][y], ring of the defining polynomial
-  S = base_ring(R) # Fq[t]
+    #Compute pth root of num and den in polynomial ring.
+    c_num = numerator(c)
+    #Compute pth root of variable powers and coefficients in Fq.
+    c_num = map_coefficients(pth_root, deflate(c_num, p.d))
 
-  #Now we still need to take pth roots of the coefficients.
-  #Note that we can only take pth roots of x^n if p divides n.
-  #We therefore ignore all other coefficients
-  for v in (1:length(fnum_pth_root))
-    v_num = numerator(fnum_pth_root[v])
-    coeffs_v_num = [pth_root(coeff(v_num, i)) for i in (0:p:degree(v_num))]
-    v_den = denominator(fnum_pth_root[v])
-    coeffs_v_den = [pth_root(coeff(v_den, i)) for i in (0:p:degree(v_den))]
-    fnum_pth_root[v] = R(coeffs_v_num)(t)//S(coeffs_v_den)(t)
+    c_den = denominator(c)
+    #Compute pth root of variable powers and coefficients in Fq.
+    c_den = map_coefficients(pth_root, deflate(c_den, p.d))
+
+    #Put together to coordinate of b.
+    coord[i] = kx(c_num, c_den)
   end
-  p_th_root = sum([fnum_pth_root[v+1]*y^v for v in (0:n-1)])
-
+  b = F(coord)
   #Check if we have an actual pth root. 
   #(I.e. all terms of the form x^n had p divide n.)
-  if (p_th_root)^p == a 
-    return p_th_root
+  if (b)^p == a
+    return b
   else
     error("Element does not have a pth root.")
   end
