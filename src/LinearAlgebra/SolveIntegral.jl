@@ -12,7 +12,7 @@
 
 struct PseudoHermiteFormTrait <: AbstractAlgebra.Solve.MatrixNormalFormTrait end
 
-AbstractAlgebra.Solve.matrix_normal_form_type(::NumFieldOrder) = PseudoHermiteFormTrait()
+AbstractAlgebra.Solve.matrix_normal_form_type(::Type{<:NumFieldOrder}) = PseudoHermiteFormTrait()
 
 function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormTrait, A::MatElem, b::MatElem, task::Symbol; side::Symbol)
   if side === :right
