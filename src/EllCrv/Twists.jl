@@ -44,13 +44,13 @@ function quadratic_twist(E::EllipticCurve{T}) where T<: FinFieldElem
     return quadratic_twist(E, non_square(K))
   end
 
-  # in characteristic 2 twist-by-d has degree 2 when Tr(d) = 1
-  if isodd(degree(K))     # Tr(1) = degree(K)*1
-    return quadratic_twist(E, one(K))
-  else                    # need to search for an element of trace 1
-    u = normal_basis(GF(2,1), K)
-    return quadratic_twist(E, u)
+  # in characteristic 2 twist-by-d has degree 2 when absolute trace of d is 1.
+  # NOTE: Tr(1) = 1 exactly when the absolute degree is odd
+  u = one(K)
+  while absolute_tr(u) == 0
+    u = rand(K)
   end
+  return quadratic_twist(E, u)
 end
 
 #Test if we can't sometimes get two isomorphic curves

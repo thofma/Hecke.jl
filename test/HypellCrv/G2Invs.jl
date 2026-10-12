@@ -20,6 +20,11 @@
     @test weighted_equality(clebsch_from_igusa_clebsch(ig_cl_invs), cl_invs, [2,4,6,10])
     @test weighted_equality(igusa_from_g2(g2_invs), ig_invs, [2,4,6,8,10])
 
+    ig_invs15, ws15 = igusa_invariants(C, true)
+    @test ws15 == [2,4,6,8,10,15]
+    @test ig_invs15[1:5] == ig_invs
+    @test ig_invs15[6] == igusa_invariant_J15(C) == QQ(101051086352003//128)
+
 
     F = GF(37)
     Fx, x = polynomial_ring(F, "x")

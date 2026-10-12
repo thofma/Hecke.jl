@@ -1462,7 +1462,7 @@ function non_square(F::FinField)
 end
 
 function inv(f::Hecke.LocMultGrpModSquMap)
-  return MapFromFunc(codomain(f), domain(f), x -> preimage(f, x))
+  return map_from_func(codomain(f), domain(f), x -> preimage(f, x))
 end
 
 ################################################################################
@@ -1851,7 +1851,7 @@ function _intersect_lattice_down_contained(xps, _ps, Lambda)
 
   for q in support(norm(LL))
     if !(q in _ps)
-      @assert _padic_index(LL, d * Lambda, q) == (0, 0)
+      @assert _padic_index(LL, Lambda, q) == (0, 0)
     end
   end
 

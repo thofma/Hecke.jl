@@ -164,7 +164,8 @@ mutable struct qAdicConj
     =#
     if splitting_field
       Zx = polynomial_ring(ZZ, cached = false)[1]
-      C = qAdicRootCtx(Zx(K.pol), p, splitting_field = true)
+      d = denominator(K.pol)
+      C = qAdicRootCtx(numerator(K.pol*d, Zx), p, splitting_field = true)
       r = new()
       r.C = C
       r.K = K
@@ -253,16 +254,20 @@ end
 #TODO: implement a proper Frobenius - with caching of the frobenius_a element
 function _conjugates(a::AbsSimpleNumFieldElem, C::qAdicConj, n::Int, op::Function)
   R = roots(C.C, n)
-  @assert parent(a) == C.K
-  Zx = polynomial_ring(ZZ, cached = false)[1]
-  d = denominator(a)
-  f = Zx(d*a)
-  res = QadicFieldElem[]
-  for x = R
-    a = op(inv(parent(x)(d))*f(x))::QadicFieldElem
-    push!(res, a)
+  setprecision(parent(R[1]), n) do
+    setprecision(base_field(parent(R[1])), n) do
+      @assert parent(a) == C.K
+      Zx = polynomial_ring(ZZ, cached = false)[1]
+      d = denominator(a)
+      f = Zx(d*a)
+      res = QadicFieldElem[]
+      for x = R
+        a = op(inv(parent(x)(d))*f(x))::QadicFieldElem
+        push!(res, a)
+      end
+      return res
+    end
   end
-  return res
 end
 
 function _log(a::QadicFieldElem)
@@ -318,7 +323,7 @@ function conjugates_log(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, C:
         lp = prime_decomposition(maximal_order(parent(k)), C.C.p)
         @assert Base.all(x -> has_2_elem_normal(x[1]), lp)
         val = map(x -> valuation(k, x[1]), lp)
-        pe = prod(lp[i][1].gen_two^val[i] for i = 1:length(lp) if val[i] != 0)
+        pe = prod(elem_in_nf(lp[i][1].gen_two)^val[i] for i = 1:length(lp) if val[i] != 0)
         aa = k//pe
         y = conjugates_log(aa, C, n, all = false, flat = false)
         if first
@@ -650,5 +655,5 @@ function completion(K::AbsSimpleNumField, ca::QadicFieldElem; cached::Bool = tru
     end
     return res#*K(p)^valuation(x)
   end
-  return parent(ca), MapFromFunc(K, parent(ca), inj, lif)
+  return parent(ca), map_from_func(K, parent(ca), inj, lif)
 end

@@ -167,5 +167,3 @@ end
 function CoerceMap(domain::D, codomain::C) where {D, C}
   return CoerceMap{D, C}(domain, codomain)
 end
-
-

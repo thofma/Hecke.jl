@@ -141,9 +141,9 @@ function isless(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
   end
 end
 
-isless(x::EmbeddedNumFieldElem, y) = isless(x, parent(x)(y))
+isless(x::EmbeddedNumFieldElem, y::RingElement) = isless(x, parent(x)(y))
 
-isless(x, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
+isless(x::RingElement, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
 
 # Support comparing with floats
 

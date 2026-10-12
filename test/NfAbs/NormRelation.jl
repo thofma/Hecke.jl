@@ -1,4 +1,15 @@
 @testset "NormRel" begin
+  @testset "GRH keyword" begin
+    for GRH in (false, true)
+      K, _ = cyclotomic_field(12; cached = false)
+      S = prime_ideals_over(maximal_order(K), 2)
+      U, mU = Hecke.NormRel._sunit_group_fac_elem_via_brauer(K, S; GRH)
+      C, mC = Hecke.sunit_group_fac_elem(S; GRH)
+      Q, _ = quo(C, [mC\mU(U[i]) for i in 1:ngens(U)])
+      @test order(Q) == 1
+    end
+  end
+
   Qx, x = polynomial_ring(QQ, "x")
   f = x^8 - x^4 + 1
   K, a = number_field(f, "a", cached = false)

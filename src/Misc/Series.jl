@@ -224,7 +224,7 @@ end
 
 function Hecke.residue_field(S::SeriesRing{T}) where {T <: Nemo.RingElem} #darn zzModRingElem/gfp
   k = base_ring(S)
-  return k, MapFromFunc(S, k, x -> coeff(x, 0), y -> set_precision(S(y), 1))
+  return k, map_from_func(S, k, x -> coeff(x, 0), y -> set_precision(S(y), 1))
 end
 
 function rational_reconstruction(a::SeriesElem; parent::PolyRing = polynomial_ring(base_ring(a), cached = false)[1])
@@ -249,4 +249,3 @@ Hecke.gcd_into!(a::PolyRingElem, b::PolyRingElem, c::PolyRingElem) = gcd(b, c)
 function Hecke.squarefree_part(a::PolyRingElem)
   return divexact(a, gcd(a, derivative(a)))
 end
-

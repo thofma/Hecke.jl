@@ -397,10 +397,11 @@ function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, pri
   end
   G, GtoQ, OKtoQ = cache[1]
   sols2 = Vector{elem_type(K)}()
-  for s in s_eval
+  for s in sols_eval
     sinQ = OKtoQ(OK(s))
     if !is_invertible(sinQ)[1]
-      push!(s, sols2)
+      push!(sols2, s)
+      continue
     end
     # s is coprime to the conductor
 
@@ -413,6 +414,9 @@ function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, pri
       s = s*inv(elem_in_nf(mUK(u), copy = false))
       return true, KtoA(s)
     end
+    # OE can be smaller than the inverse image of O. Keep s for the
+    # membership search in O below.
+    push!(sols2, s)
   end
 
   if !isassigned(cache, 2)
@@ -421,6 +425,8 @@ function __neq_find_sol_in_order(O::AlgAssAbsOrd, KtoA::NfAbsToAbsAlgAssMor, pri
     cache[2] = quo(UK, UEinUK)
   end
   Q, toQ = cache[2]
+  # Membership in O is invariant under multiplication by units of OE,
+  # since both such a unit and its inverse map into O.
   for (i, g) in enumerate(Q)
     u = mUK(toQ\g)
     for s in sols2
@@ -471,7 +477,7 @@ function __neq_sunit(K::AbsSimpleNumField, primes::Vector{ZZRingElem}, vals::Vec
       rethrow(e)
     end
   end
-  return elem_type(codomain(mSK))[ mSK(SK(s)) for s in sols ]
+  return elem_type(codomain(mSK))[ mSK(SK(sols[i, :])) for i in 1:nrows(sols) ]
 end
 
 function __neq_find_good_primes(NC::NormCache, OK::AbsNumFieldOrder)

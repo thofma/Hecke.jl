@@ -958,7 +958,7 @@ function _shortest_vectors_gram(::Type{S}, _G; dolll=true, elem_type=ZZRingElem)
   return min//d, Vector{elem_type}[ v[1] for v in V if v[2] == min]
 end
 
-function _shortest_vectors_gram(_G, elem_type::Type{S} = ZZRingElem) where {S}
+function _shortest_vectors_gram(_G::MatElem, elem_type::Type{S} = ZZRingElem) where {S}
   d = denominator(_G)
   G = change_base_ring(ZZ, d * _G)
   Glll, T = lll_gram_with_transform(G)

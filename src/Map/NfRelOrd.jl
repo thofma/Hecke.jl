@@ -403,7 +403,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
 
       FE = RelFinField(h, :v)
       FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FKxtoFKabsz = MapFromFunc(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
+      FKxtoFKabsz = map_from_func(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
       FE2, mE2 = field_extension(hh)
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
       mE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
@@ -451,7 +451,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
 
       FE = RelFinField(h, :v)
       FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FKxtoFKabsz = MapFromFunc(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
+      FKxtoFKabsz = map_from_func(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
       FE2, mE2 = field_extension(hh)
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
       mFE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))

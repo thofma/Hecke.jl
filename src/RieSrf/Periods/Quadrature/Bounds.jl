@@ -151,9 +151,8 @@ end
 # _check_integration_parameters). An unfinished implementation of Strategy 1 of
 # Bruin, Disney-Hogg, Gao, "Rigorous integration along straight lines"
 # (https://arxiv.org/abs/2208.12377): a rigorous bound for the integrand on
-# the ellipses around line subpaths. Known problems: gmin_int is undefined
-# (gmin is meant), minpoly is applied to a multivariate polynomial, and arcs
-# and circles are not covered.
+# the ellipses around line subpaths. Known problems: minpoly is applied to a
+# multivariate polynomial, and arcs and circles are not covered.
 function _ellipse_bound_rigorous!(subpath, dif_basis, int_group_rs, RS)
   if length(subpath.bounds) == 0
     i = maximum(filter(x -> (subpath.quadrature_parameter > int_group_rs[x]), 1:length(int_group_rs));init = 1)
@@ -189,7 +188,7 @@ function _ellipse_bound_rigorous!(subpath, dif_basis, int_group_rs, RS)
       z_0 = (interval[j] + interval[j-1])/2
       delta = minimum([abs(alpha - z_0) for alpha in rs]) + (abs(interval[j] - interval[j-1]))/2 
       lis = [denominator(coeff(gmin, i)) for i in (0:degree(gmin))]
-      gmin = lcm(lis) * gmin
+      gmin_int = lcm(lis) * gmin
       CC = complex_field(RS)
       v = embedding(RS)
       _, CCx = polynomial_ring(CC, "x")

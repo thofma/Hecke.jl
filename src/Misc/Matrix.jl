@@ -50,7 +50,19 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   return S
 end
 
-function _hnf(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+function _hnf(x::T; shape::Symbol = :upperright, trim::Bool = false) where {T <: MatElem}
+  x = _hnf(x, shape)
+  if trim
+    if shape === :lowerleft
+      return trim_lowerleft(x)
+    else
+      return trim_upperright(x)
+    end
+  end
+  return x
+end
+
+function _hnf(x::T, shape::Symbol) where {T <: MatElem}
   if shape == :lowerleft
     h = hnf(reverse_cols(x))
     reverse_cols!(h)
@@ -73,8 +85,7 @@ function _hnf_with_transform(x::T, shape::Symbol = :upperright) where {T <: MatE
   return hnf_with_transform(x)::Tuple{T, T}
 end
 
-
-function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+function _hnf!(x::T, shape::Symbol) where {T <: MatElem}
   if shape == :lowerleft
     reverse_cols!(x)
     hnf!(x)
@@ -86,7 +97,19 @@ function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   return x::T
 end
 
-function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem, shape::Symbol = :upperright)
+function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem; shape::Symbol = :upperright, trim::Bool = false)
+  x = _hnf_modular_eldiv(x, m, shape)
+  if trim
+    if shape === :lowerleft
+      return trim_lowerleft(x)
+    else
+      return trim_upperright(x)
+    end
+  end
+  return x
+end
+
+function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem, shape::Symbol)
   if shape == :lowerleft
     h = hnf_modular_eldiv!(reverse_cols(x), m)
     reverse_cols!(h)

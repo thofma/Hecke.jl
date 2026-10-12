@@ -91,6 +91,69 @@ is_rational(a::AbsNonSimpleNumFieldElem) = is_constant(data(a))
 
 ################################################################################
 #
+#  Random elements
+#
+################################################################################
+
+RandomExtensions.maketype(K::Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+                         ::AbstractUnitRange{<:IntegerUnion}) = elem_type(K)
+
+RandomExtensions.maketype(K::Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+                         ::AbstractUnitRange{<:IntegerUnion},
+                         ::AbstractUnitRange{<:IntegerUnion}) = elem_type(K)
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:NumFieldElem,
+                                         <:Union{RelSimpleNumField, RelNonSimpleNumField},
+                                         <:AbstractUnitRange{<:IntegerUnion}}})
+  K, r = sp[][1:end]
+  k = base_field(K)
+  return K([rand(rng, k, r) for _ in 1:degree(K)])
+end
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make3{<:NumFieldElem,
+                                         <:Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+                                         <:AbstractUnitRange{<:IntegerUnion},
+                                         <:AbstractUnitRange{<:IntegerUnion}}})
+  K, r, d = sp[][1:end]
+  @req !(0 in d) "denominator range must not contain zero"
+  a = rand(rng, K, r)
+  return divexact(a, K(rand(rng, d)))
+end
+
+@doc raw"""
+    rand([rng::AbstractRNG], K::NumField, r::AbstractUnitRange) -> NumFieldElem
+    rand([rng::AbstractRNG], K::NumField, r::AbstractUnitRange, d::AbstractUnitRange) -> NumFieldElem
+
+Return a random element of `K` with independent integer coefficients from `r`
+in its absolute basis. For a relative field, sample coefficients recursively
+over its base field.
+"""
+function rand(rng::AbstractRNG,
+              K::Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+              r::AbstractUnitRange{<:IntegerUnion})
+  return rand(rng, make(K, r))
+end
+
+function rand(rng::AbstractRNG,
+              K::Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+              r::AbstractUnitRange{<:IntegerUnion}, d::AbstractUnitRange{<:IntegerUnion})
+  return rand(rng, make(K, r, d))
+end
+
+function rand(K::Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+              r::AbstractUnitRange{<:IntegerUnion})
+  return rand(Random.default_rng(), K, r)
+end
+
+function rand(K::Union{AbsNonSimpleNumField, RelSimpleNumField, RelNonSimpleNumField},
+              r::AbstractUnitRange{<:IntegerUnion}, d::AbstractUnitRange{<:IntegerUnion})
+  return rand(Random.default_rng(), K, r, d)
+end
+
+################################################################################
+#
 #  Random elements from arrays of number field elements
 #
 ################################################################################
@@ -490,6 +553,7 @@ function absolute_norm(f::PolyRingElem{<: NumFieldElem})
 end
 
 function is_irreducible(f::PolyRingElem{<: NumFieldElem})
+  is_zero(f) && return false
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
   return sum(values(lf.fac)) == 1
@@ -667,7 +731,7 @@ end
 Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 such that $a$ is contained in $\mathfrak p^i$.
 """
-function valuation(::NumFieldElem, p) end
+valuation(::NumFieldElem, ::Any)
 
 ################################################################################
 #

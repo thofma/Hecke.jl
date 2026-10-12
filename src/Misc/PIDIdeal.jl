@@ -38,10 +38,6 @@ _canonicalize(x) = x
 Base.hash(x::PIDIdeal{T}, h::UInt) where {T} = _can_canonicalize(T) ? hash(gen(x), h) : zero(UInt)
 
 # constructors
-*(R::Ring, x::IntegerUnion) = ideal(R, x)
-
-*(x::IntegerUnion, R::Ring) = ideal(R, x)
-
 function _ideal_pid(R::Ring, x::RingElement, y::RingElement...)
   return PIDIdeal(mapreduce(z -> parent(z) === R ? z : R(z), gcd, (x,y...)))
 end
@@ -112,7 +108,9 @@ lcm(x::PIDIdeal, y::PIDIdeal) = intersect(x, y)
 
 *(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(x.gen * y.gen)
 
-^(x::PIDIdeal, n::IntegerUnion) = PIDIdeal(x.gen ^ n)
+^(x::PIDIdeal, n::Integer) = PIDIdeal(x.gen ^ n)
+
+^(x::PIDIdeal, n::ZZRingElem) = PIDIdeal(x.gen ^ n)
 
 intersect(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(lcm(x.gen, y.gen))
 

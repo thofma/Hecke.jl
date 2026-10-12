@@ -110,7 +110,7 @@ function (f::OnePlusIdealQuoMap)(y::OnePlusIdealElem)
   return z
 end
 
-function preimage(f, y::OnePlusIdealModuloOnePlusIdealElem)
+function preimage(f::OnePlusIdealQuoMap, y::OnePlusIdealModuloOnePlusIdealElem)
   @assert y.parent === f.QQ
   z = f.I((f.ItoQ)\(y.elem) + one(base_ring(f.I)))
   @assert parent(z) === f.I

@@ -27,28 +27,23 @@ function (RS::RiemannSurfaceModel)(coords::Vector{AcbFieldElem})
     x_coord = CC(coords[1])
     y_coord = CC(coords[2])
     v = abs(f(x_coord, y_coord))
-    if contains(v, RR(0))
-      for s in RS.finite_singularities
-        if contains(x_coord, s[1]) && contains(y_coord, s[2]) && contains(CC(1), s[3])
-          error("Singular point of defining polynomial. Not a point on the Riemann surface.")
-        end
-      end
-      point = RiemannSurfacePoint(RS)
-      point.coordx = coords[1]
-      point.coordy = coords[2]
-      point.is_singular = false
-      point.homog_coords = [point.coordx, point.coordy, CC(1)]
-      point.is_finite = true
-      for s in ramification_points(RS)
-        if contains(x_coord, s.coordx) && contains(y_coord, s.coordy)
-          return s
-        end
-      end
-      point.ramification_index = 1
-      return point
-    else
-      error("Not a point on the Riemann surface.")
+    @req contains(v, RR(0)) "Not a point on the Riemann surface."
+    for s in RS.finite_singularities
+      @req !(contains(x_coord, s[1]) && contains(y_coord, s[2]) && contains(CC(1), s[3])) "Singular point of defining polynomial. Not a point on the Riemann surface."
     end
+    point = RiemannSurfacePoint(RS)
+    point.coordx = coords[1]
+    point.coordy = coords[2]
+    point.is_singular = false
+    point.homog_coords = [point.coordx, point.coordy, CC(1)]
+    point.is_finite = true
+    for s in ramification_points(RS)
+      if contains(x_coord, s.coordx) && contains(y_coord, s.coordy)
+        return s
+      end
+    end
+    point.ramification_index = 1
+    return point
   elseif length(coords) == 3
     homog_coords = [CC(coords[1]), CC(coords[2]), CC(coords[3])]
     if homog_coords[3] != CC(0)
@@ -58,16 +53,14 @@ function (RS::RiemannSurfaceModel)(coords::Vector{AcbFieldElem})
       point.is_finite = false
       point.homog_coords = homog_coords
       for s in RS.singular_points
-        if contains(homog_coords, s)
-          error("Singular point of projective closure. Not a point on the Riemann surface.")
-        end
+        @req !contains(homog_coords, s) "Singular point of projective closure. Not a point on the Riemann surface."
       end
       for s in RS.infinite_points
         if contains(homog_coords, s.homog_coords)
           return s
         end
       end
-      error("Not a point on the Riemann surface.")
+      throw(ArgumentError("Not a point on the Riemann surface."))
     end
   end
 end

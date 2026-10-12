@@ -270,17 +270,6 @@ end
 #
 ################################################################################
 
-mutable struct SMatSLP_add_row{T}
-  row::Int
-  col::Int
-  val::T
-end
-
-mutable struct SMatSLP_swap_row
-  row::Int
-  col::Int
-end
-
 ################################################################################
 #
 #  Sparse rows

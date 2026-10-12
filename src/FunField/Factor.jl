@@ -92,7 +92,10 @@ function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   return la
 end
 
-function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+function Hecke.is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+  degree(f) <= 0 && return false
+  # Units in the coefficient field must not become extra polynomial factors.
+  f = divexact(f, leading_coefficient(f))
   return is_absolutely_irreducible(to_mpoly(f))
 end
 

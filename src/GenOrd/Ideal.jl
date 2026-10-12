@@ -703,7 +703,7 @@ end
 
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
   K, _ = finite_field(p,"o")
-  return K, MapFromFunc(R, K, x->K(x), y->R(y))
+  return K, map_from_func(R, K, x->K(x), y->R(y))
 end
 
 function Hecke.residue_field(R::FqPolyRing, p::FqPolyRingElem)
@@ -885,7 +885,7 @@ function residue_field(R::PolyRing{QQBarFieldElem}, p::PolyRingElem{QQBarFieldEl
   @assert is_monic(p)
   c = -coeff(p, 0)
   K = base_ring(R)
-  f = MapFromFunc(R, K, q -> q(c), x -> R(x))
+  f = map_from_func(R, K, q -> q(c), x -> R(x))
   return K, f
 end
 
@@ -1285,12 +1285,12 @@ end
 #
 ################################################################################
 
-mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, Hecke.HeckeMap, Any}#GenOrdToAlgAssMor}
-  header::Hecke.MapHeader
+mutable struct GenOrdToAlgAssMor{S, T} <: Map{S, StructureConstantAlgebra{T}, HeckeMap, Any}#GenOrdToAlgAssMor}
+  header::MapHeader
 
   function GenOrdToAlgAssMor{S, T}(O::S, A::StructureConstantAlgebra{T}, _image::Function, _preimage::Function) where {S <: GenOrd, T}
     z = new{S, T}()
-    z.header = Hecke.MapHeader(O, A, _image, _preimage)
+    z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
 end
@@ -1326,7 +1326,7 @@ kernel(f::GenOrdToFqField{S}) where {S} = f.P::ideal_type(S)
 function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
   Kt = parent(f)
   L, b = number_field(f, "a"; cached = false)
-  return L, MapFromFunc(Kt, L, x -> L(x), y -> Kt(y))
+  return L, map_from_func(Kt, L, x -> L(x), y -> Kt(y))
 end
 
 function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)

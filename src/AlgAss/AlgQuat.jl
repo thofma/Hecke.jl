@@ -198,7 +198,7 @@ end
 #
 ################################################################################
 
-(A::QuaternionAlgebra{T})(a::IntegerUnion) where {T} = A(map(base_ring(A), [a, 0, 0, 0]))
+(A::QuaternionAlgebra{T})(a::IntegerUnion) where {T <: FieldElem} = A(map(base_ring(A), [a, 0, 0, 0]))
 
 (A::QuaternionAlgebra{AbsSimpleNumFieldElem})(a::AbsSimpleNumFieldElem) = A(map(base_ring(A), [a, 0, 0, 0]))
 

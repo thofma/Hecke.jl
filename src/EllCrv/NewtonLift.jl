@@ -73,8 +73,8 @@ function newton_lift(E::EllipticCurve{<:Generic.FracFieldElem{<:PolyRingElem}}, 
   OK = valuation_ring(K)
   Ft = base_ring(base_field(E))
   OKt,_ = polynomial_ring(OK,'t'; cached=false)
-  F_to_OK = map_from_func(x-> OK(F_to_K(x)), F, OK)
-  Ft_to_OKt = map_from_func(x->map_coefficients(F_to_OK, x; parent=OKt), Ft, OKt)
+  F_to_OK = map_from_func(F, OK, x-> OK(F_to_K(x)))
+  Ft_to_OKt = map_from_func(Ft, OKt, x->map_coefficients(F_to_OK, x; parent=OKt))
 
   return  _newton_lift(P, E, F_to_K, Ft_to_OKt, F_to_k, max_iterations, sing, prime)
 end
@@ -128,7 +128,7 @@ function _newton_lift(P::EllipticCurvePoint, E::EllipticCurve, F_to_K, Ft_to_OKt
   # prepare the point for lifting
   OKt = codomain(Ft_to_OKt)
   OK = base_ring(OKt)
-  F_to_OK = map_from_func(x->OK(F_to_K(x)), F, OK)
+  F_to_OK = map_from_func(F, OK, x->OK(F_to_K(x)))
   point = [map_coefficients(x->F_to_OK(preimage(F_to_k,x)), i; parent=OKt) for i in [xn,yn,dn]]
 
   # setup the ring for bookkeeping
@@ -298,4 +298,3 @@ function can_solve_with_solution_mod(A::T, b::T, n::Int; side) where {T<: MatEle
   @assert minimum(precision.(xOK)) >= n  && minimum(precision.(bb)) >= n && bb==b
   return fl, xOK
 end
-

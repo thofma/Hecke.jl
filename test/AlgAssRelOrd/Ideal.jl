@@ -63,6 +63,20 @@
     @test is_prime(numerator(norm(@inferred Hecke.maximal_integral_ideal(OE, 3*o, :left))))
   end
 
+  @testset "Maximal ideal containing a nonzero residue ideal" begin
+    # This seed produces a residue generator with an existing pivot in column 1.
+    Hecke.Random.seed!(0)
+    K, = rationals_as_number_field()
+    A = matrix_algebra(K, 3)
+    O = order(A, basis(A))
+    p = 2 * base_ring(O)
+    I = ideal(O, A(diagonal_matrix(K, [2, 1, 2])), :left)
+    P = Hecke.maximal_integral_ideal_containing(I, p, :left)
+    @test normred(P, O) == p
+    @test all(b in P for b in absolute_basis(I))
+    @test O * P == P
+  end
+
   @testset "factor" begin
     K,z = cyclotomic_field(7);
     E = Hecke.quaternion_algebra2(K, K(-1), K(-1))

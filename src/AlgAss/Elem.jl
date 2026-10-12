@@ -17,7 +17,7 @@ function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem},
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{S}, ::Type{S}) where {T, S <: AbstractAssociativeAlgebraElem{T}}
+function AbstractAlgebra.promote_rule(::Type{S}, ::Type{S}) where {S <: AbstractAssociativeAlgebraElem}
   return S
 end
 
@@ -778,7 +778,7 @@ end
 (A::AbstractAssociativeAlgebra{T})(x::T) where {T <: AssociativeAlgebraElem} = x * one(A)
 
 # resolve ambiguity
-(A::AbstractAssociativeAlgebra{ZZRingElem})(x::ZZRingElem) = x * one(A)
+(A::AbstractAssociativeAlgebra{T})(x::ZZRingElem) where {ZZRingElem <: T <: RingElem} = x * one(A)
 
 
 ################################################################################

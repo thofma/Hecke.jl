@@ -58,7 +58,7 @@ end
 
 base_field_type(::Type{RelFinField{S}}) where S = parent_type(S)
 
-base_field(F::RelFinField{S}) where S= base_ring(F.defining_polynomial)::parent_type(S)
+base_field(F::RelFinField{S}) where S = base_ring(F.defining_polynomial)::parent_type(S)
 
 characteristic(F::RelFinField) = characteristic(base_field(F))
 
@@ -757,8 +757,9 @@ function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
 end
 
 function is_irreducible(f::PolyRingElem{T}) where T <: RelFinFieldElem
+  is_zero(f) && return false
   l = factor(f)
-  return length(l.fac) == 1
+  return sum(values(l.fac)) == 1
 end
 
 

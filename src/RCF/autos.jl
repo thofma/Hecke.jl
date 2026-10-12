@@ -29,7 +29,7 @@ function automorphism_group(C::ClassField)
     end
     push!(zz, t)
   end
-  f = MapFromFunc(A, G,
+  f = map_from_func(A, G,
                   x->prod(z[i]^x[i] for i=1:length(z)),
                   y->A([findfirst(isequal(y(gen(K, i))), zz[i])-1 for i=1:length(z)]))
   set_attribute!(C, :RelAuto => f)
@@ -626,8 +626,6 @@ function check_disjoint_cyclotomic(A::ClassField, p::ZZRingElem)
   i, mi = image(mp)
   return Int(divexact(order(codomain(mq)), order(i)))
 end
-
-Base.Int64(a::QQFieldElem) = Int(ZZ(a)) #move elsewhere?
 
 function extend_aut_pp(A::ClassField, autos::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}}, p::ZZRingElem)
   Cp = [x1 for x1 in A.cyc if degree(x1) % Int(p) == 0]
@@ -1274,4 +1272,3 @@ function _expand(M::SMat{AbsSimpleNumFieldElem}, mp::Map)
   end
   return N
 end
-

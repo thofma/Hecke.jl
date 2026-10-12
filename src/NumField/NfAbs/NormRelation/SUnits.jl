@@ -381,12 +381,12 @@ function _sunit_group_fac_elem_quo_via_brauer(K::AbsSimpleNumField, S, n::Int, i
   return __sunit_group_fac_elem_quo_via_brauer(N, S, n, invariant, compact, saturate_units = saturate_units)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
 end
 
-function _sunit_group_fac_elem_via_brauer(K::AbsSimpleNumField, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, invariant::Bool = false, compact::Int = 0)
+function _sunit_group_fac_elem_via_brauer(K::AbsSimpleNumField, S::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, invariant::Bool = false, compact::Int = 0; GRH::Bool = true)
   @vprintln :NormRelation 1 "Setting up the norm relation context ..."
   fl, N = norm_relation(K, 0, small_degree = false)
   @assert fl
   @vprintln :NormRelation 1 "Using norm relation $N"
-  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
+  return __sunit_group_fac_elem_quo_via_brauer(N, S, 0, invariant, compact; GRH)::Tuple{FinGenAbGroup, Hecke.MapSUnitGrpFacElem}
 end
 
 

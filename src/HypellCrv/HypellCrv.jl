@@ -35,7 +35,8 @@ mutable struct HypellCrv{T}
    
     R = base_ring(f)
 
-    if characteristic(R) == 2
+    char2 = characteristic(R) == 2
+    if char2
       check = false
       #TODO: Check what d is
       d = zero(R)
@@ -49,7 +50,9 @@ mutable struct HypellCrv{T}
       C.f = f
       C.h = h
       C.g = g
-      C.disc = d
+      if !char2
+        C.disc = d
+      end
       C.base_field = R
 
       coeff_f = coefficients(f)
@@ -264,19 +267,11 @@ end
 Compute the discriminant of $C$.
 """
 function discriminant(C::HypellCrv{T}) where T
-  if isdefined(C, :disc)
-    return C.disc
-  end
-  K = base_field(C)
-  if characteristic(K) != 2
-    f, h = hyperelliptic_polynomials(C)
-    d = 2^(4*g)*discriminant(f(x) + 1//4*h(x)^2)
-    C.disc = d
-    return d::T
-  else
+  if characteristic(base_field(C)) == 2
     #Need to use Witt vectors for this
     error("Cannot compute discriminant of hyperelliptic curve in characteristic 2.")
   end
+  return C.disc
 end
 
 

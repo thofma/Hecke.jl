@@ -11,6 +11,7 @@
   include("NfOrd/ResidueRingMultGrp.jl")
   include("NfOrd/Overorders.jl")
   include("NfOrd/LinearAlgebra.jl")
+  include("NfOrd/LLLctx.jl")
   include("NfOrd/PicardGroup.jl")
   include("NfOrd/NarrowPicardGroup.jl")
 end

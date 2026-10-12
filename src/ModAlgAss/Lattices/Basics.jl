@@ -338,7 +338,7 @@ end
 #
 ################################################################################
 
-function change_base_ring(f#=::AbsAlgAssMor=#, O::AlgAssAbsOrd, L::ModAlgAssLat)
+function change_base_ring(f::Map, O::AlgAssAbsOrd, L::ModAlgAssLat)
   B = codomain(f)
   @assert algebra(L.base_ring) === B
   V = L.V

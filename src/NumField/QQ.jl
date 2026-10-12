@@ -41,17 +41,7 @@ order(::ZZIdl) = ZZ
 order(::ZZFracIdl) = ZZ
 
 # constructors
-*(::ZZRing, x::IntegerUnion) = ideal(ZZ, x)
-
-*(x::IntegerUnion, ::ZZRing) = ideal(ZZ, x)
-
-ideal(::ZZRing, x::ZZRingElem) = ZZIdl(x)
-
-ideal(::ZZRing, x::Integer) = ZZIdl(ZZRingElem(x))
-
-ideal(::ZZRing, x::AbstractVector{ZZRingElem}) = ZZIdl(gcd(x))
-
-ideal(::ZZRing, x::AbstractVector{<:Integer}) = ZZIdl(ZZRingElem(gcd(x)))
+ideal(::ZZRing, x::Vector{ZZRingElem}) = ZZIdl(gcd(x))
 
 fractional_ideal(::ZZRing, x::QQFieldElem) = ZZFracIdl(x)
 
@@ -234,7 +224,7 @@ function hilbert_symbol(a,b, p::ZZIdl)
   return hilbert_symbol(a,b, gen(p))
 end
 
-is_local_norm(K, x, p::ZZIdl) = is_local_norm(K, x, gen(p))
+is_local_norm(K::AbsSimpleNumField, x, p::ZZIdl) = is_local_norm(K, x, gen(p))
 
 function quadratic_defect(q::QQFieldElem, p::ZZIdl)
   return quadratic_defect(q, gen(p))

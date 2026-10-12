@@ -1,4 +1,4 @@
-@testset "NumField/NfRel/NfResNS.jl" begin
+@testset "NumField/NfRel/NfRelNS.jl" begin
     R, x = universal_polynomial_ring(ZZ, 5; cached = false)
 
     # Simple shared root in first variable
@@ -23,4 +23,11 @@
     r = resultant(x[1]^2 - 1, x[1] - 1, x[1])
     @test parent(r) === R
     @test isa(r, UniversalPolyRingElem)
+
+    # Generic multivariate polynomials from different rings
+    K, t = polynomial_ring(QQ, :t)
+    P, (a, b) = polynomial_ring(K, [:a, :b]; cached = false)
+    Q, (c, d) = polynomial_ring(K, [:a, :b]; cached = false)
+    @test resultant(a + b, a^2 + b, 1) == b^2 + b
+    @test_throws ErrorException resultant(a + b, c^2 + d, 1)
 end

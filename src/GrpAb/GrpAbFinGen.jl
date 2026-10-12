@@ -670,7 +670,7 @@ end
 #TODO: check the universal properties here!!!
 
 @doc raw"""
-    direct_sum(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
+    direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct sum $D$ of the (finitely many) abelian groups $G_i$, together
 with the injections $G_i \to D$.
@@ -685,13 +685,13 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_sum(G::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
+function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
   @assert task in [:sum, :prod, :both, :none]
-  return _direct_product(:sum, G...; task = task, kwargs...)
+  return _direct_product(:sum, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
-    direct_product(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
+    direct_product(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$.
@@ -706,13 +706,13 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_product(G::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
+function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G...; task = task, kwargs...)
+  return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
-    biproduct(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
+    biproduct(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$ and the injections $G_i \to D$.
@@ -727,9 +727,9 @@ one should call `direct_product(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function biproduct(G::FinGenAbGroup...; task::Symbol = :both, kwargs...)
+function biproduct(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :both, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G...; task = task, kwargs...)
+  return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
@@ -1026,7 +1026,7 @@ function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
     return reverse(g[p[1]])
   end
 
-  return T, MapFromFunc(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
+  return T, map_from_func(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
 end
 
 ⊗(G::FinGenAbGroup...) = tensor_product(G..., task = :none)

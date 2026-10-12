@@ -297,6 +297,7 @@ export dickman_rho
 export different
 export different_divisor
 export differential
+export differentiation
 export dim
 export dimension
 export dimension_of_center
@@ -309,6 +310,7 @@ export discriminant
 export discriminant_group
 export discriminant_of_ternary_quartic
 export div
+export divisor
 export dixmier_ohno_invariants
 export divexact
 export divexact!
@@ -379,6 +381,7 @@ export g2_from_igusa
 export g2_invariants
 export g4_invariants
 export galois_module
+export gap_numbers
 export gcd
 export gcd_into!
 export gen_index
@@ -781,6 +784,7 @@ export postinverse
 export poverorder
 export poverorders
 export powermod
+export power_representation
 export pr_torsion_basis
 export pradical
 export precision
@@ -826,6 +830,7 @@ export radical
 export radical_bilinear
 export radical_extension
 export radical_quadratic
+export ramification_divisor
 export ramification_group
 export ramification_index
 export ramified_primes
@@ -1011,6 +1016,7 @@ export vcat!
 export vectors_of_square_and_divisibility
 export vector_space_dim
 export volume
+export weierstrass_places
 export weighted_equality
 export weighted_multiply
 export weighted_reduction

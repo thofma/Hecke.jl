@@ -22,6 +22,8 @@
   include("RieSrf/Periods/ParallelIntegration.jl")
   include("RieSrf/Periods/PeriodMatrix.jl")
   include("RieSrf/Periods/Superelliptic.jl")
+  include("RieSrf/AbelJacobi/RieSrfPoints.jl")
+  include("RieSrf/AbelJacobi/Divisors.jl")
   include("RieSrf/AbelJacobi/AbelJacobiMap.jl")
   include("RieSrf/Theta.jl")
   include("RieSrf/Endomorphisms/HeuristicEndomorphisms.jl")

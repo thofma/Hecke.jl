@@ -1849,7 +1849,7 @@ end
 ################################################################################
 
 @doc raw"""
-    direct_sum(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::T, y::T...) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
@@ -1874,10 +1874,10 @@ function direct_sum(x::Vector{T};cached::Bool=true) where T <: AbstractLat
   return lattice(W, H), inj
 end
 
-direct_sum(x::Vararg{AbstractLat};cached::Bool=true) = direct_sum(collect(x);cached)
+direct_sum(x::AbstractLat, y::AbstractLat...; cached::Bool=true) = direct_sum(collect((x, y...)); cached)
 
 @doc raw"""
-    direct_product(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
+    direct_product(x::T, y::T...) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_product(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
@@ -1902,10 +1902,10 @@ function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractLat
   return lattice(W, H), proj
 end
 
-direct_product(x::Vararg{AbstractLat}) = direct_product(collect(x))
+direct_product(x::AbstractLat, y::AbstractLat...) = direct_product(collect((x, y...)))
 
 @doc raw"""
-    biproduct(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::T, y::T...) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
@@ -1930,7 +1930,7 @@ function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractLat
   return lattice(W, H), inj, proj
 end
 
-biproduct(x::Vararg{AbstractLat}; cached::Bool=true) = biproduct(collect(x);cached)
+biproduct(x::AbstractLat, y::AbstractLat...; cached::Bool=true) = biproduct(collect((x, y...)); cached)
 
 function _biproduct(x::Vector{T}) where T <: AbstractLat
   px = pseudo_matrix.(x)

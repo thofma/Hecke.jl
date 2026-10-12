@@ -121,6 +121,7 @@ end
 
 @doc raw"""
     conic_curve([K::Field], x::Vector; check::Bool = true) -> ConCrv
+
 Given x = [a11, a22, a33, a12, a23, a13] returns the conic given by
 a11x^2 + a22y^2 + a33z^2 + a12xy + a23yz + a13xz.
 
@@ -132,7 +133,7 @@ function conic_curve(x::Vector{T}; check::Bool = true) where T <: RingElem
 end
 
 function conic_curve(K::Field, x::Vector{T}; check::Bool = true) where T
-  if T === elem_type(K)
+  if T === elem_type(K) && all(z -> parent(z) === K, x)
     return conic_curve(x, check = check)
   else
     return conic_curve(elem_type(K)[K(z) for z in x], check = check)
@@ -163,8 +164,8 @@ function conic_curve(M::MatElem{T}; check::Bool = true) where T
 end
 
 function conic_curve(K::Field, M::MatElem{T}; check::Bool = true) where T
-  if T === elem_type(K)
-    return conic_curve(x, check = check)
+  if base_ring(M) === K
+    return conic_curve(M, check = check)
   else
     return conic_curve(change_base_ring(K,M), check = check)
   end

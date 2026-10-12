@@ -4,6 +4,8 @@ import Dates
 # This is a modified showprogress from Pkg.GitTools
 
 PROGRESS_BAR_PERCENTAGE_GRANULARITY = Ref(0.001)
+# minimal number of seconds between two updates if not interactive
+const NONINTERACTIVE_TIME_GRANULARITY = Ref(2.0)
 
 Base.@kwdef mutable struct MiniProgressBar
     max::Float64 = 1.0

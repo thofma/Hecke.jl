@@ -114,4 +114,22 @@
     E = elliptic_curve_from_j_invariant(K(1))
     test_unique_twist(E)
   end
+
+  @testset "quadratic_twist in characteristic 2: different base field types" begin
+    k, _ = finite_field(2, 2, :a; cached = false)
+    kx, x = polynomial_ring(k, :x; cached = false)
+    for K in [finite_field(2, 4, :a; cached = false)[1],
+              finite_field(ZZ(2), 4, :a; cached = false)[1],
+              Native.finite_field(2, 4, :a; cached = false)[1],
+              Native.finite_field(ZZ(2), 4, :a; cached = false)[1],
+              GF(2, 4; cached = false),
+              GF(ZZ(2), 4; cached = false),
+              Native.GF(2, 4; cached = false),
+              Native.GF(ZZ(2), 4; cached = false),
+              finite_field(x^3 + x + 1, :b; cached = false)[1]]   # relative of absolute degree 6
+      E = elliptic_curve(K, [1, 0, 0, 0, gen(K)])
+      @test order(E) + order(quadratic_twist(E)) == 2*order(K) + 2
+      test_unique_twist(E)
+    end
+  end
 end

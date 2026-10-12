@@ -575,6 +575,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     if length(support) == 0 #kown to be units
       u = A
       g1 = typeof(A[1])[]
+      cp = support
     else
       S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
       u = Hecke._transform(A, transpose(T))
@@ -650,7 +651,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+            log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
             break
           else
 #            @show y
@@ -666,7 +667,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+          log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
           continue
         end
         @assert length(gamma) == length(g2)+1
@@ -694,7 +695,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     return pr(FacElem(a))
   end
 
-  return G, MapFromFunc(G, parent(u[1]), im, pr)
+  return G, map_from_func(G, parent(u[1]), im, pr)
 end
 
 function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
@@ -796,5 +797,3 @@ export syzygies
 end
 
 using .MultDep
-
-

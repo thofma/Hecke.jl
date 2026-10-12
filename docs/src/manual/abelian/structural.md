@@ -98,7 +98,7 @@ intersect(mG::FinGenAbGroupHom, mH::FinGenAbGroupHom)
 
 ## Direct Products
 ```@docs
-direct_product(G::FinGenAbGroup...)
+direct_product(G::FinGenAbGroup, H::FinGenAbGroup...)
 canonical_injection(G::FinGenAbGroup, i::Int)
 canonical_projection(G::FinGenAbGroup, i::Int)
 flat(G::FinGenAbGroup)
