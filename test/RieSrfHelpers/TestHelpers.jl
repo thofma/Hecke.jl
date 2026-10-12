@@ -275,7 +275,11 @@ end
 #
 ################################################################################
 
-Qxy, (x, y) = polynomial_ring(QQ, [:x, :y])
+# The ring of the test curves. The tests use x, y as globals; on the CI other
+# test files run in the same Main of a worker and may rebind x, y, so every
+# RieSrf test file resets them to the generators of RIESRF_RING.
+RIESRF_RING, (x, y) = polynomial_ring(QQ, [:x, :y])
+Qxy = RIESRF_RING
 
 FAST_CURVES = [
   # name       polynomial                                              genus

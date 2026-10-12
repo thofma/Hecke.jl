@@ -1,4 +1,5 @@
 isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
 
 # The standard form [0 I 0; -I 0 0; 0 0 0] of size n with blocks of size g.
 function _standard_symplectic_form(g::Int, n::Int)

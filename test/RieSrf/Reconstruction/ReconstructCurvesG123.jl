@@ -1,4 +1,5 @@
 isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
 isdefined(Main, :random_g4_reconstruction_tests) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "ReconstructionHelpers.jl"))
 
 # Reconstruction of random curves of genus 1, 2 and 3 from their small period
