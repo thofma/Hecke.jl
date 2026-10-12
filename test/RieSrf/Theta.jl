@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Theta functions" begin
 
   CC = AcbField(100)

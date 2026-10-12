@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Algebraization" begin
   RSM = Hecke.RiemannSurfaces
   Qt, t = polynomial_ring(QQ, :t)

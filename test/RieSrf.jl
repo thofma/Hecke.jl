@@ -1,11 +1,13 @@
 # Tests of src/RieSrf. The test of src/RieSrf/<Folder>/<File>.jl is
-# test/RieSrf/<Folder>/<File>.jl; TestHelpers.jl holds the shared helpers and
-# test curves; Reconstruction/ReconstructionHelpers.jl the comparisons and
-# random curves of the reconstruction tests. The diagnostics in
-# RieSrf/Diagnostics (precision suite, homomorphism stress tests, genus 4
-# reconstruction) are not part of the test run.
+# test/RieSrf/<Folder>/<File>.jl. The CI runs these files one by one (this
+# wrapper only for Hecke.test_module("RieSrf")), so each includes what it needs
+# from test/RieSrfHelpers: TestHelpers.jl (shared helpers and test curves) and
+# ReconstructionHelpers.jl (comparisons and random curves of the
+# reconstruction tests). test/RieSrfHelpers is not run by the CI, nor are the
+# diagnostics in test/RieSrfHelpers/Diagnostics (precision suite, genus 4
+# reconstruction).
 @testset "RieSrf" begin
-  include("RieSrf/TestHelpers.jl")
+  include("RieSrfHelpers/TestHelpers.jl")
   include("RieSrf/Numerics/Auxiliary.jl")
   include("RieSrf/Numerics/IntegrationParameters.jl")
   include("RieSrf/Numerics/NumericalKernel.jl")
@@ -29,7 +31,7 @@
   include("RieSrf/Endomorphisms/HeuristicEndomorphisms.jl")
   include("RieSrf/Endomorphisms/Algebraization.jl")
   include("RieSrf/Endomorphisms/EndomorphismStructure.jl")
-  include("RieSrf/Reconstruction/ReconstructionHelpers.jl")
+  include("RieSrfHelpers/ReconstructionHelpers.jl")
   include("RieSrf/Reconstruction/ReconstructCurvesG123.jl")
   include("RieSrf/Reconstruction/ReconstructG4.jl")
 end

@@ -1,6 +1,9 @@
 ################################################################################
 #
-#  Helpers for the RieSrf tests (included first by test/RieSrf.jl).
+#  Helpers for the RieSrf tests. Every test file in test/RieSrf includes this
+#  file (once: guarded by isdefined(Main, :RSM)), since the CI runs the files
+#  one by one. It lives outside test/RieSrf so that the CI does not run it as
+#  a test itself.
 #
 #  Most checks do not depend on the choice of basis of differentials or of
 #  homology:

@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Double exponential" begin
   RR = ArbField(128)
   CC = AcbField(128)

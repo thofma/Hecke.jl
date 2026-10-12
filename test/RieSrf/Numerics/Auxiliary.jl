@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Auxiliary" begin
   # Embedding number field elements from many threads at many precisions at
   # once. Hecke caches the roots of the defining polynomial per precision in

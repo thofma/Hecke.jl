@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "HeuristicEndomorphisms" begin
   R, t = polynomial_ring(QQ)
 

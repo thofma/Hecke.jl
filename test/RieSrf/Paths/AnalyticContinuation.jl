@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "AnalyticContinuation" begin
   @testset "Stress: nearly coinciding branch points" begin
     ks = riesrf_long_tests() ? (2, 5, 10, 20, 30, 40) : (2, 5, 10)

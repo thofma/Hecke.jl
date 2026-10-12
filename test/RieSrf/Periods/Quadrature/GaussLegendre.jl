@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Gauss-Legendre" begin
   RR = ArbField(128)
   for N in (7, 10)

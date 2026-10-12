@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Superelliptic" begin
   @testset "Superelliptic families" begin
     for (m, n) in [(3, 4), (3, 5), (4, 5)]

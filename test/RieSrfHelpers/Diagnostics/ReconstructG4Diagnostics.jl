@@ -1,12 +1,11 @@
 ################################################################################
 #
 #  Diagnostics of the genus 4 reconstruction (not part of the test run).
-#  Needs test/RieSrf/TestHelpers.jl and
-#  test/RieSrf/Reconstruction/ReconstructionHelpers.jl:
+#  Needs test/RieSrfHelpers/TestHelpers.jl and ReconstructionHelpers.jl:
 #
-#    include("test/RieSrf/TestHelpers.jl")
-#    include("test/RieSrf/Reconstruction/ReconstructionHelpers.jl")
-#    include("test/RieSrf/Diagnostics/ReconstructG4Diagnostics.jl")
+#    include("test/RieSrfHelpers/TestHelpers.jl")
+#    include("test/RieSrfHelpers/ReconstructionHelpers.jl")
+#    include("test/RieSrfHelpers/Diagnostics/ReconstructG4Diagnostics.jl")
 #    g4_invariant_diagnostics(_random_g4_curve(:generic), 300)
 #
 ################################################################################

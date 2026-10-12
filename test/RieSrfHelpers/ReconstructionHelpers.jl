@@ -2,8 +2,9 @@
 #
 #  Helpers for the tests of the reconstruction (src/RieSrf/Reconstruction):
 #  comparison of the reconstructed curve with the original one and tests on
-#  random curves. Included by test/RieSrf.jl before the reconstruction tests;
-#  test/RieSrf/Diagnostics/ReconstructG4Diagnostics.jl uses them as well.
+#  random curves. Included by the reconstruction tests in
+#  test/RieSrf/Reconstruction; test/RieSrfHelpers/Diagnostics/
+#  ReconstructG4Diagnostics.jl uses them as well.
 #
 #  Genus 1-3: the invariants of the original curve over QQ are computed
 #  exactly (j, Igusa-Clebsch, Shioda, Dixmier-Ohno), those of the
@@ -16,6 +17,8 @@
 #  and the exact check of the model over Q (or a number field).
 #
 ################################################################################
+
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
 
 ################################################################################
 #

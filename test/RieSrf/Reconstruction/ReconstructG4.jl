@@ -1,3 +1,6 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+isdefined(Main, :random_g4_reconstruction_tests) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "ReconstructionHelpers.jl"))
+
 # Reconstruction of random genus 4 curves (generic, one vanishing theta null,
 # hyperelliptic) from their small period matrices, compared with the original
 # curves (Bouchet's invariants resp. the branch points), the point check of a

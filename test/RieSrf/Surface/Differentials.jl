@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Differentials" begin
   @testset "Baker basis certified modulo p" begin
     f = FAST_CURVES[9][2]                                 # g6: y^4 + x^4 - 1, genus 3

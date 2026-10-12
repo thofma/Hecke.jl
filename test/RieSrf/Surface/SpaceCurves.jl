@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "SpaceCurves" begin
   @testset "Curves in projective space" begin
     P3, (X, Y, Z, W) = polynomial_ring(QQ, [:X, :Y, :Z, :W])

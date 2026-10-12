@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "NumericalKernel" begin
   CC = AcbField(1024)
   RR = ArbField(1024)

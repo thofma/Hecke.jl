@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "RieSrfPoints" begin
   Kxy, (x, y) = polynomial_ring(QQ, [:x, :y])
 

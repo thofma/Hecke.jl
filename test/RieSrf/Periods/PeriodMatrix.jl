@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "PeriodMatrix" begin
   @testset "Sanity checks: $name" for (name, f, g) in FAST_CURVES
     RS = _computed(_rs(f, 100))

@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 # The standard form [0 I 0; -I 0 0; 0 0 0] of size n with blocks of size g.
 function _standard_symplectic_form(g::Int, n::Int)
   J = zero_matrix(ZZ, n, n)

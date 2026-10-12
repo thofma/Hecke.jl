@@ -1,3 +1,5 @@
+isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
+
 @testset "Fiber" begin
   @testset "Fibers with multiplicities" begin
     for (f, x0, expected) in [
