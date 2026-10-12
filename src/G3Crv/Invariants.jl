@@ -149,31 +149,29 @@ function discriminant_of_ternary_quartic(quartic::MPolyRingElem{T}) where T
 
   M5 = _mons_of_degree_n(R, 5)
   
-  M = zero_matrix(R, 21, 21)
+  # The entries are constants: the determinant over K (over an inexact field
+  # such as AcbField the determinant over the polynomial ring R loses all
+  # precision)
+  M = zero_matrix(K, 21, 21)
   for i in (1:21)
     for j in (1:21)
       M[i,j] = coeff(matrix_entries[i], M5[j])
     end
   end
-  #Just converting it back to QQ
-  return det(M)(K(0), K(0), K(0))
+  return det(M)
 end
 
-#Just a helper functions that (inefficiently) spits out all homogeneous monomials of
-#a fixed degree.
+# All homogeneous monomials of degree n, in a fixed order (exponent vectors
+# decreasing lexicographically). The order fixes the sign of the
+# discriminant; with this order it matches the reference value in
+# test/G3Crv/Invariants.jl. (The order of the
+# elements of a Set depends on their hashes and so on the Julia version.)
 function _mons_of_degree_n(R, n)
   X = gens(R)
-  if n == 1
-    return X
-  end
-  old_mons = _mons_of_degree_n(R, n-1)
-  result = Set{MPolyRingElem}()
-  for x in X
-    for mon in old_mons
-      push!(result, x*mon)
-    end
-  end
-  return collect(result)
+  k = length(X)
+  exps = [collect(e) for e in Iterators.product(ntuple(_ -> 0:n, k)...) if sum(e) == n]
+  sort!(exps; rev = true)
+  return [prod(X[i]^e[i] for i in 1:k) for e in exps]
 end
 
 #Given multivariate polynomials A and f
