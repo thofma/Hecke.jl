@@ -4,6 +4,10 @@
   alpha = 1 + a
   beta = 2
   M = OK[alpha; beta;]
+  @test AbstractAlgebra.Solve.matrix_normal_form_type(OK) === Hecke.PseudoHermiteFormTrait()
+  @test AbstractAlgebra.Solve.matrix_normal_form_type(typeof(OK)) === Hecke.PseudoHermiteFormTrait()
+  @test AbstractAlgebra.Solve.matrix_normal_form_type(M) === Hecke.PseudoHermiteFormTrait()
+  @test AbstractAlgebra.Solve.matrix_normal_form_type(typeof(M)) === Hecke.PseudoHermiteFormTrait()
   K = kernel(M)
   @test is_zero(K * M)
   @test nrows(K) >= 2 # the ideal (alpha, beta) is not principal, hence the
