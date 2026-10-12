@@ -52,11 +52,9 @@ end
 
 # Hecke caches the roots of the defining polynomial of a number field per
 # precision in a Dict on the field (conjugate_data_arb_roots), which is not
-# thread safe; the period computation embeds polynomials in threaded loops
-# (e.g. the integrand bounds). A new precision there corrupted the Dict
-# (UndefRefError in rehash!). So all evaluations of embeddings go through
-# this lock. (Not const, by the Hecke policy for package code; the global is
-# never reassigned.)
+# thread safe. The period computation embeds polynomials in threaded loops
+# (e.g. the integrand bounds). All evaluations of embeddings go through
+# this lock.
 _embedding_lock = ReentrantLock()
 
 _evaluate_locked(c, emb, prec::Int) = lock(() -> evaluate(c, emb, prec), _embedding_lock)
@@ -209,7 +207,7 @@ function _convex_hull(points::Vector{Vector{Int}})
   end
 end
 
-# The slope from a to b (Hecke's inf for a vertical line).
+# The slope from a to b (inf for a vertical line).
 function _slope(a::Vector{Int}, b::Vector{Int})
   if b[1] == a[1]
     return inf

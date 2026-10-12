@@ -6,8 +6,8 @@
   Hecke.Random.seed!(4711)
   ok(results) = all(r -> r.result.ok == true, results)
   n = riesrf_long_tests() ? 5 : 2
-  @test ok(RSM.random_reconstruction_tests(n; genus = 1, prec = 200))
-  @test ok(RSM.random_reconstruction_tests(n; genus = 2, prec = 200))
-  @test ok(RSM.random_reconstruction_tests(n; genus = 3, hyperelliptic = true, prec = 300))
-  @test ok(RSM.random_reconstruction_tests(n; genus = 3, prec = 400))
+  @test ok(random_reconstruction_tests(n; genus = 1, prec = 200))
+  @test ok(random_reconstruction_tests(n; genus = 2, prec = 200))
+  @test ok(random_reconstruction_tests(n; genus = 3, hyperelliptic = true, prec = 300))
+  @test ok(random_reconstruction_tests(n; genus = 3, prec = 400))
 end

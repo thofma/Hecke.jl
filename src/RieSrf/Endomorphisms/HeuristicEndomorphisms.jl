@@ -9,9 +9,6 @@
 #  complex matrix A (the tangent representation) are found by LLL as the
 #  integral kernel of linear equations in the entries of R.
 #
-#  Entry points: geometric_homomorphism_representation(_nf),
-#  geometric_endomorphism_representation(_nf), tangent_representation,
-#  homology_representation, integral_left_kernel.
 #
 ################################################################################
 
@@ -22,12 +19,6 @@ Integral vectors v with v * M = 0 (as far as the balls show), found by LLL,
 as the rows of a matrix, and true; or a zero row and false if none is found.
 """
 function integral_left_kernel(M::ArbMatrix)
-  # (An adaptive variant, LLL with fewer digits first and more digits only if
-  #  the result is ambiguous, was tried: LLL was not faster with fewer digits
-  #  for the 64 x 64 homomorphism equations of genus 4 (8.7 s instead of 3.9
-  #  s), and it missed the large kernel vectors of minimal polynomials.
-  #  LLL with removal of the long vectors (lll_with_removal_transform) was
-  #  not faster either: 3.1-4.1 s against 3.1 s.)
   prec = precision(base_ring(M))
   #Subtracting 2 to ensure that rounding later on works without ambiguity.
   D = floor(Int, prec*log(2)/log(10)) - 2

@@ -9,7 +9,6 @@
 #  optional check with a direct loop around infinity. The small period matrix
 #  is computed from it.
 #
-#  Entry points: big_period_matrix, small_period_matrix.
 #
 ################################################################################
 
@@ -293,7 +292,7 @@ end
 # Step 1 of _compute_big_period_matrix: the quadrature type (:gl or :de) and
 # the parameter of every subpath. int_style :gl splits the lines
 # (_gauss_legendre_path_parameters!); :mixed in addition switches the subpaths
-# with r < 1.03 to double exponential; :de uses double exponential on the
+# with r < 1.03 to double exponential. :de uses double exponential on the
 # unsplit paths. With resplit = false (precision retry) the subpaths and their
 # types are kept. Returns the parameters of the GL and of the DE subpaths.
 function _quadrature_parameters!(RS::RiemannSurfaceModel, paths::Vector{CPath},

@@ -35,13 +35,12 @@
 #     3. total degree, number of terms, coefficient size,
 #  and the best chart is oriented so that deg_y f <= deg_x f.
 #  No search for rational points on the curve (projecting from them would
-#  lower the degree); to be done later.
+#  lower the degree).
 #
 #  Elimination for general space curves needs Groebner bases, which are left
 #  to Oscar: _elimination_generators has no methods here, and such curves are
 #  refused with a hint (see _elimination_message).
 #
-#  Entry points: riemann_surface(F::Vector, prec), plane_model.
 #
 ################################################################################
 
@@ -186,7 +185,7 @@ function _projected_equation(F::Vector{<:MPolyRingElem}, A::QQMatrix; groebner::
   elseif _resultant_applies(Gs, N)
     E = [resultant(Gs[1], Gs[2], 1)]
   else
-    groebner || return nothing          # the caller only wants the cheap cases
+    groebner || return nothing 
     @req _elimination_available() _elimination_message(N == 4 && length(F) == 2)
     E = _elimination_generators(Gs, N - 3)
   end
@@ -217,19 +216,12 @@ function _resultant_applies(Gs::Vector{<:MPolyRingElem}, N::Int)
   return true
 end
 
-@doc raw"""
-    _elimination_generators(G::Vector{<:MPolyRingElem}, k::Int)
-
-Generators of the elimination ideal of (G) with respect to the first `k`
-variables, i.e. elements of the ideal that do not involve them (the ring of
-`G`, over QQ, has lex ordering). Needed for curves that are not complete
-intersections of two surfaces in P^3. Hecke has no usable Groebner bases for
-this (AbstractAlgebra's generic ones took more than 30 minutes for a curve of
-degree 6 in P^3), so there is no method here; Oscar adds one:
-
+#=
+Hecke has no Groebner bases. 
+We should add the following function to Oscar:
     Hecke.RiemannSurfaces._elimination_generators(G::Vector{QQMPolyRingElem}, k::Int) =
       gens(eliminate(ideal(G), gens(parent(G[1]))[1:k]))
-"""
+=#
 function _elimination_generators end
 
 # Whether a method for the elimination ideal exists (added by Oscar).
@@ -238,18 +230,19 @@ _elimination_available() = !isempty(methods(_elimination_generators))
 _elimination_message(two_surfaces::Bool = false) =
   "This curve needs an elimination ideal (it is not given as a complete " *
   "intersection of two surfaces in P^3). Hecke cannot compute it " *
-  "efficiently; use Oscar, which provides it." *
+  "efficiently. use Oscar to compute the period matrix of this curve or provide a plane model." *
   (two_surfaces ? " (For two surfaces in P^3 this happens when the center " *
                   "of the projection lies on one of them; another projection avoids it.)" : "")
 
 # The image must be an irreducible (over QQbar), hence reduced, curve.
 function _check_plane_curve(G::MPolyRingElem)
   _is_absolutely_irreducible(G) ||
-    throw(ArgumentError("The polynomials do not cut out an irreducible, reduced curve (or the projection maps it onto a reducible or non-reduced plane curve)."))
+    throw(ArgumentError("The polynomials do not cut out an irreducible, 
+    reduced curve (or the projection maps it onto a reducible or non-reduced plane curve)."))
   return G
 end
 
-# Hecke's absolute irreducibility test (in the submodule MPolyFact).
+# Absolute irreducibility test (in the submodule MPolyFact).
 _is_absolutely_irreducible(G::QQMPolyRingElem) =
   applicable(Hecke.is_absolutely_irreducible, G) ? Hecke.is_absolutely_irreducible(G) :
                                                    Hecke.MPolyFact.is_absolutely_irreducible(G)

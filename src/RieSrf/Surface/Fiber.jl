@@ -7,9 +7,9 @@
 #   * fiber_repeated(RS, x0)            every root repeated by its multiplicity
 #
 #  For every irreducible factor p of disc_y(f)*lc_y(f) only two pieces of exact
-#  information are needed, both cheap:
-#    * which y-coefficients of f vanish at the roots of p   (exact: rem mod p)
-#    * the multiplicity pattern of f(alpha, y)              (modular, see below)
+#  information are neede
+#    * which y-coefficients of f vanish at the roots of p 
+#    * the multiplicity pattern of f(alpha, y) 
 #  The roots themselves are computed numerically, and the known pattern tells
 #  us how to group them. (An exact squarefree decomposition over K[x]/(p) is
 #  far too slow when p has large degree.)
@@ -26,10 +26,6 @@
 #  Implemented for K of degree 1 (curves over Q). For other K a prime ideal of
 #  degree 1 of K would be needed; left for later.
 #
-#  Computed together with the discriminant points (_ensure_discriminant_points!,
-#  serial): _compute_disc_factor_data!(RS).
-#
-#  Entry points: fiber, fiber_with_multiplicities, fiber_repeated.
 #
 ################################################################################
 

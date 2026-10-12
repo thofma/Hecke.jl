@@ -13,8 +13,6 @@
 #     the Tretkoff algorithm (Section 4.6.1), their intersection matrix and
 #     a symplectic reduction of it.
 #
-#  Entry points: fundamental_group_of_punctured_P1, monodromy_representation,
-#  monodromy_group, homology_basis, symplectic_reduction.
 #
 ################################################################################
 
@@ -115,7 +113,7 @@ function monodromy_group(RS::RiemannSurfaceModel)
 end
 
 # The permutations of the paths of the fundamental group, and from them the
-# chains around the discriminant points and around infinity, WITHOUT computing
+# chains around the discriminant points and around infinity, without computing
 # periods: the fibers are continued along the paths with the adaptive
 # continuation (no quadrature nodes). Used for the special points and the
 # monodromy of a model whose periods are not needed (yet), e.g. the original
@@ -264,7 +262,7 @@ end
 # (outside the circles of radius RS.safe_radii around the discriminant
 # points), and arcs on these circles. The generator for a discriminant point
 # goes from the base point along the tree to its circle, once around it and
-# back; at the discriminant points on the way it follows arcs of their
+# back. at the discriminant points on the way it follows arcs of their
 # circles. Arcs that were constructed for an earlier generator are reused.
 function _fundamental_group_of_punctured_P1(RS::RiemannSurfaceModel, abel_jacobi::Bool = true)
   disc_points = internal_discriminant_points(RS)   # a copy: the base point is appended
@@ -630,7 +628,7 @@ function _homology_basis(RS::RiemannSurfaceModel)
   sort!(terminated_edges, lt = compare_branches)
   reverse!(terminated_edges)
 
-  # Label the P edges in this order; a Q edge gets the label of its reverse.
+  # Label the P edges in this order. A Q edge gets the label of its reverse.
   P = TretkoffEdge[]
   Q_unsorted = TretkoffEdge[]
   Q = Vector{TretkoffEdge}(undef, number_of_cycles)
@@ -774,7 +772,7 @@ function _find_entry_one(A::ZZMatrix, pivot::Int)
 end
 
 # Move the entry A[i, j] (i != j) of the skew-symmetric matrix A to the
-# position (pivot + 1, pivot) by simultaneous swaps of rows and columns; the
+# position (pivot + 1, pivot) by simultaneous swaps of rows and columns. The
 # row swaps are also applied to B.
 function _move_to_pivot!(A::ZZMatrix, B::ZZMatrix, i::Int, j::Int, pivot::Int)
   if j != pivot

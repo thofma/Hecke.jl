@@ -11,9 +11,6 @@
 #  once, and every c_{l,j}(x) and every factor value is a single acb_dot.
 #  The quadrature weight is the initial value of each entry.
 #
-#  Entry points: DifferentialFactorCache, _evaluate_differentials!,
-#  _evaluate_differentials, _split_in_y.
-#
 ################################################################################
 
 # Split f(x, y) into y-coefficients, each a vector of x-coefficients:
@@ -44,12 +41,12 @@ mutable struct DifferentialFactorCache
   row_lengths::Vector{Vector{Int}}      # lengths of the rows without trailing zeros
   max_x_length::Int                     # maximum of x_lengths
   max_y_length::Int                     # maximum of y_lengths
-  x_powers::Ptr{acb_struct}             # scratch: 1, x, ..., x^(max_x_length - 1)
-  y_coefficients::Vector{Ptr{acb_struct}}  # scratch: c_{l,j}(x), j = 0, ..., y_lengths[l] - 1
-  y_powers::Ptr{acb_struct}             # scratch: per sheet s a row 1, y_s, ..., y_s^(max_y_length - 1)
+  x_powers::Ptr{acb_struct}             # 1, x, ..., x^(max_x_length - 1)
+  y_coefficients::Vector{Ptr{acb_struct}}  # c_{l,j}(x), j = 0, ..., y_lengths[l] - 1
+  y_powers::Ptr{acb_struct}             # per sheet s a row 1, y_s, ..., y_s^(max_y_length - 1)
   allocated_sheets::Int                 # number of rows allocated in y_powers
-  powers::Vector{AcbFieldElem}          # scratch: powers of one factor value
-  value::AcbFieldElem                   # scratch: one factor value
+  powers::Vector{AcbFieldElem}          # powers of one factor value
+  value::AcbFieldElem                   # one factor value
 
   function DifferentialFactorCache(factors::Vector{AbstractAlgebra.Generic.MPoly{AcbFieldElem}},
                                    factor_matrix::Matrix{Int}, min_powers::Vector{Int},

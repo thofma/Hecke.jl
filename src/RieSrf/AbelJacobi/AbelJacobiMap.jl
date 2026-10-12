@@ -2,20 +2,13 @@
 #
 #  RieSrf/AbelJacobi/AbelJacobiMap.jl : the Abel-Jacobi map
 #
-#  AJ(D) = sum_j n_j int_{P0}^{P_j} (omega_1, ..., omega_g) for a divisor
+#  abel_jacboi(D) = sum_j n_j int_{P0}^{P_j} (omega_1, ..., omega_g) for a divisor
 #  D = sum_j n_j P_j (D - deg(D) P0 if the degree is not 0), optionally reduced
-#  modulo the period lattice. For a generic point the integral runs from the
+#  modulo the period lattice. 
+#  For a generic point the integral runs from the
 #  base point along a chain of the fundamental group to a nearby path start,
 #  and from there along a line, with detours around the discriminant points,
-#  to the point; sheet_to_sheet_integrals connects the sheets at the base
-#  point. Points over discriminant points and points at infinity are reached
-#  by double exponential integration into the point (heuristic,
-#  _abel_jacobi_special_point!); critical points with method :swap on the model
-#  with x and y swapped. Divisors on another model of the surface are moved
-#  to the computational model first; for the superelliptic model see
-#  Superelliptic.jl.
-#
-#  Entry point: abel_jacobi_map.
+#  to the point.
 #
 ################################################################################
 
@@ -25,8 +18,8 @@
 #
 ################################################################################
 
-# AJ value V as an element of R^2g / Z^2g: the coordinates with respect to
-# the periods, reduced modulo 1.
+# The value of the abel-jacobi map as an element of R^2g / Z^2g. 
+# The coordinates with respect to the periods, reduced modulo 1.
 function _period_lattice_reduction_real(V::AcbMatrix, RS::AbstractRiemannSurfaceModel)
   g = genus(RS)
   T = RS.real_reduction_matrix
@@ -35,7 +28,7 @@ function _period_lattice_reduction_real(V::AcbMatrix, RS::AbstractRiemannSurface
   return matrix(RR, 2*g, 1, [w - round(ZZRingElem, w) for w in W])
 end
 
-# AJ value V as an element of C^g / (Z^g + tau Z^g) (normalized with P1^-1),
+# The value of the abel-jacobi map as an element of C^g / (Z^g + tau Z^g) (normalized with P1^-1),
 # reduced to the fundamental domain.
 function _period_lattice_reduction_complex(V::AcbMatrix, RS::AbstractRiemannSurfaceModel)
   g = genus(RS)
@@ -47,7 +40,7 @@ function _period_lattice_reduction_complex(V::AcbMatrix, RS::AbstractRiemannSurf
   return V - matrix(CC, g, 1, [round(ZZRingElem, real(v)) for v in V])
 end
 
-# The AJ value reduced as asked for (reduction :none, :real or :complex).
+# Reduce the value of the abel-jacobi map. Options are :none, :real or :complex.
 function _reduce_abel_jacobi(V::AcbMatrix, RS::AbstractRiemannSurfaceModel, reduction::Symbol)
   reduction === :none && return V
   _compute_reduction_matrix!(RS, reduction)
@@ -189,7 +182,7 @@ end
     abel_jacobi_map(P::RiemannSurfacePoint, method = :swap, reduction = :complex) -> AcbMatrix
 
 The Abel-Jacobi map of the divisor P - P0, P0 the base point of the Riemann
-surface. See `abel_jacobi_map(D::RiemannSurfaceDivisor, ...)`.
+surface.
 """
 function abel_jacobi_map(P::RiemannSurfacePoint, method = :swap, reduction = :complex)
   return abel_jacobi_map(divisor([P], [1]), method, reduction)
@@ -237,7 +230,6 @@ of differentials of the computational model.
 - `:real`: the result is given in R^2g / Z^2g (coordinates with respect to
   the periods).
 - `:none`: the result as computed.
-(Strings such as `"swap"` or `"complex"` are accepted as well.)
 """
 function abel_jacobi_map(D::RiemannSurfaceDivisor, method = :swap, reduction = :complex)
   V = _abel_jacobi_map(D, _option_symbol(method), _option_symbol(reduction))
@@ -302,7 +294,7 @@ function _abel_jacobi_value(RS::RiemannSurfaceModel, D::RiemannSurfaceDivisor, m
       continue
     end
     # Points over discriminant points lie on the chains around them
-    # (SpecialPoints.jl); ajm_discriminant_points and
+    # ajm_discriminant_points and
     # _abel_jacobi_special_point! index these chains (RS.pi1_chains).
     dist, ind = _disc_chain_index(RS, P.coordx)
     if P.is_singular || P.coordy == infty || (P in RS.critical_points && method === :direct)
@@ -406,8 +398,8 @@ function _ajm_generic_point(RS::RiemannSurfaceModel, P, CC::AcbField, RR::ArbFie
   return s_to_s[sheet0, :] + chain_row + line_row
 end
 
-# A regular point P (f_y(P) != 0) whose x-coordinate is a discriminant point:
-# other sheets meet over x(P), e.g. a point of the swapped surface lying over
+# A regular point P (f_y(P) != 0) whose x-coordinate is a discriminant point.
+# Other sheets meet over x(P), e.g. a point of the swapped surface lying over
 # the image of a node. The fiber over x(P) cannot be isolated, so
 #     AJ(P) = AJ(P1) + int_{P1}^{P} omega
 # for the point P1 over x1 = x(P) + delta on the sheet of P (delta a quarter of
@@ -591,7 +583,8 @@ function _abel_jacobi_special_point!(gamma::CPath, k::Int, RS::RiemannSurfaceMod
     if refine == false 
       if permutation(test_chain) != one(s_m)
         sigma = permutation(test_chain)
-        V = N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix -  change_base_ring(CC,test_chain.integral_matrix)
+        V = N_gamma.integral_matrix - inv(sigma) * N_gamma.integral_matrix -  
+        change_base_ring(CC,test_chain.integral_matrix)
         err_V = maximum([ abs(c) for c in V ])
         if contains(target_error*100, err_V)
           refine = false 

@@ -16,7 +16,7 @@
 #
 ################################################################################
 
-_abs64(z::AcbFieldElem) = abs(RSR._c64(z))
+_abs64(z::AcbFieldElem) = abs(_c64(z))
 _safe_log2(x::Float64) = x > 0 ? log2(x) : -Inf
 
 # radius of a ball (upper bound in Float64)
@@ -147,7 +147,7 @@ function _sqrt_homogeneous(F::MPolyRingElem)
   d = div(total_degree(F), 2)
   pure(i, e) = [j == i ? e : 0 for j in 1:n]
   i0 = argmax([_abs64(get(Fd, pure(i, 2*d), zero(CC))) for i in 1:n])
-  r0 = RSR._rotated_power(Fd[pure(i0, 2*d)], 1//2)
+  r0 = _rotated_power(Fd[pure(i0, 2*d)], 1//2)
   H = Dict{Vector{Int}, AcbFieldElem}(pure(i0, d) => r0)
   others = [j for j in 1:n if j != i0]
   for i in 1:d

@@ -248,7 +248,7 @@ end
 # parametrization is continued to complex t (for a point x off the path, t
 # tells how far x is from the path in the parameter domain). Computed in CC,
 # which may have a lower precision than the path. trim_zero: the log is
-# ambiguous for points on the real or imaginary axis; the ambiguity drops
+# ambiguous for points on the real or imaginary axis. The ambiguity drops
 # out of the absolute values and imaginary parts that are taken afterwards.
 function _arc_parameter_function(path::CPath, CC::AcbField)
   RR = ArbField(precision(CC))
@@ -400,7 +400,7 @@ function _set_chain_integral!(chain::CChain)
   for path in paths
     # inv(sigma) * M: row r of it is row source_rows[r] of M. Added in place,
     # without the generic product with a permutation and without copying the
-    # entries (this took 13% of the time for f19).
+    # entries.
     source_rows = inv(sigma) * rows
     M = path.integral_matrix
     GC.@preserve chain_integral M for r in 1:m

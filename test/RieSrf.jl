@@ -1,7 +1,9 @@
 # Tests of src/RieSrf. The test of src/RieSrf/<Folder>/<File>.jl is
 # test/RieSrf/<Folder>/<File>.jl; TestHelpers.jl holds the shared helpers and
-# test curves. The diagnostics in RieSrf/Diagnostics (precision suite,
-# homomorphism stress tests) are not part of the test run.
+# test curves; Reconstruction/ReconstructionHelpers.jl the comparisons and
+# random curves of the reconstruction tests. The diagnostics in
+# RieSrf/Diagnostics (precision suite, homomorphism stress tests, genus 4
+# reconstruction) are not part of the test run.
 @testset "RieSrf" begin
   include("RieSrf/TestHelpers.jl")
   include("RieSrf/Numerics/Auxiliary.jl")
@@ -25,6 +27,7 @@
   include("RieSrf/Endomorphisms/HeuristicEndomorphisms.jl")
   include("RieSrf/Endomorphisms/Algebraization.jl")
   include("RieSrf/Endomorphisms/EndomorphismStructure.jl")
+  include("RieSrf/Reconstruction/ReconstructionHelpers.jl")
   include("RieSrf/Reconstruction/ReconstructCurvesG123.jl")
   include("RieSrf/Reconstruction/ReconstructG4.jl")
 end

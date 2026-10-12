@@ -4,7 +4,7 @@
 #
 #  The user settings of the numerical computation (IntegrationParameters) and
 #  the constants of the precision management (guard bits, see the comment
-#  before _quadrature_guard_bits).
+#  before _quadrature_guard_bits). Only for power users.
 #
 ################################################################################
 
@@ -22,7 +22,6 @@ Settings for the numerical computations on a Riemann surface.
 - `int_style`: `:mixed` (Gauss-Legendre, and double exponential for subpaths
   close to a discriminant point), `:gl` (Gauss-Legendre only) or `:de`
   (double exponential only).
-  (Strings such as `"Mixed"` or `"GL"` are accepted as well.)
 - `midpoint_precision`: precision used for the intermediate steps of the
   analytic continuation; `0` switches it off, `:auto` chooses heuristically.
 - `adaptive`: adaptive step size (predictor-corrector) in the analytic continuation.
@@ -139,7 +138,7 @@ function _with_changes(P::IntegrationParameters; kw...)
 end
 
 # Heuristic for midpoint_precision = :auto. With the adaptive continuation the
-# low-precision midpoints only pay off at high precision (f2: slower at 200
+# low-precision midpoints only pay off at high precision (Tests show it is slower at 200
 # bits, 10% faster at 1000 bits).
 _auto_midpoint_precision(computational_precision::Int) = computational_precision >= 400 ? 128 : 0
 

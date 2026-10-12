@@ -25,12 +25,9 @@
 #   * the Abel-Jacobi map: integrals from a branch point to the point (finite
 #     points) and on a model at infinity (points at infinity).
 #
-#  Gauss-Jacobi quadrature for m > 2 (Neurohr's default) is not used (see
+#  Gauss-Jacobi quadrature for m > 2 (default in Neurohr) is not used (see
 #  _edge_parameters!); for m > 2 all edges use double exponential integration.
 #
-#  Entry points: _superelliptic_model (the model, chosen by riemann_surface),
-#  big_period_matrix, small_period_matrix, homology_basis, _se_abel_jacobi,
-#  _se_point, _se_infinite_points, _se_ramification_points.
 #
 ################################################################################
 
@@ -73,7 +70,6 @@ function _superelliptic_form(f::MPolyRingElem)
 end
 
 # The SuperellipticModel of RS, or nothing if the curve is not superelliptic.
-# Cheap: nothing numerical is computed.
 function _superelliptic_model(RS::RiemannSurface)
   f = RS.input_polynomial
   form = _superelliptic_form(f)
@@ -206,7 +202,7 @@ _embed_poly(p::PolyRingElem, v, CC::AcbField) =
 
 # z^q for a rational q, on the branch with the argument of z taken near its
 # Float64 argument theta: (z e^{-i theta})^q e^{i q theta}. Any Float64 theta
-# gives a valid branch (the result to the power den(q) is z^num(q)); the
+# gives a valid branch (the result to the power den(q) is z^num(q)). The
 # rotation keeps the principal root away from its branch cut, also when z is
 # (numerically) a negative real number.
 function _rotated_power(z::AcbFieldElem, q::Rational{Int})
@@ -241,7 +237,7 @@ _de_weight(U::Vector{ComplexF64}) = minimum(u -> _burger_parameter(u, pi/2), U; 
 # greedy (Prim-like) by the weight w(a, b) (larger is better), but without
 # edges that cross an edge already in the tree, since the intersection numbers
 # below assume that edges only meet at common end points. The edges are listed
-# in the order they are added; each goes from a vertex already in the tree to
+# in the order they are added. Each one goes from a vertex already in the tree to
 # a new one.
 function _orient(a::ComplexF64, b::ComplexF64, c::ComplexF64)
   return imag(conj(b - a) * (c - a))
@@ -494,7 +490,7 @@ end
 #  at P cross iff the rays of one separate the rays of the other. Sign: +1 if
 #  the second cycle crosses from the right to the left of the first (the
 #  standard orientation; the s-plane is oriented like the x-plane).
-#  Consecutive cycles of the same edge meet along a whole lift; perturbing it
+#  Consecutive cycles of the same edge meet along a whole lift. Perturbing it
 #  gives c_{e,l} . c_{e,l+1} = 1 (as in Molin-Neurohr).
 
 _in_ccw_sector(x::Float64, from::Float64, to::Float64) =
@@ -587,8 +583,7 @@ function _se_height_bits(C::SuperellipticModel)
 end
 
 # Precision retry as in the general algorithm (see _big_period_matrix), but
-# without extra guard bits for accuracy = :big: the working precision here
-# already contains log2 of the largest integrand bound, and a retry is cheap.
+# without extra guard bits for accuracy = :big.
 function big_period_matrix(C::SuperellipticModel)
   isdefined(C, :big_period_matrix) && return C.big_period_matrix
   P = _se_compute_big_period_matrix!(C)
@@ -693,7 +688,7 @@ function _se_compute_big_period_matrix!(C::SuperellipticModel)
     end
   end
 
-  # intersection matrix and symplectic basis
+  # Intersection matrix and symplectic basis
   K = _se_intersection_matrix(C, tree, data)
   C.intersection_matrix = K
   S = symplectic_reduction(K)

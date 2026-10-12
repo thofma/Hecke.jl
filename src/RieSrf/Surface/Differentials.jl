@@ -10,9 +10,6 @@
 #  products of powers of common factors (differential_form_data, see
 #  Types.jl and Integrand.jl).
 #
-#  Entry points: _ensure_differentials!, differential_form_data,
-#  basis_of_differentials (RiemannSurfaceModel.jl).
-#
 ################################################################################
 
 # Basis of differentials, genus and the factor data used for integration.

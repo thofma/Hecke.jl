@@ -8,7 +8,6 @@
 #  group (made a bit smaller), and every subpath uses the scheme with the
 #  largest r below its own (_scheme_index).
 #
-#  Entry points: _gl_group_rs, _de_group_rs, _scheme_index.
 #
 ################################################################################
 

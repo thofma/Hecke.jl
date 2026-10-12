@@ -18,9 +18,6 @@
 #  a low-precision workspace, the roots at the targets at full precision.
 #  _continue_unchecked! makes a step without the check, for paths to infinity.
 #
-#  Entry points: analytic_continuation, _continue_adaptive!,
-#  _continue_by_bisection!, _continue_unchecked!, _fresh_fiber!.
-#
 ################################################################################
 
 ################################################################################
@@ -44,11 +41,11 @@ mutable struct ContinuationWorkspace
   movement::Vector{ArbFieldElem}        # |zp_i - z_i| (adaptive check)
   worst_lhs::ArbFieldElem               # left side of the worst pair in _pairwise_check!
   worst_rhs::ArbFieldElem               # right side of the worst pair in _pairwise_check!
-  product::AcbFieldElem                 # scratch
-  diff::AcbFieldElem                    # scratch
-  abs_diff::ArbFieldElem                # scratch
-  lhs::ArbFieldElem                     # scratch
-  ratio::ArbFieldElem                   # scratch
+  product::AcbFieldElem                 
+  diff::AcbFieldElem                    
+  abs_diff::ArbFieldElem                
+  lhs::ArbFieldElem                     
+  ratio::ArbFieldElem                   
   start_values::Ptr{acb_struct}         # input of acb_poly_find_roots (m entries)
   roots::Ptr{acb_struct}                # output of acb_poly_find_roots (m entries)
   coefficient_table::Ptr{acb_struct}    # split_polynomial for acb_dot: (m + 1) x x_length, row-major
@@ -89,14 +86,14 @@ mutable struct ContinuationWorkspace
   end
 end
 
-# workspace.fiber_polynomial <- f(x, y); returns it.
+# workspace.fiber_polynomial <- f(x, y). returns it.
 function _specialize_x!(workspace::ContinuationWorkspace, x::AcbFieldElem)
   prec = precision(parent(workspace.leading_coefficient))
   entry_size = sizeof(acb_struct)
   GC.@preserve workspace begin
     _acb_powers_ptr!(workspace.x_powers, x, workspace.x_length - 1, prec)
     for j in 0:workspace.m
-      # leading_coefficient is used as the buffer; after the last j it holds
+      # leading_coefficient is used as the buffer. After the last j it holds
       # the y^m coefficient.
       _acb_dot_ptr!(workspace.leading_coefficient,
                     workspace.coefficient_table + j*workspace.x_length*entry_size,
@@ -250,7 +247,7 @@ end
 # After a passed check at x2 in `checked` (workspace or low_workspace), with
 # the starting values z_i - W_i in checked.corrections: compute the fiber at
 # x2. At an intermediate point (not final) of a mixed-precision continuation
-# the low precision roots suffice if they converge quickly; otherwise the
+# the low precision roots suffice if they converge quickly. Otherwise the
 # roots are computed at full precision into fiber, and rounded into
 # low_fiber. Without low_workspace, low_fiber is fiber.
 function _refine_roots!(workspace::ContinuationWorkspace,
@@ -438,12 +435,12 @@ end
 mutable struct AdaptiveContinuationState
   x0::AcbFieldElem                        # previous accepted point
   x1::AcbFieldElem                        # current point
-  x2::AcbFieldElem                        # scratch: trial point
+  x2::AcbFieldElem                        # trial point
   fiber0::Vector{AcbFieldElem}            # fiber at x0 (at the precision of the checks)
   predicted_fiber::Vector{AcbFieldElem}   # predicted fiber zp at x2
-  diff::AcbFieldElem                      # scratch
-  ratio::AcbFieldElem                     # scratch
-  abs_value::ArbFieldElem                 # scratch
+  diff::AcbFieldElem                      
+  ratio::AcbFieldElem                     
+  abs_value::ArbFieldElem                  
   step::Float64                           # step length |x2 - x1| to try next
   has_previous::Bool                      # x0 and fiber0 are set
   target_ratio::Float64                   # aim for q = 2m max|W| / d around this value
@@ -455,7 +452,7 @@ mutable struct AdaptiveContinuationState
   end
 end
 
-# Start (or restart) at the point x: forget the history.
+# Start (or restart) at the point x. Forget the history.
 function _adaptive_reset!(state::AdaptiveContinuationState, x::AcbFieldElem)
   Hecke.set!(state.x1, x)
   state.has_previous = false

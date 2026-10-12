@@ -3,7 +3,6 @@
     f = FAST_CURVES[5][2]                                 # f2, genus 2
     RS = _rs(f, 100)
 
-    # construction is cheap: nothing expensive has been computed yet
     @test !isdefined(RS, :computational)                 # not even the model choice
     @test !isdefined(RSM.original_model(RS), :big_period_matrix)
     @test !isdefined(RSM.original_model(RS), :basis_of_differentials)

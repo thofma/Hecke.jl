@@ -2,7 +2,7 @@
 #
 #  RieSrf/AbelJacobi/Divisors.jl : divisors on a Riemann surface
 #
-#  Formal sums of points; the Abel-Jacobi value is cached in the divisor and
+#  Formal sums of points. the Abel-Jacobi value is cached in the divisor and
 #  added along when divisors with known values are added or scaled.
 #
 ################################################################################

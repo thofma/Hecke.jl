@@ -22,8 +22,8 @@
 struct _ChunkResult
   fiber_start::Vector{AcbFieldElem}   # fresh fiber at the first point of the chunk (any order)
   fiber_end::Vector{AcbFieldElem}     # continued fiber at its last point, in the same order
-  integrals::Matrix{AcbFieldElem}     # m x g, row i = sheet fiber_start[i]; weights applied,
-                                      # the constant derivative of a line NOT yet applied
+  integrals::Matrix{AcbFieldElem}     # m x g, row i = sheet fiber_start[i]. weights applied,
+                                      # the constant derivative of a line not yet applied
 end
 
 # permutation[i] = the index j with a[i] and b[j] overlapping; must be unique

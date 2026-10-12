@@ -8,8 +8,6 @@
 #  strip |Im z| < r whose image under t = tanh(lambda sinh(z)) (the "burger")
 #  contains no discriminant point.
 #
-#  Entry points: _double_exponential_path_parameters!,
-#  _double_exponential_parameters, _tanh_sinh_nodes.
 #
 ################################################################################
 

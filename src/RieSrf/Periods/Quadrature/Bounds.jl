@@ -9,7 +9,6 @@
 #  value of the integrand at a few sample points on the boundary of that
 #  region, near the closest discriminant point.
 #
-#  Entry points: _ellipse_bound_heuristic!, _burger_bound_heuristic!.
 #
 ################################################################################
 

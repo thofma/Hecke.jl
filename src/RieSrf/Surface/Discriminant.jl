@@ -8,8 +8,6 @@
 #  to the curve (see _ensure_discriminant_points!), together with the
 #  internal precision of the model.
 #
-#  Entry points: discriminant_points, internal_discriminant_points,
-#  discriminant_points_high_prec.
 #
 ################################################################################
 

@@ -8,8 +8,7 @@
 #  for eta = 00001000, the Jacobian nullvalues (Fay's generalized Jacobi
 #  formula) for them, and the bitangents of the Prym (generic case) resp. the
 #  lines through its Weierstrass points (vanishing theta null case) that
-#  belong to the pairs (Milne's bijection). From the Magma package
-#  reconstructing-g4.
+#  belong to the pairs (Milne's bijection). 
 #
 ################################################################################
 

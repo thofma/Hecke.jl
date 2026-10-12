@@ -9,9 +9,13 @@
 #
 #  Afterwards many improvements and optimizations were added to it. 
 #  Claude Code (Opus 5.5) was used to optimize and speed up the analytic
-#  continuation and the evaluation of differential forms. 
-#
-#
+#  continuation and the evaluation of differential forms. It was also used 
+#  to write a test suite for extensive testing and to restructure the code 
+#  and put it in its current form.
+#  
+################################################################################
+
+################################################################################
 #  A RiemannSurface is the compact Riemann surface associated to a curve.
 #  Even though the input is allowed to be any kind of curve, all computations 
 #  are done on a (usually singular) model of the curve after projecting to P^2.
@@ -69,9 +73,8 @@ ramification points, monodromy, ...) always refers to the curve as given.
 The period matrices are those of the bases of differentials and of homology
 of the model used; see `computational_model`.
 
-The keyword arguments `integration_method`, `int_style`, `midpoint_precision`,
-`adaptive`, `chunk_len` and `group_cost`, or `parameters::IntegrationParameters`,
-set the integration parameters; see `IntegrationParameters`.
+For power users it is possible to tweak the way the integration is done in 
+more detail. For that one should take a look at `IntegrationParameters`.
 """
 function riemann_surface(f::MPolyRingElem, prec::Int = 100;
                          parameters::Union{Nothing, IntegrationParameters} = nothing,
@@ -82,6 +85,26 @@ function riemann_surface(f::MPolyRingElem, prec::Int = 100;
   end
   v = infinite_places(k)[1]
   return riemann_surface(f, v, prec; parameters = parameters, model = model, kw...)
+end
+
+@doc raw"""
+    riemann_surface(f::MPolyRingElem, v::Union{PosInf, InfPlc}, prec::Int = 100;
+                    model = :auto, parameters = nothing, kw...) -> RiemannSurface
+
+As `riemann_surface(f, prec)`, with the embedding into CC given by the
+infinite place v of the base field.
+"""
+function riemann_surface(f::MPolyRingElem, v::T, prec::Int = 100;
+                         parameters::Union{Nothing, IntegrationParameters} = nothing,
+                         model = :auto, kw...) where T<:Union{PosInf, InfPlc}
+  # Keyword arguments are integration parameters (integration_method,
+  # int_style, midpoint_precision, adaptive, chunk_len, group_cost); they
+  # override the ones in `parameters`.
+  P = parameters === nothing ? IntegrationParameters(; kw...) : _with_changes(parameters; kw...)
+  RS = RiemannSurface(f, v, prec, P, model)
+  O = original_model(RS)      # cheap; checks the input
+  RS.model = _check_model_choice(model, base_ring(O.defining_polynomial))
+  return RS
 end
 
 riemann_surface(f::MPolyRingElem, CC::ComplexField; kw...) =

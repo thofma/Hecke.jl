@@ -3,8 +3,7 @@
 #  ReconstructG4.jl : genus 4 curves from their theta constants
 #
 #  Hanselman, Pieper, Schiavone, "Equations of genus 4 curves from their
-#  theta constants" (arXiv:2402.03160), following the Magma package
-#  reconstructing-g4 (magma/reconstruction.m). The case is decided by the
+#  theta constants" (arXiv:2402.03160). The case is decided by the
 #  number of vanishing even theta constants of the (Siegel reduced) tau:
 #
 #   0   generic: the tritangent planes H_i, H_i' (generalized Jacobi
@@ -23,24 +22,11 @@
 #  theta_constants. Uses ThetaCharacteristics.jl, ReconstructCurvesG123.jl
 #  (Takase's quotients, Weber moduli, the genus 3 signs and bitangents),
 #  ReconstructNumerics.jl (square roots of forms) and ReconstructG4Tables.jl;
-#  the tests and comparisons are in ReconstructG4Tests.jl.
-#
-#  Usage:
-#    r = reconstruct_curve_g4_data(small_period_matrix(RS))
-#    r.case, r.curve     # [quadric, cubic] in P^3, or a hyperelliptic curve
-#    check_g4_reconstruction(f, 300)    # compares with the curve f(x, y) = 0
-#    reconstruct_rational_curve_g4(big_period_matrix(RS))   # a model over QQ
+#  the tests and comparisons are in
+#  test/RieSrf/Reconstruction/ReconstructionHelpers.jl.
 #
 ################################################################################
 
-@doc raw"""
-    reconstruct_curve_g4(tau::AcbMatrix)
-
-A model of the genus 4 curve with small period matrix `tau`: `[quadric,
-cubic]` (polynomials in four variables over the complex field of `tau`) for a
-non-hyperelliptic curve, or a hyperelliptic curve y^2 = x (x-1) prod (x -
-lambda_l) over that field.
-"""
 _reconstruct_genus4(tau::AcbMatrix) = reconstruct_curve_g4_data(tau).curve
 
 @doc raw"""
@@ -59,8 +45,7 @@ theory predicts). They are pessimistic: for non-hyperelliptic curves the
 radii are about 2^110 to 2^150 times the radius of tau, for hyperelliptic
 curves a few bits. For a result with relative radius 2^-p, compute tau with
 about p + 150 bits (resp. p + 10). This is much cheaper than first-order
-certification with the theta derivatives (tried, see the git history: the
-second order theta jets alone cost more than 10 times the reconstruction).
+certification with the theta derivatives.
 """
 function reconstruct_curve_g4_data(tau::AcbMatrix)
   @req nrows(tau) == 4 && ncols(tau) == 4 "tau must be a 4 x 4 matrix."
@@ -187,7 +172,7 @@ function _g4_prym_bitangents(th)
   th3 = Dict{NTuple{6, Int}, AcbFieldElem}()
   for c in even_theta_characteristics(3)
     p = th[(0, c[1], c[2], c[3], 0, c[4], c[5], c[6])] * th[(0, c[1], c[2], c[3], 1, c[4], c[5], c[6])]
-    th3[Tuple(c)] = RSR._rotated_power(p, 1//2)      # any branch; away from the branch cut
+    th3[Tuple(c)] = _rotated_power(p, 1//2)      # any branch; away from the branch cut
   end
   for c in odd_theta_characteristics(3)
     th3[Tuple(c)] = zero(CC)
@@ -391,8 +376,8 @@ end
 #
 #  A model over Q (or a number field) from the big period matrix
 #
-#  Magma: RationalReconstructCurveG4. The small period matrix determines the
-#  curve only up to isomorphism over C; the big period matrix Pi also fixes
+#  The small period matrix determines the curve only up to isomorphism over C. 
+#  the big period matrix Pi also fixes
 #  a basis of the differentials. If that basis is defined over K (e.g. the
 #  basis of big_period_matrix(RS) for a curve over K), the canonical model in
 #  the coordinates of these differentials is defined over K up to scaling.
@@ -405,7 +390,7 @@ end
 # normalized differentials for tau' = T(tau), Omega' = Omega [D^T B^T; C^T A^T]
 # for T = [A B; C D]) and x_k = mu_k <grad theta[xi_k](0, tau'), z> with
 # grad theta[xi_5] = sum_k mu_k grad theta[xi_k] (the tritangent plane of xi_k
-# is x_k = 0, the one of xi_5 is x_1 + .. + x_4 = 0). Magma: TritangentPlanes.
+# is x_k = 0, the one of xi_5 is x_1 + .. + x_4 = 0).
 function _g4_coordinates_from_differentials(Omega::AcbMatrix, data)
   tau = data.tau
   CC = base_ring(tau)
@@ -427,10 +412,10 @@ function _g4_field_data(K, place, CC::AcbField)
     return QQ, (c -> CC(c)), _recognize_rational, nothing
   end
   v = place === nothing ? infinite_places(K)[1] : place
-  embed(c) = CC(RSR._embed_coefficient(c, v.embedding, precision(CC)))
+  embed(c) = CC(_embed_coefficient(c, v.embedding, precision(CC)))
   function recognize(a)
     try
-      return RSR.algebraize_element(a, K, v)
+      return algebraize_element(a, K, v)
     catch
       return nothing
     end
@@ -477,7 +462,7 @@ function _reduce_by_units(p::MPolyRingElem)
   units = [K(mU(U[i])) for i in 2:ngens(U)]       # U[1]: the torsion units
   places = infinite_places(K)
   weights = [is_real(v) ? 1 : 2 for v in places]
-  value(c, v) = RSR._c64(evaluate(c, v.embedding, 128))
+  value(c, v) = _c64(evaluate(c, v.embedding, 128))
   logabs(c, v) = log(abs(value(c, v)))
   if !isempty(units)
     cs = collect(coefficients(p))
@@ -506,30 +491,15 @@ function _reduce_by_units(p::MPolyRingElem)
   return p
 end
 
+#Needs enough precision for the recognition (about 150 bits are lost in the reconstruction)
 @doc raw"""
     reconstruct_rational_curve_g4(Pi::AcbMatrix, K = QQ; place = nothing, normalize = true, reduce_units = true) -> Vector{MPolyRingElem}
 
 The canonical model [Q, Gamma] over K (QQ or a number field, embedded by
 `place`, by default its first infinite place) of a non-hyperelliptic genus 4
-curve with big period matrix Pi = [Omega_A Omega_B] (4 x 8; the rows: a basis
-of the differentials defined over K, e.g. big_period_matrix(RS) for a curve
-over K), in the coordinates of these differentials. The reconstruction over
-CC (reconstruct_curve_g4_data) is moved to these coordinates with the
-gradients of the theta functions; Q is scaled by its largest coefficient,
-Gamma is reduced modulo Q times linear forms (zero coefficients at the pivots
-of these multiples) and scaled by its largest coefficient, and the
-coefficients are recognized in K (algebraize_element). With `normalize`, Q
-and Gamma are then made integral and primitive: over QQ with coprime integer
-coefficients and positive leading coefficient, over a number field with
-coefficients in the maximal order O_K that generate O_K when their ideal is
-principal (unique up to a unit; otherwise only integral). With
-`reduce_units` (number fields, only with `normalize`) the remaining unit is
-chosen to make the coefficients small: the logarithms of the largest
-coefficient at the infinite places are balanced by the fundamental units, and
-the leading coefficient is made positive at the first real place (if any).
-Needs enough precision
-for the recognition (about 150 bits are lost in the reconstruction, see
-reconstruct_curve_g4_data). Magma: RationalReconstructCurveG4.
+curve with big period matrix Pi. With `normalize`, Q
+and Gamma are then made integral and primitive. With
+`reduce_units` the remaining unit is chosen to make the coefficients small.
 """
 function reconstruct_rational_curve_g4(Pi::AcbMatrix, K = QQ; place = nothing, normalize::Bool = true,
                                        reduce_units::Bool = true)

@@ -9,8 +9,6 @@
 #  the ellipse E_r with foci -1 and 1), splits lines where that pays off, and
 #  provides the nodes and the number of nodes for a given r.
 #
-#  Entry points: _gauss_legendre_path_parameters!, _gauss_legendre_parameters,
-#  _gauss_legendre_nodes, _gauss_chebyshev_nodes.
 #
 ################################################################################
 
@@ -67,8 +65,7 @@ end
 
 # Neurohr, Section 4.7.5: if a point is close to the line (r < 1.2), split the
 # line at the point of the line closest to it (but at most 3/4 of the way to
-# an end) if the two pieces together need at least 10 nodes fewer. Recursive;
-# returns the pieces.
+# an end) if the two pieces together need at least 10 nodes fewer. 
 function _split_line_segment!(points::Vector{AcbFieldElem}, path::CPath, error::ArbFieldElem)
   if !isdefined(path, :quadrature_parameter)
     set_quadrature_parameter!(path, _gauss_legendre_line_parameter!(points, path))
@@ -131,7 +128,7 @@ end
 # The same for arcs and circles. The points are the discriminant points (at a
 # high precision, e.g. 600 bits), but r_0 and t_p are only used to choose the
 # quadrature and to place the sample points of the heuristic bounds, so they
-# are computed at _arc_parameter_precision() bits (t_p needs a log per point);
+# are computed at _arc_parameter_precision() bits (t_p needs a log per point).
 # only a point for which r_p cannot be separated from 1 there (a point
 # extremely close to the path) is done again at full precision.
 _arc_parameter_precision() = 128

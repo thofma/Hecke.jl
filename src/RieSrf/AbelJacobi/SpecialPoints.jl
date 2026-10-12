@@ -12,7 +12,6 @@
 #   - singular points: df/dy = df/dx = 0 (also at infinity).
 #  Only needs the monodromy, not the periods.
 #
-#  Entry points: _analyze_special_points!, ramification_points.
 #
 ################################################################################
 
@@ -37,7 +36,7 @@ function _analyze_special_points!(RS::RiemannSurfaceModel)
   dfx = derivative(f,1)
   dfy = derivative(f,2)
 
-  # All discriminant points, also those with trivial monodromy: there the
+  # All discriminant points, also those with trivial monodromy. There the
   # fiber can still contain singular points (e.g. a node) or y-infinite points.
   chains = RS.pi1_chains
   K = length(chains)

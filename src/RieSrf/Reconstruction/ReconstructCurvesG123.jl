@@ -1,9 +1,7 @@
 ################################################################################
 #
-#  ReconstructCurves.jl -- reconstruct a curve of genus 1, 2 or 3 from its
-#  small period matrix (via theta constants) and compare it with the original
-#  curve by invariants. With random curves this tests the period matrices
-#  independently of the code that computed them.
+#  ReconstructCurvesG123.jl -- reconstruct a curve of genus 1, 2 or 3 from
+#  its small period matrix (via theta constants).
 #
 #    genus 1        y^2 = x(x-1)(x-lambda), lambda = (theta[1,0]/theta[0,0])^4
 #    genus 2        Rosenhain form y^2 = x(x-1)(x-l1)(x-l2)(x-l3) (Thomae)
@@ -19,23 +17,10 @@
 #  moduli and the signs of the genus 3 theta constants from Riemann's quartic
 #  relations.
 #
-#  Comparison (curves over QQ): the invariants of the original curve are
-#  computed exactly (j, Igusa-Clebsch, Shioda, Dixmier-Ohno; Hecke's HypellCrv
-#  and G3Crv code), those of the reconstructed curve over CC with the same
-#  code; the latter are scaled to the former in weighted projective space and
-#  recognized as rational numbers (Algebraization.jl).
-#
-#  Usage:
-#    include("ReconstructCurvesG123.jl")
-#    RS = riemann_surface(f, 200)
-#    C = reconstruct_curve_from_tau(small_period_matrix(RS))
-#    compare_with_original(f, RS, hyperelliptic)   # (ok, all_recognized, log2_diff, recognized)
-#    random_reconstruction_tests(10; genus = 3, hyperelliptic = false)
+#  The comparison with the original curve by invariants and the tests on
+#  random curves are in test/RieSrf/Reconstruction/ReconstructionHelpers.jl.
 #
 ################################################################################
-
-using Hecke
-const RSR = Hecke.RiemannSurfaces
 
 function _log2abs(z)
   a = abs(z)
@@ -53,7 +38,7 @@ end
     reconstruct_curve(tau::AcbMatrix) -> Vector{MPolyRingElem}
 
 Reconstruct a model of the curve from the small period matrix of a Riemann surface
-(genus 1, 2 or 3). 
+(genus 1, 2, 3 or 4). 
 """
 
 function reconstruct_curve_from_tau(tau::AcbMatrix)
@@ -109,8 +94,7 @@ end
 ################################################################################
 #  Genus 3 hyperelliptic: Takase's formula
 #
-#  As in Balakrishnan-Ionica-Lauter-Vincent and the Magma code
-#  (curve_reconstruction/rosenhain.m, precomp.m): the characteristic of the
+#  Following Balakrishnan-Ionica-Lauter-Vincent: the characteristic of the
 #  vanishing even theta constant determines a matrix gamma (precomputed by
 #  BILV), which transforms Mumford's eta map; the Rosenhain invariants are
 #  Takase's quotients of squares of theta constants (Thm. 4.5 there).
@@ -240,261 +224,16 @@ function _riemann_model_from_moduli(mods)
 end
 
 ################################################################################
-#  Comparison: scale the reconstructed invariants to the original ones and
-#  recognize them as rational numbers
+#  Rational numbers from balls (used by the model over Q of genus 4)
 ################################################################################
 
 function _recognize_rational(a::AcbFieldElem)
   K, _ = rationals_as_number_field()
   try
-    return coeff(RSR.algebraize_element(a, K), 0)
+    return coeff(algebraize_element(a, K), 0)
   catch
     return nothing
   end
-end
-
-"""
-    compare_invariants(Iex, Icc, ws)
-
-`Iex`: invariants of the original curve over QQ, `Icc`: those of the
-reconstructed curve over CC, weights `ws`. Scale `Icc` in weighted projective
-space so that its entry r (the nonzero original invariant of smallest weight)
-equals Iex[r] (trying all ws[r]-th roots), then recognize the entries as
-rational numbers. Returns a named tuple with
-  * `ok`: the scaled invariants agree with `Iex` to more than half of the
-    precision (`log2_diff < -prec/2`),
-  * `all_recognized`: all scaled invariants are recognized as rational
-    numbers and equal to `Iex` (needs more precision than `ok`: roughly twice
-    the height of the invariants in bits),
-  * `log2_diff`: log2 of the largest relative difference,
-  * `recognized`: the recognized rational numbers (`nothing` where not).
-"""
-function compare_invariants(Iex::Vector{QQFieldElem}, Icc::Vector{AcbFieldElem}, ws::Vector{Int})
-  CC = parent(Icc[1])
-  prec = precision(CC)
-  nz = findall(!iszero, Iex)
-  if isempty(nz)
-    # only possible for absolute invariants (j = 0); weighted invariants of a
-    # smooth curve do not all vanish
-    diff = maximum(_log2abs(z) for z in Icc)
-    rec = [diff < -prec/3 ? QQ(0) : nothing for _ in Icc]
-    return (ok = diff < -prec/2, all_recognized = all(r -> r == QQ(0), rec), log2_diff = diff, recognized = rec)
-  end
-  r = nz[argmin(ws[nz])]
-  if ws[r] == 0                                    # absolute invariants (j)
-    lams = [one(CC)]
-  else
-    q = CC(Iex[r]) / Icc[r]
-    # a w-th root of q; q is rotated by its Float64 argument first, since for a
-    # real curve q is often a negative real number whose ball straddles the
-    # branch cut of log (then log(q) has an imaginary part covering [-pi, pi])
-    theta = angle(ComplexF64(Float64(real(q)), Float64(imag(q))))
-    rot = exp(onei(CC) * CC(theta))
-    base = exp(log(q / rot) / ws[r]) * exp(onei(CC) * CC(theta) / ws[r])
-    zeta = exp(2 * const_pi(CC) * onei(CC) / ws[r])
-    lams = [base * zeta^s for s in 0:ws[r]-1]
-  end
-  best = (ok = false, all_recognized = false, log2_diff = Inf, recognized = nothing)
-  for lam in lams
-    scaled = [Icc[i] * lam^ws[i] for i in eachindex(ws)]
-    # scale of the invariants: |Iex[r]|^(w_i/w_r)
-    scalar(i) = ws[r] == 0 ? 1.0 : exp2(ws[i] / ws[r] * _log2abs(CC(Iex[r])))
-    diff = maximum(_log2abs(scaled[i] - CC(Iex[i])) - log2(max(scalar(i), exp2(_log2abs(CC(Iex[i]))), 1e-300))
-                   for i in eachindex(ws))
-    diff < best.log2_diff || continue
-    rec = [iszero(Iex[i]) ? (_log2abs(scaled[i]) < log2(scalar(i)) - prec/3 ? QQ(0) : nothing) :
-           _recognize_rational(scaled[i]) for i in eachindex(ws)]
-    best = (ok = diff < -prec/2, all_recognized = all(rec[i] == Iex[i] for i in eachindex(ws)),
-            log2_diff = diff, recognized = rec)
-  end
-  return best
-end
-
-"""
-    compare_with_original(f, RS, hyperelliptic::Bool) -> NamedTuple
-
-Reconstruct the curve from the period matrix of `RS` and compare its
-invariants with the exact invariants of the original curve over QQ:
-j (genus 1), Igusa-Clebsch (genus 2), Shioda (genus 3 hyperelliptic),
-Dixmier-Ohno (plane quartics). The reconstructed invariants are scaled to the
-original ones (weighted projective space) and recognized as rational numbers
-(Algebraization.jl). `f` is the curve over QQ (y^2 = h(x) for genus 1, 2
-and hyperelliptic genus 3, a plane quartic otherwise). Genus 4: Bouchet's
-invariants of the canonical model, or the branch points for hyperelliptic
-curves (see _compare_with_original_g4 in ReconstructG4.jl); the result also
-has the field `case`. See
-`compare_invariants` for the fields of the result (`ok`, `all_recognized`,
-`log2_diff`, `recognized`).
-"""
-function compare_with_original(f, RS, hyperelliptic)
-  g = genus(RS)
-  g == 4 && return _compare_with_original_g4(f, RS, hyperelliptic)    # ReconstructG4.jl
-  CC = base_ring(small_period_matrix(RS))
-  prec = precision(CC)
-  tau = small_period_matrix(RS)
-  if g == 1
-    R, x = polynomial_ring(QQ)
-    fx = f(x, R(0))
-    E = elliptic_curve(fx)
-    j = j_invariant(E)
-    j_CC = j_invariant(tau[1])
-    return compare_invariants([j], [j_CC], [0])
-  elseif g == 2 
-    R, x = polynomial_ring(QQ)
-    fx = f(x, R(0))
-    C = hyperelliptic_curve(fx)
-    I, ws = igusa_invariants(C)
-    C_CC = reconstruct_curve_from_tau(tau)
-    I_CC, ws = igusa_invariants(C_CC)
-    return compare_invariants(I, I_CC, ws)
-  elseif g == 3 && hyperelliptic
-    R, x = polynomial_ring(QQ)
-    fx = f(x, R(0))
-    C = hyperelliptic_curve(fx)
-    I, ws = shioda_invariants(C)
-    C_CC = reconstruct_curve_from_tau(tau)
-    I_CC, ws = shioda_invariants(C_CC)
-    return compare_invariants(I, I_CC, ws)
-  else
-    f_hom = Hecke.RiemannSurfaces.homogenization_RS(f)
-    I, ws = dixmier_ohno_invariants(f_hom)
-    quartic_CC = reconstruct_curve_from_tau(tau)
-    I_CC, ws = dixmier_ohno_invariants(quartic_CC)
-    return compare_invariants(I, I_CC, ws)
-  end
-end
-
-################################################################################
-#  Random tests
-################################################################################
-
-function _random_curve(genus::Int, hyperelliptic::Bool; coeff_range = -5:5)
-  S, (x, y) = polynomial_ring(QQ, [:x, :y])
-  rnd() = QQ(rand(coeff_range))
-  if genus <= 2 || hyperelliptic
-    d = 2*genus + 1
-    h = sum(rnd() * x^i for i in 0:d-1) + x^d
-    return h - y^2
-  end
-  S, (x, y) = polynomial_ring(QQ, [:x, :y])
-  f = sum(rnd() * x^i * y^j for i in 0:4 for j in 0:4-i)
-  return f + x^4 + y^4                                          # keep the degree 4 in x and y
-end
-
-"""
-    random_reconstruction_tests(n; genus, hyperelliptic = false, prec = nothing, kw...)
-
-Compute the period matrices of `n` random curves (y^2 = h(x) for genus 1, 2
-and hyperelliptic genus 3, plane quartics otherwise), reconstruct them and
-compare. Keywords are passed to `riemann_surface` (e.g. `superelliptic = false`).
-Curves of the wrong genus (singular) are skipped. Default precision: 1000
-bits. `ok` (agreement to half the precision) needs much less precision than
-recognizing all invariants as rationals (`all_recognized`): for hyperelliptic
-genus 3 about 400 bits, for plane quartics more (the Dixmier-Ohno invariants
-are rationals with ~50-100 digits).
-"""
-function random_reconstruction_tests(n::Int; genus::Int, hyperelliptic::Bool = false,
-                                     prec = 1000, kw...)
-  genus == 4 && return random_g4_reconstruction_tests(n; kind = hyperelliptic ? :hyperelliptic : :generic,
-                                                     prec = prec, kw...)
-  results = []
-  done = 0
-  while done < n
-    f = _random_curve(genus, hyperelliptic)
-    RS = riemann_surface(f, prec; kw...)
-    RSR.genus(RS) == genus || continue
-    done += 1
-    t = @elapsed r = try
-      compare_with_original(f, RS, hyperelliptic)
-    catch e
-      (ok = false, all_recognized = false, log2_diff = NaN, recognized = nothing,
-       error = sprint(showerror, e))
-    end
-    println(rpad(string(done), 4), rpad(string(r.ok), 7), rpad(string(r.all_recognized), 7),
-            lpad(string(round(r.log2_diff, digits = 1)), 8),
-            lpad(string(round(t, digits = 2), "s"), 9), "  ", f)
-    r.ok == true || println("    ", r)
-    push!(results, (f = f, result = r, time = t))
-  end
-  nok = count(r -> r.result.ok == true, results)
-  nrec = count(r -> r.result.all_recognized == true, results)
-  println("$nok of $n reconstructions agree with the original curve (log2_diff < -prec/2); ",
-          "for $nrec all invariants were recognized.")
-  return results
-end
-
-################################################################################
-#  Diagnostics for the hyperelliptic genus 3 reconstruction
-################################################################################
-
-# The Shioda invariants of a reconstruction, made independent of the scaling:
-# J_k^2 / J_2^k for k = 3, ..., 10 (J_2 must not vanish).
-function _scale_free_shioda(tau::AcbMatrix)
-  I, ws = shioda_invariants(_reconstruct_genus3(tau))
-  return [I[i]^2 / I[1]^ws[i] for i in 2:length(I)]
-end
-
-# A random integral symplectic 2g x 2g matrix (a product of `steps` generators).
-function _random_symplectic(g::Int; steps::Int = 12)
-  T = identity_matrix(ZZ, 2*g)
-  for _ in 1:steps
-    G = identity_matrix(ZZ, 2*g)
-    kind = rand(1:3)
-    if kind == 1                       # [I S; 0 I], S symmetric
-      i, j = rand(1:g), rand(1:g)
-      G[i, g + j] += 1
-      i != j && (G[j, g + i] += 1)
-    elseif kind == 2                   # [A 0; 0 A^-T], A = I + E_ij
-      i, j = rand(1:g), rand(1:g)
-      i == j && continue
-      G[i, j] = 1
-      G[g + j, g + i] = -1
-    else                               # [0 I; -I 0]
-      G = zero_matrix(ZZ, 2*g, 2*g)
-      for k in 1:g
-        G[k, g + k] = 1
-        G[g + k, k] = -1
-      end
-    end
-    T = G * T
-  end
-  return T
-end
-
-"""
-    check_takase_table(tau; tries = 300)
-
-For the small period matrix `tau` of a hyperelliptic genus 3 curve: transform
-it by random symplectic matrices (the same curve, other vanishing
-characteristics) and compare the scale-free Shioda invariants of the
-reconstructions with those for `tau`. Prints, per vanishing characteristic
-reached, log2 of the largest relative difference; a characteristic with a
-large difference points to a wrong entry of the gamma table (or a wrong sign
-in Takase's quotient).
-"""
-function check_takase_table(tau::AcbMatrix; tries::Int = 300)
-  prec = precision(base_ring(tau))
-  reference = _scale_free_shioda(tau)
-  worst = Dict{NTuple{6, Int}, Float64}()
-  for _ in 1:tries
-    t2 = Hecke.siegel_transform(_random_symplectic(3), tau)
-    van = _vanishing_even_theta_constants(theta_constants(t2), prec)
-    length(van) == 1 || continue
-    v0 = van[1]
-    other = try
-      _scale_free_shioda(t2)
-    catch
-      nothing
-    end
-    d = other === nothing ? Inf :
-        maximum(_log2abs(other[i] - reference[i]) - _log2abs(reference[i]) for i in eachindex(reference))
-    worst[v0] = max(get(worst, v0, -Inf), d)
-  end
-  for v0 in sort(collect(keys(worst)))
-    println(v0, "  ", round(worst[v0], digits = 1))
-  end
-  println(length(worst), " of 36 even characteristics reached.")
-  return worst
 end
 
 ################################################################################
@@ -560,7 +299,7 @@ end
 
 ################################################################################
 #
-#  Signs of the genus 3 theta constants (Magma: signs.m)
+#  Signs of the genus 3 theta constants 
 #
 #  The signs that change all 36 even theta constants by (-1)^(c^T T c) (T
 #  upper triangular) or by a common sign form a 21-dimensional space; the
@@ -700,7 +439,7 @@ function _correct_theta_signs_g3(thetas::Dict{NTuple{6, Int}, AcbFieldElem})
     sign_options[others[2]][3] *= -1         # option 3: second unknown term flipped
     sign_options[others[1]][4] *= -1         # option 4: both
     sign_options[others[2]][4] *= -1
-    values = [abs(RSR._c64(sum(sign_options[j][nu] * prod(thetas[Tuple(mod.(cosets[j][xi], 2))] for xi in 1:4)
+    values = [abs(_c64(sum(sign_options[j][nu] * prod(thetas[Tuple(mod.(cosets[j][xi], 2))] for xi in 1:4)
                                for j in 1:3))) for nu in 1:4]
     best = argmin(values) - 1
     append!(bits, [best & 1, (best >> 1) & 1])

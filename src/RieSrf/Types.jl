@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  RieSrf/Types.jl : shared structs (moved from the files they were used in)
+#  RieSrf/Types.jl 
 #
 ################################################################################
 
@@ -423,7 +423,7 @@ mutable struct RiemannSurfaceModel <: AbstractRiemannSurfaceModel
 
   function RiemannSurfaceModel(f::MPolyRingElem, v::T, prec::Int = 100;
                           parameters::IntegrationParameters = IntegrationParameters()) where T<:Union{PosInf, InfPlc}
-    # Only cheap data is computed here. The basis of differentials, the period
+    # Only basic data is computed here. The basis of differentials, the period
     # matrix and the special points are computed when they are first needed
     # (see _ensure_differentials!, big_period_matrix, _ensure_special_points!).
     RS = new()
@@ -569,14 +569,6 @@ mutable struct SuperellipticEdge
   end
 end
 
-@doc raw"""
-    SuperellipticModel
-
-The model y^m = p(x) of a superelliptic curve (p separable of degree n >= 3)
-on which the period matrices are computed with the algorithm of Molin and
-Neurohr: integrals along the edges of a spanning tree between the branch
-points, with an explicit branch of y = p(x)^(1/m) on each edge.
-"""
 mutable struct SuperellipticModel <: AbstractRiemannSurfaceModel
   surface::Any                 # the RiemannSurface it belongs to
   transform::Any               # identity or swap (3x3 over the base field)
@@ -630,17 +622,6 @@ mutable struct SuperellipticModel <: AbstractRiemannSurfaceModel
   end
 end
 
-@doc raw"""
-    RiemannSurface
-
-The compact Riemann surface of a plane curve f(x, y) = 0 over a number field,
-embedded into the complex numbers. Create it with `riemann_surface`.
-
-The numerical work is done on plane models of the curve (see
-`RiemannSurfaceModel`): the *original* model is the curve as given, the
-*computational* model is the one the period matrices are computed on. See
-`riemann_surface` for how the computational model is chosen.
-"""
 mutable struct RiemannSurface
   # the equation as given by the user, the embedding and the precision
   input_polynomial::MPolyRingElem

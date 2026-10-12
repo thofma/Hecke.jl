@@ -62,5 +62,4 @@ include("RieSrf/Reconstruction/ReconstructNumerics.jl")
 include("RieSrf/Reconstruction/ReconstructCurvesG123.jl")
 include("RieSrf/Reconstruction/ReconstructG4Tables.jl")
 include("RieSrf/Reconstruction/ReconstructG4.jl")
-include("RieSrf/Reconstruction/ReconstructG4Tests.jl")
 end

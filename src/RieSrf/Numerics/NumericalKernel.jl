@@ -37,7 +37,7 @@ the numerical rank `r` used, and `resbound`, an `ArbFieldElem` enclosing
 $\max_{ij} |(A N)_{ij}|$, computed in ball arithmetic on the original `A`.
 
 Certification semantics: the rank and pivot selection are heuristic
-decisions made at machine precision from midpoints; the returned kernel
+decisions made at machine precision from midpoints. The returned kernel
 entries are certified enclosures for the solution of the selected
 $r \times r$ subsystem; `resbound` is a rigorous bound on the residual of
 the full matrix against the returned basis.  If the exact matrix
@@ -61,7 +61,7 @@ function numerical_kernel(A::AcbMatrix; kw...)
   return data.kernel, data.rank, data.residual_bound
 end
 
-# numerical_kernel with the pivots of the decision: `pivot_columns` (r
+# Numerical_kernel with the pivots of the decision: `pivot_columns` (r
 # columns of A, independent if A has rank r; the kernel vectors are 1 at one
 # of the other columns and 0 at the rest of them) and `pivot_rows` (r rows of
 # A with an invertible pivot block, also chosen for nullity 0).
