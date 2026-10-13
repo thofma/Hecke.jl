@@ -25,5 +25,14 @@
 
     @test weighted_equality(DO_invs, map(K, [38, 10, 38, 37, 16, 30, 8, 14, 42, 30, 12, 40, 21]), ws)
     @test weighted_equality(dixmier_ohno_invariants(@inferred reconstruct_from_dixmier_ohno_invariants(DO_invs))[1], DO_invs, ws)
+    @test Hecke.DOBis(f) == DO_invs
+
+    # In these characteristics the third invariant is replaced
+    K = GF(19)
+    R, (x, y, z) = polynomial_ring(K, [:x,:y,:z])
+    f = x^4 + 2*x^3*y + 3*x^2*z^2 + x*y^3 + 5*y^4 + y*z^3 + 7*z^4
+    DO_invs, ws = dixmier_ohno_invariants(f)
+    DO_invs[3] += DO_invs[4]
+    @test Hecke.DOBis(f) == DO_invs
 
 end

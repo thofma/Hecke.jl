@@ -16,6 +16,15 @@
 
     @test weighted_equality(igusa_invariants(C)[1], igusa_invariants(D)[1], [2, 4, 6, 8, 10])
 
+    # A representative of the same invariants for which J15^2 is not a square
+    ig_invs = [2^i * ig_invs[i] for i in 1:5]
+    D = reconstruct_from_igusa_invariants(ig_invs)
+    @test weighted_equality(ig_invs, igusa_invariants(D)[1], [2, 4, 6, 8, 10])
+
+    # No conic for curves with extra automorphisms
+    C = hyperelliptic_curve(x^6 + 3*x^4 + 5*x^2 + 1)
+    @test_throws ErrorException Hecke.compute_conic_and_cubic_generic(igusa_invariants(C)[1])
+
     K, a = number_field(x^2 + 1, :a)
     R, t = polynomial_ring(K, :t)
     C = hyperelliptic_curve(t^5 - a*t + a, R(0))

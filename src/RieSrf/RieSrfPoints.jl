@@ -512,7 +512,7 @@ function ajm_DE_special_point(gamma::CPath, k::Int, RS::RiemannSurface, test_cha
         #If we can't determine correctness by comparing against the test_chain we need to recompute with h/2
         #and compare against the more precise computation done with the smaller step size
         s = length(gammas)
-        if s == 1 then
+        if s == 1
           go_on = true
           h = h/2
           new_prec = false

@@ -20,7 +20,7 @@ mutable struct RiemannSurfaceDivisor
 
   function RiemannSurfaceDivisor(RS::RiemannSurface) 
     D = new()
-    D.RiemannSurface = RS
+    D.riemann_surface = RS
     D.degree = 0
     D.points = RiemannSurfacePoint[]
     D.mults = Int[]
@@ -69,9 +69,7 @@ function divisor(P::Vector{RiemannSurfacePoint}, n::Vector{Int})
 end
 
 function zero_divisor(RS::RiemannSurface)
-  D = RiemannSurfaceDivisor(RS)
-  D.RiemannSurface = RS
-  return D
+  return RiemannSurfaceDivisor(RS)
 end
 
 function riemann_surface(D::RiemannSurfaceDivisor)
@@ -144,7 +142,7 @@ function *(k::Int, P::RiemannSurfacePoint)
 end
 
 function *(k::Int, D::RiemannSurfaceDivisor)
-  if k == 0 then
+  if k == 0
     return zero_divisor(riemann_surface(D))
   end
   points, mults = support(D)

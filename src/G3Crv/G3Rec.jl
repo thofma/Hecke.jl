@@ -2,11 +2,9 @@
 #With permission from Thomas
 
 function DOBis(f::MPolyRingElem{T}) where T
-  R = parent(f)
-  K = base_field(R)
-  p = characteristic(K)
-  DO_invs = dixmier_ohno_invariants(f)
-  if _P in [19, 47, 277, 523]
+  p = characteristic(base_ring(f))
+  DO_invs, _ = dixmier_ohno_invariants(f)
+  if p in [19, 47, 277, 523]
     DO_invs[3] += DO_invs[4]
   end
   return DO_invs

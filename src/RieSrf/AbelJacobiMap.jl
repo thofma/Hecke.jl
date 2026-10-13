@@ -63,7 +63,7 @@ function find_path_on_sheet(gamma::CPath, RS::RiemannSurface)
       pop!(new_path)
       new_path = vcat(new_path, [next_arc, next_line])
     else
-      new_line = c_line(start_point(new_path[end]), integration_points[j][2])
+      new_line = c_line(start_point(new_path[end]), int_points[j][2])
       V = angle((discriminant_points[int_points[j][1]] - base_point_x) 
       * exp((-1)*angle(end_point(gamma) - base_point_x)*i))
       #In case V = 0, we put the orientation to -1
