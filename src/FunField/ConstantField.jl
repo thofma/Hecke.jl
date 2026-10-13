@@ -13,7 +13,9 @@ end
 
 # convert an element of k(x) that is known to be constant to an element of k
 function _constant_to_base(c::Generic.RationalFunctionFieldElem, k::Field)
-  @assert is_constant(c) "Element is not constant"
+  n = numerator(c)
+  d = denominator(c)
+  @assert degree(n) <= 0 && degree(d) == 0 "Element is not constant"
   return k(coeff(n, 0)) // k(coeff(d, 0))
 end
 
