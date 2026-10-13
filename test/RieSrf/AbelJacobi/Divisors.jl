@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "Divisors" begin
   Kxy, (x, y) = polynomial_ring(QQ, [:x, :y])
   RS = RSM.riemann_surface(x^6 + x^2 + 1 - y^2, 100, integration_method = "heuristic")

@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "Differentials" begin
   @testset "Baker basis certified modulo p" begin
     f = FAST_CURVES[9][2]                                 # g6: y^4 + x^4 - 1, genus 3

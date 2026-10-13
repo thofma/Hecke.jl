@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "Algebraization" begin
   RSM = Hecke.RiemannSurfaces
   Qt, t = polynomial_ring(QQ, :t)

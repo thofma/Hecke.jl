@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "IntegrationParameters" begin
   @testset "Integration parameters and lazy construction" begin
     f = FAST_CURVES[5][2]                                 # f2, genus 2

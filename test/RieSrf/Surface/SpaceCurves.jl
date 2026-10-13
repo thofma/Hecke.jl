@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "SpaceCurves" begin
   @testset "Curves in projective space" begin
     P3, (X, Y, Z, W) = polynomial_ring(QQ, [:X, :Y, :Z, :W])

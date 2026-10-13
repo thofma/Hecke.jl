@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "AnalyticContinuation" begin
   @testset "Stress: nearly coinciding branch points" begin
     ks = riesrf_long_tests() ? (2, 5, 10, 20, 30, 40) : (2, 5, 10)

@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "PeriodMatrix" begin
   @testset "Sanity checks: $name" for (name, f, g) in FAST_CURVES
     RS = _computed(_rs(f, 100))

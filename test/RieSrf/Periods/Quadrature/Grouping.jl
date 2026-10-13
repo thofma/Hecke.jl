@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "Grouping" begin
   RR = ArbField(128)
   rs = [RR(r) for r in (1.05, 1.1, 1.5, 2.0, 2.1, 3.0, 4.5)]

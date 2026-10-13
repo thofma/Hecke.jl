@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 @testset "ParallelIntegration" begin
   # every abscissa (node index 2, ..., N + 1) is owned by exactly one chunk
   for (N, chunk_len) in ((10, 4), (7, 16), (16, 16))

@@ -1,6 +1,3 @@
-isdefined(Main, :RSM) || include(joinpath(Hecke.pkgdir, "test", "RieSrfHelpers", "TestHelpers.jl"))
-global Qxy = RIESRF_RING; global x, y = gens(RIESRF_RING)   # may have been rebound by other test files
-
 function _endomorphism_structure_case(f, F, v)
   RS = RSM.riemann_surface(f, v, 500)
   P = RSM.big_period_matrix(RS)
