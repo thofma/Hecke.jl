@@ -28,6 +28,11 @@ function _random_k_combination(B::Vector, k::Field)
   end
 end
 
+@doc raw"""
+    exact_constant_field_degree(K::AbsSimpleFunctionField) -> Int
+
+Return the degree of the exact constant field k' over the base field k.
+"""
 @attr Int function exact_constant_field_degree(F::Generic.AbsSimpleFunctionField)
   @req _is_separable(F) "Currently assumes separable extension"
 
@@ -40,9 +45,9 @@ end
 
 
 @doc raw"""
-    exact_constant_field(K::AbsSimpleFunctionField) -> Field
+    exact_constant_field(K::AbsSimpleFunctionField) -> Field, Map
 
-Return the exact constant field of K.
+Return the exact constant field k' of K and the embedding of k' into K.
 """
 function exact_constant_field(F::Generic.AbsSimpleFunctionField)
   return get_attribute!(F, :exact_constant_field) do
