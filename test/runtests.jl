@@ -134,22 +134,6 @@ setup_file = joinpath(Hecke.pkgdir, "test", "setup.jl")
 #
 ################################################################################
 
-function gather_test_files(path::AbstractString)
-  isfile(path) && return [String(path)]
-
-  tests = String[]
-  for (root, dirs, files) in walkdir(path)
-    for file in files
-      (startswith(file, '.') || !endswith(file, ".jl")) && continue
-      # A file with a matching directory is an include-only wrapper. Run the
-      # files below the directory directly to create sufficiently many jobs.
-      splitext(file)[1] in dirs && continue
-      push!(tests, joinpath(root, file))
-    end
-  end
-  return tests
-end
-
 @everywhere function current_rss()
   rss = Ref{Csize_t}(0)
   err = ccall(:uv_resident_set_memory, Cint, (Ref{Csize_t},), rss)
@@ -165,7 +149,7 @@ end
   end
 
   try
-    stats = @timed Base.include(identity, Main, path)
+    stats = @timed Hecke._include_test(path)
     if has_compile_time_stat
       compile_time = stats.compile_time
       recompile_time = stats.recompile_time
@@ -221,7 +205,7 @@ if short_test
   push!(testlist, joinpath(test_directory, "Aqua.jl"))
   push!(testlist, joinpath(Hecke.pkgdir, "system", "precompile.jl"))
 else
-  test_exclude = ["setup.jl", "runtests.jl", "Aqua.jl", "threads.jl"]
+  test_exclude = ["setup.jl", "setup_tests.jl", "runtests.jl", "Aqua.jl", "threads.jl"]
   long_tests = ["FieldFactory.jl"]
 
   push!(testlist, joinpath(test_directory, "Aqua.jl"))
@@ -233,7 +217,7 @@ else
 
     test_subdirectory = joinpath(test_directory, splitext(test)[1])
     if isdir(test_subdirectory)
-      append!(testlist, gather_test_files(test_subdirectory))
+      append!(testlist, Hecke._gather_test_files(test_subdirectory))
     else
       push!(testlist, joinpath(test_directory, test))
     end
