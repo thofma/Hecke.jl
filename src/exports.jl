@@ -347,6 +347,8 @@ export euclid
 export euler_phi_inv
 export evaluation_function
 export even_sublattice
+export exact_constant_field
+export exact_constant_field_degree
 export excess
 export exponent
 export exponential_integral
