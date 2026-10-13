@@ -211,10 +211,14 @@ function Hecke.pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPol
 
   #M maps pth powers of coordinates of b to coordinates of b^p s.th.
   #a = b^p = coordinates(b).^p * M * basis(F).
-  M = matrix(base_ring(F), [coordinates(b^p) for b in basis(F)])
-  Minv = inv(M)
+  #For repeated use: set_attribute!(F, :power_matrix_ctx, solve_init(M)).
+  if has_attribute(F, :power_matrix_ctx)
+    M = get_attribute(F, :power_matrix_ctx)
+  else
+    M = matrix(base_ring(F), [coordinates(b^p) for b in basis(F)])
+  end
 
-  coord = coordinates(a)*Minv #pth powers of coordinates of b
+  coord = solve(M, coordinates(a))
   for i in 1:n
     c = coord[i]
 
