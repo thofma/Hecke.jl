@@ -215,7 +215,8 @@ function Hecke.pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPol
   if has_attribute(F, :power_matrix_ctx)
     M = get_attribute(F, :power_matrix_ctx)
   else
-    M = matrix(base_ring(F), [coordinates(b^p) for b in basis(F)])
+    M = solve_init(matrix(base_ring(F), [coordinates(b^p) for b in basis(F)]))
+    set_attribute!(F, :power_matrix_ctx, M)
   end
 
   coord = solve(M, coordinates(a))
