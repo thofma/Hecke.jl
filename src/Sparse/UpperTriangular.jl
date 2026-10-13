@@ -4,6 +4,75 @@
 #
 ################################################################################
 
+function diagonal_form_with_transform(A::SMat, left=false, right=false)
+  n = 1
+  if left == true
+    C = sparse_matrix(ZZ, 0, nrows(A))
+    for i in 1:nrows(A)
+      push!(C, sparse_row(ZZ, [(i, ZZ(1))]))
+    end
+  end
+  if right == true
+    D = sparse_matrix(ZZ, 0, ncols(A))
+    for i in 1:ncols(A)
+      push!(D, sparse_row(ZZ, [(i, ZZ(1))]))
+    end
+  end
+  while(!is_diagonal(A))
+    if n % 2 == 1
+      if left == false
+        hnf!(A, truncate=false, full_hnf=true, auto=false)
+      else
+ 	I = sparse_matrix(ZZ, 0, nrows(A))
+        for i in 1:nrows(A)
+          push!(I, sparse_row(ZZ, [(i, ZZ(1))]))
+        end
+        hnf_with_trafo!(A, I, truncate=false, full_hnf=true, auto=false)
+      	R = sparse_matrix(base_ring(C), nrows(I), ncols(C))
+        for (i, row) in enumerate(I.rows)
+          rR = row * C
+          R[i] = rR
+        end
+        C = R
+      end
+      A = transpose(A)
+      n = n + 1
+    else
+      if right == false
+        hnf!(A, truncate=false, full_hnf=true, auto=false)
+      else
+        I = sparse_matrix(ZZ, 0, ncols(A))
+        for i in 1:ncols(A)
+          push!(I, sparse_row(ZZ, [(i, ZZ(1))]))
+        end
+        hnf_with_trafo!(A, I, truncate=false, full_hnf=true, auto=false)
+        R = sparse_matrix(base_ring(D), nrows(I), ncols(D))
+        for (i, row) in enumerate(I.rows)
+          rR = row * D
+          R[i] = rR
+        end
+        D = R
+      end
+      A = transpose(A)
+      n = n + 1
+    end
+  end
+  if n % 2 == 0
+    A = transpose(A)
+  end
+  if left == true && right == true
+    return C, A, transpose(D)
+  end
+  if left == true
+    return C, A
+  end
+  if right == true
+    return A, transpose(D)
+  else
+    return A
+  end
+end    
+
 @doc raw"""
     diagonal(A::SMat) -> ZZRingElem[]
 
