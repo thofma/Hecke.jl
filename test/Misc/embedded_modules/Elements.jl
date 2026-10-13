@@ -96,6 +96,68 @@ end
   end
 end
 
+@testset "coordinate reconstruction and validation" begin
+  M = Hecke.embedded_module(ZZ, QQ, QQ[2 1 0; 0 3 1]; is_basis_matrix = true)
+  c = ZZRingElem[2, -1]
+  a = Hecke._element_from_coordinates(M, c)
+  @test elem_type(typeof(M)) === typeof(a)
+  @test parent_type(typeof(a)) === typeof(M)
+  @test Hecke.ambient_coordinates(a) == QQFieldElem[4, -1, -1]
+  @test coordinates(Hecke._element_from_ambient_coordinates(M, Hecke.ambient_coordinates(a))) == c
+  @test_throws ArgumentError Hecke._element_from_coordinates(M, ZZRingElem[1])
+  @test_throws ArgumentError Hecke._element_from_coordinates(M, ZZ[1 2; 3 4])
+  @test_throws ArgumentError Hecke._element_from_ambient_coordinates(M, QQFieldElem[1, 2])
+  @test_throws ArgumentError Hecke._element_from_coordinates_and_ambient_coordinates(M, c, QQFieldElem[1, 0, 0])
+
+  v = Hecke.ambient_coordinates(a)
+  v[1] = QQ(99)
+  @test Hecke.ambient_coordinates(a) == QQFieldElem[4, -1, -1]
+  @test Hecke.ambient_coordinates(a; copy = false) === Hecke.ambient_coordinates(a; copy = false)
+
+  Z = Hecke.zero_embedded_module(ZZ, QQ, 3)
+  z = Hecke._element_from_coordinates(Z, ZZRingElem[])
+  @test Hecke.ambient_coordinates(z) == QQFieldElem[0, 0, 0]
+end
+
+@testset "Dedekind element coordinates" begin
+  K, a = quadratic_field(-5)
+  O = maximal_order(K)
+  J = ideal(O, 2, O(1 + a))
+  I = fractional_ideal(O, J, 2)
+  II = fractional_ideal(O, J)
+  B = K[1 0 0; 0 1 0]
+  M = Hecke.embedded_module(O, K, pseudo_matrix(O, B, [I, II]); is_basis_matrix = true)
+  c = elem_type(K)[(1 + a)//2, K(2)]
+  v = elem_type(K)[c[1], c[2], K(0)]
+  x = Hecke._element_from_ambient_coordinates(M, v)
+  y = Hecke._element_from_coordinates(M, c)
+
+  @test coordinates(x) == c
+  @test Hecke.ambient_coordinates(y) == v
+  @test elem_type(typeof(M)) === typeof(x)
+  @test v in M
+  @test_throws ArgumentError Hecke._element_from_coordinates(M, elem_type(K)[K(0), K(1)])
+  @test_throws ArgumentError Hecke._element_from_ambient_coordinates(M, elem_type(K)[K(0), K(1), K(0)])
+  @test_throws ArgumentError Hecke._element_from_ambient_coordinates(M, elem_type(K)[K(0), K(0), K(1)])
+  @test coordinates(Hecke._element_from_ambient_coordinates(M, v; check = false)) == c
+  @test_throws ErrorException coordinates(Hecke._element_from_ambient_coordinates(M, elem_type(K)[K(0), K(1), K(0)]; check = false))
+  @test coordinates(Hecke._element_from_coordinates_and_ambient_coordinates(M, c, v)) == c
+
+  V = matrix(K, 2, 3, [v; 2*v])
+  fl, C = Hecke._in(V, M, Val(true))
+  @test fl
+  @test C*B == V
+  @test V in M
+  V[2, 3] = K(1)
+  @test !(V in M)
+  @test !first(Hecke._in(V, M, Val(true)))
+
+  Z = Hecke.zero_embedded_module(O, K, 3)
+  z = Hecke._element_from_coordinates(Z, elem_type(K)[])
+  @test Hecke.ambient_coordinates(z) == elem_type(K)[K(0), K(0), K(0)]
+  @test coordinates(Hecke._element_from_ambient_coordinates(Z, elem_type(K)[K(0), K(0), K(0)])) == elem_type(K)[]
+end
+
 @testset "pseudo elements and Dedekind domains" begin
   p = Hecke._pseudo_element(QQ(2), ZZ)
   q = Hecke._pseudo_element(QQ(3), ZZ)
