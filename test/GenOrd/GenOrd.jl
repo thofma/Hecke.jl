@@ -1,3 +1,16 @@
+@testset "Function field basis" begin
+  for k in [GF(3), QQ]
+    K, x = rational_function_field(k, :x)
+    R, y = polynomial_ring(K, :y)
+    for d in 1:3
+      F, a = function_field(y^d - x)
+      B = @inferred basis(F)
+      @test length(B) == degree(F) == d
+      @test B == [a^i for i in 0:(d - 1)]
+    end
+  end
+end
+
 @testset "GenOrd" begin
   # Test first the ring interface
   Qx, x = QQ["x"]
