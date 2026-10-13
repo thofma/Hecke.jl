@@ -583,7 +583,7 @@ Return the genus of F.
   dDiff = d1 - d2
   @assert iseven(dDiff)
 
-  m = exact_constant_field_degree(F)
+  m = constant_field_degree(F)
   return 1 + divexact(dDiff - 2*degree(F), 2*m)
 end
 

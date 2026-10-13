@@ -250,6 +250,7 @@ export conjugates_log
 export conjugates_real
 export constant_coefficient
 export constant_field
+export constant_field_degree
 export contains_equation_order
 export content_ideal
 export contract
@@ -279,6 +280,7 @@ export decompose_into_p_rings
 export decomposition_field
 export decomposition_group
 export deepcopy
+export defining_constant_field
 export defining_modulus
 export defining_polynomial
 export defining_polynomials
@@ -347,8 +349,6 @@ export euclid
 export euler_phi_inv
 export evaluation_function
 export even_sublattice
-export exact_constant_field
-export exact_constant_field_degree
 export excess
 export exponent
 export exponential_integral

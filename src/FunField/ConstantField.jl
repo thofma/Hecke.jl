@@ -1,9 +1,10 @@
 @doc raw"""
-    constant_field(K::AbsSimpleFunctionField) -> Field
+    defining_constant_field(K::AbsSimpleFunctionField) -> Field
 
-Return the field of constants of K.
+Let K be a field extension of k(x).
+Return the field k over which the base field k(x) is defined.
 """
-function constant_field(K::AbstractAlgebra.Generic.AbsSimpleFunctionField)
+function defining_constant_field(K::AbstractAlgebra.Generic.AbsSimpleFunctionField)
   return base_ring(base_ring(K))
 end
 
@@ -29,11 +30,12 @@ function _random_k_combination(B::Vector, k::Field)
 end
 
 @doc raw"""
-    exact_constant_field_degree(K::AbsSimpleFunctionField) -> Int
+    constant_field_degree(K::AbsSimpleFunctionField) -> Int
 
-Return the degree of the exact constant field k' over the base field k.
+Let K be a field extension of k(x). And let k' be the constant field of K. 
+Return the degree of k' over the defining constant field k.
 """
-@attr Int function exact_constant_field_degree(F::Generic.AbsSimpleFunctionField)
+@attr Int function constant_field_degree(F::Generic.AbsSimpleFunctionField)
   @req _is_separable(F) "Currently assumes separable extension"
 
   Ofin = finite_maximal_order(F)
@@ -45,22 +47,24 @@ end
 
 
 @doc raw"""
-    exact_constant_field(K::AbsSimpleFunctionField) -> Field, Map
+    constant_field(K::AbsSimpleFunctionField) -> Field, Map
 
-Return the exact constant field k' of K and the embedding of k' into K.
+Return the constant field k' of K and the embedding of k' into K.
+This can differ from the defining constant field k used for the
+base field k(x).
 """
-function exact_constant_field(F::Generic.AbsSimpleFunctionField)
-  return get_attribute!(F, :exact_constant_field) do
-    _exact_constant_field(F)
+function constant_field(F::Generic.AbsSimpleFunctionField)
+  return get_attribute!(F, :constant_field) do
+    _constant_field(F)
   end::Tuple{Field, Map}
 end
 
-function _exact_constant_field(F::Generic.AbsSimpleFunctionField)
+function _constant_field(F::Generic.AbsSimpleFunctionField)
   @req _is_separable(F) "Currently assumes separable extension"
 
-  k = constant_field(F)
+  k = defining_constant_field(F)
   kx = base_field(F)
-  m = exact_constant_field_degree(F)
+  m = constant_field_degree(F)
 
   #Check if the exact constant field is already the constant field.
   if m == 1
