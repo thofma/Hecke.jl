@@ -80,7 +80,7 @@ end
 
 function Hecke.basis(F::Generic.AbsSimpleFunctionField)
   a = gen(F)
-  bas = [a^0, a]
+  bas = [one(F)]
   while length(bas) < degree(F)
     push!(bas, bas[end]*a)
   end
