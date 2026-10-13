@@ -24,7 +24,7 @@
 
   N = Hecke.embedded_module(ZZ, QQ, QQ[4 0; 0 6]; overstructure = ambient)
   @test issubset(N, M)
-  @test Hecke.index(N, M) == 4
+  @test module_index(N, M) == ideal(ZZ, 4)
 
   P = Hecke.embedded_module(ZZ, QQ, QQ[1 0; 0 3]; overstructure = ambient)
   @test !issubset(P, M)
@@ -43,4 +43,38 @@
   @test !Hecke.is_compatible(M, N_incompatible)
   @test_throws ArgumentError M + N_incompatible
   @test_throws ArgumentError issubset(N_incompatible, M)
+end
+
+@testset "PID hashing independent of the basis" begin
+  F, t = rational_function_field(GF(7), "t")
+  Rinf = localization(F, degree)
+  for (R, K, u, a) in ((ZZ, QQ, ZZ(-1), QQ(1//2)),
+                        (parent(numerator(t)), F, parent(numerator(t))(3), inv(t)),
+                        (Rinf, F, Rinf(t/(t + 1)), t))
+    for B in (matrix(K, 1, 1, [a]), K[a 0; 0 3],
+              K[a 1 0; 0 3 1], zero_matrix(K, 0, 3))
+      U = identity_matrix(R, nrows(B))
+      if nrows(B) > 0
+        U[1, 1] = u
+      end
+      if nrows(B) > 1
+        U[1, 2] = one(R)
+      end
+      C = change_base_ring(K, U)*B
+      original_B, original_C = deepcopy(B), deepcopy(C)
+      M = Hecke.embedded_module(R, K, B; is_basis_matrix = true)
+      N = Hecke.embedded_module(R, K, C; is_basis_matrix = true)
+      P = Hecke.embedded_module(R, K, deepcopy(B))
+      @test M == N == P
+      @test (@inferred module_index(N, M)) == ideal(R, one(R))
+      @test gen(module_index(N, M)) == one(R)
+      @test (@inferred hash(M)) == hash(N) == hash(P)
+      @test hash(M, UInt(42)) == hash(N, UInt(42))
+      @test length(Set([M, N, P])) == 1
+      @test Dict(M => 1)[N] == 1
+      @test basis_matrix(M) == original_B
+      @test basis_matrix(N) == original_C
+      @test hash(M) == hash(N)
+    end
+  end
 end

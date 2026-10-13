@@ -29,6 +29,7 @@ import ..Hecke:
   can_solve_with_solution,
   change_base_ring,
   codomain,
+  compose,
   coordinates,
   decompose,
   dense_matrix_type,
@@ -40,6 +41,7 @@ import ..Hecke:
   fraction_field_map,
   free_module,
   hom,
+  ideal,
   image,
   invariant_factors,
   is_compatible,
@@ -55,6 +57,7 @@ import ..Hecke:
   mul!,
   ncols,
   nrows,
+  parent_type,
   preimage,
   quo,
   residue_field,
@@ -83,12 +86,13 @@ export _PID
 export _RingType
 export _ring_type
 export _check_compatible
+export _coordinate_ring
 export _element_from_ambient_coordinates
 export _element_from_coordinates
 export _element_from_coordinates_and_ambient_coordinates
 export _embedded_module_type
 export _in
-export _map
+export _map_to_ambient
 export _pseudo_element
 export _tmp_mat_overring
 export ambient_coordinates
@@ -105,7 +109,7 @@ export fractional_ideal
 export generator_matrix
 export has_full_rank
 export index_multiple
-export index
+export module_index
 export overring
 export overstructure
 export quotient_vector_space
@@ -127,12 +131,13 @@ import .EmbeddedModules:
   _PID,
   _RingType,
   _check_compatible,
+  _coordinate_ring,
   _element_from_ambient_coordinates,
   _element_from_coordinates,
   _element_from_coordinates_and_ambient_coordinates,
   _embedded_module_type,
   _in,
-  _map,
+  _map_to_ambient,
   _pseudo_element,
   _ring_type,
   _tmp_mat_overring,
@@ -148,8 +153,8 @@ import .EmbeddedModules:
   fractional_ideal,
   generator_matrix,
   has_full_rank,
-  index,
   index_multiple,
+  module_index,
   overring,
   overstructure,
   quotient_embedded_module,

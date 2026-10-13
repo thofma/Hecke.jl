@@ -15,6 +15,8 @@ _can_canonicalize(::Type{<:PolyRingElem{T}}) where {T <: FieldElem} = true
 
 _can_canonicalize(::Type{<:FieldElem}) = true
 
+_can_canonicalize(::Type{<:KInftyElem}) = true
+
 function _canonicalize(x::ZZRingElem)
   if x > 0
     return x
@@ -32,6 +34,8 @@ function _canonicalize(x::PolyRingElem{ <: FieldElem})
 end
 
 _canonicalize(x::FieldElem) = iszero(x) ? x : one(x)
+
+_canonicalize(x::KInftyElem) = iszero(x) ? x : divexact(x, canonical_unit(x))
 
 _canonicalize(x) = x
 
@@ -54,6 +58,14 @@ function ideal(R::PolyRing{<:FieldElem}, xs::Vector)
   return _ideal_pid(R, xs)
 end
 
+function ideal(R::KInftyRing, x::RingElement, y::RingElement...)
+  return _ideal_pid(R, x, y...)
+end
+
+function ideal(R::KInftyRing, xs::Vector)
+  return _ideal_pid(R, xs)
+end
+
 function ideal(R::Field, x::RingElement, y::RingElement...)
   return _ideal_pid(R, x, y...)
 end
@@ -65,6 +77,8 @@ end
 ideal_type(::Type{T}) where {T<:Field} = PIDIdeal{elem_type(T)}
 
 ideal_type(::Type{T}) where {T<:PolyRing{<:FieldElem}} = PIDIdeal{elem_type(T)}
+
+ideal_type(::Type{T}) where {T<:KInftyRing} = PIDIdeal{elem_type(T)}
 
 
 # Show

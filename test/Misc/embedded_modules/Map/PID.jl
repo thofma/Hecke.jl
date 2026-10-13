@@ -1,3 +1,34 @@
+@testset "internal PID maps from coordinate matrices" begin
+  E = Hecke.EmbeddedModules
+  F, t = rational_function_field(GF(7), "t")
+  Rinf = localization(F, degree)
+  for (R, K, s) in ((ZZ, QQ, ZZ(3)),
+                    (parent(numerator(t)), F, numerator(t)),
+                    (Rinf, F, Rinf(inv(t))))
+    M = Hecke.embedded_module(R, K, K[1//2 0 0 0; 0 3 0 0])
+    P = Hecke.embedded_module(R, K, identity_matrix(K, 3))
+    B, D = basis(M), basis(P)
+    A = matrix(R, 2, 3, [s, one(R), zero(R), zero(R), s, one(R)])
+    f = @inferred E._hom(M, P, A)
+    @test domain(f) === M && codomain(f) === P
+    x = 3*B[1] - 2*B[2]
+    @test (@inferred f(x)) == 3*s*D[1] + (3 - 2*s)*D[2] - 2*D[3]
+    @test (@inferred preimage(f, f(x))) == x
+    @test is_injective(f) && !is_surjective(f)
+    @test iszero(rank(kernel(f)))
+    @test rank(image(f)) == 2
+    @test occursin(" -> ", sprint(show, MIME"text/plain"(), f))
+    @test_throws ArgumentError E._hom(M, P, zero_matrix(R, 1, 3))
+    @test_throws ArgumentError E._hom(M, P, zero_matrix(R, 2, 2))
+    @test_throws ArgumentError E._hom(M, P, zero_matrix(K, 2, 3))
+    Z = Hecke.zero_embedded_module(R, K, 4)
+    @test_throws ArgumentError E._hom(Z, P, zero_matrix(R, 0, 2))
+  end
+  M = Hecke.embedded_module(ZZ, QQ, identity_matrix(QQ, 2))
+  P = Hecke.embedded_module(parent(numerator(t)), F, identity_matrix(F, 3))
+  @test_throws ArgumentError E._hom(M, P, zero_matrix(ZZ, 2, 3))
+end
+
 @testset "integer PID maps" begin
   source_ambient = Ref(:source)
   target_ambient = Ref(:target)

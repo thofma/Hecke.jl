@@ -8,6 +8,17 @@ function hom(M::EmbeddedModule{_PID}, X, images::Vector)
                            EmbeddedModuleMapPIDData(M, X, identity, images))
 end
 
+function _hom(M::EmbeddedModule{_PID}, P::EmbeddedModule{_PID}, A::MatElem)
+  @req ring(M) === ring(P) "The modules must have the same coefficient ring"
+  @req base_ring(A) === ring(M) "The matrix must be over the coefficient ring"
+  @req nrows(A) == rank(M) && ncols(A) == rank(P) "The matrix has the wrong dimensions"
+  images = elem_type(P)[_element_from_coordinates(P, A[i, :]; check = false)
+                       for i in 1:nrows(A)]
+  f = hom(M, P, images)
+  data(f).data.matrix = A
+  return f
+end
+
 function hom(M::EmbeddedModule{_PID}, X, imgs::Vector{<:Pair})
   @req all(p -> first(p) isa EmbeddedModuleElem && parent(first(p)) === M,
            imgs) "Source elements must belong to the domain"

@@ -10,8 +10,8 @@
   command = Hecke._test_command(test_files, setup_file; long = false,
                                 with_gap = false, with_polymake = false)
   setup_range = findfirst("include($(repr(setup_file)))", command)
-  first_test_range = findfirst("include($(repr(test_files[1])))", command)
-  second_test_range = findfirst("include($(repr(test_files[2])))", command)
+  first_test_range = findfirst("Hecke._include_test($(repr(test_files[1])))", command)
+  second_test_range = findfirst("Hecke._include_test($(repr(test_files[2])))", command)
   @test setup_range !== nothing
   @test first_test_range !== nothing
   @test second_test_range !== nothing

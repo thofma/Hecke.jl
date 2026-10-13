@@ -517,6 +517,31 @@ function _test_file(x::AbstractString)
   end
 end
 
+function _gather_test_files(path::AbstractString)
+  isfile(path) && return [String(path)]
+
+  tests = String[]
+  for (root, dirs, files) in walkdir(path)
+    for file in files
+      (startswith(file, '.') || !endswith(file, ".jl")) && continue
+      file == "setup_tests.jl" && continue
+      # A file with a matching directory is an include-only wrapper. Run the
+      # files below the directory directly to create sufficiently many jobs.
+      splitext(file)[1] in dirs && continue
+      push!(tests, joinpath(root, file))
+    end
+  end
+  return tests
+end
+
+function _include_test(path::AbstractString)
+  setup_file = joinpath(dirname(path), "setup_tests.jl")
+  if isfile(setup_file)
+    Base.include(Main, setup_file)
+  end
+  return Base.include(Main, path)
+end
+
 function _test_command(test_files::Vector{String}, setup_file::String;
                        long::Bool, with_gap::Bool, with_polymake::Bool)
   statements = String["using Test", "using Hecke"]
@@ -526,7 +551,7 @@ function _test_command(test_files::Vector{String}, setup_file::String;
                        "_with_gap = $with_gap",
                        "_with_polymake = $with_polymake",
                        "include($(repr(setup_file)))"])
-  append!(statements, ["include($(repr(test_file)))" for test_file in test_files])
+  append!(statements, ["Hecke._include_test($(repr(test_file)))" for test_file in test_files])
   return join(statements, "; ") * ";"
 end
 
@@ -538,6 +563,9 @@ end
 Run one or more test files from Hecke's `test` directory. File names can be
 given with or without the `.jl` suffix. If `new` is `true`, all requested files
 are run in one newly spawned Julia session.
+
+If there is a file `setup_tests.jl` in the same directory as a test file, it is
+included before that test file. Setup files in parent directories are ignored.
 """
 function test_module(x::AbstractString, new::Bool = true; long::Bool = false,
                      with_gap::Bool = false, with_polymake::Bool = false,
@@ -571,7 +599,7 @@ function test_module(xs::AbstractVector{<:AbstractString}, new::Bool = true;
     @info "Running tests in same session" files = String.(xs)
     Base.include(Main, setup_file)
     for test_file in test_files
-      Base.include(Main, test_file)
+      _include_test(test_file)
     end
   end
 end
@@ -745,6 +773,7 @@ include("FieldFactory.jl")
 include("RieSrf.jl")
 include("../examples/NFDB.jl")
 include("FiniteRings/FiniteRings.jl")
+include("AssociativeAlgebraLattice.jl")
 
 const _RealRings = _RealRing[_RealRing()]
 
