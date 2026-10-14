@@ -19,8 +19,9 @@ is `true`, check that `a` belongs to `L`.
 """
 function (L::AssociativeAlgebraLattice)(a::AbstractAssociativeAlgebraElem; check::Bool = true)
   @req parent(a) === algebra(L) "The element and lattice have different ambient algebras"
-  m = _element_from_ambient_coordinates(underlying_module(L), coefficients(a; copy = true); check)
-  return AssociativeAlgebraLatticeElem(L, m)
+  b = copy(a)
+  m = _element_from_ambient_coordinates(underlying_module(L), coefficients(b; copy = false); check)
+  return AssociativeAlgebraLatticeElem(L, m, b)
 end
 
 @doc raw"""

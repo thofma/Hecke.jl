@@ -44,4 +44,12 @@ mutable struct AssociativeAlgebraLatticeElem{LatticeType, ModuleElemType, Algebr
     @req parent(m) === underlying_module(L) "The element belongs to a different embedded module"
     return new{typeof(L), typeof(m), elem_type(algebra(L))}(L, m)
   end
+
+  function AssociativeAlgebraLatticeElem(L::AssociativeAlgebraLattice,
+                                       m::EmbeddedModuleElem,
+                                       a::AbstractAssociativeAlgebraElem)
+    @req parent(m) === underlying_module(L) "The element belongs to a different embedded module"
+    @req parent(a) === algebra(L) "The element belongs to a different ambient algebra"
+    return new{typeof(L), typeof(m), elem_type(algebra(L))}(L, m, a)
+  end
 end

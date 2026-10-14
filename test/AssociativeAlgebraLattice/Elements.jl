@@ -118,6 +118,11 @@
     @test Hecke.elem_in_module(x) === Hecke.elem_in_module(x)
 
     m = Hecke._element_from_coordinates(Hecke.underlying_module(L), ZZRingElem[2, -1])
+    aa = copy(a)
+    z = @inferred Hecke.AssociativeAlgebraLatticeElem(L, m, aa)
+    @test Hecke.elem_in_module(z) == m
+    @test Hecke.elem_in_algebra(z) == aa
+    @test coordinates(z) == coordinates(x)
     y = L(m)
     coordinates(m; copy = false)[1] = ZZ(99)
     @test coordinates(y) == ZZRingElem[2, -1]
@@ -125,6 +130,9 @@
 
     A2 = matrix_algebra(QQ, 2)
     @test_throws ArgumentError L(basis(A2)[1])
+    @test_throws ArgumentError Hecke.AssociativeAlgebraLatticeElem(L, m, one(A2))
+    L2 = Hecke.lattice(A, ZZ, basis(A))
+    @test_throws ArgumentError Hecke.AssociativeAlgebraLatticeElem(L2, m, aa)
     lazy = L(a; check = false)
     @test coordinates(lazy) == coordinates(x)
     @test_throws ArgumentError L(QQ(1//4)*b[1])
