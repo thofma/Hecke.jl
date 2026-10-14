@@ -4,8 +4,17 @@
   A = StructureConstantAlgebra(f)
 
   @testset "divexact" begin
-    @test divexact(A([1,1]), A([1,1])) == one(A)
-    @test_throws ErrorException divexact(zero(A), zero(A))
+    for side in (:left, :right)
+      @test divexact(A([1,1]), A([1,1]), side) == one(A)
+      @test_throws ErrorException divexact(zero(A), zero(A), side)
+    end
+    @test_throws MethodError divexact(one(A), one(A))
+
+    M = matrix_algebra(QQ, 2)
+    a = M(QQ[1 1; 0 1])
+    b = M(QQ[1 0; 1 1])
+    @test divexact(a*b, a, :left) == b
+    @test divexact(a*b, b, :right) == a
   end
 
   @testset "Is integral" begin
