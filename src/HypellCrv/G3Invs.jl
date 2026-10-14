@@ -26,7 +26,7 @@ function shioda_invariants(f::MPolyRingElem{T}) where T
   J9 = transvectant(n, h, 4)
   J10 = transvectant(q, h, 4)
 
-  return map(x-> K(evaluate(x, [0,0])),[J2, J3, J4, J5, J6, J7, J8, J9, J10])
+  return map(x-> K(evaluate(x, [K(0),K(0)])),[J2, J3, J4, J5, J6, J7, J8, J9, J10])
 end
 
 
