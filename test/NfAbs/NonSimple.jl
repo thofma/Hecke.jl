@@ -9,6 +9,10 @@
   @test !is_simple(K)
   @test !is_simple(AbsNonSimpleNumField)
 
+  @testset "conformance" begin
+    ConformanceTests.test_Field_interface_recursive(K)
+  end
+
   @testset "Basics" begin
     @test QQ == @inferred base_ring(K)
     @test 6 == @inferred degree(K)

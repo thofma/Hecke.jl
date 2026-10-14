@@ -4,6 +4,11 @@
   Ky, y = K["y"]
   L, (a, b) = @inferred number_field([y^2 - 3, y^3 - 5])
 
+  @testset "conformance" begin
+    M, _ = number_field([y^2 - 3, y^2 - 5], "b")
+    ConformanceTests.test_Field_interface_recursive(M)
+  end
+
   @testset "Basics" begin
     @test K == @inferred base_field(L)
     @test 6 == @inferred degree(L)
@@ -35,6 +40,7 @@
         @test hash(e, UInt(123)) == hash(e_copy, UInt(123))
         @test Dict(e => 1)[e_copy] == 1
       end
+      @test hash((c + d) - d) == hash(c)
     end
   end
 
