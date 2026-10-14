@@ -136,8 +136,7 @@ function _local_height(P::EllipticCurvePoint{T}, p, v::DiscreteValuation{T}, pre
   h_offset = 2 * divexact(ZZ(valuation(v, discriminant(Eorig))) - ld.discriminant_valuation, 12)
 
   E = ld.minimal_model
-  P = isomorphism(Eorig, E)(P)
-
+  P = ld.isomorphism(P)
   x, y = P[1], P[2]
 
   a1, a2, a3, a4, a6 = a_invariants(E)

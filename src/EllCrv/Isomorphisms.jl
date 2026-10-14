@@ -13,38 +13,6 @@
 #
 ###############################################################################
 
-
-mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCrvIso} where T<:RingElem
-  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
-  domain::EllipticCurve{T}
-  codomain::EllipticCurve{T}
-  data::Tuple{T, T, T, T}
-
-  function EllCrvIso(E::EllipticCurve{T}, data::Vector{T}) where T <:RingElem
-    f = new{T}()
-    f.domain = E
-
-    if length(data)!= 4
-      throw(DomainError(T, "Array needs to have length 4"))
-    end
-    r, s, t, u = data[1], data[2], data[3], data[4]
-    f.data = (r, s, t, u)
-    a1, a2, a3, a4, a6 = a_invariants(E)
-
-    a1new = divexact(a1 + 2*s, u)
-    a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
-    a3new = divexact(a3 + r*a1 + 2*t, u^3)
-    a4new = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
-    a6new = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
-
-    F = elliptic_curve([a1new, a2new, a3new, a4new, a6new])
-    f.codomain = F
-    f.header = MapHeader(E, F)
-    return f
-  end
-
-end
-
 @doc raw"""
     id_hom(E::EllipticCurve) -> EllCrvIso
 
@@ -412,17 +380,15 @@ function preimage(f::EllCrvIso, P::EllipticCurvePoint)
   return Q
 end
 
+function _compose_rstu((r1, s1, t1, u1), (r2, s2, t2, u2))
+  return (r1 + u1^2*r2, s1 + u1*s2, t1 + u1^2*s1*r2 + u1^3*t2, u1*u2)
+end
+
 function compose(f::EllCrvIso, g::EllCrvIso)
   @req codomain(f) == domain(g) "Codomain and domain must be identitcal"
-  r1, s1, t1, u1 = f.data
-  r2, s2, t2, u2 = g.data
 
-  r3 = r1 + u1^2*r2
-  s3 = s1 + u1*s2
-  t3 = t1 + u1^2*s1*r2 + u1^3*t2
-  u3 = u1*u2
-
-  return isomorphism(domain(f), [r3, s3, t3, u3])
+  r, s, t, u = _compose_rstu(f.data, g.data)
+  return isomorphism(domain(f), [r, s, t, u])
 
 end
 

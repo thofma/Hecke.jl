@@ -68,7 +68,8 @@ end
 
 function QQValuation(p_::IntegerUnion)
   p = ZZ(p_)
-  F = finite_field(p; cached = false)[1]
+  @req is_prime(p) "p must be a prime number"
+  F = finite_field(p, 1; cached = false, check = false)[1]
   return QQValuation(p, F)
 end
 
@@ -96,6 +97,7 @@ struct AbsSimpleNumFieldValuation <: DiscreteValuation{AbsSimpleNumFieldElem}
 end
 
 function AbsSimpleNumFieldValuation(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  @req is_prime(p) "Ideal must be prime"
   OK = order(p)
   F, mF = residue_field(OK, p)
   red = extend(mF, nf(OK))
