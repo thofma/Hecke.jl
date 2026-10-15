@@ -61,7 +61,9 @@ jobs:
       - name: "Run tests"
         uses: julia-actions/julia-runtest@v1
         env:
-          NUMPROCS: "2"
+          # The macOS runners have 7 GB of memory; two workers swap, and the
+          # job spends more time in GC than in the tests.
+          NUMPROCS: ${{ matrix.os == 'macOS-latest' && '1' || '2' }}
           HECKE_TEST_ASSERTIONS: "${{ matrix.assertions }}"
         with:
           depwarn: error
