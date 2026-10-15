@@ -221,7 +221,7 @@ dot(::AbstractVector{T}, ::SMat{T}, ::AbstractVector{T}) where T
 
 Other:
 ```@docs
-sparse(::SMat)
+Main.SparseArrays.sparse(::SMat)
 ZZMatrix(::SMat{ZZRingElem})
 ZZMatrix(::SMat{T}) where {T <: Integer}
 Matrix(::SMat)

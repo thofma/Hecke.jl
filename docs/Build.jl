@@ -2,6 +2,10 @@
 # This file is included by docs/make.jl and by a helper function
 # in src/Hecke.jl
 #
+
+# loads SparseArraysExt, whose docstrings the manual references
+import SparseArrays
+
 module Build
 
 using Pkg, Nemo, Documenter, DocumenterVitepress, DocumenterCitations, Literate
@@ -53,10 +57,11 @@ function make(Hecke::Module; strict=false,
   cd(joinpath(Hecke.pkgdir, "docs")) do
     DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
     DocMeta.setdocmeta!(Hecke.Nemo, :DocTestSetup, :(using Hecke.Nemo); recursive=true)
+    modules = [Hecke, Hecke.Nemo, Base.get_extension(Hecke, :SparseArraysExt)]
 
     if format == :html
       makedocs(
-        modules=[Hecke, Hecke.Nemo],
+        modules=modules,
         authors="Claus Fieker and Tommy Hofmann",
         repo=gh_hecke,
         sitename="Hecke.jl",
@@ -72,7 +77,7 @@ function make(Hecke::Module; strict=false,
       )
     elseif format == :vitepress
       makedocs(
-        modules=[Hecke, Hecke.Nemo],
+        modules=modules,
         authors="Claus Fieker and Tommy Hofmann",
         repo=gh_hecke,
         sitename="Hecke.jl",

@@ -4,6 +4,7 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
@@ -12,4 +13,5 @@ Dates = "1.10"
 Distributed = "1.10"
 Documenter = "0.27"
 PrettyTables = "3.1.0"
+SparseArrays = "1.10"
 Test = "1.10"
