@@ -390,6 +390,7 @@ export generic_group
 export gens_with_data
 export genus
 export genus_field
+export genus_from_gram
 export genus_representatives
 export get_assertion_level
 export get_verbosity_level

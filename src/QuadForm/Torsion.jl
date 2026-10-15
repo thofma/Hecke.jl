@@ -1970,7 +1970,7 @@ function _is_genus_with_genus(
       # get rid of denominators without changing the local equivalence class
       map_entries!(x -> x*dp, G_p, G_p)
       G_pZZ = change_base_ring(ZZ, G_p)
-      genus_p = genus(G_pZZ, p, valuation(elementary_divisors(D)[end], p))
+      genus_p = genus_from_gram(G_pZZ, p, valuation(elementary_divisors(D)[end], p))
     else
       genus_p = ZZLocalGenus(p, Vector{Int}[])
     end
