@@ -581,9 +581,9 @@ function prime_check_arrays(coeff::Vector{<: IntegerUnion}, p::Int, N)
         chunk_odd = append!(copy(chunk_odd), chunk_odd)
         chunk_even = append!(copy(chunk_even), chunk_even)
       else
-        chunk = reduce(vcat, [chunk for tt in 1:p_chunks + 1])
-        chunk_odd = reduce(vcat, [chunk_odd for tt in 1:p_chunks + 1])
-        chunk_even = reduce(vcat, [chunk_even for tt in 1:p_chunks + 1])
+        chunk = repeat(chunk, p_chunks + 1)
+        chunk_odd = repeat(chunk_odd, p_chunks + 1)
+        chunk_even = repeat(chunk_even, p_chunks + 1)
       end
       #temp = chunk
       #l = length(temp)
@@ -734,11 +734,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
   part_16 = Array{Int}(undef, 16)
 
-  if isodd(n)
-      d = 1
-    else
-      d = 0
-    end
+  d = isodd(n) ? 1 : 0
 
   # t odd
   for t in (1:2:15)
