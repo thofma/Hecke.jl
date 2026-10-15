@@ -252,14 +252,16 @@ function sigma_contravariant(quartic::MPolyRingElem{T}) where T
 end
 
 
-#Computes the psi contrariant as defined in [Ohn07].
-function psi_contravariant(quartic::MPolyRingElem{T}) where T
-  R = parent(quartic)
-  x, y, z = gens(R)
-  a, b, c, d, e, f, g, h, i, j, k, l, m, n, p = _get_quartic_coefficients(quartic)
+# psi as an element of QQ[a, ..., p, x, y, z], a .. p the coefficients of the
+# quartic, built once. Written out as one expression over the base field it
+# compiles very slowly for some coefficient types (100 s for FqFieldElem).
+const _psi_formula = Ref{QQMPolyRingElem}()
 
-
-psi = a*c*e*z^6/6 - a*c*i*y*z^5/6 + a*c*l*y^2*z^4/6 - 
+function _get_psi_formula()
+  isassigned(_psi_formula) && return _psi_formula[]
+  _, (a, b, c, d, e, f, g, h, i, j, k, l, m, n, p, x, y, z) =
+    polynomial_ring(QQ, [:a, :b, :c, :d, :e, :f, :g, :h, :i, :j, :k, :l, :m, :n, :p, :x, :y, :z])
+  psi = a*c*e*z^6/6 - a*c*i*y*z^5/6 + a*c*l*y^2*z^4/6 - 
   a*c*n*y^3*z^3/6 + a*c*p*y^4*z^2/6 - a*d^2*z^6/16 + 
   a*d*h*y*z^5/8 + a*d*i*x*z^5/8 - a*d*k*y^2*z^4/8 - 
   a*d*l*x*y*z^4/4 + a*d*m*y^3*z^3/8 + 3*a*d*n*x*y^2*z^3/8 - 
@@ -387,5 +389,23 @@ psi = a*c*e*z^6/6 - a*c*i*y*z^5/6 + a*c*l*y^2*z^4/6 -
   i*l*n*x^6/48 - j^3*y^6/216 + j^2*k*x*y^5/72 - j^2*l*x^2*y^4/72 - 
   j*k^2*x^2*y^4/72 + j*k*l*x^3*y^3/36 - j*l^2*x^4*y^2/72 + 
   k^3*x^3*y^3/216 - k^2*l*x^4*y^2/72 + k*l^2*x^5*y/72 - l^3*x^6/216
-  return psi
+  return _psi_formula[] = psi
+end
+
+#Computes the psi contrariant as defined in [Ohn07].
+function psi_contravariant(quartic::MPolyRingElem{T}) where T
+  R = parent(quartic)
+  K = base_ring(R)
+  coeffs = _get_quartic_coefficients(quartic)
+
+  # substitute the coefficients, keep x, y, z
+  psi = MPolyBuildCtx(R)
+  for (c, ev) in zip(coefficients(_get_psi_formula()), exponent_vectors(_get_psi_formula()))
+    v = K(c)
+    for t in 1:15
+      v *= coeffs[t]^ev[t]
+    end
+    push_term!(psi, v, ev[16:18])
+  end
+  return finish(psi)
 end
