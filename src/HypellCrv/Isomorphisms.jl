@@ -529,7 +529,7 @@ end
 
 # Internal implementation. Always returns a HypellCrvIsom as second value;
 # if the curves are not isomorphic, returns an uninitialised (illegal) object.
-function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}) where T
+function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}, check_invariants::Bool = true) where T
   K = base_field(C1)
   @req base_field(C2) === K "Curves must have the same base field"
 
@@ -542,7 +542,7 @@ function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}) where T
 
   # Fast exit for genus 2: compare absolute invariants
   # Reference: [Igu60], implemented via Igusa-Clebsch invariants.
-  if g == 2
+  if g == 2 && check_invariants
     # test equality in P(2, 4, 6, 10)
     if !weighted_equality(igusa_clebsch_invariants(C1)[1], igusa_clebsch_invariants(C2)[1], [2, 4, 6, 10])
       return false, dummy
