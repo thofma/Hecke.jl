@@ -266,6 +266,12 @@ Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 #
 ################################################################################
 
+@doc raw"""
+    mod(x::FieldElem, I::GenOrdFracIdl) -> FieldElem
+
+Return $y \in K$, where `K = field(order(I))`, such that $x - y \in I$,
+for nonzero $I$.
+"""
 function mod(x::FieldElem, I::GenOrdFracIdl)
   O = order(I)
   K = field(O)

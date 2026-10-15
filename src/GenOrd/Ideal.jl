@@ -713,7 +713,7 @@ function idempotents(I::GenOrdIdl, J::GenOrdIdl)
   # The last n rows express the order basis in terms of the two ideal bases.
   # Use the coordinates of 1, since the first order basis vector need not be 1.
   c = matrix(R, 1, n, coordinates(one(O)))
-  v = c*sub(U, n + 1:2*n, 1:n)*basis_matrix(I)
+  v = c*view(U, n + 1:2*n, 1:n)*basis_matrix(I)
   e = O(v[1, :])
   return e, one(O) - e
 end
