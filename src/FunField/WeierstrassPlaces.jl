@@ -19,7 +19,7 @@
 #the ramification divisor
 function _gaps_and_ramification_divisor(D::Divisor, only_gaps::Bool)
   F = function_field(D)
-  K = constant_field(F)
+  K = defining_constant_field(F)
   W = canonical_divisor(F)
   x = separating_element(F)
   dx = differential(F(x))

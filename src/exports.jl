@@ -250,6 +250,7 @@ export conjugates_log
 export conjugates_real
 export constant_coefficient
 export constant_field
+export constant_field_degree
 export contains_equation_order
 export content_ideal
 export contract
@@ -279,6 +280,7 @@ export decompose_into_p_rings
 export decomposition_field
 export decomposition_group
 export deepcopy
+export defining_constant_field
 export defining_modulus
 export defining_polynomial
 export defining_polynomials

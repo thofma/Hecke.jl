@@ -1,3 +1,4 @@
+include("FunField/ConstantField.jl")
 include("FunField/DegreeLocalization.jl")
 include("FunField/Differential.jl")
 include("FunField/Divisor.jl")
