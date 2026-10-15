@@ -114,7 +114,7 @@ function sunit_group_fac_elem(S::Vector{ZZRingElem})
   Sq = QQFieldElem[x for x = S]
 
   function dexp(a::FinGenAbGroupElem)
-    return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(S)])
+    return FacElem(Sq, ZZRingElem[a.coeff[1, i] for i = 1:length(Sq)])
   end
 
   mp.header = MapHeader(G, FacElemMon(QQ), dexp)

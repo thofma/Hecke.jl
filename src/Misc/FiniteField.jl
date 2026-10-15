@@ -117,9 +117,9 @@ end
 function unit_group(F::T; n_quo::Int = -1) where T <: FinField
 
   g = primitive_element(F, n_quo = n_quo)
-  k = order(F) - 1
-  inv = ZZRingElem(1)
-  npart = ZZRingElem(k)
+  local k::ZZRingElem = order(F) - 1
+  local inv::ZZRingElem = ZZRingElem(1)
+  local npart::ZZRingElem = ZZRingElem(k)
   if n_quo != -1
     k = ZZRingElem(n_quo)
     npart, nnpart = ppio(order(F) - 1, k)
