@@ -256,8 +256,6 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
   H, U = hnf_with_transform(change_base_ring(ZZ, Amatrix))
   Hinv = inv(QQMatrix(H))
 
-  local_coeffs = Vector{Vector{QQFieldElem}}[]
-
   inv_special_basis_matrix_Hinv = inv_special_basis_matrix * Hinv
 
   #@info "preprocessing units"
@@ -353,16 +351,6 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
 #  @assert fl === ffl
 #  return ffl, inv(sca) * xx
 #
-
-  for u in Iterators.product(unit_reps...)
-    uu = sum(dec[i][2](dec[i][2]\(u[i])) for i in 1:length(dec))
-    aui = [ dec[i][2](dec[i][2]\(alpha)) * dec[i][2](dec[i][2]\(u[i])) for i in 1:length(dec)]
-    @assert sum(aui) == alpha * uu
-    if alpha * uu in I
-      return true, inv(sca) * alpha * uu
-    end
-  end
-  return false, zero(O)
 end
 
 function _old_optimization(dd, local_coeffs, dec, bases_offsets_and_lengths, H, special_basis_matrix, indices_integral, indices_nonintegral, A)
@@ -524,7 +512,6 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
   #push!(_debug, (alpha, A, dec_sorted, units_sorted, M, block_size))
   res = Vector{Vector{QQFieldElem}}[]
   k = dim(A)
-  kblock = k * block_size
   nt = _maxthreadid()
 
   @assert size(M) == (k, k)
@@ -539,13 +526,7 @@ function _compute_local_coefficients_parallel(alpha, A, dec_sorted, units_sorted
     #_local_coeffs = Vector{QQFieldElem}[ QQFieldElem[zero(QQFieldElem) for i in 1:k] for ii in 1:length(ui)]
     m = dec_sorted[i][2]#::morphism_type(StructureConstantAlgebra{QQFieldElem}, typeof(A))
     alphai = dec_sorted[i][2](dec_sorted[i][2]\(alpha))
-    kblock = div(length(ui), nt)
-    if mod(length(ui), nt) != 0
-      kblock += 1
-    end
-    if length(ui) < 100
-      kblock = length(ui)
-    end
+    kblock = length(ui) < 100 ? length(ui) : cld(length(ui), nt)
     par = collect(Iterators.partition(1:length(ui), kblock))
     @assert length(ui) < 100 || length(par) == nt
     #@info "Length/Blocksize: $(length(ui))/$(kblock)"

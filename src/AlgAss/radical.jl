@@ -297,12 +297,11 @@ function _radical_finite_generic(A::AbstractAssociativeAlgebra{T}) where {T <: U
   end
 
   C = transpose(B)
-  pl = ZZRingElem(1)
   MK = zero_matrix(K, dim(A), dim(A))
   MQx = zero_matrix(Qx, dim(A), dim(A))
   a = A()
   for l = 1:k
-    pl = p*pl
+    pl = p^l
     M = zero_matrix(Fp, dim(A2), nrows(C))
     for i = 1:nrows(C)
       c = A2toA(elem_from_mat_row(A2, C, i))

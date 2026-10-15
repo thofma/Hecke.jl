@@ -691,25 +691,9 @@ function quotient(G::MultTableGroup, H::MultTableGroup, HtoG::MultTableGroupHom)
       return @error("Subgroup is not normal")
   end
   elements_indx = [getindex(i) for i in elems]
-  M = G.mult_table
-  rows_2delete = Vector{Int64}()
-  cols_2delete = Vector{Int64}()
-  for i in 1:order(G)
-    if !(i in elements_indx)
-       pushfirst!(rows_2delete,i)
-    end
-  end
-  for i in rows_2delete
-    M = M[vcat(1:i-1,i+1:end),:]
-  end
-  for j in 1:order(G)
-    if j in M[:,1:j-1]
-      pushfirst!(cols_2delete,j)
-    end
-  end
-  for j in cols_2delete
-      M = M[:,vcat(1:j-1,j+1:end)]
-  end
+  # keep the rows of the elements of H and one column per coset
+  M = G.mult_table[sort(elements_indx), :]
+  M = M[:, [j for j in 1:order(G) if !(j in M[:, 1:j-1])]]
 
   function quotient_op(A::Vector{MultTableGroupElem}, B::Vector{MultTableGroupElem})
      i = getindex(A[1]*B[1])

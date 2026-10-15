@@ -1162,9 +1162,10 @@ function _transport_refined_wedderburn_decomposition_forward(h::AbsAlgAssMor; is
             BB = matrix([coefficients(CM(transpose(matrix(f(b))), check = false)) for b in basis(Bc)])
             BBinv = matrix([coefficients(preimage(CtoCM, CM(transpose(matrix(b)), check = false))) for b in _absolute_basis(CM)])
             #BBinv = inv(BB)
-            f = AbsAlgAssMorGen(Bc, CM, BB, BBinv)
+            Bc.isomorphic_full_matrix_algebra = CM, AbsAlgAssMorGen(Bc, CM, BB, BBinv)
+          else
+            Bc.isomorphic_full_matrix_algebra = CM, f
           end
-          Bc.isomorphic_full_matrix_algebra = CM, f
         end
       end
     end

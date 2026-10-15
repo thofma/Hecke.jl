@@ -469,7 +469,6 @@ function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion,
     return  (_matrix_to_elements(G, M, indice) for
              M in _subgroup_type_iterator(Gtype, t, p))
   end
-  return Gtype, indice
 end
 
 function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion,
@@ -498,7 +497,6 @@ function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion,
 
   return  (_matrix_to_elements(G, M, indice)
            for M in _subgroup_iterator(Gtype, p, adjusted_types))
-  return Gtype, indice
 end
 
 function __psubgroups_gens(G::FinGenAbGroup, p::IntegerUnion, order, index)
