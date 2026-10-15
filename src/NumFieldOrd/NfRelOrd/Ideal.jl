@@ -275,7 +275,7 @@ function ideal(O::RelNumFieldOrder{T, S, U}, x::RelNumFieldOrderElem{T, U}) wher
   d = degree(O)
   pb = pseudo_basis(O, copy = false)
   if iszero(x)
-    return RelNumFieldOrderIdeal{T, S, U}(O, pseudo_matrix(zero_matrix(K, 0, d), S[]))
+    return RelNumFieldOrderIdeal{T, S, U}(O, pseudo_matrix(base_ring(O), zero_matrix(K, 0, d), S[]))
   end
   M = zero_matrix(K, d, d)
   for i = 1:d
@@ -344,7 +344,7 @@ function fractional_ideal(O::RelNumFieldOrder{T, S, U}, a::S) where {T, S, U}
   pb = pseudo_basis(O, copy = false)
   if iszero(a)
     M = zero_matrix(base_field(nf(O)), 0, d)
-    PM = pseudo_matrix(M, S[])
+    PM = pseudo_matrix(base_ring(O), M, S[])
     return RelNumFieldOrderFractionalIdeal{T, S, U}(O, PM)
   end
 
@@ -635,7 +635,7 @@ function intersect(a::RelNumFieldOrderIdeal{T, S}, b::RelNumFieldOrderIdeal{T, S
   Mb = basis_pmatrix(b)
   M1 = hcat(Ma, deepcopy(Ma))
   z = zero_matrix(base_ring(Ma.matrix), d, d)
-  M2 = hcat(pseudo_matrix(z, Mb.coeffs), Mb)
+  M2 = hcat(pseudo_matrix(base_ring(Mb), z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   if T === AbsSimpleNumFieldElem
     m = intersect(norm(a), norm(b)) * _modulus(order(a))
@@ -676,7 +676,7 @@ function inv(a::Union{RelNumFieldOrderIdeal{T, S}, RelNumFieldOrderFractionalIde
   PM = pseudo_matrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))
-  PN = pseudo_matrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_matrix(base_ring(PM), N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
   return fractional_ideal(O, PN; M_in_hnf=true)
 end
@@ -1307,7 +1307,7 @@ function _valuation_for_prime_decomposition(A::RelNumFieldOrderElem, B::RelNumFi
 end
 
 function valuation_naive(A::RelNumFieldOrderIdeal{T, S}, B::RelNumFieldOrderIdeal{T, S}) where {T, S}
-  @assert order(A.basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
+  @assert base_ring(A.basis_pmatrix) == base_ring(B.basis_pmatrix)
   @assert !iszero(A) && !iszero(B)
   p = minimum(B)
   if valuation(minimum(A), p) == 0
@@ -1378,8 +1378,7 @@ valuation(A::RelNumFieldOrderIdeal{T, S}, B::RelNumFieldOrderIdeal{T, S}) where 
 
 function valuation_naive(a::RelNumFieldOrderElem{T}, B::RelNumFieldOrderIdeal{T, S}) where {T, S}
   @assert !iszero(a)
-  @assert order(parent(a).basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
-  #@assert order((a * parent(a)).basis_pmatrix.coeffs[1]) == order(B.basis_pmatrix.coeffs[1])
+  @assert base_ring(parent(a).basis_pmatrix) == base_ring(B.basis_pmatrix)
   pi = anti_uniformizer(B)
   i = 0
   b = elem_in_nf(a)

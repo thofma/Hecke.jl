@@ -669,6 +669,7 @@ the coordinate vector of $x$ against the lower-left HNF basis matrix of $y$.
 """
 function Hecke.mod(x::GenOrdElem, y::GenOrdIdl)
   parent(x) !== order(y) && error("GenOrds of element and ideal must be equal")
+  @req !iszero(y) "Modulus must be nonzero"
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -693,6 +694,28 @@ function Hecke.mod(x::GenOrdElem, y::GenOrdIdl)
   end
   z = O([a[i] for i in 1:length(a)])
   return z
+end
+
+################################################################################
+#
+#  Idempotents
+#
+################################################################################
+
+function idempotents(I::GenOrdIdl, J::GenOrdIdl)
+  O = order(I)
+  @req O === order(J) "Ideals must belong to the same order"
+  n = degree(O)
+  R = coefficient_ring(O)
+  H, U = _hnf_with_transform(vcat(basis_matrix(I), basis_matrix(J)), :lowerleft)
+  @req is_one(view(H, n + 1:2*n, 1:n)) "Ideals must be coprime"
+
+  # The last n rows express the order basis in terms of the two ideal bases.
+  # Use the coordinates of 1, since the first order basis vector need not be 1.
+  c = matrix(R, 1, n, coordinates(one(O)))
+  v = c*view(U, n + 1:2*n, 1:n)*basis_matrix(I)
+  e = O(v[1, :])
+  return e, one(O) - e
 end
 
 ################################################################################

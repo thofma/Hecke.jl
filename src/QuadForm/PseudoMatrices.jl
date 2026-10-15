@@ -19,7 +19,7 @@ function _translate_pseudo_hnf(H::PMat, f, target_order)
       m[i, j] = f(MH[i, j])
     end
   end
-  pm = pseudo_matrix(m, coeff_ideals)
+  pm = pseudo_matrix(OE, m, coeff_ideals)
   return pm
 end
 
@@ -135,7 +135,7 @@ function _intersect_modules(a::PMat, b::PMat, full_rank = true)
   M1 = hcat(a, deepcopy(a))
   d = ncols(b)
   z = zero_matrix(base_ring(matrix(a)), d, d)
-  M2 = hcat(pseudo_matrix(z, b.coeffs), b)
+  M2 = hcat(pseudo_matrix(base_ring(b), z, b.coeffs), b)
   M = vcat(M1, M2)
   if full_rank
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
@@ -155,25 +155,25 @@ function _modules_equality(a::PMat, b::PMat)
 end
 
 function _module_scale_ideal(a::AbsNumFieldOrderIdeal, b::PMat)
-  return pseudo_matrix(matrix(b), [ a * c for c in coefficient_ideals(b)])
+  return pseudo_matrix(base_ring(b), matrix(b), [ a * c for c in coefficient_ideals(b)])
 end
 
 _module_scale_ideal(a::PMat, b::AbsNumFieldOrderIdeal) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::AbsSimpleNumFieldOrderFractionalIdeal, b::PMat)
-  return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
+  return pseudo_matrix(base_ring(b), matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
 _module_scale_ideal(a::PMat, b::AbsSimpleNumFieldOrderFractionalIdeal) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::RelNumFieldOrderIdeal, b::PMat)
-  return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
+  return pseudo_matrix(base_ring(b), matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
 _module_scale_ideal(a::PMat, b::RelNumFieldOrderIdeal) = _module_scale_ideal(b, a)
 
 function _module_scale_ideal(a::RelNumFieldOrderFractionalIdeal, b::PMat)
-  return pseudo_matrix(matrix(b), Ref(a) .* coefficient_ideals(b))
+  return pseudo_matrix(base_ring(b), matrix(b), Ref(a) .* coefficient_ideals(b))
 end
 
 _module_scale_ideal(a::PMat, b::RelNumFieldOrderFractionalIdeal) = _module_scale_ideal(b, a)

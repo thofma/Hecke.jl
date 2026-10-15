@@ -1,5 +1,6 @@
 include("GenOrd/GenOrd.jl")
 include("GenOrd/Ideal.jl")
 include("GenOrd/Matrix.jl")
+include("GenOrd/PseudoMatrix.jl")
 include("GenOrd/MaximalOrder.jl")
 include("GenOrd/ResidueRing.jl")

@@ -1750,7 +1750,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-    _pm = pseudo_matrix(matrix(pm), coefficient_ideals(pm))
+    _pm = pseudo_matrix(base_ring(pm), matrix(pm), coefficient_ideals(pm))
 
     _new_cand = lattice(V, pm)
 
@@ -1938,7 +1938,7 @@ end
 
 function *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
-  pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
+  pmnew = pseudo_matrix(base_ring(pm), matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)
 end
 

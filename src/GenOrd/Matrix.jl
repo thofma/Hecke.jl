@@ -451,3 +451,22 @@ function _inv_pair(M::MatElem, K::Field)
   X, d = integral_split(inv(change_base_ring(K, M)), R)
   return _strip_pair_content(X, d)
 end
+
+################################################################################
+#
+#  Pseudo-matrices
+#
+################################################################################
+
+function pseudo_matrix(O::GenOrd, M::MatElem, C::Vector)
+  @req nrows(M) == length(C) "Wrong number of coefficient ideals"
+  @req all(I -> order(I) === O, C) "Coefficient ideals must belong to the order"
+  I = fractional_ideal_type(O)
+  return PMat{elem_type(field(O)), I}(O, change_base_ring(field(O), M), I[fractional_ideal(c) for c in C])
+end
+
+function pseudo_matrix(M::MatElem, C::Vector{<:GenOrdIdl})
+  return pseudo_matrix(M, map(fractional_ideal, C))
+end
+
+base_ring_type(::Type{PMat{T, GenOrdFracIdl{S, R}}}) where {T, S, R} = GenOrd{S, R}
