@@ -15,6 +15,8 @@ nf(O::NumFieldOrder)
 
 @inline nf(O::RelNumFieldOrder{S, T, U}) where {S, T, U} = O.nf::parent_type(U)
 
+field(O::NumFieldOrder) = nf(O)
+
 _algebra(O::NumFieldOrder) = nf(O)
 
 @doc raw"""
