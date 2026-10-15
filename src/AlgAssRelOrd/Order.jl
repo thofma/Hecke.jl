@@ -18,7 +18,7 @@ _algebra(O::AlgAssRelOrd) = algebra(O)
 
 Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an $R$-order.
 """
-base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
+base_ring(O::AlgAssRelOrd) = base_ring(basis_pmatrix(O, copy = false))
 
 base_ring_type(::Type{<:AlgAssRelOrd{S, T, U}}) where {S, T, U} = order_type(base_ring_type(U))
 
@@ -593,7 +593,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, ::Val{wi
 
 
   M = sub(PM.matrix, 1:n, 1:n)
-  PM = pseudo_matrix(M, PM.coeffs[1:n])
+  PM = pseudo_matrix(base_ring(PM), M, PM.coeffs[1:n])
   U = similar(PM.matrix, 0, 0)
   steinitz_form!(PM, U, false)
 

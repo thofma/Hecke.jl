@@ -262,6 +262,25 @@ Base.in(x::GenOrdElem, A::GenOrdFracIdl) = data(x) in A
 
 ################################################################################
 #
+#  Reduction of element modulo fractional ideal
+#
+################################################################################
+
+function mod(x::FieldElem, I::GenOrdFracIdl)
+  O = order(I)
+  K = field(O)
+  @req parent(x) === K "Element must be in field(order(I))"
+  @req !iszero(I) "Modulus must be nonzero"
+  _, dx = integral_split(x, O)
+  di = denominator(I; copy = false)
+  d = lcm(dx, di)
+  J = divexact(d, di)*numerator(I; copy = false)
+  c = K(base_field(K)(d))
+  return K(mod(O(c*x; check = false), J))//c
+end
+
+################################################################################
+#
 #  Powering
 #
 ################################################################################

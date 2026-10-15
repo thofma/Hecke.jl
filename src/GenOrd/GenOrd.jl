@@ -34,6 +34,8 @@ order(R::Ring, F::Field) = GenOrd(R, F)
 
 order(O::GenOrd, T::MatElem, d::RingElem; check::Bool = true) = GenOrd(O, T, d; check = check)
 
+_ring_type(::Type{<:GenOrd}) = _DD
+
 ################################################################################
 #
 #  Type gymnastics

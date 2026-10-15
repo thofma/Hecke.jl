@@ -2055,15 +2055,14 @@ mutable struct PMat{T, S}
   coeffs::Vector{S}
 
   function PMat{T, S}(m::Generic.MatSpaceElem{T}, c::Vector{S}) where {T, S}
-    z = new{T, S}()
-    z.matrix = m
-    z.coeffs = c
-    return z
+    @req !isempty(c) "Specify the order for a pseudo-matrix without rows"
+    return PMat{T, S}(order(c[1]), m, c)
   end
 
-  function PMat{T, S}() where {T, S}
-    z = new{T, S}()
-    return z
+  function PMat{T, S}(O::Ring, m::Generic.MatSpaceElem{T}, c::Vector{S}) where {T, S}
+    @req nrows(m) == length(c) "Wrong number of coefficient ideals"
+    @req all(I -> order(I) === O, c) "Coefficient ideals must belong to the order"
+    return new{T, S}(O, m, c)
   end
 end
 

@@ -594,7 +594,7 @@ function intersect(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}) whe
   Mb = basis_pmatrix(b)
   M1 = hcat(Ma, deepcopy(Ma))
   z = zero_matrix(base_ring(Ma.matrix), d, d)
-  M2 = hcat(pseudo_matrix(z, Mb.coeffs), Mb)
+  M2 = hcat(pseudo_matrix(base_ring(Mb), z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
   c = ideal(algebra(a), H; M_in_hnf=true)
@@ -813,7 +813,7 @@ function _colon_raw(a::AlgAssRelOrdIdl{S, T, U}, b::AlgAssRelOrdIdl{S, T, U}, si
   PM = pseudo_matrix(M, C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))
-  PN = pseudo_matrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_matrix(base_ring(PM), N, [ simplify(inv(I)) for I in PM.coeffs ])
   return PN
 end
 

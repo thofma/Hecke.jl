@@ -40,7 +40,7 @@ function image(f::AbstractSpaceMor, L::AbstractLat)
   if is_injective(f)
     B = pseudo_matrix(L)
     fB = matrix(B)*f.matrix
-    PB = pseudo_matrix(fB, B.coeffs)
+    PB = pseudo_matrix(base_ring(B), fB, B.coeffs)
     return lattice(W, PB)
   else
     error("not implemented")

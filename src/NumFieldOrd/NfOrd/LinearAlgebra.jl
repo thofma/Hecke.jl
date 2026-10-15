@@ -200,15 +200,11 @@ end
 ==(P::PMat, Q::PMat) = P.matrix == Q.matrix && P.coeffs == Q.coeffs
 
 function Base.deepcopy_internal(P::PMat{T, S}, dict::IdDict) where {T, S}
-  z = PMat{T, S}()
-  for x in fieldnames(typeof(P))
-    if x != :base_ring && isdefined(P, x)
-      setfield!(z, x, Base.deepcopy_internal(getfield(P, x), dict))
-    end
-  end
-  if isdefined(P, :base_ring)
-    z.base_ring = P.base_ring
-  end
+  haskey(dict, P) && return dict[P]
+  z = PMat{T, S}(base_ring(P), P.matrix, P.coeffs)
+  dict[P] = z
+  z.matrix = Base.deepcopy_internal(P.matrix, dict)
+  z.coeffs = Base.deepcopy_internal(P.coeffs, dict)
   return z
 end
 
@@ -265,7 +261,7 @@ matrix(M::PMat) = M.matrix
 The `PMat` $M$ defines an $R$-module for some maximal order $R$.
 This function returns the $R$ that was used to defined $M$.
 """
-base_ring(M::PMat{T, S}) where {T, S} = nrows(M) >= 1 ? order(M.coeffs[1]) : M.base_ring::order_type(parent_type(T))
+base_ring(M::PMat) = M.base_ring::base_ring_type(typeof(M))
 
 base_ring_type(::Type{PMat{T, S}}) where {T, S} = order_type(parent_type(T))
 
@@ -276,17 +272,11 @@ end
 pseudo_matrix_type(R, S) = pseudo_matrix_type(typeof(R), typeof(S))
 
 function pseudo_matrix(m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
-  # sanity checks
-  @assert nrows(m) == length(c)
-  return PMat{T, S}(m ,c)
+  return PMat{T, S}(m, c)
 end
 
 function pseudo_matrix(O::NumFieldOrder, m::AbstractAlgebra.MatElem{T}, c::Vector{S}) where {T, S}
-  # sanity checks
-  @assert nrows(m) == length(c)
-  z = PMat{T, S}(m ,c)
-  z.base_ring = O
-  return z
+  return PMat{T, S}(O, m, c)
 end
 
 @doc raw"""
@@ -337,6 +327,7 @@ function pseudo_matrix(m::MatElem{S}) where S <: NumFieldElem
 end
 
 function pseudo_matrix(m::MatElem{S}, c::Vector{T}) where {S <: NumFieldElem, T <: RelNumFieldOrderIdeal}
+  @req !isempty(c) "Specify the order for a pseudo-matrix without rows"
   @assert nrows(m) == length(c)
   cc = [ fractional_ideal(order(c[i]), basis_pmatrix(c[i]); M_in_hnf=true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
@@ -345,6 +336,7 @@ end
 pseudo_matrix(m::MatElem{AbsSimpleNumFieldOrderElem}) = pseudo_matrix(change_base_ring(nf(base_ring(m)), m))
 
 function pseudo_matrix(c::Vector{S}) where S
+   @req !isempty(c) "Coefficient ideals must be nonempty"
    K = nf(order(c[1]))
    m = identity_matrix(K, length(c))
    return pseudo_matrix(m, c)
@@ -535,9 +527,9 @@ shape of the echelon form. Possible are
 """
 pseudo_hnf_with_transform(P::PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_transform(P, shape)
 
-pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb(P, shape)
+pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: FieldElem, S} = pseudo_hnf_kb(P, shape)
 
-pseudo_hnf_with_transform(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: NumFieldElem, S} = pseudo_hnf_kb_with_transform(P, shape)
+pseudo_hnf_with_transform(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: FieldElem, S} = pseudo_hnf_kb_with_transform(P, shape)
 
 function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
@@ -574,7 +566,7 @@ pseudo_hnf_full_rank_with_modulus(P::PMat, m::RelNumFieldOrderIdeal, shape::Symb
 
 function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
-  O = order(P.coeffs[1])
+  O = base_ring(P)
   if nrows(P) == ncols(P)
     m = det(P)
     simplify(m)
@@ -638,7 +630,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
       end
       C[rowPerm[i]] = P.coeffs[i]
     end
-    PMinor = pseudo_matrix(Minor, C)
+    PMinor = pseudo_matrix(base_ring(P), Minor, C)
     m1 = det(PMinor)
     simplify(m1)
     push!(dets, numerator(m1))
@@ -649,7 +641,7 @@ end
 #TODO: das kann man besser machen
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
-  O = order(P.coeffs[1])
+  O = base_ring(P)
   integralizer = one(ZZ)
 
   for i = 1:nrows(P)
@@ -696,7 +688,7 @@ function pseudo_hnf_mod(P::PMat, m, shape::Symbol = :upperright, strategy = :spl
     end
   end
 
-  res = PMat{AbsSimpleNumFieldElem, AbsSimpleNumFieldOrderFractionalIdeal}(res_mat, copy(P.coeffs))
+  res = pseudo_matrix(O, res_mat, copy(P.coeffs))
 
   shift = 0
   if shape == :lowerleft
@@ -939,10 +931,11 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S};
   for i = start:step:stop
     # find pivot
     if shape === :upperright
-      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+      piv = findfirst(k -> !iszero(P.matrix[i, k]), 1:ncols(P))
     else
-      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))::Int
+      piv = findlast(k -> !iszero(P.matrix[i, k]), 1:ncols(P))
     end
+    piv === nothing && continue
 
     if !(w[1, piv]//P.matrix[i, piv] in P.coeffs[i]*inv(a))
       return false
@@ -994,7 +987,7 @@ end
 
 function sub(P::PMat, rows::AbstractUnitRange{Int}, cols::AbstractUnitRange{Int})
   m = sub(P.matrix, rows, cols)
-  return pseudo_matrix(m, P.coeffs[rows])
+  return pseudo_matrix(base_ring(P), m, P.coeffs[rows])
 end
 
 function pseudo_hnf_cohen(P::PMat)
@@ -1156,7 +1149,8 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val(false))
+    Q = pseudo_matrix(base_ring(P), reverse_cols(P.matrix), P.coeffs)
+    H = _pseudo_hnf_kb(Q, Val(false))
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
@@ -1170,7 +1164,8 @@ end
 
 function pseudo_hnf_kb_with_transform(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(pseudo_matrix(reverse_cols(P.matrix), P.coeffs), Val(true))
+    Q = pseudo_matrix(base_ring(P), reverse_cols(P.matrix), P.coeffs)
+    H, U = _pseudo_hnf_kb(Q, Val(true))
     reverse_cols!(H.matrix)
     reverse_rows!(H.matrix)
     reverse!(H.coeffs)
@@ -1209,7 +1204,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
 end
 
 # Reduces the row r with pivot in column c (so r = pivot[c]) with other known pivots
-function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
+function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool) where {T <: FieldElem, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1238,7 +1233,7 @@ function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c:
 end
 
 # Reduces the entries of the column c with pivots "left from c", so in the columns 1:c - 1.
-function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
+function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, c::Int, with_transform::Bool, start_element::Int = 1) where {T <: FieldElem, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1267,7 +1262,7 @@ function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int},
 end
 
 # Permute the rows to get an echelon shape
-function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, with_transform::Bool, start_element::Int = 1) where {T <: NumFieldElem, S}
+function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, with_transform::Bool, start_element::Int = 1) where {T <: FieldElem, S}
    m = nrows(H)
    n = ncols(H)
    pivot2 = zeros(Int, m)
@@ -1304,7 +1299,7 @@ function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Vector{Int}, wit
 end
 
 # Produce a 1 in entry (r, c) by pushing the entry into the coefficient ideal
-function kb_produce_one!(H::PMat{T, S}, U::Generic.Mat{T}, r::Int, c::Int, with_transform::Bool) where {T <: NumFieldElem, S}
+function kb_produce_one!(H::PMat{T, S}, U::Generic.Mat{T}, r::Int, c::Int, with_transform::Bool) where {T <: FieldElem, S}
    A = H.matrix
    H.coeffs[r] = simplify(H.coeffs[r]*A[r, c])
    with_transform ? divide_row!(U, r, A[r, c]) : nothing
@@ -1314,7 +1309,7 @@ end
 
 # For p = pivot[c], return the gcd and the idempotents of the coefficient ideals
 # necessary to produce a zero in entry (r, c)
-function kb_get_idempotents_for_entry(H::PMat{T, S}, pivot::Vector{Int}, r::Int, c::Int) where {T <: NumFieldElem, S}
+function kb_get_idempotents_for_entry(H::PMat{T, S}, pivot::Vector{Int}, r::Int, c::Int) where {T <: FieldElem, S}
    K = base_ring(H.matrix)
    p = pivot[c]
    a = H.coeffs[r]
@@ -1330,7 +1325,7 @@ function kb_get_idempotents_for_entry(H::PMat{T, S}, pivot::Vector{Int}, r::Int,
    return d, u, v
 end
 
-function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: NumFieldElem, S}
+function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool = false, start_element::Int = 1) where {T <: FieldElem, S}
    m = nrows(H)
    n = ncols(H)
    A = H.matrix
@@ -1600,7 +1595,7 @@ mutable struct ModDed
       end
       z = new()
       z.pmatrix = P
-      z.base_ring = order(P.coeffs[1])
+      z.base_ring = base_ring(P)
       z.is_triu = is_triu
       return z
    end
@@ -1671,9 +1666,11 @@ end
 #end
 
 function vcat(A::Vector{PMat{S, T}}) where {S, T}
+  @req !isempty(A) "At least one pseudo-matrix is required"
+  @req all(P -> base_ring(P) === base_ring(A[1]), A) "Pseudo-matrices must have the same base ring"
   m = reduce(vcat, dense_matrix_type(S)[P.matrix for P in A])
   c = reduce(vcat, Vector{T}[P.coeffs for P in A])::Vector{T}
-  return pseudo_matrix(m, c)
+  return pseudo_matrix(base_ring(A[1]), m, c)
 end
 
 function vcat(A0::PMat, A::PMat...)
@@ -1681,16 +1678,19 @@ function vcat(A0::PMat, A::PMat...)
 end
 
 function _hcat(P::PMat, Q::PMat)
+   @req base_ring(P) === base_ring(Q) "Pseudo-matrices must have the same base ring"
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    @assert P.coeffs == Q.coeffs
    m = hcat(P.matrix, Q.matrix)
-   return pseudo_matrix(m, P.coeffs)
+   return pseudo_matrix(base_ring(P), m, P.coeffs)
 end
 
 function hcat(A::Vector{ <: PMat })
+  @req !isempty(A) "At least one pseudo-matrix is required"
+  @req all(P -> base_ring(P) === base_ring(A[1]), A) "Pseudo-matrices must have the same base ring"
   @assert all( P -> P.coeffs == A[1].coeffs, A)
   m = reduce(hcat, [P.matrix for P in A])
-  return pseudo_matrix(m, A[1].coeffs)
+  return pseudo_matrix(base_ring(A[1]), m, A[1].coeffs)
 end
 
 function hcat(A0::PMat, A::PMat...)
@@ -1719,7 +1719,7 @@ function intersect(M::ModDed, N::ModDed)
    end
    C1 = hcat(A, deepcopy(A))
    m = zero_matrix(base_ring(B.matrix), nrows(B), ncols(B))
-   C2 = hcat(B, pseudo_matrix(m, B.coeffs))
+   C2 = hcat(B, pseudo_matrix(base_ring(B), m, B.coeffs))
    C = vcat(C1, C2)
    # C = [A A; B 0]
    pseudo_hnf_kb!(C, C.matrix, false)
@@ -1728,7 +1728,7 @@ function intersect(M::ModDed, N::ModDed)
          m[i, j] = C.matrix[i + nrows(A), j + ncols(A)]
       end
    end
-   D = pseudo_matrix(m, C.coeffs[nrows(A) + 1:nrows(C)])
+   D = pseudo_matrix(base_ring(C), m, C.coeffs[nrows(A) + 1:nrows(C)])
    MN = ModDed(D, true; check = false)
    simplify_basis!(MN)
    return MN
@@ -1947,7 +1947,7 @@ function _steinitz_form(P::PMat, ::Val{with_transform} = Val(false)) where with_
 
   K = base_ring(S.matrix)
   oneK = one(K)
-  O = order(S.coeffs[1])
+  O = base_ring(S)
   start_row = 1
   for i = 1:nrows(S)
     if !iszero(S.matrix[i, 1])
@@ -1977,7 +1977,7 @@ function steinitz_form!(M::PMat{T, S}, U::Generic.Mat{T}, with_transform::Bool =
   oneK = one(K)
   t = K()
   t1 = K()
-  O = order(M.coeffs[1])
+  O = base_ring(M)
   for r = start_row:nrows(M) - 1
     a = M.coeffs[r]
 

@@ -169,7 +169,7 @@ function fractional_ideal(O::RelNumFieldOrder{T, S, U}, A::Vector{U}) where {T, 
   if all(iszero, A)
     M = zero_matrix(base_field(nf(O)), 0, degree(O))
     pb = pseudo_basis(O)
-    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(M, S[]))
+    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(base_ring(O), M, S[]))
   end
 
   return sum(fractional_ideal(O, a) for a in A if !iszero(a))
@@ -180,7 +180,7 @@ function fractional_ideal(O::RelNumFieldOrder{T, S, U}, x::U) where {T, S, U}
   pb = pseudo_basis(O, copy = false)
   K = base_field(nf(O))
   if iszero(x)
-    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(zero_matrix(K, 0, d), S[]))
+    return RelNumFieldOrderFractionalIdeal{T, S, U}(O, pseudo_matrix(base_ring(O), zero_matrix(K, 0, d), S[]))
   end
   M = zero_matrix(K, d, d)
   for i = 1:d
@@ -253,7 +253,7 @@ function assure_has_norm(a::RelNumFieldOrderFractionalIdeal)
     return nothing
   end
   if iszero(a)
-    O = order(basis_pmatrix(a, copy = false).coeffs[1])
+    O = base_ring(basis_pmatrix(a, copy = false))
     a.norm = nf(O)()*O
     a.has_norm = true
     return nothing
@@ -433,7 +433,7 @@ end
 
 function *(a::RelNumFieldOrderFractionalIdeal{T, S}, b::S) where {T, S <: Union{RelNumFieldOrderFractionalIdeal, AbsNumFieldOrderFractionalIdeal}}
   pm = basis_pmatrix(a)
-  pmnew = pseudo_matrix(matrix(pm), map(z -> b * z, coefficient_ideals(pm)))
+  pmnew = pseudo_matrix(base_ring(pm), matrix(pm), map(z -> b * z, coefficient_ideals(pm)))
   return fractional_ideal(order(a), pmnew)
 end
 
