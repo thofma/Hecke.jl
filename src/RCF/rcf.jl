@@ -395,9 +395,9 @@ function find_gens_descent(mR::Map, A::ClassField_pp, cp::ZZRingElem)
     if degree(C.Kr) < order(U)  # there was a common subfield, we
                               # have to pass to a subgroup
 
-      f = C.Kr.pol
+      pol = C.Kr.pol
       # Can do better. If the group is cyclic (e.g. if p!=2), we already know the subgroup!
-      s, ms = sub(U, FinGenAbGroupElem[x for x in U if iszero(f(gen(C.Kr)^Int(lift(mU(x)))))], false)
+      s, ms = sub(U, FinGenAbGroupElem[x for x in U if iszero(pol(gen(C.Kr)^Int(lift(mU(x)))))], false)
       ss, mss = snf(s)
       U = ss
       #mg = mg*ms*mss
