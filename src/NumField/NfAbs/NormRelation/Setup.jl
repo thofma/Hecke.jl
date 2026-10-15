@@ -437,11 +437,8 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
 
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
-  if haskey(N.induced, auto)
-    p = N.induced[auto]
-  else
-    p = induce(FB, auto)
-    N.induced[auto] = p
+  p = get!(N.induced, auto) do
+    induce(FB, auto)
   end
   #@show p
 
@@ -749,13 +746,9 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
 
   l = length(idempotents)
 
-  subgroups_needed = Int[]
-
   if any(isempty, nonannihilating)
     return false, zero(ZZ), Vector{Tuple{Vector{Tuple{ZZRingElem, FinGenAbGroupElem}}, Vector{FinGenAbGroupElem}}}()
   end
-
-  subgroups_needed = Int[]
 
   for i in 1:length(nonannihilating)
     if greedy || !large_index
@@ -765,9 +758,7 @@ function _has_norm_relation_abstract(G::MultTableGroup, H::Vector{Tuple{MultTabl
     end
   end
 
-  k = nonannihilating[1][1]
-  push!(subgroups_needed, k)
-  i = 2
+  subgroups_needed = Int[nonannihilating[1][1]]
   for i in 2:l
     if length(intersect(subgroups_needed, nonannihilating[i])) > 0
       continue
@@ -1038,7 +1029,7 @@ function _smallest_scalar_norm_relation_coprime(G::MultTableGroup, m::ZZRingElem
 
   v = _reduce_modulo(v, K)
 
-  subgroups_needed = Int[ i for i in 1:k if !iszero(v[1, i])]
+  subgroups_needed = findall(!iszero, v[1, 1:k])
 
   den = denominator(v[1, 1])
   for i in 2:k

@@ -1340,8 +1340,6 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
   fac = [_fac_and_lift(f, p, degree_limit, lower_limit) for f in all_f]
   all_c = [1 for f = all_f]
   re = elem_type(Fpx)[]
-  rt = Vector{Vector{fqPolyRepFieldElem}}()
-  RT = []
   RE = []
   while true
     cs = all_c
@@ -1398,11 +1396,11 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
     end
     @show all_c = [rand(1:p-1) for f = all_c]
   end
-  mu = [lift(Zx, re[i])(RE[i]) for i=1:length(re)]
-  fac = [(lift(Zx, re[x]), 1, mu[x]) for x = 1:length(re) if lower_limit <= degree(re[x]) <= degree_limit]
+  mu = [lift(Zx, f)(a) for (f, a) in zip(re, RE)]
+  fac = [(lift(Zx, f), 1, m) for (f, m) in zip(re, mu) if lower_limit <= degree(f) <= degree_limit]
 
 
-  pe = sum([gens(K)[i] * all_c[i] for i=1:length(all_c)])
+  pe = sum(gens(K) .* all_c)
 
   result = Array{Tuple{ideal_type(O),Int}}(undef, length(fac))
 
@@ -1556,7 +1554,6 @@ function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldEl
   end
   bound = 5
   count = 1
-  F2 = GF(2)
   M = zero_matrix(F2, length(pos_places), length(pos_places))
   betas = Vector{elem_type(order(I))}()
   r = 0
