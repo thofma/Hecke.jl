@@ -191,11 +191,13 @@ function abelian_normal_extensions(K::AbsSimpleNumField, gtype::Vector{Int}, abs
     end
     act = induce_action(mr, gs)
     ls = stable_subgroups_for_abexts(r, act, gtype)
+    # wild generators depend only on mr, share them across subgroups
+    lwp = Dict{Int, Vector{FinGenAbGroupElem}}()
     for s in ls
       s::FinGenAbGroupHom
       @hassert :AbExt 1 order(codomain(s)) == n
       C = ray_class_field(mr, s)::ClassField{MapRayClassGrp, FinGenAbGroupHom}
-      if _is_conductor_min_normal(C) && discriminant_conductor(C, bound)
+      if _is_conductor_min_normal(C; lwp) && discriminant_conductor(C, bound)
         if only_complex
           rC, sC = signature(C)
           if !iszero(rC)
@@ -251,6 +253,12 @@ function abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
     @assert r == length(rlp)
     onetor = collect(1:r)
     fields = ClassField{MapRayClassGrp, FinGenAbGroupHom}[]
+    # the conductors do not depend on the signature, compute them once
+    if conductors === nothing
+      gtype_snf = map(Int, snf(abelian_group(gtype))[1].snf)
+      conductors = conductors_generic(K, gtype_snf, absolute_discriminant_bound, only_tame = only_tame)
+      isempty(conductors) && return fields
+    end
     for (R, S) in signatures
       if mod(r * n - R, n) != 0
         continue
