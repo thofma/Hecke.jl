@@ -696,6 +696,169 @@ function squarefree_up_to(n::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], p
   return findall(list)
 end
 
+struct SquarefreeIterator
+  bound::Int
+  block_size::Int
+  coprime_to::Vector{Int}
+  prime_base::Union{Nothing, Vector{Int}}
+end
+
+@doc raw"""
+    squarefree_up_to_iterator(n::Int; coprime_to = ZZRingElem[],
+                              prime_base = ZZRingElem[], block_size::Int = 65536)
+
+Return an iterator over positive squarefree integers up to `n`, in increasing
+order and coprime to the entries of `coprime_to`. A nonempty `prime_base`
+restricts their prime factors to that list. Uses less memory than
+`squarefree_up_to`, but is generally slower.
+"""
+function squarefree_up_to_iterator(n::Int;
+                                   coprime_to::AbstractVector{<:IntegerUnion} = ZZRingElem[],
+                                   prime_base::AbstractVector{<:IntegerUnion} = ZZRingElem[],
+                                   block_size::Int = 65536)
+  @req n >= 0 "The bound must be nonnegative"
+  @req block_size > 0 "The block size must be positive"
+
+  # Coprimality only depends on the prime factors.
+  excluded = Int[]
+  for m in coprime_to
+    if iszero(m)
+      # Only 1 is coprime to 0.
+      n = min(n, 1)
+      continue
+    end
+    for p in prime_divisors(abs(ZZ(m)))
+      p <= n && push!(excluded, Int(p))
+    end
+  end
+  sort!(unique!(excluded))
+
+  # Internally, an empty allowed list permits only 1; nothing is unrestricted.
+  allowed = nothing
+  if !isempty(prime_base)
+    allowed = Int[]
+    for p in prime_base
+      @req is_prime(p) "The prime base must contain only primes"
+      if p <= n && !(Int(p) in excluded)
+        push!(allowed, Int(p))
+      end
+    end
+    sort!(unique!(allowed))
+
+    # Every supported squarefree integer divides the product of the allowed
+    # primes. Cap the bound without overflowing when that product exceeds n.
+    max_product = 1
+    for p in allowed
+      if max_product > div(n, p)
+        max_product = n
+        break
+      end
+      max_product *= p
+    end
+    n = min(n, max_product)
+  end
+  return SquarefreeIterator(n, block_size, excluded, allowed)
+end
+
+Base.IteratorSize(::Type{SquarefreeIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{SquarefreeIterator}) = Int
+
+mutable struct _SquarefreeIteratorState
+  block_start::Int
+  next_index::Int
+  next_prime::Int
+  prime_squares::Vector{Int}
+  block::BitVector
+  residuals::Vector{Int}
+end
+
+function _sieve_squarefree_prime_base!(state::_SquarefreeIteratorState, prime_base::Vector{Int})
+  block_length = length(state.block)
+  block_end = state.block_start + (block_length - 1)
+  resize!(state.residuals, block_length)
+  for i in 1:block_length
+    state.residuals[i] = state.block_start + (i - 1)
+  end
+
+  # Remove each allowed prime once, rejecting repeated factors.
+  for p in prime_base
+    p > block_end && break
+    first_index = mod(-state.block_start, p) + 1
+    for i in first_index:p:block_length
+      q = divexact(state.residuals[i], p)
+      state.residuals[i] = q
+      if iszero(rem(q, p))
+        state.block[i] = false
+      end
+    end
+  end
+
+  # Keep only squarefree products of the base primes.
+  for i in 1:block_length
+    state.block[i] &= isone(state.residuals[i])
+  end
+  return nothing
+end
+
+function _sieve_squarefree_block!(it::SquarefreeIterator, state::_SquarefreeIteratorState)
+  block_length = min(it.block_size, it.bound - state.block_start + 1)
+  block_end = state.block_start + (block_length - 1)
+  resize!(state.block, block_length)
+  fill!(state.block, true)
+  state.next_index = 1
+
+  if it.prime_base !== nothing
+    _sieve_squarefree_prime_base!(state, it.prime_base)
+    return nothing
+  end
+
+  # Generate the prime squares needed for the current block.
+  limit = isqrt(block_end)
+  while state.next_prime <= limit
+    p = state.next_prime
+    push!(state.prime_squares, p*p)
+    state.next_prime = next_prime(p)
+  end
+
+  # Remove multiples of prime squares and excluded primes.
+  for p2 in state.prime_squares
+    first_index = mod(-state.block_start, p2) + 1
+    for i in first_index:p2:block_length
+      state.block[i] = false
+    end
+  end
+  for p in it.coprime_to
+    first_index = mod(-state.block_start, p) + 1
+    for i in first_index:p:block_length
+      state.block[i] = false
+    end
+  end
+  return nothing
+end
+
+function Base.iterate(it::SquarefreeIterator)
+  iszero(it.bound) && return nothing
+  state = _SquarefreeIteratorState(1, 1, 2, Int[], BitVector(), Int[])
+  _sieve_squarefree_block!(it, state)
+  return iterate(it, state)
+end
+
+@inline function Base.iterate(it::SquarefreeIterator, state::_SquarefreeIteratorState)
+  while true
+    i = findnext(state.block, state.next_index)
+    if i !== nothing
+      state.next_index = i + 1
+      return state.block_start + (i - 1), state
+    end
+
+    if length(state.block) == it.bound - state.block_start + 1
+      return nothing
+    end
+    state.block_start += length(state.block)
+    _sieve_squarefree_block!(it, state)
+  end
+end
+
 ################################################################################
 #
 #  Squarefree part
