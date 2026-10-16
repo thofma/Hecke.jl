@@ -501,6 +501,14 @@ end
 
     @test length(subfields(K)) == 4
     @test length(Hecke.principal_subfields(K)) == 4
+
+    # no element of the basis 1, sqrt(2), sqrt(3), sqrt(6) is primitive
+    k, _ = number_field(x^2 + 1, :i)
+    kt, t = k[:t]
+    K, _ = number_field(t^8 - 8*t^6 + 18*t^4 - 104*t^2 + 1, :b)
+    r2, r3 = roots(K, t^2 - 2)[1], roots(K, t^2 - 3)[1]
+    L, _ = subfield(K, [one(K), r2, r3, r2*r3], isbasis = true)
+    @test degree(L) == 4
   end
 end
 
