@@ -583,7 +583,7 @@ function coeffs_of_product(M::S, N::S, A::MatAlgebra{T, S}) where {T, S<:MatElem
     d = Dict{Tuple{Int, Int}, typeof(t)}()
     for I = ind
       if !haskey(d, (I[2], I[3]))
-        d[(I[2], I[3])] = coefficients(mul!(tmp, view(M, I[1]:I[1], :), view(N, :, I[2]:I[2]))[1,1])
+        d[(I[2], I[3])] = coefficients(mul!(tmp, view(M, I[2]:I[2], :), view(N, :, I[3]:I[3]))[1,1])
       end
       push!(t, d[(I[2], I[3])][I[1]])
     end
