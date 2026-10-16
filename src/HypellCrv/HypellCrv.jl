@@ -24,7 +24,7 @@ mutable struct HypellCrv{T}
   function HypellCrv{T}(f::PolyRingElem{T}, h::PolyRingElem{T}, check::Bool = true) where {T}
     n = degree(f)
     m = degree(h)
-    g = 2*m < n ? div(n - 1, 2) : div(2*m - 1, 2)
+    g = div(max(2*m, n) - 1, 2)
     if g < 0
       error("y^2 + h*y = f does not define a hyperelliptic curve.")
     end
