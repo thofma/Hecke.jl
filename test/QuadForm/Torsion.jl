@@ -212,7 +212,7 @@
   @test is_genus(T1, (4,2)) == false
   @test is_genus(T1, (16,2)) == true
   @test is_genus(T1, (5,1)) == false
-  G = genus(diagonal_matrix(ZZRingElem[2, 6, 6]))
+  G = genus_from_gram(diagonal_matrix(ZZRingElem[2, 6, 6]))
   D = discriminant_group(G)
   @test is_genus(D, (2,0)) == false
   @test is_genus(D, (3,0)) == true
