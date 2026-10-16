@@ -226,6 +226,14 @@ end
 function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
+  fl, j, c = _is_group_algebra_monomial(b)
+  if fl
+    return _mul_group_elem(a, A.base_to_group[j], Val(false), c)
+  end
+  fl, j, c = _is_group_algebra_monomial(a)
+  if fl
+    return _mul_group_elem(b, A.base_to_group[j], Val(true), c)
+  end
   if !_is_sparse(a)
     d = dim(A)
     v = Vector{T}(undef, d)
@@ -254,6 +262,72 @@ function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
       s += r
     end
     return A(s)
+  end
+end
+
+function _is_group_algebra_monomial(a::GroupAlgebraElem)
+  if _is_sparse(a)
+    ca = a.coeffs_sparse::sparse_row_type(base_ring(parent(a)))
+    if length(ca) == 1
+      return true, ca.pos[1], ca.values[1]
+    end
+    i = isempty(ca) ? 1 : ca.pos[1]
+    return false, 0, ca[i]
+  end
+  ca = coefficients(a, copy = false)
+  j = 0
+  # A second nonzero coefficient rules out singleton support.
+  for i in 1:length(ca)
+    if !iszero(ca[i])
+      j != 0 && return (false, 0, ca[i])
+      j = i
+    end
+  end
+  return j == 0 ? (false, 0, ca[1]) : (true, j, ca[j])
+end
+
+# Integer coefficients can be copied without deepcopy's temporary IdDict.
+# TODO: Replace this helper with mutable_copy once it is available.
+_copy_group_algebra_coeff(c::ZZRingElem) = set!(ZZ(), c)
+_copy_group_algebra_coeff(c) = deepcopy(c)
+
+function *(a::GroupAlgebraElem{T, GroupAlgebra{T, S, R}}, g::R) where {T, S, R}
+  return _mul_group_elem(a, g, Val(false))
+end
+
+function *(g::R, a::GroupAlgebraElem{T, GroupAlgebra{T, S, R}}) where {T, S, R}
+  return _mul_group_elem(a, g, Val(true))
+end
+
+function _mul_group_elem(a::GroupAlgebraElem{T}, g, ::Val{left}, c = nothing) where {T, left}
+  if c !== nothing && isone(c)
+    return _mul_group_elem(a, g, Val(left))
+  end
+  A = parent(a)
+  @req parent(g) == group(A) "Parents don't match"
+  if _is_dense(a)
+    j = A.group_to_base[g]
+    mt = multiplication_table(A, copy = false)
+    ca = coefficients(a, copy = false)
+    v = Vector{T}(undef, dim(A))
+    # Each row and column of the multiplication table is a permutation.
+    for i in 1:dim(A)
+      k = left ? mt[j, i] : mt[i, j]
+      v[k] = c === nothing ? _copy_group_algebra_coeff(ca[i]) : (left ? c*ca[i] : ca[i]*c)
+    end
+    return A(v)
+  else
+    op = _op(A)
+    ca = a.coeffs_sparse::sparse_row_type(base_ring(A))
+    v = Tuple{Int, T}[]
+    sizehint!(v, length(ca))
+    for (i, ci) in ca
+      h = left ? op(g, A.base_to_group[i]) : op(A.base_to_group[i], g)
+      ci = c === nothing ? _copy_group_algebra_coeff(ci) : (left ? c*ci : ci*c)
+      push!(v, (__elem_index(A, h), ci))
+    end
+    # Translation can change the order of the support indices.
+    return A(sparse_row(base_ring(A), v))
   end
 end
 
