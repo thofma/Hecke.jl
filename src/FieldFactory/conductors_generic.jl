@@ -49,6 +49,91 @@ function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; 
 
 end
 
+struct TameConductorsDegree2Iterator
+  squarefree::SquarefreeIterator
+  degree::Int
+  bound::ZZRingElem
+  ramified_primes::Vector{Int}
+  ramified_norms::Vector{ZZRingElem}
+end
+
+@doc raw"""
+    tame_conductors_degree_2_iterator(O::AbsSimpleNumFieldOrder, bound::IntegerUnion;
+                                     unramified_outside = ZZRingElem[])
+
+Return an iterator over tame conductor candidates `(m, norm(radical(m*O)))`
+of norm at most `bound` for abelian extensions with Galois group of exponent 2.
+Assume that `O` is maximal and `nf(O)` is normal. A nonempty `unramified_outside`
+restricts the prime divisors of `m`.
+"""
+function tame_conductors_degree_2_iterator(O::AbsSimpleNumFieldOrder, bound::IntegerUnion; unramified_outside::AbstractVector{<:IntegerUnion} = ZZRingElem[])
+  return _tame_conductors_degree_2_iterator(O, ZZRingElem(bound),
+                                           ZZRingElem[p for p in unramified_outside])
+end
+
+function _tame_conductors_degree_2_iterator(O::AbsSimpleNumFieldOrder, bound::ZZRingElem, unramified_outside::Vector{ZZRingElem})
+  @req bound >= 0 "The bound must be nonnegative"
+  d = degree(O)
+  ram_primes = sort!(filter!(!=(2), ramified_primes(O)))
+  squarefree = squarefree_up_to_iterator(Int(iroot(bound, d));
+                                         coprime_to = vcat(ram_primes, 2),
+                                         prime_base = unramified_outside)
+
+  primes = Int[]
+  norms = ZZRingElem[]
+  for q in ram_primes
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
+    e = prime_decomposition_type(O, Int(q))[1][2]
+    nq = ZZ(q)^divexact(d, e)
+    if nq <= bound
+      push!(primes, Int(q))
+      push!(norms, nq)
+    end
+  end
+  return TameConductorsDegree2Iterator(squarefree, d, bound, primes, norms)
+end
+
+Base.IteratorSize(::Type{TameConductorsDegree2Iterator}) = Base.SizeUnknown()
+Base.eltype(::Type{TameConductorsDegree2Iterator}) = Tuple{Int, ZZRingElem}
+
+function Base.iterate(it::TameConductorsDegree2Iterator)
+  r = iterate(it.squarefree)
+  r === nothing && return nothing
+  m, squarefree_state = r
+  n = ZZ(m)^it.degree
+  stack = Tuple{Int, Int, ZZRingElem}[(1, m, n)]
+  return (m, n), (squarefree_state, stack)
+end
+
+function Base.iterate(it::TameConductorsDegree2Iterator, state)
+  squarefree_state, stack = state
+
+  # Traverse the ramified-prime products, pruning by the norm bound.
+  while !isempty(stack)
+    i, m, n = pop!(stack)
+    while i <= length(it.ramified_primes)
+      nn = n*it.ramified_norms[i]
+      if nn <= it.bound
+        push!(stack, (i + 1, m, n))
+        mm = Base.checked_mul(m, it.ramified_primes[i])
+        push!(stack, (i + 1, mm, nn))
+        return (mm, nn), (squarefree_state, stack)
+      end
+      i += 1
+    end
+  end
+
+  # Start the next squarefree part.
+  r = iterate(it.squarefree, squarefree_state)
+  r === nothing && return nothing
+  m, squarefree_state = r
+  n = ZZ(m)^it.degree
+  push!(stack, (1, m, n))
+  return (m, n), (squarefree_state, stack)
+end
+
 function squarefree_for_conductors(O::AbsSimpleNumFieldOrder, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
 
   sqf = trues(n)
