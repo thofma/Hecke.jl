@@ -11,6 +11,23 @@ function quo(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PID})
   return Q, EmbeddedModuleMap(M, Q, d)
 end
 
+function quo(M::EmbeddedModule{_DD}, N::EmbeddedModule{_DD})
+  _check_compatible(M, N)
+  @req issubset(N, M) "Not a submodule"
+  A = basis_matrix(M)
+  B = basis_matrix(N)
+  if iszero(nrows(B))
+    C = zero_matrix(overring(M), 0, nrows(A))
+  else
+    fl, C = can_solve_with_solution(matrix(A), matrix(B); side = :left)
+    @assert fl
+  end
+  Q = Hecke.FPModuleDedekind(ring(M), Hecke.coefficient_ideals(A), C,
+                            Hecke.coefficient_ideals(B))
+  d = EmbeddedModuleDataDDQuotient(M, Q, N)
+  return Q, EmbeddedModuleMap(M, Q, d)
+end
+
 @doc raw"""
     quotient_embedded_module(M::EmbeddedModule, N::EmbeddedModule)
 

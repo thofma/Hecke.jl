@@ -260,7 +260,7 @@ nothing
 
 ## Quotients
 
-For PID coefficients and `N` contained in `M`, `quo(M, N)` returns `(Q, f)`, where `Q`
+For `N` contained in `M`, `quo(M, N)` returns `(Q, f)`, where `Q`
 represents $M/N$ and `f` is the surjective projection from `M` to `Q`.
 Its kernel is `N` and its image is `Q`; `preimage(f, y)` chooses a
 representative in `M`.
