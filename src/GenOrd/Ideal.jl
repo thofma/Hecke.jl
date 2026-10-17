@@ -1237,6 +1237,13 @@ end
 #
 ################################################################################
 
+# Checks is v*M/d is integral, i.e. v*M lies in d*R^n
+function _is_integral_row(v::Vector, M::MatElem, d::RingElem)
+  is_unit(d) && return true
+  w = matrix(base_ring(M), 1, length(v), v)*M
+  return all(c -> divides(c, d)[1], w)
+end
+
 @doc raw"""
     in(x::GenOrdElem, y::GenOrdIdl)
 
@@ -1248,15 +1255,8 @@ function in(x::GenOrdElem, y::GenOrdIdl)
 end
 
 function containment_by_matrices(x::GenOrdElem, y::GenOrdIdl)
-  A, den = _basis_matrix_inv_pair(y)
-  kx = base_ring(order(y))
-  R = residue_ring(kx, den; cached = false)[1]
-  M = map_entries(R, A)
-  coords = coordinates(x)
-  v = matrix(R, 1, degree(parent(x)), coords)
-  #mul!(v, v, M) This didn't work
-  v = v*M
-  return iszero(v)
+  M, d = _basis_matrix_inv_pair(y)
+  return _is_integral_row(coordinates(x), M, d)
 end
 
 ###############################################################################
