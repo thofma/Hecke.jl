@@ -46,6 +46,7 @@ _ring_type(::Type{ZZRing}) = _PID
 _ring_type(::Type{<:PolyRing{<:T}}) where {T <: FieldElement} = _PID
 _ring_type(::Type{<:KInftyRing{T}}) where {T <: FieldElement} = _PID
 _ring_type(::Type{<:AbsNumFieldOrder}) = _DD
+_ring_type(::Type{<:GenOrd}) = _DD
 _ring_type(R::Ring) = _ring_type(typeof(R))
 
 # When working over a Dedekind domain, work with PseudoElements
@@ -224,6 +225,20 @@ struct EmbeddedModuleDataDDQuotient{DomainT, CodomainT} <:
   domain::DomainT
   codomain::CodomainT
   kernel::DomainT
+end
+
+struct EmbeddedModuleDataDDReduction{DomainT, CodomainT, RingMapT, FieldMapT, VectorT, MatrixT} <:
+         Map{DomainT, CodomainT, HeckeMap, EmbeddedModuleDataDDReduction}
+  domain::DomainT
+  codomain::CodomainT
+  kernel::DomainT
+  ring_map::RingMapT
+  field_map::FieldMapT
+  local_generators::VectorT
+  lift_coefficients::VectorT
+  reduction_matrix::MatrixT  # nothing for M -> M/pM
+  pivot_columns::Vector{Int}
+  basis_columns::Vector{Int}
 end
 
 struct EmbeddedModuleMapDDData{DomainT, CodomainT, RingMapT}

@@ -265,9 +265,10 @@ represents $M/N$ and `f` is the surjective projection from `M` to `Q`.
 Its kernel is `N` and its image is `Q`; `preimage(f, y)` chooses a
 representative in `M`.
 
-```@docs
-quotient_vector_space
-```
+For PID coefficients, `Hecke.quotient_vector_space(M, p)` and
+`Hecke.quotient_vector_space(M, N, p)` return `(V, f)` for `M/pM` and `M/N`
+over `R/(p)`, where `R = Hecke.ring(M)` and `p` is prime in `R`. The second
+form requires `pM` contained in `N` and `N` contained in `M`.
 
 ```@example embedded_modules_integer
 Q, MtoQ = quo(M, N)
@@ -276,11 +277,11 @@ y = Hecke._element_from_coordinates(M, ZZRingElem[2, 0])
 @assert !iszero(MtoQ(x))
 @assert iszero(MtoQ(y))
 
-W, MtoW, _ = Hecke.quotient_vector_space(M, ZZ(2))
+W, MtoW = Hecke.quotient_vector_space(M, ZZ(2))
 @assert dim(W) == rank(M)
 @assert kernel(MtoW) == N
 
-V, MtoV, ZZtoF = Hecke.quotient_vector_space(M, N, ZZ(2))
+V, MtoV = Hecke.quotient_vector_space(M, N, ZZ(2))
 @assert dim(V) == 2
 @assert !iszero(MtoV(x))
 @assert iszero(MtoV(y))
@@ -288,13 +289,56 @@ V, MtoV, ZZtoF = Hecke.quotient_vector_space(M, N, ZZ(2))
 nothing
 ```
 
+Over a Dedekind domain `O`, pass a nonzero prime ideal `p` to obtain an `O/p`
+vector space. Absolute simple number field orders and generic orders,
+including finite and infinite function field orders, are supported, with
+nonprincipal and fractional coefficient ideals. The form with a submodule `N`
+requires `pM` contained in `N` and `N` contained in `M`. Both forms return
+`(V, f)`, the vector space and projection. The reduction constructs and stores
+the residue field map internally. It is available through `Hecke.ring_map(f)`.
+
+```@example embedded_modules_dedekind_reduction
+using Hecke
+K, a = quadratic_field(-5)
+O = maximal_order(K)
+p = ideal(O, 2, O(1 + a))
+I = inv(K(2))*fractional_ideal(p)
+M = Hecke.embedded_module(O, K, pseudo_matrix(O, identity_matrix(K, 2), [I, I]))
+N = Hecke.embedded_module(O, K, pseudo_matrix(O, K[1 1; 0 1], [I, p*I]))
+V, f = Hecke.quotient_vector_space(M, p)
+W, g = Hecke.quotient_vector_space(M, N, p)
+@assert dim(V) == 2 && dim(W) == 1
+@assert kernel(g) === N
+@assert f(preimage(f, V([1, 0]))) == V([1, 0])
+@assert g(preimage(g, W([1]))) == W([1])
+nothing
+```
+
+```@example embedded_modules_function_field_reduction
+using Hecke
+kt, t = rational_function_field(GF(5), :t)
+K, a = function_field(polynomial(kt, [-t^3 - t - 1, 0, 1]))
+O = finite_maximal_order(K)
+p = first(prime_decomposition(O, base_ring(O)(t)))[1]
+I = inv(K(t))*fractional_ideal(p)
+M = Hecke.embedded_module(O, K, pseudo_matrix(O, identity_matrix(K, 2), [I, I]))
+N = Hecke.embedded_module(O, K, pseudo_matrix(O, K[1 1; 0 1], [I, p*I]))
+V, f = Hecke.quotient_vector_space(M, p)
+W, g = Hecke.quotient_vector_space(M, N, p)
+@assert dim(V) == 2 && dim(W) == 1
+@assert f(preimage(f, V([1, 0]))) == V([1, 0])
+@assert g(preimage(g, W([1]))) == W([1])
+nothing
+```
+
 ### Quotients of associative algebra lattices
 
 For PID coefficients, `quo(L, N)` returns the module quotient `L/N` and a
 projection from `L`. `Hecke.quotient_vector_space(L, p)` and
-`Hecke.quotient_vector_space(L, N, p)` return a vector space over `R/(p)`,
-its projection, and the residue-field map, where `R = base_ring(L)` and `p`
-is prime. The latter requires `pL` contained in `N` and `N` contained in `L`.
+`Hecke.quotient_vector_space(L, N, p)` return a vector space over `R/(p)`
+and its projection, where `R = base_ring(L)` and `p` is prime. The latter
+requires `pL` contained in `N` and `N` contained in `L`. The residue field map
+is constructed and stored internally. Retrieve it with `Hecke.ring_map(f)`.
 These constructions delegate to the underlying embedded modules. Their
 projections accept lattice elements, return lattice elements from `preimage`,
 and return kernel lattices. Composites ending in an embedded module retain
@@ -308,8 +352,9 @@ b = basis(A)
 L = Hecke.lattice(A, ZZ, b[1:2])
 N = 3*L
 Q, q = quo(L, N)
-V, f, ZZtoF = Hecke.quotient_vector_space(L, ZZ(3))
-W, g, _ = Hecke.quotient_vector_space(L, N, ZZ(3))
+V, f = Hecke.quotient_vector_space(L, ZZ(3))
+ZZtoF = Hecke.ring_map(f)
+W, g = Hecke.quotient_vector_space(L, N, ZZ(3))
 x = L(5*b[1] - b[2])
 @assert dim(V) == dim(W) == 2
 @assert q(preimage(q, q(x))) == q(x)

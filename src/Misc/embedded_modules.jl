@@ -2,7 +2,7 @@ module EmbeddedModules
 
 import ..Hecke
 
-import Base: +, ==, intersect, issubset, parent
+import Base: *, +, ==, intersect, issubset, parent
 import LinearAlgebra: rank
 
 import ..Hecke:
@@ -10,6 +10,7 @@ import ..Hecke:
   AbsNumFieldOrder,
   FieldElement,
   FractionFieldMap,
+  GenOrd,
   HeckeMap,
   KInftyRing,
   Map,
@@ -160,6 +161,7 @@ import .EmbeddedModules:
   quotient_embedded_module,
   quotient_vector_space,
   ring,
+  ring_map,
   set_basis_matrix,
   set_basis_matrix_components,
   set_basis_matrix_inverse,

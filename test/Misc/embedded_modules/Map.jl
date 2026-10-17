@@ -6,5 +6,6 @@
   include("Map/QuotientEmbeddedModule.jl")
   include("Map/PIDReduction.jl")
   include("Map/DDQuotient.jl")
+  include("Map/DDReduction.jl")
   include("Map/Composition.jl")
 end

@@ -12,7 +12,7 @@ function _pseudo_element(elem, id)
 end
 
 function _pseudo_element(elem, R::Ring, ::Type{_DD})
-  return PseudoElement(elem, fractional_ideal(R, one(R)))
+  return PseudoElement(elem, Hecke.fractional_ideal(ideal(R, one(R))))
 end
 
 function Base.:(*)(x::PseudoElement, y::PseudoElement)

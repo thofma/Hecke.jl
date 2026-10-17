@@ -1,4 +1,3 @@
-include("GenOrd/Types.jl")
 include("GenOrd/Auxiliary.jl")
 include("GenOrd/FractionalIdeal.jl")
 include("GenOrd/GenOrd.jl")
