@@ -133,7 +133,7 @@ end
 function Base.:(*)(a::Union{Integer, Rational, RingElem}, x::EmbeddedModuleElem)
   M = parent(x)
   r = ring(M)(a)
-  c = isdefined(x, :coords) ? r .* x.coords : nothing
+  c = isdefined(x, :coords) ? _coordinate_ring(M)(r) .* x.coords : nothing
   if isdefined(x, :ambientcoords)
     s = image(fraction_map(M), r)
     v = s .* x.ambientcoords
