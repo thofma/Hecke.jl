@@ -18,8 +18,9 @@ function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; 
     tr = prime_decomposition_type(O, Int(q))
     e = tr[1][2]
     nq = ZZRingElem(q)^(divexact(d,e))
+    # Norm contributions need not increase with q.
     if nq > bound
-      break
+      continue
     end
     l=length(extra_list)
     for i = 1:l
