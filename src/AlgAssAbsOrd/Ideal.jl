@@ -76,27 +76,15 @@ Returns the ideal in $A$ with basis matrix $M$.
 If `M_in_hnf == true`, it is assumed that $M$ is already in lower left HNF.
 """
 function ideal(A::AbstractAssociativeAlgebra{QQFieldElem}, M::QQMatrix; M_in_hnf::Bool=false)
-  if !M_in_hnf
-    if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
-      M = _hnf_integral(M, :lowerleft, compute_det = true)
-    else
-      M = _hnf_integral(M, :lowerleft)
-    end
-  end
-  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  return AlgAssAbsOrdIdl{typeof(A), ZZRing}(A, ZZ, sub(M, k:nrows(M), 1:ncols(M)))
+  H = M_in_hnf ? M : _hnf_integral(M, :lowerleft)
+  k = something(findfirst(i -> !is_zero_row(H, i), 1:nrows(H)), nrows(H) + 1)
+  return AlgAssAbsOrdIdl{typeof(A), ZZRing}(A, ZZ, sub(H, k:nrows(H), 1:ncols(H)))
 end
 
 function ideal(A::AbstractAssociativeAlgebra, R::Ring, M::MatElem; M_in_hnf::Bool=false)
-  if !M_in_hnf
-    if false #is_square(M) && (dim(A) > 50 || sum(nbits, numerator(M)) > 1000)
-      M = _hnf_integral(M, R, :lowerleft, compute_det = true)
-    else
-      M = _hnf_integral(M, R, :lowerleft)
-    end
-  end
-  k = something(findfirst(i -> !is_zero_row(M, i), 1:nrows(M)), nrows(M) + 1)
-  return AlgAssAbsOrdIdl{typeof(A), typeof(R)}(A, R, sub(M, k:nrows(M), 1:ncols(M)))
+  H = M_in_hnf ? M : _hnf_integral(M, R, :lowerleft)
+  k = something(findfirst(i -> !is_zero_row(H, i), 1:nrows(H)), nrows(H) + 1)
+  return AlgAssAbsOrdIdl{typeof(A), typeof(R)}(A, R, sub(H, k:nrows(H), 1:ncols(H)))
 end
 
 @doc raw"""
@@ -467,14 +455,10 @@ function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 
   d = dim(algebra(a))
   M = vcat(basis_matrix(a, copy = false), basis_matrix(b, copy = false))
-  if nrows(M) >= ncols(M) && is_lower_triangular(M)
-    M = _hnf_integral(M, :lowerleft, triangular_top = true)
-  else
-    M = _hnf_integral(M, :lowerleft)
-  end
-  k = findfirst(i -> !is_zero_row(M, i), 1:nrows(M))
-  M = sub(M, k:nrows(M), 1:ncols(M))
-  c = ideal(algebra(a), M; M_in_hnf=true)
+  triangular_top = nrows(M) >= ncols(M) && is_lower_triangular(M)
+  H = _hnf_integral(M, :lowerleft; triangular_top)
+  k = findfirst(i -> !is_zero_row(H, i), 1:nrows(H))
+  c = ideal(algebra(a), sub(H, k:nrows(H), 1:ncols(H)); M_in_hnf=true)
   if isdefined(a, :order) && isdefined(b, :order) && order(a) === order(b)
     c.order = order(a)
   end

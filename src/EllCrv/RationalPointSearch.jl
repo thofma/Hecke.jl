@@ -207,14 +207,13 @@ function _find_points(coefficients::Vector, bound::Union{Integer, ZZRingElem}, N
 
   n = length(coefficients)
   odd_degree = iseven(n)
-  lead_coeff = coefficients[end]
 
   # Now first compute the primes we will use for sieving
   # We use those primes such that mod p there are few points
 
   # Take the Pfirst primes that are most optimal for sieving
   best_primes = Tuple{Int, QQFieldElem}[]
-  exclude_denom= Int[]
+  exclude_denom::Vector{Int} = Int[]
   exclude_denom_new = Int[]
 
   for p in primes
