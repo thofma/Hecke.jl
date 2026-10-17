@@ -53,4 +53,18 @@
     @test evaluate(fac) == f
     @test length(fac) == 1
   end
+
+  # absolute factorization over a rational function field
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qtx, x = Qt[:x]
+    fac = factor_absolute(x^2 - 2*t^2)
+    @test length(fac) == 2
+    (g, h), e = fac[2]
+    @test e == 1
+    @test degree(g) == 1 && degree(h) == 1
+    xx = gen(parent(g))
+    tt = gen(base_ring(parent(g)))
+    @test g * h == xx^2 - 2*tt^2
+  end
 end

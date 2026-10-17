@@ -67,4 +67,38 @@
   S, mS = Hecke.sunit_group_fac_elem(lP)
   V = quo(S, [(mS\(mU(U[i]))) for i in 1:ngens(U)])
   @test order(V[1]) == 1
+
+  @testset "No Brauer relation" begin
+    K, = cyclotomic_field(5; cached = false)
+    # the error path prints the group
+    @test_throws ErrorException redirect_stdout(devnull) do
+      Hecke.NormRel._norm_relation_setup_generic(K)
+    end
+    @test Hecke.NormRel.has_useful_generalized_norm_relation(small_group(24, 3))
+    @test !Hecke.NormRel.has_useful_generalized_norm_relation(small_group(8, 4))
+  end
+
+  @testset "Induced action" begin
+    K, = number_field(x^4 - 10*x^2 + 1; cached = false)
+    @test length(Hecke.NormRel._norm_relation_for_sunits(K)) == 3
+
+    N = Hecke.NormRel._norm_relation_setup_generic(K; pure = true)
+    c = Hecke.class_group_ctx(maximal_order(K))
+    FB = c.FB.ideals
+    for i in 1:length(N)
+      k, = Hecke.NormRel.subfield(N, i)
+      degree(k) == 1 && continue
+      n = divexact(degree(K), degree(k))
+      zk = lll(maximal_order(k))
+      lp = [P for p in unique!(minimum.(FB)) for (P, _) in prime_decomposition(zk, p)]
+      z = redirect_stdout(devnull) do
+        Hecke.NormRel.induce_action(N, i, 1, lp, c.FB, Vector{Tuple{Int, ZZRingElem}}[])
+      end
+      zz = Hecke.NormRel.induce_action_from_subfield(N, i, lp, c.FB, Vector{Tuple{Int, ZZRingElem}}[])
+      @test length(zz) == degree(K)
+      for y in push!(zz, z)
+        @test all(norm(prod(FB[j]^Int(e) for (j, e) in y[l])) == norm(lp[l])^n for l in 1:length(lp))
+      end
+    end
+  end
 end

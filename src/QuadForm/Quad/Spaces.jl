@@ -517,10 +517,8 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
     ok = all(p -> !is_local_square(-det, p), finite)
 
     if !ok
-      #q = ZZRingElem[p for p in finite if is_local_square(-det, p)][1]
-      if is_local_square(-det, q)
-        error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
-      end
+      q = ZZRingElem[p for p in finite if is_local_square(-det, p)][1]
+      error("A binary form with determinant $det must have Hasse invariant +1 at the prime $q")
     end
   end
 

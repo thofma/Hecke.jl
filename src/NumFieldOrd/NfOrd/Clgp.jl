@@ -334,23 +334,23 @@ end
 function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
   O = order(c.FB.ideals[1])
   if !redo
-    U = get_attribute(O, :UnitGrpCtx)::UnitGrpCtx
+    U = get_attribute(O, :UnitGrpCtx)
     if U !== nothing
-      return U
+      return U::UnitGrpCtx
     end
   end
 
   U = UnitGrpCtx{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}(O)
   need_more = true
   while true
-    r = _unit_group_find_units(U, c)
+    r, = _unit_group_find_units(U, c)
     if r == 0
       if need_more
         d = isqrt(abs(discriminant(O)))
         c.expect = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
         need_more = false
       end
-      class_group_new_relations_via_lll(c, E)
+      class_group_new_relations_via_lll(c)
     else
       set_attribute!(O, :UnitGrpCtx => U)
       return U
