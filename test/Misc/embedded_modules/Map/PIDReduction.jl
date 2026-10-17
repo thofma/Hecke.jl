@@ -2,7 +2,10 @@
   ambient = nothing
   M = Hecke.embedded_module(ZZ, QQ, QQ[1//6 0 0; 0 3 0];
                            overstructure = ambient, is_basis_matrix = true)
-  V, f, RtoF = @inferred Hecke.quotient_vector_space(M, ZZ(3))
+  result = @inferred Hecke.quotient_vector_space(M, ZZ(3))
+  @test length(result) == 2
+  V, f = result
+  RtoF = Hecke.ring_map(f)
   F = base_ring(V)
   B = basis(M)
   x = 5*B[1] - 4*B[2]
@@ -46,7 +49,7 @@
 
   N = Hecke.embedded_module(ZZ, QQ, Hecke.basis_matrix(M);
                            overstructure = ambient)
-  W, g, = Hecke.quotient_vector_space(N, ZZ(3))
+  W, g = Hecke.quotient_vector_space(N, ZZ(3))
   @test W !== V
   @test_throws ArgumentError f(basis(N)[1])
   @test_throws ArgumentError preimage(f, g(basis(N)[1]))
@@ -69,7 +72,10 @@ end
                            overstructure = ambient, is_basis_matrix = true)
   N = Hecke.embedded_module(ZZ, QQ, QQ[1//6 3 0; 0 9 0];
                            overstructure = ambient, is_basis_matrix = true)
-  V, f, RtoF = @inferred Hecke.quotient_vector_space(M, N, ZZ(3))
+  result = @inferred Hecke.quotient_vector_space(M, N, ZZ(3))
+  @test length(result) == 2
+  V, f = result
+  RtoF = Hecke.ring_map(f)
   F = base_ring(V)
   B = basis(M)
   x = 2*B[1] + 3*B[2]
@@ -101,14 +107,14 @@ end
     @test iszero(f(n))
   end
 
-  W, g, = Hecke.quotient_vector_space(M, N, ZZ(3))
+  W, g = Hecke.quotient_vector_space(M, N, ZZ(3))
   @test W !== V
   @test_throws ArgumentError f(basis(N)[1])
   @test_throws ArgumentError preimage(f, g(B[1]))
   @test occursin("defined by", sprint(show, MIME"text/plain"(), f))
 
-  U, h, = Hecke.quotient_vector_space(M, ZZ(3))
-  T, k, = Hecke.quotient_vector_space(M, kernel(h), ZZ(3))
+  U, h = Hecke.quotient_vector_space(M, ZZ(3))
+  T, k = Hecke.quotient_vector_space(M, kernel(h), ZZ(3))
   @test dim(U) == dim(T) == 2
   @test all(coordinates(h(b)) == coordinates(k(b)) for b in B)
 end
@@ -116,7 +122,7 @@ end
 @testset "zero-dimensional residue quotients" begin
   for M in (Hecke.embedded_module(ZZ, QQ, identity_matrix(QQ, 2)),
             Hecke.zero_embedded_module(ZZ, QQ, 3))
-    V, f, = Hecke.quotient_vector_space(M, M, ZZ(3))
+    V, f = Hecke.quotient_vector_space(M, M, ZZ(3))
     @test dim(V) == 0
     @test iszero(f(zero(M)))
     @test all(iszero(f(b)) for b in basis(M))
@@ -132,7 +138,7 @@ end
 
 @testset "zero PID reduction" begin
   M = Hecke.zero_embedded_module(ZZ, QQ, 3)
-  V, f, = Hecke.quotient_vector_space(M, ZZ(2))
+  V, f = Hecke.quotient_vector_space(M, ZZ(2))
   @test dim(V) == 0
   @test iszero(f(zero(M)))
   @test iszero(preimage(f, zero(V)))
@@ -152,7 +158,8 @@ end
     s = R === Rpoly ? K(p) : inv(x)
     M = Hecke.embedded_module(R, K, K[inv(s) 0 0; 0 s 0];
                              is_basis_matrix = true)
-    V, f, RtoF = Hecke.quotient_vector_space(M, p)
+    V, f = Hecke.quotient_vector_space(M, p)
+    RtoF = Hecke.ring_map(f)
     F = base_ring(V)
     B = basis(M)
     @test dim(V) == 2
@@ -190,7 +197,8 @@ end
                              is_basis_matrix = true)
     N = Hecke.embedded_module(R, K, K[inv(s) s 0; 0 s^2 0];
                              is_basis_matrix = true)
-    V, f, RtoF = Hecke.quotient_vector_space(M, N, p)
+    V, f = Hecke.quotient_vector_space(M, N, p)
+    RtoF = Hecke.ring_map(f)
     F = base_ring(V)
     B = basis(M)
     @test dim(V) == 1

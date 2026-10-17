@@ -52,14 +52,6 @@ function quotient_embedded_module(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PI
   return E, hom(M, E, images)
 end
 
-@doc raw"""
-    quotient_vector_space(M::EmbeddedModule{_PID}, p::RingElem)
-    quotient_vector_space(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PID}, p::RingElem)
-
-Return `(V, f, RtoF)` for the quotient $M/pM$ or $M/N$ over the residue
-field $F = R/(p)$, where $R$ is the coefficient PID and `p` is prime in `R`.
-The second form requires $pM \subseteq N \subseteq M$.
-"""
 function quotient_vector_space(M::EmbeddedModule{_PID}, p::RingElem)
   R = ring(M)
   @req parent(p) === R "Prime must belong to the coefficient ring"
@@ -70,7 +62,7 @@ function quotient_vector_space(M::EmbeddedModule{_PID}, p::RingElem)
   N = embedded_module(R, overring(M), s * basis_matrix(M);
                       overstructure = overstructure(M), is_basis_matrix = true)
   d = EmbeddedModuleDataPIDReduction(M, V, N, RtoF, nothing, nothing)
-  return V, EmbeddedModuleMap(M, V, d), RtoF
+  return V, EmbeddedModuleMap(M, V, d)
 end
 
 function quotient_vector_space(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PID},
@@ -100,5 +92,67 @@ function quotient_vector_space(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PID},
     @assert fl
   end
   data = EmbeddedModuleDataPIDReduction(M, V, N, RtoF, A, B)
-  return V, EmbeddedModuleMap(M, V, data), RtoF
+  return V, EmbeddedModuleMap(M, V, data)
+end
+
+function _dd_reduction_data(M::EmbeddedModule{_DD}, p)
+  R = ring(M)
+  @req Hecke.order(p) === R "Prime ideal must belong to the coefficient ring"
+  @req !iszero(p) && is_prime(p) "Ideal must be nonzero and prime"
+  F, RtoF = residue_field(R, p)
+  KtoF = Hecke.extend(RtoF, overring(M))
+  u = image(fraction_map(M), Hecke.uniformizer(p))
+  iu = inv(u)
+  ideals = Hecke.coefficient_ideals(basis_matrix(M))
+  s = Vector{elem_type(overring(M))}(undef, length(ideals))
+  lifts = similar(s)
+  for i in eachindex(s)
+    v = Hecke.valuation(ideals[i], p)
+    s[i] = v < 0 ? iu^(-v) : u^v
+    c = Hecke.coprime_to(inv(s[i]) * ideals[i], p)
+    lifts[i] = s[i] * c * preimage(KtoF, inv(image(KtoF, c)))
+  end
+  return F, RtoF, KtoF, u, s, lifts
+end
+
+function quotient_vector_space(M::EmbeddedModule{_DD}, p)
+  F, RtoF, KtoF, _, s, lifts = _dd_reduction_data(M, p)
+  V = free_module(F, rank(M); cached = false)
+  N = p * M
+  data = EmbeddedModuleDataDDReduction(M, V, N, RtoF, KtoF, s, lifts, nothing, nothing)
+  return V, EmbeddedModuleMap(M, V, data)
+end
+
+function quotient_vector_space(M::EmbeddedModule{_DD}, N::EmbeddedModule{_DD}, p)
+  _check_compatible(M, N)
+  F, RtoF, KtoF, u, s, lifts = _dd_reduction_data(M, p)
+  @req issubset(N, M) "Not a submodule"
+  pM = p * M
+  @req issubset(pM, N) "Quotient must be annihilated by the prime ideal"
+
+  # Reduce a local basis of N in the local coordinates of M. Its row span
+  # is N/pM, so a right kernel gives the projection onto M/N.
+  BN = basis_matrix(N)
+  fl, C = can_solve_with_solution(matrix(basis_matrix(M)), matrix(BN); side = :left)
+  @assert fl
+  A = zero_matrix(F, nrows(C), ncols(C))
+  iu = inv(u)
+  for i in 1:nrows(C)
+    v = Hecke.valuation(Hecke.coefficient_ideals(BN)[i], p)
+    t = v < 0 ? iu^(-v) : u^v
+    for j in 1:ncols(C)
+      A[i, j] = image(KtoF, t * C[i, j]/s[j])
+    end
+  end
+  P = kernel(A; side = :right)
+  d = ncols(P)
+  V = free_module(F, d; cached = false)
+  if iszero(d)
+    S = zero_matrix(F, 0, rank(M))
+  else
+    fl, S = can_solve_with_solution(P, Hecke.identity_matrix(F, d); side = :left)
+    @assert fl
+  end
+  data = EmbeddedModuleDataDDReduction(M, V, N, RtoF, KtoF, s, lifts, P, S)
+  return V, EmbeddedModuleMap(M, V, data)
 end

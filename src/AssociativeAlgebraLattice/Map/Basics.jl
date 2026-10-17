@@ -9,6 +9,8 @@ Return the underlying embedded-module map.
 """
 underlying_map(f::AssociativeAlgebraLatticeMap) = f.underlying_map
 
+ring_map(f::AssociativeAlgebraLatticeMap) = ring_map(underlying_map(f))
+
 function image(f::AssociativeAlgebraLatticeMap, x::AssociativeAlgebraLatticeElem)
   @req parent(x) === domain(f) "Element not in domain"
   return image(underlying_map(f), elem_in_module(x))

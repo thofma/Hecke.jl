@@ -725,7 +725,8 @@ end
 ################################################################################
 
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
-  K, _ = finite_field(p,"o")
+  @req is_irreducible(p) "Polynomial must be irreducible"
+  K = fqPolyRepField(p, :o, false)
   return K, map_from_func(R, K, x->K(x), y->R(y))
 end
 
@@ -795,6 +796,7 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem, degree_limit::Int = 0,
 
     I = ideal(O, p, b)
     I.gens_normal = p
+    I.uniformizer = b
     I.is_prime = 1
     I.splitting_type = e, f
     I.norm = p^f
@@ -929,6 +931,65 @@ function Hecke.pradical(O::GenOrd, p::RingElem)
   return ideal(O, rad(O,p); M_in_hnf = true)
 end
 
+@doc raw"""
+    uniformizer(P::GenOrdIdl) -> GenOrdElem
+
+Return an element of the nonzero prime ideal `P` with valuation one at `P`.
+Reuse a stored generator when possible, and cache the result in `P`.
+"""
+function uniformizer(P::GenOrdIdl{S, T}) where {S, T}
+  if isdefined(P, :uniformizer)
+    return P.uniformizer::elem_type(GenOrd{S, T})
+  end
+  @req !is_zero(P) && is_prime(P) "Ideal must be nonzero and prime"
+  if has_2_elem_normal(P)
+    P.uniformizer = _gen_two(P)
+    return P.uniformizer::elem_type(GenOrd{S, T})
+  end
+  P2 = P^2
+  if has_princ_gen(P) && !(_princ_gen(P) in P2)
+    P.uniformizer = _princ_gen(P)
+  elseif has_2_elem(P) && !(_gen_two(P) in P2)
+    P.uniformizer = _gen_two(P)
+  else
+    for b in basis(P; copy = false)
+      if !(b in P2)
+        P.uniformizer = b
+        break
+      end
+    end
+    @req isdefined(P, :uniformizer) "Could not find a uniformizer of the prime ideal"
+  end
+  return P.uniformizer::elem_type(GenOrd{S, T})
+end
+
+function anti_uniformizer(P::GenOrdIdl{S, T}) where {S, T}
+  if isdefined(P, :anti_uniformizer)
+    return P.anti_uniformizer::elem_type(S)
+  end
+  @req !is_zero(P) && is_prime(P) "Ideal must be nonzero and prime"
+  O = order(P)
+  K = field(O)
+  p = minimum(P)
+  if has_2_elem_normal(P)
+    u = _gen_two(P)
+  else
+    # Make the uniformizer a unit at the other primes over p.
+    u = uniformizer(P)
+    others = simplify(fractional_ideal(ideal(O, p)) *
+                      inv(fractional_ideal(P))^ramification_index(P))
+    @assert isone(denominator(others))
+    a, b = idempotents(P^2, numerator(others))
+    u = a + b*u
+  end
+  ai = inv(K(u))
+  _, d = integral_split(ai, O)
+  ai *= K(O(ppio(d, p)[2]))
+  ai = K(mod(O(K(O(p))*ai), p^2))/K(O(p))
+  P.anti_uniformizer = ai
+  return ai::elem_type(S)
+end
+
 function _basis_uniformizer(P::GenOrdIdl, p::RingElem, f::Int)
   # We have one prime above p.
   # If we are in maximal (at p) order, at least one element of the basis
@@ -985,6 +1046,7 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
     P.gen_one = p
     P.gen_two = O(p)
     P.gens_normal = p
+    P.uniformizer = P.gen_two
     P.princ_gen = O(p)
     P.is_principal = 1
 
@@ -1009,6 +1071,7 @@ function _decomposition(O::GenOrd{S, T}, I::GenOrdIdl{S, T}, Ip::GenOrdIdl{S, T}
       P.gen_one = p
       P.gen_two = P_uni
       P.gens_normal = p
+      P.uniformizer = P_uni
     end
 
     e = valuation(ideal(O, p), P)
@@ -1345,6 +1408,32 @@ mutable struct GenOrdToFqField{S, T} <: Map{S, T, Hecke.HeckeMap, Any}#GenOrdToF
 end
 
 kernel(f::GenOrdToFqField{S}) where {S} = f.P::ideal_type(S)
+
+function extend(f::GenOrdToFqField, K::Field)
+  O = domain(f)
+  @req K === field(O) "Field must be the fraction field of the order"
+  F = codomain(f)
+  p = kernel(f)
+  pia = anti_uniformizer(p)
+  function _image(x)
+    n, d = integral_split(x, O)
+    fd = f(O(d))
+    if !iszero(fd)
+      return f(n)/fd
+    end
+
+    l = valuation(ideal(O, d), p)
+    a = pia^l
+    nx = a*K(n)
+    @req nx in O "Element not p-integral"
+    return f(O(nx))/f(O(a*K(O(d))))
+  end
+  return map_from_func(K, F, _image, y -> K(preimage(f, y)))
+end
+
+function Nemo._residue_field(f::QQPolyRingElem)
+  return residue_field(parent(f), f; cached = false)
+end
 
 function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
   Kt = parent(f)

@@ -6,11 +6,32 @@ end
 
 function _zero_module_like(M::EmbeddedModule{_DD})
   B = zero_matrix(overring(M), 0, ambient_rank(M))
-  C = typeof(fractional_ideal(ring(M), one(ring(M))))[]
+  C = Hecke.fractional_ideal_type(ring(M))[]
   P = Hecke.pseudo_matrix(ring(M), B, C)
   return embedded_module(ring(M), overring(M), P;
                          overstructure = overstructure(M), is_basis_matrix = true)
 end
+
+@doc raw"""
+    *(I, M::EmbeddedModule{_DD})
+    *(M::EmbeddedModule{_DD}, I)
+
+Multiply `M` by an integral or fractional ideal `I` of `ring(M)`.
+Preserve the ambient space and `overstructure(M)`.
+"""
+function *(I::Union{Hecke.NumFieldOrderIdeal, Hecke.NumFieldOrderFractionalIdeal,
+                   Hecke.GenOrdIdl, Hecke.GenOrdFracIdl}, M::EmbeddedModule{_DD})
+  @req Hecke.order(I) === ring(M) "Ideal must belong to the coefficient ring"
+  iszero(I) && return _zero_module_like(M)
+  B = basis_matrix(M)
+  P = Hecke.pseudo_matrix(ring(M), matrix(B),
+                         [I * J for J in Hecke.coefficient_ideals(B)])
+  return embedded_module(ring(M), overring(M), P;
+                         overstructure = overstructure(M), is_basis_matrix = true)
+end
+
+*(M::EmbeddedModule{_DD}, I::Union{Hecke.NumFieldOrderIdeal, Hecke.NumFieldOrderFractionalIdeal,
+                                  Hecke.GenOrdIdl, Hecke.GenOrdFracIdl}) = I * M
 
 function _sum(M::EmbeddedModule, N::EmbeddedModule, ::Type{_PID})
   B = vcat(basis_matrix(M), basis_matrix(N))

@@ -215,7 +215,7 @@ an optional ambient object.
 function embedded_module(R::Ring, S::Ring, M#=::MatrixElem or PMat=#; overstructure = nothing, is_basis_matrix = false, inverse = nothing)
   if M isa MatElem && _ring_type(R) === _DD
     B = base_ring(M) === S ? M : change_base_ring(S, M)
-    C = [Hecke.fractional_ideal(R, one(R)) for _ in 1:nrows(B)]
+    C = [Hecke.fractional_ideal(ideal(R, one(R))) for _ in 1:nrows(B)]
     M = Hecke.pseudo_matrix(R, B, C)
   end
 

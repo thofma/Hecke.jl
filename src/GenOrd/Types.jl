@@ -113,6 +113,8 @@ end
   gen_one::RingElem
   gen_two::GenOrdElem
   gens_normal::RingElem   # the p for which <gen_one, gen_two> is a P(p)-normal presentation
+  uniformizer::GenOrdElem
+  anti_uniformizer
 
   princ_gen::GenOrdElem
   prim_elem::GenOrdElem

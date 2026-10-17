@@ -1005,3 +1005,149 @@ end
     @test mod(x, I) == mod(y, I)
   end
 end
+
+@testset "Generic order uniformizers and coprime lifts" begin
+  function test_uniformizer_and_coprime_lifts(O, p, q)
+    K = Hecke.field(O)
+    u = @inferred uniformizer(p)
+    @test parent(u) === O
+    @test u in p
+    @test !(u in p^2)
+    @test valuation(ideal(O, u), p) == 1
+    @test uniformizer(p) === u
+    @test uniformizer(deepcopy(p)) == u
+    @test Hecke.has_2_elem_normal(p)
+    @test valuation(ideal(O, Hecke._gen_two(p)), p) == 1
+
+    function test_anti_uniformizer(P)
+      a = @inferred anti_uniformizer(P)
+      @test parent(a) === K
+      @test a in inv(fractional_ideal(p))
+      @test valuation(a*O, p) == -1
+      @test anti_uniformizer(P) === a
+      @test anti_uniformizer(deepcopy(P)) == a
+      for (Q, _) in prime_decomposition(O, minimum(p))
+        @test valuation(a*O, Q) == (Q == p ? -1 : 0)
+      end
+    end
+    test_anti_uniformizer(p)
+
+    # An ideal reconstructed from its matrix has no stored two-generator
+    # presentation. Finding a uniformizer must also work in this case.
+    P = ideal(O, basis_matrix(p); M_in_hnf = true)
+    @test !Hecke.has_2_elem(P)
+    v = uniformizer(P)
+    @test v in p && !(v in p^2)
+    @test uniformizer(P) === v
+    test_anti_uniformizer(P)
+
+    if ramification_index(p) == 1
+      # This is still the same prime, but the supplied second generator has
+      # valuation two and must not be used as a uniformizer.
+      P = ideal(O, minimum(p), u*u)
+      @test P == p
+      @test !Hecke.has_2_elem_normal(P)
+      v = uniformizer(P)
+      @test v in p && !(v in p^2)
+      @test uniformizer(P) === v
+      test_anti_uniformizer(P)
+    end
+
+    I = fractional_ideal(p)
+    for J in (fractional_ideal(ideal(O, one(O))), I, inv(I), inv(K(q))*I)
+      e = valuation(J, p)
+      scale = e < 0 ? inv(K(u))^(-e) : K(u)^e
+      normalized = inv(scale)*J
+      c = Hecke.coprime_to(normalized, p)
+      @test parent(c) === K
+      @test c in normalized
+      @test valuation(c*O, p) == 0
+    end
+    @test_throws ArgumentError Hecke.coprime_to(I, p)
+    @test_throws ArgumentError uniformizer(ideal(O, zero(O)))
+    @test_throws ArgumentError uniformizer(ideal(O, one(O)))
+    @test_throws ArgumentError uniformizer(p^2)
+    @test_throws ArgumentError anti_uniformizer(ideal(O, zero(O)))
+    @test_throws ArgumentError anti_uniformizer(ideal(O, one(O)))
+    @test_throws ArgumentError anti_uniformizer(p^2)
+  end
+
+  K, a = quadratic_field(-5)
+  O = maximal_order(Hecke.GenOrd(ZZ, K))
+  for q in (2, 3, 11), (p, _) in prime_decomposition(O, ZZ(q))
+    test_uniformizer_and_coprime_lifts(O, p, K(q))
+  end
+
+  for k in (GF(5), QQ)
+    kt, t = rational_function_field(k, :t; cached = false)
+    K, a = function_field(polynomial(kt, [-t^3 - t - 1, 0, 1]); cached = false)
+    O = finite_maximal_order(K)
+    for q in (t, t - 1, t^3 + t + 1), (p, _) in prime_decomposition(O, base_ring(O)(q))
+      test_uniformizer_and_coprime_lifts(O, p, K(q))
+    end
+    Oinf = infinite_maximal_order(K)
+    for (p, _) in prime_decomposition(Oinf, base_ring(Oinf)(inv(t)))
+      test_uniformizer_and_coprime_lifts(Oinf, p, inv(K(t)))
+    end
+
+    K, a = function_field(polynomial(kt, [-t^2 - 1, 0, 1]); cached = false)
+    Oinf = infinite_maximal_order(K)
+    for (p, _) in prime_decomposition(Oinf, base_ring(Oinf)(inv(t)))
+      test_uniformizer_and_coprime_lifts(Oinf, p, inv(K(t)))
+    end
+  end
+end
+
+@testset "Extending generic order residue field maps" begin
+  function test_extended_residue_map(O, p, b, q)
+    K = Hecke.field(O)
+    F, rho = residue_field(O, p)
+    f = extend(rho, K)
+    @test domain(f) === K
+    @test codomain(f) === F
+    @test_throws ArgumentError extend(rho, QQ)
+    @test_throws ArgumentError f(zero(O))
+    @test_throws ArgumentError preimage(f, zero(O))
+
+    for c in basis(O)
+      @test f(K(c)) == rho(c)
+      @test f(K(c)/(1 + q)) == rho(c)
+    end
+    for y in (zero(F), one(F), rho(O(b)))
+      x = preimage(f, y)
+      @test parent(x) === K
+      @test f(x) == y
+    end
+
+    # At the chosen split prime, b specializes to eps = +/-1.
+    # The fraction 1/(b + eps) is locally integral, but its scalar denominator
+    # vanishes at p because b + eps vanishes at the other split prime.
+    eps = iszero(rho(O(b - 1))) ? one(K) : -one(K)
+    x = inv(b + eps)
+    _, d = Hecke.integral_split(x, O)
+    @test iszero(rho(O(d)))
+    y = inv(rho(O(b + eps)))
+    @test f(x) == y
+    @test f(x + 1) == y + 1
+    @test f(x*x) == y*y
+    @test_throws ArgumentError f(inv(b - eps))
+    @test_throws ArgumentError f(inv(K(q)))
+  end
+
+  K, a = quadratic_field(-5)
+  O = maximal_order(Hecke.GenOrd(ZZ, K))
+  p = first(prime_decomposition(O, ZZ(3)))[1]
+  test_extended_residue_map(O, p, a, K(3))
+
+  for k in (GF(5), QQ)
+    kt, t = rational_function_field(k, :t; cached = false)
+    K, a = function_field(polynomial(kt, [-t^2 - 1, 0, 1]); cached = false)
+    O = finite_maximal_order(K)
+    p = first(prime_decomposition(O, base_ring(O)(t)))[1]
+    test_extended_residue_map(O, p, a, K(t))
+
+    Oinf = infinite_maximal_order(K)
+    p = first(prime_decomposition(Oinf, base_ring(Oinf)(inv(t))))[1]
+    test_extended_residue_map(Oinf, p, a/K(t), inv(K(t)))
+  end
+end

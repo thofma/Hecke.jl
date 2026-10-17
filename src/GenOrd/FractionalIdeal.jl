@@ -578,6 +578,22 @@ function Hecke.factor(A::GenOrdFracIdl)
   return primes
 end
 
+@doc raw"""
+    coprime_to(I::GenOrdFracIdl, p::GenOrdIdl)
+
+For a fractional ideal `I` with valuation zero at the nonzero prime ideal `p`,
+return an element of `I` with valuation zero at `p`.
+"""
+function coprime_to(I::GenOrdFracIdl, p::GenOrdIdl)
+  O = order(I)
+  @req order(p) === O "Ideals must belong to the same order"
+  @req !is_zero(p) && is_prime(p) "Ideal must be nonzero and prime"
+  @req !is_zero(I) && iszero(valuation(I, p)) "Fractional ideal must have valuation zero at the prime"
+  a = first(basis(I))
+  v = valuation(a * O, p)
+  return iszero(v) ? a : a * anti_uniformizer(p)^v
+end
+
 function Hecke.valuation(A::GenOrdFracIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
   O = A.order
   A_num = numerator(A; copy = false)

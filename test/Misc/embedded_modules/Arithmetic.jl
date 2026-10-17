@@ -13,6 +13,53 @@
   @test intersect(M, N) == M
 end
 
+@testset "Ideal multiplication over Dedekind domains" begin
+  function test_ideal_multiplication(O, p, q)
+    K = parent(q)
+    I = inv(K(q))*fractional_ideal(p)
+    ambient = nothing
+    M = Hecke.embedded_module(O, K, pseudo_matrix(O, K[1 0 0; 0 1 0], [I, I]);
+                             overstructure = ambient, is_basis_matrix = true)
+    for J in (p, I)
+      N = J*M
+      @test N == M*J
+      @test Hecke.ring(N) === O
+      @test Hecke.overring(N) === K
+      @test Hecke.overstructure(N) === ambient
+      @test Hecke.ambient_rank(N) == 3
+      @test rank(N) == rank(M)
+      @test (J*p)*M == J*(p*M)
+      @test (J + p)*M == J*M + p*M
+    end
+    @test ideal(O, one(O))*M == M
+    @test fractional_ideal(ideal(O, one(O)))*M == M
+    for J in (ideal(O, zero(O)), fractional_ideal(ideal(O, zero(O))))
+      Z = J*M
+      @test iszero(rank(Z))
+      @test Hecke.ambient_rank(Z) == 3
+      @test Hecke.overstructure(Z) === ambient
+      @test p*Z == Z
+    end
+    @test kernel(last(Hecke.quotient_vector_space(M, p))) == p*M
+    L, _ = quadratic_field(-1)
+    @test_throws ArgumentError ideal(maximal_order(L), 2)*M
+  end
+
+  K, _ = quadratic_field(-5)
+  for O in (maximal_order(K), maximal_order(Hecke.GenOrd(ZZ, K)))
+    p = first(prime_decomposition(O, ZZ(3)))[1]
+    test_ideal_multiplication(O, p, K(3))
+  end
+
+  kt, t = rational_function_field(GF(5), :t; cached = false)
+  K, _ = function_field(polynomial(kt, [-t^3 - t - 1, 0, 1]); cached = false)
+  for O in (finite_maximal_order(K), infinite_maximal_order(K))
+    q = base_ring(O) isa PolyRing ? t : inv(t)
+    p = first(prime_decomposition(O, base_ring(O)(q)))[1]
+    test_ideal_multiplication(O, p, K(q))
+  end
+end
+
 @testset "degree localization" begin
   K, x = rational_function_field(QQ, "x")
   R = localization(K, degree)
