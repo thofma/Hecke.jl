@@ -54,6 +54,35 @@ function _principal_subfields_basis(K::SimpleNumField)
   return principal_subfields_ar
 end
 
+# Return a primitive element of the subfield L of K/k with k-basis given by the
+# rows of M. The coefficients of the minimal polynomial of gen(K) over L
+# generate L over k. As elementary symmetric functions in conjugates of gen(K)
+# they have small minimal polynomials, unlike the elements of an echelonized
+# basis of L.
+function _subfield_small_primitive_element(K::SimpleNumField, M::MatElem)
+  d = nrows(M)
+  d == 1 && return one(K)
+  Kx, _ = polynomial_ring(K, "x", cached = false)
+  g = _get_sfpoly(Kx, M)
+  cf = [coeff(g, j) for j in degree(g)-1:-1:0]
+
+  for c in cf
+    degree(minpoly(c)) == d && return c
+  end
+
+  # A proper intermediate field contains s(t) = sum_j cf[j]*t^(j-1) for fewer
+  # than length(cf) values of t (Vandermonde), and there are finitely many.
+  t = 1
+  while true
+    s = cf[end]
+    for j in length(cf)-1:-1:1
+      s = cf[j] + t*s
+    end
+    degree(minpoly(s)) == d && return s
+    t += 1
+  end
+end
+
 @doc raw"""
     principal_subfields(L::SimpleNumField) -> Vector{Tuple{NumField, Map}}
 
@@ -76,17 +105,18 @@ function principal_subfields(K::SimpleNumField)
   v === nothing || return v
 
   ba = _principal_subfields_basis(K)
-  elts = Vector{Vector{elem_type(K)}}(undef, length(ba))
-  for i in 1:length(ba)
+  T = typeof(K)
+  res = Tuple{T, morphism_type(T)}[]
+  for M in ba
     if K isa NumField{QQFieldElem}
-      baf = FakeFmpqMat(ba[i])
-      elts[i] = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
+      baf = FakeFmpqMat(M)
+      elts = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
+      push!(res, subfield(K, elts, isbasis = true))
     else
-      elts[i] = [elem_from_mat_row(K, ba[i], j) for j=1:nrows(ba[i])]
+      s = _subfield_small_primitive_element(K, M)
+      push!(res, _subfield_from_primitive_element(K, s))
     end
   end
-  T = typeof(K)
-  res = Tuple{T, morphism_type(T)}[ subfield(K, elts[i], isbasis = true) for i in 1:length(elts)]
   set_attribute!(K, :principal_subfields => res)
   return res
 end
