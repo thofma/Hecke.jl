@@ -149,7 +149,7 @@ of the function field in which a lives.
 """
 function differentiation(a::Generic.AbsSimpleFunctionFieldElem, j::Int)
   F = parent(a)
-  return derivation(a, j)//F(factorial(j))
+  return derivation(a, j)//F(factorial(ZZ(j)))
 end
 
 
@@ -164,7 +164,7 @@ function differentiation(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPo
     return a
   end
   r, s = divrem(j, p)
-  e = derivation(a, s)//F(factorial(s))
+  e = derivation(a, s)//F(factorial(ZZ(s)))
   if r == 0
     return e
   else
@@ -196,7 +196,7 @@ function power_representation(a0::Generic.AbsSimpleFunctionFieldElem{FqFieldElem
   b = zero_matrix(F, p, 1)
   b[p] = a[p]
   for j in (p - 1:-1:1)
-    b[j] = a[j] - sum([b[i] * binomial(i-1, j-1) *x^(i - j) for i in (j:p)])
+    b[j] = a[j] - sum([b[i] * binomial(ZZ(i-1), ZZ(j-1)) *x^(i - j) for i in (j:p)])
   end
   return [pth_root(B) for B in b]
 end
@@ -226,11 +226,11 @@ function Hecke.pth_root(a::Generic.AbsSimpleFunctionFieldElem{FqFieldElem, FqPol
     #Compute pth root of num and den in polynomial ring.
     c_num = numerator(c)
     #Compute pth root of variable powers and coefficients in Fq.
-    c_num = map_coefficients(pth_root, deflate(c_num, p.d))
+    c_num = map_coefficients(pth_root, deflate(c_num, p.d); parent = parent(c_num))
 
     c_den = denominator(c)
     #Compute pth root of variable powers and coefficients in Fq.
-    c_den = map_coefficients(pth_root, deflate(c_den, p.d))
+    c_den = map_coefficients(pth_root, deflate(c_den, p.d); parent = parent(c_num))
 
     #Put together to coordinate of b.
     coord[i] = kx(c_num, c_den)
