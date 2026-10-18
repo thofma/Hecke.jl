@@ -724,13 +724,13 @@ end
 #
 ################################################################################
 
-# NOTE: both Native.finite_field and FqField *ignore* check kwarg and do not check
-#   p to be irreducible. Currently ALL the usages i have found are guaranteed to
-#   be irreducible, but it would make sense to have cached kwarg in residue_field
+# NOTE: FqField *ignore* check kwarg and do not check p to be irreducible.
+#   Currently ALL the usages i have found are guaranteed to be irreducible,
+#   but it would make sense to have cached kwarg in residue_field
 
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
   @req parent(p) === R "p must belong to R"
-  K, _ = Native.finite_field(p, :o; cached = false, check = false)
+  K = FqField(p, :o, false; check = false)
   return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
 end
 
@@ -1368,6 +1368,12 @@ function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
   return L, map_from_func(Kt, L, x -> L(x), y -> Kt(y))
 end
 
+function Nemo._residue_field(f::Union{fpPolyRingElem, FpPolyRingElem})
+  Kt = parent(f)
+  L = FqField(f, :o, false; check = false)
+  return L, MapFromFunc(Kt, L, x -> L(x), y -> Kt(y))
+end
+
 function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)
   a, g, b, phi = get_residue_field_data(P)::Tuple{elem_type(O),
                                                   poly_type(base_ring(O)),
@@ -1375,21 +1381,25 @@ function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)
                                                   Any} # not optimal
   gg = map_coefficients(phi, g)
   bb = map_entries.(phi, b)
-  K = base_ring(parent(gg))
+  Kt = parent(gg)
   F, KtoF = Nemo._residue_field(gg)
+  # NOTE: for K = base_ring(Kt), K might not coerce to F; thus work in K[t]
+  #   and map to F at the end
+
   d = degree(O)
-  imgofbas = [KtoF(parent(gg)(bb[i][1, :])) for i in 1:d]
+  polyofbas = [Kt(bb[i][1, :]) for i in 1:d]
   powersofa = powers(a, degree(g))
 
   _image = function(x::GenOrdElem)
     @assert parent(x) === O
     c = base_ring(O).(coordinates(x))
-    return sum(phi(c[i]) * imgofbas[i] for i in 1:d)
+    return KtoF(sum(phi(c[i]) * polyofbas[i] for i in 1:d))
   end
 
   _preimage = function(x)
     @assert parent(x) === F
-    return sum(preimage(phi, coeff(x, i - 1)) * powersofa[i] for i in 1:degree(g))
+    y = preimage(KtoF, x)
+    return sum(preimage(phi, coeff(y, i - 1)) * powersofa[i] for i in 1:degree(g))
   end
 
   return F, GenOrdToFqField{typeof(O), typeof(F)}(O, F, P, _image, _preimage)

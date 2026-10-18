@@ -1116,3 +1116,30 @@ end
     @test mod(x, I) == mod(y, I)
   end
 end
+
+@testset "residue_field with different base field types (finite)" begin
+  for k in [Native.GF(5), Native.GF(ZZ(5))]
+    kx, x = rational_function_field(k, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    F, _ = function_field(y^2 - x^3 - x - 1; cached = false)
+    Ofin = finite_maximal_order(F)
+    Oinf = infinite_maximal_order(F)
+    lp = [prime_decomposition(Ofin, numerator(x));
+          prime_decomposition(Ofin, numerator(x)^2 + 2);
+          prime_decomposition(Oinf, base_ring(Oinf)(1//x))]
+    for (P, _) in lp
+      O = order(P)
+      K, OtoK = residue_field(O, P)
+      @test K isa FqField
+      @test (@inferred kernel(OtoK)) === P
+
+      for c in (zero(K), one(K), gen(K), gen(K)^2 + 2)
+        @test OtoK(preimage(OtoK, c)) == c
+      end
+
+      for b in basis(P)
+        @test iszero(OtoK(b))
+      end
+    end
+  end
+end
