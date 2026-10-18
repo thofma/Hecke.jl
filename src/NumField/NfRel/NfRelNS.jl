@@ -323,24 +323,8 @@ function Nemo.add!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T
   return c
 end
 
-# Before AbstractAlgebra 0.51.1 (Nemocas/AbstractAlgebra.jl#2575),
-# hash(::Generic.MPoly) also hashes the unused capacity of the exponent array,
-# so equal elements can hash differently; hash the terms instead
-@static if pkgversion(AbstractAlgebra) >= v"0.51.1"
-  function Base.hash(a::RelNonSimpleNumFieldElem, h::UInt)
-    return hash(data(a), h)
-  end
-else
-  function Base.hash(a::RelNonSimpleNumFieldElem, h::UInt)
-    f = data(a)
-    h = hash(0x2a8e9b1c5d3f7046 % UInt, h)
-
-    for (c, e) in zip(coefficients(f), exponent_vectors(f))
-      h = hash(e, hash(c, h))
-    end
-
-    return h
-  end
+function Base.hash(a::RelNonSimpleNumFieldElem, b::UInt)
+  return hash(a.data, b)
 end
 
 ###############################################################################
