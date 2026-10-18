@@ -625,7 +625,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
   local prec::Int = 20
   local gamma::Vector{ZZRingElem}
 
-  function pr_fac(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
+  function pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField})
     @assert parent(a) == parent(A[1]) || base_ring(parent(a)) == parent(A[1])
     c = ZZRingElem[]
     for i=1:length(cp)
@@ -695,8 +695,6 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     push!(c, _c[1,1])
     return G(c)
   end
-  pr(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}) = pr_fac(a)
-  pr(a::AbsSimpleNumFieldElem) = pr_fac(FacElem(a))
 
   return G, map_from_func(G, parent(u[1]), im, pr)
 end

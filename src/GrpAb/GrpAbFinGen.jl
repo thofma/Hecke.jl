@@ -1793,22 +1793,18 @@ function find_isomorphism(G, op, A::GrpAb)
   return GtoA, AtoG
 end
 
-# F_p[x] for the smallest prime p modulo which the defining polynomial of K is squarefree
-function _poly_ring_with_squarefree_reduction(K::AbsSimpleNumField)
-  p = 2
-  Rx = polynomial_ring(GF(p, cached = false), "x", cached = false)[1]
-  while iszero(discriminant(Rx(K.pol)))
-    p = next_prime(p)
-    Rx = polynomial_ring(GF(p, cached = false), "x", cached = false)[1]
-  end
-  return Rx
-end
-
 function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
 	id = id_hom(domain(G[1]))
 	S = small_generating_set(G)
+  p = 2
+  R = GF(p, cached = false)
   K = domain(G[1])
-  Rx = _poly_ring_with_squarefree_reduction(K)
+  Rx = polynomial_ring(R, "x", cached = false)[1]
+  while iszero(discriminant(Rx(K.pol)))
+    p = next_prime(p)
+		R = GF(p, cached = false)
+	  Rx = polynomial_ring(R, "x", cached = false)[1]
+	end
   list = fpPolyRingElem[Rx(x.prim_img) for x in S]
   push!(list, gen(Rx))
   n = length(G)
