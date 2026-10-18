@@ -710,4 +710,13 @@
   Q, mQ = quo(OK, I)
   @test is_unit(zero(Q))
   @test divides(zero(Q), zero(Q))[1]
+
+  # 3-part of (O/q)^* for N(q) = 13
+  K, a = quadratic_field(-1)
+  O = maximal_order(K)
+  q = prime_decomposition(O, 13)[1][1]
+  Q, _ = quo(O, q)
+  U, UtoQ = Hecke._mult_grp(Q, 3)
+  @test order(U) == 3
+  @test all(preimage(UtoQ, UtoQ(g)) == g for g in gens(U))
 end

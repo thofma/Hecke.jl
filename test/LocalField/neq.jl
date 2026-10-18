@@ -111,6 +111,12 @@ end
   c = mU(a+a) - mU(a)*mU(a)
   @test is_zero(c) || valuation(c) > 0
   @test preimage(mU, mU(a)) == a
+
+  # one-unit group with torsion over Q_2
+  L, _ = qadic_field(2, 2; precision = 10)
+  U, mU = Hecke.one_unit_group(L)
+  y = 1 + 2*gen(L)
+  @test mU(preimage(mU, y)) == y
 end
 
 

@@ -57,4 +57,7 @@
         @test coprime_residues(T(-1)) == T[0]
       end
     end
+
+    G, mG = Hecke.sunit_group_fac_elem(ZZRingElem[2, 3])
+    @test evaluate(mG(G([1, 2, -1]))) == QQ(-4, 3)
 end

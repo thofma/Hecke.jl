@@ -372,6 +372,8 @@
     S, mS = snf(G)
     H, mH = hom(G,G)
     T, p = tensor_product(G, G)
+    g1, g2 = gens(G)
+    @test p((g1 + g2, g2)) == p((g1, g2)) + p((g2, g2))
     D = direct_product(G, G, task = :none)
     for i=1:5
       Th = hom_tensor(T, T, map(mH, [rand(H) for x = 1:2])) #induced map in tensor product
