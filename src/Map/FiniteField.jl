@@ -4,7 +4,9 @@ function hom(F::FinField, K::FinField, a::FinFieldElem; check::Bool = true)
   # I will be jumping through a lot of hoops to make
   # base_field(F) == F_p work
   if check
-    if absolute_degree(base_field(F)) == 1 || base_field(F) !== base_field(K)
+    if F isa Union{fqPolyRepField, FqPolyRepField}
+      @assert iszero(map_coefficients(x -> K(lift(ZZ, x)), defining_polynomial(F), cached = false)(a))
+    elseif absolute_degree(base_field(F)) == 1 || base_field(F) !== base_field(K)
       @assert iszero(map_coefficients(x -> base_field(K)(lift(ZZ, x)), defining_polynomial(F), cached = false)(a))
     else
       @assert iszero(defining_polynomial(F)(a))

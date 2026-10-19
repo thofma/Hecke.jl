@@ -291,7 +291,7 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
     mmK = extend(mK, nf(order(p)))
     FKx, = polynomial_ring(FK, "x", cached = false)
     if is_index_divisor(O, p)
-      A, OtoA = StructureConstantAlgebra(O, P, p)
+      A, OtoA = StructureConstantAlgebra(O, P, p, mK)
       AtoO = pseudo_inv(OtoA)
       x = rand(A)
       h = minpoly(x)
@@ -395,15 +395,16 @@ mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap
         x = rand(A)
         h = minpoly(x)
       end
-      hh = FKabsz()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
+      hh = map_coefficients(FKtoFKabs, h; parent = FKabsz)
       h = map_coefficients(FKabstoFK, hh, cached = false)
       h = FKx(collect(coefficients(h)))
       z.poly_of_the_field = h
 
       FE = RelFinField(h, :v)
       FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FKxtoFKabsz = map_from_func(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
+      FKxtoFKabsz = map_from_func(FKx, FKabsz,
+                                 f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))),
+                                 f -> FKx(FKabstoFK.(collect(coefficients(f)))))
       FE2, mE2 = field_extension(hh)
       FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
       mE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
@@ -493,10 +494,18 @@ mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelToFqFie
   end
 end
 
-function extend(f::NfRelOrdToFqFieldRelMor{S}, E::RelSimpleNumField) where {S}
+mutable struct NfRelToRelFinFieldMor{S, T} <: Map{S, T, HeckeMap, NfRelToRelFinFieldMor}
+  header::MapHeader{S, T}
+
+  function NfRelToRelFinFieldMor{S, T}() where {S <: RelSimpleNumField, T <: RelFinField}
+    return new{S, T}(MapHeader{S, T}())
+  end
+end
+
+function extend(f::Union{NfRelOrdToFqFieldRelMor{S}, NfRelOrdToRelFinFieldMor{S}}, E::RelSimpleNumField) where {S}
   nf(domain(f)) != E && error("Number field is not the number field of the order")
 
-  g = NfRelToFqFieldRelMor{typeof(E)}()
+  g = f isa NfRelOrdToFqFieldRelMor ? NfRelToFqFieldRelMor{typeof(E)}() : NfRelToRelFinFieldMor{typeof(E), typeof(codomain(f))}()
   g.header.domain = E
   g.header.codomain = f.header.codomain
 
@@ -516,7 +525,7 @@ function extend(f::NfRelOrdToFqFieldRelMor{S}, E::RelSimpleNumField) where {S}
     return f(a)//f(b)
   end
 
-  function _preimage(x::FqFieldElem)
+  function _preimage(x::Union{FqFieldElem, RelFinFieldElem})
     return elem_in_nf(preimage(f, x))
   end
 
