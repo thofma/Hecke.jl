@@ -21,6 +21,18 @@
     @test absolute_degree(K) == 6
   end
 
+  @testset "is_square" begin
+    F = Native.finite_field(3, 3; cached = false)[1]
+    x = polynomial_ring(F, :x; cached = false)[2]
+    K, gK = Native.finite_field(x^2+1, :a; cached = false)
+    e = divexact(order(K) - 1, 2)
+    for i in 1:20
+      z = rand(K)
+      @test is_square(z^2)
+      @test is_square(z) == (iszero(z) || isone(z^e))
+    end
+  end
+
   @testset "Promote rule" begin
     F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]

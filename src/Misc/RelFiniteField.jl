@@ -336,6 +336,9 @@ function norm(x::RelFinFieldElem)
   return resultant(defining_polynomial(parent(x)), x.data)
 end
 
+# squares are exactly the elements whose norm is a square
+is_square(x::RelFinFieldElem) = is_square(norm(x))
+
 function norm_via_powering(x::RelFinFieldElem)
   q = order(base_field(parent(x)))
   n = degree(parent(x))
