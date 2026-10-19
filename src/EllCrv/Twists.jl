@@ -32,25 +32,49 @@ function quadratic_twist(E::EllipticCurve{T}, d) where T<: FieldElem
   end
 end
 
+# An element of K^* whose class generates K^*/(K^*)^n, for n dividing |K| - 1:
+# K^* being cyclic, one that is an l-th power for no prime l dividing n. The
+# twists of a curve with j = 0 or 1728 correspond to K^*/(K^*)^n, so the powers
+# 1, a, ..., a^(n - 1) of such an element give one twist each. gen(K) need not
+# be one: it is a power when the defining polynomial of K is not primitive, and
+# for a prime field it is 0, 1 or not defined. The search is deterministic, so
+# the twists are the same models on every call; it tries gen(K) + k first,
+# which in even degree avoids the prime field, all of whose elements are
+# squares, and over a prime field it tries 1, 2, ...
+function _twisting_element(K::FinField, n::Int)
+  es = [divexact(order(K) - 1, l) for l in prime_divisors(n)]
+  is_generator(a) = !iszero(a) && all(e -> !isone(a^e), es)
+  g = absolute_degree(K) == 1 ? zero(K) : gen(K)
+  k = 0
+  while k < characteristic(K)
+    is_generator(g + k) && return g + k
+    k += 1
+  end
+  for a in K
+    is_generator(a) && return a
+  end
+  error("K^* has no generator modulo n-th powers; n does not divide |K| - 1")
+end
+
+# The first element of K, in its iteration order, of non-zero absolute trace.
+function _nonzero_trace_element(K::FinField)
+  return first(a for a in K if !iszero(absolute_tr(a)))
+end
+
 @doc raw"""
     quadratic_twist(E::EllipticCurve{FinFieldElem}) -> EllipticCurve{FinFieldElem}
 
-Compute the unique quadratic twist of $E$.
+Compute the unique quadratic twist of $E$, the same model on every call.
 """
 function quadratic_twist(E::EllipticCurve{T}) where T<: FinFieldElem
   K = base_field(E)
 
   if characteristic(K) != 2 # twist-by-d has degree 2 when d is non-square
-    return quadratic_twist(E, non_square(K))
+    return quadratic_twist(E, _twisting_element(K, 2))
   end
 
-  # in characteristic 2 twist-by-d has degree 2 when absolute trace of d is 1.
-  # NOTE: Tr(1) = 1 exactly when the absolute degree is odd
-  u = one(K)
-  while absolute_tr(u) == 0
-    u = rand(K)
-  end
-  return quadratic_twist(E, u)
+  # in characteristic 2 twist-by-d has degree 2 when absolute trace of d is 1
+  return quadratic_twist(E, _nonzero_trace_element(K))
 end
 
 #Test if we can't sometimes get two isomorphic curves
@@ -68,15 +92,14 @@ end
 function supersingular_twists2(E::EllipticCurve{T}) where T<: FinFieldElem
 #Adapted from Magma code
   K = base_field(E)
-  if isodd(degree(K))
+  # the absolute degree: over a relative extension, degree(K) is relative
+  if isodd(absolute_degree(K))
     return EllipticCurve{T}[elliptic_curve(K, [0, 0, 1, 0, 0]), elliptic_curve(K, [0, 0, 1, 1, 0]), elliptic_curve(K, [0, 0, 1, 1, 1]) ]
   end
 
-  u = gen(K);
-  c = u
-  while absolute_tr(c) == 0
-    c = rand(K)
-  end
+  # u generates K^*/(K^*)^3, which has order 3 in even degree
+  u = _twisting_element(K, 3)
+  c = _nonzero_trace_element(K)
   #First three curves
   part_1 = EllipticCurve{T}[elliptic_curve(K, [0, 0, 1, 0, 0]), elliptic_curve(K, [0, 0, 1, c, 0]), elliptic_curve(K, [0, 0, 1, 0, c]) ]
   #The other four
@@ -88,21 +111,20 @@ end
 function supersingular_twists3(E::EllipticCurve{T}) where T<: FinFieldElem
 #Adapted from Magma code
     K = base_field(E)
-    d = degree(K)
+    # the absolute degree: over a relative extension, degree(K) is relative
+    d = absolute_degree(K)
 
     if mod(d, 3) != 0
         c = one(K)
     else
-      c = gen(K)
-      while absolute_tr(c) == 0
-        c = rand(K)
-      end
+      c = _nonzero_trace_element(K)
     end
 
     if isodd(d)
       return EllipticCurve{T}[elliptic_curve(K, [1,0]), elliptic_curve(K, [-1, 0]), elliptic_curve(K, [-1, c]), elliptic_curve(K, [-1, -c]) ];
     end
-    u = gen(K);
+    # u generates K^*/(K^*)^4, which has order 4 in even degree
+    u = _twisting_element(K, 4)
     #First four curves
     part_1 = EllipticCurve{T}[elliptic_curve(K, [-u^i,0]) for i in (0:3)]
     part_2 = EllipticCurve{T}[elliptic_curve(K, [-1,c]), elliptic_curve(K, [-u^2,(u^3)*c])]
@@ -113,7 +135,9 @@ end
 @doc raw"""
     twists(E::EllipticCurve{FinFieldElem}}) -> Vector{EllipticCurve{FinFieldElem}}
 
-Compute all twists of $E$.
+Return the twists of $E$: one curve in each isomorphism class over the base
+field of the curves with the $j$-invariant of $E$, the same models on every
+call.
 """
 function twists(E::EllipticCurve{T}) where T<: FinFieldElem
 #Adapted from Magma code
@@ -127,16 +151,16 @@ function twists(E::EllipticCurve{T}) where T<: FinFieldElem
    elseif p == 3
       return supersingular_twists3(E)
    elseif j == 0
-      a = gen(K)
+      n = gcd(6, order(K)-1)
+      a = _twisting_element(K, Int(n))
       c4, c6 = c_invariants(E)
       c = -c6//864
-      n = gcd(6, order(K)-1)
       return EllipticCurve{T}[ elliptic_curve(K, [0,c*a^i]) for i in (0:n-1) ]
    elseif j == 1728
-      a = gen(K)
+      n = gcd(4, order(K)-1)
+      a = _twisting_element(K, Int(n))
       c4, c6 = c_invariants(E)
       c = -c4//48;
-      n = gcd(4, order(K)-1)
       return EllipticCurve{T}[ elliptic_curve(K, [c*a^i,0]) for i in (0:n-1)]
    end
    #This can never happen:
