@@ -10,6 +10,23 @@
     ConformanceTests.test_Field_interface_recursive(L)
   end
 
+  @testset "is_square" begin
+    Qx, x = QQ[:x]
+    K, a = number_field(x^2 - 3, :a)
+    Kt, t = K[:t]
+    L, b = number_field(t^2 - 2, :b)
+    for z in [b, a*b + 1, L(a)]
+      @test is_square(z^2)
+      fl, s = is_square_with_sqrt(z^2)
+      @test fl && s^2 == z^2
+    end
+    @test is_square(L(3))
+    @test sqrt(L(3))^2 == L(3)
+    @test_throws ArgumentError sqrt(b)
+    @test !is_square(b)
+    @test !is_square(L(-1))
+  end
+
   @testset "lift" begin
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
