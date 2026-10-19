@@ -334,11 +334,21 @@ function _eichler_invariant(O, p)
   end
 end
 
-function is_eichler(O)
+@doc raw"""
+    is_eichler(O::Union{AlgAssAbsOrd, AlgAssRelOrd}) -> Bool
+
+Return whether the order $O$ of a quaternion algebra is an Eichler order, that
+is, the intersection of two maximal orders.
+"""
+function is_eichler(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
   A = algebra(O)
-  @req algebra(O) isa QuaternionAlgebra "Order must be an order of a quaternion algebra"
-  ram = _norms_of_ramified_primes(A)
-  return all(f -> f[2] == 1 || (all(x -> !in(x, f[1]) for x in ram) && eichler_invariant(O, f[1]) == 1), factor(_reduced_disc(O)))
+  @req A isa QuaternionAlgebra "Order must be an order of a quaternion algebra"
+  # O is Eichler at p if and only if it is maximal at p, which where A ramifies
+  # means that p divides discrd(O) once, or it is residually split there
+  # (Voight, Quaternion Algebras, Lemma 24.3.6)
+  return all(factor(_reduced_disc(O))) do (p, e)
+    return (e == 1 && !is_split(A, p)) || eichler_invariant(O, p) == 1
+  end
 end
 
 ################################################################################
