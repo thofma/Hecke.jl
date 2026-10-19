@@ -25,6 +25,10 @@
     p = prime_ideals_over(OA, 3)
     @test length(p) == 1
     @test p[1] == 3*OA
+
+    # p below the degree of OA, as a ZZRingElem
+    @test pradical(OA, ZZ(2)) == pradical(OA, 2)
+    @test pradical(OA, ZZ(3)) == 3*OA
   end
 
   #=
