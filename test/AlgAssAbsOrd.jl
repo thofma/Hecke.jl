@@ -11,4 +11,5 @@
   include("AlgAssAbsOrd/PIP.jl")
   include("AlgAssAbsOrd/ResidueRingMultGrp.jl")
   include("AlgAssAbsOrd/SFC.jl")
+  include("AlgAssAbsOrd/GrossLattice.jl")
 end
