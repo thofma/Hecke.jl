@@ -29,6 +29,7 @@
     @test ramification_index(P) == expected_e
     @test Hecke.has_2_elem(P)
     @test Hecke.has_2_elem_normal(P)
+    @test ideal(order(P), P.gen_one, P.gen_two) == P
     @test 1 == @inferred valuation(ideal(order(P), P.gen_two), P)
   end
 
@@ -571,6 +572,7 @@
   # In here we test "hard" cases:
   # - Kummer-Dedekind with only locally nice generator
   # - index divisor (or not-nice polynomial) finding normal two generators form
+  # We also test degree limits
   @testset "Prime Decomposition" begin
     @testset "over F_7(x) with non-integral defining polynomial" begin
       kx, x = rational_function_field(GF(7), :x; cached = false)
@@ -720,6 +722,115 @@
         check_prime_2elem(P, 1, 1)
       end
       @test prod(P^e for (P, e) in pd) == ideal(O, ZZ(2))
+    end
+
+    @testset "degree limits" begin
+      # Check that prime_decomposition with limits is equivalent to
+      #   filtering the full decomposition
+      function check_prime_decomposition_with_limits(O, p, degree_limit, lower_limit)
+        expected = [(P, e) for (P, e) in prime_decomposition(O, p)
+                    if lower_limit <= inertia_degree(P) <= degree_limit]
+
+        pd = @inferred prime_decomposition(O, p, degree_limit, lower_limit)
+        @test eltype(pd) == Tuple{ideal_type(O), Int}
+        @test length(pd) == length(expected)
+        for (P, e) in pd
+          @test (P, e) in expected
+          @test Hecke.has_2_elem_normal(P)
+          # gen_two must be a uniformizer at P, not at another prime above p
+          @test ideal(O, P.gen_one, P.gen_two) == P
+          @test 1 == valuation(ideal(O, P.gen_two), P)
+        end
+        return pd
+      end
+
+      # assumes that p = P1 * P2 with f(P1) = 1 and f(P2) = 2
+      function check_prime_split_1_2(O, p)
+        @test length(check_prime_decomposition_with_limits(O, p, 3, 0)) == 2
+
+        P, _ = only(check_prime_decomposition_with_limits(O, p, 1, 0))
+        @test inertia_degree(P) == 1
+
+        P, _ = only(check_prime_decomposition_with_limits(O, p, 3, 2))
+        @test inertia_degree(P) == 2
+
+        @test isempty(check_prime_decomposition_with_limits(O, p, 3, 3))
+      end
+
+      # assumes that p is inert
+      function check_prime_inert(O, p)
+        n = degree(O)
+        @test isempty(check_prime_decomposition_with_limits(O, p, n - 1, 0))
+
+        P, e = only(check_prime_decomposition_with_limits(O, p, n, n))
+        @test e == 1
+        @test Hecke.has_princ_gen(P)
+      end
+
+      @testset "Kummer-Dedekind" begin
+        kx, x = rational_function_field(GF(2), :x; cached = false)
+        ky, y = polynomial_ring(kx, :y; cached = false)
+        # modulo x: y^3 - x - 1 = (y + 1)(y^2 + y + 1)
+        L, _ = function_field(y^3 - x - 1; cached = false)
+        O = finite_maximal_order(L)
+
+        p = O.R(x)
+        check_prime_split_1_2(O, p)
+
+        p = O.R(x^2 + x + 1)
+        check_prime_inert(O, p)
+      end
+
+      @testset "general: finite order" begin
+        kx, x = rational_function_field(GF(2), :x; cached = false)
+        ky, y = polynomial_ring(kx, :y; cached = false)
+        L, _ = function_field(y^3 - (x + 1)//x^3; cached = false)
+        O = finite_maximal_order(L)
+
+        p = O.R(x)
+        check_prime_split_1_2(O, p)
+      end
+
+      @testset "general: infinite order" begin
+        kx, x = rational_function_field(GF(2), :x; cached = false)
+        ky, y = polynomial_ring(kx, :y; cached = false)
+        L, _ = function_field(y^3 - x^3 - 1; cached = false)
+        O = infinite_maximal_order(L)
+
+        p = O.R(1//x)
+        check_prime_split_1_2(O, p)
+      end
+
+      @testset "general: inert" begin
+        kx, x = rational_function_field(GF(5), :x; cached = false)
+        ky, y = polynomial_ring(kx, :y; cached = false)
+        L, _ = function_field(y^2 - (x + 2)//x^2; cached = false)
+        O = finite_maximal_order(L)
+
+        p = O.R(x)
+        check_prime_inert(O, p)
+      end
+
+      @testset "general: single ramified prime" begin
+        kx, x = rational_function_field(GF(5), :x; cached = false)
+        ky, y = polynomial_ring(kx, :y; cached = false)
+        L, _ = function_field(y^2 - (x + 1)//x; cached = false)
+        O = finite_maximal_order(L)
+
+        p = O.R(x)
+        P, e = only(check_prime_decomposition_with_limits(O, p, 2, 0))
+        @test (inertia_degree(P), e) == (1, 2)
+        @test isempty(check_prime_decomposition_with_limits(O, p, 2, 2))
+      end
+
+      @testset "general: number field" begin
+        x = gen(Hecke.Globals.Qx)
+        K, _ = number_field(x^3 - 3//8, :a)
+        O = Hecke.maximal_order(Hecke.GenOrd(ZZ, K))
+
+        p = ZZ(2)
+        check_prime_split_1_2(O, p)
+      end
     end
   end
 end
@@ -1003,5 +1114,32 @@ end
     x = OK([tt^3 + tt + 2, tt^2 + 1])
     y = x + b[1] - tt*b[2]
     @test mod(x, I) == mod(y, I)
+  end
+end
+
+@testset "residue_field with different base field types (finite)" begin
+  for k in [Native.GF(5), Native.GF(ZZ(5))]
+    kx, x = rational_function_field(k, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    F, _ = function_field(y^2 - x^3 - x - 1; cached = false)
+    Ofin = finite_maximal_order(F)
+    Oinf = infinite_maximal_order(F)
+    lp = [prime_decomposition(Ofin, numerator(x));
+          prime_decomposition(Ofin, numerator(x)^2 + 2);
+          prime_decomposition(Oinf, base_ring(Oinf)(1//x))]
+    for (P, _) in lp
+      O = order(P)
+      K, OtoK = residue_field(O, P)
+      @test K isa FqField
+      @test (@inferred kernel(OtoK)) === P
+
+      for c in (zero(K), one(K), gen(K), gen(K)^2 + 2)
+        @test OtoK(preimage(OtoK, c)) == c
+      end
+
+      for b in basis(P)
+        @test iszero(OtoK(b))
+      end
+    end
   end
 end
