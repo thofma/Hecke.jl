@@ -267,10 +267,10 @@ function assure_has_proj_representation(D::Divisor)
   end
 end
 
-function _set_proj_representation!(D::Divisor, A::Divisor, r::Int, f::FacElem)
-  D.D_red = A
+function _set_proj_representation!(D::Divisor, D_red::Divisor, r::Int, a::FacElem)
+  D.D_red = D_red
   D.r = r
-  D.a = f
+  D.a = a
   return D
 end
 
@@ -304,9 +304,8 @@ end
 @doc raw"""
     projective_representation(D::Divisor) -> Divisor, Int, FacElem
 
-Return (A, r, f) with D = A + r*(x)_inf - div(f), where (x)_inf is the pole divisor of the
-generator x of the rational function field and A is effective of small degree
-(at most g - 1 + [F : k(x)]).
+Return (D_red, r, a) with D = D_red + r*(x)_inf - div(a), where (x)_inf is the pole divisor of the
+generator x of the rational function field and D_red is effective of small degree.
 """
 function projective_representation(D::Divisor)
   assure_has_proj_representation(D)
@@ -472,23 +471,22 @@ function Base.:+(D1::Divisor{S, T1, T2}, D2::Divisor{S, T1, T2}) where {S, T1, T
 end
 
 function _add_in_proj_representation(D1::Divisor, D2::Divisor)
-  A1, r1, f1 = projective_representation(D1)
-  A2, r2, f2 = projective_representation(D2)
-  J1_fin, J1_inf = inverse_ideals(A1)
-  J2_fin, J2_inf = inverse_ideals(A2)
+  D1_red, r1, a1 = projective_representation(D1)
+  D2_red, r2, a2 = projective_representation(D2)
+  J1_fin, J1_inf = inverse_ideals(D1_red)
+  J2_fin, J2_inf = inverse_ideals(D2_red)
   F = function_field(D1)
-  # A1 + A2 = A + s*(x)_inf - div(h)
-  A_red, s, h = _maximal_reduction(J1_fin * J2_fin, J1_inf * J2_inf, F)
-  return A_red, r1 + r2 + s, f1 * f2 * _fac_elem(F, h, 1)
+  D_red, s, h = _maximal_reduction(J1_fin * J2_fin, J1_inf * J2_inf, F)
+  return D_red, r1 + r2 + s, a1 * a2 * _fac_elem(F, h, 1)
 end
 
 # projective representation of -D
 function _neg_in_proj_representation(D::Divisor)
-  D_red, r, f = projective_representation(D)
+  D_red, r, a = projective_representation(D)
   J_fin, J_inf = inverse_ideals(D_red)
   F = function_field(D)
   B_red, s, h = _maximal_reduction(inv(J_fin), inv(J_inf), F)
-  return B_red, s - r, _fac_elem(F, h, 1) * inv(f)
+  return B_red, s - r, _fac_elem(F, h, 1) * inv(a)
 end
 
 function Base.:-(D::Divisor)
@@ -762,7 +760,7 @@ function degree(D::Divisor)
     return fin_deg + inf_deg
   end
   if has_proj_representation(D)
-    # deg(A + r*(x)_inf - div(f)) = deg(A) + r*[F : k(x)]
+    # deg(D_red + r*(x)_inf - div(a)) = deg(D_red) + r*[F : k(x)]
     return degree(D.D_red) + D.r * degree(function_field(D))
   end
   if has_inverse_ideals(D)
