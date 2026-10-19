@@ -115,6 +115,17 @@ isone(x::EmbeddedNumFieldElem) = isone(data(x))
 
 is_unit(x::EmbeddedNumFieldElem) = is_unit(data(x))
 
+is_square(x::EmbeddedNumFieldElem) = is_square(data(x))
+
+function is_square_with_sqrt(x::EmbeddedNumFieldElem)
+  fl, s = is_square_with_sqrt(data(x))
+  return fl, parent(x)(s)
+end
+
+function sqrt(x::EmbeddedNumFieldElem; check::Bool = true)
+  return parent(x)(sqrt(data(x); check))
+end
+
 zero(E::EmbeddedNumField) = E(zero(number_field(E)))
 
 one(E::EmbeddedNumField) = E(one(number_field(E)))
