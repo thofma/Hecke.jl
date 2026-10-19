@@ -96,6 +96,32 @@
     @test Hecke.norm_via_powering(c) == 2*o
   end
 
+  @testset "Norm with nonmonic defining polynomials" begin
+    for p in (3, ZZ(3))
+      F = Native.finite_field(p, 3; cached = false)[1]
+      Fx, x = polynomial_ring(F, :x; cached = false)
+      K, b = Native.finite_field(2*x^2 + 2, :b; cached = false)
+      @test norm(zero(K)) == zero(F)
+      @test norm(one(K)) == one(F)
+      @test norm(K(2)) == one(F)
+      @test (@inferred norm(b)) == one(F)
+      @test norm(b + 1) == F(2)
+      @test norm((b + 1)^2) == one(F)
+      @test !is_square(b + 1)
+      @test is_square((b + 1)^2)
+    end
+
+    F = Native.finite_field(3, 3; cached = false)[1]
+    Fx, x = polynomial_ring(F, :x; cached = false)
+    K, b = Native.finite_field(2*x^2 + 2, :b; cached = false)
+    Kt, t = polynomial_ring(K, :t; cached = false)
+    c = b + 1
+    L, d = Native.finite_field(c*(t^2 - c), :d; cached = false)
+    @test norm(d) == -c
+    @test norm((d + 1)^2) == (1 - c)^2
+    @test is_square((d + 1)^2)
+  end
+
   @testset "Absolute basis and coordinates" begin
     F, gF = Native.finite_field(3, 3, cached = false)
     x = polynomial_ring(F, "x", cached = false)[2]
