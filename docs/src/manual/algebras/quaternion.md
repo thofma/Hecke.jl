@@ -17,6 +17,7 @@ This functionality is currently restricted to fields of characteristic not equal
 
 ```@docs
 quaternion_algebra(::Field, ::Any, ::Any)
+quaternion_algebra_ramified_at(::QQField, ::IntegerUnion)
 ```
 
 ## Arithmetic of elements

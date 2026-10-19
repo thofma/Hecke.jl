@@ -827,6 +827,7 @@ export quadratic_space
 export quadratic_twist
 export quadratic_twists
 export quaternion_algebra
+export quaternion_algebra_ramified_at
 export quo
 export quotient
 export radical
