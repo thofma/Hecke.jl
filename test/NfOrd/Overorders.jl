@@ -69,4 +69,48 @@
     S = Set([ basis_matrix(x) for x in X ]);
     @test length(S) == length(X) == 29
   end
+
+  @testset "intersect" begin
+    # x and y of full rank: covol(x cap y) covol(x + y) = covol(x) covol(y),
+    # x + y from a Hermite form, independently of intersect
+    function covolume(M::QQMatrix)
+      N, g = integral_split(M, ZZ)
+      H = hnf(N)
+      return abs(det(H[1:ncols(M), :])) // g^ncols(M)
+    end
+    function test_intersect(x, y, elem)
+      z = @inferred intersect(x, y)
+      X = basis_matrix(x)
+      Y = basis_matrix(y)
+      @test covolume(basis_matrix(z)) * covolume(vcat(X, Y)) ==
+            covolume(X) * covolume(Y)
+      @test all(b -> elem(b) in x && elem(b) in y, basis(z))
+      @test intersect(y, x) == z
+    end
+
+    K, a = quadratic_field(-3)
+    O2 = order(K, [one(K), 2a])
+    O3 = order(K, [one(K), 3a])
+    @test intersect(O2, O3) == order(K, [one(K), 6a])
+    @test intersect(O2, maximal_order(K)) == O2
+    test_intersect(O2, O3, elem_in_nf)
+
+    Qx, x = QQ["x"]
+    K, a = number_field(x^3 - 2)
+    O = maximal_order(K)
+    for (u, v) in [(2a, 3a^2), (a + 1, 5a), (7a, a^2 + a)]
+      test_intersect(order(K, [one(K), u, u^2]), order(K, [one(K), v, v^2]),
+                     elem_in_nf)
+    end
+
+    A = quaternion_algebra(QQ, -1, -1)
+    i, j, k = basis(A)[2:4]
+    M = maximal_order(A)
+    L = order(A, basis(A))
+    @test intersect(L, M) == L
+    test_intersect(L, M, elem_in_algebra)
+    u = 1 + 2i
+    N = order(A, [u * elem_in_algebra(b) * inv(u) for b in basis(M)])
+    test_intersect(M, N, elem_in_algebra)
+  end
 end

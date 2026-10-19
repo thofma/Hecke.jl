@@ -1137,20 +1137,28 @@ function is_gorenstein(O, P)
 end
 
 # This is very slow!
+# The lattice of the vectors in both row spaces, for two basis matrices x and
+# y of rank d: the first d columns of the left kernel of [x; y] combine the
+# rows of x into the vectors that are also combinations of the rows of y.
+function _intersect_lattices(x::FakeFmpqMat, y::FakeFmpqMat)
+  d = ncols(x)
+  g = lcm(x.den, y.den)
+  X = divexact(g * x.num, x.den)
+  Y = divexact(g * y.num, y.den)
+  K = kernel(vcat(X, Y), side = :left)
+  return FakeFmpqMat(_hnf(sub(K, 1:d, 1:d) * X, :lowerleft), g)
+end
+
 function intersect(x::AbsSimpleNumFieldOrder, y::AbsSimpleNumFieldOrder)
-  d = degree(x)
-  g = lcm(denominator(basis_matrix(FakeFmpqMat, x, copy = false)), denominator(basis_matrix(FakeFmpqMat, y)))
-  H = vcat(divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), divexact(g * basis_matrix(FakeFmpqMat, y).num, basis_matrix(FakeFmpqMat, y).den))
-  K = kernel(H, side = :left)
-  return order(nf(x), FakeFmpqMat(_hnf_integral(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), :lowerleft), g))
+  M = _intersect_lattices(basis_matrix(FakeFmpqMat, x, copy = false),
+                          basis_matrix(FakeFmpqMat, y, copy = false))
+  return order(nf(x), M)
 end
 
 function intersect(x::AlgAssAbsOrd, y::AlgAssAbsOrd)
-  d = degree(x)
-  g = lcm(denominator(basis_matrix(FakeFmpqMat, x)), denominator(basis_matrix(FakeFmpqMat, y)))
-  H = vcat(divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), divexact(g * basis_matrix(FakeFmpqMat, y).num, basis_matrix(FakeFmpqMat, y).den))
-  K = kernel(H, side = :left)
-  return order(_algebra(x), FakeFmpqMat(_hnf_integral(sub(K, 1:d, 1:d)*divexact(g * basis_matrix(FakeFmpqMat, x).num, basis_matrix(FakeFmpqMat, x).den), :lowerleft), g))
+  M = _intersect_lattices(basis_matrix(FakeFmpqMat, x, copy = false),
+                          basis_matrix(FakeFmpqMat, y, copy = false))
+  return order(_algebra(x), M)
 end
 
 ################################################################################
