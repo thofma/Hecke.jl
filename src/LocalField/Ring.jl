@@ -251,7 +251,7 @@ end
 ################################################################################
 
 function divexact(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem; check::Bool=true)
-  @assert !iszero(data(b))
+  iszero(b) && throw(DivideError())
   iszero(a) && return a
   valuation(data(a)) >= valuation(data(b)) || error("division not exact")
   return LocalFieldValuationRingElem(parent(a), data(a)//data(b))

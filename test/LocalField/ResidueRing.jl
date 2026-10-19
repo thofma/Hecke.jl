@@ -20,6 +20,7 @@
     @test !is_domain_type(elem_type(R))
     @test is_exact_type(elem_type(R))
     ConformanceTests.test_Ring_interface(R)
+    test_divexact_by_zero(R)
 
     p = uniformizer(R)
     @test p == R(pi)
@@ -32,6 +33,7 @@
     # the euclidean conformance test seems to assume that the ring is a domain
     R, _ = residue_ring(O, pi)
     ConformanceTests.test_EuclideanRing_interface(R)
+    test_divexact_by_zero(R)
   end
 end
 
