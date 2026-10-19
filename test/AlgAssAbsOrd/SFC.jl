@@ -516,4 +516,41 @@
     @test !Hecke.has_stably_free_cancellation(O)
     @test !Hecke.has_locally_free_cancellation(O)
   end
+
+  @testset "is_eichler" begin
+    # Eichler means maximal or residually split at every prime (Voight,
+    # Lemma 24.3.6); Z + I, for a right ideal I of prime norm l of a maximal
+    # order, is the Eichler order of level l
+    level(O, l) = order(algebra(O), vcat([one(algebra(O))],
+      basis(first(Hecke.maximal_integral_ideals(O, l; side = :right)))))
+    for (a, b, l) in [(-1, -3, 2), (-1, 3, 5)]
+      O = maximal_order(quaternion_algebra(QQ, a, b))
+      @test is_eichler(O)
+      @test is_eichler(level(O, l))
+    end
+
+    # the standard Eichler orders of level N in M_2(QQ) = (1, 1)
+    A = quaternion_algebra(QQ, 1, 1)
+    _, i, j, ij = basis(A)
+    h = QQ(1, 2)
+    for N in [1, 2, 12]
+      O = order(A, [h * (1 + i), h * (1 - i), h * (j + ij), h * N * (j - ij)];
+                isbasis = true)
+      @test is_eichler(O)
+    end
+
+    # the Lipschitz order is not maximal at the ramified 2, and Z + 3M, for
+    # the Hurwitz order M, is residually ramified at the split 3
+    A = quaternion_algebra(QQ, -1, -1)
+    e, i, j, k = basis(A)
+    @test !is_eichler(order(A, basis(A); isbasis = true))
+    M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
+    @test !is_eichler(order(A, vcat([e], [3 * b for b in M])))
+
+    K, = quadratic_field(5)
+    @test is_eichler(maximal_order(quaternion_algebra(K, -1, -1)))
+
+    A = matrix_algebra(QQ, 3)
+    @test_throws ArgumentError is_eichler(maximal_order(A))
+  end
 end
