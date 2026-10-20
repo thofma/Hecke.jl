@@ -98,7 +98,7 @@ function lift(K::AbsSimpleNumField, f::T) where {T <: Zmodn_poly}
     f = mod(f, change_base_ring(base_ring(parent(f)), K.pol; parent = parent(f)))
   end
   r = K()
-  for i=0:f.length-1
+  for i=0:degree(f)
     u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{T}, Int), f, i)
     _num_setcoeff!(r, i, u)
   end
@@ -110,7 +110,7 @@ function lift(K::AbsSimpleNumField, f::FpPolyRingElem)
     f = mod(f, parent(f)(K.pol))
   end
   r = K()
-  for i=0:f.length-1
+  for i=0:degree(f)
     u = ZZRingElem()
     ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FpPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), u, f, i, f.parent.base_ring.ninv)
     _num_setcoeff!(r, i, u)

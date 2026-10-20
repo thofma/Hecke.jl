@@ -909,7 +909,7 @@ Computes a polynomial over the number field.
 """
 function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
   res = me.Kx()
-  d = maximum([x.length for x = a])
+  d = maximum([length(x) for x = a])
   for i=0:d-1
     for j=1:me.ce.n
       ccall((:nmod_poly_set, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{fqPolyRepFieldElem}), me.rp[j], coeff(a[j], i))
