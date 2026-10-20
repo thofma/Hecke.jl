@@ -91,19 +91,27 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
     S <: Union{AbsSimpleNumField, Hecke.RelSimpleNumField},
     T <: Union{AbsSimpleNumFieldElem, Hecke.RelSimpleNumFieldElem}
    }
+  isempty(as) && return gen(K)
+  return first(_subfield_primitive_element_from_basis_with_minpoly(K, as))
+end
+
+# Also return the successful minimal polynomial so callers can reuse it.
+function _subfield_primitive_element_from_basis_with_minpoly(K::S, as::Vector{T}) where {
+    S <: Union{AbsSimpleNumField, Hecke.RelSimpleNumField},
+    T <: Union{AbsSimpleNumFieldElem, Hecke.RelSimpleNumFieldElem}
+   }
   if isempty(as)
-    return gen(K)
+    s = gen(K)
+    return s, minpoly(s)
   end
 
   d = length(as)
 
   # First check basis elements
-  i = findfirst(a -> degree(minpoly(a)) == d, as)
-  if i <= d
-    return as[i]
+  for a in as
+    f = minpoly(a)
+    degree(f) == d && return a, f
   end
-
-  k = base_field(K)
 
   # Notation: cs the coefficients in a linear combination of the as, ca the dot
   # product of these vectors.
@@ -111,8 +119,9 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
   cs[1] = one(ZZ)
   while true
     ca = sum(c*a for (c,a) in zip(cs,as))
-    if degree(minpoly(ca)) == d
-      return ca
+    f = minpoly(ca)
+    if degree(f) == d
+      return ca, f
     end
 
     # increment the components of cs
@@ -465,6 +474,11 @@ end
 
 function _subfield_from_primitive_element(K, s)
   @vtime :Subfields 1 f = minpoly(s)
+  return _subfield_from_primitive_element(K, s, f)
+end
+
+# f is the minimal polynomial already computed while selecting s.
+function _subfield_from_primitive_element(K, s, f)
   L, _ = number_field(f, cached = false)
   return L, hom(L, K, s, check = false)
 end
