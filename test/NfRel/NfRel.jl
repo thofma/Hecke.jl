@@ -56,6 +56,13 @@
     @test L(0)^0 == one(L)
     @test L(0)^1 == zero(L)
     @test_throws ArgumentError L(0)^(-1)
+
+    # inverses in a quadratic extension with non-monic defining polynomial
+    M, c = number_field(3*y^2 + a*y + 1, "c")
+    for z in [c, a*c + 1, c - a, M(a)]
+      @test isone(z * inv(z))
+    end
+    @test_throws ErrorException inv(zero(M))
   end
 
   @testset "Hashing" begin
