@@ -95,6 +95,14 @@
     @test dim(I) == 1
   end
 
+  # all representations behind `FqField`, including Zech (`GF(2, 2)`)
+  for K in (GF(2), GF(2, 2), GF(2, 20),
+            GF(next_prime(ZZ(2)^70)), GF(next_prime(ZZ(2)^70), 2))
+    A = matrix_algebra(K, [ matrix(K, 2, 2, [ 1, 0, 0, 0 ]), matrix(K, 2, 2, [ 0, 1, 0, 0 ]), matrix(K, 2, 2, [ 0, 0, 0, 1]) ])
+    gens = @inferred Hecke._radical_finite(A)
+    @test dim(Hecke._ideal_from_kgens(A, gens; side = :twosided)) == 1
+  end
+
   # function field example
   let
     k, o = finite_field(9)
