@@ -55,3 +55,12 @@ else
     return :nothing
   end
 end
+
+# The ring interface requires divexact by zero to throw DivideError.
+function test_divexact_by_zero(R)
+  is_trivial(R) && return
+  for check in (true, false)
+    @test_throws DivideError divexact(one(R), zero(R); check)
+    @test_throws DivideError divexact(zero(R), zero(R); check)
+  end
+end

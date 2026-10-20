@@ -185,6 +185,35 @@ end
 
 ################################################################################
 #
+#  Exact division
+#
+################################################################################
+
+function divides(x::GenOrdQuoRingElem, y::GenOrdQuoRingElem)
+  check_parent(x, y)
+  Q = parent(x)
+  iszero(x) && return true, zero(Q)
+  iszero(y) && return false, zero(Q)
+
+  # z*y = x in Q iff coordinates(x) = c*M_y + u*B_I with c the coordinates of z
+  O = base_ring(Q)
+  n = degree(O)
+  M = vcat(representation_matrix(y.elem), basis_matrix(Q))
+  v = matrix(base_ring(O), 1, n, coordinates(x.elem))
+  fl, s = can_solve_with_solution(M, v; side = :left)
+  fl || return false, zero(Q)
+  return true, Q(O([s[1, i] for i in 1:n]))
+end
+
+function divexact(x::GenOrdQuoRingElem, y::GenOrdQuoRingElem; check::Bool = true)
+  iszero(y) && !is_trivial(parent(y)) && throw(DivideError())
+  fl, z = divides(x, y)
+  @req fl "Division not exact"
+  return z
+end
+
+################################################################################
+#
 #  Special elements
 #
 ################################################################################
