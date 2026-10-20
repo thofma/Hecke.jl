@@ -60,7 +60,6 @@ function J30(P::MPolyRingElem{T}) where T
   a11, a22, a33, a12, a23, a13 = L
   M = matrix([a11 a12/2 a13/2 ; a12/2 a22 a23/2; a13/2 a23/2 a33])
   return det(M)
-  return d
 end
 
 #J_{0,3} operator from [Ohn07]. (Input is a contravariant, output a covariant. Implementation is identical)
