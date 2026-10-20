@@ -328,6 +328,8 @@ export dual_isogeny
 export dual_of_frobenius
 export echelon_with_transform
 export eisenstein_extension
+export eisenstein_reduction
+export eisenstein_reduction_with_transform
 export elem_in_algebra
 export elem_in_nf
 export elem_order_bsgs
@@ -519,6 +521,7 @@ export is_discriminant
 export is_dyadic
 export is_effective
 export is_eichler
+export is_eisenstein_reduced
 export is_elementary
 export is_elementary_with_prime
 export is_equal_locally

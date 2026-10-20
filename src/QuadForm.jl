@@ -6,6 +6,9 @@ include("QuadForm/Herm/Types.jl")
 # Binary quadratic forms
 include("QuadForm/QuadBin.jl")
 
+# Eisenstein reduction of definite ternary forms
+include("QuadForm/TernaryQF.jl")
+
 # Misc things that need to be sorted
 include("QuadForm/Misc.jl")
 
