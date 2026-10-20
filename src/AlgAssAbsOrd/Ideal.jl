@@ -2064,7 +2064,7 @@ function __maximal_integral_ideals(O::AlgAssAbsOrd, P, p::Union{ ZZRingElem, Int
   n = _matdeg(D)
 
   if isone(n)
-    return P
+    return [P]
   end
 
   t = zero_matrix(QQ, 1, degree(O))
