@@ -79,6 +79,9 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     gentr = (AtoB\gen)::elem_type(A)
     @hassert :PIP 1 gentr * M == a
     return fl, gentr
+  elseif base_ring(A) isa QQField && dim(A) == 4 && is_split(A, inf) &&
+      !is_split(A)
+    return _is_principal_maximal_quaternion_indefinite(a, M, side)
   elseif base_ring(A) isa QQField && dim(A) == 4 && !is_split(A)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
@@ -187,6 +190,60 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   else
     error("Something wrong here")
   end
+end
+
+# A generator of the right ideal a of the maximal order M of an indefinite
+# quaternion algebra over QQ. Every such ideal is principal (Eichler's theorem,
+# Voight, Quaternion Algebras, Theorem 17.8.3), but the norm form is
+# indefinite, so a generator is not a short vector for it; this is
+# Kirschmer-Voight, SIAM J. Comput. 39 (2010), Algorithm 4.10. With the norm
+# form diagonalised as x^2 - a y^2 - b z^2 + ab w^2, the absolute reduced norm
+# Q = x^2 + |a| y^2 + |b| z^2 + |ab| w^2 is positive definite with
+# |nrd(x)| <= Q(x). While c = nrd(I) > 1, an element g of I with
+# 0 < |nrd(g)| < c^2 exists (a generator of I has |nrd| = c), and every g with
+# Q(g) < c^2 is one; then nrd(g) = cd with |d| < c, and
+# I' = d g^-1 I = conj(g) I / c is an integral right ideal of M of reduced
+# norm |d| with I = (g / d) I'. So the reduced norm falls at every step, and
+# at 1 the ideal is M.
+function _is_principal_maximal_quaternion_indefinite(a, M, side = :right)
+  @assert side == :right
+  A = algebra(M)
+  f = standard_involution(A)
+  B = basis(A)
+  G = matrix(QQ, 4, 4, [trred(B[i] * f(B[j]))//2 for i in 1:4, j in 1:4])
+  F, S = _gram_schmidt(G, identity)
+  Sinv = inv(S)
+  P = Sinv * diagonal_matrix([abs(F[i, i]) for i in 1:4]) * transpose(Sinv)
+  beta = one(A)
+  I = a
+  c = ZZ(normred(I, M))
+  while !isone(c)
+    BI = basis_matrix(I)
+    L = integer_lattice(; gram = BI * P * transpose(BI), check = false)
+    bas = basis(I)
+    g = zero(A)
+    bound = c^2 - 1
+    while iszero(g)
+      for (v, _) in short_vectors_iterator(L, bound; check = false)
+        x = sum(v[i] * bas[i] for i in 1:4)
+        if abs(normred(x)) < c^2
+          g = x
+          break
+        end
+      end
+      bound = 2 * bound
+    end
+    d = divexact(ZZ(normred(g)), c)
+    beta = QQ(1, d) * beta * g
+    N = zero_matrix(QQ, 4, 4)
+    for i in 1:4
+      elem_to_mat_row!(N, i, QQ(1, c) * f(g) * bas[i])
+    end
+    I = ideal(A, M, N; side = :right)
+    c = abs(d)
+  end
+  @hassert :PIP 1 beta * M == a
+  return true, beta
 end
 
 function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)

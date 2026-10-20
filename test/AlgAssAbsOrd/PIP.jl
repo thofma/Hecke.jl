@@ -55,6 +55,36 @@
   reps = Hecke._unit_group_generators_maximal_simple(M)
   @test length(reps) <= 1
 
+  @testset "indefinite quaternion algebras over QQ" begin
+    # every right ideal of a maximal order is principal (Eichler's theorem,
+    # Voight, Quaternion Algebras, Theorem 17.8.3), and a generator is found
+    for (a, b) in [(-1, 3), (-1, 7)]
+      A = quaternion_algebra(QQ, a, b)
+      M = maximal_order(A)
+      D = Hecke._reduced_disc(M)
+      Is = [I for l in [5, 11]
+            for I in Hecke.maximal_integral_ideals(M, l; side = :right)]
+      # the two-sided prime ideals above the ramified primes
+      append!(Is, [P for p in prime_divisors(D)
+                   for P in prime_ideals_over(M, p)])
+      e = elem_in_algebra.(basis(M))
+      x = M(2 * e[1] - e[2] + e[3] + e[4])
+      push!(Is, x * M + 35 * M)
+      for I in Is
+        fl, g = Hecke.is_principal_with_data(I, M)
+        @test fl
+        @test g * M == I
+      end
+    end
+    # a non-maximal order needs the units of the maximal order modulo the
+    # conductor, which are not available for an indefinite algebra
+    A = quaternion_algebra(QQ, -1, 3)
+    M = maximal_order(A)
+    O = order(A, vcat([one(A)], [5 * elem_in_algebra(b) for b in basis(M)]))
+    I = 2 * O
+    @test_throws ArgumentError Hecke.is_principal_with_data(I, O)
+  end
+
   include("PIP/unit_group_generators.jl")
   include("PIP/quaternion.jl")
 
