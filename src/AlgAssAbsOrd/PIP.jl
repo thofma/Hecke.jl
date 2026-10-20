@@ -6,6 +6,7 @@
 
 include("PIP/misc.jl")
 include("PIP/maximal.jl")
+include("PIP/quaternion.jl")
 include("PIP/bley_johnston.jl")
 include("PIP/bley_hofmann_johnston.jl")
 include("PIP/unit_group_generators.jl")
@@ -39,6 +40,9 @@ _is_principal(::Type{<: Any}, x...; kw...) = _is_principal_with_data_bj(x...; kw
 
 function _is_principal_with_data(I, O = right_order(I); side = :right, local_freeness = false)
   A = algebra(O)
+  if _is_totally_definite_quaternion(A)
+    return _is_principal_with_data_definite_quaternion(I, O, side)
+  end
   @assert side === :right
   if is_commutative(A)
     return _is_principal_with_data_etale(I, local_freeness = local_freeness)
@@ -53,6 +57,9 @@ end
 
 function _is_principal(I, O = right_order(I); side = :right, local_freeness = false)
   A = algebra(O)
+  if _is_totally_definite_quaternion(A)
+    return _is_principal_with_data_definite_quaternion(I, O, side)[1]
+  end
   @assert side === :right
   if is_commutative(A)
     return _is_principal_with_data_etale(I, local_freeness = local_freeness)[1]
@@ -122,25 +129,21 @@ end
 function _isisomorphic_generic_right(X, Y; strategy = :default)
   C = _colon_raw(Y, X, :right)
   CI = ideal(algebra(X), C)
-  for x in basis(CI)
-    for y in basis(X)
-      @assert  x * y in Y
-    end
-  end
+  @hassert :PIP 1 all(x * y in Y for x in basis(CI) for y in basis(X))
   if Y != CI * X
     return false, zero(algebra(X))
   end
   Gamma = left_order(X)
-  @assert Hecke._test_ideal_sidedness(CI, Gamma, :right)
+  @hassert :PIP 1 Hecke._test_ideal_sidedness(CI, Gamma, :right)
   d = denominator(CI, Gamma)
   CIint = d * CI
   CIint.order = Gamma
-  @assert Hecke._test_ideal_sidedness(CIint, Gamma, :right)
+  @hassert :PIP 1 Hecke._test_ideal_sidedness(CIint, Gamma, :right)
   if strategy == :default
-    fl, alpha  = is_principal_with_data(CIint, Gamma; side = :right)
+    fl, alpha  = _is_principal_with_data(CIint, Gamma; side = :right)
     if fl
       alpha = inv(QQ(d)) * alpha
-      @assert alpha * X == Y
+      @hassert :PIP 1 alpha * X == Y
     end
   elseif strategy == :s1
     fl = _is_principal(CIint, Gamma; side = :right)::Bool

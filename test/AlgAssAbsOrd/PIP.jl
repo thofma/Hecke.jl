@@ -56,6 +56,7 @@
   @test length(reps) <= 1
 
   include("PIP/unit_group_generators.jl")
+  include("PIP/quaternion.jl")
 
   let
     # Something bad
