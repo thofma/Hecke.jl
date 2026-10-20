@@ -27,13 +27,13 @@ function _newton_lift(f::PolyRingElem{QadicFieldElem}, df::PolyRingElem{QadicFie
   for p = reverse(chain)
     setprecision!(r, p)
     setprecision!(o, p)
-    setprecision!(Q, r.N)
-    if r.N > precision(Q)
-      setprecision!(f, r.N)
-      setprecision!(df, r.N)
+    setprecision!(Q, precision(r))
+    if precision(r) > precision(Q)
+      setprecision!(f, precision(r))
+      setprecision!(df, precision(r))
     end
     r = r - f(r)*o
-    if r.N >= n
+    if precision(r) >= n
       setprecision!(Q, n)
       return r
     end
@@ -118,7 +118,7 @@ end
 is_splitting(C::qAdicRootCtx) = C.is_splitting
 
 function roots(C::qAdicRootCtx, n::Int = 10)
-  if isdefined(C, :R) && all(x -> x.N >= n, C.R)
+  if isdefined(C, :R) && all(x -> precision(x) >= n, C.R)
     return [setprecision(x, n) for x = C.R]
   end
   lf = factor_mod_pk(Array, C.H, n)
@@ -295,7 +295,7 @@ If `flat = true`, then instead of the conjugates, only the $p$-adic coefficients
 function conjugates_log(a::AbsSimpleNumFieldElem, C::qAdicConj, n::Int = 10; all::Bool = false, flat::Bool = true)
   if haskey(C.cache, a)
     b = C.cache[a]
-    if b[1,1].N == n
+    if precision(b[1,1]) == n
       return expand(b, all = all, flat = flat)
     end
   end

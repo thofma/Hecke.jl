@@ -252,7 +252,7 @@ function check_qadic(a::QadicFieldElem)
   v = a.val
   a.val = 0
   f = Hecke.lift(Hecke.Globals.Zx, a)
-  p = prime(parent(a))^a.N
+  p = prime(parent(a))^precision(a)
   a.val = v
   @assert all(x->abs(x) < p, coefficients(f))
 end
