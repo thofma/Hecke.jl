@@ -516,4 +516,98 @@
     @test !Hecke.has_stably_free_cancellation(O)
     @test !Hecke.has_locally_free_cancellation(O)
   end
+
+  @testset "is_eichler" begin
+    # Eichler means maximal or residually split at every prime (Voight,
+    # Lemma 24.3.6); Z + I, for a right ideal I of prime norm l of a maximal
+    # order, is the Eichler order of level l
+    level(O, l) = order(algebra(O), vcat([one(algebra(O))],
+      basis(first(Hecke.maximal_integral_ideals(O, l; side = :right)))))
+    for (a, b, l) in [(-1, -3, 2), (-1, 3, 5)]
+      O = maximal_order(quaternion_algebra(QQ, a, b))
+      @test is_eichler(O)
+      @test is_eichler(level(O, l))
+    end
+
+    # the standard Eichler orders of level N in M_2(QQ) = (1, 1)
+    A = quaternion_algebra(QQ, 1, 1)
+    _, i, j, ij = basis(A)
+    h = QQ(1, 2)
+    for N in [1, 2, 12]
+      O = order(A, [h * (1 + i), h * (1 - i), h * (j + ij), h * N * (j - ij)];
+                isbasis = true)
+      @test is_eichler(O)
+    end
+
+    # the Lipschitz order is not maximal at the ramified 2, and Z + 3M, for
+    # the Hurwitz order M, is residually ramified at the split 3
+    A = quaternion_algebra(QQ, -1, -1)
+    e, i, j, k = basis(A)
+    @test !is_eichler(order(A, basis(A); isbasis = true))
+    M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
+    @test !is_eichler(order(A, vcat([e], [3 * b for b in M])))
+
+    K, = quadratic_field(5)
+    @test is_eichler(maximal_order(quaternion_algebra(K, -1, -1)))
+
+    A = matrix_algebra(QQ, 3)
+    @test_throws ArgumentError is_eichler(maximal_order(A))
+  end
+
+  @testset "eichler_level" begin
+    # the standard Eichler order of level N, the matrices (a b; Nc d) with
+    # a, b, c, d in Z, has level N (Voight, Quaternion Algebras, 23.4.19); here
+    # in M_2(QQ) = (1, 1) and, with N O_K, over K = Q(sqrt(5)), where 2 is
+    # inert, 5 ramified and 11 split
+    function standard(A, N)
+      e, i, j, k = basis(A)
+      h = QQ(1, 2)
+      return order(A, [h * (e + i), h * (e - i), h * (j + k), h * N * (j - k)])
+    end
+    A = quaternion_algebra(QQ, 1, 1)
+    for N in [1, 2, 12, 30]
+      @test eichler_level(standard(A, N)) == N
+    end
+    K, = quadratic_field(5)
+    A = quaternion_algebra(K, 1, 1)
+    R = maximal_order(K)
+    for N in [1, 2, 11, 20]
+      @test eichler_level(standard(A, N)) == N * R
+    end
+
+    # Z + I, for a right ideal I of prime norm l of a maximal order, has level
+    # l: the discriminant of the algebra, 3, 6 or 2, is not part of it
+    for (a, b, l) in [(-1, -3, 2), (-1, 3, 5), (-1, -1, 3)]
+      O = maximal_order(quaternion_algebra(QQ, a, b))
+      @test eichler_level(O) == 1
+      I = first(Hecke.maximal_integral_ideals(O, l; side = :right))
+      E = order(algebra(O), vcat([one(algebra(O))], basis(I)))
+      @test eichler_level(E) == l
+    end
+
+    # the same over K: (sqrt(5), -3) ramifies at the prime above 5, and
+    # O_K + I, for I of prime norm P, has reduced discriminant (sqrt(5)) P
+    # and level P
+    A = quaternion_algebra(K, gen(K), K(-3))
+    O = maximal_order(A)
+    @test eichler_level(O) == 1 * R
+    for q in [2, 11]
+      P = prime_decomposition(R, q)[1][1]
+      I = first(Hecke.maximal_integral_ideals(O, P; side = :right))
+      one_row = pseudo_matrix(matrix(K, 1, 4, coefficients(one(A))), [1 * R])
+      M = pseudo_hnf(vcat(basis_pmatrix(I), one_row), :lowerleft)
+      @test eichler_level(order(A, sub(M, 2:5, 1:4))) == P
+    end
+
+    # not Eichler: the Lipschitz orders over Q and K, and Z + 3M for the
+    # Hurwitz order M
+    A = quaternion_algebra(QQ, -1, -1)
+    e, i, j, k = basis(A)
+    @test_throws ArgumentError eichler_level(order(A, basis(A); isbasis = true))
+    M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
+    E = order(A, vcat([e], [3 * b for b in M]))
+    @test_throws ArgumentError eichler_level(E)
+    A = quaternion_algebra(K, -1, -1)
+    @test_throws ArgumentError eichler_level(order(A, basis(A)))
+  end
 end

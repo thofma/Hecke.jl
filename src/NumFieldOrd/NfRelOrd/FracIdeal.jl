@@ -200,6 +200,8 @@ function fractional_ideal(O::RelNumFieldOrder{T, S, U}, a::RelNumFieldOrderIdeal
   return fractional_ideal(O, basis_pmatrix(a); M_in_hnf=true)
 end
 
+fractional_ideal(I::RelNumFieldOrderIdeal) = fractional_ideal(order(I), I)
+
 function fractional_ideal(O::RelNumFieldOrder{T, S}, a::RelNumFieldOrderIdeal{T, S}, d::U) where { T, S, U <: Union{ ZZRingElem, AbsNumFieldOrderElem, RelNumFieldOrderElem } }
   K = base_field(nf(O))
   dd = inv(K(d))
@@ -455,13 +457,13 @@ simplify(a::RelNumFieldOrderFractionalIdeal) = a
 #
 ################################################################################
 
-function mod(x::S, y::T) where {S <: Union{AbsSimpleNumFieldElem, NumFieldElem}, T <: Union{AbsSimpleNumFieldOrderFractionalIdeal, RelNumFieldOrderFractionalIdeal}}
+function mod(x::S, y::T) where {S <: Union{AbsSimpleNumFieldElem, NumFieldElem}, T <: Union{AbsNumFieldOrderFractionalIdeal, RelNumFieldOrderFractionalIdeal}}
   K = parent(x)
   O = order(y)
   d = K(lcm(denominator(x, O), denominator(y)))
   dx = d*x
   dy = d*y
-  if T == AbsSimpleNumFieldOrderFractionalIdeal
+  if T <: AbsNumFieldOrderFractionalIdeal
     dy = simplify(dy)
     dynum = numerator(dy)
   else

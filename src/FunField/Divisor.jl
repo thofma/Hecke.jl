@@ -27,7 +27,8 @@ mutable struct Divisor{S <: Generic.AbsSimpleFunctionField, T1 <: PolyRing, T2 <
 
 end
 
-function trivial_divisor(F::Generic.AbsSimpleFunctionField)
+@attr Divisor{Generic.AbsSimpleFunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+trivial_divisor(F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   return divisor(one(F))
 end
 

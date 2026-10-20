@@ -19,6 +19,28 @@
   end
 
 
+  @testset "_prime_part_multgrp_mod_p" begin
+    K, _ = quadratic_field(2)
+    O = maximal_order(K)
+
+    # Test both discrete logarithm algorithms. For q = 97,
+    # norm(P) - 1 also has a nontrivial odd part.
+    for (q, prime, group_order) in [(17, 2, 16), (41, 2, 8),
+                                   (97, 2, 32), (23, 11, 11)]
+      for P in prime_ideals_over(O, q)
+        G, m = Hecke._prime_part_multgrp_mod_p(P, prime)
+        @test order(G) == group_order
+        @test verify_order(m(G[1]), P, group_order)
+        for _ in 1:2, i in 0:group_order - 1
+          a = i * G[1]
+          y = m(a)
+          @test preimage(m, y) == a
+          @test m(preimage(m, y)) - y in P
+        end
+      end
+    end
+  end
+
   @testset "multiplicative_group" begin
      Qx,  x = polynomial_ring(QQ, "x");
 

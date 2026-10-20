@@ -34,3 +34,16 @@
 =#
 end
 
+@testset "Composite modulus resultants" begin
+  Zx, x = polynomial_ring(ZZ, :x)
+  f = 2*x^2 + x + 1
+  g = 3*x + 1
+  for m in (6, 12, 36, 45), modulus in (m, ZZ(m))
+    R, _ = residue_ring(ZZ, modulus)
+    Rt, t = polynomial_ring(R, :t)
+    fm = change_base_ring(R, f; parent = Rt)
+    gm = change_base_ring(R, g; parent = Rt)
+    @test Hecke.resultant_sircana(fm, gm) == R(resultant(f, g))
+    @test Hecke.resultant_sircana(gm, fm) == R(resultant(g, f))
+  end
+end

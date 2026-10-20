@@ -80,6 +80,18 @@ end
   R, = finite_ring(matrix_algebra(GF(3), 2))
   S, = finite_ring(matrix_ring(R, 1))
 
+  let
+    # finite_ring(::MatRing) sets the identity; compare with the generic computation
+    R, = finite_ring(matrix_algebra(GF(2), 2))
+    M = matrix_ring(R, 2)
+    S, f = finite_ring(M)
+    T = FiniteRing(S.A, S.mult)
+    @test data(one(S)) == data(one(T))
+    @test f(one(S)) == one(M)
+    @test is_one(one(S))
+    @test all(x -> one(S) * x == x == x * one(S), additive_generators(S))
+  end
+
   ZG = integral_group_ring(QQ[abelian_group([2, 2])])
   Q, = quo(ZG, 2 * ZG)
   R, = finite_ring(Q)

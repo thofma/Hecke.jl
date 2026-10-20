@@ -1,6 +1,61 @@
 Qx, x = polynomial_ring(QQ, "x")
 K2, a2 = number_field(x^3 - 2, "a1")
 K3, (a3,) = number_field([x^3 - 2], "a2")
+@testset "Fractional ideal types" begin
+  K4, _ = number_field([x^2 - 2, x^2 - 3])
+  for K in (K2, K3, K4)
+    O = equation_order(K)
+    I = fractional_ideal(O, 1)
+    @test Hecke.field(O) === K
+    @test fractional_ideal(I) === I
+    @test (@inferred Hecke.fractional_ideal_type(O)) === typeof(I)
+    @test (@inferred Hecke.fractional_ideal_type(typeof(O))) === typeof(I)
+  end
+end
+
+@testset "Non-simple ideal scaling and membership" begin
+  L, _ = quadratic_field(-1)
+  OL = maximal_order(L)
+  for polys in ([x^2 + 5], [x^2 + 5, x^2 + 7])
+    K, a = number_field(polys)
+    for O in (equation_order(K), maximal_order(K))
+      I = ideal(O, 2, O(1 + a[1]))
+      if Hecke.is_maximal_known_and_maximal(O)
+        Hecke.assure_2_normal(I)
+      end
+      for A in (I, ideal(O, basis_matrix(I)))
+        for n in (1, -1, 2, -3)
+          for B in (A*n, n*A, A*ZZ(n), ZZ(n)*A)
+            @test basis_matrix(B) == abs(n)*basis_matrix(A)
+            @test norm(B) == abs(n)^degree(K)*norm(A)
+          end
+        end
+        @test iszero(A*0)
+        @test iszero(ZZ(0)*A)
+        @test A*O(2) == A*2
+        @test O(2)*A == A*2
+      end
+      J = fractional_ideal(O, I, 2)
+      @test basis_matrix(Hecke.simplify(J*K(2))) == basis_matrix(I)
+      @test K(2) in I
+      @test !(K(1) in I)
+      @test K(1) in J
+      @test !(K(1//2) in J)
+      @test O(1) in J
+      @test 1 in J
+      @test ZZ(1) in J
+      @test_throws ArgumentError L(1) in I
+      @test_throws ArgumentError L(1) in J
+      @test_throws ArgumentError OL(1)*I
+      @test_throws ArgumentError I*OL(1)
+      for b in basis(I)
+        @test b in I
+        @test b//2 in J
+      end
+    end
+  end
+end
+
 @testset "Fractional ideals for $K1" for (K1, a1) in [(K2, a2), (K3, a3)]
   O1 = order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
 

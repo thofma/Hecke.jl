@@ -25,6 +25,10 @@
     p = prime_ideals_over(OA, 3)
     @test length(p) == 1
     @test p[1] == 3*OA
+
+    # p below the degree of OA, as a ZZRingElem
+    @test pradical(OA, ZZ(2)) == pradical(OA, 2)
+    @test pradical(OA, ZZ(3)) == 3*OA
   end
 
   #=
@@ -255,6 +259,18 @@
       lP = Hecke.maximal_integral_ideals(O, 2; side = :right)
       @test allunique(lP) && length(lP) == 3
       @test all(P -> P * O == P, lP)
+    end
+
+    # a maximal order of the quaternion algebra ramified at 11, at 11: one
+    # maximal ideal, returned as a vector like any other answer
+    let
+      A = quaternion_algebra(QQ, -1, -11)
+      M = maximal_order(A)
+      for side in [:right, :left]
+        Ps = Hecke.maximal_integral_ideals(M, 11; side)
+        @test Ps isa Vector && length(Ps) == 1
+        @test normred(only(Ps), M) == 11
+      end
     end
   end
 

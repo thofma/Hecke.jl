@@ -1795,18 +1795,18 @@ function find_isomorphism(G, op, A::GrpAb)
 end
 
 function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
-	id = id_hom(domain(G[1]))
-	S = small_generating_set(G)
+  id = id_hom(domain(G[1]))
+  S = small_generating_set(G)
   p = 2
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   K = domain(G[1])
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  while iszero(discriminant(Rx(K.pol)))
+  while iszero(discriminant(change_base_ring(base_ring(Rx), K.pol; parent = Rx)))
     p = next_prime(p)
-		R = GF(p, cached = false)
-	  Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
-  list = fpPolyRingElem[Rx(x.prim_img) for x in S]
+    R = Native.GF(p, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
+  end
+  list = fpPolyRingElem[Rx(image_primitive_element(x)) for x in S]
   push!(list, gen(Rx))
   n = length(G)
   elem_to_index = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}()
@@ -1818,7 +1818,7 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
   for i in 1:length(S)
     v = zeros(Int, length(S))
     v[i] = 1
-    words[Rx(S[i].prim_img)] = v
+    words[Rx(image_primitive_element(S[i]))] = v
   end
 
   words[list[end]] = zeros(Int, length(S))
@@ -1833,8 +1833,8 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
     for g in list
       for i in 1:length(S)
         s = S[i]
- 				sRx = Rx(s.prim_img)
-        m = compose_mod(g, sRx, Rx(K.pol))
+        sRx = Rx(image_primitive_element(s))
+        m = compose_mod(g, sRx, change_base_ring(base_ring(Rx), K.pol; parent = Rx))
 
         if m in list
           w = words[sRx] .+ words[g] .- words[m]
@@ -1863,18 +1863,18 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
   GtoAsnf = Dict{eltype(G), FinGenAbGroupElem}()
   AsnftoG = Dict{FinGenAbGroupElem, eltype(G)}()
   for g in G
-    w = words[Rx(g.prim_img)]
+    w = words[Rx(image_primitive_element(g))]
     GtoAsnf[g] = sum(w[i] * (mAsnf \ A[i]) for i in 1:length(S))
   end
   for a in Asnf
     el = gen(Rx)
     v = Int[mAsnf(a).coeff[1, i] for i in 1:length(S)]
     for i in 1:length(S)
-      el = compose_mod(el, pow(Rx(S[i].prim_img), (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), v[i], gen(Rx)), Rx(K.pol))
+      el = compose_mod(el, pow(Rx(image_primitive_element(S[i])), (x, y) -> Hecke.compose_mod(x, y, change_base_ring(base_ring(Rx), K.pol; parent = Rx)), v[i], gen(Rx)), change_base_ring(base_ring(Rx), K.pol; parent = Rx))
     end
     img = el
-		ind = findfirst(x -> Rx(x.prim_img) == img, G)
-		@assert ind !== nothing
+    ind = findfirst(x -> Rx(image_primitive_element(x)) == img, G)
+    @assert ind !== nothing
     AsnftoG[a] = G[ind]
   end
 

@@ -412,8 +412,8 @@ function mult_by_2pow_diag!(a::Matrix{BigFloat}, d::ZZMatrix, R=_RealRings[Threa
   tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
       for j = 1:s[2]
-          e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i, j])
-          ccall((:mpfr_set_z_2exp, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i, j], tmp_mpz, e + Clong(Int(d[1, j])), __get_rounding_mode())
+          e = ccall((:mpfr_get_z_2exp, Base.MPFR.libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i, j])
+          ccall((:mpfr_set_z_2exp, Base.MPFR.libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i, j], tmp_mpz, e + Clong(Int(d[1, j])), __get_rounding_mode())
       end
   end
 end
@@ -439,9 +439,9 @@ function round_scale!(b::ZZMatrix, a::Matrix{BigFloat}, l::Int, R=_RealRings[Thr
       for j = 1:s[2]
           e = a[i, j].exp
           a[i, j].exp += l
-          ccall((:mpfr_round, :libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i, j], rd)
+          ccall((:mpfr_round, Base.MPFR.libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i, j], rd)
           a[i, j].exp = e
-          f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
+          f = ccall((:mpfr_get_z_2exp, Base.MPFR.libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
               tmp_mpz, tmp_mpfr)
           ccall((:fmpz_set_mpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
           if f > 0

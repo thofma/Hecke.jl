@@ -251,7 +251,7 @@ function ResidueFieldSmallDegree1(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrder
 end
 
 @doc raw"""
-    relative_residue_field(O::RelNumFieldOrder, P::RelNumFieldOrderIdeal) -> RelFinField, Map
+    relative_residue_field(O::RelNumFieldOrder, P::RelNumFieldOrderIdeal) -> FqField, Map
 
 Given a maximal order `O` in a relative number field $E/K$ and a prime ideal
 `P` of `O`, return the residue field $O/P$ seen as an extension of the (relative)
@@ -277,13 +277,7 @@ function relative_residue_field(O::RelNumFieldOrder{S, T, U}, P::RelNumFieldOrde
       set_attribute!(p, :rel_residue_field_map, projK)
     end
   end
-  FK = codomain(projK)
   projE = NfRelOrdToFqFieldRelMor{typeof(O)}(O, P, projK)
-  #if base_field(K) isa QQField
-  #  projE = NfRelOrdToRelFinFieldMor{typeof(O), FqFieldElem}(O, P, projK)
-  #else
-  #  projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
-  #end
   set_attribute!(P, :rel_residue_field_map, projE)
   return codomain(projE), projE
 end

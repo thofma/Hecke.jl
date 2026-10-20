@@ -179,7 +179,7 @@ Compute the exponential integral function.
 """
 function exponential_integral(x::BigFloat)
   z = BigFloat()
-  ccall((:mpfr_eint, :libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), z, x, __get_rounding_mode())
+  ccall((:mpfr_eint, Base.MPFR.libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), z, x, __get_rounding_mode())
   return z
 end
 
