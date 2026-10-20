@@ -166,7 +166,7 @@ end
 
 function UnitGroup(R::Nemo.zzModRing, mod::ZZRingElem=ZZRingElem(0))
 
-  m = Int(R.n)
+  m = Int(modulus(R))
   fm = factor(ZZRingElem(m))
 
   r = Array{ZZRingElem}(undef, 0)
@@ -420,7 +420,7 @@ end
 
 function unit_group_mod(R::Nemo.zzModRing, n::Int)
 
-  fm = factor(ZZRingElem(R.n))
+  fm = factor(ZZRingElem(modulus(R)))
   gens = Vector{Int}(undef, 0)
   structt = Int[]
   disclogs = Function[]
@@ -429,7 +429,7 @@ function unit_group_mod(R::Nemo.zzModRing, n::Int)
     gensp, structp, disclog_p = _unit_pk_mod_n(Int(p), v, n)
     if length(fm)>1
       e=Int(p)^v
-      f=div(Int(R.n), e)
+      f=div(Int(modulus(R)), e)
       d,a,b=gcdx(e,f)
       for i=1:length(gensp)
         gensp[i]=Int((R(gensp[i])*b*f).data)+a*e

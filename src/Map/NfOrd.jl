@@ -1004,10 +1004,11 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
         #tt = deepcopy(t)
         if isassigned(D, i)
           y = D[i]
-          if y.mod_n == t.mod_n
+          if modulus(y) == modulus(t)
             y.parent = t.parent
             set!(y, t)
           else
+            # writes the FLINT `nmod_t` of `y` by hand, Nemo has no API for this
             y.mod_n = t.mod_n
             y.mod_ninv = t.mod_ninv
             y.mod_norm = t.mod_norm
@@ -1170,10 +1171,11 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
         #tt = deepcopy(t)
         if isassigned(D, i)
           y = D[i]
-          if y.mod_n == t.mod_n
+          if modulus(y) == modulus(t)
             y.parent = t.parent
             set!(y, t)
           else
+            # writes the FLINT `nmod_t` of `y` by hand, Nemo has no API for this
             y.mod_n = t.mod_n
             y.mod_ninv = t.mod_ninv
             y.mod_norm = t.mod_norm
@@ -1324,9 +1326,9 @@ end
 
 
 function mul_mod(x::UInt, y::ZZRingElem, R)
-  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, R.n)
+  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, modulus(R))
   r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
-             x, d, R.n, R.ninv)
+             x, d, modulus(R), R.ninv)
   return r
 end
 

@@ -392,7 +392,7 @@ end
 function _factor_distinct_deg(x::fpPolyRingElem)
   degs = Vector{Int}(undef, degree(x))
   degss = [ pointer(degs) ]
-  fac = Nemo.gfp_poly_factor(x.mod_n)
+  fac = Nemo.gfp_poly_factor(modulus(x))
   ccall((:nmod_poly_factor_distinct_deg, libflint), UInt,
           (Ref{Nemo.gfp_poly_factor}, Ref{fpPolyRingElem}, Ptr{Ptr{Int}}),
           fac, x, degss)
