@@ -331,7 +331,7 @@ function image(f::NfOrdToFqMor, x::AbsSimpleNumFieldOrderElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
     Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring.ninv)
+    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, base_ring(parent(f.tmp_gfp_fmpz_poly)).ninv)
     ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), u, f.tmp_gfp_fmpz_poly, F)
     ccall((:fq_reduce, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), u, F)
     return u
@@ -626,7 +626,7 @@ function image(f::NfOrdToFqFieldMor, x::AbsSimpleNumFieldOrderElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
     Nemo.fmpq_poly_to_fq_default_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fq_default_poly_rem, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{Nemo.FqField}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring)
+    ccall((:fq_default_poly_rem, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{Nemo.FqField}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, base_ring(parent(f.tmp_gfp_fmpz_poly)))
     res = F.forwardmap(f.tmp_gfp_fmpz_poly)::FqFieldElem
     @assert parent(res) === F
     return res

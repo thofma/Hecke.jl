@@ -35,21 +35,21 @@ function compose_mod(x::ZZModPolyRingElem, y::ZZModPolyRingElem, z::ZZModPolyRin
   check_parent(x,z)
   r = parent(x)()
   ccall((:fmpz_mod_poly_compose_mod, libflint), Nothing,
-          (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, x, y, z, x.parent.base_ring.ninv)
+          (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, x, y, z, base_ring(parent(x)).ninv)
   return r
 end
 
 function compose_mod_precomp(x::ZZModPolyRingElem, A::ZZMatrix, z::ZZModPolyRingElem, zinv::ZZModPolyRingElem)
   r = parent(x)()
   ccall((:fmpz_mod_poly_compose_mod_brent_kung_precomp_preinv, libflint), Nothing,
-        (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZMatrix}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, x, A, z, zinv, x.parent.base_ring.ninv)
+        (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZMatrix}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), r, x, A, z, zinv, base_ring(parent(x)).ninv)
   return r
 end
 
 function _inv_compose_mod(z::ZZModPolyRingElem)
   r = reverse(z)
   ccall((:fmpz_mod_poly_inv_series, libflint), Nothing,
-        (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), r, r, length(r), z.parent.base_ring.ninv)
+        (Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), r, r, length(r), base_ring(parent(z)).ninv)
   return r
 end
 
@@ -58,7 +58,7 @@ function precomp_compose_mod(y::ZZModPolyRingElem, z::ZZModPolyRingElem)
   nr = Int(iroot(degree(z), 2)) + 1
   A = zero_matrix(ZZ, nr, degree(z))
   ccall((:fmpz_mod_poly_precompute_matrix, libflint), Nothing,
-        (Ref{ZZMatrix}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), A, y, z, zinv, y.parent.base_ring.ninv)
+        (Ref{ZZMatrix}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), A, y, z, zinv, base_ring(parent(y)).ninv)
   return A, zinv
 end
 

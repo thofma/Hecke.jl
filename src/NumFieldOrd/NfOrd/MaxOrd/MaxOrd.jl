@@ -1080,6 +1080,6 @@ function _gcd_with_failure(a::ZZModPolyRingElem, b::ZZModPolyRingElem)
   f = ZZRingElem()
   G = parent(a)()
   ccall((:fmpz_mod_poly_gcd_euclidean_f, libflint), Nothing,
-        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), f, G, a, b, a.parent.base_ring.ninv)
+        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), f, G, a, b, base_ring(parent(a)).ninv)
   return f, G
 end

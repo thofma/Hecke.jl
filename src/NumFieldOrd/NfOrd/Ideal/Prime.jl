@@ -112,7 +112,7 @@ function lift(K::AbsSimpleNumField, f::FpPolyRingElem)
   r = K()
   for i=0:degree(f)
     u = ZZRingElem()
-    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FpPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), u, f, i, f.parent.base_ring.ninv)
+    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FpPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), u, f, i, base_ring(parent(f)).ninv)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -409,7 +409,7 @@ end
 function _factor_distinct_deg(x::FpPolyRingElem)
   degs = Vector{Int}(undef, degree(x))
   degss = [ pointer(degs) ]
-  n = x.parent.base_ring.ninv
+  n = base_ring(parent(x)).ninv
   fac = Nemo.gfp_fmpz_poly_factor(n)
   ccall((:fmpz_mod_poly_factor_distinct_deg, libflint), UInt,
           (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{FpPolyRingElem}, Ptr{Ptr{Int}}, Ref{fmpz_mod_ctx_struct}),

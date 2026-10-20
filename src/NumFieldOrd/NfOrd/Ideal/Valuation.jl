@@ -86,7 +86,7 @@ end
 
 function _coeff_as_fmpz!(c::ZZRingElem, f::ZZModPolyRingElem, i::Int)
   ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing,
-        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), c, f, i, f.parent.base_ring.ninv)
+        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), c, f, i, base_ring(parent(f)).ninv)
   return nothing
 end
 

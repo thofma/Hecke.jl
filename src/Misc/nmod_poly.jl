@@ -1388,7 +1388,7 @@ function is_primitive(f::ZZModPolyRingElem)
   g = ZZRingElem()
   GC.@preserve f begin
     for i = 0:degree(f)
-      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, f.parent.base_ring.ninv)
+      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, base_ring(parent(f)).ninv)
       gcd!(g, g, z)
       if isone(g)
         return true, R(g)
