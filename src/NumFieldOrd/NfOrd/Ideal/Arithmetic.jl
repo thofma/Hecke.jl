@@ -567,8 +567,8 @@ Base.literal_pow(::typeof(^), A::AbsNumFieldOrderIdeal, ::Val{p}) where {p} = A^
 #
 ################################################################################
 
-# multiplication by ZZRingElem, using two normal presentation
-function prod_by_int_2_elem_normal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::ZZRingElem)
+# The ideal presentations used for integer scaling also work for non-simple fields.
+function prod_by_int_2_elem_normal(A::AbsNumFieldOrderIdeal, a::ZZRingElem)
   @assert has_2_elem(A) && has_2_elem_normal(A)
 
   # <a,a> is a a-normal presentation
@@ -587,7 +587,7 @@ function prod_by_int_2_elem_normal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
     a2 = A.gen_two*f + A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
 
-  B = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(A.gen_one*a, a2*a)
+  B = AbsNumFieldOrderIdeal(A.gen_one*a, a2*a)
   if has_princ_gen_special(A)
     B.princ_gen_special = (2, 0, (A.princ_gen_special[2] + A.princ_gen_special[3])*a)
   end
@@ -610,10 +610,10 @@ function prod_by_int_2_elem_normal(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
   return B
 end
 
-function prod_by_int_2_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, a::ZZRingElem)
+function prod_by_int_2_elem(A::AbsNumFieldOrderIdeal, a::ZZRingElem)
   @assert has_2_elem(A)
 
-  B = AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}(A.gen_one*a, A.gen_two*a)
+  B = AbsNumFieldOrderIdeal(A.gen_one*a, A.gen_two*a)
   if has_princ_gen(A)
     B.is_principal = 1
     B.princ_gen = A.princ_gen*a
@@ -635,7 +635,8 @@ function prod_by_int_2_elem(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpl
   return B
 end
 
-function *(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
+function *(x::AbsNumFieldOrderIdeal, y::ZZRingElem)
+  y = abs(y)
   if is_maximal_known_and_maximal(order(x))
     return mul_maximal(x, y)
   else
@@ -643,8 +644,8 @@ function *(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y
   end
 end
 
-function mul_maximal(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
-  if iszero(y)
+function mul_maximal(x::AbsNumFieldOrderIdeal, y::ZZRingElem)
+  if iszero(x) || iszero(y)
     z = ideal(order(x), 0)
     z.iszero = 1
     return z
@@ -666,20 +667,20 @@ function mul_maximal(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
   return ideal(order(x), basis_matrix(x, copy = false)*y)
 end
 
-*(x::ZZRingElem, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
+*(x::ZZRingElem, y::AbsNumFieldOrderIdeal) = y * x
 
-*(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::Integer) = x * ZZRingElem(y)
+*(x::AbsNumFieldOrderIdeal, y::Integer) = x * ZZRingElem(y)
 
-*(x::Integer, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = y * x
+*(x::Integer, y::AbsNumFieldOrderIdeal) = y * x
 
-function *(x::AbsSimpleNumFieldOrderElem, y::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
-  parent(x) !== order(y) && error("Orders of element and ideal must be equal")
+function *(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIdeal)
+  @req parent(x) === order(y) "Orders of element and ideal must be equal"
   return ideal(parent(x), x) * y
 end
 
-*(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::AbsSimpleNumFieldOrderElem) = y * x
+*(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderElem) = y * x
 
-function mul_gen(x::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, y::ZZRingElem)
+function mul_gen(x::AbsNumFieldOrderIdeal, y::ZZRingElem)
   if y == 0
     z = ideal(order(x), zero_matrix(ZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1

@@ -440,7 +440,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
   if haskey(N.induced, auto)
     p = N.induced[auto]
   else
-    p = induce(FB, auto)
+    p = Hecke.induce(FB, auto)
     N.induced[auto] = p
   end
   #@show p

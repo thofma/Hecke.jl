@@ -620,6 +620,10 @@ function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
   return evaluate(res, new_vals)
 end
 
+function ConformanceTests.generate_element(L::RelNonSimpleNumField)
+  return rand(L, -10:10)
+end
+
 function mod(a::RelNonSimpleNumFieldElem{T}, p::ZZRingElem) where T
   K = parent(a)
   b = data(a)

@@ -3,6 +3,50 @@
   A = GroupAlgebra(QQ, G)
   @test sprint(show, MIME"text/plain"(), A) isa String
   @test sprint(show, A) isa String
+  @testset "Multiplication by group elements" begin
+    local G, A
+    G = small_group(6, 1)
+    x, y = first((x, y) for x in G for y in G if x*y != y*x)
+    for sparse in (false, true), R in (ZZ, QQ, residue_ring(ZZ, 6)[1]), c in (ZZ(2), ZZ(2)^200)
+      A = Hecke._group_algebra(R, G; sparse = sparse, cached = false)
+      a = A(x => c, y => -3, one(G) => 1)
+      @test a*y == a*A(y)
+      @test y*a == A(y)*a
+      @test a*y != y*a
+      for s in (0, 1, -1, 3)
+        p = A(y => s)
+        @test a*p == A(x*y => c*s, y*y => -3*s, y => s)
+        @test p*a == A(y*x => s*c, y*y => -3*s, y => s)
+        @test A(x => c)*p == A(x*y => c*s)
+      end
+      @test a*one(G) == one(G)*a == a
+      @test iszero(zero(A)*y)
+      @test iszero(y*zero(A))
+
+      # Products must not share mutable coefficients with their input.
+      for b in (a*y, y*a)
+        if sparse
+          b.coeffs_sparse.values[1] = zero!(b.coeffs_sparse.values[1])
+        else
+          zero!(b)
+        end
+        @test a == A(x => c, y => -3, one(G) => 1)
+      end
+      @test_throws ArgumentError a*one(small_group(4, 2))
+      @test_throws ArgumentError one(small_group(4, 2))*a
+    end
+
+    for G in (abelian_group([2, 3]), abelian_group([0]))
+      g = gens(G)[1]
+      for sparse in (false, true)
+        !is_finite(G) && !sparse && continue
+        A = Hecke._group_algebra(ZZ, G; sparse = sparse, cached = false)
+        a = A(zero(G) => 2, g => -3)
+        @test a*g == g*a == a*A(g)
+      end
+    end
+  end
+
   @testset "Regular matrix algebra" begin
     B, BtoA = Hecke.regular_matrix_algebra(A)
 

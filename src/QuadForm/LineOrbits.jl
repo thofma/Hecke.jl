@@ -413,7 +413,7 @@ end
 ################################################################################
 
 function inc!(a::BigInt)
-  ccall((:__gmpz_add_ui, :libgmp), Nothing,
+  ccall((:__gmpz_add_ui, Base.GMP.libgmp), Nothing,
         (Ref{BigInt}, Ref{BigInt}, UInt), a, a, UInt(1))
   return a
 end

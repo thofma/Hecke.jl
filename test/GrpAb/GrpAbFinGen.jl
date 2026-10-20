@@ -367,6 +367,35 @@
     @test length(l) == 66
   end
 
+  @testset "Isomorphism with automorphism groups" begin
+    K, _ = quadratic_field(2)
+    L, _ = cyclotomic_field(8)
+    M, _ = cyclotomic_field(5)
+    # K and L have bad reduction at 2, so the prime search must construct a
+    # new finite field and polynomial ring. M has good reduction at 2 and
+    # requires higher powers of a generator.
+    for (F, invariants) in ((K, [2]), (L, [2, 2]), (M, [4]))
+      G = automorphism_list(F)
+      A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G)
+      @test elementary_divisors(A) == invariants
+      @test order(A) == length(G)
+      @test length(GtoA) == length(AtoG) == length(G)
+
+      for g in G
+        @test AtoG[GtoA[g]] == g
+      end
+      for a in A
+        @test GtoA[AtoG[a]] == a
+      end
+      for g in G, h in G
+        @test AtoG[GtoA[g] + GtoA[h]] == g * h
+      end
+      for a in A, b in A
+        @test AtoG[a + b] == AtoG[a] * AtoG[b]
+      end
+    end
+  end
+
   @testset "HomAlg" begin
     G = abelian_group([3 1; 0 3])
     S, mS = snf(G)

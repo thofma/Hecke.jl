@@ -17,6 +17,7 @@ This functionality is currently restricted to fields of characteristic not equal
 
 ```@docs
 quaternion_algebra(::Field, ::Any, ::Any)
+quaternion_algebra_ramified_at(::QQField, ::IntegerUnion)
 ```
 
 ## Arithmetic of elements
@@ -56,6 +57,13 @@ x^2 - 2*x + 46//9
 
 julia> m(z)
 0
+```
+
+## Eichler orders
+
+```@docs
+is_eichler(::Union{AlgAssAbsOrd, AlgAssRelOrd})
+eichler_level(::AlgAssAbsOrd{<:QuaternionAlgebra})
 ```
 
 ## Splitting of quaternion algebras

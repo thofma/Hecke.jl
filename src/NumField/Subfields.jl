@@ -99,9 +99,7 @@ function _subfield_primitive_element_from_basis(K::S, as::Vector{T}) where {
 
   # First check basis elements
   i = findfirst(a -> degree(minpoly(a)) == d, as)
-  if i <= d
-    return as[i]
-  end
+  i === nothing || return as[i]
 
   k = base_field(K)
 

@@ -322,6 +322,8 @@ function finite_ring(M::AbstractAlgebra.Generic.MatRing{FiniteRingElem})
   MR = FiniteRing(D, homs)
   hhinv = m -> FiniteRingElem(MR, hinv(m))
   hh = hom(MR, M, h.(data.(additive_generators(MR))); inverse = hhinv, check = false)
+  # one(MR) would solve a linear system over Hom(D, D)
+  MR.one = hhinv(one(M))
   #hh = r -> h(data(r))
 
   # Let's compute the radical (chain)

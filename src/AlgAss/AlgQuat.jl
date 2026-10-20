@@ -106,6 +106,82 @@ function QuaternionAlgebra(K::Field, a::T, b::T) where { T <: FieldElem }
   end
 end
 
+@doc raw"""
+    quaternion_algebra_ramified_at(K::QQField, p::IntegerUnion;
+                                   check::Bool = true)
+      -> QuaternionAlgebra{QQFieldElem}
+
+Return the quaternion algebra over $\mathbf{Q}$ that is ramified exactly at
+the prime $p$ and at infinity, presented as $(-p, -q)_{\mathbf{Q}}$, so
+$i^2 = -p$ and $j^2 = -q$, where $q$ is the least prime with
+$q \equiv 3 \bmod 8$ and $\left(\frac{p}{q}\right) = -1$.
+
+The algebra carries the maximal order, which [`maximal_order`](@ref) returns,
+
+```math
+\mathbf{Z} + \mathbf{Z}\frac{1 + j}{2} + \mathbf{Z}\frac{i(1 + j)}{2}
++ \mathbf{Z}\frac{(r + i)j}{q},
+```
+
+where $r$ is the square root of $-p$ modulo $q$ in ``(0, q/2]``. Both $q$
+and $r$ are determined by $p$, so the algebra and its maximal order are the
+same on every call.
+
+If `check` is `true`, it is tested that $p$ is prime.
+
+The presentation and the order are those of [Ibu82](@cite), Lemmas 1.1 and
+1.2, with the least admissible $q$, which exists by Dirichlet's theorem.
+
+# Examples
+
+```jldoctest
+julia> A = quaternion_algebra_ramified_at(QQ, 97)
+Quaternion algebra
+  over rational field
+  defined by i^2 = -97, j^2 = -19, ij = -ji
+
+julia> abs(discriminant(maximal_order(A))) == 97^2
+true
+```
+"""
+function quaternion_algebra_ramified_at(K::QQField, p::IntegerUnion;
+                                        check::Bool = true)
+  p = ZZ(p)
+  if check
+    @req is_prime(p) "p must be a prime"
+  end
+  q = _least_admissible_prime(p)
+  A = quaternion_algebra(K, -p, -q)
+  A.maximal_order = [_ibukiyama_maximal_order(A, p, q)]
+  return A
+end
+
+# The least prime q with q = 3 mod 8 and (p/q) = -1, Ibukiyama's conditions on
+# q (Nagoya Math. J. 88, p. 181): for odd p, (p/q) = -1 is his (-q/p) = -1,
+# by quadratic reciprocity, and for p = 2 it holds for every q = 3 mod 8.
+function _least_admissible_prime(p::ZZRingElem)
+  q = ZZ(3)
+  while !(mod(q, 8) == 3 && kronecker_symbol(p, q) == -1)
+    q = next_prime(q)
+  end
+  return q
+end
+
+# Ibukiyama's maximal order O(q, r) of A = (-p, -q), Lemma 1.2 of Nagoya Math.
+# J. 88: Z + Z(1 + j)/2 + Z i(1 + j)/2 + Z (r + i)j/q, with r the square root
+# of -p modulo q in (0, q/2]. As q = 3 mod 4, a square root of -p is
+# (-p)^((q + 1)/4) mod q.
+function _ibukiyama_maximal_order(A::QuaternionAlgebra{QQFieldElem},
+                                  p::ZZRingElem, q::ZZRingElem)
+  r = powermod(mod(-p, q), div(q + 1, 4), q)
+  r = min(r, q - r)
+  e, i, j, k = basis(A)
+  B = [e, QQ(1, 2) * (e + j), QQ(1, 2) * (i + k), QQ(1, q) * (r * j + k)]
+  O = order(A, B; isbasis = true, check = false)
+  O.is_maximal = 1
+  return O
+end
+
 dim(A::QuaternionAlgebra) = 4
 
 base_ring(A::QuaternionAlgebra{T}) where {T} = A.base_ring::parent_type(T)

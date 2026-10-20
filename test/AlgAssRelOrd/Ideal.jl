@@ -135,6 +135,19 @@
       @test all(P -> P * O == P, lP)
       @test all(P -> all(in(O), absolute_basis(P)), lP)
     end
+
+    # (sqrt(5), -3) over Q(sqrt(5)) ramifies at the prime above 5: one maximal
+    # ideal there, returned as a vector like any other answer
+    let
+      K, a = quadratic_field(5)
+      A = quaternion_algebra(K, a, K(-3))
+      M = maximal_order(A)
+      p, = prime_ideals_over(base_ring(M), 5)
+      for side in [:right, :left]
+        Ps = Hecke.maximal_integral_ideals(M, p; side)
+        @test Ps isa Vector && length(Ps) == 1
+      end
+    end
   end
 
   @testset "Quotients as algebras" begin
