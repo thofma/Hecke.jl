@@ -789,8 +789,9 @@ end
 #
 ################################################################################
 
-#TODO: Use the inclusion element/AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
-function in(x::AbsSimpleNumFieldElem, y::AbsSimpleNumFieldOrderFractionalIdeal)
+# Membership uses rational coordinates for both simple and non-simple fields.
+function in(x::NumFieldElem, y::AbsNumFieldOrderFractionalIdeal)
+  @req parent(x) === nf(order(y)) "Number field of element and ideal must be equal"
   B = inv(basis_matrix(FakeFmpqMat, y))
   O = order(y)
   M = zero_matrix(ZZ, 1, degree(O))
@@ -802,12 +803,12 @@ function in(x::AbsSimpleNumFieldElem, y::AbsSimpleNumFieldOrderFractionalIdeal)
   return v.den == 1
 end
 
-function in(x::T, y::AbsSimpleNumFieldOrderFractionalIdeal) where T <: IntegerUnion
+function in(x::T, y::AbsNumFieldOrderFractionalIdeal) where T <: IntegerUnion
   O = order(y)
   return in(O(x), y)
 end
 
-function in(x::AbsNumFieldOrderElem, y::AbsSimpleNumFieldOrderFractionalIdeal)
+function in(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderFractionalIdeal)
   return in(elem_in_nf(x), y)
 end
 

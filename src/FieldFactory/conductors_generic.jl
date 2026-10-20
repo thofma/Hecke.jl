@@ -15,11 +15,15 @@ function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; 
 
   extra_list = Tuple{Int, ZZRingElem}[(1,ZZRingElem(1))]
   for q in ram_primes
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
     tr = prime_decomposition_type(O, Int(q))
     e = tr[1][2]
     nq = ZZRingElem(q)^(divexact(d,e))
+    # Norm contributions need not increase with q.
     if nq > bound
-      break
+      continue
     end
     l=length(extra_list)
     for i = 1:l

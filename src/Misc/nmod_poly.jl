@@ -1002,8 +1002,8 @@ function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Re
       R1 = residue_ring(ZZ, S(lg), cached=false)[1]
       R1t = polynomial_ring(R1, cached=false)[1]
       #g is bad in R1, so factor it
-      gR1 = R1t(lift(Zx, g))
-      fR1 = R1t(lift(Zx, f))
+      gR1 = change_base_ring(R1, lift(Zx, g); parent = R1t)
+      fR1 = change_base_ring(R1, lift(Zx, f); parent = R1t)
     else
       gR1 = g
       fR1 = f

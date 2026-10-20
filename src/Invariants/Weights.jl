@@ -7,53 +7,28 @@ return true when w1 and w2 are equal.
 """
 function weighted_equality(w1::Vector{T},w2::Vector{T}, ws::Vector{Int}) where T
 #Only consider invertible elements
-  non_zero = findall(map(is_unit, w1))
-  non_zero_w2 = findall(map(is_unit, w2))
-
-  if non_zero != non_zero_w2
+  non_zero = findall(is_unit, w1)
+  if non_zero != findall(is_unit, w2)
     return false
   end
+  isempty(non_zero) && return true
 
-#Compute gcd of the weights
-  _gcd_ws, B_coeffs = gcdx(Vector{ZZRingElem}(ws[non_zero]))
-  gcd_ws = Int(_gcd_ws)
-
-# Use Bezout coefficients to the scaling factors to get equality for an
-# invariant whose weight is equal to the gcd of the weights.
-# I.e. we want gcd_w1_scaling * gcd_w1 = gcd_w2_scaling * gcd_w2
-# where gcd_wi is the value gotten by applying the B_coeffs to wi to
-# get an invariant of weight gcd_w.
-  gcd_w1_scaling = 1
-  gcd_w2_scaling = 1
-  for j in 1:length(non_zero)
-	  if B_coeffs[j] >= 0
-	    gcd_w2_scaling *= w1[non_zero[j]]^B_coeffs[j]
-	    gcd_w1_scaling *= w2[non_zero[j]]^B_coeffs[j]
-	  else
-	    gcd_w2_scaling *= w2[non_zero[j]]^(-B_coeffs[j])
-	    gcd_w1_scaling *= w1[non_zero[j]]^(-B_coeffs[j])
-	  end
+  # The points are equal iff w2[i] = lambda^ws[i] * w1[i] for all i. Get
+  # mu = lambda^g, g the gcd of the weights, by the Euclidean algorithm on the
+  # exponents. For equal points every intermediate value is lambda^e with
+  # e <= maximum(ws); Bezout coefficients would blow up the entries instead.
+  ratio(i) = divexact(w2[i], w1[i])
+  e, mu = ws[non_zero[1]], ratio(non_zero[1])
+  for i in non_zero[2:end]
+    f, nu = ws[i], ratio(i)
+    while f != 0
+      q, r = divrem(e, f)
+      e, mu, f, nu = f, nu, r, mu * inv(nu)^q
+    end
   end
 
-  #Factor the weights by gcd_ws
-  pows = [[i, div(ws[i], gcd_ws)] for i in non_zero]
-
-  sort(pows, by = (x-> x[2]))
-
-  w2_scaling_factor = 1
-  w1_scaling_factor = 1
-  pow = 0
-
-  #For every weight we scale by an apprioriate multiple and test for equality
-  for p in pows
-	  if p[2] != pow
-	    w2_scaling_factor *= gcd_w2_scaling^(p[2]-pow)
-	    w1_scaling_factor *= gcd_w1_scaling^(p[2]-pow)
-	    pow = p[2]
-	  end
-	  if w1[p[1]]*w1_scaling_factor - w2_scaling_factor*w2[p[1]] != 0
-      return false
-    end
+  for i in non_zero
+    ratio(i) == mu^divexact(ws[i], e) || return false
   end
   return true
 end

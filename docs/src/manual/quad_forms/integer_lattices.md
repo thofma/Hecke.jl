@@ -183,6 +183,15 @@ embed_in_unimodular(::ZZLat, ::IntegerUnion, ::IntegerUnion)
 ```@docs
 lll(L::ZZLat; same_ambient::Bool = true)
 ```
+
+### Eisenstein reduction of ternary lattices
+```@docs
+eisenstein_reduction(::ZZLat)
+is_eisenstein_reduced(::ZZLat)
+eisenstein_reduction(::MatElem{ZZRingElem})
+eisenstein_reduction_with_transform(::MatElem{ZZRingElem})
+is_eisenstein_reduced(::MatElem{ZZRingElem})
+```
 ### Short Vectors
 ```@docs
 short_vectors

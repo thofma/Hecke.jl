@@ -18,5 +18,6 @@
   include("Misc/QQBar.jl")
   include("Misc/PartitionsWithCondition.jl")
   include("Misc/embedded_modules.jl")
+  include("Misc/FPModuleDedekind.jl")
   include("Misc/toMagma.jl")
 end

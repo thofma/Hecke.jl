@@ -896,8 +896,8 @@ function containment_by_matrices(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIde
   return iszero(v)
 end
 
-function in(x::AbsSimpleNumFieldElem, y::AbsNumFieldOrderIdeal)
-  parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
+function in(x::NumFieldElem, y::AbsNumFieldOrderIdeal)
+  @req parent(x) === nf(order(y)) "Number field of element and ideal must be equal"
   return in(order(y)(x),y)
 end
 
@@ -1019,7 +1019,8 @@ end
 
 
 function _minmod(a::ZZRingElem, b::AbsNumFieldOrderElem)
-  return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
+  # The minimum divides both the integer generator and the inverse denominator.
+  return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
 end
 
 function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)

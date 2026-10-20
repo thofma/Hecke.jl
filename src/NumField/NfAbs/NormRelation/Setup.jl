@@ -438,7 +438,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
   _ , _, auto = N.coefficients_gen[i][j]
   #@show auto
   p = get!(N.induced, auto) do
-    induce(FB, auto)
+    Hecke.induce(FB, auto)
   end
   #@show p
 

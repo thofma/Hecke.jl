@@ -1222,11 +1222,13 @@ function _p_adic_regulator_coates(K::AbsSimpleNumField, p::IntegerUnion)
           end
           C, mC = completion(K, dp[j], working_prec)
         end
+        # the units share many factor bases, so share the logarithms
+        D = Dict{AbsSimpleNumFieldElem, elem_type(C)}()
         for i in 1:(rK+1)
           try
             # the evaluation of the logarithm may fail, if the precision
             # is not high enough
-            el = _evaluate_log_of_fac_elem(mC, dp[j], EK[i])
+            el = _evaluate_log_of_fac_elem(mC, dp[j], EK[i], D)
             if is_zero(el)
               @goto bad_working_prec
             end
@@ -1419,9 +1421,10 @@ function _p_adic_regulator_non_normal(K, p)
     end
     C, mC = completion(N, P, prec)
     Rmat = zero_matrix(C, r, r)
+    D = Dict{elem_type(N), elem_type(C)}()
     for i in 1:r
       for j in 1:r
-        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[auts[i]])(KtoN(mU(U[j + 1])))) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
+        Rmat[i, j] = _evaluate_log_of_fac_elem(mC, P, mA(A[auts[i]])(KtoN(mU(U[j + 1]))), D) # j + 1, because the fundamental units correspond to U[2],..,U[r + 1]
       end
     end
     z = _det(Rmat)

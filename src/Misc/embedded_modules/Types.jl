@@ -219,6 +219,13 @@ end
 
 # Dedekind domains
 
+struct EmbeddedModuleDataDDQuotient{DomainT, CodomainT} <:
+         Map{DomainT, CodomainT, HeckeMap, EmbeddedModuleDataDDQuotient}
+  domain::DomainT
+  codomain::CodomainT
+  kernel::DomainT
+end
+
 struct EmbeddedModuleMapDDData{DomainT, CodomainT, RingMapT}
   # Core
   domain::DomainT

@@ -16,7 +16,7 @@ elem_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderElem{S,
 
 ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderIdeal{S, T}
 
-fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsSimpleNumFieldOrderFractionalIdeal
+fractional_ideal_type(::Type{AbsNumFieldOrder{S, T}}) where {S, T} = AbsNumFieldOrderFractionalIdeal{S, T}
 
 base_ring(::AbsNumFieldOrder) = ZZ
 
