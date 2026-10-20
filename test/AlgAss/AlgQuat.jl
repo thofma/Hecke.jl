@@ -186,4 +186,44 @@
     ugens = Hecke.unit_group_modulo_scalars(O)
     @test length(ugens) == 8 && allunique(ugens) && all(is_unit, ugens)
   end
+
+  let # quaternion_algebra_ramified_at
+    # Ibukiyama's conditions on q, Nagoya Math. J. 88 (1982), p. 181
+    admissible(p, q) =
+      is_prime(q) && mod(q, 8) == 3 && kronecker_symbol(ZZ(p), ZZ(q)) == -1
+    # 2, 3 and every class modulo 8
+    for p in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 73, 89, 97, 241,
+              257, 647, 1811]
+      A = quaternion_algebra_ramified_at(QQ, p)
+      a, b = Hecke.standard_form(A)
+      q = -ZZ(b)
+      @test a == -p
+      @test admissible(p, q) && !any(s -> admissible(p, s), 2:(q - 1))
+      # the ramification, of the same (a, b) built by quaternion_algebra,
+      # which carries no maximal order
+      B = quaternion_algebra(QQ, a, b)
+      @test Hecke.local_schur_indices(B) == [ZZ(0) => 2, ZZ(p) => 2]
+      # the order carried is maximal: rebuilt with the closure check, its
+      # discriminant is p^2 (Voight, Quaternion algebras, Thm. 15.5.5)
+      O = maximal_order(A)
+      @test O === maximal_order(A)
+      bO = [elem_in_algebra(x) for x in basis(O)]
+      @test abs(discriminant(order(A, bO; isbasis = true, check = true))) ==
+            ZZ(p)^2
+      # and it is Ibukiyama's O(q, r), p. 182
+      e, i, j, _ = basis(A)
+      r = only(filter(r -> mod(r^2 + p, q) == 0, 1:div(q, 2)))
+      @test bO == [e, QQ(1, 2) * (e + j), QQ(1, 2) * (i * (e + j)),
+                   QQ(1, q) * ((r * e + i) * j)]
+    end
+    @test Hecke.standard_form(quaternion_algebra_ramified_at(QQ, 97)) ==
+          (-97, -19)
+    @test Hecke.standard_form(quaternion_algebra_ramified_at(QQ, ZZ(647))) ==
+          (-647, -3)
+    @test_throws ArgumentError quaternion_algebra_ramified_at(QQ, 91)
+    @test_throws ArgumentError quaternion_algebra_ramified_at(QQ, 1)
+    @test_throws ArgumentError quaternion_algebra_ramified_at(QQ, -5)
+    A = quaternion_algebra_ramified_at(QQ, 97; check = false)
+    @test Hecke.standard_form(A) == (-97, -19)
+  end
 end
