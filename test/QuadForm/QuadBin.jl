@@ -205,6 +205,21 @@
     @test discriminant(f) == 17 && f[1] == 1237
     f = prime_form(ZZ(12), ZZ(743))
     @test discriminant(f) == 12 && f[1] == 743
+    # a form [p, b, c] of discriminant d exists if and only if
+    # b^2 = d mod 4p has a solution; p = 2 included
+    for d in [-200:-3; 5:200], p in ZZ.(collect(PrimesSet(2, 59)))
+      is_discriminant(ZZ(d)) && !is_square(d) || continue
+      sols = count(b -> mod(b^2 - d, 4 * p) == 0, 0:(2 * p - 1))
+      @test Hecke._number_of_primeforms(ZZ(d), p) == sols
+      if sols == 0
+        @test_throws ErrorException prime_form(ZZ(d), p)
+      else
+        f = prime_form(ZZ(d), p)
+        @test discriminant(f) == d && f[1] == p
+      end
+    end
+    @test prime_form(ZZ(-7), ZZ(2)) ==
+          binary_quadratic_form(ZZ(2), ZZ(1), ZZ(1))
   end
 
   @testset "Equivalent" begin

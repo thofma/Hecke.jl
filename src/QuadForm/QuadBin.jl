@@ -378,14 +378,15 @@ end
 ###############################################################################
 
 function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
-    if jacobi_symbol(mod(d, p), p) == -1
+    # the Kronecker symbol, unlike the Jacobi symbol, is defined at p = 2
+    if kronecker_symbol(d, p) == -1
         error("$d is no square modulo $p")
     end
     if p == 2
         if iseven(d)
             return 2 * mod(divexact(d, 4), 2)
         else
-            return 1
+            return one(ZZ)
         end
     else
         r = sqrtmod(d, p)
@@ -398,7 +399,7 @@ function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
 end
 
 function _number_of_primeforms(d::ZZRingElem, p::ZZRingElem)
-    return jacobi_symbol(mod(d, p), p) + 1
+    return kronecker_symbol(d, p) + 1
 end
 
 @doc raw"""
