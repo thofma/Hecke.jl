@@ -63,4 +63,30 @@
     end
   end
 
+  @testset "Tame conductor prime restrictions" begin
+    O = maximal_order(rationals_as_number_field()[1])
+    @test sort!(Hecke.tame_conductors_degree_2(O, ZZ(200);
+                                            unramified_outside = ZZ.([2, 3, 5]))) ==
+          [(1, ZZ(1)), (3, ZZ(3)), (5, ZZ(5)), (15, ZZ(15))]
+    @test sort!(Hecke.tame_conductors_degree_2(O, ZZ(200);
+                                            unramified_outside = ZZ.([3, 7]))) ==
+          [(1, ZZ(1)), (3, ZZ(3)), (7, ZZ(7)), (21, ZZ(21))]
+    @test Hecke.tame_conductors_degree_2(O, ZZ(200);
+                                       unramified_outside = ZZ.([2])) == [(1, ZZ(1))]
+
+    # Check norms and prime support using ideal arithmetic.
+    for K in (quadratic_field(21)[1], cyclotomic_field(15)[1])
+      O = maximal_order(K)
+      candidates = [(m, norm(radical(m*O))) for m in 1:2:200 if is_squarefree(ZZ(m))]
+      for bound in (1, 24, 81, 200)
+        for allowed in (ZZ.([2]), ZZ.([3, 5, 7, 11]), ZZ.([7, 11]))
+          expected = [(m, n) for (m, n) in candidates if n <= bound &&
+                      all(p -> p in allowed, prime_divisors(ZZ(m)))]
+          @test sort!(Hecke.tame_conductors_degree_2(O, ZZ(bound);
+                                                  unramified_outside = allowed)) == expected
+        end
+      end
+    end
+  end
+
 end

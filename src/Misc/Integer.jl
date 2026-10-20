@@ -649,11 +649,10 @@ Returns a vector containing all the squarefree numbers up to $n$.
 """
 function squarefree_up_to(n::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem}=ZZRingElem[])
 
-  @assert isempty(coprime_to) || isempty(prime_base)
   if !isempty(prime_base)
     listi = Int[1]
     for x in prime_base
-      if x > n
+      if x > n || any(y -> !isone(gcd(x, y)), coprime_to)
         continue
       end
       el = Int(x)
