@@ -39,3 +39,20 @@
           ["src/staged.jl", "src/untracked file.jl"]
   end
 end
+
+@testset "clear_cache" begin
+  f = classical_modular_polynomial(2)
+  d = Hecke.register_cache(Dict(1 => 2))
+  cleared = Ref(false)
+  Hecke.register_cache_clearer(() -> cleared[] = true)
+  Hecke.clear_cache()
+  @test isempty(Hecke._classical_modular_polynomial_cache)
+  @test isempty(d)
+  @test cleared[]
+  @test classical_modular_polynomial(2) == f
+
+  # Scratch buffers survive: rows of total length >= 10 use them.
+  a = sparse_row(ZZ, collect(1:2:19), ZZ.(1:10))
+  b = sparse_row(ZZ, collect(2:2:20), ZZ.(1:10))
+  @test Hecke.add_scaled_row(a, b, ZZ(2)) == b + 2*a
+end
