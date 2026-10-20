@@ -372,7 +372,25 @@ end
     K, a = quadratic_field(-1)
     O = order(K, [10*a])
     @test_throws ArgumentError class_group(O)
-    @test_throws ArgumentError class_number(O)
+    @test class_number(O) == 4
+  end
+
+  let # class number of the order of conductor f in an imaginary quadratic
+      # field of discriminant d (Cox, Primes of the form x^2 + ny^2, Thm. 7.24)
+    for d in [-3, -4, -7, -8, -11, -15, -20, -23, -47], f in 2:6
+      K, a = quadratic_field(d)
+      O = order(K, [f * (d + a)//2])
+      u = d == -3 ? 3 : d == -4 ? 2 : 1 # the unit index [O_K^* : O^*]
+      h = class_number(maximal_order(K)) * QQ(f, u) *
+          prod(1 - QQ(kronecker_symbol(d, p), p) for p in prime_divisors(f))
+      @test !is_maximal(O)
+      @test class_number(O) == h
+    end
+    # real quadratic, by Neukirch, Algebraic number theory, Thm. I.12.12:
+    # Z[sqrt(5)] has conductor 2O_K, (O_K/2O_K)^* = F_4^* and (O/2O_K)^* = 1,
+    # and unit index 3, ((1 + sqrt(5))/2)^3 = 2 + sqrt(5); so h = 1 * 3/3 = 1
+    K, a = quadratic_field(5)
+    @test class_number(order(K, [a])) == 1
   end
 
   let # class number
