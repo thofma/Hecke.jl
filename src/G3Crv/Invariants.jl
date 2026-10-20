@@ -401,11 +401,11 @@ function psi_contravariant(quartic::MPolyRingElem{T}) where T
   # substitute the coefficients, keep x, y, z
   psi = MPolyBuildCtx(R)
   for (c, ev) in zip(coefficients(_get_psi_formula()), exponent_vectors(_get_psi_formula()))
-    v = K(c)
+    v = K(numerator(c))
     for t in 1:15
       v *= coeffs[t]^ev[t]
     end
-    push_term!(psi, v, ev[16:18])
+    push_term!(psi, divexact(v, K(denominator(c))), ev[16:18])
   end
   return finish(psi)
 end

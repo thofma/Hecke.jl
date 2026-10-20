@@ -26,4 +26,9 @@
     @test weighted_equality(DO_invs, map(K, [38, 10, 38, 37, 16, 30, 8, 14, 42, 30, 12, 40, 21]), ws)
     @test weighted_equality(dixmier_ohno_invariants(@inferred reconstruct_from_dixmier_ohno_invariants(DO_invs))[1], DO_invs, ws)
 
+    R, (x, y, z) = polynomial_ring(ZZ, [:x, :y, :z])
+    f = x^4 + y^4 + z^4
+    @test dixmier_ohno_invariants(f)[1] ==
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1]
+
 end
