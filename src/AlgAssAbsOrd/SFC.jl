@@ -139,9 +139,12 @@ function type_number(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgA
 end
 
 function _is_isomorphic(R::T, S::T) where {T <: Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd}}
-  # Kirschmer, "Konstruktive Idealtheorie in Quatenionalgebren":
-  # R, S sind isomorph, wenn die zugehörigen quadratischen R-Gitter isomorph sind bezüglich
-  # (x, y) -> tr_D/K(x * conj(y))
+  # In a totally definite quaternion algebra, R and S are isomorphic if and
+  # only if the lattices R and S are isometric with respect to the form
+  # (x, y) -> trd(x * conj(y)): Kirschmer, Konstruktive Idealtheorie in
+  # Quaternionenalgebren, Diplomarbeit, Universitaet Ulm, 2005, Korollar 4.1.6
+  # (for conjugate orders) and Bemerkung 2.6.2 (conjugate means isomorphic, by
+  # Skolem-Noether).
 
   A = algebra(R)
   @assert !is_eichler(A)
