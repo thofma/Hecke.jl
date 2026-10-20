@@ -58,6 +58,13 @@ julia> m(z)
 0
 ```
 
+## Eichler orders
+
+```@docs
+is_eichler(::Union{AlgAssAbsOrd, AlgAssRelOrd})
+eichler_level(::AlgAssAbsOrd{<:QuaternionAlgebra})
+```
+
 ## Splitting of quaternion algebras
 
 ```@docs

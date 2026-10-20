@@ -327,6 +327,7 @@ export dual
 export dual_isogeny
 export dual_of_frobenius
 export echelon_with_transform
+export eichler_level
 export eisenstein_extension
 export elem_in_algebra
 export elem_in_nf
