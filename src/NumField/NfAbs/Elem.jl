@@ -116,7 +116,7 @@ function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
    de = denominator(a)
    ccall((:nf_elem_norm_div, libflint), Nothing,
          (Ref{QQFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Ref{ZZRingElem}, UInt),
-         z, (a*de), a.parent, (d*de^n), UInt(nb))
+         z, (a*de), parent(a), (d*de^n), UInt(nb))
    return z
 end
 

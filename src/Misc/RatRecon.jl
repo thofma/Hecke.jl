@@ -14,7 +14,7 @@
    or `false` (and garbage) if this is not possible.
 """
 function rational_reconstruction(a::PolyRingElem{S}, b::PolyRingElem{S}, n::Int, m::Int) where S
-  R = a.parent
+  R = parent(a)
   if degree(a) <= n return true, a, R(1); end
 
   M = zero_matrix(R, 2, 2)
@@ -123,7 +123,7 @@ end
 
 function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, bnd::Int = -1; error_tolerant::Bool = false) where T
     # the denominator is normalized
-    R_2 = g.parent
+    R_2 = parent(g)
     r_1 = R_2(1); t_1 = R_2(0)
     r_m = r_1;t_m = r_1
     q1 = t_1; q_m = r_1
@@ -375,7 +375,7 @@ end
 ################################################################################
 
 function _modpResults(f, p::ZZRingElem, M::Int)
-   Rc = f.parent
+   Rc = parent(f)
    l1 = fpPolyRingElem[]; l3 = ZZRingElem[]
    Np = listprimes([f], p, M)
    for j in 1:length(Np)

@@ -1005,14 +1005,14 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
         if isassigned(D, i)
           y = D[i]
           if modulus(y) == modulus(t)
-            y.parent = t.parent
+            y.parent = parent(t)
             set!(y, t)
           else
             # writes the FLINT `nmod_t` of `y` by hand, Nemo has no API for this
             y.mod_n = t.mod_n
             y.mod_ninv = t.mod_ninv
             y.mod_norm = t.mod_norm
-            y.parent = t.parent
+            y.parent = parent(t)
             set!(y, t)
           end
         else
@@ -1172,14 +1172,14 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
         if isassigned(D, i)
           y = D[i]
           if modulus(y) == modulus(t)
-            y.parent = t.parent
+            y.parent = parent(t)
             set!(y, t)
           else
             # writes the FLINT `nmod_t` of `y` by hand, Nemo has no API for this
             y.mod_n = t.mod_n
             y.mod_ninv = t.mod_ninv
             y.mod_norm = t.mod_norm
-            y.parent = t.parent
+            y.parent = parent(t)
             set!(y, t)
           end
         else

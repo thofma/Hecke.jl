@@ -1027,8 +1027,8 @@ struct FactorsOfSquarefree{T<:PolyRingElem}
   poly :: T
 
   function FactorsOfSquarefree(poly::T) where T <:PolyRingElem
-    Kx = poly.parent
-    return new{T}(order(Kx.base_ring), gen(Kx), poly)
+    Kx = parent(poly)
+    return new{T}(order(base_ring(Kx)), gen(Kx), poly)
   end
 end
 
