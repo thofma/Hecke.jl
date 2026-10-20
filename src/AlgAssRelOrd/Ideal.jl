@@ -1342,7 +1342,7 @@ function __maximal_integral_ideals(O::AlgAssRelOrd, P, p::Union{ AbsNumFieldOrde
 
   n = _matdeg(D)
   if isone(n)
-    return P
+    return [P]
   end
 
   N = basis_pmatrix(P)
