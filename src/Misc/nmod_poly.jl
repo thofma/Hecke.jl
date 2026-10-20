@@ -305,7 +305,7 @@ $\{x | xa = 0\} = \langle r\rangle$.
 function annihilator(a::ResElem{T}) where T <: IntegerUnion
   R = parent(a)
   m = modulus(R)
-  return R(divexact(m, gcd(m, a.data)))
+  return R(divexact(m, gcd(m, data(a))))
 end
 
 function is_zerodivisor(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}

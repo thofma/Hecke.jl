@@ -432,7 +432,7 @@ function unit_group_mod(R::Nemo.zzModRing, n::Int)
       f=div(Int(modulus(R)), e)
       d,a,b=gcdx(e,f)
       for i=1:length(gensp)
-        gensp[i]=Int((R(gensp[i])*b*f).data)+a*e
+        gensp[i]=Int(data(R(gensp[i])*b*f))+a*e
       end
     end
     append!(gens, gensp)
@@ -447,7 +447,7 @@ function unit_group_mod(R::Nemo.zzModRing, n::Int)
       res = Vector{Int}(undef, ngens(G))
       ind = 1
       for i = 1:length(disclogs)
-        res1 = disclogs[i](Int(x.data))
+        res1 = disclogs[i](Int(data(x)))
         for j = 1:length(res1)
           res[ind] = res1[j]
           ind += 1
@@ -514,9 +514,9 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
             return Int[disc_log(x)]
           end
         end
-        return Int[Int(gen.data)], Int[ord1], disc_log
+        return Int[Int(data(gen))], Int[ord1], disc_log
       else
-        g = Int((R(g)^(p^v)).data)
+        g = Int(data(R(g)^(p^v)))
         inv1 = invmod(p^v, ord)
         local disc_log1
         let inv1 = inv1, disclog = disclog, disc_log = disc_log
@@ -525,7 +525,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
           end
         end
       end
-      return [g, Int(gen.data)], Int[ord, ord1], disc_log1
+      return [g, Int(data(gen))], Int[ord, ord1], disc_log1
     else
       local disc_log3
       let disclog = disclog
@@ -658,7 +658,7 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       end
      end
   end
-  return Int(g.data), k, disc_log
+  return Int(data(g)), k, disc_log
 
 end
 

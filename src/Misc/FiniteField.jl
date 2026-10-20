@@ -157,7 +157,7 @@ end
 #to avoid using embed - which is (more me) still broken..
 # it accumulates fields until the machine dies
 function find_morphism(k::Nemo.zzModRing, K::fqPolyRepField)
-  return x->K(x.data)
+  return x->K(data(x))
 end
 
 function find_morphism(k::fqPolyRepField, K::fqPolyRepField)
