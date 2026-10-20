@@ -343,12 +343,68 @@ is, the intersection of two maximal orders.
 function is_eichler(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
   A = algebra(O)
   @req A isa QuaternionAlgebra "Order must be an order of a quaternion algebra"
-  # O is Eichler at p if and only if it is maximal at p, which where A ramifies
-  # means that p divides discrd(O) once, or it is residually split there
-  # (Voight, Quaternion Algebras, Lemma 24.3.6)
-  return all(factor(_reduced_disc(O))) do (p, e)
-    return (e == 1 && !is_split(A, p)) || eichler_invariant(O, p) == 1
-  end
+  return _eichler_level_factors(O) !== nothing
+end
+
+@doc raw"""
+    eichler_level(O::AlgAssAbsOrd{<:QuaternionAlgebra}) -> ZZRingElem
+    eichler_level(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra})
+      -> AbsNumFieldOrderIdeal
+
+Return the level of the Eichler order $O$ of a quaternion algebra $A$ over
+$K$: the ideal $M$ of the ring of integers of $K$, coprime to the discriminant
+$D$ of $A$, with $\operatorname{discrd}(O) = DM$ [Voi21](@cite), 23.4.19. Over
+$\mathbf{Q}$ it is returned as a positive integer.
+
+An `ArgumentError` is thrown if $O$ is not an Eichler order, see
+[`is_eichler`](@ref).
+
+# Examples
+
+The order of the matrices $\begin{pmatrix} a & b \\ 6c & d \end{pmatrix}$, with
+$a, b, c, d \in \mathbf{Z}$, in $M_2(\mathbf{Q}) \cong (1, 1)_{\mathbf{Q}}$,
+spanned by the matrix units $(1 \pm i)/2$, $(j + k)/2$ and $6$ times
+$(j - k)/2$:
+
+```jldoctest
+julia> A = quaternion_algebra(QQ, 1, 1);
+
+julia> e, i, j, k = basis(A);
+
+julia> h = QQ(1, 2);
+
+julia> O = order(A, [h * (e + i), h * (e - i), h * (j + k), 3 * (j - k)]);
+
+julia> eichler_level(O)
+6
+
+julia> eichler_level(maximal_order(A))
+1
+```
+"""
+function eichler_level(O::AlgAssAbsOrd{<:QuaternionAlgebra})
+  f = _eichler_level_factors(O)
+  @req f !== nothing "Order must be an Eichler order"
+  return prod((p^e for (p, e) in f); init = one(ZZ))
+end
+
+function eichler_level(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra})
+  f = _eichler_level_factors(O)
+  @req f !== nothing "Order must be an Eichler order"
+  return prod((p^e for (p, e) in f); init = 1 * base_ring(O))
+end
+
+# The pairs (p, e) with p^e exactly dividing the level of the order O of a
+# quaternion algebra A, or nothing if O is not an Eichler order. O is Eichler
+# at p if and only if it is maximal at p, which where A ramifies means that p
+# divides discrd(O) once, or it is residually split there (Voight, Quaternion
+# Algebras, Lemma 24.3.6); then A splits at p, and p^e, exactly dividing
+# discrd(O), exactly divides the level (23.4.19).
+function _eichler_level_factors(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+  A = algebra(O)
+  f = [(p, e) for (p, e) in factor(_reduced_disc(O)) if e > 1 || is_split(A, p)]
+  all(((p, _),) -> eichler_invariant(O, p) == 1, f) || return nothing
+  return f
 end
 
 ################################################################################
