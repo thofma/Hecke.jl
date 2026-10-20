@@ -279,4 +279,35 @@
     @test all(b in P for b in absolute_basis(I))
     @test O * P == P
   end
+
+  @testset "Maximal integral ideals of a quaternion order at a split prime" begin
+    # the l + 1 maximal right and left ideals containing l, for l not dividing
+    # the reduced discriminant of O, against the route through O/P for any
+    # order: the same ideals, each of reduced norm l with O as right (left)
+    # order, and the same list on every call
+    generic(O, l, side) = reduce(vcat,
+      [Hecke.__maximal_integral_ideals(O, P, l, side)
+       for P in prime_ideals_over(O, l)])
+    key(I) = Hecke._hnf_integral(basis_matrix(I), :lowerleft)
+    for (a, b) in [(-1, -11), (-2, -37)]
+      A = quaternion_algebra(QQ, a, b)
+      M = maximal_order(A)
+      J = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+      E = order(A, vcat([one(A)], basis(J)))
+      Z3M = order(A, vcat([one(A)], [3 * elem_in_algebra(x) for x in basis(M)]))
+      for O in [M, E, Z3M], l in [2, 3, 5, 7], side in [:right, :left]
+        is_divisible_by(Hecke._reduced_disc(O), l) && continue
+        Is = Hecke.maximal_integral_ideals(O, l; side)
+        @test length(Is) == l + 1
+        @test Set(key.(Is)) == Set(key.(generic(O, l, side)))
+        @test all(I -> normred(I, O) == l, Is)
+        if side === :right
+          @test all(I -> I * O == I && right_order(I) == O, Is)
+        else
+          @test all(I -> O * I == I && left_order(I) == O, Is)
+        end
+        @test key.(Is) == key.(Hecke.maximal_integral_ideals(O, l; side))
+      end
+    end
+  end
 end

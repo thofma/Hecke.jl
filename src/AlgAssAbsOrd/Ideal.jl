@@ -1993,8 +1993,64 @@ function maximal_integral_ideal(O::AlgAssAbsOrd, p::IntegerUnion, side::Symbol)
 end
 
 function maximal_integral_ideals(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }; side::Symbol)
+  if (side === :right || side === :left) &&
+      algebra(O) isa QuaternionAlgebra{QQFieldElem} &&
+      !is_divisible_by(_reduced_disc(O), p)
+    return _maximal_integral_ideals_split_quaternion(O, p, side)
+  end
   lP = prime_ideals_over(O, p)
   return reduce(vcat, [__maximal_integral_ideals(O, lP[i], p, side) for i in 1:length(lP)])
+end
+
+# The p + 1 maximal right (side = :right) or left (side = :left) ideals
+# containing p of an order O of a quaternion algebra over QQ, for a prime p
+# not dividing the reduced discriminant of O, so that O/pO = M_2(F_p)
+# (Voight, Quaternion Algebras, 23.4.19).
+#
+# The maximal right ideals are alpha O + pO for alpha of rank one modulo p,
+# one for each line of F_p^2 as the image of alpha (Kirschmer-Voight, SIAM J.
+# Comput. 39 (2010), Lemma 7.2), so no splitting of O/pO is needed. The
+# reduced norm modulo p is the determinant, so the first nonzero alpha, in a
+# fixed order, with p | nrd(alpha) has rank one; a basis element gamma with
+# gamma alpha outside alpha O + pO moves its image line, and then the images
+# of (t + gamma) alpha, for t in F_p, are the other p lines. The maximal left
+# ideals are the conjugates O conj(alpha) + pO, conjugation being an
+# anti-automorphism mapping O to itself. The result is the same on every call.
+function _maximal_integral_ideals_split_quaternion(O::AlgAssAbsOrd,
+                                                   p::IntegerUnion,
+                                                   side::Symbol)
+  @req side === :right || side === :left "side must be :right or :left"
+  A = algebra(O)
+  l = Int(p)
+  bs = elem_in_algebra.(basis(O))
+  # beta O + pO, or for side = :left its conjugate O conj(beta) + pO
+  function ideal_of(beta, side)
+    N = zero_matrix(QQ, 8, 4)
+    for i in 1:4
+      x = beta * bs[i]
+      elem_to_mat_row!(N, i, side === :right ? x : conj(x))
+      elem_to_mat_row!(N, 4 + i, l * bs[i])
+    end
+    N = sub(_hnf_integral(N, :lowerleft), 5:8, 1:4)
+    I = ideal(A, O, N; side, M_in_hnf = true)
+    if side === :right
+      I.right_order = O
+    else
+      I.left_order = O
+    end
+    return I
+  end
+  alpha = zero(A)
+  for c in Iterators.product(ntuple(_ -> 0:(l - 1), 4)...)
+    all(is_zero, c) && continue
+    alpha = sum(c[i] * bs[i] for i in 1:4)
+    is_divisible_by(numerator(normred(alpha)), l) && break
+  end
+  I = ideal_of(alpha, :right)
+  gamma = bs[findfirst(g -> !(g * alpha in I), bs)]
+  betas = [alpha; [(t + gamma) * alpha for t in 0:(l - 1)]]
+  side === :right && return [I; [ideal_of(b, :right) for b in betas[2:end]]]
+  return [ideal_of(b, :left) for b in betas]
 end
 
 function __construct_maximal_ideal(O::AlgAssAbsOrd, OtoB, CtoB, CtoD, basisofcenter, side, t, P, I)
