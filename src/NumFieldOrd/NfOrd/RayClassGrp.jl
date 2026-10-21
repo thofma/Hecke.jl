@@ -386,13 +386,13 @@ function _powermod(a::AbsSimpleNumFieldElem, i::Int, p::ZZRingElem)
   end
 end
 
-function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
+# mF is a residue map at p, used to detect factors that are units at p
+function _ev_quo(Q, mQ, mF, elems, p, exponent, multiplicity::Int)
   el = elem_type(Q)[one(Q) for i = 1:length(elems)]
   anti_uni = anti_uniformizer(p)
   powers = Dict{Int, AbsSimpleNumFieldElem}()
   powers[1] = anti_uni
   O = order(p)
-  F, mF = residue_field(O, p)
   for i = 1:length(elems)
     J = elems[i]
     vp = ZZRingElem(0)
@@ -452,19 +452,18 @@ end
 
 function _eval_quo(elems::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, exponent::ZZRingElem)
   O = order(p)
-  if p == q
-    if fits(Int, p.minimum)
-      Q, mQ = ResidueFieldSmall(O, p)
-      return _ev_quo(Q, mQ, elems, p, exponent, 1)
-    else
-      Q, mQ = residue_field(O, p)
-      return _ev_quo(Q, mQ, elems, p, exponent, 1)
-    end
+  # ResidueFieldSmall avoids the fq_default (possibly Zech log) setup cost
+  if fits(Int, p.minimum)
+    F, mF = ResidueFieldSmall(O, p)
   else
-    Q, mQ = quo(O, q)
-    mult = Int(clog(norm(q), norm(p)))
-    return _ev_quo(Q, mQ, elems, p, exponent, mult)
+    F, mF = residue_field(O, p)
   end
+  if p == q
+    return _ev_quo(F, mF, mF, elems, p, exponent, 1)
+  end
+  Q, mQ = quo(O, q)
+  mult = Int(clog(norm(q), norm(p)))
+  return _ev_quo(Q, mQ, mF, elems, p, exponent, mult)
 end
 
 ################################################################################
