@@ -257,10 +257,13 @@ function _try_prepare_finckepohstint_small(gram::ZZMatrix, M::Int,
     end
     lambda[i] = Int(numerator(lambda_val))
 
-    # tlob[i] = 2 * lambda[i] / b[i]
-    tlob_val, rem = divrem(2 * lambda[i], b[i])
+    # tlob[i] = 2 * lambda[i] / b[i]; 2 * lambda[i] need not fit in Int
+    tlob_val, rem = divrem(2 * ZZ(lambda[i]), b[i])
     @assert is_zero(rem)
-    tlob[i] = tlob_val
+    if !fits(Int, tlob_val)
+      return false, nothing, nothing
+    end
+    tlob[i] = Int(tlob_val)
 
     # doc[i] = d[i] / c[i]
     doc[i] = divexact(d[i], c_int[i])

@@ -99,6 +99,17 @@ end
   ok, rbig = Hecke._finckepohstint(G_big, typemax(Int))
   @test !ok
   @test isempty(rbig)
+
+  # 2 * lambda[1] = 2a does not fit in Int (lambda[1] = b[1] = a): the Int
+  # path is declined, rather than failing an assertion
+  a = ZZ(2)^62 + 1
+  G_lambda = matrix(ZZ, 2, 2, [a, 1, 1, a])
+  @test !Hecke._try_prepare_finckepohstint_small(G_lambda, Int(a))[1]
+  # the norms a(x^2 + y^2) + 2xy: a at (1, 0), (0, 1), and 2a - 2, 2a + 2 at
+  # (1, -1), (1, 1)
+  L = integer_lattice(; gram = G_lambda)
+  @test sort!([v[2] for v in short_vectors(L, 3 * a)]) == [a, a, 2a - 2, 2a + 2]
+  @test sort!([v[2] for v in short_vectors_iterator(L, 3 * a)]) == [a, a, 2a - 2, 2a + 2]
 end
 
 @testset "Integer Fincke-Pohst iterator" begin
