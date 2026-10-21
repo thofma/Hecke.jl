@@ -52,9 +52,41 @@
   # 8 orders in 4 isomorphism classes
   @test length(unique(findfirst(iso[r, :]) for r in 1:8)) == 4
 
-  # an indefinite algebra: M_2(QQ)
-  L = gross_lattice(maximal_order(quaternion_algebra(QQ, 1, 1)))
-  @test rank(L) == 3 && !is_definite(L)
+  # orders that are not maximal: an Eichler order of level 2 and Z + 3M. The
+  # determinant is 4 d(O)^2, d(O) the reduced discriminant: for a maximal order
+  # this is Chevyrev-Galbraith, Lemma 2, which they derive from Kohel's thesis,
+  # Corollary 71, stated there for any order.
+  for (p, q) in [(3, 19), (97, 19)]
+    A = quaternion_algebra(QQ, -p, -q)
+    M = maximal_order(A)
+    I = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+    E = order(A, vcat([one(A)], basis(I)))
+    Z3M = order(A, vcat([one(A)], [3 * elem_in_algebra(x) for x in basis(M)]))
+    for O in (E, Z3M)
+      L = gross_lattice(O)
+      B = gross_lattice_basis(O)
+      @test rank(L) == 3 && is_positive_definite(L)
+      @test gram_matrix(L) == gross_gram_matrix(B)
+      @test det(L) == 4 * Hecke._reduced_disc(O)^2
+      for x in B
+        @test iszero(trred(x))
+        @test any(n -> QQ(1, 2) * (x - n) in O, 0:1)
+      end
+      images = [2 * elem_in_algebra(y) - trred(elem_in_algebra(y))
+                for y in basis(O)]
+      @test L == lattice(ambient_space(L), coords(images); isbasis = false)
+    end
+  end
+
+  # the Gross lattice is defined for orders of B_p only: not for M_2(QQ), nor
+  # for (-3, -10), definite but ramified at 2, 3 and 5
+  for (a, b) in [(1, 1), (-3, -10)]
+    A = quaternion_algebra(QQ, a, b)
+    M = maximal_order(A)
+    @test_throws ArgumentError gross_lattice(M)
+    @test_throws ArgumentError gross_lattice_basis(M)
+    @test_throws ArgumentError gross_gram_matrix(basis(A)[2:4])
+  end
 
   B = gross_lattice_basis(maximal_order(quaternion_algebra(QQ, -1, -3)))
   @test_throws ArgumentError gross_gram_matrix(B[1:2])
