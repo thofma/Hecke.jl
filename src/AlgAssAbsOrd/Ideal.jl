@@ -1993,6 +1993,7 @@ function maximal_integral_ideal(O::AlgAssAbsOrd, p::IntegerUnion, side::Symbol)
 end
 
 function maximal_integral_ideals(O::AlgAssAbsOrd, p::Union{ ZZRingElem, Int }; side::Symbol)
+  @req is_probable_prime(ZZ(p)) "p must be prime"
   if (side === :right || side === :left) &&
       algebra(O) isa QuaternionAlgebra{QQFieldElem} &&
       !is_divisible_by(_reduced_disc(O), p)
@@ -2004,16 +2005,21 @@ end
 
 # The p + 1 maximal right (side = :right) or left (side = :left) ideals
 # containing p of an order O of a quaternion algebra over QQ, for a prime p
-# not dividing the reduced discriminant of O, so that O/pO = M_2(F_p)
-# (Voight, Quaternion Algebras, 23.4.19).
+# not dividing the reduced discriminant of O. Then O_p is maximal (Voight,
+# Quaternion Algebras, Lemma 15.5.3) in the split algebra B_p, so O_p is
+# M_2(Z_p) and O/pO is M_2(F_p) (Voight, 23.2.3).
 #
 # The maximal right ideals are alpha O + pO for alpha of rank one modulo p,
 # one for each line of F_p^2 as the image of alpha (Kirschmer-Voight, SIAM J.
-# Comput. 39 (2010), Lemma 7.2), so no splitting of O/pO is needed. The
-# reduced norm modulo p is the determinant, so the first nonzero alpha, in a
-# fixed order, with p | nrd(alpha) has rank one; a basis element gamma with
-# gamma alpha outside alpha O + pO moves its image line, and then the images
-# of (t + gamma) alpha, for t in F_p, are the other p lines. The maximal left
+# Comput. 39 (2010), Lemma 7.2, whose proof is local at p, where O_p =
+# M_2(Z_p)), so no splitting of O/pO is needed. The reduced norm modulo p is
+# the determinant, so alpha = v - r has rank one for v in O and r a root of
+# x^2 - trd(v) x + nrd(v) modulo p, unless alpha is in pO. The v run through
+# the basis elements b_k and then b_k + t b_m for t = 1, 2, ...: on each such
+# line the discriminant of that polynomial is a quadratic polynomial in t, a
+# square for about half the t. A basis element gamma with gamma alpha outside
+# alpha O + pO moves the image line of alpha, and then the images of
+# (t + gamma) alpha, for t in F_p, are the other p lines. The maximal left
 # ideals are the conjugates O conj(alpha) + pO, conjugation being an
 # anti-automorphism mapping O to itself. The result is the same on every call.
 function _maximal_integral_ideals_split_quaternion(O::AlgAssAbsOrd,
@@ -2040,17 +2046,48 @@ function _maximal_integral_ideals_split_quaternion(O::AlgAssAbsOrd,
     end
     return I
   end
-  alpha = zero(A)
-  for c in Iterators.product(ntuple(_ -> 0:(l - 1), 4)...)
-    all(is_zero, c) && continue
-    alpha = sum(c[i] * bs[i] for i in 1:4)
-    is_divisible_by(numerator(normred(alpha)), l) && break
-  end
+  alpha = _rank_one_modulo_prime(O, bs, l)
   I = ideal_of(alpha, :right)
   gamma = bs[findfirst(g -> !(g * alpha in I), bs)]
   betas = [alpha; [(t + gamma) * alpha for t in 0:(l - 1)]]
   side === :right && return [I; [ideal_of(b, :right) for b in betas[2:end]]]
   return [ideal_of(b, :left) for b in betas]
+end
+
+# An element of O of rank one modulo the prime l, O/lO being M_2(F_l): v - r
+# for the first v, among the b_k and then the b_k + t b_m (bs the basis of O),
+# for which x^2 - trd(v) x + nrd(v) has a root r modulo l and v - r is not in
+# lO; see _maximal_integral_ideals_split_quaternion.
+function _rank_one_modulo_prime(O::AlgAssAbsOrd, bs::Vector, l::Int)
+  L = ZZ(l)
+  is_rank_one(alpha) = !(QQ(1, l) * alpha in O)
+  # b_k, then b_k + t b_m for m != k and t = 1, ..., l - 1
+  vs = Iterators.flatten((bs, (bs[k] + t * bs[m]
+                               for k in 1:4 for m in 1:4 if m != k for t in 1:(l - 1))))
+  for v in vs
+    T = mod(ZZ(trred(v)), L)
+    N = mod(ZZ(normred(v)), L)
+    if l == 2
+      rs = [r for r in 0:1 if iszero(mod(r^2 - T * r + N, L))]
+    else
+      D = mod(T^2 - 4 * N, L)
+      jacobi_symbol(D, L) == -1 && continue
+      s = iszero(D) ? zero(ZZ) : sqrtmod(D, L)
+      rs = [mod((T + s) * invmod(ZZ(2), L), L)]
+    end
+    for r in rs
+      alpha = v - r
+      is_rank_one(alpha) && return alpha
+    end
+  end
+  # Not reached. For l odd: modulo l, 1 is in the span of at most one pair of
+  # basis elements or a multiple of one, so some line b_k + t b_m (t in F_l)
+  # contains no scalar; on it the discriminant is a quadratic polynomial in
+  # t, which is a square or zero for some t unless it is a nonzero constant,
+  # and then b_m has discriminant zero and a root itself. For l = 2, the
+  # elements without a root and the scalars form F_4, which cannot contain
+  # the basis.
+  error("no element of rank one modulo $l found")
 end
 
 function __construct_maximal_ideal(O::AlgAssAbsOrd, OtoB, CtoB, CtoD, basisofcenter, side, t, P, I)
