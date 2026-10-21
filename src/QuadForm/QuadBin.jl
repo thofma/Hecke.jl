@@ -379,9 +379,7 @@ end
 
 function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
     # the Kronecker symbol, unlike the Jacobi symbol, is defined at p = 2
-    if kronecker_symbol(d, p) == -1
-        error("$d is no square modulo $p")
-    end
+    @req kronecker_symbol(d, p) != -1 "$d is not a square modulo $(4 * p)"
     if p == 2
         if iseven(d)
             return 2 * mod(divexact(d, 4), 2)

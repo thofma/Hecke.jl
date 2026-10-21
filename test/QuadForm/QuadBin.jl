@@ -220,6 +220,8 @@
     end
     @test prime_form(ZZ(-7), ZZ(2)) ==
           binary_quadratic_form(ZZ(2), ZZ(1), ZZ(1))
+    # 5 is not a square modulo 8
+    @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(5), ZZ(2))
   end
 
   @testset "Equivalent" begin
