@@ -47,8 +47,7 @@
   V = RSM.abel_jacobi_map(P+Q)
   @test all(contains(V[i, 1], test[i, 1]) for i in 1:2)
 
-
-   # The divisor of x on y^2 = x^6 + x^2 + 1 is P1 + P2 - Q1 - Q2 with Q1, Q2
+  # The divisor of x on y^2 = x^6 + x^2 + 1 is P1 + P2 - Q1 - Q2 with Q1, Q2
   # the points at infinity, around which there is no monodromy
   f = x^6 + x^2 + 1 - y^2
   RS = RSM.riemann_surface(f, 100, integration_method = :heuristic)
