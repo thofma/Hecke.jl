@@ -205,6 +205,13 @@ end
 # I' = d g^-1 I = conj(g) I / c is an integral right ideal of M of reduced
 # norm |d| with I = (g / d) I'. So the reduced norm falls at every step, and
 # at 1 the ideal is M.
+# As in the algorithm, g is the first vector of an LLL-reduced basis of I for
+# Q when |nrd| < c^2 there (Kirschmer-Voight, Lemma 4.11: |nrd| of that vector
+# is at most a constant times c). Since det Q on I is (c^2 D / 4)^2, D the
+# discriminant of M, the LLL bound fails this only when c^2 < D, and only then
+# are short vectors enumerated, from the bound c^2 - 1 < D. Their reduced
+# norms are read off the norm form on the reduced basis, without forming
+# elements of A.
 function _is_principal_maximal_quaternion_indefinite(a, M, side = :right)
   @assert side == :right
   A = algebra(M)
@@ -219,20 +226,42 @@ function _is_principal_maximal_quaternion_indefinite(a, M, side = :right)
   c = ZZ(normred(I, M))
   while !isone(c)
     BI = basis_matrix(I)
-    L = integer_lattice(; gram = BI * P * transpose(BI), check = false)
     bas = basis(I)
-    g = zero(A)
-    bound = c^2 - 1
-    while iszero(g)
-      for (v, _) in short_vectors_iterator(L, bound; check = false)
-        x = sum(v[i] * bas[i] for i in 1:4)
-        if abs(normred(x)) < c^2
-          g = x
-          break
+    L = lll(integer_lattice(; gram = BI * P * transpose(BI), check = false))
+    # the reduced basis of I, as rows of coordinates on the basis of A, and
+    # the norm form on it
+    R = basis_matrix(L) * BI
+    GR = R * G * transpose(R)
+    w = ZZRingElem[1, 0, 0, 0]
+    if abs(GR[1, 1]) >= c^2
+      # nrd(v) = v GR v^t < c^2 in absolute value, as v GRz v^t < c^2 dR,
+      # accumulated in place: there may be many vectors
+      GRz, dR = integral_split(GR, ZZ)
+      Gv = [GRz[i, j] for i in 1:4, j in 1:4]
+      bd = c^2 * dR
+      s = zero(ZZ)
+      t = zero(ZZ)
+      found = false
+      lb = zero(ZZ)
+      ub = c^2 - 1
+      while !found
+        for (v, _) in short_vectors_iterator(L, lb, ub; check = false)
+          zero!(s)
+          for i in 1:4, j in 1:4
+            mul!(t, v[i], v[j])
+            addmul!(s, Gv[i, j], t)
+          end
+          if cmpabs(s, bd) < 0
+            w = v
+            found = true
+            break
+          end
         end
+        lb = ub
+        ub = 2 * ub
       end
-      bound = 2 * bound
     end
+    g = A(collect(matrix(QQ, 1, 4, w) * R)[1, :])
     d = divexact(ZZ(normred(g)), c)
     beta = QQ(1, d) * beta * g
     N = zero_matrix(QQ, 4, 4)

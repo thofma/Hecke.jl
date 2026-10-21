@@ -74,8 +74,27 @@
         fl, g = Hecke.is_principal_with_data(I, M)
         @test fl
         @test g * M == I
+        # with no order given, the right order of I, which is M
+        @test is_principal(I)
+        fl, g = is_principal_with_data(I)
+        @test fl
+        @test g * M == I
+      end
+      # reduced norm 1, a scalar and a fractional ideal
+      for I in [1 * M, 2 * M, QQ(1, 2) * (1 * M)]
+        fl, g = Hecke.is_principal_with_data(I, M)
+        @test fl
+        @test g * M == I
       end
     end
+    # reduced norm 1359177447: enumerating I up to nrd(I)^2 failed inside the
+    # enumeration; the first vector of the LLL-reduced basis generates I
+    A = quaternion_algebra(QQ, -1, 10007)
+    M = maximal_order(A)
+    I = M(A([-550, 32, 147, -338])) * M
+    fl, g = is_principal_with_data(I, M)
+    @test fl
+    @test g * M == I
     # a non-maximal order needs the units of the maximal order modulo the
     # conductor, which are not available for an indefinite algebra
     A = quaternion_algebra(QQ, -1, 3)
@@ -83,6 +102,9 @@
     O = order(A, vcat([one(A)], [5 * elem_in_algebra(b) for b in basis(M)]))
     I = 2 * O
     @test_throws ArgumentError Hecke.is_principal_with_data(I, O)
+    # and so do class sets: their enumeration needs a definite norm form
+    @test_throws ArgumentError Hecke.right_class_set(M)
+    @test_throws ArgumentError Hecke.unit_group_modulo_scalars(M)
   end
 
   include("PIP/unit_group_generators.jl")
