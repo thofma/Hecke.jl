@@ -337,6 +337,42 @@ end
   @test C == C*C
 end
 
+@testset "Empty tame abelian extension search" begin
+  # A tame search with no possible fields returns an empty result.
+  K, _ = quadratic_field(2, cached = false)
+  @test isempty(abelian_extensions(K, [2], ZZ(1);
+                                  signatures = [(4, 0)], only_tame = true))
+end
+
+@testset "Abelian extension search bounds" begin
+  # Validate prime norm bounds independently of signature and tame filters.
+  K, _ = quadratic_field(2, cached = false)
+  OK = maximal_order(K)
+  bound = ZZ(10)^25
+  err = ArgumentError("Discriminant bound too large: prime ideal norm bound must fit in Int")
+  for only_tame in (false, true)
+    @test_throws err Hecke.conductors_generic(OK, [2], bound; only_tame)
+    @test_throws err abelian_extensions(K, [2], bound; only_tame)
+    @test_throws err abelian_extensions(K, [2], bound;
+                                       signatures = [(4, 0)], only_tame)
+    @test_throws err abelian_extensions(K, [2], bound;
+                                       signatures = [(0, 0)], only_tame)
+  end
+  # Large discriminant bounds are supported when the prime norm bound is small.
+  bound = abs(discriminant(OK))^19 * ZZ(2)^18
+  @test isempty(only(Hecke.conductors_generic(OK, [19], bound; only_tame = true)))
+end
+
+@testset "Tame abelian extension searches" begin
+  # A quadratic extension is tame exactly when it is unramified above 2.
+  K, _ = quadratic_field(2, cached = false)
+  all_fields = abelian_extensions(K, [2], ZZ(10)^3)
+  expected = filter(C -> isodd(norm(conductor(C)[1])), all_fields)
+  tame_fields = abelian_extensions(K, [2], ZZ(10)^3; only_tame = true)
+  @test !isempty(tame_fields)
+  @test Set(tame_fields) == Set(expected)
+end
+
 @testset "Frobenius at infinity" begin
   K, = quadratic_field(21)
   OK = maximal_order(K)

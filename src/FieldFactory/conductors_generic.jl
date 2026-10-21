@@ -592,7 +592,7 @@ function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, abso
   #I am assuming that gtype is in "SNF"
   conds_tame = conductors_generic_tame(OK, gtype, absolute_bound)
   if only_tame
-    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in conds_tame]
+    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[x[1] for x in conds_tame]
   end
   wild = prime_divisors(gtype[end])
   n = prod(gtype)
@@ -687,8 +687,10 @@ function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int},
   wild = prime_divisors(n)
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
+  prime_bound = iroot(bound, pmin-1)
+  @req fits(Int, prime_bound) "Discriminant bound too large: prime ideal norm bound must fit in Int"
   @vprintln :AbExt 1 "Tame conductors: Computing prime ideals ... "
-  lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
+  lp = prime_ideals_up_to(OK, Int(prime_bound))
   @vprintln :AbExt 1 "Tame conductors: found $(length(lp)) "
   filter!(x -> !(minimum(x, copy = false) in wild), lp)
   lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
