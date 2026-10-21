@@ -290,3 +290,9 @@ end
 # Deprecated in 0.39.21
 @deprecate is_locally_isomorphic_with_isomophism is_locally_isomorphic_with_isomorphism
 @deprecate islocally_isomorphic_with_isomophism is_locally_isomorphic_with_isomorphism
+
+# Deprecated in 0.41.0
+@deprecate genus(A::MatElem) genus_from_gram(A)
+@deprecate genus(A::QQMatrix, p::IntegerUnion) genus_from_gram(A, p)
+@deprecate genus(A::ZZMatrix, p::IntegerUnion) genus_from_gram(A, p)
+@deprecate genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0) genus_from_gram(A, p, val; offset)
