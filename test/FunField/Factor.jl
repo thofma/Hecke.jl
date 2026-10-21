@@ -8,6 +8,7 @@
     Ry, y = Qtx[:y]
     r = resultant(map_coefficients(Qtx, f2, parent = Ry)(y), (x - y)^2 + (t + 3))
     @test Hecke.swinnerton_dyer([1, 2, 3], x) == divexact(r, leading_coefficient(r))
+    @test Hecke.swinnerton_dyer(3, x) == Hecke.swinnerton_dyer([1, 2, 3], x)
   end
 
   kt, t = rational_function_field(GF(3), "t")

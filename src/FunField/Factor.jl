@@ -308,7 +308,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
 end
 
 function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
-  return swinnerton_dyer(x, collect(1:n))
+  return swinnerton_dyer(collect(1:n), x)
 end
 
 end
