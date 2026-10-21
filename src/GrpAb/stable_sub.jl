@@ -977,15 +977,15 @@ function stable_subgroups_for_abexts(R::FinGenAbGroup, act::Vector{FinGenAbGroup
 end
 
 function _stable_subgroups(R::FinGenAbGroup, act::Vector{T}; quotype::Vector{Int} = Int[-1], subtype::Vector{Int} = Int[-1], order::Union{ZZRingElem, Int} = -1, minimal::Bool = false, gram::Union{ZZMatrix, Nothing} = nothing, avoid::Vector{FinGenAbGroupHom} = FinGenAbGroupHom[]) where T <: Map{FinGenAbGroup, FinGenAbGroup}
-  if quotype[1] != -1 && minimal
+  if quotype != [-1] && minimal
     error("Cannot compute minimal submodules with prescribed quotient type")
   end
-  if quotype[1]!= -1
+  if quotype != [-1]
     #I write quotype as the diagonal entries of the snf form.
     DG = abelian_group(quotype)
     quotype = Int[Int(x) for x in snf(DG)[1].snf]
   end
-  c = lcm(quotype[end], exponent(R))
+  c = lcm(isempty(quotype) ? 1 : quotype[end], exponent(R))
   Q, mQ = quo(R, c, false)
   S, mS = snf(Q)
   #I translate the action to S
@@ -1012,6 +1012,10 @@ end
 
 function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; quotype::Vector{Int} = Int[-1], subtype::Vector{Int} = Int[-1], order::Union{ZZRingElem, Int} = -1, minimal::Bool = false, gram::Union{ZZMatrix, Nothing} = nothing, avoid::Vector{FinGenAbGroupHom} = FinGenAbGroupHom[])
   @assert is_snf(R)
+  # The module constructors need an action matrix, even if every subgroup is stable.
+  if isempty(act)
+    act = [id_hom(R)]
+  end
   c = exponent(R)
   lf = factor(c)
   list = Base.Generator[]
@@ -1070,7 +1074,7 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
         # contributes one dimension. submodules expects the codimension.
         dim = count(t -> !is_coprime(t, p), subtype)
         plist = submodules(M, ngens(S) - dim)
-      elseif quotype[1] != -1
+      elseif quotype != [-1]
         ind = 0
         for i = 1:length(quotype)
           if !is_coprime(quotype[i], p)
@@ -1129,7 +1133,7 @@ function _stable_subgroup_snf(R::FinGenAbGroup, act::Vector{FinGenAbGroupHom}; q
         else
           plist = submodules(M1, typesub = subtype_p)
         end
-      elseif quotype[1] != -1
+      elseif quotype != [-1]
         quotype_p = Int[]
         for i=1:length(quotype)
           v = valuation(quotype[i],p)
