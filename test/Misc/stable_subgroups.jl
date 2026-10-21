@@ -230,4 +230,36 @@
     g = hom(A, A, [3*a for a in gens(A)])
     @test isempty(collect(stable_subgroups(A, [g], quotype = [12])))
   end
+
+  @testset "Isotropic subgroups avoiding subgroups" begin
+    # discriminant groups with the bilinear form scaled to integer values
+    for (L, f) in ((rescale(root_lattice(:A, 3), 2), 2), (rescale(root_lattice(:D, 4), 4), -1),
+                   (direct_sum(rescale(root_lattice(:A, 2), 3), rescale(root_lattice(:A, 1), 4))[1], 5))
+      T = discriminant_group(L)
+      A = abelian_group(T)
+      e = exponent(A)
+      gram = map_entries(ZZ, gram_matrix_bilinear(T)*e)
+      is_iso(m) = all(is_divisible_by((x.coeff*gram*transpose(y.coeff))[1, 1], e) for x in m.(gens(domain(m))) for y in m.(gens(domain(m))))
+      contains_image(m, h) = all(a -> has_preimage_with_preimage(m, h(a))[1], gens(domain(h)))
+      a = A[1]
+      b = A[ngens(A)]
+      # cyclic subgroups to avoid of prime power order and of mixed order
+      avoids = [FinGenAbGroupHom[], [hom(abelian_group([order(a)]), A, [a])], [hom(abelian_group([order(a + b)]), A, [a + b])]]
+      for act in ([id_hom(A)], [hom(A, A, [f*x for x in gens(A)])]), avoid in avoids
+        for kw in ((;), (; minimal = true), (; order = 4), (; order = 3), (; subtype = [2]), (; quotype = [2]))
+          expected = [(S, m) for (S, m) in stable_subgroups(A, act; kw...) if is_iso(m) && !any(h -> contains_image(m, h), avoid)]
+          actual = collect(stable_subgroups(A, act; kw..., gram = gram, avoid = avoid))
+          @test length(actual) == length(expected)
+          @test Set(Set(m.(collect(S))) for (S, m) in actual) ==
+                Set(Set(m.(collect(S))) for (S, m) in expected)
+        end
+      end
+    end
+
+    A = abelian_group([2, 4])
+    @test_throws ArgumentError stable_subgroups(A, [id_hom(A)], gram = ZZ[1 0; 0 1])
+    @test_throws ArgumentError stable_subgroups(A, [id_hom(A)], gram = ZZ[0 2; 0 0])
+    @test_throws ArgumentError stable_subgroups(A, [id_hom(A)], avoid = [id_hom(abelian_group([2, 4]))])
+    @test isempty(collect(stable_subgroups(A, [id_hom(A)], avoid = [hom(abelian_group([1]), A, [zero(A)])])))
+  end
 end
