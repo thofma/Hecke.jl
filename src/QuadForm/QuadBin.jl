@@ -378,14 +378,15 @@ end
 ###############################################################################
 
 function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
-    if jacobi_symbol(mod(d, p), p) == -1
-        error("$d is no square modulo $p")
-    end
+    # for p prime, b^2 = d mod 4p is solvable if and only if d = 0, 1 mod 4 and
+    # the Kronecker symbol, which unlike the Jacobi symbol is defined at p = 2,
+    # is not -1
+    @req mod(d, 4) <= 1 && kronecker_symbol(d, p) != -1 "$d is not a square modulo $(4 * p)"
     if p == 2
         if iseven(d)
             return 2 * mod(divexact(d, 4), 2)
         else
-            return 1
+            return one(ZZ)
         end
     else
         r = sqrtmod(d, p)
@@ -398,7 +399,9 @@ function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
 end
 
 function _number_of_primeforms(d::ZZRingElem, p::ZZRingElem)
-    return jacobi_symbol(mod(d, p), p) + 1
+    # the number of b in [0, 2p) with b^2 = d mod 4p, for p prime
+    mod(d, 4) <= 1 || return 0
+    return kronecker_symbol(d, p) + 1
 end
 
 @doc raw"""
@@ -407,6 +410,7 @@ Returns an integral binary quadratic form of discriminant $d$ and leading coeffi
 $p$ where $p$ is a prime number.
 """
 function prime_form(d::ZZRingElem, p::ZZRingElem)
+    @req is_probable_prime(p) "$p is not prime"
     if !is_discriminant(d)
         error("$d is no discriminant")
     end
