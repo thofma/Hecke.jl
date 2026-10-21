@@ -32,35 +32,6 @@ function quadratic_twist(E::EllipticCurve{T}, d) where T<: FieldElem
   end
 end
 
-# An element of K^* whose class generates K^*/(K^*)^n, for n dividing |K| - 1:
-# K^* being cyclic, one that is an l-th power for no prime l dividing n. The
-# twists of a curve with j = 0 or 1728 correspond to K^*/(K^*)^n, so the powers
-# 1, a, ..., a^(n - 1) of such an element give one twist each. gen(K) need not
-# be one: it is a power when the defining polynomial of K is not primitive, and
-# for a prime field it is 0, 1 or not defined. The search is deterministic, so
-# the twists are the same models on every call; it tries gen(K) + k first,
-# which in even degree avoids the prime field, all of whose elements are
-# squares, and over a prime field it tries 1, 2, ...
-function _twisting_element(K::FinField, n::Int)
-  es = [divexact(order(K) - 1, l) for l in prime_divisors(n)]
-  is_generator(a) = !iszero(a) && all(e -> !isone(a^e), es)
-  g = absolute_degree(K) == 1 ? zero(K) : gen(K)
-  k = 0
-  while k < characteristic(K)
-    is_generator(g + k) && return g + k
-    k += 1
-  end
-  for a in K
-    is_generator(a) && return a
-  end
-  error("K^* has no generator modulo n-th powers; n does not divide |K| - 1")
-end
-
-# The first element of K, in its iteration order, of non-zero absolute trace.
-function _nonzero_trace_element(K::FinField)
-  return first(a for a in K if !iszero(absolute_tr(a)))
-end
-
 @doc raw"""
     quadratic_twist(E::EllipticCurve{FinFieldElem}) -> EllipticCurve{FinFieldElem}
 

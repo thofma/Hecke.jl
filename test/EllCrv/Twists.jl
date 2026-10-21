@@ -191,5 +191,34 @@
     K, = finite_field(x^3 - x - 1, :b; cached = false)
     test_twists(elliptic_curve_from_j_invariant(K(0)), 6)
     test_twists(elliptic_curve_from_j_invariant(generic_j(K)), 2)
+
+    # gen(K) + k is a power for every k: the elements come from absolute_basis
+    R3, t = polynomial_ring(GF(3), :t; cached = false)
+    K, = finite_field(t^3 + 2t + 2, :a; cached = false)
+    @test all(k -> is_square(gen(K) + k), 0:2)
+    @test !is_square(Hecke._twisting_element(K, 2))
+    test_twists(elliptic_curve_from_j_invariant(K(1)), 2)
+    R2, t = polynomial_ring(GF(2), :t; cached = false)
+    K, = finite_field(t^8 + t^6 + t^5 + t^4 + t^3 + t + 1, :a; cached = false)
+    @test all(k -> isone((gen(K) + k)^85), 0:1)
+    @test !isone(Hecke._twisting_element(K, 3)^85)
+    test_twists(elliptic_curve_from_j_invariant(K(0)), 7)
+
+    # the elements depend only on the defining polynomial, not on the type of
+    # the field or its iteration order
+    coordinates(a) = [lift(ZZ, c) for c in absolute_coordinates(a)]
+    for (p, f) in [(3, [2, 2, 0, 1]), (7, [1, 0, 1]), (2, [1, 1, 0, 1, 1, 1, 1, 0, 1])]
+      Fy, y = polynomial_ring(GF(p), :y; cached = false)
+      Fny, yn = polynomial_ring(Native.GF(p), :y; cached = false)
+      K1, = finite_field(Fy(f), :a; cached = false)
+      K2, = Native.finite_field(Fny(f), "a"; cached = false)
+      for n in [2, 3, 4, 6]
+        divides(order(K1) - 1, ZZ(n))[1] || continue
+        @test coordinates(Hecke._twisting_element(K1, n)) ==
+              coordinates(Hecke._twisting_element(K2, n))
+      end
+      @test coordinates(Hecke._nonzero_trace_element(K1)) ==
+            coordinates(Hecke._nonzero_trace_element(K2))
+    end
   end
 end

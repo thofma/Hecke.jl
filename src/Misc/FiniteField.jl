@@ -113,6 +113,56 @@ function primitive_element(F::T; n_quo::Int = -1) where T <: Union{FqPolyRepFiel
   return _primitive_element(F, n_quo)
 end
 
+################################################################################
+#
+#  Elements depending only on the defining polynomials
+#
+################################################################################
+
+# Unlike primitive_element, which is random, and unlike the iteration order of
+# a finite field, which may change between versions and sessions, these depend
+# only on the defining polynomials of K, so that the twists of elliptic curves
+# built from them are the same models in every session.
+
+# An element of K^* whose class generates K^*/(K^*)^n, for n dividing |K| - 1:
+# K^* being cyclic, one that is an l-th power for no prime l dividing n. It
+# tries gen(K) + k first, which in even degree avoids the prime field, all of
+# whose elements are squares, and over a prime field is 0, 1, 2, ...; then
+# the combinations of absolute_basis(K) whose coefficients are the base-p
+# digits of 1, 2, ..., for the few fields where gen(K) + k is a power for
+# every k (F_3[x]/(x^3 + 2x + 2) and n = 2, for one).
+function _twisting_element(K::FinField, n::Int)
+  q = order(K)
+  es = [divexact(q - 1, l) for l in prime_divisors(n)]
+  is_generator(a) = !iszero(a) && all(e -> !isone(a^e), es)
+  p = characteristic(K)
+  g = absolute_degree(K) == 1 ? zero(K) : gen(K)
+  k = 0
+  while k < p
+    is_generator(g + k) && return g + k
+    k += 1
+  end
+  B = absolute_basis(K)
+  t = one(ZZ)
+  while t < q
+    s = t
+    a = zero(K)
+    for b in B
+      s, c = divrem(s, p)
+      a += c * b
+    end
+    is_generator(a) && return a
+    t += 1
+  end
+  error("K^* has no generator modulo n-th powers; n does not divide |K| - 1")
+end
+
+# The first element of absolute_basis(K) of non-zero absolute trace, which
+# exists since the absolute trace is a non-zero linear form.
+function _nonzero_trace_element(K::FinField)
+  return first(b for b in absolute_basis(K) if !iszero(absolute_tr(b)))
+end
+
 
 function unit_group(F::T; n_quo::Int = -1) where T <: FinField
 
