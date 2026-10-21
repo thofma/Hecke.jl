@@ -113,55 +113,13 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   A = algebra(M)
   B, BtoA = _as_algebra_over_center(A)
   OB = _get_order_from_gens(B, elem_type(B)[BtoA\(elem_in_algebra(b)) for b in absolute_basis(M)])
-  f = standard_involution(B)
-  K = base_ring(B)
   @assert right_order(a) == M
   b = ideal_from_lattice_gens(B, OB, elem_type(B)[BtoA\(b) for b in absolute_basis(a)])
-  nr = normred(b)
-  nr = simplify(nr)
-  #@show nr
-  fl, c = is_principal_with_data(nr)
-  if !fl
-    return false, zero(A)
-  end
-  #@show c
-  fl, u, reps = _reps_for_totally_positive(c, K)
-  if !fl
-    return false, zero(A)
-  end
-
-  #@show u
-  #@show is_totally_positive(u * c)
-
-  Babs = absolute_basis(b)::Vector{elem_type(B)}
-  d = length(Babs)
-  G = zero_matrix(QQ, d, d)
-  #@show reps
-  for z in reps
-    for i in 1:d
-      for j in 1:d
-        G[i, j] = absolute_tr(inv(u * c * z) * trred(Babs[i] * f(Babs[j]))//2)
-      end
-    end
-    #@show G
-    #@show det(G)
-    #@show lll_gram(map_entries(x -> numerator(x), G))
-    #@show Hecke._eltseq(G)
-
-    min, v = _shortest_vectors_gram(Vector, G)
-
-    if min == degree(base_ring(B))
-      for w in v
-        xi = sum(elem_type(B)[w[i] * Babs[i] for i in 1:length(Babs)])::elem_type(B)
-        xii = BtoA(xi)
-        @assert xii in a
-        @assert xii * M == a
-        return true, xii
-      end
-    end
-  end
-  # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  return false, zero(A)
+  fl, xi = _is_principal_with_data_definite_quaternion(b, OB, side)
+  fl || return false, zero(A)
+  xii = BtoA(xi)
+  @hassert :PIP 1 xii * M == a
+  return true, xii
 end
 
 # check if there is a unit u such that c * u is totally positive
@@ -201,6 +159,9 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
   a.isright = 1
   a.order = right_order(a)
+  if !is_split(A, inf)
+    return _is_principal_with_data_definite_quaternion(a, M, side)
+  end
   nrr = ZZ(normred(a))
   B = basis(a)
   G = zero_matrix(QQ, 4, 4)

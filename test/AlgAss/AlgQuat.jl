@@ -27,7 +27,7 @@
     A = Hecke.quaternion_algebra2(K, K(-1), K(-1))
     O = maximal_order(A)
     I = basis(A)[2] * O
-    fl, b = Hecke._is_principal_maximal_quaternion_generic_proper(I, O)
+    fl, b = Hecke._is_principal_with_data_definite_quaternion(I, O, :right)
     @assert fl
     @test b * O == I
 
@@ -35,7 +35,7 @@
     A = Hecke.quaternion_algebra(K, -1, -1)
     O = maximal_order(A)
     I = basis(A)[2] * O
-    fl, b = Hecke._is_principal_maximal_quaternion_generic_proper(I, O)
+    fl, b = Hecke._is_principal_with_data_definite_quaternion(I, O, :right)
     @assert fl
     @test b * O == I
   end
@@ -63,11 +63,15 @@
     @test left_order(P) == Gamma
     @test Gamma * P == P
     @test P * Gamma != P
-    # we can only test right ideals so far ...
+    # P is a left ideal of Gamma that is not principal, tested directly and
+    # through its image, a right ideal, in the opposite algebra
+    fl, _ = Hecke._is_principal_with_data_definite_quaternion(P, Gamma, :left)
+    @test !fl
     BOp, BtoBOp = opposite_algebra(B)
     GammaOp = Hecke._get_order_from_gens(BOp, [BtoBOp(elem_in_algebra(x)) for x in absolute_basis(Gamma)])
     POp = +([BtoBOp(x) * GammaOp for x in absolute_basis(P)]...)
-    fl, _ = Hecke._is_principal_maximal_quaternion_generic_proper(POp, GammaOp)
+    fl, _ = Hecke._is_principal_with_data_definite_quaternion(POp, GammaOp,
+                                                              :right)
     @test !fl
   end
 
