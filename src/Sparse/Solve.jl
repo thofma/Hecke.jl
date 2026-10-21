@@ -395,6 +395,7 @@ end
 
 function can_solve(A::SMat{T}, B::SMat{T}; side::Symbol = :left) where T <: FieldElement
   Solve.check_option(side, [:right, :left], "side")
+  @req base_ring(A) == base_ring(B) "Matrices must have same base ring"
   K = base_ring(A)
   if side === :right
     # sparse matrices might have omitted zero rows, so checking compatibility of
@@ -417,6 +418,7 @@ end
 
 function can_solve_with_solution(A::SMat{T}, B::SMat{T}; side::Symbol = :left) where T <: FieldElement
   Solve.check_option(side, [:right, :left], "side")
+  @req base_ring(A) == base_ring(B) "Matrices must have same base ring"
   K = base_ring(A)
   if side === :right
     # sparse matrices might have omitted zero rows, so checking compatibility of

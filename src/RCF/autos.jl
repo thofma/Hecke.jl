@@ -950,7 +950,7 @@ function restriction(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, Cp::Vector{
   Mk = _expand(M, imp)
 
   # one solve for all right hand sides, row (i-1)*length(Cp)+jj is tau_i(pe_jj)
-  Nk = sparse_matrix(base_field(K))
+  Nk = sparse_matrix(base_ring(Mk))
   for i = 1:length(autos), jj = 1:length(Cp)
     push!(Nk, _expand(SRow(all_pe[jj][2][i]), imp))
   end

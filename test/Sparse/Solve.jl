@@ -40,3 +40,18 @@
     end
   end
 end
+
+@testset "Sparse solving requires matching base fields" begin
+  k, _ = quadratic_field(2)
+  l, _ = quadratic_field(3)
+  A = sparse_matrix(k, [1 0; 0 1])
+  B = sparse_matrix(l, [1 0; 0 1])
+  for side in (:left, :right)
+    @test_throws ArgumentError can_solve(A, B; side)
+    @test_throws ArgumentError can_solve_with_solution(A, B; side)
+    @test_throws ArgumentError solve(A, B; side)
+  end
+  @test_throws ArgumentError can_solve(A, B.rows[1])
+  @test_throws ArgumentError can_solve_with_solution(A, B.rows[1])
+  @test_throws ArgumentError solve(A, B.rows[1])
+end
