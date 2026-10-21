@@ -1,5 +1,76 @@
 using Hecke.SparseArrays
 
+# Sparse products must preserve both inputs and own their result coefficients.
+@testset "Sparse row-matrix product ownership" begin
+  function check_product(a, B)
+    local R = base_ring(B)
+    a_before = deepcopy(a)
+    B_before = deepcopy(B)
+    row_values = Vector(a_before, nrows(B))
+    dense_basis = matrix(B_before)
+    expected = [zero(R) for _ in 1:ncols(B)]
+    for j in 1:ncols(B), i in 1:nrows(B)
+      expected[j] = expected[j] + row_values[i] * dense_basis[i, j]
+    end
+
+    c = a * B
+    @test Vector(c, ncols(B)) == expected
+    @test a == a_before
+    @test B == B_before
+    @test c !== a
+    @test c.pos !== a.pos
+    @test c.values !== a.values
+    for b in B.rows
+      @test c.pos !== b.pos
+      @test c.values !== b.values
+    end
+    if !isempty(c.values)
+      c.values[1] = add!(c.values[1], c.values[1], one(R))
+      @test a == a_before
+      @test B == B_before
+    end
+    push!(c.pos, ncols(B) + 1)
+    push!(c.values, one(R))
+    @test a == a_before
+    @test B == B_before
+  end
+
+  M = [1 2 0 0 3; 0 1 4 0 0; 1 0 0 5 6]
+  cancel = [1 1 0; 1 1 0; 0 0 0]
+  cases = ((M, [1, 1, 1]), (M, [0, 0, 0]),
+           (cancel, [1, -1, 2]), (zeros(Int, 3, 5), [1, 2, 3]),
+           (zeros(Int, 0, 5), Int[]), (zeros(Int, 3, 0), [1, 2, 3]))
+  F4 = GF(2, 2)
+  P, t = polynomial_ring(QQ, "t")
+  rings = (ZZ, QQ, GF(101), residue_ring(ZZ, 101)[1], GF(2), F4,
+           residue_ring(ZZ, 6)[1], P)
+  @testset "R = $R" for R in rings
+    for (N, v) in cases
+      B = sparse_matrix(matrix(R, N))
+      a = sparse_row(matrix(R, 1, length(v), v))
+      check_product(a, B)
+    end
+
+    B = sparse_matrix(R, [1 1 0; 0 1 1; 1 0 1])
+    check_product(B[1], B)
+
+    B.rows[2] = B.rows[1]
+    check_product(sparse_row(matrix(R, 1, 3, [1, 1, 1])), B)
+    if R !== ZZ
+      a = sparse_row(matrix(R, 1, 3, [1, 1, 1]))
+      a.values[1] = B[1].values[2]
+      @test a.values[1] === B[1].values[2]
+      check_product(a, B)
+    end
+  end
+
+  a = gen(F4)
+  B = sparse_matrix(matrix(F4, [a F4(1); F4(1) a + 1]))
+  check_product(sparse_row(matrix(F4, 1, 2, [a, a + 1])), B)
+  B = sparse_matrix(matrix(P, [t P(1); t^2 t + 1]))
+  check_product(sparse_row(matrix(P, 1, 2, [t + 1, -t])), B)
+end
+
 @testset "Matrix" begin
   R = ZZ
   M = SMatSpace(R, 3, 3)

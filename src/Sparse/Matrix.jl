@@ -651,7 +651,7 @@ function *(A::SRow{T}, B::SMat{T}) where T
     if iszero(v)
       continue
     end
-    C = add_scaled_row(B[p], C, v)
+    C = add_scaled_row!(B[p], C, v)
   end
   return C
 end
