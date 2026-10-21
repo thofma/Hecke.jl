@@ -510,6 +510,88 @@ end
     L, _ = subfield(K, [one(K), r2, r3, r2*r3], isbasis = true)
     @test degree(L) == 4
   end
+
+  # Compare basis generators with coefficients of the minimal polynomial of
+  # gen(K) over each subfield, which often give smaller defining polynomials.
+  @testset "Relative principal subfields: small generators" begin
+    Qx, x = QQ[:x]
+    bits(f) = maximum(nbits(y) for c in coefficients(f) for i in 0:degree(parent(c))-1
+                      for y in (numerator(coeff(c, i)), denominator(coeff(c, i))))
+
+    k, a = number_field(x^2 - 5, :a)
+    kt, t = k[:t]
+    h = t^2 + a*t + 1
+    for f in [h^3 + a*h + 1, (t^3 + a*t^2 + 2)^2 + 3, t^6 + a]
+      K, _ = number_field(f, :b)
+      ps = principal_subfields(K)
+      ba = Hecke._principal_subfields_basis(K)
+      @test length(ps) == length(ba)
+      for ((L, mL), M) in zip(ps, ba)
+        @test rref(basis_matrix([mL(gen(L))^i for i in 0:degree(L)-1]))[2] == M
+        @test bits(defining_polynomial(L)) <= 6
+      end
+    end
+
+    # A primitive coefficient need not be small. The basis generator satisfies
+    # x^2 - 2, while the coefficient generator satisfies x^2 - 2*N^2.
+    # N = 1 also checks that equal heights retain the basis generator.
+    for N in (1, 10, 1000, 1//1000)
+      K, b = number_field((t^2 + N*t)^2 - 2*N^2, :b; cached = false)
+      ps = principal_subfields(K)
+      L, mL = only(p for p in ps if degree(p[1]) == 2)
+      @test defining_polynomial(L) == parent(defining_polynomial(L))([-2, 0, 1])
+      @test mL(gen(L)) == b + b^2/N
+      @test mL(gen(L))^2 == 2
+      F, mF = only(p for p in ps if degree(p[1]) == degree(K))
+      @test defining_polynomial(F) == defining_polynomial(K)
+      @test mF(gen(F)) == b
+      @test principal_subfields(K) === ps
+    end
+
+    # The relative degree-one field represents the base field by x - 1.
+    K, _ = number_field(t - 7, :b; cached = false)
+    L, mL = only(principal_subfields(K))
+    @test defining_polynomial(L) == parent(defining_polynomial(L))([-1, 1])
+    @test isone(mL(gen(L)))
+
+    # The ambient generator's minimal polynomial is monic even if the input
+    # defining polynomial is not.
+    K, b = number_field(3*(t^4 - 2), :b; cached = false)
+    L, mL = only(p for p in principal_subfields(K) if degree(p[1]) == 4)
+    @test collect(coefficients(defining_polynomial(L))) == collect(coefficients(minpoly(b)))
+    @test mL(gen(L)) == b
+
+    # Height comparison also works when the base field is itself relative.
+    k2, c = number_field(t^2 - 2, :c)
+    k2u, u = k2[:u]
+    for N in (k2(10), (c+1)/1000)
+      K, b = number_field((u^2 + N*u)^2 - 3*N^2, :b; cached = false)
+      L, mL = only(p for p in principal_subfields(K) if degree(p[1]) == 2)
+      @test collect(coefficients(defining_polynomial(L))) == [k2(-3), k2(0), k2(1)]
+      @test mL(gen(L)) == b + b^2/N
+    end
+
+    # gen(K) = sqrt(2) + 3^(1/4); over L = k(sqrt(2), sqrt(3)) its minimal
+    # polynomial has no coefficient that generates L
+    k, _ = number_field(x^2 + 1, :i)
+    kt, t = k[:t]
+    K, _ = number_field(t^8 - 8*t^6 + 18*t^4 - 104*t^2 + 1, :b)
+    bas = Hecke._subfield_basis(K, [roots(K, t^2 - 2)[1], roots(K, t^2 - 3)[1]])
+    M = rref(basis_matrix(bas))[2]
+    @test degree(minpoly(Hecke._subfield_small_primitive_element(K, M))) == 4
+
+    # Oscar issue #5678: 5-division polynomial of y^2 = x^3 + x + 1
+    # (@long_test does not escape its body, which thus only sees globals)
+    @long_test begin
+      k, z = cyclotomic_field(5, :z)
+      kt, t = k[:t]
+      K, _ = number_field(t^12 + 62//5*t^10 + 76*t^9 - 21*t^8 + 48*t^7 - 108*t^6 -
+                          696//5*t^5 - 409*t^4 - 336*t^3 - 58*t^2 - 148*t - 287//5, :b)
+      L, _ = only(L for L in principal_subfields(K) if degree(L[1]) == 6)
+      cs = [coeff(c, i) for c in coefficients(defining_polynomial(L)) for i in 0:3]
+      @test all(c -> nbits(numerator(c)) <= 16 && nbits(denominator(c)) <= 16, cs)
+    end
+  end
 end
 
 let

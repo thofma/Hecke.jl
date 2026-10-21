@@ -54,6 +54,65 @@ function _principal_subfields_basis(K::SimpleNumField)
   return principal_subfields_ar
 end
 
+# Height is the maximum absolute numerator or denominator of the rational
+# coordinates of the coefficients, in the fixed absolute basis of the common
+# base field. Small rational coefficients can still have large denominators.
+function _subfield_polynomial_height(f::PolyRingElem{<:NumFieldElem})
+  h = one(ZZ)
+  for c in coefficients(f), a in absolute_coordinates(c)
+    h = max(h, abs(numerator(a)), denominator(a))
+  end
+  return h
+end
+
+# The coefficients of the minimal polynomial of gen(K) over L generate L/k.
+# They often give smaller defining polynomials than an echelonized basis.
+function _subfield_coefficient_generator_with_minpoly(K::SimpleNumField, M::MatElem)
+  d = nrows(M)
+  Kx, _ = polynomial_ring(K, "x", cached = false)
+  g = _get_sfpoly(Kx, M)
+  cf = [coeff(g, j) for j in degree(g)-1:-1:0]
+
+  for c in cf
+    f = minpoly(c)
+    degree(f) == d && return c, f
+  end
+
+  # A proper intermediate field contains s(t) = sum_j cf[j]*t^(j-1) for fewer
+  # than length(cf) values of t (Vandermonde), and there are finitely many.
+  t = 1
+  while true
+    s = cf[end]
+    for j in length(cf)-1:-1:1
+      s = cf[j] + t*s
+    end
+    f = minpoly(s)
+    degree(f) == d && return s, f
+    t += 1
+  end
+end
+
+# Return a primitive element of the subfield L with k-basis given by M.
+function _subfield_small_primitive_element(K::SimpleNumField, M::MatElem)
+  return first(_subfield_small_primitive_element_with_minpoly(K, M))
+end
+
+function _subfield_small_primitive_element_with_minpoly(K::SimpleNumField, M::MatElem)
+  d = nrows(M)
+  d == 1 && return one(K), parent(K.pol)([-1, 1])
+  d == degree(K) && return gen(K), divexact(K.pol, leading_coefficient(K.pol))
+
+  bas = [elem_from_mat_row(K, M, j) for j in 1:d]
+  s, f = _subfield_primitive_element_from_basis_with_minpoly(K, bas)
+  c, g = _subfield_coefficient_generator_with_minpoly(K, M)
+
+  # Keep the basis generator on ties, preserving the previous presentation.
+  if _subfield_polynomial_height(g) < _subfield_polynomial_height(f)
+    return c, g
+  end
+  return s, f
+end
+
 @doc raw"""
     principal_subfields(L::SimpleNumField) -> Vector{Tuple{NumField, Map}}
 
@@ -76,17 +135,18 @@ function principal_subfields(K::SimpleNumField)
   v === nothing || return v
 
   ba = _principal_subfields_basis(K)
-  elts = Vector{Vector{elem_type(K)}}(undef, length(ba))
-  for i in 1:length(ba)
+  T = typeof(K)
+  res = Tuple{T, morphism_type(T)}[]
+  for M in ba
     if K isa NumField{QQFieldElem}
-      baf = FakeFmpqMat(ba[i])
-      elts[i] = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
+      baf = FakeFmpqMat(M)
+      elts = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
+      push!(res, subfield(K, elts, isbasis = true))
     else
-      elts[i] = [elem_from_mat_row(K, ba[i], j) for j=1:nrows(ba[i])]
+      s, f = _subfield_small_primitive_element_with_minpoly(K, M)
+      push!(res, _subfield_from_primitive_element(K, s, f))
     end
   end
-  T = typeof(K)
-  res = Tuple{T, morphism_type(T)}[ subfield(K, elts[i], isbasis = true) for i in 1:length(elts)]
   set_attribute!(K, :principal_subfields => res)
   return res
 end
