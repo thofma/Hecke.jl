@@ -195,8 +195,11 @@ unless it differs from these instructions. If the change fixes issues, put
 `Fixes #123` at the end of the body, never in the title.
 
 Use GitHub interlinking syntax such as `owner/repo#123` for external issues
-and pull requests. When fixing CI failures, include the link to the specific
-CI failure in the commit message.
+and pull requests.
+
+Never include links to CI failures in commit messages or PR descriptions.
+Describe the final change and relevant validation, omitting intermediate
+development failures and corrections.
 
 ### Pull request titles
 
