@@ -103,6 +103,56 @@
     end
   end
 
+  @testset "Tame primes dividing the extension degree" begin
+    # The compositum of Q(sqrt(-3)) and the real cubic subfield of Q(zeta_7)
+    # is cyclic sextic, with conductor 21 and discriminant -64827 = -3^3*7^4.
+    # Its ramification index at 3 is 2: tame ramification at a prime dividing
+    # the degree. The old sieve missed this conductor.
+    # Also check that disjoint tame and wild local factors can be combined.
+    K, = rationals_as_number_field()
+    O = maximal_order(K)
+    P = prime_decomposition(O, 3)[1][1]
+    Q = prime_decomposition(O, 7)[1][1]
+    target = Dict(P => 1, Q => 1)
+    bound = ZZ(64827)
+    conds = Hecke.conductors_generic(O, [6], bound)
+    @test count(==(target), conds) == 1
+    @test count(==(Dict(P => 2)), conds) == 1
+    @test length(conds) == length(Set(conds))
+    mixed = Dict(prime_decomposition(O, 2)[1][1] => 2, Q => 1)
+    mixed_bound = ZZ(4)^3 * ZZ(7)^4
+    @test mixed in Hecke.conductors_generic(O, [6], mixed_bound)
+    fields = abelian_extensions(K, [6], bound)
+    field = only(filter(C -> norm(conductor(C)[1]) == 21, fields))
+    @test abs(discriminant(field, QQ)) == bound
+    @test all(C -> norm(conductor(C)[1]) != 21,
+              abelian_extensions(K, [6], bound - 1))
+
+    K, = quadratic_field(-31)
+    O = maximal_order(K)
+    P = prime_decomposition(O, 3)[1][1]
+    target = Dict(P => 1)
+    bound = abs(discriminant(O))^6 * ZZ(729)
+    @test count(==(target), Hecke.conductors_generic(O, [6], bound)) == 1
+    @test !(target in Hecke.conductors_generic(O, [6], bound - 1))
+    fields = abelian_extensions(K, [6], bound)
+    field = only(filter(C -> norm(conductor(C)[1]) == 9, fields))
+    @test norm(discriminant(field)) == 729
+  end
+
+  @testset "Cyclic sextic discriminants" begin
+    # Complete LMFDB list of C6 fields over Q with absolute discriminant <= 10^6.
+    # https://www.lmfdb.org/NumberField/?galois_group=6T1
+    # Completeness: https://www.lmfdb.org/NumberField/Completeness
+    K, = rationals_as_number_field()
+    fields = abelian_extensions(K, [6], ZZ(10)^6)
+    expected = ZZRingElem[
+      -771147, -419904, -153664, -64827, -19683, -16807,
+      300125, 371293, 453789, 820125,
+    ]
+    @test sort!([ZZ(discriminant(C, QQ)) for C in fields]) == expected
+  end
+
   @testset "abelian extensions && related examples" begin
 
     Qx, x = polynomial_ring(QQ, "x")
