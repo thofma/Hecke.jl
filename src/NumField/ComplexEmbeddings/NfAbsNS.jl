@@ -123,7 +123,8 @@ function restrict(e::NumFieldEmb, f::NumFieldHom{<: AbsNonSimpleNumField, <: Any
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)
-  cn = Bool[ all(overlaps.(ee.roots, e.(f.(gens(L))))) for ee in emb]
+  imgs = e.(f.(gens(L)))
+  cn = Bool[ all(overlaps.(ee.roots, imgs)) for ee in emb]
   @assert count(cn) == 1
   i = findfirst(cn)
   return emb[i]
