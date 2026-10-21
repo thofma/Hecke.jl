@@ -1014,7 +1014,7 @@ function _shortest_vectors_gram_integral(::Type{S}, _G; is_lll_reduced_known::Bo
       T = nothing
     end
   end
-  max = maximum(diagonal(Glll))
+  max = maximum([Glll[i, i] for i in 1:nrows(Glll)])
   @assert max > 0
   V = _short_vectors_gram_nolll_integral(S, Glll, 0, max, T, one(ZZ), ZZRingElem)
   min = minimum(v[2] for v in V)
