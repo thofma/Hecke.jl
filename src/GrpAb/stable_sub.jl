@@ -893,6 +893,9 @@ function stable_subgroups(R::FinGenAbGroup, act::Vector{T}; op = sub, quotype::V
       return (op(R, x) for x in ())
     end
   end
+  if quotype != [-1] && !has_quotient(R, quotype)
+    return (op(R, x) for x in ())
+  end
   if order != -1
     @req quotype == [-1] "Only one of `quotype` and `order` can be specified"
     @req !minimal "Cannot compute minimal subgroups with prescribed order"

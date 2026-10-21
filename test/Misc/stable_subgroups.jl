@@ -224,4 +224,10 @@
     @test_throws ArgumentError stable_subgroups(A, [g], order = 4, minimal = true)
     @test_throws ArgumentError stable_subgroups(A, [g], quotype = [4], order = 4)
   end
+
+  @testset "Quotient type with primes not dividing the order" begin
+    A = abelian_group([4, 4])
+    g = hom(A, A, [3*a for a in gens(A)])
+    @test isempty(collect(stable_subgroups(A, [g], quotype = [12])))
+  end
 end
