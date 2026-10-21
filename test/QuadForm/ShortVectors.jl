@@ -255,6 +255,10 @@ end
   ZZ[-2 -1 1 1 0 0 0 1 -1 1 1 1 1 1 1 1 -1; -1 -2 1 1 0 0 0 1 -1 0 0 1 0 1 1 1 0; 1 1 -2 -1 0 0 0 0 0 -1 -1 0 -1 0 0 0 1; 1 1 -1 -2 0 0 0 -1 1 0 -1 0 -1 0 0 0 1; 0 0 0 0 -2 1 1 1 -1 1 -1 -1 -1 -1 -1 -1 -1; 0 0 0 0 1 -2 -1 -1 1 -1 1 1 1 1 1 1 1; 0 0 0 0 1 -1 -2 0 0 0 1 1 1 1 1 1 1; 1 1 0 -1 1 -1 0 -4 3 0 1 -1 1 -1 -1 -1 0; -1 -1 0 1 -1 1 0 3 -4 1 -1 1 -1 0 1 1 -1; 1 0 -1 0 1 -1 0 0 1 -4 -1 0 -1 1 0 0 2; 1 0 -1 -1 -1 1 1 1 -1 -1 -4 -1 -3 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 1 0 -1 -4 -1 -2 -3 -3 -1; 1 0 -1 -1 -1 1 1 1 -1 -1 -3 -1 -4 -1 -1 -1 1; 1 1 0 0 -1 1 1 -1 0 1 -1 -2 -1 -4 -2 -2 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -4 -3 -1; 1 1 0 0 -1 1 1 -1 1 0 -1 -3 -1 -2 -3 -4 -1; -1 0 1 1 -1 1 1 0 -1 2 1 -1 1 -1 -1 -1 -4]]
   LL = [integer_lattice(gram=-g) for g in L]
   @test length.(first.(Hecke.short_vectors_with_condition.(LL; search_fixed_vectors = false))) == [25, 42, 31, 47]
+  # invariant subspace search in the direct enumeration (A_4)
+  L4 = integer_lattice(gram = ZZ[2 -1 0 0; -1 2 -1 0; 0 -1 2 -1; 0 0 -1 2])
+  V, grams = Hecke._short_vectors_with_condition_direct(L4; search_invariant_subspace = true)
+  @test all(all((matrix(ZZ, 1, 4, v) * g * matrix(ZZ, 4, 1, v))[1, 1] == n[i] for (i, g) in enumerate(grams)) for (v, n) in V)
 
   #=
   function test_short_vectors_with_condition(L::ZZLat; search_fixed_vectors=false)

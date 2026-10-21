@@ -1,4 +1,12 @@
 @testset "Spaces" begin
+  # dimension >= 5: entries 1 and 2 have opposite signs at both real places,
+  # and no two entries are negatives of each other
+  K, = quadratic_field(2)
+  F = diagonal_matrix(K.([1, -3, 2, 7, 5]))
+  ok, v = Hecke._isisotropic_with_vector(F)
+  vm = matrix(K, 1, 5, v)
+  @test ok && !iszero(vm) && iszero(vm * F * transpose(vm))
+
   k = QQ
 
   q = quadratic_space(QQ, QQ[1 1; 1 1;])
