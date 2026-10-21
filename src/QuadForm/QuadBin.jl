@@ -410,7 +410,7 @@ Returns an integral binary quadratic form of discriminant $d$ and leading coeffi
 $p$ where $p$ is a prime number.
 """
 function prime_form(d::ZZRingElem, p::ZZRingElem)
-    @req is_prime(p) "$p is not prime"
+    @req is_probable_prime(p) "$p is not prime"
     if !is_discriminant(d)
         error("$d is no discriminant")
     end
