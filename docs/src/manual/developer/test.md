@@ -59,6 +59,20 @@ The Hecke tests can be found in `Hecke/test/` and are organized in such a way th
 - Similar to the above, if a new directory in `src/` is added, the same must apply
   in `test/`.
 
+When a test file has a matching directory, such as `test/AlgAssAbsOrd/PIP.jl`
+and `test/AlgAssAbsOrd/PIP/`, the full test runner skips the file and runs the
+files inside the directory as separate jobs. Use the skipped file as a wrapper
+that includes its child test files. Put all test cases and assertions in the
+child files, and shared helper code in `setup_tests.jl` as described below.
+Tests written directly in the skipped file will not run in CI.
+When creating a directory beside an existing test file, move all of that file's
+test cases into child files.
+
+For example, add unit group generator tests to
+`test/AlgAssAbsOrd/PIP/unit_group_generators.jl` and include that file from
+`test/AlgAssAbsOrd/PIP.jl`. Running the wrapper explicitly with
+`Hecke.test_module("AlgAssAbsOrd/PIP")` still runs all of its included tests.
+
 ### Shared test setup
 
 If a test directory contains a file `setup_tests.jl`, this file is included into
