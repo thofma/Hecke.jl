@@ -222,6 +222,26 @@
           binary_quadratic_form(ZZ(2), ZZ(1), ZZ(1))
     # 5 is not a square modulo 8
     @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(5), ZZ(2))
+    # every d, discriminant or not: the helpers count and find the b with
+    # b^2 = d mod 4p, or throw
+    for d in -200:200, p in ZZ.(collect(PrimesSet(2, 59)))
+      sols = count(b -> mod(b^2 - d, 4 * p) == 0, 0:(2 * p - 1))
+      @test Hecke._number_of_primeforms(ZZ(d), p) == sols
+      if sols == 0
+        @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(d), p)
+      else
+        @test mod(Hecke._sqrtmod4P(ZZ(d), p)^2 - d, 4 * p) == 0
+      end
+    end
+    # d = 2 and d = 7 are not discriminants: no b at p = 2
+    @test Hecke._number_of_primeforms(ZZ(2), ZZ(2)) == 0
+    @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(2), ZZ(2))
+    @test Hecke._number_of_primeforms(ZZ(7), ZZ(2)) == 0
+    @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(7), ZZ(2))
+    # p must be prime
+    for p in [1, 4, 6, -2, 0]
+      @test_throws ArgumentError prime_form(ZZ(-7), ZZ(p))
+    end
   end
 
   @testset "Equivalent" begin
