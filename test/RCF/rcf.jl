@@ -373,6 +373,102 @@ end
   @test Set(tame_fields) == Set(expected)
 end
 
+@testset "Abelian extensions with prescribed infinite ramification" begin
+  # Absolute representatives must preserve the prescribed real ramification.
+  K, = quadratic_field(5)
+  O = maximal_order(K)
+  places = real_places(K)
+  finite_conductor = 6061*O
+  bound = ZZ(5)^4 * ZZ(6061)^4
+  for p in places
+    fields = abelian_extensions(K, [2, 2], bound;
+                                conductors = [finite_conductor],
+                                ramified_at_inf_plc = (true, [p]))
+    distinct = abelian_extensions(K, [2, 2], bound;
+                                  conductors = [finite_conductor],
+                                  ramified_at_inf_plc = (true, [p]),
+                                  absolutely_distinct = true)
+    @test length(fields) == length(distinct) == 27
+    @test fields == distinct || Set(fields) == Set(distinct)
+    @test all(C -> conductor(C) == (finite_conductor, [p]), distinct)
+    @test all(C -> signature(C) == (4, 2), distinct)
+    @test all(C -> discriminant(C, QQ) == bound, distinct)
+    @test isempty(abelian_extensions(K, [2, 2], bound - 1;
+                                    conductors = [finite_conductor],
+                                    ramified_at_inf_plc = (true, [p]),
+                                    absolutely_distinct = true))
+  end
+
+  Qx, x = QQ[:x]
+  reference, = number_field(x^4 - 6*x^2 - 11)
+  primes = first.(prime_decomposition(O, 11))
+  for p in places
+    fields = abelian_extensions(K, [2], ZZ(275);
+                                conductors = primes,
+                                ramified_at_inf_plc = (true, [p]))
+    @test length(fields) == 1
+    for conds in (primes, reverse(primes))
+      distinct = abelian_extensions(K, [2], ZZ(275);
+                                    conductors = conds,
+                                    ramified_at_inf_plc = (true, [p]),
+                                    absolutely_distinct = true)
+      @test fields == distinct
+      @test norm(conductor(only(distinct))[1]) == 11
+      @test conductor(only(distinct))[2] == [p]
+      L = number_field(AbsSimpleNumField, only(distinct))
+      @test discriminant(maximal_order(L)) == -275
+      @test signature(L) == (2, 1)
+      @test is_isomorphic(L, reference)
+    end
+  end
+
+  mixed_reference, = number_field(x^4 - x^2 - 1)
+  complex_reference, = number_field(x^4 - 8*x^2 + 36)
+  fields = abelian_extensions(K, [2], ZZ(400); conductors = [4*O])
+  distinct = abelian_extensions(K, [2], ZZ(400);
+                                conductors = [4*O],
+                                absolutely_distinct = true)
+  for (list, expected) in ((fields, [-400, -400, 400]),
+                           (distinct, [-400, 400]))
+    number_fields = [number_field(AbsSimpleNumField, C) for C in list]
+    @test sort!([discriminant(maximal_order(L)) for L in number_fields]) ==
+          expected
+    for L in number_fields
+      reference = signature(L) == (2, 1) ? mixed_reference : complex_reference
+      @test is_isomorphic(L, reference)
+    end
+  end
+  complex_field = only(filter(C -> signature(C) == (0, 2), distinct))
+  for absolutely_distinct in (false, true)
+    @test isempty(abelian_extensions(K, [2], ZZ(400);
+                                    conductors = [4*O],
+                                    ramified_at_inf_plc = (true, places[1:0]),
+                                    absolutely_distinct = absolutely_distinct))
+    fields = abelian_extensions(K, [2], ZZ(400);
+                                conductors = [4*O],
+                                ramified_at_inf_plc = (true, places),
+                                absolutely_distinct = absolutely_distinct)
+    @test length(fields) == 1
+    @test only(fields) == complex_field
+  end
+
+  conductors = [4*P for P in primes]
+  fields = abelian_extensions(K, [2], ZZ(4400);
+                              conductors = conductors,
+                              ramified_at_inf_plc = (true, places))
+  distinct = abelian_extensions(K, [2], ZZ(4400);
+                                conductors = conductors,
+                                ramified_at_inf_plc = (true, reverse(places)),
+                                absolutely_distinct = true)
+  @test length(fields) == 2
+  @test length(distinct) == 1
+  reference, = number_field(x^4 + 8*x^2 + 11)
+  L = number_field(AbsSimpleNumField, only(distinct))
+  @test discriminant(maximal_order(L)) == 4400
+  @test signature(L) == (0, 2)
+  @test is_isomorphic(L, reference)
+end
+
 @testset "Frobenius at infinity" begin
   K, = quadratic_field(21)
   OK = maximal_order(K)

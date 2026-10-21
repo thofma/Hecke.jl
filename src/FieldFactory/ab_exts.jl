@@ -331,6 +331,11 @@ function _abelian_extensions(K::AbsSimpleNumField, gtype::Vector{Int},
 
   expo = gtype[end]
   auts = automorphism_list(K)
+  if absolutely_distinct && ramified_at_inf_plc[1]
+    # Both conductor sieving and ray-class actions must preserve the
+    # prescribed infinite places as a set.
+    auts = [f for f in auts if all(P -> induce_image(f, P) in inf_plc, inf_plc)]
+  end
   gens_auts = small_generating_set(auts)
   if isone(length(auts))
     absolutely_distinct = false
