@@ -1,5 +1,29 @@
 @testset "Clgp" begin
   Qx, x = polynomial_ring(QQ, "x")
+  # Compare gcd-based prime selection with independent ideal valuations.
+  @testset "Single-prime factor-base gcd" begin
+    for (f, p) in ((x^4 + x^3 + x^2 + x + 1, 11), (x^4 + x + 2, 2))
+      K, a = number_field(f; cached = false)
+      O = maximal_order(K)
+      lp = [(i, P) for (i, (P, _)) in enumerate(prime_decomposition(O, p))]
+      @test length(lp) >= 3
+      b = K(lp[1][2].gen_two)
+      for n in 3:length(lp)
+        selected = lp[1:n]
+        sP = Hecke.FactorBaseSingleP(p, selected)
+        for candidate in (one(K), K(p), K(p)^3, b, b^3)
+          v = Int(valuation(norm(candidate), p))
+          exponents = [valuation(candidate, P) for (_, P) in selected]
+          expected = [(i, e) for (i, e) in enumerate(exponents) if !iszero(e)]
+          actual, remaining = Hecke.fb_int_doit(candidate, v, sP)
+          @test sort(actual) == expected
+          @test remaining == v - sum(degree(P)*e
+                                     for ((_, P), e) in zip(selected, exponents))
+        end
+      end
+    end
+  end
+
   @testset "Factored ideal preimages" begin
     K, a = quadratic_field(-23; cached = false)
     O = maximal_order(K)
