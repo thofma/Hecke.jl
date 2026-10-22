@@ -57,7 +57,7 @@ else
 end
 
 # The ring interface requires divexact by zero to throw DivideError.
-# TODO: remove once the test interface tests this
+# TODO: remove once the ring interface tests this
 function test_divexact_by_zero(R)
   is_trivial(R) && return
   for check in (true, false)
