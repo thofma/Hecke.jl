@@ -572,7 +572,10 @@ function Base.enumerate(O::Union{AlgAssRelOrd, AlgAssAbsOrd}, b::Int, equal::Boo
   end
 
   # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  @assert !iszero(det(G))
+  # the enumeration needs a positive definite norm form, that is, a totally
+  # definite quaternion algebra; otherwise it does not terminate
+  @req is_positive_definite(G) (
+    "Algebra must be a totally definite quaternion algebra")
   V = _short_vectors_gram(Vector, G, ZZRingElem(b), hard = true)
   res = elem_type(O)[]
   y = zero(A)

@@ -182,6 +182,11 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
     return false, zero(A)
   end
 
+  # For O maximal, I = alpha O, and no units are needed
+  if isone(index(O, M))
+    return true, alpha
+  end
+
   # Now test local freeness at the primes dividing the index [M : O]
   for p in prime_divisors(index(O, M))
     if !is_locally_free(O, I, p, side = :right)[1]
