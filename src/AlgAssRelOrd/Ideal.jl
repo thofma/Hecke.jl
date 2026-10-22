@@ -1365,8 +1365,135 @@ function maximal_integral_ideal(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal
 end
 
 function maximal_integral_ideals(O::AlgAssRelOrd, p::Union{ AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal }; side::Symbol)
+  @req is_prime(p) "p must be a prime ideal"
+  if (side === :right || side === :left) &&
+      algebra(O) isa QuaternionAlgebra{AbsSimpleNumFieldElem} &&
+      valuation(_reduced_disc(O), p) == 0
+    return _maximal_integral_ideals_split_quaternion(O, p, side)
+  end
   lP = prime_ideals_over(O, p)
   return reduce(vcat, [__maximal_integral_ideals(O, lP[i], p, side) for i in 1:length(lP)])
+end
+
+# The N(p) + 1 maximal right (side = :right) or left (side = :left) ideals
+# containing p of an order O of a quaternion algebra over a number field K,
+# for a prime p of the ring of integers R of K not dividing the reduced
+# discriminant of O. Then O_p is maximal (Voight, Quaternion Algebras, Lemma
+# 15.5.3) in the split algebra B_p, so O_p is M_2(R_p) and O/pO is M_2(R/p)
+# (Voight, 23.2.3).
+#
+# As over QQ (see _maximal_integral_ideals_split_quaternion for AlgAssAbsOrd),
+# the maximal right ideals are alpha O + pO for alpha of rank one modulo p,
+# one for each line of (R/p)^2 as the image of alpha (Kirschmer-Voight, SIAM
+# J. Comput. 39 (2010), Lemma 7.2, whose proof is local at p), and the left
+# ideals are their conjugates O conj(alpha) + pO. The element alpha is v - r
+# for v in O and r a root of x^2 - trd(v) x + nrd(v) modulo p, unless alpha
+# is in pO, where v runs through elements e_k of O whose classes form a basis
+# of O/pO, and then e_k + t e_m. A basis element gamma with gamma alpha
+# outside alpha O + pO moves the image line of alpha, and then the images of
+# (t + gamma) alpha are the other N(p) lines. Here t runs through the classes
+# of R/p, as the sums of a_i w_i with 0 <= a_i < l for _residue_class_basis
+# w, and of two roots r the one with the smaller reduction modulo p is taken,
+# so that the result does not depend on random choices or on how the residue
+# field is presented.
+function _maximal_integral_ideals_split_quaternion(O::AlgAssRelOrd,
+                                                   p::AbsNumFieldOrderIdeal,
+                                                   side::Symbol)
+  A = algebra(O)
+  K = base_ring(A)
+  R = base_ring(O)
+  l = Int(minimum(p))
+  pm = basis_pmatrix(O)
+  bs = [A(collect(matrix(pm)[i, :])) for i in 1:4]
+  cs = coefficient_ideals(pm)
+  # beta O + pO, or for side = :left its conjugate O conj(beta) + pO
+  function ideal_of(beta, side)
+    M = zero_matrix(K, 8, 4)
+    for i in 1:4
+      x = beta * bs[i]
+      elem_to_mat_row!(M, i, side === :right ? x : conj(x))
+      elem_to_mat_row!(M, 4 + i, bs[i])
+    end
+    N = pseudo_hnf(pseudo_matrix(M, vcat(cs, [p * c for c in cs])), :lowerleft)
+    I = ideal(A, O, sub(N, 5:8, 1:4); side, M_in_hnf = true)
+    if side === :right
+      I.right_order = O
+    else
+      I.left_order = O
+    end
+    return I
+  end
+  pO = ideal(A, O, pseudo_matrix(matrix(pm), [p * c for c in cs]))
+  # e_k = y_k b_k with y_k in the coefficient ideal c_k of the same valuation
+  # at p: their classes form a basis of O/pO over R/p.
+  es = map(1:4) do k
+    v = valuation(cs[k], p)
+    y = first(x for x in absolute_basis(cs[k]) if valuation(x, p) == v)
+    return y * bs[k]
+  end
+  ws = _residue_class_basis(p)
+  ts = (sum(a[i] * elem_in_nf(ws[i]) for i in eachindex(ws))
+        for a in Iterators.product(ntuple(_ -> 0:(l - 1), length(ws))...))
+  alpha = _rank_one_modulo_prime(es, ts, p, pO)
+  I = ideal_of(alpha, :right)
+  gamma = es[findfirst(g -> !(g * alpha in I), es)]
+  betas = [alpha]
+  for t in ts
+    push!(betas, (t + gamma) * alpha)
+  end
+  side === :right && return [I; [ideal_of(b, :right) for b in betas[2:end]]]
+  return [ideal_of(b, :left) for b in betas]
+end
+
+# An element of O of rank one modulo the prime p, O/pO being M_2(R/p): v - r
+# for the first v, among the es and then the es[k] + t es[m] for t in ts,
+# for which x^2 - trd(v) x + nrd(v) has a root r modulo p and v - r is not in
+# pO. Of two roots, the one whose lift, reduced modulo p, has the smaller
+# coordinates is taken.
+function _rank_one_modulo_prime(es::Vector, ts, p::AbsNumFieldOrderIdeal,
+                                pO::AlgAssRelOrdIdl)
+  R = order(p)
+  F, RtoF = residue_field(R, p)
+  Fx, x = polynomial_ring(F, :x; cached = false)
+  lift_reduced(r) = mod(preimage(RtoF, r), p)
+  vs = Iterators.flatten((es, (es[k] + t * es[m]
+                               for k in 1:4 for m in 1:4 if m != k
+                               for t in ts if !iszero(t))))
+  for v in vs
+    f = x^2 - RtoF(R(trred(v))) * x + RtoF(R(normred(v)))
+    rs = sort!(lift_reduced.(roots(f)); by = coordinates)
+    for r in rs
+      alpha = v - elem_in_nf(r)
+      alpha in pO || return alpha
+    end
+  end
+  # Not reached, as over QQ: some line es[k] + t es[m] (t in R/p) contains no
+  # scalar, and on it the discriminant of x^2 - trd x + nrd is a square or
+  # zero for some t (odd characteristic), or the reduced trace, a linear form
+  # vanishing on the scalars, vanishes at a non-scalar (characteristic 2).
+  error("no element of rank one modulo p found")
+end
+
+# Elements w_1, ..., w_f of the order R of p whose classes form a basis of
+# R/p over F_l, l the prime below p: the first elements of the basis of R
+# that are independent modulo p, found by the index of p + Z w_1 + ... in R.
+# The sums of a_i w_i with 0 <= a_i < l then represent each class of R/p once.
+function _residue_class_basis(p::AbsNumFieldOrderIdeal)
+  R = order(p)
+  n = degree(R)
+  M = basis_matrix(p)
+  index = norm(p)
+  ws = elem_type(R)[]
+  for b in basis(R)
+    isone(index) && break
+    N = sub(hnf(vcat(M, matrix(ZZ, 1, n, coordinates(b)))), 1:n, 1:n)
+    d = abs(det(N))
+    d < index || continue
+    push!(ws, b)
+    M = N
+    index = d
+  end
+  return ws
 end
 
 # Constructs a maximal integral ideal M of O such that M\cap R = p and I\subseteq M,
