@@ -3,12 +3,37 @@
   A = GroupAlgebra(QQ, G)
   @test sprint(show, MIME"text/plain"(), A) isa String
   @test sprint(show, A) isa String
+
+  # Test explicit representations, automatic selection, and caching.
+  @testset "Representation" begin
+    local G, A
+    for G in (small_group(6, 1), abelian_group([2, 2]))
+      for sparse in (false, true)
+        A = group_algebra(QQ, G; sparse)
+        @test Hecke._is_sparse(A) == sparse
+        @test group_algebra(QQ, G; sparse) === A
+        @test group_algebra(QQ, G; sparse, cached = false) !== A
+      end
+      @test group_algebra(QQ, G) === group_algebra(QQ, G; sparse = false)
+    end
+
+    for (n, sparse) in ((999, false), (1000, true), (0, true))
+      G = abelian_group([n])
+      A = group_algebra(QQ, G)
+      @test Hecke._is_sparse(A) == sparse
+      @test A === group_algebra(QQ, G; sparse)
+    end
+
+    G = abelian_group([1000])
+    @test !Hecke._is_sparse(group_algebra(QQ, G; sparse = false))
+  end
+
   @testset "Multiplication by group elements" begin
     local G, A
     G = small_group(6, 1)
     x, y = first((x, y) for x in G for y in G if x*y != y*x)
     for sparse in (false, true), R in (ZZ, QQ, residue_ring(ZZ, 6)[1]), c in (ZZ(2), ZZ(2)^200)
-      A = Hecke._group_algebra(R, G; sparse = sparse, cached = false)
+      A = group_algebra(R, G; sparse = sparse, cached = false)
       a = A(x => c, y => -3, one(G) => 1)
       @test a*y == a*A(y)
       @test y*a == A(y)*a
@@ -40,7 +65,7 @@
       g = gens(G)[1]
       for sparse in (false, true)
         !is_finite(G) && !sparse && continue
-        A = Hecke._group_algebra(ZZ, G; sparse = sparse, cached = false)
+        A = group_algebra(ZZ, G; sparse = sparse, cached = false)
         a = A(zero(G) => 2, g => -3)
         @test a*g == g*a == a*A(g)
       end
@@ -132,18 +157,18 @@
 
   QG = group_algebra(QQ, abelian_group([2, 2]))
   @test QG isa GroupAlgebra
-  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); cached = false)
-  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); sparse = true)
+  @test QG !== group_algebra(QQ, abelian_group([2, 2]); cached = false)
+  @test QG !== group_algebra(QQ, abelian_group([2, 2]); sparse = true)
 
-  QG = Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
+  QG = group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
   @test QG isa GroupAlgebra
-  @test QG !== Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
+  @test QG !== group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
 
   # test sparse arithmetic
 
   let
     G = SymmetricGroup(10)
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == factorial(10)
     #@test !is_commutative(QG) # needs https://github.com/Nemocas/AbstractAlgebra.jl/pull/1907
     @test sprint(show, MIME"text/plain"(), QG) isa String
@@ -166,7 +191,7 @@
 
   let
     G = abelian_group([2, 3, 5000])
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == 2 * 3 * 5000
     @test is_commutative(QG)
     @test sprint(show, MIME"text/plain"(), QG) isa String
@@ -189,7 +214,7 @@
 
   let
     G = abelian_group([2, 3, 0])
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     @test is_commutative(QG)
     @test sprint(show, MIME"text/plain"(), QG) isa String
     @test sprint(show, QG) isa String
@@ -198,13 +223,13 @@
   let
     # 1892
     G = abelian_group([2, 3, 50])
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     B = basis(QG)
     b = B[1]
     @test sprint(show, MIME"text/plain"(), b) isa String
 
     G = abelian_group([2, 3, 50])
-    QG = Hecke._group_algebra(QQ, G; sparse = false, cached = false)
+    QG = group_algebra(QQ, G; sparse = false, cached = false)
     B = basis(QG)
     b = B[1]
     @test sprint(show, MIME"text/plain"(), b) isa String
