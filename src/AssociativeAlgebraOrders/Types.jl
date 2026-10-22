@@ -19,3 +19,25 @@ mutable struct AssociativeAlgebraOrderElem{OrderType, LatticeElemType} <: NCRing
     return new{typeof(O), typeof(x)}(O, x)
   end
 end
+
+@attributes mutable struct AssociativeAlgebraOrderIdeal{
+    OrderType <: AssociativeAlgebraOrder,
+    LatticeType <: AssociativeAlgebraLattice}
+  order::OrderType
+  lattice::LatticeType
+
+  function AssociativeAlgebraOrderIdeal(O::AssociativeAlgebraOrder,
+                                       L::AssociativeAlgebraLattice;
+                                       side::Symbol, check::Bool = true)
+    _check_ideal_side(side)
+    Lo = underlying_lattice(O)
+    @req is_compatible(Lo, L) "The order and lattice are incompatible"
+    @req issubset(L, Lo) "The lattice is not contained in the order"
+    I = new{typeof(O), typeof(L)}(O, L)
+    if check
+      @req _test_ideal_sidedness(I, side) "The lattice has incorrect sidedness"
+    end
+    _set_ideal_side!(I, side)
+    return I
+  end
+end

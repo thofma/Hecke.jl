@@ -5,4 +5,5 @@
   include("AssociativeAlgebraOrders/Arithmetic.jl")
   include("AssociativeAlgebraOrders/Multipliers.jl")
   include("AssociativeAlgebraOrders/Invariants.jl")
+  include("AssociativeAlgebraOrders/Ideals.jl")
 end

@@ -28,3 +28,10 @@ is_injective(f::EmbeddedModuleDataEmbedding) = true
 is_surjective(f::EmbeddedModuleDataEmbedding) = domain(f) == codomain(f)
 
 is_bijective(f::EmbeddedModuleDataEmbedding) = is_surjective(f)
+
+function matrix(f::EmbeddedModuleDataEmbedding{<:EmbeddedModule{_PID},
+                                              <:EmbeddedModule{_PID}})
+  fl, A = _in(basis_matrix(domain(f)), codomain(f), Val(true))
+  @assert fl
+  return A
+end

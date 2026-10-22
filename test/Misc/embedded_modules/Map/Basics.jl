@@ -1,3 +1,4 @@
+# Map interfaces include inverse images of submodules over PID coefficients.
 @testset "map interface and printing" begin
   M = Hecke.embedded_module(ZZ, QQ, QQ[2 0; 0 3])
   N = Hecke.embedded_module(ZZ, QQ, QQ[1 0; 0 1])
@@ -40,4 +41,22 @@
   K, t = rational_function_field(QQ, "t")
   P = Hecke.embedded_module(parent(numerator(t)), K, identity_matrix(K, 2))
   @test_throws ArgumentError hom(M, P, basis(P))
+end
+
+@testset "Submodule preimages over PIDs" begin
+  F, t = rational_function_field(GF(7), "t")
+  for (R, K, c) in ((ZZ, QQ, QQ(2)), (parent(numerator(t)), F, t),
+                    (localization(F, degree), F, inv(t)))
+    M = Hecke.embedded_module(R, K, identity_matrix(K, 2))
+    N = Hecke.embedded_module(R, K, K[1;;])
+    f = Hecke._hom_from_ambient_matrix(M, N, K[1; 0;;])
+    P = Hecke.embedded_module(R, K, K[c;;])
+    expected = Hecke.embedded_module(R, K, K[c 0; 0 1])
+    @test (@inferred preimage(f, P)) == expected
+    @test preimage(f, N) == M
+    @test preimage(f, Hecke.zero_embedded_module(R, K, 1)) == kernel(f)
+    @test_throws ArgumentError preimage(f, M)
+    @test_throws ArgumentError preimage(f,
+      Hecke.embedded_module(R, K, K[inv(c);;]))
+  end
 end

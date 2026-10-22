@@ -7,7 +7,9 @@ For maps between embedded modules, return the composite `h` with
 Composites of inclusion maps remain inclusion maps over PIDs and Dedekind
 domains. Other composites between embedded PID modules use the product of
 their coordinate matrices when both are already cached, or are constructed
-from the images of the domain basis. They support preimages, kernels, and images.
+from the images of the domain basis. For embedded Dedekind modules, use the
+product of the matrices in pseudo-basis coordinates. These composites support
+preimages, kernels, and images.
 """
 function compose(f::EmbeddedModuleMap{<:EmbeddedModule, <:EmbeddedModule},
                  g::EmbeddedModuleMap{<:EmbeddedModule, <:EmbeddedModule})
@@ -30,4 +32,11 @@ function _compose(f::EmbeddedModuleMap{<:EmbeddedModule{_PID}, <:EmbeddedModule{
   end
   images = elem_type(P)[g(f(b)) for b in basis(M; copy = false)]
   return hom(M, P, images)
+end
+
+function _compose(f::EmbeddedModuleMap{<:EmbeddedModule{_DD},
+                                      <:EmbeddedModule{_DD}},
+                  g::EmbeddedModuleMap{<:EmbeddedModule{_DD},
+                                      <:EmbeddedModule{_DD}})
+  return _hom(domain(f), codomain(g), matrix(data(f))*matrix(data(g)))
 end

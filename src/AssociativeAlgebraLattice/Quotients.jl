@@ -1,4 +1,16 @@
 @doc raw"""
+    mod(x::AssociativeAlgebraLatticeElem, N::AssociativeAlgebraLattice)
+
+Return the representative of `x + N` obtained by normal-form reduction in the
+underlying embedded modules. Require `N` to be compatible with and contained
+in `parent(x)`. The result has the same parent as `x`.
+"""
+function mod(x::AssociativeAlgebraLatticeElem, N::AssociativeAlgebraLattice)
+  m = mod(elem_in_module(x), underlying_module(N))
+  return AssociativeAlgebraLatticeElem(parent(x), m)
+end
+
+@doc raw"""
     quo(L::AssociativeAlgebraLattice, N::AssociativeAlgebraLattice)
 
 For PID coefficients and compatible lattices with `N` contained in `L`, return

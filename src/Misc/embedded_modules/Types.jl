@@ -58,7 +58,7 @@ struct PseudoElement{S, T}
 end
 
 # Structure to represent R-modules inside S^n, where R <= S are commutative rings.
-mutable struct EmbeddedModule{RingTypeType, RingType, OverringType}
+@attributes mutable struct EmbeddedModule{RingTypeType, RingType, OverringType}
   overstructure::Any          # only used to check whether modules are compatible
   generator_matrix            # matrix (or pseudo-matrix) whose rows generate the module
   ring::RingType              # R
@@ -131,7 +131,7 @@ end
 #     the matrix representing the map
 #
 # 2) Dedekind domain
-#   - Have to think about this what to store
+#   - For embedded codomains, store a matrix in pseudo-basis coordinates
 
 # Note that the EmbeddedModuleMapXXData types are the actual maps
 # but we package everything up in EmbeddedModuleMap to only have one
@@ -241,10 +241,18 @@ struct EmbeddedModuleDataDDReduction{DomainT, CodomainT, RingMapT, FieldMapT, Ve
   basis_columns::Vector{Int}
 end
 
-struct EmbeddedModuleMapDDData{DomainT, CodomainT, RingMapT}
-  # Core
+@attributes mutable struct EmbeddedModuleMapDDData{
+    DomainT, CodomainT, RingMapT, MatrixT} <:
+    Map{DomainT, CodomainT, Hecke.SetMap, EmbeddedModuleMapDDData}
   domain::DomainT
   codomain::CodomainT
   ring_map::RingMapT
-  # ???
+  matrix::MatrixT
+
+  function EmbeddedModuleMapDDData(M::EmbeddedModule, N::EmbeddedModule,
+                                   A::MatElem)
+    B = copy(A)
+    return new{typeof(M), typeof(N), typeof(identity), typeof(B)}(
+      M, N, identity, B)
+  end
 end

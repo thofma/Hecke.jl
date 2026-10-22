@@ -1,3 +1,11 @@
+function _hom_from_ambient_matrix(M::EmbeddedModule{_PID},
+                                  N::EmbeddedModule{_PID}, A::MatElem)
+  _check_ambient_matrix(M, N, A)
+  fl, B = _in(basis_matrix(M)*A, N, Val(true))
+  @req fl "The matrix does not define a module map"
+  return _hom(M, N, B)
+end
+
 function hom(M::EmbeddedModule{_PID}, X, images::Vector)
   @req length(images) == rank(M) "Wrong number of basis images"
   @req all(x -> parent(x) === X, images) "Images must belong to the codomain"

@@ -13,6 +13,34 @@ function _zero_module_like(M::EmbeddedModule{_DD})
 end
 
 @doc raw"""
+    ideal(R::Ring, M::EmbeddedModule)
+
+Return the integral ideal represented by the embedded submodule `M` of
+`overring(M)^1`. Require `ring(M) === R` and `M` to be contained in `R`.
+"""
+function ideal(R::Ring, M::EmbeddedModule)
+  @req R === ring(M) "The module has a different coefficient ring"
+  @req ambient_rank(M) == 1 "The module must have ambient rank one"
+  iszero(rank(M)) && return ideal(R, zero(R))
+  return _ideal_from_module(M)::Hecke.ideal_type(typeof(R))
+end
+
+function _ideal_from_module(M::EmbeddedModule{_PID})
+  R = ring(M)
+  fl, c = _has_preimage(fraction_map(M), basis_matrix(M)[1, 1], Val(true))
+  @req fl "The module is not contained in its coefficient ring"
+  return ideal(R, c)
+end
+
+function _ideal_from_module(M::EmbeddedModule{_DD})
+  B = basis_matrix(M)
+  I = matrix(B)[1, 1]*Hecke.coefficient_ideals(B)[1]
+  @req Hecke.is_integral(I) "Module not contained in coefficient ring"
+  Hecke.simplify(I)
+  return Hecke.numerator(I)
+end
+
+@doc raw"""
     *(I, M::EmbeddedModule{_DD})
     *(M::EmbeddedModule{_DD}, I)
 

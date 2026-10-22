@@ -1,3 +1,4 @@
+# Composition preserves integral preimages and canonical inclusion maps.
 @testset "PID map composition" begin
   inclusion_map = Hecke.EmbeddedModules.inclusion_map
   F, x = rational_function_field(GF(7), "x")
@@ -223,6 +224,31 @@ end
   @test image(from_zero) === Z
   @test iszero(from_zero(zero(Z)))
   @test is_bijective(compose(inclusion_map(Z, Z), inclusion_map(Z, Z)))
+end
+
+@testset "Dedekind matrix map composition" begin
+  K, a = quadratic_field(-5)
+  R = maximal_order(K)
+  I = fractional_ideal(R, ideal(R, 2, R(1 + a)))
+  U = fractional_ideal(R, one(R))
+  M = Hecke.embedded_module(R, K, pseudo_matrix(R, K[1 0], [I]);
+                           is_basis_matrix = true)
+  N = Hecke.embedded_module(R, K,
+        pseudo_matrix(R, identity_matrix(K, 2), [I, U]);
+        is_basis_matrix = true)
+  P = Hecke.embedded_module(R, K, pseudo_matrix(R, K[0 0 1], [I]);
+                           is_basis_matrix = true)
+  f = Hecke.EmbeddedModules._hom(M, N, K[1 0])
+  g = Hecke.EmbeddedModules._hom(N, P, K[1; 2;;])
+  h = @inferred compose(f, g)
+  x = Hecke._element_from_coordinates(M, elem_type(K)[K(2)])
+  @test h(x) == g(f(x)) == (f*g)(x)
+  @test preimage(h, h(x)) == x
+  @test rank(kernel(h)) == 0
+  @test image(h) == P
+  @test is_bijective(h)
+  @test !is_injective(g)
+  @test_throws ArgumentError compose(g, f)
 end
 
 @testset "generic composition for other codomains" begin
