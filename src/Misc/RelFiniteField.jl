@@ -333,8 +333,16 @@ end
 
 #TODO: resultant or conjugates?
 function norm(x::RelFinFieldElem)
-  return resultant(defining_polynomial(parent(x)), x.data)
+  f = defining_polynomial(parent(x))
+  # The resultant gives the field norm for a monic defining polynomial.
+  if !is_monic(f)
+    f = divexact(f, leading_coefficient(f))
+  end
+  return resultant(f, x.data)
 end
+
+# squares are exactly the elements whose norm is a square
+is_square(x::RelFinFieldElem) = is_square(norm(x))
 
 function norm_via_powering(x::RelFinFieldElem)
   q = order(base_field(parent(x)))

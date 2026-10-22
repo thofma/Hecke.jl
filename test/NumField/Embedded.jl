@@ -21,6 +21,11 @@
   @test sprint(show, a) isa String
   @test sprint(show, "text/plain", a) isa String
   @test E([1, 2]) == 1 + 2*a
+  @test is_square(a^2)
+  @test !is_square(a)
+  fl, s = is_square_with_sqrt(4*a^2)
+  @test fl && s^2 == 4*a^2
+  @test sqrt(a^2)^2 == a^2
   ConformanceTests.test_Field_interface_recursive(E)
   # trigger expressify
   Et, t = E["t"]
