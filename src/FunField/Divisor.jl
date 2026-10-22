@@ -12,7 +12,7 @@ mutable struct Divisor{S <: Generic.AbsSimpleFunctionField, T1 <: PolyRing, T2 <
   finite_support::Dict{GenOrdIdl{S, T1}, Int}
   infinite_support::Dict{GenOrdIdl{S, T2}, Int}
 
-  #Inverse deal representation
+  #Inverse ideal representation
   finite_inv_ideal::GenOrdFracIdl{S, T1}
   infinite_inv_ideal::GenOrdFracIdl{S, T2}
 
@@ -61,12 +61,6 @@ divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) = Divisor(I, J)
 divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(fractional_ideal(I), fractional_ideal(J))
 divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, fractional_ideal(J))
 divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(fractional_ideal(I), J)
-
-@doc raw"""
-    divisor(I::GenOrdFracIdl) -> Divisor
-
-Return the divisor corresponding to the factorization of the ideal I
-"""
 
 @doc raw"""
     divisor(I::GenOrdFracIdl) -> Divisor
