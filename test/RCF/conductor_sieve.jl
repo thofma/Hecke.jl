@@ -25,6 +25,84 @@
     end
   end
 
+  @testset "Tame choices at primes dividing the degree" begin
+    # The tame C6 field of conductor 21 has discriminant -64827 and
+    # ramification index 2 at 3. Q(zeta_21) has group C2 x C6 and also
+    # needs the tame choice at 3 to complete the conductor from prime 7.
+    O = maximal_order(rationals_as_number_field()[1])
+    for (bound, expected) in ((64826, [-16807]), (64827, [-64827, -16807]))
+      fields = abelian_extensions(QQ, [6], ZZ(bound); tame = true)
+      number_fields = [number_field(AbsSimpleNumField, C) for C in fields]
+      discs = [discriminant(maximal_order(K)) for K in number_fields]
+      @test sort!(discs) == expected
+      @test all(K -> signature(K) == (0, 3), number_fields)
+    end
+    for bound in (0, 1)
+      @test isempty(abelian_extensions(QQ, [6], ZZ(bound); tame = true))
+    end
+    bound = ZZ(3)^6 * ZZ(7)^10
+    fields = abelian_extensions(QQ, [2, 6], bound; tame = true)
+    @test length(fields) == 1
+    K = number_field(AbsSimpleNumField, only(fields))
+    @test discriminant(maximal_order(K)) == bound
+    @test is_isomorphic(K, cyclotomic_field(21)[1])
+    @test isempty(abelian_extensions(QQ, [2, 6], bound - 1; tame = true))
+    for allowed in (ZZ.([3, 7]), ZZ.([7]), ZZ.([3]))
+      conds = Hecke.conductorsQQ(O, [6], ZZ(64827), true;
+                                 unramified_outside = allowed)
+      @test (21 in conds) == (3 in allowed && 7 in allowed)
+      @test all(c -> is_squarefree(ZZ(c)), conds)
+    end
+    @test sort!(Hecke.conductorsQQ(O, [3], ZZ(1000), true)) ==
+          [7, 13, 19, 31]
+  end
+
+  @testset "Tame normal extensions" begin
+    # Over Q(sqrt(-31)), the unramified cubic extension times K(sqrt(-3))
+    # is tame, with conductor (3) and relative discriminant norm 729.
+    # Also test relative tameness over a wildly ramified base, and the
+    # radical norms at the already ramified primes 2 and 3 of Q(zeta_12).
+    K, = quadratic_field(-31)
+    O = maximal_order(K)
+    bound = ZZ(31)^6 * ZZ(729)
+    fields = abelian_normal_extensions(K, [6], bound; tame = true)
+    @test length(fields) == 1
+    @test norm(conductor(only(fields))[1]) == 9
+    @test norm(discriminant(only(fields))) == 729
+    @test isempty(abelian_normal_extensions(K, [6], bound - 1; tame = true))
+    @test isempty(Hecke.conductors(O, [6], ZZ(0), true))
+    for gtype in ([2], [3], [6])
+      @test isempty(abelian_normal_extensions(K, gtype, ZZ(0); tame = true))
+    end
+    for allowed in (ZZ.([3]), ZZ.([7]))
+      conds = Hecke.conductors(O, [6], ZZ(729), true;
+                              unramified_outside = allowed)
+      @test any(c -> c[1] == 3 && isempty(c[2]), conds) == (3 in allowed)
+      @test all(c -> isempty(c[2]), conds)
+    end
+    fields = abelian_normal_extensions(K, [3], ZZ(31)^3; tame = true)
+    @test norm(conductor(only(fields))[1]) == 1
+    @test isempty(abelian_normal_extensions(K, [3], ZZ(31)^3 - 1; tame = true))
+
+    K, = cyclotomic_real_subfield(9)
+    fields = abelian_normal_extensions(K, [2], ZZ(19683); tame = true)
+    @test length(fields) == 1
+    @test norm(conductor(only(fields))[1]) == 3
+    @test discriminant(only(fields), QQ) == -19683
+    @test isempty(abelian_normal_extensions(K, [2], ZZ(19682); tame = true))
+
+    O = maximal_order(cyclotomic_field(12)[1])
+    for (gtype, m, weight) in (([6], 2, 256), ([6], 3, 729),
+                               ([6], 6, 186624), ([2, 6], 2, 65536),
+                               ([2, 6], 3, 531441))
+      conds = Hecke.conductors(O, gtype, ZZ(weight), true)
+      @test count(c -> c[1] == m && isempty(c[2]), conds) == 1
+      @test all(c -> isempty(c[2]), conds)
+      @test !any(c -> c[1] == m && isempty(c[2]),
+                 Hecke.conductors(O, gtype, ZZ(weight - 1), true))
+    end
+  end
+
   @testset "abelian extensions && related examples" begin
 
     Qx, x = polynomial_ring(QQ, "x")

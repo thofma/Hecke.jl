@@ -241,12 +241,8 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
   bound_tame = iroot(bound, divexact(n, expo))
   list = conductors_tame(O, expo, bound_tame, unramified_outside = unramified_outside)
 
-  if tame
-    reverse!(list)
-    return Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in list]
-  end
   #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
+  # Now include conductor factors at primes dividing the degree.
   #
   wild_list = Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}[(1, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1))]
   for _q in wild_ram
@@ -258,6 +254,25 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
     FqPolyRepFieldElem = divexact(d, lp[1][2]*length(lp))
     l = length(wild_list)
     sq = q^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
+    # Primes dividing n can still ramify tamely: Sircana's PhD thesis,
+    # Lemma 1.35. The weight follows the discussion before Lemma 1.36.
+    # https://kluedo.ub.rptu.de/files/6407/Dissertation_Sircana.pdf
+    nisc = gcd(q^FqPolyRepFieldElem - 1, ZZRingElem(expo))
+    if nisc != 1
+      fnisc = minimum(prime_divisors(nisc))
+      nq = sq^((fnisc-1)*divexact(n, fnisc))
+      for s = 1:l
+        nn = nq*wild_list[s][3]
+        if nn > bound
+          continue
+        end
+        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
+      end
+    end
+    # Only conductor exponents >= 2 require the wild bounds below.
+    if tame
+      continue
+    end
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the
@@ -290,19 +305,6 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
     end
     bound_max_exp = min(ram_groups_bound, bound_max_exp)
 
-    #The prime may be also tamely ramified!
-    nisc = gcd(q^(FqPolyRepFieldElem)-1, ZZRingElem(expo))
-    if nisc != 1
-      fnisc=minimum(prime_divisors(nisc))
-      nq=sq^((fnisc-1)*(divexact(n, fnisc)))
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
-      end
-    end
     for i=2:bound_max_exp
       d1=Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
       for j=1:length(lp)
@@ -488,11 +490,8 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
 
   single, multiple = conductors_tameQQ(O, a, bound, unramified_outside = unramified_outside)
 
-  if tame
-    return multiple
-  end
   #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
+  # Now include conductor factors at primes dividing the degree.
   #
   wild_list=Tuple{Int, Int, ZZRingElem}[(1, 1, 1)]
   for q in wild_ram
@@ -500,6 +499,23 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
       continue
     end
     l = length(wild_list)
+    # Include tame exponent-one choices at q | n as well (Sircana,
+    # Lemma 1.35 and the discussion before Lemma 1.36, cited above).
+    nisc = gcd(q-1, n)
+    if nisc != 1
+      fnisc = minimum(prime_divisors(nisc))
+      nq = ZZRingElem(q)^((fnisc-1)*divexact(n, fnisc))
+      for s = 1:l
+        nn = nq*wild_list[s][3]
+        if nn > bound
+          continue
+        end
+        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
+      end
+    end
+    if tame
+      continue
+    end
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the
@@ -515,7 +531,6 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
 
     #I don't need to give a bound for a_p on the big extension but only on the maximum extension of q-power order
     #This is the only thing that matters for the exponent of the conductor
-    nisc = gcd(q-1,n)
     nbound = q^v + v * q^v - 1
     boundsubext = iroot(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
@@ -526,17 +541,6 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
       bound_max_exp = min(bound_max_exp, valuation(expo, q)+2)
     else
       bound_max_exp = min(bound_max_exp, valuation(expo, q)+1)
-    end
-    if nisc != 1
-      fnisc=minimum(prime_divisors(nisc))
-      nq=ZZRingElem(q)^((fnisc-1)*(divexact(n, fnisc)))
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
-      end
     end
     t=(q-1)*divexact(n,q)
     for i=2:bound_max_exp
