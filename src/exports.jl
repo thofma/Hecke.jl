@@ -406,6 +406,9 @@ export gram_matrix_bilinear
 export gram_matrix_of_generators
 export gram_matrix_of_rational_span
 export gram_matrix_quadratic
+export gross_gram_matrix
+export gross_lattice
+export gross_lattice_basis
 export group
 export group_algebra
 export grunwald_wang

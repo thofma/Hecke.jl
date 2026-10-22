@@ -72,3 +72,10 @@ eichler_level(::AlgAssAbsOrd{<:QuaternionAlgebra})
 is_split_with_zero_divisor
 ```
 
+## Gross lattices
+
+```@docs
+gross_lattice(::AlgAssAbsOrd{<:QuaternionAlgebra{QQFieldElem}})
+gross_lattice_basis(::AlgAssAbsOrd{<:QuaternionAlgebra{QQFieldElem}})
+gross_gram_matrix(::Vector{<:AssociativeAlgebraElem{QQFieldElem}})
+```
