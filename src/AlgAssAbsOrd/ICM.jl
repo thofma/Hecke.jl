@@ -71,7 +71,7 @@ function is_isomorphic_with_map(I::T, J::T) where {T <: Union{AbsNumFieldOrderId
     return false, zero(A)
   end
 
-  return true, divexact(_elem_in_algebra(a, copy = false), A(denominator(IJ, copy = false)))
+  return true, divexact_left(_elem_in_algebra(a, copy = false), A(denominator(IJ, copy = false)))
 end
 
 @doc raw"""

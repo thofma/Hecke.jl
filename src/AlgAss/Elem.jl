@@ -587,7 +587,7 @@ function is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeA
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol = :left; check::Bool=true)
+function divexact(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol; check::Bool=true)
   t, c = is_divisible(a, b, action)
   if !t
     error("Division not possible")
