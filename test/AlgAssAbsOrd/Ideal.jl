@@ -291,4 +291,55 @@
     @test all(b in P for b in absolute_basis(I))
     @test O * P == P
   end
+
+  @testset "Maximal integral ideals of a quaternion order at a split prime" begin
+    # the l + 1 maximal right and left ideals containing l, for l not dividing
+    # the reduced discriminant of O, against the route through O/P for any
+    # order: the same ideals, each of reduced norm l with O as right (left)
+    # order, and the same list on every call
+    generic(O, l, side) = reduce(vcat,
+      [Hecke.__maximal_integral_ideals(O, P, l, side)
+       for P in prime_ideals_over(O, l)])
+    key(I) = Hecke._hnf_integral(basis_matrix(I), :lowerleft)
+    for (a, b) in [(-1, -11), (-2, -37)]
+      A = quaternion_algebra(QQ, a, b)
+      M = maximal_order(A)
+      J = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+      E = order(A, vcat([one(A)], basis(J)))
+      Z3M = order(A, vcat([one(A)], [3 * elem_in_algebra(x) for x in basis(M)]))
+      for O in [M, E, Z3M], l in [2, 3, 5, 7], side in [:right, :left]
+        is_divisible_by(Hecke._reduced_disc(O), l) && continue
+        Is = Hecke.maximal_integral_ideals(O, l; side)
+        @test length(Is) == l + 1
+        @test Set(key.(Is)) == Set(key.(generic(O, l, side)))
+        @test all(I -> normred(I, O) == l, Is)
+        # the right (left) order computed from the basis, not the one stored
+        fresh(I) = ideal(A, basis_matrix(I))
+        if side === :right
+          @test all(I -> I * O == I && right_order(fresh(I)) == O, Is)
+        else
+          @test all(I -> O * I == I && left_order(fresh(I)) == O, Is)
+        end
+        @test key.(Is) == key.(Hecke.maximal_integral_ideals(O, l; side))
+        @test key.(Is) == key.(Hecke.maximal_integral_ideals(O, ZZ(l); side))
+      end
+    end
+
+    # Z<1, i, j, k> in (-1, -11) at 1019, where c1^2 + c2^2 = 0 mod 1019 has
+    # only the trivial solution, so that no alpha in the span of 1 and i has
+    # rank one: the same ideals as the route through O/P
+    A = quaternion_algebra(QQ, -1, -11)
+    O = order(A, basis(A))
+    for side in [:right, :left]
+      Is = Hecke.maximal_integral_ideals(O, 1019; side)
+      @test length(Is) == 1020
+      @test Set(key.(Is)) == Set(key.(generic(O, 1019, side)))
+    end
+
+    # p must be prime
+    M = maximal_order(A)
+    for n in [15, 9, 1, 0, -3]
+      @test_throws ArgumentError Hecke.maximal_integral_ideals(M, n; side = :right)
+    end
+  end
 end
