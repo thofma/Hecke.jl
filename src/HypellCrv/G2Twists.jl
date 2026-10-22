@@ -67,9 +67,23 @@ end
 
 function filter_g2_isomorphism_classes(curves::Vector{HypellCrv{T}}) where T <: FieldElem
   result = HypellCrv{T}[]
+  # Igusa-Clebsch invariants of the curves in result, computed once per curve
+  # instead of twice per pair inside is_isomorphic
+  result_invs = Vector{T}[]
+  ws = [2, 4, 6, 10]
   for C in curves
-    if !any([ is_isomorphic(C, D) for D in result ])
-       push!(result, C)
+    I = igusa_clebsch_invariants(C)[1]
+    is_new = true
+    for (D, J) in zip(result, result_invs)
+      weighted_equality(I, J, ws) || continue
+      if _is_isomorphic(C, D, false)[1]
+        is_new = false
+        break
+      end
+    end
+    if is_new
+      push!(result, C)
+      push!(result_invs, I)
     end
   end
   return result
