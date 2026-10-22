@@ -212,3 +212,17 @@ function _riemann_roch_space_with_ctx(J_fin, J_inf, F)
   ctx.D = divisor(inv(J_fin), inv(J_inf)) #TODO: update as soon as new divisor type is included
   return ctx
 end
+
+function dimension(RRCtx::RiemannRochCtx)
+  return length(RRCtx.RR_basis)
+end
+
+#= RR(D-r*A) -> divisor reduction 
+function riemann_roch_space(D::Divisor, r)
+  TODO
+end
+
+function riemann_roch_space(RRCtx::RiemannRochCtx, r)
+  TODO
+end
+=#
