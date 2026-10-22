@@ -24,9 +24,7 @@ function divisor(P::Vector{RiemannSurfacePoint}, n::Vector{Int})
 end
 
 function zero_divisor(RS::RiemannSurfaceModel)
-  D = RiemannSurfaceDivisor(RS)
-  D.riemann_surface = RS
-  return D
+  return RiemannSurfaceDivisor(RS)
 end
 
 function riemann_surface(D::RiemannSurfaceDivisor)
