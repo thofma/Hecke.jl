@@ -30,6 +30,13 @@
       # copying and hashing
       @test deepcopy(X) == X
       @test hash(X) == hash(deepcopy(X))
+      # exact division
+      Y = f(rand_elem())
+      fl, Z = divides(X*Y, Y)
+      @test fl && Z*Y == X*Y
+      if !iszero(Y) || is_trivial(Q)
+        @test divexact(X*Y, Y)*Y == X*Y
+      end
     end
   end
 
@@ -44,6 +51,7 @@
     Q, f = @inferred quo(OK, I)
 
     ConformanceTests.test_Ring_interface(Q)
+    test_divexact_by_zero(Q)
     # 2 is a unit in F_3, so I is the unit ideal and Q is the trivial ring
     @test isone(zero(Q))
     @test iszero(one(Q))
@@ -59,6 +67,7 @@
     I = prime_decomposition(OK, tt + 1)[1][1]
     Q, f = @inferred quo(OK, I)
     ConformanceTests.test_Ring_interface(Q)
+    test_divexact_by_zero(Q)
     test_quo_common(OK, I)
   end
 
@@ -69,6 +78,18 @@
     I = ideal(O, ZZ(3))
     Q, f = quo(O, I)
     ConformanceTests.test_Ring_interface(Q)
+    test_divexact_by_zero(Q)
     test_quo_common(O, I)
+
+    # 7 splits, so a - 3 is a zero divisor in O/7O
+    I = ideal(O, ZZ(7))
+    Q, f = quo(O, I)
+    test_divexact_by_zero(Q)
+    test_quo_common(O, I)
+    b = f(O(a) - 3)
+    @test !divides(one(Q), b)[1]
+    @test_throws ArgumentError divexact(one(Q), b)
+    fl, z = divides(3*b, b)
+    @test fl && z*b == 3*b
   end
 end
