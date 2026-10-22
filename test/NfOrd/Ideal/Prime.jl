@@ -198,6 +198,65 @@ end
   end
 end
 
+# Count distinct degree-one primes without changing the order or cached ideals.
+@testset "Number of degree-one primes" begin
+  Qx, x = polynomial_ring(QQ, "x")
+
+  function degree_one_snapshot(O)
+    cached = [(deepcopy(p), [(deepcopy(P.gen_one), deepcopy(P.gen_two),
+                             P.splitting_type, e) for (P, e) in lp])
+              for (p, lp) in sort!(collect(O.index_div); by = first)]
+    return (deepcopy(defining_polynomial(Hecke.nf(O))), basis(O),
+            basis_matrix(O), deepcopy(discriminant(O)), Hecke.gen_index(O),
+            cached)
+  end
+
+  function check_degree_one_count(O, p, expected)
+    decomposition = prime_decomposition(O, p; cached = true)
+    @test count(P -> degree(P[1]) == 1, decomposition) == expected
+    @test count(P -> P[1] == 1, prime_decomposition_type(O, p)) == expected
+    before = degree_one_snapshot(O)
+    inputs = p isa Int ? (p, Int32(p), BigInt(p), ZZ(p)) : (p, BigInt(p))
+    for q in inputs
+      q_before = deepcopy(q)
+      actual = Hecke._number_of_degree_one_primes(O, q)
+      @test actual isa Int
+      @test actual == expected
+      @test q == q_before
+      @test degree_one_snapshot(O) == before
+      @test Hecke._number_of_degree_one_primes(O, q) == expected
+    end
+    q = deepcopy(ZZ(p))
+    actual = Hecke._number_of_degree_one_primes(O, q)
+    add!(q, q, 2)
+    @test actual == expected
+    @test degree_one_snapshot(O) == before
+  end
+
+  examples = ((x - 1, 2, 1), (x^2 + 1, 2, 1), (x^2 + 1, 3, 0),
+              (x^2 + 1, 5, 2), (x^3 - 2, 5, 1), (x^3 - 2, 7, 0),
+              (x^3 - 2, 31, 3), (x^4 + x + 2, 2, 2),
+              (x^3 - x^2 - 2*x - 8, 2, 3), (2*x^2 + 1, 2, 1),
+              (2*x^2 + 1, 3, 2), (2*x^2 + 1, 5, 0),
+              (x^2 - 1//2, 2, 1), (x^2 - 1//2, 7, 2))
+  for (f, p, expected) in examples
+    K, _ = number_field(f; cached = false)
+    O = maximal_order(K)
+    check_degree_one_count(O, p, expected)
+  end
+
+  K, _ = number_field(x^2 - 5; cached = false)
+  O = equation_order(K)
+  @test !is_maximal(O)
+  check_degree_one_count(O, 3, 0)
+  check_degree_one_count(O, 11, 2)
+
+  K, _ = number_field(x^2 + 1; cached = false)
+  O = maximal_order(K)
+  p = next_prime(ZZ(2)^65)
+  check_degree_one_count(O, p, isone(mod(p, 4)) ? 2 : 0)
+end
+
 @testset "Prime Decomposition (AbsNonSimple)" begin
   x = QQ[:x][2]
 

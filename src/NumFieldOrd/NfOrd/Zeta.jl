@@ -196,9 +196,14 @@ function _term_bf(O::AbsSimpleNumFieldOrder, B::Int, R::ArbField)
 
     #x += @elapsed
 
-    lP = prime_decomposition_type(O, p)
-    for P in lP
-      Pnorm = ZZRingElem(p)^P[1]
+    # If p^2 >= xx0, higher inertia degrees contribute at neither cutoff.
+    inertia_degrees = if max_exp == 1
+      fill(1, _number_of_degree_one_primes(O, p))
+    else
+      Int[t[1] for t in prime_decomposition_type(O, p)]
+    end
+    for f in inertia_degrees
+      Pnorm = ZZRingElem(p)^f
       if Pnorm < xx0
         max_exp = _max_power_in(Pnorm, xx0)
 
@@ -218,8 +223,8 @@ function _term_bf(O::AbsSimpleNumFieldOrder, B::Int, R::ArbField)
         summ = summ + summand
       end
 
-      for P in lP
-        Pnorm = ZZRingElem(p)^P[1]
+      for f in inertia_degrees
+        Pnorm = ZZRingElem(p)^f
         if (Pnorm < xx09)
           max_exp = _max_power_in(Pnorm, xx09)
 
