@@ -10,7 +10,8 @@
   @test iszero(MtoQ(y))
   @test coordinates(preimage(MtoQ, MtoQ(x))) == coordinates(x)
 
-  V, MtoV, RtoF = Hecke.quotient_vector_space(M, N, ZZ(2))
+  V, MtoV = Hecke.quotient_vector_space(M, N, ZZ(2))
+  RtoF = Hecke.ring_map(MtoV)
   @test MtoV isa Hecke.EmbeddedModuleMap
   @test domain(MtoV) === M
   @test codomain(MtoV) === V

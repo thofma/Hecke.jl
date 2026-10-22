@@ -14,8 +14,14 @@
       b = L.(basis(L))
       N = Hecke.lattice(A, R, [Hecke.elem_in_algebra(b[1] + b[2]),
                               Hecke.elem_in_algebra(p*b[2])])
-      V, f, RtoF = @inferred Hecke.quotient_vector_space(L, p)
-      W, g, RtoG = @inferred Hecke.quotient_vector_space(L, N, p)
+      result = @inferred Hecke.quotient_vector_space(L, p)
+      @test length(result) == 2
+      V, f = result
+      RtoF = Hecke.ring_map(f)
+      result = @inferred Hecke.quotient_vector_space(L, N, p)
+      @test length(result) == 2
+      W, g = result
+      RtoG = Hecke.ring_map(g)
       F, G = base_ring(V), base_ring(W)
       x = 5*b[1] - 4*b[2]
       c = R === Rpoly ? numerator(t) : R === Rinf ? Rinf((t + 1)/(t + 2)) : ZZ(5)
@@ -33,6 +39,7 @@
         @test (@inferred codomain(q)) === Q
         @test !applicable(matrix, q)
         uq = @inferred Hecke.underlying_map(q)
+        @test Hecke.ring_map(q) === Hecke.ring_map(uq)
         @test domain(uq) === Hecke.underlying_module(L)
         @test codomain(uq) === Q
         @test domain(RtoH) === R && codomain(RtoH) === base_ring(Q)
@@ -131,7 +138,7 @@
       @test is_surjective(q) && is_bijective(q) == iszero(N)
       @test show(IOBuffer(), MIME"text/plain"(), q) === nothing
     end
-    for (V, f, _) in (Hecke.quotient_vector_space(L, L, ZZ(3)),
+    for (V, f) in (Hecke.quotient_vector_space(L, L, ZZ(3)),
                        Hecke.quotient_vector_space(Z, ZZ(3)),
                        Hecke.quotient_vector_space(Z, Z, ZZ(3)))
       M = domain(f)

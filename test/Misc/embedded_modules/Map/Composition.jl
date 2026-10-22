@@ -233,7 +233,7 @@ end
   a = 4*B[1] - B[2]
   doubled = Hecke.embedded_module(ZZ, QQ, 2*basis_matrix(N))
   Q, q = quo(N, doubled)
-  V, reduction, _ = Hecke.quotient_vector_space(N, ZZ(3))
+  V, reduction = Hecke.quotient_vector_space(N, ZZ(3))
   scalar = hom(N, ZZ, ZZRingElem[2, 3])
   for g in (q, reduction, scalar)
     h = compose(f, g)

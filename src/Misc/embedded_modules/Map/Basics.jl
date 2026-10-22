@@ -4,6 +4,8 @@ codomain(f::EmbeddedModuleMap) = f.codomain
 
 data(f::EmbeddedModuleMap) = f.data
 
+ring_map(f::EmbeddedModuleMap) = ring_map(data(f))
+
 image(f::EmbeddedModuleMap, x::EmbeddedModuleElem) = image(data(f), x)::elem_type(codomain(f))
 
 preimage(f::EmbeddedModuleMap, y) = preimage(data(f), y)::elem_type(domain(f))
