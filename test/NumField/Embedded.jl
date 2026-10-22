@@ -27,6 +27,7 @@
   @test fl && s^2 == 4*a^2
   @test sqrt(a^2)^2 == a^2
   ConformanceTests.test_Field_interface_recursive(E)
+  test_divexact_by_zero(E)
   # trigger expressify
   Et, t = E["t"]
   @test sprint(show, a * t) isa String
@@ -51,6 +52,8 @@
   @test sprint(show, a[1]) isa String
   @test sprint(show, "text/plain", a[1]) isa String
   ConformanceTests.test_Ring_interface(E)
+  test_divexact_by_zero(E)
+  test_divexact_by_zero(K)
 
   # other constructors
   E, a = Hecke.embedded_number_field([x^2 - 2, x^2 - 3], [1.41, 1.6])

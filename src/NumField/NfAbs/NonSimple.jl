@@ -268,7 +268,10 @@ function Base.div(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
   return a * inv(b)
 end
 
-Nemo.divexact(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem; check::Bool = false) = div(a, b)
+function Nemo.divexact(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem; check::Bool = false)
+  iszero(b) && throw(DivideError())
+  return div(a, b)
+end
 
 ################################################################################
 #
