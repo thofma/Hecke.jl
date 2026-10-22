@@ -942,17 +942,25 @@ function restriction(K::RelNonSimpleNumField{AbsSimpleNumFieldElem}, Cp::Vector{
     push!(M, SRow(B[i]))
   end
 
-  b_AA = basis(AA)
-  Mk = _expand(M, pseudo_inv(C.mp[1]))
   all_im = Vector{Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}}(undef, length(autos))
+  isempty(autos) && return all_im
+
+  b_AA = basis(AA)
+  imp = pseudo_inv(C.mp[1])
+  Mk = _expand(M, imp)
+
+  # one solve for all right hand sides, row (i-1)*length(Cp)+jj is tau_i(pe_jj)
+  Nk = sparse_matrix(base_ring(Mk))
+  for i = 1:length(autos), jj = 1:length(Cp)
+    push!(Nk, _expand(SRow(all_pe[jj][2][i]), imp))
+  end
+  sol = solve(Mk, Nk)
+
   for i = 1:length(autos)
     all_imCp = Vector{RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}}(undef, length(Cp))
     for jj=1:length(Cp)
-      N = SRow(all_pe[jj][2][i])
-      Nk = _expand(N, pseudo_inv(C.mp[1]))
-      n = solve(Mk, Nk)
-      im = sum(v*b_AA[l] for (l, v) = n)
-      all_imCp[jj] = im
+      n = sol[(i-1)*length(Cp)+jj]
+      all_imCp[jj] = sum(v*b_AA[l] for (l, v) = n)
     end
     all_im[i] = all_imCp
   end
