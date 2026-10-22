@@ -100,6 +100,40 @@ function _split(c::node{T}, a::T) where T
   return vcat(ls, rs)
 end
 
+function _split_divisor!(factors::Vector{T}, c::node{T},
+                         a::T) where {T <: PolyRingElem}
+  isone(a) && return factors
+  if is_leaf(c)
+    push!(factors, deepcopy(a))
+    return factors
+  end
+  l = gcd(a, c.left.content)
+  if isone(l)
+    return _split_divisor!(factors, c.right, a)
+  end
+  _split_divisor!(factors, c.left, l)
+  # Monic divisors of equal degree coincide; otherwise the quotient is right.
+  if degree(l) < degree(a)
+    _split_divisor!(factors, c.right, divexact(a, l))
+  end
+  return factors
+end
+
+@doc raw"""
+    _factor_divisor(c::FactorBase{T}, a::T) -> Vector{T}
+
+Split a nonzero monic divisor `a` of `c.prod` over the pairwise coprime monic
+polynomial leaves of `c`, over a field. Return owned nonunit components, whose
+product is `a`. For coprime child products `L` and `R`, the two components are
+`gcd(a, L)` and `a / gcd(a, L)`, so only one child gcd is needed. Leaves need not
+be irreducible or squarefree. The input and the factor base are preserved.
+"""
+function _factor_divisor(c::FactorBase{T}, a::T) where {T <: PolyRingElem}
+  factors = T[]
+  isone(a) && return factors
+  return _split_divisor!(factors, c.ptree, a)
+end
+
 function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
   @assert a != 0
   f = Dict{T, Int}()

@@ -24,6 +24,42 @@
     end
   end
 
+  # Check divisor splitting and independence of mutable polynomial outputs.
+  @testset "Factor-base divisor splitting" begin
+    F4 = GF(2, 2)
+    fields = (residue_ring(ZZ, 2)[1], residue_ring(ZZ, 101)[1],
+              residue_ring(ZZ, next_prime(ZZ(2)^65))[1], F4)
+    for F in fields
+      R, t = polynomial_ring(F, "t"; cached = false)
+      y = F === F4 ? t + gen(F4) : t
+      empty_base = FactorBase{elem_type(R)}(one(R), elem_type(R)[])
+      @test isempty(Hecke._factor_divisor(empty_base, one(R)))
+      leaves = [y^3, (y + 1)^2, y^2 + y + 1]
+      for n in (1, 3)
+        selected = leaves[1:n]
+        fb = FactorBase(selected)
+        divisors = [one(R), y, y^2, fb.prod, selected...]
+        n == 3 && append!(divisors, [y + 1, y^2*(y + 1)])
+        for divisor in divisors
+          before = deepcopy((divisor, selected, fb.prod))
+          expected = filter(c -> !isone(c), [gcd(divisor, c) for c in selected])
+          components = Hecke._factor_divisor(fb, divisor)
+          @test Set(components) == Set(expected)
+          @test prod(components; init = one(R)) == divisor
+          @test (divisor, selected, fb.prod) == before
+          for i in eachindex(components)
+            previous = deepcopy(components)
+            setcoeff!(components[i], 0, coeff(components[i], 0) + 1)
+            @test (divisor, selected, fb.prod) == before
+            @test all(j == i || components[j] == previous[j]
+                      for j in eachindex(components))
+          end
+          @test Set(Hecke._factor_divisor(fb, before[1])) == Set(expected)
+        end
+      end
+    end
+  end
+
   @testset "Factored ideal preimages" begin
     K, a = quadratic_field(-23; cached = false)
     O = maximal_order(K)

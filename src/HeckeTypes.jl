@@ -1445,10 +1445,10 @@ function fb_int_doit(a::AbsSimpleNumFieldElem, v::Int, sP::FactorBaseSingleP)
   g = parent(sP.lf[1])(a)
   g = gcd(g, sP.pt.prod)
   # The gcd divides the factor-base product, so it is already smooth.
-  d = factor(sP.pt, g)
+  factors = _factor_divisor(sP.pt, g)
   r = Vector{Tuple{Int, Int}}()
   vv=v
-  for x in keys(d)
+  for x in factors
     id = something(findfirst(isequal(x), sP.lf), 0)
     vv -= sP.lp[id][2].splitting_type[2]
     push!(r, (sP.lp[id][1], 1))
@@ -1457,7 +1457,7 @@ function fb_int_doit(a::AbsSimpleNumFieldElem, v::Int, sP::FactorBaseSingleP)
     return r, vv
   end
   r = Vector{Tuple{Int, Int}}()
-  for x in keys(d)
+  for x in factors
     id = something(findfirst(isequal(x), sP.lf), 0)
     vl  = valuation(a, sP.lp[id][2])
     v -= sP.lp[id][2].splitting_type[2]*vl
