@@ -541,10 +541,10 @@ function __sunit_group_fac_elem_quo_via_brauer(N::NormRelation, O, S::Vector{Abs
     res_group = abelian_group([ZZRingElem(n) for i in 1:(length(sunitsmodunits) + length(unitsmodtorsion))])
   end
   local exp
-  let res_group = res_group, units = units
+  let res_group = res_group, units = units, sunitsmodunits = sunitsmodunits
     function exp(a::FinGenAbGroupElem)
       @assert parent(a) == res_group
-      z = prod(units[i]^a[i] for i = 1:length(units))
+      local z = prod(units[i]^a[i] for i = 1:length(units))
       if !isempty(sunitsmodunits)
         zz = prod(sunitsmodunits[i]^a[length(units) + i] for i in 1:length(sunitsmodunits))
         mul!(z, z, zz)

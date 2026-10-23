@@ -79,8 +79,10 @@ function _close_vectors_gram(::Type{T}, _G, target::Vector{QQFieldElem},
   n = nrows(G)
   tmp = zeros_array(ZZ, n)
   dotransform = output_transform !== nothing
-  cleanvec = v -> _close_vector_and_assemble(v, output_transform, dotransform,
-                                             tmp, elem_type)
+  cleanvec = let output_transform = output_transform
+    v -> _close_vector_and_assemble(v, output_transform, dotransform,
+                                    tmp, elem_type)
+  end
   cleanscalar = l -> l//scale
 
   return __enumerate_gram(T, Glll, lb, ub, QQFieldElem, cleanvec,

@@ -570,6 +570,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
 
   @req (!isa(A[1], FacElem)) || !isnothing(support) "For elements in factored form, the support has to be passed in as well"
 
+  local g1::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
   if isa(A[1], FacElem)
     K = base_ring(parent(A[1]))
     if length(support) == 0 #kown to be units
@@ -596,6 +597,9 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     u = Hecke._transform(u, transpose(T))
   end
 
+  local G::FinGenAbGroup
+  local g::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}
+  local o::ZZRingElem
   if task == :all
     Ut, _, o = syzygies_tor(u)
 
@@ -690,9 +694,6 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     c .*= _c[1,2]
     push!(c, _c[1,1])
     return G(c)
-  end
-  function pr(a::AbsSimpleNumFieldElem)
-    return pr(FacElem(a))
   end
 
   return G, map_from_func(G, parent(u[1]), im, pr)

@@ -1054,100 +1054,108 @@ function _order_1_unit(a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
   return p^k
 end
 
-function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalField}
-  gens = one_unit_group_gens(K)
+function _one_unit_group_torsion_free(K, gens::Vector)
+  o = map(_order_1_unit, gens)
+  G = abelian_group([minimum(o) for x = gens])
+  from_G = function (g::FinGenAbGroupElem)
+    return prod(gens[i]^g[i] for i=1:length(gens))
+  end
+  to_G = function (a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
+    @assert parent(a) == K
+    s, e = solve_1_units(gens, a)
+    @assert e == 1
+    return G(s)
+  end
+  return G, map_from_func(G, K, from_G, to_G)
+end
 
-  if length(gens) == absolute_degree(K)
-    o = map(_order_1_unit, gens)
-    G = abelian_group([minimum(o) for x = gens])
-    from_G = function (g::FinGenAbGroupElem)
-      return prod(gens[i]^g[i] for i=1:length(gens))
-    end
-    to_G = function (a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
-      @assert parent(a) == K
-      s, e = solve_1_units(gens, a)
-      @assert e == 1
-      return G(s)
-    end
-  else
-    @assert length(gens) == absolute_degree(K)+1
+function _one_unit_group_with_torsion(K, gens::Vector)
+  rel, po = solve_1_units(gens[1:end-1], gens[end])
+  push!(rel, -po)
+  h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
+  #= Lorenz, Algebra II, Satz 8:
+    r = ceil(Int, e/p-1)
+    then 1+P^r < one-unit-group is torsion free
+    so order of torsion <= p^r
+    The order is a power of p by stack overflow:
+    (1+x)^z = 1, z = p^a v, uv = 1 =>
+    (1+x)^z = 1 = (1+x)^zv = (1+x)^p^a
+  =#
+  p = prime(K)
+  max_tor = p^ceil(Int, absolute_ramification_index(K)//(p-1))
+  while h[1,1] > max_tor
+    #=
+    Eisenstein extension with defining polynomial x^2 + (2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + 2^20 + 2^21 + 2^22 + 2^23 + 2^24 + 2^25 + 2^26 + 2^27 + 2^28 + 2^29 + 2^30 + 2^31 + O(2^32))*x + 2^1 + O(2^32) over Unramified extension of 2-adic numbers of degree 1
+
+    gens[1]^4 == gens[2]^4, hence gens[3] is independent.
+    solve_1_units -> rework as rels_1_units
+    completion of x^2+1 at 2
+    =#
+    # @show :permuting, h[1,1]
+    i = rand(1:length(gens)-1)
+    gens[end], gens[i] = gens[i], gens[end]
     rel, po = solve_1_units(gens[1:end-1], gens[end])
     push!(rel, -po)
     h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
-    #= Lorenz, Algebra II, Satz 8:
-      r = ceil(Int, e/p-1)
-      then 1+P^r < one-unit-group is torsion free
-      so order of torsion <= p^r
-      The order is a power of p by stack overflow:
-      (1+x)^z = 1, z = p^a v, uv = 1 =>
-      (1+x)^z = 1 = (1+x)^zv = (1+x)^p^a
-    =#
-    p = prime(K)
-    max_tor = p^ceil(Int, absolute_ramification_index(K)//(p-1))
-    while h[1,1] > max_tor
-      #=
-      Eisenstein extension with defining polynomial x^2 + (2^1 + 2^2 + 2^3 + 2^4 + 2^5 + 2^6 + 2^7 + 2^8 + 2^9 + 2^10 + 2^11 + 2^12 + 2^13 + 2^14 + 2^15 + 2^16 + 2^17 + 2^18 + 2^19 + 2^20 + 2^21 + 2^22 + 2^23 + 2^24 + 2^25 + 2^26 + 2^27 + 2^28 + 2^29 + 2^30 + 2^31 + O(2^32))*x + 2^1 + O(2^32) over Unramified extension of 2-adic numbers of degree 1
+  end
 
-      gens[1]^4 == gens[2]^4, hence gens[3] is independent.
-      solve_1_units -> rework as rels_1_units
-      completion of x^2+1 at 2
-      =#
-      # @show :permuting, h[1,1]
-      i = rand(1:length(gens)-1)
-      gens[end], gens[i] = gens[i], gens[end]
-      rel, po = solve_1_units(gens[1:end-1], gens[end])
-      push!(rel, -po)
-      h, t = hnf_with_transform(matrix(ZZ, length(gens), 1, rel))
+
+  #h[1,1] is the torsion part - it should be a power of p
+  #t (and/or the inverse) should give the basis of the free bit
+  ti = inv(t)
+  #1st col should be the torsion generator, the others the free bit
+  bas = [prod(gens[i]^ti[i,j] for i=1:length(gens)) for j=1:length(gens)]
+  #bas[1] is torsion
+  #torsion kan only happen in small precision k*e < e/(p-1) I think
+  e = absolute_ramification_index(K)
+  local pr::Int = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
+  if pr < 2 && prime(K) == 2
+    pr = 2 #to see different signs
+  end
+
+  tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
+  while length(tor) < h[1,1]
+    push!(tor, setprecision(tor[end]*tor[2], pr))
+  end
+
+  ord = map(_order_1_unit, bas[2:end])
+  ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
+  G = abelian_group(ord)
+  from_G = function (g::FinGenAbGroupElem)
+    return prod(bas[i]^g[i] for i=1:length(gens))
+  end
+  to_G = function (a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
+    s, pw = solve_1_units(bas[2:end], a)
+    s = [divexact(x, pw) for x = s]
+    y = prod(bas[i+1]^s[i] for i=1:length(s)) * inv(a)
+    y = setprecision(y, pr)
+    z = findfirst(isequal(y), tor)
+    @assert z !== nothing
+    if pw != 1
+      b = a*bas[1]^(z-1)
+      s, pw = solve_1_units(bas[2:end], b)
+      @assert pw == 1
     end
-
-
-    #h[1,1] is the torsion part - it should be a power of p
-    #t (and/or the inverse) should give the basis of the free bit
-    ti = inv(t)
-    #1st col should be the torsion generator, the others the free bit
-    bas = [prod(gens[i]^ti[i,j] for i=1:length(gens)) for j=1:length(gens)]
-    #bas[1] is torsion
-    #torsion kan only happen in small precision k*e < e/(p-1) I think
-    e = absolute_ramification_index(K)
-    pr = e*ceil(Int, ZZRingElem(e)//(prime(K)-1))
-    if pr < 2 && prime(K) == 2
-      pr = 2 #to see different signs
-    end
-
-    tor = [setprecision(one(K), pr), setprecision(bas[1], pr)]
-    while length(tor) < h[1,1]
-      push!(tor, setprecision(tor[end]*tor[2], pr))
-    end
-
-    ord = map(_order_1_unit, bas[2:end])
-    ord = vcat(h[1,1], [minimum(ord) for x = bas[2:end]])
-    G = abelian_group(ord)
-    from_G = function (g::FinGenAbGroupElem)
-      return prod(bas[i]^g[i] for i=1:length(gens))
-    end
-    to_G = function (a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
-      s, p = solve_1_units(bas[2:end], a)
-      s = [divexact(x, p) for x = s]
-      y = prod(bas[i+1]^s[i] for i=1:length(s)) * inv(a)
-      y = setprecision(y, pr)
-      z = findfirst(isequal(y), tor)
-      @assert z !== nothing
-      if p != 1
-        b = a*bas[1]^(z-1)
-        s, p = solve_1_units(bas[2:end], b)
-        @assert p == 1
-      end
-      ex = vcat([-z+1], s)
-      x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
+    ex = vcat([-z+1], s)
+    x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
 #      if !(isone(x) || iszero(x-1) || e*valuation(x-1) >= precision(a))
 #        @show valuation(x-1), e, precision(a)
 #        global last_one_unit = (K, a, bas)
 #      end
-      @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
-      return G(ex)
-    end
+    @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
+    return G(ex)
   end
   return G, map_from_func(G, K, from_G, to_G)
+end
+
+function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalField}
+  gens = one_unit_group_gens(K)
+
+  if length(gens) == absolute_degree(K)
+    return _one_unit_group_torsion_free(K, gens)
+  end
+  @assert length(gens) == absolute_degree(K)+1
+  return _one_unit_group_with_torsion(K, gens)
 end
 
 function teichmuller(a::LocalFieldElem)
