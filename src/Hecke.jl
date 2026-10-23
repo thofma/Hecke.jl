@@ -732,6 +732,54 @@ base_field_type(T::DataType) = throw(MethodError(base_field_type, (T,)))
 
 ################################################################################
 #
+#  Caches
+#
+################################################################################
+
+const _cache_clearers = Any[]
+
+@doc raw"""
+    register_cache_clearer(clear)
+
+Register `clear` to be called without arguments by `clear_cache`.
+
+Other packages must register in their `__init__`: changes to Hecke's registry
+made while another package precompiles are not saved.
+"""
+function register_cache_clearer(clear)
+  push!(_cache_clearers, clear)
+  return clear
+end
+
+@doc raw"""
+    register_cache(cache::Union{AbstractDict, AbstractArray})
+
+Register `cache` to be emptied with `empty!` by `clear_cache`. Returns `cache`,
+so a cache can be registered where it is defined:
+
+    const _my_cache = register_cache(Dict{Int, ZZRingElem}())
+
+The caveat on `__init__` of `register_cache_clearer` applies.
+"""
+function register_cache(cache::Union{AbstractDict, AbstractArray})
+  register_cache_clearer(() -> empty!(cache))
+  return cache
+end
+
+@doc raw"""
+    clear_cache()
+
+Empty all caches registered with `register_cache` or `register_cache_clearer`.
+"""
+function clear_cache()
+  for clear in _cache_clearers
+    clear()
+  end
+  return nothing
+end
+
+################################################################################
+#
 #  "Submodules"
 #
 ################################################################################
@@ -859,7 +907,7 @@ include("Deprecations.jl")
 #
 ################################################################################
 
-_trace_cache = Dict()
+_trace_cache = register_cache(Dict())
 
 function _trace_call(;cache = _trace_cache, depth = 5, print = false)
   s = Base.stacktrace()[3:3 + depth - 1]
@@ -1008,41 +1056,6 @@ function find_cache(M::Module)
     end
   end
   return sym
-end
-
-const protect = [
-  # We need to protect protect itself :)
-  # Otherwise it might emptied and then everything
-  # is emptied.
-  (Hecke, :protect),
-
-  (Hecke, :ASSERT_LOOKUP),
-  (Hecke, :VERBOSE_LOOKUP),
-  (Hecke, :ASSERT_SCOPE),
-  (Hecke, :VERBOSE_SCOPE),
-  (Hecke, :_euler_phi_inverse_maximum),
-  (Hecke, :odlyzko_bound_grh),
-  (Hecke, :nC), (Hecke, :B1), #part of ECM
-  (Hecke, :VERBOSE_PRINT_INDENT),
-  (Hecke, :_RealRings),
-]
-
-function clear_cache(sym::Vector{Any})
-  for f in sym
-    if f[1] in protect
-      continue
-    end
-    try
-      empty!(f[2])
-    catch e
-    end
-  end
-end
-
-function clear_cache()
-  clear_cache(find_cache(Nemo))
-  clear_cache(find_cache(Nemo.Generic))
-  clear_cache(find_cache(Hecke))
 end
 
 precompile(maximal_order, (AbsSimpleNumField, ))
