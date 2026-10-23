@@ -44,6 +44,8 @@ end
   I2 = I^2
   a = Hecke.principal_generator(I2)
   @test I2 == ideal(O, a)
+  b = Hecke._principal_generator_fac_elem(I2)
+  @test I2 == ideal(O, O(evaluate(b)))
 
 end
 
