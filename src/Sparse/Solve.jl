@@ -7,6 +7,7 @@ function _can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzMod
   # supposed to be over a field...
 
   sol = sparse_row(base_ring(g))
+  g = deepcopy(g)
 
   while length(g)>0
     s = g.pos[1]
@@ -18,13 +19,12 @@ function _can_solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, zzMod
       break
     end
     @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
-    p = divexact(g.values[1], A.rows[j].values[1])
+    # Keep the solution coefficient independent of the mutable working row.
+    p = deepcopy(divexact(g.values[1], A.rows[j].values[1]))
     push!(sol.pos, j)
     push!(sol.values, p)
-    _g = Hecke.add_scaled_row(A[j], g, -p)
-    @assert _g != g
-    g = _g
-    @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
+    g = Hecke.add_scaled_row!(A[j], g, -p)
+    @assert length(g) == 0 || g.pos[1] > s
   end
   if length(g) == 0
     return true, sol

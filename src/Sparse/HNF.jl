@@ -36,8 +36,9 @@ function _reduce_field(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T}
     end
     @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
     @hassert :HNF 2  (A.rows[j].values[1]) == 1
-    p = g.values[1]
-    g = Hecke.add_scaled_row(A[j], g, -p)
+    # Own the scalar too: negation may return its input in characteristic two.
+    p = deepcopy(-g.values[1])
+    g = Hecke.add_scaled_row!(A[j], g, p)
     @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
   end
   if length(g) > 0
