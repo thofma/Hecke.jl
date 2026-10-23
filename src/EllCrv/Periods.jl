@@ -147,7 +147,6 @@ function faltings_height(E::EllipticCurve{QQFieldElem}, prec::Int = 100)
     end
   attempt+=attempt
   end
-  return result
 end
 
 @doc raw"""

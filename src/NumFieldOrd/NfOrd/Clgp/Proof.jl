@@ -487,7 +487,7 @@ function _is_definitely_saturated(C::VerifyContext, p; strategy = :schirokauer)
   end
   if C.is_normal
     fl = try
-        fl, _ =  _schirokauer_map_data_minkowski_unit(C.K, C.u, p, C.auts; new = true)
+        fl, _ =  _schirokauer_map_data_minkowski_unit(C.K, C.u, p, C.auts)
         fl
       catch e
         if !(e isa ErrorException && (e.msg == "Problem in the FLINT-Subsystem" || e.msg == "Impossible inverse in invmod"))
