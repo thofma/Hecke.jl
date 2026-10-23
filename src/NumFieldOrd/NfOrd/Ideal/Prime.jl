@@ -465,6 +465,38 @@ function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: In
 end
 
 @doc raw"""
+    _number_of_degree_one_primes(O::AbsSimpleNumFieldOrder, p::IntegerUnion) -> Int
+
+Return the number of distinct prime ideals of inertia degree one above the
+prime `p`, without weighting by ramification indices. The maximality
+requirements at exceptional primes are those of `prime_decomposition_type`.
+"""
+function _number_of_degree_one_primes(O::AbsSimpleNumFieldOrder,
+                                      p::IntegerUnion)::Int
+  # For an unramified prime not dividing the index of the monic integral defining
+  # polynomial, Dedekind's factorization theorem identifies these primes with its
+  # linear factors modulo `p`. The polynomial `x^p - x` is the product of the
+  # distinct monic linear polynomials over the prime field, so the degree of its
+  # gcd with the reduced defining polynomial gives the count. Exceptional primes
+  # use `prime_decomposition_type`.
+  if typeof(p) != Int && fits(Int, p)
+    return _number_of_degree_one_primes(O, Int(p))
+  end
+  if typeof(p) != ZZRingElem && typeof(p) != Int
+    return _number_of_degree_one_primes(O, ZZRingElem(p))
+  end
+  if is_defining_polynomial_nice(nf(O)) &&
+      !iszero(mod(discriminant(O), p)) && !iszero(mod(ZZRingElem(index(O)), p))
+    f = defining_polynomial(nf(O))
+    Zf = numerator(f, Globals.Zx)
+    fmodp = change_base_ring(Native.GF(p, cached = false), Zf; cached = false)
+    x = gen(parent(fmodp))
+    return degree(gcd(fmodp, powermod(x, p, fmodp) - x))
+  end
+  return count(t -> isone(t[1]), prime_decomposition_type(O, p))
+end
+
+@doc raw"""
     prime_ideals_up_to(O::AbsSimpleNumFieldOrder,
                        B::Int;
                        degree_limit::Int = 0, index_divisors::Bool = true) -> Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}

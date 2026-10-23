@@ -60,6 +60,79 @@
     end
   end
 
+  # Compare bounded zeta terms with full splitting at strict prime-power cutoffs.
+  @testset "Degree-one zeta terms" begin
+    function full_splitting_term(O, B, R)
+      X = B + mod(-B, 9)
+      X9 = div(X, 9)
+      aa = log(R(X))*sqrt(R(X))
+      aa9 = log(R(X9))*sqrt(R(X9))
+      summ = R(0)
+      p = 2
+      while p < X
+        types = prime_decomposition_type(O, p)
+        for (bound, factor, sign) in ((X, aa, -1), (X9, aa9, 1))
+          p < bound || continue
+          power = ZZ(p)
+          m = 1
+          while power < bound
+            term = Hecke._comp_summand(R, p, m, factor)
+            summ = sign == -1 ? summ - term : summ + term
+            power *= p
+            m += 1
+          end
+          for (f, _) in types
+            q = ZZ(p)^f
+            power = q
+            m = 1
+            while power < bound
+              term = Hecke._comp_summand(R, q, m, factor)
+              summ = sign == -1 ? summ + term : summ - term
+              power *= q
+              m += 1
+            end
+          end
+        end
+        p = next_prime(p)
+      end
+      scale = sqrt(R(X))*2
+      scale = scale*log(R(3*X))
+      scale = inv(scale)
+      scale = scale*3
+      return scale*summ
+    end
+
+    polynomials = (x^2 + 1, x^3 - x^2 - 2*x - 8,
+                   2*x^2 + 1, x^4 + x + 2)
+    for f in polynomials
+      K, _ = number_field(f; cached = false)
+      O = maximal_order(K)
+      for prec in (64, 128), B in (9, 10, 27, 28, 45, 46, 81, 82, 225, 226)
+        R = ArbField(prec; cached = false)
+        expected = full_splitting_term(O, B, R)
+        before = (deepcopy(defining_polynomial(K)), basis(O),
+                  basis_matrix(O), deepcopy(discriminant(O)))
+        actual = Hecke._term_bf(O, B, R)
+        @test isequal(actual, expected)
+        @test Hecke.radiuslttwopower(actual, 30 - prec)
+        add!(actual, actual, 1)
+        @test isequal(Hecke._term_bf(O, B, R), expected)
+        @test (defining_polynomial(K), basis(O), basis_matrix(O),
+               discriminant(O)) == before
+      end
+    end
+
+    K, _ = quadratic_field(-1; cached = false)
+    O = maximal_order(K)
+    R = ArbField(128; cached = false)
+    expected = log(const_pi(R)/4)
+    for error in (0.2, 0.1)
+      actual = zeta_log_residue(O, error)
+      @test radius(actual) < error
+      @test contains(actual, expected)
+    end
+  end
+
   @testset "Factored ideal preimages" begin
     K, a = quadratic_field(-23; cached = false)
     O = maximal_order(K)
