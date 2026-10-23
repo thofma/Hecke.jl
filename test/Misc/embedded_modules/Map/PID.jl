@@ -1,3 +1,4 @@
+# Matrix maps respect the chosen module bases and ambient coordinates.
 @testset "internal PID maps from coordinate matrices" begin
   E = Hecke.EmbeddedModules
   F, t = rational_function_field(GF(7), "t")
@@ -13,6 +14,11 @@
     @test domain(f) === M && codomain(f) === P
     x = 3*B[1] - 2*B[2]
     @test (@inferred f(x)) == 3*s*D[1] + (3 - 2*s)*D[2] - 2*D[3]
+    Q = K[6 6 0; 0 0 6; 0 0 0; 0 0 0]
+    g = @inferred Hecke._hom_from_ambient_matrix(M, P, Q)
+    @test Hecke.ambient_coordinates(g(x)) == Hecke.ambient_coordinates(x)*Q
+    @test_throws ArgumentError Hecke._hom_from_ambient_matrix(
+      M, P, zero_matrix(K, 2, 3))
     @test (@inferred preimage(f, f(x))) == x
     @test is_injective(f) && !is_surjective(f)
     @test iszero(rank(kernel(f)))

@@ -6,6 +6,8 @@ import Base: *, +, ==, intersect, issubset, parent
 import LinearAlgebra: rank
 
 import ..Hecke:
+  @attr,
+  @attributes,
   @req,
   AbsNumFieldOrder,
   FieldElement,
@@ -41,6 +43,7 @@ import ..Hecke:
   elem_type,
   fraction_field_map,
   free_module,
+  get_attribute!,
   hom,
   ideal,
   image,
@@ -55,6 +58,7 @@ import ..Hecke:
   is_zero_row,
   kernel,
   matrix,
+  mod,
   mul!,
   ncols,
   nrows,
@@ -138,10 +142,12 @@ import .EmbeddedModules:
   _element_from_coordinates_and_ambient_coordinates,
   _embedded_module_type,
   _in,
+  _hom_from_ambient_matrix,
   _map_to_ambient,
   _pseudo_element,
   _ring_type,
   _tmp_mat_overring,
+  addition_map,
   ambient_coordinates,
   ambient_rank,
   basis_matrix,

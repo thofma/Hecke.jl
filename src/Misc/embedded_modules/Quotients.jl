@@ -1,3 +1,97 @@
+@attr IdDict{EmbeddedModule, Any} function _mod_cache(N::EmbeddedModule)
+  return IdDict{EmbeddedModule, Any}()
+end
+
+_mod_matrix_type(::EmbeddedModule{_PID, R, K}) where {R, K} =
+  dense_matrix_type(R)
+_mod_matrix_type(::EmbeddedModule{_DD, R, K}) where {R, K} =
+  Hecke.pseudo_matrix_type(R, K)
+
+function _mod_pivots(H::MatElem)
+  return Int[something(findlast(j -> !iszero(H[i, j]), 1:ncols(H)), 0)
+             for i in 1:nrows(H)]
+end
+
+_mod_pivots(H::PMat) = _mod_pivots(matrix(H))
+
+function _mod_matrix(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PID})
+  fl, T = _in(basis_matrix(N), M, Val(true))
+  @req fl "Not a submodule"
+  iszero(nrows(T)) && return T
+  return _hnf(T; shape = :lowerleft, trim = true)
+end
+
+function _mod_matrix(M::EmbeddedModule{_DD}, N::EmbeddedModule{_DD})
+  @req Hecke.is_maximal(ring(M)) "The coefficient ring must be a maximal order"
+  @req issubset(N, M) "Not a submodule"
+  A, B = basis_matrix(M), basis_matrix(N)
+  if iszero(nrows(B))
+    T = zero_matrix(overring(M), 0, nrows(A))
+  else
+    fl, T = can_solve_with_solution(matrix(A), matrix(B); side = :left)
+    @assert fl
+  end
+  P = Hecke.pseudo_matrix(ring(M), T, Hecke.coefficient_ideals(B))
+  iszero(nrows(P)) && return P
+  return Hecke.pseudo_hnf(P, :lowerleft)
+end
+
+function _mod_data(M::EmbeddedModule, N::EmbeddedModule)
+  _check_compatible(M, N)
+  # Parent identity matters: the normal form uses the chosen basis of M.
+  data = get!(_mod_cache(N), M) do
+    H = _mod_matrix(M, N)
+    return H, _mod_pivots(H)
+  end
+  return data::Tuple{_mod_matrix_type(M), Vector{Int}}
+end
+
+function _reduce_mod!(c::Vector, H::MatElem, pivots::Vector{Int})
+  for i in nrows(H):-1:1
+    p = pivots[i]
+    iszero(p) && continue
+    r = mod(c[p], H[i, p])
+    q = divexact(c[p] - r, H[i, p])
+    for j in 1:p
+      c[j] = c[j] - q*H[i, j]
+    end
+  end
+  return c
+end
+
+function _reduce_mod!(c::Vector, H::PMat, pivots::Vector{Int})
+  # Use the coefficient-ideal pivot sweep from Hecke._fp_module_reduce!.
+  A = matrix(H)
+  ideals = Hecke.coefficient_ideals(H)
+  for i in nrows(A):-1:1
+    p = pivots[i]
+    iszero(p) && continue
+    a = divexact(c[p], A[i, p])
+    d = a - mod(a, ideals[i])
+    for j in 1:p
+      c[j] = c[j] - d*A[i, j]
+    end
+  end
+  return c
+end
+
+@doc raw"""
+    mod(x::EmbeddedModuleElem, N::EmbeddedModule)
+
+Return a representative of `x + N` in `parent(x)`. Require compatible modules
+with `N` contained in `parent(x)`. Reduce the coordinates by lower-left HNF
+over a PID, or pseudo-HNF over a supported maximal order, using the scalar
+`mod` conventions at each pivot. The normal form is relative to the chosen
+basis or pseudo-basis of `parent(x)`; it also supports smaller-rank submodules.
+Neither `x` nor the module representations are modified.
+"""
+function mod(x::EmbeddedModuleElem, N::EmbeddedModule)
+  M = parent(x)
+  H, pivots = _mod_data(M, N)
+  c = _reduce_mod!(coordinates(x), H, pivots)
+  return _element_from_coordinates(M, c; check = false)
+end
+
 function quo(M::EmbeddedModule{_PID}, N::EmbeddedModule{_PID})
   _check_compatible(M, N)
   fl, T = _in(basis_matrix(N), M, Val(true))

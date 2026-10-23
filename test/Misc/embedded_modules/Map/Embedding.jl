@@ -1,3 +1,4 @@
+# Inclusions preserve elements and expose matrices in module coordinates.
 @testset "inclusion maps" begin
   inclusion_map = Hecke.EmbeddedModules.inclusion_map
   ambient = nothing
@@ -12,6 +13,7 @@
   @test codomain(f) === M
   @test parent(y) === M
   @test coordinates(y) == ZZRingElem[12, 0]
+  @test coordinates(x)*matrix(Hecke.EmbeddedModules.data(f)) == coordinates(y)
   @test Hecke.ambient_coordinates(y) == Hecke.ambient_coordinates(x)
   @test Hecke.ambient_coordinates(y) !== Hecke.ambient_coordinates(x)
   z = (@inferred preimage(f, y))

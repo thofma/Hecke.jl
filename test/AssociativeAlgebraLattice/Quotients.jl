@@ -1,4 +1,45 @@
+# Lattice quotients and remainders delegate to embedded module operations.
 @testset "Associative algebra lattice quotients" begin
+  @testset "Normal-form remainders" begin
+    F, t = rational_function_field(GF(7), "t")
+    K, a = quadratic_field(-5)
+    R = maximal_order(K)
+    I = fractional_ideal(R, ideal(R, 2, R(1 + a)))
+    for (R, K, p) in ((ZZ, QQ, QQ(3)),
+                      (parent(numerator(t)), F, t),
+                      (localization(F, degree), F, inv(t)), (R, K, K(2)))
+      A = matrix_algebra(K, 2)
+      B = basis(A)
+      L = Hecke.lattice(A, R, [inv(p)*B[1], p*B[2]])
+      x = L(K(-1)*inv(p)*B[1] + (p + 1)*p*B[2])
+      Z = Hecke.zero_lattice(A, R)
+      for N in (Hecke.lattice(A, R, [B[1]]), p*L, Z, L)
+        y = mod(x, N)
+        @test parent(y) === L
+        @test x - y in N
+        @test mod(y, N) == y
+        @test coordinates(y) ==
+              coordinates(mod(Hecke.elem_in_module(x),
+                              Hecke.underlying_module(N)))
+      end
+      @test mod(x, Z) == x
+      @test iszero(mod(x, L))
+      @test iszero(mod(zero(Z), Z))
+      @test_throws ArgumentError mod(x, inv(p)*L)
+      @test_throws ArgumentError mod(x, Hecke.lattice(A, R, [B[3]]))
+      AA = matrix_algebra(K, 2)
+      @test_throws ArgumentError mod(x, Hecke.lattice(AA, R, basis(AA)))
+
+      if R isa Hecke.AbsNumFieldOrder
+        N = Hecke.lattice(A, R, [Hecke._pseudo_element(B[1], I)])
+        y = mod(x, N)
+        z = L(K(first(basis(I)))*B[1])
+        @test mod(x + z, N) == y
+        @test x - y in N
+      end
+    end
+  end
+
   @testset "Residue vector spaces over PIDs" begin
     Kfun, t = rational_function_field(GF(3), "t")
     Rpoly = parent(numerator(t))
