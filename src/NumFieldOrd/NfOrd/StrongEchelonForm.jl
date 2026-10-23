@@ -177,15 +177,15 @@ end
 
 function make_small(Q::EuclideanRingResidueRing{ZZRingElem})
   R = residue_ring(ZZ, Int(modulus(Q)), cached = false)[1]
-  f = (x -> R(x.data)::zzModRingElem)
-  g = (x -> Q(x.data)::EuclideanRingResidueRingElem{ZZRingElem})
+  f = (x -> R(data(x))::zzModRingElem)
+  g = (x -> Q(data(x))::EuclideanRingResidueRingElem{ZZRingElem})
   return R, f, g
 end
 
 function make_small(Q::Nemo.ZZModRing)
   R = residue_ring(ZZ, Int(modulus(Q)), cached = false)[1]
   f = (x -> R(data(x))::zzModRingElem)
-  g = (x -> Q(x.data)::Nemo.ZZModRingElem)
+  g = (x -> Q(data(x))::Nemo.ZZModRingElem)
   return R, f, g
 end
 
@@ -378,7 +378,7 @@ function _strong_echelon_form_nonsplit!(M)
       forflint = zero_matrix(ZZ, n, m)
       for i in 1:n
         for j in 1:m
-          forflint[i, j] = f(M[i, j]).data
+          forflint[i, j] = data(f(M[i, j]))
         end
       end
       ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}), forflint, modulus(RmodIZ))
@@ -433,7 +433,7 @@ function _strong_echelon_form_nonsplit(M)
       forflint = zero_matrix(ZZ, n, m)
       for i in 1:n
         for j in 1:m
-          forflint[i, j] = f(M[i, j]).data
+          forflint[i, j] = data(f(M[i, j]))
         end
       end
       ccall((:fmpz_mat_strong_echelon_form_mod, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZRingElem}), forflint, modulus(RmodIZ))
