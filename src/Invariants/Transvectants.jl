@@ -45,13 +45,12 @@ function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, r::Int, s::Int, 
   R = parent(f)
   x, y, z, w = gens(R)
 
-  if f*g == 0
-    return R(0) 
+  if iszero(f) || iszero(g)
+    return R(0)
   end
 
-  R0, (X,Y) = polynomial_ring(R, 2)
   #Might need to check for homogeneous in weighted projective space
-  @req is_homogeneous(f(x, y, X, Y)) && is_homogeneous(f(X, Y, z, w)) && is_homogeneous(g(x, y, X, Y)) && is_homogeneous(g(X, Y, z, w)) "f and g must be bihomogeneous"
+  @req _is_bihomogeneous(f) && _is_bihomogeneous(g) "f and g must be bihomogeneous"
 
   Sf = [[derivative(derivative(derivative(derivative(f, x, j), y, r-j), z, i), w, s-i) for j in (0:r)] for i in (0:s)]
   Sg = [[derivative(derivative(derivative(derivative(g, x, j), y, r-j), z, i), w, s-i) for j in (0:r)] for i in (0:s)]
@@ -68,6 +67,13 @@ function transvectant(f::MPolyRingElem{T}, g::MPolyRingElem{T}, r::Int, s::Int, 
   else
     return Tfg
   end
+end
+
+# bihomogeneous in (x, y) and (z, w)
+function _is_bihomogeneous(f::MPolyRingElem)
+  e = first(exponent_vectors(f))
+  d1, d2 = e[1] + e[2], e[3] + e[4]
+  return all(e -> e[1] + e[2] == d1 && e[3] + e[4] == d2, exponent_vectors(f))
 end
 
 function transvectant_sequence(Fs::Vector{S}, k::Int) where S <: Union{ZZMPolyRingElem, MPolyRingElem}
