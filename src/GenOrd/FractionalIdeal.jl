@@ -561,10 +561,16 @@ end
 
 function Hecke.factor(A::GenOrdFracIdl)
   O = A.order
-  N = numerator(norm(A)) * denominator(norm(A))
 
   A_num = numerator(A; copy = false)
-  A_den = ideal(O, denominator(A; copy = false))
+  d = denominator(A; copy = false)
+  A_den = ideal(O, d)
+
+  # Collect the primes from the numerator and the denominator separately:
+  #   in norm(A) = norm(A_num) / d^n, primes lying over the same prime of the
+  #   base ring can cancel (e.g. A = P1 * P2^(-1) with P1, P2 over the same p
+  #   has norm 1), and would then be missed.
+  N = norm(A_num) * d
 
   factors = factor(N)
   primes = Dict{GenOrdIdl,Int}()
