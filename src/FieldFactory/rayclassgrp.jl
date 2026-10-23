@@ -502,10 +502,8 @@ function ray_class_group_quo(O::AbsSimpleNumFieldOrder, y::Dict{AbsNumFieldOrder
     end
   end
   I = ideal(O,1)
-  for (q, vq) in y1
-    I *= q
-  end
-  for (q, vq) in y2
+  # Use the largest exponent at each prime, as in the local unit groups.
+  for (q, vq) in mergewith(max, y1, y2)
     I *= q^vq
   end
   return ray_class_group_quo(I, y1, y2, inf_plc, ctx, GRH = GRH, check = check)
