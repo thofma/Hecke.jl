@@ -242,7 +242,19 @@ Base.:(//)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T} =
 
 function Base.inv(a::RelSimpleNumFieldElem)
   a == 0 && error("Element not invertible")
-  g, s, _ = gcdx(data(a), parent(a).pol)
+  K = parent(a)
+  f = K.pol
+  if degree(f) == 2
+    # with f = r*x^2 + p*x + q and a = a0 + a1*x:
+    # a * (r*a0 - p*a1 - r*a1*x) = r*a0^2 - p*a0*a1 + q*a1^2
+    r, p, q = coeff(f, 2), coeff(f, 1), coeff(f, 0)
+    a0, a1 = coeff(a, 0), coeff(a, 1)
+    c0 = r*a0 - p*a1
+    c1 = -r*a1
+    n = inv(a0*c0 + q*a1^2)
+    return K(parent(f)([c0*n, c1*n]))
+  end
+  g, s, _ = gcdx(data(a), f)
   @assert g == 1
   return parent(a)(s)
 end
