@@ -115,8 +115,7 @@ function h2_is_iso(K::Hecke.LocalField)
   p = prime(K)
   e = absolute_ramification_index(K)
   k, mk = residue_field(K)
-  pi = uniformizer(K)
-  pi = setprecision(pi, 2*e)
+  pi = setprecision(uniformizer(K), 2*e)
   eps = setprecision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
@@ -151,10 +150,9 @@ function _unit_group_gens_case2(K::Union{QadicField, Hecke.LocalField})
   e_0 = divexact(e, (p-1)*p^(mu_0-1))
 
   kt, t = polynomial_ring(k, "t", cached = false)
-  pi = uniformizer(K)
   #we need p/pi^e, the unit, with enough precision,
   #precision(eps) = k -> p, pi needs 2k
-  pi = setprecision(pi, precision(K)+2*e)
+  pi = setprecision(uniformizer(K), precision(K)+2*e)
   eps = setprecision(K, precision(K)+e) do
     -inv(divexact(pi^e, p))
   end
@@ -165,8 +163,7 @@ function _unit_group_gens_case2(K::Union{QadicField, Hecke.LocalField})
   #the roots should form an additive (cyclic) group, we need a generator.
   #well 0 is missing, but the original poly was t^p-eps*t
   #thus any non-zero root should do
-  r = rts[1]
-  r = root(r, p^mu_0)
+  r = root(rts[1], p^mu_0)
   #now we need s.th. such that t^p-eps*t = x is irred:
   #degree is prime, char p and Artin-Schreier poly, thus
   #irred == no roots
@@ -298,9 +295,10 @@ function solve_1_units(a::Vector{T}, b::T) where T
       lvl = l # `l` is reassigned below and must not be captured
       @assert all(x->isone(x) || e*valuation(x-one) >= lvl, cur_a)
 
-      A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
-      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a]; check = false)
-      lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
+      pil = pi^l
+      A = abelian_group([p^max(0, ceil(Int, (lvl-v)//e)) for v = val_offset])
+      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pil))]) for y = cur_a]; check = false)
+      lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pil))])
       fl, s = has_preimage_with_preimage(h, lhs)
       _k, _mk = kernel(h)
       #if kernel has HNF, the next step is cheaper...
@@ -332,7 +330,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #    @show [e*valuation(x-1) for x = cur_a]
 
 
-      pa = prod(a_prec[i]^expo[i] for i=1:length(a_prec))
+      pa = prod(a_prec .^ expo[1, :])
       cur_b = divexact(b_prec^pow_b, pa)
       if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
         break
@@ -347,7 +345,7 @@ function solve_1_units(a::Vector{T}, b::T) where T
       l *= 2
       l = min(l, k)
     end
-    return [expo[1, i] for i=1:length(cur_a)], pow_b
+    return expo[1, 1:length(cur_a)], pow_b
   end
 end
 
@@ -799,9 +797,8 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   e = divexact(absolute_ramification_index(L), absolute_ramification_index(K))
   d = divexact(absolute_inertia_degree(L), absolute_inertia_degree(K))
   E = unramified_extension(L, e)[1]
-  G = automorphism_list(L, absolute_base_field(L))
   gK = map(mKL, gens(K, absolute_base_field(K)))
-  G = [g for g = G if map(g, gK) == gK]
+  G = [g for g = automorphism_list(L, absolute_base_field(L)) if map(g, gK) == gK]
   @assert Base.length(G) == absolute_degree(L)/absolute_degree(K)
 
   u = mKL(setprecision(uniformizer(K), precision(K)+10))//setprecision(uniformizer(L)^e, precision(L)+10)
@@ -966,9 +963,6 @@ k = splitting_field(x^3-2)
 l2 = prime_decomposition(maximal_order(k), 2)
 k2 = Hecke.generic_completion(k, l2[1][1])  #S(3)(6)
   =#
-
-
-  return beta, action, G_mul, mul, sigma_hat
 end
 #############################################################################
 #   The following "norm_equation_unramified" solves the norm equations only
@@ -1182,8 +1176,7 @@ function unit_group(K::T) where T <: Union{QadicField, PadicField, LocalField}
   Z = abelian_group([0])
   G, pro, inj = direct_product(Z, u, U, task = :both)
 
-  gk = preimage(mk, mu(u[1]))
-  gk = teichmuller(gk)
+  gk = teichmuller(preimage(mk, mu(u[1])))
   @assert order(u[1]) == order(u)
 
   from_G = function(g::FinGenAbGroupElem)

@@ -482,13 +482,7 @@ function genus_generators(L::HermLat)
   a = involution(L)
   def, P0, bad = smallest_neighbour_prime(L)
 
-  local bad_prod::ideal_type(base_ring(R))
-
-  if isempty(bad)
-    bad_prod = 1 * base_ring(R)
-  else
-    bad_prod = prod(bad)
-  end
+  bad_prod = isempty(bad) ? 1 * base_ring(R) : prod(bad)
 
   # First the ideals coming from the C/C0 quotient
   Eabs, EabstoE = absolute_simple_field(ambient_space(L))
@@ -543,7 +537,7 @@ function genus_generators(L::HermLat)
       _T, _ = sub(V, S)
       W, w = quo(V, _T)
       if dim(W) == 0
-        PP = ideal_type(R)[]
+        empty!(PP)
       end
     end
   end
@@ -591,7 +585,7 @@ function genus_generators(L::HermLat)
         x = x0 * u
         @assert norm(x) == 1
         if evaluate(x) == 1
-          y = w(V([zero(F) for _ in 1:length(PP)]))
+          y = w(V(zeros_array(F, length(PP))))
         else
           y = w(V([ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]))
         end
@@ -621,7 +615,7 @@ function genus_generators(L::HermLat)
       x = x0 * u
       @assert norm(x) == 1
       if evaluate(x) == 1
-        y = [zero(F) for _ in 1:length(PP)]
+        y = zeros_array(F, length(PP))
       else
         y = [ valuation(EabstoE(evaluate(x) - 1), PP[i]) >= VD[i] ? F(0) : F(1) for i in 1:length(PP)]
       end

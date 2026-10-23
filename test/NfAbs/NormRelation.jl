@@ -96,4 +96,11 @@ end
       @test N.induced[auto] === permutation
     end
   end
+
+  @testset "Non-pure norm relation" begin
+    Qx, x = QQ[:x]
+    K, = number_field(x^4 - 10x^2 + 1)
+    N = Hecke.NormRel._norm_relation_setup_generic(K; pure = false)
+    @test length(N) == 3
+  end
 end

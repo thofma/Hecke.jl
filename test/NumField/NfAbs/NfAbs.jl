@@ -196,3 +196,9 @@ end
   @test haskey(chains, objectid(L))
   @test !haskey(chains, objectid(A))
 end
+
+@testset "Discriminant bounds" begin
+  # smallest discriminants: 1609 (quintic, one real place), 28037 (sextic, two)
+  @test 0 < Hecke.lower_discriminant_bound(5, 1) <= 1609
+  @test 0 < Hecke.lower_discriminant_bound(6, 2) <= 28037
+end
