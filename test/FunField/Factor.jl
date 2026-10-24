@@ -53,4 +53,12 @@
     @test evaluate(fac) == f
     @test length(fac) == 1
   end
+
+  # swinnerton_dyer over QQ(t) has the roots sum(+-sqrt(-(t + v_i)))
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qty, y = Qt[:y]
+    @test swinnerton_dyer([5], y) == y^2 + t + 5
+    @test swinnerton_dyer([1, 2], y) == y^4 + 2*(2*t + 3)*y^2 + 1
+  end
 end
