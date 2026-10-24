@@ -449,9 +449,9 @@ function _coprime_norm_integral_ideal_class(x, y) #x::AbsSimpleNumFieldOrderFrac
   return J, res2
 end
 
-RandomExtensions.maketype(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ::Int) = AbsSimpleNumFieldOrderElem
+RandomExtensions.maketype(I::AbsNumFieldOrderIdeal{S, T}, ::Int) where {S, T} = AbsNumFieldOrderElem{S, T}
 
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldOrderElem,AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},Int}})
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:AbsNumFieldOrderElem,<:AbsNumFieldOrderIdeal,Int}})
   I, B = sp[][1:end]
   r = rand(rng, -B:B, degree(order(I)))
   b = basis(I)
@@ -462,8 +462,8 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldOrde
   return z
 end
 
-rand(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int) = rand(GLOBAL_RNG, I, B)
-rand(rng::AbstractRNG, I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, B::Int) = rand(rng, make(I, B))
+rand(I::AbsNumFieldOrderIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(rng::AbstractRNG, I::AbsNumFieldOrderIdeal, B::Int) = rand(rng, make(I, B))
 
 
 RandomExtensions.maketype(I::AbsSimpleNumFieldOrderFractionalIdeal, ::Int) = AbsSimpleNumFieldElem
