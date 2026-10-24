@@ -163,15 +163,15 @@
       R = base_ring(M)
       q, = prime_decomposition(R, 11)[1]
       one_row = pseudo_matrix(matrix(K, 1, 4, coefficients(one(A))), [1 * R])
-      PM = basis_pmatrix(M)
-      PM = pseudo_matrix(matrix(PM), [q * c for c in coefficient_ideals(PM)])
+      PM = q * basis_pmatrix(M)
       E = order(A, sub(pseudo_hnf(vcat(PM, one_row), :lowerleft), 2:5, 1:4))
       primes = [P for l in [2, 3, 11] for (P, _) in prime_decomposition(R, l)]
       for O in [M, E], p in primes, side in [:right, :left]
         valuation(Hecke._reduced_disc(O), p) == 0 || continue
         Ps = Hecke.maximal_integral_ideals(O, p; side)
         @test length(Ps) == norm(p) + 1 && allunique(Ps)
-        @test all(P -> count(==(P), old(O, p, side)) == 1, Ps)
+        old_Ps = old(O, p, side)
+        @test all(P -> count(==(P), old_Ps) == 1, Ps)
         for P in Ps
           J = ideal(A, basis_pmatrix(P))
           @test (side === :right ? right_order(J) : left_order(J)) == O

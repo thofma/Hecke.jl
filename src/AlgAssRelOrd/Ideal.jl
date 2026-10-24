@@ -1400,21 +1400,14 @@ function _maximal_integral_ideals_split_quaternion(O::AlgAssRelOrd,
                                                    p::AbsNumFieldOrderIdeal,
                                                    side::Symbol)
   A = algebra(O)
-  K = base_ring(A)
-  R = base_ring(O)
   l = Int(minimum(p))
   pm = basis_pmatrix(O)
-  bs = [A(collect(matrix(pm)[i, :])) for i in 1:4]
   cs = coefficient_ideals(pm)
   # beta O + pO, or for side = :left its conjugate O conj(beta) + pO
   function ideal_of(beta, side)
-    M = zero_matrix(K, 8, 4)
-    for i in 1:4
-      x = beta * bs[i]
-      elem_to_mat_row!(M, i, side === :right ? x : conj(x))
-      elem_to_mat_row!(M, 4 + i, bs[i])
-    end
-    N = pseudo_hnf(pseudo_matrix(M, vcat(cs, [p * c for c in cs])), :lowerleft)
+    b, action = side === :right ? (beta, :left) : (conj(beta), :right)
+    P = pseudo_matrix(matrix(pm) * representation_matrix(b, action), cs)
+    N = pseudo_hnf(vcat(P, p * pm), :lowerleft)
     I = ideal(A, O, sub(N, 5:8, 1:4); side, M_in_hnf = true)
     if side === :right
       I.right_order = O
@@ -1423,14 +1416,9 @@ function _maximal_integral_ideals_split_quaternion(O::AlgAssRelOrd,
     end
     return I
   end
-  pO = ideal(A, O, pseudo_matrix(matrix(pm), [p * c for c in cs]))
-  # e_k = y_k b_k with y_k in the coefficient ideal c_k of the same valuation
-  # at p: their classes form a basis of O/pO over R/p.
-  es = map(1:4) do k
-    v = valuation(cs[k], p)
-    y = first(x for x in absolute_basis(cs[k]) if valuation(x, p) == v)
-    return y * bs[k]
-  end
+  pO = p * O
+  B = _local_basis_submodule_matrix(pm, p)
+  es = [elem_from_mat_row(A, B, i) for i in 1:4]
   ws = _residue_class_basis(p)
   ts = (sum(a[i] * elem_in_nf(ws[i]) for i in eachindex(ws))
         for a in Iterators.product(ntuple(_ -> 0:(l - 1), length(ws))...))
@@ -1476,24 +1464,13 @@ end
 
 # Elements w_1, ..., w_f of the order R of p whose classes form a basis of
 # R/p over F_l, l the prime below p: the first elements of the basis of R
-# that are independent modulo p, found by the index of p + Z w_1 + ... in R.
+# that are independent modulo p, selected by the nonunit diagonal entries
+# of the lower left HNF basis matrix of p.
 # The sums of a_i w_i with 0 <= a_i < l then represent each class of R/p once.
 function _residue_class_basis(p::AbsNumFieldOrderIdeal)
   R = order(p)
-  n = degree(R)
-  M = basis_matrix(p)
-  index = norm(p)
-  ws = elem_type(R)[]
-  for b in basis(R)
-    isone(index) && break
-    N = sub(hnf(vcat(M, matrix(ZZ, 1, n, coordinates(b)))), 1:n, 1:n)
-    d = abs(det(N))
-    d < index || continue
-    push!(ws, b)
-    M = N
-    index = d
-  end
-  return ws
+  B = basis_matrix(p)
+  return [b for (i, b) in enumerate(basis(R)) if !isone(B[i, i])]
 end
 
 # Constructs a maximal integral ideal M of O such that M\cap R = p and I\subseteq M,
