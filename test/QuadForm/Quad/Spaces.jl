@@ -402,6 +402,19 @@
       @test iszero(inner_product(q, v, v))
     end
 
+    # dimension 5 over a totally real cubic field with signs to be fixed at
+    # several real places, and a definite space
+    Qx, x = QQ["x"]
+    K3, b = number_field(x^3 - 3*x - 1, "b", cached = false)
+    q = quadratic_space(K3, diagonal_matrix([b + 1, b^2 - 1, -b, b + 1, b^2 - 1]))
+    ok, v = is_isotropic_with_vector(q)
+    @test ok
+    @test any(!iszero, v)
+    @test iszero(inner_product(q, v, v))
+    q = quadratic_space(K3, diagonal_matrix([K3(1), b^2, b^2 + 1, K3(2), K3(3)]))
+    ok, v = is_isotropic_with_vector(q)
+    @test !ok
+
   #  too long even for a long test
   #   if long_test
   #     K,b = cyclotomic_field(16)

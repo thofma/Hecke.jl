@@ -1599,7 +1599,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           continue
         end
         if s == sign(D[4], rlp[i])
-          _a = _real_weak_approximation(_embedding(rlp[i]), _embedding(rlp[fix]))::elem_type(K)
+          _a = _real_weak_approximation(_embedding(rlp[i]), _embedding.(rlp[fix]))::elem_type(K)
           a = inv(_a)::elem_type(K)
           j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
           r = 0
