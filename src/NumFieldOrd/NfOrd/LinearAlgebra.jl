@@ -1759,15 +1759,15 @@ end
 ################################################################################
 
 # Just for debugging
-# Prints the size of the ideals/entries of a pseudo matrix
-# The first column is nbits(norm(numerator)) + nbits(denominator) of the ideal
+# Returns a table of the sizes of the ideals/entries of a pseudo matrix
+# The first column is the row index
+# The second column is nbits(norm(numerator)) + nbits(denominator) of the ideal
 # The rest of entries are nbits(max(numerator)) + nbits(denominator)
 # (The size of the entries is with respect the equation order
-function size(A::PMat)
+function _bit_sizes(A::PMat)
   K = parent(A.matrix[1, 1])
 
-  println("Size is:")
-  size = Array{String}(nrows(A), ncols(A) + 2)
+  size = Matrix{String}(undef, nrows(A), ncols(A) + 2)
   for i in 1:nrows(A)
     size[i, 1] = "$i"
     size[i, 2] = "$(nbits(norm(numerator(A.coeffs[i])))) $(nbits(denominator(A.coeffs[i])))"
@@ -1783,7 +1783,7 @@ function size(A::PMat)
       end
     end
   end
-  display(size)
+  return size
 end
 
 function is_pseudo_hnf(M, shape::Symbol = :lowerleft)

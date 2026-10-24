@@ -561,4 +561,17 @@ end
       @test startswith(read(path, String), "K, a = number_field(x^3 + 2, \"a\");\n")
     end
   end
+
+  @testset "to_magma" begin
+    # export of a class group context to Magma
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 + 5, "a")
+    c = Hecke.class_group_ctx(maximal_order(K))
+    n = length(c.R_gen) + length(c.R_rel)
+    mktemp() do path, io
+      close(io)
+      Hecke.to_magma(path, c)
+      @test occursin("MM := SparseMatrix(Integers(), $n, ", read(path, String))
+    end
+  end
 end
