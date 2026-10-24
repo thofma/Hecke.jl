@@ -284,7 +284,7 @@ mutable struct Divisors{T}
     r.f = x -> length(x) == 0 ? one(parent(r.n)) : prod(x)
     r.s = subsets(r.lf)
     if units
-      U, mU = unit_group(parent(a))
+      U, mU = unit_group(parent(r.n))
       r.U = U
       g = r.f
       r.f = x -> mU(x[1]) * g(x[2])

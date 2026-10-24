@@ -89,7 +89,7 @@ Base.IteratorSize(::Type{<:CartesianProductIt{T}}) where T = Base.HasLength()
 Base.eltype(::Type{<:CartesianProductIt{T}}) where T = Vector{eltype(T)}
 
 function Base.getindex(F::CartesianProductIt{T}, i::Int) where T
-  v = Vector{eltype{T}}(undef, length(F.ranges))
+  v = Vector{eltype(T)}(undef, length(F.ranges))
   ind = i
   for s = length(v):-1:1
     d = prod(Int[length(F.ranges[j]) for j = 1:s-1])
