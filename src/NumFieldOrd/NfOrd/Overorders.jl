@@ -1319,7 +1319,7 @@ function is_isomorphic(Q1::AbsSimpleNumFieldOrderQuoRing, Q2::AbsSimpleNumFieldO
       end
     end
     if multiplicative
-      M = Array{ZZRingElem}(degree(O1), degree(O2))
+      M = Matrix{ZZRingElem}(undef, degree(O1), degree(O2))
       for i in 1:degree(O1)
         v = coordinates(Q2_mA(h(Q1_mA_inv(Q1(basis_O1[i])))).elem)
         for j in 1:degree(O2)

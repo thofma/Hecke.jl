@@ -20,13 +20,13 @@ function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_o
 
   f = nf(O).pol
 
-  Zyf = Zy(f)
+  Zyf = change_base_ring(ZZ, f; parent = Zy)
 
-  fmodp = Kx(Zyf)
+  fmodp = change_base_ring(base_ring(Kx), Zyf; parent = Kx)
 
   fac = factor_squarefree(fmodp)
 
-  g = prod(x for x in keys(fac.fac))
+  g = prod(q for (q, _) in fac)
   h = divexact(fmodp,g)
 
   # first build 1/p ( f - g*h)
@@ -41,7 +41,7 @@ function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_o
     setcoeff!(g1,i,q)
   end
 
-  g1modp = Kx(g1)
+  g1modp = change_base_ring(base_ring(Kx), g1; parent = Kx)
   U = gcd(gcd(g, h), g1modp)
 
   if !compute_order
@@ -63,7 +63,7 @@ function dedekind_test(O::AbsSimpleNumFieldOrder, p::ZZRingElem, ::Val{compute_o
 
     @hassert :AbsNumFieldOrder 1 rem(O.disc, p^2) == 0
 
-    alpha = nf(O)(parent(f)(lift(Zy,U)))
+    alpha = nf(O)(change_base_ring(QQ, lift(Zy, U); parent = parent(f)))
 
     # build the new basis matrix
     # we have to take the representation matrix of alpha!

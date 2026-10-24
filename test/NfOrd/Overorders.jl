@@ -113,4 +113,18 @@
     N = order(A, [u * elem_in_algebra(b) * inv(u) for b in basis(M)])
     test_intersect(M, N, elem_in_algebra)
   end
+
+  # isomorphisms of residue rings of maximal orders
+  let
+    K, a = number_field(x^2 + 5, "a")
+    OK = maximal_order(K)
+    Q3, = quo(OK, 3*OK)
+    isos = Hecke.is_isomorphic(Q3, Q3)
+    @test length(isos) == 2
+    @test any(M -> map(c -> mod(c, 3), M) == [1 0; 0 1], isos)
+    @test Hecke.is_isomorphic(Q3, quo(OK, 7*OK)[1]) === false
+    Ki, = number_field(x^2 + 1, "i")
+    Oi = maximal_order(Ki)
+    @test Hecke.is_isomorphic(quo(Oi, 7*Oi)[1], quo(OK, 7*OK)[1]) === false
+  end
 end

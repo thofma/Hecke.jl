@@ -996,6 +996,12 @@ function tr(a::AbsNonSimpleNumFieldElem)
   return t
 end
 
+# in a quadratic field, a + conj(a) = tr(a)
+function conjugate_quad(a::AbsNonSimpleNumFieldElem)
+  @assert degree(parent(a)) == 2
+  return tr(a) - a
+end
+
 #TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
