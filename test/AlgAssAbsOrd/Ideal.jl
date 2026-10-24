@@ -12,6 +12,13 @@
     @test I^2 == J
     @test I^ZZRingElem(2) == J
     @test norm(I) == 16
+
+    # sum of a vector of ideals agrees with +
+    A = matrix_algebra(QQ, 2)
+    O = maximal_order(A)
+    for (I, J) in [(2*O, 3*O), (4*O, 6*O), (2*O, inv(3*O))]
+      @test sum([I, J]) == I + J
+    end
   end
 
   @testset "Prime ideals" begin

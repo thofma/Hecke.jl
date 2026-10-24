@@ -45,6 +45,14 @@ end
   a = Hecke.principal_generator(I2)
   @test I2 == ideal(O, a)
 
+  # principal generators 1 mod m, for a non-principal and a principal ideal
+  m = 1*O
+  fl, g = Hecke.has_principal_generator_1_mod_m(I, m)
+  @test !fl
+  @test g isa FacElem{elem_type(A)}
+  fl, g = Hecke.has_principal_generator_1_mod_m(I2, m)
+  @test fl
+  @test I2 == ideal(O, O(evaluate(g)))
 end
 
 @testset "Picard group of non maximal orders of algebras" begin

@@ -503,7 +503,7 @@ function sum(a::Vector{AlgAssAbsOrdIdl{S, T}}) where {S, T}
     j += d
   end
   if !iszero(g)
-    M = sub(_hnf_integral_modular_eldiv(bigmat, g, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
+    M = sub(_hnf_integral_modular_eldiv(bigmat, g; shape = :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
   else
     M = sub(_hnf_integral(bigmat, :lowerleft), (nrows(bigmat) - d + 1):nrows(bigmat), 1:d)
   end
