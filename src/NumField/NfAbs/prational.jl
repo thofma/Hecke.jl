@@ -454,7 +454,7 @@ function _p_rationality_context(K::AbsSimpleNumField; GRH::Bool = false, fundame
   tor = FacElem(torsion_units_generator(K))
   maxindepnotmaximal = ZZRingElem[]
   if class_number === nothing
-    classnumber = Hecke.class_number(OK; GRH)
+    classnumber = order(class_group(OK; GRH)[1])
   else
     classnumber = class_number
   end
@@ -472,7 +472,7 @@ function _p_rationality_context_normal(K::AbsSimpleNumField; GRH::Bool = false, 
   tor = FacElem(torsion_units_generator(K))
   maxindepnotmaximal = ZZRingElem[]
   if class_number === nothing
-    classnumber = Hecke.class_number(OK; GRH)
+    classnumber = order(class_group(OK; GRH)[1])
   else
     classnumber = class_number
   end

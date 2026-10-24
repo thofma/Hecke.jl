@@ -142,6 +142,43 @@ end
     fl, tau = Hecke.is_cm_field(K)
     @test fl
   end
+
+  let
+    # non-simple and relative fields, CM and not CM
+    Qx, x = QQ[:x]
+    K, (a, b) = number_field([x^2 + 1, x^2 + 3]; cached = false)
+    fl, tau = Hecke.is_cm_field(K)
+    @test fl && tau(a) == -a && tau(b) == -b
+    @test Hecke.is_cm_field(K) == (fl, tau)
+    K, = number_field([x^2 + 1, x^3 - 2]; cached = false)
+    @test !Hecke.is_cm_field(K)[1]
+    K, = number_field([x^2 - 2, x^2 - 3]; cached = false)
+    @test !Hecke.is_cm_field(K)[1]
+
+    k, i = number_field(x^2 + 1, "i"; cached = false)
+    ky, y = k[:y]
+    L, s = number_field(y^2 - 2, "s")
+    fl, tau = Hecke.is_cm_field(L)
+    @test fl && tau(s) == s && tau(L(i)) == -L(i)
+    L, s = number_field(y^3 - 3*y - 1, "s")
+    fl, tau = Hecke.is_cm_field(L)
+    @test fl && tau(s) == s && tau(L(i)) == -L(i)
+    L, = number_field(y^2 - (1 + i), "s")
+    @test !Hecke.is_cm_field(L)[1]
+    L, (s, t) = number_field([y^2 - 2, y^2 - 3], "s")
+    fl, tau = Hecke.is_cm_field(L)
+    @test fl && tau(s) == s && tau(t) == t && tau(L(i)) == -L(i)
+    L, = number_field([y^2 - (1 + i), y^2 - 3], "s")
+    @test !Hecke.is_cm_field(L)[1]
+
+    k, r = number_field(x^2 - 2, "r"; cached = false)
+    ky, y = k[:y]
+    L, s = number_field(y^2 + 1, "s")
+    fl, tau = Hecke.is_cm_field(L)
+    @test fl && tau(s) == -s && tau(L(r)) == L(r)
+    L, = number_field(y^2 - r, "s")
+    @test !Hecke.is_cm_field(L)[1]
+  end
 end
 
 @testset "parents" begin

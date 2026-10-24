@@ -166,7 +166,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true)
   @assert degree(base_field(L)) == 1
-  pol = to_univariate(Globals.Qx, map_coefficients(QQ, L.pol, cached = false))
+  pol = map_coefficients(QQ, L.pol, parent = Globals.Qx)
   return number_field(pol, check = false, cached = cached)
 end
 
