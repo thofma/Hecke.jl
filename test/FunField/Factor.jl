@@ -37,6 +37,15 @@
     end
   end
 
+  # swinnerton_dyer(n, y) over a rational function field
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qty, y = Qt[:y]
+    f = swinnerton_dyer(2, y)
+    @test f == swinnerton_dyer([1, 2], y)
+    @test degree(f) == 4
+  end
+
   # inseparable extension
   let
     k, o = finite_field(9)

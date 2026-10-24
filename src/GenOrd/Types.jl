@@ -41,7 +41,7 @@
     M[1, 1] = one(Qt)
     for i in 2:n
       for j in i:-1:1
-        M[i, j] = coeff(f, n - (i - j))
+        M[i, j] = Qt(coeff(f, n - (i - j)))
       end
     end
     return GenOrd(r, M, one(Qt), check = check)
