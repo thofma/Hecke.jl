@@ -232,3 +232,36 @@ end
   @test @inferred tr(K(0) * O) == 0
   @test @inferred tr(ideal(O, 0)//2) == 0
 end
+
+@testset "Fractional ideal is_power" begin
+  # maximal exponent e and root r with r^e == J, numerator and denominator
+  x = polynomial_ring(QQ, "x")[2]
+  K, a = number_field(x^2 + 5, :a)
+  OK = maximal_order(K)
+  P = prime_ideals_over(OK, 2)[1]
+  Q = prime_ideals_over(OK, 3)[1]
+  for (J, e0) in [(ideal(OK, 4)//9, 2), (ideal(OK, 8)//3, 1),
+                  (P^6//Q^4, 2), (P^3//1, 3), (ideal(OK, 1)//27, 3),
+                  (P*Q//5, 1), (ideal(OK, 1)//1, 0)]
+    e, r = is_power(J)
+    @test e == e0
+    @test r^e == J
+  end
+end
+
+@testset "Fractional ideal == factored ideal" begin
+  # comparison in both orders gives the same, correct answer
+  x = polynomial_ring(QQ, "x")[2]
+  K, a = number_field(x^2 + 5, :a)
+  OK = maximal_order(K)
+  I = ideal(OK, 2)
+  P = prime_ideals_over(OK, 3)[1]
+  B = FacElem([I], ZZRingElem[1])
+  C = FacElem([I, P], ZZRingElem[1, -1])
+  for (A, D, res) in [(fractional_ideal(OK, I), B, true), (I//3, B, false),
+                      (fractional_ideal(OK, P), B, false), (I//P, C, true),
+                      (fractional_ideal(OK, I), C, false)]
+    @test (A == D) == res
+    @test (D == A) == res
+  end
+end

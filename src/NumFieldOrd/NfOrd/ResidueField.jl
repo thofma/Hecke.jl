@@ -51,6 +51,9 @@ function compute_residue_field_data!(P)
     smallp = Int(p)
     A, m = StructureConstantAlgebra(order(P), P, smallp)
     compute_residue_field_data!(P, m)
+  elseif P isa AbsNumFieldOrderIdeal
+    A, m = StructureConstantAlgebra(order(P), P, p)
+    compute_residue_field_data!(P, m)
   else
     _, phi = residue_field(base_ring(order(P)), p)
     AA, mm = StructureConstantAlgebra(order(P), P, p, phi)
