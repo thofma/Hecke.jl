@@ -479,7 +479,8 @@ function _p_rationality_context_normal(K::AbsSimpleNumField; GRH::Bool = false, 
   autfull = automorphism_list(K)
   aut = _pick_automorphisms(K)
   #@info "Computing random Minkowski unit"
-  mink = _random_cyclic_subgroup(K, aut, us)
+  # without units there is no Minkowski unit
+  mink = isempty(us) ? nothing : _random_cyclic_subgroup(K, aut, us)
 
   return pRationalityTestGenericCtx(K, us, maxindepnotmaximal, mink, tor, aut, classnumber)
 end
@@ -577,6 +578,9 @@ _nf(K) = K.K
 
 function _dim_image_of_schirokauer_map(_K::pRationalityTestGenericCtx, us, p)
   K = _nf(_K)
+  if _K.minkowski === nothing
+    return _dim_image_of_schirokauer_map(K, us, p)
+  end
   rK = Hecke.unit_group_rank(K)
   try
     fl, _, dimimage  = _schirokauer_map_data_minkowski_unit(K, _K.minkowski, p, _K.aut; new = true)
@@ -706,7 +710,7 @@ function _is_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField},
   _, cK = signature(K)
 
   # (3)
-  if cK == 0 && is_tamely_ramified(K, p) # this is at most tamely ramified
+  if cK == 0 && is_tamely_ramified(_nf(K), p) # this is at most tamely ramified
     return false
   end
 
