@@ -48,5 +48,30 @@
     @test domain(h) === V && codomain(h) === W
     @test matrix(h) == zero_matrix(QQ, 1, 1)
   end
+
+  # isomorphism test for modules with nonzero homomorphisms
+  let
+    V = Amodule([diagonal_matrix(QQ, [1, 1])])
+    W = Amodule([diagonal_matrix(QQ, [1, -1])])
+    U = Amodule([diagonal_matrix(QQ, [1, 1, -1])])
+    @test !is_isomorphic_with_isomorphism(V, W)[1]
+    @test !is_isomorphic_with_isomorphism(W, V)[1]
+    fl, h = is_isomorphic_with_isomorphism(V, U)
+    @test !fl
+    @test matrix(h) == zero_matrix(QQ, 2, 3)
+    @test !is_isomorphic_with_isomorphism(U, V)[1]
+
+    T = matrix(QQ, [1 2; 1 3])
+    for (K, m) in [(QQ, [0 1; 0 0]), (QQ, [1 0; 0 -1]), (GF(2), [1 1; 0 1])]
+      M = matrix(K, m)
+      V = Amodule([M])
+      W = Amodule([change_base_ring(K, T) * M * inv(change_base_ring(K, T))])
+      fl, h = is_isomorphic_with_isomorphism(V, W)
+      @test fl
+      @test is_invertible(matrix(h))
+      @test M * matrix(h) == matrix(h) * Hecke.action_of_gens(W)[1]
+      @test !is_isomorphic_with_isomorphism(V, Amodule([one(M)]))[1]
+    end
+  end
 end
 
