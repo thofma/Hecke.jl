@@ -125,6 +125,33 @@
 
   end
 
+  @testset "submodules of given order" begin
+    # submodules(M; ord = k) are the stable subgroups of order p^k
+    R = residue_ring(ZZ, 9)[1]
+    V = abelian_group([3, 3, 9, 9])
+    l = [1, 1, 3, 0, 2, 1, 3, 3, 1, 1, 1, 1, 0, 0, 0, 1]
+    A = matrix_space(R, 4, 4)(l)
+    M1 = ZpnGModule(V, [A])
+    act1 = [Hecke.FinGenAbGroupHom(V, V, lift(A))]
+    W = abelian_group([3, 3])
+    M2 = ZpnGModule(W, [identity_matrix(residue_ring(ZZ, 3)[1], 2)])
+    act2 = [id_hom(W)]
+    for (M, act) in ((M1, act1), (M2, act2))
+      p = M.p
+      for k in 0:valuation(order(M.V), p) + 1
+        ls = collect(submodules(M; ord = k))
+        @test all(x -> Hecke.is_submodule(M, x), ls)
+        subs = [Hecke.submodule_to_subgroup(M, x) for x in ls]
+        @test all(S -> order(S[1]) == p^k, subs)
+        expected = [(S, m) for (S, m) in subgroups(M.V, order = p^k)
+                    if Hecke.is_stable(act, m)]
+        @test length(ls) == length(expected)
+        @test Set(Set(m.(collect(S))) for (S, m) in subs) ==
+              Set(Set(m.(collect(S))) for (S, m) in expected)
+      end
+    end
+  end
+
   let # cornercase
     A = abelian_group()
     g = id_hom(A)
