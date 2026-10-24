@@ -717,7 +717,7 @@ function has_principal_generator_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: 
     Ii = _as_ideal_of_number_field(I, AtoK)
     a, g = has_principal_generator_1_mod_m(Ii, mi)
     if !a
-      return false, FacElem(base, exps)
+      return false, FacElem(A, bases, exps)
     end
     for (b, e) in g
       t = AtoK\b
@@ -727,7 +727,7 @@ function has_principal_generator_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: 
       push!(exps, e)
     end
   end
-  return true, FacElem(bases, exps)
+  return true, FacElem(A, bases, exps)
 end
 
 function disc_log_generalized_ray_class_grp(I::FacElem{S, T}, mR::MapRayClassGroupAlg) where { S <: AlgAssAbsOrdIdl, T <: AlgAssAbsOrdIdlSet }

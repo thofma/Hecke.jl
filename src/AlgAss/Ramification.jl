@@ -245,6 +245,10 @@ function is_eichler(A::AbstractAssociativeAlgebra)
   end
   d = decompose(A)
   for (B, _) in d
+    # Over a number field K, the center would be a relative extension of K
+    if base_ring(B) isa AbsSimpleNumField
+      B, = restrict_scalars(B, QQ)
+    end
     BC, = _as_algebra_over_center(B)
     if !_is_eichler_csa(BC)
       return false
