@@ -1035,10 +1035,13 @@ function genus_representatives(
     return typeof(L)[JmodJ0[i]*L for i in 1:n]
   end
 
+  # Inference barriers: both call trees are large and often not needed
   if is_definite(L)
-    res = enumerate_definite_genus(L; use_auto, max, use_mass)
+    f = Base.inferencebarrier(enumerate_definite_genus)
+    res = f(L; use_auto, max, use_mass)::Vector{typeof(L)}
   else
-    res, _ = spinor_genera_in_genus(L; max)
+    g = Base.inferencebarrier(spinor_genera_in_genus)
+    res = g(L; max)[1]::Vector{typeof(L)}
   end
   return res
 end

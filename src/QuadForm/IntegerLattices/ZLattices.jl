@@ -777,17 +777,20 @@ function genus_representatives(_L::ZZLat; kwargs...)
   else
     L = _L
   end
+  # Inference barriers: each branch has a large call tree, and the binary
+  # one (class and unit groups of quadratic fields) is the largest
   if rank(L) == 2
     LL = _to_number_field_lattice(L)
-    G = genus_representatives(LL)
+    G = Base.inferencebarrier(genus_representatives)(LL)::Vector{typeof(LL)}
     res = ZZLat[]
     for N in G
       push!(res, _to_ZLat(N; K=QQ))
     end
   elseif is_definite(L)
-    res = first(enumerate_definite_genus([L], :default; kwargs...))
+    f = Base.inferencebarrier(enumerate_definite_genus)
+    res = first(f([L], :default; kwargs...))::Vector{ZZLat}
   else
-    res = spinor_genera_in_genus(L)
+    res = Base.inferencebarrier(spinor_genera_in_genus)(L)::Vector{ZZLat}
   end
   s != 1 && map!(L -> rescale(L, s; cached=false), res, res)
   return res
