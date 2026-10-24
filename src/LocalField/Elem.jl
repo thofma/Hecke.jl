@@ -565,7 +565,7 @@ function _absolute_minpoly(p::Generic.Poly{PadicFieldElem})
   return squarefree_part(p)
 end
 
-function absolute_minpoly(a::PadicFieldElem, parent = polynomial_ring(parent(a), "x"))
+function absolute_minpoly(a::PadicFieldElem, parent = polynomial_ring(parent(a), "x")[1])
   return gen(parent)-a
 end
 

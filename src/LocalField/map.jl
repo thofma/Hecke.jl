@@ -430,7 +430,12 @@ function _compute_inverse_data(f#= image data =#, K, LL, L::LocalField)
   g = LL(gen(L))
   fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
-  return MapDataFromLocalField{typeof(prim_preimg)}(prim_preimg)
+  bd = _compute_inverse_data(f, K, LL, base_field(L))
+  return MapDataFromLocalField{typeof(prim_preimg), typeof(bd)}(prim_preimg, bd)
+end
+
+function _compute_inverse_data(f#= image data =#, K, LL, L::PadicField)
+  return MapDataFromPadicField{typeof(K)}(K)
 end
 
 

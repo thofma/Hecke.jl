@@ -90,6 +90,11 @@
     f = absolute_minpoly(d)
     @test base_ring(f) === Qp
     @test f == gen(parent(f))^4 - 3
+
+    # absolute_minpoly of a p-adic number with the default polynomial ring
+    f = absolute_minpoly(Qp(2))
+    @test base_ring(f) === Qp
+    @test f == gen(parent(f)) - 2
   end
 
   @testset "Completions" begin
@@ -252,6 +257,40 @@
     for i in 1:10
       w = mk\(rand(k))
       @test f(g(w)) == w
+    end
+
+    # Inverse of an automorphism of a LocalField, also in towers
+    Qp = padic_field(3, precision = 20)
+    Qpx, x = polynomial_ring(Qp, "x")
+    L, b = eisenstein_extension(x^2 - 3, "b")
+    f = hom(L, L, -b)
+    g = @inferred inv(f)
+    @test g(b) == -b
+    for y in (b + 1, b^3 - 2*b + 5, L(Qp(7)))
+      @test g(f(y)) == y
+      @test f(g(y)) == y
+    end
+
+    U, u = unramified_extension(x^2 + 1)
+    Ut, t = polynomial_ring(U, "t")
+    M, c = eisenstein_extension(t^2 - 3, "c")
+    f = hom(M, M, hom(U, M, -M(u)), -c)
+    g = @inferred inv(f)
+    @test g(c) == -c
+    @test g(M(u)) == -M(u)
+    for y in (c + M(u), c^3 - u*c + 5, M(u)^3)
+      @test g(f(y)) == y
+      @test f(g(y)) == y
+    end
+
+    Qq, a = qadic_field(3, 2, precision = 20)
+    Qqt, t = polynomial_ring(Qq, "t")
+    M, c = eisenstein_extension(t^2 - 3, "c")
+    f = hom(M, M, -c)
+    g = @inferred inv(f)
+    @test g(c) == -c
+    for y in (c + M(a), a*c^3 + 2)
+      @test g(f(y)) == y
     end
   end
 
