@@ -192,4 +192,20 @@
         @test coprime_residues(T(-1)) == T[0]
       end
     end
+
+    # rational reconstruction of machine integers, with keywords
+    let
+      @test rational_reconstruction(34, 101) == (true, 1, 3)
+      for et in [false, true]
+        @test rational_reconstruction(34, 101; error_tolerant = et) ==
+              rational_reconstruction(ZZ(34), ZZ(101); error_tolerant = et)
+      end
+    end
+
+    # divisors including units, from a factorization
+    let
+      D = collect(Divisors(factor(ZZ(12)); units = true))
+      @test length(D) == 12
+      @test issetequal(D, [u * d for d in divisors(ZZ(12)) for u in [1, -1]])
+    end
 end

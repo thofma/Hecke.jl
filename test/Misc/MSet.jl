@@ -137,4 +137,12 @@ end
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
   @test length(iterate(S, iterate(S)[2])[1]) == 2
+
+  # indexing sub-sets of a given size agrees with the iteration order
+  for n in 0:6, k in 0:n+1
+    S = subsets(Set(1:n), k)
+    @test [S[i] for i in 1:length(S)] == collect(S)
+    @test_throws BoundsError S[0]
+    @test_throws BoundsError S[length(S) + 1]
+  end
 end

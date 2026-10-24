@@ -134,4 +134,21 @@ end
     L = localization(OK, P)
     @test hash(one(L)) == hash(one(L))
   end
+
+  let
+    # principal generators of ideals in the localization at a prime
+    Qx, x = QQ["x"]
+    K, a = number_field(x^6 + 108)
+    OK = ring_of_integers(K)
+    lp = prime_decomposition(OK, 5)
+    P, Q = lp[1][1], lp[2][1]
+    L = localization(OK, P)
+    for I in [P, P^2, P * Q, Q, 3 * P]
+      g = principal_generator(L, I)
+      @test Hecke.data(g) in I
+      @test valuation(g, P) == valuation(I, P)
+      @test divides(L(I.gen_one), g)[1]
+      @test divides(L(I.gen_two), g)[1]
+    end
+  end
 end
