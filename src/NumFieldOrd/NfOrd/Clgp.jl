@@ -459,7 +459,9 @@ function unit_group(O::AbsSimpleNumFieldOrder; method::Int = 3, unit_method::Int
   if is_maximal(O)
     return _unit_group_maximal(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   else
-    return unit_group_non_maximal(O)::Tuple{FinGenAbGroup, MapUnitGrp{AbsNumFieldOrder{AbsSimpleNumField,AbsSimpleNumFieldElem}}}
+    # inference barrier: large call tree, rarely needed
+    f = Base.inferencebarrier(unit_group_non_maximal)
+    return f(O)::Tuple{FinGenAbGroup, MapUnitGrp{AbsSimpleNumFieldOrder}}
   end
 end
 
