@@ -6,179 +6,6 @@
 
 ################################################################################
 #
-#  Types
-#
-################################################################################
-
-@attributes mutable struct EllipticCurve{T}
-  base_field::Ring
-  short::Bool
-  a_invariants::Tuple{T, T, T, T, T}
-  b_invariants::Tuple{T, T, T, T}
-  c_invariants::Tuple{T,T}
-  disc::T
-  j::T
-  coeff::Vector{T}
-
-  torsion_points#::Vector{EllipticCurvePoint}
-  torsion_structure#Tuple{Vector{Int}, Vector{EllipticCurvePoint}}
-
-  function EllipticCurve{T}(coeffs::Vector{T}, check::Bool = true) where {T}
-    if length(coeffs) == 2
-      if check
-        d = -16*(4*coeffs[1]^3 + 27*coeffs[2]^2)
-        if !iszero(d)
-          E = new{T}()
-          E.short = true
-          # fixed on Nemo master
-          K = parent(coeffs[1])
-          E.base_field = K
-          E.a_invariants = (zero(K), zero(K), zero(K), coeffs[1], coeffs[2])
-          E.disc = d
-        else
-          error("Discriminant is zero")
-        end
-      else
-        E = new{T}()
-        E.short = true
-        K = parent(coeffs[1])
-        E.base_field = K
-        E.a_invariants = (zero(K),zero(K),zero(K),coeffs[1],coeffs[2])
-      end
-    elseif length(coeffs) == 5 # coeffs = [a1, a2, a3, a4, a6]
-      if check
-        a1 = coeffs[1]
-        a2 = coeffs[2]
-        a3 = coeffs[3]
-        a4 = coeffs[4]
-        a6 = coeffs[5]
-
-        b2 = a1^2 + 4*a2
-        b4 = a1*a3 + 2*a4
-        b6 = a3^2 + 4*a6
-        b8 = a1^2*a6 - a1*a3*a4 + 4*a2*a6 + a2*a3^2 - a4^2
-
-        d = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
-
-        if d != 0
-          E = new{T}()
-          if iszero(a1) && iszero(a2) && iszero(a3)
-            E.short = true
-          else
-            E.short = false
-          end
-          E.a_invariants = (a1, a2, a3, a4, a6)
-          E.b_invariants = (b2, b4, b6, b8)
-          E.disc = d
-          E.base_field = parent(coeffs[1])
-        else
-          error("Discriminant is zero")
-        end
-      else
-        E = new{T}()
-        a1 = coeffs[1]
-        a2 = coeffs[2]
-        a3 = coeffs[3]
-        a4 = coeffs[4]
-        a6 = coeffs[5]
-        if iszero(a1) && iszero(a2) && iszero(a3)
-            E.short = true
-          else
-            E.short = false
-          end
-        E.a_invariants = (a1, a2, a3, a4, a6)
-        E.base_field = parent(coeffs[1])
-      end
-    else
-      error("Length of coefficient array must be either 2 or 5")
-    end
-    E.coeff = coeffs
-    return E
-  end
-end
-
-mutable struct EllipticCurvePoint{T}
-  coordx::T
-  coordy::T
-  is_infinite::Bool
-  parent::EllipticCurve{T}
-
-  function EllipticCurvePoint{T}(E::EllipticCurve{T}, coords::Vector{T}, check::Bool = true) where {T}
-    if check
-      if is_on_curve(E, coords)
-        P = new{T}(coords[1], coords[2], false, E)
-        return P
-      else
-        error("Point is not on the curve")
-      end
-    else
-      P = new{T}(coords[1], coords[2], false, E)
-      return P
-    end
-  end
-
-  function EllipticCurvePoint{T}(E::EllipticCurve{T}) where {T}
-    z = new{T}()
-    z.parent = E
-    z.is_infinite = true
-    return z
-  end
-end
-
-function Base.getindex(P::EllipticCurvePoint, i::Int)
-  @req 1 <= i <= 3 "Index must be 1, 2 or 3"
-
-  K = base_field(parent(P))
-
-  if is_infinite(P)
-    if i == 1
-      return zero(K)
-    elseif i == 2
-      return one(K)
-    elseif i == 3
-      return zero(K)
-    end
-  end
-  if i == 1
-    return P.coordx
-  elseif i == 2
-    return P.coordy
-  elseif i == 3
-    return one(K)
-  end
-end
-
-mutable struct EllCrvIso{T} <: Map{EllipticCurve, EllipticCurve, HeckeMap, EllCrvIso} where T<:RingElem
-  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
-  domain::EllipticCurve{T}
-  codomain::EllipticCurve{T}
-  data::Tuple{T, T, T, T}
-
-  function EllCrvIso(E::EllipticCurve{T}, data::Vector{T}) where T <:RingElem
-    f = new{T}()
-    f.domain = E
-
-    @req length(data) == 4 "Array needs to have length 4"
-    r, s, t, u = data[1], data[2], data[3], data[4]
-
-    f.data = (r, s, t, u)
-    a1, a2, a3, a4, a6 = a_invariants(E)
-
-    a1new = divexact(a1 + 2*s, u)
-    a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
-    a3new = divexact(a3 + r*a1 + 2*t, u^3)
-    a4new = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
-    a6new = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
-
-    F = elliptic_curve([a1new, a2new, a3new, a4new, a6new])
-    f.codomain = F
-    f.header = MapHeader(E, F)
-    return f
-  end
-end
-
-################################################################################
-#
 #  Constructors for Elliptic Curve
 #
 ################################################################################
@@ -208,10 +35,22 @@ with equation
   y^2 = x^3 + x + 1
 ```
 """
-elliptic_curve
-
 function elliptic_curve(x::Vector{T}; check::Bool = true) where T <: RingElem
-  E = EllipticCurve{T}(x, check)
+  @req length(x) == 2 || length(x) == 5 "Length of coefficient array must be either 2 or 5"
+  K = parent(x[1])
+  @req all(c -> parent(c) === K, x) "Coefficients must have the same parent"
+
+  a = if length(x) == 2
+    z = zero(K)
+    (z, z, z, x[1], x[2])
+  else
+    NTuple{5, T}(x)
+  end
+
+  E = EllipticCurve{T}(a)
+  if check
+    @req !iszero(discriminant(E)) "Discriminant is zero"
+  end
   return E
 end
 
@@ -652,26 +491,50 @@ julia> E([2, -4, 2])
 ```
 """
 function (E::EllipticCurve{T})(coords::Vector{S}; check::Bool = true) where {S, T}
-  if !(2 <= length(coords) <= 3)
-    error("Points need to be given in either affine coordinates (x, y) or projective coordinates (x : y : z)")
+  @req 2 <= length(coords) <= 3 "Points need to be given in either affine coordinates (x, y) or projective coordinates (x : y : z)"
+
+  K = base_field(E)
+  if S === T
+    @req parent(coords[1]) == K "Objects must be defined over same field"
+    c = coords
+  else
+    c = map(K, coords)::Vector{T}
   end
 
-  if length(coords) == 3
-    if coords[1] == 0 && coords[3] == 0
-      if coords[2] != 0
-        return infinity(E)
-      else
-        error("The triple (0: 0: 0) does not define a point in projective space.")
-      end
+  if length(c) == 3
+    if iszero(c[1]) && iszero(c[3])
+      @req !iszero(c[2]) "The triple (0 : 0 : 0) does not define a point in projective space"
+      return infinity(E)
     end
-    coords = [coords[1]//coords[3], coords[2]//coords[3]]
+    c = [c[1]//c[3], c[2]//c[3]]
   end
-  if S === T
-    parent(coords[1]) != base_field(E) &&
-        error("Objects must be defined over same field")
-    return EllipticCurvePoint{T}(E, coords, check)
-  else
-    return EllipticCurvePoint{T}(E, map(base_field(E), coords)::Vector{T}, check)
+
+  if check
+    @req is_on_curve(E, c) "Point is not on the curve"
+  end
+  return EllipticCurvePoint{T}(E, c[1], c[2])
+end
+
+function Base.getindex(P::EllipticCurvePoint, i::Int)
+  @req 1 <= i <= 3 "Index must be 1, 2 or 3"
+
+  K = base_field(parent(P))
+
+  if is_infinite(P)
+    if i == 1
+      return zero(K)
+    elseif i == 2
+      return one(K)
+    elseif i == 3
+      return zero(K)
+    end
+  end
+  if i == 1
+    return P.coordx
+  elseif i == 2
+    return P.coordy
+  elseif i == 3
+    return one(K)
   end
 end
 

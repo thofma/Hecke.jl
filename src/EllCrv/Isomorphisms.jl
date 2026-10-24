@@ -53,7 +53,7 @@ function inv(f::EllCrvIso{T}) where T<:RingElem
   newt = (r*s-t)//u^3
   newu = 1//u
 
-  g = EllCrvIso(codomain(f),[newr, news, newt, newu])
+  g = EllCrvIso(codomain(f), domain(f), (newr, news, newt, newu))
   return g
 end
 
@@ -64,20 +64,13 @@ Return the isomorphism $f$ as an isogeny.
 function isomorphism_to_isogeny(f::EllCrvIso)
   r, s, t, u = f.data
   E = f.domain
-  phi = Isogeny(E)
-  phi.codomain = f.codomain
-  phi.degree = 1
-
   R = base_field(E)
-  Rx, x = polynomial_ring(R, "x")
-  phi.psi = one(Rx)
+  Rx, x = polynomial_ring(R, :x)
+  Rxy, y = polynomial_ring(Rx, :y)
 
-
-  phi.coordx = (x - r)//Rx(u^2)
-  Rxy, y = polynomial_ring(Rx, "y")
-  phi.coordy = (y - s*(x-r) - t)//Rxy(u^3)
-  phi.header = f.header
-  return phi
+  coordx = (x - r)//Rx(u^2)
+  coordy = (y - s*(x-r) - t)//Rxy(u^3)
+  return Isogeny(E, f.codomain, coordx, coordy, one(Rx), 1)
 end
 
 
@@ -333,13 +326,23 @@ is calculated automatically.
 function isomorphism(E::EllipticCurve{T}, isodata::Vector{T}) where T
   @req length(isodata) == 4 "isomorphism data should be in the form [r,s,t,u]"
 
-  return EllCrvIso(E, isodata)
+  r, s, t, u = isodata
+  a1, a2, a3, a4, a6 = a_invariants(E)
+
+  a1new = divexact(a1 + 2*s, u)
+  a2new = divexact(a2 - s*a1 + 3*r - s^2, u^2)
+  a3new = divexact(a3 + r*a1 + 2*t, u^3)
+  a4new = divexact(a4 - s*a3 + 2*r*a2 - (t + r*s)*a1 + 3*r^2 - 2*s*t, u^4)
+  a6new = divexact(a6 + r*a4 + r^2*a2 + r^3 - t*a3 - t^2 - r*t*a1, u^6)
+
+  F = elliptic_curve([a1new, a2new, a3new, a4new, a6new])
+  return EllCrvIso(E, F, (r, s, t, u))
 end
 
 function isomorphism(E::EllipticCurve, isodata::Vector)
   @req length(isodata) == 4 "isomorphism data should be in the form [r,s,t,u]"
 
-  return EllCrvIso(E, map(base_field(E), isodata))
+  return isomorphism(E, map(base_field(E), isodata))
 end
 
 function degree(f::EllCrvIso)
@@ -385,11 +388,8 @@ function _compose_rstu((r1, s1, t1, u1), (r2, s2, t2, u2))
 end
 
 function compose(f::EllCrvIso, g::EllCrvIso)
-  @req codomain(f) == domain(g) "Codomain and domain must be identitcal"
-
-  r, s, t, u = _compose_rstu(f.data, g.data)
-  return isomorphism(domain(f), [r, s, t, u])
-
+  @req codomain(f) == domain(g) "Codomain and domain must be identical"
+  return EllCrvIso(domain(f), codomain(g), _compose_rstu(f.data, g.data))
 end
 
 @doc raw"""

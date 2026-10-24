@@ -1,3 +1,4 @@
+include("EllCrv/Types.jl")
 include("EllCrv/EllCrv.jl")
 include("EllCrv/Finite.jl")
 include("EllCrv/FinitePointCount.jl")

@@ -1,11 +1,11 @@
 @testset "Generic elliptic curve" begin
 
   @testset "Constructors" begin
-    @test_throws ErrorException elliptic_curve([1])
-    @test_throws ErrorException elliptic_curve([1, 2, 3])
-    @test_throws ErrorException elliptic_curve([1, 2, 3, 4, 5, 6])
-    @test_throws ErrorException elliptic_curve([0, 0])
-    @test_throws ErrorException elliptic_curve([0, 0, 0, 0, 0])
+    @test_throws ArgumentError elliptic_curve([1])
+    @test_throws ArgumentError elliptic_curve([1, 2, 3])
+    @test_throws ArgumentError elliptic_curve([1, 2, 3, 4, 5, 6])
+    @test_throws ArgumentError elliptic_curve([0, 0])
+    @test_throws ArgumentError elliptic_curve([0, 0, 0, 0, 0])
 
     E = @inferred elliptic_curve([1, 2], check = false)
     @test typeof(E) == EllipticCurve{QQFieldElem}
@@ -142,7 +142,7 @@
 # the error is/was from doing QQ(K(0)) - which is possible now
 #    @test_throws MethodError E43_a1([gen(K), gen(K)])
 
-    @test_throws ErrorException E43_a1([2, 2])
+    @test_throws ArgumentError E43_a1([2, 2])
 
     P = @inferred infinity(E43_a1)
     @test @inferred !is_finite(P)
@@ -160,7 +160,7 @@
     @test !is_finite(P)
     @test is_infinite(P)
 
-    @test_throws ErrorException E116_1_a1([1, 1])
+    @test_throws ArgumentError E116_1_a1([1, 1])
 
     P = @inferred Eshort([2, 4], check = false)
     @test @inferred is_finite(P)
@@ -170,6 +170,10 @@
     E = elliptic_curve(GF(7,2),[1,2,3,4,5])
     L = @inferred points_with_x_coordinate(E,0)
     @test E([0,5]) in L && E([0, 6]) in L
+
+    E = elliptic_curve(GF(3), [1, 1])
+    @test is_infinite(E([0, 1, 3]))
+    @test_throws ArgumentError E([0, 0, 3])
 
     # this is a docs example. make sure it works
     E = elliptic_curve(QQ, [1, 2]);
@@ -242,7 +246,7 @@
 
     P = @inferred Eshort([2, 4])
     O = @inferred infinity(Eshort)
-    @test_throws ErrorException Eshort([-1, -1])
+    @test_throws ArgumentError Eshort([-1, -1])
 
     @test Eshort([0, 0]) == @inferred P + P
     @test P == @inferred O + P
