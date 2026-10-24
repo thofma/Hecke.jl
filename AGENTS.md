@@ -39,8 +39,11 @@ this file so that the repository guidance is maintained in one place.
 ### Writing code
 
 - Read nearby implementations and tests before editing.
-- Use established Nemo and AbstractAlgebra APIs instead of reinventing
-  functionality.
+- **Before writing a new helper, search Hecke, Nemo, and AbstractAlgebra
+  for an existing function** that provides the needed behavior, and reuse
+  it when available.
+- **Use what objects already store.** Inspect existing fields and accessors
+  before recomputing values or introducing duplicate state.
 - Preserve documented mathematical behavior and avoid unnecessary API
   changes.
 
