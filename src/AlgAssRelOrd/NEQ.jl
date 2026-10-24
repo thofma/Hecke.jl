@@ -64,12 +64,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
     local vals2::Vector{Int}
 
     if !isempty(good_primes)
-      if degree(L) != n
-        n2 = degree(L)//n
-        vals2 = [ Int(n2*vals[i]) for i = 1:length(vals) ]
-      else
-        vals2 = vals
-      end
+      vals2 = __neq_field_valuations(vals, degree(L)//n, good_primes)
 
       remaining_primes = Set{Int}()
       # First search for solutions for single primes
@@ -124,7 +119,7 @@ function _norm_equation_relative(NC::NormCache, order_num::Int; max_num_fields::
         if !skip
           push!(fields_in_product, (LtoA, KtoL))
 
-          G, pi = direct_product(G, UK, task = :prod)::Tuple{FinGenAbGroup, Tuple{FinGenAbGroupHom, FinGenAbGroupHom}}
+          G, pi = direct_product(G, UK, task = :prod)::Tuple{FinGenAbGroup, Vector{FinGenAbGroupHom}}
           old_GtoUk = GtoUk
           GtoUk = hom(G, Uk, gens(G), [ old_GtoUk(pi[1](g)) + N(pi[2](g)) for g in gens(G) ])
           if is_surjective(GtoUk)
@@ -189,12 +184,7 @@ function _norm_equation_valuations_only(O::AlgAssRelOrd, primes::Vector{<: AbsNu
 
     if !isempty(good_primes)
       cache = Vector{Any}(undef, 3) # Used in __neq_find_sol_in_order
-      if degree(L) != n
-        n2 = degree(L)//n
-        vals2 = Int[ Int(n2*valuations[i]) for i = 1:length(valuations) ]
-      else
-        vals2 = valuations
-      end
+      vals2 = __neq_field_valuations(valuations, degree(L)//n, good_primes)
 
       remaining_primes = Set{Int}()
       # First search for solutions for single primes
@@ -391,6 +381,20 @@ function __neq_lift_unit(NC::NormCache, order_num::Int, g::FinGenAbGroupElem)
   return x
 end
 
+# For x in a subfield of degree m of an algebra of degree n, normred(x) is
+# norm(x)^(n/m). This turns the valuations of normred(x) into those of norm(x),
+# with mn = m//n. They are integral only at the good primes; other entries are 0.
+function __neq_field_valuations(vals::Vector{Int}, mn::Rational{Int}, good_primes::Set{Int})
+  if isone(mn)
+    return vals
+  end
+  vals2 = zeros(Int, length(vals))
+  for i in good_primes
+    vals2[i] = Int(mn*vals[i])
+  end
+  return vals2
+end
+
 function __neq_find_good_primes(NC::NormCache, OL::RelNumFieldOrder)
   n = NC.n
   m = degree(nf(OL))
@@ -456,7 +460,7 @@ function _issubmodule(modules::Vector{<: PMat}, O::RelNumFieldOrder, LtoA::NfRel
   B = absolute_basis(O)
   M = zero_matrix(base_ring(A), length(B), dim(A))
   for i = 1:length(B)
-    elem_to_mat_row!(M, i, LtoA(B[i]))
+    elem_to_mat_row!(M, i, LtoA(elem_in_nf(B[i], copy = false)))
   end
   PM = pseudo_hnf_kb(pseudo_matrix(M), :lowerleft)
   for i = 1:nrows(PM)
@@ -562,7 +566,8 @@ function add_field(FO::FieldOracle, i::Int; no_restriction::Bool = false)
 
   function _increase_counter(k::Int)
     j = FO.last_generated_field[k]
-    if j != length(FO.small_elements) - FO.rounds + k
+    # The bound is negative if there are fewer than FO.rounds small elements
+    if j < length(FO.small_elements) - FO.rounds + k
       FO.last_generated_field[k] += 1
       return true
     end
