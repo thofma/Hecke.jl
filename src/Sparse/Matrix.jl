@@ -425,7 +425,7 @@ end
 
 function (M::SMatSpace)(A::T; R::S = base_ring(A),
                                  keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
-  return sparse_matrix(A, R, keepzrows)
+  return sparse_matrix(change_base_ring(R, A); keepzrows)
 end
 
 function (M::SMatSpace)(A::Matrix{T}) where T <: MatElem

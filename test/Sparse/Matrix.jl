@@ -83,6 +83,10 @@ end
   @test R == @inferred base_ring(Asparse)
   @test M == @inferred parent(Asparse)
 
+  # construction from a dense matrix via the matrix space
+  @test M(A) == Asparse
+  @test M(A; R = QQ) == sparse_matrix(change_base_ring(QQ, A))
+
   @test 3 == @inferred nrows(Asparse)
   @test 3 == @inferred ncols(Asparse)
   @test 3 == @inferred nnz(Asparse)
