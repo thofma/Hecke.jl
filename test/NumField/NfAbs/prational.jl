@@ -100,6 +100,16 @@
   @test is_tamely_ramified(K, 2)
   @test is_quasi_p_rational(K, 2)
   @test !is_p_rational(K, 2)
+
+  # precomputed contexts, generic and normal, with and without GRH
+  K, = quadratic_field(79; cached = false)
+  for is_normal in [false, true], GRH in [false, true]
+    C = Hecke.p_rationality_context(K; GRH, is_normal)
+    @test C.classnumber == 3
+    if is_normal
+      @test [is_p_rational(C, p) for p in [2, 3, 5]] == [false, false, true]
+    end
+  end
 end
 
 function _multiquadratic_field(ds)

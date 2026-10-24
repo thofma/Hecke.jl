@@ -181,6 +181,10 @@
     @test_throws ArgumentError QQ(a)
   end
 
+  # variable name given as a Char
+  K, (a, b) = number_field([x^2 - 2, x^2 - 3], 'a')
+  @test string(a) == "a1" && string(b) == "a2"
+
   K, (a,) = @inferred number_field([x])
   @test tr(a) == 0
   @test tr(one(K)) == 1

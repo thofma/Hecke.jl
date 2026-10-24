@@ -153,12 +153,34 @@ is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 #
 ################################################################################
 @doc raw"""
-    is_cm_field(K::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
+    is_cm_field(K::NumField) -> Bool, NumFieldHom
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
+
+For a relative field, the complex conjugation is an automorphism of $K$ as an
+absolute field; it is the identity on the base field only if the base field is
+totally real.
 """
 function is_cm_field(K::NumField)
+  c = get_attribute(K, :cm_field)
+  if c !== nothing
+    return true, c::morphism_type(K)
+  end
+  if isodd(absolute_degree(K)) || !is_totally_complex(K)
+    return false, id_hom(K)
+  end
+  Kabs, KabstoK, KtoKabs = _absolute_simple_field_internal(K)
+  fl, cabs = is_cm_field(Kabs)
+  if !fl
+    return false, id_hom(K)
+  end
+  c = KtoKabs * cabs * KabstoK
+  set_attribute!(K, :cm_field => c)
+  return true, c
+end
+
+function is_cm_field(K::AbsSimpleNumField)
   c = get_attribute(K, :cm_field)
   if c !== nothing
     return true, c::morphism_type(K)
