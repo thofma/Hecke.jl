@@ -315,7 +315,7 @@ function genus(J::JorDec)
 end
 
 function direct_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
-  @req J1.p === J2.p "Jordan decompositions must be over same prime"
+  @req J1.p == J2.p "Jordan decompositions must be over same prime"
   if !(J1.is_dyadic)
     i1 = 1
     i2 = 1
@@ -1055,7 +1055,7 @@ end
 ################################################################################
 
 function direct_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
-  @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
+  @req prime(G1) == prime(G2) "Local genera must have the same prime ideal"
   if !G1.is_dyadic
     p = prime(G1)
     if uniformizer(G1) != uniformizer(G2)
@@ -1947,7 +1947,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
       @assert !is_dyadic(p)
       fl = is_local_square(G1.d, p)
       dcl = fl ? 1 : -1
-      g1 = genus(QuadLat, p, [(0, rank(G1), dcl)])
+      g1 = genus(QuadLat, p, elem_in_nf(uniformizer(p)), [G1.rank], [0], [dcl])
     end
 
     if p in P2
@@ -1957,7 +1957,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
       @assert !is_dyadic(p)
       fl = is_local_square(G2.d, p)
       dcl = fl ? 1 : -1
-      g2 = genus(QuadLat, p, [(0, rank(G2), dcl)])
+      g2 = genus(QuadLat, p, elem_in_nf(uniformizer(p)), [G2.rank], [0], [dcl])
     end
     g3 = direct_sum(g1, g2)
     push!(LGS, g3)

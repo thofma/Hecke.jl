@@ -641,7 +641,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       for j in 1:n
         for bj in 1:length(B)
           w[j] = B[bj]
-          G[r, c] = trace(alpha * inner_product(V, v, w), QQ)
+          G[r, c] = absolute_tr(alpha * inner_product(V, v, w))
           w[j] = zero(E)
           c = c + 1
         end

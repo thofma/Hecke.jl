@@ -587,6 +587,11 @@ end
   @test_throws ArgumentError hermitian_genera(E, -1, sig, DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, min_scale = 0*DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, max_scale = 0*DE)
+
+  # without a determinant both scale bounds are required
+  @test_throws ArgumentError hermitian_genera(E, 8, sig)
+  @test_throws ArgumentError hermitian_genera(E, 8, sig; min_scale = DE)
+  @test_throws ArgumentError hermitian_genera(E, 8, sig; max_scale = DE)
   sig[rp[1]] = -12
   @test_throws ArgumentError hermitian_genera(E, 4, sig, DE)
 end
