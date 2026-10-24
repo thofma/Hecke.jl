@@ -192,6 +192,17 @@
   @test (@inferred Hecke.dimension_over_center(Ares)) == 9
   @test (@inferred Hecke.degree_as_central_simple_algebra(Ares)) == 3
 
+  # restriction to the base field itself is the identity
+  MQ = matrix_algebra(QQ, 2)
+  for A in [MQ, StructureConstantAlgebra(MQ)[1]]
+    B, BtoA = restrict_scalars(A, QQ)
+    @test B === A
+    @test domain(BtoA) === A && codomain(BtoA) === A
+    x = rand(A, -10:10)
+    @test BtoA(x) == x
+    @test preimage(BtoA, x) == x
+  end
+
   G = small_group(5, 1);
   QG = QQ[G];
   idems = @inferred central_primitive_idempotents(QG)
