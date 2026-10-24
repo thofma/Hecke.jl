@@ -1297,7 +1297,7 @@ function is_isomorphic(Q1::AbsSimpleNumFieldOrderQuoRing, Q2::AbsSimpleNumFieldO
   basis_O1 = basis(O1)
 
   for poss in Iterators.product([ elements_with_correct_order[o] for o in orders]...)
-    h = hom(Q1_A, collect(poss))
+    h = hom(Q1_A, Q2_A, collect(poss))
     if !is_bijective(h)
       continue
     end
