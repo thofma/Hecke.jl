@@ -16,6 +16,22 @@
     @test ZZMatrix(B) == hnf(A)
   end
 
+  # Transformations recording the sign normalization of a reduced row
+  A = sparse_matrix(matrix(ZZ, [1 0 0; 0 2 0]))
+  for (b, start) in [(sparse_row(ZZ, [1], [-1]), 2),
+                     (sparse_row(ZZ, [3], [-2]), 1),
+                     (sparse_row(ZZ, [2, 3], [-2, -1]), 1)]
+    r, T = Hecke.reduce_right(A, b, start, Val(true))
+    @test !is_negative(r.values[1])
+    @test Hecke.reduce_right(A, b, start) == r
+    B = deepcopy(A)
+    push!(B, b)
+    for t in T
+      Hecke.apply_left!(B, t)
+    end
+    @test B[3] == r
+  end
+
   p = 23
   m = matrix(ZZ, 30, 20, [powermod(i, j, p) for i=1:30 for j=1:20])
   hm = hnf(m)

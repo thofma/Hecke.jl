@@ -470,7 +470,7 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
   end
   if length(g.values) > 0 && is_negative(getindex!(p_v, g.values, 1))
     scale_row!(g, -1)
-    with_transform ? push!(trafos, sparse_trafo_scale{ZZRingElem}(nrows(A) + 1, ZZRingElem(-1))) : nothing
+    with_transform ? push!(trafos, sparse_trafo_scale(nrows(A) + 1, ZZRingElem(-1))) : nothing
   end
 
   if A.r == A.c
@@ -506,7 +506,7 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
     if is_negative(b.values[1])
       scale_row!(b, -1)
       if with_transform
-        push!(trafos, sparse_trafo_scale(nrows(A) + 1), ZZ(-1))
+        push!(trafos, sparse_trafo_scale(nrows(A) + 1, ZZ(-1)))
       end
     end
     with_transform ? (return b, trafos) : return b
@@ -516,7 +516,7 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
     if is_negative(b.values[1])
       scale_row!(b, -1)
       if with_transform
-        push!(trafos, sparse_trafo_scale(nrows(A) + 1), ZZ(-1))
+        push!(trafos, sparse_trafo_scale(nrows(A) + 1, ZZ(-1)))
       end
     end
 
@@ -560,10 +560,9 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
     j += 1
   end
   if length(b) > 0 && is_negative(getindex!(A_v, b.values, 1))
-    @assert new_g
     scale_row!(b, -1)
     if with_transform
-      push!(trafos, sparse_trafo_scale(nrows(A) + 1), ZZ(-1))
+      push!(trafos, sparse_trafo_scale(nrows(A) + 1, ZZ(-1)))
     end
   end
   release_tmp(A, tmpa)
