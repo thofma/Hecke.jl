@@ -320,20 +320,17 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
   pp = ZZRingElem(1)
   re = K(0)
   rf = ZK()
-  threshold = 3
-  if degree(K) > 30
-    threshold = div(degree(K), 10)
-  end
+  threshold = min(3, degree(K))
+  failures = 0
   while (true)
-    dt = prime_decomposition_type(ZK, Int(p))
-    fl = true
-    for i = 1:length(dt)
-      if dt[i][1] > threshold
-        fl = false
-        break
-      end
+    # Relax the degree bound after 32 consecutive unusable primes.
+    if failures == 32
+      threshold = min(2*threshold, degree(K))
+      failures = 0
     end
-    if !fl
+    failures += 1
+    if !all(t -> t[1] <= threshold,
+            prime_decomposition_type(ZK, Int(p)))
       p = next_prime(p)
       continue
     end
@@ -349,6 +346,7 @@ function evaluate_mod(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, B::A
       p = next_prime(p)
       continue
     end
+    failures = 0
     m = modular_lift(mp, me)
     if isone(pp)
       re = m
