@@ -392,6 +392,7 @@ struct VerifyContext
   units_fac::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}} #= as factored elements =#
   u::AbsSimpleNumFieldElem #= Minkowski unit =#
   is_normal::Bool
+  is_galois_stable::Bool #= supplied subgroup is stable modulo torsion =#
   is_cyclic::Bool
   auts::Vector{NumFieldHom{AbsSimpleNumField, AbsSimpleNumField, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldElem}}
   auts_gen::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, Hecke.MapDataFromAnticNumberField{AbsSimpleNumFieldElem}, AbsSimpleNumFieldElem}
@@ -405,7 +406,23 @@ end
 #end
 
 
-function initialize_verify_context(OK::AbsSimpleNumFieldOrder; test_normality::Bool = true, evaluate_elements::Bool = true)
+@doc raw"""
+    initialize_verify_context(units::Vector; is_galois_stable = false, ...)
+    initialize_verify_context(OK::AbsSimpleNumFieldOrder;
+                              is_galois_stable = false, ...)
+
+Create a context for verifying the supplied unit subgroup. Setting
+`is_galois_stable = true` asserts that this subgroup is stable modulo torsion
+under all automorphisms of the number field. This assertion is not checked;
+it enables the Minkowski unit shortcut in normal fields.
+
+For an order, the units are computed assuming GRH. This computation alone does
+not establish Galois stability unconditionally, so the flag also defaults to
+`false` in this case.
+"""
+function initialize_verify_context(OK::AbsSimpleNumFieldOrder;
+    test_normality::Bool = true, evaluate_elements::Bool = true,
+    is_galois_stable::Bool = false)
   K = Hecke.nf(OK)
   OK = lll(maximal_order(K))
   U, mU = unit_group_fac_elem(maximal_order(K); GRH = true)
@@ -414,18 +431,29 @@ function initialize_verify_context(OK::AbsSimpleNumFieldOrder; test_normality::B
   else
     units_fac = [mU(U[i]) for i in 2:ngens(U)]
   end
-  return initialize_verify_context(units_fac; test_normality, evaluate_elements = false)
+  return initialize_verify_context(units_fac; test_normality,
+                                   evaluate_elements = false, is_galois_stable)
 end
 
-function initialize_verify_context(units_fac::Vector{AbsSimpleNumFieldElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
-  return initialize_verify_context(FacElem.(units_fac); test_normality, evaluate_elements)
+function initialize_verify_context(
+    units_fac::Vector{AbsSimpleNumFieldElem};
+    test_normality::Bool = true, evaluate_elements::Bool = true,
+    is_galois_stable::Bool = false)
+  return initialize_verify_context(FacElem.(units_fac); test_normality,
+                                   evaluate_elements, is_galois_stable)
 end
 
-function initialize_verify_context(units_fac::Vector{AbsSimpleNumFieldOrderElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
-  return initialize_verify_context(elem_in_nf.(units_fac); test_normality, evaluate_elements)
+function initialize_verify_context(
+    units_fac::Vector{AbsSimpleNumFieldOrderElem};
+    test_normality::Bool = true, evaluate_elements::Bool = true,
+    is_galois_stable::Bool = false)
+  return initialize_verify_context(elem_in_nf.(units_fac); test_normality,
+                                   evaluate_elements, is_galois_stable)
 end
 
-function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality::Bool = true, evaluate_elements::Bool = true)
+function initialize_verify_context(units_fac::Vector{<:FacElem};
+    test_normality::Bool = true, evaluate_elements::Bool = true,
+    is_galois_stable::Bool = false)
   if evaluate_elements
     units_fac = FacElem.(evaluate.(units_fac))
   end
@@ -452,6 +480,8 @@ function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality:
       end
       auts_gen = mG(g)
     end
+  end
+  if _is_normal && is_galois_stable
     # now find a Minkowski unit
     for i in 1:length(units_fac)
       fl, = Hecke._isindependent([a(units_fac[i]) for a in auts])
@@ -461,20 +491,25 @@ function initialize_verify_context(units_fac::Vector{<:FacElem}; test_normality:
       end
     end
     if is_zero(u)
-      # not found yet
+      # not found yet, try random products of the given units
       k = 0
-      uu = K(mU(U(rand(0:1, ngens(U)))))
-      while !(Hecke._isindependent([a(uu) for a in auts]))
+      uu = prod(units_fac)
+      while !Hecke._isindependent([a(uu) for a in auts])[1]
         k += 1
-        uu = K(mU(rand(U, 2)))
         if k > 100
           error("something wrong")
         end
+        e = rand(-2:2, length(units_fac))
+        # the trivial product has no factors to apply the automorphisms to
+        iszero(e) && continue
+        uu = prod(units_fac[i]^e[i] for i in 1:length(units_fac))
       end
       u = evaluate(uu)
     end
   end
-  return VerifyContext(K, OK, elem_type(K)[], units_fac, u, _is_normal, _is_cyclic, auts, auts_gen, t, regulator(units_fac), exp, contains_subfield_units)
+  return VerifyContext(K, OK, elem_type(K)[], units_fac, u, _is_normal,
+                       is_galois_stable, _is_cyclic, auts, auts_gen, t,
+                       regulator(units_fac), exp, contains_subfield_units)
 end
 
 function _is_definitely_saturated(C::VerifyContext, p; strategy = :schirokauer)
@@ -485,7 +520,7 @@ function _is_definitely_saturated(C::VerifyContext, p; strategy = :schirokauer)
   if is_ramified(C.OK, p) || is_divisible_by(C.t, p)
     return Hecke.__is_definitely_saturated_default(C.units_fac, p)
   end
-  if C.is_normal
+  if C.is_normal && C.is_galois_stable
     fl = try
         fl, _ =  _schirokauer_map_data_minkowski_unit(C.K, C.u, p, C.auts; new = true)
         fl
@@ -521,8 +556,10 @@ function Hecke.__is_definitely_saturated_default(units::Vector{<:FacElem}, p)
   return 0 == nrows(Hecke.RelSaturate.compute_candidates_for_saturate(units, Int(p), 7.5))
 end
 
-function verify_maximlity_up_to(U::Vector, B::Int; strategy = :schirokauer)
-  C = initialize_verify_context(U; test_normality = true, evaluate_elements = true)
+function verify_maximlity_up_to(U::Vector, B::Int; strategy = :schirokauer,
+    is_galois_stable::Bool = false)
+  C = initialize_verify_context(U; test_normality = true,
+                                evaluate_elements = true, is_galois_stable)
   verify_maximlity_up_to(C, B; strategy)
 end
 
