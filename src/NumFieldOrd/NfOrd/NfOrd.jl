@@ -285,7 +285,7 @@ the trace matrix of $\mathcal O$.
 function reduced_discriminant(O::AbsSimpleNumFieldOrder)
   if is_equation_order(O)
     Zx = polynomial_ring(ZZ, cached = false)[1]
-    f = Zx(nf(O).pol)
+    f = change_base_ring(ZZ, nf(O).pol; parent = Zx)
     return reduced_resultant(f, derivative(f))
   end
   return maximal_elementary_divisor(trace_matrix(O, copy = false))

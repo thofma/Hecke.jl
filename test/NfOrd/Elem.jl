@@ -43,6 +43,21 @@
     @test b6.has_coord
     @test b1 == b6
 
+    # element with coordinates given as a row or column matrix
+    let
+      K, a = number_field(x^2 + 5, "a")
+      OK = maximal_order(K)
+      v = matrix(ZZ, 1, 2, [0, 1])
+      for check in (false, true)
+        b = OK(a, v, check)
+        @test b == OK(a)
+        @test b.has_coord && coordinates(b) == [ZZ(0), ZZ(1)]
+      end
+      @test coordinates(OK(a, transpose(v))) == [ZZ(0), ZZ(1)]
+      @test_throws ErrorException OK(a, matrix(ZZ, 1, 2, [1, 0]), true)
+      @test_throws ErrorException OK(a//2, matrix(ZZ, 1, 2, [0, 1]), true)
+    end
+
     b7 = @inferred O1()
     @test parent(b6) == O1
     @test typeof(b6) == AbsSimpleNumFieldOrderElem

@@ -259,4 +259,14 @@
   H = pseudo_hnf(M, :lowerleft)
   @test all(is_one, H.coeffs)
   @test is_one(H.matrix)
+
+  # bit sizes of the ideals and entries of a pseudo matrix
+  let
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 + 5, "a")
+    OK = maximal_order(K)
+    pm = pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, a//2]),
+                       [fractional_ideal(OK, 1*OK), fractional_ideal(OK, 3*OK)])
+    @test Hecke._bit_sizes(pm) == ["1" "1 1" "1 1" "0"; "2" "4 1" "0" "1 2"]
+  end
 end
