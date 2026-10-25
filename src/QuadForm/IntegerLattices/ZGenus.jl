@@ -310,11 +310,11 @@ function zero_integer_genus()
 end
 
 @doc raw"""
-    genus(A::MatElem) -> ZZGenus
+    genus_from_gram(A::MatElem) -> ZZGenus
 
-Return the genus of a $\mathbb Z$-lattice with gram matrix `A`.
+Return the genus of a $\mathbb Z$-lattice with Gram matrix `A`.
 """
-function genus(A::MatElem)
+function genus_from_gram(A::MatElem)
   @req ncols(A) == nrows(A) "Input must be a square matrix"
   @req rank(A) == ncols(A) "Input must have full rank"
   return genus(integer_lattice(; gram = A))
@@ -345,7 +345,7 @@ function genus(L::ZZLat)
     if p == 2
       val += 3
     end
-    push!(symbols, genus(AZZ, p, val; offset = 2*valuation(denom, p)))
+    push!(symbols, genus_from_gram(AZZ, p, val; offset = 2*valuation(denom, p)))
   end
   DA = diagonal(rational_span(L))
   neg = count(x < 0 for x in DA)
@@ -360,10 +360,10 @@ end
 Return the local genus symbol of `L` at the prime `p`.
 """
 function genus(L::ZZLat, p::IntegerUnion)
-  return genus(gram_matrix(L), p)
+  return genus_from_gram(gram_matrix(L), p)
 end
 
-function genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0)
+function genus_from_gram(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0)
   symbol = _p_adic_symbol(A, p, val)
   for i in 1:size(symbol)[1]
     symbol[i][1] = symbol[i][1] - offset
@@ -372,11 +372,11 @@ function genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0)
 end
 
 @doc raw"""
-    genus(A::QQMatrix, p::IntegerUnion) -> ZZLocalGenus
+    genus_from_gram(A::Union{ZZMatrix, QQMatrix}, p::IntegerUnion) -> ZZLocalGenus
 
-Return the local genus symbol of a Z-lattice with gram matrix `A` at the prime `p`.
+Return the local genus symbol of a Z-lattice with Gram matrix `A` at the prime `p`.
 """
-function genus(A::QQMatrix, _p::IntegerUnion)
+function genus_from_gram(A::QQMatrix, _p::IntegerUnion)
   @req is_symmetric(A) "Input must be symmetric"
   @req rank(A) == nrows(A) "Input must have full rank"
   p = ZZ(_p)
@@ -388,10 +388,10 @@ function genus(A::QQMatrix, _p::IntegerUnion)
   if p == 2
     val += 3
   end
-  return genus(AZZ, p, val; offset)
+  return genus_from_gram(AZZ, p, val; offset)
 end
 
-genus(A::ZZMatrix, _p::IntegerUnion) = genus(change_base_ring(QQ, A), _p)
+genus_from_gram(A::ZZMatrix, p::IntegerUnion) = genus_from_gram(change_base_ring(QQ, A), p)
 
 @doc raw"""
     direct_sum(S1::ZZLocalGenus, S2::ZZLocalGenus) -> ZZLocalGenus
@@ -1722,7 +1722,7 @@ function hasse_invariant(S::ZZLocalGenus)
   #=f0 = ZZRingElem[e]
   append!(f0, eltype(f0)[one(ZZ) for i in 2:n])
   mf0 = diagonal_matrix(f0)
-  gf0 = genus(mf0, prime(S))
+  gf0 = genus_from_gram(mf0, prime(S))
   @assert g == gf0
   =#
   if excess(S) == excess(g)
@@ -2200,7 +2200,7 @@ function gram_matrix(S::ZZLocalGenus)
     push!(G, _gram_from_jordan_block(p, block))
   end
   G = diagonal_matrix(QQ, G)
-  @hassert :Lattice 1  S == genus(G, p)
+  @hassert :Lattice 1  S == genus_from_gram(G, p)
   return G
 end
 
@@ -3522,7 +3522,7 @@ function rescale(G::ZZLocalGenus, a::RationalUnion)
   end
   g = ZZLocalGenus(p, data)
   #m = gram_matrix(G)
-  #@assert genus(a*m, p)==g
+  #@assert genus_from_gram(a*m, p)==g
   return g
 end
 
