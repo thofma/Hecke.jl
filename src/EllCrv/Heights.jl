@@ -348,15 +348,12 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
     x = evaluate(P[1], v, newprec)
     y = evaluate(P[2], v, newprec)
 
-    if abs(x)<0.5
-      t = 1/(x+1)
-      beta = 0
-    elseif abs(x) >= 0.5
+    if abs(x) >= 0.5
       t = 1/x
       beta = 1
     else
-      attempt = 2 * attempt
-      continue
+      t = 1/(x+1)
+      beta = 0
     end
 
     mu = -log(abs(t))

@@ -196,6 +196,17 @@
       end
     end
 
+    # corner case in local height computation: |sigma(P_x)| = 1/2 exactly
+    # before this testcase would just hang, infinitely increasing precision
+    let (K, i) = number_field(x^2 + 1, :i),
+        E = elliptic_curve(K, [0, 0, 0, 0, -288 - 91*i]),
+      D = 1 + 3*i
+      P = E([(3 - 4*i)//D^2, (-378 + 399*i)//D^3])
+      v = complex_places(K)[1]
+
+      h = local_height(P, v, 50)
+      @test overlaps(h, parent(h)("2.3664798676775410944873740579471174"))
+    end
   end
 
   @testset "Canonical height" begin
