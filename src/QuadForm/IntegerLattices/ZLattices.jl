@@ -777,8 +777,7 @@ function genus_representatives(_L::ZZLat; kwargs...)
   else
     L = _L
   end
-  # Inference barriers: each branch has a large call tree, and the binary
-  # one (class and unit groups of quadratic fields) is the largest
+  # inference barriers: compile each call tree only when it runs
   if rank(L) == 2
     LL = _to_number_field_lattice(L)
     G = Base.inferencebarrier(genus_representatives)(LL)::Vector{typeof(LL)}

@@ -1035,7 +1035,7 @@ function genus_representatives(
     return typeof(L)[JmodJ0[i]*L for i in 1:n]
   end
 
-  # Inference barriers: both call trees are large and often not needed
+  # inference barriers: compile each call tree only when it runs
   if is_definite(L)
     f = Base.inferencebarrier(enumerate_definite_genus)
     res = f(L; use_auto, max, use_mass)::Vector{typeof(L)}

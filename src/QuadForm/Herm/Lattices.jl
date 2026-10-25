@@ -765,7 +765,7 @@ function maximal_integral_lattice(V::HermSpace)
   if dim(V) == 1
     return L
   end
-  # inference barrier: large call tree, not needed in rank 1
+  # inference barrier: compile this call tree only when it runs
   return Base.inferencebarrier(maximal_integral_lattice)(L)::typeof(L)
 end
 

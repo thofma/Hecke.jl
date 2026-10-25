@@ -861,8 +861,7 @@ function _find_quaternion_algebra(b, P, I)
   #__P = convert(Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, collect(keys(_P)))
 
   found = false
-  # inference barrier: large call tree, often skipped by the return above
-  Base.inferencebarrier(unit_group)(R)
+  U, h = unit_group(R)
   function sign_vector(g)
     return matrix(F, 1, length(__P) + length(I),
                   vcat([div(1 - hilbert_symbol(K(g), b, p), 2) for p in __P ], [ div(1 - sign(g, p), 2) for p in I]))::typeof(target)
