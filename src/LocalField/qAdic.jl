@@ -57,7 +57,7 @@ end
 function getUnit(a::PadicFieldElem)
   u = ZZRingElem()
   u = set!(u, a.u)
-  return u, a.v, a.N
+  return u, a.v, precision(a)
 end
 
 function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)

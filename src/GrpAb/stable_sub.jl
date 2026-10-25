@@ -13,7 +13,7 @@ function base_ring_type(::Type{ZpnGModule})
 end
 
 function show(io::IO, M::ZpnGModule)
-  print(io, "Module over Z/", M.R.n, "Z with structure ", M.V)
+  print(io, "Module over Z/", modulus(M.R), "Z with structure ", M.V)
 end
 
 
@@ -154,12 +154,12 @@ end
 function _dualize_1(M::zzModMatrix, snf_struct::Vector{ZZRingElem})
 
   A=kernel(transpose(M), side = :right)
-  B=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
+  B=vcat(transpose(A),zero_matrix(base_ring(M), ncols(A),ncols(A)))
   for j=1:ncols(A)
     B[nrows(A)+j,j]=snf_struct[j]
   end
   S=kernel(B, side = :right)
-  C=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
+  C=vcat(transpose(A),zero_matrix(base_ring(M), ncols(A),ncols(A)))
   return S*C
 
 end
@@ -321,9 +321,9 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
     minlist = minimal_submodules(N,ind)
   end
   list=Vector{zzModMatrix}()
-  v=[divexact(ZZRingElem(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
+  v=[divexact(ZZRingElem(modulus(R)),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
-    K = abelian_group([ZZRingElem(R.n) for j=1:nrows(x)])
+    K = abelian_group([ZZRingElem(modulus(R)) for j=1:nrows(x)])
     A = lift(transpose(x))
     for j=1:nrows(A)
       for k=1:ncols(A)
@@ -381,7 +381,7 @@ function _mult_by_p(M::ZpnGModule)
   #
   #  Now, the others
   #
-  s = valuation(ZZRingElem(M.R.n),p)
+  s = valuation(ZZRingElem(modulus(M.R)),p)
   j = 1
   for i = 2:s
     while !is_divisible_by(V.snf[j], p^i)
@@ -498,7 +498,7 @@ function submodules_all(M::ZpnGModule; gram::Union{zzModMatrix, Nothing} = nothi
   @assert (gram === nothing && isempty(avoid)) || is_snf(M.V)
   S,mS = snf(M)
 
-  w = ZZRingElem[divexact(ZZRingElem(R.n), S.V.snf[j]) for j=1:ngens(S.V)]
+  w = ZZRingElem[divexact(ZZRingElem(modulus(R)), S.V.snf[j]) for j=1:ngens(S.V)]
 
   reshowell = Set{zzModMatrix}()
   res = Vector{zzModMatrix}()
@@ -634,7 +634,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Vector{Int})
   #Some data needed in the loop
   w = Vector{ZZRingElem}(undef, ngens(M.V))
   for i = 1:length(w)
-    w[i] = divexact(ZZRingElem(R.n), M.V.snf[i])
+    w[i] = divexact(ZZRingElem(modulus(R)), M.V.snf[i])
   end
   new_typesub = _update_typesub(typesub)
   #Now, the iterative process.
@@ -788,7 +788,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
 
   R=M.R
   S,mS=snf(M)
-  @assert exponent(S.V)==ZZRingElem(R.n)
+  @assert exponent(S.V)==ZZRingElem(modulus(R))
   N=Hecke._exponent_p_sub(S)
   lf=composition_factors_with_multiplicity(N)
   list=zzModMatrix[]
@@ -813,7 +813,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   #
   #  Check for redundancy
   #
-  w=ZZRingElem[divexact(ZZRingElem(R.n), S.V.snf[j]) for j=1:ngens(S.V)]
+  w=ZZRingElem[divexact(ZZRingElem(modulus(R)), S.V.snf[j]) for j=1:ngens(S.V)]
   list=_no_redundancy(list,w)
 
   #

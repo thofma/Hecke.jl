@@ -160,7 +160,7 @@ function _map(Q::QadicField, a::PadicFieldElem)
   v = valuation(a)
   if v >= 0
     q = Q(lift(ZZ, a))
-    return setprecision(q, a.N)
+    return setprecision(q, precision(a))
   else
     d = uniformizer(K)^-v
     n = a*d

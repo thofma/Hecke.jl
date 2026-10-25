@@ -462,7 +462,7 @@ This returns u, v and the precision
 function canonical_split(a::PadicFieldElem)
   u = ZZ()
   ccall((:fmpz_set, Hecke.libflint), Nothing, (Ref{ZZRingElem}, Ref{Int}), u, a.u)
-  return u, a.v, a.N
+  return u, a.v, precision(a)
 end
 
 #TODO: different name ...
