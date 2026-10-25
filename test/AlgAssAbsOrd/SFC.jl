@@ -715,5 +715,26 @@
     @test is_class_set(O, right_class_set(O))
     @test right_class_set(order(algebra(O), basis_pmatrix(O))) ==
           right_class_set(O)
+
+    # indefinite: the reduced norm is a bijection onto Cl_{G(O)} R (Voight,
+    # Quaternion Algebras, Theorem 28.5.5), which is trivial for a maximal
+    # order over QQ, of order 2 for Z + 5M in (-1, 3), where the norms of the
+    # units at 5 are squares, and the class group of R for a maximal order
+    # split at every real place, with the same ideals on every call
+    A = quaternion_algebra(QQ, -1, 3)
+    M = maximal_order(A)
+    @test right_class_set(M) == [1 * M]
+    O = plus_multiple(M, 5)
+    C = right_class_set(O)
+    @test length(C) == 2 && all(I -> right_order(I) == O, C)
+    @test Set(jacobi_symbol(numerator(normred(I)), ZZ(5)) for I in C) ==
+          Set([1, -1])
+    @test_throws ArgumentError Hecke.type_number(M)
+    K, = quadratic_field(10)
+    M = maximal_order(quaternion_algebra(K, -1, 3))
+    C = right_class_set(M)
+    @test length(C) == order(class_group(base_ring(M))[1])
+    @test all(I -> right_order(I) == M, C)
+    @test all(_ -> Hecke._right_class_set(M) == C, 1:3)
   end
 end

@@ -60,8 +60,11 @@ choices.
 If $A$ is totally definite, the classes are found by multiplying ideals of
 prime reduced norm, and their masses are checked to add up to the mass of $O$
 given by the Eichler mass formula [Voi21](@cite), Main Theorem 26.1.5, which
-proves that every class has been found. Otherwise an `ArgumentError` is
-thrown.
+proves that every class has been found. Otherwise the reduced norm is a
+bijection from the classes onto a class group of the base field
+[Voi21](@cite), Theorem 28.5.5, and one ideal of prime reduced norm is
+returned per class; if $O$ is not an Eichler order at a prime above 2 of norm
+greater than 16, an `ArgumentError` is thrown.
 
 # Examples
 
@@ -72,6 +75,9 @@ julia> C = right_class_set(O);
 
 julia> length(C), all(I -> right_order(I) == O, C)
 (8, true)
+
+julia> length(right_class_set(maximal_order(quaternion_algebra(QQ, -1, 3))))
+1
 ```
 """
 @attr Vector{ideal_type(typeof(O))} function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
@@ -79,14 +85,18 @@ julia> length(C), all(I -> right_order(I) == O, C)
 end
 
 function _right_class_set(O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
-  @req _is_totally_definite_quaternion(algebra(O)) "Algebra must be totally definite"
-  return _right_class_set_definite(O)
+  if _is_totally_definite_quaternion(algebra(O))
+    return _right_class_set_definite(O)
+  end
+  return _right_class_set_indefinite(O)
 end
 
 function _right_class_set(
     O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
-  @req _is_totally_definite_quaternion(algebra(O)) "Algebra must be totally definite"
-  return _right_class_set_definite(O)
+  if _is_totally_definite_quaternion(algebra(O))
+    return _right_class_set_definite(O)
+  end
+  return _right_class_set_indefinite(O)
 end
 
 _right_class_set(O::AlgAssRelOrd) = _right_class_set_naive(O)
@@ -504,8 +514,182 @@ function _trace_diagonal(A::QuaternionAlgebra)
   return diagonal_matrix(K, [K(2), -2 * a, -2 * b, 2 * a * b])
 end
 
+################################################################################
+#
+#  Right class sets of indefinite orders
+#
+################################################################################
+
+# The right class set of an order O of a quaternion algebra satisfying the
+# Eichler condition: 1 * O, then one integral right ideal of prime reduced
+# norm for each further class of Cl_{G(O)} R, onto which the reduced norm is a
+# bijection (Voight, Quaternion Algebras, Theorem 28.5.5).
+function _right_class_set_indefinite(O)
+  G, cls = _indefinite_class_group(O)
+  N = _reduced_disc(O)
+  ideals = [1 * O]
+  classes = [zero(G)]
+  if O isa AlgAssAbsOrd
+    candidates = b -> [ZZ(p) for p in PrimesSet(2, b)]
+    good = p -> !is_divisible_by(N, p)
+  else
+    R = base_ring(O)
+    candidates = b -> sort!(prime_ideals_up_to(R, b); by = norm)
+    good = P -> valuation(N, P) == 0
+  end
+  # Every class of a ray class group contains infinitely many primes
+  # (Neukirch, Algebraic Number Theory, Theorem VII.13.2).
+  bound = 10
+  while length(ideals) < order(G)
+    for P in candidates(bound)
+      good(P) || continue
+      g = cls(P)
+      g in classes && continue
+      push!(ideals, first(maximal_integral_ideals(O, P; side = :right)))
+      push!(classes, g)
+    end
+    bound *= 2
+  end
+  return ideals
+end
+
+# The group Cl_{G(O)} R in bijection with the right classes of the order O of
+# an indefinite quaternion algebra, and the map sending a prime of R not
+# dividing discrd(O) to the class of the ideals of that reduced norm: the ray
+# class group modulo m and the real places where the algebra ramifies, divided
+# by the local reduced norms of units, where m is the product of p^(v_p(4) + 1)
+# over the primes p where O is not Eichler (Voight, Quaternion Algebras,
+# Theorem 28.5.5; Smertnig-Voight, Trans. London Math. Soc. 6 (2019), 53-86,
+# Remark 6.12, for a definite algebra, there with every real place).
+function _indefinite_class_group(
+    O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
+  S = _non_eichler_primes(O)
+  if isempty(S)
+    G = abelian_group(Int[])
+    return G, (_::IntegerUnion) -> zero(G)
+  end
+  ls = [valuation(ZZ(4), p) + 1 for p in S]
+  m = prod(p^l for (p, l) in zip(S, ls))
+  Zm, = residue_ring(ZZ, m)
+  U, mU = unit_group(Zm)
+  cls(a::IntegerUnion) = preimage(mU, Zm(a))
+  # No real place ramifies, so -1 is among the global elements divided out.
+  H = [cls(-1)]
+  for (p, l) in zip(S, ls)
+    q = p^l
+    Zq, = residue_ring(ZZ, q)
+    Uq, mUq = unit_group(Zq)
+    res = _local_norm_residues(O, p, l)
+    local_gens = res === :all ? gens(Uq) : [preimage(mUq, Zq(r)) for r in res]
+    # The squares are the norms of scalars.
+    for u in vcat(local_gens, [2 * g for g in gens(Uq)])
+      push!(H, cls(crt(lift(mUq(u)), q, ZZ(1), divexact(m, q))))
+    end
+  end
+  G, mG = quo(U, H)
+  return G, (ell::IntegerUnion) -> mG(cls(ell))
+end
+
+function _indefinite_class_group(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
+  A = algebra(O)
+  R = base_ring(O)
+  K = base_ring(A)
+  omega = [v for v in real_places(K) if !is_split(A, v)]
+  S = _non_eichler_primes(O)
+  ls = [valuation(R(4), P) + 1 for P in S]
+  m = prod((P^l for (P, l) in zip(S, ls)); init = 1 * R)
+  C, mC = ray_class_group(m, omega; GRH = false)
+  n = minimum(m)
+  H = elem_type(C)[]
+  for (k, P) in enumerate(S)
+    Pl = P^ls[k]
+    rest = prod((S[j]^ls[j] for j in eachindex(S) if j != k); init = 1 * R)
+    Q, mQ = quo(R, Pl)
+    U, mU = unit_group(Q)
+    res = _local_norm_residues(O, P, ls[k])
+    local_gens = res === :all ? gens(U) : [preimage(mU, mQ(r)) for r in res]
+    for u in vcat(local_gens, [2 * g for g in gens(U)])
+      # b + t n is b modulo m, and totally positive for t large.
+      b = make_positive(crt(lift(mU(u)), Pl, one(R), rest), n)
+      push!(H, mC \ (b * R))
+    end
+  end
+  G, mG = quo(C, H)
+  return G, (P::AbsNumFieldOrderIdeal) -> mG(mC \ P)
+end
+
+# Residues modulo p^l which, together with the squares, generate
+# nrd(O_p^x) modulo 1 + p^l R_p; or :all if that is every unit. Here
+# l = v_p(4) + 1, so that 1 + p^l R_p consists of squares (Smertnig-Voight,
+# Trans. London Math. Soc. 6 (2019), 53-86, Remark 6.12).
+function _local_norm_residues(O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}},
+                              p::ZZRingElem, l::Int)
+  B = elem_in_algebra.(basis(O))
+  # An element of O_p is a unit if and only if its reduced norm is (Voight,
+  # Quaternion Algebras, Exercise 10.15).
+  # At an odd prime, nrd modulo p is a quadratic form over F_p, which takes
+  # every nonzero value a if its rank is at least 2: with Q its
+  # nondegenerate part, Q - a t^2 is isotropic (ibid., Lemma 12.3.5), so
+  # either Q takes the value a or Q is isotropic and then contains a
+  # hyperbolic plane (ibid., Lemma 5.4.2), which is universal. If its rank is
+  # 1, it takes only squares, nrd(1) being 1.
+  if is_odd(p)
+    F = GF(p)
+    G = _trace_form_gram(algebra(O), basis_matrix(O))
+    return rank(map_entries(x -> F(ZZ(x)), G)) >= 2 ? :all : ZZRingElem[]
+  end
+  # Above 2: the norms of lifts of the units of O/pO, the elements of odd
+  # norm, and of 1 + p^i b for a basis b of O; since
+  # nrd(1 + p^i x) = 1 + p^i trd(x) modulo p^(i + 1), the latter generate
+  # nrd(1 + pO_p) modulo 1 + p^l Z_p.
+  q = p^l
+  res = Set{ZZRingElem}()
+  for c in Iterators.product(ntuple(_ -> 0:1, 4)...)
+    n = ZZ(normred(sum(c[i] * B[i] for i in 1:4)))
+    is_odd(n) && push!(res, mod(n, q))
+  end
+  for i in 1:(l - 1), b in B
+    push!(res, mod(ZZ(normred(1 + p^i * b)), q))
+  end
+  return collect(res)
+end
+
+function _local_norm_residues(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra},
+    P::AbsNumFieldOrderIdeal, l::Int)
+  A = algebra(O)
+  R = base_ring(O)
+  # The rows of B are elements of O whose classes form a basis of O/PO over
+  # R/P.
+  B = _local_basis_submodule_matrix(basis_pmatrix(O), P)
+  F, mF = residue_field(R, P)
+  # As over QQ, with pi^i r for r in a basis of R in place of p^i above 2.
+  if is_odd(minimum(P))
+    G = _trace_form_gram(A, B)
+    return rank(map_entries(x -> mF(R(x)), G)) >= 2 ? :all : elem_type(R)[]
+  end
+  @req norm(P) <= 16 ("Not implemented for orders that are not Eichler " *
+                       "at a prime above 2 of norm greater than 16")
+  e = [elem_from_mat_row(A, B, i) for i in 1:4]
+  Pl = P^l
+  reps = [preimage(mF, a) for a in F]
+  # The residues generate the same group for any uniformizer.
+  pi = uniformizer(P)
+  res = Set{elem_type(R)}()
+  for c in Iterators.product(ntuple(_ -> reps, 4)...)
+    n = R(normred(sum(elem_in_nf(c[i]) * e[i] for i in 1:4)))
+    !iszero(n) && valuation(n, P) == 0 && push!(res, mod(n, Pl))
+  end
+  for i in 1:(l - 1), r in absolute_basis(R), x in e
+    push!(res, mod(R(normred(one(A) + elem_in_nf(pi^i * r) * x)), Pl))
+  end
+  return collect(res)
+end
+
 # { Compute type number for arbitrary order using RightClassSet }
 function type_number(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+  @req !is_eichler(algebra(O)) "Algebra must be totally definite"
   C = right_class_set(O)
   orders = [left_order(R) for R in C]
   nonisomorphic = typeof(O)[]
