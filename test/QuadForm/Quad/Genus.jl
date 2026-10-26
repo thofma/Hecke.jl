@@ -229,3 +229,18 @@ end
   G2 = genus(discriminant_group(L), (0, 4))
   @test genus(representative(G2)) == G
 end
+
+@testset "direct sum of global genera" begin
+  # the local symbols of the summands store equal but non-identical primes
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 - 2, "a", cached = false)
+  Ls = [quadratic_lattice(K, gram = diagonal_matrix(K, [K(3), K(1)])),
+        quadratic_lattice(K, gram = identity_matrix(K, 2)),
+        quadratic_lattice(K, gram = diagonal_matrix(K, [K(5), K(-1), a])),
+        quadratic_lattice(K, gram = diagonal_matrix(K, [a, 2*a + 1]))]
+  for L1 in Ls, L2 in Ls
+    G = @inferred direct_sum(genus(L1), genus(L2))
+    @test G == genus(direct_sum(L1, L2)[1])
+    @test G.rank == rank(L1) + rank(L2)
+  end
+end

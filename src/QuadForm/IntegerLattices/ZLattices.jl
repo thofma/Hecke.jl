@@ -119,6 +119,16 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; 
   end
 end
 
+### Documentation in ../Lattices.jl
+function lattice(V::QuadSpace{QQField, QQMatrix}, gens::Vector)
+  @req all(v -> length(v) == dim(V), gens) "Incompatible arguments: the length of the elements of gens must correspond to the dimension of V"
+  B = zero_matrix(QQ, length(gens), dim(V))
+  for i in 1:length(gens), j in 1:dim(V)
+    B[i, j] = gens[i][j]
+  end
+  return lattice(V, B; isbasis = false)
+end
+
 function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true, isbasis::Bool=true)
   @req !check || (rank(B) == nrows(B)) "The rows of B must define a free system of vectors"
   V = ambient_space(L)

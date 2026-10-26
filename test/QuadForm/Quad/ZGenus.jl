@@ -633,6 +633,15 @@ end
 @testset "Fix issues" begin
   ## Issue 1103
   @test sprint(show, "text/plain", genus(root_lattice(:E, 8), 2)) isa String
+
+  # embed_in_unimodular with ZZRingElem signature agrees with the Int version
+  S = root_lattice(:A, 2)
+  L1, S1, = embed_in_unimodular(S, ZZ(8), ZZ(0))
+  L2, S2, = embed_in_unimodular(S, 8, 0)
+  @test gram_matrix(L1) == gram_matrix(L2)
+  @test basis_matrix(S1) == basis_matrix(S2)
+  @test genus(L1) == genus(root_lattice(:E, 8))
+  @test is_primitive(L1, S1)
 end
 
 @testset "Canonical symbols" begin

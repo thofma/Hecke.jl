@@ -208,6 +208,14 @@ end
   @test ambient_space(Lres) === Vres
   @test all(v -> VrestoV(VrestoV\v) == v, gens(L))
 
+  # restriction of scalars from QQ to QQ rescales the form by alpha
+  V = quadratic_space(QQ, QQ[2 1; 1 2])
+  Vres, VrestoV = restrict_scalars(V, QQ)
+  @test gram_matrix(Vres) == gram_matrix(V)
+  @test codomain(VrestoV) === V
+  Vres, = restrict_scalars(V, QQ, QQ(3))
+  @test gram_matrix(Vres) == 3 * gram_matrix(V)
+
 
   Qx, x = polynomial_ring(QQ, "x")
   f = x - 1

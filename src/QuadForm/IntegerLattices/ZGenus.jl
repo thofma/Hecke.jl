@@ -3363,8 +3363,8 @@ function embed_in_unimodular(S::ZZLat, pos::IntegerUnion, neg::IntegerUnion; pri
   pS, kS, nS = signature_tuple(S)
   @req kS == 0 "S must be non-degenerate"
   even || error("NotImplemented: for now we need the unimodular lattice to be even.")
-  pR = pos - pS
-  nR = neg - nS
+  pR = Int(pos) - pS
+  nR = Int(neg) - nS
   DS = discriminant_group(S)
   DR = rescale(DS, -1)  # discriminant group of R = S^\perp in L as predicted by Nikulin
   GR = genus(DR, (pR, nR)) # genus of R
