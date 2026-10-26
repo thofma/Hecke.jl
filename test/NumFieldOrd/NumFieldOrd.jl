@@ -235,13 +235,10 @@ let # rand and uniformizer for prime ideals of a non-simple field
   Qx, x = QQ[:x]
   K, = number_field([x^2 - 2, x^2 - 3])
   OK = maximal_order(K)
-  for p in [2, 3], (P, e) in prime_decomposition(OK, p)
+  for p in [2, 3], (P, _) in prime_decomposition(OK, p)
     @test rand(P, 5) in P
-    # same prime without the normal presentation from prime_decomposition
-    Q = ideal(OK, P.gen_one, P.gen_two)
-    Q.is_prime = 1
-    Q.minimum = ZZ(p)
-    Q.splitting_type = P.splitting_type
+    Q = ideal(OK, basis_matrix(P))
+    @test is_prime(Q)
     @test valuation(uniformizer(Q), P) == 1
   end
 end
