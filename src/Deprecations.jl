@@ -291,15 +291,10 @@ end
 @deprecate is_locally_isomorphic_with_isomophism is_locally_isomorphic_with_isomorphism
 @deprecate islocally_isomorphic_with_isomophism is_locally_isomorphic_with_isomorphism
 
-# Deprecated in 0.41.0
-@deprecate genus(A::MatElem) genus_from_gram(A)
-@deprecate genus(A::QQMatrix, p::IntegerUnion) genus_from_gram(A, p)
-@deprecate genus(A::ZZMatrix, p::IntegerUnion) genus_from_gram(A, p)
-@deprecate genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0) genus_from_gram(A, p, val; offset)
-
-# Deprecated in 0.41.1
+# Keyword `isbasis` renamed to `is_basis` in 0.41.1
 function _is_basis_kwarg(is_basis::Bool, isbasis::Union{Nothing, Bool}, f::Symbol)
   isnothing(isbasis) && return is_basis
-  Base.depwarn("The keyword `isbasis` is deprecated, use `is_basis` instead.", f)
+  # TODO: enable in the next breaking release
+  # Base.depwarn("The keyword `isbasis` is deprecated, use `is_basis` instead.", f)
   return isbasis
 end
