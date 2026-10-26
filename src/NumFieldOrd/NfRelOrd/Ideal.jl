@@ -1120,9 +1120,9 @@ end
 
 function prime_decomposition(O::RelNumFieldOrder, p::Union{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, RelNumFieldOrderIdeal}; compute_uniformizer::Bool = true, compute_anti_uniformizer::Bool = true)
   if !is_simple(nf(O)) || is_index_divisor(O, p)
-    # inference barrier: compile this call tree only when it runs
-    f = Base.inferencebarrier(prime_dec_index)
-    ls = f(O, p)::Vector{Tuple{ideal_type(O), Int}}
+    # inference stops at invokelatest: compile this call tree only when it runs
+    ls = Base.invokelatest(prime_dec_index, O, p)
+    ls = ls::Vector{Tuple{ideal_type(O), Int}}
   else
     ls = prime_dec_nonindex(O, p, compute_uniformizer = compute_uniformizer)
   end
