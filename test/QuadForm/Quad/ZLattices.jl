@@ -545,7 +545,7 @@ end
   end
 
   q = quadratic_space(QQ, QQ[2 1; 1 2])
-  L = lattice(q, QQ[0 0; 0 0], isbasis = false)
+  L = lattice(q, QQ[0 0; 0 0], is_basis = false)
   g = automorphism_group_generators(L)
   @test rank(L) == 0
   @test g == [identity_matrix(QQ, 2)]
@@ -777,7 +777,7 @@ end
   L = lattice(V, [[1, 0], [0, 2], [1, 2]])
   @test L isa ZZLat
   @test ambient_space(L) === V
-  @test L == lattice(V, QQ[1 0; 0 2; 1 2]; isbasis = false)
+  @test L == lattice(V, QQ[1 0; 0 2; 1 2]; is_basis = false)
   @test lattice(V, [QQ.([1//2, 0])]) == lattice(V, QQ[1//2 0])
   L = lattice(V, [])
   @test L isa ZZLat

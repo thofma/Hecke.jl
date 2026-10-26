@@ -207,7 +207,7 @@
       @test allunique(R)
       for (L, RL) in zip(reps, R), U in unimodular[1:3]
         B = U * basis_matrix(L)
-        LU = lattice(ambient_space(L), B; isbasis = true)
+        LU = lattice(ambient_space(L), B; is_basis = true)
         @test gram_matrix(eisenstein_reduction(LU)) == RL
       end
     end

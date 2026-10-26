@@ -28,7 +28,7 @@
     end
     images = [2 * elem_in_algebra(y) - trred(elem_in_algebra(y))
               for y in basis(O)]
-    @test L == lattice(ambient_space(L), coords(images); isbasis = false)
+    @test L == lattice(ambient_space(L), coords(images); is_basis = false)
   end
 
   # Goren-Love, Thm. 1.4: maximal orders of B_p are isomorphic if and only if
@@ -41,7 +41,7 @@
   A = quaternion_algebra(QQ, -97, -19)
   e, i, j, k = basis(A)
   O = order(A, [e, QQ(1, 2) * (e + j), QQ(1, 2) * (i + k),
-                QQ(1, 19) * (6 * j + k)]; isbasis = true)
+                QQ(1, 19) * (6 * j + k)]; is_basis = true)
   @test is_maximal(O)
   Os = [O; [left_order(I) for l in (2, 3)
             for I in Hecke.maximal_integral_ideals(O, l; side = :right)]]
@@ -74,7 +74,7 @@
       end
       images = [2 * elem_in_algebra(y) - trred(elem_in_algebra(y))
                 for y in basis(O)]
-      @test L == lattice(ambient_space(L), coords(images); isbasis = false)
+      @test L == lattice(ambient_space(L), coords(images); is_basis = false)
     end
   end
 

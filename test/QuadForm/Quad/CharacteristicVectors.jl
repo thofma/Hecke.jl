@@ -21,7 +21,7 @@
     M[n+1, j] = 1//2
   end
   # the unimodular lattice D_12^+, whose root sublattice D_12 has index 2
-  Dplus = lattice(quadratic_space(QQ, identity_matrix(QQ, n)), M; isbasis=false)
+  Dplus = lattice(quadratic_space(QQ, identity_matrix(QQ, n)), M; is_basis=false)
   G = matrix(QQ, 4, 4, [2,0,0,0, 0,3,1,1, 0,1,3,-1, 0,1,-1,5])
   Ls = ZZLat[root_lattice(:A, 5), root_lattice(:D, 6), root_lattice(:E, 7),
              Dplus, integer_lattice(gram = G)]
