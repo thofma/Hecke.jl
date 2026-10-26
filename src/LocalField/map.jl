@@ -448,6 +448,10 @@ end
 ################################################################################
 
 # f : K -> L, g : L -> M
+function _compose(f::MapDataFromPadicField, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(M)
+end
+
 function _compose(f::MapDataFromQadicField, g#= map data =#, K, L, M)
   return map_data_type(K, M)(image(g, M, image(f, L, gen(K))))
 end

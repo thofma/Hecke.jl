@@ -227,6 +227,20 @@
       @test g(f(z)) == z
     end
 
+    # Composition of maps whose domain is a LocalField over a p-adic field
+    Qp = padic_field(3, precision = 20)
+    Qpx, x = polynomial_ring(Qp, "x")
+    U, u = unramified_extension(x^2 + 1)
+    f = hom(U, U, -u)
+    @test f * f == id_hom(U)
+    @test (f * f)(u + 2) == u + 2
+    Ut, t = polynomial_ring(U, "t")
+    M, c = eisenstein_extension(t^2 - 3, "c")
+    h = hom(M, M, f, -c)
+    @test h(c) == -c
+    @test h(M(u)) == -M(u)
+    @test (h * h)(c + M(u)) == c + M(u)
+
     # QadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
