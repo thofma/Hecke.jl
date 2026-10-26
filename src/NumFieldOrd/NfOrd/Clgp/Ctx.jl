@@ -165,7 +165,7 @@ function to_magma(f::IOStream, clg::ClassGrpCtx)
   end
   print(f, "];\n")
 
-  to_magma(f, clg.M, name = "MM")
+  to_magma(f, vcat(clg.M.bas_gens, clg.M.rel_gens), name = "MM")
 end
 
 function to_magma(s::String, c::ClassGrpCtx)
