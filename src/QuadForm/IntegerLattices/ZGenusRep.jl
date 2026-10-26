@@ -1052,7 +1052,7 @@ function enumerate_definite_genus(
     append!(edg, _edg)
     length(edg) >= max && return edg
   end
-  sc != 1 && map!(L -> lattice_in_same_ambient_space(_L, basis_matrix(L); check=false, isbasis=true), edg, edg)
+  sc != 1 && map!(L -> lattice_in_same_ambient_space(_L, basis_matrix(L); check=false, is_basis=true), edg, edg)
   return edg
 end
 

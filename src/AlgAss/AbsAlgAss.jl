@@ -754,7 +754,7 @@ of the basis elements of $A$ and a map from $B$ to $A$.
 """
 function regular_matrix_algebra(A::Union{ StructureConstantAlgebra, GroupAlgebra })
   K = base_ring(A)
-  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true)
+  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], is_basis = true)
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)); check = false)
 end
 

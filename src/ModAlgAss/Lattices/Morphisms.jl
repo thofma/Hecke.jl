@@ -52,7 +52,7 @@ function endomorphism_ring(f::EndAlgMap, L::ModAlgAssLat)
     end
   end
   bas = [Bminv * b * Bm for b in BELint]
-  O = order(E, [E(b, check = false) for b in bas], isbasis = true, check = false)
+  O = order(E, [E(b, check = false) for b in bas], is_basis = true, check = false)
   set_attribute!(L, :endomorphism_ring => (O, f))
   return O
 end

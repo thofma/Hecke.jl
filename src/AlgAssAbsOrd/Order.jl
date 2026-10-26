@@ -1052,7 +1052,7 @@ function _maximal_order_via_decomposition(O::AlgAssAbsOrd, cache_in_substructure
     Mibas = [ mAi(elem_in_algebra(b)) for b in basis(Mi)]
     append!(bas, Mibas)
   end
-  M = order(A, bas, isbasis = true, check = false)
+  M = order(A, bas, is_basis = true, check = false)
   N = order(A, _hnf_integral(basis_matrix(M, copy = false)))
   N.is_maximal = 1
   return N

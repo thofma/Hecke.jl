@@ -756,7 +756,7 @@ end
   d = dim(A)
   K = coefficient_ring(A)
   BAt = [transpose(matrix(a, copy = false)) for a in BA]
-  Aop = matrix_algebra(coefficient_ring(A), BAt, isbasis = true)
+  Aop = matrix_algebra(coefficient_ring(A), BAt, is_basis = true)
   return Aop, hom(A, Aop, identity_matrix(K, d), identity_matrix(K, d))
 end
 
