@@ -67,7 +67,7 @@
     O8 = order(K1, [a1])
     @test O8 == equation_order(K1)
 
-    @test_throws ErrorException order(K1, [a1, a1, a1], isbasis = true)
+    @test_throws ErrorException order(K1, [a1, a1, a1], is_basis = true)
     #@test_throws ErrorException order(K1, [1, a1, a1])
     #@test_throws ErrorException order(K1, [1.0, a1, a1])
     @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))

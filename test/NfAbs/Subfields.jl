@@ -507,7 +507,7 @@ end
     kt, t = k[:t]
     K, _ = number_field(t^8 - 8*t^6 + 18*t^4 - 104*t^2 + 1, :b)
     r2, r3 = roots(K, t^2 - 2)[1], roots(K, t^2 - 3)[1]
-    L, _ = subfield(K, [one(K), r2, r3, r2*r3], isbasis = true)
+    L, _ = subfield(K, [one(K), r2, r3, r2*r3], is_basis = true)
     @test degree(L) == 4
   end
 

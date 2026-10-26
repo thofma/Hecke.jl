@@ -16,7 +16,7 @@
 
     # Supplied bases over an algebra coefficient ring.
     B = [matrix(QG, 1, 1, [2*b]) for b in basis(QG)]
-    A = matrix_algebra(QQ, QG, B; isbasis = true)
+    A = matrix_algebra(QQ, QG, B; is_basis = true)
     @test dim(A) == 2
     @test matrix.(basis(A)) == B
     @test coefficients(A(B[1] + 2*B[2])) == QQ.([1, 2])
@@ -24,7 +24,7 @@
   end
 
   @testset "multiplication table" begin
-    M = matrix_algebra(QQ, [matrix(QQ, 1, 1, [4])]; isbasis=true)
+    M = matrix_algebra(QQ, [matrix(QQ, 1, 1, [4])]; is_basis=true)
     @test Hecke._matrix_in_algebra(matrix(QQ, 1, 1, [1]), M) == [QQ(1, 4)]
     @test multiplication_table(M) == fill(QQ(4), 1, 1, 1)
 

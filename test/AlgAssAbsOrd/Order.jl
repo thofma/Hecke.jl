@@ -174,7 +174,7 @@
     @test count(is_maximal, S) == 2
 
     A = matrix_algebra(QQ, 6)
-    O = order(A, basis(A), isbasis = true)
+    O = order(A, basis(A), is_basis = true)
     M = maximal_order(O)
     @test is_unit(discriminant(M))
 

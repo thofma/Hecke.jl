@@ -143,7 +143,7 @@
   # issubset
   G = small_group(4, 2)
   QG = QQ[G]
-  ZG = order(QG, basis(QG), isbasis = true)
+  ZG = order(QG, basis(QG), is_basis = true)
   M = maximal_order(ZG)
   @test is_subset(2 * ZG, ZG)
   @test is_subset(2 * ZG, M)
@@ -161,7 +161,7 @@
   # primary decomposition
   G = small_group(4, 2)
   QG = QQ[G]
-  ZG = order(QG, basis(QG), isbasis = true)
+  ZG = order(QG, basis(QG), is_basis = true)
   M = maximal_order(ZG)
   I = 6 * ZG
   PD = primary_decomposition(I, ZG)

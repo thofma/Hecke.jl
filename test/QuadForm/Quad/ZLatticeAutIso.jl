@@ -545,7 +545,7 @@ end
   end
 
   q = quadratic_space(QQ, QQ[2 1; 1 2])
-  L = lattice(q, QQ[0 0; 0 0], isbasis = false)
+  L = lattice(q, QQ[0 0; 0 0], is_basis = false)
   g = automorphism_group_generators(L)
   @test rank(L) == 0
   @test g == [identity_matrix(QQ, 2)]
