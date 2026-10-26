@@ -50,21 +50,11 @@ end
     right_class_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd}) -> Vector
 
 Return representatives of the classes of locally principal right ideals of
-the order $O$ of a quaternion algebra $A$ over $\mathbf{Q}$ or a number field,
-where $I$ and $J$ lie in the same class if $J = \alpha I$ for some
-$\alpha \in A^\times$. The representatives are integral right ideals of $O$,
-and the first is $1 \cdot O$. If $A$ is a `QuaternionAlgebra` over
-$\mathbf{Q}$ or an absolute number field, they do not depend on random
-choices.
+the order $O$ of a quaternion algebra $A$ over $\mathbf{Q}$ or a number field.
+Two ideals $I$ and $J$ lie in the same class if $J = \alpha I$ for some
+$\alpha \in A^\times$.
 
-If $A$ is totally definite, the classes are found by multiplying ideals of
-prime reduced norm, and their masses are checked to add up to the mass of $O$
-given by the Eichler mass formula [Voi21](@cite), Main Theorem 26.1.5, which
-proves that every class has been found. Otherwise the reduced norm is a
-bijection from the classes onto a class group of the base field
-[Voi21](@cite), Theorem 28.5.5, and one ideal of prime reduced norm is
-returned per class; if $O$ is not an Eichler order at a prime above 2 of norm
-greater than 16, an `ArgumentError` is thrown.
+The representatives are integral right ideals of $O$.
 
 # Examples
 
@@ -663,23 +653,21 @@ function _local_norm_residues(
   # The rows of B are elements of O whose classes form a basis of O/PO over
   # R/P.
   B = _local_basis_submodule_matrix(basis_pmatrix(O), P)
-  F, mF = residue_field(R, P)
+  _, mF = residue_field(R, P)
   # As over QQ, with pi^i r for r in a basis of R in place of p^i above 2.
   if is_odd(minimum(P))
     G = _trace_form_gram(A, B)
     return rank(map_entries(x -> mF(R(x)), G)) >= 2 ? :all : elem_type(R)[]
   end
-  @req norm(P) <= 16 ("Not implemented for orders that are not Eichler " *
-                       "at a prime above 2 of norm greater than 16")
   e = [elem_from_mat_row(A, B, i) for i in 1:4]
   Pl = P^l
-  reps = [preimage(mF, a) for a in F]
+  Q, OtoQ = StructureConstantAlgebra(O, P * O, P, mF)
   # The residues generate the same group for any uniformizer.
   pi = uniformizer(P)
   res = Set{elem_type(R)}()
-  for c in Iterators.product(ntuple(_ -> reps, 4)...)
-    n = R(normred(sum(elem_in_nf(c[i]) * e[i] for i in 1:4)))
-    !iszero(n) && valuation(n, P) == 0 && push!(res, mod(n, Pl))
+  # Lift unit generators of O/PO and take their reduced norms.
+  for u in K1(Q; do_units = true)
+    push!(res, mod(normred(OtoQ \ u), Pl))
   end
   for i in 1:(l - 1), r in absolute_basis(R), x in e
     push!(res, mod(R(normred(one(A) + elem_in_nf(pi^i * r) * x)), Pl))

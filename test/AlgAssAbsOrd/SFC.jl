@@ -642,7 +642,6 @@
       h = (p - 1)//12 + (1 - jacobi_symbol(-4, p))//4 +
           (1 - jacobi_symbol(-3, p))//3
       @test length(C) == h
-      @test C[1] == 1 * O
       @test all(I -> right_order(I) == O && all(x -> x in O, basis(I)), C)
     end
     O = maximal_order(quaternion_algebra_ramified_at(QQ, 97))
@@ -723,7 +722,7 @@
     # split at every real place, with the same ideals on every call
     A = quaternion_algebra(QQ, -1, 3)
     M = maximal_order(A)
-    @test right_class_set(M) == [1 * M]
+    @test length(right_class_set(M)) == 1
     O = plus_multiple(M, 5)
     C = right_class_set(O)
     @test length(C) == 2 && all(I -> right_order(I) == O, C)
@@ -736,5 +735,26 @@
     @test length(C) == order(class_group(base_ring(M))[1])
     @test all(I -> right_order(I) == M, C)
     @test all(_ -> Hecke._right_class_set(M) == C, 1:3)
+
+    # Cl_{G(O)} R is the locally free class group (Voight, Quaternion
+    # Algebras, Theorem 28.10.1), for orders not Eichler at 5 and at 2 over
+    # QQ, and at a prime above 2 of norm 2, 4 and 32 over a number field
+    locally_free(O) = elementary_divisors(locally_free_class_group(O))
+    indefinite(O) = elementary_divisors(Hecke._indefinite_class_group(O)[1])
+    M = maximal_order(quaternion_algebra(QQ, -1, 3))
+    for n in [5, 8]
+      O = plus_multiple(M, n)
+      @test indefinite(O) == locally_free(O) == [2]
+    end
+    Qx, x = QQ[:x]
+    for (f, n, h) in [(x^2 - 10, 2, [2]), (x^2 - 5, 2, Int[]),
+                      (x^5 - x^2 - 1, 1, Int[])]
+      K, = number_field(f)
+      M = maximal_order(quaternion_algebra(K, -1, 3))
+      P = only(first.(prime_decomposition(base_ring(M), 2)))
+      O = plus_multiple(M, P^n)
+      @test indefinite(O) == locally_free(O) == h
+      @test length(right_class_set(O)) == prod(h; init = 1)
+    end
   end
 end
