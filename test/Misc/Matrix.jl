@@ -46,6 +46,8 @@ end
   @test_throws ArgumentError multiplicative_order(zero_matrix(QQ,1,1))
   @test_throws ArgumentError has_finite_multiplicative_order(aag[1][:, 1:end-1])
   @test !has_finite_multiplicative_order(zero_matrix(QQ, 1, 1))
+  @test_throws ArgumentError multiplicative_order(QQ[1//2 0; 0 0])
+  @test !has_finite_multiplicative_order(QQ[1//2 0; 0 0])
 
   # compare with repeated multiplication
   function brute_order(M)

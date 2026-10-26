@@ -1042,7 +1042,8 @@ function _euler_phi_at_most(d::Int)
   return res
 end
 
-# Return the multiplicative order of `f` if it is finite, and `0` otherwise.
+# Return the multiplicative order of `f` if it is finite, `-1` if `f` is
+# singular, and `0` otherwise.
 #
 # Dividing the cyclotomic factors off the characteristic polynomial takes
 # 4 us in degree 8, factoring it 50 us. If nothing remains, `f` has finite
@@ -1053,6 +1054,7 @@ function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   # involutions are common and cost a single product
   is_one(f * f) && return 2
   chi = charpoly(f)
+  is_zero(constant_coefficient(chi)) && return -1
   if chi isa QQPolyRingElem
     is_one(denominator(chi)) || return 0
     chi = numerator(chi)
@@ -1143,9 +1145,8 @@ infinity
 function multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   @req is_square(f) "Matrix must be square"
   n = _multiplicative_order(f)
-  n > 0 && return n
-  @req is_invertible(f) "Matrix must be invertible"
-  return PosInf()
+  @req n >= 0 "Matrix must be invertible"
+  return n > 0 ? n : PosInf()
 end
 
 ################################################################################
