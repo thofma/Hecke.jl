@@ -105,6 +105,7 @@ Sparse matrices can also be created from dense matrices as well as from julia ar
 
 ```@docs
 sparse_matrix(::MatElem; keepzrows)
+sparse_matrix(::Ring, ::MatElem; keepzrows)
 sparse_matrix(::Matrix{T}) where {T}
 sparse_matrix(::Ring, ::Matrix{T}) where {T}
 ```

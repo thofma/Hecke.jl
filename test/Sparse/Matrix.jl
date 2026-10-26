@@ -83,6 +83,21 @@ end
   @test R == @inferred base_ring(Asparse)
   @test M == @inferred parent(Asparse)
 
+  # construction from a dense matrix via the matrix space
+  @test M(A) == Asparse
+  @test M(A; R = QQ) == sparse_matrix(change_base_ring(QQ, A))
+
+  # construction over another ring; entries vanishing in it are dropped
+  D = matrix(ZZ, [1 2; 0 0; 4 3])
+  F = GF(2)
+  @test sparse_matrix(QQ, D) == sparse_matrix(change_base_ring(QQ, D))
+  DF = sparse_matrix(F, D)
+  @test base_ring(DF) === F
+  @test DF == sparse_matrix(change_base_ring(F, D))
+  @test nnz(DF) == 2
+  @test nrows(sparse_matrix(F, D; keepzrows = false)) == 2
+  @test sparse_matrix(ZZ, D) == sparse_matrix(D)
+
   @test 3 == @inferred nrows(Asparse)
   @test 3 == @inferred ncols(Asparse)
   @test 3 == @inferred nnz(Asparse)

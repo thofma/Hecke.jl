@@ -385,6 +385,38 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
 end
 
 @doc raw"""
+    sparse_matrix(R::Ring, A::MatElem; keepzrows::Bool = true) -> SMat
+
+Constructs the sparse matrix over $R$ corresponding to the dense matrix $A$.
+If `keepzrows` is false, then the constructor will drop any row that is zero
+over $R$.
+"""
+function sparse_matrix(R::Ring, A::MatElem; keepzrows::Bool = true)
+  R === base_ring(A) && return sparse_matrix(A; keepzrows)
+  m = sparse_matrix(R)
+  m.c = ncols(A)
+  m.r = 0
+  for i in 1:nrows(A)
+    r = sparse_row(R)
+    for j in 1:ncols(A)
+      is_zero_entry(A, i, j) && continue
+      x = R(A[i, j])
+      # entries may vanish in R, e.g. for a residue ring
+      iszero(x) && continue
+      push!(r.values, x)
+      push!(r.pos, j)
+    end
+    if !keepzrows && isempty(r.pos)
+      continue
+    end
+    m.nnz += length(r.pos)
+    push!(m.rows, r)
+    m.r += 1
+  end
+  return m
+end
+
+@doc raw"""
     sparse_matrix(A::Matrix{T}) -> SMat{T}
 
 Constructs the sparse matrix corresponding to $A$.
@@ -425,7 +457,7 @@ end
 
 function (M::SMatSpace)(A::T; R::S = base_ring(A),
                                  keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
-  return sparse_matrix(A, R, keepzrows)
+  return sparse_matrix(R, A; keepzrows)
 end
 
 function (M::SMatSpace)(A::Matrix{T}) where T <: MatElem
