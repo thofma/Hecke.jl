@@ -29,3 +29,18 @@
   fl, t = Hecke.__neq_find_sol_in_order(O, LtoA, KtoL, ktoK, [P], [1], Vector{Any}(undef, 3))
   @test !fl
 end
+
+@testset "FieldOracle counter" begin
+  K, = quadratic_field(-1)
+  A = matrix_algebra(K, 2)
+  FO = Hecke.FieldOracle(A, [maximal_order(A)])
+  n = length(FO.small_elements)
+  FO.rounds = 2
+  FO.last_generated_field = [1, 2]
+  c = 0
+  while Hecke._increase_counter!(FO, 2)
+    c += 1
+  end
+  @test c == binomial(n, 2) - 1
+  @test FO.last_generated_field == [n - 1, n]
+end

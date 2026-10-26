@@ -192,4 +192,6 @@
         @test coprime_residues(T(-1)) == T[0]
       end
     end
+
+    @test issetequal(Hecke.coprime_base_bernstein(ZZRingElem[6, 10, 15, 7]), ZZRingElem[2, 3, 5, 7])
 end

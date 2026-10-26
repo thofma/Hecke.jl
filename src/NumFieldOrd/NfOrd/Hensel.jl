@@ -111,10 +111,11 @@ function _roots_hensel(f::Generic.Poly{AbsSimpleNumFieldElem};
     end
   end
 
+  den_pol = lcm(map(denominator, coefficients(K.pol)))
   while !found
     p = next_prime(p)
 
-    if any(x->iszero(denominator(x) % p), coefficients(K.pol))
+    if iszero(den_pol % p)
       continue
     end
 

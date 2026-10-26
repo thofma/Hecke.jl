@@ -734,11 +734,7 @@ function mod16_check_arrays(coefficients::Vector{<: IntegerUnion})
 
   part_16 = Array{Int}(undef, 16)
 
-  if isodd(n)
-      d = 1
-    else
-      d = 0
-    end
+  d = isodd(n) ? 1 : 0
 
   # t odd
   for t in (1:2:15)

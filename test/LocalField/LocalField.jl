@@ -402,4 +402,11 @@
     @test Hecke._is_locally_isomorphic(K, L, 5)
     #@test !Hecke._is_locally_isomorphic(K, L, 2)
   end
+
+  @testset "Uniformizer powers" begin
+    K = padic_field(3; precision = 10)
+    Kt, t = K[:t]
+    L, = eisenstein_extension(t^2 - 3)
+    @test isone(uniformizer(L, -3) * uniformizer(L)^3)
+  end
 end

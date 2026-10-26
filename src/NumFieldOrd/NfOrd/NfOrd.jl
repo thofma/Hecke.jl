@@ -655,7 +655,7 @@ function _norm_change_const(v::Vector{AbsSimpleNumFieldElem})
 
   M = M*transpose(M)
 
-  N = Symmetric([ Float64(M[i, j]) for i in 1:nrows(M), j in 1:ncols(M) ])
+  N = Symmetric(Float64.(Matrix(M)))
   #forcing N to really be Symmetric helps julia - apparently
   if any(!isfinite, N)
     fl1 = true

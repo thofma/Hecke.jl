@@ -119,9 +119,8 @@ function lower_discriminant_bound(n::Int, r::Int; grh::Bool = true)
       !isodd(r) && error("Number of real places $r must be odd")
       j = div(r + 1, 2)
     end
-    b = odlyzko_bound_grh[n][j]
-    setrounding(BigFloat, RoundUp) do
-      b = b^n
+    b = setrounding(BigFloat, RoundUp) do
+      odlyzko_bound_grh[n][j]^n
     end
     bb = ZZRingElem(ceil(b))
     return bb

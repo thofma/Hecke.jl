@@ -424,13 +424,11 @@ function merge_bernstein(P::Vector{E}, Q::Vector{E}) where E
   m = length(Q)
   b = nbits(m)
   S = P
-  i = 0
-  while i<=b
+  for i in 0:b
     R = prod(view(Q, findall(x -> x & (2^i) ==0, 1:length(Q))))
     T = augment_bernstein(S, R)
     R = prod(view(Q, findall(x -> x & (2^i) !=0, 1:length(Q))))
     S = augment_bernstein(T, R)
-    i += 1
   end
   return S
 end

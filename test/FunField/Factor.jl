@@ -1,4 +1,16 @@
 @testset "Factor" begin
+  @testset "Swinnerton-Dyer polynomials" begin
+    Qt, t = rational_function_field(QQ, :t)
+    Qtx, x = Qt[:x]
+    f2 = Hecke.swinnerton_dyer([1, 2], x)
+    @test f2 == x^4 + 2*(2*t + 3)*x^2 + 1
+    # one more summand: compose with x - y where y^2 = -(t + 3)
+    Ry, y = Qtx[:y]
+    r = resultant(map_coefficients(Qtx, f2, parent = Ry)(y), (x - y)^2 + (t + 3))
+    @test Hecke.swinnerton_dyer([1, 2, 3], x) == divexact(r, leading_coefficient(r))
+    @test Hecke.swinnerton_dyer(3, x) == Hecke.swinnerton_dyer([1, 2, 3], x)
+  end
+
   kt, t = rational_function_field(GF(3), "t")
   ktx, x = kt[:x]
   F, a = function_field(x^2 + 1)

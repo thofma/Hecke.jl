@@ -302,7 +302,7 @@ function _radical_finite_generic(A::AbstractAssociativeAlgebra{T}) where {T <: U
   MQx = zero_matrix(Qx, dim(A), dim(A))
   a = A()
   for l = 1:k
-    pl = p*pl
+    mul!(pl, p)
     M = zero_matrix(Fp, dim(A2), nrows(C))
     for i = 1:nrows(C)
       c = A2toA(elem_from_mat_row(A2, C, i))
