@@ -1049,6 +1049,9 @@ end
 # order if and only if `f^L` is one, where `L` is the lcm of the orders of
 # the eigenvalues.
 function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
+  is_one(f) && return 1
+  # involutions are common and cost a single product
+  is_one(f * f) && return 2
   chi = charpoly(f)
   if chi isa QQPolyRingElem
     is_one(denominator(chi)) || return 0
