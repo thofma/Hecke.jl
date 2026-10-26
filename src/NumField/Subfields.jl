@@ -426,7 +426,8 @@ Number field with defining polynomial x^2 + 6*x + 4
   over rational field
 ```
 """
-function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = false, isbasis::Bool = false)
+function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = false, isbasis::Union{Nothing, Bool} = nothing)
+  is_basis = _is_basis_kwarg(is_basis, isbasis, :subfield)
   @req all(x -> parent(x) === K, elt) "Elements must be contained in the field"
 
   # A single element is already primitive for the field it generates.
@@ -440,9 +441,7 @@ function subfield(K::NumField, elt::Vector{<:NumFieldElem}; is_basis::Bool = fal
     return _subfield_from_primitive_element(K, s)
   end
 
-  isbasis = is_basis || isbasis
-
-  if isbasis
+  if is_basis
     s = _subfield_primitive_element_from_basis(K, elt)
   else
     bas = _subfield_basis(K, elt)

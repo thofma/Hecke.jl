@@ -97,11 +97,12 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
 end
 
 @doc raw"""
-    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; isbasis=true, check=true) -> ZZLat
+    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; is_basis=true, check=true) -> ZZLat
 
 Return the $\mathbb Z$-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; isbasis::Bool = true, check::Bool = true)
+function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; is_basis::Bool = true, check::Bool = true, isbasis::Union{Nothing, Bool} = nothing)
+  is_basis = _is_basis_kwarg(is_basis, isbasis, :lattice)
   @req dim(V) == ncols(_B) "Ambient space and the matrix B have incompatible dimension"
   if typeof(_B) !== QQMatrix
     B = map_entries(QQ, _B)
@@ -111,7 +112,7 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; 
 
   # We need to produce a basis matrix
 
-  if !isbasis
+  if !is_basis
     BB = QQMatrix(_hnf_integral(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
     while i > 0 && is_zero_row(BB, i)
@@ -134,10 +135,11 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, gens::Vector)
   return lattice(V, B; isbasis = false)
 end
 
-function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true, isbasis::Bool=true)
+function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true, is_basis::Bool=true, isbasis::Union{Nothing, Bool} = nothing)
+  is_basis = _is_basis_kwarg(is_basis, isbasis, :lattice_in_same_ambient_space)
   @req !check || (rank(B) == nrows(B)) "The rows of B must define a free system of vectors"
   V = ambient_space(L)
-  return lattice(V, B; check = false, isbasis)
+  return lattice(V, B; check = false, is_basis)
 end
 
 @doc raw"""
