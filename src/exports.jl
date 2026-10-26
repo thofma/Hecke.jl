@@ -890,6 +890,7 @@ export restrict_scalars
 export restrict_scalars_with_map
 export resultant
 export riemann_roch_space
+export right_class_set
 export right_ideal
 export right_order
 export ring_of_integers

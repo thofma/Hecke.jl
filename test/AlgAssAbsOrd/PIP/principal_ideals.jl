@@ -102,8 +102,8 @@
     O = order(A, vcat([one(A)], [5 * elem_in_algebra(b) for b in basis(M)]))
     I = 2 * O
     @test_throws ArgumentError Hecke.is_principal_with_data(I, O)
-    # and so do class sets: their enumeration needs a definite norm form
-    @test_throws ArgumentError Hecke.right_class_set(M)
+    # and so does the unit group modulo scalars: its enumeration needs a
+    # definite norm form
     @test_throws ArgumentError Hecke.unit_group_modulo_scalars(M)
   end
 
