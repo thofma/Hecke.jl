@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc raw"""
-    restrict_scalars(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
+    restrict_scalars(A::StructureConstantAlgebra{<:NumFieldElem}, Q::QQField)
     restrict_scalars(A::StructureConstantAlgebra{fqPolyRepFieldElem}, Fp::fpField)
     restrict_scalars(A::StructureConstantAlgebra{FqPolyRepFieldElem}, Fp::EuclideanRingResidueField{ZZRingElem})
       -> StructureConstantAlgebra, Map
@@ -14,7 +14,7 @@ Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
 function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
 """
 # Top level functions to avoid "type mix-ups" (like StructureConstantAlgebra{fqPolyRepFieldElem} with QQ)
-function restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
+function restrict_scalars(A::AbstractAssociativeAlgebra{<:NumFieldElem}, Q::QQField)
   return _restrict_scalars(A, Q)
 end
 
@@ -120,7 +120,8 @@ function _restrict_scalars(A::AbstractAssociativeAlgebra{T}, prime_field) where 
   Bas = f.B
   F = f.K
 
-  m = div(degree(K), degree(F))
+  # Bas is a basis of K over F
+  m = length(Bas)
   nm = n*m
 
   absbasis = elem_type(A)[]

@@ -166,6 +166,20 @@
     @test is_eichler(restrict_scalars(StructureConstantAlgebra(KG)[1], QQ)[1])
   end
 
+  # Eichler condition over a relative totally real field
+  let
+    Qx, x = QQ["x"]
+    K, = number_field(x^2 - 2, "a")
+    Ky, y = K["y"]
+    L, = number_field(y^2 - 3, "b")
+    @test is_eichler(matrix_algebra(L, 2))
+    @test !is_eichler(quaternion_algebra(L, -1, -1))
+    # 3 is totally positive, so (-1, 3)_L is split at every real place
+    @test is_eichler(quaternion_algebra(L, -1, 3))
+    @test !is_eichler(group_algebra(L, small_group(8, 4)))
+    @test is_eichler(group_algebra(L, abelian_group([2])))
+  end
+
   # bug in positive root calculation
   m = Array{Rational{Int}, 3}(undef, 4, 4, 4)
   m[1, :, :] = [346//83 0 0 0; 0 346//83 0 0; 6//205 0 0 0; 0 2//83 0 0]
