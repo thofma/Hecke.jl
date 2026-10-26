@@ -58,7 +58,7 @@ end
 function maximal_order_from_components(L::AbsNonSimpleNumField; disc::ZZRingElem = ZZRingElem(-1), ramified_primes::Vector{ZZRingElem} = ZZRingElem[])
   BKs, lp, disc_order = _maximal_order_of_components(L)
   B = _product_basis(BKs)
-  OO = order(L, B, check = false, cached = false, isbasis = true)
+  OO = order(L, B, check = false, cached = false, is_basis = true)
   OO.disc = disc_order
   if disc != -1 && discriminant(OO) == disc
     OO.is_maximal = 1

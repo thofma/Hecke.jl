@@ -141,7 +141,7 @@ function principal_subfields(K::SimpleNumField)
     if K isa NumField{QQFieldElem}
       baf = FakeFmpqMat(M)
       elts = [elem_from_mat_row(K, baf.num, j, baf.den) for j=1:nrows(baf)]
-      push!(res, subfield(K, elts, isbasis = true))
+      push!(res, subfield(K, elts, is_basis = true))
     else
       s, f = _subfield_small_primitive_element_with_minpoly(K, M)
       push!(res, _subfield_from_primitive_element(K, s, f))
@@ -417,7 +417,7 @@ function subfields(K::SimpleNumField; degree::Int = -1)
       end
 
     end
-    push!(ResidueRingElem, subfield(K, basis_ar, isbasis = true))
+    push!(ResidueRingElem, subfield(K, basis_ar, is_basis = true))
   end
   degree == -1 && set_attribute!(K, :all_subfields => ResidueRingElem)
   return ResidueRingElem

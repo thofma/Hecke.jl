@@ -1499,7 +1499,7 @@ function sub(T::TorQuadModule, gens::Vector{TorQuadModuleElem})
     V = ambient_space(T.cover)
     _gens_mat = matrix(QQ, _gens)
     gens_new = [basis_matrix(T.rels); _gens_mat]::QQMatrix
-    cover = lattice(V, gens_new; isbasis = false)
+    cover = lattice(V, gens_new; is_basis = false)
   else
     cover = T.rels
     _gens = nothing
@@ -1515,7 +1515,7 @@ end
 function _sub(T::TorQuadModule, _gens_mat::QQMatrix)
   V = ambient_space(T.cover)
   gens_new = [basis_matrix(T.rels); _gens_mat]::QQMatrix
-  cover = lattice(V, gens_new; isbasis = false)
+  cover = lattice(V, gens_new; is_basis = false)
   S = torsion_quadratic_module(cover, T.rels;
                                modulus=modulus_bilinear_form(T),
                                modulus_qf=modulus_quadratic_form(T),
@@ -1716,8 +1716,8 @@ function rescale(T::TorQuadModule, k::RingElement; cached=false)
   @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
   V = rescale(ambient_space(C), k; cached=false)
-  M = lattice(V, basis_matrix(C); check=false, isbasis=true)
-  N = lattice(V, basis_matrix(T.rels); check=false, isbasis=true)
+  M = lattice(V, basis_matrix(C); check=false, is_basis=true)
+  N = lattice(V, basis_matrix(T.rels); check=false, is_basis=true)
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
   return torsion_quadratic_module(M, N; gens = gene,
                                         modulus = abs(k)*modulus_bilinear_form(T),

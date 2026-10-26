@@ -217,7 +217,7 @@ function eisenstein_reduction(L::ZZLat; same_ambient::Bool = true)
   M, d = _integral_split_gram(L)
   R, U = _eisenstein_reduce(M, Val(true))
   if same_ambient
-    return lattice(ambient_space(L), U * basis_matrix(L); isbasis = true,
+    return lattice(ambient_space(L), U * basis_matrix(L); is_basis = true,
                    check = false)
   end
   return integer_lattice(; gram = QQ(1, d) * R, check = false)

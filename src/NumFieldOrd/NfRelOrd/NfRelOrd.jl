@@ -579,7 +579,7 @@ function maximal_order_via_relative(K::AbsSimpleNumField, m::NumFieldHom{AbsSimp
     L = codomain(m)
     OL = maximal_order(L)
     B = absolute_basis(OL, L)
-    OK = order(K, [ m\b for b in B ], check = false, isbasis = true)
+    OK = order(K, [ m\b for b in B ], check = false, is_basis = true)
     OK.is_maximal = 1
     return OK
   end::order_type(K)

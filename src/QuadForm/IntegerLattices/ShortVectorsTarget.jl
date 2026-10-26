@@ -122,11 +122,11 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat,
   @hassert :ShortVec 1 isone(basis_matrix(L))
   n = rank(L)
   V = ambient_space(L)
-  R_fix = lattice(V, fixed_space; isbasis=true, check=false)
-  R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
+  R_fix = lattice(V, fixed_space; is_basis=true, check=false)
+  R_cofix = [lattice(V, b; is_basis=true, check=false) for b in isotypic_coinvariant_space]
   R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
   GZZ,_  = _integral_split_gram(L)
-  Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); isbasis=true, check=false)
+  Rperp = lattice(V, QQ.(kernel(GZZ*transpose(R); side=:left)); is_basis=true, check=false)
   successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
   @vprintln :ShortVec 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
   m = length(successive_sublattices)
@@ -190,7 +190,7 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_furt
     projection_ranges[i] = r1:r2
     Si = view(_hnf_integral(view(Fi, :, r1:r2), :upper_right), 1:1+r2-r1,:)*view(F, r1:r2, :)
     # do the following the hard way
-    # Li = lll(lattice(rescale(V,denoms[i]; cached=false), Si; isbasis=true, check=false); _is_definite=true)
+    # Li = lll(lattice(rescale(V,denoms[i]; cached=false), Si; is_basis=true, check=false); _is_definite=true)
     SZ, di = integral_split(Si, ZZ)
     denoms[i] = di
     Gi = divexact!(SZ*gramLZZ*transpose(SZ),di)
@@ -203,7 +203,7 @@ function _grams_proj(L::ZZLat, successive_sublattices::Vector{ZZLat}; split_furt
     if split_further
       # this part is not optimized, turned off by default
       if rkLL[i] > 1 && !(i in no_split)
-        Li = lattice(V, Si; isbasis=true, check=false)
+        Li = lattice(V, Si; is_basis=true, check=false)
         set_attribute!(Li,:_integral_split_gram=>(Gi, ZZ(1)))
         set_attribute!(Li,:is_lll_reduced=>true)
         Li_split = _successive_sublattices(Li; use_dual=false)
@@ -1177,10 +1177,10 @@ function _short_vectors_with_condition_direct(L::ZZLat; use_projections=true, us
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L, [matrix(ZZ, 1, n, i) for i in fundamental_roots])
   fixed_space, isotypic_coinvariant_space, weyl_vector, root_orbits = _weyl_group(L, root_types, fundamental_roots)
   if use_projections
-    R_fix = lattice(V, fixed_space; isbasis=true, check=false)
-    R_cofix = [lattice(V, b; isbasis=true, check=false) for b in isotypic_coinvariant_space]
+    R_fix = lattice(V, fixed_space; is_basis=true, check=false)
+    R_cofix = [lattice(V, b; is_basis=true, check=false) for b in isotypic_coinvariant_space]
     R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, rank(L)))
-    Rperp = lattice(V, QQ.(kernel(G*transpose(R); side=:left)); isbasis=true, check=false)
+    Rperp = lattice(V, QQ.(kernel(G*transpose(R); side=:left)); is_basis=true, check=false)
     successive_sublattices = append!([R_fix], R_cofix, _successive_sublattices(Rperp; use_dual=false))
     @vprintln :ShortVec 1 "largest successive sublattice of rank $(maximum(rank.(successive_sublattices)[2:end]))"
     projL, projL_gram, projection_ranges,denoms,successive_sublattices = _grams_proj(L, successive_sublattices; split_further=use_dual)

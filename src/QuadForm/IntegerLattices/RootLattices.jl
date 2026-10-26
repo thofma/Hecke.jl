@@ -554,7 +554,7 @@ function root_sublattice(L::ZZLat; length::Vector{Int} = [1, 2], check::Bool=tru
     BZ = _row_span!(first.(sv))
   end
   BQ = BZ*basis_matrix(L)
-  return lattice(V, BQ; check=false, isbasis=true)
+  return lattice(V, BQ; check=false, is_basis=true)
 end
 
 
@@ -689,8 +689,8 @@ function root_lattice_recognition_fundamental(L::ZZLat; check::Bool=true)
   B = basis_matrix(L)
   ambient_bases = QQMatrix[b*B for b in basis_matrices_wrt_L]
   V = ambient_space(L)
-  C = lattice(V, reduce(vcat,ambient_bases; init=zero_matrix(QQ,0,degree(L))); isbasis=true, check=false)
-  components = ZZLat[lattice(V,b;isbasis=true, check=false) for b in ambient_bases]
+  C = lattice(V, reduce(vcat,ambient_bases; init=zero_matrix(QQ,0,degree(L))); is_basis=true, check=false)
+  components = ZZLat[lattice(V,b;is_basis=true, check=false) for b in ambient_bases]
   return C, ADE, components
 end
 

@@ -585,7 +585,7 @@ function fixed_field(K::AbsSimpleNumField, A::Vector{<:NumFieldHom{AbsSimpleNumF
       end
     end
   end
-  return subfield(K, bas, isbasis = true)
+  return subfield(K, bas, is_basis = true)
 end
 
 
@@ -635,7 +635,7 @@ function fixed_field(K::RelSimpleNumField, A::Vector{T}; simplify::Bool = true) 
       bas[i] = elem_from_mat_row(K, Ker, i)
     end
   end
-  return subfield(K, bas, isbasis = true)
+  return subfield(K, bas, is_basis = true)
 end
 
 
@@ -707,7 +707,7 @@ function fixed_field1(K::AbsSimpleNumField, auts::Vector{<:NumFieldHom{AbsSimple
 	for i = 1:degree_subfield
     bas[i] = elem_from_mat_row(OK, Ker, i).elem_in_nf
 	end
-  return subfield(K, bas, isbasis = true)
+  return subfield(K, bas, is_basis = true)
 end
 
 
