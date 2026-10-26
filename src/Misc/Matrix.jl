@@ -1025,13 +1025,50 @@ end
 #
 ################################################################################
 
-# we avoid to compute twice the minpoly in case of finite order
-function _has_finite_multiplicative_order(f)
-  @assert is_square(f)
-  chi = minpoly(f)
-  !Hecke.is_squarefree(chi) && return (false, [Pair(chi, 1)])
-  fact = collect(factor(chi))
-  return all(p -> is_cyclotomic_polynomial(p[1]), fact), fact
+# All pairs `(n, euler_phi(n))` with `euler_phi(n) <= d`.
+function _euler_phi_at_most(d::Int)
+  res = [(1, 1)]
+  for p in PrimesSet(2, d + 1)
+    for i in 1:length(res)
+      n, e = res[i]
+      q, f = p, p - 1
+      while e * f <= d
+        push!(res, (n * q, e * f))
+        q *= p
+        f *= p
+      end
+    end
+  end
+  return res
+end
+
+# Return the multiplicative order of `f` if it is finite, and `0` otherwise.
+#
+# Dividing the cyclotomic factors off the characteristic polynomial takes
+# 4 us in degree 8, factoring it 50 us. If nothing remains, `f` has finite
+# order if and only if `f^L` is one, where `L` is the lcm of the orders of
+# the eigenvalues.
+function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
+  chi = charpoly(f)
+  if chi isa QQPolyRingElem
+    is_one(denominator(chi)) || return 0
+    chi = numerator(chi)
+  end
+  x = gen(parent(chi))
+  L = 1
+  for (n, e) in _euler_phi_at_most(degree(chi))
+    e > degree(chi) && continue
+    c = cyclotomic(n, x)
+    b, q = divides(chi, c)
+    while b
+      L = lcm(L, n)
+      chi = q
+      b, q = divides(chi, c)
+    end
+  end
+  is_one(chi) || return 0
+  is_one(f^L) || return 0
+  return L
 end
 
 @doc raw"""
@@ -1066,7 +1103,7 @@ false
 """
 function has_finite_multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   @req is_square(f) "Matrix must be square"
-  return _has_finite_multiplicative_order(f)[1]
+  return _multiplicative_order(f) > 0
 end
 
 @doc raw"""
@@ -1101,19 +1138,11 @@ infinity
 ```
 """
 function multiplicative_order(f::Union{ZZMatrix, QQMatrix})
+  @req is_square(f) "Matrix must be square"
+  n = _multiplicative_order(f)
+  n > 0 && return n
   @req is_invertible(f) "Matrix must be invertible"
-  bool, fact = _has_finite_multiplicative_order(f)
-  bool || return PosInf()
-  degs = unique([degree(p[1]) for p in fact])
-  exps = Int.(euler_phi_inv(degs[1]))
-  for i in 1:length(degs)
-    union!(exps, Int.(euler_phi_inv(degs[i])))
-  end
-  maxdeg = lcm(exps)
-  divmd = sort(divisors(maxdeg))
-  n = findfirst(k -> isone(f^k), divmd)
-  @assert n !== nothing
-  return divmd[n]
+  return PosInf()
 end
 
 ################################################################################
