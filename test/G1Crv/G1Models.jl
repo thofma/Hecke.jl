@@ -18,5 +18,12 @@
 
   @test c_invariants(Hecke.g1_model_d4(P1, P2)) == (QQ(70876192), QQ(-1845203945336))
 
+  # the Jacobian has the invariants of the model
+  for D in [Hecke.g1_model_d2(Q, P), Hecke.g1_model_d3(C),
+            Hecke.g1_model_d4(P1, P2)]
+    E = Hecke.jacobian(D)
+    @test a_invariants(E) == a_invariants(D)
+    @test c_invariants(E) == c_invariants(D)
+  end
 end
 

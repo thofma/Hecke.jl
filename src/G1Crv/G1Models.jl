@@ -63,6 +63,6 @@ function g1_model_d4(Q1::MPolyRingElem{T}, Q2::MPolyRingElem{T}) where T
 end
 
 function jacobian(D::G1Model)
-  return elliptic_curve(a_invariants(D))
+  return elliptic_curve(collect(a_invariants(D)))
 end
 
