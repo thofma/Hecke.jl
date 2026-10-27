@@ -43,11 +43,18 @@ end
     n = multiplicative_order(M)
     @test divides(ao, n)[1]
   end
+
   @test_throws ArgumentError multiplicative_order(zero_matrix(QQ,1,1))
   @test_throws ArgumentError has_finite_multiplicative_order(aag[1][:, 1:end-1])
   @test !has_finite_multiplicative_order(zero_matrix(QQ, 1, 1))
   @test_throws ArgumentError multiplicative_order(QQ[1//2 0; 0 0])
   @test !has_finite_multiplicative_order(QQ[1//2 0; 0 0])
+
+  # not invertible over ZZ
+  @test_throws ArgumentError multiplicative_order(ZZ[2;])
+  @test !has_finite_multiplicative_order(ZZ[2;])
+  @test_throws ArgumentError multiplicative_order(ZZ[1 1; -1 1])
+  @test multiplicative_order(QQ[2;]) == PosInf()
 
   # compare with repeated multiplication
   function brute_order(M)
@@ -59,6 +66,7 @@ end
     return PosInf()
   end
   Zx, _ = polynomial_ring(ZZ, :x; cached = false)
+
   # block sums of companion matrices of cyclotomic polynomials, conjugated
   U = ZZ[1 2 0 -1 3; 0 1 1 0 2; 0 0 1 4 -1; 0 0 0 1 1; 0 0 0 0 1]
   for ns in [[1, 4], [3, 2], [5], [8, 1], [12, 2], [2, 2, 3], [6, 3], [10]]
@@ -72,14 +80,17 @@ end
     @test multiplicative_order(change_base_ring(QQ, M)) == o
     @test has_finite_multiplicative_order(M)
   end
+
   # non-integral rational matrix of finite order
   @test multiplicative_order(QQ[0 1//2; -2 0]) == 4
+
   # eigenvalues are roots of unity, but the matrix is not diagonalizable
   for M in [ZZ[1 1; 0 1], ZZ[-1 1; 0 -1],
             ZZ[0 -1 1 0; 1 -1 0 1; 0 0 0 -1; 0 0 1 -1]]
     @test !has_finite_multiplicative_order(M)
     @test multiplicative_order(M) == PosInf()
   end
+
   # eigenvalues are not roots of unity
   @test multiplicative_order(ZZ[2 1; 1 1]) == PosInf()
   @test multiplicative_order(QQ[1//2 0; 0 2]) == PosInf()
