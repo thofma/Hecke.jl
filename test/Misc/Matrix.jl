@@ -95,5 +95,13 @@ end
   @test multiplicative_order(ZZ[2 1; 1 1]) == PosInf()
   @test multiplicative_order(QQ[1//2 0; 0 2]) == PosInf()
   @test multiplicative_order(QQ[0 1//2; 1 0]) == PosInf()
+
+  # the order does not fit into an `Int`
+  ps = collect(PrimesSet(2, 53))
+  M = block_diagonal_matrix([companion_matrix(cyclotomic_polynomial(p, Zx))
+                             for p in ps])
+  @test has_finite_multiplicative_order(M)
+  @test Hecke._multiplicative_order(M) == prod(ZZ.(ps))
+  @test_throws InexactError multiplicative_order(M)
 end
 

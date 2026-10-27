@@ -1050,17 +1050,17 @@ end
 # order if and only if `f^L` is one, where `L` is the lcm of the orders of
 # the eigenvalues.
 function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
-  is_one(f) && return 1
+  is_one(f) && return ZZ(1)
   # involutions are common and cost a single product
-  is_one(f * f) && return 2
+  is_one(f * f) && return ZZ(2)
   chi = charpoly(f)
-  is_unit(constant_coefficient(chi)) || return -1
+  is_unit(constant_coefficient(chi)) || return ZZ(-1)
   if chi isa QQPolyRingElem
-    is_one(denominator(chi)) || return 0
+    is_one(denominator(chi)) || return ZZ(0)
     chi = numerator(chi)
   end
   x = gen(parent(chi))
-  L = 1
+  L = ZZ(1) # can exceed `typemax(Int)`
   for (n, e) in _euler_phi_at_most(degree(chi))
     e > degree(chi) && continue
     c = cyclotomic(n, x)
@@ -1071,8 +1071,10 @@ function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
       b, q = divides(chi, c)
     end
   end
-  is_one(chi) || return 0
-  is_one(f^L) || return 0
+  is_one(chi) || return ZZ(0)
+  # TODO: use `f^L` once Nemo supports large `ZZRingElem` exponents
+  fL = fits(Int, L) ? f^Int(L) : AbstractAlgebra.internal_power(f, L)
+  is_one(fL) || return ZZ(0)
   return L
 end
 
@@ -1146,7 +1148,8 @@ function multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   @req is_square(f) "Matrix must be square"
   n = _multiplicative_order(f)
   @req n >= 0 "Matrix must be invertible"
-  return n > 0 ? n : PosInf()
+  is_zero(n) && return PosInf()
+  return Int(n)
 end
 
 ################################################################################
