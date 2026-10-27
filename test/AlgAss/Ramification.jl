@@ -151,6 +151,21 @@
   QG = QQ[small_group(8, 4)]
   @test !is_eichler(QG)
 
+  # Eichler condition for group algebras over number fields
+  let
+    K, = quadratic_field(2)
+    @test is_eichler(group_algebra(K, abelian_group([2])))
+    @test is_eichler(group_algebra(K, abelian_group([3])))
+    # (-1, -1)_K is totally definite, since K is totally real
+    KG = group_algebra(K, small_group(8, 4))
+    @test !is_eichler(KG)
+    @test !is_eichler(restrict_scalars(StructureConstantAlgebra(KG)[1], QQ)[1])
+    K, = quadratic_field(-1)
+    KG = group_algebra(K, small_group(8, 4))
+    @test is_eichler(KG)
+    @test is_eichler(restrict_scalars(StructureConstantAlgebra(KG)[1], QQ)[1])
+  end
+
   # bug in positive root calculation
   m = Array{Rational{Int}, 3}(undef, 4, 4, 4)
   m[1, :, :] = [346//83 0 0 0; 0 346//83 0 0; 6//205 0 0 0; 0 2//83 0 0]
