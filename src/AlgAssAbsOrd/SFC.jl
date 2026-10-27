@@ -675,26 +675,117 @@ function _local_norm_residues(
   return collect(res)
 end
 
-# { Compute type number for arbitrary order using RightClassSet }
-function type_number(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
-  @req !is_eichler(algebra(O)) "Algebra must be totally definite"
-  C = right_class_set(O)
-  orders = [left_order(R) for R in C]
-  nonisomorphic = typeof(O)[]
-  for R in orders
-    seen  = false
-    for S in nonisomorphic
-      if _is_isomorphic(R, S)
-        seen = true
-        break
-      end
-    end
+################################################################################
+#
+#  Types
+#
+################################################################################
 
-    if !seen
-      push!(nonisomorphic, R)
-    end
+@doc raw"""
+    type_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd}) -> Vector
+
+Return representatives of the types of the order $O$ of a quaternion algebra
+$A$ over $\mathbf{Q}$ or a number field: one order for each isomorphism class
+of orders locally isomorphic to $O$.
+
+If $A$ is not totally definite, $O$ must be an Eichler order.
+
+# Examples
+
+```jldoctest
+julia> O = maximal_order(quaternion_algebra_ramified_at(QQ, 97));
+
+julia> length(type_set(O)), length(right_class_set(O))
+(5, 8)
+```
+"""
+@attr Vector{typeof(O)} function type_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+  return _type_set(O)
+end
+
+@doc raw"""
+    type_number(O::Union{AlgAssAbsOrd, AlgAssRelOrd}) -> Int
+
+Return the number of types of the order $O$, that is, the length of
+[`type_set`](@ref).
+"""
+function type_number(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+  return length(type_set(O))
+end
+
+# The left orders of the right ideal classes of O run over every type (Voight,
+# Quaternion Algebras, Lemma 17.4.13); over QQ one is kept per value of the
+# complete isomorphism invariant _class_set_key.
+function _type_set(O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
+  _is_totally_definite_quaternion(algebra(O)) || return _type_set_indefinite(O)
+  key_of = _class_set_key(O)
+  seen = Set{ZZMatrix}()
+  types = typeof(O)[]
+  for I in right_class_set(O)
+    L = left_order(I)
+    key = key_of(L)
+    key in seen && continue
+    push!(seen, key)
+    push!(types, L)
   end
-  return length(nonisomorphic)
+  return types
+end
+
+function _type_set(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
+  _is_totally_definite_quaternion(algebra(O)) || return _type_set_indefinite(O)
+  return _type_set_definite(O)
+end
+
+function _type_set(O::AlgAssRelOrd)
+  @req !is_eichler(algebra(O)) "Algebra must be totally definite"
+  return _type_set_definite(O)
+end
+
+# The same over a number field, comparing left orders by _is_isomorphic.
+function _type_set_definite(O::AlgAssRelOrd)
+  types = typeof(O)[]
+  for I in right_class_set(O)
+    L = left_order(I)
+    any(S -> _is_isomorphic(L, S), types) || push!(types, L)
+  end
+  return types
+end
+
+# For an indefinite algebra the reduced norm induces a bijection from the
+# types of O onto Cl_{G_N(O)} R, the quotient of Cl_{G(O)} R by the reduced
+# norms of the normalizers of the completions of O (Voight, Quaternion
+# Algebras, Corollary 28.5.10). For an Eichler order these are the squares,
+# every element at a ramified prime (Lemma 13.4.9), and pi^e at a prime
+# p^e exactly dividing the level, the norm of an Atkin-Lehner element
+# (Proposition 23.4.14); compare 28.5.11. The normalizers of other orders are
+# not determined here.
+function _type_set_indefinite(O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
+  @req _eichler_level_factors(O) !== nothing "Order must be an Eichler order"
+  # Cl_{G(O)} Z is trivial: no real place ramifies and O is Eichler.
+  return typeof(O)[O]
+end
+
+function _type_set_indefinite(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
+  level = _eichler_level_factors(O)
+  @req level !== nothing "Order must be an Eichler order"
+  A = algebra(O)
+  G, cls = _indefinite_class_group(O)
+  normalizer = vcat([2 * g for g in gens(G)],
+                    [cls(P) for (P, _) in factor(_reduced_disc(O))
+                     if !is_split(A, P)],
+                    [cls(P) for (P, e) in level if is_odd(e)])
+  Q, mQ = quo(G, normalizer)
+  seen = Set{elem_type(Q)}()
+  types = typeof(O)[]
+  for I in right_class_set(O)
+    q = mQ(cls(numerator(normred(I))))
+    q in seen && continue
+    push!(seen, q)
+    push!(types, left_order(I))
+  end
+  return types
 end
 
 function _is_isomorphic(R::T, S::T) where {T <: Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd}}

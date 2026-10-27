@@ -1015,6 +1015,8 @@ export trivial_morphism
 export trred
 export trred_matrix
 export twists
+export type_number
+export type_set
 export twosided_ideal
 export uniformizer
 export unit_group

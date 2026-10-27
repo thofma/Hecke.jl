@@ -933,14 +933,21 @@ end
 # Returns a vector containing a system of representatives of the maximal orders
 # of A with respect to conjugation, that is, any maximal order of A is conjugated
 # to one of them and no two returned orders are conjugated.
-# Only works for algebras fulfilling the Eichler condition.
+# For a totally definite quaternion algebra these are the types of a maximal
+# order.
 representatives_of_maximal_orders(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}) = representatives_of_maximal_orders(maximal_order(A))
+
+function representatives_of_maximal_orders(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
+  @req is_maximal(O) "Order must be maximal"
+  return type_set(O)
+end
 
 function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)
-  @assert is_simple(A)
-  @assert is_eichler(A)
-  @assert is_maximal(O)
+  @req is_simple(A) "Algebra must be simple"
+  @req is_maximal(O) "Order must be maximal"
+  is_eichler(A) || return _types_via_quaternion_algebra(O)
   K = base_ring(A)
   OK = base_ring(O)
   n2 = dim(A)
