@@ -125,6 +125,8 @@ end
 
   splitting_type::Tuple{Int, Int}
                          #ordered as ramification index, inertia degree
+  valuation::Function    # valuation at the prime ideal,
+                         # see assure_valuation_function
 
 
   function GenOrdIdl(O::GenOrd{S, T}) where {S, T}

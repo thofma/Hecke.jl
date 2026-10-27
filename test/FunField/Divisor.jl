@@ -1,5 +1,66 @@
 import Hecke: divisor
 
+
+#Helper functions for divisor representation tests
+function _only_free(D)
+  Hecke.assure_has_support(D)
+  return Hecke._divisor_from_support(function_field(D), copy(D.finite_support), copy(D.infinite_support))
+end
+
+function _only_inverse_ideals(D)
+  return Hecke._divisor_from_inverse_ideals(Hecke.inverse_ideals(D)...)
+end
+
+function _only_projective(D)
+  A, r, f = Hecke.projective_representation(D)
+  R = Hecke._empty_divisor(function_field(D))
+  return Hecke._set_proj_representation!(R, A, r, f)
+end
+
+function _only_ideals(D)
+  return Hecke.Divisor(Hecke.ideals(D)...)
+end
+
+function _places_deg1(F, N)
+  k = defining_constant_field(F)
+  Of = finite_maximal_order(F)
+  kx = base_field(F)
+  res = []
+  for a in k
+    for (P, _) in prime_decomposition(Of, numerator(gen(kx) - kx(a)))
+      degree(P) == 1 && push!(res, P)
+    end
+    length(res) >= N && break
+  end
+  return res[1:N]
+end
+
+function test_representations(D, places)
+  F = function_field(D)
+  reps = [_only_free(D), _only_inverse_ideals(D), _only_projective(D), _only_ideals(D)]
+  d = degree(D)
+  l = dimension(D)
+  for R in reps
+    @test R == D
+    @test degree(R) == d
+    @test dimension(R) == l
+    @test is_effective(R) == is_effective(D)
+    for P in places
+      @test valuation(R, P) == valuation(D, P)
+    end
+    for f in riemann_roch_space(R)
+      @test is_effective(divisor(f) + D)
+    end
+    @test length(riemann_roch_space(R)) == l
+  end
+  A, r, f = Hecke.projective_representation(D)
+  x = F(gen(base_field(F)))
+  @test is_effective(A)
+  @test degree(A) <= genus(F) - 1 + degree(F)
+  @test D == A + r*pole_divisor(x) - divisor(Hecke._evaluate_fac_elem(f))
+end
+
+
 @testset "Divisors" begin
   @testset "Basic Operations" begin
     for base_field in [QQ, finite_field(2, 4)[1], finite_field(101)[1]]
@@ -34,10 +95,10 @@ import Hecke: divisor
       @test Dlcm == lcm(D2, D1)
       @test Dgcd + Dlcm == D1 + D2
 
-      @test valuation(Dgcd, p1) == valuation(Dgcd.finite_ideal, p1)
-      @test valuation(Dgcd, p4) == valuation(Dgcd.infinite_ideal, p4)
-      @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
-      @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
+      @test valuation(Dgcd, p1) == valuation(Hecke.ideals(Dgcd)[1], p1)
+      @test valuation(Dgcd, p4) == valuation(Hecke.ideals(Dgcd)[2], p4)
+      @test valuation(Dlcm, p1) == valuation(Hecke.ideals(Dlcm)[1], p1)
+      @test valuation(Dlcm, p4) == valuation(Hecke.ideals(Dlcm)[2], p4)
 
       D1 = d1 + 3*d4
       D2 = 2*d1 - 3*d3
@@ -50,10 +111,10 @@ import Hecke: divisor
       @test Dlcm == lcm(D2, D1)
       @test Dgcd + Dlcm == D1 + D2
 
-      @test valuation(Dgcd, p1) == valuation(Dgcd.finite_ideal, p1)
-      @test valuation(Dgcd, p4) == valuation(Dgcd.infinite_ideal, p4)
-      @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
-      @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
+      @test valuation(Dgcd, p1) == valuation(Hecke.ideals(Dgcd)[1], p1)
+      @test valuation(Dgcd, p4) == valuation(Hecke.ideals(Dgcd)[2], p4)
+      @test valuation(Dlcm, p1) == valuation(Hecke.ideals(Dlcm)[1], p1)
+      @test valuation(Dlcm, p4) == valuation(Hecke.ideals(Dlcm)[2], p4)
 
       D1 = d1 - 3*d4
       D2 = 2*d1
@@ -65,16 +126,17 @@ import Hecke: divisor
       @test Dlcm == lcm(D2, D1)
       @test Dgcd + Dlcm == D1 + D2
 
-      @test valuation(Dgcd, p1) == valuation(Dgcd.finite_ideal, p1)
-      @test valuation(Dgcd, p4) == valuation(Dgcd.infinite_ideal, p4)
-      @test valuation(Dlcm, p1) == valuation(Dlcm.finite_ideal, p1)
-      @test valuation(Dlcm, p4) == valuation(Dlcm.infinite_ideal, p4)
+      @test valuation(Dgcd, p1) == valuation(Hecke.ideals(Dgcd)[1], p1)
+      @test valuation(Dgcd, p4) == valuation(Hecke.ideals(Dgcd)[2], p4)
+      @test valuation(Dlcm, p1) == valuation(Hecke.ideals(Dlcm)[1], p1)
+      @test valuation(Dlcm, p4) == valuation(Hecke.ideals(Dlcm)[2], p4)
     end
   end
 
   @testset "Degree" begin
     function test_degree(I, d)
-      D = divisor(I)
+      # build the divisor from the ideal (a prime ideal would give the free representation)
+      D = divisor(Hecke.fractional_ideal(I))
 
       @assert !Hecke.has_support(D)
       @test d == @inferred degree(D)
@@ -97,6 +159,7 @@ import Hecke: divisor
     @test e == 6
     test_degree(I, 6)
     test_degree(P, 1)
+    @test degree(divisor(P)) == 1   # free representation
 
     I = ideal(Ofin, x^2+x+1)
     fac = @inferred factor(I)
@@ -105,6 +168,7 @@ import Hecke: divisor
     @test e == 1
     test_degree(I, 6)
     test_degree(P, 6)
+    @test degree(divisor(P)) == 6  
   end
 
   @testset "Pole/Zero divisors" begin
@@ -376,4 +440,74 @@ import Hecke: divisor
         @test is_effective(D)
       end
     end
+end
+
+@testset "Divisor representations" begin
+  for (p, eq) in ((101, :hyp), (101, :quartic), (7, :quartic))
+    k = GF(p)
+    kx, x = rational_function_field(k, :x; cached = false)
+    ky, y = polynomial_ring(kx, :y; cached = false)
+    F, a = eq == :hyp ? function_field(y^2 - (x^7 + 3x^3 + x + 1); cached = false) :
+                        function_field(y^4 + x^4 + 3x^3*y + x*y^2 + 5x + 1; cached = false)
+    Oinf = infinite_maximal_order(F)
+    pl = _places_deg1(F, 6)
+    pinf = [P for (P, _) in factor(ideal(Oinf, base_ring(Oinf)(1//x)))]
+    places = vcat(pl, pinf)
+    P = [divisor(Q) for Q in pl]
+    Pinf = pole_divisor(F(x))
+    f = (a^2 + x*a + 3)//(a + x^2 + 1)
+
+    @testset "p = $p, $eq" begin
+      for D in (trivial_divisor(F), P[1], P[1] + 2*P[2] - 3*P[3], P[1] + P[2] + P[3] + P[4] - Pinf,
+                divisor(f), divisor(f) + 3*P[5], 4*P[6] - divisor(a + 1))
+        test_representations(D, places)
+      end
+
+      # Arithmetic agrees across representations
+      D1 = P[1] + 2*P[2] - P[3]
+      D2 = divisor(f) - P[4]
+      S = D1 + D2
+      for R1 in (_only_free(D1), _only_inverse_ideals(D1), _only_projective(D1), _only_ideals(D1)),
+          R2 in (_only_free(D2), _only_inverse_ideals(D2), _only_projective(D2), _only_ideals(D2))
+        @test R1 + R2 == S
+        @test R1 - R2 == D1 - D2
+        @test gcd(R1, R2) == gcd(D1, D2)
+        @test lcm(R1, R2) == lcm(D1, D2)
+      end
+      for R in (_only_free(D1), _only_inverse_ideals(D1), _only_projective(D1), _only_ideals(D1))
+        @test -R == -D1
+        @test 7*R == D1 + D1 + D1 + D1 + D1 + D1 + D1
+        @test -3*R == -(D1 + D1 + D1)
+        @test is_zero(R - D1)
+      end
+
+      # Large multiples stay small in the projective representation
+      E = _only_projective(P[1] - P[2])
+      E1000 = 1000*E
+      A, r, _ = Hecke.projective_representation(E1000)
+      @test degree(A) <= genus(F) - 1 + degree(F)
+      @test degree(E1000) == 0
+      # valuations go through the support (factorization of the ideals).
+      @test valuation(E1000, pl[1]) == 1000
+      @test valuation(E1000, pl[2]) == -1000
+      @test valuation(E1000, pl[3]) == 0
+      @test dimension(E1000 + genus(F)*P[3]) == dimension(_only_free(1000*(P[1] - P[2])) + genus(F)*P[3])
+      # dimension and Riemann-Roch space of a projective divisor do not
+      # evaluate the factored element
+      R = _only_projective(E1000 + genus(F)*P[3])
+      @test dimension(R) == dimension(E1000 + genus(F)*P[3])
+      @test !Hecke.has_inverse_ideals(R)
+      R = _only_projective(D1 + 2*P[4])
+      B = riemann_roch_space(R)
+      @test !Hecke.has_inverse_ideals(R)
+      @test length(B) == dimension(D1 + 2*P[4])
+      @test all(b -> is_effective(divisor(b) + D1 + 2*P[4]), B)
+
+      # Principal divisors
+      @test is_principal(divisor(f) - divisor(a + x))
+      fl, h = is_principal_with_data(_only_projective(divisor(f)))
+      @test fl
+      @test divisor(h) == divisor(f)
+    end
+  end
 end
