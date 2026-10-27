@@ -207,6 +207,20 @@
     R = order(QG, basis(QG))
     M = maximal_order(R)
     @test (@inferred index(R, M)) == 2
+
+    # a maximal order given by bases with determinants of both signs, an
+    # Eichler order of level 2 inside it, and an order not contained in another
+    A = quaternion_algebra_ramified_at(QQ, 97)
+    B = Hecke._hnf_integral(basis_matrix(maximal_order(A)), :lowerleft)
+    Mp = order(A, B)
+    Mn = order(A, vcat(-B[1:1, :], B[2:4, :]))
+    @test det(basis_matrix(Mp)) > 0 && det(basis_matrix(Mn)) < 0
+    @test index(Mp) == 76 && index(Mn) == 76
+    @test index(Mp, Mn) == 1 && index(Mn, Mp) == 1
+    P = first(Hecke.maximal_integral_ideals(Mp, 2; side = :left))
+    E = intersect(Mp, right_order(P))
+    @test index(E, Mp) == 2 && index(E, Mn) == 2
+    @test_throws ArgumentError index(Mn, E)
   end
 
   @testset "numbers larger than 2^$p0" for p0 in [32, 64]
