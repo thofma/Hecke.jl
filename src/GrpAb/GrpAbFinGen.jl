@@ -991,7 +991,7 @@ $g_1 \otimes \cdots \otimes g_n$. The map admits a preimage as well.
 """
 function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
   @assert task in [:map, :none]
-  local T
+  local T::FinGenAbGroup
   if length(G) == 1
     T = G[1]
   else
@@ -1007,15 +1007,14 @@ function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
 
   g = vec(collect(Base.Iterators.ProductIterator(Tuple(gens(g) for g = reverse(G)))))
 
-  function pure(g::FinGenAbGroupElem...)
+  function pure_tensor(g::Tuple)
     @assert length(g) == length(G)
     @assert all(i-> parent(g[i]) == G[i], 1:length(G))
 
     return T(vec(collect(prod(x) for x = Base.Iterators.product([h.coeff for h = reverse(g)]...))))
   end
-  function pure(T::Tuple)
-    return pure(T...)
-  end
+  pure(g::FinGenAbGroupElem...) = pure_tensor(g)
+  pure(T::Tuple) = pure_tensor(T)
   function inv_pure(t::FinGenAbGroupElem)
     p = Base.findall(i -> !iszero(t[i]), 1:ngens(T))
     if length(p) == 0

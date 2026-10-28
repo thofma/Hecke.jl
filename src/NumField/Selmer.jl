@@ -70,12 +70,14 @@ function pselmer_group_fac_elem(p::Int, S::Vector{<:AbsNumFieldOrderIdeal{AbsSim
     pr, pos = iterate(P, pos)
   end
 
+  local mU::Union{Hecke.MapUnitGrp{FacElemMon{AbsSimpleNumField}}, Hecke.MapSUnitGrpFacElem}
   if length(D) + length(S) == 0
     U, mU = Hecke.unit_group_fac_elem(ZK)
   else
     U, mU = Hecke.sunit_group_fac_elem(vcat(S, D))
   end
 
+  local mk::FinGenAbGroupHom
   if length(D) == 0
     k = U
     mk = hom(U, U, gens(U))

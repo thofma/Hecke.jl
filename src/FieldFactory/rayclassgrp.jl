@@ -238,17 +238,7 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   let X = X, mC = mC, invd = invd, C = C, exp_class = exp_class, powers = powers, groups_and_maps = groups_and_maps, quo_rings = quo_rings, lH = lH, diffC = diffC, n_quo = n_quo, m = m, p = p, expon = expon
 
     # Discrete logarithm
-    function disclog(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-      @vprintln :RayFacElem 1 "Disc log of element $J"
-      a1 = id(X)
-      for (f, k) in _simplify_for_ray_class_map(J, m)
-        iszero(k) && continue
-        a1 += k*disclog(f)
-      end
-      return a1
-    end
-
-    function disclog(J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+    function disclog_ideal(J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
       @hassert :RayFacElem 1 is_coprime(J, m)
       if isone(J)
         @vprintln :RayFacElem 1 "J is one"
@@ -290,6 +280,18 @@ function ray_class_group_quo(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
       end
       return FinGenAbGroupElem(X, coeffs)
     end
+
+    function disclog(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
+      @vprintln :RayFacElem 1 "Disc log of element $J"
+      a1 = id(X)
+      for (f, k) in _simplify_for_ray_class_map(J, m)
+        iszero(k) && continue
+        a1 += k*disclog_ideal(f)
+      end
+      return a1
+    end
+
+    disclog(J::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}) = disclog_ideal(J)
   end
 
   Dgens = Tuple{AbsSimpleNumFieldOrderElem, FinGenAbGroupElem}[]
