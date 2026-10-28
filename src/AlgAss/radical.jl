@@ -112,39 +112,27 @@ function _radical_finite(A::MatAlgebra{FqFieldElem})
   # FqField misses a lot of inplace functions and optimiziations
   # We first pass to a 'native' type (except in the Zech representation)
   F = base_ring(A)
-  type = Nemo._fq_default_ctx_type(F)
-  if type == Nemo._FQ_DEFAULT_FQ_NMOD
-    let f = Nemo.canonical_raw_type(fqPolyRepField, F),
-      FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
-      RR = _radical_finite(AA)
-      return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
-    end
-  elseif type == Nemo._FQ_DEFAULT_FQ
-    let f = Nemo.canonical_raw_type(FqPolyRepField, F),
-      FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
-      RR = _radical_finite(AA)
-      return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
-    end
-  elseif type == Nemo._FQ_DEFAULT_NMOD
-    let f = Nemo.canonical_raw_type(fpField, F),
-      FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
-      RR = _radical_finite(AA)
-      return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
-    end
-  elseif type == Nemo._FQ_DEFAULT_FMPZ_NMOD
-    let f = Nemo.canonical_raw_type(FpField, F),
-      FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
-      RR = _radical(AA)
-      return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
-    end
-  else
-    # this is a Zech representation, so use the generic fallback
+  T = Nemo.raw_field_type(F)
+  # split by hand, inference widens T to Type
+  if T === fpField
+    return _radical_finite_raw(fpField, A)
+  elseif T === FpField
+    return _radical_finite_raw(FpField, A)
+  elseif T === fqPolyRepField
+    return _radical_finite_raw(fqPolyRepField, A)
+  elseif T === FqPolyRepField
+    return _radical_finite_raw(FqPolyRepField, A)
+  else # Zech representation
     return _radical_finite_generic(A)
   end
+end
+
+function _radical_finite_raw(::Type{T}, A::MatAlgebra{FqFieldElem}) where {T}
+  f = Nemo.canonical_raw_type(T, base_ring(A))
+  FF = codomain(f)
+  AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true)
+  RR = _radical_finite(AA)
+  return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
 end
 
 function _radical_finite_prime_field(A::MatAlgebra{<:Union{fpFieldElem, FpFieldElem}})
