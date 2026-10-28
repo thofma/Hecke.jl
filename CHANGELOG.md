@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+tries to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+The following gives an overview of the changes compared to the previous releases. This list is not
+complete, many more internal or minor changes were made, but we tried to only list those changes
+which we think might affect some users directly.
+
+## [0.39.11](https://github.com/thofma/Hecke.jl/releases/tag/v0.39.11) - 2026-01-28
+
+### **TODO** Uncategorized PR
+
+If there are any PRs listed below, either apply the same steps
+as above, or change their label to "release notes: not needed".
+
+- [#2147](https://github.com/thofma/Hecke.jl/pull/2147) Added in-place operations for elliptic curve points
+- [#2150](https://github.com/thofma/Hecke.jl/pull/2150) fix: mathematically wrong documentation in `QuadForm`
+- [#2154](https://github.com/thofma/Hecke.jl/pull/2154) Fix is_isometric
+
 ## [0.36.0](https://github.com/thofma/Hecke/releases/tag/v0.36.0) - 2025-05-19
 
 The following gives an overview of the changes compared to the previous release. This list is not
