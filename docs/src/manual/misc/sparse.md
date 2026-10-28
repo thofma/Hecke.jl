@@ -222,10 +222,10 @@ dot(::AbstractVector{T}, ::SMat{T}, ::AbstractVector{T}) where T
 
 Other:
 ```@docs
-sparse(::SMat)
 ZZMatrix(::SMat{ZZRingElem})
 ZZMatrix(::SMat{T}) where {T <: Integer}
 Matrix(::SMat)
 Array(::SMat)
 ```
 
+With SparseArrays loaded, `sparse(A::SMat)` returns the same matrix as a `SparseMatrixCSC`.

@@ -1,4 +1,4 @@
-using Hecke.SparseArrays
+import SparseArrays
 
 # Sparse products must preserve both inputs and own their result coefficients.
 @testset "Sparse row-matrix product ownership" begin
@@ -101,6 +101,7 @@ end
   @test 3 == @inferred nrows(Asparse)
   @test 3 == @inferred ncols(Asparse)
   @test 3 == @inferred nnz(Asparse)
+  @test 3 == @inferred SparseArrays.nnz(Asparse)
   @test (3, 3) == @inferred size(Asparse)
   @test 3 == @inferred size(Asparse, 1)
   @test 3 == @inferred size(Asparse, 2)

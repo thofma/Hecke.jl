@@ -26,7 +26,6 @@ using Artifacts
 using LinearAlgebra
 using Distributed
 using Printf
-using SparseArrays
 using Random
 using Pkg
 
@@ -54,8 +53,6 @@ import AbstractAlgebra: Solve, coprime_base_steel, InfiniteDimensionError
 import AbstractAlgebra: MapWithHeader, MapHeader, MapCache, InverseMap, pseudo_inv
 
 import LinearAlgebra: dot, nullspace, rank, ishermitian
-
-import SparseArrays: nnz
 
 import Random: rand!
 using Random: Sampler, SamplerTrivial, GLOBAL_RNG

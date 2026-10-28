@@ -945,7 +945,6 @@ export snf
 export snf_with_transform
 export solve
 export solve_init
-export sparse
 export sparse_matrix
 export sparse_matrix_type
 export sparse_row
