@@ -403,6 +403,51 @@ end
     @test order(C) == 8
   end
 
+  @testset "Minkowski unit from units of subfields" begin
+    # Test Minkowski-unit construction and saturation in QQ(sqrt(2), sqrt(3)),
+    # including subgroups that are not stable under the Galois action.
+    Qx, x = QQ["x"]
+    K, a = number_field(x^4 - 10*x^2 + 1, "a"; cached = false)
+    s2 = (a^3 - 9*a)//2
+    s6 = (a^2 - 5)//2
+    units = [1 + s2, (s2 + s6)//2, a]
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(
+      units; is_galois_stable = true)
+    @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+    @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 3)
+    @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 5)
+    # The product of these is a, so that random products are tried.
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(
+      [units[1], units[2], a * inv(units[1] * units[2])];
+      is_galois_stable = true)
+    @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(
+      [units[1]^3, units[2], units[3]]; is_galois_stable = true)
+    @test !Hecke.VerifyUnitGroup._is_definitely_saturated(C, 3)
+
+    OK = maximal_order(K)
+    for supplied_units in (FacElem.(units), OK.(units))
+      C = Hecke.VerifyUnitGroup.initialize_verify_context(
+        supplied_units; is_galois_stable = true, evaluate_elements = false)
+      @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+      @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 5)
+    end
+    @test Hecke.VerifyUnitGroup.verify_maximlity_up_to(
+      units, 5; is_galois_stable = true)
+
+    # This subgroup has index 5; its Galois closure contains units[1].
+    subgroup = [units[1]^5, units[2], units[1]*units[3]]
+    for supplied_units in (subgroup, FacElem.(subgroup), OK.(subgroup))
+      C = Hecke.VerifyUnitGroup.initialize_verify_context(
+        supplied_units; evaluate_elements = false)
+      @test C.is_normal
+      @test !C.is_galois_stable
+      @test is_zero(C.u)
+      @test !is_ramified(C.OK, 5)
+      @test !Hecke.VerifyUnitGroup._is_definitely_saturated(C, 5)
+    end
+  end
+
   @testset "Auto but no autos" begin
     K, a = number_field(x^3 - 3*x - 4)
     OK = (maximal_order(K))
