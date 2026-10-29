@@ -190,9 +190,9 @@ function *(x::S, y::S) where S <: AbsNumFieldOrderIdeal
   @hassert :AbsNumFieldOrder 1 is_consistent(y)
   OK = order(x)
   if is_maximal_known_and_maximal(OK)
-    z = mul_maximal(x, y)
+    z = mul_maximal(x, y)::S
   else
-    z = mul_gen(x, y)
+    z = mul_gen(x, y)::S
   end
   @hassert :AbsNumFieldOrder 1 is_consistent(z)
   return z

@@ -24,6 +24,21 @@
     @test K == ideal(O1, 16)
   end
 
+  # Multiplication must retain the ideal type before checking consistency.
+  @testset "Multiplication type" begin
+    Kns, _ = number_field([x^2 - 2, x^2 - 3])
+    for O in (O1, maximal_order(K1), maximal_order(Kns))
+      I = ideal(O, ZZRingElem(2), basis(O)[2])
+      J = ideal(O, ZZRingElem(3), basis(O)[end])
+      for (A, B) in ((I, J), (I, ideal(O, 0)), (ideal(O, 1), J))
+        C = @inferred A * B
+        @test typeof(C) === typeof(A)
+        @test order(C) === O
+        @test C == Hecke.mul_gen(A, B)
+      end
+    end
+  end
+
   @testset "Ad hoc binary operations" begin
     I = ideal(O1, O1(2*a1))
     J = ideal(O1, 3)

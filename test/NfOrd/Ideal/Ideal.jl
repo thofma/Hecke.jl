@@ -70,6 +70,10 @@
   end
 
   @testset "Norm" begin
+    # Inference on the unparameterized ideal type must retain the integer norm.
+    norm_types = Base.return_types(norm, (Hecke.AbsNumFieldOrderIdeal,))
+    @test only(norm_types) === ZZRingElem
+
     @test 4913 == @inferred norm(I)
     @test 4913 == @inferred norm(J)
     @test 4913 == @inferred norm(K)
