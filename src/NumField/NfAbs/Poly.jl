@@ -267,6 +267,8 @@ function gcdx_modular(a::Generic.Poly{AbsSimpleNumFieldElem}, b::Generic.Poly{Ab
   K = base_ring(parent(a))
   @assert parent(a) == parent(b)
   g = zero(a)
+  ca = zero(a)
+  cb = zero(a)
   d = ZZRingElem(1)
   last_g = parent(a)(0)
   while true

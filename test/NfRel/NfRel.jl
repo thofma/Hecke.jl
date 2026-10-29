@@ -39,6 +39,18 @@
     @test_throws ArgumentError lift(Kt, o)
   end
 
+  @testset "absolute field over rationals" begin
+    # conversion of an extension of rationals_as_number_field()
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    L, b = number_field(t^3 - 2//3*t + 5, "b")
+    M, c = number_field(AbsSimpleNumField, L)
+    @test M isa AbsSimpleNumField
+    Qx = parent(defining_polynomial(M))
+    @test defining_polynomial(M) == gen(Qx)^3 - 2//3*gen(Qx) + 5
+    @test c == gen(M)
+  end
+
   @testset "Arithmetic" begin
     x = QQ["x"][2]
     K, a = number_field(x^2 + 12x - 92, "a")

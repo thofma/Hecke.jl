@@ -35,6 +35,16 @@ end
   Ky, y = K["y"]
   h = y^3+(15037//140*a^2 - 109//40*a - 915//14)*y^2+(16375724527//78400*a^2 - 993527643//4900*a + 393774209//11200)*y+(107296943419277//878080*a^2 - 2594040461688323//21952000*a + 17784340885567//878080)
   @assert is_irreducible(h)
+
+  # modular gcdx needing more than one prime
+  K, a = quadratic_field(-5)
+  Ky, y = K["y"]
+  B = ZZ(10)^40
+  f = (y^2 + a*y + 3) * (y - (B + 1)*a)
+  g = (y^2 + a*y + 3) * (y^3 + B + 7)
+  d, u, v = Hecke.gcdx_modular(f, g)
+  @test d == gcd(f, g)
+  @test u*f + v*g == d
 end
 
 @testset "Is integral" begin

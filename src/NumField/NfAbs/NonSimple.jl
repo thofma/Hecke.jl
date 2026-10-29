@@ -835,7 +835,7 @@ function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool =
 end
 
 function number_field(f::Vector{QQPolyRingElem}, s::VarName; cached::Bool = false, check::Bool = true)
-  return number_field(f, String(s); cached = cached, check = check)
+  return number_field(f, string(s); cached = cached, check = check)
 end
 
 function number_field(f::Vector{QQPolyRingElem}, s::Vector{<:VarName}; cached::Bool = false, check::Bool = true)
