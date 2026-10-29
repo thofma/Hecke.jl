@@ -153,6 +153,65 @@
     @test sort!([ZZ(discriminant(C, QQ)) for C in fields]) == expected
   end
 
+  @testset "Tame conductor iterator of exponent 2" begin
+    fields = [rationals_as_number_field()[1], quadratic_field(-1)[1],
+              quadratic_field(5)[1], quadratic_field(21)[1],
+              quadratic_field(105)[1], cyclotomic_field(5)[1],
+              cyclotomic_field(15)[1]]
+    for K in fields
+      O = maximal_order(K)
+      @test isempty(collect(Hecke.tame_conductors_degree_2_iterator(O, 0)))
+      @test_throws ArgumentError Hecke.tame_conductors_degree_2_iterator(O, -1)
+      for bound in (1, 4, 5, 9, 25, 100, 1000)
+        it = Hecke.tame_conductors_degree_2_iterator(O, bound)
+        @test eltype(it) == Tuple{Int, ZZRingElem}
+        @test Base.IteratorSize(typeof(it)) == Base.SizeUnknown()
+        expected = sort!(Hecke.tame_conductors_degree_2(O, ZZ(bound)))
+        @test sort!(collect(it)) == expected
+        @test sort!(collect(it)) == expected
+      end
+    end
+
+    for K in (quadratic_field(21)[1], cyclotomic_field(15)[1])
+      O = maximal_order(K)
+      for bound in (1, 24, 25, 80, 81, 200)
+        for allowed in (Int[], [2], [3, 5, 7, 11], [7, 11])
+          expected = sort!(Hecke.tame_conductors_degree_2(O, ZZ(bound);
+                                                       unramified_outside = ZZ.(allowed)))
+          it = @inferred Hecke.tame_conductors_degree_2_iterator(O, bound;
+                                                               unramified_outside = allowed)
+          @test sort!(collect(it)) == expected
+        end
+      end
+    end
+
+    O = maximal_order(fields[1])
+    expected = Hecke.tame_conductors_degree_2(O, ZZ(30))
+    for T in (Int, Int32, UInt, BigInt, ZZRingElem)
+      it = @inferred Hecke.tame_conductors_degree_2_iterator(O, T(30))
+      @test collect(it) == expected
+      for S in (Int, Int32, UInt, BigInt, ZZRingElem)
+        it = @inferred Hecke.tame_conductors_degree_2_iterator(O, T(30);
+                                                             unramified_outside = S.([3, 5]))
+        @test sort!(collect(it)) == [(m, ZZ(m)) for m in (1, 3, 5, 15)]
+      end
+    end
+    it = @inferred Hecke.tame_conductors_degree_2_iterator(O, ZZ(30);
+                                                         unramified_outside = view([3, 5, 7], 1:2))
+    @test sort!(collect(it)) == [(m, ZZ(m)) for m in (1, 3, 5, 15)]
+    @test isempty(collect(Hecke.tame_conductors_degree_2_iterator(O, big(0))))
+    @test_throws ArgumentError Hecke.tame_conductors_degree_2_iterator(O, big(-1))
+
+    O5 = maximal_order(fields[3])
+    it = Hecke.tame_conductors_degree_2_iterator(O5, big(typemax(Int)) + 1)
+    @test first(it) == (1, ZZ(1))
+
+    # Taking the first few values must not enumerate the whole range.
+    it = Hecke.tame_conductors_degree_2_iterator(O, typemax(Int))
+    values = [1, 3, 5, 7, 11, 13, 15, 17, 19, 21]
+    @test collect(Iterators.take(it, 10)) == [(m, ZZ(m)) for m in values]
+  end
+
   @testset "abelian extensions && related examples" begin
 
     Qx, x = polynomial_ring(QQ, "x")
