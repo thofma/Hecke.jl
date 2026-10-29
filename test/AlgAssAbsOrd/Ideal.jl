@@ -195,7 +195,7 @@
   m[:, :, 3] = m3
   m[:, :, 4] = m4
   A = StructureConstantAlgebra(QQ, m)
-  basO = map(x -> A(x), Vector{QQFieldElem}[[1//24, 0, 0, 0], [0, 1//48, 0, 0], [1//48, 0, 1//48, 0], [0, 0, 0, 1//48]])
+  basO = map(A, Vector{QQFieldElem}[[1//24, 0, 0, 0], [0, 1//48, 0, 0], [1//48, 0, 1//48, 0], [0, 0, 0, 1//48]])
   O = order(A, basO)
   I = A(48) * O
   PD = primary_decomposition(I, O)

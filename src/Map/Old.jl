@@ -63,7 +63,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPol
       R = z.codomain
       parent(a) == R || error("mixed rings in preimage")
       g = gens(domain)
-      im_gen = map(x -> z(x), g) # apply x -> z(x) to the generatotrs ## possibly should be cached and stored
+      im_gen = map(z, g) # apply x -> z(x) to the generatotrs ## possibly should be cached and stored
           ## need to write the elements in a matrix, solve the eqn for a
       Mt = zero_matrix(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))
 

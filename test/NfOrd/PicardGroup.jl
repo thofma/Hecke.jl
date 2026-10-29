@@ -119,7 +119,7 @@ end
   @test test_disc_log_units(U, mU, O)
   UU, mUU = U, mU
   U, mU = @inferred unit_group_fac_elem(O)
-  @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> mU(x), [ U[2], U[3] ]), 1))
+  @test contains(AF(455982050.1598537651), Hecke.regulator(map(mU, [U[2], U[3]]), 1))
   @test all(x -> evaluate(mU(x)) in O, [U[2], U[3]])
   @test is_trivial(quo(UU, [mUU\O(evaluate(mU(u))) for u in gens(U)])[1])
 
@@ -138,7 +138,7 @@ end
   @test test_disc_log_units(U, mU, O)
   UU, mUU = U, mU
   U, mU = unit_group_fac_elem(O)
-  @test contains(AF(124666.2260696), Hecke.regulator(map( x -> mU(x), [ U[2], U[3] ]), 1))
+  @test contains(AF(124666.2260696), Hecke.regulator(map(mU, [U[2], U[3]]), 1))
   @test all(x -> evaluate(mU(x)) in O, [U[2], U[3]])
   @test is_trivial(quo(UU, [mUU\O(evaluate(mU(u))) for u in gens(U)])[1])
 end

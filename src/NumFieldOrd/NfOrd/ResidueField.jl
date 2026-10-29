@@ -35,7 +35,7 @@ end
 # Compute the residue field data and store it in the prime P given the map m
 function compute_residue_field_data!(P::AbsNumFieldOrderIdeal, m)
   F = base_ring(codomain(m))
-  phi = map_from_func(ZZ, F, x -> F(x), y -> lift(ZZ, y))
+  phi = map_from_func(ZZ, F, F, y -> lift(ZZ, y))
   return compute_residue_field_data!(P, m, phi)
 end
 

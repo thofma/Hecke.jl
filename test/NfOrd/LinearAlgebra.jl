@@ -79,7 +79,7 @@
       0 0 0 0 37684868701591492337245802520684209569420259]
 
     de = ZZRingElem(37684868701591492337245802520684209569420259)
-    AoverO = matrix_space(O, 5, 5)(map(z -> O(z), A))
+    AoverO = matrix_space(O, 5, 5)(map(O, A))
 
     Apm = Hecke.pseudo_matrix( AoverO, [(O(1)*O)::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} for i in 1:5])
 
