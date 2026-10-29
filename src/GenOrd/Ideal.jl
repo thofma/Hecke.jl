@@ -169,10 +169,12 @@ Hecke.order(a::GenOrdIdl) = a.order
 #
 ################################################################################
 
+# The valuation is a closure which contains I in its environment, so
+#   deepcopying it would recurse. As for number fields, we do not copy it.
 function Base.deepcopy_internal(I::GenOrdIdl{S, T}, dict::IdDict) where {S, T}
   J = GenOrdIdl(order(I))
   for f in fieldnames(typeof(I))
-    f === :order && continue
+    (f === :order || f === :valuation) && continue
     if isdefined(I, f)
       setfield!(J, f, Base.deepcopy_internal(getfield(I, f), dict))
     end
@@ -826,29 +828,6 @@ function prime_dec_nonindex(O::GenOrd{S, T}, p::RingElem; degree_limit::Int, low
   end
   return result
 end
-
-function Hecke.valuation(A::GenOrdIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
-  @req !is_zero(A) "A is zero"
-
-  O = order(A)
-  e = 0
-  if has_2_elem_normal(p)
-    beta = Hecke.numerator(inv(O.F(_gen_two(p))), O)
-    newA = fractional_ideal(beta*A, _gen_one(p))
-    while is_integral(newA)
-      e += 1
-      newA = fractional_ideal(numerator(beta*newA; copy = false), _gen_one(p))
-    end
-  else
-    newA = Hecke.colon(A,p)
-    while is_integral(newA)
-      e+=1
-      newA = Hecke.colon(newA,fractional_ideal(p))
-    end
-  end
-  return e
-end
-
 
 function Hecke.factor(A::GenOrdIdl{S, T}) where {S, T}
   O = A.order

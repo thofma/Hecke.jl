@@ -561,16 +561,21 @@ end
 
 function Hecke.factor(A::GenOrdFracIdl)
   O = A.order
-  N = numerator(norm(A)) * denominator(norm(A))
 
   A_num = numerator(A; copy = false)
-  A_den = ideal(O, denominator(A; copy = false))
+  d = denominator(A; copy = false)
+
+  # Collect the primes from the numerator and the denominator separately:
+  #   in norm(A) = norm(A_num) / d^n, primes lying over the same prime of the
+  #   base ring can cancel (e.g. A = P1 * P2^(-1) with P1, P2 over the same p
+  #   has norm 1), and would then be missed.
+  N = norm(A_num) * d
 
   factors = factor(N)
   primes = Dict{GenOrdIdl,Int}()
   for (f,e) in factors
     for (p,r) in prime_decomposition(O,f)
-      p_val = valuation(A_num, p) - valuation(A_den, p)
+      p_val = valuation(A_num, p) - valuation(d, p)
       if p_val != 0
         primes[p] = p_val
       end
@@ -597,8 +602,6 @@ function coprime_to(I::GenOrdFracIdl, p::GenOrdIdl)
 end
 
 function Hecke.valuation(A::GenOrdFracIdl{S, T}, p::GenOrdIdl{S, T}) where {S, T}
-  O = A.order
-  A_num = numerator(A; copy = false)
-  A_den = ideal(O, denominator(A; copy = false))
-  return valuation(A_num, p) - valuation(A_den, p)
+  return valuation(numerator(A; copy = false), p) -
+         valuation(denominator(A; copy = false), p)
 end
