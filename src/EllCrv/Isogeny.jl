@@ -7,41 +7,16 @@
 #
 ###############################################################################
 
-mutable struct Isogeny{T <: RingElem} <: Map{EllipticCurve, EllipticCurve, HeckeMap, Isogeny}
-  header::MapHeader{EllipticCurve{T}, EllipticCurve{T}}
-  domain::EllipticCurve{T}
-  codomain::EllipticCurve{T}
-  coordx::RingElem
-  coordy::RingElem
-  phi::RingElem
-  omega::RingElem
-  psi::RingElem
-  degree::Int
-
-  function Isogeny(E::EllipticCurve{T}) where T<:RingElem
-    r = new{T}()
-    r.domain = E
-    return r
-  end
-end
-
 function Isogeny(E::EllipticCurve{T}, psi::RingElem) where T<:RingElem
-  r = Isogeny(E)
-
-  #Normalize and set kernel polynomial
+  #Normalize kernel polynomial
   R = parent(psi)
   psi = numerator(psi//R(leading_coefficient(psi)))
-  r.psi = psi
 
   #Compute codomain and maps
-  r.codomain, phi, omega, r.degree = isogeny_kernel_polynomial(E, psi)
+  F, phi, omega, d = isogeny_kernel_polynomial(E, psi)
   Ry = parent(omega)
-  r.coordx = phi//psi^2
-  r.coordy = Ry(omega)//Ry(psi^3)
 
-  #Set header
-  r.header = MapHeader(E, r.codomain)
-  return r
+  return Isogeny(E, F, phi//psi^2, Ry(omega)//Ry(psi^3), psi, d)
 end
 
 
@@ -406,16 +381,9 @@ end
 Return the dual of frobenius.
 """
 function dual_of_frobenius(E)
-
   supsing = is_supersingular(E)
 
   a1, a2, a3, a4, a6 = a_invariants(E)
-  f = Isogeny(E)
-  K = base_field(E)
-  p = characteristic(K)
-
-  f.codomain = E
-  f.degree = p
 
   p = characteristic(base_field(E))
   phim = multiplication_by_m_map(E, p)
@@ -449,12 +417,10 @@ function dual_of_frobenius(E)
   dual_omega0= defrobenify(omega0, p)
   dual_omega1= defrobenify(omega1, p)
 
+  coordx = dual_phi//(dual_psi)^2
+  coordy = (dual_omega0 + dual_omega1*y)//(Kxy(dual_psi))^3
+  f = Isogeny(E, E, coordx, coordy, dual_psi, p)
 
-  f.coordx = dual_phi//(dual_psi)^2
-  f.coordy = (dual_omega0 + dual_omega1*y)//(Kxy(dual_psi))^3
-
-  f.psi = dual_psi
-  f.header = MapHeader(E, f.codomain)
   if supsing
     return f*frobenius_map(E)
   else
@@ -498,18 +464,9 @@ function multiplication_by_m_map(E::EllipticCurve, m::S) where S<:Union{Integer,
   mult_mx = multiplication_by_m_numerator(E, m, x)//multiplication_by_m_denominator(E, m, x)
   mult_my = multiplication_by_m_y_coord(E, m)
 
-  mul_m = Isogeny(E)
-  mul_m.coordx = mult_mx
-  mul_m.coordy = mult_my
-  mul_m.degree = m^2
-
-  #This feels superfluous. Maybe division polynomials need to be cached somehow
   psi_temp = division_polynomial_univariate(E, m)[1]
-  mul_m.psi = divexact(psi_temp, leading_coefficient(psi_temp))
-  mul_m.codomain = E
-  mul_m.header = MapHeader(E, E)
-
-  return mul_m
+  psi = divexact(psi_temp, leading_coefficient(psi_temp))
+  return Isogeny(E, E, mult_mx, mult_my, psi, m^2)
 end
 
 #If the input is a polynomial of the form f(x^p) this returns f(x).
@@ -557,19 +514,13 @@ end
 Return the $n$-th power of the Frobenius map on E.
 """
 function frobenius_map(E::EllipticCurve{T}, n) where T<:FinFieldElem
-  f = Isogeny(E)
   K = base_field(E)
   p = characteristic(K)
+  #
+  Rx, x = polynomial_ring(K, :x)
+  Rxy, y = polynomial_ring(Rx, :y)
   pn = p^n
-  Rx, x = polynomial_ring(K, "x")
-  Rxy, y = polynomial_ring(Rx, "y")
-  f.codomain = E
-  f.degree = pn
-  f.coordx = x^pn//1
-  f.coordy = y^pn//1
-  f.psi = one(Rx)
-  f.header = MapHeader(E, f.codomain)
-  return f
+  return Isogeny(E, E, x^pn//1, y^pn//1, one(Rx), pn)
 end
 
 
@@ -658,19 +609,7 @@ function compose(I1::Isogeny, I2::Isogeny)
     newpsi = sqrt(psitemp)
   end
 
-
-  E = domain(I1)
-  F = codomain(I2)
-
-  f = Isogeny(E)
-  f.coordx = evaluate(I2.coordx, newx)
-  f.coordy = omega_num//omega_denom
-  f.psi = newpsi
-
-  f.codomain = F
-  f.degree = I1.degree*I2.degree
-  f.header = MapHeader(E, F)
-  return f
+  return Isogeny(E, F, tempx, omega_num//omega_denom, newpsi, degree(I1)*degree(I2))
 end
 
 @doc raw"""
