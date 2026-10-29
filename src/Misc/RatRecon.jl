@@ -57,7 +57,7 @@ function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; error_tolerant::B
 end
 
 function rational_reconstruction(a::Integer, b::Integer; error_tolerant::Bool = false, kw...)
-  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b), error_tolerant, kw...)
+  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b); error_tolerant, kw...)
 end
 
 function rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem)

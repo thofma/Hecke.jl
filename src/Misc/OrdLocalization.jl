@@ -400,7 +400,8 @@ end
 function principal_generator(L::OrdLoc{T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
   #possible for !L.comp due to semi local
   #theoretical for L.comp if L.prime large enough...
-   valuation(L(I.gen_one)) >= valuation(L(I.gen_two)) ? L(I.gen_two) : L(I.gen_one)
+   a, b = L(I.gen_one), L(I.gen_two)
+   valuation(a, L.prime) >= valuation(b, L.prime) ? b : a
 end
 
 
