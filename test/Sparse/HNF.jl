@@ -62,7 +62,7 @@ end
   function dense_remainder(R, M, v)
     B = deepcopy(map(R, M))
     w = deepcopy(map(R, v))
-    pivots = [findfirst(x -> !iszero(x), B[i, :]) for i in axes(B, 1)]
+    pivots = [findfirst(!iszero, B[i, :]) for i in axes(B, 1)]
     for c in eachindex(w)
       iszero(w[c]) && continue
       i = findfirst(==(c), pivots)
@@ -70,7 +70,7 @@ end
       p = w[c]
       w = [w[j] - p * B[i, j] for j in eachindex(w)]
     end
-    c = findfirst(x -> !iszero(x), w)
+    c = findfirst(!iszero, w)
     if c !== nothing
       p = inv(w[c])
       w = [p * x for x in w]

@@ -24,8 +24,8 @@
     @req all(b -> order(b) === R, coefficient_ideals(P)) "Relation ideals must belong to the base ring"
     a = I[fractional_ideal(x) for x in A]
     b = I[fractional_ideal(x) for x in coefficient_ideals(P)]
-    @req all(x -> !iszero(x), a) "Numerator ideals must be nonzero"
-    @req all(x -> !iszero(x), b) "Relation ideals must be nonzero"
+    @req all(!iszero, a) "Numerator ideals must be nonzero"
+    @req all(!iszero, b) "Relation ideals must be nonzero"
     C = deepcopy(change_base_ring(K, matrix(P)))
     if check
       @req is_maximal(R) "The base ring must be a maximal order"

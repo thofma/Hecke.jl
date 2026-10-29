@@ -108,7 +108,7 @@ end
 #    s = readlines(IOBuffer(head * body))
 #    #@info s
 #    s = filter(x -> !startswith(x, "end if"), s)
-#    filter!(x -> !isempty(x), s)
+#    filter!(!isempty, s)
 #    name = name * "nchar17"
 #    #@info println(s)
 #  end

@@ -432,7 +432,7 @@ end
   end
   G = [genus(root_lattice(:D, j)) for j in [4,5,6,7]]
   @test all(g -> is_primary(g, 2), G)
-  @test all(g -> !is_unimodular(g), G)
+  @test all(!is_unimodular, G)
   j = any(g -> !is_elementary(g,2), G)
   @test j !== nothing
 
@@ -559,7 +559,7 @@ end
   gen = @inferred integer_genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
   @test length(gen) == 8
   @test all(g -> det(g) == -4//3, gen)
-  @test all(g -> !is_integral(g), gen)
+  @test all(!is_integral, gen)
   @test all(g -> scale(g) in [1//9, 1//3, 2//9, 2//3], gen)
   gen = @inferred integer_genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
   @test isempty(gen)

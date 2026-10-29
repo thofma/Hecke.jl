@@ -42,7 +42,7 @@
         n == 3 && append!(divisors, [y + 1, y^2*(y + 1)])
         for divisor in divisors
           before = deepcopy((divisor, selected, fb.prod))
-          expected = filter(c -> !isone(c), [gcd(divisor, c) for c in selected])
+          expected = filter(!isone, [gcd(divisor, c) for c in selected])
           components = Hecke._factor_divisor(fb, divisor)
           @test Set(components) == Set(expected)
           @test prod(components; init = one(R)) == divisor
