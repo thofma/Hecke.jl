@@ -1171,7 +1171,7 @@ function iszero(a::AbstractAssociativeAlgebraElem)
   if _is_sparse(a)
     return length(a.coeffs_sparse) == 0
   end
-  return all(i -> iszero(i), coefficients(a, copy = false))
+  return all(iszero, coefficients(a, copy = false))
 end
 
 ################################################################################

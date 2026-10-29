@@ -1,7 +1,7 @@
 @testset "Meataxe" begin
 
   finite_field_functions = [
-    n -> GF(n),
+    GF,
     n -> GF(ZZ(n)),
     n -> finite_field(n, 1, "a")[1],
     n -> finite_field(ZZ(n), 1, "a")[1]

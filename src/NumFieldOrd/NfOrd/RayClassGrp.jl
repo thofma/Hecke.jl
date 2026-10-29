@@ -1404,7 +1404,7 @@ function has_principal_generator_1_mod_m(I::Union{AbsNumFieldOrderIdeal{AbsSimpl
   # of the ray class group, but only in the case of the full ray_class_group
   # and not in the quotient.
 
-  @assert all(x -> isreal(x), inf_plc)
+  @assert all(isreal, inf_plc)
 
   O = order(m)
   C, mC = class_group(O, GRH = GRH)

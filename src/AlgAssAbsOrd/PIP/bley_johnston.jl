@@ -242,7 +242,7 @@ function _is_principal_with_data_bj(I, O; side = :right, _alpha = nothing, local
   unit_reps = _unit_reps(M, F; GRH = GRH)
 
   decc = copy(dec)
-  p = sortperm(unit_reps, by = x -> length(x))
+  p = sortperm(unit_reps, by = length)
   dec_sorted = decc[p]
   units_sorted = unit_reps[p]
   bases_sorted = bases[p]

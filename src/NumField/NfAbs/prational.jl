@@ -265,7 +265,7 @@ function _schirokauer_map_data_generic(K, u::Vector, ell, ell2, OK)
   ZZy, = ZZ[:y]
   gmodell2 = change_base_ring(base_ring(Zell2x), g; parent = Zell2x)
   gmodell = change_base_ring(base_ring(Zellx), g; parent = Zellx)
-  sort!(lP, by = P -> norm(P))
+  sort!(lP, by = norm)
   # We do the computations prime ideal by prime ideal.
   # We sort the prime ideals, so that we can reuse the powers u^norm(P) in case
   # the prime ideal has the same norm as the previous one

@@ -337,8 +337,8 @@ end
 
 # trivial helper to filter support
 function _filter_support(D::Divisor, pred)
-  s_fin = filter(t -> pred(t), D.finite_support)
-  s_inf = filter(t -> pred(t), D.infinite_support)
+  s_fin = filter(pred, D.finite_support)
+  s_inf = filter(pred, D.infinite_support)
 
   F = function_field(D)
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)

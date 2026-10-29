@@ -79,7 +79,7 @@ non-degenerate integer_lattice.
   function ZZGenus(signature_pair, symbols::Vector{ZZLocalGenus})
     G = new()
     G._signature_pair = signature_pair
-    sort!(symbols, by = x->prime(x))
+    sort!(symbols, by = prime)
     deleteat!(symbols, [i for (i,s) in enumerate(symbols) if prime(s)!=2 && is_unimodular(s)])
     G._symbols = symbols
     return G

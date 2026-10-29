@@ -41,7 +41,7 @@
   function eichler(O, l)
     A = algebra(O)
     if base_ring(A) isa QQField
-      coords = x -> coefficients(x)
+      coords = coefficients
     else
       AQ, AQtoA = restrict_scalars(A, QQ)
       coords = x -> coefficients(preimage(AQtoA, x))

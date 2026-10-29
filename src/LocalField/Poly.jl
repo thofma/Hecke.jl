@@ -1034,7 +1034,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem
       fphi1 = fphi
       NP = newton_polygon(fphi, phi)
       L = lines(NP)
-      L1 = sort(L, rev = true, by = x -> slope(x))
+      L1 = sort(L, rev = true, by = slope)
       last_s = QQFieldElem(0)
       for l in L1
         if l == L1[end]

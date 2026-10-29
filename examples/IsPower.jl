@@ -67,7 +67,7 @@ function ispower_mod_p(a::AbsSimpleNumFieldElem, i::Int)
     while true
       con_r = map(abs, conjugates(a, r_pr))
       map(contains_zero, con_r)
-      if any(x->contains_zero(x), con_r)
+      if any(contains_zero, con_r)
         r_pr += 20
       else
         con_r = [root(x, i) for x = con_r]

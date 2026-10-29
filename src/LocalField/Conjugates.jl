@@ -551,7 +551,7 @@ function completion_easy(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpl
   p = minimum(P)
   C = qAdicConj(K, Int(p); cached)
   g = conjugates(P.gen_two.elem_in_nf, C)
-#  @show map(x->valuation(x), g)
+#  @show map(valuation, g)
   i = findfirst(x->valuation(x) > 0, g)
   return completion(K, p, i, precision; cached)
 end

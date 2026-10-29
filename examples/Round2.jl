@@ -304,7 +304,7 @@ function radical_basis_power(O::Order, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = map_from_func(parent(p), F, F, y->lift(y))
+    mF = map_from_func(parent(p), F, F, lift)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   q = characteristic(F)
@@ -338,7 +338,7 @@ function radical_basis_trace(O::Order, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = map_from_func(parent(p), R, R, y->lift(y))
+    mR = map_from_func(parent(p), R, R, lift)
   end
 
   TT = map_entries(mR, T)
@@ -355,7 +355,7 @@ function radical_basis_power_non_perfect(O::Order, p::RingElem)
     F, mF = t
   else
     F = t
-    mF = map_from_func(parent(p), F, F, y->lift(y))
+    mF = map_from_func(parent(p), F, F, lift)
   end
   @assert isa(F, Generic.RationalFunctionField) && characteristic(F) != 0
   q = characteristic(F)
@@ -481,7 +481,7 @@ function Hecke.pmaximal_overorder(O::Order, p::RingElem)
     R, mR = t
   else
     R = t
-    mR = map_from_func(parent(p), R, R, y->lift(y))
+    mR = map_from_func(parent(p), R, R, lift)
   end
 #  @assert characteristic(F) == 0 || (isfinite(F) && characteristic(F) > degree(O))
   if characteristic(R) == 0 || characteristic(R) > degree(O)
