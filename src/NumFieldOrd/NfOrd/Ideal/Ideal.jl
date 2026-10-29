@@ -837,7 +837,7 @@ function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
       return false
     end
     OK = order(x)
-    if contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
+    if is_simple(OK) && contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
       f = defining_polynomial(number_field(OK))
       if px <= typemax(Int)
         return _test(Int(px), elem_in_nf(x.gen_two), elem_in_nf(y.gen_two), f)
@@ -1492,12 +1492,16 @@ end
 
 function is_power(I::AbsSimpleNumFieldOrderFractionalIdeal)
   num, den = integral_split(I)
-  e, r = is_perfect_power_with_data(num)
+  e, r = is_power(num)
   if e == 1
     return e, I
   end
-  f, s = is_perfect_power_with_data(den)
+  f, s = is_power(den)
   g = gcd(e, f)
+  if iszero(g)
+    # I is the unit ideal
+    return 0, I
+  end
   return g, r^div(e, g)//s^div(f, g)
 end
 

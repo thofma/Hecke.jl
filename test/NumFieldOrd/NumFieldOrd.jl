@@ -230,3 +230,15 @@ end
   G = Hecke.ray_class_groupQQ(maximal_order(rationals_as_number_field()[1]), 100, true, 0)[1]
   @test order(G) == 40
 end
+
+let # rand and uniformizer for prime ideals of a non-simple field
+  Qx, x = QQ[:x]
+  K, = number_field([x^2 - 2, x^2 - 3])
+  OK = maximal_order(K)
+  for p in [2, 3], (P, _) in prime_decomposition(OK, p)
+    @test rand(P, 5) in P
+    Q = ideal(OK, basis_matrix(P))
+    @test is_prime(Q)
+    @test valuation(uniformizer(Q), P) == 1
+  end
+end

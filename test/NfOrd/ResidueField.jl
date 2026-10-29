@@ -77,3 +77,32 @@
     end
   end
 end
+
+@testset "residue_field of an equation order for large p" begin
+  # residue map is a ring homomorphism onto a field with norm(P) elements
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 + 1)
+  E = equation_order(K)
+  ps = ZZRingElem[]
+  q = next_prime(ZZ(2)^70)
+  for r in (1, 3)
+    while mod(q, 4) != r
+      q = next_prime(q)
+    end
+    push!(ps, q)
+  end
+  for p in ps, (P, _) in prime_decomposition(E, p)
+    F, mF = residue_field(E, P)
+    @test order(F) == norm(P)
+    @test mF(one(E)) == one(F)
+    @test is_zero(mF(E(p)))
+    @test is_zero(mF(P.gen_two))
+    for i in 1:5
+      b = rand(E, -100:100)
+      c = rand(E, -100:100)
+      @test mF(b + c) == mF(b) + mF(c)
+      @test mF(b * c) == mF(b) * mF(c)
+      @test mF\(mF(b)) - b in P
+    end
+  end
+end

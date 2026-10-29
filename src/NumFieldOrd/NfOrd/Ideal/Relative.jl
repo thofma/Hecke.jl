@@ -215,7 +215,7 @@ function prime_decomposition_nonindex(f::Map, p::AbsNumFieldOrderIdeal{AbsSimple
       push!(res, (P, divexact(e, ramification_index(p))))
     end
   else
-    Fp1 = polynomial_ring(GF(minimum(p), cached = false), cached = false)[1]
+    Fp1 = polynomial_ring(Native.GF(minimum(p), cached = false), cached = false)[1]
     Gp1 = factor(ppio(change_base_ring(base_ring(Fp1), G; parent = Fp1),
                       change_base_ring(base_ring(Fp1), Qx(f(K(p.gen_two))); parent = Fp1))[1])
     for (ke, e) in Gp1
@@ -251,14 +251,15 @@ function prime_decomposition_type_nonindex(f::Map, p::AbsNumFieldOrderIdeal{AbsS
     Gp = factor_shape(gcd(Fp(f(K(p.gen_two))), change_base_ring(base_ring(Fp), G; parent = Fp)))
   else
     Fpp = polynomial_ring(Native.GF(minimum(p), cached = false), cached = false)[1]
-    Gp = factor_shape(gcd(Fpp(f(K(p.gen_two))),
+    Gp = factor_shape(gcd(change_base_ring(base_ring(Fpp), Qx(f(K(p.gen_two)));
+                                           parent = Fpp),
                           change_base_ring(base_ring(Fpp), G; parent = Fpp)))
   end
   res = Vector{Tuple{Int, Int}}(undef, sum(values(Gp)))
   ind = 1
   for (d, e) in Gp
     for i = 1:e
-      res[ind] = (d, 1)
+      res[ind] = (divexact(d, degree(p)), 1)
       ind += 1
     end
   end

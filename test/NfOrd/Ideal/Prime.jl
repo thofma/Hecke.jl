@@ -285,6 +285,44 @@ end
   end
 end
 
+@testset "Equality of prime ideals (AbsNonSimple)" begin
+  # distinct primes over the same unramified p compare unequal
+  x = QQ[:x][2]
+  K, = number_field([x^2 - 2, x^2 - 3])
+  OK = maximal_order(K)
+  lp = prime_decomposition(OK, 23)
+  @test length(lp) == 4
+  for (P, _) in lp, (Q, _) in lp
+    @test (P == Q) == (P === Q)
+  end
+end
+
+@testset "Prime decomposition along an embedding" begin
+  # P*O_L for primes P of k ramified, split and inert over QQ, small and large
+  x = QQ[:x][2]
+  L, c = number_field(x^4 - 2)
+  k, m = subfield(L, [c^2])
+  OL = maximal_order(L)
+  Ok = maximal_order(k)
+  ps = ZZRingElem[2, 3, 7]
+  q = next_prime(ZZ(2)^70)
+  for split in (true, false)
+    while (mod(q, 8) in (1, 7)) != split
+      q = next_prime(q)
+    end
+    push!(ps, q)
+  end
+  for p in ps, (P, _) in prime_decomposition(Ok, p)
+    lQ = prime_decomposition(m, P)
+    POL = ideal(OL, P.gen_one, OL(m(P.gen_two.elem_in_nf)))
+    @test prod(Q^e for (Q, e) in lQ) == POL
+    @test all(minimum(Q) == p for (Q, _) in lQ)
+    t = [(divexact(degree(Q), degree(P)), e) for (Q, e) in lQ]
+    @test sum(f*e for (f, e) in t) == 2
+    @test sort(prime_decomposition_type(m, P)) == sort(t)
+  end
+end
+
 Qx, x = QQ["x"]
 f = x^2 - 2
 K, a = number_field([f], "a")
