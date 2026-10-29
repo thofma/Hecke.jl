@@ -835,7 +835,7 @@ function field(RC::RootCtx, m::MatElem)
   #TODO invest work in one factor only - need only powers of the roots involved there
   #     the other factor is then just a division away
   #     if complete orbits are combined, use the trace (pointwise) rather than powers
-  @vprintln :AbsFact 2 "combining: $([findall(x->!iszero(x), collect(m[i, :])) for i=1:nrows(m)])"
+  @vprintln :AbsFact 2 "combining: $([findall(!iszero, collect(m[i, :])) for i=1:nrows(m)])"
   k, mk = residue_field(parent(R[1]))
   kt, t = polynomial_ring(k, cached = false)
   RR = map(mk, R)

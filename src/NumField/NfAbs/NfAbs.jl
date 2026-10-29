@@ -978,7 +978,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
   if isa(base_field(a), NumField)
     b = base_field(a)
     ob = objectid(b)
-    all_chain[ob] = [map_from_func(b, a, x->a(x))]
+    all_chain[ob] = [map_from_func(b, a, a)]
     push!(seen, ob)
     push!(new_k, b)
   end
@@ -988,7 +988,7 @@ function collect_all_chains(a::NumField, filter::Function = x->true)
       b = base_field(k)
       ob = objectid(b)
       if !(ob in seen)
-        g = map_from_func(b, k, x->k(x))
+        g = map_from_func(b, k, k)
         all_chain[ob] = vcat([g], all_chain[objectid(k)])
         push!(seen, ob)
         push!(new_k, b)
@@ -1026,7 +1026,7 @@ function find_one_chain(t::NumField, a::NumField)
   if isa(base_field(a), NumField)
     b = base_field(a)
     ob = objectid(b)
-    all_chain[ob] = [map_from_func(b, a, x->a(x))]
+    all_chain[ob] = [map_from_func(b, a, a)]
     push!(seen, ob)
     push!(new_k, b)
   end
@@ -1039,7 +1039,7 @@ function find_one_chain(t::NumField, a::NumField)
       b = base_field(k)
       ob = objectid(b)
       if !(ob in seen)
-        g = map_from_func(b, k, x->k(x))
+        g = map_from_func(b, k, k)
         all_chain[ob] = vcat([g], all_chain[objectid(k)])
         ob == ot && return all_chain[ob]
         push!(seen, ob)

@@ -2566,7 +2566,7 @@ euler_phi_inv(n::Integer, zk::AbsNumFieldOrder) = [ numerator(evaluate(x)) for x
 ################################################################################
 
 function _squarefree_ideals_with_bounded_norm(O::AbsNumFieldOrder, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, bound::ZZRingElem)
-  #@assert issorted(lp, by = x -> norm(x))
+  #@assert issorted(lp, by = norm)
   lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
   for P in lp
     push!(lf, (P, norm(P)))

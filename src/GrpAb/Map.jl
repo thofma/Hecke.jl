@@ -61,7 +61,7 @@ function has_preimage_with_preimage(M::FinGenAbGroupHom, a::Vector{FinGenAbGroup
     e = G.exponent
     RR = Native.GF(Int(e))
     fl, p = can_solve_with_solution(map_entries(RR, m), map_entries(RR, reduce(vcat, [x.coeff for x = a])), side = :left)
-    p = map_entries(x -> lift(x), p)
+    p = map_entries(lift, p)
   else
     fl, p = can_solve_with_solution(m, reduce(vcat, [x.coeff for x = a]), side = :left)
   end
@@ -553,7 +553,7 @@ end
 
 function evaluate(p::QQPolyRingElem, f::FinGenAbGroupHom)
   @assert domain(f) === codomain(f)
-  @assert all(a -> is_integral(a), coefficients(p))
+  @assert all(is_integral, coefficients(p))
   return evaluate(map_coefficients(ZZ, p, cached = false), f)
 end
 

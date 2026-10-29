@@ -2470,7 +2470,7 @@ Return the product $\prod_p \QQ_p* / (\QQ_p*)^2$ where `p in primes`.
 function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
   K, _ = Hecke.rationals_as_number_field()
   # f : QQ -> K
-  f = map_from_func(QQ, K, x -> K(x), x -> coeff(x, 0))
+  f = map_from_func(QQ, K, K, x -> coeff(x, 0))
   OK = maximal_order(K)
   primes_as_ideals = [prime_decomposition(OK, p)[1][1] for p in primes]
   stuff = [Hecke.local_multiplicative_group_modulo_squares(P) for P in primes_as_ideals]

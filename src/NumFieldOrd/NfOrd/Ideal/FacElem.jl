@@ -132,7 +132,7 @@ end
 *(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B*A
 
 function isone(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-  if all(x -> iszero(x), values(A.fac))
+  if all(iszero, values(A.fac))
     return true
   end
   simplify!(A)
@@ -256,7 +256,7 @@ end
 function simplify!(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}; refine::Bool = false)
   if length(x.fac) <= 1
     return nothing
-  elseif all(x -> iszero(x), values(x.fac))
+  elseif all(iszero, values(x.fac))
     x.fac = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
     return nothing
   end

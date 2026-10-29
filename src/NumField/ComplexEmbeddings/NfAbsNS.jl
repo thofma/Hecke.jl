@@ -198,7 +198,7 @@ function _find_nearest_complex_embedding(K::AbsNonSimpleNumField, x)
     push!(t, gen_diffs)
   end
 
-  _, i = findmin(map(y -> sum(y), t))
+  _, i = findmin(map(sum, t))
 
   check_overlaps = y -> isempty(filter(x -> !overlaps(x...), y))
   for j in 1:length(t)

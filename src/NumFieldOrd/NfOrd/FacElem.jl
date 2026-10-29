@@ -152,7 +152,7 @@ function conjugates_arb_log(x::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}
   d = r1 + r2
   res = Array{ArbFieldElem}(undef, d)
 
-  if isempty(x.fac) || all(x -> iszero(x), values(x.fac))
+  if isempty(x.fac) || all(iszero, values(x.fac))
     x.fac[one(K)] = ZZRingElem(1)
   end
 

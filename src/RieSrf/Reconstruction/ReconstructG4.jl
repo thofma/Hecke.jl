@@ -409,7 +409,7 @@ end
 # K, the embedding K -> CC and the recognition CC -> K (nothing on failure)
 function _g4_field_data(K, place, CC::AcbField)
   if K isa QQField
-    return QQ, (c -> CC(c)), _recognize_rational, nothing
+    return QQ, CC, _recognize_rational, nothing
   end
   v = place === nothing ? infinite_places(K)[1] : place
   embed(c) = CC(_embed_coefficient(c, v.embedding, precision(CC)))

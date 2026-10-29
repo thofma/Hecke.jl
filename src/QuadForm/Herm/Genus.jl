@@ -1985,7 +1985,7 @@ function hermitian_genera(
   union!(bd, support(norm(min_scale)))
   union!(bd, support(norm(max_scale)))
   b && union!(bd, support(norm(determinant)))
-  sort!(bd; by = (x -> minimum(x)))
+  sort!(bd; by = minimum)
   local_symbols = Vector{local_genus_herm_type(E)}[]
   res = genus_herm_type(E)[]
 

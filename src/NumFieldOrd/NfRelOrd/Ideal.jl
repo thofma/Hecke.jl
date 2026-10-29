@@ -1783,5 +1783,5 @@ function prime_ideals_up_to(O::RelNumFieldOrder, n::Union{Int, ZZRingElem})
     end
     p = next_prime(p)
   end
-  return sort!(z, by = a -> absolute_norm(a))
+  return sort!(z, by = absolute_norm)
 end

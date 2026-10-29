@@ -1298,7 +1298,7 @@ function _maximal_order_rel_nice(O::RelNumFieldOrder{S, T, U}) where {S, T, U <:
   OL = maximal_order(L)
   d = discriminant(O)
   facts = prefactorization_discriminant(K, d)
-  sort!(facts, by = x -> absolute_minimum(x), rev = true)
+  sort!(facts, by = absolute_minimum, rev = true)
   @vprintln :RelNumFieldOrder 1 "Factors of the discriminant lying over $([minimum(x) for x in facts])"
   E = equation_order(K)
   OO = O

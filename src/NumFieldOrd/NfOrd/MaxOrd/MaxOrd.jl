@@ -493,7 +493,7 @@ function TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem}=ZZRin
   end
   push!(l, discriminant(OO))
   append!(l,lp)
-  filter!(x-> !iszero(x), l)
+  filter!(!iszero, l)
   for i=1:length(l)
     l[i]=abs(l[i])
   end

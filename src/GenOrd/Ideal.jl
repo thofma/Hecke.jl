@@ -731,13 +731,13 @@ end
 function Hecke.residue_field(R::fpPolyRing, p::fpPolyRingElem)
   @req parent(p) === R "p must belong to R"
   K = FqField(p, :o, false; check = false)
-  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
+  return K, MapFromFunc(R, K, K, R)
 end
 
 function Hecke.residue_field(R::FpPolyRing, p::FpPolyRingElem)
   @req parent(p) === R "p must belong to R"
   K = FqField(p, :o, false; check = false)
-  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
+  return K, MapFromFunc(R, K, K, R)
 end
 
 function Hecke.residue_field(R::FqPolyRing, p::FqPolyRingElem)
@@ -920,7 +920,7 @@ function residue_field(R::PolyRing{QQBarFieldElem}, p::PolyRingElem{QQBarFieldEl
   @assert is_monic(p)
   c = -coeff(p, 0)
   K = base_ring(R)
-  f = map_from_func(R, K, q -> q(c), x -> R(x))
+  f = map_from_func(R, K, q -> q(c), R)
   return K, f
 end
 
@@ -1463,13 +1463,13 @@ end
 function Nemo._residue_field(f::PolyRingElem{<:NumFieldElem})
   Kt = parent(f)
   L, b = number_field(f, "a"; cached = false)
-  return L, map_from_func(Kt, L, x -> L(x), y -> Kt(y))
+  return L, map_from_func(Kt, L, L, Kt)
 end
 
 function Nemo._residue_field(f::Union{fpPolyRingElem, FpPolyRingElem})
   Kt = parent(f)
   L = FqField(f, :o, false; check = false)
-  return L, MapFromFunc(Kt, L, x -> L(x), y -> Kt(y))
+  return L, MapFromFunc(Kt, L, L, Kt)
 end
 
 function residue_field(O::GenOrd, P::GenOrdIdl, check::Bool = true)

@@ -588,7 +588,7 @@ end
 ################################################################################
 
 function id_hom(F::FinField)
-  return Nemo.FinFieldMorphism(F, F, x -> identity(x), x -> identity(x))
+  return Nemo.FinFieldMorphism(F, F, identity, identity)
 end
 
 function inv(f::Nemo.FinFieldMorphism)

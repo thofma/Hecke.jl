@@ -168,10 +168,10 @@ struct NFDBRecordInfo
 end
 
 const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
-                             :deg => (Int, x -> degree(x)),
-                             :poly => (QQPolyRingElem, x -> defining_polynomial(x)),
+                             :deg => (Int, degree),
+                             :poly => (QQPolyRingElem, defining_polynomial),
                              :discriminant => (ZZRingElem, x -> discriminant(maximal_order(x))),
-                             :signature => (Tuple{Int, Int}, x -> signature(x)),
+                             :signature => (Tuple{Int, Int}, signature),
                              :class_number => (ZZRingElem, x -> order(class_group(maximal_order(x))[1])),
                              :class_group => (Vector{ZZRingElem}, x -> elementary_divisors(class_group(maximal_order(x))[1])),
                              :is_cm => (Bool, x -> is_cm_field(x)[1]),
@@ -184,12 +184,12 @@ const properties_comp = Dict(:id => (Int, x -> UInt(hash(x))),
                                                           @assert mod(hK, hk) == 0
                                                           return divexact(hK, hk)
                                                         end),
-                              :is_normal => (Bool, x -> is_normal(x)),
+                              :is_normal => (Bool, is_normal),
                               :automorphism_group => (Tuple{Int, Int}, x -> find_small_group(automorphism_group(x)[1])[1]),
                               :regulator => (ArbFieldElem, x -> regulator(maximal_order(x))),
                               :lmfdb_label => (String, x -> ""),
                               :is_abelian => (Bool, x -> is_abelian(automorphism_group(x)[1])),
-                              :non_simple => (Vector{QQPolyRingElem}, x -> non_simple_extension(x)),
+                              :non_simple => (Vector{QQPolyRingElem}, non_simple_extension),
                               :galois_group => (Tuple{Int, Int}, x -> error()),
                               :p_adic_regulator => (Dict{ZZRingElem, QQFieldElem}, (x, y) -> _p_adic_regulator(x, y)))
 

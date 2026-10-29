@@ -281,7 +281,7 @@ end
 function _adjoin_root(K, f::PolyRingElem)
   if K isa QQField || K isa NumField
     L, r = number_field(f; cached = false)
-    embed = x -> L(x)
+    embed = L
     return L, embed, r
   end
   if K isa FqField
