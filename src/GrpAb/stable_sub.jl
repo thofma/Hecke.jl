@@ -728,6 +728,9 @@ end
 
 function _no_redundancy(list::Vector{zzModMatrix}, w::Vector{ZZRingElem})
 
+  if isempty(list)
+    return list
+  end
   R = base_ring(list[1])
   n = ncols(list[1])
   #
@@ -786,14 +789,22 @@ end
 
 function submodules_order(M::ZpnGModule, ord::Int)
 
+  # ord specifies the order p^ord.
   R=M.R
+  if iszero(ord)
+    return (x for x in zzModMatrix[zero_matrix(R, 0, ngens(M.V))])
+  end
+  if order(M.V) < ZZRingElem(M.p)^ord
+    return (x for x in zzModMatrix[])
+  end
   S,mS=snf(M)
-  @assert exponent(S.V)==ZZRingElem(modulus(R))
+  # Every simple submodule lies in the p-torsion.
   N=Hecke._exponent_p_sub(S)
   lf=composition_factors_with_multiplicity(N)
   list=zzModMatrix[]
   v=ZZRingElem[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
-  for i=1:ord-1
+  # Choose a minimal submodule, then recurse on the quotient.
+  for i=1:min(ord, dim(N))
     minlist=minimal_submodules(N,i,lf)
     for x in minlist
       A=lift(x,R)
@@ -802,16 +813,20 @@ function submodules_order(M::ZpnGModule, ord::Int)
           A[s,t]*=v[t]
         end
       end
-      L, _=quo(S, A, false)
-      newlist=Hecke.submodules_order(L,ord-i)
-      for z=1:length(newlist)
-        push!(list,vcat(newlist[z],A))
+      if i == ord
+        push!(list, A)
+        continue
+      end
+      L, _=quo(S, A)
+      for z in Hecke.submodules_order(L,ord-i)
+        # quo keeps the generators of S; adjoining A gives the preimage.
+        push!(list,vcat(z,A))
       end
     end
   end
 
   #
-  #  Check for redundancy
+  #  Different minimal submodules can yield the same preimage.
   #
   w=ZZRingElem[divexact(ZZRingElem(modulus(R)), S.V.snf[j]) for j=1:ngens(S.V)]
   list=_no_redundancy(list,w)
@@ -820,18 +835,9 @@ function submodules_order(M::ZpnGModule, ord::Int)
   #  Write the submodules in terms of the set of given generators
   #
 
-  MatSnf=map(mS.map, R)
+  MatSnf=change_base_ring(R, mS.map)
   for j=1:length(list)
-    list[j]=list[j]*MatSnf #reduce(vcat, [W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:nrows(list[j])])
-  end
-
-  #
-  #  Add the minimal submodules
-  #
-
-  minlist=minimal_submodules(N,ord, lf)
-  for x in minlist
-    push!(list, reduce(vcat, [W((mS( S.V(ZZRingElem[ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
+    list[j]=list[j]*MatSnf
   end
   return (x for x in list)
 
