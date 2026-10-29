@@ -329,3 +329,5 @@ lifted_denominator(x::ZZRingElem) = ZZRingElem(1)
 ################################################################################
 
 absolute_basis(Q::QQField) = [one(Q)]
+
+absolute_coordinates(x::QQFieldElem) = [x]

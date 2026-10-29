@@ -9,6 +9,11 @@ ambient quadratic space of $L$.
 """
 basis_matrix(L::ZZLat) = L.basis_matrix
 
+# Documentation in ../Lattices.jl
+absolute_basis_matrix(L::ZZLat) = basis_matrix(L)
+
+absolute_basis(L::ZZLat) = [basis_matrix(L)[i, :] for i in 1:rank(L)]
+
 ambient_space(L::ZZLat) = L.space
 
 base_ring(L::ZZLat) = ZZ
