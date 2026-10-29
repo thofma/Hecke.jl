@@ -72,10 +72,7 @@ end
 @everywhere import Dates
 @everywhere using Test
 @everywhere using Hecke
-@everywhere Hecke.Random.seed!($seed)
-# The RNG is task-local and each `@everywhere` runs in a separate task, so seed
-# the main process again.
-Hecke.Random.seed!(seed)
+@everywhere test_seed = $seed
 
 ################################################################################
 #
@@ -149,6 +146,11 @@ end
   end
 
   try
+    # The RNG is task-local and pmap runs each file in a new task, whose RNG is
+    # derived from the randomly seeded worker state. Seed here, so that every
+    # file sees the same random stream regardless of order and worker.
+    Hecke.Random.seed!(test_seed)
+    Hecke.Random.seed!(rng, test_seed)
     stats = @timed Hecke._include_test(path)
     if has_compile_time_stat
       compile_time = stats.compile_time
