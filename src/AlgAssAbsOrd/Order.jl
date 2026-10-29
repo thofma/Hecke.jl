@@ -257,18 +257,24 @@ end
 
 function index(O::AlgAssAbsOrd)
   B = basis_matrix_inverse(O, copy = false)
-  n = det(B)
+  n = abs(det(B))
   @assert isinteger(n)
   return ZZ(n)
 end
 
+@doc raw"""
+    index(O::AlgAssAbsOrd, R::AlgAssAbsOrd) -> ZZRingElem
+
+Return the index $[R : O]$ of the order $O$ in the order $R$, which must
+contain it.
+"""
 function index(O::AlgAssAbsOrd, R::AlgAssAbsOrd)
+  @req is_subset(O, R) "First order must be contained in the second"
   B = basis_matrix_inverse(O, copy = false)
   n = det(B)
   B = basis_matrix_inverse(R, copy = false)
   m = det(B)
-  @assert isinteger(m//n)
-  return ZZ(m//n)
+  return ZZ(abs(m//n))
 end
 
 ################################################################################
