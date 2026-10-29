@@ -473,7 +473,7 @@ function absolute_frobenius_matrix(K::RelFinField, d::Int=1)
   return matrix([absolute_coordinates(x) for x = b])
 end
 
-absolute_representation_matrix(a::fqPolyRepField) = representation_matrix(a)
+absolute_representation_matrix(a::fqPolyRepFieldElem) = representation_matrix(a)
 absolute_representation_matrix(a::fpFieldElem) = matrix(parent(a), 1, 1, [a])
 
 function absolute_frobenius_matrix(a::FqField, d::Int = 1)

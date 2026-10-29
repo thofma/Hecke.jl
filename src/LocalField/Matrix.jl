@@ -1,13 +1,15 @@
 function content(x::MatrixElem{T}) where T <: Hecke.LocalFieldValuationRingElem
-  d = typemax{Int}
+  d = PosInf()
   for i = 1:nrows(x)
      for j = 1:ncols(x)
        if !is_zero_entry(x, i, j)
-         d = min(valuation(x[i,j]), d)
+         # valuation is normalized to v(p) = 1, the exponent of the uniformizer is not
+         d = min(_valuation_integral(data(x[i, j])), d)
          is_zero(d) && return one(base_ring(x))
        end
      end
   end
+  d isa PosInf && return zero(base_ring(x))
   return uniformizer(base_ring(x))^d
 end
 
