@@ -789,20 +789,21 @@ end
 
 function submodules_order(M::ZpnGModule, ord::Int)
 
+  # ord specifies the order p^ord.
   R=M.R
   if iszero(ord)
-    return (x for x in zzModMatrix[zero_matrix(R, 1, ngens(M.V))])
+    return (x for x in zzModMatrix[zero_matrix(R, 0, ngens(M.V))])
   end
   if order(M.V) < ZZRingElem(M.p)^ord
     return (x for x in zzModMatrix[])
   end
   S,mS=snf(M)
+  # Every simple submodule lies in the p-torsion.
   N=Hecke._exponent_p_sub(S)
   lf=composition_factors_with_multiplicity(N)
   list=zzModMatrix[]
   v=ZZRingElem[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
-  #  every submodule contains a minimal one of dimension i, and is either
-  #  equal to it or the preimage of a submodule of the quotient
+  # Choose a minimal submodule, then recurse on the quotient.
   for i=1:min(ord, dim(N))
     minlist=minimal_submodules(N,i,lf)
     for x in minlist
@@ -818,13 +819,14 @@ function submodules_order(M::ZpnGModule, ord::Int)
       end
       L, _=quo(S, A)
       for z in Hecke.submodules_order(L,ord-i)
+        # quo keeps the generators of S; adjoining A gives the preimage.
         push!(list,vcat(z,A))
       end
     end
   end
 
   #
-  #  Check for redundancy
+  #  Different minimal submodules can yield the same preimage.
   #
   w=ZZRingElem[divexact(ZZRingElem(modulus(R)), S.V.snf[j]) for j=1:ngens(S.V)]
   list=_no_redundancy(list,w)
