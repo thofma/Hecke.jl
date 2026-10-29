@@ -66,10 +66,12 @@ is_eichler(::Union{AlgAssAbsOrd, AlgAssRelOrd})
 eichler_level(::AlgAssAbsOrd{<:QuaternionAlgebra})
 ```
 
-## Right ideal classes
+## Right ideal classes and types
 
 ```@docs
 right_class_set(::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+type_set(::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+type_number(::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
 ```
 
 ## Splitting of quaternion algebras
