@@ -43,6 +43,11 @@
                     (a + t) // F(t^3 + 2),
                     ZZ(10)^40 * a^2 + (ZZ(3)^50 * t - 1) * a + ZZ(7)^30])
 
+  # the first prime of the multimodular algorithm divides lc_y(f)
+  p = first(PrimesSet(Hecke.p_start, -1))
+  F, a = function_field(p * x^4 + t * x - 1, :a)
+  test_inverses(F, [a^2 + t * a + 1, (t^3 + 1) * a^3 + a])
+
   # extensions of Q(t) of degree <= 3 use the generic algorithm
   F, a = function_field(x^3 - t^3 - 1//2, :a)
   @test Hecke._inv_modular(a + t) === nothing
