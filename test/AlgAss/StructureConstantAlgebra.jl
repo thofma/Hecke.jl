@@ -104,6 +104,16 @@ end
 
     test_alg_morphism_char_0(C, B, CtoB)
 
+    # Restrict from relative number field to Q
+    Ky, y = K["y"]
+    L, = number_field(y^2 - 3, "b")
+    A = StructureConstantAlgebra(matrix_ring(L, 2))
+    B, BtoA = Hecke.restrict_scalars(A, QQ)
+    @test base_ring(B) == QQ
+    @test dim(B) == dim(A)*absolute_degree(L)
+
+    test_alg_morphism_char_0(B, A, BtoA)
+
     # Restrict from number field to number field
     g = x^9 - 15x^6 - 87x^3 - 125
     L, b = number_field(g, "b")
