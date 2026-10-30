@@ -436,6 +436,8 @@ function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
     return nothing
   end
 
+  OK = OK::AbsSimpleNumFieldOrder
+
   if !is_simple(nf(OK)) && isdefined(A, :is_prime) && A.is_prime == 1 &&
          A.norm == A.minimum && !is_index_divisor(OK, A.minimum)
     # A is a prime ideal of degree 1
