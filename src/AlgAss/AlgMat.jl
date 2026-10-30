@@ -418,7 +418,7 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; isbasis::Bo
     A.dim = length(gens)
     bas = Vector{elem_type(A)}(undef, dim(A))
     for i = 1:dim(A)
-      bas[i] = A(gens[i])
+      bas[i] = A(gens[i]; check = false)
     end
     A.basis = bas
 

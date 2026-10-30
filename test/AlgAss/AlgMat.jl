@@ -13,6 +13,14 @@
     M2 = matrix(QG, [ 1 0; 1 1])
     A = matrix_algebra(QQ, QG, [ M1, M2 ])
     @test dim(A) == 4
+
+    # Supplied bases over an algebra coefficient ring.
+    B = [matrix(QG, 1, 1, [2*b]) for b in basis(QG)]
+    A = matrix_algebra(QQ, QG, B; isbasis = true)
+    @test dim(A) == 2
+    @test matrix.(basis(A)) == B
+    @test coefficients(A(B[1] + 2*B[2])) == QQ.([1, 2])
+    @test A(B[2])*A(B[2]) == 4*one(A)
   end
 
   @testset "multiplication table" begin
