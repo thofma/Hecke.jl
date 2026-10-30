@@ -26,8 +26,8 @@
 #
 #       r(u) = res(g(u), f(u)),  s(u) = r(u) g(u)^-1 mod f(u)
 #
-#     (the latter if r(u) != 0, which makes g(u) invertible modulo f(u). 
-#     Points where one of these leading coefficients or r(u) 
+#     (the latter if r(u) != 0, which makes g(u) invertible modulo f(u).)
+#     Points where one of these leading coefficients or r(u)
 #     vanishes are skipped.
 #   - Over Q, do this modulo word-size primes p and combine the results with
 #     the Chinese Remainder Algorithm [GG13, Section 5.4], until the product
