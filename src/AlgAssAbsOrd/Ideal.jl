@@ -1480,6 +1480,193 @@ numerator(a::AlgAssAbsOrdIdl; copy::Bool = true) = numerator(a, order(a), copy =
 
 ################################################################################
 #
+#  Ideals connecting maximal orders
+#
+################################################################################
+
+@doc raw"""
+    connecting_ideal(O1::AlgAssAbsOrd{<:QuaternionAlgebra},
+                     O2::AlgAssAbsOrd{<:QuaternionAlgebra}; check::Bool = true)
+      -> AlgAssAbsOrdIdl
+    connecting_ideal(O1::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra},
+                     O2::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra};
+                     check::Bool = true) -> AlgAssRelOrdIdl
+
+Given maximal orders $O_1$ and $O_2$ of a quaternion algebra over
+$\mathbf{Q}$ or a number field, return the lattice $O_1 O_2$ spanned by the
+products $xy$ with $x \in O_1$ and $y \in O_2$. It is an invertible fractional
+ideal with left order $O_1$ and right order $O_2$ [Voi21](@cite), Lemma 17.4.7.
+As it contains $O_1$ and $O_2$, it is integral only if $O_1 = O_2$.
+
+If `check` is `true`, an `ArgumentError` is thrown unless both orders are
+maximal.
+
+# Examples
+
+```jldoctest
+julia> O = maximal_order(quaternion_algebra_ramified_at(QQ, 97));
+
+julia> O1, O2 = left_order.(right_class_set(O)[1:2]);
+
+julia> J = connecting_ideal(O1, O2);
+
+julia> left_order(J) == O1, right_order(J) == O2
+(true, true)
+```
+"""
+function connecting_ideal(O1::AlgAssAbsOrd{<:QuaternionAlgebra},
+                          O2::AlgAssAbsOrd{<:QuaternionAlgebra};
+                          check::Bool = true)
+  @req algebra(O1) === algebra(O2) "Orders must lie in the same algebra"
+  if check
+    @req is_maximal(O1) && is_maximal(O2) "Orders must be maximal"
+  end
+  J = (1 * O1) * (1 * O2)
+  J.left_order = O1
+  J.right_order = O2
+  return J
+end
+
+@doc raw"""
+    least_norm_ideal(I::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; side::Symbol = :right,
+                     check::Bool = true) -> ZZRingElem, AlgAssAbsOrdIdl
+
+Given an invertible fractional ideal $I$ with right order $O$ (`side = :right`)
+or left order $O$ (`side = :left`), in a definite quaternion algebra $A$ over
+$\mathbf{Q}$, return the least reduced norm $d$ of an integral ideal in the
+class of $I$, and one such ideal $J$. The class of $I$ consists of the ideals
+$\alpha I$ (`side = :right`) or $I \alpha$ (`side = :left`) with
+$\alpha \in A^\times$, as in [`right_class_set`](@ref): the order $O$ of $J$
+on that side is $O$ itself, while its order on the other side is a conjugate of
+the one of $I$. In particular, $d = 1$ if and only if $I$ is principal.
+
+For `side = :right`, the integral ideals in the class of $I$ are the
+$\bar\gamma I / \operatorname{nrd}(I)$ with $0 \neq \gamma \in I$, of reduced
+norm $\operatorname{nrd}(\gamma)/\operatorname{nrd}(I)$ ([Voi21](@cite), proof
+of Proposition 17.5.6), and similarly for `side = :left`. So $d$ is the
+minimum of $\operatorname{nrd}/\operatorname{nrd}(I)$ on $I$, found by one
+shortest vector computation, and $J$ is the ideal of such a $\gamma$.
+
+If `check` is `true`, an `ArgumentError` is thrown unless $I$ is invertible
+with the order $O$ on the given side.
+
+# Examples
+
+```jldoctest
+julia> O = maximal_order(quaternion_algebra_ramified_at(QQ, 97));
+
+julia> C = right_class_set(O);
+
+julia> d, J = least_norm_ideal(C[2], O);
+
+julia> d == normred(J, O), right_order(J) == O, is_subset(J, O)
+(true, true, true)
+
+julia> first(least_norm_ideal(3 * C[2], O)) == d
+true
+```
+"""
+function least_norm_ideal(I::AlgAssAbsOrdIdl{QuaternionAlgebra{QQFieldElem}},
+                          O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}};
+                          side::Symbol = :right, check::Bool = true)
+  @req side === :right || side === :left "side must be :right or :left"
+  A = algebra(O)
+  @req algebra(I) === A "Ideal and order must lie in the same algebra"
+  @req _is_totally_definite_quaternion(A) "Algebra must be definite"
+  if check
+    R = side === :right ? right_order(I) : left_order(I)
+    @req is_subset(R, O) && is_subset(O, R) (
+      "Order must be the $(side) order of the ideal")
+    n = normred(I, O)
+    Ibar = ideal(A, _conjugate_basis_matrix(I))
+    @req (side === :right ? Ibar * I : I * Ibar) == (1 * O) * n (
+      "Ideal must be invertible")
+  end
+  n = normred(I, O)
+  # trd(x conj(y)) = nrd(x + y) - nrd(x) - nrd(y) lies in nZ on I, so the
+  # Gram matrix over n is integral and even, with minimum twice that of
+  # nrd/n.
+  G = _trace_form_gram(A, basis_matrix(I, copy = false)) * inv(n)
+  L = integer_lattice(; gram = G)
+  v = first(shortest_vectors(L))
+  B = basis(I, copy = false)
+  gamma = sum(v[i] * B[i] for i in 1:4)
+  if side === :right
+    J = (conj(gamma) * inv(n)) * I
+    J.right_order = O
+  else
+    J = I * (conj(gamma) * inv(n))
+    J.left_order = O
+  end
+  return ZZ(divexact(minimum(L), 2)), J
+end
+
+@doc raw"""
+    least_connecting_norm(O1::AlgAssAbsOrd, O2::AlgAssAbsOrd;
+                          check::Bool = true) -> ZZRingElem, AlgAssAbsOrdIdl
+
+Given maximal orders $O_1$ and $O_2$ of a definite quaternion algebra $A$ over
+$\mathbf{Q}$, return the least reduced norm $d$ of an integral ideal with left
+order $O_1$ and right order conjugate to $O_2$, and one such ideal. So $O_1$ is
+fixed and $O_2$ is taken up to conjugacy: $d$ depends only on the types of
+$O_1$ and $O_2$ (see [`type_set`](@ref)), does not change when they are
+swapped, and is $1$ if and only if they are conjugate. When $A$ is ramified
+only at a prime $p$ and $\infty$, it is the least degree of an isogeny
+between supersingular elliptic curves over $\overline{\mathbf{F}}_p$ with
+endomorphism rings $O_1$ and $O_2$
+([Voi21](@cite), Proposition 42.2.16 and Corollary 42.2.21).
+
+The ideals with left order $O_1$ and right order conjugate to $O_2$ lie in the
+left classes of $J P$, where $J$ is [`connecting_ideal(O1, O2)`](@ref
+connecting_ideal) and $P$ runs over the products of the two-sided prime ideals
+of $O_2$ above distinct primes ramified in $A$ ([Voi21](@cite), Theorem 18.1.3
+and Proposition 18.5.10). So $d$ is the least of the values of
+[`least_norm_ideal`](@ref) with `side = :left` on these $2^r$ ideals, where $r$
+is the number of ramified primes.
+
+If `check` is `true`, an `ArgumentError` is thrown unless both orders are
+maximal.
+
+# Examples
+
+```jldoctest
+julia> O = maximal_order(quaternion_algebra_ramified_at(QQ, 97));
+
+julia> Ts = type_set(O);
+
+julia> [first(least_connecting_norm(Ts[1], T)) for T in Ts]
+5-element Vector{ZZRingElem}:
+ 1
+ 2
+ 2
+ 4
+ 3
+```
+"""
+function least_connecting_norm(O1::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}},
+                               O2::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}};
+                               check::Bool = true)
+  A = algebra(O1)
+  @req _is_totally_definite_quaternion(A) "Algebra must be definite"
+  J = connecting_ideal(O1, O2; check)
+  Ks = [J]
+  for p in _norms_of_ramified_primes(A)
+    P = pradical(O2, p)
+    append!(Ks, [K * P for K in Ks])
+  end
+  best = least_norm_ideal(J, O1; side = :left, check = false)
+  for K in Ks[2:end]
+    K.left_order = O1
+    c = least_norm_ideal(K, O1; side = :left, check = false)
+    if c[1] < best[1]
+      best = c
+    end
+  end
+  return best
+end
+
+################################################################################
+#
 #  Ideal Set
 #
 ################################################################################

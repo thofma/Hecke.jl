@@ -349,4 +349,137 @@
       @test_throws ArgumentError Hecke.maximal_integral_ideals(M, n; side = :right)
     end
   end
+
+  @testset "Ideals connecting maximal orders" begin
+    # connecting_ideal, least_norm_ideal and least_connecting_norm on the
+    # maximal orders of definite algebras ramified at one and at three primes,
+    # the least norms against every integral ideal built as a chain of ideals
+    # of prime norm, and index and denominator at ideals of prime norm
+    function algebra_of_discriminant(D)
+      for a in -1:-1:-10, b in a:-1:-200
+        A = quaternion_algebra(QQ, a, b)
+        abs(discriminant(maximal_order(A))) == D^2 && return A
+      end
+    end
+    # left and right orders computed from the basis, not the ones stored, and
+    # compared as sets
+    fresh(I) = ideal(algebra(I), basis_matrix(I))
+    same(R, S) = is_subset(R, S) && is_subset(S, R)
+    # isomorphism of maximal orders by a complete invariant
+    function iso(R, S)
+      key = Hecke._class_set_key(R)
+      return key(R) == key(S)
+    end
+    # the least reduced norm of an integral ideal with left order O1 and
+    # right order of each type, over the products I P, P a maximal integral
+    # left ideal of the right order of I, of norm at most N
+    function least_norms(O1, Ts, N)
+      best = fill(typemax(Int), length(Ts))
+      level = Dict(1 => [1 * O1])
+      for n in 1:N, I in get(level, n, [])
+        R = right_order(I)
+        t = findfirst(T -> iso(R, T), Ts)
+        best[t] = min(best[t], n)
+        for l in Hecke.primes_up_to(div(N, n))
+          for P in Hecke.maximal_integral_ideals(R, l; side = :left)
+            push!(get!(level, n * l, []), I * P)
+          end
+        end
+      end
+      return best
+    end
+
+    for A in [quaternion_algebra_ramified_at(QQ, 97),
+              quaternion_algebra_ramified_at(QQ, 101),
+              algebra_of_discriminant(66), algebra_of_discriminant(165)]
+      M = maximal_order(A)
+      Ts = type_set(M)
+      for O1 in Ts, O2 in Ts
+        J = connecting_ideal(O1, O2)
+        @test same(left_order(fresh(J)), O1) && same(right_order(fresh(J)), O2)
+        @test all(b -> elem_in_algebra(b) in J, vcat(basis(O1), basis(O2)))
+        d, I = least_connecting_norm(O1, O2)
+        @test normred(I, O1) == d && is_subset(I, O1)
+        @test same(left_order(fresh(I)), O1)
+        @test iso(right_order(fresh(I)), O2)
+        @test (d == 1) == iso(O1, O2)
+        @test first(least_connecting_norm(O2, O1)) == d
+      end
+      for O1 in Ts
+        d = [first(least_connecting_norm(O1, O2)) for O2 in Ts]
+        @test d == least_norms(O1, Ts, Int(maximum(d)))
+      end
+
+      C = right_class_set(M)
+      ds = ZZRingElem[]
+      for K in C
+        d, I = least_norm_ideal(K, M)
+        push!(ds, d)
+        @test normred(I, M) == d && is_subset(I, M)
+        @test same(right_order(fresh(I)), M)
+        @test iso(left_order(fresh(I)), left_order(K))
+        @test first(least_norm_ideal(3 * K, M)) == d
+        Kbar = ideal(A, Hecke._conjugate_basis_matrix(K))
+        d2, I2 = least_norm_ideal(Kbar, M; side = :left)
+        @test d2 == d && same(left_order(fresh(I2)), M)
+      end
+      # the classes are distinct, so exactly one is principal
+      @test count(isone, ds) == 1
+
+      # O_R(I) for I of prime norm l is an order at distance l: O meets it
+      # in an Eichler order of level l (Voight, Quaternion Algebras,
+      # Proposition 23.4.3) of index l in both, and l L lies in M
+      for l in [2, 3, 5]
+        is_divisible_by(Hecke._reduced_disc(M), l) && continue
+        for P in Hecke.maximal_integral_ideals(M, l; side = :left)
+          L = right_order(fresh(P))
+          @test index(intersect(M, L), M) == l
+          @test index(intersect(M, L), L) == l
+          @test denominator(L, M) == l && denominator(M, L) == l
+          @test denominator(L, M) == lcm([denominator(elem_in_algebra(b), M)
+                                          for b in basis(L)])
+        end
+      end
+      @test denominator(M, M) == 1
+    end
+
+    # an ideal of an Eichler order of level 2
+    A = quaternion_algebra_ramified_at(QQ, 97)
+    M = maximal_order(A)
+    P = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+    E = intersect(M, left_order(P))
+    for K in right_class_set(E)
+      d, I = least_norm_ideal(K, E)
+      @test normred(I, E) == d && is_subset(I, E)
+      @test same(right_order(fresh(I)), E)
+    end
+
+    # an indefinite algebra: connecting_ideal only
+    A = quaternion_algebra(QQ, -1, 3)
+    M = maximal_order(A)
+    P = first(Hecke.maximal_integral_ideals(M, 5; side = :right))
+    L = left_order(P)
+    J = connecting_ideal(L, M)
+    @test same(left_order(fresh(J)), L) && same(right_order(fresh(J)), M)
+    @test_throws ArgumentError least_connecting_norm(L, M)
+    @test_throws ArgumentError least_norm_ideal(P, M)
+
+    # orders that are not maximal, other algebras, other sides and the dual
+    # of Z + 3M, which has left and right order Z + 3M but is not invertible
+    A = quaternion_algebra_ramified_at(QQ, 2)
+    M = maximal_order(A)
+    O = order(A, vcat([one(A)], [3 * elem_in_algebra(x) for x in basis(M)]))
+    @test_throws ArgumentError connecting_ideal(O, M)
+    @test_throws ArgumentError least_connecting_norm(M, O)
+    B = quaternion_algebra_ramified_at(QQ, 3)
+    @test_throws ArgumentError connecting_ideal(M, maximal_order(B))
+    @test_throws ArgumentError denominator(M, maximal_order(B))
+    I = 1 * M
+    @test_throws ArgumentError least_norm_ideal(I, M; side = :twosided)
+    @test_throws ArgumentError least_norm_ideal(I, O)
+    T = change_base_ring(QQ, trred_matrix(O))
+    Odual = ideal(A, inv(T) * basis_matrix(O))
+    @test same(right_order(Odual), O) && same(left_order(Odual), O)
+    @test_throws ArgumentError least_norm_ideal(Odual, O)
+  end
 end

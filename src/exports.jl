@@ -248,6 +248,7 @@ export conjugates_complex
 export conjugates_init
 export conjugates_log
 export conjugates_real
+export connecting_ideal
 export constant_coefficient
 export constant_field
 export constant_field_degree
@@ -675,6 +676,8 @@ export lattice_name
 export lattice_with_local_conditions
 export lcm
 export leading_coefficient
+export least_connecting_norm
+export least_norm_ideal
 export leech_lattice
 export left_ideal
 export left_order
