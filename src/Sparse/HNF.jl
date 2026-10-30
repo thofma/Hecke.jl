@@ -75,7 +75,7 @@ function reduce(A::SMat{T}, g::SRow{T}; new_g::Bool = false) where {T}
   R = base_ring(A)
   tmp, p_v, A_v, x, a, b = tmp_scalar = get_tmp_scalar(A, 6)
 
-  @inbounds while length(g)>0
+  @inbounds while length(g) > 0
     s = g.pos[1]
     j = 1
     while j<= nrows(A) && A.rows[j].pos[1] < s
@@ -255,20 +255,25 @@ end
 ################################################################################
 
 @doc raw"""
-    find_row_starting_with(A::SMat, p::Int) -> Int
+    find_row_starting_with(A::SMat, p::Int, start::Int = 1) -> Int
 
 Tries to find the index $i$ such that $A_{i,p} \neq 0$ and $A_{i, p-j} = 0$
-for all $j > 1$. It is assumed that $A$ is upper triangular.
-If such an index does not exist, find the smallest index larger.
+for all $j > 1$. It is assumed that $A$ is upper triangular, with any zero
+rows at the end. If such an index does not exist, return the first row with a
+larger pivot, the first zero row, or `nrows(A) + 1` if neither exists.
+Only rows `start:nrows(A)` are searched. The bound
+`1 <= start <= nrows(A) + 1` is required.
 """
-function find_row_starting_with(A::SMat, p::Int)
+function find_row_starting_with(A::SMat, p::Int, start::Int = 1)
 #  @hassert :HNF 1  is_upper_triangular(A)
-  start = 0
-  stop = nrows(A)+1
+  start -= 1
+  stop = nrows(A) + 1
   @inbounds while start < stop - 1
     mid = div((stop + start), 2)
     Am = A[mid]
-    if length(Am) == 0 || Am.pos[1] == p
+    if length(Am) == 0
+      stop = mid
+    elseif Am.pos[1] == p
       return mid
     elseif Am.pos[1] < p
       start = mid
@@ -278,6 +283,9 @@ function find_row_starting_with(A::SMat, p::Int)
   end
   return stop
 end
+
+# Scan nearby pivots before binary searching the remaining rows.
+const _hnf_pivot_scan_limit = 16
 
 # If with_transform is set to true, then additionally an Array of transformations
 # is returned.
@@ -347,15 +355,19 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
 
   nrA = nrows(A)
   local Aj::SRow{T, S} = tmpa
+  j = 1
 
   @inbounds while length(g)>0
     s = g.pos[1]
-    j = 1
-    while j<= nrA && A.rows[j].pos[1] < s
+    scan_end = min(nrA + 1, j + _hnf_pivot_scan_limit)
+    while j < scan_end && length(A[j]) > 0 && A[j].pos[1] < s
       j += 1
     end
+    if j <= nrA && length(A[j]) > 0 && A[j].pos[1] < s
+      j = find_row_starting_with(A, s, j + 1)
+    end
     j <= nrA && (Aj = A[j])
-    if j > nrA || Aj.pos[1] > s || s > limit
+    if j > nrA || length(Aj) == 0 || Aj.pos[1] > s || s > limit
       A_v = getindex!(A_v, g.values, 1)
       if (is_Z && is_negative(A_v)) || (!is_Z && !isone(canonical_unit(A_v)))
         # Multiply row g by -1
@@ -457,6 +469,8 @@ function reduce_full(A::SMat{T}, g::SRow{T, S}, with_transform_val::Val{with_tra
         @hassert :HNF 1  minimum(A[j]) >= 0
       end
     end
+    # Pivot columns stay fixed while the leading column of g moves right.
+    j += 1
   end
   if !new_g
     g = deepcopy(g)
@@ -527,8 +541,12 @@ function reduce_right(A::SMat{T}, b::SRow{T}, start::Int = 1, with_transform_val
   R = base_ring(A)
   b_v, A_v, q, r = tmp_scalar = get_tmp_scalar(A, 4)
   @inbounds while j <= length(b.pos)
-    while p<nrows(A) && length(A[p])>0 && A[p].pos[1] < b.pos[j]
+    scan_end = min(nrows(A), p + _hnf_pivot_scan_limit)
+    while p < scan_end && length(A[p]) > 0 && A[p].pos[1] < b.pos[j]
       p += 1
+    end
+    if p < nrows(A) && length(A[p]) > 0 && A[p].pos[1] < b.pos[j]
+      p = find_row_starting_with(A, b.pos[j], p + 1)
     end
     if p > length(A.rows) || length(A[p]) == 0 || A[p].pos[1] > limit
       break
