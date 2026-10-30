@@ -214,6 +214,23 @@
       @test el == dot(v, BN)
       @test el == dot(vabs, BNabs)
     end
+
+    @testset "Degree-one relative extensions" begin
+      # Absolute bases and coordinates agree over simple and nonsimple towers.
+      for k in (K, Kns, L, Lns)
+        kt, t = polynomial_ring(k, "t", cached = false)
+        E, e = number_field(t - 1, "e", cached = false)
+        B = absolute_basis(E)
+        @test length(B) == absolute_degree(E)
+        c = [QQ(i)//(i + 1) for i in 1:length(B)]
+        z = dot(c, B)
+        @test absolute_coordinates(z) == c
+        for el in (zero(E), one(E), e, z)
+          @test el == dot(coordinates(el), basis(E))
+          @test el == dot(absolute_coordinates(el), B)
+        end
+      end
+    end
   end
 
   @testset "relative extension" begin
