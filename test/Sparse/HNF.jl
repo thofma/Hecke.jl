@@ -1,4 +1,151 @@
 @testset "Hermite normal form" begin
+  @testset "pivot search with trailing zero rows" begin
+    for rank in 0:5, zero_rows in 0:5
+      A = sparse_matrix(ZZ, 0, 12)
+      pivots = collect(2:2:2rank)
+      for p in pivots
+        push!(A, sparse_row(ZZ, [(p, ZZ(1))]))
+      end
+      for _ in 1:zero_rows
+        push!(A, sparse_row(ZZ))
+      end
+      for p in 1:12
+        @test Hecke.find_row_starting_with(A, p) == searchsortedfirst(pivots, p)
+        for start in 1:nrows(A) + 1
+          @test Hecke.find_row_starting_with(A, p, start) ==
+            max(start, searchsortedfirst(pivots, p))
+        end
+      end
+    end
+  end
+
+  @testset "forward reduction across short and long pivot gaps" begin
+    columns = cumsum([1, 1, 3, 4, 5, 7, 8, 9, 15, 16, 17, 64])
+    b = sparse_row(ZZ, [(p, ZZ(i)) for (i, p) in enumerate(columns)])
+    for zero_rows in (0, 10), limit in (columns[8], columns[end])
+      A = identity_matrix(SMat, ZZ, columns[end])
+      for _ in 1:zero_rows
+        push!(A, sparse_row(ZZ))
+      end
+      expected = sparse_row(ZZ,
+        [(p, ZZ(i)) for (i, p) in enumerate(columns) if p > limit])
+      for with_transform in (false, true)
+        M = deepcopy(A)
+        full = Hecke.reduce_full(M, b, Val(with_transform); limit = limit)
+        right = Hecke.reduce_right(A, b, 1, Val(with_transform); limit = limit)
+        @test full[1] == expected
+        @test isempty(full[2])
+        @test (with_transform ? right[1] : right) == expected
+        @test M == A
+        if with_transform
+          for (reduced, ts) in ((full[1], full[3]), right)
+            original = deepcopy(A)
+            push!(original, deepcopy(b))
+            for t in ts
+              Hecke.apply_left!(original, t)
+            end
+            target = deepcopy(A)
+            push!(target, deepcopy(reduced))
+            @test original == target
+          end
+        end
+      end
+    end
+  end
+
+  @testset "reducers with trailing zero rows" begin
+    # The old binary lookup returned empty row 6 instead of pivot row 5.
+    for rank in (0, 5), zero_rows in (0, 1, 3, 10), limit in (4, 6)
+      A = sparse_matrix(ZZ, 0, 6)
+      for p in 1:rank
+        push!(A, sparse_row(ZZ, [(p, ZZ(1))]))
+      end
+      for _ in 1:zero_rows
+        push!(A, sparse_row(ZZ))
+      end
+
+      b = sparse_row(ZZ, [(1, ZZ(1)), (5, ZZ(2)), (6, ZZ(3))])
+      expected = rank == 0 ? b :
+        limit == 4 ? sparse_row(ZZ, [(5, ZZ(2)), (6, ZZ(3))]) :
+        sparse_row(ZZ, [(6, ZZ(3))])
+      original = deepcopy(A)
+      reduced, ts = Hecke.reduce_right(A, b, 1, Val(true); limit = limit)
+      @test reduced == expected
+      @test Hecke.reduce_right(A, b; limit = limit) == expected
+      @test A == original
+      push!(original, deepcopy(b))
+      for t in ts
+        Hecke.apply_left!(original, t)
+      end
+      @test original[nrows(original)] == expected
+
+      # A pivot hit, a missing pivot past the nonzero prefix, and an empty row.
+      for g in (sparse_row(ZZ, [(5, ZZ(-2))]), b, sparse_row(ZZ))
+        expected_full = sparse_row(ZZ,
+          [(p, v) for (p, v) in zip(g.pos, g.values) if p > min(rank, limit)])
+        if length(expected_full) > 0 && expected_full.values[1] < 0
+          Hecke.scale_row!(expected_full, -1)
+        end
+        M = deepcopy(A)
+        reduced, pivots, ts = Hecke.reduce_full(M, g, Val(true); limit = limit)
+        @test reduced == expected_full
+        @test isempty(pivots)
+        @test M == A
+        @test Hecke.reduce_full(deepcopy(A), g; limit = limit) ==
+          (expected_full, Int[])
+        original = deepcopy(A)
+        push!(original, deepcopy(g))
+        for t in ts
+          Hecke.apply_left!(original, t)
+        end
+        push!(M, deepcopy(reduced))
+        @test original == M
+      end
+    end
+  end
+
+  @testset "reduction across gaps in pivot columns" begin
+    A = sparse_matrix(ZZ, 0, 101)
+    for j in (2, 20, 40, 60, 80, 100)
+      push!(A, sparse_row(ZZ, [(j, ZZ(1))]))
+    end
+    b = sparse_row(ZZ,
+      [(1, ZZ(7)), (2, ZZ(-3)), (41, ZZ(5)), (80, ZZ(2)), (101, ZZ(9))])
+    for trailing_zero in (false, true), limit in (41, 101)
+      M = deepcopy(A)
+      trailing_zero && push!(M, sparse_row(ZZ))
+      original = deepcopy(M)
+      reduced, ts = Hecke.reduce_right(M, b, 1, Val(true); limit = limit)
+      expected = limit == 41 ?
+        sparse_row(ZZ, [(1, ZZ(7)), (41, ZZ(5)), (80, ZZ(2)), (101, ZZ(9))]) :
+        sparse_row(ZZ, [(1, ZZ(7)), (41, ZZ(5)), (101, ZZ(9))])
+      @test reduced == expected
+      @test Hecke.reduce_right(M, b; limit = limit) == expected
+      @test M == original
+      push!(original, deepcopy(b))
+      for t in ts
+        Hecke.apply_left!(original, t)
+      end
+      @test original[nrows(original)] == expected
+    end
+
+    # Exercise both pivot searches in a rank-deficient integer lattice, with
+    # nonunit pivots, negative entries, and many unused columns.
+    for _ in 1:10
+      dense = zero_matrix(ZZ, 12, 101)
+      for i in 1:12, j in (2, 20, 40, 60, 80, 100)
+        dense[i, j] = rand(-3:3)
+      end
+      R = sparse_matrix(dense)
+      H, ts = Hecke.hnf_kannan_bachem(R, Val(true))
+      @test matrix(H) == hnf(dense)
+      for t in ts
+        Hecke.apply_left!(R, t)
+      end
+      @test R == H
+    end
+  end
+
   for i in 1:10
     r = 20
     c = 10
