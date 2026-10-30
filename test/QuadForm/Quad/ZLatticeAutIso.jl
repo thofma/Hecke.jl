@@ -953,3 +953,64 @@ end
     @test g[I,I] == -gram_matrix(root_lattice(t,nrows(g)))
   end
 end
+
+@testset "Automorphism compression regression" begin
+  # These lattices failed in the fallback compression.
+  G = matrix(ZZ, [
+       2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0;
+       0  6  3  3  3 -3 -3  0 -3  3 -3 -3 -3  3  3  3  3  3;
+       0  3  6  3  3 -3  0  0  0  0  0  0  0  0  0  0  0  0;
+       0  3  3  6  3 -3  0  0 -3  3 -3 -3 -3  3  3  3  3  3;
+       0  3  3  3  6 -3  0  0 -3  3 -3 -3 -3  3  3  3  3  3;
+       0 -3 -3 -3 -3  6  0  0  0  0  0  0  0  0  0  0  0  0;
+       0 -3  0  0  0  0  6  0  0  0  0  0  0  0  0 -3 -3 -3;
+       0  0  0  0  0  0  0  6  3 -3 -3  3 -3 -3 -3  0  0  0;
+       0 -3  0 -3 -3  0  0  3 12 -9  6  9  6 -9 -9 -6 -6 -6;
+       0  3  0  3  3  0  0 -3 -9 12 -3 -9 -3  9  9  6  6  6;
+       0 -3  0 -3 -3  0  0 -3  6 -3 12  3  9 -3 -3 -6 -6 -6;
+       0 -3  0 -3 -3  0  0  3  9 -9  3 12  3 -9 -9 -3 -6 -6;
+       0 -3  0 -3 -3  0  0 -3  6 -3  9  3 12 -3 -3 -6 -3 -3;
+       0  3  0  3  3  0  0 -3 -9  9 -3 -9 -3 12  9  3  6  6;
+       0  3  0  3  3  0  0 -3 -9  9 -3 -9 -3  9 12  3  6  6;
+       0  3  0  3  3  0 -3  0 -6  6 -6 -3 -6  3  3 12  6  6;
+       0  3  0  3  3  0 -3  0 -6  6 -6 -6 -3  6  6  6 12  9;
+       0  3  0  3  3  0 -3  0 -6  6 -6 -6 -3  6  6  6  9 12;
+  ])
+  Random.seed!(21)
+  L = integer_lattice(; gram=G, cached=false)
+  Hecke.__assert_has_automorphisms(L; redo=true, short_vectors_direct=false,
+    use_dual=true, use_everything=true, search_invariant_subspace=true,
+    do_lll=false, depth=0)
+  @test automorphism_group_order(L) == 58060800
+  @test all(g * G * transpose(g) == G
+            for g in L.automorphism_group_generators)
+
+  G = matrix(ZZ, [
+       2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0;
+       0  6 -3  3  3  3  3  0  3 -3 -3  3 -3  3  3  3  3  3;
+       0 -3  6  0  0  0  0  0 -3  3  3 -3  3 -3 -3 -3 -3 -3;
+       0  3  0  6  3  3  3  0  3 -3 -3  3 -3  3  3  3  3  3;
+       0  3  0  3  6  3  3  0  3 -3  0  0  0  0  0  0  0  3;
+       0  3  0  3  3  6  3  0  3 -3 -3  3 -3  3  3  3  0  0;
+       0  3  0  3  3  3  6  0  3 -3 -3  0 -3  0  3  3  0  3;
+       0  0  0  0  0  0  0  6  3  3 -3 -3 -3 -3  3  0 -3 -3;
+       0  3 -3  3  3  3  3  3 12  0 -6  0 -6  0  6  6  3  3;
+       0 -3  3 -3 -3 -3 -3  3  0 12  0 -6  0 -6  0 -3 -3 -3;
+       0 -3  3 -3  0 -3 -3 -3 -6  0 12  0  9  0 -9 -3  0  0;
+       0  3 -3  3  0  3  0 -3  0 -6  0 12 -3  9  3  6  6  3;
+       0 -3  3 -3  0 -3 -3 -3 -6  0  9 -3 12  0 -9 -6  0  0;
+       0  3 -3  3  0  3  0 -3  0 -6  0  9  0 12  3  6  6  3;
+       0  3 -3  3  0  3  3  3  6  0 -9  3 -9  3 12  6  0  0;
+       0  3 -3  3  0  3  3  0  6 -3 -3  6 -6  6  6 12  6  3;
+       0  3 -3  3  0  0  0 -3  3 -3  0  6  0  6  0  6 12  6;
+       0  3 -3  3  3  0  3 -3  3 -3  0  3  0  3  0  3  6 12;
+  ])
+  Random.seed!(1)
+  L = integer_lattice(; gram=G, cached=false)
+  Hecke.__assert_has_automorphisms(L; redo=true, short_vectors_direct=false,
+    use_dual=true, use_everything=true, search_invariant_subspace=true,
+    do_lll=false, depth=0)
+  @test automorphism_group_order(L) == 4838400
+  @test all(g * G * transpose(g) == G
+            for g in L.automorphism_group_generators)
+end
