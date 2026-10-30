@@ -116,28 +116,28 @@ function _radical_finite(A::MatAlgebra{FqFieldElem})
   if type == Nemo._FQ_DEFAULT_FQ_NMOD
     let f = Nemo.canonical_raw_type(fqPolyRepField, F),
       FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
+      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], is_basis = true),
       RR = _radical_finite(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end
   elseif type == Nemo._FQ_DEFAULT_FQ
     let f = Nemo.canonical_raw_type(FqPolyRepField, F),
       FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
+      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], is_basis = true),
       RR = _radical_finite(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end
   elseif type == Nemo._FQ_DEFAULT_NMOD
     let f = Nemo.canonical_raw_type(fpField, F),
       FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
+      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], is_basis = true),
       RR = _radical_finite(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end
   elseif type == Nemo._FQ_DEFAULT_FMPZ_NMOD
     let f = Nemo.canonical_raw_type(FpField, F),
       FF = codomain(f),
-      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], isbasis = true),
+      AA = matrix_algebra(FF, [f.(matrix(m)) for m in basis(A)], is_basis = true),
       RR = _radical(AA)
       return [A(map_entries(c -> preimage(f, c), matrix(a)), check = false) for a in RR]
     end

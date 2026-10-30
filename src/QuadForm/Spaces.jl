@@ -52,8 +52,8 @@ function image(f::AbstractSpaceMor, L::ZZLat)
   @req V === ambient_space(L) "L not in domain"
   W = codomain(f)
   B = basis_matrix(L)*f.matrix
-  isbasis = is_injective(f)
-  return lattice(W, B; isbasis=isbasis, check=false)
+  is_basis = is_injective(f)
+  return lattice(W, B; is_basis=is_basis, check=false)
 end
 
 function preimage(f::AbstractSpaceMor, L::ZZLat)

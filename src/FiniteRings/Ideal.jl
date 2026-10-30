@@ -133,7 +133,7 @@ julia> additive_generators(J)
     push!(mats, reduce(vcat, [RtoQ(data(FiniteRingElem(R, g) * FiniteRingElem(R, h))).coeff for h in liftgens]))
   end
   F = GF(p; cached = false, check = false)
-  J = radical(matrix_algebra(F, map_entries.(Ref(F), mats); isbasis = true)) # isbasis = true is important
+  J = radical(matrix_algebra(F, map_entries.(Ref(F), mats); is_basis = true)) # is_basis = true is important
   BJ = basis(J)
   ss = FiniteRingElem[]
   for b in BJ

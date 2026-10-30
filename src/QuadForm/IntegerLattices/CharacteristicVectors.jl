@@ -353,7 +353,7 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   # the matrix of a generating system of `L2`.
   L0 = lattice(rational_span(L))
   pr = identity_matrix(QQ, n) - change_base_ring(QQ, gram_roots*dweights)*QQ(1, dd)
-  L2 = lll(lattice(ambient_space(L0), pr; isbasis=false, check=false)) # the hnf basis can be badly conditioned
+  L2 = lll(lattice(ambient_space(L0), pr; is_basis=false, check=false)) # the hnf basis can be badly conditioned
   PZ = change_base_ring(ZZ, solve(basis_matrix(L2), pr; side=:left))
   cv2 = _characteristic_vectors(L2)
   # `_characteristic_vectors` returns the characteristic vectors only up to

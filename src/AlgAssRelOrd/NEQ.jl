@@ -248,7 +248,7 @@ function __neq_find_sol_in_order(O::AlgAssRelOrd, LtoA::NfRelToAbsAlgAssMor, Kto
   OK = maximal_order(K)
   UK, mUK = unit_group(OK)
   if !isassigned(cache, 1)
-    cache[1] = order(K, [ KtoL\elem_in_nf(b) for b in absolute_basis(equation_order(L)) ], check = false, isbasis = true)
+    cache[1] = order(K, [ KtoL\elem_in_nf(b) for b in absolute_basis(equation_order(L)) ], check = false, is_basis = true)
   end
   OE = cache[1]
   if !isassigned(cache, 2)

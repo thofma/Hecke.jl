@@ -177,7 +177,7 @@ function _ibukiyama_maximal_order(A::QuaternionAlgebra{QQFieldElem},
   r = min(r, q - r)
   e, i, j, k = basis(A)
   B = [e, QQ(1, 2) * (e + j), QQ(1, 2) * (i + k), QQ(1, q) * (r * j + k)]
-  O = order(A, B; isbasis = true, check = false)
+  O = order(A, B; is_basis = true, check = false)
   O.is_maximal = 1
   return O
 end

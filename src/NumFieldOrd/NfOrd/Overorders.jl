@@ -756,7 +756,7 @@ function poverorders_one_step_generic(O, p::ZZRingElem)
   K = _algebra(O)
   d = degree(O)
   B = basis(O)
-  M = order(K, [inv(K(p)) * _elem_in_algebra(b) for b in B ], check = false, isbasis = true)
+  M = order(K, [inv(K(p)) * _elem_in_algebra(b) for b in B ], check = false, is_basis = true)
   A, mA = quo(M, O)
   orders = typeof(O)[O]
   if order(A) == 1
