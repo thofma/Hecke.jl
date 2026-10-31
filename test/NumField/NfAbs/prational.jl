@@ -106,10 +106,21 @@
   for is_normal in [false, true], GRH in [false, true]
     C = Hecke.p_rationality_context(K; GRH, is_normal)
     @test C.classnumber == 3
-    if is_normal
-      @test [is_p_rational(C, p) for p in [2, 3, 5]] == [false, false, true]
+    @test [is_p_rational(C, p) for p in [2, 3, 5]] == [false, false, true]
+  end
+
+  # contexts agree with the field, also for p | h with cK == 0 and for unit
+  # rank 0
+  for (d, ps) in [(10, [2, 3]), (85, [2]), (-1, [2, 3]), (-23, [2, 3])]
+    K, = quadratic_field(d; cached = false)
+    for is_normal in [false, true]
+      C = Hecke.p_rationality_context(K; is_normal)
+      @test [is_p_rational(C, p) for p in ps] == [is_p_rational(K, p) for p in ps]
     end
   end
+  K, = number_field(x^3 - x - 1; cached = false)
+  C = Hecke.p_rationality_context(K)
+  @test [is_p_rational(C, p) for p in [2, 5, 23]] == [is_p_rational(K, p) for p in [2, 5, 23]]
 end
 
 function _multiquadratic_field(ds)
