@@ -585,6 +585,9 @@ The completion of $K$ wrt to the topology induced by the valuation at a totally 
 presented as a Eisenstein extension of $Q_p$.
 The map giving the embedding of $K$ into the completion, admits a pointwise pre-image to obtain a lift.
 Note, that the map is not well defined by this data: $K$ will have $\deg P$ many embeddings.
+
+The base field $Q_p$ has precision `precision`, so the completion has
+precision $e \cdot$ `precision` in powers of its uniformizer.
 """
 function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, precision::Int = 64)
   @assert precision > 0
@@ -594,13 +597,46 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   @assert isone(degree(P))
   e = ramification_index(P)
   Qp = padic_field(minimum(P), precision = precision)
-  Zp = maximal_order(Qp)
-  Zx = ZZ["x"][1]
   Qpx = polynomial_ring(Qp, "x")[1]
   u = uniformizer(P).elem_in_nf
+  coeffs_eisenstein, img_prim_elem = _solve_totally_ramified(u, P, Qp, precision)
+  pol_gen = Qpx(coeffs_eisenstein)
+  Kp, gKp = eisenstein_extension(pol_gen, "a")
+  img = Kp(Qpx(img_prim_elem))
+  completion_map = CompletionMap(K, Kp, img, u, e*precision)
+  completion_map.P = P
+
+  # Elements of K with p in the denominator are mapped at a higher precision,
+  # which needs the Eisenstein polynomial to more digits.
+  Kp.def_poly = function(x::Int) # precision in powers of p
+    if !haskey(Kp.def_poly_cache, x)
+      if x > maximum(keys(Kp.def_poly_cache))
+        old_pr = precision_all(Kp)
+        setprecision!(completion_map, e*x)
+        setprecision_all!(Kp, old_pr)
+      end
+      k = minimum(y for y in keys(Kp.def_poly_cache) if y >= x)
+      Kp.def_poly_cache[x] = setprecision(Kp.def_poly_cache[k], x)
+    end
+    return Kp.def_poly_cache[x]
+  end
+  return Kp, completion_map
+end
+
+# Return the coefficients of the Eisenstein polynomial of the uniformizer u of
+# the totally ramified prime P over Qp, and of the image of gen(K) as a
+# polynomial in u, both to p-adic precision pr.
+#
+# Since O_P = Zp[u] (Serre, Local Fields, Ch. I, Prop. 18), it suffices to
+# write u^e and gen(K) as Zp-combinations of 1, u, ..., u^(e-1) modulo P^(e*pr):
+# the coefficient of u^i is then determined modulo p^ceil((e*pr - i)/e) = p^pr.
+function _solve_totally_ramified(u::AbsSimpleNumFieldElem, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Qp::PadicField, pr::Int)
+  K = parent(u)
+  e = ramification_index(P)
+  Zp = maximal_order(Qp)
   pows_u = powers(u, e-1)
   bK = basis_matrix(AbsSimpleNumFieldElem[u*pows_u[end], gen(K)], FakeFmpqMat)
-  append!(pows_u, map(elem_in_nf, basis(P^precision, copy = false)))
+  append!(pows_u, map(elem_in_nf, basis(P^(e*pr), copy = false)))
   MK = basis_matrix(pows_u, FakeFmpqMat)
   d = lcm(denominator(MK, copy = false), denominator(bK, copy = false))
   if d != denominator(MK, copy = false)
@@ -609,84 +645,48 @@ function totally_ramified_completion(K::AbsSimpleNumField, P::AbsNumFieldOrderId
   if d != denominator(bK, copy = false)
     mul!(bK.num, bK.num, divexact(d, denominator(bK, copy = false)))
   end
-  MZp = map_entries(Zp, MK.num)
-  bZp = map_entries(Zp, bK.num)
-  fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
-  @assert fl
-  coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
-  for i = 1:e
-    coeffs_eisenstein[i] = -xZp[1, i].x
+
+  # The solve loses p-adic precision; raise the working precision until the
+  # coefficients are known to precision pr.
+  working_prec = pr
+  local xZp
+  while true
+    xZp = setprecision(Qp, working_prec) do
+      MZp = map_entries(Zp, MK.num)
+      bZp = map_entries(Zp, bK.num)
+      fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
+      @assert fl
+      return xZp
+    end
+    loss = pr - minimum(precision(xZp[i, j].x) for i in 1:2, j in 1:e)
+    loss <= 0 && break
+    working_prec += loss
   end
-  coeffs_eisenstein[e+1] = one(Qp)
-  pol_gen = Qpx(coeffs_eisenstein)
-  Kp, gKp = eisenstein_extension(pol_gen, "a")
+
+  coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
   img_prim_elem = Vector{PadicFieldElem}(undef, e)
   for i = 1:e
-    img_prim_elem[i] = xZp[2, i].x
+    coeffs_eisenstein[i] = -setprecision(xZp[1, i].x, pr)
+    img_prim_elem[i] = setprecision(xZp[2, i].x, pr)
   end
-  img = Kp(Qpx(img_prim_elem))
-  if Nemo.precision(img) < Nemo.precision(Kp)
-    img = newton_lift(Zx(defining_polynomial(K)), img, Nemo.precision(img), Nemo.precision(Kp))
-  end
-  completion_map = CompletionMap(K, Kp, img, u, precision)
-  completion_map.P = P
-  return Kp, completion_map
+  coeffs_eisenstein[e+1] = one(Qp, precision = pr)
+  return coeffs_eisenstein, img_prim_elem
 end
-
 
 function setprecision!(f::CompletionMap{LocalField{PadicFieldElem, EisensteinLocalField}, LocalFieldElem{PadicFieldElem, EisensteinLocalField}}, new_prec::Int)
   Kp = codomain(f)
-  if new_prec <= maximum(keys(Kp.def_poly_cache))
-    setprecision!(Kp, new_prec)
-    setprecision!(base_field(Kp), new_prec)
-    @assert precision(f.prim_img) >= new_prec
-#    setprecision!(f.prim_img, new_prec)
-    f.precision = new_prec
-  else
-    K = domain(f)
-    #I need to increase the precision of the data
-    P = prime(f)
-    e = ramification_index(P)
-    u = f.inv_img[2]
-    Kp = codomain(f)
-    @assert !(new_prec in keys(Kp.def_poly_cache))
-    ex, r = divrem(new_prec, ramification_index(P))
-    if r > 0
-      ex += 1
-    end
-    Qp = padic_field(prime(Kp), precision = div(new_prec, e) + 1)
-    Zp = maximal_order(Qp)
-    Qpx, _ = polynomial_ring(Qp, "x")
-    pows_u = powers(u, e-1)
-    bK = basis_matrix(AbsSimpleNumFieldElem[u*pows_u[end], gen(K)])
-    append!(pows_u, map(elem_in_nf, basis(P^new_prec, copy = false)))
-    MK = basis_matrix(pows_u)
-    cMK = content(MK)
-    divexact!(MK, MK, cMK)
-    divexact!(bK, bK, cMK)
-    MZp = map_entries(Zp, MK)
-    bZp = map_entries(Zp, bK)
-    fl, xZp = can_solve_with_solution(MZp, bZp, side = :left)
-    @assert fl
-    coeffs_eisenstein = Vector{PadicFieldElem}(undef, e+1)
-    for i = 1:e
-      coeffs_eisenstein[i] = -xZp[1, i].x
-    end
-    coeffs_eisenstein[e+1] = one(Qp)
-    pol_gen = Qpx(coeffs_eisenstein)
-    Kp.def_poly_cache[new_prec] = pol_gen
-    setprecision!(Kp, new_prec * ramification_index(Kp))
-    #Should I update the traces too?
-    img_prim_elem = Vector{PadicFieldElem}(undef, e)
-    for i = 1:e
-      img_prim_elem[i] = xZp[2, i].x
-    end
-#    @show map(precision, img_prim_elem)
-    img = Kp(Qpx(img_prim_elem))
-    f.prim_img = img
-#    @show precision(img), new_prec
-    f.precision = new_prec
+  Qp = base_field(Kp)
+  e = ramification_index(Kp)
+  pr = div(new_prec + e - 1, e)
+  if new_prec > precision(f.prim_img)
+    coeffs_eisenstein, img_prim_elem = _solve_totally_ramified(f.inv_img[2], prime(f), Qp, pr)
+    Qpx = parent(first(values(Kp.def_poly_cache)))
+    Kp.def_poly_cache[pr] = Qpx(coeffs_eisenstein)
+    f.prim_img = Kp(Qpx(img_prim_elem))
   end
+  setprecision!(Kp, new_prec)
+  setprecision!(Qp, pr)
+  f.precision = new_prec
   return nothing
 end
 
