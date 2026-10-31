@@ -174,10 +174,11 @@ function __assert_has_automorphisms(
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
-    res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
-    @assert length(res2) == 2
-    res, vector_set, faithful = _compress_two_matrices_try_faithful_and_small!(res, vector_set)
-    @vprintln :Lattice 1 "Compression to one matrix successful: $faithful"
+    if length(res) == 2
+      res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
+      res, vector_set, faithful = _compress_two_matrices_try_faithful_and_small!(res, vector_set)
+      @vprintln :Lattice 1 "Compression to one matrix successful: $faithful"
+    end
   end
 
   if get_assertion_level(:Lattice) > 1
@@ -423,6 +424,7 @@ end
 # Given gram matrices G1,...,Gn, we construct
 # - G1, a_2G_2 + ... + a_nG_n with a_i small, positive, and random
 # - adjust the vector_set accordingly
+# Return the inputs unchanged if the compression bound cannot be guaranteed.
 function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector)
   # determine the bound for the size of the gram matrix
   arangebit = 3
@@ -443,13 +445,10 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector)
   # Gnbits <= bitbound - vector_nbits - nrows_nbits - 1 - 3 - nbits(r)
   gramnbitsbound = bitbound - vectors_nbits - nrows_nbits - 1 - arangebit - nbits(length(res) - 1)
   I = collect(2:length(res))
-  II = filter(i -> maximum(nbits, res[i]) <= gramnbitsbound, I)
-  @assert length(I) == length(II)
-  #if maximum(nbits, res[1]) <= gramnbitsbound && length(II) < length(I)
-  #  #error("Some Gram matrices are too large. Interesting case?!")
-  #  @vprintln :Lattice 1  "Removed Gram matrices with entries too large"
-  #end
-  I = II
+  if any(i -> maximum(nbits, res[i]) > gramnbitsbound, I)
+    # Keep all constraints and norms when compression could exceed the bound.
+    return res, vector_set
+  end
 
   if length(I) == 0
     return res, vector_set

@@ -85,6 +85,37 @@
   Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = true, do_lll = false, depth = 0);
   @test L.reduced_automorphism_group_order == 18720000
 
+  @testset "Gram matrix compression bounds" begin
+    # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
+    G = matrix(ZZ, [
+      2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0;
+      0  6  3  3  3 -3 -3  0 -3  3 -3 -3 -3  3  3  3  3  3;
+      0  3  6  3  3 -3  0  0  0  0  0  0  0  0  0  0  0  0;
+      0  3  3  6  3 -3  0  0 -3  3 -3 -3 -3  3  3  3  3  3;
+      0  3  3  3  6 -3  0  0 -3  3 -3 -3 -3  3  3  3  3  3;
+      0 -3 -3 -3 -3  6  0  0  0  0  0  0  0  0  0  0  0  0;
+      0 -3  0  0  0  0  6  0  0  0  0  0  0  0  0 -3 -3 -3;
+      0  0  0  0  0  0  0  6  3 -3 -3  3 -3 -3 -3  0  0  0;
+      0 -3  0 -3 -3  0  0  3 12 -9  6  9  6 -9 -9 -6 -6 -6;
+      0  3  0  3  3  0  0 -3 -9 12 -3 -9 -3  9  9  6  6  6;
+      0 -3  0 -3 -3  0  0 -3  6 -3 12  3  9 -3 -3 -6 -6 -6;
+      0 -3  0 -3 -3  0  0  3  9 -9  3 12  3 -9 -9 -3 -6 -6;
+      0 -3  0 -3 -3  0  0 -3  6 -3  9  3 12 -3 -3 -6 -3 -3;
+      0  3  0  3  3  0  0 -3 -9  9 -3 -9 -3 12  9  3  6  6;
+      0  3  0  3  3  0  0 -3 -9  9 -3 -9 -3  9 12  3  6  6;
+      0  3  0  3  3  0 -3  0 -6  6 -6 -3 -6  3  3 12  6  6;
+      0  3  0  3  3  0 -3  0 -6  6 -6 -6 -3  6  6  6 12  9;
+      0  3  0  3  3  0 -3  0 -6  6 -6 -6 -3  6  6  6  9 12;
+    ])
+    Random.seed!(2)
+    L = integer_lattice(; gram = G, cached = false)
+    @test automorphism_group_order(L; redo = true,
+      short_vectors_direct = false, use_dual = true, use_everything = true,
+      search_invariant_subspace = true, do_lll = false, depth = 0) == 58060800
+    @test all(g -> g * G * transpose(g) == G,
+              automorphism_group_generators(L; ambient_representation = false))
+  end
+
   # Issue #2311: `ZLatAutoCtx`'s `init` threw `UndefRefError` whenever
   # more than 2 simultaneous Gram matrices were used, because the
   # short-vector length loop inside `init` always wrote to `w[2]`
