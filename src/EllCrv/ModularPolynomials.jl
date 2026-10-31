@@ -1,6 +1,6 @@
 const default_class_mod_pol_db = joinpath(artifact"ClassicalModularPolynomialsDB", "ClassicalModularPolynomialsDB", "data")
 
-const _classical_modular_polynomial_cache = Dict{Any, Any}()
+const _classical_modular_polynomial_cache = register_cache(Dict{Any, Any}())
 
 @doc raw"""
     classical_modular_polynomial([R::MPolyRing,] n::Int) -> Poly
@@ -38,7 +38,7 @@ end
 
 const default_atkin_mod_pol_db = joinpath(artifact"AtkinModularPolynomialsDB", "AtkinModularPolynomialsDB", "data")
 
-const _atkin_modular_polynomial_cache = Dict{Any, Any}()
+const _atkin_modular_polynomial_cache = register_cache(Dict{Any, Any}())
 
 @doc raw"""
     atkin_modular_polynomial([R::MPolyRing,] n::Int) -> Poly
