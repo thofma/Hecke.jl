@@ -348,7 +348,10 @@ function _compress_two_matrices_try_faithful_and_small!(res, vector_set)
     _lambda = next_prime(8 * ZZ(1) * maximum(abs, res[i0]) + 1, false)
     faithful = false
     Gnew = _lambda * res[i1] + res[i0]
-    @assert _fits_small_init([Gnew], vector_set)
+    if !_fits_small_init([Gnew], vector_set)
+      # The fallback can also exceed the bounds for machine arithmetic.
+      return res, vector_set, true
+    end
   end
   keep_separated = false
   if fits(Int, _lambda) && all(x -> fits(Int, x), Gnew)
