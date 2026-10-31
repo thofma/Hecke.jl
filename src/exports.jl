@@ -66,6 +66,7 @@ export HypellCrvIsom
 export HypellCrvPt
 export IdealSet
 export InfPlc
+export IntegerUnion
 export Isogeny
 export KInftyElem
 export KInftyRing
