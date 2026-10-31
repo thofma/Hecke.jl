@@ -467,6 +467,29 @@ function denominator(a::AbstractAssociativeAlgebraElem, O::AlgAssAbsOrd)
   return denominator(t)
 end
 
+@doc raw"""
+    denominator(R::AlgAssAbsOrd, O::AlgAssAbsOrd) -> ZZRingElem
+
+Return the least positive integer $d$ with $dR \subseteq O$, for orders $R$
+and $O$ of the same algebra.
+
+# Examples
+
+```jldoctest
+julia> O = maximal_order(quaternion_algebra_ramified_at(QQ, 97));
+
+julia> O1, O2 = left_order.(right_class_set(O)[1:2]);
+
+julia> denominator(O1, O1), denominator(O2, O1), index(intersect(O1, O2), O1)
+(1, 2, 2)
+```
+"""
+function denominator(R::AlgAssAbsOrd, O::AlgAssAbsOrd)
+  @req algebra(R) === algebra(O) "Orders must lie in the same algebra"
+  M = basis_matrix(R, copy = false) * basis_matrix_inverse(O, copy = false)
+  return denominator(M)
+end
+
 ################################################################################
 #
 #  Random elements
