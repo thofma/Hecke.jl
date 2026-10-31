@@ -1035,12 +1035,14 @@ function genus_representatives(
     return typeof(L)[JmodJ0[i]*L for i in 1:n]
   end
 
+  # inference stops at invokelatest: compile each call tree only when it runs
   if is_definite(L)
-    res = enumerate_definite_genus(L; use_auto, max, use_mass)
+    res = Base.invokelatest(enumerate_definite_genus, L;
+                            use_auto, max, use_mass)
   else
-    res, _ = spinor_genera_in_genus(L; max)
+    res = Base.invokelatest(spinor_genera_in_genus, L; max)[1]
   end
-  return res
+  return res::Vector{typeof(L)}
 end
 
 @doc raw"""

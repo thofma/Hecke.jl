@@ -792,17 +792,19 @@ function genus_representatives(_L::ZZLat; kwargs...)
   else
     L = _L
   end
+  # inference stops at invokelatest: compile each call tree only when it runs
   if rank(L) == 2
     LL = _to_number_field_lattice(L)
-    G = genus_representatives(LL)
+    G = Base.invokelatest(genus_representatives, LL)::Vector{typeof(LL)}
     res = ZZLat[]
     for N in G
       push!(res, _to_ZLat(N; K=QQ))
     end
   elseif is_definite(L)
-    res = first(enumerate_definite_genus([L], :default; kwargs...))
+    res = Base.invokelatest(enumerate_definite_genus, [L], :default; kwargs...)
+    res = first(res)::Vector{ZZLat}
   else
-    res = spinor_genera_in_genus(L)
+    res = Base.invokelatest(spinor_genera_in_genus, L)::Vector{ZZLat}
   end
   s != 1 && map!(L -> rescale(L, s; cached=false), res, res)
   return res
