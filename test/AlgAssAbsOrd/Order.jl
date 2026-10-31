@@ -185,6 +185,27 @@
     @test length(unique([Hecke.new_maximal_order(ZG, false) for i in 1:20])) == 2
   end
 
+  # Arbitrary group-algebra orders can fail maximality outside group-order primes.
+  @testset "Maximality outside group-order primes" begin
+    A = group_algebra(QQ, FinGenAbGroup([2]); cached = false)
+    e = QQ(1//2)*(one(A) + basis(A)[2])
+    O = order(A, [one(A), 3*e]; cached = false)
+    @test !isdefined(A, :maximal_order)
+    @test !Hecke.is_maximal_known(O)
+    @test discriminant(O) == 9
+    @test pmaximal_overorder(O, 2) === O
+    @test !is_maximal(O)
+    @test Hecke.is_maximal_known(O)
+    @test !is_maximal(O)
+    M = pmaximal_overorder(O, 3)
+    @test index(O, M) == 3
+    @test discriminant(M) == 1
+    @test !isdefined(A, :maximal_order)
+    @test is_maximal(M)
+    @test Hecke.is_maximal_known(M)
+    @test is_maximal(M)
+  end
+
   @testset "rand" begin
     Qx, x = QQ["x"]
     A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
