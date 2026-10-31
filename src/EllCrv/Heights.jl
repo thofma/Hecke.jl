@@ -328,13 +328,20 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
 
   wprec = prec + 1
 
-  abs_disc = abs(evaluate(discriminant(E), v, 53))
+  # evaluate takes *absolute* precision! Refine unless we can exclude 0
+  disc = discriminant(E)
+  dprec = 53
+  abs_disc = abs(evaluate(disc, v, dprec))
+  while contains_zero(abs_disc)
+    dprec *= 2
+    abs_disc = abs(evaluate(disc, v, dprec))
+  end
 
-  N = ceil(Int,
+  N = Int(upper_bound(ZZRingElem,
             Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
             Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
                                  Rc(1)/3 * log(max(Rc(1), inv(Rc(abs_disc)))))
-          )
+          ))
 
   while true
     newprec = attempt*wprec
