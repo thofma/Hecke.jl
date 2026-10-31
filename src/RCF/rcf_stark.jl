@@ -965,19 +965,6 @@ function _coeff_0_odd(n::Int, q::Int)
   end
 end
 
-function _coeff_exp_odd(n::Int, q::Int, RR::ArbField)
-  res = Vector{ArbFieldElem}(undef, n-1)
-  res[1] = _sum_pow_inv_odd(q, 1) + (n-1)*_sum_pow_inv_even(q, 1) - log(RR(2)) - QQFieldElem(n, 2)*const_euler(RR)
-  for k = 2:n-1
-    res[k] = (-1)^k*zeta(k, RR)*(1+QQFieldElem(n-2, ZZRingElem(2)^k)) + _sum_pow_inv_odd(q, k) + (n-1)*_sum_pow_inv_even(q, k)
-    res[k] = res[k]/k
-  end
-  RRx = power_series_ring(RR, n, "x", cached = false)[1]
-  g = RRx(res, length(res), n, 1)
-  gexp = exp(g)
-  return ArbFieldElem[coeff(gexp, i) for i = 0:n-1]
-end
-
 function _coeffs_exp_odd(n::Int, nterms::Int, RR::ArbField)
   nt = div(nterms, 2)
   if isodd(nterms)

@@ -1008,7 +1008,6 @@ export transform_rstu
 export transformation_GLn
 export transvectant
 export transvectant_sequence
-export triangularize
 export trivial_divisor
 export trivial_morphism
 export trred
