@@ -86,6 +86,24 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
+@testset "prime_ideals_over" begin
+  K, = quadratic_field(-23)
+  OK = maximal_order(K)
+  @test length(prime_ideals_over(OK, [2, 3, 5])) == 5
+  @test length(prime_ideals_over(OK, [2, 3, 5]; degree_limit = 1)) == 4
+
+  # the progress message is only built at this verbosity level
+  Hecke.set_verbosity_level(:ClassGroup, 2)
+  lp = try
+    redirect_stdout(devnull) do
+      prime_ideals_over(OK, [2, 3, 5])
+    end
+  finally
+    Hecke.set_verbosity_level(:ClassGroup, 0)
+  end
+  @test length(lp) == 5
+end
+
 @testset "Subgroups at finite places" begin
   K, a = quadratic_field(-1)
   O = maximal_order(K)

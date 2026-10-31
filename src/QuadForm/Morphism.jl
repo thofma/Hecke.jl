@@ -1208,7 +1208,7 @@ end
 
 
 function _operate(point, A::Matrix{Int}, V)
-  return _operate(point, A, V, zeros(Int, size(A, 2)), sorted)
+  return _operate(point, A, V, zeros(Int, size(A, 2)))
 end
 
 function _operate(point, A::ZZMatrix, V)
