@@ -1611,10 +1611,15 @@ order $O_1$ and right order conjugate to $O_2$, and one such ideal. So $O_1$ is
 fixed and $O_2$ is taken up to conjugacy: $d$ depends only on the types of
 $O_1$ and $O_2$ (see [`type_set`](@ref)), does not change when they are
 swapped, and is $1$ if and only if they are conjugate. When $A$ is ramified
-only at a prime $p$ and $\infty$, it is the least degree of an isogeny
-between supersingular elliptic curves over $\overline{\mathbf{F}}_p$ with
-endomorphism rings $O_1$ and $O_2$
-([Voi21](@cite), Proposition 42.2.16 and Corollary 42.2.21).
+only at a prime $p$ and $\infty$, and $E_1$, $E_2$ are supersingular elliptic
+curves over $\overline{\mathbf{F}}_p$ with endomorphism rings $O_1$ and $O_2$,
+it is the least degree of an isogeny from $E_1$ to $E_2$ or to its Frobenius
+conjugate $E_2^{(p)}$ ([Voi21](@cite), Proposition 42.2.16 and Corollary
+42.2.21; the ideals $J$ and $J P$ below). The curve $E_2^{(p)}$ also has
+endomorphism ring $O_2$, and is not isomorphic to $E_2$ unless
+$j(E_2) \in \mathbf{F}_p$ ([Voi21](@cite), Lemma 42.4.1), so $d$ need not be
+the least degree of an isogeny $E_1 \to E_2$: for $O_1 = O_2$ it is $1$, while
+in $B_{97}$ some $E_2 \to E_2^{(p)}$ have least degree $2$.
 
 The ideals with left order $O_1$ and right order conjugate to $O_2$ lie in the
 left classes of $J P$, where $J$ is [`connecting_ideal(O1, O2)`](@ref
