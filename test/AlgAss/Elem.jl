@@ -150,3 +150,33 @@
     @test u + v == alpha
   end
 end
+
+# Reduced traces remain defined when the matrix degree vanishes in the field.
+@testset "Reduced trace" begin
+  for p in (2, 3)
+    k = GF(p)
+    B = matrix_algebra(k, p)
+    b = B(diagonal_matrix(k, [one(k); fill(zero(k), p - 1)]))
+    @test iszero(tr(b))
+    @test trred(b) == one(k)
+
+    K, t = rational_function_field(GF(p), :t; cached = false)
+    A = matrix_algebra(K, p)
+    a = A(diagonal_matrix(K, [one(K); fill(t, p - 1)]))
+    @test iszero(tr(a))
+    @test trred(a) == one(K) + (p - 1)*t
+    @test trred(zero(A)) == zero(K)
+    @test trred(one(A)) == zero(K)
+    @test trred(a + one(A)) == trred(a)
+  end
+  kt, t = rational_function_field(GF(2), :t; cached = false)
+  K, b = function_field(polynomial(kt, [t^3 + t + 1, 1, 1]); cached = false)
+  A = matrix_algebra(K, 2)
+  @test trred(A(K[1 b; 0 0])) == one(K)
+  @test trred(A(K[b 1; 0 0])) == b
+
+  for K in (QQ, GF(3))
+    A = matrix_algebra(K, 2)
+    @test trred(A(K[1 2; 3 4])) == K(5)
+  end
+end
