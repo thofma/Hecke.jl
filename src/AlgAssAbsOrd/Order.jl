@@ -79,16 +79,17 @@ function is_maximal(O::AlgAssAbsOrd)
     end
   end
 
-  if typeof(A) <: GroupAlgebra
-    fac = factor(degree(O))
+  factor_inputs = if A isa GroupAlgebra
+    # Check group-order primes first, then the remaining discriminant primes.
+    # Arbitrary orders in group algebras can have index primes outside |G|.
+    n = ZZ(degree(O))
+    (n, ppio(abs(d), n)[2])
   else
-    fac = factor(abs(d))
+    (abs(d),)
   end
 
-  for (p, j) in fac
-    # This can be improved a bit. Even in the GroupAlgebra case, we should
-    # only look at the primes dividing d with power > 1
-    if !(typeof(A) <: GroupAlgebra) && j == 1
+  for a in factor_inputs, (p, _) in factor(a)
+    if rem(d, p^2) != 0
       continue
     end
     d2 = discriminant(pmaximal_overorder(O, p))
