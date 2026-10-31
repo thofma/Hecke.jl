@@ -144,7 +144,8 @@ function number_field(f::Vector{Generic.Poly{T}}, S::Vector{Symbol}; cached::Boo
   Rx, x = polynomial_ring(R, S)::Tuple{mpoly_ring_type(T), Vector{mpoly_type(T)}}
   K = RelNonSimpleNumField(f, [f[i](x[i]) for i=1:length(f)], S)
   if check
-    if !_check_consistency(K)
+    # see number_field for RelSimpleNumField
+    if !Base.inferencebarrier(_check_consistency)(K)
       error("The fields are not linearly disjoint!")
     end
   end
