@@ -605,6 +605,7 @@ function _dim_image_of_schirokauer_map(K::AbsSimpleNumField, us, p)
 end
 
 function _dim_image_of_eta_map(K, us, p; OK = lll(maximal_order(K)))
+  isempty(us) && return 0
   U, f = _create_eta_map(K, p; OK = OK)
   V, = sub(U, f.(us))
   r = rank(V, p)

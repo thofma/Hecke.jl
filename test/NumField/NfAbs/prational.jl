@@ -111,13 +111,20 @@
 
   # contexts agree with the field, also for p | h with cK == 0 and for unit
   # rank 0
-  for (d, ps) in [(10, [2, 3]), (85, [2]), (-1, [2, 3]), (-23, [2, 3])]
+  for (d, ps) in [(10, [2, 3]), (85, [2]), (-1, [2, 3]),
+                  (-23, [2, 3, 23])]
     K, = quadratic_field(d; cached = false)
     for is_normal in [false, true]
       C = Hecke.p_rationality_context(K; is_normal)
       @test [is_p_rational(C, p) for p in ps] == [is_p_rational(K, p) for p in ps]
     end
   end
+  # Rank-zero normal contexts also handle odd ramified primes.
+  K, = quadratic_field(-5; cached = false)
+  C = Hecke.p_rationality_context(K; is_normal = true)
+  @test is_quasi_p_rational(C, 5)
+  @test is_p_rational(C, 5)
+
   K, = number_field(x^3 - x - 1; cached = false)
   C = Hecke.p_rationality_context(K)
   @test [is_p_rational(C, p) for p in [2, 5, 23]] == [is_p_rational(K, p) for p in [2, 5, 23]]
