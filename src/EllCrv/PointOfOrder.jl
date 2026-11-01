@@ -23,7 +23,8 @@ of lower degree for $X_1(N)$, which would make large $N$ faster, are
 available at <https://math.mit.edu/~drew/X1_altcurves.html>.
 
 An error is raised when no elliptic curve over $K$ has a point of order $N$,
-as for $N = 13$ over $\mathbb{F}_2$.
+as for $N = 13$ over $\mathbb{F}_2$; at once when $N > q + 1 + 2\sqrt{q}$,
+$q$ the order of $K$, the Hasse bound on the number of points.
 
 # Examples
 
@@ -41,6 +42,10 @@ function elliptic_curve_with_point_of_order(
   n = Int(N)
   p = characteristic(K)
   @req !is_divisible_by(ZZ(n), p) "N must be prime to the characteristic"
+  q = order(K)
+  # N divides the number of points, at most q + 1 + 2 sqrt(q) (Hasse)
+  n > q + 1 + isqrt(4 * q) &&
+    error("no elliptic curve over $K has a point of order $n")
   a = _first_curve(_point_of_order_curves(K, n, rng), K, rng)
   a === nothing && error("no elliptic curve over $K has a point of order $n")
   E = elliptic_curve(K, a; check = false)
@@ -144,10 +149,6 @@ end
 
 const _X1_RAW_FORMS = Dict{Int, ZZMPolyRingElem}()
 const _X1_RAW_FORM_TABLES = Dict{Int, Tuple{Bool, Vector{Vector{ZZRingElem}}}}()
-# Guards the dictionaries only: the forms are computed outside it, so that a
-# long computation for one N does not block the others; two tasks computing
-# the same N at once both get the form stored first.
-const _X1_RAW_FORMS_LOCK = ReentrantLock()
 
 # (solve_r, coefficients) of `_x1_raw_form_table(N)` mapped into K; kept on K
 # when K stores attributes, since mapping them is a fifth of a call.
@@ -156,20 +157,17 @@ function _x1_raw_form_coefficients(K::FinField, N::Int)
   map_into_K() = [[K(a) for a in v] for v in table]
   is_attribute_storing(K) || return solve_r, map_into_K()
   T = elem_type(K)
-  return lock(_X1_RAW_FORMS_LOCK) do
-    cache = get_attribute!(K, :x1_raw_form_coefficients) do
-      Dict{Int, Vector{Vector{T}}}()
-    end
-    return solve_r, get!(map_into_K, cache, N)
+  cache = get_attribute!(K, :x1_raw_form_coefficients) do
+    Dict{Int, Vector{Vector{T}}}()
   end
+  return solve_r, get!(map_into_K, cache, N)
 end
 
 # (solve_r, table): F_N as a polynomial in the variable of smaller positive
 # degree (r if solve_r, else s), for each of its powers, constant term first,
 # the integer coefficients in the other variable, constant term first.
 function _x1_raw_form_table(N::Int)
-  t = lock(() -> get(_X1_RAW_FORM_TABLES, N, nothing), _X1_RAW_FORMS_LOCK)
-  t === nothing || return t
+  haskey(_X1_RAW_FORM_TABLES, N) && return _X1_RAW_FORM_TABLES[N]
   F = _x1_raw_form(N)
   dr, ds = degree(F, 1), degree(F, 2)
   solve_r = dr > 0 && (dr <= ds || ds == 0)
@@ -178,8 +176,7 @@ function _x1_raw_form_table(N::Int)
   for (a, e) in zip(coefficients(F), exponent_vectors(F))
     table[e[i] + 1][e[j] + 1] = a
   end
-  return lock(() -> get!(_X1_RAW_FORM_TABLES, N, (solve_r, table)),
-              _X1_RAW_FORMS_LOCK)
+  return _X1_RAW_FORM_TABLES[N] = (solve_r, table)
 end
 
 # F_N(r, s) in ZZ[r, s], N >= 6, by Algorithm 1 of [Sut12*1]: the numerator of
@@ -188,8 +185,7 @@ end
 # r - 1 and F_M, M > 5 a proper divisor of N; made square-free. Computed once.
 function _x1_raw_form(N::Int)
   @assert N >= 6
-  F = lock(() -> get(_X1_RAW_FORMS, N, nothing), _X1_RAW_FORMS_LOCK)
-  F === nothing || return F
+  haskey(_X1_RAW_FORMS, N) && return _X1_RAW_FORMS[N]
   R, (r, s) = polynomial_ring(ZZ, [:r, :s])
   Q = fraction_field(R)
   b = Q(r * s * (r - 1))
@@ -208,12 +204,8 @@ function _x1_raw_form(N::Int)
       numerator(xs[n]) * denominator(xs[m])
   divisors_M = [_x1_raw_form(M) for M in 6:(N - 1) if N % M == 0]
   for f in vcat([r, s, r - 1], divisors_M)
-    ok, q = divides(G, f)
-    while ok
-      G = q
-      ok, q = divides(G, f)
-    end
+    _, G = remove(G, f)
   end
   G = prod(p for (p, _) in factor_squarefree(G))
-  return lock(() -> get!(_X1_RAW_FORMS, N, G), _X1_RAW_FORMS_LOCK)
+  return _X1_RAW_FORMS[N] = G
 end

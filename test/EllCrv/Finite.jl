@@ -332,6 +332,9 @@
     curve = elliptic_curve_with_point_of_order
     # no curve over F_2 has 13 points or more, by the Hasse bound
     @test_throws ErrorException curve(GF(2), 13)
+    # 61 > 2 + 1 + 2 sqrt(2): an error before F_61 is computed
+    @test_throws ErrorException curve(GF(2), 61)
+    @test !haskey(Hecke._X1_RAW_FORMS, 61)
     @test_throws ArgumentError curve(GF(101), 1)
     @test_throws ArgumentError curve(GF(101), ZZ(2)^70)
     @test_throws ArgumentError curve(GF(7), 14)
