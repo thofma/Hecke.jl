@@ -87,3 +87,12 @@ gross_lattice(::AlgAssAbsOrd{<:QuaternionAlgebra{QQFieldElem}})
 gross_lattice_basis(::AlgAssAbsOrd{<:QuaternionAlgebra{QQFieldElem}})
 gross_gram_matrix(::Vector{<:AssociativeAlgebraElem{QQFieldElem}})
 ```
+
+## Ideals connecting maximal orders
+
+```@docs
+connecting_ideal(::AlgAssAbsOrd{<:QuaternionAlgebra}, ::AlgAssAbsOrd{<:QuaternionAlgebra})
+least_norm_ideal(::AlgAssAbsOrdIdl{QuaternionAlgebra{QQFieldElem}}, ::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
+least_connecting_norm(::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, ::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
+denominator(::AlgAssAbsOrd, ::AlgAssAbsOrd)
+```

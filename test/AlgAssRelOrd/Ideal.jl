@@ -259,4 +259,27 @@
     @test is_zero(q)
     @test parent(q) === OL
   end
+
+  @testset "Ideals connecting maximal orders" begin
+    # O1 O2 for maximal orders of a definite and an indefinite quaternion
+    # algebra over Q(sqrt(5)), O2 the left order of a maximal integral right
+    # ideal of O1, against the orders computed from its basis
+    K, = quadratic_field(5)
+    P = prime_decomposition(maximal_order(K), 11)[1][1]
+    for (u, v) in [(-1, -1), (-1, 3)]
+      A = quaternion_algebra(K, u, v)
+      M = maximal_order(A)
+      L = left_order(first(Hecke.maximal_integral_ideals(M, P; side = :right)))
+      @test L != M
+      J = connecting_ideal(M, L)
+      Jfresh = ideal(A, basis_pmatrix(J))
+      @test left_order(Jfresh) == M && right_order(Jfresh) == L
+    end
+    A = quaternion_algebra(K, -1, -1)
+    M = maximal_order(A)
+    O = order(A, basis(A))
+    @test_throws ArgumentError connecting_ideal(O, M)
+    B = quaternion_algebra(K, -1, 3)
+    @test_throws ArgumentError connecting_ideal(M, maximal_order(B))
+  end
 end

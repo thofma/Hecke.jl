@@ -1895,6 +1895,25 @@ end
 
 ################################################################################
 #
+#  Ideals connecting maximal orders
+#
+################################################################################
+
+function connecting_ideal(O1::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra},
+                          O2::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra};
+                          check::Bool = true)
+  @req algebra(O1) === algebra(O2) "Orders must lie in the same algebra"
+  if check
+    @req is_maximal(O1) && is_maximal(O2) "Orders must be maximal"
+  end
+  J = (1 * O1) * (1 * O2)
+  J.left_order = O1
+  J.right_order = O2
+  return J
+end
+
+################################################################################
+#
 #  Preimage
 #
 ################################################################################
