@@ -34,6 +34,10 @@ function radical(A::AbstractAssociativeAlgebra)
 end
 
 function _radical(A::AbstractAssociativeAlgebra)
+  if is_zero(A)
+    return elem_type(A)[]
+  end
+
   K = base_ring(A)
   if is_zero(characteristic(K))
     return _radical_zero(A)

@@ -1,4 +1,30 @@
 @testset "Radical" begin
+  @testset "Zero algebra" begin
+    # The zero algebra has zero radical over every supported base field.
+    for K in (GF(2),
+              GF(5),
+              GF(25),
+              Native.GF(2),
+              Native.GF(5),
+              Native.GF(5, 2),
+              QQ,
+              rationals_as_number_field()[1],
+              rational_function_field(QQ)[1],
+              rational_function_field(GF(2))[1],
+              rational_function_field(GF(25))[1])
+      A = zero_algebra(K)
+      J = radical(A)
+      @test algebra(J) === A
+      @test dim(J) == 0
+      @test is_zero(J)
+      @test isempty(basis(J))
+      @test size(basis_matrix(J)) == (0, 0)
+      @test is_left_ideal(J)
+      @test is_right_ideal(J)
+      @test is_semisimple(A)
+    end
+  end
+
   Qx, x = QQ["x"]
   # f = x^2 + 1
   # g = x^3 + 3x^2 + 5x - 5
