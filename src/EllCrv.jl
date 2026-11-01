@@ -1,6 +1,7 @@
 include("EllCrv/Types.jl")
 include("EllCrv/EllCrv.jl")
 include("EllCrv/Finite.jl")
+include("EllCrv/PointOfOrder.jl")
 include("EllCrv/FinitePointCount.jl")
 include("EllCrv/DiscreteValuation.jl")
 include("EllCrv/Heights.jl")

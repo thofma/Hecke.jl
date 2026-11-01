@@ -302,4 +302,39 @@
     m = disc_log(P, Q)
     @test m * P == Q
   end
+
+  @testset "Curves with a point of given order" begin
+    # (0, 0) of order exactly N over prime fields, extension fields and
+    # characteristics 2 and 3 not dividing N; N beyond 30; the default rng;
+    # the exhaustive fallback; the limits
+    rng = Random.Xoshiro(1)
+    # order exactly N, without counting the points of E
+    has_order(P, N) = is_infinite(N * P) &&
+                      all(l -> !is_infinite(div(N, l) * P), prime_divisors(N))
+    fields = [GF(101), GF(next_prime(ZZ(2)^61)), GF(7, 3), GF(2, 10), GF(3, 7)]
+    for N in 2:30, K in fields
+      is_divisible_by(ZZ(N), characteristic(K)) && continue
+      E, P = elliptic_curve_with_point_of_order(K, N; rng)
+      @test base_field(E) === K
+      @test has_order(P, N)
+    end
+    for N in (31, 40), K in fields[1:2]
+      E, P = elliptic_curve_with_point_of_order(K, N; rng)
+      @test has_order(P, N)
+    end
+    E, P = elliptic_curve_with_point_of_order(GF(1009), 11)
+    @test order(P) == 11
+    K = GF(7)
+    none = Vector{elem_type(K)}[]
+    found = (u, all) -> all && u == K(3) ? [[K(u)]] : none
+    @test Hecke._first_curve(found, K, rng) == [K(3)]
+    @test Hecke._first_curve((u, all) -> none, K, rng) === nothing
+    curve = elliptic_curve_with_point_of_order
+    # no curve over F_2 has 13 points or more, by the Hasse bound
+    @test_throws ErrorException curve(GF(2), 13)
+    @test_throws ArgumentError curve(GF(101), 1)
+    @test_throws ArgumentError curve(GF(101), ZZ(2)^70)
+    @test_throws ArgumentError curve(GF(7), 14)
+    @test_throws ArgumentError curve(GF(2, 3), 6)
+  end
 end
