@@ -659,13 +659,7 @@ end
 
 #trivia, missing in RelSimpleNumField
 function basis(K::RelSimpleNumField)
-  a = gen(K)
-  z = one(K)
-  b = elem_type(K)[z, a]
-  while length(b) < degree(K)
-    push!(b, b[end]*a)
-  end
-  return b
+  return powers(gen(K), degree(K) - 1)
 end
 
 function (K::RelNonSimpleNumField)(a::Vector)
