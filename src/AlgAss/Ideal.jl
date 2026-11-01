@@ -143,6 +143,7 @@ end
 ################################################################################
 
 function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
+  @req side in (:left, :right, :twosided) "Side must be :left, :right or :twosided"
   A = algebra(a)
   ba = basis(a, copy = false)
   t = A()
@@ -153,13 +154,12 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
         if !(t in a)
           return false
         end
-      elseif side === :right || side === :twosided
+      end
+      if side === :right || side === :twosided
         t = mul!(t, ba[j], A[i])
         if !(t in a)
           return false
         end
-      else
-        error("side must be either :left or :right")
       end
     end
   end
