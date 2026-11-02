@@ -112,10 +112,10 @@ conjugates_arb_log_normalise(::AbsSimpleNumFieldElem)
 
 The $\mathbf{Q}$-linear function
 ```math
-\begin{gather*}
+\begin{gathered}
   K \longrightarrow \mathbf R^{d} \\
   \alpha \longmapsto \Bigl( \sigma_1(\alpha), \dotsc, \sigma_r(\alpha), \sqrt{2}\operatorname{Re}\bigl(\sigma_{r+1}(\alpha)\bigr), \sqrt{2}\operatorname{Im}\bigl(\sigma_{r+1}(\alpha)\bigr), \dotsc, \sqrt{2}\operatorname{Re}\bigl(\sigma_{r+s}(\alpha)\bigr), \sqrt{2}\operatorname{Im}\bigl(\sigma_{r+s}(\alpha)\bigr) \Bigr)
-\end{gather*}
+\end{gathered}
 ```
 is called the *Minkowski map* (or *Minkowski embedding*).
 We provide a function that returns the image of an element under the Minkowski map.
