@@ -57,6 +57,7 @@ end
       cs = Iterators.product(fill(collect(F), n)...)
       U = [g for g in (Fx(collect(c)) for c in cs) if isone(gcd(g, f))]
       ord(g) = findfirst(k -> isone(powermod(g, k, f)), 1:length(U))
+      @test euler_phi(f) == length(U)
       @test carmichael_lambda(f) == reduce(lcm, ord.(U))
     end
   end

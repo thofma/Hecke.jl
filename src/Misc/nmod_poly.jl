@@ -1305,7 +1305,7 @@ end
 function euler_phi(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
   lf = factor(f)
   q = size(base_ring(f))
-  return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) in lf)
+  return prod((q^degree(p)-1)*q^(degree(p)*(k-1)) for (p,k) in lf)
 end
 
 function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
