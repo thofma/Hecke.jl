@@ -496,8 +496,8 @@ function carmichael_lambda(_x::Fac{ZZRingElem})
   # we want to swap out x under our feets, so we use a Dict instead
   # (better behaved with respect to copying)
   x = Dict(p => e for (p, e) in _x)
-  if haskey(x.fac, two)
-    y = deepcopy(x.fac)
+  if haskey(x, two)
+    y = copy(x)
     v = y[two]
     delete!(y, two)
     if v == 2
@@ -509,7 +509,7 @@ function carmichael_lambda(_x::Fac{ZZRingElem})
     end
   else
     c = ZZRingElem(1)
-    y = x.fac
+    y = x
   end
   if length(y) == 0
     return c

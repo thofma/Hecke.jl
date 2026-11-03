@@ -40,6 +40,10 @@
 
     @test carmichael_lambda(8) == 2
 
+    # `carmichael_lambda` of a factorization
+    @test carmichael_lambda(factor(ZZ(2^5 * 3^2 * 7))) == 24
+    @test carmichael_lambda(factor(ZZ(45))) == 12
+
     @test sort(Hecke.squarefree_up_to(2)) == [1,2]
 
     @testset "Squarefree numbers with prime restrictions" begin
