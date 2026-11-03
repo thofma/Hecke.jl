@@ -1305,7 +1305,7 @@ end
 function euler_phi(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
   lf = factor(f)
   q = size(base_ring(f))
-  return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) = lf.fac)
+  return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) in lf)
 end
 
 function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
@@ -1313,7 +1313,7 @@ function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPoly
   pp = characteristic(base_ring(f))
   q = size(base_ring(f))
   #ala Auer... (Diss, DOI:10.4064/aa-95-2-97-122)
-  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) = lf.fac], init = ZZRingElem(1))
+  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) in lf], init = ZZRingElem(1))
   #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = ZZRingElem(1))
   return l
 end
