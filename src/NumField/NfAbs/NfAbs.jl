@@ -577,11 +577,11 @@ function compositum(K::AbsSimpleNumField, L::AbsSimpleNumField)
     return K, id_hom(K), mL
   end
   lf = factor(L, K.pol)
-  d = degree(first(lf.fac)[1])
-  if any(x->degree(x) != d, keys(lf.fac))
+  d = degree(first(lf)[1])
+  if any(x->degree(x[1]) != d, lf)
     error("2nd field cannot be normal")
   end
-  KK = number_field(first(lf.fac)[1])[1]
+  KK = number_field(first(lf)[1])[1]
   Ka, mKa = absolute_simple_field(KK)
   mK = hom(K, Ka, mKa\gen(KK))
   mL = hom(L, Ka, mKa\(KK(gen(L))))
@@ -796,7 +796,7 @@ function splitting_field(fl::Vector{<:PolyRingElem{AbsSimpleNumFieldElem}}; do_r
   end
   ffl = eltype(fl)[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
   r = []
@@ -836,7 +836,7 @@ function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::
   end
   ffl = eltype(fl)[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
   K = base_ring(fl[1])

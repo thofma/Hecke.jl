@@ -588,8 +588,7 @@ minimal Julia covariant.
 function reduce_binary_form(f::MPolyRingElem{T}) where T <: QQFieldElem
   #Check stability
   n = total_degree(f)
-  ms = values(factor(f).fac)
-  for m in ms
+  for (_, m) in factor(f)
     if 2*m >= n
       error("Binary form is not stable.")
     end

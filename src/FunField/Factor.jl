@@ -216,7 +216,7 @@ function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSi
 
   fN = factor(N)
   # We are reconstructing the monic polynomial g and the gcds below are monic.
-  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
+  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) in fN))
   return D
 end
 
@@ -225,7 +225,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   f = divexact(f, gcd(f, derivative(f)))
 
   lf = factor(f)
-  lf = [x for x = keys(lf.fac) if degree(x) > 1]
+  lf = [x for (x, _) in lf if degree(x) > 1]
   if length(lf) == 0
     return base_ring(f)
   end
@@ -258,7 +258,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
     end
 
     fN = factor(N)
-    lf = [x for x = keys(fN.fac) if degree(x) > degree(G)]
+    lf = [x for (x, _) in fN if degree(x) > degree(G)]
       #the gcd of x with deg(x) == deg(G) will yield a linear
       #factor, hence does not contribute further
     if length(lf) == 0

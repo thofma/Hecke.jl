@@ -767,7 +767,7 @@ end
 function is_irreducible(f::PolyRingElem{T}) where T <: RelFinFieldElem
   is_zero(f) && return false
   l = factor(f)
-  return sum(values(l.fac)) == 1
+  return sum(e for (_, e) in l; init = 0) == 1
 end
 
 
