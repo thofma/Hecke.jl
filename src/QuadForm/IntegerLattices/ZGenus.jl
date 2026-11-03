@@ -2524,7 +2524,7 @@ Further Delta is in bijection with the proper spinor genera of `G`.
     p = prime(g)
     for r in automorphous_numbers(g)
       r = QQ(r)
-      S = [i for i in P if i!=p]
+      S = [i for i in P if i != p]
       pv0, u0 = ppio(ZZ(r),p)
       pv = QQ(pv0); u = QQ(u0)
       push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S], init=A()))
@@ -2535,11 +2535,11 @@ Further Delta is in bijection with the proper spinor genera of `G`.
     # -1 is -1-adically automorphous
     # We want to embed -1 diagonally, so we take the sum of its image
     # in every summand
-    push!(gens_automorph, sum(inj[p](QQ(-1)) for p in P; init=A()))
+    push!(gens_automorph, diagonal_map(QQ(-1)))
   end
   gens_local_automorphs = elem_type(A)[]
   for p in P
-    if p ==2
+    if p == 2
       u_p = inj[p](QQ(3))
       push!(gens_local_automorphs, u_p)
       u_p = inj[p](QQ(5))
