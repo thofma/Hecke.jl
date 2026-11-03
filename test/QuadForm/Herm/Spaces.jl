@@ -123,6 +123,19 @@
   @test !is_isometric(V1, H)
   @test is_isometric(V1, V2)
 
+  # Issue #2610
+  Qx, x = QQ["x"]
+  K, s5 = number_field(x^2 - 5, "s5")
+  Ky, y = K["y"]
+  E, a = number_field(y^2 - 2, "a")
+  V1 = hermitian_space(E, E[1;;])
+  V2 = hermitian_space(E, E[-1;;])
+  u = 1 + a
+  T = E[u;;]
+  T * gram_matrix(V2) * transpose(map_entries(involution(V2), T)) == gram_matrix(V1) # returns true
+  # the real places of K split in E and then
+  # E_v = K_v x K_{v^\sigma} = RR^2
+  @test is_isometric(V1, V2)
 end
 
 @testset "diagonal with transform" begin

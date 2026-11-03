@@ -224,6 +224,14 @@ function is_isometric(L::HermSpace, M::HermSpace, P::InfPlc)
     return true
   end
 
+  E = base_ring(L)
+  if length(extend(P, E)) == 2
+    # P splits
+    # E_P is isomorphic to RR x RR
+    # and the rank decides isometry
+    return true
+  end
+
   DL = diagonal(L)
   DM = diagonal(M)
   iL = count(d -> is_negative(d, P), DL)
