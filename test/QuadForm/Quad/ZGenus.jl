@@ -673,3 +673,24 @@ end
   @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l1) == 1, l1)
   @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l2) == 1, l2)
 end
+
+@testset "Fix enumeration odd indefinite lattice of rank 3" begin
+  s = Vector{Int}[[ 1, 0, 0, 0, -12, -102, 0, -102, -3 ],
+                  [ -2, 4, -2, 4, 67, -17, -2, -17, 73 ],
+                  [ -12, 6, 0, 6, 22, -6, 0, -6, 36 ],
+                  [ 1, 6, -3, 6, -12, 6, -3, 6, 222 ],
+                  [ 13, 5, 7, 5, 13, -25, 7, -25, -2 ],
+                  [ -1, 7, 0, 7, -1, 0, 0, 0, 27 ],
+                  [ 1, 0, 0, 0, -12, 6, 0, 6, 213 ],
+                  [ -2, 1, 17, 1, 13, 5, 17, 5, 13 ],
+                  [ 1, 15, 6, 15, 6, -9, 6, -9, 9 ],
+                  [ -4, 14, 0, 14, -1, 0, 0, 0, 27 ],
+                  [ -1, 7, 0, 7, -1, 0, 0, 0, 108 ],
+                  [ 8, 0, -14, 0, 18, -9, -14, -9, -25 ],
+                  [ -1, -8, 13, -8, 11, 11, 13, 11, 50 ]]
+
+  for m in s
+    L = integer_lattice(; gram=matrix(QQ, 3, 3, m))
+    @test length(genus_representatives(L)) == 2
+  end
+end

@@ -2423,7 +2423,7 @@ function automorphous_numbers(g::ZZLocalGenus)
   end
 
   # supplement (ii)
-  sort(I, by=x->valuation(x,2))
+  sort!(I, by=x->valuation(x,2))
   n = length(I)
   for i in 1:n
     for j in 1:i-1
@@ -2533,9 +2533,9 @@ Further Delta is in bijection with the proper spinor genera of `G`.
   s = signature_tuple(G)
   if s[1]*s[3]>0
     # -1 is -1-adically automorphous
-    for p in P
-      push!(gens_automorph, inj[p](QQ(-1)))
-    end
+    # We want to embed -1 diagonally, so we take the sum of its image
+    # in every summand
+    push!(gens_automorph, sum(inj[p](QQ(-1)) for p in P; init=A()))
   end
   gens_local_automorphs = elem_type(A)[]
   for p in P
