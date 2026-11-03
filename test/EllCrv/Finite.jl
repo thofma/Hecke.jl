@@ -158,6 +158,81 @@
     E = elliptic_curve_from_j_invariant(a)
     @test !(@inferred is_supersingular(E))
     @inferred is_probable_supersingular(E)
+
+    # A j-invariant with complex multiplication by an order of discriminant d
+    # and class number 1 is supersingular exactly when p does not split in
+    # Q(sqrt(d)) (Deuring). Phi_2(-3375, X) has the double root -3375.
+    cm = [(-7, -3375), (-8, 8000), (-11, -32768), (-12, 54000),
+          (-16, 287496), (-19, -884736), (-27, -12288000), (-28, 16581375),
+          (-43, -884736000), (-67, -147197952000),
+          (-163, -262537412640768000)]
+    for p in [ZZ(1013), next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
+      for K in [GF(p), GF(p, 2)], (d, j) in cm
+        E = elliptic_curve_from_j_invariant(K(j))
+        @test is_supersingular(E) == (kronecker_symbol(ZZ(d), p) != 1)
+      end
+    end
+
+    # the table of class number 1 j-invariants against the Hilbert class
+    # polynomials, and the walk (without the table) against Deuring's criterion
+    Zx, x = ZZ[:x]
+    @test length(Set(first.(Hecke._CLASS_NUMBER_ONE_J_INVARIANTS))) == 13
+    for (d, j) in Hecke._CLASS_NUMBER_ONE_J_INVARIANTS
+      @test hilbert_class_polynomial(d, Zx) == x - j
+    end
+    for p in [ZZ(1013), next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
+      F = GF(p)
+      for (d, j) in Hecke._CLASS_NUMBER_ONE_J_INVARIANTS
+        @test Hecke._is_supersingular_prime_field(F(j), GF(p, 2)) ==
+          (kronecker_symbol(ZZ(d), p) != 1)
+      end
+    end
+
+    # every j in F_p; at (191, 150), (239, 68) and (359, 91) all three paths
+    # stay in F_p
+    for p in filter(is_prime, 5:400)
+      F = GF(p)
+      ss = roots(map_coefficients(F, supersingular_polynomial(p)))
+      @test all(F) do j
+        is_supersingular(elliptic_curve_from_j_invariant(j)) == (j in ss)
+      end
+    end
+
+    # large p: roots of Hilbert class polynomials H_{-q} for p inert in
+    # Q(sqrt(-q)) are supersingular (h(-q) odd, so one is in F_p); a point P
+    # with (p + 1)*P != 0 shows that a curve is ordinary
+    for p in [next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
+      F = GF(p)
+      for q in [23, 31, 47, 59, 71, 79, 83, 103, 107, 127]
+        kronecker_symbol(ZZ(-q), p) == -1 || continue
+        r = roots(map_coefficients(F, hilbert_class_polynomial(-q, Zx)))
+        @test all(j -> is_supersingular(elliptic_curve_from_j_invariant(j)), r)
+      end
+      for j in F.(1:20)
+        E = elliptic_curve_from_j_invariant(j)
+        @test !is_zero((p + 1) * rand(rng, E))
+        @test !is_supersingular(E)
+      end
+    end
+
+    # the specialised modular polynomial and one step of a path
+    F = GF(1013, 2)
+    Fx, X = polynomial_ring(F, :X)
+    S, (x, y) = polynomial_ring(ZZ, [:x, :y])
+    Phi2 = map_coefficients(F, classical_modular_polynomial(S, 2))
+    for j in [F(-3375), F(8000), gen(F), gen(F) + 5]
+      a, b, c = Hecke._modular_polynomial_2(j)
+      f = X^3 + a*X^2 + b*X + c
+      @test f == evaluate(Phi2, [Fx(j), X])
+      for back in roots(f)
+        step = Hecke._next_2_isogeny_step(j, back)
+        if step === nothing
+          @test length(roots(divexact(f, X - back))) == 0
+        else
+          @test (X - back) * (X - step[1]) * (X - step[2]) == f
+        end
+      end
+    end
   end
 
   @testset "is_supersingular: different base field types" begin
