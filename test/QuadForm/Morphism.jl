@@ -116,6 +116,35 @@
               automorphism_group_generators(L; ambient_representation = false))
   end
 
+  # Entries beyond Int: the search first runs with Int entries allowing
+  # overflows, which must not reject a candidate. Scaling a form changes
+  # neither its automorphisms nor its isometries.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    J = ZZ[0 1; -1 0]
+    E8 = change_base_ring(ZZ, gram_matrix(root_lattice(:E, 8)))
+    X = ZZ[3 2; 1 1]
+    function order_of_forms(G)
+      C = Hecke.ZLatAutoCtx(G)
+      Hecke.init(C)
+      Hecke.auto(C)
+      return Hecke._get_generators(C)[2]
+    end
+    for e in [63, 64, 100]
+      N = ZZ(2)^e
+      @test automorphism_group_order(integer_lattice(; gram = N * A2)) == 12
+      @test automorphism_group_order(integer_lattice(; gram = N * E8)) ==
+            696729600
+      @test order_of_forms([ZZ[N 1; 1 N]]) == 4
+      @test order_of_forms([N * A2, N * J]) == 6
+      L = integer_lattice(; gram = ZZ[N 1; 1 N])
+      M = integer_lattice(; gram = X * gram_matrix(L) * transpose(X))
+      fl, T = is_isometric_with_isometry(L, M)
+      @test fl
+      @test T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+    end
+  end
+
   # Issue #2311: `ZLatAutoCtx`'s `init` threw `UndefRefError` whenever
   # more than 2 simultaneous Gram matrices were used, because the
   # short-vector length loop inside `init` always wrote to `w[2]`
