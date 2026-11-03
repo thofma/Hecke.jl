@@ -1474,7 +1474,11 @@ cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{Int}, Co::
 
 function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{S, T, U}, Co::ZLatAutoCtx{S, T, U}, overflows::Bool = false) where {S, T, U}
   dep = Ci.depth
-  use_vector_sums = (I > 1 && dep > 0)
+  # With overflows the entries are only known modulo a power of 2, so only
+  # equalities can be trusted. Since this reduction is not injective, the
+  # lookup of the scalar products for the vector sums can fail or find the
+  # wrong entry, so we leave them to the verification with ZZRingElem.
+  use_vector_sums = (I > 1 && dep > 0 && !overflows)
   dim = Hecke.dim(Ci)
   vec = Ci.tmp_vec1
   vec2 = Ci.tmp_vec2
@@ -1674,6 +1678,10 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = j
+      elseif overflows
+        # vectors which are no candidates can pass the test with overflows,
+        # so enough candidates is all we can conclude
+        return true
       else
         # there are too many candidates
         return false
@@ -1685,6 +1693,8 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = -j
+      elseif overflows
+        return true
       else
         # there are too many candidates
         return false
