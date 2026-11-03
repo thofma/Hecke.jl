@@ -1072,9 +1072,7 @@ function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
     end
   end
   is_one(chi) || return ZZ(0)
-  # TODO: use `f^L` once Nemo supports large `ZZRingElem` exponents
-  fL = fits(Int, L) ? f^Int(L) : AbstractAlgebra.internal_power(f, L)
-  is_one(fL) || return ZZ(0)
+  is_one(f^L) || return ZZ(0)
   return L
 end
 
