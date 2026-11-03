@@ -113,9 +113,9 @@
       is_square(discriminant(f)) && is_primitive(f) || continue
       @test is_reduced(Hecke.reduction(f))
     end
-    #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
-    #@test reduce(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
-    #@test reduce(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)
+    @test Hecke.reduction(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
+    @test Hecke.reduction(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
+    @test Hecke.reduction(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)
 
     q1 = binary_quadratic_form(15, -7, 0)
     q1red = Hecke.reduction(q1)
@@ -127,11 +127,47 @@
     @test is_equivalent(q1, q2)
   end
 
-#   @testset "Composition" begin
-#   @test reduce(compose(binary_quadratic_form(2 ,2, 1), binary_quadratic_form(5, 4, 1))) == binary_quadratic_form(1, 0, 1)
-#   @test reduce(compose(binary_quadratic_form(1, 1, 6), binary_quadratic_form(1, 1, 6))) == binary_quadratic_form(1, 1, 6)
-#   @test reduce(compose(binary_quadratic_form(2, -1, 3), binary_quadratic_form(2, -1, 3))) == binary_quadratic_form(2, 1, 3)
-#   end
+  @testset "Definite reduction" begin
+    # the unique reduced form properly equivalent to a definite form
+    f = binary_quadratic_form(10, 34, 31)
+    g, T = Hecke.reduction_with_transformation(f)
+    @test g == binary_quadratic_form(3, 0, 7)
+    @test T == matrix(ZZ, 2, 2, [-2, 1, 1, -1])
+    # b = a or a = c, where the sign of b is fixed by is_reduced
+    for (a, b, c) in [(2, -2, 3), (3, -2, 3), (1, -1, 1), (-2, -2, -3),
+                      (-3, -2, -3), (-1, -1, -1)]
+      f = binary_quadratic_form(a, b, c)
+      @test Hecke.reduction(f) == binary_quadratic_form(a, abs(b), c)
+    end
+    Vs = [matrix(ZZ, 2, 2, [2, 1, 1, 1]), matrix(ZZ, 2, 2, [0, -1, 1, 7]),
+          matrix(ZZ, 2, 2, [-5, 3, 3, -2])]
+    for a in 1:8, b in -12:12, c in 1:8, s in (1, -1)
+      b^2 < 4 * a * c || continue
+      f = binary_quadratic_form(s * a, b, s * c)
+      g, T = Hecke.reduction_with_transformation(f)
+      @test is_reduced(g) && sign(g[1]) == s && Hecke.reduction(f) == g
+      @test Hecke._action(f, T) == g && det(T) == 1
+      @test all(V -> Hecke.reduction(Hecke._action(f, V)) == g, Vs)
+    end
+    # coefficients beyond Int
+    V = matrix(ZZ, 2, 2, [ZZ(2)^70 + 1, ZZ(2)^70, 1, 1])
+    f = Hecke._action(binary_quadratic_form(1, 1, 6), V)
+    g, T = Hecke.reduction_with_transformation(f)
+    @test g == binary_quadratic_form(1, 1, 6) && Hecke._action(f, T) == g
+
+    f = binary_quadratic_form(2, 1, 3)
+    g = binary_quadratic_form(2, -1, 3)
+    @test !is_equivalent(f, g)
+    @test is_equivalent(f, g, proper = false)
+    @test is_equivalent(f, Hecke._action(f, Vs[3]))
+    @test !is_equivalent(f, binary_quadratic_form(-2, 1, -3), proper = false)
+  end
+
+  @testset "Composition" begin
+    @test Hecke.reduction(compose(binary_quadratic_form(2, 2, 1), binary_quadratic_form(5, 4, 1))) == binary_quadratic_form(1, 0, 1)
+    @test Hecke.reduction(compose(binary_quadratic_form(1, 1, 6), binary_quadratic_form(1, 1, 6))) == binary_quadratic_form(1, 1, 6)
+    @test Hecke.reduction(compose(binary_quadratic_form(2, -1, 3), binary_quadratic_form(2, -1, 3))) == binary_quadratic_form(2, 1, 3)
+  end
 
   @testset "Cycle" begin
 
@@ -379,41 +415,60 @@
   end
 
   @testset "Representatives" begin
-    # (-4)
-    # [x^2 + y^2]
-    #
-    # (-163)
-    # [x^2 + x*y + 41*y^2]
-    #
-    # (-12)
-    # [x^2 + 3*y^2, 2*x^2 + 2*x*y + 2*y^2]
-    #
-    # (-16)
-    # [x^2 + 4*y^2, 2*x^2 + 2*y^2]
-    #
-    # (-63)
-    # [x^2 + x*y + 16*y^2, 2*x^2 - x*y + 8*y^2, 2*x^2 + x*y + 8*y^2, 3*x^2 + 3*x*y + 6*y^2, 4*x^2 + x*y + 4*y^2]
-    #
-    # (-23*9)
-    # [x^2 + x*y + 52*y^2,
-    # 2*x^2 - x*y + 26*y^2,
-    # 2*x^2 + x*y + 26*y^2,
-    # 3*x^2 + 3*x*y + 18*y^2,
-    # 4*x^2 - x*y + 13*y^2,
-    # 4*x^2 + x*y + 13*y^2,
-    # 6*x^2 - 3*x*y + 9*y^2,
-    # 6*x^2 + 3*x*y + 9*y^2,
-    # 8*x^2 + 7*x*y + 8*y^2]
-    #
-    # (-23*9, primitive = true)
-    # [x^2 + x*y + 52*y^2,
-    # 2*x^2 - x*y + 26*y^2,
-    # 2*x^2 + x*y + 26*y^2,
-    # 4*x^2 - x*y + 13*y^2,
-    # 4*x^2 + x*y + 13*y^2,
-    # 8*x^2 + 7*x*y + 8*y^2]
     Zx, (x, y) = ZZ["x", "y"]
     poly_to_form(f) = binary_quadratic_form(coeff(f, x^2), coeff(f, x*y), coeff(f, y^2))
+    # d < 0: the reduced positive definite forms
+    R = Hecke.binary_quadratic_form_representatives
+    for (d, forms) in [
+        (-4, [x^2 + y^2]),
+        (-163, [x^2 + x*y + 41*y^2]),
+        (-12, [x^2 + 3*y^2, 2*x^2 + 2*x*y + 2*y^2]),
+        (-16, [x^2 + 4*y^2, 2*x^2 + 2*y^2]),
+        (-63, [x^2 + x*y + 16*y^2, 2*x^2 - x*y + 8*y^2, 2*x^2 + x*y + 8*y^2,
+               3*x^2 + 3*x*y + 6*y^2, 4*x^2 + x*y + 4*y^2]),
+        (-23*9, [x^2 + x*y + 52*y^2, 2*x^2 - x*y + 26*y^2,
+                 2*x^2 + x*y + 26*y^2, 3*x^2 + 3*x*y + 18*y^2,
+                 4*x^2 - x*y + 13*y^2, 4*x^2 + x*y + 13*y^2,
+                 6*x^2 - 3*x*y + 9*y^2, 6*x^2 + 3*x*y + 9*y^2,
+                 8*x^2 + 7*x*y + 8*y^2])]
+      @test issetequal(R(ZZ(d)), poly_to_form.(forms))
+    end
+    forms = [x^2 + x*y + 52*y^2, 2*x^2 - x*y + 26*y^2, 2*x^2 + x*y + 26*y^2,
+             4*x^2 - x*y + 13*y^2, 4*x^2 + x*y + 13*y^2, 8*x^2 + 7*x*y + 8*y^2]
+    @test issetequal(R(ZZ(-23*9), primitive = true), poly_to_form.(forms))
+    @test issetequal(R(ZZ(-3)), [binary_quadratic_form(1, 1, 1)])
+    f1, f2, f3 = binary_quadratic_form.([1, 2, 2], [1, 1, -1], [6, 3, 3])
+    @test issetequal(R(ZZ(-23)), [f1, f2, f3])
+    @test issetequal(R(ZZ(-23), proper = false), [f1, f2])
+    # the counts against the class numbers of the quadratic orders
+    Qx, z = QQ[:z]
+    function order_of_discriminant(d)
+      K, = number_field(z^2 - d*z + (d^2 - d)//4; cached = false)
+      return equation_order(K)
+    end
+    for d in -3:-1:-150
+      is_discriminant(d) || continue
+      G, = picard_group(order_of_discriminant(d))
+      h = order(G)
+      h2 = prod(gcd(e, 2) for e in elementary_divisors(G); init = ZZ(1))
+      # the forms of content n are n times the primitive forms of d/n^2
+      ns = [n for n in 1:isqrt(-d)
+            if mod(d, n^2) == 0 && is_discriminant(divexact(d, n^2))]
+      reps = R(ZZ(d))
+      @test all(f -> is_reduced(f) && discriminant(f) == d, reps)
+      @test length(reps) ==
+        sum(n -> class_number(order_of_discriminant(divexact(d, n^2))), ns)
+      @test length(R(ZZ(d), primitive = true)) == h
+      # an improper class is a proper class together with its inverse
+      @test length(R(ZZ(d), primitive = true, proper = false)) ==
+        divexact(h + h2, 2)
+    end
+    d = ZZ(-1000003)
+    @test length(R(d, primitive = true)) ==
+      class_number(order_of_discriminant(d))
+    for d in [0, -1, -2, -5, -6, 3]
+      @test_throws ArgumentError R(ZZ(d))
+    end
     d = ZZRingElem(73)
     @test length(Hecke.binary_quadratic_form_representatives(d)) ==
       length([4*x^2 + 3*x*y - 4*y^2])
