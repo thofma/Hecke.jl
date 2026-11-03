@@ -623,10 +623,10 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, d
       pols = [x-Fp(r) for r = _roots]
     else
       lp = factor(fp)
-      if any(!isequal(1), values(lp.fac))
+      if any(x -> !isone(x[2]), lp)
         throw(BadPrime(p))
       end
-      pols = collect(keys(lp.fac))
+      pols = [g for (g, _) in lp]
       if deg_limit > 0
         pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
       end

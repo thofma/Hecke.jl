@@ -14,7 +14,7 @@ function principal_generator_eichler(I::AlgAssAbsOrdIdl)
   N = numerator(Nq)
   @assert is_principal(N) "Ideal is not principal"
 
-  primes = collect(keys(factor(N).fac))
+  primes = [p for (p, _) in factor(N)]
   valuations = [ valuation(N, p) for p in primes ]
   w = _norm_equation_valuations_only(O, primes, valuations)
   w = evaluate(w)

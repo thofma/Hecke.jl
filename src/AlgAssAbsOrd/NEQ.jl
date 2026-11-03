@@ -98,7 +98,7 @@ mutable struct NormCache{S, T, U, M, T2, T3}
   end
 
   function NormCache{S, T, U, M, T2, T3}(A::S, orders::Vector{T}, a::T2) where { S <: AbstractAssociativeAlgebra{QQFieldElem}, T, U, M, T2 <: ZZRingElem, T3}
-    primes = collect(keys(factor(a).fac))
+    primes = [p for (p, _) in factor(a)]
     vals = [ valuation(a, p) for p in primes ]
     z = NormCache{S, T, U, M, T2, T3}(A, orders, primes, vals)
     z.a = a
