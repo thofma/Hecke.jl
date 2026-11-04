@@ -386,8 +386,9 @@ end
   # A2: the norm 2k is represented 6 * sum_{d | k} (d/3) times
   A2 = root_lattice(:A, 2)
   t = theta_series(A2, 20)
-  q = gen(parent(t))
-  @test t == 1 + 6*q^2 + 6*q^6 + 6*q^8 + 12*q^14 + 6*q^18 + O(q^21)
+  @test precision(t) == 21
+  @test [coeff(t, k) for k in 0:20] ==
+    [1, 0, 6, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0, 0, 12, 0, 0, 0, 6, 0, 0]
   @test all(1:10) do k
     coeff(t, 2 * k) == 6 * sum(jacobi_symbol(d, 3) for d in divisors(k))
   end
@@ -401,7 +402,8 @@ end
 
   # rank 0, precision 0, and integral norm with half-integral scale
   Z0 = integer_lattice(gram = zero_matrix(QQ, 0, 0))
-  @test theta_series(Z0, 3) == 1 + O(gen(parent(theta_series(Z0, 3)))^4)
+  t = theta_series(Z0, 3)
+  @test precision(t) == 4 && [coeff(t, k) for k in 0:3] == [1, 0, 0, 0]
   t = theta_series(A2, 0)
   @test precision(t) == 1 && coeff(t, 0) == 1
   t = theta_series(rescale(A2, 1//2), 3)
