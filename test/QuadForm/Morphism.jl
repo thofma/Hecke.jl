@@ -145,6 +145,25 @@
     end
   end
 
+  # Entries between 2^62 and 2^63: the default route, through the Weyl
+  # group, cannot enumerate its target vectors with Int; the search proceeds
+  # as for entries beyond Int. Scaling a form does not change its group.
+  let
+    N = ZZ(2)^62
+    s = ZZ(2)^61 + 1
+    A2 = ZZ[2 -1; -1 2]
+    D4 = change_base_ring(ZZ, gram_matrix(root_lattice(:D, 4)))
+    G = ZZ[N 0; 0 N+1]
+    @test automorphism_group_order(integer_lattice(; gram = G)) == 4
+    @test automorphism_group_order(integer_lattice(; gram = s * A2)) == 12
+    L = integer_lattice(; gram = s * D4)
+    @test automorphism_group_order(L) == 1152
+    @test all(g * gram_matrix(L) * transpose(g) == gram_matrix(L)
+              for g in automorphism_group_generators(L))
+    G = diagonal_matrix(ZZ[1;], s * A2)
+    @test automorphism_group_order(integer_lattice(; gram = G)) == 24
+  end
+
   # Issue #2311: `ZLatAutoCtx`'s `init` threw `UndefRefError` whenever
   # more than 2 simultaneous Gram matrices were used, because the
   # short-vector length loop inside `init` always wrote to `w[2]`

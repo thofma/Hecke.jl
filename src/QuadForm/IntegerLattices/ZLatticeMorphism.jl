@@ -149,7 +149,12 @@ function __assert_has_automorphisms(
 
   if maximum(abs.(gram_matrix(_L)))>ZZ(2)^62
     # temporary fix TODO to it in _short_vectors_with_condition
+    # The Weyl route needs the target enumeration, and the projections
+    # enumerate with Int: proceed as for big lattices above.
+    use_weyl = false
+    use_projections = false
     use_target_enum = false
+    compress = false
   end
   if use_weyl && use_projections && use_target_enum
     res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
