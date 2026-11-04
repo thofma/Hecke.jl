@@ -2290,7 +2290,7 @@ end
 
 Given the glue map of a primitive extension of $\mathbb Z$-lattices
 $S \oplus R \subseteq L$, return `L` and the inclusions of
-$S\otimes \QQ $ and $R \otimes \QQ$ into $L \otimes \QQ$.
+$S \otimes \mathbb{Q}$ and $R \otimes \mathbb{Q}$ into $L \otimes \mathbb{Q}$.
 
 This creates $L$ inside the direct sum of $S$ and $R$.
 If $S$ and $R$ are in the same ambient space consider using
