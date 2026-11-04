@@ -102,6 +102,31 @@
   Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = true, do_lll = false, depth = 0);
   @test L.reduced_automorphism_group_order == 18720000
 
+  # Reduced automorphism group order when the Weyl route does not run: the
+  # order of the group divided by that of the Weyl group.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    red(L) = Hecke.reduced_automorphism_group_order(L)
+    # the order computed first, without the Weyl route
+    function red_after_order(L)
+      Hecke.__assert_has_automorphisms(L; use_everything = false,
+                                       use_weyl = false,
+                                       use_projections = false,
+                                       use_target_enum = false)
+      return red(L)
+    end
+    @test red(integer_lattice(; gram = diagonal_matrix(ZZ[1;], A2))) == 2
+    @test red(integer_lattice(; gram = ZZ(2)^63 * A2)) == 12
+    @test red(integer_lattice(; gram = zero_matrix(ZZ, 0, 0))) == 1
+    G = diagonal_matrix(A2, A2, ZZ[5;])
+    @test red_after_order(integer_lattice(; gram = G)) ==
+          red(integer_lattice(; gram = G)) == 16
+    L = integer_lattice(; gram = diagonal_matrix(A2, ZZ[3;]))
+    @test red(rescale(L, -1)) == 4
+    # a non-integral lattice: roots are taken in the same rescaling
+    @test red_after_order(rescale(L, 3//2)) == red(rescale(L, 3//2))
+  end
+
   @testset "Gram matrix compression bounds" begin
     # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
     G = matrix(ZZ, [

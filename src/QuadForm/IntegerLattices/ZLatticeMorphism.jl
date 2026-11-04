@@ -543,13 +543,26 @@ function reduced_automorphism_group_order(
   if isdefined(L, :reduced_automorphism_group_order)
     return L.reduced_automorphism_group_order
   end
-  if isdefined(L, :automorphism_group_order)
-    wg_order = _weyl_group_order(root_lattice_recognition(L)[1])
-    L.reduced_automorphism_group_order = divexact(L.automorphism_group_order, wg_order)
-  end
   @req is_definite(L) "The lattice must be definite"
-  # overwrite use_weyl keyword, to compute the reduced information
-  assert_has_automorphisms(L; kwargs..., use_weyl = true)
+  if !isdefined(L, :automorphism_group_order)
+    # overwrite use_weyl keyword, to compute the reduced information
+    assert_has_automorphisms(L; kwargs..., use_weyl = true)
+  end
+  if !isdefined(L, :reduced_automorphism_group_order)
+    # Not set by the Weyl route (order computed before, norm one vectors split
+    # off, or entries too large). O(L) is the semidirect product of the Weyl
+    # group and the reduced group, with roots taken in the integral positive
+    # definite rescaling, as in __assert_has_automorphisms.
+    root_types = Tuple{Symbol, Int}[]
+    if rank(L) > 0
+      G = gram_matrix(L)
+      d = sign(G[1, 1]) * denominator(G)
+      GL = numerator(gram_matrix(isone(d) ? L : rescale(L, 1//d; cached=false)))
+      root_types = root_lattice_recognition(integer_lattice(; gram=GL))[1]
+    end
+    L.reduced_automorphism_group_order = divexact(L.automorphism_group_order,
+                                                  _weyl_group_order(root_types))
+  end
   return L.reduced_automorphism_group_order
 end
 
