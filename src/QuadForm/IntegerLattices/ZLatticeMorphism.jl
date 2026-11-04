@@ -110,9 +110,11 @@ function __assert_has_automorphisms(
     compress = false
   end
   vector_set = []
-  # Split off norm 1 vectors
-  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
-    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
+  # Split off norm 1 vectors, which needs an integral lattice: the one with
+  # Gram matrix GL, in the basis of L
+  if use_norm_one && (LGL = integer_lattice(; gram = GL);
+                      sv = short_vectors(LGL, 0, Int(1)); length(sv) > 0)
+    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(LGL, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
                                compress, use_target_enum, allow_short_vectors_direct)
