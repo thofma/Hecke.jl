@@ -44,8 +44,11 @@ function inv(x::AssociativeAlgebraOrderElem)
   return y
 end
 
-function ^(x::AssociativeAlgebraOrderElem, n::IntegerUnion)
-  return parent(x)(elem_in_algebra(x; copy = false)^n; check = n < 0)
+# avoid ambiguities
+for T in [Integer, ZZRingElem]
+  @eval function ^(x::AssociativeAlgebraOrderElem, n::$T)
+    return parent(x)(elem_in_algebra(x; copy = false)^n; check = n < 0)
+  end
 end
 
 function divexact(x::AssociativeAlgebraOrderElem, y::AssociativeAlgebraOrderElem;

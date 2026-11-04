@@ -37,6 +37,7 @@ import ..Hecke:
   SamplerTrivial,
   ZZ,
   ZZRing,
+  ZZRingElem,
   +, -, *, ^, ==,
   add!,
   addmul!,
