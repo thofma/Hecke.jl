@@ -104,7 +104,16 @@ function _short_vectors_with_condition_preprocessing(L::ZZLat; use_dual::Bool=fa
   return _short_vectors_with_condition_preprocessing(L, fundamental_roots, weyl_vector, fixed_space, isotypic_coinvariant_space, sort, use_dual)
 end
 
+# Stored on L: the isometry test of definite lattices keeps its lattices
+# (see _isometry_test_data), so a lattice tested against many is prepared once
 function _short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat; use_dual::Bool=false)
+  use_dual && return __short_vectors_with_condition_preprocessing_with_root_data(L, true)
+  return get_attribute!(L, :short_vectors_with_condition_preprocessing) do
+    __short_vectors_with_condition_preprocessing_with_root_data(L, false)
+  end
+end
+
+function __short_vectors_with_condition_preprocessing_with_root_data(L::ZZLat, use_dual::Bool)
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(L)
   fixed_space, isotypic_coinvariant_space, weyl_vector = _weyl_group(L, root_types, fundamental_roots)
   return _short_vectors_with_condition_preprocessing(L, fundamental_roots, weyl_vector, fixed_space, isotypic_coinvariant_space, :rank, use_dual), (root_types, fundamental_roots), fixed_space

@@ -638,6 +638,40 @@ end
 # assumes rank >0, definite, no genus check
 _is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
 
+# The data of the definite isometry test that depend on the lattice L of
+# positive rank alone: the sign s of its Gram matrix G, the rational r with
+# s * G = r * P for an integral primitive matrix P, the LLL reduction
+# Plll = T * P * transpose(T) with T, and the lattice with Gram matrix Plll.
+# A lattice returned by lll(L) is already reduced (with the same parameters
+# by default, through -G when G is negative definite), so it is not reduced
+# again; the search is correct for any basis, only its speed depends on it
+@attr Tuple{Int, QQFieldElem, ZZMatrix, ZZMatrix, ZZLat} function _isometry_test_data(L::ZZLat)
+  M, d = _integral_split_gram(L)
+  s = M[1, 1] < 0 ? -1 : 1
+  c = content(M)
+  P = divexact(s * M, c)
+  if get_attribute(L, :is_lll_reduced, false)
+    Plll, T = P, identity_matrix(ZZ, nrows(P))
+  else
+    Plll, T = lll_gram_with_transform(P)
+  end
+  @hassert :Lattice 1 T * (s * M) * transpose(T) == Plll * c
+  return s, d//c, Plll, T, integer_lattice(gram = Plll; cached = false)
+end
+
+# For the lattice L of _isometry_test_data: the number of its vectors of norm
+# one, up to sign, and if there are any, the sublattice S they span and its
+# orthogonal complement in L. The Gram matrix of L is integral, positive
+# definite and LLL-reduced, so the vectors are enumerated without reducing it
+# again (as short_vectors would)
+@attr Tuple{Int, Union{Nothing, Tuple{ZZLat, ZZLat}}} function _isometry_test_norm_one(L::ZZLat)
+  G = change_base_ring(ZZ, gram_matrix(L))
+  sv = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, 1, nothing, one(ZZ))
+  isempty(sv) && return 0, nothing
+  S, T, _, _ = _norm_one_sublattice_automorphism_group(L, sv; doauto = false)
+  return length(sv), (S, T)
+end
+
 function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, use_norm_one=true)
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
@@ -648,56 +682,29 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     return true, zero_matrix(QQ, 0, 0)
   end
 
-  i = sign(gram_matrix(L)[1,1])
-  j = sign(gram_matrix(M)[1,1])
-  @req i==j "The lattices must have the same signatures"
+  # What depends on one lattice alone is stored on it, so that testing one
+  # lattice against many (as the genus enumeration does) computes it once
+  s, rL, GLlll, TL, _L1 = _isometry_test_data(L)
+  t, rM, GMlll, TM, _L2 = _isometry_test_data(M)
+  @req s == t "The lattices must have the same signatures"
 
-  if i < 0
-    s = -1
-  else
-    s = 1
-  end
-
-  GL = gram_matrix(L)
-  dL = denominator(GL)
-  GLint = change_base_ring(ZZ, s * dL * GL)
-  cL = content(GLint)
-  GLint = divexact!.(GLint, cL)
-
-  GM = gram_matrix(M)
-  dM = denominator(GM)
-  GMint = change_base_ring(ZZ, s * dM * GM)
-  cM = content(GMint)
-  GMint = divexact!.(GMint, cM)
-
-  # GLint, GMint are integral, primitive scalings of GL and GM
-  # If they are isometric, then the scalars must be identical.
-  if dL//cL != dM//cM
+  # GLlll, GMlll are LLL-reduced integral, primitive scalings of the Gram
+  # matrices of L and M; if they are isometric, the scalars are identical
+  if rL != rM
     return false, zero_matrix(QQ, 0, 0)
   end
 
-  # Now compute LLL reduced gram matrices
-  GLlll, TL = lll_gram_with_transform(GLint)
-  @hassert :Lattice 1 TL * change_base_ring(ZZ, s*dL*GL) * transpose(TL) == GLlll *cL
-  GMlll, TM = lll_gram_with_transform(GMint)
-  @hassert :Lattice 1 TM * change_base_ring(ZZ, s*dM*GM) * transpose(TM) == GMlll *cM
-
   # Setup for Plesken--Souvignier
-
-  G1 = ZZMatrix[GLlll]
-  G2 = ZZMatrix[GMlll]
 
   fl = (all(fits(Int,i) for i in GLlll)) && (all(fits(Int,i) for i in GMlll))
   if fl
-    _L1 = integer_lattice(gram=G1[1];cached=false)
-    _L2 = integer_lattice(gram=G2[1];cached=false)
     if use_norm_one
-      sv1 = short_vectors(_L1, 0, Int(1))
-      sv2 = short_vectors(_L2, 0, Int(1))
-      length(sv1) == length(sv2) || return false, zero_matrix(QQ,0,0)
-      if length(sv1)>0
-        S1, T1, _, _ = _norm_one_sublattice_automorphism_group(_L1, sv1; doauto=false)
-        S2, T2, _, _ = _norm_one_sublattice_automorphism_group(_L2, sv2; doauto=false)
+      n1, ST1 = _isometry_test_norm_one(_L1)
+      n2, ST2 = _isometry_test_norm_one(_L2)
+      n1 == n2 || return false, zero_matrix(QQ,0,0)
+      if n1 > 0
+        S1, T1 = ST1
+        S2, T2 = ST2
         b,T = is_isometric_with_isometry(T1,T2)
         !b && return false, zero_matrix(QQ,0,0)
         B1 = vcat(basis_matrix(S1),basis_matrix(T1))

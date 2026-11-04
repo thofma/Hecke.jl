@@ -745,6 +745,51 @@ end
 
 end
 
+@testset "isometry testing, data stored on the lattices" begin
+  # Testing one lattice against many reuses what the definite isometry test
+  # stores on each lattice: the answers, the isometries and the stored data
+  # stay the same. The genus of E8 + E8 has two classes, E8 + E8 and D16+
+  # (Witt; Conway-Sloane, Chapter 16); copies under fixed unimodular matrices
+  E8 = root_lattice(:E, 8)
+  reps = genus_representatives(direct_sum(E8, E8)[1])
+  @test length(reps) == 2
+  U = identity_matrix(ZZ, 16)
+  for i in 1:15
+    U[i, i + 1] = 1
+  end
+  for L in reps
+    for _ in 1:2, V in [U, transpose(U)]
+      M = integer_lattice(gram = V * gram_matrix(L) * transpose(V))
+      fl, T = is_isometric_with_isometry(L, M)
+      @test fl && T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+    end
+  end
+  @test !is_isometric(reps[1], reps[2]) && !is_isometric(reps[2], reps[1])
+
+  # the stored preprocessing is not changed by the tests that use it
+  L = reps[1]
+  P = Hecke._isometry_test_data(L)[5]
+  pre = get_attribute(P, :short_vectors_with_condition_preprocessing)
+  @test pre !== nothing
+  before = deepcopy(pre[1][3:end])
+  @test all(is_isometric(L, integer_lattice(gram = gram_matrix(L))) for _ in 1:2)
+  @test !is_isometric(L, reps[2])
+  @test pre[1][3:end] == before
+
+  # a lattice from lll is used as it is, also when negative definite
+  for K in [L, rescale(L, -1)]
+    Kr = lll(integer_lattice(gram = U * gram_matrix(K) * transpose(U)))
+    @test isone(Hecke._isometry_test_data(Kr)[4])
+    fl, T = is_isometric_with_isometry(K, Kr)
+    @test fl && T * gram_matrix(Kr) * transpose(T) == gram_matrix(K)
+  end
+
+  # negative definite, scaled, and of opposite signs
+  @test is_isometric(rescale(L, -1), rescale(L, -1; cached = false))
+  @test !is_isometric(L, rescale(L, 3))
+  @test_throws ArgumentError is_isometric_with_isometry(L, rescale(L, -1))
+end
+
 @testset "direct sums" begin
   L1 = root_lattice(:A, 6)
   L2 = root_lattice(:E, 7)
