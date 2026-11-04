@@ -141,7 +141,7 @@ function _presentation_generic(F, r::T, n::Int) where T <: Union{ZZRingElem, Int
   xZx = ZZ["x"][2]
   phi = cyclotomic(r, xZx)
   lf = factor(F, phi)
-  lF = collect(keys(lf.fac))
+  lF = [p for (p, _) in lf]
   ind = 1
   st = steinitz_number(lF[1])
   for i = 2:length(lF)

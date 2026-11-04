@@ -2144,7 +2144,7 @@ function integral_coprime_representative(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, a:
   end
 
   fac_a = factor(a)
-  primes = collect(keys(fac_a.fac))
+  primes = [p for (p, _) in fac_a]
   q = prod(primes)
 
   x = A()

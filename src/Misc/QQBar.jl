@@ -7,7 +7,7 @@ function _primitive_element(a::Vector{QQBarFieldElem})
     g = minpoly(Globals.Qx, a[i])
     f = minpoly(Globals.Qx, pe)
     k, _ = number_field(f, check = false, cached = false)
-    lf = collect(keys(factor(k, g).fac))
+    lf = [p for (p, _) in factor(k, g)]
     for j = 1:length(lf)
       cur = pe
       h = map_coefficients(x->Qx(x)(cur), lf[j])

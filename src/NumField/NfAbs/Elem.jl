@@ -326,10 +326,7 @@ function factor(f::PolyRingElem{AbsSimpleNumFieldElem}; algo::Symbol=:default)
   iszero(f) && error("poly is zero")
 
   if degree(f) == 0
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(leading_coefficient(f))
-    return r
+    return Fac(Kx(leading_coefficient(f)), Dict{typeof(f), Int}())
   end
   sqf = factor_squarefree(f)
   fac = Dict{typeof(f), Int}()
@@ -349,11 +346,8 @@ function factor(f::PolyRingElem{AbsSimpleNumFieldElem}; algo::Symbol=:default)
       fac[g] = v
     end
   end
-  r = Fac{typeof(f)}()
-  r.fac = fac
   #The unit is just the leading coefficient of f
-  r.unit = Kx(leading_coefficient(f))
-  return r
+  return Fac(Kx(leading_coefficient(f)), fac)
 end
 
   #assumes that f is a squarefree polynomial

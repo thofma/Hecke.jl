@@ -886,7 +886,7 @@ function integral_model(E::EllipticCurve{<:AbstractAlgebra.Generic.RationalFunct
         if e > 0
           continue
         end
-        e = floor(Int, minimum([get(facs[i].fac, p, 0)//wts[i] for i in 1:5 if !is_zero(aiorig[i])]))
+        e = floor(Int, minimum([(p in facs[i] ? facs[i][p] : 0)//wts[i] for i in 1:5 if !is_zero(aiorig[i])]))
         ai = [ai[i]/K(p)^(Int(e * wts[i])) for i in 1:5]
       end
     end

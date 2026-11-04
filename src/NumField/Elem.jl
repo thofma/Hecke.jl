@@ -556,7 +556,7 @@ function is_irreducible(f::PolyRingElem{<: NumFieldElem})
   is_zero(f) && return false
   # TODO (easy): We can do better then this. First do a squarefree factorization
   lf = factor(f)
-  return sum(values(lf.fac)) == 1
+  return sum(e for (_, e) in lf; init = 0) == 1
 end
 
 function AbstractAlgebra.factor(f::PolyRingElem{<: NumFieldElem})
@@ -565,7 +565,7 @@ function AbstractAlgebra.factor(f::PolyRingElem{<: NumFieldElem})
 
   fKa = map_coefficients(inv(mKa), f, cached = false)
   lf = factor(fKa)
-  res = Fac(map_coefficients(mKa, lf.unit, parent = parent(f)), Dict(map_coefficients(mKa, k, parent = parent(f)) => v for (k,v) = lf.fac))
+  res = Fac(map_coefficients(mKa, unit(lf), parent = parent(f)), Dict(map_coefficients(mKa, k, parent = parent(f)) => v for (k,v) in lf))
 
   return res
 end
@@ -573,7 +573,7 @@ end
 function roots(f::PolyRingElem{<: NumFieldElem})
   lf = factor(f)
   @assert degree(unit(lf)) == 0
-  return elem_type(base_ring(f))[-constant_coefficient(x)*inv(leading_coefficient(x)) for x = keys(lf.fac) if degree(x) == 1]
+  return elem_type(base_ring(f))[-constant_coefficient(x)*inv(leading_coefficient(x)) for (x, _) in lf if degree(x) == 1]
 end
 
 ################################################################################

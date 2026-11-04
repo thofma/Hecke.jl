@@ -1062,13 +1062,11 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
   end
 
   if degree(f) == 0
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(leading_coefficient(f))
+    d = Dict{typeof(f), Int}()
     if val > 0
-      r.fac[gen(Kx)] = val
+      d[gen(Kx)] = val
     end
-    return r
+    return Fac(Kx(leading_coefficient(f)), d)
   end
 
   f_orig = deepcopy(f)
@@ -1082,13 +1080,11 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
 
   if degree(f) == 1
     multip = div(degree(f_orig), degree(f))
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//leading_coefficient(f)) => multip)
-    r.unit = one(Kx) * leading_coefficient(f_orig)
+    d = Dict{typeof(f), Int}(f*(1//leading_coefficient(f)) => multip)
     if val > 0
-      r.fac[gen(Kx)] = val
+      d[gen(Kx)] = val
     end
-    return r
+    return Fac(one(Kx) * leading_coefficient(f_orig), d)
   end
 
   f = f*(1//leading_coefficient(f))
@@ -1108,7 +1104,7 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
   end
   @vtime :PolyFactor 2 fac = factor(N)
 
-  res = Dict{PolyRingElem{AbsNonSimpleNumFieldElem}, Int64}()
+  res = Dict{typeof(f), Int}()
 
   for (i, _) in fac
     t = change_base_ring(K, i, parent = Kx)
@@ -1117,15 +1113,12 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
     res[t] = valuation(f_orig, t)
   end
 
-  r = Fac{typeof(f)}()
-  r.fac = res
-  r.unit = Kx(1)
   if val > 0
-    r.fac[gen(Kx)] = val
+    res[gen(Kx)] = val
   end
 
-  r.unit = one(Kx)* leading_coefficient(f_orig)//prod((leading_coefficient(p) for (p, e) in r))
-  return r
+  u = one(Kx)* leading_coefficient(f_orig)//prod((leading_coefficient(p) for p in keys(res)))
+  return Fac(u, res)
 end
 
 ################################################################################
