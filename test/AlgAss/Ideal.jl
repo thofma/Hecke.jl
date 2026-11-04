@@ -47,6 +47,38 @@
     @test J == one(A) * A
   end
 
+  @testset "Two-sided stability" begin
+    # Check both sides for strict one-sided ideals and the unit and zero ideals.
+    A = matrix_algebra(QQ, 2)
+    e = A(QQ[1 0; 0 0])
+    L = left_ideal(A, [e])
+    R = right_ideal(A, [e])
+    U = twosided_ideal(A, [one(A)])
+    Z = twosided_ideal(A, [zero(A)])
+
+    @test is_left_ideal(L)
+    @test !is_right_ideal(L)
+    @test Hecke._test_ideal_sidedness(L, :left)
+    @test !Hecke._test_ideal_sidedness(L, :right)
+    @test !Hecke._test_ideal_sidedness(L, :twosided)
+
+    @test !is_left_ideal(R)
+    @test is_right_ideal(R)
+    @test !Hecke._test_ideal_sidedness(R, :left)
+    @test Hecke._test_ideal_sidedness(R, :right)
+    @test !Hecke._test_ideal_sidedness(R, :twosided)
+
+    for I in (U, Z)
+      for side in (:left, :right, :twosided)
+        @test Hecke._test_ideal_sidedness(I, side)
+      end
+      @test_throws ArgumentError Hecke._test_ideal_sidedness(I, :invalid)
+    end
+
+    @test_throws ArgumentError quo(U, L)
+    @test_throws ArgumentError quo(U, R)
+  end
+
   @testset "Quotients" begin
     Qx, x = QQ["x"]
     # f = x^2 + 1
