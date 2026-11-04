@@ -364,3 +364,63 @@ end
     @test length(x) == 8
   end
 end
+
+@testset "Theta series" begin
+  # Classical formulas (Conway-Sloane, Chapter 2, Section 2.3, and Chapter 4),
+  # the vectors counted by short_vectors, and the input checks
+  E8 = root_lattice(:E, 8)
+  t = theta_series(E8, 12)
+  @test precision(t) == 13
+  @test coeff(t, 0) == 1
+  @test all(1:12) do k
+    coeff(t, k) == (isodd(k) ? 0 : 240 * divisor_sigma(div(k, 2), 3))
+  end
+
+  # Jacobi's four-square theorem
+  Z4 = integer_lattice(gram = identity_matrix(QQ, 4))
+  t = theta_series(Z4, 20)
+  @test all(1:20) do k
+    coeff(t, k) == 8 * sum(d for d in divisors(k) if !is_divisible_by(d, 4))
+  end
+
+  # A2: the norm 2k is represented 6 * sum_{d | k} (d/3) times
+  A2 = root_lattice(:A, 2)
+  t = theta_series(A2, 20)
+  q = gen(parent(t))
+  @test t == 1 + 6*q^2 + 6*q^6 + 6*q^8 + 12*q^14 + 6*q^18 + O(q^21)
+  @test all(1:10) do k
+    coeff(t, 2 * k) == 6 * sum(jacobi_symbol(d, 3) for d in divisors(k))
+  end
+  @test parent(t) === parent(theta_series(Z4, 20))
+
+  # negative definite, and a badly reduced basis of Z^2
+  @test theta_series(rescale(A2, -1), 20) == t
+  Z2 = lattice(quadratic_space(QQ, 2), matrix(QQ, 2, 2, [1, 0, ZZ(10)^20, 1]))
+  I2 = integer_lattice(gram = identity_matrix(QQ, 2))
+  @test theta_series(Z2, 5) == theta_series(I2, 5)
+
+  # rank 0, precision 0, and integral norm with half-integral scale
+  Z0 = integer_lattice(gram = zero_matrix(QQ, 0, 0))
+  @test theta_series(Z0, 3) == 1 + O(gen(parent(theta_series(Z0, 3)))^4)
+  t = theta_series(A2, 0)
+  @test precision(t) == 1 && coeff(t, 0) == 1
+  t = theta_series(rescale(A2, 1//2), 3)
+  @test [coeff(t, k) for k in 0:3] == [1, 6, 0, 6]
+
+  # against short_vectors and kissing_number on lattices of the database
+  D = lattice_database()
+  for i in 1:60
+    L = lattice(D, i)
+    is_integral(norm(L)) || continue
+    n = Int(minimum(L)) + 3
+    t = theta_series(L, n)
+    sv = short_vectors(L, n)
+    @test all(k -> coeff(t, k) == 2 * count(v -> v[2] == k, sv), 1:n)
+    @test coeff(t, Int(minimum(L))) == kissing_number(L)
+    @test Hecke._theta_series(L, n) == [count(v -> v[2] == k, sv) for k in 1:n]
+  end
+
+  @test_throws ArgumentError theta_series(hyperbolic_plane_lattice(), 3)
+  @test_throws ArgumentError theta_series(rescale(A2, 1//4), 3)
+  @test_throws ArgumentError theta_series(A2, -1)
+end

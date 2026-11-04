@@ -203,6 +203,7 @@ center_density(::ZZLat)
 density(::ZZLat)
 hermite_number(::ZZLat)
 kissing_number(L::ZZLat)
+theta_series(L::ZZLat, n::Int)
 ```
 
 ### Vectors with given square and divisibility

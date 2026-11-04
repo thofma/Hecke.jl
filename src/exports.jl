@@ -988,6 +988,7 @@ export tates_algorithm_global
 export tates_algorithm_local
 export tensor_product
 export theta
+export theta_series
 export tidy_model
 export torsion_bound
 export torsion_free_rank
