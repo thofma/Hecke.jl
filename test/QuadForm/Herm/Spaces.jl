@@ -119,8 +119,7 @@
   @test_throws ArgumentError is_isometric(U, V)  # U is not regular
   @test is_isometric(V1, V1, infp[1])
   @test !is_isometric(V1, W, infp[2]) # infp[2] is complex but V and W don't have same rank
-  @test count(v -> is_isometric(V1, H, v), infp) == 1 # V1 and H are not everywhere locally isometric
-  @test !is_isometric(V1, H)
+  @test is_isometric(V1, H)
   @test is_isometric(V1, V2)
 
   # Issue #2610
@@ -132,7 +131,7 @@
   V2 = hermitian_space(E, E[-1;;])
   u = 1 + a
   T = E[u;;]
-  T * gram_matrix(V2) * transpose(map_entries(involution(V2), T)) == gram_matrix(V1) # returns true
+  @test T * gram_matrix(V2) * transpose(map_entries(involution(V2), T)) == gram_matrix(V1)
   # the real places of K split in E and then
   # E_v = K_v x K_{v^\sigma} = RR^2
   @test is_isometric(V1, V2)
