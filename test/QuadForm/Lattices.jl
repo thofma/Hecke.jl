@@ -399,3 +399,95 @@ end
   L = lattice(rescale(V, b+inv(b)))
   @test length(unique!([L, intersect(L, L)])) == 1
 end
+
+@testset "Several forms" begin
+  # Automorphisms and isometries of lattices over number fields which also
+  # preserve forms on the ambient space
+  function closure(gs)
+    id = identity_matrix(base_ring(gs[1]), nrows(gs[1]))
+    seen = Set([id])
+    todo = [id]
+    while !isempty(todo)
+      h = pop!(todo)
+      for g in gs
+        k = h * g
+        if !(k in seen)
+          push!(seen, k)
+          push!(todo, k)
+        end
+      end
+    end
+    return collect(seen)
+  end
+
+  # Lattice 214 from the database and its other genus representative
+  Qx, x = polynomial_ring(QQ, "x")
+  K, a = number_field(x^2 - x - 1, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  E, b = number_field(t^2 - a + 3, "b", cached = false)
+  D = identity_matrix(E, 3)
+  gene = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [1, 0, 0]), map(E, [0, 1, -1]), map(E, [0, -1//2*a*b - 1//2*a + 3//2, 0])]
+  L = hermitian_lattice(E, gene, gram = D)
+  L1, L2 = genus_representatives(L)
+  inv_ = involution(L1)
+  star(g) = Hecke._map(transpose(g), inv_)
+
+  # E-linear automorphisms preserving the hermitian form preserve its multiples
+  o = automorphism_group_order(L1)
+  @test automorphism_group_order(L1, [D]) == o
+  @test automorphism_group_order(L1, [b * D]) == o
+
+  # Another form: the subgroup of the automorphisms fixing it
+  F = diagonal_matrix(E, [E(1), E(2), E(3)])
+  gens = automorphism_group_generators(L1, [F])
+  @test all(g * F * star(g) == F && g * D * star(g) == D for g in gens)
+  @test automorphism_group_order(L1, [F]) ==
+        count(g -> g * F * star(g) == F,
+              closure(automorphism_group_generators(L1)))
+  B = basis_matrix_of_rational_span(L1)
+  G = gram_matrix_of_rational_span(L1)
+  FB = B * F * star(B)
+  gs = automorphism_group_generators(L1, [F]; ambient_representation = false)
+  @test all(g * G * star(g) == G && g * FB * star(g) == FB for g in gs)
+
+  fl, T = is_isometric_with_isometry(L1, [F], L1, [F])
+  @test fl
+  @test T * G * star(T) == G && T * FB * star(T) == FB
+  @test !is_isometric(L1, [F], L1, [2 * F])
+  @test is_isometric(L1, [D], L2, [D]) == is_isometric(L1, L2)
+
+  # The trace forms Tr(h(x, y)) and Tr(w h(x, y)), w purely imaginary: one
+  # symmetric positive definite, one antisymmetric
+  w = b - inv_(b)
+  Z1 = Hecke.Zforms(L1, [E(1), w])[1]
+  Z2 = Hecke.Zforms(L2, [E(1), w])[1]
+  @test is_symmetric(Z1[1]) && Z1[2] == -transpose(Z1[2])
+  n = nrows(Z1[1])
+  U = identity_matrix(ZZ, n)
+  for i in 1:(n - 1)
+    U[i, i + 1] = mod(i, 3) - 1
+  end
+  X = transpose(U) * U * U
+  ZL(Z) = integer_lattice(; gram = Z[1])
+  XZ = [X * z * transpose(X) for z in Z1]
+  fl, T = is_isometric_with_isometry(ZL(Z1), Z1[2:2], ZL(XZ), XZ[2:2])
+  @test fl
+  @test all(T * XZ[k] * transpose(T) == Z1[k] for k in 1:2)
+  @test is_isometric(ZL(Z1), Z1[2:2], ZL(Z2), Z2[2:2]) == is_isometric(L1, L2)
+
+  # Lattice 441 from the database and its genus
+  K, a = number_field(x - 1, "a", cached = false)
+  Kt, t = polynomial_ring(K, "t")
+  E, b = number_field(t^2 + 11, "b", cached = false)
+  D = identity_matrix(E, 4)
+  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [5//2*b + 121//2, 1//2*b + 55//2, 0, 0]), map(E, [-1, -3, -1, 0]), map(E, [987//2*b - 2407//2, 475//2*b - 679//2, 0, 2*b + 62]), map(E, [3906*b - 16305, 2074*b - 5477, 0, 70*b + 595])]
+  L = hermitian_lattice(E, gens, gram = D)
+  for M in representatives(genus(L))
+    @test is_isometric(L, [D], M, [D]) == is_isometric(L, M)
+    @test automorphism_group_order(M, [D]) == automorphism_group_order(M)
+  end
+
+  @test_throws ArgumentError automorphism_group_order(L1,
+                                                      [identity_matrix(E, 2)])
+  @test_throws ArgumentError is_isometric(L, [D], L, [D, D])
+end

@@ -104,6 +104,18 @@ automorphism_group_order(L::ZZLat)
 is_isometric(L::ZZLat, M::ZZLat)
 is_locally_isometric(L::ZZLat, M::ZZLat, p::Int)
 ```
+
+### Several forms
+The automorphisms and isometries which also preserve further bilinear forms,
+not necessarily symmetric, given by their Gram matrices with respect to the
+basis of the lattice.
+
+```@docs
+automorphism_group_generators(::ZZLat, ::Vector{<:MatElem})
+automorphism_group_order(::ZZLat, ::Vector{<:MatElem})
+is_isometric_with_isometry(::ZZLat, ::Vector{<:MatElem}, ::ZZLat, ::Vector{<:MatElem})
+is_isometric(::ZZLat, ::Vector{<:MatElem}, ::ZZLat, ::Vector{<:MatElem})
+```
 # Root lattices
 ```@docs
 root_lattice_recognition(L::ZZLat)

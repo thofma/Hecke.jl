@@ -492,28 +492,33 @@ function automorphism_group_generators(
   if !ambient_representation
     return QQMatrix[ change_base_ring(QQ, g) for g in gens]
   else
-    # Now translate to get the automorphisms with respect to basis_matrix(L)
-    bm = basis_matrix(L)
-    V = ambient_space(L)
-    if rank(L) == rank(V)
-      bminv = inv(bm)
-      res = QQMatrix[bminv * change_base_ring(QQ, g) * bm for g in gens]
-    else
-      # Extend trivially to the orthogonal complement of the rational span
-      !is_regular(V) &&
-        error(
-          """Can compute ambient representation only if ambient space is
-             regular""")
-      C = orthogonal_complement(V, basis_matrix(L))
-      C = vcat(basis_matrix(L), C)
-      Cinv = inv(C)
-      D = identity_matrix(QQ, rank(V) - rank(L))
-      res = QQMatrix[Cinv * diagonal_matrix(change_base_ring(QQ, g), D) * C for g in gens]
-    end
-    @hassert :Lattice 1 all(g * gram_matrix(V) * transpose(g) == gram_matrix(V)
-                            for g in res)
-    return res
+    return _automorphisms_in_ambient_space(L, gens)
   end
+end
+
+# Translate automorphisms given with respect to the basis of L to the ambient
+# space, extended by the identity on the orthogonal complement.
+function _automorphisms_in_ambient_space(L::ZZLat, gens)
+  bm = basis_matrix(L)
+  V = ambient_space(L)
+  if rank(L) == rank(V)
+    bminv = inv(bm)
+    res = QQMatrix[bminv * change_base_ring(QQ, g) * bm for g in gens]
+  else
+    # Extend trivially to the orthogonal complement of the rational span
+    !is_regular(V) &&
+      error(
+        """Can compute ambient representation only if ambient space is
+           regular""")
+    C = orthogonal_complement(V, basis_matrix(L))
+    C = vcat(basis_matrix(L), C)
+    Cinv = inv(C)
+    D = identity_matrix(QQ, rank(V) - rank(L))
+    res = QQMatrix[Cinv * diagonal_matrix(change_base_ring(QQ, g), D) * C for g in gens]
+  end
+  @hassert :Lattice 1 all(g * gram_matrix(V) * transpose(g) == gram_matrix(V)
+                          for g in res)
+  return res
 end
 
 # documented in ../Lattices.jl
@@ -718,11 +723,11 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     fl, CLsmall, CMsmall = _try_iso_setup_small(grams1, grams2, depth = depth, bacher_depth = bacher_depth; vector_set1=V1, vector_set2=V2, invariants1, invariants2)
   end
   if fl
-    b, _T = isometry(CLsmall, CMsmall)
+    b, _T = _isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
   else
     CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
-    b, T = isometry(CL, CM)
+    b, T = _isometry(CL, CM)
   end
 
   if b
@@ -733,6 +738,209 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
   else
     return false, zero_matrix(QQ, 0, 0)
   end
+end
+
+################################################################################
+#
+#  Several forms
+#
+################################################################################
+
+# Scale the k-th forms of G and H by a common positive rational number, so that
+# they become integral and primitive together; this changes no isometry.
+function _integral_forms(G::Vector{QQMatrix}, H::Vector{QQMatrix})
+  @req length(G) == length(H) "The lists must have the same length"
+  GZ = ZZMatrix[]
+  HZ = ZZMatrix[]
+  for (g, h) in zip(G, H)
+    d = lcm(denominator(g), denominator(h))
+    gZ = change_base_ring(ZZ, d * g)
+    hZ = change_base_ring(ZZ, d * h)
+    c = gcd(content(gZ), content(hZ))
+    if !iszero(c)
+      gZ = divexact(gZ, c)
+      hZ = divexact(hZ, c)
+    end
+    push!(GZ, gZ)
+    push!(HZ, hZ)
+  end
+  return GZ, HZ
+end
+
+function _integral_forms(G::Vector{QQMatrix})
+  GZ = ZZMatrix[]
+  for g in G
+    gZ = change_base_ring(ZZ, denominator(g) * g)
+    c = content(gZ)
+    push!(GZ, iszero(c) ? gZ : divexact(gZ, c))
+  end
+  return GZ
+end
+
+# The forms of the lattice L, made positive definite, followed by the forms F,
+# given with respect to the basis of L
+function _forms_of_lattice(L::ZZLat, F::Vector)
+  n = rank(L)
+  fl = all(f -> size(f) == (n, n), F)
+  @req fl "The forms must be given with respect to the basis of the lattice"
+  G = gram_matrix(L)
+  if n > 0 && G[1, 1] < 0
+    G = -G
+  end
+  return vcat(QQMatrix[G], QQMatrix[change_base_ring(QQ, f) for f in F])
+end
+
+@doc raw"""
+    automorphism_group_generators(L::ZZLat, F::Vector{<:MatElem};
+                                  ambient_representation::Bool = true,
+                                  depth::Int = -1, bacher_depth::Int = 0)
+                                                       -> Vector{QQMatrix}
+
+Given a definite $\mathbf{Z}$-lattice `L` and a list `F` of Gram matrices of
+bilinear forms with respect to the basis of `L`, return generators for the
+group of automorphisms of `L` which preserve every form in `F`.
+
+The forms in `F` need not be symmetric. If `ambient_representation` is `true`
+(the default), the automorphisms are represented with respect to the ambient
+space of `L`. Otherwise, they are represented with respect to the basis of
+`L`, that is, $g G_L g^t = G_L$ and $g F_k g^t = F_k$ for all $k$.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may
+improve performance. If set to `-1` (default), the used value of `depth` is
+chosen heuristically depending on the rank of `L`. By default, `bacher_depth`
+is set to `0`.
+
+The underlying algorithm is by Plesken and Souvignier [PS97](@cite), who
+allow several forms, at least one of them symmetric and positive definite.
+
+# Examples
+For $2 \times 2$ matrices $g J g^t = \det(g) J$, so the form $J$ below keeps
+the automorphisms of determinant $1$.
+```jldoctest
+julia> L = integer_lattice(; gram = ZZ[2 -1; -1 2]);
+
+julia> J = ZZ[0 1; -1 0];
+
+julia> gs = automorphism_group_generators(L, [J];
+                                         ambient_representation = false);
+
+julia> all(g * J * transpose(g) == J for g in gs)
+true
+
+julia> automorphism_group_order(L), automorphism_group_order(L, [J])
+(12, 6)
+```
+"""
+function automorphism_group_generators(L::ZZLat, F::Vector{<: MatElem};
+                                       ambient_representation::Bool = true,
+                                       depth::Int = -1, bacher_depth::Int = 0)
+  @req is_definite(L) "The lattice must be definite"
+  G = _integral_forms(_forms_of_lattice(L, F))
+  gens = QQMatrix[change_base_ring(QQ, g)
+                  for g in _automorphisms_of_forms(G; depth, bacher_depth)[1]]
+  if !ambient_representation
+    return gens
+  end
+  return _automorphisms_in_ambient_space(L, gens)
+end
+
+@doc raw"""
+    automorphism_group_order(L::ZZLat, F::Vector{<:MatElem};
+                             depth::Int = -1, bacher_depth::Int = 0)
+                                                       -> ZZRingElem
+
+Given a definite $\mathbf{Z}$-lattice `L` and a list `F` of Gram matrices of
+bilinear forms with respect to the basis of `L`, return the order of the
+group of automorphisms of `L` which preserve every form in `F`.
+
+See [`automorphism_group_generators(::ZZLat, ::Vector{<:MatElem})`](@ref).
+"""
+function automorphism_group_order(L::ZZLat, F::Vector{<: MatElem};
+                                  depth::Int = -1, bacher_depth::Int = 0)
+  @req is_definite(L) "The lattice must be definite"
+  G = _integral_forms(_forms_of_lattice(L, F))
+  return _automorphisms_of_forms(G; depth, bacher_depth)[2]
+end
+
+@doc raw"""
+    is_isometric_with_isometry(L::ZZLat, F::Vector{<:MatElem},
+                               M::ZZLat, H::Vector{<:MatElem};
+                               depth::Int = -1, bacher_depth::Int = 0)
+                                                       -> (Bool, QQMatrix)
+
+Given definite $\mathbf{Z}$-lattices `L` and `M` and lists `F` and `H` of Gram
+matrices of bilinear forms with respect to the bases of `L` and `M`, return
+whether there is an isometry from `L` to `M` carrying the $k$-th form of `H`
+to the $k$-th form of `F` for every $k$. If this is the case, the second
+returned value is such an isometry `T`, represented with respect to the bases
+of `L` and `M`, that is, $T G_M T^t = G_L$ and $T H_k T^t = F_k$ for all $k$.
+
+The forms in `F` and `H` need not be symmetric.
+
+Setting the parameters `depth` and `bacher_depth` to a positive value may
+improve performance. If set to `-1` (default), the used value of `depth` is
+chosen heuristically depending on the rank of `L`. By default, `bacher_depth`
+is set to `0`.
+
+The underlying algorithm is by Plesken and Souvignier [PS97](@cite), who
+allow several forms, at least one of them symmetric and positive definite.
+
+# Examples
+```jldoctest
+julia> L = integer_lattice(; gram = ZZ[2 1; 1 2]);
+
+julia> M = integer_lattice(; gram = ZZ[2 -1; -1 2]);
+
+julia> J = ZZ[0 1; -1 0];
+
+julia> fl, T = is_isometric_with_isometry(L, [J], M, [J]);
+
+julia> GL, GM = gram_matrix(L), gram_matrix(M);
+
+julia> fl, T * GM * transpose(T) == GL, T * J * transpose(T) == J
+(true, true, true)
+
+julia> is_isometric(L, [J], M, [2 * J])
+false
+```
+"""
+function is_isometric_with_isometry(L::ZZLat, F::Vector{<: MatElem},
+                                    M::ZZLat, H::Vector{<: MatElem};
+                                    depth::Int = -1, bacher_depth::Int = 0)
+  @req is_definite(L) && is_definite(M) "The lattices must be definite"
+  @req length(F) == length(H) "The lists of forms must have the same length"
+  GL = _forms_of_lattice(L, F)
+  GM = _forms_of_lattice(M, H)
+  if rank(L) != rank(M)
+    return false, zero_matrix(QQ, 0, 0)
+  end
+  if rank(L) > 0
+    sL, sM = sign(gram_matrix(L)[1, 1]), sign(gram_matrix(M)[1, 1])
+    @req sL == sM "The lattices must have the same signatures"
+  end
+  fl, T = _isometry_of_forms(_integral_forms(GL, GM)...; depth, bacher_depth,
+                             choose_side = true)
+  if !fl
+    return false, zero_matrix(QQ, 0, 0)
+  end
+  return true, change_base_ring(QQ, T)
+end
+
+@doc raw"""
+    is_isometric(L::ZZLat, F::Vector{<:MatElem}, M::ZZLat, H::Vector{<:MatElem};
+                 depth::Int = -1, bacher_depth::Int = 0) -> Bool
+
+Given definite $\mathbf{Z}$-lattices `L` and `M` and lists `F` and `H` of Gram
+matrices of bilinear forms with respect to the bases of `L` and `M`, return
+whether there is an isometry from `L` to `M` carrying the $k$-th form of `H`
+to the $k$-th form of `F` for every $k$.
+
+See [`is_isometric_with_isometry(::ZZLat, ::Vector{<:MatElem}, ::ZZLat, ::Vector{<:MatElem})`](@ref).
+"""
+function is_isometric(L::ZZLat, F::Vector{<: MatElem},
+                      M::ZZLat, H::Vector{<: MatElem};
+                      depth::Int = -1, bacher_depth::Int = 0)
+  return is_isometric_with_isometry(L, F, M, H; depth, bacher_depth)[1]
 end
 
 ################################################################################

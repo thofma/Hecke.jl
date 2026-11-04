@@ -1014,3 +1014,162 @@ end
   @test all(g * G * transpose(g) == G
             for g in L.automorphism_group_generators)
 end
+
+@testset "Several forms" begin
+  # Isometries and automorphisms of lattices preserving further forms, not
+  # necessarily symmetric, given in the basis of the lattice. lat, aut and iso
+  # take the first matrix as the Gram matrix of the lattice.
+  lat(G) = integer_lattice(; gram = G)
+  aut(G) = automorphism_group_order(lat(G[1]), G[2:end])
+  iso(G, H) = is_isometric_with_isometry(lat(G[1]), G[2:end],
+                                         lat(H[1]), H[2:end])
+
+  # For 2x2 matrices g * J * g^t == det(g) * J, so adding J keeps the
+  # automorphisms of determinant 1.
+  J = ZZ[0 1; -1 0]
+  for (G, o) in [(ZZ[2 -1; -1 2], 12), (ZZ[1 0; 0 1], 8), (ZZ[3 1; 1 4], 2)]
+    @test aut([G]) == o
+    @test aut([G, J]) == (o == 2 ? 2 : div(o, 2))
+    gens = automorphism_group_generators(lat(G), [J];
+                                         ambient_representation = false)
+    @test all(g * G * transpose(g) == G && g * J * transpose(g) == J
+              for g in gens)
+    @test all(det(g) == 1 for g in gens)
+  end
+
+  # No extra form: the answers of the methods for one form
+  for (m, o) in lattices_and_aut_order
+    n = length(m[1])
+    n > 8 && continue
+    G = matrix(ZZ, n, n, reduce(vcat, m))
+    @test aut([G]) == o
+    X = _random_invertible_matrix(n, -3:3)
+    H = X * G * transpose(X)
+    fl, T = iso([G], [H])
+    @test fl
+    @test T * H * transpose(T) == G
+  end
+  @test !iso([change_base_ring(ZZ, gram_matrix(root_lattice(:A, 4)))],
+             [change_base_ring(ZZ, gram_matrix(root_lattice(:D, 4)))])[1]
+
+  # Forms moved by a unimodular matrix, with antisymmetric extra forms
+  for n in [4, 8]
+    G1 = change_base_ring(ZZ, gram_matrix(n == 4 ? root_lattice(:D, 4) :
+                                                   root_lattice(:E, 8)))
+    A = zero_matrix(ZZ, n, n)
+    for i in 1:n, j in (i + 1):n
+      A[i, j] = rand(-2:2)
+      A[j, i] = -A[i, j]
+    end
+    G = [G1, A, G1 + A]
+    X = _random_invertible_matrix(n, -3:3)
+    H = [X * g * transpose(X) for g in G]
+    fl, T = iso(G, H)
+    @test fl
+    @test all(T * H[k] * transpose(T) == G[k] for k in 1:3)
+    fl, T = iso(H, G)
+    @test fl
+    @test all(T * G[k] * transpose(T) == H[k] for k in 1:3)
+    @test aut(G) == aut(H)
+  end
+
+  # The extra form separates: same lattices, extra forms of the same
+  # determinant, not related by a signed permutation
+  I4 = identity_matrix(ZZ, 4)
+  A = zero_matrix(ZZ, 4, 4)
+  A[1, 2] = A[3, 4] = 1
+  B = deepcopy(A)
+  B[1, 3] = 1
+  A = A - transpose(A)
+  B = B - transpose(B)
+  @test det(A) == det(B)
+  @test !iso([I4, A], [I4, B])[1]
+  @test iso([I4, A], [I4, -A])[1]
+
+  # Entries beyond Int
+  X = ZZ[3 2; 1 1]
+  for e in [62, 64, 100]
+    N = ZZ(2)^e
+    G = [N * ZZ[2 -1; -1 2], N * J]
+    @test aut(G) == 6
+    @test aut([G[1], J]) == 6
+    H = [X * g * transpose(X) for g in G]
+    fl, T = iso(G, H)
+    @test fl
+    @test all(T * H[k] * transpose(T) == G[k] for k in 1:2)
+    G = [ZZ[N 1; 1 N], J]
+    @test aut(G) == 2
+    @test iso(G, [X * g * transpose(X) for g in G])[1]
+  end
+
+  # Lattices with forms. Two forms on one module: the automorphisms of both
+  # are those of the first which fix the second.
+  function closure(gs)
+    id = identity_matrix(base_ring(gs[1]), nrows(gs[1]))
+    seen = Set([id])
+    todo = [id]
+    while !isempty(todo)
+      h = pop!(todo)
+      for g in gs
+        k = h * g
+        if !(k in seen)
+          push!(seen, k)
+          push!(todo, k)
+        end
+      end
+    end
+    return collect(seen)
+  end
+  G1 = ZZ[2 1 0; 1 2 0; 0 0 26]
+  L = integer_lattice(; gram = G1)
+  autL = closure(automorphism_group_generators(L;
+                                               ambient_representation = false))
+  for B in [identity_matrix(ZZ, 3), ZZ[0 1 2; -1 0 0; -2 0 0],
+            ZZ[1 2 0; 0 1 0; 0 0 3]]
+    gens = automorphism_group_generators(L, [B]; ambient_representation = false)
+    @test all(g * G1 * transpose(g) == G1 && g * B * transpose(g) == B
+              for g in gens)
+    @test automorphism_group_order(L, [B]) ==
+          count(g -> g * B * transpose(g) == B, autL)
+  end
+  @test aut([-ZZ[2 -1; -1 2], J]) == 6
+
+  # Ambient representation, for a lattice which is not of full rank
+  V = quadratic_space(QQ, QQ[2 -1 0; -1 2 0; 0 0 5])
+  L = lattice(V, QQ[1 0 0; 0 1 0])
+  gens = automorphism_group_generators(L, [J])
+  @test length(closure(gens)) == 6
+  @test all(g * gram_matrix(V) * transpose(g) == gram_matrix(V) for g in gens)
+
+  # Isometries of lattices with forms
+  L = integer_lattice(; gram = G1)
+  F = [ZZ[0 1 2; -1 0 0; -2 0 0]]
+  Y = ZZ[1 1 0; 0 1 1; 0 0 1]
+  M = integer_lattice(; gram = Y * G1 * transpose(Y))
+  H = [Y * f * transpose(Y) for f in F]
+  fl, T = is_isometric_with_isometry(L, F, M, H)
+  @test fl
+  @test T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+  @test T * H[1] * transpose(T) == F[1]
+  @test !is_isometric(L, F, M, [2 * H[1]])
+  @test !is_isometric(L, [I4[1:3, 1:3]], lat(ZZ[2 1; 1 2]), [J])
+  @test_throws ArgumentError is_isometric(L, F, lat(-G1), F)
+  @test_throws ArgumentError automorphism_group_order(L, [J])
+
+  # Rational forms
+  @test aut([QQ[1 1//2; 1//2 1], QQ[0 1//3; -1//3 0]]) == 6
+  @test iso([QQ[1 1//2; 1//2 1]], [QQ[1 -1//2; -1//2 1]])[1]
+  @test !iso([QQ[1 0; 0 1], QQ[0 1//2; -1//2 0]],
+             [QQ[1 0; 0 1], QQ[0 1; -1 0]])[1]
+
+  # Rank 0
+  @test aut([zero_matrix(ZZ, 0, 0)]) == 1
+  @test iso([zero_matrix(ZZ, 0, 0)], [zero_matrix(ZZ, 0, 0)])[1]
+
+  # Input checks
+  @test_throws ArgumentError aut([ZZ[1 0; 0 -1]])
+  @test_throws ArgumentError aut([I4, J])
+  @test_throws ArgumentError iso([I4], [I4, A])
+  @test_throws ArgumentError iso([I4], [-I4])
+  @test !iso([I4], [ZZ[1 0; 0 1]])[1]
+end
