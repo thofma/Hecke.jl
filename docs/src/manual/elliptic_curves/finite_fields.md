@@ -21,6 +21,12 @@ julia> rand(E)
 (2 : 0 : 1)
 ```
 
+## Curves with a point of given order
+
+```@docs
+elliptic_curve_with_point_of_order(::FinField, ::IntegerUnion)
+```
+
 ## Cardinality and orders
 
 ```@docs

@@ -341,6 +341,7 @@ export elementary_divisors
 export elements
 export elliptic_curve
 export elliptic_curve_from_j_invariant
+export elliptic_curve_with_point_of_order
 export embed_in_unimodular
 export embedded_number_field
 export embedding
