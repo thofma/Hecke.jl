@@ -102,6 +102,40 @@
   Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = true, do_lll = false, depth = 0);
   @test L.reduced_automorphism_group_order == 18720000
 
+  # Reduced automorphism group order: the order of the group divided by that
+  # of the Weyl group of the positive definite rescaling of scale 1, on the
+  # Weyl route and when it does not run.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    red(L) = Hecke.reduced_automorphism_group_order(L)
+    # the order computed first, without the Weyl route
+    function red_after_order(L)
+      Hecke.__assert_has_automorphisms(L; use_everything = false,
+                                       use_weyl = false,
+                                       use_projections = false,
+                                       use_target_enum = false)
+      return red(L)
+    end
+    @test red(integer_lattice(; gram = diagonal_matrix(ZZ[1;], A2))) == 2
+    # the roots do not depend on the scale
+    for s in [1, -1, 2, 3, 1//2, 1//3, 3//2]
+      @test red(rescale(root_lattice(:A, 2), s)) == 2
+      @test red_after_order(rescale(root_lattice(:A, 2), s)) == 2
+      @test red(rescale(integer_lattice(; gram = diagonal_matrix(ZZ[1;], A2)), s)) == 2
+    end
+    @test red(rescale(root_lattice(:E, 8), 2)) == 1
+    # entries beyond Int: A2 in the basis (1, N), (0, 1)
+    B = ZZ[1 ZZ(2)^40; 0 1]
+    @test red(integer_lattice(; gram = B * A2 * transpose(B))) == 2
+    @test red(integer_lattice(; gram = zero_matrix(ZZ, 0, 0))) == 1
+    G = diagonal_matrix(A2, A2, ZZ[5;])
+    @test red_after_order(integer_lattice(; gram = G)) ==
+          red(integer_lattice(; gram = G)) == 16
+    L = integer_lattice(; gram = diagonal_matrix(A2, ZZ[3;]))
+    @test red(rescale(L, -1)) == 4
+    @test red_after_order(rescale(L, 3//2)) == red(rescale(L, 3//2)) == 4
+  end
+
   @testset "Gram matrix compression bounds" begin
     # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
     G = matrix(ZZ, [
