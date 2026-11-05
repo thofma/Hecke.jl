@@ -1215,6 +1215,14 @@ function trred(a::AbstractAssociativeAlgebraElem)
     n = divexact(dim(A), d)
     m = isqrt(n)
     @assert m^2 == n
+    if iszero(base_ring(A)(m))
+      # The regular trace is m times the reduced trace, so division by m
+      # is unavailable here. Use the defining characteristic coefficient
+      # (Voight, Quaternion Algebras, Definition 7.8.9).
+      R = polynomial_ring(base_ring(A), "x"; cached = false)[1]
+      f = _reduced_charpoly_simple(a, R)
+      return -coeff(f, degree(f) - 1)
+    end
     return divexact(tr(a), m)
   else
     W = decompose(A)
