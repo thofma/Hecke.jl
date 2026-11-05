@@ -263,12 +263,13 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   # at most 2
   absolute_degree(K) > 2 && jp^p != j && return false
 
-  L = finite_field(p, 2)[1]
   if jp == j
     F = prime_field(K)
     jF = F(lift(ZZ, absolute_coordinates(j)[1]))
-    return _is_supersingular_prime_field(jF, L)
+    return _is_supersingular_prime_field(jF)
   end
+  # p is the characteristic of K, so it is prime
+  L = finite_field(p, 2; check = false)[1]
   Lx, X = polynomial_ring(L, :X; cached = false)
 
   # j is a root of X^2 - (j + j^p)*X + j^(p + 1), whose coefficients lie in F_p.
@@ -302,9 +303,9 @@ end
 # Algorithm 2 of [Sut12] for j in the prime field F = F_p, with the
 # optimization of section 5.1 there: the paths are walked in G_2(F_p) until one
 # reaches a vertex with only one neighbour in F_p; that path alone goes on in
-# G_2(F_{p^2}) = G_2(L), since if E is ordinary, the edges leaving F_p from that
-# vertex descend.
-function _is_supersingular_prime_field(j::FinFieldElem, L::FinField)
+# G_2(F_{p^2}), since if E is ordinary, the edges leaving F_p from that vertex
+# descend. F_{p^2} is constructed only then.
+function _is_supersingular_prime_field(j::FinFieldElem)
   F = parent(j)
   p = characteristic(F)
   m = nbits(p)
@@ -338,6 +339,8 @@ function _is_supersingular_prime_field(j::FinFieldElem, L::FinField)
     back, cur = previous[k], js[k]
   end
   # cur has the one neighbour back in F_p; go on through one of the other two
+  # in F_{p^2}, where p, the characteristic of F, is prime
+  L = finite_field(p, 2; check = false)[1]
   back, cur = L(lift(ZZ, back)), L(lift(ZZ, cur))
   for _ in 0:m
     step = _next_2_isogeny_step(cur, back)

@@ -183,7 +183,7 @@
     for p in [ZZ(1013), next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
       F = GF(p)
       for (d, j) in Hecke._CLASS_NUMBER_ONE_J_INVARIANTS
-        @test Hecke._is_supersingular_prime_field(F(j), GF(p, 2)) ==
+        @test Hecke._is_supersingular_prime_field(F(j)) ==
           (kronecker_symbol(ZZ(d), p) != 1)
       end
     end
