@@ -79,16 +79,21 @@ function is_maximal(O::AlgAssAbsOrd)
     end
   end
 
-  factor_inputs = if A isa GroupAlgebra
-    # Check group-order primes first, then the remaining discriminant primes.
-    # Arbitrary orders in group algebras can have index primes outside |G|.
-    n = ZZ(degree(O))
-    (n, ppio(abs(d), n)[2])
+  if A isa GroupAlgebra
+    # Maximal Z-orders in QQ[G] have discriminant supported on |G|.
+    # See Curtis and Reiner, Methods of Representation Theory, Vol. I,
+    # Proposition (27.1), and local conjugacy of maximal orders.
+    if A isa GroupAlgebra{QQFieldElem} && base_ring(O) === ZZ &&
+       !isone(ppio(abs(d), ZZ(degree(O)))[2])
+      O.is_maximal = 2
+      return false
+    end
+    fac = factor(degree(O))
   else
-    (abs(d),)
+    fac = factor(abs(d))
   end
 
-  for a in factor_inputs, (p, _) in factor(a)
+  for (p, _) in fac
     if rem(d, p^2) != 0
       continue
     end

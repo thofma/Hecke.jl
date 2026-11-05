@@ -206,6 +206,20 @@
     @test is_maximal(M)
   end
 
+  # Maximality for polynomial-base orders must accept a polynomial discriminant.
+  @testset "Maximality over polynomial rings" begin
+    for k in (QQ, GF(7))
+      F, t = rational_function_field(k, :t)
+      R = parent(numerator(t))
+      A = group_algebra(F, FinGenAbGroup([1]); cached = false)
+      O = order(A, R, identity_matrix(F, 1); cached = false)
+      @test !Hecke.is_maximal_known(O)
+      @test discriminant(O) == one(R)
+      @test is_maximal(O)
+      @test Hecke.is_maximal_known(O)
+    end
+  end
+
   @testset "rand" begin
     Qx, x = QQ["x"]
     A = StructureConstantAlgebra(x^2 - QQFieldElem(1, 5))
