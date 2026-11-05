@@ -383,6 +383,69 @@ end
 
 ################################################################################
 #
+#  Theta series
+#
+################################################################################
+
+@doc raw"""
+    theta_series(L::ZZLat, n::Int) -> ZZAbsPowerSeriesRingElem
+
+Return the theta series of the definite lattice ``L`` up to ``O(q^{n+1})``,
+that is,
+
+```math
+\sum_{k=0}^{n} N_k q^k + O(q^{n+1}),
+```
+
+where ``N_k`` is the number of vectors ``v`` in ``L`` with ``|b(v, v)| = k``,
+counting ``v`` and ``-v`` separately; see [CS99](@cite), Chapter 2,
+Section 2.3. The constant term ``N_0 = 1`` counts the zero vector. For ``L``
+negative definite, this is the theta series of `rescale(L, -1)`.
+
+The norm of ``L`` must be integral, so that every ``b(v, v)`` is an integer.
+
+The series lies in `power_series_ring(ZZ, n + 1, :q; model = :capped_absolute)`,
+so the theta series of two lattices with the same ``n`` can be compared.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:A, 2);
+
+julia> theta_series(L, 6)
+1 + 6*q^2 + 6*q^6 + O(q^7)
+```
+"""
+function theta_series(L::ZZLat, n::Int)
+  @req n >= 0 "The precision must be non-negative"
+  @req is_definite(L) "Lattice must be definite"
+  @req is_integral(norm(L)) "The norm of the lattice must be integral"
+  c = zeros(Int, n + 1)
+  c[1] = 1
+  if rank(L) > 0
+    # Only the norms are counted, on an LLL-reduced Gram matrix G/d with G
+    # integral; d is 1 or 2, since the norm of L is integral
+    G, d = _integral_split_gram(lll(L; same_ambient = false))
+    if G[1, 1] < 0
+      G = -G
+    end
+    _count_norms!(c, __short_vectors_it(G, nothing, d * n), Int(d))
+  end
+  R, _ = power_series_ring(ZZ, n + 1, :q; model = :capped_absolute)
+  return R(ZZRingElem.(c), n + 1, n + 1)
+end
+
+# Add 2 to c[k + 1] for each vector of norm d * k from the iterator, which
+# gives one of v and -v; a function barrier, as the type of the iterator is
+# only known at run time
+function _count_norms!(c::Vector{Int}, it, d::Int)
+  for (_, m) in it
+    c[Int(divexact(m, d)) + 1] += 2
+  end
+  return c
+end
+
+################################################################################
+#
 #  Successive minima
 #
 ################################################################################

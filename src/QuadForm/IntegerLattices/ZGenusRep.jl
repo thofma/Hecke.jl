@@ -532,12 +532,10 @@ function default_invariant_function(L::ZZLat)
   return _invariants
 end
 
-function _theta_series(L, n)
-  r = zeros(ZZRingElem,n)
-  for (_,i) in short_vectors_iterator(L,n, Int64)
-    r[Int(i)] += 1
-  end
-  return r
+# The number of vectors of norm 1, ..., n in L, up to sign
+function _theta_series(L::ZZLat, n::Int)
+  t = theta_series(L, n)
+  return ZZRingElem[divexact(coeff(t, k), 2) for k in 1:n]
 end
 
 ###############################################################################
