@@ -137,6 +137,44 @@
   @test is_isometric(V1, V2)
 end
 
+@testset "Dimensions at infinite places" begin
+  # Local isometry preserves dimension, including for degenerate spaces.
+  Qx, x = QQ["x"]
+  K, a = number_field(x^3 + 3, "a")
+  Kt, t = K["t"]
+  for d in (-2, 2)
+    E, b = number_field(t^2 - d, "b")
+    V = hermitian_space(E, E[-1;;])
+    W = hermitian_space(E, E[1 0; 0 0])
+    U = hermitian_space(E, E[-1 0; 0 0])
+    Z = hermitian_space(E, zero_matrix(E, 0, 0))
+    Z1 = hermitian_space(E, E[0;;])
+    for p in infinite_places(K)
+      @test !is_isometric(V, W, p)
+      @test !is_isometric(W, V, p)
+      @test !is_isometric(Z, Z1, p)
+      @test is_isometric(U, W, p) == (d > 0 || is_complex(p))
+    end
+  end
+end
+
+@testset "Isometry at the rational infinite place" begin
+  # Test split and nonsplit quadratic extensions of QQ, locally and globally.
+  p = only(real_places(QQ))
+  for d in (-2, 2)
+    E, b = quadratic_field(d)
+    V = hermitian_space(E, E[1;;])
+    W = hermitian_space(E, E[-1;;])
+    U = hermitian_space(E, E[4;;])
+    D = hermitian_space(E, E[1 0; 0 0])
+    @test is_isometric(V, W, p) == (d > 0)
+    @test is_isometric(V, W) == (d > 0)
+    @test is_isometric(V, U, p)
+    @test is_isometric(V, U)
+    @test !is_isometric(V, D, p)
+  end
+end
+
 @testset "diagonal with transform" begin
   E, b = cyclotomic_field_as_cm_extension(3)
   K = base_field(E)

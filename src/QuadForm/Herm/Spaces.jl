@@ -211,12 +211,12 @@ function _isisometric(L::HermSpace, M::HermSpace, p)
   return is_local_norm(base_ring(L), det(L) * det(M), p)[1]
 end
 
-function is_isometric(L::HermSpace, M::HermSpace, P::InfPlc)
+function is_isometric(L::HermSpace, M::HermSpace, P::Union{InfPlc, PosInf})
   if L == M
     return true
   end
 
-  if rank(L) != rank(M)
+  if dim(L) != dim(M) || rank(L) != rank(M)
     return false
   end
 
@@ -225,7 +225,9 @@ function is_isometric(L::HermSpace, M::HermSpace, P::InfPlc)
   end
 
   E = base_ring(L)
-  if length(extend(P, E)) == 2
+  if P isa PosInf
+    is_totally_real(E) && return true
+  elseif length(extend(P, E)) == 2
     # P splits
     # E_P is isomorphic to RR x RR
     # and the rank decides isometry
