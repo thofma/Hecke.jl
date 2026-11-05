@@ -1313,7 +1313,7 @@ function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPoly
   pp = characteristic(base_ring(f))
   q = size(base_ring(f))
   #ala Auer... (Diss, DOI:10.4064/aa-95-2-97-122)
-  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) in lf], init = ZZRingElem(1))
+  l = reduce(lcm, [(q^degree(p)-1)*pp^clog(ZZ(k), pp) for (p, k) in lf], init = ZZRingElem(1))
   #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = ZZRingElem(1))
   return l
 end
