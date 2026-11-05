@@ -74,6 +74,23 @@
   end
   @test  orders == automorphism_group_order.(L)
 
+  # Non-integral lattices: norm one vectors are split off in an integral
+  # rescaling. Scaling a form does not change its automorphisms.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    E8 = change_base_ring(ZZ, gram_matrix(root_lattice(:E, 8)))
+    for (G, o) in [(diagonal_matrix(ZZ[1;], A2), 24),
+                   (diagonal_matrix(A2, ZZ[3;]), 24),
+                   (identity_matrix(ZZ, 3), 48), (E8, 696729600)]
+      for a in [1//2, 1//3, -1//5]
+        L = rescale(integer_lattice(; gram = G), a)
+        @test automorphism_group_order(L) == o
+        @test all(g * gram_matrix(L) * transpose(g) == gram_matrix(L)
+                  for g in automorphism_group_generators(L))
+      end
+    end
+  end
+
   L = integer_lattice(; gram = ZZ[-2 0 0 0 1 1 -1 -1 -1 -1 -1 -1 1 1 1 -1 -1; 0 -2 1 1 0 0 -1 -1 -1 1 -1 1 1 1 1 1 1; 0 1 -2 0 0 0 0 1 0 -1 0 -1 0 -1 0 -1 -1; 0 1 0 -2 0 0 0 0 0 -1 0 -1 0 0 -1 0 0; 1 0 0 0 -2 0 1 0 1 1 1 1 -1 -1 0 0 1; 1 0 0 0 0 -2 0 0 1 1 1 1 0 -1 0 1 1; -1 -1 0 0 1 0 -4 -2 -2 -1 -2 -1 2 0 0 1 -1; -1 -1 1 0 0 0 -2 -4 0 1 0 1 2 0 1 0 0; -1 -1 0 0 1 1 -2 0 -4 -2 -3 -2 2 2 1 1 0; -1 1 -1 -1 1 1 -1 1 -2 -4 -1 -3 0 0 0 0 -2; -1 -1 0 0 1 1 -2 0 -3 -1 -4 -1 2 2 0 1 0; -1 1 -1 -1 1 1 -1 1 -2 -3 -1 -4 0 0 0 -1 -2; 1 1 0 0 -1 0 2 2 2 0 2 0 -4 -1 -1 -1 0; 1 1 -1 0 -1 -1 0 0 2 0 2 0 -1 -4 -1 0 -1; 1 1 0 -1 0 0 0 1 1 0 0 0 -1 -1 -4 1 -1; -1 1 -1 0 0 1 1 0 1 0 1 -1 -1 0 1 -4 -1; -1 1 -1 0 1 1 -1 0 0 -2 0 -2 0 -1 -1 -1 -4]);
   @test Hecke.reduced_automorphism_group_order(L)==2
 
