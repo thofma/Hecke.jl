@@ -119,10 +119,60 @@
   @test_throws ArgumentError is_isometric(U, V)  # U is not regular
   @test is_isometric(V1, V1, infp[1])
   @test !is_isometric(V1, W, infp[2]) # infp[2] is complex but V and W don't have same rank
-  @test count(v -> is_isometric(V1, H, v), infp) == 1 # V1 and H are not everywhere locally isometric
-  @test !is_isometric(V1, H)
+  @test is_isometric(V1, H)
   @test is_isometric(V1, V2)
 
+  # Issue #2610
+  Qx, x = QQ["x"]
+  K, s5 = number_field(x^2 - 5, "s5")
+  Ky, y = K["y"]
+  E, a = number_field(y^2 - 2, "a")
+  V1 = hermitian_space(E, E[1;;])
+  V2 = hermitian_space(E, E[-1;;])
+  u = 1 + a
+  T = E[u;;]
+  @test T * gram_matrix(V2) * transpose(map_entries(involution(V2), T)) == gram_matrix(V1)
+  # the real places of K split in E and then
+  # E_v = K_v x K_{v^\sigma} = RR^2
+  @test is_isometric(V1, V2)
+end
+
+@testset "Dimensions at infinite places" begin
+  # Local isometry preserves dimension, including for degenerate spaces.
+  Qx, x = QQ["x"]
+  K, a = number_field(x^3 + 3, "a")
+  Kt, t = K["t"]
+  for d in (-2, 2)
+    E, b = number_field(t^2 - d, "b")
+    V = hermitian_space(E, E[-1;;])
+    W = hermitian_space(E, E[1 0; 0 0])
+    U = hermitian_space(E, E[-1 0; 0 0])
+    Z = hermitian_space(E, zero_matrix(E, 0, 0))
+    Z1 = hermitian_space(E, E[0;;])
+    for p in infinite_places(K)
+      @test !is_isometric(V, W, p)
+      @test !is_isometric(W, V, p)
+      @test !is_isometric(Z, Z1, p)
+      @test is_isometric(U, W, p) == (d > 0 || is_complex(p))
+    end
+  end
+end
+
+@testset "Isometry at the rational infinite place" begin
+  # Test split and nonsplit quadratic extensions of QQ, locally and globally.
+  p = only(real_places(QQ))
+  for d in (-2, 2)
+    E, b = quadratic_field(d)
+    V = hermitian_space(E, E[1;;])
+    W = hermitian_space(E, E[-1;;])
+    U = hermitian_space(E, E[4;;])
+    D = hermitian_space(E, E[1 0; 0 0])
+    @test is_isometric(V, W, p) == (d > 0)
+    @test is_isometric(V, W) == (d > 0)
+    @test is_isometric(V, U, p)
+    @test is_isometric(V, U)
+    @test !is_isometric(V, D, p)
+  end
 end
 
 @testset "diagonal with transform" begin
