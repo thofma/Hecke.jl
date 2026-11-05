@@ -430,7 +430,7 @@ end
 is_isometric(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}) = is_equivalent(f, g, proper=false)
 
 @doc raw"""
-    is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = false)
+    is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = true)
 
 Return whether `f` and `g` are (properly) equivalent.
 """
@@ -776,7 +776,7 @@ Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
 be of discriminant `D`.
 
 If `f` is positive definite (`D < 0` and `a > 0`), then `f` is reduced if and
-only if `|b| <= a <= c`, and `b >= 0` if `a = b` or `a = c`.
+only if `|b| <= a <= c`, and `b >= 0` if `a = |b|` or `a = c`.
 
 If `f` is negative definite (`D < 0` and `a < 0`), then `f` is reduced if and
 only if `[-a, b, -c]` is reduced.
