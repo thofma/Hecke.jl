@@ -535,7 +535,7 @@
     h = QQ(1, 2)
     for N in [1, 2, 12]
       O = order(A, [h * (1 + i), h * (1 - i), h * (j + ij), h * N * (j - ij)];
-                isbasis = true)
+                is_basis = true)
       @test is_eichler(O)
     end
 
@@ -543,7 +543,7 @@
     # the Hurwitz order M, is residually ramified at the split 3
     A = quaternion_algebra(QQ, -1, -1)
     e, i, j, k = basis(A)
-    @test !is_eichler(order(A, basis(A); isbasis = true))
+    @test !is_eichler(order(A, basis(A); is_basis = true))
     M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
     @test !is_eichler(order(A, vcat([e], [3 * b for b in M])))
 
@@ -603,7 +603,7 @@
     # Hurwitz order M
     A = quaternion_algebra(QQ, -1, -1)
     e, i, j, k = basis(A)
-    @test_throws ArgumentError eichler_level(order(A, basis(A); isbasis = true))
+    @test_throws ArgumentError eichler_level(order(A, basis(A); is_basis = true))
     M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
     E = order(A, vcat([e], [3 * b for b in M]))
     @test_throws ArgumentError eichler_level(E)
@@ -680,7 +680,7 @@
     E = order(algebra(M), vcat([one(algebra(M))], basis(I)))
     @test is_eichler(E) && is_class_set(E, right_class_set(E))
     A = quaternion_algebra(QQ, -1, -1)
-    L = order(A, basis(A); isbasis = true)
+    L = order(A, basis(A); is_basis = true)
     @test is_class_set(L, right_class_set(L))
     O = plus_multiple(maximal_order(A), 3)
     C = right_class_set(O)

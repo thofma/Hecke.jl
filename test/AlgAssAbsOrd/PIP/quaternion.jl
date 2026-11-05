@@ -19,7 +19,7 @@
     A = quaternion_algebra(QQ, -p, -q)
     e, i, j, k = basis(A)
     return order(A, [e, QQ(1, 2) * (e + j), QQ(1, 2) * (i + k),
-                     QQ(1, q) * (r * j + k)]; isbasis = true)
+                     QQ(1, q) * (r * j + k)]; is_basis = true)
   end
 
   # right ideals x O + m O, for fixed x in O, and the left ideals

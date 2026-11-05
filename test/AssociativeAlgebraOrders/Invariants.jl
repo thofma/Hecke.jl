@@ -39,7 +39,7 @@
 
   A = quaternion_algebra(QQ, -1, -1)
   O = AlgebraOrders.order(A, ZZ, basis(A))
-  OO = Hecke.order(A, basis(A); isbasis = true)
+  OO = Hecke.order(A, basis(A); is_basis = true)
   @test Hecke.trred_matrix(O) == Hecke.trred_matrix(OO)
   @test discriminant(O) == discriminant(OO)
   x = O(basis(A)[2])

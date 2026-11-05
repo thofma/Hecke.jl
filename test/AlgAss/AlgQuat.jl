@@ -212,7 +212,7 @@
       O = maximal_order(A)
       @test O === maximal_order(A)
       bO = [elem_in_algebra(x) for x in basis(O)]
-      @test abs(discriminant(order(A, bO; isbasis = true, check = true))) ==
+      @test abs(discriminant(order(A, bO; is_basis = true, check = true))) ==
             ZZ(p)^2
       # and it is Ibukiyama's O(q, r), p. 182
       e, i, j, _ = basis(A)

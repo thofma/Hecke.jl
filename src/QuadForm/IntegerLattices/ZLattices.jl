@@ -93,15 +93,16 @@ function quadratic_lattice(::QQField, gens::Vector{T}; gram = nothing, check::Bo
   for i in 1:length(gens)
     B[i:i,:] = gens[i]
   end
-  return lattice(V, B; isbasis = false)
+  return lattice(V, B; is_basis = false)
 end
 
 @doc raw"""
-    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; isbasis=true, check=true) -> ZZLat
+    lattice(V::QuadSpace{QQField, QQMatrix}, B::QQMatrix; is_basis=true, check=true) -> ZZLat
 
 Return the $\mathbb Z$-lattice with basis matrix $B$ inside the quadratic space $V$.
 """
-function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; isbasis::Bool = true, check::Bool = true)
+function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; is_basis::Bool = true, check::Bool = true, isbasis::Union{Nothing, Bool} = nothing)
+  is_basis = _is_basis_kwarg(is_basis, isbasis, :lattice)
   @req dim(V) == ncols(_B) "Ambient space and the matrix B have incompatible dimension"
   if typeof(_B) !== QQMatrix
     B = map_entries(QQ, _B)
@@ -111,7 +112,7 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, _B::MatElem{<:RationalUnion}; 
 
   # We need to produce a basis matrix
 
-  if !isbasis
+  if !is_basis
     BB = QQMatrix(_hnf_integral(FakeFmpqMat(B), :upper_right))
     i = nrows(BB)
     while i > 0 && is_zero_row(BB, i)
@@ -131,13 +132,14 @@ function lattice(V::QuadSpace{QQField, QQMatrix}, gens::Vector)
   for i in 1:length(gens), j in 1:dim(V)
     B[i, j] = gens[i][j]
   end
-  return lattice(V, B; isbasis = false)
+  return lattice(V, B; is_basis = false)
 end
 
-function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true, isbasis::Bool=true)
+function lattice_in_same_ambient_space(L::ZZLat, B::MatElem; check::Bool = true, is_basis::Bool=true, isbasis::Union{Nothing, Bool} = nothing)
+  is_basis = _is_basis_kwarg(is_basis, isbasis, :lattice_in_same_ambient_space)
   @req !check || (rank(B) == nrows(B)) "The rows of B must define a free system of vectors"
   V = ambient_space(L)
-  return lattice(V, B; check = false, isbasis)
+  return lattice(V, B; check = false, is_basis)
 end
 
 @doc raw"""
@@ -168,7 +170,7 @@ function rescale(L::ZZLat, r::RationalUnion; cached::Bool=false)
   B = basis_matrix(L)
   gram_space = gram_matrix(ambient_space(L))
   Vr = quadratic_space(QQ, r*gram_space; check=false, cached)
-  R = lattice(Vr, B; isbasis=true, check = false)
+  R = lattice(Vr, B; is_basis=true, check = false)
   if isdefined(L,:gram_matrix)
     R.gram_matrix = r*L.gram_matrix
   end
@@ -669,7 +671,7 @@ function intersect(M::ZZLat, N::ZZLat)
   H = vcat(BMint, BNint)
   K = kernel(H, side = :left)
   BI = view(K,:, 1:nrows(BM)) * BM
-  return lattice(ambient_space(M), BI; isbasis=true, check = false)
+  return lattice(ambient_space(M), BI; is_basis=true, check = false)
 end
 
 ################################################################################
@@ -929,7 +931,7 @@ function maximal_integral_lattice(L::ZZLat)
   L2 = rescale(L, 2; cached=false)
   LL2 = maximal_even_lattice(L2)
   V = ambient_space(L)
-  return lattice(V, basis_matrix(LL2); check=false, isbasis=true)
+  return lattice(V, basis_matrix(LL2); check=false, is_basis=true)
 end
 
 function maximal_integral_lattice(L::ZZLat, p)
@@ -1031,7 +1033,7 @@ function is_maximal_even(L::ZZLat, p::IntegerUnion; check=true)
   B = vcat(basis_matrix(L), v)
   #B = _hnf!_integral(B)
   #B = B[2:rank(L)+1, :]
-  LL = lattice(ambient_space(L), B; isbasis=false, check=false)
+  LL = lattice(ambient_space(L), B; is_basis=false, check=false)
   @hassert :Lattice 1 det(L) ==  det(LL) * p^2 && valuation(norm(LL), p) >= 0
   @hassert :Lattice 1 denominator(scale(LL))==1
   @hassert :Lattice 1 p!=2 || mod(ZZ(norm(LL)),2)==0
@@ -1198,7 +1200,7 @@ function local_modification(M::ZZLat, L::ZZLat, p; check=true)
   s = denominator(scale(L))
   L_max = rescale(L, s; cached=false)
   L_max = maximal_integral_lattice(L_max, p)
-  L_max = lattice_in_same_ambient_space(L, basis_matrix(L_max);isbasis=true, check=false)
+  L_max = lattice_in_same_ambient_space(L, basis_matrix(L_max);is_basis=true, check=false)
   # invert the gerstein operations
   GLm, U = padic_normal_form(gram_matrix(L_max), p; prec=level+3)
   R, _ = residue_ring(ZZ, d)
@@ -1224,7 +1226,7 @@ function local_modification(M::ZZLat, L::ZZLat, p; check=true)
   #B = hnf!(B)
 
   V = ambient_space(M)
-  S = lattice(V, view(B,1:n,1:n)*basis_matrix(M);isbasis=true, check=false)
+  S = lattice(V, view(B,1:n,1:n)*basis_matrix(M);is_basis=true, check=false)
   # confirm result
   #@assert S==SS
   @hassert :Lattice 2 genus(S, p) == genus(L, p)
@@ -1486,7 +1488,7 @@ function lll(
   G2, U = _lll(M, def, ctx)
   if same_ambient
     B2 = U*basis_matrix(L)
-    Llll = lattice(ambient_space(L), B2; isbasis=true, check=false)
+    Llll = lattice(ambient_space(L), B2; is_basis=true, check=false)
   else
     Llll = integer_lattice(; gram=QQ(1//d)*G2, check=false)
   end
@@ -1561,7 +1563,7 @@ function irreducible_components(L::ZZLat; check::Bool=true)
 
   irr = _irreducible_components(G, U)
   V = ambient_space(L)
-  return ZZLat[lattice(V, M*basis_matrix(L); isbasis=false, check=false) for M in irr]
+  return ZZLat[lattice(V, M*basis_matrix(L); is_basis=false, check=false) for M in irr]
 end
 
 @doc raw"""
@@ -1998,7 +2000,7 @@ function shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   if !is_shorter
     return L
   end
-  return lattice(ambient_space(L),B*basis_matrix(L);isbasis=true, check=false)
+  return lattice(ambient_space(L),B*basis_matrix(L);is_basis=true, check=false)
 end
 
 function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
@@ -2059,7 +2061,7 @@ function _shortest_vectors_sublattice(L::ZZLat; check::Bool=true)
   V = ambient_space(L)
   sv = ZZMatrix[matrix(ZZ, 1, rank(L), a) for a in shortest_vectors(L, Int; check=false)]
   B = _row_span!(sv)*basis_matrix(L)
-  M = lattice(V, B; isbasis=true, check=false)
+  M = lattice(V, B; is_basis=true, check=false)
   P = primitive_closure(L, M)
   return M, P, sv
 end
@@ -2409,7 +2411,7 @@ function overlattice(L::ZZLat, glue::Vector{TorQuadModuleElem}; check=true)
   D = discriminant_group(L)
   check && @req all(in(D), glue) "glue must be contained in the discriminant group of L"
   B = matrix(QQ, lift.(glue))
-  return lattice(ambient_space(L), B; isbasis=false) + L
+  return lattice(ambient_space(L), B; is_basis=false) + L
 end
 
 function overlattice(L::ZZLat, glue_group::TorQuadModule; check::Bool=true)

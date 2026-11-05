@@ -6,7 +6,7 @@ function isomorphism(::Type{MatAlgebra}, R::FiniteRing)
   G = additive_generators(R)
   @assert length(G) == length(elementary_divisors(R.A))
   F = GF(p)
-  MA = matrix_algebra(F, map_entries.(Ref(F), transpose.(matrix.(R.mult))); isbasis = true) # isbasis = true is important
+  MA = matrix_algebra(F, map_entries.(Ref(F), transpose.(matrix.(R.mult))); is_basis = true) # is_basis = true is important
   iso = hom(R, MA, [MA(F.(x.a.coeff[1,:])) for x in _zgens(R)]; check = false)
   isoinv = hom(MA, R, x -> lift(ZZ, x), [FiniteRingElem(R, R.A(lift.(Ref(ZZ), coefficients(y)))) for y in basis(MA)]; check = false)
   iso.inv = isoinv
@@ -32,7 +32,7 @@ function isomorphism(::Type{StructureConstantAlgebra{T}}, R::FiniteRing) where {
   end
   G = gens(R.A)
   @assert length(G) == length(elementary_divisors(R.A))
-  MA = matrix_algebra(F, map_entries.(Ref(F), transpose.(matrix.(R.mult))); isbasis = true) # isbasis = true is important
+  MA = matrix_algebra(F, map_entries.(Ref(F), transpose.(matrix.(R.mult))); is_basis = true) # is_basis = true is important
   S, StoMA = StructureConstantAlgebra(MA)
   iso = hom(R, S, [preimage(StoMA, MA(F.(x.a.coeff[1,:]))) for x in _zgens(R)]; check = false)
   isoinv = hom(S, R, x -> lift(ZZ, x), [FiniteRingElem(R, R.A(lift.(Ref(ZZ), coefficients(StoMA(y))))) for y in basis(S)]; check = false)

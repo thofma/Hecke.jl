@@ -8,7 +8,7 @@ function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector; doauto=tr
   M = matrix(ZZ, first.(sv))
   # TODO: avoid the rational_span?
   V = rational_span(L)
-  S = lattice(V, M; isbasis = true, check = false)
+  S = lattice(V, M; is_basis = true, check = false)
   s = rank(S)
   T = orthogonal_submodule(lattice(V), S)
   gensOS = ZZMatrix[]
