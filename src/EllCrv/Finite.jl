@@ -227,12 +227,21 @@ end
 ################################################################################
 
 
-#Following Identifying supersingular elliptic curves - Andrew V. Sutherland
+# The j-invariants of the elliptic curves with complex multiplication by an
+# imaginary quadratic order of class number 1, with the discriminant of the
+# order, as in Table 3.1.1 of He-Korpal-Tran-Vincent, arXiv:2503.03478.
+const _CLASS_NUMBER_ONE_J_INVARIANTS = (
+  (-3, 0), (-4, 1728), (-7, -3375), (-8, 8000), (-11, -32768), (-12, 54000),
+  (-16, 287496), (-19, -884736), (-27, -12288000), (-28, 16581375),
+  (-43, -884736000), (-67, -147197952000), (-163, -262537412640768000))
+
 @doc raw"""
     is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
 
-Returns `true` when the elliptic curve is supersingular and `false` otherwise.
-The result is proven to be correct.
+Returns `true` when the elliptic curve is supersingular and `false` otherwise,
+by Algorithm 2 of [Sut12](@cite), with the optimization of section 5.1 there
+when the $j$-invariant lies in the prime field. The result is proven to be
+correct.
 """
 function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   K = base_field(E)
@@ -241,17 +250,27 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   j = j_invariant(E)
 
   p <= 3 && return iszero(j)
-  iszero(j) && return mod(p,3) == 2    # supersingular <=> p != 1 mod 3
-  j == K(1728) && return mod(p,4) == 3 # supersingular <=> p != 1 mod 4
+  # For p > 3, the reduction of an elliptic curve with complex multiplication by
+  # an order of discriminant d is supersingular if and only if p does not split
+  # in Q(sqrt(d)) (Deuring; Lang, Elliptic Functions, Chapter 13, Theorem 12),
+  # and whether E is supersingular depends only on j.
+  for (d, jd) in _CLASS_NUMBER_ONE_J_INVARIANTS
+    j == jd && return kronecker_symbol(ZZ(d), p) != 1
+  end
 
   jp = j^p
-  # supersingular j-invariants are in F_{p^2}
-  jp^p != j && return false
+  # supersingular j-invariants are in F_{p^2}, as is all of K if its degree is
+  # at most 2
+  absolute_degree(K) > 2 && jp^p != j && return false
 
-  L = finite_field(p, 2)[1]
+  if jp == j
+    F = prime_field(K)
+    jF = F(lift(ZZ, absolute_coordinates(j)[1]))
+    return _is_supersingular_prime_field(jF)
+  end
+  # p is the characteristic of K, so it is prime
+  L = finite_field(p, 2; check = false)[1]
   Lx, X = polynomial_ring(L, :X; cached = false)
-  Lxy, Y = polynomial_ring(Lx, :Y; cached = false)
-  Phi2 = X^3 + Y^3 - X^2*Y^2 + 1488*(X^2*Y + Y^2*X) - 162000*(X^2 + Y^2) + 40773375*X*Y + 8748000000*(X + Y) - 157464000000000
 
   # j is a root of X^2 - (j + j^p)*X + j^(p + 1), whose coefficients lie in F_p.
   # Conjugate j-invariants are both supersingular or both ordinary, so we need any conjugate
@@ -259,46 +278,99 @@ function is_supersingular(E::EllipticCurve{T}) where T <: FinFieldElem
   jn = L(lift(ZZ, absolute_coordinates(j * jp)[1]))
   jL = first(roots(X^2 - jt*X + jn))
 
-  # In Sutherland's algorithm we must consider roots with multiplicity!
-  # According to pari/gp source code comments, we can get multiple roots
-  #   when E has complex multiplication over Q(sqrt(-13))
-  #   that is for p = 3, 5, 7, 11, 13, 14 (mod 15)
-  # We check if we got 3 roots (with multiplicity)
-  #   but there is no need to do a duplicated path search thus we store unique roots
-  # TODO: redo once we have roots function with multiplicities
+  # The edges of the 2-isogeny graph are counted with multiplicity, so jL has
+  # three neighbours if Phi_2(jL, X) has three roots counted so. A repeated
+  # root gives the same paths twice, so each is followed once.
+  a, b, c = _modular_polynomial_2(jL)
+  rts = roots_with_multiplicities(X^3 + a*X^2 + b*X + c)
+  sum(last, rts; init = 0) < 3 && return false
+  js = first.(rts)
 
-  js = elem_type(L)[]
-  sizehint!(js, 3)
-
-  total_count = 0
-  for (g, e) in factor(Phi2(jL))
-    if degree(g) == 1
-      total_count += e
-      @assert isone(coeff(g, 1))
-      push!(js, -coeff(g, 0))
-    end
-  end
-
-  total_count < 3 && return false
-  path_count = length(js)
-
-  newjs = fill(jL, path_count)
-  f = zeros_array(Lx, path_count)
-
-  # in Sutherland paper the path length is checked up to floor( log_2(p) ) + 1
+  # in Sutherland's paper the path length is checked up to floor( log_2(p) ) + 1
   # which is exactly the bitlength of p
-  m = nbits(p)
-  for _ in 1:m
-    for i in 1:path_count
-      f[i] = divexact(Phi2(js[i]), X - newjs[i])
-      newjs[i] = js[i]
-
-      froots = roots(f[i])
-      isempty(froots) && return false
-      js[i] = froots[1]
+  previous = fill(jL, length(js))
+  for _ in 1:nbits(p)
+    for i in eachindex(js)
+      step = _next_2_isogeny_step(js[i], previous[i])
+      step === nothing && return false
+      previous[i] = js[i]
+      js[i] = first(step)
     end
   end
   return true
+end
+
+# Algorithm 2 of [Sut12] for j in the prime field F = F_p, with the
+# optimization of section 5.1 there: the paths are walked in G_2(F_p) until one
+# reaches a vertex with only one neighbour in F_p; that path alone goes on in
+# G_2(F_{p^2}), since if E is ordinary, the edges leaving F_p from that vertex
+# descend. F_{p^2} is constructed only then.
+function _is_supersingular_prime_field(j::FinFieldElem)
+  F = parent(j)
+  p = characteristic(F)
+  m = nbits(p)
+  Fx, X = polynomial_ring(F, :X; cached = false)
+  a, b, c = _modular_polynomial_2(j)
+  rts = roots_with_multiplicities(X^3 + a*X^2 + b*X + c)
+  # irreducible over F_p, so also over F_{p^2}: j has fewer than 3 neighbours
+  isempty(rts) && return false
+  if length(rts) == 1 && rts[1][2] == 1
+    # j has one neighbour in F_p
+    back, cur = rts[1][1], j
+  else
+    # all three neighbours of j are in F_p
+    js = first.(rts)
+    previous = fill(j, length(js))
+    k = 0
+    for _ in 1:m
+      for i in eachindex(js)
+        step = _next_2_isogeny_step(js[i], previous[i])
+        if step === nothing
+          k = i
+          break
+        end
+        previous[i] = js[i]
+        js[i] = first(step)
+      end
+      k > 0 && break
+    end
+    # every path has length m + 1, as in Algorithm 2
+    k == 0 && return true
+    back, cur = previous[k], js[k]
+  end
+  # cur has the one neighbour back in F_p; go on through one of the other two
+  # in F_{p^2}, where p, the characteristic of F, is prime
+  L = finite_field(p, 2; check = false)[1]
+  back, cur = L(lift(ZZ, back)), L(lift(ZZ, cur))
+  for _ in 0:m
+    step = _next_2_isogeny_step(cur, back)
+    step === nothing && return false
+    back, cur = cur, first(step)
+  end
+  return true
+end
+
+# The coefficients (a, b, c) of Phi_2(y, X) = X^3 + a*X^2 + b*X + c, the
+# classical modular polynomial of level 2 with one variable specialised at y.
+function _modular_polynomial_2(y::FinFieldElem)
+  y2 = y * y
+  return (-y2 + 1488 * y - 162000,
+          1488 * y2 + 40773375 * y + 8748000000,
+          y2 * y - 162000 * y2 + 8748000000 * y - 157464000000000)
+end
+
+# The two roots of Phi_2(j, X)/(X - back) in the field of j, or `nothing` if
+# they do not lie in it, for a root `back` of Phi_2(j, X): one step of a path
+# in the 2-isogeny graph that does not go back [Sut12, Algorithm 2, step 5],
+# by the quadratic formula as in section 4.2 there, for odd characteristic.
+function _next_2_isogeny_step(j::T, back::T) where T <: FinFieldElem
+  # Phi_2(j, X) = (X - back) * (X^2 + q1*X + q0)
+  a, b, _ = _modular_polynomial_2(j)
+  q1 = a + back
+  q0 = b + back * q1
+  fl, s = is_square_with_sqrt(q1^2 - 4*q0)
+  fl || return nothing
+  return (divexact(-q1 + s, 2), divexact(-q1 - s, 2))
 end
 
 @doc raw"""
