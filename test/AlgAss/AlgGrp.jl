@@ -274,6 +274,10 @@
     @test @inferred(x - y) == -@inferred(y - x)
     @test @inferred(x * y) == A(g1 + g2)
     @test @inferred((x + y)[g1]) == 1
+
+    # Hashing
+    @test hash(x + y) == hash(y + x)
+    @test length(Set([x, y, A(g1), x * y, y * x])) == 3
   end
 
   let

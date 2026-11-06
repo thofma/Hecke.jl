@@ -864,7 +864,11 @@ Base.copy(a::AbstractAssociativeAlgebraElem) = deepcopy(a)
 ################################################################################
 
 function Base.hash(a::AbstractAssociativeAlgebraElem{T}, h::UInt) where {T}
-  return Base.hash(coefficients(a, copy = false), h)
+  if _is_sparse(a)
+    return Base.hash(_coeffs_sparse(a), h)
+  else
+    return Base.hash(coefficients(a, copy = false), h)
+  end
 end
 
 ################################################################################
