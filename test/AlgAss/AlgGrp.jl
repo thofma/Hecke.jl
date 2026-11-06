@@ -266,6 +266,14 @@
     add!(w, g1)
     @test x == A(g1 + g2)
     @test x != A(2*g1 + g2)
+
+    # Type stability
+    x = A(g1)
+    y = A(g2)
+    @test @inferred(x + y) == @inferred(y + x)
+    @test @inferred(x - y) == -@inferred(y - x)
+    @test @inferred(x * y) == A(g1 + g2)
+    @test @inferred((x + y)[g1]) == 1
   end
 
   let

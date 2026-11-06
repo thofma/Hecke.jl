@@ -8,6 +8,10 @@ _is_sparse(a::AbstractAssociativeAlgebraElem) = _is_sparse(parent(a))
 
 _is_dense(a::AbstractAssociativeAlgebraElem) = _is_dense(parent(a))
 
+# The field is untyped, since dense elements leave it undefined.
+_coeffs_sparse(a::AbstractAssociativeAlgebraElem{T}) where {T} =
+  a.coeffs_sparse::sparse_row_type(T)
+
 function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem}, ::Type{S}) where {S}
   T = elem_type(base_ring_type(parent_type(U)))
   if AbstractAlgebra.promote_rule(T, S) === T
@@ -155,7 +159,7 @@ end
 
 function -(a::AbstractAssociativeAlgebraElem{T}) where {T}
   if _is_sparse(a)
-    return parent(a)(-a.coeffs_sparse)
+    return parent(a)(-_coeffs_sparse(a))
   else
     v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
     return parent(a)(v)
@@ -177,7 +181,7 @@ function +(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraEl
     end
     return parent(a)(v)
   else
-    vv = a.coeffs_sparse + b.coeffs_sparse
+    vv = _coeffs_sparse(a) + _coeffs_sparse(b)
     return parent(a)(vv)
   end
 end
@@ -185,7 +189,7 @@ end
 function -(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   if _is_sparse(a)
-    return parent(a)(a.coeffs_sparse - b.coeffs_sparse)
+    return parent(a)(_coeffs_sparse(a) - _coeffs_sparse(b))
   else
     v = Vector{T}(undef, dim(parent(a)))
     for i = 1:dim(parent(a))
@@ -259,8 +263,8 @@ function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   else
     op = _op(A)
     s = sparse_row(base_ring(A))
-    for (i, ci) in a.coeffs_sparse
-      r = sparse_row(base_ring(A), [(__elem_index(A, op(A.base_to_group[i],A.base_to_group[j])), ci * cj) for (j, cj) in b.coeffs_sparse])
+    for (i, ci) in _coeffs_sparse(a)
+      r = sparse_row(base_ring(A), [(__elem_index(A, op(A.base_to_group[i],A.base_to_group[j])), ci * cj) for (j, cj) in _coeffs_sparse(b)])
       s += r
     end
     return A(s)
@@ -269,7 +273,7 @@ end
 
 function _is_group_algebra_monomial(a::GroupAlgebraElem)
   if _is_sparse(a)
-    ca = a.coeffs_sparse::sparse_row_type(base_ring(parent(a)))
+    ca = _coeffs_sparse(a)
     if length(ca) == 1
       return true, ca.pos[1], ca.values[1]
     end
@@ -320,7 +324,7 @@ function _mul_group_elem(a::GroupAlgebraElem{T}, g, ::Val{left}, c = nothing) wh
     return A(v)
   else
     op = _op(A)
-    ca = a.coeffs_sparse::sparse_row_type(base_ring(A))
+    ca = _coeffs_sparse(a)
     v = Tuple{Int, T}[]
     sizehint!(v, length(ca))
     for (i, ci) in ca
@@ -344,7 +348,7 @@ function getindex(a::GroupAlgebraElem{S, GroupAlgebra{S, T, U}}, g::U) where {S,
     if !haskey(parent(a).group_to_base, g)
       return zero(base_ring(parent(a)))
     else
-      return a.coeffs_sparse[parent(a).group_to_base[g]]
+      return _coeffs_sparse(a)[parent(a).group_to_base[g]]
     end
   else
     return a.coeffs[parent(a).group_to_base[g]]
@@ -567,7 +571,7 @@ function *(a::AbstractAssociativeAlgebraElem{S}, b::S) where {S <: RingElem}
   if !_is_sparse(a)
     return typeof(a)(parent(a), coefficients(a, copy = false).* Ref(b))
   else
-    return typeof(a)(parent(a), a.coeffs_sparse * b)
+    return typeof(a)(parent(a), _coeffs_sparse(a) * b)
   end
 end
 
@@ -816,7 +820,7 @@ function show(io::IO, a::AbstractAssociativeAlgebraElem)
     if _is_sparse(a)
       sum = Expr(:call, :+)
       if !iszero(a)
-        for (i, ci) in a.coeffs_sparse
+        for (i, ci) in _coeffs_sparse(a)
           push!(sum.args,
                 Expr(:call, :*, AbstractAlgebra.expressify(ci, context = io),
                                 AbstractAlgebra.expressify(parent(a).base_to_group[i], context = IOContext(io, :compact => true))))
@@ -874,7 +878,7 @@ function ==(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraE
   if !_is_sparse(a)
     return coefficients(a, copy = false) == coefficients(b, copy = false)
   else
-    return a.coeffs_sparse == b.coeffs_sparse
+    return _coeffs_sparse(a) == _coeffs_sparse(b)
   end
 end
 
@@ -1117,7 +1121,7 @@ isone(a::AbstractAssociativeAlgebraElem) = a == one(parent(a))
 
 function iszero(a::AbstractAssociativeAlgebraElem)
   if _is_sparse(a)
-    return length(a.coeffs_sparse) == 0
+    return length(_coeffs_sparse(a)) == 0
   end
   return all(iszero, coefficients(a, copy = false))
 end
