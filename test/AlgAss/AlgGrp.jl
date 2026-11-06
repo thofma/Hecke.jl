@@ -278,6 +278,10 @@
     # Hashing
     @test hash(x + y) == hash(y + x)
     @test length(Set([x, y, A(g1), x * y, y * x])) == 3
+
+    # Compact printing
+    @test sprint(show, x; context = :compact => true) isa String
+    @test sprint(show, Dict(x => 1)) isa String
   end
 
   let

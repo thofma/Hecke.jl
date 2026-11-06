@@ -814,19 +814,19 @@ end
 ################################################################################
 
 function show(io::IO, a::AbstractAssociativeAlgebraElem)
-  if get(io, :compact, false)
-    print(io, coefficients(a, copy = false))
-  else
-    if _is_sparse(a)
-      sum = Expr(:call, :+)
-      if !iszero(a)
-        for (i, ci) in _coeffs_sparse(a)
-          push!(sum.args,
-                Expr(:call, :*, AbstractAlgebra.expressify(ci, context = io),
-                                AbstractAlgebra.expressify(parent(a).base_to_group[i], context = IOContext(io, :compact => true))))
-        end
+  if _is_sparse(a)
+    sum = Expr(:call, :+)
+    if !iszero(a)
+      for (i, ci) in _coeffs_sparse(a)
+        push!(sum.args,
+              Expr(:call, :*, AbstractAlgebra.expressify(ci, context = io),
+                              AbstractAlgebra.expressify(parent(a).base_to_group[i], context = IOContext(io, :compact => true))))
       end
-      print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
+    end
+    print(io, AbstractAlgebra.expr_to_string(AbstractAlgebra.canonicalize(sum)))
+  else
+    if get(io, :compact, false)
+      print(io, coefficients(a, copy = false))
     else
       ve = Expr(:vect)
       for ci in coefficients(a, copy = false)
