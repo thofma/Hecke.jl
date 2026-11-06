@@ -49,11 +49,18 @@ end
 end
 
 @testset "euler_phi and carmichael_lambda" begin
-  # compare with the unit group of F_q[x]/(f), computed by brute force
+  # Test constants and compare with unit groups of F_q[x]/(f) by brute force.
   for F in [Native.GF(2), Native.GF(3), Native.GF(ZZ(3)),
             Native.finite_field(2, 2, :a)[1],
             Native.finite_field(3, 2, :a)[1]]
     Fx, x = F[:x]
+    @test_throws ArgumentError euler_phi(zero(Fx))
+    for c in F
+      iszero(c) && continue
+      phi = euler_phi(Fx(c))
+      @test phi isa ZZRingElem
+      @test phi == 1
+    end
     for f in [x^3, x^4, (x + 1)^2 * (x^2 + x + 1), x^3 + x^2 + 1]
       n = degree(f)
       cs = Iterators.product(fill(collect(F), n)...)
