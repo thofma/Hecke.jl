@@ -79,16 +79,22 @@ function is_maximal(O::AlgAssAbsOrd)
     end
   end
 
-  if typeof(A) <: GroupAlgebra
+  if A isa GroupAlgebra
+    # Maximal Z-orders in QQ[G] have discriminant supported on |G|.
+    # See Curtis and Reiner, Methods of Representation Theory, Vol. I,
+    # Proposition (27.1), and local conjugacy of maximal orders.
+    if A isa GroupAlgebra{QQFieldElem} && base_ring(O) === ZZ &&
+       !isone(ppio(abs(d), ZZ(degree(O)))[2])
+      O.is_maximal = 2
+      return false
+    end
     fac = factor(degree(O))
   else
     fac = factor(abs(d))
   end
 
-  for (p, j) in fac
-    # This can be improved a bit. Even in the GroupAlgebra case, we should
-    # only look at the primes dividing d with power > 1
-    if !(typeof(A) <: GroupAlgebra) && j == 1
+  for (p, _) in fac
+    if rem(d, p^2) != 0
       continue
     end
     d2 = discriminant(pmaximal_overorder(O, p))
