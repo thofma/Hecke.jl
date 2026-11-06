@@ -50,15 +50,34 @@ end
 
 @testset "euler_phi and carmichael_lambda" begin
   # compare with the unit group of F_q[x]/(f), computed by brute force
-  for F in [Native.GF(2), Native.GF(ZZ(3)), Native.finite_field(2, 2, :a)[1]]
+  for F in [Native.GF(2), Native.GF(3), Native.GF(ZZ(3)),
+            Native.finite_field(2, 2, :a)[1],
+            Native.finite_field(3, 2, :a)[1]]
     Fx, x = F[:x]
-    for f in [x^4, (x + 1)^2 * (x^2 + x + 1), x^3 + x^2 + 1]
+    for f in [x^3, x^4, (x + 1)^2 * (x^2 + x + 1), x^3 + x^2 + 1]
       n = degree(f)
       cs = Iterators.product(fill(collect(F), n)...)
       U = [g for g in (Fx(collect(c)) for c in cs) if isone(gcd(g, f))]
       ord(g) = findfirst(k -> isone(powermod(g, k, f)), 1:length(U))
       @test euler_phi(f) == length(U)
       @test carmichael_lambda(f) == reduce(lcm, ord.(U))
+    end
+  end
+end
+
+@testset "carmichael_lambda at characteristic powers" begin
+  # Check exact characteristic powers and neighboring factor multiplicities.
+  for p in (2, 3, 5)
+    for F in (Native.GF(p), Native.GF(ZZ(p)),
+              Native.finite_field(p, 2, :a)[1])
+      Fx, x = F[:x]
+      q = size(F)
+      @test carmichael_lambda(one(Fx)) == 1
+      for (k, u) in ((1, 1), (p - 1, p == 2 ? 1 : p), (p, p),
+                     (p + 1, p^2), (p^2 - 1, p^2), (p^2, p^2),
+                     (p^2 + 1, p^3))
+        @test carmichael_lambda(x^k) == (q - 1)*u
+      end
     end
   end
 end
