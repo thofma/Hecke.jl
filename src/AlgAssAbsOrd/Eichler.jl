@@ -12,7 +12,9 @@ function principal_generator_eichler(I::AlgAssAbsOrdIdl)
   Nq = normred(J, O)
   @assert denominator(Nq) == 1 # J should be integral
   N = numerator(Nq)
-  @assert is_principal(N) "Ideal is not principal"
+  # Over QQ the reduced norm ideal has a positive generator, so the ray class
+  # obstruction tested in the relative implementation is always trivial.
+  isone(N) && return inv(y) # An integral ideal of reduced norm one equals O.
 
   primes = [p for (p, _) in factor(N)]
   valuations = [ valuation(N, p) for p in primes ]

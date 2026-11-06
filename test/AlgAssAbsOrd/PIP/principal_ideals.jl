@@ -1,3 +1,29 @@
+@testset "Eichler principal generators with norm one" begin
+  # Check generators of scalar left ideals, including fractional ideals.
+  A = matrix_algebra(QQ, 2)
+  O = maximal_order(A)
+  @test is_eichler(A)
+  @test is_maximal(O)
+  for I in [1*O, QQ(1, 2)*(1*O)]
+    g = Hecke.principal_generator_eichler(I)
+    @test parent(g) === A
+    @test O*g == I
+  end
+end
+
+@with_polymake @testset "Eichler principal generators" begin
+  # Nonunit reduced norms exercise field search and ideal transformation.
+  A = matrix_algebra(QQ, 2)
+  O = maximal_order(A)
+  for I in [2*O, 3*O, 6*O, QQ(1, 2)*(3*O),
+            O*A(QQ[2 1; 0 1]), O*A(QQ[1 0; 1 -3])]
+    g = Hecke.principal_generator_eichler(I)
+    @test parent(g) === A
+    @test O*g == I
+    @test abs(normred(g)) == normred(I, O)
+  end
+end
+
 @testset "PIP" begin
   G = small_group(8, 3) # D_4
   QG = QQ[G]
