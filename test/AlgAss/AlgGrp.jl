@@ -254,6 +254,20 @@
     @test sprint(show, MIME"text/plain"(), b) isa String
   end
 
+  # Sparse group algebras of infinite groups whose elements are mutable.
+  @testset "Sparse, infinite group" begin
+    G = abelian_group([0, 0, 0])
+    g1, g2, g3 = gens(G)
+
+    # Mutating a group element must not change stored elements.
+    A = group_algebra(ZZ, G; sparse = true, cached = false)
+    w = g1 + g2
+    x = A(w)
+    add!(w, g1)
+    @test x == A(g1 + g2)
+    @test x != A(2*g1 + g2)
+  end
+
   let
     # coefficient rings
     R = ZZ
