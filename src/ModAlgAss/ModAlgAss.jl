@@ -652,19 +652,21 @@ function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
   if dim(V) != dim(W)
     return false, zero_map(V, W)
   end
+
+  # V and W are isomorphic if and only if Hom(V, W) is a free End(V)-module
+  # of rank 1 with an invertible generator.
   B = _basis_of_hom(W, V)
-  if length(B) == 0
+  E, _ = endomorphism_algebra(V)
+  if length(B) != dim(E)
     return false, zero_map(V, W)
   end
 
-  # Search for an isomorphism first, since the decision below is costly.
+  # Search for an isomorphism first, since the deterministic method is costly.
   c = _find_invertible_combination(B, 50)
   if c === nothing
-    if !_have_isomorphic_tops(V, W)
+    c = _generator_of_hom(E, B)
+    if c === nothing || !is_invertible(c)
       return false, zero_map(V, W)
-    end
-    while c === nothing
-      c = _find_invertible_combination(B, 50)
     end
   end
   return true, hom(V, W, c)
@@ -691,39 +693,82 @@ function _find_invertible_combination(B::Vector{<:MatElem}, tries::Int)
   return nothing
 end
 
-# Decide whether the modules V and W of equal dimension are isomorphic.
+# Return a generator of H = Hom(V, W) as a left module over the matrix
+# algebra E = End(V), or nothing if H is not cyclic. B is a basis of H.
+# If H contains an invertible matrix, then every generator is invertible.
 #
-# Let L = End(V \oplus W) with radical J and e_V, e_W the projections onto V
-# and W. Then V and W are isomorphic if and only if the projective right
-# L-modules e_V L and e_W L are, which holds if and only if their tops are,
-# see [ARS97, Sections I.4 and II.2]. The tops are semisimple;
-# if they contain the simple L/J-module S_i with multiplicities a_i, b_i and
-# s_i = dim End(S_i), then d(X, Y) = dim Hom(top e_X L, top e_Y L)
-# = dim e_Y L e_X - dim e_Y J e_X satisfies
-# d(V, V) - 2 d(V, W) + d(W, W) = sum s_i (a_i - b_i)^2.
+# Let J be the radical of E. By Nakayama's lemma, h generates H if and only
+# if its image v generates the semisimple E-module H/JH, that is, if the rank
+# dim Ev equals dim H/JH. An element v of H/JH has maximal rank if and only if
+# Ann(v) w lies in Ev for all w in H/JH. Otherwise, for such a w and the
+# E-linear projection p onto Ev, the element v + w - p(w) has larger rank.
+# See [CIK97, Sections 2.1-2.3].
 #
-# [ARS97] M. Auslander, I. Reiten, S. O. Smalo, Representation theory of
-#         Artin algebras, Cambridge University Press, 1997.
-function _have_isomorphic_tops(V::ModAlgAss, W::ModAlgAss)
-  x, y = consistent_action(V, W)
-  n = dim(V)
-  K = coefficient_ring(V)
-  z = [block_diagonal_matrix([x[i], y[i]]) for i in 1:length(x)]
-  BL = _basis_of_commutator_algebra(z, z)
-  L = matrix_algebra(K, BL; isbasis = true)
-  BJ = [matrix(b) for b in basis(radical(L))]
-  rV = 1:n
-  rW = (n + 1):(2 * n)
-  d = [_dim_of_block_span(BL, r, c) - _dim_of_block_span(BJ, r, c)
-       for (r, c) in ((rV, rV), (rV, rW), (rW, rW))]
-  return d[1] == d[2] == d[3]
-end
+# [CIK97] A. Chistov, G. Ivanyos, M. Karpinski, Polynomial time algorithms
+#         for modules over finite dimensional algebras, ISSAC 1997, 68-74.
+function _generator_of_hom(E::MatAlgebra, B::Vector{<:MatElem})
+  K = base_ring(E)
+  r = length(B)
+  BE = [matrix(e) for e in basis(E)]
+  BJ = [matrix(j) for j in basis(radical(E))]
+  C = solve_init(matrix(K, [_eltseq(b) for b in B]))
 
-function _dim_of_block_span(B::Vector{<:MatElem}, r::UnitRange{Int}, c::UnitRange{Int})
-  if isempty(B)
-    return 0
+  # x -> x * P is the projection H -> H/JH in coordinates with respect to B,
+  # and R * P = 1.
+  JH = zero_matrix(K, 0, r)
+  for j in BJ, b in B
+    JH = vcat(JH, matrix(K, 1, r, solve(C, _eltseq(j * b); side = :left)))
   end
-  return rank(matrix([_eltseq(b[r, c]) for b in B]))
+  P = kernel(JH; side = :right)
+  s = ncols(P)
+  R = solve(P, identity_matrix(K, s); side = :left)
+
+  # The action of E on H/JH
+  T = [R * matrix(K, [solve(C, _eltseq(e * b); side = :left) for b in B]) * P
+       for e in BE]
+  # The E-endomorphisms of H/JH, computed when first needed since they are
+  # the most costly part
+  Pi = nothing
+
+  if is_finite(K)
+    v = matrix(K, 1, s, [rand(K) for _ in 1:s])
+  else
+    v = matrix(K, 1, s, [rand(-s:s) for _ in 1:s])
+  end
+  for _ in 0:s
+    U = reduce(vcat, [v * t for t in T])
+    if rank(U) == s
+      x = v * R
+      return sum(x[1, i] * B[i] for i in 1:r)
+    end
+
+    # Find a basis vector w of H/JH and a in Ann(v) with w a not in Ev.
+    N = kernel(U; side = :right)
+    Ann = kernel(U; side = :left)
+    w = nothing
+    for k in 1:nrows(Ann)
+      X = sum(Ann[k, l] * T[l] for l in 1:length(T)) * N
+      i = findfirst(i -> !is_zero_row(X, i), 1:s)
+      if i !== nothing
+        w = identity_matrix(K, s)[i:i, :]
+        break
+      end
+    end
+    if w === nothing
+      return nothing
+    end
+
+    # The projection p = sum c_k Pi_k is the identity on Ev and maps into Ev.
+    if Pi === nothing
+      Pi = _basis_of_commutator_algebra(T, T)
+    end
+    M = matrix(K, [vcat(_eltseq(U * p), _eltseq(p * N)) for p in Pi])
+    t = vcat(_eltseq(U), [zero(K) for _ in 1:(s * ncols(N))])
+    c = solve(M, matrix(K, 1, length(t), t); side = :left)
+    p = sum(c[1, k] * Pi[k] for k in 1:length(Pi))
+    v = v + w - w * p
+  end
+  error("rank did not increase")
 end
 
 function is_free(V::ModAlgAss)

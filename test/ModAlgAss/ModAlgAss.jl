@@ -73,5 +73,29 @@
       @test !is_isomorphic_with_isomorphism(V, Amodule([one(M)]))[1]
     end
   end
+
+  # isomorphism test over GF(2) where dim Hom(V, W) = dim End(V)
+  let
+    F = GF(2)
+    V = Amodule([matrix(F, [0 0; 0 1]), matrix(F, [1 0; 0 1])])
+    W = Amodule([matrix(F, [0 0; 0 0]), matrix(F, [1 0; 0 1])])
+    @test !is_isomorphic_with_isomorphism(V, W)[1]
+    V = Amodule([matrix(F, [1 1; 0 0]), matrix(F, [1 1; 0 1])])
+    W = Amodule([matrix(F, [1 1; 0 0]), matrix(F, [1 0; 0 1])])
+    @test !is_isomorphic_with_isomorphism(V, W)[1]
+
+    # V is the sum of k pairwise non-isomorphic simple modules, so a random
+    # element of Hom(V, W) is invertible with probability 2^-k.
+    k = 16
+    gens = [diagonal_matrix(F, [F((i >> j) & 1) for i in 0:(k - 1)])
+            for j in 0:3]
+    T = matrix(F, k, k, [i <= j ? 1 : 0 for i in 1:k for j in 1:k])
+    V = Amodule(gens)
+    W = Amodule([T * m * inv(T) for m in gens])
+    fl, h = is_isomorphic_with_isomorphism(V, W)
+    @test fl
+    @test is_invertible(matrix(h))
+    @test all(m * matrix(h) == matrix(h) * T * m * inv(T) for m in gens)
+  end
 end
 
