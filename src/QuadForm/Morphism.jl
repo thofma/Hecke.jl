@@ -339,6 +339,10 @@ function try_init_small(
 
   r = length(C.G)
 
+  if !all(fits(Int, x) for G in (C.G, D.G) for g in G for x in g)
+    return false, Csmall
+  end
+
   Gsmall = Matrix{Int}[Matrix{Int}(g) for g in C.G]
 
   Gsmall_nbits = 0
