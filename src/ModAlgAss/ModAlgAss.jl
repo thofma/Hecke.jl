@@ -649,18 +649,81 @@ function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
   if V == W
     return true, hom(V, W, identity_matrix(br, dim(W)); check=false)
   end
+  if dim(V) != dim(W)
+    return false, zero_map(V, W)
+  end
   B = _basis_of_hom(W, V)
   if length(B) == 0
-    return false, hom(V, W, zero_matrix(br, dim(V), dim(W)); check=false)
+    return false, zero_map(V, W)
   end
-  l = length(B)
-  for i in 1:50
-    c = sum(c * b for (c, b) in zip(rand(-1:1, l), B))
-    if !iszero(det(c))
-      return true, hom(V, W, c)
+
+  # Search for an isomorphism first, since the decision below is costly.
+  c = _find_invertible_combination(B, 50)
+  if c === nothing
+    if !_have_isomorphic_tops(V, W)
+      return false, zero_map(V, W)
+    end
+    while c === nothing
+      c = _find_invertible_combination(B, 50)
     end
   end
-  throw("Maximal number of tries exhausted while finding isomorphism")
+  return true, hom(V, W, c)
+end
+
+# Return an invertible random linear combination of the square matrices B,
+# or nothing if none is found in the given number of tries. If the span of B
+# contains an invertible matrix, a try succeeds with probability at least 1/2
+# over a field of characteristic zero (Schwartz-Zippel, det has degree
+# nrows(B[1])), and with positive probability over a finite field.
+function _find_invertible_combination(B::Vector{<:MatElem}, tries::Int)
+  K = base_ring(B[1])
+  N = nrows(B[1])
+  for _ in 1:tries
+    if is_finite(K)
+      c = sum(rand(K) * b for b in B)
+    else
+      c = sum(rand(-N:N) * b for b in B)
+    end
+    if is_invertible(c)
+      return c
+    end
+  end
+  return nothing
+end
+
+# Decide whether the modules V and W of equal dimension are isomorphic.
+#
+# Let L = End(V \oplus W) with radical J and e_V, e_W the projections onto V
+# and W. Then V and W are isomorphic if and only if the projective right
+# L-modules e_V L and e_W L are, which holds if and only if their tops are,
+# see [ARS97, Sections I.4 and II.2]. The tops are semisimple;
+# if they contain the simple L/J-module S_i with multiplicities a_i, b_i and
+# s_i = dim End(S_i), then d(X, Y) = dim Hom(top e_X L, top e_Y L)
+# = dim e_Y L e_X - dim e_Y J e_X satisfies
+# d(V, V) - 2 d(V, W) + d(W, W) = sum s_i (a_i - b_i)^2.
+#
+# [ARS97] M. Auslander, I. Reiten, S. O. Smalo, Representation theory of
+#         Artin algebras, Cambridge University Press, 1997.
+function _have_isomorphic_tops(V::ModAlgAss, W::ModAlgAss)
+  x, y = consistent_action(V, W)
+  n = dim(V)
+  K = coefficient_ring(V)
+  z = [block_diagonal_matrix([x[i], y[i]]) for i in 1:length(x)]
+  BL = _basis_of_commutator_algebra(z, z)
+  L = matrix_algebra(K, BL; isbasis = true)
+  BJ = [matrix(b) for b in basis(radical(L))]
+  rV = 1:n
+  rW = (n + 1):(2 * n)
+  d = [_dim_of_block_span(BL, r, c) - _dim_of_block_span(BJ, r, c)
+       for (r, c) in ((rV, rV), (rV, rW), (rW, rW))]
+  return d[1] == d[2] == d[3]
+end
+
+function _dim_of_block_span(B::Vector{<:MatElem}, r::UnitRange{Int}, c::UnitRange{Int})
+  if isempty(B)
+    return 0
+  end
+  return rank(matrix([_eltseq(b[r, c]) for b in B]))
 end
 
 function is_free(V::ModAlgAss)
