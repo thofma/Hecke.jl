@@ -1,0 +1,1023 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-\.]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
+    
+    
+      
+        <title>Introduction - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.adb8469c.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.86422ebf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#introduction" tabindex="0" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Hecke" aria-label="Hecke" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Hecke
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Introduction
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../.." class="md-tabs__link">
+        About
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    
+    
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../number_fields/intro/" class="md-tabs__link">
+          Documentation
+        </a>
+      
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="https://www.github.com/thofma/Hecke.jl" class="md-tabs__link">
+          Source
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Hecke
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Number fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        Number fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/basics/" title="Creation and basics" class="md-nav__link">
+      Creation and basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/internal/" title="Internals" class="md-nav__link">
+      Internals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Orders
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        Orders
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Introduction
+      </label>
+    
+    <a href="./" title="Introduction" class="md-nav__link md-nav__link--active">
+      Introduction
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#definitions-and-vocabulary" class="md-nav__link">
+    Definitions and vocabulary
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#number-fields" class="md-nav__link">
+    Number fields
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orders" class="md-nav__link">
+    Orders
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../orders/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ideals/" title="Ideals" class="md-nav__link">
+      Ideals
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../frac_ideals/" title="Fractional Ideals" class="md-nav__link">
+      Fractional Ideals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Quadratic and Hermitian forms
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Quadratic and Hermitian forms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/basics/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/lattices/" title="Lattices" class="md-nav__link">
+      Lattices
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Abelian groups
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Abelian groups
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../abelian/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Class fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Class fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../class_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Misc
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../FacElem/" title="Factored Elements" class="md-nav__link">
+      Factored Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sparse/intro/" title="Sparse Linear Algebra" class="md-nav__link">
+      Sparse Linear Algebra
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Source
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Source
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://www.github.com/thofma/Hecke.jl" title="None" class="md-nav__link">
+      None
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#definitions-and-vocabulary" class="md-nav__link">
+    Definitions and vocabulary
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#number-fields" class="md-nav__link">
+    Number fields
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#orders" class="md-nav__link">
+    Orders
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p><a id='Introduction-1'></a></p>
+<h1 id="introduction">Introduction</h1>
+<p>This chapter deals with absolute number fields and orders there of. </p>
+<p><a id='Definitions-and-vocabulary-1'></a></p>
+<h2 id="definitions-and-vocabulary">Definitions and vocabulary</h2>
+<p>We begin by collecting the necessary definitions and vocabulary.  This is in particular important for everything related to embeddings of number fields into archimedean fields, since they are at least two (slighlty) different normalizations. </p>
+<p><a id='Number-fields-1'></a></p>
+<h3 id="number-fields">Number fields</h3>
+<p>By an absolute number field we mean finite extensions of <script type="math/tex">\mathbf Q</script>, which is of type <code>AnticNumberField</code> and whose elements are of type <code>nf_elem</code>. Such an absolute number field <script type="math/tex">K</script> is always given in the form <script type="math/tex">K = \mathbf Q(\alpha) = \mathbf Q[X]/(f)</script>, where <script type="math/tex">f \in \mathbf Q[X]</script> is an irreducible polynomial. See <a href="../../number_fields/intro/#NumberFieldsLink-1">here</a> for more information on the different types of fields supported.</p>
+<p>We call <script type="math/tex">(1,\alpha,\alpha^2,\dotsc,\alpha^{d-1})</script>, where <script type="math/tex">d</script> is the degree <script type="math/tex">[K : \mathbf Q]</script> the <em>power basis</em> of <script type="math/tex">K</script>. If <script type="math/tex">\beta</script> is any element of <script type="math/tex">K</script>, then the <em>representation matrix</em> of <script type="math/tex">\beta</script> is the matrix representing <script type="math/tex">K \to K, \gamma \mapsto \beta \gamma</script> with respect to the power basis, that is,</p>
+<p>
+<script type="math/tex; mode=display">
+\beta \cdot (1,\alpha,\dotsc,\alpha^{d-1}) = M_\alpha (1, \alpha, \dotsc, \alpha^{d-1}).
+</script>
+</p>
+<p>Let <script type="math/tex">(r,s)</script> be the signature of <script type="math/tex">K</script>, that is, <script type="math/tex">K</script> has <script type="math/tex">r</script> real embeddings <script type="math/tex">\sigma_i \colon K \to \mathbf{R}</script>, <script type="math/tex">1 \leq i \leq r</script>, and <script type="math/tex">2s</script> complex embeddings <script type="math/tex">\sigma_i \colon K \to \mathbf{C}</script>, <script type="math/tex">1 \leq i \leq 2s</script>. In Hecke the complex embeddings are always ordered such that <script type="math/tex">\sigma_i = \overline{\sigma_{i+s}}</script> for <script type="math/tex">r + 1 \leq i \leq r + s</script>. The <script type="math/tex">\mathbf{Q}</script>-linear function</p>
+<p>
+<script type="math/tex; mode=display">
+K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\sqrt{2}\operatorname{Re}(\sigma_{r+1}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\sqrt{2}\operatorname{Re}(\sigma_{r+s}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+s}(\alpha))
+</script>
+</p>
+<p>is called the <em>Minkowski map</em> (or <em>Minkowski embedding</em>).</p>
+<p><a id='Orders-1'></a></p>
+<h3 id="orders">Orders</h3>
+<p>If <script type="math/tex">K = \mathbf Q(\alpha)</script> is an absolute number field, then an <em>order</em> <script type="math/tex">\mathcal O</script> of <script type="math/tex">K</script> is a subring of the ring of integers <script type="math/tex">\mathcal O_K</script>, which is free of rank <script type="math/tex">[ K : \mathbf Q]</script> as a <script type="math/tex">\mathbf Z</script>-module. The natural order <script type="math/tex">\mathbf Z[\alpha]</script> is called the <em>equation order</em> of <script type="math/tex">K</script>. In Hecke orders of absolute number fields are constructed (implicitely) by specifying a <script type="math/tex">\mathbf Z</script>-basis, which is refered to as the <em>basis</em> of <script type="math/tex">\mathcal O</script>. If <script type="math/tex">(\omega_1,\dotsc,\omega_d)</script> is the basis of <script type="math/tex">\mathcal O</script>, then the matrix <script type="math/tex">B \in \operatorname{Mat}_{d \times d}(\mathbf Q)</script> with</p>
+<p>
+<script type="math/tex; mode=display">
+\begin{pmatrix} \omega_1 \\\\ \vdots \\\\ \omega_d \end{pmatrix} = B \begin{pmatrix} 1 \\\\ \vdots \\\\ \alpha^{d - 1} \end{pmatrix}
+</script>
+</p>
+<p>is called the <em>basis matrix</em> of <script type="math/tex">\mathcal O</script>. We call <script type="math/tex">\det(B)</script> the <em>generalized index</em> of <script type="math/tex">\mathcal O</script>.  In case <script type="math/tex">\mathbf Z[\alpha] \subseteq \mathcal O</script>, the determinant <script type="math/tex">\det(B)^{-1}</script> is in fact equal to <script type="math/tex">[ \mathcal O : \mathbf Z[\alpha]]</script> and is called the <em>index</em> of <script type="math/tex">\mathcal O</script>. The matrix</p>
+<p>
+<script type="math/tex; mode=display">
+\begin{pmatrix} 
+\sigma_1(\omega_1) & \dotsc & \sigma_r(\omega_1) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_1)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_1)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_1)) \\\\
+\sigma_1(\omega_2) & \dotsc & \sigma_r(\omega_2) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_2)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_2)) & \dotsc  & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_2)) \\\\
+\vdots & \dotsc & \vdots & \vdots & \dotsc & \vdots & \vdots\\\\
+\sigma_1(\omega_d) & \dotsc & \sigma_r(\omega_d) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_d)) & \sqrt{2}\operatorname{Im}(\sigma_{r+2}(\omega_d)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_d))
+\end{pmatrix}
+\in \operatorname{Mat}_{d\times d}(\mathbf R).
+</script>
+</p>
+<p>is called the <em>Minkowski matrix</em> of <script type="math/tex">\mathcal O</script>.</p>
+<h2 id="examples">Examples</h2>
+<p>Usually, to create an order, one starts with a field (or a polynomial):</p>
+<div class="codehilite"><pre><span></span><code>julia&gt; Qx, x = PolynomialRing(FlintQQ, &quot;x&quot;);
+
+julia&gt; K, a = NumberField(x^2 - 10, &quot;a&quot;);
+
+julia&gt; E = EquationOrder(K)
+Maximal order of Number field over Rational Field with defining polynomial x^2-10
+with basis nf_elem[1, a]
+
+julia&gt; Z_K = MaximalOrder(K)
+Maximal order of Number field over Rational Field with defining polynomial x^2-10
+with basis nf_elem[1, a]
+
+julia&gt; conductor(E)
+&lt;no 2-elts present&gt;
+basis_matrix
+[1  0]
+[0  1]
+
+julia&gt; E == Z_K
+true
+</code></pre></div>
+
+<p>Once orders are created, we can play with elements and ideals:</p>
+<div class="codehilite"><pre><span></span><code>julia&gt; lp = prime_decomposition(Z_K, 2)
+1-element Array{Tuple{NfAbsOrdIdl{AnticNumberField,nf_elem},Int64},1}:
+ (&lt;2, a&gt;
+Norm: 2
+Minimum: 2
+two normal wrt: 2, 2)
+
+julia&gt; p = lp[1][1]
+&lt;2, a&gt;
+Norm: 2
+Minimum: 2
+two normal wrt: 2
+
+julia&gt; isprincipal(p)
+(false, 1)
+
+julia&gt; fl, alpha = isprincipal(p^2)
+(true, -2)
+
+julia&gt; norm(alpha)
+4
+</code></pre></div>
+
+<p>It is possible to work with residue fields as well:</p>
+<div class="codehilite"><pre><span></span><code>julia&gt; Fp, mFp = ResidueField(Z_K, p)
+(Finite field of degree 1 over F_2, Map with following data
+Domain:
+=======
+Maximal order of Number field over Rational Field with defining polynomial x^2-10
+with basis nf_elem[1, a]
+Codomain:
+=========
+Finite field of degree 1 over F_2
+)
+
+julia&gt; [ mFp(x) for x = basis(Z_K)]
+2-element Array{fq,1}:
+ 1
+ 0
+</code></pre></div>
+                
+                  
+                
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../number_fields/internal/" title="Internals" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Internals
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../orders/" title="Basics" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Basics
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org" target="_blank" rel="noopener">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.c33a9706.js"></script>
+      
+      <script>app.initialize({version:"1.1",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+    
+  </body>
+</html>

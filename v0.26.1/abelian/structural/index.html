@@ -1,0 +1,2191 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Hecke">
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+      
+        <link rel="prev" href="../maps/">
+      
+      
+        <link rel="next" href="../../class_fields/intro/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.6">
+    
+    
+      
+        <title>Structural Computations - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.50c56a3b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/default.min.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#structural-computations" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Hecke" class="md-header__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Hecke
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Structural Computations
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo" aria-label="Hecke" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    Hecke
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/thofma/Hecke.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Hecke.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    About
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Documentation
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Number fields
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Number fields
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Number field operations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/complex_embeddings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Complex embeddings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../number_fields/internal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Internals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Function fields
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Function fields
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Creation and basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/internal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Internals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../function_fields/degree_localization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Degree localization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Orders
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Orders
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/orders/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/ideals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ideals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../orders/frac_ideals/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fractional Ideals
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Quadratic and hermitian forms
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            Quadratic and hermitian forms
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spaces
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/lattices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/integer_lattices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integer lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/genusherm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Genera for hermitian lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/Zgenera/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Genera for integer lattices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quad_forms/discriminant_group/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Discriminant groups
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elliptic curves
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            Elliptic curves
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/finite_fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Finite fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elliptic_curves/number_fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Number fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Abelian groups
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            Abelian groups
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../maps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Structural Computations
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Structural Computations
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#structural-computations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structural Computations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structural Computations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#subgroups-and-quotients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subgroups and Quotients
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#direct-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      Direct Products
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tensor-producs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tensor Producs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hom-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hom-Group
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Class fields
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            Class fields
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../class_fields/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            Misc
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/Map/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Maps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FacElem/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Factored Elements
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparse/intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sparse Linear Algebra
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pmat/introduction/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pseudo-Matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/conjugacy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Conjugacy of integral matrices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../misc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Extra features
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            Extra features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/macros/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Macros
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/mset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Multi-sets
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    References
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_12" id="__nav_2_12_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_12">
+            <span class="md-nav__icon md-icon"></span>
+            Developer
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dev/test/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#structural-computations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structural Computations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structural Computations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#subgroups-and-quotients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subgroups and Quotients
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#direct-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      Direct Products
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tensor-producs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tensor Producs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hom-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hom-Group
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Structural Computations</h1>
+
+<p><a id='Structural-Computations'></a></p>
+<p><a id='Structural-Computations-1'></a></p>
+<h2 id="structural-computations">Structural Computations</h2>
+<p>Abelian groups support a wide range of structural operations such as</p>
+<ul>
+<li>enumeration of subgroups</li>
+<li>(outer) direct products</li>
+<li>tensor and <code>hom</code> constructions</li>
+<li>free resolutions and general complexes</li>
+<li>(co)-homology and tensor and <code>hom</code>-functors</li>
+</ul>
+<p><a id='snf-Tuple{FinGenAbGroup}' href='#snf-Tuple{FinGenAbGroup}'>#</a>
+<strong><code>snf</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">snf</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Return a pair <script type="math/tex">(G, f)</script>, where <script type="math/tex">G</script> is an abelian group in canonical Smith normal form isomorphic to <script type="math/tex">A</script> and an isomorphism <script type="math/tex">f : G \to A</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L441-L446' class='documenter-source'>source</a><br></p>
+<p><a id='find_isomorphism-Tuple{Any, Any, Hecke.GrpAb}' href='#find_isomorphism-Tuple{Any, Any, Hecke.GrpAb}'>#</a>
+<strong><code>find_isomorphism</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">find_isomorphism</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="o">::</span><span class="kt">GrpAb</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Dict</span><span class="p">,</span><span class="w"> </span><span class="kt">Dict</span>
+</code></pre></div>
+<p>Given an abelian group <script type="math/tex">A</script> and a collection <script type="math/tex">G</script> which is an abelian group with the operation <code>op</code>, this functions returns isomorphisms <script type="math/tex">G \to A</script> and <script type="math/tex">A \to G</script> encoded as dictionaries.</p>
+<p>It is assumed that <script type="math/tex">G</script> and <script type="math/tex">A</script> are isomorphic.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1671-L1679' class='documenter-source'>source</a><br></p>
+<p><a id='Subgroups-and-Quotients'></a></p>
+<p><a id='Subgroups-and-Quotients-1'></a></p>
+<h3 id="subgroups-and-quotients">Subgroups and Quotients</h3>
+<p><a id='torsion_subgroup-Tuple{FinGenAbGroup}' href='#torsion_subgroup-Tuple{FinGenAbGroup}'>#</a>
+<strong><code>torsion_subgroup</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">torsion_subgroup</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Return the torsion subgroup of <code>G</code>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1025-L1029' class='documenter-source'>source</a><br></p>
+<p><a id='sub-Tuple{FinGenAbGroup, Vector{FinGenAbGroupElem}}' href='#sub-Tuple{FinGenAbGroup, Vector{FinGenAbGroupElem}}'>#</a>
+<strong><code>sub</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">FinGenAbGroupElem</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Create the subgroup <script type="math/tex">H</script> of <script type="math/tex">G</script> generated by the elements in <code>s</code> together with the injection <script type="math/tex">\iota : H \to G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1064-L1069' class='documenter-source'>source</a><br></p>
+<p><a id='sub-Tuple{Vector{FinGenAbGroupElem}}' href='#sub-Tuple{Vector{FinGenAbGroupElem}}'>#</a>
+<strong><code>sub</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sub</span><span class="p">(</span><span class="n">A</span><span class="o">::</span><span class="kt">SMat</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="o">::</span><span class="kt">AbstractUnitRange</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">::</span><span class="kt">AbstractUnitRange</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">SMat</span>
+</code></pre></div>
+<p>Return the submatrix of <script type="math/tex">A</script>, where the rows correspond to <script type="math/tex">r</script> and the columns correspond to <script type="math/tex">c</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/Sparse/Matrix.jl#L815-L820' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code>sub(s::Vector{FinGenAbGroupElem}) -&gt; FinGenAbGroup, FinGenAbGroupHom
+</code></pre></div>
+<p>Assuming that the non-empty array <code>s</code> contains elements of an abelian group <script type="math/tex">G</script>, this functions returns the subgroup <script type="math/tex">H</script> of <script type="math/tex">G</script> generated by the elements in <code>s</code> together with the injection <script type="math/tex">\iota : H \to G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1134-L1140' class='documenter-source'>source</a><br></p>
+<p><a id='sub-Tuple{FinGenAbGroup, ZZMatrix}' href='#sub-Tuple{FinGenAbGroup, ZZMatrix}'>#</a>
+<strong><code>sub</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">ZZMatrix</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Create the subgroup <script type="math/tex">H</script> of <script type="math/tex">G</script> generated by the elements corresponding to the rows of <script type="math/tex">M</script> together with the injection <script type="math/tex">\iota : H \to G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1147-L1152' class='documenter-source'>source</a><br></p>
+<p><a id='sub-Tuple{FinGenAbGroup, ZZRingElem}' href='#sub-Tuple{FinGenAbGroup, ZZRingElem}'>#</a>
+<strong><code>sub</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">ZZRingElem</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Create the subgroup <script type="math/tex">n \cdot G</script> of <script type="math/tex">G</script> together with the injection <script type="math/tex">\iota : n\cdot G \to G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1237-L1242' class='documenter-source'>source</a><br></p>
+<p><a id='sub-Tuple{FinGenAbGroup, Integer}' href='#sub-Tuple{FinGenAbGroup, Integer}'>#</a>
+<strong><code>sub</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Create the subgroup <script type="math/tex">n \cdot G</script> of <script type="math/tex">G</script> together with the injection <script type="math/tex">\iota : n \cdot G \to G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1258-L1263' class='documenter-source'>source</a><br></p>
+<p><a id='sylow_subgroup-Tuple{FinGenAbGroup, Union{Integer, ZZRingElem}}' href='#sylow_subgroup-Tuple{FinGenAbGroup, Union{Integer, ZZRingElem}}'>#</a>
+<strong><code>sylow_subgroup</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">sylow_subgroup</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">IntegerUnion</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Return the Sylow <script type="math/tex">p-</script>subgroup of the finitely generated abelian group <code>G</code>, for a prime <code>p</code>. This is the subgroup of <code>p</code>-power order in <code>G</code> whose index in <code>G</code> is coprime to <code>p</code>.</p>
+<p><strong>Examples</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abelian_group</span><span class="p">(</span><span class="n">ZZRingElem</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">30</span><span class="p">])</span>
+<span class="go">Z/2 x Z/6 x Z/30</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">H</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sylow_subgroup</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">H</span>
+<span class="go">(Z/2)^3</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">divexact</span><span class="p">(</span><span class="n">order</span><span class="p">(</span><span class="n">A</span><span class="p">),</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="n">H</span><span class="p">))</span>
+<span class="go">45</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1591-L1611' class='documenter-source'>source</a><br></p>
+<p><a id='has_quotient-Tuple{FinGenAbGroup, Vector{Int64}}' href='#has_quotient-Tuple{FinGenAbGroup, Vector{Int64}}'>#</a>
+<strong><code>has_quotient</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">has_quotient</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">invariant</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">Int</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>Given an abelian group <script type="math/tex">G</script>, return true if it has a quotient with given elementary divisors and false otherwise.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1995-L2000' class='documenter-source'>source</a><br></p>
+<p><a id='has_complement-Tuple{FinGenAbGroupHom}' href='#has_complement-Tuple{FinGenAbGroupHom}'>#</a>
+<strong><code>has_complement</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">has_complement</span><span class="p">(</span><span class="n">f</span><span class="o">::</span><span class="kt">FinGenAbGroupHom</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+<span class="n">has_complement</span><span class="p">(</span><span class="n">U</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Given a map representing a subgroup of a group <script type="math/tex">G</script>, or a subgroup <code>U</code> of a group <code>G</code>, return either true and an injection of a complement in <script type="math/tex">G</script>, or false.</p>
+<p>See also: <a href="./#is_pure-Tuple{FinGenAbGroup, FinGenAbGroup}"><code>is_pure</code></a></p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L2140-L2149' class='documenter-source'>source</a><br></p>
+<p><a id='is_pure-Tuple{FinGenAbGroup, FinGenAbGroup}' href='#is_pure-Tuple{FinGenAbGroup, FinGenAbGroup}'>#</a>
+<strong><code>is_pure</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_pure</span><span class="p">(</span><span class="n">U</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>A subgroup <code>U</code> of <code>G</code> is called pure if for all <code>n</code> an element in <code>U</code> that is in the image of the multiplication by <code>n</code> map of <code>G</code> is also a multiple of an element in <code>U</code>.</p>
+<p>For finite abelian groups this is equivalent to <code>U</code> having a complement in <code>G</code>. They are also know as <em>isolated subgroups</em> and <em>serving subgroups</em>.</p>
+<p>See also: <a href="./#is_neat-Tuple{FinGenAbGroup, FinGenAbGroup}"><code>is_neat</code></a>, <a href="./#has_complement-Tuple{FinGenAbGroupHom}"><code>has_complement</code></a></p>
+<p><strong>EXAMPLES</strong></p>
+<div class="highlight"><pre><span></span><code><span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abelian_group</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">]);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">G</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="n">G</span><span class="p">[</span><span class="mi">2</span><span class="p">]]);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">is_pure</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="p">)</span>
+<span class="nb">false</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">G</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">4</span><span class="o">*</span><span class="n">G</span><span class="p">[</span><span class="mi">2</span><span class="p">]]);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">is_pure</span><span class="p">(</span><span class="n">U</span><span class="p">)</span>
+<span class="nb">true</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">has_complement</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="nb">true</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L2024-L2053' class='documenter-source'>source</a><br></p>
+<p><a id='is_neat-Tuple{FinGenAbGroup, FinGenAbGroup}' href='#is_neat-Tuple{FinGenAbGroup, FinGenAbGroup}'>#</a>
+<strong><code>is_neat</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">is_neat</span><span class="p">(</span><span class="n">U</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="kt">Bool</span>
+</code></pre></div>
+<p>A subgroup <code>U</code> of <code>G</code> is called neat if for all primes <code>p</code> an element in <code>U</code> that is in the image of the multiplication by <code>p</code> map of <code>G</code> is also a multiple of an element in <code>U</code>.</p>
+<p>See also: <a href="./#is_pure-Tuple{FinGenAbGroup, FinGenAbGroup}"><code>is_pure</code></a></p>
+<p><strong>EXAMPLES</strong></p>
+<div class="highlight"><pre><span></span><code><span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abelian_group</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">]);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">G</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">2</span><span class="o">*</span><span class="n">G</span><span class="p">[</span><span class="mi">2</span><span class="p">]]);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">is_neat</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="p">)</span>
+<span class="nb">true</span>
+
+<span class="n">julia</span><span class="o">&gt;</span><span class="w"> </span><span class="n">is_pure</span><span class="p">(</span><span class="n">U</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="p">)</span>
+<span class="nb">false</span>
+</code></pre></div>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L2071-L2093' class='documenter-source'>source</a><br></p>
+<p><a id='saturate-Tuple{FinGenAbGroup, FinGenAbGroup}' href='#saturate-Tuple{FinGenAbGroup, FinGenAbGroup}'>#</a>
+<strong><code>saturate</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">saturate</span><span class="p">(</span><span class="n">U</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span>
+</code></pre></div>
+<p>For a subgroup <code>U</code> of <code>G</code> find a minimal overgroup that is pure, and thus has a complement.</p>
+<p>See also: <a href="./#is_pure-Tuple{FinGenAbGroup, FinGenAbGroup}"><code>is_pure</code></a>, <a href="./#has_complement-Tuple{FinGenAbGroupHom}"><code>has_complement</code></a></p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L2109-L2116' class='documenter-source'>source</a><br></p>
+<p>A sophisticated algorithm for the enumeration of all (or selected) subgroups of a finite abelian group is available.</p>
+<p><a id='psubgroups-Tuple{FinGenAbGroup, Integer}' href='#psubgroups-Tuple{FinGenAbGroup, Integer}'>#</a>
+<strong><code>psubgroups</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">psubgroups</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="o">::</span><span class="kt">Integer</span><span class="p">;</span>
+<span class="w">           </span><span class="n">subtype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:all</span><span class="p">,</span>
+<span class="w">           </span><span class="n">quotype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:all</span><span class="p">,</span>
+<span class="w">           </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="w">           </span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>Return an iterator for the subgroups of <script type="math/tex">G</script> of the specific form. Note that <code>subtype</code> (and <code>quotype</code>) is the type of the subgroup as an abelian <script type="math/tex">p</script>-group.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/SubgroupEnum.jl#L693-L702' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="n">G</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abelian_group</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">])</span>
+<span class="go">Z/6 x Z/12</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">shapes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">MSet</span><span class="p">{</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">ZZRingElem</span><span class="p">}}()</span>
+<span class="go">MSet{Vector{ZZRingElem}}()</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">U</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">psubgroups</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="w">         </span><span class="n">push!</span><span class="p">(</span><span class="n">shapes</span><span class="p">,</span><span class="w"> </span><span class="n">elementary_divisors</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="w">       </span><span class="k">end</span>
+
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="n">shapes</span>
+<span class="go">MSet{Vector{ZZRingElem}} with 8 elements:</span>
+<span class="go">  ZZRingElem[]</span>
+<span class="go">  ZZRingElem[4]    : 2</span>
+<span class="go">  ZZRingElem[2, 4]</span>
+<span class="go">  ZZRingElem[2]    : 3</span>
+<span class="go">  ZZRingElem[2, 2]</span>
+</code></pre></div>
+<p>So there are <script type="math/tex">2</script> subgroups isomorphic to <script type="math/tex">C_4</script> (<code>ZZRingElem[4] : 2</code>), <script type="math/tex">1</script> isomorphic to <script type="math/tex">C_2\times C_4</script>, 1 trivial and <script type="math/tex">3</script>
+<script type="math/tex">C_2</script> subgroups.</p>
+<p><a id='subgroups-Tuple{FinGenAbGroup}' href='#subgroups-Tuple{FinGenAbGroup}'>#</a>
+<strong><code>subgroups</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">subgroups</span><span class="p">(</span><span class="n">g</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">;</span>
+<span class="w">          </span><span class="n">subtype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:all</span><span class="w"> </span><span class="p">,</span>
+<span class="w">          </span><span class="n">quotype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:all</span><span class="p">,</span>
+<span class="w">          </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="w">          </span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>Return an iterator for the subgroups of <script type="math/tex">G</script> of the specific form.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/SubgroupEnum.jl#L903-L911' class='documenter-source'>source</a><br></p>
+<div class="highlight"><pre><span></span><code><span class="gp">julia&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">U</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subgroups</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="n">subtype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="w">         </span><span class="nd">@show</span><span class="w"> </span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">map</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">gens</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="w">       </span><span class="k">end</span>
+<span class="go">(U[1], map(U[2], gens(U[1]))) = (Z/2, FinGenAbGroupElem[Abelian group element [0, 6]])</span>
+<span class="go">(U[1], map(U[2], gens(U[1]))) = (Z/2, FinGenAbGroupElem[Abelian group element [3, 6]])</span>
+<span class="go">(U[1], map(U[2], gens(U[1]))) = (Z/2, FinGenAbGroupElem[Abelian group element [3, 0]])</span>
+
+<span class="gp">julia&gt;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">U</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subgroups</span><span class="p">(</span><span class="n">G</span><span class="p">,</span><span class="w"> </span><span class="n">quotype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="w">         </span><span class="nd">@show</span><span class="w"> </span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">map</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="w"> </span><span class="n">gens</span><span class="p">(</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="w">       </span><span class="k">end</span>
+<span class="go">(U[1], map(U[2], gens(U[1]))) = (Finitely generated abelian group with 3 generators and 3 relations, FinGenAbGroupElem[Abelian group element [3, 3], Abelian group element [0, 4], Abelian group element [2, 0]])</span>
+<span class="go">(U[1], map(U[2], gens(U[1]))) = (Finitely generated abelian group with 3 generators and 3 relations, FinGenAbGroupElem[Abelian group element [0, 3], Abelian group element [0, 4], Abelian group element [2, 0]])</span>
+<span class="go">(U[1], map(U[2], gens(U[1]))) = (Finitely generated abelian group with 4 generators and 4 relations, FinGenAbGroupElem[Abelian group element [3, 6], Abelian group element [0, 6], Abelian group element [0, 4], Abelian group element [2, 0]])</span>
+</code></pre></div>
+<p><a id='quo-Tuple{FinGenAbGroup, Vector{FinGenAbGroupElem}}' href='#quo-Tuple{FinGenAbGroup, Vector{FinGenAbGroupElem}}'>#</a>
+<strong><code>quo</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="kt">FinGenAbGroupElem</span><span class="p">})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">GrpAbfinGemMap</span>
+</code></pre></div>
+<p>Create the quotient <script type="math/tex">H</script> of <script type="math/tex">G</script> by the subgroup generated by the elements in <script type="math/tex">s</script>, together with the projection <script type="math/tex">p : G \to H</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1275-L1280' class='documenter-source'>source</a><br></p>
+<p><a id='quo-Tuple{FinGenAbGroup, ZZMatrix}' href='#quo-Tuple{FinGenAbGroup, ZZMatrix}'>#</a>
+<strong><code>quo</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="o">::</span><span class="kt">ZZMatrix</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Create the quotient <script type="math/tex">H</script> of <script type="math/tex">G</script> by the subgroup generated by the elements corresponding to the rows of <script type="math/tex">M</script>, together with the projection <script type="math/tex">p : G \to H</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1324-L1329' class='documenter-source'>source</a><br></p>
+<p><a id='quo-Tuple{FinGenAbGroup, Integer}' href='#quo-Tuple{FinGenAbGroup, Integer}'>#</a>
+<strong><code>quo</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">Integer</span><span class="err">}</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+<span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">ZZRingElem</span><span class="err">}</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Returns the quotient <script type="math/tex">H = G/nG</script> together with the projection <script type="math/tex">p : G \to H</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1351-L1356' class='documenter-source'>source</a><br></p>
+<p><a id='quo-Tuple{FinGenAbGroup, ZZRingElem}' href='#quo-Tuple{FinGenAbGroup, ZZRingElem}'>#</a>
+<strong><code>quo</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">Integer</span><span class="err">}</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+<span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">::</span><span class="kt">ZZRingElem</span><span class="err">}</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Returns the quotient <script type="math/tex">H = G/nG</script> together with the projection <script type="math/tex">p : G \to H</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1351-L1356' class='documenter-source'>source</a><br></p>
+<p><a id='quo-Tuple{FinGenAbGroup, FinGenAbGroup}' href='#quo-Tuple{FinGenAbGroup, FinGenAbGroup}'>#</a>
+<strong><code>quo</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">quo</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">U</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Create the quotient <script type="math/tex">H</script> of <script type="math/tex">G</script> by <script type="math/tex">U</script>, together with the projection <script type="math/tex">p : G \to H</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1528-L1533' class='documenter-source'>source</a><br></p>
+<p>For 2 subgroups <code>U</code> and <code>V</code> of the same group <code>G</code>, <code>U+V</code> returns the smallest subgroup of <code>G</code> containing both. Similarly, <script type="math/tex">U\cap V</script> computes the intersection and <script type="math/tex">U \subset V</script> tests for inclusion. The difference between <code>issubset =</code> <script type="math/tex">\subset</script> and <code>is_subgroup</code> is that the inclusion map is also returned in the 2nd call.</p>
+<p><a id='intersect-Tuple{FinGenAbGroupHom, FinGenAbGroupHom}' href='#intersect-Tuple{FinGenAbGroupHom, FinGenAbGroupHom}'>#</a>
+<strong><code>intersect</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">intersect</span><span class="p">(</span><span class="n">mG</span><span class="o">::</span><span class="kt">FinGenAbGroupHom</span><span class="p">,</span><span class="w"> </span><span class="n">mH</span><span class="o">::</span><span class="kt">FinGenAbGroupHom</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Given two injective maps of abelian groups with the same codomain <script type="math/tex">G</script>, return the intersection of the images as a subgroup of <script type="math/tex">G</script>.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L1404-L1409' class='documenter-source'>source</a><br></p>
+<p><a id='Direct-Products'></a></p>
+<p><a id='Direct-Products-1'></a></p>
+<h3 id="direct-products">Direct Products</h3>
+<p><a id='direct_product-Tuple{Vararg{FinGenAbGroup}}' href='#direct_product-Tuple{Vararg{FinGenAbGroup}}'>#</a>
+<strong><code>direct_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">direct_product</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="o">...</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="kt">Vector</span><span class="p">{</span><span class="kt">FinGenAbGroupHom</span><span class="p">}</span>
+</code></pre></div>
+<p>Return the direct product <script type="math/tex">D</script> of the (finitely many) abelian groups <script type="math/tex">G_i</script>, together with the projections <script type="math/tex">D \to G_i</script>.</p>
+<p>For finite abelian groups, finite direct sums and finite direct products agree and they are therefore called biproducts. If one wants to obtain <script type="math/tex">D</script> as a direct sum together with the injections <script type="math/tex">D \to G_i</script>, one should call <code>direct_sum(G...)</code>. If one wants to obtain <script type="math/tex">D</script> as a biproduct together with the projections and the injections, one should call <code>biproduct(G...)</code>.</p>
+<p>Otherwise, one could also call <code>canonical_injections(D)</code> or <code>canonical_projections(D)</code> later on.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L673-L688' class='documenter-source'>source</a><br></p>
+<p><a id='canonical_injection-Tuple{FinGenAbGroup, Int64}' href='#canonical_injection-Tuple{FinGenAbGroup, Int64}'>#</a>
+<strong><code>canonical_injection</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">canonical_injection</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Given a group <script type="math/tex">G</script> that was created as a direct product, return the injection from the <script type="math/tex">i</script>th component.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L796-L801' class='documenter-source'>source</a><br></p>
+<p><a id='canonical_projection-Tuple{FinGenAbGroup, Int64}' href='#canonical_projection-Tuple{FinGenAbGroup, Int64}'>#</a>
+<strong><code>canonical_projection</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">canonical_projection</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Given a group <script type="math/tex">G</script> that was created as a direct product, return the projection onto the <script type="math/tex">i</script>th component.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L822-L827' class='documenter-source'>source</a><br></p>
+<p><a id='flat-Tuple{FinGenAbGroup}' href='#flat-Tuple{FinGenAbGroup}'>#</a>
+<strong><code>flat</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">flat</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroupHom</span>
+</code></pre></div>
+<p>Given a group <script type="math/tex">G</script> that is created using (iterated) direct products, or (iterated) tensor products, return a group isomorphism into a flat product: for <script type="math/tex">G := (A \oplus B) \oplus C</script>, it returns the isomorphism <script type="math/tex">G \to A \oplus B \oplus C</script> (resp. <script type="math/tex">\otimes</script>).</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L894-L901' class='documenter-source'>source</a><br></p>
+<p><a id='Tensor-Producs'></a></p>
+<p><a id='Tensor-Producs-1'></a></p>
+<h3 id="tensor-producs">Tensor Producs</h3>
+<p><a id='tensor_product-Tuple{Vararg{FinGenAbGroup}}' href='#tensor_product-Tuple{Vararg{FinGenAbGroup}}'>#</a>
+<strong><code>tensor_product</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">tensor_product</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="o">...</span><span class="p">;</span><span class="w"> </span><span class="n">task</span><span class="o">::</span><span class="kt">Symbol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:map</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Given groups <script type="math/tex">G_i</script>, compute the tensor product <script type="math/tex">G_1\otimes \cdots \otimes G_n</script>. If <code>task</code> is set to ":map", a map <script type="math/tex">\phi</script> is returned that maps tuples in <script type="math/tex">G_1 \times \cdots \times G_n</script> to pure tensors <script type="math/tex">g_1 \otimes \cdots \otimes g_n</script>. The map admits a preimage as well.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L941-L948' class='documenter-source'>source</a><br></p>
+<p><a id='hom-Tuple{FinGenAbGroup, FinGenAbGroup, Vector{Map{FinGenAbGroup, FinGenAbGroup}}}' href='#hom-Tuple{FinGenAbGroup, FinGenAbGroup, Vector{Map{FinGenAbGroup, FinGenAbGroup}}}'>#</a>
+<strong><code>hom</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hom</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">H</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="o">::</span><span class="kt">Vector</span><span class="p">{</span><span class="w"> </span><span class="o">&lt;:</span><span class="w"> </span><span class="kt">Map</span><span class="p">{</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="kt">FinGenAbGroup</span><span class="p">}})</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Given groups <script type="math/tex">G = G_1 \otimes \cdots \otimes G_n</script> and <script type="math/tex">H = H_1 \otimes \cdot \otimes H_n</script> as well as maps <script type="math/tex">\phi_i: G_i\to H_i</script>, compute the tensor product of the maps.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/GrpAbFinGen.jl#L991-L997' class='documenter-source'>source</a><br></p>
+<p><a id='Hom-Group'></a></p>
+<p><a id='Hom-Group-1'></a></p>
+<h3 id="hom-group">Hom-Group</h3>
+<p><a id='hom-Tuple{FinGenAbGroup, FinGenAbGroup}' href='#hom-Tuple{FinGenAbGroup, FinGenAbGroup}'>#</a>
+<strong><code>hom</code></strong> &mdash; <em>Method</em>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">hom</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">H</span><span class="o">::</span><span class="kt">FinGenAbGroup</span><span class="p">;</span><span class="w"> </span><span class="n">task</span><span class="o">::</span><span class="kt">Symbol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:map</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">FinGenAbGroup</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span>
+</code></pre></div>
+<p>Computes the group of all homomorpisms from <script type="math/tex">G</script> to <script type="math/tex">H</script> as an abstract group. If <code>task</code> is ":map", then a map <script type="math/tex">\phi</script> is computed that can be used to obtain actual homomorphisms. This map also allows preimages. Set <code>task</code> to ":none" to not compute the map.</p>
+<p><a target='_blank' href='https://github.com/thofma/Hecke.jl/blob/caeda1a070e409619184c451c7b456a7d4e1ce7e/src/GrpAb/Map.jl#L593-L600' class='documenter-source'>source</a><br></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/thofma" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M186.1 328.7c0 20.9-10.9 55.1-36.7 55.1s-36.7-34.2-36.7-55.1 10.9-55.1 36.7-55.1 36.7 34.2 36.7 55.1zM480 278.2c0 31.9-3.2 65.7-17.5 95-37.9 76.6-142.1 74.8-216.7 74.8-75.8 0-186.2 2.7-225.6-74.8-14.6-29-20.2-63.1-20.2-95 0-41.9 13.9-81.5 41.5-113.6-5.2-15.8-7.7-32.4-7.7-48.8 0-21.5 4.9-32.3 14.6-51.8 45.3 0 74.3 9 108.8 36 29-6.9 58.8-10 88.7-10 27 0 54.2 2.9 80.4 9.2 34-26.7 63-35.2 107.8-35.2 9.8 19.5 14.6 30.3 14.6 51.8 0 16.4-2.6 32.7-7.7 48.2 27.5 32.4 39 72.3 39 114.2zm-64.3 50.5c0-43.9-26.7-82.6-73.5-82.6-18.9 0-37 3.4-56 6-14.9 2.3-29.8 3.2-45.1 3.2-15.2 0-30.1-.9-45.1-3.2-18.7-2.6-37-6-56-6-46.8 0-73.5 38.7-73.5 82.6 0 87.8 80.4 101.3 150.4 101.3h48.2c70.3 0 150.6-13.4 150.6-101.3zm-82.6-55.1c-25.8 0-36.7 34.2-36.7 55.1s10.9 55.1 36.7 55.1 36.7-34.2 36.7-55.1-10.9-55.1-36.7-55.1z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.e1c3ead8.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      
+    
+  </body>
+</html>
