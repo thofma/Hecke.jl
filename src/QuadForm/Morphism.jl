@@ -2057,7 +2057,7 @@ function _iso_setup(Gi::Vector{ZZMatrix}, Go::Vector{ZZMatrix}; depth::Int = -1,
   return Ci, Co
 end
 
-function isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
+function _isometry(Ci::ZLatAutoCtx{SS, T, U}, Co::ZLatAutoCtx{SS, T, U}) where {SS, T, U}
   # If S == ZZRingElem, we produce ZLatAutoCtx with integer entries allowing
   # overflow. This is used in `cand`: Only if `cand` returns true for the
   # Int-version, we run the computation for the ZZRingElem-version for
@@ -2258,6 +2258,94 @@ function assert_auto(C, order)
     end
   end
   return true
+end
+
+################################################################################
+#
+#  Several forms
+#
+################################################################################
+
+# The search of [PS97](@cite) for integral forms G[1], ..., G[r] of the same
+# size, the first symmetric and positive definite, the others arbitrary
+# (Section 9(2) and 9(3) there). The callers check these conditions.
+
+# Return generators and the order of the group of all g in GL_n(ZZ) with
+# g * G[k] * g^t == G[k] for all k.
+function _automorphisms_of_forms(G::Vector{ZZMatrix}; depth::Int = -1,
+                                 bacher_depth::Int = 0)
+  if iszero(nrows(G[1]))
+    return ZZMatrix[], one(ZZ)
+  end
+  # The search enumerates the short vectors of the first form, so make it
+  # small (Section 10(1) of [PS97](@cite)).
+  _, T = lll_gram_with_transform(G[1])
+  Ttr = transpose(T)
+  C = ZLatAutoCtx(ZZMatrix[T * g * Ttr for g in G])
+  fl, Csmall = try_init_small(C; depth, bacher_depth)
+  if fl
+    auto(Csmall)
+    _gens, order = _get_generators(Csmall)
+    gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
+  else
+    init(C; depth, bacher_depth)
+    auto(C)
+    gens, order = _get_generators(C)
+  end
+  Tinv = inv(T)
+  gens = ZZMatrix[Tinv * g * T for g in gens]
+  @assert all(g * G[k] * transpose(g) == G[k] for g in gens, k in 1:length(G))
+  return gens, order
+end
+
+# Return whether there is T in GL_n(ZZ) with T * H[k] * T^t == G[k] for all k,
+# and such a T; H must have the length of G and its first form must be
+# symmetric and positive definite as well. If `choose_side` is set, the search
+# starts from the side whose reduced first form has the smaller largest
+# diagonal entry, since it enumerates the vectors up to that entry on both
+# sides.
+function _isometry_of_forms(G::Vector{ZZMatrix}, H::Vector{ZZMatrix};
+                            depth::Int = -1, bacher_depth::Int = 0,
+                            choose_side::Bool = false)
+  if nrows(G[1]) != nrows(H[1])
+    return false, zero_matrix(ZZ, 0, 0)
+  end
+  for k in 1:length(G)
+    if is_symmetric(G[k]) != is_symmetric(H[k]) || det(G[k]) != det(H[k])
+      return false, zero_matrix(ZZ, 0, 0)
+    end
+  end
+  if iszero(nrows(G[1]))
+    return true, zero_matrix(ZZ, 0, 0)
+  end
+  _, TG = lll_gram_with_transform(G[1])
+  _, TH = lll_gram_with_transform(H[1])
+  Gred = ZZMatrix[TG * g * transpose(TG) for g in G]
+  Hred = ZZMatrix[TH * h * transpose(TH) for h in H]
+  if choose_side && maximum(diagonal(Hred[1])) < maximum(diagonal(Gred[1]))
+    # T * G[k] * T^t == H[k], so inv(T) is an isometry the other way
+    fl, T = _isometry_of_reduced_forms(Hred, Gred; depth, bacher_depth)
+    fl && (T = inv(T))
+  else
+    fl, T = _isometry_of_reduced_forms(Gred, Hred; depth, bacher_depth)
+  end
+  if !fl
+    return false, zero_matrix(ZZ, 0, 0)
+  end
+  T = inv(TG) * T * TH
+  @assert all(T * H[k] * transpose(T) == G[k] for k in 1:length(G))
+  return true, T
+end
+
+function _isometry_of_reduced_forms(G::Vector{ZZMatrix}, H::Vector{ZZMatrix};
+                                    depth::Int = -1, bacher_depth::Int = 0)
+  fl, CG, CH = _try_iso_setup_small(G, H; depth, bacher_depth)
+  if fl
+    b, T = _isometry(CG, CH)
+    return b, matrix(ZZ, T)
+  end
+  CG, CH = _iso_setup(G, H; depth, bacher_depth)
+  return _isometry(CG, CH)
 end
 
 ################################################################################
