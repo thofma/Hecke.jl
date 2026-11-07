@@ -933,7 +933,7 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
     doc_init()
   end
   Pkg.activate(docsproject) do
-    Base.invokelatest(Main.Build.build_all_tutorials, Hecke)
+    Base.invokelatest(Main.Build.build_all_tutorials, Hecke; pdf=format == :pdf)
     Base.invokelatest(Main.Build.make, Hecke; strict=strict, local_build=true, doctest=doctest, format=format)
   end
   if format == :html
@@ -941,6 +941,8 @@ function build_doc(; doctest=false, strict=false, format=:vitepress)
   elseif format == :vitepress
     println("""Run `npm run docs:dev` inside `../Hecke/docs/` to view the documentation.
             """)
+  elseif format == :pdf
+    println("The documentation is in `docs/build/Hecke.jl.pdf`.")
   else
     error("format :$(format) not recognized")
   end
