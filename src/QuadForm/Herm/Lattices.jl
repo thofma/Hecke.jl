@@ -765,6 +765,7 @@ function maximal_integral_lattice(V::HermSpace)
   if dim(V) == 1
     return L
   end
-  return maximal_integral_lattice(L)
+  # inference stops at invokelatest: compile this call tree only when it runs
+  return Base.invokelatest(maximal_integral_lattice, L)::typeof(L)
 end
 
