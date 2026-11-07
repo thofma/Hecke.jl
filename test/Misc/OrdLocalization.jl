@@ -147,8 +147,61 @@ end
       g = principal_generator(L, I)
       @test Hecke.data(g) in I
       @test valuation(g, P) == valuation(I, P)
-      @test divides(L(I.gen_one), g)[1]
-      @test divides(L(I.gen_two), g)[1]
+      @test all(b -> divides(L(b), g)[1], basis(I))
     end
   end
+
+  @testset "Principal generators" begin
+    # Check equality of extended ideals, including composite localization ideals.
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 + 1, "a")
+    O = maximal_order(K)
+    P = prime_decomposition(O, 5)[1][1]
+    I = ideal(O, 13, O(a + 5))
+    J = ideal(O, basis_matrix(I))
+    for S in (P, P^2, 26*O, 52*O, 13*O, 2*O, 1*O)
+      L = localization(O, S)
+      for A in (I, J, 3*I, ideal(O, 1), ideal(O, 13, O(0)))
+        g = principal_generator(L, A)
+        @test parent(g) === L
+        @test Hecke.data(g) in A
+        for b in basis(A)
+          @test divides(L(b), g)[1]
+        end
+        for Q in keys(factor(S))
+          @test valuation(g, Q) == valuation(A, Q)
+        end
+      end
+      @test iszero(principal_generator(L, ideal(O, 0)))
+    end
+
+    L = localization(O, 26*O)
+    @test !divides(L(13), L(a + 5))[1]
+    g = principal_generator(L, I)
+    @test is_unit(divexact(g, L(3 - 2*a)))
+    @test !(K(1//2) in L)
+    @test K(1//5) in L
+    C = localization(O, P; comp=true)
+    @test !(K(1//5) in C)
+    @test K(1//5) in localization(O, 5*O; comp=true)
+    @test !(K(1//2) in C)
+    @test_throws ArgumentError principal_generator(C, I)
+    @test_throws ArgumentError principal_generator(localization(O, 0*O), I)
+
+    F, b = number_field(x^2 + 5, "b")
+    R = maximal_order(F)
+    A = ideal(R, 2, R(1 + b))
+    @test !is_principal(A)
+    M = localization(R, 6*R)
+    g = principal_generator(M, A)
+    @test Hecke.data(g) in A
+    @test all(t -> divides(M(t), g)[1], basis(A))
+    @test_throws ArgumentError principal_generator(M, I)
+
+    F, b = number_field(x^2 - 5, "b")
+    R = equation_order(F)
+    @test !is_maximal(R)
+    @test_throws ArgumentError principal_generator(localization(R, 2*R), 2*R)
+  end
+
 end
