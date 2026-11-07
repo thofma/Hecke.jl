@@ -526,7 +526,7 @@ end
 
 function small_elements(O::AlgAssAbsOrd)
   A = algebra(O)
-  M = basis_matrix(O, copy = false)
+  M = basis_matrix(FakeFmpqMat, O, copy = false)
   L = lll(M.num)
   res = Vector{elem_type(A)}()
   for i = 1:dim(A)

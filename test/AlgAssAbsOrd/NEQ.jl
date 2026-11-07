@@ -1,3 +1,14 @@
+@testset "Small elements of absolute orders" begin
+  # The small elements form a basis, also when the basis has denominators.
+  A = matrix_algebra(QQ, 2)
+  O = maximal_order(A)
+  x = A(QQ[1//2 0; 0 1])
+  Ox = order(A, [inv(x)*b*x for b in basis(O, A)])
+  for R in [O, Ox]
+    @test Hecke.ideal_from_lattice_gens(A, Hecke.small_elements(R)) == 1*R
+  end
+end
+
 @with_polymake @testset "Norm equations" begin
   A = matrix_algebra(QQ, 2)
   O = order(A, basis(A))
