@@ -947,7 +947,7 @@ function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)
   @req is_simple(A) "Algebra must be simple"
   @req is_maximal(O) "Order must be maximal"
-  is_eichler(A) || return _types_via_quaternion_algebra(O)
+  is_eichler(A) || return type_set(O)
   K = base_ring(A)
   OK = base_ring(O)
   n2 = dim(A)

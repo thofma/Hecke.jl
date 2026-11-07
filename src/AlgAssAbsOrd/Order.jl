@@ -1284,27 +1284,13 @@ function representatives_of_maximal_orders(O::AlgAssAbsOrd)
   @req is_simple(A) "Algebra must be simple"
   @req is_maximal(O) "Order must be maximal"
   is_eichler(A) && return typeof(O)[ O ]
-  return _types_via_quaternion_algebra(O)
+  return type_set(O)
 end
 
 function representatives_of_maximal_orders(
     O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
   @req is_maximal(O) "Order must be maximal"
   return type_set(O)
-end
-
-# The types of the order O of a central quaternion algebra A that is not a
-# QuaternionAlgebra, computed in the QuaternionAlgebra isomorphic to A.
-function _types_via_quaternion_algebra(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
-  A = algebra(O)
-  @req dim(A) == 4 && is_central(A) "Algebra must be a central quaternion algebra"
-  QtoA = isomorphism(QuaternionAlgebra, A)
-  Q = domain(QtoA)
-  OQ = _get_order_from_gens(Q, [QtoA \ elem_in_algebra(b)
-                                for b in absolute_basis(O)])
-  return [_get_order_from_gens(A, [QtoA(elem_in_algebra(b))
-                                   for b in absolute_basis(L)])
-          for L in type_set(OQ)]
 end
 
 ################################################################################
