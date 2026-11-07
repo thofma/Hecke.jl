@@ -38,29 +38,3 @@ function howell_form!(A::Generic.Mat{Nemo.ZZModRingElem})
   end
   return A
 end
-
-function triangularize!(A::Generic.Mat{Nemo.ZZModRingElem})
-  R=base_ring(A)
-  n=R.modulus
-
-  #
-  #  Get an upper triangular matrix
-  #
-
-  for j=1:ncols(A)
-    for i=j+1:ncols(A)
-      g,s,t,u,v = _xxgcd(A[j,j].data,A[i,j].data,n)
-      for k in 1:ncols(A)
-        t1 = s* A[j,k] + t* A[i,k]
-        t2 = u* A[j,k] + v* A[i,k]
-        A[j,k] = t1
-        A[i,k] = t2
-      end
-    end
-  end
-end
-
-function triangularize(A::Generic.Mat{Nemo.ZZModRingElem})
-  B= triangularize!(deepcopy(A))
-  return B
-end
