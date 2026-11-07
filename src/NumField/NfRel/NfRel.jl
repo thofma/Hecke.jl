@@ -158,7 +158,9 @@ end
 
 function number_field(f::PolyRingElem{T}, S::VarName = "_\$";
                      cached::Bool = false, check::Bool = true)  where {T <: NumFieldElem}
-  check && !is_irreducible(f) && error("Polynomial must be irreducible")
+  # The barrier keeps inference out of the factorization machinery, which is
+  # expensive to compile for every new tower type, unless check is set.
+  check && !Base.inferencebarrier(is_irreducible)(f) && error("Polynomial must be irreducible")
   K = RelSimpleNumField{T}(f, Symbol(S), cached)
   return K, K(gen(parent(f)))
 end
