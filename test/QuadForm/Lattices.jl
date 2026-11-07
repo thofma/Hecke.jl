@@ -173,6 +173,32 @@
   @test is_isometric_with_isometry(L, L)[1]
 end
 
+@testset "Rank-zero automorphisms and isometries" begin
+  # Rank-zero quadratic and hermitian lattices have trivial automorphisms.
+  _, x = polynomial_ring(QQ, "x")
+  K, _ = number_field(x^2 - 2, "a")
+  _, t = polynomial_ring(K, "t")
+  E, _ = number_field(t^2 + 1, "b")
+  for (F, constructor) in ((K, quadratic_lattice), (E, hermitian_lattice))
+    Z = constructor(F, []; gram = identity_matrix(F, 2))
+    @test automorphism_group_order(Z) == 1
+    @test automorphism_group_generators(Z; ambient_representation = true) ==
+          [identity_matrix(F, 2)]
+    @test automorphism_group_generators(Z; ambient_representation = false) ==
+          [identity_matrix(F, 0)]
+    @test is_isometric(Z, Z)
+    @test is_isometric_with_isometry(Z, Z) == (true, zero_matrix(F, 0, 0))
+    N = constructor(F; gram = diagonal_matrix(F, [1, -1]))
+    for (L, M) in ((Z, N), (N, Z))
+      @test !is_isometric(L, M)
+      @test is_isometric_with_isometry(L, M) == (false, zero_matrix(F, 0, 0))
+    end
+  end
+
+  Z = quadratic_lattice(E, []; gram = identity_matrix(E, 2))
+  @test is_isometric(Z, Z)
+end
+
 @testset "Misc" begin
   Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")

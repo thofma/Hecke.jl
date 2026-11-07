@@ -1430,6 +1430,12 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
 
   E = base_ring(ambient_space(L))
 
+  if rank(L) == 0
+    L.automorphism_group_generators = [identity_matrix(E, 0)]
+    L.automorphism_group_order = one(ZZ)
+    return nothing
+  end
+
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   @assert isone(generatorsL[1])
 
@@ -1626,7 +1632,8 @@ performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
 function is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0)
-  if is_definite(L)
+  rank(L) == rank(M) || return false
+  if rank(L) == 0 || is_definite(L)
     return is_isometric_with_isometry(L, M; depth = depth, bacher_depth = bacher_depth)[1]
   end
   genus(L) == genus(M) || return false
@@ -1666,6 +1673,12 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   K = base_field(E)
   @assert base_ring(V) == base_ring(W)
   @assert base_ring(L) == base_ring(M)
+  if rank(L) != rank(M)
+    return false, zero_matrix(E, 0, 0)
+  end
+  if rank(L) == 0
+    return true, zero_matrix(E, 0, 0)
+  end
   @req is_definite(L) "Only implemented for definite lattices"
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M, generatorsL)
