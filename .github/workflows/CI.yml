@@ -137,6 +137,7 @@ jobs:
           julia --color=yes --project=docs/ -e 'using Pkg; Pkg.instantiate()'
       - name: Build PDF
         env:
+          DOCUMENTER_LATEX_SHOW_LOGS: 'true'
           # keep the LaTeX sources and log
           DOCUMENTER_LATEX_DEBUG: ${{ runner.temp }}/latex
         run: julia --color=yes --project=docs/ docs/make.jl --pdf
