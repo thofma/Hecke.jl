@@ -196,6 +196,40 @@
     end
   end
 
+  @testset "Small setup with large extra forms" begin
+    # Every form in both contexts must fit Int before taking the small path;
+    # otherwise the exact searches must still compute the correct result.
+    N = ZZ(2)^100
+    I2 = identity_matrix(ZZ, 2)
+    H = ZZMatrix[I2, ZZ[1 0; 0 2]]
+    @test first(Hecke.try_init_small(Hecke.ZLatAutoCtx(H)))
+    @test first(Hecke._try_iso_setup_small(H, H))
+
+    for F in (ZZ[1 0; 0 N], ZZ[1 0; 0 -N], ZZ[1 N; N 1], ZZ[1 -N; -N 1])
+      G = ZZMatrix[I2, F]
+      C = Hecke.ZLatAutoCtx(G)
+      D = Hecke.ZLatAutoCtx(H)
+      @test !first(Hecke.try_init_small(C))
+      @test !first(Hecke.try_init_small(C, true, ZZ(1)))
+      @test !first(Hecke.try_init_small(C, false, ZZ(1); D))
+      @test !first(Hecke.try_init_small(D, false, ZZ(1); D = C))
+      @test !first(Hecke.try_init_small(Hecke.ZLatAutoCtx([I2, I2, F])))
+      @test !first(Hecke._try_iso_setup_small(G, G))
+      @test !first(Hecke._try_iso_setup_small(G, H))
+      @test !first(Hecke._try_iso_setup_small(H, G))
+
+      Hecke.init(C)
+      gens, order = Hecke.auto(C)
+      @test order == 4
+      @test all(g * A * transpose(g) == A for g in gens for A in G)
+
+      Ci, Co = Hecke._iso_setup(G, G)
+      fl, T = Hecke.isometry(Ci, Co)
+      @test fl
+      @test all(T * A * transpose(T) == A for A in G)
+    end
+  end
+
   # Entries between 2^62 and 2^63: the default route, through the Weyl
   # group, cannot enumerate its target vectors with Int; the search proceeds
   # as for entries beyond Int. Scaling a form does not change its group.
