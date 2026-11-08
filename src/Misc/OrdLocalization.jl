@@ -397,11 +397,30 @@ end
 #
 ###############################################################################
 
+@doc raw"""
+    principal_generator(L::OrdLoc, I::AbsNumFieldOrderIdeal)
+
+Return a generator of the extended ideal $IL$, represented by an element of
+$I$. The order of $I$ must equal that of $L$ and must be maximal.
+Only semilocal localizations at nonzero ideals are supported.
+For `comp=true`, extended ideals need not be principal.
+"""
 function principal_generator(L::OrdLoc{T}, I::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}) where {T <: AbsSimpleNumFieldElem}
-  #possible for !L.comp due to semi local
-  #theoretical for L.comp if L.prime large enough...
-   a, b = L(I.gen_one), L(I.gen_two)
-   valuation(a, L.prime) >= valuation(b, L.prime) ? b : a
+  @req order(I) == order(L) "Ideal and localization must have the same order"
+  @req is_maximal(order(L)) "The order must be maximal"
+  @req !L.comp "Principal generators for comp=true are not implemented"
+  @req !iszero(prime(L)) "The localization ideal must be nonzero"
+  iszero(I) && return zero(L)
+  assure_2_normal(I)
+  a, b = I.gen_one, I.gen_two
+  isone(a) && return one(L)
+
+  _, n = ppio(minimum(prime(L)), a)
+  # A normal presentation (Pohst-Zassenhaus, p. 404) gives v_P(b) = v_P(I)
+  # at every prime ideal P dividing (a). At the other primes dividing S,
+  # a is a unit and n is not. As in prod_via_2_elem_normal, n*b + a^2
+  # therefore has the required valuation at every prime dividing S.
+  return L(n*b + a^2)
 end
 
 
@@ -534,8 +553,10 @@ Returns the localization of the order $OK$ at the ideal $S$.
 If `cached == true` (the default) then the resulting
 localization parent object is cached and returned for any subsequent calls
 to the constructor with the same order $OK$ and ideal $S$.
-`comp == false` means primes dividing $S$ are invertible,
-`comp == true` means all primes not dividing $S$ become units.
+For `comp == false`, elements have nonnegative valuations at all primes
+dividing $S$; primes not dividing $S$ become units.
+For `comp == true`, elements have nonnegative valuations at all primes
+not dividing $S$; primes dividing $S$ become units.
 """
 function localization(OK::AbsNumFieldOrder{AbsSimpleNumField,T}, S::AbsNumFieldOrderIdeal{AbsSimpleNumField,T}; cached=true, comp::Bool = false) where {T <: AbsSimpleNumFieldElem}
    return OrdLoc{T}(OK, S, cached, comp)
