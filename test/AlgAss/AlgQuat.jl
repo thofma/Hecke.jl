@@ -22,6 +22,22 @@
     end
   end
 
+  @testset "Isomorphism over a relative field" begin
+    K, = quadratic_field(2)
+    _, t = K[:t]
+    L, = number_field(t^2 - 3)
+    A, = StructureConstantAlgebra(matrix_algebra(L, 2))
+    f = isomorphism(Hecke.QuaternionAlgebra, A)
+    Q = domain(f)
+    @test Q isa Hecke.QuaternionAlgebra
+    @test base_ring(Q) === L
+    @test codomain(f) === A
+    @test f(one(Q)) == one(A)
+    B = basis(Q)
+    @test all(preimage(f, f(b)) == b for b in B)
+    @test all(f(b * c) == f(b) * f(c) for b in B, c in B)
+  end
+
   let
     K, a = quadratic_field(5)
     A = Hecke.quaternion_algebra2(K, K(-1), K(-1))
