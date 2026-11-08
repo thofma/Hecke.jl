@@ -468,10 +468,12 @@ function _is_quaternion_algebra(A::StructureConstantAlgebra)
     return false, Nemo.@new_struct(morphism_type(QuaternionAlgebra{elem_type(K)}, typeof(A)))
   end
 
-  a = stdbasis[2]^2
-  b = stdbasis[3]^2
-
-  (scalea, scaleb, newa, newb) = _reduce_standard_form(K(a), K(b))
+  # For a trace-zero generator v, trred(v * conj(v)) / 2 = -v^2.
+  a = -F[2, 2]
+  b = -F[3, 3]
+  @assert stdbasis[2]^2 == A(a)
+  @assert stdbasis[3]^2 == A(b)
+  (scalea, scaleb, newa, newb) = _reduce_standard_form(a, b)
 
   stdbasis[2] = scalea * stdbasis[2]
   stdbasis[3] = scaleb * stdbasis[3]
