@@ -121,6 +121,16 @@
     @test dim(I) == 1
   end
 
+  # matrix algebras of dimension smaller than their matrix degree
+  for K in (GF(2), Native.GF(2), GF(3), GF(4))
+    A = matrix_algebra(K, [identity_matrix(K, 4)]; is_basis = true)
+    @test is_zero(radical(A))
+    N1 = zero_matrix(K, 4, 4); N1[1, 3] = N1[1, 4] = 1
+    N2 = zero_matrix(K, 4, 4); N2[2, 3] = N2[2, 4] = 1
+    A = matrix_algebra(K, [N1, N2, identity_matrix(K, 4)]; is_basis = true)
+    @test dim(radical(A)) == 2
+  end
+
   # function field example
   let
     k, o = finite_field(9)
