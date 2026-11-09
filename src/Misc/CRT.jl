@@ -850,7 +850,7 @@ function modular_lift(a::Vector{fqPolyRepFieldElem}, me::modular_env)
   ap = crt(me.rp, me.ce)
   r = me.K()
   for i=0:ap.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), ap, i)
+    u = Nemo.coeff_raw(ap, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -911,7 +911,7 @@ function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
     ap = crt(me.rp, me.ce)
     r = coeff(res, i)
     for j=0:ap.length-1
-      u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), ap, j)
+      u = Nemo.coeff_raw(ap, j)
       _num_setcoeff!(r, j, u)
     end
     setcoeff!(res, i, r)

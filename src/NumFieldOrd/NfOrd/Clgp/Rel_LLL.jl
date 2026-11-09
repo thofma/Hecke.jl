@@ -42,8 +42,7 @@ function norm(a::ZZMatrix, NC::NormCtx_gen, div::ZZRingElem = ZZRingElem(1))
     mul!(NC.np[i], NC.mp[i], NC.basis[i])
     gp = NC.gp[i]
     for j=1:degree(k)
-      ccall((:nmod_poly_set_coeff_ui, libflint), Nothing,
-      (Ref{fpPolyRingElem}, Int, UInt), gp, j - 1, NC.np[i][1,j].data)
+      setcoeff!(gp, j - 1, NC.np[i][1,j].data)
     end
     push!(l, lift(resultant(NC.fp[i], gp)//div))
   end

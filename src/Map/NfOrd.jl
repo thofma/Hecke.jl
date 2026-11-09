@@ -383,9 +383,7 @@ mutable struct NfOrdToGFMor <: Map{AbsSimpleNumFieldOrder, fpField, HeckeMap, Nf
     	function _image(x::AbsSimpleNumFieldOrderElem)
       	gg = parent(nf(O).pol)(elem_in_nf(x))::QQPolyRingElem
       	Nemo.fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
-      	ccall((:nmod_poly_rem, libflint), Nothing,
-        	    (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ptr{Nothing}),
-          	  tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(ZZRingElem))
+      	rem!(tmp_gfp_poly, tmp_gfp_poly, g)
       	return coeff(tmp_gfp_poly, 0)
 			end
     end
@@ -581,9 +579,7 @@ function NfOrdToFqFieldMor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{A
     v = coordinates(x, copy = false)
     zz = zero(F)
     for i in 1:n
-      ccall((:fq_default_mul_fmpz, libflint), Nothing,
-            (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{ZZRingElem}, Ref{FqField}),
-            tempF, imageofbasis[i], v[i], F)
+      mul!(tempF, imageofbasis[i], v[i])
       add!(zz, zz, tempF)
     end
     return zz
