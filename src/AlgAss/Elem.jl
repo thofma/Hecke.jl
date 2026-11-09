@@ -396,14 +396,10 @@ end
 function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
-  if c === a
-    d = parent(a)()
-    d = mul!(d, a, b)
-    return d
-  end
-
-  for i = 1:dim(parent(a))
-    c.coeffs[i] = mul!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], b)
+  ccoeffs = coefficients(c, copy = false)
+  acoeffs = coefficients(a, copy = false)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = mul!(ccoeffs[i], acoeffs[i], b)
   end
   return c
 end
