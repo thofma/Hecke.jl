@@ -783,15 +783,15 @@ end
     while z[i][3] >= t
 #        @show i, is[i][1]
       if (z[i][2] & it) != 0
-        mul!(v, v, z[i][1])
+        mul!(v, z[i][1])
       end
       i += 1
       if i > length(z)
         break
       end
     end
-    mul!(u, u, u)
-    mul!(u, u, v)
+    mul!(u, u)
+    mul!(u, v)
     t -= 1
     it = it >> 1
   end
@@ -811,7 +811,7 @@ end
     while z[i][3] >= t
 #        @show i, is[i][1]
       if is[i][1]
-        mul!(v, v, z[i][1])
+        mul!(v, z[i][1])
       end
 
       if t > 1
@@ -828,8 +828,8 @@ end
         break
       end
     end
-    mul!(u, u, u)
-    mul!(u, u, v)
+    mul!(u, u)
+    mul!(u, v)
     t -= 1
   end
   return u
