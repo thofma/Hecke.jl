@@ -250,25 +250,9 @@ function arb_trim(x::ArbFieldElem)
   return z
 end
 
-function rel_error_bits(x::ArbFieldElem)
-  return ccall((:arb_rel_error_bits, libflint), Int, (Ref{Nemo.ArbFieldElem}, ), x)
-end
-
-function rel_accuracy(x::ArbFieldElem)
-  return ccall((:arb_rel_accuracy_bits, libflint), Int, (Ref{Nemo.ArbFieldElem}, ), x)
-end
-
 function set!(z::ArbFieldElem, x::ArbFieldElem)
   ccall((:arb_set, libflint), Nothing, (Ref{Nemo.ArbFieldElem}, Ref{Nemo.ArbFieldElem}), z, x)
   return z
-end
-
-function rel_error_bits(x::AcbFieldElem)
-  return ccall((:acb_rel_error_bits, libflint), Int, (Ref{Nemo.AcbFieldElem}, ), x)
-end
-
-function rel_accuracy(x::AcbFieldElem)
-  return ccall((:acb_rel_accuracy_bits, libflint), Int, (Ref{Nemo.AcbFieldElem}, ), x)
 end
 
 function set!(z::AcbFieldElem, x::AcbFieldElem)
@@ -277,7 +261,7 @@ function set!(z::AcbFieldElem, x::AcbFieldElem)
 end
 
 function expand!(x::Union{ArbFieldElem, AcbFieldElem}, max_radius_2exp::Int)
-  if rel_accuracy(x) < 0
+  if accuracy_bits(x) < 0
     # Radius has less precision then the midpoint
     # Think of 0.100001 +/- 10
     # Reducing the precision of the midpoint won't help.
