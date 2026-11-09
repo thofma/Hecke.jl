@@ -358,28 +358,25 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
   m.c = ncols(A)
   m.r = 0
 
-  GC.@preserve A begin
-    for i=1:nrows(A)
-      if is_zero_row(A, i)
-        if !keepzrows
-          continue
-        else
-          r = sparse_row(R)
-        end
+  for i in 1:nrows(A)
+    if is_zero_row(A, i)
+      if !keepzrows
+        continue
       else
         r = sparse_row(R)
-        for j = 1:ncols(A)
-          t, el = _is_zero_entry(A, i, j)
-          if !t
-            m.nnz += 1
-            push!(r.values, _get(el))
-            push!(r.pos, j)
-          end
+      end
+    else
+      r = sparse_row(R)
+      for j in 1:ncols(A)
+        if !is_zero_entry(A, i, j)
+          m.nnz += 1
+          push!(r.values, A[i, j])
+          push!(r.pos, j)
         end
       end
-      push!(m.rows, r)
-      m.r += 1
     end
+    push!(m.rows, r)
+    m.r += 1
   end
   return m
 end
