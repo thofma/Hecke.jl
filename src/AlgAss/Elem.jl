@@ -361,16 +361,16 @@ function zero!(a::GroupAlgebraElem)
   if _is_sparse(a)
     zero!(a.coeffs_sparse)
   else
-    for i = 1:length(coefficients(a, copy = false))
-      a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
+    for i in 1:dim(parent(a))
+      a.coeffs[i] = zero!(a.coeffs[i])
     end
   end
   return a
 end
 
 function zero!(a::AssociativeAlgebraElem)
-  for i = 1:length(coefficients(a, copy = false))
-    a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
+  for i in 1:dim(parent(a))
+    a.coeffs[i] = zero!(a.coeffs[i])
   end
   return a
 end
@@ -384,11 +384,8 @@ function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
     return c
   end
 
-  ccoeffs = coefficients(c, copy = false)
-  acoeffs = coefficients(a, copy = false)
-  bcoeffs = coefficients(b, copy = false)
   for i in 1:dim(parent(a))
-    ccoeffs[i] = add!(ccoeffs[i], acoeffs[i], bcoeffs[i])
+    c.coeffs[i] = add!(c.coeffs[i], a.coeffs[i], b.coeffs[i])
   end
   return c
 end
@@ -396,10 +393,8 @@ end
 function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
-  ccoeffs = coefficients(c, copy = false)
-  acoeffs = coefficients(a, copy = false)
   for i in 1:dim(parent(a))
-    ccoeffs[i] = mul!(ccoeffs[i], acoeffs[i], b)
+    c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], b)
   end
   return c
 end
@@ -409,10 +404,9 @@ mul!(c::AbstractAssociativeAlgebraElem{T}, a::Union{T, Int, ZZRingElem}, b::Abst
 function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}, t::T) where {T}
   @req parent(a) === parent(c) "Parents don't match"
 
-  ccoeffs = coefficients(c, copy = false)
   acoeffs = coefficients(a, copy = false)
   for i in 1:dim(parent(a))
-    ccoeffs[i] = addmul!(ccoeffs[i], acoeffs[i], b, t)
+    c.coeffs[i] = addmul!(c.coeffs[i], acoeffs[i], b, t)
   end
   return c
 end
@@ -437,10 +431,8 @@ function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlge
     return z
   end
 
-  v = coefficients(c, copy = false)
-
   for i in 1:d
-    v[i] = zero!(v[i])
+    c.coeffs[i] = zero!(c.coeffs[i])
   end
 
   mA = multiplication_table(A, copy = false)
@@ -450,11 +442,11 @@ function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlge
   for i in 1:d
     for j in 1:d
       k = mA[i, j]
-      _v = v[k]
+      _v = c.coeffs[k]
       if ismutabletype(T)
         _v = addmul!(_v, ca[i], cb[j])
       else
-        v[k] = addmul!(_v, ca[i], cb[j])
+        c.coeffs[k] = addmul!(_v, ca[i], cb[j])
       end
     end
   end
@@ -473,13 +465,12 @@ function mul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Ass
   t = base_ring(A)()
   s = base_ring(A)()
 
-  ccoeff = coefficients(c, copy = false)
   acoeff = coefficients(a, copy = false)
   bcoeff = coefficients(b, copy = false)
   mt = multiplication_table(A, copy = false)
 
   for k in 1:n
-    c.coeffs[k] = zero!(ccoeff[k])
+    c.coeffs[k] = zero!(c.coeffs[k])
   end
 
   for i = 1:n
@@ -494,7 +485,7 @@ function mul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Ass
       end
       for k = 1:n
         s = mul!(s, mt[i, j, k], t)
-        c.coeffs[k] = add!(ccoeff[k], ccoeff[k], s)
+        c.coeffs[k] = add!(c.coeffs[k], c.coeffs[k], s)
         #c.coeffs[k] += A.mult_table[i, j, k]*t
       end
     end
