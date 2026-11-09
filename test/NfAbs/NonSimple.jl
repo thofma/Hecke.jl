@@ -219,6 +219,8 @@
     L, (s, t) = number_field([x^2 - 2, x^2 - 5]; cached = false)
     @test mod((s + 3 * t) // 2, ZZ(9)) == 5 * s + 6 * t
     @test mod((s + 3 * t) // 6, ZZ(9)) == QQ(14, 3) * s + 5 * t
+    @test mod((s + 3 * t) // 6, ZZ(-9)) == -QQ(13, 3) * s - 4 * t
+    @test iszero(mod(s // 2, ZZ(-1)))
     for m in ZZ.([2, 9, 10, 131769]), i in 1:20
       c = rand(L, -100:100) // rand(1:60)
       r = mod(c, m)
@@ -241,7 +243,21 @@
     A.gens_normal = ZZ(363)
     B = basis_matrix(A)
     simplify(A)
-    @test Hecke.defines_2_normal(A) && basis_matrix(A) == B
+    @test Hecke.defines_2_normal(A)
+    C = ideal(O, A.gen_one, O(L(A.gen_two)))
+    @test basis_matrix(C) == B
+  end
+
+  @testset "simplify over a nonmaximal order" begin
+    # The second generator must remain in the order after reduction.
+    L, (t,) = number_field([x^2 - 5]; cached = false)
+    w = (1 + t) // 2
+    O = order([one(L), 3 * w]; is_basis = true)
+    A = ideal(O, 5, O(15 * w))
+    simplify(A)
+    @test L(A.gen_two) in O
+    C = ideal(O, A.gen_one, O(L(A.gen_two)))
+    @test C == ideal(O, 5)
   end
 
   @testset "consistency check" begin

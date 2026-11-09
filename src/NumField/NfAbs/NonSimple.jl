@@ -657,10 +657,7 @@ function mod!(b::AbsNonSimpleNumFieldElem, p::ZZRingElem)
     el = coeff(b.data, i)
     q1, q2 = ppio(denominator(el), p)
     m = q1 * p
-    n = numerator(el)
-    if !isone(q2) && !isone(m)
-      n *= invmod(q2, m)
-    end
+    n = isone(q2) ? numerator(el) : mod(q1 * el, abs(m))
     setcoeff!(b.data, i, QQFieldElem(mod(n, m), q1))
   end
   combine_like_terms!(b.data)

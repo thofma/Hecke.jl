@@ -1384,8 +1384,13 @@ function simplify(A::AbsNumFieldOrderIdeal)
       end
       A.norm = n
     end
-    be = mod(A.gen_two.elem_in_nf, A.gen_one^2)
-    A.gen_two = order(A)(be, false)
+    O = order(A)
+    m = A.gen_one^2
+    if contains_equation_order(O)
+      A.gen_two = O(mod(A.gen_two.elem_in_nf, m), false)
+    else
+      A.gen_two = mod(A.gen_two, m)
+    end
 
 
     if isdefined(A, :gens_normal)

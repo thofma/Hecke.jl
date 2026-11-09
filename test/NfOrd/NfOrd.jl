@@ -213,6 +213,16 @@
     @test !@inferred is_index_divisor(O7, 5)
   end
 
+  @testset "Equation order containment" begin
+    # Equal covolumes do not imply containment, even before caching the inverse.
+    _, x = QQ["x"]
+    K, (s, t) = number_field([x^2 - 2, x^2 - 5]; cached = false)
+    w = (1 + t) // 2
+    O = order([one(K), w, 2 * s, 2 * s * w]; is_basis = true, check = false)
+    @test abs(gen_index(O)) == 1
+    @test !Hecke.contains_equation_order(O)
+  end
+
   @testset "Discriminant" begin
     b = @inferred discriminant(O1)
     @test b == -108

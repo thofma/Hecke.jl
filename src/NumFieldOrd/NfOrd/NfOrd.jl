@@ -34,10 +34,7 @@ function contains_equation_order(O::AbsNumFieldOrder)
   if isdefined(O, :index)
     return true
   end
-  if isdefined(O, :basis_mat_inv)
-    return isone(O.basis_mat_inv.den)
-  end
-  return isinteger(gen_index(O))
+  return isone(basis_mat_inv(FakeFmpqMat, O, copy = false).den)
 end
 
 ################################################################################
