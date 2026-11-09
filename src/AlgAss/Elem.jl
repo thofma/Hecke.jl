@@ -445,12 +445,7 @@ function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlge
   for i in 1:d
     for j in 1:d
       k = mA[i, j]
-      _v = c.coeffs[k]
-      if ismutabletype(T)
-        _v = addmul!(_v, ca[i], cb[j])
-      else
-        c.coeffs[k] = addmul!(_v, ca[i], cb[j])
-      end
+      c.coeffs[k] = addmul!(c.coeffs[k], ca[i], cb[j])
     end
   end
 
