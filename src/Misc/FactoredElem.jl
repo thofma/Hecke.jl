@@ -475,16 +475,7 @@ function _ev(d::Dict{fqPolyRepFieldElem, ZZRingElem}, z::fqPolyRepFieldElem)
       continue
     end
     if abs(v) < 10
-      if v >0
-        kv = Fq()
-        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{ZZRingElem}, Ref{fqPolyRepField}), kv, k, v, Fq)
-        mul!(z, z, kv)
-      else
-        kv = Fq()
-        ccall((:fq_nmod_inv, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), kv, k, Fq)
-        ccall((:fq_nmod_pow, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{ZZRingElem}, Ref{fqPolyRepField}), kv, kv, -v, Fq)
-        mul!(z, z, kv)
-      end
+      mul!(z, k^v)
     else
       r = isodd(v) ? 1 : 0
       vv = div(v-r, 2)
