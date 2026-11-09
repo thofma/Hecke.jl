@@ -916,7 +916,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
     if (quo != 0 && vv != 0) || !iszero(v)
       # We have something to do
-      if iszero(denominator(k) % char_Fq)
+      if is_divisible_by(denominator(k), char_Fq)
         throw(BadPrime(characteristic(Fq)))
       end
       _nf_to_fq!(s, k, Fq, t)
