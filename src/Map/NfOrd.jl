@@ -1312,10 +1312,8 @@ end
 
 
 function mul_mod(x::UInt, y::ZZRingElem, R)
-  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, modulus(R))
-  r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
-             x, d, modulus(R), R.ninv)
-  return r
+  d = mod(y, modulus(R))
+  return Nemo.mulmod(x, d, modulus(R), R.ninv)
 end
 
 function evaluate_raw(x::fpPolyRingElem, y::fpFieldElem)

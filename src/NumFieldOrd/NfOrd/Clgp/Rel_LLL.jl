@@ -13,7 +13,7 @@ end
 function norm(m::ZZMatrix, NC::NormCtx_split, div::ZZRingElem = ZZRingElem(1))
   l = Vector{ZZRingElem}()
   for i = 1:length(NC.lp)
-    ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{fpMatrix}, Ref{ZZMatrix}), NC.mp[i], m)
+    map_entries!(base_ring(NC.mp[i]), NC.mp[i], m)
     mul!(NC.np[i], NC.mp[i], NC.lC[i])
     n = NC.np[i]
     p = n[1,1]
@@ -38,7 +38,7 @@ function norm(a::ZZMatrix, NC::NormCtx_gen, div::ZZRingElem = ZZRingElem(1))
   k = nf(O)
   l = Vector{ZZRingElem}()
   for i=1:length(NC.lp)
-    ccall((:fmpz_mat_get_nmod_mat, libflint), Cvoid, (Ref{fpMatrix}, Ref{ZZMatrix}), NC.mp[i], a)
+    map_entries!(base_ring(NC.mp[i]), NC.mp[i], a)
     mul!(NC.np[i], NC.mp[i], NC.basis[i])
     gp = NC.gp[i]
     for j=1:degree(k)
