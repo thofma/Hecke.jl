@@ -181,17 +181,6 @@ function Mor(O::AbsSimpleNumFieldOrder, F::fqPolyRepField, h::fpPolyRingElem)
   return NfOrdToFqNmodMor(O, F, h)
 end
 
-function _get_coeff_raw(x::fqPolyRepFieldElem, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, i)
-  return u
-end
-
-function _get_coeff_raw(x::FqPolyRepFieldElem, i::Int)
-  t = ZZRingElem()
-  ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), t, x, i)
-  return t
-end
-
 # this is super slow
 # improve
 function (f::NfOrdQuoMap)(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
