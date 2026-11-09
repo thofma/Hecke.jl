@@ -143,7 +143,7 @@ function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   return c
 end
 
-function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::T) where {T}
+function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(c) !== parent(a) && error("Parents don't match.")
   A = parent(a)
 

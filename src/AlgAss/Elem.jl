@@ -398,7 +398,7 @@ function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
   return c
 end
 
-function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::T) where {T}
+function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
   if c === a
@@ -413,32 +413,9 @@ function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
   return c
 end
 
-mul!(c::AbstractAssociativeAlgebraElem{T}, a::T, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
+mul!(c::AbstractAssociativeAlgebraElem{T}, a::Union{T, Int, ZZRingElem}, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
 
-function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::Union{ Int, ZZRingElem }) where {T}
-  parent(a) != parent(c) && error("Parents don't match.")
-
-  if c === a
-    d = parent(a)()
-    d = mul!(d, a, b)
-    return d
-  end
-
-  ccoeffs = coefficients(c, copy = false)
-
-  for i in 1:dim(parent(a))
-    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], b)
-  end
-
-  if c isa MatAlgebraElem
-    c.matrix = mul!(c.matrix, a.matrix, b)
-  end
-  return c
-end
-
-mul!(c::AbstractAssociativeAlgebraElem{T}, a::Union{ Int, ZZRingElem }, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
-
-function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::T, t::T) where {T}
+function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}, t::T) where {T}
   @req parent(a) === parent(c) "Parents don't match"
 
   ccoeffs = coefficients(c, copy = false)
@@ -449,28 +426,11 @@ function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::
   return c
 end
 
-function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{Int, ZZRingElem}, t::T) where {T}
-  @req parent(a) === parent(c) "Parents don't match"
+addmul!(c::AssociativeAlgebraElem{T}, a::Union{T, Int, ZZRingElem}, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
 
-  ccoeffs = coefficients(c, copy = false)
-  acoeffs = coefficients(a, copy = false)
-  for i in 1:dim(parent(a))
-    ccoeffs[i] = addmul!(ccoeffs[i], acoeffs[i], b, t)
-  end
-  return c
-end
+addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T} = addmul!(c, a, b, base_ring(parent(c))())
 
-addmul!(c::AssociativeAlgebraElem{T}, a::T, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
-
-addmul!(c::AssociativeAlgebraElem{T}, a::Union{Int, ZZRingElem}, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
-
-addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::T) where {T} = addmul!(c, a, b, base_ring(parent(c))())
-
-addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{Int, ZZRingElem}) where {T} = addmul!(c, a, b, base_ring(parent(c))())
-
-addmul!(c::AssociativeAlgebraElem{T}, a::T, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
-
-addmul!(c::AssociativeAlgebraElem{T}, a::Union{Int, ZZRingElem}, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
+addmul!(c::AssociativeAlgebraElem{T}, a::Union{T, Int, ZZRingElem}, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
 
 function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
