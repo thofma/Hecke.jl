@@ -34,7 +34,7 @@ function _acb_powers_ptr!(p::Ptr{acb_struct}, x::AcbFieldElem, n::Int, prec::Int
   sz = sizeof(acb_struct)
   ccall((:acb_one, libflint), Nothing, (Ptr{acb_struct},), p)
   n >= 1 || return p
-  ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), p + sz, x)
+  Nemo._acb_set(p + sz, x)
   for i in 2:n
     ccall((:acb_mul, libflint), Nothing,
           (Ptr{acb_struct}, Ptr{acb_struct}, Ref{AcbFieldElem}, Int),
