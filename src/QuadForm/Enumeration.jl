@@ -1040,15 +1040,13 @@ end
 @inline function floor!(z::ZZRingElem, y::QQFieldElem, t0::ZZRingElem, t1::ZZRingElem)
   numerator!(t0, y)
   denominator!(t1, y)
-  ccall((:fmpz_fdiv_q, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, t0, t1)
-  return z
+  return fdiv!(z, t0, t1)
 end
 
 @inline function ceil!(z::ZZRingElem, y::QQFieldElem, t0::ZZRingElem, t1::ZZRingElem)
   numerator!(t0, y)
   denominator!(t1, y)
-  ccall((:fmpz_cdiv_q, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), z, t0, t1)
-  return z
+  return cdiv!(z, t0, t1)
 end
 
 @inline function isqrt!(z::ZZRingElem, a::ZZRingElem)

@@ -89,7 +89,7 @@ function defining_polynomial(Q::QadicField, P::Ring = base_field(Q))
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
     a = ZZRingElem()
-    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a+i*sizeof(Ptr))
+    set!(a, Ptr{ZZRingElem}(Q.a + i*sizeof(Ptr)))
     setcoeff!(f, j, P(a))
   end
   return f

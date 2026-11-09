@@ -266,7 +266,7 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         n = mat_entry_ptr(a, c, j)
         m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
-        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
+        fdiv!(q, n, m)
         #q = fdiv(a[c, j], H[i, j])
         fl = is_zero(q)
         if fl
@@ -298,7 +298,7 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         n = mat_entry_ptr(a, c, j)
         m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
-        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
+        fdiv!(q, n, m)
         #q = fdiv(a[c, j], H[i, j])
         fl = is_zero(q)
         if fl
@@ -511,23 +511,16 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
       Sii = mat_entry_ptr(S, i, i)
-      fl = is_one(Sii)
-      if fl
+      if is_one(Sii)
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
         Sjj = mat_entry_ptr(S, j, j)
-        fl = is_zero(Sjj)
-        if fl
+        if is_zero(Sjj)
           continue
         end
-        fl1 = is_zero(Sii)
-        if !fl1
-          fl2 = Bool(ccall((:fmpz_divisible, libflint), Cint,
-              (Ref{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sii))
-          if fl2
-            continue
-          end
+        if !is_zero(Sii) && is_divisible_by(Sjj, Sii)
+          continue
         end
         #if S[i,i] != 0 && S[j,j] % S[i,i] == 0
         #  continue
