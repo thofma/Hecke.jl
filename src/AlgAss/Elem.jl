@@ -416,9 +416,8 @@ function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
 
   ccoeffs = coefficients(c, copy = false)
 
-  bfmpq = QQFieldElem(b, 1)
-  for i = 1:dim(parent(a))
-    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], bfmpq)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], b)
   end
 
   if c isa MatAlgebraElem

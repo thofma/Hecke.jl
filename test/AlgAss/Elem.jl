@@ -121,6 +121,28 @@
     @test_throws ArgumentError addmul!(zero(B), a, ZZ(1), QQ())
   end
 
+  # mul! and addmul! with integer scalars over base rings other than QQ
+  let
+    H = abelian_group([2, 3])
+    Fx, x = GF(5)[:x]
+    algs = [group_algebra(ZZ, H; sparse = false, cached = false),
+            group_algebra(GF(5), H; sparse = false, cached = false),
+            structure_constant_algebra(x^3 + x + 1),
+            matrix_algebra(GF(5), 2)]
+    for A in algs
+      a = A(base_ring(A).(1:dim(A)))
+      for s in (ZZ(3), 3)
+        c = zero(A)
+        @test mul!(c, a, s) === c
+        @test c == 3 * a
+        @test mul!(zero(A), s, a) == 3 * a
+        @test addmul!(one(A), a, s) == one(A) + 3 * a
+        b = deepcopy(a)
+        @test mul!(b, b, s) == 3 * a
+      end
+    end
+  end
+
   # add! for matrix algebra elements
   # 1547
   let
