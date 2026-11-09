@@ -908,7 +908,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
     if quo != 0
       if v > small_mod
-        vv = fmpz_mod_ui(v, small_mod)
+        vv = mod(v, small_mod)
       else
         vv = UInt(v)
       end
@@ -943,7 +943,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
   t = mF.t
   s = mF.s
   i = 0
-  char = UInt(Fq.n)
+  char = characteristic(Fq)
   small_mod = UInt(0)
 
   if quo != 0
@@ -964,7 +964,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
     if quo != 0
       if v > small_mod
-        vv = fmpz_mod_ui(v, small_mod)
+        vv = mod(v, small_mod)
       else
         vv = UInt(v)
       end
@@ -972,7 +972,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
 
     # We always reduce, so do the test first
-    if !cached && iszero(fmpz_mod_ui(denominator(k), char))
+    if !cached && is_divisible_by(denominator(k), char)
       throw(BadPrime(characteristic(Fq)))
     end
 
@@ -1127,6 +1127,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
   t = mF.t
   i = 0
   pminusone = Fq.n - 1
+  char = characteristic(Fq)
   @assert is_monic(p)
   evaluateat = -coeff(p, 0)
   for (k, v) in a.fac
@@ -1134,7 +1135,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
     if v > 0 && v < pminusone
       vv = UInt(v)
     else
-      vv = fmpz_mod_ui(v, pminusone)
+      vv = mod(v, pminusone)
     end
     if quo != 0
       vv = vv % quo # vv will always be positive
@@ -1142,7 +1143,7 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
     @assert vv < Fq.n  #please complain if this is triggered
 
     # We always have to reduce, so check first
-    if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
+    if !cached && is_divisible_by(denominator(k), char)
       throw(BadPrime(characteristic(Fq)))
     end
 
@@ -1325,8 +1326,4 @@ function evaluate_raw(x::fpPolyRingElem, y::fpFieldElem)
   z = ccall((:nmod_poly_evaluate_nmod, libflint), UInt,
               (Ref{fpPolyRingElem}, UInt), x, y.data)
   return parent(y)(z)
-end
-
-function fmpz_mod_ui(x::ZZRingElem, y::UInt)
-  return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), x, y)
 end
