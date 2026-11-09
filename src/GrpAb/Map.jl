@@ -522,6 +522,9 @@ Base.:(*)(f::FinGenAbGroupHom, a::IntegerUnion) = a*f
 
 function Base.:^(f::FinGenAbGroupHom, n::Integer)
   @assert domain(f) === codomain(f)
+  if n < 0
+    return inv(f)^-n
+  end
   @assert n >= 0
   C = codomain(f)
   if isdefined(C, :exponent)
