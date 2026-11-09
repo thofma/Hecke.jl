@@ -129,13 +129,6 @@ end
 
 function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  A = parent(a)
-
-  if c === a || c === b
-    d = parent(a)()
-    mul!(d, a, b)
-    return d
-  end
 
   c.matrix = mul!(c.matrix, a.matrix, b.matrix)
   c.has_coeffs = false
