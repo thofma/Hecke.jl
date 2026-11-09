@@ -298,6 +298,7 @@ end
 
 # Deprecated in 0.41.2
 @deprecate cholesky_decomposition(x::ArbMatrix) cholesky(x) false
+@deprecate gcd_into!(a, b, c) gcd!(a, b, c)
 
 # Keyword `isbasis` renamed to `is_basis` in 0.41.1
 function _is_basis_kwarg(is_basis::Bool, isbasis::Union{Nothing, Bool}, f::Symbol)

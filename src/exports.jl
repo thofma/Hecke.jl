@@ -391,7 +391,6 @@ export g4_invariants
 export galois_module
 export gap_numbers
 export gcd
-export gcd_into!
 export gen_index
 export generators
 export generic_group

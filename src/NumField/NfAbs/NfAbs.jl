@@ -781,8 +781,6 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
 end
 
-gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
-
 @doc raw"""
     splitting_field(f::PolyRingElem{AbsSimpleNumFieldElem}) -> AbsSimpleNumField
 

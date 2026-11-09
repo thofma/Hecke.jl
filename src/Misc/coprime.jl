@@ -17,20 +17,10 @@
 # changes
 #
 # needs
-# isone, gcd_into!, divexact!, copy
+# isone, gcd!, divexact!, copy
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
 import Nemo.isone, Nemo.divexact, Base.copy
-
-function gcd_into!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
-  ccall((:fmpz_gcd, libflint), Nothing,
-          (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), a, b, c)
-  return a
-end
-
-function gcd_into!(a::T, b::T, c::T) where T <: Integer
-  return gcd(b, c)::T
-end
 
 function mul_into!(a::T, b::T, c::T) where T
   return (b*c)::T
@@ -317,7 +307,7 @@ end
 #Note: Bernstein needs bigints, either Integer or ZZRingElem
 #      well, polys are also OK, small integers are not.
 
-# could/ should be optimsed using divexact! and gcd_into!
+# could/ should be optimsed using divexact! and gcd!
 # probably should also be combined with ppio somewhere
 
 function ppgle(a::E, b::E) where E

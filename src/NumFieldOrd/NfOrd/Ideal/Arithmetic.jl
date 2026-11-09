@@ -456,10 +456,6 @@ function gcd(A::S, B::S) where S <: AbsNumFieldOrderIdeal
   return A+B
 end
 
-function gcd_into!(A::AbsNumFieldOrderIdeal, B::AbsNumFieldOrderIdeal, C::AbsNumFieldOrderIdeal)
-  return C+B
-end
-
 #TODO: write a ppio version that allows for p-powers as well
 @doc raw"""
     gcd(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, p::ZZRingElem) -> AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
