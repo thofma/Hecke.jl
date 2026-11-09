@@ -1,5 +1,5 @@
 function _raw_setindex(A::zzModMatrix, i::Int, j::Int, x::UInt)
-  ccall((:nmod_mat_set_entry, libflint), Nothing, (Ref{zzModMatrix}, Int, Int, UInt), A, i - 1, j - 1, x)
+  Nemo.setindex_raw!(A, x, i, j)
 end
 
 

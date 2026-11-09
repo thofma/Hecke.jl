@@ -493,14 +493,12 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         if is_lower_triangular(S)
           break
         end
-        ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
+        transpose!(S)
         ccall((:fmpz_mat_hnf_transform, libflint), Nothing,
            (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), S, T, S)
         #S, T = hnf_with_transform(S)
         R = mul!(R, T, R)
-        ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
+        transpose!(S)
         if is_upper_triangular(S)
           break
         end
@@ -991,8 +989,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       SR[i, i+nrows(M)] = 1
     end
-    ccall((:nmod_mat_howell_form, libflint), Nothing, (Ref{zzModMatrix}, ), SR)
-    #howell_form!(SR)
+    howell_form!(SR)
     iMR = SR[1:nrows(M), nrows(M)+1:ncols(SR)]
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
@@ -1004,7 +1001,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       S[i, i+nrows(M)] = 1
     end
-    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), S, R.ninv)
+    howell_form!(S)
     iM = S[1:nrows(M), nrows(M)+1:ncols(S)]
     #@assert iM*MR == identity_matrix(R, nrows(M))
     return lift(iM)
