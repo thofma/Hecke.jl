@@ -213,6 +213,37 @@
     @test degree(K) == 40
   end
 
+  @testset "mod" begin
+    # mod(c, m) is congruent to c modulo m: c - mod(c, m) has denominator
+    # coprime to m and numerator divisible by m, as for simple fields
+    L, (s, t) = number_field([x^2 - 2, x^2 - 5]; cached = false)
+    @test mod((s + 3 * t) // 2, ZZ(9)) == 5 * s + 6 * t
+    @test mod((s + 3 * t) // 6, ZZ(9)) == QQ(14, 3) * s + 5 * t
+    for m in ZZ.([2, 9, 10, 131769]), i in 1:20
+      c = rand(L, -100:100) // rand(1:60)
+      r = mod(c, m)
+      d = c - r
+      D = denominator(d)
+      @test is_coprime(D, m)
+      @test all(z -> is_divisible_by(numerator(z), m), coordinates(D * d))
+      @test isone(ppio(denominator(r), m)[2])
+    end
+
+    # simplify reduces the second generator of a 2-normal presentation
+    # modulo the square of the first, which must keep it normal; the ring of
+    # integers has index 4 over Z[s, t], so its elements can have
+    # denominators coprime to 363
+    O = maximal_order(L)
+    a = O(3011258217 * s * t - 1501549643 * s - QQ(1630201243, 2) * t +
+          QQ(13379788587, 2))
+    A = ideal(O, ZZ(363), a)
+    @test Hecke.defines_2_normal(A)
+    A.gens_normal = ZZ(363)
+    B = basis_matrix(A)
+    simplify(A)
+    @test Hecke.defines_2_normal(A) && basis_matrix(A) == B
+  end
+
   @testset "consistency check" begin
     x = gen(Hecke.Globals.Qx)
     # Q(i) lies inside Q(zeta_8)
