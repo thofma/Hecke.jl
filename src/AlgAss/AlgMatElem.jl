@@ -113,6 +113,7 @@ end
 
 function zero!(a::MatAlgebraElem)
   a.matrix = zero!(a.matrix)
+  a.has_coeffs = false
   return a
 end
 
