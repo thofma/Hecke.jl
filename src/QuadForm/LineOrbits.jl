@@ -531,34 +531,6 @@ function set!(a::fqPolyRepMatrix, z::Vector{fqPolyRepFieldElem})
   end
 end
 
-function _isequal(x::fqPolyRepMatrix, y::Vector{fqPolyRepFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:length(y)
-      el = mat_entry_ptr(x, 1, i)
-      b = ccall((:fq_nmod_equal, libflint), Cint, (Ref{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), y[i], el, R)
-      bb = Bool(b)
-      if !bb
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _muleq!(x::fqPolyRepMatrix, y::fqPolyRepFieldElem)
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        el = mat_entry_ptr(x, i, j)
-        ccall((:fq_nmod_mul, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, el, y, R)
-      end
-    end
-  end
-  return x
-end
-
 function _normalize!(x::fqPolyRepMatrix)
   R = base_ring(x)
   GC.@preserve x begin
@@ -651,36 +623,6 @@ function set!(a::FqPolyRepMatrix, z::Vector{FqPolyRepFieldElem})
           (Ref{FqPolyRepMatrix}, Int, Int, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}),
           a, 0, i - 1, z[i], base_ring(a))
   end
-end
-
-function _isequal(x::FqPolyRepMatrix, y::Vector{FqPolyRepFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:length(y)
-      el = mat_entry_ptr(x, 1, i)
-      b = ccall((:fq_equal, libflint), Cint,
-                (Ref{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), y[i], el, R)
-      bb = Bool(b)
-      if !bb
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _muleq!(x::FqPolyRepMatrix, y::FqPolyRepFieldElem)
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        el = mat_entry_ptr(x, i, j)
-        ccall((:fq_mul, libflint), Cvoid,
-              (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, el, y, R)
-      end
-    end
-  end
-  return x
 end
 
 function _normalize!(x::FqPolyRepMatrix)
@@ -787,36 +729,6 @@ function set!(a::FqMatrix, z::Vector{FqFieldElem})
           (Ref{FqMatrix}, Int, Int, Ref{FqFieldElem}, Ref{FqField}),
           a, 0, i - 1, z[i], base_ring(a))
   end
-end
-
-function _isequal(x::FqMatrix, y::Vector{FqFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:length(y)
-      el = mat_entry_ptr(x, 1, i)
-      b = ccall((:fq_default_equal, libflint), Cint,
-                (Ref{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), y[i], el, R)
-      bb = Bool(b)
-      if !bb
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _muleq!(x::FqMatrix, y::FqFieldElem)
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        el = mat_entry_ptr(x, i, j)
-        ccall((:fq_default_mul, libflint), Cvoid,
-              (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), el, el, y, R)
-      end
-    end
-  end
-  return x
 end
 
 function _normalize!(x::FqMatrix)
