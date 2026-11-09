@@ -383,18 +383,13 @@ function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
     c.coeffs_sparse = add!(c.coeffs_sparse, a.coeffs_sparse, b.coeffs_sparse)
     return c
   end
-  d = dim(A)
 
-  if c === a || c === b
-    d = A()
-    d = add!(d, a, b)
-    return d
+  ccoeffs = coefficients(c, copy = false)
+  acoeffs = coefficients(a, copy = false)
+  bcoeffs = coefficients(b, copy = false)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = add!(ccoeffs[i], acoeffs[i], bcoeffs[i])
   end
-
-  for i = 1:d
-    c.coeffs[i] = add!(coefficients(c, copy = false)[i], coefficients(a, copy = false)[i], coefficients(b, copy = false)[i])
-  end
-
   return c
 end
 
