@@ -463,16 +463,15 @@ function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlge
 end
 
 function mul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::AssociativeAlgebraElem{T}) where {T}
+  if c === a || c === b
+    z = parent(a)()
+    return mul!(z, a, b)
+  end
+
   A = parent(a)
   n = dim(A)
   t = base_ring(A)()
   s = base_ring(A)()
-
-  if c === a || c === b
-    z = parent(a)()
-    mul!(z, a, b)
-    return z
-  end
 
   ccoeff = coefficients(c, copy = false)
   acoeff = coefficients(a, copy = false)
