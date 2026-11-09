@@ -66,7 +66,8 @@ end
 #
 ################################################################################
 
-function ramified_infinite_places(A::StructureConstantAlgebra{AbsSimpleNumFieldElem})
+function ramified_infinite_places(
+    A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem})
   K = base_ring(A)
   inf_plc = Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}()
   places = real_places(K)
