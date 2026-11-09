@@ -263,6 +263,7 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
 
   # This does not make a copy of coeffs
   function GroupAlgebraElem{T, S}(A::S, coeffs::Vector{T}) where {T, S}
+    @req _is_dense(A) "Sparse group algebras do not accept coefficient vectors"
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs

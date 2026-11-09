@@ -373,6 +373,10 @@ function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
   parent(a) != parent(b) && error("Parents don't match.")
   parent(c) != parent(b) && error("Parents don't match.")
   A = parent(a)
+  if _is_sparse(A)
+    c.coeffs_sparse = add!(c.coeffs_sparse, a.coeffs_sparse, b.coeffs_sparse)
+    return c
+  end
   d = dim(A)
 
   if c === a || c === b
