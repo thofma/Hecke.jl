@@ -318,34 +318,6 @@ end
 #
 ################################################################################
 
-# A dangerous interface for checking whether an entry is zero
-#
-# fl, t = _is_zero_entry(A, i, j)
-# then A[i, j] == _get(t)
-#
-# This is to avoid the allocation and double "lookup" for flint matrices
-#
-# WARNING: The function calling _is_zero_entry(A, i, j) must call this inside a
-# GC.@preserve A block
-
-@inline function _is_zero_entry(A::ZZMatrix, i, j)
-  x = mat_entry_ptr(A, i, j)
-  return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), x), x
-end
-
-@inline function _is_zero_entry(A::MatElem, i, j)
-  t = A[i, j]
-  return iszero(t), t
-end
-
-@inline function _get(x::Ptr{ZZRingElem})
-  z = ZZRingElem()
-  set!(z, x)
-  return z
-end
-
-_get(x::RingElem) = x
-
 @doc raw"""
     sparse_matrix(A::MatElem; keepzrows::Bool = true)
 
