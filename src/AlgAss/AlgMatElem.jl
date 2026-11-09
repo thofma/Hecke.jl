@@ -44,6 +44,11 @@ function coefficients(a::MatAlgebraElem; copy::Bool = true)
   end
 end
 
+function coeff(a::MatAlgebraElem, i::Int)
+  assure_has_coeffs(a)
+  return a.coeffs[i]
+end
+
 ################################################################################
 #
 #  String I/O

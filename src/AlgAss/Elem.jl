@@ -1296,6 +1296,23 @@ function coefficients(a::AbstractAssociativeAlgebraElem; copy::Bool = true)
   return a.coeffs
 end
 
+@doc raw"""
+    coeff(a::AbstractAssociativeAlgebraElem, i::Int) -> RingElem
+
+Return the $i$-th coefficient of $a$ in the basis of `parent(a)`.
+
+The result may share memory with $a$ and must not be mutated.
+"""
+coeff(a::AbstractAssociativeAlgebraElem, i::Int) = a.coeffs[i]
+
+function coeff(a::GroupAlgebraElem, i::Int)
+  if _is_sparse(a)
+    return a.coeffs_sparse[i]
+  else
+    return a.coeffs[i]
+  end
+end
+
 ################################################################################
 #
 #  Denominator
