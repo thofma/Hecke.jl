@@ -542,7 +542,7 @@ function any_order(A::AbstractAssociativeAlgebra{T}, R::Union{ AbsNumFieldOrder,
   M = vcat(zero_matrix(K, 1, dim(A)), d*identity_matrix(K, dim(A)))
   oneA = one(A)
   for i = 1:dim(A)
-    M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
+    M[1, i] = deepcopy(coeff(oneA, i))
   end
   PM = pseudo_matrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)

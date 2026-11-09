@@ -73,7 +73,7 @@ Returns $-a$.
 function -(a::MatAlgebraElem)
   b = parent(a)(-matrix(a, copy = false))
   if a.has_coeffs
-    b.coeffs = [ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
+    b.coeffs = [ -coeff(a, i) for i in 1:dim(parent(a)) ]
     b.has_coeffs = true
   end
   return b
@@ -89,7 +89,7 @@ function +(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false), check = false)
   if a.has_coeffs && b.has_coeffs
-    c.coeffs = [ coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
+    c.coeffs = [ coeff(a, i) + coeff(b, i) for i in 1:dim(parent(a)) ]
     c.has_coeffs = true
   end
   return c
@@ -99,7 +99,7 @@ function -(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false); check = false)
   if a.has_coeffs && b.has_coeffs
-    c.coeffs = [ coefficients(a, copy = false)[i] - coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
+    c.coeffs = [ coeff(a, i) - coeff(b, i) for i in 1:dim(parent(a)) ]
     c.has_coeffs = true
   end
   return c

@@ -133,7 +133,7 @@ function assure_has_basis_matrix(A::MatAlgebra)
       for (j, n) in enumerate(N)
         jj = (j - 1)*dcr
         for k = 1:dcr
-          M[i, jj + k] = coefficients(n, copy = false)[k]
+          M[i, jj + k] = coeff(n, k)
         end
       end
     end
@@ -444,7 +444,7 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; is_basis::B
     for (j, s) in enumerate(span[i])
       jj = (j - 1)*dcr
       for k = 1:dcr
-        v[jj + k] = coefficients(s, copy = false)[k]
+        v[jj + k] = coeff(s, k)
       end
     end
     new_elt = _add_row_to_rref!(M, deepcopy(v), pivot_rows, cur_rank + 1)
@@ -469,7 +469,7 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; is_basis::B
         for (j, s) in enumerate(t)
           jj = (j - 1)*dcr
           for k = 1:dcr
-            v[jj + k] = coefficients(s, copy = false)[k]
+            v[jj + k] = coeff(s, k)
           end
         end
         new_elt = _add_row_to_rref!(M, deepcopy(v), pivot_rows, cur_rank + 1)
@@ -555,7 +555,7 @@ function _matrix_in_algebra(M::S, A::MatAlgebra{T, S}) where {T, S<:MatElem}
     t = [M[I] for I in ind[pivots]] # = M[ind[pivots]] if it were supported
   else
     ind = CartesianIndices((dim_of_coefficient_ring(A), axes(M)...))
-    t = [coefficients(M[I[2], I[3]]; copy=false)[I[1]] for I in ind[pivots]]
+    t = [coeff(M[I[2], I[3]], I[1]) for I in ind[pivots]]
   end
   return t*U
 end
@@ -620,8 +620,8 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(
     for (i, m) in enumerate(M)
       ii = (i - 1)*dcr
       for j = 1:dcr
-        t[ii + j] = coefficients(m, copy = false)[j]
-        #tt[1, ii + j] = coefficients(m, copy = false)[j]
+        t[ii + j] = coeff(m, j)
+        #tt[1, ii + j] = coeff(m, j)
       end
     end
   end
