@@ -1679,7 +1679,13 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   if rank(L) == 0
     return true, zero_matrix(E, 0, 0)
   end
-  @req is_definite(L) "Only implemented for definite lattices"
+  definite_L = is_definite(L)
+  definite_M = is_definite(M)
+  @req definite_L || definite_M "Only implemented for definite lattices"
+  if definite_L != definite_M ||
+     is_positive_definite(L) != is_positive_definite(M)
+    return false, zero_matrix(E, 0, 0)
+  end
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M, generatorsL)
   @assert generatorsL == generatorsM

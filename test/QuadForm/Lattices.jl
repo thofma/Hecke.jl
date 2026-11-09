@@ -199,6 +199,55 @@ end
   @test is_isometric(Z, Z)
 end
 
+@testset "Definite number field lattice isometry" begin
+  # Check sign compatibility and isometry certificates for both lattice types.
+  _, x = polynomial_ring(QQ, "x")
+  K, _ = number_field(x^2 - 2, "a")
+  E, _ = number_field(x^2 + 1, "b")
+  for (F, make_lattice) in ((K, quadratic_lattice), (E, hermitian_lattice))
+    for n in 1:2
+      D = identity_matrix(F, n)
+      P = make_lattice(F; gram = D)
+      N = make_lattice(F; gram = -D)
+      for (L, M) in ((P, N), (N, P))
+        @test !is_isometric(L, M)
+        @test is_isometric_with_isometry(L, M) ==
+              (false, zero_matrix(F, 0, 0))
+      end
+
+      U = identity_matrix(F, n)
+      U[1, n] = 1
+      for (s, L) in ((1, P), (-1, N))
+        M = make_lattice(F, U; gram = s * D)
+        for (A, B) in ((L, L), (L, M), (M, L))
+          @test is_isometric(A, B)
+          fl, T = is_isometric_with_isometry(A, B)
+          @test fl
+          @test base_ring(T) === F
+          @test T * gram_matrix(rational_span(B)) *
+                map_entries(involution(A), transpose(T)) ==
+                gram_matrix(rational_span(A))
+        end
+        M = make_lattice(F; gram = 2 * s * D)
+        @test !is_isometric(L, M)
+        @test is_isometric_with_isometry(L, M) ==
+              (false, zero_matrix(F, 0, 0))
+      end
+    end
+
+    I = make_lattice(F; gram = diagonal_matrix(F, [1, -1]))
+    for s in (1, -1)
+      L = make_lattice(F; gram = s * identity_matrix(F, 2))
+      @test !is_isometric(L, I)
+      @test is_isometric_with_isometry(L, I) ==
+            (false, zero_matrix(F, 0, 0))
+      @test is_isometric_with_isometry(I, L) ==
+            (false, zero_matrix(F, 0, 0))
+    end
+    @test_throws ArgumentError is_isometric_with_isometry(I, I)
+  end
+end
+
 @testset "Misc" begin
   Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
