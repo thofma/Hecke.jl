@@ -27,6 +27,8 @@ parent_type(::Type{GroupAlgebraElem{T, S}}) where {T, S} = S
 
 parent(a::AbstractAssociativeAlgebraElem) = a.parent
 
+is_exact_type(::Type{<:AbstractAssociativeAlgebraElem{T}}) where {T} = is_exact_type(T)
+
 function (K::AbsSimpleNumField)(a::AbstractAssociativeAlgebraElem{AbsSimpleNumFieldElem})
   @assert K == base_ring(parent(a))
   @assert has_one(parent(a))
