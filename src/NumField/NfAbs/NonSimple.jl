@@ -648,13 +648,17 @@ end
 
 # TODO: Dan says that it is better to use a BuilderCtx if the result has
 # denominator 1
+# As nf_elem_coprime_den for simple fields: each coefficient n/(q1 q2), with
+# q1 composed of the primes dividing p and q2 coprime to p, becomes
+# n q2^-1 mod p q1, divided by q1, so that b changes by an element with
+# denominator coprime to p and numerator divisible by p.
 function mod!(b::AbsNonSimpleNumFieldElem, p::ZZRingElem)
   for i=1:length(b.data)
     el = coeff(b.data, i)
-    dnew, cp = ppio(denominator(el), p)
-    el *= cp
-    n = mod(numerator(el), dnew * p)
-    setcoeff!(b.data, i, QQFieldElem(n, dnew))
+    q1, q2 = ppio(denominator(el), p)
+    m = q1 * p
+    n = isone(q2) ? numerator(el) : mod(q1 * el, abs(m))
+    setcoeff!(b.data, i, QQFieldElem(mod(n, m), q1))
   end
   combine_like_terms!(b.data)
   return b
