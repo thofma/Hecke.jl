@@ -22,33 +22,6 @@
 
 import Nemo.isone, Nemo.divexact, Base.copy
 
-function mul_into!(a::T, b::T, c::T) where T
-  return (b*c)::T
-end
-
-function mul_into!(a::ZZRingElem, b::ZZRingElem, c::ZZRingElem)
-  mul!(a, b, c)
-  return a
-end
-
-function copy_into!(a, b)
-  return b
-end
-
-function copy_into!(a::MPolyRingElem, b::MPolyRingElem)
-  return copy(b)
-end
-
-function copy_into!(a::ZZRingElem, b::ZZRingElem)
-  set!(a, b)
-  return a
-end
-
-function copy_into!(a::QQFieldElem, b::QQFieldElem)
-  set!(a, b)
-  return a
-end
-
 #for larger lists much better than Bill's (Nemo's) prod function
 # the built-in Julia is better than Bill's Nemo function anyway
 """
@@ -79,20 +52,20 @@ end
 function Base.push!(A::ProdEnv{T}, b::T) where T
   if A.last == 0
     A.level[1] = 1
-    A.val[1] = copy_into!(A.val[1], b)
+    A.val[1] = set!(A.val[1], b)
     A.last = 1
     return
   end
   if A.level[A.last] > 1
     A.last += 1
     A.level[A.last] = 1
-    A.val[A.last] = copy_into!(A.val[A.last], b)
+    A.val[A.last] = set!(A.val[A.last], b)
     return
   end
 
   lev = 1
   while A.last > 0 && A.level[A.last] <= lev
-    b = mul_into!(A.val[A.last], A.val[A.last], b)
+    b = mul!(A.val[A.last], A.val[A.last], b)
     lev += A.level[A.last]
     A.last -= 1
   end
@@ -106,7 +79,7 @@ function finish(A::ProdEnv)
   b = A.val[A.last]
   while A.last >1
     A.last -= 1
-    b = mul_into!(b, A.val[A.last], b)
+    b = mul!(b, A.val[A.last], b)
   end
   return b
 end
@@ -162,14 +135,14 @@ end
 function Base.push!(A::EvalEnv{T}, b::T) where T
   if A.last == 0
     A.level[1] = 1
-    A.val[1] = copy_into!(A.val[1], b)
+    A.val[1] = set!(A.val[1], b)
     A.last = 1
     return
   end
   if A.level[A.last] > 1
     A.last += 1
     A.level[A.last] = 1
-    A.val[A.last] = copy_into!(A.val[A.last], b)
+    A.val[A.last] = set!(A.val[A.last], b)
     return
   end
 
@@ -191,7 +164,7 @@ function Base.push!(A::EvalEnv{T}, b::T) where T
      bx^3+cx^2+d 1
   ...
   =#
-  b = copy_into!(A.pow[end], b)
+  b = set!(A.pow[end], b)
   while A.last > 0 && A.level[A.last] <= lev
 #    b = b*A.pow[lev] + A.val[A.last]
     b = mul!(b, b, A.pow[lev])
@@ -201,7 +174,7 @@ function Base.push!(A::EvalEnv{T}, b::T) where T
   end
   A.last += 1
   A.level[A.last] = lev
-  A.val[A.last] = copy_into!(A.val[A.last], b)
+  A.val[A.last] = set!(A.val[A.last], b)
   return
 end
 
