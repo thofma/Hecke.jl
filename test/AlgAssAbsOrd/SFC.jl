@@ -835,6 +835,29 @@
       A, = StructureConstantAlgebra(B)
       @test length(Hecke.representatives_of_maximal_orders(A)) == n
     end
+    # with a center larger than the base field: M_2(Q(sqrt(-5))), of class
+    # number 2, has two types (ibid., 28.5.11), over QQ and over QQ as a
+    # number field, and as many representatives_of_maximal_orders; a number
+    # field has one maximal order, and other algebras with a larger center are
+    # refused
+    K5, = quadratic_field(-5)
+    Q1, = rationals_as_number_field()
+    over_Q1(A) = StructureConstantAlgebra(Q1, map(Q1, multiplication_table(A)))
+    A, = restrict_scalars(matrix_algebra(K5, 2), QQ)
+    for B in [A, over_Q1(A)]
+      M = maximal_order(B)
+      @test type_number(M) == 2
+      @test length(Hecke.representatives_of_maximal_orders(M)) == 2
+    end
+    F, = restrict_scalars(matrix_algebra(K5, 1), QQ)
+    for B in [F, over_Q1(F)]
+      @test length(Hecke.representatives_of_maximal_orders(maximal_order(B))) == 1
+    end
+    A, = restrict_scalars(matrix_algebra(K5, 3), QQ)
+    for B in [A, over_Q1(A)]
+      @test_throws ArgumentError Hecke.representatives_of_maximal_orders(
+        maximal_order(B))
+    end
     M = maximal_order(quaternion_algebra(K, 1, 1))
     R = base_ring(M)
     P = first(first.(prime_decomposition(R, 3)))
@@ -921,9 +944,11 @@
     @test eichler_level(M) == 1 * base_ring(M)
 
     # an order over QQ that is not a module over the ring of integers of its
-    # center Q(sqrt(5)), and an algebra of dimension 9
+    # center Q(sqrt(5)), and algebras of dimension 9 over their centers
     O = order(A, vcat([one(A)], [2 * elem_in_algebra(b) for b in basis(MA)]))
     @test_throws ArgumentError right_class_set(O)
     @test_throws ArgumentError type_set(maximal_order(matrix_algebra(QQ, 3)))
+    A3, = restrict_scalars(matrix_algebra(quadratic_field(-5)[1], 3), QQ)
+    @test_throws ArgumentError type_set(maximal_order(A3))
   end
 end

@@ -757,14 +757,14 @@ end
 
 function _quaternion_model(A::StructureConstantAlgebra)
   @req is_simple(A) "Algebra must be simple"
+  @req dimension_over_center(A) == 4 (
+    "Algebra must be a quaternion algebra over its center")
   if dimension_of_center(A) > 1
     # A quaternion algebra over the number field of its center
     C, CtoA = _as_algebra_over_center(A)
-    @req dim(C) == 4 "Algebra must be a quaternion algebra over its center"
     Q, from, to, level = _quaternion_model(C)
     return Q, y -> CtoA(from(y)), x -> to(preimage(CtoA, x)), level
   end
-  @req dim(A) == 4 "Algebra must be a quaternion algebra"
   QtoA = isomorphism(QuaternionAlgebra, A)
   Q, from, to, level = _quaternion_model(domain(QtoA))
   return Q, y -> QtoA(from(y)), x -> to(preimage(QtoA, x)), level
