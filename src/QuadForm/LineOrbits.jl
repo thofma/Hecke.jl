@@ -490,29 +490,11 @@ function set!(a::MatElem, z::Vector{FpFieldElem})
   end
 end
 
-function _normalize!(x::MatElem{FpFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = x[1, j]
-      if !iszero(el)
-        piv = j
-        ell = inv(el)
-        break
-      end
-    end
-
-    @assert piv != 0
-
-    for j in (piv+1):ncols(x)
-      t = x[1, j]
-      mul!(t, t, ell)
-    end
-    one!(x[1, piv].data)
-  end
-  return x
+# The entries before the pivot are zero, so scaling the row normalizes it.
+function _normalize!(x::FpMatrix)
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
+  return mul!(x, inv(x[1, piv]))
 end
 
 function _isless(x::Vector{FpFieldElem}, y::MatElem)

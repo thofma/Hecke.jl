@@ -9,3 +9,52 @@
     @test !iszero(v) && isone(v[findfirst(!iszero, v)])
   end
 end
+
+@testset "Line orbits" begin
+  # The orbits returned by line_orbits partition the lines and have the
+  # stated lengths, for every matrix type with its own helpers.
+  function is_line_orbit_partition(G, res)
+    K = base_ring(G[1])
+    n = nrows(G[1])
+    normalize(v) = inv(v[findfirst(!iszero, v)]) .* v
+    orbit_of = Dict{Vector{elem_type(K)}, Int}()
+    for (i, (v, len)) in enumerate(res)
+      v = normalize(v)
+      haskey(orbit_of, v) && return false
+      orbit_of[v] = i
+      orb = [v]
+      j = 1
+      while j <= length(orb)
+        for g in G
+          wg = matrix(K, 1, n, orb[j]) * g
+          w = normalize([wg[1, k] for k in 1:n])
+          if !haskey(orbit_of, w)
+            orbit_of[w] = i
+            push!(orb, w)
+          elseif orbit_of[w] != i
+            return false
+          end
+        end
+        j += 1
+      end
+      length(orb) == len || return false
+    end
+    return length(orbit_of) == length(Hecke.enumerate_lines(K, n))
+  end
+
+  function random_invertible(K, n)
+    g = rand(matrix_space(K, n, n))
+    while is_zero(det(g))
+      g = rand(matrix_space(K, n, n))
+    end
+    return g
+  end
+
+  fields = [Native.GF(5), Native.GF(ZZ(5)), Native.finite_field(3, 2, "a")[1],
+            Native.finite_field(ZZ(3), 2, "a")[1], GF(5), GF(3, 2)]
+  for K in fields
+    G = [random_invertible(K, 3)]
+    @test is_line_orbit_partition(G, line_orbits(G))
+    @test is_line_orbit_partition(G, Hecke._line_orbits(G))
+  end
+end
