@@ -943,7 +943,6 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
   t = mF.t
   s = mF.s
   i = 0
-  char = characteristic(Fq)
   small_mod = UInt(0)
 
   if quo != 0
@@ -971,8 +970,9 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
     end
 
 
-    # We always reduce, so do the test first
-    if !cached && is_divisible_by(denominator(k), char)
+    # We always reduce, so do the test first.
+    # Use Fq.n to avoid allocating a ZZRingElem for the characteristic.
+    if !cached && iszero(mod(denominator(k), Fq.n))
       throw(BadPrime(characteristic(Fq)))
     end
 
@@ -1127,7 +1127,6 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
   t = mF.t
   i = 0
   pminusone = Fq.n - 1
-  char = characteristic(Fq)
   @assert is_monic(p)
   evaluateat = -coeff(p, 0)
   for (k, v) in a.fac
@@ -1142,8 +1141,9 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
     end
     @assert vv < Fq.n  #please complain if this is triggered
 
-    # We always have to reduce, so check first
-    if !cached && is_divisible_by(denominator(k), char)
+    # We always reduce, so do the test first.
+    # Use Fq.n to avoid allocating a ZZRingElem for the characteristic.
+    if !cached && iszero(mod(denominator(k), Fq.n))
       throw(BadPrime(characteristic(Fq)))
     end
 
