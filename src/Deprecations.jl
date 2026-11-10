@@ -150,7 +150,6 @@ end
 @deprecate iskummer_extension is_kummer_extension
 @deprecate isleaf is_leaf
 @deprecate isleft_ideal is_left_ideal
-@deprecate islessorequal is_lessorequal
 @deprecate islinearly_disjoint is_linearly_disjoint
 @deprecate islll_reduced is_lll_reduced
 @deprecate islocal_norm is_local_norm
