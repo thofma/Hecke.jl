@@ -253,7 +253,7 @@ function _block(a::AbsSimpleNumFieldElem, R::Vector{fqPolyRepFieldElem}, ap::fqP
   Nemo.nf_elem_to_gfp_poly!(_tmp, a, false) # ignore denominator
   set_length!(ap, length(_tmp))
   for i in 0:(length(_tmp) - 1)
-    setcoeff!(ap, i, base_ring(ap)(_get_coeff_raw(_tmp, i)))
+    setcoeff!(ap, i, base_ring(ap)(Nemo.coeff_raw(_tmp, i)))
   end
 #  ap = Ft(Zx(a*denominator(a)))
   s = fqPolyRepFieldElem[evaluate(ap, x) for x = R]

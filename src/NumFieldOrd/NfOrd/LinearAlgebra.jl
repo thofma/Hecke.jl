@@ -57,16 +57,6 @@ end
 #  return res
 #end
 
-function _get_coeff_raw(x::zzModPolyRingElem, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), x, i)
-  return u
-end
-
-function _get_coeff_raw(x::fpPolyRingElem, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fpPolyRingElem}, Int), x, i)
-  return u
-end
-
 function det(M::Generic.Mat{AbsSimpleNumFieldOrderElem})
   O = base_ring(M)::AbsSimpleNumFieldOrder
   K = nf(O)

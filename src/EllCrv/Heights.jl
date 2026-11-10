@@ -768,20 +768,8 @@ function CPS_dvev_complex(E::EllipticCurve{T}, v::V, prec::Int = 100) where T wh
   H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
   H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
 
-  # minimum and maximum of Vector{ArbFieldElem} are bugged, even reduec(min/max, ...)
-  alpha_start_fg = H_fg[1]
-  beta_start_fg = H_fg[1]
-  for x in H_fg
-    alpha_start_fg = _min(alpha_start_fg, x)
-    beta_start_fg = _max(beta_start_fg, x)
-  end
-
-  alpha_start_FG = H_FG[1]
-  beta_start_FG = H_FG[1]
-  for x in H_FG
-    alpha_start_FG = _min(alpha_start_FG, x)
-    beta_start_FG = _max(beta_start_FG, x)
-  end
+  alpha_start_fg, beta_start_fg = extrema(H_fg)
+  alpha_start_FG, beta_start_FG = extrema(H_FG)
 
   #Determines precision. Choosing a smaller mu makes the function a lot slower as
   #alpha_bound converges very slowly. When I tested different values it took 0.5s for
