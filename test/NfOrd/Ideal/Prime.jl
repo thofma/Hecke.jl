@@ -86,6 +86,49 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
+@testset "Approximation at real places" begin
+  # Check the supplied signs and congruence of the correction factor.
+  K, a = quadratic_field(2)
+  O = maximal_order(K)
+  I = ideal(O, 3)
+  places = real_places(K)
+  vals = [!is_positive(a, p) for p in places]
+  for (x, to_field) in ((a, identity), (FacElem(a), evaluate))
+    @test isone(to_field(Hecke.approximate_factor(x, I, places, [true, true])))
+    c = Hecke.approximate_factor(x, I, places, vals)
+    @test [is_positive(c, p) for p in places] == vals
+    @test O(to_field(c) - 1) in I
+
+    b = Hecke.approximate(x, I, places)
+    @test is_positive(b, places)
+    @test O(to_field(b) - a) in I
+  end
+
+  p = first(places)
+  c = Hecke.approximate_factor(a, I, [p, p], [false, false])
+  @test sign(c, p) == -1
+  @test O(c - 1) in I
+  @test_throws ArgumentError Hecke.approximate_factor(a, I, [p, p], [true, false])
+  @test_throws ArgumentError Hecke.approximate_factor(a, I, [p], Bool[])
+
+  zero_ideal = ideal(O, 0)
+  @test isone(Hecke.approximate_factor(a, zero_ideal, [p], [true]))
+  @test_throws ArgumentError Hecke.approximate_factor(a, zero_ideal, [p], [false])
+
+  @testset "Unit ideal" begin
+    # Replay a zero first sample using the current Julia version's RNG.
+    unit_ideal = ideal(O, 1)
+    seed = findfirst(1:10_000) do trial
+      Random.seed!(trial)
+      return iszero(1 + rand(unit_ideal, 5))
+    end
+    @test seed !== nothing
+    Random.seed!(seed)
+    c = Hecke.approximate_factor(a, unit_ideal, [p], [false])
+    @test sign(c, p) == -1
+  end
+end
+
 @testset "Subgroups at finite places" begin
   K, a = quadratic_field(-1)
   O = maximal_order(K)
