@@ -849,31 +849,17 @@ function _normalize!(x::FqMatrix)
   return x
 end
 
-function _isless(x::FqFieldElem, y::FqFieldElem, xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
-  d = absolute_degree(parent(x)) - 1
-  for i in 0:d
-    ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), xi, x, i, parent(x))
-    ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), yi, y, i, parent(x))
-    if xi != yi
-      return xi < yi
-    end
-  end
-  return false
-end
-
 # `fq_default_get_coeff_fmpz` works in the absolute FLINT context, so all
 # `absolute_degree` coefficients are compared, also for relative fields
-@inline function _isless(x::FqFieldElem, y::Ptr{FqFieldElem}, xi::ZZRingElem = ZZRingElem(),
-                                            yi::ZZRingElem = ZZRingElem())
+@inline function _isless(x::FqFieldElem, y::Nemo.TypeOrPtr{FqFieldElem},
+                         xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
   R = parent(x)
   d = absolute_degree(R) - 1
   for i in 0:d
     ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), xi, x, i, R)
     ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ptr{FqFieldElem}, Int, Ref{FqField}), yi, y, i, R)
+          (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), yi, y, i, R)
     if xi != yi
       return xi < yi
     end
