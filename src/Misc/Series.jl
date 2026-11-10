@@ -243,9 +243,6 @@ function rational_reconstruction(a::PadicFieldElem)
   return rational_reconstruction(Hecke.lift(ZZ, a), prime(parent(a), precision(a)))
 end
 
-Hecke.gcd_into!(a::PolyRingElem, b::PolyRingElem, c::PolyRingElem) = gcd(b, c)
-
-
 function Hecke.squarefree_part(a::PolyRingElem)
   return divexact(a, gcd(a, derivative(a)))
 end
