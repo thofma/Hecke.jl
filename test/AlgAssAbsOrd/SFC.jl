@@ -943,6 +943,26 @@
     @test type_number(M) == 5
     @test eichler_level(M) == 1 * base_ring(M)
 
+    # M_2 over the non-simple field Q(sqrt(2), sqrt(5)): level one for the
+    # maximal order, and level P for the matrices (a b; c d) with c in P, for P
+    # over 11, an Eichler order; one class and one type for each
+    Qx, x = QQ[:x]
+    L, = number_field([x^2 - 2, x^2 - 5])
+    AL = matrix_algebra(L, 2)
+    ML = maximal_order(AL)
+    RL = base_ring(ML)
+    @test eichler_level(ML) == 1 * RL
+    @test type_number(ML) == 1
+    @test length(Hecke.representatives_of_maximal_orders(ML)) == 1
+    P = first(first.(prime_decomposition(RL, 11)))
+    units = [AL(matrix(L, [1 0; 0 0])), AL(matrix(L, [0 1; 0 0])),
+             AL(matrix(L, [0 0; 1 0])), AL(matrix(L, [0 0; 0 1]))]
+    rows = vcat([matrix(L, 1, 4, coefficients(u)) for u in units]...)
+    ideals = [fractional_ideal(RL, I) for I in [1 * RL, 1 * RL, P, 1 * RL]]
+    EL = order(AL, pseudo_matrix(rows, ideals))
+    @test eichler_level(EL) == P
+    @test length(right_class_set(EL)) == 1 && type_number(EL) == 1
+
     # an order over QQ that is not a module over the ring of integers of its
     # center Q(sqrt(5)), and algebras of dimension 9 over their centers
     O = order(A, vcat([one(A)], [2 * elem_in_algebra(b) for b in basis(MA)]))
