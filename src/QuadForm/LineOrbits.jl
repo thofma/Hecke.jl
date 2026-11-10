@@ -531,21 +531,11 @@ end
 
 function _normalize!(x::fqPolyRepMatrix)
   R = base_ring(x)
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
   GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = mat_entry_ptr(x, 1, j)
-      b = ccall((:fq_nmod_is_zero, libflint), Cint, (Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, R)
-      if !Bool(b)
-        piv = j
-        ccall((:fq_nmod_inv, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, el, R)
-        ell = el
-        break
-      end
-    end
-
-    @assert piv != 0
+    ell = mat_entry_ptr(x, 1, piv)
+    ccall((:fq_nmod_inv, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), ell, ell, R)
 
     for j in (piv+1):ncols(x)
       el = mat_entry_ptr(x, 1, j)
@@ -625,23 +615,12 @@ end
 
 function _normalize!(x::FqPolyRepMatrix)
   R = base_ring(x)
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
   GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = mat_entry_ptr(x, 1, j)
-      b = ccall((:fq_is_zero, libflint), Cint,
-                (Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, R)
-      if !Bool(b)
-        piv = j
-        ccall((:fq_inv, libflint), Cvoid,
-              (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, el, R)
-        ell = el
-        break
-      end
-    end
-
-    @assert piv != 0
+    ell = mat_entry_ptr(x, 1, piv)
+    ccall((:fq_inv, libflint), Cvoid,
+          (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), ell, ell, R)
 
     for j in (piv+1):ncols(x)
       el = mat_entry_ptr(x, 1, j)
@@ -731,23 +710,12 @@ end
 
 function _normalize!(x::FqMatrix)
   R = base_ring(x)
-  piv = 0
-  local ell
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
   GC.@preserve x begin
-    for j in 1:ncols(x)
-      el = mat_entry_ptr(x, 1, j)
-      b = ccall((:fq_default_is_zero, libflint), Cint,
-                (Ptr{FqFieldElem}, Ref{FqField}), el, R)
-      if !Bool(b)
-        piv = j
-        ccall((:fq_default_inv, libflint), Cvoid,
-              (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), el, el, R)
-        ell = el
-        break
-      end
-    end
-
-    @assert piv != 0
+    ell = mat_entry_ptr(x, 1, piv)
+    ccall((:fq_default_inv, libflint), Cvoid,
+          (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), ell, ell, R)
 
     for j in (piv+1):ncols(x)
       el = mat_entry_ptr(x, 1, j)
