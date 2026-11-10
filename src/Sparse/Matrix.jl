@@ -318,34 +318,6 @@ end
 #
 ################################################################################
 
-# A dangerous interface for checking whether an entry is zero
-#
-# fl, t = _is_zero_entry(A, i, j)
-# then A[i, j] == _get(t)
-#
-# This is to avoid the allocation and double "lookup" for flint matrices
-#
-# WARNING: The function calling _is_zero_entry(A, i, j) must call this inside a
-# GC.@preserve A block
-
-@inline function _is_zero_entry(A::ZZMatrix, i, j)
-  x = mat_entry_ptr(A, i, j)
-  return ccall((:fmpz_is_zero, libflint), Bool, (Ptr{ZZRingElem},), x), x
-end
-
-@inline function _is_zero_entry(A::MatElem, i, j)
-  t = A[i, j]
-  return iszero(t), t
-end
-
-@inline function _get(x::Ptr{ZZRingElem})
-  z = ZZRingElem()
-  set!(z, x)
-  return z
-end
-
-_get(x::RingElem) = x
-
 @doc raw"""
     sparse_matrix(A::MatElem; keepzrows::Bool = true)
 
@@ -358,28 +330,25 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
   m.c = ncols(A)
   m.r = 0
 
-  GC.@preserve A begin
-    for i=1:nrows(A)
-      if is_zero_row(A, i)
-        if !keepzrows
-          continue
-        else
-          r = sparse_row(R)
-        end
+  for i in 1:nrows(A)
+    if is_zero_row(A, i)
+      if !keepzrows
+        continue
       else
         r = sparse_row(R)
-        for j = 1:ncols(A)
-          t, el = _is_zero_entry(A, i, j)
-          if !t
-            m.nnz += 1
-            push!(r.values, _get(el))
-            push!(r.pos, j)
-          end
+      end
+    else
+      r = sparse_row(R)
+      for j in 1:ncols(A)
+        if !is_zero_entry(A, i, j)
+          m.nnz += 1
+          push!(r.values, A[i, j])
+          push!(r.pos, j)
         end
       end
-      push!(m.rows, r)
-      m.r += 1
     end
+    push!(m.rows, r)
+    m.r += 1
   end
   return m
 end
