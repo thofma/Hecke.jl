@@ -12,7 +12,8 @@ end
 
 @testset "Line orbits" begin
   # The orbits returned by line_orbits partition the lines and have the
-  # stated lengths, for every matrix type with its own helpers.
+  # stated lengths, for every matrix type with its own helpers and for a
+  # relative field.
   function is_line_orbit_partition(G, res)
     K = base_ring(G[1])
     n = nrows(G[1])
@@ -50,8 +51,11 @@ end
     return g
   end
 
+  F = GF(3, 2)
+  Fx, x = F[:x]
+  L, = finite_field(x^2 + x + gen(F), :b)
   fields = [Native.GF(5), Native.GF(ZZ(5)), Native.finite_field(3, 2, "a")[1],
-            Native.finite_field(ZZ(3), 2, "a")[1], GF(5), GF(3, 2)]
+            Native.finite_field(ZZ(3), 2, "a")[1], GF(5), F, L]
   for K in fields
     G = [random_invertible(K, 3)]
     @test is_line_orbit_partition(G, line_orbits(G))

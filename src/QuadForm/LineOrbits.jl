@@ -863,10 +863,12 @@ function _isless(x::FqFieldElem, y::FqFieldElem, xi::ZZRingElem = ZZRingElem(), 
   return false
 end
 
+# `fq_default_get_coeff_fmpz` works in the absolute FLINT context, so all
+# `absolute_degree` coefficients are compared, also for relative fields
 @inline function _isless(x::FqFieldElem, y::Ptr{FqFieldElem}, xi::ZZRingElem = ZZRingElem(),
                                             yi::ZZRingElem = ZZRingElem())
   R = parent(x)
-  d = degree(parent(x)) - 1
+  d = absolute_degree(R) - 1
   for i in 0:d
     ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), xi, x, i, R)
