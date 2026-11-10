@@ -357,7 +357,7 @@ end
 
 function zero!(a::GroupAlgebraElem)
   if _is_sparse(a)
-    empty!(a.coeffs_sparse)
+    zero!(a.coeffs_sparse)
   else
     for i = 1:length(coefficients(a, copy = false))
       a.coeffs[i] = zero!(coefficients(a, copy = false)[i])

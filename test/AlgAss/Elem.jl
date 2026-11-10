@@ -30,6 +30,19 @@
     @test Hecke.is_integral(QQFieldElem(1, 2)*C[1]) == false
   end
 
+  @testset "zero! for group algebra elements" begin
+    # Check in-place zeroing for both representations, including infinite groups.
+    for (n, sparse) in ((4, false), (4, true), (0, true))
+      G = abelian_group([n])
+      B = group_algebra(ZZ, G; sparse)
+      b = B(zero(G) => 2, first(gens(G)) => -3)
+      @test !iszero(b)
+      @test zero!(b) === b
+      @test iszero(b)
+      @test zero!(b) === b
+    end
+  end
+
   let
     A = matrix_algebra(QQ, 2)
     @test is_idempotent(A(QQ[1 0; 0 0]))
