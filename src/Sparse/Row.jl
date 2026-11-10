@@ -923,7 +923,7 @@ function addmul!(z::SRow{T}, x::SRow{T}, y) where T
 end
 
 function addmul!(z::SRow{T}, x, y::SRow{T}) where T
-  if z === x
+  if z === y
     return scale_row_left!(y, x+1)
   end
   return add_left_scaled_row!(y, z, x)
@@ -941,7 +941,7 @@ function submul!(z::SRow{T}, x::SRow{T}, y) where T
 end
 
 function submul!(z::SRow{T}, x, y::SRow{T}) where T
-  if z === x
+  if z === y
     return scale_row_left!(y, -x+1)
   end
   return add_left_scaled_row!(y, z, -x)

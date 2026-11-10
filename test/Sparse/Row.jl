@@ -235,6 +235,18 @@
   C = add_scaled_row(A,B,F(1))
   @test C == A+B
 
+  # addmul!/submul! with the row aliased to the output, scalar on either side
+  A = sparse_row(F, [1, 3], [x, x*y + 1])
+  for (op, f) in ((+, addmul!), (-, submul!))
+    Z = deepcopy(A)
+    @test f(Z, y, Z) === Z
+    @test Z == op(A, y*A)
+    Z = deepcopy(A)
+    @test f(Z, Z, y) === Z
+    @test Z == op(A, A*y)
+  end
+  @test y*A != A*y
+
   # mutating arithmetic
   randcoeff() = begin
     n = rand((1,1,1,2,5,7,15))
