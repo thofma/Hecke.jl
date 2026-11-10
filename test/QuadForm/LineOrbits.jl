@@ -62,3 +62,11 @@ end
     @test is_line_orbit_partition(G, Hecke._line_orbits(G))
   end
 end
+
+@testset "Line orbits over a large prime field" begin
+  # Exercise normalization above the UInt modulus limit with a single line.
+  p = next_prime(ZZ(typemax(UInt)))
+  K = Native.GF(p)
+  G = [matrix(K, 1, 1, [2])]
+  @test line_orbits(G) == [([one(K)], 1)]
+end
