@@ -37,7 +37,10 @@ group(A::GroupAlgebra) = A.group
 has_one(A::GroupAlgebra) = true
 
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
-  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
+  if c isa Vector
+    @req _is_dense(A) "Sparse group algebras do not accept coefficient vectors"
+    length(c) == dim(A) || error("Dimensions don't match.")
+  end
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
