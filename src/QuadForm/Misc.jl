@@ -260,6 +260,7 @@ function image(f::NumFieldHom{AbsSimpleNumField, <:NumField}, I::AbsNumFieldOrde
 end
 
 function image(f::NumFieldHom{AbsSimpleNumField, <:NumField}, I::AbsNumFieldOrderIdeal)
+  domain(f) === codomain(f) && return induce_image(f, I)
   OK = maximal_order(codomain(f))
   return image(f, I, OK)
 end

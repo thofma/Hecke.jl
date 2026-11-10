@@ -59,6 +59,12 @@ end
   # factorization of p and the norms, and agrees with induce_image.
   Qx, x = QQ["x"]
   K, = number_field(x^2 - 5, "s")
+
+  O = equation_order(K)
+  I = 2 * O
+  J = image(Hecke.id_hom(K), I)
+  @test order(J) === O && J == I
+
   Ky, y = K["y"]
   L1, = number_field(y^2 - 2, "t")
   L1z, z = L1["z"]
