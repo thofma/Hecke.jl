@@ -673,9 +673,7 @@ function modular_proj(a::AbsSimpleNumFieldElem, me::modular_env)
     else
       u = F()
     end
-    ccall((:fq_nmod_set, libflint), Nothing,
-                (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                u, me.rp[i], F)
+    set!(u, me.rp[i])
     me.res[i] = u
   end
   return me.res
@@ -701,9 +699,7 @@ function modular_proj(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, me::
     for i=1:me.ce.n
       F = me.fld[i]
       u = F()
-      ccall((:fq_nmod_set, libflint), Nothing,
-                  (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                  u, me.rp[i], F)
+      set!(u, me.rp[i])
       eee = mod(v, size(F)-1)
       if abs(eee-size(F)+1) < div(eee, 2)
         eee = eee+1-size(F)
@@ -735,9 +731,7 @@ function modular_proj_vec(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, 
     for i=1:me.ce.n
       F = me.fld[i]
       u = F()
-      ccall((:fq_nmod_set, libflint), Nothing,
-                  (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                  u, me.rp[i], F)
+      set!(u, me.rp[i])
       eee = mod(v, size(F)-1)
 
       if abs(eee-size(F)+1) < div(eee, 2)
@@ -886,9 +880,7 @@ function modular_proj(a::Generic.Poly{AbsSimpleNumFieldElem}, me::modular_env)
     crt_inv!(me.rp, r, me.ce)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
-      ccall((:fq_nmod_set, libflint), Nothing,
-                   (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                   u, me.rp[j], me.fld[j])
+      set!(u, me.rp[j])
       setcoeff!(me.Rp[j], i, u)
     end
   end
