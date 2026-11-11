@@ -711,6 +711,26 @@ function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :p
   return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
+function direct_product(G::Vector{FinGenAbGroup}; task::Symbol = :prod, init::Union{Nothing, Ring} = nothing)
+  if length(G) > 0
+    return direct_product(G...; task)
+  end
+  
+  Dp = free_abelian_group(0)
+  set_attribute!(Dp, :direct_product =>G, :show => show_direct_product)
+  inj = FinGenAbGroupHom[]
+  pro = FinGenAbGroupHom[]
+  if task == :none
+    return Dp
+  elseif task == :prod
+    return Dp, pro
+  elseif task == :sum
+    return Dp, inj
+  else
+    return Dp, pro, inj
+  end
+end
+
 @doc raw"""
     biproduct(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
 
@@ -741,7 +761,7 @@ If one wants to access the injections $G_i \to D$ or the projections $D \to G_i$
 one can call respectively `canonical_injections(D)` or `canonical_projections(D)`.
 """
 function _direct_product(t::Symbol, G::FinGenAbGroup...
-             ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
+  ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum, init::Union{Nothing, Ring} = nothing)
   @assert task in [:prod, :sum, :both, :none]
 
   Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
