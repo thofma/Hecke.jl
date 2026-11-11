@@ -247,6 +247,32 @@
   end
   @test y*A != A*y
 
+  # Coerce scalars before adding the identity or negating.
+  @testset "Fixed-width scalars" begin
+    A = sparse_row(ZZ, 1, 1)
+    for (op, f, c) in ((+, addmul!, typemax(Int)),
+                       (-, submul!, typemin(Int) + 1),
+                       (-, submul!, typemin(Int)))
+      expected = sparse_row(ZZ, 1, op(one(ZZ), ZZ(c)))
+
+      Z = deepcopy(A)
+      @test f(Z, c, Z) === Z
+      @test Z == expected
+
+      Z = deepcopy(A)
+      @test f(Z, Z, c) === Z
+      @test Z == expected
+
+      Z = deepcopy(A)
+      @test f(Z, c, A) === Z
+      @test Z == expected
+
+      Z = deepcopy(A)
+      @test f(Z, A, c) === Z
+      @test Z == expected
+    end
+  end
+
   # mutating arithmetic
   randcoeff() = begin
     n = rand((1,1,1,2,5,7,15))
