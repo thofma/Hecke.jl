@@ -1049,11 +1049,6 @@ end
   return cdiv!(z, t0, t1)
 end
 
-@inline function isqrt!(z::ZZRingElem, a::ZZRingElem)
-  ccall((:fmpz_sqrt, libflint), Cvoid, (Ref{ZZRingElem}, Ref{ZZRingElem}), z, a)
-  return z
-end
-
 floor!(z::Int, x::Rational{Int}, y::Int, w::Int) = Int(floor(x))
 
 isqrt!(z::Int, x::Int) = isqrt(x)
