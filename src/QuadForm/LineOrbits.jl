@@ -549,24 +549,13 @@ function _normalize!(x::fqPolyRepMatrix)
   return x
 end
 
-function _isless(x::fqPolyRepFieldElem, y::fqPolyRepFieldElem)
-  d = degree(parent(x)) - 1
-  for i in 0:d
-    xi = coeff(x, i)
-    yi = coeff(y, i)
-    if xi != yi
-      return xi < yi
-    end
-  end
-  return false
-end
-
-@inline function _isless(x::fqPolyRepFieldElem, y::Ptr{fqPolyRepFieldElem})
+@inline function _isless(x::fqPolyRepFieldElem,
+                         y::Nemo.TypeOrPtr{fqPolyRepFieldElem})
   d = degree(parent(x)) - 1
   for i in 0:d
     xi = coeff(x, i)
     yi = ccall((:nmod_poly_get_coeff_ui, libflint), UInt,
-               (Ptr{fqPolyRepFieldElem}, Int), y, i)
+               (Ref{fqPolyRepFieldElem}, Int), y, i)
     if xi != yi
       return xi < yi
     end
@@ -632,28 +621,15 @@ function _normalize!(x::FqPolyRepMatrix)
   return x
 end
 
-function _isless(x::FqPolyRepFieldElem, y::FqPolyRepFieldElem, xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
+@inline function _isless(x::FqPolyRepFieldElem,
+                         y::Nemo.TypeOrPtr{FqPolyRepFieldElem},
+                         xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
   d = degree(parent(x)) - 1
   for i in 0:d
     ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), xi, x, i)
     ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), yi, y, i)
-    if xi != yi
-      return xi < yi
-    end
-  end
-  return false
-end
-
-@inline function _isless(x::FqPolyRepFieldElem, y::Ptr{FqPolyRepFieldElem}, xi::ZZRingElem = ZZRingElem(),
-                                            yi::ZZRingElem = ZZRingElem())
-  d = degree(parent(x)) - 1
-  for i in 0:d
-    ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), xi, x, i)
-    ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ptr{FqPolyRepFieldElem}, Int), yi, y, i)
     if xi != yi
       return xi < yi
     end
