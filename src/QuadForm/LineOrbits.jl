@@ -430,30 +430,6 @@ function set!(a::fpMatrix, z::Vector{fpFieldElem})
   end
 end
 
-function _isless(x::Vector{fpFieldElem}, y::fpMatrix)
-  d = length(x)
-  for i in 1:d
-    xi = x[i]
-    yi = y[1, i]
-    if xi.data != yi.data
-      return xi.data < yi.data
-    end
-  end
-  return false
-end
-
-function _isless(x::Vector{fpFieldElem}, y::Vector{fpFieldElem})
-  d = length(x)
-  for i in 1:d
-    xi = x[i]
-    yi = y[i]
-    if xi.data != yi.data
-      return xi.data < yi.data
-    end
-  end
-  return false
-end
-
 # gfp_fmpz
 
 function set!(a::MatElem, z::Vector{FpFieldElem})
@@ -463,14 +439,10 @@ function set!(a::MatElem, z::Vector{FpFieldElem})
   end
 end
 
-# The entries before the pivot are zero, so scaling the row normalizes it.
-function _normalize!(x::Union{fpMatrix, FpMatrix})
-  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
-  @assert !isnothing(piv)
-  return mul!(x, inv(x[1, piv]))
-end
+# gfp and gfp_fmpz
 
-function _isless(x::Vector{FpFieldElem}, y::MatElem)
+function _isless(x::Vector{T}, y::MatElem{T}) where
+                                    {T <: Union{fpFieldElem, FpFieldElem}}
   d = length(x)
   for i in 1:d
     xi = x[i]
@@ -482,7 +454,8 @@ function _isless(x::Vector{FpFieldElem}, y::MatElem)
   return false
 end
 
-function _isless(x::Vector{FpFieldElem}, y::Vector{FpFieldElem})
+function _isless(x::Vector{T}, y::Vector{T}) where
+                                    {T <: Union{fpFieldElem, FpFieldElem}}
   d = length(x)
   for i in 1:d
     xi = x[i]
@@ -492,6 +465,13 @@ function _isless(x::Vector{FpFieldElem}, y::Vector{FpFieldElem})
     end
   end
   return false
+end
+
+# The entries before the pivot are zero, so scaling the row normalizes it.
+function _normalize!(x::Union{fpMatrix, FpMatrix})
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
+  return mul!(x, inv(x[1, piv]))
 end
 
 # fqPolyRepMatrix
