@@ -34,14 +34,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       Fp = Native.GF(p; cached = false)
     end
     Fpx = polynomial_ring(Fp, "x", cached = false)[1]
-    g = Fpx()
-    if isnmod
-      pt = ccall((:fq_nmod_ctx_modulus, libflint), Ptr{zzModPolyRingElem}, (Ref{fqPolyRepField}, ), Fq)
-      ccall((:nmod_poly_set, libflint), Nothing, (Ref{fpPolyRingElem}, Ptr{zzModPolyRingElem}), g, pt)
-    else
-      pt = ccall((:fq_ctx_modulus, libflint), Ptr{ZZModPolyRingElem}, (Ref{FqPolyRepField}, ), Fq)
-      ccall((:fmpz_mod_poly_set, libflint), Nothing, (Ref{FpPolyRingElem}, Ptr{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), g, pt, base_ring(parent(g)).ninv)
-    end
+    g = defining_polynomial(Fpx, Fq)
     n = degree(Fq)
     @assert n == degree(g)
     m = degree(h)

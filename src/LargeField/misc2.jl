@@ -217,7 +217,7 @@ function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
 #    println("lc: $lc")
     for j=1:length(lpx)
       for k=1:n
-        @inbounds ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}), tmp[j, k], bp[j, lc[1], k])
+        @inbounds set!(tmp[j, k], bp[j, lc[1], k])
         for l = 2:no_coeff
 #          tmp[j][k] +=  bp[j][lc[l]][k]
           @inbounds add!(tmp[j, k], tmp[j, k], bp[j, lc[l], k])
