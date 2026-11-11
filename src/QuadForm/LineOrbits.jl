@@ -490,29 +490,11 @@ function set!(a::MatElem, z::Vector{FpFieldElem})
   end
 end
 
-function _normalize!(x::MatElem{FpFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = x[1, j]
-      if !iszero(el)
-        piv = j
-        ell = inv(el)
-        break
-      end
-    end
-
-    @assert piv != 0
-
-    for j in (piv+1):ncols(x)
-      t = x[1, j]
-      mul!(t, t, ell)
-    end
-    one!(x[1, piv].data)
-  end
-  return x
+# The entries before the pivot are zero, so scaling the row normalizes it.
+function _normalize!(x::FpMatrix)
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
+  return mul!(x, inv(x[1, piv]))
 end
 
 function _isless(x::Vector{FpFieldElem}, y::MatElem)
@@ -867,29 +849,17 @@ function _normalize!(x::FqMatrix)
   return x
 end
 
-function _isless(x::FqFieldElem, y::FqFieldElem, xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
-  d = absolute_degree(parent(x)) - 1
-  for i in 0:d
-    ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), xi, x, i, parent(x))
-    ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), yi, y, i, parent(x))
-    if xi != yi
-      return xi < yi
-    end
-  end
-  return false
-end
-
-@inline function _isless(x::FqFieldElem, y::Ptr{FqFieldElem}, xi::ZZRingElem = ZZRingElem(),
-                                            yi::ZZRingElem = ZZRingElem())
+# `fq_default_get_coeff_fmpz` works in the absolute FLINT context, so all
+# `absolute_degree` coefficients are compared, also for relative fields
+@inline function _isless(x::FqFieldElem, y::Nemo.TypeOrPtr{FqFieldElem},
+                         xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
   R = parent(x)
-  d = degree(parent(x)) - 1
+  d = absolute_degree(R) - 1
   for i in 0:d
     ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), xi, x, i, R)
     ccall((:fq_default_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ptr{FqFieldElem}, Int, Ref{FqField}), yi, y, i, R)
+          (Ref{ZZRingElem}, Ref{FqFieldElem}, Int, Ref{FqField}), yi, y, i, R)
     if xi != yi
       return xi < yi
     end
