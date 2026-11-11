@@ -66,7 +66,8 @@ function preimage(f::ModAlgHom, a::ModAlgAssElem)
 end
 
 function zero_map(V::ModAlgAss, W::ModAlgAss)
-  return hom(V, W, zero_matrix(base_ring(algebra(V)), dim(V), dim(W)))
+  M = zero_matrix(coefficient_ring(V), dim(V), dim(W))
+  return hom(V, W, M; check = false)
 end
 
 #################################################################################
